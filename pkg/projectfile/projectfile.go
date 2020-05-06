@@ -615,13 +615,15 @@ func FromPath(path string) (*Project, *failures.Failure) {
 
 // CreateParams are parameters that we create a custom activestate.yaml file from
 type CreateParams struct {
-	Owner      string
-	Project    string
-	CommitID   *strfmt.UUID
-	Directory  string
-	Content    string
-	path       string
-	projectURL string
+	Owner           string
+	Project         string
+	CommitID        *strfmt.UUID
+	Directory       string
+	Content         string
+	Language        string
+	LanguageVersion string
+	path            string
+	projectURL      string
 }
 
 // CreateWithProjectURL a new activestate.yaml with default content
@@ -681,8 +683,10 @@ func createCustom(params *CreateParams) (*Project, *failures.Failure) {
 	}
 
 	data := map[string]interface{}{
-		"Project": params.projectURL,
-		"Content": params.Content,
+		"Project":         params.projectURL,
+		"LanguageName":    params.Language,
+		"LanguageVersion": params.LanguageVersion,
+		"Content":         params.Content,
 	}
 
 	template, fail := loadTemplate(params.path, data)

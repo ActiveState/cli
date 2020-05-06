@@ -57,6 +57,9 @@ var (
 
 	// FailRuntimeInvalidEnvironment represents a Failure during set up of the runtime environment
 	FailRuntimeInvalidEnvironment = failures.Type("runtime.runtime.invalidenv", failures.FailIO)
+
+	// FailRuntimeUnknownEngine is a failure due to the engine not being known.
+	FailRuntimeUnknownEngine = failures.Type("runtime.runtime.unknownengine", FailRuntimeInvalid)
 )
 
 // Installer implements an Installer that works with a runtime.Downloader and a
@@ -129,7 +132,7 @@ func (installer *Installer) IsInstalled() (bool, *failures.Failure) {
 
 	dirs := assembler.InstallDirs()
 	for _, dir := range dirs {
-		if ! fileutils.DirExists(dir) {
+		if !fileutils.DirExists(dir) {
 			return false, nil
 		}
 	}
@@ -147,11 +150,21 @@ func (installer *Installer) Assembler() (Assembler, *failures.Failure) {
 		return nil, fail
 	}
 
-	if artifacts.IsAlternative {
+	switch artifacts.BuildEngine {
+	case Alternative:
 		return NewAlternativeRuntime(artifacts.Artifacts, installer.params.CacheDir, artifacts.RecipeID)
-	}
+	case Camel:
+		return NewCamelRuntime(artifacts.Artifacts, installer.params.CacheDir)
+	case Hybrid:
+		cr, fail := NewCamelRuntime(artifacts.Artifacts, installer.params.CacheDir)
+		if fail != nil {
+			return nil, fail
+		}
 
-	return NewCamelRuntime(artifacts.Artifacts, installer.params.CacheDir)
+		return &HybridRuntime{cr}, nil
+	default:
+		return nil, FailRuntimeUnknownEngine.New("installer_err_engine_unknown")
+	}
 }
 
 func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGetter EnvGetter, freshInstallation bool, fail *failures.Failure) {

@@ -3,6 +3,7 @@ package runtime
 import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/unarchiver"
+	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 )
 
 // EnvGetter provides a function to return variables for a runtime environment
@@ -65,10 +66,48 @@ type Assembler interface {
 type BuildEngine int
 
 const (
+	// UnknownEngine represents an engine unknown to the runtime.
+	UnknownEngine BuildEngine = iota
+
 	// Camel is the legacy build engine, that builds Active{Python,Perl,Tcl}
 	// distributions
-	Camel BuildEngine = iota
+	Camel
 
 	// Alternative is the new alternative build orchestration framework
 	Alternative
+
+	// Hybrid wraps Camel.
+	Hybrid
 )
+
+// BuildEngineFromResponse handles a headchef build status response and returns
+// the relevant engine.
+func BuildEngineFromResponse(resp *headchef_models.BuildStatusResponse) BuildEngine {
+	if resp == nil || resp.BuildEngine == nil {
+		return UnknownEngine
+	}
+
+	switch *resp.BuildEngine {
+	case headchef_models.BuildStatusResponseBuildEngineCamel:
+		return Camel
+	case headchef_models.BuildStatusResponseBuildEngineAlternative:
+		return Alternative
+	case headchef_models.BuildStatusResponseBuildEngineHybrid:
+		return Hybrid
+	default:
+		return UnknownEngine
+	}
+}
+
+func (be BuildEngine) String() string {
+	switch be {
+	case Camel:
+		return headchef_models.BuildStatusResponseBuildEngineCamel
+	case Alternative:
+		return headchef_models.BuildStatusResponseBuildEngineAlternative
+	case Hybrid:
+		return headchef_models.BuildStatusResponseBuildEngineHybrid
+	default:
+		return "unknown"
+	}
+}

@@ -205,9 +205,21 @@ workflows:
   version: 2
   CI-test-build-deploy:
     jobs:
-      - build-linux
-      #- build-windows
-      - build-macos
+      - build-linux:
+          filters:
+            branches:
+              ignore:
+                - clas
+      # - build-windows
+      #     filters:
+      #       branches:
+      #         ignore:
+      #           - clas
+      - build-macos:
+          filters:
+            branches:
+              ignore:
+                - clas
   nightly:
     triggers:
       - schedule:

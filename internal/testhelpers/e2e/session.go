@@ -3,6 +3,7 @@ package e2e
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -39,12 +40,20 @@ type Session struct {
 }
 
 var (
-	PersistentUsername = "cli-integration-tests"
-	PersistentPassword = "test-cli-integration"
+	PersistentUsername string
+	PersistentPassword string
 
 	defaultTimeout = 20 * time.Second
 	authnTimeout   = 40 * time.Second
 )
+
+func init() {
+	PersistentUsername = os.Getenv("INTEGRATION_TEST_USERNAME")
+	PersistentPassword = os.Getenv("INTEGRATION_TEST_PASSWORD")
+	if PersistentUsername == "" || PersistentPassword == "" {
+		log.Fatal("Environment variables INTEGRATION_TEST_USERNAME and INTEGRATION_TEST_PASSWORD must be defined!")
+	}
+}
 
 // executablePath returns the path to the state tool that we want to test
 func (s *Session) executablePath() string {
