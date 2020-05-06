@@ -20,6 +20,6 @@ jobs:
           path-To-cladocument: 'https://github.com/ActiveState/cli/blob/master/cla.md'
           # branch should not be protected
           branch: 'clas'
-          whitelist: ""
+          whitelist: mdrohmann
           empty-commit-flag: true
           blockchain-storage-flag: false
