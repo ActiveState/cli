@@ -72,9 +72,10 @@ func (suite *EditIntegrationTestSuite) TestEdit() {
 	cp := ts.SpawnWithOpts(e2e.WithArgs("scripts", "edit", "test-script"), env)
 	cp.Expect("Watching file changes")
 	cp.Expect("Are you done editing?")
-	cp.Expect("Script changes detected")
 	cp.SendLine("Y")
 	cp.ExpectExitCode(0)
+	// The following line is sent asynchronously, such that it can appear before or after the line "Are you done editing"
+	suite.Contains(cp.TrimmedSnapshot(), "Script changes detected")
 }
 
 func (suite *EditIntegrationTestSuite) TestEdit_NonInteractive() {
