@@ -149,7 +149,6 @@ func run(args []string, outputer output.Outputer) (int, error) {
 	if updated {
 		outputer.Notice(locale.Tr("auto_update_to_version", constants.Version, toVersion))
 		defer updater.CleanOld()
-		fmt.Println("RELAUNCHING!")
 		return relaunch() // will not return
 	}
 
@@ -161,7 +160,6 @@ func run(args []string, outputer output.Outputer) (int, error) {
 	}
 
 	versionInfo, fail := projectfile.ParseVersionInfo()
-	fmt.Println(versionInfo)
 	if fail != nil {
 		// if we are running `state update`, we just print the error message, but don't fail, as we can still update the state tool executable
 		logging.Error("Could not parse version info from projectifle: %s", fail.Error())
