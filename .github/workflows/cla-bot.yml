@@ -4,7 +4,7 @@ on:
   issue_comment:
     types: [created]
   pull_request:
-    types: [opened,closed,sychronized]
+    types: [opened,closed,synchronize]
 
 jobs:
   CLA-assistant:
