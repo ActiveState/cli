@@ -167,7 +167,6 @@ func updateGlobal() {
 	print.Info(locale.T("update_complete"))
 }
 
-// leave desiredVersion empty for latest
 func newUpdater(currentVersion string) *updater.Updater {
 	return &updater.Updater{
 		CurrentVersion: currentVersion,
