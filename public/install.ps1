@@ -177,7 +177,6 @@ function warningIfadmin() {
 
 function promptConsent() {
     $consentText="
-
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean ornare leo non dolor porttitor
 euismod. Cras
 commodo, nisi vel gravida volutpat, enim turpis tempor eros, ut venenatis elit leo ut nunc. Nulla fermentum
@@ -193,12 +192,7 @@ Suspendisse luctus purus justo, sed iaculis lectus consequat nec. Etiam pretium 
 ligula, a pretium sapien facilisis eu. Nulla rhoncus viverra turpis a rutrum.
 Cras eu porttitor urna. Duis nec metus vel nisi accumsan scelerisque. Cras lectus erat, mattis non mauris in, consectetur vulputate ipsum.
 "
-    $width=(Get-Host).UI.RawUI.MaxWindowSize.Width
-    $folded=$consentText -split "(.{$width}?[ |$])" | Where-Object{$_}
-    # TODO: The text folding isn't working. It appears powershell doesn't do this
-    # automatically and most tested commands don't break lines on spaces so may
-    # just leave this as is.
-    Write-Host $folded
+    Write-Host $consentText
     if ( $script:NOPROMPT ) {
         Write-Host "By running the State Tool installer without prompts you accept the above agreement"
         return $True
