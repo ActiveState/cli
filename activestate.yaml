@@ -52,7 +52,7 @@ scripts:
     description: Installs the current HEAD version into GOBIN
     value: |
       $scripts.preprocess
-      eval go install $CLI_BUILDFLAGS $CLI_PKGS
+      go install $constants.CLI_BUILDFLAGS $CLI_PKGS
   - name: deploy-updates
     description: Deploys update files to S3. This steps is automated by CI and should never be ran manually unless you KNOW WHAT YOU'RE DOING.
     constraints:
@@ -117,7 +117,7 @@ scripts:
     value: |
       $scripts.preprocess
       go run scripts/wix/main.go public/wix/install.wxs
-      eval go build -o ./public/wix/rmpath/rmpath.exe $CLI_BUILDFLAGS ./public/wix/rmpath/main.go
+      go build -o ./public/wix/rmpath/rmpath.exe $constants.CLI_BUILDFLAGS ./public/wix/rmpath/main.go
   - name: test
     description: Runs unit tests (not integration tests)
     value: |
