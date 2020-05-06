@@ -246,13 +246,12 @@ func observeExpectFn(s *Session) expect.ExpectObserver {
 
 // Close removes the temporary directory unless RetainDirs is specified
 func (s *Session) Close() error {
+	if !s.retainDirs {
+		defer s.Dirs.Close()
+	}
+
 	if s.cp != nil {
 		s.cp.Close()
-	}
-	defer s.Dirs.Close()
-
-	if s.retainDirs {
-		return nil
 	}
 
 	if os.Getenv("PLATFORM_API_TOKEN") == "" {
@@ -266,6 +265,7 @@ func (s *Session) Close() error {
 			s.t.Errorf("Could not delete user %s: %v", user, err)
 		}
 	}
+
 	return nil
 }
 

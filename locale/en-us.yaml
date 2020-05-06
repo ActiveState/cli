@@ -140,6 +140,8 @@ updating_to_version:
   other: Updating from {{.fromVersion}} to {{.toVersion}}
 err_update_failed:
   other: Update failed, check the error log for more information
+confirm_update_locked_version_prompt:
+  other: "You ran update from a project directory with a locked State Tool version. This will update the version that your project is locked to. Are you sure you want to do this?"
 version_info:
   other: |
     ActiveState CLI version {{.Version}}
@@ -867,6 +869,8 @@ forward_fail_info:
   other: The requested version of the State Tool does not exist, please ensure the version and branch are correct.
 flag_update_lock_description:
   other: Lock the State Tool at the current version, this disables automatic updates. You can still force an update by manually running the update command.
+flag_update_force_description:
+  other: Automatically confirm that you would like to update the State Tool version that your project is locked to.
 err_lock_failed:
   other: Locking the version failed
 locking_version:
