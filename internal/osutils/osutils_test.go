@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"reflect"
 	"runtime"
+	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -107,15 +108,17 @@ func TestEnvMapToSlice(t *testing.T) {
 				"_":    "",
 			},
 			[]string{
-				"foo=bar",
 				"PATH=blah:blah",
 				"_=",
+				"foo=bar",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := EnvMapToSlice(tt.envMap); !reflect.DeepEqual(got, tt.want) {
+			got := EnvMapToSlice(tt.envMap)
+			sort.Strings(got)
+			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("EnvMapToSlice() = %v, want %v", got, tt.want)
 			}
 		})
