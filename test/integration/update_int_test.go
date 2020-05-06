@@ -93,7 +93,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmationNegative() 
 		Branch:  constants.BranchName,
 	}
 
-	ts := e2e.New(suite.T(), true)
+	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	pjfile.SetPath(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))
@@ -118,7 +118,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmationPositive() 
 		Branch:  constants.BranchName,
 	}
 
-	ts := e2e.New(suite.T(), true)
+	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	pjfile.SetPath(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))
@@ -143,7 +143,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmationForce() {
 		Branch:  constants.BranchName,
 	}
 
-	ts := e2e.New(suite.T(), true)
+	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	pjfile.SetPath(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))
