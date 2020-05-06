@@ -3,7 +3,9 @@ package integration
 import (
 	"fmt"
 	"path/filepath"
+	"regexp"
 	"runtime"
+	"strconv"
 	"testing"
 	"time"
 
@@ -37,6 +39,8 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_update() {
 	cp := ts.Spawn("auth", "--username", username, "--password", username)
 	cp.Expect("You are logged in")
 	cp.ExpectExitCode(0)
+	res := cp.MatchState().TermState.StringBeforeCursor()
+	fmt.Println(res)
 
 	path := cp.WorkDirectory()
 	var err error
@@ -67,8 +71,19 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_update() {
 	cp = ts.Spawn("languages")
 	cp.Expect("Name")
 	cp.Expect("Python")
-	cp.Expect("3.8.1")
+	versionRe := regexp.MustCompile(`(\d+)\.(\d+).(\d+)`)
+	cp.ExpectRe(versionRe.String())
 	cp.ExpectExitCode(0)
+
+	// assert that version number increased at least 3.8.1
+	output := cp.MatchState().TermState.StringBeforeCursor()
+	matches := versionRe.FindStringSubmatch(output)
+	suite.Require().Len(matches, 4)
+	suite.Equal("3", matches[1])
+	minor, err := strconv.ParseInt(matches[2], 10, 32)
+	patch, err := strconv.ParseInt(matches[3], 10, 32)
+	suite.GreaterOrEqual(minor, int64(8))
+	suite.GreaterOrEqual(patch, int64(2))
 }
 
 func (suite *LanguagesIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session) {
