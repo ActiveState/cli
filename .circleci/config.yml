@@ -61,7 +61,7 @@ defaults:
         name: Run integration tests
         command: |
           set -e
-          go test ./test/integration -v
+          go test -timeout 20m ./test/integration -v
     deployBits: &deployBits
       run:
         name: Deploy bits
@@ -101,6 +101,7 @@ jobs:
       - <<: *runTests
       - <<: *buildCli
       - <<: *deployBits
+      - <<: *runIntegrationTests
       - <<: *storeArtifacts
       - <<: *storeTestResults
   build-windows:
@@ -157,6 +158,7 @@ jobs:
       - <<: *runTests
       - <<: *buildCli
       - <<: *deployBits
+      - <<: *runIntegrationTests
       - <<: *storeArtifacts
       - <<: *storeTestResults
   test-linux:
