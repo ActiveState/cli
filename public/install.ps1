@@ -10,7 +10,7 @@ install.ps1 -b branchToInstall -t C:\dir\on\path
 #>
 
 param (
-    [Parameter(Mandatory=$False)][string]$b = "unstable"
+    [Parameter(Mandatory=$False)][string]$b = "production"
     ,[Parameter(Mandatory=$False)]
         [string]
         $t
@@ -264,7 +264,7 @@ function install()
     $USAGE="install.ps1 [flags]
     
     Flags:
-    -b <branch>          Default 'unstable'.  Specify an alternative branch to install from (eg. master)
+    -b <branch>          Default 'production'.  Specify an alternative branch to install from (eg. master)
     -n                   Don't prompt for anything, just install and override any existing executables
     -t <dir>             Install target dir
     -f <file>            Default 'state.exe'.  Binary filename to use

@@ -49,8 +49,8 @@ defaults:
           BRANCH=$(git rev-parse --abbrev-ref HEAD)
           if [[ "$BRANCH" == "master" ]]; then
             echo "Building for external use"
-            BRANCH_OVERRIDE=unstable state run build-external
-            BRANCH_OVERRIDE=unstable state run generate-update
+            BRANCH_OVERRIDE=production state run build-external
+            BRANCH_OVERRIDE=production state run generate-update
           fi
 
           echo "Building for internal use"
