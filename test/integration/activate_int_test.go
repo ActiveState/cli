@@ -185,7 +185,9 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
 	cp.WaitForInput()
 
 	cp.SendLine("perldoc -l DBD::Pg")
-	cp.Expect(ts.Dirs.Cache)
+	// Expect the source code to be installed in the cache directory
+	// Note: At least for Windows we cannot expect cp.Dirs.Cache, because it is unreliable how the path name formats are unreliable (sometimes DOS 8.3 format, sometimes not)
+	cp.Expect("cache")
 	cp.Expect("Pg.pm")
 
 	cp.SendLine("exit")

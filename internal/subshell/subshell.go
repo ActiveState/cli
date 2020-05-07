@@ -152,7 +152,6 @@ func IsActivated() bool {
 }
 
 func isActivateCmdlineArgs(args []string) bool {
-	// look for the state tool command in the first three arguments (first argument could be "bash" / "cmd")
 	foundStateCmd := false
 	for _, arg := range args {
 		// look for the state tool command in the first arguments (very first argument could be "bash" / "cmd" / "docker" / ...)
