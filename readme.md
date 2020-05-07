@@ -38,10 +38,9 @@ For usage information please refer to the [State Tool Documentation](http://docs
    * **Integration tests:** `state run integration-tests`
 
 <sup>
-* Our unit tests are in an awkward state of slowly being converted to
-standalone integration tests, meaning that while we refer to them as unit
-tests they still contain a lot of tests that are better described as
-integration tests.
+* Our unit tests are in a state of slowly being converted to standalone
+ integration tests, meaning that while we refer to them as unit tests
+ they still contain a lot of tests that are better described as integration tests.
 </sup>
 
 ### Refactoring
@@ -52,7 +51,7 @@ contributing.
 
 * Error handling is slowly being refactored to retire our home brewed
  failures package in favour of conventional Go errors, please refer to
- [docs/errors.md] for more information.
-* Commands registered under the [state/] folder are using our legacy
-  command architecture, all future commands should use the [cmd/state/internal/cmdtree]
-  architecture.
+ [docs/errors.md](docs/errors.md) for more information.
+* Commands registered under the [state/](state/) folder are using our legacy
+  command architecture, all future commands should use the
+  [cmd/state/internal/cmdtree](cmd/state/internal/cmdtree) architecture.
