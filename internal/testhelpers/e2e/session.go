@@ -187,7 +187,10 @@ func (s *Session) LoginUser(userName string) {
 
 // LoginAsPersistentUser is a common test case after which an integration test user should be logged in to the platform
 func (s *Session) LoginAsPersistentUser() {
-	p := s.Spawn("auth", "--username", PersistentUsername, "--password", PersistentPassword)
+	p := s.SpawnWithOpts(
+		WithArgs("auth", "--username", PersistentUsername, "--password", PersistentPassword),
+		HideCmdLine(),
+	)
 
 	p.Expect("successfully authenticated", authnTimeout)
 	p.ExpectExitCode(0)
