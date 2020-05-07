@@ -2,7 +2,6 @@ package subshell
 
 import (
 	"os"
-	"path"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -153,13 +152,16 @@ func IsActivated() bool {
 }
 
 func isActivateCmdlineArgs(args []string) bool {
-	exec := path.Base(args[0])
-	if !strings.HasPrefix(exec, constants.CommandName) {
-		return false
-	}
+	// look for the state tool command in the first three arguments (first argument could be "bash" / "cmd")
+	foundStateCmd := false
+	for _, arg := range args {
+		// look for the state tool command in the first arguments (very first argument could be "bash" / "cmd" / "docker" / ...)
+		exec := filepath.Base(args[0])
+		if strings.HasPrefix(exec, constants.CommandName) {
+			foundStateCmd = true
+		}
 
-	for _, arg := range args[1:] {
-		if arg == "activate" {
+		if foundStateCmd && arg == "activate" {
 			return true
 		}
 	}
