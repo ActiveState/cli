@@ -185,7 +185,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
 	cp.WaitForInput()
 
 	cp.SendLine("perldoc -l DBD::Pg")
-	cp.Expect(ts.Dirs.Work)
+	cp.Expect(ts.Dirs.Cache)
 	cp.Expect("Pg.pm")
 
 	cp.SendLine("exit")
