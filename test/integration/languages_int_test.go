@@ -5,10 +5,10 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
-	"strconv"
 	"testing"
 	"time"
 
+	"github.com/blang/semver"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -77,13 +77,11 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_update() {
 
 	// assert that version number increased at least 3.8.1
 	output := cp.MatchState().TermState.StringBeforeCursor()
-	matches := versionRe.FindStringSubmatch(output)
-	suite.Require().Len(matches, 4)
-	suite.Equal("3", matches[1])
-	minor, err := strconv.ParseInt(matches[2], 10, 32)
-	patch, err := strconv.ParseInt(matches[3], 10, 32)
-	suite.GreaterOrEqual(minor, int64(8))
-	suite.GreaterOrEqual(patch, int64(2))
+	vs := versionRe.FindString(output)
+	v, err := semver.Parse(vs)
+	suite.Require().NoError(err, "parsing version %s", vs)
+	minVersion := semver.MustParse("3.8.1")
+	suite.True(v.GTE(minVersion), "%v >= 3.8.1", v)
 }
 
 func (suite *LanguagesIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session) {
