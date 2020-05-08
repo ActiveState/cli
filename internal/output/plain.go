@@ -4,16 +4,26 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"reflect"
 	"sort"
 	"strings"
 
 	"github.com/bndr/gotabulate"
 	"github.com/go-openapi/strfmt"
+	"github.com/thoas/go-funk"
+	"golang.org/x/crypto/ssh/terminal"
 
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+)
+
+type PlainOpts string
+
+const (
+	SingleLineOpt PlainOpts = "singleLine"
 )
 
 // Plain is our plain outputer, it uses reflect to marshal the data.
@@ -206,6 +216,12 @@ func sprintTable(slice []interface{}) (string, error) {
 		return "", nil
 	}
 
+	termWidth, _, err := terminal.GetSize(int(os.Stdin.Fd()))
+	if err != nil {
+		logging.Debug("Cannot get terminal size: %v", err)
+		termWidth = 100
+	}
+
 	headers := []string{}
 	rows := [][]interface{}{}
 	for _, v := range slice {
@@ -218,19 +234,24 @@ func sprintTable(slice []interface{}) (string, error) {
 			return "", err
 		}
 
-		setHeaders := len(headers) == 0
+		firstIteration := len(headers) == 0
 		row := []interface{}{}
 		for _, field := range meta {
+			if firstIteration {
+				headers = append(headers, localizedField(field.l10n))
+				termWidth = termWidth - (len(headers) * 10) // Account for cell padding, cause gotabulate doesn't..
+			}
+
 			stringValue, err := sprint(field.value)
 			if err != nil {
 				return "", err
 			}
 
-			row = append(row, stringValue)
-
-			if setHeaders {
-				headers = append(headers, localizedField(field.l10n))
+			if funk.Contains(field.opts, string(SingleLineOpt)) {
+				stringValue = trimValue(stringValue, termWidth)
 			}
+
+			row = append(row, stringValue)
 		}
 
 		rows = append(rows, row)
@@ -239,7 +260,7 @@ func sprintTable(slice []interface{}) (string, error) {
 	t := gotabulate.Create(rows)
 	t.SetWrapDelimiter(' ')
 	t.SetWrapStrings(true)
-	t.SetMaxCellSize(100)
+	t.SetMaxCellSize(termWidth)
 	t.SetHeaders(headers)
 
 	// Don't print whitespace lines
@@ -252,5 +273,19 @@ func sprintTable(slice []interface{}) (string, error) {
 
 // localizedField is a little helper that will return the localized version of the given string
 func localizedField(input string) string {
-	return locale.T("field_" + strings.ToLower(input))
+	in := strings.Split(input, ",")
+	key := "field_" + strings.ToLower(input)
+	out := locale.T("field_" + strings.ToLower(input))
+	if out == key && len(in) > 1 {
+		out = in[1]
+	}
+	return out
+}
+
+func trimValue(value string, size int) string {
+	value = strings.Replace(value, fileutils.LineEnd, " ", -1)
+	if len(value) > size {
+		value = value[0:size-5] + " [..]"
+	}
+	return value
 }

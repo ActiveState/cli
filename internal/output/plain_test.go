@@ -287,3 +287,34 @@ func TestPlain_Error(t *testing.T) {
 		})
 	}
 }
+
+func Test_localizedField(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+		want  string
+	}{
+		{
+			"Input locale",
+			"localized_field",
+			"Localized Field",
+		},
+		{
+			"Input locale, nonexistant",
+			"non_localized_field",
+			"field_non_localized_field",
+		},
+		{
+			"Input locale, nonexistant with fallback",
+			"non_localized_field,fallback",
+			"fallback",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := localizedField(tt.input); got != tt.want {
+				t.Errorf("localizedField() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
