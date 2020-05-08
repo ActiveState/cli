@@ -905,7 +905,7 @@ installer_err_runtime_missing_meta:
   other: |
     The requested runtime does not appear to have a metadata file and the metadata could not be inferred.
     Possible causes are:
-      - A previous installation of the runtime was aborted before it could finish. Manually deleting
+      - A previous installation of the runtime was improperly aborted before it could finish. Manually deleting
         directory "{{.V0}}" and retrying this command will fix this issue.
       - You are trying to use a much older build that is not supported by this version of the State Tool. It
         is recommended that you produce a new build.
