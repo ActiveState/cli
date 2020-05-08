@@ -18,6 +18,7 @@ const (
 	Bash
 	Sh
 	Batch
+	PowerShell
 	Perl
 	Python2
 	Python3
@@ -77,6 +78,10 @@ var lookup = [...]languageData{
 	},
 	{
 		"batch", "Batch", ".bat", false, "", "",
+		Executable{"", true},
+	},
+	{
+		"powershell", "PowerShell", ".ps1", false, "", "",
 		Executable{"", true},
 	},
 	{
