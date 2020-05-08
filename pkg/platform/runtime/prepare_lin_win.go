@@ -65,7 +65,7 @@ func (m *MetaData) Prepare() *failures.Failure {
 	}
 
 	if m.RelocationDir == "" {
-		return FailMetaDataNotDetected.New("installer_err_runtime_missing_meta")
+		return FailMetaDataNotDetected.New("installer_err_runtime_missing_meta", m.Path)
 	}
 
 	return nil
