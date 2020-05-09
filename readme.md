@@ -1,7 +1,12 @@
 [![CircleCI](https://circleci.com/gh/ActiveState/cli.svg?style=shield&circle-token=e439410d217d72704e82808bdc3bbe78b6ecbf21)](https://circleci.com/gh/ActiveState/cli)
 
--- Introduction to follow --
+# State Tool
+State Tool is the Command Line Interface for accessing [ActiveState Platform](https://www.activestate.com/products/platform/) functionality. It is written in Go language and is cross-platform supporting Windows, Linux and Mac. Not all versions of all said operating systems and distributions are fully supported yet (we're working on extending the repertoire). 
 
+State Tool helps with mananging the package dependencies of a language runtime, for the languages supported by the ActiveState Platform (Dynamic Open Source Languages like Pyhton, Perl and Tcl). It functions as a package manager (of sorts, more development is ongoing in this area) and a virtual environment for developers, but it also has functionality to support deployment of the language runtimes (supported by ActiveState or Custom Runtimes created by the users on the platform) into environments like VMs and containers used in CI/CD systems.
+
+State Tool also has neat features for developers like cross-platform scripting and support for secrets, and has a stated goal of "Replacing the Makefile". We're not there yet, but always open for ideas/suggestions/issue reports and code contributions. 
+ 
 ## Installation
 
 ### Linux & macOS
