@@ -189,6 +189,7 @@ func (s *Session) LoginUser(userName string) {
 func (s *Session) LoginAsPersistentUser() {
 	p := s.SpawnWithOpts(
 		WithArgs("auth", "--username", PersistentUsername, "--password", PersistentPassword),
+		// as the command line includes a password, we do not print the executed command, so the password does not get logged
 		HideCmdLine(),
 	)
 
