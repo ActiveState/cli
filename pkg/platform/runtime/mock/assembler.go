@@ -62,6 +62,11 @@ func (a *Assembler) PostUnpackArtifact(artf *runtime.HeadChefArtifact, tmpRuntim
 	return args.Get(0).(*failures.Failure)
 }
 
+func (a *Assembler) PostInstall() *failures.Failure {
+	args := a.Called()
+	return args.Get(0).(*failures.Failure)
+}
+
 func (a *Assembler) InstallerExtension() string {
 	return ".tar.gz"
 }

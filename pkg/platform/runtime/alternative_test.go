@@ -117,8 +117,16 @@ func (suite *AlternativeRuntimeTestSuite) Test_GetEnv() {
 	firstEnvDefPath := filepath.Join(installDir, constants.LocalRuntimeEnvironmentDirectory, fmt.Sprintf("%06d.json", 0))
 
 	suite.Assert().False(fileutils.FileExists(mergedFilePath))
+	// installation complete marker is missing
 	env, fail := ar.GetEnv(true, "")
+	suite.Require().Error(fail.ToError(), "installation complete marker is missing")
+
+	fail = ar.PostInstall()
+	suite.Require().NoError(fail.ToError(), "installation complete marker created")
+
+	env, fail = ar.GetEnv(true, "")
 	suite.Require().NoError(fail.ToError())
+
 	suite.Assert().Equal(expectedEnv, env)
 	suite.Assert().True(fileutils.FileExists(mergedFilePath))
 	err := os.Remove(firstEnvDefPath)

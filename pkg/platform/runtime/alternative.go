@@ -257,7 +257,7 @@ func (ar *AlternativeRuntime) assembleRuntimeDefinition() (*envdef.EnvironmentDe
 
 	files, err := ioutil.ReadDir(ar.runtimeEnvBaseDir())
 	if err != nil {
-		return nil, FailRuntimeInvalidEnvironment.New("err_no_environment_definition")
+		return nil, FailRuntimeInvalidEnvironment.New("err_no_environment_definition", ar.installationDirectory())
 	}
 
 	filenames := make([]string, 0, len(files))
@@ -288,7 +288,7 @@ func (ar *AlternativeRuntime) assembleRuntimeDefinition() (*envdef.EnvironmentDe
 	}
 
 	if rtGlobal == nil {
-		return nil, FailRuntimeInvalidEnvironment.New("err_no_environment_definition")
+		return nil, FailRuntimeInvalidEnvironment.New("err_no_environment_definition", ar.installationDirectory())
 	}
 
 	err = rtGlobal.WriteFile(mergedRuntimeDefinitionFile)
@@ -300,8 +300,17 @@ func (ar *AlternativeRuntime) assembleRuntimeDefinition() (*envdef.EnvironmentDe
 	return rtGlobal, nil
 }
 
+// PostInstall creates a marker file marking the installation as complete
+func (ar *AlternativeRuntime) PostInstall() *failures.Failure {
+	return fileutils.Touch(filepath.Join(ar.runtimeEnvBaseDir(), constants.RuntimeInstallationCompleteMarker))
+}
+
 // GetEnv returns the environment variable configuration for this build
 func (ar *AlternativeRuntime) GetEnv(inherit bool, _ string) (map[string]string, *failures.Failure) {
+	// check if global installation-completion-marker is set
+	if !fileutils.FileExists(filepath.Join(ar.runtimeEnvBaseDir(), constants.RuntimeInstallationCompleteMarker)) {
+		return nil, FailRuntimeInvalidEnvironment.New("err_no_environment_definition", ar.installationDirectory())
+	}
 	rt, fail := ar.assembleRuntimeDefinition()
 	if fail != nil {
 		return nil, fail

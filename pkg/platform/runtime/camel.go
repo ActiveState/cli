@@ -363,6 +363,11 @@ func (cr *CamelRuntime) GetEnv(inherit bool, projectDir string) (map[string]stri
 	return env, nil
 }
 
+// PostInstall does nothing for camel builds
+func (cr *CamelRuntime) PostInstall() *failures.Failure {
+	return nil
+}
+
 func prependPath(PATH, prefix string) string {
 	var suffix string
 	if PATH != "" {

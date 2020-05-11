@@ -201,6 +201,11 @@ func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGet
 		return nil, false, fail
 	}
 
+	fail = runtimeAssembler.PostInstall()
+	if fail != nil {
+		return nil, false, fail
+	}
+
 	return runtimeAssembler, true, nil
 }
 
