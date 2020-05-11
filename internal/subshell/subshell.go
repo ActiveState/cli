@@ -152,15 +152,15 @@ func IsActivated() bool {
 }
 
 func isActivateCmdlineArgs(args []string) bool {
-	foundStateCmd := false
-	for _, arg := range args {
-		// look for the state tool command in the first arguments (very first argument could be "bash" / "cmd" / "docker" / ...)
-		exec := filepath.Base(args[0])
-		if strings.HasPrefix(exec, constants.CommandName) {
-			foundStateCmd = true
-		}
+	// look for the state tool command in the first argument
+	exec := filepath.Base(args[0])
+	if !strings.HasPrefix(exec, constants.CommandName) {
+		return false
+	}
 
-		if foundStateCmd && arg == "activate" {
+	// ensure that first argument (not prefixed with a dash) is "activate"
+	for _, arg := range args[1:] {
+		if arg == "activate" {
 			return true
 		}
 	}
