@@ -184,6 +184,9 @@ func (suite *RunIntegrationTestSuite) TestRun_Unauthenticated() {
 
 	cp.SendLine(fmt.Sprintf("%s run helloWorldPython", cp.Executable()))
 	cp.Expect("Hello Python!", 5*time.Second)
+
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
 }
 
 func TestRunIntegrationTestSuite(t *testing.T) {
