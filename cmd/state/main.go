@@ -32,6 +32,7 @@ import (
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/internal/terminal"
 	"github.com/ActiveState/cli/internal/updater"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
@@ -154,7 +155,7 @@ func run(args []string, outputer output.Outputer) (int, error) {
 
 	// Explicitly check for projectfile missing when in activated env so we can give a friendlier error without
 	// any missleading prefix
-	_, fail := projectfile.GetProjectFilePath()
+	pjPath, fail := projectfile.GetProjectFilePath()
 	if fail != nil && fail.Type.Matches(projectfile.FailNoProjectFromEnv) {
 		return 1, fail
 	}
@@ -199,7 +200,20 @@ func run(args []string, outputer output.Outputer) (int, error) {
 		}
 	}
 
-	cmds := cmdtree.New(outputer)
+	// Retrieve active project (if any)
+	var pj *project.Project
+	if pjPath != "" {
+		pjf, fail := projectfile.FromPath(pjPath)
+		if fail != nil {
+			return 1, fail
+		}
+		pj, fail = project.New(pjf)
+		if fail != nil {
+			return 1, fail
+		}
+	}
+
+	cmds := cmdtree.New(pj, outputer)
 	err := cmds.Execute(args[1:])
 
 	if err2 := normalizeError(err); err2 != nil {

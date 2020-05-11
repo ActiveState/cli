@@ -8,16 +8,12 @@ state_description:
   other: The ActiveState CLI allows you to easily switch between your ActiveState environments
 activate_project:
   other: Activate a project
-events_description:
-  other: Manage project events
 events_header_id:
   other: ID
 events_header_event:
   other: Event
 events_header_value:
   other: Value
-event_listing:
-  other: Listing configured events
 usage_tpl:
   other: "
 Usage:
@@ -130,8 +126,6 @@ err_no_projectfile:
   other: No activestate.yaml file exists in the current working directory
 err_invalid_input:
   other: Invalid input received
-events_empty:
-  other: No events found for the current environment
 err_no_update_info:
   other: Cannot retrieve update information
 no_update_available:
