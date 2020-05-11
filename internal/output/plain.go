@@ -272,10 +272,12 @@ func sprintTable(slice []interface{}) (string, error) {
 }
 
 // localizedField is a little helper that will return the localized version of the given string
+// locale values are in the form of `key,fallback` where fallback is optional
 func localizedField(input string) string {
-	in := strings.Split(input, ",")
+	in := strings.Split(input, ",") // First value is the locale key, second is the fallback value
 	key := "field_" + strings.ToLower(input)
 	out := locale.T("field_" + strings.ToLower(input))
+	// If we can't find the locale for this field and this has a fallback value then use the fallback value
 	if out == key && len(in) > 1 {
 		out = in[1]
 	}
