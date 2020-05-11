@@ -39,8 +39,7 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_update() {
 	cp := ts.Spawn("auth", "--username", username, "--password", username)
 	cp.Expect("You are logged in")
 	cp.ExpectExitCode(0)
-	res := cp.MatchState().TermState.StringBeforeCursor()
-	fmt.Println(res)
+	cp.MatchState().TermState.StringBeforeCursor()
 
 	path := cp.WorkDirectory()
 	var err error
