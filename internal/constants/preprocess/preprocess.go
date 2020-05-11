@@ -22,7 +22,7 @@ func init() {
 
 	incrementer, err := NewVersionIncrementer(NewGithubProvider(os.Getenv("GITHUB_REPO_TOKEN")), branchName, buildEnvironment())
 	if err != nil {
-		log.Fatalf("Could not initialize verion incrementer: %s", err)
+		log.Fatalf("Could not initialize version incrementer: %s", err)
 	}
 
 	Constants["BranchName"] = func() string { return branchName }
