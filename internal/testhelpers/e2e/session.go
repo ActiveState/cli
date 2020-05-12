@@ -3,7 +3,6 @@ package e2e
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -51,7 +50,7 @@ func init() {
 	PersistentUsername = os.Getenv("INTEGRATION_TEST_USERNAME")
 	PersistentPassword = os.Getenv("INTEGRATION_TEST_PASSWORD")
 	if PersistentUsername == "" || PersistentPassword == "" {
-		log.Fatal("Environment variables INTEGRATION_TEST_USERNAME and INTEGRATION_TEST_PASSWORD must be defined!")
+		fmt.Println("WARNING!!! Environment variables INTEGRATION_TEST_USERNAME and INTEGRATION_TEST_PASSWORD should be defined!")
 	}
 }
 
