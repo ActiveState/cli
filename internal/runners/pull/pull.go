@@ -32,7 +32,6 @@ type outputFormat struct {
 }
 
 func (f *outputFormat) MarshalOutput(format output.Format) interface{} {
-	logging.Debug("Marshalling for %s", string(format))
 	switch format {
 	case output.EditorV0FormatName:
 		return f.editorV0Format()
