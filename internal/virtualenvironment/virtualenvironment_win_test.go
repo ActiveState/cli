@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestGetEnvSlice_NoPath(t *testing.T) {
@@ -13,6 +14,7 @@ func TestGetEnvSlice_NoPath(t *testing.T) {
 	defer teardown()
 
 	venv := Init()
-	env := venv.GetEnvSlice(true)
+	env, err := venv.GetEnvSlice(true)
+	require.NoError(t, err)
 	assert.NotContains(t, env, "Path")
 }
