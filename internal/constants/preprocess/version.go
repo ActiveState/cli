@@ -17,9 +17,10 @@ const (
 )
 
 const (
-	patch = "patch"
-	minor = "minor"
-	major = "major"
+	zeroed = "zeroed"
+	patch  = "patch"
+	minor  = "minor"
+	major  = "major"
 )
 
 // VersionIncrementer provides methods for incrementing version numbers
@@ -27,18 +28,17 @@ type VersionIncrementer struct {
 	branch      string
 	environment int
 	master      *semver.Version
-	provider    IncrementProvider
+	typer       IncrementTyper
 }
 
-// IncrementProvider represents a client/service that returns
+// IncrementTyper represents a client/service that returns
 // strings related to semver increment values (ie. major, minor, patch)
-type IncrementProvider interface {
-	IncrementBranch() (string, error)
-	IncrementMaster() (string, error)
+type IncrementTyper interface {
+	IncrementType() (string, error)
 }
 
 // NewVersionIncrementer returns a version service initialized with provider and environment information
-func NewVersionIncrementer(provider IncrementProvider, branchName string, buildEnvironment int) (*VersionIncrementer, error) {
+func NewVersionIncrementer(typer IncrementTyper, branchName string, buildEnvironment int) (*VersionIncrementer, error) {
 	master, err := masterVersion()
 	if err != nil {
 		return nil, err
@@ -47,7 +47,7 @@ func NewVersionIncrementer(provider IncrementProvider, branchName string, buildE
 	return &VersionIncrementer{
 		branch:      branchName,
 		environment: buildEnvironment,
-		provider:    provider,
+		typer:       typer,
 		master:      master,
 	}, nil
 }
@@ -75,17 +75,18 @@ func (v *VersionIncrementer) IncrementVersionRevision(revision string) (*semver.
 	return version, nil
 }
 
-// IncrementString returns the string representation of the version bump
+// IncrementType returns the string representation of the version bump
 // ie. patch, minor, or major
-func (v *VersionIncrementer) IncrementString() (string, error) {
+func (v *VersionIncrementer) IncrementType() (string, error) {
 	if v.environment == localEnv {
-		return v.master.String(), nil
+		return zeroed, nil
 	}
 
 	if v.branch == "master" {
-		return v.provider.IncrementMaster()
+		return v.typer.IncrementType()
 	}
-	return v.provider.IncrementBranch()
+
+	return zeroed, nil
 }
 
 func masterVersion() (*semver.Version, error) {
@@ -117,7 +118,11 @@ func masterVersion() (*semver.Version, error) {
 func (v *VersionIncrementer) incrementFromEnvironment() (*semver.Version, error) {
 	switch v.environment {
 	case localEnv:
-		return v.master, nil
+		copy := *v.master
+		copy.Major = 0
+		copy.Minor = 0
+		copy.Patch = 0
+		return &copy, nil
 	case remoteEnv:
 		return v.incrementVersion()
 	default:
@@ -131,9 +136,9 @@ func (v *VersionIncrementer) incrementVersion() (*semver.Version, error) {
 
 	switch v.branch {
 	case "master":
-		increment, err = v.provider.IncrementMaster()
+		increment, err = v.typer.IncrementType()
 	default:
-		increment, err = v.provider.IncrementBranch()
+		increment = zeroed
 	}
 	if err != nil {
 		return nil, err
@@ -141,6 +146,10 @@ func (v *VersionIncrementer) incrementVersion() (*semver.Version, error) {
 
 	copy := *v.master
 	switch increment {
+	case zeroed:
+		copy.Major = 0
+		copy.Minor = 0
+		copy.Patch = 0
 	case patch:
 		copy.Patch++
 	case minor:

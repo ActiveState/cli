@@ -4,9 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"regexp"
-	"strconv"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -35,23 +33,10 @@ func NewGithubProvider(token string) *GithubIncrementProvider {
 	}
 }
 
-// IncrementBranch returns the increment value string (major, minor, patch) of a
-// pull request label for the current pull request
-func (g *GithubIncrementProvider) IncrementBranch() (string, error) {
-	prNum, err := pullRequestNumber()
-	if err != nil {
-		return "", err
-	}
-	if prNum == 0 {
-		return patch, nil
-	}
-
-	return g.versionLabelPullRequest(prNum)
-}
-
-// IncrementMaster returns the version number for the master branch by reading
-// the appropriate version file associated with the most recently merged pull request
-func (g *GithubIncrementProvider) IncrementMaster() (string, error) {
+// IncrementType returns the increment value string (major, minor, patch) by
+// reading the appropriate version file associated with the most recently
+// merged pull request.
+func (g *GithubIncrementProvider) IncrementType() (string, error) {
 	pullRequests, err := g.pullRequestList(&github.PullRequestListOptions{
 		State:     "closed",
 		Sort:      "updated",
@@ -137,54 +122,6 @@ func (g *GithubIncrementProvider) isMerged(pullRequest *github.PullRequest) (boo
 	}
 
 	return merged, nil
-}
-
-func pullRequestNumber() (int, error) {
-	// CircleCI
-	prInfo := os.Getenv("CI_PULL_REQUEST")
-	if prInfo != "" {
-		return pullRequestNumberCircle(prInfo)
-	}
-
-	// Azure
-	prInfo = os.Getenv("SYSTEM_PULLREQUEST_PULLREQUESTNUMBER")
-	if prInfo != "" {
-		return pullRequestNumberAzure(prInfo)
-	}
-
-	// Pull request info not set, we are on a branch but no PR has been created
-	// Should still be allowed to build in this state hence we do not return
-	// an error here.
-	return 0, nil
-}
-
-func pullRequestNumberCircle(info string) (int, error) {
-	regex := regexp.MustCompile("/pull/[0-9]+")
-	match := regex.FindString(info)
-	if match == "" {
-		return 0, fmt.Errorf("could not determine pull request number from: %s", info)
-	}
-	num := strings.TrimPrefix(match, "/pull/")
-	prNumber, err := strconv.Atoi(num)
-	if err != nil {
-		return 0, err
-	}
-
-	return prNumber, nil
-}
-
-func pullRequestNumberAzure(info string) (int, error) {
-	regex := regexp.MustCompile("[0-9]+")
-	if !regex.MatchString(info) {
-		return 0, fmt.Errorf("pull request number contains non-digits, recieved: %s", info)
-	}
-
-	prNumber, err := strconv.Atoi(info)
-	if err != nil {
-		return 0, err
-	}
-
-	return prNumber, nil
 }
 
 func getLabel(labels []*github.Label) string {

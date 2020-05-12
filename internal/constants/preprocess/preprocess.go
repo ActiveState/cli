@@ -123,7 +123,7 @@ func mustIncrementVersionRevision(incrementer *VersionIncrementer, revision stri
 }
 
 func mustGetIncrementString(incrementer *VersionIncrementer) string {
-	increment, err := incrementer.IncrementString()
+	increment, err := incrementer.IncrementType()
 	if err != nil {
 		log.Fatalf("Failed to get increment string: %s", err)
 	}

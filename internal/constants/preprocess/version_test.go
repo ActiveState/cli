@@ -8,33 +8,22 @@ import (
 	"github.com/blang/semver"
 )
 
-type provider struct {
+type incrementStateStore struct {
 	increment string
 }
 
-func (p provider) IncrementBranch() (string, error) {
-	return p.run()
-}
-
-func (p provider) IncrementMaster() (string, error) {
-	return p.run()
-}
-
-func (p provider) run() (string, error) {
+func (p incrementStateStore) IncrementType() (string, error) {
 	switch p.increment {
-	case patch:
-		return patch, nil
-	case minor:
-		return minor, nil
-	case major:
-		return major, nil
+	case patch, minor, major:
+		return p.increment, nil
+	case zeroed:
+		return "", errors.New("should never return zeroed")
 	default:
-		return "", errors.New("error")
+		return "", errors.New("unknown increment type name")
 	}
 }
 
 func TestService_IncrementVersion(t *testing.T) {
-	versionString := "0.2.2"
 	versionSemver, err := semver.New("0.2.2")
 	if err != nil {
 		t.Fatal(err)
@@ -43,7 +32,8 @@ func TestService_IncrementVersion(t *testing.T) {
 	type fields struct {
 		environment int
 		master      *semver.Version
-		provider    IncrementProvider
+		typer       IncrementTyper
+		branch      string
 	}
 	tests := []struct {
 		name    string
@@ -56,9 +46,21 @@ func TestService_IncrementVersion(t *testing.T) {
 			fields: fields{
 				environment: localEnv,
 				master:      versionSemver,
-				provider:    provider{patch},
+				typer:       incrementStateStore{patch},
+				branch:      "master",
 			},
-			want:    versionString,
+			want:    "0.0.0",
+			wantErr: false,
+		},
+		{
+			name: "local environment (branch)",
+			fields: fields{
+				environment: localEnv,
+				master:      versionSemver,
+				typer:       incrementStateStore{patch},
+				branch:      "not-master",
+			},
+			want:    "0.0.0",
 			wantErr: false,
 		},
 		{
@@ -66,7 +68,8 @@ func TestService_IncrementVersion(t *testing.T) {
 			fields: fields{
 				environment: remoteEnv,
 				master:      versionSemver,
-				provider:    provider{patch},
+				typer:       incrementStateStore{patch},
+				branch:      "master",
 			},
 			want:    "0.2.3",
 			wantErr: false,
@@ -76,7 +79,8 @@ func TestService_IncrementVersion(t *testing.T) {
 			fields: fields{
 				environment: remoteEnv,
 				master:      versionSemver,
-				provider:    provider{minor},
+				typer:       incrementStateStore{minor},
+				branch:      "master",
 			},
 			want:    "0.3.0",
 			wantErr: false,
@@ -86,9 +90,32 @@ func TestService_IncrementVersion(t *testing.T) {
 			fields: fields{
 				environment: remoteEnv,
 				master:      versionSemver,
-				provider:    provider{major},
+				typer:       incrementStateStore{major},
+				branch:      "master",
 			},
 			want:    "1.0.0",
+			wantErr: false,
+		},
+		{
+			name: "remote environment - major (branch)",
+			fields: fields{
+				environment: remoteEnv,
+				master:      versionSemver,
+				typer:       incrementStateStore{major},
+				branch:      "not-master",
+			},
+			want:    "0.0.0",
+			wantErr: false,
+		},
+		{
+			name: "remote environment - patch (branch)",
+			fields: fields{
+				environment: remoteEnv,
+				master:      versionSemver,
+				typer:       incrementStateStore{patch},
+				branch:      "not-master",
+			},
+			want:    "0.0.0",
 			wantErr: false,
 		},
 		{
@@ -96,7 +123,8 @@ func TestService_IncrementVersion(t *testing.T) {
 			fields: fields{
 				environment: unknownEnv,
 				master:      versionSemver,
-				provider:    provider{""},
+				typer:       incrementStateStore{""},
+				branch:      "master",
 			},
 			want:    "",
 			wantErr: true,
@@ -107,7 +135,8 @@ func TestService_IncrementVersion(t *testing.T) {
 			s := &VersionIncrementer{
 				environment: tt.fields.environment,
 				master:      tt.fields.master,
-				provider:    tt.fields.provider,
+				typer:       tt.fields.typer,
+				branch:      tt.fields.branch,
 			}
 			got, err := s.IncrementVersion()
 			if (err != nil) != tt.wantErr {
@@ -126,7 +155,6 @@ func TestService_IncrementVersion(t *testing.T) {
 }
 
 func TestService_IncrementVersionPreRelease(t *testing.T) {
-	versionString := "0.2.2-SHA1a2b3c4d"
 	versionSemver, err := semver.New("0.2.2")
 	if err != nil {
 		t.Fatal(err)
@@ -142,7 +170,8 @@ func TestService_IncrementVersionPreRelease(t *testing.T) {
 	type fields struct {
 		environment int
 		master      *semver.Version
-		provider    IncrementProvider
+		provider    IncrementTyper
+		branch      string
 	}
 	type args struct {
 		revision string
@@ -159,10 +188,23 @@ func TestService_IncrementVersionPreRelease(t *testing.T) {
 			fields: fields{
 				environment: localEnv,
 				master:      versionSemver,
-				provider:    provider{patch},
+				provider:    incrementStateStore{patch},
+				branch:      "master",
 			},
 			args:    args{revision},
-			want:    versionString,
+			want:    fmt.Sprintf("%s-SHA%s", "0.0.0", preRelease),
+			wantErr: false,
+		},
+		{
+			name: "local environment (branch)",
+			fields: fields{
+				environment: localEnv,
+				master:      versionSemver,
+				provider:    incrementStateStore{patch},
+				branch:      "not-master",
+			},
+			args:    args{revision},
+			want:    fmt.Sprintf("%s-SHA%s", "0.0.0", preRelease),
 			wantErr: false,
 		},
 		{
@@ -170,7 +212,8 @@ func TestService_IncrementVersionPreRelease(t *testing.T) {
 			fields: fields{
 				environment: remoteEnv,
 				master:      versionSemver,
-				provider:    provider{patch},
+				provider:    incrementStateStore{patch},
+				branch:      "master",
 			},
 			args:    args{revision},
 			want:    fmt.Sprintf("%s-SHA%s", "0.2.3", preRelease),
@@ -181,7 +224,8 @@ func TestService_IncrementVersionPreRelease(t *testing.T) {
 			fields: fields{
 				environment: remoteEnv,
 				master:      versionSemver,
-				provider:    provider{minor},
+				provider:    incrementStateStore{minor},
+				branch:      "master",
 			},
 			args:    args{revision},
 			want:    fmt.Sprintf("%s-SHA%s", "0.3.0", preRelease),
@@ -192,10 +236,35 @@ func TestService_IncrementVersionPreRelease(t *testing.T) {
 			fields: fields{
 				environment: remoteEnv,
 				master:      versionSemver,
-				provider:    provider{major},
+				provider:    incrementStateStore{major},
+				branch:      "master",
 			},
 			args:    args{revision},
 			want:    fmt.Sprintf("%s-SHA%s", "1.0.0", preRelease),
+			wantErr: false,
+		},
+		{
+			name: "remote environment - major (branch)",
+			fields: fields{
+				environment: remoteEnv,
+				master:      versionSemver,
+				provider:    incrementStateStore{major},
+				branch:      "not-master",
+			},
+			args:    args{revision},
+			want:    fmt.Sprintf("%s-SHA%s", "0.0.0", preRelease),
+			wantErr: false,
+		},
+		{
+			name: "remote environment - patch (branch)",
+			fields: fields{
+				environment: remoteEnv,
+				master:      versionSemver,
+				provider:    incrementStateStore{patch},
+				branch:      "not-master",
+			},
+			args:    args{revision},
+			want:    fmt.Sprintf("%s-SHA%s", "0.0.0", preRelease),
 			wantErr: false,
 		},
 		{
@@ -203,7 +272,8 @@ func TestService_IncrementVersionPreRelease(t *testing.T) {
 			fields: fields{
 				environment: unknownEnv,
 				master:      versionSemver,
-				provider:    provider{""},
+				provider:    incrementStateStore{""},
+				branch:      "master",
 			},
 			args:    args{revision},
 			want:    "",
@@ -215,7 +285,8 @@ func TestService_IncrementVersionPreRelease(t *testing.T) {
 			s := &VersionIncrementer{
 				environment: tt.fields.environment,
 				master:      tt.fields.master,
-				provider:    tt.fields.provider,
+				typer:       tt.fields.provider,
+				branch:      tt.fields.branch,
 			}
 			got, err := s.IncrementVersionRevision(tt.args.revision)
 			if (err != nil) != tt.wantErr {
