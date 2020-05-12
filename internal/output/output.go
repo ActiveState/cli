@@ -13,9 +13,9 @@ type Format string
 // FormatName constants are tokens representing supported output formats.
 const (
 	PlainFormatName    Format = "plain"     // human readable
-	JSONFormatName            = "json"      // plain json
-	EditorFormatName          = "editor"    // alias of "json"
-	EditorV0FormatName        = "editor.v0" // for Komodo: alias of "json"
+	JSONFormatName     Format = "json"      // plain json
+	EditorFormatName   Format = "editor"    // alias of "json"
+	EditorV0FormatName Format = "editor.v0" // for Komodo: alias of "json"
 )
 
 // FailNotRecognized is a failure due to the format not being recognized
@@ -26,6 +26,7 @@ type Outputer interface {
 	Print(value interface{})
 	Error(value interface{})
 	Notice(value interface{})
+	Type() Format
 	Config() *Config
 }
 
@@ -38,19 +39,19 @@ func New(formatName string, config *Config) (Outputer, *failures.Failure) {
 	case "", PlainFormatName:
 		logging.Debug("Using Plain outputer")
 		plain, fail := NewPlain(config)
-		return &mediator{&plain, PlainFormatName}, fail
+		return &Mediator{&plain, PlainFormatName}, fail
 	case JSONFormatName:
 		logging.Debug("Using JSON outputer")
 		json, fail := NewJSON(config)
-		return &mediator{&json, JSONFormatName}, fail
+		return &Mediator{&json, JSONFormatName}, fail
 	case EditorFormatName:
 		logging.Debug("Using Editor outputer")
 		editor, fail := NewEditor(config)
-		return &mediator{&editor, EditorFormatName}, fail
+		return &Mediator{&editor, EditorFormatName}, fail
 	case EditorV0FormatName:
 		logging.Debug("Using EditorV0 outputer")
 		editor0, fail := NewEditorV0(config)
-		return &mediator{&editor0, EditorV0FormatName}, fail
+		return &Mediator{&editor0, EditorV0FormatName}, fail
 	}
 
 	return nil, FailNotRecognized.New(locale.Tr("err_unknown_format", string(formatName)))

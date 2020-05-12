@@ -1,6 +1,6 @@
 package output
 
-type mediator struct {
+type Mediator struct {
 	Outputer
 	format Format
 }
@@ -9,15 +9,15 @@ type Marshaller interface {
 	MarshalOutput(Format) interface{}
 }
 
-func (m *mediator) Print(v interface{}) {
+func (m *Mediator) Print(v interface{}) {
 	m.Outputer.Print(mediatorValue(v, m.format))
 }
 
-func (m *mediator) Error(v interface{}) {
+func (m *Mediator) Error(v interface{}) {
 	m.Outputer.Error(mediatorValue(v, m.format))
 }
 
-func (m *mediator) Notice(v interface{}) {
+func (m *Mediator) Notice(v interface{}) {
 	m.Outputer.Notice(mediatorValue(v, m.format))
 }
 

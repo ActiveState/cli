@@ -50,37 +50,37 @@ func (suite *MainTestSuite) TestOutputer() {
 	{
 		outputer, fail := initOutputer(outputFlags{"", false}, "")
 		suite.Require().NoError(fail.ToError())
-		suite.IsType(&output.Plain{}, outputer, "Returns Plain outputer")
+		suite.Equal(output.PlainFormatName, outputer.Type(), "Returns Plain outputer")
 	}
 
 	{
 		outputer, fail := initOutputer(outputFlags{string(output.PlainFormatName), false}, "")
 		suite.Require().NoError(fail.ToError())
-		suite.IsType(&output.Plain{}, outputer, "Returns Plain outputer")
+		suite.Equal(output.PlainFormatName, outputer.Type(), "Returns Plain outputer")
 	}
 
 	{
 		outputer, fail := initOutputer(outputFlags{string(output.JSONFormatName), false}, "")
 		suite.Require().NoError(fail.ToError())
-		suite.IsType(&output.JSON{}, outputer, "Returns JSON outputer")
+		suite.Equal(output.JSONFormatName, outputer.Type(), "Returns JSON outputer")
 	}
 
 	{
-		outputer, fail := initOutputer(outputFlags{"", false}, output.JSONFormatName)
+		outputer, fail := initOutputer(outputFlags{"", false}, string(output.JSONFormatName))
 		suite.Require().NoError(fail.ToError())
-		suite.IsType(&output.JSON{}, outputer, "Returns JSON outputer")
+		suite.Equal(output.JSONFormatName, outputer.Type(), "Returns JSON outputer")
 	}
 
 	{
-		outputer, fail := initOutputer(outputFlags{"", false}, output.EditorFormatName)
+		outputer, fail := initOutputer(outputFlags{"", false}, string(output.EditorFormatName))
 		suite.Require().NoError(fail.ToError())
-		suite.IsType(&output.JSON{}, outputer, "Returns JSON outputer")
+		suite.Equal(output.EditorFormatName, outputer.Type(), "Returns JSON outputer")
 	}
 
 	{
-		outputer, fail := initOutputer(outputFlags{"", false}, output.EditorV0FormatName)
+		outputer, fail := initOutputer(outputFlags{"", false}, string(output.EditorV0FormatName))
 		suite.Require().NoError(fail.ToError())
-		suite.IsType(&output.JSON{}, outputer, "Returns JSON outputer")
+		suite.Equal(output.EditorV0FormatName, outputer.Type(), "Returns JSON outputer")
 	}
 }
 
