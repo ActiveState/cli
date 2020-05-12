@@ -26,3 +26,10 @@ func AppendEnv(env ...string) SpawnOptions {
 		return nil
 	}
 }
+
+func HideCmdLine() SpawnOptions {
+	return func(opts *termtest.Options) error {
+		opts.HideCmdLine = true
+		return nil
+	}
+}

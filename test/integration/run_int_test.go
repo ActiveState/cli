@@ -30,7 +30,7 @@ func (suite *RunIntegrationTestSuite) createProjectFile(ts *e2e.Session) {
 
 	// ActiveState-CLI/Python3 is just a place-holder that is never used
 	configFileContent := strings.TrimSpace(`
-project: https://platform.activestate.com/ActiveState-CLI/Python3?commitID=6d9280e7-75eb-401a-9e71-0d99759fbad3
+project: https://platform.activestate.com/ActiveState-CLI/Python3?commitID=fbc613d6-b0b1-4f84-b26e-4aa5869c4e54
 scripts:
   - name: test-interrupt
     description: A script that sleeps for a very long time.  It should be interrupted.  The first interrupt does not terminate.
@@ -184,6 +184,9 @@ func (suite *RunIntegrationTestSuite) TestRun_Unauthenticated() {
 
 	cp.SendLine(fmt.Sprintf("%s run helloWorldPython", cp.Executable()))
 	cp.Expect("Hello Python!", 5*time.Second)
+
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
 }
 
 func TestRunIntegrationTestSuite(t *testing.T) {
