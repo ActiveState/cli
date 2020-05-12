@@ -44,6 +44,7 @@ defaults:
     buildCli: &buildCli
       run:
         name: Build the CLI
+        no_output_timeout: 2m
         command: |
           set -e
           BRANCH=$(git rev-parse --abbrev-ref HEAD)
