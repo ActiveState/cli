@@ -89,7 +89,7 @@ func TestIsActivateCamdLineArgs(t *testing.T) {
 		},
 		{
 			"state activate with params",
-			[]string{stateCmd, "-v", "--output", "term", "activate"},
+			[]string{stateCmd, "-v", "--output", "plain", "activate"},
 			true,
 		},
 		{
