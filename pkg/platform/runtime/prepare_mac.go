@@ -75,13 +75,15 @@ func (m *MetaData) Prepare() *failures.Failure {
 		}
 	}
 
-	if relVersionedFrameWorkDir != "" {
-		m.TargetedRelocations = []TargetedRelocation{TargetedRelocation{
-			InDir:        filepath.Join(m.Path, frameWorkDir, "Current", "bin"),
-			SearchString: filepath.Join("/", relVersionedFrameWorkDir),
-			Replacement:  filepath.Join(m.Path, relVersionedFrameWorkDir),
-		}}
+	if relVersionedFrameWorkDir == "" {
+		return failures.FailNotFound.New("could not find path %s/x.x in build artifact", frameWorkDir)
 	}
+
+	m.TargetedRelocations = []TargetedRelocation{TargetedRelocation{
+		InDir:        filepath.Join(m.Path, frameWorkDir, "Current", "bin"),
+		SearchString: filepath.Join("/", relVersionedFrameWorkDir),
+		Replacement:  filepath.Join(m.Path, relVersionedFrameWorkDir),
+	}}
 
 	return nil
 }
