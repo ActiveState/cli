@@ -16,6 +16,16 @@ var (
 	FailMetaDataNotDetected = failures.Type("runtime.metadata.notdetected", failures.FailIO, failures.FailNotFound)
 )
 
+// TargetedRelocation is a relocation instruction for files in a specific directory
+type TargetedRelocation struct {
+	// InDir is the directory in which files need to be relocated
+	InDir string
+	// SearchString to be replaced
+	SearchString string
+	// Replacement is the replacement string
+	Replacement string
+}
+
 // MetaData is used to parse the metadata.json file
 type MetaData struct {
 	// Path is the directory containing the meta file
@@ -35,6 +45,9 @@ type MetaData struct {
 
 	// LibLocation is the place in which .so and .dll files are stored (which binary files will need relocated)
 	RelocationTargetBinaries string `json:"relocation_target_binaries"`
+
+	// TargetedRelocations are relocations that only target specific parts of the installation
+	TargetedRelocations []TargetedRelocation
 }
 
 // MetaDataBinary is used to represent a binary path contained within the metadata.json file
