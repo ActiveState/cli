@@ -57,19 +57,23 @@ func NewChecker(timeout time.Duration) *Checker {
 
 // Check will run a Checker.Check with defaults
 func Check() (*Info, *failures.Failure) {
+	return CheckVersionNumber(constants.VersionNumber)
+}
+
+// CheckVersionNumber will run a Checker.Check with defaults
+func CheckVersionNumber(versionNumber string) (*Info, *failures.Failure) {
 	checker := NewChecker(DefaultTimeout)
-	return checker.Check()
+	return checker.check(versionNumber)
 }
 
 // Check will check if the current version of the tool is deprecated and returns deprecation info if it is.
 // This uses a fairly short timeout to check against our deprecation url, so this should not be considered conclusive.
 func (checker *Checker) Check() (*Info, *failures.Failure) {
-	infos, fail := checker.fetchDeprecationInfo()
-	if fail != nil {
-		return nil, fail
-	}
+	return checker.check(constants.VersionNumber)
+}
 
-	versionInfo, err := version.NewVersion(constants.VersionNumber)
+func (checker *Checker) check(versionNumber string) (*Info, *failures.Failure) {
+	versionInfo, err := version.NewVersion(versionNumber)
 	if err != nil {
 		return nil, FailParseVersion.Wrap(err)
 	}
@@ -81,6 +85,11 @@ func (checker *Checker) Check() (*Info, *failures.Failure) {
 
 	if versionInfo.Equal(zeroed) {
 		return nil, nil
+	}
+
+	infos, fail := checker.fetchDeprecationInfo()
+	if fail != nil {
+		return nil, fail
 	}
 
 	for _, info := range infos {
