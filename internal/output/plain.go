@@ -39,6 +39,11 @@ func NewPlain(config *Config) (Plain, *failures.Failure) {
 	return Plain{config}, nil
 }
 
+// Type tells callers what type of outputer we are
+func (f *Plain) Type() Format {
+	return PlainFormatName
+}
+
 // Print will marshal and print the given value to the output writer
 func (f *Plain) Print(value interface{}) {
 	f.write(f.cfg.OutWriter, value)

@@ -775,14 +775,12 @@ secrets_row_value_unset:
   other: Undefined
 variable_field_deprecation_warning:
   other: The variable field has been deprecated in favour of secrets and constants. Please update your activestate.yaml.
-pull_is_updated:
-  other: Your activestate.yaml has been updated to the latest version available
 pull_not_updated:
   other: Your activestate.yaml is already up to date!
-notify_user_to_reactivate_instances:
+pull_updated:
   other: |
-    If you have any active instances of this project open in other terminals, please exit and 
-    re-activate them to pick up the latest changes.
+    Your activestate.yaml has been updated to the latest version available.
+    If you have any active instances of this project open in other terminals, please exit and re-activate them to pick up the latest changes.
 keypair_cmd_description:
   other: Manage Your Keypair
 keypair_generate_cmd_description:
@@ -1033,10 +1031,6 @@ err_activate_auth_required:
   other: Activating a project requires you to be authenticated against the ActiveState Platform
 err_pull_get_latest_commit_id:
   other: Cannot get latest commit id from project
-err_pull_update_commit_id:
-  other: Cannot update commit id in project file
-pull_latest:
-  other: Pull in the latest version of your project from the ActiveState Platform
 err_os_not_a_directory:
   other: Expected '{{.V0}}' to be a valid directory
 unstable_version_warning:
