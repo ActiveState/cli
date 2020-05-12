@@ -54,13 +54,13 @@ func (suite *MainTestSuite) TestOutputer() {
 	}
 
 	{
-		outputer, fail := initOutputer(outputFlags{output.PlainFormatName, false}, "")
+		outputer, fail := initOutputer(outputFlags{string(output.PlainFormatName), false}, "")
 		suite.Require().NoError(fail.ToError())
 		suite.IsType(&output.Plain{}, outputer, "Returns Plain outputer")
 	}
 
 	{
-		outputer, fail := initOutputer(outputFlags{output.JSONFormatName, false}, "")
+		outputer, fail := initOutputer(outputFlags{string(output.JSONFormatName), false}, "")
 		suite.Require().NoError(fail.ToError())
 		suite.IsType(&output.JSON{}, outputer, "Returns JSON outputer")
 	}
