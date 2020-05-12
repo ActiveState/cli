@@ -10,7 +10,7 @@ github.com/ActiveState/go-colortext
 github.com/ActiveState/go-ogle-analytics
 # github.com/ActiveState/sysinfo v0.0.0-20200504175252-e607d44295c6
 github.com/ActiveState/sysinfo
-# github.com/ActiveState/termtest v0.5.0
+# github.com/ActiveState/termtest v0.5.1
 github.com/ActiveState/termtest
 github.com/ActiveState/termtest/internal/osutils
 github.com/ActiveState/termtest/internal/osutils/stacktrace

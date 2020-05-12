@@ -141,7 +141,8 @@ func splitPath(path string) []string {
 func filterPrefixed(prefix string, paths []string) []string {
 	var ps []string
 	for _, p := range paths {
-		if strings.HasPrefix(p, prefix) {
+		// Clean removes double slashes and relative path directories
+		if strings.HasPrefix(filepath.Clean(p), filepath.Clean(prefix)) {
 			ps = append(ps, p)
 		}
 	}

@@ -114,6 +114,15 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	cp.SendLine(pythonExe + " -c \"import pytest; print(pytest.__doc__)\"")
 	cp.Expect("unit and functional testing")
 
+	// test that other executables that use python work as well
+	pipExe := "pip" + version
+	cp.SendLine(fmt.Sprintf("%s --version", pipExe))
+	pipVersionRe := regexp.MustCompile(`pip \d+(?:\.\d+)+ from ([^ ]+) \(python`)
+	cp.ExpectRe(pipVersionRe.String())
+	pipVersionMatch := pipVersionRe.FindStringSubmatch(cp.TrimmedSnapshot())
+	suite.Require().Len(pipVersionMatch, 2, "expected pip version to match")
+	suite.Contains(pipVersionMatch[1], "cache", "pip loaded from activestate cache dir")
+
 	// de-activate shell
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
@@ -185,7 +194,9 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
 	cp.WaitForInput()
 
 	cp.SendLine("perldoc -l DBD::Pg")
-	cp.Expect(ts.Dirs.Work)
+	// Expect the source code to be installed in the cache directory
+	// Note: At least for Windows we cannot expect cp.Dirs.Cache, because it is unreliable how the path name formats are unreliable (sometimes DOS 8.3 format, sometimes not)
+	cp.Expect("cache")
 	cp.Expect("Pg.pm")
 
 	cp.SendLine("exit")
