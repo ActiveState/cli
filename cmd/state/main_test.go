@@ -17,7 +17,8 @@ type MainTestSuite struct {
 }
 
 func (suite *MainTestSuite) TestUnknownCommand() {
-	exitCode, err := run([]string{"", "IdontExist"}, nil)
+	catcher := outputhelper.NewCatcher()
+	exitCode, err := run([]string{"", "IdontExist"}, catcher.Outputer)
 	suite.Contains(err.Error(), `unknown command "IdontExist"`)
 	suite.Equal(1, exitCode)
 }
