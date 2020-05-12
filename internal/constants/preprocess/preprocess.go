@@ -20,7 +20,7 @@ func init() {
 	branchName, branchNameFull := branchName()
 	buildNumber := buildNumber()
 
-	incrementer, err := NewVersionIncrementer(NewGithubProvider(os.Getenv("GITHUB_REPO_TOKEN")), branchName, buildEnvironment())
+	incrementer, err := NewVersionIncrementer(NewGithubIncrementStateStore(os.Getenv("GITHUB_REPO_TOKEN")), branchName, buildEnvironment())
 	if err != nil {
 		log.Fatalf("Could not initialize version incrementer: %s", err)
 	}

@@ -16,19 +16,19 @@ const labelPrefix = "version: "
 const branchPrefix = "ActiveState:"
 const masterBranch = "master"
 
-// GithubIncrementProvider provides methods for getting label values from the Github API
-type GithubIncrementProvider struct {
+// GithubIncrementStateStore provides methods for getting label values from the Github API
+type GithubIncrementStateStore struct {
 	client *github.Client
 }
 
-// NewGithubProvider returns an initialized Github client
-func NewGithubProvider(token string) *GithubIncrementProvider {
+// NewGithubIncrementStateStore returns an initialized Github client
+func NewGithubIncrementStateStore(token string) *GithubIncrementStateStore {
 	ts := oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: token},
 	)
 	tc := oauth2.NewClient(context.Background(), ts)
 
-	return &GithubIncrementProvider{
+	return &GithubIncrementStateStore{
 		client: github.NewClient(tc),
 	}
 }
@@ -36,7 +36,7 @@ func NewGithubProvider(token string) *GithubIncrementProvider {
 // IncrementType returns the increment value string (major, minor, patch) by
 // reading the appropriate version file associated with the most recently
 // merged pull request.
-func (g *GithubIncrementProvider) IncrementType() (string, error) {
+func (g *GithubIncrementStateStore) IncrementType() (string, error) {
 	pullRequests, err := g.pullRequestList(&github.PullRequestListOptions{
 		State:     "closed",
 		Sort:      "updated",
@@ -65,7 +65,7 @@ func (g *GithubIncrementProvider) IncrementType() (string, error) {
 	return getVersionString(branchName)
 }
 
-func (g *GithubIncrementProvider) versionLabelPullRequest(number int) (string, error) {
+func (g *GithubIncrementStateStore) versionLabelPullRequest(number int) (string, error) {
 	pullRequest, err := g.pullRequest(number)
 	if err != nil {
 		return "", err
@@ -84,7 +84,7 @@ func (g *GithubIncrementProvider) versionLabelPullRequest(number int) (string, e
 	return strings.TrimPrefix(label, labelPrefix), nil
 }
 
-func (g *GithubIncrementProvider) pullRequestList(options *github.PullRequestListOptions) ([]*github.PullRequest, error) {
+func (g *GithubIncrementStateStore) pullRequestList(options *github.PullRequestListOptions) ([]*github.PullRequest, error) {
 	pullReqests, _, err := g.client.PullRequests.List(
 		context.Background(),
 		constants.LibraryOwner,
@@ -98,7 +98,7 @@ func (g *GithubIncrementProvider) pullRequestList(options *github.PullRequestLis
 	return pullReqests, nil
 }
 
-func (g *GithubIncrementProvider) pullRequest(number int) (*github.PullRequest, error) {
+func (g *GithubIncrementStateStore) pullRequest(number int) (*github.PullRequest, error) {
 	pullRequest, _, err := g.client.PullRequests.Get(context.Background(), constants.LibraryOwner, constants.LibraryName, number)
 	if err != nil {
 		return nil, err
@@ -107,7 +107,7 @@ func (g *GithubIncrementProvider) pullRequest(number int) (*github.PullRequest, 
 	return pullRequest, nil
 }
 
-func (g *GithubIncrementProvider) isMerged(pullRequest *github.PullRequest) (bool, error) {
+func (g *GithubIncrementStateStore) isMerged(pullRequest *github.PullRequest) (bool, error) {
 	if pullRequest.Number == nil {
 		return false, errors.New("could not check if pull request has been merged, invalid pull request received")
 	}
