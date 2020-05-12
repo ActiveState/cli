@@ -2,8 +2,10 @@ package main
 
 import (
 	"os"
+	"strings"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/constants"
 	depMock "github.com/ActiveState/cli/internal/deprecation/mock"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
@@ -32,7 +34,10 @@ func (suite *MainTestSuite) TestDeprecated() {
 	exitCode, err := run([]string{""}, catcher.Outputer)
 	suite.Require().NoError(err)
 	suite.Require().Equal(0, exitCode, "Should exit with code 0, output: %s", catcher.CombinedOutput())
-	suite.Require().Contains(catcher.Output(), output.StripColorCodes(locale.Tr("warn_deprecation", "")[0:50]))
+
+	if !strings.HasPrefix(constants.Version, "0.0.0") {
+		suite.Require().Contains(catcher.Output(), output.StripColorCodes(locale.Tr("warn_deprecation", "")[0:50]))
+	}
 }
 
 func (suite *MainTestSuite) TestExpired() {
@@ -44,7 +49,10 @@ func (suite *MainTestSuite) TestExpired() {
 	exitCode, err := run([]string{""}, catcher.Outputer)
 	suite.Require().NoError(err)
 	suite.Require().Equal(0, exitCode, "Should exit with code 0, output: %s", catcher.CombinedOutput())
-	suite.Require().Contains(catcher.ErrorOutput(), locale.Tr("err_deprecation", "")[0:50])
+
+	if !strings.HasPrefix(constants.Version, "0.0.0") {
+		suite.Require().Contains(catcher.ErrorOutput(), locale.Tr("err_deprecation", "")[0:50])
+	}
 }
 
 func (suite *MainTestSuite) TestOutputer() {

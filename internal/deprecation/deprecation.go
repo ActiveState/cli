@@ -74,6 +74,15 @@ func (checker *Checker) Check() (*Info, *failures.Failure) {
 		return nil, FailParseVersion.Wrap(err)
 	}
 
+	zeroed, err := version.NewVersion("0.0.0")
+	if err != nil {
+		return nil, FailParseVersion.Wrap(err)
+	}
+
+	if versionInfo.Equal(zeroed) {
+		return nil, nil
+	}
+
 	for _, info := range infos {
 		if versionInfo.LessThan(info.versionInfo) || versionInfo.Equal(info.versionInfo) {
 			return &info, nil
