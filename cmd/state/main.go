@@ -109,7 +109,7 @@ func initOutputer(flags outputFlags, formatName string) (output.Outputer, *failu
 		if fail.Type.Matches(output.FailNotRecognized) {
 			// The formatter might still be registered, so default to plain for now
 			logging.Warningf("Output format not recognized: %s, defaulting to plain output instead", formatName)
-			return initOutputer(flags, output.PlainFormatName)
+			return initOutputer(flags, string(output.PlainFormatName))
 		}
 		logging.Errorf("Could not create outputer, name: %s, error: %s", formatName, fail.Error())
 	}
