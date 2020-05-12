@@ -43,7 +43,18 @@ namespace GetProjectName
             }
 
             Project project = GetProject(session, projectID, token);
+            if (project == null)
+            {
+                session.Log("Could not get project data");
+                return ActionResult.Failure;
+            }
+
             Organization organization = GetOrganization(session, project.OrganizationID, token);
+            if (organization == null)
+            {
+                session.Log("Could not get organization data");
+                return ActionResult.Failure;
+            }
 
             session.Log(string.Format("Setting project name to {0}/{1}", organization.URLName, project.Name));
             session["PROJECT_NAME"] = string.Format("{0}/{1}", organization.URLName, project.Name);
@@ -80,6 +91,7 @@ namespace GetProjectName
 
         public static bool LoggedIn(Session session)
         {
+            // TODO: This could be it's own custom action that sets a value in the session map
             string output = "";
             try
             {
