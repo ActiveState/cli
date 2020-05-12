@@ -47,10 +47,10 @@
 		</Property>
 
 		<Binary Id="StateCommandCA" SourceFile="$(var.StateCommandExists.TargetDir)$(var.StateCommandExists.TargetName).CA.dll" />
-		<CustomAction Id="StateCommandExists" Impersonate="no" BinaryKey="StateCommandCA" DllEntry="StateCommandExists" Execute="deferred" Return="check" />
+		<CustomAction Id="StateCommandExists" Impersonate="no" BinaryKey="StateCommandCA" DllEntry="StateCommandExists" Return="check" />
 
 		<Binary Id="GetProjectNameCA" SourceFile="$(var.GetProjectName.TargetDir)$(var.GetProjectName.TargetName).CA.dll" />
-		<CustomAction Id="GetProjectName" Impersonate="no" BinaryKey="GetProjectNameCA" DllEntry="GetProjectName" Execute="deferred" Return="check" />
+		<CustomAction Id="GetProjectName" Impersonate="no" BinaryKey="GetProjectNameCA" DllEntry="GetProjectName" Return="check" />
 
 		<Binary Id="rmpath.exe" SourceFile="C:\Users\miked\work\cli\public\wix\rmpath\rmpath.exe" />
 
