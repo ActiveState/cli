@@ -34,7 +34,7 @@ namespace StateDeploy
             catch (Exception objException)
             {
                 session.Log(string.Format("Caught exception: {0}", objException));
-                ActionResult.Failure;
+                return ActionResult.Failure;
             }
 
             return ActionResult.Success;
