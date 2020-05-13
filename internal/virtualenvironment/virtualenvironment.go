@@ -132,6 +132,15 @@ func (v *VirtualEnvironment) GetEnv(inherit bool, projectDir string) map[string]
 	if projectDir != "" {
 		env[constants.ActivatedStateEnvVarName] = projectDir
 		env[constants.ActivatedStateIDEnvVarName] = v.activationID
+
+		pj, fail := project.Parse(filepath.Join(projectDir, constants.ConfigFileName))
+		if fail != nil {
+			logging.Error("Could not find provided project: %v", fail)
+		} else {
+			for _, constant := range pj.Constants() {
+				env[constant.Name()] = constant.Value()
+			}
+		}
 	}
 
 	if inherit {

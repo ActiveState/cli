@@ -1,6 +1,8 @@
 package main
 
 import (
+	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"runtime/debug"
@@ -17,6 +19,7 @@ import (
 	"github.com/ActiveState/cli/internal/config" // MUST be first!
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/deprecation"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -25,9 +28,11 @@ import (
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/profile"
 	_ "github.com/ActiveState/cli/internal/prompt" // Sets up survey defaults
+	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/internal/terminal"
 	"github.com/ActiveState/cli/internal/updater"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
@@ -56,6 +61,7 @@ func main() {
 
 	code, err := run(os.Args, outputer)
 	if err != nil {
+		err = processErrs(err)
 		outputer.Error(err.Error())
 	}
 
@@ -103,7 +109,7 @@ func initOutputer(flags outputFlags, formatName string) (output.Outputer, *failu
 		if fail.Type.Matches(output.FailNotRecognized) {
 			// The formatter might still be registered, so default to plain for now
 			logging.Warningf("Output format not recognized: %s, defaulting to plain output instead", formatName)
-			return initOutputer(flags, output.PlainFormatName)
+			return initOutputer(flags, string(output.PlainFormatName))
 		}
 		logging.Errorf("Could not create outputer, name: %s, error: %s", formatName, fail.Error())
 	}
@@ -149,7 +155,7 @@ func run(args []string, outputer output.Outputer) (int, error) {
 
 	// Explicitly check for projectfile missing when in activated env so we can give a friendlier error without
 	// any missleading prefix
-	_, fail := projectfile.GetProjectFilePath()
+	pjPath, fail := projectfile.GetProjectFilePath()
 	if fail != nil && fail.Type.Matches(projectfile.FailNoProjectFromEnv) {
 		return 1, fail
 	}
@@ -194,7 +200,20 @@ func run(args []string, outputer output.Outputer) (int, error) {
 		}
 	}
 
-	cmds := cmdtree.New(outputer)
+	// Retrieve active project (if any)
+	var pj *project.Project
+	if pjPath != "" {
+		pjf, fail := projectfile.FromPath(pjPath)
+		if fail != nil {
+			return 1, fail
+		}
+		pj, fail = project.New(pjf)
+		if fail != nil {
+			return 1, fail
+		}
+	}
+
+	cmds := cmdtree.New(pj, outputer)
 	err := cmds.Execute(args[1:])
 
 	if err2 := normalizeError(err); err2 != nil {
@@ -307,4 +326,35 @@ func relaunch() (int, error) {
 	}
 
 	return osutils.CmdExitCode(cmd), err
+}
+
+func processErrs(err error) error {
+	if err == nil {
+		return nil
+	}
+
+	var ee errs.Error = &errs.WrappedErr{}
+	isErrs := errors.As(err, &ee)
+	if !isErrs {
+		return err
+	}
+
+	// Log error if this isn't a user input error
+	if !locale.IsInputError(err) {
+		logging.Error("Returning error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), ee.Stack().String())
+	}
+
+	// Log if the error isn't localized
+	if !locale.IsError(err) {
+		logging.Error("MUST ADDRESS: Error does not have localization: %s", errs.Join(err, "\n").Error())
+
+		// If this wasn't built via CI then this is a dev workstation, and we should be more aggressive
+		if !rtutils.BuiltViaCI {
+			panic(fmt.Sprintf("Errors must be localized! Please localize: %s, called at: %s", err.Error(), ee.Stack().String()))
+		}
+		return err
+	}
+
+	// Receive the localized error
+	return locale.JoinErrors(err, "\n")
 }

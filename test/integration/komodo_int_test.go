@@ -34,7 +34,10 @@ func (suite *AuthIntegrationTestSuite) TestAuth_EditorV0() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("auth", "--username", e2e.PersistentUsername, "--password", e2e.PersistentPassword, "--output", "editor.v0")
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("auth", "--username", e2e.PersistentUsername, "--password", e2e.PersistentPassword, "--output", "editor.v0"),
+		e2e.HideCmdLine(),
+	)
 	cp.Expect(`"privateProjects":false}`)
 	cp.ExpectExitCode(0)
 	suite.Equal(fmt.Sprintf("%s", string(expected)), cp.TrimmedSnapshot())

@@ -16,7 +16,9 @@ import (
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 var (
@@ -41,7 +43,9 @@ func (r *Run) Run(name string, args []string) error {
 }
 
 func run(name string, args []string) error {
-	checker.RunCommitsBehindNotifier()
+	if authentication.Get().Authenticated() {
+		checker.RunCommitsBehindNotifier()
+	}
 
 	logging.Debug("Execute")
 
@@ -87,7 +91,7 @@ func run(name string, args []string) error {
 			return fail.WithDescription("error_state_run_activate")
 		}
 
-		subs.SetEnv(venv.GetEnvSlice(true))
+		subs.SetEnv(venv.GetEnv(true, filepath.Dir(projectfile.Get().Path())))
 		path = venv.GetEnv(false, "")["PATH"]
 	}
 
@@ -137,7 +141,8 @@ func splitPath(path string) []string {
 func filterPrefixed(prefix string, paths []string) []string {
 	var ps []string
 	for _, p := range paths {
-		if strings.HasPrefix(p, prefix) {
+		// Clean removes double slashes and relative path directories
+		if strings.HasPrefix(filepath.Clean(p), filepath.Clean(prefix)) {
 			ps = append(ps, p)
 		}
 	}

@@ -8,16 +8,12 @@ state_description:
   other: The ActiveState CLI allows you to easily switch between your ActiveState environments
 activate_project:
   other: Activate a project
-events_description:
-  other: Manage project events
 events_header_id:
   other: ID
 events_header_event:
   other: Event
 events_header_value:
   other: Value
-event_listing:
-  other: Listing configured events
 usage_tpl:
   other: "
 Usage:
@@ -130,8 +126,6 @@ err_no_projectfile:
   other: No activestate.yaml file exists in the current working directory
 err_invalid_input:
   other: Invalid input received
-events_empty:
-  other: No events found for the current environment
 err_no_update_info:
   other: Cannot retrieve update information
 no_update_available:
@@ -140,6 +134,8 @@ updating_to_version:
   other: Updating from {{.fromVersion}} to {{.toVersion}}
 err_update_failed:
   other: Update failed, check the error log for more information
+confirm_update_locked_version_prompt:
+  other: "You ran update from a project directory with a locked State Tool version. This will update the version that your project is locked to. Are you sure you want to do this?"
 version_info:
   other: |
     ActiveState CLI version {{.Version}}
@@ -779,14 +775,12 @@ secrets_row_value_unset:
   other: Undefined
 variable_field_deprecation_warning:
   other: The variable field has been deprecated in favour of secrets and constants. Please update your activestate.yaml.
-pull_is_updated:
-  other: Your activestate.yaml has been updated to the latest version available
 pull_not_updated:
   other: Your activestate.yaml is already up to date!
-notify_user_to_reactivate_instances:
+pull_updated:
   other: |
-    If you have any active instances of this project open in other terminals, please exit and 
-    re-activate them to pick up the latest changes.
+    Your activestate.yaml has been updated to the latest version available.
+    If you have any active instances of this project open in other terminals, please exit and re-activate them to pick up the latest changes.
 keypair_cmd_description:
   other: Manage Your Keypair
 keypair_generate_cmd_description:
@@ -867,6 +861,8 @@ forward_fail_info:
   other: The requested version of the State Tool does not exist, please ensure the version and branch are correct.
 flag_update_lock_description:
   other: Lock the State Tool at the current version, this disables automatic updates. You can still force an update by manually running the update command.
+flag_update_force_description:
+  other: Automatically confirm that you would like to update the State Tool version that your project is locked to.
 err_lock_failed:
   other: Locking the version failed
 locking_version:
@@ -924,7 +920,7 @@ installer_err_runtime_move_files_access_denied:
   other: |
     Unable to move runtime files.  Please ensure that you have write permissions for the directory '{{.V0}}'
     If you believe this is happening due to antivirus software please report your issue on our forums: 
-    {{.V0}}
+    {{.V1}}
 installer_err_runtime_move_files_failed:
   other: Unable to move runtime files from '{{.V0}}' to '{{.V1}}'
 installer_err_runtime_rm_installdir:
@@ -933,12 +929,16 @@ installer_err_runtime_no_commitid:
   other: A CommitID is required to install this runtime environment
 installer_err_runtime_preplatform:
   other: The version of the installer used in the project you specified is not compatible with the State Tool. Please make a new project.
+installer_err_engine_unknown:
+  other: Build engine is unknown.
 build_status_unknown:
-  other: Build status could not be retrieved, please check the dashboard for more information
+  other: "Build status could not be retrieved, please view the project at: {{.V0}} for more information"
 build_status_in_progress:
-  other: Build is in progress, please try again later
+  other: "The project is currently building. Please visit {{.V0}} to see the progress."
 build_status_unknown_error:
-  other: "Build reported an unknown error: {{.V0}}; Please check the dashboard for more information"
+  other: "Build reported an unknown error: {{.V0}}; Please view the project at: {{.V1}} for more information"
+build_status_failed:
+  other: "The build for your project defined at: {{.V0}} is not building correctly. Error message recieved was: {{.V1}}. Please correct by visiting the above link or use 'state packages'"
 err_no_default_branch:
   other: This project has no default branch. This indicates malformed data, please contact support!
 err_no_commit:
@@ -1031,10 +1031,6 @@ err_activate_auth_required:
   other: Activating a project requires you to be authenticated against the ActiveState Platform
 err_pull_get_latest_commit_id:
   other: Cannot get latest commit id from project
-err_pull_update_commit_id:
-  other: Cannot update commit id in project file
-pull_latest:
-  other: Pull in the latest version of your project from the ActiveState Platform
 err_os_not_a_directory:
   other: Expected '{{.V0}}' to be a valid directory
 unstable_version_warning:
@@ -1352,7 +1348,7 @@ err_init_file_exists:
   other: The target directory '{{.V0}}' already contains an activestate.yaml.
 init_success:
   other: |
-    Project '{{.V0}}/{{.V1}}' has been succesfully initialized at '{{.V2}}'.
+    Project '{{.V0}}/{{.V1}}' has been successfully initialized at '{{.V2}}'.
     You should run 'state push' before activating your project for the first time.
     Once pushed you can activate your project with 'state activate'.
 flag_state_init_skeleton_description:
@@ -1382,7 +1378,7 @@ err_push_invalid_language:
 push_creating_project:
   other: "Creating project {{.V1}} under {{.V0}} on the ActiveState Platform"
 push_project_created:
-  other: "Project created at {{.V0}}"
+  other: "Project created at {{.V0}} with language {{.V1}} {{.V2}}"
 push_up_to_date:
   other: "Your project is up to date"
 init_description:
@@ -1413,6 +1409,8 @@ field_organization:
   other: Organization
 request_timed_out:
   other: A request for data took too long - Trying again may help
+err_recipe_payload:
+  other: Received multiple platform recipes where only one was expected
 no_commits:
   other: No commits exist yet for {{.V0}}
 err_orgs_length:
@@ -1449,6 +1447,8 @@ history_cmd_description:
   other: View history of the active or given project
 arg_state_history_namespace_description:
   other: "The namespace to view the history for (owner/name)"
+err_history_namespace:
+  other: "Please provide a namespace or run `state history` in a project directory"
 clean_description:
   other: Clean caches, configuration files, or completely remove the state tool
 uninstall_description:
@@ -1497,6 +1497,12 @@ field_languages:
   other: Languages
 err_no_recipes:
   other: No build recipes could be generated for the current project
+err_solve_order:
+  other: "Could not solve order: {{.V0}}"
+err_order_bad_request:
+  other: "Bad request while resolving order: {{.V0}}"
+err_order_unknown:
+  other: Unknown error resolving order"
 using_cached_env:
   other: Reusing cached runtime environment
 auto_update_to_version:
@@ -1530,12 +1536,8 @@ err_windows_registry:
   other: Error while interacting with Windows registry
 err_deploy_run_install:
   other: You need to run the install step at least once before you can run the configure or report steps. Run 'state deploy --help' for more information.
-err_deploy_path_empty:
-  other: Your system does not have any PATH entries configured, so symlinks can not be created.
 err_deploy_path_noperm:
   other: "No permission to create symlinks on any of the PATH entries: {{.V0}}"
-err_deploy_symlink_target_exists:
-  other: "Cannot create symlink as the target already exists: {{.V0}}. Use '--force' to overwrite any existing files."
 deploy_install:
   other: "[BLUE]Installing Runtime Environment[/RESET]"
 deploy_configure_shell:
@@ -1569,6 +1571,10 @@ deploy_restart_shell:
   other: |
 
     [BLUE][BOLD]Please restart your terminal or start a new terminal session in order to start using the newly configured Runtime Environment.[/RESET]
+deploy_restart_cmd:
+  other: |
+
+    [BLUE][BOLD]Please log out and back in again in order to start using the newly configured Runtime Environment.[/RESET]
 flag_state_deploy_path_description:
   other: The path to deploy the runtime installation files to. This directory will not be affected by 'state clean'
 flag_state_deploy_force_description:

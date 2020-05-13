@@ -2,6 +2,7 @@ package cmdtree
 
 import (
 	"github.com/ActiveState/cli/internal/captain"
+	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/runners/history"
@@ -30,13 +31,15 @@ func newHistoryCommand(outputer output.Outputer) *captain.Command {
 		},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, _ []string) error {
-			pj, fail := project.GetSafe()
-			if fail != nil && !fail.Type.Matches(projectfile.FailNoProject) {
-				return fail
-			}
-
 			namespace := opts.Namespace
 			if namespace == "" {
+				pj, fail := project.GetSafe()
+				if fail != nil && fail.Type.Matches(projectfile.FailNoProject) {
+					return failures.FailUser.New("err_history_namespace")
+				}
+				if fail != nil {
+					return fail
+				}
 				namespace = pj.Namespace()
 			}
 

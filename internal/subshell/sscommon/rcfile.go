@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 	"text/template"
 
@@ -97,7 +96,7 @@ func cleanRcFile(path string) *failures.Failure {
 
 // SetupRcFile creates a temporary RC file that our shell is initiated from, this allows us to template the logic
 // used for initialising the subshell
-func SetupProjectRcFile(templateName, ext string) (*os.File, *failures.Failure) {
+func SetupProjectRcFile(templateName, ext string, env map[string]string) (*os.File, *failures.Failure) {
 	box := packr.NewBox("../../../assets/shells")
 	tpl := box.String(templateName)
 	prj := project.Get()
@@ -136,7 +135,7 @@ func SetupProjectRcFile(templateName, ext string) (*os.File, *failures.Failure) 
 	rcData := map[string]interface{}{
 		"Owner":       prj.Owner(),
 		"Name":        prj.Name(),
-		"Env":         virtualenvironment.Get().GetEnv(false, filepath.Dir(prj.Source().Path())),
+		"Env":         env,
 		"WD":          virtualenvironment.Get().WorkingDirectory(),
 		"UserScripts": userScripts,
 		"Scripts":     scripts,

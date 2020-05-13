@@ -76,7 +76,6 @@ func (cr *CamelRuntime) Unarchiver() unarchiver.Unarchiver {
 }
 
 // InstallDirs returns the installation directories for the artifacts
-// Note that this only used for testing
 func (cr *CamelRuntime) InstallDirs() []string {
 	return cr.installDirs
 }
@@ -231,6 +230,17 @@ func (cr *CamelRuntime) PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir
 func Relocate(metaData *MetaData, cb func()) *failures.Failure {
 	prefix := metaData.RelocationDir
 
+	for _, tr := range metaData.TargetedRelocations {
+		err := fileutils.ReplaceAllInDirectory(tr.InDir, tr.SearchString, tr.Replacement,
+			// only replace text files for now
+			func(_ string, fileBytes []byte) bool {
+				return !fileutils.IsBinary(fileBytes)
+			})
+		if err != nil {
+			return FailRuntimeInstallation.Wrap(err)
+		}
+	}
+
 	if len(prefix) == 0 || prefix == metaData.Path {
 		return nil
 	}
@@ -301,7 +311,7 @@ func (cr *CamelRuntime) GetEnv(inherit bool, projectDir string) (map[string]stri
 
 		// Unset AffectedEnv
 		if meta.AffectedEnv != "" {
-			env[meta.AffectedEnv] = ""
+			delete(env, meta.AffectedEnv)
 		}
 
 		// Set up env according to artifact meta

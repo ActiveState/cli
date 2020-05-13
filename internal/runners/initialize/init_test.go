@@ -16,22 +16,8 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
-
-type configMock struct {
-	set map[string]interface{}
-}
-
-func (c *configMock) Set(key string, value interface{}) {
-	if c.set == nil {
-		c.set = map[string]interface{}{}
-	}
-	c.set[key] = value
-}
-
-func newLanguageUnsupportedError(value string) error {
-	return language.NewUnrecognizedLanguageError(value, language.RecognizedSupportedsNames())
-}
 
 func TestInitialize_Run(t *testing.T) {
 	wd, err := os.Getwd()
@@ -63,9 +49,6 @@ func TestInitialize_Run(t *testing.T) {
 	}
 	fileutils.WriteFile(fileutils.Join(tempDirWithFile, "bogus"), []byte(""))
 
-	type fields struct {
-		config setter
-	}
 	type args struct {
 		namespace *project.Namespaced
 		path      string
@@ -75,7 +58,6 @@ func TestInitialize_Run(t *testing.T) {
 	tests := []struct {
 		name            string
 		wd              string
-		fields          fields
 		args            args
 		wantErr         error
 		wantPath        string
@@ -86,7 +68,6 @@ func TestInitialize_Run(t *testing.T) {
 		{
 			"namespace without path or language",
 			tempDir,
-			fields{&configMock{}},
 			args{
 				namespace: &project.Namespaced{
 					Owner:   "foo",
@@ -103,7 +84,6 @@ func TestInitialize_Run(t *testing.T) {
 		{
 			"namespace without path and with language",
 			osutil.PrepareDir(fileutils.Join(tempDir, "0")),
-			fields{&configMock{}},
 			args{
 				namespace: &project.Namespaced{
 					Owner:   "foo",
@@ -121,7 +101,6 @@ func TestInitialize_Run(t *testing.T) {
 		{
 			"namespace without path and with language, wd has file",
 			tempDirWithFile,
-			fields{&configMock{}},
 			args{
 				namespace: &project.Namespaced{
 					Owner:   "foo",
@@ -139,7 +118,6 @@ func TestInitialize_Run(t *testing.T) {
 		{
 			"namespace with path and without language",
 			tempDir,
-			fields{&configMock{}},
 			args{
 				namespace: &project.Namespaced{
 					Owner:   "foo",
@@ -156,7 +134,6 @@ func TestInitialize_Run(t *testing.T) {
 		{
 			"namespace with path and language",
 			tempDir,
-			fields{&configMock{}},
 			args{
 				namespace: &project.Namespaced{
 					Owner:   "foo",
@@ -174,7 +151,6 @@ func TestInitialize_Run(t *testing.T) {
 		{
 			"namespace with path, language and version",
 			tempDir,
-			fields{&configMock{}},
 			args{
 				namespace: &project.Namespaced{
 					Owner:   "foo",
@@ -192,7 +168,6 @@ func TestInitialize_Run(t *testing.T) {
 		{
 			"as.yaml already exists",
 			tempDir,
-			fields{&configMock{}},
 			args{
 				namespace: &project.Namespaced{
 					Owner:   "foo",
@@ -210,13 +185,11 @@ func TestInitialize_Run(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cfgMock := configMock{}
-
 			err := os.Chdir(tt.wd)
 			if err != nil {
 				t.Errorf("Initialize.run() chdir error = %v", err)
 			}
-			path, err := run(&cfgMock, &RunParams{
+			path, err := run(&RunParams{
 				Namespace: tt.args.namespace,
 				Path:      tt.args.path,
 				Language:  tt.args.language,
@@ -238,29 +211,28 @@ func TestInitialize_Run(t *testing.T) {
 			}
 			configFile := fileutils.Join(tt.wantPath, constants.ConfigFileName)
 			if !fileutils.FileExists(configFile) {
-				t.Errorf("Expected file to exist: %s", configFile)
-			} else {
-				contents := fileutils.ReadFileUnsafe(configFile)
-				if !strings.Contains(string(contents), fmt.Sprintf("%s/%s", tt.args.namespace.Owner, tt.args.namespace.Project)) {
-					t.Errorf("Expected %s to contain %s/%s", contents, tt.args.namespace.Owner, tt.args.namespace.Project)
-				}
+				t.Fatalf("Expected file to exist: %s", configFile)
 			}
-			if cfgMock.set[tt.resultPath+"_language"] != tt.wantLanguage {
-				t.Errorf("Expected config to have been written for language, config: %v, resultPath: %s", cfgMock.set, tt.resultPath)
+
+			pj, fail := projectfile.Parse(configFile)
+			if fail != nil {
+				t.Fatalf("Projectfile failed to parse: %s", fail.Error())
 			}
-			if cfgMock.set[tt.resultPath+"_language_version"] != tt.wantLangVersion {
-				t.Errorf("Expected config to have been written for language version, config: %v, resultPath: %s", cfgMock.set, tt.resultPath)
+			if !strings.Contains(pj.Project, fmt.Sprintf("%s/%s", tt.args.namespace.Owner, tt.args.namespace.Project)) {
+				t.Errorf("Expected %s to contain %s/%s", pj.Project, tt.args.namespace.Owner, tt.args.namespace.Project)
+			}
+
+			if len(pj.Languages) != 1 {
+				t.Fatalf("Expected 1 languages but got %d: %v", len(pj.Languages), pj.Languages)
+			}
+			if pj.Languages[0].Name != tt.wantLanguage {
+				t.Errorf("Expected language %s, actual: %s", pj.Languages[0].Name, tt.wantLanguage)
+			}
+			if pj.Languages[0].Version != tt.wantLangVersion {
+				t.Errorf("Expected language version %s, actual: %s", pj.Languages[0].Version, tt.wantLangVersion)
 			}
 		})
 	}
-}
-
-func resolvePath(t *testing.T, path string) string {
-	r, err := filepath.EvalSymlinks(path)
-	if err != nil {
-		t.Errorf("t.Errorf: %v", err)
-	}
-	return r
 }
 
 func confirmPath(path, want string) bool {

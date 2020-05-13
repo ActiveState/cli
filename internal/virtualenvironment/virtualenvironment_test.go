@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
 
@@ -70,13 +69,7 @@ func TestActivate(t *testing.T) {
 
 	venv := Init()
 	fail := venv.Activate()
-	if runtime.GOOS == "windows" {
-		// Since creating symlinks on Windows requires admin privilages for now,
-		// test activation should fail.
-		require.Error(t, fail, "Symlinking requires admin privilages for now")
-	} else {
-		require.NoError(t, fail.ToError(), "Should activate")
-	}
+	require.NoError(t, fail.ToError(), "Should activate")
 
 	setup(t)
 	projectURL := fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
@@ -87,13 +80,7 @@ func TestActivate(t *testing.T) {
 
 	venv = Init()
 	fail = venv.Activate()
-	if runtime.GOOS == "windows" {
-		// Since creating symlinks on Windows requires admin privilages for now,
-		// test activation should fail.
-		require.Error(t, fail, "Symlinking requires admin privilages for now")
-	} else {
-		require.NoError(t, fail.ToError(), "Should activate, even if no languages are defined")
-	}
+	require.NoError(t, fail.ToError(), "Should activate, even if no languages are defined")
 }
 
 func TestActivateFailureUnknownLanguage(t *testing.T) {

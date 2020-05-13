@@ -24,7 +24,7 @@ func setup(t *testing.T) {
 	os.Chdir(filepath.Join(root, "test"))
 }
 
-func TestActivateFailures(t *testing.T) {
+func TestGetFailures(t *testing.T) {
 	setup(t)
 
 	shell := os.Getenv("SHELL")
@@ -32,7 +32,7 @@ func TestActivateFailures(t *testing.T) {
 
 	os.Setenv("SHELL", "foo")
 	os.Setenv("ComSpec", "foo")
-	_, err := Activate()
+	_, err := Get()
 	os.Setenv("SHELL", shell)
 	os.Setenv("ComSpec", comspec)
 
@@ -73,6 +73,44 @@ func TestRunCommand(t *testing.T) {
 	assert.Equal(t, "Hello", trimmed[len(trimmed)-len("Hello"):])
 
 	projectfile.Reset()
+}
+
+func TestIsActivateCamdLineArgs(t *testing.T) {
+	stateCmd := filepath.Join("usr", "bin", "state.exe")
+	cases := []struct {
+		Name     string
+		Args     []string
+		Expected bool
+	}{
+		{
+			"state activate",
+			[]string{stateCmd, "activate"},
+			true,
+		},
+		{
+			"state activate with params",
+			[]string{stateCmd, "-v", "--output", "plain", "activate"},
+			true,
+		},
+		{
+			"state run",
+			[]string{stateCmd, "run", "a-script"},
+			false,
+		},
+		{
+			"other command",
+			[]string{"/bin/bash", "activate", "arg2"},
+			false,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.Name, func(tt *testing.T) {
+			if res := isActivateCmdlineArgs(c.Args); res != c.Expected {
+				tt.Errorf("search for 'state activate' in args: %v, expected=%v, got=%v", c.Args, c.Expected, res)
+			}
+		})
+	}
 }
 
 func TestIsActivated(t *testing.T) {

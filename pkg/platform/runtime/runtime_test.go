@@ -28,9 +28,9 @@ type artifactsResultMockOption func(*runtime.FetchArtifactsResult) *runtime.Fetc
 func mockFetchArtifactsResult(options ...artifactsResultMockOption) *runtime.FetchArtifactsResult {
 	recipeID := strfmt.UUID("00020002-0002-0002-0002-0002-00020000200002")
 	res := &runtime.FetchArtifactsResult{
-		RecipeID:      recipeID,
-		Artifacts:     []*runtime.HeadChefArtifact{},
-		IsAlternative: true,
+		RecipeID:    recipeID,
+		Artifacts:   []*runtime.HeadChefArtifact{},
+		BuildEngine: runtime.Alternative,
 	}
 	for _, opt := range options {
 		res = opt(res)

@@ -7,6 +7,9 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 )
 
+var lineBreak = "\n"
+var lineBreakChar = `\n`
+
 func stop(cmd *exec.Cmd) *failures.Failure {
 	// may panic if process no longer exists
 	defer failures.Recover()

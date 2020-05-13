@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"net/url"
+	"path"
 	"path/filepath"
 
 	"github.com/go-openapi/strfmt"
@@ -11,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/progress"
+	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -57,9 +59,9 @@ type HeadChefArtifact = headchef_models.Artifact
 // This information is extracted from a build request response in the
 // FetchArtifacts() method
 type FetchArtifactsResult struct {
-	IsAlternative bool
-	Artifacts     []*HeadChefArtifact
-	RecipeID      strfmt.UUID
+	BuildEngine BuildEngine
+	Artifacts   []*HeadChefArtifact
+	RecipeID    strfmt.UUID
 }
 
 // DownloadDirectoryProvider provides download directories for individual artifacts
@@ -98,28 +100,26 @@ func NewDownload(commitID strfmt.UUID, owner, projectName string) Downloader {
 }
 
 // fetchRecipe juggles API's to get the build request that can be sent to the head-chef
-func (r *Download) fetchRecipe() (string, *failures.Failure) {
+func (r *Download) fetchRecipeID() (strfmt.UUID, *failures.Failure) {
 	commitID := strfmt.UUID(r.commitID)
 	if commitID == "" {
 		return "", FailNoCommit.New(locale.T("err_no_commit"))
 	}
 
-	recipe, fail := model.FetchRawRecipeForCommitAndPlatform(commitID, model.HostPlatform)
+	recipeID, fail := model.FetchRecipeIDForCommitAndPlatform(commitID, model.HostPlatform)
 	if fail != nil {
 		return "", fail
 	}
 
-	return recipe, nil
+	return *recipeID, nil
 }
 
 // FetchArtifacts will retrieve artifact information from the head-chef (eg language installers)
 // The first return argument specifies whether we are dealing with an alternative build
 func (r *Download) FetchArtifacts() (*FetchArtifactsResult, *failures.Failure) {
-	result := &FetchArtifactsResult{
-		IsAlternative: false,
-	}
+	result := &FetchArtifactsResult{}
 
-	recipe, fail := r.fetchRecipe()
+	recipeID, fail := r.fetchRecipeID()
 	if fail != nil {
 		return nil, fail
 	}
@@ -130,7 +130,7 @@ func (r *Download) FetchArtifacts() (*FetchArtifactsResult, *failures.Failure) {
 	}
 
 	logging.Debug("sending request to head-chef")
-	buildRequest, fail := headchef.NewBuildRequest(recipe, platProject.OrganizationID, platProject.ProjectID)
+	buildRequest, fail := headchef.NewBuildRequest(recipeID, platProject.OrganizationID, platProject.ProjectID)
 	if fail != nil {
 		return result, fail
 	}
@@ -143,37 +143,47 @@ func (r *Download) FetchArtifacts() (*FetchArtifactsResult, *failures.Failure) {
 				return result, FailNoArtifacts.New(locale.T("err_no_artifacts"))
 			}
 
-			result.IsAlternative = resp.BuildEngine != nil && *resp.BuildEngine == headchef_models.BuildStatusResponseBuildEngineAlternative
+			result.BuildEngine = BuildEngineFromResponse(resp)
+			if result.BuildEngine == UnknownEngine {
+				return result, FailRuntimeUnknownEngine.New("installer_err_engine_unknown")
+			}
+
 			if resp.RecipeID == nil {
 				return result, FailBuildBadResponse.New(locale.T("err_corrupted_build_request_response"))
 			}
 			result.RecipeID = *resp.RecipeID
 			result.Artifacts = resp.Artifacts
-			logging.Debug("request isAlternative=%v, recipeID=%s", result.IsAlternative, result.RecipeID.String())
+			logging.Debug("request engine=%v, recipeID=%s", result.BuildEngine, result.RecipeID.String())
 
 			return result, nil
 
 		case msg := <-buildStatus.Failed:
 			logging.Debug("BuildFailed: %s", msg)
-			return result, FailBuildFailed.New(msg)
+			return result, FailBuildFailed.New(locale.Tr("build_status_failed", r.projectURL(), msg))
 
 		case <-buildStatus.Started:
 			logging.Debug("BuildStarted")
-			return result, FailBuildInProgress.New(locale.T("build_status_in_progress"))
+			return result, FailBuildInProgress.New(locale.Tr("build_status_in_progress", r.projectURL()))
 
 		case fail := <-buildStatus.RunFail:
 			logging.Debug("Failure: %v", fail)
 
 			switch {
 			case fail.Type.Matches(headchef.FailBuildReqErrorResp):
-				l10n := locale.Tr("build_status_unknown_error", fail.Error())
+				l10n := locale.Tr("build_status_unknown_error", fail.Error(), r.projectURL())
 				return result, FailBuildErrResponse.New(l10n)
 			default:
-				l10n := locale.T("build_status_unknown")
+				l10n := locale.Tr("build_status_unknown", r.projectURL())
 				return result, FailBuildBadResponse.New(l10n)
 			}
 		}
 	}
+}
+
+func (r *Download) projectURL() string {
+	url := api.GetServiceURL(api.ServiceHeadChef)
+	url.Path = path.Join(r.owner, r.projectName)
+	return url.String()
 }
 
 // Download is the main function used to kick off the runtime download

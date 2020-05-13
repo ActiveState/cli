@@ -14,6 +14,7 @@ type envGetter = runtime.EnvGetter
 type installable interface {
 	Install() (envGetter envGetter, freshInstallation bool, fail *failures.Failure)
 	Env() (envGetter envGetter, fail *failures.Failure)
+	IsInstalled() (bool, *failures.Failure)
 }
 
 // newInstallerFunc defines a testable type for runtime.InitInstaller

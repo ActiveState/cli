@@ -10,7 +10,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
@@ -209,6 +209,7 @@ func TestParse(t *testing.T) {
 	assert.NotEmpty(t, project.Languages[0].Packages[1].Build, "Package build should be set")
 	assert.NotEmpty(t, project.Languages[0].Packages[1].Build["override"], "Build override should be set")
 
+	assert.NotEmpty(t, project.Languages[0].Constraints.OS, "Platform constraint should be set")
 	assert.NotEmpty(t, project.Languages[0].Constraints.Platform, "Platform constraint should be set")
 	assert.NotEmpty(t, project.Languages[0].Constraints.Environment, "Environment constraint should be set")
 

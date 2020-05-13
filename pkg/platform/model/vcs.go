@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-openapi/strfmt"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -107,6 +108,12 @@ func LatestCommitID(ownerName, projectName string) (*strfmt.UUID, *failures.Fail
 	branch, fail := DefaultBranchForProject(proj)
 	if fail != nil {
 		return nil, fail
+	}
+
+	if branch.CommitID == nil {
+		return nil, failures.FailUserInput.New(locale.Tl(
+			"err_project_no_commit",
+			"Your project does not have any commits yet, head over to https://{{.V0}}/{{.V1}}/{{.V2}} to set up your project.", constants.PlatformURL, ownerName, projectName))
 	}
 
 	return branch.CommitID, nil

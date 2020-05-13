@@ -19,6 +19,11 @@ func NewJSON(config *Config) (JSON, *failures.Failure) {
 	return JSON{config}, nil
 }
 
+// Type tells callers what type of outputer we are
+func (f *JSON) Type() Format {
+	return JSONFormatName
+}
+
 // Print will marshal and print the given value to the output writer
 func (f *JSON) Print(value interface{}) {
 	b, err := json.Marshal(value)

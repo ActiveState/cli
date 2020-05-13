@@ -438,6 +438,16 @@ func ValidateProjectURL(url string) *failures.Failure {
 	return nil
 }
 
+// Reload the project file from disk
+func (p *Project) Reload() *failures.Failure {
+	pj, fail := Parse(p.path)
+	if fail != nil {
+		return fail
+	}
+	*p = *pj
+	return nil
+}
+
 // Save the project to its activestate.yaml file
 func (p *Project) Save() *failures.Failure {
 	dat, err := yaml.Marshal(p)
@@ -449,6 +459,8 @@ func (p *Project) Save() *failures.Failure {
 	if fail != nil {
 		return fail
 	}
+
+	logging.Debug("Saving %s", p.Path())
 
 	f, err := os.Create(p.Path())
 	if err != nil {
@@ -603,13 +615,15 @@ func FromPath(path string) (*Project, *failures.Failure) {
 
 // CreateParams are parameters that we create a custom activestate.yaml file from
 type CreateParams struct {
-	Owner      string
-	Project    string
-	CommitID   *strfmt.UUID
-	Directory  string
-	Content    string
-	path       string
-	projectURL string
+	Owner           string
+	Project         string
+	CommitID        *strfmt.UUID
+	Directory       string
+	Content         string
+	Language        string
+	LanguageVersion string
+	path            string
+	projectURL      string
 }
 
 // CreateWithProjectURL a new activestate.yaml with default content
@@ -669,8 +683,10 @@ func createCustom(params *CreateParams) (*Project, *failures.Failure) {
 	}
 
 	data := map[string]interface{}{
-		"Project": params.projectURL,
-		"Content": params.Content,
+		"Project":         params.projectURL,
+		"LanguageName":    params.Language,
+		"LanguageVersion": params.LanguageVersion,
+		"Content":         params.Content,
 	}
 
 	template, fail := loadTemplate(params.path, data)

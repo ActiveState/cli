@@ -34,7 +34,7 @@ defaults:
         command: |
           # We have to get a little creative here because we don't want to exit before the test results have been reported
           set +e 
-          $GOROOT/bin/go test -v -covermode=atomic -coverprofile=c.out `$GOROOT/bin/go list ./... | grep -v api | grep -v integration | grep -v expect | grep -v e2e` > out
+          $GOROOT/bin/go test -v -covermode=atomic -coverprofile=c.out `$GOROOT/bin/go list ./... | grep -v api | grep -v integration | grep -v expect` > out
           EXITCODE=$?
           set -e 
           cat out | tee ${TEST_RESULTS}/go-test.out
@@ -44,16 +44,13 @@ defaults:
     buildCli: &buildCli
       run:
         name: Build the CLI
+        no_output_timeout: 2m
         command: |
           set -e
           BRANCH=$(git rev-parse --abbrev-ref HEAD)
           if [[ "$BRANCH" == "master" ]]; then
-            echo "Building for external use"
-            BRANCH_OVERRIDE=unstable state run build-external
-            BRANCH_OVERRIDE=unstable state run generate-update
+            export BRANCH_OVERRIDE=unstable
           fi
-
-          echo "Building for internal use"
           state run build
           state run generate-update
     runIntegrationTests: &runIntegrationTests
@@ -61,9 +58,7 @@ defaults:
         name: Run integration tests
         command: |
           set -e
-
-          go test ./pkg/expect ./internal/testhelpers/e2e
-          go test ./test/integration -v
+          go test -timeout 20m ./test/integration -v
     deployBits: &deployBits
       run:
         name: Deploy bits
@@ -92,6 +87,7 @@ jobs:
       GOROOT: /usr/local/go
       GOFLAGS: -p=8 -mod=vendor
       SHELL: bash
+      GO_BUILD_TAGS: CI
     docker:
       - image: circleci/golang:1.13
     resource_class: large
@@ -111,6 +107,7 @@ jobs:
       GOROOT: /c/go
       GOFLAGS: -p=8 -mod=vendor
       TEST_RESULTS: /c/tmp/test-results
+      GO_BUILD_TAGS: CI
     executor:
       name: win/vs2019
       shell: bash.exe
@@ -139,6 +136,7 @@ jobs:
       GOROOT: /private/tmp/go
       GOFLAGS: -p=8 -mod=vendor
       SHELL: bash
+      GO_BUILD_TAGS: CI
     macos:
       xcode: 9.3.0
     resource_class: large
@@ -166,6 +164,7 @@ jobs:
       GOROOT: /usr/local/go
       GOFLAGS: -p=8 -mod=vendor
       SHELL: bash
+      GO_BUILD_TAGS: CI
     docker:
       - image: circleci/golang:1.13
     resource_class: large
@@ -203,9 +202,21 @@ workflows:
   version: 2
   CI-test-build-deploy:
     jobs:
-      - build-linux
-      #- build-windows
-      - build-macos
+      - build-linux:
+          filters:
+            branches:
+              ignore:
+                - clas
+      # - build-windows
+      #     filters:
+      #       branches:
+      #         ignore:
+      #           - clas
+      - build-macos:
+          filters:
+            branches:
+              ignore:
+                - clas
   nightly:
     triggers:
       - schedule:

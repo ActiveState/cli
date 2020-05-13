@@ -32,3 +32,7 @@ func (m *Mock) MockOrderRecipes() {
 func (m *Mock) MockIngredientsByName() {
 	m.httpmock.RegisterWithResponse("GET", "/v1/namespaces/ingredients", 200, "ingredients_by_name")
 }
+
+func (m *Mock) MockSolutions() {
+	m.httpmock.RegisterWithResponse("POST", "/v1/solutions", 201, "solutions")
+}
