@@ -19,6 +19,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -39,6 +40,7 @@ func activationLoop(targetPath string, activator activateFunc) error {
 			// something more actionable for the context they're in
 			return failures.FailUserInput.New("err_project_from_path")
 		}
+		updater.PrintUpdateMessage(proj.Source().Path())
 		print.Info(locale.T("info_activating_state", proj))
 
 		if proj.CommitID() == "" {

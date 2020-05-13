@@ -16,12 +16,6 @@ type MainTestSuite struct {
 	suite.Suite
 }
 
-func (suite *MainTestSuite) TestUnknownCommand() {
-	exitCode, err := run([]string{"", "IdontExist"}, nil)
-	suite.Contains(err.Error(), `unknown command "IdontExist"`)
-	suite.Equal(1, exitCode)
-}
-
 func (suite *MainTestSuite) TestDeprecated() {
 	mock := depMock.Init()
 	defer mock.Close()
@@ -48,37 +42,37 @@ func (suite *MainTestSuite) TestExpired() {
 
 func (suite *MainTestSuite) TestOutputer() {
 	{
-		outputer, fail := initOutputer(outputFlags{"", false}, "")
+		outputer, fail := initOutput(outputFlags{"", false}, "")
 		suite.Require().NoError(fail.ToError())
 		suite.Equal(output.PlainFormatName, outputer.Type(), "Returns Plain outputer")
 	}
 
 	{
-		outputer, fail := initOutputer(outputFlags{string(output.PlainFormatName), false}, "")
+		outputer, fail := initOutput(outputFlags{string(output.PlainFormatName), false}, "")
 		suite.Require().NoError(fail.ToError())
 		suite.Equal(output.PlainFormatName, outputer.Type(), "Returns Plain outputer")
 	}
 
 	{
-		outputer, fail := initOutputer(outputFlags{string(output.JSONFormatName), false}, "")
+		outputer, fail := initOutput(outputFlags{string(output.JSONFormatName), false}, "")
 		suite.Require().NoError(fail.ToError())
 		suite.Equal(output.JSONFormatName, outputer.Type(), "Returns JSON outputer")
 	}
 
 	{
-		outputer, fail := initOutputer(outputFlags{"", false}, string(output.JSONFormatName))
+		outputer, fail := initOutput(outputFlags{"", false}, string(output.JSONFormatName))
 		suite.Require().NoError(fail.ToError())
 		suite.Equal(output.JSONFormatName, outputer.Type(), "Returns JSON outputer")
 	}
 
 	{
-		outputer, fail := initOutputer(outputFlags{"", false}, string(output.EditorFormatName))
+		outputer, fail := initOutput(outputFlags{"", false}, string(output.EditorFormatName))
 		suite.Require().NoError(fail.ToError())
 		suite.Equal(output.EditorFormatName, outputer.Type(), "Returns JSON outputer")
 	}
 
 	{
-		outputer, fail := initOutputer(outputFlags{"", false}, string(output.EditorV0FormatName))
+		outputer, fail := initOutput(outputFlags{"", false}, string(output.EditorV0FormatName))
 		suite.Require().NoError(fail.ToError())
 		suite.Equal(output.EditorV0FormatName, outputer.Type(), "Returns JSON outputer")
 	}

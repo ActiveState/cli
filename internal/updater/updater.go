@@ -82,8 +82,8 @@ func (u *Updater) CanUpdate() bool {
 
 // PrintUpdateMessage will print a message to stdout when an update is available.
 // This will only print the message if the current project has a version lock AND if an update is available
-func PrintUpdateMessage() {
-	if versionInfo, _ := projectfile.ParseVersionInfo(); versionInfo == nil {
+func PrintUpdateMessage(pjPath string) {
+	if versionInfo, _ := projectfile.ParseVersionInfo(pjPath); versionInfo == nil {
 		return
 	}
 
@@ -340,8 +340,8 @@ func verifySha(bin []byte, sha string) bool {
 	return bytesEqual
 }
 
-// CleanOld will remove any leftover binary files from previous updates
-func CleanOld() error {
+// cleanOld will remove any leftover binary files from previous updates
+func cleanOld() error {
 	path, err := osext.Executable()
 	if err != nil {
 		return err
