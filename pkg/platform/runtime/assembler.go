@@ -62,7 +62,10 @@ type Assembler interface {
 	PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir string, archivePath string, cb func()) *failures.Failure
 
 	// PostInstall is called after all artifacts have been successfully installed
-	PostInstall() *failures.Failure
+	PostInstall() error
+
+	// IsInstalled returns whether the artifacts have been successfully installed already
+	IsInstalled() bool
 }
 
 // BuildEngine describes the build engine that was used to build the runtime

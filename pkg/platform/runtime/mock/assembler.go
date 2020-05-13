@@ -62,9 +62,14 @@ func (a *Assembler) PostUnpackArtifact(artf *runtime.HeadChefArtifact, tmpRuntim
 	return args.Get(0).(*failures.Failure)
 }
 
-func (a *Assembler) PostInstall() *failures.Failure {
+func (a *Assembler) PostInstall() error {
 	args := a.Called()
-	return args.Get(0).(*failures.Failure)
+	return args.Get(0).(error)
+}
+
+func (a *Assembler) IsInstalled() bool {
+	args := a.Called()
+	return args.Get(0).(bool)
 }
 
 func (a *Assembler) InstallerExtension() string {

@@ -130,16 +130,10 @@ func (installer *Installer) IsInstalled() (bool, *failures.Failure) {
 		return false, fail
 	}
 
-	dirs := assembler.InstallDirs()
-	for _, dir := range dirs {
-		if !fileutils.DirExists(dir) {
-			return false, nil
-		}
-	}
-
-	return true, nil
+	return assembler.IsInstalled(), nil
 }
 
+// Assembler returns a new runtime assembler for the given checkpoint and artifacts
 func (installer *Installer) Assembler() (Assembler, *failures.Failure) {
 	if fail := installer.validateCheckpoint(); fail != nil {
 		return nil, fail
@@ -167,7 +161,12 @@ func (installer *Installer) Assembler() (Assembler, *failures.Failure) {
 	}
 }
 
+// InstallArtifacts installs all artifacts provided by a runtime assembler
 func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGetter EnvGetter, freshInstallation bool, fail *failures.Failure) {
+	if runtimeAssembler.IsInstalled() {
+		logging.Debug("runtime already successfully installed")
+		return runtimeAssembler, false, nil
+	}
 	downloadArtfs, unpackArchives := runtimeAssembler.ArtifactsToDownloadAndUnpack()
 
 	if len(downloadArtfs) == 0 && len(unpackArchives) == 0 {
@@ -201,9 +200,9 @@ func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGet
 		return nil, false, fail
 	}
 
-	fail = runtimeAssembler.PostInstall()
-	if fail != nil {
-		return nil, false, fail
+	err := runtimeAssembler.PostInstall()
+	if err != nil {
+		return nil, false, failures.FailRuntime.Wrap(err, "error during post installation step")
 	}
 
 	return runtimeAssembler, true, nil
