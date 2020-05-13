@@ -112,7 +112,6 @@ func (ar *AlternativeRuntime) cachedArtifact(downloadDir string) *string {
 // for this project.
 // Otherwise: It filters out artifacts that have been downloaded before, and adds them to
 // the list of artifacts that need to be unpacked only.
-// TODO: check checksums of downloaded files to ensure that the download completed
 func (ar *AlternativeRuntime) ArtifactsToDownloadAndUnpack() ([]*HeadChefArtifact, map[string]*HeadChefArtifact) {
 	downloadArtfs := []*HeadChefArtifact{}
 	archives := map[string]*HeadChefArtifact{}
