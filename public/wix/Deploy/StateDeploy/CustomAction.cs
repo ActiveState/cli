@@ -1,7 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
 using Microsoft.Deployment.WindowsInstaller;
+using System;
 
 namespace StateDeploy
 {
@@ -10,15 +8,17 @@ namespace StateDeploy
         [CustomAction]
         public static ActionResult StateDeploy(Session session)
         {
-            session.Log("Begin state deploy");
+            session.Log("Starting state deploy");
 
+            string installDir = session["INSTALLDIR"];
             string projectName = session["PROJECT_NAME"];
-            string targetDir = session["INSTALLDIR"];
+            string deployCmd = string.Format("state deploy --path {0} {1}", installDir, projectName);
 
+            session.Log(string.Format("Executing deploy command: {0}", deployCmd));
             try
             {
                 System.Diagnostics.ProcessStartInfo procStartInfo =
-                    new System.Diagnostics.ProcessStartInfo("cmd", "/c " + string.Format("state deploy --path {0} {1}", targetDir, projectName));
+                    new System.Diagnostics.ProcessStartInfo("cmd", "/c " + deployCmd);
 
                 // The following commands are needed to redirect the standard output.
                 // This means that it will be redirected to the Process.StandardOutput StreamReader.
@@ -30,6 +30,7 @@ namespace StateDeploy
                 System.Diagnostics.Process proc = new System.Diagnostics.Process();
                 proc.StartInfo = procStartInfo;
                 proc.Start();
+                session.Log(proc.StandardOutput.ReadToEnd());
             }
             catch (Exception objException)
             {

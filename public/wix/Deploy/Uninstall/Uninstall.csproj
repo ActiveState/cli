@@ -5,11 +5,11 @@
     <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{FDAF56F5-7B7F-4E71-B008-03860A584147}</ProjectGuid>
+    <ProjectGuid>{4C663442-BD30-4183-9E55-FD3EEF13F032}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>StateDeploy</RootNamespace>
-    <AssemblyName>StateDeploy</AssemblyName>
+    <RootNamespace>Uninstall</RootNamespace>
+    <AssemblyName>Uninstall</AssemblyName>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
