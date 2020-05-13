@@ -26,10 +26,10 @@ func (i *InstallableMock) IsInstalled() (bool, *failures.Failure) {
 }
 
 type EnvGetMock struct {
-	callback func(inherit bool, projectDir string) (map[string]string, *failures.Failure)
+	callback func(inherit bool, projectDir string) (map[string]string, error)
 }
 
-func (e *EnvGetMock) GetEnv(inherit bool, projectDir string) (map[string]string, *failures.Failure) {
+func (e *EnvGetMock) GetEnv(inherit bool, projectDir string) (map[string]string, error) {
 	return e.callback(inherit, projectDir)
 }
 
@@ -179,7 +179,7 @@ func Test_report(t *testing.T) {
 			"Report",
 			args{
 				&EnvGetMock{
-					func(inherit bool, projectDir string) (map[string]string, *failures.Failure) {
+					func(inherit bool, projectDir string) (map[string]string, error) {
 						return map[string]string{
 							"KEY1": "VAL1",
 							"KEY2": "VAL2",

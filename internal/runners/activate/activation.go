@@ -92,7 +92,10 @@ func activate(owner, name, srcPath string) bool {
 
 	ve, err := venv.GetEnv(false, filepath.Dir(projectfile.Get().Path()))
 	if ve != nil {
-		return err
+		// wrapping error in failure, so Handle knows what to do with it...
+		fail := failures.FailRuntime.Wrap(err)
+		failures.Handle(fail, locale.T("error_could_not_activate_venv"))
+		return false
 	}
 
 	subs.SetEnv(ve)

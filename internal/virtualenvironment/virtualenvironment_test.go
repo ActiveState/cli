@@ -116,6 +116,7 @@ func TestEnv(t *testing.T) {
 	setup(t)
 	defer teardown()
 
+	os.Setenv(constants.DisableRuntime, "true")
 	os.Setenv(constants.ProjectEnvVarName, projectfile.Get().Path())
 
 	venv := Init()
@@ -158,7 +159,8 @@ languages:
 	fail := venv.Activate()
 	require.NoError(t, fail.ToError(), "Should activate")
 
-	env := venv.GetEnv(false, project.Path())
+	env, err := venv.GetEnv(false, project.Path())
+	require.NoError(t, err)
 	assert.Contains(t, env, "PATH", "PATH is set")
 }
 

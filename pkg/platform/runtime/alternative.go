@@ -290,11 +290,14 @@ func (ar *AlternativeRuntime) PostInstall() error {
 }
 
 // GetEnv returns the environment variable configuration for this build
-func (ar *AlternativeRuntime) GetEnv(inherit bool, _ string) (map[string]string, *failures.Failure) {
+func (ar *AlternativeRuntime) GetEnv(inherit bool, _ string) (map[string]string, error) {
 	mergedRuntimeDefinitionFile := filepath.Join(ar.runtimeEnvBaseDir(), constants.RuntimeDefinitionFilename)
 	rt, fail := envdef.NewEnvironmentDefinition(mergedRuntimeDefinitionFile)
 	if fail != nil {
-		return nil, fail
+		return nil, locale.WrapError(
+			fail, "err_no_environment_definition",
+			"Your installation seems corrupted.\n\nCannot find a runtime definition file at {{.V0}}. Please try to re-run this command.",
+		)
 	}
 	return rt.GetEnv(inherit), nil
 }

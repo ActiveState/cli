@@ -115,17 +115,22 @@ func (v *VirtualEnvironment) activateRuntime() *failures.Failure {
 
 // GetEnv returns a map of the cumulative environment variables for all active virtual environments
 func (v *VirtualEnvironment) GetEnv(inherit bool, projectDir string) (map[string]string, error) {
-	var env map[string]string
+	env := make(map[string]string)
 	if v.getEnv == nil {
-		return nil, locale.NewError(
-			"err_get_env_unactivated", "Trying to set up an environment in an un-activated environment.  This should not happen.  Please re-port this issue in our forum: %s",
-			constants.ForumsURL,
-		)
-	}
-	var err error
-	env, err = v.getEnv(inherit, projectDir)
-	if err != nil {
-		return map[string]string{}, err
+		// if runtime is not explicitly disabled, this is an error
+		if os.Getenv(constants.DisableRuntime) != "true" {
+			return nil, locale.NewError(
+				"err_get_env_unactivated", "Trying to set up an environment in an un-activated environment.  This should not happen.  Please re-port this issue in our forum: %s",
+				constants.ForumsURL,
+			)
+		}
+		env["PATH"] = os.Getenv("PATH")
+	} else {
+		var err error
+		env, err = v.getEnv(inherit, projectDir)
+		if err != nil {
+			return env, err
+		}
 	}
 
 	if projectDir != "" {
@@ -134,7 +139,11 @@ func (v *VirtualEnvironment) GetEnv(inherit bool, projectDir string) (map[string
 
 		pj, fail := project.Parse(filepath.Join(projectDir, constants.ConfigFileName))
 		if fail != nil {
-			return env, locale.WrapError(fail, "err_get_env_no_project", "Could not parse project file.")
+			var getFail *failures.Failure
+			pj, getFail = project.GetSafe()
+			if getFail != nil {
+				return env, locale.WrapError(fail, "err_get_env_no_project", "Could not parse project file.")
+			}
 		}
 		for _, constant := range pj.Constants() {
 			env[constant.Name()] = constant.Value()
