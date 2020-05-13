@@ -26,7 +26,6 @@ defaults:
           echo "export PS1='> '" >> $BASH_ENV
           source $BASH_ENV
 
-          state auth --token $PLATFORM_API_TOKEN
           $GOROOT/bin/go version
     runTests: &runTests
       run:
@@ -39,7 +38,6 @@ defaults:
           set -e 
           cat out | tee ${TEST_RESULTS}/go-test.out
           $GOBIN/go-junit-report < ${TEST_RESULTS}/go-test.out > ${TEST_RESULTS}/go-test-report.xml
-          state auth --token $PLATFORM_API_TOKEN # Tests appear to be breaking the authentication
           exit $EXITCODE
     buildCli: &buildCli
       run:
