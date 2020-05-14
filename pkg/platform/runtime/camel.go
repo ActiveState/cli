@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/hash"
@@ -96,12 +97,12 @@ func (cr *CamelRuntime) DownloadDirectory(artf *HeadChefArtifact) (string, *fail
 }
 
 // ArtifactsToDownloadAndUnpack returns the artifacts that we need to download for this project
-// It filters out all artifacts for which the final installation directory is non-empty
+// It filters out all artifacts for which the final installation directory does not include a completion marker yet
 func (cr *CamelRuntime) ArtifactsToDownloadAndUnpack() ([]*HeadChefArtifact, map[string]*HeadChefArtifact) {
 	downloadArtfs := []*HeadChefArtifact{}
 
 	for installDir, artf := range cr.artifactMap {
-		if !fileutils.DirExists(installDir) {
+		if !fileutils.FileExists(filepath.Join(installDir, constants.RuntimeInstallationCompleteMarker)) {
 			downloadArtfs = append(downloadArtfs, artf)
 		}
 	}
@@ -123,6 +124,7 @@ func (cr *CamelRuntime) PreInstall() *failures.Failure {
 
 // PreUnpackArtifact ensures that the final installation directory exists and is
 // useable.
+// Note:  It will remove a previous installation
 func (cr *CamelRuntime) PreUnpackArtifact(artf *HeadChefArtifact) *failures.Failure {
 	installDir := cr.InstallationDirectory(artf)
 
@@ -131,15 +133,15 @@ func (cr *CamelRuntime) PreUnpackArtifact(artf *HeadChefArtifact) *failures.Fail
 		return FailInstallDirInvalid.New("installer_err_installdir_isfile", installDir)
 	}
 
-	if fail := fileutils.MkdirUnlessExists(installDir); fail != nil {
-		return fail
+	if fileutils.DirExists(installDir) {
+		// remove previous installation
+		if err := os.RemoveAll(installDir); err != nil {
+			return failures.FailOS.Wrap(err, "failed to remove spurious previous installation")
+		}
 	}
 
-	if isEmpty, fail := fileutils.IsEmptyDir(installDir); fail != nil || !isEmpty {
-		if fail != nil {
-			return fail
-		}
-		return FailInstallDirInvalid.New("installer_err_installdir_notempty", installDir)
+	if fail := fileutils.MkdirUnlessExists(installDir); fail != nil {
+		return fail
 	}
 
 	return nil
@@ -361,6 +363,27 @@ func (cr *CamelRuntime) GetEnv(inherit bool, projectDir string) (map[string]stri
 		}
 	}
 	return env, nil
+}
+
+// PostInstall creates completion markers for all artifact directories
+func (cr *CamelRuntime) PostInstall() error {
+	for _, instDir := range cr.installDirs {
+		fail := fileutils.Touch(filepath.Join(instDir, constants.RuntimeInstallationCompleteMarker))
+		if fail != nil {
+			return errs.Wrap(fail, "could not set completion marker")
+		}
+	}
+	return nil
+}
+
+// IsInstalled checks if completion marker files exist for all artifacts
+func (cr *CamelRuntime) IsInstalled() bool {
+	for _, instDir := range cr.installDirs {
+		if !fileutils.FileExists(filepath.Join(instDir, constants.RuntimeInstallationCompleteMarker)) {
+			return false
+		}
+	}
+	return true
 }
 
 func prependPath(PATH, prefix string) string {

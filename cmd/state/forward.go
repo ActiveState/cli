@@ -6,6 +6,7 @@ import (
 	"runtime"
 
 	"github.com/phayes/permbits"
+	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -14,13 +15,52 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/updater"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 // forceFileExt is used in tests, do not use it for anything else
 var forceFileExt string
+
+func forwardIfWarranted(args []string, out output.Outputer, pj *project.Project) (int, error) {
+	if pj == nil {
+		return 0, nil
+	}
+	
+	// Retrieve the version info specified in the activestate.yaml
+	versionInfo, fail := projectfile.ParseVersionInfo(pj.Source().Path())
+	if fail != nil {
+		// if we are running `state update`, we just print the error message, but don't fail, as we can still update the state tool executable
+		logging.Error("Could not parse version info from projectifle: %s", fail.Error())
+		if funk.Contains(args, "update") {
+			out.Error(locale.T("err_version_parse"))
+			return 0, nil
+		} else {
+			return 1, locale.WrapError(fail, "err_version_parse", "Could not determine the State Tool version to use to run this command.")
+		}
+	}
+
+	// Check if we need to forward
+	if versionInfo == nil || (versionInfo.Version == constants.Version && versionInfo.Branch == constants.BranchName) {
+		return 0, nil
+	}
+
+	// Perform the forward
+	out.Notice(locale.Tr("forward_version", versionInfo.Version))
+	code, fail := forward(args, versionInfo)
+	if fail != nil {
+		out.Error(locale.T("forward_fail"))
+		return 1, fail
+	}
+	if code != -1 {
+		return code, locale.NewError("err_forward", "Error occurred while running older version of the state tool, you may want to 'state update'.")
+	}
+
+	return 0, nil
+}
 
 // forward will forward the call to the appropriate State Tool version if necessary
 func forward(args []string, versionInfo *projectfile.VersionInfo) (int, *failures.Failure) {
@@ -43,10 +83,6 @@ func execForward(binary string, args []string) (int, *failures.Failure) {
 		return 1, failures.FailOS.New(locale.Tr("forward_fail_with_error", err.Error()))
 	}
 	return code, nil
-}
-
-func shouldForward(versionInfo *projectfile.VersionInfo) bool {
-	return versionInfo != nil && (versionInfo.Version != constants.Version || versionInfo.Branch != constants.BranchName)
 }
 
 func forwardBin(versionInfo *projectfile.VersionInfo) string {

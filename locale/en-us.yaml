@@ -775,14 +775,12 @@ secrets_row_value_unset:
   other: Undefined
 variable_field_deprecation_warning:
   other: The variable field has been deprecated in favour of secrets and constants. Please update your activestate.yaml.
-pull_is_updated:
-  other: Your activestate.yaml has been updated to the latest version available
 pull_not_updated:
   other: Your activestate.yaml is already up to date!
-notify_user_to_reactivate_instances:
+pull_updated:
   other: |
-    If you have any active instances of this project open in other terminals, please exit and 
-    re-activate them to pick up the latest changes.
+    Your activestate.yaml has been updated to the latest version available.
+    If you have any active instances of this project open in other terminals, please exit and re-activate them to pick up the latest changes.
 keypair_cmd_description:
   other: Manage Your Keypair
 keypair_generate_cmd_description:
@@ -905,9 +903,12 @@ installer_err_runtime_missing_install_dir:
   other: Expected runtime '{{.V0}}' to contain directory named one of '{{.V1}}'
 installer_err_runtime_missing_meta:
   other: |
-    The requested runtime does not appear to have a metadata file and the metadata could not be inferred, this usually 
-    means you're trying to use a much older build that is not supported by this version of the State Tool. It is 
-    recommended that you produce a new build.
+    The requested runtime does not appear to have a metadata file and the metadata could not be inferred.
+    Possible causes are:
+      - A previous installation of the runtime was improperly aborted before it could finish. Manually deleting
+        directory "{{.V0}}" and retrying this command will fix this issue.
+      - You are trying to use a much older build that is not supported by this version of the State Tool. It
+        is recommended that you produce a new build.
 installer_err_runtime_no_executable:
   other: Expected runtime installer '{{.V0}}' to include '{{.V1}}' or '{{.V2}}'
 installer_err_runtime_no_file:
@@ -1014,7 +1015,7 @@ err_deprecation:
 
     Please update now!"
 err_auth_required:
-  other: Authentication is required
+  other: Authentication is required, please authenticate by running 'state auth'
 auth_required_activate:
   other: You need to be authenticated to activate an ActiveState Platform project
 prompt_login_or_signup:
@@ -1033,10 +1034,6 @@ err_activate_auth_required:
   other: Activating a project requires you to be authenticated against the ActiveState Platform
 err_pull_get_latest_commit_id:
   other: Cannot get latest commit id from project
-err_pull_update_commit_id:
-  other: Cannot update commit id in project file
-pull_latest:
-  other: Pull in the latest version of your project from the ActiveState Platform
 err_os_not_a_directory:
   other: Expected '{{.V0}}' to be a valid directory
 unstable_version_warning:
@@ -1125,13 +1122,6 @@ err_bad_project_url:
   other: "Invalid value for 'project' field in your activestate.yaml, please ensure it is in the format of: 'https://platform.activestate.com/Owner/ProjectName'."
 warn_deprecation_owner_name_fields:
   other: "DEPRECATION WARNING: Your project is using 'owner' and 'name' fields, these should be replaced with a single project field, eg. 'project: https://platform.activestate.com/{{.V0}}/{{.V1}}'"
-cpu_profiling_setup_failed:
-  other: CPU profiling setup failed
-err_main_panic:
-  other: |
-    An unexpected error occurred while running the State Tool.
-    Check the error log for more information.
-    Your error log is located at: {{.V0}}/log.txt
 err_deprection_404:
   other: Could not check for deprecation as the service returned a 404 not found
 err_deprection_code:
@@ -1516,9 +1506,7 @@ auto_update_to_version:
     [BLUE]Auto updating from [BOLD]{{.V0}}[/RESET] [BLUE]to[/RESET] [BOLD]{{.V1}}[/RESET].
     [BLUE]To avoid auto updating run 'state update --lock' (only recommended for production environments).[/RESET]
 forward_version:
-  other: |
-    [BLUE]Using locked state tool version [BOLD]{{.V0}}[/RESET][BLUE].
-    To avoid auto updating run 'state update --lock' (only recommended for production environments).[/RESET]
+  other: "[BLUE]Using locked state tool version [BOLD]{{.V0}}[/RESET]."
 err_project_env_file_not_exist:
   other: |
     Your activated environment appears to have been corrupted because the activestate.yaml cannot be found anymore.

@@ -40,7 +40,6 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePython2() {
 func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
-	ts.LoginAsPersistentUser()
 
 	cp := ts.Spawn("activate", "ActiveState-CLI/Python3")
 	cp.Expect("Where would you like to checkout")
@@ -60,7 +59,6 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePythonByHostOnly() {
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
-	ts.LoginAsPersistentUser()
 
 	projectName := "Python-LinuxWorks"
 	cp := ts.Spawn("activate", "cli-integration-tests/"+projectName, "--path="+ts.Dirs.Work)
@@ -88,7 +86,6 @@ func (suite *ActivateIntegrationTestSuite) assertCompletedStatusBarReport(snapsh
 func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraEnv ...string) {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
-	ts.LoginAsPersistentUser()
 
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("activate", "ActiveState-CLI/Python"+version),
@@ -147,10 +144,6 @@ version: %s
 
 	ts.PrepareActiveStateYAML(contents)
 
-	fmt.Printf("login \n")
-	ts.LoginAsPersistentUser()
-	fmt.Printf("logged in \n")
-
 	// Ensure we have the most up to date version of the project before activating
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("pull"),
@@ -176,7 +169,6 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
-	ts.LoginAsPersistentUser()
 
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("activate", "ActiveState-CLI/Perl"),
@@ -207,7 +199,6 @@ func (suite *ActivateIntegrationTestSuite) testOutput(method string) {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.LoginAsPersistentUser()
 	cp := ts.Spawn("activate", "ActiveState-CLI/Python3", "--output", method)
 	cp.Expect("Where would you like to checkout")
 	cp.SendLine(cp.WorkDirectory())
@@ -262,6 +253,40 @@ func (suite *ActivateIntegrationTestSuite) TestInit_Activation_NoCommitID() {
 	)
 	cp.Expect(locale.Tr("err_project_no_commit", url))
 	cp.ExpectExitCode(1)
+}
+
+func (suite *ActivateIntegrationTestSuite) TestActivate_InterruptedInstallation() {
+	ts := e2e.New(suite.T(), true)
+	defer ts.Close()
+
+	cp := ts.Spawn("deploy", "install", "ActiveState-CLI/small-python")
+	cp.Expect("Downloading")
+	cp.Expect("Installing")
+	// interrupting installation
+	cp.SendCtrlC()
+	cp.ExpectNotExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("activate", "ActiveState-CLI/small-python", "--path", ts.Dirs.Work),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("Downloading")
+	cp.Expect("Installing")
+	cp.Expect("activated state")
+
+	suite.assertCompletedStatusBarReport(cp.Snapshot())
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
+
+	// next activation is cached
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("activate", "ActiveState-CLI/small-python", "--path", ts.Dirs.Work),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("activated state")
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
+	suite.NotContains(cp.TrimmedSnapshot(), "Downloading required artifacts")
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivate_JSON() {

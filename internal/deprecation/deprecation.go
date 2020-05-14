@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 )
 
 // DefaultTimeout defines how long we should wait for a response from constants.DeprecationInfoURL
@@ -127,6 +128,10 @@ func (checker *Checker) fetchDeprecationInfoBody() (int, []byte, *failures.Failu
 func (checker *Checker) fetchDeprecationInfo() ([]Info, *failures.Failure) {
 	code, body, fail := checker.fetchDeprecationInfoBody()
 	if fail != nil {
+		if fail.Type.Matches(FailTimeout) {
+			logging.Debug("Timed out while fetching deprecation info: %v", fail.Error())
+			return nil, nil
+		}
 		return nil, fail
 	}
 

@@ -77,7 +77,7 @@ func Execute(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	updater.PrintUpdateMessage()
+	updater.PrintUpdateMessage(project.Source().Path())
 
 	output := commands.Output(strings.ToLower(*Flags.Output))
 	switch output {

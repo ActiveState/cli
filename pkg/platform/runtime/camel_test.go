@@ -62,7 +62,7 @@ func (suite *CamelRuntimeTestSuite) Test_PreUnpackArtifact() {
 			suite.Require().NoError(fail.ToError())
 			err := ioutil.WriteFile(filepath.Join(installDir, "dummy"), []byte{}, 0666)
 			suite.Require().NoError(err)
-		}, runtime.FailInstallDirInvalid},
+		}, nil},
 		{"InstallationDirectoryIsOkay", func(installDir string) {}, nil},
 	}
 

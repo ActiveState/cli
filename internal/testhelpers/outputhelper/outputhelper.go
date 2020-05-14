@@ -53,6 +53,10 @@ type TypedCatcher struct {
 	Notices []interface{}
 }
 
+func (t *TypedCatcher) Type() output.Format {
+	return ""
+}
+
 func (t *TypedCatcher) Print(value interface{}) {
 	t.Prints = append(t.Prints, value)
 }

@@ -26,6 +26,7 @@ func (c *confirmMock) Confirm(message string, defaultChoice bool) (bool, *failur
 
 type testOutputer struct{}
 
+func (o *testOutputer) Type() output.Format      { return "" }
 func (o *testOutputer) Print(value interface{})  {}
 func (o *testOutputer) Error(value interface{})  {}
 func (o *testOutputer) Notice(value interface{}) {}

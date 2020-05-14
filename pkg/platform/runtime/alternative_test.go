@@ -117,11 +117,19 @@ func (suite *AlternativeRuntimeTestSuite) Test_GetEnv() {
 	firstEnvDefPath := filepath.Join(installDir, constants.LocalRuntimeEnvironmentDirectory, fmt.Sprintf("%06d.json", 0))
 
 	suite.Assert().False(fileutils.FileExists(mergedFilePath))
+	// installation complete marker is missing
 	env, fail := ar.GetEnv(true, "")
-	suite.Require().NoError(fail.ToError())
-	suite.Assert().Equal(expectedEnv, env)
+	suite.Require().Error(fail.ToError(), "installation complete marker is missing")
+
+	err := ar.PostInstall()
+	suite.Require().NoError(err, "merged runtime environment definition is created")
 	suite.Assert().True(fileutils.FileExists(mergedFilePath))
-	err := os.Remove(firstEnvDefPath)
+
+	env, fail = ar.GetEnv(true, "")
+	suite.Require().NoError(fail.ToError())
+
+	suite.Assert().Equal(expectedEnv, env)
+	err = os.Remove(firstEnvDefPath)
 	suite.Assert().NoError(err, "removing cached runtime definition file for first artifact")
 
 	// This should still work, as we have cached the merged result by now
@@ -204,7 +212,7 @@ func (suite *AlternativeRuntimeTestSuite) Test_PreInstall() {
 			suite.Require().NoError(fail.ToError())
 			err := ioutil.WriteFile(filepath.Join(installDir, "dummy"), []byte{}, 0666)
 			suite.Require().NoError(err)
-		}, runtime.FailInstallDirInvalid},
+		}, nil},
 		{"InstallationDirectoryIsOkay", func(installDir string) {}, nil},
 	}
 
