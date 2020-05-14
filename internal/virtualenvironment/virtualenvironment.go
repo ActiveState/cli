@@ -120,7 +120,7 @@ func (v *VirtualEnvironment) GetEnv(inherit bool, projectDir string) (map[string
 		// if runtime is not explicitly disabled, this is an error
 		if os.Getenv(constants.DisableRuntime) != "true" {
 			return nil, locale.NewError(
-				"err_get_env_unactivated", "Trying to set up an environment in an un-activated environment.  This should not happen.  Please re-port this issue in our forum: %s",
+				"err_get_env_unactivated", "Trying to set up an environment in an un-activated environment.  This should not happen.  Please report this issue in our forum: %s",
 				constants.ForumsURL,
 			)
 		}
