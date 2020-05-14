@@ -311,7 +311,8 @@ func (cr *CamelRuntime) GetEnv(inherit bool, projectDir string) (map[string]stri
 			return nil, locale.WrapError(
 				fail,
 				"err_get_env_metadata_error",
-				"Your installation or build is corrupted.  Try re-installing the project, or update your build.  If the problem persists, please report the issue on our forums: {{.V0}}", constants.ForumsURL,
+				"Your installation or build is corrupted.  Try re-installing the project, or update your build.  If the problem persists, please report the issue on our forums: {{.V0}}", 
+				constants.ForumsURL,
 			)
 		}
 
