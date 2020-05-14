@@ -20,7 +20,7 @@ import (
 )
 
 var configPath = filepath.Join(environment.GetRootPathUnsafe(), "internal", "updater", "testdata", constants.ConfigFileName)
-var configPathWithVersion = filepath.Join(environment.GetRootPathUnsafe(), "internal", "updater", "testdata", "withVersion", constants.ConfigFileName)
+var configPathWithVersion = filepath.Join(environment.GetRootPathUnsafe(), "internal", "updater", "testdata", "withversion", constants.ConfigFileName)
 
 func TestUpdaterWithEmptyPayloadErrorNoUpdate(t *testing.T) {
 	httpmock.Activate(constants.APIUpdateURL)
