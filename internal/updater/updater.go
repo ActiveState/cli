@@ -51,6 +51,15 @@ type Updater struct {
 	Requester      Requester
 }
 
+func New(currentVersion string) *Updater {
+	return &Updater{
+		CurrentVersion: currentVersion,
+		APIURL:         constants.APIUpdateURL,
+		Dir:            constants.UpdateStorageDir,
+		CmdName:        constants.CommandName,
+	}
+}
+
 // Info reports updater.info, but only if we have an actual update
 func (u *Updater) Info() (*Info, error) {
 	if u.info.Version != "" && u.info.Version != u.CurrentVersion {

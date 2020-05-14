@@ -15,7 +15,6 @@ import (
 	"github.com/ActiveState/cli/state/scripts"
 	"github.com/ActiveState/cli/state/secrets"
 	"github.com/ActiveState/cli/state/show"
-	"github.com/ActiveState/cli/state/update"
 )
 
 // CmdTree manages a tree of captain.Command instances.
@@ -60,7 +59,7 @@ func New(pj *project.Project, outputer output.Outputer) *CmdTree {
 	)
 
 	languagesCmd := newLanguagesCommand(outputer)
-	languagesCmd.AddChildren(newUpdateCommand(outputer))
+	languagesCmd.AddChildren(newLanguageUpdateCommand(outputer))
 
 	cleanCmd := newCleanCommand(outputer)
 	cleanCmd.AddChildren(
@@ -95,6 +94,7 @@ func New(pj *project.Project, outputer output.Outputer) *CmdTree {
 		deployCmd,
 		newEventsCommand(pj, outputer),
 		newPullCommand(pj, outputer),
+		newUpdateCommand(pj, outputer),
 	)
 
 	applyLegacyChildren(stateCmd, globals)
@@ -195,7 +195,6 @@ func applyLegacyChildren(cmd *captain.Command, globals *globalOptions) {
 	setLegacyOutput(globals)
 
 	cmd.AddLegacyChildren(
-		update.Command,
 		show.Command,
 		scripts.Command,
 		invite.Command,
