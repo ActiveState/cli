@@ -135,14 +135,10 @@ func (v *VirtualEnvironment) GetEnv(inherit bool, projectDir string) (map[string
 		env[constants.ActivatedStateEnvVarName] = projectDir
 		env[constants.ActivatedStateIDEnvVarName] = v.activationID
 
-		// Get project from explicitly defined configuration file, or fallback to project persisted in memory (only for tests, I think!)
+		// Get project from explicitly defined configuration file
 		pj, fail := project.Parse(filepath.Join(projectDir, constants.ConfigFileName))
 		if fail != nil {
-			var getFail *failures.Failure
-			pj, getFail = project.GetSafe()
-			if getFail != nil {
-				return env, fail.ToError()
-			}
+			return env, fail.ToError()
 		}
 		for _, constant := range pj.Constants() {
 			env[constant.Name()] = constant.Value()
