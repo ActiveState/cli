@@ -143,7 +143,7 @@ func (v *VirtualEnvironment) GetEnv(inherit bool, projectDir string) (map[string
 			var getFail *failures.Failure
 			pj, getFail = project.GetSafe()
 			if getFail != nil {
-				return env, locale.WrapError(fail, "err_get_env_no_project", "Could not parse project file.")
+				return env, fail.ToError()
 			}
 		}
 		for _, constant := range pj.Constants() {
