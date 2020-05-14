@@ -78,11 +78,7 @@ func (v *VersionIncrementer) IncrementVersionRevision(revision string) (*semver.
 // IncrementType returns the string representation of the version bump
 // ie. patch, minor, or major
 func (v *VersionIncrementer) IncrementType() (string, error) {
-	if v.environment == localEnv {
-		return zeroed, nil
-	}
-
-	if v.branch == "master" {
+	if v.environment != localEnv && v.branch == "master" {
 		return v.typer.IncrementType()
 	}
 
@@ -164,4 +160,20 @@ func (v *VersionIncrementer) incrementVersion() (*semver.Version, error) {
 	}
 
 	return &copy, nil
+}
+
+// CurrentVersionNumberIsProduction returns whether or not the currently
+// generated version number indicates a production build. The accuracy of this
+// likely relies on constant generation being run first.
+func CurrentVersionNumberIsProduction() bool {
+	return versionNumberIsProduction(constants.VersionNumber)
+}
+
+func versionNumberIsProduction(versionNumber string) bool {
+	version, err := semver.Parse(versionNumber)
+	if err != nil {
+		return false
+	}
+
+	return version.Major > 0 && version.Minor > 0 && version.Patch > 0
 }
