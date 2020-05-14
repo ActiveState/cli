@@ -255,6 +255,40 @@ func (suite *ActivateIntegrationTestSuite) TestInit_Activation_NoCommitID() {
 	cp.ExpectExitCode(1)
 }
 
+func (suite *ActivateIntegrationTestSuite) TestActivate_InterruptedInstallation() {
+	ts := e2e.New(suite.T(), true)
+	defer ts.Close()
+
+	cp := ts.Spawn("deploy", "install", "ActiveState-CLI/small-python")
+	cp.Expect("Downloading")
+	cp.Expect("Installing")
+	// interrupting installation
+	cp.SendCtrlC()
+	cp.ExpectNotExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("activate", "ActiveState-CLI/small-python", "--path", ts.Dirs.Work),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("Downloading")
+	cp.Expect("Installing")
+	cp.Expect("activated state")
+
+	suite.assertCompletedStatusBarReport(cp.Snapshot())
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
+
+	// next activation is cached
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("activate", "ActiveState-CLI/small-python", "--path", ts.Dirs.Work),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("activated state")
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
+	suite.NotContains(cp.TrimmedSnapshot(), "Downloading required artifacts")
+}
+
 func (suite *ActivateIntegrationTestSuite) TestActivate_JSON() {
 	suite.testOutput("json")
 }

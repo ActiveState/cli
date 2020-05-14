@@ -889,9 +889,12 @@ installer_err_runtime_missing_install_dir:
   other: Expected runtime '{{.V0}}' to contain directory named one of '{{.V1}}'
 installer_err_runtime_missing_meta:
   other: |
-    The requested runtime does not appear to have a metadata file and the metadata could not be inferred, this usually 
-    means you're trying to use a much older build that is not supported by this version of the State Tool. It is 
-    recommended that you produce a new build.
+    The requested runtime does not appear to have a metadata file and the metadata could not be inferred.
+    Possible causes are:
+      - A previous installation of the runtime was improperly aborted before it could finish. Manually deleting
+        directory "{{.V0}}" and retrying this command will fix this issue.
+      - You are trying to use a much older build that is not supported by this version of the State Tool. It
+        is recommended that you produce a new build.
 installer_err_runtime_no_executable:
   other: Expected runtime installer '{{.V0}}' to include '{{.V1}}' or '{{.V2}}'
 installer_err_runtime_no_file:

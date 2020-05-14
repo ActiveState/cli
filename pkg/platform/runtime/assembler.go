@@ -60,6 +60,12 @@ type Assembler interface {
 	// after it has been unpacked into its temporary installation directory tmpRuntimeDir
 	// Here, the final relocation to InstallationDirectory() needs to take place.
 	PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir string, archivePath string, cb func()) *failures.Failure
+
+	// PostInstall is called after all artifacts have been successfully installed
+	PostInstall() error
+
+	// IsInstalled returns whether the artifacts have been successfully installed already
+	IsInstalled() bool
 }
 
 // BuildEngine describes the build engine that was used to build the runtime

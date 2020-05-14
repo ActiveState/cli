@@ -37,7 +37,7 @@ ARCH="amd64"
 NOPROMPT=false
 FORCEOVERWRITE=false
 
-if [ -z "${TERM}" ]; then
+if [ -z "${TERM}" ] || [ "${TERM}" == "dumb" ]; then
   OUTPUT_BOLD=""
   OUTPUT_WARN=""
   OUTPUT_ERROR=""
