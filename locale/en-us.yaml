@@ -1015,7 +1015,7 @@ err_deprecation:
 
     Please update now!"
 err_auth_required:
-  other: Authentication is required
+  other: Authentication is required, please authenticate by running 'state auth'
 auth_required_activate:
   other: You need to be authenticated to activate an ActiveState Platform project
 prompt_login_or_signup:
@@ -1122,13 +1122,6 @@ err_bad_project_url:
   other: "Invalid value for 'project' field in your activestate.yaml, please ensure it is in the format of: 'https://platform.activestate.com/Owner/ProjectName'."
 warn_deprecation_owner_name_fields:
   other: "DEPRECATION WARNING: Your project is using 'owner' and 'name' fields, these should be replaced with a single project field, eg. 'project: https://platform.activestate.com/{{.V0}}/{{.V1}}'"
-cpu_profiling_setup_failed:
-  other: CPU profiling setup failed
-err_main_panic:
-  other: |
-    An unexpected error occurred while running the State Tool.
-    Check the error log for more information.
-    Your error log is located at: {{.V0}}/log.txt
 err_deprection_404:
   other: Could not check for deprecation as the service returned a 404 not found
 err_deprection_code:
@@ -1513,9 +1506,7 @@ auto_update_to_version:
     [BLUE]Auto updating from [BOLD]{{.V0}}[/RESET] [BLUE]to[/RESET] [BOLD]{{.V1}}[/RESET].
     [BLUE]To avoid auto updating run 'state update --lock' (only recommended for production environments).[/RESET]
 forward_version:
-  other: |
-    [BLUE]Using locked state tool version [BOLD]{{.V0}}[/RESET][BLUE].
-    To avoid auto updating run 'state update --lock' (only recommended for production environments).[/RESET]
+  other: "[BLUE]Using locked state tool version [BOLD]{{.V0}}[/RESET]."
 err_project_env_file_not_exist:
   other: |
     Your activated environment appears to have been corrupted because the activestate.yaml cannot be found anymore.

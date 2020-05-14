@@ -1,7 +1,6 @@
 package failures
 
 import (
-	"errors"
 	"fmt"
 	"reflect"
 	"runtime"
@@ -160,7 +159,7 @@ func (e *Failure) ToError() error {
 	if e.err != nil {
 		return e.err
 	}
-	return errors.New(e.Error())
+	return e
 }
 
 // WithDescription is a convenience method that emulates the behavior of using Handle()
@@ -245,6 +244,15 @@ func Handled() error {
 // ResetHandled resets handled to nil
 func ResetHandled() {
 	handled = nil
+}
+
+// ToError converts a failure to an error
+func ToError(err error) error {
+	switch v := err.(type) {
+	case *Failure:
+		err = v.ToError()
+	}
+	return err
 }
 
 // IsFailure returns whether the given error is of the Failure type
