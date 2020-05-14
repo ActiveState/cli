@@ -1,7 +1,6 @@
 package virtualenvironment
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	rt "runtime"
@@ -16,7 +15,6 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 var persisted *VirtualEnvironment
@@ -153,20 +151,6 @@ func (v *VirtualEnvironment) GetEnv(inherit bool, projectDir string) (map[string
 
 	if inherit {
 		return inheritEnv(env), nil
-	}
-
-	return env, nil
-}
-
-// GetEnvSlice returns the same results as GetEnv, but formatted in a way that the process package can handle
-func (v *VirtualEnvironment) GetEnvSlice(inherit bool) ([]string, error) {
-	envMap, err := v.GetEnv(inherit, filepath.Dir(projectfile.Get().Path()))
-	if err != nil {
-		return nil, err
-	}
-	var env []string
-	for k, v := range envMap {
-		env = append(env, fmt.Sprintf("%s=%s", k, v))
 	}
 
 	return env, nil
