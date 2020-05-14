@@ -9,20 +9,14 @@
 		<MediaTemplate />
 
 		<!-- The default directory structure when installing the state tool. This can be changed via the UI -->
-		<!-- TODO: This might need to be a different directory for the language installation -->
 		<Directory Id='TARGETDIR' Name='SourceDir'>
 			<Directory Id='AppDataFolder' Name='AppData'>
 				<Directory Id='ActiveState' Name='ActiveState'>
-					<!-- TODO: Find a way to set this dynamically with the project namespace -->
 					<Directory Id='INSTALLDIR' Name='Language'>
 						<Component Id='DeployDir' Guid='7CF56E89-AA69-4A35-921C-F2CA2F9FE12B'>
 							<RemoveFolder Id='INSTALLDIR' On='uninstall' />
 							<!-- Required by WiX -->
 							<RegistryValue Root='HKCU' Key='Software\[Manufacturer]\[ProductName]' Type='string' Value='' KeyPath='yes' />
-							<!-- TODO: This File Id should not be needed as state deploy should be able to take care of that -->
-							<!-- <File Id='StateEXE' Name='state.exe' DiskId='1' Source='..\..\build\state.exe'  /> -->
-							<!-- This utility element uses a custom install directory value to remove the state tool on uninstallation -->
-							<!-- TODO: Right now this is removing the state tool installation! Need to address -->
 							<util:RemoveFolderEx On="uninstall" Property="REMOVAL"/>
 						</Component>
 					</Directory>
@@ -105,19 +99,17 @@
 		<UIRef Id="WixUI_Common" />
 
 		<!-- Set the icon to be shown in the Add/Remove Programs dialog -->
-		<Icon Id="icon.ico" SourceFile="C:\Users\miked\work\cli\public\wix\favicon.ico"/>
+		<Icon Id="icon.ico" SourceFile="favicon.ico"/>
 		<Property Id="ARPPRODUCTICON" Value="icon.ico" />
 
 		<!-- Property and custom action to set the text of the Success screen -->
 		<Property Id="WIXUI_EXITDIALOGOPTIONALTEXT" Value=" " />
-		<!-- TODO: Maybe we can use the project namespace here in the success message? -->
-		<CustomAction Id="CA_Set_WIXUI_EXITDIALOGOPTIONALTEXT" Property="WIXUI_EXITDIALOGOPTIONALTEXT" Value="Installation complete. Thank you for installing an ActiveState runtime."/>
+		<!-- TODO: Use project name in success message after install -->
+		<CustomAction Id="CA_Set_WIXUI_EXITDIALOGOPTIONALTEXT" Property="WIXUI_EXITDIALOGOPTIONALTEXT" Value="Installation complete. Thank you for installing an ActiveState Language Runtime."/>
 		<InstallUISequence>
+			<Custom Action="GetProjectName" After="CostFinalize">NOT Installed</Custom>
 			<Custom Action="CA_Set_WIXUI_EXITDIALOGOPTIONALTEXT" Sequence="1">NOT Installed</Custom>
 		</InstallUISequence>
-
-		<!-- This currently only works when we are updating the USER path -->
-		<CustomAction Id="RemoveInstallPath" BinaryKey="rmpath.exe" Return="ignore" Execute="commit" ExeCommand='[INSTALLDIR]' />
 
 		<Binary Id="StateCommandCA" SourceFile="$(var.StateCommandExists.TargetDir)$(var.StateCommandExists.TargetName).CA.dll" />
 		<CustomAction Id="StateCommandExists" Impersonate="no" BinaryKey="StateCommandCA" DllEntry="StateCommandExists" Return="check" />
@@ -131,12 +123,9 @@
 		<Binary Id="UninstallCA" SourceFile="$(var.Uninstall.TargetDir)$(var.Uninstall.TargetName).CA.dll" />
 		<CustomAction Id="Uninstall" Impersonate="no" BinaryKey="UninstallCA" DllEntry="Uninstall" Return="check" />
 
-		<Binary Id="rmpath.exe" SourceFile="C:\Users\miked\work\cli\public\wix\rmpath\rmpath.exe" />
-
 		<InstallExecuteSequence>
 			<Custom Action="StateCommandExists" After="InstallInitialize">NOT Installed</Custom>
-			<Custom Action="GetProjectName" After="StateCommandExists">NOT Installed</Custom>
-			<Custom Action="StateDeploy" After="GetProjectName">NOT Installed</Custom>
+			<Custom Action="StateDeploy" After="StateCommandExists">NOT Installed</Custom>
 			<Custom Action="Uninstall" After="RemoveFiles">REMOVE="ALL"</Custom>
 		</InstallExecuteSequence>
 	</Product>

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using Microsoft.Deployment.WindowsInstaller;
 
 namespace Uninstall
@@ -13,7 +12,7 @@ namespace Uninstall
         {
             session.Log("Begin uninstallation");
 
-            string installDir = session["INSTALLDIR"];
+            string installDir = session["REMOVAL"];
             try
             {
                 Directory.Delete(installDir, true);
@@ -25,7 +24,6 @@ namespace Uninstall
             }
 
             string pathEnv = Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.User);
-            session.Log(string.Format("PATH: {0}", pathEnv));
             string[] paths = pathEnv.Split(';');
 
             List<string> cleanPath = new List<string>();
@@ -39,7 +37,7 @@ namespace Uninstall
             }
 
             Environment.SetEnvironmentVariable("PATH", string.Join(";", cleanPath), EnvironmentVariableTarget.User);
-            Environment.SetEnvironmentVariable("PATH_OLD", null);
+            Environment.SetEnvironmentVariable("PATH_ORIGINAL", null, EnvironmentVariableTarget.User);
 
             return ActionResult.Success;
         }
