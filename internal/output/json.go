@@ -26,6 +26,7 @@ func (f *JSON) Type() Format {
 
 // Print will marshal and print the given value to the output writer
 func (f *JSON) Print(value interface{}) {
+	value = prepareJSONValue(value)
 	b, err := json.Marshal(value)
 	if err != nil {
 		logging.Error("Could not marshal value, error: %v", err)
@@ -41,6 +42,7 @@ func (f *JSON) Print(value interface{}) {
 // that identifies it as an error
 // NOTE that JSON always prints to the output writer, the error writer is unused.
 func (f *JSON) Error(value interface{}) {
+	value = prepareJSONValue(value)
 	errStruct := struct{ Error interface{} }{value}
 	b, err := json.Marshal(errStruct)
 	if err != nil {
@@ -60,4 +62,11 @@ func (f *JSON) Notice(value interface{}) {
 // Config returns the Config struct for the active instance
 func (f *JSON) Config() *Config {
 	return f.cfg
+}
+
+func prepareJSONValue(v interface{}) interface{} {
+	if err, ok := v.(error); ok {
+		return err.Error()
+	}
+	return v
 }

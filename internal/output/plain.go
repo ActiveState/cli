@@ -95,6 +95,10 @@ func sprint(value interface{}) (string, error) {
 		return nilText, nil
 	}
 
+	if err, ok := value.(error); ok {
+		return err.Error(), nil
+	}
+
 	valueRfl := valueOf(value)
 	switch valueRfl.Kind() {
 	case reflect.Ptr:

@@ -529,3 +529,32 @@ func ChangesetFromRequirements(op Operation, reqs Checkpoint) Changeset {
 
 	return changeset
 }
+
+func TrackBranch(source, target *mono_models.Project) *failures.Failure {
+	sourceBranch, fail := DefaultBranchForProject(source)
+	if fail != nil {
+		return fail
+	}
+
+	targetBranch, fail := DefaultBranchForProject(target)
+	if fail != nil {
+		return fail
+	}
+
+	trackingType := mono_models.BranchEditableTrackingTypeNotify
+
+	updateParams := vcsClient.NewUpdateBranchParams()
+	branch := &mono_models.BranchEditable{
+		TrackingType: &trackingType,
+		Tracks:       &sourceBranch.BranchID,
+	}
+	updateParams.SetBranch(branch)
+	updateParams.SetBranchID(targetBranch.BranchID)
+
+	_, err := authentication.Client().VersionControl.UpdateBranch(updateParams, authentication.ClientAuth())
+	if err != nil {
+		msg := api.ErrorMessageFromPayload(err)
+		return api.FailUnknown.Wrap(err, msg)
+	}
+	return nil
+}
