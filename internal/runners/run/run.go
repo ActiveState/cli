@@ -96,6 +96,8 @@ func run(name string, args []string) error {
 			return failures.FailRuntime.Wrap(err)
 		}
 		subs.SetEnv(env)
+
+		// get the "clean" path (only PATHS that are set by venv)
 		env, err = venv.GetEnv(false, "")
 		if err != nil {
 			return failures.FailRuntime.Wrap(err)
