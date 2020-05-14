@@ -296,7 +296,8 @@ func (ar *AlternativeRuntime) GetEnv(inherit bool, _ string) (map[string]string,
 	if fail != nil {
 		return nil, locale.WrapError(
 			fail, "err_no_environment_definition",
-			"Your installation seems corrupted.\n\nCannot find a runtime definition file at {{.V0}}. Please try to re-run this command.",
+			"Your installation seems corrupted.\nPlease try to re-run this command, as it may fix the problem.  If the problem persists, please report it in our forum: {{.V0}}",
+			constants.ForumsURL,
 		)
 	}
 	return rt.GetEnv(inherit), nil
