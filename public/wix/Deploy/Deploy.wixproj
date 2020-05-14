@@ -14,7 +14,7 @@
     <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
     <DefineConstants>Debug</DefineConstants>
     <CompilerAdditionalOptions>-ext WixUIExtension -ext WixUtilExtension</CompilerAdditionalOptions>
-    <LinkerAdditionalOptions>-sice:ICE91 -sice:ICE64 -sice:ICE71 -ext WixUIExtension -ext WixUtilExtension</LinkerAdditionalOptions>
+    <LinkerAdditionalOptions>-sice:ICE91 -sice:ICE64 -sice:ICE71 -sice:ICE68 -ext WixUIExtension -ext WixUtilExtension</LinkerAdditionalOptions>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <OutputPath>bin\$(Configuration)\</OutputPath>
