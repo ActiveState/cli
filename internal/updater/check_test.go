@@ -43,14 +43,14 @@ func TestTimedCheck(t *testing.T) {
 
 	updatemocks.MockUpdater(t, os.Args[0], constants.BranchName, "1.2.3-123")
 
-	update, _ := AutoUpdate()
+	update, _ := AutoUpdate(configPath)
 	assert.True(t, update, "Should want to update")
 
 	stat, err := os.Stat(updateCheckMarker)
 	assert.NoError(t, err, "update-check marker was created")
 	modTime := stat.ModTime()
 
-	update, _ = AutoUpdate()
+	update, _ = AutoUpdate(configPath)
 	assert.False(t, update, "Should not want to update")
 	stat, err = os.Stat(updateCheckMarker)
 	assert.NoError(t, err, "update-check marker still exists")
@@ -65,7 +65,7 @@ func TestTimedCheckLockedVersion(t *testing.T) {
 	_, err := os.Stat(updateCheckMarker)
 	assert.Error(t, err, "update-check marker does not exist")
 
-	update, _ := AutoUpdate()
+	update, _ := AutoUpdate(configPath)
 	assert.False(t, update, "Should not want to update because we're using a locked version")
 }
 

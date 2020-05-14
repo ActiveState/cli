@@ -27,7 +27,8 @@ func unwrapError(err error) (int, error) {
 
 	var ee errs.Error
 	stack := "not provided"
-	if errors.As(err, &ee) {
+	isErrs := errors.As(err, &ee)
+	if isErrs {
 		stack = ee.Stack().String()
 	}
 
@@ -38,7 +39,7 @@ func unwrapError(err error) (int, error) {
 
 	if locale.IsError(err) {
 		err = locale.JoinErrors(err, "\n")
-	} else {
+	} else if isErrs {
 		logging.Error("MUST ADDRESS: Error does not have localization: %s", errs.Join(err, "\n").Error())
 
 		// If this wasn't built via CI then this is a dev workstation, and we should be more aggressive

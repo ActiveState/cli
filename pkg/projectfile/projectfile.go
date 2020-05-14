@@ -718,6 +718,10 @@ func validateCreateParams(params *CreateParams) *failures.Failure {
 // ParseVersionInfo parses the version field from the projectfile, and ONLY the version field. This is to ensure it doesn't
 // trip over older activestate.yaml's with breaking changes
 func ParseVersionInfo(projectFilePath string) (*VersionInfo, *failures.Failure) {
+	if !fileutils.FileExists(projectFilePath) {
+		return nil, nil
+	}
+	
 	dat, err := ioutil.ReadFile(projectFilePath)
 	if err != nil {
 		return nil, failures.FailIO.Wrap(err)

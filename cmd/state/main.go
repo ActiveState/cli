@@ -38,9 +38,6 @@ func main() {
 	// Set up our legacy outputer
 	setPrinterColors(outFlags)
 
-	// Ensure any config set so far is preserved
-	defer config.Save()
-
 	// Run our main command logic, which is logic that defers to the error handling logic below
 	code, err := run(os.Args, out)
 	if err != nil {
@@ -63,6 +60,9 @@ func run(args []string, out output.Outputer) (int, error) {
 	logging.Debug("ConfigPath: %s", config.ConfigPath())
 	logging.Debug("CachePath: %s", config.CachePath())
 
+	// Ensure any config set is preserved
+	defer config.Save()
+
 	// Retrieve project file
 	pjPath, fail := projectfile.GetProjectFilePath()
 	if fail != nil && fail.Type.Matches(projectfile.FailNoProjectFromEnv) {
@@ -71,7 +71,7 @@ func run(args []string, out output.Outputer) (int, error) {
 	}
 
 	// Auto update to latest state tool version, only runs once per day
-	if code, err := autoUpdate(args, out, pjPath); err != nil {
+	if updated, code, err := autoUpdate(args, out, pjPath); err != nil || updated {
 		return code, err
 	}
 

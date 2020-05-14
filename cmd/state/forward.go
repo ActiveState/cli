@@ -26,6 +26,10 @@ import (
 var forceFileExt string
 
 func forwardIfWarranted(args []string, out output.Outputer, pj *project.Project) (int, error) {
+	if pj == nil {
+		return 0, nil
+	}
+	
 	// Retrieve the version info specified in the activestate.yaml
 	versionInfo, fail := projectfile.ParseVersionInfo(pj.Source().Path())
 	if fail != nil {

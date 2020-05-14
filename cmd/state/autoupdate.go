@@ -16,23 +16,24 @@ import (
 	"github.com/ActiveState/cli/internal/updater"
 )
 
-func autoUpdate(args []string, out output.Outputer, pjPath string) (int, error) {
+func autoUpdate(args []string, out output.Outputer, pjPath string) (bool, int, error) {
 	disableAutoUpdate := strings.ToLower(os.Getenv(constants.DisableUpdates)) == "true"
 	disableAutoUpdateCauseCI := (os.Getenv("CI") != "" || os.Getenv("BUILDER_OUTPUT") != "") && strings.ToLower(os.Getenv(constants.DisableUpdates)) != "false"
 	updateIsRunning := funk.Contains(args, "update")
 	testsAreRunning := condition.InTest()
 
 	if testsAreRunning || updateIsRunning || disableAutoUpdate || disableAutoUpdateCauseCI {
-		return 0, nil
+		return false, 0, nil
 	}
 
 	updated, resultVersion := updater.AutoUpdate(pjPath)
 	if !updated {
-		return 0, nil
+		return false, 0, nil
 	}
 
 	out.Notice(locale.Tr("auto_update_to_version", constants.Version, resultVersion))
-	return relaunch()
+	code, err := relaunch()
+	return true, code, err
 }
 
 // When an update was found and applied, re-launch the update with the current
