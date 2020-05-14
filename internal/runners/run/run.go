@@ -93,14 +93,14 @@ func run(name string, args []string) error {
 
 		env, err := venv.GetEnv(true, filepath.Dir(projectfile.Get().Path()))
 		if err != nil {
-			return failures.FailRuntime.Wrap(err)
+			return err
 		}
 		subs.SetEnv(env)
 
 		// get the "clean" path (only PATHS that are set by venv)
 		env, err = venv.GetEnv(false, "")
 		if err != nil {
-			return failures.FailRuntime.Wrap(err)
+			return err
 		}
 		path = env["PATH"]
 	}
