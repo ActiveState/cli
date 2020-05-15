@@ -25,16 +25,11 @@ jobs:
           go-version: ${{ matrix.go-version }}
       - name: prepare
         run: |
-          set -e
-
-          # Don't run from project dir as that will pull in deps we don't need
           pushd /
-          go get github.com/jstemmer/go-junit-report
           go get github.com/gobuffalo/packr/packr
           popd
 
           ./public/install.sh -n -b master
-
           echo "::add-path::$HOME/.local/bin"
       - name: build
         run: |
@@ -45,7 +40,28 @@ jobs:
           fi
           state run build
           state run generate-update
-      - name: unit tests
-        run: go test -v -covermode=atomic -coverprofile=c.out `$GOROOT/bin/go list ./... | grep -v api | grep -v integration | grep -v expect` > out
       - name: integration tests
         run: go test -timeout 20m ./test/integration -v
+  unit-test:
+    strategy:
+      matrix:
+        go-version: [1.13.x]
+        platform: [ubuntu-latest] # , macos-latest, windows-latest]
+    runs-on: ${{ matrix.platform }}
+    env:
+      GOFLAGS: -mod=vendor
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go-version }}
+      - name: prepare
+        run: |
+          pushd /
+          go get github.com/gobuffalo/packr/packr
+          popd
+          packr
+      - name: unit tests
+        run: go test -v -covermode=atomic -coverprofile=c.out `$GOROOT/bin/go list ./... | grep -v api | grep -v integration | grep -v expect`
