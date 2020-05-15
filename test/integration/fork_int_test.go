@@ -4,8 +4,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 )
 
 type ForkIntegrationTestSuite struct {
@@ -17,6 +18,22 @@ func (suite *ForkIntegrationTestSuite) cleanup(ts *e2e.Session) {
 	cp := ts.Spawn("auth", "logout")
 	cp.ExpectExitCode(0)
 	ts.Close()
+}
+
+func (suite *ForkIntegrationTestSuite) TestFork() {
+	ts := e2e.New(suite.T(), false)
+	defer suite.cleanup(ts)
+
+	username := ts.CreateNewUser()
+
+	cp := ts.Spawn("fork", "ActiveState-CLI/Python3", "--name", "Test-Python3", "--org", username)
+	cp.Expect("fork has been successfully created")
+	cp.ExpectExitCode(0)
+
+	// Check if we error out on conflicts properly
+	cp = ts.Spawn("fork", "ActiveState-CLI/Python3", "--name", "Test-Python3", "--org", username, "--output", "editor.v0")
+	cp.Expect(`Could not create project`)
+	cp.ExpectExitCode(1)
 }
 
 func (suite *ForkIntegrationTestSuite) TestFork_FailNameExists() {

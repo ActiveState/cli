@@ -290,18 +290,6 @@ login_err_auth_token:
   other: Token authentication failed
 fetch_org_err:
   other: Failed to fetch organization {{.V0}} from ActivateState platform.  Is the organization name correct?
-fork_project:
-  other: Fork an existing ActiveState Platform project
-flag_state_fork_org_description:
-  other: The organization to fork the project to
-flag_state_fork_private_description:
-  other: Denotes if the forked project will be private
-flag_state_fork_name_description:
-  other: The name of the new project to be created
-arg_state_fork_namespace:
-  other: ORG/PROJECT
-arg_state_fork_namespace_description:
-  other: The namespace of the project to be forked
 auth_required_fork:
   other: You need to be authenticated to fork an ActiveState Platform project
 err_fork_auth_required:
@@ -314,8 +302,6 @@ err_fork_get_owner:
   other: Could not fork project, owner required.
 err_cannot_marshal_data:
   other: Cannot marshal data properly
-fork_select_org:
-  other: Please select an owner for the forked project
 state_fork_success:
   other: Successfully forked project {{.OriginalOwner}}/{{.OriginalName}} as {{.NewOwner}}/{{.NewName}}
 local:
@@ -1504,8 +1490,6 @@ arg_state_deploy_namespace:
   other: ORG/PROJECT
 arg_state_deploy_namespace_description:
   other: The namespace of the project that you wish to deploy
-err_requires_runtime_download:
-  other: You need to download the runtime environment before you can use it
 err_deploy_no_commits:
   other: "The project '{{.V0}}' does not have any packages configured, please add add some packages first."
 err_userrc_notfound:

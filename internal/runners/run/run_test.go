@@ -67,29 +67,20 @@ func TestEnvIsSet(t *testing.T) {
 	}
 	failures.ResetHandled()
 
-	project := &projectfile.Project{}
-	var contents string
-	if runtime.GOOS != "windows" {
-		contents = strings.TrimSpace(`
-project: "https://platform.activestate.com/ActiveState/project?commitID=00010001-0001-0001-0001-000100010001"
-scripts:
-  - name: run
-    value: printenv
-  `)
-	} else {
-		contents = strings.TrimSpace(`
-project: "https://platform.activestate.com/ActiveState/project?commitID=00010001-0001-0001-0001-000100010001"
-scripts:
-  - name: run
-    value: cmd.exe /C SET
-  `)
-	}
-	err := yaml.Unmarshal([]byte(contents), project)
-	assert.Nil(t, err, "Unmarshalled YAML")
+	root, err := environment.GetRootPath()
+	require.NoError(t, err, "should detect root path")
+	prjPath := filepath.Join(root, "internal", "runners", "run", "testdata", "printEnv", "activestate.yaml")
+
+	project, fail := projectfile.Parse(prjPath)
+	require.NoError(t, fail.ToError(), "parsing project file")
 	project.Persist()
 
 	os.Setenv("TEST_KEY_EXISTS", "true")
 	os.Setenv(constants.DisableRuntime, "true")
+	defer func() {
+		os.Unsetenv("TEST_KEY_EXISTS")
+		os.Unsetenv(constants.DisableRuntime)
+	}()
 
 	out := capturer.CaptureOutput(func() {
 		err = run("run", nil)

@@ -155,7 +155,7 @@ func install(installer installable, out output.Outputer) (runtime.EnvGetter, err
 	if fail != nil {
 		return envGetter, errs.Wrap(fail, "Install failed")
 	}
-	if ! installed {
+	if !installed {
 		out.Notice(locale.T("using_cached_env"))
 	}
 	out.Print(locale.Tl("deploy_install_done", "Installation completed"))
@@ -166,7 +166,10 @@ type configureFunc func(envGetter runtime.EnvGetter, out output.Outputer) error
 
 func configure(envGetter runtime.EnvGetter, out output.Outputer) error {
 	venv := virtualenvironment.New(envGetter.GetEnv)
-	env := venv.GetEnv(false, "")
+	env, err := venv.GetEnv(false, "")
+	if err != nil {
+		return err
+	}
 
 	// Configure Shell
 	sshell, fail := subshell.Get()
@@ -187,7 +190,10 @@ type symlinkFunc func(installPath string, overwrite bool, envGetter runtime.EnvG
 
 func symlink(installPath string, overwrite bool, envGetter runtime.EnvGetter, out output.Outputer) error {
 	venv := virtualenvironment.New(envGetter.GetEnv)
-	env := venv.GetEnv(false, "")
+	env, err := venv.GetEnv(false, "")
+	if err != nil {
+		return err
+	}
 
 	// Retrieve path to write symlinks to
 	path, err := usablePath()
@@ -268,7 +274,10 @@ type reportFunc func(envGetter runtime.EnvGetter, out output.Outputer) error
 
 func report(envGetter runtime.EnvGetter, out output.Outputer) error {
 	venv := virtualenvironment.New(envGetter.GetEnv)
-	env := venv.GetEnv(false, "")
+	env, err := venv.GetEnv(false, "")
+	if err != nil {
+		return err
+	}
 
 	var bins []string
 	if path, ok := env["PATH"]; ok {

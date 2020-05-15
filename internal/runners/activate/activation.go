@@ -92,7 +92,13 @@ func activate(owner, name, srcPath string) bool {
 		return false
 	}
 
-	subs.SetEnv(venv.GetEnv(false, filepath.Dir(projectfile.Get().Path())))
+	ve, err := venv.GetEnv(false, filepath.Dir(projectfile.Get().Path()))
+	if err != nil {
+		failures.Handle(err, locale.T("error_could_not_activate_venv"))
+		return false
+	}
+
+	subs.SetEnv(ve)
 	fail = subs.Activate()
 	if fail != nil {
 		failures.Handle(fail, locale.T("error_could_not_activate_subshell"))
