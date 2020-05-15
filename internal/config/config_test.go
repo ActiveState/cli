@@ -87,6 +87,10 @@ func (suite *ConfigTestSuite) testNoHomeRunner() {
 	args := []string{"test", pkgPath, "-run", "TestConfigTestSuite", "-testify.m", "TestNoHome"}
 	fmt.Printf("Executing: go %s", strings.Join(args, " "))
 
+	var err error
+	goCache, err := ioutil.TempDir("", "go-cache")
+	suite.Require().NoError(err)
+
 	runCmd := exec.Command("go", args...)
 	runCmd.Env = []string{
 		"PATH=" + os.Getenv("PATH"),
@@ -96,6 +100,7 @@ func (suite *ConfigTestSuite) testNoHomeRunner() {
 		"APPDATA=" + os.Getenv("APPDATA"),
 		"SystemRoot=" + os.Getenv("SystemRoot"), // Ref: https://bugs.python.org/msg248951
 		"GOFLAGS=" + os.Getenv("GOFLAGS"),
+		"GOCACHE=" + goCache,
 		"TESTNOHOME=TRUE",
 	}
 
