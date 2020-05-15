@@ -31,6 +31,7 @@ jobs:
 
           ./public/install.sh -n -b master
           echo "::add-path::$HOME/.local/bin"
+          state run preprocess
       - name: build
         run: |
           set -e
@@ -62,6 +63,9 @@ jobs:
           pushd /
           go get github.com/gobuffalo/packr/packr
           popd
-          packr
+
+          ./public/install.sh -n -b master
+          echo "::add-path::$HOME/.local/bin"
+          state run preprocess
       - name: unit tests
         run: go test -v -covermode=atomic -coverprofile=c.out `$GOROOT/bin/go list ./... | grep -v api | grep -v integration | grep -v expect`
