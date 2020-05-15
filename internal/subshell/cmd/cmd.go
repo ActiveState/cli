@@ -76,6 +76,8 @@ func (v *SubShell) WriteUserEnv(env map[string]string) *failures.Failure {
 			return fail
 		}
 	}
+
+	cmdEnv.propagate()
 	return nil
 }
 
