@@ -97,6 +97,7 @@ func (suite *ConfigTestSuite) testNoHomeRunner() {
 	runCmd := exec.Command("go", args...)
 	runCmd.Env = []string{
 		"PATH=" + os.Getenv("PATH"),
+		"GOROOT=" + os.Getenv("GOROOT"),
 		"USERPROFILE=" + os.Getenv("USERPROFILE"), // Permission error trying to use C:\Windows, ref: https://golang.org/pkg/os/#TempDir
 		"APPDATA=" + os.Getenv("APPDATA"),
 		"SystemRoot=" + os.Getenv("SystemRoot"), // Ref: https://bugs.python.org/msg248951
