@@ -15,6 +15,7 @@ jobs:
     runs-on: ${{ matrix.platform }}
     env:
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true # We don't need Perl or Python
+      GOFLAGS: -mod=vendor
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -36,8 +37,6 @@ jobs:
 
           echo "::add-path::$HOME/.local/bin"
       - name: build
-        env:
-          GOFLAGS: -mod=vendor
         run: |
           set -e
           BRANCH=$(git rev-parse --abbrev-ref HEAD)
@@ -46,3 +45,7 @@ jobs:
           fi
           state run build
           state run generate-update
+      - name: unit tests
+        run: go test -v -covermode=atomic -coverprofile=c.out `$GOROOT/bin/go list ./... | grep -v api | grep -v integration | grep -v expect` > out
+      - name: integration tests
+        run: go test -timeout 20m ./test/integration -v
