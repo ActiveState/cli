@@ -32,7 +32,6 @@ jobs:
           ./public/install.sh -n -b master
           echo "::add-path::$HOME/.local/bin"
           state run preprocess
-          printenv
       - name: build
         run: |
           set -e

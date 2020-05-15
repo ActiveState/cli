@@ -87,22 +87,15 @@ func (suite *ConfigTestSuite) testNoHomeRunner() {
 	args := []string{"test", pkgPath, "-run", "TestConfigTestSuite", "-testify.m", "TestNoHome"}
 	fmt.Printf("Executing: go %s", strings.Join(args, " "))
 
-	goCache := os.Getenv("GOCACHE")
-	if goCache == "" {
-		var err error
-		goCache, err = ioutil.TempDir("", "go-cache")
-		suite.Require().NoError(err)
-	}
-
 	runCmd := exec.Command("go", args...)
 	runCmd.Env = []string{
 		"PATH=" + os.Getenv("PATH"),
 		"GOROOT=" + os.Getenv("GOROOT"),
+		"GOENV=" + os.Getenv("GOENV"),
 		"USERPROFILE=" + os.Getenv("USERPROFILE"), // Permission error trying to use C:\Windows, ref: https://golang.org/pkg/os/#TempDir
 		"APPDATA=" + os.Getenv("APPDATA"),
 		"SystemRoot=" + os.Getenv("SystemRoot"), // Ref: https://bugs.python.org/msg248951
 		"GOFLAGS=" + os.Getenv("GOFLAGS"),
-		"GOCACHE=" + goCache,
 		"TESTNOHOME=TRUE",
 	}
 
