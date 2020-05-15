@@ -91,8 +91,18 @@ func run(name string, args []string) error {
 			return fail.WithDescription("error_state_run_activate")
 		}
 
-		subs.SetEnv(venv.GetEnv(true, filepath.Dir(projectfile.Get().Path())))
-		path = venv.GetEnv(false, "")["PATH"]
+		env, err := venv.GetEnv(true, filepath.Dir(projectfile.Get().Path()))
+		if err != nil {
+			return err
+		}
+		subs.SetEnv(env)
+
+		// get the "clean" path (only PATHS that are set by venv)
+		env, err = venv.GetEnv(false, "")
+		if err != nil {
+			return err
+		}
+		path = env["PATH"]
 	}
 
 	if !langExec.Builtin() && !pathProvidesExec(configCachePath(), langExec.Name(), path) {

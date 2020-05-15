@@ -38,7 +38,11 @@ func envOutput(inherit bool, targetPath string) (string, error) {
 		return "", fail
 	}
 
-	env := venv.GetEnv(inherit, targetPath)
+	env, err := venv.GetEnv(inherit, targetPath)
+	if err != nil {
+		return "", err
+	}
+
 	envJSON, err := json.Marshal(env)
 	if err != nil {
 		return "", err

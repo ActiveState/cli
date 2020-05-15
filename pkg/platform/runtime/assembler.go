@@ -9,7 +9,7 @@ import (
 // EnvGetter provides a function to return variables for a runtime environment
 type EnvGetter interface {
 	// GetEnv returns a map between environment variable names and their values
-	GetEnv(inherit bool, projectDir string) (map[string]string, *failures.Failure)
+	GetEnv(inherit bool, projectDir string) (map[string]string, error)
 }
 
 // Assembler provides functionality to assemble a runtime environment for an
