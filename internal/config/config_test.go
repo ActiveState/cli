@@ -96,6 +96,7 @@ func (suite *ConfigTestSuite) testNoHomeRunner() {
 		"PATH=" + os.Getenv("PATH"),
 		"GOROOT=" + os.Getenv("GOROOT"),
 		"GOENV=" + os.Getenv("GOENV"),
+		"GOPATH=" + filepath.Join(os.Getenv("GOROOT"), "GOHOME"),
 		"USERPROFILE=" + os.Getenv("USERPROFILE"), // Permission error trying to use C:\Windows, ref: https://golang.org/pkg/os/#TempDir
 		"APPDATA=" + os.Getenv("APPDATA"),
 		"SystemRoot=" + os.Getenv("SystemRoot"), // Ref: https://bugs.python.org/msg248951
@@ -108,7 +109,7 @@ func (suite *ConfigTestSuite) testNoHomeRunner() {
 	runCmd.Stdout = &out
 	runCmd.Stderr = &out
 
-	err := runCmd.Run()
+	err = runCmd.Run()
 	suite.Require().NoError(err, "Should run without error, but returned: \n### START ###\n %s\n### END ###", out.String())
 }
 
