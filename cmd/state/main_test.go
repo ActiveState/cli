@@ -27,7 +27,7 @@ func (suite *MainTestSuite) TestDeprecated() {
 	suite.Require().NoError(err)
 	suite.Require().Equal(0, exitCode, "Should exit with code 0, output: %s", catcher.CombinedOutput())
 
-	if preprocess.CurrentVersionNumberIsProduction() {
+	if preprocess.VersionNumberIsProduction(constants.VersionNumber) {
 		suite.Require().Contains(catcher.Output(), output.StripColorCodes(locale.Tr("warn_deprecation", "")[0:50]))
 	}
 }
@@ -42,7 +42,7 @@ func (suite *MainTestSuite) TestExpired() {
 	suite.Require().NoError(err)
 	suite.Require().Equal(0, exitCode, "Should exit with code 0, output: %s", catcher.CombinedOutput())
 
-	if preprocess.CurrentVersionNumberIsProduction() {
+	if preprocess.VersionNumberIsProduction(constants.VersionNumber) {
 		suite.Require().Contains(catcher.ErrorOutput(), locale.Tr("err_deprecation", "")[0:50])
 	}
 }

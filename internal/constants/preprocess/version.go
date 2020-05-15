@@ -162,14 +162,10 @@ func (v *VersionIncrementer) incrementVersion() (*semver.Version, error) {
 	return &copy, nil
 }
 
-// CurrentVersionNumberIsProduction returns whether or not the currently
-// generated version number indicates a production build. The accuracy of this
-// likely relies on constant generation being run first.
-func CurrentVersionNumberIsProduction() bool {
-	return versionNumberIsProduction(constants.VersionNumber)
-}
-
-func versionNumberIsProduction(versionNumber string) bool {
+// VersionNumberIsProduction returns whether or not the provided version number
+// indicates a production build. The accuracy of this likely relies on constant
+// generation being run first.
+func VersionNumberIsProduction(versionNumber string) bool {
 	version, err := semver.Parse(versionNumber)
 	if err != nil {
 		return false
