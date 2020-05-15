@@ -2,7 +2,6 @@ package integration
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"regexp"
 	"testing"
@@ -163,7 +162,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 
 	cp := ts.SpawnWithOpts(e2e.WithArgs("update"), e2e.AppendEnv(suite.env(true)...))
 	// on master branch, we might already have the latest version available
-	if os.Getenv("GIT_BRANCH") == "master" {
+	if constants.BranchName == "master" {
 		cp.ExpectRe("(Update completed|You are using the latest version available)", 60*time.Second)
 	} else {
 		cp.Expect("Update completed", 60*time.Second)
