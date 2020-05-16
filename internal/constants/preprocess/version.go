@@ -171,5 +171,5 @@ func VersionNumberIsProduction(versionNumber string) bool {
 		return false
 	}
 
-	return version.Major > 0 && version.Minor > 0 && version.Patch > 0
+	return version.Major > 0 || version.Minor > 0 || version.Patch > 0
 }
