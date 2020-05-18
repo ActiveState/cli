@@ -81,8 +81,8 @@ func (m *MetaData) Prepare() *failures.Failure {
 
 	m.TargetedRelocations = []TargetedRelocation{TargetedRelocation{
 		InDir:        filepath.Join(m.Path, frameWorkDir, "Current", "bin"),
-		SearchString: filepath.Join("/", relVersionedFrameWorkDir),
-		Replacement:  filepath.Join(m.Path, relVersionedFrameWorkDir),
+		SearchString: "!" + filepath.Join("/", relVersionedFrameWorkDir),
+		Replacement:  "!" + filepath.Join(m.Path, relVersionedFrameWorkDir),
 	}}
 
 	return nil
