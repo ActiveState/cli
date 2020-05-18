@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/constants/version"
 )
 
 // Constants holds constants that will be preprocessed, meaning the key value parts here will be built into the constants
@@ -20,7 +21,7 @@ func init() {
 	branchName, branchNameFull := branchName()
 	buildNumber := buildNumber()
 
-	incrementer, err := NewVersionIncrementer(NewGithubIncrementStateStore(os.Getenv("GITHUB_REPO_TOKEN")), branchName, buildEnvironment())
+	inc, err := version.NewIncrementation(NewGithubIncrementStateStore(os.Getenv("GITHUB_REPO_TOKEN")), branchName, buildEnvironment())
 	if err != nil {
 		log.Fatalf("Could not initialize version incrementer: %s", err)
 	}
@@ -29,9 +30,9 @@ func init() {
 	Constants["BuildNumber"] = func() string { return buildNumber }
 	Constants["RevisionHash"] = func() string { return getCmdOutput("git rev-parse --verify " + branchNameFull) }
 	Constants["RevisionHashShort"] = func() string { return getCmdOutput("git rev-parse --short " + branchNameFull) }
-	Constants["Version"] = func() string { return mustIncrementVersionRevision(incrementer, Constants["RevisionHashShort"]()) }
-	Constants["VersionNumber"] = func() string { return mustIncrementVersion(incrementer) }
-	Constants["IncrementString"] = func() string { return mustGetIncrementString(incrementer) }
+	Constants["Version"] = func() string { return mustIncrementVersionRevision(inc, Constants["RevisionHashShort"]()) }
+	Constants["VersionNumber"] = func() string { return mustIncrementVersion(inc) }
+	Constants["IncrementString"] = func() string { return mustGetIncrementString(inc) }
 	Constants["Date"] = func() string { return time.Now().Format("Mon Jan 2 2006 15:04:05 -0700 MST") }
 	Constants["UserAgent"] = func() string {
 		return fmt.Sprintf("%s/%s; %s", constants.CommandName, Constants["Version"](), branchName)
@@ -89,12 +90,12 @@ func getCmdOutput(cmdString string) string {
 	return strings.Trim(out.String(), "\n")
 }
 
-func buildEnvironment() int {
+func buildEnvironment() version.Env {
 	if !onCI() {
-		return localEnv
+		return version.LocalEnv
 	}
 
-	return remoteEnv
+	return version.RemoteEnv
 }
 
 func onCI() bool {
@@ -104,26 +105,26 @@ func onCI() bool {
 	return false
 }
 
-func mustIncrementVersion(incrementer *VersionIncrementer) string {
-	version, err := incrementer.IncrementVersion()
+func mustIncrementVersion(inc *version.Incrementation) string {
+	vers, err := inc.Increment()
 	if err != nil {
 		log.Fatalf("Failed to increment version: %s", err)
 	}
 
-	return version.String()
+	return vers.String()
 }
 
-func mustIncrementVersionRevision(incrementer *VersionIncrementer, revision string) string {
-	version, err := incrementer.IncrementVersionRevision(revision)
+func mustIncrementVersionRevision(inc *version.Incrementation, revision string) string {
+	vers, err := inc.IncrementWithRevision(revision)
 	if err != nil {
 		log.Fatalf("Failed to increment version: %s", err)
 	}
 
-	return version.String()
+	return vers.String()
 }
 
-func mustGetIncrementString(incrementer *VersionIncrementer) string {
-	increment, err := incrementer.IncrementType()
+func mustGetIncrementString(inc *version.Incrementation) string {
+	increment, err := inc.Type()
 	if err != nil {
 		log.Fatalf("Failed to get increment string: %s", err)
 	}

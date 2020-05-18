@@ -1,4 +1,4 @@
-package preprocess
+package version
 
 import (
 	"errors"
@@ -14,9 +14,9 @@ type incrementStateStore struct {
 
 func (p incrementStateStore) IncrementType() (string, error) {
 	switch p.increment {
-	case patch, minor, major:
+	case Patch, Minor, Major:
 		return p.increment, nil
-	case zeroed:
+	case Zeroed:
 		return "", errors.New("should never return zeroed")
 	default:
 		return "", errors.New("unknown increment type name")
@@ -30,7 +30,7 @@ func TestService_IncrementVersion(t *testing.T) {
 	}
 
 	type fields struct {
-		environment int
+		environment Env
 		master      *semver.Version
 		typer       IncrementTyper
 		branch      string
@@ -44,9 +44,9 @@ func TestService_IncrementVersion(t *testing.T) {
 		{
 			name: "local environment",
 			fields: fields{
-				environment: localEnv,
+				environment: LocalEnv,
 				master:      versionSemver,
-				typer:       incrementStateStore{patch},
+				typer:       incrementStateStore{Patch},
 				branch:      "master",
 			},
 			want:    "0.0.0",
@@ -55,9 +55,9 @@ func TestService_IncrementVersion(t *testing.T) {
 		{
 			name: "local environment (branch)",
 			fields: fields{
-				environment: localEnv,
+				environment: LocalEnv,
 				master:      versionSemver,
-				typer:       incrementStateStore{patch},
+				typer:       incrementStateStore{Patch},
 				branch:      "not-master",
 			},
 			want:    "0.0.0",
@@ -66,9 +66,9 @@ func TestService_IncrementVersion(t *testing.T) {
 		{
 			name: "remote environment - patch",
 			fields: fields{
-				environment: remoteEnv,
+				environment: RemoteEnv,
 				master:      versionSemver,
-				typer:       incrementStateStore{patch},
+				typer:       incrementStateStore{Patch},
 				branch:      "master",
 			},
 			want:    "0.2.3",
@@ -77,9 +77,9 @@ func TestService_IncrementVersion(t *testing.T) {
 		{
 			name: "remote environment - minor",
 			fields: fields{
-				environment: remoteEnv,
+				environment: RemoteEnv,
 				master:      versionSemver,
-				typer:       incrementStateStore{minor},
+				typer:       incrementStateStore{Minor},
 				branch:      "master",
 			},
 			want:    "0.3.0",
@@ -88,9 +88,9 @@ func TestService_IncrementVersion(t *testing.T) {
 		{
 			name: "remote environment - major",
 			fields: fields{
-				environment: remoteEnv,
+				environment: RemoteEnv,
 				master:      versionSemver,
-				typer:       incrementStateStore{major},
+				typer:       incrementStateStore{Major},
 				branch:      "master",
 			},
 			want:    "1.0.0",
@@ -99,9 +99,9 @@ func TestService_IncrementVersion(t *testing.T) {
 		{
 			name: "remote environment - major (branch)",
 			fields: fields{
-				environment: remoteEnv,
+				environment: RemoteEnv,
 				master:      versionSemver,
-				typer:       incrementStateStore{major},
+				typer:       incrementStateStore{Major},
 				branch:      "not-master",
 			},
 			want:    "0.0.0",
@@ -110,9 +110,9 @@ func TestService_IncrementVersion(t *testing.T) {
 		{
 			name: "remote environment - patch (branch)",
 			fields: fields{
-				environment: remoteEnv,
+				environment: RemoteEnv,
 				master:      versionSemver,
-				typer:       incrementStateStore{patch},
+				typer:       incrementStateStore{Patch},
 				branch:      "not-master",
 			},
 			want:    "0.0.0",
@@ -121,7 +121,7 @@ func TestService_IncrementVersion(t *testing.T) {
 		{
 			name: "error",
 			fields: fields{
-				environment: unknownEnv,
+				environment: UnknownEnv,
 				master:      versionSemver,
 				typer:       incrementStateStore{""},
 				branch:      "master",
@@ -132,13 +132,13 @@ func TestService_IncrementVersion(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := &VersionIncrementer{
-				environment: tt.fields.environment,
-				master:      tt.fields.master,
-				typer:       tt.fields.typer,
-				branch:      tt.fields.branch,
+			s := &Incrementation{
+				env:    tt.fields.environment,
+				master: tt.fields.master,
+				typer:  tt.fields.typer,
+				branch: tt.fields.branch,
 			}
-			got, err := s.IncrementVersion()
+			got, err := s.Increment()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("VersionIncrementer.IncrementVersion() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -168,7 +168,7 @@ func TestService_IncrementVersionPreRelease(t *testing.T) {
 	versionSemver.Pre = []semver.PRVersion{preRelease}
 
 	type fields struct {
-		environment int
+		environment Env
 		master      *semver.Version
 		provider    IncrementTyper
 		branch      string
@@ -186,9 +186,9 @@ func TestService_IncrementVersionPreRelease(t *testing.T) {
 		{
 			name: "local environment",
 			fields: fields{
-				environment: localEnv,
+				environment: LocalEnv,
 				master:      versionSemver,
-				provider:    incrementStateStore{patch},
+				provider:    incrementStateStore{Patch},
 				branch:      "master",
 			},
 			args:    args{revision},
@@ -198,9 +198,9 @@ func TestService_IncrementVersionPreRelease(t *testing.T) {
 		{
 			name: "local environment (branch)",
 			fields: fields{
-				environment: localEnv,
+				environment: LocalEnv,
 				master:      versionSemver,
-				provider:    incrementStateStore{patch},
+				provider:    incrementStateStore{Patch},
 				branch:      "not-master",
 			},
 			args:    args{revision},
@@ -210,9 +210,9 @@ func TestService_IncrementVersionPreRelease(t *testing.T) {
 		{
 			name: "remote environment - patch",
 			fields: fields{
-				environment: remoteEnv,
+				environment: RemoteEnv,
 				master:      versionSemver,
-				provider:    incrementStateStore{patch},
+				provider:    incrementStateStore{Patch},
 				branch:      "master",
 			},
 			args:    args{revision},
@@ -222,9 +222,9 @@ func TestService_IncrementVersionPreRelease(t *testing.T) {
 		{
 			name: "remote environment - minor",
 			fields: fields{
-				environment: remoteEnv,
+				environment: RemoteEnv,
 				master:      versionSemver,
-				provider:    incrementStateStore{minor},
+				provider:    incrementStateStore{Minor},
 				branch:      "master",
 			},
 			args:    args{revision},
@@ -234,9 +234,9 @@ func TestService_IncrementVersionPreRelease(t *testing.T) {
 		{
 			name: "remote environment - major",
 			fields: fields{
-				environment: remoteEnv,
+				environment: RemoteEnv,
 				master:      versionSemver,
-				provider:    incrementStateStore{major},
+				provider:    incrementStateStore{Major},
 				branch:      "master",
 			},
 			args:    args{revision},
@@ -246,9 +246,9 @@ func TestService_IncrementVersionPreRelease(t *testing.T) {
 		{
 			name: "remote environment - major (branch)",
 			fields: fields{
-				environment: remoteEnv,
+				environment: RemoteEnv,
 				master:      versionSemver,
-				provider:    incrementStateStore{major},
+				provider:    incrementStateStore{Major},
 				branch:      "not-master",
 			},
 			args:    args{revision},
@@ -258,9 +258,9 @@ func TestService_IncrementVersionPreRelease(t *testing.T) {
 		{
 			name: "remote environment - patch (branch)",
 			fields: fields{
-				environment: remoteEnv,
+				environment: RemoteEnv,
 				master:      versionSemver,
-				provider:    incrementStateStore{patch},
+				provider:    incrementStateStore{Patch},
 				branch:      "not-master",
 			},
 			args:    args{revision},
@@ -270,7 +270,7 @@ func TestService_IncrementVersionPreRelease(t *testing.T) {
 		{
 			name: "error",
 			fields: fields{
-				environment: unknownEnv,
+				environment: UnknownEnv,
 				master:      versionSemver,
 				provider:    incrementStateStore{""},
 				branch:      "master",
@@ -282,13 +282,13 @@ func TestService_IncrementVersionPreRelease(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := &VersionIncrementer{
-				environment: tt.fields.environment,
-				master:      tt.fields.master,
-				typer:       tt.fields.provider,
-				branch:      tt.fields.branch,
+			s := &Incrementation{
+				env:    tt.fields.environment,
+				master: tt.fields.master,
+				typer:  tt.fields.provider,
+				branch: tt.fields.branch,
 			}
-			got, err := s.IncrementVersionRevision(tt.args.revision)
+			got, err := s.IncrementWithRevision(tt.args.revision)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("VersionIncrementer.IncrementVersionPreRelease() error = %v, wantErr %v", err, tt.wantErr)
 				return

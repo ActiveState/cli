@@ -1,4 +1,4 @@
-package preprocess
+package version
 
 import (
 	"errors"
@@ -10,57 +10,61 @@ import (
 	"github.com/blang/semver"
 )
 
+// Semver increment type values.
 const (
-	unknownEnv = iota
-	localEnv
-	remoteEnv
+	Zeroed = "zeroed"
+	Patch  = "patch"
+	Minor  = "minor"
+	Major  = "major"
 )
 
-const (
-	zeroed = "zeroed"
-	patch  = "patch"
-	minor  = "minor"
-	major  = "major"
-)
-
-// VersionIncrementer provides methods for incrementing version numbers
-type VersionIncrementer struct {
-	branch      string
-	environment int
-	master      *semver.Version
-	typer       IncrementTyper
-}
-
-// IncrementTyper represents a client/service that returns
-// strings related to semver increment values (ie. major, minor, patch)
+// IncrementTyper represents a client/service that returns strings related to
+// semver increment type values.
 type IncrementTyper interface {
 	IncrementType() (string, error)
 }
 
-// NewVersionIncrementer returns a version service initialized with provider and environment information
-func NewVersionIncrementer(typer IncrementTyper, branchName string, buildEnvironment int) (*VersionIncrementer, error) {
+// Env helps define and limit the available environments.
+type Env int
+
+const (
+	UnknownEnv Env = iota
+	LocalEnv
+	RemoteEnv
+)
+
+// Incrementation provides methods for incrementing version numbers
+type Incrementation struct {
+	branch string
+	env    Env
+	master *semver.Version
+	typer  IncrementTyper
+}
+
+// NewIncrementation returns a version service initialized with provider and environment information
+func NewIncrementation(typer IncrementTyper, branchName string, buildEnv Env) (*Incrementation, error) {
 	master, err := masterVersion()
 	if err != nil {
 		return nil, err
 	}
 
-	return &VersionIncrementer{
-		branch:      branchName,
-		environment: buildEnvironment,
-		typer:       typer,
-		master:      master,
+	return &Incrementation{
+		branch: branchName,
+		env:    buildEnv,
+		typer:  typer,
+		master: master,
 	}, nil
 }
 
-// IncrementVersion bumps the master version based on the current build
-// environment and the increment provided
-func (v *VersionIncrementer) IncrementVersion() (*semver.Version, error) {
+// Increment bumps the master version based on the current build environment
+// and the increment type provided.
+func (v *Incrementation) Increment() (*semver.Version, error) {
 	return v.incrementFromEnvironment()
 }
 
-// IncrementVersionRevision bumps the master version based on the current build
-// environment, the increment and revision string provided
-func (v *VersionIncrementer) IncrementVersionRevision(revision string) (*semver.Version, error) {
+// IncrementWithRevision bumps the master version based on the current build
+// environment, the increment type and revision string provided.
+func (v *Incrementation) IncrementWithRevision(revision string) (*semver.Version, error) {
 	version, err := v.incrementFromEnvironment()
 	if err != nil {
 		return nil, err
@@ -75,14 +79,14 @@ func (v *VersionIncrementer) IncrementVersionRevision(revision string) (*semver.
 	return version, nil
 }
 
-// IncrementType returns the string representation of the version bump
+// Type returns the string representation of the version bump
 // ie. patch, minor, or major
-func (v *VersionIncrementer) IncrementType() (string, error) {
-	if v.environment != localEnv && v.branch == "master" {
+func (v *Incrementation) Type() (string, error) {
+	if v.env != LocalEnv && v.branch == "master" {
 		return v.typer.IncrementType()
 	}
 
-	return zeroed, nil
+	return Zeroed, nil
 }
 
 func masterVersion() (*semver.Version, error) {
@@ -111,22 +115,22 @@ func masterVersion() (*semver.Version, error) {
 	return masterVersion, nil
 }
 
-func (v *VersionIncrementer) incrementFromEnvironment() (*semver.Version, error) {
-	switch v.environment {
-	case localEnv:
+func (v *Incrementation) incrementFromEnvironment() (*semver.Version, error) {
+	switch v.env {
+	case LocalEnv:
 		copy := *v.master
 		copy.Major = 0
 		copy.Minor = 0
 		copy.Patch = 0
 		return &copy, nil
-	case remoteEnv:
-		return v.incrementVersion()
+	case RemoteEnv:
+		return v.increment()
 	default:
 		return nil, errors.New("encountered unknown build environment")
 	}
 }
 
-func (v *VersionIncrementer) incrementVersion() (*semver.Version, error) {
+func (v *Incrementation) increment() (*semver.Version, error) {
 	var increment string
 	var err error
 
@@ -134,7 +138,7 @@ func (v *VersionIncrementer) incrementVersion() (*semver.Version, error) {
 	case "master":
 		increment, err = v.typer.IncrementType()
 	default:
-		increment = zeroed
+		increment = Zeroed
 	}
 	if err != nil {
 		return nil, err
@@ -142,16 +146,16 @@ func (v *VersionIncrementer) incrementVersion() (*semver.Version, error) {
 
 	copy := *v.master
 	switch increment {
-	case zeroed:
+	case Zeroed:
 		copy.Major = 0
 		copy.Minor = 0
 		copy.Patch = 0
-	case patch:
+	case Patch:
 		copy.Patch++
-	case minor:
+	case Minor:
 		copy.Minor++
 		copy.Patch = 0
-	case major:
+	case Major:
 		copy.Major++
 		copy.Minor = 0
 		copy.Patch = 0
@@ -162,11 +166,17 @@ func (v *VersionIncrementer) incrementVersion() (*semver.Version, error) {
 	return &copy, nil
 }
 
-// VersionNumberIsProduction returns whether or not the provided version number
+// CurrentNumberIsProduction returns whether or not the current version number
 // indicates a production build. The accuracy of this likely relies on constant
 // generation being run first.
-func VersionNumberIsProduction(versionNumber string) bool {
-	version, err := semver.Parse(versionNumber)
+func CurrentNumberIsProduction() bool {
+	return NumberIsProduction(constants.VersionNumber)
+}
+
+// NumberIsProduction returns whether or not the provided version number
+// indicates a production build.
+func NumberIsProduction(number string) bool {
+	version, err := semver.Parse(number)
 	if err != nil {
 		return false
 	}

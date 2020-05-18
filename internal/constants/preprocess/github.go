@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/constants/version"
 	"github.com/google/go-github/v29/github"
 	"golang.org/x/oauth2"
 )
@@ -74,7 +75,7 @@ func (g *GithubIncrementStateStore) versionLabelPullRequest(number int) (string,
 	label := getLabel(pullRequest.Labels)
 	target := strings.TrimPrefix(pullRequest.GetBase().GetLabel(), fmt.Sprintf("%s:", constants.LibraryOwner))
 	if target != masterBranch && label == "" {
-		return patch, nil
+		return version.Patch, nil
 	}
 
 	if label == "" {
