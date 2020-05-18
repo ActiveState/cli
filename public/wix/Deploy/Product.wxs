@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-	<Product Id="*" Name="ActiveState Language Installer" Language="1033" Version="1.0.0.0" Manufacturer="ActiveState" UpgradeCode="a8b44798-ee47-4404-8ae3-d821e603b426">
-		<Package Id='*' Keywords='Installer' Description="ActiveState's Language Installer"
+	<Product Id="*" Name="ActiveState Language Runtime" Language="1033" Version="1.0.0.0" Manufacturer="ActiveState" UpgradeCode="a8b44798-ee47-4404-8ae3-d821e603b426">
+		<Package Id='*' Keywords='Installer' Description="ActiveState Language Runtime"
             Comments='State Tool is a registered trademark of ActiveState' Manufacturer='ActiveState'
             InstallerVersion='200' Languages='1033' Compressed='yes' SummaryCodepage='1252' />
 
@@ -88,11 +88,11 @@
 
 			<Publish Dialog="MaintenanceWelcomeDlg" Control="Next" Event="NewDialog" Value="MaintenanceTypeDlg">1</Publish>
 
+			<Publish Dialog="MaintenanceTypeDlg" Control="ChangeButton" Event="NewDialog" Value="VerifyReadyDlg">1</Publish>
 			<Publish Dialog="MaintenanceTypeDlg" Control="RepairButton" Event="NewDialog" Value="VerifyReadyDlg">1</Publish>
 			<Publish Dialog="MaintenanceTypeDlg" Control="RemoveButton" Event="NewDialog" Value="VerifyReadyDlg">1</Publish>
 			<Publish Dialog="MaintenanceTypeDlg" Control="Back" Event="NewDialog" Value="MaintenanceWelcomeDlg">1</Publish>
 
-			<Property Id="ARPNOMODIFY" Value="1" />
 		</UI>
 
 		<UIRef Id="WixUI_Common" />
@@ -106,7 +106,7 @@
 		<!-- TODO: Use project name in success message after install -->
 		<CustomAction Id="CA_Set_WIXUI_EXITDIALOGOPTIONALTEXT" Property="WIXUI_EXITDIALOGOPTIONALTEXT" Value="Installation complete. Thank you for installing an ActiveState Language Runtime."/>
 		<InstallUISequence>
-			<Custom Action="GetProjectName" After="CostFinalize">NOT Installed</Custom>
+			<Custom Action="GetProjectName" After="CostFinalize">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
 			<Custom Action="CA_Set_WIXUI_EXITDIALOGOPTIONALTEXT" Sequence="1">NOT Installed</Custom>
 		</InstallUISequence>
 
@@ -123,8 +123,8 @@
 		<CustomAction Id="Uninstall" Impersonate="no" BinaryKey="UninstallCA" DllEntry="Uninstall" Return="check" />
 
 		<InstallExecuteSequence>
-			<Custom Action="StateCommandExists" After="InstallInitialize">NOT Installed</Custom>
-			<Custom Action="StateDeploy" After="StateCommandExists">NOT Installed</Custom>
+			<Custom Action="StateCommandExists" After="InstallInitialize">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
+			<Custom Action="StateDeploy" After="StateCommandExists">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
 			<Custom Action="Uninstall" After="RemoveFiles">REMOVE="ALL"</Custom>
 		</InstallExecuteSequence>
 	</Product>
