@@ -27,6 +27,7 @@ type IncrementTyper interface {
 // Env helps define and limit the available environments.
 type Env int
 
+// Env constants are the available environment tokens.
 const (
 	UnknownEnv Env = iota
 	LocalEnv
@@ -164,13 +165,6 @@ func (v *Incrementation) increment() (*semver.Version, error) {
 	}
 
 	return &copy, nil
-}
-
-// CurrentNumberIsProduction returns whether or not the current version number
-// indicates a production build. The accuracy of this likely relies on constant
-// generation being run first.
-func CurrentNumberIsProduction() bool {
-	return NumberIsProduction(constants.VersionNumber)
 }
 
 // NumberIsProduction returns whether or not the provided version number
