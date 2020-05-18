@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -46,8 +47,8 @@ func (suite *DeployIntegrationTestSuite) TestDeploy() {
 		cp = ts.Spawn("deploy", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work, "--force")
 	}
 
-	cp.Expect("Installing", 120*time.Second)
-	cp.Expect("Configuring", 120*time.Second)
+	cp.Expect("Installing", 2*time.Second)
+	cp.Expect("Configuring", 2*time.Second)
 	cp.Expect("Symlinking")
 	cp.Expect("Deployment Information", 60*time.Second)
 	cp.Expect(ts.Dirs.Work) // expect bin dir
@@ -66,6 +67,20 @@ func (suite *DeployIntegrationTestSuite) TestDeploy() {
 		suite.Require().NoError(err)
 		suite.Contains(link, ts.Dirs.Work, "python3 executable resolves to the one on our target dir")
 	}
+
+	// check that some of the installed symlinks are use-able
+	cp = ts.SpawnCmd(filepath.Join(ts.Dirs.Work, "bin", "python3"), "--version")
+	cp.Expect("Python 3")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnCmd(filepath.Join(ts.Dirs.Work, "bin", "pip3"), "--version")
+	cp.Expect("pip")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnCmd(filepath.Join(ts.Dirs.Work, "bin", "pytest"), "--version")
+	cp.Expect("This is pytest version")
+	cp.Expect(fmt.Sprintf("imported from %s", ts.Dirs.Work))
+	cp.ExpectExitCode(0)
 
 	suite.AssertConfig(ts)
 }
