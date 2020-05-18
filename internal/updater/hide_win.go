@@ -3,12 +3,9 @@
 package updater
 
 import (
-	"errors"
 	"fmt"
 	"syscall"
 	"unsafe"
-
-	"golang.org/x/sys/windows"
 )
 
 func hideFile(path string) error {
@@ -16,8 +13,8 @@ func hideFile(path string) error {
 	setFileAttrs := k32.NewProc("SetFileAttributesW")
 
 	uipPath := uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(path)))
-	_, _, err := setFileAttrs.Call(uipPath, 2)
-	if err != nil && !errors.Is(err, windows.ERROR_SUCCESS) {
+	r1, _, err := setFileAttrs.Call(uipPath, 2)
+	if r1 == 0 && err != 0 {
 		return fmt.Errorf("Hide file (set attributes): %w", err)
 	}
 
