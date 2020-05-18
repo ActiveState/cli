@@ -2,7 +2,9 @@ package deploy
 
 import (
 	"os"
+	"path/filepath"
 	"reflect"
+	rt "runtime"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/failures"
@@ -159,6 +161,49 @@ func Test_runStepsWithFuncs(t *testing.T) {
 			}
 			if reportCalled != tt.want.reportCalled {
 				t.Errorf("runStepsWithFuncs() reportCalled = %v, want %v", reportCalled, tt.want.reportCalled)
+			}
+		})
+	}
+}
+
+func Test_fileNameBase(t *testing.T) {
+	testPath := filepath.FromSlash("/a/b/test-a.exe")
+	res := fileNameBase(testPath)
+	expected := "test-a.exe"
+	if rt.GOOS == "windows" {
+		expected = "test-a"
+	}
+	if res != expected {
+		t.Errorf("expected=\"%s\", got=\"%s\"", expected, res)
+	}
+}
+
+func Test_maySymlink(t *testing.T) {
+
+	symlinkedFiles := map[string]string{
+		fileNameBase("test-a.exe"): filepath.FromSlash("/a/test-a.exe"),
+	}
+
+	tests := []struct {
+		name string
+		path string
+		want bool
+	}{
+		{"new executable", filepath.FromSlash("/a/new.exe"), true},
+		{"overwrite exe", filepath.FromSlash("/a/test-a.exe"), true},
+		{"add bat", filepath.FromSlash("/a/test-a.bat"), true},
+		{"add exe other dir", filepath.FromSlash("/b/c/test-a.exe"), false},
+		{"add bat other dir", filepath.FromSlash("/b/c/test-a.bat"), rt.GOOS != "windows"},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(tt *testing.T) {
+			if maySymlink(tc.path, symlinkedFiles) != tc.want {
+				conditional := ""
+				if !tc.want {
+					conditional = "not"
+				}
+				t.Errorf("Expected %s %s to be allowed to symlink", tc.path, conditional)
 			}
 		})
 	}

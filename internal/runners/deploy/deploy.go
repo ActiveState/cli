@@ -222,6 +222,41 @@ func symlink(installPath string, overwrite bool, envGetter runtime.EnvGetter, ou
 	return nil
 }
 
+// maySymlink checks if we are allowed to symlink to path. If a symlink
+// to a file of the same name (possibly with a different file extension on
+// Windows) in a different directory exists already, it returns false
+func maySymlink(path string, symlinkedFiles map[string]string) bool {
+	oldPath, exists := symlinkedFiles[fileNameBase(path)]
+	// if not file of that name has been written yet, then symlinking is okay
+	if !exists {
+		return true
+	}
+
+	// if the the new path is in a different directory, we should not symlink, as the previously symlinked file was in a higher priority PATH
+	return filepath.Dir(oldPath) == filepath.Dir(path)
+}
+
+func fileNameBase(path string) string {
+	base := filepath.Base(path)
+	if rt.GOOS == "windows" {
+		ext := filepath.Ext(path)
+		base = base[0 : len(base)-len(ext)-1]
+	}
+	return base
+}
+
+func symlinkWritten(path string, symlinkedFiles map[string]string) map[string]string {
+	key := fileNameBase(path)
+
+	symlinkedFiles[key] = path
+	return symlinkedFiles
+}
+
+// symlinkWithTarget creates symlinks in the target path of all executables found in the bins dir
+// It overwrites existing files, if the overwrite flag is set.
+// On Windows the same executable name can have several file extensions,
+// therefore executables are only symlinked if it has not been symlinked to a
+// target (with the same or a different extension) from a different directory.
 func symlinkWithTarget(overwrite bool, path string, bins []string, out output.Outputer) error {
 	out.Notice(locale.Tr("deploy_symlink", path))
 
@@ -231,6 +266,7 @@ func symlinkWithTarget(overwrite bool, path string, bins []string, out output.Ou
 			"Could not create directory at {{.V0}}, make sure you have permissions to write to %s.", path, filepath.Dir(path))
 	}
 
+	symlinkedFiles := make(map[string]string)
 	for _, bin := range bins {
 		err := filepath.Walk(bin, func(fpath string, info os.FileInfo, err error) error {
 			// Filter out files that are not executable
@@ -240,6 +276,9 @@ func symlinkWithTarget(overwrite bool, path string, bins []string, out output.Ou
 
 			// Ensure target is valid
 			target := filepath.Join(path, filepath.Base(fpath))
+			if !maySymlink(fpath, symlinkedFiles) {
+				return nil
+			}
 			if fileutils.TargetExists(target) {
 				if overwrite {
 					out.Notice(locale.Tr("deploy_overwrite_target", target))
@@ -255,6 +294,7 @@ func symlinkWithTarget(overwrite bool, path string, bins []string, out output.Ou
 				}
 			}
 
+			symlinkedFiles[fileNameBase(fpath)] = fpath
 			return link(fpath, target)
 		})
 		if err != nil {
