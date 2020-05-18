@@ -77,7 +77,10 @@ func (suite *DeployIntegrationTestSuite) TestDeploy() {
 	cp.Expect("pip")
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnCmd(filepath.Join(ts.Dirs.Work, "bin", "pytest"), "--version")
+	cp = ts.SpawnCmd(filepath.Join(ts.Dirs.Work, "bin", "pyvenv"), "-h")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnCmd(filepath.Join(ts.Dirs.Work, "bin", "python3"), "-m", "pytest", "--version")
 	cp.Expect("This is pytest version")
 	cp.Expect(fmt.Sprintf("imported from %s", ts.Dirs.Work))
 	cp.ExpectExitCode(0)
