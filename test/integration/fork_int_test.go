@@ -45,7 +45,7 @@ func (suite *ForkIntegrationTestSuite) TestFork_FailNameExists() {
 		e2e.WithArgs("fork", "ActiveState-CLI/Python3", "--org", e2e.PersistentUsername),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Could not create the forked project", 30*time.Second)
+	cp.Expect("Could not create project:", 30*time.Second)
 	cp.Expect("The name 'Python3' is no longer available, it was used in a now deleted project.", 30*time.Second)
 	cp.ExpectNotExitCode(0)
 	suite.NotContains(cp.TrimmedSnapshot(), "Successfully forked project")
