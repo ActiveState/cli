@@ -68,19 +68,38 @@ func (suite *DeployIntegrationTestSuite) TestDeploy() {
 		suite.Contains(link, ts.Dirs.Work, "python3 executable resolves to the one on our target dir")
 	}
 
+	env := e2e.AppendEnv()
+	// add .lnk to PATHEXT on windows
+	if runtime.GOOS == "windows" {
+		env = e2e.AppendEnv("PATHEXT=.COM;.EXE;.BAT;.LNK")
+	}
+
 	// check that some of the installed symlinks are use-able
-	cp = ts.SpawnCmd(filepath.Join(ts.Dirs.Work, "bin", "python3"), "--version")
+	cp = ts.SpawnCmdWithOpts(
+		filepath.Join(ts.Dirs.Work, "bin", "python3"),
+		e2e.WithArgs("--version"), env,
+	)
+
 	cp.Expect("Python 3")
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnCmd(filepath.Join(ts.Dirs.Work, "bin", "pip3"), "--version")
+	cp = ts.SpawnCmdWithOpts(
+		filepath.Join(ts.Dirs.Work, "bin", "pip3"),
+		e2e.WithArgs("--version"), env,
+	)
 	cp.Expect("pip")
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnCmd(filepath.Join(ts.Dirs.Work, "bin", "pyvenv"), "-h")
+	cp = ts.SpawnCmdWithOpts(
+		filepath.Join(ts.Dirs.Work, "bin", "pyvenv"),
+		e2e.WithArgs("-h"), env,
+	)
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnCmd(filepath.Join(ts.Dirs.Work, "bin", "python3"), "-m", "pytest", "--version")
+	cp = ts.SpawnCmdWithOpts(
+		filepath.Join(ts.Dirs.Work, "bin", "python3"),
+		e2e.WithArgs("-m", "pytest", "--version"), env,
+	)
 	cp.Expect("This is pytest version")
 	cp.Expect(fmt.Sprintf("imported from %s", ts.Dirs.Work))
 	cp.ExpectExitCode(0)
