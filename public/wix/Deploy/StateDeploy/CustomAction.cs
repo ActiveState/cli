@@ -1,5 +1,6 @@
 using Microsoft.Deployment.WindowsInstaller;
 using System;
+using System.Text;
 
 namespace StateDeploy
 {
@@ -10,10 +11,7 @@ namespace StateDeploy
         {
             session.Log("Starting state deploy");
 
-            string installDir = session["INSTALLDIR"];
-            string projectName = session["PROJECT_NAME"];
-            string deployCmd = string.Format("state deploy --force --path {0} {1}", installDir, projectName);
-
+            string deployCmd = BuildDeployCmd(session);
             session.Log(string.Format("Executing deploy command: {0}", deployCmd));
             try
             {
@@ -41,6 +39,26 @@ namespace StateDeploy
             }
 
             return ActionResult.Success;
+        }
+
+        private static string BuildDeployCmd(Session session)
+        {
+            string installDir = session["INSTALLDIR"];
+            string projectName = session["PROJECT_NAME"];
+            string isModify = session["IS_MODIFY"];
+
+            StringBuilder deployCMDBuilder = new StringBuilder("state deploy");
+            if (isModify == "true")
+            {
+                deployCMDBuilder.Append(" --force");
+            }
+
+            // We quote the string here as Windows paths that contain spaces must be quoted.
+            // We also account for a path ending with a slash and ensure that the quote character
+            // isn't preserved.
+            deployCMDBuilder.AppendFormat(" {0} --path=\"{1}\\\"", projectName, @installDir);
+
+            return deployCMDBuilder.ToString();
         }
     }
 }
