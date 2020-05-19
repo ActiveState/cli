@@ -132,8 +132,6 @@ no_update_available:
   other: You are using the latest version available
 updating_to_version:
   other: Updating from {{.fromVersion}} to {{.toVersion}}
-err_update_failed:
-  other: Update failed, check the error log for more information
 confirm_update_locked_version_prompt:
   other: "You ran update from a project directory with a locked State Tool version. This will update the version that your project is locked to. Are you sure you want to do this?"
 version_info:
@@ -845,16 +843,6 @@ forward_fail_with_error:
   other: "Could not forward the command to the appropriate State Tool version, error: {{.V0}}"
 forward_fail_info:
   other: The requested version of the State Tool does not exist, please ensure the version and branch are correct.
-flag_update_lock_description:
-  other: Lock the State Tool at the current version, this disables automatic updates. You can still force an update by manually running the update command.
-flag_update_force_description:
-  other: Automatically confirm that you would like to update the State Tool version that your project is locked to.
-err_lock_failed:
-  other: Locking the version failed
-locking_version:
-  other: Locking State Tool to the current version
-version_locked:
-  other: Version locked at {{.V0}}
 update_available:
   other: |
     A new update is available!
@@ -1084,8 +1072,6 @@ commit_message_add_language:
   other: "Added language: {{.V0}} {{.V1}}"
 commit_message_removed_language:
   other: "Removed language: {{.V0}} {{.V1}}"
-update_description:
-  other: Updates the State Tool to the latest available version
 downloading_artifacts:
   other: Downloading required artifacts
 installing_artifacts:
@@ -1250,8 +1236,6 @@ commit_reqstext_remove_existing_message:
   other: "Remove current packages prior to import from requirements file"
 err_cannot_remove_existing:
   other: "The already configured packages were not able to be overwritten"
-err_action_was_not_confirmed:
-  other: "Current action was not confirmed"
 err_branch_not_bare:
   other: Branch is not bare and is unable to be initialized as such
 err_package_add:

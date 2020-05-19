@@ -105,7 +105,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmationNegative() 
 	)
 	cp.Expect("sure you want")
 	cp.SendLine("n")
-	cp.Expect("not confirmed")
+	cp.Expect("not confirm")
 	cp.ExpectNotExitCode(0)
 }
 
@@ -130,7 +130,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmationPositive() 
 	)
 	cp.Expect("sure you want")
 	cp.SendLine("y")
-	cp.Expect("locked at")
+	cp.Expect("Locked version updated")
 	cp.ExpectExitCode(0)
 }
 
@@ -153,7 +153,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmationForce() {
 		e2e.WithArgs("update", "--force"),
 		e2e.AppendEnv(suite.env(true)...),
 	)
-	cp.Expect("locked at")
+	cp.Expect("Locked version updated")
 	cp.ExpectExitCode(0)
 }
 
@@ -164,9 +164,9 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 	cp := ts.SpawnWithOpts(e2e.WithArgs("update"), e2e.AppendEnv(suite.env(true)...))
 	// on master branch, we might already have the latest version available
 	if os.Getenv("GIT_BRANCH") == "master" {
-		cp.ExpectRe("(Update completed|You are using the latest version available)", 60*time.Second)
+		cp.ExpectRe("(Version updated|You are using the latest version available)", 60*time.Second)
 	} else {
-		cp.Expect("Update completed", 60*time.Second)
+		cp.Expect("Version updated", 60*time.Second)
 	}
 	cp.ExpectExitCode(0)
 
