@@ -232,20 +232,6 @@ func TestExecutable(t *testing.T) {
 	assert.True(t, IsExecutable(os.Args[0]), "Can detect that file is executable")
 }
 
-func TestSymlink(t *testing.T) {
-	td, err := ioutil.TempDir("", "")
-	require.NoError(t, err)
-	target := filepath.Join(td, "target")
-	fail := Touch(target)
-	require.NoError(t, fail.ToError())
-	symlink := filepath.Join(td, "symlink")
-	err = os.Symlink(target, symlink)
-	require.NoError(t, err)
-
-	assert.True(t, IsSymlink(symlink), "expected symlink")
-	assert.False(t, IsSymlink(target), "expected no symlink")
-}
-
 func TestCreateTempExecutable(t *testing.T) {
 	patPrefix := "abc"
 	patSuffix := ".xxx"
