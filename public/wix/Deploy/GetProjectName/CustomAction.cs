@@ -10,7 +10,7 @@ namespace GetProjectName
         [CustomAction]
         public static ActionResult GetProjectName(Session session)
         {
-            session.Log("Attempting to get Project namespace from filename");
+            session.Log("Attempting to get Project namespace from MSI filename");
 
             string filename = Path.GetFileNameWithoutExtension(session["OriginalDatabase"]);
             session.Log(string.Format("MSI filename: {0}", filename));
@@ -30,8 +30,18 @@ namespace GetProjectName
             session["PROJECT_NAME"] = projectNamespace;
 
             // Update INSTALLDIR to dynamically set the installation directory to the project name
+            return SetInstallDir(session, projectNamespace);
+        }
+
+        private static ActionResult SetInstallDir(Session session, string projectNamespace)
+        {
             string originalInstallDir = session["INSTALLDIR"];
             string[] elements = Path.GetDirectoryName(originalInstallDir).Split('\\');
+            if (elements.Count() <= 0)
+            {
+                session.Message(InstallMessage.Error, new Record { FormatString = string.Format("Invalid install directory: {0}.", originalInstallDir) });
+                return ActionResult.Failure;
+            }
 
             string projectName = projectNamespace.Substring(projectNamespace.IndexOf('/') + 1);
             elements[elements.Count() - 1] = projectName;
