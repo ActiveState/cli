@@ -739,12 +739,12 @@ func HomeDir() (string, error) {
 func IsWritable(path string) bool {
 	fpath := filepath.Join(path, uuid.New().String())
 	if fail := Touch(fpath); fail != nil {
-		logging.Error("Could not create file: %v", fail.ToError())
+		logging.Debug("Could not create file: %v", fail.ToError())
 		return false
 	}
 
 	if errr := os.Remove(fpath); errr != nil {
-		logging.Error("Could not clean up test file: %v", errr)
+		logging.Debug("Could not clean up test file: %v", errr)
 		return false
 	}
 
