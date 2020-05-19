@@ -113,6 +113,18 @@ scripts:
       $scripts.preprocess
       go run scripts/wix/main.go public/wix/install.wxs
       go build -o ./public/wix/rmpath/rmpath.exe $constants.CLI_BUILDFLAGS ./public/wix/rmpath/main.go
+  - name: build-workflows
+    Description: Generates our github workflows
+    value: |
+      if ! type "go" &> /dev/null; then
+        pushd ~
+        go get github.com/k14s/ytt/cmd/ytt
+        popd
+      fi
+      pwd
+      mv .github/workflows/README.md /tmp # ytt deletes all files in target dir -- https://github.com/k14s/ytt/issues/145
+      ytt -f .github/workflows-src/ --ignore-unknown-comments --output-directory .github/workflows
+      mv /tmp/README.md .github/workflows
   - name: test
     description: Runs unit tests (not integration tests)
     value: |
@@ -146,9 +158,13 @@ events:
       git config core.hooksPath .githooks
       if ! type "packr" &> /dev/null; then
         echo "packr was not found on your PATH, installing .."
+        pushd ~
         go get -u github.com/gobuffalo/packr/...
+        popd
       fi
       if ! type "swagger" &> /dev/null; then
         echo "swagger was not found on your PATH, installing .."
+        pushd
         go get -u github.com/go-swagger/go-swagger/cmd/swagger
+        popd
       fi

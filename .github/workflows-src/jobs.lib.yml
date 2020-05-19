@@ -1,0 +1,55 @@
+#@ load("steps.lib.yml", "steps_build", "steps_genupdate", "steps_installgo", "steps_installstate", "steps_inttest")
+
+strategy: &strategy
+  matrix:
+    go-version: [1.13.x]
+    platform: [ubuntu-latest] # , macos-latest, windows-latest]
+runs-on: &runs-on ${{ matrix.platform }}
+env: &env
+  ACTIVESTATE_CLI_DISABLE_RUNTIME: true # We don't need Perl or Python
+  GOFLAGS: -mod=vendor
+
+#@ def jobs_build():
+build:
+  name: Build
+  strategy: *strategy
+  runs-on: *runs-on
+  env: *env
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - #@ steps_installgo()
+    - #@ steps_installstate()
+    - #@ steps_build()
+    - #@ steps_genupdate()
+#@ end
+
+#@ def jobs_unittest():
+unit-test:
+  name: Unit Test
+  strategy: *strategy
+  runs-on: *runs-on
+  env: *env
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - #@ steps_installgo()
+    - #@ steps_installstate()
+    - name: Unit Tests
+      run: go test -v -covermode=atomic -coverprofile=c.out `$GOROOT/bin/go list ./... | grep -v api | grep -v integration | grep -v expect`
+#@ end
+
+#@ def jobs_inttest():
+build:
+  name: Integration Test
+  strategy: *strategy
+  runs-on: *runs-on
+  env: *env
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - #@ steps_installgo()
+    - #@ steps_installstate()
+    - #@ steps_build()
+    - #@ steps_inttest()
+#@ end

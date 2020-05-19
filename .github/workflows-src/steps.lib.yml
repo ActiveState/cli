@@ -1,0 +1,35 @@
+#@ def steps_build():
+name: Build
+run: |
+  BRANCH=$(git rev-parse --abbrev-ref HEAD)
+  if [[ "$BRANCH" == "master" ]]; then
+  export BRANCH_OVERRIDE=unstable
+  fi
+  state run build
+#@ end
+---
+#@ def steps_genupdate():
+name: Generate Update
+run: |
+  state run generate-update
+#@ end
+
+---
+#@ def steps_installgo():
+name: Install Go
+uses: actions/setup-go@v2
+with:
+  go-version: ${{ matrix.go-version }}
+#@ end
+---
+#@ def steps_installstate():
+name: Install State Tool
+run: |
+  ./public/install.sh -n -b master
+  echo "::add-path::$HOME/.local/bin"
+#@ end
+---
+#@ def steps_inttest():
+name: integration tests
+run: go test -timeout 20m ./test/integration -v
+#@ end

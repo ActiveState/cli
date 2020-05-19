@@ -1,43 +1,40 @@
-name: Integration Tests
-
-on:
-  schedule:
-    - cron:  '0 0 * * *'
-
+name: Integration Test
+true:
+  push:
+    branches:
+    - master
+  pull_request:
+  - master
 jobs:
-  build-test:
+  build:
+    name: Integration Test
     strategy:
       matrix:
-        go-version: [1.13.x]
-        platform: [ubuntu-latest] # , macos-latest, windows-latest]
+        go-version:
+        - 1.13.x
+        platform:
+        - ubuntu-latest
     runs-on: ${{ matrix.platform }}
     env:
-      ACTIVESTATE_CLI_DISABLE_RUNTIME: true # We don't need Perl or Python
+      ACTIVESTATE_CLI_DISABLE_RUNTIME: true
       GOFLAGS: -mod=vendor
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-      - name: Install Go
-        uses: actions/setup-go@v2
-        with:
-          go-version: ${{ matrix.go-version }}
-      - name: prepare
-        run: |
-          pushd /
-          go get github.com/gobuffalo/packr/packr
-          popd
-
-          ./public/install.sh -n -b master
-          echo "::add-path::$HOME/.local/bin"
-          state run preprocess
-      - name: build
-        run: |
-          set -e
-          BRANCH=$(git rev-parse --abbrev-ref HEAD)
-          if [[ "$BRANCH" == "master" ]]; then
-            export BRANCH_OVERRIDE=unstable
-          fi
-          state run build
-          state run generate-update
-      - name: integration tests
-        run: go test -timeout 20m ./test/integration -v
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - name: Install Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: ${{ matrix.go-version }}
+    - name: Install State Tool
+      run: |
+        ./public/install.sh -n -b master
+        echo "::add-path::$HOME/.local/bin"
+    - name: Build
+      run: |
+        BRANCH=$(git rev-parse --abbrev-ref HEAD)
+        if [[ "$BRANCH" == "master" ]]; then
+        export BRANCH_OVERRIDE=unstable
+        fi
+        state run build
+    - name: integration tests
+      run: go test -timeout 20m ./test/integration -v
