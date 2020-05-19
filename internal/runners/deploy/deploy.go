@@ -232,10 +232,9 @@ func symlink(installPath string, overwrite bool, envGetter runtime.EnvGetter, ou
 	return nil
 }
 
-// maySymlink checks if we are allowed to symlink to path: If a symlink
-// to a file of the same name (possibly with a different file extension on
-// Windows) in a different directory exists has been created already, it returns false
-// This function enforces that the PATH order is respected for symlinks
+// maySymlink enforces that only executables in the most prioritized PATH directory are symlinked.
+// If a symlink to a file of the same name (possibly with a different file extension on
+// Windows) in a different directory exists has been created already, it returns false.
 func maySymlink(path string, symlinkedFiles map[string]string) bool {
 	oldPath, exists := symlinkedFiles[fileNameBase(path)]
 	// if not file of that name has been written yet, then symlinking is okay
@@ -247,7 +246,11 @@ func maySymlink(path string, symlinkedFiles map[string]string) bool {
 	return filepath.Dir(oldPath) == filepath.Dir(path)
 }
 
-func shouldOverwrite(overwrite bool, path string, symlinkedFiles map[string]string, pathExt []string) (bool, bool) {
+// shouldOverwriteSymlink enforces that only executables with the most prioritized PATHEXT extension (on Windows) are symlinked.
+// It returns two booleans, the first one indicating whether the symlink should be overwritten, the second one indicating whether it is allowed.
+// On Linux and MacOS it always returns true
+// On Windows only, if the new path has a higher priority extension than previously symlinked exectuables.
+func shouldOverwriteSymlink(overwrite bool, path string, symlinkedFiles map[string]string, pathExt []string) (bool, bool) {
 	// on non-windows systems, overwrite says it all
 	if rt.GOOS != "windows" {
 		return true, overwrite
@@ -306,7 +309,7 @@ func symlinkWritten(path string, symlinkedFiles map[string]string) map[string]st
 // On Windows the same executable name can have several file extensions,
 // therefore executables are only symlinked if it has not been symlinked to a
 // target (with the same or a different extension) from a different directory.
-// Also, only the executable with the highest priority according to pathExt is symlinked.
+// Also: Only the executable with the highest priority according to pathExt is symlinked.
 func symlinkWithTarget(overwrite bool, path string, bins []string, pathExt []string, out output.Outputer) error {
 	out.Notice(locale.Tr("deploy_symlink", path))
 
@@ -330,7 +333,7 @@ func symlinkWithTarget(overwrite bool, path string, bins []string, pathExt []str
 				return nil
 			}
 			if fileutils.TargetExists(target) {
-				doOverwrite, allowed := shouldOverwrite(overwrite, fpath, symlinkedFiles, pathExt)
+				doOverwrite, allowed := shouldOverwriteSymlink(overwrite, fpath, symlinkedFiles, pathExt)
 				if doOverwrite {
 					if !allowed {
 						return locale.NewInputError(

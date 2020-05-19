@@ -40,7 +40,7 @@ func Test_shouldOverwriteSymlink(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(tt *testing.T) {
-			doOverwrite, allowed := shouldOverwrite(tc.overwrite, tc.path, symlinkedFiles, pathExt)
+			doOverwrite, allowed := shouldOverwriteSymlink(tc.overwrite, tc.path, symlinkedFiles, pathExt)
 			if doOverwrite != tc.want {
 				conditional := ""
 				if !tc.want {
