@@ -65,7 +65,7 @@ func TestTimedCheckLockedVersion(t *testing.T) {
 	_, err := os.Stat(updateCheckMarker)
 	assert.Error(t, err, "update-check marker does not exist")
 
-	update, _ := AutoUpdate(configPath)
+	update, _ := AutoUpdate(configPathWithVersion)
 	assert.False(t, update, "Should not want to update because we're using a locked version")
 }
 
