@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 	"time"
 
@@ -68,38 +69,37 @@ func (suite *DeployIntegrationTestSuite) TestDeploy() {
 		suite.Contains(link, ts.Dirs.Work, "python3 executable resolves to the one on our target dir")
 	}
 
-	env := e2e.AppendEnv()
-	// add .lnk to PATHEXT on windows
-	if runtime.GOOS == "windows" {
-		env = e2e.AppendEnv("PATHEXT=.COM;.EXE;.BAT;.LNK")
+	cmdIfy := func(args ...string) *termtest.ConsoleProcess {
+		if runtime.GOOS != "windows" {
+			return ts.SpawnCmd(args[0], args[1:]...)
+		}
+
+		var b strings.Builder
+		b.WriteString(args[0] + ".lnk")
+		for i := 1; i < len(args); i++ {
+			b.WriteString(fmt.Sprintf(" %s", args[i]))
+		}
+
+		return ts.SpawnCmd("cmd", "/c", b.String())
 	}
 
 	// check that some of the installed symlinks are use-able
-	cp = ts.SpawnCmdWithOpts(
-		filepath.Join(ts.Dirs.Work, "bin", "python3"),
-		e2e.WithArgs("--version"), env,
-	)
+	cp = cmdIfy(filepath.Join(ts.Dirs.Work, "bin", "python3"), "--version")
 
 	cp.Expect("Python 3")
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnCmdWithOpts(
-		filepath.Join(ts.Dirs.Work, "bin", "pip3"),
-		e2e.WithArgs("--version"), env,
-	)
+	cp = cmdIfy(filepath.Join(ts.Dirs.Work, "bin", "pip3"), "--version")
 	cp.Expect("pip")
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnCmdWithOpts(
-		filepath.Join(ts.Dirs.Work, "bin", "pyvenv"),
-		e2e.WithArgs("-h"), env,
-	)
-	cp.ExpectExitCode(0)
+	if runtime.GOOS == "darwin" {
+		// This is kept as a regression test, pyvenv used to have a relocation problem on MacOS
+		cp = cmdIfy(filepath.Join(ts.Dirs.Work, "bin", "pyvenv"), "-h")
+		cp.ExpectExitCode(0)
+	}
 
-	cp = ts.SpawnCmdWithOpts(
-		filepath.Join(ts.Dirs.Work, "bin", "python3"),
-		e2e.WithArgs("-m", "pytest", "--version"), env,
-	)
+	cp = cmdIfy(filepath.Join(ts.Dirs.Work, "bin", "python3"), "-m", "pytest", "--version")
 	cp.Expect("This is pytest version")
 	cp.Expect(fmt.Sprintf("imported from %s", ts.Dirs.Work))
 	cp.ExpectExitCode(0)
