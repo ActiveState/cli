@@ -27,14 +27,14 @@
 			<ComponentRef Id='DeployDir' />
 			<Component Id='InstallHelper' Directory="INSTALLDIR" Guid='4dda6117-ca9c-4371-a09d-c8575f520a01'>
 				<!-- We save the value of the install directory to the registry so we can retrieve it on uninstall -->
-				<RegistryValue Root="HKCU" Key="Software\[Manufacturer]\[ProductName]" Name="CompleteRemoval" Value="[INSTALLDIR]" Type="string"/>
+				<RegistryValue Root="HKCU" Key="Software\[Manufacturer]\[ProductName]" Name="InstallDir" Value="[INSTALLDIR]" Type="string"/>
 				<RemoveFolder Id='CleanupApplicationFolder' On='uninstall' />
 			</Component>
 		</Feature>
 
-		<Property Id="REMOVAL">
+		<Property Id="REMEMBER">
 			<!-- Retrieve the value of the installation directory from the registry -->
-			<RegistrySearch Id="RemovalProperty" Root="HKCU" Key="Software\[Manufacturer]\[ProductName]" Name="CompleteRemoval" Type="raw" />
+			<RegistrySearch Id="RememberProperty" Root="HKCU" Key="Software\[Manufacturer]\[ProductName]" Name="InstallDir" Type="raw" />
 		</Property>
 
 		<UI Id="WixUI_InstallDir">
@@ -100,15 +100,22 @@
 		<!-- Set the icon to be shown in the Add/Remove Programs dialog -->
 		<Icon Id="icon.ico" SourceFile="favicon.ico"/>
 		<Property Id="ARPPRODUCTICON" Value="icon.ico" />
+		
+		<Property Id="IS_MODIFY" Value="false" />
 
 		<!-- Property and custom action to set the text of the Success screen -->
 		<Property Id="WIXUI_EXITDIALOGOPTIONALTEXT" Value=" " />
-		<!-- TODO: Use project name in success message after install -->
 		<CustomAction Id="CA_Set_WIXUI_EXITDIALOGOPTIONALTEXT" Property="WIXUI_EXITDIALOGOPTIONALTEXT" Value="Installation complete. Thank you for installing an ActiveState Language Runtime."/>
 		<InstallUISequence>
 			<Custom Action="GetProjectName" After="CostFinalize">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
+			<Custom Action="SetIsModify" After="GetProjectName">(Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL"</Custom>
+			<Custom Action="SetInstallDirOnModify" After="SetIsModify">(Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL"</Custom>
 			<Custom Action="CA_Set_WIXUI_EXITDIALOGOPTIONALTEXT" Sequence="1">NOT Installed</Custom>
 		</InstallUISequence>
+		
+		<CustomAction Id="SetIsModify" Property="IS_MODIFY" Value="true" />
+		
+		<CustomAction Id="SetInstallDirOnModify" Directory="INSTALLDIR" Value="[REMEMBER]" />
 
 		<Binary Id="StateCommandCA" SourceFile="$(var.StateCommandExists.TargetDir)$(var.StateCommandExists.TargetName).CA.dll" />
 		<CustomAction Id="StateCommandExists" Impersonate="no" BinaryKey="StateCommandCA" DllEntry="StateCommandExists" Return="check" />

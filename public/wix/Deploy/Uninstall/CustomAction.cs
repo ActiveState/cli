@@ -12,7 +12,7 @@ namespace Uninstall
         {
             session.Log("Begin uninstallation");
 
-            string installDir = session["REMOVAL"];
+            string installDir = session["REMEMBER"];
             try
             {
                 Directory.Delete(installDir, true);
@@ -24,7 +24,7 @@ namespace Uninstall
             }
 
             string pathEnv = Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.User);
-            string[] paths = pathEnv.Split(';');
+            string[] paths = pathEnv.Split(Path.PathSeparator);
 
             List<string> cleanPath = new List<string>();
             foreach (var path in paths)
