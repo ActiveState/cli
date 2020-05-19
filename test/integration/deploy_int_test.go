@@ -47,9 +47,9 @@ func (suite *DeployIntegrationTestSuite) TestDeploy() {
 		cp = ts.Spawn("deploy", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work, "--force")
 	}
 
-	cp.Expect("Installing", 2*time.Second)
-	cp.Expect("Configuring", 2*time.Second)
-	cp.Expect("Symlinking")
+	cp.Expect("Installing", 20*time.Second)
+	cp.Expect("Configuring", 20*time.Second)
+	cp.Expect("Symlinking", 30*time.Second)
 	cp.Expect("Deployment Information", 60*time.Second)
 	cp.Expect(ts.Dirs.Work) // expect bin dir
 	if runtime.GOOS == "windows" {
