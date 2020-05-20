@@ -44,7 +44,7 @@ func (suite *InternalTestSuite) BeforeTest(suiteName, testName string) {
 	suite.Require().NoError(err)
 
 	var fail *failures.Failure
-	suite.installer, fail = NewInstallerByParams(NewInstallerParams(suite.cacheDir, "00010001-0001-0001-0001-000100010001", "string", "string"))
+	suite.installer, fail = NewInstallerByParams(NewInstallerParams(suite.cacheDir, "00010001-0001-0001-0001-000100010001", "00020002-0002-0002-0002-000200020002", "string", "string"))
 	suite.Require().NoError(fail.ToError())
 	suite.Require().NotNil(suite.installer)
 
@@ -60,7 +60,7 @@ func (suite *InternalTestSuite) AfterTest(suiteName, testName string) {
 
 func (suite *InternalTestSuite) TestValidateCheckpointNoCommit() {
 	var fail *failures.Failure
-	suite.installer, fail = NewInstallerByParams(NewInstallerParams(suite.cacheDir, "", "string", "string"))
+	suite.installer, fail = NewInstallerByParams(NewInstallerParams(suite.cacheDir, "", "", "string", "string"))
 	suite.Require().NoError(fail.ToError())
 	suite.Require().NotNil(suite.installer)
 

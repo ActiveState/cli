@@ -67,7 +67,7 @@ func (suite *RecipeTestSuite) mockProject() *mono_models.Project {
 }
 
 func (suite *RecipeTestSuite) TestFetchRecipesForCommit() {
-	recipe, fail := model.FetchRawRecipeForCommit("00010001-0001-0001-0001-000100010001")
+	recipe, fail := model.FetchRawRecipeForCommit("00010001-0001-0001-0001-000100010001", "00010001-0001-0001-0001-000100010001")
 	suite.Require().NoError(fail.ToError())
 	suite.NotEmpty(recipe, "Returns recipes")
 }
@@ -79,7 +79,7 @@ func (suite *RecipeTestSuite) TestFetchRecipeForPlatform() {
 }
 
 func (suite *RecipeTestSuite) TestFetchRecipeForCommitAndHostPlatform() {
-	recipe, fail := model.FetchRawRecipeForCommitAndPlatform("00010001-0001-0001-0001-000100010001", model.HostPlatform)
+	recipe, fail := model.FetchRawRecipeForCommitAndPlatform("00010001-0001-0001-0001-000100010001", "00010001-0001-0001-0001-000100010001", model.HostPlatform)
 	suite.Require().NoError(fail.ToError())
 	suite.NotEmpty(recipe, "Returns recipes")
 }

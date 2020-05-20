@@ -75,24 +75,26 @@ type Installer struct {
 type InstallerParams struct {
 	CacheDir    string
 	CommitID    strfmt.UUID
+	ProjectID   strfmt.UUID
 	Owner       string
 	ProjectName string
 }
 
-func NewInstallerParams(cacheDir string, commitID strfmt.UUID, owner string, projectName string) InstallerParams {
+func NewInstallerParams(cacheDir string, commitID strfmt.UUID, projectID strfmt.UUID, owner string, projectName string) InstallerParams {
 	if cacheDir == "" {
 		cacheDir = config.CachePath()
 	}
-	return InstallerParams{cacheDir, commitID, owner, projectName}
+	return InstallerParams{cacheDir, commitID, projectID, owner, projectName}
 }
 
 // NewInstaller creates a new RuntimeInstaller
-func NewInstaller(commitID strfmt.UUID, owner, projectName string) (*Installer, *failures.Failure) {
+func NewInstaller(commitID strfmt.UUID, projectID strfmt.UUID, owner, projectName string) (*Installer, *failures.Failure) {
 	logging.Debug("cache path: %s", config.CachePath())
 	return NewInstallerByParams(
 		InstallerParams{
 			config.CachePath(),
 			commitID,
+			projectID,
 			owner,
 			projectName,
 		})
@@ -102,7 +104,7 @@ func NewInstaller(commitID strfmt.UUID, owner, projectName string) (*Installer, 
 // exists as a directory or can be created.
 func NewInstallerByParams(params InstallerParams) (*Installer, *failures.Failure) {
 	installer := &Installer{
-		runtimeDownloader: NewDownload(params.CommitID, params.Owner, params.ProjectName),
+		runtimeDownloader: NewDownload(params.CommitID, params.ProjectID, params.Owner, params.ProjectName),
 		params:            params,
 	}
 

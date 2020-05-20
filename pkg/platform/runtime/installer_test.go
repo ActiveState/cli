@@ -56,7 +56,7 @@ func (suite *InstallerTestSuite) BeforeTest(suiteName, testName string) {
 
 	suite.prg = pmock.NewTestProgress()
 	var fail *failures.Failure
-	suite.installer, fail = runtime.NewInstallerByParams(runtime.NewInstallerParams(suite.cacheDir, "00010001-0001-0001-0001-000100010001", "string", "string"))
+	suite.installer, fail = runtime.NewInstallerByParams(runtime.NewInstallerParams(suite.cacheDir, "00010001-0001-0001-0001-000100010001", "00010001-0001-0001-0001-000100010001", "string", "string"))
 	suite.Require().NoError(fail.ToError())
 	suite.Require().NotNil(suite.installer)
 }
@@ -123,7 +123,7 @@ func (suite *InstallerTestSuite) TestInstall_EventsCalled() {
 	suite.Require().NoError(err)
 
 	var fail *failures.Failure
-	suite.installer, fail = runtime.NewInstallerByParams(runtime.NewInstallerParams(cacheDir, "00010001-0001-0001-0001-000100010001", "string", "string"))
+	suite.installer, fail = runtime.NewInstallerByParams(runtime.NewInstallerParams(cacheDir, "00010001-0001-0001-0001-000100010001", "00010001-0001-0001-0001-000100010001", "string", "string"))
 	suite.Require().NoError(fail.ToError())
 
 	onDownloadCalled := false
@@ -148,7 +148,7 @@ func (suite *InstallerTestSuite) TestInstall_EventsCalled() {
 
 func (suite *InstallerTestSuite) TestInstall_LegacyAndNew() {
 	var fail *failures.Failure
-	suite.installer, fail = runtime.NewInstallerByParams(runtime.NewInstallerParams(suite.cacheDir, "00010001-0001-0001-0001-000100010001", "string", "string"))
+	suite.installer, fail = runtime.NewInstallerByParams(runtime.NewInstallerParams(suite.cacheDir, "00010001-0001-0001-0001-000100010001", "00010001-0001-0001-0001-000100010001", "string", "string"))
 	suite.Require().NoError(fail.ToError())
 
 	envGetter, freshInstall, fail := suite.installer.Install()

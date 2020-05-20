@@ -35,6 +35,11 @@ type Language struct {
 	Version string `json:"version"`
 }
 
+type OrderAnnotations struct {
+	CommitID  string `json:"commit_id"`
+	ProjectID string `json:"project_id"`
+}
+
 // FetchLanguagesForProject fetches a list of language names for the given project
 func FetchLanguagesForProject(orgName string, projectName string) ([]Language, *failures.Failure) {
 	platProject, fail := FetchProjectByName(orgName, projectName)
@@ -122,8 +127,12 @@ func FilterCheckpointPackages(chkPt Checkpoint) Checkpoint {
 }
 
 // CheckpointToOrder converts a checkpoint to an order
-func CheckpointToOrder(commitID strfmt.UUID, atTime strfmt.DateTime, checkpoint Checkpoint) *inventory_models.V1Order {
+func CheckpointToOrder(commitID strfmt.UUID, projectID strfmt.UUID, atTime strfmt.DateTime, checkpoint Checkpoint) *inventory_models.V1Order {
 	return &inventory_models.V1Order{
+		Annotations: OrderAnnotations{
+			CommitID:  commitID.String(),
+			ProjectID: projectID.String(),
+		},
 		OrderID:      &commitID,
 		Platforms:    CheckpointToPlatforms(checkpoint),
 		Requirements: CheckpointToRequirements(checkpoint),

@@ -32,15 +32,13 @@ type Deploy struct {
 	output output.Outputer
 	step   Step
 
-	DefaultBranchForProjectName defaultBranchForProjectNameFunc
-	NewRuntimeInstaller         newInstallerFunc
+	NewRuntimeInstaller newInstallerFunc
 }
 
 func NewDeploy(step Step, out output.Outputer) *Deploy {
 	return &Deploy{
 		out,
 		step,
-		model.DefaultBranchForProjectName,
 		newInstaller,
 	}
 }
@@ -57,7 +55,12 @@ func (d *Deploy) Run(params *Params) error {
 }
 
 func (d *Deploy) createInstaller(namespace project.Namespaced, path string) (installable, string, error) {
-	branch, fail := d.DefaultBranchForProjectName(namespace.Owner, namespace.Project)
+	proj, fail := model.FetchProjectByName(namespace.Owner, namespace.Project)
+	if fail != nil {
+		return nil, "", fail.ToError()
+	}
+
+	branch, fail := model.DefaultBranchForProject(proj)
 	if fail != nil {
 		return nil, "", errs.Wrap(fail, "Could not create installer")
 	}
@@ -68,7 +71,7 @@ func (d *Deploy) createInstaller(namespace project.Namespaced, path string) (ins
 			"The project '{{.V0}}' does not have any packages configured, please add add some packages first.", namespace.String())
 	}
 
-	installable, cacheDir, fail := d.NewRuntimeInstaller(*branch.CommitID, namespace.Owner, namespace.Project, path)
+	installable, cacheDir, fail := d.NewRuntimeInstaller(*branch.CommitID, proj.ProjectID, namespace.Owner, namespace.Project, path)
 	return installable, cacheDir, fail.ToError()
 }
 

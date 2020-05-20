@@ -58,7 +58,7 @@ func recipeData(proj *project.Project, commitID, platform string) ([]byte, *fail
 
 	cid := strfmt.UUID(commitID)
 
-	r, fail := fetchRecipe(pj, cid, platform)
+	r, fail := fetchRecipe(pj, cid, pj.ProjectID, platform)
 	if fail != nil {
 		return nil, fail
 	}
@@ -76,13 +76,13 @@ func beautifyJSON(d []byte) ([]byte, error) {
 	return d, nil
 }
 
-func fetchRecipe(pj *mono_models.Project, commitID strfmt.UUID, platform string) (string, *failures.Failure) {
+func fetchRecipe(pj *mono_models.Project, commitID strfmt.UUID, projectID strfmt.UUID, platform string) (string, *failures.Failure) {
 	if platform == "" {
 		platform = sysinfo.OS().String()
 	}
 
 	if commitID != "" {
-		return model.FetchRawRecipeForCommitAndPlatform(commitID, platform)
+		return model.FetchRawRecipeForCommitAndPlatform(commitID, projectID, platform)
 	}
 
 	return model.FetchRawRecipeForPlatform(pj, platform)
