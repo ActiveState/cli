@@ -129,7 +129,7 @@ func Test_runStepsWithFuncs(t *testing.T) {
 				return nil, nil
 			}
 			var configCalled bool
-			configFunc := func(runtime.EnvGetter, output.Outputer) error {
+			configFunc := func(runtime.EnvGetter, output.Outputer, bool) error {
 				configCalled = true
 				return nil
 			}
@@ -144,7 +144,7 @@ func Test_runStepsWithFuncs(t *testing.T) {
 				return nil
 			}
 			catcher := outputhelper.NewCatcher()
-			err := runStepsWithFuncs("", true, tt.args.step, tt.args.installer, catcher.Outputer, installFunc, configFunc, symlinkFunc, reportFunc)
+			err := runStepsWithFuncs("", true, false, tt.args.step, tt.args.installer, catcher.Outputer, installFunc, configFunc, symlinkFunc, reportFunc)
 			if err != tt.want.err {
 				t.Errorf("runStepsWithFuncs() error = %v, wantErr %v", err, tt.want.err)
 			}

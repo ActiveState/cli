@@ -46,7 +46,7 @@ type SubShell interface {
 	SetBinary(string)
 
 	// WriteUserEnv writes the given env map to the users environment
-	WriteUserEnv(map[string]string) *failures.Failure
+	WriteUserEnv(map[string]string, bool) *failures.Failure
 
 	// Shell returns an identifiable string representing the shell, eg. bash, zsh
 	Shell() string

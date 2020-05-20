@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
@@ -26,6 +27,7 @@ type Params struct {
 	Path      string
 	Step      Step
 	Force     bool
+	Admin     bool
 }
 
 type Deploy struct {
@@ -46,6 +48,15 @@ func NewDeploy(step Step, out output.Outputer) *Deploy {
 }
 
 func (d *Deploy) Run(params *Params) error {
+	if params.Admin {
+		isAdmin, err := osutils.IsWindowsAdmin()
+		if err != nil {
+			logging.Error("Could not check for windows administrator privileges: %v", err)
+		}
+		if !isAdmin {
+			return locale.NewError("err_deploy_admin_privileges_required", "You need to run this command with Administrator privileges because the --system_path flag is set")
+		}
+	}
 	installer, targetPath, err := d.createInstaller(params.Namespace, params.Path)
 	if err != nil {
 		return locale.WrapError(
@@ -53,7 +64,7 @@ func (d *Deploy) Run(params *Params) error {
 			"Could not initialize an installer for {{.V0}}.", params.Namespace.String())
 	}
 
-	return runSteps(targetPath, params.Force, d.step, installer, d.output)
+	return runSteps(targetPath, params.Force, params.Admin, d.step, installer, d.output)
 }
 
 func (d *Deploy) createInstaller(namespace project.Namespaced, path string) (installable, string, error) {
@@ -72,13 +83,13 @@ func (d *Deploy) createInstaller(namespace project.Namespaced, path string) (ins
 	return installable, cacheDir, fail.ToError()
 }
 
-func runSteps(targetPath string, force bool, step Step, installer installable, out output.Outputer) error {
+func runSteps(targetPath string, force bool, systemEnv bool, step Step, installer installable, out output.Outputer) error {
 	return runStepsWithFuncs(
-		targetPath, force, step, installer, out,
+		targetPath, force, systemEnv, step, installer, out,
 		install, configure, symlink, report)
 }
 
-func runStepsWithFuncs(targetPath string, force bool, step Step, installer installable, out output.Outputer, installf installFunc, configuref configureFunc, symlinkf symlinkFunc, reportf reportFunc) error {
+func runStepsWithFuncs(targetPath string, force, systemEnv bool, step Step, installer installable, out output.Outputer, installf installFunc, configuref configureFunc, symlinkf symlinkFunc, reportf reportFunc) error {
 	logging.Debug("runSteps: %s", step.String())
 
 	var envGetter runtime.EnvGetter
@@ -111,7 +122,7 @@ func runStepsWithFuncs(targetPath string, force bool, step Step, installer insta
 				return errs.Wrap(fail, "Could not retrieve env for Configure step")
 			}
 		}
-		if err := configuref(envGetter, out); err != nil {
+		if err := configuref(envGetter, out, systemEnv); err != nil {
 			return err
 		}
 		if step == UnsetStep {
@@ -162,9 +173,9 @@ func install(installer installable, out output.Outputer) (runtime.EnvGetter, err
 	return envGetter, nil
 }
 
-type configureFunc func(envGetter runtime.EnvGetter, out output.Outputer) error
+type configureFunc func(envGetter runtime.EnvGetter, out output.Outputer, systemEnv bool) error
 
-func configure(envGetter runtime.EnvGetter, out output.Outputer) error {
+func configure(envGetter runtime.EnvGetter, out output.Outputer, systemEnv bool) error {
 	venv := virtualenvironment.New(envGetter.GetEnv)
 	env, err := venv.GetEnv(false, "")
 	if err != nil {
@@ -178,7 +189,7 @@ func configure(envGetter runtime.EnvGetter, out output.Outputer) error {
 	}
 	out.Notice(locale.Tr("deploy_configure_shell", sshell.Shell()))
 
-	fail = sshell.WriteUserEnv(env)
+	fail = sshell.WriteUserEnv(env, systemEnv)
 	if fail != nil {
 		return locale.WrapError(fail, "err_deploy_subshell_write", "Could not write environment information to your shell configuration.")
 	}

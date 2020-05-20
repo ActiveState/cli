@@ -1,6 +1,8 @@
 package cmdtree
 
 import (
+	"runtime"
+
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
@@ -12,21 +14,30 @@ func newDeployCommand(output output.Outputer) *captain.Command {
 
 	params := &deploy.Params{}
 
+	flags := []*captain.Flag{
+		{
+			Name:        "path",
+			Description: locale.T("flag_state_deploy_path_description"),
+			Value:       &params.Path,
+		},
+		{
+			Name:        "force",
+			Description: locale.T("flag_state_deploy_force_description"),
+			Value:       &params.Force,
+		},
+	}
+	if runtime.GOOS == "windows" {
+		flags = append(flags, &captain.Flag{
+			Name:        "system_path",
+			Description: locale.T("flag_state_deploy_system_path_description"),
+			Value:       &params.Admin,
+		})
+	}
+
 	return captain.NewCommand(
 		"deploy",
 		locale.T("deploy_cmd_description"),
-		[]*captain.Flag{
-			{
-				Name:        "path",
-				Description: locale.T("flag_state_deploy_path_description"),
-				Value:       &params.Path,
-			},
-			{
-				Name:        "force",
-				Description: locale.T("flag_state_deploy_force_description"),
-				Value:       &params.Force,
-			},
-		},
+		flags,
 		[]*captain.Argument{
 			{
 				Name:        locale.T("arg_state_deploy_namespace"),
@@ -73,16 +84,25 @@ func newDeployConfigureCommand(output output.Outputer) *captain.Command {
 
 	params := &deploy.Params{}
 
+	flags := []*captain.Flag{
+		{
+			Name:        "path",
+			Description: locale.T("flag_state_deploy_path_description"),
+			Value:       &params.Path,
+		},
+	}
+	if runtime.GOOS == "windows" {
+		flags = append(flags, &captain.Flag{
+			Name:        "system_path",
+			Description: locale.T("flag_state_deploy_system_path_description"),
+			Value:       &params.Admin,
+		})
+	}
+
 	return captain.NewCommand(
 		"configure",
 		locale.T("deploy_configure_cmd_description"),
-		[]*captain.Flag{
-			{
-				Name:        "path",
-				Description: locale.T("flag_state_deploy_path_description"),
-				Value:       &params.Path,
-			},
-		},
+		flags,
 		[]*captain.Argument{
 			{
 				Name:        locale.T("arg_state_deploy_namespace"),

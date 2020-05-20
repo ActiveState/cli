@@ -122,6 +122,12 @@ func (suite *DeployIntegrationTestSuite) TestDeployConfigure() {
 	cp.Expect("Configuring shell", 60*time.Second)
 	cp.ExpectExitCode(0)
 
+	if runtime.GOOS == "windows" {
+		cp = ts.Spawn("deploy", "configure", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work, "--system_path")
+		cp.Expect("You need to run this command with administrator privileges")
+		cp.ExpectNotExitCode(0)
+	}
+
 	suite.AssertConfig(ts)
 }
 

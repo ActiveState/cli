@@ -17,8 +17,12 @@ func notExistError() error {
 	return registry.ErrNotExist
 }
 
-func OpenKey(path string) (RegistryKey, error) {
+func OpenUserKey(path string) (RegistryKey, error) {
 	return registry.OpenKey(registry.CURRENT_USER, path, registry.ALL_ACCESS)
+}
+
+func OpenSystemKey(path string) (RegistryKey, error) {
+	return registry.OpenKey(registry.LOCAL_MACHINE, path, registry.ALL_ACCESS)
 }
 
 func IsNotExistError(err error) bool {
