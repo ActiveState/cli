@@ -232,21 +232,13 @@ func symlink(installPath string, overwrite bool, envGetter runtime.EnvGetter, ou
 	return nil
 }
 
-
-// shouldOverwriteSymlink enforces that only executables with the most prioritized PATHEXT extension (on Windows) are symlinked.
-// It returns two booleans, the first one indicating whether the symlink should be overwritten, the second one indicating whether it is allowed.
-// On Linux and MacOS it always returns true
-// On Windows only, if the new path has a higher priority extension than previously symlinked exectuables.
-func shouldOverwriteSymlink(overwrite bool, path string, symlinkedFiles map[string]string, pathExt []string) (bool, bool) {
-	// on non-windows systems, overwrite says it all
+// shouldOverwriteSymlink can be called if a symlink target exists already to check if we should overwrite it
+// On Linux and MacOS it always returns true.
+// On Windows only, if the new path has a higher priority extension than previously symlinked executables.
+func shouldOverwriteSymlink(path string, oldPath string, pathExt []string) bool {
+	// on non-windows systems, it is always save to overwrite
 	if rt.GOOS != "windows" {
-		return true, overwrite
-	}
-
-	oldPath, exists := symlinkedFiles[fileNameBase(path)]
-	// if it is a new file, then the overwrite flag decide whether we are allowed to overwrite the file
-	if !exists {
-		return true, overwrite
+		return true
 	}
 
 	// Only overwrite if this path has a higher pathext priority
@@ -254,15 +246,15 @@ func shouldOverwriteSymlink(overwrite bool, path string, symlinkedFiles map[stri
 	ext := filepath.Ext(path)
 	for _, pe := range pathExt {
 		if strings.ToLower(oldExt) == strings.ToLower(pe) {
-			return false, false
+			return false
 		}
 		if strings.ToLower(ext) == strings.ToLower(pe) {
-			return true, true
+			return true
 		}
 	}
 
 	// this should not happen: none of the pathes has pathext extension
-	return false, false
+	return false
 }
 
 func fileNameBase(path string) string {
@@ -322,10 +314,20 @@ func symlinkWithTarget(overwrite bool, path string, bins []string, pathExt []str
 			if exists && filepath.Dir(oldPath) != filepath.Dir(path) {
 				return nil
 			}
+
 			if fileutils.TargetExists(target) {
-				doOverwrite, allowed := shouldOverwriteSymlink(overwrite, fpath, symlinkedFiles, pathExt)
-				if doOverwrite {
-					if !allowed {
+				oldPath, exists := symlinkedFiles[fileNameBase(path)]
+				if exists {
+					if !shouldOverwriteSymlink(fpath, oldPath, pathExt) {
+						return nil
+					}
+					if err := os.Remove(target); err != nil {
+						return locale.WrapInputError(
+							err, "err_deploy_overwrite",
+							"Could not overwrite {{.V0}}, make sure you have permissions to write to this file.", target)
+					}
+				} else { // overwriting an external file (that was not installed during this deployment)
+					if !overwrite {
 						return locale.NewInputError(
 							"err_deploy_symlink_target_exists",
 							"Cannot create symlink as the target already exists: {{.V0}}. Use '--force' to overwrite any existing files.", target)
@@ -335,6 +337,7 @@ func symlinkWithTarget(overwrite bool, path string, bins []string, pathExt []str
 						return locale.WrapInputError(
 							err, "err_deploy_overwrite",
 							"Could not overwrite {{.V0}}, make sure you have permissions to write to this file.", target)
+
 					}
 				}
 			}
