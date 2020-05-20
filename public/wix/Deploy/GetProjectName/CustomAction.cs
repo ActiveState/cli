@@ -22,8 +22,28 @@ namespace GetProjectName
                 return ActionResult.Failure;
             }
 
-            byte[] data = Convert.FromBase64String(parts[1]);
-            string projectNamespace = System.Text.Encoding.Default.GetString(data);
+            byte[] data;
+            try
+            {
+                data = Convert.FromBase64String(parts[1]);
+            }
+            catch (FormatException e)
+            {
+                session.Log(string.Format("Could not convert base64 filename, got error: {0}", e.ToString()));
+                return ActionResult.Failure;
+            }
+
+            string projectNamespace;
+            try
+            {
+                projectNamespace = System.Text.Encoding.Default.GetString(data);
+            }
+            catch (FormatException e)
+            {
+                session.Log(string.Format("Could not decode filename to project namespace, got error: {0}", e.ToString()));
+                return ActionResult.Failure;
+            }
+            
 
             // Set PROJECT_NAME to be used in other custom actions
             session.Log(string.Format("Setting PROJECT_NAME to: {0}", projectNamespace));
