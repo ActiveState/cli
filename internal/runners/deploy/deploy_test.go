@@ -168,7 +168,7 @@ func Test_runStepsWithFuncs(t *testing.T) {
 
 func Test_fileNameBase(t *testing.T) {
 	testPath := filepath.FromSlash("/a/b/test-a.exe")
-	res := fileNameBase(testPath)
+	res := fileNameWithoutWindowsExt(testPath)
 	expected := "test-a.exe"
 	if rt.GOOS == "windows" {
 		expected = "test-a"

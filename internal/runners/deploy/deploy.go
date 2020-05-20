@@ -257,7 +257,7 @@ func shouldOverwriteSymlink(path string, oldPath string, pathExt []string) bool 
 	return false
 }
 
-func fileNameBase(path string) string {
+func fileNameWithoutWindowsExt(path string) string {
 	base := filepath.Base(path)
 	if rt.GOOS == "windows" {
 		ext := filepath.Ext(path)
@@ -302,14 +302,14 @@ func symlinkWithTarget(overwrite bool, path string, bins []string, pathExt []str
 			// Ensure target is valid
 			target := linkTarget(path, fpath)
 
-			oldPath, exists := symlinkedFiles[fileNameBase(path)]
+			oldPath, exists := symlinkedFiles[fileNameWithoutWindowsExt(path)]
 			// if file of that name has been symlinked before, to a different (and therefore higher priority) PATH, skip
 			if exists && filepath.Dir(oldPath) != filepath.Dir(path) {
 				return nil
 			}
 
 			if fileutils.TargetExists(target) {
-				oldPath, exists := symlinkedFiles[fileNameBase(path)]
+				oldPath, exists := symlinkedFiles[fileNameWithoutWindowsExt(path)]
 				if exists {
 					if !shouldOverwriteSymlink(fpath, oldPath, pathExt) {
 						return nil
@@ -335,7 +335,7 @@ func symlinkWithTarget(overwrite bool, path string, bins []string, pathExt []str
 				}
 			}
 
-			symlinkedFiles[fileNameBase(fpath)] = fpath
+			symlinkedFiles[fileNameWithoutWindowsExt(fpath)] = fpath
 			return link(fpath, target)
 		})
 		if err != nil {
