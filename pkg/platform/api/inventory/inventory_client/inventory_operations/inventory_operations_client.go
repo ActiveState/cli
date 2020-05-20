@@ -1800,6 +1800,64 @@ func (a *Client) GetLibcs(params *GetLibcsParams) (*GetLibcsOK, error) {
 }
 
 /*
+GetNamespaceIngredient Retrieve a single ingredient by namespace and name
+*/
+func (a *Client) GetNamespaceIngredient(params *GetNamespaceIngredientParams, authInfo runtime.ClientAuthInfoWriter) (*GetNamespaceIngredientOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetNamespaceIngredientParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getNamespaceIngredient",
+		Method:             "GET",
+		PathPattern:        "/v1/namespaces/ingredient",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetNamespaceIngredientReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetNamespaceIngredientOK), nil
+
+}
+
+/*
+GetNamespaceIngredientVersions Retrieve ingredient versions by namespace and ingredient name
+*/
+func (a *Client) GetNamespaceIngredientVersions(params *GetNamespaceIngredientVersionsParams, authInfo runtime.ClientAuthInfoWriter) (*GetNamespaceIngredientVersionsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetNamespaceIngredientVersionsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getNamespaceIngredientVersions",
+		Method:             "GET",
+		PathPattern:        "/v1/namespaces/ingredient/versions",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetNamespaceIngredientVersionsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetNamespaceIngredientVersionsOK), nil
+
+}
+
+/*
 GetNamespaceIngredients Retrieve (or, if query string provided, search across) all ingredients and versions which provide at least one feature in this namespace
 */
 func (a *Client) GetNamespaceIngredients(params *GetNamespaceIngredientsParams, authInfo runtime.ClientAuthInfoWriter) (*GetNamespaceIngredientsOK, error) {

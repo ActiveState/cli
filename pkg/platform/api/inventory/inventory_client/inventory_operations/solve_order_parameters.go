@@ -25,10 +25,12 @@ import (
 // with the default values initialized.
 func NewSolveOrderParams() *SolveOrderParams {
 	var (
-		useCacheDefault = bool(true)
+		returnDevelopmentSolverRecipesDefault = bool(false)
+		useRecipeStoreDefault                 = bool(true)
 	)
 	return &SolveOrderParams{
-		UseCache: &useCacheDefault,
+		ReturnDevelopmentSolverRecipes: &returnDevelopmentSolverRecipesDefault,
+		UseRecipeStore:                 &useRecipeStoreDefault,
 
 		timeout: cr.DefaultTimeout,
 	}
@@ -38,10 +40,12 @@ func NewSolveOrderParams() *SolveOrderParams {
 // with the default values initialized, and the ability to set a timeout on a request
 func NewSolveOrderParamsWithTimeout(timeout time.Duration) *SolveOrderParams {
 	var (
-		useCacheDefault = bool(true)
+		returnDevelopmentSolverRecipesDefault = bool(false)
+		useRecipeStoreDefault                 = bool(true)
 	)
 	return &SolveOrderParams{
-		UseCache: &useCacheDefault,
+		ReturnDevelopmentSolverRecipes: &returnDevelopmentSolverRecipesDefault,
+		UseRecipeStore:                 &useRecipeStoreDefault,
 
 		timeout: timeout,
 	}
@@ -51,10 +55,12 @@ func NewSolveOrderParamsWithTimeout(timeout time.Duration) *SolveOrderParams {
 // with the default values initialized, and the ability to set a context for a request
 func NewSolveOrderParamsWithContext(ctx context.Context) *SolveOrderParams {
 	var (
-		useCacheDefault = bool(true)
+		returnDevelopmentSolverRecipesDefault = bool(false)
+		useRecipeStoreDefault                 = bool(true)
 	)
 	return &SolveOrderParams{
-		UseCache: &useCacheDefault,
+		ReturnDevelopmentSolverRecipes: &returnDevelopmentSolverRecipesDefault,
+		UseRecipeStore:                 &useRecipeStoreDefault,
 
 		Context: ctx,
 	}
@@ -64,11 +70,13 @@ func NewSolveOrderParamsWithContext(ctx context.Context) *SolveOrderParams {
 // with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewSolveOrderParamsWithHTTPClient(client *http.Client) *SolveOrderParams {
 	var (
-		useCacheDefault = bool(true)
+		returnDevelopmentSolverRecipesDefault = bool(false)
+		useRecipeStoreDefault                 = bool(true)
 	)
 	return &SolveOrderParams{
-		UseCache:   &useCacheDefault,
-		HTTPClient: client,
+		ReturnDevelopmentSolverRecipes: &returnDevelopmentSolverRecipesDefault,
+		UseRecipeStore:                 &useRecipeStoreDefault,
+		HTTPClient:                     client,
 	}
 }
 
@@ -84,8 +92,16 @@ type SolveOrderParams struct {
 
 	*/
 	OrganizationID *string
-	/*UseCache*/
-	UseCache *bool
+	/*ReturnDevelopmentSolverRecipes
+	  This can be used to request that the results be based on the development version of the solver, rather than the default solver. This is just present for debugging new solvers, and you should not write production code that relies on this parameter continuing to exist.
+
+	*/
+	ReturnDevelopmentSolverRecipes *bool
+	/*UseRecipeStore
+	  Whether to check if this order has already been solved and retrieve the result from the recipe store or, if false, to force the order to be solved anew
+
+	*/
+	UseRecipeStore *bool
 
 	timeout    time.Duration
 	Context    context.Context
@@ -147,15 +163,26 @@ func (o *SolveOrderParams) SetOrganizationID(organizationID *string) {
 	o.OrganizationID = organizationID
 }
 
-// WithUseCache adds the useCache to the solve order params
-func (o *SolveOrderParams) WithUseCache(useCache *bool) *SolveOrderParams {
-	o.SetUseCache(useCache)
+// WithReturnDevelopmentSolverRecipes adds the returnDevelopmentSolverRecipes to the solve order params
+func (o *SolveOrderParams) WithReturnDevelopmentSolverRecipes(returnDevelopmentSolverRecipes *bool) *SolveOrderParams {
+	o.SetReturnDevelopmentSolverRecipes(returnDevelopmentSolverRecipes)
 	return o
 }
 
-// SetUseCache adds the useCache to the solve order params
-func (o *SolveOrderParams) SetUseCache(useCache *bool) {
-	o.UseCache = useCache
+// SetReturnDevelopmentSolverRecipes adds the returnDevelopmentSolverRecipes to the solve order params
+func (o *SolveOrderParams) SetReturnDevelopmentSolverRecipes(returnDevelopmentSolverRecipes *bool) {
+	o.ReturnDevelopmentSolverRecipes = returnDevelopmentSolverRecipes
+}
+
+// WithUseRecipeStore adds the useRecipeStore to the solve order params
+func (o *SolveOrderParams) WithUseRecipeStore(useRecipeStore *bool) *SolveOrderParams {
+	o.SetUseRecipeStore(useRecipeStore)
+	return o
+}
+
+// SetUseRecipeStore adds the useRecipeStore to the solve order params
+func (o *SolveOrderParams) SetUseRecipeStore(useRecipeStore *bool) {
+	o.UseRecipeStore = useRecipeStore
 }
 
 // WriteToRequest writes these params to a swagger request
@@ -188,16 +215,32 @@ func (o *SolveOrderParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Re
 
 	}
 
-	if o.UseCache != nil {
+	if o.ReturnDevelopmentSolverRecipes != nil {
 
-		// query param use_cache
-		var qrUseCache bool
-		if o.UseCache != nil {
-			qrUseCache = *o.UseCache
+		// query param return_development_solver_recipes
+		var qrReturnDevelopmentSolverRecipes bool
+		if o.ReturnDevelopmentSolverRecipes != nil {
+			qrReturnDevelopmentSolverRecipes = *o.ReturnDevelopmentSolverRecipes
 		}
-		qUseCache := swag.FormatBool(qrUseCache)
-		if qUseCache != "" {
-			if err := r.SetQueryParam("use_cache", qUseCache); err != nil {
+		qReturnDevelopmentSolverRecipes := swag.FormatBool(qrReturnDevelopmentSolverRecipes)
+		if qReturnDevelopmentSolverRecipes != "" {
+			if err := r.SetQueryParam("return_development_solver_recipes", qReturnDevelopmentSolverRecipes); err != nil {
+				return err
+			}
+		}
+
+	}
+
+	if o.UseRecipeStore != nil {
+
+		// query param use_recipe_store
+		var qrUseRecipeStore bool
+		if o.UseRecipeStore != nil {
+			qrUseRecipeStore = *o.UseRecipeStore
+		}
+		qUseRecipeStore := swag.FormatBool(qrUseRecipeStore)
+		if qUseRecipeStore != "" {
+			if err := r.SetQueryParam("use_recipe_store", qUseRecipeStore); err != nil {
 				return err
 			}
 		}
