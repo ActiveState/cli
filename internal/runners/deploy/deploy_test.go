@@ -2,9 +2,7 @@ package deploy
 
 import (
 	"os"
-	"path/filepath"
 	"reflect"
-	rt "runtime"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/failures"
@@ -163,18 +161,6 @@ func Test_runStepsWithFuncs(t *testing.T) {
 				t.Errorf("runStepsWithFuncs() reportCalled = %v, want %v", reportCalled, tt.want.reportCalled)
 			}
 		})
-	}
-}
-
-func Test_fileNameBase(t *testing.T) {
-	testPath := filepath.FromSlash("/a/b/test-a.exe")
-	res := fileNameWithoutWindowsExt(testPath)
-	expected := "test-a.exe"
-	if rt.GOOS == "windows" {
-		expected = "test-a"
-	}
-	if res != expected {
-		t.Errorf("expected=\"%s\", got=\"%s\"", expected, res)
 	}
 }
 
