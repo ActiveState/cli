@@ -1,10 +1,7 @@
 name: Integration Test
 true:
-  push:
-    branches:
-    - master
-  pull_request:
-  - master
+  schedule:
+  - cron: 0 0 * * *
 jobs:
   build:
     name: Integration Test

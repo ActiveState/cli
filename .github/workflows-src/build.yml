@@ -1,7 +1,7 @@
 #@ load("jobs.lib.yml", "jobs_build", "jobs_unittest")
 name: Build-Test-Deploy
 
-on:
+"on":
   push:
     branches:
       - master

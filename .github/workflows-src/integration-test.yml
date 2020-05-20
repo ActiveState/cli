@@ -1,11 +1,8 @@
 #@ load("jobs.lib.yml", "jobs_inttest")
 name: Integration Test
 
-on:
-  push:
-    branches:
-      - master
-  pull_request:
-    - master
+"on":
+  schedule:
+    - cron: "0 0 * * *"
 
 jobs: #@ jobs_inttest()

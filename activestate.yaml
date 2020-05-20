@@ -123,7 +123,7 @@ scripts:
       fi
       pwd
       mv .github/workflows/README.md /tmp # ytt deletes all files in target dir -- https://github.com/k14s/ytt/issues/145
-      ytt -f .github/workflows-src/ --ignore-unknown-comments --output-directory .github/workflows
+      ytt -f .github/workflows-src/ --ignore-unknown-comments --strict --output-directory .github/workflows
       mv /tmp/README.md .github/workflows
   - name: test
     description: Runs unit tests (not integration tests)
