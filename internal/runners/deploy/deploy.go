@@ -232,19 +232,6 @@ func symlink(installPath string, overwrite bool, envGetter runtime.EnvGetter, ou
 	return nil
 }
 
-// maySymlink enforces that only executables in the most prioritized PATH directory are symlinked.
-// If a symlink to a file of the same name (possibly with a different file extension on
-// Windows) in a different directory exists has been created already, it returns false.
-func maySymlink(path string, symlinkedFiles map[string]string) bool {
-	oldPath, exists := symlinkedFiles[fileNameBase(path)]
-	// if not file of that name has been written yet, then symlinking is okay
-	if !exists {
-		return true
-	}
-
-	// if the the new path is in a different directory, we should not symlink, as the previously symlinked file was in a higher priority PATH
-	return filepath.Dir(oldPath) == filepath.Dir(path)
-}
 
 // shouldOverwriteSymlink enforces that only executables with the most prioritized PATHEXT extension (on Windows) are symlinked.
 // It returns two booleans, the first one indicating whether the symlink should be overwritten, the second one indicating whether it is allowed.
@@ -329,7 +316,10 @@ func symlinkWithTarget(overwrite bool, path string, bins []string, pathExt []str
 
 			// Ensure target is valid
 			target := linkTarget(path, fpath)
-			if !maySymlink(fpath, symlinkedFiles) {
+
+			oldPath, exists := symlinkedFiles[fileNameBase(path)]
+			// if file of that name has been symlinked before, to a different (and therefore higher priority) PATH, skip
+			if exists && filepath.Dir(oldPath) != filepath.Dir(path) {
 				return nil
 			}
 			if fileutils.TargetExists(target) {
