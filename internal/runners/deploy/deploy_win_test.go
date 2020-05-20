@@ -33,7 +33,7 @@ func Test_shouldOverwriteSymlink(t *testing.T) {
 		t.Run(tc.name, func(tt *testing.T) {
 			if shouldOverwriteSymlink(tc.path, oldPath, pathExt) != tc.shouldOverwrite {
 				conditional := ""
-				if !tc.want {
+				if !tc.shouldOverwrite {
 					conditional = "not"
 				}
 				t.Errorf("Expected that %s should %s overwrite existing symlink", tc.path, conditional)
