@@ -8,6 +8,7 @@ import (
 
 	"github.com/thoas/go-funk"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -224,6 +225,10 @@ func symlink(installPath string, overwrite bool, envGetter runtime.EnvGetter, ou
 
 func symlinkWithTarget(overwrite bool, path string, bins []string, out output.Outputer) error {
 	out.Notice(locale.Tr("deploy_symlink", path))
+
+	if path == config.CachePath() {
+		logging.Warning("Skipping symlinks targeting %q", path)
+	}
 
 	if fail := fileutils.MkdirUnlessExists(path); fail != nil {
 		return locale.WrapInputError(
