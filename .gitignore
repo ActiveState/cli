@@ -13,3 +13,5 @@ __PYCACHE__
 .env
 .idea
 .vs
+bin/
+obj/
