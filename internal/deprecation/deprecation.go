@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/go-version"
 
 	"github.com/ActiveState/cli/internal/constants"
+	constvers "github.com/ActiveState/cli/internal/constants/version"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -74,18 +75,13 @@ func (checker *Checker) Check() (*Info, *failures.Failure) {
 }
 
 func (checker *Checker) check(versionNumber string) (*Info, *failures.Failure) {
+	if !constvers.NumberIsProduction(versionNumber) {
+		return nil, nil
+	}
+
 	versionInfo, err := version.NewVersion(versionNumber)
 	if err != nil {
 		return nil, FailParseVersion.Wrap(err)
-	}
-
-	zeroed, err := version.NewVersion("0.0.0")
-	if err != nil {
-		return nil, FailParseVersion.Wrap(err)
-	}
-
-	if versionInfo.Equal(zeroed) {
-		return nil, nil
 	}
 
 	infos, fail := checker.fetchDeprecationInfo()
