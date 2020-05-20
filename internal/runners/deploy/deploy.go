@@ -276,13 +276,6 @@ func linkTarget(targetDir string, path string) string {
 	return target[0:len(target)-len(oldExt)] + ".lnk"
 }
 
-func symlinkWritten(path string, symlinkedFiles map[string]string) map[string]string {
-	key := fileNameBase(path)
-
-	symlinkedFiles[key] = path
-	return symlinkedFiles
-}
-
 // symlinkWithTarget creates symlinks in the target path of all executables found in the bins dir
 // It overwrites existing files, if the overwrite flag is set.
 // On Windows the same executable name can have several file extensions,
