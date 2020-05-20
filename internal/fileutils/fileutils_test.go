@@ -449,3 +449,14 @@ func TestMoveAllFilesRecursively(t *testing.T) {
 	assert.Error(t, err, "reading dir contents %s", fromDir)
 	assert.IsType(t, io.EOF, err)
 }
+
+func TestIsSameOrInsideOf(t *testing.T) {
+	insideOf := isSameOrInsideOf("../../internal/fileutils", "../../internal")
+	assert.True(t, insideOf)
+
+	insideOf = isSameOrInsideOf("../../internal/fileutils", "../../cmd")
+	assert.False(t, insideOf)
+
+	insideOf = isSameOrInsideOf("../../internalfileutils", "../../internal")
+	assert.False(t, insideOf)
+}

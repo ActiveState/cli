@@ -17,6 +17,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -759,4 +760,56 @@ func IsDir(path string) bool {
 		return false
 	}
 	return info.IsDir()
+}
+
+// AbsoluteAndEvaluated gets the absolute location of the provided path and
+// fully evaluates the result if it is a symlink.
+func AbsoluteAndEvaluated(path string) (string, error) {
+	emsg := "AbsoluteAndEvaluated"
+
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return "", errs.Wrap(err, emsg)
+	}
+
+	evalPath, err := filepath.EvalSymlinks(absPath)
+	if err != nil {
+		return "", errs.Wrap(err, emsg)
+	}
+
+	return evalPath, nil
+}
+
+// PathIsOutsideOf checks if the directory path is equal to or a child directory
+// of the targeted directory. Symlinks are evaluated for this comparison.
+func PathIsOutsideOf(path, targeted string) (bool, error) {
+	if path == targeted {
+		return false, nil
+	}
+
+	emsg := "PathIsOutsideOf: Could not get absolute and evaluated path for %q"
+
+	aevalPath, err := AbsoluteAndEvaluated(path)
+	if err != nil {
+		return false, errs.Wrap(err, emsg, path)
+	}
+
+	aevalTargeted, err := AbsoluteAndEvaluated(targeted)
+	if err != nil {
+		return false, errs.Wrap(err, emsg, targeted)
+	}
+
+	return !isSameOrInsideOf(aevalPath, aevalTargeted), nil
+}
+
+func isSameOrInsideOf(path, targeted string) bool {
+	if !strings.HasSuffix(path, string(os.PathSeparator)) {
+		path += string(os.PathSeparator)
+	}
+
+	if !strings.HasSuffix(targeted, string(os.PathSeparator)) {
+		targeted += string(os.PathSeparator)
+	}
+
+	return path == targeted || strings.HasPrefix(path, targeted)
 }

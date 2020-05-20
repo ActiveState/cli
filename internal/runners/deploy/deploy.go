@@ -226,8 +226,13 @@ func symlink(installPath string, overwrite bool, envGetter runtime.EnvGetter, ou
 func symlinkWithTarget(overwrite bool, path string, bins []string, out output.Outputer) error {
 	out.Notice(locale.Tr("deploy_symlink", path))
 
-	if path == config.CachePath() {
+	isOutsideOf, err := fileutils.PathIsOutsideOf(path, config.CachePath())
+	if err != nil {
+		return err
+	}
+	if !isOutsideOf {
 		logging.Warning("Skipping symlinks targeting %q", path)
+		return nil
 	}
 
 	if fail := fileutils.MkdirUnlessExists(path); fail != nil {
