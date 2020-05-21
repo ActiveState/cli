@@ -778,26 +778,26 @@ func ResolvePath(path string) (string, error) {
 	return evalPath, nil
 }
 
-// PathIsOutsideOf checks if the directory path is equal to or a child directory
+// PathIsInsideOf checks if the directory path is equal to or a child directory
 // of the targeted directory. Symlinks are evaluated for this comparison.
-func PathIsOutsideOf(path, targeted string) (bool, error) {
+func PathIsInsideOf(path, targeted string) (bool, error) {
 	if path == targeted {
-		return false, nil
+		return true, nil
 	}
 
-	emsg := "PathIsOutsideOf: Could not get absolute and evaluated path for %q"
+	efmt := "cannot resolve %q"
 
 	resPath, err := ResolvePath(path)
 	if err != nil {
-		return false, errs.Wrap(err, emsg, path)
+		return false, errs.Wrap(err, efmt, path)
 	}
 
 	resTargeted, err := ResolvePath(targeted)
 	if err != nil {
-		return false, errs.Wrap(err, emsg, targeted)
+		return false, errs.Wrap(err, efmt, targeted)
 	}
 
-	return !isSameOrInsideOf(resPath, resTargeted), nil
+	return isSameOrInsideOf(resPath, resTargeted), nil
 }
 
 func isSameOrInsideOf(path, targeted string) bool {
