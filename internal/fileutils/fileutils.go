@@ -762,19 +762,17 @@ func IsDir(path string) bool {
 	return info.IsDir()
 }
 
-// AbsoluteAndEvaluated gets the absolute location of the provided path and
+// ResolvePath gets the absolute location of the provided path and
 // fully evaluates the result if it is a symlink.
 func ResolvePath(path string) (string, error) {
-	emsg := "AbsoluteAndEvaluated"
-
 	absPath, err := filepath.Abs(path)
 	if err != nil {
-		return "", errs.Wrap(err, emsg)
+		return "", errs.Wrap(err, "cannot get absolute filepath of %q", path)
 	}
 
 	evalPath, err := filepath.EvalSymlinks(absPath)
 	if err != nil {
-		return "", errs.Wrap(err, emsg)
+		return "", errs.Wrap(err, "cannot evaluate symlink %q", absPath)
 	}
 
 	return evalPath, nil
@@ -789,17 +787,17 @@ func PathIsOutsideOf(path, targeted string) (bool, error) {
 
 	emsg := "PathIsOutsideOf: Could not get absolute and evaluated path for %q"
 
-	aevalPath, err := AbsoluteAndEvaluated(path)
+	resPath, err := ResolvePath(path)
 	if err != nil {
 		return false, errs.Wrap(err, emsg, path)
 	}
 
-	aevalTargeted, err := AbsoluteAndEvaluated(targeted)
+	resTargeted, err := ResolvePath(targeted)
 	if err != nil {
 		return false, errs.Wrap(err, emsg, targeted)
 	}
 
-	return !isSameOrInsideOf(aevalPath, aevalTargeted), nil
+	return !isSameOrInsideOf(resPath, resTargeted), nil
 }
 
 func isSameOrInsideOf(path, targeted string) bool {
