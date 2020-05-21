@@ -59,7 +59,7 @@ func (suite *InstallerLinuxTestSuite) BeforeTest(suiteName, testName string) {
 	suite.Require().NoError(err)
 
 	var fail *failures.Failure
-	suite.installer, fail = runtime.NewInstallerByParams(runtime.NewInstallerParams(suite.cacheDir, "00010001-0001-0001-0001-000100010001", "00010001-0001-0001-0001-000100010001", "string", "string"))
+	suite.installer, fail = runtime.NewInstallerByParams(runtime.NewInstallerParams(suite.cacheDir, "00010001-0001-0001-0001-000100010001", "string", "string"))
 	suite.Require().NoError(fail.ToError())
 	suite.Require().NotNil(suite.installer)
 }

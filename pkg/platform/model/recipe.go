@@ -40,17 +40,17 @@ func init() {
 }
 
 // FetchRawRecipeForCommit returns a recipe from a project based off a commitID
-func FetchRawRecipeForCommit(commitID strfmt.UUID, projectID strfmt.UUID) (string, *failures.Failure) {
-	return fetchRawRecipe(commitID, projectID, nil)
+func FetchRawRecipeForCommit(commitID strfmt.UUID, project, owner string) (string, *failures.Failure) {
+	return fetchRawRecipe(commitID, project, owner, nil)
 }
 
 // FetchRawRecipeForCommitAndPlatform returns a recipe from a project based off a commitID and platform
-func FetchRawRecipeForCommitAndPlatform(commitID strfmt.UUID, projectID strfmt.UUID, platform string) (string, *failures.Failure) {
-	return fetchRawRecipe(commitID, projectID, &platform)
+func FetchRawRecipeForCommitAndPlatform(commitID strfmt.UUID, project, owner string, platform string) (string, *failures.Failure) {
+	return fetchRawRecipe(commitID, project, owner, &platform)
 }
 
 // FetchRawRecipeForPlatform returns the available recipe matching the default branch commit id and platform string
-func FetchRawRecipeForPlatform(pj *mono_models.Project, hostPlatform string) (string, *failures.Failure) {
+func FetchRawRecipeForPlatform(pj *mono_models.Project, project, owner string, hostPlatform string) (string, *failures.Failure) {
 	branch, fail := DefaultBranchForProject(pj)
 	if fail != nil {
 		return "", fail
@@ -59,20 +59,20 @@ func FetchRawRecipeForPlatform(pj *mono_models.Project, hostPlatform string) (st
 		return "", FailNoCommit.New(locale.T("err_no_commit"))
 	}
 
-	return FetchRawRecipeForCommitAndPlatform(*branch.CommitID, pj.ProjectID, hostPlatform)
+	return FetchRawRecipeForCommitAndPlatform(*branch.CommitID, project, owner, hostPlatform)
 }
 
 // FetchRecipeIDForCommitAndPlatform returns a recipe ID for a project based on the given commitID and platform string
-func FetchRecipeIDForCommitAndPlatform(commitID strfmt.UUID, projectID strfmt.UUID, hostPlatform string) (*strfmt.UUID, *failures.Failure) {
-	return fetchRecipeID(commitID, projectID, &hostPlatform)
+func FetchRecipeIDForCommitAndPlatform(commitID strfmt.UUID, project, owner string, hostPlatform string) (*strfmt.UUID, *failures.Failure) {
+	return fetchRecipeID(commitID, project, owner, &hostPlatform)
 }
 
-func fetchRawRecipe(commitID strfmt.UUID, projectID strfmt.UUID, hostPlatform *string) (string, *failures.Failure) {
+func fetchRawRecipe(commitID strfmt.UUID, project, owner string, hostPlatform *string) (string, *failures.Failure) {
 	_, transport := inventory.Init()
 
 	var fail *failures.Failure
 	params := iop.NewResolveRecipesParams()
-	params.Order, fail = prepareOrder(commitID, projectID, hostPlatform)
+	params.Order, fail = prepareOrder(commitID, project, owner, hostPlatform)
 	if fail != nil {
 		return "", fail
 	}
@@ -105,10 +105,10 @@ func fetchRawRecipe(commitID strfmt.UUID, projectID strfmt.UUID, hostPlatform *s
 	return recipe, nil
 }
 
-func fetchRecipeID(commitID strfmt.UUID, projectID strfmt.UUID, hostPlatform *string) (*strfmt.UUID, *failures.Failure) {
+func fetchRecipeID(commitID strfmt.UUID, project, owner string, hostPlatform *string) (*strfmt.UUID, *failures.Failure) {
 	var fail *failures.Failure
 	params := iop.NewSolveOrderParams()
-	params.Order, fail = prepareOrder(commitID, projectID, hostPlatform)
+	params.Order, fail = prepareOrder(commitID, project, owner, hostPlatform)
 	if fail != nil {
 		return nil, fail
 	}
@@ -150,13 +150,13 @@ func fetchRecipeID(commitID strfmt.UUID, projectID strfmt.UUID, hostPlatform *st
 	return nil, FailNoData.New("err_recipe_not_found")
 }
 
-func prepareOrder(commitID strfmt.UUID, projectID strfmt.UUID, hostPlatform *string) (*inventory_models.V1Order, *failures.Failure) {
+func prepareOrder(commitID strfmt.UUID, project, owner string, hostPlatform *string) (*inventory_models.V1Order, *failures.Failure) {
 	checkpoint, atTime, fail := FetchCheckpointForCommit(commitID)
 	if fail != nil {
 		return nil, fail
 	}
 
-	order := CheckpointToOrder(commitID, projectID, atTime, checkpoint)
+	order := CheckpointToOrder(commitID, project, owner, atTime, checkpoint)
 	if fail != nil {
 		return nil, fail
 	}

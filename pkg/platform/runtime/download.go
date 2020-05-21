@@ -83,21 +83,20 @@ type Downloader interface {
 
 // Download is the main struct for orchestrating the download of all the artifacts belonging to a runtime
 type Download struct {
-	projectID   strfmt.UUID
 	commitID    strfmt.UUID
 	owner       string
 	projectName string
 }
 
 // InitDownload creates a new RuntimeDownload instance and assumes default values for everything but the target dir
-func InitDownload(projectID strfmt.UUID) Downloader {
+func InitDownload(strfmt.UUID) Downloader {
 	pj := project.Get()
-	return NewDownload(pj.CommitUUID(), projectID, pj.Owner(), pj.Name())
+	return NewDownload(pj.CommitUUID(), pj.Owner(), pj.Name())
 }
 
 // NewDownload creates a new RuntimeDownload using all custom args
-func NewDownload(commitID strfmt.UUID, projectID strfmt.UUID, owner, projectName string) Downloader {
-	return &Download{commitID, projectID, owner, projectName}
+func NewDownload(commitID strfmt.UUID, owner, projectName string) Downloader {
+	return &Download{commitID, owner, projectName}
 }
 
 // fetchRecipe juggles API's to get the build request that can be sent to the head-chef
@@ -106,13 +105,8 @@ func (r *Download) fetchRecipeID() (strfmt.UUID, *failures.Failure) {
 	if commitID == "" {
 		return "", FailNoCommit.New(locale.T("err_no_commit"))
 	}
-	projectID := strfmt.UUID(r.projectID)
-	if projectID == "" {
-		// the projectID is not crucial at this point
-		logging.Error("Unknown Project ID: %s", r.projectID)
-	}
 
-	recipeID, fail := model.FetchRecipeIDForCommitAndPlatform(commitID, projectID, model.HostPlatform)
+	recipeID, fail := model.FetchRecipeIDForCommitAndPlatform(commitID, r.projectName, r.owner, model.HostPlatform)
 	if fail != nil {
 		return "", fail
 	}

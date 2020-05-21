@@ -35,9 +35,12 @@ type Language struct {
 	Version string `json:"version"`
 }
 
+// OrderAnnotations are sent with every order for analytical purposes described here:
+// https://docs.google.com/document/d/1nXeNCRWX-4ULtk20t3C7kTZDCSBJchJJHhzz-lQuVsU/edit#heading=h.o93wm4bt5ul9
 type OrderAnnotations struct {
-	CommitID  string `json:"commit_id"`
-	ProjectID string `json:"project_id"`
+	CommitID     string `json:"commit_id"`
+	Project      string `json:"project"`
+	Organization string `json:"organization"`
 }
 
 // FetchLanguagesForProject fetches a list of language names for the given project
@@ -127,11 +130,12 @@ func FilterCheckpointPackages(chkPt Checkpoint) Checkpoint {
 }
 
 // CheckpointToOrder converts a checkpoint to an order
-func CheckpointToOrder(commitID strfmt.UUID, projectID strfmt.UUID, atTime strfmt.DateTime, checkpoint Checkpoint) *inventory_models.V1Order {
+func CheckpointToOrder(commitID strfmt.UUID, project, owner string, atTime strfmt.DateTime, checkpoint Checkpoint) *inventory_models.V1Order {
 	return &inventory_models.V1Order{
 		Annotations: OrderAnnotations{
-			CommitID:  commitID.String(),
-			ProjectID: projectID.String(),
+			CommitID:     commitID.String(),
+			Project:      project,
+			Organization: owner,
 		},
 		OrderID:      &commitID,
 		Platforms:    CheckpointToPlatforms(checkpoint),

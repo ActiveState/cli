@@ -4,6 +4,7 @@ import (
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 )
 
@@ -17,17 +18,19 @@ type installable interface {
 }
 
 // newInstallerFunc defines a testable type for runtime.InitInstaller
-type newInstallerFunc func(commitID, projectID strfmt.UUID, owner, projectName string, targetDir string) (installable, string, *failures.Failure)
+type newInstallerFunc func(commitID strfmt.UUID, owner, projectName string, targetDir string) (installable, string, *failures.Failure)
 
 // newInstaller wraps runtime.newInstaller so we can modify the return types
-func newInstaller(commitID, projectID strfmt.UUID, owner, projectName, targetDir string) (installable, string, *failures.Failure) {
+func newInstaller(commitID strfmt.UUID, owner, projectName, targetDir string) (installable, string, *failures.Failure) {
 	params := runtime.NewInstallerParams(
 		targetDir,
 		commitID,
-		projectID,
 		owner,
 		projectName,
 	)
 	installable, fail := runtime.NewInstallerByParams(params)
 	return installable, params.CacheDir, fail
 }
+
+// defaultBranchForProjectNameFunc defines a testable type for model.DefaultBranchForProjectName
+type defaultBranchForProjectNameFunc func(owner, name string) (*mono_models.Branch, *failures.Failure)

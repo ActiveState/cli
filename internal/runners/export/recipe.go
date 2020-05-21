@@ -81,9 +81,19 @@ func fetchRecipe(pj *mono_models.Project, commitID strfmt.UUID, projectID strfmt
 		platform = sysinfo.OS().String()
 	}
 
-	if commitID != "" {
-		return model.FetchRawRecipeForCommitAndPlatform(commitID, projectID, platform)
+	pjName := pj.Name
+	pjOrg := "unknown"
+	ns, fail := project.ParseNamespace(pj.Name)
+	if fail == nil {
+		pjName = ns.Project
+		pjOrg = ns.Owner
+	} else {
+		logging.Error("Could not parse project String %s: %v", pj.Name, fail)
 	}
 
-	return model.FetchRawRecipeForPlatform(pj, platform)
+	if commitID != "" {
+		return model.FetchRawRecipeForCommitAndPlatform(commitID, pjName, pjOrg, platform)
+	}
+
+	return model.FetchRawRecipeForPlatform(pj, pjName, pjOrg, platform)
 }
