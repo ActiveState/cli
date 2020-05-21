@@ -170,8 +170,8 @@ function activateIfRequested() {
 }
 
 function warningIfadmin() {
-    if (IsAdmin) {
-        Write-Warning "It's recommended that you close this command prompt and start a new one without admin privileges.`n"
+    if ( (IsAdmin) -and -not (Test-Path env:CI) ) {
+        Write-Warning "It is recommended to use the State Tool in a new terminal session without admin privileges.`n"
     }
 }
 
