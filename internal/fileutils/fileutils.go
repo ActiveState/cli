@@ -764,7 +764,7 @@ func IsDir(path string) bool {
 
 // AbsoluteAndEvaluated gets the absolute location of the provided path and
 // fully evaluates the result if it is a symlink.
-func AbsoluteAndEvaluated(path string) (string, error) {
+func ResolvePath(path string) (string, error) {
 	emsg := "AbsoluteAndEvaluated"
 
 	absPath, err := filepath.Abs(path)
