@@ -15,10 +15,15 @@ namespace GetProjectName
             string filename = Path.GetFileNameWithoutExtension(session["OriginalDatabase"]);
             session.Log(string.Format("MSI filename: {0}", filename));
 
+            Record installErrorRecord = new Record
+            {
+                FormatString = string.Format("Invalid filename found: {0}. Filename must be of the format <LanguageName><Version>-<Base64 String>", filename)
+            };
+
             string[] parts = filename.Split('-');
             if (parts.Count() != 2)
             {
-                session.Message(InstallMessage.Error, new Record { FormatString = string.Format("Invalid filename found: {0}. Filename must be of the format <LanguageName><Version>-<Base64 String>", filename)});
+                session.Message(InstallMessage.Error, installErrorRecord);
                 return ActionResult.Failure;
             }
 
@@ -30,7 +35,7 @@ namespace GetProjectName
             catch (Exception e)
             {
                 session.Log(string.Format("Could not convert base64 filename, got error: {0}", e.ToString()));
-                session.Message(InstallMessage.Error, new Record { FormatString = "Could not convert base64 filename" });
+                session.Message(InstallMessage.Error, installErrorRecord);
                 return ActionResult.Failure;
             }
 
@@ -42,7 +47,7 @@ namespace GetProjectName
             catch (Exception e)
             {
                 session.Log(string.Format("Could not decode filename to project namespace, got error: {0}", e.ToString()));
-                session.Message(InstallMessage.Error, new Record { FormatString = "Could not decode filename to project namespace" });
+                session.Message(InstallMessage.Error, installErrorRecord);
                 return ActionResult.Failure;
             }
             
