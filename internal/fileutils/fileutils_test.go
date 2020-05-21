@@ -451,12 +451,16 @@ func TestMoveAllFilesRecursively(t *testing.T) {
 }
 
 func TestIsSameOrInsideOf(t *testing.T) {
-	insideOf := isSameOrInsideOf("../../internal/fileutils", "../../internal")
+	setSep := func(path string) string {
+		return strings.ReplaceAll(path, "/", string(os.PathSeparator))
+	}
+
+	insideOf := isSameOrInsideOf(setSep("../../internal/fileutils"), setSep("../../internal"))
 	assert.True(t, insideOf)
 
-	insideOf = isSameOrInsideOf("../../internal/fileutils", "../../cmd")
+	insideOf = isSameOrInsideOf(setSep("../../internal/fileutils"), setSep("../../cmd"))
 	assert.False(t, insideOf)
 
-	insideOf = isSameOrInsideOf("../../internalfileutils", "../../internal")
+	insideOf = isSameOrInsideOf(setSep("../../internalfileutils"), setSep("../../internal"))
 	assert.False(t, insideOf)
 }
