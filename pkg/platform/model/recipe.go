@@ -111,13 +111,13 @@ func commitToOrder(commitID strfmt.UUID, hostPlatform *string) (*inventory_model
 		return nil, FailOrderRecipes.Wrap(err, locale.T("err_order_recipe"))
 	}
 
-	data, err := monoOrder.MarshalBinary()
+	orderData, err := monoOrder.MarshalBinary()
 	if err != nil {
 		return nil, failures.FailMarshal.New(locale.T("err_order_marshal"))
 	}
 
 	order := &inventory_models.V1Order{}
-	err = order.UnmarshalBinary(data)
+	err = order.UnmarshalBinary(orderData)
 	if err != nil {
 		return nil, failures.FailMarshal.New(locale.T("err_order_marshal"))
 	}

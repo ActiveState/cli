@@ -532,8 +532,7 @@ func ChangesetFromRequirements(op Operation, reqs Checkpoint) Changeset {
 	return changeset
 }
 
-// FetchOrderFromCommit retrieves an order that is ready for submission from
-// a given commit ID
+// FetchOrderFromCommit retrieves an order from a given commit ID
 func FetchOrderFromCommit(commitID strfmt.UUID) (*mono_models.Order, error) {
 	params := vcsClient.NewGetOrderParams()
 	params.CommitID = commitID
