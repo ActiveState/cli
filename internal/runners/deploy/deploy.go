@@ -217,7 +217,7 @@ func symlink(installPath string, overwrite bool, envGetter runtime.EnvGetter, ou
 
 	// Symlink to targetDir/bin
 	if err := symlinkWithTarget(overwrite, filepath.Join(installPath, "bin"), bins, out); err != nil {
-		return locale.WrapError(err, "Could not create symlinks to {{.V0}}.", path)
+		return locale.WrapError(err, "err_symlink", "Could not create symlinks to {{.V0}}.", path)
 	}
 
 	return nil
