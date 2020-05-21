@@ -108,7 +108,8 @@
 		<CustomAction Id="CA_Set_WIXUI_EXITDIALOGOPTIONALTEXT" Property="WIXUI_EXITDIALOGOPTIONALTEXT" Value="Installation complete. Thank you for installing an ActiveState Language Runtime."/>
 		<InstallUISequence>
 			<Custom Action="GetProjectName" After="CostFinalize">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
-			<Custom Action="SetIsModify" After="GetProjectName">(Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL"</Custom>
+			<Custom Action="StateCommandExists" After="GetProjectName">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
+			<Custom Action="SetIsModify" After="StateCommandExists">(Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL"</Custom>
 			<Custom Action="SetInstallDirOnModify" After="SetIsModify">(Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL"</Custom>
 			<Custom Action="CA_Set_WIXUI_EXITDIALOGOPTIONALTEXT" Sequence="1">NOT Installed</Custom>
 		</InstallUISequence>
@@ -130,8 +131,7 @@
 		<CustomAction Id="Uninstall" Impersonate="no" BinaryKey="UninstallCA" DllEntry="Uninstall" Return="check" />
 
 		<InstallExecuteSequence>
-			<Custom Action="StateCommandExists" After="InstallInitialize">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
-			<Custom Action="StateDeploy" After="StateCommandExists">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
+			<Custom Action="StateDeploy" After="InstallInitialize">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
 			<Custom Action="Uninstall" After="RemoveFiles">REMOVE="ALL"</Custom>
 		</InstallExecuteSequence>
 	</Product>
