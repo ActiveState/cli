@@ -20,9 +20,9 @@ func IsExecutable(path string) bool {
 	}
 
 	pathExts := strings.Split(os.Getenv("PATHEXT"), ";")
-	for _, ext := range pathExts {
+	for _, pe := range pathExts {
 		// pathext entries have `.` and are capitalize
-		if strings.ToLower(ext) == strings.ToLower(ext)[1:] {
+		if strings.ToLower(ext) == strings.ToLower(pe) {
 			return true
 		}
 	}
