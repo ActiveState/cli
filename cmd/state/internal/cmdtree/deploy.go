@@ -28,9 +28,9 @@ func newDeployCommand(output output.Outputer) *captain.Command {
 	}
 	if runtime.GOOS == "windows" {
 		flags = append(flags, &captain.Flag{
-			Name:        "system_path",
-			Description: locale.T("flag_state_deploy_system_path_description"),
-			Value:       &params.Admin,
+			Name:        "user",
+			Description: locale.T("flag_state_deploy_user_path_description"),
+			Value:       &params.UserScope,
 		})
 	}
 
@@ -93,9 +93,9 @@ func newDeployConfigureCommand(output output.Outputer) *captain.Command {
 	}
 	if runtime.GOOS == "windows" {
 		flags = append(flags, &captain.Flag{
-			Name:        "system_path",
-			Description: locale.T("flag_state_deploy_system_path_description"),
-			Value:       &params.Admin,
+			Name:        "user",
+			Description: locale.T("flag_state_deploy_user_path_description"),
+			Value:       &params.UserScope,
 		})
 	}
 

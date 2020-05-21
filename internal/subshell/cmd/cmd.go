@@ -42,8 +42,8 @@ func (v *SubShell) SetBinary(binary string) {
 }
 
 // WriteUserEnv - see subshell.SubShell
-func (v *SubShell) WriteUserEnv(env map[string]string, systemEnv bool) *failures.Failure {
-	cmdEnv := NewCmdEnv(systemEnv)
+func (v *SubShell) WriteUserEnv(env map[string]string, userScope bool) *failures.Failure {
+	cmdEnv := NewCmdEnv(userScope)
 
 	// Clean up old entries
 	oldEnv := viper.GetStringMap("user_env")

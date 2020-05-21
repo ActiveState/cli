@@ -19,29 +19,29 @@ type OpenKeyFn func(path string) (RegistryKey, error)
 type CmdEnv struct {
 	openKeyFn OpenKeyFn
 	// whether this updates the system environment
-	system bool
+	userScope bool
 }
 
-func NewCmdEnv(system bool) *CmdEnv {
-	openKeyFn := OpenUserKey
-	if system {
-		openKeyFn = OpenSystemKey
+func NewCmdEnv(userScope bool) *CmdEnv {
+	openKeyFn := OpenSystemKey
+	if userScope {
+		openKeyFn = OpenUserKey
 	}
-	return &CmdEnv{openKeyFn, system}
+	return &CmdEnv{openKeyFn, userScope}
 }
 
-func getEnvironmentPath(system bool) string {
-	if system {
-		return `SYSTEM\ControlSet001\Control\Session Manager\Environment`
+func getEnvironmentPath(userScope bool) string {
+	if userScope {
+		return "Environment"
 	}
-	return "Environment"
+	return `SYSTEM\ControlSet001\Control\Session Manager\Environment`
 }
 
 // unsetUserEnv clears a state cool configured environment variable
 // It only does this if the value equals the expected value (meaning if we can verify that state tool was in fact
 // responsible for setting it)
 func (c *CmdEnv) unset(name, ifValueEquals string) *failures.Failure {
-	key, err := c.openKeyFn(getEnvironmentPath(c.system))
+	key, err := c.openKeyFn(getEnvironmentPath(c.userScope))
 	if err != nil {
 		return failures.FailOS.Wrap(err, locale.T("err_windows_registry"))
 	}
@@ -80,7 +80,7 @@ func (c *CmdEnv) unset(name, ifValueEquals string) *failures.Failure {
 
 // setUserEnv sets a variable in the user environment and saves the original as a backup
 func (c *CmdEnv) set(name, newValue string) *failures.Failure {
-	key, err := c.openKeyFn(getEnvironmentPath(c.system))
+	key, err := c.openKeyFn(getEnvironmentPath(c.userScope))
 	if err != nil {
 		return failures.FailOS.Wrap(err, locale.T("err_windows_registry"))
 	}
@@ -102,7 +102,7 @@ func (c *CmdEnv) set(name, newValue string) *failures.Failure {
 
 // getUserEnv retrieves a variable from the user environment, this prioritizes a backup if it exists
 func (c *CmdEnv) get(name string) (string, *failures.Failure) {
-	key, err := c.openKeyFn(getEnvironmentPath(c.system))
+	key, err := c.openKeyFn(getEnvironmentPath(c.userScope))
 	if err != nil {
 		return "", failures.FailOS.Wrap(err, locale.T("err_windows_registry"))
 	}
