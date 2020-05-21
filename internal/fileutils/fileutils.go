@@ -17,6 +17,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -759,4 +760,26 @@ func IsDir(path string) bool {
 		return false
 	}
 	return info.IsDir()
+}
+
+func IsAccurateSymlink(name, dest string) (bool, error) {
+	emsg := "IsAccurateSymlink"
+
+	fileInfo, err := os.Lstat(name)
+	if err != nil {
+		return false, errs.Wrap(err, emsg)
+	}
+
+	emsgSym := emsg + ": %q is not a symlink"
+
+	if fileInfo.Mode()&os.ModeSymlink != os.ModeSymlink {
+		return false, errs.New(emsgSym, name)
+	}
+
+	evalDest, err := filepath.EvalSymlinks(name)
+	if err != nil {
+		return false, errs.Wrap(err, emsg)
+	}
+
+	return evalDest == dest, nil
 }
