@@ -26,6 +26,7 @@ var (
 	FailRecipeNotFound = failures.Type("model.fail.recipe.notfound", failures.FailNonFatal)
 
 	FailUnsupportedPlatform = failures.Type("model.fail.unsupportedplatform")
+	FailNoRecipes           = failures.Type("model.fail.norecipes", api.FailNotFound)
 )
 
 // HostPlatform stores a reference to current platform
@@ -61,12 +62,18 @@ func FetchRawRecipeForPlatform(pj *mono_models.Project, hostPlatform string) (st
 	return FetchRawRecipeForCommitAndPlatform(*branch.CommitID, hostPlatform)
 }
 
+// FetchRecipeIDForCommitAndPlatform returns a recipe ID for a project based on the given commitID and platform string
+func FetchRecipeIDForCommitAndPlatform(commitID strfmt.UUID, hostPlatform string) (*strfmt.UUID, *failures.Failure) {
+	return fetchRecipeID(commitID, &hostPlatform)
+}
+
 func fetchRawRecipe(commitID strfmt.UUID, hostPlatform *string) (string, *failures.Failure) {
 	_, transport := inventory.Init()
 
+	var fail *failures.Failure
 	params := iop.NewResolveRecipesParams()
 	var err error
-	params.Order, err = commitToOrder(commitID)
+	params.Order, err = commitToOrder(commitID, hostPlatform)
 	if err != nil {
 		return "", FailOrderRecipes.Wrap(err)
 	}
@@ -93,21 +100,21 @@ func fetchRawRecipe(commitID strfmt.UUID, hostPlatform *string) (string, *failur
 		case *iop.ResolveRecipesDefault:
 			msg := *rrErr.Payload.Message
 			logging.Error("Could not resolve order, error: %s, order: %s", msg, string(orderBody))
-			return "", FailOrderRecipes.New(msg)
+			return "", FailOrderRecipes.New("err_solve_order", msg)
 		case *iop.ResolveRecipesBadRequest:
 			msg := *rrErr.Payload.Message
 			logging.Error("Bad request while resolving order, error: %s, order: %s", msg, string(orderBody))
-			return "", FailOrderRecipes.New(msg)
+			return "", FailOrderRecipes.New("err_order_bad_request", msg)
 		default:
 			logging.Error("Unknown error while resolving order, error: %v, order: %s", err, string(orderBody))
-			return "", FailOrderRecipes.Wrap(err)
+			return "", FailOrderRecipes.Wrap(err, "err_order_unknown")
 		}
 	}
 
 	return recipe, nil
 }
 
-func commitToOrder(commitID strfmt.UUID) (*inventory_models.V1Order, error) {
+func commitToOrder(commitID strfmt.UUID, hostPlatform *string) (*inventory_models.V1Order, error) {
 	monoOrder, err := FetchOrderFromCommit(commitID)
 	if err != nil {
 		return nil, FailOrderRecipes.Wrap(err, locale.T("err_order_recipe"))
@@ -124,5 +131,57 @@ func commitToOrder(commitID strfmt.UUID) (*inventory_models.V1Order, error) {
 		return nil, failures.FailMarshal.New(locale.T("err_order_marshal"))
 	}
 
+	if hostPlatform != nil {
+		order.Platforms, fail = filterPlatformIDs(*hostPlatform, runtime.GOARCH, order.Platforms)
+		if fail != nil {
+			return nil, fail
+		}
+	}
+
 	return order, nil
+}
+
+func fetchRecipeID(commitID strfmt.UUID, hostPlatform *string) (*strfmt.UUID, *failures.Failure) {
+	var fail *failures.Failure
+	params := iop.NewSolveOrderParams()
+	params.Order, fail = commitToOrder(commitID, hostPlatform)
+	if fail != nil {
+		return nil, fail
+	}
+
+	client, _ := inventory.Init()
+
+	recipeID, err := client.SolveOrder(params, authentication.ClientAuth())
+	if err != nil {
+		if err == context.DeadlineExceeded {
+			return nil, FailOrderRecipes.New("request_timed_out")
+		}
+
+		orderBody, _ := json.Marshal(params.Order)
+		switch rrErr := err.(type) {
+		case *iop.SolveOrderDefault:
+			msg := *rrErr.Payload.Message
+			logging.Error("Could not solve order, error: %s, order: %s", msg, string(orderBody))
+			return nil, FailOrderRecipes.New("err_solve_order", msg)
+		case *iop.SolveOrderBadRequest:
+			msg := *rrErr.Payload.Message
+			logging.Error("Bad request while resolving order, error: %s, order: %s", msg, string(orderBody))
+			return nil, FailOrderRecipes.New("err_order_bad_request", msg)
+		default:
+			logging.Error("Unknown error while resolving order, error: %v, order: %s", err, string(orderBody))
+			return nil, FailOrderRecipes.Wrap(err, "err_order_unknown")
+		}
+	}
+
+	// Because we filter platforms in the request we should only
+	// recieve one recipe ID
+	if len(recipeID.Payload) != 1 {
+		return nil, FailOrderRecipes.New("err_recipe_payload")
+	}
+
+	for _, id := range recipeID.Payload {
+		return id.RecipeID, nil
+	}
+
+	return nil, FailNoData.New("err_recipe_not_found")
 }

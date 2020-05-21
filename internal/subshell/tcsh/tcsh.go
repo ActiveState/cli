@@ -22,7 +22,7 @@ type SubShell struct {
 	binary string
 	rcFile *os.File
 	cmd    *exec.Cmd
-	env    []string
+	env    map[string]string
 	fs     chan *failures.Failure
 }
 
@@ -48,11 +48,12 @@ func (v *SubShell) WriteUserEnv(env map[string]string) *failures.Failure {
 		return failures.FailIO.Wrap(err)
 	}
 
+	env = sscommon.EscapeEnv(env)
 	return sscommon.WriteRcFile("tcshrc_append.sh", filepath.Join(homeDir, ".tcshrc"), env)
 }
 
 // SetEnv - see subshell.SetEnv
-func (v *SubShell) SetEnv(env []string) {
+func (v *SubShell) SetEnv(env map[string]string) {
 	v.env = env
 }
 
@@ -71,8 +72,9 @@ func (v *SubShell) Activate() *failures.Failure {
 	// The exec'd shell does not inherit 'prompt' from the calling terminal since
 	// tcsh does not export prompt.  This may be intractable.  I couldn't figure out a
 	// hack to make it work.
+	env := sscommon.EscapeEnv(v.env)
 	var fail *failures.Failure
-	if v.rcFile, fail = sscommon.SetupProjectRcFile("tcsh.sh", ""); fail != nil {
+	if v.rcFile, fail = sscommon.SetupProjectRcFile("tcsh.sh", "", env); fail != nil {
 		return fail
 	}
 
@@ -105,7 +107,7 @@ func (v *SubShell) Deactivate() *failures.Failure {
 
 // Run - see subshell.SubShell
 func (v *SubShell) Run(filename string, args ...string) error {
-	return sscommon.RunFuncByBinary(v.Binary())(v.env, filename, args...)
+	return sscommon.RunFuncByBinary(v.Binary())(osutils.EnvMapToSlice(v.env), filename, args...)
 }
 
 // IsActive - see subshell.SubShell

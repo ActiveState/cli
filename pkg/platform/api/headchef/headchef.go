@@ -2,7 +2,6 @@ package headchef
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/url"
 	"time"
@@ -69,36 +68,27 @@ func NewClient(apiURL *url.URL) *Client {
 	}
 }
 
-func (r *Client) RequestBuild(recipe BuildRequest) *BuildStatus {
+func (r *Client) RequestBuild(buildRequest *headchef_models.V1BuildRequest) *BuildStatus {
 	buildStatus := NewBuildStatus()
 
 	go func() {
 		defer buildStatus.Close()
-		r.reqBuild(recipe, buildStatus)
+		r.reqBuild(buildRequest, buildStatus)
 	}()
 
 	return buildStatus
 }
 
-type BuildRequest struct {
-	headchef_models.V1BuildRequest
-	Recipe json.RawMessage `json:"recipe,omitempty"`
-}
-
-func NewBuildRequest(recipe string, orgID, projID strfmt.UUID) (BuildRequest, *failures.Failure) {
+func NewBuildRequest(recipeID, orgID, projID strfmt.UUID) (*headchef_models.V1BuildRequest, *failures.Failure) {
 	uid := strfmt.UUID("00010001-0001-0001-0001-000100010001")
-	format := "raw"
 
-	br := BuildRequest{
-		headchef_models.V1BuildRequest{
-			Requester: &headchef_models.V1BuildRequestRequester{
-				OrganizationID: &orgID,
-				ProjectID:      &projID,
-				UserID:         uid,
-			},
-			Format: &format,
+	br := &headchef_models.V1BuildRequest{
+		Requester: &headchef_models.V1BuildRequestRequester{
+			OrganizationID: &orgID,
+			ProjectID:      &projID,
+			UserID:         uid,
 		},
-		json.RawMessage(recipe),
+		RecipeID: recipeID,
 	}
 
 	return br, nil
@@ -107,7 +97,7 @@ func NewBuildRequest(recipe string, orgID, projID strfmt.UUID) (BuildRequest, *f
 type BuildParams struct {
 	headchef_operations.StartBuildV1Params
 	timeout      time.Duration
-	BuildRequest *BuildRequest
+	BuildRequest *headchef_models.V1BuildRequest
 }
 
 func (b *BuildParams) WithTimeout(timeout time.Duration) *BuildParams {
@@ -133,15 +123,13 @@ func (b *BuildParams) WriteToRequest(req runtime.ClientRequest, reg strfmt.Regis
 	return nil
 }
 
-func (r *Client) reqBuild(buildReq BuildRequest, buildStatus *BuildStatus) {
-	startParams := BuildParams{
-		StartBuildV1Params: headchef_operations.StartBuildV1Params{
-			Context: context.Background(),
-		},
-		BuildRequest: &buildReq,
+func (r *Client) reqBuild(buildReq *headchef_models.V1BuildRequest, buildStatus *BuildStatus) {
+	startParams := headchef_operations.StartBuildV1Params{
+		Context:      context.Background(),
+		BuildRequest: buildReq,
 	}
 
-	created, accepted, err := r.StartBuild(&startParams)
+	created, accepted, err := r.client.StartBuildV1(&startParams)
 
 	switch {
 	case err != nil:
@@ -186,33 +174,4 @@ func (r *Client) reqBuild(buildReq BuildRequest, buildStatus *BuildStatus) {
 	default:
 		buildStatus.RunFail <- FailBuildReqNoResp.New("no response")
 	}
-}
-
-func (r *Client) StartBuild(params *BuildParams) (*headchef_operations.StartBuildV1Created, *headchef_operations.StartBuildV1Accepted, error) {
-	if params == nil {
-		params = &BuildParams{}
-	}
-
-	result, err := r.transport.Submit(&runtime.ClientOperation{
-		ID:                 "startBuildV1",
-		Method:             "POST",
-		PathPattern:        "/v1/builds",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"http"},
-		Params:             params,
-		Reader:             &headchef_operations.StartBuildV1Reader{},
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	})
-	if err != nil {
-		return nil, nil, err
-	}
-	switch value := result.(type) {
-	case *headchef_operations.StartBuildV1Created:
-		return value, nil, nil
-	case *headchef_operations.StartBuildV1Accepted:
-		return nil, value, nil
-	}
-	return nil, nil, nil
 }

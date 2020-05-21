@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-openapi/strfmt"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -109,6 +110,12 @@ func LatestCommitID(ownerName, projectName string) (*strfmt.UUID, *failures.Fail
 	branch, fail := DefaultBranchForProject(proj)
 	if fail != nil {
 		return nil, fail
+	}
+
+	if branch.CommitID == nil {
+		return nil, failures.FailUserInput.New(locale.Tl(
+			"err_project_no_commit",
+			"Your project does not have any commits yet, head over to https://{{.V0}}/{{.V1}}/{{.V2}} to set up your project.", constants.PlatformURL, ownerName, projectName))
 	}
 
 	return branch.CommitID, nil
@@ -537,4 +544,33 @@ func FetchOrderFromCommit(commitID strfmt.UUID) (*mono_models.Order, error) {
 	}
 
 	return res.Payload, err
+}
+
+func TrackBranch(source, target *mono_models.Project) *failures.Failure {
+	sourceBranch, fail := DefaultBranchForProject(source)
+	if fail != nil {
+		return fail
+	}
+
+	targetBranch, fail := DefaultBranchForProject(target)
+	if fail != nil {
+		return fail
+	}
+
+	trackingType := mono_models.BranchEditableTrackingTypeNotify
+
+	updateParams := vcsClient.NewUpdateBranchParams()
+	branch := &mono_models.BranchEditable{
+		TrackingType: &trackingType,
+		Tracks:       &sourceBranch.BranchID,
+	}
+	updateParams.SetBranch(branch)
+	updateParams.SetBranchID(targetBranch.BranchID)
+
+	_, err := authentication.Client().VersionControl.UpdateBranch(updateParams, authentication.ClientAuth())
+	if err != nil {
+		msg := api.ErrorMessageFromPayload(err)
+		return api.FailUnknown.Wrap(err, msg)
+	}
+	return nil
 }

@@ -1,8 +1,6 @@
 package cmdtree
 
 import (
-	"github.com/spf13/viper"
-
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/runners/initialize"
@@ -10,7 +8,7 @@ import (
 )
 
 func newInitCommand() *captain.Command {
-	initRunner := initialize.New(viper.GetViper())
+	initRunner := initialize.New()
 
 	params := initialize.RunParams{
 		Namespace: &project.Namespaced{},

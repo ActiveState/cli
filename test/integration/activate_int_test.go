@@ -40,7 +40,6 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePython2() {
 func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
-	ts.LoginAsPersistentUser()
 
 	cp := ts.Spawn("activate", "ActiveState-CLI/Python3")
 	cp.Expect("Where would you like to checkout")
@@ -60,7 +59,6 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePythonByHostOnly() {
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
-	ts.LoginAsPersistentUser()
 
 	projectName := "Python-LinuxWorks"
 	cp := ts.Spawn("activate", "cli-integration-tests/"+projectName, "--path="+ts.Dirs.Work)
@@ -72,12 +70,22 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePythonByHostOnly() {
 	cp.ExpectExitCode(0)
 }
 
-func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraEnv ...string) {
-	// temp skip // pythonExe := "python" + version
+func (suite *ActivateIntegrationTestSuite) assertCompletedStatusBarReport(snapshot string) {
+	// ensure that terminal contains output "Installing x/y" with x, y numbers and x=y
+	installingString := regexp.MustCompile(
+		"Installing *([0-9]+) */ *([0-9]+)",
+	).FindAllStringSubmatch(snapshot, -1)
+	suite.Require().Greater(len(installingString), 0, "no match for Installing x / x in\n%s", snapshot)
+	le := len(installingString) - 1
+	suite.Require().Equalf(
+		installingString[le][1], installingString[le][2],
+		"expected all artifacts are reported to be installed, got %s in\n%s", installingString[0][0], snapshot,
+	)
+}
 
+func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraEnv ...string) {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
-	ts.LoginAsPersistentUser()
 
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("activate", "ActiveState-CLI/Python"+version),
@@ -90,26 +98,27 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	cp.Expect("Installing", 120*time.Second)
 	cp.Expect("activated state", 120*time.Second)
 
-	// ensure that terminal contains output "Installing x/y" with x, y numbers and x=y
-	installingString := regexp.MustCompile(
-		"Installing *([0-9]+) */ *([0-9]+)",
-	).FindAllStringSubmatch(cp.TrimmedSnapshot(), 1)
-	suite.Require().Len(installingString, 1, "no match for Installing x / x in\n%s", cp.TrimmedSnapshot())
-	suite.Require().Equalf(
-		installingString[0][1], installingString[0][2],
-		"expected all artifacts are reported to be installed, got %s", installingString[0][0],
-	)
+	suite.assertCompletedStatusBarReport(cp.Snapshot())
 
 	// ensure that shell is functional
 	cp.WaitForInput()
 
-	// test python
-	// Temporarily skip these lines until MacOS on Python builds with correct copyright
-	// temp skip // cp.SendLine(pythonExe + " -c \"import sys; print(sys.copyright)\"")
-	// temp skip // cp.Expect("ActiveState Software Inc.")
+	pythonExe := "python" + version
 
-	// temp skip // cp.SendLine(pythonExe + " -c \"import pytest; print(pytest.__doc__)\"")
-	// temp skip // cp.Expect("unit and functional testing")
+	cp.SendLine(pythonExe + " -c \"import sys; print(sys.copyright)\"")
+	cp.Expect("ActiveState Software Inc.")
+
+	cp.SendLine(pythonExe + " -c \"import pytest; print(pytest.__doc__)\"")
+	cp.Expect("unit and functional testing")
+
+	// test that other executables that use python work as well
+	pipExe := "pip" + version
+	cp.SendLine(fmt.Sprintf("%s --version", pipExe))
+	pipVersionRe := regexp.MustCompile(`pip \d+(?:\.\d+)+ from ([^ ]+) \(python`)
+	cp.ExpectRe(pipVersionRe.String())
+	pipVersionMatch := pipVersionRe.FindStringSubmatch(cp.TrimmedSnapshot())
+	suite.Require().Len(pipVersionMatch, 2, "expected pip version to match")
+	suite.Contains(pipVersionMatch[1], "cache", "pip loaded from activestate cache dir")
 
 	// de-activate shell
 	cp.SendLine("exit")
@@ -135,10 +144,6 @@ version: %s
 
 	ts.PrepareActiveStateYAML(contents)
 
-	fmt.Printf("login \n")
-	ts.LoginAsPersistentUser()
-	fmt.Printf("logged in \n")
-
 	// Ensure we have the most up to date version of the project before activating
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("pull"),
@@ -158,14 +163,12 @@ version: %s
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
-	perlExe := "perl"
 	if runtime.GOOS == "darwin" {
 		suite.T().Skip("Perl not supported on macOS")
 	}
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
-	ts.LoginAsPersistentUser()
 
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("activate", "ActiveState-CLI/Perl"),
@@ -177,20 +180,18 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
 	cp.Expect("Installing", 120*time.Second)
 	cp.Expect("activated state", 120*time.Second)
 
-	// ensure that terminal contains output "Installing x/y" with x, y numbers and x=y
-	installingString := regexp.MustCompile(
-		"Installing *([0-9]+) */ *([0-9]+)",
-	).FindAllStringSubmatch(cp.TrimmedSnapshot(), 1)
-	suite.Require().Len(installingString, 1, "no match for Installing x / x in\n%s", cp.TrimmedSnapshot())
-	suite.Require().Equalf(
-		installingString[0][1], installingString[0][2],
-		"expected all artifacts are reported to be installed, got %s", installingString[0][0],
-	)
+	suite.assertCompletedStatusBarReport(cp.Snapshot())
 
 	// ensure that shell is functional
 	cp.WaitForInput()
 
-	cp.SendLine(perlExe + " -e \"use DBD::Pg\"")
+	cp.SendLine("perldoc -l DBD::Pg")
+	// Expect the source code to be installed in the cache directory
+	// Note: At least for Windows we cannot expect cp.Dirs.Cache, because it is unreliable how the path name formats are unreliable (sometimes DOS 8.3 format, sometimes not)
+	cp.Expect("cache")
+	cp.Expect("Pg.pm")
+
+	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 }
 
@@ -198,7 +199,6 @@ func (suite *ActivateIntegrationTestSuite) testOutput(method string) {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.LoginAsPersistentUser()
 	cp := ts.Spawn("activate", "ActiveState-CLI/Python3", "--output", method)
 	cp.Expect("Where would you like to checkout")
 	cp.SendLine(cp.WorkDirectory())
@@ -245,7 +245,7 @@ func (suite *ActivateIntegrationTestSuite) TestInit_Activation_NoCommitID() {
 	defer ts.Close()
 
 	cp := ts.Spawn("init", namespace, "python3")
-	cp.Expect(fmt.Sprintf("Project '%s' has been succesfully initialized", namespace))
+	cp.Expect(fmt.Sprintf("Project '%s' has been successfully initialized", namespace))
 	cp.ExpectExitCode(0)
 	cp = ts.SpawnWithOpts(
 		e2e.WithArgs("activate"),
@@ -253,6 +253,40 @@ func (suite *ActivateIntegrationTestSuite) TestInit_Activation_NoCommitID() {
 	)
 	cp.Expect(locale.Tr("err_project_no_commit", url))
 	cp.ExpectExitCode(1)
+}
+
+func (suite *ActivateIntegrationTestSuite) TestActivate_InterruptedInstallation() {
+	ts := e2e.New(suite.T(), true)
+	defer ts.Close()
+
+	cp := ts.Spawn("deploy", "install", "ActiveState-CLI/small-python")
+	cp.Expect("Downloading")
+	cp.Expect("Installing")
+	// interrupting installation
+	cp.SendCtrlC()
+	cp.ExpectNotExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("activate", "ActiveState-CLI/small-python", "--path", ts.Dirs.Work),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("Downloading")
+	cp.Expect("Installing")
+	cp.Expect("activated state")
+
+	suite.assertCompletedStatusBarReport(cp.Snapshot())
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
+
+	// next activation is cached
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("activate", "ActiveState-CLI/small-python", "--path", ts.Dirs.Work),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("activated state")
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
+	suite.NotContains(cp.TrimmedSnapshot(), "Downloading required artifacts")
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivate_JSON() {

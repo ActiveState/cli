@@ -11,3 +11,7 @@ __PYCACHE__
 .vscode
 *-packr.go
 .env
+.idea
+.vs
+bin/
+obj/

@@ -66,9 +66,8 @@ func (suite *UpdateIntegrationTestSuite) TestAutoUpdate() {
 }
 
 func (suite *UpdateIntegrationTestSuite) TestLocked() {
-	projectURL := fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
 	pjfile := projectfile.Project{
-		Project: projectURL,
+		Project: lockedProjectURL(),
 	}
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -87,6 +86,77 @@ func (suite *UpdateIntegrationTestSuite) TestLocked() {
 	suite.versionCompare(ts, false, constants.Version, suite.Equal)
 }
 
+func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmationNegative() {
+	pjfile := projectfile.Project{
+		Project: lockedProjectURL(),
+		Version: constants.Version,
+		Branch:  constants.BranchName,
+	}
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	pjfile.SetPath(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))
+	pjfile.Save()
+
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("update"),
+		e2e.AppendEnv(suite.env(true)...),
+	)
+	cp.Expect("sure you want")
+	cp.SendLine("n")
+	cp.Expect("not confirm")
+	cp.ExpectNotExitCode(0)
+}
+
+// TestUpdateLockedConfirmationPositive does not verify the effects of the
+// update behavior. That is left to TestUpdate.
+func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmationPositive() {
+	pjfile := projectfile.Project{
+		Project: lockedProjectURL(),
+		Version: constants.Version,
+		Branch:  constants.BranchName,
+	}
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	pjfile.SetPath(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))
+	pjfile.Save()
+
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("update"),
+		e2e.AppendEnv(suite.env(true)...),
+	)
+	cp.Expect("sure you want")
+	cp.SendLine("y")
+	cp.Expect("Locked version updated")
+	cp.ExpectExitCode(0)
+}
+
+// TestUpdateLockedConfirmationForce does not verify the effects of the
+// update behavior. That is left to TestUpdate.
+func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmationForce() {
+	pjfile := projectfile.Project{
+		Project: lockedProjectURL(),
+		Version: constants.Version,
+		Branch:  constants.BranchName,
+	}
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	pjfile.SetPath(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))
+	pjfile.Save()
+
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("update", "--force"),
+		e2e.AppendEnv(suite.env(true)...),
+	)
+	cp.Expect("Locked version updated")
+	cp.ExpectExitCode(0)
+}
+
 func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -94,9 +164,9 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 	cp := ts.SpawnWithOpts(e2e.WithArgs("update"), e2e.AppendEnv(suite.env(true)...))
 	// on master branch, we might already have the latest version available
 	if os.Getenv("GIT_BRANCH") == "master" {
-		cp.ExpectRe("(Update completed|You are using the latest version available)", 60*time.Second)
+		cp.ExpectRe("(Version updated|You are using the latest version available)", 60*time.Second)
 	} else {
-		cp.Expect("Update completed", 60*time.Second)
+		cp.Expect("Version updated", 60*time.Second)
 	}
 	cp.ExpectExitCode(0)
 
@@ -108,4 +178,8 @@ func TestUpdateIntegrationTestSuite(t *testing.T) {
 		t.Skip("skipping integration test in short mode.")
 	}
 	suite.Run(t, new(UpdateIntegrationTestSuite))
+}
+
+func lockedProjectURL() string {
+	return fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
 }

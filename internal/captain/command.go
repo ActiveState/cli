@@ -85,7 +85,7 @@ func (c *Command) Execute(args []string) error {
 	return setupSensibleErrors(err)
 }
 
-func (c *Command) SetAliases(aliases []string) {
+func (c *Command) SetAliases(aliases ...string) {
 	c.cobra.Aliases = aliases
 }
 
@@ -177,7 +177,7 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 			}
 		default:
 			return failures.FailDeveloper.New(
-				"arg value must be *string, or ArgMarshaler",
+				fmt.Sprintf("arg: %s must be *string, or ArgMarshaler", arg.Name),
 			)
 		}
 

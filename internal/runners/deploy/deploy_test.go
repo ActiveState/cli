@@ -3,7 +3,6 @@ package deploy
 import (
 	"os"
 	"reflect"
-	rt "runtime"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/failures"
@@ -22,11 +21,15 @@ func (i *InstallableMock) Env() (envGetter envGetter, fail *failures.Failure) {
 	return nil, nil
 }
 
-type EnvGetMock struct {
-	callback func(inherit bool, projectDir string) (map[string]string, *failures.Failure)
+func (i *InstallableMock) IsInstalled() (bool, *failures.Failure) {
+	return true, nil
 }
 
-func (e *EnvGetMock) GetEnv(inherit bool, projectDir string) (map[string]string, *failures.Failure) {
+type EnvGetMock struct {
+	callback func(inherit bool, projectDir string) (map[string]string, error)
+}
+
+func (e *EnvGetMock) GetEnv(inherit bool, projectDir string) (map[string]string, error) {
 	return e.callback(inherit, projectDir)
 }
 
@@ -57,7 +60,7 @@ func Test_runStepsWithFuncs(t *testing.T) {
 				nil,
 				true,
 				true,
-				rt.GOOS == "linux",
+				true,
 				true,
 			},
 		},
@@ -99,7 +102,7 @@ func Test_runStepsWithFuncs(t *testing.T) {
 				nil,
 				false,
 				false,
-				rt.GOOS == "linux",
+				true,
 				false,
 			},
 		},
@@ -176,7 +179,7 @@ func Test_report(t *testing.T) {
 			"Report",
 			args{
 				&EnvGetMock{
-					func(inherit bool, projectDir string) (map[string]string, *failures.Failure) {
+					func(inherit bool, projectDir string) (map[string]string, error) {
 						return map[string]string{
 							"KEY1": "VAL1",
 							"KEY2": "VAL2",
@@ -201,16 +204,16 @@ func Test_report(t *testing.T) {
 				t.FailNow()
 			}
 			report, ok := catcher.Prints[0].(Report)
-			if ! ok {
+			if !ok {
 				t.Errorf("Printed unknown structure, expected Report type. Value: %v", report)
 				t.FailNow()
 			}
 
-			if ! reflect.DeepEqual(report.Environment, tt.wantEnv) {
+			if !reflect.DeepEqual(report.Environment, tt.wantEnv) {
 				t.Errorf("Expected envs to be the same. Want: %v, got: %v", tt.wantEnv, report.Environment)
 			}
 
-			if ! reflect.DeepEqual(report.BinaryDirectories, tt.wantBinary) {
+			if !reflect.DeepEqual(report.BinaryDirectories, tt.wantBinary) {
 				t.Errorf("Expected bins to be the same. Want: %v, got: %v", tt.wantBinary, report.BinaryDirectories)
 			}
 		})

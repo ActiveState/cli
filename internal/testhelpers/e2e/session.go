@@ -10,17 +10,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/environment"
-	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/osutils/stacktrace"
-	"github.com/ActiveState/cli/pkg/projectfile"
-	expect "github.com/ActiveState/go-expect"
 	"github.com/ActiveState/termtest"
+	"github.com/ActiveState/termtest/expect"
 	"github.com/autarch/testify/require"
 	"github.com/google/uuid"
 	"github.com/phayes/permbits"
 	"gopkg.in/yaml.v2"
+
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 // Session represents an end-to-end testing session during which several console process can be spawned and tested
@@ -39,12 +39,20 @@ type Session struct {
 }
 
 var (
-	PersistentUsername = "cli-integration-tests"
-	PersistentPassword = "test-cli-integration"
+	PersistentUsername string
+	PersistentPassword string
 
 	defaultTimeout = 20 * time.Second
 	authnTimeout   = 40 * time.Second
 )
+
+func init() {
+	PersistentUsername = os.Getenv("INTEGRATION_TEST_USERNAME")
+	PersistentPassword = os.Getenv("INTEGRATION_TEST_PASSWORD")
+	if PersistentUsername == "" || PersistentPassword == "" {
+		fmt.Println("WARNING!!! Environment variables INTEGRATION_TEST_USERNAME and INTEGRATION_TEST_PASSWORD should be defined!")
+	}
+}
 
 // executablePath returns the path to the state tool that we want to test
 func (s *Session) executablePath() string {
@@ -104,7 +112,8 @@ func (s *Session) SpawnCmdWithOpts(exe string, opts ...SpawnOptions) *termtest.C
 
 	execu := exe
 	// if executable is provided as absolute path, copy it to temporary directory
-	if filepath.IsAbs(exe) {
+	// do not copy if file is a symlink
+	if !fileutils.IsSymlink(exe) && filepath.IsAbs(exe) {
 		execu = filepath.Join(s.Dirs.Bin, filepath.Base(exe))
 		fail := fileutils.CopyFile(exe, execu)
 		require.NoError(s.t, fail.ToError())
@@ -178,7 +187,11 @@ func (s *Session) LoginUser(userName string) {
 
 // LoginAsPersistentUser is a common test case after which an integration test user should be logged in to the platform
 func (s *Session) LoginAsPersistentUser() {
-	p := s.Spawn("auth", "--username", PersistentUsername, "--password", PersistentPassword)
+	p := s.SpawnWithOpts(
+		WithArgs("auth", "--username", PersistentUsername, "--password", PersistentPassword),
+		// as the command line includes a password, we do not print the executed command, so the password does not get logged
+		HideCmdLine(),
+	)
 
 	p.Expect("successfully authenticated", authnTimeout)
 	p.ExpectExitCode(0)
@@ -231,37 +244,18 @@ func observeSendFn(s *Session) func(string, int, error) {
 	}
 }
 
-func observeExpectFn(s *Session) func([]expect.Matcher, string, string, error) {
-	return func(matchers []expect.Matcher, raw, pty string, err error) {
-		if err == nil {
-			return
-		}
-
-		var value string
-		var sep string
-		for _, matcher := range matchers {
-			value += fmt.Sprintf("%s%v", sep, matcher.Criteria())
-			sep = ", "
-		}
-
-		pty = strings.TrimRight(pty, " \n") + "\n"
-
-		s.t.Fatalf(
-			"Could not meet expectation: Expectation: '%s'\nError: %v at\n%s\n---\nTerminal snapshot:\n%s\n---\nParsed output:\n%s\n",
-			value, err, stacktrace.Get().String(), pty, raw,
-		)
-	}
+func observeExpectFn(s *Session) expect.ExpectObserver {
+	return termtest.TestExpectObserveFn(s.t)
 }
 
 // Close removes the temporary directory unless RetainDirs is specified
 func (s *Session) Close() error {
+	if !s.retainDirs {
+		defer s.Dirs.Close()
+	}
+
 	if s.cp != nil {
 		s.cp.Close()
-	}
-	defer s.Dirs.Close()
-
-	if s.retainDirs {
-		return nil
 	}
 
 	if os.Getenv("PLATFORM_API_TOKEN") == "" {
@@ -275,5 +269,10 @@ func (s *Session) Close() error {
 			s.t.Errorf("Could not delete user %s: %v", user, err)
 		}
 	}
+
 	return nil
+}
+
+func RunningOnCI() bool {
+	return os.Getenv("CI") != "" || os.Getenv("BUILDER_OUTPUT") != ""
 }

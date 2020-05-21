@@ -26,17 +26,25 @@ func (suite *DeprecationTestSuite) AfterTest(suiteName, testName string) {
 func (suite *DeprecationTestSuite) TestDeprecation() {
 	suite.mock.MockExpired()
 
-	deprecated, fail := deprecation.Check()
+	deprecated, fail := deprecation.CheckVersionNumber("0.11.18")
 	suite.Require().NoError(fail.ToError())
 	suite.NotNil(deprecated, "Returns deprecation info")
 	suite.Equal("999.0.0", deprecated.Version, "Fails on the most recent applicable version")
 	suite.True(deprecated.DateReached, "Deprecation date has been reached")
 }
 
+func (suite *DeprecationTestSuite) TestDeprecationHandlesZeroed() {
+	suite.mock.MockExpired()
+
+	deprecated, fail := deprecation.CheckVersionNumber("0.0.0")
+	suite.Require().NoError(fail.ToError())
+	suite.Nil(deprecated, "Returns no deprecation info")
+}
+
 func (suite *DeprecationTestSuite) TestDeprecationFuture() {
 	suite.mock.MockDeprecated()
 
-	deprecated, fail := deprecation.Check()
+	deprecated, fail := deprecation.CheckVersionNumber("0.11.18")
 	suite.Require().NoError(fail.ToError())
 	suite.NotNil(deprecated, "Returns deprecation info")
 	suite.False(deprecated.DateReached, "Deprecation date has not been reached")
@@ -45,8 +53,8 @@ func (suite *DeprecationTestSuite) TestDeprecationFuture() {
 func (suite *DeprecationTestSuite) TestDeprecationTimeout() {
 	suite.mock.MockExpiredTimed(deprecation.DefaultTimeout + time.Second)
 
-	_, fail := deprecation.Check()
-	suite.Equal(deprecation.FailTimeout.Name, fail.Type.Name, "Wrong failure type, error: %s", fail.Error())
+	_, fail := deprecation.CheckVersionNumber("0.11.18")
+	suite.Require().NoError(fail.ToError()) // timeouts should be handled gracefully inside the package
 }
 
 func TestDeprecationTestSuite(t *testing.T) {

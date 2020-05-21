@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
 
@@ -70,13 +69,7 @@ func TestActivate(t *testing.T) {
 
 	venv := Init()
 	fail := venv.Activate()
-	if runtime.GOOS == "windows" {
-		// Since creating symlinks on Windows requires admin privilages for now,
-		// test activation should fail.
-		require.Error(t, fail, "Symlinking requires admin privilages for now")
-	} else {
-		require.NoError(t, fail.ToError(), "Should activate")
-	}
+	require.NoError(t, fail.ToError(), "Should activate")
 
 	setup(t)
 	projectURL := fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
@@ -87,13 +80,7 @@ func TestActivate(t *testing.T) {
 
 	venv = Init()
 	fail = venv.Activate()
-	if runtime.GOOS == "windows" {
-		// Since creating symlinks on Windows requires admin privilages for now,
-		// test activation should fail.
-		require.Error(t, fail, "Symlinking requires admin privilages for now")
-	} else {
-		require.NoError(t, fail.ToError(), "Should activate, even if no languages are defined")
-	}
+	require.NoError(t, fail.ToError(), "Should activate, even if no languages are defined")
 }
 
 func TestActivateFailureUnknownLanguage(t *testing.T) {
@@ -129,10 +116,12 @@ func TestEnv(t *testing.T) {
 	setup(t)
 	defer teardown()
 
+	os.Setenv(constants.DisableRuntime, "true")
 	os.Setenv(constants.ProjectEnvVarName, projectfile.Get().Path())
 
 	venv := Init()
-	env := venv.GetEnv(false, projectfile.Get().Path())
+	env, err := venv.GetEnv(false, filepath.Dir(projectfile.Get().Path()))
+	require.NoError(t, err)
 
 	assert.NotContains(t, env, constants.ProjectEnvVarName)
 	assert.NotEmpty(t, env[constants.ActivatedStateIDEnvVarName])
@@ -170,7 +159,8 @@ languages:
 	fail := venv.Activate()
 	require.NoError(t, fail.ToError(), "Should activate")
 
-	env := venv.GetEnv(false, project.Path())
+	env, err := venv.GetEnv(false, project.Path())
+	require.NoError(t, err)
 	assert.Contains(t, env, "PATH", "PATH is set")
 }
 

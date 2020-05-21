@@ -6,11 +6,14 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runners/state"
+	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/ActiveState/cli/state/fork"
-	"github.com/ActiveState/cli/state/pull"
+	"github.com/ActiveState/cli/pkg/project"
+	"github.com/ActiveState/cli/state/invite"
 	"github.com/ActiveState/cli/state/scripts"
+	"github.com/ActiveState/cli/state/secrets"
 	"github.com/ActiveState/cli/state/show"
 )
 
@@ -20,7 +23,7 @@ type CmdTree struct {
 }
 
 // New prepares a CmdTree.
-func New(outputer output.Outputer) *CmdTree {
+func New(pj *project.Project, outputer output.Outputer, prompter prompt.Prompter) *CmdTree {
 	globals := newGlobalOptions()
 
 	auth := authentication.Get()
@@ -39,6 +42,15 @@ func New(outputer output.Outputer) *CmdTree {
 		newAPIKeyCommand(outputer),
 	)
 
+	packagesCmd := newPackagesCommand(outputer)
+	packagesCmd.AddChildren(
+		newPackagesAddCommand(outputer),
+		newPackagesUpdateCommand(outputer),
+		newPackagesRemoveCommand(outputer),
+		newPackagesImportCommand(outputer),
+		newPackagesSearchCommand(outputer),
+	)
+
 	platformsCmd := newPlatformsCommand(outputer)
 	platformsCmd.AddChildren(
 		newPlatformsSearchCommand(outputer),
@@ -47,13 +59,21 @@ func New(outputer output.Outputer) *CmdTree {
 	)
 
 	languagesCmd := newLanguagesCommand(outputer)
-	languagesCmd.AddChildren(newUpdateCommand(outputer))
+	languagesCmd.AddChildren(newLanguageUpdateCommand(outputer))
 
 	cleanCmd := newCleanCommand(outputer)
 	cleanCmd.AddChildren(
 		newUninstallCommand(outputer),
 		newCacheCommand(outputer),
 		newConfigCommand(outputer),
+	)
+
+	deployCmd := newDeployCommand(outputer)
+	deployCmd.AddChildren(
+		newDeployInstallCommand(outputer),
+		newDeployConfigureCommand(outputer),
+		newDeploySymlinkCommand(outputer),
+		newDeployReportCommand(outputer),
 	)
 
 	stateCmd := newStateCommand(globals)
@@ -66,11 +86,16 @@ func New(outputer output.Outputer) *CmdTree {
 		exportCmd,
 		newOrganizationsCommand(globals),
 		newRunCommand(),
+		packagesCmd,
 		platformsCmd,
 		newHistoryCommand(outputer),
 		cleanCmd,
 		languagesCmd,
-		newDeployCommand(outputer),
+		deployCmd,
+		newEventsCommand(pj, outputer),
+		newPullCommand(pj, outputer),
+		newUpdateCommand(pj, outputer),
+		newForkCommand(pj, auth, outputer, prompter),
 	)
 
 	applyLegacyChildren(stateCmd, globals)
@@ -158,7 +183,21 @@ func (ct *CmdTree) Execute(args []string) error {
 
 func setLegacyOutput(globals *globalOptions) {
 	scripts.Flags.Output = &globals.Output
-	fork.Flags.Output = &globals.Output
 	show.Flags.Output = &globals.Output
-	pull.Flags.Output = &globals.Output
+}
+
+// applyLegacyChildren will register any commands and expanders
+func applyLegacyChildren(cmd *captain.Command, globals *globalOptions) {
+	logging.Debug("register")
+
+	secretsapi.InitializeClient()
+
+	setLegacyOutput(globals)
+
+	cmd.AddLegacyChildren(
+		show.Command,
+		scripts.Command,
+		invite.Command,
+		secrets.NewCommand(secretsapi.Get(), &globals.Output).Config(),
+	)
 }

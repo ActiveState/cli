@@ -51,6 +51,15 @@ type Updater struct {
 	Requester      Requester
 }
 
+func New(currentVersion string) *Updater {
+	return &Updater{
+		CurrentVersion: currentVersion,
+		APIURL:         constants.APIUpdateURL,
+		Dir:            constants.UpdateStorageDir,
+		CmdName:        constants.CommandName,
+	}
+}
+
 // Info reports updater.info, but only if we have an actual update
 func (u *Updater) Info() (*Info, error) {
 	if u.info.Version != "" && u.info.Version != u.CurrentVersion {
@@ -82,8 +91,8 @@ func (u *Updater) CanUpdate() bool {
 
 // PrintUpdateMessage will print a message to stdout when an update is available.
 // This will only print the message if the current project has a version lock AND if an update is available
-func PrintUpdateMessage() {
-	if versionInfo, _ := projectfile.ParseVersionInfo(); versionInfo == nil {
+func PrintUpdateMessage(pjPath string) {
+	if versionInfo, _ := projectfile.ParseVersionInfo(pjPath); versionInfo == nil {
 		return
 	}
 
@@ -340,8 +349,8 @@ func verifySha(bin []byte, sha string) bool {
 	return bytesEqual
 }
 
-// CleanOld will remove any leftover binary files from previous updates
-func CleanOld() error {
+// cleanOld will remove any leftover binary files from previous updates
+func cleanOld() error {
 	path, err := osext.Executable()
 	if err != nil {
 		return err

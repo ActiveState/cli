@@ -7,14 +7,14 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 )
 
-type catcher struct {
+type Catcher struct {
 	Outputer  *output.Plain
 	outWriter *bytes.Buffer
 	errWriter *bytes.Buffer
 }
 
-func NewCatcher() *catcher {
-	catch := &catcher{}
+func NewCatcher() *Catcher {
+	catch := &Catcher{}
 
 	catch.outWriter = &bytes.Buffer{}
 	catch.errWriter = &bytes.Buffer{}
@@ -35,15 +35,15 @@ func NewCatcher() *catcher {
 	return catch
 }
 
-func (c *catcher) Output() string {
+func (c *Catcher) Output() string {
 	return c.outWriter.String()
 }
 
-func (c *catcher) ErrorOutput() string {
+func (c *Catcher) ErrorOutput() string {
 	return c.errWriter.String()
 }
 
-func (c *catcher) CombinedOutput() string {
+func (c *Catcher) CombinedOutput() string {
 	return c.Output() + "\n" + c.ErrorOutput()
 }
 
@@ -51,6 +51,10 @@ type TypedCatcher struct {
 	Prints  []interface{}
 	Errors  []interface{}
 	Notices []interface{}
+}
+
+func (t *TypedCatcher) Type() output.Format {
+	return ""
 }
 
 func (t *TypedCatcher) Print(value interface{}) {

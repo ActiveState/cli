@@ -1,7 +1,6 @@
 package virtualenvironment
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	rt "runtime"
@@ -13,9 +12,9 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 var persisted *VirtualEnvironment
@@ -26,7 +25,7 @@ var FailAlreadyActive = failures.Type("virtualenvironment.fail.alreadyactive", f
 // OS is used by tests to spoof a different value
 var OS = rt.GOOS
 
-type getEnvFunc func(inherit bool, projectDir string) (map[string]string, *failures.Failure)
+type getEnvFunc func(inherit bool, projectDir string) (map[string]string, error)
 
 // VirtualEnvironment represents our virtual environment, it pulls together and virtualizes the runtime environment
 type VirtualEnvironment struct {
@@ -113,47 +112,49 @@ func (v *VirtualEnvironment) activateRuntime() *failures.Failure {
 }
 
 // GetEnv returns a map of the cumulative environment variables for all active virtual environments
-func (v *VirtualEnvironment) GetEnv(inherit bool, projectDir string) map[string]string {
-	var env map[string]string
+func (v *VirtualEnvironment) GetEnv(inherit bool, projectDir string) (map[string]string, error) {
+	env := make(map[string]string)
 	if v.getEnv == nil {
-		logging.Error("setting up environment in un-activated project")
-		env = make(map[string]string)
+		// if runtime is not explicitly disabled, this is an error
+		if os.Getenv(constants.DisableRuntime) != "true" {
+			return nil, locale.NewError(
+				"err_get_env_unactivated", "Trying to set up an environment in an un-activated environment.  This should not happen.  Please report this issue in our forum: %s",
+				constants.ForumsURL,
+			)
+		}
 		env["PATH"] = os.Getenv("PATH")
 	} else {
-		var fail *failures.Failure
-		env, fail = v.getEnv(inherit, projectDir)
-		if fail != nil {
-			logging.Error("could not set-up the runtime environment: %v", fail)
-			return map[string]string{}
+		var err error
+		env, err = v.getEnv(inherit, projectDir)
+		if err != nil {
+			return env, err
 		}
 	}
 
 	if projectDir != "" {
 		env[constants.ActivatedStateEnvVarName] = projectDir
 		env[constants.ActivatedStateIDEnvVarName] = v.activationID
+
+		// Get project from explicitly defined configuration file
+		pj, fail := project.Parse(filepath.Join(projectDir, constants.ConfigFileName))
+		if fail != nil {
+			return env, fail.ToError()
+		}
+		for _, constant := range pj.Constants() {
+			env[constant.Name()] = constant.Value()
+		}
 	}
 
 	if inherit {
-		return inheritEnv(env)
+		return inheritEnv(env), nil
 	}
 
-	return env
-}
-
-// GetEnvSlice returns the same results as GetEnv, but formatted in a way that the process package can handle
-func (v *VirtualEnvironment) GetEnvSlice(inherit bool) []string {
-	envMap := v.GetEnv(inherit, filepath.Dir(projectfile.Get().Path()))
-	var env []string
-	for k, v := range envMap {
-		env = append(env, fmt.Sprintf("%s=%s", k, v))
-	}
-
-	return env
+	return env, nil
 }
 
 // WorkingDirectory returns the working directory to use for the current environment
 func (v *VirtualEnvironment) WorkingDirectory() string {
-	wd, err := os.Getwd()
+	wd, err := osutils.Getwd()
 	if err != nil {
 		// Shouldn't happen unless something is seriously wrong with your system
 		panic(locale.T("panic_couldnt_detect_wd", map[string]interface{}{"Error": err.Error()}))

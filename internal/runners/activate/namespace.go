@@ -7,14 +7,16 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/pkg/project"
+
+	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/thoas/go-funk"
 )
 
 type configAble interface {
@@ -165,7 +167,7 @@ func (r *NamespaceSelect) validatePath(namespace string, path string) *failures.
 }
 
 func getSafeWorkDir() (string, error) {
-	dir, err := os.Getwd()
+	dir, err := osutils.Getwd()
 	if err != nil {
 		return "", err
 	}

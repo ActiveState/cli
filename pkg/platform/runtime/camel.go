@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/hash"
@@ -76,7 +77,6 @@ func (cr *CamelRuntime) Unarchiver() unarchiver.Unarchiver {
 }
 
 // InstallDirs returns the installation directories for the artifacts
-// Note that this only used for testing
 func (cr *CamelRuntime) InstallDirs() []string {
 	return cr.installDirs
 }
@@ -97,12 +97,12 @@ func (cr *CamelRuntime) DownloadDirectory(artf *HeadChefArtifact) (string, *fail
 }
 
 // ArtifactsToDownloadAndUnpack returns the artifacts that we need to download for this project
-// It filters out all artifacts for which the final installation directory is non-empty
+// It filters out all artifacts for which the final installation directory does not include a completion marker yet
 func (cr *CamelRuntime) ArtifactsToDownloadAndUnpack() ([]*HeadChefArtifact, map[string]*HeadChefArtifact) {
 	downloadArtfs := []*HeadChefArtifact{}
 
 	for installDir, artf := range cr.artifactMap {
-		if !fileutils.DirExists(installDir) {
+		if !fileutils.FileExists(filepath.Join(installDir, constants.RuntimeInstallationCompleteMarker)) {
 			downloadArtfs = append(downloadArtfs, artf)
 		}
 	}
@@ -124,6 +124,7 @@ func (cr *CamelRuntime) PreInstall() *failures.Failure {
 
 // PreUnpackArtifact ensures that the final installation directory exists and is
 // useable.
+// Note:  It will remove a previous installation
 func (cr *CamelRuntime) PreUnpackArtifact(artf *HeadChefArtifact) *failures.Failure {
 	installDir := cr.InstallationDirectory(artf)
 
@@ -132,15 +133,15 @@ func (cr *CamelRuntime) PreUnpackArtifact(artf *HeadChefArtifact) *failures.Fail
 		return FailInstallDirInvalid.New("installer_err_installdir_isfile", installDir)
 	}
 
-	if fail := fileutils.MkdirUnlessExists(installDir); fail != nil {
-		return fail
+	if fileutils.DirExists(installDir) {
+		// remove previous installation
+		if err := os.RemoveAll(installDir); err != nil {
+			return failures.FailOS.Wrap(err, "failed to remove spurious previous installation")
+		}
 	}
 
-	if isEmpty, fail := fileutils.IsEmptyDir(installDir); fail != nil || !isEmpty {
-		if fail != nil {
-			return fail
-		}
-		return FailInstallDirInvalid.New("installer_err_installdir_notempty", installDir)
+	if fail := fileutils.MkdirUnlessExists(installDir); fail != nil {
+		return fail
 	}
 
 	return nil
@@ -174,8 +175,17 @@ func (cr *CamelRuntime) PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir
 	}
 
 	if fail := fileutils.MoveAllFilesCrossDisk(tmpInstallDir, installDir); fail != nil {
-		logging.Error("moving files from %s after unpacking runtime: %v", tmpInstallDir, fail.ToError())
-		return FailRuntimeInstallation.New("installer_err_runtime_move_files_failed", tmpInstallDir)
+		underlyingError := fail.ToError()
+		logging.Error("moving files from %s after unpacking runtime: %v", tmpInstallDir, underlyingError)
+
+		// It is possible that we get an Access Denied error (on Windows) while moving files to the installation directory.
+		// Eg., https://rollbar.com/activestate/state-tool/items/297/occurrences/118875103987/
+		// This might happen due to virus software or other access control software running on the user's machine,
+		// and therefore we forward this information to the user.
+		if os.IsPermission(underlyingError) {
+			return FailRuntimeInstallation.New("installer_err_runtime_move_files_access_denied", installDir, constants.ForumsURL)
+		}
+		return FailRuntimeInstallation.New("installer_err_runtime_move_files_failed", tmpInstallDir, installDir)
 	}
 
 	tmpMetaFile := filepath.Join(tmpRuntimeDir, archiveName, constants.RuntimeMetaFile)
@@ -221,6 +231,17 @@ func (cr *CamelRuntime) PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir
 // character sequence in those files containing the given prefix.
 func Relocate(metaData *MetaData, cb func()) *failures.Failure {
 	prefix := metaData.RelocationDir
+
+	for _, tr := range metaData.TargetedRelocations {
+		err := fileutils.ReplaceAllInDirectory(tr.InDir, tr.SearchString, tr.Replacement,
+			// only replace text files for now
+			func(_ string, fileBytes []byte) bool {
+				return !fileutils.IsBinary(fileBytes)
+			})
+		if err != nil {
+			return FailRuntimeInstallation.Wrap(err)
+		}
+	}
 
 	if len(prefix) == 0 || prefix == metaData.Path {
 		return nil
@@ -274,25 +295,30 @@ func Relocate(metaData *MetaData, cb func()) *failures.Failure {
 }
 
 // GetEnv returns the environment that is needed to use the installed runtime
-func (cr *CamelRuntime) GetEnv(inherit bool, projectDir string) (map[string]string, *failures.Failure) {
+func (cr *CamelRuntime) GetEnv(inherit bool, projectDir string) (map[string]string, error) {
 	env := map[string]string{"PATH": ""}
 	if inherit {
 		env["PATH"] = os.Getenv("PATH")
 	}
 
 	if len(cr.installDirs) == 0 {
-		return nil, FailRequiresDownload.New(locale.T("err_requires_runtime_download"))
+		return nil, locale.NewError("err_requires_runtime_download", "You need to download the runtime environment before you can use it")
 	}
 
 	for _, artifactPath := range cr.installDirs {
 		meta, fail := InitMetaData(artifactPath)
 		if fail != nil {
-			return nil, fail
+			return nil, locale.WrapError(
+				fail,
+				"err_get_env_metadata_error",
+				"Your installation or build is corrupted.  Try re-installing the project, or update your build.  If the problem persists, please report the issue on our forums: {{.V0}}", 
+				constants.ForumsURL,
+			)
 		}
 
 		// Unset AffectedEnv
 		if meta.AffectedEnv != "" {
-			env[meta.AffectedEnv] = ""
+			delete(env, meta.AffectedEnv)
 		}
 
 		// Set up env according to artifact meta
@@ -342,6 +368,27 @@ func (cr *CamelRuntime) GetEnv(inherit bool, projectDir string) (map[string]stri
 		}
 	}
 	return env, nil
+}
+
+// PostInstall creates completion markers for all artifact directories
+func (cr *CamelRuntime) PostInstall() error {
+	for _, instDir := range cr.installDirs {
+		fail := fileutils.Touch(filepath.Join(instDir, constants.RuntimeInstallationCompleteMarker))
+		if fail != nil {
+			return errs.Wrap(fail, "could not set completion marker")
+		}
+	}
+	return nil
+}
+
+// IsInstalled checks if completion marker files exist for all artifacts
+func (cr *CamelRuntime) IsInstalled() bool {
+	for _, instDir := range cr.installDirs {
+		if !fileutils.FileExists(filepath.Join(instDir, constants.RuntimeInstallationCompleteMarker)) {
+			return false
+		}
+	}
+	return true
 }
 
 func prependPath(PATH, prefix string) string {

@@ -190,6 +190,10 @@ const RuntimeDefinitionFilename = "runtime.json"
 // LocalRuntimeEnvironmentDirectory is the directory (relative to the installation of a runtime build) where runtime definition files are stored
 const LocalRuntimeEnvironmentDirectory = "_runtime_env"
 
+// RuntimeInstallationCompleteMarker is created after all artifacts have been installed
+// Check for existence of this file to ensure that the installation has not been interrupted prematurely.
+const RuntimeInstallationCompleteMarker = "support/completed"
+
 // TermsOfServiceURLText is the URL to get the current terms of service in txt form
 const TermsOfServiceURLText = "https://www.activestate.com/wp-content/uploads/2020/03/activestate_platform_terms_service_agreement.txt"
 
@@ -201,3 +205,6 @@ const RCAppendStartLine = "-- START ACTIVESTATE RUNTIME ENVIRONMENT"
 
 // RCAppendEndLine is the end line used to denote our environment config in RC files
 const RCAppendStopLine = "-- STOP ACTIVESTATE RUNTIME ENVIRONMENT"
+
+// ForumsURL is the URL to the state tool forums
+const ForumsURL = "https://community.activestate.com/c/state-tool/9"

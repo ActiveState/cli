@@ -71,7 +71,6 @@ func (suite *EditIntegrationTestSuite) TestEdit() {
 	defer ts.Close()
 	cp := ts.SpawnWithOpts(e2e.WithArgs("scripts", "edit", "test-script"), env)
 	cp.Expect("Watching file changes")
-	cp.Expect("Are you done editing?")
 	cp.Expect("Script changes detected")
 	cp.SendLine("Y")
 	cp.ExpectExitCode(0)
@@ -93,16 +92,22 @@ func (suite *EditIntegrationTestSuite) TestEdit_NonInteractive() {
 func (suite *EditIntegrationTestSuite) TestEdit_UpdateCorrectPlatform() {
 	ts, env := suite.setup()
 	defer ts.Close()
-	cp := ts.SpawnWithOpts(e2e.WithArgs("scripts", "edit", "test-script"), env)
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("scripts", "edit", "test-script"),
+		e2e.WithWorkDirectory(ts.Dirs.Work),
+		env,
+	)
 	cp.SendLine("Y")
 	cp.ExpectExitCode(0)
 
 	time.Sleep(time.Second * 2) // let CI env catch up
 
-	project := projectfile.Get()
+	project, fail := projectfile.FromPath(ts.Dirs.Work)
+	suite.Require().NoError(fail.ToError())
+
 	i := constraints.MostSpecificUnconstrained("test-script", project.Scripts.AsConstrainedEntities())
-	suite.Require().GreaterOrEqual(0, i)
-	suite.Contains(project.Scripts[i].Value, "more info!")
+	suite.Require().True(i > -1, "Finds at least one script")
+	suite.Contains(project.Scripts[i].Value, "more info!", "Output of edit command:\n%s", cp.Snapshot())
 }
 
 func TestEditIntegrationTestSuite(t *testing.T) {

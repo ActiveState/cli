@@ -56,12 +56,12 @@ type UpdateResult struct {
 	ToVersion   string
 }
 
-// TimedCheck checks for updates once per day and, if one was found within a
+// AutoUpdate checks for updates once per day and, if one was found within a
 // timeout period of one second, applies the update and returns `true`.
 // Otherwise, returns `false`.
-// TimedCheck is skipped altogether if the current project has a locked version.
-func TimedCheck() (updated bool, resultVersion string) {
-	if versionInfo, _ := projectfile.ParseVersionInfo(); versionInfo != nil {
+// AutoUpdate is skipped altogether if the current project has a locked version.
+func AutoUpdate(pjPath string) (updated bool, resultVersion string) {
+	if versionInfo, _ := projectfile.ParseVersionInfo(pjPath); versionInfo != nil {
 		return false, ""
 	}
 
@@ -129,6 +129,8 @@ func TimedCheck() (updated bool, resultVersion string) {
 		logging.Error("Unable to update modification times of check marker: %s", err)
 		return false, ""
 	}
+
+	cleanOld()
 
 	return true, info.Version
 }

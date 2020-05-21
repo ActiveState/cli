@@ -9,6 +9,7 @@ import (
 type structField struct {
 	name  string
 	l10n  string
+	opts  []string
 	value interface{}
 }
 
@@ -38,9 +39,15 @@ func parseStructMeta(v interface{}) (structMeta, error) {
 			serialized = v
 		}
 
+		opts := []string{}
+		if v, ok := fieldRfl.Tag.Lookup("opts"); ok {
+			opts = strings.Split(v, ",")
+		}
+
 		field := structField{
 			name:  fieldRfl.Name,
 			l10n:  serialized,
+			opts:  opts,
 			value: valueRfl.Interface(),
 		}
 		meta = append(meta, field)

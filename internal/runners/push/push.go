@@ -1,19 +1,20 @@
 package push
 
 import (
-	"os"
-
-	"github.com/ActiveState/cli/internal/print"
 	"github.com/go-openapi/strfmt"
+
+	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/print"
 
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+
+	"github.com/spf13/viper"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/spf13/viper"
 )
 
 type configGetter interface {
@@ -33,7 +34,7 @@ func (r *Push) Run() *failures.Failure {
 		return failures.FailUserInput.New("err_api_not_authenticated")
 	}
 
-	wd, err := os.Getwd()
+	wd, err := osutils.Getwd()
 	if err != nil {
 		return failures.FailIO.Wrap(err, locale.T("err_wd"))
 	}
@@ -63,7 +64,7 @@ func (r *Push) Run() *failures.Failure {
 		return nil
 	}
 
-	lang, langVersion, fail := r.languageForPath(wd)
+	lang, langVersion, fail := r.languageForProject(pj)
 	if fail != nil {
 		return fail
 	}
@@ -75,24 +76,34 @@ func (r *Push) Run() *failures.Failure {
 		return fail
 	}
 
-	print.Info(locale.Tr("push_project_created", pj.Source().Project))
+	// Remove temporary language entry
+	pjf := pj.Source()
+	pjf.Languages = nil
+	pjf.Save()
+
+	print.Info(locale.Tr("push_project_created", pj.Source().Project, lang.String(), langVersion))
 	pj.Source().SetCommit(commitID.String())
 
 	return nil
 }
 
-func (r *Push) languageForPath(path string) (*language.Supported, string, *failures.Failure) {
-	languageVersion := r.config.GetString(path + "_language_version")
-
-	languageName := r.config.GetString(path + "_language")
-	if languageName == "" {
-		return nil, languageVersion, nil
+func (r *Push) languageForProject(pj *project.Project) (*language.Supported, string, *failures.Failure) {
+	langs := pj.Languages()
+	if len(langs) == 0 {
+		return nil, "", failures.FailUserInput.New(locale.Tl("err_push_nolang",
+			"Your project has not specified any languages, did you remove it from the activestate.yaml? Try deleting activestate.yaml and running 'state init' again.",
+		))
+	}
+	if len(langs) > 1 {
+		return nil, "", failures.FailUserInput.New(locale.Tl("err_push_toomanylang",
+			"Your project has specified multiple languages, however the platform currently only supports one language per project. Please edit your activestate.yaml to only have one language specified.",
+		))
 	}
 
-	lang := language.Supported{language.MakeByName(languageName)}
+	lang := language.Supported{language.MakeByName(langs[0].Name())}
 	if !lang.Recognized() {
-		return nil, languageVersion, failures.FailUserInput.New("err_push_invalid_language", languageName)
+		return nil, langs[0].Version(), failures.FailUserInput.New("err_push_invalid_language", langs[0].Name())
 	}
 
-	return &lang, languageVersion, nil
+	return &lang, langs[0].Version(), nil
 }

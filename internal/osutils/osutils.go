@@ -6,10 +6,12 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
-
 	"github.com/ActiveState/cli/internal/logging"
 )
+
+var FailGetWd = failures.Type("osutils.fail.getwd", failures.FailUser)
 
 // CmdExitCode returns the exit code of a command in a platform agnostic way
 // taken from https://www.reddit.com/r/golang/comments/1hvvnn/any_better_way_to_do_a_crossplatform_exec_and/caytqvr/
@@ -76,4 +78,34 @@ func BashifyPath(absolutePath string) (string, *failures.Failure) {
 	absolutePath = strings.Replace(absolutePath, `\`, `/`, -1)  // backslash to forward slash
 	absolutePath = strings.Replace(absolutePath, ` `, `\ `, -1) // escape space
 	return "/" + absolutePath, nil
+}
+
+// Getwd is an alias of osutils.Getwd which wraps the error in our localized error message and FailGetWd, which is user facing (doesn't get logged)
+func Getwd() (string, error) {
+	r, err := os.Getwd()
+	if err != nil {
+		return "", FailGetWd.New("err_getwd", err.Error(), constants.ForumsURL)
+	}
+	return r, nil
+}
+
+func EnvSliceToMap(envSlice []string) map[string]string {
+	env := map[string]string{}
+	for _, v := range envSlice {
+		kv := strings.SplitN(v, "=", 2)
+		env[kv[0]] = ""
+		if len(kv) == 2 { // account for empty values, windows does some weird stuff, better safe than sorry
+			env[kv[0]] = kv[1]
+		}
+	}
+	return env
+}
+
+func EnvMapToSlice(envMap map[string]string) []string {
+	var env []string
+	for k, v := range envMap {
+		env = append(env, fmt.Sprintf("%s=%s", k, v))
+	}
+
+	return env
 }

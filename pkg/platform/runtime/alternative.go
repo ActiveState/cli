@@ -12,6 +12,7 @@ import (
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/hash"
@@ -31,6 +32,7 @@ type AlternativeRuntime struct {
 	artifactMap    map[string]*HeadChefArtifact
 	artifactOrder  map[string]int
 	tempInstallDir string
+	installDirs    []string
 }
 
 // NewAlternativeRuntime returns a new alternative runtime assembler
@@ -64,6 +66,8 @@ func NewAlternativeRuntime(artifacts []*HeadChefArtifact, cacheDir string, recip
 
 		artifactMap[downloadDir] = artf
 		artifactOrder[artf.ArtifactID.String()] = i
+
+		ar.installDirs = append(ar.installDirs, ar.InstallationDirectory(artf))
 	}
 
 	if len(artifactMap) == 0 {
@@ -85,6 +89,11 @@ func (ar *AlternativeRuntime) Unarchiver() unarchiver.Unarchiver {
 	return unarchiver.NewTarGz()
 }
 
+// InstallDirs returns the installation directories for the artifacts
+func (ar *AlternativeRuntime) InstallDirs() []string {
+	return ar.installDirs
+}
+
 // BuildEngine always returns Alternative
 func (ar *AlternativeRuntime) BuildEngine() BuildEngine {
 	return Alternative
@@ -101,17 +110,11 @@ func (ar *AlternativeRuntime) cachedArtifact(downloadDir string) *string {
 
 // ArtifactsToDownloadAndUnpack returns the artifacts that we need to download
 // for this project.
-// It returns nothing if the final installation directory is non-empty.
 // Otherwise: It filters out artifacts that have been downloaded before, and adds them to
 // the list of artifacts that need to be unpacked only.
 func (ar *AlternativeRuntime) ArtifactsToDownloadAndUnpack() ([]*HeadChefArtifact, map[string]*HeadChefArtifact) {
 	downloadArtfs := []*HeadChefArtifact{}
 	archives := map[string]*HeadChefArtifact{}
-
-	// if final installation directory exists -> no need to download or unpack anything
-	if fileutils.DirExists(ar.installationDirectory()) {
-		return downloadArtfs, archives
-	}
 
 	for downloadDir, artf := range ar.artifactMap {
 		cached := ar.cachedArtifact(downloadDir)
@@ -122,6 +125,13 @@ func (ar *AlternativeRuntime) ArtifactsToDownloadAndUnpack() ([]*HeadChefArtifac
 		}
 	}
 	return downloadArtfs, archives
+}
+
+// IsInstalled checks if the merged runtime environment definition file exists
+func (ar *AlternativeRuntime) IsInstalled() bool {
+	// runtime environment definition file
+	red := filepath.Join(ar.runtimeEnvBaseDir(), constants.RuntimeDefinitionFilename)
+	return fileutils.FileExists(red)
 }
 
 func (ar *AlternativeRuntime) downloadDirectory(artf *HeadChefArtifact) string {
@@ -158,15 +168,15 @@ func (ar *AlternativeRuntime) PreInstall() *failures.Failure {
 		return FailInstallDirInvalid.New("installer_err_installdir_isfile", installDir)
 	}
 
-	if fail := fileutils.MkdirUnlessExists(installDir); fail != nil {
-		return fail
+	if fileutils.DirExists(installDir) {
+		// remove previous installation
+		if err := os.RemoveAll(installDir); err != nil {
+			return failures.FailOS.Wrap(err, "failed to remove spurious previous installation")
+		}
 	}
 
-	if isEmpty, fail := fileutils.IsEmptyDir(installDir); fail != nil || !isEmpty {
-		if fail != nil {
-			return fail
-		}
-		return FailInstallDirInvalid.New("installer_err_installdir_notempty", installDir)
+	if fail := fileutils.MkdirUnlessExists(installDir); fail != nil {
+		return fail
 	}
 
 	return nil
@@ -229,27 +239,19 @@ func (ar *AlternativeRuntime) runtimeEnvBaseDir() string {
 	return filepath.Join(ar.installationDirectory(), constants.LocalRuntimeEnvironmentDirectory)
 }
 
-// assembleRuntimeDefinition assembles the environment from runtime definition files copied to the
-// installation directory (at runtimeEnvBaseDir())
+// PostInstall merges all runtime environment definition files for the artifacts in order
 // This function expects files named `"00001.json", "00002.json", ...` that are installed in the
 // PostUnpackArtifact step.  It sorts them by name, parses them and merges the EnvironmentDefinition
 //
-// As an optimization step, the merged environment definition is cached and written back to
-// `<runtimeEnvBaseDir()>/runtime.json`. If this file exits, we can just return its parsed contents and skip parsing
-// the many individual runtime definition files.
-func (ar *AlternativeRuntime) assembleRuntimeDefinition() (*envdef.EnvironmentDefinition, *failures.Failure) {
+// The merged environment definition is cached and written back to `<runtimeEnvBaseDir()>/runtime.json`.
+// This file also serves as a marker that the installation was successfully completed.
+func (ar *AlternativeRuntime) PostInstall() error {
 	mergedRuntimeDefinitionFile := filepath.Join(ar.runtimeEnvBaseDir(), constants.RuntimeDefinitionFilename)
-	if fileutils.FileExists(mergedRuntimeDefinitionFile) {
-		rt, fail := envdef.NewEnvironmentDefinition(mergedRuntimeDefinitionFile)
-		if fail == nil {
-			return rt, nil
-		}
-		logging.Warning("Failed to unmarshal the merged runtime definition file at %s: %v", mergedRuntimeDefinitionFile, fail.ToError())
-	}
+	var rtGlobal *envdef.EnvironmentDefinition
 
 	files, err := ioutil.ReadDir(ar.runtimeEnvBaseDir())
 	if err != nil {
-		return nil, FailRuntimeInvalidEnvironment.New("err_no_environment_definition")
+		return errs.Wrap(err, "could not find the runtime environment directory")
 	}
 
 	filenames := make([]string, 0, len(files))
@@ -259,14 +261,11 @@ func (ar *AlternativeRuntime) assembleRuntimeDefinition() (*envdef.EnvironmentDe
 		}
 	}
 	sort.Strings(filenames)
-
-	var rtGlobal *envdef.EnvironmentDefinition
-
 	for _, fn := range filenames {
 		rtPath := filepath.Join(ar.runtimeEnvBaseDir(), fn)
 		rt, fail := envdef.NewEnvironmentDefinition(rtPath)
 		if fail != nil {
-			return nil, fail
+			return errs.Wrap(fail, "Failed to parse runtime environment definition file at %s", rtPath)
 		}
 		if rtGlobal == nil {
 			rtGlobal = rt
@@ -274,29 +273,32 @@ func (ar *AlternativeRuntime) assembleRuntimeDefinition() (*envdef.EnvironmentDe
 		}
 		rtGlobal, err = rtGlobal.Merge(rt)
 		if err != nil {
-			logging.Warning("Failed to merge environment definition file %s: %v", rtPath, err)
-			continue
+			return errs.Wrap(err, "Failed merge environment definitions")
 		}
 	}
 
 	if rtGlobal == nil {
-		return nil, FailRuntimeInvalidEnvironment.New("err_no_environment_definition")
+		return errs.New("No runtime environment definition file at %s", ar.installationDirectory())
 	}
 
 	err = rtGlobal.WriteFile(mergedRuntimeDefinitionFile)
 	if err != nil {
-		// It should still work without writing the merged runtime definition file
-		logging.Warning(fmt.Sprintf("Failed to write merged runtime definition file at %s", mergedRuntimeDefinitionFile))
+		return errs.Wrap(err, "Failed to write merged runtime definition file at %s", mergedRuntimeDefinitionFile)
 	}
 
-	return rtGlobal, nil
+	return nil
 }
 
 // GetEnv returns the environment variable configuration for this build
-func (ar *AlternativeRuntime) GetEnv(inherit bool, _ string) (map[string]string, *failures.Failure) {
-	rt, fail := ar.assembleRuntimeDefinition()
+func (ar *AlternativeRuntime) GetEnv(inherit bool, _ string) (map[string]string, error) {
+	mergedRuntimeDefinitionFile := filepath.Join(ar.runtimeEnvBaseDir(), constants.RuntimeDefinitionFilename)
+	rt, fail := envdef.NewEnvironmentDefinition(mergedRuntimeDefinitionFile)
 	if fail != nil {
-		return nil, fail
+		return nil, locale.WrapError(
+			fail, "err_no_environment_definition",
+			"Your installation seems corrupted.\nPlease try to re-run this command, as it may fix the problem.  If the problem persists, please report it in our forum: {{.V0}}",
+			constants.ForumsURL,
+		)
 	}
 	return rt.GetEnv(inherit), nil
 }

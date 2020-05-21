@@ -10,7 +10,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
@@ -19,14 +19,18 @@ import (
 )
 
 func setCwd(t *testing.T, subdir string) {
+	err := os.Chdir(getWd(t, subdir))
+	require.NoError(t, err, "Should change dir without issue.")
+}
+
+func getWd(t *testing.T, subdir string) string {
 	cwd, err := environment.GetRootPath()
 	require.NoError(t, err, "Should fetch cwd")
 	path := filepath.Join(cwd, "pkg", "projectfile", "testdata")
 	if subdir != "" {
 		path = filepath.Join(path, subdir)
 	}
-	err = os.Chdir(path)
-	require.NoError(t, err, "Should change dir without issue.")
+	return path
 }
 
 func TestProjectStruct(t *testing.T) {
@@ -209,6 +213,7 @@ func TestParse(t *testing.T) {
 	assert.NotEmpty(t, project.Languages[0].Packages[1].Build, "Package build should be set")
 	assert.NotEmpty(t, project.Languages[0].Packages[1].Build["override"], "Build override should be set")
 
+	assert.NotEmpty(t, project.Languages[0].Constraints.OS, "Platform constraint should be set")
 	assert.NotEmpty(t, project.Languages[0].Constraints.Platform, "Platform constraint should be set")
 	assert.NotEmpty(t, project.Languages[0].Constraints.Environment, "Environment constraint should be set")
 
@@ -335,25 +340,21 @@ func TestGetActivated(t *testing.T) {
 }
 
 func TestParseVersionInfo(t *testing.T) {
-	setCwd(t, "")
-	versionInfo, fail := ParseVersionInfo()
+	versionInfo, fail := ParseVersionInfo(filepath.Join(getWd(t, ""), constants.ConfigFileName))
 	require.NoError(t, fail.ToError())
 	assert.Nil(t, versionInfo, "No version exists")
 
-	setCwd(t, "withversion")
-	versionInfo, fail = ParseVersionInfo()
+	versionInfo, fail = ParseVersionInfo(filepath.Join(getWd(t, "withversion"), constants.ConfigFileName))
 	require.NoError(t, fail.ToError())
 	assert.NotNil(t, versionInfo, "Version exists")
 
-	setCwd(t, "withbadversion")
-	versionInfo, fail = ParseVersionInfo()
+	versionInfo, fail = ParseVersionInfo(filepath.Join(getWd(t, "withbadversion"), constants.ConfigFileName))
 	assert.Error(t, fail.ToError())
 	assert.Equal(t, FailInvalidVersion.Name, fail.Type.Name, "Fails with FailInvalidVersion")
 
 	path, err := ioutil.TempDir("", "ParseVersionInfoTest")
 	require.NoError(t, err)
-	os.Chdir(path)
-	versionInfo, fail = ParseVersionInfo()
+	versionInfo, fail = ParseVersionInfo(filepath.Join(path, constants.ConfigFileName))
 	require.NoError(t, fail.ToError())
 	assert.Nil(t, versionInfo, "No version exists, because no project file exists")
 }

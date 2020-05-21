@@ -18,9 +18,9 @@ func (a *Assembler) DownloadDirectory(artf *runtime.HeadChefArtifact) (string, *
 	args := a.Called(artf)
 	return args.String(0), args.Get(1).(*failures.Failure)
 }
-func (a *Assembler) GetEnv(inherit bool, projectDir string) (map[string]string, *failures.Failure) {
+func (a *Assembler) GetEnv(inherit bool, projectDir string) (map[string]string, error) {
 	args := a.Called()
-	return args.Get(0).(map[string]string), args.Get(1).(*failures.Failure)
+	return args.Get(0).(map[string]string), args.Get(1).(error)
 }
 
 func (a *Assembler) ArtifactsToDownloadAndUnpack() ([]*runtime.HeadChefArtifact, map[string]*runtime.HeadChefArtifact) {
@@ -31,6 +31,11 @@ func (a *Assembler) ArtifactsToDownloadAndUnpack() ([]*runtime.HeadChefArtifact,
 func (a *Assembler) InstallationDirectory(artf *runtime.HeadChefArtifact) string {
 	args := a.Called(artf)
 	return args.String(0)
+}
+
+func (a *Assembler) InstallDirs() []string {
+	args := a.Called()
+	return args.Get(0).([]string)
 }
 
 func (a *Assembler) PreInstall() *failures.Failure {
@@ -55,6 +60,16 @@ func (a *Assembler) PostUnpackArtifact(artf *runtime.HeadChefArtifact, tmpRuntim
 		return nil
 	}
 	return args.Get(0).(*failures.Failure)
+}
+
+func (a *Assembler) PostInstall() error {
+	args := a.Called()
+	return args.Get(0).(error)
+}
+
+func (a *Assembler) IsInstalled() bool {
+	args := a.Called()
+	return args.Get(0).(bool)
 }
 
 func (a *Assembler) InstallerExtension() string {

@@ -34,7 +34,10 @@ func (suite *AuthIntegrationTestSuite) TestAuth_EditorV0() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("auth", "--username", e2e.PersistentUsername, "--password", e2e.PersistentPassword, "--output", "editor.v0")
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("auth", "--username", e2e.PersistentUsername, "--password", e2e.PersistentPassword, "--output", "editor.v0"),
+		e2e.HideCmdLine(),
+	)
 	cp.Expect(`"privateProjects":false}`)
 	cp.ExpectExitCode(0)
 	suite.Equal(fmt.Sprintf("%s", string(expected)), cp.TrimmedSnapshot())
@@ -74,6 +77,11 @@ func (suite *ForkIntegrationTestSuite) TestFork_EditorV0() {
 	cp.Expect(`"OriginalOwner":"ActiveState-CLI"}}`)
 	suite.Equal(string(expected), cp.TrimmedSnapshot())
 	cp.ExpectExitCode(0)
+
+	// Check if we error out on conflicts properly
+	cp = ts.Spawn("fork", "ActiveState-CLI/Python3", "--name", "Test-Python3", "--org", username, "--output", "editor.v0")
+	cp.Expect(`{"error":{"code":-16,"message":"`)
+	cp.ExpectExitCode(1)
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_EditorV0() {

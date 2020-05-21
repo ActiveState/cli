@@ -1,7 +1,6 @@
 package failures
 
 import (
-	"errors"
 	"fmt"
 	"reflect"
 	"runtime"
@@ -160,7 +159,7 @@ func (e *Failure) ToError() error {
 	if e.err != nil {
 		return e.err
 	}
-	return errors.New(e.Error())
+	return e
 }
 
 // WithDescription is a convenience method that emulates the behavior of using Handle()
@@ -190,6 +189,19 @@ func (e *Failure) Handle(description string) {
 		// Descriptions are always communicated to the user
 		print.Error(description)
 	}
+}
+
+// Dirty hack to check failure type without importing the failure package
+// We're getting rid of failures, not going to dance around to do this cleaner
+func (e *Failure) IsFailure() {
+}
+
+// InputError tells us whether this is a user input error or not
+func (e *Failure) InputError() bool {
+	if e == nil {
+		return false
+	}
+	return e.Type.User
 }
 
 // Type returns a FailureType that can be used to create your own failure types
@@ -232,6 +244,15 @@ func Handled() error {
 // ResetHandled resets handled to nil
 func ResetHandled() {
 	handled = nil
+}
+
+// ToError converts a failure to an error
+func ToError(err error) error {
+	switch v := err.(type) {
+	case *Failure:
+		err = v.ToError()
+	}
+	return err
 }
 
 // IsFailure returns whether the given error is of the Failure type

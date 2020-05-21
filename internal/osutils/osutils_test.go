@@ -4,7 +4,9 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"reflect"
 	"runtime"
+	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -61,4 +63,66 @@ func TestBashifyPath(t *testing.T) {
 	require.Error(t, err)
 	_, err = BashifyPath("../relative/path")
 	require.Error(t, err, "Relative paths should not work")
+}
+
+func TestEnvSliceToMap(t *testing.T) {
+	tests := []struct {
+		name     string
+		envSlice []string
+		want     map[string]string
+	}{
+		{
+			"Env slice is converted to map",
+			[]string{
+				"foo=bar",
+				"PATH=blah:blah",
+				"_=",
+			},
+			map[string]string{
+				"foo":  "bar",
+				"PATH": "blah:blah",
+				"_":    "",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := EnvSliceToMap(tt.envSlice); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("EnvSliceToMap() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestEnvMapToSlice(t *testing.T) {
+	tests := []struct {
+		name   string
+		envMap map[string]string
+		want   []string
+	}{
+		{
+			"Env map is converted to slice",
+			map[string]string{
+				"foo":  "bar",
+				"PATH": "blah:blah",
+				"_":    "",
+			},
+			[]string{
+				"foo=bar",
+				"PATH=blah:blah",
+				"_=",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := EnvMapToSlice(tt.envMap)
+
+			sort.Strings(got)
+			sort.Strings(tt.want)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("EnvMapToSlice() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }

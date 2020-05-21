@@ -2,6 +2,7 @@ package output
 
 import (
 	"bytes"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -20,6 +21,12 @@ func TestJSON_Print(t *testing.T) {
 		{
 			"simple string",
 			args{"hello"},
+			`"hello"` + "\n",
+			"",
+		},
+		{
+			"error string",
+			args{errors.New("hello")},
 			`"hello"` + "\n",
 			"",
 		},

@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"path"
+	"path/filepath"
 	"runtime"
 	"syscall"
 	"time"
@@ -18,6 +19,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -38,6 +40,7 @@ func activationLoop(targetPath string, activator activateFunc) error {
 			// something more actionable for the context they're in
 			return failures.FailUserInput.New("err_project_from_path")
 		}
+		updater.PrintUpdateMessage(proj.Source().Path())
 		print.Info(locale.T("info_activating_state", proj))
 
 		if proj.CommitID() == "" {
@@ -83,9 +86,22 @@ func activate(owner, name, srcPath string) bool {
 
 	ignoreWindowsInterrupts()
 
-	subs, err := subshell.Activate()
+	subs, fail := subshell.Get()
+	if fail != nil {
+		failures.Handle(fail, locale.T("error_could_not_activate_subshell"))
+		return false
+	}
+
+	ve, err := venv.GetEnv(false, filepath.Dir(projectfile.Get().Path()))
 	if err != nil {
-		failures.Handle(err, locale.T("error_could_not_activate_subshell"))
+		failures.Handle(err, locale.T("error_could_not_activate_venv"))
+		return false
+	}
+
+	subs.SetEnv(ve)
+	fail = subs.Activate()
+	if fail != nil {
+		failures.Handle(fail, locale.T("error_could_not_activate_subshell"))
 		return false
 	}
 

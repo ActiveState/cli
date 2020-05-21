@@ -10,14 +10,16 @@ import (
 
 	"gopkg.in/yaml.v2"
 
+	"github.com/go-openapi/strfmt"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/print"
-	"github.com/go-openapi/strfmt"
 )
 
 var (
@@ -436,6 +438,16 @@ func ValidateProjectURL(url string) *failures.Failure {
 	return nil
 }
 
+// Reload the project file from disk
+func (p *Project) Reload() *failures.Failure {
+	pj, fail := Parse(p.path)
+	if fail != nil {
+		return fail
+	}
+	*p = *pj
+	return nil
+}
+
 // Save the project to its activestate.yaml file
 func (p *Project) Save() *failures.Failure {
 	dat, err := yaml.Marshal(p)
@@ -447,6 +459,8 @@ func (p *Project) Save() *failures.Failure {
 	if fail != nil {
 		return fail
 	}
+
+	logging.Debug("Saving %s", p.Path())
 
 	f, err := os.Create(p.Path())
 	if err != nil {
@@ -520,7 +534,7 @@ func GetProjectFilePath() (string, *failures.Failure) {
 		return projectFilePath, nil
 	}
 
-	root, err := os.Getwd()
+	root, err := osutils.Getwd()
 	if err != nil {
 		logging.Warning("Could not get project root path: %v", err)
 		return "", failures.FailOS.Wrap(err)
@@ -601,13 +615,15 @@ func FromPath(path string) (*Project, *failures.Failure) {
 
 // CreateParams are parameters that we create a custom activestate.yaml file from
 type CreateParams struct {
-	Owner      string
-	Project    string
-	CommitID   *strfmt.UUID
-	Directory  string
-	Content    string
-	path       string
-	projectURL string
+	Owner           string
+	Project         string
+	CommitID        *strfmt.UUID
+	Directory       string
+	Content         string
+	Language        string
+	LanguageVersion string
+	path            string
+	projectURL      string
 }
 
 // CreateWithProjectURL a new activestate.yaml with default content
@@ -667,8 +683,10 @@ func createCustom(params *CreateParams) (*Project, *failures.Failure) {
 	}
 
 	data := map[string]interface{}{
-		"Project": params.projectURL,
-		"Content": params.Content,
+		"Project":         params.projectURL,
+		"LanguageName":    params.Language,
+		"LanguageVersion": params.LanguageVersion,
+		"Content":         params.Content,
 	}
 
 	template, fail := loadTemplate(params.path, data)
@@ -699,26 +717,11 @@ func validateCreateParams(params *CreateParams) *failures.Failure {
 
 // ParseVersionInfo parses the version field from the projectfile, and ONLY the version field. This is to ensure it doesn't
 // trip over older activestate.yaml's with breaking changes
-func ParseVersionInfo() (*VersionInfo, *failures.Failure) {
-	var projectFilePath string
-	if persistentProject != nil {
-		projectFilePath = persistentProject.Path()
-	} else {
-		var fail *failures.Failure
-		projectFilePath, fail = GetProjectFilePath()
-		if fail != nil {
-			if fail.Type.Matches(FailNoProjectFromEnv) {
-				return nil, fail
-			}
-			// Not being able to find a project file is not a failure for the purposes of this function
-			return nil, nil
-		}
-	}
-
-	if projectFilePath == "" {
+func ParseVersionInfo(projectFilePath string) (*VersionInfo, *failures.Failure) {
+	if !fileutils.FileExists(projectFilePath) {
 		return nil, nil
 	}
-
+	
 	dat, err := ioutil.ReadFile(projectFilePath)
 	if err != nil {
 		return nil, failures.FailIO.Wrap(err)

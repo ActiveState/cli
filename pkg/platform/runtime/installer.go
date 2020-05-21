@@ -57,6 +57,9 @@ var (
 
 	// FailRuntimeInvalidEnvironment represents a Failure during set up of the runtime environment
 	FailRuntimeInvalidEnvironment = failures.Type("runtime.runtime.invalidenv", failures.FailIO)
+
+	// FailRuntimeUnknownEngine is a failure due to the engine not being known.
+	FailRuntimeUnknownEngine = failures.Type("runtime.runtime.unknownengine", FailRuntimeInvalid)
 )
 
 // Installer implements an Installer that works with a runtime.Downloader and a
@@ -120,6 +123,17 @@ func (installer *Installer) Env() (envGetter EnvGetter, fail *failures.Failure) 
 	return installer.Assembler()
 }
 
+// IsInstalled will check if the installer has already ran (ie. the artifacts already exist at the target dir)
+func (installer *Installer) IsInstalled() (bool, *failures.Failure) {
+	assembler, fail := installer.Assembler()
+	if fail != nil {
+		return false, fail
+	}
+
+	return assembler.IsInstalled(), nil
+}
+
+// Assembler returns a new runtime assembler for the given checkpoint and artifacts
 func (installer *Installer) Assembler() (Assembler, *failures.Failure) {
 	if fail := installer.validateCheckpoint(); fail != nil {
 		return nil, fail
@@ -130,14 +144,29 @@ func (installer *Installer) Assembler() (Assembler, *failures.Failure) {
 		return nil, fail
 	}
 
-	if artifacts.IsAlternative {
+	switch artifacts.BuildEngine {
+	case Alternative:
 		return NewAlternativeRuntime(artifacts.Artifacts, installer.params.CacheDir, artifacts.RecipeID)
-	}
+	case Camel:
+		return NewCamelRuntime(artifacts.Artifacts, installer.params.CacheDir)
+	case Hybrid:
+		cr, fail := NewCamelRuntime(artifacts.Artifacts, installer.params.CacheDir)
+		if fail != nil {
+			return nil, fail
+		}
 
-	return NewCamelRuntime(artifacts.Artifacts, installer.params.CacheDir)
+		return &HybridRuntime{cr}, nil
+	default:
+		return nil, FailRuntimeUnknownEngine.New("installer_err_engine_unknown")
+	}
 }
 
+// InstallArtifacts installs all artifacts provided by a runtime assembler
 func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGetter EnvGetter, freshInstallation bool, fail *failures.Failure) {
+	if runtimeAssembler.IsInstalled() {
+		logging.Debug("runtime already successfully installed")
+		return runtimeAssembler, false, nil
+	}
 	downloadArtfs, unpackArchives := runtimeAssembler.ArtifactsToDownloadAndUnpack()
 
 	if len(downloadArtfs) == 0 && len(unpackArchives) == 0 {
@@ -169,6 +198,11 @@ func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGet
 	if fail != nil {
 		progress.Cancel()
 		return nil, false, fail
+	}
+
+	err := runtimeAssembler.PostInstall()
+	if err != nil {
+		return nil, false, failures.FailRuntime.Wrap(err, "error during post installation step")
 	}
 
 	return runtimeAssembler, true, nil

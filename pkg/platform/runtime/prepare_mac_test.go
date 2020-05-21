@@ -29,10 +29,16 @@ func (suite *MetaDataTestSuite) TestMetaData_Prepare() {
 		os.Setenv("PYTHONIOENCODING", originalValue)
 	}()
 
-	tempDir := suite.dir
+	relBinDir := filepath.Join("Library", "Frameworks", "Python.framework", "Versions", "Current", "bin")
+	relVersionedDir := filepath.Join("Library", "Frameworks", "Python.framework", "Versions", "3.7")
+
 	// Directory that contains binary file on MacOS
-	tempDir = filepath.Join(suite.dir, "Library", "Frameworks", "Python.framework", "Versions", "Current", "bin")
+	tempDir := filepath.Join(suite.dir, relBinDir)
 	fail := fileutils.Mkdir(tempDir)
+	suite.Require().NoError(fail.ToError())
+
+	versionedDir := filepath.Join(suite.dir, relVersionedDir)
+	fail = fileutils.Mkdir(versionedDir)
 	suite.Require().NoError(fail.ToError())
 
 	// Directory that contains site-packages on MacOS
@@ -51,4 +57,11 @@ func (suite *MetaDataTestSuite) TestMetaData_Prepare() {
 	fail = metaData.Prepare()
 	suite.Require().NoError(fail.ToError())
 	suite.Require().NotEmpty(metaData.Env["PYTHONIOENCODING"])
+
+	suite.Len(metaData.TargetedRelocations, 1, "expected one targeted relocation")
+	suite.Equal(runtime.TargetedRelocation{
+		InDir:        tempDir,
+		SearchString: "#!" + filepath.Join("/", relVersionedDir),
+		Replacement:  "#!" + versionedDir,
+	}, metaData.TargetedRelocations[0], suite.dir)
 }

@@ -30,11 +30,14 @@ var (
 
 	// FailCannotConvertModel is a failure to convert a new model to an existing model
 	FailCannotConvertModel = failures.Type("model.fail.cannotconvertmodel")
+
+	// FailProjectNameConflict is a failure due to a project name conflict
+	FailProjectNameConflict = failures.Type("model.fail.projectconflict")
 )
 
 // FetchProjectByName fetches a project for an organization.
 func FetchProjectByName(orgName string, projectName string) (*mono_models.Project, *failures.Failure) {
-	logging.Debug("fetching project (%s) in organization (%s), %s", projectName, orgName)
+	logging.Debug("fetching project (%s) in organization (%s)", projectName, orgName)
 
 	request := request.ProjectByOrgAndName(orgName, projectName)
 
@@ -103,12 +106,9 @@ func DefaultBranchForProject(pj *mono_models.Project) (*mono_models.Branch, *fai
 
 // CreateProject will create the project on the platform
 func CreateProject(owner, name, hostPlatform string, lang *language.Supported, langVersion string) (*mono_models.Project, strfmt.UUID, *failures.Failure) {
-	addParams := projects.NewAddProjectParams()
-	addParams.SetOrganizationName(owner)
-	addParams.SetProject(&mono_models.Project{Name: name})
-	_, err := authentication.Client().Projects.AddProject(addParams, authentication.ClientAuth())
-	if err != nil {
-		return nil, "", api.FailUnknown.New(api.ErrorMessageFromPayload(err))
+	_, fail := CreateEmptyProject(owner, name)
+	if fail != nil {
+		return nil, "", fail
 	}
 
 	var requirement string
@@ -120,6 +120,41 @@ func CreateProject(owner, name, hostPlatform string, lang *language.Supported, l
 	}
 
 	return CommitInitial(owner, name, hostPlatform, requirement, langVersion)
+}
+
+// CreateEmptyProject will create the project on the platform
+func CreateEmptyProject(owner, name string) (*mono_models.Project, *failures.Failure) {
+	addParams := projects.NewAddProjectParams()
+	addParams.SetOrganizationName(owner)
+	addParams.SetProject(&mono_models.Project{Name: name})
+	pj, err := authentication.Client().Projects.AddProject(addParams, authentication.ClientAuth())
+	if err != nil {
+		msg := api.ErrorMessageFromPayload(err)
+		if _, ok := err.(*projects.AddProjectConflict); ok {
+			return nil, FailProjectNameConflict.New(msg)
+		}
+		return nil, api.FailUnknown.New(msg)
+	}
+
+	return pj.Payload, nil
+}
+
+// MakeProjectPrivate turns the given project private
+func MakeProjectPrivate(owner, name string) *failures.Failure {
+	editParams := projects.NewEditProjectParams()
+	editParams.SetProject(&mono_models.ProjectEditable{
+		Private: true,
+	})
+	editParams.SetOrganizationName(owner)
+	editParams.SetProjectName(name)
+
+	_, err := authentication.Client().Projects.EditProject(editParams, authentication.ClientAuth())
+	if err != nil {
+		msg := api.ErrorMessageFromPayload(err)
+		return api.FailUnknown.Wrap(err, msg)
+	}
+
+	return nil
 }
 
 // ProjectURL creates a valid platform URL for the given project parameters
