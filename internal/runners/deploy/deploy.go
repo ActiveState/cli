@@ -228,10 +228,10 @@ func symlinkWithTarget(overwrite bool, path string, bins []string, out output.Ou
 
 	isInsideOf, err := fileutils.PathIsInsideOf(path, config.CachePath())
 	if err != nil {
-		return err
+		return locale.WrapError(err, "err_symlink_protection_undetermined", "Cannot determine if '{{.V0}}' is within protected directory", path)
 	}
 	if isInsideOf {
-		logging.Warning("Skipping symlinks targeting %q", path)
+		logging.Warning("Skipping symlink targeting %q", path)
 		return nil
 	}
 
