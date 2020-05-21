@@ -170,7 +170,7 @@ function activateIfRequested() {
 }
 
 function warningIfadmin() {
-    if (IsAdmin) {
+    if ( (IsAdmin) -and -not (Test-Path env:CI) ) {
         Write-Warning "It is recommended to use the state tool in a new terminal session without admin privileges.`n"
     }
 }
