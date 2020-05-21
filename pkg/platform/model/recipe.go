@@ -70,20 +70,11 @@ func FetchRecipeIDForCommitAndPlatform(commitID strfmt.UUID, hostPlatform string
 func fetchRawRecipe(commitID strfmt.UUID, hostPlatform *string) (string, *failures.Failure) {
 	_, transport := inventory.Init()
 
-	var fail *failures.Failure
-	params := iop.NewResolveRecipesParams()
 	var err error
+	params := iop.NewResolveRecipesParams()
 	params.Order, err = commitToOrder(commitID, hostPlatform)
 	if err != nil {
 		return "", FailOrderRecipes.Wrap(err)
-	}
-
-	var fail *failures.Failure
-	if hostPlatform != nil {
-		params.Order.Platforms, fail = filterPlatformIDs(*hostPlatform, runtime.GOARCH, params.Order.Platforms)
-		if fail != nil {
-			return "", fail
-		}
 	}
 
 	recipe, err := inventory.ResolveRecipes(transport, params, authentication.ClientAuth())
@@ -131,6 +122,7 @@ func commitToOrder(commitID strfmt.UUID, hostPlatform *string) (*inventory_model
 		return nil, failures.FailMarshal.New(locale.T("err_order_marshal"))
 	}
 
+	var fail *failures.Failure
 	if hostPlatform != nil {
 		order.Platforms, fail = filterPlatformIDs(*hostPlatform, runtime.GOARCH, order.Platforms)
 		if fail != nil {
@@ -142,11 +134,11 @@ func commitToOrder(commitID strfmt.UUID, hostPlatform *string) (*inventory_model
 }
 
 func fetchRecipeID(commitID strfmt.UUID, hostPlatform *string) (*strfmt.UUID, *failures.Failure) {
-	var fail *failures.Failure
+	var err error
 	params := iop.NewSolveOrderParams()
-	params.Order, fail = commitToOrder(commitID, hostPlatform)
-	if fail != nil {
-		return nil, fail
+	params.Order, err = commitToOrder(commitID, hostPlatform)
+	if err != nil {
+		return nil, FailOrderRecipes.Wrap(err)
 	}
 
 	client, _ := inventory.Init()
