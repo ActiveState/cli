@@ -18,7 +18,7 @@ namespace GetProjectName
             string[] parts = filename.Split('-');
             if (parts.Count() != 2)
             {
-                session.Message(InstallMessage.Error, new Record{ FormatString = string.Format("Invalid filename found: {0}. Filename must be of the format <LanguageName><Version>-<Base64 String>", filename)});
+                session.Message(InstallMessage.Error, new Record { FormatString = string.Format("Invalid filename found: {0}. Filename must be of the format <LanguageName><Version>-<Base64 String>", filename)});
                 return ActionResult.Failure;
             }
 
@@ -27,9 +27,10 @@ namespace GetProjectName
             {
                 data = Convert.FromBase64String(parts[1]);
             }
-            catch (FormatException e)
+            catch (Exception e)
             {
                 session.Log(string.Format("Could not convert base64 filename, got error: {0}", e.ToString()));
+                session.Message(InstallMessage.Error, new Record { FormatString = "Could not convert base64 filename" });
                 return ActionResult.Failure;
             }
 
@@ -38,9 +39,10 @@ namespace GetProjectName
             {
                 projectNamespace = System.Text.Encoding.Default.GetString(data);
             }
-            catch (FormatException e)
+            catch (Exception e)
             {
                 session.Log(string.Format("Could not decode filename to project namespace, got error: {0}", e.ToString()));
+                session.Message(InstallMessage.Error, new Record { FormatString = "Could not decode filename to project namespace" });
                 return ActionResult.Failure;
             }
             
