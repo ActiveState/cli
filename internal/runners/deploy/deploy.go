@@ -304,24 +304,20 @@ func symlinkWithTarget(overwrite bool, path string, bins []string, pathExt []str
 					if !shouldOverwriteSymlink(fpath, oldPath, pathExt) {
 						return nil
 					}
-					if err := os.Remove(target); err != nil {
-						return locale.WrapInputError(
-							err, "err_deploy_overwrite",
-							"Could not overwrite {{.V0}}, make sure you have permissions to write to this file.", target)
-					}
-				} else { // overwriting an external file (that was not installed during this deployment)
+				} else { // existing target has not been created during deployment
 					if !overwrite {
 						return locale.NewInputError(
 							"err_deploy_symlink_target_exists",
 							"Cannot create symlink as the target already exists: {{.V0}}. Use '--force' to overwrite any existing files.", target)
 					}
 					out.Notice(locale.Tr("deploy_overwrite_target", target))
-					if err := os.Remove(target); err != nil {
-						return locale.WrapInputError(
-							err, "err_deploy_overwrite",
-							"Could not overwrite {{.V0}}, make sure you have permissions to write to this file.", target)
+				}
 
-					}
+				// to overwrite the existing file, we have to remove it first, or the link command will fail
+				if err := os.Remove(target); err != nil {
+					return locale.WrapInputError(
+						err, "err_deploy_overwrite",
+						"Could not overwrite {{.V0}}, make sure you have permissions to write to this file.", target)
 				}
 			}
 
