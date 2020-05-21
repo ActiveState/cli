@@ -111,16 +111,13 @@ func commitToOrder(commitID strfmt.UUID, hostPlatform *string) (*inventory_model
 		return nil, FailOrderRecipes.Wrap(err, locale.T("err_order_recipe"))
 	}
 
-	orderData, err := monoOrder.MarshalBinary()
-	if err != nil {
-		return nil, failures.FailMarshal.New(locale.T("err_order_marshal"))
+	order := &inventory_models.V1Order{
+		CamelFlags: monoOrder.CamelFlags,
+		OrderID:    &monoOrder.OrderID,
+		Platforms:  monoOrder.Platforms,
+		Timestamp:  &monoOrder.Timestamp,
 	}
-
-	order := &inventory_models.V1Order{}
-	err = order.UnmarshalBinary(orderData)
-	if err != nil {
-		return nil, failures.FailMarshal.New(locale.T("err_order_marshal"))
-	}
+	order.Requirements = buildOrderRequirements(monoOrder)
 
 	var fail *failures.Failure
 	if hostPlatform != nil {
@@ -131,6 +128,28 @@ func commitToOrder(commitID strfmt.UUID, hostPlatform *string) (*inventory_model
 	}
 
 	return order, nil
+}
+
+func buildOrderRequirements(order *mono_models.Order) []*inventory_models.V1OrderRequirementsItems {
+	orderRequirements := []*inventory_models.V1OrderRequirementsItems{}
+	for _, req := range order.Requirements {
+		requirement := &inventory_models.V1OrderRequirementsItems{
+			Feature:             &req.Feature,
+			IngredientVersionID: strfmt.UUID(req.IngredientVersionID),
+			Namespace:           &req.Namespace,
+			Revision:            req.Revision,
+		}
+
+		for _, versionReq := range req.VersionRequirements {
+			requirement.VersionRequirements = append(requirement.VersionRequirements, &inventory_models.V1OrderRequirementsItemsVersionRequirementsItems{
+				Comparator: &versionReq.Comparator,
+				Version:    &versionReq.Version,
+			})
+		}
+
+		orderRequirements = append(orderRequirements, requirement)
+	}
+	return orderRequirements
 }
 
 func fetchRecipeID(commitID strfmt.UUID, hostPlatform *string) (*strfmt.UUID, *failures.Failure) {
