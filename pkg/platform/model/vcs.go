@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api"
+	"github.com/ActiveState/cli/pkg/platform/api/mono"
 	vcsClient "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/version_control"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -530,7 +531,7 @@ func FetchOrderFromCommit(commitID strfmt.UUID) (*mono_models.Order, error) {
 	params := vcsClient.NewGetOrderParams()
 	params.CommitID = commitID
 
-	res, err := authentication.Client().VersionControl.GetOrder(params, authentication.ClientAuth())
+	res, err := mono.New().VersionControl.GetOrder(params, nil)
 	if err != nil {
 		return nil, errors.New(api.ErrorMessageFromPayload(err))
 	}
