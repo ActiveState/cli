@@ -83,7 +83,7 @@ func (v *Incrementation) IncrementWithRevision(revision string) (*semver.Version
 // Type returns the string representation of the version bump
 // ie. patch, minor, or major
 func (v *Incrementation) Type() (string, error) {
-	if v.env != LocalEnv && v.branch == "master" {
+	if v.env != LocalEnv && (v.branch == "master" || v.branch == "unstable") {
 		return v.typer.IncrementType()
 	}
 
@@ -136,7 +136,7 @@ func (v *Incrementation) increment() (*semver.Version, error) {
 	var err error
 
 	switch v.branch {
-	case "master":
+	case "master", "unstable":
 		increment, err = v.typer.IncrementType()
 	default:
 		increment = Zeroed
