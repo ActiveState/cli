@@ -30,7 +30,8 @@ type Params struct {
 	UserScope bool
 }
 
-func (p Params) RequiresAdministratorRights() bool {
+// RequiresAdministratorRights checks if the requested deploy command requires administrator privileges.
+func RequiresAdministratorRights(p Params) bool {
 	if rt.GOOS != "windows" {
 		return false
 	}
@@ -55,13 +56,13 @@ func NewDeploy(step Step, out output.Outputer) *Deploy {
 }
 
 func (d *Deploy) Run(params *Params) error {
-	if params.RequiresAdministratorRights() {
+	if RequiresAdministratorRights(*params) {
 		isAdmin, err := osutils.IsWindowsAdmin()
 		if err != nil {
 			logging.Error("Could not check for windows administrator privileges: %v", err)
 		}
 		if !isAdmin {
-			return locale.NewError("err_deploy_admin_privileges_required", "You need to run this command with Administrator privileges because the --system_path flag is set")
+			return locale.NewError("err_deploy_admin_privileges_required", "Administrator rights are required for this command to modify the system PATH.  If you want to deploy to the user environment, please adjust the command line flags.")
 		}
 	}
 	installer, targetPath, err := d.createInstaller(params.Namespace, params.Path)
