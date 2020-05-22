@@ -43,7 +43,7 @@ func (v *SubShell) SetBinary(binary string) {
 }
 
 // WriteUserEnv - see subshell.SubShell
-func (v *SubShell) WriteUserEnv(env map[string]string) *failures.Failure {
+func (v *SubShell) WriteUserEnv(env map[string]string, _ bool) *failures.Failure {
 	homeDir, err := fileutils.HomeDir()
 	if err != nil {
 		return failures.FailIO.Wrap(err)

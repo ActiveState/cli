@@ -158,8 +158,17 @@ func (suite *DeployIntegrationTestSuite) TestDeployConfigure() {
 
 	cp.Expect("Configuring shell", 60*time.Second)
 	cp.ExpectExitCode(0)
-
 	suite.AssertConfig(ts)
+
+	if runtime.GOOS == "windows" {
+		cp = ts.Spawn("deploy", "configure", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work, "--user")
+		cp.Expect("Configuring shell", 60*time.Second)
+		cp.ExpectExitCode(0)
+
+		out, err := exec.Command("reg", "query", `HKCU\Environment`, "/v", "Path").Output()
+		suite.Require().NoError(err)
+		suite.Contains(string(out), ts.Dirs.Work, "Windows user PATH should contain our target dir")
+	}
 }
 
 func (suite *DeployIntegrationTestSuite) AssertConfig(ts *e2e.Session) {
@@ -174,9 +183,9 @@ func (suite *DeployIntegrationTestSuite) AssertConfig(ts *e2e.Session) {
 		suite.Contains(string(bashContents), ts.Dirs.Work, "bashrc should contain our target dir")
 	} else {
 		// Test registry
-		out, err := exec.Command("reg", "query", "HKCU\\Environment", "/v", "Path").Output()
+		out, err := exec.Command("reg", "query", `HKLM\SYSTEM\ControlSet001\Control\Session Manager\Environment`, "/v", "Path").Output()
 		suite.Require().NoError(err)
-		suite.Contains(string(out), ts.Dirs.Work, "Windows PATH should contain our target dir")
+		suite.Contains(string(out), ts.Dirs.Work, "Windows system PATH should contain our target dir")
 	}
 }
 

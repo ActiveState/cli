@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
@@ -26,6 +27,15 @@ type Params struct {
 	Path      string
 	Step      Step
 	Force     bool
+	UserScope bool
+}
+
+// RequiresAdministratorRights checks if the requested deploy command requires administrator privileges.
+func RequiresAdministratorRights(p Params) bool {
+	if rt.GOOS != "windows" {
+		return false
+	}
+	return (p.Step == UnsetStep || p.Step == ConfigureStep) && !p.UserScope
 }
 
 type Deploy struct {
@@ -46,6 +56,15 @@ func NewDeploy(step Step, out output.Outputer) *Deploy {
 }
 
 func (d *Deploy) Run(params *Params) error {
+	if RequiresAdministratorRights(*params) {
+		isAdmin, err := osutils.IsWindowsAdmin()
+		if err != nil {
+			logging.Error("Could not check for windows administrator privileges: %v", err)
+		}
+		if !isAdmin {
+			return locale.NewError("err_deploy_admin_privileges_required", "Administrator rights are required for this command to modify the system PATH.  If you want to deploy to the user environment, please adjust the command line flags.")
+		}
+	}
 	installer, targetPath, err := d.createInstaller(params.Namespace, params.Path)
 	if err != nil {
 		return locale.WrapError(
@@ -53,7 +72,7 @@ func (d *Deploy) Run(params *Params) error {
 			"Could not initialize an installer for {{.V0}}.", params.Namespace.String())
 	}
 
-	return runSteps(targetPath, params.Force, d.step, installer, d.output)
+	return runSteps(targetPath, params.Force, params.UserScope, d.step, installer, d.output)
 }
 
 func (d *Deploy) createInstaller(namespace project.Namespaced, path string) (installable, string, error) {
@@ -72,13 +91,13 @@ func (d *Deploy) createInstaller(namespace project.Namespaced, path string) (ins
 	return installable, cacheDir, fail.ToError()
 }
 
-func runSteps(targetPath string, force bool, step Step, installer installable, out output.Outputer) error {
+func runSteps(targetPath string, force bool, userScope bool, step Step, installer installable, out output.Outputer) error {
 	return runStepsWithFuncs(
-		targetPath, force, step, installer, out,
+		targetPath, force, userScope, step, installer, out,
 		install, configure, symlink, report)
 }
 
-func runStepsWithFuncs(targetPath string, force bool, step Step, installer installable, out output.Outputer, installf installFunc, configuref configureFunc, symlinkf symlinkFunc, reportf reportFunc) error {
+func runStepsWithFuncs(targetPath string, force, userScope bool, step Step, installer installable, out output.Outputer, installf installFunc, configuref configureFunc, symlinkf symlinkFunc, reportf reportFunc) error {
 	logging.Debug("runSteps: %s", step.String())
 
 	var envGetter runtime.EnvGetter
@@ -111,7 +130,7 @@ func runStepsWithFuncs(targetPath string, force bool, step Step, installer insta
 				return errs.Wrap(fail, "Could not retrieve env for Configure step")
 			}
 		}
-		if err := configuref(envGetter, out); err != nil {
+		if err := configuref(envGetter, out, userScope); err != nil {
 			return err
 		}
 		if step == UnsetStep {
@@ -162,9 +181,9 @@ func install(installer installable, out output.Outputer) (runtime.EnvGetter, err
 	return envGetter, nil
 }
 
-type configureFunc func(envGetter runtime.EnvGetter, out output.Outputer) error
+type configureFunc func(envGetter runtime.EnvGetter, out output.Outputer, userScope bool) error
 
-func configure(envGetter runtime.EnvGetter, out output.Outputer) error {
+func configure(envGetter runtime.EnvGetter, out output.Outputer, userScope bool) error {
 	venv := virtualenvironment.New(envGetter.GetEnv)
 	env, err := venv.GetEnv(false, "")
 	if err != nil {
@@ -178,7 +197,7 @@ func configure(envGetter runtime.EnvGetter, out output.Outputer) error {
 	}
 	out.Notice(locale.Tr("deploy_configure_shell", sshell.Shell()))
 
-	fail = sshell.WriteUserEnv(env)
+	fail = sshell.WriteUserEnv(env, userScope)
 	if fail != nil {
 		return locale.WrapError(fail, "err_deploy_subshell_write", "Could not write environment information to your shell configuration.")
 	}

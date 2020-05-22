@@ -18,17 +18,30 @@ type OpenKeyFn func(path string) (RegistryKey, error)
 
 type CmdEnv struct {
 	openKeyFn OpenKeyFn
+	// whether this updates the system environment
+	userScope bool
 }
 
-func NewCmdEnv() *CmdEnv {
-	return &CmdEnv{OpenKey}
+func NewCmdEnv(userScope bool) *CmdEnv {
+	openKeyFn := OpenSystemKey
+	if userScope {
+		openKeyFn = OpenUserKey
+	}
+	return &CmdEnv{openKeyFn, userScope}
+}
+
+func getEnvironmentPath(userScope bool) string {
+	if userScope {
+		return "Environment"
+	}
+	return `SYSTEM\ControlSet001\Control\Session Manager\Environment`
 }
 
 // unsetUserEnv clears a state cool configured environment variable
 // It only does this if the value equals the expected value (meaning if we can verify that state tool was in fact
 // responsible for setting it)
 func (c *CmdEnv) unset(name, ifValueEquals string) *failures.Failure {
-	key, err := c.openKeyFn("Environment")
+	key, err := c.openKeyFn(getEnvironmentPath(c.userScope))
 	if err != nil {
 		return failures.FailOS.Wrap(err, locale.T("err_windows_registry"))
 	}
@@ -49,7 +62,7 @@ func (c *CmdEnv) unset(name, ifValueEquals string) *failures.Failure {
 
 	// Check for backup value
 	backupValue, _, err := key.GetStringValue(envBackupName(name))
-	realError := err != nil && ! IsNotExistError(err)
+	realError := err != nil && !IsNotExistError(err)
 	backupExists := err == nil
 
 	if realError {
@@ -67,7 +80,7 @@ func (c *CmdEnv) unset(name, ifValueEquals string) *failures.Failure {
 
 // setUserEnv sets a variable in the user environment and saves the original as a backup
 func (c *CmdEnv) set(name, newValue string) *failures.Failure {
-	key, err := c.openKeyFn("Environment")
+	key, err := c.openKeyFn(getEnvironmentPath(c.userScope))
 	if err != nil {
 		return failures.FailOS.Wrap(err, locale.T("err_windows_registry"))
 	}
@@ -75,7 +88,7 @@ func (c *CmdEnv) set(name, newValue string) *failures.Failure {
 
 	// Check if we're going to be overriding
 	oldValue, _, err := key.GetStringValue(name)
-	if err != nil && ! IsNotExistError(err) {
+	if err != nil && !IsNotExistError(err) {
 		return failures.FailOS.Wrap(err, locale.T("err_windows_registry"))
 	} else if err == nil {
 		// Save backup
@@ -89,7 +102,7 @@ func (c *CmdEnv) set(name, newValue string) *failures.Failure {
 
 // getUserEnv retrieves a variable from the user environment, this prioritizes a backup if it exists
 func (c *CmdEnv) get(name string) (string, *failures.Failure) {
-	key, err := c.openKeyFn("Environment")
+	key, err := c.openKeyFn(getEnvironmentPath(c.userScope))
 	if err != nil {
 		return "", failures.FailOS.Wrap(err, locale.T("err_windows_registry"))
 	}
@@ -97,14 +110,14 @@ func (c *CmdEnv) get(name string) (string, *failures.Failure) {
 
 	// Return the backup version if it exists
 	originalValue, _, err := key.GetStringValue(envBackupName(name))
-	if err != nil && ! IsNotExistError(err) {
+	if err != nil && !IsNotExistError(err) {
 		return "", failures.FailOS.Wrap(err, locale.T("err_windows_registry"))
 	} else if err == nil {
 		return originalValue, nil
 	}
 
 	v, _, err := key.GetStringValue(name)
-	if err != nil && ! IsNotExistError(err) {
+	if err != nil && !IsNotExistError(err) {
 		return v, failures.FailOS.Wrap(err, locale.T("err_windows_registry"))
 	}
 	return v, nil
