@@ -196,6 +196,18 @@ func TestService_IncrementVersionPreRelease(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "local environment (unstable)",
+			fields: fields{
+				environment: LocalEnv,
+				master:      versionSemver,
+				provider:    incrementStateStore{Patch},
+				branch:      "unstable",
+			},
+			args:    args{revision},
+			want:    fmt.Sprintf("%s-SHA%s", "0.0.0", preRelease),
+			wantErr: false,
+		},
+		{
 			name: "local environment (branch)",
 			fields: fields{
 				environment: LocalEnv,
@@ -238,6 +250,18 @@ func TestService_IncrementVersionPreRelease(t *testing.T) {
 				master:      versionSemver,
 				provider:    incrementStateStore{Major},
 				branch:      "master",
+			},
+			args:    args{revision},
+			want:    fmt.Sprintf("%s-SHA%s", "1.0.0", preRelease),
+			wantErr: false,
+		},
+		{
+			name: "remote environment - major (unstable)",
+			fields: fields{
+				environment: RemoteEnv,
+				master:      versionSemver,
+				provider:    incrementStateStore{Major},
+				branch:      "unstable",
 			},
 			args:    args{revision},
 			want:    fmt.Sprintf("%s-SHA%s", "1.0.0", preRelease),
