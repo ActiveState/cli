@@ -170,20 +170,9 @@ fi
 
 CONSENT_TEXT="\
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean ornare leo non dolor porttitor
-euismod. Cras
-commodo, nisi vel gravida volutpat, enim turpis tempor eros, ut venenatis elit leo ut nunc. Nulla fermentum
-ligula id tincidunt porttitor.
+ActiveState collects usage statistics and diagnostic data about failures. The collected data complies with ActiveState Privacy Policy and will be used to identify product enhancements, help fix defects, and prevent abuse.
 
-  Morbi ut massa vitae tortor rutrum
-  gravida ut id nunc. Integer imperdiet pharetra augue, quis finibus justo
-  luctus id. Phasellus a diam ac risus consequat pharetra. Cras
-  lacinia neque
-  sed ipsum euismod, non commodo felis facilisis.
-
-Suspendisse luctus purus justo, sed iaculis lectus consequat nec. Etiam pretium ultricies
-ligula, a pretium sapien facilisis eu. Nulla rhoncus viverra turpis a rutrum.
-Cras eu porttitor urna. Duis nec metus vel nisi accumsan scelerisque. Cras lectus erat, mattis non mauris in, consectetur vulputate ipsum.
+For more information on the ActiveState Privacy Policy please visit https://www.activestate.com/company/privacy-policy/
 "
 echo "$CONSENT_TEXT" | fold -s -w $WIDTH
 
