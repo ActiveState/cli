@@ -47,23 +47,19 @@ func (g *GithubIncrementStateStore) IncrementType() (string, error) {
 		return "", err
 	}
 
-	var branchName string
+	var label string
 	for _, pullRequest := range pullRequests {
 		merged, err := g.isMerged(pullRequest)
 		if err != nil {
 			return "", err
 		}
-		if !merged {
-			continue
+		if merged {
+			label = getLabel(pullRequest.Labels)
+			break
 		}
-		branchName = strings.TrimPrefix(pullRequest.Head.GetLabel(), branchPrefix)
-		break
-	}
-	if branchName == "" {
-		return "", errors.New("could not determine branch name from previosly merged pull requests")
 	}
 
-	return getVersionString(branchName)
+	return strings.TrimPrefix(label, labelPrefix), nil
 }
 
 func (g *GithubIncrementStateStore) versionLabelPullRequest(number int) (string, error) {
