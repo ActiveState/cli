@@ -179,7 +179,7 @@ function promptConsent() {
     $consentText="
 ActiveState collects usage statistics and diagnostic data about failures. The collected data complies with ActiveState Privacy Policy and will be used to identify product enhancements, help fix defects, and prevent abuse.
 
-For more information on the ActiveState Privacy Policy please visit https://www.activestate.com/company/privacy-policy/
+For more information on the ActiveState Privacy Policy please visit: https://www.activestate.com/company/privacy-policy/
 "
     Write-Host $consentText
     if ( $script:NOPROMPT ) {

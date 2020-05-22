@@ -172,7 +172,7 @@ CONSENT_TEXT="\
 
 ActiveState collects usage statistics and diagnostic data about failures. The collected data complies with ActiveState Privacy Policy and will be used to identify product enhancements, help fix defects, and prevent abuse.
 
-For more information on the ActiveState Privacy Policy please visit https://www.activestate.com/company/privacy-policy/
+For more information on the ActiveState Privacy Policy please visit: https://www.activestate.com/company/privacy-policy/
 "
 echo "$CONSENT_TEXT" | fold -s -w $WIDTH
 
