@@ -58,6 +58,9 @@ func (g *GithubIncrementStateStore) IncrementType() (string, error) {
 			break
 		}
 	}
+	if label == "" {
+		return "", errors.New("Could not find merged pull request for version label")
+	}
 
 	return strings.TrimPrefix(label, labelPrefix), nil
 }
