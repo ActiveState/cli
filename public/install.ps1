@@ -175,17 +175,14 @@ function warningIfadmin() {
     }
 }
 
-function promptConsent() {
+function displayConsent() {
     $consentText="
+
 ActiveState collects usage statistics and diagnostic data about failures. The collected data complies with ActiveState Privacy Policy (https://www.activestate.com/company/privacy-policy/) and will be used to identify product enhancements, help fix defects, and prevent abuse.
+
+By running the State Tool installer you consent to the Privacy Policy.
 "
     Write-Host $consentText
-    if ( $script:NOPROMPT ) {
-        Write-Host "By running the State Tool installer without prompts you accept the above agreement"
-        return $True
-    } else {
-        return promptYN "Do you accept the above agreement?"
-    }
 }
 
 function fetchArtifacts($downloadDir, $statejson, $statepkg) {
@@ -287,7 +284,7 @@ function install()
     # Ensure errors from previously run commands are not reported during install
     $Error.Clear()
 
-    if (-Not (promptConsent)) {
+    if (-Not (displayConsent)) {
         Write-Host "Consent aggrement must be accepted to install the State Tool"
         return
     }
