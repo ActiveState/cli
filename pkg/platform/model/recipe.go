@@ -108,25 +108,25 @@ func fetchRawRecipe(commitID strfmt.UUID, hostPlatform *string) (string, *failur
 func commitToOrder(commitID strfmt.UUID, hostPlatform *string) (*inventory_models.V1Order, error) {
 	monoOrder, err := FetchOrderFromCommit(commitID)
 	if err != nil {
-		return nil, FailOrderRecipes.Wrap(err, locale.T("err_order_recipe"))
+		return nil, FailOrderRecipes.Wrap(err, locale.T("err_order_recipe")).ToError()
 	}
 
 	orderData, err := monoOrder.MarshalBinary()
 	if err != nil {
-		return nil, failures.FailMarshal.New(locale.T("err_order_marshal"))
+		return nil, failures.FailMarshal.New(locale.T("err_order_marshal")).ToError()
 	}
 
 	order := &inventory_models.V1Order{}
 	err = order.UnmarshalBinary(orderData)
 	if err != nil {
-		return nil, failures.FailMarshal.New(locale.T("err_order_marshal"))
+		return nil, failures.FailMarshal.New(locale.T("err_order_marshal")).ToError()
 	}
 
 	var fail *failures.Failure
 	if hostPlatform != nil {
 		order.Platforms, fail = filterPlatformIDs(*hostPlatform, runtime.GOARCH, order.Platforms)
 		if fail != nil {
-			return nil, fail
+			return nil, fail.ToError()
 		}
 	}
 
