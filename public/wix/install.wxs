@@ -3,7 +3,7 @@
     <Product Name='ActiveState State Tool' Manufacturer='ActiveState'
         Id='72781F65-49A7-47F5-9BA8-B25294271E09' 
         UpgradeCode='50D1C035-D6CB-4F15-A458-94E385B0A28D'
-        Language='1033' Codepage='1252' Version='{{.Version}}'>
+        Language='1033' Codepage='1252' Version='0.9.17'>
         <Package Id='*' Keywords='Installer' Description="ActiveState's State Tool Installer"
             Comments='State Tool is a registered trademark of ActiveState' Manufacturer='ActiveState'
             InstallerVersion='100' Languages='1033' Compressed='yes' SummaryCodepage='1252' />
@@ -131,15 +131,15 @@
                 <Control Id="BottomLine" Type="Line" X="0" Y="234" Width="370" Height="0" />
                 <Control Id="Description" Type="Text" X="25" Y="23" Width="340" Height="15" Transparent="yes" NoPrefix="yes" Text="Please read the following agreement carefully" />
                 <Control Id="Title" Type="Text" X="15" Y="6" Width="200" Height="15" Transparent="yes" NoPrefix="yes" Text="{\WixUI_Font_Title}ActiveState Data Collection Agreement" />
-                <Control Id="LicenseAcceptedCheckBox" Type="CheckBox" X="20" Y="207" Width="330" Height="18" CheckBoxValue="1" Property="LicenseAccepted" Text="I accept the terms of the Data Collection agreement" />
+                <!-- <Control Id="LicenseAcceptedCheckBox" Type="CheckBox" X="20" Y="207" Width="330" Height="18" CheckBoxValue="1" Property="LicenseAccepted" Text="I accept the terms of the Data Collection agreement" /> -->
                 <Control Id="Print" Type="PushButton" X="112" Y="243" Width="56" Height="17" Text="!(loc.WixUIPrint)">
                     <Publish Event="DoAction" Value="WixUIPrintEula">1</Publish>
                 </Control>
                 <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="!(loc.WixUIBack)" />
                 <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="!(loc.WixUINext)">
-                    <Publish Event="SpawnWaitDialog" Value="WaitForCostingDlg">!(wix.WixUICostingPopupOptOut) OR CostingComplete = 1</Publish>
-                    <Condition Action="disable"><![CDATA[LicenseAccepted <> "1"]]></Condition>
-                    <Condition Action="enable">LicenseAccepted = "1"</Condition>
+                    <Publish Event="NewDialog" Value="InstallDirDlg">!(wix.WixUICostingPopupOptOut) OR CostingComplete = 1</Publish>
+                    <!-- <Condition Action="disable"><![CDATA[LicenseAccepted <> "1"]]></Condition>
+                    <Condition Action="enable">LicenseAccepted = "1"</Condition> -->
                 </Control>
                 <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="!(loc.WixUICancel)">
                     <Publish Event="SpawnDialog" Value="CancelDlg">1</Publish>
