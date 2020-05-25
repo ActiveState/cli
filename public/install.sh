@@ -169,26 +169,12 @@ if $FORCEOVERWRITE && ( ! $NOPROMPT ); then
 fi
 
 CONSENT_TEXT="\
+
 ActiveState collects usage statistics and diagnostic data about failures. The collected data complies with ActiveState Privacy Policy (https://www.activestate.com/company/privacy-policy/) and will be used to identify product enhancements, help fix defects, and prevent abuse.
+
+By running the State Tool installer you consent to the Privacy Policy.
 "
 echo "$CONSENT_TEXT" | fold -s -w $WIDTH
-
-if $NOPROMPT; then
-  warn "By running the State Tool installer without prompts you accept the above agreement"
-else
-  userprompt "Do you accept the above agreement? [y/N] "
-  RESPONSE=$(userinput y)
-  case "$RESPONSE" in
-    [Yy])
-      # Continue installation
-      info "Conset agreement accepted"
-      ;;
-    [Nn]|*)
-      error "Consent aggrement must be accepted to install the State Tool"
-      exit 0
-      ;;
-  esac
-fi
 
 # Construct system-dependent filenames.
 STATEJSON=$OS-$ARCH.json
