@@ -70,11 +70,11 @@ func FetchRecipeIDForCommitAndPlatform(commitID strfmt.UUID, hostPlatform string
 func fetchRawRecipe(commitID strfmt.UUID, hostPlatform *string) (string, *failures.Failure) {
 	_, transport := inventory.Init()
 
-	var fail *failures.Failure
+	var err error
 	params := iop.NewResolveRecipesParams()
-	params.Order, fail = prepareOrder(commitID, hostPlatform)
-	if fail != nil {
-		return "", fail
+	params.Order, err = commitToOrder(commitID, hostPlatform)
+	if err != nil {
+		return "", FailOrderRecipes.Wrap(err)
 	}
 
 	recipe, err := inventory.ResolveRecipes(transport, params, authentication.ClientAuth())
@@ -105,12 +105,40 @@ func fetchRawRecipe(commitID strfmt.UUID, hostPlatform *string) (string, *failur
 	return recipe, nil
 }
 
-func fetchRecipeID(commitID strfmt.UUID, hostPlatform *string) (*strfmt.UUID, *failures.Failure) {
+func commitToOrder(commitID strfmt.UUID, hostPlatform *string) (*inventory_models.V1Order, error) {
+	monoOrder, err := FetchOrderFromCommit(commitID)
+	if err != nil {
+		return nil, FailOrderRecipes.Wrap(err, locale.T("err_order_recipe")).ToError()
+	}
+
+	orderData, err := monoOrder.MarshalBinary()
+	if err != nil {
+		return nil, failures.FailMarshal.New(locale.T("err_order_marshal")).ToError()
+	}
+
+	order := &inventory_models.V1Order{}
+	err = order.UnmarshalBinary(orderData)
+	if err != nil {
+		return nil, failures.FailMarshal.New(locale.T("err_order_marshal")).ToError()
+	}
+
 	var fail *failures.Failure
+	if hostPlatform != nil {
+		order.Platforms, fail = filterPlatformIDs(*hostPlatform, runtime.GOARCH, order.Platforms)
+		if fail != nil {
+			return nil, fail.ToError()
+		}
+	}
+
+	return order, nil
+}
+
+func fetchRecipeID(commitID strfmt.UUID, hostPlatform *string) (*strfmt.UUID, *failures.Failure) {
+	var err error
 	params := iop.NewSolveOrderParams()
-	params.Order, fail = prepareOrder(commitID, hostPlatform)
-	if fail != nil {
-		return nil, fail
+	params.Order, err = commitToOrder(commitID, hostPlatform)
+	if err != nil {
+		return nil, FailOrderRecipes.Wrap(err)
 	}
 
 	client, _ := inventory.Init()
@@ -148,25 +176,4 @@ func fetchRecipeID(commitID strfmt.UUID, hostPlatform *string) (*strfmt.UUID, *f
 	}
 
 	return nil, FailNoData.New("err_recipe_not_found")
-}
-
-func prepareOrder(commitID strfmt.UUID, hostPlatform *string) (*inventory_models.V1Order, *failures.Failure) {
-	checkpoint, atTime, fail := FetchCheckpointForCommit(commitID)
-	if fail != nil {
-		return nil, fail
-	}
-
-	order := CheckpointToOrder(commitID, atTime, checkpoint)
-	if fail != nil {
-		return nil, fail
-	}
-
-	if hostPlatform != nil {
-		order.Platforms, fail = filterPlatformIDs(*hostPlatform, runtime.GOARCH, order.Platforms)
-		if fail != nil {
-			return nil, fail
-		}
-	}
-
-	return order, nil
 }

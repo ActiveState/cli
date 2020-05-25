@@ -118,59 +118,6 @@ func (suite *InstallerTestSuite) TestInstall_Perl_Legacy_RelocationSuccessful() 
 	suite.testRelocation("perl-good-installer-nometa", constants.ActivePerlExecutable)
 }
 
-func (suite *InstallerTestSuite) TestInstall_EventsCalled() {
-	cacheDir, err := ioutil.TempDir("", "")
-	suite.Require().NoError(err)
-
-	var fail *failures.Failure
-	suite.installer, fail = runtime.NewInstallerByParams(runtime.NewInstallerParams(cacheDir, "00010001-0001-0001-0001-000100010001", "string", "string"))
-	suite.Require().NoError(fail.ToError())
-
-	onDownloadCalled := false
-
-	suite.installer.OnDownload(func() { onDownloadCalled = true })
-
-	envGetter, freshInstall, fail := suite.installer.Install()
-	suite.Require().NoError(fail.ToError())
-	suite.Assert().NotNil(envGetter)
-	suite.Assert().True(freshInstall)
-
-	suite.True(onDownloadCalled, "OnDownload is triggered")
-
-	onDownloadCalled = false
-	envGetter, freshInstall, fail = suite.installer.Install()
-	suite.Require().NoError(fail.ToError())
-	suite.Assert().NotNil(envGetter)
-	suite.Assert().False(freshInstall)
-
-	suite.False(onDownloadCalled, "OnDownload is not triggered, because we already downloaded it")
-}
-
-func (suite *InstallerTestSuite) TestInstall_LegacyAndNew() {
-	var fail *failures.Failure
-	suite.installer, fail = runtime.NewInstallerByParams(runtime.NewInstallerParams(suite.cacheDir, "00010001-0001-0001-0001-000100010001", "string", "string"))
-	suite.Require().NoError(fail.ToError())
-
-	envGetter, freshInstall, fail := suite.installer.Install()
-	suite.Require().NoError(fail.ToError())
-	suite.Assert().NotNil(envGetter)
-	suite.Assert().True(freshInstall)
-
-	camelRt, ok := envGetter.(*runtime.CamelRuntime)
-	suite.Require().True(ok, "envGetter is CamelRuntime")
-
-	suite.Require().Len(camelRt.InstallDirs(), 2)
-
-	metaCount := 0
-	for _, installDir := range camelRt.InstallDirs() {
-		if _, fail := runtime.InitMetaData(installDir); fail == nil {
-			metaCount = metaCount + 1
-		}
-	}
-
-	suite.Equal(2, metaCount, "Both new and legacy got installed via metafile")
-}
-
 func Test_InstallerTestSuite(t *testing.T) {
 	suite.Run(t, new(InstallerTestSuite))
 }
