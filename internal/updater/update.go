@@ -35,10 +35,16 @@ func (u *Updater) fromStream(path string, updateWith io.Reader) (err error, errR
 	}
 	defer fp.Close()
 	_, err = io.Copy(fp, updateWith)
+	if err != nil {
+		return
+	}
 
 	// if we don't call fp.Close(), windows won't let us move the new executable
 	// because the file will still be "in use"
-	fp.Close()
+	err = fp.Close()
+	if err != nil {
+		return
+	}
 
 	// this is where we'll move the executable to so that we can swap in the updated replacement
 	oldPath := filepath.Join(updateDir, fmt.Sprintf(".%s.old", "state"))

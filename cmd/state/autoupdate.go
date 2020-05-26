@@ -26,7 +26,7 @@ func autoUpdate(args []string, out output.Outputer, pjPath string) (bool, int, e
 		return false, 0, nil
 	}
 
-	updated, resultVersion := updater.AutoUpdate(pjPath)
+	updated, resultVersion := updater.AutoUpdate(pjPath, out)
 	if !updated {
 		return false, 0, nil
 	}
