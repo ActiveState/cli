@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/updatemocks"
@@ -29,7 +30,7 @@ func TestUpdaterWithEmptyPayloadErrorNoUpdate(t *testing.T) {
 
 	updater := createUpdater()
 
-	err := updater.Run()
+	err := updater.Run(&output.Plain{})
 	assert.Error(t, err, "Should fail because there is no update")
 }
 
@@ -82,7 +83,6 @@ func createUpdater() *Updater {
 	return &Updater{
 		CurrentVersion: "1.2",
 		APIURL:         constants.APIUpdateURL,
-		Dir:            constants.UpdateStorageDir,
 		CmdName:        constants.CommandName, // app name
 	}
 }

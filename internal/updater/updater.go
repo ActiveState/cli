@@ -10,6 +10,8 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"syscall"
+	"time"
 
 	"github.com/kardianos/osext"
 
@@ -166,6 +168,51 @@ func (u *Updater) download(path string) error {
 	return nil
 }
 
+func AcquireUpdateLock(updateDir string) (ok bool, cleanup func()) {
+	fn := filepath.Join(updateDir, fmt.Sprintf(".%s.update-lock", "state"))
+	f, err := os.OpenFile(fn, os.O_CREATE|os.O_RDWR, 0666)
+	if err != nil {
+		fmt.Printf("could not open file: %s: %v\n", fn, err)
+		return false, nil
+	}
+
+	// attempting to obtain read lock on update file
+	ft := &syscall.Flock_t{
+		Whence: int16(os.SEEK_SET),
+		Start:  0,
+		Len:    0,
+		Pid:    int32(os.Getpid()),
+		Type:   syscall.F_RDLCK,
+	}
+
+	err = syscall.FcntlFlock(f.Fd(), syscall.F_SETLK, ft)
+	if err != nil {
+		fmt.Printf("could not lock")
+		// if lock cannot be acquired -> a different process is updating, return nil
+		f.Close()
+		return false, nil
+	}
+
+	// check if update lock is not expired yet (this is just a back-up solution, in case the file locking does not work)
+	info, err := f.Stat()
+	expirationTime := info.ModTime().Add(5 * time.Minute)
+	if info.Size() > 0 && time.Now().Before(expirationTime) {
+		logging.Debug("not updating due to fallback-stat check of update file")
+		return false, nil
+	}
+
+	// update expiration time stamp
+	f.Write([]byte("1"))
+
+	// defer release of lock
+	return true, func() {
+		ft.Type = syscall.F_UNLCK
+		syscall.FcntlFlock(f.Fd(), syscall.F_SETLK, ft)
+		f.Close()
+		os.Remove(fn)
+	}
+}
+
 // update performs the actual update of the executable
 func (u *Updater) update(out output.Outputer) error {
 	path, err := osext.Executable()
@@ -174,13 +221,19 @@ func (u *Updater) update(out output.Outputer) error {
 	}
 
 	logging.Debug("Attempting to open executable path at: %s", path)
+
+	ok, cleanup := AcquireUpdateLock(filepath.Dir(path))
+	if !ok {
+		return nil
+	}
+	defer cleanup()
+
 	old, err := os.Open(path)
 	if err != nil {
 		_ = fileutils.LogPath(path)
 		return err
 	}
 
-	out.Notice(locale.T("auto_update_attempt"))
 	err = u.fetchInfo()
 	if err != nil {
 		return err
@@ -190,6 +243,7 @@ func (u *Updater) update(out output.Outputer) error {
 		return nil
 	}
 
+	out.Notice(locale.T("auto_update_attempt"))
 	bin, err := u.fetchAndVerifyFullBin()
 	if err != nil {
 		return err
@@ -347,7 +401,7 @@ func cleanOld() error {
 	if err != nil {
 		return err
 	}
-	oldFile := filepath.Join(path, ".%s.old")
+	oldFile := filepath.Join(filepath.Dir(path), fmt.Sprintf(".%s.old", "state"))
 
 	if !fileutils.FileExists(oldFile) {
 		return nil

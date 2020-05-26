@@ -1,6 +1,7 @@
 package updater
 
 import (
+	"bytes"
 	"errors"
 	"os"
 	"path/filepath"
@@ -13,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/config" // MUST be first!
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/updatemocks"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -30,6 +32,18 @@ func setup(t *testing.T, withVersion bool) {
 	projectfile.Reset()
 }
 
+func testOutput(t *testing.T) output.Outputer {
+	o, fail := output.New("", &output.Config{
+		OutWriter:   &bytes.Buffer{},
+		ErrWriter:   &bytes.Buffer{},
+		Colored:     false,
+		Interactive: false,
+	})
+	require.NoError(t, fail.ToError())
+
+	return o
+}
+
 func TestTimedCheck(t *testing.T) {
 	setup(t, false)
 
@@ -43,14 +57,14 @@ func TestTimedCheck(t *testing.T) {
 
 	updatemocks.MockUpdater(t, os.Args[0], constants.BranchName, "1.2.3-123")
 
-	update, _ := AutoUpdate(configPath)
+	update, _ := AutoUpdate(configPath, testOutput(t))
 	assert.True(t, update, "Should want to update")
 
 	stat, err := os.Stat(updateCheckMarker)
 	assert.NoError(t, err, "update-check marker was created")
 	modTime := stat.ModTime()
 
-	update, _ = AutoUpdate(configPath)
+	update, _ = AutoUpdate(configPath, testOutput(t))
 	assert.False(t, update, "Should not want to update")
 	stat, err = os.Stat(updateCheckMarker)
 	assert.NoError(t, err, "update-check marker still exists")
@@ -65,7 +79,7 @@ func TestTimedCheckLockedVersion(t *testing.T) {
 	_, err := os.Stat(updateCheckMarker)
 	assert.Error(t, err, "update-check marker does not exist")
 
-	update, _ := AutoUpdate(configPathWithVersion)
+	update, _ := AutoUpdate(configPathWithVersion, testOutput(t))
 	assert.False(t, update, "Should not want to update because we're using a locked version")
 }
 

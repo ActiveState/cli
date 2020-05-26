@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
@@ -60,7 +61,7 @@ type UpdateResult struct {
 // timeout period of one second, applies the update and returns `true`.
 // Otherwise, returns `false`.
 // AutoUpdate is skipped altogether if the current project has a locked version.
-func AutoUpdate(pjPath string, out outputer.Output) (updated bool, resultVersion string) {
+func AutoUpdate(pjPath string, out output.Outputer) (updated bool, resultVersion string) {
 	if versionInfo, _ := projectfile.ParseVersionInfo(pjPath); versionInfo != nil {
 		return false, ""
 	}
@@ -91,7 +92,6 @@ func AutoUpdate(pjPath string, out outputer.Output) (updated bool, resultVersion
 	update := Updater{
 		CurrentVersion: constants.Version,
 		APIURL:         constants.APIUpdateURL,
-		Dir:            constants.UpdateStorageDir,
 		CmdName:        constants.CommandName,
 	}
 	seconds := 1

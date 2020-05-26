@@ -25,7 +25,7 @@ func TestUpdaterNoError(t *testing.T) {
 
 	updater := createUpdater()
 
-	err := updater.Run()
+	err := updater.Run(testOutput(t))
 	require.NoError(t, err, "Should run update")
 
 	dir, err := ioutil.TempDir("", "state-test-updater")
