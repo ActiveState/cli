@@ -12,7 +12,12 @@ func IsNotExistError(err error) bool {
 	return err.Error() == "NOT_EXIST_ERROR"
 }
 
-func OpenKey(path string) (RegistryKey, error) {
+func OpenUserKey(path string) (RegistryKey, error) {
+	panic("Not supported outside of Windows, this only exists to facilitate unit tests")
+	return nil, nil
+}
+
+func OpenSystemKey(path string) (RegistryKey, error) {
 	panic("Not supported outside of Windows, this only exists to facilitate unit tests")
 	return nil, nil
 }

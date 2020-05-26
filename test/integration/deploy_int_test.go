@@ -1,10 +1,12 @@
 package integration
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 	"time"
 
@@ -46,9 +48,9 @@ func (suite *DeployIntegrationTestSuite) TestDeploy() {
 		cp = ts.Spawn("deploy", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work, "--force")
 	}
 
-	cp.Expect("Installing", 120*time.Second)
-	cp.Expect("Configuring", 120*time.Second)
-	cp.Expect("Symlinking")
+	cp.Expect("Installing", 20*time.Second)
+	cp.Expect("Configuring", 20*time.Second)
+	cp.Expect("Symlinking", 30*time.Second)
 	cp.Expect("Deployment Information", 60*time.Second)
 	cp.Expect(ts.Dirs.Work) // expect bin dir
 	if runtime.GOOS == "windows" {
@@ -66,6 +68,41 @@ func (suite *DeployIntegrationTestSuite) TestDeploy() {
 		suite.Require().NoError(err)
 		suite.Contains(link, ts.Dirs.Work, "python3 executable resolves to the one on our target dir")
 	}
+
+	cmdIfy := func(args ...string) *termtest.ConsoleProcess {
+		if runtime.GOOS != "windows" {
+			return ts.SpawnCmd(args[0], args[1:]...)
+		}
+
+		var b strings.Builder
+		b.WriteString(args[0] + ".lnk")
+		for i := 1; i < len(args); i++ {
+			b.WriteString(fmt.Sprintf(" %s", args[i]))
+		}
+
+		return ts.SpawnCmd("cmd", "/c", b.String())
+	}
+
+	// check that some of the installed symlinks are use-able
+	cp = cmdIfy(filepath.Join(ts.Dirs.Work, "bin", "python3"), "--version")
+
+	cp.Expect("Python 3")
+	cp.ExpectExitCode(0)
+
+	cp = cmdIfy(filepath.Join(ts.Dirs.Work, "bin", "pip3"), "--version")
+	cp.Expect("pip")
+	cp.ExpectExitCode(0)
+
+	if runtime.GOOS == "darwin" {
+		// This is kept as a regression test, pyvenv used to have a relocation problem on MacOS
+		cp = cmdIfy(filepath.Join(ts.Dirs.Work, "bin", "pyvenv"), "-h")
+		cp.ExpectExitCode(0)
+	}
+
+	cp = cmdIfy(filepath.Join(ts.Dirs.Work, "bin", "python3"), "-m", "pytest", "--version")
+	cp.Expect("This is pytest version")
+	cp.Expect(fmt.Sprintf("imported from %s", ts.Dirs.Work))
+	cp.ExpectExitCode(0)
 
 	suite.AssertConfig(ts)
 }
@@ -121,8 +158,17 @@ func (suite *DeployIntegrationTestSuite) TestDeployConfigure() {
 
 	cp.Expect("Configuring shell", 60*time.Second)
 	cp.ExpectExitCode(0)
-
 	suite.AssertConfig(ts)
+
+	if runtime.GOOS == "windows" {
+		cp = ts.Spawn("deploy", "configure", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work, "--user")
+		cp.Expect("Configuring shell", 60*time.Second)
+		cp.ExpectExitCode(0)
+
+		out, err := exec.Command("reg", "query", `HKCU\Environment`, "/v", "Path").Output()
+		suite.Require().NoError(err)
+		suite.Contains(string(out), ts.Dirs.Work, "Windows user PATH should contain our target dir")
+	}
 }
 
 func (suite *DeployIntegrationTestSuite) AssertConfig(ts *e2e.Session) {
@@ -137,9 +183,9 @@ func (suite *DeployIntegrationTestSuite) AssertConfig(ts *e2e.Session) {
 		suite.Contains(string(bashContents), ts.Dirs.Work, "bashrc should contain our target dir")
 	} else {
 		// Test registry
-		out, err := exec.Command("reg", "query", "HKCU\\Environment", "/v", "Path").Output()
+		out, err := exec.Command("reg", "query", `HKLM\SYSTEM\ControlSet001\Control\Session Manager\Environment`, "/v", "Path").Output()
 		suite.Require().NoError(err)
-		suite.Contains(string(out), ts.Dirs.Work, "Windows PATH should contain our target dir")
+		suite.Contains(string(out), ts.Dirs.Work, "Windows system PATH should contain our target dir")
 	}
 }
 

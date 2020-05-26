@@ -17,8 +17,12 @@ func notExistError() error {
 	return registry.ErrNotExist
 }
 
-func OpenKey(path string) (RegistryKey, error) {
+func OpenUserKey(path string) (RegistryKey, error) {
 	return registry.OpenKey(registry.CURRENT_USER, path, registry.ALL_ACCESS)
+}
+
+func OpenSystemKey(path string) (RegistryKey, error) {
+	return registry.OpenKey(registry.LOCAL_MACHINE, path, registry.ALL_ACCESS)
 }
 
 func IsNotExistError(err error) bool {
@@ -26,5 +30,6 @@ func IsNotExistError(err error) bool {
 }
 
 func (c *CmdEnv) propagate() {
-	syscall.NewLazyDLL("user32.dll").NewProc("SendMessageW").Call(HwndBroadcast, WmSettingChange, 0, uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr("ENVIRONMENT"))))
+	// Note: Always use SendNotifyMessageW here, as SendMessageW can hang forever (https://stackoverflow.com/a/1956702)
+	syscall.NewLazyDLL("user32.dll").NewProc("SendNotifyMessageW").Call(HwndBroadcast, WmSettingChange, 0, uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr("ENVIRONMENT"))))
 }

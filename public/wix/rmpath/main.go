@@ -13,7 +13,7 @@ func main() {
 		log.Fatal("Must have a path argument")
 	}
 
-	removePath := os.Args[1]
+	removePath := strings.TrimSuffix(os.Args[1], `\`)
 	fmt.Printf("Attempting to remove path: %s\n", removePath)
 
 	oldPath := os.Getenv("PATH")
@@ -21,6 +21,7 @@ func main() {
 
 	var newPathElements []string
 	for _, element := range oldPathElements {
+		element = strings.TrimSuffix(element, `\`)
 		if element == removePath {
 			continue
 		}

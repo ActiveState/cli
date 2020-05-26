@@ -294,8 +294,6 @@ auth_required_fork:
   other: You need to be authenticated to fork an ActiveState Platform project
 err_fork_auth_required:
   other: Forking a project requires you to be authenticated against the ActiveState Platform
-err_fork_create_fork:
-  other: Could not create the forked project
 err_fork_invalid_namespace:
   other: Could not fork the given project as the namespace is incorrect
 err_fork_get_owner:
@@ -920,6 +918,10 @@ err_no_default_branch:
   other: This project has no default branch. This indicates malformed data, please contact support!
 err_no_commit:
   other: Project branch has no commits
+err_order_recipe:
+  other: Could not get order from commit ID
+err_order_marshal:
+  other: Failed to marshal/unmarshal order
 err_no_data_found:
   other: No data found
 err_no_langauge:
@@ -1541,6 +1543,8 @@ flag_state_deploy_path_description:
   other: The path to deploy the runtime installation files to. This directory will not be affected by 'state clean'
 flag_state_deploy_force_description:
   other: "Overwrites any existing files / configurations."
+flag_state_deploy_user_path_description:
+  other: "Updates the user PATH instead of the system PATH"
 envdef_file_not_found:
   other: |
     Your installation seems to be corrupted.
