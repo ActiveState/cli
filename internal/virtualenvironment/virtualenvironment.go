@@ -13,7 +13,6 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -91,13 +90,8 @@ func (v *VirtualEnvironment) OnUseCache(f func()) { v.onUseCache = f }
 
 // activateRuntime sets up a runtime environment
 func (v *VirtualEnvironment) activateRuntime() *failures.Failure {
-	pjf := project.Get()
-	pj, fail := model.FetchProjectByName(pjf.Owner(), pjf.Name())
-	if fail != nil {
-		return fail
-	}
-
-	installer, fail := runtime.NewInstaller(pjf.CommitUUID(), pj.ProjectID, pjf.Owner(), pjf.Name())
+	pj := project.Get()
+	installer, fail := runtime.NewInstaller(pj.CommitUUID(), pj.Owner(), pj.Name())
 	if fail != nil {
 		return fail
 	}

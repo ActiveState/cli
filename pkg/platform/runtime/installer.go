@@ -87,7 +87,7 @@ func NewInstallerParams(cacheDir string, commitID strfmt.UUID, owner string, pro
 }
 
 // NewInstaller creates a new RuntimeInstaller
-func NewInstaller(commitID strfmt.UUID, projectID strfmt.UUID, owner, projectName string) (*Installer, *failures.Failure) {
+func NewInstaller(commitID strfmt.UUID, owner, projectName string) (*Installer, *failures.Failure) {
 	logging.Debug("cache path: %s", config.CachePath())
 	return NewInstallerByParams(
 		InstallerParams{
