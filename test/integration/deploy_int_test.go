@@ -241,6 +241,25 @@ func (suite *DeployIntegrationTestSuite) TestDeployReport() {
 	cp.ExpectExitCode(0)
 }
 
+func (suite *DeployIntegrationTestSuite) TestDeploySymlinkExisting() {
+	if runtime.GOOS == "linux" && !e2e.RunningOnCI() {
+		suite.T().Skipf("Skipping TestDeploySymlink when not running on CI, as it modifies PATH")
+	}
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	suite.InstallAndAssert(ts)
+
+	cp := ts.Spawn("deploy", "symlink", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work)
+	cp.ExpectExitCode(0)
+
+	suite.True(fileutils.FileExists(filepath.Join(ts.Dirs.Work, "bin", "python3"+symlinkExt)), "Python3 symlink should have been written")
+
+	cp := ts.Spawn("deploy", "symlink", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work)
+	cp.ExpectExitCode(0)
+}
+
 func TestDeployIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(DeployIntegrationTestSuite))
 }
