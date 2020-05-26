@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/go-version"
 
 	"github.com/ActiveState/cli/internal/constants"
+	constvers "github.com/ActiveState/cli/internal/constants/version"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -58,21 +59,34 @@ func NewChecker(timeout time.Duration) *Checker {
 
 // Check will run a Checker.Check with defaults
 func Check() (*Info, *failures.Failure) {
+	return CheckVersionNumber(constants.VersionNumber)
+}
+
+// CheckVersionNumber will run a Checker.Check with defaults
+func CheckVersionNumber(versionNumber string) (*Info, *failures.Failure) {
 	checker := NewChecker(DefaultTimeout)
-	return checker.Check()
+	return checker.check(versionNumber)
 }
 
 // Check will check if the current version of the tool is deprecated and returns deprecation info if it is.
 // This uses a fairly short timeout to check against our deprecation url, so this should not be considered conclusive.
 func (checker *Checker) Check() (*Info, *failures.Failure) {
+	return checker.check(constants.VersionNumber)
+}
+
+func (checker *Checker) check(versionNumber string) (*Info, *failures.Failure) {
+	if !constvers.NumberIsProduction(versionNumber) {
+		return nil, nil
+	}
+
+	versionInfo, err := version.NewVersion(versionNumber)
+	if err != nil {
+		return nil, FailParseVersion.Wrap(err)
+	}
+
 	infos, fail := checker.fetchDeprecationInfo()
 	if fail != nil {
 		return nil, fail
-	}
-
-	versionInfo, err := version.NewVersion(constants.VersionNumber)
-	if err != nil {
-		return nil, FailParseVersion.Wrap(err)
 	}
 
 	for _, info := range infos {

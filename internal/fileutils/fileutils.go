@@ -128,6 +128,15 @@ func ReplaceAllInDirectory(path, find string, replace string, include includeFun
 	return nil
 }
 
+// IsSymlink checks if a path is a symlink
+func IsSymlink(path string) bool {
+	fi, err := os.Lstat(path)
+	if err != nil {
+		return false
+	}
+	return (fi.Mode() & os.ModeSymlink) == os.ModeSymlink
+}
+
 // IsBinary checks if the given bytes are for a binary file
 func IsBinary(fileBytes []byte) bool {
 	return bytes.IndexByte(fileBytes, nullByte) != -1

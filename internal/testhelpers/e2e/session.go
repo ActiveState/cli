@@ -112,7 +112,8 @@ func (s *Session) SpawnCmdWithOpts(exe string, opts ...SpawnOptions) *termtest.C
 
 	execu := exe
 	// if executable is provided as absolute path, copy it to temporary directory
-	if filepath.IsAbs(exe) {
+	// do not copy if file is a symlink
+	if !fileutils.IsSymlink(exe) && filepath.IsAbs(exe) {
 		execu = filepath.Join(s.Dirs.Bin, filepath.Base(exe))
 		fail := fileutils.CopyFile(exe, execu)
 		require.NoError(s.t, fail.ToError())
