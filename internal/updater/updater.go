@@ -43,7 +43,6 @@ type Updater struct {
 	CurrentVersion string // Currently running version.
 	APIURL         string // Base URL for API requests (json files).
 	CmdName        string // Command name is appended to the APIURL like http://apiurl/CmdName/. This represents one binary.
-	Dir            string // Directory to store selfupdate state.
 	ForceCheck     bool   // Check for update regardless of cktime timestamp
 	DesiredBranch  string
 	DesiredVersion string
@@ -55,7 +54,6 @@ func New(currentVersion string) *Updater {
 	return &Updater{
 		CurrentVersion: currentVersion,
 		APIURL:         constants.APIUpdateURL,
-		Dir:            constants.UpdateStorageDir,
 		CmdName:        constants.CommandName,
 	}
 }
@@ -133,14 +131,6 @@ func (u *Updater) Run() error {
 		return failures.FailNotFound.New("No update available")
 	}
 
-	dir, err := u.getExecRelativeDir(u.Dir)
-	if err != nil {
-		return err
-	}
-
-	if err := os.MkdirAll(dir, 0777); err != nil {
-		return err
-	}
 	return u.update()
 }
 
