@@ -3,7 +3,7 @@
 	<Product Id="*" Name="ActiveState Language Runtime" Language="1033" Version="1.0.0.0" Manufacturer="ActiveState" UpgradeCode="a8b44798-ee47-4404-8ae3-d821e603b426">
 		<Package Id='*' Keywords='Installer' Description="ActiveState Language Runtime"
             Comments='State Tool is a registered trademark of ActiveState' Manufacturer='ActiveState'
-            InstallerVersion='200' Languages='1033' Compressed='yes' SummaryCodepage='1252' />
+            InstallerVersion='200' Languages='1033' Compressed='yes' SummaryCodepage='1252' InstallPrivileges='elevated' AdminImage='yes' InstallScope='perMachine' />
 
 		<MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
 		<MediaTemplate />
@@ -36,6 +36,8 @@
 			<!-- Retrieve the value of the installation directory from the registry -->
 			<RegistrySearch Id="RememberProperty" Root="HKCU" Key="Software\[Manufacturer]\[ProductName]" Name="InstallDir" Type="raw" />
 		</Property>
+		
+		<Property Id="MSIUSEREALADMINDETECTION" Value="1" />
 
 		<UI Id="WixUI_InstallDir">
 			<TextStyle Id="WixUI_Font_Normal" FaceName="Tahoma" Size="8" />
@@ -117,6 +119,10 @@
 		<CustomAction Id="SetIsModify" Property="IS_MODIFY" Value="true" />
 		
 		<CustomAction Id="SetInstallDirOnModify" Directory="INSTALLDIR" Value="[REMEMBER]" />
+		
+		<CustomAction Id="SetStateDeployPropertyValues" Property="StateDeploy" Value="INSTALLDIR=[INSTALLDIR];PROJECT_NAME=[PROJECT_NAME];IS_MODIFY=[IS_MODIFY]" />
+		
+		<CustomAction Id="SetUninstallProperties" Property="Uninstall" Value="REMEMBER=[REMEMBER]" />
 
 		<Binary Id="StateCommandCA" SourceFile="$(var.StateCommandExists.TargetDir)$(var.StateCommandExists.TargetName).CA.dll" />
 		<CustomAction Id="StateCommandExists" Impersonate="no" BinaryKey="StateCommandCA" DllEntry="StateCommandExists" Return="check" />
@@ -125,14 +131,16 @@
 		<CustomAction Id="GetProjectName" Impersonate="no" BinaryKey="GetProjectNameCA" DllEntry="GetProjectName" Return="check" />
 
 		<Binary Id="StateDeployCA" SourceFile="$(var.StateDeploy.TargetDir)$(var.StateDeploy.TargetName).CA.dll" />
-		<CustomAction Id="StateDeploy" Impersonate="no" BinaryKey="StateDeployCA" DllEntry="StateDeploy" Return="check" />
+		<CustomAction Id="StateDeploy" Impersonate="no" BinaryKey="StateDeployCA" DllEntry="StateDeploy" Execute="deferred" Return="check" />
 
 		<Binary Id="UninstallCA" SourceFile="$(var.Uninstall.TargetDir)$(var.Uninstall.TargetName).CA.dll" />
-		<CustomAction Id="Uninstall" Impersonate="no" BinaryKey="UninstallCA" DllEntry="Uninstall" Return="check" />
+		<CustomAction Id="Uninstall" Impersonate="no" BinaryKey="UninstallCA" DllEntry="Uninstall" Execute="deferred" Return="check" />
 
 		<InstallExecuteSequence>
-			<Custom Action="StateDeploy" After="InstallInitialize">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
-			<Custom Action="Uninstall" After="RemoveFiles">REMOVE="ALL"</Custom>
+			<Custom Action="SetStateDeployPropertyValues" After="InstallInitialize">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
+			<Custom Action="StateDeploy" After="SetStateDeployPropertyValues">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
+			<Custom Action="SetUninstallProperties" After="RemoveFiles">REMOVE="ALL"</Custom>
+			<Custom Action="Uninstall" After="SetUninstallProperties">REMOVE="ALL"</Custom>
 		</InstallExecuteSequence>
 	</Product>
 </Wix>

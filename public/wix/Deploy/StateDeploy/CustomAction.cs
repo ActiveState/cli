@@ -43,9 +43,9 @@ namespace StateDeploy
 
         private static string BuildDeployCmd(Session session)
         {
-            string installDir = session["INSTALLDIR"];
-            string projectName = session["PROJECT_NAME"];
-            string isModify = session["IS_MODIFY"];
+            string installDir = session.CustomActionData["INSTALLDIR"];
+            string projectName = session.CustomActionData["PROJECT_NAME"];
+            string isModify = session.CustomActionData["IS_MODIFY"];
 
             StringBuilder deployCMDBuilder = new StringBuilder("state deploy");
             if (isModify == "true")
