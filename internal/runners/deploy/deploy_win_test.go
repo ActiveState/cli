@@ -7,11 +7,11 @@ import (
 	"testing"
 )
 
-func Test_linkTarget(t *testing.T) {
-	target := linkTarget(filepath.FromSlash("/d/e/"), filepath.FromSlash("/a/test.exe.exe"))
+func Test_symlinkName(t *testing.T) {
+	name := symlinkName(filepath.FromSlash("/d/e/"), filepath.FromSlash("/a/test.exe.exe"))
 	expected := filepath.FromSlash("/d/e/test.exe.lnk")
-	if target != expected {
-		t.Errorf("expected = %s, got %s", expected, target)
+	if name != expected {
+		t.Errorf("expected = %s, got %s", expected, name)
 	}
 }
 

@@ -17,11 +17,11 @@ import (
 	"github.com/ActiveState/cli/internal/scriptfile"
 )
 
-func link(src, dst string) error {
-	if strings.HasSuffix(dst, ".exe") {
-		dst = strings.Replace(dst, ".exe", ".lnk", 1)
+func link(dest, name string) error {
+	if strings.HasSuffix(name, ".exe") {
+		name = strings.Replace(name, ".exe", ".lnk", 1)
 	}
-	logging.Debug("Creating shortcut, source: %s target: %s", src, dst)
+	logging.Debug("Creating shortcut, destination: %s name: %s", dest, name)
 
 	box := packr.NewBox("../../../assets/scripts/")
 	sfile, fail := scriptfile.New(language.PowerShell, "createShortcut", box.String("createShortcut.ps1"))
@@ -30,16 +30,16 @@ func link(src, dst string) error {
 	}
 
 	// Some paths may contain spaces so we must quote
-	src = strconv.Quote(src)
-	dst = strconv.Quote(dst)
+	dest = strconv.Quote(dest)
+	name = strconv.Quote(name)
 
-	cmd := exec.Command("powershell.exe", "-ExecutionPolicy", "Bypass", "-Command", sfile.Filename(), src, dst)
+	cmd := exec.Command("powershell.exe", "-ExecutionPolicy", "Bypass", "-Command", sfile.Filename(), dest, name)
 	var out bytes.Buffer
 	cmd.Stdout = &out
 	cmd.Stderr = &out
 	err := cmd.Run()
 	if err != nil {
-		return locale.WrapError(err, "err_powersell_symlink", "Invoking powershell to create a shortcut failed with error code: {{.V0}}, error: {{.V1}}", err.Error(), out.String())
+		return locale.WrapError(err, "err_powershell_symlink", "Invoking powershell to create a shortcut failed with error code: {{.V0}}, error: {{.V1}}", err.Error(), out.String())
 	}
 	return nil
 }

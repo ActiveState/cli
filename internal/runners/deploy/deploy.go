@@ -276,7 +276,7 @@ func shouldOverwriteSymlink(path string, oldPath string, pathExt []string) bool 
 	return false
 }
 
-func linkTarget(targetDir string, path string) string {
+func symlinkName(targetDir string, path string) string {
 	target := filepath.Clean(filepath.Join(targetDir, filepath.Base(path)))
 	if rt.GOOS != "windows" {
 		return target
@@ -302,6 +302,7 @@ func symlinkWithTarget(overwrite bool, path string, bins []string, pathExt []str
 	}
 
 	symlinkedFiles := make(map[string]string)
+
 	for _, bin := range bins {
 		err := filepath.Walk(bin, func(fpath string, info os.FileInfo, err error) error {
 			// Filter out files that are not executable
@@ -309,39 +310,46 @@ func symlinkWithTarget(overwrite bool, path string, bins []string, pathExt []str
 				return nil // not executable
 			}
 
-			// Ensure target is valid
-			target := linkTarget(path, fpath)
+			linkName := symlinkName(path, fpath)
+			repeatedLink, isRepeat := symlinkedFiles[linkName]
 
-			oldPath, exists := symlinkedFiles[target]
 			// if file of that name has been symlinked before, to a different (and therefore higher priority) PATH, skip
-			if exists && filepath.Dir(oldPath) != filepath.Dir(path) {
+			if isRepeat && filepath.Dir(repeatedLink) != filepath.Dir(path) {
 				return nil
 			}
 
-			if fileutils.TargetExists(target) {
-				if exists {
-					if !shouldOverwriteSymlink(fpath, oldPath, pathExt) {
+			if fileutils.TargetExists(linkName) {
+				if isRepeat {
+					if !shouldOverwriteSymlink(fpath, repeatedLink, pathExt) {
 						return nil
 					}
-				} else { // existing target has not been created during deployment
+				} else { // existing linkName has not been created during deployment
+					isAccurate, err := fileutils.IsAccurateSymlink(linkName, fpath)
+					if err != nil {
+						return locale.WrapError(err, "err_symlink_accuracy_unknown", "Could not determine the accuracy of {{.V0}}.", linkName)
+					}
+					if isAccurate {
+						return nil
+					}
+
 					if !overwrite {
 						return locale.NewInputError(
 							"err_deploy_symlink_target_exists",
-							"Cannot create symlink as the target already exists: {{.V0}}. Use '--force' to overwrite any existing files.", target)
+							"Cannot create symlink as the target already exists: {{.V0}}. Use '--force' to overwrite any existing files.", linkName)
 					}
-					out.Notice(locale.Tr("deploy_overwrite_target", target))
+					out.Notice(locale.Tr("deploy_overwrite_target", linkName))
 				}
 
 				// to overwrite the existing file, we have to remove it first, or the link command will fail
-				if err := os.Remove(target); err != nil {
+				if err := os.Remove(linkName); err != nil {
 					return locale.WrapInputError(
 						err, "err_deploy_overwrite",
-						"Could not overwrite {{.V0}}, make sure you have permissions to write to this file.", target)
+						"Could not overwrite {{.V0}}, make sure you have permissions to write to this file.", linkName)
 				}
 			}
 
-			symlinkedFiles[target] = fpath
-			return link(fpath, target)
+			symlinkedFiles[linkName] = fpath
+			return link(fpath, linkName)
 		})
 		if err != nil {
 			return errs.Wrap(err, "Error while walking path")

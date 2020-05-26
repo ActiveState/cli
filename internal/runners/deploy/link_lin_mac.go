@@ -10,13 +10,13 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 )
 
-func link(src, dst string) error {
-	logging.Debug("Creating symlink, source: %s target: %s", src, dst)
-	err := os.Symlink(src, dst)
+func link(dest, name string) error {
+	logging.Debug("Creating symlink, destination: %s name: %s", dest, name)
+	err := os.Symlink(dest, name)
 	if err != nil {
 		return locale.WrapInputError(
 			err, "err_deploy_symlink",
-			"Cannot create symlink at {{.V0}}, ensure you have permission to write to {{.V1}}.", dst, filepath.Dir(dst))
+			"Cannot create symlink at {{.V0}}, ensure you have permission to write to {{.V1}}.", name, filepath.Dir(name))
 	}
 	return nil
 }
