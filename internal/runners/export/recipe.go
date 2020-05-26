@@ -88,7 +88,7 @@ func fetchRecipe(pj *mono_models.Project, commitID strfmt.UUID, platform string)
 		pjName = ns.Project
 		pjOrg = ns.Owner
 	} else {
-		logging.Error("Could not parse project String %s: %v", pj.Name, fail)
+		logging.Error("Could not parse fetched project string %s: %v", pj.Name, fail)
 	}
 
 	if commitID != "" {
