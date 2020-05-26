@@ -35,6 +35,14 @@ var HostPlatform string
 // Recipe aliases recipe model
 type Recipe = inventory_models.V1RecipeResponseRecipesItems
 
+// OrderAnnotations are sent with every order for analytical purposes described here:
+// https://docs.google.com/document/d/1nXeNCRWX-4ULtk20t3C7kTZDCSBJchJJHhzz-lQuVsU/edit#heading=h.o93wm4bt5ul9
+type OrderAnnotations struct {
+	CommitID     string `json:"commit_id"`
+	Project      string `json:"project"`
+	Organization string `json:"organization"`
+}
+
 func init() {
 	HostPlatform = sysinfo.OS().String()
 }
@@ -139,10 +147,10 @@ func commitToOrder(commitID strfmt.UUID, project, owner string, hostPlatform *st
 	return order, nil
 }
 
-func fetchRecipeID(commitID strfmt.UUID, hostPlatform *string) (*strfmt.UUID, *failures.Failure) {
+func fetchRecipeID(commitID strfmt.UUID, project, owner string, hostPlatform *string) (*strfmt.UUID, *failures.Failure) {
 	var err error
 	params := iop.NewSolveOrderParams()
-	params.Order, err = commitToOrder(commitID, hostPlatform)
+	params.Order, err = commitToOrder(commitID, project, owner, hostPlatform)
 	if err != nil {
 		return nil, FailOrderRecipes.Wrap(err)
 	}
