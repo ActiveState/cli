@@ -18,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -97,7 +98,6 @@ func PrintUpdateMessage(pjPath string) {
 	up := Updater{
 		CurrentVersion: constants.Version,
 		APIURL:         constants.APIUpdateURL,
-		Dir:            constants.UpdateStorageDir,
 		CmdName:        constants.CommandName,
 	}
 
@@ -126,12 +126,12 @@ func (u *Updater) Download(path string) error {
 }
 
 // Run starts the update check and apply cycle.
-func (u *Updater) Run() error {
+func (u *Updater) Run(out output.Outputer) error {
 	if !u.CanUpdate() {
 		return failures.FailNotFound.New("No update available")
 	}
 
-	return u.update()
+	return u.update(out)
 }
 
 // getExecRelativeDir relativizes the directory to store selfupdate state
@@ -167,7 +167,7 @@ func (u *Updater) download(path string) error {
 }
 
 // update performs the actual update of the executable
-func (u *Updater) update() error {
+func (u *Updater) update(out output.Outputer) error {
 	path, err := osext.Executable()
 	if err != nil {
 		return err
@@ -180,6 +180,7 @@ func (u *Updater) update() error {
 		return err
 	}
 
+	out.Notice(locale.T("auto_update_attempt"))
 	err = u.fetchInfo()
 	if err != nil {
 		return err
@@ -188,6 +189,7 @@ func (u *Updater) update() error {
 		logging.Debug("Already at latest version :)")
 		return nil
 	}
+
 	bin, err := u.fetchAndVerifyFullBin()
 	if err != nil {
 		return err

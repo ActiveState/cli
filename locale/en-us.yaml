@@ -1473,11 +1473,14 @@ err_order_unknown:
   other: Unknown error resolving order"
 using_cached_env:
   other: Reusing cached runtime environment
-auto_update_to_version:
+auto_update_attempt:
   other: |
-    [BLUE]Auto updating from [BOLD]{{.V0}}[/RESET] [BLUE]to[/RESET] [BOLD]{{.V1}}[/RESET].
+    [BLUE]Auto updating:  Downloading latest version of the state tool...
     [BLUE]To avoid auto updating run 'state update --lock' (only recommended for production environments).[/RESET]
 forward_version:
+auto_update_to_version:
+  other: |
+    [BLUE]Updated from [BOLD]{{.V0}}[/RESET] [BLUE]to[/RESET] [BOLD]{{.V1}}[/RESET].
   other: "[BLUE]Using locked state tool version [BOLD]{{.V0}}[/RESET]."
 err_project_env_file_not_exist:
   other: |

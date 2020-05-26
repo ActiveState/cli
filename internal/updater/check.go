@@ -60,7 +60,7 @@ type UpdateResult struct {
 // timeout period of one second, applies the update and returns `true`.
 // Otherwise, returns `false`.
 // AutoUpdate is skipped altogether if the current project has a locked version.
-func AutoUpdate(pjPath string) (updated bool, resultVersion string) {
+func AutoUpdate(pjPath string, out outputer.Output) (updated bool, resultVersion string) {
 	if versionInfo, _ := projectfile.ParseVersionInfo(pjPath); versionInfo != nil {
 		return false, ""
 	}
@@ -116,7 +116,7 @@ func AutoUpdate(pjPath string) (updated bool, resultVersion string) {
 
 	// Self-update.
 	logging.Debug("Self-updating.")
-	err = update.Run()
+	err = update.Run(out)
 	if err != nil {
 		logging.Error("Unable to self update: %s", err)
 		return false, ""
