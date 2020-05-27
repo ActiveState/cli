@@ -79,7 +79,7 @@ func New(pj *project.Project, outputer output.Outputer) *CmdTree {
 
 	stateCmd := newStateCommand(globals)
 	stateCmd.AddChildren(
-		newActivateCommand(globals),
+		newActivateCommand(outputer),
 		newInitCommand(),
 		newPushCommand(),
 		newProjectsCommand(outputer, auth),
