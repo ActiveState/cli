@@ -92,8 +92,8 @@ func fetchRecipe(pj *mono_models.Project, commitID strfmt.UUID, platform string)
 	}
 
 	if commitID != "" {
-		return model.FetchRawRecipeForCommitAndPlatform(commitID, pjName, pjOrg, platform)
+		return model.FetchRawRecipeForCommitAndPlatform(commitID, pjOrg, pjName, platform)
 	}
 
-	return model.FetchRawRecipeForPlatform(pj, pjName, pjOrg, platform)
+	return model.FetchRawRecipeForPlatform(pj, pjOrg, pjName, platform)
 }

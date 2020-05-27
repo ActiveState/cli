@@ -89,7 +89,7 @@ type Download struct {
 }
 
 // InitDownload creates a new RuntimeDownload instance and assumes default values for everything but the target dir
-func InitDownload(strfmt.UUID) Downloader {
+func InitDownload() Downloader {
 	pj := project.Get()
 	return NewDownload(pj.CommitUUID(), pj.Owner(), pj.Name())
 }
@@ -106,7 +106,7 @@ func (r *Download) fetchRecipeID() (strfmt.UUID, *failures.Failure) {
 		return "", FailNoCommit.New(locale.T("err_no_commit"))
 	}
 
-	recipeID, fail := model.FetchRecipeIDForCommitAndPlatform(commitID, r.projectName, r.owner, model.HostPlatform)
+	recipeID, fail := model.FetchRecipeIDForCommitAndPlatform(commitID, r.owner, r.projectName, model.HostPlatform)
 	if fail != nil {
 		return "", fail
 	}

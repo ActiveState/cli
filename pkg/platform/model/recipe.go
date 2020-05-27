@@ -48,17 +48,17 @@ func init() {
 }
 
 // FetchRawRecipeForCommit returns a recipe from a project based off a commitID
-func FetchRawRecipeForCommit(commitID strfmt.UUID, project, owner string) (string, *failures.Failure) {
-	return fetchRawRecipe(commitID, project, owner, nil)
+func FetchRawRecipeForCommit(commitID strfmt.UUID, owner, project string) (string, *failures.Failure) {
+	return fetchRawRecipe(commitID, owner, project, nil)
 }
 
 // FetchRawRecipeForCommitAndPlatform returns a recipe from a project based off a commitID and platform
-func FetchRawRecipeForCommitAndPlatform(commitID strfmt.UUID, project, owner string, platform string) (string, *failures.Failure) {
-	return fetchRawRecipe(commitID, project, owner, &platform)
+func FetchRawRecipeForCommitAndPlatform(commitID strfmt.UUID, owner, project string, platform string) (string, *failures.Failure) {
+	return fetchRawRecipe(commitID, owner, project, &platform)
 }
 
 // FetchRawRecipeForPlatform returns the available recipe matching the default branch commit id and platform string
-func FetchRawRecipeForPlatform(pj *mono_models.Project, project, owner string, hostPlatform string) (string, *failures.Failure) {
+func FetchRawRecipeForPlatform(pj *mono_models.Project, owner, project string, hostPlatform string) (string, *failures.Failure) {
 	branch, fail := DefaultBranchForProject(pj)
 	if fail != nil {
 		return "", fail
@@ -67,20 +67,20 @@ func FetchRawRecipeForPlatform(pj *mono_models.Project, project, owner string, h
 		return "", FailNoCommit.New(locale.T("err_no_commit"))
 	}
 
-	return FetchRawRecipeForCommitAndPlatform(*branch.CommitID, project, owner, hostPlatform)
+	return FetchRawRecipeForCommitAndPlatform(*branch.CommitID, owner, project, hostPlatform)
 }
 
 // FetchRecipeIDForCommitAndPlatform returns a recipe ID for a project based on the given commitID and platform string
-func FetchRecipeIDForCommitAndPlatform(commitID strfmt.UUID, project, owner string, hostPlatform string) (*strfmt.UUID, *failures.Failure) {
-	return fetchRecipeID(commitID, project, owner, &hostPlatform)
+func FetchRecipeIDForCommitAndPlatform(commitID strfmt.UUID, owner, project string, hostPlatform string) (*strfmt.UUID, *failures.Failure) {
+	return fetchRecipeID(commitID, owner, project, &hostPlatform)
 }
 
-func fetchRawRecipe(commitID strfmt.UUID, project, owner string, hostPlatform *string) (string, *failures.Failure) {
+func fetchRawRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *string) (string, *failures.Failure) {
 	_, transport := inventory.Init()
 
 	var err error
 	params := iop.NewResolveRecipesParams()
-	params.Order, err = commitToOrder(commitID, project, owner, hostPlatform)
+	params.Order, err = commitToOrder(commitID, owner, project, hostPlatform)
 	if err != nil {
 		return "", FailOrderRecipes.Wrap(err)
 	}
@@ -113,7 +113,7 @@ func fetchRawRecipe(commitID strfmt.UUID, project, owner string, hostPlatform *s
 	return recipe, nil
 }
 
-func commitToOrder(commitID strfmt.UUID, project, owner string, hostPlatform *string) (*inventory_models.V1Order, error) {
+func commitToOrder(commitID strfmt.UUID, owner, project string, hostPlatform *string) (*inventory_models.V1Order, error) {
 	monoOrder, err := FetchOrderFromCommit(commitID)
 	if err != nil {
 		return nil, FailOrderRecipes.Wrap(err, locale.T("err_order_recipe")).ToError()
@@ -147,10 +147,10 @@ func commitToOrder(commitID strfmt.UUID, project, owner string, hostPlatform *st
 	return order, nil
 }
 
-func fetchRecipeID(commitID strfmt.UUID, project, owner string, hostPlatform *string) (*strfmt.UUID, *failures.Failure) {
+func fetchRecipeID(commitID strfmt.UUID, owner, project string, hostPlatform *string) (*strfmt.UUID, *failures.Failure) {
 	var err error
 	params := iop.NewSolveOrderParams()
-	params.Order, err = commitToOrder(commitID, project, owner, hostPlatform)
+	params.Order, err = commitToOrder(commitID, owner, project, hostPlatform)
 	if err != nil {
 		return nil, FailOrderRecipes.Wrap(err)
 	}
