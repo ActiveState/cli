@@ -7,6 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
@@ -78,7 +79,10 @@ func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc)
 		if fail := venv.Activate(); fail != nil {
 			return fail.ToError()
 		}
-		env := venv.GetEnv(false, targetPath)
+		env, err := venv.GetEnv(false, targetPath)
+		if err != nil {
+			return locale.WrapError(err, "err_activate_getenv", "Could not build environment for your runtime environment.")
+		}
 		if r.out.Type() == output.EditorV0FormatName {
 			fmt.Println("[activated-JSON]")
 		}
