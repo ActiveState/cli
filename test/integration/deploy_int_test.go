@@ -256,8 +256,8 @@ func (suite *DeployIntegrationTestSuite) TestDeploySymlinkExisting() {
 
 	suite.True(fileutils.FileExists(filepath.Join(ts.Dirs.Work, "bin", "python3"+symlinkExt)), "Python3 symlink should have been written")
 
-	cp := ts.Spawn("deploy", "symlink", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work)
-	cp.ExpectExitCode(0)
+	cpx := ts.Spawn("deploy", "symlink", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work)
+	cpx.ExpectExitCode(0)
 }
 
 func TestDeployIntegrationTestSuite(t *testing.T) {
