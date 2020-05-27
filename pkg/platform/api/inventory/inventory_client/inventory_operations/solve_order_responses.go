@@ -53,9 +53,7 @@ func (o *SolveOrderReader) ReadResponse(response runtime.ClientResponse, consume
 
 // NewSolveOrderCreated creates a SolveOrderCreated with default headers values
 func NewSolveOrderCreated() *SolveOrderCreated {
-	return &SolveOrderCreated{
-		CacheControl: "private, max-age 3600",
-	}
+	return &SolveOrderCreated{}
 }
 
 /*SolveOrderCreated handles this case with default header values.
@@ -63,8 +61,6 @@ func NewSolveOrderCreated() *SolveOrderCreated {
 Returns the ids of and links to the created recipes
 */
 type SolveOrderCreated struct {
-	CacheControl string
-
 	Payload inventory_models.V1SolutionResponse
 }
 
@@ -73,9 +69,6 @@ func (o *SolveOrderCreated) Error() string {
 }
 
 func (o *SolveOrderCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
-
-	// response header Cache-Control
-	o.CacheControl = response.GetHeader("Cache-Control")
 
 	// response payload
 	if err := consumer.Consume(response.Body(), &o.Payload); err != nil && err != io.EOF {
@@ -95,7 +88,7 @@ func NewSolveOrderBadRequest() *SolveOrderBadRequest {
 If the order is invalid
 */
 type SolveOrderBadRequest struct {
-	Payload *inventory_models.RestAPIValidationError
+	Payload *inventory_models.V1SolverValidationError
 }
 
 func (o *SolveOrderBadRequest) Error() string {
@@ -104,7 +97,7 @@ func (o *SolveOrderBadRequest) Error() string {
 
 func (o *SolveOrderBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(inventory_models.RestAPIValidationError)
+	o.Payload = new(inventory_models.V1SolverValidationError)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -128,7 +121,7 @@ If there is an error processing the order
 type SolveOrderDefault struct {
 	_statusCode int
 
-	Payload *inventory_models.RestAPIError
+	Payload *inventory_models.V1SolverError
 }
 
 // Code gets the status code for the solve order default response
@@ -142,7 +135,7 @@ func (o *SolveOrderDefault) Error() string {
 
 func (o *SolveOrderDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(inventory_models.RestAPIError)
+	o.Payload = new(inventory_models.V1SolverError)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

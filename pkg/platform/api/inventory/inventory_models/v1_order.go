@@ -21,6 +21,9 @@ import (
 // swagger:model v1Order
 type V1Order struct {
 
+	// Additional information about the request that may be logged for debugging
+	Annotations interface{} `json:"annotations,omitempty"`
+
 	// Camel-specific flags for controlling the build.
 	CamelFlags []string `json:"camel_flags"`
 

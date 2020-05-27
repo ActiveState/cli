@@ -779,6 +779,10 @@ func ResolvePath(path string) (string, error) {
 		return "", errs.Wrap(err, "cannot get absolute filepath of %q", path)
 	}
 
+	if !TargetExists(path) {
+		return absPath, nil
+	}
+
 	evalPath, err := filepath.EvalSymlinks(absPath)
 	if err != nil {
 		return "", errs.Wrap(err, "cannot evaluate symlink %q", absPath)
