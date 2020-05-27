@@ -106,7 +106,7 @@ func (u *Update) runUpdateGlobal() error {
 		return nil
 	}
 
-	if err = up.Run(); err != nil {
+	if err = up.Run(u.out); err != nil {
 		failures.Handle(err, locale.T("err_update_failed"))
 		return locale.WrapError(err, "err_update_failed", "Update failed, please try again later or try reinstalling the State Tool.")
 	}
