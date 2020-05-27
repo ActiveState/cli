@@ -127,6 +127,15 @@ func ReplaceAllInDirectory(path, find string, replace string, include includeFun
 	return nil
 }
 
+// IsSymlink checks if a path is a symlink
+func IsSymlink(path string) bool {
+	fi, err := os.Lstat(path)
+	if err != nil {
+		return false
+	}
+	return (fi.Mode() & os.ModeSymlink) == os.ModeSymlink
+}
+
 // IsBinary checks if the given bytes are for a binary file
 func IsBinary(fileBytes []byte) bool {
 	return bytes.IndexByte(fileBytes, nullByte) != -1
@@ -739,12 +748,12 @@ func HomeDir() (string, error) {
 func IsWritable(path string) bool {
 	fpath := filepath.Join(path, uuid.New().String())
 	if fail := Touch(fpath); fail != nil {
-		logging.Error("Could not create file: %v", fail.ToError())
+		logging.Debug("Could not create file: %v", fail.ToError())
 		return false
 	}
 
 	if errr := os.Remove(fpath); errr != nil {
-		logging.Error("Could not clean up test file: %v", errr)
+		logging.Debug("Could not clean up test file: %v", errr)
 		return false
 	}
 

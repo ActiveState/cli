@@ -132,8 +132,6 @@ no_update_available:
   other: You are using the latest version available
 updating_to_version:
   other: Updating from {{.fromVersion}} to {{.toVersion}}
-err_update_failed:
-  other: Update failed, check the error log for more information
 confirm_update_locked_version_prompt:
   other: "You ran update from a project directory with a locked State Tool version. This will update the version that your project is locked to. Are you sure you want to do this?"
 version_info:
@@ -292,32 +290,16 @@ login_err_auth_token:
   other: Token authentication failed
 fetch_org_err:
   other: Failed to fetch organization {{.V0}} from ActivateState platform.  Is the organization name correct?
-fork_project:
-  other: Fork an existing ActiveState Platform project
-flag_state_fork_org_description:
-  other: The organization to fork the project to
-flag_state_fork_private_description:
-  other: Denotes if the forked project will be private
-flag_state_fork_name_description:
-  other: The name of the new project to be created
-arg_state_fork_namespace:
-  other: ORG/PROJECT
-arg_state_fork_namespace_description:
-  other: The namespace of the project to be forked
 auth_required_fork:
   other: You need to be authenticated to fork an ActiveState Platform project
 err_fork_auth_required:
   other: Forking a project requires you to be authenticated against the ActiveState Platform
-err_fork_create_fork:
-  other: Could not create the forked project
 err_fork_invalid_namespace:
   other: Could not fork the given project as the namespace is incorrect
 err_fork_get_owner:
   other: Could not fork project, owner required.
 err_cannot_marshal_data:
   other: Cannot marshal data properly
-fork_select_org:
-  other: Please select an owner for the forked project
 state_fork_success:
   other: Successfully forked project {{.OriginalOwner}}/{{.OriginalName}} as {{.NewOwner}}/{{.NewName}}
 local:
@@ -859,16 +841,6 @@ forward_fail_with_error:
   other: "Could not forward the command to the appropriate State Tool version, error: {{.V0}}"
 forward_fail_info:
   other: The requested version of the State Tool does not exist, please ensure the version and branch are correct.
-flag_update_lock_description:
-  other: Lock the State Tool at the current version, this disables automatic updates. You can still force an update by manually running the update command.
-flag_update_force_description:
-  other: Automatically confirm that you would like to update the State Tool version that your project is locked to.
-err_lock_failed:
-  other: Locking the version failed
-locking_version:
-  other: Locking State Tool to the current version
-version_locked:
-  other: Version locked at {{.V0}}
 update_available:
   other: |
     A new update is available!
@@ -946,6 +918,10 @@ err_no_default_branch:
   other: This project has no default branch. This indicates malformed data, please contact support!
 err_no_commit:
   other: Project branch has no commits
+err_order_recipe:
+  other: Could not get order from commit ID
+err_order_marshal:
+  other: Failed to marshal/unmarshal order
 err_no_data_found:
   other: No data found
 err_no_langauge:
@@ -1098,8 +1074,6 @@ commit_message_add_language:
   other: "Added language: {{.V0}} {{.V1}}"
 commit_message_removed_language:
   other: "Removed language: {{.V0}} {{.V1}}"
-update_description:
-  other: Updates the State Tool to the latest available version
 downloading_artifacts:
   other: Downloading required artifacts
 installing_artifacts:
@@ -1264,8 +1238,6 @@ commit_reqstext_remove_existing_message:
   other: "Remove current packages prior to import from requirements file"
 err_cannot_remove_existing:
   other: "The already configured packages were not able to be overwritten"
-err_action_was_not_confirmed:
-  other: "Current action was not confirmed"
 err_branch_not_bare:
   other: Branch is not bare and is unable to be initialized as such
 err_package_add:
@@ -1520,8 +1492,6 @@ arg_state_deploy_namespace:
   other: ORG/PROJECT
 arg_state_deploy_namespace_description:
   other: The namespace of the project that you wish to deploy
-err_requires_runtime_download:
-  other: You need to download the runtime environment before you can use it
 err_deploy_no_commits:
   other: "The project '{{.V0}}' does not have any packages configured, please add add some packages first."
 err_userrc_notfound:
@@ -1573,6 +1543,8 @@ flag_state_deploy_path_description:
   other: The path to deploy the runtime installation files to. This directory will not be affected by 'state clean'
 flag_state_deploy_force_description:
   other: "Overwrites any existing files / configurations."
+flag_state_deploy_user_path_description:
+  other: "Updates the user PATH instead of the system PATH"
 envdef_file_not_found:
   other: |
     Your installation seems to be corrupted.

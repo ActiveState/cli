@@ -170,9 +170,18 @@ function activateIfRequested() {
 }
 
 function warningIfadmin() {
-    if (IsAdmin) {
-        Write-Warning "It's recommended that you close this command prompt and start a new one without admin privileges.`n"
+    if ( (IsAdmin) -and -not (Test-Path env:CI) ) {
+        Write-Warning "It is recommended to use the State Tool in a new terminal session without admin privileges.`n"
     }
+}
+
+function displayConsent() {
+    $consentText="
+ActiveState collects usage statistics and diagnostic data about failures. The collected data complies with ActiveState Privacy Policy (https://www.activestate.com/company/privacy-policy/) and will be used to identify product enhancements, help fix defects, and prevent abuse.
+
+By running the State Tool installer you consent to the Privacy Policy. This is required for the State Tool to operate while we are still in beta.
+"
+    Write-Host $consentText
 }
 
 function fetchArtifacts($downloadDir, $statejson, $statepkg) {
@@ -273,6 +282,8 @@ function install()
 
     # Ensure errors from previously run commands are not reported during install
     $Error.Clear()
+
+    displayConsent
 
     if ($h) {
         Write-Host $USAGE

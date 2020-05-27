@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 )
@@ -32,6 +33,8 @@ func unwrapError(err error) (int, error) {
 		stack = ee.Stack().String()
 	}
 
+	_, hasMarshaller := err.(output.Marshaller)
+
 	// Log error if this isn't a user input error
 	if !locale.IsInputError(err) {
 		logging.Error("Returning error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
@@ -39,7 +42,7 @@ func unwrapError(err error) (int, error) {
 
 	if locale.IsError(err) {
 		err = locale.JoinErrors(err, "\n")
-	} else if isErrs {
+	} else if isErrs && !hasMarshaller {
 		logging.Error("MUST ADDRESS: Error does not have localization: %s", errs.Join(err, "\n").Error())
 
 		// If this wasn't built via CI then this is a dev workstation, and we should be more aggressive

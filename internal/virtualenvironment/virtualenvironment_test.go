@@ -1,7 +1,6 @@
 package virtualenvironment
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -63,26 +62,6 @@ func TestEvents(t *testing.T) {
 	assert.True(t, onInstallCalled, "OnInstallArtifacts is triggered")
 }
 
-func TestActivate(t *testing.T) {
-	setup(t)
-	defer teardown()
-
-	venv := Init()
-	fail := venv.Activate()
-	require.NoError(t, fail.ToError(), "Should activate")
-
-	setup(t)
-	projectURL := fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
-	pjfile := projectfile.Project{
-		Project: projectURL,
-	}
-	pjfile.Persist()
-
-	venv = Init()
-	fail = venv.Activate()
-	require.NoError(t, fail.ToError(), "Should activate, even if no languages are defined")
-}
-
 func TestActivateFailureUnknownLanguage(t *testing.T) {
 	setup(t)
 	defer teardown()
@@ -116,10 +95,12 @@ func TestEnv(t *testing.T) {
 	setup(t)
 	defer teardown()
 
+	os.Setenv(constants.DisableRuntime, "true")
 	os.Setenv(constants.ProjectEnvVarName, projectfile.Get().Path())
 
 	venv := Init()
-	env := venv.GetEnv(false, projectfile.Get().Path())
+	env, err := venv.GetEnv(false, filepath.Dir(projectfile.Get().Path()))
+	require.NoError(t, err)
 
 	assert.NotContains(t, env, constants.ProjectEnvVarName)
 	assert.NotEmpty(t, env[constants.ActivatedStateIDEnvVarName])
@@ -137,28 +118,6 @@ func TestInheritEnv_MultipleEquals(t *testing.T) {
 	updated := inheritEnv(env)
 
 	assert.Equal(t, value, updated[key])
-}
-
-func TestActivateRuntimeEnvironment(t *testing.T) {
-	setup(t)
-	defer teardown()
-
-	os.Unsetenv(constants.DisableRuntime)
-
-	project := projectfile.Project{}
-	dat := strings.TrimSpace(`
-project: "https://platform.activestate.com/string/string?commitID=00010001-0001-0001-0001-000100010001"
-languages:
-    - name: Python3`)
-	yaml.Unmarshal([]byte(dat), &project)
-	project.Persist()
-
-	venv := Init()
-	fail := venv.Activate()
-	require.NoError(t, fail.ToError(), "Should activate")
-
-	env := venv.GetEnv(false, project.Path())
-	assert.Contains(t, env, "PATH", "PATH is set")
 }
 
 func TestSkipActivateRuntimeEnvironment(t *testing.T) {

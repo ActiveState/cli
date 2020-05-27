@@ -42,11 +42,13 @@ if [ -z "${TERM}" ] || [ "${TERM}" == "dumb" ]; then
   OUTPUT_WARN=""
   OUTPUT_ERROR=""
   OUTPUT_END=""
+  WIDTH=80
 else
   OUTPUT_BOLD="$(tput bold)"
   OUTPUT_WARN="$(tput setf 3)"
   OUTPUT_ERROR="$(tput setf 1)"
   OUTPUT_END="$(tput sgr0)"
+  WIDTH="$(tput cols)"
 fi
 
 info () {
@@ -75,6 +77,7 @@ userinput () {
     echo "$result"
   fi
 }
+
 
 # Determine the current OS.
 case `uname -s` in
@@ -164,6 +167,14 @@ if $FORCEOVERWRITE && ( ! $NOPROMPT ); then
   error "Flag -f also requires -n"
   exit 1
 fi
+
+CONSENT_TEXT="\
+
+ActiveState collects usage statistics and diagnostic data about failures. The collected data complies with ActiveState Privacy Policy (https://www.activestate.com/company/privacy-policy/) and will be used to identify product enhancements, help fix defects, and prevent abuse.
+
+By running the State Tool installer you consent to the Privacy Policy. This is required for the State Tool to operate while we are still in beta.
+"
+echo "$CONSENT_TEXT" | fold -s -w $WIDTH
 
 # Construct system-dependent filenames.
 STATEJSON=$OS-$ARCH.json
