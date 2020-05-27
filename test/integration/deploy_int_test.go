@@ -203,7 +203,7 @@ func (suite *DeployIntegrationTestSuite) TestDeploySymlink() {
 	cp.ExpectExitCode(1)
 	suite.InstallAndAssert(ts)
 
-	cp = ts.Spawn("deploy", "symlink", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work, "--force")
+	cp = ts.Spawn("deploy", "symlink", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work)
 
 	cp.Expect("Symlinking executables")
 	cp.ExpectExitCode(0)

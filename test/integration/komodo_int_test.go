@@ -14,7 +14,14 @@ import (
 )
 
 func (suite *ActivateIntegrationTestSuite) TestActivate_EditorV0() {
-	suite.testOutput("editor.v0")
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("activate", "ActiveState-CLI/Python3", "--output", "editor.v0")
+	cp.Expect("Where would you like to checkout")
+	cp.SendLine(cp.WorkDirectory())
+	cp.Expect("[activated-JSON]")
+	cp.ExpectExitCode(0)
 }
 
 func (suite *AuthIntegrationTestSuite) TestAuthOutput_EditorV0() {
