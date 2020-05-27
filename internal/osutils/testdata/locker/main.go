@@ -14,17 +14,20 @@ func main() {
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 
-	if len(os.Args) < 2 {
-		fmt.Printf("one argument required")
+	if len(os.Args) < 3 {
+		fmt.Printf("two arguments required")
 		os.Exit(2)
 	}
+	keep := os.Args[2] == "keep"
 	pl, err := osutils.NewPidLock(os.Args[1])
 	if err != nil {
 		fmt.Printf("DENIED")
 	}
 
 	fmt.Println("LOCKED")
-	defer pl.Close()
+	if keep {
+		pl.Close(keep)
+	}
 
 	select {
 	case <-c:
@@ -33,5 +36,5 @@ func main() {
 
 	fmt.Println("done")
 
-	os.Exit(0)
+	defer pl.Close()
 }

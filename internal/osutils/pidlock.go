@@ -18,7 +18,7 @@ type PidLock struct {
 }
 
 // NewPidLock creates a new PidLock that can be used to get exclusive access to resources between processes
-// If the file at path has been created by a different process, the function returns nil and an error
+// If the file at path has been created by a different process and that process is still running, the function returns nil and an error.
 func NewPidLock(path string) (pl *PidLock, err error) {
 	pl = &PidLock{
 		path: path,
@@ -67,10 +67,22 @@ func NewPidLock(path string) (pl *PidLock, err error) {
 }
 
 // Close removes the lock file and releases the lock
-func (pl *PidLock) Close() error {
-	err := pl.file.Close()
+func (pl *PidLock) Close(keepFile ...bool) error {
+	keep := false
+	if len(keepFile) == 1 {
+		keep = keepFile[0]
+	}
+	err := LockRelease(pl.file)
+	if err != nil {
+		fmt.Printf("error releasing lock: %v\n", err)
+		return err
+	}
+	err = pl.file.Close()
 	if err != nil {
 		return err
+	}
+	if keep {
+		return nil
 	}
 	err = os.Remove(pl.path)
 	if err != nil {

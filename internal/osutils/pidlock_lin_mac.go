@@ -46,3 +46,15 @@ func LockRead(f *os.File) error {
 
 	return syscall.FcntlFlock(f.Fd(), syscall.F_SETLK, ft)
 }
+
+func LockRelease(f *os.File) error {
+	ft := &syscall.Flock_t{
+		Whence: int16(os.SEEK_SET),
+		Start:  0,
+		Len:    0,
+		Pid:    int32(os.Getpid()),
+		Type:   syscall.F_UNLCK,
+	}
+
+	return syscall.FcntlFlock(f.Fd(), syscall.F_SETLK, ft)
+}
