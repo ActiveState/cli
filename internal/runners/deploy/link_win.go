@@ -17,11 +17,11 @@ import (
 	"github.com/ActiveState/cli/internal/scriptfile"
 )
 
-func link(dest, name string) error {
-	if strings.HasSuffix(name, ".exe") {
-		name = strings.Replace(name, ".exe", ".lnk", 1)
+func link(fpath, symlink string) error {
+	if strings.HasSuffix(symlink, ".exe") {
+		symlink = strings.Replace(symlink, ".exe", ".lnk", 1)
 	}
-	logging.Debug("Creating shortcut, destination: %s name: %s", dest, name)
+	logging.Debug("Creating shortcut, destination: %s symlink: %s", fpath, symlink)
 
 	box := packr.NewBox("../../../assets/scripts/")
 	sfile, fail := scriptfile.New(language.PowerShell, "createShortcut", box.String("createShortcut.ps1"))
@@ -30,10 +30,10 @@ func link(dest, name string) error {
 	}
 
 	// Some paths may contain spaces so we must quote
-	dest = strconv.Quote(dest)
-	name = strconv.Quote(name)
+	fpath = strconv.Quote(fpath)
+	symlink = strconv.Quote(symlink)
 
-	cmd := exec.Command("powershell.exe", "-ExecutionPolicy", "Bypass", "-Command", sfile.Filename(), dest, name)
+	cmd := exec.Command("powershell.exe", "-ExecutionPolicy", "Bypass", "-Command", sfile.Filename(), fpath, symlink)
 	var out bytes.Buffer
 	cmd.Stdout = &out
 	cmd.Stderr = &out
