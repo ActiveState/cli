@@ -1,4 +1,4 @@
-package updater
+package osutils
 
 import (
 	"context"
@@ -22,7 +22,7 @@ func buildTestExecutable(t *testing.T, dir string) string {
 
 	cmd := exec.Command(
 		"go", "build", "-o", lockerExe,
-		filepath.Join(root, "internal", "updater", "testdata", "locker"),
+		filepath.Join(root, "internal", "osutils", "testdata", "locker"),
 	)
 	err = cmd.Run()
 	require.NoError(t, err)
@@ -30,7 +30,7 @@ func buildTestExecutable(t *testing.T, dir string) string {
 	return lockerExe
 }
 
-func Test_acquireUpdateLockProcesses(t *testing.T) {
+func Test_acquirePidLockProcesses(t *testing.T) {
 	tmpDir, err := ioutil.TempDir("", "")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
@@ -39,11 +39,9 @@ func Test_acquireUpdateLockProcesses(t *testing.T) {
 	lockerExe := buildTestExecutable(t, tmpDir)
 
 	t.Run("locked in other process", func(tt *testing.T) {
-		updateDir := filepath.Join(tmpDir, "locked")
-		err = os.MkdirAll(updateDir, 0755)
-		require.NoError(tt, err)
+		lockFile := filepath.Join(tmpDir, "locked")
 
-		lockCmd := exec.Command(lockerExe, updateDir)
+		lockCmd := exec.Command(lockerExe, lockFile)
 		stdout, err := lockCmd.StdoutPipe()
 		require.NoError(tt, err)
 		err = lockCmd.Start()
@@ -57,9 +55,9 @@ func Test_acquireUpdateLockProcesses(t *testing.T) {
 		assert.Equal(tt, "LOCKED", string(buf))
 
 		// trying to acquire the lock in this process should fail
-		ok, cleanup := AcquireUpdateLock(updateDir)
-		assert.False(tt, ok)
-		assert.Nil(tt, cleanup)
+		pl, err := NewPidLock(lockFile)
+		assert.Nil(tt, pl)
+		assert.Error(tt, err)
 
 		// stopping the other process
 		err = lockCmd.Process.Signal(os.Interrupt)
@@ -76,9 +74,7 @@ func Test_acquireUpdateLockProcesses(t *testing.T) {
 		// stress tests runs numProcesses in parallel, and only one should get the lock
 		numProcesses := 100
 
-		updateDir := filepath.Join(tmpDir, "stress")
-		err = os.MkdirAll(updateDir, 0755)
-		require.NoError(tt, err)
+		lockFile := filepath.Join(tmpDir, "stress")
 
 		done := make(chan string, numProcesses+1)
 		defer close(done)
@@ -90,7 +86,7 @@ func Test_acquireUpdateLockProcesses(t *testing.T) {
 			go func() {
 				var s string = "BLOCKED"
 				defer func() { done <- s }()
-				lockCmd := exec.Command(lockerExe, updateDir)
+				lockCmd := exec.Command(lockerExe, lockFile)
 				stdout, err := lockCmd.StdoutPipe()
 				require.NoError(tt, err)
 				err = lockCmd.Start()
@@ -152,23 +148,25 @@ func Test_acquireUpdateLockProcesses(t *testing.T) {
 	})
 }
 
-func Test_acquireUpdateLock(t *testing.T) {
+func Test_acquirePidLock(t *testing.T) {
 	tmpDir, err := ioutil.TempDir("", "")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 
-	ok, cleanup := AcquireUpdateLock(tmpDir)
-	assert.True(t, ok)
-	assert.NotNil(t, cleanup)
+	lockFile := filepath.Join(tmpDir, "lockfile")
 
-	ok2, cleanup2 := AcquireUpdateLock(tmpDir)
-	assert.False(t, ok2)
-	assert.Nil(t, cleanup2)
+	pl, err := NewPidLock(lockFile)
+	assert.NotNil(t, pl)
+	assert.NoError(t, err)
 
-	cleanup()
-	ok, cleanup = AcquireUpdateLock(tmpDir)
-	assert.True(t, ok)
-	assert.NotNil(t, cleanup)
+	pl2, err := NewPidLock(lockFile)
+	assert.Nil(t, pl2)
+	assert.Error(t, err)
 
-	cleanup()
+	pl.Close()
+
+	pl, err = NewPidLock(lockFile)
+	assert.NotNil(t, pl)
+	assert.NoError(t, err)
+	pl.Close()
 }

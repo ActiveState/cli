@@ -7,7 +7,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/ActiveState/cli/internal/updater"
+	"github.com/ActiveState/cli/internal/osutils"
 )
 
 func main() {
@@ -18,13 +18,13 @@ func main() {
 		fmt.Printf("one argument required")
 		os.Exit(2)
 	}
-	ok, cleanup := updater.AcquireUpdateLock(os.Args[1])
-	if !ok {
+	pl, err := osutils.NewPidLock(os.Args[1])
+	if err != nil {
 		fmt.Printf("DENIED")
 	}
 
 	fmt.Println("LOCKED")
-	defer cleanup()
+	defer pl.Close()
 
 	select {
 	case <-c:
