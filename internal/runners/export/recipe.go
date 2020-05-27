@@ -6,14 +6,14 @@ import (
 
 	"github.com/go-openapi/strfmt"
 
+	"github.com/ActiveState/sysinfo"
+
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
-	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/sysinfo"
 )
 
 type Recipe struct{}
@@ -52,14 +52,9 @@ func (r *Recipe) Run(params *RecipeParams) error {
 }
 
 func recipeData(proj *project.Project, commitID, platform string) ([]byte, *failures.Failure) {
-	pj, fail := model.FetchProjectByName(proj.Owner(), proj.Name())
-	if fail != nil {
-		return nil, fail
-	}
-
 	cid := strfmt.UUID(commitID)
 
-	r, fail := fetchRecipe(pj, cid, platform)
+	r, fail := fetchRecipe(proj, cid, platform)
 	if fail != nil {
 		return nil, fail
 	}
@@ -77,19 +72,14 @@ func beautifyJSON(d []byte) ([]byte, error) {
 	return d, nil
 }
 
-func fetchRecipe(pj *mono_models.Project, commitID strfmt.UUID, platform string) (string, *failures.Failure) {
+func fetchRecipe(proj *project.Project, commitID strfmt.UUID, platform string) (string, *failures.Failure) {
 	if platform == "" {
 		platform = sysinfo.OS().String()
 	}
 
-	pjName := pj.Name
-	pjOrg := "unknown"
-	ns, fail := project.ParseNamespace(pj.Name)
-	if fail == nil {
-		pjName = ns.Project
-		pjOrg = ns.Owner
-	} else {
-		logging.Error("Could not parse fetched project string %s: %v", pj.Name, fail)
+	pj, fail := model.FetchProjectByName(proj.Owner(), proj.Name())
+	if fail != nil {
+		return "", fail
 	}
 
 	if commitID == "" {
@@ -100,7 +90,8 @@ func fetchRecipe(pj *mono_models.Project, commitID strfmt.UUID, platform string)
 		if branch.CommitID == nil {
 			return "", model.FailNoCommit.New(locale.T("err_no_commit"))
 		}
+		commitID = *branch.CommitID
 	}
 
-	return model.FetchRawRecipeForCommitAndPlatform(commitID, pjOrg, pjName, platform)
+	return model.FetchRawRecipeForCommitAndPlatform(commitID, proj.Owner(), proj.Name(), platform)
 }
