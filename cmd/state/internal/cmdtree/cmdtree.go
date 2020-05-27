@@ -78,7 +78,7 @@ func New(pj *project.Project, outputer output.Outputer, prompter prompt.Prompter
 
 	stateCmd := newStateCommand(globals)
 	stateCmd.AddChildren(
-		newActivateCommand(globals),
+		newActivateCommand(outputer),
 		newInitCommand(),
 		newPushCommand(),
 		newProjectsCommand(outputer, auth),

@@ -109,9 +109,9 @@ error_in_active_subshell:
 err_output_flag_value_invalid:
   other: Could not recognize output type
 info_reactivating:
-  other: Reactivating state
+  other: "[BLUE]Reactivating state[/RESET]"
 info_deactivated:
-  other: Deactivated {{.Owner}}/{{.Name}}
+  other: "[BLUE]Deactivated {{.Owner}}/{{.Name}}[/RESET]"
 venv_installer_is_nil:
   other: Provided installer should not be nil
 error_unsupported_language:
@@ -123,7 +123,7 @@ err_language_not_yet_supported:
 error_missing_arg:
   other: "Argument missing: {{.V0}}"
 err_no_projectfile:
-  other: No activestate.yaml file exists in the current working directory
+  other: No activestate.yaml file exists in the current working directory or its parent directories.
 err_invalid_input:
   other: Invalid input received
 err_no_update_info:
@@ -167,7 +167,7 @@ err_artifact_no_parent:
 err_invalid_status_code:
   other: "Invalid status code: {{.V0}}"
 info_activating_state:
-  other: "Activating state: {{.Owner}}/{{.Name}}"
+  other: "[BLUE]Activating state: {{.Owner}}/{{.Name}}[/RESET]"
 info_state_active_repoexists:
   other: "Repo already exists: {{.Path}}"
 panic_couldnt_detect_wd:
@@ -1013,7 +1013,7 @@ err_pull_get_latest_commit_id:
 err_os_not_a_directory:
   other: Expected '{{.V0}}' to be a valid directory
 unstable_version_warning:
-  other: The State Tool is currently in beta, we are actively changing and adding features based on developer feedback.
+  other: "[YELLOW]The State Tool is currently in beta, we are actively changing and adding features based on developer feedback.[/RESET]"
 export_cmd_description:
   other: Print information based on the provided subcommand
 export_recipe_cmd_description:
@@ -1472,7 +1472,7 @@ err_order_bad_request:
 err_order_unknown:
   other: Unknown error resolving order"
 using_cached_env:
-  other: Reusing cached runtime environment
+  other: "[BLUE]Reusing cached runtime environment[/RESET]"
 auto_update_to_version:
   other: |
     [BLUE]Auto updating from [BOLD]{{.V0}}[/RESET] [BLUE]to[/RESET] [BOLD]{{.V1}}[/RESET].
