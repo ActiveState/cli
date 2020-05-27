@@ -176,7 +176,7 @@ func (u *Updater) update(out output.Outputer) error {
 
 	logging.Debug("Attempting to open executable path at: %s", path)
 
-	lockFile := filepath.Join(updateDir, fmt.Sprintf(".%s.update-lock", "state"))
+	lockFile := filepath.Join(filepath.Dir(path), fmt.Sprintf(".%s.update-lock", "state"))
 	pl, err := osutils.NewPidLock(lockFile)
 	if err != nil {
 		return err
