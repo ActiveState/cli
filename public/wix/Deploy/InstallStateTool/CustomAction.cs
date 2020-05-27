@@ -1,28 +1,49 @@
-using Microsoft.Deployment.WindowsInstaller;
 using System;
-using System.Text;
+using System.IO;
+using Microsoft.Deployment.WindowsInstaller;
 
-namespace StateDeploy
+namespace InstallStateTool
 {
     public class CustomActions
     {
         [CustomAction]
-        public static ActionResult StateDeploy(Session session)
+        public static ActionResult InstallStateTool(Session session)
         {
-            session.Log("Starting state deploy");
+            session.Log("Installing State Tool if necessary");
+            if (session.CustomActionData["STATE_TOOL_INSTALLED"] == "true")
+            {
+                session.Log("State Tool is installed, no installation required");
+                return ActionResult.Success;
+            }
 
-            StatusMessage(session, string.Format("Deploying project {0}...", session.CustomActionData["PROJECT_NAME"]));
-            MessageResult incrementResult = IncrementProgressBar(session, 3);
+            string tempDir = Path.GetTempPath();
+            string scriptPath = Path.Combine(tempDir, "install.ps1");
+
+            StatusMessage(session, "Installing State Tool...");
+            MessageResult incrementResult = IncrementProgressBar(session, 2);
             if (incrementResult == MessageResult.Cancel)
             {
                 return ActionResult.UserExit;
             }
-            string deployCmd = BuildDeployCmd(session);
-            session.Log(string.Format("Executing deploy command: {0}", deployCmd));
+
+            string downloadCmd = "cmd " + "/c " + string.Format("powershell \"(New-Object Net.WebClient).DownloadFile('https://platform.activestate.com/dl/cli/install.ps1', '{0}')\"", scriptPath);
+            session.Log(string.Format("Running download command: {0}", downloadCmd));
+            ActionResult result = RunCommand(session, downloadCmd);
+            if (result.Equals(ActionResult.Failure)) {
+                return result;
+            }
+
+            string installCmd = string.Format("powershell \"{0} -n\"", scriptPath);
+            session.Log(string.Format("Running install command: {0}", installCmd));
+            return RunCommand(session, installCmd);
+        }
+
+        private static ActionResult RunCommand(Session session, string cmd)
+        {
             try
             {
                 System.Diagnostics.ProcessStartInfo procStartInfo =
-                    new System.Diagnostics.ProcessStartInfo("cmd", "/c " + deployCmd);
+                    new System.Diagnostics.ProcessStartInfo("cmd", "/c " + cmd);
 
                 // The following commands are needed to redirect the standard output.
                 // This means that it will be redirected to the Process.StandardOutput StreamReader.
@@ -47,26 +68,6 @@ namespace StateDeploy
             return ActionResult.Success;
         }
 
-        private static string BuildDeployCmd(Session session)
-        {
-            string installDir = session.CustomActionData["INSTALLDIR"];
-            string projectName = session.CustomActionData["PROJECT_NAME"];
-            string isModify = session.CustomActionData["IS_MODIFY"];
-
-            StringBuilder deployCMDBuilder = new StringBuilder("state deploy");
-            if (isModify == "true")
-            {
-                deployCMDBuilder.Append(" --force");
-            }
-
-            // We quote the string here as Windows paths that contain spaces must be quoted.
-            // We also account for a path ending with a slash and ensure that the quote character
-            // isn't preserved.
-            deployCMDBuilder.AppendFormat(" {0} --path=\"{1}\\\"", projectName, @installDir);
-
-            return deployCMDBuilder.ToString();
-        }
-
         internal static void StatusMessage(Session session, string status)
         {
             Record record = new Record(3);
@@ -85,5 +86,6 @@ namespace StateDeploy
             record[3] = 0; // ignore 
             return session.Message(InstallMessage.Progress, record);
         }
+
     }
 }

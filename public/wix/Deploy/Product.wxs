@@ -123,12 +123,20 @@
 		<CustomAction Id="SetStateDeployPropertyValues" Property="StateDeploy" Value="INSTALLDIR=[INSTALLDIR];PROJECT_NAME=[PROJECT_NAME];IS_MODIFY=[IS_MODIFY]" />
 		
 		<CustomAction Id="SetUninstallProperties" Property="Uninstall" Value="REMEMBER=[REMEMBER]" />
+		
+		<CustomAction Id="SetIsStateToolInstalled" Property="InstallStateTool" Value="STATE_TOOL_INSTALLED=[STATE_TOOL_INSTALLED]" />
 
 		<Binary Id="StateCommandCA" SourceFile="$(var.StateCommandExists.TargetDir)$(var.StateCommandExists.TargetName).CA.dll" />
-		<CustomAction Id="StateCommandExists" Impersonate="no" BinaryKey="StateCommandCA" DllEntry="StateCommandExists" Return="check" />
+		<CustomAction Id="StateCommandExists" Impersonate="yes" BinaryKey="StateCommandCA" DllEntry="StateCommandExists" Return="check" />
+
+		<Binary Id="ResetProgressCA" SourceFile="$(var.ResetProgress.TargetDir)$(var.ResetProgress.TargetName).CA.dll" />
+		<CustomAction Id="ResetProgress" Impersonate="no" BinaryKey="ResetProgressCA" DllEntry="ResetProgress" Execute="deferred" Return="check" />
+		
+		<Binary Id="StateToolInstallCA" SourceFile="$(var.InstallStateTool.TargetDir)$(var.InstallStateTool.TargetName).CA.dll" />
+		<CustomAction Id="InstallStateTool" Impersonate="no" BinaryKey="StateToolInstallCA" DllEntry="InstallStateTool" Execute="deferred" Return="check" />
 
 		<Binary Id="GetProjectNameCA" SourceFile="$(var.GetProjectName.TargetDir)$(var.GetProjectName.TargetName).CA.dll" />
-		<CustomAction Id="GetProjectName" Impersonate="no" BinaryKey="GetProjectNameCA" DllEntry="GetProjectName" Return="check" />
+		<CustomAction Id="GetProjectName" Impersonate="yes" BinaryKey="GetProjectNameCA" DllEntry="GetProjectName" Return="check" />
 
 		<Binary Id="StateDeployCA" SourceFile="$(var.StateDeploy.TargetDir)$(var.StateDeploy.TargetName).CA.dll" />
 		<CustomAction Id="StateDeploy" Impersonate="no" BinaryKey="StateDeployCA" DllEntry="StateDeploy" Execute="deferred" Return="check" />
@@ -137,7 +145,10 @@
 		<CustomAction Id="Uninstall" Impersonate="no" BinaryKey="UninstallCA" DllEntry="Uninstall" Execute="deferred" Return="check" />
 
 		<InstallExecuteSequence>
-			<Custom Action="SetStateDeployPropertyValues" After="InstallInitialize">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
+			<Custom Action="SetIsStateToolInstalled" After="InstallInitialize">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
+			<Custom Action="ResetProgress" After="SetIsStateToolInstalled">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
+			<Custom Action="InstallStateTool" After="ResetProgress">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
+			<Custom Action="SetStateDeployPropertyValues" After="InstallStateTool">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
 			<Custom Action="StateDeploy" After="SetStateDeployPropertyValues">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
 			<Custom Action="SetUninstallProperties" After="RemoveFiles">REMOVE="ALL"</Custom>
 			<Custom Action="Uninstall" After="SetUninstallProperties">REMOVE="ALL"</Custom>
