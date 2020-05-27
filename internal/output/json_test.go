@@ -27,7 +27,7 @@ func TestJSON_Print(t *testing.T) {
 		{
 			"error string",
 			args{errors.New("hello")},
-			`"hello"` + "\n",
+			`"hello"` + "\x00\n",
 			"",
 		},
 		{
