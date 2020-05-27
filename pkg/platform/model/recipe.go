@@ -15,7 +15,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory"
 	iop "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
-	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/sysinfo"
 )
@@ -55,19 +54,6 @@ func FetchRawRecipeForCommit(commitID strfmt.UUID, owner, project string) (strin
 // FetchRawRecipeForCommitAndPlatform returns a recipe from a project based off a commitID and platform
 func FetchRawRecipeForCommitAndPlatform(commitID strfmt.UUID, owner, project string, platform string) (string, *failures.Failure) {
 	return fetchRawRecipe(commitID, owner, project, &platform)
-}
-
-// FetchRawRecipeForPlatform returns the available recipe matching the default branch commit id and platform string
-func FetchRawRecipeForPlatform(pj *mono_models.Project, owner, project string, hostPlatform string) (string, *failures.Failure) {
-	branch, fail := DefaultBranchForProject(pj)
-	if fail != nil {
-		return "", fail
-	}
-	if branch.CommitID == nil {
-		return "", FailNoCommit.New(locale.T("err_no_commit"))
-	}
-
-	return FetchRawRecipeForCommitAndPlatform(*branch.CommitID, owner, project, hostPlatform)
 }
 
 // FetchRecipeIDForCommitAndPlatform returns a recipe ID for a project based on the given commitID and platform string

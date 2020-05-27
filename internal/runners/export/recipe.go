@@ -7,6 +7,7 @@ import (
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
@@ -91,9 +92,15 @@ func fetchRecipe(pj *mono_models.Project, commitID strfmt.UUID, platform string)
 		logging.Error("Could not parse fetched project string %s: %v", pj.Name, fail)
 	}
 
-	if commitID != "" {
-		return model.FetchRawRecipeForCommitAndPlatform(commitID, pjOrg, pjName, platform)
+	if commitID == "" {
+		branch, fail := model.DefaultBranchForProject(pj)
+		if fail != nil {
+			return "", fail
+		}
+		if branch.CommitID == nil {
+			return "", model.FailNoCommit.New(locale.T("err_no_commit"))
+		}
 	}
 
-	return model.FetchRawRecipeForPlatform(pj, pjOrg, pjName, platform)
+	return model.FetchRawRecipeForCommitAndPlatform(commitID, pjOrg, pjName, platform)
 }
