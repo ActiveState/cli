@@ -106,7 +106,7 @@ func (r *Download) fetchRecipeID() (strfmt.UUID, *failures.Failure) {
 		return "", FailNoCommit.New(locale.T("err_no_commit"))
 	}
 
-	recipeID, fail := model.FetchRecipeIDForCommitAndPlatform(commitID, model.HostPlatform)
+	recipeID, fail := model.FetchRecipeIDForCommitAndPlatform(commitID, r.owner, r.projectName, model.HostPlatform)
 	if fail != nil {
 		return "", fail
 	}
