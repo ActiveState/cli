@@ -8,6 +8,7 @@ import (
 
 	"github.com/thoas/go-funk"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -245,7 +246,7 @@ func symlink(installPath string, overwrite bool, envGetter runtime.EnvGetter, ou
 
 	// Symlink to targetDir/bin
 	if err := symlinkWithTarget(overwrite, filepath.Join(installPath, "bin"), bins, pathExt, out); err != nil {
-		return locale.WrapError(err, "Could not create symlinks to {{.V0}}.", path)
+		return locale.WrapError(err, "err_symlink", "Could not create symlinks to {{.V0}}.", path)
 	}
 
 	return nil
@@ -294,6 +295,15 @@ func linkTarget(targetDir string, path string) string {
 // Also: Only the executable with the highest priority according to pathExt is symlinked.
 func symlinkWithTarget(overwrite bool, path string, bins []string, pathExt []string, out output.Outputer) error {
 	out.Notice(locale.Tr("deploy_symlink", path))
+
+	isInsideOf, err := fileutils.PathIsInsideOf(path, config.CachePath())
+	if err != nil {
+		return locale.WrapError(err, "err_symlink_protection_undetermined", "Cannot determine if '{{.V0}}' is within protected directory.", path)
+	}
+	if isInsideOf {
+		logging.Warning("Skipping symlink targeting %q", path)
+		return nil
+	}
 
 	if fail := fileutils.MkdirUnlessExists(path); fail != nil {
 		return locale.WrapInputError(

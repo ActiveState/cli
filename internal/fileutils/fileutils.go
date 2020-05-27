@@ -17,6 +17,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -768,4 +769,54 @@ func IsDir(path string) bool {
 		return false
 	}
 	return info.IsDir()
+}
+
+// ResolvePath gets the absolute location of the provided path and
+// fully evaluates the result if it is a symlink.
+func ResolvePath(path string) (string, error) {
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return "", errs.Wrap(err, "cannot get absolute filepath of %q", path)
+	}
+
+	evalPath, err := filepath.EvalSymlinks(absPath)
+	if err != nil {
+		return "", errs.Wrap(err, "cannot evaluate symlink %q", absPath)
+	}
+
+	return evalPath, nil
+}
+
+// PathIsInsideOf checks if the directory path is equal to or a child directory
+// of the targeted directory. Symlinks are evaluated for this comparison.
+func PathIsInsideOf(path, targeted string) (bool, error) {
+	if path == targeted {
+		return true, nil
+	}
+
+	efmt := "cannot resolve %q"
+
+	resPath, err := ResolvePath(path)
+	if err != nil {
+		return false, errs.Wrap(err, efmt, path)
+	}
+
+	resTargeted, err := ResolvePath(targeted)
+	if err != nil {
+		return false, errs.Wrap(err, efmt, targeted)
+	}
+
+	return isSameOrInsideOf(resPath, resTargeted), nil
+}
+
+func isSameOrInsideOf(path, targeted string) bool {
+	if !strings.HasSuffix(path, string(os.PathSeparator)) {
+		path += string(os.PathSeparator)
+	}
+
+	if !strings.HasSuffix(targeted, string(os.PathSeparator)) {
+		targeted += string(os.PathSeparator)
+	}
+
+	return path == targeted || strings.HasPrefix(path, targeted)
 }

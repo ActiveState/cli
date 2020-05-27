@@ -539,7 +539,11 @@ func GetProjectFilePath() (string, *failures.Failure) {
 		logging.Warning("Could not get project root path: %v", err)
 		return "", failures.FailOS.Wrap(err)
 	}
-	return fileutils.FindFileInPath(root, constants.ConfigFileName)
+	path, fail := fileutils.FindFileInPath(root, constants.ConfigFileName)
+	if fail != nil {
+		return "", FailNoProject.Wrap(fail, locale.T("err_no_projectfile"))
+	}
+	return path, nil
 }
 
 // Get returns the project configration in an unsafe manner (exits if errors occur)
@@ -595,9 +599,9 @@ func GetOnce() (*Project, *failures.Failure) {
 // FromPath will return the projectfile that's located at the given path (this will walk up the directory tree until it finds the project)
 func FromPath(path string) (*Project, *failures.Failure) {
 	// we do not want to use a path provided by state if we're running tests
-	projectFilePath, failure := fileutils.FindFileInPath(path, constants.ConfigFileName)
-	if failure != nil {
-		return nil, failure
+	projectFilePath, fail := fileutils.FindFileInPath(path, constants.ConfigFileName)
+	if fail != nil {
+		return nil, FailNoProject.Wrap(fail, locale.T("err_no_projectfile"))
 	}
 
 	_, err := ioutil.ReadFile(projectFilePath)
@@ -721,7 +725,7 @@ func ParseVersionInfo(projectFilePath string) (*VersionInfo, *failures.Failure) 
 	if !fileutils.FileExists(projectFilePath) {
 		return nil, nil
 	}
-	
+
 	dat, err := ioutil.ReadFile(projectFilePath)
 	if err != nil {
 		return nil, failures.FailIO.Wrap(err)

@@ -12,7 +12,7 @@ var colorRx *regexp.Regexp
 
 func init() {
 	var err error
-	colorRx, err = regexp.Compile(`\[(BOLD|UNDERLINE|BLACK|RED|GREEN|YELLOW|BLUE|MAGENTA|CYAN|WHITE|/RESET)!?\]`)
+	colorRx, err = regexp.Compile(`\[(BOLD|UNDERLINE|BLACK|RED|GREEN|YELLOW|BLUE|MAGENTA|CYAN|WHITE|INFO|/RESET)!?\]`)
 	if err != nil {
 		panic(fmt.Sprintf("Could not compile regex: %v", err))
 	}
@@ -68,6 +68,9 @@ func colorize(writer io.Writer, colorName string, brighten bool) {
 		ct.Foreground(writer, ct.Cyan, brighten)
 	case `WHITE`:
 		ct.Foreground(writer, ct.White, brighten)
+	case `INFO`:
+		ct.Foreground(writer, ct.Blue, brighten)
+		ct.ChangeStyle(writer, ct.Bold)
 	case `/RESET`:
 		ct.Reset(writer)
 	}
