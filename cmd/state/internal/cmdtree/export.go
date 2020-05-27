@@ -6,6 +6,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/runners/export"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/project"
 )
 
 func newExportCommand() *captain.Command {
@@ -109,5 +110,30 @@ func newAPIKeyCommand(outputer output.Outputer) *captain.Command {
 		func(ccmd *captain.Command, args []string) error {
 			params.IsAuthed = auth.Authenticated
 			return apikey.Run(params)
+		})
+}
+
+func newVirtualEnvCommand(pj *project.Project, outputer output.Outputer) *captain.Command {
+	virtualenv := export.NewVirtualEnv(pj, outputer)
+	params := export.VirtualEnvParams{}
+
+	return captain.NewCommand(
+		"virtualenv",
+		locale.Tl("export_virtualenv", "Creates a fake virtualenv environment at the target location, allowing you to use this project with legacy tooling."),
+		[]*captain.Flag{
+			{
+				Name:        "target",
+				Description: locale.Tl("export_virtualenv_target_description", "The path to write the virtualenv to."),
+				Value:       &params.Path,
+			},
+			{
+				Name:        "force",
+				Description: locale.Tl("export_virtualenv_force_description", "Overwrite any conflicts at the target path."),
+				Value:       &params.Force,
+			},
+		},
+		[]*captain.Argument{},
+		func(ccmd *captain.Command, args []string) error {
+			return virtualenv.Run(params)
 		})
 }

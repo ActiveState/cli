@@ -40,6 +40,7 @@ func New(pj *project.Project, outputer output.Outputer, prompter prompt.Prompter
 		newJWTCommand(),
 		newPrivateKeyCommand(),
 		newAPIKeyCommand(outputer),
+		newVirtualEnvCommand(pj, outputer),
 	)
 
 	packagesCmd := newPackagesCommand(outputer)
@@ -78,7 +79,7 @@ func New(pj *project.Project, outputer output.Outputer, prompter prompt.Prompter
 
 	stateCmd := newStateCommand(globals)
 	stateCmd.AddChildren(
-		newActivateCommand(globals),
+		newActivateCommand(outputer),
 		newInitCommand(),
 		newPushCommand(),
 		newProjectsCommand(outputer, auth),
