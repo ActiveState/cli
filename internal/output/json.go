@@ -34,7 +34,7 @@ func (f *JSON) Print(value interface{}) {
 	}
 
 	f.cfg.OutWriter.Write(b)
-	f.cfg.OutWriter.Write([]byte("\n"))
+	f.cfg.OutWriter.Write([]byte("\x00\n")) // Terminate with NUL character so consumers can differentiate between multiple output messages
 }
 
 // Error will marshal and print the given value to the error writer, it wraps the error message in a very basic structure
@@ -48,7 +48,7 @@ func (f *JSON) Error(value interface{}) {
 		b = []byte(locale.T("err_could_not_marshal_print"))
 	}
 	f.cfg.OutWriter.Write(b)
-	f.cfg.OutWriter.Write([]byte("\n"))
+	f.cfg.OutWriter.Write([]byte("\x00\n")) // Terminate with NUL character so consumers can differentiate between multiple output messages
 }
 
 // Notice is ignored by JSON, as they are considered as non-critical output and there's currently no reliable way to

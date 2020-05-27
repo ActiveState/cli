@@ -1,20 +1,22 @@
 package cmdtree
 
 import (
+	"github.com/spf13/viper"
+
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runners/activate"
 	"github.com/ActiveState/cli/pkg/cmdlets/git"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/spf13/viper"
 )
 
-func newActivateCommand(globals *globalOptions) *captain.Command {
+func newActivateCommand(out output.Outputer) *captain.Command {
 	prompter := prompt.New()
 	checkout := activate.NewCheckout(git.NewRepo())
 	namespaceSelect := activate.NewNamespaceSelect(viper.GetViper(), prompter)
-	runner := activate.NewActivate(namespaceSelect, checkout)
+	runner := activate.NewActivate(out, namespaceSelect, checkout)
 
 	params := activate.ActivateParams{
 		Namespace: &project.Namespaced{},
@@ -39,8 +41,6 @@ func newActivateCommand(globals *globalOptions) *captain.Command {
 			},
 		},
 		func(_ *captain.Command, _ []string) error {
-			params.Output = globals.Output
-
 			return runner.Run(&params)
 		},
 	)
