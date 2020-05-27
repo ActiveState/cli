@@ -1475,18 +1475,18 @@ using_cached_env:
   other: Reusing cached runtime environment
 update_attempt:
   other: |
-    [BLUE]Updating state tool:  Downloading latest version of the state tool...
-forward_version:
+    [BLUE]Updating state tool:  Downloading latest version of the state tool...[/RESET]
 auto_update_to_version:
   other: |
     [BLUE]Updated from [BOLD]{{.V0}}[/RESET] [BLUE]to[/RESET] [BOLD]{{.V1}}[/RESET].
     [BLUE]To avoid auto updating run 'state update --lock' (only recommended for production environments).[/RESET]
-  other: "[BLUE]Using locked state tool version [BOLD]{{.V0}}[/RESET]."
 auto_update_permission_err:
   other: |
-    Could not update to the latest available version of the state tool, due to insufficient permissions.
-    You can manually update the state tool running 'state update' as a user with sufficient permissions.
-    If you want the state tool to auto-update, please re-install it in a user-writable directory.
+    [BLUE]Could not update to the latest available version of the state tool, due to insufficient permissions.[/RESET]
+    [BLUE]To manually update, run 'state update' as a privileged user.[/RESET]
+    [BLUE]If you want the state tool to auto-update, please re-install it in a user-writable directory.[/RESET]
+forward_version:
+  other: "[BLUE]Using locked state tool version [BOLD]{{.V0}}[/RESET]."
 err_project_env_file_not_exist:
   other: |
     Your activated environment appears to have been corrupted because the activestate.yaml cannot be found anymore.
