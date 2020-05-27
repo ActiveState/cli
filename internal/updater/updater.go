@@ -198,7 +198,7 @@ func (u *Updater) update(out output.Outputer) error {
 		return nil
 	}
 
-	out.Notice(locale.T("auto_update_attempt"))
+	out.Notice(locale.T("update_attempt"))
 	bin, err := u.fetchAndVerifyFullBin()
 	if err != nil {
 		return err
