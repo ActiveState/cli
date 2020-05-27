@@ -241,7 +241,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployReport() {
 	cp.ExpectExitCode(0)
 }
 
-func (suite *DeployIntegrationTestSuite) TestDeploySymlinkExisting() {
+func (suite *DeployIntegrationTestSuite) TestDeployTwice() {
 	if runtime.GOOS == "linux" && !e2e.RunningOnCI() {
 		suite.T().Skipf("Skipping TestDeploySymlink when not running on CI, as it modifies PATH")
 	}
@@ -251,12 +251,13 @@ func (suite *DeployIntegrationTestSuite) TestDeploySymlinkExisting() {
 
 	suite.InstallAndAssert(ts)
 
-	cp := ts.Spawn("deploy", "symlink", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work)
+	cp := ts.Spawn("deploy", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work)
 	cp.ExpectExitCode(0)
 
 	suite.True(fileutils.FileExists(filepath.Join(ts.Dirs.Work, "bin", "python3"+symlinkExt)), "Python3 symlink should have been written")
 
-	cpx := ts.Spawn("deploy", "symlink", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work)
+	// Running deploy a second time should not cause any errors (cache is properly picked up)
+	cpx := ts.Spawn("deploy", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work)
 	cpx.ExpectExitCode(0)
 }
 
