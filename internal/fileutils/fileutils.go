@@ -779,7 +779,7 @@ func ResolvePath(path string) (string, error) {
 		return "", errs.Wrap(err, "cannot get absolute filepath of %q", path)
 	}
 
-	if (IsDir(path) && !DirExists(path)) || !FileExists(path string) {
+	if !TargetExists(path string) {
 		return absPath, nil
 	}
 
