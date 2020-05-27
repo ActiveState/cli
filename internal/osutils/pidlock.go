@@ -30,7 +30,7 @@ func NewPidLock(path string) (pl *PidLock, err error) {
 	}
 	pl.file = f
 
-	err = LockRead(f)
+	err = LockFile(f)
 	if err != nil {
 		// if lock cannot be acquired it usually means that another process is holding the lock
 		f.Close()

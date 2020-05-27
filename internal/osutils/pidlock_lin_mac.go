@@ -33,8 +33,8 @@ func PidExists(pid int) bool {
 	return false
 }
 
-// LockRead tries to acquire a read lock on the file f
-func LockRead(f *os.File) error {
+// LockFile tries to acquire a read lock on the file f
+func LockFile(f *os.File) error {
 	// attempting to obtain read lock on update file
 	ft := &syscall.Flock_t{
 		Whence: int16(os.SEEK_SET),
