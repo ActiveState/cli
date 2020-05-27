@@ -227,54 +227,31 @@ func symlink(installPath string, overwrite bool, envGetter runtime.EnvGetter, ou
 		bins = strings.Split(p, string(os.PathListSeparator))
 	}
 
-	var pathExt []string
 	if rt.GOOS == "windows" {
-		var pes string
-		var ok bool
-		if pes, ok = env["PATHEXT"]; !ok {
-			pes = os.Getenv("PATHEXT")
-		}
-		pathExt = strings.Split(pes, ";")
+		// Ensure we only symlink the versions dictated by PATHEXT
+		bins = uniqueBins(bins, os.Getenv("PATHEXT"))
 	}
 
 	if rt.GOOS == "linux" {
 		// Symlink to PATH (eg. /usr/local/bin)
-		if err := symlinkWithTarget(overwrite, path, bins, pathExt, out); err != nil {
+		if err := symlinkWithTarget(overwrite, path, bins, out); err != nil {
 			return locale.WrapError(err, "err_symlink", "Could not create symlinks to {{.V0}}.", path)
 		}
 	}
 
 	// Symlink to targetDir/bin
-	if err := symlinkWithTarget(overwrite, filepath.Join(installPath, "bin"), bins, pathExt, out); err != nil {
-		return locale.WrapError(err, "err_symlink", "Could not create symlinks to {{.V0}}.", path)
+	symlinkPath := filepath.Join(installPath, "bin")
+	isInsideOf, err := fileutils.PathContainsParent(symlinkPath, config.CachePath())
+	if err != nil {
+		return locale.WrapError(err, "err_symlink_protection_undetermined", "Cannot determine if '{{.V0}}' is within protected directory.", symlinkPath)
+	}
+	if !isInsideOf {
+		if err := symlinkWithTarget(overwrite, symlinkPath, bins, out); err != nil {
+			return locale.WrapError(err, "err_symlink", "Could not create symlinks to {{.V0}}.", path)
+		}
 	}
 
 	return nil
-}
-
-// shouldOverwriteSymlink can be called if a symlink target exists already to check if we should overwrite it
-// On Linux and MacOS it always returns true.
-// On Windows only, if the new path has a higher priority extension than previously symlinked executables.
-func shouldOverwriteSymlink(path string, oldPath string, pathExt []string) bool {
-	// on non-windows systems, it is always save to overwrite
-	if rt.GOOS != "windows" {
-		return true
-	}
-
-	// Only overwrite if this path has a higher pathext priority
-	oldExt := filepath.Ext(oldPath)
-	ext := filepath.Ext(path)
-	for _, pe := range pathExt {
-		if strings.ToLower(oldExt) == strings.ToLower(pe) {
-			return false
-		}
-		if strings.ToLower(ext) == strings.ToLower(pe) {
-			return true
-		}
-	}
-
-	// this should not happen: none of the pathes has pathext extension
-	return false
 }
 
 func symlinkName(targetDir string, path string) string {
@@ -293,25 +270,14 @@ func symlinkName(targetDir string, path string) string {
 // therefore executables are only symlinked if it has not been symlinked to a
 // target (with the same or a different extension) from a different directory.
 // Also: Only the executable with the highest priority according to pathExt is symlinked.
-func symlinkWithTarget(overwrite bool, path string, bins []string, pathExt []string, out output.Outputer) error {
+func symlinkWithTarget(overwrite bool, path string, bins []string, out output.Outputer) error {
 	out.Notice(locale.Tr("deploy_symlink", path))
-
-	isInsideOf, err := fileutils.PathIsInsideOf(path, config.CachePath())
-	if err != nil {
-		return locale.WrapError(err, "err_symlink_protection_undetermined", "Cannot determine if '{{.V0}}' is within protected directory.", path)
-	}
-	if isInsideOf {
-		logging.Warning("Skipping symlink targeting %q", path)
-		return nil
-	}
 
 	if fail := fileutils.MkdirUnlessExists(path); fail != nil {
 		return locale.WrapInputError(
 			fail, "err_deploy_mkdir",
 			"Could not create directory at {{.V0}}, make sure you have permissions to write to %s.", path, filepath.Dir(path))
 	}
-
-	symlinkedFiles := make(map[string]string)
 
 	for _, bin := range bins {
 		err := filepath.Walk(bin, func(fpath string, info os.FileInfo, err error) error {
@@ -320,46 +286,38 @@ func symlinkWithTarget(overwrite bool, path string, bins []string, pathExt []str
 				return nil // not executable
 			}
 
-			linkName := symlinkName(path, fpath)
-			repeatedLink, isRepeat := symlinkedFiles[linkName]
+			symlink := symlinkName(path, fpath)
 
-			// if file of that name has been symlinked before, to a different (and therefore higher priority) PATH, skip
-			if isRepeat && filepath.Dir(repeatedLink) != filepath.Dir(path) {
-				return nil
-			}
-
-			if fileutils.TargetExists(linkName) {
-				if isRepeat {
-					if !shouldOverwriteSymlink(fpath, repeatedLink, pathExt) {
-						return nil
-					}
-				} else { // existing linkName has not been created during deployment
-					isAccurate, err := fileutils.IsAccurateSymlink(linkName, fpath)
-					if err != nil {
-						return locale.WrapError(err, "err_symlink_accuracy_unknown", "Could not determine the accuracy of {{.V0}}.", linkName)
-					}
-					if isAccurate {
-						return nil
-					}
-
-					if !overwrite {
-						return locale.NewInputError(
-							"err_deploy_symlink_target_exists",
-							"Cannot create symlink as the target already exists: {{.V0}}. Use '--force' to overwrite any existing files.", linkName)
-					}
-					out.Notice(locale.Tr("deploy_overwrite_target", linkName))
+			// If the link already exists we may have to overwrite it, skip it, or fail..
+			if fileutils.TargetExists(symlink) {
+				// If the existing symlink already matches the one we want to create, skip it
+				skip, err := shouldSkipSymlink(symlink, fpath)
+				if err != nil {
+					return locale.WrapError(err, "err_deploy_shouldskip", "Could not determine if link already exists.")
 				}
+				if skip {
+					return nil
+				}
+
+				// If we're trying to overwrite a link not owned by us but overwrite=false then we should fail
+				if !overwrite {
+					return locale.NewInputError(
+						"err_deploy_symlink_target_exists",
+						"Cannot create symlink as the target already exists: {{.V0}}. Use '--force' to overwrite any existing files.", symlink)
+				}
+
+				// We're about to overwrite, so if this link isn't owned by us we should let the user know
+				out.Notice(locale.Tr("deploy_overwrite_target", symlink))
 
 				// to overwrite the existing file, we have to remove it first, or the link command will fail
-				if err := os.Remove(linkName); err != nil {
+				if err := os.Remove(symlink); err != nil {
 					return locale.WrapInputError(
 						err, "err_deploy_overwrite",
-						"Could not overwrite {{.V0}}, make sure you have permissions to write to this file.", linkName)
+						"Could not overwrite {{.V0}}, make sure you have permissions to write to this file.", symlink)
 				}
 			}
 
-			symlinkedFiles[linkName] = fpath
-			return link(fpath, linkName)
+			return link(fpath, symlink)
 		})
 		if err != nil {
 			return errs.Wrap(err, "Error while walking path")
@@ -367,6 +325,58 @@ func symlinkWithTarget(overwrite bool, path string, bins []string, pathExt []str
 	}
 
 	return nil
+}
+
+func shouldSkipSymlink(symlink, fpath string) (bool, error) {
+	// If the existing symlink already matches the one we want to create, skip it
+	if fileutils.IsSymlink(symlink) {
+		symlinkTarget, err := fileutils.SymlinkTarget(symlink)
+		if err != nil {
+			return false, locale.WrapError(err, "err_symlink_target", "Could not resolve target of symlink: {{.V0}}", symlink)
+		}
+
+		isAccurate, err := fileutils.PathsEqual(fpath, symlinkTarget)
+		if err != nil {
+			return false, locale.WrapError(err, "err_symlink_accuracy_unknown", "Could not determine whether symlink is owned by State Tool: {{.V0}}.", symlink)
+		}
+		if isAccurate {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+type binFile struct {
+	fname string
+	name  string
+	ext   string
+}
+
+func uniqueBins(bins []string, pathext string) []string {
+	pathExt := strings.Split(strings.ToLower(pathext), ";")
+	binFiles := map[string]binFile{}
+
+	for _, bin := range bins {
+		bin = strings.ToLower(bin) // Windows is case-insensitive
+
+		bf := binFile{bin, "", filepath.Ext(bin)}
+		bf.name = strings.TrimSuffix(bin, bf.ext)
+
+		if bfExisting, exists := binFiles[bf.name]; exists {
+			if funk.IndexOf(pathExt, bfExisting.ext) < funk.IndexOf(pathExt, bf.ext) {
+				continue // Existing entry is already valid
+			}
+		}
+
+		binFiles[bf.name] = bf
+	}
+
+	result := []string{}
+	for _, bf := range binFiles {
+		result = append(result, bf.fname)
+	}
+	return result
 }
 
 type Report struct {

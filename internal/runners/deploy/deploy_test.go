@@ -3,6 +3,7 @@ package deploy
 import (
 	"os"
 	"reflect"
+	"sort"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/failures"
@@ -217,6 +218,43 @@ func Test_report(t *testing.T) {
 
 			if !reflect.DeepEqual(report.BinaryDirectories, tt.wantBinary) {
 				t.Errorf("Expected bins to be the same. Want: %v, got: %v", tt.wantBinary, report.BinaryDirectories)
+			}
+		})
+	}
+}
+
+func Test_uniqueBins(t *testing.T) {
+	tests := []struct {
+		name    string
+		bins    []string
+		pathext string
+		want    []string
+	}{
+		{
+			"Returns same bins",
+			[]string{"a", "a", "b", "c"},
+			"",
+			[]string{"a", "b", "c"},
+		},
+		{
+			"Returns exe prioritized",
+			[]string{"a.exe", "a.cmd", "c"},
+			".exe;.cmd",
+			[]string{"a.exe", "c"},
+		},
+		{
+			"Returns cmd prioritized",
+			[]string{"a.exe", "a.cmd", "c"},
+			".cmd;.cmd",
+			[]string{"a.exe", "c"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := uniqueBins(tt.bins, tt.pathext)
+			sort.Strings(got)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("uniqueBins() = %v, want %v", got, tt.want)
 			}
 		})
 	}

@@ -455,12 +455,12 @@ func TestIsSameOrInsideOf(t *testing.T) {
 		return strings.ReplaceAll(path, "/", string(os.PathSeparator))
 	}
 
-	insideOf := isSameOrInsideOf(setSep("../../internal/fileutils"), setSep("../../internal"))
+	insideOf := resolvedPathContainsParent(setSep("../../internal/fileutils"), setSep("../../internal"))
 	assert.True(t, insideOf)
 
-	insideOf = isSameOrInsideOf(setSep("../../internal/fileutils"), setSep("../../cmd"))
+	insideOf = resolvedPathContainsParent(setSep("../../internal/fileutils"), setSep("../../cmd"))
 	assert.False(t, insideOf)
 
-	insideOf = isSameOrInsideOf(setSep("../../internalfileutils"), setSep("../../internal"))
+	insideOf = resolvedPathContainsParent(setSep("../../internalfileutils"), setSep("../../internal"))
 	assert.False(t, insideOf)
 }
