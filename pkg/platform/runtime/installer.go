@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-openapi/strfmt"
 	"github.com/google/uuid"
+	"github.com/vbauerster/mpb/v4"
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/failures"
@@ -179,7 +180,7 @@ func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGet
 		installer.onDownload()
 	}
 
-	progress := progress.New()
+	progress := progress.New(mpb.WithOutput(os.Stderr))
 	defer progress.Close()
 
 	if len(downloadArtfs) > 0 {
