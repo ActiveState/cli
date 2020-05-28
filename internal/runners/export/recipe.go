@@ -36,13 +36,13 @@ func (r *Recipe) Run(params *RecipeParams) error {
 
 	data, fail := recipeData(proj, params.CommitID, params.Platform)
 	if fail != nil {
-		return fail
+		return fail.ToError()
 	}
 
 	if params.Pretty {
 		var err error
 		data, err = beautifyJSON(data)
-		if fail != nil {
+		if err != nil {
 			return err
 		}
 	}
@@ -77,12 +77,12 @@ func fetchRecipe(proj *project.Project, commitID strfmt.UUID, platform string) (
 		platform = sysinfo.OS().String()
 	}
 
-	pj, fail := model.FetchProjectByName(proj.Owner(), proj.Name())
-	if fail != nil {
-		return "", fail
-	}
-
 	if commitID == "" {
+		pj, fail := model.FetchProjectByName(proj.Owner(), proj.Name())
+		if fail != nil {
+			return "", fail
+		}
+
 		branch, fail := model.DefaultBranchForProject(pj)
 		if fail != nil {
 			return "", fail
