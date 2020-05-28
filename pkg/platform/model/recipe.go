@@ -158,7 +158,7 @@ func fetchRecipeID(commitID strfmt.UUID, owner, project string, hostPlatform *st
 		case *iop.SolveOrderBadRequest:
 			msg := *rrErr.Payload.Message
 			logging.Error("Bad request while resolving order, error: %s, order: %s", msg, string(orderBody))
-			return nil, FailOrderRecipes.New("err_order_bad_request", msg)
+			return nil, FailOrderRecipes.New("err_order_bad_request", owner, project, msg)
 		default:
 			logging.Error("Unknown error while resolving order, error: %v, order: %s", err, string(orderBody))
 			return nil, FailOrderRecipes.Wrap(err, "err_order_unknown")
