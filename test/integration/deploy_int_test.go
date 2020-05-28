@@ -249,13 +249,20 @@ func (suite *DeployIntegrationTestSuite) TestDeployTwice() {
 
 	suite.InstallAndAssert(ts)
 
-	cp := ts.Spawn("deploy", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work)
+	pathDir := fileutils.TempDirUnsafe()
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("deploy", "symlink", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work),
+		e2e.AppendEnv(fmt.Sprintf("PATH=%s", pathDir)), // Avoid conflicts
+	)
 	cp.ExpectExitCode(0)
 
 	suite.True(fileutils.FileExists(filepath.Join(ts.Dirs.Work, "bin", "python3"+symlinkExt)), "Python3 symlink should have been written")
 
 	// Running deploy a second time should not cause any errors (cache is properly picked up)
-	cpx := ts.Spawn("deploy", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work)
+	cpx := ts.SpawnWithOpts(
+		e2e.WithArgs("deploy", "symlink", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work),
+		e2e.AppendEnv(fmt.Sprintf("PATH=%s", pathDir)), // Avoid conflicts
+	)
 	cpx.ExpectExitCode(0)
 }
 
