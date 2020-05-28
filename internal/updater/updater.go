@@ -182,6 +182,10 @@ func (u *Updater) update(out output.Outputer) error {
 		return err
 	}
 	defer pl.Close()
+	_, err = pl.TryLock()
+	if err != nil {
+		return err
+	}
 
 	old, err := os.Open(path)
 	if err != nil {

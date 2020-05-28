@@ -70,10 +70,16 @@ func Test_acquirePidLockProcesses(t *testing.T) {
 			require.Equal(tt, 6, n)
 			assert.Equal(tt, "LOCKED", string(buf))
 
-			// trying to acquire the lock in this process should fail
 			pl, err := NewPidLock(lockFile)
-			assert.Nil(tt, pl)
+			require.NoError(tt, err)
+
+			// trying to acquire the lock in this process should fail
+			ok, err := pl.TryLock()
+			assert.False(tt, ok)
 			assert.Error(tt, err)
+
+			err = pl.Close()
+			require.NoError(tt, err)
 
 			// stopping the other process
 			interruptProcess(tt, lockCmd.Process)
@@ -172,27 +178,43 @@ func Test_acquirePidLock(t *testing.T) {
 	lockFile := filepath.Join(tmpDir, "lockfile")
 
 	pl, err := NewPidLock(lockFile)
-	assert.NoError(t, err)
-	require.NotNil(t, pl)
+	require.NoError(t, err)
+	ok, err := pl.TryLock()
+	assert.True(t, ok)
+	require.NoError(t, err)
 
 	pl2, err := NewPidLock(lockFile)
-	assert.Nil(t, pl2)
+	require.NoError(t, err)
+	ok2, err := pl2.TryLock()
+	assert.False(t, ok2)
 	assert.Error(t, err)
+
+	err = pl2.Close()
+	require.NoError(t, err)
 
 	err = pl.Close()
 	require.NoError(t, err)
 	assert.False(t, fileutils.FileExists(lockFile))
 
 	pl, err = NewPidLock(lockFile)
-	assert.NoError(t, err)
-	require.NotNil(t, pl)
+	require.NoError(t, err)
+	ok, err = pl.TryLock()
+	require.NoError(t, err)
+	assert.True(t, ok)
+
 	err = pl.Close(true)
 	require.NoError(t, err)
 	assert.True(t, fileutils.FileExists(lockFile))
 
-	pl2, err = NewPidLock(lockFile)
-	assert.Nil(t, pl2)
+	pl, err = NewPidLock(lockFile)
+	require.NoError(t, err)
+
+	ok, err = pl.TryLock()
+	assert.False(t, ok)
 	assert.Error(t, err)
+
+	err = pl.Close()
+	require.NoError(t, err)
 }
 
 func TestPidExists(t *testing.T) {

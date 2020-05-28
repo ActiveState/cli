@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -21,6 +22,10 @@ func main() {
 	keep := os.Args[2] == "keep"
 	pl, err := osutils.NewPidLock(os.Args[1])
 	if err != nil {
+		log.Fatalf("Could not open lock file: %s", os.Args[1])
+	}
+	ok, _ := pl.TryLock()
+	if !ok {
 		fmt.Printf("DENIED")
 	}
 

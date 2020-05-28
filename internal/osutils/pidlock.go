@@ -22,56 +22,55 @@ import (
 // - The implementation currently does not support a blocking wait operation that returns once the lock can be acquired. If required, it can be extended this way.
 // - Storing the PID inside the lockfile was initially intended to be fall-back mechanism for file systems that do not support locking files.  This is probably unnecessary, but could be extended to communicate with the process currently holding the lock via its PID.
 type PidLock struct {
-	path string
-	file *os.File
+	path   string
+	file   *os.File
+	locked bool
 }
 
 // NewPidLock creates a new PidLock that can be used to get exclusive access to resources between processes
-// If the file at path has been created by a different process and that process is still running, the function returns nil and an error.
 func NewPidLock(path string) (pl *PidLock, err error) {
-	pl = &PidLock{
-		path: path,
-	}
-
-	f, err := os.OpenFile(pl.path, os.O_CREATE|os.O_RDWR, 0666)
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_RDWR, 0666)
 	if err != nil {
 		return nil, errs.Wrap(err, "failed to open lock file %s", path)
 	}
-	pl.file = f
+	return &PidLock{
+		path: path,
+		file: f,
+	}, nil
+}
 
-	err = LockFile(f)
+// TryLock attempts to lock the created lock file. If the lock cannot be acquired, it returns false and an error.
+func (pl *PidLock) TryLock() (locked bool, err error) {
+	err = LockFile(pl.file)
 	if err != nil {
 		// if lock cannot be acquired it usually means that another process is holding the lock
-		f.Close()
-		return nil, errs.Wrap(err, "failed to acquire exclusive lock for lock file %s", path)
+		return false, errs.Wrap(err, "failed to acquire exclusive lock for lock file %s", pl.path)
 	}
 
 	// check if PID can be read and if so, if the process is running
 	b := make([]byte, 100)
-	n, err := f.Read(b)
+	n, err := pl.file.Read(b)
 	if err != nil && err != io.EOF {
-		f.Close()
-		return nil, errs.Wrap(err, "failed to read PID from lockfile %s", path)
+		return false, errs.Wrap(err, "failed to read PID from lockfile %s", pl.path)
 	}
 	if n > 0 {
 		pid, err := strconv.ParseInt(string(b[:n]), 10, 64)
 		if err != nil {
-			f.Close()
-			return nil, errs.Wrap(err, "failed to parse PID from lockfile %s", path)
+			return false, errs.Wrap(err, "failed to parse PID from lockfile %s", pl.path)
 		}
 		if PidExists(int(pid)) {
-			f.Close()
-			return nil, errs.New("cannot acquire lock: pid %d exists", pid)
+			return false, errs.New("cannot acquire lock: pid %d exists", pid)
 		}
 	}
 
 	// write PID into lock file
-	_, err = f.Write([]byte(fmt.Sprintf("%d", os.Getpid())))
+	_, err = pl.file.Write([]byte(fmt.Sprintf("%d", os.Getpid())))
 	if err != nil {
-		return nil, errs.Wrap(err, "failed to write pid to lockfile %s", path)
+		return false, errs.Wrap(err, "failed to write pid to lockfile %s", pl.path)
 	}
 
-	return pl, nil
+	pl.locked = true
+	return true, nil
 }
 
 // Close removes the lock file and releases the lock
@@ -79,6 +78,13 @@ func (pl *PidLock) Close(keepFile ...bool) error {
 	keep := false
 	if len(keepFile) == 1 {
 		keep = keepFile[0]
+	}
+	if !pl.locked {
+		err := pl.file.Close()
+		if err != nil {
+			return errs.Wrap(err, "failed to close unlocked lock file %s", pl.path)
+		}
+		return nil
 	}
 	err := pl.cleanLockFile(keep)
 	if err != nil {
