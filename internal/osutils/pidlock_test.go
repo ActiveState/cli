@@ -194,3 +194,8 @@ func Test_acquirePidLock(t *testing.T) {
 	assert.Nil(t, pl2)
 	assert.Error(t, err)
 }
+
+func TestPidExists(t *testing.T) {
+	assert.True(t, PidExists(os.Getpid()))
+	assert.False(t, PidExists(99999999))
+}
