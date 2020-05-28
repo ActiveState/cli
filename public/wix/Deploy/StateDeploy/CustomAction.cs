@@ -26,8 +26,12 @@ namespace StateDeploy
 
                 // The following commands are needed to redirect the standard output.
                 // This means that it will be redirected to the Process.StandardOutput StreamReader.
-                procStartInfo.RedirectStandardOutput = true;
-                procStartInfo.RedirectStandardError = true;
+
+                // NOTE: Due to progress bar changes in the State Tool we can no longer redirect strout
+                // and strerr output. Once we have a non-interactive mode in the State Tool these lines
+                // can be reenabled
+                // procStartInfo.RedirectStandardOutput = true;
+                // procStartInfo.RedirectStandardError = true;
                 procStartInfo.UseShellExecute = false;
                 // Do not create the black window.
                 procStartInfo.CreateNoWindow = true;
@@ -35,8 +39,12 @@ namespace StateDeploy
                 System.Diagnostics.Process proc = new System.Diagnostics.Process();
                 proc.StartInfo = procStartInfo;
                 proc.Start();
-                session.Log(string.Format("Standard output: {0}", proc.StandardOutput.ReadToEnd()));
-                session.Log(string.Format("Standard error: {0}", proc.StandardError.ReadToEnd()));
+                proc.WaitForExit();
+                
+                // NOTE: See comment above re: progress bar. Can reenable these lines once State Tool
+                // is updated
+                // session.Log(string.Format("Standard output: {0}", proc.StandardOutput.ReadToEnd()));
+                // session.Log(string.Format("Standard error: {0}", proc.StandardError.ReadToEnd()));
             }
             catch (Exception objException)
             {
