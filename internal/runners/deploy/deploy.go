@@ -26,17 +26,16 @@ import (
 type Params struct {
 	Namespace project.Namespaced
 	Path      string
-	Step      Step
 	Force     bool
 	UserScope bool
 }
 
 // RequiresAdministratorRights checks if the requested deploy command requires administrator privileges.
-func RequiresAdministratorRights(p Params) bool {
+func RequiresAdministratorRights(step Step, userScope bool) bool {
 	if rt.GOOS != "windows" {
 		return false
 	}
-	return (p.Step == UnsetStep || p.Step == ConfigureStep) && !p.UserScope
+	return (step == UnsetStep || step == ConfigureStep) && !userScope
 }
 
 type Deploy struct {
@@ -57,7 +56,7 @@ func NewDeploy(step Step, out output.Outputer) *Deploy {
 }
 
 func (d *Deploy) Run(params *Params) error {
-	if RequiresAdministratorRights(*params) {
+	if RequiresAdministratorRights(d.step, params.UserScope) {
 		isAdmin, err := osutils.IsWindowsAdmin()
 		if err != nil {
 			logging.Error("Could not check for windows administrator privileges: %v", err)
