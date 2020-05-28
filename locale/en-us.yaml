@@ -1482,7 +1482,7 @@ auto_update_to_version:
     [BLUE]To avoid auto updating run 'state update --lock' (only recommended for production environments).[/RESET]
 auto_update_permission_err:
   other: |
-    [BLUE]Could not update to the latest available version of the state tool, due to insufficient permissions.[/RESET]
+    [BLUE]Could not update to the latest available version of the state tool due to insufficient permissions.[/RESET]
     [BLUE]To manually update, run 'state update' as a privileged user.[/RESET]
     [BLUE]If you want the state tool to auto-update, please re-install it in a user-writable directory.[/RESET]
 forward_version:

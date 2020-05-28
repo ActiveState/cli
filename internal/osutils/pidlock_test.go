@@ -132,7 +132,7 @@ func Test_acquirePidLockProcesses(t *testing.T) {
 				}()
 			}
 
-			// timeout if test does not finish after five seconds
+			// timeout if test does not finish after 20 seconds
 			go func() {
 				select {
 				case <-ctx.Done():

@@ -9,12 +9,15 @@ import (
 
 // PidExists checks if a process with the given PID exists and is running
 func PidExists(pid int) bool {
+	// this always returns a process on linux...
 	p, err := os.FindProcess(int(pid))
 	if err != nil {
 		return false
 	}
+	// ... so we have to send it a fake signal
 	err = p.Signal(syscall.Signal(0))
 	if err == nil {
+		// process exists on success
 		return true
 	}
 	if err.Error() == "os: process already finished" {
@@ -25,10 +28,10 @@ func PidExists(pid int) bool {
 		return false
 	}
 	switch errno {
-	case syscall.ESRCH:
+	case syscall.ESRCH: // process does not exist if we get search failed error
 		return false
 	case syscall.EPERM:
-		return true
+		return true // process exists if we do not have permissions to send signal
 	}
 	return false
 }

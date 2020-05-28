@@ -65,13 +65,12 @@ func NewPidLock(path string) (pl *PidLock, err error) {
 		}
 	}
 
-	// write PID in lock file
+	// write PID into lock file
 	_, err = f.Write([]byte(fmt.Sprintf("%d", os.Getpid())))
 	if err != nil {
 		return nil, err
 	}
 
-	// defer release of lock
 	return pl, nil
 }
 
