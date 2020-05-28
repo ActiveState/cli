@@ -3,9 +3,10 @@
 package osutils
 
 import (
-	"fmt"
 	"os"
 	"syscall"
+
+	"github.com/ActiveState/cli/internal/errs"
 )
 
 // ErrorLockViolation is the error no returned if a lock fails on Windows
@@ -23,10 +24,10 @@ func LockFile(f *os.File) error {
 
 	if errNo > 0 {
 		if errNo == ErrorLockViolation || errNo == syscall.ERROR_IO_PENDING {
-			return fmt.Errorf("cannot obtain lock")
+			return errs.New("cannot obtain lock")
 		}
 
-		return fmt.Errorf("unknown error: %d", errNo)
+		return errs.New("unknown error: %d", errNo)
 	}
 	return nil
 }
@@ -35,7 +36,7 @@ func LockFile(f *os.File) error {
 func LockRelease(f *os.File) error {
 	// mark the file as unlocked
 	if _, errNo := unlockFileEx(syscall.Handle(f.Fd()), 0, 1, 0, &syscall.Overlapped{}); errNo > 0 {
-		return fmt.Errorf("error releasing windows file lock. errno: %d", errNo)
+		return errs.New("error releasing windows file lock. errno: %d", errNo)
 	}
 	return nil
 }
@@ -43,11 +44,11 @@ func LockRelease(f *os.File) error {
 func (pl *PidLock) cleanLockFile(keep bool) error {
 	err := LockRelease(pl.file)
 	if err != nil {
-		return err
+		return errs.Wrap(err, "failed to release lock on lock file %s", pl.path)
 	}
 	err = pl.file.Close()
 	if err != nil {
-		return err
+		return errs.Wrap(err, "failed to close lock file %s", pl.path)
 	}
 	// On Windows, we have to remove the file after it is closed.
 	// It is not an error if it fails, because that could mean that another

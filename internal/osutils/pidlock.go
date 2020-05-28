@@ -35,7 +35,7 @@ func NewPidLock(path string) (pl *PidLock, err error) {
 
 	f, err := os.OpenFile(pl.path, os.O_CREATE|os.O_RDWR, 0666)
 	if err != nil {
-		return nil, err
+		return nil, errs.Wrap(err, "failed to open lock file %s", path)
 	}
 	pl.file = f
 
@@ -43,7 +43,7 @@ func NewPidLock(path string) (pl *PidLock, err error) {
 	if err != nil {
 		// if lock cannot be acquired it usually means that another process is holding the lock
 		f.Close()
-		return nil, err
+		return nil, errs.Wrap(err, "failed to acquire exclusive lock for lock file %s", path)
 	}
 
 	// check if PID can be read and if so, if the process is running
@@ -51,13 +51,13 @@ func NewPidLock(path string) (pl *PidLock, err error) {
 	n, err := f.Read(b)
 	if err != nil && err != io.EOF {
 		f.Close()
-		return nil, err
+		return nil, errs.Wrap(err, "failed to read PID from lockfile %s", path)
 	}
 	if n > 0 {
 		pid, err := strconv.ParseInt(string(b[:n]), 10, 64)
 		if err != nil {
 			f.Close()
-			return nil, err
+			return nil, errs.Wrap(err, "failed to parse PID from lockfile %s", path)
 		}
 		if PidExists(int(pid)) {
 			f.Close()
@@ -68,7 +68,7 @@ func NewPidLock(path string) (pl *PidLock, err error) {
 	// write PID into lock file
 	_, err = f.Write([]byte(fmt.Sprintf("%d", os.Getpid())))
 	if err != nil {
-		return nil, err
+		return nil, errs.Wrap(err, "failed to write pid to lockfile %s", path)
 	}
 
 	return pl, nil

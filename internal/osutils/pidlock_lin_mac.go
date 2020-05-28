@@ -5,6 +5,8 @@ package osutils
 import (
 	"os"
 	"syscall"
+
+	"github.com/ActiveState/cli/internal/errs"
 )
 
 // PidExists checks if a process with the given PID exists and is running
@@ -47,7 +49,11 @@ func LockFile(f *os.File) error {
 		Type:   syscall.F_RDLCK,
 	}
 
-	return syscall.FcntlFlock(f.Fd(), syscall.F_SETLK, ft)
+	err := syscall.FcntlFlock(f.Fd(), syscall.F_SETLK, ft)
+	if err != nil {
+		return errs.Wrap(err, "failed to lock file")
+	}
+	return nil
 }
 
 func LockRelease(f *os.File) error {
@@ -67,16 +73,16 @@ func (pl *PidLock) cleanLockFile(keep bool) error {
 	if !keep {
 		err := os.Remove(pl.path)
 		if err != nil {
-			return err
+			return errs.Wrap(err, "failed to remove lock file %s", pl.path)
 		}
 	}
 	err := LockRelease(pl.file)
 	if err != nil {
-		return err
+		return errs.Wrap(err, "failed to release lock on lock file %s", pl.path)
 	}
 	err = pl.file.Close()
 	if err != nil {
-		return err
+		return errs.Wrap(err, "failed to close lock file %s", pl.path)
 	}
 	return nil
 }
