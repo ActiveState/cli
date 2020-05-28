@@ -120,7 +120,7 @@ func AutoUpdate(pjPath string, out output.Outputer) (updated bool, resultVersion
 	err = update.Run(out)
 	if err != nil {
 		if os.IsPermission(err) {
-			out.Notice(locale.T("auto_update_permission_err"))
+			out.Error(locale.T("auto_update_permission_err"))
 		}
 		logging.Error("Unable to self update: %s", err)
 		return false, ""
