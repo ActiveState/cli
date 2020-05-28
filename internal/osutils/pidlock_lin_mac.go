@@ -58,3 +58,22 @@ func LockRelease(f *os.File) error {
 
 	return syscall.FcntlFlock(f.Fd(), syscall.F_SETLK, ft)
 }
+
+func (pl *PidLock) cleanLockFile(keep bool) error {
+	// On Linux we have to remove the file before removing the file lock to avoid race conditions.
+	if !keep {
+		err := os.Remove(pl.path)
+		if err != nil {
+			return err
+		}
+	}
+	err := LockRelease(pl.file)
+	if err != nil {
+		return err
+	}
+	err = pl.file.Close()
+	if err != nil {
+		return err
+	}
+	return nil
+}

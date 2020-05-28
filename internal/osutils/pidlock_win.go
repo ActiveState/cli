@@ -39,3 +39,21 @@ func LockRelease(f *os.File) error {
 	}
 	return nil
 }
+
+func (pl *PidLock) cleanLockFile(keep bool) error {
+	err := LockRelease(pl.file)
+	if err != nil {
+		return err
+	}
+	err = pl.file.Close()
+	if err != nil {
+		return err
+	}
+	// On Windows, we have to remove the file after it is closed.
+	// It is not an error if it fails, because that could mean that another
+	// process has acquired the lock for the file already.
+	if !keep {
+		_ = os.Remove(pl.path)
+	}
+	return nil
+}

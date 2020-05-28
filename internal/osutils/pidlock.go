@@ -12,6 +12,15 @@ import (
 
 // PidLock represents a lock file that can be used for exclusive access to
 // resources that should be accessed by only one process at a time.
+//
+// The characteristics of the lock are:
+// - Lockfiles are removed after use
+// - Even if the lockfiles are not removed (because a process has been terminated prematurely), it is unlocked
+// - On file-systems that support advisory locks via fcntl or LockFileEx, all file system operations are atomic
+//
+// Notes:
+// - The implementation currently does not support a blocking wait operation that returns once the lock can be acquired. If required, it can be extended this way.
+// - Storing the PID inside the lockfile was initially intended to be fall-back mechanism for file systems that do not support locking files.  This is probably unnecessary, but could be extended to communicate with the process currently holding the lock via its PID.
 type PidLock struct {
 	path string
 	file *os.File
@@ -72,19 +81,7 @@ func (pl *PidLock) Close(keepFile ...bool) error {
 	if len(keepFile) == 1 {
 		keep = keepFile[0]
 	}
-	err := LockRelease(pl.file)
-	if err != nil {
-		fmt.Printf("error releasing lock: %v\n", err)
-		return err
-	}
-	err = pl.file.Close()
-	if err != nil {
-		return err
-	}
-	if keep {
-		return nil
-	}
-	err = os.Remove(pl.path)
+	err := pl.cleanLockFile(keep)
 	if err != nil {
 		return err
 	}
