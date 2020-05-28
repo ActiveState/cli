@@ -90,7 +90,7 @@ func NewResolveRecipesBadRequest() *ResolveRecipesBadRequest {
 If the order is invalid
 */
 type ResolveRecipesBadRequest struct {
-	Payload *inventory_models.RestAPIValidationError
+	Payload *inventory_models.V1SolverValidationError
 }
 
 func (o *ResolveRecipesBadRequest) Error() string {
@@ -99,7 +99,7 @@ func (o *ResolveRecipesBadRequest) Error() string {
 
 func (o *ResolveRecipesBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(inventory_models.RestAPIValidationError)
+	o.Payload = new(inventory_models.V1SolverValidationError)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -123,7 +123,7 @@ If there is an error processing the order
 type ResolveRecipesDefault struct {
 	_statusCode int
 
-	Payload *inventory_models.RestAPIError
+	Payload *inventory_models.V1SolverError
 }
 
 // Code gets the status code for the resolve recipes default response
@@ -137,7 +137,7 @@ func (o *ResolveRecipesDefault) Error() string {
 
 func (o *ResolveRecipesDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(inventory_models.RestAPIError)
+	o.Payload = new(inventory_models.V1SolverError)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

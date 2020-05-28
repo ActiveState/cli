@@ -14,7 +14,7 @@ import (
 )
 
 func (suite *ActivateIntegrationTestSuite) TestActivate_EditorV0() {
-	suite.testOutput("editor.v0")
+	suite.testOutput("editor.v0", "[activated-JSON]")
 }
 
 func (suite *AuthIntegrationTestSuite) TestAuthOutput_EditorV0() {

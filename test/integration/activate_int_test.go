@@ -195,14 +195,12 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
 	cp.ExpectExitCode(0)
 }
 
-func (suite *ActivateIntegrationTestSuite) testOutput(method string) {
+func (suite *ActivateIntegrationTestSuite) testOutput(method, expectation string) {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("activate", "ActiveState-CLI/Python3", "--output", method)
-	cp.Expect("Where would you like to checkout")
-	cp.SendLine(cp.WorkDirectory())
-	cp.Expect("[activated-JSON]")
+	cp := ts.Spawn("activate", "ActiveState-CLI/Python3", "--output", method, "--path", ts.Dirs.Work)
+	cp.Expect(expectation)
 	cp.ExpectExitCode(0)
 }
 
@@ -290,7 +288,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_InterruptedInstallation(
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivate_JSON() {
-	suite.testOutput("json")
+	suite.testOutput("json", `"ACTIVESTATE_ACTIVATED":`)
 }
 
 func TestActivateIntegrationTestSuite(t *testing.T) {

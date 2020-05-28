@@ -7,9 +7,9 @@ import (
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
-	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/sysinfo"
@@ -51,14 +51,10 @@ func (r *Recipe) Run(params *RecipeParams) error {
 }
 
 func recipeData(proj *project.Project, commitID, platform string) ([]byte, *failures.Failure) {
-	pj, fail := model.FetchProjectByName(proj.Owner(), proj.Name())
-	if fail != nil {
-		return nil, fail
-	}
 
 	cid := strfmt.UUID(commitID)
 
-	r, fail := fetchRecipe(pj, cid, platform)
+	r, fail := fetchRecipe(proj, cid, platform)
 	if fail != nil {
 		return nil, fail
 	}
@@ -76,14 +72,26 @@ func beautifyJSON(d []byte) ([]byte, error) {
 	return d, nil
 }
 
-func fetchRecipe(pj *mono_models.Project, commitID strfmt.UUID, platform string) (string, *failures.Failure) {
+func fetchRecipe(proj *project.Project, commitID strfmt.UUID, platform string) (string, *failures.Failure) {
 	if platform == "" {
 		platform = sysinfo.OS().String()
 	}
 
-	if commitID != "" {
-		return model.FetchRawRecipeForCommitAndPlatform(commitID, platform)
+	if commitID == "" {
+		pj, fail := model.FetchProjectByName(proj.Owner(), proj.Name())
+		if fail != nil {
+			return "", fail
+		}
+
+		branch, fail := model.DefaultBranchForProject(pj)
+		if fail != nil {
+			return "", fail
+		}
+		if branch.CommitID == nil {
+			return "", model.FailNoCommit.New(locale.T("err_no_commit"))
+		}
+		commitID = *branch.CommitID
 	}
 
-	return model.FetchRawRecipeForPlatform(pj, platform)
+	return model.FetchRawRecipeForCommitAndPlatform(commitID, proj.Owner(), proj.Name(), platform)
 }
