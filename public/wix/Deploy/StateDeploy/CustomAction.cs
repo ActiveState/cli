@@ -27,7 +27,7 @@ namespace StateDeploy
                 // The following commands are needed to redirect the standard output.
                 // This means that it will be redirected to the Process.StandardOutput StreamReader.
 
-                // NOTE: Due to progress bar changes in the State Tool we can no longer redirect strout
+                // NOTE: Due to progress bar changes in the State Tool we can no longer redirect stdout
                 // and strerr output. Once we have a non-interactive mode in the State Tool these lines
                 // can be enabled
                 // procStartInfo.RedirectStandardOutput = true;
