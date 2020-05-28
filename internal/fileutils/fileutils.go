@@ -859,9 +859,9 @@ func SymlinkTarget(symlink string) (string, error) {
 		return "", errs.New("%s is not a symlink", symlink)
 	}
 
-	evalDest, err := filepath.EvalSymlinks(symlink)
+	evalDest, err := os.Readlink(symlink)
 	if err != nil {
-		return "", errs.Wrap(err, "Could not eval symlink: %s", symlink)
+		return "", errs.Wrap(err, "Could not resolve symlink: %s", symlink)
 	}
 
 	return evalDest, nil
