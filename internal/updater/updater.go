@@ -174,19 +174,24 @@ func (u *Updater) update(out output.Outputer) error {
 		return err
 	}
 
-	logging.Debug("Attempting to open executable path at: %s", path)
-
+	// Synchronize the update process between state tool instances by acquiring a lock file
 	lockFile := filepath.Join(filepath.Dir(path), fmt.Sprintf(".%s.update-lock", "state"))
+	logging.Debug("Attempting to open lock file at %s", lockFile)
 	pl, err := osutils.NewPidLock(lockFile)
 	if err != nil {
 		return err
 	}
 	defer pl.Close()
+
+	// This will succeed for only one of several concurrently state tool
+	// instances. By returning otherwise, we preventing that we download the
+	// same new state tool version several times.
 	_, err = pl.TryLock()
 	if err != nil {
 		return err
 	}
 
+	logging.Debug("Attempting to open executable path at: %s", path)
 	old, err := os.Open(path)
 	if err != nil {
 		_ = fileutils.LogPath(path)
