@@ -203,21 +203,19 @@ func (suite *DeployIntegrationTestSuite) TestDeploySymlink() {
 	cp.ExpectExitCode(1)
 	suite.InstallAndAssert(ts)
 
-	cp = ts.Spawn("deploy", "symlink", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work)
+	pathDir := fileutils.TempDirUnsafe()
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("deploy", "symlink", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work),
+		e2e.AppendEnv(fmt.Sprintf("PATH=%s", pathDir)), // Avoid conflicts
+	)
 
 	cp.Expect("Symlinking executables")
 	cp.ExpectExitCode(0)
 
-	suite.True(fileutils.FileExists(filepath.Join(ts.Dirs.Work, "bin", "python3"+symlinkExt)), "Python3 symlink should have been written")
-
-	// Linux symlinks to /usr/local/bin, so we can verify right away
 	if runtime.GOOS == "linux" {
-		execPath, err := exec.LookPath("python3")
-		suite.Require().NoError(err)
-		link, err := os.Readlink(execPath)
-		suite.Require().NoError(err)
-		suite.Contains(link, ts.Dirs.Work, "python3 executable resolves to the one on our target dir")
+		suite.True(fileutils.FileExists(filepath.Join(pathDir, "python3"+symlinkExt)), "Python3 symlink should have been written to PATH")
 	}
+	suite.True(fileutils.FileExists(filepath.Join(ts.Dirs.Work, "bin", "python3"+symlinkExt)), "Python3 symlink should have been written")
 }
 
 func (suite *DeployIntegrationTestSuite) TestDeployReport() {
