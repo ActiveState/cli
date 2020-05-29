@@ -21,11 +21,6 @@ namespace InstallStateTool
             string scriptPath = Path.Combine(tempDir, "install.ps1");
 
             StatusMessage(session, "Installing State Tool...");
-            MessageResult incrementResult = IncrementProgressBar(session, 2);
-            if (incrementResult == MessageResult.Cancel)
-            {
-                return ActionResult.UserExit;
-            }
 
             try
             {
@@ -81,15 +76,6 @@ namespace InstallStateTool
             record[3] = "Incrementing tick [1] of [2]";
 
             session.Message(InstallMessage.ActionStart, record);
-        }
-
-        public static MessageResult IncrementProgressBar(Session session, int progressPercentage)
-        {
-            var record = new Record(3);
-            record[1] = 2; // "ProgressReport" message 
-            record[2] = progressPercentage.ToString(); // ticks to increment 
-            record[3] = 0; // ignore 
-            return session.Message(InstallMessage.Progress, record);
         }
 
     }
