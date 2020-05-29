@@ -1,8 +1,10 @@
 package version
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"os/exec"
 	"regexp"
 
@@ -44,10 +46,11 @@ type Incrementation struct {
 
 // NewIncrementation returns a version service initialized with provider and environment information
 func NewIncrementation(typer IncrementTyper, branchName string, buildEnv Env) (*Incrementation, error) {
-	master, err := masterVersion()
+	master, err := masterVersion(branchName, buildEnv)
 	if err != nil {
 		return nil, err
 	}
+	fmt.Printf("Base version for incrementer is: %s\n", master.String())
 
 	return &Incrementation{
 		branch: branchName,
@@ -90,15 +93,46 @@ func (v *Incrementation) Type() (string, error) {
 	return Zeroed, nil
 }
 
-func masterVersion() (*semver.Version, error) {
-	cmd := exec.Command(constants.CommandName, "--version")
-	output, err := cmd.Output()
+func fetchLatestUpdateJSON(branch string) ([]byte, error) {
+	// linux-amd64.json is our single source of truth for the latest version number
+	stateURL := "https://s3.ca-central-1.amazonaws.com/cli-update/update/state/%s/linux-amd64.json"
+	resp, err := http.Get(fmt.Sprintf(stateURL, branch))
 	if err != nil {
-		errMsg := err.Error()
-		if ee, ok := err.(*exec.ExitError); ok {
-			errMsg = fmt.Sprintf("Stderr: %s, code: %s", ee.Stderr, errMsg)
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	type versionJSON struct {
+		Version string
+	}
+	var v versionJSON
+	err = json.NewDecoder(resp.Body).Decode(&v)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Printf(": %v\n", v)
+
+	return []byte(v.Version), err
+}
+
+func masterVersion(branchName string, buildEnv Env) (*semver.Version, error) {
+	var output []byte
+	var err error
+	if buildEnv == RemoteEnv {
+		output, err = fetchLatestUpdateJSON(branchName)
+		if err != nil {
+			return nil, err
 		}
-		return nil, errors.New(errMsg)
+	} else {
+		cmd := exec.Command(constants.CommandName, "--version")
+		output, err = cmd.Output()
+		if err != nil {
+			errMsg := err.Error()
+			if ee, ok := err.(*exec.ExitError); ok {
+				errMsg = fmt.Sprintf("Stderr: %s, code: %s", ee.Stderr, errMsg)
+			}
+			return nil, errors.New(errMsg)
+		}
 	}
 
 	regex := regexp.MustCompile(`\d+\.\d+\.\d+-(SHA)?[a-f0-9]+`)
