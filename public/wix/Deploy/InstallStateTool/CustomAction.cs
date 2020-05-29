@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Net;
 using Microsoft.Deployment.WindowsInstaller;
 
 namespace InstallStateTool
@@ -26,12 +27,16 @@ namespace InstallStateTool
                 return ActionResult.UserExit;
             }
 
-            string downloadCmd = "cmd " + "/c " + string.Format("powershell \"(New-Object Net.WebClient).DownloadFile('https://platform.activestate.com/dl/cli/install.ps1', '{0}')\"", scriptPath);
-            session.Log(string.Format("Running download command: {0}", downloadCmd));
-            ActionResult result = RunCommand(session, downloadCmd);
-            if (result.Equals(ActionResult.Failure)) {
-                return result;
+            try
+            {
+                WebClient client = new WebClient();
+                client.DownloadFile("https://platform.activestate.com/dl/cli/install.ps1", scriptPath);
+            } catch (WebException e)
+            {
+                session.Log(string.Format("Encoutered exception downloading file: {0}", e.ToString()));
+                return ActionResult.Failure;
             }
+
 
             string installCmd = string.Format("powershell \"{0} -n\"", scriptPath);
             session.Log(string.Format("Running install command: {0}", installCmd));
