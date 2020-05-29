@@ -5,10 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os/exec"
 	"regexp"
 
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/blang/semver"
 )
 
@@ -40,23 +38,15 @@ const (
 type Incrementation struct {
 	branch string
 	env    Env
-	master *semver.Version
 	typer  IncrementTyper
 }
 
 // NewIncrementation returns a version service initialized with provider and environment information
 func NewIncrementation(typer IncrementTyper, branchName string, buildEnv Env) (*Incrementation, error) {
-	master, err := masterVersion(branchName, buildEnv)
-	if err != nil {
-		return nil, err
-	}
-	fmt.Printf("Base version for incrementer is: %s\n", master.String())
-
 	return &Incrementation{
 		branch: branchName,
 		env:    buildEnv,
 		typer:  typer,
-		master: master,
 	}, nil
 }
 
@@ -98,12 +88,12 @@ func (v *Incrementation) Type() (string, error) {
 	return Zeroed, nil
 }
 
-func fetchLatestUpdateJSON(branch string) ([]byte, error) {
+func fetchLatestUpdateJSON(branch string) (string, error) {
 	// linux-amd64.json is our single source of truth for the latest version number
 	stateURL := "https://s3.ca-central-1.amazonaws.com/cli-update/update/state/%s/linux-amd64.json"
 	resp, err := http.Get(fmt.Sprintf(stateURL, branch))
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	defer resp.Body.Close()
 
@@ -113,34 +103,24 @@ func fetchLatestUpdateJSON(branch string) ([]byte, error) {
 	var v versionJSON
 	err = json.NewDecoder(resp.Body).Decode(&v)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
-	return []byte(v.Version), err
+	return v.Version, err
 }
 
 func masterVersion(branchName string, buildEnv Env) (*semver.Version, error) {
-	var output []byte
+	versionString := "0.0.0"
 	var err error
 	if needsIncrement(buildEnv, branchName) {
-		output, err = fetchLatestUpdateJSON(branchName)
+		versionString, err = fetchLatestUpdateJSON(branchName)
 		if err != nil {
 			return nil, err
-		}
-	} else {
-		cmd := exec.Command(constants.CommandName, "--version")
-		output, err = cmd.Output()
-		if err != nil {
-			errMsg := err.Error()
-			if ee, ok := err.(*exec.ExitError); ok {
-				errMsg = fmt.Sprintf("Stderr: %s, code: %s", ee.Stderr, errMsg)
-			}
-			return nil, errors.New(errMsg)
 		}
 	}
 
 	regex := regexp.MustCompile(`\d+\.\d+\.\d+-(SHA)?[a-f0-9]+`)
-	match := regex.FindString(string(output))
+	match := regex.FindString(versionString)
 	if match == "" {
 		return nil, errors.New("could not determine master version")
 	}
@@ -157,11 +137,7 @@ func masterVersion(branchName string, buildEnv Env) (*semver.Version, error) {
 func (v *Incrementation) incrementFromEnvironment() (*semver.Version, error) {
 	switch v.env {
 	case LocalEnv:
-		copy := *v.master
-		copy.Major = 0
-		copy.Minor = 0
-		copy.Patch = 0
-		return &copy, nil
+		return semver.New("0.0.0")
 	case RemoteEnv:
 		return v.increment()
 	default:
@@ -170,13 +146,18 @@ func (v *Incrementation) incrementFromEnvironment() (*semver.Version, error) {
 }
 
 func (v *Incrementation) increment() (*semver.Version, error) {
+	baseVersion, err := masterVersion(v.branch, v.env)
+	if err != nil {
+		return nil, err
+	}
 	increment, err := v.Type()
+	fmt.Printf("Base version for increment is: %s\n", baseVersion)
 
 	if err != nil {
 		return nil, err
 	}
 
-	copy := *v.master
+	copy := *baseVersion
 	switch increment {
 	case Zeroed:
 		copy.Major = 0
