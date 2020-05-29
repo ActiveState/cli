@@ -1468,7 +1468,7 @@ err_no_recipes:
 err_solve_order:
   other: "Could not solve order: {{.V0}}"
 err_order_bad_request:
-  other: "Bad request while resolving order: {{.V0}}"
+  other: "Bad request while resolving order: Please visit https://platform.activestate.com/{{.V0}}/{{.V1}}/customize to see details about the error: {{.V2}}"
 err_order_unknown:
   other: Unknown error resolving order"
 using_cached_env:
