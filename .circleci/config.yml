@@ -66,7 +66,6 @@ defaults:
           if [[ "$BRANCH" == "master" ]]; then
             state run deploy-updates
           fi
-          state run deploy-version
     storeArtifacts: &storeArtifacts
       store_artifacts:
         path: /tmp/test-results

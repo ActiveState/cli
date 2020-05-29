@@ -62,11 +62,6 @@ scripts:
     value: |
       go run scripts/s3-deployer/main.go public/update ca-central-1 cli-update update/state
       go run scripts/s3-deployer/main.go public/install.ps1 ca-central-1 cli-update update/state/install.ps1
-  - name: deploy-version
-    description: Deploy the version file to S3. This steps is automated by CI and should never be ran manually unless you KNOW WHAT YOU'RE DOING.
-    constraints:
-    value: |
-      go run scripts/s3-deployer/main.go public/update/versions ca-central-1 cli-update update/state/versions
   - name: generate-api-client
     description: Generates the mono-api client files
     value: |
