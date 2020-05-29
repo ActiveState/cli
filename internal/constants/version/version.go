@@ -83,10 +83,15 @@ func (v *Incrementation) IncrementWithRevision(revision string) (*semver.Version
 	return version, nil
 }
 
+// needsIncrement whether we need to an increment for the environment
+func needsIncrement(env Env, branch string) bool {
+	return env != LocalEnv && (branch == "master" || branch == "unstable")
+}
+
 // Type returns the string representation of the version bump
 // ie. patch, minor, or major
 func (v *Incrementation) Type() (string, error) {
-	if v.env != LocalEnv && (v.branch == "master" || v.branch == "unstable") {
+	if needsIncrement(v.env, v.branch) {
 		return v.typer.IncrementType()
 	}
 
@@ -118,7 +123,7 @@ func fetchLatestUpdateJSON(branch string) ([]byte, error) {
 func masterVersion(branchName string, buildEnv Env) (*semver.Version, error) {
 	var output []byte
 	var err error
-	if buildEnv == RemoteEnv {
+	if needsIncrement(buildEnv, branchName) {
 		output, err = fetchLatestUpdateJSON(branchName)
 		if err != nil {
 			return nil, err
@@ -166,15 +171,8 @@ func (v *Incrementation) incrementFromEnvironment() (*semver.Version, error) {
 }
 
 func (v *Incrementation) increment() (*semver.Version, error) {
-	var increment string
-	var err error
+	increment, err := v.Type()
 
-	switch v.branch {
-	case "master", "unstable":
-		increment, err = v.typer.IncrementType()
-	default:
-		increment = Zeroed
-	}
 	if err != nil {
 		return nil, err
 	}
