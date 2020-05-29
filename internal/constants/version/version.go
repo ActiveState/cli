@@ -115,7 +115,6 @@ func fetchLatestUpdateJSON(branch string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf(": %v\n", v)
 
 	return []byte(v.Version), err
 }
