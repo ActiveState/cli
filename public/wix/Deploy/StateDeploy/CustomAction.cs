@@ -86,11 +86,11 @@ namespace StateDeploy
             session.Message(InstallMessage.ActionStart, record);
         }
 
-        public static MessageResult IncrementProgressBar(Session session, int progressPercentage)
+        public static MessageResult IncrementProgressBar(Session session, int progressTicks)
         {
             var record = new Record(3);
             record[1] = 2; // "ProgressReport" message 
-            record[2] = progressPercentage.ToString(); // ticks to increment 
+            record[2] = progressTicks.ToString(); // ticks to increment 
             record[3] = 0; // ignore 
             return session.Message(InstallMessage.Progress, record);
         }
