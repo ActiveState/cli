@@ -10,6 +10,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/config" // MUST be first!
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -119,7 +120,7 @@ func AutoUpdate(pjPath string, out output.Outputer) (updated bool, resultVersion
 	logging.Debug("Self-updating.")
 	err = update.Run(out)
 	if err != nil {
-		if os.IsPermission(err) {
+		if os.IsPermission(errs.InnerError(err)) {
 			out.Error(locale.T("auto_update_permission_err"))
 		}
 		logging.Error("Unable to self update: %s", err)

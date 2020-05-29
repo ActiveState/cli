@@ -1,8 +1,10 @@
 package update
 
 import (
+	"os"
+
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
@@ -107,11 +109,13 @@ func (u *Update) runUpdateGlobal() error {
 	}
 
 	if err = up.Run(u.out); err != nil {
-		failures.Handle(err, locale.T("err_update_failed"))
+		if os.IsPermission(errs.InnerError(err)) {
+			return locale.WrapError(err, "err_update_failed_due_to_permissions", "Update failed due to permission error.  You may have to re-run the command as a privileged user.")
+		}
 		return locale.WrapError(err, "err_update_failed", "Update failed, please try again later or try reinstalling the State Tool.")
 	}
 
-	u.out.Print(locale.Tl("version_updated", "Version updated to {{.V0}}", constants.Version))
+	u.out.Print(locale.Tl("version_updated", "Version updated to {{.V0}}", info.Version))
 	return nil
 }
 
