@@ -88,7 +88,7 @@ func (v *Incrementation) Type() (string, error) {
 	return Zeroed, nil
 }
 
-func fetchLatestUpdateJSON(branch string) (string, error) {
+func fetchLatestVersionString(branch string) (string, error) {
 	// linux-amd64.json is our single source of truth for the latest version number
 	stateURL := "https://s3.ca-central-1.amazonaws.com/cli-update/update/state/%s/linux-amd64.json"
 	resp, err := http.Get(fmt.Sprintf(stateURL, branch))
@@ -110,13 +110,13 @@ func fetchLatestUpdateJSON(branch string) (string, error) {
 }
 
 func masterVersion(branchName string, buildEnv Env) (*semver.Version, error) {
-	versionString := "0.0.0"
 	var err error
-	if needsIncrement(buildEnv, branchName) {
-		versionString, err = fetchLatestUpdateJSON(branchName)
-		if err != nil {
-			return nil, err
-		}
+	if !needsIncrement(buildEnv, branchName) {
+		return semver.New("0.0.0")
+	}
+	versionString, err := fetchLatestVersionString(branchName)
+	if err != nil {
+		return nil, err
 	}
 
 	regex := regexp.MustCompile(`\d+\.\d+\.\d+-(SHA)?[a-f0-9]+`)
