@@ -46,11 +46,12 @@ defaults:
         command: |
           set -e
           BRANCH=$(git rev-parse --abbrev-ref HEAD)
-          if [[ "$BRANCH" == "master" ]]; then
-            export BRANCH_OVERRIDE=unstable
-          fi
           state run build
-          state run generate-update
+          if [[ "$BRANCH" == "master" ]]; then
+            # Create updates for the master branch and the unstable branch (Currently they are the same)
+            state run generate-update
+            BRANCH_OVERRIDE=unstable state run generate-update
+          fi
     runIntegrationTests: &runIntegrationTests
       run:
         name: Run integration tests
