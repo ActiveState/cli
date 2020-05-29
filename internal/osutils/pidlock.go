@@ -88,7 +88,7 @@ func (pl *PidLock) Close(keepFile ...bool) error {
 	}
 	err := pl.cleanLockFile(keep)
 	if err != nil {
-		return err
+		return errs.Wrap(err, "failed to remove lock file")
 	}
 	return nil
 }

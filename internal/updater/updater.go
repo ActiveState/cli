@@ -14,6 +14,7 @@ import (
 	"github.com/kardianos/osext"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
@@ -179,7 +180,7 @@ func (u *Updater) update(out output.Outputer) error {
 	logging.Debug("Attempting to open lock file at %s", lockFile)
 	pl, err := osutils.NewPidLock(lockFile)
 	if err != nil {
-		return err
+		return errs.Wrap(err, "could not create pid lock file for update process")
 	}
 	defer pl.Close()
 
@@ -188,7 +189,7 @@ func (u *Updater) update(out output.Outputer) error {
 	// same new state tool version several times.
 	_, err = pl.TryLock()
 	if err != nil {
-		return err
+		return errs.Wrap(err, "failed to acquire lock for update process")
 	}
 
 	logging.Debug("Attempting to open executable path at: %s", path)
