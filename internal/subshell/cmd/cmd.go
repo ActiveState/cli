@@ -93,9 +93,8 @@ func (v *SubShell) Quote(value string) string {
 
 // Activate - see subshell.SubShell
 func (v *SubShell) Activate() *failures.Failure {
-	env := sscommon.EscapeEnv(v.env)
 	var fail *failures.Failure
-	if v.rcFile, fail = sscommon.SetupProjectRcFile("config.bat", ".bat", env); fail != nil {
+	if v.rcFile, fail = sscommon.SetupProjectRcFile("config.bat", ".bat", v.env); fail != nil {
 		return fail
 	}
 
