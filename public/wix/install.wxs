@@ -3,7 +3,7 @@
     <Product Name='ActiveState State Tool' Manufacturer='ActiveState'
         Id='72781F65-49A7-47F5-9BA8-B25294271E09' 
         UpgradeCode='50D1C035-D6CB-4F15-A458-94E385B0A28D'
-        Language='1033' Codepage='1252' Version='0.9.17'>
+        Language='1033' Codepage='1252' Version='{{.Version}}'>
         <Package Id='*' Keywords='Installer' Description="ActiveState's State Tool Installer"
             Comments='State Tool is a registered trademark of ActiveState' Manufacturer='ActiveState'
             InstallerVersion='100' Languages='1033' Compressed='yes' SummaryCodepage='1252' />

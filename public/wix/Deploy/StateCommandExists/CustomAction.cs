@@ -16,10 +16,13 @@ namespace StateCommandExists
             {
                 var fullPath = Path.Combine(path, "state.exe");
                 if (File.Exists(fullPath))
+                {
+                    session["STATE_TOOL_INSTALLED"] = "true";
                     return ActionResult.Success;
+                }
             }
-            session.Message(InstallMessage.Error, new Record { FormatString = "State Tool installation does not exist on system, please install the State Tool and try again." });
-            return ActionResult.Failure;
+            session["STATE_TOOL_INSTALLED"] = "false";
+            return ActionResult.Success;
         }
     }
 }

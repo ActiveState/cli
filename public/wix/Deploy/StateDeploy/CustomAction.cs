@@ -11,6 +11,12 @@ namespace StateDeploy
         {
             session.Log("Starting state deploy");
 
+            StatusMessage(session, string.Format("Deploying project {0}...", session.CustomActionData["PROJECT_NAME"]));
+            MessageResult incrementResult = IncrementProgressBar(session, 3);
+            if (incrementResult == MessageResult.Cancel)
+            {
+                return ActionResult.UserExit;
+            }
             string deployCmd = BuildDeployCmd(session);
             session.Log(string.Format("Executing deploy command: {0}", deployCmd));
             try
@@ -20,8 +26,13 @@ namespace StateDeploy
 
                 // The following commands are needed to redirect the standard output.
                 // This means that it will be redirected to the Process.StandardOutput StreamReader.
-                procStartInfo.RedirectStandardOutput = true;
-                procStartInfo.RedirectStandardError = true;
+
+                // NOTE: Due to progress bar changes in the State Tool we can no longer redirect stdout
+                // and strerr output. Once we have a non-interactive mode in the State Tool these lines
+                // can be enabled
+                // procStartInfo.RedirectStandardOutput = true;
+                // procStartInfo.RedirectStandardError = true;
+
                 procStartInfo.UseShellExecute = false;
                 // Do not create the black window.
                 procStartInfo.CreateNoWindow = true;
@@ -29,8 +40,12 @@ namespace StateDeploy
                 System.Diagnostics.Process proc = new System.Diagnostics.Process();
                 proc.StartInfo = procStartInfo;
                 proc.Start();
-                session.Log(string.Format("Standard output: {0}", proc.StandardOutput.ReadToEnd()));
-                session.Log(string.Format("Standard error: {0}", proc.StandardError.ReadToEnd()));
+                proc.WaitForExit();
+                
+                // NOTE: See comment above re: progress bar. Can enable these lines once State Tool
+                // is updated
+                // session.Log(string.Format("Standard output: {0}", proc.StandardOutput.ReadToEnd()));
+                // session.Log(string.Format("Standard error: {0}", proc.StandardError.ReadToEnd()));
             }
             catch (Exception objException)
             {
@@ -43,9 +58,9 @@ namespace StateDeploy
 
         private static string BuildDeployCmd(Session session)
         {
-            string installDir = session["INSTALLDIR"];
-            string projectName = session["PROJECT_NAME"];
-            string isModify = session["IS_MODIFY"];
+            string installDir = session.CustomActionData["INSTALLDIR"];
+            string projectName = session.CustomActionData["PROJECT_NAME"];
+            string isModify = session.CustomActionData["IS_MODIFY"];
 
             StringBuilder deployCMDBuilder = new StringBuilder("state deploy");
             if (isModify == "true")
@@ -59,6 +74,25 @@ namespace StateDeploy
             deployCMDBuilder.AppendFormat(" {0} --path=\"{1}\\\"", projectName, @installDir);
 
             return deployCMDBuilder.ToString();
+        }
+
+        internal static void StatusMessage(Session session, string status)
+        {
+            Record record = new Record(3);
+            record[1] = "callAddProgressInfo";
+            record[2] = status;
+            record[3] = "Incrementing tick [1] of [2]";
+
+            session.Message(InstallMessage.ActionStart, record);
+        }
+
+        public static MessageResult IncrementProgressBar(Session session, int progressTicks)
+        {
+            var record = new Record(3);
+            record[1] = 2; // "ProgressReport" message 
+            record[2] = progressTicks.ToString(); // ticks to increment 
+            record[3] = 0; // ignore 
+            return session.Message(InstallMessage.Progress, record);
         }
     }
 }

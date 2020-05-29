@@ -12,7 +12,7 @@ namespace Uninstall
         {
             session.Log("Begin uninstallation");
 
-            string installDir = session["REMEMBER"];
+            string installDir = session.CustomActionData["REMEMBER"];
             try
             {
                 Directory.Delete(installDir, true);
@@ -23,7 +23,7 @@ namespace Uninstall
                 return ActionResult.Failure;
             }
 
-            string pathEnv = Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.User);
+            string pathEnv = Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.Machine);
             string[] paths = pathEnv.Split(Path.PathSeparator);
 
             List<string> cleanPath = new List<string>();
@@ -36,8 +36,8 @@ namespace Uninstall
                 cleanPath.Add(path);
             }
 
-            Environment.SetEnvironmentVariable("PATH", string.Join(";", cleanPath), EnvironmentVariableTarget.User);
-            Environment.SetEnvironmentVariable("PATH_ORIGINAL", null, EnvironmentVariableTarget.User);
+            Environment.SetEnvironmentVariable("PATH", string.Join(";", cleanPath), EnvironmentVariableTarget.Machine);
+            Environment.SetEnvironmentVariable("PATH_ORIGINAL", null, EnvironmentVariableTarget.Machine);
 
             return ActionResult.Success;
         }
