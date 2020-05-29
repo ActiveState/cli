@@ -14,8 +14,6 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 )
 
-var escaper *osutils.ShellEscape
-
 var (
 	// FailExecCmd represents a failure running a cmd
 	FailExecCmd = failures.Type("sscommon.fail.execcmd")
@@ -26,10 +24,6 @@ var (
 	// FailSignalCmd represents a failure sending a system signal to a cmd
 	FailSignalCmd = failures.Type("sscommon.fail.signalcmd")
 )
-
-func init() {
-	escaper = osutils.NewBashEscaper()
-}
 
 // Start wires stdin/stdout/stderr into the provided command, starts it, and
 // returns a channel to monitor errors on.
@@ -186,15 +180,4 @@ func runDirect(env []string, name string, args ...string) error {
 	ignoreInterrupts(ctx)
 
 	return runCmd.Run()
-}
-
-// EscapeEnv escapes all values so they can be exported
-func EscapeEnv(env map[string]string) map[string]string {
-	result := map[string]string{}
-	for k, v := range env {
-		result[k] = v
-		result[k] = escaper.Escape(result[k])
-		result[k] = strings.ReplaceAll(result[k], lineBreak, lineBreakChar)
-	}
-	return result
 }
