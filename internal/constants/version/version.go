@@ -109,11 +109,7 @@ func fetchLatestVersionString(branch string) (string, error) {
 	return v.Version, err
 }
 
-func masterVersion(branchName string, buildEnv Env) (*semver.Version, error) {
-	var err error
-	if !needsIncrement(buildEnv, branchName) {
-		return semver.New("0.0.0")
-	}
+func masterVersion(branchName string) (*semver.Version, error) {
 	versionString, err := fetchLatestVersionString(branchName)
 	if err != nil {
 		return nil, err
@@ -145,24 +141,9 @@ func (v *Incrementation) incrementFromEnvironment() (*semver.Version, error) {
 	}
 }
 
-func (v *Incrementation) increment() (*semver.Version, error) {
-	baseVersion, err := masterVersion(v.branch, v.env)
-	if err != nil {
-		return nil, err
-	}
-	increment, err := v.Type()
-	fmt.Printf("Base version for increment is: %s\n", baseVersion)
-
-	if err != nil {
-		return nil, err
-	}
-
+func incrementFrom(baseVersion *semver.Version, increment string) (*semver.Version, error) {
 	copy := *baseVersion
 	switch increment {
-	case Zeroed:
-		copy.Major = 0
-		copy.Minor = 0
-		copy.Patch = 0
 	case Patch:
 		copy.Patch++
 	case Minor:
@@ -177,6 +158,25 @@ func (v *Incrementation) increment() (*semver.Version, error) {
 	}
 
 	return &copy, nil
+}
+
+func (v *Incrementation) increment() (*semver.Version, error) {
+	inc, err := v.Type()
+	if err != nil {
+		return nil, err
+	}
+
+	if inc == Zeroed {
+		return semver.New("0.0.0")
+	}
+
+	baseVersion, err := masterVersion(v.branch)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Printf("Base version for increment is: %s\n", baseVersion)
+
+	return incrementFrom(baseVersion, inc)
 }
 
 // NumberIsProduction returns whether or not the provided version number
