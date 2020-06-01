@@ -23,6 +23,65 @@ func (p incrementStateStore) IncrementType() (string, error) {
 	}
 }
 
+func TestService_IncrementFrom(t *testing.T) {
+	tests := []struct {
+		name        string
+		baseVersion string
+		increment   string
+		wantVersion string
+		wantErr     bool
+	}{
+		{
+			name:        "patch",
+			baseVersion: "0.2.2",
+			increment:   "patch",
+			wantVersion: "0.2.3",
+			wantErr:     false,
+		},
+		{
+			name:        "minor",
+			baseVersion: "0.2.2",
+			increment:   "minor",
+			wantVersion: "0.3.0",
+			wantErr:     false,
+		},
+		{
+			name:        "major",
+			baseVersion: "0.2.2",
+			increment:   "major",
+			wantVersion: "1.0.0",
+			wantErr:     false,
+		},
+		{
+			name:        "error",
+			baseVersion: "0.2.2",
+			increment:   "error",
+			wantVersion: "",
+			wantErr:     true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			bv, err := semver.New(tt.baseVersion)
+			if err != nil {
+				t.Fatalf("could not parse base version string %s error = %v", tt.baseVersion, err)
+			}
+			nv, err := incrementFrom(bv, tt.increment)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("incrementFrom(%s, %s) error = %v, wantErr %v", tt.baseVersion, tt.increment, err, tt.wantErr)
+			}
+			if nv == nil {
+				return
+			}
+			if nv.String() != tt.wantVersion {
+				t.Errorf("incrementFrom(%s, %s) == %s, want %s", tt.baseVersion, tt.increment, nv.String(), tt.wantVersion)
+			}
+		})
+	}
+
+}
+
 func TestService_IncrementVersion(t *testing.T) {
 	versionSemver, err := semver.New("0.2.2")
 	if err != nil {
@@ -36,10 +95,10 @@ func TestService_IncrementVersion(t *testing.T) {
 		branch      string
 	}
 	tests := []struct {
-		name    string
-		fields  fields
-		want    string
-		wantErr bool
+		name       string
+		fields     fields
+		wantZeroed bool
+		wantErr    bool
 	}{
 		{
 			name: "local environment",
@@ -49,8 +108,8 @@ func TestService_IncrementVersion(t *testing.T) {
 				typer:       incrementStateStore{Patch},
 				branch:      "master",
 			},
-			want:    "0.0.0",
-			wantErr: false,
+			wantZeroed: true,
+			wantErr:    false,
 		},
 		{
 			name: "local environment (branch)",
@@ -60,41 +119,19 @@ func TestService_IncrementVersion(t *testing.T) {
 				typer:       incrementStateStore{Patch},
 				branch:      "not-master",
 			},
-			want:    "0.0.0",
-			wantErr: false,
+			wantZeroed: true,
+			wantErr:    false,
 		},
 		{
-			name: "remote environment - patch",
+			name: "remote environment",
 			fields: fields{
 				environment: RemoteEnv,
 				master:      versionSemver,
 				typer:       incrementStateStore{Patch},
 				branch:      "master",
 			},
-			want:    "0.2.3",
-			wantErr: false,
-		},
-		{
-			name: "remote environment - minor",
-			fields: fields{
-				environment: RemoteEnv,
-				master:      versionSemver,
-				typer:       incrementStateStore{Minor},
-				branch:      "master",
-			},
-			want:    "0.3.0",
-			wantErr: false,
-		},
-		{
-			name: "remote environment - major",
-			fields: fields{
-				environment: RemoteEnv,
-				master:      versionSemver,
-				typer:       incrementStateStore{Major},
-				branch:      "master",
-			},
-			want:    "1.0.0",
-			wantErr: false,
+			wantZeroed: false,
+			wantErr:    false,
 		},
 		{
 			name: "remote environment - major (branch)",
@@ -104,19 +141,8 @@ func TestService_IncrementVersion(t *testing.T) {
 				typer:       incrementStateStore{Major},
 				branch:      "not-master",
 			},
-			want:    "0.0.0",
-			wantErr: false,
-		},
-		{
-			name: "remote environment - patch (branch)",
-			fields: fields{
-				environment: RemoteEnv,
-				master:      versionSemver,
-				typer:       incrementStateStore{Patch},
-				branch:      "not-master",
-			},
-			want:    "0.0.0",
-			wantErr: false,
+			wantZeroed: true,
+			wantErr:    false,
 		},
 		{
 			name: "error",
@@ -126,15 +152,14 @@ func TestService_IncrementVersion(t *testing.T) {
 				typer:       incrementStateStore{""},
 				branch:      "master",
 			},
-			want:    "",
-			wantErr: true,
+			wantZeroed: false,
+			wantErr:    true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &Incrementation{
 				env:    tt.fields.environment,
-				master: tt.fields.master,
 				typer:  tt.fields.typer,
 				branch: tt.fields.branch,
 			}
@@ -143,12 +168,20 @@ func TestService_IncrementVersion(t *testing.T) {
 				t.Errorf("VersionIncrementer.IncrementVersion() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			var gotString string
-			if got != nil {
-				gotString = got.String()
+			if got == nil {
+				return
 			}
-			if gotString != tt.want {
-				t.Errorf("VersionIncrementer.IncrementVersion() = %v, want %v", got, tt.want)
+			gotVersion, err := semver.New(got.String())
+			if err != nil {
+				t.Errorf("VersionIncrementer.IncrementVersion(): Could not parse returned version %s, error = %v", got.String(), err)
+			}
+			isZero := gotVersion.String() == "0.0.0"
+			if isZero != tt.wantZeroed {
+				cond := "not"
+				if tt.wantZeroed {
+					cond = ""
+				}
+				t.Errorf("VersionIncrementer.IncrementVersion() version = %s, want %s 0.0.0", gotVersion.String(), cond)
 			}
 		})
 	}
@@ -177,11 +210,11 @@ func TestService_IncrementVersionPreRelease(t *testing.T) {
 		revision string
 	}
 	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    string
-		wantErr bool
+		name       string
+		fields     fields
+		args       args
+		wantZeroed bool
+		wantErr    bool
 	}{
 		{
 			name: "local environment",
@@ -191,9 +224,9 @@ func TestService_IncrementVersionPreRelease(t *testing.T) {
 				provider:    incrementStateStore{Patch},
 				branch:      "master",
 			},
-			args:    args{revision},
-			want:    fmt.Sprintf("%s-SHA%s", "0.0.0", preRelease),
-			wantErr: false,
+			args:       args{revision},
+			wantZeroed: true,
+			wantErr:    false,
 		},
 		{
 			name: "local environment (unstable)",
@@ -203,9 +236,9 @@ func TestService_IncrementVersionPreRelease(t *testing.T) {
 				provider:    incrementStateStore{Patch},
 				branch:      "unstable",
 			},
-			args:    args{revision},
-			want:    fmt.Sprintf("%s-SHA%s", "0.0.0", preRelease),
-			wantErr: false,
+			args:       args{revision},
+			wantZeroed: true,
+			wantErr:    false,
 		},
 		{
 			name: "local environment (branch)",
@@ -215,81 +248,45 @@ func TestService_IncrementVersionPreRelease(t *testing.T) {
 				provider:    incrementStateStore{Patch},
 				branch:      "not-master",
 			},
-			args:    args{revision},
-			want:    fmt.Sprintf("%s-SHA%s", "0.0.0", preRelease),
-			wantErr: false,
+			args:       args{revision},
+			wantZeroed: true,
+			wantErr:    false,
 		},
 		{
-			name: "remote environment - patch",
+			name: "remote environment",
 			fields: fields{
 				environment: RemoteEnv,
 				master:      versionSemver,
 				provider:    incrementStateStore{Patch},
 				branch:      "master",
 			},
-			args:    args{revision},
-			want:    fmt.Sprintf("%s-SHA%s", "0.2.3", preRelease),
-			wantErr: false,
+			args:       args{revision},
+			wantZeroed: false,
+			wantErr:    false,
 		},
 		{
-			name: "remote environment - minor",
-			fields: fields{
-				environment: RemoteEnv,
-				master:      versionSemver,
-				provider:    incrementStateStore{Minor},
-				branch:      "master",
-			},
-			args:    args{revision},
-			want:    fmt.Sprintf("%s-SHA%s", "0.3.0", preRelease),
-			wantErr: false,
-		},
-		{
-			name: "remote environment - major",
-			fields: fields{
-				environment: RemoteEnv,
-				master:      versionSemver,
-				provider:    incrementStateStore{Major},
-				branch:      "master",
-			},
-			args:    args{revision},
-			want:    fmt.Sprintf("%s-SHA%s", "1.0.0", preRelease),
-			wantErr: false,
-		},
-		{
-			name: "remote environment - major (unstable)",
+			name: "remote environment - (unstable)",
 			fields: fields{
 				environment: RemoteEnv,
 				master:      versionSemver,
 				provider:    incrementStateStore{Major},
 				branch:      "unstable",
 			},
-			args:    args{revision},
-			want:    fmt.Sprintf("%s-SHA%s", "1.0.0", preRelease),
-			wantErr: false,
+			args:       args{revision},
+			wantZeroed: false,
+			wantErr:    false,
 		},
 		{
-			name: "remote environment - major (branch)",
+			name: "remote environment - (branch)",
 			fields: fields{
 				environment: RemoteEnv,
 				master:      versionSemver,
 				provider:    incrementStateStore{Major},
 				branch:      "not-master",
 			},
-			args:    args{revision},
-			want:    fmt.Sprintf("%s-SHA%s", "0.0.0", preRelease),
-			wantErr: false,
-		},
-		{
-			name: "remote environment - patch (branch)",
-			fields: fields{
-				environment: RemoteEnv,
-				master:      versionSemver,
-				provider:    incrementStateStore{Patch},
-				branch:      "not-master",
-			},
-			args:    args{revision},
-			want:    fmt.Sprintf("%s-SHA%s", "0.0.0", preRelease),
-			wantErr: false,
+			args:       args{revision},
+			wantZeroed: true,
+			wantErr:    false,
 		},
 		{
 			name: "error",
@@ -299,16 +296,15 @@ func TestService_IncrementVersionPreRelease(t *testing.T) {
 				provider:    incrementStateStore{""},
 				branch:      "master",
 			},
-			args:    args{revision},
-			want:    "",
-			wantErr: true,
+			args:       args{revision},
+			wantZeroed: false,
+			wantErr:    true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &Incrementation{
 				env:    tt.fields.environment,
-				master: tt.fields.master,
 				typer:  tt.fields.provider,
 				branch: tt.fields.branch,
 			}
@@ -317,12 +313,27 @@ func TestService_IncrementVersionPreRelease(t *testing.T) {
 				t.Errorf("VersionIncrementer.IncrementVersionPreRelease() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			var gotString string
-			if got != nil {
-				gotString = got.String()
+			if got == nil {
+				return
 			}
-			if gotString != tt.want {
-				t.Errorf("VersionIncrementer.IncrementVersionPreRelease() = %v, want %v", got, tt.want)
+			gotVersion, err := semver.New(got.String())
+			if err != nil {
+				t.Errorf("VersionIncrementer.IncrementVersionPreRelease(): Could not parse returned version %s, error = %v", got.String(), err)
+			}
+			if len(gotVersion.Pre) != 1 {
+				t.Errorf("VersionIncrementer.IncrementVersionPreRelease() did not return pre-release version")
+			}
+			if gotVersion.Pre[0].String() != fmt.Sprintf("SHA%s", revision) {
+				t.Errorf("VersionIncrementer.IncrementVersionPreRelease() pre-release version = %s, want SHA%s", gotVersion.Pre[0].String(), revision)
+			}
+			gotVersion.Pre = nil
+			isZero := gotVersion.String() == "0.0.0"
+			if isZero != tt.wantZeroed {
+				cond := "not"
+				if tt.wantZeroed {
+					cond = ""
+				}
+				t.Errorf("VersionIncrementer.IncrementVersionPreRelease() version = %s, want %s 0.0.0", gotVersion.String(), cond)
 			}
 		})
 	}
