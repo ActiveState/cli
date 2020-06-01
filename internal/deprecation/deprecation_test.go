@@ -6,6 +6,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/deprecation"
 	depMock "github.com/ActiveState/cli/internal/deprecation/mock"
+	"github.com/spf13/viper"
 
 	"github.com/stretchr/testify/suite"
 )
@@ -17,6 +18,8 @@ type DeprecationTestSuite struct {
 
 func (suite *DeprecationTestSuite) BeforeTest(suiteName, testName string) {
 	suite.mock = depMock.Init()
+	v := viper.GetViper()
+	v.Set("deprecation_time", time.Time{})
 }
 
 func (suite *DeprecationTestSuite) AfterTest(suiteName, testName string) {
@@ -55,6 +58,15 @@ func (suite *DeprecationTestSuite) TestDeprecationTimeout() {
 
 	_, fail := deprecation.CheckVersionNumber("0.11.18")
 	suite.Require().NoError(fail.ToError()) // timeouts should be handled gracefully inside the package
+}
+
+func (suite *DeprecationTestSuite) TestDeprecaitonNoCheck() {
+	v := viper.GetViper()
+	v.Set("deprecation_time", time.Now().Add(15*time.Minute))
+
+	deprecated, fail := deprecation.CheckVersionNumber("0.11.18")
+	suite.Require().NoError(fail.ToError())
+	suite.Nil(deprecated, "Should not have checked for deprecation")
 }
 
 func TestDeprecationTestSuite(t *testing.T) {
