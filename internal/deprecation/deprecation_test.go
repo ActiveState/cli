@@ -18,8 +18,7 @@ type DeprecationTestSuite struct {
 
 func (suite *DeprecationTestSuite) BeforeTest(suiteName, testName string) {
 	suite.mock = depMock.Init()
-	v := viper.GetViper()
-	v.Set("deprecation_time", time.Time{})
+	viper.Reset()
 }
 
 func (suite *DeprecationTestSuite) AfterTest(suiteName, testName string) {
