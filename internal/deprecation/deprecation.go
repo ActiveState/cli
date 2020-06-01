@@ -62,7 +62,6 @@ type Checker struct {
 type configable interface {
 	GetTime(key string) time.Time
 	Set(key string, value interface{})
-	IsSet(key string) bool
 }
 
 // NewChecker returns a new instance of the Checker struct
