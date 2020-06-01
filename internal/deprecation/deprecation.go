@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-version"
+	"github.com/spf13/viper"
 
 	"github.com/ActiveState/cli/internal/constants"
 	constvers "github.com/ActiveState/cli/internal/constants/version"
@@ -18,8 +19,13 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 )
 
-// DefaultTimeout defines how long we should wait for a response from constants.DeprecationInfoURL
-const DefaultTimeout = time.Second
+const (
+	// DefaultTimeout defines how long we should wait for a response from constants.DeprecationInfoURL
+	DefaultTimeout = time.Second
+
+	// timeKey is the config key used to determine if a deprecation check should occur
+	timeKey = "deprecation_time"
+)
 
 var (
 	// FailFetchDeprecationInfo communicates a failure in retrieving the deprecation info via http
@@ -50,11 +56,18 @@ type Info struct {
 // Checker is the struct that we use to do checks with
 type Checker struct {
 	timeout time.Duration
+	config  configable
+}
+
+type configable interface {
+	GetTime(key string) time.Time
+	Set(key string, value interface{})
+	IsSet(key string) bool
 }
 
 // NewChecker returns a new instance of the Checker struct
-func NewChecker(timeout time.Duration) *Checker {
-	return &Checker{timeout}
+func NewChecker(timeout time.Duration, config configable) *Checker {
+	return &Checker{timeout, config}
 }
 
 // Check will run a Checker.Check with defaults
@@ -64,7 +77,7 @@ func Check() (*Info, *failures.Failure) {
 
 // CheckVersionNumber will run a Checker.Check with defaults
 func CheckVersionNumber(versionNumber string) (*Info, *failures.Failure) {
-	checker := NewChecker(DefaultTimeout)
+	checker := NewChecker(DefaultTimeout, viper.GetViper())
 	return checker.check(versionNumber)
 }
 
@@ -75,7 +88,7 @@ func (checker *Checker) Check() (*Info, *failures.Failure) {
 }
 
 func (checker *Checker) check(versionNumber string) (*Info, *failures.Failure) {
-	if !constvers.NumberIsProduction(versionNumber) {
+	if !checker.shouldCheck(versionNumber) {
 		return nil, nil
 	}
 
@@ -96,6 +109,21 @@ func (checker *Checker) check(versionNumber string) (*Info, *failures.Failure) {
 	}
 
 	return nil, nil
+}
+
+func (checker *Checker) shouldCheck(versionNumber string) bool {
+	if !constvers.NumberIsProduction(versionNumber) {
+		return false
+	}
+
+	lastCheck := checker.config.GetTime(timeKey)
+	if !lastCheck.IsZero() && time.Now().Before(lastCheck) {
+		return false
+	}
+
+	checker.config.Set(timeKey, time.Now().Add(15*time.Minute))
+	return true
+
 }
 
 func (checker *Checker) fetchDeprecationInfoBody() (int, []byte, *failures.Failure) {
