@@ -4,13 +4,16 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/hashicorp/go-version"
+	"github.com/spf13/viper"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	constvers "github.com/ActiveState/cli/internal/constants/version"
 	"github.com/ActiveState/cli/internal/failures"
@@ -18,12 +21,20 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 )
 
-// DefaultTimeout defines how long we should wait for a response from constants.DeprecationInfoURL
-const DefaultTimeout = time.Second
+const (
+	// DefaultTimeout defines how long we should wait for a response from constants.DeprecationInfoURL
+	DefaultTimeout = time.Second
+
+	// fetchKey is the config key used to determine if a deprecation check should occur
+	fetchKey = "deprecation_fetch_time"
+)
 
 var (
 	// FailFetchDeprecationInfo communicates a failure in retrieving the deprecation info via http
-	FailFetchDeprecationInfo = failures.Type("deprecation.fail.info", failures.FailNetwork)
+	FailFetchDeprecationInfo = failures.Type("deprecation.fail.fetchinfo", failures.FailNetwork)
+
+	// FailGetCatchedDeprectionInfo communications a failure in retrieving the deprection info on disk
+	FailGetCatchedDeprectionInfo = failures.Type("deprecation.fail.getinfo", failures.FailIO)
 
 	// FailParseVersion communicates a failure in parsing a semantic version (the version is not formatted properly)
 	FailParseVersion = failures.Type("deprecation.fail.versionparse", failures.FailInput)
@@ -49,12 +60,23 @@ type Info struct {
 
 // Checker is the struct that we use to do checks with
 type Checker struct {
-	timeout time.Duration
+	timeout         time.Duration
+	config          configable
+	deprecationFile string
+}
+
+type configable interface {
+	GetTime(key string) time.Time
+	Set(key string, value interface{})
 }
 
 // NewChecker returns a new instance of the Checker struct
-func NewChecker(timeout time.Duration) *Checker {
-	return &Checker{timeout}
+func NewChecker(timeout time.Duration, configuration configable) *Checker {
+	return &Checker{
+		timeout,
+		configuration,
+		filepath.Join(config.ConfigPath(), "deprecation.json"),
+	}
 }
 
 // Check will run a Checker.Check with defaults
@@ -64,7 +86,7 @@ func Check() (*Info, *failures.Failure) {
 
 // CheckVersionNumber will run a Checker.Check with defaults
 func CheckVersionNumber(versionNumber string) (*Info, *failures.Failure) {
-	checker := NewChecker(DefaultTimeout)
+	checker := NewChecker(DefaultTimeout, viper.GetViper())
 	return checker.check(versionNumber)
 }
 
@@ -84,9 +106,18 @@ func (checker *Checker) check(versionNumber string) (*Info, *failures.Failure) {
 		return nil, FailParseVersion.Wrap(err)
 	}
 
-	infos, fail := checker.fetchDeprecationInfo()
-	if fail != nil {
-		return nil, fail
+	var infos []Info
+	var fail *failures.Failure
+	if checker.shouldFetch() {
+		infos, fail = checker.fetchDeprecationInfo()
+		if fail != nil {
+			return nil, fail
+		}
+	} else {
+		infos, err = checker.cachedDeprecationInfo()
+		if err != nil {
+			return nil, FailGetCatchedDeprectionInfo.Wrap(err)
+		}
 	}
 
 	for _, info := range infos {
@@ -96,6 +127,17 @@ func (checker *Checker) check(versionNumber string) (*Info, *failures.Failure) {
 	}
 
 	return nil, nil
+}
+
+func (checker *Checker) shouldFetch() bool {
+	lastFetch := checker.config.GetTime(fetchKey)
+	if !lastFetch.IsZero() && time.Now().Before(lastFetch) {
+		return false
+	}
+
+	checker.config.Set(fetchKey, time.Now().Add(15*time.Minute))
+	return true
+
 }
 
 func (checker *Checker) fetchDeprecationInfoBody() (int, []byte, *failures.Failure) {
@@ -122,6 +164,7 @@ func (checker *Checker) fetchDeprecationInfoBody() (int, []byte, *failures.Failu
 }
 
 func (checker *Checker) fetchDeprecationInfo() ([]Info, *failures.Failure) {
+	logging.Debug("Fetching deprecation information from S3")
 	code, body, fail := checker.fetchDeprecationInfoBody()
 	if fail != nil {
 		if fail.Type.Matches(FailTimeout) {
@@ -139,23 +182,61 @@ func (checker *Checker) fetchDeprecationInfo() ([]Info, *failures.Failure) {
 		return nil, FailInvalidResponseCode.New(locale.Tr("err_deprection_code", strconv.Itoa(code)))
 	}
 
-	infos := make([]Info, 0)
-	err := json.Unmarshal(body, &infos)
+	infos, err := initializeInfo(body)
 	if err != nil {
-		return nil, failures.FailMarshal.Wrap(err)
+		return nil, failures.FailIO.Wrap(err)
 	}
 
-	for k := range infos {
-		infos[k].versionInfo, err = version.NewVersion(infos[k].Version)
-		if err != nil {
-			return nil, FailParseVersion.Wrap(err)
-		}
-		infos[k].DateReached = infos[k].Date.Before(time.Now())
+	err = checker.saveDeprecationInfo(infos)
+	if err != nil {
+		return nil, failures.FailIO.Wrap(err)
 	}
-
-	sort.Slice(infos, func(i, j int) bool {
-		return infos[i].versionInfo.GreaterThan(infos[j].versionInfo)
-	})
 
 	return infos, nil
+}
+
+func (checker *Checker) saveDeprecationInfo(info []Info) error {
+	data, err := json.MarshalIndent(info, "", " ")
+	if err != nil {
+		return locale.WrapError(err, "err_save_deprection", "Could not save deprication information")
+	}
+
+	return ioutil.WriteFile(checker.deprecationFile, data, 0644)
+}
+
+func (checker *Checker) cachedDeprecationInfo() ([]Info, error) {
+	logging.Debug("Using cached deprecation information")
+	data, err := ioutil.ReadFile(checker.deprecationFile)
+	if err != nil {
+		return nil, locale.WrapError(err, "err_read_deprection", "Could not read cached deprecation information")
+	}
+
+	info, err := initializeInfo(data)
+	if err != nil {
+		return nil, locale.WrapError(err, "err_init_deprecation_info", "Could not initialize deprecation information")
+	}
+
+	return info, nil
+}
+
+func initializeInfo(data []byte) ([]Info, error) {
+	var info []Info
+	err := json.Unmarshal(data, &info)
+	if err != nil {
+		return nil, locale.WrapError(err, "err_unmarshal_deprecation", "Could not unmarshall deprecation information")
+	}
+
+	for k := range info {
+		info[k].versionInfo, err = version.NewVersion(info[k].Version)
+		if err != nil {
+			return nil, locale.WrapError(err, "err_deprecation_parse_version", "Could not parse version in deprecation information")
+		}
+		info[k].DateReached = info[k].Date.Before(time.Now())
+	}
+
+	sort.Slice(info, func(i, j int) bool {
+		return info[i].versionInfo.GreaterThan(info[j].versionInfo)
+	})
+
+	return info, nil
 }

@@ -6,6 +6,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/deprecation"
 	depMock "github.com/ActiveState/cli/internal/deprecation/mock"
+	"github.com/spf13/viper"
 
 	"github.com/stretchr/testify/suite"
 )
@@ -17,6 +18,7 @@ type DeprecationTestSuite struct {
 
 func (suite *DeprecationTestSuite) BeforeTest(suiteName, testName string) {
 	suite.mock = depMock.Init()
+	viper.Reset()
 }
 
 func (suite *DeprecationTestSuite) AfterTest(suiteName, testName string) {
