@@ -10,8 +10,11 @@ import (
 
 	"github.com/ActiveState/cli/internal/config" // MUST be first!
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
@@ -60,7 +63,7 @@ type UpdateResult struct {
 // timeout period of one second, applies the update and returns `true`.
 // Otherwise, returns `false`.
 // AutoUpdate is skipped altogether if the current project has a locked version.
-func AutoUpdate(pjPath string) (updated bool, resultVersion string) {
+func AutoUpdate(pjPath string, out output.Outputer) (updated bool, resultVersion string) {
 	if versionInfo, _ := projectfile.ParseVersionInfo(pjPath); versionInfo != nil {
 		return false, ""
 	}
@@ -91,7 +94,6 @@ func AutoUpdate(pjPath string) (updated bool, resultVersion string) {
 	update := Updater{
 		CurrentVersion: constants.Version,
 		APIURL:         constants.APIUpdateURL,
-		Dir:            constants.UpdateStorageDir,
 		CmdName:        constants.CommandName,
 	}
 	seconds := 1
@@ -116,8 +118,11 @@ func AutoUpdate(pjPath string) (updated bool, resultVersion string) {
 
 	// Self-update.
 	logging.Debug("Self-updating.")
-	err = update.Run()
+	err = update.Run(out)
 	if err != nil {
+		if os.IsPermission(errs.InnerError(err)) {
+			out.Error(locale.T("auto_update_permission_err"))
+		}
 		logging.Error("Unable to self update: %s", err)
 		return false, ""
 	}

@@ -126,7 +126,7 @@ func (suite *RSAKeypairTestSuite) TestParseRSA_RequiresPassphrase() {
 
 	kp2, failure := keypairs.ParseRSA(encrPrivKey)
 	suite.Nil(kp2)
-	suite.True(failure.Type.Matches(keypairs.FailKeypairPassphrase))
+	suite.True(failure.Type.Matches(keypairs.FailKeypairPassphrase), "failure was: %v", failure)
 }
 
 func (suite *RSAKeypairTestSuite) TestParseRSA_EmptyPassphraseButStillEncrypted() {

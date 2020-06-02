@@ -6,6 +6,7 @@ import (
 	"io"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -16,6 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
+	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 	"github.com/ActiveState/cli/internal/testhelpers/updatemocks"
 )
 
@@ -29,8 +31,10 @@ func TestUpdaterWithEmptyPayloadErrorNoUpdate(t *testing.T) {
 
 	updater := createUpdater()
 
-	err := updater.Run()
+	out := outputhelper.NewCatcher()
+	err := updater.Run(out.Outputer)
 	assert.Error(t, err, "Should fail because there is no update")
+	assert.Equal(t, "", strings.TrimSpace(out.CombinedOutput()))
 }
 
 func TestUpdaterInfoDesiredVersion(t *testing.T) {
@@ -82,7 +86,6 @@ func createUpdater() *Updater {
 	return &Updater{
 		CurrentVersion: "1.2",
 		APIURL:         constants.APIUpdateURL,
-		Dir:            constants.UpdateStorageDir,
 		CmdName:        constants.CommandName, // app name
 	}
 }
