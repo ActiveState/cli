@@ -12,11 +12,6 @@ namespace StateDeploy
             session.Log("Starting state deploy");
 
             StatusMessage(session, string.Format("Deploying project {0}...", session.CustomActionData["PROJECT_NAME"]));
-            MessageResult incrementResult = IncrementProgressBar(session, 3);
-            if (incrementResult == MessageResult.Cancel)
-            {
-                return ActionResult.UserExit;
-            }
             string deployCmd = BuildDeployCmd(session);
             session.Log(string.Format("Executing deploy command: {0}", deployCmd));
             try
@@ -40,7 +35,15 @@ namespace StateDeploy
                 System.Diagnostics.Process proc = new System.Diagnostics.Process();
                 proc.StartInfo = procStartInfo;
                 proc.Start();
-                proc.WaitForExit();
+
+                while (!proc.HasExited)
+                {
+                    MessageResult incrementResult = IncrementProgressBar(session, 1);
+                    if (incrementResult == MessageResult.Cancel)
+                    {
+                        return ActionResult.UserExit;
+                    }
+                }
                 
                 // NOTE: See comment above re: progress bar. Can enable these lines once State Tool
                 // is updated
