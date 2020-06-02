@@ -35,6 +35,9 @@ var FailMoveDestinationNotDirectory = failures.Type("fileutils.fail.move.destina
 // FailMoveDestinationExists indicates the specified destination to move to already exists
 var FailMoveDestinationExists = failures.Type("fileutils.fail.movedestinationexists", failures.FailIO)
 
+// FailCreateFile indicates that file creation failed and does not report to rollbar
+var FailCreateFile = failures.Type("fileutils.fail.touch", failures.FailIO, failures.FailUser)
+
 // nullByte represents the null-terminator byte
 const nullByte byte = 0
 
@@ -403,7 +406,7 @@ func Touch(path string) *failures.Failure {
 	}
 	file, err := os.OpenFile(path, os.O_CREATE, FileMode)
 	if err != nil {
-		return failures.FailIO.Wrap(err)
+		return FailCreateFile.Wrap(err)
 	}
 	if err := file.Close(); err != nil {
 		return failures.FailIO.Wrap(err)
@@ -749,12 +752,10 @@ func HomeDir() (string, error) {
 func IsWritable(path string) bool {
 	fpath := filepath.Join(path, uuid.New().String())
 	if fail := Touch(fpath); fail != nil {
-		logging.Debug("Could not create file: %v", fail.ToError())
 		return false
 	}
 
 	if errr := os.Remove(fpath); errr != nil {
-		logging.Debug("Could not clean up test file: %v", errr)
 		return false
 	}
 
