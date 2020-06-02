@@ -59,15 +59,6 @@ func (suite *DeprecationTestSuite) TestDeprecationTimeout() {
 	suite.Require().NoError(fail.ToError()) // timeouts should be handled gracefully inside the package
 }
 
-func (suite *DeprecationTestSuite) TestDeprecaitonNoCheck() {
-	v := viper.GetViper()
-	v.Set("deprecation_time", time.Now().Add(15*time.Minute))
-
-	deprecated, fail := deprecation.CheckVersionNumber("0.11.18")
-	suite.Require().NoError(fail.ToError())
-	suite.Nil(deprecated, "Should not have checked for deprecation")
-}
-
 func TestDeprecationTestSuite(t *testing.T) {
 	suite.Run(t, new(DeprecationTestSuite))
 }
