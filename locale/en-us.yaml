@@ -984,12 +984,12 @@ warn_deprecation:
     Please update soon![/RESET]
 err_deprecation:
   other: |
-    You are running a version of the State Tool that is no longer supported! You will be encountering issues. 
+    [RED]You are running a version of the State Tool that is no longer supported! You will be encountering issues.
 
     Reason for deprecation: 
       {{.V1}}
 
-    Please update now!"
+    Please update now![/RESET]"
 err_auth_required:
   other: Authentication is required, please authenticate by running 'state auth'
 auth_required_activate:
