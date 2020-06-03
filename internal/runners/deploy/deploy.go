@@ -87,8 +87,8 @@ func (d *Deploy) createInstaller(namespace project.Namespaced, path string) (ins
 			"The project '{{.V0}}' does not have any packages configured, please add add some packages first.", namespace.String())
 	}
 
-	installable, cacheDir, fail := d.NewRuntimeInstaller(*branch.CommitID, namespace.Owner, namespace.Project, path)
-	return installable, cacheDir, fail.ToError()
+	installable, cacheDir, err := d.NewRuntimeInstaller(*branch.CommitID, namespace.Owner, namespace.Project, path)
+	return installable, cacheDir, err
 }
 
 func runSteps(targetPath string, force bool, userScope bool, step Step, installer installable, out output.Outputer) error {

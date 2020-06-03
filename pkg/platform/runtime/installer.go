@@ -9,6 +9,7 @@ import (
 	"github.com/vbauerster/mpb/v4"
 
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
@@ -111,7 +112,7 @@ func NewInstallerByParams(params InstallerParams) (*Installer, *failures.Failure
 }
 
 // Install will download the installer archive and invoke InstallFromArchive
-func (installer *Installer) Install() (envGetter EnvGetter, freshInstallation bool, fail *failures.Failure) {
+func (installer *Installer) Install() (envGetter EnvGetter, freshInstallation bool, err error) {
 	assembler, fail := installer.Assembler()
 	if fail != nil {
 		return nil, false, fail
@@ -163,7 +164,7 @@ func (installer *Installer) Assembler() (Assembler, *failures.Failure) {
 }
 
 // InstallArtifacts installs all artifacts provided by a runtime assembler
-func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGetter EnvGetter, freshInstallation bool, fail *failures.Failure) {
+func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGetter EnvGetter, freshInstallation bool, err error) {
 	if runtimeAssembler.IsInstalled() {
 		logging.Debug("runtime already successfully installed")
 		return runtimeAssembler, false, nil
@@ -195,15 +196,15 @@ func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGet
 		}
 	}
 
-	fail = installer.InstallFromArchives(unpackArchives, runtimeAssembler, progress)
-	if fail != nil {
+	err = installer.InstallFromArchives(unpackArchives, runtimeAssembler, progress)
+	if err != nil {
 		progress.Cancel()
-		return nil, false, fail
+		return nil, false, err
 	}
 
-	err := runtimeAssembler.PostInstall()
+	err = runtimeAssembler.PostInstall()
 	if err != nil {
-		return nil, false, failures.FailRuntime.Wrap(err, "error during post installation step")
+		return nil, false, errs.Wrap(err, "error during post installation step")
 	}
 
 	return runtimeAssembler, true, nil
@@ -232,7 +233,7 @@ func (installer *Installer) validateCheckpoint() *failures.Failure {
 // InstallFromArchives will unpack the installer archive, locate the install script, and then use the installer
 // script to install a runtime to the configured runtime dir. Any failures during this process will result in a
 // failed installation and the install-dir being removed.
-func (installer *Installer) InstallFromArchives(archives map[string]*HeadChefArtifact, a Assembler, progress *progress.Progress) *failures.Failure {
+func (installer *Installer) InstallFromArchives(archives map[string]*HeadChefArtifact, a Assembler, progress *progress.Progress) error {
 	bar := progress.AddTotalBar(locale.T("installing"), len(archives))
 
 	fail := a.PreInstall()
@@ -242,9 +243,9 @@ func (installer *Installer) InstallFromArchives(archives map[string]*HeadChefArt
 	}
 
 	for archivePath, artf := range archives {
-		if fail := installer.InstallFromArchive(archivePath, artf, a, progress); fail != nil {
+		if err := installer.InstallFromArchive(archivePath, artf, a, progress); err != nil {
 			progress.Cancel()
-			return fail
+			return err
 		}
 		bar.Increment()
 	}
@@ -253,7 +254,7 @@ func (installer *Installer) InstallFromArchives(archives map[string]*HeadChefArt
 }
 
 // InstallFromArchive will unpack artifact and install it
-func (installer *Installer) InstallFromArchive(archivePath string, artf *HeadChefArtifact, a Assembler, progress *progress.Progress) *failures.Failure {
+func (installer *Installer) InstallFromArchive(archivePath string, artf *HeadChefArtifact, a Assembler, progress *progress.Progress) error {
 
 	fail := a.PreUnpackArtifact(artf)
 	if fail != nil {
@@ -267,10 +268,10 @@ func (installer *Installer) InstallFromArchive(archivePath string, artf *HeadChe
 		return fail
 	}
 
-	fail = a.PostUnpackArtifact(artf, tmpRuntimeDir, archivePath, func() { upb.Increment() })
-	if fail != nil {
+	err := a.PostUnpackArtifact(artf, tmpRuntimeDir, archivePath, func() { upb.Increment() })
+	if err != nil {
 		removeInstallDir(installDir)
-		return fail
+		return err
 	}
 	upb.Complete()
 

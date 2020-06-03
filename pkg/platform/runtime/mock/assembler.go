@@ -54,12 +54,12 @@ func (a *Assembler) PreUnpackArtifact(artf *runtime.HeadChefArtifact) *failures.
 	return args.Get(0).(*failures.Failure)
 }
 
-func (a *Assembler) PostUnpackArtifact(artf *runtime.HeadChefArtifact, tmpRuntimeDir string, archivePath string, cb func()) *failures.Failure {
+func (a *Assembler) PostUnpackArtifact(artf *runtime.HeadChefArtifact, tmpRuntimeDir string, archivePath string, cb func()) error {
 	args := a.Called(artf, tmpRuntimeDir, archivePath, cb)
 	if args.Get(0) == nil {
 		return nil
 	}
-	return args.Get(0).(*failures.Failure)
+	return args.Get(0).(error)
 }
 
 func (a *Assembler) PostInstall() error {

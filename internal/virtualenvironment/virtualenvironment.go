@@ -62,17 +62,17 @@ func New(getEnv getEnvFunc) *VirtualEnvironment {
 }
 
 // Activate the virtual environment
-func (v *VirtualEnvironment) Activate() *failures.Failure {
+func (v *VirtualEnvironment) Activate() error {
 	logging.Debug("Activating Virtual Environment")
 
 	activeProject := os.Getenv(constants.ActivatedStateEnvVarName)
 	if activeProject != "" {
-		return FailAlreadyActive.New("err_already_active", v.project.Owner()+"/"+v.project.Name())
+		return locale.NewError("err_already_active", v.project.Owner()+"/"+v.project.Name())
 	}
 
 	if strings.ToLower(os.Getenv(constants.DisableRuntime)) != "true" {
-		if failure := v.activateRuntime(); failure != nil {
-			return failure
+		if err := v.activateRuntime(); err != nil {
+			return err
 		}
 	}
 
@@ -89,7 +89,7 @@ func (v *VirtualEnvironment) OnInstallArtifacts(f func()) { v.onInstallArtifacts
 func (v *VirtualEnvironment) OnUseCache(f func()) { v.onUseCache = f }
 
 // activateRuntime sets up a runtime environment
-func (v *VirtualEnvironment) activateRuntime() *failures.Failure {
+func (v *VirtualEnvironment) activateRuntime() error {
 	pj := project.Get()
 	installer, fail := runtime.NewInstaller(pj.CommitUUID(), pj.Owner(), pj.Name())
 	if fail != nil {
@@ -98,9 +98,9 @@ func (v *VirtualEnvironment) activateRuntime() *failures.Failure {
 
 	installer.OnDownload(v.onDownloadArtifacts)
 
-	rt, installed, fail := installer.Install()
-	if fail != nil {
-		return fail
+	rt, installed, err := installer.Install()
+	if err != nil {
+		return err
 	}
 
 	v.getEnv = rt.GetEnv
