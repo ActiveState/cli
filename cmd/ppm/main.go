@@ -6,35 +6,37 @@ package main
 // http://docs.activestate.com/activeperl/5.24/perl/bin/ppm.html
 // If available it prints a suggestion on which state tool command to explore, when the user
 // requests a deprecated ppm command.
-// Several c
+// Several ppm commands do not have an equivalent state tool functionality, in which case
+// we just print out a default message pointing to the state tool documentation.
 
 import (
 	"fmt"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/spf13/cobra"
 )
 
 const docsBaseURI = "https://docs.activestate.com/platform"
 
-const headerMessage = `The Perl package manager is no longer supported.
-To manage your Perl packages from the command line, use the state tool instead.
-You can find more information on the state tool at
+const headerMessage = `
+The Perl Package Manager(PPM) is no longer supported.
+To manage your Perl packages from the command line, use the State Tool(state) instead. You can find more information on the State Tool at
 https://www.activestate.com/products/platform/state-tool/
 `
 
 func printDefault() {
-	fmt.Println(headerMessage)
+	fmt.Println(strings.TrimSpace(headerMessage))
 }
 
-func printVersion() {
+func printMain() {
 	fmt.Println(strings.TrimSpace(fmt.Sprintf(`
 %s
-PPM shim for ActiveState CLI version %s
-Copyright (c) 2020, ActiveState Software
-`, headerMessage, constants.Version)))
+To see help for State Tool commands, run:
 
+    state help
+
+See "https://docs.activestate.com/platform/state/" for details.
+`, headerMessage)))
 }
 
 func printSuggestion(ppmIntent, newCommand, docLink string) {
@@ -80,9 +82,9 @@ func addVersionCommand(cmds []*cobra.Command) []*cobra.Command {
 		&cobra.Command{
 			Use:   "version",
 			Short: "print version info",
-			Long:  headerMessage,
+			Long:  strings.TrimSpace(headerMessage),
 			Run: func(cmd *cobra.Command, args []string) {
-				printVersion()
+				printDefault()
 			},
 		},
 	)
@@ -93,27 +95,25 @@ func addProjectCommands(cmds []*cobra.Command) []*cobra.Command {
 		&cobra.Command{
 			Use:   "area",
 			Short: "organizes packages in different areas",
-			Long:  headerMessage,
+			Long:  strings.TrimSpace(headerMessage),
 			Run: func(cmd *cobra.Command, args []string) {
 				fmt.Println(strings.TrimSpace(fmt.Sprintf(`
 %s
 To manage several projects with varying dependencies, you can organize them as
-projects on the platform: %s/projects.html.
+projects on the ActiveState Platform: %s/projects.html.
 
 To fork an existing project, run:
 	state fork
 See %s/state/fork.html for details.
 	
-To create a new project, run:
-	state init
-See %s/state/init.html for details.
+To create a new project, see the guide at %s/state/start.html for details.
 `, headerMessage, docsBaseURI, docsBaseURI, docsBaseURI)))
 			},
 		},
 		&cobra.Command{
 			Use:   "list",
 			Short: "lists installed packages",
-			Long:  headerMessage,
+			Long:  strings.TrimSpace(headerMessage),
 			Run: func(cmd *cobra.Command, args []string) {
 				printSuggestion("list the packages installed for a project", "state packages", "state/packages.html")
 			},
@@ -121,7 +121,7 @@ See %s/state/init.html for details.
 		&cobra.Command{
 			Use:   "files",
 			Short: "lists the full path name of the files belonging to the given package, one line per file.",
-			Long:  headerMessage,
+			Long:  strings.TrimSpace(headerMessage),
 			Run: func(cmd *cobra.Command, args []string) {
 				printDefault()
 			},
@@ -129,7 +129,7 @@ See %s/state/init.html for details.
 		&cobra.Command{
 			Use:   "verify",
 			Short: "checks that the installed files are present and unmodified.",
-			Long:  headerMessage,
+			Long:  strings.TrimSpace(headerMessage),
 			Run: func(cmd *cobra.Command, args []string) {
 				printDefault()
 			},
@@ -146,7 +146,7 @@ func addRepositoryCommands(cmds []*cobra.Command) []*cobra.Command {
 		&cobra.Command{
 			Use:   "repo",
 			Short: "manages package repositories",
-			Long:  headerMessage,
+			Long:  strings.TrimSpace(headerMessage),
 			Run: func(cmd *cobra.Command, args []string) {
 				printDefault()
 			},
@@ -154,15 +154,15 @@ func addRepositoryCommands(cmds []*cobra.Command) []*cobra.Command {
 		&cobra.Command{
 			Use:   "search",
 			Short: "searches for packages in all enabled repositories",
-			Long:  headerMessage,
+			Long:  strings.TrimSpace(headerMessage),
 			Run: func(cmd *cobra.Command, args []string) {
-				printSuggestion("search for a package on the platform", "state packages search", "state/packages.html")
+				printSuggestion("search for a package on the ActiveState Platform", "state packages search", "state/packages.html")
 			},
 		},
 		&cobra.Command{
 			Use:   "describe",
 			Short: "shows all properties from a particular package from the last search result",
-			Long:  headerMessage,
+			Long:  strings.TrimSpace(headerMessage),
 			Run: func(cmd *cobra.Command, args []string) {
 				printDefault()
 			},
@@ -170,7 +170,7 @@ func addRepositoryCommands(cmds []*cobra.Command) []*cobra.Command {
 		&cobra.Command{
 			Use:   "tree",
 			Short: "shows all dependencies for a particular package.",
-			Long:  headerMessage,
+			Long:  strings.TrimSpace(headerMessage),
 			Run: func(cmd *cobra.Command, args []string) {
 				printDefault()
 			},
@@ -187,7 +187,7 @@ func addOtherCommands(cmds []*cobra.Command) []*cobra.Command {
 		&cobra.Command{
 			Use:   "config",
 			Short: "configuration settings",
-			Long:  headerMessage,
+			Long:  strings.TrimSpace(headerMessage),
 			Run: func(cmd *cobra.Command, args []string) {
 				printDefault()
 			},
@@ -195,7 +195,7 @@ func addOtherCommands(cmds []*cobra.Command) []*cobra.Command {
 		&cobra.Command{
 			Use:   "gui",
 			Short: "opens the graphical user-interface",
-			Long:  headerMessage,
+			Long:  strings.TrimSpace(headerMessage),
 			Run: func(cmd *cobra.Command, args []string) {
 				printDefault()
 			},
@@ -207,7 +207,7 @@ func addInfoCommand(cmds []*cobra.Command) []*cobra.Command {
 	return append(cmds, &cobra.Command{
 		Use:   "info",
 		Short: "prints ppm help message",
-		Long:  headerMessage,
+		Long:  strings.TrimSpace(headerMessage),
 		Run: func(cmd *cobra.Command, args []string) {
 			rootCmd.Help()
 		},
@@ -219,13 +219,13 @@ var versionFlag bool
 var rootCmd = &cobra.Command{
 	Use:   "ppm",
 	Short: "Prints hints on how to replace PPM with the state tool",
-	Long:  `Shim for the deprecated Perl Package Manager, explaining how to replace it with the state tool.`,
+	Long:  strings.TrimSpace(headerMessage),
 	Run: func(cmd *cobra.Command, args []string) {
 		if versionFlag {
-			printVersion()
+			printDefault()
 			return
 		}
-		printDefault()
+		printMain()
 	},
 }
 
@@ -239,12 +239,10 @@ func main() {
 	commands = addInfoCommand(commands)
 	commands = addOtherCommands(commands)
 
-	// replace the --help messages with the actual commands
-	for _, c := range commands {
-		c.SetHelpFunc(func(c *cobra.Command, args []string) {
-			c.Run(c, args)
-		})
-	}
+	rootCmd.SetHelpFunc(func(c *cobra.Command, args []string) {
+		c.Run(c, args)
+	})
+
 	rootCmd.AddCommand(commands...)
 	rootCmd.Execute()
 }
