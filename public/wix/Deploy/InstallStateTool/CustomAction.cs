@@ -20,7 +20,7 @@ namespace InstallStateTool
             string tempDir = Path.GetTempPath();
             string scriptPath = Path.Combine(tempDir, "install.ps1");
 
-            StatusMessage(session, "Installing State Tool...");
+            Status.ProgressBar.StatusMessage(session, "Installing State Tool...");
 
             try
             {
@@ -66,16 +66,6 @@ namespace InstallStateTool
             }
 
             return ActionResult.Success;
-        }
-
-        internal static void StatusMessage(Session session, string status)
-        {
-            Record record = new Record(3);
-            record[1] = "callAddProgressInfo";
-            record[2] = status;
-            record[3] = "Incrementing tick [1] of [2]";
-
-            session.Message(InstallMessage.ActionStart, record);
         }
 
     }

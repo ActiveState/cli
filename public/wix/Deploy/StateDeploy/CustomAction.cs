@@ -1,6 +1,7 @@
 using Microsoft.Deployment.WindowsInstaller;
 using System;
 using System.Text;
+using System.Diagnostics;
 
 namespace StateDeploy
 {
@@ -11,13 +12,18 @@ namespace StateDeploy
         {
             session.Log("Starting state deploy");
 
-            StatusMessage(session, string.Format("Deploying project {0}...", session.CustomActionData["PROJECT_NAME"]));
+            Status.ProgressBar.StatusMessage(session, string.Format("Deploying project {0}...", session.CustomActionData["PROJECT_NAME"]));
+            MessageResult incrementResult = Status.ProgressBar.Increment(session, 3);
+            if (incrementResult == MessageResult.Cancel)
+            {
+                return ActionResult.UserExit;
+            }
+
             string deployCmd = BuildDeployCmd(session);
             session.Log(string.Format("Executing deploy command: {0}", deployCmd));
             try
             {
-                System.Diagnostics.ProcessStartInfo procStartInfo =
-                    new System.Diagnostics.ProcessStartInfo("cmd", "/c " + deployCmd);
+                ProcessStartInfo procStartInfo = new ProcessStartInfo("cmd", "/c " + deployCmd);
 
                 // The following commands are needed to redirect the standard output.
                 // This means that it will be redirected to the Process.StandardOutput StreamReader.
@@ -32,15 +38,48 @@ namespace StateDeploy
                 // Do not create the black window.
                 procStartInfo.CreateNoWindow = true;
 
-                System.Diagnostics.Process proc = new System.Diagnostics.Process();
+                Process proc = new Process();
                 proc.StartInfo = procStartInfo;
                 proc.Start();
 
                 while (!proc.HasExited)
                 {
-                    MessageResult incrementResult = IncrementProgressBar(session, 1);
-                    if (incrementResult == MessageResult.Cancel)
+                    try
                     {
+                        incrementResult = Status.ProgressBar.Increment(session, 0);
+                        if (incrementResult == MessageResult.Cancel)
+                        {
+                            session.Log("Increment result was cancel!");
+                            return ActionResult.UserExit;
+                        }
+                    } catch (InstallCanceledException)
+                    {
+                        session.Log("Caught install canceled exception!");
+                        
+                        // Close any State Tool processes
+                        foreach (var process in Process.GetProcessesByName("state"))
+                        {
+                            process.Kill();
+                            process.Dispose();
+                        }
+
+                        // Close the cmd.exe process that started the above State Tool process
+                        proc.Kill();
+                        proc.Dispose();
+
+                        ActionResult result = Uninstall.Remove.InstallDir(session, session.CustomActionData["INSTALLDIR"]);
+                        if (result.Equals(ActionResult.Failure))
+                        {
+                            session.Log("Could not remove installation directory");
+                            return ActionResult.Failure;
+                        }
+
+                        result = Uninstall.Remove.EnvironmentEntries(session, session.CustomActionData["INSTALLDIR"]);
+                        if (result.Equals(ActionResult.Failure))
+                        {
+                            session.Log("Could not remove environment entries");
+                            return ActionResult.Failure;
+                        }
                         return ActionResult.UserExit;
                     }
                 }
@@ -77,25 +116,6 @@ namespace StateDeploy
             deployCMDBuilder.AppendFormat(" {0} --path=\"{1}\\\"", projectName, @installDir);
 
             return deployCMDBuilder.ToString();
-        }
-
-        internal static void StatusMessage(Session session, string status)
-        {
-            Record record = new Record(3);
-            record[1] = "callAddProgressInfo";
-            record[2] = status;
-            record[3] = "Incrementing tick [1] of [2]";
-
-            session.Message(InstallMessage.ActionStart, record);
-        }
-
-        public static MessageResult IncrementProgressBar(Session session, int progressTicks)
-        {
-            var record = new Record(3);
-            record[1] = 2; // "ProgressReport" message 
-            record[2] = progressTicks.ToString(); // ticks to increment 
-            record[3] = 0; // ignore 
-            return session.Message(InstallMessage.Progress, record);
         }
     }
 }
