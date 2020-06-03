@@ -89,7 +89,7 @@ func NewInstallerParams(cacheDir string, commitID strfmt.UUID, owner string, pro
 }
 
 // NewInstaller creates a new RuntimeInstaller
-func NewInstaller(commitID strfmt.UUID, owner, projectName string) (*Installer, *failures.Failure) {
+func NewInstaller(commitID strfmt.UUID, owner, projectName string) (*Installer, error) {
 	logging.Debug("cache path: %s", config.CachePath())
 	return NewInstallerByParams(
 		InstallerParams{
@@ -102,7 +102,7 @@ func NewInstaller(commitID strfmt.UUID, owner, projectName string) (*Installer, 
 
 // NewInstallerByParams creates a new RuntimeInstaller after verifying the provided install-dir
 // exists as a directory or can be created.
-func NewInstallerByParams(params InstallerParams) (*Installer, *failures.Failure) {
+func NewInstallerByParams(params InstallerParams) (*Installer, error) {
 	installer := &Installer{
 		runtimeDownloader: NewDownload(params.CommitID, params.Owner, params.ProjectName),
 		params:            params,
