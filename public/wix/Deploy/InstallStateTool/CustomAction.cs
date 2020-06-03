@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Net;
 using Microsoft.Deployment.WindowsInstaller;
+using System.Diagnostics;
 
 namespace InstallStateTool
 {
@@ -19,8 +20,10 @@ namespace InstallStateTool
 
             string tempDir = Path.GetTempPath();
             string scriptPath = Path.Combine(tempDir, "install.ps1");
+            string installPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ActiveState", "bin");
 
             Status.ProgressBar.StatusMessage(session, "Installing State Tool...");
+            ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
 
             try
             {
@@ -33,17 +36,36 @@ namespace InstallStateTool
             }
 
 
-            string installCmd = string.Format("powershell \"{0} -n\"", scriptPath);
+            string installCmd = string.Format("powershell \"{0} -n -t {1}\"", scriptPath, installPath);
             session.Log(string.Format("Running install command: {0}", installCmd));
-            return RunCommand(session, installCmd);
+            ActionResult result = RunCommand(session, installCmd);
+            if (result.Equals(ActionResult.UserExit))
+            {
+                result = Uninstall.Remove.InstallDir(session, installPath);
+                if (result.Equals(ActionResult.Failure))
+                {
+                    session.Log("Could not remove installation directory");
+                    return ActionResult.Failure;
+                }
+
+                result = Uninstall.Remove.EnvironmentEntries(session, installPath);
+                if (result.Equals(ActionResult.Failure))
+                {
+                    session.Log("Could not remove environment entries");
+                    return ActionResult.Failure;
+                }
+                return ActionResult.UserExit;
+            }
+
+            return ActionResult.Success;
         }
 
         private static ActionResult RunCommand(Session session, string cmd)
         {
+            bool cancelled = false;
             try
             {
-                System.Diagnostics.ProcessStartInfo procStartInfo =
-                    new System.Diagnostics.ProcessStartInfo("cmd", "/c " + cmd);
+                ProcessStartInfo procStartInfo = new ProcessStartInfo("cmd", "/c " + cmd);
 
                 // The following commands are needed to redirect the standard output.
                 // This means that it will be redirected to the Process.StandardOutput StreamReader.
@@ -53,9 +75,24 @@ namespace InstallStateTool
                 // Do not create the black window.
                 procStartInfo.CreateNoWindow = true;
 
-                System.Diagnostics.Process proc = new System.Diagnostics.Process();
+                Process proc = new Process();
                 proc.StartInfo = procStartInfo;
                 proc.Start();
+
+                while (!proc.HasExited)
+                {
+                    try
+                    {
+                        Status.ProgressBar.Increment(session, 0);
+                    }
+                    catch (InstallCanceledException)
+                    {
+                        cancelled = true;
+                        Status.ProgressBar.StatusMessage(session, "Cancelling State Tool installation...");
+                        break;
+                    }
+                }
+                proc.WaitForExit();
                 session.Log(string.Format("Standard output: {0}", proc.StandardOutput.ReadToEnd()));
                 session.Log(string.Format("Standard error: {0}", proc.StandardError.ReadToEnd()));
             }
@@ -65,6 +102,10 @@ namespace InstallStateTool
                 return ActionResult.Failure;
             }
 
+            if (cancelled)
+            {
+                return ActionResult.UserExit;
+            }
             return ActionResult.Success;
         }
 
