@@ -1275,7 +1275,8 @@ package_update:
 package_version_update:
   other: "Package updated: {{.V0}}@{{.V1}}"
 package_ingredient_err:
-  other: Failed to resolve an ingredient named {{.V0}}:
+  other: |
+    Failed to resolve an ingredient named {{.V0}}:
 err_package_removed:
   other: Failed to remove package
 err_packages_removed:
