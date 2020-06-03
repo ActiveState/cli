@@ -1257,7 +1257,7 @@ err_obtaining_change_request:
 package_no_data:
   other: No data found - Please verify the provided commit id
 package_no_packages:
-  other: No packages to list
+  other: Currently no package of the provided name is available on the ActiveState Platform.
 package_name:
   other: Name
 package_version:
@@ -1275,9 +1275,7 @@ package_update:
 package_version_update:
   other: "Package updated: {{.V0}}@{{.V1}}"
 package_ingredient_err:
-  other: Could not verify package name
-package_ingredient_not_found:
-  other: The provided package does not exist
+  other: Failed to resolve an ingredient named {{.V0}}:
 err_package_removed:
   other: Failed to remove package
 err_packages_removed:
@@ -1286,8 +1284,8 @@ package_removed:
   other: "Package removed: {{.V0}}"
 package_update_config_file:
   other: To ensure your local project is synchronized with the ActiveState platform please use `state pull`
-inventory_ingredient_version_not_available:
-  other: The ingredient {{.V0}} does not have any versions available
+inventory_ingredient_not_available:
+  other: The ingredient {{.V0}} is not available on the ActiveState Platform
 command_flag_no_such_flag:
   other: "No such flag: {{.V0}}"
 command_flag_invalid_value:

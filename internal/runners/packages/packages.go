@@ -1,7 +1,6 @@
 package packages
 
 import (
-	"errors"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/locale"
@@ -30,17 +29,14 @@ func executeAddUpdate(out output.Outputer, language, name, version string, opera
 	}
 
 	// Verify that the provided package actually exists (the vcs API doesn't care)
-	var ingredient *model.IngredientAndVersion
+	var err error
 	if version == "" {
-		ingredient, fail = model.IngredientWithLatestVersion(language, name)
+		_, err = model.IngredientWithLatestVersion(language, name)
 	} else {
-		ingredient, fail = model.IngredientByNameAndVersion(language, name, version)
+		_, err = model.IngredientByNameAndVersion(language, name, version)
 	}
-	if fail != nil {
-		return fail.WithDescription("package_ingredient_err")
-	}
-	if ingredient == nil {
-		return errors.New(locale.T("package_ingredient_not_found"))
+	if err != nil {
+		return locale.WrapError(err, "package_ingredient_err", "Failed to resolve an ingredient named {{.V0}}:", name)
 	}
 
 	// Commit the package
