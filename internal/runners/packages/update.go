@@ -39,7 +39,7 @@ func (u *Update) Run(params UpdateRunParams) error {
 	if version == "" {
 		ingredientVersion, err := model.IngredientWithLatestVersion(language, name)
 		if err != nil {
-			return locale.WrapError(err, "package_ingredient_err", "Failed to resolve an ingredient named {{.V0}}:", name)
+			return locale.WrapError(err, "package_ingredient_err", "Failed to resolve an ingredient named {{.V0}}.", name)
 		}
 		version = *ingredientVersion.Version.Version
 	}

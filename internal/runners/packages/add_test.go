@@ -20,7 +20,7 @@ func TestAdd(t *testing.T) {
 	}{
 		"no version":      {func() {}, "artifact", "Package added: artifact", noErr},
 		"valid version":   {func() {}, "artifact@2.0", "Package added: artifact@2.0", noErr},
-		"invalid version": {func() {}, "artifact@10.0", "provided package does not exist", yesErr},
+		"invalid version": {func() {}, "artifact@10.0", "Failed to resolve an ingredient named artifact", yesErr},
 		"commit error":    {regCommitError, "artifact", "Failed to add package", yesErr},
 	}
 

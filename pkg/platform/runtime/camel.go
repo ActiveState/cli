@@ -232,7 +232,7 @@ func (cr *CamelRuntime) PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir
 	if metaData.hasBinaryFile(constants.ActivePerlExecutable) {
 		err := installPPMShim(metaData)
 		if err != nil {
-			return locale.WrapError(err, "ppm_install_err", "Failed to install PPM shim command")
+			return locale.WrapError(err, "ppm_install_err", "Failed to install PPM shim command.")
 		}
 	}
 

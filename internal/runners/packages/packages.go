@@ -36,7 +36,7 @@ func executeAddUpdate(out output.Outputer, language, name, version string, opera
 		_, err = model.IngredientByNameAndVersion(language, name, version)
 	}
 	if err != nil {
-		return locale.WrapError(err, "package_ingredient_err", "Failed to resolve an ingredient named {{.V0}}:", name)
+		return locale.WrapError(err, "package_ingredient_err", "Failed to resolve an ingredient named {{.V0}}.", name)
 	}
 
 	// Commit the package
