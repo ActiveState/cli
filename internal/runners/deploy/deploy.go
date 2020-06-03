@@ -236,7 +236,7 @@ func symlink(installPath string, overwrite bool, envGetter runtime.EnvGetter, ou
 		pathExt = strings.Split(pes, ";")
 	}
 
-	if rt.GOOS == "linux" {
+	if rt.GOOS != "windows" {
 		// Symlink to PATH (eg. /usr/local/bin)
 		if err := symlinkWithTarget(overwrite, path, bins, pathExt, out); err != nil {
 			return locale.WrapError(err, "err_symlink", "Could not create symlinks to {{.V0}}.", path)
