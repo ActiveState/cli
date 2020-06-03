@@ -1,8 +1,11 @@
 package mock
 
 import (
+	"fmt"
+	"runtime"
 	rt "runtime"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/download"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	graphMock "github.com/ActiveState/cli/pkg/platform/api/graphql/request/mock"
@@ -19,6 +22,7 @@ type Mock struct {
 	apiMock   *apiMock.Mock
 	authMock  *authMock.Mock
 	GraphMock *graphMock.Mock
+	ppmMock   *ppmMock
 }
 
 var mock *httpmock.HTTPMock
@@ -31,6 +35,7 @@ func Init() *Mock {
 		apiMock.Init(),
 		authMock.Init(),
 		graphMock.Init(),
+		initPpm(),
 	}
 }
 
@@ -41,6 +46,7 @@ func (m *Mock) Close() {
 	m.apiMock.Close()
 	m.authMock.Close()
 	m.GraphMock.Close()
+	m.ppmMock.Close()
 }
 
 func (m *Mock) MockFullRuntime() {
@@ -57,6 +63,26 @@ func (m *Mock) MockFullRuntime() {
 	download.SetMocking(false)
 
 	m.MockCamelDownload()
+
+	m.ppmMock.MockDownload()
+}
+
+type ppmMock struct {
+	httpmock *httpmock.HTTPMock
+}
+
+func initPpm() *ppmMock {
+	return &ppmMock{
+		httpmock.Activate(constants.PpmDownloadURL),
+	}
+}
+
+func (m *ppmMock) Close() {
+	httpmock.DeActivate()
+}
+
+func (m *ppmMock) MockDownload() {
+	m.httpmock.RegisterWithResponseBody("GET", fmt.Sprintf("ppm-%s", runtime.GOOS), 200, "")
 }
 
 func (m *Mock) MockCamelDownload() {
