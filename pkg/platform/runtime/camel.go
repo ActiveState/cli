@@ -2,10 +2,14 @@ package runtime
 
 import (
 	"bytes"
+	"fmt"
 	"html/template"
+	"io"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
 	rt "runtime"
 	"strings"
 
@@ -17,6 +21,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/unarchiver"
+	"github.com/phayes/permbits"
 )
 
 var _ Assembler = &CamelRuntime{}
@@ -149,7 +154,7 @@ func (cr *CamelRuntime) PreUnpackArtifact(artf *HeadChefArtifact) *failures.Fail
 
 // PostUnpackArtifact parses the metadata file, runs the Relocation function (if
 // necessary) and moves the artifact to its final destination
-func (cr *CamelRuntime) PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir string, archivePath string, cb func()) *failures.Failure {
+func (cr *CamelRuntime) PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir string, archivePath string, cb func()) error {
 	archiveName := strings.TrimSuffix(filepath.Base(archivePath), filepath.Ext(archivePath))
 
 	// the above only strips .gz, so account for .tar.gz use-case
@@ -224,6 +229,47 @@ func (cr *CamelRuntime) PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir
 		return fail
 	}
 
+	if metaData.hasBinaryFile(constants.ActivePerlExecutable) {
+		err := installPPMShim(metaData)
+		if err != nil {
+			return locale.WrapError(err, "ppm_install_err", "Failed to install PPM shim command")
+		}
+	}
+
+	return nil
+}
+
+func installPPMShim(metaData *MetaData) error {
+	resp, err := http.Get(fmt.Sprintf("%s/ppm-%s", constants.PpmDownloadURL, runtime.GOOS))
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	td := filepath.Join(metaData.Path, metaData.BinaryLocations[0].Path)
+	ppmExe := "ppm"
+	if runtime.GOOS == "windows" {
+		ppmExe = "ppm.exe"
+	}
+	ppmTarget := filepath.Join(td, ppmExe)
+	out, err := os.Create(ppmTarget)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, resp.Body)
+	if err != nil {
+		return err
+	}
+
+	out.Close()
+	permissions, _ := permbits.Stat(ppmTarget)
+	permissions.SetUserExecute(true)
+	err = permbits.Chmod(ppmTarget, permissions)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -311,7 +357,7 @@ func (cr *CamelRuntime) GetEnv(inherit bool, projectDir string) (map[string]stri
 			return nil, locale.WrapError(
 				fail,
 				"err_get_env_metadata_error",
-				"Your installation or build is corrupted.  Try re-installing the project, or update your build.  If the problem persists, please report the issue on our forums: {{.V0}}", 
+				"Your installation or build is corrupted.  Try re-installing the project, or update your build.  If the problem persists, please report the issue on our forums: {{.V0}}",
 				constants.ForumsURL,
 			)
 		}
