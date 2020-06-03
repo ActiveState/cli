@@ -9,7 +9,6 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
@@ -18,9 +17,6 @@ import (
 )
 
 var persisted *VirtualEnvironment
-
-// FailAlreadyActive is a failure given when a project is already active
-var FailAlreadyActive = failures.Type("virtualenvironment.fail.alreadyactive", failures.FailUser)
 
 // OS is used by tests to spoof a different value
 var OS = rt.GOOS
@@ -67,7 +63,7 @@ func (v *VirtualEnvironment) Activate() error {
 
 	activeProject := os.Getenv(constants.ActivatedStateEnvVarName)
 	if activeProject != "" {
-		return locale.NewError("err_already_active", v.project.Owner()+"/"+v.project.Name())
+		return locale.NewError("err_already_active", "You cannot activate a new state when you are already in an activated state. You are in an activated state for project: {{.V0}}", v.project.Owner()+"/"+v.project.Name())
 	}
 
 	if strings.ToLower(os.Getenv(constants.DisableRuntime)) != "true" {

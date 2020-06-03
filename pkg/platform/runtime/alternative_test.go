@@ -106,8 +106,8 @@ func (suite *AlternativeRuntimeTestSuite) Test_GetEnv() {
 
 	for i := numArtifacts - 1; i >= 0; i-- {
 		counter := mock.NewMockIncrementer()
-		fail := ar.PostUnpackArtifact(artifacts.Artifacts[i], runtimeDirs[i], "", func() { counter.Increment() })
-		suite.Assert().NoError(fail.ToError())
+		err := ar.PostUnpackArtifact(artifacts.Artifacts[i], runtimeDirs[i], "", func() { counter.Increment() })
+		suite.Assert().NoError(err)
 		suite.Assert().Equal(1, counter.Count, "one executable moved to final installation directory")
 	}
 

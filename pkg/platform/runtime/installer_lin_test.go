@@ -88,15 +88,14 @@ func (suite *InstallerLinuxTestSuite) TestInstall_ArchiveDoesNotExist() {
 	mockAssembler := new(rmock.Assembler)
 	suite.setMocks(mockAssembler, false)
 	_, archives := headchefArtifact("/no/such/archive.tar.gz")
-	fail := suite.installer.InstallFromArchives(archives, mockAssembler, prg.Progress)
+	err := suite.installer.InstallFromArchives(archives, mockAssembler, prg.Progress)
 
 	prg.AssertCloseAfterCancellation(suite.T())
 
 	mockAssembler.AssertExpectations(suite.T())
 
-	suite.Require().Error(fail.ToError())
-	suite.Equal(runtime.FailArchiveInvalid, fail.Type)
-	suite.Equal(locale.Tr("installer_err_archive_notfound", "/no/such/archive.tar.gz"), fail.Error())
+	suite.Require().Error(err)
+	suite.EqualError(err, locale.Tr("installer_err_archive_notfound", "/no/such/archive.tar.gz"))
 }
 
 func (suite *InstallerLinuxTestSuite) TestInstall_ArchiveNotTarGz() {
@@ -113,14 +112,13 @@ func (suite *InstallerLinuxTestSuite) TestInstall_ArchiveNotTarGz() {
 
 	_, archives := headchefArtifact(invalidArchive)
 
-	fail = suite.installer.InstallFromArchives(archives, mockAssembler, prg.Progress)
+	err := suite.installer.InstallFromArchives(archives, mockAssembler, prg.Progress)
 
 	mockAssembler.AssertExpectations(suite.T())
 
 	prg.AssertCloseAfterCancellation(suite.T())
-	suite.Require().Error(fail.ToError())
-	suite.Equal(runtime.FailArchiveInvalid, fail.Type)
-	suite.Equal(locale.Tr("installer_err_archive_badext", invalidArchive), fail.Error())
+	suite.Require().Error(err)
+	suite.EqualError(err, locale.Tr("installer_err_archive_badext", invalidArchive))
 }
 
 func (suite *InstallerLinuxTestSuite) TestInstall_BadArchive() {
@@ -132,14 +130,13 @@ func (suite *InstallerLinuxTestSuite) TestInstall_BadArchive() {
 	suite.setMocks(mockAssembler, false)
 
 	_, archives := headchefArtifact(badArchive)
-	fail := suite.installer.InstallFromArchives(archives, mockAssembler, prg.Progress)
+	err := suite.installer.InstallFromArchives(archives, mockAssembler, prg.Progress)
 
 	prg.AssertCloseAfterCancellation(suite.T())
 
 	mockAssembler.AssertExpectations(suite.T())
-	suite.Require().Error(fail.ToError())
-	suite.Equal(runtime.FailArchiveInvalid, fail.Type)
-	suite.Contains(fail.Error(), "EOF")
+	suite.Require().Error(err)
+	suite.Contains(err.Error(), "EOF")
 }
 
 func Test_InstallerLinuxTestSuite(t *testing.T) {

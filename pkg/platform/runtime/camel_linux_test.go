@@ -54,7 +54,7 @@ func (suite *CamelLinuxRuntimeTestSuite) TestRelocate() {
 		Path:          filepath.Join(cacheDir, "relocate"),
 		RelocationDir: relocationPrefix,
 		BinaryLocations: []runtime.MetaDataBinary{
-			runtime.MetaDataBinary{
+			{
 				Path:     "bin",
 				Relative: true,
 			},
@@ -120,9 +120,11 @@ func (suite *CamelLinuxRuntimeTestSuite) Test_PostUnpackWithFailures() {
 			suite.Require().NoError(fail.ToError(), "camel runtime assembler initialized")
 			fail = fileutils.MkdirUnlessExists(cr.InstallationDirectory(artifact))
 			suite.Require().NoError(fail.ToError(), "creating installation directory")
-			fail = cr.PostUnpackArtifact(artifact, runtimeDir, archivePath, func() { counter.Increment() })
+			err = cr.PostUnpackArtifact(artifact, runtimeDir, archivePath, func() { counter.Increment() })
 
-			suite.Require().Error(fail.ToError())
+			suite.Require().Error(err)
+			suite.IsType(&failures.Failure{}, err)
+			fail, _ = err.(*failures.Failure)
 			suite.Equal(tc.expectedFailure, fail.Type)
 			suite.Assert().Equal(0, counter.Count)
 		})
@@ -130,5 +132,5 @@ func (suite *CamelLinuxRuntimeTestSuite) Test_PostUnpackWithFailures() {
 }
 
 func Test_CamelLinuxRuntimeTestSuite(t *testing.T) {
-	suite.Run(t, new(CamelRuntimeTestSuite))
+	suite.Run(t, new(CamelLinuxRuntimeTestSuite))
 }
