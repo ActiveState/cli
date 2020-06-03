@@ -57,7 +57,7 @@ namespace InstallStateTool
                 return ActionResult.UserExit;
             }
 
-            return ActionResult.Success;
+            return result;
         }
 
         private static ActionResult RunCommand(Session session, string cmd)
@@ -87,6 +87,7 @@ namespace InstallStateTool
                     }
                     catch (InstallCanceledException)
                     {
+                        session.Log("Caught install cancelled exception");
                         cancelled = true;
                         Status.ProgressBar.StatusMessage(session, "Cancelling State Tool installation...");
                         break;

@@ -46,15 +46,10 @@ namespace StateDeploy
                 {
                     try
                     {
-                        incrementResult = Status.ProgressBar.Increment(session, 0);
-                        if (incrementResult == MessageResult.Cancel)
-                        {
-                            session.Log("Increment result was cancel!");
-                            return ActionResult.UserExit;
-                        }
+                        Status.ProgressBar.Increment(session, 0);
                     } catch (InstallCanceledException)
                     {
-                        session.Log("Caught install canceled exception!");
+                        session.Log("Caught install canceled exception");
                         
                         // Close any State Tool processes
                         foreach (var process in Process.GetProcessesByName("state"))
