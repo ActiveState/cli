@@ -56,10 +56,14 @@ func link(fpath, symlink string) error {
 	if _, err = oleutil.CallMethod(shortcut, "Save"); err != nil {
 		return errs.Wrap(err, "Could not save lnk")
 	}
+	return nil
 }
 
 func newShortcut(target string) (*ole.IDispatch, error) {
-	ole.CoInitializeEx(0, ole.COINIT_APARTMENTTHREADED|ole.COINIT_SPEED_OVER_MEMORY)
+	if err := ole.CoInitializeEx(0, ole.COINIT_APARTMENTTHREADED|ole.COINIT_SPEED_OVER_MEMORY); err != nil {
+		return nil, errs.Wrap(err, "Could not initialize ole")
+	}
+
 	oleShellObject, err := oleutil.CreateObject("WScript.Shell")
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not create shell object")
