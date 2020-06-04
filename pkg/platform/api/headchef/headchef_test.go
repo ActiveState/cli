@@ -33,7 +33,7 @@ func (suite *HeadchefTestSuite) SendRequest(rt headchefMock.ResponseType) *headc
 
 	client := headchef.NewClient(api.GetServiceURL(api.ServiceHeadChef))
 	buildRequest := &headchef_models.V1BuildRequest{
-		Requester: &headchef_models.V1BuildRequestRequester{},
+		Requester: &headchef_models.V1Requester{},
 	}
 	return client.RequestBuild(buildRequest)
 }
