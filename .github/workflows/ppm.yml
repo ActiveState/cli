@@ -2,6 +2,7 @@ name: PPM Shim deploy
 
 on:
   push:
+    branches: [ master ]
     paths: 
       - 'cmd/ppm/**'
   pull_request:
