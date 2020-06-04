@@ -13,22 +13,34 @@ jobs:
 
   build:
     name: Build
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    env:
+      ACTIVESTATE_CLI_DISABLE_RUNTIME: true
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
     steps:
-
     - name: Set up Go 1.x
       uses: actions/setup-go@v2
       with:
         go-version: ^1.13
       id: go
 
-    - name: Install State Tool
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v2
+
+    - name: Install State Tool (windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        .\public\install.ps1 -n -t %GITHUB_WORKSPACE%
+        echo "::add-path::%GITHUB_WORKSPACE%"
+      shell: cmd
+
+    - name: Install State Tool (linux)
       run: |
         ./public/install.sh -n -b master
         echo "::add-path::$HOME/.local/bin"
-    - name: Install the state tool
-      run: public/install.sh -t $PWD
-      
+
     - name: Build
       run: state run build-ppm
 

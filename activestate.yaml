@@ -54,11 +54,11 @@ scripts:
   - name: build-ppm
     description: Builds the ppm shim command that is installed with ActivePerl installations
     value: |
-      go build -o ./build/$constants.PPM_BUILD_TARGET $constants.PPM_PKGS
+      go build -mod=vendor -o ./build/$constants.PPM_BUILD_TARGET $constants.PPM_PKGS
   - name: deploy-ppm
     description: Deploys the PPM shim to s3
     value: |
-      go run scripts/s3-deployer/main.go build/$constants.PPM_BUILD_TARGET ca-central-1 cli-update update/ppm/$constants.PPM_BUILD_TARGET
+      go run -mod=vendor scripts/s3-deployer/main.go build/$constants.PPM_BUILD_TARGET ca-central-1 cli-update update/ppm/$constants.PPM_BUILD_TARGET
   - name: generate-update
     description: Generate update files
     value: |
