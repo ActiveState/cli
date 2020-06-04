@@ -92,7 +92,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployPerl() {
 	cp.ExpectExitCode(0)
 
 	cp = cmdIfy(ts, filepath.Join(ts.Dirs.Work, "bin", "ptar"), "--version")
-	cp.Expect("a tar-like program written in Perl")
+	cp.Expect("a tar-like program written in perl")
 	cp.ExpectExitCode(0)
 
 	cp = cmdIfy(ts, filepath.Join(ts.Dirs.Work, "bin", "ppm"), "--version")
