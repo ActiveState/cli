@@ -91,9 +91,9 @@ func (suite *DeployIntegrationTestSuite) TestDeployPerl() {
 	cp.Expect("This is perl 5")
 	cp.ExpectExitCode(0)
 
-	cp = cmdIfy(ts, filepath.Join(ts.Dirs.Work, "bin", "ptar"), "--version")
+	cp = cmdIfy(ts, filepath.Join(ts.Dirs.Work, "bin", "ptar"), "-h")
 	cp.Expect("a tar-like program written in perl")
-	cp.ExpectExitCode(0)
+	cp.Wait()
 
 	cp = cmdIfy(ts, filepath.Join(ts.Dirs.Work, "bin", "ppm"), "--version")
 	cp.Expect("The Perl Package Manager(PPM) is no longer supported.")
