@@ -60,7 +60,7 @@ func cmdIfy(ts *e2e.Session, args ...string) *termtest.ConsoleProcess {
 	}
 
 	return ts.SpawnCmdWithOpts("cmd",
-		e2e.WithArgs("/c", strings.Join(args[1:], " ")),
+		e2e.WithArgs("/c", strings.Join(args, " ")),
 		e2e.AppendEnv("PATHEXT=.COM;.EXE;.BAT;.LNK"))
 }
 
