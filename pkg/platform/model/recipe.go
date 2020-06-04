@@ -101,7 +101,6 @@ func fetchRawRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *s
 
 func commitToOrder(commitID strfmt.UUID, owner, project string, hostPlatform *string) (*inventory_models.V1Order, error) {
 	monoOrder, err := FetchOrderFromCommit(commitID)
-	fmt.Printf("in commitToOrder: %v %v\n", monoOrder, err)
 	if err != nil {
 		return nil, FailOrderRecipes.Wrap(err, locale.T("err_order_recipe")).ToError()
 	}
@@ -138,7 +137,6 @@ func fetchRecipeID(commitID strfmt.UUID, owner, project string, hostPlatform *st
 	var err error
 	params := iop.NewSolveOrderParams()
 	params.Order, err = commitToOrder(commitID, owner, project, hostPlatform)
-	fmt.Printf("in fetchRecipeID: commitToOrder %v %v\n", params.Order, err)
 	if err != nil {
 		return nil, FailOrderRecipes.Wrap(err)
 	}

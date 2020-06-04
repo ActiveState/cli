@@ -1,7 +1,6 @@
 package runtime
 
 import (
-	"fmt"
 	"net/url"
 	"path"
 	"path/filepath"
@@ -108,7 +107,6 @@ func (r *Download) fetchRecipeID() (strfmt.UUID, *failures.Failure) {
 	}
 
 	recipeID, fail := model.FetchRecipeIDForCommitAndPlatform(commitID, r.owner, r.projectName, model.HostPlatform)
-	fmt.Printf("in fetchRecipeID: %v %v\n", recipeID, fail)
 	if fail != nil {
 		return "", fail
 	}
@@ -122,7 +120,6 @@ func (r *Download) FetchArtifacts() (*FetchArtifactsResult, *failures.Failure) {
 	result := &FetchArtifactsResult{}
 
 	recipeID, fail := r.fetchRecipeID()
-	fmt.Printf("in FetchArtifacts: %v %v\n", recipeID, fail)
 	if fail != nil {
 		return nil, fail
 	}

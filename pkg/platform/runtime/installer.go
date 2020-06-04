@@ -1,7 +1,6 @@
 package runtime
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 
@@ -115,7 +114,6 @@ func NewInstallerByParams(params InstallerParams) (*Installer, error) {
 // Install will download the installer archive and invoke InstallFromArchive
 func (installer *Installer) Install() (envGetter EnvGetter, freshInstallation bool, err error) {
 	assembler, fail := installer.Assembler()
-	fmt.Printf("in Install: %v %v\n", assembler, fail)
 	if fail != nil {
 		return nil, false, fail
 	}
@@ -144,7 +142,6 @@ func (installer *Installer) Assembler() (Assembler, *failures.Failure) {
 	}
 
 	artifacts, fail := installer.runtimeDownloader.FetchArtifacts()
-	fmt.Printf("in Assembler: %v %v\n", artifacts, fail)
 	if fail != nil {
 		return nil, fail
 	}

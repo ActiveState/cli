@@ -1,7 +1,6 @@
 package virtualenvironment
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	rt "runtime"
@@ -67,7 +66,6 @@ func (v *VirtualEnvironment) Activate() error {
 		return locale.NewError("err_already_active", "You cannot activate a new state when you are already in an activated state. You are in an activated state for project: {{.V0}}", v.project.Owner()+"/"+v.project.Name())
 	}
 
-	fmt.Println("DISABLE_RUNTIME set? ", strings.ToLower(os.Getenv(constants.DisableRuntime)))
 	if strings.ToLower(os.Getenv(constants.DisableRuntime)) != "true" {
 		if err := v.activateRuntime(); err != nil {
 			return err
@@ -97,7 +95,6 @@ func (v *VirtualEnvironment) activateRuntime() error {
 	installer.OnDownload(v.onDownloadArtifacts)
 
 	rt, installed, err := installer.Install()
-	fmt.Printf("in activateRuntime: %v %v %v\n", rt, installed, err)
 	if err != nil {
 		return err
 	}
