@@ -230,28 +230,38 @@ func Test_uniqueExes(t *testing.T) {
 		pathext string
 		want    []string
 	}{
-		{
+/*		{
 			"Returns same bins",
-			[]string{"a", "a", "b", "c"},
+			[]string{"path1/a", "path2/b", "path3/c"},
 			"",
-			[]string{"a", "b", "c"},
+			[]string{"path1/a", "path2/b", "path3/c"},
 		},
 		{
 			"Returns exe prioritized",
-			[]string{"a.exe", "a.cmd", "c"},
+			[]string{"path1/a.exe", "path2/a.cmd", "path3/c"},
 			".exe;.cmd",
-			[]string{"a.exe", "c"},
+			[]string{"path1/a.exe", "path3/c"},
 		},
 		{
-			"Returns cmd prioritized",
-			[]string{"a.exe", "a.cmd", "c"},
-			".cmd;.cmd",
-			[]string{"a.exe", "c"},
+			"Returns cmd prioritized by PATH",
+			[]string{"path1/a.exe", "path2/a.cmd", "path2/c"},
+			".cmd;.exe",
+			[]string{"path1/a.exe", "path2/c"},
+		},*/
+		{
+			"Returns cmd prioritized by PATHEXT",
+			[]string{"path1/a.exe", "path1/a.cmd", "path2/c"},
+			".cmd;.exe",
+			[]string{"path1/a.exe", "path2/c"},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := uniqueExes(tt.bins, tt.pathext)
+			got, err := uniqueExes(tt.bins, tt.pathext)
+			if err != nil {
+				t.Errorf("uniqueExes error: %v", err)
+				t.FailNow()
+			}
 			sort.Strings(got)
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("uniqueExes() = %v, want %v", got, tt.want)

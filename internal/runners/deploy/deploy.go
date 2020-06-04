@@ -233,7 +233,10 @@ func symlink(installPath string, overwrite bool, envGetter runtime.EnvGetter, ou
 
 	if rt.GOOS == "windows" {
 		// Ensure we only symlink the versions dictated by PATHEXT
-		bins = uniqueExes(exes, os.Getenv("PATHEXT"))
+		exes, err = uniqueExes(exes, os.Getenv("PATHEXT"))
+		if err != nil {
+			return locale.WrapError(err, "err_unique_exes", "Could not detect unique executables, make sure your PATH and PATHEXT environment variables are properly configured.")
+		}
 	}
 
 	if rt.GOOS == "linux" {
@@ -351,9 +354,10 @@ func executables(bins []string) ([]string, error) {
 	return exes, nil
 }
 
-func uniqueExes(exePaths []string, pathext string) []string {
+func uniqueExes(exePaths []string, pathext string) ([]string, error) {
 	pathExt := strings.Split(strings.ToLower(pathext), ";")
 	exeFiles := map[string]exeFile{}
+	result := []string{}
 
 	for _, exePath := range exePaths {
 		exePath = strings.ToLower(exePath) // Windows is case-insensitive
@@ -362,19 +366,25 @@ func uniqueExes(exePaths []string, pathext string) []string {
 		exe.name = strings.TrimSuffix(filepath.Base(exePath), exe.ext)
 
 		if prevExe, exists := exeFiles[exe.name]; exists {
+			pathsEqual, err := fileutils.PathsEqual(filepath.Dir(exe.fpath), filepath.Dir(prevExe.fpath))
+			if err != nil {
+				return result, errs.Wrap(err, "Could not compare paths")
+			}
+			if pathsEqual {
+				continue // Earlier PATH entries win
+			}
 			if funk.IndexOf(pathExt, prevExe.ext) < funk.IndexOf(pathExt, exe.ext) {
-				continue // Existing entry is already valid
+				continue // Earlier PATHEXT entries win
 			}
 		}
 
 		exeFiles[exe.name] = exe
 	}
 
-	result := []string{}
 	for _, exe := range exeFiles {
 		result = append(result, exe.fpath)
 	}
-	return result
+	return result, nil
 }
 
 type Report struct {
