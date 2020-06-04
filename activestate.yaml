@@ -58,7 +58,6 @@ scripts:
   - name: deploy-ppm
     description: Deploys the PPM shim to s3
     value: |
-      echo go run scripts/s3-deployer/main.go build/$constants.PPM_BUILD_TARGET ca-central-1 cli-update update/ppm/$constants.PPM_BUILD_TARGET
       go run scripts/s3-deployer/main.go build/$constants.PPM_BUILD_TARGET ca-central-1 cli-update update/ppm/$constants.PPM_BUILD_TARGET
   - name: generate-update
     description: Generate update files
