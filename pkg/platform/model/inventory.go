@@ -23,7 +23,7 @@ var (
 	// FailPlatforms is a failure in calling the platforms endpoint
 	FailPlatforms = failures.Type("model.fail.platforms", api.FailUnknown)
 	// FailNoPlatformData indicates when no platform data is available after filtering.
-	FailNoPlatformData = failures.Type("model.fail.noplatformdata")
+	FailNoPlatformData = failures.Type("model.fail.noplatformdata", failures.FailUser)
 )
 
 // IngredientAndVersion is a sane version of whatever the hell it is go-swagger thinks it's doing
