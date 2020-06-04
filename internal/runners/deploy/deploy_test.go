@@ -223,7 +223,7 @@ func Test_report(t *testing.T) {
 	}
 }
 
-func Test_uniqueBins(t *testing.T) {
+func Test_uniqueExes(t *testing.T) {
 	tests := []struct {
 		name    string
 		bins    []string
@@ -251,10 +251,10 @@ func Test_uniqueBins(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := uniqueBins(tt.bins, tt.pathext)
+			got := uniqueExes(tt.bins, tt.pathext)
 			sort.Strings(got)
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("uniqueBins() = %v, want %v", got, tt.want)
+				t.Errorf("uniqueExes() = %v, want %v", got, tt.want)
 			}
 		})
 	}

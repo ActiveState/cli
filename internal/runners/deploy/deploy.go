@@ -226,14 +226,19 @@ func symlink(installPath string, overwrite bool, envGetter runtime.EnvGetter, ou
 		bins = strings.Split(p, string(os.PathListSeparator))
 	}
 
+	exes, err := executables(bins)
+	if err != nil {
+		return locale.WrapError(err, "err_symlink_exes", "Could not detect executables")
+	}
+
 	if rt.GOOS == "windows" {
 		// Ensure we only symlink the versions dictated by PATHEXT
-		bins = uniqueBins(bins, os.Getenv("PATHEXT"))
+		bins = uniqueExes(exes, os.Getenv("PATHEXT"))
 	}
 
 	if rt.GOOS == "linux" {
 		// Symlink to PATH (eg. /usr/local/bin)
-		if err := symlinkWithTarget(overwrite, path, bins, out); err != nil {
+		if err := symlinkWithTarget(overwrite, path, exes, out); err != nil {
 			return locale.WrapError(err, "err_symlink", "Could not create symlinks to {{.V0}}.", path)
 		}
 	}
@@ -245,7 +250,7 @@ func symlink(installPath string, overwrite bool, envGetter runtime.EnvGetter, ou
 		return locale.WrapError(err, "err_symlink_protection_undetermined", "Cannot determine if '{{.V0}}' is within protected directory.", symlinkPath)
 	}
 	if !isInsideOf {
-		if err := symlinkWithTarget(overwrite, symlinkPath, bins, out); err != nil {
+		if err := symlinkWithTarget(overwrite, symlinkPath, exes, out); err != nil {
 			return locale.WrapError(err, "err_symlink", "Could not create symlinks to {{.V0}}.", path)
 		}
 	}
@@ -269,57 +274,49 @@ func symlinkName(targetDir string, path string) string {
 // therefore executables are only symlinked if it has not been symlinked to a
 // target (with the same or a different extension) from a different directory.
 // Also: Only the executable with the highest priority according to pathExt is symlinked.
-func symlinkWithTarget(overwrite bool, path string, bins []string, out output.Outputer) error {
-	out.Notice(locale.Tr("deploy_symlink", path))
+func symlinkWithTarget(overwrite bool, symlinkPath string, exePaths []string, out output.Outputer) error {
+	out.Notice(locale.Tr("deploy_symlink", symlinkPath))
 
-	if fail := fileutils.MkdirUnlessExists(path); fail != nil {
+	if fail := fileutils.MkdirUnlessExists(symlinkPath); fail != nil {
 		return locale.WrapInputError(
 			fail, "err_deploy_mkdir",
-			"Could not create directory at {{.V0}}, make sure you have permissions to write to %s.", path, filepath.Dir(path))
+			"Could not create directory at {{.V0}}, make sure you have permissions to write to %s.", symlinkPath, filepath.Dir(symlinkPath))
 	}
 
-	for _, bin := range bins {
-		err := filepath.Walk(bin, func(fpath string, info os.FileInfo, err error) error {
-			// Filter out files that are not executable
-			if info == nil || info.IsDir() || !fileutils.IsExecutable(fpath) { // check if executable by anyone
-				return nil // not executable
+	for _, exePath := range exePaths {
+		symlink := symlinkName(symlinkPath, exePath)
+
+		// If the link already exists we may have to overwrite it, skip it, or fail..
+		if fileutils.TargetExists(symlink) {
+			// If the existing symlink already matches the one we want to create, skip it
+			skip, err := shouldSkipSymlink(symlink, exePath)
+			if err != nil {
+				return locale.WrapError(err, "err_deploy_shouldskip", "Could not determine if link already exists.")
+			}
+			if skip {
+				return nil
 			}
 
-			symlink := symlinkName(path, fpath)
-
-			// If the link already exists we may have to overwrite it, skip it, or fail..
-			if fileutils.TargetExists(symlink) {
-				// If the existing symlink already matches the one we want to create, skip it
-				skip, err := shouldSkipSymlink(symlink, fpath)
-				if err != nil {
-					return locale.WrapError(err, "err_deploy_shouldskip", "Could not determine if link already exists.")
-				}
-				if skip {
-					return nil
-				}
-
-				// If we're trying to overwrite a link not owned by us but overwrite=false then we should fail
-				if !overwrite {
-					return locale.NewInputError(
-						"err_deploy_symlink_target_exists",
-						"Cannot create symlink as the target already exists: {{.V0}}. Use '--force' to overwrite any existing files.", symlink)
-				}
-
-				// We're about to overwrite, so if this link isn't owned by us we should let the user know
-				out.Notice(locale.Tr("deploy_overwrite_target", symlink))
-
-				// to overwrite the existing file, we have to remove it first, or the link command will fail
-				if err := os.Remove(symlink); err != nil {
-					return locale.WrapInputError(
-						err, "err_deploy_overwrite",
-						"Could not overwrite {{.V0}}, make sure you have permissions to write to this file.", symlink)
-				}
+			// If we're trying to overwrite a link not owned by us but overwrite=false then we should fail
+			if !overwrite {
+				return locale.NewInputError(
+					"err_deploy_symlink_target_exists",
+					"Cannot create symlink as the target already exists: {{.V0}}. Use '--force' to overwrite any existing files.", symlink)
 			}
 
-			return link(fpath, symlink)
-		})
-		if err != nil {
-			return errs.Wrap(err, "Error while walking path")
+			// We're about to overwrite, so if this link isn't owned by us we should let the user know
+			out.Notice(locale.Tr("deploy_overwrite_target", symlink))
+
+			// to overwrite the existing file, we have to remove it first, or the link command will fail
+			if err := os.Remove(symlink); err != nil {
+				return locale.WrapInputError(
+					err, "err_deploy_overwrite",
+					"Could not overwrite {{.V0}}, make sure you have permissions to write to this file.", symlink)
+			}
+		}
+
+		if err := link(exePath, symlink); err != nil {
+			return err
 		}
 	}
 
@@ -346,34 +343,56 @@ func shouldSkipSymlink(symlink, fpath string) (bool, error) {
 	return false, nil
 }
 
-type binFile struct {
-	fname string
+type exeFile struct {
+	fpath string
 	name  string
 	ext   string
 }
 
-func uniqueBins(bins []string, pathext string) []string {
-	pathExt := strings.Split(strings.ToLower(pathext), ";")
-	binFiles := map[string]binFile{}
+// executables will return all the executables that need to be symlinked in the various provided bin directories
+func executables(bins []string) ([]string, error) {
+	exes := []string{}
 
 	for _, bin := range bins {
-		bin = strings.ToLower(bin) // Windows is case-insensitive
+		err := filepath.Walk(bin, func(fpath string, info os.FileInfo, err error) error {
+			// Filter out files that are not executable
+			if info == nil || info.IsDir() || !fileutils.IsExecutable(fpath) { // check if executable by anyone
+				return nil // not executable
+			}
 
-		bf := binFile{bin, "", filepath.Ext(bin)}
-		bf.name = strings.TrimSuffix(bin, bf.ext)
+			exes = append(exes, fpath)
+			return nil
+		})
+		if err != nil {
+			return exes, errs.Wrap(err, "Error while walking path")
+		}
+	}
 
-		if bfExisting, exists := binFiles[bf.name]; exists {
-			if funk.IndexOf(pathExt, bfExisting.ext) < funk.IndexOf(pathExt, bf.ext) {
+	return exes, nil
+}
+
+func uniqueExes(exePaths []string, pathext string) []string {
+	pathExt := strings.Split(strings.ToLower(pathext), ";")
+	exeFiles := map[string]exeFile{}
+
+	for _, exePath := range exePaths {
+		exePath = strings.ToLower(exePath) // Windows is case-insensitive
+
+		exe := exeFile{exePath, "", filepath.Ext(exePath)}
+		exe.name = strings.TrimSuffix(filepath.Base(exePath), exe.ext)
+
+		if prevExe, exists := exeFiles[exe.name]; exists {
+			if funk.IndexOf(pathExt, prevExe.ext) < funk.IndexOf(pathExt, exe.ext) {
 				continue // Existing entry is already valid
 			}
 		}
 
-		binFiles[bf.name] = bf
+		exeFiles[exe.name] = exe
 	}
 
 	result := []string{}
-	for _, bf := range binFiles {
-		result = append(result, bf.fname)
+	for _, exe := range exeFiles {
+		result = append(result, exe.fpath)
 	}
 	return result
 }
