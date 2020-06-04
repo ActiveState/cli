@@ -46,6 +46,8 @@ func (suite *DeployIntegrationTestSuite) TestDeploy() {
 			e2e.AppendEnv("SHELL=bash"),
 		)
 	case "darwin":
+		// On macOS some of the binaries already exist at /usr/local/bin so we have
+		// to use the --force flag
 		cp = ts.SpawnWithOpts(
 			e2e.WithArgs("deploy", "ActiveState-CLI/Python3", "--force", "--path", ts.Dirs.Work),
 			e2e.AppendEnv("SHELL=bash"),
