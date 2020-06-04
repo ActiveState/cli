@@ -10,12 +10,18 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
+	"github.com/spf13/viper"
 
 	"github.com/stretchr/testify/suite"
 )
 
 type MainTestSuite struct {
 	suite.Suite
+}
+
+func (suite *MainTestSuite) AfterTest(suiteName, testName string) {
+	// Reset viper config so deprecation mock is always used
+	viper.Reset()
 }
 
 func (suite *MainTestSuite) TestDeprecated() {
