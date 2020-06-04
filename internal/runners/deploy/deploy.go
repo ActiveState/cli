@@ -280,7 +280,7 @@ func symlinkWithTarget(overwrite bool, symlinkPath string, exePaths []string, ou
 	if fail := fileutils.MkdirUnlessExists(symlinkPath); fail != nil {
 		return locale.WrapInputError(
 			fail, "err_deploy_mkdir",
-			"Could not create directory at {{.V0}}, make sure you have permissions to write to %s.", symlinkPath, filepath.Dir(symlinkPath))
+			"Could not create directory at {{.V0}}, make sure you have permissions to write to {{.V1}}.", symlinkPath, filepath.Dir(symlinkPath))
 	}
 
 	for _, exePath := range exePaths {
