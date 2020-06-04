@@ -49,9 +49,6 @@ var (
 
 	// FailArtifactInvalidURL indicates a failure due to an artifact having an invalid URL
 	FailArtifactInvalidURL = failures.Type("runtime.fail.invalidurl")
-
-	// FailNoCommitID indicates a failures due to a platform project not having a default branch with commit ID
-	// FailNoCommitID = failures.Type("runtime.fail.nocommitid")
 )
 
 // HeadChefArtifact is a convenient type alias cause swagger generates some really shitty code
