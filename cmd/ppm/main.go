@@ -19,7 +19,7 @@ import (
 const docsBaseURI = "https://docs.activestate.com/platform"
 
 const headerMessage = `
-The Perl Package Manager(PPM) is no longer supported.
+The Perl Package Manager (PPM) is no longer supported.
 To manage your Perl packages from the command line, use the State Tool (state) instead. You can find more information on the State Tool at
 https://www.activestate.com/products/platform/state-tool/
 `

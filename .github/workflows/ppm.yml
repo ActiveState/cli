@@ -2,13 +2,12 @@ name: PPM Shim deploy
 
 on:
   push:
-    branches: [ master ]
     paths: 
-      - cmd/ppm
+      - 'cmd/ppm/**'
   pull_request:
     branches: [ master ]
     paths:
-      - cmd/ppm
+      - 'cmd/ppm/**'
 
 jobs:
 
