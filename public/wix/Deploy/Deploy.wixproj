@@ -25,15 +25,17 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
     <DefineConstants>Debug</DefineConstants>
     <CompilerAdditionalOptions>-ext WixUIExtension -ext WixUtilExtension</CompilerAdditionalOptions>
-    <LinkerAdditionalOptions>-sice:ICE91 -sice:ICE64 -sice:ICE71 -sice:ICE68 -ext WixUIExtension -ext WixUtilExtension</LinkerAdditionalOptions>
+    <LinkerAdditionalOptions>-ext WixUIExtension -ext WixUtilExtension</LinkerAdditionalOptions>
     <OutputPath>bin\$(Platform)\$(Configuration)\</OutputPath>
     <IntermediateOutputPath>obj\$(Platform)\$(Configuration)\</IntermediateOutputPath>
+    <SuppressIces>ICE91;ICE64;ICE71;ICE69;ICE39</SuppressIces>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
     <CompilerAdditionalOptions>-ext WixUIExtension -ext WixUtilExtension</CompilerAdditionalOptions>
-    <LinkerAdditionalOptions>-sice:ICE91 -sice:ICE64 -sice:ICE71 -sice:ICE68 -ext WixUIExtension -ext WixUtilExtension</LinkerAdditionalOptions>
+    <LinkerAdditionalOptions>-ext WixUIExtension -ext WixUtilExtension</LinkerAdditionalOptions>
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
+    <SuppressIces>ICE91;ICE64;ICE71;ICE69;ICE39</SuppressIces>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Product.wxs" />
@@ -42,6 +44,22 @@
     <ProjectReference Include="GetProjectName\GetProjectName.csproj">
       <Name>GetProjectName</Name>
       <Project>{d9de011c-0747-428e-b624-447ebb38e361}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>True</DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="InstallStateTool\InstallStateTool.csproj">
+      <Name>InstallStateTool</Name>
+      <Project>{0603250d-8a12-4de4-ba71-148aee759f06}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>True</DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="ResetProgress\ResetProgress.csproj">
+      <Name>ResetProgress</Name>
+      <Project>{5eb4dcdf-0e44-4db7-9b33-cef19b9bb2b3}</Project>
       <Private>True</Private>
       <DoNotHarvest>True</DoNotHarvest>
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>

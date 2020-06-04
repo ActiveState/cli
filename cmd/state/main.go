@@ -102,9 +102,9 @@ func run(args []string, out output.Outputer) (int, error) {
 	if deprecated != nil {
 		date := deprecated.Date.Format(constants.DateFormatUser)
 		if !deprecated.DateReached {
-			out.Print(locale.Tr("warn_deprecation", date, deprecated.Reason))
+			out.Notice(locale.Tr("warn_deprecation", date, deprecated.Reason))
 		} else {
-			out.Error(locale.Tr("err_deprecation", date, deprecated.Reason))
+			return 1, locale.NewInputError("err_deprecation", "You are running a version of the State Tool that is no longer supported! Reason: {{.V1}}", date, deprecated.Reason)
 		}
 	}
 

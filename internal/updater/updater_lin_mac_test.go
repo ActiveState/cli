@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -14,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
+	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 	"github.com/ActiveState/cli/internal/testhelpers/updatemocks"
 )
 
@@ -25,8 +27,11 @@ func TestUpdaterNoError(t *testing.T) {
 
 	updater := createUpdater()
 
-	err := updater.Run()
+	out := outputhelper.NewCatcher()
+	err := updater.Run(out.Outputer)
 	require.NoError(t, err, "Should run update")
+	// should notify about update_attempt
+	assert.NotEqual(t, "", strings.TrimSpace(out.CombinedOutput()))
 
 	dir, err := ioutil.TempDir("", "state-test-updater")
 	require.NoError(t, err)

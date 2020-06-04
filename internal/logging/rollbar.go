@@ -16,7 +16,10 @@ type delayedLog struct {
 var delayedLogs []delayedLog
 
 func SetupRollbar() {
-	UpdateRollbarPerson("unknown", "unknown", "unknown") // call again at authentication
+	// set user to unknown (if it has not been set yet)
+	if _, ok := rollbar.Custom()["UserID"]; !ok {
+		UpdateRollbarPerson("unknown", "unknown", "unknown")
+	}
 	rollbar.SetToken(constants.RollbarToken)
 	rollbar.SetEnvironment(constants.BranchName)
 	rollbar.SetCodeVersion(constants.RevisionHash)

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
+	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 	"github.com/ActiveState/cli/internal/testhelpers/updatemocks"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -43,18 +45,23 @@ func TestTimedCheck(t *testing.T) {
 
 	updatemocks.MockUpdater(t, os.Args[0], constants.BranchName, "1.2.3-123")
 
-	update, _ := AutoUpdate(configPath)
+	out := outputhelper.NewCatcher()
+	update, _ := AutoUpdate(configPath, out.Outputer)
 	assert.True(t, update, "Should want to update")
+	// It should notify about and update attempt
+	assert.NotEqual(t, "", strings.TrimSpace(out.CombinedOutput()))
 
 	stat, err := os.Stat(updateCheckMarker)
 	assert.NoError(t, err, "update-check marker was created")
 	modTime := stat.ModTime()
 
-	update, _ = AutoUpdate(configPath)
+	out = outputhelper.NewCatcher()
+	update, _ = AutoUpdate(configPath, out.Outputer)
 	assert.False(t, update, "Should not want to update")
 	stat, err = os.Stat(updateCheckMarker)
 	assert.NoError(t, err, "update-check marker still exists")
 	assert.Equal(t, modTime, stat.ModTime(), "update-check marker will not be modified for at least a day")
+	assert.Equal(t, "", strings.TrimSpace(out.CombinedOutput()))
 }
 
 func TestTimedCheckLockedVersion(t *testing.T) {
@@ -65,8 +72,10 @@ func TestTimedCheckLockedVersion(t *testing.T) {
 	_, err := os.Stat(updateCheckMarker)
 	assert.Error(t, err, "update-check marker does not exist")
 
-	update, _ := AutoUpdate(configPathWithVersion)
+	out := outputhelper.NewCatcher()
+	update, _ := AutoUpdate(configPathWithVersion, out.Outputer)
 	assert.False(t, update, "Should not want to update because we're using a locked version")
+	assert.Equal(t, "", strings.TrimSpace(out.CombinedOutput()))
 }
 
 func TestTimeout(t *testing.T) {
