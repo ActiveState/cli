@@ -251,7 +251,12 @@ func installPPMShim(metaData *MetaData) error {
 	if runtime.GOOS == "windows" {
 		ppmExe = "ppm.exe"
 	}
+
 	ppmTarget := filepath.Join(td, ppmExe)
+
+	// remove old ppm command (if it existed before)
+	_ = os.Remove(ppmTarget)
+
 	out, err := os.Create(ppmTarget)
 	if err != nil {
 		return err
