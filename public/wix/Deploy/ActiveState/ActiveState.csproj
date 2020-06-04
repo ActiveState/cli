@@ -5,11 +5,11 @@
     <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{FDAF56F5-7B7F-4E71-B008-03860A584147}</ProjectGuid>
+    <ProjectGuid>{6DB57871-36B9-42C2-AEB9-0F5E3A2F8272}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>StateDeploy</RootNamespace>
-    <AssemblyName>StateDeploy</AssemblyName>
+    <RootNamespace>ActiveState</RootNamespace>
+    <AssemblyName>ActiveState</AssemblyName>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -65,20 +65,6 @@
     <Compile Include="CustomAction.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Content Include="CustomAction.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\ActiveState\ActiveState.csproj">
-      <Project>{6db57871-36b9-42c2-aeb9-0f5e3a2f8272}</Project>
-      <Name>ActiveState</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Status\Status.csproj">
-      <Project>{5eb4dcdf-0e44-4db7-9b33-cef19b9bb2b3}</Project>
-      <Name>Status</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Uninstall\Uninstall.csproj">
-      <Project>{4c663442-bd30-4183-9e55-fd3eef13f032}</Project>
-      <Name>Uninstall</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(WixCATargetsPath)" Condition=" '$(WixCATargetsPath)' != '' " />

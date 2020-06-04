@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InstallStateTool", "Install
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Status", "Status\Status.csproj", "{5EB4DCDF-0E44-4DB7-9B33-CEF19B9BB2B3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ActiveState", "ActiveState\ActiveState.csproj", "{6DB57871-36B9-42C2-AEB9-0F5E3A2F8272}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -80,6 +82,13 @@ Global
 		{5EB4DCDF-0E44-4DB7-9B33-CEF19B9BB2B3}.Release|x64.Build.0 = Release|x64
 		{5EB4DCDF-0E44-4DB7-9B33-CEF19B9BB2B3}.Release|x86.ActiveCfg = Release|x86
 		{5EB4DCDF-0E44-4DB7-9B33-CEF19B9BB2B3}.Release|x86.Build.0 = Release|x86
+		{6DB57871-36B9-42C2-AEB9-0F5E3A2F8272}.Debug|x64.ActiveCfg = Debug|x64
+		{6DB57871-36B9-42C2-AEB9-0F5E3A2F8272}.Debug|x64.Build.0 = Debug|x64
+		{6DB57871-36B9-42C2-AEB9-0F5E3A2F8272}.Debug|x86.ActiveCfg = Debug|x86
+		{6DB57871-36B9-42C2-AEB9-0F5E3A2F8272}.Debug|x86.Build.0 = Debug|x86
+		{6DB57871-36B9-42C2-AEB9-0F5E3A2F8272}.Release|x64.ActiveCfg = Release|x86
+		{6DB57871-36B9-42C2-AEB9-0F5E3A2F8272}.Release|x86.ActiveCfg = Release|x86
+		{6DB57871-36B9-42C2-AEB9-0F5E3A2F8272}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

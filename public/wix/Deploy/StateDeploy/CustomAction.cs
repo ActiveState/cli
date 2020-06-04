@@ -50,17 +50,8 @@ namespace StateDeploy
                     } catch (InstallCanceledException)
                     {
                         session.Log("Caught install canceled exception");
-                        
-                        // Close any State Tool processes
-                        foreach (var process in Process.GetProcessesByName("state"))
-                        {
-                            process.Kill();
-                            process.Dispose();
-                        }
 
-                        // Close the cmd.exe process that started the above State Tool process
-                        proc.Kill();
-                        proc.Dispose();
+                        ActiveState.Process.KillProcessAndChildren(proc.Id);
 
                         ActionResult result = Uninstall.Remove.InstallDir(session, session.CustomActionData["INSTALLDIR"]);
                         if (result.Equals(ActionResult.Failure))

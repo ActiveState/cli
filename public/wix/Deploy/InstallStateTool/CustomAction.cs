@@ -62,7 +62,6 @@ namespace InstallStateTool
 
         private static ActionResult RunCommand(Session session, string cmd)
         {
-            bool cancelled = false;
             try
             {
                 ProcessStartInfo procStartInfo = new ProcessStartInfo("cmd", "/c " + cmd);
@@ -88,9 +87,8 @@ namespace InstallStateTool
                     catch (InstallCanceledException)
                     {
                         session.Log("Caught install cancelled exception");
-                        cancelled = true;
-                        Status.ProgressBar.StatusMessage(session, "Cancelling State Tool installation...");
-                        break;
+                        ActiveState.Process.KillProcessAndChildren(proc.Id);
+                        return ActionResult.UserExit;
                     }
                 }
                 proc.WaitForExit();
@@ -101,11 +99,6 @@ namespace InstallStateTool
             {
                 session.Log(string.Format("Caught exception: {0}", objException));
                 return ActionResult.Failure;
-            }
-
-            if (cancelled)
-            {
-                return ActionResult.UserExit;
             }
             return ActionResult.Success;
         }
