@@ -97,7 +97,10 @@ func TestEnv(t *testing.T) {
 	defer teardown()
 
 	os.Setenv(constants.DisableRuntime, "true")
+	defer os.Unsetenv(constants.DisableRuntime)
+
 	os.Setenv(constants.ProjectEnvVarName, projectfile.Get().Path())
+	defer os.Unsetenv(constants.ProjectEnvVarName)
 
 	venv := Init()
 	env, err := venv.GetEnv(false, filepath.Dir(projectfile.Get().Path()))

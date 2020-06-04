@@ -538,6 +538,7 @@ func FetchOrderFromCommit(commitID strfmt.UUID) (*mono_models.Order, error) {
 	params.CommitID = commitID
 
 	res, err := mono.New().VersionControl.GetOrder(params, nil)
+	fmt.Printf("in FetchOrderFromCommit get order: %v %v\n", res, err)
 	if err != nil {
 		return nil, errors.New(api.ErrorMessageFromPayload(err))
 	}
