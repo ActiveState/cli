@@ -33,9 +33,9 @@ jobs:
     - name: Install State Tool (windows)
       if: matrix.os == 'windows-latest'
       run: |
-        .\public\install.ps1 -n -t %GITHUB_WORKSPACE%
-        echo "::add-path::%GITHUB_WORKSPACE%"
-      shell: cmd
+        .\public\install.ps1 -n -t $Env:GITHUB_WORKSPACE
+        echo "::add-path::$Env:GITHUB_WORKSPACE"
+      shell: powershell
 
     - name: Install State Tool (linux)
       run: |
