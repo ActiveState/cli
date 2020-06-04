@@ -49,6 +49,9 @@ var (
 
 	// FailArtifactInvalidURL indicates a failure due to an artifact having an invalid URL
 	FailArtifactInvalidURL = failures.Type("runtime.fail.invalidurl")
+
+	// FailNoCommitID indicates a failures due to a platform project not having a default branch with commit ID
+	// FailNoCommitID = failures.Type("runtime.fail.nocommitid")
 )
 
 // HeadChefArtifact is a convenient type alias cause swagger generates some really shitty code
@@ -129,12 +132,15 @@ func (r *Download) FetchArtifacts() (*FetchArtifactsResult, *failures.Failure) {
 		return nil, fail
 	}
 
-	var commitID strfmt.UUID
+	var commitID *strfmt.UUID
 	for _, branch := range platProject.Branches {
 		if branch.Default {
-			commitID = *branch.CommitID
+			commitID = branch.CommitID
 			break
 		}
+	}
+	if commitID == nil {
+		return nil, FailNoCommitID.New("fetch_err_runtime_no_commitid")
 	}
 
 	buildAnnotations := headchef.BuildAnnotations{
