@@ -231,12 +231,10 @@ func symlink(installPath string, overwrite bool, envGetter runtime.EnvGetter, ou
 		return locale.WrapError(err, "err_symlink_exes", "Could not detect executables")
 	}
 
-	if rt.GOOS == "windows" {
-		// Ensure we only symlink the versions dictated by PATHEXT
-		exes, err = uniqueExes(exes, os.Getenv("PATHEXT"))
-		if err != nil {
-			return locale.WrapError(err, "err_unique_exes", "Could not detect unique executables, make sure your PATH and PATHEXT environment variables are properly configured.")
-		}
+	// Remove duplicate executables as per PATH and PATHEXT
+	exes, err = uniqueExes(exes, os.Getenv("PATHEXT"))
+	if err != nil {
+		return locale.WrapError(err, "err_unique_exes", "Could not detect unique executables, make sure your PATH and PATHEXT environment variables are properly configured.")
 	}
 
 	if rt.GOOS == "linux" {
