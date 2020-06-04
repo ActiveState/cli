@@ -13,7 +13,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
 	pmock "github.com/ActiveState/cli/internal/progress/mock"
@@ -55,9 +54,9 @@ func (suite *InstallerTestSuite) BeforeTest(suiteName, testName string) {
 	suite.Require().NoError(err)
 
 	suite.prg = pmock.NewTestProgress()
-	var fail *failures.Failure
-	suite.installer, fail = runtime.NewInstallerByParams(runtime.NewInstallerParams(suite.cacheDir, "00010001-0001-0001-0001-000100010001", "string", "string"))
-	suite.Require().NoError(fail.ToError())
+
+	suite.installer, err = runtime.NewInstallerByParams(runtime.NewInstallerParams(suite.cacheDir, "00010001-0001-0001-0001-000100010001", "string", "string"))
+	suite.Require().NoError(err)
 	suite.Require().NotNil(suite.installer)
 }
 

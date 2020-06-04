@@ -6,7 +6,6 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	graphMock "github.com/ActiveState/cli/pkg/platform/api/graphql/request/mock"
@@ -43,9 +42,8 @@ func (suite *InternalTestSuite) BeforeTest(suiteName, testName string) {
 	suite.downloadDir, err = ioutil.TempDir("", "cli-installer-test-download")
 	suite.Require().NoError(err)
 
-	var fail *failures.Failure
-	suite.installer, fail = NewInstallerByParams(NewInstallerParams(suite.cacheDir, "00010001-0001-0001-0001-000100010001", "string", "string"))
-	suite.Require().NoError(fail.ToError())
+	suite.installer, err = NewInstallerByParams(NewInstallerParams(suite.cacheDir, "00010001-0001-0001-0001-000100010001", "string", "string"))
+	suite.Require().NoError(err)
 	suite.Require().NotNil(suite.installer)
 
 	suite.graphMock = graphMock.Init()
@@ -59,12 +57,12 @@ func (suite *InternalTestSuite) AfterTest(suiteName, testName string) {
 }
 
 func (suite *InternalTestSuite) TestValidateCheckpointNoCommit() {
-	var fail *failures.Failure
-	suite.installer, fail = NewInstallerByParams(NewInstallerParams(suite.cacheDir, "", "string", "string"))
-	suite.Require().NoError(fail.ToError())
+	var err error
+	suite.installer, err = NewInstallerByParams(NewInstallerParams(suite.cacheDir, "", "string", "string"))
+	suite.Require().NoError(err)
 	suite.Require().NotNil(suite.installer)
 
-	fail = suite.installer.validateCheckpoint()
+	fail := suite.installer.validateCheckpoint()
 	suite.Equal(FailNoCommitID.Name, fail.Type.Name)
 }
 
