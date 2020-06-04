@@ -87,9 +87,9 @@ func (v *VirtualEnvironment) OnUseCache(f func()) { v.onUseCache = f }
 // activateRuntime sets up a runtime environment
 func (v *VirtualEnvironment) activateRuntime() error {
 	pj := project.Get()
-	installer, fail := runtime.NewInstaller(pj.CommitUUID(), pj.Owner(), pj.Name())
-	if fail != nil {
-		return fail
+	installer, err := runtime.NewInstaller(pj.CommitUUID(), pj.Owner(), pj.Name())
+	if err != nil {
+		return err
 	}
 
 	installer.OnDownload(v.onDownloadArtifacts)

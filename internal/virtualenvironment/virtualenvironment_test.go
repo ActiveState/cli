@@ -12,6 +12,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	rtmock "github.com/ActiveState/cli/pkg/platform/runtime/mock"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -74,7 +75,8 @@ func TestActivateFailureUnknownLanguage(t *testing.T) {
 
 	venv := Init()
 	err := venv.Activate()
-	assert.Error(t, err, "Should not activate due to unknown language")
+	fail, ok := err.(*failures.Failure)
+	assert.Error(t, err, "Should not activate due to unknown language: %v %v %v", err, ok, fail)
 }
 
 func TestActivateFailureAlreadyActive(t *testing.T) {
