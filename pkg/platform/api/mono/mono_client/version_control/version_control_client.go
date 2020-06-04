@@ -241,7 +241,6 @@ func (a *Client) GetOrder(params *GetOrderParams, authInfo runtime.ClientAuthInf
 		Context:            params.Context,
 		Client:             params.HTTPClient,
 	})
-	fmt.Printf("submit err=%v\n", err)
 	if err != nil {
 		return nil, err
 	}
