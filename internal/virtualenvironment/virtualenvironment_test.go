@@ -67,6 +67,9 @@ func TestActivateFailureUnknownLanguage(t *testing.T) {
 	setup(t)
 	defer teardown()
 
+	os.Setenv(constants.DisableRuntime, "false")
+	defer os.Unsetenv(constants.DisableRuntime)
+
 	project := projectfile.Get()
 	project.Languages = append(project.Languages, projectfile.Language{
 		Name: "foo",
