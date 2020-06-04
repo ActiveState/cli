@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	headchef_models "github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
+	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 )
 
 // GetBuildStatusReader is a Reader for the GetBuildStatus structure.
@@ -24,21 +23,18 @@ type GetBuildStatusReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetBuildStatusReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewGetBuildStatusOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 404:
 		result := NewGetBuildStatusNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewGetBuildStatusDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -68,6 +64,10 @@ func (o *GetBuildStatusOK) Error() string {
 	return fmt.Sprintf("[GET /builds/{build_request_id}][%d] getBuildStatusOK  %+v", 200, o.Payload)
 }
 
+func (o *GetBuildStatusOK) GetPayload() *headchef_models.BuildStatusResponse {
+	return o.Payload
+}
+
 func (o *GetBuildStatusOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(headchef_models.BuildStatusResponse)
@@ -95,6 +95,10 @@ type GetBuildStatusNotFound struct {
 
 func (o *GetBuildStatusNotFound) Error() string {
 	return fmt.Sprintf("[GET /builds/{build_request_id}][%d] getBuildStatusNotFound  %+v", 404, o.Payload)
+}
+
+func (o *GetBuildStatusNotFound) GetPayload() *headchef_models.RestAPIError {
+	return o.Payload
 }
 
 func (o *GetBuildStatusNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -133,6 +137,10 @@ func (o *GetBuildStatusDefault) Code() int {
 
 func (o *GetBuildStatusDefault) Error() string {
 	return fmt.Sprintf("[GET /builds/{build_request_id}][%d] getBuildStatus default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *GetBuildStatusDefault) GetPayload() *headchef_models.RestAPIError {
+	return o.Payload
 }
 
 func (o *GetBuildStatusDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

@@ -48,7 +48,7 @@ func (s *BuildStatus) Close() {
 }
 
 type Client struct {
-	client    *headchef_operations.Client
+	client    headchef_operations.ClientService
 	transport *httptransport.Runtime
 }
 
@@ -83,7 +83,7 @@ func NewBuildRequest(recipeID, orgID, projID strfmt.UUID) (*headchef_models.V1Bu
 	uid := strfmt.UUID("00010001-0001-0001-0001-000100010001")
 
 	br := &headchef_models.V1BuildRequest{
-		Requester: &headchef_models.V1BuildRequestRequester{
+		Requester: &headchef_models.V1Requester{
 			OrganizationID: &orgID,
 			ProjectID:      &projID,
 			UserID:         uid,
