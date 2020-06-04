@@ -323,26 +323,6 @@ func symlinkWithTarget(overwrite bool, symlinkPath string, exePaths []string, ou
 	return nil
 }
 
-func shouldSkipSymlink(symlink, fpath string) (bool, error) {
-	// If the existing symlink already matches the one we want to create, skip it
-	if fileutils.IsSymlink(symlink) {
-		symlinkTarget, err := fileutils.SymlinkTarget(symlink)
-		if err != nil {
-			return false, locale.WrapError(err, "err_symlink_target", "Could not resolve target of symlink: {{.V0}}", symlink)
-		}
-
-		isAccurate, err := fileutils.PathsEqual(fpath, symlinkTarget)
-		if err != nil {
-			return false, locale.WrapError(err, "err_symlink_accuracy_unknown", "Could not determine whether symlink is owned by State Tool: {{.V0}}.", symlink)
-		}
-		if isAccurate {
-			return true, nil
-		}
-	}
-
-	return false, nil
-}
-
 type exeFile struct {
 	fpath string
 	name  string
