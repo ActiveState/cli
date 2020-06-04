@@ -40,11 +40,14 @@ func (suite *MainTestSuite) TestExpired() {
 
 	catcher := outputhelper.NewCatcher()
 	exitCode, err := run([]string{""}, catcher.Outputer)
-	suite.Require().Error(err)
-	suite.Require().Equal(1, exitCode, "Should exit with code 1, output: %s", catcher.CombinedOutput())
 
 	if version.NumberIsProduction(constants.VersionNumber) {
+		suite.Require().Error(err)
+		suite.Require().Equal(1, exitCode, "Should exit with code 1, output: %s", catcher.CombinedOutput())
 		suite.Require().Contains(err.Error(), locale.Tr("err_deprecation", "")[0:50])
+	} else {
+		suite.Require().NoError(err)
+		suite.Require().Equal(0, exitCode, "Should exit with code 0, output: %s", catcher.CombinedOutput())
 	}
 }
 
