@@ -129,8 +129,25 @@ func (r *Download) FetchArtifacts() (*FetchArtifactsResult, *failures.Failure) {
 		return nil, fail
 	}
 
+	var commitID *strfmt.UUID
+	for _, branch := range platProject.Branches {
+		if branch.Default {
+			commitID = branch.CommitID
+			break
+		}
+	}
+	if commitID == nil {
+		return nil, FailNoCommitID.New("fetch_err_runtime_no_commitid")
+	}
+
+	buildAnnotations := headchef.BuildAnnotations{
+		CommitID:     commitID.String(),
+		Project:      r.projectName,
+		Organization: r.owner,
+	}
+
 	logging.Debug("sending request to head-chef")
-	buildRequest, fail := headchef.NewBuildRequest(recipeID, platProject.OrganizationID, platProject.ProjectID)
+	buildRequest, fail := headchef.NewBuildRequest(recipeID, platProject.OrganizationID, platProject.ProjectID, buildAnnotations)
 	if fail != nil {
 		return result, fail
 	}

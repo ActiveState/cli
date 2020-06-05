@@ -902,6 +902,8 @@ installer_err_runtime_rm_installdir:
   other: Unable to remove '{{.V0}}' after unpacking runtime
 installer_err_runtime_no_commitid:
   other: A CommitID is required to install this runtime environment
+fetch_err_runtime_no_commitid:
+  other: Could not get a CommitID for this project
 installer_err_runtime_preplatform:
   other: The version of the installer used in the project you specified is not compatible with the State Tool. Please make a new project.
 installer_err_engine_unknown:

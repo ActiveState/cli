@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	headchef_models "github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
+	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 )
 
 // StartBuildV1Reader is a Reader for the StartBuildV1 structure.
@@ -24,42 +23,36 @@ type StartBuildV1Reader struct {
 // ReadResponse reads a server response into the received o.
 func (o *StartBuildV1Reader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 201:
 		result := NewStartBuildV1Created()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 202:
 		result := NewStartBuildV1Accepted()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewStartBuildV1BadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 401:
 		result := NewStartBuildV1Unauthorized()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewStartBuildV1Forbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewStartBuildV1Default(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -87,6 +80,10 @@ type StartBuildV1Created struct {
 
 func (o *StartBuildV1Created) Error() string {
 	return fmt.Sprintf("[POST /v1/builds][%d] startBuildV1Created  %+v", 201, o.Payload)
+}
+
+func (o *StartBuildV1Created) GetPayload() *headchef_models.BuildStatusResponse {
+	return o.Payload
 }
 
 func (o *StartBuildV1Created) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -118,6 +115,10 @@ func (o *StartBuildV1Accepted) Error() string {
 	return fmt.Sprintf("[POST /v1/builds][%d] startBuildV1Accepted  %+v", 202, o.Payload)
 }
 
+func (o *StartBuildV1Accepted) GetPayload() *headchef_models.BuildStatusResponse {
+	return o.Payload
+}
+
 func (o *StartBuildV1Accepted) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(headchef_models.BuildStatusResponse)
@@ -145,6 +146,10 @@ type StartBuildV1BadRequest struct {
 
 func (o *StartBuildV1BadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/builds][%d] startBuildV1BadRequest  %+v", 400, o.Payload)
+}
+
+func (o *StartBuildV1BadRequest) GetPayload() *headchef_models.RestAPIError {
+	return o.Payload
 }
 
 func (o *StartBuildV1BadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -176,6 +181,10 @@ func (o *StartBuildV1Unauthorized) Error() string {
 	return fmt.Sprintf("[POST /v1/builds][%d] startBuildV1Unauthorized  %+v", 401, o.Payload)
 }
 
+func (o *StartBuildV1Unauthorized) GetPayload() *headchef_models.RestAPIError {
+	return o.Payload
+}
+
 func (o *StartBuildV1Unauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(headchef_models.RestAPIError)
@@ -203,6 +212,10 @@ type StartBuildV1Forbidden struct {
 
 func (o *StartBuildV1Forbidden) Error() string {
 	return fmt.Sprintf("[POST /v1/builds][%d] startBuildV1Forbidden  %+v", 403, o.Payload)
+}
+
+func (o *StartBuildV1Forbidden) GetPayload() *headchef_models.RestAPIError {
+	return o.Payload
 }
 
 func (o *StartBuildV1Forbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -241,6 +254,10 @@ func (o *StartBuildV1Default) Code() int {
 
 func (o *StartBuildV1Default) Error() string {
 	return fmt.Sprintf("[POST /v1/builds][%d] startBuildV1 default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *StartBuildV1Default) GetPayload() *headchef_models.RestAPIError {
+	return o.Payload
 }
 
 func (o *StartBuildV1Default) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

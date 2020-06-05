@@ -31,6 +31,12 @@ type BuildStatus struct {
 	RunFail   chan *failures.Failure
 }
 
+type BuildAnnotations struct {
+	CommitID     string `json:"commit_id"`
+	Project      string `json:"project"`
+	Organization string `json:"organization"`
+}
+
 func NewBuildStatus() *BuildStatus {
 	return &BuildStatus{
 		Started:   make(chan struct{}),
@@ -48,7 +54,7 @@ func (s *BuildStatus) Close() {
 }
 
 type Client struct {
-	client    *headchef_operations.Client
+	client    headchef_operations.ClientService
 	transport *httptransport.Runtime
 }
 
@@ -79,16 +85,17 @@ func (r *Client) RequestBuild(buildRequest *headchef_models.V1BuildRequest) *Bui
 	return buildStatus
 }
 
-func NewBuildRequest(recipeID, orgID, projID strfmt.UUID) (*headchef_models.V1BuildRequest, *failures.Failure) {
+func NewBuildRequest(recipeID, orgID, projID strfmt.UUID, annotations BuildAnnotations) (*headchef_models.V1BuildRequest, *failures.Failure) {
 	uid := strfmt.UUID("00010001-0001-0001-0001-000100010001")
 
 	br := &headchef_models.V1BuildRequest{
-		Requester: &headchef_models.V1BuildRequestRequester{
+		Requester: &headchef_models.V1Requester{
 			OrganizationID: &orgID,
 			ProjectID:      &projID,
 			UserID:         uid,
 		},
-		RecipeID: recipeID,
+		RecipeID:    recipeID,
+		Annotations: annotations,
 	}
 
 	return br, nil
