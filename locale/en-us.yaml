@@ -1583,3 +1583,8 @@ err_getwd:
   other: |
     Could not retrieve your working directory, error received: {{.V0}}.
     If this problem continues please report it on our forums: {{.V1}}
+deploy_usable_path:
+  other: |
+    The path {{.V0}} is not in the current PATH.
+    To add this path please execute `export PATH={{.V0}}:$PATH`.
+    To make this change permanent add the above command to your RC file. 
