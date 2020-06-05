@@ -78,7 +78,9 @@ namespace InstallStateTool
                 proc.StartInfo = procStartInfo;
                 proc.Start();
 
-                while (!proc.HasExited)
+                TimeSpan timeout = new TimeSpan(0, 2, 0);
+                Stopwatch stopwatch = Stopwatch.StartNew();
+                while (!proc.HasExited && stopwatch.Elapsed < timeout)
                 {
                     try
                     {

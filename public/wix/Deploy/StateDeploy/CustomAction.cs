@@ -42,7 +42,9 @@ namespace StateDeploy
                 proc.StartInfo = procStartInfo;
                 proc.Start();
 
-                while (!proc.HasExited)
+                TimeSpan timeout = new TimeSpan(0, 5, 0);
+                Stopwatch stopwatch = Stopwatch.StartNew();
+                while (!proc.HasExited && stopwatch.Elapsed < timeout)
                 {
                     try
                     {
