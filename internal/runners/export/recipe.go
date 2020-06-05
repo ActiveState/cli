@@ -6,13 +6,14 @@ import (
 
 	"github.com/go-openapi/strfmt"
 
+	"github.com/ActiveState/sysinfo"
+
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/sysinfo"
 )
 
 type Recipe struct{}
@@ -35,13 +36,13 @@ func (r *Recipe) Run(params *RecipeParams) error {
 
 	data, fail := recipeData(proj, params.CommitID, params.Platform)
 	if fail != nil {
-		return fail
+		return fail.ToError()
 	}
 
 	if params.Pretty {
 		var err error
 		data, err = beautifyJSON(data)
-		if fail != nil {
+		if err != nil {
 			return err
 		}
 	}
@@ -51,7 +52,6 @@ func (r *Recipe) Run(params *RecipeParams) error {
 }
 
 func recipeData(proj *project.Project, commitID, platform string) ([]byte, *failures.Failure) {
-
 	cid := strfmt.UUID(commitID)
 
 	r, fail := fetchRecipe(proj, cid, platform)
