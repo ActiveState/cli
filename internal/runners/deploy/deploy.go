@@ -358,7 +358,9 @@ func uniqueExes(exePaths []string, pathext string) ([]string, error) {
 	result := []string{}
 
 	for _, exePath := range exePaths {
-		exePath = strings.ToLower(exePath) // Windows is case-insensitive
+		if rt.GOOS == "windows" {
+			exePath = strings.ToLower(exePath) // Windows is case-insensitive
+		}
 
 		exe := exeFile{exePath, "", filepath.Ext(exePath)}
 		exe.name = strings.TrimSuffix(filepath.Base(exePath), exe.ext)
