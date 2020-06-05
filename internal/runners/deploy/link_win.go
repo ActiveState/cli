@@ -60,9 +60,7 @@ func link(fpath, symlink string) error {
 }
 
 func newShortcut(target string) (*ole.IDispatch, error) {
-	if err := ole.CoInitializeEx(0, ole.COINIT_APARTMENTTHREADED|ole.COINIT_SPEED_OVER_MEMORY); err != nil {
-		return nil, errs.Wrap(err, "Could not initialize ole")
-	}
+	ole.CoInitialize(0) // ALWAYS errors with "Incorrect function", which can apparently be safely ignored..
 
 	oleShellObject, err := oleutil.CreateObject("WScript.Shell")
 	if err != nil {
