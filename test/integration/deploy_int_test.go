@@ -39,20 +39,12 @@ func (suite *DeployIntegrationTestSuite) TestDeploy() {
 	defer ts.Close()
 
 	var cp *termtest.ConsoleProcess
-	switch runtime.GOOS {
-	case "windows":
+	if runtime.GOOS == "windows" {
 		cp = ts.SpawnWithOpts(
 			e2e.WithArgs("deploy", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work),
 			e2e.AppendEnv("SHELL=bash"),
 		)
-	case "darwin":
-		// On macOS some of the binaries already exist at /usr/local/bin so we have
-		// to use the --force flag
-		cp = ts.SpawnWithOpts(
-			e2e.WithArgs("deploy", "ActiveState-CLI/Python3", "--force", "--path", ts.Dirs.Work),
-			e2e.AppendEnv("SHELL=bash"),
-		)
-	default:
+	} else {
 		cp = ts.Spawn("deploy", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work, "--force")
 	}
 
@@ -68,8 +60,8 @@ func (suite *DeployIntegrationTestSuite) TestDeploy() {
 	}
 	cp.ExpectExitCode(0)
 
-	// Linux symlinks to /usr/local/bin, so we can verify right away
-	if runtime.GOOS == "linux" {
+	// Linux/Mac symlinks to /usr/local/bin, so we can verify right away
+	if runtime.GOOS != "windows" {
 		execPath, err := exec.LookPath("python3")
 		suite.Require().NoError(err)
 		link, err := os.Readlink(execPath)
@@ -198,7 +190,7 @@ func (suite *DeployIntegrationTestSuite) AssertConfig(ts *e2e.Session) {
 }
 
 func (suite *DeployIntegrationTestSuite) TestDeploySymlink() {
-	if runtime.GOOS == "linux" && !e2e.RunningOnCI() {
+	if runtime.GOOS != "windows" && !e2e.RunningOnCI() {
 		suite.T().Skipf("Skipping TestDeploySymlink when not running on CI, as it modifies PATH")
 	}
 
