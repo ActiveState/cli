@@ -13,23 +13,49 @@ namespace Uninstall
             session.Log("Begin uninstallation");
 
             string installDir = session.CustomActionData["REMEMBER"];
-            try
+
+            ActionResult result = Remove.InstallDir(session, installDir);
+            if (result.Equals(ActionResult.Failure))
             {
-                Directory.Delete(installDir, true);
-            } 
-            catch (IOException e)
-            {
-                session.Log(string.Format("Could not delete install directory, got error: {0}", e.ToString()));
+                session.Log("Could not remove installation directory");
                 return ActionResult.Failure;
             }
 
+            return Remove.EnvironmentEntries(session, installDir);
+        }
+    }
+    public class Remove
+    {
+        public static ActionResult InstallDir(Session session, string dir)
+        {
+            session.Log("Begin removing install directory");
+
+            if (Directory.Exists(dir))
+            {
+                try
+                {
+                    Directory.Delete(dir, true);
+                }
+                catch (IOException e)
+                {
+                    session.Log(string.Format("Could not delete install directory, got error: {0}", e.ToString()));
+                    return ActionResult.Failure;
+                }
+            }
+
+            return ActionResult.Success;
+        }
+
+        public static ActionResult EnvironmentEntries(Session session, string dir)
+        {
+            session.Log("Begin remvoing environment entries");
             string pathEnv = Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.Machine);
             string[] paths = pathEnv.Split(Path.PathSeparator);
 
             List<string> cleanPath = new List<string>();
             foreach (var path in paths)
             {
-                if (path.StartsWith(installDir))
+                if (path.StartsWith(dir))
                 {
                     continue;
                 }

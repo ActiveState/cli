@@ -15,7 +15,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Uninstall", "Uninstall\Unin
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InstallStateTool", "InstallStateTool\InstallStateTool.csproj", "{0603250D-8A12-4DE4-BA71-148AEE759F06}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ResetProgress", "ResetProgress\ResetProgress.csproj", "{5EB4DCDF-0E44-4DB7-9B33-CEF19B9BB2B3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Status", "Status\Status.csproj", "{5EB4DCDF-0E44-4DB7-9B33-CEF19B9BB2B3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ActiveState", "ActiveState\ActiveState.csproj", "{658291C2-5419-4012-BD6A-C85AB86009EE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -76,9 +78,17 @@ Global
 		{5EB4DCDF-0E44-4DB7-9B33-CEF19B9BB2B3}.Debug|x64.Build.0 = Debug|x64
 		{5EB4DCDF-0E44-4DB7-9B33-CEF19B9BB2B3}.Debug|x86.ActiveCfg = Debug|x86
 		{5EB4DCDF-0E44-4DB7-9B33-CEF19B9BB2B3}.Debug|x86.Build.0 = Debug|x86
-		{5EB4DCDF-0E44-4DB7-9B33-CEF19B9BB2B3}.Release|x64.ActiveCfg = Release|x86
+		{5EB4DCDF-0E44-4DB7-9B33-CEF19B9BB2B3}.Release|x64.ActiveCfg = Release|x64
+		{5EB4DCDF-0E44-4DB7-9B33-CEF19B9BB2B3}.Release|x64.Build.0 = Release|x64
 		{5EB4DCDF-0E44-4DB7-9B33-CEF19B9BB2B3}.Release|x86.ActiveCfg = Release|x86
 		{5EB4DCDF-0E44-4DB7-9B33-CEF19B9BB2B3}.Release|x86.Build.0 = Release|x86
+		{658291C2-5419-4012-BD6A-C85AB86009EE}.Debug|x64.ActiveCfg = Debug|x64
+		{658291C2-5419-4012-BD6A-C85AB86009EE}.Debug|x64.Build.0 = Debug|x64
+		{658291C2-5419-4012-BD6A-C85AB86009EE}.Debug|x86.ActiveCfg = Debug|x86
+		{658291C2-5419-4012-BD6A-C85AB86009EE}.Debug|x86.Build.0 = Debug|x86
+		{658291C2-5419-4012-BD6A-C85AB86009EE}.Release|x64.ActiveCfg = Release|x86
+		{658291C2-5419-4012-BD6A-C85AB86009EE}.Release|x86.ActiveCfg = Release|x86
+		{658291C2-5419-4012-BD6A-C85AB86009EE}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
