@@ -362,7 +362,10 @@ func uniqueExes(exePaths []string, pathext string) ([]string, error) {
 			exePath = strings.ToLower(exePath) // Windows is case-insensitive
 		}
 
-		exe := exeFile{exePath, "", filepath.Ext(exePath)}
+		exe := exeFile{exePath, "", ""}
+		if rt.GOOS == "windows" {
+			exe.ext = filepath.Ext(exePath)
+		}
 		exe.name = strings.TrimSuffix(filepath.Base(exePath), exe.ext)
 
 		if prevExe, exists := exeFiles[exe.name]; exists {
