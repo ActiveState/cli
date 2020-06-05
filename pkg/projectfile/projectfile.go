@@ -55,6 +55,9 @@ var (
 
 	// FailInvalidURL identifies a failures as being caused by the project URL being invalid
 	FailInvalidURL = failures.Type("projectfile.fail.invalidurl")
+
+	// FailProjectFileRoot identifies a failure being caused by not being able to find a path to a project file
+	FailProjectFileRoot = failures.Type("projectfile.fail.projectfileroot", failures.FailNonFatal)
 )
 
 var strReg = fmt.Sprintf(`https:\/\/%s\/([\w_.-]*)\/([\w_.-]*)(?:\?commitID=)*(.*)`, strings.Replace(constants.PlatformURL, ".", "\\.", -1))
@@ -537,7 +540,7 @@ func GetProjectFilePath() (string, *failures.Failure) {
 	root, err := osutils.Getwd()
 	if err != nil {
 		logging.Warning("Could not get project root path: %v", err)
-		return "", failures.FailOS.Wrap(err)
+		return "", FailProjectFileRoot.Wrap(err)
 	}
 	path, fail := fileutils.FindFileInPath(root, constants.ConfigFileName)
 	if fail != nil {

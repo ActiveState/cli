@@ -792,10 +792,34 @@ func ResolvePath(path string) (string, error) {
 	return evalPath, nil
 }
 
-// PathIsInsideOf checks if the directory path is equal to or a child directory
+// PathsEqual checks whether the paths given all resolve to the same path
+func PathsEqual(paths ...string) (bool, error) {
+	if len(paths) < 2 {
+		return false, errs.New("Must supply at least two paths")
+	}
+
+	var equalTo string
+	for _, path := range paths {
+		resolvedPath, err := ResolvePath(path)
+		if err != nil {
+			return false, errs.Wrap(err, "Could not resolve path: %s", path)
+		}
+		if equalTo == "" {
+			equalTo = resolvedPath
+			continue
+		}
+		if resolvedPath != equalTo {
+			return false, nil
+		}
+	}
+
+	return true, nil
+}
+
+// PathContainsParent checks if the directory path is equal to or a child directory
 // of the targeted directory. Symlinks are evaluated for this comparison.
-func PathIsInsideOf(path, targeted string) (bool, error) {
-	if path == targeted {
+func PathContainsParent(path, parentPath string) (bool, error) {
+	if path == parentPath {
 		return true, nil
 	}
 
@@ -806,22 +830,40 @@ func PathIsInsideOf(path, targeted string) (bool, error) {
 		return false, errs.Wrap(err, efmt, path)
 	}
 
-	resTargeted, err := ResolvePath(targeted)
+	resParent, err := ResolvePath(parentPath)
 	if err != nil {
-		return false, errs.Wrap(err, efmt, targeted)
+		return false, errs.Wrap(err, efmt, parentPath)
 	}
 
-	return isSameOrInsideOf(resPath, resTargeted), nil
+	return resolvedPathContainsParent(resPath, resParent), nil
 }
 
-func isSameOrInsideOf(path, targeted string) bool {
+func resolvedPathContainsParent(path, parentPath string) bool {
 	if !strings.HasSuffix(path, string(os.PathSeparator)) {
 		path += string(os.PathSeparator)
 	}
 
-	if !strings.HasSuffix(targeted, string(os.PathSeparator)) {
-		targeted += string(os.PathSeparator)
+	if !strings.HasSuffix(parentPath, string(os.PathSeparator)) {
+		parentPath += string(os.PathSeparator)
 	}
 
-	return path == targeted || strings.HasPrefix(path, targeted)
+	return path == parentPath || strings.HasPrefix(path, parentPath)
+}
+
+func SymlinkTarget(symlink string) (string, error) {
+	fileInfo, err := os.Lstat(symlink)
+	if err != nil {
+		return "", errs.Wrap(err, "Could not lstat symlink")
+	}
+
+	if fileInfo.Mode()&os.ModeSymlink != os.ModeSymlink {
+		return "", errs.New("%s is not a symlink", symlink)
+	}
+
+	evalDest, err := os.Readlink(symlink)
+	if err != nil {
+		return "", errs.Wrap(err, "Could not resolve symlink: %s", symlink)
+	}
+
+	return evalDest, nil
 }
