@@ -204,10 +204,17 @@ func (suite *DeployIntegrationTestSuite) TestDeploySymlink() {
 	suite.InstallAndAssert(ts)
 
 	pathDir := fileutils.TempDirUnsafe()
-	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("deploy", "symlink", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work),
-		e2e.AppendEnv(fmt.Sprintf("PATH=%s", pathDir)), // Avoid conflicts
-	)
+	if runtime.GOOS == "linux" {
+		cp = ts.SpawnWithOpts(
+			e2e.WithArgs("deploy", "symlink", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work),
+			e2e.AppendEnv(fmt.Sprintf("PATH=%s", pathDir)), // Avoid conflicts
+		)
+	} else {
+		cp = ts.SpawnWithOpts(
+			e2e.WithArgs("deploy", "symlink", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work, "--force"),
+			e2e.AppendEnv(fmt.Sprintf("PATH=%s", strings.Join([]string{pathDir, "/usr/local/bin"}, ":"))), // Avoid conflicts
+		)
+	}
 
 	cp.Expect("Symlinking executables")
 	cp.ExpectExitCode(0)
@@ -250,10 +257,18 @@ func (suite *DeployIntegrationTestSuite) TestDeployTwice() {
 	suite.InstallAndAssert(ts)
 
 	pathDir := fileutils.TempDirUnsafe()
-	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("deploy", "symlink", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work),
-		e2e.AppendEnv(fmt.Sprintf("PATH=%s", pathDir)), // Avoid conflicts
-	)
+	var cp *termtest.ConsoleProcess
+	if runtime.GOOS == "linux" {
+		cp = ts.SpawnWithOpts(
+			e2e.WithArgs("deploy", "symlink", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work),
+			e2e.AppendEnv(fmt.Sprintf("PATH=%s", pathDir)), // Avoid conflicts
+		)
+	} else {
+		cp = ts.SpawnWithOpts(
+			e2e.WithArgs("deploy", "symlink", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work, "--force"),
+			e2e.AppendEnv(fmt.Sprintf("PATH=%s", strings.Join([]string{pathDir, "/usr/local/bin"}, ":"))), // Avoid conflicts
+		)
+	}
 	cp.ExpectExitCode(0)
 
 	suite.True(fileutils.FileExists(filepath.Join(ts.Dirs.Work, "bin", "python3"+symlinkExt)), "Python3 symlink should have been written")
