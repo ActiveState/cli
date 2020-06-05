@@ -45,7 +45,7 @@ func (cmd *Command) ExecuteGet(_ *cobra.Command, args []string) {
 	}
 
 	switch commands.Output(strings.ToLower(*cmd.Flags.Output)) {
-	case commands.JSON, commands.EditorV0:
+	case commands.JSON, commands.EditorV0, commands.Editor:
 		printJSON(&SecretExport{secret.Name(), secret.Scope(), secret.Description(), valuePtr != nil, value})
 	default:
 		if valuePtr == nil {

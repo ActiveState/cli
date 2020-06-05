@@ -42,6 +42,8 @@ const (
 	JSON Output = "json"
 	// EditorV0 is the output type that represents Komodo output
 	EditorV0 Output = "editor.v0"
+	// EditorV0 is the output type that represents Editor output
+	Editor Output = "editor"
 )
 
 // Flag is used to define flags in our Command struct
