@@ -78,13 +78,12 @@ namespace InstallStateTool
                 proc.StartInfo = procStartInfo;
                 proc.Start();
 
-                TimeSpan timeout = new TimeSpan(0, 2, 0);
-                Stopwatch stopwatch = Stopwatch.StartNew();
-                while (!proc.HasExited && stopwatch.Elapsed < timeout)
+                while (!proc.HasExited)
                 {
                     try
                     {
                         Status.ProgressBar.Increment(session, 0);
+                        System.Threading.Thread.Sleep(200);
                     }
                     catch (InstallCanceledException)
                     {
