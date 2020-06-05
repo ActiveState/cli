@@ -210,8 +210,8 @@ func (suite *DeployIntegrationTestSuite) TestDeploySymlink() {
 
 	suite.True(fileutils.FileExists(filepath.Join(ts.Dirs.Work, "bin", "python3"+symlinkExt)), "Python3 symlink should have been written")
 
-	// Linux symlinks to /usr/local/bin, so we can verify right away
-	if runtime.GOOS == "linux" {
+	// Linux/Mac symlinks to /usr/local/bin, so we can verify right away
+	if runtime.GOOS != "windows" {
 		execPath, err := exec.LookPath("python3")
 		suite.Require().NoError(err)
 		link, err := os.Readlink(execPath)
