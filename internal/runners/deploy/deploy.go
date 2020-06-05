@@ -363,7 +363,8 @@ func uniqueExes(exePaths []string, pathext string) ([]string, error) {
 		}
 
 		exe := exeFile{exePath, "", ""}
-		if rt.GOOS == "windows" {
+		ext := filepath.Ext(exePath)
+		if funk.Contains(pathExt, ext) {
 			exe.ext = filepath.Ext(exePath)
 		}
 		exe.name = strings.TrimSuffix(filepath.Base(exePath), exe.ext)
