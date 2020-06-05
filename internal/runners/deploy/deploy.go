@@ -370,7 +370,7 @@ func uniqueExes(exePaths []string, pathext string) ([]string, error) {
 			if err != nil {
 				return result, errs.Wrap(err, "Could not compare paths")
 			}
-			if pathsEqual {
+			if !pathsEqual {
 				continue // Earlier PATH entries win
 			}
 			if funk.IndexOf(pathExt, prevExe.ext) < funk.IndexOf(pathExt, exe.ext) {

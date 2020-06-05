@@ -230,7 +230,7 @@ func Test_uniqueExes(t *testing.T) {
 		pathext string
 		want    []string
 	}{
-/*		{
+		{
 			"Returns same bins",
 			[]string{"path1/a", "path2/b", "path3/c"},
 			"",
@@ -247,12 +247,18 @@ func Test_uniqueExes(t *testing.T) {
 			[]string{"path1/a.exe", "path2/a.cmd", "path2/c"},
 			".cmd;.exe",
 			[]string{"path1/a.exe", "path2/c"},
-		},*/
+		},
 		{
 			"Returns cmd prioritized by PATHEXT",
 			[]string{"path1/a.exe", "path1/a.cmd", "path2/c"},
 			".cmd;.exe",
-			[]string{"path1/a.exe", "path2/c"},
+			[]string{"path1/a.cmd", "path2/c"},
+		},
+		{
+			"PATHEXT can be empty",
+			[]string{"path1/a", "path2/b", "path3/c"},
+			"",
+			[]string{"path1/a", "path2/b", "path3/c"},
 		},
 	}
 	for _, tt := range tests {
