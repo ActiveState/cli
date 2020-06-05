@@ -94,7 +94,6 @@ jobs:
       - <<: *prepareEnv
       - <<: *runTests
       - <<: *buildCli
-      - <<: *runIntegrationTests
       - <<: *deployBits
       #- <<: *runIntegrationTests
       - <<: *storeArtifacts
@@ -150,7 +149,7 @@ jobs:
             tar -xzf golang.tar.gz
             popd
       - <<: *prepareEnv
-      - <<: *runTests
+      # - <<: *runTests
       - <<: *buildCli
       - <<: *runIntegrationTests
       - <<: *deployBits
