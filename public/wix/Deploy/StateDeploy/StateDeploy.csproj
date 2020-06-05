@@ -68,7 +68,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ActiveState\ActiveState.csproj">
-      <Project>{6db57871-36b9-42c2-aeb9-0f5e3a2f8272}</Project>
+      <Project>{658291c2-5419-4012-bd6a-c85ab86009ee}</Project>
       <Name>ActiveState</Name>
     </ProjectReference>
     <ProjectReference Include="..\Status\Status.csproj">

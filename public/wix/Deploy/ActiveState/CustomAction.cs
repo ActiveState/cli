@@ -11,7 +11,8 @@ namespace ActiveState
         [CustomAction]
         public static ActionResult CustomAction1(Session session)
         {
-            // Required placeholder in order to build
+            // Required placeholder Custom Action
+            return ActionResult.Success;
         }
     }
 
@@ -21,6 +22,7 @@ namespace ActiveState
         /// Kill a process, and all of its children, grandchildren, etc.
         /// </summary>
         /// <param name="pid">Process ID.</param>
+        /// Code taken from https://stackoverflow.com/a/10402906
         public static void KillProcessAndChildren(int pid)
         {
             // Cannot close 'system idle process'.
