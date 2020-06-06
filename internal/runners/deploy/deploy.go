@@ -364,6 +364,10 @@ func uniqueExes(exePaths []string, pathext string) ([]string, error) {
 
 		exe := exeFile{exePath, "", ""}
 		ext := filepath.Ext(exePath)
+
+		// We only set the excutable extension if PATHEXT is present.
+		// Some macOS builds can contain binaries with periods in their
+		// names and we do not want to strip off suffixes after the period.
 		if funk.Contains(pathExt, ext) {
 			exe.ext = filepath.Ext(exePath)
 		}
