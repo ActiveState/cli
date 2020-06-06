@@ -39,7 +39,7 @@ func (suite *DeployIntegrationTestSuite) TestDeploy() {
 	defer ts.Close()
 
 	var cp *termtest.ConsoleProcess
-	if runtime.GOOS == "windows" {
+	if runtime.GOOS != "windows" {
 		cp = ts.SpawnWithOpts(
 			e2e.WithArgs("deploy", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work),
 			e2e.AppendEnv("SHELL=bash"),
