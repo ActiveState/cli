@@ -1585,6 +1585,4 @@ err_getwd:
     If this problem continues please report it on our forums: {{.V1}}
 deploy_usable_path:
   other: |
-    The path {{.V0}} is not in the current PATH.
-    To add this path please execute `export PATH={{.V0}}:$PATH`.
-    To make this change permanent add the above command to your RC file. 
+    [YELLOW]Please ensure '{{.V0}}' exists and is on your PATH.[/RESET]

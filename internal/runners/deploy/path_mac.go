@@ -16,12 +16,12 @@ func usablePath(out output.Outputer) (string, error) {
 	if !fileutils.DirExists(binDir) {
 		fail := fileutils.Mkdir(binDir)
 		if fail != nil {
-			return "", locale.WrapError(fail.ToError(), "err_symlink_bin_macos", "Could not create {{.V0}} directory for symlinking", binDir)
+			return "", locale.WrapError(fail, "deploy_usable_path", "Please ensure '{{.V0}}' exists and is on your PATH.", binDir)
 		}
 	}
 
 	if !funk.Contains(os.Getenv("PATH"), binDir) {
-		out.Notice(locale.Tr("deploy_usable_path", binDir))
+		return binDir, locale.Error("err_symlink_bin_macos", "Please ensure '{{.V0}}' exists and is on your PATH.", binDir)
 	}
 
 	return binDir, nil
