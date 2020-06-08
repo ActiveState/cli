@@ -47,9 +47,15 @@ func NewCommand(name, description string, flags []*Flag, args []*Argument, execu
 		flags:     flags,
 	}
 
+	short := description
+	if idx := strings.IndexByte(description, '.'); idx > 0 {
+		short = description[0:idx]
+	}
+
 	cmd.cobra = &cobra.Command{
 		Use:              name,
-		Short:            description,
+		Short:            short,
+		Long:             description,
 		PersistentPreRun: cmd.persistRunner,
 		RunE:             cmd.runner,
 

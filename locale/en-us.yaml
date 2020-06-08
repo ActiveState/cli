@@ -1526,7 +1526,7 @@ deploy_info:
     This information is provided for your reference, for most common use-cases you do not need to do anything with this.
 deploy_cmd_description:
   other: |
-    Deploys the given runtime environment on the local system and sets it up so you can run it from any shell environment that matches the current shell, overriding any conflicting installations.
+    Deploys the given runtime environment on the local system. Deploy sets up the language so you can run it from any shell environment that matches the current shell, overriding any conflicting installations.
     You can run individual deploy steps by running the sub-commands, which is useful if you're preparing docker images, CI environments, or the like.
     If you're setting up a local development environment you probably won't need the sub-commands.
 deploy_install_cmd_description:
