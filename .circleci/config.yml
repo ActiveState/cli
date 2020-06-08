@@ -92,8 +92,9 @@ jobs:
     steps:
       - checkout
       - <<: *prepareEnv
-      - <<: *runTests
+      # - <<: *runTests
       - <<: *buildCli
+      - <<: *runIntegrationTests
       - <<: *deployBits
       #- <<: *runIntegrationTests
       - <<: *storeArtifacts
