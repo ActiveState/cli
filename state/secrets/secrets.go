@@ -114,7 +114,7 @@ func (cmd *Command) Execute(_ *cobra.Command, args []string) {
 	}
 
 	switch commands.Output(strings.ToLower(*cmd.Flags.Output)) {
-	case commands.JSON, commands.EditorV0:
+	case commands.JSON, commands.EditorV0, commands.Editor:
 		data, fail := secretsAsJSON(secretExports)
 		if fail != nil {
 			failures.Handle(fail, locale.T("secrets_err_output"))

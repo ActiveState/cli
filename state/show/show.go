@@ -81,7 +81,7 @@ func Execute(cmd *cobra.Command, args []string) {
 
 	output := commands.Output(strings.ToLower(*Flags.Output))
 	switch output {
-	case commands.JSON, commands.EditorV0:
+	case commands.JSON, commands.EditorV0, commands.Editor:
 		print.Line(fmt.Sprintf("{\"namespace\": \"%s/%s\"}", project.Owner(), project.Name()))
 	default:
 		print.BoldInline("%s: ", locale.T("print_state_show_name"))

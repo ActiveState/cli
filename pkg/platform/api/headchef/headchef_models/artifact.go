@@ -9,9 +9,8 @@ import (
 	"encoding/json"
 	"strconv"
 
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
@@ -19,6 +18,7 @@ import (
 // Artifact Artifact
 //
 // The result of building a single ingredient is an artifact, which contains the files created by the build.
+//
 // swagger:model Artifact
 type Artifact struct {
 

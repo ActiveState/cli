@@ -46,7 +46,7 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 	}
 
 	switch commands.Output(strings.ToLower(*Flags.Output)) {
-	case commands.JSON, commands.EditorV0:
+	case commands.JSON, commands.EditorV0, commands.Editor:
 		data, fail := scriptsAsJSON(scripts)
 		if fail != nil {
 			failures.Handle(fail, locale.T("scripts_err_output"))

@@ -129,8 +129,8 @@
 		<Binary Id="StateCommandCA" SourceFile="$(var.StateCommandExists.TargetDir)$(var.StateCommandExists.TargetName).CA.dll" />
 		<CustomAction Id="StateCommandExists" Impersonate="yes" BinaryKey="StateCommandCA" DllEntry="StateCommandExists" Return="check" />
 
-		<Binary Id="ResetProgressCA" SourceFile="$(var.ResetProgress.TargetDir)$(var.ResetProgress.TargetName).CA.dll" />
-		<CustomAction Id="ResetProgress" Impersonate="no" BinaryKey="ResetProgressCA" DllEntry="ResetProgress" Execute="deferred" Return="check" />
+		<Binary Id="StatusCA" SourceFile="$(var.Status.TargetDir)$(var.Status.TargetName).CA.dll" />
+		<CustomAction Id="Status" Impersonate="no" BinaryKey="StatusCA" DllEntry="ResetProgress" Execute="deferred" Return="check" />
 		
 		<Binary Id="StateToolInstallCA" SourceFile="$(var.InstallStateTool.TargetDir)$(var.InstallStateTool.TargetName).CA.dll" />
 		<CustomAction Id="InstallStateTool" Impersonate="no" BinaryKey="StateToolInstallCA" DllEntry="InstallStateTool" Execute="deferred" Return="check" />
@@ -146,8 +146,8 @@
 
 		<InstallExecuteSequence>
 			<Custom Action="SetIsStateToolInstalled" After="InstallInitialize">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
-			<Custom Action="ResetProgress" After="SetIsStateToolInstalled">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
-			<Custom Action="InstallStateTool" After="ResetProgress">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
+			<Custom Action="Status" After="SetIsStateToolInstalled">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
+			<Custom Action="InstallStateTool" After="Status">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
 			<Custom Action="SetStateDeployPropertyValues" After="InstallStateTool">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
 			<Custom Action="StateDeploy" After="SetStateDeployPropertyValues">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
 			<Custom Action="SetUninstallProperties" After="RemoveFiles">REMOVE="ALL"</Custom>
