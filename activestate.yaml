@@ -14,18 +14,20 @@ constants:
     constraints:
       os: windows
     value: ./build/state.exe
-  - name: PPM_BUILD_TARGET
+  - name: PPM_BUILD_NAME
     constraints:
       os: linux
     value: ppm-linux
-  - name: PPM_BUILD_TARGET
+  - name: PPM_BUILD_NAME
     constraints:
       os: macos
     value: ppm-darwin
-  - name: PPM_BUILD_TARGET
+  - name: PPM_BUILD_NAME
     constraints:
       os: windows
     value: ppm-windows
+  - name: PPM_BUILD_TARGET
+    value: build/$constants.PPM_BUILD_NAME
   - name: SET_ENV
     description: The environment settings used throughout our project
     value: |
@@ -54,11 +56,11 @@ scripts:
   - name: build-ppm
     description: Builds the ppm shim command that is installed with ActivePerl installations
     value: |
-      go build -mod=vendor -o ./build/$constants.PPM_BUILD_TARGET $constants.PPM_PKGS
+      go build -mod=vendor -o $constants.PPM_BUILD_TARGET $constants.PPM_PKGS
   - name: deploy-ppm
     description: Deploys the PPM shim to s3
     value: |
-      go run -mod=vendor scripts/s3-deployer/main.go build/$constants.PPM_BUILD_TARGET ca-central-1 cli-update update/ppm/$constants.PPM_BUILD_TARGET
+      go run -mod=vendor scripts/s3-deployer/main.go $constants.PPM_BUILD_TARGET ca-central-1 cli-update update/ppm/$constants.PPM_BUILD_NAME
   - name: generate-update
     description: Generate update files
     value: |
