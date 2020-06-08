@@ -20,7 +20,7 @@ func usablePath() (string, error) {
 	}
 
 	if !funk.Contains(os.Getenv("PATH"), binDir) {
-		return binDir, locale.Error("err_symlink_bin_macos", "Please ensure '{{.V0}}' exists and is on your PATH.", binDir)
+		return binDir, locale.NewError("err_symlink_bin_macos", "Please ensure '{{.V0}}' exists and is on your PATH.", binDir)
 	}
 
 	return binDir, nil
