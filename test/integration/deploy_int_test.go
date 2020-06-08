@@ -43,7 +43,7 @@ func (suite *DeployIntegrationTestSuite) TestDeploy() {
 	case "windows":
 		cp = ts.Spawn("deploy", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work, "--force")
 	case "darwin":
-		// On MacOS the command is the same as Linux, however some binaries 
+		// On MacOS the command is the same as Linux, however some binaries
 		// already exist at /usr/local/bin so we use the --force flag
 		cp = ts.SpawnWithOpts(
 			e2e.WithArgs("deploy", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work, "--force"),
@@ -288,7 +288,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployTwice() {
 		)
 	} else {
 		cpx = ts.SpawnWithOpts(
-			e2e.WithArgs("deploy", "symlink", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work, "--force")
+			e2e.WithArgs("deploy", "symlink", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work, "--force"),
 		)
 	}
 	cpx.ExpectExitCode(0)
