@@ -76,8 +76,8 @@ func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc)
 	// If we're not using plain output then we should just dump the environment information
 	if r.out.Type() != output.PlainFormatName {
 		venv := virtualenvironment.Get()
-		if err := venv.Activate(); err != nil {
-			return err
+		if fail := venv.Activate(); fail != nil {
+			return fail.ToError()
 		}
 		env, err := venv.GetEnv(false, targetPath)
 		if err != nil {

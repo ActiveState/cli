@@ -86,9 +86,9 @@ func run(name string, args []string) error {
 		venv.OnDownloadArtifacts(func() { print.Line(locale.T("downloading_artifacts")) })
 		venv.OnInstallArtifacts(func() { print.Line(locale.T("installing_artifacts")) })
 
-		if err := venv.Activate(); err != nil {
+		if fail := venv.Activate(); fail != nil {
 			logging.Errorf("Unable to activate state: %s", fail.Error())
-			return locale.WrapError(err, "error_state_run_activate", `Unable to activate a state for running the script in. Try manually running "state activate" first.`)
+			return fail.WithDescription("error_state_run_activate")
 		}
 
 		env, err := venv.GetEnv(true, filepath.Dir(projectfile.Get().Path()))

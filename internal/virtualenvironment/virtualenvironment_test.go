@@ -87,10 +87,11 @@ func TestActivateFailureAlreadyActive(t *testing.T) {
 	os.Setenv(constants.ActivatedStateEnvVarName, "test")
 
 	venv := Init()
-	err := venv.Activate()
+	failure := venv.Activate()
 	namespace := venv.project.Owner() + "/" + venv.project.Name()
-	require.Error(t, err, "expected an error")
-	assert.EqualError(t, err, locale.Tr("err_already_active", namespace))
+	require.NotNil(t, failure, "expected a failure")
+	assert.Equal(t, FailAlreadyActive, failure.Type)
+	assert.Equal(t, locale.Tr("err_already_active", namespace), failure.Error())
 }
 
 func TestEnv(t *testing.T) {
@@ -141,6 +142,6 @@ languages:
 	project.Persist()
 
 	venv := Init()
-	err := venv.Activate()
-	require.NoError(t, err, "Should activate")
+	fail := venv.Activate()
+	require.NoError(t, fail.ToError(), "Should activate")
 }

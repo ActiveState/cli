@@ -154,7 +154,7 @@ func (cr *CamelRuntime) PreUnpackArtifact(artf *HeadChefArtifact) *failures.Fail
 
 // PostUnpackArtifact parses the metadata file, runs the Relocation function (if
 // necessary) and moves the artifact to its final destination
-func (cr *CamelRuntime) PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir string, archivePath string, cb func()) error {
+func (cr *CamelRuntime) PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir string, archivePath string, cb func()) *failures.Failure {
 	archiveName := strings.TrimSuffix(filepath.Base(archivePath), filepath.Ext(archivePath))
 
 	// the above only strips .gz, so account for .tar.gz use-case
@@ -232,7 +232,7 @@ func (cr *CamelRuntime) PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir
 	if metaData.hasBinaryFile(constants.ActivePerlExecutable) {
 		err := installPPMShim(metaData)
 		if err != nil {
-			return locale.WrapError(err, "ppm_install_err", "Failed to install PPM shim command.")
+			return FailRuntimeInstallation.New("ppm_install_err")
 		}
 	}
 

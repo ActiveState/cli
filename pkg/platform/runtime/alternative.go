@@ -190,7 +190,7 @@ func (ar *AlternativeRuntime) PreUnpackArtifact(artf *HeadChefArtifact) *failure
 // PostUnpackArtifact is called after the artifacts are unpacked
 // In this steps, the artifact contents are moved to its final destination.
 // This step also sets up the runtime environment variables.
-func (ar *AlternativeRuntime) PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir string, archivePath string, cb func()) error {
+func (ar *AlternativeRuntime) PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir string, archivePath string, cb func()) *failures.Failure {
 
 	// final installation target
 	ft := ar.InstallationDirectory(artf)

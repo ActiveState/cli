@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
@@ -17,6 +18,9 @@ import (
 )
 
 var persisted *VirtualEnvironment
+
+// FailAlreadyActive is a failure given when a project is already active
+var FailAlreadyActive = failures.Type("virtualenvironment.fail.alreadyactive", failures.FailUser)
 
 // OS is used by tests to spoof a different value
 var OS = rt.GOOS
@@ -58,17 +62,17 @@ func New(getEnv getEnvFunc) *VirtualEnvironment {
 }
 
 // Activate the virtual environment
-func (v *VirtualEnvironment) Activate() error {
+func (v *VirtualEnvironment) Activate() *failures.Failure {
 	logging.Debug("Activating Virtual Environment")
 
 	activeProject := os.Getenv(constants.ActivatedStateEnvVarName)
 	if activeProject != "" {
-		return locale.NewError("err_already_active", "You cannot activate a new state when you are already in an activated state. You are in an activated state for project: {{.V0}}", v.project.Owner()+"/"+v.project.Name())
+		return FailAlreadyActive.New("err_already_active", v.project.Owner()+"/"+v.project.Name())
 	}
 
 	if strings.ToLower(os.Getenv(constants.DisableRuntime)) != "true" {
-		if err := v.activateRuntime(); err != nil {
-			return err
+		if failure := v.activateRuntime(); failure != nil {
+			return failure
 		}
 	}
 
@@ -85,18 +89,18 @@ func (v *VirtualEnvironment) OnInstallArtifacts(f func()) { v.onInstallArtifacts
 func (v *VirtualEnvironment) OnUseCache(f func()) { v.onUseCache = f }
 
 // activateRuntime sets up a runtime environment
-func (v *VirtualEnvironment) activateRuntime() error {
+func (v *VirtualEnvironment) activateRuntime() *failures.Failure {
 	pj := project.Get()
-	installer, err := runtime.NewInstaller(pj.CommitUUID(), pj.Owner(), pj.Name())
-	if err != nil {
-		return err
+	installer, fail := runtime.NewInstaller(pj.CommitUUID(), pj.Owner(), pj.Name())
+	if fail != nil {
+		return fail
 	}
 
 	installer.OnDownload(v.onDownloadArtifacts)
 
-	rt, installed, err := installer.Install()
-	if err != nil {
-		return err
+	rt, installed, fail := installer.Install()
+	if fail != nil {
+		return fail
 	}
 
 	v.getEnv = rt.GetEnv

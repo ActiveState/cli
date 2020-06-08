@@ -78,9 +78,9 @@ func activate(out output.Outputer, owner, name, srcPath string) bool {
 	venv.OnDownloadArtifacts(func() { out.Notice(locale.T("downloading_artifacts")) })
 	venv.OnInstallArtifacts(func() { out.Notice(locale.T("installing_artifacts")) })
 	venv.OnUseCache(func() { out.Notice(locale.T("using_cached_env")) })
-	err := venv.Activate()
-	if err != nil {
-		failures.Handle(err, locale.T("error_could_not_activate_venv"))
+	fail := venv.Activate()
+	if fail != nil {
+		failures.Handle(fail, locale.T("error_could_not_activate_venv"))
 		return false
 	}
 

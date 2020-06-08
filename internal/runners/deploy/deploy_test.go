@@ -13,7 +13,7 @@ import (
 
 type InstallableMock struct{}
 
-func (i *InstallableMock) Install() (envGetter envGetter, freshInstallation bool, err error) {
+func (i *InstallableMock) Install() (envGetter envGetter, freshInstallation bool, fail *failures.Failure) {
 	return nil, false, nil
 }
 
