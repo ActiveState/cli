@@ -109,7 +109,14 @@ func (suite *DeployIntegrationTestSuite) TestDeploy() {
 
 	cp = cmdIfy(filepath.Join(ts.Dirs.Work, "bin", "python3"), "-m", "pytest", "--version")
 	cp.Expect("This is pytest version")
-	cp.Expect(fmt.Sprintf("imported from %s", ts.Dirs.Work))
+
+	workDir := ts.Dirs.Work
+	var err error
+	if runtime.GOOS == "windows" {
+		workDir, err = filepath.Abs(ts.Dirs.Work)
+		suite.Require().NoError(err)
+	}
+	cp.Expect(fmt.Sprintf("imported from %s", workDir))
 	cp.ExpectExitCode(0)
 
 	suite.AssertConfig(ts)
