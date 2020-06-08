@@ -73,7 +73,7 @@ type ppmMock struct {
 
 func initPpm() *ppmMock {
 	return &ppmMock{
-		httpmock.Activate(constants.PpmDownloadURL),
+		httpmock.Activate(constants.PPMDownloadURL),
 	}
 }
 

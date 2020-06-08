@@ -240,7 +240,7 @@ func (cr *CamelRuntime) PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir
 }
 
 func installPPMShim(metaData *MetaData) error {
-	resp, err := http.Get(fmt.Sprintf("%s/ppm-%s", constants.PpmDownloadURL, runtime.GOOS))
+	resp, err := http.Get(fmt.Sprintf("%s/ppm-%s", constants.PPMDownloadURL, runtime.GOOS))
 	if err != nil {
 		return err
 	}
