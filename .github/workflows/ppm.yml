@@ -17,6 +17,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true
+      GOFLAGS: "-mod=vendor"
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
