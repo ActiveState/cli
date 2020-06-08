@@ -204,7 +204,7 @@ func (suite *DeployIntegrationTestSuite) TestDeploySymlink() {
 	suite.InstallAndAssert(ts)
 
 	pathDir := fileutils.TempDirUnsafe()
-	if runtime.GOOS == "linux" {
+	if runtime.GOOS != "darwin" {
 		cp = ts.SpawnWithOpts(
 			e2e.WithArgs("deploy", "symlink", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work),
 			e2e.AppendEnv(fmt.Sprintf("PATH=%s", pathDir)), // Avoid conflicts
@@ -212,7 +212,6 @@ func (suite *DeployIntegrationTestSuite) TestDeploySymlink() {
 	} else {
 		cp = ts.SpawnWithOpts(
 			e2e.WithArgs("deploy", "symlink", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work, "--force"),
-			e2e.AppendEnv(fmt.Sprintf("PATH=%s", strings.Join([]string{pathDir, "/usr/local/bin"}, ":"))), // Avoid conflicts
 		)
 	}
 
