@@ -8,12 +8,11 @@ import (
 
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/output"
 	"github.com/thoas/go-funk"
 )
 
 // usablePath will find a writable directory under PATH
-func usablePath(out output.Outputer) (string, error) {
+func usablePath() (string, error) {
 	paths := strings.Split(os.Getenv("PATH"), string(os.PathListSeparator))
 	if len(paths) == 0 {
 		return "", locale.NewInputError("err_deploy_path_empty", "Your system does not have any PATH entries configured, so symlinks can not be created.")

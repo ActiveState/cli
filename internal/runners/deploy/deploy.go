@@ -215,7 +215,7 @@ func symlink(installPath string, overwrite bool, envGetter runtime.EnvGetter, ou
 	}
 
 	// Retrieve path to write symlinks to
-	path, err := usablePath(out)
+	path, err := usablePath()
 	if err != nil {
 		return locale.WrapError(err, "err_usablepath", "Could not retrieve a usable PATH")
 	}

@@ -7,11 +7,10 @@ import (
 
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/output"
 	"github.com/thoas/go-funk"
 )
 
-func usablePath(out output.Outputer) (string, error) {
+func usablePath() (string, error) {
 	binDir := "/usr/local/bin"
 	if !fileutils.DirExists(binDir) {
 		fail := fileutils.Mkdir(binDir)
