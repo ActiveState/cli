@@ -57,6 +57,7 @@ namespace InstallStateTool
                 return ActionResult.UserExit;
             }
 
+            session["STATE_TOOL_PATH"] = Path.Combine(installPath, "state.exe");
             return result;
         }
 

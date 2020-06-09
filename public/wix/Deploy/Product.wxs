@@ -6,10 +6,7 @@
             InstallerVersion='200' Languages='1033' Compressed='yes' SummaryCodepage='1252' InstallPrivileges='elevated' AdminImage='yes' InstallScope='perMachine' />
 
     <!-- Configuration parameters -->
-    <Property Id="ProjectName" Value="ActiveState/ActivePerl-5.26" />
-    <Property Id='ProductNameWithoutVersion' Value='ActivePerl' />
-    <Property Id='PerlVersion' Value='5.26' />
-    <Property Id='PerlArchitecture' Value='64-bit' />
+    <Property Id="PROJECT_NAME" Value="ActiveState/ActivePerl-5.26" />
     <!-- End Configuration parameters -->
     
     <!-- Design assets -->
@@ -139,7 +136,6 @@
 		<Property Id="WIXUI_EXITDIALOGOPTIONALTEXT" Value=" " />
 		<CustomAction Id="CA_Set_WIXUI_EXITDIALOGOPTIONALTEXT" Property="WIXUI_EXITDIALOGOPTIONALTEXT" Value="!(loc.ExitDialogSuccess)"/>
 		<InstallUISequence>
-      <!--Custom Action="GetProjectName" After="CostFinalize">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom-->
 			<Custom Action="StateCommandExists" After="CostFinalize">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
 			<Custom Action="SetIsModify" After="StateCommandExists">(Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL"</Custom>
 			<Custom Action="SetInstallDirOnModify" After="SetIsModify">(Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL"</Custom>
@@ -149,11 +145,11 @@
     <CustomAction Id="SetIsModify" Property="IS_MODIFY" Value="true" />
 		
 		<CustomAction Id="SetInstallDirOnModify" Directory="INSTALLDIR" Value="[REMEMBER]" />
-		
-		<CustomAction Id="SetStateDeployPropertyValues" Property="StateDeploy" Value="INSTALLDIR=[INSTALLDIR];PROJECT_NAME=[PROJECT_NAME];IS_MODIFY=[IS_MODIFY]" />
-		
+
+		<CustomAction Id="SetStateDeployPropertyValues" Property="StateDeploy" Value="INSTALLDIR=[INSTALLDIR];PROJECT_NAME=[PROJECT_NAME];IS_MODIFY=[IS_MODIFY];STATE_TOOL_PATH=[STATE_TOOL_PATH]" />
+		<Property Id="STATE_TOOL_PATH" Value="state.exe" />
 		<CustomAction Id="SetUninstallProperties" Property="Uninstall" Value="REMEMBER=[REMEMBER]" />
-		
+
 		<CustomAction Id="SetIsStateToolInstalled" Property="InstallStateTool" Value="STATE_TOOL_INSTALLED=[STATE_TOOL_INSTALLED]" />
 
 		<Binary Id="StateCommandCA" SourceFile="$(var.StateCommandExists.TargetDir)$(var.StateCommandExists.TargetName).CA.dll" />
@@ -164,9 +160,6 @@
 		
 		<Binary Id="StateToolInstallCA" SourceFile="$(var.InstallStateTool.TargetDir)$(var.InstallStateTool.TargetName).CA.dll" />
 		<CustomAction Id="InstallStateTool" Impersonate="no" BinaryKey="StateToolInstallCA" DllEntry="InstallStateTool" Execute="deferred" Return="check" />
-
-		<Binary Id="GetProjectNameCA" SourceFile="$(var.GetProjectName.TargetDir)$(var.GetProjectName.TargetName).CA.dll" />
-		<CustomAction Id="GetProjectName" Impersonate="yes" BinaryKey="GetProjectNameCA" DllEntry="GetProjectName" Return="check" />
 
 		<Binary Id="StateDeployCA" SourceFile="$(var.StateDeploy.TargetDir)$(var.StateDeploy.TargetName).CA.dll" />
 		<CustomAction Id="StateDeploy" Impersonate="no" BinaryKey="StateDeployCA" DllEntry="StateDeploy" Execute="deferred" Return="check" />

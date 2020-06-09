@@ -31,8 +31,8 @@ namespace StateDeploy
                 // NOTE: Due to progress bar changes in the State Tool we can no longer redirect stdout
                 // and strerr output. Once we have a non-interactive mode in the State Tool these lines
                 // can be enabled
-                // procStartInfo.RedirectStandardOutput = true;
-                // procStartInfo.RedirectStandardError = true;
+                procStartInfo.RedirectStandardOutput = true;
+                //procStartInfo.RedirectStandardError = true;
 
                 procStartInfo.UseShellExecute = false;
                 // Do not create the black window.
@@ -73,8 +73,14 @@ namespace StateDeploy
                 
                 // NOTE: See comment above re: progress bar. Can enable these lines once State Tool
                 // is updated
-                // session.Log(string.Format("Standard output: {0}", proc.StandardOutput.ReadToEnd()));
-                // session.Log(string.Format("Standard error: {0}", proc.StandardError.ReadToEnd()));
+                session.Log(string.Format("Standard output: {0}", proc.StandardOutput.ReadToEnd()));
+                //session.Log(string.Format("Standard error: {0}", proc.StandardError.ReadToEnd()));
+
+                if (proc.ExitCode != 0)
+                {
+                    session.Log(string.Format("Process exited with code: {0}", proc.ExitCode));
+                    return ActionResult.Failure;
+                }
             }
             catch (Exception objException)
             {
@@ -91,11 +97,13 @@ namespace StateDeploy
             string projectName = session.CustomActionData["PROJECT_NAME"];
             string isModify = session.CustomActionData["IS_MODIFY"];
 
-            StringBuilder deployCMDBuilder = new StringBuilder("state deploy");
+            StringBuilder deployCMDBuilder = new StringBuilder(session.CustomActionData["STATE_TOOL_PATH"] + " deploy");
             if (isModify == "true")
             {
                 deployCMDBuilder.Append(" --force");
             }
+
+            deployCMDBuilder.Append(" --output json");
 
             // We quote the string here as Windows paths that contain spaces must be quoted.
             // We also account for a path ending with a slash and ensure that the quote character
