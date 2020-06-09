@@ -1287,7 +1287,7 @@ package_removed:
 package_update_config_file:
   other: To ensure your local project is synchronized with the ActiveState platform please use `state pull`
 inventory_ingredient_not_available:
-  other: The ingredient {{.V0}} is not available on the ActiveState Platform
+  other: The package {{.V0}} is not available on the ActiveState Platform, or does not have a matching version
 command_flag_no_such_flag:
   other: "No such flag: {{.V0}}"
 command_flag_invalid_value:
