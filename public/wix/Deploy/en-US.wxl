@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <WixLocalization Culture="en-us" xmlns="http://schemas.microsoft.com/wix/2006/localization">
-  <!--String Id="WelcomeDlgTitle">{\WixUI_Font_Bigger}Welcome to the AWESOME [ProductName] Setup Wizard</String-->
-  <String Id="WelcomeDlgDescription">This Setup Wizard will install ActivePerl [PerlVersion] ([PerlArchitecture]) on your computer.
-The installation requires the ActiveState State Tool. If the Setup Wizard cannot find it on your computer, it will also install it.
+  <String Id="WelcomeDlgDescription">This Setup Wizard will install [ProductName] [PerlVersion] ([PerlArchitecture]) on your computer.
 
 Click "Next" to continue or "Cancel" to exit the Setup Wizard.</String>
   <String Id="PrivacyConsentDlg_Title">[ProductName] Setup</String>
