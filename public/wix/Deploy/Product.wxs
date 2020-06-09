@@ -1,18 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-	<Product Id="*" Name="ActivePerl" Language="1033" Version="1.0.0.0" Manufacturer="ActiveState" UpgradeCode="a8b44798-ee47-4404-8ae3-d821e603b426">
+	<Product Id="*" Name="ActivePerl 5.28 (64bit)" Language="1033" Version="1.0.0.0" Manufacturer="ActiveState" UpgradeCode="a8b44798-ee47-4404-8ae3-d821e603b426">
 		<Package Id='*' Keywords='Installer' Description="ActiveState Language Runtime"
             Comments='State Tool is a registered trademark of ActiveState' Manufacturer='ActiveState'
             InstallerVersion='200' Languages='1033' Compressed='yes' SummaryCodepage='1252' InstallPrivileges='elevated' AdminImage='yes' InstallScope='perMachine' />
 
-    <Property Id='PerlVersion' Value='5.28' />
+    <!-- Configuration parameters -->
+    <Property Id="ProjectName" Value="ActiveState/ActivePerl-5.26" />
+    <Property Id='ProductNameWithoutVersion' Value='ActivePerl' />
+    <Property Id='PerlVersion' Value='5.26' />
     <Property Id='PerlArchitecture' Value='64-bit' />
+    <!-- End Configuration parameters -->
+    
+    <!-- Design assets -->
     <WixVariable Id='WixUIBannerBmp' Value='assets\header.bmp'/>
     <WixVariable Id='WixUIDialogBmp' Value='assets\InstallGraphic.bmp'/>
-
     <WixVariable Id="WixUILicenseRtf" Value="assets\license.rtf" />
 
-    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] [PerlVersion] ([PerlArchitecture]) is already installed." />
+    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
 		<MediaTemplate />
 
     <!-- The default directory structure when installing the state tool. This can be changed via the UI -->
@@ -62,7 +67,6 @@
 			<RegistrySearch Id="RememberProperty" Root="HKCU" Key="Software\[Manufacturer]\[ProductName]" Name="InstallDir" Type="raw" />
 		</Property>
 
-    <Property Id="ProjectName" Value="ActiveState/ActivePerl-5.26" />
 		<Property Id="MSIUSEREALADMINDETECTION" Value="1" />
 
 		<UI Id="WixUI_InstallDir">
