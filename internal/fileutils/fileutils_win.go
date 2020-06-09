@@ -3,9 +3,14 @@
 package fileutils
 
 import (
+	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/ActiveState/cli/internal/logging"
+	"github.com/thoas/go-funk"
 )
 
 const LineEnd = "\r\n"
@@ -26,5 +31,24 @@ func IsExecutable(path string) bool {
 			return true
 		}
 	}
+	return false
+}
+
+// IsWritable returns true if the given path is writable
+func IsWritable(path string) bool {
+	cmd := exec.Command("powershell", "-c", fmt.Sprintf("(Get-Acl %s).AccessToString | findstr \"$env:USERNAME\"", path))
+
+	out, err := cmd.Output()
+	if err != nil {
+		logging.Debug(fmt.Sprintf("Path %s is not writable, got error: %v", path, err))
+		return false
+	}
+
+	if funk.Contains(string(out), "FullControl") {
+		// TODO: Add more checks for values from here:
+		// https://docs.microsoft.com/en-us/dotnet/api/system.security.accesscontrol.filesystemrights?view=dotnet-plat-ext-3.1
+		return true
+	}
+
 	return false
 }
