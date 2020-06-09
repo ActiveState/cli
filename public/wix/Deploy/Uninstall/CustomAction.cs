@@ -50,7 +50,7 @@ namespace Uninstall
         {
             session.Log("Begin remvoing environment entries");
             string pathEnv = Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.Machine);
-            if pathEnv == null {
+            if (pathEnv == null) {
               return ActionResult.Success;
             }
             string[] paths = pathEnv.Split(Path.PathSeparator);
