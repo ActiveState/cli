@@ -41,7 +41,7 @@ func (suite *DeployIntegrationTestSuite) TestDeploy() {
 	var cp *termtest.ConsoleProcess
 	switch runtime.GOOS {
 	case "windows":
-		cp = ts.Spawn("deploy", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work, "--force")
+		cp = ts.Spawn("deploy", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work)
 	case "darwin":
 		// On MacOS the command is the same as Linux, however some binaries
 		// already exist at /usr/local/bin so we use the --force flag
@@ -260,7 +260,10 @@ func (suite *DeployIntegrationTestSuite) TestDeployReport() {
 }
 
 func (suite *DeployIntegrationTestSuite) TestDeployTwice() {
-	if runtime.GOOS != "windows" && !e2e.RunningOnCI() {
+	if runtime.GOOS == "linux" && !e2e.RunningOnCI() {
+		// Currently only running this test on Linux as the MacOS image on CI
+		// already has binaries that state deploy would overwrite, requiring
+		// us to use the --force flag
 		suite.T().Skipf("Skipping TestDeploySymlink when not running on CI, as it modifies PATH")
 	}
 
@@ -270,33 +273,19 @@ func (suite *DeployIntegrationTestSuite) TestDeployTwice() {
 	suite.InstallAndAssert(ts)
 
 	pathDir := fileutils.TempDirUnsafe()
-	var cp *termtest.ConsoleProcess
-	if runtime.GOOS != "darwin" {
-		cp = ts.SpawnWithOpts(
-			e2e.WithArgs("deploy", "symlink", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work),
-			e2e.AppendEnv(fmt.Sprintf("PATH=%s", pathDir)), // Avoid conflicts
-		)
-	} else {
-		cp = ts.SpawnWithOpts(
-			e2e.WithArgs("deploy", "symlink", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work, "--force"),
-		)
-	}
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("deploy", "symlink", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work),
+		e2e.AppendEnv(fmt.Sprintf("PATH=%s", pathDir)),
+	)
 	cp.ExpectExitCode(0)
 
 	suite.True(fileutils.FileExists(filepath.Join(ts.Dirs.Work, "bin", "python3"+symlinkExt)), "Python3 symlink should have been written")
 
 	// Running deploy a second time should not cause any errors (cache is properly picked up)
-	var cpx *termtest.ConsoleProcess
-	if runtime.GOOS != "darwin" {
-		cpx = ts.SpawnWithOpts(
-			e2e.WithArgs("deploy", "symlink", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work),
-			e2e.AppendEnv(fmt.Sprintf("PATH=%s", pathDir)), // Avoid conflicts
-		)
-	} else {
-		cpx = ts.SpawnWithOpts(
-			e2e.WithArgs("deploy", "symlink", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work, "--force"),
-		)
-	}
+	cpx := ts.SpawnWithOpts(
+		e2e.WithArgs("deploy", "symlink", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work),
+		e2e.AppendEnv(fmt.Sprintf("PATH=%s", pathDir)),
+	)
 	cpx.ExpectExitCode(0)
 }
 
