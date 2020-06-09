@@ -97,7 +97,7 @@
 			<Publish Dialog="BrowseDlg" Control="OK" Event="DoAction" Value="WixUIValidatePath" Order="3">1</Publish>
 			<Publish Dialog="BrowseDlg" Control="OK" Event="SpawnDialog" Value="InvalidDirDlg" Order="4"><![CDATA[NOT WIXUI_DONTVALIDATEPATH AND WIXUI_INSTALLDIR_VALID<>"1"]]></Publish>
 
-			<Publish Dialog="ExitDialog" Control="Finish" Event="EndDialog" Value="Return" Order="999">1</Publish>
+			<Publish Dialog="CustomExitDialog" Control="Finish2" Event="EndDialog" Value="Return" Order="999">1</Publish>
 
 			<Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="PrivacyConsentDlg">NOT Installed</Publish>
 			<Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="VerifyReadyDlg">Installed AND PATCH</Publish>
@@ -137,7 +137,7 @@
 
 		<!-- Property and custom action to set the text of the Success screen -->
 		<Property Id="WIXUI_EXITDIALOGOPTIONALTEXT" Value=" " />
-		<CustomAction Id="CA_Set_WIXUI_EXITDIALOGOPTIONALTEXT" Property="WIXUI_EXITDIALOGOPTIONALTEXT" Value="Installation complete. Thank you for installing an ActiveState Language Runtime."/>
+		<CustomAction Id="CA_Set_WIXUI_EXITDIALOGOPTIONALTEXT" Property="WIXUI_EXITDIALOGOPTIONALTEXT" Value="!(loc.ExitDialogSuccess)"/>
 		<InstallUISequence>
       <!--Custom Action="GetProjectName" After="CostFinalize">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom-->
 			<Custom Action="StateCommandExists" After="CostFinalize">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
@@ -145,8 +145,8 @@
 			<Custom Action="SetInstallDirOnModify" After="SetIsModify">(Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL"</Custom>
 			<Custom Action="CA_Set_WIXUI_EXITDIALOGOPTIONALTEXT" Sequence="1">NOT Installed</Custom>
 		</InstallUISequence>
-		
-		<CustomAction Id="SetIsModify" Property="IS_MODIFY" Value="true" />
+
+    <CustomAction Id="SetIsModify" Property="IS_MODIFY" Value="true" />
 		
 		<CustomAction Id="SetInstallDirOnModify" Directory="INSTALLDIR" Value="[REMEMBER]" />
 		

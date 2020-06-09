@@ -3,10 +3,13 @@
   <String Id="WelcomeDlgDescription">This Setup Wizard will install [ProductName] on your computer.
 
 Click "Next" to continue or "Cancel" to exit the Setup Wizard.</String>
-
+  <String Id="ExitDialogSuccess">Thank  you for installing [ProductName].</String>
+  <String Id="ExitDialogLink1">Click here to see the <![CDATA[<a href="http://docs.activestate.com/activeperl/[PerlVersion]/get/relnotes/">Release Notes.</a>]]></String>
+  <String Id="ExitDialogLink2">The <![CDATA[<a href="https://www.activestate.com/products/platform/state-tool/">State Tool</a>]]> has been installed during the installation, and can be used to manage your projects.</String>
+  <String Id="ExitDialogLink3"><![CDATA[<a href="https://docs.activestate.com/platform/state/">State Tool Documentation</a>]]></String>
   <String Id="VerifyReadyDlgInstallText">Click Install to begin the installation of [ProductName]. Perl will be added to your path and file extensions associations for .pl and .wpl  will be created.
   
-  Click Back to review or change any of your installation settings.  Click cancel to exit the wizard.</String>
+Click "Back" to review or change any of your installation settings.  Click "Cancel" to exit the wizard.</String>
   <String Id="PrivacyConsentDlg_Title">[ProductName] Setup</String>
   <String Id="PrivacyConsentDlgBannerBitmap">WixUI_Bmp_Banner</String>
   <!--String Id="PrivacyConsentDlgDescription">Please read the following privacy information carefully.</String -->
