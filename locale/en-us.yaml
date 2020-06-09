@@ -117,7 +117,7 @@ venv_installer_is_nil:
 error_unsupported_language:
   other: "Unsupported language: {{.Language}}"
 error_could_not_activate_venv:
-  other: Could not activate the virtual environment
+  other: Could not activate project. If this is a private project ensure that you are authenticated.
 err_language_not_yet_supported:
   other: "The Platform responded with an artifact that is not supported by this version of the State Tool, artifact name: {{.V0}}. Is your State Tool up to date?"
 error_missing_arg:
