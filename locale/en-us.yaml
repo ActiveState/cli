@@ -1585,3 +1585,6 @@ err_getwd:
   other: |
     Could not retrieve your working directory, error received: {{.V0}}.
     If this problem continues please report it on our forums: {{.V1}}
+deploy_usable_path:
+  other: |
+    [YELLOW]Please ensure '{{.V0}}' exists and is on your PATH.[/RESET]

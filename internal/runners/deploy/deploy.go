@@ -237,7 +237,7 @@ func symlink(installPath string, overwrite bool, envGetter runtime.EnvGetter, ou
 		return locale.WrapError(err, "err_unique_exes", "Could not detect unique executables, make sure your PATH and PATHEXT environment variables are properly configured.")
 	}
 
-	if rt.GOOS == "linux" {
+	if rt.GOOS != "windows" {
 		// Symlink to PATH (eg. /usr/local/bin)
 		if err := symlinkWithTarget(overwrite, path, exes, out); err != nil {
 			return locale.WrapError(err, "err_symlink", "Could not create symlinks to {{.V0}}.", path)
@@ -362,7 +362,15 @@ func uniqueExes(exePaths []string, pathext string) ([]string, error) {
 			exePath = strings.ToLower(exePath) // Windows is case-insensitive
 		}
 
-		exe := exeFile{exePath, "", filepath.Ext(exePath)}
+		exe := exeFile{exePath, "", ""}
+		ext := filepath.Ext(exePath)
+
+		// We only set the excutable extension if PATHEXT is present.
+		// Some macOS builds can contain binaries with periods in their
+		// names and we do not want to strip off suffixes after the period.
+		if funk.Contains(pathExt, ext) {
+			exe.ext = filepath.Ext(exePath)
+		}
 		exe.name = strings.TrimSuffix(filepath.Base(exePath), exe.ext)
 
 		if prevExe, exists := exeFiles[exe.name]; exists {
@@ -421,35 +429,4 @@ func report(envGetter runtime.EnvGetter, out output.Outputer) error {
 	}
 
 	return nil
-}
-
-// usablePath will find a writable directory under PATH
-func usablePath() (string, error) {
-	paths := strings.Split(os.Getenv("PATH"), string(os.PathListSeparator))
-	if len(paths) == 0 {
-		return "", locale.NewInputError("err_deploy_path_empty", "Your system does not have any PATH entries configured, so symlinks can not be created.")
-	}
-
-	preferredPaths := []string{
-		"/usr/local/bin",
-		"/usr/bin",
-	}
-	var result string
-	for _, path := range paths {
-		if path == "" || (!fileutils.IsDir(path) && !fileutils.FileExists(path)) || !fileutils.IsWritable(path) {
-			continue
-		}
-
-		// Record result
-		if funk.Contains(preferredPaths, path) {
-			return path, nil
-		}
-		result = path
-	}
-
-	if result != "" {
-		return result, nil
-	}
-
-	return "", locale.NewInputError("err_deploy_path_noperm", "No permission to create symlinks on any of the PATH entries: {{.V0}}.", os.Getenv("PATH"))
 }
