@@ -260,11 +260,8 @@ func (suite *DeployIntegrationTestSuite) TestDeployReport() {
 }
 
 func (suite *DeployIntegrationTestSuite) TestDeployTwice() {
-	if runtime.GOOS == "linux" && !e2e.RunningOnCI() {
-		// Currently only running this test on Linux as the MacOS image on CI
-		// already has binaries that state deploy would overwrite, requiring
-		// us to use the --force flag
-		suite.T().Skipf("Skipping TestDeploySymlink when not running on CI, as it modifies PATH")
+	if runtime.GOOS == "darwin" || !e2e.RunningOnCI() {
+		suite.T().Skipf("Skipping TestDeployTwice when not running on CI or on MacOS, as it modifies PATH")
 	}
 
 	ts := e2e.New(suite.T(), false)
@@ -275,7 +272,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployTwice() {
 	pathDir := fileutils.TempDirUnsafe()
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("deploy", "symlink", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work),
-		e2e.AppendEnv(fmt.Sprintf("PATH=%s", pathDir)),
+		e2e.AppendEnv(fmt.Sprintf("PATH=%s", pathDir)), // Avoid conflicts
 	)
 	cp.ExpectExitCode(0)
 
@@ -284,7 +281,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployTwice() {
 	// Running deploy a second time should not cause any errors (cache is properly picked up)
 	cpx := ts.SpawnWithOpts(
 		e2e.WithArgs("deploy", "symlink", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work),
-		e2e.AppendEnv(fmt.Sprintf("PATH=%s", pathDir)),
+		e2e.AppendEnv(fmt.Sprintf("PATH=%s", pathDir)), // Avoid conflicts
 	)
 	cpx.ExpectExitCode(0)
 }
