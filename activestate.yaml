@@ -101,13 +101,22 @@ scripts:
     description: Detects new localisation calls and generates placeholder entries in en-us.yaml
     value: python3 scripts/locale-generator.py
   - name: build-wix
-    Description: Update the wxs file and build a helper for the MSI installer
+    description: Build the state tool MSI installer
     constraints:
       os: windows
     value: |
       $scripts.preprocess
       go run scripts/wix/main.go public/wix/install.wxs
       go build -o ./public/wix/rmpath/rmpath.exe $constants.CLI_BUILDFLAGS ./public/wix/rmpath/main.go
+      candle.exe ./public/wix/install.wxs -o ./public/wix/install.wixobj -ext WixUIExtension -ext WixUtilExtension
+      light.exe ./public/wix/install.wixobj -o ./public/wix/state_tool_setup.msi -sice:ICE91 -sice:ICE64 -ext WixUIExtension -ext WixUtilExtension
+  - name: build-language-wix
+    description: Update the language wxs file and build a helper for the MSI installer
+    standalone: true
+    constraints:
+      os: windows
+    value: |
+      msbuild.exe public/wix/Deploy/Deploy.wixproj
   - name: test
     description: Runs unit tests (not integration tests)
     value: |
