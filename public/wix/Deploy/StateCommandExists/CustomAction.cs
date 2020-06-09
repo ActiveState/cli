@@ -18,6 +18,7 @@ namespace StateCommandExists
                 if (File.Exists(fullPath))
                 {
                     session["STATE_TOOL_INSTALLED"] = "true";
+                    session["STATE_TOOL_PATH"] = fullPath;
                     return ActionResult.Success;
                 }
             }
