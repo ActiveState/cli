@@ -15,43 +15,45 @@
     <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] [PerlVersion] ([PerlArchitecture]) is already installed." />
 		<MediaTemplate />
 
-		<!-- The default directory structure when installing the state tool. This can be changed via the UI -->
-		<Directory Id='TARGETDIR' Name='SourceDir'>
-			<Directory Id='AppDataFolder' Name='AppData'>
-				<Directory Id='ActiveState' Name='ActiveState'>
-					<Directory Id='INSTALLDIR' Name='Language'>
-						<Component Id='DeployDir' Guid='7CF56E89-AA69-4A35-921C-F2CA2F9FE12B'>
-							<RemoveFolder Id='INSTALLDIR' On='uninstall' />
-							<!-- Required by WiX -->
-							<RegistryValue Root='HKCU' Key='Software\[Manufacturer]\[ProductName]' Type='string' Value='' KeyPath='yes' />
-						</Component>
-					</Directory>
-				</Directory>
-			</Directory>
-		</Directory>
+    <!-- The default directory structure when installing the state tool. This can be changed via the UI -->
+    <Directory Id='TARGETDIR' Name='SourceDir'>
+      <Directory Id='INSTALLDIR' Name='Perl64'>
+        <Component Id='DeployDir' Guid='7CF56E89-AA69-4A35-921C-F2CA2F9FE12B'>
+          <RemoveFolder Id='INSTALLDIR' On='uninstall' />
+          <!-- Required by WiX -->
+          <RegistryValue Root='HKCU' Key='Software\[Manufacturer]\[ProductName]' Type='string' Value='' KeyPath='yes' />
+        </Component>
+      </Directory>
+    </Directory>
 
-		<Feature Id='Complete' Level='1'>
-			<ComponentRef Id='DeployDir' />
+    <Property Id='PerlExe' Value='bin\perl.exe' />
+    <Property Id='WPerlExe' Value='bin\wperl.exe' />
+    
+    <Feature Id='Complete' Level='1'>
+      <ComponentRef Id='DeployDir' />
       <Component Id='InstallHelper' Directory="INSTALLDIR" Guid='4dda6117-ca9c-4371-a09d-c8575f520a01'>
         <!-- We save the value of the install directory to the registry so we can retrieve it on uninstall -->
+        <!-- TODO: Should this be a user key or a system wide key? -->
         <RegistryValue Root="HKCU" Key="Software\[Manufacturer]\[ProductName]" Name="InstallDir" Value="[INSTALLDIR]" Type="string"/>
         <RemoveFolder Id='CleanupApplicationFolder' On='uninstall' />
-      </Component>
-      <Component Id='Executables' Directory='INSTALLDIR' Guid='*'>
-        <File Id='perlExe' Name='perl.exe' DiskId='1' Source='perl.exe' />
-
+      
         <!-- App Paths to support Start,Run -> "myapp" -->
-        <!--RegistryValue Root="HKLM" Key="SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\perl.exe" Value="[!perl.exe]" Type="string" />
-        <RegistryValue Root="HKLM" Key="SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\MyApp.exe" Name="Path" Value="[INSTALLDIR]" Type="string" /-->
+        <RegistryValue Root="HKLM" Key="SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\perl.exe" Value="[!perl.exe]" Type="string" />
+        <RegistryValue Root="HKLM" Key="SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\MyApp.exe" Name="Path" Value="[INSTALLDIR]" Type="string" />
 
-        <!-- MyApp.Document ProgID -->
-        <ProgId Id="Perl.Document" Description="!(loc.DescPL)" Advertise='yes'>
+        <!-- Perl file scripts -->
+        <ProgId Id="Perl.Document" Description="!(loc.DescPL)" Advertise='no'>
           <Extension Id="pl" ContentType="text/x-perl">
-            <Verb Id="open" Command="!(loc.ExplorerMenuOpenPL)" Argument="&quot;%1&quot;" />
+            <Verb Id="open" Command="!(loc.ExplorerMenuOpenPL)" TargetProperty="PerlExe" Argument="&quot;%1&quot;" />
+          </Extension>
+				</ProgId>
+        <!-- Windows perl file scripts (started with hidden console) -->
+        <ProgId Id="WPerl.Document" Description="!(loc.DescPL)" Advertise='no'>
+          <Extension Id="wpl" ContentType="text/x-w-perl">
+            <Verb Id="open" Command="!(loc.ExplorerMenuOpenPL)" TargetProperty="WPerlExe" Argument="&quot;%1&quot;" />
           </Extension>
         </ProgId>
       </Component>
-
 
     </Feature>
 
