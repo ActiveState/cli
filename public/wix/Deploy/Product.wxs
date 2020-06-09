@@ -16,6 +16,9 @@
     <WixVariable Id='WixUIBannerBmp' Value='assets\header.bmp'/>
     <WixVariable Id='WixUIDialogBmp' Value='assets\InstallGraphic.bmp'/>
     <WixVariable Id="WixUILicenseRtf" Value="assets\license.rtf" />
+    <Icon Id="perl.ico" SourceFile="assets\perl.ico"/>
+    <Property Id="ARPPRODUCTICON" Value="perl.ico" />
+    <!-- End Design assets -->
 
     <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
 		<MediaTemplate />
@@ -130,10 +133,6 @@
 		<UIRef Id="WixUI_Common" />
     <UIRef Id="CustomUI_PrivacyConsent" />
 
-		<!-- Set the icon to be shown in the Add/Remove Programs dialog -->
-		<Icon Id="icon.ico" SourceFile="favicon.ico"/>
-		<Property Id="ARPPRODUCTICON" Value="icon.ico" />
-		
 		<Property Id="IS_MODIFY" Value="false" />
 
 		<!-- Property and custom action to set the text of the Success screen -->
