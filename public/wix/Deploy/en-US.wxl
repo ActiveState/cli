@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<WixLocalization Culture="en-us" xmlns="http://schemas.microsoft.com/wix/2006/localization">
+  <!--String Id="WelcomeDlgTitle">{\WixUI_Font_Bigger}Welcome to the AWESOME [ProductName] Setup Wizard</String-->
+  <String Id="WelcomeDlgDescription">This Setup Wizard will install ActivePerl [PerlVersion] ([PerlArchitecture]) on your computer.
+The installation requires the ActiveState State Tool. If the Setup Wizard cannot find it on your computer, it will also install it.
+
+Click "Next" to continue or "Cancel" to exit the Setup Wizard.</String>
+  <String Id="PrivacyConsentDlg_Title">[ProductName] Setup</String>
+  <String Id="PrivacyConsentDlgBannerBitmap">WixUI_Bmp_Banner</String>
+  <!--String Id="PrivacyConsentDlgDescription">Please read the following privacy information carefully.</String -->
+  <String Id="PrivacyConsentDlgTitle">{\WixUI_Font_Title}Privacy Consent Notice</String>
+  <String Id="PrivacyConsentDlgNotice">ActiveState collects usage statistics and diagnostic data about failures. The collected data complies with the <![CDATA[<a href="https://www.activestate.com/company/privacy-policy/">ActiveState Privacy Policy</a>]]> and will be used to identify product enhancements, help fix defects, and prevent abuse.</String>
+  <String Id="DescPL">Perl script</String>
+  <String Id="ExplorerMenuOpenPL">Open</String>
+</WixLocalization>

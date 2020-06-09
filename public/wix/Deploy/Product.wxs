@@ -1,11 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-	<Product Id="*" Name="ActiveState Language Runtime" Language="1033" Version="1.0.0.0" Manufacturer="ActiveState" UpgradeCode="a8b44798-ee47-4404-8ae3-d821e603b426">
+	<Product Id="*" Name="ActivePerl" Language="1033" Version="1.0.0.0" Manufacturer="ActiveState" UpgradeCode="a8b44798-ee47-4404-8ae3-d821e603b426">
 		<Package Id='*' Keywords='Installer' Description="ActiveState Language Runtime"
             Comments='State Tool is a registered trademark of ActiveState' Manufacturer='ActiveState'
             InstallerVersion='200' Languages='1033' Compressed='yes' SummaryCodepage='1252' InstallPrivileges='elevated' AdminImage='yes' InstallScope='perMachine' />
 
-		<MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+    <Property Id='PerlVersion' Value='5.28' />
+    <Property Id='PerlArchitecture' Value='64-bit' />
+    <WixVariable Id='WixUIBannerBmp' Value='assets\header.bmp'/>
+    <WixVariable Id='WixUIDialogBmp' Value='assets\InstallGraphic.bmp'/>
+
+    <WixVariable Id="WixUILicenseRtf" Value="assets\license.rtf" />
+
+    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] [PerlVersion] ([PerlArchitecture]) is already installed." />
 		<MediaTemplate />
 
 		<!-- The default directory structure when installing the state tool. This can be changed via the UI -->
@@ -25,12 +32,28 @@
 
 		<Feature Id='Complete' Level='1'>
 			<ComponentRef Id='DeployDir' />
-			<Component Id='InstallHelper' Directory="INSTALLDIR" Guid='4dda6117-ca9c-4371-a09d-c8575f520a01'>
-				<!-- We save the value of the install directory to the registry so we can retrieve it on uninstall -->
-				<RegistryValue Root="HKCU" Key="Software\[Manufacturer]\[ProductName]" Name="InstallDir" Value="[INSTALLDIR]" Type="string"/>
-				<RemoveFolder Id='CleanupApplicationFolder' On='uninstall' />
-			</Component>
-		</Feature>
+      <Component Id='InstallHelper' Directory="INSTALLDIR" Guid='4dda6117-ca9c-4371-a09d-c8575f520a01'>
+        <!-- We save the value of the install directory to the registry so we can retrieve it on uninstall -->
+        <RegistryValue Root="HKCU" Key="Software\[Manufacturer]\[ProductName]" Name="InstallDir" Value="[INSTALLDIR]" Type="string"/>
+        <RemoveFolder Id='CleanupApplicationFolder' On='uninstall' />
+      </Component>
+      <Component Id='Executables' Directory='INSTALLDIR' Guid='*'>
+        <File Id='perlExe' Name='perl.exe' DiskId='1' Source='perl.exe' />
+
+        <!-- App Paths to support Start,Run -> "myapp" -->
+        <!--RegistryValue Root="HKLM" Key="SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\perl.exe" Value="[!perl.exe]" Type="string" />
+        <RegistryValue Root="HKLM" Key="SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\MyApp.exe" Name="Path" Value="[INSTALLDIR]" Type="string" /-->
+
+        <!-- MyApp.Document ProgID -->
+        <ProgId Id="Perl.Document" Description="!(loc.DescPL)" Advertise='yes'>
+          <Extension Id="pl" ContentType="text/x-perl">
+            <Verb Id="open" Command="!(loc.ExplorerMenuOpenPL)" Argument="&quot;%1&quot;" />
+          </Extension>
+        </ProgId>
+      </Component>
+
+
+    </Feature>
 
 		<Property Id="REMEMBER">
 			<!-- Retrieve the value of the installation directory from the registry -->
@@ -66,16 +89,16 @@
 
 			<Publish Dialog="ExitDialog" Control="Finish" Event="EndDialog" Value="Return" Order="999">1</Publish>
 
-			<!-- Can enable the element below when EULA text is prepared -->
-			<!-- <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="LicenseAgreementDlg">NOT Installed</Publish> -->
-			<Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="InstallDirDlg">NOT Installed</Publish>
+			<Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="PrivacyConsentDlg">NOT Installed</Publish>
 			<Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="VerifyReadyDlg">Installed AND PATCH</Publish>
 
-			<Publish Dialog="LicenseAgreementDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg">1</Publish>
+      <Publish Dialog="PrivacyConsentDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg">1</Publish>
+      <Publish Dialog="PrivacyConsentDlg" Control="Next" Event="NewDialog" Value="LicenseAgreementDlg">1</Publish>
+
+      <Publish Dialog="LicenseAgreementDlg" Control="Back" Event="NewDialog" Value="PrivacyConsentDlg">1</Publish>
 			<Publish Dialog="LicenseAgreementDlg" Control="Next" Event="NewDialog" Value="InstallDirDlg">LicenseAccepted = "1"</Publish>
 
-			<!-- Can enable the element below when EULA text is prepared -->
-			<!-- <Publish Dialog="InstallDirDlg" Control="Back" Event="NewDialog" Value="LicenseAgreementDlg">1</Publish> -->
+			<Publish Dialog="InstallDirDlg" Control="Back" Event="NewDialog" Value="LicenseAgreementDlg">1</Publish>
 			<Publish Dialog="InstallDirDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg">1</Publish>
 			<Publish Dialog="InstallDirDlg" Control="Next" Event="SetTargetPath" Value="[WIXUI_INSTALLDIR]" Order="1">1</Publish>
 			<Publish Dialog="InstallDirDlg" Control="Next" Event="DoAction" Value="WixUIValidatePath" Order="2">NOT WIXUI_DONTVALIDATEPATH</Publish>
@@ -98,6 +121,7 @@
 		</UI>
 
 		<UIRef Id="WixUI_Common" />
+    <UIRef Id="CustomUI_PrivacyConsent" />
 
 		<!-- Set the icon to be shown in the Add/Remove Programs dialog -->
 		<Icon Id="icon.ico" SourceFile="favicon.ico"/>
