@@ -7,8 +7,6 @@ Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "Deploy", "Deploy.wixproj", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StateCommandExists", "StateCommandExists\StateCommandExists.csproj", "{ADEBE963-F9B2-4860-8512-364A7C78B757}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GetProjectName", "GetProjectName\GetProjectName.csproj", "{D9DE011C-0747-428E-B624-447EBB38E361}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StateDeploy", "StateDeploy\StateDeploy.csproj", "{FDAF56F5-7B7F-4E71-B008-03860A584147}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Uninstall", "Uninstall\Uninstall.csproj", "{4C663442-BD30-4183-9E55-FD3EEF13F032}"
@@ -43,14 +41,6 @@ Global
 		{ADEBE963-F9B2-4860-8512-364A7C78B757}.Release|x64.Build.0 = Release|x64
 		{ADEBE963-F9B2-4860-8512-364A7C78B757}.Release|x86.ActiveCfg = Release|x86
 		{ADEBE963-F9B2-4860-8512-364A7C78B757}.Release|x86.Build.0 = Release|x86
-		{D9DE011C-0747-428E-B624-447EBB38E361}.Debug|x64.ActiveCfg = Debug|x64
-		{D9DE011C-0747-428E-B624-447EBB38E361}.Debug|x64.Build.0 = Debug|x64
-		{D9DE011C-0747-428E-B624-447EBB38E361}.Debug|x86.ActiveCfg = Debug|x86
-		{D9DE011C-0747-428E-B624-447EBB38E361}.Debug|x86.Build.0 = Debug|x86
-		{D9DE011C-0747-428E-B624-447EBB38E361}.Release|x64.ActiveCfg = Release|x64
-		{D9DE011C-0747-428E-B624-447EBB38E361}.Release|x64.Build.0 = Release|x64
-		{D9DE011C-0747-428E-B624-447EBB38E361}.Release|x86.ActiveCfg = Release|x86
-		{D9DE011C-0747-428E-B624-447EBB38E361}.Release|x86.Build.0 = Release|x86
 		{FDAF56F5-7B7F-4E71-B008-03860A584147}.Debug|x64.ActiveCfg = Debug|x64
 		{FDAF56F5-7B7F-4E71-B008-03860A584147}.Debug|x64.Build.0 = Debug|x64
 		{FDAF56F5-7B7F-4E71-B008-03860A584147}.Debug|x86.ActiveCfg = Debug|x86
