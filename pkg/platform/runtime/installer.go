@@ -12,6 +12,7 @@ import (
 	"github.com/vbauerster/mpb/v4"
 
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
@@ -362,29 +363,32 @@ func installPPMShim(binPath string) error {
 	}
 	ppmExe := filepath.Join(binPath, ppmExeName)
 	if fileutils.FileExists(ppmExe) {
-		err := os.Remove(filepath.Join(binPath, ppmExe))
+		err := os.Remove(ppmExe)
 		if err != nil {
-			return err
+			return errs.Wrap(err, "failed to remove existing ppm %s", ppmExe)
 		}
 	}
 
 	box := packr.NewBox("../../../assets/ppm")
-	var ppmShimName string
-	var ppmBytes []byte
-	if runtime.GOOS == "windows" {
-		ppmBytes = box.Bytes("ppm.bat")
-		ppmShimName = "ppm.bat"
-	} else {
-		ppmBytes = box.Bytes("ppm.sh")
-		ppmShimName = "ppm"
-	}
-	shim := filepath.Join(binPath, ppmShimName)
+	ppmBytes := box.Bytes("ppm.sh")
+	shim := filepath.Join(binPath, "ppm")
 	// remove shim if it existed before, so we can overwrite (ok to drop error here)
 	_ = os.Remove(shim)
 
 	err := ioutil.WriteFile(shim, ppmBytes, 0755)
 	if err != nil {
-		return err
+		return errs.Wrap(err, "failed to write shim command %s", shim)
+	}
+	if runtime.GOOS == "windows" {
+		ppmBatBytes := box.Bytes("ppm.bat")
+		shim := filepath.Join(binPath, "ppm.bat")
+		// remove shim if it existed before, so we can overwrite (ok to drop error here)
+		_ = os.Remove(shim)
+
+		err := ioutil.WriteFile(shim, ppmBatBytes, 0755)
+		if err != nil {
+			return errs.Wrap(err, "failed to write shim command %s", shim)
+		}
 	}
 
 	return nil
