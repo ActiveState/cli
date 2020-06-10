@@ -78,8 +78,6 @@ const NonInteractive = "ACTIVESTATE_NONINTERACTIVE"
 // APIUpdateURL is the URL for our update server
 const APIUpdateURL = "https://s3.ca-central-1.amazonaws.com/cli-update/update/"
 
-const PPMDownloadURL = "https://s3.ca-central-1.amazonaws.com/cli-update/update/ppm"
-
 // APIArtifactURL is the URL for downloading artifacts
 const APIArtifactURL = "https://s3.ca-central-1.amazonaws.com/cli-artifacts/"
 
