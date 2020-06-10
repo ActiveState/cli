@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/fileutils"
 )
 
 // EnvironmentDefinition provides all the information needed to set up an
@@ -342,4 +344,20 @@ func (ed *EnvironmentDefinition) GetEnv(inherit bool) map[string]string {
 		panic(fmt.Sprintf("Could not inherit OS environment variable: %v", err))
 	}
 	return res
+}
+
+// FindBinPathFor returns the PATH directory in which the executable can be found.
+// If the executable cannot be found, an empty string is returned.
+// This function should be called after variables names are expanded with ExpandVariables()
+func (ed *EnvironmentDefinition) FindBinPathFor(executable string) string {
+	for _, ev := range ed.Env {
+		if ev.Name == "PATH" {
+			for _, dir := range ev.Values {
+				if fileutils.FileExists(filepath.Join(dir, executable)) {
+					return dir
+				}
+			}
+		}
+	}
+	return ""
 }

@@ -1,8 +1,10 @@
 package runtime
 
 import (
+	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
 
 	"github.com/go-openapi/strfmt"
 	"github.com/google/uuid"
@@ -347,4 +349,45 @@ func removeInstallDir(installDir string) {
 	if err := os.RemoveAll(installDir); err != nil {
 		logging.Errorf("attempting to remove install dir '%s': %v", installDir, err)
 	}
+}
+
+// installPPMShim installs an executable shell script and a BAT file that is executed instead of PPM in the specified path.
+// It calls the `state _ppm` sub-command printing deprecation messages.
+func installPPMShim(binPath string) error {
+	ppmExe := "ppm"
+	if runtime.GOOS == "windows" {
+		ppmExe = "ppm.exe"
+	}
+
+	// remove old ppm command if it existed before
+	_ = os.Remove(filepath.Join(binPath, ppmExe))
+
+	shShim := filepath.Join(binPath, "ppm")
+	// remove it, in case it existed before
+	_ = os.Remove(shShim)
+	err := ioutil.WriteFile(shShim, []byte(`
+#!/bin/sh
+
+state _ppm $*
+`), 0755)
+	if err != nil {
+		return err
+	}
+
+	batShim := filepath.Join(binPath, "ppm.bat")
+	// remove it, in case it existed before
+	_ = os.Remove(batShim)
+	err = ioutil.WriteFile(batShim, []byte(`
+@echo off
+
+state.exe _ppm $*
+	if err != nil {
+		return err
+	}
+`), 0755)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

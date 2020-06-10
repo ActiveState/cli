@@ -2,14 +2,10 @@ package runtime
 
 import (
 	"bytes"
-	"fmt"
 	"html/template"
-	"io"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"path/filepath"
-	"runtime"
 	rt "runtime"
 	"strings"
 
@@ -21,7 +17,6 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/unarchiver"
-	"github.com/phayes/permbits"
 )
 
 var _ Assembler = &CamelRuntime{}
@@ -230,51 +225,12 @@ func (cr *CamelRuntime) PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir
 	}
 
 	if metaData.hasBinaryFile(constants.ActivePerlExecutable) {
-		err := installPPMShim(metaData)
+		err := installPPMShim(filepath.Join(metaData.Path, metaData.BinaryLocations[0].Path))
 		if err != nil {
 			return FailRuntimeInstallation.New("ppm_install_err")
 		}
 	}
 
-	return nil
-}
-
-func installPPMShim(metaData *MetaData) error {
-	resp, err := http.Get(fmt.Sprintf("%s/ppm-%s", constants.PPMDownloadURL, runtime.GOOS))
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	td := filepath.Join(metaData.Path, metaData.BinaryLocations[0].Path)
-	ppmExe := "ppm"
-	if runtime.GOOS == "windows" {
-		ppmExe = "ppm.exe"
-	}
-
-	ppmTarget := filepath.Join(td, ppmExe)
-
-	// remove old ppm command (if it existed before)
-	_ = os.Remove(ppmTarget)
-
-	out, err := os.Create(ppmTarget)
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-
-	_, err = io.Copy(out, resp.Body)
-	if err != nil {
-		return err
-	}
-
-	out.Close()
-	permissions, _ := permbits.Stat(ppmTarget)
-	permissions.SetUserExecute(true)
-	err = permbits.Chmod(ppmTarget, permissions)
-	if err != nil {
-		return err
-	}
 	return nil
 }
 
