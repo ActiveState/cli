@@ -7,6 +7,7 @@ import (
 	"runtime"
 
 	"github.com/go-openapi/strfmt"
+	"github.com/gobuffalo/packr"
 	"github.com/google/uuid"
 	"github.com/vbauerster/mpb/v4"
 
@@ -354,37 +355,34 @@ func removeInstallDir(installDir string) {
 // installPPMShim installs an executable shell script and a BAT file that is executed instead of PPM in the specified path.
 // It calls the `state _ppm` sub-command printing deprecation messages.
 func installPPMShim(binPath string) error {
-	ppmExe := "ppm"
-	if runtime.GOOS == "windows" {
-		ppmExe = "ppm.exe"
-	}
-
 	// remove old ppm command if it existed before
-	_ = os.Remove(filepath.Join(binPath, ppmExe))
-
-	shShim := filepath.Join(binPath, "ppm")
-	// remove it, in case it existed before
-	_ = os.Remove(shShim)
-	err := ioutil.WriteFile(shShim, []byte(`
-#!/bin/sh
-
-state _ppm $*
-`), 0755)
-	if err != nil {
-		return err
+	ppmExeName := "ppm"
+	if runtime.GOOS == "windows" {
+		ppmExeName = "ppm.exe"
+	}
+	ppmExe := filepath.Join(binPath, ppmExeName)
+	if fileutils.FileExists(ppmExe) {
+		err := os.Remove(filepath.Join(binPath, ppmExe))
+		if err != nil {
+			return err
+		}
 	}
 
-	batShim := filepath.Join(binPath, "ppm.bat")
-	// remove it, in case it existed before
-	_ = os.Remove(batShim)
-	err = ioutil.WriteFile(batShim, []byte(`
-@echo off
-
-state.exe _ppm $*
-	if err != nil {
-		return err
+	box := packr.NewBox("../../../assets/ppm")
+	var ppmShimName string
+	var ppmBytes []byte
+	if runtime.GOOS == "windows" {
+		ppmBytes = box.Bytes("ppm.bat")
+		ppmShimName = "ppm.bat"
+	} else {
+		ppmBytes = box.Bytes("ppm.sh")
+		ppmShimName = "ppm"
 	}
-`), 0755)
+	shim := filepath.Join(binPath, ppmShimName)
+	// remove shim if it existed before, so we can overwrite (ok to drop error here)
+	_ = os.Remove(shim)
+
+	err := ioutil.WriteFile(shim, ppmBytes, 0755)
 	if err != nil {
 		return err
 	}
