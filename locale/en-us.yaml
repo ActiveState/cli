@@ -1261,7 +1261,7 @@ package_no_data:
 package_search_no_packages:
   other: Currently no package of the provided name is available on the ActiveState Platform.
 package_list_no_packages:
-  other: The project has not packages to list.
+  other: The project has no packages to list.
 package_name:
   other: Name
 package_version:
