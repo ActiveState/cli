@@ -26,6 +26,7 @@ scripts:
       $constants.SET_ENV
       packr
       go run scripts/constants-generator/main.go -- internal/constants/generated.go
+      mkdir -p build
   - name: build
     description: Builds the project with the host OS as the target OS.
     value: |
@@ -41,8 +42,8 @@ scripts:
     description: Generate update files
     value: |
       $scripts.preprocess
-      mkdir -p public/update
-      go run scripts/update-generator/main.go -o public/update $constants.BUILD_TARGET
+      mkdir -p build/update
+      go run scripts/update-generator/main.go -o build/update $constants.BUILD_TARGET
   - name: install
     description: Installs the current HEAD version into GOBIN
     value: |
@@ -53,15 +54,15 @@ scripts:
     constraints:
       os: linux,macos
     value: |
-      go run scripts/s3-deployer/main.go public/update ca-central-1 cli-update update/state
-      go run scripts/s3-deployer/main.go public/install.sh ca-central-1 cli-update update/state/install.sh
+      go run scripts/s3-deployer/main.go build/update ca-central-1 cli-update update/state
+      go run scripts/s3-deployer/main.go installers/install.sh ca-central-1 cli-update update/state/install.sh
   - name: deploy-updates
     description: Deploys update files to S3. This steps is automated by CI and should never be ran manually unless you KNOW WHAT YOU'RE DOING.
     constraints:
       os: windows
     value: |
-      go run scripts/s3-deployer/main.go public/update ca-central-1 cli-update update/state
-      go run scripts/s3-deployer/main.go public/install.ps1 ca-central-1 cli-update update/state/install.ps1
+      go run scripts/s3-deployer/main.go build/update ca-central-1 cli-update update/state
+      go run scripts/s3-deployer/main.go installers/install.ps1 ca-central-1 cli-update update/state/install.ps1
   - name: generate-api-client
     description: Generates the mono-api client files
     value: |
@@ -100,23 +101,22 @@ scripts:
   - name: generate-locale
     description: Detects new localisation calls and generates placeholder entries in en-us.yaml
     value: python3 scripts/locale-generator.py
-  - name: build-wix
-    description: Build the state tool MSI installer
-    constraints:
-      os: windows
-    value: |
-      $scripts.preprocess
-      go run scripts/wix/main.go public/wix/install.wxs
-      go build -o ./public/wix/rmpath/rmpath.exe $constants.CLI_BUILDFLAGS ./public/wix/rmpath/main.go
-      candle.exe ./public/wix/install.wxs -o ./public/wix/install.wixobj -ext WixUIExtension -ext WixUtilExtension
-      light.exe ./public/wix/install.wixobj -o ./public/wix/state_tool_setup.msi -sice:ICE91 -sice:ICE64 -ext WixUIExtension -ext WixUtilExtension
-  - name: build-language-wix
-    description: Update the language wxs file and build a helper for the MSI installer
+  - name: build-msi-state
+    description: Build the state tool MSI, requires that you have wixtools installed and on PATH
     standalone: true
     constraints:
       os: windows
     value: |
-      msbuild.exe public/wix/Deploy/Deploy.wixproj
+      go build -o ./installers/msi-state/rmpath/rmpath.exe $constants.CLI_BUILDFLAGS ./installers/msi-state/rmpath/main.go
+      candle.exe ./installers/msi-state/install.wxs -o ./installers/msi-state/install.wixobj -ext WixUIExtension -ext WixUtilExtension
+      light.exe ./installers/msi-state/install.wixobj -o ./build/state_tool.msi -sice:ICE91 -sice:ICE64 -ext WixUIExtension -ext WixUtilExtension
+  - name: build-msi-language
+    description: Builds the language MSI, requires that you have .NET 4.x installed and on PATH
+    standalone: true
+    constraints:
+      os: windows
+    value: |
+      msbuild.exe installers/msi-language/Deploy.wixproj
   - name: test
     description: Runs unit tests (not integration tests)
     value: |

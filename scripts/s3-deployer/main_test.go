@@ -9,7 +9,7 @@ import (
 )
 
 func init() {
-	sourcePath = "public/update"
+	sourcePath = "build/update"
 	awsRegionName = "ca-central-1"
 	awsBucketName = "cli-update"
 	awsBucketPrefix = "update/state"

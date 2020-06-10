@@ -1,8 +1,6 @@
 build
 debug
 debug.test
-public/update/*
-public/distro/*
 internal/constants/generated.go
 **/testdata/generated/**
 .DS_Store
