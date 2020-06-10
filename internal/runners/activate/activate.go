@@ -77,7 +77,7 @@ func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc)
 	if r.out.Type() != output.PlainFormatName {
 		venv := virtualenvironment.Get()
 		if fail := venv.Activate(); fail != nil {
-			return fail.ToError()
+			return locale.WrapError(fail.ToError(), "error_could_not_activate_venv", "Could not activate project. If this is a private project ensure that you are authenticated.")
 		}
 		env, err := venv.GetEnv(false, targetPath)
 		if err != nil {
