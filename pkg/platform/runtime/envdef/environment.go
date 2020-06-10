@@ -353,7 +353,7 @@ func (ed *EnvironmentDefinition) FindBinPathFor(executable string) string {
 	for _, ev := range ed.Env {
 		if ev.Name == "PATH" {
 			for _, dir := range ev.Values {
-				if fileutils.FileExists(filepath.Join(dir, executable)) {
+				if fileutils.TargetExists(filepath.Join(dir, executable)) {
 					return dir
 				}
 			}
