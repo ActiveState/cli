@@ -13,7 +13,7 @@
     <WixVariable Id='WixUIBannerBmp' Value='assets\header.bmp'/>
     <WixVariable Id='WixUIDialogBmp' Value='assets\InstallGraphic.bmp'/>
     <WixVariable Id="WixUILicenseRtf" Value="assets\license.rtf" />
-    <Icon Id="perl.ico" SourceFile="assets\perl.ico"/>
+    <Icon Id="perl.ico" SourceFile="perl.ico"/>
     <Property Id="ARPPRODUCTICON" Value="perl.ico" />
     <!-- End Design assets -->
 
@@ -22,49 +22,49 @@
 
     <!-- The default directory structure when installing the state tool. This can be changed via the UI -->
     <Directory Id='TARGETDIR' Name='SourceDir'>
+      
       <Directory Id='INSTALLDIR' Name='Perl64'>
         <Component Id='DeployDir' Guid='7CF56E89-AA69-4A35-921C-F2CA2F9FE12B'>
           <RemoveFolder Id='INSTALLDIR' On='uninstall' />
           <!-- Required by WiX -->
-          <RegistryValue Root='HKCU' Key='Software\[Manufacturer]\[ProductName]' Type='string' Value='' KeyPath='yes' />
+          <RegistryValue Root='HKLM' Key='SOFTWARE\[Manufacturer]\[ProductName]' Type='string' Value='' KeyPath='yes' />
         </Component>
       </Directory>
     </Directory>
 
-    <Property Id='PerlExe' Value='bin\perl.exe' />
-    <Property Id='WPerlExe' Value='bin\wperl.exe' />
+    <Property Id='PerlExe' Value='bin\perl.lnk' />
+    <Property Id='WPerlExe' Value='bin\wperl.lnk' />
+    <Property Id='CmdExe' Value='cmd.exe' />
     
     <Feature Id='Complete' Level='1'>
+      <Component Id='ProgIdPerl' Directory='TARGETDIR' Guid='4dda6117-ca9c-4371-a09d-c8575f520a02'>
+        <!-- Perl file scripts -->
+        <ProgId Id="Perl.Document" Description="!(loc.DescPL)" Advertise='no'>
+          <Extension Id="pl" ContentType="text/x-perl">
+            <Verb Id="open" Command="!(loc.ExplorerMenuOpenPL)" TargetProperty="CmdExe" Argument="/c &quot;[PerlExe]&quot; &quot;%1&quot;" />
+          </Extension>
+        </ProgId>
+        <!-- Windows perl file scripts (started with hidden console) -->
+        <ProgId Id="WPerl.Document" Description="!(loc.DescPL)" Advertise='no'>
+          <Extension Id="wpl" ContentType="text/x-w-perl">
+            <Verb Id="open" Command="!(loc.ExplorerMenuOpenPL)" TargetProperty="CmdExe" Argument="/c &quot;[WPerlExe]&quot; &quot;%1&quot;" />
+          </Extension>
+        </ProgId>
+      </Component>
       <ComponentRef Id='DeployDir' />
       <Component Id='InstallHelper' Directory="INSTALLDIR" Guid='4dda6117-ca9c-4371-a09d-c8575f520a01'>
         <!-- We save the value of the install directory to the registry so we can retrieve it on uninstall -->
         <!-- TODO: Should this be a user key or a system wide key? -->
-        <RegistryValue Root="HKCU" Key="Software\[Manufacturer]\[ProductName]" Name="InstallDir" Value="[INSTALLDIR]" Type="string"/>
+        <RegistryValue Root="HKLM" Key="Software\[Manufacturer]\[ProductName]" Name="InstallDir" Value="[INSTALLDIR]" Type="string"/>
         <RemoveFolder Id='CleanupApplicationFolder' On='uninstall' />
-      
-        <!-- App Paths to support Start,Run -> "myapp" -->
-        <RegistryValue Root="HKLM" Key="SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\perl.exe" Value="[!perl.exe]" Type="string" />
-        <RegistryValue Root="HKLM" Key="SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\MyApp.exe" Name="Path" Value="[INSTALLDIR]" Type="string" />
-
-        <!-- Perl file scripts -->
-        <ProgId Id="Perl.Document" Description="!(loc.DescPL)" Advertise='no'>
-          <Extension Id="pl" ContentType="text/x-perl">
-            <Verb Id="open" Command="!(loc.ExplorerMenuOpenPL)" TargetProperty="PerlExe" Argument="&quot;%1&quot;" />
-          </Extension>
-				</ProgId>
-        <!-- Windows perl file scripts (started with hidden console) -->
-        <ProgId Id="WPerl.Document" Description="!(loc.DescPL)" Advertise='no'>
-          <Extension Id="wpl" ContentType="text/x-w-perl">
-            <Verb Id="open" Command="!(loc.ExplorerMenuOpenPL)" TargetProperty="WPerlExe" Argument="&quot;%1&quot;" />
-          </Extension>
-        </ProgId>
       </Component>
+
 
     </Feature>
 
     <Property Id="REMEMBER">
 			<!-- Retrieve the value of the installation directory from the registry -->
-			<RegistrySearch Id="RememberProperty" Root="HKCU" Key="Software\[Manufacturer]\[ProductName]" Name="InstallDir" Type="raw" />
+			<RegistrySearch Id="RememberProperty" Root="HKLM" Key="SOFTWARE\[Manufacturer]\[ProductName]" Name="InstallDir" Type="raw" />
 		</Property>
 
 		<Property Id="MSIUSEREALADMINDETECTION" Value="1" />
@@ -136,7 +136,12 @@
 			<Custom Action="StateCommandExists" After="CostFinalize">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
 			<Custom Action="SetIsModify" After="StateCommandExists">(Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL"</Custom>
 			<Custom Action="SetInstallDirOnModify" After="SetIsModify">(Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL"</Custom>
-		</InstallUISequence>
+      <Custom Action="SetPerlExe" After="SetInstallDirOnModify">1</Custom>
+      <Custom Action="SetWPerlExe" After="SetPerlExe">1</Custom>
+    </InstallUISequence>
+
+    <CustomAction Id="SetPerlExe" Property="PerlExe" Value="[INSTALLDIR]bin\perl.lnk" />
+    <CustomAction Id="SetWPerlExe" Property="WPerlExe" Value="[INSTALLDIR]bin\wperl.lnk" />
 
     <CustomAction Id="SetIsModify" Property="IS_MODIFY" Value="true" />
 		
@@ -164,7 +169,9 @@
 		<CustomAction Id="Uninstall" Impersonate="no" BinaryKey="UninstallCA" DllEntry="Uninstall" Execute="deferred" Return="check" />
 
 		<InstallExecuteSequence>
-			<Custom Action="SetIsStateToolInstalled" After="InstallInitialize">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
+      <Custom Action="SetPerlExe" After="InstallInitialize">1</Custom>
+      <Custom Action="SetWPerlExe" After="SetPerlExe">1</Custom>
+      <Custom Action="SetIsStateToolInstalled" After="SetWPerlExe">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
 			<Custom Action="Status" After="SetIsStateToolInstalled">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
 			<Custom Action="InstallStateTool" After="Status">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
 			<Custom Action="SetStateDeployPropertyValues" After="InstallStateTool">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
