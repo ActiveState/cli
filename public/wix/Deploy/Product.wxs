@@ -132,14 +132,10 @@
 
 		<Property Id="IS_MODIFY" Value="false" />
 
-		<!-- Property and custom action to set the text of the Success screen -->
-		<Property Id="WIXUI_EXITDIALOGOPTIONALTEXT" Value=" " />
-		<CustomAction Id="CA_Set_WIXUI_EXITDIALOGOPTIONALTEXT" Property="WIXUI_EXITDIALOGOPTIONALTEXT" Value="!(loc.ExitDialogSuccess)"/>
 		<InstallUISequence>
 			<Custom Action="StateCommandExists" After="CostFinalize">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
 			<Custom Action="SetIsModify" After="StateCommandExists">(Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL"</Custom>
 			<Custom Action="SetInstallDirOnModify" After="SetIsModify">(Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL"</Custom>
-			<Custom Action="CA_Set_WIXUI_EXITDIALOGOPTIONALTEXT" Sequence="1">NOT Installed</Custom>
 		</InstallUISequence>
 
     <CustomAction Id="SetIsModify" Property="IS_MODIFY" Value="true" />
