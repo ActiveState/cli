@@ -298,7 +298,7 @@ func symlinkWithTarget(overwrite bool, symlinkPath string, exePaths []string, ou
 				return locale.WrapError(err, "err_deploy_shouldskip", "Could not determine if link already exists.")
 			}
 			if skip {
-				return nil
+				continue
 			}
 
 			// If we're trying to overwrite a link not owned by us but overwrite=false then we should fail
