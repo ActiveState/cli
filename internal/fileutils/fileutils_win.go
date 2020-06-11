@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/thoas/go-funk"
+	"github.com/gobuffalo/packr"
 )
 
 const LineEnd = "\r\n"
@@ -36,19 +36,21 @@ func IsExecutable(path string) bool {
 
 // IsWritable returns true if the given path is writable
 func IsWritable(path string) bool {
-	cmd := exec.Command("powershell", "-c", fmt.Sprintf("(Get-Acl %s).AccessToString | findstr \"$env:USERNAME\"", path))
-
-	out, err := cmd.Output()
-	if err != nil {
-		logging.Debug(fmt.Sprintf("Path %s is not writable, got error: %v", path, err))
+	box := packr.NewBox("../../assets/scripts")
+	contents := box.String("IsWritable.ps1")
+	scriptFile, fail := WriteTempFile(
+		"", fmt.Sprintf("%s*%s", "IsWritable", ".ps1"), []byte(contents), 0700,
+	)
+	if fail != nil {
 		return false
 	}
 
-	if funk.Contains(string(out), "FullControl") {
-		// TODO: Add more checks for values from here:
-		// https://docs.microsoft.com/en-us/dotnet/api/system.security.accesscontrol.filesystemrights?view=dotnet-plat-ext-3.1
-		return true
+	cmd := exec.Command("powershell.exe", "-c", scriptFile, path)
+	err := cmd.Run()
+	if err != nil {
+		logging.Debug("Path %s is not writable, got error %v", path, err)
+		return false
 	}
 
-	return false
+	return true
 }
