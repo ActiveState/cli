@@ -12,7 +12,6 @@ Click "Next" to continue or "Cancel" to exit the Setup Wizard.</String>
 Click "Back" to review or change any of your installation settings.  Click "Cancel" to exit the wizard.</String>
   <String Id="PrivacyConsentDlg_Title">[ProductName] Setup</String>
   <String Id="PrivacyConsentDlgBannerBitmap">WixUI_Bmp_Banner</String>
-  <!--String Id="PrivacyConsentDlgDescription">Please read the following privacy information carefully.</String -->
   <String Id="PrivacyConsentDlgTitle">{\WixUI_Font_Title}Privacy Consent Notice</String>
   <String Id="PrivacyConsentDlgNotice">ActiveState collects usage statistics and diagnostic data about failures. The collected data complies with the <![CDATA[<a href="https://www.activestate.com/company/privacy-policy/">ActiveState Privacy Policy</a>]]> and will be used to identify product enhancements, help fix defects, and prevent abuse.</String>
   <String Id="DescPL">Perl script</String>
