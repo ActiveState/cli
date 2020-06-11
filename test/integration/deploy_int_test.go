@@ -39,13 +39,21 @@ func (suite *DeployIntegrationTestSuite) TestDeploy() {
 	defer ts.Close()
 
 	var cp *termtest.ConsoleProcess
-	if runtime.GOOS != "windows" {
+	switch runtime.GOOS {
+	case "windows":
+		cp = ts.Spawn("deploy", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work)
+	case "darwin":
+		// On MacOS the command is the same as Linux, however some binaries
+		// already exist at /usr/local/bin so we use the --force flag
+		cp = ts.SpawnWithOpts(
+			e2e.WithArgs("deploy", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work, "--force"),
+			e2e.AppendEnv("SHELL=bash"),
+		)
+	default:
 		cp = ts.SpawnWithOpts(
 			e2e.WithArgs("deploy", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work),
 			e2e.AppendEnv("SHELL=bash"),
 		)
-	} else {
-		cp = ts.Spawn("deploy", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work, "--force")
 	}
 
 	cp.Expect("Installing", 20*time.Second)
@@ -60,8 +68,8 @@ func (suite *DeployIntegrationTestSuite) TestDeploy() {
 	}
 	cp.ExpectExitCode(0)
 
-	// Linux symlinks to /usr/local/bin, so we can verify right away
-	if runtime.GOOS == "linux" {
+	// Linux/Mac symlinks to /usr/local/bin, so we can verify right away
+	if runtime.GOOS != "windows" {
 		execPath, err := exec.LookPath("python3")
 		suite.Require().NoError(err)
 		link, err := os.Readlink(execPath)
@@ -101,7 +109,13 @@ func (suite *DeployIntegrationTestSuite) TestDeploy() {
 
 	cp = cmdIfy(filepath.Join(ts.Dirs.Work, "bin", "python3"), "-m", "pytest", "--version")
 	cp.Expect("This is pytest version")
-	cp.Expect(fmt.Sprintf("imported from %s", ts.Dirs.Work))
+
+	if runtime.GOOS != "windows" {
+		// AzureCI has multiple representations for the work directory that
+		// may not agree when running tests
+		cp.Expect(fmt.Sprintf("imported from %s", ts.Dirs.Work))
+	}
+
 	cp.ExpectExitCode(0)
 
 	suite.AssertConfig(ts)
@@ -190,7 +204,7 @@ func (suite *DeployIntegrationTestSuite) AssertConfig(ts *e2e.Session) {
 }
 
 func (suite *DeployIntegrationTestSuite) TestDeploySymlink() {
-	if runtime.GOOS == "linux" && !e2e.RunningOnCI() {
+	if runtime.GOOS != "windows" && !e2e.RunningOnCI() {
 		suite.T().Skipf("Skipping TestDeploySymlink when not running on CI, as it modifies PATH")
 	}
 
@@ -204,10 +218,16 @@ func (suite *DeployIntegrationTestSuite) TestDeploySymlink() {
 	suite.InstallAndAssert(ts)
 
 	pathDir := fileutils.TempDirUnsafe()
-	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("deploy", "symlink", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work),
-		e2e.AppendEnv(fmt.Sprintf("PATH=%s", pathDir)), // Avoid conflicts
-	)
+	if runtime.GOOS != "darwin" {
+		cp = ts.SpawnWithOpts(
+			e2e.WithArgs("deploy", "symlink", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work),
+			e2e.AppendEnv(fmt.Sprintf("PATH=%s", pathDir)), // Avoid conflicts
+		)
+	} else {
+		cp = ts.SpawnWithOpts(
+			e2e.WithArgs("deploy", "symlink", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work, "--force"),
+		)
+	}
 
 	cp.Expect("Symlinking executables")
 	cp.ExpectExitCode(0)
@@ -240,8 +260,8 @@ func (suite *DeployIntegrationTestSuite) TestDeployReport() {
 }
 
 func (suite *DeployIntegrationTestSuite) TestDeployTwice() {
-	if runtime.GOOS == "linux" && !e2e.RunningOnCI() {
-		suite.T().Skipf("Skipping TestDeploySymlink when not running on CI, as it modifies PATH")
+	if runtime.GOOS == "darwin" || !e2e.RunningOnCI() {
+		suite.T().Skipf("Skipping TestDeployTwice when not running on CI or on MacOS, as it modifies PATH")
 	}
 
 	ts := e2e.New(suite.T(), false)
