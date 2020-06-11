@@ -111,7 +111,7 @@ scripts:
       candle.exe ./public/wix/install.wxs -o ./public/wix/install.wixobj -ext WixUIExtension -ext WixUtilExtension
       light.exe ./public/wix/install.wixobj -o ./public/wix/state_tool_setup.msi -sice:ICE91 -sice:ICE64 -ext WixUIExtension -ext WixUtilExtension
   - name: build-language-wix
-    description: Update the language wxs file and build a helper for the MSI installer
+    description: Build the MSI installer
     standalone: true
     constraints:
       os: windows
