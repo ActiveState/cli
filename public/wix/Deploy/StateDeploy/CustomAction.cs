@@ -2,14 +2,12 @@ using Microsoft.Deployment.WindowsInstaller;
 using System;
 using System.Text;
 using System.Diagnostics;
+using System.Threading;
 
 namespace StateDeploy
 {
     public class CustomActions
     {
-
-        private static StringBuilder output = new StringBuilder();
-        private static StringBuilder error = new StringBuilder();
 
         [CustomAction]
         public static ActionResult StateDeploy(Session session)
@@ -42,42 +40,37 @@ namespace StateDeploy
                 // Do not create the black window.
                 procStartInfo.CreateNoWindow = true;
 
-                Process proc = new Process();
+                var proc = new Process();
                 proc.StartInfo = procStartInfo;
                 proc.OutputDataReceived += new DataReceivedEventHandler((sender, e) =>
                 {
-                    // Prepend line numbers to each line of the output.
-                    if (!String.IsNullOrEmpty(e.Data))
+                        // Prepend line numbers to each line of the output.
+                        if (!String.IsNullOrEmpty(e.Data))
                     {
                         session.Log("out: " + e.Data);
-                        output.Append("\n" + e.Data);
                     }
                 });
                 proc.ErrorDataReceived += new DataReceivedEventHandler((sender, e) =>
                 {
-                    // Prepend line numbers to each line of the output.
-                    if (!String.IsNullOrEmpty(e.Data))
+                        // Prepend line numbers to each line of the output.
+                        if (!String.IsNullOrEmpty(e.Data))
                     {
                         session.Log("err: " + e.Data);
-                        // error.Append("\n" + e.Data);
                     }
                 });
 
-
                 proc.Start();
 
-                
                 // Asynchronously read the standard output and standard error of the spawned process.
                 // This raises OutputDataReceived/ErrorDataReceived events for each line of output/errors.
                 proc.BeginOutputReadLine();
                 proc.BeginErrorReadLine();
-                session.Log("waiting for exit");
+
                 while (!proc.HasExited)
                 {
                     try
                     {
-                        Status.ProgressBar.Increment(session, 0);
-                        System.Threading.Thread.Sleep(200);
+                        Thread.Sleep(200);
                     }
                     catch (InstallCanceledException)
                     {
@@ -100,19 +93,10 @@ namespace StateDeploy
                         }
                         return ActionResult.UserExit;
                     }
+
                 }
 
-
                 proc.WaitForExit();
-                session.Log("done");
-
-                // NOTE: See comment above re: progress bar. Can enable these lines once State Tool
-                // is updated
-                session.Log(string.Format("Standard output: {0}", output.ToString()));
-                session.Log(string.Format("Standard error: {0}", error.ToString()));
-
-                proc.WaitForExit();
-
                 if (proc.ExitCode != 0)
                 {
                     session.Log(string.Format("Process exited with code: {0}", proc.ExitCode));
