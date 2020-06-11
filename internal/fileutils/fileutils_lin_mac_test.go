@@ -25,3 +25,25 @@ func TestSymlink(t *testing.T) {
 	assert.True(t, IsSymlink(symlink), "expected symlink")
 	assert.False(t, IsSymlink(target), "expected no symlink")
 }
+
+func TestIsWritable(t *testing.T) {
+	file, fail := WriteTempFile(
+		"", t.Name(), []byte("Some data"), 0777,
+	)
+	if fail != nil {
+		t.Error(fail.ToError())
+	}
+
+	if IsWritable(file) != true {
+		t.Fatal("File should be writable")
+	}
+
+	err := os.Chmod(file, 0444)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if IsWritable(file) != false {
+		t.Fatal("File should no longer be writable")
+	}
+}
