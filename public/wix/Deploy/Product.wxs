@@ -22,7 +22,6 @@
 
     <!-- The default directory structure when installing the state tool. This can be changed via the UI -->
     <Directory Id='TARGETDIR' Name='SourceDir'>
-      
       <Directory Id='INSTALLDIR' Name='Perl64'>
         <Component Id='DeployDir' Guid='7CF56E89-AA69-4A35-921C-F2CA2F9FE12B'>
           <RemoveFolder Id='INSTALLDIR' On='uninstall' />

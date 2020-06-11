@@ -3,9 +3,7 @@
   <String Id="WelcomeDlgDescription">This Setup Wizard will install [ProductName] on your computer.
 
 Click "Next" to continue or "Cancel" to exit the Setup Wizard.</String>
-  <String Id="ExitDialogSuccess">[ProductName] has been successfully installed on your system using the <![CDATA[<a href="https://docs.activestate.com/platform/state/">State Tool</a>]]>, the new command line interface from ActiveState replacing PPM. Just try State Tool in a Command Prompt Window and find out what it can do by typing:
-    state help
-Use State Tool to add packages from the ActiveState repository to your projects, create shareable virtual environments, maintain cross platform scripts, access and use ecnrypted secrets, and more...</String>
+  <String Id="ExitDialogSuccess">[ProductName] has been successfully installed on your system using the <![CDATA[<a href="https://docs.activestate.com/platform/state/">State Tool</a>]]>, the new command line interface from ActiveState replacing PPM. Just try State Tool in a Command Prompt Window and find out what it can do by typing `state help`. Use State Tool to add packages from the ActiveState repository to your projects, create shareable virtual environments, maintain cross platform scripts, access and use ecnrypted secrets, and more...</String>
   <String Id="ExitDialogLink1">To discover the State Tool functionality that you can use in your development workflows, refer to the <![CDATA[<a href="https://www.activestate.com/products/platform/state-tool/">State Tool Documentation.</a>]]></String>
   <String Id="ExitDialogLink2">Click here to see the <![CDATA[<a href="http://docs.activestate.com/activeperl/[PerlVersion]/get/relnotes/">ActivePerl Release Notes.</a>]]></String>
   <String Id="VerifyReadyDlgInstallText">Click Install to begin the installation of [ProductName]. Perl will be added to your path and file extensions associations for .pl and .wpl  will be created.
