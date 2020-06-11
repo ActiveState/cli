@@ -224,6 +224,13 @@ func (cr *CamelRuntime) PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir
 		return fail
 	}
 
+	if metaData.hasBinaryFile(constants.ActivePerlExecutable) {
+		err := installPPMShim(filepath.Join(metaData.Path, metaData.BinaryLocations[0].Path))
+		if err != nil {
+			return FailRuntimeInstallation.New("ppm_install_err")
+		}
+	}
+
 	return nil
 }
 
@@ -311,7 +318,7 @@ func (cr *CamelRuntime) GetEnv(inherit bool, projectDir string) (map[string]stri
 			return nil, locale.WrapError(
 				fail,
 				"err_get_env_metadata_error",
-				"Your installation or build is corrupted.  Try re-installing the project, or update your build.  If the problem persists, please report the issue on our forums: {{.V0}}", 
+				"Your installation or build is corrupted.  Try re-installing the project, or update your build.  If the problem persists, please report the issue on our forums: {{.V0}}",
 				constants.ForumsURL,
 			)
 		}

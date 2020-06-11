@@ -76,7 +76,7 @@ func (suite *PackageIntegrationTestSuite) TestPackages_project_name_noData() {
 	defer ts.Close()
 
 	cp := ts.Spawn("packages", "--namespace", "ActiveState-CLI/List", "--package", "req")
-	cp.Expect("No packages to list")
+	cp.Expect("The package has no projects to list.")
 	cp.ExpectExitCode(0)
 }
 
@@ -130,7 +130,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitValidNoPa
 	suite.PrepareActiveStateYAML(ts)
 
 	cp := ts.Spawn("packages", "--commit", "cd674adb-e89a-48ff-95c6-ad52a177537b")
-	cp.Expect("No packages")
+	cp.Expect("The project has no packages to list.")
 	cp.ExpectExitCode(0)
 }
 
@@ -187,7 +187,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTermWrongTe
 	suite.PrepareActiveStateYAML(ts)
 
 	cp := ts.Spawn("packages", "search", "xxxrequestsxxx", "--exact-term")
-	cp.Expect("No packages")
+	cp.Expect("Currently no package of the provided name is available on the ActiveState Platform")
 	cp.ExpectExitCode(0)
 }
 
@@ -210,7 +210,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithWrongLang() {
 	suite.PrepareActiveStateYAML(ts)
 
 	cp := ts.Spawn("packages", "search", "numpy", "--language=perl")
-	cp.Expect("No packages")
+	cp.Expect("Currently no package of the provided name is available on the ActiveState Platform")
 	cp.ExpectExitCode(0)
 }
 
