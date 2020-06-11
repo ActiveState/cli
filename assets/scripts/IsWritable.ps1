@@ -21,16 +21,14 @@ function IsWritable($path) {
     foreach ($item in $accessRules) {
         $aclSID = New-Object System.Security.Principal.SecurityIdentifier((New-Object System.Security.Principal.NTAccount($item.IdentityReference.ToString())).Translate([System.Security.Principal.SecurityIdentifier]))
     
-        # Check user permissions
+        # Check user permissions first
         if ($aclSID.Equals($userSID)) {
-            Write-Host $item.FileSystemRights
-
             if (($item.FileSystemRights.value__ -band $permWrite) -eq $permWrite) {
                 exit 0
             }
         }
 
-        # Check group permissions
+        # Check group permissions if no direct user permissions have been granted
         $groups = (Get-LocalGroup).Name
 
         $userGroups = [System.Collections.ArrayList]@()
