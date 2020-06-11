@@ -354,7 +354,7 @@ func (ed *EnvironmentDefinition) FindBinPathFor(executable string) string {
 		if ev.Name == "PATH" {
 			for _, dir := range ev.Values {
 				if fileutils.TargetExists(filepath.Join(dir, executable)) {
-					return dir
+					return filepath.Clean(filepath.FromSlash(dir))
 				}
 			}
 		}
