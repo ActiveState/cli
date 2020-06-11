@@ -96,6 +96,7 @@ func New(pj *project.Project, outputer output.Outputer, prompter prompt.Prompter
 		newPullCommand(pj, outputer),
 		newUpdateCommand(pj, outputer),
 		newForkCommand(pj, auth, outputer, prompter),
+		newPpmCommand(),
 	)
 
 	applyLegacyChildren(stateCmd, globals)

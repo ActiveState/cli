@@ -14,7 +14,7 @@ func TestUpdate(t *testing.T) {
 	}{
 		"no version":      {"artifact", "Package updated: artifact", noErr},
 		"valid version":   {"artifact@2.0", "Package updated: artifact@2.0", noErr},
-		"invalid version": {"artifact@10.0", "provided package does not exist", yesErr},
+		"invalid version": {"artifact@10.0", "Failed to resolve an ingredient named artifact", yesErr},
 	}
 
 	for tn, tt := range tests {
