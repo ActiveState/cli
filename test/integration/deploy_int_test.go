@@ -30,22 +30,23 @@ func init() {
 	}
 }
 
-func (suite *DeployIntegrationTestSuite) TestDeploy() {
-	if !e2e.RunningOnCI() {
-		suite.T().Skipf("Skipping DeployIntegrationTestSuite when not running on CI, as it modifies bashrc/registry")
-	}
-
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
+func (suite *DeployIntegrationTestSuite) deploy(ts *e2e.Session, prj string) {
 	var cp *termtest.ConsoleProcess
-	if runtime.GOOS != "windows" {
+	switch runtime.GOOS {
+	case "windows":
+		cp = ts.Spawn("deploy", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work)
+	case "darwin":
+		// On MacOS the command is the same as Linux, however some binaries
+		// already exist at /usr/local/bin so we use the --force flag
 		cp = ts.SpawnWithOpts(
-			e2e.WithArgs("deploy", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work),
+			e2e.WithArgs("deploy", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work, "--force"),
 			e2e.AppendEnv("SHELL=bash"),
 		)
-	} else {
-		cp = ts.Spawn("deploy", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work, "--force")
+	default:
+		cp = ts.SpawnWithOpts(
+			e2e.WithArgs("deploy", prj, "--path", ts.Dirs.Work),
+			e2e.AppendEnv("SHELL=bash"),
+		)
 	}
 
 	cp.Expect("Installing", 20*time.Second)
@@ -59,6 +60,63 @@ func (suite *DeployIntegrationTestSuite) TestDeploy() {
 		cp.Expect("restart")
 	}
 	cp.ExpectExitCode(0)
+}
+
+func cmdIfy(ts *e2e.Session, args ...string) *termtest.ConsoleProcess {
+	if runtime.GOOS != "windows" {
+		return ts.SpawnCmd(args[0], args[1:]...)
+	}
+
+	return ts.SpawnCmdWithOpts("cmd",
+		e2e.WithArgs("/c", strings.Join(args, " ")),
+		e2e.AppendEnv("PATHEXT=.COM;.EXE;.BAT;.LNK"))
+}
+
+func (suite *DeployIntegrationTestSuite) TestDeployPerl() {
+	if !e2e.RunningOnCI() {
+		suite.T().Skipf("Skipping DeployIntegrationTestSuite when not running on CI, as it modifies bashrc/registry")
+	}
+
+	if runtime.GOOS == "darwin" {
+		suite.T().Skip("Perl is not supported on Mac OS yet.")
+	}
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	suite.deploy(ts, "ActiveState-CLI/Perl")
+
+	// Linux symlinks to /usr/local/bin, so we can verify right away
+	if runtime.GOOS == "linux" {
+		execPath, err := exec.LookPath("perl")
+		suite.Require().NoError(err)
+		link, err := os.Readlink(execPath)
+		suite.Require().NoError(err)
+		suite.Contains(link, ts.Dirs.Work, "python3 executable resolves to the one on our target dir")
+	}
+	// check that some of the installed symlinks are use-able
+	cp := cmdIfy(ts, filepath.Join(ts.Dirs.Work, "bin", "perl"), "--version")
+	cp.Expect("This is perl 5")
+	cp.ExpectExitCode(0)
+
+	cp = cmdIfy(ts, filepath.Join(ts.Dirs.Work, "bin", "ptar"), "-h")
+	cp.Expect("a tar-like program written in perl")
+	cp.Wait()
+
+	cp = cmdIfy(ts, filepath.Join(ts.Dirs.Work, "bin", "ppm"), "--version")
+	cp.Expect("The Perl Package Manager(PPM) is no longer supported.")
+	cp.ExpectExitCode(0)
+}
+
+func (suite *DeployIntegrationTestSuite) TestDeployPython() {
+	if !e2e.RunningOnCI() {
+		suite.T().Skipf("Skipping DeployIntegrationTestSuite when not running on CI, as it modifies bashrc/registry")
+	}
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	suite.deploy(ts, "ActiveState-CLI/Python3")
 
 	// Linux symlinks to /usr/local/bin, so we can verify right away
 	if runtime.GOOS == "linux" {
@@ -69,39 +127,30 @@ func (suite *DeployIntegrationTestSuite) TestDeploy() {
 		suite.Contains(link, ts.Dirs.Work, "python3 executable resolves to the one on our target dir")
 	}
 
-	cmdIfy := func(args ...string) *termtest.ConsoleProcess {
-		if runtime.GOOS != "windows" {
-			return ts.SpawnCmd(args[0], args[1:]...)
-		}
-
-		var b strings.Builder
-		b.WriteString(args[0] + ".lnk")
-		for i := 1; i < len(args); i++ {
-			b.WriteString(fmt.Sprintf(" %s", args[i]))
-		}
-
-		return ts.SpawnCmd("cmd", "/c", b.String())
-	}
-
 	// check that some of the installed symlinks are use-able
-	cp = cmdIfy(filepath.Join(ts.Dirs.Work, "bin", "python3"), "--version")
-
+	cp := cmdIfy(ts, filepath.Join(ts.Dirs.Work, "bin", "python3"), "--version")
 	cp.Expect("Python 3")
 	cp.ExpectExitCode(0)
 
-	cp = cmdIfy(filepath.Join(ts.Dirs.Work, "bin", "pip3"), "--version")
+	cp = cmdIfy(ts, filepath.Join(ts.Dirs.Work, "bin", "pip3"), "--version")
 	cp.Expect("pip")
 	cp.ExpectExitCode(0)
 
 	if runtime.GOOS == "darwin" {
 		// This is kept as a regression test, pyvenv used to have a relocation problem on MacOS
-		cp = cmdIfy(filepath.Join(ts.Dirs.Work, "bin", "pyvenv"), "-h")
+		cp = cmdIfy(ts, filepath.Join(ts.Dirs.Work, "bin", "pyvenv"), "-h")
 		cp.ExpectExitCode(0)
 	}
 
-	cp = cmdIfy(filepath.Join(ts.Dirs.Work, "bin", "python3"), "-m", "pytest", "--version")
+	cp = cmdIfy(ts, filepath.Join(ts.Dirs.Work, "bin", "python3"), "-m", "pytest", "--version")
 	cp.Expect("This is pytest version")
-	cp.Expect(fmt.Sprintf("imported from %s", ts.Dirs.Work))
+
+	if runtime.GOOS != "windows" {
+		// AzureCI has multiple representations for the work directory that
+		// may not agree when running tests
+		cp.Expect(fmt.Sprintf("imported from %s", ts.Dirs.Work))
+	}
+
 	cp.ExpectExitCode(0)
 
 	suite.AssertConfig(ts)
@@ -190,7 +239,7 @@ func (suite *DeployIntegrationTestSuite) AssertConfig(ts *e2e.Session) {
 }
 
 func (suite *DeployIntegrationTestSuite) TestDeploySymlink() {
-	if runtime.GOOS == "linux" && !e2e.RunningOnCI() {
+	if runtime.GOOS != "windows" && !e2e.RunningOnCI() {
 		suite.T().Skipf("Skipping TestDeploySymlink when not running on CI, as it modifies PATH")
 	}
 
@@ -204,10 +253,16 @@ func (suite *DeployIntegrationTestSuite) TestDeploySymlink() {
 	suite.InstallAndAssert(ts)
 
 	pathDir := fileutils.TempDirUnsafe()
-	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("deploy", "symlink", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work),
-		e2e.AppendEnv(fmt.Sprintf("PATH=%s", pathDir)), // Avoid conflicts
-	)
+	if runtime.GOOS != "darwin" {
+		cp = ts.SpawnWithOpts(
+			e2e.WithArgs("deploy", "symlink", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work),
+			e2e.AppendEnv(fmt.Sprintf("PATH=%s", pathDir)), // Avoid conflicts
+		)
+	} else {
+		cp = ts.SpawnWithOpts(
+			e2e.WithArgs("deploy", "symlink", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work, "--force"),
+		)
+	}
 
 	cp.Expect("Symlinking executables")
 	cp.ExpectExitCode(0)
@@ -240,8 +295,8 @@ func (suite *DeployIntegrationTestSuite) TestDeployReport() {
 }
 
 func (suite *DeployIntegrationTestSuite) TestDeployTwice() {
-	if runtime.GOOS == "linux" && !e2e.RunningOnCI() {
-		suite.T().Skipf("Skipping TestDeploySymlink when not running on CI, as it modifies PATH")
+	if runtime.GOOS == "darwin" || !e2e.RunningOnCI() {
+		suite.T().Skipf("Skipping TestDeployTwice when not running on CI or on MacOS, as it modifies PATH")
 	}
 
 	ts := e2e.New(suite.T(), false)

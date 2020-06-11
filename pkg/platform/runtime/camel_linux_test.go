@@ -130,5 +130,5 @@ func (suite *CamelLinuxRuntimeTestSuite) Test_PostUnpackWithFailures() {
 }
 
 func Test_CamelLinuxRuntimeTestSuite(t *testing.T) {
-	suite.Run(t, new(CamelRuntimeTestSuite))
+	suite.Run(t, new(CamelLinuxRuntimeTestSuite))
 }

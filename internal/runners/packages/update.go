@@ -1,6 +1,7 @@
 package packages
 
 import (
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -36,9 +37,9 @@ func (u *Update) Run(params UpdateRunParams) error {
 
 	name, version := splitNameAndVersion(params.Name)
 	if version == "" {
-		ingredientVersion, fail := model.IngredientWithLatestVersion(language, name)
-		if fail != nil {
-			return fail.WithDescription("package_ingredient_not_found")
+		ingredientVersion, err := model.IngredientWithLatestVersion(language, name)
+		if err != nil {
+			return locale.WrapError(err, "package_ingredient_err", "Failed to resolve an ingredient named {{.V0}}.", name)
 		}
 		version = *ingredientVersion.Version.Version
 	}

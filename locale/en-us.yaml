@@ -117,7 +117,7 @@ venv_installer_is_nil:
 error_unsupported_language:
   other: "Unsupported language: {{.Language}}"
 error_could_not_activate_venv:
-  other: Could not activate the virtual environment
+  other: Could not activate project. If this is a private project ensure that you are authenticated.
 err_language_not_yet_supported:
   other: "The Platform responded with an artifact that is not supported by this version of the State Tool, artifact name: {{.V0}}. Is your State Tool up to date?"
 error_missing_arg:
@@ -1200,7 +1200,7 @@ package_remove_cmd_description:
   other: Remove a package from your project
 package_import_cmd_description:
   other: Import packages from a list of dependencies
-package_search_description:
+package_search_cmd_description:
   other: Search for available packages that can be added to your project
 package_arg_name:
   other: name
@@ -1258,8 +1258,10 @@ err_obtaining_change_request:
   other: Cannot obtain change request
 package_no_data:
   other: No data found - Please verify the provided commit id
-package_no_packages:
-  other: No packages to list
+package_search_no_packages:
+  other: Currently no package of the provided name is available on the ActiveState Platform.
+package_list_no_packages:
+  other: The project has no packages to list.
 package_name:
   other: Name
 package_version:
@@ -1277,9 +1279,7 @@ package_update:
 package_version_update:
   other: "Package updated: {{.V0}}@{{.V1}}"
 package_ingredient_err:
-  other: Could not verify package name
-package_ingredient_not_found:
-  other: The provided package does not exist
+  other: Failed to resolve an ingredient named {{.V0}}.
 err_package_removed:
   other: Failed to remove package
 err_packages_removed:
@@ -1288,8 +1288,8 @@ package_removed:
   other: "Package removed: {{.V0}}"
 package_update_config_file:
   other: To ensure your local project is synchronized with the ActiveState platform please use `state pull`
-inventory_ingredient_version_not_available:
-  other: The ingredient {{.V0}} does not have any versions available
+inventory_ingredient_not_available:
+  other: The package {{.V0}} is not available on the ActiveState Platform, or does not have a matching version
 command_flag_no_such_flag:
   other: "No such flag: {{.V0}}"
 command_flag_invalid_value:
@@ -1585,3 +1585,57 @@ err_getwd:
   other: |
     Could not retrieve your working directory, error received: {{.V0}}.
     If this problem continues please report it on our forums: {{.V1}}
+ppm_install_err:
+  other: Failed to install PPM shim command.
+ppm_header_message:
+  other: |
+    The Perl Package Manager (PPM) is no longer supported.
+    To manage your Perl packages from the command line, use the State Tool (state) instead. You can find more information on the State Tool at
+    https://www.activestate.com/products/platform/state-tool/
+ppm_print_suggestion:
+  other: |
+    The Perl Package Manager (PPM) is no longer supported.
+    To manage your Perl packages from the command line, use the State Tool (state) instead. You can find more information on the State Tool at
+    https://www.activestate.com/products/platform/state-tool/
+
+    To {{.V0}}, run:
+
+      {{.V1}}
+
+    See "https://docs.activestate.com/platform/{{.V2}}" for details.
+ppm_print_main:
+  other: |
+    The Perl Package Manager (PPM) is no longer supported.
+    To manage your Perl packages from the command line, use the State Tool (state) instead. You can find more information on the State Tool at
+    https://www.activestate.com/products/platform/state-tool/
+
+    To see help for State Tool commands, run:
+
+        state help
+
+    See "https://docs.activestate.com/platform/state/" for details.
+ppm_install_intent:
+  other: add new packages to your project 
+ppm_upgrade_intent:
+  other: upgrade an existing package
+ppm_remove_intent:
+  other: remove a package from your project
+ppm_area_message:
+  other: |
+    The Perl Package Manager (PPM) is no longer supported.
+    To manage your Perl packages from the command line, use the State Tool (state) instead. You can find more information on the State Tool at
+    https://www.activestate.com/products/platform/state-tool/
+
+    To manage several projects with varying dependencies, you can organize them as
+    projects on the ActiveState Platform: https://docs.activestate.com/platform/projects.html.
+
+    To fork an existing project, run:
+    	state fork
+    See https://docs.activestate.com/platform/state/fork.html for details.
+    	
+    To create a new project, see the guide at https://docs.activestate.com/platform/state/start.html for details.
+ppm_list_intent:
+  other: list the packages installed for a project
+deploy_usable_path:
+  other: |
+    [YELLOW]Please ensure '{{.V0}}' exists and is on your PATH.[/RESET]
