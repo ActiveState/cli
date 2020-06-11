@@ -3,6 +3,7 @@
 package fileutils
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/gobuffalo/packr"
+	"github.com/google/uuid"
 )
 
 const LineEnd = "\r\n"
@@ -35,6 +37,7 @@ func IsExecutable(path string) bool {
 
 // IsWritable returns true if the given path is writable
 func IsWritable(path string) bool {
+	writableTemp(path)
 	box := packr.NewBox("../../assets/scripts")
 	contents := box.String("IsWritable.ps1")
 	scriptFile, fail := WriteTempFile(
@@ -48,9 +51,26 @@ func IsWritable(path string) bool {
 	cmd := exec.Command("powershell.exe", "-c", scriptFile, path)
 	err := cmd.Run()
 	if err != nil {
+		fmt.Printf("Path %s is not writable, got error %v\n", path, err)
 		logging.Debug("Path %s is not writable, got error %v", path, err)
 		return false
 	}
 
+	return true
+}
+
+func writableTemp(path string) bool {
+	fpath := filepath.Join(path, uuid.New().String())
+	if fail := Touch(fpath); fail != nil {
+		return false
+	}
+	fmt.Println("Wrote file to: ", path)
+
+	if errr := os.Remove(fpath); errr != nil {
+		return false
+	}
+	fmt.Println("Removed file from: ", path)
+
+	fmt.Printf("Path %s is writable\n", path)
 	return true
 }
