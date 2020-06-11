@@ -43,14 +43,6 @@
     <Compile Include="Product.wxs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="InstallStateTool\InstallStateTool.csproj">
-      <Name>InstallStateTool</Name>
-      <Project>{0603250d-8a12-4de4-ba71-148aee759f06}</Project>
-      <Private>True</Private>
-      <DoNotHarvest>True</DoNotHarvest>
-      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
-      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
-    </ProjectReference>
     <ProjectReference Include="StateCommandExists\StateCommandExists.csproj">
       <Name>StateCommandExists</Name>
       <Project>{adebe963-f9b2-4860-8512-364a7c78b757}</Project>

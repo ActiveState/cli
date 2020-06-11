@@ -3,62 +3,102 @@ using System;
 using System.Text;
 using System.Diagnostics;
 using System.Threading;
+using System.IO;
+using System.Net;
 
 namespace StateDeploy
 {
     public class CustomActions
     {
+        public static string STATE_TOOL_PATH;
 
-        [CustomAction]
-        public static ActionResult StateDeploy(Session session)
+        public static ActionResult InstallStateTool(Session session)
         {
-            session.Log("Starting state deploy");
-
-            Status.ProgressBar.StatusMessage(session, string.Format("Deploying project {0}...", session.CustomActionData["PROJECT_NAME"]));
-            MessageResult incrementResult = Status.ProgressBar.Increment(session, 3);
-            if (incrementResult == MessageResult.Cancel)
+            session.Log("Installing State Tool if necessary");
+            if (session.CustomActionData["STATE_TOOL_INSTALLED"] == "true")
             {
+                STATE_TOOL_PATH = session.CustomActionData["STATE_TOOL_PATH"];
+                session.Log("State Tool is installed, no installation required");
+                return ActionResult.Success;
+            }
+
+            string tempDir = Path.GetTempPath();
+            string scriptPath = Path.Combine(tempDir, "install.ps1");
+            string installPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ActiveState", "bin");
+
+            Status.ProgressBar.StatusMessage(session, "Installing State Tool...");
+
+            ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
+            try
+            {
+                WebClient client = new WebClient();
+                client.DownloadFile("https://platform.activestate.com/dl/cli/install.ps1", scriptPath);
+            }
+            catch (WebException e)
+            {
+                session.Log(string.Format("Encoutered exception downloading file: {0}", e.ToString()));
+                return ActionResult.Failure;
+            }
+
+            string installCmd = string.Format("powershell \"{0} -n -t {1}\"", scriptPath, installPath);
+            session.Log(string.Format("Running install command: {0}", installCmd));
+            
+            ActionResult result = RunCommand(session, installCmd);
+            if (result.Equals(ActionResult.UserExit))
+            {
+                result = Uninstall.Remove.InstallDir(session, installPath);
+                if (result.Equals(ActionResult.Failure))
+                {
+                    session.Log("Could not remove installation directory");
+                    return ActionResult.Failure;
+                }
+
+                result = Uninstall.Remove.EnvironmentEntries(session, installPath);
+                if (result.Equals(ActionResult.Failure))
+                {
+                    session.Log("Could not remove environment entries");
+                    return ActionResult.Failure;
+                }
                 return ActionResult.UserExit;
             }
 
-            string deployCmd = BuildDeployCmd(session);
-            session.Log(string.Format("Executing deploy command: {0}", deployCmd));
+            STATE_TOOL_PATH = Path.Combine(installPath, "state.exe");
+            return result;
+        }
+
+        private static ActionResult RunCommand(Session session, string cmd)
+        {
             try
             {
-                ProcessStartInfo procStartInfo = new ProcessStartInfo("cmd", "/c " + deployCmd);
+                ProcessStartInfo procStartInfo = new ProcessStartInfo("cmd", "/c " + cmd);
 
                 // The following commands are needed to redirect the standard output.
                 // This means that it will be redirected to the Process.StandardOutput StreamReader.
-
-                // NOTE: Due to progress bar changes in the State Tool we can no longer redirect stdout
-                // and strerr output. Once we have a non-interactive mode in the State Tool these lines
-                // can be enabled
                 procStartInfo.RedirectStandardOutput = true;
                 procStartInfo.RedirectStandardError = true;
-
                 procStartInfo.UseShellExecute = false;
                 // Do not create the black window.
                 procStartInfo.CreateNoWindow = true;
 
-                var proc = new Process();
+                Process proc = new Process();
                 proc.StartInfo = procStartInfo;
+
                 proc.OutputDataReceived += new DataReceivedEventHandler((sender, e) =>
                 {
-                        // Prepend line numbers to each line of the output.
-                        if (!String.IsNullOrEmpty(e.Data))
+                    // Prepend line numbers to each line of the output.
+                    if (!String.IsNullOrEmpty(e.Data))
                     {
                         session.Log("out: " + e.Data);
                     }
                 });
                 proc.ErrorDataReceived += new DataReceivedEventHandler((sender, e) =>
                 {
-                        // Prepend line numbers to each line of the output.
-                        if (!String.IsNullOrEmpty(e.Data))
+                    // Prepend line numbers to each line of the output.
+                    if (!String.IsNullOrEmpty(e.Data))
                     {
                         session.Log("err: " + e.Data);
                     }
                 });
-
                 proc.Start();
 
                 // Asynchronously read the standard output and standard error of the spawned process.
@@ -74,36 +114,65 @@ namespace StateDeploy
                     }
                     catch (InstallCanceledException)
                     {
-                        session.Log("Caught install canceled exception");
-
+                        session.Log("Caught install cancelled exception");
                         ActiveState.Process.KillProcessAndChildren(proc.Id);
-
-                        ActionResult result = Uninstall.Remove.InstallDir(session, session.CustomActionData["INSTALLDIR"]);
-                        if (result.Equals(ActionResult.Failure))
-                        {
-                            session.Log("Could not remove installation directory");
-                            return ActionResult.Failure;
-                        }
-
-                        result = Uninstall.Remove.EnvironmentEntries(session, session.CustomActionData["INSTALLDIR"]);
-                        if (result.Equals(ActionResult.Failure))
-                        {
-                            session.Log("Could not remove environment entries");
-                            return ActionResult.Failure;
-                        }
                         return ActionResult.UserExit;
                     }
-
                 }
-
                 proc.WaitForExit();
-                if (proc.ExitCode != 0)
-                {
-                    session.Log(string.Format("Process exited with code: {0}", proc.ExitCode));
-                    return ActionResult.Failure;
-                }
 
                 proc.Close();
+            }
+            catch (Exception objException)
+            {
+                session.Log(string.Format("Caught exception: {0}", objException));
+                return ActionResult.Failure;
+            }
+            return ActionResult.Success;
+        }
+
+
+        [CustomAction]
+        public static ActionResult StateDeploy(Session session)
+        {
+
+            var res = InstallStateTool(session);
+            if (res != ActionResult.Success) {
+                return res;
+            }
+            session.Log("Starting state deploy");
+
+            Status.ProgressBar.StatusMessage(session, string.Format("Deploying project {0}...", session.CustomActionData["PROJECT_NAME"]));
+            MessageResult incrementResult = Status.ProgressBar.Increment(session, 3);
+            if (incrementResult == MessageResult.Cancel)
+            {
+                return ActionResult.UserExit;
+            }
+
+            string deployCmd = BuildDeployCmd(session);
+            session.Log(string.Format("Executing deploy command: {0}", deployCmd));
+            try
+            {
+                var runResult = RunCommand(session, deployCmd);
+                if (runResult == ActionResult.UserExit) {
+                    ActionResult result = Uninstall.Remove.InstallDir(session, session.CustomActionData["INSTALLDIR"]);
+                    if (result.Equals(ActionResult.Failure))
+                    {
+                        session.Log("Could not remove installation directory");
+                        return ActionResult.Failure;
+                    }
+
+                    result = Uninstall.Remove.EnvironmentEntries(session, session.CustomActionData["INSTALLDIR"]);
+                    if (result.Equals(ActionResult.Failure))
+                    {
+                        session.Log("Could not remove environment entries");
+                        return ActionResult.Failure;
+                    }
+                    return ActionResult.UserExit;
+                } else if (runResult != ActionResult.Success)
+                {
+                    return runResult;
+                }
             }
             catch (Exception objException)
             {
@@ -120,7 +189,7 @@ namespace StateDeploy
             string projectName = session.CustomActionData["PROJECT_NAME"];
             string isModify = session.CustomActionData["IS_MODIFY"];
 
-            StringBuilder deployCMDBuilder = new StringBuilder(session.CustomActionData["STATE_TOOL_PATH"] + " deploy");
+            StringBuilder deployCMDBuilder = new StringBuilder(STATE_TOOL_PATH + " deploy");
             if (isModify == "true")
             {
                 deployCMDBuilder.Append(" --force");
