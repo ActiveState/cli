@@ -3,7 +3,6 @@
 package fileutils
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -39,9 +38,10 @@ func IsWritable(path string) bool {
 	box := packr.NewBox("../../assets/scripts")
 	contents := box.String("IsWritable.ps1")
 	scriptFile, fail := WriteTempFile(
-		"", fmt.Sprintf("%s*%s", "IsWritable", ".ps1"), []byte(contents), 0700,
+		"", "IsWritable*.ps1", []byte(contents), 0700,
 	)
 	if fail != nil {
+		logging.Error("Could not create temporary powershell file: %v", fail)
 		return false
 	}
 

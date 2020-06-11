@@ -14,11 +14,8 @@ function IsWritable($path) {
         [System.Security.AccessControl.FileSystemRights]::Synchronize
 
     $User = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
-
     $acl = (Get-Acl $Path)
-
     $userSID = (New-Object System.Security.Principal.NTAccount($User)).Translate([System.Security.Principal.SecurityIdentifier])
-
     $accessRules = $acl.GetAccessRules($True, $True, [System.Security.Principal.NTAccount])
 
     foreach ($item in $accessRules) {
@@ -29,7 +26,6 @@ function IsWritable($path) {
             Write-Host $item.FileSystemRights
 
             if (($item.FileSystemRights.value__ -band $permWrite) -eq $permWrite) {
-                # Write-Host "Another match!"
                 exit 0
             }
         }
