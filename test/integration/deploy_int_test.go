@@ -255,7 +255,8 @@ func (suite *DeployIntegrationTestSuite) TestDeploySymlink() {
 	pathDir := fileutils.TempDirUnsafe()
 	path := pathDir
 	if runtime.GOOS == "windows" {
-		powershellPath := exec.LookPath("powershell.exe")
+		powershellPath, err := exec.LookPath("powershell.exe")
+		suite.Require().NoError(err)
 		path = strings.Join([]string{pathDir, powershellPath}, ";")
 	}
 
@@ -313,7 +314,8 @@ func (suite *DeployIntegrationTestSuite) TestDeployTwice() {
 	pathDir := fileutils.TempDirUnsafe()
 	path := pathDir
 	if runtime.GOOS == "windows" {
-		powershellPath := exec.LookPath("powershell.exe")
+		powershellPath, err := exec.LookPath("powershell.exe")
+		suite.Require().NoError(err)
 		path = strings.Join([]string{pathDir, powershellPath}, ";")
 	}
 
