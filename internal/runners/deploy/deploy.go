@@ -214,10 +214,13 @@ func symlink(installPath string, overwrite bool, envGetter runtime.EnvGetter, ou
 		return err
 	}
 
-	// Retrieve path to write symlinks to
-	path, err := usablePath()
-	if err != nil {
-		return locale.WrapError(err, "err_usablepath", "Could not retrieve a usable PATH")
+	var path string
+	if rt.GOOS != "windows" {
+		// Retrieve path to write symlinks to
+		path, err = usablePath()
+		if err != nil {
+			return locale.WrapError(err, "err_usablepath", "Could not retrieve a usable PATH")
+		}
 	}
 
 	// Retrieve artifact binary directory
