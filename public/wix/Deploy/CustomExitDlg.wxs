@@ -13,10 +13,10 @@
         <Control Id="BottomLine" Type="Line" X="0" Y="234" Width="370" Height="0" />
         <Control Id="Description" Type="Text" X="130" Y="60" Width="230" Height="20" Transparent="yes" NoPrefix="yes" Text="!(loc.ExitDialogDescription)" />
         <Control Id="Title" Type="Text" X="130" Y="20" Width="230" Height="60" Transparent="yes" NoPrefix="yes" Text="!(loc.ExitDialogTitle)" />
-        <Control Id="SuccessText" Type="Hyperlink" X="130" Y="80" Width="230" Height="85" Transparent="yes" Hidden="yes" Text="!(loc.ExitDialogSuccess)">
+        <Control Id="SuccessText" Type="Hyperlink" X="130" Y="80" Width="230" Height="65" Transparent="yes" Hidden="yes" Text="!(loc.ExitDialogSuccess)">
           <Condition Action="show">NOT Installed</Condition>
         </Control>
-        <Control Id="Link1" Type="Hyperlink" X="130" Y="165" Width="230" Height="30" Transparent="yes" Hidden="yes" Text="!(loc.ExitDialogLink1)">
+        <Control Id="Link1" Type="Hyperlink" X="130" Y="145" Width="230" Height="50" Transparent="yes" Hidden="yes" Text="!(loc.ExitDialogLink1)">
           <Condition Action="show">NOT Installed</Condition>
         </Control>
         <Control Id="Link2" Type="Hyperlink" X="130" Y="200" Width="230" Height="10" Transparent="yes" Hidden="yes" Text="!(loc.ExitDialogLink2)">

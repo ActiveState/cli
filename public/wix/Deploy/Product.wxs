@@ -18,7 +18,7 @@
     <!-- End Design assets -->
 
     <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
-		<MediaTemplate />
+		<MediaTemplate EmbedCab="yes" />
 
     <!-- The default directory structure when installing the state tool. This can be changed via the UI -->
     <Directory Id='TARGETDIR' Name='SourceDir'>
@@ -38,13 +38,13 @@
     <Feature Id='Complete' Level='1'>
       <Component Id='ProgIdPerl' Directory='TARGETDIR' Guid='4dda6117-ca9c-4371-a09d-c8575f520a02'>
         <!-- Perl file scripts -->
-        <ProgId Id="Perl.Document" Description="!(loc.DescPL)" Advertise='no'>
+        <ProgId Id="Perl.Document" Description="!(loc.DescPL)" Advertise='no' Icon='PerlIco'>
           <Extension Id="pl" ContentType="text/x-perl">
             <Verb Id="open" Command="!(loc.ExplorerMenuOpenPL)" TargetProperty="CmdExe" Argument="/c &quot;[PerlExe]&quot; &quot;%1&quot;" />
           </Extension>
         </ProgId>
         <!-- Windows perl file scripts (started with hidden console) -->
-        <ProgId Id="WPerl.Document" Description="!(loc.DescPL)" Advertise='no'>
+        <ProgId Id="WPerl.Document" Description="!(loc.DescPL)" Advertise='no' Icon='PerlIco'>
           <Extension Id="wpl" ContentType="text/x-w-perl">
             <Verb Id="open" Command="!(loc.ExplorerMenuOpenPL)" TargetProperty="CmdExe" Argument="/c &quot;[WPerlExe]&quot; &quot;%1&quot;" />
           </Extension>
@@ -57,8 +57,9 @@
         <RegistryValue Root="HKLM" Key="Software\[Manufacturer]\[ProductName]" Name="InstallDir" Value="[INSTALLDIR]" Type="string"/>
         <RemoveFolder Id='CleanupApplicationFolder' On='uninstall' />
       </Component>
-
-
+      <Component Id='cmpPerlIco' Directory='INSTALLDIR' Guid='1069a43f-9ec5-4ad8-b15c-2452b56c9b04'>
+        <File Id='PerlIco' Source='perl.ico' />
+      </Component>
     </Feature>
 
     <Property Id="REMEMBER">
