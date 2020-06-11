@@ -39,13 +39,13 @@
         <!-- Perl file scripts -->
         <ProgId Id="Perl.Document" Description="!(loc.DescPL)" Advertise='no' Icon='PerlIco'>
           <Extension Id="pl" ContentType="text/x-perl">
-            <Verb Id="open" Command="!(loc.ExplorerMenuOpenPL)" TargetProperty="PerlExe" Argument="/c &quot;%1&quot;" />
+            <Verb Id="open" Command="!(loc.ExplorerMenuOpenPL)" TargetProperty="PerlExe" Argument="&quot;%1&quot;" />
           </Extension>
         </ProgId>
         <!-- Windows perl file scripts (started with hidden console) -->
         <ProgId Id="WPerl.Document" Description="!(loc.DescPL)" Advertise='no' Icon='PerlIco'>
           <Extension Id="wpl" ContentType="text/x-w-perl">
-            <Verb Id="open" Command="!(loc.ExplorerMenuOpenPL)" TargetProperty="WPerlExe" Argument="/&quot;%1&quot;" />
+            <Verb Id="open" Command="!(loc.ExplorerMenuOpenPL)" TargetProperty="WPerlExe" Argument="&quot;%1&quot;" />
           </Extension>
         </ProgId>
       </Component>
