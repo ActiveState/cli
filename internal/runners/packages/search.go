@@ -47,7 +47,7 @@ func (s *Search) Run(params SearchRunParams) error {
 		return fail.WithDescription("package_err_cannot_obtain_search_results")
 	}
 	if len(packages) == 0 {
-		s.out.Print(locale.T("package_search_no_packages"))
+		s.out.Print(locale.T("package_no_packages"))
 		return nil
 	}
 

@@ -61,7 +61,7 @@ func (l *List) Run(params ListRunParams) error {
 		return fail.WithDescription("package_err_cannot_fetch_checkpoint")
 	}
 	if len(checkpoint) == 0 {
-		l.out.Print(locale.T("package_list_no_packages"))
+		l.out.Print(locale.T("package_no_packages"))
 		return nil
 	}
 
@@ -70,7 +70,7 @@ func (l *List) Run(params ListRunParams) error {
 
 	output := table.output()
 	if output == "" {
-		output = locale.T("package_list_no_packages")
+		output = locale.T("package_no_packages")
 	}
 
 	l.out.Print(output)

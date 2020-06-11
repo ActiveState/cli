@@ -1,18 +1,14 @@
 package runtime
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
-	"runtime"
 
 	"github.com/go-openapi/strfmt"
-	"github.com/gobuffalo/packr"
 	"github.com/google/uuid"
 	"github.com/vbauerster/mpb/v4"
 
 	"github.com/ActiveState/cli/internal/config"
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
@@ -351,45 +347,4 @@ func removeInstallDir(installDir string) {
 	if err := os.RemoveAll(installDir); err != nil {
 		logging.Errorf("attempting to remove install dir '%s': %v", installDir, err)
 	}
-}
-
-// installPPMShim installs an executable shell script and a BAT file that is executed instead of PPM in the specified path.
-// It calls the `state _ppm` sub-command printing deprecation messages.
-func installPPMShim(binPath string) error {
-	// remove old ppm command if it existed before
-	ppmExeName := "ppm"
-	if runtime.GOOS == "windows" {
-		ppmExeName = "ppm.exe"
-	}
-	ppmExe := filepath.Join(binPath, ppmExeName)
-	if fileutils.FileExists(ppmExe) {
-		err := os.Remove(ppmExe)
-		if err != nil {
-			return errs.Wrap(err, "failed to remove existing ppm %s", ppmExe)
-		}
-	}
-
-	box := packr.NewBox("../../../assets/ppm")
-	ppmBytes := box.Bytes("ppm.sh")
-	shim := filepath.Join(binPath, "ppm")
-	// remove shim if it existed before, so we can overwrite (ok to drop error here)
-	_ = os.Remove(shim)
-
-	err := ioutil.WriteFile(shim, ppmBytes, 0755)
-	if err != nil {
-		return errs.Wrap(err, "failed to write shim command %s", shim)
-	}
-	if runtime.GOOS == "windows" {
-		ppmBatBytes := box.Bytes("ppm.bat")
-		shim := filepath.Join(binPath, "ppm.bat")
-		// remove shim if it existed before, so we can overwrite (ok to drop error here)
-		_ = os.Remove(shim)
-
-		err := ioutil.WriteFile(shim, ppmBatBytes, 0755)
-		if err != nil {
-			return errs.Wrap(err, "failed to write shim command %s", shim)
-		}
-	}
-
-	return nil
 }

@@ -295,7 +295,7 @@ func symlinkWithTarget(overwrite bool, symlinkPath string, exePaths []string, ou
 				return locale.WrapError(err, "err_deploy_shouldskip", "Could not determine if link already exists.")
 			}
 			if skip {
-				continue
+				return nil
 			}
 
 			// If we're trying to overwrite a link not owned by us but overwrite=false then we should fail
@@ -365,7 +365,7 @@ func uniqueExes(exePaths []string, pathext string) ([]string, error) {
 		exe := exeFile{exePath, "", ""}
 		ext := filepath.Ext(exePath)
 
-		// We only set the executable extension if PATHEXT is present.
+		// We only set the excutable extension if PATHEXT is present.
 		// Some macOS builds can contain binaries with periods in their
 		// names and we do not want to strip off suffixes after the period.
 		if funk.Contains(pathExt, ext) {

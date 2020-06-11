@@ -72,50 +72,6 @@ func NewCommand(name, description string, flags []*Flag, args []*Argument, execu
 	return cmd
 }
 
-// NewHiddenShimCommand is a very specialized function that is used for adding the
-// PPM Shim.  Differences to NewCommand() are:
-// - the entrypoint is hidden in the help text
-// - calling the help for a subcommand will execute this subcommand
-func NewHiddenShimCommand(name string, flags []*Flag, args []*Argument, executor Executor) *Command {
-	// Validate args
-	for idx, arg := range args {
-		if idx > 0 && arg.Required && !args[idx-1].Required {
-			msg := fmt.Sprintf(
-				"Cannot have a non-required argument followed by a required argument.\n\n%v\n\n%v",
-				arg, args[len(args)-1],
-			)
-			panic(msg)
-		}
-	}
-
-	cmd := &Command{
-		execute:   executor,
-		arguments: args,
-		flags:     flags,
-	}
-
-	cmd.cobra = &cobra.Command{
-		Use:              name,
-		PersistentPreRun: cmd.persistRunner,
-		RunE:             cmd.runner,
-		Hidden:           true,
-
-		// Silence errors and usage, we handle that ourselves
-		SilenceErrors: true,
-		SilenceUsage:  true,
-	}
-
-	cmd.cobra.SetHelpFunc(func(_ *cobra.Command, args []string) {
-		cmd.execute(cmd, args)
-	})
-
-	if err := cmd.setFlags(flags); err != nil {
-		panic(err)
-	}
-
-	return cmd
-}
-
 func (c *Command) Usage() error {
 	return c.cobra.Usage()
 }
