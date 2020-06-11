@@ -30,7 +30,14 @@ func init() {
 	}
 }
 
-func (suite *DeployIntegrationTestSuite) deploy(ts *e2e.Session, prj string) {
+func (suite *DeployIntegrationTestSuite) TestDeploy() {
+	if !e2e.RunningOnCI() {
+		suite.T().Skipf("Skipping DeployIntegrationTestSuite when not running on CI, as it modifies bashrc/registry")
+	}
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
 	var cp *termtest.ConsoleProcess
 	switch runtime.GOOS {
 	case "windows":
@@ -44,7 +51,7 @@ func (suite *DeployIntegrationTestSuite) deploy(ts *e2e.Session, prj string) {
 		)
 	default:
 		cp = ts.SpawnWithOpts(
-			e2e.WithArgs("deploy", prj, "--path", ts.Dirs.Work),
+			e2e.WithArgs("deploy", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work),
 			e2e.AppendEnv("SHELL=bash"),
 		)
 	}
@@ -60,66 +67,9 @@ func (suite *DeployIntegrationTestSuite) deploy(ts *e2e.Session, prj string) {
 		cp.Expect("restart")
 	}
 	cp.ExpectExitCode(0)
-}
 
-func cmdIfy(ts *e2e.Session, args ...string) *termtest.ConsoleProcess {
+	// Linux/Mac symlinks to /usr/local/bin, so we can verify right away
 	if runtime.GOOS != "windows" {
-		return ts.SpawnCmd(args[0], args[1:]...)
-	}
-
-	return ts.SpawnCmdWithOpts("cmd",
-		e2e.WithArgs("/c", strings.Join(args, " ")),
-		e2e.AppendEnv("PATHEXT=.COM;.EXE;.BAT;.LNK"))
-}
-
-func (suite *DeployIntegrationTestSuite) TestDeployPerl() {
-	if !e2e.RunningOnCI() {
-		suite.T().Skipf("Skipping DeployIntegrationTestSuite when not running on CI, as it modifies bashrc/registry")
-	}
-
-	if runtime.GOOS == "darwin" {
-		suite.T().Skip("Perl is not supported on Mac OS yet.")
-	}
-
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	suite.deploy(ts, "ActiveState-CLI/Perl")
-
-	// Linux symlinks to /usr/local/bin, so we can verify right away
-	if runtime.GOOS == "linux" {
-		execPath, err := exec.LookPath("perl")
-		suite.Require().NoError(err)
-		link, err := os.Readlink(execPath)
-		suite.Require().NoError(err)
-		suite.Contains(link, ts.Dirs.Work, "python3 executable resolves to the one on our target dir")
-	}
-	// check that some of the installed symlinks are use-able
-	cp := cmdIfy(ts, filepath.Join(ts.Dirs.Work, "bin", "perl"), "--version")
-	cp.Expect("This is perl 5")
-	cp.ExpectExitCode(0)
-
-	cp = cmdIfy(ts, filepath.Join(ts.Dirs.Work, "bin", "ptar"), "-h")
-	cp.Expect("a tar-like program written in perl")
-	cp.Wait()
-
-	cp = cmdIfy(ts, filepath.Join(ts.Dirs.Work, "bin", "ppm"), "--version")
-	cp.Expect("The Perl Package Manager(PPM) is no longer supported.")
-	cp.ExpectExitCode(0)
-}
-
-func (suite *DeployIntegrationTestSuite) TestDeployPython() {
-	if !e2e.RunningOnCI() {
-		suite.T().Skipf("Skipping DeployIntegrationTestSuite when not running on CI, as it modifies bashrc/registry")
-	}
-
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	suite.deploy(ts, "ActiveState-CLI/Python3")
-
-	// Linux symlinks to /usr/local/bin, so we can verify right away
-	if runtime.GOOS == "linux" {
 		execPath, err := exec.LookPath("python3")
 		suite.Require().NoError(err)
 		link, err := os.Readlink(execPath)
@@ -127,22 +77,37 @@ func (suite *DeployIntegrationTestSuite) TestDeployPython() {
 		suite.Contains(link, ts.Dirs.Work, "python3 executable resolves to the one on our target dir")
 	}
 
+	cmdIfy := func(args ...string) *termtest.ConsoleProcess {
+		if runtime.GOOS != "windows" {
+			return ts.SpawnCmd(args[0], args[1:]...)
+		}
+
+		var b strings.Builder
+		b.WriteString(args[0] + ".lnk")
+		for i := 1; i < len(args); i++ {
+			b.WriteString(fmt.Sprintf(" %s", args[i]))
+		}
+
+		return ts.SpawnCmd("cmd", "/c", b.String())
+	}
+
 	// check that some of the installed symlinks are use-able
-	cp := cmdIfy(ts, filepath.Join(ts.Dirs.Work, "bin", "python3"), "--version")
+	cp = cmdIfy(filepath.Join(ts.Dirs.Work, "bin", "python3"), "--version")
+
 	cp.Expect("Python 3")
 	cp.ExpectExitCode(0)
 
-	cp = cmdIfy(ts, filepath.Join(ts.Dirs.Work, "bin", "pip3"), "--version")
+	cp = cmdIfy(filepath.Join(ts.Dirs.Work, "bin", "pip3"), "--version")
 	cp.Expect("pip")
 	cp.ExpectExitCode(0)
 
 	if runtime.GOOS == "darwin" {
 		// This is kept as a regression test, pyvenv used to have a relocation problem on MacOS
-		cp = cmdIfy(ts, filepath.Join(ts.Dirs.Work, "bin", "pyvenv"), "-h")
+		cp = cmdIfy(filepath.Join(ts.Dirs.Work, "bin", "pyvenv"), "-h")
 		cp.ExpectExitCode(0)
 	}
 
-	cp = cmdIfy(ts, filepath.Join(ts.Dirs.Work, "bin", "python3"), "-m", "pytest", "--version")
+	cp = cmdIfy(filepath.Join(ts.Dirs.Work, "bin", "python3"), "-m", "pytest", "--version")
 	cp.Expect("This is pytest version")
 
 	if runtime.GOOS != "windows" {

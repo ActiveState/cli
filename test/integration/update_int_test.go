@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"runtime"
 	"testing"
 	"time"
 
@@ -67,9 +66,6 @@ func (suite *UpdateIntegrationTestSuite) TestAutoUpdate() {
 }
 
 func (suite *UpdateIntegrationTestSuite) TestAutoUpdateNoPermissions() {
-	if runtime.GOOS == "windows" {
-		suite.T().Skip("Skipping permission test on Windows, as CI on Windows is running as Administrator and is allowed to do EVERYTHING")
-	}
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -210,9 +206,6 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 }
 
 func (suite *UpdateIntegrationTestSuite) TestUpdateNoPermissions() {
-	if runtime.GOOS == "windows" {
-		suite.T().Skip("Skipping permission test on Windows, as CI on Windows is running as Administrator and is allowed to do EVERYTHING")
-	}
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 

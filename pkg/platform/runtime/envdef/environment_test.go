@@ -3,14 +3,11 @@ package envdef_test
 import (
 	"encoding/json"
 	"io/ioutil"
-	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 )
 
@@ -137,7 +134,7 @@ func (suite *EnvironmentTestSuite) TestValueString() {
 	suite.Assert().Equal("a:b", res)
 }
 
-func (suite *EnvironmentTestSuite) TestGetEnv() {
+func (suite *EnvironmentTestSuite) GetEnv() {
 	ed1 := envdef.EnvironmentDefinition{}
 	err := json.Unmarshal([]byte(`{
 			"env": [{"env_name": "V", "values": ["a", "b"]}],
@@ -149,28 +146,6 @@ func (suite *EnvironmentTestSuite) TestGetEnv() {
 	suite.Assert().Equal(map[string]string{
 		"V": "a:b",
 	}, res)
-}
-
-func (suite *EnvironmentTestSuite) TestFindBinPathFor() {
-	tmpDir, err := ioutil.TempDir("", "")
-	require.NoError(suite.T(), err, "creating temporary directory")
-	defer os.RemoveAll(tmpDir)
-
-	ed1 := envdef.EnvironmentDefinition{}
-	err = json.Unmarshal([]byte(`{
-			"env": [{"env_name": "PATH", "values": ["${INSTALLDIR}/bin", "${INSTALLDIR}/bin2"]}],
-			"installdir": "abc"
-		}`), &ed1)
-	require.NoError(suite.T(), err, "un-marshaling test json blob")
-
-	// expand variables
-	ed1.ExpandVariables(tmpDir)
-
-	suite.Assert().Equal("", ed1.FindBinPathFor("executable"), "executable should not exist")
-
-	fail := fileutils.Touch(filepath.Join(tmpDir, "bin2", "executable"))
-	require.NoError(suite.T(), fail.ToError(), "creating dummy file")
-	suite.Assert().Equal(filepath.Join(tmpDir, "bin2"), ed1.FindBinPathFor("executable"), "executable should be found")
 }
 
 func TestEnvironmentTestSuite(t *testing.T) {
