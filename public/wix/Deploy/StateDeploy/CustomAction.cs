@@ -10,14 +10,12 @@ namespace StateDeploy
 {
     public class CustomActions
     {
-        public static string STATE_TOOL_PATH;
-
-        public static ActionResult InstallStateTool(Session session)
+        public static ActionResult InstallStateTool(Session session, ref string stateToolPath)
         {
             session.Log("Installing State Tool if necessary");
             if (session.CustomActionData["STATE_TOOL_INSTALLED"] == "true")
             {
-                STATE_TOOL_PATH = session.CustomActionData["STATE_TOOL_PATH"];
+                stateToolPath = session.CustomActionData["STATE_TOOL_PATH"];
                 session.Log("State Tool is installed, no installation required");
                 return ActionResult.Success;
             }
@@ -62,7 +60,7 @@ namespace StateDeploy
                 return ActionResult.UserExit;
             }
 
-            STATE_TOOL_PATH = Path.Combine(installPath, "state.exe");
+            stateToolPath = Path.Combine(installPath, "state.exe");
             return result;
         }
 
@@ -137,12 +135,12 @@ namespace StateDeploy
         [CustomAction]
         public static ActionResult StateDeploy(Session session)
         {
-
-            var res = InstallStateTool(session);
+            string stateToolPath = "";
+            var res = InstallStateTool(session, ref stateToolPath);
             if (res != ActionResult.Success) {
                 return res;
             }
-            session.Log("Starting state deploy");
+            session.Log("Starting state deploy with state tool at " + stateToolPath);
 
             Status.ProgressBar.StatusMessage(session, string.Format("Deploying project {0}...", session.CustomActionData["PROJECT_NAME"]));
             MessageResult incrementResult = Status.ProgressBar.Increment(session, 3);
@@ -151,7 +149,7 @@ namespace StateDeploy
                 return ActionResult.UserExit;
             }
 
-            string deployCmd = BuildDeployCmd(session);
+            string deployCmd = BuildDeployCmd(session, stateToolPath);
             session.Log(string.Format("Executing deploy command: {0}", deployCmd));
             try
             {
@@ -185,13 +183,13 @@ namespace StateDeploy
             return ActionResult.Success;
         }
 
-        private static string BuildDeployCmd(Session session)
+        private static string BuildDeployCmd(Session session, string stateToolPath)
         {
             string installDir = session.CustomActionData["INSTALLDIR"];
             string projectName = session.CustomActionData["PROJECT_NAME"];
             string isModify = session.CustomActionData["IS_MODIFY"];
 
-            StringBuilder deployCMDBuilder = new StringBuilder(STATE_TOOL_PATH + " deploy");
+            StringBuilder deployCMDBuilder = new StringBuilder(stateToolPath + " deploy");
             if (isModify == "true")
             {
                 deployCMDBuilder.Append(" --force");
