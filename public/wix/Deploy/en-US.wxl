@@ -3,7 +3,7 @@
   <String Id="WelcomeDlgDescription">This Setup Wizard will install [ProductName] on your computer.
 
 Click "Next" to continue or "Cancel" to exit the Setup Wizard.</String>
-  <String Id="ExitDialogSuccess">ActivePerl 5.2x has been successfully installed on your system using the <![CDATA[<a href="https://www.activestate.com/products/platform/state-tool/">State Tool</a>]]>, the new command line interface from ActiveState replacing PPM. Just try State Tool by typing 
+  <String Id="ExitDialogSuccess">[ProductName] has been successfully installed on your system using the <![CDATA[<a href="https://www.activestate.com/products/platform/state-tool/">State Tool</a>]]>, the new command line interface from ActiveState replacing PPM. Just try State Tool by typing 
 'state help' in a Command Prompt window and find out what it can do.</String>
   <String Id="ExitDialogLink1">Visit <![CDATA[<a href="https://docs.activestate.com/platform/state/">State Tool Documentation</a>]]> to learn more about what the State tool is capable of, such as creating shareable virtual environments, maintaining cross-platform scripts, sharing and using encrypted secrets, and more...</String>
   <String Id="ExitDialogLink2">Click here to see the <![CDATA[<a href="http://docs.activestate.com/activeperl/[PerlVersion]/get/relnotes/">ActivePerl Release Notes.</a>]]></String>
