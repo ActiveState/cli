@@ -1,21 +1,7 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
-using Microsoft.Deployment.WindowsInstaller;
 using System.Management;
-
 namespace ActiveState
 {
-    public class CustomActions
-    {
-        [CustomAction]
-        public static ActionResult CustomAction1(Session session)
-        {
-            // Required placeholder Custom Action
-            return ActionResult.Success;
-        }
-    }
-
     public class Process
     {
         /// <summary>
