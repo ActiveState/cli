@@ -110,6 +110,8 @@ namespace StateDeploy
                 {
                     try
                     {
+                        // This is just hear to throw an InstallCanceled Exception if necessary
+                        Status.ProgressBar.Increment(session, 0);
                         Thread.Sleep(200);
                     }
                     catch (InstallCanceledException)
