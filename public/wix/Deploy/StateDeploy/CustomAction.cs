@@ -5,6 +5,9 @@ using System.Diagnostics;
 using System.Threading;
 using System.IO;
 using System.Net;
+using System.Text.RegularExpressions;
+using System.Runtime.CompilerServices;
+using System.Collections.ObjectModel;
 
 namespace StateDeploy
 {
@@ -131,6 +134,65 @@ namespace StateDeploy
             return ActionResult.Success;
         }
 
+        private class MatchStatus
+        {
+            private static Regex pcentRx = new Regex(" (\\d+) %", RegexOptions.Compiled);
+
+            enum Step
+            {
+                Unset,
+                Downloading,
+                Installing,
+            };
+
+            private Step step;
+            bool nextLineProgress;
+
+            public MatchStatus()
+            {
+                this.step = Step.Unset;
+                this.nextLineProgress = false;
+            }
+
+            public void matchUpdate(Session session, string line, ref int pcnt)
+            {
+                session.Log("matching " + line);
+                if (line.Contains("Downloading")) {
+                    if (this.step != Step.Downloading)
+                    {
+                        Status.ProgressBar.StatusMessage(session, "Downloading ActiveState/ActivePerl");
+                    }
+                    this.step = Step.Downloading;
+                    this.nextLineProgress = true;
+                    session.Log("matched downloading");
+                    return;
+                }
+                if (line.Contains("Installing"))
+                {
+                    if (this.step != Step.Installing)
+                    {
+                        Status.ProgressBar.StatusMessage(session, "Downloading ActiveState/ActivePerl");
+                    }
+                    this.step = Step.Installing;
+                    session.Log("matched installing");
+                    this.nextLineProgress = true;
+                    return;
+                }
+                if (this.nextLineProgress)
+                {
+                    session.Log("matching for percentage progress");
+                    Match match = pcentRx.Match(line);
+
+                    if (match.Success)
+                    {
+                        var pcentStr = match.Groups[1].Value;
+                        session.Log("matched with " + pcentStr);
+                        pcnt = Int32.Parse(pcentStr);
+                    }
+                }
+                this.nextLineProgress = false;
+            }
+        };
 
         [CustomAction]
         public static ActionResult StateDeploy(Session session)
