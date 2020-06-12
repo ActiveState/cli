@@ -20,6 +20,7 @@ namespace StateDeploy
             {
                 stateToolPath = session.CustomActionData["STATE_TOOL_PATH"];
                 session.Log("State Tool is installed, no installation required");
+                Status.ProgressBar.Increment(session, 1);
                 return ActionResult.Success;
             }
 
@@ -62,6 +63,7 @@ namespace StateDeploy
                 }
                 return ActionResult.UserExit;
             }
+            Status.ProgressBar.Increment(session, 1);
 
             stateToolPath = Path.Combine(installPath, "state.exe");
             return result;
@@ -193,6 +195,17 @@ namespace StateDeploy
                 this.nextLineProgress = false;
             }
         };
+        public struct InstallSequenceElement
+        {
+            public readonly string SubCommand;
+            public readonly string Description;
+
+            public InstallSequenceElement(string subCommand, string description)
+            {
+                this.SubCommand = subCommand;
+                this.Description = description;
+            }
+        };
 
         [CustomAction]
         public static ActionResult StateDeploy(Session session)
@@ -205,35 +218,52 @@ namespace StateDeploy
             session.Log("Starting state deploy with state tool at " + stateToolPath);
 
             Status.ProgressBar.StatusMessage(session, string.Format("Deploying project {0}...", session.CustomActionData["PROJECT_NAME"]));
-            MessageResult incrementResult = Status.ProgressBar.Increment(session, 3);
-            if (incrementResult == MessageResult.Cancel)
+            MessageResult statusResult = Status.ProgressBar.StatusMessage(session, "Preparing deployment of ActivePerl...");
+            if (statusResult == MessageResult.Cancel)
             {
                 return ActionResult.UserExit;
             }
 
-            string deployCmd = BuildDeployCmd(session, stateToolPath);
-            session.Log(string.Format("Executing deploy command: {0}", deployCmd));
+            var sequence = new ReadOnlyCollection<InstallSequenceElement>(
+                new[]
+                {
+                    new InstallSequenceElement("install", "Installing ActivePerl"),
+                    new InstallSequenceElement("configure", "Updating system environment"),
+                    new InstallSequenceElement("symlink", "Creating symlink directory"),
+                });
+
             try
             {
-                var runResult = RunCommand(session, deployCmd);
-                if (runResult == ActionResult.UserExit) {
-                    ActionResult result = Uninstall.Remove.InstallDir(session, session.CustomActionData["INSTALLDIR"]);
-                    if (result.Equals(ActionResult.Failure))
-                    {
-                        session.Log("Could not remove installation directory");
-                        return ActionResult.Failure;
-                    }
-
-                    result = Uninstall.Remove.EnvironmentEntries(session, session.CustomActionData["INSTALLDIR"]);
-                    if (result.Equals(ActionResult.Failure))
-                    {
-                        session.Log("Could not remove environment entries");
-                        return ActionResult.Failure;
-                    }
-                    return ActionResult.UserExit;
-                } else if (runResult != ActionResult.Success)
+                foreach (var seq in sequence)
                 {
-                    return runResult;
+                    string deployCmd = BuildDeployCmd(session, seq.SubCommand, stateToolPath);
+                    session.Log(string.Format("Executing deploy command: {0}", deployCmd));
+
+                    var matchState = new MatchStatus();
+                    Status.ProgressBar.Increment(session, 1);
+                    Status.ProgressBar.StatusMessage(session, seq.Description);
+                    var runResult = RunCommand(session, deployCmd);
+                    if (runResult == ActionResult.UserExit)
+                    {
+                        ActionResult result = Uninstall.Remove.InstallDir(session, session.CustomActionData["INSTALLDIR"]);
+                        if (result.Equals(ActionResult.Failure))
+                        {
+                            session.Log("Could not remove installation directory");
+                            return ActionResult.Failure;
+                        }
+
+                        result = Uninstall.Remove.EnvironmentEntries(session, session.CustomActionData["INSTALLDIR"]);
+                        if (result.Equals(ActionResult.Failure))
+                        {
+                            session.Log("Could not remove environment entries");
+                            return ActionResult.Failure;
+                        }
+                        return ActionResult.UserExit;
+                    }
+                    else if (runResult != ActionResult.Success)
+                    {
+                        return runResult;
+                    }
                 }
             }
             catch (Exception objException)
@@ -242,16 +272,17 @@ namespace StateDeploy
                 return ActionResult.Failure;
             }
 
+            Status.ProgressBar.Increment(session, 1);
             return ActionResult.Success;
         }
 
-        private static string BuildDeployCmd(Session session, string stateToolPath)
+        private static string BuildDeployCmd(Session session, string subCommand, string stateToolPath)
         {
             string installDir = session.CustomActionData["INSTALLDIR"];
             string projectName = session.CustomActionData["PROJECT_NAME"];
             string isModify = session.CustomActionData["IS_MODIFY"];
 
-            StringBuilder deployCMDBuilder = new StringBuilder(stateToolPath + " deploy");
+            StringBuilder deployCMDBuilder = new StringBuilder(stateToolPath + " deploy " + subCommand);
             if (isModify == "true")
             {
                 deployCMDBuilder.Append(" --force");
