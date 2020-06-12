@@ -36,6 +36,17 @@ func IsExecutable(path string) bool {
 
 // IsWritable returns true if the given path is writable
 func IsWritable(path string) bool {
+	info, err := os.Stat(os.Args[1])
+	if err != nil {
+		logging.Error("Could not stat path: %s, got error: %v", path, err)
+		return false
+	}
+
+	// Check if read-only bit is set
+	if info.Mode().Perm()&(0|1<<(uint(7))|1<<(uint(4))|1<<(uint(1))) == 0 {
+		return false
+	}
+
 	box := packr.NewBox("../../assets/scripts")
 	contents := box.String("IsWritable.ps1")
 	scriptFile, fail := WriteTempFile(
@@ -47,7 +58,7 @@ func IsWritable(path string) bool {
 	}
 
 	cmd := exec.Command("powershell.exe", "-c", scriptFile, path)
-	err := cmd.Run()
+	err = cmd.Run()
 	if err != nil {
 		logging.Debug("Path %s is not writable, got error %v", path, err)
 		return false
