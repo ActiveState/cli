@@ -101,8 +101,9 @@ func NewHiddenShimCommand(name string, flags []*Flag, args []*Argument, executor
 		Hidden:           true,
 
 		// Silence errors and usage, we handle that ourselves
-		SilenceErrors: true,
-		SilenceUsage:  true,
+		SilenceErrors:      true,
+		SilenceUsage:       true,
+		DisableFlagParsing: true,
 	}
 
 	cmd.cobra.SetHelpFunc(func(_ *cobra.Command, args []string) {
@@ -112,6 +113,31 @@ func NewHiddenShimCommand(name string, flags []*Flag, args []*Argument, executor
 	if err := cmd.setFlags(flags); err != nil {
 		panic(err)
 	}
+
+	return cmd
+}
+
+// NewShimCommand is a very specialized function that is used to support sub-commands for a hidden shim command.
+// It has only a name a description and function to execute.  All flags and arguments are ignored.
+func NewShimCommand(name, description string, executor Executor) *Command {
+	cmd := &Command{
+		execute: executor,
+	}
+
+	short := description
+	if idx := strings.IndexByte(description, '.'); idx > 0 {
+		short = description[0:idx]
+	}
+
+	cmd.cobra = &cobra.Command{
+		Use:                name,
+		Short:              short,
+		Long:               description,
+		DisableFlagParsing: true,
+		RunE:               cmd.runner,
+	}
+
+	cmd.SetUsageTemplate("usage_tpl")
 
 	return cmd
 }

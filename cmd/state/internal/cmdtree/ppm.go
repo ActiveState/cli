@@ -24,22 +24,14 @@ func printMain() error {
 }
 
 func newPpmCommand() *captain.Command {
-	var versionFlagSet bool
-
 	rootCmd := captain.NewHiddenShimCommand(
 		"_ppm",
-		[]*captain.Flag{
-			{
-				Name:        "version",
-				Description: "prints version information",
-				Persist:     true,
-				Value:       &versionFlagSet,
-			},
-		},
-		nil,
-		func(_ *captain.Command, _ []string) error {
-			if versionFlagSet {
-				return printDefault()
+		nil, nil,
+		func(_ *captain.Command, args []string) error {
+			for _, arg := range args {
+				if arg == "--version" {
+					return printDefault()
+				}
 			}
 			return printMain()
 		},
@@ -59,27 +51,23 @@ func newPpmCommand() *captain.Command {
 
 func addPackagesCommands(cmds []*captain.Command) []*captain.Command {
 	return append(cmds,
-		captain.NewCommand(
+		captain.NewShimCommand(
 			"install",
 			"installs new packages",
-			nil,
-			nil,
 			func(_ *captain.Command, _ []string) error {
 				return printSuggestion(locale.T("ppm_install_intent"), "state packages add", "state/packages.html")
 			},
 		),
-		captain.NewCommand(
+		captain.NewShimCommand(
 			"upgrade",
 			"upgrades installed packages",
-			nil, nil,
 			func(_ *captain.Command, _ []string) error {
 				return printSuggestion(locale.T("ppm_upgrade_intent"), "state packages update", "state/packages.html")
 			},
 		),
-		captain.NewCommand(
+		captain.NewShimCommand(
 			"remove",
 			"removes installed packages",
-			nil, nil,
 			func(_ *captain.Command, _ []string) error {
 				return printSuggestion(locale.T("ppm_remove_intent"), "state packages remove", "state/packages.html")
 			},
@@ -89,10 +77,9 @@ func addPackagesCommands(cmds []*captain.Command) []*captain.Command {
 
 func addVersionCommand(cmds []*captain.Command) []*captain.Command {
 	return append(cmds,
-		captain.NewCommand(
+		captain.NewShimCommand(
 			"version",
 			"print version info",
-			nil, nil,
 			func(_ *captain.Command, _ []string) error {
 				return printDefault()
 			},
@@ -102,37 +89,33 @@ func addVersionCommand(cmds []*captain.Command) []*captain.Command {
 
 func addProjectCommands(cmds []*captain.Command) []*captain.Command {
 	return append(cmds,
-		captain.NewCommand(
+		captain.NewShimCommand(
 			"area",
 			"organizes packages in different areas",
-			nil, nil,
 			func(_ *captain.Command, _ []string) error {
 				fmt.Println(locale.T("ppm_area_message"))
 				return nil
 			},
 		),
-		captain.NewCommand(
+		captain.NewShimCommand(
 			"list",
 			"lists installed packages",
-			nil, nil,
 			func(_ *captain.Command, _ []string) error {
 				return printSuggestion(locale.T("ppm_list_intent"), "state packages", "state/packages.html")
 			},
 		),
 		//	Long:  strings.TrimSpace(locale.T("ppm_header_message")),
-		captain.NewCommand(
+		captain.NewShimCommand(
 			"files",
 			"lists the full path name of the files belonging to the given package, one line per file.",
-			nil, nil,
 			func(_ *captain.Command, _ []string) error {
 				return printDefault()
 			},
 		),
 		//	Long:  strings.TrimSpace(locale.T("ppm_header_message")),
-		captain.NewCommand(
+		captain.NewShimCommand(
 			"verify",
 			"checks that the installed files are present and unmodified.",
-			nil, nil,
 			func(_ *captain.Command, _ []string) error {
 				return printDefault()
 			},
@@ -147,34 +130,30 @@ func addRepositoryCommands(cmds []*captain.Command) []*captain.Command {
 		// you cannot host a private platform yet.
 		// So, I am just printing the default message.
 		// Long:  strings.TrimSpace(locale.T("ppm_header_message")),
-		captain.NewCommand(
+		captain.NewShimCommand(
 			"repo",
 			"manages package repositories",
-			nil, nil,
 			func(_ *captain.Command, _ []string) error {
 				return printDefault()
 			},
 		),
-		captain.NewCommand(
+		captain.NewShimCommand(
 			"search",
 			"searches for packages in all enabled repositories",
-			nil, nil,
 			func(_ *captain.Command, _ []string) error {
 				return printSuggestion(locale.T("ppm_search_intent"), "state packages search", "state/packages.html")
 			},
 		),
-		captain.NewCommand(
+		captain.NewShimCommand(
 			"describe",
 			"shows all properties from a particular package from the last search result",
-			nil, nil,
 			func(_ *captain.Command, _ []string) error {
 				return printDefault()
 			},
 		),
-		captain.NewCommand(
+		captain.NewShimCommand(
 			"tree",
 			"shows all dependencies for a particular package.",
-			nil, nil,
 			func(_ *captain.Command, _ []string) error {
 				return printDefault()
 			},
@@ -188,18 +167,16 @@ func addOtherCommands(cmds []*captain.Command) []*captain.Command {
 		// directories. At this point, this is an unsupported functionality, as
 		// you cannot host a private platform yet.
 		// So, I am just printing the default message.
-		captain.NewCommand(
+		captain.NewShimCommand(
 			"config",
 			"configuration settings",
-			nil, nil,
 			func(_ *captain.Command, _ []string) error {
 				return printDefault()
 			},
 		),
-		captain.NewCommand(
+		captain.NewShimCommand(
 			"gui",
 			"opens the graphical user-interface",
-			nil, nil,
 			func(_ *captain.Command, _ []string) error {
 				return printDefault()
 			},
@@ -208,10 +185,9 @@ func addOtherCommands(cmds []*captain.Command) []*captain.Command {
 }
 
 func addInfoCommand(cmds []*captain.Command) []*captain.Command {
-	return append(cmds, captain.NewCommand(
+	return append(cmds, captain.NewShimCommand(
 		"info",
 		"prints ppm help message",
-		nil, nil,
 		func(_ *captain.Command, _ []string) error {
 			return printMain()
 		},
