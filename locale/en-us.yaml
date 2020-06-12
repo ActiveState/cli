@@ -1620,6 +1620,8 @@ ppm_upgrade_intent:
   other: upgrade an existing package
 ppm_remove_intent:
   other: remove a package from your project
+ppm_search_intent:
+  other: search for a package in the ActiveState repository
 ppm_area_message:
   other: |
     The Perl Package Manager (PPM) is no longer supported.
