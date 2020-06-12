@@ -253,17 +253,10 @@ func (suite *DeployIntegrationTestSuite) TestDeploySymlink() {
 	suite.InstallAndAssert(ts)
 
 	pathDir := fileutils.TempDirUnsafe()
-	path := pathDir
-	if runtime.GOOS == "windows" {
-		powershellPath, err := exec.LookPath("powershell.exe")
-		suite.Require().NoError(err)
-		path = strings.Join([]string{pathDir, powershellPath}, ";")
-	}
-
 	if runtime.GOOS != "darwin" {
 		cp = ts.SpawnWithOpts(
 			e2e.WithArgs("deploy", "symlink", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work),
-			e2e.AppendEnv(fmt.Sprintf("PATH=%s", path)), // Avoid conflicts
+			e2e.AppendEnv(fmt.Sprintf("PATH=%s", pathDir)), // Avoid conflicts
 		)
 	} else {
 		cp = ts.SpawnWithOpts(
@@ -312,16 +305,9 @@ func (suite *DeployIntegrationTestSuite) TestDeployTwice() {
 	suite.InstallAndAssert(ts)
 
 	pathDir := fileutils.TempDirUnsafe()
-	path := pathDir
-	if runtime.GOOS == "windows" {
-		powershellPath, err := exec.LookPath("powershell.exe")
-		suite.Require().NoError(err)
-		path = strings.Join([]string{pathDir, powershellPath}, ";")
-	}
-
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("deploy", "symlink", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work),
-		e2e.AppendEnv(fmt.Sprintf("PATH=%s", path)), // Avoid conflicts
+		e2e.AppendEnv(fmt.Sprintf("PATH=%s", pathDir)), // Avoid conflicts
 	)
 	cp.ExpectExitCode(0)
 
@@ -330,7 +316,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployTwice() {
 	// Running deploy a second time should not cause any errors (cache is properly picked up)
 	cpx := ts.SpawnWithOpts(
 		e2e.WithArgs("deploy", "symlink", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work),
-		e2e.AppendEnv(fmt.Sprintf("PATH=%s", path)), // Avoid conflicts
+		e2e.AppendEnv(fmt.Sprintf("PATH=%s", pathDir)), // Avoid conflicts
 	)
 	cpx.ExpectExitCode(0)
 }
