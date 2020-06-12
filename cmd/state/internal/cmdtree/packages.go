@@ -18,17 +18,17 @@ func newPackagesCommand(out output.Outputer) *captain.Command {
 		[]*captain.Flag{
 			{
 				Name:        "commit",
-				Description: "package_list_flag_commit_description",
+				Description: locale.T("package_list_flag_commit_description"),
 				Value:       &params.Commit,
 			},
 			{
 				Name:        "package",
-				Description: "package_list_flag_name_description",
+				Description: locale.T("package_list_flag_name_description"),
 				Value:       &params.Name,
 			},
 			{
 				Name:        "namespace",
-				Description: "namespace_list_flag_project_description",
+				Description: locale.T("namespace_list_flag_project_description"),
 				Value:       &params.Project,
 			},
 		},
@@ -54,7 +54,7 @@ func newPackagesAddCommand(out output.Outputer) *captain.Command {
 		[]*captain.Argument{
 			{
 				Name:        "package_arg_nameversion",
-				Description: "package_arg_nameversion_description",
+				Description: locale.T("package_arg_nameversion_description"),
 				Value:       &params.Name,
 				Required:    true,
 			},
@@ -77,7 +77,7 @@ func newPackagesUpdateCommand(out output.Outputer) *captain.Command {
 		[]*captain.Argument{
 			{
 				Name:        "package_arg_nameversion",
-				Description: "package_arg_nameversion_description",
+				Description: locale.T("package_arg_nameversion_description"),
 				Value:       &params.Name,
 				Required:    true,
 			},
@@ -100,7 +100,7 @@ func newPackagesRemoveCommand(out output.Outputer) *captain.Command {
 		[]*captain.Argument{
 			{
 				Name:        "package_arg_name",
-				Description: "package_arg_name_description",
+				Description: locale.T("package_arg_name_description"),
 				Value:       &params.Name,
 				Required:    true,
 			},
@@ -122,12 +122,12 @@ func newPackagesImportCommand(out output.Outputer) *captain.Command {
 		[]*captain.Flag{
 			{
 				Name:        "file",
-				Description: "package_import_flag_filename_description",
+				Description: locale.T("package_import_flag_filename_description"),
 				Value:       &params.FileName,
 			},
 			{
 				Name:        "force",
-				Description: "package_import_flag_force_description",
+				Description: locale.T("package_import_flag_force_description"),
 				Value:       &params.Force,
 			},
 		},
@@ -149,19 +149,19 @@ func newPackagesSearchCommand(out output.Outputer) *captain.Command {
 		[]*captain.Flag{
 			{
 				Name:        "language",
-				Description: "package_search_flag_language_description",
+				Description: locale.T("package_search_flag_language_description"),
 				Value:       &params.Language,
 			},
 			{
 				Name:        "exact-term",
-				Description: "package_search_flag_exact-term_description",
+				Description: locale.T("package_search_flag_exact-term_description"),
 				Value:       &params.ExactTerm,
 			},
 		},
 		[]*captain.Argument{
 			{
 				Name:        "package_arg_name",
-				Description: "package_arg_name_description",
+				Description: locale.T("package_arg_name_description"),
 				Value:       &params.Name,
 				Required:    true,
 			},
