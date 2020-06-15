@@ -9,27 +9,26 @@ run: |
 #@ end
 ---
 #@ def steps_genupdate():
-name: Generate Update
-run: |
-  state run generate-update
+name: "Generate Update"
+run: state run generate-update
 #@ end
 
 ---
 #@ def steps_installgo():
-name: Install Go
+name: "Install Go"
 uses: actions/setup-go@v2
 with:
   go-version: ${{ matrix.go-version }}
 #@ end
 ---
 #@ def steps_installstate():
-name: Install State Tool
+name: "Install State Tool"
 run: |
   ./public/install.sh -n -b master
   echo "::add-path::$HOME/.local/bin"
 #@ end
 ---
 #@ def steps_inttest():
-name: integration tests
+name: "Integration Tests"
 run: go test -timeout 20m ./test/integration -v
 #@ end

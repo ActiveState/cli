@@ -1,5 +1,5 @@
 #@ load("jobs.lib.yml", "jobs_inttest")
-name: Integration Test
+name: "Integration Test"
 
 "on":
   schedule:

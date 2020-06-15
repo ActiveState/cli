@@ -1,5 +1,5 @@
 name: Build-Test-Deploy
-true:
+"on":
   push:
     branches:
     - master
@@ -37,8 +37,7 @@ jobs:
         fi
         state run build
     - name: Generate Update
-      run: |
-        state run generate-update
+      run: state run generate-update
 - unit-test:
     name: Unit Test
     strategy:

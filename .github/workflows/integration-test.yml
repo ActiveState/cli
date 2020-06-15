@@ -1,5 +1,5 @@
 name: Integration Test
-true:
+"on":
   schedule:
   - cron: 0 0 * * *
 jobs:
@@ -33,5 +33,5 @@ jobs:
         export BRANCH_OVERRIDE=unstable
         fi
         state run build
-    - name: integration tests
+    - name: Integration Tests
       run: go test -timeout 20m ./test/integration -v
