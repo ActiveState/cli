@@ -1,10 +1,10 @@
 name: Build-Test-Deploy
-"on":
+on:
   push:
     branches:
-    - master
+      - master
   pull_request:
-  - master
+    - master
 jobs:
 - build:
     name: Build
