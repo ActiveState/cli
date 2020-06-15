@@ -20,11 +20,11 @@ function IsWritable($path) {
 
     foreach ($item in $accessRules) {
         $aclSID = New-Object System.Security.Principal.SecurityIdentifier((New-Object System.Security.Principal.NTAccount($item.IdentityReference.ToString())).Translate([System.Security.Principal.SecurityIdentifier]))
-    
+
         # Check user permissions first
         if ($aclSID.Equals($userSID)) {
             if (($item.FileSystemRights.value__ -band $permWrite) -eq $permWrite) {
-                Write-Host "True"
+                Write-Output "True"
                 exit 0
             }
         }
@@ -45,14 +45,14 @@ function IsWritable($path) {
 
             if ($aclSID.ToString() -eq $groupSID.ToString()) {
                 if (($item.FileSystemRights.value__ -band $permWrite) -eq $permWrite) {
-                    Write-Host "True"
+                    Write-Output "True"
                     exit 0
                 }
             }
         }
     }
 
-    Write-Host "False"
+    Write-Output "False"
     exit 0
 }
 
