@@ -36,14 +36,14 @@ func IsExecutable(path string) bool {
 
 // IsWritable returns true if the given path is writable
 func IsWritable(path string) bool {
-	info, err := os.Stat(os.Args[1])
+	info, err := os.Stat(path)
 	if err != nil {
 		logging.Error("Could not stat path: %s, got error: %v", path, err)
 		return false
 	}
 
 	// Check if read-only bit is set
-	if info.Mode().Perm()&(0|1<<(uint(7))|1<<(uint(4))|1<<(uint(1))) == 0 {
+	if info.Mode().Perm()&(0222) == 0 {
 		return false
 	}
 

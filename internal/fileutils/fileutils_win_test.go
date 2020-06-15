@@ -4,6 +4,7 @@ package fileutils
 
 import (
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -68,6 +69,26 @@ func Test_IsWritable_Dir(t *testing.T) {
 	}
 
 	err = acl.Chmod(dir, 0444)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if IsWritable(dir) != false {
+		t.Fatal("Dir should no longer be writable")
+	}
+}
+
+func Test_IsWritable_ReadOnly(t *testing.T) {
+	dir, err := ioutil.TempDir("", t.Name())
+	if err != nil {
+		t.Error(err)
+	}
+
+	if IsWritable(dir) != true {
+		t.Fatal("Dir should be writable")
+	}
+
+	err = os.Chmod(dir, 0400)
 	if err != nil {
 		t.Error(err)
 	}
