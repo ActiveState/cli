@@ -7,13 +7,14 @@ namespace Status
         [CustomAction]
         public static ActionResult ResetProgress(Session session)
         {
+            session.Log("reset progress bar");
             return ProgressBar.Reset(session);
         }
     }
 
     public class ProgressBar
     {
-        public static string ticksString = "4";
+        public static string ticksString = "5";
         public static int ticks = 10000;
 
         public static ActionResult Reset(Session session)
@@ -28,18 +29,22 @@ namespace Status
             return ActionResult.Success;
         }
 
-        public static void StatusMessage(Session session, string status)
+        public static MessageResult StatusMessage(Session session, string status)
         {
             Record record = new Record(3);
             record[1] = "callAddProgressInfo";
             record[2] = status;
             record[3] = "Incrementing tick [1] of [2]";
 
-            session.Message(InstallMessage.ActionStart, record);
+            return session.Message(InstallMessage.ActionStart, record);
         }
 
         public static MessageResult Increment(Session session, int progressTicks)
         {
+            if (progressTicks > 0)
+            {
+                session.Log(string.Format("increment by {0}", progressTicks));
+            }
             var record = new Record(3);
             record[1] = 2; // "ProgressReport" message 
             record[2] = progressTicks.ToString(); // ticks to increment 

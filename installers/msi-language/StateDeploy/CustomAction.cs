@@ -2,58 +2,188 @@ using Microsoft.Deployment.WindowsInstaller;
 using System;
 using System.Text;
 using System.Diagnostics;
+using System.Threading;
+using System.IO;
+using System.Net;
+using System.Collections.ObjectModel;
 
 namespace StateDeploy
 {
     public class CustomActions
     {
-        [CustomAction]
-        public static ActionResult StateDeploy(Session session)
+        public static ActionResult InstallStateTool(Session session, ref string stateToolPath)
         {
-            session.Log("Starting state deploy");
-
-            Status.ProgressBar.StatusMessage(session, string.Format("Deploying project {0}...", session.CustomActionData["PROJECT_NAME"]));
-            MessageResult incrementResult = Status.ProgressBar.Increment(session, 3);
-            if (incrementResult == MessageResult.Cancel)
+            session.Log("Installing State Tool if necessary");
+            if (session.CustomActionData["STATE_TOOL_INSTALLED"] == "true")
             {
-                return ActionResult.UserExit;
+                stateToolPath = session.CustomActionData["STATE_TOOL_PATH"];
+                session.Log("State Tool is installed, no installation required");
+                Status.ProgressBar.Increment(session, 1);
+                return ActionResult.Success;
             }
 
-            string deployCmd = BuildDeployCmd(session);
-            session.Log(string.Format("Executing deploy command: {0}", deployCmd));
+            string tempDir = Path.GetTempPath();
+            string scriptPath = Path.Combine(tempDir, "install.ps1");
+            string installPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ActiveState", "bin");
+
+            Status.ProgressBar.StatusMessage(session, "Installing State Tool...");
+
+            ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
             try
             {
-                ProcessStartInfo procStartInfo = new ProcessStartInfo("cmd", "/c " + deployCmd);
+                WebClient client = new WebClient();
+                client.DownloadFile("https://platform.activestate.com/dl/cli/install.ps1", scriptPath);
+            }
+            catch (WebException e)
+            {
+                session.Log(string.Format("Encoutered exception downloading file: {0}", e.ToString()));
+                return ActionResult.Failure;
+            }
+
+            string installCmd = string.Format("powershell \"{0} -n -t {1}\"", scriptPath, installPath);
+            session.Log(string.Format("Running install command: {0}", installCmd));
+            
+            ActionResult result = RunCommand(session, installCmd);
+            if (result.Equals(ActionResult.UserExit))
+            {
+                result = Uninstall.Remove.InstallDir(session, installPath);
+                if (result.Equals(ActionResult.Failure))
+                {
+                    session.Log("Could not remove installation directory");
+                    return ActionResult.Failure;
+                }
+
+                result = Uninstall.Remove.EnvironmentEntries(session, installPath);
+                if (result.Equals(ActionResult.Failure))
+                {
+                    session.Log("Could not remove environment entries");
+                    return ActionResult.Failure;
+                }
+                return ActionResult.UserExit;
+            }
+            Status.ProgressBar.Increment(session, 1);
+
+            stateToolPath = Path.Combine(installPath, "state.exe");
+            return result;
+        }
+
+        private static ActionResult RunCommand(Session session, string cmd)
+        {
+            try
+            {
+                ProcessStartInfo procStartInfo = new ProcessStartInfo("cmd", "/c " + cmd);
 
                 // The following commands are needed to redirect the standard output.
                 // This means that it will be redirected to the Process.StandardOutput StreamReader.
-
-                // NOTE: Due to progress bar changes in the State Tool we can no longer redirect stdout
-                // and strerr output. Once we have a non-interactive mode in the State Tool these lines
-                // can be enabled
                 procStartInfo.RedirectStandardOutput = true;
-                //procStartInfo.RedirectStandardError = true;
-
+                procStartInfo.RedirectStandardError = true;
                 procStartInfo.UseShellExecute = false;
                 // Do not create the black window.
                 procStartInfo.CreateNoWindow = true;
 
                 Process proc = new Process();
                 proc.StartInfo = procStartInfo;
+
+                proc.OutputDataReceived += new DataReceivedEventHandler((sender, e) =>
+                {
+                    // Prepend line numbers to each line of the output.
+                    if (!String.IsNullOrEmpty(e.Data))
+                    {
+                        session.Log("out: " + e.Data);
+                    }
+                });
+                proc.ErrorDataReceived += new DataReceivedEventHandler((sender, e) =>
+                {
+                    // Prepend line numbers to each line of the output.
+                    if (!String.IsNullOrEmpty(e.Data))
+                    {
+                        session.Log("err: " + e.Data);
+                    }
+                });
                 proc.Start();
+
+                // Asynchronously read the standard output and standard error of the spawned process.
+                // This raises OutputDataReceived/ErrorDataReceived events for each line of output/errors.
+                proc.BeginOutputReadLine();
+                proc.BeginErrorReadLine();
 
                 while (!proc.HasExited)
                 {
                     try
                     {
+                        // This is just hear to throw an InstallCanceled Exception if necessary
                         Status.ProgressBar.Increment(session, 0);
-                        System.Threading.Thread.Sleep(200);
-                    } catch (InstallCanceledException)
+                        Thread.Sleep(200);
+                    }
+                    catch (InstallCanceledException)
                     {
-                        session.Log("Caught install canceled exception");
-
+                        session.Log("Caught install cancelled exception");
                         ActiveState.Process.KillProcessAndChildren(proc.Id);
+                        return ActionResult.UserExit;
+                    }
+                }
+                proc.WaitForExit();
 
+                proc.Close();
+            }
+            catch (Exception objException)
+            {
+                session.Log(string.Format("Caught exception: {0}", objException));
+                return ActionResult.Failure;
+            }
+            return ActionResult.Success;
+        }
+
+        public struct InstallSequenceElement
+        {
+            public readonly string SubCommand;
+            public readonly string Description;
+
+            public InstallSequenceElement(string subCommand, string description)
+            {
+                this.SubCommand = subCommand;
+                this.Description = description;
+            }
+        };
+
+
+        [CustomAction]
+        public static ActionResult StateDeploy(Session session)
+        {
+            string stateToolPath = "";
+            var res = InstallStateTool(session, ref stateToolPath);
+            if (res != ActionResult.Success) {
+                return res;
+            }
+            session.Log("Starting state deploy with state tool at " + stateToolPath);
+
+            Status.ProgressBar.StatusMessage(session, string.Format("Deploying project {0}...", session.CustomActionData["PROJECT_NAME"]));
+            MessageResult statusResult = Status.ProgressBar.StatusMessage(session, "Preparing deployment of ActivePerl...");
+            if (statusResult == MessageResult.Cancel)
+            {
+                return ActionResult.UserExit;
+            }
+
+            var sequence = new ReadOnlyCollection<InstallSequenceElement>(
+                new[]
+                {
+                    new InstallSequenceElement("install", "Installing ActivePerl"),
+                    new InstallSequenceElement("configure", "Updating system environment"),
+                    new InstallSequenceElement("symlink", "Creating symlink directory"),
+                });
+
+            try
+            {
+                foreach (var seq in sequence)
+                {
+                    string deployCmd = BuildDeployCmd(session, seq.SubCommand, stateToolPath);
+                    session.Log(string.Format("Executing deploy command: {0}", deployCmd));
+
+                    Status.ProgressBar.Increment(session, 1);
+                    Status.ProgressBar.StatusMessage(session, seq.Description);
+                    var runResult = RunCommand(session, deployCmd);
+                    if (runResult == ActionResult.UserExit)
+                    {
                         ActionResult result = Uninstall.Remove.InstallDir(session, session.CustomActionData["INSTALLDIR"]);
                         if (result.Equals(ActionResult.Failure))
                         {
@@ -69,17 +199,10 @@ namespace StateDeploy
                         }
                         return ActionResult.UserExit;
                     }
-                }
-                
-                // NOTE: See comment above re: progress bar. Can enable these lines once State Tool
-                // is updated
-                session.Log(string.Format("Standard output: {0}", proc.StandardOutput.ReadToEnd()));
-                //session.Log(string.Format("Standard error: {0}", proc.StandardError.ReadToEnd()));
-
-                if (proc.ExitCode != 0)
-                {
-                    session.Log(string.Format("Process exited with code: {0}", proc.ExitCode));
-                    return ActionResult.Failure;
+                    else if (runResult != ActionResult.Success)
+                    {
+                        return runResult;
+                    }
                 }
             }
             catch (Exception objException)
@@ -88,16 +211,17 @@ namespace StateDeploy
                 return ActionResult.Failure;
             }
 
+            Status.ProgressBar.Increment(session, 1);
             return ActionResult.Success;
         }
 
-        private static string BuildDeployCmd(Session session)
+        private static string BuildDeployCmd(Session session, string subCommand, string stateToolPath)
         {
             string installDir = session.CustomActionData["INSTALLDIR"];
             string projectName = session.CustomActionData["PROJECT_NAME"];
             string isModify = session.CustomActionData["IS_MODIFY"];
 
-            StringBuilder deployCMDBuilder = new StringBuilder(session.CustomActionData["STATE_TOOL_PATH"] + " deploy");
+            StringBuilder deployCMDBuilder = new StringBuilder(stateToolPath + " deploy " + subCommand);
             if (isModify == "true")
             {
                 deployCMDBuilder.Append(" --force");
