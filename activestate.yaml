@@ -23,6 +23,7 @@ scripts:
   - name: preprocess
     description: Generates assets required by the project that aren't just specific to the build
     value: |
+      set -e
       if ! type "packr" &> /dev/null; then
         echo "packr was not found on your PATH, installing .."
         pushd ~
@@ -35,17 +36,20 @@ scripts:
   - name: build
     description: Builds the project with the host OS as the target OS.
     value: |
+      set -e
       $scripts.preprocess
       go build -tags "$GO_BUILD_TAGS" -o $constants.BUILD_TARGET $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
   - name: build-for
     description: Builds the project with the specified OS as the target OS. (valid values darwin, linux, windows)
     value: |
+      set -e
       $scripts.preprocess
       export GOOS=${1}
       go build -tags "internal $GO_BUILD_TAGS" -o $constants.BUILD_TARGET $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
   - name: generate-update
     description: Generate update files
     value: |
+      set -e
       $scripts.preprocess
       mkdir -p public/update
       go run scripts/update-generator/main.go -o public/update $constants.BUILD_TARGET
@@ -59,6 +63,7 @@ scripts:
     constraints:
       os: linux,macos
     value: |
+      set -e
       go run scripts/s3-deployer/main.go public/update ca-central-1 cli-update update/state
       go run scripts/s3-deployer/main.go public/install.sh ca-central-1 cli-update update/state/install.sh
   - name: deploy-updates
@@ -66,6 +71,7 @@ scripts:
     constraints:
       os: windows
     value: |
+      set -e
       go run scripts/s3-deployer/main.go public/update ca-central-1 cli-update update/state
       go run scripts/s3-deployer/main.go public/install.ps1 ca-central-1 cli-update update/state/install.ps1
   - name: generate-api-client
