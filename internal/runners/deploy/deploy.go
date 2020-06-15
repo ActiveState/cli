@@ -6,6 +6,7 @@ import (
 	rt "runtime"
 	"strings"
 
+	"github.com/gobuffalo/packr"
 	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/config"
@@ -130,7 +131,7 @@ func runStepsWithFuncs(targetPath string, force, userScope bool, step Step, inst
 				return errs.Wrap(fail, "Could not retrieve env for Configure step")
 			}
 		}
-		if err := configuref(envGetter, out, userScope); err != nil {
+		if err := configuref(targetPath, envGetter, out, userScope); err != nil {
 			return err
 		}
 		if step == UnsetStep {
@@ -158,7 +159,7 @@ func runStepsWithFuncs(targetPath string, force, userScope bool, step Step, inst
 				return errs.Wrap(fail, "Could not retrieve env for Report step")
 			}
 		}
-		if err := reportf(envGetter, out); err != nil {
+		if err := reportf(targetPath, envGetter, out); err != nil {
 			return err
 		}
 	}
@@ -181,9 +182,9 @@ func install(installer installable, out output.Outputer) (runtime.EnvGetter, err
 	return envGetter, nil
 }
 
-type configureFunc func(envGetter runtime.EnvGetter, out output.Outputer, userScope bool) error
+type configureFunc func(path string, envGetter runtime.EnvGetter, out output.Outputer, userScope bool) error
 
-func configure(envGetter runtime.EnvGetter, out output.Outputer, userScope bool) error {
+func configure(path string, envGetter runtime.EnvGetter, out output.Outputer, userScope bool) error {
 	venv := virtualenvironment.New(envGetter.GetEnv)
 	env, err := venv.GetEnv(false, "")
 	if err != nil {
@@ -200,6 +201,15 @@ func configure(envGetter runtime.EnvGetter, out output.Outputer, userScope bool)
 	fail = sshell.WriteUserEnv(env, userScope)
 	if fail != nil {
 		return locale.WrapError(fail, "err_deploy_subshell_write", "Could not write environment information to your shell configuration.")
+	}
+
+	if rt.GOOS == "windows" {
+		box := packr.NewBox("../../../assets/scripts")
+		contents := box.Bytes("setenv.bat")
+		fail = fileutils.WriteFile(filepath.Join(path, "setenv.bat"), contents)
+		if fail != nil {
+			return locale.WrapError(err, "err_deploy_write_setenv", "Could not create setenv batch scriptfile at path: %s", path)
+		}
 	}
 
 	return nil
@@ -403,9 +413,9 @@ type Report struct {
 	Environment       map[string]string
 }
 
-type reportFunc func(envGetter runtime.EnvGetter, out output.Outputer) error
+type reportFunc func(path string, envGetter runtime.EnvGetter, out output.Outputer) error
 
-func report(envGetter runtime.EnvGetter, out output.Outputer) error {
+func report(path string, envGetter runtime.EnvGetter, out output.Outputer) error {
 	venv := virtualenvironment.New(envGetter.GetEnv)
 	env, err := venv.GetEnv(false, "")
 	if err != nil {
@@ -426,7 +436,7 @@ func report(envGetter runtime.EnvGetter, out output.Outputer) error {
 	})
 
 	if rt.GOOS == "windows" {
-		out.Notice(locale.T("deploy_restart_cmd"))
+		out.Notice(locale.Tr("deploy_restart_cmd", filepath.Join(path, "setenv.bat")))
 	} else {
 		out.Notice(locale.T("deploy_restart_shell"))
 	}
