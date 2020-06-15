@@ -46,6 +46,7 @@ require (
 	github.com/gorilla/websocket v1.4.0
 	github.com/hashicorp/go-version v1.1.0
 	github.com/hashicorp/hcl v0.0.0-20171017181929-23c074d0eceb // indirect
+	github.com/hectane/go-acl v0.0.0-20190604041725-da78bae5fc95
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/jarcoal/httpmock v1.0.3
 	github.com/jessevdk/go-flags v1.4.0

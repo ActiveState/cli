@@ -15,8 +15,6 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/google/uuid"
-
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
@@ -746,20 +744,6 @@ func HomeDir() (string, error) {
 	}
 
 	return usr.HomeDir, nil
-}
-
-// IsWritable returns true if the given path is writable
-func IsWritable(path string) bool {
-	fpath := filepath.Join(path, uuid.New().String())
-	if fail := Touch(fpath); fail != nil {
-		return false
-	}
-
-	if errr := os.Remove(fpath); errr != nil {
-		return false
-	}
-
-	return true
 }
 
 // IsDir returns true if the given path is a directory
