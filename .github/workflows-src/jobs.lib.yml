@@ -1,4 +1,4 @@
-#@ load("steps.lib.yml", "steps_build", "steps_genupdate", "steps_installgo", "steps_installstate", "steps_inttest")
+#@ load("steps.lib.yml", "steps_preprocess", "steps_build", "steps_genupdate", "steps_installgo", "steps_installstate", "steps_inttest")
 
 strategy: &strategy
   matrix:
@@ -33,6 +33,7 @@ steps:
     uses: actions/checkout@v2
   - #@ steps_installgo()
   - #@ steps_installstate()
+  - #@ steps_preprocess()
   - name: "Unit Tests"
     run: "go test -v -covermode=atomic -coverprofile=c.out `$GOROOT/bin/go list ./... | grep -v api | grep -v integration | grep -v expect`"
 #@ end

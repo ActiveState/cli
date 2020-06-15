@@ -60,6 +60,8 @@ jobs:
       run: |
         ./public/install.sh -n -b master
         echo "::add-path::$HOME/.local/bin"
+    - name: Preprocess
+      run: state run preprocess
     - name: Unit Tests
       run: go test -v -covermode=atomic -coverprofile=c.out `$GOROOT/bin/go list ./...
         | grep -v api | grep -v integration | grep -v expect`

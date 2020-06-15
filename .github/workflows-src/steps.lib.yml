@@ -28,6 +28,11 @@ run: |
   echo "::add-path::$HOME/.local/bin"
 #@ end
 ---
+#@ def steps_preprocess():
+name: "Preprocess"
+run: state run preprocess
+#@ end
+---
 #@ def steps_inttest():
 name: "Integration Tests"
 run: go test -timeout 20m ./test/integration -v
