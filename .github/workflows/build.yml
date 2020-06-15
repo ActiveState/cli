@@ -1,67 +1,65 @@
 name: Build-Test-Deploy
-
-on:
+"on":
   push:
     branches:
-      - master
-  pull_request:
-
+    - master
+  pull_request: null
 jobs:
-  - build:
-      name: Build
-      strategy:
-        matrix:
-          go-version:
-            - 1.13.x
-          platform:
-            - ubuntu-latest
-      runs-on: ${{ matrix.platform }}
-      env:
-        ACTIVESTATE_CLI_DISABLE_RUNTIME: true
-        GOFLAGS: -mod=vendor
-      steps:
-        - name: Checkout code
-          uses: actions/checkout@v2
-        - name: Install Go
-          uses: actions/setup-go@v2
-          with:
-            go-version: ${{ matrix.go-version }}
-        - name: Install State Tool
-          run: |
-            ./public/install.sh -n -b master
-            echo "::add-path::$HOME/.local/bin"
-        - name: Build
-          run: |
-            BRANCH=$(git rev-parse --abbrev-ref HEAD)
-            if [[ "$BRANCH" == "master" ]]; then
-            export BRANCH_OVERRIDE=unstable
-            fi
-            state run build
-        - name: Generate Update
-          run: state run generate-update
-  - unit-test:
-      name: Unit Test
-      strategy:
-        matrix:
-          go-version:
-            - 1.13.x
-          platform:
-            - ubuntu-latest
-      runs-on: ${{ matrix.platform }}
-      env:
-        ACTIVESTATE_CLI_DISABLE_RUNTIME: true
-        GOFLAGS: -mod=vendor
-      steps:
-        - name: Checkout code
-          uses: actions/checkout@v2
-        - name: Install Go
-          uses: actions/setup-go@v2
-          with:
-            go-version: ${{ matrix.go-version }}
-        - name: Install State Tool
-          run: |
-            ./public/install.sh -n -b master
-            echo "::add-path::$HOME/.local/bin"
-        - name: Unit Tests
-          run: go test -v -covermode=atomic -coverprofile=c.out `$GOROOT/bin/go list ./...
-            | grep -v api | grep -v integration | grep -v expect`
+  build:
+    name: Build
+    strategy:
+      matrix:
+        go-version:
+        - 1.13.x
+        platform:
+        - ubuntu-latest
+    runs-on: ${{ matrix.platform }}
+    env:
+      ACTIVESTATE_CLI_DISABLE_RUNTIME: true
+      GOFLAGS: -mod=vendor
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - name: Install Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: ${{ matrix.go-version }}
+    - name: Install State Tool
+      run: |
+        ./public/install.sh -n -b master
+        echo "::add-path::$HOME/.local/bin"
+    - name: Build
+      run: |
+        BRANCH=$(git rev-parse --abbrev-ref HEAD)
+        if [[ "$BRANCH" == "master" ]]; then
+        export BRANCH_OVERRIDE=unstable
+        fi
+        state run build
+    - name: Generate Update
+      run: state run generate-update
+  unittest:
+    name: Unit Test
+    strategy:
+      matrix:
+        go-version:
+        - 1.13.x
+        platform:
+        - ubuntu-latest
+    runs-on: ${{ matrix.platform }}
+    env:
+      ACTIVESTATE_CLI_DISABLE_RUNTIME: true
+      GOFLAGS: -mod=vendor
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - name: Install Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: ${{ matrix.go-version }}
+    - name: Install State Tool
+      run: |
+        ./public/install.sh -n -b master
+        echo "::add-path::$HOME/.local/bin"
+    - name: Unit Tests
+      run: go test -v -covermode=atomic -coverprofile=c.out `$GOROOT/bin/go list ./...
+        | grep -v api | grep -v integration | grep -v expect`

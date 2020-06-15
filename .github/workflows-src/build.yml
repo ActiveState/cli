@@ -6,8 +6,7 @@ name: Build-Test-Deploy
     branches:
       - master
   pull_request:
-    - master
 
 jobs:
-  - #@ jobs_build()
-  - #@ jobs_unittest()
+  build: #@ jobs_build()
+  unittest: #@ jobs_unittest()

@@ -10,46 +10,43 @@ env: &env
   GOFLAGS: -mod=vendor
 
 #@ def jobs_build():
-build:
-  name: Build
-  strategy: *strategy
-  runs-on: *runs-on
-  env: *env
-  steps:
-    - name: "Checkout code"
-      uses: actions/checkout@v2
-    - #@ steps_installgo()
-    - #@ steps_installstate()
-    - #@ steps_build()
-    - #@ steps_genupdate()
+name: Build
+strategy: *strategy
+runs-on: *runs-on
+env: *env
+steps:
+  - name: "Checkout code"
+    uses: actions/checkout@v2
+  - #@ steps_installgo()
+  - #@ steps_installstate()
+  - #@ steps_build()
+  - #@ steps_genupdate()
 #@ end
 
 #@ def jobs_unittest():
-unit-test:
-  name: "Unit Test"
-  strategy: *strategy
-  runs-on: *runs-on
-  env: *env
-  steps:
-    - name: "Checkout code"
-      uses: actions/checkout@v2
-    - #@ steps_installgo()
-    - #@ steps_installstate()
-    - name: "Unit Tests"
-      run: "go test -v -covermode=atomic -coverprofile=c.out `$GOROOT/bin/go list ./... | grep -v api | grep -v integration | grep -v expect`"
+name: "Unit Test"
+strategy: *strategy
+runs-on: *runs-on
+env: *env
+steps:
+  - name: "Checkout code"
+    uses: actions/checkout@v2
+  - #@ steps_installgo()
+  - #@ steps_installstate()
+  - name: "Unit Tests"
+    run: "go test -v -covermode=atomic -coverprofile=c.out `$GOROOT/bin/go list ./... | grep -v api | grep -v integration | grep -v expect`"
 #@ end
 
 #@ def jobs_inttest():
-build:
-  name: "Integration Test"
-  strategy: *strategy
-  runs-on: *runs-on
-  env: *env
-  steps:
-    - name: "Checkout code"
-      uses: actions/checkout@v2
-    - #@ steps_installgo()
-    - #@ steps_installstate()
-    - #@ steps_build()
-    - #@ steps_inttest()
+name: "Integration Test"
+strategy: *strategy
+runs-on: *runs-on
+env: *env
+steps:
+  - name: "Checkout code"
+    uses: actions/checkout@v2
+  - #@ steps_installgo()
+  - #@ steps_installstate()
+  - #@ steps_build()
+  - #@ steps_inttest()
 #@ end

@@ -5,4 +5,5 @@ name: "Integration Test"
   schedule:
     - cron: "0 0 * * *"
 
-jobs: #@ jobs_inttest()
+jobs:
+  inttest: #@ jobs_inttest()
