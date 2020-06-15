@@ -23,6 +23,12 @@ scripts:
   - name: preprocess
     description: Generates assets required by the project that aren't just specific to the build
     value: |
+      if ! type "packr" &> /dev/null; then
+        echo "packr was not found on your PATH, installing .."
+        pushd ~
+        go get -u github.com/gobuffalo/packr/...
+        popd
+      fi
       $constants.SET_ENV
       packr
       go run scripts/constants-generator/main.go -- internal/constants/generated.go
@@ -164,12 +170,6 @@ events:
       fi
       $scripts.preprocess
       git config core.hooksPath .githooks
-      if ! type "packr" &> /dev/null; then
-        echo "packr was not found on your PATH, installing .."
-        pushd ~
-        go get -u github.com/gobuffalo/packr/...
-        popd
-      fi
       if ! type "swagger" &> /dev/null; then
         echo "swagger was not found on your PATH, installing .."
         pushd ~
