@@ -68,10 +68,10 @@ func IsWritable(path string) bool {
 	output := strings.TrimSpace(string(bytes))
 	if output != "True" {
 		logging.Debug("Path %s is not writable, got output: %s", path, output)
-		return true
+		return false
 	}
 
-	return false
+	return true
 }
 
 func isWritableTempFile(path string) bool {
