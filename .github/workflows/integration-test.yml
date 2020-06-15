@@ -1,7 +1,9 @@
 name: Integration Test
+
 on:
   schedule:
     - cron: 0 0 * * *
+
 jobs:
   build:
     name: Integration Test
