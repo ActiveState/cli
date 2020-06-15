@@ -14,10 +14,13 @@ import (
 	"github.com/kardianos/osext"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -43,12 +46,19 @@ type Updater struct {
 	CurrentVersion string // Currently running version.
 	APIURL         string // Base URL for API requests (json files).
 	CmdName        string // Command name is appended to the APIURL like http://apiurl/CmdName/. This represents one binary.
-	Dir            string // Directory to store selfupdate state.
 	ForceCheck     bool   // Check for update regardless of cktime timestamp
 	DesiredBranch  string
 	DesiredVersion string
 	info           Info
 	Requester      Requester
+}
+
+func New(currentVersion string) *Updater {
+	return &Updater{
+		CurrentVersion: currentVersion,
+		APIURL:         constants.APIUpdateURL,
+		CmdName:        constants.CommandName,
+	}
 }
 
 // Info reports updater.info, but only if we have an actual update
@@ -90,7 +100,6 @@ func PrintUpdateMessage(pjPath string) {
 	up := Updater{
 		CurrentVersion: constants.Version,
 		APIURL:         constants.APIUpdateURL,
-		Dir:            constants.UpdateStorageDir,
 		CmdName:        constants.CommandName,
 	}
 
@@ -119,20 +128,12 @@ func (u *Updater) Download(path string) error {
 }
 
 // Run starts the update check and apply cycle.
-func (u *Updater) Run() error {
+func (u *Updater) Run(out output.Outputer) error {
 	if !u.CanUpdate() {
 		return failures.FailNotFound.New("No update available")
 	}
 
-	dir, err := u.getExecRelativeDir(u.Dir)
-	if err != nil {
-		return err
-	}
-
-	if err := os.MkdirAll(dir, 0777); err != nil {
-		return err
-	}
-	return u.update()
+	return u.update(out)
 }
 
 // getExecRelativeDir relativizes the directory to store selfupdate state
@@ -168,10 +169,27 @@ func (u *Updater) download(path string) error {
 }
 
 // update performs the actual update of the executable
-func (u *Updater) update() error {
+func (u *Updater) update(out output.Outputer) error {
 	path, err := osext.Executable()
 	if err != nil {
 		return err
+	}
+
+	// Synchronize the update process between state tool instances by acquiring a lock file
+	lockFile := filepath.Join(filepath.Dir(path), fmt.Sprintf(".%s.update-lock", "state"))
+	logging.Debug("Attempting to open lock file at %s", lockFile)
+	pl, err := osutils.NewPidLock(lockFile)
+	if err != nil {
+		return errs.Wrap(err, "could not create pid lock file for update process")
+	}
+	defer pl.Close()
+
+	// This will succeed for only one of several concurrently state tool
+	// instances. By returning otherwise, we preventing that we download the
+	// same new state tool version several times.
+	_, err = pl.TryLock()
+	if err != nil {
+		return errs.Wrap(err, "failed to acquire lock for update process")
 	}
 
 	logging.Debug("Attempting to open executable path at: %s", path)
@@ -189,6 +207,8 @@ func (u *Updater) update() error {
 		logging.Debug("Already at latest version :)")
 		return nil
 	}
+
+	out.Notice(locale.T("update_attempt"))
 	bin, err := u.fetchAndVerifyFullBin()
 	if err != nil {
 		return err
@@ -346,7 +366,7 @@ func cleanOld() error {
 	if err != nil {
 		return err
 	}
-	oldFile := filepath.Join(path, ".%s.old")
+	oldFile := filepath.Join(filepath.Dir(path), fmt.Sprintf(".%s.old", "state"))
 
 	if !fileutils.FileExists(oldFile) {
 		return nil

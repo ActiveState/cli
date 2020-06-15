@@ -118,23 +118,23 @@ func (suite *AlternativeRuntimeTestSuite) Test_GetEnv() {
 
 	suite.Assert().False(fileutils.FileExists(mergedFilePath))
 	// installation complete marker is missing
-	env, fail := ar.GetEnv(true, "")
-	suite.Require().Error(fail.ToError(), "installation complete marker is missing")
+	env, err := ar.GetEnv(true, "")
+	suite.Require().Error(err, "installation complete marker is missing")
 
-	err := ar.PostInstall()
+	err = ar.PostInstall()
 	suite.Require().NoError(err, "merged runtime environment definition is created")
 	suite.Assert().True(fileutils.FileExists(mergedFilePath))
 
-	env, fail = ar.GetEnv(true, "")
-	suite.Require().NoError(fail.ToError())
+	env, err = ar.GetEnv(true, "")
+	suite.Require().NoError(err)
 
 	suite.Assert().Equal(expectedEnv, env)
 	err = os.Remove(firstEnvDefPath)
 	suite.Assert().NoError(err, "removing cached runtime definition file for first artifact")
 
 	// This should still work, as we have cached the merged result by now
-	env, fail = ar.GetEnv(true, "")
-	suite.Require().NoError(fail.ToError())
+	env, err = ar.GetEnv(true, "")
+	suite.Require().NoError(err)
 	suite.Assert().Equal(expectedEnv, env)
 }
 

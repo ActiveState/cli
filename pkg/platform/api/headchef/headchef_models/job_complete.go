@@ -8,9 +8,8 @@ package headchef_models
 import (
 	"encoding/json"
 
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
@@ -18,6 +17,7 @@ import (
 // JobComplete JobComplete
 //
 // A Job reports status details from the scheduler API.
+//
 // swagger:model jobComplete
 type JobComplete struct {
 

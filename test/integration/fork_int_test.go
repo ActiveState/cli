@@ -4,8 +4,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 )
 
 type ForkIntegrationTestSuite struct {
@@ -19,6 +20,22 @@ func (suite *ForkIntegrationTestSuite) cleanup(ts *e2e.Session) {
 	ts.Close()
 }
 
+func (suite *ForkIntegrationTestSuite) TestFork() {
+	ts := e2e.New(suite.T(), false)
+	defer suite.cleanup(ts)
+
+	username := ts.CreateNewUser()
+
+	cp := ts.Spawn("fork", "ActiveState-CLI/Python3", "--name", "Test-Python3", "--org", username)
+	cp.Expect("fork has been successfully created")
+	cp.ExpectExitCode(0)
+
+	// Check if we error out on conflicts properly
+	cp = ts.Spawn("fork", "ActiveState-CLI/Python3", "--name", "Test-Python3", "--org", username, "--output", "editor.v0")
+	cp.Expect(`Could not create project`)
+	cp.ExpectExitCode(1)
+}
+
 func (suite *ForkIntegrationTestSuite) TestFork_FailNameExists() {
 	ts := e2e.New(suite.T(), false)
 	defer suite.cleanup(ts)
@@ -28,8 +45,8 @@ func (suite *ForkIntegrationTestSuite) TestFork_FailNameExists() {
 		e2e.WithArgs("fork", "ActiveState-CLI/Python3", "--org", e2e.PersistentUsername),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Could not create the forked project", 30*time.Second)
-	cp.Expect("The name 'Python3' is no longer available, it was used in a now deleted project.", 30*time.Second)
+	cp.Expect("Could not create project:", 30*time.Second)
+	cp.Expect("You already have a project with the name 'Python3'.", 30*time.Second)
 	cp.ExpectNotExitCode(0)
 	suite.NotContains(cp.TrimmedSnapshot(), "Successfully forked project")
 }

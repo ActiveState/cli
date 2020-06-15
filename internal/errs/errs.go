@@ -63,7 +63,7 @@ func Wrap(wrapTarget error, message string, args ...interface{}) error {
 // Join all error messages in the Unwrap stack
 func Join(err error, sep string) error {
 	var message []string
-	for ! errIsNil(err) {
+	for !errIsNil(err) {
 		message = append(message, err.Error())
 		err = errors.Unwrap(err)
 	}
@@ -74,11 +74,20 @@ func Join(err error, sep string) error {
 func errIsNil(err error) bool {
 	if fail, ok := err.(*failures.Failure); ok && fail == nil && err != nil {
 		logging.Error("MUST FIX: nil failure is being passed as non-nil error, os.Args: %v", os.Args)
-		if ! rtutils.BuiltViaCI {
+		if !rtutils.BuiltViaCI {
 			// Ensure we don't miss this while testing locally
 			print.Error("MUST FIX: nil failure is being passed as non-nil error")
 		}
 		return true
 	}
 	return err == nil
+}
+
+// InnerError unwraps wrapped error messages
+func InnerError(err error) error {
+	unwrapped := errors.Unwrap(err)
+	if unwrapped != nil {
+		return InnerError(unwrapped)
+	}
+	return err
 }

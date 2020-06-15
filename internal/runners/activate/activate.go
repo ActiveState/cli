@@ -1,14 +1,17 @@
 package activate
 
 import (
+	"fmt"
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/pkg/cmdlets/commands"
+	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -16,18 +19,19 @@ import (
 type Activate struct {
 	namespaceSelect  namespaceSelectAble
 	activateCheckout CheckoutAble
+	out              output.Outputer
 }
 
 type ActivateParams struct {
 	Namespace     *project.Namespaced
 	PreferredPath string
-	Output        string
 }
 
-func NewActivate(namespaceSelect namespaceSelectAble, activateCheckout CheckoutAble) *Activate {
+func NewActivate(out output.Outputer, namespaceSelect namespaceSelectAble, activateCheckout CheckoutAble) *Activate {
 	return &Activate{
 		namespaceSelect,
 		activateCheckout,
+		out,
 	}
 }
 
@@ -67,16 +71,26 @@ func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc)
 		}
 	}
 
-	if params.Output != "" {
-		output := commands.Output(params.Output)
-		if output == commands.JSON || output == commands.EditorV0 {
-			return activateOutput(targetPath, output)
-		}
-	}
-
 	go sendProjectIDToAnalytics(params.Namespace, filepath.Join(targetPath, constants.ConfigFileName))
 
-	return activatorLoop(targetPath, activate)
+	// If we're not using plain output then we should just dump the environment information
+	if r.out.Type() != output.PlainFormatName {
+		venv := virtualenvironment.Get()
+		if fail := venv.Activate(); fail != nil {
+			return locale.WrapError(fail.ToError(), "error_could_not_activate_venv", "Could not activate project. If this is a private project ensure that you are authenticated.")
+		}
+		env, err := venv.GetEnv(false, targetPath)
+		if err != nil {
+			return locale.WrapError(err, "err_activate_getenv", "Could not build environment for your runtime environment.")
+		}
+		if r.out.Type() == output.EditorV0FormatName {
+			fmt.Println("[activated-JSON]")
+		}
+		r.out.Print(env)
+		return nil
+	}
+
+	return activatorLoop(r.out, targetPath, activate)
 }
 
 func (r *Activate) setupPath(namespace string, preferredPath string) (string, error) {

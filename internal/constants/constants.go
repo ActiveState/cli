@@ -87,9 +87,6 @@ const ArtifactFile = "artifact.json"
 // ArtifactArchiveName is the standardized name of an artifact archive
 const ArtifactArchiveName = "artifact.tar.gz"
 
-// UpdateStorageDir is the directory where updates will be stored
-const UpdateStorageDir = "update/"
-
 // DefaultNamespaceDomain is the domain used when no namespace is given and one has to be constructed
 const DefaultNamespaceDomain = "github.com"
 

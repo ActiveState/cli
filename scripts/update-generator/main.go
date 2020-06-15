@@ -26,7 +26,7 @@ import (
 
 var exit = os.Exit
 
-var appPath, version, increment, genDir, defaultPlatform, branch string
+var appPath, version, genDir, defaultPlatform, branch string
 
 var outputDirFlag, platformFlag, branchFlag *string
 
@@ -114,32 +114,7 @@ func createUpdate(path string, platform string) {
 		panic(err)
 	}
 
-	createIncrement(increment)
-
 	copy(jsonPath, filepath.Join(genDir, branch, version, platform+".json"))
-}
-
-func createIncrement(increment string) {
-	v := struct {
-		Increment string
-	}{increment}
-
-	b, err := json.MarshalIndent(v, "", "    ")
-	if err != nil {
-		fmt.Println("error:", err)
-	}
-
-	err = os.MkdirAll(filepath.Join(genDir, "versions", branch), 0755)
-	if err != nil {
-		log.Fatalf("could not create versions directory: %v", err)
-	}
-
-	jsonPath := filepath.Join(genDir, "versions", branch, "version.json")
-	fmt.Printf("Creating %s\n", jsonPath)
-	err = ioutil.WriteFile(jsonPath, b, 0755)
-	if err != nil {
-		panic(err)
-	}
 }
 
 func createGzip(path string, target string) {
@@ -233,13 +208,6 @@ func run() {
 		version = flag.Arg(1)
 		if flag.Arg(1) == "" {
 			version = constants.Version
-		}
-	}
-
-	if increment == "" {
-		increment = flag.Arg(2)
-		if flag.Arg(2) == "" {
-			increment = constants.IncrementString
 		}
 	}
 

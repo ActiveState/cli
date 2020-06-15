@@ -4,16 +4,24 @@ import (
 	"os"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/constants/version"
 	depMock "github.com/ActiveState/cli/internal/deprecation/mock"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
+	"github.com/spf13/viper"
 
 	"github.com/stretchr/testify/suite"
 )
 
 type MainTestSuite struct {
 	suite.Suite
+}
+
+func (suite *MainTestSuite) AfterTest(suiteName, testName string) {
+	// Reset viper config so deprecation mock is always used
+	viper.Reset()
 }
 
 func (suite *MainTestSuite) TestDeprecated() {
@@ -25,7 +33,10 @@ func (suite *MainTestSuite) TestDeprecated() {
 	exitCode, err := run([]string{""}, catcher.Outputer)
 	suite.Require().NoError(err)
 	suite.Require().Equal(0, exitCode, "Should exit with code 0, output: %s", catcher.CombinedOutput())
-	suite.Require().Contains(catcher.Output(), output.StripColorCodes(locale.Tr("warn_deprecation", "")[0:50]))
+
+	if version.NumberIsProduction(constants.VersionNumber) {
+		suite.Require().Contains(catcher.CombinedOutput(), output.StripColorCodes(locale.Tr("warn_deprecation", "")[0:50]))
+	}
 }
 
 func (suite *MainTestSuite) TestExpired() {
@@ -35,9 +46,15 @@ func (suite *MainTestSuite) TestExpired() {
 
 	catcher := outputhelper.NewCatcher()
 	exitCode, err := run([]string{""}, catcher.Outputer)
-	suite.Require().NoError(err)
-	suite.Require().Equal(0, exitCode, "Should exit with code 0, output: %s", catcher.CombinedOutput())
-	suite.Require().Contains(catcher.ErrorOutput(), locale.Tr("err_deprecation", "")[0:50])
+
+	if version.NumberIsProduction(constants.VersionNumber) {
+		suite.Require().Error(err)
+		suite.Require().Equal(1, exitCode, "Should exit with code 1, output: %s", catcher.CombinedOutput())
+		suite.Require().Contains(err.Error(), locale.Tr("err_deprecation", "")[0:50])
+	} else {
+		suite.Require().NoError(err)
+		suite.Require().Equal(0, exitCode, "Should exit with code 0, output: %s", catcher.CombinedOutput())
+	}
 }
 
 func (suite *MainTestSuite) TestOutputer() {

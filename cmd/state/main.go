@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/profile"
+	"github.com/ActiveState/cli/internal/prompt"
 	_ "github.com/ActiveState/cli/internal/prompt" // Sets up survey defaults
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -101,14 +102,14 @@ func run(args []string, out output.Outputer) (int, error) {
 	if deprecated != nil {
 		date := deprecated.Date.Format(constants.DateFormatUser)
 		if !deprecated.DateReached {
-			out.Print(locale.Tr("warn_deprecation", date, deprecated.Reason))
+			out.Notice(locale.Tr("warn_deprecation", date, deprecated.Reason))
 		} else {
-			out.Error(locale.Tr("err_deprecation", date, deprecated.Reason))
+			return 1, locale.NewInputError("err_deprecation", "You are running a version of the State Tool that is no longer supported! Reason: {{.V1}}", date, deprecated.Reason)
 		}
 	}
 
 	// Run the actual command
-	cmds := cmdtree.New(pj, out)
+	cmds := cmdtree.New(pj, out, prompt.New())
 	err := cmds.Execute(args[1:])
 
 	return unwrapError(err)

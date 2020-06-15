@@ -62,11 +62,6 @@ scripts:
     value: |
       go run scripts/s3-deployer/main.go public/update ca-central-1 cli-update update/state
       go run scripts/s3-deployer/main.go public/install.ps1 ca-central-1 cli-update update/state/install.ps1
-  - name: deploy-version
-    description: Deploy the version file to S3. This steps is automated by CI and should never be ran manually unless you KNOW WHAT YOU'RE DOING.
-    constraints:
-    value: |
-      go run scripts/s3-deployer/main.go public/update/versions ca-central-1 cli-update update/state/versions
   - name: generate-api-client
     description: Generates the mono-api client files
     value: |
@@ -106,13 +101,22 @@ scripts:
     description: Detects new localisation calls and generates placeholder entries in en-us.yaml
     value: python3 scripts/locale-generator.py
   - name: build-wix
-    Description: Update the wxs file and build a helper for the MSI installer
+    description: Build the state tool MSI installer
     constraints:
       os: windows
     value: |
       $scripts.preprocess
       go run scripts/wix/main.go public/wix/install.wxs
       go build -o ./public/wix/rmpath/rmpath.exe $constants.CLI_BUILDFLAGS ./public/wix/rmpath/main.go
+      candle.exe ./public/wix/install.wxs -o ./public/wix/install.wixobj -ext WixUIExtension -ext WixUtilExtension
+      light.exe ./public/wix/install.wixobj -o ./public/wix/state_tool_setup.msi -sice:ICE91 -sice:ICE64 -ext WixUIExtension -ext WixUtilExtension
+  - name: build-language-wix
+    description: Build the MSI installer
+    standalone: true
+    constraints:
+      os: windows
+    value: |
+      msbuild.exe public/wix/Deploy/Deploy.wixproj
   - name: build-workflows
     Description: Generates our github workflows
     value: |
@@ -147,6 +151,10 @@ scripts:
     value: |
       $scripts.build
       build/state --help
+  - name: debug
+    description: "Runs a remote debugger, that can be hooked into from your IDE, example usage: `state run debug activate` (will debug `state activate`)"
+    standalone: true
+    value: dlv debug --headless --listen=:2346 --api-version=2 github.com/ActiveState/cli/cmd/state -- $@
 events:
   - name: ACTIVATE
     value: |
@@ -164,7 +172,7 @@ events:
       fi
       if ! type "swagger" &> /dev/null; then
         echo "swagger was not found on your PATH, installing .."
-        pushd
+        pushd ~
         go get -u github.com/go-swagger/go-swagger/cmd/swagger
         popd
       fi

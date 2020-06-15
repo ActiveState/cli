@@ -6,12 +6,10 @@ package headchef_client
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_client/headchef_operations"
 	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
-
-	strfmt "github.com/go-openapi/strfmt"
-
-	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_client/headchef_operations"
+	"github.com/go-openapi/strfmt"
 )
 
 // Default headchef HTTP client.
@@ -56,9 +54,7 @@ func New(transport runtime.ClientTransport, formats strfmt.Registry) *Headchef {
 
 	cli := new(Headchef)
 	cli.Transport = transport
-
 	cli.HeadchefOperations = headchef_operations.New(transport, formats)
-
 	return cli
 }
 
@@ -103,7 +99,7 @@ func (cfg *TransportConfig) WithSchemes(schemes []string) *TransportConfig {
 
 // Headchef is a client for headchef
 type Headchef struct {
-	HeadchefOperations *headchef_operations.Client
+	HeadchefOperations headchef_operations.ClientService
 
 	Transport runtime.ClientTransport
 }
@@ -111,7 +107,5 @@ type Headchef struct {
 // SetTransport changes the transport on the client and all its subresources
 func (c *Headchef) SetTransport(transport runtime.ClientTransport) {
 	c.Transport = transport
-
 	c.HeadchefOperations.SetTransport(transport)
-
 }

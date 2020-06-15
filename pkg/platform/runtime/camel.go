@@ -224,6 +224,13 @@ func (cr *CamelRuntime) PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir
 		return fail
 	}
 
+	if metaData.hasBinaryFile(constants.ActivePerlExecutable) {
+		err := installPPMShim(filepath.Join(metaData.Path, metaData.BinaryLocations[0].Path))
+		if err != nil {
+			return FailRuntimeInstallation.New("ppm_install_err")
+		}
+	}
+
 	return nil
 }
 
@@ -295,20 +302,25 @@ func Relocate(metaData *MetaData, cb func()) *failures.Failure {
 }
 
 // GetEnv returns the environment that is needed to use the installed runtime
-func (cr *CamelRuntime) GetEnv(inherit bool, projectDir string) (map[string]string, *failures.Failure) {
+func (cr *CamelRuntime) GetEnv(inherit bool, projectDir string) (map[string]string, error) {
 	env := map[string]string{"PATH": ""}
 	if inherit {
 		env["PATH"] = os.Getenv("PATH")
 	}
 
 	if len(cr.installDirs) == 0 {
-		return nil, FailRequiresDownload.New(locale.T("err_requires_runtime_download"))
+		return nil, locale.NewError("err_requires_runtime_download", "You need to download the runtime environment before you can use it")
 	}
 
 	for _, artifactPath := range cr.installDirs {
 		meta, fail := InitMetaData(artifactPath)
 		if fail != nil {
-			return nil, fail
+			return nil, locale.WrapError(
+				fail,
+				"err_get_env_metadata_error",
+				"Your installation or build is corrupted.  Try re-installing the project, or update your build.  If the problem persists, please report the issue on our forums: {{.V0}}",
+				constants.ForumsURL,
+			)
 		}
 
 		// Unset AffectedEnv

@@ -47,9 +47,15 @@ func NewCommand(name, description string, flags []*Flag, args []*Argument, execu
 		flags:     flags,
 	}
 
+	short := description
+	if idx := strings.IndexByte(description, '.'); idx > 0 {
+		short = description[0:idx]
+	}
+
 	cmd.cobra = &cobra.Command{
 		Use:              name,
-		Short:            description,
+		Short:            short,
+		Long:             description,
 		PersistentPreRun: cmd.persistRunner,
 		RunE:             cmd.runner,
 
@@ -61,6 +67,76 @@ func NewCommand(name, description string, flags []*Flag, args []*Argument, execu
 	if err := cmd.setFlags(flags); err != nil {
 		panic(err)
 	}
+	cmd.SetUsageTemplate("usage_tpl")
+
+	return cmd
+}
+
+// NewHiddenShimCommand is a very specialized function that is used for adding the
+// PPM Shim.  Differences to NewCommand() are:
+// - the entrypoint is hidden in the help text
+// - calling the help for a subcommand will execute this subcommand
+func NewHiddenShimCommand(name string, flags []*Flag, args []*Argument, executor Executor) *Command {
+	// Validate args
+	for idx, arg := range args {
+		if idx > 0 && arg.Required && !args[idx-1].Required {
+			msg := fmt.Sprintf(
+				"Cannot have a non-required argument followed by a required argument.\n\n%v\n\n%v",
+				arg, args[len(args)-1],
+			)
+			panic(msg)
+		}
+	}
+
+	cmd := &Command{
+		execute:   executor,
+		arguments: args,
+		flags:     flags,
+	}
+
+	cmd.cobra = &cobra.Command{
+		Use:              name,
+		PersistentPreRun: cmd.persistRunner,
+		RunE:             cmd.runner,
+		Hidden:           true,
+
+		// Silence errors and usage, we handle that ourselves
+		SilenceErrors:      true,
+		SilenceUsage:       true,
+		DisableFlagParsing: true,
+	}
+
+	cmd.cobra.SetHelpFunc(func(_ *cobra.Command, args []string) {
+		cmd.execute(cmd, args)
+	})
+
+	if err := cmd.setFlags(flags); err != nil {
+		panic(err)
+	}
+
+	return cmd
+}
+
+// NewShimCommand is a very specialized function that is used to support sub-commands for a hidden shim command.
+// It has only a name a description and function to execute.  All flags and arguments are ignored.
+func NewShimCommand(name, description string, executor Executor) *Command {
+	cmd := &Command{
+		execute: executor,
+	}
+
+	short := description
+	if idx := strings.IndexByte(description, '.'); idx > 0 {
+		short = description[0:idx]
+	}
+
+	cmd.cobra = &cobra.Command{
+		Use:                name,
+		Short:              short,
+		Long:               description,
+		DisableFlagParsing: true,
+		RunE:               cmd.runner,
+	}
+
 	cmd.SetUsageTemplate("usage_tpl")
 
 	return cmd
@@ -177,7 +253,7 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 			}
 		default:
 			return failures.FailDeveloper.New(
-				"arg value must be *string, or ArgMarshaler",
+				fmt.Sprintf("arg: %s must be *string, or ArgMarshaler", arg.Name),
 			)
 		}
 

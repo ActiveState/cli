@@ -3,43 +3,80 @@
 package deploy
 
 import (
-	"bytes"
-	"os/exec"
-	"strconv"
 	"strings"
 
-	"github.com/gobuffalo/packr"
+	"github.com/go-ole/go-ole"
+	"github.com/go-ole/go-ole/oleutil"
 
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/language"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/scriptfile"
 )
 
-func link(src, dst string) error {
-	if strings.HasSuffix(dst, ".exe") {
-		dst = strings.Replace(dst, ".exe", ".lnk", 1)
+func shouldSkipSymlink(symlink, fpath string) (bool, error) {
+	// If the existing symlink already matches the one we want to create, skip it
+	if fileutils.FileExists(symlink) {
+		shortcut, err := newShortcut(symlink)
+		if err != nil {
+			return false, errs.Wrap(err, "Could not create shortcut interface")
+		}
+
+		symlinkTarget, err := oleutil.GetProperty(shortcut, "TargetPath")
+		if err != nil {
+			return false, locale.WrapError(err, "err_link_target", "Could not resolve target of link: {{.V0}}", symlink)
+		}
+
+		isAccurate, err := fileutils.PathsEqual(fpath, symlinkTarget.ToString())
+		if err != nil {
+			return false, locale.WrapError(err, "err_symlink_accuracy_unknown", "Could not determine whether link is owned by State Tool: {{.V0}}.", symlink)
+		}
+		if isAccurate {
+			return true, nil
+		}
 	}
-	logging.Debug("Creating shortcut, source: %s target: %s", src, dst)
 
-	box := packr.NewBox("../../../assets/scripts/")
-	sfile, fail := scriptfile.New(language.PowerShell, "createShortcut", box.String("createShortcut.ps1"))
-	if fail != nil {
-		return errs.Wrap(fail.ToError(), "Could not create createShortcut.ps1 scriptfile")
+	return false, nil
+}
+
+func link(fpath, symlink string) error {
+	if strings.HasSuffix(symlink, ".exe") {
+		symlink = strings.Replace(symlink, ".exe", ".lnk", 1)
 	}
+	logging.Debug("Creating shortcut, destination: %s symlink: %s", fpath, symlink)
 
-	// Some paths may contain spaces so we must quote
-	src = strconv.Quote(src)
-	dst = strconv.Quote(dst)
-
-	cmd := exec.Command("powershell.exe", "-ExecutionPolicy", "Bypass", "-Command", sfile.Filename(), src, dst)
-	var out bytes.Buffer
-	cmd.Stdout = &out
-	cmd.Stderr = &out
-	err := cmd.Run()
+	shortcut, err := newShortcut(symlink)
 	if err != nil {
-		return locale.WrapError(err, "err_powersell_symlink", "Invoking powershell to create a shortcut failed with error code: {{.V0}}, error: {{.V1}}", err.Error(), out.String())
+		return errs.Wrap(err, "Could not create shortcut interface")
+	}
+
+	if _, err = oleutil.PutProperty(shortcut, "TargetPath", fpath); err != nil {
+		return errs.Wrap(err, "Could not set TargetPath on lnk")
+	}
+	if _, err = oleutil.CallMethod(shortcut, "Save"); err != nil {
+		return errs.Wrap(err, "Could not save lnk")
 	}
 	return nil
+}
+
+func newShortcut(target string) (*ole.IDispatch, error) {
+	ole.CoInitialize(0) // ALWAYS errors with "Incorrect function", which can apparently be safely ignored..
+
+	oleShellObject, err := oleutil.CreateObject("WScript.Shell")
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not create shell object")
+	}
+
+	defer oleShellObject.Release()
+	wshell, err := oleShellObject.QueryInterface(ole.IID_IDispatch)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not interface with shell object")
+	}
+
+	defer wshell.Release()
+	cs, err := oleutil.CallMethod(wshell, "CreateShortcut", target)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not call CreateShortcut on shell object")
+	}
+	return cs.ToIDispatch(), nil
 }

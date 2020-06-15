@@ -38,6 +38,15 @@ type Session struct {
 	t     *testing.T
 }
 
+// Options for spawning a testable terminal process
+type Options struct {
+	termtest.Options
+	// removes write-permissions in the bin directory from which executables are spawned.
+	NonWriteableBinDir bool
+	// re-use the executables written to the session's bin directory
+	ReUseExecutables bool
+}
+
 var (
 	PersistentUsername string
 	PersistentPassword string
@@ -110,35 +119,49 @@ func (s *Session) SpawnCmdWithOpts(exe string, opts ...SpawnOptions) *termtest.C
 		s.cp.Close()
 	}
 
-	execu := exe
-	// if executable is provided as absolute path, copy it to temporary directory
-	if filepath.IsAbs(exe) {
-		execu = filepath.Join(s.Dirs.Bin, filepath.Base(exe))
-		fail := fileutils.CopyFile(exe, execu)
-		require.NoError(s.t, fail.ToError())
-
-		permissions, _ := permbits.Stat(execu)
-		permissions.SetUserExecute(true)
-		require.NoError(s.t, permbits.Chmod(execu, permissions))
-	}
-
 	env := s.env
 
-	pOpts := termtest.Options{
-		DefaultTimeout: defaultTimeout,
-		Environment:    env,
-		WorkDirectory:  s.Dirs.Work,
-		RetainWorkDir:  true,
-		ObserveExpect:  observeExpectFn(s),
-		ObserveSend:    observeSendFn(s),
-		CmdName:        execu,
+	pOpts := Options{
+		Options: termtest.Options{
+			DefaultTimeout: defaultTimeout,
+			Environment:    env,
+			WorkDirectory:  s.Dirs.Work,
+			RetainWorkDir:  true,
+			ObserveExpect:  observeExpectFn(s),
+			ObserveSend:    observeSendFn(s),
+		},
+		NonWriteableBinDir: false,
 	}
 
 	for _, opt := range opts {
 		opt(&pOpts)
 	}
 
-	console, err := termtest.New(pOpts)
+	execu := exe
+	// if executable is provided as absolute path, copy it to temporary directory
+	// do not copy if file is a symlink
+	if !fileutils.IsSymlink(exe) && filepath.IsAbs(exe) {
+		execu = filepath.Join(s.Dirs.Bin, filepath.Base(exe))
+		if !(fileutils.TargetExists(execu) && pOpts.ReUseExecutables) {
+			fail := fileutils.CopyFile(exe, execu)
+			require.NoError(s.t, fail.ToError())
+
+			permissions, _ := permbits.Stat(execu)
+			permissions.SetUserExecute(true)
+			require.NoError(s.t, permbits.Chmod(execu, permissions))
+		}
+	}
+
+	pOpts.Options.CmdName = execu
+
+	if pOpts.NonWriteableBinDir {
+		// make bin dir read-only
+		os.Chmod(s.Dirs.Bin, 0555)
+	} else {
+		os.Chmod(s.Dirs.Bin, 0777)
+	}
+
+	console, err := termtest.New(pOpts.Options)
 	require.NoError(s.t, err)
 	s.cp = console
 

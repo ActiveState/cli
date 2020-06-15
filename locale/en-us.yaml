@@ -109,21 +109,21 @@ error_in_active_subshell:
 err_output_flag_value_invalid:
   other: Could not recognize output type
 info_reactivating:
-  other: Reactivating state
+  other: "[BLUE]Reactivating state[/RESET]"
 info_deactivated:
-  other: Deactivated {{.Owner}}/{{.Name}}
+  other: "[BLUE]Deactivated {{.Owner}}/{{.Name}}[/RESET]"
 venv_installer_is_nil:
   other: Provided installer should not be nil
 error_unsupported_language:
   other: "Unsupported language: {{.Language}}"
 error_could_not_activate_venv:
-  other: Could not activate the virtual environment
+  other: Could not activate project. If this is a private project ensure that you are authenticated.
 err_language_not_yet_supported:
   other: "The Platform responded with an artifact that is not supported by this version of the State Tool, artifact name: {{.V0}}. Is your State Tool up to date?"
 error_missing_arg:
   other: "Argument missing: {{.V0}}"
 err_no_projectfile:
-  other: No activestate.yaml file exists in the current working directory
+  other: No activestate.yaml file exists in the current working directory or its parent directories.
 err_invalid_input:
   other: Invalid input received
 err_no_update_info:
@@ -132,8 +132,6 @@ no_update_available:
   other: You are using the latest version available
 updating_to_version:
   other: Updating from {{.fromVersion}} to {{.toVersion}}
-err_update_failed:
-  other: Update failed, check the error log for more information
 confirm_update_locked_version_prompt:
   other: "You ran update from a project directory with a locked State Tool version. This will update the version that your project is locked to. Are you sure you want to do this?"
 version_info:
@@ -169,7 +167,7 @@ err_artifact_no_parent:
 err_invalid_status_code:
   other: "Invalid status code: {{.V0}}"
 info_activating_state:
-  other: "Activating state: {{.Owner}}/{{.Name}}"
+  other: "[BLUE]Activating state: {{.Owner}}/{{.Name}}[/RESET]"
 info_state_active_repoexists:
   other: "Repo already exists: {{.Path}}"
 panic_couldnt_detect_wd:
@@ -292,32 +290,16 @@ login_err_auth_token:
   other: Token authentication failed
 fetch_org_err:
   other: Failed to fetch organization {{.V0}} from ActivateState platform.  Is the organization name correct?
-fork_project:
-  other: Fork an existing ActiveState Platform project
-flag_state_fork_org_description:
-  other: The organization to fork the project to
-flag_state_fork_private_description:
-  other: Denotes if the forked project will be private
-flag_state_fork_name_description:
-  other: The name of the new project to be created
-arg_state_fork_namespace:
-  other: ORG/PROJECT
-arg_state_fork_namespace_description:
-  other: The namespace of the project to be forked
 auth_required_fork:
   other: You need to be authenticated to fork an ActiveState Platform project
 err_fork_auth_required:
   other: Forking a project requires you to be authenticated against the ActiveState Platform
-err_fork_create_fork:
-  other: Could not create the forked project
 err_fork_invalid_namespace:
   other: Could not fork the given project as the namespace is incorrect
 err_fork_get_owner:
   other: Could not fork project, owner required.
 err_cannot_marshal_data:
   other: Cannot marshal data properly
-fork_select_org:
-  other: Please select an owner for the forked project
 state_fork_success:
   other: Successfully forked project {{.OriginalOwner}}/{{.OriginalName}} as {{.NewOwner}}/{{.NewName}}
 local:
@@ -859,16 +841,6 @@ forward_fail_with_error:
   other: "Could not forward the command to the appropriate State Tool version, error: {{.V0}}"
 forward_fail_info:
   other: The requested version of the State Tool does not exist, please ensure the version and branch are correct.
-flag_update_lock_description:
-  other: Lock the State Tool at the current version, this disables automatic updates. You can still force an update by manually running the update command.
-flag_update_force_description:
-  other: Automatically confirm that you would like to update the State Tool version that your project is locked to.
-err_lock_failed:
-  other: Locking the version failed
-locking_version:
-  other: Locking State Tool to the current version
-version_locked:
-  other: Version locked at {{.V0}}
 update_available:
   other: |
     A new update is available!
@@ -930,6 +902,8 @@ installer_err_runtime_rm_installdir:
   other: Unable to remove '{{.V0}}' after unpacking runtime
 installer_err_runtime_no_commitid:
   other: A CommitID is required to install this runtime environment
+fetch_err_runtime_no_commitid:
+  other: Could not get a CommitID for this project
 installer_err_runtime_preplatform:
   other: The version of the installer used in the project you specified is not compatible with the State Tool. Please make a new project.
 installer_err_engine_unknown:
@@ -946,6 +920,10 @@ err_no_default_branch:
   other: This project has no default branch. This indicates malformed data, please contact support!
 err_no_commit:
   other: Project branch has no commits
+err_order_recipe:
+  other: Could not get order from commit ID
+err_order_marshal:
+  other: Failed to marshal/unmarshal order
 err_no_data_found:
   other: No data found
 err_no_langauge:
@@ -1008,12 +986,12 @@ warn_deprecation:
     Please update soon![/RESET]
 err_deprecation:
   other: |
-    You are running a version of the State Tool that is no longer supported! You will be encountering issues. 
+    [RED]You are running a version of the State Tool that is no longer supported! You will be encountering issues.
 
     Reason for deprecation: 
       {{.V1}}
 
-    Please update now!"
+    Please update now![/RESET]"
 err_auth_required:
   other: Authentication is required, please authenticate by running 'state auth'
 auth_required_activate:
@@ -1037,7 +1015,7 @@ err_pull_get_latest_commit_id:
 err_os_not_a_directory:
   other: Expected '{{.V0}}' to be a valid directory
 unstable_version_warning:
-  other: The State Tool is currently in beta, we are actively changing and adding features based on developer feedback.
+  other: "[YELLOW]The State Tool is currently in beta, we are actively changing and adding features based on developer feedback.[/RESET]"
 export_cmd_description:
   other: Print information based on the provided subcommand
 export_recipe_cmd_description:
@@ -1098,8 +1076,6 @@ commit_message_add_language:
   other: "Added language: {{.V0}} {{.V1}}"
 commit_message_removed_language:
   other: "Removed language: {{.V0}} {{.V1}}"
-update_description:
-  other: Updates the State Tool to the latest available version
 downloading_artifacts:
   other: Downloading required artifacts
 installing_artifacts:
@@ -1224,7 +1200,7 @@ package_remove_cmd_description:
   other: Remove a package from your project
 package_import_cmd_description:
   other: Import packages from a list of dependencies
-package_search_description:
+package_search_cmd_description:
   other: Search for available packages that can be added to your project
 package_arg_name:
   other: name
@@ -1264,8 +1240,6 @@ commit_reqstext_remove_existing_message:
   other: "Remove current packages prior to import from requirements file"
 err_cannot_remove_existing:
   other: "The already configured packages were not able to be overwritten"
-err_action_was_not_confirmed:
-  other: "Current action was not confirmed"
 err_branch_not_bare:
   other: Branch is not bare and is unable to be initialized as such
 err_package_add:
@@ -1284,8 +1258,10 @@ err_obtaining_change_request:
   other: Cannot obtain change request
 package_no_data:
   other: No data found - Please verify the provided commit id
-package_no_packages:
-  other: No packages to list
+package_search_no_packages:
+  other: Currently no package of the provided name is available on the ActiveState Platform.
+package_list_no_packages:
+  other: The project has no packages to list.
 package_name:
   other: Name
 package_version:
@@ -1303,9 +1279,7 @@ package_update:
 package_version_update:
   other: "Package updated: {{.V0}}@{{.V1}}"
 package_ingredient_err:
-  other: Could not verify package name
-package_ingredient_not_found:
-  other: The provided package does not exist
+  other: Failed to resolve an ingredient named {{.V0}}.
 err_package_removed:
   other: Failed to remove package
 err_packages_removed:
@@ -1314,8 +1288,8 @@ package_removed:
   other: "Package removed: {{.V0}}"
 package_update_config_file:
   other: To ensure your local project is synchronized with the ActiveState platform please use `state pull`
-inventory_ingredient_version_not_available:
-  other: The ingredient {{.V0}} does not have any versions available
+inventory_ingredient_not_available:
+  other: The package {{.V0}} is not available on the ActiveState Platform, or does not have a matching version
 command_flag_no_such_flag:
   other: "No such flag: {{.V0}}"
 command_flag_invalid_value:
@@ -1496,15 +1470,23 @@ err_no_recipes:
 err_solve_order:
   other: "Could not solve order: {{.V0}}"
 err_order_bad_request:
-  other: "Bad request while resolving order: {{.V0}}"
+  other: "Bad request while resolving order: Please visit https://platform.activestate.com/{{.V0}}/{{.V1}}/customize to see details about the error: {{.V2}}"
 err_order_unknown:
   other: Unknown error resolving order"
 using_cached_env:
-  other: Reusing cached runtime environment
+  other: "[BLUE]Reusing cached runtime environment[/RESET]"
+update_attempt:
+  other: |
+    [BLUE]Updating state tool:  Downloading latest version of the state tool...[/RESET]
 auto_update_to_version:
   other: |
-    [BLUE]Auto updating from [BOLD]{{.V0}}[/RESET] [BLUE]to[/RESET] [BOLD]{{.V1}}[/RESET].
+    [BLUE]Updated from [BOLD]{{.V0}}[/RESET] [BLUE]to[/RESET] [BOLD]{{.V1}}[/RESET].
     [BLUE]To avoid auto updating run 'state update --lock' (only recommended for production environments).[/RESET]
+auto_update_permission_err:
+  other: |
+    Could not update to the latest available version of the state tool due to insufficient permissions.
+    To manually update, run 'state update' as a privileged user.
+    If you want the state tool to auto-update, please re-install it in a user-writable directory.
 forward_version:
   other: "[BLUE]Using locked state tool version [BOLD]{{.V0}}[/RESET]."
 err_project_env_file_not_exist:
@@ -1520,8 +1502,6 @@ arg_state_deploy_namespace:
   other: ORG/PROJECT
 arg_state_deploy_namespace_description:
   other: The namespace of the project that you wish to deploy
-err_requires_runtime_download:
-  other: You need to download the runtime environment before you can use it
 err_deploy_no_commits:
   other: "The project '{{.V0}}' does not have any packages configured, please add add some packages first."
 err_userrc_notfound:
@@ -1546,7 +1526,7 @@ deploy_info:
     This information is provided for your reference, for most common use-cases you do not need to do anything with this.
 deploy_cmd_description:
   other: |
-    Deploys the given runtime environment on the local system and sets it up so you can run it from any shell environment that matches the current shell, overriding any conflicting installations.
+    Deploys the given runtime environment on the local system. Deploy sets up the language so you can run it from any shell environment that matches the current shell, overriding any conflicting installations.
     You can run individual deploy steps by running the sub-commands, which is useful if you're preparing docker images, CI environments, or the like.
     If you're setting up a local development environment you probably won't need the sub-commands.
 deploy_install_cmd_description:
@@ -1573,6 +1553,8 @@ flag_state_deploy_path_description:
   other: The path to deploy the runtime installation files to. This directory will not be affected by 'state clean'
 flag_state_deploy_force_description:
   other: "Overwrites any existing files / configurations."
+flag_state_deploy_user_path_description:
+  other: "Updates the user PATH instead of the system PATH"
 envdef_file_not_found:
   other: |
     Your installation seems to be corrupted.
@@ -1603,3 +1585,59 @@ err_getwd:
   other: |
     Could not retrieve your working directory, error received: {{.V0}}.
     If this problem continues please report it on our forums: {{.V1}}
+ppm_install_err:
+  other: Failed to install PPM shim command.
+ppm_header_message:
+  other: |
+    The Perl Package Manager (PPM) is no longer supported.
+    To manage your Perl packages from the command line, use the State Tool (state) instead. You can find more information on the State Tool at
+    https://www.activestate.com/products/platform/state-tool/
+ppm_print_suggestion:
+  other: |
+    The Perl Package Manager (PPM) is no longer supported.
+    To manage your Perl packages from the command line, use the State Tool (state) instead. You can find more information on the State Tool at
+    https://www.activestate.com/products/platform/state-tool/
+
+    To {{.V0}}, run:
+
+      {{.V1}}
+
+    See "https://docs.activestate.com/platform/{{.V2}}" for details.
+ppm_print_main:
+  other: |
+    The Perl Package Manager (PPM) is no longer supported.
+    To manage your Perl packages from the command line, use the State Tool (state) instead. You can find more information on the State Tool at
+    https://www.activestate.com/products/platform/state-tool/
+
+    To see help for State Tool commands, run:
+
+        state help
+
+    See "https://docs.activestate.com/platform/state/" for details.
+ppm_install_intent:
+  other: add new packages to your project 
+ppm_upgrade_intent:
+  other: upgrade an existing package
+ppm_remove_intent:
+  other: remove a package from your project
+ppm_search_intent:
+  other: search for a package in the ActiveState repository
+ppm_area_message:
+  other: |
+    The Perl Package Manager (PPM) is no longer supported.
+    To manage your Perl packages from the command line, use the State Tool (state) instead. You can find more information on the State Tool at
+    https://www.activestate.com/products/platform/state-tool/
+
+    To manage several projects with varying dependencies, you can organize them as
+    projects on the ActiveState Platform: https://docs.activestate.com/platform/projects.html.
+
+    To fork an existing project, run:
+    	state fork
+    See https://docs.activestate.com/platform/state/fork.html for details.
+    	
+    To create a new project, see the guide at https://docs.activestate.com/platform/state/start.html for details.
+ppm_list_intent:
+  other: list the packages installed for a project
+deploy_usable_path:
+  other: |
+    [YELLOW]Please ensure '{{.V0}}' exists and is on your PATH.[/RESET]

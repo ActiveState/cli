@@ -3,6 +3,7 @@ package deploy
 import (
 	"os"
 	"reflect"
+	"sort"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/failures"
@@ -26,10 +27,10 @@ func (i *InstallableMock) IsInstalled() (bool, *failures.Failure) {
 }
 
 type EnvGetMock struct {
-	callback func(inherit bool, projectDir string) (map[string]string, *failures.Failure)
+	callback func(inherit bool, projectDir string) (map[string]string, error)
 }
 
-func (e *EnvGetMock) GetEnv(inherit bool, projectDir string) (map[string]string, *failures.Failure) {
+func (e *EnvGetMock) GetEnv(inherit bool, projectDir string) (map[string]string, error) {
 	return e.callback(inherit, projectDir)
 }
 
@@ -129,7 +130,7 @@ func Test_runStepsWithFuncs(t *testing.T) {
 				return nil, nil
 			}
 			var configCalled bool
-			configFunc := func(runtime.EnvGetter, output.Outputer) error {
+			configFunc := func(runtime.EnvGetter, output.Outputer, bool) error {
 				configCalled = true
 				return nil
 			}
@@ -144,7 +145,9 @@ func Test_runStepsWithFuncs(t *testing.T) {
 				return nil
 			}
 			catcher := outputhelper.NewCatcher()
-			err := runStepsWithFuncs("", true, tt.args.step, tt.args.installer, catcher.Outputer, installFunc, configFunc, symlinkFunc, reportFunc)
+			forceOverwrite := true
+			userScope := false
+			err := runStepsWithFuncs("", forceOverwrite, userScope, tt.args.step, tt.args.installer, catcher.Outputer, installFunc, configFunc, symlinkFunc, reportFunc)
 			if err != tt.want.err {
 				t.Errorf("runStepsWithFuncs() error = %v, wantErr %v", err, tt.want.err)
 			}
@@ -179,7 +182,7 @@ func Test_report(t *testing.T) {
 			"Report",
 			args{
 				&EnvGetMock{
-					func(inherit bool, projectDir string) (map[string]string, *failures.Failure) {
+					func(inherit bool, projectDir string) (map[string]string, error) {
 						return map[string]string{
 							"KEY1": "VAL1",
 							"KEY2": "VAL2",
@@ -215,6 +218,59 @@ func Test_report(t *testing.T) {
 
 			if !reflect.DeepEqual(report.BinaryDirectories, tt.wantBinary) {
 				t.Errorf("Expected bins to be the same. Want: %v, got: %v", tt.wantBinary, report.BinaryDirectories)
+			}
+		})
+	}
+}
+
+func Test_uniqueExes(t *testing.T) {
+	tests := []struct {
+		name    string
+		bins    []string
+		pathext string
+		want    []string
+	}{
+		{
+			"Returns same bins",
+			[]string{"path1/a", "path2/b", "path3/c"},
+			"",
+			[]string{"path1/a", "path2/b", "path3/c"},
+		},
+		{
+			"Returns exe prioritized",
+			[]string{"path1/a.exe", "path2/a.cmd", "path3/c"},
+			".exe;.cmd",
+			[]string{"path1/a.exe", "path3/c"},
+		},
+		{
+			"Returns cmd prioritized by PATH",
+			[]string{"path1/a.exe", "path2/a.cmd", "path2/c"},
+			".cmd;.exe",
+			[]string{"path1/a.exe", "path2/c"},
+		},
+		{
+			"Returns cmd prioritized by PATHEXT",
+			[]string{"path1/a.exe", "path1/a.cmd", "path2/c"},
+			".cmd;.exe",
+			[]string{"path1/a.cmd", "path2/c"},
+		},
+		{
+			"PATHEXT can be empty",
+			[]string{"path1/a", "path2/b", "path3/c"},
+			"",
+			[]string{"path1/a", "path2/b", "path3/c"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := uniqueExes(tt.bins, tt.pathext)
+			if err != nil {
+				t.Errorf("uniqueExes error: %v", err)
+				t.FailNow()
+			}
+			sort.Strings(got)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("uniqueExes() = %v, want %v", got, tt.want)
 			}
 		})
 	}

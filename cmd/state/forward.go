@@ -29,13 +29,16 @@ func forwardIfWarranted(args []string, out output.Outputer, pj *project.Project)
 	if pj == nil {
 		return 0, nil
 	}
-	
+	if len(args) > 1 && args[1] == "update" {
+		return 0, nil // Handle updates through the latest state tool version available, ie the current one
+	}
+
 	// Retrieve the version info specified in the activestate.yaml
 	versionInfo, fail := projectfile.ParseVersionInfo(pj.Source().Path())
 	if fail != nil {
 		// if we are running `state update`, we just print the error message, but don't fail, as we can still update the state tool executable
 		logging.Error("Could not parse version info from projectifle: %s", fail.Error())
-		if funk.Contains(args, "update") {
+		if funk.Contains(args, "update") { // Handle use case of update being called as anything but the first argument (unlikely, but possible)
 			out.Error(locale.T("err_version_parse"))
 			return 0, nil
 		} else {
@@ -55,7 +58,7 @@ func forwardIfWarranted(args []string, out output.Outputer, pj *project.Project)
 		out.Error(locale.T("forward_fail"))
 		return 1, fail
 	}
-	if code != -1 {
+	if code > 0 {
 		return code, locale.NewError("err_forward", "Error occurred while running older version of the state tool, you may want to 'state update'.")
 	}
 
@@ -104,7 +107,6 @@ func ensureForwardExists(binary string, versionInfo *projectfile.VersionInfo) *f
 	up := updater.Updater{
 		CurrentVersion: constants.Version,
 		APIURL:         constants.APIUpdateURL,
-		Dir:            constants.UpdateStorageDir,
 		CmdName:        constants.CommandName,
 		DesiredBranch:  versionInfo.Branch,
 		DesiredVersion: versionInfo.Version,

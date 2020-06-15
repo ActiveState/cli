@@ -17,7 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/hail"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
@@ -26,9 +26,9 @@ import (
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
-type activationLoopFunc func(targetPath string, activator activateFunc) error
+type activationLoopFunc func(out output.Outputer, targetPath string, activator activateFunc) error
 
-func activationLoop(targetPath string, activator activateFunc) error {
+func activationLoop(out output.Outputer, targetPath string, activator activateFunc) error {
 	// activate should be continually called while returning true
 	// looping here provides a layer of scope to handle printing output
 	var proj *project.Project
@@ -41,7 +41,7 @@ func activationLoop(targetPath string, activator activateFunc) error {
 			return failures.FailUserInput.New("err_project_from_path")
 		}
 		updater.PrintUpdateMessage(proj.Source().Path())
-		print.Info(locale.T("info_activating_state", proj))
+		out.Notice(locale.T("info_activating_state", proj))
 
 		if proj.CommitID() == "" {
 			return errors.New(locale.Tr("err_project_no_commit", model.ProjectURL(proj.Owner(), proj.Name(), "")))
@@ -53,31 +53,31 @@ func activationLoop(targetPath string, activator activateFunc) error {
 		}
 
 		if constants.BranchName != constants.StableBranch {
-			print.Stderr().Warning(locale.Tr("unstable_version_warning", constants.BugTrackerURL))
+			out.Error(locale.Tr("unstable_version_warning", constants.BugTrackerURL))
 		}
 
-		if !activator(proj.Owner(), proj.Name(), proj.Source().Path()) {
+		if !activator(out, proj.Owner(), proj.Name(), proj.Source().Path()) {
 			break
 		}
 
-		print.Info(locale.T("info_reactivating", proj))
+		out.Notice(locale.T("info_reactivating", proj))
 	}
 
-	print.Bold(locale.T("info_deactivated", proj))
+	out.Notice(locale.T("info_deactivated", proj))
 
 	return nil
 }
 
-type activateFunc func(owner, name, srcPath string) bool
+type activateFunc func(out output.Outputer, owner, name, srcPath string) bool
 
 // activate will activate the venv and subshell. It is meant to be run in a loop
 // with the return value indicating whether another iteration is warranted.
-func activate(owner, name, srcPath string) bool {
+func activate(out output.Outputer, owner, name, srcPath string) bool {
 	projectfile.Reset()
 	venv := virtualenvironment.Get()
-	venv.OnDownloadArtifacts(func() { print.Line(locale.T("downloading_artifacts")) })
-	venv.OnInstallArtifacts(func() { print.Line(locale.T("installing_artifacts")) })
-	venv.OnUseCache(func() { print.Info(locale.T("using_cached_env")) })
+	venv.OnDownloadArtifacts(func() { out.Notice(locale.T("downloading_artifacts")) })
+	venv.OnInstallArtifacts(func() { out.Notice(locale.T("installing_artifacts")) })
+	venv.OnUseCache(func() { out.Notice(locale.T("using_cached_env")) })
 	fail := venv.Activate()
 	if fail != nil {
 		failures.Handle(fail, locale.T("error_could_not_activate_venv"))
@@ -92,7 +92,13 @@ func activate(owner, name, srcPath string) bool {
 		return false
 	}
 
-	subs.SetEnv(venv.GetEnv(false, filepath.Dir(projectfile.Get().Path())))
+	ve, err := venv.GetEnv(false, filepath.Dir(projectfile.Get().Path()))
+	if err != nil {
+		failures.Handle(err, locale.T("error_could_not_activate_venv"))
+		return false
+	}
+
+	subs.SetEnv(ve)
 	fail = subs.Activate()
 	if fail != nil {
 		failures.Handle(fail, locale.T("error_could_not_activate_subshell"))

@@ -28,7 +28,7 @@ func newLanguagesCommand(outputer output.Outputer) *captain.Command {
 	)
 }
 
-func newUpdateCommand(outputer output.Outputer) *captain.Command {
+func newLanguageUpdateCommand(outputer output.Outputer) *captain.Command {
 	runner := languages.NewUpdate(outputer)
 
 	params := languages.UpdateParams{}

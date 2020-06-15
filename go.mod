@@ -28,7 +28,7 @@ require (
 	github.com/fatih/color v1.5.0
 	github.com/fsnotify/fsnotify v1.4.7
 	github.com/go-ini/ini v1.32.0 // indirect
-	github.com/go-ole/go-ole v1.2.4 // indirect
+	github.com/go-ole/go-ole v1.2.4
 	github.com/go-openapi/analysis v0.0.0-20180418034448-863ac7f90e00 // indirect
 	github.com/go-openapi/errors v0.0.0-20171226161601-7bcb96a367ba
 	github.com/go-openapi/jsonpointer v0.0.0-20180322222829-3a0015ad55fa // indirect
@@ -46,6 +46,7 @@ require (
 	github.com/gorilla/websocket v1.4.0
 	github.com/hashicorp/go-version v1.1.0
 	github.com/hashicorp/hcl v0.0.0-20171017181929-23c074d0eceb // indirect
+	github.com/hectane/go-acl v0.0.0-20190604041725-da78bae5fc95
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/jarcoal/httpmock v1.0.3
 	github.com/jessevdk/go-flags v1.4.0

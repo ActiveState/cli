@@ -26,7 +26,6 @@ defaults:
           echo "export PS1='> '" >> $BASH_ENV
           source $BASH_ENV
 
-          state auth --token $PLATFORM_API_TOKEN
           $GOROOT/bin/go version
     runTests: &runTests
       run:
@@ -39,7 +38,6 @@ defaults:
           set -e 
           cat out | tee ${TEST_RESULTS}/go-test.out
           $GOBIN/go-junit-report < ${TEST_RESULTS}/go-test.out > ${TEST_RESULTS}/go-test-report.xml
-          state auth --token $PLATFORM_API_TOKEN # Tests appear to be breaking the authentication
           exit $EXITCODE
     buildCli: &buildCli
       run:
@@ -48,11 +46,11 @@ defaults:
         command: |
           set -e
           BRANCH=$(git rev-parse --abbrev-ref HEAD)
-          if [[ "$BRANCH" == "master" ]]; then
-            export BRANCH_OVERRIDE=unstable
-          fi
           state run build
           state run generate-update
+          if [[ "$BRANCH" == "master" ]]; then
+            BRANCH_OVERRIDE=unstable state run generate-update
+          fi
     runIntegrationTests: &runIntegrationTests
       run:
         name: Run integration tests
@@ -68,7 +66,6 @@ defaults:
           if [[ "$BRANCH" == "master" ]]; then
             state run deploy-updates
           fi
-          state run deploy-version
     storeArtifacts: &storeArtifacts
       store_artifacts:
         path: /tmp/test-results
@@ -98,6 +95,7 @@ jobs:
       - <<: *runTests
       - <<: *buildCli
       - <<: *deployBits
+      #- <<: *runIntegrationTests
       - <<: *storeArtifacts
       - <<: *storeTestResults
   build-windows:
@@ -154,6 +152,7 @@ jobs:
       - <<: *runTests
       - <<: *buildCli
       - <<: *deployBits
+      #- <<: *runIntegrationTests
       - <<: *storeArtifacts
       - <<: *storeTestResults
   test-linux:

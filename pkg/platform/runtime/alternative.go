@@ -245,6 +245,8 @@ func (ar *AlternativeRuntime) runtimeEnvBaseDir() string {
 //
 // The merged environment definition is cached and written back to `<runtimeEnvBaseDir()>/runtime.json`.
 // This file also serves as a marker that the installation was successfully completed.
+//
+// It also checks if a PPM shim needs to be installed
 func (ar *AlternativeRuntime) PostInstall() error {
 	mergedRuntimeDefinitionFile := filepath.Join(ar.runtimeEnvBaseDir(), constants.RuntimeDefinitionFilename)
 	var rtGlobal *envdef.EnvironmentDefinition
@@ -281,6 +283,13 @@ func (ar *AlternativeRuntime) PostInstall() error {
 		return errs.New("No runtime environment definition file at %s", ar.installationDirectory())
 	}
 
+	if activePerlPath := rtGlobal.FindBinPathFor(constants.ActivePerlExecutable); activePerlPath != "" {
+		err = installPPMShim(activePerlPath)
+		if err != nil {
+			return errs.Wrap(err, "Failed to install the PPM shim command at %s", activePerlPath)
+		}
+	}
+
 	err = rtGlobal.WriteFile(mergedRuntimeDefinitionFile)
 	if err != nil {
 		return errs.Wrap(err, "Failed to write merged runtime definition file at %s", mergedRuntimeDefinitionFile)
@@ -290,11 +299,15 @@ func (ar *AlternativeRuntime) PostInstall() error {
 }
 
 // GetEnv returns the environment variable configuration for this build
-func (ar *AlternativeRuntime) GetEnv(inherit bool, _ string) (map[string]string, *failures.Failure) {
+func (ar *AlternativeRuntime) GetEnv(inherit bool, _ string) (map[string]string, error) {
 	mergedRuntimeDefinitionFile := filepath.Join(ar.runtimeEnvBaseDir(), constants.RuntimeDefinitionFilename)
 	rt, fail := envdef.NewEnvironmentDefinition(mergedRuntimeDefinitionFile)
 	if fail != nil {
-		return nil, fail
+		return nil, locale.WrapError(
+			fail, "err_no_environment_definition",
+			"Your installation seems corrupted.\nPlease try to re-run this command, as it may fix the problem.  If the problem persists, please report it in our forum: {{.V0}}",
+			constants.ForumsURL,
+		)
 	}
 	return rt.GetEnv(inherit), nil
 }

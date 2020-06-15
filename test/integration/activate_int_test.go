@@ -191,18 +191,11 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
 	cp.Expect("cache")
 	cp.Expect("Pg.pm")
 
+	// Expect PPM to be installed
+	cp.SendLine("ppm")
+	cp.Expect("The Perl Package Manager(PPM) is no longer supported.")
+
 	cp.SendLine("exit")
-	cp.ExpectExitCode(0)
-}
-
-func (suite *ActivateIntegrationTestSuite) testOutput(method string) {
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	cp := ts.Spawn("activate", "ActiveState-CLI/Python3", "--output", method)
-	cp.Expect("Where would you like to checkout")
-	cp.SendLine(cp.WorkDirectory())
-	cp.Expect("[activated-JSON]")
 	cp.ExpectExitCode(0)
 }
 
@@ -290,7 +283,14 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_InterruptedInstallation(
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivate_JSON() {
-	suite.testOutput("json")
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("activate", "ActiveState-CLI/Python3", "--output", "json")
+	cp.Expect("Where would you like to checkout")
+	cp.SendLine(cp.WorkDirectory())
+	cp.Expect(`"ACTIVESTATE_ACTIVATED":"`)
+	cp.ExpectExitCode(0)
 }
 
 func TestActivateIntegrationTestSuite(t *testing.T) {

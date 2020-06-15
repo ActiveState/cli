@@ -121,17 +121,6 @@ func FilterCheckpointPackages(chkPt Checkpoint) Checkpoint {
 	return checkpoint
 }
 
-// CheckpointToOrder converts a checkpoint to an order
-func CheckpointToOrder(commitID strfmt.UUID, atTime strfmt.DateTime, checkpoint Checkpoint) *inventory_models.V1Order {
-	return &inventory_models.V1Order{
-		OrderID:      &commitID,
-		Platforms:    CheckpointToPlatforms(checkpoint),
-		Requirements: CheckpointToRequirements(checkpoint),
-		CamelFlags:   CheckpointToCamelFlags(checkpoint),
-		Timestamp:    &atTime,
-	}
-}
-
 // CheckpointToRequirements converts a checkpoint to a list of requirements for use with the head-chef
 func CheckpointToRequirements(checkpoint Checkpoint) []*inventory_models.V1OrderRequirementsItems {
 	result := []*inventory_models.V1OrderRequirementsItems{}

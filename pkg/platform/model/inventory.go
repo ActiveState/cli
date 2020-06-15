@@ -23,7 +23,7 @@ var (
 	// FailPlatforms is a failure in calling the platforms endpoint
 	FailPlatforms = failures.Type("model.fail.platforms", api.FailUnknown)
 	// FailNoPlatformData indicates when no platform data is available after filtering.
-	FailNoPlatformData = failures.Type("model.fail.noplatformdata")
+	FailNoPlatformData = failures.Type("model.fail.noplatformdata", failures.FailUser)
 )
 
 // IngredientAndVersion is a sane version of whatever the hell it is go-swagger thinks it's doing
@@ -36,10 +36,14 @@ var platformCache []*Platform
 
 // IngredientByNameAndVersion fetches an ingredient that matches the given name and version. If version is empty the first
 // matching ingredient will be returned.
-func IngredientByNameAndVersion(language, name, version string) (*IngredientAndVersion, *failures.Failure) {
+func IngredientByNameAndVersion(language, name, version string) (*IngredientAndVersion, error) {
 	results, fail := searchIngredients(9001, language, name)
 	if fail != nil {
-		return nil, fail
+		return nil, fail.ToError()
+	}
+
+	if len(results) == 0 {
+		return nil, locale.NewInputError("inventory_ingredient_not_available", "The ingredient {{.V0}} is not available on the ActiveState Platform", name)
 	}
 
 	for _, ingredient := range results {
@@ -52,18 +56,18 @@ func IngredientByNameAndVersion(language, name, version string) (*IngredientAndV
 		}
 	}
 
-	return nil, nil
+	return nil, locale.NewInputError("inventory_ingredient_version_not_available", "Version {{.V0}} is not available for package {{.V1}} on the ActiveState Platform", version, name)
 }
 
 // IngredientWithLatestVersion will grab the latest available ingredient and ingredientVersion that matches the ingredient name
-func IngredientWithLatestVersion(language, name string) (*IngredientAndVersion, *failures.Failure) {
+func IngredientWithLatestVersion(language, name string) (*IngredientAndVersion, error) {
 	results, fail := searchIngredients(9001, language, name)
 	if fail != nil {
-		return nil, fail
+		return nil, fail.ToError()
 	}
 
 	if len(results) == 0 {
-		return nil, FailIngredients.New(locale.T("inventory_ingredient_version_not_available"), name)
+		return nil, locale.NewInputError("inventory_ingredient_not_available", "The ingredient {{.V0}} is not available on the ActiveState Platform", name)
 	}
 
 	var latest *IngredientAndVersion
@@ -82,6 +86,9 @@ func IngredientWithLatestVersion(language, name string) (*IngredientAndVersion, 
 		}
 	}
 
+	if latest == nil {
+		return nil, locale.NewInputError("inventory_ingredient_no_version_available", "No versions are available for package {{.V1}} on the ActiveState Platform", name)
+	}
 	return latest, nil
 }
 

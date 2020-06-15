@@ -7,6 +7,8 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -32,7 +34,7 @@ func (n *namespaceSelectMock) Run(namespace string, preferredPath string) (strin
 	return n.resultPath, n.resultErr
 }
 
-var activatorMock = func(string, activateFunc) error {
+var activatorMock = func(output.Outputer, string, activateFunc) error {
 	return nil
 }
 
@@ -59,21 +61,21 @@ func TestActivate_run(t *testing.T) {
 		{
 			"expect no error",
 			fields{&namespaceSelectMock{"defer", nil}, &checkoutMock{}},
-			args{&ActivateParams{&project.Namespaced{"foo", "bar"}, tempDir, ""}, activatorMock},
+			args{&ActivateParams{&project.Namespaced{"foo", "bar"}, tempDir}, activatorMock},
 			false,
 			true,
 		},
 		{
 			"expect no error, expect checkout",
 			fields{&namespaceSelectMock{"defer", nil}, &checkoutMock{}},
-			args{&ActivateParams{&project.Namespaced{"foo", "bar"}, tempDir, ""}, activatorMock},
+			args{&ActivateParams{&project.Namespaced{"foo", "bar"}, tempDir}, activatorMock},
 			false,
 			true,
 		},
 		{
 			"expect error",
 			fields{&namespaceSelectMock{tempDir, errors.New("mocked error")}, &checkoutMock{errors.New("mocked error"), true}},
-			args{&ActivateParams{&project.Namespaced{"foo", "bar"}, "", ""}, activatorMock},
+			args{&ActivateParams{&project.Namespaced{"foo", "bar"}, ""}, activatorMock},
 			true,
 			true,
 		},
@@ -83,6 +85,7 @@ func TestActivate_run(t *testing.T) {
 			r := &Activate{
 				namespaceSelect:  tt.fields.namespaceSelect,
 				activateCheckout: tt.fields.activateCheckout,
+				out:              outputhelper.NewCatcher().Outputer,
 			}
 			if err := r.run(tt.args.params, tt.args.activatorLoop); (err != nil) != tt.wantErr {
 				t.Errorf("Activate.run() error = %v, wantErr %v", err, tt.wantErr)

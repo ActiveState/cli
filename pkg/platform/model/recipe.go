@@ -15,7 +15,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory"
 	iop "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
-	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/sysinfo"
 )
@@ -35,46 +34,41 @@ var HostPlatform string
 // Recipe aliases recipe model
 type Recipe = inventory_models.V1RecipeResponseRecipesItems
 
+// OrderAnnotations are sent with every order for analytical purposes described here:
+// https://docs.google.com/document/d/1nXeNCRWX-4ULtk20t3C7kTZDCSBJchJJHhzz-lQuVsU/edit#heading=h.o93wm4bt5ul9
+type OrderAnnotations struct {
+	CommitID     string `json:"commit_id"`
+	Project      string `json:"project"`
+	Organization string `json:"organization"`
+}
+
 func init() {
 	HostPlatform = sysinfo.OS().String()
 }
 
 // FetchRawRecipeForCommit returns a recipe from a project based off a commitID
-func FetchRawRecipeForCommit(commitID strfmt.UUID) (string, *failures.Failure) {
-	return fetchRawRecipe(commitID, nil)
+func FetchRawRecipeForCommit(commitID strfmt.UUID, owner, project string) (string, *failures.Failure) {
+	return fetchRawRecipe(commitID, owner, project, nil)
 }
 
 // FetchRawRecipeForCommitAndPlatform returns a recipe from a project based off a commitID and platform
-func FetchRawRecipeForCommitAndPlatform(commitID strfmt.UUID, platform string) (string, *failures.Failure) {
-	return fetchRawRecipe(commitID, &platform)
-}
-
-// FetchRawRecipeForPlatform returns the available recipe matching the default branch commit id and platform string
-func FetchRawRecipeForPlatform(pj *mono_models.Project, hostPlatform string) (string, *failures.Failure) {
-	branch, fail := DefaultBranchForProject(pj)
-	if fail != nil {
-		return "", fail
-	}
-	if branch.CommitID == nil {
-		return "", FailNoCommit.New(locale.T("err_no_commit"))
-	}
-
-	return FetchRawRecipeForCommitAndPlatform(*branch.CommitID, hostPlatform)
+func FetchRawRecipeForCommitAndPlatform(commitID strfmt.UUID, owner, project string, platform string) (string, *failures.Failure) {
+	return fetchRawRecipe(commitID, owner, project, &platform)
 }
 
 // FetchRecipeIDForCommitAndPlatform returns a recipe ID for a project based on the given commitID and platform string
-func FetchRecipeIDForCommitAndPlatform(commitID strfmt.UUID, hostPlatform string) (*strfmt.UUID, *failures.Failure) {
-	return fetchRecipeID(commitID, &hostPlatform)
+func FetchRecipeIDForCommitAndPlatform(commitID strfmt.UUID, owner, project string, hostPlatform string) (*strfmt.UUID, *failures.Failure) {
+	return fetchRecipeID(commitID, owner, project, &hostPlatform)
 }
 
-func fetchRawRecipe(commitID strfmt.UUID, hostPlatform *string) (string, *failures.Failure) {
+func fetchRawRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *string) (string, *failures.Failure) {
 	_, transport := inventory.Init()
 
-	var fail *failures.Failure
+	var err error
 	params := iop.NewResolveRecipesParams()
-	params.Order, fail = prepareOrder(commitID, hostPlatform)
-	if fail != nil {
-		return "", fail
+	params.Order, err = commitToOrder(commitID, owner, project, hostPlatform)
+	if err != nil {
+		return "", FailOrderRecipes.Wrap(err)
 	}
 
 	recipe, err := inventory.ResolveRecipes(transport, params, authentication.ClientAuth())
@@ -105,12 +99,46 @@ func fetchRawRecipe(commitID strfmt.UUID, hostPlatform *string) (string, *failur
 	return recipe, nil
 }
 
-func fetchRecipeID(commitID strfmt.UUID, hostPlatform *string) (*strfmt.UUID, *failures.Failure) {
+func commitToOrder(commitID strfmt.UUID, owner, project string, hostPlatform *string) (*inventory_models.V1Order, error) {
+	monoOrder, err := FetchOrderFromCommit(commitID)
+	if err != nil {
+		return nil, FailOrderRecipes.Wrap(err, locale.T("err_order_recipe")).ToError()
+	}
+
+	orderData, err := monoOrder.MarshalBinary()
+	if err != nil {
+		return nil, failures.FailMarshal.New(locale.T("err_order_marshal")).ToError()
+	}
+
+	order := &inventory_models.V1Order{}
+	err = order.UnmarshalBinary(orderData)
+	if err != nil {
+		return nil, failures.FailMarshal.New(locale.T("err_order_marshal")).ToError()
+	}
+
+	order.Annotations = OrderAnnotations{
+		CommitID:     commitID.String(),
+		Project:      project,
+		Organization: owner,
+	}
+
 	var fail *failures.Failure
+	if hostPlatform != nil {
+		order.Platforms, fail = filterPlatformIDs(*hostPlatform, runtime.GOARCH, order.Platforms)
+		if fail != nil {
+			return nil, fail.ToError()
+		}
+	}
+
+	return order, nil
+}
+
+func fetchRecipeID(commitID strfmt.UUID, owner, project string, hostPlatform *string) (*strfmt.UUID, *failures.Failure) {
+	var err error
 	params := iop.NewSolveOrderParams()
-	params.Order, fail = prepareOrder(commitID, hostPlatform)
-	if fail != nil {
-		return nil, fail
+	params.Order, err = commitToOrder(commitID, owner, project, hostPlatform)
+	if err != nil {
+		return nil, FailOrderRecipes.Wrap(err)
 	}
 
 	client, _ := inventory.Init()
@@ -130,7 +158,7 @@ func fetchRecipeID(commitID strfmt.UUID, hostPlatform *string) (*strfmt.UUID, *f
 		case *iop.SolveOrderBadRequest:
 			msg := *rrErr.Payload.Message
 			logging.Error("Bad request while resolving order, error: %s, order: %s", msg, string(orderBody))
-			return nil, FailOrderRecipes.New("err_order_bad_request", msg)
+			return nil, FailOrderRecipes.New("err_order_bad_request", owner, project, msg)
 		default:
 			logging.Error("Unknown error while resolving order, error: %v, order: %s", err, string(orderBody))
 			return nil, FailOrderRecipes.Wrap(err, "err_order_unknown")
@@ -138,7 +166,7 @@ func fetchRecipeID(commitID strfmt.UUID, hostPlatform *string) (*strfmt.UUID, *f
 	}
 
 	// Because we filter platforms in the request we should only
-	// recieve one recipe ID
+	// receive one recipe ID
 	if len(recipeID.Payload) != 1 {
 		return nil, FailOrderRecipes.New("err_recipe_payload")
 	}
@@ -148,25 +176,4 @@ func fetchRecipeID(commitID strfmt.UUID, hostPlatform *string) (*strfmt.UUID, *f
 	}
 
 	return nil, FailNoData.New("err_recipe_not_found")
-}
-
-func prepareOrder(commitID strfmt.UUID, hostPlatform *string) (*inventory_models.V1Order, *failures.Failure) {
-	checkpoint, atTime, fail := FetchCheckpointForCommit(commitID)
-	if fail != nil {
-		return nil, fail
-	}
-
-	order := CheckpointToOrder(commitID, atTime, checkpoint)
-	if fail != nil {
-		return nil, fail
-	}
-
-	if hostPlatform != nil {
-		order.Platforms, fail = filterPlatformIDs(*hostPlatform, runtime.GOARCH, order.Platforms)
-		if fail != nil {
-			return nil, fail
-		}
-	}
-
-	return order, nil
 }
