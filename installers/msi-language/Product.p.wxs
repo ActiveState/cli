@@ -7,7 +7,7 @@
 
     <!-- Configuration parameters -->
     <Property Id="PROJECT_NAME" Value="ActiveState/{{PROJECT}}" />
-    <Property Id="PerlVersion" Value="5.26" />  <!-- Just the version number used to resolve the release notes link -->
+    <Property Id="REL_NOTES" Value="{{REL_NOTES}}" />
     <!-- End Configuration parameters -->
     
     <!-- Design assets -->
