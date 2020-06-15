@@ -24,6 +24,7 @@ function IsWritable($path) {
         # Check user permissions first
         if ($aclSID.Equals($userSID)) {
             if (($item.FileSystemRights.value__ -band $permWrite) -eq $permWrite) {
+                Write-Host "True"
                 exit 0
             }
         }
@@ -44,13 +45,15 @@ function IsWritable($path) {
 
             if ($aclSID.ToString() -eq $groupSID.ToString()) {
                 if (($item.FileSystemRights.value__ -band $permWrite) -eq $permWrite) {
+                    Write-Host "True"
                     exit 0
                 }
             }
         }
     }
 
-    exit 1
+    Write-Host "False"
+    exit 0
 }
 
 IsWritable $Path

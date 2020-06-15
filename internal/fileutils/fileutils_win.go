@@ -58,13 +58,20 @@ func IsWritable(path string) bool {
 	}
 
 	cmd := exec.Command("powershell.exe", "-c", scriptFile, path)
-	err = cmd.Run()
+	bytes, err := cmd.Output()
 	if err != nil {
-		logging.Debug("Path %s is not writable, got error %v", path, err)
-		return false
+		logging.Debug("Could not determine if path: %s is writable, got error: %v", path, err)
+		// Fallback on writing a tempfile
+		return isWritableTempFile(path)
 	}
 
-	return true
+	output := strings.TrimSpace(string(bytes))
+	if output != "True" {
+		logging.Debug("Path %s is not writable, got output: %s", path, output)
+		return true
+	}
+
+	return false
 }
 
 func isWritableTempFile(path string) bool {
