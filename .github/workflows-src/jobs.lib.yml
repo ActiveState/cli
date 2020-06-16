@@ -9,6 +9,7 @@ env: &env
   ACTIVESTATE_CLI_DISABLE_RUNTIME: true # We don't need Perl or Python
   GOFLAGS: -mod=vendor
   SHELL: bash
+  GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 #@ def jobs_build():
 name: Build
