@@ -1,13 +1,14 @@
-#@ load("steps.lib.yml", "steps_preprocess", "steps_build", "steps_genupdate", "steps_installgo", "steps_installstate", "steps_inttest", "steps_uploadartifacts", "steps_downloadartifacts", "steps_deploy")
+#@ load("steps.lib.yml", "steps_preprocess", "steps_build", "steps_genupdate", "steps_installgo", "steps_installstate", "steps_inttest", "steps_uploadartifacts", "steps_downloadartifacts", "steps_deploy", "steps_build_state_msi", "steps_build_languages_msi")
 
 strategy: &strategy
   matrix:
     go-version: [1.13.x]
-    platform: [ ubuntu-latest, macos-latest ] # , [ ubuntu-latest, macos-latest, windows-latest]
+    platform: [ windows-latest ] # , [ ubuntu-latest, macos-latest, windows-latest]
 runs-on: &runs-on ${{ matrix.platform }}
 env: &env
   ACTIVESTATE_CLI_DISABLE_RUNTIME: true # We don't need Perl or Python
   GOFLAGS: -mod=vendor
+  SHELL: bash
 
 #@ def jobs_build():
 name: Build
@@ -22,6 +23,21 @@ steps:
   - #@ steps_build()
   - #@ steps_genupdate()
   - #@ steps_uploadartifacts()
+#@ end
+
+#@ def jobs_build_msi():
+name: Build MSI's
+runs-on: windows-latest
+env:
+  ACTIVESTATE_CLI_DISABLE_RUNTIME: true # We don't need Perl or Python
+  GOFLAGS: -mod=vendor
+steps:
+  - name: "Checkout code"
+    uses: actions/checkout@v2
+  - #@ steps_installgo()
+  - #@ steps_installstate()
+  - #@ steps_build_state_msi()
+  - #@ steps_build_languages_msi()
 #@ end
 
 #@ def jobs_unittest():
@@ -55,7 +71,7 @@ steps:
 
 #@ def jobs_deploy():
 name: Deploy
-needs: [ build, unittest ]
+needs: [ build, build_msi, unittest ]
 runs-on: ubuntu-latest
 env:
   ACTIVESTATE_CLI_DISABLE_RUNTIME: true # We don't need Perl or Python

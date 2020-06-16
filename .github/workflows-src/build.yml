@@ -1,4 +1,4 @@
-#@ load("jobs.lib.yml", "jobs_build", "jobs_deploy", "jobs_unittest")
+#@ load("jobs.lib.yml", "jobs_build", "jobs_build_msi", "jobs_deploy", "jobs_unittest")
 name: Build-Test-Deploy
 
 "on":
@@ -9,5 +9,6 @@ name: Build-Test-Deploy
 
 jobs:
   build: #@ jobs_build()
+  build_msi: #@ jobs_build_msi()
   unittest: #@ jobs_unittest()
   deploy: #@ jobs_deploy()

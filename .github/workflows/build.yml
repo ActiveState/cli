@@ -12,12 +12,12 @@ jobs:
         go-version:
         - 1.13.x
         platform:
-        - ubuntu-latest
-        - macos-latest
+        - windows-latest
     runs-on: ${{ matrix.platform }}
     env:
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true
       GOFLAGS: -mod=vendor
+      SHELL: bash
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
@@ -26,10 +26,12 @@ jobs:
       with:
         go-version: ${{ matrix.go-version }}
     - name: Install State Tool
+      shell: bash
       run: |
         ./installers/install.sh -n -b master
         echo "::add-path::$HOME/.local/bin"
     - name: Build
+      shell: bash
       run: |
         echo "Branch: $GITHUB_HEAD_REF"
         if [[ "$GITHUB_HEAD_REF" == "master" ]]; then
@@ -37,22 +39,17 @@ jobs:
         fi
         state run build
     - name: Generate Update
+      shell: bash
       run: state run generate-update
     - name: Upload Artifacts
       uses: actions/upload-artifact@v2
       with:
         name: build
+        shell: bash
         path: build/
-  unittest:
-    name: Unit Test
-    strategy:
-      matrix:
-        go-version:
-        - 1.13.x
-        platform:
-        - ubuntu-latest
-        - macos-latest
-    runs-on: ${{ matrix.platform }}
+  build_msi:
+    name: Build MSI's
+    runs-on: windows-latest
     env:
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true
       GOFLAGS: -mod=vendor
@@ -64,10 +61,59 @@ jobs:
       with:
         go-version: ${{ matrix.go-version }}
     - name: Install State Tool
+      shell: bash
+      run: |
+        ./installers/install.sh -n -b master
+        echo "::add-path::$HOME/.local/bin"
+    - name: Build State MSI
+      shell: bash
+      run: |
+        echo $MSI_CERT_BASE64 | base64 -Dd > Cert.p12
+        export PATH=/c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/:/c/Program\ Files\ \(x86\)/Windows\ Kits/10/bin/10.0.16299.0/x86/:$PATH
+        state run build-msi-state
+        signtool.exe sign -d "ActiveState State Tool" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} build/state_tool.msi
+      env:
+        CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
+        MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
+    - name: Build Languages MSI
+      shell: bash
+      run: |
+        echo $MSI_CERT_BASE64 | base64 -Dd > Cert.p12
+        export PATH=/c/Program\ Files\ \(x86\)/Microsoft\ Visual\ Studio/2019/Enterprise/MSBuild/Current/Bin/:/c/Program\ Files\ \(x86\)/Windows\ Kits/10/bin/10.0.16299.0/x86/:$PATH
+        state run build-msi-language ActivePerl-5.26 http://docs.activestate.com/activeperl/5.26/get/relnotes/
+        signtool.exe sign -d "ActiveState Language Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/ActivePerl-5.26.msi
+        state run build-msi-language ActivePerl-5.28 http://docs.activestate.com/activeperl/5.28/get/relnotes/
+        signtool.exe sign -d "ActiveState Language Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/ActivePerl-5.28.msi
+      env:
+        CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
+        MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
+  unittest:
+    name: Unit Test
+    strategy:
+      matrix:
+        go-version:
+        - 1.13.x
+        platform:
+        - windows-latest
+    runs-on: ${{ matrix.platform }}
+    env:
+      ACTIVESTATE_CLI_DISABLE_RUNTIME: true
+      GOFLAGS: -mod=vendor
+      SHELL: bash
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - name: Install Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: ${{ matrix.go-version }}
+    - name: Install State Tool
+      shell: bash
       run: |
         ./installers/install.sh -n -b master
         echo "::add-path::$HOME/.local/bin"
     - name: Preprocess
+      shell: bash
       run: state run preprocess
     - name: Unit Tests
       run: go test -v -covermode=atomic -coverprofile=c.out `$GOROOT/bin/go list ./...
@@ -76,6 +122,7 @@ jobs:
     name: Deploy
     needs:
     - build
+    - build_msi
     - unittest
     runs-on: ubuntu-latest
     env:
@@ -89,6 +136,7 @@ jobs:
       with:
         go-version: ${{ matrix.go-version }}
     - name: Install State Tool
+      shell: bash
       run: |
         ./installers/install.sh -n -b master
         echo "::add-path::$HOME/.local/bin"
@@ -96,11 +144,15 @@ jobs:
       uses: actions/download-artifact@v2
       with:
         name: build
+        shell: bash
         path: build/
     - name: Deploy
+      shell: bash
       run: |
         state run deploy-updates
-        state run deploy-installers
+        if [[ "$GITHUB_HEAD_REF" == "master" ]]; then
+          state run deploy-installers
+        fi
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
