@@ -6,13 +6,16 @@ using System.Threading;
 using System.IO;
 using System.Net;
 using System.Collections.ObjectModel;
+using System.Windows.Forms;
+using System.Linq;
 
 namespace StateDeploy
 {
     public class CustomActions
     {
-        public static ActionResult InstallStateTool(Session session, ref string stateToolPath)
+        public static ActionResult InstallStateTool(Session session, out string stateToolPath)
         {
+            stateToolPath = "";
             session.Log("Installing State Tool if necessary");
             if (session.CustomActionData["STATE_TOOL_INSTALLED"] == "true")
             {
@@ -42,8 +45,9 @@ namespace StateDeploy
 
             string installCmd = string.Format("powershell \"{0} -n -t {1}\"", scriptPath, installPath);
             session.Log(string.Format("Running install command: {0}", installCmd));
-            
-            ActionResult result = RunCommand(session, installCmd);
+
+            string output;
+            ActionResult result = RunCommand(session, installCmd, out output);
             if (result.Equals(ActionResult.UserExit))
             {
                 result = Uninstall.Remove.InstallDir(session, installPath);
@@ -67,11 +71,12 @@ namespace StateDeploy
             return result;
         }
 
-        private static ActionResult RunCommand(Session session, string cmd)
+        private static ActionResult RunCommand(Session session, string cmd, out string output)
         {
+            var outputBuilder = new StringBuilder();
             try
             {
-                ProcessStartInfo procStartInfo = new ProcessStartInfo("cmd", "/c " + cmd);
+                ProcessStartInfo procStartInfo = new ProcessStartInfo("cmd.exe", "/c " + cmd);
 
                 // The following commands are needed to redirect the standard output.
                 // This means that it will be redirected to the Process.StandardOutput StreamReader.
@@ -86,10 +91,11 @@ namespace StateDeploy
 
                 proc.OutputDataReceived += new DataReceivedEventHandler((sender, e) =>
                 {
-                    // Prepend line numbers to each line of the output.
-                    if (!String.IsNullOrEmpty(e.Data))
+                    var line = e.Data;
+                    if (!String.IsNullOrEmpty(line))
                     {
-                        session.Log("out: " + e.Data);
+                        session.Log("out: " + line);
+                        outputBuilder.Append("\n" + line);
                     }
                 });
                 proc.ErrorDataReceived += new DataReceivedEventHandler((sender, e) =>
@@ -119,18 +125,30 @@ namespace StateDeploy
                     {
                         session.Log("Caught install cancelled exception");
                         ActiveState.Process.KillProcessAndChildren(proc.Id);
+                        output = "process got interrupted.";
                         return ActionResult.UserExit;
                     }
                 }
                 proc.WaitForExit();
 
+                var exitCode = proc.ExitCode;
+                session.Log(String.Format("process returned with exit code: {0}", exitCode));
                 proc.Close();
+                if (exitCode != 0)
+                {
+                    output = outputBuilder.ToString();
+                    session.Log("returning due to return code - error");
+                    session.Log("output = " + output);
+                    return ActionResult.Failure;
+                }
             }
             catch (Exception objException)
             {
+                output = outputBuilder.ToString();
                 session.Log(string.Format("Caught exception: {0}", objException));
                 return ActionResult.Failure;
             }
+            output = outputBuilder.ToString();
             return ActionResult.Success;
         }
 
@@ -150,8 +168,8 @@ namespace StateDeploy
         [CustomAction]
         public static ActionResult StateDeploy(Session session)
         {
-            string stateToolPath = "";
-            var res = InstallStateTool(session, ref stateToolPath);
+            string stateToolPath;
+            var res = InstallStateTool(session, out stateToolPath);
             if (res != ActionResult.Success) {
                 return res;
             }
@@ -181,7 +199,9 @@ namespace StateDeploy
 
                     Status.ProgressBar.Increment(session, 1);
                     Status.ProgressBar.StatusMessage(session, seq.Description);
-                    var runResult = RunCommand(session, deployCmd);
+
+                    string output;
+                    var runResult = RunCommand(session, deployCmd, out output);
                     if (runResult == ActionResult.UserExit)
                     {
                         ActionResult result = Uninstall.Remove.InstallDir(session, session.CustomActionData["INSTALLDIR"]);
@@ -199,8 +219,15 @@ namespace StateDeploy
                         }
                         return ActionResult.UserExit;
                     }
-                    else if (runResult != ActionResult.Success)
+                    else if (runResult == ActionResult.Failure)
                     {
+                        Record record = new Record();
+                        var sb = new StringBuilder();
+                        var lastFiveLines = output.Split('\n').Reverse().Take(5).Reverse().ToList();
+                        sb.AppendFormat("{0} failed with Error\n{1}", seq.Description, string.Join("\n", lastFiveLines));
+                        record.FormatString = sb.ToString();
+
+                        MessageResult msgRes = session.Message(InstallMessage.Error | (InstallMessage)MessageBoxButtons.OK, record);
                         return runResult;
                     }
                 }
