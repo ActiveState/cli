@@ -1,5 +1,5 @@
 name: Delete old artifacts
-true:
+"on":
   schedule:
   - cron: 0 0 * * *
 jobs:
