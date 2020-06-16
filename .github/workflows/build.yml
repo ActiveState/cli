@@ -12,6 +12,8 @@ jobs:
         go-version:
         - 1.13.x
         platform:
+        - ubuntu-latest
+        - macos-latest
         - windows-latest
     runs-on: ${{ matrix.platform }}
     env:
@@ -111,6 +113,8 @@ jobs:
         go-version:
         - 1.13.x
         platform:
+        - ubuntu-latest
+        - macos-latest
         - windows-latest
     runs-on: ${{ matrix.platform }}
     env:
