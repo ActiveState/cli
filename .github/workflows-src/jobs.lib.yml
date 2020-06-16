@@ -61,6 +61,8 @@ env:
   ACTIVESTATE_CLI_DISABLE_RUNTIME: true # We don't need Perl or Python
   GOFLAGS: -mod=vendor
 steps:
+  - name: "Checkout code"
+    uses: actions/checkout@v2
   - #@ steps_installgo()
   - #@ steps_installstate()
   - #@ steps_downloadartifacts()
