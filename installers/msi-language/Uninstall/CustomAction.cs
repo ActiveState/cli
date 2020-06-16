@@ -14,7 +14,15 @@ namespace Uninstall
 
             string installDir = session.CustomActionData["REMEMBER"];
 
-            ActionResult result = Remove.InstallDir(session, installDir);
+            ActionResult result = Remove.Dir(session, installDir);
+            if (result.Equals(ActionResult.Failure))
+            {
+                session.Log("Could not remove installation directory");
+                return ActionResult.Failure;
+            }
+
+            string shortcutDir = session.CustomActionData["REMEMBER_SHORTCUTDIR"];
+            result = Remove.Dir(session, shortcutDir);
             if (result.Equals(ActionResult.Failure))
             {
                 session.Log("Could not remove installation directory");
@@ -26,9 +34,9 @@ namespace Uninstall
     }
     public class Remove
     {
-        public static ActionResult InstallDir(Session session, string dir)
+        public static ActionResult Dir(Session session, string dir)
         {
-            session.Log("Begin removing install directory");
+            session.Log(string.Format("Removing directory: {0}", dir));
 
             if (Directory.Exists(dir))
             {
