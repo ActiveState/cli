@@ -22,6 +22,7 @@ steps:
     uses: actions/checkout@v2
   - #@ steps_installgo()
   - #@ steps_installstate()
+  - #@ steps_preprocess()
   - #@ steps_build()
   - #@ steps_genupdate()
   - #@ steps_uploadartifacts()
@@ -49,7 +50,7 @@ name: "Unit Test"
 strategy: *strategy
 runs-on: *runs-on
 env: *env
-timeout-minutes: 5
+timeout-minutes: 10
 steps:
   - name: "Checkout code"
     uses: actions/checkout@v2
@@ -70,6 +71,7 @@ steps:
     uses: actions/checkout@v2
   - #@ steps_installgo()
   - #@ steps_installstate()
+  - #@ steps_preprocess()
   - #@ steps_build()
   - #@ steps_inttest()
 #@ end
@@ -86,5 +88,6 @@ steps:
   - #@ steps_installgo()
   - #@ steps_installstate()
   - #@ steps_downloadartifacts()
+  - #@ steps_preprocess()
   - #@ steps_deploy()
 #@ end
