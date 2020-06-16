@@ -30,9 +30,9 @@ jobs:
         echo "::add-path::$HOME/.local/bin"
     - name: Build
       run: |
-        BRANCH=$(git rev-parse --abbrev-ref HEAD)
-        if [[ "$BRANCH" == "master" ]]; then
-        export BRANCH_OVERRIDE=unstable
+        echo "Branch: $GITHUB_HEAD_REF"
+        if [[ "$GITHUB_HEAD_REF" == "master" ]]; then
+          export BRANCH_OVERRIDE=unstable
         fi
         state run build
     - name: Generate Update

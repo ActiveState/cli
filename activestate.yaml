@@ -24,7 +24,6 @@ scripts:
     description: Generates assets required by the project that aren't just specific to the build
     value: |
       set -e
-      printenv
       if ! type "packr" &> /dev/null; then
         echo "packr was not found on your PATH, installing .."
         pushd ~
