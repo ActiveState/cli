@@ -37,6 +37,11 @@ jobs:
         state run build
     - name: Generate Update
       run: state run generate-update
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: build
+        path: build/
   unittest:
     name: Unit Test
     strategy:
@@ -65,3 +70,27 @@ jobs:
     - name: Unit Tests
       run: go test -v -covermode=atomic -coverprofile=c.out `$GOROOT/bin/go list ./...
         | grep -v api | grep -v integration | grep -v expect`
+  deploy:
+    name: Deploy
+    needs:
+    - build
+    - unittest
+    runs-on: ubuntu-latest
+    env:
+      ACTIVESTATE_CLI_DISABLE_RUNTIME: true
+      GOFLAGS: -mod=vendor
+    steps:
+    - name: Install Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: ${{ matrix.go-version }}
+    - name: Install State Tool
+      run: |
+        ./public/install.sh -n -b master
+        echo "::add-path::$HOME/.local/bin"
+    - name: Download Artifacts
+      uses: actions/download-artifact@v2
+      with:
+        name: build
+    - name: Deploy
+      run: state run deploy-updates

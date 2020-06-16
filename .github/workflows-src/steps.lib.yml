@@ -37,3 +37,18 @@ run: state run preprocess
 name: "Integration Tests"
 run: go test -timeout 20m ./test/integration -v
 #@ end
+---
+#@ def steps_uploadartifacts():
+name: "Upload Artifacts"
+uses: actions/upload-artifact@v2
+with:
+  name: build
+  path: build/
+#@ end
+---
+#@ def steps_downloadartifacts():
+name: "Download Artifacts"
+uses: actions/download-artifact@v2
+with:
+  name: build
+#@ end

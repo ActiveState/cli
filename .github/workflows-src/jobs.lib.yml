@@ -1,4 +1,4 @@
-#@ load("steps.lib.yml", "steps_preprocess", "steps_build", "steps_genupdate", "steps_installgo", "steps_installstate", "steps_inttest")
+#@ load("steps.lib.yml", "steps_preprocess", "steps_build", "steps_genupdate", "steps_installgo", "steps_installstate", "steps_inttest", "steps_uploadartifacts", "steps_downloadartifacts")
 
 strategy: &strategy
   matrix:
@@ -21,6 +21,7 @@ steps:
   - #@ steps_installstate()
   - #@ steps_build()
   - #@ steps_genupdate()
+  - #@ steps_uploadartifacts()
 #@ end
 
 #@ def jobs_unittest():
@@ -50,4 +51,19 @@ steps:
   - #@ steps_installstate()
   - #@ steps_build()
   - #@ steps_inttest()
+#@ end
+
+#@ def jobs_deploy():
+name: Deploy
+needs: [ build, unittest ]
+runs-on: ubuntu-latest
+env:
+  ACTIVESTATE_CLI_DISABLE_RUNTIME: true # We don't need Perl or Python
+  GOFLAGS: -mod=vendor
+steps:
+  - #@ steps_installgo()
+  - #@ steps_installstate()
+  - #@ steps_downloadartifacts()
+  - name: "Deploy"
+    run: state run deploy-updates
 #@ end
