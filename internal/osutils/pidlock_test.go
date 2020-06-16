@@ -146,12 +146,12 @@ func Test_acquirePidLockProcesses(t *testing.T) {
 				}()
 			}
 
-			// timeout if test does not finish after 20 seconds
+			// timeout if test does not finish after 60 seconds
 			go func() {
 				select {
 				case <-ctx.Done():
 					return
-				case <-time.After(20 * time.Second):
+				case <-time.After(60 * time.Second):
 					done <- "TIMEOUT"
 				}
 			}()
