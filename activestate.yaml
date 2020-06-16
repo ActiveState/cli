@@ -33,7 +33,7 @@ scripts:
       $constants.SET_ENV
       packr
       go run scripts/constants-generator/main.go -- internal/constants/generated.go
-      mkdir -p build
+      mkdir -p build/msi
   - name: build
     description: Builds the project with the host OS as the target OS.
     value: |
@@ -61,20 +61,15 @@ scripts:
       go install $constants.CLI_BUILDFLAGS $CLI_PKGS
   - name: deploy-updates
     description: Deploys update files to S3. This steps is automated by CI and should never be ran manually unless you KNOW WHAT YOU'RE DOING.
-    constraints:
-      os: linux,macos
     value: |
       set -e
       go run scripts/s3-deployer/main.go build/update ca-central-1 cli-update update/state
-      go run scripts/s3-deployer/main.go installers/install.sh ca-central-1 cli-update update/state/install.sh
-  - name: deploy-updates
+  - name: deploy-installers
     description: Deploys update files to S3. This steps is automated by CI and should never be ran manually unless you KNOW WHAT YOU'RE DOING.
-    constraints:
-      os: windows
     value: |
-      set -e
-      go run scripts/s3-deployer/main.go build/update ca-central-1 cli-update update/state
+      go run scripts/s3-deployer/main.go installers/install.sh ca-central-1 cli-update update/state/install.sh
       go run scripts/s3-deployer/main.go installers/install.ps1 ca-central-1 cli-update update/state/install.ps1
+      go run scripts/s3-deployer/main.go build/msi us-east-1 cli-msi /
   - name: generate-api-client
     description: Generates the mono-api client files
     value: |
@@ -122,7 +117,7 @@ scripts:
       export GOFLAGS='-mod=vendor'
       go build -o ./installers/msi-state/rmpath/rmpath.exe $constants.CLI_BUILDFLAGS ./installers/msi-state/rmpath/main.go
       candle.exe ./installers/msi-state/install.wxs -o ./installers/msi-state/install.wixobj -ext WixUIExtension -ext WixUtilExtension
-      light.exe ./installers/msi-state/install.wixobj -o ./build/state_tool.msi -sice:ICE91 -sice:ICE64 -ext WixUIExtension -ext WixUtilExtension
+      light.exe ./installers/msi-state/install.wixobj -o ./build/msi/state_tool.msi -sice:ICE91 -sice:ICE64 -ext WixUIExtension -ext WixUtilExtension
   - name: build-msi-language
     description: Builds the language MSI, requires that you have .NET 4.x installed and on PATH
     standalone: true
@@ -142,7 +137,8 @@ scripts:
       sed -i "s^{{ID}}^$(go run scripts/uuid-generator/main.go $1)^g" installers/msi-language/Product.wxs
       msbuild.exe installers/msi-language/Deploy.wixproj /target:Build "//p:Configuration=Release;Platform=x64;RunWixToolsOutOfProc=true;OutDir=$dir\\build\\msi-language\\"
       echo "Copying MSI to build/${1}.msi"
-      cp build/msi-language/en-us/Deploy.msi "build/${1}.msi"
+      cp build/msi-language/en-us/Deploy.msi "build/msi/${1}.msi"
+      rm -Rf build/msi-language
   - name: build-workflows
     Description: Generates our github workflows
     value: |
