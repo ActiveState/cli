@@ -50,12 +50,19 @@ jobs:
   build_msi:
     name: Build MSI's
     runs-on: windows-latest
+    needs: build
     env:
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true
       GOFLAGS: -mod=vendor
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
+    - name: Download Artifacts
+      uses: actions/download-artifact@v2
+      with:
+        name: build
+        shell: bash
+        path: build/
     - name: Install Go
       uses: actions/setup-go@v2
       with:
@@ -87,6 +94,12 @@ jobs:
       env:
         CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
         MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: build
+        shell: bash
+        path: build/
   unittest:
     name: Unit Test
     strategy:

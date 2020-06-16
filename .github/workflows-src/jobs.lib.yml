@@ -28,16 +28,19 @@ steps:
 #@ def jobs_build_msi():
 name: Build MSI's
 runs-on: windows-latest
+needs: build
 env:
   ACTIVESTATE_CLI_DISABLE_RUNTIME: true # We don't need Perl or Python
   GOFLAGS: -mod=vendor
 steps:
   - name: "Checkout code"
     uses: actions/checkout@v2
+  - #@ steps_downloadartifacts()
   - #@ steps_installgo()
   - #@ steps_installstate()
   - #@ steps_build_state_msi()
   - #@ steps_build_languages_msi()
+  - #@ steps_uploadartifacts()
 #@ end
 
 #@ def jobs_unittest():
