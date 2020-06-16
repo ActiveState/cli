@@ -107,3 +107,9 @@ env:
   CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
   MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
 #@ end
+---
+#@ def steps_cleanbuild():
+name: "Cleanup Build Dir"
+shell: bash
+run: rm build/state*
+#@ end

@@ -48,6 +48,9 @@ jobs:
     - name: Generate Update
       shell: bash
       run: state run generate-update
+    - name: Cleanup Build Dir
+      shell: bash
+      run: rm build/state*
     - name: Upload Artifacts
       uses: actions/upload-artifact@v2
       with:
