@@ -111,5 +111,5 @@ env:
 #@ def steps_cleanbuild():
 name: "Cleanup Build Dir"
 shell: bash
-run: rm build/state*
+run: rm build/state* || true
 #@ end
