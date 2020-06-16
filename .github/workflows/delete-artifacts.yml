@@ -9,4 +9,4 @@ jobs:
     - uses: kolpav/purge-artifacts-action@v1
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
-        expire-in: 7days
+        expire-in: 2days
