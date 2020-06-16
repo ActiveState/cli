@@ -51,4 +51,5 @@ name: "Download Artifacts"
 uses: actions/download-artifact@v2
 with:
   name: build
+  path: build/
 #@ end

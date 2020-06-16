@@ -94,5 +94,6 @@ jobs:
       uses: actions/download-artifact@v2
       with:
         name: build
+        path: build/
     - name: Deploy
       run: state run deploy-updates
