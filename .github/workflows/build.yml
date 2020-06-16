@@ -19,6 +19,7 @@ jobs:
       GOFLAGS: -mod=vendor
       SHELL: bash
       GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    timeout-minutes: 5
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
@@ -46,7 +47,6 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: build
-        shell: bash
         path: build/
   build_msi:
     name: Build MSI's
@@ -57,6 +57,7 @@ jobs:
       GOFLAGS: -mod=vendor
       SHELL: bash
       GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    timeout-minutes: 5
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
@@ -64,7 +65,6 @@ jobs:
       uses: actions/download-artifact@v2
       with:
         name: build
-        shell: bash
         path: build/
     - name: Install Go
       uses: actions/setup-go@v2
@@ -103,7 +103,6 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: build
-        shell: bash
         path: build/
   unittest:
     name: Unit Test
@@ -119,6 +118,7 @@ jobs:
       GOFLAGS: -mod=vendor
       SHELL: bash
       GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    timeout-minutes: 5
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
@@ -150,6 +150,7 @@ jobs:
       GOFLAGS: -mod=vendor
       SHELL: bash
       GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    timeout-minutes: 5
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
@@ -166,7 +167,6 @@ jobs:
       uses: actions/download-artifact@v2
       with:
         name: build
-        shell: bash
         path: build/
     - name: Deploy
       shell: bash

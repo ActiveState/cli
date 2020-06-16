@@ -54,7 +54,6 @@ name: "Upload Artifacts"
 uses: actions/upload-artifact@v2
 with:
   name: build
-  shell: bash
   path: build/
 #@ end
 ---
@@ -63,7 +62,6 @@ name: "Download Artifacts"
 uses: actions/download-artifact@v2
 with:
   name: build
-  shell: bash
   path: build/
 #@ end
 ---
