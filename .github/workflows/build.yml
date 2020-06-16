@@ -48,9 +48,6 @@ jobs:
     - name: Generate Update
       shell: bash
       run: state run generate-update
-    - name: Cleanup Build Dir
-      shell: bash
-      run: rm build/state*
     - name: Upload Artifacts
       uses: actions/upload-artifact@v2
       with:
@@ -181,6 +178,9 @@ jobs:
     - name: Preprocess
       shell: bash
       run: state run preprocess
+    - name: Cleanup Build Dir
+      shell: bash
+      run: rm build/state* || true
     - name: Deploy
       shell: bash
       run: |
@@ -191,3 +191,12 @@ jobs:
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    - name: Cleanup Artifacts
+      uses: geekyeggo/delete-artifact@v1
+      with:
+        name: build
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: build
+        path: build/

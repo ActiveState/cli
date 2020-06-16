@@ -65,6 +65,13 @@ with:
   path: build/
 #@ end
 ---
+#@ def steps_deleteartifacts():
+name: "Cleanup Artifacts"
+uses: geekyeggo/delete-artifact@v1
+with:
+  name: build
+#@ end
+---
 #@ def steps_deploy():
 name: "Deploy"
 shell: bash

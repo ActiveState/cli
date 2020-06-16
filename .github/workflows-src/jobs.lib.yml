@@ -1,4 +1,4 @@
-#@ load("steps.lib.yml", "steps_preprocess", "steps_build", "steps_genupdate", "steps_installgo", "steps_installstate", "steps_test", "steps_inttest", "steps_uploadartifacts", "steps_downloadartifacts", "steps_deploy", "steps_build_state_msi", "steps_build_languages_msi", "steps_cleanbuild")
+#@ load("steps.lib.yml", "steps_preprocess", "steps_build", "steps_genupdate", "steps_installgo", "steps_installstate", "steps_test", "steps_inttest", "steps_uploadartifacts", "steps_downloadartifacts", "steps_deleteartifacts", "steps_deploy", "steps_build_state_msi", "steps_build_languages_msi", "steps_cleanbuild")
 
 strategy: &strategy
   matrix:
@@ -25,7 +25,6 @@ steps:
   - #@ steps_preprocess()
   - #@ steps_build()
   - #@ steps_genupdate()
-  - #@ steps_cleanbuild()
   - #@ steps_uploadartifacts()
 #@ end
 
@@ -90,5 +89,8 @@ steps:
   - #@ steps_installstate()
   - #@ steps_downloadartifacts()
   - #@ steps_preprocess()
+  - #@ steps_cleanbuild()
   - #@ steps_deploy()
+  - #@ steps_deleteartifacts()
+  - #@ steps_uploadartifacts()
 #@ end
