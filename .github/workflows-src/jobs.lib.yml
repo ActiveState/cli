@@ -29,9 +29,7 @@ steps:
 name: Build MSI's
 runs-on: windows-latest
 needs: build
-env:
-  ACTIVESTATE_CLI_DISABLE_RUNTIME: true # We don't need Perl or Python
-  GOFLAGS: -mod=vendor
+env: *env
 steps:
   - name: "Checkout code"
     uses: actions/checkout@v2
@@ -75,9 +73,7 @@ steps:
 name: Deploy
 needs: [ build, build_msi, unittest ]
 runs-on: ubuntu-latest
-env:
-  ACTIVESTATE_CLI_DISABLE_RUNTIME: true # We don't need Perl or Python
-  GOFLAGS: -mod=vendor
+env: *env
 steps:
   - name: "Checkout code"
     uses: actions/checkout@v2
