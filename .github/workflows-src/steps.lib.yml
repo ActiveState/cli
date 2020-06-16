@@ -53,3 +53,11 @@ with:
   name: build
   path: build/
 #@ end
+---
+#@ def steps_deploy():
+name: "Deploy"
+run: state run deploy-updates
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#@ end

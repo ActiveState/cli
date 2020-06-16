@@ -1,4 +1,4 @@
-#@ load("steps.lib.yml", "steps_preprocess", "steps_build", "steps_genupdate", "steps_installgo", "steps_installstate", "steps_inttest", "steps_uploadartifacts", "steps_downloadartifacts")
+#@ load("steps.lib.yml", "steps_preprocess", "steps_build", "steps_genupdate", "steps_installgo", "steps_installstate", "steps_inttest", "steps_uploadartifacts", "steps_downloadartifacts", "steps_deploy")
 
 strategy: &strategy
   matrix:
@@ -66,6 +66,5 @@ steps:
   - #@ steps_installgo()
   - #@ steps_installstate()
   - #@ steps_downloadartifacts()
-  - name: "Deploy"
-    run: state run deploy-updates
+  - #@ steps_deploy()
 #@ end
