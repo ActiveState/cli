@@ -32,6 +32,9 @@ jobs:
       run: |
         ./installers/install.sh -n -b master
         echo "::add-path::$HOME/.local/bin"
+    - name: Preprocess
+      shell: bash
+      run: state run preprocess
     - name: Build
       shell: bash
       run: |
