@@ -42,12 +42,8 @@ func init() {
 
 // gitBranchName returns the branch name of the current git commit / PR
 func gitBranchName() string {
-	// branch name variable set by Azure CI during pull request
-	if branch, isset := os.LookupEnv("SYSTEM_PULLREQUEST_SOURCEBRANCH"); isset {
-		return "origin/" + branch
-	}
-	// branch name variable set by Azure CI
-	if branch, isset := os.LookupEnv("BUILD_SOURCEBRANCH"); isset {
+	// branch name variable set by Github Actions
+	if branch, isset := os.LookupEnv("GITHUB_REF"); isset {
 		return "origin/" + strings.TrimPrefix(branch, "refs/heads/")
 	}
 	branch := getCmdOutput("git rev-parse --abbrev-ref HEAD")
