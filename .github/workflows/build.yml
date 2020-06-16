@@ -21,7 +21,7 @@ jobs:
       GOFLAGS: -mod=vendor
       SHELL: bash
       GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
@@ -65,7 +65,7 @@ jobs:
       GOFLAGS: -mod=vendor
       SHELL: bash
       GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
@@ -160,7 +160,7 @@ jobs:
       GOFLAGS: -mod=vendor
       SHELL: bash
       GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
     - name: Checkout code
       uses: actions/checkout@v2

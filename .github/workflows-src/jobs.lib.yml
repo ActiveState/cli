@@ -16,7 +16,7 @@ name: Build
 strategy: *strategy
 runs-on: *runs-on
 env: *env
-timeout-minutes: 5
+timeout-minutes: 10
 steps:
   - name: "Checkout code"
     uses: actions/checkout@v2
@@ -34,7 +34,7 @@ name: Build MSI's
 runs-on: windows-latest
 needs: build
 env: *env
-timeout-minutes: 5
+timeout-minutes: 10
 steps:
   - name: "Checkout code"
     uses: actions/checkout@v2
@@ -82,7 +82,7 @@ name: Deploy
 needs: [ build, build_msi, unittest ]
 runs-on: ubuntu-latest
 env: *env
-timeout-minutes: 5
+timeout-minutes: 10
 steps:
   - name: "Checkout code"
     uses: actions/checkout@v2
