@@ -68,7 +68,7 @@ jobs:
     - name: Build State MSI
       shell: bash
       run: |
-        echo $MSI_CERT_BASE64 | base64 -Dd > Cert.p12
+        echo $MSI_CERT_BASE64 | base64 --decode > Cert.p12
         export PATH=/c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/:/c/Program\ Files\ \(x86\)/Windows\ Kits/10/bin/10.0.16299.0/x86/:$PATH
         state run build-msi-state
         signtool.exe sign -d "ActiveState State Tool" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} build/state_tool.msi
@@ -78,7 +78,7 @@ jobs:
     - name: Build Languages MSI
       shell: bash
       run: |
-        echo $MSI_CERT_BASE64 | base64 -Dd > Cert.p12
+        echo $MSI_CERT_BASE64 | base64 --decode > Cert.p12
         export PATH=/c/Program\ Files\ \(x86\)/Microsoft\ Visual\ Studio/2019/Enterprise/MSBuild/Current/Bin/:/c/Program\ Files\ \(x86\)/Windows\ Kits/10/bin/10.0.16299.0/x86/:$PATH
         state run build-msi-language ActivePerl-5.26 http://docs.activestate.com/activeperl/5.26/get/relnotes/
         signtool.exe sign -d "ActiveState Language Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/ActivePerl-5.26.msi
@@ -116,8 +116,9 @@ jobs:
       shell: bash
       run: state run preprocess
     - name: Unit Tests
-      run: go test -v -covermode=atomic -coverprofile=c.out `$GOROOT/bin/go list ./...
-        | grep -v api | grep -v integration | grep -v expect`
+      shell: bash
+      run: |
+        go test -v `go list ./... | grep -v api | grep -v integration | grep -v expect`
   deploy:
     name: Deploy
     needs:

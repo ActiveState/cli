@@ -1,4 +1,4 @@
-#@ load("steps.lib.yml", "steps_preprocess", "steps_build", "steps_genupdate", "steps_installgo", "steps_installstate", "steps_inttest", "steps_uploadartifacts", "steps_downloadartifacts", "steps_deploy", "steps_build_state_msi", "steps_build_languages_msi")
+#@ load("steps.lib.yml", "steps_preprocess", "steps_build", "steps_genupdate", "steps_installgo", "steps_installstate", "steps_test", "steps_inttest", "steps_uploadartifacts", "steps_downloadartifacts", "steps_deploy", "steps_build_state_msi", "steps_build_languages_msi")
 
 strategy: &strategy
   matrix:
@@ -51,8 +51,7 @@ steps:
   - #@ steps_installgo()
   - #@ steps_installstate()
   - #@ steps_preprocess()
-  - name: "Unit Tests"
-    run: "go test -v -covermode=atomic -coverprofile=c.out `$GOROOT/bin/go list ./... | grep -v api | grep -v integration | grep -v expect`"
+  - #@ steps_test()
 #@ end
 
 #@ def jobs_inttest():

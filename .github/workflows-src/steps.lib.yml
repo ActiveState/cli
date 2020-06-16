@@ -37,6 +37,13 @@ shell: bash
 run: state run preprocess
 #@ end
 ---
+#@ def steps_test():
+name: "Unit Tests"
+shell: bash
+run: |
+  go test -v `go list ./... | grep -v api | grep -v integration | grep -v expect`
+#@ end
+---
 #@ def steps_inttest():
 name: "Integration Tests"
 shell: bash
