@@ -24,7 +24,7 @@ with:
 #@ def steps_installstate():
 name: "Install State Tool"
 run: |
-  ./public/install.sh -n -b master
+  ./installers/install.sh -n -b master
   echo "::add-path::$HOME/.local/bin"
 #@ end
 ---
