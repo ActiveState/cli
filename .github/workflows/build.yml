@@ -48,10 +48,10 @@ jobs:
     - name: Generate Update
       shell: bash
       run: state run generate-update
-    - name: Upload Artifacts
+    - name: Upload Session Artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: build
+        name: session-build
         path: build/
   build_msi:
     name: Build MSI's
@@ -66,10 +66,10 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
-    - name: Download Artifacts
+    - name: Download Session Artifacts
       uses: actions/download-artifact@v2
       with:
-        name: build
+        name: session-build
         path: build/
     - name: Install Go
       uses: actions/setup-go@v2
@@ -104,10 +104,10 @@ jobs:
       env:
         CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
         MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
-    - name: Upload Artifacts
+    - name: Upload Session Artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: build
+        name: session-build
         path: build/
   unittest:
     name: Unit Test
@@ -170,10 +170,10 @@ jobs:
       run: |
         ./installers/install.sh -n -b master
         echo "::add-path::$HOME/.local/bin"
-    - name: Download Artifacts
+    - name: Download Session Artifacts
       uses: actions/download-artifact@v2
       with:
-        name: build
+        name: session-build
         path: build/
     - name: Preprocess
       shell: bash
@@ -191,10 +191,10 @@ jobs:
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-    - name: Cleanup Artifacts
+    - name: Cleanup Session Artifacts
       uses: geekyeggo/delete-artifact@v1
       with:
-        name: build
+        name: session-build
     - name: Upload Artifacts
       uses: actions/upload-artifact@v2
       with:

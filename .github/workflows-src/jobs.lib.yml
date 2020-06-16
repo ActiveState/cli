@@ -1,4 +1,4 @@
-#@ load("steps.lib.yml", "steps_preprocess", "steps_build", "steps_genupdate", "steps_installgo", "steps_installstate", "steps_test", "steps_inttest", "steps_uploadartifacts", "steps_downloadartifacts", "steps_deleteartifacts", "steps_deploy", "steps_build_state_msi", "steps_build_languages_msi", "steps_cleanbuild")
+#@ load("steps.lib.yml", "steps_preprocess", "steps_build", "steps_genupdate", "steps_installgo", "steps_installstate", "steps_test", "steps_inttest", "steps_uploadartifacts", "steps_uploadsessartifacts", "steps_downloadsessartifacts", "steps_deletesessartifacts", "steps_deploy", "steps_build_state_msi", "steps_build_languages_msi", "steps_cleanbuild")
 
 strategy: &strategy
   matrix:
@@ -25,7 +25,7 @@ steps:
   - #@ steps_preprocess()
   - #@ steps_build()
   - #@ steps_genupdate()
-  - #@ steps_uploadartifacts()
+  - #@ steps_uploadsessartifacts()
 #@ end
 
 #@ def jobs_build_msi():
@@ -37,12 +37,12 @@ timeout-minutes: 10
 steps:
   - name: "Checkout code"
     uses: actions/checkout@v2
-  - #@ steps_downloadartifacts()
+  - #@ steps_downloadsessartifacts()
   - #@ steps_installgo()
   - #@ steps_installstate()
   - #@ steps_build_state_msi()
   - #@ steps_build_languages_msi()
-  - #@ steps_uploadartifacts()
+  - #@ steps_uploadsessartifacts()
 #@ end
 
 #@ def jobs_unittest():
@@ -87,10 +87,10 @@ steps:
     uses: actions/checkout@v2
   - #@ steps_installgo()
   - #@ steps_installstate()
-  - #@ steps_downloadartifacts()
+  - #@ steps_downloadsessartifacts()
   - #@ steps_preprocess()
   - #@ steps_cleanbuild()
   - #@ steps_deploy()
-  - #@ steps_deleteartifacts()
+  - #@ steps_deletesessartifacts()
   - #@ steps_uploadartifacts()
 #@ end

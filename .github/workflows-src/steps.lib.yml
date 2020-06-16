@@ -49,6 +49,14 @@ shell: bash
 run: go test -timeout 20m ./test/integration -v
 #@ end
 ---
+#@ def steps_uploadsessartifacts():
+name: "Upload Session Artifacts"
+uses: actions/upload-artifact@v2
+with:
+  name: session-build
+  path: build/
+#@ end
+---
 #@ def steps_uploadartifacts():
 name: "Upload Artifacts"
 uses: actions/upload-artifact@v2
@@ -57,19 +65,19 @@ with:
   path: build/
 #@ end
 ---
-#@ def steps_downloadartifacts():
-name: "Download Artifacts"
+#@ def steps_downloadsessartifacts():
+name: "Download Session Artifacts"
 uses: actions/download-artifact@v2
 with:
-  name: build
+  name: session-build
   path: build/
 #@ end
 ---
-#@ def steps_deleteartifacts():
-name: "Cleanup Artifacts"
+#@ def steps_deletesessartifacts():
+name: "Cleanup Session Artifacts"
 uses: geekyeggo/delete-artifact@v1
 with:
-  name: build
+  name: session-build
 #@ end
 ---
 #@ def steps_deploy():
