@@ -14,7 +14,7 @@ namespace Status
 
     public class ProgressBar
     {
-        public static string ticksString = "5";
+        public static string ticksString = "4";
         public static int ticks = 10000;
 
         public static ActionResult Reset(Session session)

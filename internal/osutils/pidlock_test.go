@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"sync"
 	"testing"
 	"time"
 
@@ -100,13 +101,20 @@ func Test_acquirePidLockProcesses(t *testing.T) {
 			done := make(chan string, numProcesses+1)
 			defer close(done)
 
+			var wg sync.WaitGroup
+			defer wg.Wait()
+
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 
 			for i := 0; i < numProcesses; i++ {
+				wg.Add(1)
 				go func() {
 					var s string = "LOCKED"
-					defer func() { done <- s }()
+					defer func() {
+						done <- s
+						wg.Done()
+					}()
 					lockCmd := exec.Command(lockerExe, lockFile, tc.keep)
 					lockCmd = prepLockCmd(lockCmd)
 					stdout, err := lockCmd.StdoutPipe()
@@ -138,12 +146,12 @@ func Test_acquirePidLockProcesses(t *testing.T) {
 				}()
 			}
 
-			// timeout if test does not finish after 20 seconds
+			// timeout if test does not finish after 60 seconds
 			go func() {
 				select {
 				case <-ctx.Done():
 					return
-				case <-time.After(20 * time.Second):
+				case <-time.After(60 * time.Second):
 					done <- "TIMEOUT"
 				}
 			}()

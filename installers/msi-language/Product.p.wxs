@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi" xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
 	<Product Id="{{ID}}" Name="{{PROJECT}}" Language="1033" Version="1.0.0.0" Manufacturer="ActiveState" UpgradeCode="a8b44798-ee47-4404-8ae3-d821e603b426">
 		<Package Id='*' Keywords='Installer' Description="ActiveState Language Runtime"
             Comments='State Tool is a registered trademark of ActiveState' Manufacturer='ActiveState'
@@ -8,6 +8,9 @@
     <!-- Configuration parameters -->
     <Property Id="PROJECT_NAME" Value="ActiveState/{{PROJECT}}" />
     <Property Id="REL_NOTES" Value="{{REL_NOTES}}" />
+	<!-- A comma separated list of shortcuts to be installed -->
+	<!-- Expected possible values: [PerlCritic] or supply None to build no shortcuts -->
+	<Property Id="SHORTCUTS" Value="{{SHORTCUTS}}" />
     <!-- End Configuration parameters -->
     
     <!-- Design assets -->
@@ -29,8 +32,20 @@
           <!-- Required by WiX -->
           <RegistryValue Root='HKLM' Key='SOFTWARE\[Manufacturer]\[ProductName]' Type='string' Value='' KeyPath='yes' />
         </Component>
+		<Directory Id="ProgramMenuFolder">
+			<Directory Id="ApplicationProgramsFolder" Name="{{PROJECT}}"/>
+		</Directory>
       </Directory>
     </Directory>
+
+	<!-- Build documentation URL shortcut -->
+	<DirectoryRef Id="ApplicationProgramsFolder">
+		<Component Id="ApplicationShortcut" Guid="9e688401-bf59-46c3-99ae-49295948f7b8">
+			<util:InternetShortcut Id="DocumentationShortcut" Name="Documentation" Target="[REL_NOTES]" IconFile="[#PerlIco]" Type="url" />
+			<RemoveFolder Id="CleanUpShortCut" Directory="ApplicationProgramsFolder" On="uninstall"/>
+			<RegistryValue Root="HKCU" Key="Software\[Manufacturer]\[ProductName]" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+		</Component>
+	</DirectoryRef>
 
     <Property Id='PerlExe' Value='perl.exe' />
     <Property Id='WPerlExe' Value='wperl.exe' />
@@ -54,17 +69,24 @@
       <Component Id='InstallHelper' Directory="INSTALLDIR" Guid='4dda6117-ca9c-4371-a09d-c8575f520a01'>
         <!-- We save the value of the install directory to the registry so we can retrieve it on uninstall -->
         <RegistryValue Root="HKLM" Key="Software\[Manufacturer]\[ProductName]" Name="InstallDir" Value="[INSTALLDIR]" Type="string"/>
-        <RemoveFolder Id='CleanupApplicationFolder' On='uninstall' />
+        <RegistryValue Root="HKLM" Key="Software\[Manufacturer]\[ProductName]" Name="ShortcutDir" Value="[ApplicationProgramsFolder]" Type="string"/>
+		<RemoveFolder Id='CleanupApplicationFolder' On='uninstall' />
       </Component>
       <Component Id='cmpPerlIco' Directory='INSTALLDIR' Guid='1069a43f-9ec5-4ad8-b15c-2452b56c9b04'>
         <File Id='PerlIco' Source='perl.ico' />
       </Component>
+	  <ComponentRef Id="ApplicationShortcut" />
     </Feature>
 
     <Property Id="REMEMBER">
 			<!-- Retrieve the value of the installation directory from the registry -->
 			<RegistrySearch Id="RememberProperty" Root="HKLM" Key="SOFTWARE\[Manufacturer]\[ProductName]" Name="InstallDir" Type="raw" />
 		</Property>
+
+	<Property Id="REMEMBER_SHORTCUTDIR">
+		<!-- Retrieve the value of the installation directory from the registry -->
+		<RegistrySearch Id="RememberShortcutProperty" Root="HKLM" Key="SOFTWARE\[Manufacturer]\[ProductName]" Name="ShortcutDir" Type="raw" />
+	</Property>
 
 		<Property Id="MSIUSEREALADMINDETECTION" Value="1" />
 
@@ -144,7 +166,8 @@
 		<Property Id="STATE_TOOL_PATH" Value="state.exe" />
 
 		<CustomAction Id="SetStateDeployPropertyValues" Property="StateDeploy" Value="INSTALLDIR=[INSTALLDIR];PROJECT_NAME=[PROJECT_NAME];IS_MODIFY=[IS_MODIFY];STATE_TOOL_INSTALLED=[STATE_TOOL_INSTALLED];STATE_TOOL_PATH=[STATE_TOOL_PATH]" />
-		<CustomAction Id="SetUninstallProperties" Property="Uninstall" Value="REMEMBER=[REMEMBER]" />
+		<CustomAction Id="SetUninstallProperties" Property="Uninstall" Value="REMEMBER=[REMEMBER];REMEMBER_SHORTCUTDIR=[REMEMBER_SHORTCUTDIR]" />
+		<CustomAction Id="SetShortcutInfo" Property="Shortcut" Value="INSTALLDIR=[INSTALLDIR];PROJECT_NAME=[PROJECT_NAME];SHORTCUTS=[SHORTCUTS]" />
 
     <Binary Id="StateCommandCA" SourceFile="$(var.StateCommandExists.TargetDir)$(var.StateCommandExists.TargetName).CA.dll" />
 		<CustomAction Id="StateCommandExists" Impersonate="yes" BinaryKey="StateCommandCA" DllEntry="StateCommandExists" Return="check" />
@@ -155,6 +178,9 @@
 		<Binary Id="StateDeployCA" SourceFile="$(var.StateDeploy.TargetDir)$(var.StateDeploy.TargetName).CA.dll" />
 		<CustomAction Id="StateDeploy" Impersonate="no" BinaryKey="StateDeployCA" DllEntry="StateDeploy" Execute="deferred" Return="check" />
 
+		<Binary Id="ShortcutCA" SourceFile="$(var.Shortcut.TargetDir)$(var.Shortcut.TargetName).CA.dll" />
+		<CustomAction Id="Shortcut" Impersonate="no" BinaryKey="ShortcutCA" DllEntry="InstallShortcuts" Execute="deferred" Return="check" />
+
 		<Binary Id="UninstallCA" SourceFile="$(var.Uninstall.TargetDir)$(var.Uninstall.TargetName).CA.dll" />
 		<CustomAction Id="Uninstall" Impersonate="no" BinaryKey="UninstallCA" DllEntry="Uninstall" Execute="deferred" Return="check" />
 
@@ -162,6 +188,8 @@
 			<Custom Action="Status" After="InstallInitialize">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
 			<Custom Action="SetStateDeployPropertyValues" After="Status">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
 			<Custom Action="StateDeploy" After="SetStateDeployPropertyValues">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
+			<Custom Action="SetShortcutInfo" After="CreateShortcuts">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
+			<Custom Action="Shortcut" After="SetShortcutInfo">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
 			<Custom Action="SetUninstallProperties" After="RemoveFiles">REMOVE="ALL"</Custom>
 			<Custom Action="Uninstall" After="SetUninstallProperties">REMOVE="ALL"</Custom>
 		</InstallExecuteSequence>
