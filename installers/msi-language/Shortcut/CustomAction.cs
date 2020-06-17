@@ -11,7 +11,34 @@ namespace Shortcut
         public static ActionResult InstallShortcuts(Session session)
         {
             session.Log("Begin InstallShortcuts");
-            return PerlCriticShortcut(session);
+            string shortcutData = session.CustomActionData["SHORTCUTS"];
+            if (shortcutData.ToLower() == "none")
+            {
+                session.Log("Recieved none, not building any shortcuts");
+                return ActionResult.Success;
+            }
+
+            string[] shortcuts = shortcutData.Split(',');
+            foreach (string shortcut in shortcuts)
+            {
+                var s = shortcut.ToLower();
+                switch (s)
+                {
+                    case "perlcritic":
+                        ActionResult result = PerlCriticShortcut(session);
+                        if (result.Equals(ActionResult.Failure))
+                        {
+                            session.Log("Could not create Perl Critic shortcut");
+                            return result;
+                        }
+                        break;
+                    default:
+                        session.Log(string.Format("Recieved unknown shortcut, not building: {0}", shortcut));
+                        break;
+
+                }
+            }
+            return ActionResult.Success;
         }
 
         private static ActionResult PerlCriticShortcut(Session session)

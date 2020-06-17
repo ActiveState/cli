@@ -8,6 +8,9 @@
     <!-- Configuration parameters -->
     <Property Id="PROJECT_NAME" Value="ActiveState/{{PROJECT}}" />
     <Property Id="REL_NOTES" Value="{{REL_NOTES}}" />
+	<!-- A comma separated list of shortcuts to be installed -->
+	<!-- Expected possible values: [PerlCritic] or supply None to build no shortcuts -->
+	<Property Id="SHORTCUTS" Value="{{SHORTCUTS}}" />
     <!-- End Configuration parameters -->
     
     <!-- Design assets -->
@@ -163,7 +166,7 @@
 
 		<CustomAction Id="SetStateDeployPropertyValues" Property="StateDeploy" Value="INSTALLDIR=[INSTALLDIR];PROJECT_NAME=[PROJECT_NAME];IS_MODIFY=[IS_MODIFY];STATE_TOOL_INSTALLED=[STATE_TOOL_INSTALLED];STATE_TOOL_PATH=[STATE_TOOL_PATH]" />
 		<CustomAction Id="SetUninstallProperties" Property="Uninstall" Value="REMEMBER=[REMEMBER];REMEMBER_SHORTCUTDIR=[REMEMBER_SHORTCUTDIR]" />
-		<CustomAction Id="SetShortcutInfo" Property="Shortcut" Value="INSTALLDIR=[INSTALLDIR];PROJECT_NAME=[PROJECT_NAME]" />
+		<CustomAction Id="SetShortcutInfo" Property="Shortcut" Value="INSTALLDIR=[INSTALLDIR];PROJECT_NAME=[PROJECT_NAME];SHORTCUTS=[SHORTCUTS]" />
 
     <Binary Id="StateCommandCA" SourceFile="$(var.StateCommandExists.TargetDir)$(var.StateCommandExists.TargetName).CA.dll" />
 		<CustomAction Id="StateCommandExists" Impersonate="yes" BinaryKey="StateCommandCA" DllEntry="StateCommandExists" Return="check" />
