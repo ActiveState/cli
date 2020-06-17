@@ -142,7 +142,7 @@ scripts:
       unset ACTIVESTATE_ACTIVATED
       export INTEGRATION_TEST_USERNAME=$secrets.project.INTEGRATION_TEST_USERNAME
       export INTEGRATION_TEST_PASSWORD=$secrets.project.INTEGRATION_TEST_PASSWORD
-      go test ./test/integration -v
+      go test ./test/integration -v "${@:1}"
   - name: clean
     description: Cleans out the build dir.
     value: |
