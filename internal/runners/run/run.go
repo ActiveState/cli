@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/internal/subshell"
@@ -30,19 +31,24 @@ var (
 	FailExecNotFound = failures.Type("run.fail.execnotfound", failures.FailUser)
 )
 
+// Run contains the run execution context.
 type Run struct {
+	out output.Outputer
 }
 
-func New() *Run {
-	return &Run{}
+// New constructs a new instance of Run.
+func New(out output.Outputer) *Run {
+	return &Run{
+		out: out,
+	}
 }
 
-// Execute the run command.
+// Run runs the Run run runner.
 func (r *Run) Run(name string, args []string) error {
-	return run(name, args)
+	return run(r.out, name, args)
 }
 
-func run(name string, args []string) error {
+func run(out output.Outputer, name string, args []string) error {
 	if authentication.Get().Authenticated() {
 		checker.RunCommitsBehindNotifier()
 	}
@@ -68,7 +74,14 @@ func run(name string, args []string) error {
 	}
 
 	lang := script.Language()
-	if !lang.Recognized() || !lang.Executable().Available() {
+	if !lang.Recognized() {
+		warning := locale.Tl(
+			"run_warn_deprecated_script_without_language",
+			"[YELLOW]DEPRECATION WARNING: Scripts without a defined language currently fall back to using the default interpreter of your shell. Soon a language will need to be explicitly defined for each script. Please configure the 'language' field with a valid option ({{.V0}})[/RESET]",
+			strings.Join(language.RecognizedNames(), ", "),
+		)
+		out.Notice(warning)
+
 		lang = language.MakeByShell(subs.Shell())
 	}
 
