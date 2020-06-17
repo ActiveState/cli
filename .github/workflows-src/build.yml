@@ -13,6 +13,6 @@ jobs:
   build_msi: #@ jobs_build_msi()
   unittest: #@ jobs_unittest()
   inttest:
-    if: 'contains(github.event.pull_request.labels.*.name, "run: integration tests")'
+    if: 'contains(github.event.pull_request.labels.*.name, "run\: integration tests")'
     _: #@ template.replace(jobs_inttest())
   deploy: #@ jobs_deploy()
