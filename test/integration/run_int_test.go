@@ -191,6 +191,20 @@ func (suite *RunIntegrationTestSuite) TestRun_Unauthenticated() {
 	cp.ExpectExitCode(0)
 }
 
+func (suite *RunIntegrationTestSuite) TestRun_DeprecatedLackingLanguage() {
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	suite.createProjectFile(ts)
+
+	cp := ts.Spawn("run", "helloWorld")
+	cp.Expect("DEPRECATION", 5*time.Second)
+	cp.Expect("Hello", 5*time.Second)
+
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
+}
+
 func (suite *RunIntegrationTestSuite) TestRun_BadLanguage() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
