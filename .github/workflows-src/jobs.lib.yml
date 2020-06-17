@@ -65,7 +65,7 @@ name: "Integration Test"
 strategy: *strategy
 runs-on: *runs-on
 env: *env
-timeout-minutes: 15
+timeout-minutes: 25
 steps:
   - name: "Checkout code"
     uses: actions/checkout@v2

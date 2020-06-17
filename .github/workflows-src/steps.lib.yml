@@ -86,8 +86,7 @@ with:
 name: "Validate"
 shell: bash
 run: |
-  echo "labels: ${{ toJson(github.event.pull_request.labels) }}"
-  if [ "${{ contains(github.event.pull_request.labels.*.name, 'version') }}" != "true" ]; then
+  if [ "${{ contains(toJson(github.event.pull_request.labels), 'version:') }}" != "true" ]; then
     echo "Version label must be set"
     exit 1
   fi
