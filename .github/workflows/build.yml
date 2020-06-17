@@ -18,7 +18,7 @@ jobs:
       shell: bash
       run: |
         echo ${{ contains(github.event.pull_request.labels.*.name, 'version:') }}
-        if [ "${{ contains(github.event.pull_request.labels.*.name, 'version:') }}" -ne "true" ]; then
+        if [ "${{ contains(github.event.pull_request.labels.*.name, 'version:') }}" != "true" ]; then
           echo "Version label must be set"
           exit 1
         fi
