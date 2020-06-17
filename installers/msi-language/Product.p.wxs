@@ -38,6 +38,7 @@
       </Directory>
     </Directory>
 
+	<!-- Build documentation URL shortcut -->
 	<DirectoryRef Id="ApplicationProgramsFolder">
 		<Component Id="ApplicationShortcut" Guid="9e688401-bf59-46c3-99ae-49295948f7b8">
 			<util:InternetShortcut Id="DocumentationShortcut" Name="Documentation" Target="[REL_NOTES]" IconFile="[#PerlIco]" Type="url" />
