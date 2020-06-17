@@ -46,8 +46,7 @@ namespace StateDeploy
             string installCmd = string.Format("powershell \"{0} -n -t {1}\"", scriptPath, installPath);
             session.Log(string.Format("Running install command: {0}", installCmd));
 
-            string output;
-            ActionResult result = RunCommand(session, installCmd, out output);
+            ActionResult result = RunCommand(session, installCmd);
             if (result.Equals(ActionResult.UserExit))
             {
                 result = Uninstall.Remove.InstallDir(session, installPath);
@@ -69,6 +68,11 @@ namespace StateDeploy
 
             stateToolPath = Path.Combine(installPath, "state.exe");
             return result;
+        }
+
+        private static ActionResult RunCommand(Session session, string cmd)
+        {
+            return RunCommand(session, cmd, out _);
         }
 
         private static ActionResult RunCommand(Session session, string cmd, out string output)
