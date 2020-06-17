@@ -33,7 +33,7 @@
           <RegistryValue Root='HKLM' Key='SOFTWARE\[Manufacturer]\[ProductName]' Type='string' Value='' KeyPath='yes' />
         </Component>
 		<Directory Id="ProgramMenuFolder">
-			<Directory Id="ApplicationProgramsFolder" Name="ActivePerl-5.26"/>
+			<Directory Id="ApplicationProgramsFolder" Name="{{PROJECT}}"/>
 		</Directory>
       </Directory>
     </Directory>
@@ -42,7 +42,7 @@
 		<Component Id="ApplicationShortcut" Guid="9e688401-bf59-46c3-99ae-49295948f7b8">
 			<util:InternetShortcut Id="DocumentationShortcut" Name="Documentation" Target="[REL_NOTES]" IconFile="[#PerlIco]" Type="url" />
 			<RemoveFolder Id="CleanUpShortCut" Directory="ApplicationProgramsFolder" On="uninstall"/>
-			<RegistryValue Root="HKCU" Key="Software\ActiveState\ActivePerl-5.26" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+			<RegistryValue Root="HKCU" Key="Software\[Manufacturer]\[ProductName]" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
 		</Component>
 	</DirectoryRef>
 
