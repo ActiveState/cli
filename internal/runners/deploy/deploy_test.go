@@ -126,12 +126,12 @@ func Test_runStepsWithFuncs(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var installCalled bool
-			installFunc := func(installable, output.Outputer) (runtime.EnvGetter, error) {
+			installFunc := func(string, installable, output.Outputer) (runtime.EnvGetter, error) {
 				installCalled = true
 				return nil, nil
 			}
 			var configCalled bool
-			configFunc := func(string, runtime.EnvGetter, output.Outputer, bool) error {
+			configFunc := func(runtime.EnvGetter, output.Outputer, bool) error {
 				configCalled = true
 				return nil
 			}
