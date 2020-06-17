@@ -25,7 +25,7 @@ namespace Uninstall
             result = Remove.Dir(session, shortcutDir);
             if (result.Equals(ActionResult.Failure))
             {
-                session.Log("Could not remove installation directory");
+                session.Log("Could not remove shortcuts directory");
                 return ActionResult.Failure;
             }
 
