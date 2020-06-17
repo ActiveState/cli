@@ -46,7 +46,7 @@ namespace StateDeploy
             ActionResult result = RunCommand(session, installCmd);
             if (result.Equals(ActionResult.UserExit))
             {
-                result = Uninstall.Remove.InstallDir(session, installPath);
+                result = Uninstall.Remove.Dir(session, installPath);
                 if (result.Equals(ActionResult.Failure))
                 {
                     session.Log("Could not remove installation directory");
@@ -184,7 +184,7 @@ namespace StateDeploy
                     var runResult = RunCommand(session, deployCmd);
                     if (runResult == ActionResult.UserExit)
                     {
-                        ActionResult result = Uninstall.Remove.InstallDir(session, session.CustomActionData["INSTALLDIR"]);
+                        ActionResult result = Uninstall.Remove.Dir(session, session.CustomActionData["INSTALLDIR"]);
                         if (result.Equals(ActionResult.Failure))
                         {
                             session.Log("Could not remove installation directory");
