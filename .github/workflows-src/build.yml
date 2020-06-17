@@ -7,12 +7,25 @@ name: Build-Test-Deploy
     branches:
       - master
   pull_request:
+    types: [labeled, opened, synchronize, reopened]
 
 jobs:
-  build: #@ jobs_build()
-  build_msi: #@ jobs_build_msi()
-  unittest: #@ jobs_unittest()
-  inttest:
-    if: contains(github.event.pull_request.labels.*.name, 'run integration tests')
-    _: #@ template.replace(jobs_inttest())
-  deploy: #@ jobs_deploy()
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test
+        shell: bash
+        run: |
+          echo ${{ contains(github.event.pull_request.labels.*.name, 'version:') }}
+          if [ "${{ contains(github.event.pull_request.labels.*.name, 'version:') }}" -ne "true" ]; then
+            echo "Version label must be set"
+            exit 1
+          fi
+#  build: #@ jobs_build()
+#  build_msi: #@ jobs_build_msi()
+#  unittest: #@ jobs_unittest()
+#  inttest:
+#    if: contains(github.event.pull_request.labels.*.name, 'run integration tests')
+#    _: #@ template.replace(jobs_inttest())
+#  deploy: #@ jobs_deploy()
