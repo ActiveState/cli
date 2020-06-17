@@ -8,6 +8,8 @@ using System.Net;
 using System.Collections.ObjectModel;
 using System.Windows.Forms;
 using System.Linq;
+using System.Web.Script.Serialization;
+using System.Collections.Generic;
 
 namespace StateDeploy
 {
@@ -140,9 +142,10 @@ namespace StateDeploy
                 proc.Close();
                 if (exitCode != 0)
                 {
+                    outputBuilder.Append('\x00');
+                    outputBuilder.AppendFormat("Process returned with exit code: {0}", exitCode);
                     output = outputBuilder.ToString();
                     session.Log("returning due to return code - error");
-                    session.Log("output = " + output);
                     return ActionResult.Failure;
                 }
             }
@@ -226,10 +229,8 @@ namespace StateDeploy
                     else if (runResult == ActionResult.Failure)
                     {
                         Record record = new Record();
-                        var sb = new StringBuilder();
-                        var lastFiveLines = output.Split('\n').Reverse().Take(5).Reverse().ToList();
-                        sb.AppendFormat("{0} failed with Error\n{1}", seq.Description, string.Join("\n", lastFiveLines));
-                        record.FormatString = sb.ToString();
+                        var errorOutput = FormatErrorOutput(output);
+                        record.FormatString = String.Format("{0} failed with error:\n{1}", seq.Description, errorOutput);
 
                         MessageResult msgRes = session.Message(InstallMessage.Error | (InstallMessage)MessageBoxButtons.OK, record);
                         return runResult;
@@ -244,6 +245,31 @@ namespace StateDeploy
 
             Status.ProgressBar.Increment(session, 1);
             return ActionResult.Success;
+        }
+
+        /// <summary>
+        /// FormatErrorOutput formats the output of a state tool command optimized for display in an error dialog
+        /// </summary>
+        /// <param name="cmdOutput">
+        /// the output from a state tool command run with `--output=json`
+        /// </param>
+        private static string FormatErrorOutput(string cmdOutput)
+        {
+            return string.Join("\n", cmdOutput.Split('\x00').Select(blob =>
+            {
+                try
+                {
+                    var json = new JavaScriptSerializer();
+                    var data = json.Deserialize<Dictionary<string, string>>(blob);
+                    var error = data["Error"];
+                    return error;
+                }
+                catch (Exception)
+                {
+                    return blob;
+                }
+            }).ToList());
+
         }
 
         private static string BuildDeployCmd(Session session, string subCommand, string stateToolPath)
