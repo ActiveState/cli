@@ -29,11 +29,12 @@ jobs:
       uses: actions/setup-go@v2
       with:
         go-version: ${{ matrix.go-version }}
-    - name: Install State Tool
+    - name: Setup
       shell: bash
       run: |
-        ./installers/install.sh -n -b master
-        echo "::add-path::$HOME/.local/bin"
+        bin=$(pwd)/.github/deps/${{ runner.os }}/bin
+        echo "Adding $bin to PATH"
+        echo "::add-path::$bin"
     - name: Preprocess
       shell: bash
       run: state run preprocess
@@ -75,11 +76,12 @@ jobs:
       uses: actions/setup-go@v2
       with:
         go-version: ${{ matrix.go-version }}
-    - name: Install State Tool
+    - name: Setup
       shell: bash
       run: |
-        ./installers/install.sh -n -b master
-        echo "::add-path::$HOME/.local/bin"
+        bin=$(pwd)/.github/deps/${{ runner.os }}/bin
+        echo "Adding $bin to PATH"
+        echo "::add-path::$bin"
     - name: Build State MSI
       shell: bash
       run: |
@@ -133,11 +135,12 @@ jobs:
       uses: actions/setup-go@v2
       with:
         go-version: ${{ matrix.go-version }}
-    - name: Install State Tool
+    - name: Setup
       shell: bash
       run: |
-        ./installers/install.sh -n -b master
-        echo "::add-path::$HOME/.local/bin"
+        bin=$(pwd)/.github/deps/${{ runner.os }}/bin
+        echo "Adding $bin to PATH"
+        echo "::add-path::$bin"
     - name: Preprocess
       shell: bash
       run: state run preprocess
@@ -165,11 +168,12 @@ jobs:
       uses: actions/setup-go@v2
       with:
         go-version: ${{ matrix.go-version }}
-    - name: Install State Tool
+    - name: Setup
       shell: bash
       run: |
-        ./installers/install.sh -n -b master
-        echo "::add-path::$HOME/.local/bin"
+        bin=$(pwd)/.github/deps/${{ runner.os }}/bin
+        echo "Adding $bin to PATH"
+        echo "::add-path::$bin"
     - name: Download Session Artifacts
       uses: actions/download-artifact@v2
       with:

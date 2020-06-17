@@ -1,4 +1,4 @@
-#@ load("steps.lib.yml", "steps_preprocess", "steps_build", "steps_genupdate", "steps_installgo", "steps_installstate", "steps_test", "steps_inttest", "steps_uploadartifacts", "steps_uploadsessartifacts", "steps_downloadsessartifacts", "steps_deletesessartifacts", "steps_deploy", "steps_build_state_msi", "steps_build_languages_msi", "steps_cleanbuild")
+#@ load("steps.lib.yml", "steps_preprocess", "steps_build", "steps_genupdate", "steps_installgo", "steps_setup", "steps_test", "steps_inttest", "steps_uploadartifacts", "steps_uploadsessartifacts", "steps_downloadsessartifacts", "steps_deletesessartifacts", "steps_deploy", "steps_build_state_msi", "steps_build_languages_msi", "steps_cleanbuild")
 
 strategy: &strategy
   matrix:
@@ -21,7 +21,7 @@ steps:
   - name: "Checkout code"
     uses: actions/checkout@v2
   - #@ steps_installgo()
-  - #@ steps_installstate()
+  - #@ steps_setup()
   - #@ steps_preprocess()
   - #@ steps_build()
   - #@ steps_genupdate()
@@ -39,7 +39,7 @@ steps:
     uses: actions/checkout@v2
   - #@ steps_downloadsessartifacts()
   - #@ steps_installgo()
-  - #@ steps_installstate()
+  - #@ steps_setup()
   - #@ steps_build_state_msi()
   - #@ steps_build_languages_msi()
   - #@ steps_uploadsessartifacts()
@@ -55,7 +55,7 @@ steps:
   - name: "Checkout code"
     uses: actions/checkout@v2
   - #@ steps_installgo()
-  - #@ steps_installstate()
+  - #@ steps_setup()
   - #@ steps_preprocess()
   - #@ steps_test()
 #@ end
@@ -70,7 +70,7 @@ steps:
   - name: "Checkout code"
     uses: actions/checkout@v2
   - #@ steps_installgo()
-  - #@ steps_installstate()
+  - #@ steps_setup()
   - #@ steps_preprocess()
   - #@ steps_build()
   - #@ steps_inttest()
@@ -86,7 +86,7 @@ steps:
   - name: "Checkout code"
     uses: actions/checkout@v2
   - #@ steps_installgo()
-  - #@ steps_installstate()
+  - #@ steps_setup()
   - #@ steps_downloadsessartifacts()
   - #@ steps_preprocess()
   - #@ steps_cleanbuild()

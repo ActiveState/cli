@@ -22,12 +22,13 @@ with:
   go-version: ${{ matrix.go-version }}
 #@ end
 ---
-#@ def steps_installstate():
-name: "Install State Tool"
+#@ def steps_setup():
+name: "Setup"
 shell: bash
 run: |
-  ./installers/install.sh -n -b master
-  echo "::add-path::$HOME/.local/bin"
+  bin=$(pwd)/.github/deps/${{ runner.os }}/bin
+  echo "Adding $bin to PATH"
+  echo "::add-path::$bin"
 #@ end
 ---
 #@ def steps_preprocess():
