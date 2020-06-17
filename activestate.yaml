@@ -21,6 +21,7 @@ constants:
       PATH="${GOROOT}/bin:${GOPATH}/bin:${PATH}"
 scripts:
   - name: preprocess
+    language: bash
     description: Generates assets required by the project that aren't just specific to the build
     value: |
       $constants.SET_ENV
@@ -28,28 +29,33 @@ scripts:
       go run scripts/constants-generator/main.go -- internal/constants/generated.go
       mkdir -p build
   - name: build
+    language: bash
     description: Builds the project with the host OS as the target OS.
     value: |
       $scripts.preprocess
       go build -tags "$GO_BUILD_TAGS" -o $constants.BUILD_TARGET $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
   - name: build-for
+    language: bash
     description: Builds the project with the specified OS as the target OS. (valid values darwin, linux, windows)
     value: |
       $scripts.preprocess
       export GOOS=${1}
       go build -tags "internal $GO_BUILD_TAGS" -o $constants.BUILD_TARGET $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
   - name: generate-update
+    language: bash
     description: Generate update files
     value: |
       $scripts.preprocess
       mkdir -p build/update
       go run scripts/update-generator/main.go -o build/update $constants.BUILD_TARGET
   - name: install
+    language: bash
     description: Installs the current HEAD version into GOBIN
     value: |
       $scripts.preprocess
       go install $constants.CLI_BUILDFLAGS $CLI_PKGS
   - name: deploy-updates
+    language: bash
     description: Deploys update files to S3. This steps is automated by CI and should never be ran manually unless you KNOW WHAT YOU'RE DOING.
     constraints:
       os: linux,macos
@@ -57,6 +63,7 @@ scripts:
       go run scripts/s3-deployer/main.go build/update ca-central-1 cli-update update/state
       go run scripts/s3-deployer/main.go installers/install.sh ca-central-1 cli-update update/state/install.sh
   - name: deploy-updates
+    language: bash
     description: Deploys update files to S3. This steps is automated by CI and should never be ran manually unless you KNOW WHAT YOU'RE DOING.
     constraints:
       os: windows
@@ -64,6 +71,7 @@ scripts:
       go run scripts/s3-deployer/main.go build/update ca-central-1 cli-update update/state
       go run scripts/s3-deployer/main.go installers/install.ps1 ca-central-1 cli-update update/state/install.ps1
   - name: generate-api-client
+    language: bash
     description: Generates the mono-api client files
     value: |
       WD=$(pwd)
@@ -71,6 +79,7 @@ scripts:
       swagger generate client -f ${WD}/../TheHomeRepot/service/api/swagger/swagger.yaml -A mono -a mono_operations -m mono_models -c mono_client
       popd
   - name: generate-secrets-client
+    language: bash
     description: Generates the secrets-api client files
     value: |
       WD=$(pwd)
@@ -78,6 +87,7 @@ scripts:
       swagger generate client -f ${WD}/../TheHomeRepot/service/secrets/api/swagger.yaml -A secrets -a secrets_operations -m secrets_models -c secrets_client
       popd
   - name: generate-headchef-client
+    language: bash
     description: Generates the headchef-api client files
     value: |
       WD=$(pwd)
@@ -85,6 +95,7 @@ scripts:
       swagger generate client --with-flatten full -f ${WD}/../TheHomeRepot/service/head-chef/swagger.json -A headchef -a headchef_operations -m headchef_models -c headchef_client
       popd
   - name: generate-inventory-client
+    language: bash
     description: Generates the inventory-api client files
     value: |
       WD=$(pwd)
@@ -92,6 +103,7 @@ scripts:
       swagger generate client --with-flatten full -f ${WD}/../TheHomeRepot/service/inventory-api-v1/swagger.json -A inventory -a inventory_operations -m inventory_models -c inventory_client
       popd
   - name: generate-clients
+    language: bash
     description: Generates all api clients
     value: |
       $scripts.generate-api-client
@@ -99,9 +111,11 @@ scripts:
       $scripts.generate-headchef-client
       $scripts.generate-inventory-client
   - name: generate-locale
+    language: bash
     description: Detects new localisation calls and generates placeholder entries in en-us.yaml
     value: python3 scripts/locale-generator.py
   - name: build-msi-state
+    language: bash
     description: Build the state tool MSI, requires that you have wixtools installed and on PATH
     standalone: true
     constraints:
@@ -112,6 +126,7 @@ scripts:
       candle.exe ./installers/msi-state/install.wxs -o ./installers/msi-state/install.wixobj -ext WixUIExtension -ext WixUtilExtension
       light.exe ./installers/msi-state/install.wixobj -o ./build/state_tool.msi -sice:ICE91 -sice:ICE64 -ext WixUIExtension -ext WixUtilExtension
   - name: build-msi-language
+    language: bash
     description: Builds the language MSI, requires that you have .NET 4.x installed and on PATH
     standalone: true
     constraints:
@@ -137,6 +152,7 @@ scripts:
       ACTIVESTATE_PROJECT="" go test -parallel 12 $(go list ./... | grep -v /test/integration)
     standalone: true
   - name: integration-tests
+    language: bash
     description: Runs integration tests.
     value: |
       unset ACTIVESTATE_ACTIVATED
@@ -144,16 +160,19 @@ scripts:
       export INTEGRATION_TEST_PASSWORD=$secrets.project.INTEGRATION_TEST_PASSWORD
       go test ./test/integration -v "${@:1}"
   - name: clean
+    language: bash
     description: Cleans out the build dir.
     value: |
       go clean
       rm -Rf build
   - name: run
+    language: bash
     description: Builds the State Tool and runs it with `--help`
     value: |
       $scripts.build
       build/state --help
   - name: debug
+    language: bash
     description: "Runs a remote debugger, that can be hooked into from your IDE, example usage: `state run debug activate` (will debug `state activate`)"
     standalone: true
     value: dlv debug --headless --listen=:2346 --api-version=2 github.com/ActiveState/cli/cmd/state -- $@
