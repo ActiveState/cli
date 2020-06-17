@@ -81,6 +81,16 @@ with:
   name: session-build
 #@ end
 ---
+#@ def steps_validate():
+name: "Validate"
+shell: bash
+run: |
+  if [ "${{ contains(github.event.pull_request.labels.*.name, 'version:') }}" != "true" ]; then
+    echo "Version label must be set"
+    exit 1
+  fi
+#@ end
+---
 #@ def steps_deploy():
 name: "Deploy"
 shell: bash
