@@ -95,7 +95,7 @@ jobs:
       - <<: *runTests
       - <<: *buildCli
       - <<: *deployBits
-      - <<: *runIntegrationTests
+      # - <<: *runIntegrationTests
       - <<: *storeArtifacts
       - <<: *storeTestResults
   build-windows:
@@ -152,7 +152,7 @@ jobs:
       - <<: *runTests
       - <<: *buildCli
       - <<: *deployBits
-      - <<: *runIntegrationTests
+      # - <<: *runIntegrationTests
       - <<: *storeArtifacts
       - <<: *storeTestResults
   test-linux:
