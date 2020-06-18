@@ -2,6 +2,7 @@ package sscommon
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -117,11 +118,33 @@ func runWithCmd(env []string, name string, args ...string) error {
 		name = perlPath
 	case ".bat":
 		// No action required
+	case ".ps1":
+		args = append([]string{"-file", name}, args...)
+		name = "powershell"
+	case ".sh":
+		name = winPathToLinPath(name)
+		args = append([]string{"-c", name}, args...)
+		name = "bash"
 	default:
 		return failures.FailUser.New("err_sscommon_unsupported_language", ext)
 	}
 
 	return runDirect(env, name, args...)
+}
+
+func winPathToLinPath(name string) string {
+	if true {
+		return name
+	}
+	ss := strings.SplitN(name, ":", 2)
+	if len(ss) < 2 {
+		return name
+	}
+
+	drive := strings.ToLower(ss[0])
+	path := strings.ReplaceAll(ss[1], string(os.PathSeparator), "/")
+
+	return fmt.Sprintf("/mnt/%s%s", drive, path)
 }
 
 func binaryPathCmd(env []string, name string) (string, error) {
