@@ -133,9 +133,6 @@ func runWithCmd(env []string, name string, args ...string) error {
 }
 
 func winPathToLinPath(name string) string {
-	if true {
-		return name
-	}
 	ss := strings.SplitN(name, ":", 2)
 	if len(ss) < 2 {
 		return name
