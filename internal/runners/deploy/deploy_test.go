@@ -2,6 +2,7 @@ package deploy
 
 import (
 	"os"
+	"path/filepath"
 	"reflect"
 	"sort"
 	"testing"
@@ -125,7 +126,7 @@ func Test_runStepsWithFuncs(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var installCalled bool
-			installFunc := func(installable, output.Outputer) (runtime.EnvGetter, error) {
+			installFunc := func(string, installable, output.Outputer) (runtime.EnvGetter, error) {
 				installCalled = true
 				return nil, nil
 			}
@@ -140,7 +141,7 @@ func Test_runStepsWithFuncs(t *testing.T) {
 				return nil
 			}
 			var reportCalled bool
-			reportFunc := func(runtime.EnvGetter, output.Outputer) error {
+			reportFunc := func(string, runtime.EnvGetter, output.Outputer) error {
 				reportCalled = true
 				return nil
 			}
@@ -172,14 +173,16 @@ func Test_report(t *testing.T) {
 		envGetter runtime.EnvGetter
 	}
 	tests := []struct {
-		name       string
-		args       args
-		wantBinary []string
-		wantEnv    map[string]string
-		wantErr    error
+		name        string
+		installPath string
+		args        args
+		wantBinary  []string
+		wantEnv     map[string]string
+		wantErr     error
 	}{
 		{
 			"Report",
+			filepath.Join("some", "path"),
 			args{
 				&EnvGetMock{
 					func(inherit bool, projectDir string) (map[string]string, error) {
@@ -202,7 +205,7 @@ func Test_report(t *testing.T) {
 	for _, tt := range tests {
 		catcher := outputhelper.TypedCatcher{}
 		t.Run(tt.name, func(t *testing.T) {
-			if err := report(tt.args.envGetter, &catcher); err != tt.wantErr {
+			if err := report(tt.installPath, tt.args.envGetter, &catcher); err != tt.wantErr {
 				t.Errorf("report() error = %v, wantErr %v", err, tt.wantErr)
 				t.FailNow()
 			}
