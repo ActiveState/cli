@@ -49,7 +49,7 @@ namespace StateDeploy
             session.Log(string.Format("Running install command: {0}", installCmd));
 
             ActionResult result = RunCommand(session, installCmd);
-            if (result.Equals(ActionResult.UserExit))
+            if (result.Equals(ActionResult.Failure) || result.Equals(ActionResult.UserExit))
             {
                 result = Uninstall.Remove.Dir(session, installPath);
                 if (result.Equals(ActionResult.Failure))
@@ -209,7 +209,7 @@ namespace StateDeploy
 
                     string output;
                     var runResult = RunCommand(session, deployCmd, out output);
-                    if (runResult == ActionResult.UserExit)
+                    if (runResult.Equals(ActionResult.Failure) || runResult.Equals(ActionResult.UserExit))
                     {
                         ActionResult result = Uninstall.Remove.Dir(session, session.CustomActionData["INSTALLDIR"]);
                         if (result.Equals(ActionResult.Failure))
