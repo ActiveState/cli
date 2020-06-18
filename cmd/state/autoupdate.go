@@ -47,7 +47,7 @@ func relaunch() (int, error) {
 	err := cmd.Start()
 	if err != nil {
 		return 1, locale.WrapError(err, "err_autoupdate_relaunch_start",
-			"Could start updated State Tool after auto-updating, please manually run your command again, if the problem persists please reinstall the State Tool.")
+			"Could not start updated State Tool after auto-updating, please manually run your command again, if the problem persists please reinstall the State Tool.")
 	}
 
 	err = cmd.Wait()
