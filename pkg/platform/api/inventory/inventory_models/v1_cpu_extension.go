@@ -6,22 +6,22 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // V1CPUExtension CPU Extension
 //
 // The full CPU extension data model
+//
 // swagger:model v1CpuExtension
 type V1CPUExtension struct {
 	V1CPUExtensionAllOf0
 
-	V1CPUExtensionAllOf1
+	V1CPUExtensionCore
 
-	V1CPUExtensionAllOf2
+	V1SubSchemaRevisionedResource
 }
 
 // UnmarshalJSON unmarshals this object from a JSON structure
@@ -34,18 +34,18 @@ func (m *V1CPUExtension) UnmarshalJSON(raw []byte) error {
 	m.V1CPUExtensionAllOf0 = aO0
 
 	// AO1
-	var aO1 V1CPUExtensionAllOf1
+	var aO1 V1CPUExtensionCore
 	if err := swag.ReadJSON(raw, &aO1); err != nil {
 		return err
 	}
-	m.V1CPUExtensionAllOf1 = aO1
+	m.V1CPUExtensionCore = aO1
 
 	// AO2
-	var aO2 V1CPUExtensionAllOf2
+	var aO2 V1SubSchemaRevisionedResource
 	if err := swag.ReadJSON(raw, &aO2); err != nil {
 		return err
 	}
-	m.V1CPUExtensionAllOf2 = aO2
+	m.V1SubSchemaRevisionedResource = aO2
 
 	return nil
 }
@@ -60,18 +60,17 @@ func (m V1CPUExtension) MarshalJSON() ([]byte, error) {
 	}
 	_parts = append(_parts, aO0)
 
-	aO1, err := swag.WriteJSON(m.V1CPUExtensionAllOf1)
+	aO1, err := swag.WriteJSON(m.V1CPUExtensionCore)
 	if err != nil {
 		return nil, err
 	}
 	_parts = append(_parts, aO1)
 
-	aO2, err := swag.WriteJSON(m.V1CPUExtensionAllOf2)
+	aO2, err := swag.WriteJSON(m.V1SubSchemaRevisionedResource)
 	if err != nil {
 		return nil, err
 	}
 	_parts = append(_parts, aO2)
-
 	return swag.ConcatJSON(_parts...), nil
 }
 
@@ -83,12 +82,12 @@ func (m *V1CPUExtension) Validate(formats strfmt.Registry) error {
 	if err := m.V1CPUExtensionAllOf0.Validate(formats); err != nil {
 		res = append(res, err)
 	}
-	// validation for a type composition with V1CPUExtensionAllOf1
-	if err := m.V1CPUExtensionAllOf1.Validate(formats); err != nil {
+	// validation for a type composition with V1CPUExtensionCore
+	if err := m.V1CPUExtensionCore.Validate(formats); err != nil {
 		res = append(res, err)
 	}
-	// validation for a type composition with V1CPUExtensionAllOf2
-	if err := m.V1CPUExtensionAllOf2.Validate(formats); err != nil {
+	// validation for a type composition with V1SubSchemaRevisionedResource
+	if err := m.V1SubSchemaRevisionedResource.Validate(formats); err != nil {
 		res = append(res, err)
 	}
 

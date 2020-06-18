@@ -52,7 +52,6 @@ func (s *Search) Run(params SearchRunParams) error {
 	}
 
 	table := newPackagesTable(packages)
-	sortByFirstTwoCols(table.data)
 
 	s.out.Print(table.output())
 

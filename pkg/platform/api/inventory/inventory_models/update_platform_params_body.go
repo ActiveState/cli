@@ -6,21 +6,20 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // UpdatePlatformParamsBody update platform params body
+//
 // swagger:model updatePlatformParamsBody
 type UpdatePlatformParamsBody struct {
 
-	// end of support date
-	// Required: true
+	// The last day on which this platform will be supported. Can be omitted to clear an existing date.
 	// Format: date
-	EndOfSupportDate *strfmt.Date `json:"end_of_support_date"`
+	EndOfSupportDate strfmt.Date `json:"end_of_support_date,omitempty"`
 }
 
 // Validate validates this update platform params body
@@ -39,8 +38,8 @@ func (m *UpdatePlatformParamsBody) Validate(formats strfmt.Registry) error {
 
 func (m *UpdatePlatformParamsBody) validateEndOfSupportDate(formats strfmt.Registry) error {
 
-	if err := validate.Required("end_of_support_date", "body", m.EndOfSupportDate); err != nil {
-		return err
+	if swag.IsZero(m.EndOfSupportDate) { // not required
+		return nil
 	}
 
 	if err := validate.FormatOf("end_of_support_date", "body", "date", m.EndOfSupportDate.String(), formats); err != nil {

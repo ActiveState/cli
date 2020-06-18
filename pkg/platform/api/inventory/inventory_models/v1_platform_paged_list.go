@@ -8,9 +8,8 @@ package inventory_models
 import (
 	"strconv"
 
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
@@ -18,20 +17,21 @@ import (
 // V1PlatformPagedList Platform Paged List
 //
 // A paginated list of platforms
+//
 // swagger:model v1PlatformPagedList
 type V1PlatformPagedList struct {
 
 	// links
 	// Required: true
-	Links *V1PlatformPagedListLinks `json:"links"`
+	Links *V1SubSchemaPagingLinks `json:"links"`
 
 	// paging
 	// Required: true
-	Paging *V1PlatformPagedListPaging `json:"paging"`
+	Paging *V1SubSchemaPaging `json:"paging"`
 
 	// A page of platforms
 	// Required: true
-	Platforms []*V1PlatformPagedListPlatformsItems `json:"platforms"`
+	Platforms []*V1Platform `json:"platforms"`
 }
 
 // Validate validates this v1 platform paged list

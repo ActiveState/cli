@@ -6,20 +6,20 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // V1CPUExtensionCore CPU Extension Core
 //
 // The properties of a CPU extension needed to create a new one
+//
 // swagger:model v1CpuExtensionCore
 type V1CPUExtensionCore struct {
 	V1CPUExtensionCoreAllOf0
 
-	V1CPUExtensionCoreAllOf1
+	V1Revision
 }
 
 // UnmarshalJSON unmarshals this object from a JSON structure
@@ -32,11 +32,11 @@ func (m *V1CPUExtensionCore) UnmarshalJSON(raw []byte) error {
 	m.V1CPUExtensionCoreAllOf0 = aO0
 
 	// AO1
-	var aO1 V1CPUExtensionCoreAllOf1
+	var aO1 V1Revision
 	if err := swag.ReadJSON(raw, &aO1); err != nil {
 		return err
 	}
-	m.V1CPUExtensionCoreAllOf1 = aO1
+	m.V1Revision = aO1
 
 	return nil
 }
@@ -51,12 +51,11 @@ func (m V1CPUExtensionCore) MarshalJSON() ([]byte, error) {
 	}
 	_parts = append(_parts, aO0)
 
-	aO1, err := swag.WriteJSON(m.V1CPUExtensionCoreAllOf1)
+	aO1, err := swag.WriteJSON(m.V1Revision)
 	if err != nil {
 		return nil, err
 	}
 	_parts = append(_parts, aO1)
-
 	return swag.ConcatJSON(_parts...), nil
 }
 
@@ -68,8 +67,8 @@ func (m *V1CPUExtensionCore) Validate(formats strfmt.Registry) error {
 	if err := m.V1CPUExtensionCoreAllOf0.Validate(formats); err != nil {
 		res = append(res, err)
 	}
-	// validation for a type composition with V1CPUExtensionCoreAllOf1
-	if err := m.V1CPUExtensionCoreAllOf1.Validate(formats); err != nil {
+	// validation for a type composition with V1Revision
+	if err := m.V1Revision.Validate(formats); err != nil {
 		res = append(res, err)
 	}
 

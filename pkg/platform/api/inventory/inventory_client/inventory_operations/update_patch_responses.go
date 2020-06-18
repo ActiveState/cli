@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // UpdatePatchReader is a Reader for the UpdatePatch structure.
@@ -24,21 +23,18 @@ type UpdatePatchReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *UpdatePatchReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewUpdatePatchOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewUpdatePatchBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewUpdatePatchDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -68,6 +64,10 @@ func (o *UpdatePatchOK) Error() string {
 	return fmt.Sprintf("[PUT /v1/patches/{patch_id}][%d] updatePatchOK  %+v", 200, o.Payload)
 }
 
+func (o *UpdatePatchOK) GetPayload() *inventory_models.V1Patch {
+	return o.Payload
+}
+
 func (o *UpdatePatchOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(inventory_models.V1Patch)
@@ -95,6 +95,10 @@ type UpdatePatchBadRequest struct {
 
 func (o *UpdatePatchBadRequest) Error() string {
 	return fmt.Sprintf("[PUT /v1/patches/{patch_id}][%d] updatePatchBadRequest  %+v", 400, o.Payload)
+}
+
+func (o *UpdatePatchBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
+	return o.Payload
 }
 
 func (o *UpdatePatchBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -133,6 +137,10 @@ func (o *UpdatePatchDefault) Code() int {
 
 func (o *UpdatePatchDefault) Error() string {
 	return fmt.Sprintf("[PUT /v1/patches/{patch_id}][%d] updatePatch default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *UpdatePatchDefault) GetPayload() *inventory_models.RestAPIError {
+	return o.Payload
 }
 
 func (o *UpdatePatchDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

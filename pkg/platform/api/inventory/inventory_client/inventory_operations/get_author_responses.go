@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // GetAuthorReader is a Reader for the GetAuthor structure.
@@ -24,14 +23,12 @@ type GetAuthorReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetAuthorReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewGetAuthorOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	default:
 		result := NewGetAuthorDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -59,6 +56,10 @@ type GetAuthorOK struct {
 
 func (o *GetAuthorOK) Error() string {
 	return fmt.Sprintf("[GET /v1/authors/{author_id_or_email}][%d] getAuthorOK  %+v", 200, o.Payload)
+}
+
+func (o *GetAuthorOK) GetPayload() *inventory_models.V1Author {
+	return o.Payload
 }
 
 func (o *GetAuthorOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -97,6 +98,10 @@ func (o *GetAuthorDefault) Code() int {
 
 func (o *GetAuthorDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/authors/{author_id_or_email}][%d] getAuthor default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *GetAuthorDefault) GetPayload() *inventory_models.RestAPIError {
+	return o.Payload
 }
 
 func (o *GetAuthorDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

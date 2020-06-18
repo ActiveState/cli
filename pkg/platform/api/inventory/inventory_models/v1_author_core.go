@@ -8,9 +8,8 @@ package inventory_models
 import (
 	"strconv"
 
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
@@ -18,6 +17,7 @@ import (
 // V1AuthorCore Author Core
 //
 // The core fields of a author
+//
 // swagger:model v1AuthorCore
 type V1AuthorCore struct {
 
