@@ -76,7 +76,7 @@ func (suite *PackageIntegrationTestSuite) TestPackages_project_name_noData() {
 	defer ts.Close()
 
 	cp := ts.Spawn("packages", "--namespace", "ActiveState-CLI/List", "--package", "req")
-	cp.Expect("The package has no projects to list.")
+	cp.Expect("The project has no packages to list.")
 	cp.ExpectExitCode(0)
 }
 
@@ -144,14 +144,16 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchSimple() {
 	expectations := []string{
 		"Name",
 		"requests",
-		"2.10.0",
-		"2.18.4",
-		"2.21.0",
-		"2.22.0",
-		"2.3",
-		"requests-oauthlib",
+		"2.8.1",
 		"requests3",
-		"requests_gpgauthlib",
+		"3.0.0a1",
+		"requests-auth",
+		"5.1.0",
+		"requests-aws",
+		"0.1.8",
+		"requests-aws-sign",
+		"0.1.5",
+		"---",
 	}
 	for _, expectation := range expectations {
 		cp.Expect(expectation)
@@ -168,10 +170,8 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTerm() {
 	expectations := []string{
 		"Name",
 		"requests",
-		"2.10.0",
-		"2.18.4",
-		"2.21.0",
-		"2.22.0",
+		"2.8.1",
+		"2.7.0",
 		"2.3",
 		"---",
 	}
