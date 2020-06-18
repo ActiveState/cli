@@ -31,6 +31,8 @@ func autoUpdate(args []string, out output.Outputer, pjPath string) (bool, int, e
 		return false, 0, nil
 	}
 
+	defer updater.Cleanup()
+
 	out.Notice(locale.Tr("auto_update_to_version", constants.Version, resultVersion))
 	code, err := relaunch()
 	return true, code, err
@@ -44,13 +46,14 @@ func relaunch() (int, error) {
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 	err := cmd.Start()
 	if err != nil {
-		logging.Error("Failed to start command: %v", err)
+		return 1, locale.WrapError(err, "err_autoupdate_relaunch_start",
+			"Could not start updated State Tool after auto-updating, please manually run your command again, if the problem persists please reinstall the State Tool.")
 	}
 
 	err = cmd.Wait()
 	if err != nil {
-		logging.Error("relaunched cmd returned error: %v", err)
+		return osutils.CmdExitCode(cmd), locale.WrapError(err, "err_autoupdate_relaunch_wait", "Could not forward your command after auto-updating, please manually run your command again.")
 	}
 
-	return osutils.CmdExitCode(cmd), err
+	return osutils.CmdExitCode(cmd), nil
 }

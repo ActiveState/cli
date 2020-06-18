@@ -135,7 +135,5 @@ func AutoUpdate(pjPath string, out output.Outputer) (updated bool, resultVersion
 		return false, ""
 	}
 
-	cleanOld()
-
 	return true, info.Version
 }
