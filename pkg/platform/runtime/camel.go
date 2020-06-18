@@ -270,7 +270,7 @@ func Relocate(metaData *MetaData, cb func()) *failures.Failure {
 			if relocMap[suffix] {
 				return true
 			}
-			if !strings.HasSuffix(p, constants.RuntimeMetaFile) && (!binariesSeparate || !fileutils.IsBinary(contents)) {
+			if !strings.HasSuffix(p, filepath.FromSlash(constants.RuntimeMetaFile)) && (!binariesSeparate || !fileutils.IsBinary(contents)) {
 				cb()
 				return true
 			}
