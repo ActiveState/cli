@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // AddPlatformReader is a Reader for the AddPlatform structure.
@@ -24,21 +23,18 @@ type AddPlatformReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *AddPlatformReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 201:
 		result := NewAddPlatformCreated()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewAddPlatformBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewAddPlatformDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -68,6 +64,10 @@ func (o *AddPlatformCreated) Error() string {
 	return fmt.Sprintf("[POST /v1/platforms][%d] addPlatformCreated  %+v", 201, o.Payload)
 }
 
+func (o *AddPlatformCreated) GetPayload() *inventory_models.V1Platform {
+	return o.Payload
+}
+
 func (o *AddPlatformCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(inventory_models.V1Platform)
@@ -95,6 +95,10 @@ type AddPlatformBadRequest struct {
 
 func (o *AddPlatformBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/platforms][%d] addPlatformBadRequest  %+v", 400, o.Payload)
+}
+
+func (o *AddPlatformBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
+	return o.Payload
 }
 
 func (o *AddPlatformBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -133,6 +137,10 @@ func (o *AddPlatformDefault) Code() int {
 
 func (o *AddPlatformDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/platforms][%d] addPlatform default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *AddPlatformDefault) GetPayload() *inventory_models.RestAPIError {
+	return o.Payload
 }
 
 func (o *AddPlatformDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

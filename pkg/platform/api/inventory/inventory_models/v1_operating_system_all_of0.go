@@ -6,20 +6,20 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // V1OperatingSystemAllOf0 v1 operating system all of0
+//
 // swagger:model v1OperatingSystemAllOf0
 type V1OperatingSystemAllOf0 struct {
 
 	// links
 	// Required: true
-	Links *V1OperatingSystemAllOf0Links `json:"links"`
+	Links *V1SubSchemaSelfLink `json:"links"`
 
 	// operating system id
 	// Required: true

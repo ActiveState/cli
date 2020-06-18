@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // GetNamespacesReader is a Reader for the GetNamespaces structure.
@@ -24,14 +23,12 @@ type GetNamespacesReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetNamespacesReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewGetNamespacesOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	default:
 		result := NewGetNamespacesDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -59,6 +56,10 @@ type GetNamespacesOK struct {
 
 func (o *GetNamespacesOK) Error() string {
 	return fmt.Sprintf("[GET /v1/namespaces][%d] getNamespacesOK  %+v", 200, o.Payload)
+}
+
+func (o *GetNamespacesOK) GetPayload() *inventory_models.V1NamespacePagedList {
+	return o.Payload
 }
 
 func (o *GetNamespacesOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -97,6 +98,10 @@ func (o *GetNamespacesDefault) Code() int {
 
 func (o *GetNamespacesDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/namespaces][%d] getNamespaces default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *GetNamespacesDefault) GetPayload() *inventory_models.RestAPIError {
+	return o.Payload
 }
 
 func (o *GetNamespacesDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

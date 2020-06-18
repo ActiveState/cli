@@ -6,15 +6,15 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/validate"
 )
 
 // V1SolutionResponse Solver Response
 //
 // The response to an order. It is a mapping of platform id to recipe id and location.
+//
 // swagger:model v1SolutionResponse
 type V1SolutionResponse map[string]V1SolutionResponseAdditionalProperties
 

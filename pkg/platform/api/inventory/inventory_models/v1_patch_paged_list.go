@@ -8,9 +8,8 @@ package inventory_models
 import (
 	"strconv"
 
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
@@ -18,20 +17,21 @@ import (
 // V1PatchPagedList Patch Paged List
 //
 // A paginated list of patches
+//
 // swagger:model v1PatchPagedList
 type V1PatchPagedList struct {
 
 	// links
 	// Required: true
-	Links *V1PatchPagedListLinks `json:"links"`
+	Links *V1SubSchemaPagingLinks `json:"links"`
 
 	// paging
 	// Required: true
-	Paging *V1PatchPagedListPaging `json:"paging"`
+	Paging *V1SubSchemaPaging `json:"paging"`
 
 	// A page of patches
 	// Required: true
-	Patches []*V1PatchPagedListPatchesItems `json:"patches"`
+	Patches []*V1Patch `json:"patches"`
 }
 
 // Validate validates this v1 patch paged list

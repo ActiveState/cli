@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // AddKernelVersionReader is a Reader for the AddKernelVersion structure.
@@ -24,21 +23,18 @@ type AddKernelVersionReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *AddKernelVersionReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 201:
 		result := NewAddKernelVersionCreated()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewAddKernelVersionBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewAddKernelVersionDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -68,6 +64,10 @@ func (o *AddKernelVersionCreated) Error() string {
 	return fmt.Sprintf("[POST /v1/kernels/{kernel_id}/versions][%d] addKernelVersionCreated  %+v", 201, o.Payload)
 }
 
+func (o *AddKernelVersionCreated) GetPayload() *inventory_models.V1KernelVersion {
+	return o.Payload
+}
+
 func (o *AddKernelVersionCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(inventory_models.V1KernelVersion)
@@ -95,6 +95,10 @@ type AddKernelVersionBadRequest struct {
 
 func (o *AddKernelVersionBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/kernels/{kernel_id}/versions][%d] addKernelVersionBadRequest  %+v", 400, o.Payload)
+}
+
+func (o *AddKernelVersionBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
+	return o.Payload
 }
 
 func (o *AddKernelVersionBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -133,6 +137,10 @@ func (o *AddKernelVersionDefault) Code() int {
 
 func (o *AddKernelVersionDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/kernels/{kernel_id}/versions][%d] addKernelVersion default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *AddKernelVersionDefault) GetPayload() *inventory_models.RestAPIError {
+	return o.Payload
 }
 
 func (o *AddKernelVersionDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

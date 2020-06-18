@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // GetBuildScriptsReader is a Reader for the GetBuildScripts structure.
@@ -24,14 +23,12 @@ type GetBuildScriptsReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetBuildScriptsReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewGetBuildScriptsOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	default:
 		result := NewGetBuildScriptsDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -59,6 +56,10 @@ type GetBuildScriptsOK struct {
 
 func (o *GetBuildScriptsOK) Error() string {
 	return fmt.Sprintf("[GET /v1/build-scripts][%d] getBuildScriptsOK  %+v", 200, o.Payload)
+}
+
+func (o *GetBuildScriptsOK) GetPayload() *inventory_models.V1BuildScriptPagedList {
+	return o.Payload
 }
 
 func (o *GetBuildScriptsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -97,6 +98,10 @@ func (o *GetBuildScriptsDefault) Code() int {
 
 func (o *GetBuildScriptsDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/build-scripts][%d] getBuildScripts default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *GetBuildScriptsDefault) GetPayload() *inventory_models.RestAPIError {
+	return o.Payload
 }
 
 func (o *GetBuildScriptsDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

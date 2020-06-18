@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // GetIngredientVersionAuthorsReader is a Reader for the GetIngredientVersionAuthors structure.
@@ -24,14 +23,12 @@ type GetIngredientVersionAuthorsReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetIngredientVersionAuthorsReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewGetIngredientVersionAuthorsOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	default:
 		result := NewGetIngredientVersionAuthorsDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -59,6 +56,10 @@ type GetIngredientVersionAuthorsOK struct {
 
 func (o *GetIngredientVersionAuthorsOK) Error() string {
 	return fmt.Sprintf("[GET /v1/ingredients/{ingredient_id}/versions/{ingredient_version_id}/authors][%d] getIngredientVersionAuthorsOK  %+v", 200, o.Payload)
+}
+
+func (o *GetIngredientVersionAuthorsOK) GetPayload() *inventory_models.V1AuthorPagedList {
+	return o.Payload
 }
 
 func (o *GetIngredientVersionAuthorsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -97,6 +98,10 @@ func (o *GetIngredientVersionAuthorsDefault) Code() int {
 
 func (o *GetIngredientVersionAuthorsDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/ingredients/{ingredient_id}/versions/{ingredient_version_id}/authors][%d] getIngredientVersionAuthors default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *GetIngredientVersionAuthorsDefault) GetPayload() *inventory_models.RestAPIError {
+	return o.Payload
 }
 
 func (o *GetIngredientVersionAuthorsDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // GetOperatingSystemsReader is a Reader for the GetOperatingSystems structure.
@@ -24,14 +23,12 @@ type GetOperatingSystemsReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetOperatingSystemsReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewGetOperatingSystemsOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	default:
 		result := NewGetOperatingSystemsDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -59,6 +56,10 @@ type GetOperatingSystemsOK struct {
 
 func (o *GetOperatingSystemsOK) Error() string {
 	return fmt.Sprintf("[GET /v1/operating-systems][%d] getOperatingSystemsOK  %+v", 200, o.Payload)
+}
+
+func (o *GetOperatingSystemsOK) GetPayload() *inventory_models.V1OperatingSystemPagedList {
+	return o.Payload
 }
 
 func (o *GetOperatingSystemsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -97,6 +98,10 @@ func (o *GetOperatingSystemsDefault) Code() int {
 
 func (o *GetOperatingSystemsDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/operating-systems][%d] getOperatingSystems default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *GetOperatingSystemsDefault) GetPayload() *inventory_models.RestAPIError {
+	return o.Payload
 }
 
 func (o *GetOperatingSystemsDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

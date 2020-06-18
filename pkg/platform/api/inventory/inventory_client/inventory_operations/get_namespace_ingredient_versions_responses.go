@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // GetNamespaceIngredientVersionsReader is a Reader for the GetNamespaceIngredientVersions structure.
@@ -24,21 +23,18 @@ type GetNamespaceIngredientVersionsReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetNamespaceIngredientVersionsReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewGetNamespaceIngredientVersionsOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 404:
 		result := NewGetNamespaceIngredientVersionsNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewGetNamespaceIngredientVersionsDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -68,6 +64,10 @@ func (o *GetNamespaceIngredientVersionsOK) Error() string {
 	return fmt.Sprintf("[GET /v1/namespaces/ingredient/versions][%d] getNamespaceIngredientVersionsOK  %+v", 200, o.Payload)
 }
 
+func (o *GetNamespaceIngredientVersionsOK) GetPayload() *inventory_models.V1IngredientVersionPagedList {
+	return o.Payload
+}
+
 func (o *GetNamespaceIngredientVersionsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(inventory_models.V1IngredientVersionPagedList)
@@ -95,6 +95,10 @@ type GetNamespaceIngredientVersionsNotFound struct {
 
 func (o *GetNamespaceIngredientVersionsNotFound) Error() string {
 	return fmt.Sprintf("[GET /v1/namespaces/ingredient/versions][%d] getNamespaceIngredientVersionsNotFound  %+v", 404, o.Payload)
+}
+
+func (o *GetNamespaceIngredientVersionsNotFound) GetPayload() *inventory_models.RestAPIError {
+	return o.Payload
 }
 
 func (o *GetNamespaceIngredientVersionsNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -133,6 +137,10 @@ func (o *GetNamespaceIngredientVersionsDefault) Code() int {
 
 func (o *GetNamespaceIngredientVersionsDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/namespaces/ingredient/versions][%d] getNamespaceIngredientVersions default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *GetNamespaceIngredientVersionsDefault) GetPayload() *inventory_models.RestAPIError {
+	return o.Payload
 }
 
 func (o *GetNamespaceIngredientVersionsDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
