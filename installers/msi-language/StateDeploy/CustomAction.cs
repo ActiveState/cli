@@ -49,26 +49,15 @@ namespace StateDeploy
             session.Log(string.Format("Running install command: {0}", installCmd));
 
             ActionResult result = RunCommand(session, installCmd);
-            if (result.Equals(ActionResult.Failure) || result.Equals(ActionResult.UserExit))
+            if (result.Equals(ActionResult.UserExit))
             {
-                result = Uninstall.Remove.Dir(session, installPath);
-                if (result.Equals(ActionResult.Failure))
-                {
-                    session.Log("Could not remove installation directory");
-                    return ActionResult.Failure;
-                }
-
-                result = Uninstall.Remove.EnvironmentEntries(session, installPath);
-                if (result.Equals(ActionResult.Failure))
-                {
-                    session.Log("Could not remove environment entries");
-                    return ActionResult.Failure;
-                }
-                return ActionResult.UserExit;
+                // Catch cancel and return
+                return result;
             }
             Status.ProgressBar.Increment(session, 1);
 
             stateToolPath = Path.Combine(installPath, "state.exe");
+            session.CustomActionData["STATE_TOOL_PATH"] = stateToolPath;
             return result;
         }
 
@@ -209,22 +198,10 @@ namespace StateDeploy
 
                     string output;
                     var runResult = RunCommand(session, deployCmd, out output);
-                    if (runResult.Equals(ActionResult.Failure) || runResult.Equals(ActionResult.UserExit))
+                    if (runResult.Equals(ActionResult.UserExit))
                     {
-                        ActionResult result = Uninstall.Remove.Dir(session, session.CustomActionData["INSTALLDIR"]);
-                        if (result.Equals(ActionResult.Failure))
-                        {
-                            session.Log("Could not remove installation directory");
-                            return ActionResult.Failure;
-                        }
-
-                        result = Uninstall.Remove.EnvironmentEntries(session, session.CustomActionData["INSTALLDIR"]);
-                        if (result.Equals(ActionResult.Failure))
-                        {
-                            session.Log("Could not remove environment entries");
-                            return ActionResult.Failure;
-                        }
-                        return ActionResult.UserExit;
+                        // Catch cancel and return
+                        return runResult;
                     }
                     else if (runResult == ActionResult.Failure)
                     {
