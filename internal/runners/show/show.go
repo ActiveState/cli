@@ -4,84 +4,74 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/bndr/gotabulate"
-	"github.com/spf13/cobra"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/updater"
-	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	prj "github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
-// Command is the show command's definition.
-var Command = &commands.Command{
-	Name:        "show",
-	Description: "show_project",
-	Run:         Execute,
-
-	Arguments: []*commands.Argument{
-		&commands.Argument{
-			Name:        "remote",
-			Description: "arg_state_show_remote_description",
-			Variable:    &Args.Remote,
-		},
-	},
-}
-
-// Args holds the arg values passed through the command line.
-var Args struct {
+// RunParams describes the data required for the show run func.
+type RunParams struct {
 	Remote string
 }
 
-// Flags holds global flags passed through the command line.
-var Flags struct {
-	Output *string
+// Show manages the show run execution context.
+type Show struct {
+	out output.Outputer
 }
 
-// Execute the show command.
-func Execute(cmd *cobra.Command, args []string) {
+// New returns a pointer to an instance of Show.
+func New(out output.Outputer) *Show {
+	return &Show{
+		out: out,
+	}
+}
+
+// Run is the primary show logic.
+func (s *Show) Run(params RunParams) error {
 	logging.Debug("Execute")
 
 	var project *prj.Project
-	if Args.Remote == "" {
+	if params.Remote == "" {
 		project = prj.Get()
 	} else {
-		path := Args.Remote
-		projectFilePath := filepath.Join(Args.Remote, constants.ConfigFileName)
+		path := params.Remote
+		projectFilePath := filepath.Join(params.Remote, constants.ConfigFileName)
 		if _, err := os.Stat(path); err != nil {
 			print.Error(locale.T("err_state_show_path_does_not_exist"))
-			return
+			return nil
 		} else if _, err := os.Stat(projectFilePath); err != nil {
 			print.Error(locale.T("err_state_show_no_config"))
-			return
+			return nil
 		}
 		projectFile, err := projectfile.Parse(projectFilePath)
 		if err != nil {
 			logging.Errorf("Unable to parse activestate.yaml: %s", err)
 			print.Error(locale.T("err_state_show_project_parse"))
-			return
+			return nil
 		}
 		var fail *failures.Failure
 		project, fail = prj.New(projectFile)
 		if fail != nil {
 			failures.Handle(fail.ToError(), fail.Message)
-			return
+			return nil
 		}
 	}
 
 	updater.PrintUpdateMessage(project.Source().Path())
 
-	output := commands.Output(strings.ToLower(*Flags.Output))
-	switch output {
-	case commands.JSON, commands.EditorV0, commands.Editor:
+	outType := s.out.Type()
+	switch outType {
+	case output.JSONFormatName, output.EditorV0FormatName, output.EditorFormatName:
 		print.Line(fmt.Sprintf("{\"namespace\": \"%s/%s\"}", project.Owner(), project.Name()))
 	default:
 		print.BoldInline("%s: ", locale.T("print_state_show_name"))
@@ -97,6 +87,8 @@ func Execute(cmd *cobra.Command, args []string) {
 		printScripts(project.Source())
 		printEvents(project.Source())
 	}
+
+	return nil
 }
 
 func printPlatforms(project *projectfile.Project) {
