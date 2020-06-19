@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // GetPlatformsReader is a Reader for the GetPlatforms structure.
@@ -24,14 +23,12 @@ type GetPlatformsReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetPlatformsReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewGetPlatformsOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	default:
 		result := NewGetPlatformsDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -59,6 +56,10 @@ type GetPlatformsOK struct {
 
 func (o *GetPlatformsOK) Error() string {
 	return fmt.Sprintf("[GET /v1/platforms][%d] getPlatformsOK  %+v", 200, o.Payload)
+}
+
+func (o *GetPlatformsOK) GetPayload() *inventory_models.V1PlatformPagedList {
+	return o.Payload
 }
 
 func (o *GetPlatformsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -97,6 +98,10 @@ func (o *GetPlatformsDefault) Code() int {
 
 func (o *GetPlatformsDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/platforms][%d] getPlatforms default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *GetPlatformsDefault) GetPayload() *inventory_models.RestAPIError {
+	return o.Payload
 }
 
 func (o *GetPlatformsDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

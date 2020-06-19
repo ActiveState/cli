@@ -6,24 +6,24 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // V1IngredientVersion Ingredient Version
 //
 // The full ingredient version data model. Returned from all read requests.
+//
 // swagger:model v1IngredientVersion
 type V1IngredientVersion struct {
 	V1IngredientVersionAllOf0
 
-	V1IngredientVersionAllOf1
+	V1SubSchemaRevisionedResource
 
-	V1IngredientVersionAllOf2
+	V1IngredientVersionCore
 
-	V1IngredientVersionAllOf3
+	V1IngredientVersionRevisionCore
 }
 
 // UnmarshalJSON unmarshals this object from a JSON structure
@@ -36,25 +36,25 @@ func (m *V1IngredientVersion) UnmarshalJSON(raw []byte) error {
 	m.V1IngredientVersionAllOf0 = aO0
 
 	// AO1
-	var aO1 V1IngredientVersionAllOf1
+	var aO1 V1SubSchemaRevisionedResource
 	if err := swag.ReadJSON(raw, &aO1); err != nil {
 		return err
 	}
-	m.V1IngredientVersionAllOf1 = aO1
+	m.V1SubSchemaRevisionedResource = aO1
 
 	// AO2
-	var aO2 V1IngredientVersionAllOf2
+	var aO2 V1IngredientVersionCore
 	if err := swag.ReadJSON(raw, &aO2); err != nil {
 		return err
 	}
-	m.V1IngredientVersionAllOf2 = aO2
+	m.V1IngredientVersionCore = aO2
 
 	// AO3
-	var aO3 V1IngredientVersionAllOf3
+	var aO3 V1IngredientVersionRevisionCore
 	if err := swag.ReadJSON(raw, &aO3); err != nil {
 		return err
 	}
-	m.V1IngredientVersionAllOf3 = aO3
+	m.V1IngredientVersionRevisionCore = aO3
 
 	return nil
 }
@@ -69,24 +69,23 @@ func (m V1IngredientVersion) MarshalJSON() ([]byte, error) {
 	}
 	_parts = append(_parts, aO0)
 
-	aO1, err := swag.WriteJSON(m.V1IngredientVersionAllOf1)
+	aO1, err := swag.WriteJSON(m.V1SubSchemaRevisionedResource)
 	if err != nil {
 		return nil, err
 	}
 	_parts = append(_parts, aO1)
 
-	aO2, err := swag.WriteJSON(m.V1IngredientVersionAllOf2)
+	aO2, err := swag.WriteJSON(m.V1IngredientVersionCore)
 	if err != nil {
 		return nil, err
 	}
 	_parts = append(_parts, aO2)
 
-	aO3, err := swag.WriteJSON(m.V1IngredientVersionAllOf3)
+	aO3, err := swag.WriteJSON(m.V1IngredientVersionRevisionCore)
 	if err != nil {
 		return nil, err
 	}
 	_parts = append(_parts, aO3)
-
 	return swag.ConcatJSON(_parts...), nil
 }
 
@@ -98,16 +97,16 @@ func (m *V1IngredientVersion) Validate(formats strfmt.Registry) error {
 	if err := m.V1IngredientVersionAllOf0.Validate(formats); err != nil {
 		res = append(res, err)
 	}
-	// validation for a type composition with V1IngredientVersionAllOf1
-	if err := m.V1IngredientVersionAllOf1.Validate(formats); err != nil {
+	// validation for a type composition with V1SubSchemaRevisionedResource
+	if err := m.V1SubSchemaRevisionedResource.Validate(formats); err != nil {
 		res = append(res, err)
 	}
-	// validation for a type composition with V1IngredientVersionAllOf2
-	if err := m.V1IngredientVersionAllOf2.Validate(formats); err != nil {
+	// validation for a type composition with V1IngredientVersionCore
+	if err := m.V1IngredientVersionCore.Validate(formats); err != nil {
 		res = append(res, err)
 	}
-	// validation for a type composition with V1IngredientVersionAllOf3
-	if err := m.V1IngredientVersionAllOf3.Validate(formats); err != nil {
+	// validation for a type composition with V1IngredientVersionRevisionCore
+	if err := m.V1IngredientVersionRevisionCore.Validate(formats); err != nil {
 		res = append(res, err)
 	}
 

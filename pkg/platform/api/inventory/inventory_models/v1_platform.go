@@ -8,9 +8,8 @@ package inventory_models
 import (
 	"strconv"
 
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
@@ -18,15 +17,16 @@ import (
 // V1Platform Platform
 //
 // A platform upon which a build can be built.
+//
 // swagger:model v1Platform
 type V1Platform struct {
 
 	// cpu architecture
 	// Required: true
-	CPUArchitecture *V1PlatformCPUArchitecture `json:"cpu_architecture"`
+	CPUArchitecture *V1CPUArchitecture `json:"cpu_architecture"`
 
 	// cpu extensions
-	CPUExtensions []*V1PlatformCPUExtensionsItems `json:"cpu_extensions"`
+	CPUExtensions []*V1CPUExtension `json:"cpu_extensions"`
 
 	// The date and time this platform was created.
 	// Required: true
@@ -42,40 +42,40 @@ type V1Platform struct {
 	EndOfSupportDate *strfmt.Date `json:"end_of_support_date,omitempty"`
 
 	// gpu architecture
-	GpuArchitecture *V1PlatformGpuArchitecture `json:"gpu_architecture,omitempty"`
+	GpuArchitecture *V1GpuArchitecture `json:"gpu_architecture,omitempty"`
 
 	// images
 	// Required: true
-	Images []*V1PlatformImagesItems `json:"images"`
+	Images []*V1Image `json:"images"`
 
 	// If true, the platform should be shown to the user as a selectable platform for an order. If false, the platform should be hidden from the user.
 	IsUserVisible *bool `json:"is_user_visible,omitempty"`
 
 	// kernel
 	// Required: true
-	Kernel *V1PlatformKernel `json:"kernel"`
+	Kernel *V1Kernel `json:"kernel"`
 
 	// kernel version
 	// Required: true
-	KernelVersion *V1PlatformKernelVersion `json:"kernel_version"`
+	KernelVersion *V1KernelVersion `json:"kernel_version"`
 
 	// libc
-	Libc *V1PlatformLibc `json:"libc,omitempty"`
+	Libc *V1Libc `json:"libc,omitempty"`
 
 	// libc version
-	LibcVersion *V1PlatformLibcVersion `json:"libc_version,omitempty"`
+	LibcVersion *V1LibcVersion `json:"libc_version,omitempty"`
 
 	// links
 	// Required: true
-	Links *V1PlatformLinks `json:"links"`
+	Links *V1SubSchemaSelfLink `json:"links"`
 
 	// operating system
 	// Required: true
-	OperatingSystem *V1PlatformOperatingSystem `json:"operating_system"`
+	OperatingSystem *V1OperatingSystem `json:"operating_system"`
 
 	// operating system version
 	// Required: true
-	OperatingSystemVersion *V1PlatformOperatingSystemVersion `json:"operating_system_version"`
+	OperatingSystemVersion *V1OperatingSystemVersion `json:"operating_system_version"`
 
 	// platform id
 	// Required: true

@@ -13,6 +13,7 @@ import (
 	"os/user"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -81,6 +82,11 @@ func ReplaceAll(filename, find string, replace string, include includeFunc) erro
 	// arrays must be of equal length (replacement being NUL-padded as necessary).
 	var replaceRegex *regexp.Regexp
 	quoteEscapeFind := regexp.QuoteMeta(find)
+
+	// Ensure we replace both types of backslashes on Windows
+	if runtime.GOOS == "windows" {
+		quoteEscapeFind = strings.ReplaceAll(quoteEscapeFind, `\\`, `(\\|\\\\)`)
+	}
 	if IsBinary(fileBytes) {
 		logging.Debug("Assuming file '%s' is a binary file", filename)
 

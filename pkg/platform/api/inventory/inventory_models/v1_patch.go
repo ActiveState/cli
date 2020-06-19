@@ -6,20 +6,20 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // V1Patch Patch
 //
 // A diff of changes that can be applied to an ingredient's source code. This model contains all patch properties and is returned from read requests
+//
 // swagger:model v1Patch
 type V1Patch struct {
 	V1PatchAllOf0
 
-	V1PatchAllOf1
+	V1PatchCore
 }
 
 // UnmarshalJSON unmarshals this object from a JSON structure
@@ -32,11 +32,11 @@ func (m *V1Patch) UnmarshalJSON(raw []byte) error {
 	m.V1PatchAllOf0 = aO0
 
 	// AO1
-	var aO1 V1PatchAllOf1
+	var aO1 V1PatchCore
 	if err := swag.ReadJSON(raw, &aO1); err != nil {
 		return err
 	}
-	m.V1PatchAllOf1 = aO1
+	m.V1PatchCore = aO1
 
 	return nil
 }
@@ -51,12 +51,11 @@ func (m V1Patch) MarshalJSON() ([]byte, error) {
 	}
 	_parts = append(_parts, aO0)
 
-	aO1, err := swag.WriteJSON(m.V1PatchAllOf1)
+	aO1, err := swag.WriteJSON(m.V1PatchCore)
 	if err != nil {
 		return nil, err
 	}
 	_parts = append(_parts, aO1)
-
 	return swag.ConcatJSON(_parts...), nil
 }
 
@@ -68,8 +67,8 @@ func (m *V1Patch) Validate(formats strfmt.Registry) error {
 	if err := m.V1PatchAllOf0.Validate(formats); err != nil {
 		res = append(res, err)
 	}
-	// validation for a type composition with V1PatchAllOf1
-	if err := m.V1PatchAllOf1.Validate(formats); err != nil {
+	// validation for a type composition with V1PatchCore
+	if err := m.V1PatchCore.Validate(formats); err != nil {
 		res = append(res, err)
 	}
 

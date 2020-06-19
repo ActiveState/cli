@@ -6,20 +6,20 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // V1Ingredient Ingredient
 //
 // A unique ingredient that can be used in a recipe. This model contains all ingredient properties and is returned from read requests.
+//
 // swagger:model v1Ingredient
 type V1Ingredient struct {
 	V1IngredientAllOf0
 
-	V1IngredientAllOf1
+	V1IngredientCore
 }
 
 // UnmarshalJSON unmarshals this object from a JSON structure
@@ -32,11 +32,11 @@ func (m *V1Ingredient) UnmarshalJSON(raw []byte) error {
 	m.V1IngredientAllOf0 = aO0
 
 	// AO1
-	var aO1 V1IngredientAllOf1
+	var aO1 V1IngredientCore
 	if err := swag.ReadJSON(raw, &aO1); err != nil {
 		return err
 	}
-	m.V1IngredientAllOf1 = aO1
+	m.V1IngredientCore = aO1
 
 	return nil
 }
@@ -51,12 +51,11 @@ func (m V1Ingredient) MarshalJSON() ([]byte, error) {
 	}
 	_parts = append(_parts, aO0)
 
-	aO1, err := swag.WriteJSON(m.V1IngredientAllOf1)
+	aO1, err := swag.WriteJSON(m.V1IngredientCore)
 	if err != nil {
 		return nil, err
 	}
 	_parts = append(_parts, aO1)
-
 	return swag.ConcatJSON(_parts...), nil
 }
 
@@ -68,8 +67,8 @@ func (m *V1Ingredient) Validate(formats strfmt.Registry) error {
 	if err := m.V1IngredientAllOf0.Validate(formats); err != nil {
 		res = append(res, err)
 	}
-	// validation for a type composition with V1IngredientAllOf1
-	if err := m.V1IngredientAllOf1.Validate(formats); err != nil {
+	// validation for a type composition with V1IngredientCore
+	if err := m.V1IngredientCore.Validate(formats); err != nil {
 		res = append(res, err)
 	}
 

@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // AddImageRevisionReader is a Reader for the AddImageRevision structure.
@@ -24,21 +23,18 @@ type AddImageRevisionReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *AddImageRevisionReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewAddImageRevisionOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewAddImageRevisionBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewAddImageRevisionDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -68,6 +64,10 @@ func (o *AddImageRevisionOK) Error() string {
 	return fmt.Sprintf("[POST /v1/images/{image_id}/revisions][%d] addImageRevisionOK  %+v", 200, o.Payload)
 }
 
+func (o *AddImageRevisionOK) GetPayload() *inventory_models.V1Image {
+	return o.Payload
+}
+
 func (o *AddImageRevisionOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(inventory_models.V1Image)
@@ -95,6 +95,10 @@ type AddImageRevisionBadRequest struct {
 
 func (o *AddImageRevisionBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/images/{image_id}/revisions][%d] addImageRevisionBadRequest  %+v", 400, o.Payload)
+}
+
+func (o *AddImageRevisionBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
+	return o.Payload
 }
 
 func (o *AddImageRevisionBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -133,6 +137,10 @@ func (o *AddImageRevisionDefault) Code() int {
 
 func (o *AddImageRevisionDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/images/{image_id}/revisions][%d] addImageRevision default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *AddImageRevisionDefault) GetPayload() *inventory_models.RestAPIError {
+	return o.Payload
 }
 
 func (o *AddImageRevisionDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

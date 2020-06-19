@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // GetNamespaceIngredientsReader is a Reader for the GetNamespaceIngredients structure.
@@ -24,14 +23,12 @@ type GetNamespaceIngredientsReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetNamespaceIngredientsReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewGetNamespaceIngredientsOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	default:
 		result := NewGetNamespaceIngredientsDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -59,6 +56,10 @@ type GetNamespaceIngredientsOK struct {
 
 func (o *GetNamespaceIngredientsOK) Error() string {
 	return fmt.Sprintf("[GET /v1/namespaces/ingredients][%d] getNamespaceIngredientsOK  %+v", 200, o.Payload)
+}
+
+func (o *GetNamespaceIngredientsOK) GetPayload() *inventory_models.V1IngredientAndVersionPagedList {
+	return o.Payload
 }
 
 func (o *GetNamespaceIngredientsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -97,6 +98,10 @@ func (o *GetNamespaceIngredientsDefault) Code() int {
 
 func (o *GetNamespaceIngredientsDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/namespaces/ingredients][%d] getNamespaceIngredients default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *GetNamespaceIngredientsDefault) GetPayload() *inventory_models.RestAPIError {
+	return o.Payload
 }
 
 func (o *GetNamespaceIngredientsDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

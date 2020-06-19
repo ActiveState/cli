@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // AddCPUArchitectureRevisionReader is a Reader for the AddCPUArchitectureRevision structure.
@@ -24,21 +23,18 @@ type AddCPUArchitectureRevisionReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *AddCPUArchitectureRevisionReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewAddCPUArchitectureRevisionOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewAddCPUArchitectureRevisionBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewAddCPUArchitectureRevisionDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -68,6 +64,10 @@ func (o *AddCPUArchitectureRevisionOK) Error() string {
 	return fmt.Sprintf("[POST /v1/cpu-architectures/{cpu_architecture_id}/revisions][%d] addCpuArchitectureRevisionOK  %+v", 200, o.Payload)
 }
 
+func (o *AddCPUArchitectureRevisionOK) GetPayload() *inventory_models.V1CPUArchitecture {
+	return o.Payload
+}
+
 func (o *AddCPUArchitectureRevisionOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(inventory_models.V1CPUArchitecture)
@@ -95,6 +95,10 @@ type AddCPUArchitectureRevisionBadRequest struct {
 
 func (o *AddCPUArchitectureRevisionBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/cpu-architectures/{cpu_architecture_id}/revisions][%d] addCpuArchitectureRevisionBadRequest  %+v", 400, o.Payload)
+}
+
+func (o *AddCPUArchitectureRevisionBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
+	return o.Payload
 }
 
 func (o *AddCPUArchitectureRevisionBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -133,6 +137,10 @@ func (o *AddCPUArchitectureRevisionDefault) Code() int {
 
 func (o *AddCPUArchitectureRevisionDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/cpu-architectures/{cpu_architecture_id}/revisions][%d] addCpuArchitectureRevision default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *AddCPUArchitectureRevisionDefault) GetPayload() *inventory_models.RestAPIError {
+	return o.Payload
 }
 
 func (o *AddCPUArchitectureRevisionDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

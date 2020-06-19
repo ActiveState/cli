@@ -9,9 +9,8 @@ import (
 	"encoding/json"
 	"strconv"
 
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
@@ -19,11 +18,12 @@ import (
 // V1BuildScriptCore Build Script Core
 //
 // A short piece of scripting code that can be used to build an ingredient. This model only contains mutable fields of a build script.
+//
 // swagger:model v1BuildScriptCore
 type V1BuildScriptCore struct {
 
 	// The features that must already be present in the recipe for this build script to be used. For example, can be used to create build scripts that only work on specific operating systems.
-	Conditions []*V1BuildScriptCoreConditionsItems `json:"conditions"`
+	Conditions []*V1SubSchemaCondition `json:"conditions"`
 
 	// The scripting language that the build script is written in
 	// Required: true

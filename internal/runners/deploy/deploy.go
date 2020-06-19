@@ -6,6 +6,7 @@ import (
 	rt "runtime"
 	"strings"
 
+	"github.com/gobuffalo/packr"
 	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/config"
@@ -115,7 +116,7 @@ func runStepsWithFuncs(targetPath string, force, userScope bool, step Step, inst
 	if step == UnsetStep || step == InstallStep {
 		logging.Debug("Running install step")
 		var err error
-		if envGetter, err = installf(installer, out); err != nil {
+		if envGetter, err = installf(targetPath, installer, out); err != nil {
 			return err
 		}
 
@@ -158,7 +159,7 @@ func runStepsWithFuncs(targetPath string, force, userScope bool, step Step, inst
 				return errs.Wrap(fail, "Could not retrieve env for Report step")
 			}
 		}
-		if err := reportf(envGetter, out); err != nil {
+		if err := reportf(targetPath, envGetter, out); err != nil {
 			return err
 		}
 	}
@@ -166,9 +167,9 @@ func runStepsWithFuncs(targetPath string, force, userScope bool, step Step, inst
 	return nil
 }
 
-type installFunc func(installer installable, out output.Outputer) (runtime.EnvGetter, error)
+type installFunc func(path string, installer installable, out output.Outputer) (runtime.EnvGetter, error)
 
-func install(installer installable, out output.Outputer) (runtime.EnvGetter, error) {
+func install(path string, installer installable, out output.Outputer) (runtime.EnvGetter, error) {
 	out.Notice(locale.T("deploy_install"))
 	envGetter, installed, fail := installer.Install()
 	if fail != nil {
@@ -177,6 +178,16 @@ func install(installer installable, out output.Outputer) (runtime.EnvGetter, err
 	if !installed {
 		out.Notice(locale.T("using_cached_env"))
 	}
+
+	if rt.GOOS == "windows" {
+		box := packr.NewBox("../../../assets/scripts")
+		contents := box.Bytes("setenv.bat")
+		fail = fileutils.WriteFile(filepath.Join(path, "setenv.bat"), contents)
+		if fail != nil {
+			return envGetter, locale.WrapError(fail.ToError(), "err_deploy_write_setenv", "Could not create setenv batch scriptfile at path: %s", path)
+		}
+	}
+
 	out.Print(locale.Tl("deploy_install_done", "Installation completed"))
 	return envGetter, nil
 }
@@ -403,9 +414,9 @@ type Report struct {
 	Environment       map[string]string
 }
 
-type reportFunc func(envGetter runtime.EnvGetter, out output.Outputer) error
+type reportFunc func(path string, envGetter runtime.EnvGetter, out output.Outputer) error
 
-func report(envGetter runtime.EnvGetter, out output.Outputer) error {
+func report(path string, envGetter runtime.EnvGetter, out output.Outputer) error {
 	venv := virtualenvironment.New(envGetter.GetEnv)
 	env, err := venv.GetEnv(false, "")
 	if err != nil {
@@ -426,7 +437,7 @@ func report(envGetter runtime.EnvGetter, out output.Outputer) error {
 	})
 
 	if rt.GOOS == "windows" {
-		out.Notice(locale.T("deploy_restart_cmd"))
+		out.Notice(locale.Tr("deploy_restart_cmd", filepath.Join(path, "setenv.bat")))
 	} else {
 		out.Notice(locale.T("deploy_restart_shell"))
 	}

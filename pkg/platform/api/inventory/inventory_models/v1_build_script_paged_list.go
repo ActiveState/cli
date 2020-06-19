@@ -8,9 +8,8 @@ package inventory_models
 import (
 	"strconv"
 
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
@@ -18,20 +17,21 @@ import (
 // V1BuildScriptPagedList Build Script Paged List
 //
 // A paginated list of build scripts
+//
 // swagger:model v1BuildScriptPagedList
 type V1BuildScriptPagedList struct {
 
 	// A page of build scripts
 	// Required: true
-	BuildScripts []*V1BuildScriptPagedListBuildScriptsItems `json:"build_scripts"`
+	BuildScripts []*V1BuildScript `json:"build_scripts"`
 
 	// links
 	// Required: true
-	Links *V1BuildScriptPagedListLinks `json:"links"`
+	Links *V1SubSchemaPagingLinks `json:"links"`
 
 	// paging
 	// Required: true
-	Paging *V1BuildScriptPagedListPaging `json:"paging"`
+	Paging *V1SubSchemaPaging `json:"paging"`
 }
 
 // Validate validates this v1 build script paged list

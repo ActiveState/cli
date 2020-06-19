@@ -6,16 +6,16 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // V1IngredientVersionAllOf0Links v1 ingredient version all of0 links
+//
 // swagger:model v1IngredientVersionAllOf0Links
 type V1IngredientVersionAllOf0Links struct {
-	V1IngredientVersionAllOf0LinksAllOf0
+	V1SubSchemaSelfLink
 
 	V1IngredientVersionAllOf0LinksAllOf1
 }
@@ -23,11 +23,11 @@ type V1IngredientVersionAllOf0Links struct {
 // UnmarshalJSON unmarshals this object from a JSON structure
 func (m *V1IngredientVersionAllOf0Links) UnmarshalJSON(raw []byte) error {
 	// AO0
-	var aO0 V1IngredientVersionAllOf0LinksAllOf0
+	var aO0 V1SubSchemaSelfLink
 	if err := swag.ReadJSON(raw, &aO0); err != nil {
 		return err
 	}
-	m.V1IngredientVersionAllOf0LinksAllOf0 = aO0
+	m.V1SubSchemaSelfLink = aO0
 
 	// AO1
 	var aO1 V1IngredientVersionAllOf0LinksAllOf1
@@ -43,7 +43,7 @@ func (m *V1IngredientVersionAllOf0Links) UnmarshalJSON(raw []byte) error {
 func (m V1IngredientVersionAllOf0Links) MarshalJSON() ([]byte, error) {
 	_parts := make([][]byte, 0, 2)
 
-	aO0, err := swag.WriteJSON(m.V1IngredientVersionAllOf0LinksAllOf0)
+	aO0, err := swag.WriteJSON(m.V1SubSchemaSelfLink)
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +54,6 @@ func (m V1IngredientVersionAllOf0Links) MarshalJSON() ([]byte, error) {
 		return nil, err
 	}
 	_parts = append(_parts, aO1)
-
 	return swag.ConcatJSON(_parts...), nil
 }
 
@@ -62,8 +61,8 @@ func (m V1IngredientVersionAllOf0Links) MarshalJSON() ([]byte, error) {
 func (m *V1IngredientVersionAllOf0Links) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	// validation for a type composition with V1IngredientVersionAllOf0LinksAllOf0
-	if err := m.V1IngredientVersionAllOf0LinksAllOf0.Validate(formats); err != nil {
+	// validation for a type composition with V1SubSchemaSelfLink
+	if err := m.V1SubSchemaSelfLink.Validate(formats); err != nil {
 		res = append(res, err)
 	}
 	// validation for a type composition with V1IngredientVersionAllOf0LinksAllOf1
