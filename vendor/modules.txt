@@ -8,7 +8,7 @@ github.com/ActiveState/archiver
 github.com/ActiveState/go-colortext
 # github.com/ActiveState/go-ogle-analytics v0.0.0-20170510030904-9b3f14901527
 github.com/ActiveState/go-ogle-analytics
-# github.com/ActiveState/sysinfo v0.0.0-20200504175252-e607d44295c6
+# github.com/ActiveState/sysinfo v0.0.0-20200619170619-0582d42daf27
 github.com/ActiveState/sysinfo
 # github.com/ActiveState/termtest v0.5.1
 github.com/ActiveState/termtest
