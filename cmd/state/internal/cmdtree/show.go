@@ -12,7 +12,7 @@ func newShowCommand(out output.Outputer) *captain.Command {
 
 	params := show.RunParams{}
 
-	cmd := captain.NewCommand(
+	return captain.NewCommand(
 		"show",
 		locale.T("show_project"),
 		nil,
@@ -27,7 +27,4 @@ func newShowCommand(out output.Outputer) *captain.Command {
 			return runner.Run(params)
 		},
 	)
-	cmd.SetAliases("pkg", "package")
-
-	return cmd
 }
