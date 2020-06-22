@@ -598,12 +598,6 @@ show_project:
   other: Show information about a project
 arg_state_show_remote_description:
   other: Path to project
-err_state_show_path_does_not_exist:
-  other: Directory does not exist.
-err_state_show_no_config:
-  other: activestate.yaml file not found in the given location.
-err_state_show_project_parse:
-  other: Could not parse activestate.yaml.
 print_state_show_name:
   other: Name
 print_state_show_organization:

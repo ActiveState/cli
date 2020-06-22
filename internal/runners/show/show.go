@@ -46,24 +46,37 @@ func (s *Show) Run(params RunParams) error {
 	} else {
 		path := params.Remote
 		projectFilePath := filepath.Join(params.Remote, constants.ConfigFileName)
+
 		if _, err := os.Stat(path); err != nil {
-			print.Error(locale.T("err_state_show_path_does_not_exist"))
-			return nil
-		} else if _, err := os.Stat(projectFilePath); err != nil {
-			print.Error(locale.T("err_state_show_no_config"))
-			return nil
+			return locale.WrapError(
+				err,
+				"err_state_show_path_does_not_exist",
+				"Directory does not exist.",
+			)
 		}
+
+		if _, err := os.Stat(projectFilePath); err != nil {
+			return locale.WrapError(
+				err,
+				"err_state_show_no_config",
+				"activestate.yaml file not found in the given location.",
+			)
+		}
+
 		projectFile, err := projectfile.Parse(projectFilePath)
 		if err != nil {
 			logging.Errorf("Unable to parse activestate.yaml: %s", err)
-			print.Error(locale.T("err_state_show_project_parse"))
-			return nil
+			return locale.WrapError(
+				err,
+				"err_state_show_project_parse",
+				"Could not parse activestate.yaml.",
+			)
 		}
+
 		var fail *failures.Failure
 		project, fail = prj.New(projectFile)
 		if fail != nil {
-			failures.Handle(fail.ToError(), fail.Message)
-			return nil
+			return fail.ToError()
 		}
 	}
 
