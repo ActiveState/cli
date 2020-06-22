@@ -168,6 +168,8 @@
 		<CustomAction Id="SetStateDeployPropertyValues" Property="StateDeploy" Value="INSTALLDIR=[INSTALLDIR];PROJECT_NAME=[PROJECT_NAME];IS_MODIFY=[IS_MODIFY];STATE_TOOL_INSTALLED=[STATE_TOOL_INSTALLED];STATE_TOOL_PATH=[STATE_TOOL_PATH]" />
 		<CustomAction Id="SetUninstallProperties" Property="Uninstall" Value="REMEMBER=[REMEMBER];REMEMBER_SHORTCUTDIR=[REMEMBER_SHORTCUTDIR]" />
 		<CustomAction Id="SetShortcutInfo" Property="Shortcut" Value="INSTALLDIR=[INSTALLDIR];PROJECT_NAME=[PROJECT_NAME];SHORTCUTS=[SHORTCUTS]" />
+		<CustomAction Id="SetRollbackPropertyValues" Property="Rollback" Value="STATE_TOOL_INSTALLED=[STATE_TOOL_INSTALLED];INSTALLDIR=[INSTALLDIR]" />
+
 
     <Binary Id="StateCommandCA" SourceFile="$(var.StateCommandExists.TargetDir)$(var.StateCommandExists.TargetName).CA.dll" />
 		<CustomAction Id="StateCommandExists" Impersonate="yes" BinaryKey="StateCommandCA" DllEntry="StateCommandExists" Return="check" />
@@ -181,13 +183,18 @@
 		<Binary Id="ShortcutCA" SourceFile="$(var.Shortcut.TargetDir)$(var.Shortcut.TargetName).CA.dll" />
 		<CustomAction Id="Shortcut" Impersonate="no" BinaryKey="ShortcutCA" DllEntry="InstallShortcuts" Execute="deferred" Return="check" />
 
+		<Binary Id="RollbackCA" SourceFile="$(var.Rollback.TargetDir)$(var.Rollback.TargetName).CA.dll" />
+		<CustomAction Id="Rollback" Impersonate="no" BinaryKey="RollbackCA" DllEntry="Rollback" Execute="rollback" Return="check" />
+
 		<Binary Id="UninstallCA" SourceFile="$(var.Uninstall.TargetDir)$(var.Uninstall.TargetName).CA.dll" />
 		<CustomAction Id="Uninstall" Impersonate="no" BinaryKey="UninstallCA" DllEntry="Uninstall" Execute="deferred" Return="check" />
 
 		<InstallExecuteSequence>
 			<Custom Action="Status" After="InstallInitialize">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
-			<Custom Action="SetStateDeployPropertyValues" After="Status">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
-			<Custom Action="StateDeploy" After="SetStateDeployPropertyValues">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
+			<Custom Action="SetRollbackPropertyValues" After="Status">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
+			<Custom Action="SetStateDeployPropertyValues" After="SetRollbackPropertyValues">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
+			<Custom Action="Rollback" After="SetStateDeployPropertyValues">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
+			<Custom Action="StateDeploy" After="Rollback">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
 			<Custom Action="SetShortcutInfo" After="CreateShortcuts">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
 			<Custom Action="Shortcut" After="SetShortcutInfo">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
 			<Custom Action="SetUninstallProperties" After="RemoveFiles">REMOVE="ALL"</Custom>
