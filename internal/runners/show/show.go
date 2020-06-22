@@ -5,15 +5,12 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/bndr/gotabulate"
-
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/updater"
 	prj "github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -82,106 +79,98 @@ func (s *Show) Run(params RunParams) error {
 
 	updater.PrintUpdateMessage(project.Source().Path())
 
-	outType := s.out.Type()
-	switch outType {
-	case output.JSONFormatName, output.EditorV0FormatName, output.EditorFormatName:
-		print.Line(fmt.Sprintf("{\"namespace\": \"%s/%s\"}", project.Owner(), project.Name()))
-	default:
-		print.BoldInline("%s: ", locale.T("print_state_show_name"))
-		print.Line("%s", project.Name())
+	src := project.Source()
 
-		print.BoldInline("%s: ", locale.T("print_state_show_organization"))
-		print.Line("%s", project.Owner())
-
-		print.Line("")
-
-		printPlatforms(project.Source())
-		printLanguages(project.Source())
-		printScripts(project.Source())
-		printEvents(project.Source())
+	data := outputData{
+		Namespace:    project.Namespace(),
+		Name:         project.Name(),
+		Organization: project.Owner(),
+		Platforms:    platformsData(src),
+		Languages:    languagesData(src),
+		Events:       eventsData(src),
+		Scripts:      scriptsData(src),
 	}
+
+	s.out.Print(data)
 
 	return nil
 }
 
-func printPlatforms(project *projectfile.Project) {
+type outputData struct {
+	Namespace    string
+	Name         string
+	Organization string
+	Platforms    []string          `json:",omitempty"`
+	Languages    []string          `json:",omitempty"`
+	Events       []string          `json:",omitempty"`
+	Scripts      map[string]string `json:",omitempty"`
+}
+
+func platformsData(project *projectfile.Project) []string {
 	if len(project.Platforms) == 0 {
-		return
+		return nil
 	}
 
-	rows := [][]interface{}{}
+	var data []string
 	for _, platform := range project.Platforms {
 		constrained := "*"
 		if !constraints.PlatformMatches(platform) {
 			constrained = ""
 		}
 		v := fmt.Sprintf("%s%s %s %s (%s)", constrained, platform.Os, platform.Version, platform.Architecture, platform.Name)
-		rows = append(rows, []interface{}{v})
+		data = append(data, v)
 	}
 
-	print.BoldInline("%s:", locale.T("print_state_show_platforms"))
-	printTable(rows)
+	return data
 }
 
-func printEvents(project *projectfile.Project) {
+func eventsData(project *projectfile.Project) []string {
 	if len(project.Events) == 0 {
-		return
+		return nil
 	}
 
-	rows := [][]interface{}{}
 	es := projectfile.MakeEventsFromConstrainedEntities(
 		constraints.FilterUnconstrained(project.Events.AsConstrainedEntities()),
 	)
+
+	var data []string
 	for _, event := range es {
-		rows = append(rows, []interface{}{event.Name})
+		data = append(data, event.Name)
 	}
 
-	print.BoldInline("%s:", locale.T("print_state_show_events"))
-	printTable(rows)
+	return data
 }
 
-func printScripts(project *projectfile.Project) {
+func scriptsData(project *projectfile.Project) map[string]string {
 	if len(project.Scripts) == 0 {
-		return
+		return nil
 	}
 
-	rows := [][]interface{}{}
 	scripts := projectfile.MakeScriptsFromConstrainedEntities(
 		constraints.FilterUnconstrained(project.Scripts.AsConstrainedEntities()),
 	)
+
+	data := make(map[string]string)
 	for _, script := range scripts {
-		rows = append(rows, []interface{}{script.Name, script.Description})
+		data[script.Name] = script.Description
 	}
 
-	print.BoldInline("%s:", locale.T("print_state_show_scripts"))
-	printTable(rows)
+	return data
 }
 
-func printLanguages(project *projectfile.Project) {
+func languagesData(project *projectfile.Project) []string {
 	if len(project.Languages) == 0 {
-		return
+		return nil
 	}
 
-	rows := [][]interface{}{}
 	languages := projectfile.MakeLanguagesFromConstrainedEntities(
 		constraints.FilterUnconstrained(project.Languages.AsConstrainedEntities()),
 	)
+
+	var data []string
 	for _, language := range languages {
-		rows = append(rows, []interface{}{language.Name, language.Version})
+		data = append(data, fmt.Sprintf("%s %s", language.Name, language.Version))
 	}
 
-	print.BoldInline("%s:", locale.T("print_state_show_languages"))
-	printTable(rows)
-}
-
-func printTable(rows [][]interface{}) {
-	t := gotabulate.Create(rows)
-
-	// gotabulate tries to make the first row the headers, so use some empty header instead
-	// this is also the reason why we're using BoldInLine, since the header line will act as the newline
-	t.SetHeaders([]string{""})
-
-	t.SetHideLines([]string{"betweenLine", "top", "aboveTitle", "belowheader", "LineTop", "LineBottom", "bottomLine"}) // Don't print whitespace lines
-	t.SetAlign("left")
-	print.Line(t.Render("plain"))
+	return data
 }
