@@ -85,6 +85,7 @@ func New(pj *project.Project, outputer output.Outputer, prompter prompt.Prompter
 		exportCmd,
 		newOrganizationsCommand(globals),
 		newRunCommand(),
+		newShowCommand(outputer),
 		packagesCmd,
 		platformsCmd,
 		newHistoryCommand(outputer),
