@@ -7,7 +7,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
-	"github.com/ActiveState/cli/internal/runners/show"
 	"github.com/ActiveState/cli/internal/runners/state"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -184,7 +183,6 @@ func (ct *CmdTree) Execute(args []string) error {
 
 func setLegacyOutput(globals *globalOptions) {
 	scripts.Flags.Output = &globals.Output
-	show.Flags.Output = &globals.Output
 }
 
 // applyLegacyChildren will register any commands and expanders
@@ -196,7 +194,6 @@ func applyLegacyChildren(cmd *captain.Command, globals *globalOptions) {
 	setLegacyOutput(globals)
 
 	cmd.AddLegacyChildren(
-		show.Command,
 		scripts.Command,
 		invite.Command,
 		secrets.NewCommand(secretsapi.Get(), &globals.Output).Config(),
