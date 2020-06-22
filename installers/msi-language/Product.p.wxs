@@ -17,8 +17,8 @@
     <WixVariable Id='WixUIBannerBmp' Value='assets\header.bmp'/>
     <WixVariable Id='WixUIDialogBmp' Value='assets\InstallGraphic.bmp'/>
     <WixVariable Id="WixUILicenseRtf" Value="assets\license.rtf" />
-    <Icon Id="InstallerIcon" SourceFile="{{ICON}}"/>
-    <Property Id="ARPPRODUCTICON" Value="InstallerIcon" />
+    <Icon Id="perl.ico" SourceFile="perl.ico"/>
+    <Property Id="ARPPRODUCTICON" Value="perl.ico" />
     <!-- End Design assets -->
 
     <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
@@ -41,7 +41,7 @@
 	<!-- Build documentation URL shortcut -->
 	<DirectoryRef Id="ApplicationProgramsFolder">
 		<Component Id="ApplicationShortcut" Guid="9e688401-bf59-46c3-99ae-49295948f7b8">
-			<util:InternetShortcut Id="DocumentationShortcut" Name="Documentation" Target="[REL_NOTES]" IconFile="[#LanguageIco]" Type="url" />
+			<util:InternetShortcut Id="DocumentationShortcut" Name="Documentation" Target="[REL_NOTES]" IconFile="[#PerlIco]" Type="url" />
 			<RemoveFolder Id="CleanUpShortCut" Directory="ApplicationProgramsFolder" On="uninstall"/>
 			<RegistryValue Root="HKCU" Key="Software\[Manufacturer]\[ProductName]" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
 		</Component>
@@ -53,13 +53,13 @@
     <Feature Id='Complete' Level='1'>
       <Component Id='ProgIdPerl' Directory='TARGETDIR' Guid='4dda6117-ca9c-4371-a09d-c8575f520a02'>
         <!-- Perl file scripts -->
-        <ProgId Id="Perl.Document" Description="!(loc.DescPL)" Advertise='no' Icon='LanguageIco'>
+        <ProgId Id="Perl.Document" Description="!(loc.DescPL)" Advertise='no' Icon='PerlIco'>
           <Extension Id="pl" ContentType="text/x-perl">
             <Verb Id="open" Command="!(loc.ExplorerMenuOpenPL)" TargetProperty="PerlExe" Argument="&quot;%1&quot;" />
           </Extension>
         </ProgId>
         <!-- Windows perl file scripts (started with hidden console) -->
-        <ProgId Id="WPerl.Document" Description="!(loc.DescPL)" Advertise='no' Icon='LanguageIco'>
+        <ProgId Id="WPerl.Document" Description="!(loc.DescPL)" Advertise='no' Icon='PerlIco'>
           <Extension Id="wpl" ContentType="text/x-w-perl">
             <Verb Id="open" Command="!(loc.ExplorerMenuOpenPL)" TargetProperty="WPerlExe" Argument="&quot;%1&quot;" />
           </Extension>
@@ -72,8 +72,8 @@
         <RegistryValue Root="HKLM" Key="Software\[Manufacturer]\[ProductName]" Name="ShortcutDir" Value="[ApplicationProgramsFolder]" Type="string"/>
 		<RemoveFolder Id='CleanupApplicationFolder' On='uninstall' />
       </Component>
-      <Component Id='cmpLanguageIco' Directory='INSTALLDIR' Guid='1069a43f-9ec5-4ad8-b15c-2452b56c9b04'>
-        <File Id='LanguageIco' Source='{{ICON}}' />
+      <Component Id='cmpPerlIco' Directory='INSTALLDIR' Guid='1069a43f-9ec5-4ad8-b15c-2452b56c9b04'>
+        <File Id='PerlIco' Source='perl.ico' />
       </Component>
 	  <ComponentRef Id="ApplicationShortcut" />
     </Feature>
