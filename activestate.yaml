@@ -118,8 +118,8 @@ scripts:
       os: windows
     value: |
       set -e
-      if [ "$#" -ne 4 ]; then
-        echo "Required Arguments: <Project Name> <Release Notes URL> <Shortcuts> <IconFile> (comma-separated list of shortcuts to build)"
+      if [ "$#" -ne 3 ]; then
+        echo "Required Arguments: <Project Name> <Release Notes URL> <Shortcuts> (comma-separated list of shortcuts to build)"
         exit 1
       fi
 
@@ -137,7 +137,6 @@ scripts:
       sed -i "s^{{PROJECT}}^${project[1]}^g" installers/msi-language/Product.wxs
       sed -i "s^{{REL_NOTES}}^${2}^g" installers/msi-language/Product.wxs
       sed -i "s^{{SHORTCUTS}}^${3}^g" installers/msi-language/Product.wxs
-      sed -i "s^{{ICON}}^${4}^g" installers/msi-language/Product.wxs
       sed -i "s^{{ID}}^$(go run scripts/uuid-generator/main.go $1)^g" installers/msi-language/Product.wxs
 
       msbuild.exe installers/msi-language/Deploy.wixproj /target:Build "//p:Configuration=Release;Platform=x64;RunWixToolsOutOfProc=true;OutDir=$dir\\build\\msi-language\\"
