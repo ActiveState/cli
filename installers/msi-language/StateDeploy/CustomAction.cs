@@ -57,7 +57,6 @@ namespace StateDeploy
             Status.ProgressBar.Increment(session, 1);
 
             stateToolPath = Path.Combine(installPath, "state.exe");
-            session.CustomActionData["STATE_TOOL_PATH"] = stateToolPath;
             return result;
         }
 
