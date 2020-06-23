@@ -11,7 +11,6 @@ import (
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/state/invite"
 	"github.com/ActiveState/cli/state/scripts"
 	"github.com/ActiveState/cli/state/secrets"
 	"github.com/ActiveState/cli/state/show"
@@ -97,6 +96,7 @@ func New(pj *project.Project, outputer output.Outputer, prompter prompt.Prompter
 		newUpdateCommand(pj, outputer),
 		newForkCommand(pj, auth, outputer, prompter),
 		newPpmCommand(),
+		newInviteCommand(pj, outputer, prompter),
 	)
 
 	applyLegacyChildren(stateCmd, globals)
@@ -198,7 +198,6 @@ func applyLegacyChildren(cmd *captain.Command, globals *globalOptions) {
 	cmd.AddLegacyChildren(
 		show.Command,
 		scripts.Command,
-		invite.Command,
 		secrets.NewCommand(secretsapi.Get(), &globals.Output).Config(),
 	)
 }

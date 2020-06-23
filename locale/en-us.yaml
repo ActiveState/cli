@@ -316,42 +316,6 @@ organization_name:
   other: Organization Name
 organization_no_orgs:
   other: You are not a member of any organizations
-org_role_choice_owner:
-  other: Owner (can edit members)
-org_role_choice_member:
-  other: Member (can only edit projects)
-invite_description:
-  other: Invite new members to an organization
-invite_flag_organization_description:
-  other: "Organization to invite to. If not set, invite to current project's organization"
-invite_flag_role_description:
-  other: Set user role to 'member' or 'owner'. If not set, prompt for the role
-invite_arg_emails:
-  other: "Email addresses to send the invitations to"
-invite_role_needs_selection:
-  other: "A user role needs to be selected"
-invite_select_org_role:
-  other: |
-    You are about to invite {{.Invitees}} to the {{.Organization}} organization
-    What role should the user(s) be given?
-invite_limit_fetch_err:
-  other: Failed to fetch the organization limits.  Please check your permissions for this organization.
-invite_personal_org_err:
-  other: This project does not belong to any organization and so cannot have any users invited to it. To invite users create an organization
-invite_org_err:
-  other: Unable to invite user. Please check the organization name.
-invite_org_secrets_reminder:
-  other: "
-
-You should run 'state secrets sync' once they have accepted their invitation and authenticated with the State Tool."
-invite_member_limit_err:
-  other: Only {{.RemainingUsers}} can be added to the organization {{.Organization}} with a limit of {{.UserLimit}}.  The request exceeds the limit by {{.ExceededBy}} users.
-invite_invitation_err:
-  other: Invite of at least one new member failed
-invite_invitation_sent:
-  other: Invitation sent to {{.Email}}
-invite_invalid_role_string:
-  other: "Invalid role name provided: needs to be 'member' or 'owner'"
 project:
   other: Project
 project_name:
