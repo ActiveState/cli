@@ -161,18 +161,14 @@ func TestPlain_Print(t *testing.T) {
 				" field_header1       field_header2       field_header3    \n" +
 				"------------------  ------------------  ------------------\n" +
 				" 111                 222                 <nil>            \n" +
-				"field_nil1: <nil>\n" +
-				"field_nil2: \n<nil>\n" +
 				"field_nil3: \n - <nil>\n - <nil>\n - <nil>\n" +
-				"field_nil4: <nil>\n" +
-				"field_nil5: \nfield_n: <nil>\n" +
+				"field_nil5: \n\n" +
 				"field_nil6: \n" +
 				" field_n    \n" +
 				"------------\n" +
 				" <nil>      \n" +
 				" <nil>      \n" +
-				" <nil>      \n" +
-				"field_nil7: <nil>\n",
+				" <nil>      \n",
 			"",
 		},
 		{
