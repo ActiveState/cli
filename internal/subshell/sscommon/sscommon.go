@@ -139,20 +139,9 @@ func runWithCmd(env []string, name string, args ...string) error {
 }
 
 func winPathToLinPath(name string) (string, error) {
-	cur, err := os.Getwd()
-	if err != nil {
-		return "", err
-	}
-
-	dir := filepath.Dir(name)
-	if err := os.Chdir(dir); err != nil {
-		return "", err
-	}
-	defer func() {
-		_ = os.Chdir(cur)
-	}()
-
 	cmd := exec.Command("bash", "-c", "pwd")
+	cmd.Dir = filepath.Dir(name)
+
 	out, err := cmd.Output()
 	if err != nil {
 		return "", err
