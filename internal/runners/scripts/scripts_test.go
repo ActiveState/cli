@@ -6,51 +6,13 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	yaml "gopkg.in/yaml.v2"
 
-	"github.com/ActiveState/cli/internal/failures"
-	osutil "github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
-func setup(t *testing.T) {
-	Flags.Output = new(string)
-}
-
-func TestExecute(t *testing.T) {
-	setup(t)
-
-	project := &projectfile.Project{}
-	contents := strings.TrimSpace(`
-project: "https://platform.activestate.com/ActiveState/project?commitID=00010001-0001-0001-0001-000100010001"
-scripts:
-  - name: run
-    value: whatever
-  `)
-	{
-		err := yaml.Unmarshal([]byte(contents), project)
-		assert.Nil(t, err, "Unmarshalled YAML")
-		project.Persist()
-	}
-
-	{
-		var otherErr error
-		str, err := osutil.CaptureStdout(func() {
-			otherErr = Command.Execute()
-		})
-		assert.NoError(t, err, "Error capturing Execute output")
-		require.NoError(t, otherErr, "Should Executed without error")
-		assert.NoError(t, failures.Handled(), "No failure should occurr")
-		assert.NotEmpty(t, str, "Outputs don't match")
-	}
-
-}
-
 func TestScriptsTable(t *testing.T) {
-	setup(t)
-
 	hdrs := []string{"Name", "Description"}
 	rows := [][]string{
 		{"name0", "desc0"},

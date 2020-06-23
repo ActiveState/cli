@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/suite"
 	"gopkg.in/yaml.v2"
 
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/scriptfile"
@@ -73,18 +72,17 @@ func (suite *EditTestSuite) AfterTest(suiteName, testName string) {
 func (suite *EditTestSuite) TestCreateScriptFile() {
 	script := suite.project.ScriptByName("hello")
 
-	var fail *failures.Failure
-	suite.scriptFile, fail = createScriptFile(script)
-	suite.Require().NoError(fail.ToError(), "should create file")
+	var err error
+	suite.scriptFile, err = createScriptFile(script, false)
+	suite.Require().NoError(err, "should create file")
 }
 
 func (suite *EditTestSuite) TestCreateScriptFile_Expand() {
 	script := suite.project.ScriptByName("hello-constant")
 
-	EditFlags.Expand = true
-	var fail *failures.Failure
-	suite.scriptFile, fail = createScriptFile(script)
-	suite.Require().NoError(fail.ToError(), "should create file")
+	var err error
+	suite.scriptFile, err = createScriptFile(script, true)
+	suite.Require().NoError(err, "should create file")
 
 	content, fail := fileutils.ReadFile(suite.scriptFile.Filename())
 	suite.Require().NoError(fail.ToError(), "unexpected error reading file contents")
@@ -115,8 +113,8 @@ func (suite *EditTestSuite) TestGetOpenCmd_EditorSet() {
 
 	os.Setenv("EDITOR", expected)
 
-	actual, fail := getOpenCmd()
-	suite.Require().NoError(fail.ToError(), "could not get open command")
+	actual, err := getOpenCmd()
+	suite.Require().NoError(err, "could not get open command")
 	suite.Equal(expected, actual)
 }
 
@@ -168,11 +166,11 @@ func (suite *EditTestSuite) TestGetOpenCmd_EditorNotSet() {
 		expected = defaultEditorWin
 	}
 
-	actual, fail := getOpenCmd()
-	if platform == "linux" && fail != nil {
-		suite.EqualError(fail.ToError(), locale.Tr("error_open_not_installed_lin", openCmdLin))
+	actual, err := getOpenCmd()
+	if platform == "linux" && err != nil {
+		suite.EqualError(err, locale.Tr("error_open_not_installed_lin", openCmdLin))
 	} else {
-		suite.Require().NoError(fail.ToError(), "could not get open command")
+		suite.Require().NoError(err, "could not get open command")
 		suite.Equal(expected, actual)
 	}
 }
@@ -180,20 +178,20 @@ func (suite *EditTestSuite) TestGetOpenCmd_EditorNotSet() {
 func (suite *EditTestSuite) TestNewScriptWatcher() {
 	script := suite.project.ScriptByName("hello")
 
-	var fail *failures.Failure
-	suite.scriptFile, fail = createScriptFile(script)
-	suite.Require().NoError(fail.ToError(), "should create file")
+	var err error
+	suite.scriptFile, err = createScriptFile(script, false)
+	suite.Require().NoError(err, "should create file")
 
-	watcher, fail := newScriptWatcher(suite.scriptFile)
-	suite.Require().NoError(fail.ToError(), "unexpected error creatig script watcher")
+	watcher, err := newScriptWatcher(suite.scriptFile)
+	suite.Require().NoError(err, "unexpected error creating script watcher")
 
-	go watcher.run()
+	go watcher.run("hello")
 
 	watcher.done <- true
 
 	select {
-	case fail = <-watcher.fails:
-		suite.Require().NoError(fail.ToError(), "should not get error from running watcher")
+	case err = <-watcher.errs:
+		suite.Require().NoError(err, "should not get error from running watcher")
 	default:
 		// Do nothing, test passed
 	}
@@ -202,13 +200,12 @@ func (suite *EditTestSuite) TestNewScriptWatcher() {
 func (suite *EditTestSuite) TestUpdateProjectFile() {
 	replace := suite.project.ScriptByName("replace")
 
-	var fail *failures.Failure
-	suite.scriptFile, fail = createScriptFile(replace)
-	suite.Require().NoError(fail.ToError(), "unexpected error creating script file")
+	var err error
+	suite.scriptFile, err = createScriptFile(replace, false)
+	suite.Require().NoError(err, "unexpected error creating script file")
 
-	EditArgs.Name = "hello"
-	fail = updateProjectFile(suite.scriptFile)
-	suite.Require().NoError(fail.ToError(), "should be able to update script file")
+	err = updateProjectFile(suite.scriptFile, "hello")
+	suite.Require().NoError(err, "should be able to update script file")
 
 	updatedProject := project.Get()
 	suite.Equal(replace.Value(), updatedProject.ScriptByName("hello").Value())

@@ -5,61 +5,27 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/bndr/gotabulate"
-	"github.com/spf13/cobra"
-
-	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/bndr/gotabulate"
 )
 
-// Flags captures values for any of the flags used with the scripts command.
-var Flags struct {
-	Output *string
+type Scripts struct {
 }
 
-// Command holds the definition for "state scripts".
-var Command = &commands.Command{
-	Name:        "scripts",
-	Description: "scripts_description",
-	Run:         Execute,
+type ScriptsParams struct {
+	Output string
 }
 
-func init() {
-	Command.Append(EditCommand)
+func NewScripts() *Scripts {
+	return &Scripts{}
 }
 
-// Execute the scripts command.
-func Execute(cmd *cobra.Command, allArgs []string) {
-	logging.Debug("Execute")
-
-	prj := project.Get()
-	name, owner := prj.Name(), prj.Owner()
-	scripts := prj.Scripts()
-
-	if len(scripts) == 0 {
-		fmt.Println(locale.T("scripts_no_scripts"))
-		return
-	}
-
-	switch commands.Output(strings.ToLower(*Flags.Output)) {
-	case commands.JSON, commands.EditorV0, commands.Editor:
-		data, fail := scriptsAsJSON(scripts)
-		if fail != nil {
-			failures.Handle(fail, locale.T("scripts_err_output"))
-			return
-		}
-
-		print.Line(string(data))
-	default:
-		listAllScripts(name, owner, scripts)
-	}
-}
-
-func scriptsAsJSON(scripts []*project.Script) ([]byte, *failures.Failure) {
+func scriptsAsJSON(scripts []*project.Script) ([]byte, error) {
 	type scriptRaw struct {
 		Name        string `json:"name,omitempty"`
 		Description string `json:"description,omitempty"`
@@ -76,7 +42,7 @@ func scriptsAsJSON(scripts []*project.Script) ([]byte, *failures.Failure) {
 
 	bs, err := json.Marshal(ss)
 	if err != nil {
-		return nil, failures.FailMarshal.Wrap(err)
+		return nil, errs.Wrap(err, "could not marshal scripts as JSON")
 	}
 
 	return bs, nil
@@ -108,4 +74,31 @@ func scriptsTable(ss []*project.Script) (hdrs []string, rows [][]string) {
 	}
 
 	return hdrs, rows
+}
+
+func (s *Scripts) Run(params *ScriptsParams) error {
+	logging.Debug("Execute scripts command")
+
+	prj := project.Get()
+	name, owner := prj.Name(), prj.Owner()
+	scripts := prj.Scripts()
+
+	if len(scripts) == 0 {
+		fmt.Println(locale.T("scripts_no_scripts"))
+		return nil
+	}
+
+	switch commands.Output(strings.ToLower(params.Output)) {
+	case commands.JSON, commands.EditorV0, commands.Editor:
+		data, err := scriptsAsJSON(scripts)
+		if err != nil {
+			return locale.WrapError(err, "scripts_err_output", "Failed to display scripts output")
+		}
+
+		print.Line(string(data))
+	default:
+		listAllScripts(name, owner, scripts)
+	}
+
+	return nil
 }
