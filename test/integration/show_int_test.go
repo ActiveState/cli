@@ -91,21 +91,3 @@ scripts:
 func TestShowIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(ShowIntegrationTestSuite))
 }
-
-/*func TestShowFailParseConfig(t *testing.T) {
-	Args.Remote = "" // reset
-	Flags.Output = new(string)
-	tmpdir, err := ioutil.TempDir("", "cli-show-test")
-	assert.NoError(t, err, "Created temp directory")
-
-	err = ioutil.WriteFile(filepath.Join(tmpdir, constants.ConfigFileName), []byte("\tBad Syntax"), 0666)
-	assert.NoError(t, err, "Created bad configuration file")
-
-	Cc := Command.GetCobraCmd()
-	Cc.SetArgs([]string{tmpdir})
-	err = Command.Execute()
-	assert.NoError(t, err, "Executed without error")
-	assert.NoError(t, failures.Handled(), "No failure occurred")
-
-	os.RemoveAll(tmpdir)
-}*/
