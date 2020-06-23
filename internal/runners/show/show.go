@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/updater"
+	"github.com/ActiveState/cli/pkg/project"
 	prj "github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -23,13 +24,15 @@ type Params struct {
 
 // Show manages the show run execution context.
 type Show struct {
-	out output.Outputer
+	project *project.Project
+	out     output.Outputer
 }
 
 // New returns a pointer to an instance of Show.
-func New(out output.Outputer) *Show {
+func New(pj *project.Project, out output.Outputer) *Show {
 	return &Show{
-		out: out,
+		project: pj,
+		out:     out,
 	}
 }
 
@@ -37,10 +40,9 @@ func New(out output.Outputer) *Show {
 func (s *Show) Run(params Params) error {
 	logging.Debug("Execute")
 
-	var project *prj.Project
-	if params.Remote == "" {
-		project = prj.Get()
-	} else {
+	pj := s.project
+
+	if params.Remote != "" {
 		path := params.Remote
 		projectFilePath := filepath.Join(params.Remote, constants.ConfigFileName)
 
@@ -71,20 +73,20 @@ func (s *Show) Run(params Params) error {
 		}
 
 		var fail *failures.Failure
-		project, fail = prj.New(projectFile)
+		pj, fail = prj.New(projectFile)
 		if fail != nil {
 			return fail.ToError()
 		}
 	}
 
-	updater.PrintUpdateMessage(project.Source().Path())
+	src := pj.Source()
 
-	src := project.Source()
+	updater.PrintUpdateMessage(src.Path())
 
 	data := outputData{
-		Namespace:    project.Namespace(),
-		Name:         project.Name(),
-		Organization: project.Owner(),
+		Namespace:    pj.Namespace(),
+		Name:         pj.Name(),
+		Organization: pj.Owner(),
 		Platforms:    platformsData(src),
 		Languages:    languagesData(src),
 		Events:       eventsData(src),

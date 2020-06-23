@@ -5,10 +5,11 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/runners/show"
+	"github.com/ActiveState/cli/pkg/project"
 )
 
-func newShowCommand(out output.Outputer) *captain.Command {
-	runner := show.New(out)
+func newShowCommand(pj *project.Project, out output.Outputer) *captain.Command {
+	runner := show.New(pj, out)
 
 	params := show.Params{}
 
