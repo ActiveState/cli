@@ -14,7 +14,6 @@ import (
 	"github.com/ActiveState/cli/state/invite"
 	"github.com/ActiveState/cli/state/scripts"
 	"github.com/ActiveState/cli/state/secrets"
-	"github.com/ActiveState/cli/state/show"
 )
 
 // CmdTree manages a tree of captain.Command instances.
@@ -86,6 +85,7 @@ func New(pj *project.Project, outputer output.Outputer, prompter prompt.Prompter
 		exportCmd,
 		newOrganizationsCommand(globals),
 		newRunCommand(),
+		newShowCommand(pj, outputer),
 		packagesCmd,
 		platformsCmd,
 		newHistoryCommand(outputer),
@@ -184,7 +184,6 @@ func (ct *CmdTree) Execute(args []string) error {
 
 func setLegacyOutput(globals *globalOptions) {
 	scripts.Flags.Output = &globals.Output
-	show.Flags.Output = &globals.Output
 }
 
 // applyLegacyChildren will register any commands and expanders
@@ -196,7 +195,6 @@ func applyLegacyChildren(cmd *captain.Command, globals *globalOptions) {
 	setLegacyOutput(globals)
 
 	cmd.AddLegacyChildren(
-		show.Command,
 		scripts.Command,
 		invite.Command,
 		secrets.NewCommand(secretsapi.Get(), &globals.Output).Config(),
