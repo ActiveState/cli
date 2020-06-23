@@ -16,8 +16,8 @@ import (
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
-// RunParams describes the data required for the show run func.
-type RunParams struct {
+// Params describes the data required for the show run func.
+type Params struct {
 	Remote string
 }
 
@@ -34,7 +34,7 @@ func New(out output.Outputer) *Show {
 }
 
 // Run is the primary show logic.
-func (s *Show) Run(params RunParams) error {
+func (s *Show) Run(params Params) error {
 	logging.Debug("Execute")
 
 	var project *prj.Project

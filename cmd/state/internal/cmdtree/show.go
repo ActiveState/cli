@@ -10,7 +10,7 @@ import (
 func newShowCommand(out output.Outputer) *captain.Command {
 	runner := show.New(out)
 
-	params := show.RunParams{}
+	params := show.Params{}
 
 	return captain.NewCommand(
 		"show",
