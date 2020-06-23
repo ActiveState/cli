@@ -126,7 +126,7 @@ func runWithCmd(env []string, name string, args ...string) error {
 		if err != nil {
 			return locale.WrapError(
 				err, "err_sscommon_cannot_translate_path",
-				"Cannot translate Windows path ({{.V0}}) to WSL path.", name,
+				"Cannot translate Windows path ({{.V0}}) to bash path.", name,
 			)
 		}
 		args = append([]string{"-c", linPath}, args...)
