@@ -2,7 +2,6 @@ package sscommon
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -11,6 +10,7 @@ import (
 	"syscall"
 
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 )
@@ -122,8 +122,14 @@ func runWithCmd(env []string, name string, args ...string) error {
 		args = append([]string{"-file", name}, args...)
 		name = "powershell"
 	case ".sh":
-		name = winPathToLinPath(name)
-		args = append([]string{"-c", name}, args...)
+		linPath, err := winPathToLinPath(name)
+		if err != nil {
+			return locale.WrapError(
+				err, "err_sscommon_cannot_translate_path",
+				"Cannot translate Windows path ({{.V0}}) to WSL path.", name,
+			)
+		}
+		args = append([]string{"-c", linPath}, args...)
 		name = "bash"
 	default:
 		return failures.FailUser.New("err_sscommon_unsupported_language", ext)
@@ -132,16 +138,29 @@ func runWithCmd(env []string, name string, args ...string) error {
 	return runDirect(env, name, args...)
 }
 
-func winPathToLinPath(name string) string {
-	ss := strings.SplitN(name, ":", 2)
-	if len(ss) < 2 {
-		return name
+func winPathToLinPath(name string) (string, error) {
+	cur, err := os.Getwd()
+	if err != nil {
+		return "", err
 	}
 
-	drive := strings.ToLower(ss[0])
-	path := strings.ReplaceAll(ss[1], string(os.PathSeparator), "/")
+	dir := filepath.Dir(name)
+	if err := os.Chdir(dir); err != nil {
+		return "", err
+	}
+	defer func() {
+		_ = os.Chdir(cur)
+	}()
 
-	return fmt.Sprintf("/mnt/%s%s", drive, path)
+	cmd := exec.Command("bash", "-c", "pwd")
+	out, err := cmd.Output()
+	if err != nil {
+		return "", err
+	}
+
+	path := strings.TrimSpace(string(out)) + "/" + filepath.Base(name)
+
+	return path, nil
 }
 
 func binaryPathCmd(env []string, name string) (string, error) {
