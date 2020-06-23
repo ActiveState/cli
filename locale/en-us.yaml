@@ -488,6 +488,8 @@ edit_scripts_no_name:
   other: Could not find script with the given name {{.V0}}
 edit_scripts_project_file_saved:
   other: Script changes detected, updating activestate.yaml
+error_open_not_installed_lin:
+  other: Please install '{{.V0}}' to edit scripts
 error_edit_script:
   other: Failed to edit script
 error_edit_unrecognized_platform:
