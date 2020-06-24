@@ -72,7 +72,7 @@ func TestExecuteNoArgsAuthenticated(t *testing.T) {
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
 	require.NoError(t, fail.ToError())
 
-	assert.NoError(t, runAuth(&AuthParams{}, ""), "Executed without error")
+	assert.NoError(t, runAuth(&AuthParams{}), "Executed without error")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
 
@@ -88,7 +88,7 @@ func TestExecuteNoArgsNotAuthenticated(t *testing.T) {
 	pmock.OnMethod("Input").Once().Return("baduser", nil)
 	pmock.OnMethod("InputSecret").Once().Return("badpass", nil)
 
-	err := runAuth(&AuthParams{}, "")
+	err := runAuth(&AuthParams{})
 	assert.Error(t, err)
 	assert.Nil(t, authentication.ClientAuth(), "Did not authenticate")
 }
@@ -113,7 +113,7 @@ func TestExecuteNoArgsAuthenticated_WithExistingKeypair(t *testing.T) {
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
 	require.NoError(t, fail.ToError())
 
-	assert.NoError(t, runAuth(&AuthParams{}, ""), "Executed without error")
+	assert.NoError(t, runAuth(&AuthParams{}), "Executed without error")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
 
@@ -135,7 +135,7 @@ func TestExecuteNoArgsLoginByPrompt_WithExistingKeypair(t *testing.T) {
 
 	pmock.OnMethod("Input").Once().Return(user.Username, nil)
 	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
-	err := runAuth(&AuthParams{}, "")
+	err := runAuth(&AuthParams{})
 
 	assert.NoError(t, err, "Executed without error")
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
@@ -168,7 +168,7 @@ func TestExecuteNoArgsLoginByPrompt_NoExistingKeypair(t *testing.T) {
 
 	pmock.OnMethod("Input").Once().Return(user.Username, nil)
 	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
-	err := runAuth(&AuthParams{}, "")
+	err := runAuth(&AuthParams{})
 
 	assert.NoError(t, err, "Executed without error")
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
@@ -218,7 +218,7 @@ func TestExecuteNoArgsLoginThenSignupByPrompt(t *testing.T) {
 	pmock.OnMethod("Confirm").Once().Return(true, nil)
 	pmock.OnMethod("Input").Once().Return(user.Email, nil)
 	pmock.OnMethod("Input").Once().Return(user.Name, nil)
-	err := runAuth(&AuthParams{}, "")
+	err := runAuth(&AuthParams{})
 
 	assert.NoError(t, err, "Executed without error")
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
@@ -249,7 +249,7 @@ func TestExecuteAuthenticatedByPrompts(t *testing.T) {
 
 	pmock.OnMethod("Input").Once().Return(user.Username, nil)
 	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
-	err := runAuth(&AuthParams{}, "")
+	err := runAuth(&AuthParams{})
 
 	assert.NoError(t, err, "Executed without error")
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
@@ -275,7 +275,7 @@ func TestExecuteAuthenticatedByFlags(t *testing.T) {
 	err := runAuth(&AuthParams{
 		Username: user.Username,
 		Password: user.Password,
-	}, "")
+	})
 
 	assert.NoError(t, err, "Executed without error")
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
@@ -360,7 +360,7 @@ func TestExecuteToken(t *testing.T) {
 	assert.NoError(t, fail.ToError(), "Executed without error")
 	assert.Nil(t, authentication.ClientAuth(), "Not Authenticated")
 
-	err := runAuth(&AuthParams{Token: token}, "")
+	err := runAuth(&AuthParams{Token: token})
 
 	assert.NoError(t, err, "Executed without error")
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
@@ -429,14 +429,14 @@ func TestExecuteAuthWithTOTP_WithExistingKeypair(t *testing.T) {
 	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
 	pmock.OnMethod("Input").Once().Return("", nil)
 
-	err := runAuth(&AuthParams{}, "")
+	err := runAuth(&AuthParams{})
 	assert.Error(t, err)
 	assert.Nil(t, authentication.ClientAuth(), "Not Authenticated")
 
 	pmock.OnMethod("Input").Once().Return(user.Username, nil)
 	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
 	pmock.OnMethod("Input").Once().Return("foo", nil)
-	err = runAuth(&AuthParams{}, "")
+	err = runAuth(&AuthParams{})
 
 	require.NoError(t, err, "Executed without error")
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
@@ -478,14 +478,14 @@ func TestExecuteAuthWithTOTP_NoExistingKeypair(t *testing.T) {
 	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
 	pmock.OnMethod("Input").Once().Return("", nil)
 
-	err := runAuth(&AuthParams{}, "")
+	err := runAuth(&AuthParams{})
 	assert.Error(t, err)
 	assert.Nil(t, authentication.ClientAuth(), "Not Authenticated")
 
 	pmock.OnMethod("Input").Once().Return(user.Username, nil)
 	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
 	pmock.OnMethod("Input").Once().Return("foo", nil)
-	err = runAuth(&AuthParams{}, "")
+	err = runAuth(&AuthParams{})
 
 	require.NoError(t, err, "Executed without error")
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
@@ -511,7 +511,7 @@ func TestExecuteWithTOTPFlag(t *testing.T) {
 		Username: user.Username,
 		Password: user.Password,
 		Totp:     "123456",
-	}, "")
+	})
 	require.NoError(t, err)
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
 }

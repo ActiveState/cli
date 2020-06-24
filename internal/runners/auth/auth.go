@@ -14,15 +14,14 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
-type Auth struct {
-	Output string
-}
+type Auth struct{}
 
-func NewAuth(output string) *Auth {
-	return &Auth{output}
+func NewAuth() *Auth {
+	return &Auth{}
 }
 
 type AuthParams struct {
+	Output   string
 	Token    string
 	Username string
 	Password string
@@ -31,15 +30,15 @@ type AuthParams struct {
 
 // Run runs our command
 func (a *Auth) Run(params *AuthParams) error {
-	return runAuth(params, a.Output)
+	return runAuth(params)
 }
 
-func runAuth(params *AuthParams, outputFlag string) error {
+func runAuth(params *AuthParams) error {
 	auth := authentication.Get()
 
-	output := commands.Output(strings.ToLower(outputFlag))
+	output := commands.Output(strings.ToLower(params.Output))
 	if !auth.Authenticated() {
-		return authenticate(params, auth, output)
+		return authenticate(params, auth)
 	}
 
 	logging.Debug("Already authenticated")
@@ -59,7 +58,7 @@ func runAuth(params *AuthParams, outputFlag string) error {
 	return nil
 }
 
-func authenticate(params *AuthParams, auth *authentication.Auth, output commands.Output) error {
+func authenticate(params *AuthParams, auth *authentication.Auth) error {
 	if params.Token == "" {
 		fail := authlet.AuthenticateWithInput(params.Username, params.Password, params.Totp)
 		if fail != nil {
@@ -75,7 +74,7 @@ func authenticate(params *AuthParams, auth *authentication.Auth, output commands
 		return failures.FailUser.New(locale.T("login_err_auth"))
 	}
 
-	switch output {
+	switch commands.Output(strings.ToLower(params.Output)) {
 	case commands.JSON, commands.EditorV0, commands.Editor:
 		user, fail := userToJSON(auth.WhoAmI())
 		if fail != nil {
