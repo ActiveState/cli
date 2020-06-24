@@ -60,13 +60,15 @@ func (e *Edit) Run(pj *project.Project, params *EditParams) error {
 func editScript(script *project.Script, params *EditParams) error {
 	scriptFile, err := createScriptFile(script, params.Expand)
 	if err != nil {
-		return errs.Wrap(err, "Could not create script file.")
+		return locale.WrapError(
+			err, "error_edit_create_scriptfile",
+			"Could not create script file.")
 	}
 	defer scriptFile.Clean()
 
 	watcher, err := newScriptWatcher(scriptFile)
 	if err != nil {
-		return err
+		return errs.Wrap(err, "Failed to initialize file watch.")
 	}
 	defer watcher.close()
 
@@ -86,7 +88,7 @@ func createScriptFile(script *project.Script, expand bool) (*scriptfile.ScriptFi
 
 	f, fail := scriptfile.NewAsSource(script.LanguageSafe(), script.Name(), scriptBlock)
 	if fail != nil {
-		return f, errs.Wrap(fail, "failed to create script file")
+		return f, errs.Wrap(fail, "Failed to create script file")
 	}
 	return f, nil
 }
