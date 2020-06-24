@@ -15,14 +15,11 @@ import (
 )
 
 type Scripts struct {
-}
-
-type ScriptsParams struct {
 	Output string
 }
 
-func NewScripts() *Scripts {
-	return &Scripts{}
+func NewScripts(output string) *Scripts {
+	return &Scripts{output}
 }
 
 func scriptsAsJSON(scripts []*project.Script) ([]byte, error) {
@@ -76,7 +73,7 @@ func scriptsTable(ss []*project.Script) (hdrs []string, rows [][]string) {
 	return hdrs, rows
 }
 
-func (s *Scripts) Run(params *ScriptsParams) error {
+func (s *Scripts) Run() error {
 	logging.Debug("Execute scripts command")
 
 	prj := project.Get()
@@ -88,7 +85,7 @@ func (s *Scripts) Run(params *ScriptsParams) error {
 		return nil
 	}
 
-	switch commands.Output(strings.ToLower(params.Output)) {
+	switch commands.Output(strings.ToLower(s.Output)) {
 	case commands.JSON, commands.EditorV0, commands.Editor:
 		data, err := scriptsAsJSON(scripts)
 		if err != nil {

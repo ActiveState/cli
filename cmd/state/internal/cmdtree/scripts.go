@@ -7,10 +7,7 @@ import (
 )
 
 func newScriptsCommand(globals *globalOptions) *captain.Command {
-	runner := scripts.NewScripts()
-
-	params := scripts.ScriptsParams{}
-	params.Output = globals.Output
+	runner := scripts.NewScripts(globals.Output)
 
 	return captain.NewCommand(
 		"scripts",
@@ -18,7 +15,7 @@ func newScriptsCommand(globals *globalOptions) *captain.Command {
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
-			return runner.Run(&params)
+			return runner.Run()
 		})
 }
 
