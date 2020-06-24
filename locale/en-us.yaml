@@ -487,7 +487,7 @@ edit_script_cmd_expand_flag:
 edit_scripts_no_name:
   other: Could not find script with the given name {{.V0}}
 edit_scripts_project_file_saved:
-  other: Script changes detected, updating activestate.yaml
+  other: "\nScript changes detected, updating activestate.yaml"
 error_open_not_installed_lin:
   other: Please install '{{.V0}}' to edit scripts
 error_edit_script:
@@ -1622,3 +1622,5 @@ ppm_list_intent:
 deploy_usable_path:
   other: |
     [YELLOW]Please ensure '{{.V0}}' exists and is on your PATH.[/RESET]
+script_watcher_watch_file:
+  other: "Watching file changes at: {{.V0}}"

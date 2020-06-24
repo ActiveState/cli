@@ -8,7 +8,7 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
-func newScriptsCommand(pj *project.Project, globals *globalOptions, output output.Outputer) *captain.Command {
+func newScriptsCommand(pj *project.Project, output output.Outputer) *captain.Command {
 	runner := scripts.NewScripts(pj, output)
 
 	return captain.NewCommand(
@@ -17,7 +17,7 @@ func newScriptsCommand(pj *project.Project, globals *globalOptions, output outpu
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
-			return runner.Run(globals.Output)
+			return runner.Run()
 		})
 }
 

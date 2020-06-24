@@ -79,7 +79,7 @@ func (e *Edit) editScript(script *project.Script, params *EditParams) error {
 	if err != nil {
 		return locale.WrapError(
 			err, "error_edit_open_scriptfile",
-			"Failed to open {{.V0}} in editor.", scriptFile.Filename())
+			"Failed to open script file in editor.")
 	}
 
 	return start(watcher, params.Name, e.output)
@@ -143,8 +143,6 @@ func (sw *scriptWatcher) run(scriptName string, outputer output.Outputer) {
 					sw.errs <- errs.Wrap(err, "Failed to write project file.")
 					return
 				}
-				// To ensure confirm dialog and update message are not on the same line
-				outputer.Print("")
 				outputer.Print(locale.T("edit_scripts_project_file_saved"))
 			}
 		case err, ok := <-sw.watcher.Errors:
@@ -252,7 +250,7 @@ func verifyPathEditor(editor string) (string, error) {
 }
 
 func start(sw *scriptWatcher, scriptName string, output output.Outputer) (err error) {
-	output.Print(fmt.Sprintf("Watching file changes at: %s", sw.scriptFile.Filename()))
+	output.Print(locale.Tr("script_watcher_watch_file", sw.scriptFile.Filename()))
 	if strings.ToLower(os.Getenv(constants.NonInteractive)) == "true" {
 		err = startNoninteractive(sw, scriptName, output)
 	} else {

@@ -1,12 +1,9 @@
 package scripts
 
 import (
-	"strings"
-
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/bndr/gotabulate"
 )
@@ -21,7 +18,7 @@ func NewScripts(pj *project.Project, output output.Outputer) *Scripts {
 }
 
 // scriptsAsStruct returns the scripts as a JSON serializable struct
-func scriptsAsStruct(scripts []*project.Script) (interface{}, error) {
+func scriptsAsStruct(scripts []*project.Script) interface{} {
 	type scriptRaw struct {
 		Name        string `json:"name,omitempty"`
 		Description string `json:"description,omitempty"`
@@ -36,11 +33,11 @@ func scriptsAsStruct(scripts []*project.Script) (interface{}, error) {
 		}
 	}
 
-	return ss, nil
+	return ss
 }
 
 // listAllScripts lists of all of the scripts defined for this project.
-func (s *Scripts) listAllScripts(name, owner string, scripts []*project.Script) {
+func listAllScripts(name, owner string, scripts []*project.Script) string {
 	logging.Debug("listing scripts for org=%s, project=%s", owner, name)
 
 	hdrs, rows := scriptsTable(scripts)
@@ -48,7 +45,7 @@ func (s *Scripts) listAllScripts(name, owner string, scripts []*project.Script) 
 	t.SetHeaders(hdrs)
 	t.SetAlign("left")
 
-	s.output.Print(t.Render("simple"))
+	return t.Render("simple")
 }
 
 func scriptsTable(ss []*project.Script) (hdrs []string, rows [][]string) {
@@ -67,7 +64,23 @@ func scriptsTable(ss []*project.Script) (hdrs []string, rows [][]string) {
 	return hdrs, rows
 }
 
-func (s *Scripts) Run(outputFlag string) error {
+type outputFormat struct {
+	name    string
+	owner   string
+	scripts []*project.Script
+}
+
+func (f outputFormat) MarshalOutput(format output.Format) interface{} {
+	switch format {
+	case output.JSONFormatName, output.EditorFormatName, output.EditorV0FormatName:
+		return scriptsAsStruct(f.scripts)
+	case output.PlainFormatName:
+		return listAllScripts(f.name, f.owner, f.scripts)
+	}
+	return f
+}
+
+func (s *Scripts) Run() error {
 	logging.Debug("Execute scripts command")
 
 	name, owner := s.project.Name(), s.project.Owner()
@@ -78,17 +91,7 @@ func (s *Scripts) Run(outputFlag string) error {
 		return nil
 	}
 
-	switch commands.Output(strings.ToLower(outputFlag)) {
-	case commands.JSON, commands.EditorV0, commands.Editor:
-		data, err := scriptsAsStruct(scripts)
-		if err != nil {
-			return locale.WrapError(err, "scripts_err_output", "Failed to display scripts output")
-		}
-
-		s.output.Print(data)
-	default:
-		s.listAllScripts(name, owner, scripts)
-	}
+	s.output.Print(outputFormat{name, owner, scripts})
 
 	return nil
 }
