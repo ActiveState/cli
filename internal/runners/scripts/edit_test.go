@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/scriptfile"
+	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -185,7 +186,8 @@ func (suite *EditTestSuite) TestNewScriptWatcher() {
 	watcher, err := newScriptWatcher(suite.scriptFile)
 	suite.Require().NoError(err, "unexpected error creating script watcher")
 
-	go watcher.run("hello")
+	catcher := outputhelper.NewCatcher()
+	go watcher.run("hello", catcher.Outputer)
 
 	watcher.done <- true
 
