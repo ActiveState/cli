@@ -15,7 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/pkg/project"
@@ -37,11 +37,13 @@ type EditParams struct {
 }
 
 // Edit represents the runner for `state script edit`
-type Edit struct{}
+type Edit struct {
+	output output.Outputer
+}
 
 // NewEdit creates a new Edit runner
-func NewEdit() *Edit {
-	return &Edit{}
+func NewEdit(output output.Outputer) *Edit {
+	return &Edit{output}
 }
 
 func (e *Edit) Run(pj *project.Project, params *EditParams) error {
@@ -50,14 +52,14 @@ func (e *Edit) Run(pj *project.Project, params *EditParams) error {
 		return locale.NewInputError("edit_scripts_no_name", "Could not find script with the given name {{.V0}}", params.Name)
 	}
 
-	err := editScript(script, params)
+	err := e.editScript(script, params)
 	if err != nil {
 		return locale.WrapError(err, "error_edit_script", "Failed to edit script.")
 	}
 	return nil
 }
 
-func editScript(script *project.Script, params *EditParams) error {
+func (e *Edit) editScript(script *project.Script, params *EditParams) error {
 	scriptFile, err := createScriptFile(script, params.Expand)
 	if err != nil {
 		return locale.WrapError(
@@ -74,10 +76,12 @@ func editScript(script *project.Script, params *EditParams) error {
 
 	err = openEditor(scriptFile.Filename())
 	if err != nil {
-		return errs.Wrap(err, "Failed to open %s in editor.", scriptFile.Filename())
+		return locale.WrapError(
+			err, "error_edit_open_scriptfile",
+			"Failed to open {{.V0}} in editor.", scriptFile.Filename())
 	}
 
-	return start(watcher, params.Name)
+	return start(watcher, params.Name, e.output)
 }
 
 func createScriptFile(script *project.Script, expand bool) (*scriptfile.ScriptFile, error) {
@@ -119,7 +123,7 @@ func newScriptWatcher(scriptFile *scriptfile.ScriptFile) (*scriptWatcher, error)
 	}, nil
 }
 
-func (sw *scriptWatcher) run(scriptName string) {
+func (sw *scriptWatcher) run(scriptName string, outputer output.Outputer) {
 	for {
 		select {
 		case <-sw.done:
@@ -139,8 +143,8 @@ func (sw *scriptWatcher) run(scriptName string) {
 					return
 				}
 				// To ensure confirm dialog and update message are not on the same line
-				print.Line("")
-				print.Line(locale.T("edit_scripts_project_file_saved"))
+				outputer.Print("")
+				outputer.Print(locale.T("edit_scripts_project_file_saved"))
 			}
 		case err, ok := <-sw.watcher.Errors:
 			if !ok {
@@ -246,17 +250,17 @@ func verifyPathEditor(editor string) (string, error) {
 	return editor, nil
 }
 
-func start(sw *scriptWatcher, scriptName string) (err error) {
-	print.Line("Watching file changes at: %s", sw.scriptFile.Filename())
+func start(sw *scriptWatcher, scriptName string, output output.Outputer) (err error) {
+	output.Print(fmt.Sprintf("Watching file changes at: %s", sw.scriptFile.Filename()))
 	if strings.ToLower(os.Getenv(constants.NonInteractive)) == "true" {
-		err = startNoninteractive(sw, scriptName)
+		err = startNoninteractive(sw, scriptName, output)
 	} else {
-		err = startInteractive(sw, scriptName)
+		err = startInteractive(sw, scriptName, output)
 	}
 	return err
 }
 
-func startNoninteractive(sw *scriptWatcher, scriptName string) error {
+func startNoninteractive(sw *scriptWatcher, scriptName string, output output.Outputer) error {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 
@@ -277,7 +281,7 @@ func startNoninteractive(sw *scriptWatcher, scriptName string) error {
 			// Do nothing and let defer take over
 		}
 	}()
-	sw.run(scriptName)
+	sw.run(scriptName, output)
 
 	err := <-errC
 
@@ -292,8 +296,8 @@ func startNoninteractive(sw *scriptWatcher, scriptName string) error {
 	return nil
 }
 
-func startInteractive(sw *scriptWatcher, scriptName string) error {
-	go sw.run(scriptName)
+func startInteractive(sw *scriptWatcher, scriptName string, output output.Outputer) error {
+	go sw.run(scriptName, output)
 
 	prompter := prompt.New()
 	for {
