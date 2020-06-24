@@ -43,6 +43,22 @@
     <Compile Include="Product.wxs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="Rollback\Rollback.csproj">
+      <Name>Rollback</Name>
+      <Project>{be5d8c31-e68d-493b-9314-ac33d5f83eff}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>True</DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="Shortcut\Shortcut.csproj">
+      <Name>Shortcut</Name>
+      <Project>{877517d7-1f44-41c8-8b45-23070ac62845}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>True</DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
+    </ProjectReference>
     <ProjectReference Include="StateCommandExists\StateCommandExists.csproj">
       <Name>StateCommandExists</Name>
       <Project>{adebe963-f9b2-4860-8512-364a7c78b757}</Project>

@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // UpdateAuthorReader is a Reader for the UpdateAuthor structure.
@@ -24,21 +23,18 @@ type UpdateAuthorReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *UpdateAuthorReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewUpdateAuthorOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewUpdateAuthorBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewUpdateAuthorDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -68,6 +64,10 @@ func (o *UpdateAuthorOK) Error() string {
 	return fmt.Sprintf("[PUT /v1/authors/{author_id_or_email}][%d] updateAuthorOK  %+v", 200, o.Payload)
 }
 
+func (o *UpdateAuthorOK) GetPayload() *inventory_models.V1Author {
+	return o.Payload
+}
+
 func (o *UpdateAuthorOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(inventory_models.V1Author)
@@ -95,6 +95,10 @@ type UpdateAuthorBadRequest struct {
 
 func (o *UpdateAuthorBadRequest) Error() string {
 	return fmt.Sprintf("[PUT /v1/authors/{author_id_or_email}][%d] updateAuthorBadRequest  %+v", 400, o.Payload)
+}
+
+func (o *UpdateAuthorBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
+	return o.Payload
 }
 
 func (o *UpdateAuthorBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -133,6 +137,10 @@ func (o *UpdateAuthorDefault) Code() int {
 
 func (o *UpdateAuthorDefault) Error() string {
 	return fmt.Sprintf("[PUT /v1/authors/{author_id_or_email}][%d] updateAuthor default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *UpdateAuthorDefault) GetPayload() *inventory_models.RestAPIError {
+	return o.Payload
 }
 
 func (o *UpdateAuthorDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

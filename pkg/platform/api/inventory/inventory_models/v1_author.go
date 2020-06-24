@@ -6,20 +6,20 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // V1Author Author
 //
 // An author
+//
 // swagger:model v1Author
 type V1Author struct {
 	V1AuthorAllOf0
 
-	V1AuthorAllOf1
+	V1AuthorCore
 }
 
 // UnmarshalJSON unmarshals this object from a JSON structure
@@ -32,11 +32,11 @@ func (m *V1Author) UnmarshalJSON(raw []byte) error {
 	m.V1AuthorAllOf0 = aO0
 
 	// AO1
-	var aO1 V1AuthorAllOf1
+	var aO1 V1AuthorCore
 	if err := swag.ReadJSON(raw, &aO1); err != nil {
 		return err
 	}
-	m.V1AuthorAllOf1 = aO1
+	m.V1AuthorCore = aO1
 
 	return nil
 }
@@ -51,12 +51,11 @@ func (m V1Author) MarshalJSON() ([]byte, error) {
 	}
 	_parts = append(_parts, aO0)
 
-	aO1, err := swag.WriteJSON(m.V1AuthorAllOf1)
+	aO1, err := swag.WriteJSON(m.V1AuthorCore)
 	if err != nil {
 		return nil, err
 	}
 	_parts = append(_parts, aO1)
-
 	return swag.ConcatJSON(_parts...), nil
 }
 
@@ -68,8 +67,8 @@ func (m *V1Author) Validate(formats strfmt.Registry) error {
 	if err := m.V1AuthorAllOf0.Validate(formats); err != nil {
 		res = append(res, err)
 	}
-	// validation for a type composition with V1AuthorAllOf1
-	if err := m.V1AuthorAllOf1.Validate(formats); err != nil {
+	// validation for a type composition with V1AuthorCore
+	if err := m.V1AuthorCore.Validate(formats); err != nil {
 		res = append(res, err)
 	}
 

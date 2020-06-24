@@ -8,9 +8,8 @@ package inventory_models
 import (
 	"strconv"
 
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
@@ -18,20 +17,21 @@ import (
 // V1OperatingSystemVersionPagedList Operating System Version Paged List
 //
 // A paginated list of operating system versions
+//
 // swagger:model v1OperatingSystemVersionPagedList
 type V1OperatingSystemVersionPagedList struct {
 
 	// links
 	// Required: true
-	Links *V1OperatingSystemVersionPagedListLinks `json:"links"`
+	Links *V1SubSchemaPagingLinks `json:"links"`
 
 	// A page of operating system versions
 	// Required: true
-	OperatingSystemVersions []*V1OperatingSystemVersionPagedListOperatingSystemVersionsItems `json:"operating_system_versions"`
+	OperatingSystemVersions []*V1OperatingSystemVersion `json:"operating_system_versions"`
 
 	// paging
 	// Required: true
-	Paging *V1OperatingSystemVersionPagedListPaging `json:"paging"`
+	Paging *V1SubSchemaPaging `json:"paging"`
 }
 
 // Validate validates this v1 operating system version paged list

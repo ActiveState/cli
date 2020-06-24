@@ -6,31 +6,27 @@ package inventory_operations
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"net/http"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // NewResolveRecipesParams creates a new ResolveRecipesParams object
 // with the default values initialized.
 func NewResolveRecipesParams() *ResolveRecipesParams {
 	var (
-		returnDevelopmentSolverRecipesDefault = bool(false)
-		useRecipeStoreDefault                 = bool(true)
+		useRecipeStoreDefault = bool(true)
 	)
 	return &ResolveRecipesParams{
-		ReturnDevelopmentSolverRecipes: &returnDevelopmentSolverRecipesDefault,
-		UseRecipeStore:                 &useRecipeStoreDefault,
+		UseRecipeStore: &useRecipeStoreDefault,
 
 		timeout: cr.DefaultTimeout,
 	}
@@ -40,12 +36,10 @@ func NewResolveRecipesParams() *ResolveRecipesParams {
 // with the default values initialized, and the ability to set a timeout on a request
 func NewResolveRecipesParamsWithTimeout(timeout time.Duration) *ResolveRecipesParams {
 	var (
-		returnDevelopmentSolverRecipesDefault = bool(false)
-		useRecipeStoreDefault                 = bool(true)
+		useRecipeStoreDefault = bool(true)
 	)
 	return &ResolveRecipesParams{
-		ReturnDevelopmentSolverRecipes: &returnDevelopmentSolverRecipesDefault,
-		UseRecipeStore:                 &useRecipeStoreDefault,
+		UseRecipeStore: &useRecipeStoreDefault,
 
 		timeout: timeout,
 	}
@@ -55,12 +49,10 @@ func NewResolveRecipesParamsWithTimeout(timeout time.Duration) *ResolveRecipesPa
 // with the default values initialized, and the ability to set a context for a request
 func NewResolveRecipesParamsWithContext(ctx context.Context) *ResolveRecipesParams {
 	var (
-		returnDevelopmentSolverRecipesDefault = bool(false)
-		useRecipeStoreDefault                 = bool(true)
+		useRecipeStoreDefault = bool(true)
 	)
 	return &ResolveRecipesParams{
-		ReturnDevelopmentSolverRecipes: &returnDevelopmentSolverRecipesDefault,
-		UseRecipeStore:                 &useRecipeStoreDefault,
+		UseRecipeStore: &useRecipeStoreDefault,
 
 		Context: ctx,
 	}
@@ -70,13 +62,11 @@ func NewResolveRecipesParamsWithContext(ctx context.Context) *ResolveRecipesPara
 // with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewResolveRecipesParamsWithHTTPClient(client *http.Client) *ResolveRecipesParams {
 	var (
-		returnDevelopmentSolverRecipesDefault = bool(false)
-		useRecipeStoreDefault                 = bool(true)
+		useRecipeStoreDefault = bool(true)
 	)
 	return &ResolveRecipesParams{
-		ReturnDevelopmentSolverRecipes: &returnDevelopmentSolverRecipesDefault,
-		UseRecipeStore:                 &useRecipeStoreDefault,
-		HTTPClient:                     client,
+		UseRecipeStore: &useRecipeStoreDefault,
+		HTTPClient:     client,
 	}
 }
 
@@ -92,11 +82,6 @@ type ResolveRecipesParams struct {
 
 	*/
 	OrganizationID *string
-	/*ReturnDevelopmentSolverRecipes
-	  This can be used to request that the results be based on the development version of the solver, rather than the default solver. This is just present for debugging new solvers, and you should not write production code that relies on this parameter continuing to exist.
-
-	*/
-	ReturnDevelopmentSolverRecipes *bool
 	/*UseRecipeStore
 	  Whether to check if this order has already been solved and retrieve the result from the recipe store or, if false, to force the order to be solved anew
 
@@ -163,17 +148,6 @@ func (o *ResolveRecipesParams) SetOrganizationID(organizationID *string) {
 	o.OrganizationID = organizationID
 }
 
-// WithReturnDevelopmentSolverRecipes adds the returnDevelopmentSolverRecipes to the resolve recipes params
-func (o *ResolveRecipesParams) WithReturnDevelopmentSolverRecipes(returnDevelopmentSolverRecipes *bool) *ResolveRecipesParams {
-	o.SetReturnDevelopmentSolverRecipes(returnDevelopmentSolverRecipes)
-	return o
-}
-
-// SetReturnDevelopmentSolverRecipes adds the returnDevelopmentSolverRecipes to the resolve recipes params
-func (o *ResolveRecipesParams) SetReturnDevelopmentSolverRecipes(returnDevelopmentSolverRecipes *bool) {
-	o.ReturnDevelopmentSolverRecipes = returnDevelopmentSolverRecipes
-}
-
 // WithUseRecipeStore adds the useRecipeStore to the resolve recipes params
 func (o *ResolveRecipesParams) WithUseRecipeStore(useRecipeStore *bool) *ResolveRecipesParams {
 	o.SetUseRecipeStore(useRecipeStore)
@@ -209,22 +183,6 @@ func (o *ResolveRecipesParams) WriteToRequest(r runtime.ClientRequest, reg strfm
 		qOrganizationID := qrOrganizationID
 		if qOrganizationID != "" {
 			if err := r.SetQueryParam("organization_id", qOrganizationID); err != nil {
-				return err
-			}
-		}
-
-	}
-
-	if o.ReturnDevelopmentSolverRecipes != nil {
-
-		// query param return_development_solver_recipes
-		var qrReturnDevelopmentSolverRecipes bool
-		if o.ReturnDevelopmentSolverRecipes != nil {
-			qrReturnDevelopmentSolverRecipes = *o.ReturnDevelopmentSolverRecipes
-		}
-		qReturnDevelopmentSolverRecipes := swag.FormatBool(qrReturnDevelopmentSolverRecipes)
-		if qReturnDevelopmentSolverRecipes != "" {
-			if err := r.SetQueryParam("return_development_solver_recipes", qReturnDevelopmentSolverRecipes); err != nil {
 				return err
 			}
 		}

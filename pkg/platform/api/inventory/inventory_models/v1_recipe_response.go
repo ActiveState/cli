@@ -8,9 +8,8 @@ package inventory_models
 import (
 	"strconv"
 
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
@@ -18,6 +17,7 @@ import (
 // V1RecipeResponse Recipe Response
 //
 // The response to an order. It is a list of recipes satisfying the order.
+//
 // swagger:model v1RecipeResponse
 type V1RecipeResponse struct {
 
@@ -29,7 +29,7 @@ type V1RecipeResponse struct {
 	// List of resolved recipes by platform for a given order
 	// Required: true
 	// Min Length: 1
-	Recipes []*V1RecipeResponseRecipesItems `json:"recipes"`
+	Recipes []*V1Recipe `json:"recipes"`
 }
 
 // Validate validates this v1 recipe response

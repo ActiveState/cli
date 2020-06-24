@@ -6,22 +6,22 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // V1Image Image
 //
 // The full image data model
+//
 // swagger:model v1Image
 type V1Image struct {
 	V1ImageAllOf0
 
-	V1ImageAllOf1
+	V1ImageCore
 
-	V1ImageAllOf2
+	V1SubSchemaRevisionedResource
 }
 
 // UnmarshalJSON unmarshals this object from a JSON structure
@@ -34,18 +34,18 @@ func (m *V1Image) UnmarshalJSON(raw []byte) error {
 	m.V1ImageAllOf0 = aO0
 
 	// AO1
-	var aO1 V1ImageAllOf1
+	var aO1 V1ImageCore
 	if err := swag.ReadJSON(raw, &aO1); err != nil {
 		return err
 	}
-	m.V1ImageAllOf1 = aO1
+	m.V1ImageCore = aO1
 
 	// AO2
-	var aO2 V1ImageAllOf2
+	var aO2 V1SubSchemaRevisionedResource
 	if err := swag.ReadJSON(raw, &aO2); err != nil {
 		return err
 	}
-	m.V1ImageAllOf2 = aO2
+	m.V1SubSchemaRevisionedResource = aO2
 
 	return nil
 }
@@ -60,18 +60,17 @@ func (m V1Image) MarshalJSON() ([]byte, error) {
 	}
 	_parts = append(_parts, aO0)
 
-	aO1, err := swag.WriteJSON(m.V1ImageAllOf1)
+	aO1, err := swag.WriteJSON(m.V1ImageCore)
 	if err != nil {
 		return nil, err
 	}
 	_parts = append(_parts, aO1)
 
-	aO2, err := swag.WriteJSON(m.V1ImageAllOf2)
+	aO2, err := swag.WriteJSON(m.V1SubSchemaRevisionedResource)
 	if err != nil {
 		return nil, err
 	}
 	_parts = append(_parts, aO2)
-
 	return swag.ConcatJSON(_parts...), nil
 }
 
@@ -83,12 +82,12 @@ func (m *V1Image) Validate(formats strfmt.Registry) error {
 	if err := m.V1ImageAllOf0.Validate(formats); err != nil {
 		res = append(res, err)
 	}
-	// validation for a type composition with V1ImageAllOf1
-	if err := m.V1ImageAllOf1.Validate(formats); err != nil {
+	// validation for a type composition with V1ImageCore
+	if err := m.V1ImageCore.Validate(formats); err != nil {
 		res = append(res, err)
 	}
-	// validation for a type composition with V1ImageAllOf2
-	if err := m.V1ImageAllOf2.Validate(formats); err != nil {
+	// validation for a type composition with V1SubSchemaRevisionedResource
+	if err := m.V1SubSchemaRevisionedResource.Validate(formats); err != nil {
 		res = append(res, err)
 	}
 

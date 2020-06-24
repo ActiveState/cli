@@ -6,18 +6,18 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // V1SolverValidationError Solver Validation Error
 //
 // An error for when invalid input is supplied to a solver endpoint.
+//
 // swagger:model v1SolverValidationError
 type V1SolverValidationError struct {
-	V1SolverValidationErrorAllOf0
+	V1SolverError
 
 	V1SolverValidationErrorAllOf1
 }
@@ -25,11 +25,11 @@ type V1SolverValidationError struct {
 // UnmarshalJSON unmarshals this object from a JSON structure
 func (m *V1SolverValidationError) UnmarshalJSON(raw []byte) error {
 	// AO0
-	var aO0 V1SolverValidationErrorAllOf0
+	var aO0 V1SolverError
 	if err := swag.ReadJSON(raw, &aO0); err != nil {
 		return err
 	}
-	m.V1SolverValidationErrorAllOf0 = aO0
+	m.V1SolverError = aO0
 
 	// AO1
 	var aO1 V1SolverValidationErrorAllOf1
@@ -45,7 +45,7 @@ func (m *V1SolverValidationError) UnmarshalJSON(raw []byte) error {
 func (m V1SolverValidationError) MarshalJSON() ([]byte, error) {
 	_parts := make([][]byte, 0, 2)
 
-	aO0, err := swag.WriteJSON(m.V1SolverValidationErrorAllOf0)
+	aO0, err := swag.WriteJSON(m.V1SolverError)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +56,6 @@ func (m V1SolverValidationError) MarshalJSON() ([]byte, error) {
 		return nil, err
 	}
 	_parts = append(_parts, aO1)
-
 	return swag.ConcatJSON(_parts...), nil
 }
 
@@ -64,8 +63,8 @@ func (m V1SolverValidationError) MarshalJSON() ([]byte, error) {
 func (m *V1SolverValidationError) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	// validation for a type composition with V1SolverValidationErrorAllOf0
-	if err := m.V1SolverValidationErrorAllOf0.Validate(formats); err != nil {
+	// validation for a type composition with V1SolverError
+	if err := m.V1SolverError.Validate(formats); err != nil {
 		res = append(res, err)
 	}
 	// validation for a type composition with V1SolverValidationErrorAllOf1

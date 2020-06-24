@@ -592,30 +592,16 @@ show_project:
   other: Show information about a project
 arg_state_show_remote_description:
   other: Path to project
-err_state_show_path_does_not_exist:
-  other: Directory does not exist.
-err_state_show_no_config:
-  other: activestate.yaml file not found in the given location.
-err_state_show_project_parse:
-  other: Could not parse activestate.yaml.
-print_state_show_name:
-  other: Name
-print_state_show_organization:
-  other: Organization
-print_state_show_url:
-  other: URL
-print_state_show_platforms:
+field_namespace:
+  other: Namespace
+field_platforms:
   other: Platforms
-print_state_show_events:
+field_events:
   other: Events
-print_state_show_scripts:
+field_scripts:
   other: Scripts
-print_state_show_languages:
+field_languages:
   other: Languages
-print_state_show_packages:
-  other: Packages
-print_state_show_secrets:
-  other: Secret specifications
 err_cannot_obtain_dist:
   other: "Could not obtain distribution for language: {{.V0}}"
 err_already_active:
@@ -1543,6 +1529,7 @@ deploy_restart_cmd:
   other: |
 
     [BLUE][BOLD]Please log out and back in again in order to start using the newly configured Runtime Environment.[/RESET]
+    [BLUE][BOLD]Alternatively, you can run `setenv` from the installation directory to update your environment[/RESET]
 flag_state_deploy_path_description:
   other: The path to deploy the runtime installation files to. This directory will not be affected by 'state clean'
 flag_state_deploy_force_description:

@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // GetNamespaceIngredientReader is a Reader for the GetNamespaceIngredient structure.
@@ -24,21 +23,18 @@ type GetNamespaceIngredientReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetNamespaceIngredientReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewGetNamespaceIngredientOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 404:
 		result := NewGetNamespaceIngredientNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewGetNamespaceIngredientDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -68,6 +64,10 @@ func (o *GetNamespaceIngredientOK) Error() string {
 	return fmt.Sprintf("[GET /v1/namespaces/ingredient][%d] getNamespaceIngredientOK  %+v", 200, o.Payload)
 }
 
+func (o *GetNamespaceIngredientOK) GetPayload() *inventory_models.V1Ingredient {
+	return o.Payload
+}
+
 func (o *GetNamespaceIngredientOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(inventory_models.V1Ingredient)
@@ -95,6 +95,10 @@ type GetNamespaceIngredientNotFound struct {
 
 func (o *GetNamespaceIngredientNotFound) Error() string {
 	return fmt.Sprintf("[GET /v1/namespaces/ingredient][%d] getNamespaceIngredientNotFound  %+v", 404, o.Payload)
+}
+
+func (o *GetNamespaceIngredientNotFound) GetPayload() *inventory_models.RestAPIError {
+	return o.Payload
 }
 
 func (o *GetNamespaceIngredientNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -133,6 +137,10 @@ func (o *GetNamespaceIngredientDefault) Code() int {
 
 func (o *GetNamespaceIngredientDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/namespaces/ingredient][%d] getNamespaceIngredient default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *GetNamespaceIngredientDefault) GetPayload() *inventory_models.RestAPIError {
+	return o.Payload
 }
 
 func (o *GetNamespaceIngredientDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

@@ -69,7 +69,7 @@ func OSVersion() (*OSVersionInfo, error) {
 
 	osvi, err = newOSVersionInfoFromDLL()
 	if err != nil {
-		return nil, fmt.Errorf("From DLL error: %v. From Registry error: %v", err, regErr)
+		return nil, fmt.Errorf("From DLL error: %v.\nFrom Registry error: %v", err, regErr)
 	}
 
 	return osvi, nil
@@ -84,6 +84,27 @@ func newOSVersionInfoFromRegistry() (*OSVersionInfo, error) {
 	defer key.Close()
 
 	keyEntryErrMsgFmt := "Cannot get entry %q at %q: %w"
+
+	stat, err := key.Stat()
+	if err != nil {
+		return nil, fmt.Errorf("Cannot stat key %s, err: %w", keyName, err)
+	}
+
+	keys, err := key.ReadValueNames(int(stat.ValueCount))
+	if err != nil {
+		return nil, fmt.Errorf("Cannot read values for key %s, err: %w", keyName, err)
+	}
+
+	hasVersionInfo := false
+	for _, v := range keys {
+		if v == "CurrentMajorVersionNumber" {
+			hasVersionInfo = true
+		}
+	}
+
+	if ! hasVersionInfo {
+		return newOSVersionInfoFromLegacyRegistry(key)
+	}
 
 	majorEntryName := "CurrentMajorVersionNumber"
 	major64, _, err := key.GetIntegerValue(majorEntryName)
@@ -109,6 +130,32 @@ func newOSVersionInfoFromRegistry() (*OSVersionInfo, error) {
 	}
 
 	return newOSVersionInfo(int(major64), int(minor64), micro), nil
+}
+
+func newOSVersionInfoFromLegacyRegistry(key registry.Key) (*OSVersionInfo, error) {
+	var major64 uint64
+	var minor64 uint64
+
+	productEntryName := "ProductName"
+	productName, _, err := key.GetStringValue(productEntryName)
+	if err != nil {
+		return nil, fmt.Errorf("Cannot get ProductName registry value: %w", err)
+	}
+
+	re := regexp.MustCompile(`\d+`)
+	versions := re.FindAllString(productName, -1)
+	if len(versions) > 0 {
+		if major64, err = strconv.ParseUint(versions[0], 10, 64); err != nil {
+			return nil, fmt.Errorf("Invalid int '%v' returned from product name: '%s', error: %v", versions, err)
+		}
+	}
+	if len(versions) > 1 {
+		if minor64, err = strconv.ParseUint(versions[1], 10, 64); err != nil {
+			return nil, fmt.Errorf("Invalid int '%v' returned from product name: '%s', error: %v", versions, err)
+		}
+	}
+
+	return newOSVersionInfo(int(major64), int(minor64), 0), nil
 }
 
 func newOSVersionInfoFromDLL() (*OSVersionInfo, error) {

@@ -195,7 +195,7 @@ func (u *Updater) update(out output.Outputer) error {
 	logging.Debug("Attempting to open executable path at: %s", path)
 	old, err := os.Open(path)
 	if err != nil {
-		_ = fileutils.LogPath(path)
+		fileutils.LogPath(path)
 		return err
 	}
 
@@ -361,25 +361,27 @@ func verifySha(bin []byte, sha string) bool {
 }
 
 // cleanOld will remove any leftover binary files from previous updates
-func cleanOld() error {
+func Cleanup() {
 	path, err := osext.Executable()
 	if err != nil {
-		return err
+		logging.Error("Could not get executable: %v", err)
 	}
 	oldFile := filepath.Join(filepath.Dir(path), fmt.Sprintf(".%s.old", "state"))
 
 	if !fileutils.FileExists(oldFile) {
-		return nil
+		return
 	}
 
 	err = os.Remove(oldFile)
 	if err != nil {
+		logging.Debug("Could not remove old file: %v", err)
 		errHide := hideFile(oldFile)
 		if errHide != nil {
-			return errHide
+			logging.Error("Could not hide old file: %v (remove err: %v)", errHide, err)
+			return
 		}
-		return err
+		return
 	}
 
-	return nil
+	return
 }

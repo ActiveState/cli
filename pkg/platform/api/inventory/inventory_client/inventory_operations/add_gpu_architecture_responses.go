@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // AddGpuArchitectureReader is a Reader for the AddGpuArchitecture structure.
@@ -24,21 +23,18 @@ type AddGpuArchitectureReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *AddGpuArchitectureReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 201:
 		result := NewAddGpuArchitectureCreated()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewAddGpuArchitectureBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewAddGpuArchitectureDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -68,6 +64,10 @@ func (o *AddGpuArchitectureCreated) Error() string {
 	return fmt.Sprintf("[POST /v1/gpu-architectures][%d] addGpuArchitectureCreated  %+v", 201, o.Payload)
 }
 
+func (o *AddGpuArchitectureCreated) GetPayload() *inventory_models.V1GpuArchitecture {
+	return o.Payload
+}
+
 func (o *AddGpuArchitectureCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(inventory_models.V1GpuArchitecture)
@@ -95,6 +95,10 @@ type AddGpuArchitectureBadRequest struct {
 
 func (o *AddGpuArchitectureBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/gpu-architectures][%d] addGpuArchitectureBadRequest  %+v", 400, o.Payload)
+}
+
+func (o *AddGpuArchitectureBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
+	return o.Payload
 }
 
 func (o *AddGpuArchitectureBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -133,6 +137,10 @@ func (o *AddGpuArchitectureDefault) Code() int {
 
 func (o *AddGpuArchitectureDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/gpu-architectures][%d] addGpuArchitecture default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *AddGpuArchitectureDefault) GetPayload() *inventory_models.RestAPIError {
+	return o.Payload
 }
 
 func (o *AddGpuArchitectureDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

@@ -6,22 +6,22 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // V1GpuArchitecture GPU Architecture
 //
 // The full GPU architecture data model
+//
 // swagger:model v1GpuArchitecture
 type V1GpuArchitecture struct {
 	V1GpuArchitectureAllOf0
 
-	V1GpuArchitectureAllOf1
+	V1GpuArchitectureCore
 
-	V1GpuArchitectureAllOf2
+	V1SubSchemaRevisionedResource
 }
 
 // UnmarshalJSON unmarshals this object from a JSON structure
@@ -34,18 +34,18 @@ func (m *V1GpuArchitecture) UnmarshalJSON(raw []byte) error {
 	m.V1GpuArchitectureAllOf0 = aO0
 
 	// AO1
-	var aO1 V1GpuArchitectureAllOf1
+	var aO1 V1GpuArchitectureCore
 	if err := swag.ReadJSON(raw, &aO1); err != nil {
 		return err
 	}
-	m.V1GpuArchitectureAllOf1 = aO1
+	m.V1GpuArchitectureCore = aO1
 
 	// AO2
-	var aO2 V1GpuArchitectureAllOf2
+	var aO2 V1SubSchemaRevisionedResource
 	if err := swag.ReadJSON(raw, &aO2); err != nil {
 		return err
 	}
-	m.V1GpuArchitectureAllOf2 = aO2
+	m.V1SubSchemaRevisionedResource = aO2
 
 	return nil
 }
@@ -60,18 +60,17 @@ func (m V1GpuArchitecture) MarshalJSON() ([]byte, error) {
 	}
 	_parts = append(_parts, aO0)
 
-	aO1, err := swag.WriteJSON(m.V1GpuArchitectureAllOf1)
+	aO1, err := swag.WriteJSON(m.V1GpuArchitectureCore)
 	if err != nil {
 		return nil, err
 	}
 	_parts = append(_parts, aO1)
 
-	aO2, err := swag.WriteJSON(m.V1GpuArchitectureAllOf2)
+	aO2, err := swag.WriteJSON(m.V1SubSchemaRevisionedResource)
 	if err != nil {
 		return nil, err
 	}
 	_parts = append(_parts, aO2)
-
 	return swag.ConcatJSON(_parts...), nil
 }
 
@@ -83,12 +82,12 @@ func (m *V1GpuArchitecture) Validate(formats strfmt.Registry) error {
 	if err := m.V1GpuArchitectureAllOf0.Validate(formats); err != nil {
 		res = append(res, err)
 	}
-	// validation for a type composition with V1GpuArchitectureAllOf1
-	if err := m.V1GpuArchitectureAllOf1.Validate(formats); err != nil {
+	// validation for a type composition with V1GpuArchitectureCore
+	if err := m.V1GpuArchitectureCore.Validate(formats); err != nil {
 		res = append(res, err)
 	}
-	// validation for a type composition with V1GpuArchitectureAllOf2
-	if err := m.V1GpuArchitectureAllOf2.Validate(formats); err != nil {
+	// validation for a type composition with V1SubSchemaRevisionedResource
+	if err := m.V1SubSchemaRevisionedResource.Validate(formats); err != nil {
 		res = append(res, err)
 	}
 

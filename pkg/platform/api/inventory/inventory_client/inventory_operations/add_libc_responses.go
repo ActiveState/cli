@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // AddLibcReader is a Reader for the AddLibc structure.
@@ -24,21 +23,18 @@ type AddLibcReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *AddLibcReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 201:
 		result := NewAddLibcCreated()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewAddLibcBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewAddLibcDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -68,6 +64,10 @@ func (o *AddLibcCreated) Error() string {
 	return fmt.Sprintf("[POST /v1/libcs][%d] addLibcCreated  %+v", 201, o.Payload)
 }
 
+func (o *AddLibcCreated) GetPayload() *inventory_models.V1Libc {
+	return o.Payload
+}
+
 func (o *AddLibcCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(inventory_models.V1Libc)
@@ -95,6 +95,10 @@ type AddLibcBadRequest struct {
 
 func (o *AddLibcBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/libcs][%d] addLibcBadRequest  %+v", 400, o.Payload)
+}
+
+func (o *AddLibcBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
+	return o.Payload
 }
 
 func (o *AddLibcBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -133,6 +137,10 @@ func (o *AddLibcDefault) Code() int {
 
 func (o *AddLibcDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/libcs][%d] addLibc default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *AddLibcDefault) GetPayload() *inventory_models.RestAPIError {
+	return o.Payload
 }
 
 func (o *AddLibcDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

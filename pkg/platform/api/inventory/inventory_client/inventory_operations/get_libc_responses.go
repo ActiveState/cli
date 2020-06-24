@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // GetLibcReader is a Reader for the GetLibc structure.
@@ -24,14 +23,12 @@ type GetLibcReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetLibcReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewGetLibcOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	default:
 		result := NewGetLibcDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -59,6 +56,10 @@ type GetLibcOK struct {
 
 func (o *GetLibcOK) Error() string {
 	return fmt.Sprintf("[GET /v1/libcs/{libc_id}][%d] getLibcOK  %+v", 200, o.Payload)
+}
+
+func (o *GetLibcOK) GetPayload() *inventory_models.V1Libc {
+	return o.Payload
 }
 
 func (o *GetLibcOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -97,6 +98,10 @@ func (o *GetLibcDefault) Code() int {
 
 func (o *GetLibcDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/libcs/{libc_id}][%d] getLibc default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *GetLibcDefault) GetPayload() *inventory_models.RestAPIError {
+	return o.Payload
 }
 
 func (o *GetLibcDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

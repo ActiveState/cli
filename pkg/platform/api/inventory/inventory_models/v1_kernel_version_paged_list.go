@@ -8,9 +8,8 @@ package inventory_models
 import (
 	"strconv"
 
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
@@ -18,20 +17,21 @@ import (
 // V1KernelVersionPagedList Kernel Version Paged List
 //
 // A paginated list of kernel versions
+//
 // swagger:model v1KernelVersionPagedList
 type V1KernelVersionPagedList struct {
 
 	// A page of kernel versions
 	// Required: true
-	KernelVersions []*V1KernelVersionPagedListKernelVersionsItems `json:"kernel_versions"`
+	KernelVersions []*V1KernelVersion `json:"kernel_versions"`
 
 	// links
 	// Required: true
-	Links *V1KernelVersionPagedListLinks `json:"links"`
+	Links *V1SubSchemaPagingLinks `json:"links"`
 
 	// paging
 	// Required: true
-	Paging *V1KernelVersionPagedListPaging `json:"paging"`
+	Paging *V1SubSchemaPaging `json:"paging"`
 }
 
 // Validate validates this v1 kernel version paged list

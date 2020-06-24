@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // UpdateIngredientVersionReader is a Reader for the UpdateIngredientVersion structure.
@@ -24,21 +23,18 @@ type UpdateIngredientVersionReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *UpdateIngredientVersionReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewUpdateIngredientVersionOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewUpdateIngredientVersionBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewUpdateIngredientVersionDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -68,6 +64,10 @@ func (o *UpdateIngredientVersionOK) Error() string {
 	return fmt.Sprintf("[PUT /v1/ingredients/{ingredient_id}/versions/{ingredient_version_id}][%d] updateIngredientVersionOK  %+v", 200, o.Payload)
 }
 
+func (o *UpdateIngredientVersionOK) GetPayload() *inventory_models.V1IngredientVersion {
+	return o.Payload
+}
+
 func (o *UpdateIngredientVersionOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(inventory_models.V1IngredientVersion)
@@ -95,6 +95,10 @@ type UpdateIngredientVersionBadRequest struct {
 
 func (o *UpdateIngredientVersionBadRequest) Error() string {
 	return fmt.Sprintf("[PUT /v1/ingredients/{ingredient_id}/versions/{ingredient_version_id}][%d] updateIngredientVersionBadRequest  %+v", 400, o.Payload)
+}
+
+func (o *UpdateIngredientVersionBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
+	return o.Payload
 }
 
 func (o *UpdateIngredientVersionBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -133,6 +137,10 @@ func (o *UpdateIngredientVersionDefault) Code() int {
 
 func (o *UpdateIngredientVersionDefault) Error() string {
 	return fmt.Sprintf("[PUT /v1/ingredients/{ingredient_id}/versions/{ingredient_version_id}][%d] updateIngredientVersion default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *UpdateIngredientVersionDefault) GetPayload() *inventory_models.RestAPIError {
+	return o.Payload
 }
 
 func (o *UpdateIngredientVersionDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
