@@ -138,6 +138,7 @@ scripts:
       sed -i "s^{{REL_NOTES}}^${2}^g" installers/msi-language/Product.wxs
       sed -i "s^{{SHORTCUTS}}^${3}^g" installers/msi-language/Product.wxs
       sed -i "s^{{ID}}^$(go run scripts/uuid-generator/main.go $1)^g" installers/msi-language/Product.wxs
+      sed -i "s^{{ICON}}^./assets/perl.ico^g" installers/msi-language/Product.wxs
 
       msbuild.exe installers/msi-language/Deploy.wixproj /target:Build "//p:Configuration=Release;Platform=x64;RunWixToolsOutOfProc=true;OutDir=$dir\\build\\msi-language\\"
       echo "Copying MSI to build/${1}.msi"
@@ -158,6 +159,7 @@ scripts:
 
       # We require a product ID in order to build an MSI
       sed -i "s^{{ID}}^{FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF}^g" installers/msi-language/Product.wxs
+      sed -i "s^{{ICON}}^./assets/as.ico^g" installers/msi-language/Product.wxs
 
       msbuild.exe installers/msi-language/Deploy.wixproj /target:Build "//p:Configuration=Release;Platform=x64;RunWixToolsOutOfProc=true;OutDir=$dir\\build\\msi-language\\"
       echo "Copying MSI to build/${1}.msi"

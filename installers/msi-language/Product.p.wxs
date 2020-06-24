@@ -17,8 +17,8 @@
     <WixVariable Id='WixUIBannerBmp' Value='assets\header.bmp'/>
     <WixVariable Id='WixUIDialogBmp' Value='assets\InstallGraphic.bmp'/>
     <WixVariable Id="WixUILicenseRtf" Value="assets\license.rtf" />
-    <Icon Id="perl.ico" SourceFile="perl.ico"/>
-    <Property Id="ARPPRODUCTICON" Value="perl.ico" />
+    <Icon Id="InstallerIcon" SourceFile="{{ICON}}"/>
+	<Property Id="ARPPRODUCTICON" Value="InstallerIcon" />
     <!-- End Design assets -->
 
     <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
@@ -53,13 +53,13 @@
     <Feature Id='Complete' Level='1'>
       <Component Id='ProgIdPerl' Directory='TARGETDIR' Guid='4dda6117-ca9c-4371-a09d-c8575f520a02'>
         <!-- Perl file scripts -->
-        <ProgId Id="Perl.Document" Description="!(loc.DescPL)" Advertise='no' Icon='PerlIco'>
+        <ProgId Id="Perl.Document" Description="!(loc.DescPL)" Advertise='no' Icon='InstallerIco'>
           <Extension Id="pl" ContentType="text/x-perl">
             <Verb Id="open" Command="!(loc.ExplorerMenuOpenPL)" TargetProperty="PerlExe" Argument="&quot;%1&quot;" />
           </Extension>
         </ProgId>
         <!-- Windows perl file scripts (started with hidden console) -->
-        <ProgId Id="WPerl.Document" Description="!(loc.DescPL)" Advertise='no' Icon='PerlIco'>
+        <ProgId Id="WPerl.Document" Description="!(loc.DescPL)" Advertise='no' Icon='InstallerIco'>
           <Extension Id="wpl" ContentType="text/x-w-perl">
             <Verb Id="open" Command="!(loc.ExplorerMenuOpenPL)" TargetProperty="WPerlExe" Argument="&quot;%1&quot;" />
           </Extension>
@@ -72,8 +72,8 @@
         <RegistryValue Root="HKLM" Key="Software\[Manufacturer]\[ProductName]" Name="ShortcutDir" Value="[ApplicationProgramsFolder]" Type="string"/>
 		<RemoveFolder Id='CleanupApplicationFolder' On='uninstall' />
       </Component>
-      <Component Id='cmpPerlIco' Directory='INSTALLDIR' Guid='1069a43f-9ec5-4ad8-b15c-2452b56c9b04'>
-        <File Id='PerlIco' Source='perl.ico' />
+      <Component Id='cmpInstallerIco' Directory='INSTALLDIR' Guid='1069a43f-9ec5-4ad8-b15c-2452b56c9b04'>
+        <File Id='InstallerIco' Source='{{ICON}}' />
       </Component>
 	  <ComponentRef Id="ApplicationShortcut" />
     </Feature>
