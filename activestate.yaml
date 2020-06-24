@@ -119,7 +119,7 @@ scripts:
     value: |
       set -e
       if [ "$#" -ne 3 ]; then
-        echo "Required Arguments: <Project Name> <Release Notes URL> <Shortcuts> (comma-separated list of shortcuts to build)"
+        echo "Required Arguments: <Project Name> (In format of Owner/Name) <Release Notes URL> <Shortcuts> (comma-separated list of shortcuts to build)"
         exit 1
       fi
 
@@ -133,8 +133,8 @@ scripts:
       export GOFLAGS='-mod=vendor'
       dir=$(cmd //C echo %CD%)
       cp installers/msi-language/Product.p.wxs installers/msi-language/Product.wxs
-      sed -i "s^{{PROJECT_NAME}}^${1}^g" installers/msi-language/Product.wxs
-      sed -i "s^{{PROJECT}}^${project[1]}^g" installers/msi-language/Product.wxs
+      sed -i "s^{{PROJECT}}^${1}^g" installers/msi-language/Product.wxs
+      sed -i "s^{{NAME}}^${project[1]}^g" installers/msi-language/Product.wxs
       sed -i "s^{{REL_NOTES}}^${2}^g" installers/msi-language/Product.wxs
       sed -i "s^{{SHORTCUTS}}^${3}^g" installers/msi-language/Product.wxs
       sed -i "s^{{ID}}^$(go run scripts/uuid-generator/main.go $1)^g" installers/msi-language/Product.wxs
