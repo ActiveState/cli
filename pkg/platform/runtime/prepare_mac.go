@@ -56,34 +56,36 @@ func (m *MetaData) Prepare() *failures.Failure {
 		m.Env["PYTHONPATH"] = m.Env["PYTHONPATH"] + string(os.PathListSeparator) + sitePackages
 	}
 
-	// the binaries are actually in a versioned directory
-	// this version is likely the same as the found above, but it doesn't hurt to get explicitly
-	dirRe = regexp.MustCompile(`\d+(?:\.\d+)+`)
-	files, err = ioutil.ReadDir(filepath.Join(m.Path, frameWorkDir))
-	if err != nil {
-		return failures.FailOS.Wrap(err)
-	}
-
-	var relVersionedFrameWorkDir string
-	for _, f := range files {
-		if !f.IsDir() {
-			continue
+	if m.TargetedRelocations == nil {
+		// the binaries are actually in a versioned directory
+		// this version is likely the same as the found above, but it doesn't hurt to get explicitly
+		dirRe = regexp.MustCompile(`\d+(?:\.\d+)+`)
+		files, err = ioutil.ReadDir(filepath.Join(m.Path, frameWorkDir))
+		if err != nil {
+			return failures.FailOS.Wrap(err)
 		}
-		if dirRe.MatchString(f.Name()) {
-			relVersionedFrameWorkDir = filepath.Join(frameWorkDir, f.Name())
-			break
+
+		var relVersionedFrameWorkDir string
+		for _, f := range files {
+			if !f.IsDir() {
+				continue
+			}
+			if dirRe.MatchString(f.Name()) {
+				relVersionedFrameWorkDir = filepath.Join(frameWorkDir, f.Name())
+				break
+			}
 		}
-	}
 
-	if relVersionedFrameWorkDir == "" {
-		return failures.FailNotFound.New("could not find path %s/x.x in build artifact", frameWorkDir)
-	}
+		if relVersionedFrameWorkDir == "" {
+			return failures.FailNotFound.New("could not find path %s/x.x in build artifact", frameWorkDir)
+		}
 
-	m.TargetedRelocations = []TargetedRelocation{TargetedRelocation{
-		InDir:        filepath.Join(m.Path, frameWorkDir, "Current", "bin"),
-		SearchString: "#!" + filepath.Join("/", relVersionedFrameWorkDir),
-		Replacement:  "#!" + filepath.Join(m.Path, relVersionedFrameWorkDir),
-	}}
+		m.TargetedRelocations = []TargetedRelocation{TargetedRelocation{
+			InDir:        filepath.Join(frameWorkDir, "Current", "bin"),
+			SearchString: "#!" + filepath.Join("/", relVersionedFrameWorkDir),
+			Replacement:  "#!" + filepath.Join(m.Path, relVersionedFrameWorkDir),
+		}}
+	}
 
 	return nil
 }
