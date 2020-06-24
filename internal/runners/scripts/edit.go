@@ -139,7 +139,7 @@ func (sw *scriptWatcher) run(scriptName string, outputer output.Outputer) {
 			if event.Op&fsnotify.Write == fsnotify.Write {
 				err := updateProjectFile(sw.scriptFile, scriptName)
 				if err != nil {
-					sw.errs <- err
+					sw.errs <- errs.Wrap(err, "Failed to write project file.")
 					return
 				}
 				// To ensure confirm dialog and update message are not on the same line
@@ -204,7 +204,7 @@ func getOpenCmd() (string, error) {
 	case "linux":
 		_, err := exec.LookPath(openCmdLin)
 		if err != nil {
-			return "", locale.NewError(
+			return "", locale.NewInputError(
 				"error_open_not_installed_lin",
 				"Please install '{{.V0}}' to edit scripts.",
 				openCmdLin)
@@ -237,14 +237,14 @@ func verifyEditor(editor string) (string, error) {
 
 func verifyPathEditor(editor string) (string, error) {
 	if runtime.GOOS == "windows" && filepath.Ext(editor) == "" {
-		return "", locale.NewError(
+		return "", locale.NewInputError(
 			"error_edit_windows_invalid_editor",
 			"Editor path must contain a file extension")
 	}
 
 	_, err := os.Stat(editor)
 	if err != nil {
-		return "", errs.Wrap(err, "Failed to find editor %s on file system.", editor)
+		return "", locale.WrapInputError(err, "error_edit_stat_editor", "Failed to find editor {{.V0}} on file system.", editor)
 	}
 
 	return editor, nil
