@@ -9,7 +9,7 @@ import (
 )
 
 func newScriptsCommand(pj *project.Project, globals *globalOptions, output output.Outputer) *captain.Command {
-	runner := scripts.NewScripts(output)
+	runner := scripts.NewScripts(pj, output)
 
 	return captain.NewCommand(
 		"scripts",
@@ -17,12 +17,12 @@ func newScriptsCommand(pj *project.Project, globals *globalOptions, output outpu
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
-			return runner.Run(pj, globals.Output)
+			return runner.Run(globals.Output)
 		})
 }
 
 func newScriptsEditCommand(pj *project.Project, output output.Outputer) *captain.Command {
-	editRunner := scripts.NewEdit(output)
+	editRunner := scripts.NewEdit(pj, output)
 	params := scripts.EditParams{}
 
 	return captain.NewCommand(
@@ -45,7 +45,7 @@ func newScriptsEditCommand(pj *project.Project, output output.Outputer) *captain
 			},
 		},
 		func(ccmd *captain.Command, args []string) error {
-			return editRunner.Run(pj, &params)
+			return editRunner.Run(&params)
 		},
 	)
 

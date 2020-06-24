@@ -38,16 +38,17 @@ type EditParams struct {
 
 // Edit represents the runner for `state script edit`
 type Edit struct {
-	output output.Outputer
+	project *project.Project
+	output  output.Outputer
 }
 
 // NewEdit creates a new Edit runner
-func NewEdit(output output.Outputer) *Edit {
-	return &Edit{output}
+func NewEdit(pj *project.Project, output output.Outputer) *Edit {
+	return &Edit{pj, output}
 }
 
-func (e *Edit) Run(pj *project.Project, params *EditParams) error {
-	script := pj.ScriptByName(params.Name)
+func (e *Edit) Run(params *EditParams) error {
+	script := e.project.ScriptByName(params.Name)
 	if script == nil {
 		return locale.NewInputError("edit_scripts_no_name", "Could not find script with the given name {{.V0}}", params.Name)
 	}

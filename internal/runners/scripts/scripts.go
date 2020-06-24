@@ -12,11 +12,12 @@ import (
 )
 
 type Scripts struct {
-	output output.Outputer
+	project *project.Project
+	output  output.Outputer
 }
 
-func NewScripts(output output.Outputer) *Scripts {
-	return &Scripts{output}
+func NewScripts(pj *project.Project, output output.Outputer) *Scripts {
+	return &Scripts{pj, output}
 }
 
 // scriptsAsStruct returns the scripts as a JSON serializable struct
@@ -66,11 +67,11 @@ func scriptsTable(ss []*project.Script) (hdrs []string, rows [][]string) {
 	return hdrs, rows
 }
 
-func (s *Scripts) Run(prj *project.Project, outputFlag string) error {
+func (s *Scripts) Run(outputFlag string) error {
 	logging.Debug("Execute scripts command")
 
-	name, owner := prj.Name(), prj.Owner()
-	scripts := prj.Scripts()
+	name, owner := s.project.Name(), s.project.Owner()
+	scripts := s.project.Scripts()
 
 	if len(scripts) == 0 {
 		s.output.Print(locale.T("scripts_no_scripts"))
