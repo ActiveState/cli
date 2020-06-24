@@ -1,7 +1,6 @@
 package scripts
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/locale"
@@ -74,7 +73,7 @@ func (s *Scripts) Run(prj *project.Project, outputFlag string) error {
 	scripts := prj.Scripts()
 
 	if len(scripts) == 0 {
-		fmt.Println(locale.T("scripts_no_scripts"))
+		s.output.Print(locale.T("scripts_no_scripts"))
 		return nil
 	}
 
