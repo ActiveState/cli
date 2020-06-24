@@ -44,8 +44,8 @@ func NewEdit() *Edit {
 	return &Edit{}
 }
 
-func (e *Edit) Run(params *EditParams) error {
-	script := project.Get().ScriptByName(params.Name)
+func (e *Edit) Run(pj *project.Project, params *EditParams) error {
+	script := pj.ScriptByName(params.Name)
 	if script == nil {
 		return locale.NewInputError("edit_scripts_no_name", "Could not find script with the given name {{.V0}}", params.Name)
 	}

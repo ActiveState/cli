@@ -4,9 +4,10 @@ import (
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/runners/scripts"
+	"github.com/ActiveState/cli/pkg/project"
 )
 
-func newScriptsCommand(globals *globalOptions) *captain.Command {
+func newScriptsCommand(pj *project.Project, globals *globalOptions) *captain.Command {
 	runner := scripts.NewScripts(globals.Output)
 
 	return captain.NewCommand(
@@ -15,11 +16,11 @@ func newScriptsCommand(globals *globalOptions) *captain.Command {
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
-			return runner.Run()
+			return runner.Run(pj)
 		})
 }
 
-func newScriptsEditCommand() *captain.Command {
+func newScriptsEditCommand(pj *project.Project) *captain.Command {
 	editRunner := scripts.NewEdit()
 	params := scripts.EditParams{}
 
@@ -43,7 +44,7 @@ func newScriptsEditCommand() *captain.Command {
 			},
 		},
 		func(ccmd *captain.Command, args []string) error {
-			return editRunner.Run(&params)
+			return editRunner.Run(pj, &params)
 		},
 	)
 

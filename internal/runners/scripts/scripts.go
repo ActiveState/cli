@@ -73,10 +73,9 @@ func scriptsTable(ss []*project.Script) (hdrs []string, rows [][]string) {
 	return hdrs, rows
 }
 
-func (s *Scripts) Run() error {
+func (s *Scripts) Run(prj *project.Project) error {
 	logging.Debug("Execute scripts command")
 
-	prj := project.Get()
 	name, owner := prj.Name(), prj.Owner()
 	scripts := prj.Scripts()
 

@@ -57,9 +57,9 @@ func New(pj *project.Project, outputer output.Outputer, prompter prompt.Prompter
 		newPlatformsRemoveCommand(outputer),
 	)
 
-	scriptsCmd := newScriptsCommand(globals)
+	scriptsCmd := newScriptsCommand(pj, globals)
 	scriptsCmd.AddChildren(
-		newScriptsEditCommand(),
+		newScriptsEditCommand(pj),
 	)
 
 	languagesCmd := newLanguagesCommand(outputer)
