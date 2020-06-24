@@ -26,17 +26,21 @@
 
     <!-- The default directory structure when installing a language runtime. This can be changed via the UI -->
     <Directory Id='TARGETDIR' Name='SourceDir'>
-      <Directory Id='INSTALLDIR' Name='Perl64'>
-        <Component Id='DeployDir' Guid='7CF56E89-AA69-4A35-921C-F2CA2F9FE12B'>
-          <RemoveFolder Id='INSTALLDIR' On='uninstall' />
-          <!-- Required by WiX -->
-          <RegistryValue Root='HKLM' Key='SOFTWARE\[Manufacturer]\[ProductName]' Type='string' Value='' KeyPath='yes' />
-        </Component>
-		<Directory Id="ProgramMenuFolder">
-			<Directory Id="ApplicationProgramsFolder" Name="{{NAME}}"/>
-		</Directory>
+      <Directory Id="WINDOWSVOLUME" >
+        <Directory Id='INSTALLDIR' Name='Perl64'>
+          <Component Id='DeployDir' Guid='7CF56E89-AA69-4A35-921C-F2CA2F9FE12B'>
+            <RemoveFolder Id='INSTALLDIR' On='uninstall' />
+            <!-- Required by WiX -->
+            <RegistryValue Root='HKLM' Key='SOFTWARE\[Manufacturer]\[ProductName]' Type='string' Value='' KeyPath='yes' />
+          </Component>
+          <Directory Id="ProgramMenuFolder">
+            <Directory Id="ApplicationProgramsFolder" Name="{{PROJECT}}"/>
+          </Directory>
+        </Directory>
       </Directory>
     </Directory>
+
+    <SetDirectory Id="WINDOWSVOLUME" Value="[WindowsVolume]"/>
 
 	<!-- Build documentation URL shortcut -->
 	<DirectoryRef Id="ApplicationProgramsFolder">
