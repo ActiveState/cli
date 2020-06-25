@@ -90,7 +90,7 @@ func ReplaceAll(filename, find string, replace string, include includeFunc) erro
 		quoteEscapeFind = strings.ReplaceAll(quoteEscapeFind, `\\`, `(\\|\\\\)`)
 	}
 	if IsBinary(fileBytes) {
-		logging.Debug("Assuming file '%s' is a binary file", filename)
+		//logging.Debug("Assuming file '%s' is a binary file", filename)
 
 		regexExpandBytes := []byte("${1}")
 		// Must account for the expand characters (ie. '${1}') in the
@@ -104,14 +104,14 @@ func ReplaceAll(filename, find string, replace string, include includeFunc) erro
 			return errors.New("replacement text cannot be longer than search text in a binary file")
 		} else if len(findBytes) > replaceBytesLen {
 			// Pad replacement with NUL bytes.
-			logging.Debug("Padding replacement text by %d byte(s)", len(findBytes)-len(replaceBytes))
+			//logging.Debug("Padding replacement text by %d byte(s)", len(findBytes)-len(replaceBytes))
 			paddedReplaceBytes := make([]byte, len(findBytes)+len(regexExpandBytes))
 			copy(paddedReplaceBytes, replaceBytes)
 			replaceBytes = paddedReplaceBytes
 		}
 	} else {
 		replaceRegex = regexp.MustCompile(fmt.Sprintf(`%s`, quoteEscapeFind))
-		logging.Debug("Assuming file '%s' is a text file", filename)
+		//logging.Debug("Assuming file '%s' is a text file", filename)
 	}
 
 	replaced := replaceRegex.ReplaceAll(fileBytes, replaceBytes)
@@ -123,11 +123,11 @@ func ReplaceAll(filename, find string, replace string, include includeFunc) erro
 
 // ReplaceAllInDirectory walks the given directory and invokes ReplaceAll on each file
 func ReplaceAllInDirectory(path, find string, replace string, include includeFunc) error {
-	err := cwalk.Walk(path, func(path string, f os.FileInfo, err error) error {
+	err := cwalk.Walk(path, func(subpath string, f os.FileInfo, err error) error {
 		if f.IsDir() {
 			return nil
 		}
-		return ReplaceAll(path, find, replace, include)
+		return ReplaceAll(filepath.Join(path, subpath), find, replace, include)
 	})
 
 	if err != nil {
