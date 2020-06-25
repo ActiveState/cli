@@ -170,8 +170,8 @@ namespace StateDeploy
             }
             session.Log("Starting state deploy with state tool at " + stateToolPath);
 
-            Status.ProgressBar.StatusMessage(session, string.Format("Deploying project {0}...", session.CustomActionData["PROJECT_NAME"]));
-            MessageResult statusResult = Status.ProgressBar.StatusMessage(session, string.Format("Preparing deployment of {0}...", session.CustomActionData["PROJECT_NAME"]));
+            Status.ProgressBar.StatusMessage(session, string.Format("Deploying project {0}...", session.CustomActionData["PROJECT_OWNER_AND_NAME"]));
+            MessageResult statusResult = Status.ProgressBar.StatusMessage(session, string.Format("Preparing deployment of {0}...", session.CustomActionData["PROJECT_OWNER_AND_NAME"]));
             if (statusResult == MessageResult.Cancel)
             {
                 return ActionResult.UserExit;
@@ -180,7 +180,7 @@ namespace StateDeploy
             var sequence = new ReadOnlyCollection<InstallSequenceElement>(
                 new[]
                 {
-                    new InstallSequenceElement("install", string.Format("Installing {0}", session.CustomActionData["PROJECT_NAME"])),
+                    new InstallSequenceElement("install", string.Format("Installing {0}", session.CustomActionData["PROJECT_OWNER_AND_NAME"])),
                     new InstallSequenceElement("configure", "Updating system environment"),
                     new InstallSequenceElement("symlink", "Creating shortcut directory"),
                 });
@@ -251,7 +251,7 @@ namespace StateDeploy
         private static string BuildDeployCmd(Session session, string subCommand, string stateToolPath)
         {
             string installDir = session.CustomActionData["INSTALLDIR"];
-            string projectName = session.CustomActionData["PROJECT_NAME"];
+            string projectName = session.CustomActionData["PROJECT_OWNER_AND_NAME"];
             string isModify = session.CustomActionData["IS_MODIFY"];
 
             StringBuilder deployCMDBuilder = new StringBuilder(stateToolPath + " deploy " + subCommand);
