@@ -161,7 +161,7 @@ func newStateCommand(globals *globalOptions) *captain.Command {
 				Name:        "confirm-exit-on-error", // Name and Shorthand should be kept in sync with cmd/state/main.go
 				Description: "prompts the user to press enter before exiting, when an error occurs",
 				Persist:     true,
-				Hidden:      true,
+				Hidden:      true, // No need to add this to help messages
 				Value:       &opts.ConfirmExit,
 			},
 			{
