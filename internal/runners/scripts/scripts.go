@@ -17,8 +17,8 @@ func NewScripts(pj *project.Project, output output.Outputer) *Scripts {
 	return &Scripts{pj, output}
 }
 
-// scriptsAsStruct returns the scripts as a JSON serializable struct
-func scriptsAsStruct(scripts []*project.Script) interface{} {
+// scriptsAsSerializableSlice returns the scripts as a JSON serializable slice
+func scriptsAsSerializableSlice(scripts []*project.Script) interface{} {
 	type scriptRaw struct {
 		Name        string `json:"name,omitempty"`
 		Description string `json:"description,omitempty"`
@@ -36,11 +36,23 @@ func scriptsAsStruct(scripts []*project.Script) interface{} {
 	return ss
 }
 
-// listAllScripts lists of all of the scripts defined for this project.
-func listAllScripts(name, owner string, scripts []*project.Script) string {
-	logging.Debug("listing scripts for org=%s, project=%s", owner, name)
+type scriptLine struct {
+	Name        string `json:"name,omitempty"`
+	Description string `json:"description,omitempty"`
+}
 
-	hdrs, rows := scriptsTable(scripts)
+type outputFormat []scriptLine
+
+func (f outputFormat) MarshalOutput(format output.Format) interface{} {
+	if format == output.PlainFormatName {
+		return f.formatScriptsList()
+	}
+	return f
+}
+
+// formatScriptsList formats a lists of all of the scripts defined for this project.
+func (f outputFormat) formatScriptsList() string {
+	hdrs, rows := f.scriptsTable()
 	t := gotabulate.Create(rows)
 	t.SetHeaders(hdrs)
 	t.SetAlign("left")
@@ -48,10 +60,10 @@ func listAllScripts(name, owner string, scripts []*project.Script) string {
 	return t.Render("simple")
 }
 
-func scriptsTable(ss []*project.Script) (hdrs []string, rows [][]string) {
-	for _, s := range ss {
+func (f outputFormat) scriptsTable() (hdrs []string, rows [][]string) {
+	for _, s := range f {
 		row := []string{
-			s.Name(), s.Description(),
+			s.Name, s.Description,
 		}
 		rows = append(rows, row)
 	}
@@ -64,26 +76,9 @@ func scriptsTable(ss []*project.Script) (hdrs []string, rows [][]string) {
 	return hdrs, rows
 }
 
-type outputFormat struct {
-	name    string
-	owner   string
-	scripts []*project.Script
-}
-
-func (f outputFormat) MarshalOutput(format output.Format) interface{} {
-	switch format {
-	case output.JSONFormatName, output.EditorFormatName, output.EditorV0FormatName:
-		return scriptsAsStruct(f.scripts)
-	case output.PlainFormatName:
-		return listAllScripts(f.name, f.owner, f.scripts)
-	}
-	return f
-}
-
 func (s *Scripts) Run() error {
 	logging.Debug("Execute scripts command")
 
-	name, owner := s.project.Name(), s.project.Owner()
 	scripts := s.project.Scripts()
 
 	if len(scripts) == 0 {
@@ -91,7 +86,16 @@ func (s *Scripts) Run() error {
 		return nil
 	}
 
-	s.output.Print(outputFormat{name, owner, scripts})
+	name, owner := s.project.Name(), s.project.Owner()
+	logging.Debug("listing scripts for org=%s, project=%s", owner, name)
+	var rows outputFormat
+	for _, s := range scripts {
+		row := scriptLine{
+			s.Name(), s.Description(),
+		}
+		rows = append(rows, row)
+	}
+	s.output.Print(rows)
 
 	return nil
 }
