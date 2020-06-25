@@ -220,6 +220,7 @@ func (suite *AlternativeRuntimeTestSuite) Test_PreInstall() {
 			ar, fail := runtime.NewAlternativeRuntime(artifactsRes.Artifacts, suite.cacheDir, artifactsRes.RecipeID)
 			suite.Require().NoError(fail.ToError())
 
+			os.RemoveAll(suite.cacheDir)
 			defer os.RemoveAll(suite.cacheDir)
 
 			tc.prepFunc(suite.cacheDir)

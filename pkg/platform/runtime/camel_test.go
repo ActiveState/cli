@@ -73,6 +73,8 @@ func (suite *CamelRuntimeTestSuite) Test_PreUnpackArtifact() {
 		suite.Run(tc.name, func() {
 			cr, fail := runtime.NewCamelRuntime([]*runtime.HeadChefArtifact{artifact}, cacheDir)
 			suite.Require().NoError(fail.ToError())
+
+			os.RemoveAll(cacheDir)
 			defer os.RemoveAll(cacheDir)
 
 			tc.prepFunc(cacheDir)
