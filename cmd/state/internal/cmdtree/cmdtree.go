@@ -83,7 +83,7 @@ func New(pj *project.Project, outputer output.Outputer, prompter prompt.Prompter
 		authCmd,
 		exportCmd,
 		newOrganizationsCommand(globals),
-		newRunCommand(),
+		newRunCommand(outputer),
 		newShowCommand(pj, outputer),
 		packagesCmd,
 		platformsCmd,
