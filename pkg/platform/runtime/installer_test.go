@@ -64,7 +64,7 @@ func (suite *InstallerTestSuite) BeforeTest(suiteName, testName string) {
 func (suite *InstallerTestSuite) AfterTest(suiteName, testName string) {
 	suite.rmock.Close()
 	if err := os.RemoveAll(suite.cacheDir); err != nil {
-		logging.Warningf("Could not remove cacheDir: %v\n", err)
+		logging.Warningf("Could not remove runtimeDir: %v\n", err)
 	}
 	if err := os.RemoveAll(suite.downloadDir); err != nil {
 		logging.Warningf("Could not remove downloadDir: %v\n", err)
@@ -79,19 +79,17 @@ func (suite *InstallerTestSuite) testRelocation(archiveName string, executable s
 
 	envGetter, fail := runtime.NewCamelRuntime([]*runtime.HeadChefArtifact{artifact}, suite.cacheDir)
 	suite.Require().NoError(fail.ToError(), "camel runtime assembler initialized")
-	suite.Require().NotEmpty(envGetter.InstallDirs(), "Installs artifacts")
+	suite.Require().NotEmpty(suite.cacheDir, "Installs artifacts")
 
 	fail = suite.installer.InstallFromArchives(archives, envGetter, suite.prg.Progress)
 	suite.Require().NoError(fail.ToError())
 
 	suite.prg.AssertProperClose(suite.T())
 
-	suite.Require().True(fileutils.DirExists(envGetter.InstallDirs()[0]), "expected install-dir to exist")
-
-	pathToExecutable := filepath.Join(envGetter.InstallDirs()[0], "bin", executable)
+	pathToExecutable := filepath.Join(suite.cacheDir, "bin", executable)
 	suite.Require().FileExists(pathToExecutable, executable+" exists")
 
-	ascriptContents := string(fileutils.ReadFileUnsafe(path.Join(envGetter.InstallDirs()[0], "bin", "a-script")))
+	ascriptContents := string(fileutils.ReadFileUnsafe(path.Join(suite.cacheDir, "bin", "a-script")))
 	suite.Contains(ascriptContents, pathToExecutable)
 }
 

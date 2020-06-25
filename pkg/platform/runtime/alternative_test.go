@@ -97,8 +97,6 @@ func (suite *AlternativeRuntimeTestSuite) Test_GetEnv() {
 	ar, fail := runtime.NewAlternativeRuntime(artifacts.Artifacts, suite.cacheDir, artifacts.RecipeID)
 	suite.Require().NoError(fail.ToError())
 
-	installDir := ar.InstallationDirectory(artifacts.Artifacts[0])
-	fail = fileutils.MkdirUnlessExists(installDir)
 	suite.Require().NoError(fail.ToError())
 	envDefs, merged := suite.mockEnvDefs(numArtifacts)
 
@@ -113,8 +111,8 @@ func (suite *AlternativeRuntimeTestSuite) Test_GetEnv() {
 
 	expectedEnv := merged.GetEnv(true)
 
-	mergedFilePath := filepath.Join(installDir, constants.LocalRuntimeEnvironmentDirectory, constants.RuntimeDefinitionFilename)
-	firstEnvDefPath := filepath.Join(installDir, constants.LocalRuntimeEnvironmentDirectory, fmt.Sprintf("%06d.json", 0))
+	mergedFilePath := filepath.Join(suite.cacheDir, constants.LocalRuntimeEnvironmentDirectory, constants.RuntimeDefinitionFilename)
+	firstEnvDefPath := filepath.Join(suite.cacheDir, constants.LocalRuntimeEnvironmentDirectory, fmt.Sprintf("%06d.json", 0))
 
 	suite.Assert().False(fileutils.FileExists(mergedFilePath))
 	// installation complete marker is missing
@@ -222,10 +220,9 @@ func (suite *AlternativeRuntimeTestSuite) Test_PreInstall() {
 			ar, fail := runtime.NewAlternativeRuntime(artifactsRes.Artifacts, suite.cacheDir, artifactsRes.RecipeID)
 			suite.Require().NoError(fail.ToError())
 
-			installDir := ar.InstallationDirectory(artifactsRes.Artifacts[0])
-			defer os.RemoveAll(installDir)
+			defer os.RemoveAll(suite.cacheDir)
 
-			tc.prepFunc(installDir)
+			tc.prepFunc(suite.cacheDir)
 			fail = ar.PreInstall()
 			if tc.expectedFailure == nil {
 				suite.Require().NoError(fail.ToError())

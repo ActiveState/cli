@@ -6,10 +6,11 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/stretchr/testify/suite"
+
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
-	"github.com/stretchr/testify/suite"
 )
 
 type CamelRuntimeTestSuite struct {
@@ -72,10 +73,9 @@ func (suite *CamelRuntimeTestSuite) Test_PreUnpackArtifact() {
 		suite.Run(tc.name, func() {
 			cr, fail := runtime.NewCamelRuntime([]*runtime.HeadChefArtifact{artifact}, cacheDir)
 			suite.Require().NoError(fail.ToError())
-			installDir := cr.InstallationDirectory(artifact)
-			defer os.RemoveAll(installDir)
+			defer os.RemoveAll(cacheDir)
 
-			tc.prepFunc(installDir)
+			tc.prepFunc(cacheDir)
 			fail = cr.PreUnpackArtifact(artifact)
 			if tc.expectedFailure == nil {
 				suite.Require().NoError(fail.ToError())

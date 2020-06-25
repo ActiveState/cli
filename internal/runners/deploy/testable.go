@@ -29,7 +29,7 @@ func newInstaller(commitID strfmt.UUID, owner, projectName, targetDir string) (i
 		projectName,
 	)
 	installable, fail := runtime.NewInstallerByParams(params)
-	return installable, params.CacheDir, fail
+	return installable, params.RuntimeDir, fail
 }
 
 // defaultBranchForProjectNameFunc defines a testable type for model.DefaultBranchForProjectName
