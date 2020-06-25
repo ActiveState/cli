@@ -8,8 +8,9 @@ import (
 )
 
 type Options struct {
-	Locale  string
-	Version bool
+	Locale      string
+	Version     bool
+	ConfirmExit bool
 }
 
 func NewOptions() *Options {

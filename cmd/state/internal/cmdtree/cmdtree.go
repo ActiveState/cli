@@ -157,6 +157,14 @@ func newStateCommand(globals *globalOptions) *captain.Command {
 				Value:       &globals.Output,
 			},
 			{
+				/* This option is only used for the vscode extension: It prevents the integrated terminal to close immediately after an error occurs, such that the user can read the message */
+				Name:        "confirm-exit-on-error", // Name and Shorthand should be kept in sync with cmd/state/main.go
+				Description: "prompts the user to press enter before exiting, when an error occurs",
+				Persist:     true,
+				Hidden:      true,
+				Value:       &opts.ConfirmExit,
+			},
+			{
 				Name:        "version",
 				Description: locale.T("flag_state_version_description"),
 				Value:       &opts.Version,
