@@ -123,17 +123,11 @@ func ReplaceAll(filename, find string, replace string, include includeFunc) erro
 
 // ReplaceAllInDirectory walks the given directory and invokes ReplaceAll on each file
 func ReplaceAllInDirectory(path, find string, replace string, include includeFunc) error {
-	errs := make(chan error)
 	err := cwalk.Walk(path, func(path string, f os.FileInfo, err error) error {
 		if f.IsDir() {
 			return nil
 		}
-		go func() {
-			if err := ReplaceAll(path, find, replace, include); err != nil {
-				errs <- err
-			}
-		}()
-		return nil
+		return ReplaceAll(path, find, replace, include)
 	})
 
 	if err != nil {
