@@ -438,8 +438,6 @@ scripts_no_scripts:
   other: No scripts in your 'activestate.yaml' or no scripts to run in for your environment
 scripts_no_name:
   other: No script with name {{.V0}}
-scripts_err_output:
-  other: Failed to display scripts output
 organizations_err_output:
   other: Failed to display organizations output
 edit_description:
@@ -453,7 +451,7 @@ edit_script_cmd_expand_flag:
 edit_scripts_no_name:
   other: Could not find script with the given name {{.V0}}
 edit_scripts_project_file_saved:
-  other: Script changes detected, updating activestate.yaml
+  other: "\nScript changes detected, updating activestate.yaml"
 error_open_not_installed_lin:
   other: Please install '{{.V0}}' to edit scripts
 error_edit_script:
@@ -462,10 +460,6 @@ error_edit_unrecognized_platform:
   other: Could not open script file on this platform {{.V0}}
 error_edit_invalid_editor:
   other: The EDITOR environment variable was not correctly set, falling back to platform default editor
-error_edit_windows_invalid_editor:
-  other: Editor path must contain a file extension
-error_edit_watcher_channel_closed:
-  other: Encountered error watching scriptfile. Please restart edit command
 prompt_done_editing:
   other: Are you done editing?
 arg_state_run_name:
@@ -1592,5 +1586,7 @@ ppm_list_intent:
 deploy_usable_path:
   other: |
     [YELLOW]Please ensure '{{.V0}}' exists and is on your PATH.[/RESET]
+script_watcher_watch_file:
+  other: "Watching file changes at: {{.V0}}"
 confirm_exit_on_error_prompt:
   other: Press enter to continue...

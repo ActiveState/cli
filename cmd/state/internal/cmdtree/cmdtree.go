@@ -11,7 +11,6 @@ import (
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/state/scripts"
 	"github.com/ActiveState/cli/state/secrets"
 )
 
@@ -56,6 +55,11 @@ func New(pj *project.Project, outputer output.Outputer, prompter prompt.Prompter
 		newPlatformsRemoveCommand(outputer),
 	)
 
+	scriptsCmd := newScriptsCommand(pj, outputer)
+	scriptsCmd.AddChildren(
+		newScriptsEditCommand(pj, outputer),
+	)
+
 	languagesCmd := newLanguagesCommand(outputer)
 	languagesCmd.AddChildren(newLanguageUpdateCommand(outputer))
 
@@ -91,6 +95,7 @@ func New(pj *project.Project, outputer output.Outputer, prompter prompt.Prompter
 		cleanCmd,
 		languagesCmd,
 		deployCmd,
+		scriptsCmd,
 		newEventsCommand(pj, outputer),
 		newPullCommand(pj, outputer),
 		newUpdateCommand(pj, outputer),
@@ -190,20 +195,13 @@ func (ct *CmdTree) Execute(args []string) error {
 	return ct.cmd.Execute(args)
 }
 
-func setLegacyOutput(globals *globalOptions) {
-	scripts.Flags.Output = &globals.Output
-}
-
 // applyLegacyChildren will register any commands and expanders
 func applyLegacyChildren(cmd *captain.Command, globals *globalOptions) {
 	logging.Debug("register")
 
 	secretsapi.InitializeClient()
 
-	setLegacyOutput(globals)
-
 	cmd.AddLegacyChildren(
-		scripts.Command,
 		secrets.NewCommand(secretsapi.Get(), &globals.Output).Config(),
 	)
 }
