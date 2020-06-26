@@ -98,14 +98,6 @@ error_state_activate:
   other: Unable to activate. Please refer to the above error message, resolve the issue, and run activate again.
 error_unsupported_shell:
   other: "You are using an unsupported shell: {{.Shell}}"
-error_could_not_activate_subshell:
-  other: Could not activate a new subshell
-error_unable_to_monitor_pulls:
-  other: Failed to setup pull monitoring
-error_deactivating_subshell:
-  other: Failed to deactivate subshell properly
-error_in_active_subshell:
-  other: Failure encountered in active subshell
 err_output_flag_value_invalid:
   other: Could not recognize output type
 info_reactivating:
@@ -116,8 +108,6 @@ venv_installer_is_nil:
   other: Provided installer should not be nil
 error_unsupported_language:
   other: "Unsupported language: {{.Language}}"
-error_could_not_activate_venv:
-  other: Could not activate project. If this is a private project ensure that you are authenticated.
 err_language_not_yet_supported:
   other: "The Platform responded with an artifact that is not supported by this version of the State Tool, artifact name: {{.V0}}. Is your State Tool up to date?"
 error_missing_arg:
