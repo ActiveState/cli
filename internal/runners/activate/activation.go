@@ -17,6 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/hail"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/updater"
@@ -143,7 +144,8 @@ func listenForReactivation(id string, rcvs <-chan *hail.Received, subs subShell)
 			}
 
 			if rcvd.Fail != nil {
-				return false, errs.New("error in hailing channel: %s", rcvd.Fail)
+				logging.Error("error in hailing channel: %s", rcvd.Fail)
+				continue
 			}
 
 			if !idsValid(id, rcvd.Data) {
@@ -169,7 +171,7 @@ func listenForReactivation(id string, rcvs <-chan *hail.Received, subs subShell)
 				return false, locale.WrapError(fail, "error_in_active_subshell", "Failure encountered in active subshell")
 			}
 
-			return false, errs.New("subshell failure channel closed")
+			return false, nil
 		}
 	}
 }
