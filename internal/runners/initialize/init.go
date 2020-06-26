@@ -23,7 +23,7 @@ type RunParams struct {
 	Path      string
 	Style     string
 	Language  string
-	language  language.Language
+	language  language.Supported
 	version   string
 }
 
@@ -41,7 +41,7 @@ func prepare(params *RunParams) error {
 		params.version = langParts[1]
 	}
 
-	params.language = language.MakeByName(langParts[0])
+	params.language = language.Supported{language.MakeByName(langParts[0])}
 	if !params.language.Recognized() {
 		return language.NewUnrecognizedLanguageError(
 			params.language.String(),

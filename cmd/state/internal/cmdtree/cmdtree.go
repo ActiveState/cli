@@ -11,7 +11,6 @@ import (
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/state/invite"
 	"github.com/ActiveState/cli/state/secrets"
 )
 
@@ -88,7 +87,7 @@ func New(pj *project.Project, outputer output.Outputer, prompter prompt.Prompter
 		authCmd,
 		exportCmd,
 		newOrganizationsCommand(globals),
-		newRunCommand(),
+		newRunCommand(outputer),
 		newShowCommand(pj, outputer),
 		packagesCmd,
 		platformsCmd,
@@ -102,6 +101,7 @@ func New(pj *project.Project, outputer output.Outputer, prompter prompt.Prompter
 		newUpdateCommand(pj, outputer),
 		newForkCommand(pj, auth, outputer, prompter),
 		newPpmCommand(),
+		newInviteCommand(pj, outputer, prompter),
 	)
 
 	applyLegacyChildren(stateCmd, globals)
@@ -162,6 +162,14 @@ func newStateCommand(globals *globalOptions) *captain.Command {
 				Value:       &globals.Output,
 			},
 			{
+				/* This option is only used for the vscode extension: It prevents the integrated terminal to close immediately after an error occurs, such that the user can read the message */
+				Name:        "confirm-exit-on-error", // Name and Shorthand should be kept in sync with cmd/state/main.go
+				Description: "prompts the user to press enter before exiting, when an error occurs",
+				Persist:     true,
+				Hidden:      true, // No need to add this to help messages
+				Value:       &opts.ConfirmExit,
+			},
+			{
 				Name:        "version",
 				Description: locale.T("flag_state_version_description"),
 				Value:       &opts.Version,
@@ -194,7 +202,6 @@ func applyLegacyChildren(cmd *captain.Command, globals *globalOptions) {
 	secretsapi.InitializeClient()
 
 	cmd.AddLegacyChildren(
-		invite.Command,
 		secrets.NewCommand(secretsapi.Get(), &globals.Output).Config(),
 	)
 }
