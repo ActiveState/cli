@@ -17,25 +17,6 @@ func NewScripts(pj *project.Project, output output.Outputer) *Scripts {
 	return &Scripts{pj, output}
 }
 
-// scriptsAsSerializableSlice returns the scripts as a JSON serializable slice
-func scriptsAsSerializableSlice(scripts []*project.Script) interface{} {
-	type scriptRaw struct {
-		Name        string `json:"name,omitempty"`
-		Description string `json:"description,omitempty"`
-	}
-
-	ss := make([]scriptRaw, len(scripts))
-
-	for i, script := range scripts {
-		ss[i] = scriptRaw{
-			Name:        script.Name(),
-			Description: script.Description(),
-		}
-	}
-
-	return ss
-}
-
 type scriptLine struct {
 	Name        string `json:"name,omitempty"`
 	Description string `json:"description,omitempty"`
