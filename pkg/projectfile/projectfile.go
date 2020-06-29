@@ -728,8 +728,8 @@ func validateCreateParams(params *CreateParams) *failures.Failure {
 	}
 }
 
-// ParseVersionInfo parses the lock field from the projectfile, and ONLY the lock field.
-// This is to ensure it doesn't trip over older activestate.yaml's with breaking changes
+// ParseVersionInfo parses the lock field from the projectfile and updates
+// the activestate.yaml if an older version representation is present
 func ParseVersionInfo(projectFilePath string) (*VersionInfo, *failures.Failure) {
 	if !fileutils.FileExists(projectFilePath) {
 		return nil, nil
@@ -774,6 +774,7 @@ func ParseVersionInfo(projectFilePath string) (*VersionInfo, *failures.Failure) 
 	}, nil
 }
 
+// AddLockInfo adds the lock field to activestate.yaml
 func AddLockInfo(projectFilePath, branch, version string) (string, error) {
 	data, err := cleanVersionInfo(projectFilePath)
 	if err != nil {
