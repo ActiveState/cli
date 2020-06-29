@@ -18,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/hash"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/unarchiver"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 )
@@ -38,6 +39,9 @@ type AlternativeRuntime struct {
 // It filters the provided artifact list for useable artifacts
 // The recipeID is needed to define the installation directory
 func NewAlternativeRuntime(artifacts []*HeadChefArtifact, cacheDir string, recipeID strfmt.UUID) (*AlternativeRuntime, *failures.Failure) {
+	if rtutils.BuiltViaCI {
+		return nil, failures.FailRuntime.New("Alternative builds are not yet supported. Please contact support if you are seeing this error.")
+	}
 
 	artifactMap := map[string]*HeadChefArtifact{}
 	artifactOrder := map[string]int{}

@@ -9,6 +9,7 @@ import (
 	rt "runtime"
 	"testing"
 
+	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -77,7 +78,7 @@ func (suite *InstallerTestSuite) testRelocation(archiveName string, executable s
 
 	artifact, archives := headchefArtifact(path.Join(suite.dataDir, archive))
 
-	envGetter, fail := runtime.NewCamelRuntime([]*runtime.HeadChefArtifact{artifact}, suite.cacheDir)
+	envGetter, fail := runtime.NewCamelRuntime(strfmt.UUID(""), []*runtime.HeadChefArtifact{artifact}, suite.cacheDir)
 	suite.Require().NoError(fail.ToError(), "camel runtime assembler initialized")
 	suite.Require().NotEmpty(suite.cacheDir, "Installs artifacts")
 

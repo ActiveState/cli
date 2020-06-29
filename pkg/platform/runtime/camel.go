@@ -10,6 +10,8 @@ import (
 	rt "runtime"
 	"strings"
 
+	"github.com/go-openapi/strfmt"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
@@ -27,6 +29,7 @@ const deleteMarker = "!#DELETE#!"
 // CamelRuntime holds all the meta-data necessary to activate a runtime
 // environment for a Camel build
 type CamelRuntime struct {
+	commitID   strfmt.UUID
 	artifacts  []*HeadChefArtifact
 	runtimeDir string
 	env        map[string]string
@@ -34,8 +37,8 @@ type CamelRuntime struct {
 
 // NewCamelRuntime returns a new camel runtime assembler
 // It filters the provided artifact list for use-able artifacts
-func NewCamelRuntime(artifacts []*HeadChefArtifact, cacheDir string) (*CamelRuntime, *failures.Failure) {
-	cr := &CamelRuntime{[]*HeadChefArtifact{}, cacheDir, map[string]string{}}
+func NewCamelRuntime(commitID strfmt.UUID, artifacts []*HeadChefArtifact, cacheDir string) (*CamelRuntime, *failures.Failure) {
+	cr := &CamelRuntime{commitID, []*HeadChefArtifact{}, cacheDir, map[string]string{}}
 
 	for _, artf := range artifacts {
 		// filter artifacts
@@ -355,7 +358,7 @@ func (cr *CamelRuntime) GetEnv(inherit bool, projectDir string) (map[string]stri
 
 // PostInstall creates completion markers for all artifact directories
 func (cr *CamelRuntime) PostInstall() error {
-	fail := fileutils.Touch(filepath.Join(cr.runtimeDir, constants.RuntimeInstallationCompleteMarker))
+	fail := fileutils.WriteFile(filepath.Join(cr.runtimeDir, constants.RuntimeInstallationCompleteMarker), []byte(cr.commitID.String()))
 	if fail != nil {
 		return errs.Wrap(fail, "could not set completion marker")
 	}
@@ -374,7 +377,18 @@ func (cr *CamelRuntime) PostInstall() error {
 
 // IsInstalled checks if completion marker files exist for all artifacts
 func (cr *CamelRuntime) IsInstalled() bool {
-	return fileutils.FileExists(filepath.Join(cr.runtimeDir, constants.RuntimeInstallationCompleteMarker))
+	marker := filepath.Join(cr.runtimeDir, constants.RuntimeInstallationCompleteMarker)
+	if !fileutils.FileExists(marker) {
+		return false
+	}
+
+	contents, fail := fileutils.ReadFile(marker)
+	if fail != nil {
+		logging.Error("Could not read marker: %v", fail)
+		return false
+	}
+
+	return string(contents) == cr.commitID.String()
 }
 
 func prependPath(PATH, prefix string) string {

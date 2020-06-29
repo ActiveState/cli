@@ -163,9 +163,9 @@ func (installer *Installer) Assembler() (Assembler, *failures.Failure) {
 	case Alternative:
 		return NewAlternativeRuntime(artifacts.Artifacts, installer.params.RuntimeDir, artifacts.RecipeID)
 	case Camel:
-		return NewCamelRuntime(artifacts.Artifacts, installer.params.RuntimeDir)
+		return NewCamelRuntime(installer.params.CommitID, artifacts.Artifacts, installer.params.RuntimeDir)
 	case Hybrid:
-		cr, fail := NewCamelRuntime(artifacts.Artifacts, installer.params.RuntimeDir)
+		cr, fail := NewCamelRuntime(installer.params.CommitID, artifacts.Artifacts, installer.params.RuntimeDir)
 		if fail != nil {
 			return nil, fail
 		}
@@ -182,6 +182,17 @@ func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGet
 		logging.Debug("runtime already successfully installed")
 		return runtimeAssembler, false, nil
 	}
+
+	empty, fail := fileutils.IsEmptyDir(installer.params.RuntimeDir)
+	if fail != nil {
+		logging.Error("Could not check if target runtime dir is empty, this could cause issues.. %v", fail)
+	} else if !empty {
+		logging.Debug("Removing existing runtime")
+		if err := os.RemoveAll(installer.params.RuntimeDir); err != nil {
+			logging.Error("Could not empty out target runtime dir prior to install, this could cause issues.. %v", err)
+		}
+	}
+
 	downloadArtfs, unpackArchives := runtimeAssembler.ArtifactsToDownloadAndUnpack()
 
 	if len(downloadArtfs) == 0 && len(unpackArchives) == 0 {

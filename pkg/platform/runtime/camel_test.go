@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/failures"
@@ -33,7 +34,7 @@ func (suite *CamelRuntimeTestSuite) Test_InitializeWithInvalidArtifacts() {
 	cacheDir, cacheCleanup := suite.genCacheDir()
 	defer cacheCleanup()
 
-	_, fail := runtime.NewCamelRuntime([]*runtime.HeadChefArtifact{
+	_, fail := runtime.NewCamelRuntime(strfmt.UUID(""), []*runtime.HeadChefArtifact{
 		invalidExtension,
 		testArtifact,
 		noURIArtifact,
@@ -71,7 +72,7 @@ func (suite *CamelRuntimeTestSuite) Test_PreUnpackArtifact() {
 	artifact, _ := headchefArtifact(archivePath)
 	for _, tc := range cases {
 		suite.Run(tc.name, func() {
-			cr, fail := runtime.NewCamelRuntime([]*runtime.HeadChefArtifact{artifact}, cacheDir)
+			cr, fail := runtime.NewCamelRuntime(strfmt.UUID(""), []*runtime.HeadChefArtifact{artifact}, cacheDir)
 			suite.Require().NoError(fail.ToError())
 
 			os.RemoveAll(cacheDir)
