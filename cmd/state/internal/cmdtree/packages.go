@@ -53,7 +53,7 @@ func newPackagesAddCommand(out output.Outputer) *captain.Command {
 		[]*captain.Flag{},
 		[]*captain.Argument{
 			{
-				Name:        "package_arg_nameversion",
+				Name:        locale.T("package_arg_nameversion"),
 				Description: locale.T("package_arg_nameversion_description"),
 				Value:       &params.Name,
 				Required:    true,
@@ -76,7 +76,7 @@ func newPackagesUpdateCommand(out output.Outputer) *captain.Command {
 		[]*captain.Flag{},
 		[]*captain.Argument{
 			{
-				Name:        "package_arg_nameversion",
+				Name:        locale.T("package_arg_nameversion"),
 				Description: locale.T("package_arg_nameversion_description"),
 				Value:       &params.Name,
 				Required:    true,
@@ -99,7 +99,7 @@ func newPackagesRemoveCommand(out output.Outputer) *captain.Command {
 		[]*captain.Flag{},
 		[]*captain.Argument{
 			{
-				Name:        "package_arg_name",
+				Name:        locale.T("package_arg_name"),
 				Description: locale.T("package_arg_name_description"),
 				Value:       &params.Name,
 				Required:    true,
@@ -160,7 +160,7 @@ func newPackagesSearchCommand(out output.Outputer) *captain.Command {
 		},
 		[]*captain.Argument{
 			{
-				Name:        "package_arg_name",
+				Name:        locale.T("package_arg_name"),
 				Description: locale.T("package_arg_name_description"),
 				Value:       &params.Name,
 				Required:    true,
