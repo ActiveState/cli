@@ -66,7 +66,7 @@ func (suite *InstallerLinuxTestSuite) BeforeTest(suiteName, testName string) {
 
 func (suite *InstallerLinuxTestSuite) AfterTest(suiteName, testName string) {
 	if err := os.RemoveAll(suite.cacheDir); err != nil {
-		logging.Warningf("Could not remove cacheDir: %v\n", err)
+		logging.Warningf("Could not remove runtimeDir: %v\n", err)
 	}
 	if err := os.RemoveAll(suite.installDir); err != nil {
 		logging.Warningf("Could not remove installDir: %v\n", err)
@@ -74,7 +74,6 @@ func (suite *InstallerLinuxTestSuite) AfterTest(suiteName, testName string) {
 }
 
 func (suite *InstallerLinuxTestSuite) setMocks(a *rmock.Assembler, unpackingOk bool) {
-	a.On("InstallationDirectory", mock.Anything).Return(suite.installDir)
 	a.On("PreInstall").Return(nil)
 	a.On("PreUnpackArtifact", mock.Anything).Return(nil)
 	a.On("Unarchiver").Return(unarchiver.NewTarGz())
