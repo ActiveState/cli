@@ -115,7 +115,7 @@ func (u *Update) replaceUpdateInYAML(version, branch string) error {
 		return locale.WrapError(err, "err_read_projectfile", "Failed to read the activestate.yaml at: %s", u.project.Source().Path())
 	}
 
-	lockRegex := regexp.MustCompile(`(?m:(lock:\s*)((\w+@)\d+\.\d+\.\d+-(SHA)?[a-f0-9]+))`)
+	lockRegex := regexp.MustCompile(`(?m:(lock:\s*)((.+@)\d+\.\d+\.\d+-(SHA)?[a-f0-9]+))`)
 	versionUpdate := []byte(fmt.Sprintf("${1}%s@%s", branch, version))
 
 	replaced := lockRegex.ReplaceAll(data, versionUpdate)

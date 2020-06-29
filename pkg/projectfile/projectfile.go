@@ -758,7 +758,7 @@ func ParseVersionInfo(projectFilePath string) (*VersionInfo, *failures.Failure) 
 	}
 
 	lock := strings.TrimSpace(versionStruct.Lock)
-	match, fail := regexp.MatchString(`^(\w+@)\d+\.\d+\.\d+-(SHA)?[a-f0-9]+`, lock)
+	match, fail := regexp.MatchString(`^(.+@)\d+\.\d+\.\d+-(SHA)?[a-f0-9]+`, lock)
 	if fail != nil || !match {
 		return nil, FailInvalidVersion.New(locale.T("err_invalid_version"))
 	}
