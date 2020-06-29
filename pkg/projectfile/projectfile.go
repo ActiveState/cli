@@ -58,6 +58,10 @@ var (
 
 	// FailProjectFileRoot identifies a failure being caused by not being able to find a path to a project file
 	FailProjectFileRoot = failures.Type("projectfile.fail.projectfileroot", failures.FailNonFatal)
+
+	// FailUpdateVersion identifies a failure being cased by not being able to update the version information
+	// in a projectfile
+	FailUpdateVersion = failures.Type("projectfile.fail.projectfileupdate")
 )
 
 var strReg = fmt.Sprintf(`https:\/\/%s\/([\w_.-]*)\/([\w_.-]*)(?:\?commitID=)*(.*)`, strings.Replace(constants.PlatformURL, ".", "\\.", -1))
@@ -70,6 +74,7 @@ var ProjectURLRe = regexp.MustCompile(strReg)
 type VersionInfo struct {
 	Branch  string `yaml:"branch"`
 	Version string `yaml:"version"`
+	Lock    string `yaml:"lock"`
 }
 
 // ProjectSimple reflects a bare basic project structure
@@ -83,6 +88,7 @@ type Project struct {
 	Namespace    string        `yaml:"namespace,omitempty"`
 	Branch       string        `yaml:"branch,omitempty"`
 	Version      string        `yaml:"version,omitempty"`
+	Lock         string        `yaml:"lock,omitempty"`
 	Environments string        `yaml:"environments,omitempty"`
 	Platforms    []Platform    `yaml:"platforms,omitempty"`
 	Languages    Languages     `yaml:"languages,omitempty"`
@@ -722,8 +728,8 @@ func validateCreateParams(params *CreateParams) *failures.Failure {
 	}
 }
 
-// ParseVersionInfo parses the version field from the projectfile, and ONLY the version field. This is to ensure it doesn't
-// trip over older activestate.yaml's with breaking changes
+// ParseVersionInfo parses the lock field from the projectfile, and ONLY the lock field.
+// This is to ensure it doesn't trip over older activestate.yaml's with breaking changes
 func ParseVersionInfo(projectFilePath string) (*VersionInfo, *failures.Failure) {
 	if !fileutils.FileExists(projectFilePath) {
 		return nil, nil
@@ -735,22 +741,72 @@ func ParseVersionInfo(projectFilePath string) (*VersionInfo, *failures.Failure) 
 	}
 
 	versionStruct := VersionInfo{}
-	err = yaml.Unmarshal([]byte(dat), &versionStruct)
+	err = yaml.Unmarshal(dat, &versionStruct)
 	if err != nil {
 		return nil, FailParseProject.Wrap(err)
 	}
 
-	if versionStruct.Version == "" {
+	if versionStruct.Branch != "" && versionStruct.Version != "" {
+		versionStruct.Lock, err = AddLockInfo(projectFilePath, versionStruct.Branch, versionStruct.Version)
+		if err != nil {
+			return nil, FailUpdateVersion.New(locale.T("err_update_version"))
+		}
+	}
+
+	if versionStruct.Lock == "" {
 		return nil, nil
 	}
 
-	version := strings.TrimSpace(versionStruct.Version)
-	match, fail := regexp.MatchString(`^\d+\.\d+\.\d+-(SHA)?[a-f0-9]+`, version)
+	lock := strings.TrimSpace(versionStruct.Lock)
+	match, fail := regexp.MatchString(`^(\w+@)\d+\.\d+\.\d+-(SHA)?[a-f0-9]+`, lock)
 	if fail != nil || !match {
-		return &versionStruct, FailInvalidVersion.New(locale.T("err_invalid_version"))
+		return nil, FailInvalidVersion.New(locale.T("err_invalid_version"))
 	}
 
-	return &versionStruct, nil
+	split := strings.Split(versionStruct.Lock, "@")
+	if len(split) != 2 {
+		return nil, FailInvalidVersion.New(locale.T("err_invalid_version"))
+	}
+
+	return &VersionInfo{
+		Branch:  split[0],
+		Version: split[1],
+	}, nil
+}
+
+func AddLockInfo(projectFilePath, branch, version string) (string, error) {
+	data, err := cleanVersionInfo(projectFilePath)
+	if err != nil {
+		return "", locale.WrapError(err, "err_clean_projectfile", "Could not remove old version information from projectfile", projectFilePath)
+	}
+
+	projectRegex := regexp.MustCompile(fmt.Sprintf("(?m:^project:\\s*%s)", ProjectURLRe))
+	lockString := fmt.Sprintf("%s@%s", branch, version)
+	lockUpdate := []byte(fmt.Sprintf("\nlock: %s", lockString))
+
+	index := projectRegex.FindIndex(data)
+
+	return lockString, fileutils.InsertIntoFile(projectFilePath, index[1], lockUpdate)
+}
+
+func cleanVersionInfo(projectFilePath string) ([]byte, error) {
+	data, err := ioutil.ReadFile(projectFilePath)
+	if err != nil {
+		return nil, locale.WrapError(err, "err_read_projectfile", "Failed to read the activestate.yaml at: %s", projectFilePath)
+	}
+
+	branchRegex := regexp.MustCompile(`(?m:branch:\s*\w+\n)`)
+	clean := branchRegex.ReplaceAll(data, []byte(""))
+
+	versionRegex := regexp.MustCompile(`(?m:version:\s*\d+.\d+.\d+-[A-Za-z0-9]+\n)`)
+	clean = versionRegex.ReplaceAll(clean, []byte(""))
+
+	err = ioutil.WriteFile(projectFilePath, clean, 0644)
+	if err != nil {
+		return nil, locale.WrapError(err, "err_write_clean_projectfile", "Could not write cleaned projectfile information")
+	}
+
+	return clean, nil
 }
 
 // Reset the current state, which unsets the persistent project

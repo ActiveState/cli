@@ -213,6 +213,9 @@ func (p *Project) Version() string { return p.projectfile.Version }
 // Branch returns branch that we're pinned to (useless unless version is also set)
 func (p *Project) Branch() string { return p.projectfile.Branch }
 
+// Lock returns the lock information for this project
+func (p *Project) Lock() string { return p.projectfile.Lock }
+
 // Namespace returns project namespace
 func (p *Project) Namespace() string { return Namespace(p.owner, p.name) }
 

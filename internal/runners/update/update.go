@@ -56,12 +56,12 @@ func run(lock, isLocked, force bool, runLock, runUpdateLock, runUpdateGlobal, co
 func (u *Update) runLock() error {
 	u.out.Notice(locale.Tl("locking_version", "Locking State Tool to the current version."))
 
-	if u.project.Version() != "" {
+	if u.project.Lock() != "" {
 		u.out.Print(locale.Tl("lock_project_uptodate", "Your project is already locked, did you mean to run 'state update' (without the --lock flag)?"))
 		return nil
 	}
 
-	err := u.setUpdateInYAML(constants.Version, constants.BranchName)
+	_, err := projectfile.AddLockInfo(u.project.Source().Path(), constants.BranchName, constants.Version)
 	if err != nil {
 		return locale.WrapError(err, "err_update_projectfile", "Could not update projectfile")
 	}
@@ -83,7 +83,7 @@ func (u *Update) runUpdateLock() error {
 		return nil
 	}
 
-	err = u.replaceUpdateInYAML(info.Version, "master")
+	err = u.replaceUpdateInYAML(info.Version, constants.BranchName)
 	if err != nil {
 		return locale.WrapError(err, "err_update_projectfile", "Could not replace update in projectfile")
 	}
@@ -106,7 +106,7 @@ func (u *Update) setUpdateInYAML(version, branch string) error {
 		return locale.NewError("err_find_project_entry", "Could not find valid project entry in projectfile")
 	}
 
-	return fileutils.InsertIntoFile(u.project.Source().Path(), index[1], []byte(fmt.Sprintf("branch: %s\nversion: %s\n", branch, version)))
+	return fileutils.InsertIntoFile(u.project.Source().Path(), index[1], []byte(fmt.Sprintf("version: %s@%s\n", branch, version)))
 }
 
 func (u *Update) replaceUpdateInYAML(version, branch string) error {
@@ -115,14 +115,10 @@ func (u *Update) replaceUpdateInYAML(version, branch string) error {
 		return locale.WrapError(err, "err_read_projectfile", "Failed to read the activestate.yaml at: %s", u.project.Source().Path())
 	}
 
-	branchRegex := regexp.MustCompile(`(?m:(branch:\s*)(\w+))`)
-	branchUpdate := []byte(fmt.Sprintf("${1}%s", branch))
-	out := branchRegex.ReplaceAll(data, branchUpdate)
+	lockRegex := regexp.MustCompile(`(?m:(lock:\s*)((\w+@)\d+\.\d+\.\d+-(SHA)?[a-f0-9]+))`)
+	versionUpdate := []byte(fmt.Sprintf("${1}%s@%s", branch, version))
 
-	versionRegex := regexp.MustCompile(`(?m:(version:\s*)(\d+.\d+.\d+-[A-Za-z0-9]+))`)
-	versionUpdate := []byte(fmt.Sprintf("${1}%s", version))
-
-	replaced := versionRegex.ReplaceAll(out, versionUpdate)
+	replaced := lockRegex.ReplaceAll(data, versionUpdate)
 
 	return ioutil.WriteFile(u.project.Source().Path(), replaced, 0644)
 }
@@ -148,7 +144,7 @@ func (u *Update) runUpdateGlobal() error {
 		return locale.WrapError(err, "err_update_failed", "Update failed, please try again later or try reinstalling the State Tool.")
 	}
 
-	u.out.Print(locale.Tl("version_updated", "Version updated to {{.V0}}", info.Version))
+	u.out.Print(locale.Tl("version_updated", "Version updated to {{.V0}}@{{.V1}}", constants.BranchName, info.Version))
 	return nil
 }
 
@@ -170,5 +166,5 @@ func confirmUpdateLock() error {
 
 func isLocked() bool {
 	pj, fail := projectfile.GetSafe()
-	return fail == nil && pj.Version != ""
+	return fail == nil && pj.Lock != ""
 }
