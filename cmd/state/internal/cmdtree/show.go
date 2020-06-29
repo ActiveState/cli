@@ -20,7 +20,7 @@ func newShowCommand(pj *project.Project, out output.Outputer) *captain.Command {
 		[]*captain.Argument{
 			{
 				Name:        "remote",
-				Description: "arg_state_show_remote_description",
+				Description: locale.T("arg_state_show_remote_description"),
 				Value:       &params.Remote,
 			},
 		},
