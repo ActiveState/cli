@@ -46,7 +46,7 @@ func LockFile(f *os.File) error {
 		Start:  0,
 		Len:    0,
 		Pid:    int32(os.Getpid()),
-		Type:   syscall.F_RDLCK,
+		Type:   syscall.F_WRLCK,
 	}
 
 	err := syscall.FcntlFlock(f.Fd(), syscall.F_SETLK, ft)
