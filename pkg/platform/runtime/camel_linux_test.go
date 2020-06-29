@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/ActiveState/archiver"
+	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/environment"
@@ -119,7 +120,7 @@ func (suite *CamelLinuxRuntimeTestSuite) Test_PostUnpackWithFailures() {
 
 			cr, fail := runtime.NewCamelRuntime(strfmt.UUID(""), []*runtime.HeadChefArtifact{artifact}, cacheDir)
 			suite.Require().NoError(fail.ToError(), "camel runtime assembler initialized")
-			fail = fileutils.MkdirUnlessExists(cr.InstallationDirectory(artifact))
+			fail = fileutils.MkdirUnlessExists(cacheDir)
 			suite.Require().NoError(fail.ToError(), "creating installation directory")
 			fail = cr.PostUnpackArtifact(artifact, runtimeDir, archivePath, func() { counter.Increment() })
 

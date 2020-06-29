@@ -74,7 +74,6 @@ func (suite *InstallerLinuxTestSuite) AfterTest(suiteName, testName string) {
 }
 
 func (suite *InstallerLinuxTestSuite) setMocks(a *rmock.Assembler, unpackingOk bool) {
-	a.On("InstallationDirectory", mock.Anything).Return(suite.installDir)
 	a.On("PreInstall").Return(nil)
 	a.On("PreUnpackArtifact", mock.Anything).Return(nil)
 	a.On("Unarchiver").Return(unarchiver.NewTarGz())
