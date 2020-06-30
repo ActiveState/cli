@@ -29,7 +29,8 @@ namespace Shortcut
                         if (result.Equals(ActionResult.Failure))
                         {
                             session.Log("Could not create Perl Critic shortcut");
-                            return result;
+                            // Do not fail if we cannot create shortcut
+                            return ActionResult.Success;
                         }
                         break;
                     default:
@@ -45,20 +46,20 @@ namespace Shortcut
         {
             session.Log("Installing Perl Critic shortcut");
 
-            string[] subDirs = Directory.GetDirectories(session.CustomActionData["INSTALLDIR"]);
-            if (subDirs.Length != 2)
+            string target = session.CustomActionData["INSTALLDIR"] + @"\bin\wperl.exe";
+            if (!System.IO.File.Exists(target))
             {
-                session.Log("Unknown deployment directory configuration");
+                session.Log(string.Format("wperl.exe does not exist in path: {0}", target));
                 return ActionResult.Failure;
             }
 
-            string targetDir = subDirs[0];
-            if (targetDir == "bin")
+            string perlCriticLocation = session.CustomActionData["INSTALLDIR"]+ @"\bin\perlcritic-gui";
+            if (!System.IO.File.Exists(perlCriticLocation))
             {
-                targetDir = subDirs[1];
+                session.Log(string.Format("perlcritic-gui does not exist in path: {0}", perlCriticLocation));
+                return ActionResult.Failure;
             }
 
-            string target = targetDir + @"\bin\wperl.exe";
             string projectName = session.CustomActionData["PROJECT_OWNER_AND_NAME"];
             string shortcutDir = projectName.Substring(projectName.IndexOf("/")+1);
 
@@ -75,7 +76,7 @@ namespace Shortcut
             shortcut.Description = "Perl Critic";
             shortcut.IconLocation = session.CustomActionData["INSTALLDIR"] + "perl.ico";
             shortcut.TargetPath = target;
-            shortcut.Arguments = " -x " + targetDir + @"\bin\perlcritic-gui";
+            shortcut.Arguments = " -x " + perlCriticLocation;
             shortcut.Save();
             return ActionResult.Success;
         }
