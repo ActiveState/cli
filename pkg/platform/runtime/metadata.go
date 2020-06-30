@@ -48,12 +48,6 @@ type MetaData struct {
 
 	// TargetedRelocations are relocations that only target specific parts of the installation
 	TargetedRelocations []TargetedRelocation `json:"custom_relocations"`
-
-	// TargetDir is the directory relative to the installation directory that this artifact should be installed to
-	TargetDir string `json:"target_dir"`
-
-	// InstallStrategy is the strategy used when installing files, pertaining to what to do with conflicts. Possible values: merge, delete, skip
-	InstallStrategy string `json:"install_strategy"`
 }
 
 // MetaDataBinary is used to represent a binary path contained within the metadata.json file
@@ -93,14 +87,6 @@ func InitMetaData(installDir string) (*MetaData, *failures.Failure) {
 	fail := metaData.Prepare()
 	if fail != nil {
 		return nil, fail
-	}
-
-	if metaData.TargetDir == "" {
-		metaData.TargetDir = "./"
-	}
-
-	if metaData.InstallStrategy == "" {
-		metaData.InstallStrategy = "delete"
 	}
 
 	return metaData, nil

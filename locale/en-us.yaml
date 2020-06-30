@@ -98,14 +98,6 @@ error_state_activate:
   other: Unable to activate. Please refer to the above error message, resolve the issue, and run activate again.
 error_unsupported_shell:
   other: "You are using an unsupported shell: {{.Shell}}"
-error_could_not_activate_subshell:
-  other: Could not activate a new subshell
-error_unable_to_monitor_pulls:
-  other: Failed to setup pull monitoring
-error_deactivating_subshell:
-  other: Failed to deactivate subshell properly
-error_in_active_subshell:
-  other: Failure encountered in active subshell
 err_output_flag_value_invalid:
   other: Could not recognize output type
 info_reactivating:
@@ -116,8 +108,6 @@ venv_installer_is_nil:
   other: Provided installer should not be nil
 error_unsupported_language:
   other: "Unsupported language: {{.Language}}"
-error_could_not_activate_venv:
-  other: Could not activate project. If this is a private project ensure that you are authenticated.
 err_language_not_yet_supported:
   other: "The Platform responded with an artifact that is not supported by this version of the State Tool, artifact name: {{.V0}}. Is your State Tool up to date?"
 error_missing_arg:
@@ -316,42 +306,6 @@ organization_name:
   other: Organization Name
 organization_no_orgs:
   other: You are not a member of any organizations
-org_role_choice_owner:
-  other: Owner (can edit members)
-org_role_choice_member:
-  other: Member (can only edit projects)
-invite_description:
-  other: Invite new members to an organization
-invite_flag_organization_description:
-  other: "Organization to invite to. If not set, invite to current project's organization"
-invite_flag_role_description:
-  other: Set user role to 'member' or 'owner'. If not set, prompt for the role
-invite_arg_emails:
-  other: "Email addresses to send the invitations to"
-invite_role_needs_selection:
-  other: "A user role needs to be selected"
-invite_select_org_role:
-  other: |
-    You are about to invite {{.Invitees}} to the {{.Organization}} organization
-    What role should the user(s) be given?
-invite_limit_fetch_err:
-  other: Failed to fetch the organization limits.  Please check your permissions for this organization.
-invite_personal_org_err:
-  other: This project does not belong to any organization and so cannot have any users invited to it. To invite users create an organization
-invite_org_err:
-  other: Unable to invite user. Please check the organization name.
-invite_org_secrets_reminder:
-  other: "
-
-You should run 'state secrets sync' once they have accepted their invitation and authenticated with the State Tool."
-invite_member_limit_err:
-  other: Only {{.RemainingUsers}} can be added to the organization {{.Organization}} with a limit of {{.UserLimit}}.  The request exceeds the limit by {{.ExceededBy}} users.
-invite_invitation_err:
-  other: Invite of at least one new member failed
-invite_invitation_sent:
-  other: Invitation sent to {{.Email}}
-invite_invalid_role_string:
-  other: "Invalid role name provided: needs to be 'member' or 'owner'"
 project:
   other: Project
 project_name:
@@ -474,8 +428,6 @@ scripts_no_scripts:
   other: No scripts in your 'activestate.yaml' or no scripts to run in for your environment
 scripts_no_name:
   other: No script with name {{.V0}}
-scripts_err_output:
-  other: Failed to display scripts output
 organizations_err_output:
   other: Failed to display organizations output
 edit_description:
@@ -489,7 +441,7 @@ edit_script_cmd_expand_flag:
 edit_scripts_no_name:
   other: Could not find script with the given name {{.V0}}
 edit_scripts_project_file_saved:
-  other: Script changes detected, updating activestate.yaml
+  other: "\nScript changes detected, updating activestate.yaml"
 error_open_not_installed_lin:
   other: Please install '{{.V0}}' to edit scripts
 error_edit_script:
@@ -498,10 +450,6 @@ error_edit_unrecognized_platform:
   other: Could not open script file on this platform {{.V0}}
 error_edit_invalid_editor:
   other: The EDITOR environment variable was not correctly set, falling back to platform default editor
-error_edit_windows_invalid_editor:
-  other: Editor path must contain a file extension
-error_edit_watcher_channel_closed:
-  other: Encountered error watching scriptfile. Please restart edit command
 prompt_done_editing:
   other: Are you done editing?
 arg_state_run_name:
@@ -1628,3 +1576,7 @@ ppm_list_intent:
 deploy_usable_path:
   other: |
     [YELLOW]Please ensure '{{.V0}}' exists and is on your PATH.[/RESET]
+script_watcher_watch_file:
+  other: "Watching file changes at: {{.V0}}"
+confirm_exit_on_error_prompt:
+  other: Press enter to continue...

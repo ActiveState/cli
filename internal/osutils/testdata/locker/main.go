@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -15,6 +16,16 @@ func main() {
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 
+	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(2*time.Minute))
+	defer cancel()
+	go func() {
+		select {
+		case <-c:
+		case <-ctx.Done():
+		}
+		cancel()
+	}()
+
 	if len(os.Args) < 3 {
 		fmt.Printf("two arguments required")
 		os.Exit(2)
@@ -26,7 +37,8 @@ func main() {
 	}
 	ok, _ := pl.TryLock()
 	if !ok {
-		fmt.Printf("DENIED")
+		fmt.Println("DENIED")
+		return
 	}
 
 	fmt.Println("LOCKED")
@@ -34,12 +46,8 @@ func main() {
 		pl.Close(keep)
 	}
 
-	select {
-	case <-c:
-	case <-time.After(1 * time.Hour):
-	}
-
+	<-ctx.Done()
 	fmt.Println("done")
 
-	defer pl.Close()
+	pl.Close()
 }

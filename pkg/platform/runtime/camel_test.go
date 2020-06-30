@@ -6,10 +6,12 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/go-openapi/strfmt"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
-	"github.com/stretchr/testify/suite"
 )
 
 type CamelRuntimeTestSuite struct {
@@ -32,7 +34,7 @@ func (suite *CamelRuntimeTestSuite) Test_InitializeWithInvalidArtifacts() {
 	cacheDir, cacheCleanup := suite.genCacheDir()
 	defer cacheCleanup()
 
-	_, fail := runtime.NewCamelRuntime([]*runtime.HeadChefArtifact{
+	_, fail := runtime.NewCamelRuntime(strfmt.UUID(""), []*runtime.HeadChefArtifact{
 		invalidExtension,
 		testArtifact,
 		noURIArtifact,
@@ -70,12 +72,13 @@ func (suite *CamelRuntimeTestSuite) Test_PreUnpackArtifact() {
 	artifact, _ := headchefArtifact(archivePath)
 	for _, tc := range cases {
 		suite.Run(tc.name, func() {
-			cr, fail := runtime.NewCamelRuntime([]*runtime.HeadChefArtifact{artifact}, cacheDir)
+			cr, fail := runtime.NewCamelRuntime(strfmt.UUID(""), []*runtime.HeadChefArtifact{artifact}, cacheDir)
 			suite.Require().NoError(fail.ToError())
-			installDir := cr.InstallationDirectory(artifact)
-			defer os.RemoveAll(installDir)
 
-			tc.prepFunc(installDir)
+			os.RemoveAll(cacheDir)
+			defer os.RemoveAll(cacheDir)
+
+			tc.prepFunc(cacheDir)
 			fail = cr.PreUnpackArtifact(artifact)
 			if tc.expectedFailure == nil {
 				suite.Require().NoError(fail.ToError())

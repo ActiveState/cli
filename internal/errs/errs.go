@@ -22,14 +22,9 @@ type Error interface {
 // WrappedErr is what we use for errors created from this package, this does not mean every error returned from this
 // package is wrapping something, it simply has the plumbing to.
 type WrappedErr struct {
-	msg     string
+	error
 	wrapped error
 	stack   *stacktrace.Stacktrace
-}
-
-// Error returns the error message
-func (e *WrappedErr) Error() string {
-	return e.msg
 }
 
 // Unwrap returns the parent error, if one exists
@@ -42,7 +37,7 @@ func (e *WrappedErr) Stack() *stacktrace.Stacktrace {
 	return e.stack
 }
 
-func newError(err string, wrapTarget error) error {
+func newError(err error, wrapTarget error) error {
 	return &WrappedErr{
 		err,
 		wrapTarget,
@@ -52,12 +47,17 @@ func newError(err string, wrapTarget error) error {
 
 // New creates a new error, similar to errors.New
 func New(message string, args ...interface{}) error {
-	return newError(fmt.Sprintf(message, args...), nil)
+	return newError(errors.New(fmt.Sprintf(message, args...)), nil)
 }
 
 // Wrap creates a new error that wraps the given error
 func Wrap(wrapTarget error, message string, args ...interface{}) error {
-	return newError(fmt.Sprintf(message, args...), wrapTarget)
+	return newError(errors.New(fmt.Sprintf(message, args...)), wrapTarget)
+}
+
+// WrapErrors wraps one error in another
+func WrapErrors(wrapTarget error, wrapper error) error {
+	return newError(wrapper, wrapTarget)
 }
 
 // Join all error messages in the Unwrap stack

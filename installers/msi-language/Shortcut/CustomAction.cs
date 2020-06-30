@@ -59,7 +59,7 @@ namespace Shortcut
             }
 
             string target = targetDir + @"\bin\wperl.exe";
-            string projectName = session.CustomActionData["PROJECT_NAME"];
+            string projectName = session.CustomActionData["PROJECT_OWNER_AND_NAME"];
             string shortcutDir = projectName.Substring(projectName.IndexOf("/")+1);
 
             string commonStartMenuPath = Environment.GetFolderPath(Environment.SpecialFolder.CommonStartMenu);

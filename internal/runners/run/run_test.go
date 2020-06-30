@@ -18,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
+	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 	rtMock "github.com/ActiveState/cli/pkg/platform/runtime/mock"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -53,7 +54,7 @@ scripts:
 	assert.Nil(t, err, "Unmarshalled YAML")
 	project.Persist()
 
-	err = run("run", nil)
+	err = run(outputhelper.NewCatcher(), "run", nil)
 	assert.NoError(t, err, "No error occurred")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
@@ -83,7 +84,7 @@ func TestEnvIsSet(t *testing.T) {
 	}()
 
 	out := capturer.CaptureOutput(func() {
-		err = run("run", nil)
+		err = run(outputhelper.NewCatcher(), "run", nil)
 		assert.NoError(t, err, "No error occurred")
 		assert.NoError(t, failures.Handled(), "No failure occurred")
 	})
@@ -119,7 +120,7 @@ scripts:
 	project.Persist()
 
 	out, err := osutil.CaptureStdout(func() {
-		rerr := run("run", nil)
+		rerr := run(outputhelper.NewCatcher(), "run", nil)
 		assert.NoError(t, rerr, "No error occurred")
 		assert.NoError(t, failures.Handled(), "No failure occurred")
 	})
@@ -141,7 +142,7 @@ scripts:
 	assert.Nil(t, err, "Unmarshalled YAML")
 	project.Persist()
 
-	err = run("", nil)
+	err = run(outputhelper.NewCatcher(), "", nil)
 	assert.Error(t, err, "Error occurred")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
@@ -160,7 +161,7 @@ scripts:
 	assert.Nil(t, err, "Unmarshalled YAML")
 	project.Persist()
 
-	err = run("unknown", nil)
+	err = run(outputhelper.NewCatcher(), "unknown", nil)
 	assert.Error(t, err, "Error occurred")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
@@ -180,7 +181,7 @@ scripts:
 	assert.Nil(t, err, "Unmarshalled YAML")
 	project.Persist()
 
-	err = run("run", nil)
+	err = run(outputhelper.NewCatcher(), "run", nil)
 	assert.Error(t, err, "Error occurred")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
@@ -221,7 +222,7 @@ scripts:
 	project.Persist()
 
 	// Run the command.
-	err = run("run", nil)
+	err = run(outputhelper.NewCatcher(), "run", nil)
 	assert.NoError(t, err, "No error occurred")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 
