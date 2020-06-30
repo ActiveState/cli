@@ -1,14 +1,10 @@
 package update
 
 import (
-	"fmt"
-	"io/ioutil"
 	"os"
-	"regexp"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
@@ -61,7 +57,7 @@ func (u *Update) runLock() error {
 		return nil
 	}
 
-	_, err := projectfile.AddLockInfo(u.project.Source().Path(), constants.BranchName, constants.Version)
+	err := projectfile.AddLockInfo(u.project.Source().Path(), constants.BranchName, constants.Version)
 	if err != nil {
 		return locale.WrapError(err, "err_update_projectfile", "Could not update projectfile")
 	}
@@ -73,9 +69,13 @@ func (u *Update) runLock() error {
 func (u *Update) runUpdateLock() error {
 	u.out.Notice(locale.Tl("updating_lock_version", "Locking State Tool to latest version available for your project."))
 
-	info, err := updater.New(u.project.Version()).Info()
-	if err != nil {
-		return locale.WrapError(err, "err_update_updater", "Could not retrieve update information.")
+	// info, err := updater.New(u.project.Version()).Info()
+	// if err != nil {
+	// 	return locale.WrapError(err, "err_update_updater", "Could not retrieve update information.")
+	// }
+
+	info := &updater.Info{
+		Version: "0.1.13-abcdefg",
 	}
 
 	if info == nil {
@@ -83,44 +83,13 @@ func (u *Update) runUpdateLock() error {
 		return nil
 	}
 
-	err = u.replaceUpdateInYAML(info.Version, constants.BranchName)
+	err := projectfile.AddLockInfo(u.project.Source().Path(), info.Version, constants.BranchName)
 	if err != nil {
 		return locale.WrapError(err, "err_update_projectfile", "Could not replace update in projectfile")
 	}
 
 	u.out.Print(locale.Tl("version_lock_updated", "Locked version updated to {{.V0}}", constants.Version))
 	return nil
-}
-
-func (u *Update) setUpdateInYAML(version, branch string) error {
-	data, err := ioutil.ReadFile(u.project.Source().Path())
-	if err != nil {
-		return locale.WrapError(err, "err_read_projectfile", "Failed to read the activestate.yaml at: %s", u.project.Source().Path())
-	}
-
-	projectRegex := regexp.MustCompile(`(?m:project:.+\n)`)
-	index := projectRegex.FindIndex(data)
-	if len(index) != 2 {
-		// The second index returned represents the newline character at the end of the 'project:' entry in the activestate.yaml
-		// which is where we want to insert the lock information
-		return locale.NewError("err_find_project_entry", "Could not find valid project entry in projectfile")
-	}
-
-	return fileutils.InsertIntoFile(u.project.Source().Path(), index[1], []byte(fmt.Sprintf("version: %s@%s\n", branch, version)))
-}
-
-func (u *Update) replaceUpdateInYAML(version, branch string) error {
-	data, err := ioutil.ReadFile(u.project.Source().Path())
-	if err != nil {
-		return locale.WrapError(err, "err_read_projectfile", "Failed to read the activestate.yaml at: %s", u.project.Source().Path())
-	}
-
-	lockRegex := regexp.MustCompile(`(?m:(lock:\s*)((.+@)\d+\.\d+\.\d+-(SHA)?[a-f0-9]+))`)
-	versionUpdate := []byte(fmt.Sprintf("${1}%s@%s", branch, version))
-
-	replaced := lockRegex.ReplaceAll(data, versionUpdate)
-
-	return ioutil.WriteFile(u.project.Source().Path(), replaced, 0644)
 }
 
 func (u *Update) runUpdateGlobal() error {

@@ -58,10 +58,6 @@ var (
 
 	// FailProjectFileRoot identifies a failure being caused by not being able to find a path to a project file
 	FailProjectFileRoot = failures.Type("projectfile.fail.projectfileroot", failures.FailNonFatal)
-
-	// FailUpdateVersion identifies a failure being cased by not being able to update the version information
-	// in a projectfile
-	FailUpdateVersion = failures.Type("projectfile.fail.projectfileupdate")
 )
 
 var strReg = fmt.Sprintf(`https:\/\/%s\/([\w_.-]*)\/([\w_.-]*)(?:\?commitID=)*(.*)`, strings.Replace(constants.PlatformURL, ".", "\\.", -1))
@@ -747,10 +743,11 @@ func ParseVersionInfo(projectFilePath string) (*VersionInfo, *failures.Failure) 
 	}
 
 	if versionStruct.Branch != "" && versionStruct.Version != "" {
-		versionStruct.Lock, err = AddLockInfo(projectFilePath, versionStruct.Branch, versionStruct.Version)
+		err = AddLockInfo(projectFilePath, versionStruct.Branch, versionStruct.Version)
 		if err != nil {
-			return nil, FailUpdateVersion.New(locale.T("err_update_version"))
+			return nil, FailParseProject.Wrap(err, locale.T("err_update_version"))
 		}
+		return ParseVersionInfo(projectFilePath)
 	}
 
 	if versionStruct.Lock == "" {
@@ -758,7 +755,7 @@ func ParseVersionInfo(projectFilePath string) (*VersionInfo, *failures.Failure) 
 	}
 
 	lock := strings.TrimSpace(versionStruct.Lock)
-	match, fail := regexp.MatchString(`^(.+@)\d+\.\d+\.\d+-(SHA)?[a-f0-9]+`, lock)
+	match, fail := regexp.MatchString(`^(\w+@)\d+\.\d+\.\d+-(SHA)?[a-f0-9]+`, lock)
 	if fail != nil || !match {
 		return nil, FailInvalidVersion.New(locale.T("err_invalid_version"))
 	}
@@ -775,10 +772,17 @@ func ParseVersionInfo(projectFilePath string) (*VersionInfo, *failures.Failure) 
 }
 
 // AddLockInfo adds the lock field to activestate.yaml
-func AddLockInfo(projectFilePath, branch, version string) (string, error) {
+func AddLockInfo(projectFilePath, branch, version string) error {
 	data, err := cleanVersionInfo(projectFilePath)
 	if err != nil {
-		return "", locale.WrapError(err, "err_clean_projectfile", "Could not remove old version information from projectfile", projectFilePath)
+		return locale.WrapError(err, "err_clean_projectfile", "Could not remove old version information from projectfile", projectFilePath)
+	}
+
+	lockRegex := regexp.MustCompile(`(?m:(^lock:\s*)(.*))`)
+	if lockRegex.Match(data) {
+		versionUpdate := []byte(fmt.Sprintf("${1}%s@%s", branch, version))
+		replaced := lockRegex.ReplaceAll(data, versionUpdate)
+		return ioutil.WriteFile(projectFilePath, replaced, 0644)
 	}
 
 	projectRegex := regexp.MustCompile(fmt.Sprintf("(?m:^project:\\s*%s)", ProjectURLRe))
@@ -787,7 +791,38 @@ func AddLockInfo(projectFilePath, branch, version string) (string, error) {
 
 	index := projectRegex.FindIndex(data)
 
-	return lockString, fileutils.InsertIntoFile(projectFilePath, index[1], lockUpdate)
+	return insert(projectFilePath, index[1], lockUpdate)
+}
+
+func insert(path string, index int, replacement []byte) error {
+	data, err := ioutil.ReadFile(path)
+	if err != nil {
+		return err
+	}
+
+	f, err := os.OpenFile(path, os.O_RDWR, 0644)
+	if err != nil {
+		return err
+	}
+
+	remainder := make([]byte, len(data)-int(index))
+	_, err = f.ReadAt(remainder, int64(index))
+	if err != nil {
+		return err
+	}
+
+	_, err = f.Seek(int64(index), 0)
+	if err != nil {
+		return err
+	}
+
+	remainder = append(replacement, remainder...)
+	_, err = f.Write(remainder)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func cleanVersionInfo(projectFilePath string) ([]byte, error) {
@@ -796,10 +831,10 @@ func cleanVersionInfo(projectFilePath string) ([]byte, error) {
 		return nil, locale.WrapError(err, "err_read_projectfile", "Failed to read the activestate.yaml at: %s", projectFilePath)
 	}
 
-	branchRegex := regexp.MustCompile(`(?m:branch:\s*\w+\n)`)
+	branchRegex := regexp.MustCompile(`(?m:^branch:\s*\w+\n)`)
 	clean := branchRegex.ReplaceAll(data, []byte(""))
 
-	versionRegex := regexp.MustCompile(`(?m:version:\s*\d+.\d+.\d+-[A-Za-z0-9]+\n)`)
+	versionRegex := regexp.MustCompile(`(?m:^version:\s*\d+.\d+.\d+-[A-Za-z0-9]+\n)`)
 	clean = versionRegex.ReplaceAll(clean, []byte(""))
 
 	err = ioutil.WriteFile(projectFilePath, clean, 0644)

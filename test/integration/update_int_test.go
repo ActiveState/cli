@@ -89,6 +89,10 @@ func (suite *UpdateIntegrationTestSuite) TestAutoUpdateNoPermissions() {
 }
 
 func (suite *UpdateIntegrationTestSuite) TestLocked() {
+	if constants.BranchName != "master" {
+		suite.T().Skip("The lock mechanism only works if the branch name is a single word")
+	}
+
 	pjfile := projectfile.Project{
 		Project: lockedProjectURL(),
 	}

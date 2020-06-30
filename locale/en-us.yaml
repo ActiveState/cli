@@ -819,6 +819,8 @@ err_version_parse:
   other:  Could not determine the State Tool version to use to run this command. Please ensure the project field in your activestate.yaml is formatted correctly.
 err_invalid_version:
   other: "Invalid version specified in your activestate.yaml, should be in the format of: {number}.{number}.{number}-{hash}"
+err_update_version:
+  other: "Could not update deprecated version representation"
 downloading_state_version:
   other: "Downloading State Tool version {{.V0}}, as specified by your activestate.yaml (this only needs to happen once for each version you specify)."
 forward_fail:

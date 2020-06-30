@@ -857,34 +857,3 @@ func SymlinkTarget(symlink string) (string, error) {
 
 	return evalDest, nil
 }
-
-func InsertIntoFile(path string, index int, replacement []byte) error {
-	data, err := ioutil.ReadFile(path)
-	if err != nil {
-		return locale.WrapError(err, "err_insert_read", "Failed to read the file at: %s", path)
-	}
-
-	f, err := os.OpenFile(path, os.O_RDWR, FileMode)
-	if err != nil {
-		return locale.WrapError(err, "err_insert_open", "Failed to open the file for insert")
-	}
-
-	remainder := make([]byte, len(data)-int(index))
-	_, err = f.ReadAt(remainder, int64(index))
-	if err != nil {
-		return locale.WrapError(err, "err_insert_read_remainder", "Could not read remainder of update file contents")
-	}
-
-	_, err = f.Seek(int64(index), 0)
-	if err != nil {
-		return locale.WrapError(err, "err_insert_seek", "Could not seek in file for insert")
-	}
-
-	remainder = append(replacement, remainder...)
-	_, err = f.Write(remainder)
-	if err != nil {
-		return locale.WrapError(err, "err_write_update", "Could not write update information to file at: %s", path)
-	}
-
-	return nil
-}
