@@ -126,6 +126,11 @@ func newPackagesImportCommand(out output.Outputer) *captain.Command {
 				Value:       &params.FileName,
 			},
 			{
+				Name:        "language",
+				Description: locale.Tl("package_import_flag_lang_description", "Which language to address, eg. python, perl"),
+				Value:       &params.Language,
+			},
+			{
 				Name:        "force",
 				Description: locale.T("package_import_flag_force_description"),
 				Value:       &params.Force,

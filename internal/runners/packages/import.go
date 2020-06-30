@@ -26,12 +26,13 @@ type Confirmer interface {
 // ChangesetProvider describes the behavior required to convert some file data
 // into a changeset.
 type ChangesetProvider interface {
-	Changeset([]byte) (model.Changeset, error)
+	Changeset(contents []byte, lang string) (model.Changeset, error)
 }
 
 // ImportRunParams tracks the info required for running Import.
 type ImportRunParams struct {
 	FileName string
+	Language string
 	Force    bool
 }
 
@@ -83,7 +84,7 @@ func (i *Import) Run(params ImportRunParams) error {
 		return fail.WithDescription("package_err_cannot_fetch_checkpoint")
 	}
 
-	changeset, err := fetchImportChangeset(reqsimport.Init(), params.FileName)
+	changeset, err := fetchImportChangeset(reqsimport.Init(), params.FileName, params.Language)
 	if err != nil {
 		return fail.WithDescription("err_obtaining_change_request")
 	}
@@ -131,13 +132,13 @@ func removeRequirements(conf Confirmer, pjOwner, pjName string, force bool, reqs
 	return nil
 }
 
-func fetchImportChangeset(cp ChangesetProvider, file string) (model.Changeset, error) {
+func fetchImportChangeset(cp ChangesetProvider, file string, lang string) (model.Changeset, error) {
 	data, err := ioutil.ReadFile(file)
 	if err != nil {
 		return nil, err
 	}
 
-	changeset, err := cp.Changeset(data)
+	changeset, err := cp.Changeset(data, lang)
 	if err != nil {
 		return nil, err
 	}
