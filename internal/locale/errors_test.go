@@ -22,6 +22,14 @@ func TestIsError(t *testing.T) {
 		isInputError    bool
 	}{
 		{
+			"NewError from ID",
+			locale.NewError("id_error"),
+			"id_error",
+			"id_error",
+			true,
+			false,
+		},
+		{
 			"NewError",
 			locale.NewError("", "Localized {{.V0}}", "Error"),
 			"Localized Error",
