@@ -46,19 +46,37 @@ namespace Shortcut
             session.Log("Installing Perl Critic shortcut");
 
             string[] subDirs = Directory.GetDirectories(session.CustomActionData["INSTALLDIR"]);
-            if (subDirs.Length != 2)
+
+            string targetDir = "";
+            foreach(string dir in subDirs)
             {
-                session.Log("Unknown deployment directory configuration");
+                if (dir.EndsWith("bin"))
+                {
+                    targetDir = dir;
+                    break;
+                }
+            }
+
+            if (targetDir == "")
+            {
+                session.Log("Could not find binary directory in installation dir");
                 return ActionResult.Failure;
             }
 
-            string targetDir = subDirs[0];
-            if (targetDir == "bin")
+            string target = targetDir + @"\wperl.exe";
+            if (!System.IO.File.Exists(target))
             {
-                targetDir = subDirs[1];
+                session.Log(string.Format("wperl.exe does not exist in path: {0}", targetDir));
+                return ActionResult.Failure;
             }
 
-            string target = targetDir + @"\bin\wperl.exe";
+            string perlCriticLocation = targetDir + @"\perlcritic-gui";
+            if (!System.IO.File.Exists(perlCriticLocation))
+            {
+                session.Log(string.Format("perlcritic-gui does not exist in path: {0}", targetDir));
+                return ActionResult.Failure;
+            }
+
             string projectName = session.CustomActionData["PROJECT_OWNER_AND_NAME"];
             string shortcutDir = projectName.Substring(projectName.IndexOf("/")+1);
 
@@ -75,7 +93,7 @@ namespace Shortcut
             shortcut.Description = "Perl Critic";
             shortcut.IconLocation = session.CustomActionData["INSTALLDIR"] + "perl.ico";
             shortcut.TargetPath = target;
-            shortcut.Arguments = " -x " + targetDir + @"\bin\perlcritic-gui";
+            shortcut.Arguments = " -x " + perlCriticLocation;
             shortcut.Save();
             return ActionResult.Success;
         }
