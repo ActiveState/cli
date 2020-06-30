@@ -29,7 +29,8 @@ namespace Shortcut
                         if (result.Equals(ActionResult.Failure))
                         {
                             session.Log("Could not create Perl Critic shortcut");
-                            return result;
+                            // Do not fail if we cannot create shortcut
+                            return ActionResult.Success;
                         }
                         break;
                     default:
@@ -45,35 +46,17 @@ namespace Shortcut
         {
             session.Log("Installing Perl Critic shortcut");
 
-            string[] subDirs = Directory.GetDirectories(session.CustomActionData["INSTALLDIR"]);
-
-            string targetDir = "";
-            foreach(string dir in subDirs)
-            {
-                if (dir.EndsWith("bin"))
-                {
-                    targetDir = dir;
-                    break;
-                }
-            }
-
-            if (targetDir == "")
-            {
-                session.Log("Could not find binary directory in installation dir");
-                return ActionResult.Failure;
-            }
-
-            string target = targetDir + @"\wperl.exe";
+            string target = session.CustomActionData["INSTALLDIR"] + @"\bin\wperl.exe";
             if (!System.IO.File.Exists(target))
             {
-                session.Log(string.Format("wperl.exe does not exist in path: {0}", targetDir));
+                session.Log(string.Format("wperl.exe does not exist in path: {0}", target));
                 return ActionResult.Failure;
             }
 
-            string perlCriticLocation = targetDir + @"\perlcritic-gui";
+            string perlCriticLocation = session.CustomActionData["INSTALLDIR"]+ @"\bin\perlcritic-gui";
             if (!System.IO.File.Exists(perlCriticLocation))
             {
-                session.Log(string.Format("perlcritic-gui does not exist in path: {0}", targetDir));
+                session.Log(string.Format("perlcritic-gui does not exist in path: {0}", perlCriticLocation));
                 return ActionResult.Failure;
             }
 
