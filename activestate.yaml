@@ -189,21 +189,10 @@ scripts:
       dir=$(cmd //C echo %CD%)
       cp installers/msi-language/Product.p.wxs installers/msi-language/Product.wxs
 
-      pad () {
-        string=$1
-
-        # Use base length that avoids string overflow warnings from wix
-        # Subtract string length and brackets
-        padLength=$((246-${#string}-4))
-        printf -v pad '%*s' "$padLength"
-        padded=$(printf '%s' $1)$(echo ${pad// /-})
-        echo $padded
-      }
-
       # We require a product ID in order to build an MSI
       sed -i "s^{{ID}}^{FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF}^g" installers/msi-language/Product.wxs
+      sed -i "s^{{VERSION}}^255.255.255^g" installers/msi-language/Product.wxs
       sed -i "s^{{ICON}}^./assets/as.ico^g" installers/msi-language/Product.wxs
-      sed -i "s^{{$(pad VERSION)}}^0.0.0^g" installers/msi-language/Product.wxs
 
       msbuild.exe installers/msi-language/Deploy.wixproj /target:Build "//p:Configuration=Release;Platform=x64;RunWixToolsOutOfProc=true;OutDir=$dir\\build\\msi-language\\"
       echo "Copying MSI to build/${1}.msi"
