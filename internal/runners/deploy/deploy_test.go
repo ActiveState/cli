@@ -131,7 +131,7 @@ func Test_runStepsWithFuncs(t *testing.T) {
 				return nil, nil
 			}
 			var configCalled bool
-			configFunc := func(runtime.EnvGetter, output.Outputer, bool) error {
+			configFunc := func(string, runtime.EnvGetter, output.Outputer, bool) error {
 				configCalled = true
 				return nil
 			}

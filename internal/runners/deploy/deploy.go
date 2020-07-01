@@ -1,6 +1,7 @@
 package deploy
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	rt "runtime"
@@ -73,7 +74,7 @@ func (d *Deploy) Run(params *Params) error {
 			"Could not initialize an installer for {{.V0}}.", params.Namespace.String())
 	}
 
-	return runSteps(targetPath, params.Force, params.UserScope, d.step, installer, d.output)
+	return runSteps(targetPath, params.Force, params.UserScope, params.Namespace, d.step, installer, d.output)
 }
 
 func (d *Deploy) createInstaller(namespace project.Namespaced, path string) (installable, string, error) {
@@ -92,13 +93,13 @@ func (d *Deploy) createInstaller(namespace project.Namespaced, path string) (ins
 	return installable, cacheDir, fail.ToError()
 }
 
-func runSteps(targetPath string, force bool, userScope bool, step Step, installer installable, out output.Outputer) error {
+func runSteps(targetPath string, force bool, userScope bool, namespace project.Namespaced, step Step, installer installable, out output.Outputer) error {
 	return runStepsWithFuncs(
-		targetPath, force, userScope, step, installer, out,
+		targetPath, force, userScope, namespace, step, installer, out,
 		install, configure, symlink, report)
 }
 
-func runStepsWithFuncs(targetPath string, force, userScope bool, step Step, installer installable, out output.Outputer, installf installFunc, configuref configureFunc, symlinkf symlinkFunc, reportf reportFunc) error {
+func runStepsWithFuncs(targetPath string, force, userScope bool, namespace project.Namespaced, step Step, installer installable, out output.Outputer, installf installFunc, configuref configureFunc, symlinkf symlinkFunc, reportf reportFunc) error {
 	logging.Debug("runSteps: %s", step.String())
 
 	var envGetter runtime.EnvGetter
@@ -131,7 +132,7 @@ func runStepsWithFuncs(targetPath string, force, userScope bool, step Step, inst
 				return errs.Wrap(fail, "Could not retrieve env for Configure step")
 			}
 		}
-		if err := configuref(envGetter, out, userScope); err != nil {
+		if err := configuref(targetPath, envGetter, out, namespace, userScope); err != nil {
 			return err
 		}
 		if step == UnsetStep {
@@ -173,7 +174,7 @@ func install(path string, installer installable, out output.Outputer) (runtime.E
 	out.Notice(locale.T("deploy_install"))
 	envGetter, installed, fail := installer.Install()
 	if fail != nil {
-		return envGetter, errs.Wrap(fail, "Install failed")
+		return envGetter, locale.WrapError(fail, "deploy_install_failed", "Installation failed.")
 	}
 	if !installed {
 		out.Notice(locale.T("using_cached_env"))
@@ -192,9 +193,9 @@ func install(path string, installer installable, out output.Outputer) (runtime.E
 	return envGetter, nil
 }
 
-type configureFunc func(envGetter runtime.EnvGetter, out output.Outputer, userScope bool) error
+type configureFunc func(installpath string, envGetter runtime.EnvGetter, out output.Outputer, namespace project.Namespaced, userScope bool) error
 
-func configure(envGetter runtime.EnvGetter, out output.Outputer, userScope bool) error {
+func configure(installpath string, envGetter runtime.EnvGetter, out output.Outputer, namespace project.Namespaced, userScope bool) error {
 	venv := virtualenvironment.New(envGetter.GetEnv)
 	env, err := venv.GetEnv(false, "")
 	if err != nil {
@@ -211,6 +212,15 @@ func configure(envGetter runtime.EnvGetter, out output.Outputer, userScope bool)
 	fail = sshell.WriteUserEnv(env, userScope)
 	if fail != nil {
 		return locale.WrapError(fail, "err_deploy_subshell_write", "Could not write environment information to your shell configuration.")
+	}
+
+	if rt.GOOS == "windows" {
+		// Write env file
+		out.Notice(fmt.Sprintf("Writing shell env file to %s\n", filepath.Join(installpath, "bin")))
+		err = sshell.SetupShellRcFile(filepath.Join(installpath, "bin"), env, namespace)
+		if err != nil {
+			return locale.WrapError(err, "err_deploy_subshell_rc_file", "Could not create environment script.")
+		}
 	}
 
 	return nil

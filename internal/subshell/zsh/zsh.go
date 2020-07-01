@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
+	"github.com/ActiveState/cli/pkg/project"
 )
 
 var escaper *osutils.ShellEscape
@@ -55,6 +56,12 @@ func (v *SubShell) WriteUserEnv(env map[string]string, _ bool) *failures.Failure
 
 	env = sscommon.EscapeEnv(env)
 	return sscommon.WriteRcFile("zshrc_append.sh", filepath.Join(homeDir, ".zshrc"), env)
+}
+
+// SetupShellRcFile - subshell.SubShell
+func (v *SubShell) SetupShellRcFile(targetDir string, env map[string]string, namespace project.Namespaced) error {
+	env = sscommon.EscapeEnv(env)
+	return sscommon.SetupShellRcFile(filepath.Join(targetDir, "shell.zsh"), "zshrc.sh", env, namespace)
 }
 
 // SetEnv - see subshell.SetEnv
