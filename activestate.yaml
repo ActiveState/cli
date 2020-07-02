@@ -146,7 +146,7 @@ scripts:
       sed -i "s^{{PROJECT_OWNER_AND_NAME}}^${1}^g" installers/msi-language/Product.wxs
 
       # Only use the project name for this replacement
-      sed -i "s^{{PROJECT_NAME}}^$(echo $1 | sed -e "s^.*/^^")^g" installers/msi-language/Product.wxs
+      sed -i "s^{{PROJECT_NAME}}^${1##*/}^g" installers/msi-language/Product.wxs
 
       sed -i "s^{{VERSION}}^${2}^g" installers/msi-language/Product.wxs
       sed -i "s^{{REL_NOTES}}^${3}^g" installers/msi-language/Product.wxs
