@@ -155,8 +155,8 @@ scripts:
       sed -i "s^{{ICON}}^./assets/perl.ico^g" installers/msi-language/Product.wxs
 
       msbuild.exe installers/msi-language/Deploy.wixproj /target:Build "//p:Configuration=Release;Platform=x64;RunWixToolsOutOfProc=true;OutDir=$dir\\build\\msi-language\\"
-      echo "Copying MSI to build/${1}.msi"
-      cp build/msi-language/en-us/Deploy.msi "build/${project[1]}.msi"
+      echo "Copying MSI to build/${1##*/}.msi"
+      cp build/msi-language/en-us/Deploy.msi "build/${1##*/}.msi"
   - name: build-base-language-msi
     description: |
       Builds the language MSI with no project information, requires that you have .NET 4.x installed and on PATH.
@@ -177,7 +177,7 @@ scripts:
       sed -i "s^{{ICON}}^./assets/as.ico^g" installers/msi-language/Product.wxs
 
       msbuild.exe installers/msi-language/Deploy.wixproj /target:Build "//p:Configuration=Release;Platform=x64;RunWixToolsOutOfProc=true;OutDir=$dir\\build\\msi-language\\"
-      echo "Copying MSI to build/${1}.msi"
+      echo "Copying MSI to build/base.msi"
       cp build/msi-language/en-us/Deploy.msi "build/base.msi"
   - name: test
     description: Runs unit tests (not integration tests)
