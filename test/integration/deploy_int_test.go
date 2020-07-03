@@ -94,7 +94,8 @@ func (suite *DeployIntegrationTestSuite) TestDeployPerl() {
 		suite.Require().NoError(err)
 		suite.Contains(link, ts.Dirs.Work, "python3 executable resolves to the one on our target dir")
 	}
-	// check that some of the installed symlinks are use-able
+
+	// check that some of the installed binaries are use-able
 	cp := cmdIfy(ts, filepath.Join(ts.Dirs.Work, "bin", "perl"), "--version")
 	cp.Expect("This is perl 5")
 	cp.ExpectExitCode(0)
@@ -127,7 +128,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployPython() {
 		suite.Contains(link, ts.Dirs.Work, "python3 executable resolves to the one on our target dir")
 	}
 
-	// check that some of the installed symlinks are use-able
+	// check that some of the installed binaries are use-able
 	cp := cmdIfy(ts, filepath.Join(ts.Dirs.Work, "bin", "python3"), "--version")
 	cp.Expect("Python 3")
 	cp.ExpectExitCode(0)
@@ -183,8 +184,7 @@ func (suite *DeployIntegrationTestSuite) InstallAndAssert(ts *e2e.Session) {
 
 func (suite *DeployIntegrationTestSuite) TestDeployConfigure() {
 	if !e2e.RunningOnCI() {
-		suite.T().Skipf("Skipping TestDeployConfigure when not ru" +
-			"nning on CI, as it modifies bashrc/registry")
+		suite.T().Skipf("Skipping TestDeployConfigure when not running on CI, as it modifies bashrc/registry")
 	}
 
 	ts := e2e.New(suite.T(), false)

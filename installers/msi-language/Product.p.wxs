@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi" xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
-	<Product Id="{{ID}}" Name="{{PROJECT_NAME--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------}}" Language="1033" Version="{{VERSION}}" Manufacturer="ActiveState" UpgradeCode="a8b44798-ee47-4404-8ae3-d821e603b426">
+	<Product Id="{{ID}}" Name="{{PROJECT_NAME--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------}}" Language="1033" Version="{{VERSION}}" Manufacturer="ActiveState" UpgradeCode="{{ID}}">
 		<Package Id='*' Keywords='Installer' Description="ActiveState Language Runtime"
             Comments='State Tool is a registered trademark of ActiveState' Manufacturer='ActiveState'
             InstallerVersion='200' Languages='1033' Compressed='yes' SummaryCodepage='1252' InstallPrivileges='elevated' AdminImage='yes' InstallScope='perMachine' />

@@ -13,7 +13,7 @@ type projectByOrgAndName struct {
 
 func (p *projectByOrgAndName) Query() string {
 	return `query ($org: String, $name: String) {
-	  projects(where: {name: {_eq: $name}, organization: {url_name: {_eq: $org}}}, limit: 1) {
+	  projects(where: {deleted: {_is_null: true}, name: {_eq: $name}, organization: {url_name: {_eq: $org}}}, limit: 1) {
 		branches {
 		  branch_id
 		  commit_id
