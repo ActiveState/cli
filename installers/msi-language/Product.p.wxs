@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi" xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
-	<Product Id="{{ID}}" Name="{{PROJECT_NAME}}" Language="1033" Version="{{VERSION}}" Manufacturer="ActiveState" UpgradeCode="{{ID}}">
+	<Product Id="{{ID}}" Name="{{PROJECT_NAME--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------}}" Language="1033" Version="{{VERSION}}" Manufacturer="ActiveState" UpgradeCode="{{ID}}">
 		<Package Id='*' Keywords='Installer' Description="ActiveState Language Runtime"
             Comments='State Tool is a registered trademark of ActiveState' Manufacturer='ActiveState'
             InstallerVersion='200' Languages='1033' Compressed='yes' SummaryCodepage='1252' InstallPrivileges='elevated' AdminImage='yes' InstallScope='perMachine' />
 
     <!-- Configuration parameters -->
-    <Property Id="PROJECT_OWNER_AND_NAME" Value="{{PROJECT_OWNER_AND_NAME}}" />
-    <Property Id="REL_NOTES" Value="{{REL_NOTES}}" />
+    <Property Id="PROJECT_OWNER_AND_NAME" Value="{{PROJECT_OWNER_AND_NAME----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------}}" />
+    <Property Id="REL_NOTES" Value="{{REL_NOTES-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------}}" />
 	<!-- A comma separated list of shortcuts to be installed -->
 	<!-- Expected possible values: [PerlCritic] or supply None to build no shortcuts -->
-	<Property Id="SHORTCUTS" Value="{{SHORTCUTS}}" />
+	<Property Id="SHORTCUTS" Value="{{SHORTCUTS-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------}}" />
     <!-- End Configuration parameters -->
     
     <!-- Design assets -->
@@ -34,7 +34,7 @@
             <RegistryValue Root='HKLM' Key='SOFTWARE\[Manufacturer]\[ProductName]' Type='string' Value='' KeyPath='yes' />
           </Component>
           <Directory Id="ProgramMenuFolder">
-            <Directory Id="ApplicationProgramsFolder" Name="{{PROJECT_NAME}}"/>
+            <Directory Id="ApplicationProgramsFolder" Name="{{PROJECT_NAME------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------}}"/>
           </Directory>
         </Directory>
       </Directory>
