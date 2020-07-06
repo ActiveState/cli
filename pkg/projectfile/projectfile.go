@@ -12,6 +12,7 @@ import (
 
 	"github.com/go-openapi/strfmt"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -419,6 +420,15 @@ func Parse(filepath string) (*Project, *failures.Failure) {
 		project.Project = fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, project.Owner, project.Name)
 	}
 
+	fail := ValidateProjectURL(project.Project)
+	if fail != nil {
+		return nil, fail
+	}
+
+	match := ProjectURLRe.FindStringSubmatch(project.Project)
+	project.Namespace = fmt.Sprintf("%s/%s", match[1], match[2])
+	config.SetProject(project.Namespace, project.path)
+
 	return &project, nil
 }
 
@@ -475,6 +485,7 @@ func (p *Project) Save() *failures.Failure {
 	if err != nil {
 		return failures.FailIO.Wrap(err)
 	}
+	config.SetProject(p.Namespace, p.path)
 
 	return nil
 }
