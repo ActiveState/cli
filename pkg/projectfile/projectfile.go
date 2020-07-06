@@ -778,9 +778,9 @@ func AddLockInfo(projectFilePath, branch, version string) error {
 		return locale.WrapError(err, "err_clean_projectfile", "Could not remove old version information from projectfile", projectFilePath)
 	}
 
-	lockRegex := regexp.MustCompile(`(?m:(^lock:\s*)(.*))`)
+	lockRegex := regexp.MustCompile(`(?m)^lock:.*`)
 	if lockRegex.Match(data) {
-		versionUpdate := []byte(fmt.Sprintf("${1}%s@%s", branch, version))
+		versionUpdate := []byte(fmt.Sprintf("lock: %s@%s", branch, version))
 		replaced := lockRegex.ReplaceAll(data, versionUpdate)
 		return ioutil.WriteFile(projectFilePath, replaced, 0644)
 	}
