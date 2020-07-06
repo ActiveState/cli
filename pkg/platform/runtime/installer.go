@@ -15,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/hash"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/progress"
@@ -78,17 +79,17 @@ type Installer struct {
 }
 
 type InstallerParams struct {
-	CacheDir    string
+	RuntimeDir  string
 	CommitID    strfmt.UUID
 	Owner       string
 	ProjectName string
 }
 
-func NewInstallerParams(cacheDir string, commitID strfmt.UUID, owner string, projectName string) InstallerParams {
-	if cacheDir == "" {
-		cacheDir = config.CachePath()
+func NewInstallerParams(runtimeDir string, commitID strfmt.UUID, owner string, projectName string) InstallerParams {
+	if runtimeDir == "" {
+		runtimeDir = installPath(owner, projectName)
 	}
-	return InstallerParams{cacheDir, commitID, owner, projectName}
+	return InstallerParams{runtimeDir, commitID, owner, projectName}
 }
 
 // NewInstaller creates a new RuntimeInstaller
@@ -96,11 +97,20 @@ func NewInstaller(commitID strfmt.UUID, owner, projectName string) (*Installer, 
 	logging.Debug("cache path: %s", config.CachePath())
 	return NewInstallerByParams(
 		InstallerParams{
-			config.CachePath(),
+			installPath(owner, projectName),
 			commitID,
 			owner,
 			projectName,
 		})
+}
+
+func installPath(owner, projectName string) string {
+	if runtime.GOOS == "darwin" {
+		// mac doesn't use relocation so we can safely use a longer path
+		return filepath.Join(config.CachePath(), owner, projectName)
+	} else {
+		return filepath.Join(config.CachePath(), hash.ShortHash(owner, projectName))
+	}
 }
 
 // NewInstallerByParams creates a new RuntimeInstaller after verifying the provided install-dir
@@ -151,11 +161,11 @@ func (installer *Installer) Assembler() (Assembler, *failures.Failure) {
 
 	switch artifacts.BuildEngine {
 	case Alternative:
-		return NewAlternativeRuntime(artifacts.Artifacts, installer.params.CacheDir, artifacts.RecipeID)
+		return NewAlternativeRuntime(artifacts.Artifacts, installer.params.RuntimeDir, artifacts.RecipeID)
 	case Camel:
-		return NewCamelRuntime(artifacts.Artifacts, installer.params.CacheDir)
+		return NewCamelRuntime(installer.params.CommitID, artifacts.Artifacts, installer.params.RuntimeDir)
 	case Hybrid:
-		cr, fail := NewCamelRuntime(artifacts.Artifacts, installer.params.CacheDir)
+		cr, fail := NewCamelRuntime(installer.params.CommitID, artifacts.Artifacts, installer.params.RuntimeDir)
 		if fail != nil {
 			return nil, fail
 		}
@@ -172,6 +182,19 @@ func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGet
 		logging.Debug("runtime already successfully installed")
 		return runtimeAssembler, false, nil
 	}
+
+	if fileutils.DirExists(installer.params.RuntimeDir) {
+		empty, fail := fileutils.IsEmptyDir(installer.params.RuntimeDir)
+		if fail != nil {
+			logging.Error("Could not check if target runtime dir is empty, this could cause issues.. %v", fail)
+		} else if !empty {
+			logging.Debug("Removing existing runtime")
+			if err := os.RemoveAll(installer.params.RuntimeDir); err != nil {
+				logging.Error("Could not empty out target runtime dir prior to install, this could cause issues.. %v", err)
+			}
+		}
+	}
+
 	downloadArtfs, unpackArchives := runtimeAssembler.ArtifactsToDownloadAndUnpack()
 
 	if len(downloadArtfs) == 0 && len(unpackArchives) == 0 {
@@ -264,7 +287,7 @@ func (installer *Installer) InstallFromArchive(archivePath string, artf *HeadChe
 		return fail
 	}
 
-	installDir := a.InstallationDirectory(artf)
+	installDir := installer.params.RuntimeDir
 	tmpRuntimeDir, upb, fail := installer.unpackArchive(a.Unarchiver(), archivePath, installDir, progress)
 	if fail != nil {
 		removeInstallDir(installDir)

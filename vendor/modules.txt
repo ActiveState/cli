@@ -100,6 +100,8 @@ github.com/emirpasic/gods/trees/binaryheap
 github.com/emirpasic/gods/utils
 # github.com/fatih/color v1.5.0
 github.com/fatih/color
+# github.com/felixge/fgprof v0.9.0
+github.com/felixge/fgprof
 # github.com/fsnotify/fsnotify v1.4.7
 github.com/fsnotify/fsnotify
 # github.com/go-ini/ini v1.32.0
@@ -158,6 +160,8 @@ github.com/google/go-cmp/cmp/internal/value
 github.com/google/go-github/v29/github
 # github.com/google/go-querystring v1.0.0
 github.com/google/go-querystring/query
+# github.com/google/pprof v0.0.0-20200615235658-03e1cf38a040
+github.com/google/pprof/profile
 # github.com/google/uuid v1.1.0
 github.com/google/uuid
 # github.com/googleapis/gax-go/v2 v2.0.5
@@ -180,6 +184,8 @@ github.com/hashicorp/hcl/json/token
 # github.com/hectane/go-acl v0.0.0-20190604041725-da78bae5fc95
 github.com/hectane/go-acl
 github.com/hectane/go-acl/api
+# github.com/iafan/cwalk v0.0.0-20191125092548-dd7f505d2f66
+github.com/iafan/cwalk
 # github.com/inconshreveable/mousetrap v1.0.0
 github.com/inconshreveable/mousetrap
 # github.com/jarcoal/httpmock v1.0.3

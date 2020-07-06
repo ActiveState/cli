@@ -6,6 +6,7 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/thoas/go-funk"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/pkg/platform/api"
@@ -80,13 +81,13 @@ func FetchOrgMember(orgName, name string) (*mono_models.Member, *failures.Failur
 //
 // Note: This method only returns the invitation for the new user, not existing
 // users.
-func InviteUserToOrg(org *mono_models.Organization, asOwner bool, email string) (*mono_models.Invitation, *failures.Failure) {
+func InviteUserToOrg(orgName string, asOwner bool, email string) (*mono_models.Invitation, *failures.Failure) {
 	params := clientOrgs.NewInviteOrganizationParams()
 	body := clientOrgs.InviteOrganizationBody{
 		AddedOnly: true,
 		AsOwner:   asOwner,
 	}
-	params.SetOrganizationName(org.URLname)
+	params.SetOrganizationName(orgName)
 	params.SetAttributes(body)
 	params.SetEmail(email)
 	resOk, err := authentication.Client().Organizations.InviteOrganization(params, authentication.ClientAuth())
@@ -132,11 +133,13 @@ func processOrgErrorResponse(err error) *failures.Failure {
 
 func processInviteErrorResponse(err error) *failures.Failure {
 	switch statusCode := api.ErrorCode(err); statusCode {
+	case 400:
+		return api.FailUnknown.Wrap(locale.WrapInputError(err, "err_api_invite_400", "Invalid request, did you enter a valid email address?"))
 	case 401:
 		return api.FailAuth.New("err_api_not_authenticated")
 	case 404:
 		return api.FailOrganizationNotFound.New("err_api_org_not_found")
 	default:
-		return api.FailUnknown.Wrap(err)
+		return api.FailUnknown.Wrap(errs.New(api.ErrorMessageFromPayload(err)))
 	}
 }

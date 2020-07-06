@@ -26,6 +26,7 @@ require (
 	github.com/denisbrodbeck/machineid v0.8.0
 	github.com/dsnet/compress v0.0.0-20171208185109-cc9eb1d7ad76 // indirect
 	github.com/fatih/color v1.5.0
+	github.com/felixge/fgprof v0.9.0
 	github.com/fsnotify/fsnotify v1.4.7
 	github.com/go-ini/ini v1.32.0 // indirect
 	github.com/go-ole/go-ole v1.2.4
@@ -47,6 +48,7 @@ require (
 	github.com/hashicorp/go-version v1.1.0
 	github.com/hashicorp/hcl v0.0.0-20171017181929-23c074d0eceb // indirect
 	github.com/hectane/go-acl v0.0.0-20190604041725-da78bae5fc95
+	github.com/iafan/cwalk v0.0.0-20191125092548-dd7f505d2f66
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/jarcoal/httpmock v1.0.3
 	github.com/jessevdk/go-flags v1.4.0

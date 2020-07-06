@@ -110,11 +110,7 @@ func Test_acquirePidLockProcesses(t *testing.T) {
 			for i := 0; i < numProcesses; i++ {
 				wg.Add(1)
 				go func() {
-					var s string = "LOCKED"
-					defer func() {
-						done <- s
-						wg.Done()
-					}()
+					defer wg.Done()
 					lockCmd := exec.Command(lockerExe, lockFile, tc.keep)
 					lockCmd = prepLockCmd(lockCmd)
 					stdout, err := lockCmd.StdoutPipe()
@@ -127,13 +123,15 @@ func Test_acquirePidLockProcesses(t *testing.T) {
 					n, err := stdout.Read(buf)
 					require.NoError(tt, err)
 					require.Equal(tt, 6, n)
-					if string(buf) == "DENIED" {
-						s = "DENIED"
+
+					sb := string(buf[:n])
+					if sb == "DENIED" {
+						done <- "DENIED"
 						return
 					}
+					assert.Equal(tt, "LOCKED", string(buf[:6]))
 
-					// if we get here, the process acquired the lock
-					assert.Equal(tt, "LOCKED", string(buf))
+					done <- "LOCKED"
 
 					// wait for the signal to kill process and to release the lock
 					<-ctx.Done()
@@ -157,23 +155,24 @@ func Test_acquirePidLockProcesses(t *testing.T) {
 			}()
 
 			// ensure that numProcesses-1 processes are denied access and only 1 got the lock
-			var count int
+			var denied int
+			var locked int
 			for d := range done {
 				if d == "TIMEOUT" {
 					tt.Fatalf("test timed out")
 				}
-				count++
-				if count <= numProcesses-1 {
-					assert.Equal(tt, "DENIED", d)
+				if d == "LOCKED" {
+					locked++
 				}
-				if count == numProcesses-1 {
-					cancel()
+				if d == "DENIED" {
+					denied++
 				}
-				if count == numProcesses {
-					assert.Equal(tt, "LOCKED", d)
+				if denied+locked == numProcesses {
 					break
 				}
 			}
+			assert.Equal(t, 1, locked, "only process should lock")
+			assert.Equal(t, numProcesses-1, denied, "all but on processes should have been denied lock-file access")
 		})
 	}
 }

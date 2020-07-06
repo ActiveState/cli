@@ -40,6 +40,10 @@ func New(pj *project.Project, out output.Outputer) *Show {
 func (s *Show) Run(params Params) error {
 	logging.Debug("Execute")
 
+	if s.project == nil {
+		return locale.NewError("err_no_projectfile")
+	}
+
 	pj := s.project
 
 	if params.Remote != "" {

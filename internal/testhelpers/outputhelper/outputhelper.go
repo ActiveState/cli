@@ -8,7 +8,7 @@ import (
 )
 
 type Catcher struct {
-	Outputer  *output.Plain
+	output.Outputer
 	outWriter *bytes.Buffer
 	errWriter *bytes.Buffer
 }

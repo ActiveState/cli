@@ -27,13 +27,6 @@ type Assembler interface {
 	// instances.
 	ArtifactsToDownloadAndUnpack() ([]*HeadChefArtifact, map[string]*HeadChefArtifact)
 
-	// InstallationDirectory returns the final installation directory, where the
-	// runtime should be installed to.
-	InstallationDirectory(artf *HeadChefArtifact) string
-
-	// InstallDirs returns the installation directories for the artifacts
-	InstallDirs() []string
-
 	// BuildEngine returns the build engine that this runtime has been created
 	// with
 	BuildEngine() BuildEngine
