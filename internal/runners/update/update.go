@@ -69,13 +69,9 @@ func (u *Update) runLock() error {
 func (u *Update) runUpdateLock() error {
 	u.out.Notice(locale.Tl("updating_lock_version", "Locking State Tool to latest version available for your project."))
 
-	// info, err := updater.New(u.project.Version()).Info()
-	// if err != nil {
-	// 	return locale.WrapError(err, "err_update_updater", "Could not retrieve update information.")
-	// }
-
-	info := &updater.Info{
-		Version: "0.1.13-abcdefg",
+	info, err := updater.New(u.project.Version()).Info()
+	if err != nil {
+		return locale.WrapError(err, "err_update_updater", "Could not retrieve update information.")
 	}
 
 	if info == nil {
@@ -83,7 +79,7 @@ func (u *Update) runUpdateLock() error {
 		return nil
 	}
 
-	err := projectfile.AddLockInfo(u.project.Source().Path(), info.Version, constants.BranchName)
+	err = projectfile.AddLockInfo(u.project.Source().Path(), info.Version, constants.BranchName)
 	if err != nil {
 		return locale.WrapError(err, "err_update_projectfile", "Could not replace update in projectfile")
 	}
