@@ -820,7 +820,7 @@ err_version_parse:
 err_invalid_version:
   other: "Invalid version specified in your activestate.yaml, should be in the format of: {number}.{number}.{number}-{hash}"
 err_update_version:
-  other: "Could not update deprecated version representation"
+  other: "Failed to automatically update your locked version schema. Please manually remove your 'version' and 'branch' fields in your activestate.yaml and substitute them for 'lock: <branch>@<version>'."
 downloading_state_version:
   other: "Downloading State Tool version {{.V0}}, as specified by your activestate.yaml (this only needs to happen once for each version you specify)."
 forward_fail:
