@@ -131,5 +131,11 @@ func confirmUpdateLock() error {
 
 func isLocked() bool {
 	pj, fail := projectfile.GetSafe()
+
+	// Support deprecated way of representing a locked version
+	if pj.Branch != "" && pj.Version != "" {
+		return true
+	}
+
 	return fail == nil && pj.Lock != ""
 }
