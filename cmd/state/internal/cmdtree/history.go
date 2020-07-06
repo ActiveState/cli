@@ -4,7 +4,7 @@ import (
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/history"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -14,7 +14,7 @@ type HistoryOpts struct {
 	Namespace string
 }
 
-func newHistoryCommand(outputer output.Outputer) *captain.Command {
+func newHistoryCommand(prime *primer.Values) *captain.Command {
 	initRunner := history.NewHistory()
 
 	opts := HistoryOpts{}
@@ -48,7 +48,7 @@ func newHistoryCommand(outputer output.Outputer) *captain.Command {
 				return fail
 			}
 
-			params := history.NewHistoryParams(nsMeta.Owner, nsMeta.Project, outputer)
+			params := history.NewHistoryParams(nsMeta.Owner, nsMeta.Project, prime)
 			return initRunner.Run(&params)
 		},
 	)

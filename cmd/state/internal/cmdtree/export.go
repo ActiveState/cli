@@ -3,7 +3,7 @@ package cmdtree
 import (
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/export"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
@@ -88,10 +88,8 @@ func newPrivateKeyCommand() *captain.Command {
 		})
 }
 
-func newAPIKeyCommand(outputer output.Outputer) *captain.Command {
-	auth := authentication.Get()
-
-	apikey := export.NewAPIKey(auth, outputer)
+func newAPIKeyCommand(prime *primer.Values) *captain.Command {
+	apikey := export.NewAPIKey(prime)
 	params := export.APIKeyRunParams{}
 
 	return captain.NewCommand(
@@ -107,7 +105,7 @@ func newAPIKeyCommand(outputer output.Outputer) *captain.Command {
 			},
 		},
 		func(ccmd *captain.Command, args []string) error {
-			params.IsAuthed = auth.Authenticated
+			params.IsAuthed = prime.Auth().Authenticated
 			return apikey.Run(params)
 		})
 }

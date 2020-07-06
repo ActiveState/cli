@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
@@ -11,9 +12,9 @@ type Languages struct {
 	out output.Outputer
 }
 
-func NewLanguages(out output.Outputer) *Languages {
+func NewLanguages(prime primer.Outputer) *Languages {
 	return &Languages{
-		out: out,
+		out: prime.Output(),
 	}
 }
 

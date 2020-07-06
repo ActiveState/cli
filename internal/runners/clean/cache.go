@@ -21,10 +21,10 @@ type CacheParams struct {
 	Force bool
 }
 
-func NewCache(out output.Outputer, confirmer confirmAble) *Cache {
+func NewCache(prime primeable) *Cache {
 	return &Cache{
-		output:  out,
-		confirm: confirmer,
+		output:  prime.Output(),
+		confirm: prime.Prompt(),
 		path:    config.CachePath(),
 	}
 }

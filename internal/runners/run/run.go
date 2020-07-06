@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/internal/subshell"
@@ -33,22 +34,29 @@ var (
 
 // Run contains the run execution context.
 type Run struct {
-	out output.Outputer
+	out      output.Outputer
+	subshell subshell.SubShell
+}
+
+type primeable interface {
+	primer.Outputer
+	primer.Subsheller
 }
 
 // New constructs a new instance of Run.
-func New(out output.Outputer) *Run {
+func New(prime primeable) *Run {
 	return &Run{
-		out: out,
+		prime.Output(),
+		prime.Subshell(),
 	}
 }
 
 // Run runs the Run run runner.
 func (r *Run) Run(name string, args []string) error {
-	return run(r.out, name, args)
+	return run(r.out, r.subshell, name, args)
 }
 
-func run(out output.Outputer, name string, args []string) error {
+func run(out output.Outputer, subs subshell.SubShell, name string, args []string) error {
 	if authentication.Get().Authenticated() {
 		checker.RunCommitsBehindNotifier()
 	}
@@ -66,11 +74,6 @@ func run(out output.Outputer, name string, args []string) error {
 			locale.T("error_state_run_unknown_name", map[string]string{"Name": name}),
 		)
 		return fail
-	}
-
-	subs, fail := subshell.Get()
-	if fail != nil {
-		return fail.WithDescription("error_state_run_no_shell")
 	}
 
 	lang := script.Language()

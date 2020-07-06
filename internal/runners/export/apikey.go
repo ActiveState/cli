@@ -7,6 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 )
 
 // APIKeyProvider describes the behavior required to obtain a new api key.
@@ -39,11 +40,16 @@ type APIKey struct {
 	out    output.Outputer
 }
 
+type primeable interface {
+	primer.Auther
+	primer.Outputer
+}
+
 // NewAPIKey is a convenience construction function.
-func NewAPIKey(keyPro APIKeyProvider, out output.Outputer) *APIKey {
+func NewAPIKey(prime primeable) *APIKey {
 	return &APIKey{
-		out:    out,
-		keyPro: keyPro,
+		keyPro: prime.Auth(),
+		out:    prime.Output(),
 	}
 }
 

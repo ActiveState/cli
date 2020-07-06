@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/project"
 	prj "github.com/ActiveState/cli/pkg/project"
@@ -28,11 +29,16 @@ type Show struct {
 	out     output.Outputer
 }
 
+type primeable interface {
+	primer.Projectable
+	primer.Outputable
+}
+
 // New returns a pointer to an instance of Show.
-func New(pj *project.Project, out output.Outputer) *Show {
+func New(prime primeable) *Show {
 	return &Show{
-		project: pj,
-		out:     out,
+		prime.Project(),
+		prime.Output(),
 	}
 }
 

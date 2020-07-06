@@ -3,13 +3,12 @@ package cmdtree
 import (
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/pull"
-	"github.com/ActiveState/cli/pkg/project"
 )
 
-func newPullCommand(pj *project.Project, output output.Outputer) *captain.Command {
-	runner := pull.New(pj, output)
+func newPullCommand(prime *primer.Values) *captain.Command {
+	runner := pull.New(prime)
 
 	return captain.NewCommand(
 		"pull",

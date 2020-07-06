@@ -9,6 +9,8 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/fsnotify/fsnotify"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/errs"
@@ -20,7 +22,6 @@ import (
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/fsnotify/fsnotify"
 )
 
 // The default open command and editors based on platform
@@ -43,8 +44,11 @@ type Edit struct {
 }
 
 // NewEdit creates a new Edit runner
-func NewEdit(pj *project.Project, output output.Outputer) *Edit {
-	return &Edit{pj, output}
+func NewEdit(prime primeable) *Edit {
+	return &Edit{
+		prime.Project(),
+		prime.Output(),
+	}
 }
 
 func (e *Edit) Run(params *EditParams) error {

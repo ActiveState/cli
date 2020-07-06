@@ -4,6 +4,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -19,9 +20,9 @@ type Update struct {
 }
 
 // NewUpdate prepares an update execution context for use.
-func NewUpdate(out output.Outputer) *Update {
+func NewUpdate(prime primer.Outputer) *Update {
 	return &Update{
-		out: out,
+		out: prime.Output(),
 	}
 }
 

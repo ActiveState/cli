@@ -5,12 +5,12 @@ import (
 
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/deploy"
 )
 
-func newDeployCommand(output output.Outputer) *captain.Command {
-	runner := deploy.NewDeploy(deploy.UnsetStep, output)
+func newDeployCommand(prime *primer.Values) *captain.Command {
+	runner := deploy.NewDeploy(deploy.UnsetStep, prime)
 
 	params := &deploy.Params{}
 
@@ -51,8 +51,8 @@ func newDeployCommand(output output.Outputer) *captain.Command {
 		})
 }
 
-func newDeployInstallCommand(output output.Outputer) *captain.Command {
-	runner := deploy.NewDeploy(deploy.InstallStep, output)
+func newDeployInstallCommand(prime *primer.Values) *captain.Command {
+	runner := deploy.NewDeploy(deploy.InstallStep, prime)
 
 	params := &deploy.Params{}
 
@@ -79,8 +79,8 @@ func newDeployInstallCommand(output output.Outputer) *captain.Command {
 		})
 }
 
-func newDeployConfigureCommand(output output.Outputer) *captain.Command {
-	runner := deploy.NewDeploy(deploy.ConfigureStep, output)
+func newDeployConfigureCommand(prime *primer.Values) *captain.Command {
+	runner := deploy.NewDeploy(deploy.ConfigureStep, prime)
 
 	params := &deploy.Params{}
 
@@ -116,8 +116,8 @@ func newDeployConfigureCommand(output output.Outputer) *captain.Command {
 		})
 }
 
-func newDeploySymlinkCommand(output output.Outputer) *captain.Command {
-	runner := deploy.NewDeploy(deploy.SymlinkStep, output)
+func newDeploySymlinkCommand(prime *primer.Values) *captain.Command {
+	runner := deploy.NewDeploy(deploy.SymlinkStep, prime)
 
 	params := &deploy.Params{}
 
@@ -149,8 +149,8 @@ func newDeploySymlinkCommand(output output.Outputer) *captain.Command {
 		})
 }
 
-func newDeployReportCommand(output output.Outputer) *captain.Command {
-	runner := deploy.NewDeploy(deploy.ReportStep, output)
+func newDeployReportCommand(prime *primer.Values) *captain.Command {
+	runner := deploy.NewDeploy(deploy.ReportStep, prime)
 
 	params := &deploy.Params{}
 

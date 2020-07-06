@@ -14,9 +14,11 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/internal/prompt"
 	_ "github.com/ActiveState/cli/internal/prompt" // Sets up survey defaults
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -123,7 +125,7 @@ func run(args []string, out output.Outputer) (int, error) {
 	}
 
 	// Run the actual command
-	cmds := cmdtree.New(pj, out, prompt.New())
+	cmds := cmdtree.New(primer.New(pj, out, authentication.Get(), prompt.New()))
 	err := cmds.Execute(args[1:])
 
 	return unwrapError(err)

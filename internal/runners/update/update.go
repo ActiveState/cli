@@ -7,6 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/project"
@@ -23,10 +24,15 @@ type Update struct {
 	out     output.Outputer
 }
 
-func New(pj *project.Project, out output.Outputer) *Update {
+type primeable interface {
+	primer.Projecter
+	primer.Outputer
+}
+
+func New(prime primeable) *Update {
 	return &Update{
-		pj,
-		out,
+		prime.Project(),
+		prime.Output(),
 	}
 }
 

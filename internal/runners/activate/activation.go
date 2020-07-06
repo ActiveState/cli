@@ -27,9 +27,9 @@ import (
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
-type activationLoopFunc func(out output.Outputer, targetPath string, activator activateFunc) error
+type activationLoopFunc func(out output.Outputer, subs subshell.SubShell, targetPath string, activator activateFunc) error
 
-func activationLoop(out output.Outputer, targetPath string, activator activateFunc) error {
+func activationLoop(out output.Outputer, subs subshell.SubShell, targetPath string, activator activateFunc) error {
 	// activate should be continually called while returning true
 	// looping here provides a layer of scope to handle printing output
 	var proj *project.Project
@@ -57,7 +57,7 @@ func activationLoop(out output.Outputer, targetPath string, activator activateFu
 			out.Error(locale.Tr("unstable_version_warning", constants.BugTrackerURL))
 		}
 
-		keepGoing, err := activator(out, proj.Owner(), proj.Name(), proj.Source().Path())
+		keepGoing, err := activator(out, subs)
 		if err != nil {
 			return err
 		}
@@ -74,11 +74,11 @@ func activationLoop(out output.Outputer, targetPath string, activator activateFu
 	return nil
 }
 
-type activateFunc func(out output.Outputer, owner, name, srcPath string) (keepGoing bool, err error)
+type activateFunc func(out output.Outputer, subs subshell.SubShell) (keepGoing bool, err error)
 
 // activate will activate the venv and subshell. It is meant to be run in a loop
 // with the return value indicating whether another iteration is warranted.
-func activate(out output.Outputer, owner, name, srcPath string) (bool, error) {
+func activate(out output.Outputer, subs subshell.SubShell) (bool, error) {
 	projectfile.Reset()
 	venv := virtualenvironment.Get()
 	venv.OnDownloadArtifacts(func() { out.Notice(locale.T("downloading_artifacts")) })
@@ -90,11 +90,6 @@ func activate(out output.Outputer, owner, name, srcPath string) (bool, error) {
 	}
 
 	ignoreWindowsInterrupts()
-
-	subs, fail := subshell.Get()
-	if fail != nil {
-		return false, locale.WrapError(fail, "error_could_not_get_subshell", "Could not start a new subshell.")
-	}
 
 	ve, err := venv.GetEnv(false, filepath.Dir(projectfile.Get().Path()))
 	if err != nil {
