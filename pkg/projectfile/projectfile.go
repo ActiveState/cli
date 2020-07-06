@@ -785,44 +785,18 @@ func AddLockInfo(projectFilePath, branch, version string) error {
 		return ioutil.WriteFile(projectFilePath, replaced, 0644)
 	}
 
-	projectRegex := regexp.MustCompile(fmt.Sprintf("(?m:^project:\\s*%s)", ProjectURLRe))
+	projectRegex := regexp.MustCompile(fmt.Sprintf("(?m:(^project:\\s*%s))", ProjectURLRe))
 	lockString := fmt.Sprintf("%s@%s", branch, version)
-	lockUpdate := []byte(fmt.Sprintf("\nlock: %s", lockString))
+	lockUpdate := []byte(fmt.Sprintf("${1}\nlock: %s", lockString))
 
-	index := projectRegex.FindIndex(data)
-
-	return insert(projectFilePath, index[1], lockUpdate)
-}
-
-func insert(path string, index int, replacement []byte) error {
-	data, err := ioutil.ReadFile(path)
+	data, err = ioutil.ReadFile(projectFilePath)
 	if err != nil {
 		return err
 	}
 
-	f, err := os.OpenFile(path, os.O_RDWR, 0644)
-	if err != nil {
-		return err
-	}
+	updated := projectRegex.ReplaceAll(data, lockUpdate)
 
-	remainder := make([]byte, len(data)-int(index))
-	_, err = f.ReadAt(remainder, int64(index))
-	if err != nil {
-		return err
-	}
-
-	_, err = f.Seek(int64(index), 0)
-	if err != nil {
-		return err
-	}
-
-	remainder = append(replacement, remainder...)
-	_, err = f.Write(remainder)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return ioutil.WriteFile(projectFilePath, updated, 0644)
 }
 
 func cleanVersionInfo(projectFilePath string) ([]byte, error) {
