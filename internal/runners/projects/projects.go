@@ -1,7 +1,6 @@
 package projects
 
 import (
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
@@ -9,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/organizations"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 // Holds a union of project and organization parameters.
@@ -67,6 +67,6 @@ func (r *Projects) fetchProjects() ([]projectWithOrg, *failures.Failure) {
 			projectsList = append(projectsList, projectWithOrg{project.Name, desc, org.Name})
 		}
 	}
-	config.CleanStaleProjects()
+	projectfile.CleanStaleConfig()
 	return projectsList, nil
 }

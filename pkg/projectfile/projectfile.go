@@ -11,8 +11,8 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/go-openapi/strfmt"
+	"github.com/spf13/viper"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -65,6 +65,8 @@ var strReg = fmt.Sprintf(`https:\/\/%s\/([\w_.-]*)\/([\w_.-]*)(?:\?commitID=)*(.
 
 // ProjectURLRe Regex used to validate project fields /orgname/projectname[?commitID=someUUID]
 var ProjectURLRe = regexp.MustCompile(strReg)
+
+const projectsKey = "projects"
 
 // VersionInfo is used in cases where we only care about parsing the version field. In all other cases the version is parsed via
 // the Project struct
@@ -429,7 +431,7 @@ func Parse(filepath string) (*Project, *failures.Failure) {
 		match := ProjectURLRe.FindStringSubmatch(project.Project)
 		project.Namespace = fmt.Sprintf("%s/%s", match[1], match[2])
 	}
-	config.SetProject(project.Namespace, project.path)
+	setProjectConfig(project.Namespace, project.path)
 
 	return &project, nil
 }
@@ -487,7 +489,7 @@ func (p *Project) Save() *failures.Failure {
 	if err != nil {
 		return failures.FailIO.Wrap(err)
 	}
-	config.SetProject(p.Namespace, p.path)
+	setProjectConfig(p.Namespace, p.path)
 
 	return nil
 }
@@ -782,4 +784,30 @@ func (p *Project) Persist() {
 	}
 	persistentProject = p
 	os.Setenv(constants.ProjectEnvVarName, p.Path())
+}
+
+// setProjectConfig associates the projectName with the project
+// path in the config
+func setProjectConfig(projectName, projectPath string) {
+	projects := viper.GetStringMapString(projectsKey)
+	if projects == nil {
+		projects = make(map[string]string)
+	}
+
+	projects[projectName] = projectPath
+	viper.Set(projectsKey, projects)
+}
+
+// CleanStaleConfig removes projects that no longer exist
+// on a user's filesystem from the projects config entry
+func CleanStaleConfig() {
+	projects := viper.GetStringMapString(projectsKey)
+
+	for namespace, path := range projects {
+		if _, err := os.Stat(path); os.IsNotExist(err) {
+			delete(projects, namespace)
+		}
+	}
+
+	viper.Set("projects", projects)
 }
