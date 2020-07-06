@@ -1,6 +1,7 @@
 package projects
 
 import (
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
@@ -66,5 +67,6 @@ func (r *Projects) fetchProjects() ([]projectWithOrg, *failures.Failure) {
 			projectsList = append(projectsList, projectWithOrg{project.Name, desc, org.Name})
 		}
 	}
+	config.CleanStaleProjects()
 	return projectsList, nil
 }
