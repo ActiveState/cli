@@ -425,8 +425,10 @@ func Parse(filepath string) (*Project, *failures.Failure) {
 		return nil, fail
 	}
 
-	match := ProjectURLRe.FindStringSubmatch(project.Project)
-	project.Namespace = fmt.Sprintf("%s/%s", match[1], match[2])
+	if project.Namespace == "" {
+		match := ProjectURLRe.FindStringSubmatch(project.Project)
+		project.Namespace = fmt.Sprintf("%s/%s", match[1], match[2])
+	}
 	config.SetProject(project.Namespace, project.path)
 
 	return &project, nil
