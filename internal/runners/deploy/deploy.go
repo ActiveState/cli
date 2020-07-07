@@ -10,7 +10,6 @@ import (
 	"github.com/gobuffalo/packr"
 	"github.com/thoas/go-funk"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -267,19 +266,7 @@ func symlink(installPath string, overwrite bool, envGetter runtime.EnvGetter, ou
 			return locale.WrapError(err, "err_symlink", "Could not create symlinks to {{.V0}}.", path)
 		}
 	}
-
-	// Symlink to targetDir/bin
-	symlinkPath := filepath.Join(installPath, "bin")
-	isInsideOf, err := fileutils.PathContainsParent(symlinkPath, config.CachePath())
-	if err != nil {
-		return locale.WrapError(err, "err_symlink_protection_undetermined", "Cannot determine if '{{.V0}}' is within protected directory.", symlinkPath)
-	}
-	if !isInsideOf {
-		if err := symlinkWithTarget(overwrite, symlinkPath, exes, out); err != nil {
-			return locale.WrapError(err, "err_symlink", "Could not create symlinks to {{.V0}}.", path)
-		}
-	}
-
+	
 	return nil
 }
 
