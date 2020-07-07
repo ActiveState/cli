@@ -431,7 +431,8 @@ func Parse(filepath string) (*Project, *failures.Failure) {
 		match := ProjectURLRe.FindStringSubmatch(project.Project)
 		project.Namespace = fmt.Sprintf("%s/%s", match[1], match[2])
 	}
-	setProjectConfig(project.Namespace, project.path)
+	logging.Debug("From parse")
+	storeProjectMapping(project.Namespace, project.path)
 
 	return &project, nil
 }
@@ -489,7 +490,8 @@ func (p *Project) Save() *failures.Failure {
 	if err != nil {
 		return failures.FailIO.Wrap(err)
 	}
-	setProjectConfig(p.Namespace, p.path)
+	logging.Debug("From config")
+	storeProjectMapping(p.Namespace, p.path)
 
 	return nil
 }
@@ -786,9 +788,10 @@ func (p *Project) Persist() {
 	os.Setenv(constants.ProjectEnvVarName, p.Path())
 }
 
-// setProjectConfig associates the projectName with the project
+// storeProjectMapping associates the projectName with the project
 // path in the config
-func setProjectConfig(projectName, projectPath string) {
+func storeProjectMapping(projectName, projectPath string) {
+	logging.Debug("Setting in config")
 	projects := viper.GetStringMapString(projectsKey)
 	if projects == nil {
 		projects = make(map[string]string)
@@ -798,9 +801,9 @@ func setProjectConfig(projectName, projectPath string) {
 	viper.Set(projectsKey, projects)
 }
 
-// CleanStaleConfig removes projects that no longer exist
+// CleanProjectMapping removes projects that no longer exist
 // on a user's filesystem from the projects config entry
-func CleanStaleConfig() {
+func CleanProjectMapping() {
 	projects := viper.GetStringMapString(projectsKey)
 
 	for namespace, path := range projects {

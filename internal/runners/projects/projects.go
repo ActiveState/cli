@@ -67,6 +67,6 @@ func (r *Projects) fetchProjects() ([]projectWithOrg, *failures.Failure) {
 			projectsList = append(projectsList, projectWithOrg{project.Name, desc, org.Name})
 		}
 	}
-	projectfile.CleanStaleConfig()
+	projectfile.CleanProjectMapping()
 	return projectsList, nil
 }
