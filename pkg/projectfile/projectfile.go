@@ -431,7 +431,6 @@ func Parse(filepath string) (*Project, *failures.Failure) {
 		match := ProjectURLRe.FindStringSubmatch(project.Project)
 		project.Namespace = fmt.Sprintf("%s/%s", match[1], match[2])
 	}
-	logging.Debug("From parse")
 	storeProjectMapping(project.Namespace, project.path)
 
 	return &project, nil
@@ -490,7 +489,6 @@ func (p *Project) Save() *failures.Failure {
 	if err != nil {
 		return failures.FailIO.Wrap(err)
 	}
-	logging.Debug("From config")
 	storeProjectMapping(p.Namespace, p.path)
 
 	return nil
@@ -791,7 +789,6 @@ func (p *Project) Persist() {
 // storeProjectMapping associates the projectName with the project
 // path in the config
 func storeProjectMapping(projectName, projectPath string) {
-	logging.Debug("Setting in config")
 	projects := viper.GetStringMapString(projectsKey)
 	if projects == nil {
 		projects = make(map[string]string)
