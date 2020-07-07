@@ -213,13 +213,11 @@ func configure(installpath string, envGetter runtime.EnvGetter, out output.Outpu
 		return locale.WrapError(fail, "err_deploy_subshell_write", "Could not write environment information to your shell configuration.")
 	}
 
-	if rt.GOOS == "windows" {
-		// Write env file
-		out.Notice(fmt.Sprintf("Writing shell env file to %s\n", filepath.Join(installpath, "bin")))
-		err = sshell.SetupShellRcFile(filepath.Join(installpath, "bin"), env, namespace)
-		if err != nil {
-			return locale.WrapError(err, "err_deploy_subshell_rc_file", "Could not create environment script.")
-		}
+	// Write global env file
+	out.Notice(fmt.Sprintf("Writing shell env file to %s\n", filepath.Join(installpath, "bin")))
+	err = sshell.SetupShellRcFile(filepath.Join(installpath, "bin"), env, namespace)
+	if err != nil {
+		return locale.WrapError(err, "err_deploy_subshell_rc_file", "Could not create environment script.")
 	}
 
 	return nil
@@ -266,7 +264,7 @@ func symlink(installPath string, overwrite bool, envGetter runtime.EnvGetter, ou
 			return locale.WrapError(err, "err_symlink", "Could not create symlinks to {{.V0}}.", path)
 		}
 	}
-	
+
 	return nil
 }
 
