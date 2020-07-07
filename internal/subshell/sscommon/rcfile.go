@@ -13,6 +13,7 @@ import (
 	"github.com/mash/go-tempfile-suffix"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
@@ -94,7 +95,42 @@ func cleanRcFile(path string) *failures.Failure {
 	return fileutils.WriteFile(path, []byte(strings.Join(fileContents, fileutils.LineEnd)))
 }
 
-// SetupRcFile creates a temporary RC file that our shell is initiated from, this allows us to template the logic
+// SetupShellRcFile create a rc file to activate a runtime (without a project being present)
+func SetupShellRcFile(rcFileName, templateName string, env map[string]string, namespace project.Namespaced) error {
+	box := packr.NewBox("../../../assets/shells")
+	tpl := box.String(templateName)
+
+	rcData := map[string]interface{}{
+		"Env":     env,
+		"Project": namespace.String(),
+	}
+	t, err := template.New("rcfile").Parse(tpl)
+	if err != nil {
+		return errs.Wrap(err, "Failed to parse template file.")
+	}
+
+	var out bytes.Buffer
+	err = t.Execute(&out, rcData)
+	if err != nil {
+		return errs.Wrap(err, "failed to execute template.")
+	}
+
+	f, err := os.Create(rcFileName)
+	if err != nil {
+		return locale.WrapError(err, "sscommon_rc_file_creation_err", "Failed to create file %s", rcFileName)
+	}
+	defer f.Close()
+
+	f.WriteString(out.String())
+
+	err = os.Chmod(rcFileName, 0755)
+	if err != nil {
+		return errs.Wrap(err, "Failed to set executable flag.")
+	}
+	return nil
+}
+
+// SetupProjectRcFile creates a temporary RC file that our shell is initiated from, this allows us to template the logic
 // used for initialising the subshell
 func SetupProjectRcFile(templateName, ext string, env map[string]string) (*os.File, *failures.Failure) {
 	box := packr.NewBox("../../../assets/shells")

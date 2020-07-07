@@ -56,7 +56,7 @@ namespace Uninstall
 
         public static ActionResult EnvironmentEntries(Session session, string dir)
         {
-            session.Log("Begin remvoing environment entries");
+            session.Log("Begin removing environment entries");
             string pathEnv = Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.Machine);
             if (pathEnv == null) {
               return ActionResult.Success;
