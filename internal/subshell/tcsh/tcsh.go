@@ -56,7 +56,7 @@ func (v *SubShell) WriteUserEnv(env map[string]string, _ bool) *failures.Failure
 // SetupShellRcFile - subshell.SubShell
 func (v *SubShell) SetupShellRcFile(targetDir string, env map[string]string, namespace project.Namespaced) error {
 	env = sscommon.EscapeEnv(env)
-	return sscommon.SetupShellRcFile(filepath.Join(targetDir, "shell.tcsh"), "tcsh.sh", env, namespace)
+	return sscommon.SetupShellRcFile(filepath.Join(targetDir, "shell.tcsh"), "tcsh_global.sh", env, namespace)
 }
 
 // SetEnv - see subshell.SetEnv
