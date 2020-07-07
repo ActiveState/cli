@@ -800,9 +800,9 @@ func storeProjectMapping(namespace, projectPath string) {
 		projects = make(map[string][]string)
 	}
 
-	var paths []string
-	if configPaths, ok := projects[namespace]; ok {
-		paths = configPaths
+	paths := projects[namespace]
+	if paths == nil {
+		paths = make([]string, 0)
 	}
 
 	if !funk.Contains(paths, projectPath) {
