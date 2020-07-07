@@ -28,6 +28,8 @@ func NewProjects(outputer output.Outputer, auth *authentication.Auth) *Projects 
 }
 
 func (r *Projects) Run() *failures.Failure {
+	projectfile.CleanProjectMapping()
+
 	projectsList, fail := r.fetchProjects()
 	if fail != nil {
 		return fail.WithDescription(locale.T("project_err"))
@@ -67,6 +69,5 @@ func (r *Projects) fetchProjects() ([]projectWithOrg, *failures.Failure) {
 			projectsList = append(projectsList, projectWithOrg{project.Name, desc, org.Name})
 		}
 	}
-	projectfile.CleanProjectMapping()
 	return projectsList, nil
 }
