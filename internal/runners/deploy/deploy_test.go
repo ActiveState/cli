@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
+	"github.com/ActiveState/cli/pkg/project"
 )
 
 type InstallableMock struct{}
@@ -131,7 +132,7 @@ func Test_runStepsWithFuncs(t *testing.T) {
 				return nil, nil
 			}
 			var configCalled bool
-			configFunc := func(string, runtime.EnvGetter, output.Outputer, bool) error {
+			configFunc := func(string, runtime.EnvGetter, output.Outputer, project.Namespaced, bool) error {
 				configCalled = true
 				return nil
 			}
@@ -148,7 +149,8 @@ func Test_runStepsWithFuncs(t *testing.T) {
 			catcher := outputhelper.NewCatcher()
 			forceOverwrite := true
 			userScope := false
-			err := runStepsWithFuncs("", forceOverwrite, userScope, tt.args.step, tt.args.installer, catcher.Outputer, installFunc, configFunc, symlinkFunc, reportFunc)
+			namespace := project.Namespaced{"owner", "project"}
+			err := runStepsWithFuncs("", forceOverwrite, userScope, namespace, tt.args.step, tt.args.installer, catcher.Outputer, installFunc, configFunc, symlinkFunc, reportFunc)
 			if err != tt.want.err {
 				t.Errorf("runStepsWithFuncs() error = %v, wantErr %v", err, tt.want.err)
 			}
