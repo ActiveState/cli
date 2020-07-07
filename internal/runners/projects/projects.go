@@ -1,6 +1,8 @@
 package projects
 
 import (
+	"fmt"
+
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
@@ -14,17 +16,22 @@ import (
 // Holds a union of project and organization parameters.
 type projectWithOrg struct {
 	Name         string `json:"name"`
-	Description  string `json:"description"`
 	Organization string `json:"organization"`
+	Local        string `json:"local_checkout"`
+}
+
+type configGetter interface {
+	GetStringMapString(key string) map[string]string
 }
 
 type Projects struct {
-	out  output.Outputer
-	auth *authentication.Auth
+	out    output.Outputer
+	auth   *authentication.Auth
+	config configGetter
 }
 
-func NewProjects(outputer output.Outputer, auth *authentication.Auth) *Projects {
-	return &Projects{outputer, auth}
+func NewProjects(outputer output.Outputer, auth *authentication.Auth, config configGetter) *Projects {
+	return &Projects{outputer, auth, config}
 }
 
 func (r *Projects) Run() *failures.Failure {
@@ -54,17 +61,22 @@ func (r *Projects) fetchProjects() ([]projectWithOrg, *failures.Failure) {
 		return nil, api.FailUnknown.Wrap(err)
 	}
 	projectsList := []projectWithOrg{}
+	localProjects := r.config.GetStringMapString(projectfile.ProjectsKey)
 	for _, org := range orgs.Payload {
 		orgProjects, err := model.FetchOrganizationProjects(org.URLname)
 		if err != nil {
 			return nil, err
 		}
 		for _, project := range orgProjects {
-			desc := ""
-			if project.Description != nil {
-				desc = *project.Description
+			// TODO: Use shortened description as part of project name
+			p := projectWithOrg{
+				Name:         project.Name,
+				Organization: org.Name,
 			}
-			projectsList = append(projectsList, projectWithOrg{project.Name, desc, org.Name})
+			if localPath, ok := localProjects[fmt.Sprintf("%s/%s", org.URLname, project.Name)]; ok {
+				p.Local = localPath
+			}
+			projectsList = append(projectsList, p)
 		}
 	}
 	projectfile.CleanProjectMapping()
