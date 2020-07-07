@@ -15,13 +15,13 @@ import (
 
 // Holds a union of project and organization parameters.
 type projectWithOrg struct {
-	Name         string `json:"name"`
-	Organization string `json:"organization"`
-	Local        string `json:"local_checkout"`
+	Name           string   `json:"name"`
+	Organization   string   `json:"organization"`
+	LocalCheckouts []string `json:"local_checkouts,omitempty" opts:"emptyNil"`
 }
 
 type configGetter interface {
-	GetStringMapString(key string) map[string]string
+	GetStringMapStringSlice(key string) map[string][]string
 }
 
 type Projects struct {
@@ -63,7 +63,7 @@ func (r *Projects) fetchProjects() ([]projectWithOrg, *failures.Failure) {
 		return nil, api.FailUnknown.Wrap(err)
 	}
 	projectsList := []projectWithOrg{}
-	localProjects := r.config.GetStringMapString(projectfile.LocalProjectsConfigKey)
+	localProjects := r.config.GetStringMapStringSlice(projectfile.LocalProjectsConfigKey)
 	for _, org := range orgs.Payload {
 		orgProjects, err := model.FetchOrganizationProjects(org.URLname)
 		if err != nil {
@@ -75,8 +75,8 @@ func (r *Projects) fetchProjects() ([]projectWithOrg, *failures.Failure) {
 				Name:         project.Name,
 				Organization: org.Name,
 			}
-			if localPath, ok := localProjects[fmt.Sprintf("%s/%s", org.URLname, project.Name)]; ok {
-				p.Local = localPath
+			if localPaths, ok := localProjects[fmt.Sprintf("%s/%s", org.URLname, project.Name)]; ok {
+				p.LocalCheckouts = localPaths
 			}
 			projectsList = append(projectsList, p)
 		}
