@@ -35,6 +35,8 @@ func NewProjects(outputer output.Outputer, auth *authentication.Auth, config con
 }
 
 func (r *Projects) Run() *failures.Failure {
+	projectfile.CleanProjectMapping()
+
 	projectsList, fail := r.fetchProjects()
 	if fail != nil {
 		return fail.WithDescription(locale.T("project_err"))
@@ -61,7 +63,7 @@ func (r *Projects) fetchProjects() ([]projectWithOrg, *failures.Failure) {
 		return nil, api.FailUnknown.Wrap(err)
 	}
 	projectsList := []projectWithOrg{}
-	localProjects := r.config.GetStringMapString(projectfile.ProjectsKey)
+	localProjects := r.config.GetStringMapString(projectfile.LocalProjectsConfigKey)
 	for _, org := range orgs.Payload {
 		orgProjects, err := model.FetchOrganizationProjects(org.URLname)
 		if err != nil {
@@ -79,6 +81,5 @@ func (r *Projects) fetchProjects() ([]projectWithOrg, *failures.Failure) {
 			projectsList = append(projectsList, p)
 		}
 	}
-	projectfile.CleanProjectMapping()
 	return projectsList, nil
 }
