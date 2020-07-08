@@ -15,7 +15,9 @@ import (
 type configMock struct{}
 
 func (c *configMock) GetStringMapStringSlice(key string) map[string][]string {
-	return nil
+	return map[string][]string{
+		"organizationname/test project": {"/some/local/path/"},
+	}
 }
 
 func TestProjects(t *testing.T) {
@@ -36,6 +38,7 @@ func TestProjects(t *testing.T) {
 	assert.Equal(t, 1, len(projects), "One project fetched")
 	assert.Equal(t, "test project (test description)", projects[0].Name)
 	assert.Equal(t, "organizationName", projects[0].Organization)
+	assert.Equal(t, []string{"/some/local/path/"}, projects[0].LocalCheckouts)
 
 	fail = pjs.Run()
 	assert.NoError(t, fail.ToError(), "Executed without error")
