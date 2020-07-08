@@ -1,20 +1,69 @@
 package constraints
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
+	"text/template"
+
+	"github.com/ActiveState/sysinfo"
+	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/ActiveState/sysinfo"
 )
 
 // For testing.
 var osOverride, osVersionOverride, archOverride, libcOverride, compilerOverride string
+
+type Conditional struct {
+	params map[string]interface{}
+	funcs  template.FuncMap
+}
+
+func NewConditional() *Conditional {
+	c := &Conditional{map[string]interface{}{}, map[string]interface{}{}}
+
+	c.RegisterFunc("Contains", funk.Contains)
+	c.RegisterFunc("HasPrefix", strings.HasPrefix)
+	c.RegisterFunc("HasSuffix", strings.HasSuffix)
+	c.RegisterFunc("MatchRx", func(rxv, v string) bool {
+		rx, err := regexp.Compile(rxv)
+		if err != nil {
+			logging.Warning("Invalid Regex: %s, error: %v", rxv, err)
+			return false
+		}
+		return rx.Match([]byte(v))
+	})
+
+	return c
+}
+
+func (c *Conditional) RegisterFunc(name string, value interface{}) {
+	c.funcs[name] = value
+}
+
+func (c *Conditional) RegisterParam(name string, value interface{}) {
+	c.params[name] = value
+}
+
+func (c *Conditional) Eval(conditional string) (bool, error) {
+	tpl, err := template.New("letter").Funcs(c.funcs).Parse(fmt.Sprintf(`{{if %s}}1{{end}}`, conditional))
+	if err != nil {
+		return false, locale.WrapInputError(err, "err_conditional", "Invalid 'if' condition: '{{.V0}}', error: '{{.V1}}'.", conditional, err.Error())
+	}
+
+	result := bytes.Buffer{}
+	tpl.Execute(&result, c.params)
+
+	return result.String() == "1", nil
+}
 
 // Returns whether or not the sysinfo-detected OS matches the given one
 // (presumably the constraint).
@@ -315,19 +364,35 @@ func IsConstrained(constraint projectfile.Constraint) (bool, int) {
 // FilterUnconstrained filters a list of constrained entities and returns only
 // those which are unconstrained. If two items with the same name exist, only
 // the most specific item will be added to the results.
-func FilterUnconstrained(items []projectfile.ConstrainedEntity) []projectfile.ConstrainedEntity {
+func FilterUnconstrained(conditional *Conditional, items []projectfile.ConstrainedEntity) ([]projectfile.ConstrainedEntity, error) {
 	type itemIndex struct {
 		specificity int
 		index       int
 	}
 	selected := make(map[string]itemIndex)
 
+	if conditional == nil {
+		logging.Error("FilterUnconstrained called with nil conditional")
+	}
+
 	for i, item := range items {
-		c := item.ConstraintsFilter()
-		constrained, specificity := IsConstrained(c)
-		if !constrained {
-			if s, exists := selected[item.ID()]; !exists || s.specificity < specificity {
-				selected[item.ID()] = itemIndex{specificity, i}
+		if conditional != nil && item.ConditionalFilter() != "" {
+			isTrue, err := conditional.Eval(string(item.ConditionalFilter()))
+			if err != nil {
+				return items, err
+			}
+
+			if isTrue {
+				selected[item.ID()] = itemIndex{0, i}
+			}
+		}
+
+		if item.ConditionalFilter() == "" {
+			constrained, specificity := IsConstrained(item.ConstraintsFilter())
+			if !constrained {
+				if s, exists := selected[item.ID()]; !exists || s.specificity < specificity {
+					selected[item.ID()] = itemIndex{specificity, i}
+				}
 			}
 		}
 	}
@@ -341,26 +406,5 @@ func FilterUnconstrained(items []projectfile.ConstrainedEntity) []projectfile.Co
 	for _, index := range indices {
 		res = append(res, items[index])
 	}
-	return res
-}
-
-// MostSpecificUnconstrained searches for entities named name and returns the
-// unconstrained with the most specific constraint definition (if it exists).
-// It also returns the index of the found item in the list (which is -1 if none
-// could be found)
-func MostSpecificUnconstrained(name string, items []projectfile.ConstrainedEntity) int {
-	var maxSpecificity int = -1
-	var index int = -1
-
-	for i, item := range items {
-		c := item.ConstraintsFilter()
-		constrained, specificity := IsConstrained(c)
-		if item.ID() == name && !constrained {
-			if specificity > maxSpecificity {
-				maxSpecificity = specificity
-				index = i
-			}
-		}
-	}
-	return index
+	return res, nil
 }

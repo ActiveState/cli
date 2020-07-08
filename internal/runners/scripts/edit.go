@@ -10,9 +10,9 @@ import (
 	"strings"
 
 	"github.com/fsnotify/fsnotify"
+	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
@@ -21,7 +21,6 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 // The default open command and editors based on platform
@@ -328,14 +327,24 @@ func updateProjectFile(scriptFile *scriptfile.ScriptFile, name string) error {
 		return errs.Wrap(fail, "Failed to read script file %s.", scriptFile.Filename())
 	}
 
-	projectFile := projectfile.Get()
-	i := constraints.MostSpecificUnconstrained(name, projectFile.Scripts.AsConstrainedEntities())
-	if i < 0 { // no script found
-		return nil
-	}
-	projectFile.Scripts[i].Value = string(updatedScript)
+	pj := project.Get()
+	pjf := pj.Source()
+	script := pj.ScriptByName(name).Source()
 
-	fail = projectFile.Save()
+	idx := -1
+	for i, s := range pjf.Scripts {
+		if funk.Equal(s, script) {
+			idx = i
+			break
+		}
+	}
+	if idx == -1 {
+		return locale.NewError("err_update_script_cannot_find", "Could not find the source script to update.")
+	}
+
+	pjf.Scripts[idx].Value = string(updatedScript)
+
+	fail = pjf.Save()
 	if fail != nil {
 		return errs.Wrap(fail, "Failed to save project file.")
 	}

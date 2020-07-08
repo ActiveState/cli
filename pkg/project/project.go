@@ -27,6 +27,14 @@ var FailProjectNotLoaded = failures.Type("project.fail.notparsed", failures.Fail
 // Build covers the build structure
 type Build map[string]string
 
+var pConditional *constraints.Conditional
+
+// RegisterConditional is a a temporary method for registering our conditional as a global
+// yes this is bad, but at the time of implementation refactoring the project package to not be global is out of scope
+func RegisterConditional(conditional *constraints.Conditional) {
+	pConditional = conditional
+}
+
 // Project covers the platform structure
 type Project struct {
 	projectfile *projectfile.Project
@@ -49,9 +57,11 @@ func (p *Project) Platforms() []*Platform {
 
 // Languages returns a reference to projectfile.Languages
 func (p *Project) Languages() []*Language {
-	ls := projectfile.MakeLanguagesFromConstrainedEntities(
-		constraints.FilterUnconstrained(p.projectfile.Languages.AsConstrainedEntities()),
-	)
+	constrained, err := constraints.FilterUnconstrained(pConditional, p.projectfile.Languages.AsConstrainedEntities())
+	if err != nil {
+		logging.Warning("Could not filter unconstrained languages: %v", err)
+	}
+	ls := projectfile.MakeLanguagesFromConstrainedEntities(constrained)
 	languages := []*Language{}
 	for _, l := range ls {
 		languages = append(languages, &Language{l, p})
@@ -61,9 +71,11 @@ func (p *Project) Languages() []*Language {
 
 // Constants returns a reference to projectfile.Constants
 func (p *Project) Constants() []*Constant {
-	cs := projectfile.MakeConstantsFromConstrainedEntities(
-		constraints.FilterUnconstrained(p.projectfile.Constants.AsConstrainedEntities()),
-	)
+	constrained, err := constraints.FilterUnconstrained(pConditional, p.projectfile.Constants.AsConstrainedEntities())
+	if err != nil {
+		logging.Warning("Could not filter unconstrained constants: %v", err)
+	}
+	cs := projectfile.MakeConstantsFromConstrainedEntities(constrained)
 	constants := []*Constant{}
 	for _, c := range cs {
 		constants = append(constants, &Constant{c, p})
@@ -88,17 +100,21 @@ func (p *Project) Secrets() []*Secret {
 		return secrets
 	}
 	if p.projectfile.Secrets.User != nil {
-		secs := projectfile.MakeSecretsFromConstrainedEntities(
-			constraints.FilterUnconstrained(p.projectfile.Secrets.User.AsConstrainedEntities()),
-		)
+		constrained, err := constraints.FilterUnconstrained(pConditional, p.projectfile.Secrets.User.AsConstrainedEntities())
+		if err != nil {
+			logging.Warning("Could not filter unconstrained user secrets: %v", err)
+		}
+		secs := projectfile.MakeSecretsFromConstrainedEntities(constrained)
 		for _, s := range secs {
 			secrets = append(secrets, p.NewSecret(s, SecretScopeUser))
 		}
 	}
 	if p.projectfile.Secrets.Project != nil {
-		secs := projectfile.MakeSecretsFromConstrainedEntities(
-			constraints.FilterUnconstrained(p.projectfile.Secrets.Project.AsConstrainedEntities()),
-		)
+		constrained, err := constraints.FilterUnconstrained(pConditional, p.projectfile.Secrets.Project.AsConstrainedEntities())
+		if err != nil {
+			logging.Warning("Could not filter unconstrained project secrets: %v", err)
+		}
+		secs := projectfile.MakeSecretsFromConstrainedEntities(constrained)
 		for _, secret := range secs {
 			secrets = append(secrets, p.NewSecret(secret, SecretScopeProject))
 		}
@@ -118,9 +134,11 @@ func (p *Project) SecretByName(name string, scope SecretScope) *Secret {
 
 // Events returns a reference to projectfile.Events
 func (p *Project) Events() []*Event {
-	es := projectfile.MakeEventsFromConstrainedEntities(
-		constraints.FilterUnconstrained(p.projectfile.Events.AsConstrainedEntities()),
-	)
+	constrained, err := constraints.FilterUnconstrained(pConditional, p.projectfile.Events.AsConstrainedEntities())
+	if err != nil {
+		logging.Warning("Could not filter unconstrained events: %v", err)
+	}
+	es := projectfile.MakeEventsFromConstrainedEntities(constrained)
 	events := make([]*Event, 0, len(es))
 	for _, e := range es {
 		events = append(events, &Event{e, p})
@@ -130,9 +148,11 @@ func (p *Project) Events() []*Event {
 
 // Scripts returns a reference to projectfile.Scripts
 func (p *Project) Scripts() []*Script {
-	scs := projectfile.MakeScriptsFromConstrainedEntities(
-		constraints.FilterUnconstrained(p.projectfile.Scripts.AsConstrainedEntities()),
-	)
+	constrained, err := constraints.FilterUnconstrained(pConditional, p.projectfile.Scripts.AsConstrainedEntities())
+	if err != nil {
+		logging.Warning("Could not filter unconstrained scripts: %v", err)
+	}
+	scs := projectfile.MakeScriptsFromConstrainedEntities(constrained)
 	scripts := make([]*Script, 0, len(scs))
 	for _, s := range scs {
 		scripts = append(scripts, &Script{s, p})
@@ -368,10 +388,11 @@ func (l *Language) Build() *Build {
 
 // Packages returned are constrained set
 func (l *Language) Packages() []Package {
-
-	ps := projectfile.MakePackagesFromConstrainedEntities(
-		constraints.FilterUnconstrained(l.language.Packages.AsConstrainedEntities()),
-	)
+	constrained, err := constraints.FilterUnconstrained(pConditional, l.language.Packages.AsConstrainedEntities())
+	if err != nil {
+		logging.Warning("Could not filter unconstrained packages: %v", err)
+	}
+	ps := projectfile.MakePackagesFromConstrainedEntities(constrained)
 	validPackages := make([]Package, 0, len(ps))
 	for _, pkg := range ps {
 		validPackages = append(validPackages, Package{pkg: pkg, project: l.project})

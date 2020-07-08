@@ -6,9 +6,12 @@ import (
 	"os"
 	"os/exec"
 
+	"github.com/ActiveState/sysinfo"
+
 	"github.com/ActiveState/cli/cmd/state/internal/cmdtree"
 	"github.com/ActiveState/cli/internal/config" // MUST be first!
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/deprecation"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
@@ -18,6 +21,7 @@ import (
 	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/internal/prompt"
 	_ "github.com/ActiveState/cli/internal/prompt" // Sets up survey defaults
+	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -124,9 +128,31 @@ func run(args []string, out output.Outputer) (int, error) {
 		}
 	}
 
+	// Set up conditional, which accesses a lot of primer data
+	conditional := constraints.NewConditional()
+	conditional.RegisterParam("Project", map[string]string{
+		"Namespace": pj.Namespace(),
+		"Name":      pj.Name(),
+		"Owner":     pj.Owner(),
+	})
+	osVersion, err := sysinfo.OSVersion()
+	if err != nil {
+		logging.Error("Could not detect OSVersion: %v", err)
+	}
+	conditional.RegisterParam("OS", map[string]interface{}{
+		"Name":         sysinfo.OS().String(),
+		"Version":      osVersion,
+		"Architecture": sysinfo.Architecture().String(),
+	})
+
+	sshell := subshell.New()
+	conditional.RegisterParam("Shell", sshell.Shell())
+
+	project.RegisterConditional(conditional)
+
 	// Run the actual command
-	cmds := cmdtree.New(primer.New(pj, out, authentication.Get(), prompt.New()))
-	err := cmds.Execute(args[1:])
+	cmds := cmdtree.New(primer.New(pj, out, authentication.Get(), prompt.New(), sshell, conditional))
+	err = cmds.Execute(args[1:])
 
 	return unwrapError(err)
 }

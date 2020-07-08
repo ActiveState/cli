@@ -1,7 +1,6 @@
 package show
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 
@@ -25,13 +24,15 @@ type Params struct {
 
 // Show manages the show run execution context.
 type Show struct {
-	project *project.Project
-	out     output.Outputer
+	project     *project.Project
+	out         output.Outputer
+	conditional *constraints.Conditional
 }
 
 type primeable interface {
-	primer.Projectable
-	primer.Outputable
+	primer.Projecter
+	primer.Outputer
+	primer.Conditioner
 }
 
 // New returns a pointer to an instance of Show.
@@ -39,6 +40,7 @@ func New(prime primeable) *Show {
 	return &Show{
 		prime.Project(),
 		prime.Output(),
+		prime.Conditional(),
 	}
 }
 
@@ -93,14 +95,22 @@ func (s *Show) Run(params Params) error {
 
 	updater.PrintUpdateMessage(src.Path())
 
+	events, err := eventsData(src, s.conditional)
+	if err != nil {
+		return locale.WrapError(err, "err_show_events", "Could not parse events.")
+	}
+
+	scripts, err := scriptsData(src, s.conditional)
+	if err != nil {
+		return locale.WrapError(err, "err_show_scripts", "Could not parse scripts.")
+	}
+
 	data := outputData{
 		Namespace:    pj.Namespace(),
 		Name:         pj.Name(),
 		Organization: pj.Owner(),
-		Platforms:    platformsData(src),
-		Languages:    languagesData(src),
-		Events:       eventsData(src),
-		Scripts:      scriptsData(src),
+		Events:       events,
+		Scripts:      scripts,
 	}
 
 	s.out.Print(data)
@@ -112,77 +122,46 @@ type outputData struct {
 	Namespace    string
 	Name         string
 	Organization string
-	Platforms    []string          `json:",omitempty"`
-	Languages    []string          `json:",omitempty"`
 	Events       []string          `json:",omitempty"`
 	Scripts      map[string]string `json:",omitempty"`
 }
 
-func platformsData(project *projectfile.Project) []string {
-	if len(project.Platforms) == 0 {
-		return nil
-	}
-
-	var data []string
-	for _, platform := range project.Platforms {
-		constrained := "*"
-		if !constraints.PlatformMatches(platform) {
-			constrained = ""
-		}
-		v := fmt.Sprintf("%s%s %s %s (%s)", constrained, platform.Os, platform.Version, platform.Architecture, platform.Name)
-		data = append(data, v)
-	}
-
-	return data
-}
-
-func eventsData(project *projectfile.Project) []string {
+func eventsData(project *projectfile.Project, conditional *constraints.Conditional) ([]string, error) {
 	if len(project.Events) == 0 {
-		return nil
+		return nil, nil
 	}
 
-	es := projectfile.MakeEventsFromConstrainedEntities(
-		constraints.FilterUnconstrained(project.Events.AsConstrainedEntities()),
-	)
+	constrained, err := constraints.FilterUnconstrained(conditional, project.Events.AsConstrainedEntities())
+	if err != nil {
+		return nil, locale.WrapError(err, "err_event_condition", "Event has invalid conditional")
+	}
+
+	es := projectfile.MakeEventsFromConstrainedEntities(constrained)
 
 	var data []string
 	for _, event := range es {
 		data = append(data, event.Name)
 	}
 
-	return data
+	return data, nil
 }
 
-func scriptsData(project *projectfile.Project) map[string]string {
+func scriptsData(project *projectfile.Project, conditional *constraints.Conditional) (map[string]string, error) {
 	if len(project.Scripts) == 0 {
-		return nil
+		return nil, nil
 	}
 
-	scripts := projectfile.MakeScriptsFromConstrainedEntities(
-		constraints.FilterUnconstrained(project.Scripts.AsConstrainedEntities()),
-	)
+	constrained, err := constraints.FilterUnconstrained(conditional, project.Scripts.AsConstrainedEntities())
+	if err != nil {
+		return nil, locale.WrapError(err, "err_script_condition", "Script has invalid conditional")
+	}
+
+	scripts := projectfile.MakeScriptsFromConstrainedEntities(constrained)
 
 	data := make(map[string]string)
 	for _, script := range scripts {
 		data[script.Name] = script.Description
 	}
 
-	return data
-}
-
-func languagesData(project *projectfile.Project) []string {
-	if len(project.Languages) == 0 {
-		return nil
-	}
-
-	languages := projectfile.MakeLanguagesFromConstrainedEntities(
-		constraints.FilterUnconstrained(project.Languages.AsConstrainedEntities()),
-	)
-
-	var data []string
-	for _, language := range languages {
-		data = append(data, fmt.Sprintf("%s %s", language.Name, language.Version))
-	}
-
-	return data
+	return data, nil
 }

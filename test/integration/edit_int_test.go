@@ -10,10 +10,10 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
@@ -102,12 +102,10 @@ func (suite *EditIntegrationTestSuite) TestEdit_UpdateCorrectPlatform() {
 
 	time.Sleep(time.Second * 2) // let CI env catch up
 
-	project, fail := projectfile.FromPath(ts.Dirs.Work)
+	pj, fail := project.FromPath(ts.Dirs.Work)
 	suite.Require().NoError(fail.ToError())
 
-	i := constraints.MostSpecificUnconstrained("test-script", project.Scripts.AsConstrainedEntities())
-	suite.Require().True(i > -1, "Finds at least one script")
-	suite.Contains(project.Scripts[i].Value, "more info!", "Output of edit command:\n%s", cp.Snapshot())
+	suite.Contains(pj.ScriptByName("test-script"), "more info!", "Output of edit command:\n%s", cp.Snapshot())
 }
 
 func TestEditIntegrationTestSuite(t *testing.T) {

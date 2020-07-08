@@ -117,11 +117,12 @@ type Build map[string]string
 
 // Language covers the language structure, which goes under Project
 type Language struct {
-	Name        string     `yaml:"name"`
-	Version     string     `yaml:"version,omitempty"`
-	Constraints Constraint `yaml:"constraints,omitempty"`
-	Build       Build      `yaml:"build,omitempty"`
-	Packages    Packages   `yaml:"packages,omitempty"`
+	Name        string      `yaml:"name"`
+	Version     string      `yaml:"version,omitempty"`
+	Conditional Conditional `yaml:"if"`
+	Constraints Constraint  `yaml:"constraints,omitempty"`
+	Build       Build       `yaml:"build,omitempty"`
+	Packages    Packages    `yaml:"packages,omitempty"`
 }
 
 var _ ConstrainedEntity = Language{}
@@ -134,6 +135,10 @@ func (l Language) ID() string {
 // ConstraintsFilter returns the language constraints
 func (l Language) ConstraintsFilter() Constraint {
 	return l.Constraints
+}
+
+func (l Language) ConditionalFilter() Conditional {
+	return l.Conditional
 }
 
 // Languages is a slice of Language definitions
@@ -160,9 +165,10 @@ func MakeLanguagesFromConstrainedEntities(items []ConstrainedEntity) (languages 
 
 // Constant covers the constant structure, which goes under Project
 type Constant struct {
-	Name        string     `yaml:"name"`
-	Value       string     `yaml:"value"`
-	Constraints Constraint `yaml:"constraints,omitempty"`
+	Name        string      `yaml:"name"`
+	Value       string      `yaml:"value"`
+	Conditional Conditional `yaml:"if"`
+	Constraints Constraint  `yaml:"constraints,omitempty"`
 }
 
 var _ ConstrainedEntity = &Constant{}
@@ -175,6 +181,10 @@ func (c *Constant) ID() string {
 // ConstraintsFilter returns the constant constraints
 func (c *Constant) ConstraintsFilter() Constraint {
 	return c.Constraints
+}
+
+func (c *Constant) ConditionalFilter() Conditional {
+	return c.Conditional
 }
 
 // Constants is a slice of constant values
@@ -207,9 +217,10 @@ type SecretScopes struct {
 
 // Secret covers the variable structure, which goes under Project
 type Secret struct {
-	Name        string     `yaml:"name"`
-	Description string     `yaml:"description"`
-	Constraints Constraint `yaml:"constraints"`
+	Name        string      `yaml:"name"`
+	Description string      `yaml:"description"`
+	Conditional Conditional `yaml:"if"`
+	Constraints Constraint  `yaml:"constraints"`
 }
 
 var _ ConstrainedEntity = &Secret{}
@@ -222,6 +233,10 @@ func (s *Secret) ID() string {
 // ConstraintsFilter returns the secret constraints
 func (s *Secret) ConstraintsFilter() Constraint {
 	return s.Constraints
+}
+
+func (s *Secret) ConditionalFilter() Conditional {
+	return s.Conditional
 }
 
 // Secrets is a slice of Secret definitions
@@ -246,6 +261,10 @@ func MakeSecretsFromConstrainedEntities(items []ConstrainedEntity) (secrets []*S
 	return secrets
 }
 
+// Conditional is an `if` conditional that when evalutes to true enables the entity its under
+// it is meant to replace Constraints
+type Conditional string
+
 // Constraint covers the constraint structure, which can go under almost any other struct
 type Constraint struct {
 	OS          string `yaml:"os,omitempty"`
@@ -260,14 +279,17 @@ type ConstrainedEntity interface {
 
 	// ConstraintsFilter returns the specified constraints for this entity
 	ConstraintsFilter() Constraint
+
+	ConditionalFilter() Conditional
 }
 
 // Package covers the package structure, which goes under the language struct
 type Package struct {
-	Name        string     `yaml:"name"`
-	Version     string     `yaml:"version"`
-	Constraints Constraint `yaml:"constraints,omitempty"`
-	Build       Build      `yaml:"build,omitempty"`
+	Name        string      `yaml:"name"`
+	Version     string      `yaml:"version"`
+	Conditional Conditional `yaml:"if"`
+	Constraints Constraint  `yaml:"constraints,omitempty"`
+	Build       Build       `yaml:"build,omitempty"`
 }
 
 var _ ConstrainedEntity = Package{}
@@ -280,6 +302,10 @@ func (p Package) ID() string {
 // ConstraintsFilter returns the package constraints
 func (p Package) ConstraintsFilter() Constraint {
 	return p.Constraints
+}
+
+func (p Package) ConditionalFilter() Conditional {
+	return p.Conditional
 }
 
 // Packages is a slice of Package configurations
@@ -306,9 +332,10 @@ func MakePackagesFromConstrainedEntities(items []ConstrainedEntity) (packages []
 
 // Event covers the event structure, which goes under Project
 type Event struct {
-	Name        string     `yaml:"name"`
-	Value       string     `yaml:"value"`
-	Constraints Constraint `yaml:"constraints,omitempty"`
+	Name        string      `yaml:"name"`
+	Value       string      `yaml:"value"`
+	Conditional Conditional `yaml:"if"`
+	Constraints Constraint  `yaml:"constraints,omitempty"`
 }
 
 var _ ConstrainedEntity = Event{}
@@ -321,6 +348,10 @@ func (e Event) ID() string {
 // ConstraintsFilter returns the event constraints
 func (e Event) ConstraintsFilter() Constraint {
 	return e.Constraints
+}
+
+func (e Event) ConditionalFilter() Conditional {
+	return e.Conditional
 }
 
 // Events is a slice of Event definitions
@@ -353,6 +384,7 @@ type Script struct {
 	Filename    string            `yaml:"filename,omitempty"`
 	Standalone  bool              `yaml:"standalone,omitempty"`
 	Language    language.Language `yaml:"language,omitempty"`
+	Conditional Conditional       `yaml:"if"`
 	Constraints Constraint        `yaml:"constraints,omitempty"`
 }
 
@@ -366,6 +398,10 @@ func (s Script) ID() string {
 // ConstraintsFilter returns the script constraints
 func (s Script) ConstraintsFilter() Constraint {
 	return s.Constraints
+}
+
+func (s Script) ConditionalFilter() Conditional {
+	return s.Conditional
 }
 
 // Scripts is a slice of scripts
