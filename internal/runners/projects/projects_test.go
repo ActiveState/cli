@@ -14,7 +14,7 @@ import (
 
 type configMock struct{}
 
-func (c *configMock) GetStringMapString(key string) map[string]string {
+func (c *configMock) GetStringMapStringSlice(key string) map[string][]string {
 	return nil
 }
 

@@ -2,6 +2,7 @@ package projects
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
@@ -62,8 +63,9 @@ func (r *Projects) fetchProjects() ([]projectWithOrg, *failures.Failure) {
 		}
 		return nil, api.FailUnknown.Wrap(err)
 	}
-	projectsList := []projectWithOrg{}
-	localProjects := r.config.GetStringMapStringSlice(projectfile.LocalProjectsConfigKey)
+	platfomProjects := []projectWithOrg{}
+	localProjects := []projectWithOrg{}
+	localConfigProjects := r.config.GetStringMapStringSlice(projectfile.LocalProjectsConfigKey)
 	for _, org := range orgs.Payload {
 		orgProjects, err := model.FetchOrganizationProjects(org.URLname)
 		if err != nil {
@@ -75,11 +77,16 @@ func (r *Projects) fetchProjects() ([]projectWithOrg, *failures.Failure) {
 				Name:         project.Name,
 				Organization: org.Name,
 			}
-			if localPaths, ok := localProjects[fmt.Sprintf("%s/%s", org.URLname, project.Name)]; ok {
+
+			// Viper lowers all map keys so we must do the same here
+			// in order to retrieve the locally cached projects
+			if localPaths, ok := localConfigProjects[fmt.Sprintf("%s/%s", strings.ToLower(org.URLname), strings.ToLower(project.Name))]; ok {
 				p.LocalCheckouts = localPaths
+				localProjects = append(localProjects, p)
+				continue
 			}
-			projectsList = append(projectsList, p)
+			platfomProjects = append(platfomProjects, p)
 		}
 	}
-	return projectsList, nil
+	return append(localProjects, platfomProjects...), nil
 }
