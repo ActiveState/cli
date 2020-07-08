@@ -2,6 +2,7 @@ package projects
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/failures"
@@ -63,15 +64,16 @@ func (r *Projects) fetchProjects() ([]projectWithOrg, *failures.Failure) {
 		}
 		return nil, api.FailUnknown.Wrap(err)
 	}
-	platfomProjects := []projectWithOrg{}
-	localProjects := []projectWithOrg{}
+	projects := []projectWithOrg{}
 	localConfigProjects := r.config.GetStringMapStringSlice(projectfile.LocalProjectsConfigKey)
 	for _, org := range orgs.Payload {
-		orgProjects, err := model.FetchOrganizationProjects(org.URLname)
+		platformOrgProjects, err := model.FetchOrganizationProjects(org.URLname)
 		if err != nil {
 			return nil, err
 		}
-		for _, project := range orgProjects {
+
+		orgProjects := make([]projectWithOrg, len(platformOrgProjects))
+		for i, project := range platformOrgProjects {
 			p := projectWithOrg{
 				Name:         project.Name,
 				Organization: org.Name,
@@ -86,13 +88,17 @@ func (r *Projects) fetchProjects() ([]projectWithOrg, *failures.Failure) {
 			// in order to retrieve the locally cached projects
 			if localPaths, ok := localConfigProjects[fmt.Sprintf("%s/%s", strings.ToLower(org.URLname), strings.ToLower(project.Name))]; ok {
 				p.LocalCheckouts = localPaths
-				localProjects = append(localProjects, p)
-				continue
 			}
-			platfomProjects = append(platfomProjects, p)
+			orgProjects[i] = p
 		}
+
+		sort.Slice(orgProjects, func(i, j int) bool {
+			return orgProjects[i].LocalCheckouts != nil && orgProjects[j].LocalCheckouts == nil
+		})
+		projects = append(projects, orgProjects...)
 	}
-	return append(localProjects, platfomProjects...), nil
+
+	return projects, nil
 }
 
 func nameAndDescription(name, description string) string {
