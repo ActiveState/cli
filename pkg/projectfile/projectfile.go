@@ -11,6 +11,8 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/go-openapi/strfmt"
+	"github.com/spf13/viper"
+	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
@@ -64,6 +66,8 @@ var strReg = fmt.Sprintf(`https:\/\/%s\/([\w_.-]*)\/([\w_.-]*)(?:\?commitID=)*(.
 
 // ProjectURLRe Regex used to validate project fields /orgname/projectname[?commitID=someUUID]
 var ProjectURLRe = regexp.MustCompile(strReg)
+
+const localProjectsConfigKey = "projects"
 
 // VersionInfo is used in cases where we only care about parsing the version field. In all other cases the version is parsed via
 // the Project struct
@@ -395,15 +399,15 @@ func MakeScriptsFromConstrainedEntities(items []ConstrainedEntity) (scripts []*S
 var persistentProject *Project
 
 // Parse the given filepath, which should be the full path to an activestate.yaml file
-func Parse(filepath string) (*Project, *failures.Failure) {
-	dat, err := ioutil.ReadFile(filepath)
+func Parse(configFilepath string) (*Project, *failures.Failure) {
+	dat, err := ioutil.ReadFile(configFilepath)
 	if err != nil {
 		return nil, failures.FailIO.Wrap(err)
 	}
 
 	project := Project{}
 	err = yaml.Unmarshal([]byte(dat), &project)
-	project.path = filepath
+	project.path = configFilepath
 
 	if err != nil {
 		return nil, FailParseProject.New(locale.T("err_project_parse", map[string]interface{}{"Error": err.Error()}))
@@ -420,6 +424,18 @@ func Parse(filepath string) (*Project, *failures.Failure) {
 		}
 		project.Project = fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, project.Owner, project.Name)
 	}
+
+	fail := ValidateProjectURL(project.Project)
+	if fail != nil {
+		return nil, fail
+	}
+
+	if project.Owner == "" && project.Name == "" {
+		match := ProjectURLRe.FindStringSubmatch(project.Project)
+		project.Owner = match[1]
+		project.Name = match[2]
+	}
+	storeProjectMapping(fmt.Sprintf("%s/%s", project.Owner, project.Name), filepath.Dir(project.path))
 
 	return &project, nil
 }
@@ -477,6 +493,7 @@ func (p *Project) Save() *failures.Failure {
 	if err != nil {
 		return failures.FailIO.Wrap(err)
 	}
+	storeProjectMapping(fmt.Sprintf("%s/%s", p.Owner, p.Name), filepath.Dir(p.Path()))
 
 	return nil
 }
@@ -835,4 +852,43 @@ func (p *Project) Persist() {
 	}
 	persistentProject = p
 	os.Setenv(constants.ProjectEnvVarName, p.Path())
+}
+
+// storeProjectMapping associates the namespace with the project
+// path in the config
+func storeProjectMapping(namespace, projectPath string) {
+	projectPath = filepath.Clean(projectPath)
+
+	projects := viper.GetStringMapStringSlice(localProjectsConfigKey)
+	if projects == nil {
+		projects = make(map[string][]string)
+	}
+
+	paths := projects[namespace]
+	if paths == nil {
+		paths = make([]string, 0)
+	}
+
+	if !funk.Contains(paths, projectPath) {
+		paths = append(paths, projectPath)
+	}
+
+	projects[namespace] = paths
+	viper.Set(localProjectsConfigKey, projects)
+}
+
+// CleanProjectMapping removes projects that no longer exist
+// on a user's filesystem from the projects config entry
+func CleanProjectMapping() {
+	projects := viper.GetStringMapStringSlice(localProjectsConfigKey)
+
+	for namespace, paths := range projects {
+		for _, path := range paths {
+			if !fileutils.DirExists(path) {
+				delete(projects, namespace)
+			}
+		}
+	}
+
+	viper.Set("projects", projects)
 }

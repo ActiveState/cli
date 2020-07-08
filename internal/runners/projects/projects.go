@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/organizations"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 // Holds a union of project and organization parameters.
@@ -27,6 +28,8 @@ func NewProjects(outputer output.Outputer, auth *authentication.Auth) *Projects 
 }
 
 func (r *Projects) Run() *failures.Failure {
+	projectfile.CleanProjectMapping()
+
 	projectsList, fail := r.fetchProjects()
 	if fail != nil {
 		return fail.WithDescription(locale.T("project_err"))
