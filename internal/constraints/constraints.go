@@ -45,6 +45,27 @@ func NewConditional() *Conditional {
 	return c
 }
 
+func NewPrimeConditional(pjOwner, pjName, pjNamespace, subshellName string) *Conditional {
+	c := NewConditional()
+	c.RegisterParam("Project", map[string]string{
+		"Namespace": pjNamespace,
+		"Name":      pjName,
+		"Owner":     pjOwner,
+	})
+	osVersion, err := sysinfo.OSVersion()
+	if err != nil {
+		logging.Error("Could not detect OSVersion: %v", err)
+	}
+	c.RegisterParam("OS", map[string]interface{}{
+		"Name":         sysinfo.OS().String(),
+		"Version":      osVersion,
+		"Architecture": sysinfo.Architecture().String(),
+	})
+	c.RegisterParam("Shell", subshellName)
+
+	return c
+}
+
 func (c *Conditional) RegisterFunc(name string, value interface{}) {
 	c.funcs[name] = value
 }

@@ -6,8 +6,6 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/ActiveState/sysinfo"
-
 	"github.com/ActiveState/cli/cmd/state/internal/cmdtree"
 	"github.com/ActiveState/cli/internal/config" // MUST be first!
 	"github.com/ActiveState/cli/internal/constants"
@@ -129,30 +127,13 @@ func run(args []string, out output.Outputer) (int, error) {
 	}
 
 	// Set up conditional, which accesses a lot of primer data
-	conditional := constraints.NewConditional()
-	conditional.RegisterParam("Project", map[string]string{
-		"Namespace": pj.Namespace(),
-		"Name":      pj.Name(),
-		"Owner":     pj.Owner(),
-	})
-	osVersion, err := sysinfo.OSVersion()
-	if err != nil {
-		logging.Error("Could not detect OSVersion: %v", err)
-	}
-	conditional.RegisterParam("OS", map[string]interface{}{
-		"Name":         sysinfo.OS().String(),
-		"Version":      osVersion,
-		"Architecture": sysinfo.Architecture().String(),
-	})
-
 	sshell := subshell.New()
-	conditional.RegisterParam("Shell", sshell.Shell())
-
+	conditional := constraints.NewPrimeConditional(pj.Owner(), pj.Name(), pj.Namespace(), sshell.Shell())
 	project.RegisterConditional(conditional)
 
 	// Run the actual command
 	cmds := cmdtree.New(primer.New(pj, out, authentication.Get(), prompt.New(), sshell, conditional))
-	err = cmds.Execute(args[1:])
+	err := cmds.Execute(args[1:])
 
 	return unwrapError(err)
 }
