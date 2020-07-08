@@ -6,20 +6,20 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // V1NamespaceAllOf0 v1 namespace all of0
+//
 // swagger:model v1NamespaceAllOf0
 type V1NamespaceAllOf0 struct {
 
 	// links
 	// Required: true
-	Links *V1NamespaceAllOf0Links `json:"links"`
+	Links *V1SubSchemaSelfLink `json:"links"`
 
 	// namespace id
 	// Required: true

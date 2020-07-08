@@ -54,13 +54,18 @@ type ErrorInput interface {
 
 // NewError creates a new error, it does a locale.Tt lookup of the given id, if the lookup fails it will use the
 // locale string instead
-func NewError(id, locale string, args ...string) error {
-	return WrapError(nil, id, locale, args...)
+func NewError(id string, args ...string) error {
+	return WrapError(nil, id, args...)
 }
 
 // WrapError creates a new error that wraps the given error, it does a locale.Tt lookup of the given id, if the lookup
 // fails it will use the locale string instead
-func WrapError(err error, id, locale string, args ...string) error {
+func WrapError(err error, id string, args ...string) error {
+	locale := id
+	if len(args) > 0 {
+		locale, args = args[0], args[1:]
+	}
+
 	l := &LocalizedError{}
 	translation := Tl(id, locale, args...)
 	l.wrapped = err
@@ -70,12 +75,17 @@ func WrapError(err error, id, locale string, args ...string) error {
 }
 
 // NewInputError is like NewError but marks it as an input error
-func NewInputError(id, locale string, args ...string) error {
-	return WrapInputError(nil, id, locale, args...)
+func NewInputError(id string, args ...string) error {
+	return WrapInputError(nil, id, args...)
 }
 
 // WrapInputError is like WrapError but marks it as an input error
-func WrapInputError(err error, id, locale string, args ...string) error {
+func WrapInputError(err error, id string, args ...string) error {
+	locale := id
+	if len(args) > 0 {
+		locale, args = args[0], args[1:]
+	}
+
 	l := &LocalizedError{}
 	translation := Tl(id, locale, args...)
 	l.inputErr = true

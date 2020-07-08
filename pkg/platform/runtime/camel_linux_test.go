@@ -11,12 +11,14 @@ import (
 	"testing"
 
 	"github.com/ActiveState/archiver"
+	"github.com/go-openapi/strfmt"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	pMock "github.com/ActiveState/cli/internal/progress/mock"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
-	"github.com/stretchr/testify/suite"
 )
 
 type CamelLinuxRuntimeTestSuite struct {
@@ -116,9 +118,9 @@ func (suite *CamelLinuxRuntimeTestSuite) Test_PostUnpackWithFailures() {
 			artifact, _ := headchefArtifact(archivePath)
 			counter := pMock.NewMockIncrementer()
 
-			cr, fail := runtime.NewCamelRuntime([]*runtime.HeadChefArtifact{artifact}, cacheDir)
+			cr, fail := runtime.NewCamelRuntime(strfmt.UUID(""), []*runtime.HeadChefArtifact{artifact}, cacheDir)
 			suite.Require().NoError(fail.ToError(), "camel runtime assembler initialized")
-			fail = fileutils.MkdirUnlessExists(cr.InstallationDirectory(artifact))
+			fail = fileutils.MkdirUnlessExists(cacheDir)
 			suite.Require().NoError(fail.ToError(), "creating installation directory")
 			fail = cr.PostUnpackArtifact(artifact, runtimeDir, archivePath, func() { counter.Increment() })
 

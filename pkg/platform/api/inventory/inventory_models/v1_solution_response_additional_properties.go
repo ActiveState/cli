@@ -6,14 +6,14 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // V1SolutionResponseAdditionalProperties v1 solution response additional properties
+//
 // swagger:model v1SolutionResponseAdditionalProperties
 type V1SolutionResponseAdditionalProperties struct {
 

@@ -8,14 +8,14 @@ package inventory_models
 import (
 	"strconv"
 
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // V1SolverValidationErrorAllOf1 v1 solver validation error all of1
+//
 // swagger:model v1SolverValidationErrorAllOf1
 type V1SolverValidationErrorAllOf1 struct {
 

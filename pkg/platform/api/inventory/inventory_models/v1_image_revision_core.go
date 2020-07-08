@@ -6,20 +6,20 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // V1ImageRevisionCore Image Revision Core
 //
 // The properties of an image revision needed to create a new one
+//
 // swagger:model v1ImageRevisionCore
 type V1ImageRevisionCore struct {
-	V1ImageRevisionCoreAllOf0
+	V1SubSchemaVersionInfo
 
-	V1ImageRevisionCoreAllOf1
+	V1Revision
 
 	V1ImageRevisionCoreAllOf2
 }
@@ -27,18 +27,18 @@ type V1ImageRevisionCore struct {
 // UnmarshalJSON unmarshals this object from a JSON structure
 func (m *V1ImageRevisionCore) UnmarshalJSON(raw []byte) error {
 	// AO0
-	var aO0 V1ImageRevisionCoreAllOf0
+	var aO0 V1SubSchemaVersionInfo
 	if err := swag.ReadJSON(raw, &aO0); err != nil {
 		return err
 	}
-	m.V1ImageRevisionCoreAllOf0 = aO0
+	m.V1SubSchemaVersionInfo = aO0
 
 	// AO1
-	var aO1 V1ImageRevisionCoreAllOf1
+	var aO1 V1Revision
 	if err := swag.ReadJSON(raw, &aO1); err != nil {
 		return err
 	}
-	m.V1ImageRevisionCoreAllOf1 = aO1
+	m.V1Revision = aO1
 
 	// AO2
 	var aO2 V1ImageRevisionCoreAllOf2
@@ -54,13 +54,13 @@ func (m *V1ImageRevisionCore) UnmarshalJSON(raw []byte) error {
 func (m V1ImageRevisionCore) MarshalJSON() ([]byte, error) {
 	_parts := make([][]byte, 0, 3)
 
-	aO0, err := swag.WriteJSON(m.V1ImageRevisionCoreAllOf0)
+	aO0, err := swag.WriteJSON(m.V1SubSchemaVersionInfo)
 	if err != nil {
 		return nil, err
 	}
 	_parts = append(_parts, aO0)
 
-	aO1, err := swag.WriteJSON(m.V1ImageRevisionCoreAllOf1)
+	aO1, err := swag.WriteJSON(m.V1Revision)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +71,6 @@ func (m V1ImageRevisionCore) MarshalJSON() ([]byte, error) {
 		return nil, err
 	}
 	_parts = append(_parts, aO2)
-
 	return swag.ConcatJSON(_parts...), nil
 }
 
@@ -79,12 +78,12 @@ func (m V1ImageRevisionCore) MarshalJSON() ([]byte, error) {
 func (m *V1ImageRevisionCore) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	// validation for a type composition with V1ImageRevisionCoreAllOf0
-	if err := m.V1ImageRevisionCoreAllOf0.Validate(formats); err != nil {
+	// validation for a type composition with V1SubSchemaVersionInfo
+	if err := m.V1SubSchemaVersionInfo.Validate(formats); err != nil {
 		res = append(res, err)
 	}
-	// validation for a type composition with V1ImageRevisionCoreAllOf1
-	if err := m.V1ImageRevisionCoreAllOf1.Validate(formats); err != nil {
+	// validation for a type composition with V1Revision
+	if err := m.V1Revision.Validate(formats); err != nil {
 		res = append(res, err)
 	}
 	// validation for a type composition with V1ImageRevisionCoreAllOf2

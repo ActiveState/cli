@@ -51,20 +51,8 @@ namespace StateDeploy
             ActionResult result = RunCommand(session, installCmd);
             if (result.Equals(ActionResult.UserExit))
             {
-                result = Uninstall.Remove.Dir(session, installPath);
-                if (result.Equals(ActionResult.Failure))
-                {
-                    session.Log("Could not remove installation directory");
-                    return ActionResult.Failure;
-                }
-
-                result = Uninstall.Remove.EnvironmentEntries(session, installPath);
-                if (result.Equals(ActionResult.Failure))
-                {
-                    session.Log("Could not remove environment entries");
-                    return ActionResult.Failure;
-                }
-                return ActionResult.UserExit;
+                // Catch cancel and return
+                return result;
             }
             Status.ProgressBar.Increment(session, 1);
 
@@ -182,8 +170,8 @@ namespace StateDeploy
             }
             session.Log("Starting state deploy with state tool at " + stateToolPath);
 
-            Status.ProgressBar.StatusMessage(session, string.Format("Deploying project {0}...", session.CustomActionData["PROJECT_NAME"]));
-            MessageResult statusResult = Status.ProgressBar.StatusMessage(session, string.Format("Preparing deployment of {0}...", session.CustomActionData["PROJECT_NAME"]));
+            Status.ProgressBar.StatusMessage(session, string.Format("Deploying project {0}...", session.CustomActionData["PROJECT_OWNER_AND_NAME"]));
+            MessageResult statusResult = Status.ProgressBar.StatusMessage(session, string.Format("Preparing deployment of {0}...", session.CustomActionData["PROJECT_OWNER_AND_NAME"]));
             if (statusResult == MessageResult.Cancel)
             {
                 return ActionResult.UserExit;
@@ -192,7 +180,7 @@ namespace StateDeploy
             var sequence = new ReadOnlyCollection<InstallSequenceElement>(
                 new[]
                 {
-                    new InstallSequenceElement("install", string.Format("Installing {0}", session.CustomActionData["PROJECT_NAME"])),
+                    new InstallSequenceElement("install", string.Format("Installing {0}", session.CustomActionData["PROJECT_OWNER_AND_NAME"])),
                     new InstallSequenceElement("configure", "Updating system environment"),
                     new InstallSequenceElement("symlink", "Creating shortcut directory"),
                 });
@@ -209,22 +197,10 @@ namespace StateDeploy
 
                     string output;
                     var runResult = RunCommand(session, deployCmd, out output);
-                    if (runResult == ActionResult.UserExit)
+                    if (runResult.Equals(ActionResult.UserExit))
                     {
-                        ActionResult result = Uninstall.Remove.Dir(session, session.CustomActionData["INSTALLDIR"]);
-                        if (result.Equals(ActionResult.Failure))
-                        {
-                            session.Log("Could not remove installation directory");
-                            return ActionResult.Failure;
-                        }
-
-                        result = Uninstall.Remove.EnvironmentEntries(session, session.CustomActionData["INSTALLDIR"]);
-                        if (result.Equals(ActionResult.Failure))
-                        {
-                            session.Log("Could not remove environment entries");
-                            return ActionResult.Failure;
-                        }
-                        return ActionResult.UserExit;
+                        // Catch cancel and return
+                        return runResult;
                     }
                     else if (runResult == ActionResult.Failure)
                     {
@@ -275,7 +251,7 @@ namespace StateDeploy
         private static string BuildDeployCmd(Session session, string subCommand, string stateToolPath)
         {
             string installDir = session.CustomActionData["INSTALLDIR"];
-            string projectName = session.CustomActionData["PROJECT_NAME"];
+            string projectName = session.CustomActionData["PROJECT_OWNER_AND_NAME"];
             string isModify = session.CustomActionData["IS_MODIFY"];
 
             StringBuilder deployCMDBuilder = new StringBuilder(stateToolPath + " deploy " + subCommand);

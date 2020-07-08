@@ -60,7 +60,7 @@ func (suite *MetaDataTestSuite) TestMetaData_Prepare() {
 
 	suite.Len(metaData.TargetedRelocations, 1, "expected one targeted relocation")
 	suite.Equal(runtime.TargetedRelocation{
-		InDir:        tempDir,
+		InDir:        relBinDir,
 		SearchString: "#!" + filepath.Join("/", relVersionedDir),
 		Replacement:  "#!" + versionedDir,
 	}, metaData.TargetedRelocations[0], suite.dir)

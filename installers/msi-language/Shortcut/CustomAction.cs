@@ -12,6 +12,7 @@ namespace Shortcut
         {
             session.Log("Begin InstallShortcuts");
             string shortcutData = session.CustomActionData["SHORTCUTS"];
+            string appStartMenuPath = session.CustomActionData["APP_START_MENU_PATH"];
             if (shortcutData.ToLower() == "none")
             {
                 session.Log("Recieved none, not building any shortcuts");
@@ -25,15 +26,29 @@ namespace Shortcut
                 switch (s)
                 {
                     case "perlcritic":
-                        ActionResult result = PerlCriticShortcut(session);
-                        if (result.Equals(ActionResult.Failure))
                         {
-                            session.Log("Could not create Perl Critic shortcut");
-                            return result;
+                            ActionResult result = PerlCriticShortcut(session, appStartMenuPath);
+                            if (result.Equals(ActionResult.Failure))
+                            {
+                                session.Log("Could not create Perl Critic shortcut");
+                                // Do not fail if we cannot create shortcut
+                                return ActionResult.Success;
+                            }
+                            break;
                         }
-                        break;
+                    case "cmdprompt":
+                        {
+                            ActionResult result = CmdPromptShortcut(session, appStartMenuPath);
+                            if (result.Equals(ActionResult.Failure))
+                            {
+                                session.Log("Could not create Command Prompt shortcut");
+                                // Do not fail if we cannot create shortcut
+                                return ActionResult.Success;
+                            }
+                            break;
+                        }
                     default:
-                        session.Log(string.Format("Recieved unknown shortcut, not building: {0}", shortcut));
+                        session.Log(string.Format("Received unknown shortcut, not building: {0}", shortcut));
                         break;
 
                 }
@@ -41,29 +56,23 @@ namespace Shortcut
             return ActionResult.Success;
         }
 
-        private static ActionResult PerlCriticShortcut(Session session)
+        private static ActionResult PerlCriticShortcut(Session session, string appStartMenuPath)
         {
             session.Log("Installing Perl Critic shortcut");
 
-            string[] subDirs = Directory.GetDirectories(session.CustomActionData["INSTALLDIR"]);
-            if (subDirs.Length != 2)
+            string target = Path.Combine(session.CustomActionData["INSTALLDIR"], "bin", "wperl.exe");
+            if (!System.IO.File.Exists(target))
             {
-                session.Log("Unknown deployment directory configuration");
+                session.Log(string.Format("wperl.exe does not exist in path: {0}", target));
                 return ActionResult.Failure;
             }
 
-            string targetDir = subDirs[0];
-            if (targetDir == "bin")
+            string perlCriticLocation = Path.Combine(session.CustomActionData["INSTALLDIR"], "bin", "perlcritic-gui");
+            if (!System.IO.File.Exists(perlCriticLocation))
             {
-                targetDir = subDirs[1];
+                session.Log(string.Format("perlcritic-gui does not exist in path: {0}", perlCriticLocation));
+                return ActionResult.Failure;
             }
-
-            string target = targetDir + @"\bin\wperl.exe";
-            string projectName = session.CustomActionData["PROJECT_NAME"];
-            string shortcutDir = projectName.Substring(projectName.IndexOf("/")+1);
-
-            string commonStartMenuPath = Environment.GetFolderPath(Environment.SpecialFolder.CommonStartMenu);
-            string appStartMenuPath = Path.Combine(commonStartMenuPath, "Programs", shortcutDir);
 
             if (!Directory.Exists(appStartMenuPath))
                 Directory.CreateDirectory(appStartMenuPath);
@@ -75,7 +84,32 @@ namespace Shortcut
             shortcut.Description = "Perl Critic";
             shortcut.IconLocation = session.CustomActionData["INSTALLDIR"] + "perl.ico";
             shortcut.TargetPath = target;
-            shortcut.Arguments = " -x " + targetDir + @"\bin\perlcritic-gui";
+            shortcut.Arguments = " -x " + perlCriticLocation;
+            shortcut.Save();
+            return ActionResult.Success;
+        }
+
+        private static ActionResult CmdPromptShortcut(Session session, string appStartMenuPath)
+        {
+            session.Log("Installing Cmd Prompt shortcut");
+
+            string target = Path.Combine(session.CustomActionData["INSTALLDIR"], "bin", "shell.bat");
+            if (!System.IO.File.Exists(target))
+            {
+                session.Log(string.Format("shell.bat does not exist in path: {0}", target));
+                return ActionResult.Failure;
+            }
+
+            if (!Directory.Exists(appStartMenuPath))
+                Directory.CreateDirectory(appStartMenuPath);
+
+            string shortcutLocation = Path.Combine(appStartMenuPath, "Developer Command Prompt.lnk");
+            WshShell shell = new WshShell();
+            IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(shortcutLocation);
+
+            shortcut.Description = "Developer Command Prompt";
+            shortcut.TargetPath = "%comspec%";
+            shortcut.Arguments = " /k " + target;
             shortcut.Save();
             return ActionResult.Success;
         }

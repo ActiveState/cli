@@ -6,17 +6,15 @@ package inventory_operations
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"net/http"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
-
-	strfmt "github.com/go-openapi/strfmt"
 )
 
 // NewGetNamespaceIngredientsParams creates a new GetNamespaceIngredientsParams object
@@ -111,6 +109,11 @@ type GetNamespaceIngredientsParams struct {
 
 	*/
 	Limit *int64
+	/*MaxVersionsPerIngredient
+	  Return only this many versions per ingredient found
+
+	*/
+	MaxVersionsPerIngredient *int64
 	/*Namespace*/
 	Namespace string
 	/*OrganizationID
@@ -214,6 +217,17 @@ func (o *GetNamespaceIngredientsParams) WithLimit(limit *int64) *GetNamespaceIng
 // SetLimit adds the limit to the get namespace ingredients params
 func (o *GetNamespaceIngredientsParams) SetLimit(limit *int64) {
 	o.Limit = limit
+}
+
+// WithMaxVersionsPerIngredient adds the maxVersionsPerIngredient to the get namespace ingredients params
+func (o *GetNamespaceIngredientsParams) WithMaxVersionsPerIngredient(maxVersionsPerIngredient *int64) *GetNamespaceIngredientsParams {
+	o.SetMaxVersionsPerIngredient(maxVersionsPerIngredient)
+	return o
+}
+
+// SetMaxVersionsPerIngredient adds the maxVersionsPerIngredient to the get namespace ingredients params
+func (o *GetNamespaceIngredientsParams) SetMaxVersionsPerIngredient(maxVersionsPerIngredient *int64) {
+	o.MaxVersionsPerIngredient = maxVersionsPerIngredient
 }
 
 // WithNamespace adds the namespace to the get namespace ingredients params
@@ -337,6 +351,22 @@ func (o *GetNamespaceIngredientsParams) WriteToRequest(r runtime.ClientRequest, 
 		qLimit := swag.FormatInt64(qrLimit)
 		if qLimit != "" {
 			if err := r.SetQueryParam("limit", qLimit); err != nil {
+				return err
+			}
+		}
+
+	}
+
+	if o.MaxVersionsPerIngredient != nil {
+
+		// query param max_versions_per_ingredient
+		var qrMaxVersionsPerIngredient int64
+		if o.MaxVersionsPerIngredient != nil {
+			qrMaxVersionsPerIngredient = *o.MaxVersionsPerIngredient
+		}
+		qMaxVersionsPerIngredient := swag.FormatInt64(qrMaxVersionsPerIngredient)
+		if qMaxVersionsPerIngredient != "" {
+			if err := r.SetQueryParam("max_versions_per_ingredient", qMaxVersionsPerIngredient); err != nil {
 				return err
 			}
 		}

@@ -8,18 +8,18 @@ package inventory_models
 import (
 	"strconv"
 
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // V1ImageRevisionCoreAllOf2 v1 image revision core all of2
+//
 // swagger:model v1ImageRevisionCoreAllOf2
 type V1ImageRevisionCoreAllOf2 struct {
 
 	// conditions
-	Conditions []*V1ImageRevisionCoreAllOf2ConditionsItems `json:"conditions"`
+	Conditions []*V1SubSchemaCondition `json:"conditions"`
 }
 
 // Validate validates this v1 image revision core all of2

@@ -6,14 +6,14 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // V1IngredientVersionAllOf0LinksAllOf1 v1 ingredient version all of0 links all of1
+//
 // swagger:model v1IngredientVersionAllOf0LinksAllOf1
 type V1IngredientVersionAllOf0LinksAllOf1 struct {
 

@@ -8,9 +8,8 @@ package inventory_models
 import (
 	"strconv"
 
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
@@ -18,11 +17,12 @@ import (
 // V1PatchCore Patch Core
 //
 // A diff of changes that can be applied to an ingredient's source code. This model only contains mutable fields of a patch.
+//
 // swagger:model v1PatchCore
 type V1PatchCore struct {
 
 	// The features that must already be present in the recipe for this patch to be used. For example, can be used to create patches that only work on specific operating systems.
-	Conditions []*V1PatchCoreConditionsItems `json:"conditions"`
+	Conditions []*V1SubSchemaCondition `json:"conditions"`
 
 	// The patch itself
 	// Required: true

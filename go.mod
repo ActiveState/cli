@@ -7,7 +7,7 @@ require (
 	github.com/ActiveState/archiver v3.1.1+incompatible
 	github.com/ActiveState/go-colortext v0.0.0-20190402165444-9cd201a66eb0
 	github.com/ActiveState/go-ogle-analytics v0.0.0-20170510030904-9b3f14901527
-	github.com/ActiveState/sysinfo v0.0.0-20200504175252-e607d44295c6
+	github.com/ActiveState/sysinfo v0.0.0-20200619170619-0582d42daf27
 	github.com/ActiveState/termtest v0.5.1
 	github.com/ActiveState/termtest/expect v0.5.1
 	github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78
@@ -26,6 +26,7 @@ require (
 	github.com/denisbrodbeck/machineid v0.8.0
 	github.com/dsnet/compress v0.0.0-20171208185109-cc9eb1d7ad76 // indirect
 	github.com/fatih/color v1.5.0
+	github.com/felixge/fgprof v0.9.0
 	github.com/fsnotify/fsnotify v1.4.7
 	github.com/go-ini/ini v1.32.0 // indirect
 	github.com/go-ole/go-ole v1.2.4
@@ -47,6 +48,7 @@ require (
 	github.com/hashicorp/go-version v1.1.0
 	github.com/hashicorp/hcl v0.0.0-20171017181929-23c074d0eceb // indirect
 	github.com/hectane/go-acl v0.0.0-20190604041725-da78bae5fc95
+	github.com/iafan/cwalk v0.0.0-20191125092548-dd7f505d2f66
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/jarcoal/httpmock v1.0.3
 	github.com/jessevdk/go-flags v1.4.0

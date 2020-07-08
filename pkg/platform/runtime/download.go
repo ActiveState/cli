@@ -36,7 +36,7 @@ var (
 	FailNoValidArtifact = failures.Type("runtime.fail.novalidartifact")
 
 	// FailBuildFailed indicates a failure due to the build failing
-	FailBuildFailed = failures.Type("runtime.fail.buildfailed")
+	FailBuildFailed = failures.Type("runtime.fail.buildfailed", failures.FailUser)
 
 	// FailBuildInProgress indicates a failure due to the build being in progress
 	FailBuildInProgress = failures.Type("runtime.fail.buildinprogress", failures.FailUser)

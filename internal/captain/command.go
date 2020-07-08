@@ -225,12 +225,34 @@ func (c *Command) persistRunner(cobraCmd *cobra.Command, args []string) {
 	c.runFlags(true)
 }
 
+// returns a slice of the names of the sub-commands called
+func (c *Command) subcommandNames() []string {
+	var commands []string
+	cmd := c.cobra
+	root := cmd.Root()
+	for {
+		if cmd == nil || cmd == root {
+			break
+		}
+		commands = append(commands, cmd.Name())
+		cmd = cmd.Parent()
+	}
+
+	// reverse commands
+	for i, j := 0, len(commands)-1; i < j; i, j = i+1, j-1 {
+		commands[i], commands[j] = commands[j], commands[i]
+	}
+
+	return commands
+}
+
 func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	outputFlag := cobraCmd.Flag("output")
 	if outputFlag != nil && outputFlag.Changed {
 		analytics.CustomDimensions.SetOutput(outputFlag.Value.String())
 	}
-	analytics.Event(analytics.CatRunCmd, c.cobra.Name())
+	subCommandString := strings.Join(c.subcommandNames(), " ")
+	analytics.Event(analytics.CatRunCmd, subCommandString)
 
 	// Run OnUse functions for non-persistent flags
 	c.runFlags(false)

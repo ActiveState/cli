@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // AddKernelReader is a Reader for the AddKernel structure.
@@ -24,21 +23,18 @@ type AddKernelReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *AddKernelReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 201:
 		result := NewAddKernelCreated()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewAddKernelBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewAddKernelDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -68,6 +64,10 @@ func (o *AddKernelCreated) Error() string {
 	return fmt.Sprintf("[POST /v1/kernels][%d] addKernelCreated  %+v", 201, o.Payload)
 }
 
+func (o *AddKernelCreated) GetPayload() *inventory_models.V1Kernel {
+	return o.Payload
+}
+
 func (o *AddKernelCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(inventory_models.V1Kernel)
@@ -95,6 +95,10 @@ type AddKernelBadRequest struct {
 
 func (o *AddKernelBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/kernels][%d] addKernelBadRequest  %+v", 400, o.Payload)
+}
+
+func (o *AddKernelBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
+	return o.Payload
 }
 
 func (o *AddKernelBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -133,6 +137,10 @@ func (o *AddKernelDefault) Code() int {
 
 func (o *AddKernelDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/kernels][%d] addKernel default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *AddKernelDefault) GetPayload() *inventory_models.RestAPIError {
+	return o.Payload
 }
 
 func (o *AddKernelDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

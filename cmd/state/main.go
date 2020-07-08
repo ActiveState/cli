@@ -1,7 +1,10 @@
 package main
 
 import (
+	"bufio"
+	"errors"
 	"os"
+	"os/exec"
 
 	"github.com/ActiveState/cli/cmd/state/internal/cmdtree"
 	"github.com/ActiveState/cli/internal/config" // MUST be first!
@@ -43,6 +46,17 @@ func main() {
 	code, err := run(os.Args, out)
 	if err != nil {
 		out.Error(err)
+
+		// If a state tool error occurs in a VSCode integrated terminal, we want
+		// to pause and give time to the user to read the error message.
+		// But not, if we exit, because the last command in the activated sub-shell failed.
+		var eerr *exec.ExitError
+		isExitError := errors.As(err, &eerr)
+		if !isExitError && outFlags.ConfirmExit {
+			out.Print(locale.T("confirm_exit_on_error_prompt"))
+			br := bufio.NewReader(os.Stdin)
+			br.ReadLine()
+		}
 	}
 
 	os.Exit(code)

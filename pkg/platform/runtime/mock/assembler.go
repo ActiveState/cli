@@ -28,16 +28,6 @@ func (a *Assembler) ArtifactsToDownloadAndUnpack() ([]*runtime.HeadChefArtifact,
 	return args.Get(0).([]*runtime.HeadChefArtifact), args.Get(1).(map[string]*runtime.HeadChefArtifact)
 }
 
-func (a *Assembler) InstallationDirectory(artf *runtime.HeadChefArtifact) string {
-	args := a.Called(artf)
-	return args.String(0)
-}
-
-func (a *Assembler) InstallDirs() []string {
-	args := a.Called()
-	return args.Get(0).([]string)
-}
-
 func (a *Assembler) PreInstall() *failures.Failure {
 	args := a.Called()
 	if args.Get(0) == nil {

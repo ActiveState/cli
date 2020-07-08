@@ -1,24 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi" xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
-	<Product Id="{{ID}}" Name="{{PROJECT}}" Language="1033" Version="1.0.0.0" Manufacturer="ActiveState" UpgradeCode="a8b44798-ee47-4404-8ae3-d821e603b426">
+	<Product Id="{{ID}}" Name="{{PROJECT_NAME--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------}}" Language="1033" Version="{{VERSION}}" Manufacturer="ActiveState" UpgradeCode="{{ID}}">
 		<Package Id='*' Keywords='Installer' Description="ActiveState Language Runtime"
             Comments='State Tool is a registered trademark of ActiveState' Manufacturer='ActiveState'
             InstallerVersion='200' Languages='1033' Compressed='yes' SummaryCodepage='1252' InstallPrivileges='elevated' AdminImage='yes' InstallScope='perMachine' />
 
     <!-- Configuration parameters -->
-    <Property Id="PROJECT_NAME" Value="ActiveState/{{PROJECT}}" />
-    <Property Id="REL_NOTES" Value="{{REL_NOTES}}" />
+    <Property Id="PROJECT_OWNER_AND_NAME" Value="{{PROJECT_OWNER_AND_NAME----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------}}" />
+    <Property Id="REL_NOTES" Value="{{REL_NOTES-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------}}" />
 	<!-- A comma separated list of shortcuts to be installed -->
-	<!-- Expected possible values: [PerlCritic] or supply None to build no shortcuts -->
-	<Property Id="SHORTCUTS" Value="{{SHORTCUTS}}" />
+	<!-- Expected possible values: [PerlCritic,CmdPrompt] or supply None to build no shortcuts -->
+	<Property Id="SHORTCUTS" Value="{{SHORTCUTS-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------}}" />
     <!-- End Configuration parameters -->
     
     <!-- Design assets -->
     <WixVariable Id='WixUIBannerBmp' Value='assets\header.bmp'/>
     <WixVariable Id='WixUIDialogBmp' Value='assets\InstallGraphic.bmp'/>
     <WixVariable Id="WixUILicenseRtf" Value="assets\license.rtf" />
-    <Icon Id="perl.ico" SourceFile="perl.ico"/>
-    <Property Id="ARPPRODUCTICON" Value="perl.ico" />
+    <Icon Id="InstallerIcon" SourceFile="{{ICON}}"/>
+	<Property Id="ARPPRODUCTICON" Value="InstallerIcon" />
     <!-- End Design assets -->
 
     <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
@@ -26,17 +26,21 @@
 
     <!-- The default directory structure when installing a language runtime. This can be changed via the UI -->
     <Directory Id='TARGETDIR' Name='SourceDir'>
-      <Directory Id='INSTALLDIR' Name='Perl64'>
-        <Component Id='DeployDir' Guid='7CF56E89-AA69-4A35-921C-F2CA2F9FE12B'>
-          <RemoveFolder Id='INSTALLDIR' On='uninstall' />
-          <!-- Required by WiX -->
-          <RegistryValue Root='HKLM' Key='SOFTWARE\[Manufacturer]\[ProductName]' Type='string' Value='' KeyPath='yes' />
-        </Component>
-		<Directory Id="ProgramMenuFolder">
-			<Directory Id="ApplicationProgramsFolder" Name="{{PROJECT}}"/>
-		</Directory>
+      <Directory Id="WINDOWSVOLUME" >
+        <Directory Id='INSTALLDIR' Name='Perl64'>
+          <Component Id='DeployDir' Guid='7CF56E89-AA69-4A35-921C-F2CA2F9FE12B'>
+            <RemoveFolder Id='INSTALLDIR' On='uninstall' />
+            <!-- Required by WiX -->
+            <RegistryValue Root='HKLM' Key='SOFTWARE\[Manufacturer]\[ProductName]' Type='string' Value='' KeyPath='yes' />
+          </Component>
+          <Directory Id="ProgramMenuFolder">
+            <Directory Id="ApplicationProgramsFolder" Name="{{PROJECT_NAME------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------}}"/>
+          </Directory>
+        </Directory>
       </Directory>
     </Directory>
+
+    <SetDirectory Id="WINDOWSVOLUME" Value="[WindowsVolume]"/>
 
 	<!-- Build documentation URL shortcut -->
 	<DirectoryRef Id="ApplicationProgramsFolder">
@@ -53,13 +57,13 @@
     <Feature Id='Complete' Level='1'>
       <Component Id='ProgIdPerl' Directory='TARGETDIR' Guid='4dda6117-ca9c-4371-a09d-c8575f520a02'>
         <!-- Perl file scripts -->
-        <ProgId Id="Perl.Document" Description="!(loc.DescPL)" Advertise='no' Icon='PerlIco'>
+        <ProgId Id="Perl.Document" Description="!(loc.DescPL)" Advertise='no' Icon='InstallerIco'>
           <Extension Id="pl" ContentType="text/x-perl">
             <Verb Id="open" Command="!(loc.ExplorerMenuOpenPL)" TargetProperty="PerlExe" Argument="&quot;%1&quot;" />
           </Extension>
         </ProgId>
         <!-- Windows perl file scripts (started with hidden console) -->
-        <ProgId Id="WPerl.Document" Description="!(loc.DescPL)" Advertise='no' Icon='PerlIco'>
+        <ProgId Id="WPerl.Document" Description="!(loc.DescPL)" Advertise='no' Icon='InstallerIco'>
           <Extension Id="wpl" ContentType="text/x-w-perl">
             <Verb Id="open" Command="!(loc.ExplorerMenuOpenPL)" TargetProperty="WPerlExe" Argument="&quot;%1&quot;" />
           </Extension>
@@ -72,8 +76,8 @@
         <RegistryValue Root="HKLM" Key="Software\[Manufacturer]\[ProductName]" Name="ShortcutDir" Value="[ApplicationProgramsFolder]" Type="string"/>
 		<RemoveFolder Id='CleanupApplicationFolder' On='uninstall' />
       </Component>
-      <Component Id='cmpPerlIco' Directory='INSTALLDIR' Guid='1069a43f-9ec5-4ad8-b15c-2452b56c9b04'>
-        <File Id='PerlIco' Source='perl.ico' />
+      <Component Id='cmpInstallerIco' Directory='INSTALLDIR' Guid='1069a43f-9ec5-4ad8-b15c-2452b56c9b04'>
+        <File Id='InstallerIco' Source='{{ICON}}' />
       </Component>
 	  <ComponentRef Id="ApplicationShortcut" />
     </Feature>
@@ -165,9 +169,11 @@
 
 		<Property Id="STATE_TOOL_PATH" Value="state.exe" />
 
-		<CustomAction Id="SetStateDeployPropertyValues" Property="StateDeploy" Value="INSTALLDIR=[INSTALLDIR];PROJECT_NAME=[PROJECT_NAME];IS_MODIFY=[IS_MODIFY];STATE_TOOL_INSTALLED=[STATE_TOOL_INSTALLED];STATE_TOOL_PATH=[STATE_TOOL_PATH]" />
+		<CustomAction Id="SetStateDeployPropertyValues" Property="StateDeploy" Value="INSTALLDIR=[INSTALLDIR];PROJECT_OWNER_AND_NAME=[PROJECT_OWNER_AND_NAME];IS_MODIFY=[IS_MODIFY];STATE_TOOL_INSTALLED=[STATE_TOOL_INSTALLED];STATE_TOOL_PATH=[STATE_TOOL_PATH]" />
 		<CustomAction Id="SetUninstallProperties" Property="Uninstall" Value="REMEMBER=[REMEMBER];REMEMBER_SHORTCUTDIR=[REMEMBER_SHORTCUTDIR]" />
-		<CustomAction Id="SetShortcutInfo" Property="Shortcut" Value="INSTALLDIR=[INSTALLDIR];PROJECT_NAME=[PROJECT_NAME];SHORTCUTS=[SHORTCUTS]" />
+		<CustomAction Id="SetShortcutInfo" Property="Shortcut" Value="INSTALLDIR=[INSTALLDIR];APP_START_MENU_PATH=[ApplicationProgramsFolder];SHORTCUTS=[SHORTCUTS]" />
+		<CustomAction Id="SetRollbackPropertyValues" Property="Rollback" Value="STATE_TOOL_INSTALLED=[STATE_TOOL_INSTALLED];INSTALLDIR=[INSTALLDIR]" />
+
 
     <Binary Id="StateCommandCA" SourceFile="$(var.StateCommandExists.TargetDir)$(var.StateCommandExists.TargetName).CA.dll" />
 		<CustomAction Id="StateCommandExists" Impersonate="yes" BinaryKey="StateCommandCA" DllEntry="StateCommandExists" Return="check" />
@@ -181,13 +187,18 @@
 		<Binary Id="ShortcutCA" SourceFile="$(var.Shortcut.TargetDir)$(var.Shortcut.TargetName).CA.dll" />
 		<CustomAction Id="Shortcut" Impersonate="no" BinaryKey="ShortcutCA" DllEntry="InstallShortcuts" Execute="deferred" Return="check" />
 
+		<Binary Id="RollbackCA" SourceFile="$(var.Rollback.TargetDir)$(var.Rollback.TargetName).CA.dll" />
+		<CustomAction Id="Rollback" Impersonate="no" BinaryKey="RollbackCA" DllEntry="Rollback" Execute="rollback" Return="check" />
+
 		<Binary Id="UninstallCA" SourceFile="$(var.Uninstall.TargetDir)$(var.Uninstall.TargetName).CA.dll" />
 		<CustomAction Id="Uninstall" Impersonate="no" BinaryKey="UninstallCA" DllEntry="Uninstall" Execute="deferred" Return="check" />
 
 		<InstallExecuteSequence>
 			<Custom Action="Status" After="InstallInitialize">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
-			<Custom Action="SetStateDeployPropertyValues" After="Status">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
-			<Custom Action="StateDeploy" After="SetStateDeployPropertyValues">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
+			<Custom Action="SetRollbackPropertyValues" After="Status">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
+			<Custom Action="SetStateDeployPropertyValues" After="SetRollbackPropertyValues">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
+			<Custom Action="Rollback" After="SetStateDeployPropertyValues">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
+			<Custom Action="StateDeploy" After="Rollback">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
 			<Custom Action="SetShortcutInfo" After="CreateShortcuts">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
 			<Custom Action="Shortcut" After="SetShortcutInfo">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
 			<Custom Action="SetUninstallProperties" After="RemoveFiles">REMOVE="ALL"</Custom>

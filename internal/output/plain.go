@@ -156,6 +156,9 @@ func sprintStruct(value interface{}) (string, error) {
 		if err != nil {
 			return "", err
 		}
+		if stringValue == nilText {
+			continue
+		}
 
 		if isStruct(field.value) || isSlice(field.value) {
 			stringValue = "\n" + stringValue

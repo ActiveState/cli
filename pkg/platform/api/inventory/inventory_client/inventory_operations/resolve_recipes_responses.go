@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // ResolveRecipesReader is a Reader for the ResolveRecipes structure.
@@ -24,21 +23,18 @@ type ResolveRecipesReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *ResolveRecipesReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewResolveRecipesOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewResolveRecipesBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewResolveRecipesDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -68,6 +64,10 @@ func (o *ResolveRecipesOK) Error() string {
 	return fmt.Sprintf("[POST /v1/recipes][%d] resolveRecipesOK  %+v", 200, o.Payload)
 }
 
+func (o *ResolveRecipesOK) GetPayload() *inventory_models.V1RecipeResponse {
+	return o.Payload
+}
+
 func (o *ResolveRecipesOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(inventory_models.V1RecipeResponse)
@@ -95,6 +95,10 @@ type ResolveRecipesBadRequest struct {
 
 func (o *ResolveRecipesBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/recipes][%d] resolveRecipesBadRequest  %+v", 400, o.Payload)
+}
+
+func (o *ResolveRecipesBadRequest) GetPayload() *inventory_models.V1SolverValidationError {
+	return o.Payload
 }
 
 func (o *ResolveRecipesBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -133,6 +137,10 @@ func (o *ResolveRecipesDefault) Code() int {
 
 func (o *ResolveRecipesDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/recipes][%d] resolveRecipes default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *ResolveRecipesDefault) GetPayload() *inventory_models.V1SolverError {
+	return o.Payload
 }
 
 func (o *ResolveRecipesDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

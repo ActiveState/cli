@@ -8,9 +8,8 @@ package inventory_models
 import (
 	"strconv"
 
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
@@ -18,20 +17,21 @@ import (
 // V1AuthorPagedList Author Paged List
 //
 // A page of authors from a paged author list
+//
 // swagger:model v1AuthorPagedList
 type V1AuthorPagedList struct {
 
 	// The authors
 	// Required: true
-	Authors []*V1AuthorPagedListAuthorsItems `json:"authors"`
+	Authors []*V1Author `json:"authors"`
 
 	// links
 	// Required: true
-	Links *V1AuthorPagedListLinks `json:"links"`
+	Links *V1SubSchemaPagingLinks `json:"links"`
 
 	// paging
 	// Required: true
-	Paging *V1AuthorPagedListPaging `json:"paging"`
+	Paging *V1SubSchemaPaging `json:"paging"`
 }
 
 // Validate validates this v1 author paged list

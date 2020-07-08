@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // GetPatchesReader is a Reader for the GetPatches structure.
@@ -24,14 +23,12 @@ type GetPatchesReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetPatchesReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewGetPatchesOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	default:
 		result := NewGetPatchesDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -59,6 +56,10 @@ type GetPatchesOK struct {
 
 func (o *GetPatchesOK) Error() string {
 	return fmt.Sprintf("[GET /v1/patches][%d] getPatchesOK  %+v", 200, o.Payload)
+}
+
+func (o *GetPatchesOK) GetPayload() *inventory_models.V1PatchPagedList {
+	return o.Payload
 }
 
 func (o *GetPatchesOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -97,6 +98,10 @@ func (o *GetPatchesDefault) Code() int {
 
 func (o *GetPatchesDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/patches][%d] getPatches default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *GetPatchesDefault) GetPayload() *inventory_models.RestAPIError {
+	return o.Payload
 }
 
 func (o *GetPatchesDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

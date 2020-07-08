@@ -6,22 +6,22 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // V1KernelVersion Kernel Version
 //
 // The full kernel version data model
+//
 // swagger:model v1KernelVersion
 type V1KernelVersion struct {
 	V1KernelVersionAllOf0
 
-	V1KernelVersionAllOf1
+	V1KernelVersionCore
 
-	V1KernelVersionAllOf2
+	V1SubSchemaRevisionedResource
 }
 
 // UnmarshalJSON unmarshals this object from a JSON structure
@@ -34,18 +34,18 @@ func (m *V1KernelVersion) UnmarshalJSON(raw []byte) error {
 	m.V1KernelVersionAllOf0 = aO0
 
 	// AO1
-	var aO1 V1KernelVersionAllOf1
+	var aO1 V1KernelVersionCore
 	if err := swag.ReadJSON(raw, &aO1); err != nil {
 		return err
 	}
-	m.V1KernelVersionAllOf1 = aO1
+	m.V1KernelVersionCore = aO1
 
 	// AO2
-	var aO2 V1KernelVersionAllOf2
+	var aO2 V1SubSchemaRevisionedResource
 	if err := swag.ReadJSON(raw, &aO2); err != nil {
 		return err
 	}
-	m.V1KernelVersionAllOf2 = aO2
+	m.V1SubSchemaRevisionedResource = aO2
 
 	return nil
 }
@@ -60,18 +60,17 @@ func (m V1KernelVersion) MarshalJSON() ([]byte, error) {
 	}
 	_parts = append(_parts, aO0)
 
-	aO1, err := swag.WriteJSON(m.V1KernelVersionAllOf1)
+	aO1, err := swag.WriteJSON(m.V1KernelVersionCore)
 	if err != nil {
 		return nil, err
 	}
 	_parts = append(_parts, aO1)
 
-	aO2, err := swag.WriteJSON(m.V1KernelVersionAllOf2)
+	aO2, err := swag.WriteJSON(m.V1SubSchemaRevisionedResource)
 	if err != nil {
 		return nil, err
 	}
 	_parts = append(_parts, aO2)
-
 	return swag.ConcatJSON(_parts...), nil
 }
 
@@ -83,12 +82,12 @@ func (m *V1KernelVersion) Validate(formats strfmt.Registry) error {
 	if err := m.V1KernelVersionAllOf0.Validate(formats); err != nil {
 		res = append(res, err)
 	}
-	// validation for a type composition with V1KernelVersionAllOf1
-	if err := m.V1KernelVersionAllOf1.Validate(formats); err != nil {
+	// validation for a type composition with V1KernelVersionCore
+	if err := m.V1KernelVersionCore.Validate(formats); err != nil {
 		res = append(res, err)
 	}
-	// validation for a type composition with V1KernelVersionAllOf2
-	if err := m.V1KernelVersionAllOf2.Validate(formats); err != nil {
+	// validation for a type composition with V1SubSchemaRevisionedResource
+	if err := m.V1SubSchemaRevisionedResource.Validate(formats); err != nil {
 		res = append(res, err)
 	}
 

@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // GetKernelVersionReader is a Reader for the GetKernelVersion structure.
@@ -24,14 +23,12 @@ type GetKernelVersionReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetKernelVersionReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewGetKernelVersionOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	default:
 		result := NewGetKernelVersionDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -59,6 +56,10 @@ type GetKernelVersionOK struct {
 
 func (o *GetKernelVersionOK) Error() string {
 	return fmt.Sprintf("[GET /v1/kernels/{kernel_id}/versions/{kernel_version_id}][%d] getKernelVersionOK  %+v", 200, o.Payload)
+}
+
+func (o *GetKernelVersionOK) GetPayload() *inventory_models.V1KernelVersion {
+	return o.Payload
 }
 
 func (o *GetKernelVersionOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -97,6 +98,10 @@ func (o *GetKernelVersionDefault) Code() int {
 
 func (o *GetKernelVersionDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/kernels/{kernel_id}/versions/{kernel_version_id}][%d] getKernelVersion default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *GetKernelVersionDefault) GetPayload() *inventory_models.RestAPIError {
+	return o.Payload
 }
 
 func (o *GetKernelVersionDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
