@@ -397,15 +397,15 @@ func MakeScriptsFromConstrainedEntities(items []ConstrainedEntity) (scripts []*S
 var persistentProject *Project
 
 // Parse the given filepath, which should be the full path to an activestate.yaml file
-func Parse(filepath string) (*Project, *failures.Failure) {
-	dat, err := ioutil.ReadFile(filepath)
+func Parse(configFilepath string) (*Project, *failures.Failure) {
+	dat, err := ioutil.ReadFile(configFilepath)
 	if err != nil {
 		return nil, failures.FailIO.Wrap(err)
 	}
 
 	project := Project{}
 	err = yaml.Unmarshal([]byte(dat), &project)
-	project.path = filepath
+	project.path = configFilepath
 
 	if err != nil {
 		return nil, FailParseProject.New(locale.T("err_project_parse", map[string]interface{}{"Error": err.Error()}))
@@ -433,7 +433,7 @@ func Parse(filepath string) (*Project, *failures.Failure) {
 		project.Owner = match[1]
 		project.Name = match[2]
 	}
-	storeProjectMapping(fmt.Sprintf("%s/%s", project.Owner, project.Name), project.path)
+	storeProjectMapping(fmt.Sprintf("%s/%s", project.Owner, project.Name), filepath.Dir(project.path))
 
 	return &project, nil
 }
@@ -491,7 +491,7 @@ func (p *Project) Save() *failures.Failure {
 	if err != nil {
 		return failures.FailIO.Wrap(err)
 	}
-	storeProjectMapping(fmt.Sprintf("%s/%s", p.Owner, p.Name), p.Path())
+	storeProjectMapping(fmt.Sprintf("%s/%s", p.Owner, p.Name), filepath.Dir(p.Path()))
 
 	return nil
 }
@@ -791,9 +791,7 @@ func (p *Project) Persist() {
 // storeProjectMapping associates the namespace with the project
 // path in the config
 func storeProjectMapping(namespace, projectPath string) {
-	if filepath.Base(projectPath) == constants.ConfigFileName {
-		projectPath = filepath.Dir(projectPath)
-	}
+	projectPath = filepath.Clean(projectPath)
 
 	projects := viper.GetStringMapStringSlice(localProjectsConfigKey)
 	if projects == nil {
