@@ -74,6 +74,7 @@ const LocalProjectsConfigKey = "projects"
 type VersionInfo struct {
 	Branch  string `yaml:"branch"`
 	Version string `yaml:"version"`
+	Lock    string `yaml:"lock"`
 }
 
 // ProjectSimple reflects a bare basic project structure
@@ -87,6 +88,7 @@ type Project struct {
 	Namespace    string        `yaml:"namespace,omitempty"`
 	Branch       string        `yaml:"branch,omitempty"`
 	Version      string        `yaml:"version,omitempty"`
+	Lock         string        `yaml:"lock,omitempty"`
 	Environments string        `yaml:"environments,omitempty"`
 	Platforms    []Platform    `yaml:"platforms,omitempty"`
 	Languages    Languages     `yaml:"languages,omitempty"`
@@ -397,15 +399,15 @@ func MakeScriptsFromConstrainedEntities(items []ConstrainedEntity) (scripts []*S
 var persistentProject *Project
 
 // Parse the given filepath, which should be the full path to an activestate.yaml file
-func Parse(filepath string) (*Project, *failures.Failure) {
-	dat, err := ioutil.ReadFile(filepath)
+func Parse(configFilepath string) (*Project, *failures.Failure) {
+	dat, err := ioutil.ReadFile(configFilepath)
 	if err != nil {
 		return nil, failures.FailIO.Wrap(err)
 	}
 
 	project := Project{}
 	err = yaml.Unmarshal([]byte(dat), &project)
-	project.path = filepath
+	project.path = configFilepath
 
 	if err != nil {
 		return nil, FailParseProject.New(locale.T("err_project_parse", map[string]interface{}{"Error": err.Error()}))
@@ -433,7 +435,7 @@ func Parse(filepath string) (*Project, *failures.Failure) {
 		project.Owner = match[1]
 		project.Name = match[2]
 	}
-	storeProjectMapping(fmt.Sprintf("%s/%s", project.Owner, project.Name), project.path)
+	storeProjectMapping(fmt.Sprintf("%s/%s", project.Owner, project.Name), filepath.Dir(project.path))
 
 	return &project, nil
 }
@@ -491,7 +493,7 @@ func (p *Project) Save() *failures.Failure {
 	if err != nil {
 		return failures.FailIO.Wrap(err)
 	}
-	storeProjectMapping(fmt.Sprintf("%s/%s", p.Owner, p.Name), p.Path())
+	storeProjectMapping(fmt.Sprintf("%s/%s", p.Owner, p.Name), filepath.Dir(p.Path()))
 
 	return nil
 }
@@ -739,8 +741,8 @@ func validateCreateParams(params *CreateParams) *failures.Failure {
 	}
 }
 
-// ParseVersionInfo parses the version field from the projectfile, and ONLY the version field. This is to ensure it doesn't
-// trip over older activestate.yaml's with breaking changes
+// ParseVersionInfo parses the lock field from the projectfile and updates
+// the activestate.yaml if an older version representation is present
 func ParseVersionInfo(projectFilePath string) (*VersionInfo, *failures.Failure) {
 	if !fileutils.FileExists(projectFilePath) {
 		return nil, nil
@@ -752,22 +754,86 @@ func ParseVersionInfo(projectFilePath string) (*VersionInfo, *failures.Failure) 
 	}
 
 	versionStruct := VersionInfo{}
-	err = yaml.Unmarshal([]byte(dat), &versionStruct)
+	err = yaml.Unmarshal(dat, &versionStruct)
 	if err != nil {
 		return nil, FailParseProject.Wrap(err)
 	}
 
-	if versionStruct.Version == "" {
+	if versionStruct.Branch != "" && versionStruct.Version != "" {
+		err = AddLockInfo(projectFilePath, versionStruct.Branch, versionStruct.Version)
+		if err != nil {
+			return nil, FailParseProject.Wrap(err, locale.T("err_update_version"))
+		}
+		return ParseVersionInfo(projectFilePath)
+	}
+
+	if versionStruct.Lock == "" {
 		return nil, nil
 	}
 
-	version := strings.TrimSpace(versionStruct.Version)
-	match, fail := regexp.MatchString(`^\d+\.\d+\.\d+-(SHA)?[a-f0-9]+`, version)
+	lock := strings.TrimSpace(versionStruct.Lock)
+	match, fail := regexp.MatchString(`^([\w\/\-]+@)\d+\.\d+\.\d+-(SHA)?[a-f0-9]+`, lock)
 	if fail != nil || !match {
-		return &versionStruct, FailInvalidVersion.New(locale.T("err_invalid_version"))
+		return nil, FailInvalidVersion.New(locale.T("err_invalid_version"))
 	}
 
-	return &versionStruct, nil
+	split := strings.Split(versionStruct.Lock, "@")
+	if len(split) != 2 {
+		return nil, FailInvalidVersion.New(locale.T("err_invalid_version"))
+	}
+
+	return &VersionInfo{
+		Branch:  split[0],
+		Version: split[1],
+	}, nil
+}
+
+// AddLockInfo adds the lock field to activestate.yaml
+func AddLockInfo(projectFilePath, branch, version string) error {
+	data, err := cleanVersionInfo(projectFilePath)
+	if err != nil {
+		return locale.WrapError(err, "err_clean_projectfile", "Could not remove old version information from projectfile", projectFilePath)
+	}
+
+	lockRegex := regexp.MustCompile(`(?m)^lock:.*`)
+	if lockRegex.Match(data) {
+		versionUpdate := []byte(fmt.Sprintf("lock: %s@%s", branch, version))
+		replaced := lockRegex.ReplaceAll(data, versionUpdate)
+		return ioutil.WriteFile(projectFilePath, replaced, 0644)
+	}
+
+	projectRegex := regexp.MustCompile(fmt.Sprintf("(?m:(^project:\\s*%s))", ProjectURLRe))
+	lockString := fmt.Sprintf("%s@%s", branch, version)
+	lockUpdate := []byte(fmt.Sprintf("${1}\nlock: %s", lockString))
+
+	data, err = ioutil.ReadFile(projectFilePath)
+	if err != nil {
+		return err
+	}
+
+	updated := projectRegex.ReplaceAll(data, lockUpdate)
+
+	return ioutil.WriteFile(projectFilePath, updated, 0644)
+}
+
+func cleanVersionInfo(projectFilePath string) ([]byte, error) {
+	data, err := ioutil.ReadFile(projectFilePath)
+	if err != nil {
+		return nil, locale.WrapError(err, "err_read_projectfile", "Failed to read the activestate.yaml at: %s", projectFilePath)
+	}
+
+	branchRegex := regexp.MustCompile(`(?m:^branch:\s*\w+\n)`)
+	clean := branchRegex.ReplaceAll(data, []byte(""))
+
+	versionRegex := regexp.MustCompile(`(?m:^version:\s*\d+.\d+.\d+-[A-Za-z0-9]+\n)`)
+	clean = versionRegex.ReplaceAll(clean, []byte(""))
+
+	err = ioutil.WriteFile(projectFilePath, clean, 0644)
+	if err != nil {
+		return nil, locale.WrapError(err, "err_write_clean_projectfile", "Could not write cleaned projectfile information")
+	}
+
+	return clean, nil
 }
 
 // Reset the current state, which unsets the persistent project
@@ -791,9 +857,7 @@ func (p *Project) Persist() {
 // storeProjectMapping associates the namespace with the project
 // path in the config
 func storeProjectMapping(namespace, projectPath string) {
-	if filepath.Base(projectPath) == constants.ConfigFileName {
-		projectPath = filepath.Dir(projectPath)
-	}
+	projectPath = filepath.Clean(projectPath)
 
 	projects := viper.GetStringMapStringSlice(LocalProjectsConfigKey)
 	if projects == nil {

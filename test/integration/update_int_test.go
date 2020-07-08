@@ -112,8 +112,7 @@ func (suite *UpdateIntegrationTestSuite) TestLocked() {
 func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmationNegative() {
 	pjfile := projectfile.Project{
 		Project: lockedProjectURL(),
-		Version: constants.Version,
-		Branch:  constants.BranchName,
+		Lock:    fmt.Sprintf("%s@%s", constants.Version, constants.BranchName),
 	}
 
 	ts := e2e.New(suite.T(), false)
@@ -137,8 +136,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmationNegative() 
 func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmationPositive() {
 	pjfile := projectfile.Project{
 		Project: lockedProjectURL(),
-		Version: constants.Version,
-		Branch:  constants.BranchName,
+		Lock:    fmt.Sprintf("%s@%s", constants.Version, constants.BranchName),
 	}
 
 	ts := e2e.New(suite.T(), false)
@@ -162,8 +160,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmationPositive() 
 func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmationForce() {
 	pjfile := projectfile.Project{
 		Project: lockedProjectURL(),
-		Version: constants.Version,
-		Branch:  constants.BranchName,
+		Lock:    fmt.Sprintf("%s@%s", constants.Version, constants.BranchName),
 	}
 
 	ts := e2e.New(suite.T(), false)
