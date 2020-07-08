@@ -34,7 +34,7 @@ func TestProjects(t *testing.T) {
 	projects, fail := pjs.fetchProjects()
 	assert.NoError(t, fail.ToError(), "Fetched projects")
 	assert.Equal(t, 1, len(projects), "One project fetched")
-	assert.Equal(t, "test project", projects[0].Name)
+	assert.Equal(t, "test project (test description)", projects[0].Name)
 	assert.Equal(t, "organizationName", projects[0].Organization)
 
 	fail = pjs.Run()

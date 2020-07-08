@@ -72,10 +72,14 @@ func (r *Projects) fetchProjects() ([]projectWithOrg, *failures.Failure) {
 			return nil, err
 		}
 		for _, project := range orgProjects {
-			// TODO: Use shortened description as part of project name
 			p := projectWithOrg{
 				Name:         project.Name,
 				Organization: org.Name,
+			}
+
+			// Description can be non-nil but also empty
+			if project.Description != nil && *project.Description != "" {
+				p.Name = nameAndDescription(project.Name, *project.Description)
 			}
 
 			// Viper lowers all map keys so we must do the same here
@@ -89,4 +93,13 @@ func (r *Projects) fetchProjects() ([]projectWithOrg, *failures.Failure) {
 		}
 	}
 	return append(localProjects, platfomProjects...), nil
+}
+
+func nameAndDescription(name, description string) string {
+	limit := 32
+	if len(description) > limit {
+		description = fmt.Sprintf("%s...", description[0:limit])
+	}
+
+	return fmt.Sprintf("%s (%s)", name, description)
 }
