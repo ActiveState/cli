@@ -264,8 +264,8 @@ func sprintTable(slice []interface{}) (string, error) {
 				stringValue = trimValue(stringValue, termWidth)
 			}
 
-			if funk.Contains(field.opts, string(EmptyNil)) {
-				stringValue = useEmptyNil(stringValue)
+			if funk.Contains(field.opts, string(EmptyNil)) && stringValue == nilText {
+				stringValue = ""
 			}
 
 			row = append(row, stringValue)
@@ -305,13 +305,6 @@ func trimValue(value string, size int) string {
 	value = strings.Replace(value, fileutils.LineEnd, " ", -1)
 	if len(value) > size {
 		value = value[0:size-5] + " [..]"
-	}
-	return value
-}
-
-func useEmptyNil(value string) string {
-	if value == nilText {
-		return ""
 	}
 	return value
 }
