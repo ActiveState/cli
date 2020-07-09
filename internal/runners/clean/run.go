@@ -27,5 +27,9 @@ func (u *Uninstall) runUninstall() error {
 }
 
 func removeCache(cachePath string) error {
-	return os.RemoveAll(cachePath)
+	err := os.RemoveAll(cachePath)
+	if err != nil {
+		return locale.WrapError(err, "err_remove_cache", "Could not remove State Tool cache directory")
+	}
+	return nil
 }
