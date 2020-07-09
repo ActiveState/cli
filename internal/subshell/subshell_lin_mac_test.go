@@ -28,8 +28,7 @@ func TestRunCommandNoProjectEnv(t *testing.T) {
 	os.Setenv("SHELL", "bash")
 	os.Setenv("ACTIVESTATE_PROJECT", "SHOULD NOT BE SET")
 
-	subs, fail := Get()
-	require.NoError(t, fail.ToError())
+	subs := New()
 
 	data := []byte("#!/usr/bin/env bash\necho $ACTIVESTATE_PROJECT")
 	filename, fail := fileutils.WriteTempFile("", "testRunCommand", data, 0700)
@@ -55,8 +54,7 @@ func TestRunCommandError(t *testing.T) {
 
 	os.Setenv("SHELL", "bash")
 
-	subs, fail := Get()
-	require.NoError(t, fail.ToError())
+	subs := New()
 
 	err := subs.Run("some-file-that-doesnt-exist")
 	assert.Error(t, err, "Returns an error")

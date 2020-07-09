@@ -24,21 +24,6 @@ func setup(t *testing.T) {
 	os.Chdir(filepath.Join(root, "test"))
 }
 
-func TestGetFailures(t *testing.T) {
-	setup(t)
-
-	shell := os.Getenv("SHELL")
-	comspec := os.Getenv("ComSpec")
-
-	os.Setenv("SHELL", "foo")
-	os.Setenv("ComSpec", "foo")
-	_, err := Get()
-	os.Setenv("SHELL", shell)
-	os.Setenv("ComSpec", comspec)
-
-	assert.Error(t, err, "Should produce an error because of unsupported shell")
-}
-
 func TestRunCommand(t *testing.T) {
 	projectURL := fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
 	pjfile := projectfile.Project{
@@ -56,8 +41,7 @@ func TestRunCommand(t *testing.T) {
 		os.Setenv("SHELL", "bash")
 	}
 
-	subs, fail := Get()
-	require.NoError(t, fail.ToError())
+	subs := New()
 
 	filename, fail := fileutils.WriteTempFile("", "testRunCommand*.bat", data, 0700)
 	require.NoError(t, fail.ToError())

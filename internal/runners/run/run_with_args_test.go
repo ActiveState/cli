@@ -9,9 +9,10 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -65,7 +66,7 @@ func captureExecCommand(t *testing.T, tmplCmdName, cmdName string, cmdArgs []str
 
 	var err error
 	outStr, outErr := osutil.CaptureStdout(func() {
-		err = run(outputhelper.NewCatcher(), cmdName, cmdArgs)
+		err = run(outputhelper.NewCatcher(), subshell.New(), cmdName, cmdArgs)
 	})
 	require.NoError(t, outErr, "error capturing stdout")
 	require.NoError(t, failures.Handled(), "No failures handled")
