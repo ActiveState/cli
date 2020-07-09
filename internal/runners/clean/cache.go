@@ -3,7 +3,6 @@ package clean
 import (
 	"errors"
 	"os"
-	"strings"
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -11,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
+	"github.com/ActiveState/cli/pkg/project"
 )
 
 type Cache struct {
@@ -70,12 +70,17 @@ func (c *Cache) removeProject(namespace string, force bool) error {
 		}
 	}
 
-	split := strings.Split(namespace, "/")
-	if len(split) != 2 {
-		return locale.NewInputError("err_clean_cache_invalid_namespace", "Namespace argument is not in the correct format of <Owner>/<ProjectName>")
+	parsed, fail := project.ParseNamespace(namespace)
+	if fail != nil {
+		return locale.WrapError(fail.ToError(), "err_clean_cache_invalid_namespace", "Namespace argument is not of the correct format")
 	}
-	projectInstallPath := runtime.InstallPath(split[0], split[1])
+	projectInstallPath := runtime.InstallPath(parsed.Owner, parsed.Project)
 
 	logging.Debug("Remove project path: %s", projectInstallPath)
-	return os.RemoveAll(projectInstallPath)
+	err := os.RemoveAll(projectInstallPath)
+	if err != nil {
+		return locale.WrapError(err, "err_clean_remove_artifact", "Could not remove artifact for project: {{.V0}}", namespace)
+	}
+
+	return nil
 }
