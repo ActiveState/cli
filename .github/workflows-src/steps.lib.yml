@@ -3,7 +3,7 @@ name: Build
 shell: bash
 run: |
   echo "Branch: $GITHUB_HEAD_REF"
-  if [[ "$GITHUB_HEAD_REF" == "master" ]]; then
+  if [[ "${GITHUB_REF##*/}" == "master" ]]; then
     export BRANCH_OVERRIDE=unstable
   fi
   state run build
@@ -114,7 +114,7 @@ name: "Deploy"
 shell: bash
 run: |
   state run deploy-updates
-  if [[ "$GITHUB_HEAD_REF" == "master" ]]; then
+  if [[ "${GITHUB_REF##*/}" == "master" ]]; then
     state run deploy-installers
   fi
 env:

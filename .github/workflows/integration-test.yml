@@ -41,7 +41,7 @@ jobs:
       shell: bash
       run: |
         echo "Branch: $GITHUB_HEAD_REF"
-        if [[ "$GITHUB_HEAD_REF" == "master" ]]; then
+        if [[ "${GITHUB_REF##*/}" == "master" ]]; then
           export BRANCH_OVERRIDE=unstable
         fi
         state run build
