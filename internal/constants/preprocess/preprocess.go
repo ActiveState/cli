@@ -47,10 +47,10 @@ func init() {
 // gitBranchName returns the branch name of the current git commit / PR
 func gitBranchName() string {
 	// branch name variable set by Github Actions
-	if branch, isset := os.LookupEnv("GITHUB_HEAD_REF"); isset {
+	if branch, isset := os.LookupEnv("GITHUB_HEAD_REF"); isset && branch != "" {
 		return "origin/" + branch
 	}
-	if branch, isset := os.LookupEnv("GITHUB_REF"); isset {
+	if branch, isset := os.LookupEnv("GITHUB_REF"); isset && branch != "" {
 		return "origin/" + strings.TrimPrefix(branch, "refs/heads/")
 	}
 	branch := getCmdOutput("git rev-parse --abbrev-ref HEAD")
