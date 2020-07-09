@@ -1360,7 +1360,7 @@ clean_description:
 uninstall_description:
   other: Remove the State Tool, installed languages, and any configuration files
 cache_description:
-  other: Removes cached Runtime Environments.
+  other: Removes cached Runtime Environments
 config_description:
   other: Removes global State Tool configuration. Project configuration will not be affected.
 flag_state_clean_uninstall_force_description:

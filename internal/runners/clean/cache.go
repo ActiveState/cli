@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	C "github.com/ActiveState/cli/internal/config"
+	c "github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -33,7 +33,7 @@ func NewCache(out output.Outputer, confirmer confirmAble, config configGetter) *
 	return &Cache{
 		output:  out,
 		confirm: confirmer,
-		path:    C.CachePath(),
+		path:    c.CachePath(),
 		config:  config,
 	}
 }
