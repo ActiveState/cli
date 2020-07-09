@@ -42,6 +42,7 @@ run: |
   bin=$(pwd)/.github/deps/${{ runner.os }}/bin
   echo "Adding $bin to PATH"
   echo "::add-path::$bin"
+  printenv
 #@ end
 ---
 #@ def steps_preprocess():

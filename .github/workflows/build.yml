@@ -40,6 +40,7 @@ jobs:
         bin=$(pwd)/.github/deps/${{ runner.os }}/bin
         echo "Adding $bin to PATH"
         echo "::add-path::$bin"
+        printenv
     - name: Preprocess
       shell: bash
       run: state run preprocess
@@ -97,6 +98,7 @@ jobs:
         bin=$(pwd)/.github/deps/${{ runner.os }}/bin
         echo "Adding $bin to PATH"
         echo "::add-path::$bin"
+        printenv
     - name: Build State MSI
       shell: bash
       run: |
@@ -157,6 +159,7 @@ jobs:
         bin=$(pwd)/.github/deps/${{ runner.os }}/bin
         echo "Adding $bin to PATH"
         echo "::add-path::$bin"
+        printenv
     - name: Preprocess
       shell: bash
       run: state run preprocess
@@ -195,6 +198,7 @@ jobs:
         bin=$(pwd)/.github/deps/${{ runner.os }}/bin
         echo "Adding $bin to PATH"
         echo "::add-path::$bin"
+        printenv
     - name: Preprocess
       shell: bash
       run: state run preprocess
@@ -219,6 +223,7 @@ jobs:
     - build_msi
     - unittest
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'
     env:
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true
       GOFLAGS: -mod=vendor
@@ -245,6 +250,7 @@ jobs:
         bin=$(pwd)/.github/deps/${{ runner.os }}/bin
         echo "Adding $bin to PATH"
         echo "::add-path::$bin"
+        printenv
     - name: Download Session Artifacts
       uses: actions/download-artifact@v2
       with:
