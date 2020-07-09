@@ -9,7 +9,7 @@
     <Property Id="PROJECT_OWNER_AND_NAME" Value="{{PROJECT_OWNER_AND_NAME----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------}}" />
     <Property Id="REL_NOTES" Value="{{REL_NOTES-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------}}" />
 	<!-- A comma separated list of shortcuts to be installed -->
-	<!-- Expected possible values: [PerlCritic] or supply None to build no shortcuts -->
+	<!-- Expected possible values: [PerlCritic,CmdPrompt] or supply None to build no shortcuts -->
 	<Property Id="SHORTCUTS" Value="{{SHORTCUTS-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------}}" />
     <!-- End Configuration parameters -->
     
@@ -171,7 +171,7 @@
 
 		<CustomAction Id="SetStateDeployPropertyValues" Property="StateDeploy" Value="INSTALLDIR=[INSTALLDIR];PROJECT_OWNER_AND_NAME=[PROJECT_OWNER_AND_NAME];IS_MODIFY=[IS_MODIFY];STATE_TOOL_INSTALLED=[STATE_TOOL_INSTALLED];STATE_TOOL_PATH=[STATE_TOOL_PATH]" />
 		<CustomAction Id="SetUninstallProperties" Property="Uninstall" Value="REMEMBER=[REMEMBER];REMEMBER_SHORTCUTDIR=[REMEMBER_SHORTCUTDIR]" />
-		<CustomAction Id="SetShortcutInfo" Property="Shortcut" Value="INSTALLDIR=[INSTALLDIR];PROJECT_OWNER_AND_NAME=[PROJECT_OWNER_AND_NAME];SHORTCUTS=[SHORTCUTS]" />
+		<CustomAction Id="SetShortcutInfo" Property="Shortcut" Value="INSTALLDIR=[INSTALLDIR];APP_START_MENU_PATH=[ApplicationProgramsFolder];SHORTCUTS=[SHORTCUTS]" />
 		<CustomAction Id="SetRollbackPropertyValues" Property="Rollback" Value="STATE_TOOL_INSTALLED=[STATE_TOOL_INSTALLED];INSTALLDIR=[INSTALLDIR]" />
 
 

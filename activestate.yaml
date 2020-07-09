@@ -24,52 +24,59 @@ scripts:
     language: bash
     description: Generates assets required by the project that aren't just specific to the build
     value: |
+      set -e
+      if ! type "packr" &> /dev/null; then
+        echo "packr was not found on your PATH, installing .."
+        pushd ~
+        go get -u github.com/gobuffalo/packr/...
+        popd
+      fi
       $constants.SET_ENV
       packr
       go run scripts/constants-generator/main.go -- internal/constants/generated.go
-      mkdir -p build
+      mkdir -p build/msi
   - name: build
     language: bash
     description: Builds the project with the host OS as the target OS.
     value: |
-      $scripts.preprocess
+      set -e
+      $constants.SET_ENV
       go build -tags "$GO_BUILD_TAGS" -o $constants.BUILD_TARGET $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
   - name: build-for
     language: bash
     description: Builds the project with the specified OS as the target OS. (valid values darwin, linux, windows)
     value: |
-      $scripts.preprocess
+      set -e
+      $constants.SET_ENV
       export GOOS=${1}
       go build -tags "internal $GO_BUILD_TAGS" -o $constants.BUILD_TARGET $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
   - name: generate-update
     language: bash
     description: Generate update files
     value: |
-      $scripts.preprocess
+      set -e
+      $constants.SET_ENV
       mkdir -p build/update
       go run scripts/update-generator/main.go -o build/update $constants.BUILD_TARGET
   - name: install
     language: bash
     description: Installs the current HEAD version into GOBIN
     value: |
-      $scripts.preprocess
+      $constants.SET_ENV
       go install $constants.CLI_BUILDFLAGS $CLI_PKGS
   - name: deploy-updates
     language: bash
     description: Deploys update files to S3. This steps is automated by CI and should never be ran manually unless you KNOW WHAT YOU'RE DOING.
-    constraints:
-      os: linux,macos
     value: |
+      set -e
       go run scripts/s3-deployer/main.go build/update ca-central-1 cli-update update/state
-      go run scripts/s3-deployer/main.go installers/install.sh ca-central-1 cli-update update/state/install.sh
-  - name: deploy-updates
+  - name: deploy-installers
     language: bash
     description: Deploys update files to S3. This steps is automated by CI and should never be ran manually unless you KNOW WHAT YOU'RE DOING.
-    constraints:
-      os: windows
     value: |
-      go run scripts/s3-deployer/main.go build/update ca-central-1 cli-update update/state
+      go run scripts/s3-deployer/main.go installers/install.sh ca-central-1 cli-update update/state/install.sh
       go run scripts/s3-deployer/main.go installers/install.ps1 ca-central-1 cli-update update/state/install.ps1
+      go run scripts/s3-deployer/main.go build/msi us-east-1 cli-msi /
   - name: generate-api-client
     language: bash
     description: Generates the mono-api client files
@@ -124,7 +131,8 @@ scripts:
       export GOFLAGS='-mod=vendor'
       go build -o ./installers/msi-state/rmpath/rmpath.exe $constants.CLI_BUILDFLAGS ./installers/msi-state/rmpath/main.go
       candle.exe ./installers/msi-state/install.wxs -o ./installers/msi-state/install.wixobj -ext WixUIExtension -ext WixUtilExtension
-      light.exe ./installers/msi-state/install.wixobj -o ./build/state_tool.msi -sice:ICE91 -sice:ICE64 -ext WixUIExtension -ext WixUtilExtension
+      light.exe ./installers/msi-state/install.wixobj -o ./build/msi/state_tool.msi -sice:ICE91 -sice:ICE64 -ext WixUIExtension -ext WixUtilExtension
+      rm ./build/msi/state_tool.wixpdb || true
   - name: build-msi-language
     language: bash
     description: Builds the language MSI, requires that you have .NET 4.x installed and on PATH
@@ -159,15 +167,15 @@ scripts:
       # Only use the project name for this replacement
       sed -i "s^{{pad PROJECT_NAME}}^${1##*/}^g" installers/msi-language/Product.wxs
 
-      sed -i "s^{{$(pad VERSION)}}^${2}^g" installers/msi-language/Product.wxs
+      sed -i "s^{{VERSION}}^${2}^g" installers/msi-language/Product.wxs
       sed -i "s^{{$(pad REL_NOTES)}}^${3}^g" installers/msi-language/Product.wxs
       sed -i "s^{{$(pad SHORTCUTS)}}^${4}^g" installers/msi-language/Product.wxs
       sed -i "s^{{ID}}^$(go run scripts/uuid-generator/main.go $1)^g" installers/msi-language/Product.wxs
       sed -i "s^{{ICON}}^./assets/perl.ico^g" installers/msi-language/Product.wxs
 
       msbuild.exe installers/msi-language/Deploy.wixproj /target:Build "//p:Configuration=Release;Platform=x64;RunWixToolsOutOfProc=true;OutDir=$dir\\build\\msi-language\\"
-      echo "Copying MSI to build/${1##*/}.msi"
-      cp build/msi-language/en-us/Deploy.msi "build/${1##*/}.msi"
+      echo "Copying MSI to build/msi/${1##*/}.msi"
+      cp build/msi-language/en-us/Deploy.msi "build/msi/${1##*/}.msi"
   - name: build-base-language-msi
     description: |
       Builds the language MSI with no project information, requires that you have .NET 4.x installed and on PATH.
@@ -188,8 +196,20 @@ scripts:
       sed -i "s^{{ICON}}^./assets/as.ico^g" installers/msi-language/Product.wxs
 
       msbuild.exe installers/msi-language/Deploy.wixproj /target:Build "//p:Configuration=Release;Platform=x64;RunWixToolsOutOfProc=true;OutDir=$dir\\build\\msi-language\\"
-      echo "Copying MSI to build/base.msi"
-      cp build/msi-language/en-us/Deploy.msi "build/base.msi"
+      echo "Copying MSI to build/msi/base.msi"
+      cp build/msi-language/en-us/Deploy.msi "build/msi/base.msi"
+  - name: build-workflows
+    Description: Generates our github workflows
+    value: |
+      if ! type "go" &> /dev/null; then
+        pushd ~
+        go get github.com/k14s/ytt/cmd/ytt
+        popd
+      fi
+      pwd
+      mv .github/workflows/README.md /tmp # ytt deletes all files in target dir -- https://github.com/k14s/ytt/issues/145
+      ytt -f .github/workflows-src/ --ignore-unknown-comments --output-files .github/workflows
+      mv /tmp/README.md .github/workflows
   - name: test
     description: Runs unit tests (not integration tests)
     value: |
@@ -229,11 +249,9 @@ events:
       fi
       $scripts.preprocess
       git config core.hooksPath .githooks
-      if ! type "packr" &> /dev/null; then
-        echo "packr was not found on your PATH, installing .."
-        go get -u github.com/gobuffalo/packr/...
-      fi
       if ! type "swagger" &> /dev/null; then
         echo "swagger was not found on your PATH, installing .."
+        pushd ~
         go get -u github.com/go-swagger/go-swagger/cmd/swagger
+        popd
       fi

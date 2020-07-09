@@ -193,7 +193,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
 
 	// Expect PPM to be installed
 	cp.SendLine("ppm")
-	cp.Expect("The Perl Package Manager(PPM) is no longer supported.")
+	cp.Expect("The Perl Package Manager (PPM) is no longer supported.")
 
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)

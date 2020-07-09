@@ -18,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/subshell/fish"
 	"github.com/ActiveState/cli/internal/subshell/tcsh"
 	"github.com/ActiveState/cli/internal/subshell/zsh"
+	"github.com/ActiveState/cli/pkg/project"
 )
 
 // SubShell defines the interface for our virtual environment packages, which should be contained in a sub-directory
@@ -46,6 +47,9 @@ type SubShell interface {
 
 	// WriteUserEnv writes the given env map to the users environment
 	WriteUserEnv(map[string]string, bool) *failures.Failure
+
+	// SetupShellRcFile writes a script or source-able file that updates the environment variables and sets the prompt
+	SetupShellRcFile(string, map[string]string, project.Namespaced) error
 
 	// Shell returns an identifiable string representing the shell, eg. bash, zsh
 	Shell() string

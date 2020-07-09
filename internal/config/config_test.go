@@ -87,17 +87,16 @@ func (suite *ConfigTestSuite) testNoHomeRunner() {
 	args := []string{"test", pkgPath, "-run", "TestConfigTestSuite", "-testify.m", "TestNoHome"}
 	fmt.Printf("Executing: go %s", strings.Join(args, " "))
 
-	goCache := os.Getenv("GOCACHE")
-	if goCache == "" {
-		var err error
-		goCache, err = ioutil.TempDir("", "go-cache")
-		suite.Require().NoError(err)
-	}
+	var err error
+	goCache, err := ioutil.TempDir("", "go-cache")
+	suite.Require().NoError(err)
 
 	runCmd := exec.Command("go", args...)
 	runCmd.Env = []string{
 		"PATH=" + os.Getenv("PATH"),
-		"GOPATH=" + os.Getenv("GOPATH"),
+		"GOROOT=" + os.Getenv("GOROOT"),
+		"GOENV=" + os.Getenv("GOENV"),
+		"GOPATH=" + filepath.Join(os.Getenv("GOROOT"), "GOHOME"),
 		"USERPROFILE=" + os.Getenv("USERPROFILE"), // Permission error trying to use C:\Windows, ref: https://golang.org/pkg/os/#TempDir
 		"APPDATA=" + os.Getenv("APPDATA"),
 		"SystemRoot=" + os.Getenv("SystemRoot"), // Ref: https://bugs.python.org/msg248951
@@ -110,7 +109,7 @@ func (suite *ConfigTestSuite) testNoHomeRunner() {
 	runCmd.Stdout = &out
 	runCmd.Stderr = &out
 
-	err := runCmd.Run()
+	err = runCmd.Run()
 	suite.Require().NoError(err, "Should run without error, but returned: \n### START ###\n %s\n### END ###", out.String())
 }
 
