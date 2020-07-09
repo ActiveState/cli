@@ -30,9 +30,13 @@ type primeable interface {
 }
 
 func NewProjects(prime primeable) *Projects {
+	return newProjects(prime.Auth(), prime.Output())
+}
+
+func newProjects(auth *authentication.Auth, out output.Outputer) *Projects {
 	return &Projects{
-		prime.Auth(),
-		prime.Output(),
+		auth,
+		out,
 	}
 }
 
