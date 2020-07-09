@@ -60,7 +60,14 @@ func newCacheCommand(output output.Outputer) *captain.Command {
 				Value:       &params.Force,
 			},
 		},
-		[]*captain.Argument{},
+		[]*captain.Argument{
+			{
+				Name:        "project",
+				Description: locale.T("arg_state_clean_cache_project_description"),
+				Required:    false,
+				Value:       &params.Project,
+			},
+		},
 		func(ccmd *captain.Command, _ []string) error {
 			return runner.Run(&params)
 		},

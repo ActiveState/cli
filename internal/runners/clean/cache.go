@@ -9,6 +9,8 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/pkg/platform/runtime"
+	"github.com/ActiveState/cli/pkg/project"
 )
 
 type Cache struct {
@@ -18,7 +20,8 @@ type Cache struct {
 }
 
 type CacheParams struct {
-	Force bool
+	Force   bool
+	Project string
 }
 
 func NewCache(out output.Outputer, confirmer confirmAble) *Cache {
@@ -34,7 +37,15 @@ func (c *Cache) Run(params *CacheParams) error {
 		return errors.New(locale.T("err_clean_cache_activated"))
 	}
 
-	if !params.Force {
+	if params.Project != "" {
+		return c.removeProject(params.Project, params.Force)
+	}
+
+	return c.removeCache(c.path, params.Force)
+}
+
+func (c *Cache) removeCache(path string, force bool) error {
+	if !force {
 		ok, fail := c.confirm.Confirm(locale.T("clean_cache_confirm"), false)
 		if fail != nil {
 			return fail.ToError()
@@ -44,6 +55,32 @@ func (c *Cache) Run(params *CacheParams) error {
 		}
 	}
 
-	logging.Debug("Removing cache path: %s", c.path)
+	logging.Debug("Removing cache path: %s", path)
 	return removeCache(c.path)
+}
+
+func (c *Cache) removeProject(namespace string, force bool) error {
+	if !force {
+		ok, fail := c.confirm.Confirm(locale.Tr("clean_cache_artifact_confirm", namespace), false)
+		if fail != nil {
+			return fail.ToError()
+		}
+		if !ok {
+			return nil
+		}
+	}
+
+	parsed, fail := project.ParseNamespace(namespace)
+	if fail != nil {
+		return locale.WrapError(fail.ToError(), "err_clean_cache_invalid_namespace", "Namespace argument is not of the correct format")
+	}
+	projectInstallPath := runtime.InstallPath(parsed.Owner, parsed.Project)
+
+	logging.Debug("Remove project path: %s", projectInstallPath)
+	err := os.RemoveAll(projectInstallPath)
+	if err != nil {
+		return locale.WrapError(err, "err_clean_remove_artifact", "Could not remove cached runtime environment for project: {{.V0}}", namespace)
+	}
+
+	return nil
 }
