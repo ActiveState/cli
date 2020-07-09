@@ -6,6 +6,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runners/clean"
+	"github.com/spf13/viper"
 )
 
 func newCleanCommand(outputer output.Outputer) *captain.Command {
@@ -47,7 +48,7 @@ func newUninstallCommand(outputer output.Outputer) *captain.Command {
 }
 
 func newCacheCommand(output output.Outputer) *captain.Command {
-	runner := clean.NewCache(output, prompt.New())
+	runner := clean.NewCache(output, prompt.New(), viper.GetViper())
 	params := clean.CacheParams{}
 	return captain.NewCommand(
 		"cache",
@@ -60,7 +61,14 @@ func newCacheCommand(output output.Outputer) *captain.Command {
 				Value:       &params.Force,
 			},
 		},
-		[]*captain.Argument{},
+		[]*captain.Argument{
+			{
+				Name:        "project",
+				Description: locale.T("arg_state_clean_cache_project_description"),
+				Required:    false,
+				Value:       &params.Project,
+			},
+		},
 		func(ccmd *captain.Command, _ []string) error {
 			return runner.Run(&params)
 		},

@@ -87,7 +87,7 @@ type InstallerParams struct {
 
 func NewInstallerParams(runtimeDir string, commitID strfmt.UUID, owner string, projectName string) InstallerParams {
 	if runtimeDir == "" {
-		runtimeDir = installPath(owner, projectName)
+		runtimeDir = InstallPath(owner, projectName)
 	}
 	return InstallerParams{runtimeDir, commitID, owner, projectName}
 }
@@ -97,14 +97,14 @@ func NewInstaller(commitID strfmt.UUID, owner, projectName string) (*Installer, 
 	logging.Debug("cache path: %s", config.CachePath())
 	return NewInstallerByParams(
 		InstallerParams{
-			installPath(owner, projectName),
+			InstallPath(owner, projectName),
 			commitID,
 			owner,
 			projectName,
 		})
 }
 
-func installPath(owner, projectName string) string {
+func InstallPath(owner, projectName string) string {
 	if runtime.GOOS == "darwin" {
 		// mac doesn't use relocation so we can safely use a longer path
 		return filepath.Join(config.CachePath(), owner, projectName)
