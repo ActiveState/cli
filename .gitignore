@@ -11,6 +11,5 @@ __PYCACHE__
 .env
 .idea
 .vs
-bin/
 obj/
 installers/msi-language/Product.wxs

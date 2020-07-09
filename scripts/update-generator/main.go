@@ -13,12 +13,12 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"time"
 
 	"github.com/phayes/permbits"
 	"github.com/pkg/errors"
 
 	"github.com/ActiveState/archiver"
+
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -32,7 +32,6 @@ var outputDirFlag, platformFlag, branchFlag *string
 
 type current struct {
 	Version  string
-	Sha256   string
 	Sha256v2 string
 }
 
@@ -47,11 +46,7 @@ func generateSha256(path string) string {
 }
 
 func createUpdate(path string, platform string) {
-	t := time.Now().Format("2006-01-02_15-04-05")
-	archiveName := t + "--" + constants.BuildNumber + "--" + constants.RevisionHash
-
 	os.MkdirAll(filepath.Join(genDir, branch, version), 0755)
-	os.MkdirAll(filepath.Join(genDir, branch, version, archiveName), 0755)
 
 	// Prepare the archiver
 	archive, ext, binExt := archiveMeta()
@@ -77,10 +72,9 @@ func createUpdate(path string, platform string) {
 
 	targetDir := filepath.Join(genDir, branch, version)
 	targetPath := filepath.Join(targetDir, platform+ext)
-	targetArchivePath := filepath.Join(targetDir, archiveName, platform+ext)
 
-	// Remove target files if they already exists
-	remove(targetPath, targetArchivePath)
+	// Remove target path if it already exists
+	os.Remove(targetPath)
 
 	// Create main archive
 	fmt.Printf("Creating %s\n", targetPath)
@@ -89,19 +83,7 @@ func createUpdate(path string, platform string) {
 		panic(errors.Wrap(err, "Archiving failed"))
 	}
 
-	// Make copies to archive
-	copy(targetPath, targetArchivePath)
-
-	var fallbackSha256 string
-	if runtime.GOOS != "windows" {
-		// We used to generate tar.gz's with just the .gz extension, so we need to facilitate this pattern for a little while
-		// longer so these versions get updated to an updater that uses .tar.gz
-		targetPathFallback := filepath.Join(targetDir, platform+".gz")
-		createGzip(path, targetPathFallback)
-		fallbackSha256 = generateSha256(targetPathFallback)
-	}
-
-	c := current{Version: version, Sha256: fallbackSha256, Sha256v2: generateSha256(targetPath)}
+	c := current{Version: version, Sha256v2: generateSha256(targetPath)}
 	b, err := json.MarshalIndent(c, "", "    ")
 	if err != nil {
 		fmt.Println("error:", err)

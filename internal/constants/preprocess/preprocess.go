@@ -18,8 +18,12 @@ import (
 var Constants = map[string]func() string{}
 
 func init() {
-	branchName, branchNameFull := branchName()
+	branchName, commitRef := branchName()
 	buildNumber := buildNumber()
+
+	if sha, exists := os.LookupEnv("GITHUB_SHA"); exists {
+		commitRef = sha
+	}
 
 	inc, err := version.NewIncrementation(NewGithubIncrementStateStore(os.Getenv("GITHUB_REPO_TOKEN")), branchName, buildEnvironment())
 	if err != nil {
@@ -28,8 +32,8 @@ func init() {
 
 	Constants["BranchName"] = func() string { return branchName }
 	Constants["BuildNumber"] = func() string { return buildNumber }
-	Constants["RevisionHash"] = func() string { return getCmdOutput("git rev-parse --verify " + branchNameFull) }
-	Constants["RevisionHashShort"] = func() string { return getCmdOutput("git rev-parse --short " + branchNameFull) }
+	Constants["RevisionHash"] = func() string { return getCmdOutput("git rev-parse --verify " + commitRef) }
+	Constants["RevisionHashShort"] = func() string { return getCmdOutput("git rev-parse --short " + commitRef) }
 	Constants["Version"] = func() string { return mustIncrementVersionRevision(inc, Constants["RevisionHashShort"]()) }
 	Constants["VersionNumber"] = func() string { return mustIncrementVersion(inc) }
 	Constants["IncrementString"] = func() string { return mustGetIncrementString(inc) }
@@ -42,13 +46,9 @@ func init() {
 
 // gitBranchName returns the branch name of the current git commit / PR
 func gitBranchName() string {
-	// branch name variable set by Azure CI during pull request
-	if branch, isset := os.LookupEnv("SYSTEM_PULLREQUEST_SOURCEBRANCH"); isset {
+	// branch name variable set by Github Actions
+	if branch, isset := os.LookupEnv("GITHUB_HEAD_REF"); isset {
 		return "origin/" + branch
-	}
-	// branch name variable set by Azure CI
-	if branch, isset := os.LookupEnv("BUILD_SOURCEBRANCH"); isset {
-		return "origin/" + strings.TrimPrefix(branch, "refs/heads/")
 	}
 	branch := getCmdOutput("git rev-parse --abbrev-ref HEAD")
 	return branch
