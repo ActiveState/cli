@@ -450,16 +450,6 @@ func TestConditional_Eval(t *testing.T) {
 			false,
 		},
 		{
-			"Field with Method Conditional",
-			fields{
-				map[string]interface{}{"field": map[string]interface{}{"func": func() bool { return true }}},
-				map[string]interface{}{},
-			},
-			".field.func()",
-			true,
-			false,
-		},
-		{
 			"Multiple Conditionals",
 			fields{
 				map[string]interface{}{"value1": "v1", "value2": "v2"},
