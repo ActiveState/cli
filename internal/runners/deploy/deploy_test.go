@@ -9,6 +9,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/project"
@@ -132,7 +133,7 @@ func Test_runStepsWithFuncs(t *testing.T) {
 				return nil, nil
 			}
 			var configCalled bool
-			configFunc := func(string, runtime.EnvGetter, output.Outputer, project.Namespaced, bool) error {
+			configFunc := func(string, runtime.EnvGetter, output.Outputer, subshell.SubShell, project.Namespaced, bool) error {
 				configCalled = true
 				return nil
 			}
@@ -150,7 +151,7 @@ func Test_runStepsWithFuncs(t *testing.T) {
 			forceOverwrite := true
 			userScope := false
 			namespace := project.Namespaced{"owner", "project"}
-			err := runStepsWithFuncs("", forceOverwrite, userScope, namespace, tt.args.step, tt.args.installer, catcher.Outputer, installFunc, configFunc, symlinkFunc, reportFunc)
+			err := runStepsWithFuncs("", forceOverwrite, userScope, namespace, tt.args.step, tt.args.installer, catcher.Outputer, nil, installFunc, configFunc, symlinkFunc, reportFunc)
 			if err != tt.want.err {
 				t.Errorf("runStepsWithFuncs() error = %v, wantErr %v", err, tt.want.err)
 			}
