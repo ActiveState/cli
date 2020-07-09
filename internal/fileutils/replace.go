@@ -16,7 +16,7 @@ import (
 // If no match could be found -1 is returned
 func checkPathMatch(buf []byte, findBytes []byte) int {
 	i := 0
-	for ; i < len(findBytes) && i < len(buf); i++ {
+	for ; i < len(findBytes); i++ {
 		b := buf[i]
 		if b == '\\' && i+1 < len(buf) && buf[i+1] == '\\' {
 			continue
