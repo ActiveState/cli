@@ -30,18 +30,22 @@ type UninstallParams struct {
 
 type primeable interface {
 	primer.Outputer
-	Prompt() confirmAble
+	primer.Prompter
 }
 
 func NewUninstall(prime primeable) (*Uninstall, error) {
+	return newUninstall(prime.Output(), prime.Prompt())
+}
+
+func newUninstall(out output.Outputer, confirm confirmAble) (*Uninstall, error) {
 	installPath, err := os.Executable()
 	if err != nil {
 		return nil, err
 	}
 
 	return &Uninstall{
-		out:         prime.Output(),
-		confirm:     prime.Prompt(),
+		out:         out,
+		confirm:     confirm,
 		installPath: installPath,
 		configPath:  config.ConfigPath(),
 		cachePath:   config.CachePath(),

@@ -22,9 +22,13 @@ type ConfigParams struct {
 }
 
 func NewConfig(prime primeable) *Config {
+	return newConfig(prime.Output(), prime.Prompt())
+}
+
+func newConfig(out output.Outputer, confirm confirmAble) *Config {
 	return &Config{
-		output:  prime.Output(),
-		confirm: prime.Prompt(),
+		output:  out,
+		confirm: confirm,
 		path:    config.ConfigPath(),
 	}
 }

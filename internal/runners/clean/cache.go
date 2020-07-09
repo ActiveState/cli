@@ -22,9 +22,13 @@ type CacheParams struct {
 }
 
 func NewCache(prime primeable) *Cache {
+	return newCache(prime.Output(), prime.Prompt())
+}
+
+func newCache(output output.Outputer, confirm confirmAble) *Cache {
 	return &Cache{
-		output:  prime.Output(),
-		confirm: prime.Prompt(),
+		output:  output,
+		confirm: confirm,
 		path:    config.CachePath(),
 	}
 }
