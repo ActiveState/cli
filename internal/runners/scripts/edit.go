@@ -6,11 +6,11 @@ import (
 	"os/exec"
 	"os/signal"
 	"path/filepath"
+	"reflect"
 	"runtime"
 	"strings"
 
 	"github.com/fsnotify/fsnotify"
-	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -329,11 +329,14 @@ func updateProjectFile(scriptFile *scriptfile.ScriptFile, name string) error {
 
 	pj := project.Get()
 	pjf := pj.Source()
-	script := pj.ScriptByName(name).Source()
+	script := pj.ScriptByName(name)
+	if script == nil {
+		return locale.NewError("err_update_script_cannot_find", "Could not find the source script to update.")
+	}
 
 	idx := -1
 	for i, s := range pjf.Scripts {
-		if funk.Equal(s, script) {
+		if reflect.DeepEqual(s, *script.SourceScript()) {
 			idx = i
 			break
 		}

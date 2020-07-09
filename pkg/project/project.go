@@ -593,6 +593,9 @@ type Script struct {
 // Source returns the source projectfile
 func (script *Script) Source() *projectfile.Project { return script.project.projectfile }
 
+// SourceScript returns the source script
+func (script *Script) SourceScript() *projectfile.Script { return script.script }
+
 // Name returns script name
 func (script *Script) Name() string { return script.script.Name }
 
