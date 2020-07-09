@@ -50,6 +50,9 @@ func gitBranchName() string {
 	if branch, isset := os.LookupEnv("GITHUB_HEAD_REF"); isset {
 		return "origin/" + branch
 	}
+	if branch, isset := os.LookupEnv("GITHUB_REF"); isset {
+		return "origin/" + branch
+	}
 	branch := getCmdOutput("git rev-parse --abbrev-ref HEAD")
 	return branch
 }
