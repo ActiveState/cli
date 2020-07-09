@@ -1,5 +1,3 @@
-[![CircleCI](https://circleci.com/gh/ActiveState/cli.svg?style=shield&circle-token=e439410d217d72704e82808bdc3bbe78b6ecbf21)](https://circleci.com/gh/ActiveState/cli)
-
 # State Tool
 State Tool is the Command Line Interface for accessing [ActiveState Platform](https://www.activestate.com/products/platform/) functionality. It is a cross-platform tool written in Go supporting Windows, Linux and Mac. We're working on extending support to more  versions and distributions in tandem with the Platform (feel free to let us know if you have issues in your favorite OS). 
 
