@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	c "github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -16,7 +16,6 @@ import (
 type Cache struct {
 	output  output.Outputer
 	confirm confirmAble
-	config  configGetter
 	path    string
 }
 
@@ -25,16 +24,11 @@ type CacheParams struct {
 	Project string
 }
 
-type configGetter interface {
-	GetStringMapStringSlice(key string) map[string][]string
-}
-
-func NewCache(out output.Outputer, confirmer confirmAble, config configGetter) *Cache {
+func NewCache(out output.Outputer, confirmer confirmAble) *Cache {
 	return &Cache{
 		output:  out,
 		confirm: confirmer,
-		path:    c.CachePath(),
-		config:  config,
+		path:    config.CachePath(),
 	}
 }
 
