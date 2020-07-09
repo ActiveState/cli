@@ -6,10 +6,24 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/output"
 )
 
+type primeMock struct {
+	out    output.Outputer
+	prompt confirmAble
+}
+
+func (p *primeMock) Output() output.Outputer {
+	return p.out
+}
+
+func (p *primeMock) Prompt() confirmAble {
+	return p.prompt
+}
+
 func (suite *CleanTestSuite) TestCache() {
-	runner := NewCache(&testOutputer{}, &confirmMock{confirm: true})
+	runner := NewCache(&primeMock{&testOutputer{}, &confirmMock{confirm: true}})
 	runner.path = suite.cachePath
 	err := runner.Run(&CacheParams{})
 	suite.Require().NoError(err)
@@ -27,7 +41,7 @@ func (suite *CleanTestSuite) TestCache() {
 }
 
 func (suite *CleanTestSuite) TestCache_PromptNo() {
-	runner := NewCache(&testOutputer{}, &confirmMock{})
+	runner := NewCache(&primeMock{&testOutputer{}, &confirmMock{}})
 	runner.path = suite.cachePath
 	err := runner.Run(&CacheParams{})
 	suite.Require().NoError(err)
@@ -43,7 +57,7 @@ func (suite *CleanTestSuite) TestCache_Activated() {
 		os.Unsetenv(constants.ActivatedStateEnvVarName)
 	}()
 
-	runner := NewCache(&testOutputer{}, &confirmMock{})
+	runner := NewCache(&primeMock{&testOutputer{}, &confirmMock{}})
 	runner.path = suite.cachePath
 	err := runner.Run(&CacheParams{})
 	suite.Require().Error(err)

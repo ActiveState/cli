@@ -30,7 +30,7 @@ type UninstallParams struct {
 
 type primeable interface {
 	primer.Outputer
-	primer.Prompter
+	Prompt() confirmAble
 }
 
 func NewUninstall(prime primeable) (*Uninstall, error) {
