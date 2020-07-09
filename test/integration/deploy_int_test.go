@@ -105,7 +105,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployPerl() {
 	cp.Wait()
 
 	cp = cmdIfy(ts, filepath.Join(ts.Dirs.Work, "bin", "ppm"), "--version")
-	cp.Expect("The Perl Package Manager(PPM) is no longer supported.")
+	cp.Expect("The Perl Package Manager (PPM) is no longer supported.")
 	cp.ExpectExitCode(0)
 }
 
