@@ -103,7 +103,7 @@ with:
 name: "Validate"
 shell: bash
 run: |
-  if [ "${{ contains(toJson(github.event.pull_request.labels), 'version:') }}" != "true" ]; then
+  if [ "${GITHUB_REF##*/}" != "master" ] && [ "${{ contains(toJson(github.event.pull_request.labels), 'version:') }}" != "true" ]; then
     echo "Version label must be set"
     exit 1
   fi
@@ -112,11 +112,10 @@ run: |
 #@ def steps_deploy():
 name: "Deploy"
 shell: bash
+if: github.ref == 'refs/heads/master'
 run: |
   state run deploy-updates
-  if [[ "${GITHUB_REF##*/}" == "master" ]]; then
-    state run deploy-installers
-  fi
+  state run deploy-installers
 env:
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

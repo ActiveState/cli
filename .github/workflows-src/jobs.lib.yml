@@ -81,7 +81,6 @@ steps:
 name: Deploy
 needs: [ build, build_msi, unittest ]
 runs-on: ubuntu-latest
-if: github.ref == 'refs/heads/master'
 env: *env
 timeout-minutes: 10
 steps:
