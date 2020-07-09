@@ -79,7 +79,7 @@ func (c *Cache) removeProject(namespace string, force bool) error {
 	logging.Debug("Remove project path: %s", projectInstallPath)
 	err := os.RemoveAll(projectInstallPath)
 	if err != nil {
-		return locale.WrapError(err, "err_clean_remove_artifact", "Could not remove artifact for project: {{.V0}}", namespace)
+		return locale.WrapError(err, "err_clean_remove_artifact", "Could not remove cached runtime environment for project: {{.V0}}", namespace)
 	}
 
 	return nil
