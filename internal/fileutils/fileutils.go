@@ -12,7 +12,6 @@ import (
 	"os/user"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/iafan/cwalk"
 
@@ -89,7 +88,6 @@ func ReplaceAll(filename, find string, replace string, include includeFunc) erro
 
 // ReplaceAllInDirectory walks the given directory and invokes ReplaceAll on each file
 func ReplaceAllInDirectory(path, find string, replace string, include includeFunc) error {
-	start := time.Now()
 	err := cwalk.Walk(path, func(subpath string, f os.FileInfo, err error) error {
 		if f.IsDir() {
 			return nil
@@ -100,9 +98,6 @@ func ReplaceAllInDirectory(path, find string, replace string, include includeFun
 	if err != nil {
 		return err
 	}
-
-	end := time.Now()
-	logging.Debug("ReplaceAllInDirectory took %v", end.Sub(start))
 
 	return nil
 }

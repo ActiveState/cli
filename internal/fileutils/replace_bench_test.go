@@ -191,15 +191,6 @@ func BenchmarkReplace(b *testing.B) {
 			replacePathInFile,
 			stringByts,
 		},
-		/*
-			{
-				"streamed (binary)",
-				func(buf []byte, find, replacement string) (int, []byte, error) {
-					return ReplaceNulTerminatedPathStream(bytes.NewReader(buf), find, replacement)
-				},
-				binByts,
-			},
-		*/
 	}
 	b.ResetTimer()
 
@@ -262,11 +253,6 @@ func TestReplaceBytes(t *testing.T) {
 		{"nul-terminated without regex - no match", replacePathInFile, noMatchByts, noMatchByts, 0},
 		{"text with regex - no match", replacePathInFileRegex, noMatchText, noMatchText, 1},
 		{"text without regex - no match", replacePathInFile, noMatchText, noMatchText, 0},
-		/*
-			{"nul-terminated stream", func(buf []byte, find, replacement string) (int, []byte, error) {
-				return ReplaceNulTerminatedPathStream(bytes.NewReader(buf), find, replacement)
-			}, byts, expected, 1},
-		*/
 	}
 
 	for _, run := range runs {
