@@ -133,7 +133,7 @@ func replaceInFile(buf []byte, oldpath, newpath string) (bool, []byte, error) {
 
 	replaced := replaceRegex.ReplaceAll(buf, replaceBytes)
 
-	return string(replaced) != string(buf), replaced, nil
+	return !bytes.Equal(replaced, buf), replaced, nil
 }
 
 // ReplaceAllInDirectory walks the given directory and invokes ReplaceAll on each file
