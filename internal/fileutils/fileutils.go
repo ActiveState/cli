@@ -76,7 +76,7 @@ func ReplaceAll(filename, find string, replace string, include includeFunc) erro
 		return nil
 	}
 
-	changed, byts, err := replaceInFileRegex(fileBytes, find, replace)
+	changed, byts, err := replaceInFile(fileBytes, find, replace)
 	if err != nil {
 		return err
 	}
@@ -89,10 +89,10 @@ func ReplaceAll(filename, find string, replace string, include includeFunc) erro
 	return WriteFile(filename, byts).ToError()
 }
 
-// replaceInFileRegex replaces all occurrences of oldpath with newpath
+// replaceInFile replaces all occurrences of oldpath with newpath
 // For binary files with nul-terminated strings, it ensures that the replaces strings are still valid nul-terminated strings and the returned buffer has the same size as the input buffer buf.
 // The first return argument denotes whether at least one file has been replaced
-func replaceInFileRegex(buf []byte, oldpath, newpath string) (bool, []byte, error) {
+func replaceInFile(buf []byte, oldpath, newpath string) (bool, []byte, error) {
 	findBytes := []byte(oldpath)
 	replaceBytes := []byte(newpath)
 	replaceBytesLen := len(replaceBytes)

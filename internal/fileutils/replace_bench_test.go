@@ -173,22 +173,12 @@ func BenchmarkReplace(b *testing.B) {
 	}{
 		{
 			"with regex (binary)",
-			replaceInFileRegex,
-			binByts,
-		},
-		{
-			"without regex (binary)",
-			replacePathInFile,
+			replaceInFile,
 			binByts,
 		},
 		{
 			"with regex (string)",
-			replaceInFileRegex,
-			stringByts,
-		},
-		{
-			"without regex (string)",
-			replacePathInFile,
+			replaceInFile,
 			stringByts,
 		},
 	}
@@ -215,14 +205,8 @@ func BenchmarkReplace(b *testing.B) {
 
 func TestReplaceBytesError(t *testing.T) {
 	b := []byte("Hello world\x00")
-	t.Run("with regex", func(tt *testing.T) {
-		_, _, err := replaceInFileRegex(b, "short", "longer")
-		assert.Error(tt, err)
-	})
-	t.Run("without regex", func(tt *testing.T) {
-		_, _, err := replacePathInFile(b, "short", "longer")
-		assert.Error(tt, err)
-	})
+	_, _, err := replaceInFile(b, "short", "longer")
+	assert.Error(t, err)
 }
 
 func TestReplaceBytes(t *testing.T) {
@@ -245,14 +229,10 @@ func TestReplaceBytes(t *testing.T) {
 		expected []byte
 		changes  bool
 	}{
-		{"nul-terminated with regex", replaceInFileRegex, byts, expected, true},
-		{"nul-terminated without regex", replacePathInFile, byts, expected, true},
-		{"text with regex", replaceInFileRegex, text, textExpected, true},
-		{"text without regex", replacePathInFile, text, textExpected, true},
-		{"nul-terminated with regex - no match", replaceInFileRegex, noMatchByts, noMatchByts, false},
-		{"nul-terminated without regex - no match", replacePathInFile, noMatchByts, noMatchByts, false},
-		{"text with regex - no match", replaceInFileRegex, noMatchText, noMatchText, false},
-		{"text without regex - no match", replacePathInFile, noMatchText, noMatchText, false},
+		{"nul-terminated with regex", replaceInFile, byts, expected, true},
+		{"text with regex", replaceInFile, text, textExpected, true},
+		{"nul-terminated with regex - no match", replaceInFile, noMatchByts, noMatchByts, false},
+		{"text with regex - no match", replaceInFile, noMatchText, noMatchText, false},
 	}
 
 	for _, run := range runs {
