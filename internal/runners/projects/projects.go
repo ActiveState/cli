@@ -19,7 +19,7 @@ import (
 type projectWithOrg struct {
 	Name           string   `json:"name"`
 	Organization   string   `json:"organization"`
-	LocalCheckouts []string `json:"local_checkouts,omitempty" opts:"emptyNil"`
+	LocalCheckouts []string `json:"local_checkouts,omitempty" opts:"emptyNil,singleLine"`
 }
 
 type configGetter interface {
