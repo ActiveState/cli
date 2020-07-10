@@ -201,7 +201,7 @@ scripts:
   - name: build-workflows
     Description: Generates our github workflows
     value: |
-      if ! type "go" &> /dev/null; then
+      if ! type "ytt" &> /dev/null; then
         pushd ~
         go get github.com/k14s/ytt/cmd/ytt
         popd
