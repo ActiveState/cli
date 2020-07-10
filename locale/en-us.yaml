@@ -74,6 +74,8 @@ arg_state_activate_namespace:
   other: ORG/PROJECT
 arg_state_activate_namespace_description:
   other: The namespace of the project that you wish to activate
+flag_state_init_private_flag_description:
+  other: Create a private project
 flag_state_locale_description:
   other: Set the localisation
 flag_state_verbose_description:

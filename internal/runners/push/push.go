@@ -71,7 +71,7 @@ func (r *Push) Run() *failures.Failure {
 
 	print.Info(locale.Tr("push_creating_project", pj.Owner(), pj.Name()))
 	var commitID strfmt.UUID
-	pjm, commitID, fail = model.CreateProject(pj.Owner(), pj.Name(), model.HostPlatform, lang, langVersion)
+	pjm, commitID, fail = model.CreateProject(pj.Owner(), pj.Name(), model.HostPlatform, lang, langVersion, pj.Private())
 	if fail != nil {
 		return fail
 	}

@@ -105,8 +105,8 @@ func DefaultBranchForProject(pj *mono_models.Project) (*mono_models.Branch, *fai
 }
 
 // CreateProject will create the project on the platform
-func CreateProject(owner, name, hostPlatform string, lang *language.Supported, langVersion string) (*mono_models.Project, strfmt.UUID, *failures.Failure) {
-	_, fail := CreateEmptyProject(owner, name)
+func CreateProject(owner, name, hostPlatform string, lang *language.Supported, langVersion string, private bool) (*mono_models.Project, strfmt.UUID, *failures.Failure) {
+	_, fail := CreateEmptyProject(owner, name, private)
 	if fail != nil {
 		return nil, "", fail
 	}
@@ -123,10 +123,10 @@ func CreateProject(owner, name, hostPlatform string, lang *language.Supported, l
 }
 
 // CreateEmptyProject will create the project on the platform
-func CreateEmptyProject(owner, name string) (*mono_models.Project, *failures.Failure) {
+func CreateEmptyProject(owner, name string, private bool) (*mono_models.Project, *failures.Failure) {
 	addParams := projects.NewAddProjectParams()
 	addParams.SetOrganizationName(owner)
-	addParams.SetProject(&mono_models.Project{Name: name})
+	addParams.SetProject(&mono_models.Project{Name: name, Private: private})
 	pj, err := authentication.Client().Projects.AddProject(addParams, authentication.ClientAuth())
 	if err != nil {
 		msg := api.ErrorMessageFromPayload(err)

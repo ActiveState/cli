@@ -23,6 +23,7 @@ type RunParams struct {
 	Path      string
 	Style     string
 	Language  string
+	Private   bool
 	language  language.Supported
 	version   string
 }
@@ -116,7 +117,7 @@ func run(params *RunParams) (string, error) {
 		return "", err
 	}
 
-	logging.Debug("Init: %s/%s", params.Namespace.Owner, params.Namespace.Project)
+	logging.Debug("Init: %s/%s %v", params.Namespace.Owner, params.Namespace.Project, params.Private)
 
 	createParams := &projectfile.CreateParams{
 		Owner:           params.Namespace.Owner,
@@ -124,6 +125,7 @@ func run(params *RunParams) (string, error) {
 		Language:        params.language.String(),
 		LanguageVersion: params.version,
 		Directory:       params.Path,
+		Private:         params.Private,
 	}
 
 	if params.Style == SkeletonEditor {

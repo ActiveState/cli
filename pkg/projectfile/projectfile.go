@@ -96,6 +96,7 @@ type Project struct {
 	Secrets      *SecretScopes `yaml:"secrets,omitempty"`
 	Events       Events        `yaml:"events,omitempty"`
 	Scripts      Scripts       `yaml:"scripts,omitempty"`
+	Private      bool          `yaml:"private,omitempty"`
 	path         string        // "private"
 
 	// Deprecated
@@ -684,6 +685,7 @@ type CreateParams struct {
 	Content         string
 	Language        string
 	LanguageVersion string
+	Private         bool
 	path            string
 	projectURL      string
 }
@@ -749,6 +751,7 @@ func createCustom(params *CreateParams) (*Project, *failures.Failure) {
 		"LanguageName":    params.Language,
 		"LanguageVersion": params.LanguageVersion,
 		"Content":         params.Content,
+		"Private":         params.Private,
 	}
 
 	template, fail := loadTemplate(params.path, data)

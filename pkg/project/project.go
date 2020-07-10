@@ -204,6 +204,10 @@ func (p *Project) Name() string {
 	return p.name
 }
 
+func (p *Project) Private() bool {
+	return p.Source().Private
+}
+
 // CommitID returns project commitID
 func (p *Project) CommitID() string {
 	return p.commitID
