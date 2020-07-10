@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	gmodel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -31,8 +32,8 @@ type HistoryParams struct {
 	out         output.Outputer
 }
 
-func NewHistoryParams(owner, projectName string, out output.Outputer) HistoryParams {
-	return HistoryParams{owner, projectName, out}
+func NewHistoryParams(owner, projectName string, prime primer.Outputer) HistoryParams {
+	return HistoryParams{owner, projectName, prime.Output()}
 }
 
 func (h *History) Run(params *HistoryParams) error {

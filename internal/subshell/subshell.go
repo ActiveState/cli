@@ -11,7 +11,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
-	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/subshell/bash"
@@ -63,8 +62,7 @@ type SubShell interface {
 }
 
 // Get returns the subshell relevant to the current process, but does not activate it
-func Get() (SubShell, *failures.Failure) {
-	var T = locale.T
+func New() SubShell {
 	binary := os.Getenv("SHELL")
 	if binary == "" {
 		if runtime.GOOS == "windows" {
@@ -101,9 +99,15 @@ func Get() (SubShell, *failures.Failure) {
 	case "cmd":
 		subs = &cmd.SubShell{}
 	default:
-		return nil, failures.FailUser.New(T("error_unsupported_shell", map[string]interface{}{
-			"Shell": name,
-		}))
+		logging.Errorf("Unsupported shell: %s, defaulting to OS default.", name)
+		switch runtime.GOOS {
+		case "windows":
+			return &cmd.SubShell{}
+		case "darwin":
+			return &zsh.SubShell{}
+		default:
+			return &bash.SubShell{}
+		}
 	}
 
 	logging.Debug("Using binary: %s", binary)
@@ -114,7 +118,7 @@ func Get() (SubShell, *failures.Failure) {
 	})
 	subs.SetEnv(osutils.EnvSliceToMap(env))
 
-	return subs, nil
+	return subs
 }
 
 // IsActivated returns whether or not this process is being run in an activated

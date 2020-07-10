@@ -3,13 +3,13 @@ package cmdtree
 import (
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/languages"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
-func newLanguagesCommand(outputer output.Outputer) *captain.Command {
-	runner := languages.NewLanguages(outputer)
+func newLanguagesCommand(prime *primer.Values) *captain.Command {
+	runner := languages.NewLanguages(prime)
 
 	return captain.NewCommand(
 		"languages",
@@ -28,8 +28,8 @@ func newLanguagesCommand(outputer output.Outputer) *captain.Command {
 	)
 }
 
-func newLanguageUpdateCommand(outputer output.Outputer) *captain.Command {
-	runner := languages.NewUpdate(outputer)
+func newLanguageUpdateCommand(prime *primer.Values) *captain.Command {
+	runner := languages.NewUpdate(prime)
 
 	params := languages.UpdateParams{}
 

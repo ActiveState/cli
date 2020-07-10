@@ -34,7 +34,7 @@
             <RegistryValue Root='HKLM' Key='SOFTWARE\[Manufacturer]\[ProductName]' Type='string' Value='' KeyPath='yes' />
           </Component>
           <Directory Id="ProgramMenuFolder">
-            <Directory Id="ApplicationProgramsFolder" Name="{{PROJECT_NAME------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------}}"/>
+            <Directory Id="ApplicationProgramsFolder" Name="{{PROJECT_NAME--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------}}"/>
           </Directory>
         </Directory>
       </Directory>

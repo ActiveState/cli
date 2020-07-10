@@ -4,6 +4,7 @@ import (
 	"regexp"
 
 	"github.com/ActiveState/cli/internal/scriptfile"
+	"github.com/ActiveState/cli/pkg/projectfile"
 
 	"github.com/ActiveState/cli/internal/rxutils"
 
@@ -146,12 +147,16 @@ func PlatformExpander(name string, meta string, isFunction bool, project *Projec
 // EventExpander expands events defined in the project-file.
 func EventExpander(name string, meta string, isFunction bool, project *Project) (string, *failures.Failure) {
 	projectFile := project.Source()
-
-	i := constraints.MostSpecificUnconstrained(name, projectFile.Events.AsConstrainedEntities())
-	if i < 0 {
-		return "", nil
+	constrained, err := constraints.FilterUnconstrained(pConditional, projectFile.Events.AsConstrainedEntities())
+	if err != nil {
+		return "", failures.FailTemplating.Wrap(err)
 	}
-	return projectFile.Events[i].Value, nil
+	for _, v := range constrained {
+		if v.ID() == name {
+			return projectfile.MakeEventsFromConstrainedEntities([]projectfile.ConstrainedEntity{v})[0].Value, nil
+		}
+	}
+	return "", nil
 }
 
 // ScriptExpander expands scripts defined in the project-file.
@@ -189,9 +194,14 @@ func expandPath(name string, script *Script) (string, *failures.Failure) {
 // ConstantExpander expands constants defined in the project-file.
 func ConstantExpander(name string, meta string, isFunction bool, project *Project) (string, *failures.Failure) {
 	projectFile := project.Source()
-	i := constraints.MostSpecificUnconstrained(name, projectFile.Constants.AsConstrainedEntities())
-	if i < 0 {
-		return "", nil
+	constrained, err := constraints.FilterUnconstrained(pConditional, projectFile.Constants.AsConstrainedEntities())
+	if err != nil {
+		return "", failures.FailTemplating.Wrap(err)
 	}
-	return projectFile.Constants[i].Value, nil
+	for _, v := range constrained {
+		if v.ID() == name {
+			return projectfile.MakeConstantsFromConstrainedEntities([]projectfile.ConstrainedEntity{v})[0].Value, nil
+		}
+	}
+	return "", nil
 }

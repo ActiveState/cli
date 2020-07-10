@@ -3,25 +3,24 @@ package cmdtree
 import (
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/clean"
 )
 
-func newCleanCommand(outputer output.Outputer) *captain.Command {
+func newCleanCommand(prime *primer.Values) *captain.Command {
 	return captain.NewCommand(
 		"clean",
 		locale.T("clean_description"),
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, _ []string) error {
-			outputer.Print(ccmd.Help())
+			prime.Output().Print(ccmd.Help())
 			return nil
 		},
 	)
 }
 
-func newUninstallCommand(outputer output.Outputer) *captain.Command {
+func newUninstallCommand(prime *primer.Values) *captain.Command {
 	params := clean.UninstallParams{}
 	return captain.NewCommand(
 		"uninstall",
@@ -36,7 +35,7 @@ func newUninstallCommand(outputer output.Outputer) *captain.Command {
 		},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, _ []string) error {
-			runner, err := clean.NewUninstall(outputer, prompt.New())
+			runner, err := clean.NewUninstall(prime)
 			if err != nil {
 				return err
 			}
@@ -46,8 +45,8 @@ func newUninstallCommand(outputer output.Outputer) *captain.Command {
 	)
 }
 
-func newCacheCommand(output output.Outputer) *captain.Command {
-	runner := clean.NewCache(output, prompt.New())
+func newCacheCommand(prime *primer.Values) *captain.Command {
+	runner := clean.NewCache(prime)
 	params := clean.CacheParams{}
 	return captain.NewCommand(
 		"cache",
@@ -74,8 +73,8 @@ func newCacheCommand(output output.Outputer) *captain.Command {
 	)
 }
 
-func newConfigCommand(output output.Outputer) *captain.Command {
-	runner := clean.NewConfig(output, prompt.New())
+func newConfigCommand(prime *primer.Values) *captain.Command {
+	runner := clean.NewConfig(prime)
 	params := clean.ConfigParams{}
 	return captain.NewCommand(
 		"config",

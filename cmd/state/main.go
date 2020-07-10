@@ -9,14 +9,18 @@ import (
 	"github.com/ActiveState/cli/cmd/state/internal/cmdtree"
 	"github.com/ActiveState/cli/internal/config" // MUST be first!
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/deprecation"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/internal/prompt"
 	_ "github.com/ActiveState/cli/internal/prompt" // Sets up survey defaults
+	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -122,8 +126,13 @@ func run(args []string, out output.Outputer) (int, error) {
 		}
 	}
 
+	// Set up conditional, which accesses a lot of primer data
+	sshell := subshell.New()
+	conditional := constraints.NewPrimeConditional(pj.Owner(), pj.Name(), pj.Namespace(), sshell.Shell())
+	project.RegisterConditional(conditional)
+
 	// Run the actual command
-	cmds := cmdtree.New(pj, out, prompt.New())
+	cmds := cmdtree.New(primer.New(pj, out, authentication.Get(), prompt.New(), sshell, conditional))
 	err := cmds.Execute(args[1:])
 
 	return unwrapError(err)

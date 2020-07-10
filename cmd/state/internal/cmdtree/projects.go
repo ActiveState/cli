@@ -3,14 +3,13 @@ package cmdtree
 import (
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/projects"
-	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/spf13/viper"
 )
 
-func newProjectsCommand(outputer output.Outputer, auth *authentication.Auth) *captain.Command {
-	runner := projects.NewProjects(outputer, auth, viper.GetViper())
+func newProjectsCommand(prime *primer.Values) *captain.Command {
+	runner := projects.NewProjects(prime, viper.GetViper())
 
 	return captain.NewCommand(
 		"projects",

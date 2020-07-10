@@ -3,13 +3,12 @@ package cmdtree
 import (
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/scripts"
-	"github.com/ActiveState/cli/pkg/project"
 )
 
-func newScriptsCommand(pj *project.Project, output output.Outputer) *captain.Command {
-	runner := scripts.NewScripts(pj, output)
+func newScriptsCommand(prime *primer.Values) *captain.Command {
+	runner := scripts.NewScripts(prime)
 
 	return captain.NewCommand(
 		"scripts",
@@ -21,8 +20,8 @@ func newScriptsCommand(pj *project.Project, output output.Outputer) *captain.Com
 		})
 }
 
-func newScriptsEditCommand(pj *project.Project, output output.Outputer) *captain.Command {
-	editRunner := scripts.NewEdit(pj, output)
+func newScriptsEditCommand(prime *primer.Values) *captain.Command {
+	editRunner := scripts.NewEdit(prime)
 	params := scripts.EditParams{}
 
 	return captain.NewCommand(

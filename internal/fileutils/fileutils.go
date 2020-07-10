@@ -76,20 +76,37 @@ func ReplaceAll(filename, find string, replace string, include includeFunc) erro
 		return nil
 	}
 
-	findBytes := []byte(find)
-	replaceBytes := []byte(replace)
+	changed, byts, err := replaceInFile(fileBytes, find, replace)
+	if err != nil {
+		return err
+	}
+
+	// skip writing file, if we did not change anything
+	if !changed {
+		return nil
+	}
+
+	return WriteFile(filename, byts).ToError()
+}
+
+// replaceInFile replaces all occurrences of oldpath with newpath
+// For binary files with nul-terminated strings, it ensures that the replaces strings are still valid nul-terminated strings and the returned buffer has the same size as the input buffer buf.
+// The first return argument denotes whether at least one file has been replaced
+func replaceInFile(buf []byte, oldpath, newpath string) (bool, []byte, error) {
+	findBytes := []byte(oldpath)
+	replaceBytes := []byte(newpath)
 	replaceBytesLen := len(replaceBytes)
 
 	// Check if the file is a binary file. If so, the search and replace byte
 	// arrays must be of equal length (replacement being NUL-padded as necessary).
 	var replaceRegex *regexp.Regexp
-	quoteEscapeFind := regexp.QuoteMeta(find)
+	quoteEscapeFind := regexp.QuoteMeta(oldpath)
 
 	// Ensure we replace both types of backslashes on Windows
 	if runtime.GOOS == "windows" {
 		quoteEscapeFind = strings.ReplaceAll(quoteEscapeFind, `\\`, `(\\|\\\\)`)
 	}
-	if IsBinary(fileBytes) {
+	if IsBinary(buf) {
 		//logging.Debug("Assuming file '%s' is a binary file", filename)
 
 		regexExpandBytes := []byte("${1}")
@@ -101,7 +118,7 @@ func ReplaceAll(filename, find string, replace string, include includeFunc) erro
 		replaceRegex = regexp.MustCompile(fmt.Sprintf(`%s([^\x00]*)`, quoteEscapeFind))
 		if replaceBytesLen > len(findBytes) {
 			logging.Errorf("Replacement text too long: %s, original text: %s", string(replaceBytes), string(findBytes))
-			return errors.New("replacement text cannot be longer than search text in a binary file")
+			return false, nil, errors.New("replacement text cannot be longer than search text in a binary file")
 		} else if len(findBytes) > replaceBytesLen {
 			// Pad replacement with NUL bytes.
 			//logging.Debug("Padding replacement text by %d byte(s)", len(findBytes)-len(replaceBytes))
@@ -114,11 +131,9 @@ func ReplaceAll(filename, find string, replace string, include includeFunc) erro
 		//logging.Debug("Assuming file '%s' is a text file", filename)
 	}
 
-	replaced := replaceRegex.ReplaceAll(fileBytes, replaceBytes)
-	buffer := bytes.NewBuffer([]byte{})
-	buffer.Write(replaced)
+	replaced := replaceRegex.ReplaceAll(buf, replaceBytes)
 
-	return WriteFile(filename, buffer.Bytes()).ToError()
+	return !bytes.Equal(replaced, buf), replaced, nil
 }
 
 // ReplaceAllInDirectory walks the given directory and invokes ReplaceAll on each file

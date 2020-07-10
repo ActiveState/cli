@@ -1,16 +1,15 @@
 package cmdtree
 
 import (
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/update"
 
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/pkg/project"
 )
 
-func newUpdateCommand(pj *project.Project, output output.Outputer) *captain.Command {
-	runner := update.New(pj, output)
+func newUpdateCommand(prime *primer.Values) *captain.Command {
+	runner := update.New(prime)
 	params := update.Params{}
 
 	return captain.NewCommand(

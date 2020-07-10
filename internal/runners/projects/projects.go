@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/organizations"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -27,13 +28,26 @@ type configGetter interface {
 }
 
 type Projects struct {
-	out    output.Outputer
 	auth   *authentication.Auth
+	out    output.Outputer
 	config configGetter
 }
 
-func NewProjects(outputer output.Outputer, auth *authentication.Auth, config configGetter) *Projects {
-	return &Projects{outputer, auth, config}
+type primeable interface {
+	primer.Auther
+	primer.Outputer
+}
+
+func NewProjects(prime primeable, config configGetter) *Projects {
+	return newProjects(prime.Auth(), prime.Output(), config)
+}
+
+func newProjects(auth *authentication.Auth, out output.Outputer, config configGetter) *Projects {
+	return &Projects{
+		auth,
+		out,
+		config,
+	}
 }
 
 func (r *Projects) Run() *failures.Failure {

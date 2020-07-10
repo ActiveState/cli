@@ -3,6 +3,7 @@ package packages
 import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/pkg/cmdlets/auth"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -19,9 +20,9 @@ type Remove struct {
 }
 
 // NewRemove prepares a removal execution context for use.
-func NewRemove(out output.Outputer) *Remove {
+func NewRemove(prime primer.Outputer) *Remove {
 	return &Remove{
-		out: out,
+		out: prime.Output(),
 	}
 }
 

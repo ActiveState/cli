@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
@@ -17,8 +18,8 @@ type Update struct {
 	out output.Outputer
 }
 
-func NewUpdate(out output.Outputer) *Update {
-	return &Update{out}
+func NewUpdate(prime primer.Outputer) *Update {
+	return &Update{prime.Output()}
 }
 
 type UpdateParams struct {

@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 )
 
 type confirmAble interface {
@@ -27,15 +28,24 @@ type UninstallParams struct {
 	Force bool
 }
 
-func NewUninstall(outputer output.Outputer, confirmer confirmAble) (*Uninstall, error) {
+type primeable interface {
+	primer.Outputer
+	primer.Prompter
+}
+
+func NewUninstall(prime primeable) (*Uninstall, error) {
+	return newUninstall(prime.Output(), prime.Prompt())
+}
+
+func newUninstall(out output.Outputer, confirm confirmAble) (*Uninstall, error) {
 	installPath, err := os.Executable()
 	if err != nil {
 		return nil, err
 	}
 
 	return &Uninstall{
-		out:         outputer,
-		confirm:     confirmer,
+		out:         out,
+		confirm:     confirm,
 		installPath: installPath,
 		configPath:  config.ConfigPath(),
 		cachePath:   config.CachePath(),

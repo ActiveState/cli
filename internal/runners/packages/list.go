@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -26,9 +27,9 @@ type List struct {
 }
 
 // NewList prepares a list execution context for use.
-func NewList(out output.Outputer) *List {
+func NewList(prime primer.Outputer) *List {
 	return &List{
-		out: out,
+		out: prime.Output(),
 	}
 }
 

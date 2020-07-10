@@ -5,12 +5,9 @@ import (
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/state"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
-	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/state/secrets"
 )
 
@@ -20,10 +17,8 @@ type CmdTree struct {
 }
 
 // New prepares a CmdTree.
-func New(pj *project.Project, outputer output.Outputer, prompter prompt.Prompter) *CmdTree {
+func New(prime *primer.Values) *CmdTree {
 	globals := newGlobalOptions()
-
-	auth := authentication.Get()
 
 	authCmd := newAuthCommand(globals)
 	authCmd.AddChildren(
@@ -36,72 +31,72 @@ func New(pj *project.Project, outputer output.Outputer, prompter prompt.Prompter
 		newRecipeCommand(),
 		newJWTCommand(),
 		newPrivateKeyCommand(),
-		newAPIKeyCommand(outputer),
+		newAPIKeyCommand(prime),
 	)
 
-	packagesCmd := newPackagesCommand(outputer)
+	packagesCmd := newPackagesCommand(prime)
 	packagesCmd.AddChildren(
-		newPackagesAddCommand(outputer),
-		newPackagesUpdateCommand(outputer),
-		newPackagesRemoveCommand(outputer),
-		newPackagesImportCommand(outputer),
-		newPackagesSearchCommand(outputer),
+		newPackagesAddCommand(prime),
+		newPackagesUpdateCommand(prime),
+		newPackagesRemoveCommand(prime),
+		newPackagesImportCommand(prime),
+		newPackagesSearchCommand(prime),
 	)
 
-	platformsCmd := newPlatformsCommand(outputer)
+	platformsCmd := newPlatformsCommand(prime)
 	platformsCmd.AddChildren(
-		newPlatformsSearchCommand(outputer),
-		newPlatformsAddCommand(outputer),
-		newPlatformsRemoveCommand(outputer),
+		newPlatformsSearchCommand(prime),
+		newPlatformsAddCommand(prime),
+		newPlatformsRemoveCommand(prime),
 	)
 
-	scriptsCmd := newScriptsCommand(pj, outputer)
+	scriptsCmd := newScriptsCommand(prime)
 	scriptsCmd.AddChildren(
-		newScriptsEditCommand(pj, outputer),
+		newScriptsEditCommand(prime),
 	)
 
-	languagesCmd := newLanguagesCommand(outputer)
-	languagesCmd.AddChildren(newLanguageUpdateCommand(outputer))
+	languagesCmd := newLanguagesCommand(prime)
+	languagesCmd.AddChildren(newLanguageUpdateCommand(prime))
 
-	cleanCmd := newCleanCommand(outputer)
+	cleanCmd := newCleanCommand(prime)
 	cleanCmd.AddChildren(
-		newUninstallCommand(outputer),
-		newCacheCommand(outputer),
-		newConfigCommand(outputer),
+		newUninstallCommand(prime),
+		newCacheCommand(prime),
+		newConfigCommand(prime),
 	)
 
-	deployCmd := newDeployCommand(outputer)
+	deployCmd := newDeployCommand(prime)
 	deployCmd.AddChildren(
-		newDeployInstallCommand(outputer),
-		newDeployConfigureCommand(outputer),
-		newDeploySymlinkCommand(outputer),
-		newDeployReportCommand(outputer),
+		newDeployInstallCommand(prime),
+		newDeployConfigureCommand(prime),
+		newDeploySymlinkCommand(prime),
+		newDeployReportCommand(prime),
 	)
 
 	stateCmd := newStateCommand(globals)
 	stateCmd.AddChildren(
-		newActivateCommand(outputer),
+		newActivateCommand(prime),
 		newInitCommand(),
 		newPushCommand(),
-		newProjectsCommand(outputer, auth),
+		newProjectsCommand(prime),
 		authCmd,
 		exportCmd,
 		newOrganizationsCommand(globals),
-		newRunCommand(outputer),
-		newShowCommand(pj, outputer),
+		newRunCommand(prime),
+		newShowCommand(prime),
 		packagesCmd,
 		platformsCmd,
-		newHistoryCommand(outputer),
+		newHistoryCommand(prime),
 		cleanCmd,
 		languagesCmd,
 		deployCmd,
 		scriptsCmd,
-		newEventsCommand(pj, outputer),
-		newPullCommand(pj, outputer),
-		newUpdateCommand(pj, outputer),
-		newForkCommand(pj, auth, outputer, prompter),
+		newEventsCommand(prime),
+		newPullCommand(prime),
+		newUpdateCommand(prime),
+		newForkCommand(prime),
 		newPpmCommand(),
-		newInviteCommand(pj, outputer, prompter),
+		newInviteCommand(prime),
 	)
 
 	applyLegacyChildren(stateCmd, globals)
