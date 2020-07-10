@@ -19,7 +19,7 @@ import (
 type projectWithOrg struct {
 	Name           string   `json:"name"`
 	Organization   string   `json:"organization"`
-	LocalCheckouts []string `json:"local_checkouts,omitempty" opts:"emptyNil,singleLine"`
+	LocalCheckouts []string `json:"local_checkouts,omitempty" locale:"local_checkouts,Local Checkouts" opts:"emptyNil,singleLine"`
 }
 
 type configGetter interface {
@@ -92,11 +92,12 @@ func (r *Projects) fetchProjects() ([]projectWithOrg, *failures.Failure) {
 			orgProjects[i] = p
 		}
 
-		sort.Slice(orgProjects, func(i, j int) bool {
-			return orgProjects[i].LocalCheckouts != nil && orgProjects[j].LocalCheckouts == nil
-		})
 		projects = append(projects, orgProjects...)
 	}
+	sort.SliceStable(projects, func(i, j int) bool {
+		return (projects[i].LocalCheckouts != nil && projects[j].LocalCheckouts == nil) ||
+			projects[i].Organization < projects[j].Organization
+	})
 
 	return projects, nil
 }
