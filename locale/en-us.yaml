@@ -1362,13 +1362,15 @@ clean_description:
 uninstall_description:
   other: Remove the State Tool, installed languages, and any configuration files
 cache_description:
-  other: Removes all cached Runtime Environments
+  other: Removes cached Runtime Environments
 config_description:
   other: Removes global State Tool configuration. Project configuration will not be affected.
 flag_state_clean_uninstall_force_description:
   other: Run uninstall operation without prompts
 flag_state_clean_cache_force_description:
   other: Run clean cache operation without prompts
+arg_state_clean_cache_project_description:
+  other: The project to be removed from the local cache. Must be in the format of <Owner>/<ProjectName>
 flag_state_clean_config_force_description:
   other: Run clean config operation without prompts
 err_uninstall_activated:
@@ -1381,6 +1383,8 @@ uninstall_confirm:
   other: You are about to remove the State Tool, installed laguage runtimes, and all configuration information. Continue?
 clean_cache_confirm:
   other: You are about to remove the State Tool cache directory. Continue?
+clean_cache_artifact_confirm:
+  other: You are about the remove the cached runtime for {{.V0}}. Continue?
 clean_config_confirm:
   other: You are about the remove the State Tool config directory. Continue?
 clean_success_message:
