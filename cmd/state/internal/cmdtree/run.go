@@ -3,13 +3,13 @@ package cmdtree
 import (
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/runners/run"
 )
 
-func newRunCommand(output output.Outputer) *captain.Command {
-	runner := run.New(output)
+func newRunCommand(prime *primer.Values) *captain.Command {
+	runner := run.New(prime)
 
 	var name string
 

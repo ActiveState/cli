@@ -3,12 +3,12 @@ package cmdtree
 import (
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/packages"
 )
 
-func newPackagesCommand(out output.Outputer) *captain.Command {
-	runner := packages.NewList(out)
+func newPackagesCommand(prime *primer.Values) *captain.Command {
+	runner := packages.NewList(prime)
 
 	params := packages.ListRunParams{}
 
@@ -42,8 +42,8 @@ func newPackagesCommand(out output.Outputer) *captain.Command {
 	return cmd
 }
 
-func newPackagesAddCommand(out output.Outputer) *captain.Command {
-	runner := packages.NewAdd(out)
+func newPackagesAddCommand(prime *primer.Values) *captain.Command {
+	runner := packages.NewAdd(prime)
 
 	params := packages.AddRunParams{}
 
@@ -65,8 +65,8 @@ func newPackagesAddCommand(out output.Outputer) *captain.Command {
 	)
 }
 
-func newPackagesUpdateCommand(out output.Outputer) *captain.Command {
-	runner := packages.NewUpdate(out)
+func newPackagesUpdateCommand(prime *primer.Values) *captain.Command {
+	runner := packages.NewUpdate(prime)
 
 	params := packages.UpdateRunParams{}
 
@@ -88,8 +88,8 @@ func newPackagesUpdateCommand(out output.Outputer) *captain.Command {
 	)
 }
 
-func newPackagesRemoveCommand(out output.Outputer) *captain.Command {
-	runner := packages.NewRemove(out)
+func newPackagesRemoveCommand(prime *primer.Values) *captain.Command {
+	runner := packages.NewRemove(prime)
 
 	params := packages.RemoveRunParams{}
 
@@ -111,8 +111,8 @@ func newPackagesRemoveCommand(out output.Outputer) *captain.Command {
 	)
 }
 
-func newPackagesImportCommand(out output.Outputer) *captain.Command {
-	runner := packages.NewImport(out)
+func newPackagesImportCommand(prime *primer.Values) *captain.Command {
+	runner := packages.NewImport(prime)
 
 	params := packages.NewImportRunParams()
 
@@ -138,8 +138,8 @@ func newPackagesImportCommand(out output.Outputer) *captain.Command {
 	)
 }
 
-func newPackagesSearchCommand(out output.Outputer) *captain.Command {
-	runner := packages.NewSearch(out)
+func newPackagesSearchCommand(prime *primer.Values) *captain.Command {
+	runner := packages.NewSearch(prime)
 
 	params := packages.SearchRunParams{}
 

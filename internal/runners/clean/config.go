@@ -21,10 +21,14 @@ type ConfigParams struct {
 	Force bool
 }
 
-func NewConfig(out output.Outputer, confirmer confirmAble) *Config {
+func NewConfig(prime primeable) *Config {
+	return newConfig(prime.Output(), prime.Prompt())
+}
+
+func newConfig(out output.Outputer, confirm confirmAble) *Config {
 	return &Config{
 		output:  out,
-		confirm: confirmer,
+		confirm: confirm,
 		path:    config.ConfigPath(),
 	}
 }

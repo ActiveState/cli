@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -19,10 +20,15 @@ type Pull struct {
 	out     output.Outputer
 }
 
-func New(pj *project.Project, out output.Outputer) *Pull {
+type primeable interface {
+	primer.Projecter
+	primer.Outputer
+}
+
+func New(prime primeable) *Pull {
 	return &Pull{
-		pj,
-		out,
+		prime.Project(),
+		prime.Output(),
 	}
 }
 

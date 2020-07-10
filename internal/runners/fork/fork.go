@@ -5,6 +5,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -25,12 +26,19 @@ type Fork struct {
 	prompt  prompt.Prompter
 }
 
-func New(pj *project.Project, auth *authentication.Auth, out output.Outputer, prompter prompt.Prompter) *Fork {
+type primeable interface {
+	primer.Projecter
+	primer.Outputer
+	primer.Auther
+	primer.Prompter
+}
+
+func New(prime primeable) *Fork {
 	return &Fork{
-		pj,
-		out,
-		auth,
-		prompter,
+		prime.Project(),
+		prime.Output(),
+		prime.Auth(),
+		prime.Prompt(),
 	}
 }
 

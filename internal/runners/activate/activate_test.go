@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -34,7 +35,7 @@ func (n *namespaceSelectMock) Run(namespace string, preferredPath string) (strin
 	return n.resultPath, n.resultErr
 }
 
-var activatorMock = func(output.Outputer, string, activateFunc) error {
+var activatorMock = func(out output.Outputer, subs subshell.SubShell, targetPath string, activator activateFunc) error {
 	return nil
 }
 

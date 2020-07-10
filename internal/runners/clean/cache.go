@@ -24,10 +24,14 @@ type CacheParams struct {
 	Project string
 }
 
-func NewCache(out output.Outputer, confirmer confirmAble) *Cache {
+func NewCache(prime primeable) *Cache {
+	return newCache(prime.Output(), prime.Prompt())
+}
+
+func newCache(output output.Outputer, confirm confirmAble) *Cache {
 	return &Cache{
-		output:  out,
-		confirm: confirmer,
+		output:  output,
+		confirm: confirm,
 		path:    config.CachePath(),
 	}
 }

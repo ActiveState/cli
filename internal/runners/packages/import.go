@@ -7,6 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/pkg/cmdlets/auth"
 	"github.com/ActiveState/cli/pkg/platform/api/reqsimport"
@@ -49,9 +50,9 @@ type Import struct {
 }
 
 // NewImport prepares an importation execution context for use.
-func NewImport(out output.Outputer) *Import {
+func NewImport(prime primer.Outputer) *Import {
 	return &Import{
-		out: out,
+		out: prime.Output(),
 	}
 }
 

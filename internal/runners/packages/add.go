@@ -3,6 +3,7 @@ package packages
 import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -18,9 +19,9 @@ type Add struct {
 }
 
 // NewAdd prepares an addition execution context for use.
-func NewAdd(out output.Outputer) *Add {
+func NewAdd(prime primer.Outputer) *Add {
 	return &Add{
-		out: out,
+		out: prime.Output(),
 	}
 }
 

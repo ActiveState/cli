@@ -206,11 +206,11 @@ func (suite *EditTestSuite) TestUpdateProjectFile() {
 	suite.scriptFile, err = createScriptFile(replace, false)
 	suite.Require().NoError(err, "unexpected error creating script file")
 
-	err = updateProjectFile(suite.scriptFile, "hello")
+	err = updateProjectFile(suite.scriptFile, "replace")
 	suite.Require().NoError(err, "should be able to update script file")
 
 	updatedProject := project.Get()
-	suite.Equal(replace.Value(), updatedProject.ScriptByName("hello").Value())
+	suite.Equal(replace.Value(), updatedProject.ScriptByName("replace").Value())
 }
 
 func TestEditSuite(t *testing.T) {

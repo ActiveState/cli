@@ -11,6 +11,8 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -20,6 +22,7 @@ type Activate struct {
 	namespaceSelect  namespaceSelectAble
 	activateCheckout CheckoutAble
 	out              output.Outputer
+	subshell         subshell.SubShell
 }
 
 type ActivateParams struct {
@@ -27,11 +30,17 @@ type ActivateParams struct {
 	PreferredPath string
 }
 
-func NewActivate(out output.Outputer, namespaceSelect namespaceSelectAble, activateCheckout CheckoutAble) *Activate {
+type primeable interface {
+	primer.Outputer
+	primer.Subsheller
+}
+
+func NewActivate(prime primeable, namespaceSelect namespaceSelectAble, activateCheckout CheckoutAble) *Activate {
 	return &Activate{
 		namespaceSelect,
 		activateCheckout,
-		out,
+		prime.Output(),
+		prime.Subshell(),
 	}
 }
 
@@ -90,7 +99,7 @@ func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc)
 		return nil
 	}
 
-	return activatorLoop(r.out, targetPath, activate)
+	return activatorLoop(r.out, r.subshell, targetPath, activate)
 }
 
 func (r *Activate) setupPath(namespace string, preferredPath string) (string, error) {

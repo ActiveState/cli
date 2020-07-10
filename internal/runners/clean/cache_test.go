@@ -9,7 +9,7 @@ import (
 )
 
 func (suite *CleanTestSuite) TestCache() {
-	runner := NewCache(&testOutputer{}, &confirmMock{confirm: true})
+	runner := newCache(&testOutputer{}, &confirmMock{confirm: true})
 	runner.path = suite.cachePath
 	err := runner.Run(&CacheParams{})
 	suite.Require().NoError(err)
@@ -27,7 +27,7 @@ func (suite *CleanTestSuite) TestCache() {
 }
 
 func (suite *CleanTestSuite) TestCache_PromptNo() {
-	runner := NewCache(&testOutputer{}, &confirmMock{})
+	runner := newCache(&testOutputer{}, &confirmMock{})
 	runner.path = suite.cachePath
 	err := runner.Run(&CacheParams{})
 	suite.Require().NoError(err)
@@ -43,7 +43,7 @@ func (suite *CleanTestSuite) TestCache_Activated() {
 		os.Unsetenv(constants.ActivatedStateEnvVarName)
 	}()
 
-	runner := NewCache(&testOutputer{}, &confirmMock{})
+	runner := newCache(&testOutputer{}, &confirmMock{})
 	runner.path = suite.cachePath
 	err := runner.Run(&CacheParams{})
 	suite.Require().Error(err)

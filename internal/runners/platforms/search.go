@@ -3,6 +3,7 @@ package platforms
 import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
@@ -12,9 +13,9 @@ type Search struct {
 }
 
 // NewSearch prepares a search execution context for use.
-func NewSearch(out output.Outputer) *Search {
+func NewSearch(prime primer.Outputer) *Search {
 	return &Search{
-		out: out,
+		out: prime.Output(),
 	}
 }
 

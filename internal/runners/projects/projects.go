@@ -4,6 +4,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/organizations"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -19,12 +20,24 @@ type projectWithOrg struct {
 }
 
 type Projects struct {
-	out  output.Outputer
 	auth *authentication.Auth
+	out  output.Outputer
 }
 
-func NewProjects(outputer output.Outputer, auth *authentication.Auth) *Projects {
-	return &Projects{outputer, auth}
+type primeable interface {
+	primer.Auther
+	primer.Outputer
+}
+
+func NewProjects(prime primeable) *Projects {
+	return newProjects(prime.Auth(), prime.Output())
+}
+
+func newProjects(auth *authentication.Auth, out output.Outputer) *Projects {
+	return &Projects{
+		auth,
+		out,
+	}
 }
 
 func (r *Projects) Run() *failures.Failure {

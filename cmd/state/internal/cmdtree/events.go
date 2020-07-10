@@ -3,13 +3,12 @@ package cmdtree
 import (
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/events"
-	"github.com/ActiveState/cli/pkg/project"
 )
 
-func newEventsCommand(pj *project.Project, output output.Outputer) *captain.Command {
-	runner := events.New(pj, output)
+func newEventsCommand(prime *primer.Values) *captain.Command {
+	runner := events.New(prime)
 
 	return captain.NewCommand(
 		"events",

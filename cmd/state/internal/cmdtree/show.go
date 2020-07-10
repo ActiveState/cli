@@ -3,13 +3,12 @@ package cmdtree
 import (
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/show"
-	"github.com/ActiveState/cli/pkg/project"
 )
 
-func newShowCommand(pj *project.Project, out output.Outputer) *captain.Command {
-	runner := show.New(pj, out)
+func newShowCommand(prime *primer.Values) *captain.Command {
+	runner := show.New(prime)
 
 	params := show.Params{}
 
