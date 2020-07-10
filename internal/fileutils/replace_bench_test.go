@@ -168,12 +168,12 @@ func BenchmarkReplace(b *testing.B) {
 	stringByts := setup(oldPath, newPath, "/bin/python.sh", false)
 	runs := []struct {
 		name  string
-		f     func([]byte, string, string) (int, []byte, error)
+		f     func([]byte, string, string) (bool, []byte, error)
 		input []byte
 	}{
 		{
 			"with regex (binary)",
-			replacePathInFileRegex,
+			replaceInFileRegex,
 			binByts,
 		},
 		{
@@ -183,7 +183,7 @@ func BenchmarkReplace(b *testing.B) {
 		},
 		{
 			"with regex (string)",
-			replacePathInFileRegex,
+			replaceInFileRegex,
 			stringByts,
 		},
 		{
@@ -216,7 +216,7 @@ func BenchmarkReplace(b *testing.B) {
 func TestReplaceBytesError(t *testing.T) {
 	b := []byte("Hello world\x00")
 	t.Run("with regex", func(tt *testing.T) {
-		_, _, err := replacePathInFileRegex(b, "short", "longer")
+		_, _, err := replaceInFileRegex(b, "short", "longer")
 		assert.Error(tt, err)
 	})
 	t.Run("without regex", func(tt *testing.T) {
@@ -240,19 +240,19 @@ func TestReplaceBytes(t *testing.T) {
 
 	runs := []struct {
 		name     string
-		f        func([]byte, string, string) (int, []byte, error)
+		f        func([]byte, string, string) (bool, []byte, error)
 		input    []byte
 		expected []byte
-		changes  int
+		changes  bool
 	}{
-		{"nul-terminated with regex", replacePathInFileRegex, byts, expected, 1},
-		{"nul-terminated without regex", replacePathInFile, byts, expected, 2},
-		{"text with regex", replacePathInFileRegex, text, textExpected, 1},
-		{"text without regex", replacePathInFile, text, textExpected, 2},
-		{"nul-terminated with regex - no match", replacePathInFileRegex, noMatchByts, noMatchByts, 1},
-		{"nul-terminated without regex - no match", replacePathInFile, noMatchByts, noMatchByts, 0},
-		{"text with regex - no match", replacePathInFileRegex, noMatchText, noMatchText, 1},
-		{"text without regex - no match", replacePathInFile, noMatchText, noMatchText, 0},
+		{"nul-terminated with regex", replaceInFileRegex, byts, expected, true},
+		{"nul-terminated without regex", replacePathInFile, byts, expected, true},
+		{"text with regex", replaceInFileRegex, text, textExpected, true},
+		{"text without regex", replacePathInFile, text, textExpected, true},
+		{"nul-terminated with regex - no match", replaceInFileRegex, noMatchByts, noMatchByts, false},
+		{"nul-terminated without regex - no match", replacePathInFile, noMatchByts, noMatchByts, false},
+		{"text with regex - no match", replaceInFileRegex, noMatchText, noMatchText, false},
+		{"text without regex - no match", replacePathInFile, noMatchText, noMatchText, false},
 	}
 
 	for _, run := range runs {

@@ -3,12 +3,6 @@ package fileutils
 import (
 	"bytes"
 	"errors"
-	"fmt"
-	"regexp"
-	"runtime"
-	"strings"
-
-	"github.com/ActiveState/cli/internal/logging"
 )
 
 // checkPathMatch tries to find `findBytes` at the beginning of `buf` and returns the length of the match.
@@ -31,14 +25,14 @@ func checkPathMatch(buf []byte, findBytes []byte) int {
 // replacePathInFile replaces all occurrences of oldpath with newpath
 // For binary files with nul-terminated strings, it ensures that the replaces strings are still valid nul-terminated strings and the returned buffer has the same size as the input buffer buf
 // The first return argument denotes the number of replacements.
-func replacePathInFile(buf []byte, oldpath, newpath string) (int, []byte, error) {
+func replacePathInFile(buf []byte, oldpath, newpath string) (bool, []byte, error) {
 	if IsBinary(buf) {
 		return replaceNulTerminatedPath(buf, oldpath, newpath)
 	}
 	return replacePathInTextFile(buf, oldpath, newpath)
 }
 
-func replacePathInTextFile(buf []byte, oldpath, newpath string) (int, []byte, error) {
+func replacePathInTextFile(buf []byte, oldpath, newpath string) (bool, []byte, error) {
 	findBytes := []byte(oldpath)
 	replaceBytes := []byte(newpath)
 
@@ -75,17 +69,17 @@ func replacePathInTextFile(buf []byte, oldpath, newpath string) (int, []byte, er
 	}
 	// if nothing was replaced, we just return the initial buffer
 	if count == 0 {
-		return 0, buf, nil
+		return false, buf, nil
 	}
 	res.Write(buf[lw:])
-	return count, res.Bytes(), nil
+	return true, res.Bytes(), nil
 }
 
-func replaceNulTerminatedPath(buf []byte, oldpath, newpath string) (int, []byte, error) {
+func replaceNulTerminatedPath(buf []byte, oldpath, newpath string) (bool, []byte, error) {
 	findBytes := []byte(oldpath)
 	replaceBytes := []byte(newpath)
 	if len(findBytes) < len(replaceBytes) {
-		return -1, nil, errors.New("replacement text cannot be longer than search text in a binary file")
+		return false, nil, errors.New("replacement text cannot be longer than search text in a binary file")
 	}
 	zeros := make([]byte, len(findBytes)-len(replaceBytes))
 
@@ -125,54 +119,5 @@ func replaceNulTerminatedPath(buf []byte, oldpath, newpath string) (int, []byte,
 		// fast forward to the end of the string
 		i = endOffset - 1
 	}
-	return count, buf, nil
-}
-
-// replacePathInFileRegex is the old implementation of replacePathInFile based on regular expressions.
-// It is now only used in the benchmark functions
-// Note that it always returns 1 for the count of replacements
-func replacePathInFileRegex(buf []byte, oldpath, newpath string) (int, []byte, error) {
-	findBytes := []byte(oldpath)
-	replaceBytes := []byte(newpath)
-	replaceBytesLen := len(replaceBytes)
-
-	// Check if the file is a binary file. If so, the search and replace byte
-	// arrays must be of equal length (replacement being NUL-padded as necessary).
-	var replaceRegex *regexp.Regexp
-	quoteEscapeFind := regexp.QuoteMeta(oldpath)
-
-	// Ensure we replace both types of backslashes on Windows
-	if runtime.GOOS == "windows" {
-		quoteEscapeFind = strings.ReplaceAll(quoteEscapeFind, `\\`, `(\\|\\\\)`)
-	}
-	if IsBinary(buf) {
-		//logging.Debug("Assuming file '%s' is a binary file", filename)
-
-		regexExpandBytes := []byte("${1}")
-		// Must account for the expand characters (ie. '${1}') in the
-		// replacement bytes in order for the binary paddding to be correct
-		replaceBytes = append(replaceBytes, regexExpandBytes...)
-
-		// Replacement regex for binary files must account for null characters
-		replaceRegex = regexp.MustCompile(fmt.Sprintf(`%s([^\x00]*)`, quoteEscapeFind))
-		if replaceBytesLen > len(findBytes) {
-			logging.Errorf("Replacement text too long: %s, original text: %s", string(replaceBytes), string(findBytes))
-			return -1, nil, errors.New("replacement text cannot be longer than search text in a binary file")
-		} else if len(findBytes) > replaceBytesLen {
-			// Pad replacement with NUL bytes.
-			//logging.Debug("Padding replacement text by %d byte(s)", len(findBytes)-len(replaceBytes))
-			paddedReplaceBytes := make([]byte, len(findBytes)+len(regexExpandBytes))
-			copy(paddedReplaceBytes, replaceBytes)
-			replaceBytes = paddedReplaceBytes
-		}
-	} else {
-		replaceRegex = regexp.MustCompile(fmt.Sprintf(`%s`, quoteEscapeFind))
-		//logging.Debug("Assuming file '%s' is a text file", filename)
-	}
-
-	replaced := replaceRegex.ReplaceAll(buf, replaceBytes)
-	buffer := bytes.NewBuffer([]byte{})
-	buffer.Write(replaced)
-
-	return 1, buffer.Bytes(), nil
+	return count > 0, buf, nil
 }
