@@ -400,7 +400,7 @@ func FilterUnconstrained(conditional *Conditional, items []projectfile.Constrain
 		if conditional != nil && item.ConditionalFilter() != "" {
 			isTrue, err := conditional.Eval(string(item.ConditionalFilter()))
 			if err != nil {
-				return items, err
+				return nil, err
 			}
 
 			if isTrue {

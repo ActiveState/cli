@@ -460,6 +460,16 @@ func TestConditional_Eval(t *testing.T) {
 			false,
 		},
 		{
+			"Multiple Conditionals with False",
+			fields{
+				map[string]interface{}{"value1": "v1", "value2": "v2"},
+				map[string]interface{}{},
+			},
+			`and (eq .value1 "v1") (eq .value2 "notv2")`,
+			false,
+			false,
+		},
+		{
 			"Custom Functions",
 			fields{
 				map[string]interface{}{"value1": "foobar"},
