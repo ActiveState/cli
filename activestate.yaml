@@ -125,8 +125,7 @@ scripts:
     language: bash
     description: Build the state tool MSI, requires that you have wixtools installed and on PATH
     standalone: true
-    constraints:
-      os: windows
+    if: eq .OS.Name "Windows"
     value: |
       export GOFLAGS='-mod=vendor'
       go build -o ./installers/msi-state/rmpath/rmpath.exe $constants.CLI_BUILDFLAGS ./installers/msi-state/rmpath/main.go
@@ -137,8 +136,7 @@ scripts:
     language: bash
     description: Builds the language MSI, requires that you have .NET 4.x installed and on PATH
     standalone: true
-    constraints:
-      os: windows
+    if: eq .OS.Name "Windows"
     value: |
       set -e
       if [ "$#" -ne 4 ]; then
@@ -181,8 +179,7 @@ scripts:
       Builds the language MSI with no project information, requires that you have .NET 4.x installed and on PATH.
       The resulting MSI requires project information be injected in order to be functional.
     standalone: true
-    constraints:
-      os: windows
+    if: eq .OS.Name "Windows"
     value: |
       set -e
 
@@ -242,6 +239,7 @@ scripts:
     value: dlv debug --headless --listen=:2346 --api-version=2 github.com/ActiveState/cli/cmd/state -- $@
 events:
   - name: ACTIVATE
+    if: ne .Shell "cmd"
     value: |
       if ! type "go" &> /dev/null; then
         echo "go is not installed. Please install Go version 1.11 or above."
@@ -255,3 +253,4 @@ events:
         go get -u github.com/go-swagger/go-swagger/cmd/swagger
         popd
       fi
+      set +e # Take care not to run the shell too aggressively

@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"runtime"
 	"strings"
 	"testing"
 
@@ -19,7 +20,10 @@ func (suite *ConditionIntegrationTestSuite) TestCondition() {
 
 	suite.PrepareActiveStateYAML(ts)
 
-	cp := ts.Spawn("run", "test")
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("run", "test"),
+		e2e.AppendEnv("VERBOSE=true"),
+	)
 	cp.Expect(`projectNameValue`)
 	cp.Expect(`projectOwnerValue`)
 	cp.Expect(`projectNamespaceValue`)
@@ -36,6 +40,49 @@ func (suite *ConditionIntegrationTestSuite) TestCondition() {
 	cp.WaitForInput()
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("run", "complex-true"),
+	)
+	cp.Expect(`I exist`)
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("run", "complex-false"),
+	)
+	cp.ExpectExitCode(1)
+}
+
+func (suite *ConditionIntegrationTestSuite) TestConditionOSName() {
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	suite.PrepareActiveStateYAML(ts)
+
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("run", "OSName"),
+	)
+	if runtime.GOOS == "windows" {
+		cp.Expect(`using-windows`)
+	} else if runtime.GOOS == "darwin" {
+		cp.Expect(`using-macos`)
+	} else {
+		cp.Expect(`using-linux`)
+	}
+	cp.ExpectExitCode(0)
+}
+
+func (suite *ConditionIntegrationTestSuite) TestConditionSyntaxError() {
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	suite.PrepareActiveStateYAMLWithSyntaxError(ts)
+
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("run", "test"),
+	)
+	cp.Expect(`not defined`) // for now we aren't passing the error up the chain, so invalid syntax will lead to empty result
+	cp.ExpectExitCode(1)
 }
 
 func (suite *ConditionIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session) {
@@ -70,7 +117,19 @@ constants:
     value: shellValue
     if: ne .Shell ""
 scripts:
+  - name: complex-true
+    language: bash
+    standalone: true
+    value: echo "I exist"
+    if: or (eq .OS.Architecture "") (Contains .OS.Architecture "64")
+  - name: complex-false
+    language: bash
+    standalone: true
+    value: echo "I exist"
+    if: and (eq .OS.Architecture "") (Contains .OS.Architecture "64")
   - name: test
+    language: bash
+    standalone: true
     value: echo wrong script
     if: false
   - name: test
@@ -86,8 +145,25 @@ scripts:
       echo ${constants.shell}
     if: ne .Shell ""
   - name: test
+    language: bash
+    standalone: true
     value: echo wrong script
     if: false
+  - name: OSName
+    language: bash
+    standalone: true
+    value: echo using-windows
+    if: eq .OS.Name "Windows"
+  - name: OSName
+    language: bash
+    standalone: true
+    value: echo using-macos
+    if: eq .OS.Name "MacOS"
+  - name: OSName
+    language: bash
+    standalone: true
+    value: echo using-linux
+    if: eq .OS.Name "Linux"
 events:
   - name: ACTIVATE
     value: echo "Wrong event"
@@ -98,6 +174,24 @@ events:
   - name: ACTIVATE
     value: echo "Wrong event"
     if: false
+`)
+
+	ts.PrepareActiveStateYAML(asyData)
+}
+func (suite *ConditionIntegrationTestSuite) PrepareActiveStateYAMLWithSyntaxError(ts *e2e.Session) {
+	asyData := strings.TrimSpace(`
+project: https://platform.activestate.com/ActiveState-CLI/test?commitID=9090c128-e948-4388-8f7f-96e2c1e00d98
+scripts:
+  - name: test
+    language: bash
+    standalone: true
+    value: echo invalid value
+    if: not a valid conditional
+  - name: test
+    language: bash
+    standalone: true
+    value: echo valid value
+    if: true
 `)
 
 	ts.PrepareActiveStateYAML(asyData)
