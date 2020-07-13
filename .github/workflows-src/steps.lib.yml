@@ -102,6 +102,7 @@ with:
 name: "Validate"
 shell: bash
 run: |
+  echo "${{ toJson(github.event.pull_request.labels) }}"
   if [ "${GITHUB_REF##*/}" != "master" ] && [ "${{ contains(toJson(github.event.pull_request.labels), 'version:') }}" != "true" ]; then
     echo "Version label must be set"
     exit 1
