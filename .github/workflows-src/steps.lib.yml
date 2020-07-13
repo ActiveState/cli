@@ -1,12 +1,7 @@
 #@ def steps_build():
 name: Build
 shell: bash
-run: |
-  echo "Branch: $GITHUB_HEAD_REF"
-  if [[ "${GITHUB_REF##*/}" == "master" ]]; then
-    export BRANCH_OVERRIDE=unstable
-  fi
-  state run build
+run: state run build
 #@ end
 ---
 #@ def steps_sign():
@@ -48,7 +43,11 @@ run: |
 #@ def steps_preprocess():
 name: "Preprocess"
 shell: bash
-run: state run preprocess
+run: |
+  if [[ "${GITHUB_REF##*/}" == "master" ]]; then
+    export BRANCH_OVERRIDE=unstable
+  fi
+  state run preprocess
 #@ end
 ---
 #@ def steps_test():

@@ -36,15 +36,14 @@ jobs:
         printenv
     - name: Preprocess
       shell: bash
-      run: state run preprocess
-    - name: Build
-      shell: bash
       run: |
-        echo "Branch: $GITHUB_HEAD_REF"
         if [[ "${GITHUB_REF##*/}" == "master" ]]; then
           export BRANCH_OVERRIDE=unstable
         fi
-        state run build
+        state run preprocess
+    - name: Build
+      shell: bash
+      run: state run build
     - name: Integration Tests
       shell: bash
       run: go test -timeout 20m ./test/integration -v
