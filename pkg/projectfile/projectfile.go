@@ -67,7 +67,7 @@ var strReg = fmt.Sprintf(`https:\/\/%s\/([\w_.-]*)\/([\w_.-]*)(?:\?commitID=)*(.
 // ProjectURLRe Regex used to validate project fields /orgname/projectname[?commitID=someUUID]
 var ProjectURLRe = regexp.MustCompile(strReg)
 
-const localProjectsConfigKey = "projects"
+const LocalProjectsConfigKey = "projects"
 
 // VersionInfo is used in cases where we only care about parsing the version field. In all other cases the version is parsed via
 // the Project struct
@@ -895,7 +895,7 @@ func (p *Project) Persist() {
 func storeProjectMapping(namespace, projectPath string) {
 	projectPath = filepath.Clean(projectPath)
 
-	projects := viper.GetStringMapStringSlice(localProjectsConfigKey)
+	projects := viper.GetStringMapStringSlice(LocalProjectsConfigKey)
 	if projects == nil {
 		projects = make(map[string][]string)
 	}
@@ -910,13 +910,13 @@ func storeProjectMapping(namespace, projectPath string) {
 	}
 
 	projects[namespace] = paths
-	viper.Set(localProjectsConfigKey, projects)
+	viper.Set(LocalProjectsConfigKey, projects)
 }
 
 // CleanProjectMapping removes projects that no longer exist
 // on a user's filesystem from the projects config entry
 func CleanProjectMapping() {
-	projects := viper.GetStringMapStringSlice(localProjectsConfigKey)
+	projects := viper.GetStringMapStringSlice(LocalProjectsConfigKey)
 
 	for namespace, paths := range projects {
 		for _, path := range paths {

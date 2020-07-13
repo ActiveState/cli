@@ -24,6 +24,7 @@ type PlainOpts string
 
 const (
 	SingleLineOpt PlainOpts = "singleLine"
+	EmptyNil      PlainOpts = "emptyNil"
 )
 
 // Plain is our plain outputer, it uses reflect to marshal the data.
@@ -261,6 +262,10 @@ func sprintTable(slice []interface{}) (string, error) {
 
 			if funk.Contains(field.opts, string(SingleLineOpt)) {
 				stringValue = trimValue(stringValue, termWidth)
+			}
+
+			if funk.Contains(field.opts, string(EmptyNil)) && stringValue == nilText {
+				stringValue = ""
 			}
 
 			row = append(row, stringValue)

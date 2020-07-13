@@ -1,6 +1,10 @@
 package projects
 
 import (
+	"fmt"
+	"sort"
+	"strings"
+
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
@@ -14,14 +18,19 @@ import (
 
 // Holds a union of project and organization parameters.
 type projectWithOrg struct {
-	Name         string `json:"name"`
-	Description  string `json:"description"`
-	Organization string `json:"organization"`
+	Name           string   `json:"name"`
+	Organization   string   `json:"organization"`
+	LocalCheckouts []string `json:"local_checkouts,omitempty" locale:"local_checkouts,Local Checkouts" opts:"emptyNil,singleLine"`
+}
+
+type configGetter interface {
+	GetStringMapStringSlice(key string) map[string][]string
 }
 
 type Projects struct {
-	auth *authentication.Auth
-	out  output.Outputer
+	auth   *authentication.Auth
+	out    output.Outputer
+	config configGetter
 }
 
 type primeable interface {
@@ -29,14 +38,15 @@ type primeable interface {
 	primer.Outputer
 }
 
-func NewProjects(prime primeable) *Projects {
-	return newProjects(prime.Auth(), prime.Output())
+func NewProjects(prime primeable, config configGetter) *Projects {
+	return newProjects(prime.Auth(), prime.Output(), config)
 }
 
-func newProjects(auth *authentication.Auth, out output.Outputer) *Projects {
+func newProjects(auth *authentication.Auth, out output.Outputer, config configGetter) *Projects {
 	return &Projects{
 		auth,
 		out,
+		config,
 	}
 }
 
@@ -68,19 +78,49 @@ func (r *Projects) fetchProjects() ([]projectWithOrg, *failures.Failure) {
 		}
 		return nil, api.FailUnknown.Wrap(err)
 	}
-	projectsList := []projectWithOrg{}
+	projects := []projectWithOrg{}
+	localConfigProjects := r.config.GetStringMapStringSlice(projectfile.LocalProjectsConfigKey)
 	for _, org := range orgs.Payload {
-		orgProjects, err := model.FetchOrganizationProjects(org.URLname)
+		platformOrgProjects, err := model.FetchOrganizationProjects(org.URLname)
 		if err != nil {
 			return nil, err
 		}
-		for _, project := range orgProjects {
-			desc := ""
-			if project.Description != nil {
-				desc = *project.Description
+
+		orgProjects := make([]projectWithOrg, len(platformOrgProjects))
+		for i, project := range platformOrgProjects {
+			p := projectWithOrg{
+				Name:         project.Name,
+				Organization: org.Name,
 			}
-			projectsList = append(projectsList, projectWithOrg{project.Name, desc, org.Name})
+
+			// Description can be non-nil but also empty
+			if project.Description != nil && *project.Description != "" {
+				p.Name = nameAndDescription(project.Name, *project.Description)
+			}
+
+			// Viper lowers all map keys so we must do the same here
+			// in order to retrieve the locally cached projects
+			if localPaths, ok := localConfigProjects[fmt.Sprintf("%s/%s", strings.ToLower(org.URLname), strings.ToLower(project.Name))]; ok {
+				p.LocalCheckouts = localPaths
+			}
+			orgProjects[i] = p
 		}
+
+		projects = append(projects, orgProjects...)
 	}
-	return projectsList, nil
+	sort.SliceStable(projects, func(i, j int) bool {
+		return (projects[i].LocalCheckouts != nil && projects[j].LocalCheckouts == nil) ||
+			projects[i].Organization < projects[j].Organization
+	})
+
+	return projects, nil
+}
+
+func nameAndDescription(name, description string) string {
+	limit := 32
+	if len(description) > limit {
+		description = fmt.Sprintf("%s...", description[0:limit])
+	}
+
+	return fmt.Sprintf("%s (%s)", name, description)
 }
