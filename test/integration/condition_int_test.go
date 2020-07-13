@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"runtime"
 	"strings"
 	"testing"
 
@@ -49,6 +50,25 @@ func (suite *ConditionIntegrationTestSuite) TestCondition() {
 	cp = ts.SpawnWithOpts(
 		e2e.WithArgs("run", "complex-false"),
 	)
+	cp.ExpectExitCode(1)
+}
+
+func (suite *ConditionIntegrationTestSuite) TestConditionOSName() {
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	suite.PrepareActiveStateYAML(ts)
+
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("run", "OSName"),
+	)
+	if runtime.GOOS == "windows" {
+		cp.Expect(`Windows`)
+	} else if runtime.GOOS == "darwin" {
+		cp.Expect(`MacOS`)
+	} else {
+		cp.Expect(`Linux`)
+	}
 	cp.ExpectExitCode(1)
 }
 
@@ -129,6 +149,21 @@ scripts:
     standalone: true
     value: echo wrong script
     if: false
+  - name: OSName
+    language: bash
+    standalone: true
+    value: echo using-windows
+    if: eq .OS.Name "Windows"
+  - name: OSName
+    language: bash
+    standalone: true
+    value: echo using-macos
+    if: eq .OS.Name "MacOS"
+  - name: OSName
+    language: bash
+    standalone: true
+    value: echo using-linux
+    if: eq .OS.Name "Linux"
 events:
   - name: ACTIVATE
     value: echo "Wrong event"
