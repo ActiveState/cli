@@ -5,10 +5,10 @@ constants:
   - name: CLI_PKGS
     value: ./cmd/state
   - name: BUILD_TARGET
-    if: ne .OS.Name "windows"
+    if: ne .OS.Name "Windows"
     value: ./build/state
   - name: BUILD_TARGET
-    if: eq .OS.Name "windows"
+    if: eq .OS.Name "Windows"
     value: ./build/state.exe
   - name: SET_ENV
     description: The environment settings used throughout our project
@@ -125,7 +125,7 @@ scripts:
     language: bash
     description: Build the state tool MSI, requires that you have wixtools installed and on PATH
     standalone: true
-    if: eq .OS.Name "windows"
+    if: eq .OS.Name "Windows"
     value: |
       export GOFLAGS='-mod=vendor'
       go build -o ./installers/msi-state/rmpath/rmpath.exe $constants.CLI_BUILDFLAGS ./installers/msi-state/rmpath/main.go
@@ -136,7 +136,7 @@ scripts:
     language: bash
     description: Builds the language MSI, requires that you have .NET 4.x installed and on PATH
     standalone: true
-    if: eq .OS.Name "windows"
+    if: eq .OS.Name "Windows"
     value: |
       set -e
       if [ "$#" -ne 4 ]; then
@@ -179,7 +179,7 @@ scripts:
       Builds the language MSI with no project information, requires that you have .NET 4.x installed and on PATH.
       The resulting MSI requires project information be injected in order to be functional.
     standalone: true
-    if: eq .OS.Name "windows"
+    if: eq .OS.Name "Windows"
     value: |
       set -e
 
