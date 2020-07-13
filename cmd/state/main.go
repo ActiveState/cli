@@ -126,9 +126,17 @@ func run(args []string, out output.Outputer) (int, error) {
 		}
 	}
 
+	pjOwner := ""
+	pjNamespace := ""
+	pjName := ""
+	if pj != nil {
+		pjOwner = pj.Owner()
+		pjNamespace = pj.Namespace()
+		pjName = pj.Name()
+	}
 	// Set up conditional, which accesses a lot of primer data
 	sshell := subshell.New()
-	conditional := constraints.NewPrimeConditional(pj.Owner(), pj.Name(), pj.Namespace(), sshell.Shell())
+	conditional := constraints.NewPrimeConditional(pjOwner, pjName, pjNamespace, sshell.Shell())
 	project.RegisterConditional(conditional)
 
 	// Run the actual command

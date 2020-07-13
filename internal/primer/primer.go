@@ -21,15 +21,18 @@ type Values struct {
 }
 
 func New(project *project.Project, output output.Outputer, auth *authentication.Auth, prompt prompt.Prompter, subshell subshell.SubShell, conditional *constraints.Conditional) *Values {
-	return &Values{
-		project,
-		project.Source(),
-		output,
-		auth,
-		prompt,
-		subshell,
-		conditional,
+	v := &Values{
+		output:      output,
+		auth:        auth,
+		prompt:      prompt,
+		subshell:    subshell,
+		conditional: conditional,
 	}
+	if project != nil {
+		v.project = project
+		v.projectfile = project.Source()
+	}
+	return v
 }
 
 type Projecter interface {
