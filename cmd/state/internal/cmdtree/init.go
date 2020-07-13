@@ -39,6 +39,12 @@ func newInitCommand() *captain.Command {
 				Value:  &params.Language,
 				Hidden: true,
 			},
+			{
+				Name:        "private",
+				Shorthand:   "",
+				Description: locale.T("flag_state_init_private_flag_description"),
+				Value:       &params.Private,
+			},
 		},
 		[]*captain.Argument{
 			&captain.Argument{

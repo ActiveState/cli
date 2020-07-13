@@ -96,7 +96,7 @@ func (f *Fork) run(params *Params) error {
 	}
 
 	// Create the target project
-	targetProject, fail := model.CreateEmptyProject(target.Owner, target.Project)
+	targetProject, fail := model.CreateEmptyProject(target.Owner, target.Project, false)
 	if fail != nil {
 		return locale.WrapError(fail, "err_fork_createProject", "Could not create project: {{.V0}}", target.String())
 	}
