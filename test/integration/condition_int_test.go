@@ -44,7 +44,7 @@ func (suite *ConditionIntegrationTestSuite) TestCondition() {
 	cp = ts.SpawnWithOpts(
 		e2e.WithArgs("run", "complex-true"),
 	)
-	cp.Expect(`I Exist`)
+	cp.Expect(`I exist`)
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
@@ -63,13 +63,13 @@ func (suite *ConditionIntegrationTestSuite) TestConditionOSName() {
 		e2e.WithArgs("run", "OSName"),
 	)
 	if runtime.GOOS == "windows" {
-		cp.Expect(`Windows`)
+		cp.Expect(`using-windows`)
 	} else if runtime.GOOS == "darwin" {
-		cp.Expect(`MacOS`)
+		cp.Expect(`using-macos`)
 	} else {
-		cp.Expect(`Linux`)
+		cp.Expect(`using-linux`)
 	}
-	cp.ExpectExitCode(1)
+	cp.ExpectExitCode(0)
 }
 
 func (suite *ConditionIntegrationTestSuite) TestConditionSyntaxError() {
@@ -121,12 +121,12 @@ scripts:
     language: bash
     standalone: true
     value: echo "I exist"
-    if: or (eq .OS.Architecture "") (contains .OS.Architecture "64")
+    if: or (eq .OS.Architecture "") (Contains .OS.Architecture "64")
   - name: complex-false
     language: bash
     standalone: true
     value: echo "I exist"
-    if: and (eq .OS.Architecture "") (contains .OS.Architecture "64")
+    if: and (eq .OS.Architecture "") (Contains .OS.Architecture "64")
   - name: test
     language: bash
     standalone: true
