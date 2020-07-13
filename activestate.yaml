@@ -5,12 +5,10 @@ constants:
   - name: CLI_PKGS
     value: ./cmd/state
   - name: BUILD_TARGET
-    constraints:
-      os: macos,linux
+    if: ne .OS.Name "Windows"
     value: ./build/state
   - name: BUILD_TARGET
-    constraints:
-      os: windows
+    if: eq .OS.Name "Windows"
     value: ./build/state.exe
   - name: SET_ENV
     description: The environment settings used throughout our project
