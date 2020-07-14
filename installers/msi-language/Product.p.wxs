@@ -55,19 +55,12 @@
     <Property Id='WPerlExe' Value='wperl.exe' />
     
     <Feature Id='Complete' Level='1'>
-      <Component Id='ProgIdPerl' Directory='TARGETDIR' Guid='4dda6117-ca9c-4371-a09d-c8575f520a02'>
-        <!-- Perl file scripts -->
-        <ProgId Id="Perl.Document" Description="!(loc.DescPL)" Advertise='no' Icon='InstallerIco'>
-          <Extension Id="pl" ContentType="text/x-perl">
-            <Verb Id="open" Command="!(loc.ExplorerMenuOpenPL)" TargetProperty="PerlExe" Argument="&quot;%1&quot;" />
-          </Extension>
-        </ProgId>
-        <!-- Windows perl file scripts (started with hidden console) -->
-        <ProgId Id="WPerl.Document" Description="!(loc.DescPL)" Advertise='no' Icon='InstallerIco'>
-          <Extension Id="wpl" ContentType="text/x-w-perl">
-            <Verb Id="open" Command="!(loc.ExplorerMenuOpenPL)" TargetProperty="WPerlExe" Argument="&quot;%1&quot;" />
-          </Extension>
-        </ProgId>
+      <Component Id='FileAssociations' Directory='TARGETDIR' Guid='4dda6117-ca9c-4371-a09d-c8575f520a02'>
+		<RegistryValue Root='HKLM' Key='Software\Classes\Perl.Document\shell\open\command' Type='string' Value='[INSTALLDIR]bin\perl.exe &quot;%1&quot; %*' />
+		<RegistryValue Root='HKLM' Key='Software\Classes\.pl' Type='string' Value='Perl.Document' />
+		<RegistryValue Root='HKLM' Key='Software\Classes\WPerl.Document\shell\open\command' Type='string' Value='[INSTALLDIR]bin\wperl.exe &quot;%1&quot; %*' />
+		<RegistryValue Root='HKLM' Key='Software\Classes\.wpl' Type='string' Value='WPerl.Document' />
+		<Environment Id='UpdatePathExt' Name='PATHEXT' Action='set' Permanent='no' System='yes' Part='first' Value='.PL;.WPL' />
       </Component>
       <ComponentRef Id='DeployDir' />
       <Component Id='InstallHelper' Directory="INSTALLDIR" Guid='4dda6117-ca9c-4371-a09d-c8575f520a01'>
