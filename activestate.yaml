@@ -18,10 +18,6 @@ constants:
       GOROOT="${GOROOT:=`go env GOROOT`}"
       PATH="${GOROOT}/bin:${GOPATH}/bin:${PATH}"
 scripts:
-  - name: foo
-    value: |
-      echo $constants.BUILD_TARGET
-      echo $BUILD_TARGET
   - name: preprocess
     language: bash
     description: Generates assets required by the project that aren't just specific to the build
