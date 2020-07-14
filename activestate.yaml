@@ -5,13 +5,11 @@ constants:
   - name: CLI_PKGS
     value: ./cmd/state
   - name: BUILD_TARGET
-    constraints:
-      os: macos,linux
-    value: ./build/state
-  - name: BUILD_TARGET
-    constraints:
-      os: windows
+    if: eq .OS.Name "Windows"
     value: ./build/state.exe
+  - name: BUILD_TARGET
+    if: ne .OS.Name "Windows"
+    value: ./build/state
   - name: SET_ENV
     description: The environment settings used throughout our project
     value: |
@@ -49,7 +47,7 @@ scripts:
       set -e
       $constants.SET_ENV
       export GOOS=${1}
-      go build -tags "internal $GO_BUILD_TAGS" -o $constants.BUILD_TARGET $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
+      go build -tags "internal $GO_BUILD_TAGS" -o ${2} $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
   - name: generate-update
     language: bash
     description: Generate update files
@@ -207,6 +205,10 @@ scripts:
       mv .github/workflows/README.md /tmp # ytt deletes all files in target dir -- https://github.com/k14s/ytt/issues/145
       ytt -f .github/workflows-src/ --ignore-unknown-comments --output-files .github/workflows
       mv /tmp/README.md .github/workflows
+
+      $scripts.build-for.path() "windows" ./.github/deps/Windows/bin/state.exe
+      $scripts.build-for.path() "linux" ./.github/deps/Linux/bin/state
+      $scripts.build-for.path() "darwin" ./.github/deps/macOS/bin/state
   - name: test
     description: Runs unit tests (not integration tests)
     value: |
