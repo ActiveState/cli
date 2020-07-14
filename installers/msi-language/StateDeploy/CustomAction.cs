@@ -13,6 +13,13 @@ using System.Collections.Generic;
 
 namespace StateDeploy
 {
+
+    enum Shell
+    {
+        Cmd,
+        Powershell,
+    }
+
     public class CustomActions
     {
         public static ActionResult InstallStateTool(Session session, out string stateToolPath)
@@ -45,10 +52,10 @@ namespace StateDeploy
                 return ActionResult.Failure;
             }
 
-            string installCmd = string.Format("powershell \"{0} -n -t {1}\"", scriptPath, installPath);
+            string installCmd = string.Format("Set-ExecutionPolicy Unrestricted -Scope Process; {0} -n -t {1}", scriptPath, installPath);
             session.Log(string.Format("Running install command: {0}", installCmd));
 
-            ActionResult result = RunCommand(session, installCmd);
+            ActionResult result = RunCommand(session, installCmd, Shell.Powershell);
             if (result.Equals(ActionResult.UserExit))
             {
                 // Catch cancel and return
@@ -60,17 +67,26 @@ namespace StateDeploy
             return result;
         }
 
-        private static ActionResult RunCommand(Session session, string cmd)
+        private static ActionResult RunCommand(Session session, string cmd, Shell shell=Shell.Cmd)
         {
-            return RunCommand(session, cmd, out _);
+            return RunCommand(session, cmd, shell, out _);
         }
 
-        private static ActionResult RunCommand(Session session, string cmd, out string output)
+        private static ActionResult RunCommand(Session session, string cmd, Shell shell, out string output)
         {
             var outputBuilder = new StringBuilder();
             try
             {
-                ProcessStartInfo procStartInfo = new ProcessStartInfo("cmd.exe", "/c " + cmd);
+                ProcessStartInfo procStartInfo;
+                switch(shell)
+                {
+                    case Shell.Powershell:
+                        procStartInfo = new ProcessStartInfo("powershell.exe", cmd);
+                        break;
+                    default:
+                        procStartInfo = new ProcessStartInfo("cmd.exe", "/c " + cmd);
+                        break;
+                }
 
                 // The following commands are needed to redirect the standard output.
                 // This means that it will be redirected to the Process.StandardOutput StreamReader.
@@ -196,7 +212,7 @@ namespace StateDeploy
                     Status.ProgressBar.StatusMessage(session, seq.Description);
 
                     string output;
-                    var runResult = RunCommand(session, deployCmd, out output);
+                    var runResult = RunCommand(session, deployCmd, Shell.Cmd, out output);
                     if (runResult.Equals(ActionResult.UserExit))
                     {
                         // Catch cancel and return
