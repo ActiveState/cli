@@ -58,7 +58,7 @@
       <Component Id='FileAssociations' Directory='TARGETDIR' Guid='4dda6117-ca9c-4371-a09d-c8575f520a02'>
 		<RegistryValue Root='HKLM' Key='Software\Classes\Perl.Document\shell\open\command' Type='string' Value='[INSTALLDIR]bin\perl.exe &quot;%1&quot; %*' />
 		<RegistryValue Root='HKLM' Key='Software\Classes\.pl' Type='string' Value='Perl.Document' />
-		<RegistryValue Root='HKLM' Key='Software\Classes\WPerl.Document\shell\open\command' Type='string' Value='[INSTALLDIR]bin\perl.exe &quot;%1&quot; %*' />
+		<RegistryValue Root='HKLM' Key='Software\Classes\WPerl.Document\shell\open\command' Type='string' Value='[INSTALLDIR]bin\wperl.exe &quot;%1&quot; %*' />
 		<RegistryValue Root='HKLM' Key='Software\Classes\.wpl' Type='string' Value='WPerl.Document' />
 		<Environment Id='UpdatePathExt' Name='PATHEXT' Action='set' Permanent='no' System='yes' Part='first' Value='.PL;WPL' />
       </Component>
