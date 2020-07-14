@@ -195,9 +195,9 @@ func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGet
 		}
 	}
 
-	downloadArtfs, unpackArchives := runtimeAssembler.ArtifactsToDownloadAndUnpack()
+	downloadArtfs := runtimeAssembler.ArtifactsToDownload()
 
-	if len(downloadArtfs) == 0 && len(unpackArchives) == 0 {
+	if len(downloadArtfs) == 0 {
 		// Already installed, no need to download or install
 		logging.Debug("Nothing to download")
 		return runtimeAssembler, false, nil
@@ -210,6 +210,7 @@ func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGet
 	progress := progress.New(mpb.WithOutput(os.Stderr))
 	defer progress.Close()
 
+	unpackArchives := map[string]*HeadChefArtifact{}
 	if len(downloadArtfs) > 0 {
 		archives, fail := installer.runtimeDownloader.Download(downloadArtfs, runtimeAssembler, progress)
 		if fail != nil {

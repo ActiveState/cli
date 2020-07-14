@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 
 	"github.com/go-openapi/strfmt"
@@ -185,9 +186,8 @@ func (suite *AlternativeRuntimeTestSuite) Test_ArtifactsToDownloadAndUnpack() {
 				suite.Require().NoError(err)
 			}
 
-			downloadArtfs, unpackArchives := ar.ArtifactsToDownloadAndUnpack()
+			downloadArtfs := ar.ArtifactsToDownload()
 			suite.Assert().Len(downloadArtfs, 2-tc.preExisting)
-			suite.Assert().Len(unpackArchives, tc.preExisting)
 		})
 	}
 }
@@ -236,4 +236,58 @@ func (suite *AlternativeRuntimeTestSuite) Test_PreInstall() {
 }
 func Test_AlternativeRuntimeTestSuite(t *testing.T) {
 	suite.Run(t, new(AlternativeRuntimeTestSuite))
+}
+
+func TestMultiArtifactInstall(t *testing.T) {
+	type args struct {
+		artifacts []*runtime.HeadChefArtifact
+		cacheDir  string
+		recipeID  strfmt.UUID
+	}
+	tests := []struct {
+		name            string
+		args            args
+		wantArtifactIDs []strfmt.UUID
+	}{
+		{
+			"Multi artifact build",
+			args{
+				[]*runtime.HeadChefArtifact{
+					&runtime.HeadChefArtifact{
+						ArtifactID:          UUID("00000000-0000-0000-0000-000000000000"),
+						IngredientVersionID: strfmt.UUID("00000000-0000-0000-0000-000000000000"),
+						URI:                 strfmt.URI("https://00000000-0000-0000-0000-000000000000.tld/file.tar.gz"),
+					},
+				},
+				"",
+				strfmt.UUID("00000000-0000-0000-0000-000000000000"),
+			},
+			[]strfmt.UUID{
+				strfmt.UUID("00000000-0000-0000-0000-000000000000"),
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ar, fail := runtime.NewAlternativeRuntime(tt.args.artifacts, tt.args.cacheDir, tt.args.recipeID)
+			if fail != nil {
+				t.Fatalf("NewAlternativeRuntime failed: %v", fail)
+			}
+
+			gotArtf := []strfmt.UUID{}
+			artifacts := ar.ArtifactsToDownload()
+			for _, artf := range artifacts {
+				gotArtf = append(gotArtf, *artf.ArtifactID)
+			}
+
+			if !reflect.DeepEqual(tt.wantArtifactIDs, gotArtf) {
+				t.Fatalf("Did not receive expected artifacts to download. Wanted: \n%v\n\ngot: %v", tt.wantArtifactIDs, gotArtf)
+			}
+		})
+	}
+}
+
+func UUID(uuids string) *strfmt.UUID {
+	uuid := strfmt.UUID(uuids)
+	return &uuid
 }

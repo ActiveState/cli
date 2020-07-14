@@ -21,11 +21,11 @@ type Assembler interface {
 	EnvGetter
 	DownloadDirectoryProvider
 
-	// ArtifactsToDownloadAndUnpack returns the artifacts that need to be
+	// ArtifactsToDownload returns the artifacts that need to be
 	// downloaded and the archives that already exist and *only* need to be unpacked.
 	// The second return value is a map from the archive paths to the artifact
 	// instances.
-	ArtifactsToDownloadAndUnpack() ([]*HeadChefArtifact, map[string]*HeadChefArtifact)
+	ArtifactsToDownload() []*HeadChefArtifact
 
 	// BuildEngine returns the build engine that this runtime has been created
 	// with

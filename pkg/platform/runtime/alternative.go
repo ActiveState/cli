@@ -104,23 +104,20 @@ func (ar *AlternativeRuntime) cachedArtifact(downloadDir string) *string {
 	return nil
 }
 
-// ArtifactsToDownloadAndUnpack returns the artifacts that we need to download
+// ArtifactsToDownload returns the artifacts that we need to download
 // for this project.
 // Otherwise: It filters out artifacts that have been downloaded before, and adds them to
 // the list of artifacts that need to be unpacked only.
-func (ar *AlternativeRuntime) ArtifactsToDownloadAndUnpack() ([]*HeadChefArtifact, map[string]*HeadChefArtifact) {
+func (ar *AlternativeRuntime) ArtifactsToDownload() []*HeadChefArtifact {
 	downloadArtfs := []*HeadChefArtifact{}
-	archives := map[string]*HeadChefArtifact{}
 
 	for downloadDir, artf := range ar.artifactMap {
 		cached := ar.cachedArtifact(downloadDir)
 		if cached == nil {
 			downloadArtfs = append(downloadArtfs, artf)
-		} else {
-			archives[*cached] = artf
 		}
 	}
-	return downloadArtfs, archives
+	return downloadArtfs
 }
 
 // IsInstalled checks if the merged runtime environment definition file exists
