@@ -50,7 +50,7 @@ $perlMSIs | ForEach-Object -Process {
     $installLogFile = LogFileName $_.Path $installAction
     $installExitCode = ExecMsiexec $_.Path $installAction $installLogFile
     if ($installExitCode -ne 0) {
-        Write-Output "failed to install correctly"
+        Write-Error "failed to install correctly"
         exit $installExitCode
     }
     # should the log file be dumped? or can it be inspected after-the-fact?
@@ -58,21 +58,21 @@ $perlMSIs | ForEach-Object -Process {
     $companyMatches=(perl -v | Select-String -Pattern "ActiveState").length
     $versionMatches=(perl -v | Select-String -Pattern $_.Version).length
     if (($companyMatches -eq 0) -or ($versionMatches -eq 0)) { 
-        Write-Output "perl $($_.Version) does not appear to be provided by ActiveState from $($_.Path)"
+        Write-Error "perl $($_.Version) does not appear to be provided by ActiveState from $($_.Path)"
         exit 1 
     }
 
     $uninstallLogFile = LogFileName $_.Path $uninstallAction
     $uninstallExitCode = ExecMsiexec $_.Path $uninstallAction $uninstallLogFile
     if ($uninstallExitCode -ne 0) {
-        Write-Output "failed to uninstall correctly"
+        Write-Error "failed to uninstall correctly"
         exit $uninstallExitCode
     }
 
     if (CommandExists "perl") {
         $companyMatches=(perl -v | Select-String -Pattern "ActiveState").length
         if ($companyMatches -gt 0) { 
-            Write-Output "ActiveState perl is still detected"
+            Write-Error "ActiveState perl is still detected"
             exit 1 
         }
     }
