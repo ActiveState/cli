@@ -80,9 +80,7 @@ function promptYN([string]$msg)
     return $True
 }
 
-function errorOccured($suppress) {
-    $errMsg = $Error[0]
-    $Error.Clear()
+function errorOccured($suppress, $errMsg) {
     if($errMsg) {
         if (-Not $suppress){
             Write-Warning $errMsg
@@ -98,52 +96,17 @@ function hasWritePermission([string] $path)
     # $acl = Get-Acl $path -ErrorAction 'silentlycontinue'
     # return (($acl.Access | Select-Object -ExpandProperty IdentityReference) -contains $user)
     $thefile = "activestate-perms"
-    New-Item -Path (Join-Path $path $thefile) -ItemType File -ErrorAction 'silentlycontinue'
-    $occurance = errorOccured $True
+    New-Item -Path (Join-Path $path $thefile) -ItemType File -ErrorAction 'SilentlyContinue' -ErrorVariable err
+    $occurance = errorOccured $True $err
     #  If an error occurred and it's NOT and IOExpction error where the file already exists
     if( $occurance[0] -And -Not ($occurance[1].exception.GetType().fullname -eq "System.IO.IOException" -And (Test-Path $path))){
         return $False
     }
-    Remove-Item -Path (Join-Path $path $thefile) -Force  -ErrorAction 'silentlycontinue'
-    if((errorOccured $True)[0]){
+    Remove-Item -Path (Join-Path $path $thefile) -Force  -ErrorAction 'silentlycontinue' -ErrorVariable err
+    if((errorOccured $True $err)[0]){
         return $False
     }
     return $True
-}
-
-function checkPermsRecur([string] $path)
-{
-    $orig = $path
-    # recurse up to the drive root if we have to
-    while ($path -ne "") {
-        if (Test-Path $path){
-            if (-Not (hasWritePermission $path)){
-                Write-Warning "You do not have permission to write to '$path'.  Are you running as admin?"
-                return $False
-            } else {
-                return $True
-            }
-        }
-        $path = split-path $path
-    }
-    Write-Warning "'$orig' is not a valid path"
-    return $False
-}
-
-function isValidFolder([string] $path)
-{      
-    if($path[1] -ne ":"){
-        Write-Warning "Must provide an absolute path."
-        return $False
-    }
-    if(Test-Path $path){
-        #it's a folder
-        if (-Not (Test-Path $path -PathType 'Container')){
-            Write-Warning "'$path' exists and is not a directory"
-            return $False
-        }
-    }
-    return checkPermsRecur $path
 }
 
 # isStateToolInstallationOnPath returns true if the State Tool's installation directory is in the current PATH
@@ -361,8 +324,8 @@ function install()
         New-Item -Path $installDir -ItemType Directory | Out-Null
     } else {
         if(Test-Path $installPath -PathType Leaf) {
-            Remove-Item $installPath -Erroraction 'silentlycontinue'
-            $occurance = errorOccured $False
+            Remove-Item $installPath -Erroraction 'silentlycontinue' -ErrorVariable err
+            $occurance = errorOccured $False $err
             if($occurance[0]){
                 Write-Host "Aborting Installation" -ForegroundColor Yellow
                 return 1
