@@ -80,7 +80,7 @@ function promptYN([string]$msg)
     return $True
 }
 
-function errorOccured($suppress, $err) {
+function errorOccured($suppress, $errMsg) {
     if($errMsg) {
         if (-Not $suppress){
             Write-Warning $errMsg
@@ -96,7 +96,7 @@ function hasWritePermission([string] $path)
     # $acl = Get-Acl $path -ErrorAction 'silentlycontinue'
     # return (($acl.Access | Select-Object -ExpandProperty IdentityReference) -contains $user)
     $thefile = "activestate-perms"
-    New-Item -Path (Join-Path $path $thefile) -ItemType File -ErrorAction 'silentlycontinue' -ErrorVariable err
+    New-Item -Path (Join-Path $path $thefile) -ItemType File -ErrorAction 'SilentlyContinue' -ErrorVariable err
     $occurance = errorOccured $True $err
     #  If an error occurred and it's NOT and IOExpction error where the file already exists
     if( $occurance[0] -And -Not ($occurance[1].exception.GetType().fullname -eq "System.IO.IOException" -And (Test-Path $path))){
