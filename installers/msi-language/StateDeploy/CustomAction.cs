@@ -55,21 +55,26 @@ namespace StateDeploy
             string installCmd = string.Format("Set-ExecutionPolicy Unrestricted -Scope Process; {0} -n -t {1}", scriptPath, installPath);
             session.Log(string.Format("Running install command: {0}", installCmd));
 
-            ActionResult result = RunCommand(session, installCmd, Shell.Powershell);
+            string output;
+            ActionResult result = RunCommand(session, installCmd, Shell.Powershell, out output);
             if (result.Equals(ActionResult.UserExit))
             {
                 // Catch cancel and return
+                return result;
+            }
+            else if (result == ActionResult.Failure)
+            {
+                Record record = new Record();
+                var errorOutput = FormatErrorOutput(output);
+                record.FormatString = String.Format("state tool installation failed with error:\n{1}", errorOutput);
+
+                MessageResult msgRes = session.Message(InstallMessage.Error | (InstallMessage)MessageBoxButtons.OK, record);
                 return result;
             }
             Status.ProgressBar.Increment(session, 1);
 
             stateToolPath = Path.Combine(installPath, "state.exe");
             return result;
-        }
-
-        private static ActionResult RunCommand(Session session, string cmd, Shell shell=Shell.Cmd)
-        {
-            return RunCommand(session, cmd, shell, out _);
         }
 
         private static ActionResult RunCommand(Session session, string cmd, Shell shell, out string output)
@@ -81,7 +86,13 @@ namespace StateDeploy
                 switch(shell)
                 {
                     case Shell.Powershell:
-                        procStartInfo = new ProcessStartInfo("powershell.exe", cmd);
+                        var powershellExe = Path.Combine(Environment.SystemDirectory, "WindowsPowershell", "v1.0", "powershell.exe");
+                        if (!File.Exists(powershellExe))
+                        {
+                            session.Log("Did not find powershell @" + powershellExe);
+                            powershellExe = "powershell.exe";
+                        }
+                        procStartInfo = new ProcessStartInfo(powershellExe, cmd);
                         break;
                     default:
                         procStartInfo = new ProcessStartInfo("cmd.exe", "/c " + cmd);
@@ -155,8 +166,11 @@ namespace StateDeploy
             }
             catch (Exception objException)
             {
+                outputBuilder.Append('\x00');
+                var exceptionString = string.Format("Caught exception: {0}", objException);
+                outputBuilder.Append(exceptionString);
                 output = outputBuilder.ToString();
-                session.Log(string.Format("Caught exception: {0}", objException));
+                session.Log(exceptionString);
                 return ActionResult.Failure;
             }
             output = outputBuilder.ToString();
