@@ -109,41 +109,6 @@ function hasWritePermission([string] $path)
     return $True
 }
 
-function checkPermsRecur([string] $path)
-{
-    $orig = $path
-    # recurse up to the drive root if we have to
-    while ($path -ne "") {
-        if (Test-Path $path){
-            if (-Not (hasWritePermission $path)){
-                Write-Warning "You do not have permission to write to '$path'.  Are you running as admin?"
-                return $False
-            } else {
-                return $True
-            }
-        }
-        $path = split-path $path
-    }
-    Write-Warning "'$orig' is not a valid path"
-    return $False
-}
-
-function isValidFolder([string] $path)
-{      
-    if($path[1] -ne ":"){
-        Write-Warning "Must provide an absolute path."
-        return $False
-    }
-    if(Test-Path $path){
-        #it's a folder
-        if (-Not (Test-Path $path -PathType 'Container')){
-            Write-Warning "'$path' exists and is not a directory"
-            return $False
-        }
-    }
-    return checkPermsRecur $path
-}
-
 # isStateToolInstallationOnPath returns true if the State Tool's installation directory is in the current PATH
 function isStateToolInstallationOnPath($installDirectory) {
     $existing = getExistingOnPath
