@@ -13,6 +13,7 @@ jobs:
   build:
     name: Build
     strategy:
+      fail-fast: false
       matrix:
         go-version:
         - 1.13.x
@@ -131,6 +132,7 @@ jobs:
   unittest:
     name: Unit Test
     strategy:
+      fail-fast: false
       matrix:
         go-version:
         - 1.13.x
@@ -174,6 +176,7 @@ jobs:
     if: contains(github.event.pull_request.labels.*.name, 'run integration tests')
     name: Integration Test
     strategy:
+      fail-fast: false
       matrix:
         go-version:
         - 1.13.x
@@ -214,7 +217,7 @@ jobs:
       run: state run build
     - name: Integration Tests
       shell: bash
-      run: go test -timeout 20m ./test/integration -v
+      run: go test -timeout 20m ./test/integration
       env:
         INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
         INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
