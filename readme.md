@@ -53,8 +53,8 @@ in a single PR, as such please keep the following guidelines in mind when
 contributing.
 
 * Error handling is slowly being refactored to retire our home brewed
- failures package in favour of conventional Go errors, please refer to
- [docs/errors.md](docs/errors.md) for more information.
+  failures package in favour of conventional Go errors, please refer to
+  [docs/errors.md](docs/errors.md) for more information.
 * Commands registered under the [state/](state/) folder are using our legacy
   command architecture, all future commands should use the
   [cmd/state/internal/cmdtree](cmd/state/internal/cmdtree) architecture.
