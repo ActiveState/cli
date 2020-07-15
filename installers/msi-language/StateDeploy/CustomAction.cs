@@ -81,7 +81,13 @@ namespace StateDeploy
                 switch(shell)
                 {
                     case Shell.Powershell:
-                        procStartInfo = new ProcessStartInfo("powershell.exe", cmd);
+                        var powershellExe = Path.Combine(Environment.SystemDirectory, "WindowsPowershell", "v1.0", "powershell.exe");
+                        if (!File.Exists(powershellExe))
+                        {
+                            session.Log("Did not find powershell @" + powershellExe);
+                            powershellExe = "powershell.exe";
+                        }
+                        procStartInfo = new ProcessStartInfo(powershellExe, cmd);
                         break;
                     default:
                         procStartInfo = new ProcessStartInfo("cmd.exe", "/c " + cmd);
