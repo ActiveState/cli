@@ -49,9 +49,6 @@ type outputData struct {
 	Scripts      map[string]string   `json:",omitempty"`
 }
 
-type remoteOutputData struct {
-}
-
 // New returns a pointer to an instance of Show.
 func New(prime primeable) *Show {
 	return &Show{
