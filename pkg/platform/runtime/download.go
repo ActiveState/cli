@@ -215,11 +215,14 @@ func (r *Download) Download(artifacts []*HeadChefArtifact, dp DownloadDirectoryP
 		// Ideally we'd be passing authentication down the chain somehow, but for now this would require way too much
 		// additional plumbing, so we're going to use the global version until the higher level architecture is refactored
 		auth := authentication.Get()
+		uid := "00000000-0000-0000-0000-000000000000"
 		if auth.Authenticated() {
-			q := u.Query()
-			q.Set("x-uuid", auth.UserID().String()) // x-uuid is used so our analytics can filter out activator traffic
-			u.RawQuery = q.Encode()
+			uid = auth.UserID().String()
 		}
+		
+		q := u.Query()
+		q.Set("x-uuid", uid) // x-uuid is used so our analytics can filter out activator traffic
+		u.RawQuery = q.Encode()
 
 		targetDir, fail := dp.DownloadDirectory(artf)
 		if fail != nil {
