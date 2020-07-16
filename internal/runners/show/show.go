@@ -87,9 +87,9 @@ func (s *Show) Run(params Params) error {
 			return locale.NewError("err_no_projectfile")
 		}
 
-		owner = s.project.Source().Owner
-		projectName = s.project.Source().Name
-		projectURL = s.project.Source().Project
+		owner = s.project.Owner()
+		projectName = s.project.Name()
+		projectURL = s.project.URL()
 
 		events, err = eventsData(s.project.Source(), s.conditional)
 		if err != nil {
