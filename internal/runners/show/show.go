@@ -2,23 +2,19 @@ package show
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/secrets"
-	"github.com/ActiveState/cli/internal/updater"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
-	prj "github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/go-openapi/strfmt"
 )
 
 // Params describes the data required for the show run func.
@@ -48,128 +44,98 @@ type outputData struct {
 	Commit       string `locale:"commit,Commit"`
 	Platforms    []string
 	Languages    []string
-	// TODO: This does not tab properly in output
-	Secrets *secretsOutputData `locale:"secrets,Secrets"`
-	Events  []string           `json:",omitempty"`
-	Scripts map[string]string  `json:",omitempty"`
+	Secrets      map[string][]string `locale:"secrets,Secrets"`
+	Events       []string            `json:",omitempty"`
+	Scripts      map[string]string   `json:",omitempty"`
 }
 
-type secretsOutputData struct {
-	User    []string `locale:"user,User"`
-	Project []string `locale:"project,Project"`
+type remoteOutputData struct {
 }
 
 // New returns a pointer to an instance of Show.
 func New(prime primeable) *Show {
 	return &Show{
-		prime.Project(),
-		prime.Output(),
-		prime.Conditional(),
+		project:     prime.Project(),
+		out:         prime.Output(),
+		conditional: prime.Conditional(),
 	}
 }
 
 // Run is the primary show logic.
 func (s *Show) Run(params Params) error {
-	logging.Debug("Execute")
+	logging.Debug("Execute show")
 
-	if s.project == nil {
-		return locale.NewError("err_no_projectfile")
-	}
+	var (
+		owner       string
+		projectName string
+		events      []string
+		scripts     map[string]string
+		err         error
+	)
 
-	pj := s.project
-	namespace := fmt.Sprintf("%s/%s", s.project.Owner(), s.project.Name())
 	if params.Remote != "" {
-		path := params.Remote
-		projectFilePath := filepath.Join(params.Remote, constants.ConfigFileName)
-
-		if _, err := os.Stat(path); err != nil {
-			return locale.WrapError(
-				err,
-				"err_state_show_path_does_not_exist",
-				"Directory does not exist.",
-			)
-		}
-
-		if _, err := os.Stat(projectFilePath); err != nil {
-			return locale.WrapError(
-				err,
-				"err_state_show_no_config",
-				"activestate.yaml file not found in the given location.",
-			)
-		}
-
-		projectFile, fail := projectfile.Parse(projectFilePath)
+		namespaced, fail := project.ParseNamespace(params.Remote)
 		if fail != nil {
-			logging.Errorf("Unable to parse activestate.yaml: %s", fail)
-			return locale.WrapError(
-				fail,
-				"err_state_show_project_parse",
-				"Could not parse activestate.yaml.",
-			)
+			return locale.WrapError(fail.ToError(), "err_show_parse_namespace", "Invalid remote argument, must be of the form <Owner>/<Project>")
 		}
 
-		pj, fail = prj.New(projectFile)
-		if fail != nil {
-			return fail.ToError()
+		owner = namespaced.Owner
+		projectName = namespaced.Project
+	} else {
+		owner = s.project.Source().Owner
+		projectName = s.project.Source().Name
+
+		events, err = eventsData(s.project.Source(), s.conditional)
+		if err != nil {
+			return locale.WrapError(err, "err_show_events", "Could not parse events")
 		}
 
-		split := strings.Split(filepath.Clean(params.Remote), string(filepath.Separator))
-		namespace = fmt.Sprintf("%s/%s", split[len(split)-2], split[len(split)-1])
+		scripts, err = scriptsData(s.project.Source(), s.conditional)
+		if err != nil {
+			return locale.WrapError(err, "err_show_scripts", "Could not parse scripts")
+		}
 	}
 
-	src := pj.Source()
-
-	updater.PrintUpdateMessage(src.Path())
-
-	namespaced, fail := prj.ParseNamespace(namespace)
+	branch, fail := model.DefaultBranchForProjectName(owner, projectName)
 	if fail != nil {
-		return locale.WrapError(
-			fail.ToError(),
-			"err_show_parse_namespace",
-			"Could not parse remote project namespace",
-		)
+		return locale.WrapError(fail.ToError(), "err_show_get_default_branch", "Could not get project information from the platform")
+	}
+	if branch.CommitID == nil {
+		return locale.NewError("err_show_commitID", "Remote project details are incorrect. Default branch is missing commitID")
 	}
 
-	events, err := eventsData(src, s.conditional)
-	if err != nil {
-		return locale.WrapError(err, "err_show_events", "Could not parse events.")
-	}
+	projectURL := model.ProjectURL(owner, projectName, branch.CommitID.String())
 
-	scripts, err := scriptsData(src, s.conditional)
-	if err != nil {
-		return locale.WrapError(err, "err_show_scripts", "Could not parse scripts.")
-	}
-
-	platforms, err := platformsData(namespaced.Owner, namespaced.Project)
+	platforms, err := platformsData(owner, projectName, *branch.CommitID)
 	if err != nil {
 		return locale.WrapError(err, "err_show_platforms", "Could not retrieve platform information")
 	}
 
-	languages, err := languagesData(namespaced.Owner, namespaced.Project)
+	languages, err := languagesData(owner, projectName)
 	if err != nil {
 		return locale.WrapError(err, "err_show_langauges", "Could not retrieve language information")
 	}
 
-	visibility, err := visibilityData(namespaced.Owner, namespaced.Project)
+	visibility, err := visibilityData(owner, projectName)
 	if err != nil {
 		return locale.WrapError(err, "err_show_visibility", "Could not get visibility information")
 	}
 
-	commit, err := s.commitsData(namespaced.Owner, namespaced.Project)
+	commit, err := commitsData(owner, projectName, *branch.CommitID, s.project)
 	if err != nil {
 		return locale.WrapError(err, "err_show_commit", "Could not get commit information")
 	}
 
-	secrets, err := secretsData(namespaced.Owner, namespaced.Project)
+	secrets, err := secretsData(owner, projectName)
 	if err != nil {
 		return locale.WrapError(err, "err_show_secrets", "Could not get secret information")
 	}
 
 	data := outputData{
-		ProjectURL:   pj.Source().Project,
-		Namespace:    pj.Namespace(),
-		Name:         pj.Name(),
-		Organization: pj.Owner(),
+		ProjectURL:   projectURL,
+		Namespace:    fmt.Sprintf("%s/%s", owner, projectName),
+		Name:         projectName,
+		Organization: owner,
 		Visibility:   visibility,
 		Commit:       commit,
 		Languages:    languages,
@@ -180,7 +146,6 @@ func (s *Show) Run(params Params) error {
 	}
 
 	s.out.Print(data)
-
 	return nil
 }
 
@@ -224,19 +189,10 @@ func scriptsData(project *projectfile.Project, conditional *constraints.Conditio
 	return data, nil
 }
 
-func platformsData(owner, project string) ([]string, error) {
-	branch, fail := model.DefaultBranchForProjectName(owner, project)
+func platformsData(owner, project string, branchID strfmt.UUID) ([]string, error) {
+	remotePlatforms, fail := model.FetchPlatformsForCommit(branchID)
 	if fail != nil {
-		return nil, locale.WrapError(fail.ToError(), "err_show_get_default_branch", "Could not get the default branch")
-	}
-	if branch.CommitID == nil {
-		return nil, locale.NewError("err_show_get_commitID", "Could not get commit ID for default branch")
-	}
-
-	// TODO: Could create model method for getting platforms via project namespace
-	remotePlatforms, fail := model.FetchPlatformsForCommit(*branch.CommitID)
-	if fail != nil {
-		return nil, locale.WrapError(fail.ToError(), "err_show_get_platforms", "Could not get platform details")
+		return nil, locale.WrapError(fail.ToError(), "err_show_get_platforms", "Could not get platform details for commit: {{.V0}}", branchID.String())
 	}
 
 	platforms := make([]string, len(remotePlatforms))
@@ -251,10 +207,9 @@ func platformsData(owner, project string) ([]string, error) {
 }
 
 func languagesData(owner, project string) ([]string, error) {
-	// TODO: Improve all error messages
 	platformLanguages, fail := model.FetchLanguagesForProject(owner, project)
 	if fail != nil {
-		return nil, locale.WrapError(fail.ToError(), "err_show_get_langauges", "Could not get languages for proejct: {{.V0}}", project)
+		return nil, locale.WrapError(fail.ToError(), "err_show_get_langauges", "Could not get languages for project")
 	}
 
 	languages := make([]string, len(platformLanguages))
@@ -268,7 +223,7 @@ func languagesData(owner, project string) ([]string, error) {
 func visibilityData(owner, project string) (string, error) {
 	platfomProject, fail := model.FetchProjectByName(owner, project)
 	if fail != nil {
-		return "", locale.WrapError(fail.ToError(), "err_show_fetch_project", "Could not get project: {{.V0}}/{{.V1}}", owner, project)
+		return "", locale.WrapError(fail.ToError(), "err_show_fetch_project", "Could not get remote project information")
 	}
 
 	if platfomProject.Private {
@@ -277,37 +232,30 @@ func visibilityData(owner, project string) (string, error) {
 	return "Public", nil
 }
 
-func (s *Show) commitsData(owner, project string) (string, error) {
-	// TODO: Store this, or similar information in the show struct
-	branch, fail := model.DefaultBranchForProjectName(owner, project)
-	if fail != nil {
-		return "", locale.WrapError(fail.ToError(), "err_show_get_default_branch", "Could not get the default branch")
-	}
-	if branch.CommitID == nil {
-		return "", locale.NewError("err_show_get_commitID", "Could not get commit ID for default branch")
-	}
-
+func commitsData(owner, project string, commitID strfmt.UUID, localProject *project.Project) (string, error) {
 	latestCommit, fail := model.LatestCommitID(owner, project)
 	if fail != nil {
 		return "", locale.WrapError(fail.ToError(), "err_show_get_latest_commit", "Could not get latest commit ID")
 	}
 
-	behind, fail := model.CommitsBehindLatest(owner, project, s.project.CommitID())
-	if fail != nil {
-		return "", locale.WrapError(fail.ToError(), "err_show_commits_behind", "Could not get commits behind latest")
-	}
-	if behind != 0 {
-		return fmt.Sprintf("%s (%d behind latest)", latestCommit, behind), nil
+	if localProject != nil && localProject.Owner() == owner && localProject.Name() == project {
+		behind, fail := model.CommitsBehindLatest(owner, project, localProject.CommitID())
+		if fail != nil {
+			return "", locale.WrapError(fail.ToError(), "err_show_commits_behind", "Could not determine number of commits behind latest")
+		}
+		if behind != 0 {
+			return fmt.Sprintf("%s (%d behind latest)", latestCommit, behind), nil
+		}
 	}
 
 	return fmt.Sprintf("%s", latestCommit), nil
 }
 
-func secretsData(owner, project string) (*secretsOutputData, error) {
+func secretsData(owner, project string) (map[string][]string, error) {
 	client := secretsapi.Get()
 	sec, fail := secrets.DefsByProject(client, owner, project)
 	if fail != nil {
-		return nil, locale.WrapError(fail.ToError(), "err_show_get_secrets", "Could not get secrets for project: {{.V0}}/{{.V1}}", owner, project)
+		return nil, locale.WrapError(fail.ToError(), "err_show_get_secrets", "Could not get secret definitions")
 	}
 
 	var userSecrets []string
@@ -317,15 +265,24 @@ func secretsData(owner, project string) (*secretsOutputData, error) {
 		if s.Description != "" {
 			data = fmt.Sprintf("%s: %s", *s.Name, s.Description)
 		}
-		if *s.Scope == "project" {
+		if strings.ToLower(*s.Scope) == "project" {
 			projectSecrets = append(projectSecrets, data)
 			continue
 		}
 		userSecrets = append(userSecrets, data)
 	}
 
-	return &secretsOutputData{
-		User:    userSecrets,
-		Project: projectSecrets,
-	}, nil
+	secrets := make(map[string][]string)
+	if len(userSecrets) > 0 {
+		secrets["User"] = userSecrets
+	}
+	if len(projectSecrets) > 0 {
+		secrets["Project"] = projectSecrets
+	}
+
+	if len(secrets) == 0 {
+		return nil, nil
+	}
+
+	return secrets, nil
 }

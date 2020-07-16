@@ -547,7 +547,7 @@ env_inherit_inherit_aborted:
 show_project:
   other: Show information about a project
 arg_state_show_remote_description:
-  other: Path to project
+  other: Namespace of remote project
 field_namespace:
   other: Namespace
 field_platforms:
