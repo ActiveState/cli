@@ -248,7 +248,7 @@ func commitsData(owner, project string, commitID strfmt.UUID, localProject *proj
 		}
 	}
 
-	return fmt.Sprintf("%s", latestCommit), nil
+	return latestCommit.String(), nil
 }
 
 func secretsData(owner, project string) (map[string][]string, error) {
