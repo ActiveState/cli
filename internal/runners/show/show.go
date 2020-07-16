@@ -77,7 +77,7 @@ func (s *Show) Run(params Params) error {
 	if params.Remote != "" {
 		namespaced, fail := project.ParseNamespace(params.Remote)
 		if fail != nil {
-			return locale.WrapError(fail.ToError(), "err_show_parse_namespace", "Invalid remote argument, must be of the form <Owner>/<Project>")
+			return locale.WrapError(fail, "err_show_parse_namespace", "Invalid remote argument, must be of the form <Owner>/<Project>")
 		}
 
 		owner = namespaced.Owner
@@ -104,14 +104,14 @@ func (s *Show) Run(params Params) error {
 
 	remoteProject, fail := model.FetchProjectByName(owner, projectName)
 	if fail != nil && fail.Type.Matches(model.FailProjectNotFound) {
-		return locale.WrapError(fail.ToError(), "err_show_project_not_found", "Please run `state push` to synchronize this project with the ActiveState Platform.")
+		return locale.WrapError(fail, "err_show_project_not_found", "Please run `state push` to synchronize this project with the ActiveState Platform.")
 	} else if fail != nil {
 		return locale.WrapError(err, "err_show_get_project", "Could not get remote project details")
 	}
 
 	branch, fail := model.DefaultBranchForProjectName(owner, projectName)
 	if fail != nil {
-		return locale.WrapError(fail.ToError(), "err_show_get_default_branch", "Could not get project information from the platform")
+		return locale.WrapError(fail, "err_show_get_default_branch", "Could not get project information from the platform")
 	}
 	if branch.CommitID == nil {
 		return locale.NewError("err_show_commitID", "Remote project details are incorrect. Default branch is missing commitID")
@@ -202,7 +202,7 @@ func scriptsData(project *projectfile.Project, conditional *constraints.Conditio
 func platformsData(owner, project string, branchID strfmt.UUID) ([]string, error) {
 	remotePlatforms, fail := model.FetchPlatformsForCommit(branchID)
 	if fail != nil {
-		return nil, locale.WrapError(fail.ToError(), "err_show_get_platforms", "Could not get platform details for commit: {{.V0}}", branchID.String())
+		return nil, locale.WrapError(fail, "err_show_get_platforms", "Could not get platform details for commit: {{.V0}}", branchID.String())
 	}
 
 	platforms := make([]string, len(remotePlatforms))
@@ -219,7 +219,7 @@ func platformsData(owner, project string, branchID strfmt.UUID) ([]string, error
 func languagesData(owner, project string) ([]string, error) {
 	platformLanguages, fail := model.FetchLanguagesForProject(owner, project)
 	if fail != nil {
-		return nil, locale.WrapError(fail.ToError(), "err_show_get_langauges", "Could not get languages for project")
+		return nil, locale.WrapError(fail, "err_show_get_langauges", "Could not get languages for project")
 	}
 
 	languages := make([]string, len(platformLanguages))
@@ -240,7 +240,7 @@ func visibilityData(owner, project string, remoteProject *mono_models.Project) s
 func commitsData(owner, project string, commitID strfmt.UUID, localProject *project.Project) (string, error) {
 	latestCommit, fail := model.LatestCommitID(owner, project)
 	if fail != nil {
-		return "", locale.WrapError(fail.ToError(), "err_show_get_latest_commit", "Could not get latest commit ID")
+		return "", locale.WrapError(fail, "err_show_get_latest_commit", "Could not get latest commit ID")
 	}
 
 	if !authentication.Get().Authenticated() {
@@ -250,7 +250,7 @@ func commitsData(owner, project string, commitID strfmt.UUID, localProject *proj
 	if localProject != nil && localProject.Owner() == owner && localProject.Name() == project {
 		behind, fail := model.CommitsBehindLatest(owner, project, localProject.CommitID())
 		if fail != nil {
-			return "", locale.WrapError(fail.ToError(), "err_show_commits_behind", "Could not determine number of commits behind latest")
+			return "", locale.WrapError(fail, "err_show_commits_behind", "Could not determine number of commits behind latest")
 		}
 		if behind != 0 {
 			return fmt.Sprintf("%s (%d behind latest)", latestCommit, behind), nil
