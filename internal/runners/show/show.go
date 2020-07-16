@@ -10,8 +10,10 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/secrets"
+	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -42,7 +44,7 @@ type outputData struct {
 	Name         string
 	Organization string
 	Visibility   string `locale:"visibility,Visibility"`
-	Commit       string `locale:"commit,Commit"`
+	Commit       string `locale:"commit,Latest Commit"`
 	Platforms    []string
 	Languages    []string
 	Secrets      map[string][]string `locale:"secrets,Secrets"`
@@ -66,6 +68,7 @@ func (s *Show) Run(params Params) error {
 	var (
 		owner       string
 		projectName string
+		projectURL  string
 		events      []string
 		scripts     map[string]string
 		err         error
@@ -86,6 +89,7 @@ func (s *Show) Run(params Params) error {
 
 		owner = s.project.Source().Owner
 		projectName = s.project.Source().Name
+		projectURL = s.project.Source().Project
 
 		events, err = eventsData(s.project.Source(), s.conditional)
 		if err != nil {
@@ -113,7 +117,9 @@ func (s *Show) Run(params Params) error {
 		return locale.NewError("err_show_commitID", "Remote project details are incorrect. Default branch is missing commitID")
 	}
 
-	projectURL := model.ProjectURL(owner, projectName, branch.CommitID.String())
+	if projectURL == "" {
+		projectURL = model.ProjectURL(owner, projectName, branch.CommitID.String())
+	}
 
 	platforms, err := platformsData(owner, projectName, *branch.CommitID)
 	if err != nil {
@@ -237,6 +243,10 @@ func commitsData(owner, project string, commitID strfmt.UUID, localProject *proj
 		return "", locale.WrapError(fail.ToError(), "err_show_get_latest_commit", "Could not get latest commit ID")
 	}
 
+	if !authentication.Get().Authenticated() {
+		return latestCommit.String(), nil
+	}
+
 	if localProject != nil && localProject.Owner() == owner && localProject.Name() == project {
 		behind, fail := model.CommitsBehindLatest(owner, project, localProject.CommitID())
 		if fail != nil {
@@ -251,10 +261,18 @@ func commitsData(owner, project string, commitID strfmt.UUID, localProject *proj
 }
 
 func secretsData(owner, project string) (map[string][]string, error) {
+	if !authentication.Get().Authenticated() {
+		return nil, nil
+	}
+
 	client := secretsapi.Get()
 	sec, fail := secrets.DefsByProject(client, owner, project)
-	if fail != nil {
-		return nil, locale.WrapError(fail.ToError(), "err_show_get_secrets", "Could not get secret definitions")
+	if fail != nil && fail.Type.Matches(api.FailAuth) {
+		// The user is authenticated however may not have access to secrets on the project
+		// The secrets api will return not authenticated with a message to authenticate that
+		// we do not want to present to the user
+		logging.Debug("Could not get secret definitions, got failure: %s", fail)
+		return nil, locale.NewError("err_show_get_secrets", "Could not get secret definitions, you may not be authorized to view secrets on this project")
 	}
 
 	var userSecrets []string
