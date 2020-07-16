@@ -82,6 +82,10 @@ func (s *Show) Run(params Params) error {
 		owner = namespaced.Owner
 		projectName = namespaced.Project
 	} else {
+		if s.project == nil {
+			return locale.NewError("err_no_projectfile")
+		}
+
 		owner = s.project.Source().Owner
 		projectName = s.project.Source().Name
 
