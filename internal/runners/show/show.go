@@ -226,7 +226,7 @@ func platformsData(owner, project string, branchID strfmt.UUID) ([]string, error
 func languagesData(owner, project string) ([]string, error) {
 	platformLanguages, fail := model.FetchLanguagesForProject(owner, project)
 	if fail != nil {
-		return nil, locale.WrapError(fail, "err_show_get_langauges", "Could not get languages for project")
+		return nil, locale.WrapError(fail, "err_show_get_languages", "Could not get languages for project")
 	}
 
 	languages := make([]string, len(platformLanguages))
