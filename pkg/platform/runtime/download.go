@@ -15,8 +15,8 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/project"
 )
 
 // ensure that Downloader implements the Download interface
@@ -86,12 +86,6 @@ type Download struct {
 	commitID    strfmt.UUID
 	owner       string
 	projectName string
-}
-
-// InitDownload creates a new RuntimeDownload instance and assumes default values for everything but the target dir
-func InitDownload() Downloader {
-	pj := project.Get()
-	return NewDownload(pj.CommitUUID(), pj.Owner(), pj.Name())
 }
 
 // NewDownload creates a new RuntimeDownload using all custom args
@@ -216,6 +210,15 @@ func (r *Download) Download(artifacts []*HeadChefArtifact, dp DownloadDirectoryP
 		u, fail := model.SignS3URL(artifactURL)
 		if fail != nil {
 			return files, fail
+		}
+
+		// Ideally we'd be passing authentication down the chain somehow, but for now this would require way too much
+		// additional plumbing, so we're going to use the global version until the higher level architecture is refactored
+		auth := authentication.Get()
+		if auth.Authenticated() {
+			q := u.Query()
+			q.Set("x-uuid", auth.UserID().String()) // x-uuid is used so our analytics can filter out activator traffic
+			u.RawQuery = q.Encode()
 		}
 
 		targetDir, fail := dp.DownloadDirectory(artf)
