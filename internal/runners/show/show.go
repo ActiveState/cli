@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/secrets"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -97,6 +98,13 @@ func (s *Show) Run(params Params) error {
 		}
 	}
 
+	remoteProject, fail := model.FetchProjectByName(owner, projectName)
+	if fail != nil && fail.Type.Matches(model.FailProjectNotFound) {
+		return locale.WrapError(fail.ToError(), "err_show_project_not_found", "Please run `state push` to synchronize this project with the ActiveState Platform.")
+	} else if fail != nil {
+		return locale.WrapError(err, "err_show_get_project", "Could not get remote project details")
+	}
+
 	branch, fail := model.DefaultBranchForProjectName(owner, projectName)
 	if fail != nil {
 		return locale.WrapError(fail.ToError(), "err_show_get_default_branch", "Could not get project information from the platform")
@@ -117,11 +125,6 @@ func (s *Show) Run(params Params) error {
 		return locale.WrapError(err, "err_show_langauges", "Could not retrieve language information")
 	}
 
-	visibility, err := visibilityData(owner, projectName)
-	if err != nil {
-		return locale.WrapError(err, "err_show_visibility", "Could not get visibility information")
-	}
-
 	commit, err := commitsData(owner, projectName, *branch.CommitID, s.project)
 	if err != nil {
 		return locale.WrapError(err, "err_show_commit", "Could not get commit information")
@@ -137,7 +140,7 @@ func (s *Show) Run(params Params) error {
 		Namespace:    fmt.Sprintf("%s/%s", owner, projectName),
 		Name:         projectName,
 		Organization: owner,
-		Visibility:   visibility,
+		Visibility:   visibilityData(owner, projectName, remoteProject),
 		Commit:       commit,
 		Languages:    languages,
 		Platforms:    platforms,
@@ -221,16 +224,11 @@ func languagesData(owner, project string) ([]string, error) {
 	return languages, nil
 }
 
-func visibilityData(owner, project string) (string, error) {
-	platfomProject, fail := model.FetchProjectByName(owner, project)
-	if fail != nil {
-		return "", locale.WrapError(fail.ToError(), "err_show_fetch_project", "Could not get remote project information")
+func visibilityData(owner, project string, remoteProject *mono_models.Project) string {
+	if remoteProject.Private {
+		return "Private"
 	}
-
-	if platfomProject.Private {
-		return "Private", nil
-	}
-	return "Public", nil
+	return "Public"
 }
 
 func commitsData(owner, project string, commitID strfmt.UUID, localProject *project.Project) (string, error) {
