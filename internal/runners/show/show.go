@@ -30,12 +30,18 @@ type Show struct {
 	project     *project.Project
 	out         output.Outputer
 	conditional *constraints.Conditional
+	auth        *authentication.Auth
+}
+
+type auther interface {
+	Authenticated() bool
 }
 
 type primeable interface {
 	primer.Projecter
 	primer.Outputer
 	primer.Conditioner
+	primer.Auther
 }
 
 type outputData struct {
@@ -58,6 +64,7 @@ func New(prime primeable) *Show {
 		prime.Project(),
 		prime.Output(),
 		prime.Conditional(),
+		prime.Auth(),
 	}
 }
 
@@ -131,12 +138,12 @@ func (s *Show) Run(params Params) error {
 		return locale.WrapError(err, "err_show_langauges", "Could not retrieve language information")
 	}
 
-	commit, err := commitsData(owner, projectName, *branch.CommitID, s.project)
+	commit, err := commitsData(owner, projectName, *branch.CommitID, s.project, s.auth)
 	if err != nil {
 		return locale.WrapError(err, "err_show_commit", "Could not get commit information")
 	}
 
-	secrets, err := secretsData(owner, projectName)
+	secrets, err := secretsData(owner, projectName, s.auth)
 	if err != nil {
 		return locale.WrapError(err, "err_show_secrets", "Could not get secret information")
 	}
@@ -237,13 +244,13 @@ func visibilityData(owner, project string, remoteProject *mono_models.Project) s
 	return locale.T("show_visibility_public")
 }
 
-func commitsData(owner, project string, commitID strfmt.UUID, localProject *project.Project) (string, error) {
+func commitsData(owner, project string, commitID strfmt.UUID, localProject *project.Project, auth auther) (string, error) {
 	latestCommit, fail := model.LatestCommitID(owner, project)
 	if fail != nil {
 		return "", locale.WrapError(fail, "err_show_get_latest_commit", "Could not get latest commit ID")
 	}
 
-	if !authentication.Get().Authenticated() {
+	if !auth.Authenticated() {
 		return latestCommit.String(), nil
 	}
 
@@ -260,8 +267,8 @@ func commitsData(owner, project string, commitID strfmt.UUID, localProject *proj
 	return latestCommit.String(), nil
 }
 
-func secretsData(owner, project string) (map[string][]string, error) {
-	if !authentication.Get().Authenticated() {
+func secretsData(owner, project string, auth auther) (map[string][]string, error) {
+	if !auth.Authenticated() {
 		return nil, nil
 	}
 
