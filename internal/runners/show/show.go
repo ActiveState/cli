@@ -52,9 +52,9 @@ type outputData struct {
 // New returns a pointer to an instance of Show.
 func New(prime primeable) *Show {
 	return &Show{
-		project:     prime.Project(),
-		out:         prime.Output(),
-		conditional: prime.Conditional(),
+		prime.Project(),
+		prime.Output(),
+		prime.Conditional(),
 	}
 }
 
