@@ -452,7 +452,7 @@ func IsEmptyDir(path string) (bool, *failures.Failure) {
 }
 
 // MoveAllFilesCallback is invoked for every file that we move
-type MoveAllFilesCallback func()
+type MoveAllFilesCallback func(fromPath, toPath string)
 
 // MoveAllFilesRecursively moves files and directories from one directory to another.
 // Unlike in MoveAllFiles, the destination directory does not need to be empty, and
@@ -511,7 +511,7 @@ func MoveAllFilesRecursively(fromPath, toPath string, cb MoveAllFilesCallback) *
 			if err != nil {
 				return failures.FailOS.Wrap(err)
 			}
-			cb()
+			cb(subFromPath, subToPath)
 		}
 	}
 	return nil

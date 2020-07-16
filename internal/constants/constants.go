@@ -87,6 +87,9 @@ const ArtifactFile = "artifact.json"
 // ArtifactArchiveName is the standardized name of an artifact archive
 const ArtifactArchiveName = "artifact.tar.gz"
 
+// ArtifactArchiveName is the standardized name of an artifact archive
+const ArtifactCacheFileName = "artifact_cache.json"
+
 // DefaultNamespaceDomain is the domain used when no namespace is given and one has to be constructed
 const DefaultNamespaceDomain = "github.com"
 

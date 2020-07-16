@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"reflect"
 	"testing"
 
 	"github.com/go-openapi/strfmt"
@@ -158,40 +157,6 @@ func (suite *AlternativeRuntimeTestSuite) Test_InitializationFailure() {
 	}
 }
 
-func (suite *AlternativeRuntimeTestSuite) Test_ArtifactsToDownloadAndUnpack() {
-	artifactsRes := mockFetchArtifactsResult(withRegularArtifacts(2))
-	suite.Require().Len(artifactsRes.Artifacts, 2)
-	ar, fail := runtime.NewAlternativeRuntime(artifactsRes.Artifacts, suite.cacheDir, artifactsRes.RecipeID)
-	suite.Require().NoError(fail.ToError())
-	suite.Require().NotNil(ar)
-
-	cases := []struct {
-		name        string
-		preExisting int
-	}{
-		{"no cached artifacts", 0},
-		{"one cached artifact", 1},
-		{"all artifacts cached", 2},
-	}
-
-	for _, tc := range cases {
-		suite.Run(tc.name, func() {
-			for i := 0; i < tc.preExisting; i++ {
-				downloadDir, fail := ar.DownloadDirectory(artifactsRes.Artifacts[i])
-				suite.Require().NoError(fail.ToError())
-				fail = fileutils.MkdirUnlessExists(downloadDir)
-				suite.Require().NoError(fail.ToError())
-
-				err := ioutil.WriteFile(filepath.Join(downloadDir, constants.ArtifactArchiveName), []byte{}, 0666)
-				suite.Require().NoError(err)
-			}
-
-			downloadArtfs := ar.ArtifactsToDownload()
-			suite.Assert().Len(downloadArtfs, 2-tc.preExisting)
-		})
-	}
-}
-
 func (suite *AlternativeRuntimeTestSuite) Test_PreInstall() {
 	cases := []struct {
 		name            string
@@ -236,58 +201,4 @@ func (suite *AlternativeRuntimeTestSuite) Test_PreInstall() {
 }
 func Test_AlternativeRuntimeTestSuite(t *testing.T) {
 	suite.Run(t, new(AlternativeRuntimeTestSuite))
-}
-
-func TestMultiArtifactInstall(t *testing.T) {
-	type args struct {
-		artifacts []*runtime.HeadChefArtifact
-		cacheDir  string
-		recipeID  strfmt.UUID
-	}
-	tests := []struct {
-		name            string
-		args            args
-		wantArtifactIDs []strfmt.UUID
-	}{
-		{
-			"Multi artifact build",
-			args{
-				[]*runtime.HeadChefArtifact{
-					&runtime.HeadChefArtifact{
-						ArtifactID:          UUID("00000000-0000-0000-0000-000000000000"),
-						IngredientVersionID: strfmt.UUID("00000000-0000-0000-0000-000000000000"),
-						URI:                 strfmt.URI("https://00000000-0000-0000-0000-000000000000.tld/file.tar.gz"),
-					},
-				},
-				"",
-				strfmt.UUID("00000000-0000-0000-0000-000000000000"),
-			},
-			[]strfmt.UUID{
-				strfmt.UUID("00000000-0000-0000-0000-000000000000"),
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			ar, fail := runtime.NewAlternativeRuntime(tt.args.artifacts, tt.args.cacheDir, tt.args.recipeID)
-			if fail != nil {
-				t.Fatalf("NewAlternativeRuntime failed: %v", fail)
-			}
-
-			gotArtf := []strfmt.UUID{}
-			artifacts := ar.ArtifactsToDownload()
-			for _, artf := range artifacts {
-				gotArtf = append(gotArtf, *artf.ArtifactID)
-			}
-
-			if !reflect.DeepEqual(tt.wantArtifactIDs, gotArtf) {
-				t.Fatalf("Did not receive expected artifacts to download. Wanted: \n%v\n\ngot: %v", tt.wantArtifactIDs, gotArtf)
-			}
-		})
-	}
-}
-
-func UUID(uuids string) *strfmt.UUID {
-	uuid := strfmt.UUID(uuids)
-	return &uuid
 }
