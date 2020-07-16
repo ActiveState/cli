@@ -13,6 +13,13 @@ using System.Collections.Generic;
 
 namespace StateDeploy
 {
+
+    enum Shell
+    {
+        Cmd,
+        Powershell,
+    }
+
     public class CustomActions
     {
         public static ActionResult InstallStateTool(Session session, out string stateToolPath)
@@ -45,13 +52,23 @@ namespace StateDeploy
                 return ActionResult.Failure;
             }
 
-            string installCmd = string.Format("powershell \"{0} -n -t {1}\"", scriptPath, installPath);
+            string installCmd = string.Format("Set-PSDebug -trace 2; Set-ExecutionPolicy Unrestricted -Scope Process; \"{0}\" -n -t \"{1}\"", scriptPath, installPath);
             session.Log(string.Format("Running install command: {0}", installCmd));
 
-            ActionResult result = RunCommand(session, installCmd);
+            string output;
+            ActionResult result = RunCommand(session, installCmd, Shell.Powershell, out output);
             if (result.Equals(ActionResult.UserExit))
             {
                 // Catch cancel and return
+                return result;
+            }
+            else if (result.Equals(ActionResult.Failure))
+            {
+                Record record = new Record();
+                var errorOutput = FormatErrorOutput(output);
+                record.FormatString = String.Format("state tool installation failed with error:\n{0}", errorOutput);
+
+                MessageResult msgRes = session.Message(InstallMessage.Error | (InstallMessage)MessageBoxButtons.OK, record);
                 return result;
             }
             Status.ProgressBar.Increment(session, 1);
@@ -60,17 +77,27 @@ namespace StateDeploy
             return result;
         }
 
-        private static ActionResult RunCommand(Session session, string cmd)
-        {
-            return RunCommand(session, cmd, out _);
-        }
-
-        private static ActionResult RunCommand(Session session, string cmd, out string output)
+        private static ActionResult RunCommand(Session session, string cmd, Shell shell, out string output)
         {
             var outputBuilder = new StringBuilder();
             try
             {
-                ProcessStartInfo procStartInfo = new ProcessStartInfo("cmd.exe", "/c " + cmd);
+                ProcessStartInfo procStartInfo;
+                switch(shell)
+                {
+                    case Shell.Powershell:
+                        var powershellExe = Path.Combine(Environment.SystemDirectory, "WindowsPowershell", "v1.0", "powershell.exe");
+                        if (!File.Exists(powershellExe))
+                        {
+                            session.Log("Did not find powershell @" + powershellExe);
+                            powershellExe = "powershell.exe";
+                        }
+                        procStartInfo = new ProcessStartInfo(powershellExe, cmd);
+                        break;
+                    default:
+                        procStartInfo = new ProcessStartInfo("cmd.exe", "/c " + cmd);
+                        break;
+                }
 
                 // The following commands are needed to redirect the standard output.
                 // This means that it will be redirected to the Process.StandardOutput StreamReader.
@@ -139,8 +166,11 @@ namespace StateDeploy
             }
             catch (Exception objException)
             {
+                outputBuilder.Append('\x00');
+                var exceptionString = string.Format("Caught exception: {0}", objException);
+                outputBuilder.Append(exceptionString);
                 output = outputBuilder.ToString();
-                session.Log(string.Format("Caught exception: {0}", objException));
+                session.Log(exceptionString);
                 return ActionResult.Failure;
             }
             output = outputBuilder.ToString();
@@ -196,7 +226,7 @@ namespace StateDeploy
                     Status.ProgressBar.StatusMessage(session, seq.Description);
 
                     string output;
-                    var runResult = RunCommand(session, deployCmd, out output);
+                    var runResult = RunCommand(session, deployCmd, Shell.Cmd, out output);
                     if (runResult.Equals(ActionResult.UserExit))
                     {
                         // Catch cancel and return

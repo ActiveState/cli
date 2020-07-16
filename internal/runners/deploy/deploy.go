@@ -216,9 +216,14 @@ func configure(installpath string, envGetter runtime.EnvGetter, out output.Outpu
 		return locale.WrapError(fail, "err_deploy_subshell_write", "Could not write environment information to your shell configuration.")
 	}
 
+	binPath := filepath.Join(installpath, "bin")
+	if fail := fileutils.MkdirUnlessExists(binPath); fail != nil {
+		return locale.WrapError(fail.ToError(), "err_deploy_binpath", "Could not create bin directory.")
+	}
+
 	// Write global env file
 	out.Notice(fmt.Sprintf("Writing shell env file to %s\n", filepath.Join(installpath, "bin")))
-	err = sshell.SetupShellRcFile(filepath.Join(installpath, "bin"), env, namespace)
+	err = sshell.SetupShellRcFile(binPath, env, namespace)
 	if err != nil {
 		return locale.WrapError(err, "err_deploy_subshell_rc_file", "Could not create environment script.")
 	}

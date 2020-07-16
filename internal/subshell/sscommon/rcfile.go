@@ -117,7 +117,7 @@ func SetupShellRcFile(rcFileName, templateName string, env map[string]string, na
 
 	f, err := os.Create(rcFileName)
 	if err != nil {
-		return locale.WrapError(err, "sscommon_rc_file_creation_err", "Failed to create file %s", rcFileName)
+		return locale.WrapError(err, "sscommon_rc_file_creation_err", "Failed to create file {{.V0}}", rcFileName)
 	}
 	defer f.Close()
 
