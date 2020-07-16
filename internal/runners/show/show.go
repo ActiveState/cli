@@ -232,9 +232,9 @@ func languagesData(owner, project string) ([]string, error) {
 
 func visibilityData(owner, project string, remoteProject *mono_models.Project) string {
 	if remoteProject.Private {
-		return "Private"
+		return locale.T("show_visibility_private")
 	}
-	return "Public"
+	return locale.T("show_visibility_public")
 }
 
 func commitsData(owner, project string, commitID strfmt.UUID, localProject *project.Project) (string, error) {
