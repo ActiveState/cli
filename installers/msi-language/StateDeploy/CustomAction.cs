@@ -52,7 +52,7 @@ namespace StateDeploy
                 return ActionResult.Failure;
             }
 
-            string installCmd = string.Format("Set-ExecutionPolicy Unrestricted -Scope Process; {0} -n -t {1}", scriptPath, installPath);
+            string installCmd = string.Format("Set-PSDebug -trace 2; Set-ExecutionPolicy Unrestricted -Scope Process; \"{0}\" -n -t \"{1}\"", scriptPath, installPath);
             session.Log(string.Format("Running install command: {0}", installCmd));
 
             string output;
@@ -62,11 +62,11 @@ namespace StateDeploy
                 // Catch cancel and return
                 return result;
             }
-            else if (result == ActionResult.Failure)
+            else if (result.Equals(ActionResult.Failure))
             {
                 Record record = new Record();
                 var errorOutput = FormatErrorOutput(output);
-                record.FormatString = String.Format("state tool installation failed with error:\n{1}", errorOutput);
+                record.FormatString = String.Format("state tool installation failed with error:\n{0}", errorOutput);
 
                 MessageResult msgRes = session.Message(InstallMessage.Error | (InstallMessage)MessageBoxButtons.OK, record);
                 return result;
