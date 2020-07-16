@@ -5,7 +5,9 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/termtest"
 )
 
@@ -13,49 +15,43 @@ var (
 	rootDir = `Z:\bin`
 	asToken = "ActiveState"
 
-	perlLang = language{
-		name:     "perl",
-		checkCmd: "perl -v",
-	}
-
 	perlMsiFileNames = []string{
 		"ActivePerl-5.26.msi",
 		//"ActivePerl-5.28.msi",
 	}
 
+	checkPerlCmd = "perl -v"
+
 	installAction   msiExecAction = "install"
 	uninstallAction msiExecAction = "uninstall"
 )
 
-type language struct {
-	name     string
-	checkCmd string
-}
-
 type msiFile struct {
 	path    string
 	version string
-	lang    language
 }
 
-func newMsiFile(filename string, lang language) *msiFile {
+func newMsiFile(filename string) *msiFile {
 	return &msiFile{
 		path:    filepath.Join(rootDir, filename),
 		version: versionFromMsiFileName(filename),
-		lang:    lang,
 	}
 }
 
 type msiExecAction string
 
-func (a msiExecAction) cmdText(msiPath string) string {
+func (a msiExecAction) cmd(msiPath string) string {
 	msiAct := "/package"
 	if a == uninstallAction {
 		msiAct = "/uninstall"
 	}
 
-	form := `Start-Process msiexec.exe -Wait -ArgumentList "%s %s /quiet /qn /norestart /log %s" -PassThru`
-	return fmt.Sprintf(form, msiPath, msiAct, a.logFileName(msiPath))
+	pwshCmdForm := `$proc = Start-Process msiexec.exe -Wait -ArgumentList ` +
+		`"%s %s /quiet /qn /norestart /log %s" -PassThru;` +
+		`$handle = $proc.Handle; $proc.WaitForExit();` +
+		`echo "exitcode:$($proc.ExitCode):";` // use to ensure exit code is exactly 0
+	pwshCmd := fmt.Sprintf(pwshCmdForm, msiAct, msiPath, a.logFileName(msiPath))
+	return pwshCmd
 }
 
 func (a msiExecAction) logFileName(msiPath string) string {
@@ -69,36 +65,8 @@ func versionFromMsiFileName(name string) string {
 	return name[i+1:]
 }
 
-type psSession struct {
-	*termtest.ConsoleProcess
-}
-
-func newPSSession(root string) (*psSession, error) {
-	opts := termtest.Options{
-		CmdName:       "powershell",
-		WorkDirectory: root,
-		RetainWorkDir: true,
-	}
-	cp, err := termtest.New(opts)
-	if err != nil {
-		return nil, err
-	}
-
-	s := psSession{
-		ConsoleProcess: cp,
-	}
-
-	return &s, nil
-}
-
-func (s *psSession) Expect(fail func(...interface{}), value string) {
-	if out, err := s.ConsoleProcess.Expect(value); err != nil {
-		fail(err, out)
-	}
-}
-
-func (s *psSession) ExpectNone(fail func(...interface{}), values ...string) {
-	trimmed := s.ConsoleProcess.TrimmedSnapshot()
+func expectNone(cp *termtest.ConsoleProcess, fail func(...interface{}), values ...string) {
+	trimmed := cp.TrimmedSnapshot()
 	for _, val := range values {
 		if strings.Contains(trimmed, val) {
 			fail(fmt.Sprintf("incorrectly contains: %s", val))
@@ -106,29 +74,42 @@ func (s *psSession) ExpectNone(fail func(...interface{}), values ...string) {
 	}
 }
 
+type pwshSession struct {
+	*e2e.Session
+}
+
+func newPwshSession(t *testing.T) *pwshSession {
+	return &pwshSession{e2e.New(t, false)}
+}
+
+func (s *pwshSession) Spawn(args ...string) *termtest.ConsoleProcess {
+	as := []string{"/c"}
+	as = append(as, args...)
+	return s.Session.SpawnCmd("powershell", args...)
+}
+
 func TestActivePerl(t *testing.T) {
 	for _, msiFileName := range perlMsiFileNames {
 		t.Run(msiFileName, func(t *testing.T) {
-			m := newMsiFile(msiFileName, perlLang)
-			cp, err := newPSSession(rootDir)
-			if err != nil {
-				t.Fatal(err)
-			}
+			m := newMsiFile(msiFileName)
+			s := newPwshSession(t)
 
-			cp.Send(installAction.cmdText(m.path))
-			cp.Send("echo $?")
-			cp.Expect(t.Fatal, "True")
+			cp := s.Spawn(installAction.cmd(m.path))
+			cp.Expect("exitcode:0:", time.Minute*3)
+			cp.ExpectExitCode(0)
 
-			cp.Send(m.lang.checkCmd)
-			cp.Expect(t.Error, m.version)
-			cp.Expect(t.Error, asToken)
+			cp = s.Spawn(checkPerlCmd)
+			cp.Expect(m.version)
+			cp.Expect(asToken)
+			cp.ExpectExitCode(0)
 
-			cp.Send(uninstallAction.cmdText(m.path))
-			cp.Send("echo $?")
-			cp.Expect(t.Fatal, "True")
+			cp = s.Spawn(uninstallAction.cmd(m.path))
+			cp.Expect("exitcode:0:", time.Minute)
+			cp.ExpectExitCode(0)
 
-			cp.Send(m.lang.checkCmd)
-			cp.ExpectNone(t.Fatal, asToken)
+			cp = s.Spawn(checkPerlCmd)
+			cp.Expect("'perl' is not recognized")
+			cp.ExpectNotExitCode(0)
 		})
 	}
 }
