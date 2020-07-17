@@ -548,9 +548,9 @@ show_project:
   other: Show information about a project
 arg_state_show_remote_description:
   other: Namespace of remote project
-show_visibility_private:
+private:
   other: Private
-show_visibility_public:
+public:
   other: Public
 field_namespace:
   other: Namespace

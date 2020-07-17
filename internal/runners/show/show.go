@@ -9,7 +9,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/runners/platforms"
 	"github.com/ActiveState/cli/internal/secrets"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
@@ -218,11 +217,9 @@ func platformsData(owner, project string, branchID strfmt.UUID) ([]string, error
 		return nil, locale.WrapError(fail, "err_show_get_platforms", "Could not get platform details for commit: {{.V0}}", branchID.String())
 	}
 
-	plats := platforms.MakePlatformsFromModelPlatforms(remotePlatforms)
-
-	platforms := make([]string, len(plats))
-	for i, plat := range plats {
-		platforms[i] = fmt.Sprintf("%s %s %s-bit", plat.Name, plat.Version, plat.BitWidth)
+	platforms := make([]string, len(remotePlatforms))
+	for i, plat := range remotePlatforms {
+		platforms[i] = *plat.DisplayName
 	}
 
 	return platforms, nil
@@ -244,9 +241,9 @@ func languagesData(owner, project string) ([]string, error) {
 
 func visibilityData(owner, project string, remoteProject *mono_models.Project) string {
 	if remoteProject.Private {
-		return locale.T("show_visibility_private")
+		return locale.T("private")
 	}
-	return locale.T("show_visibility_public")
+	return locale.T("public")
 }
 
 func commitsData(owner, project string, commitID strfmt.UUID, localProject *project.Project, auth auther) (string, error) {
