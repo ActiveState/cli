@@ -116,7 +116,7 @@ func (f *FailureType) New(message string, params ...string) *Failure {
 	if !f.Matches(FailUser) && !f.Matches(FailNonFatal) {
 		logger = logging.Error
 	}
-	logger("%s. Failure: %s File: %s, Line: %d", message, f.Name, file, line)
+	logger(message)
 
 	return &Failure{message, f, file, line, stacktrace.Get(), nil}
 }
