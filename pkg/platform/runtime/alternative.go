@@ -150,11 +150,15 @@ func artifactsToDownload(artifactCacheUuids []strfmt.UUID, artifactsRequested []
 	return downloadArtfs
 }
 
-// IsInstalled checks if the merged runtime environment definition file exists
+// IsInstalled checks if the merged runtime environment definition file exists and whether any artifacts need to be
+// downloaded or deleted
 func (ar *AlternativeRuntime) IsInstalled() bool {
+	download := artifactsToDownload(artifactCacheToUuids(ar.cache), ar.artifactsRequested)
+	_, delete := artifactsToKeepAndDelete(ar.cache, artifactsToUuids(ar.artifactsRequested))
+
 	// runtime environment definition file
 	red := filepath.Join(ar.runtimeEnvBaseDir(), constants.RuntimeDefinitionFilename)
-	return fileutils.FileExists(red)
+	return fileutils.FileExists(red) && len(download) == 0 && len(delete) == 0
 }
 
 func (ar *AlternativeRuntime) downloadDirectory(artf *HeadChefArtifact) string {
