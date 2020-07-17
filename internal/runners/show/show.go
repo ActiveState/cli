@@ -217,9 +217,11 @@ func platformsData(owner, project string, branchID strfmt.UUID) ([]string, error
 		return nil, locale.WrapError(fail, "err_show_get_platforms", "Could not get platform details for commit: {{.V0}}", branchID.String())
 	}
 
-	platforms := make([]string, len(remotePlatforms))
-	for i, plat := range remotePlatforms {
-		platforms[i] = *plat.DisplayName
+	var platforms []string
+	for _, plat := range remotePlatforms {
+		if plat.DisplayName != nil {
+			platforms = append(platforms, *plat.DisplayName)
+		}
 	}
 
 	return platforms, nil
