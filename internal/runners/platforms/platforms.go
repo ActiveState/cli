@@ -16,7 +16,7 @@ type Platform struct {
 	BitWidth string `json:"bitWidth"`
 }
 
-func makePlatformsFromModelPlatforms(platforms []*model.Platform) []*Platform {
+func MakePlatformsFromModelPlatforms(platforms []*model.Platform) []*Platform {
 	var ps []*Platform
 
 	for _, platform := range platforms {

@@ -64,7 +64,7 @@ func newListing(commitID, projName, projOrg string) (*Listing, error) {
 	}
 
 	listing := Listing{
-		Platforms: makePlatformsFromModelPlatforms(platforms),
+		Platforms: MakePlatformsFromModelPlatforms(platforms),
 	}
 
 	return &listing, nil

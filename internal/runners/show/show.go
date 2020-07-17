@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/runners/platforms"
 	"github.com/ActiveState/cli/internal/secrets"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
@@ -212,12 +213,11 @@ func platformsData(owner, project string, branchID strfmt.UUID) ([]string, error
 		return nil, locale.WrapError(fail, "err_show_get_platforms", "Could not get platform details for commit: {{.V0}}", branchID.String())
 	}
 
-	platforms := make([]string, len(remotePlatforms))
-	for i, plat := range remotePlatforms {
-		if plat.Kernel == nil || plat.Kernel.Name == nil {
-			continue
-		}
-		platforms[i] = *plat.Kernel.Name
+	plats := platforms.MakePlatformsFromModelPlatforms(remotePlatforms)
+
+	platforms := make([]string, len(plats))
+	for i, plat := range plats {
+		platforms[i] = fmt.Sprintf("%s %s %s-bit", plat.Name, plat.Version, plat.BitWidth)
 	}
 
 	return platforms, nil
@@ -260,8 +260,9 @@ func commitsData(owner, project string, commitID strfmt.UUID, localProject *proj
 			return "", locale.WrapError(fail, "err_show_commits_behind", "Could not determine number of commits behind latest")
 		}
 		if behind != 0 {
-			return fmt.Sprintf("%s (%d behind latest)", latestCommit, behind), nil
+			return fmt.Sprintf("%s (%d behind latest)", localProject.CommitID(), behind), nil
 		}
+		return localProject.CommitID(), nil
 	}
 
 	return latestCommit.String(), nil

@@ -44,7 +44,7 @@ func newSearchResult() (*SearchResult, error) {
 	}
 
 	result := SearchResult{
-		Platforms: makePlatformsFromModelPlatforms(platforms),
+		Platforms: MakePlatformsFromModelPlatforms(platforms),
 	}
 
 	return &result, nil
