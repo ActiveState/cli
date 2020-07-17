@@ -219,10 +219,13 @@ func (r *Download) Download(artifacts []*HeadChefArtifact, dp DownloadDirectoryP
 		if auth.Authenticated() {
 			uid = auth.UserID().String()
 		}
-		
+
 		q := u.Query()
 		q.Set("x-uuid", uid) // x-uuid is used so our analytics can filter out activator traffic
-		u.RawQuery = q.Encode()
+
+		// Disabled for now as `x-` seems to interact with signing negatively
+		// And adding it to the URL to be signed just drops it from the resulting URL
+		// u.RawQuery = q.Encode()
 
 		targetDir, fail := dp.DownloadDirectory(artf)
 		if fail != nil {
