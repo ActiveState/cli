@@ -11,6 +11,9 @@ namespace Shortcut
         public static ActionResult InstallShortcuts(Session session)
         {
             session.Log("Begin InstallShortcuts");
+
+            ActiveState.RollbarHelper.ConfigureRollbarSingleton();
+
             string shortcutData = session.CustomActionData["SHORTCUTS"];
             string appStartMenuPath = session.CustomActionData["APP_START_MENU_PATH"];
             if (shortcutData.ToLower() == "none")
@@ -64,6 +67,7 @@ namespace Shortcut
             if (!System.IO.File.Exists(target))
             {
                 session.Log(string.Format("wperl.exe does not exist in path: {0}", target));
+                ActiveState.RollbarHelper.Report(string.Format("wperl.exe does not exist in path: {0}", target));
                 return ActionResult.Failure;
             }
 
@@ -71,6 +75,7 @@ namespace Shortcut
             if (!System.IO.File.Exists(perlCriticLocation))
             {
                 session.Log(string.Format("perlcritic-gui does not exist in path: {0}", perlCriticLocation));
+                ActiveState.RollbarHelper.Report(string.Format("perlcritic-gui does not exist in path: {0}", perlCriticLocation));
                 return ActionResult.Failure;
             }
 
@@ -97,6 +102,7 @@ namespace Shortcut
             if (!System.IO.File.Exists(target))
             {
                 session.Log(string.Format("shell.bat does not exist in path: {0}", target));
+                ActiveState.RollbarHelper.Report(string.Format("shell.bat does not exist in path: {0}", target));
                 return ActionResult.Failure;
             }
 

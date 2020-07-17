@@ -24,6 +24,8 @@ namespace StateDeploy
     {
         public static ActionResult InstallStateTool(Session session, out string stateToolPath)
         {
+            ActiveState.RollbarHelper.ConfigureRollbarSingleton();
+
             stateToolPath = "";
             session.Log("Installing State Tool if necessary");
             if (session.CustomActionData["STATE_TOOL_INSTALLED"] == "true")
@@ -49,6 +51,7 @@ namespace StateDeploy
             catch (WebException e)
             {
                 session.Log(string.Format("Encoutered exception downloading file: {0}", e.ToString()));
+                ActiveState.RollbarHelper.Report(string.Format("Encoutered exception downloading file: {0}", e.ToString()));
                 return ActionResult.Failure;
             }
 
@@ -161,6 +164,7 @@ namespace StateDeploy
                     outputBuilder.AppendFormat("Process returned with exit code: {0}", exitCode);
                     output = outputBuilder.ToString();
                     session.Log("returning due to return code - error");
+                    ActiveState.RollbarHelper.Report(string.Format("returning due to return code: {0} - error", exitCode));
                     return ActionResult.Failure;
                 }
             }
@@ -171,6 +175,7 @@ namespace StateDeploy
                 outputBuilder.Append(exceptionString);
                 output = outputBuilder.ToString();
                 session.Log(exceptionString);
+                ActiveState.RollbarHelper.Report(exceptionString);
                 return ActionResult.Failure;
             }
             output = outputBuilder.ToString();
@@ -193,6 +198,10 @@ namespace StateDeploy
         [CustomAction]
         public static ActionResult StateDeploy(Session session)
         {
+            ActiveState.RollbarHelper.ConfigureRollbarSingleton();
+
+            ActiveState.RollbarHelper.Report("Deploy");
+
             string stateToolPath;
             var res = InstallStateTool(session, out stateToolPath);
             if (res != ActionResult.Success) {
@@ -246,6 +255,7 @@ namespace StateDeploy
             catch (Exception objException)
             {
                 session.Log(string.Format("Caught exception: {0}", objException));
+                ActiveState.RollbarHelper.Report(string.Format("Caught exception: {0}", objException));
                 return ActionResult.Failure;
             }
 
