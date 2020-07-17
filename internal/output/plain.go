@@ -215,6 +215,10 @@ func sprintMap(value interface{}) (string, error) {
 			return "", err
 		}
 
+		if isSlice(v) {
+			stringValue = "\n" + stringValue
+		}
+
 		result = append(result, fmt.Sprintf(" %s: %s ", k, stringValue))
 	}
 
