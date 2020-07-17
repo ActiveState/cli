@@ -54,9 +54,14 @@ type outputData struct {
 	Commit       string `locale:"commit,Latest Commit"`
 	Platforms    []string
 	Languages    []string
-	Secrets      map[string][]string `locale:"secrets,Secrets"`
-	Events       []string            `json:",omitempty"`
-	Scripts      map[string]string   `json:",omitempty"`
+	Secrets      *secretOutput     `locale:"secrets,Secrets"`
+	Events       []string          `json:",omitempty"`
+	Scripts      map[string]string `json:",omitempty"`
+}
+
+type secretOutput struct {
+	User    []string `locale:"user,User"`
+	Project []string `locale:"project,Project"`
 }
 
 // New returns a pointer to an instance of Show.
@@ -268,7 +273,7 @@ func commitsData(owner, project string, commitID strfmt.UUID, localProject *proj
 	return latestCommit.String(), nil
 }
 
-func secretsData(owner, project string, auth auther) (map[string][]string, error) {
+func secretsData(owner, project string, auth auther) (*secretOutput, error) {
 	if !auth.Authenticated() {
 		return nil, nil
 	}
@@ -297,17 +302,17 @@ func secretsData(owner, project string, auth auther) (map[string][]string, error
 		userSecrets = append(userSecrets, data)
 	}
 
-	secrets := make(map[string][]string)
-	if len(userSecrets) > 0 {
-		secrets["User"] = userSecrets
-	}
-	if len(projectSecrets) > 0 {
-		secrets["Project"] = projectSecrets
-	}
-
-	if len(secrets) == 0 {
+	if len(userSecrets) == 0 && len(projectSecrets) == 0 {
 		return nil, nil
 	}
 
-	return secrets, nil
+	secrets := secretOutput{}
+	if len(userSecrets) > 0 {
+		secrets.User = userSecrets
+	}
+	if len(projectSecrets) > 0 {
+		secrets.Project = projectSecrets
+	}
+
+	return &secrets, nil
 }
