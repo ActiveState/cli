@@ -92,10 +92,10 @@ func (cr *CamelRuntime) DownloadDirectory(artf *HeadChefArtifact) (string, *fail
 	return downloadDir, nil
 }
 
-// ArtifactsToDownloadAndUnpack returns the artifacts that we need to download for this project
+// ArtifactsToDownload returns the artifacts that we need to download for this project
 // It filters out all artifacts for which the final installation directory does not include a completion marker yet
-func (cr *CamelRuntime) ArtifactsToDownloadAndUnpack() ([]*HeadChefArtifact, map[string]*HeadChefArtifact) {
-	return cr.artifacts, map[string]*HeadChefArtifact{}
+func (cr *CamelRuntime) ArtifactsToDownload() []*HeadChefArtifact {
+	return cr.artifacts
 }
 
 // PreInstall does nothing for camel builds

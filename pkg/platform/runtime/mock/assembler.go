@@ -23,9 +23,9 @@ func (a *Assembler) GetEnv(inherit bool, projectDir string) (map[string]string, 
 	return args.Get(0).(map[string]string), args.Get(1).(error)
 }
 
-func (a *Assembler) ArtifactsToDownloadAndUnpack() ([]*runtime.HeadChefArtifact, map[string]*runtime.HeadChefArtifact) {
+func (a *Assembler) ArtifactsToDownload() []*runtime.HeadChefArtifact {
 	args := a.Called()
-	return args.Get(0).([]*runtime.HeadChefArtifact), args.Get(1).(map[string]*runtime.HeadChefArtifact)
+	return args.Get(0).([]*runtime.HeadChefArtifact)
 }
 
 func (a *Assembler) PreInstall() *failures.Failure {
