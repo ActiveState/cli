@@ -6,16 +6,25 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "Deploy", "Deploy.wixproj", "{7AF8271C-CD98-4D63-8C58-08252A34B8F9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StateCommandExists", "StateCommandExists\StateCommandExists.csproj", "{ADEBE963-F9B2-4860-8512-364A7C78B757}"
+	ProjectSection(ProjectDependencies) = postProject
+		{658291C2-5419-4012-BD6A-C85AB86009EE} = {658291C2-5419-4012-BD6A-C85AB86009EE}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StateDeploy", "StateDeploy\StateDeploy.csproj", "{FDAF56F5-7B7F-4E71-B008-03860A584147}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Uninstall", "Uninstall\Uninstall.csproj", "{4C663442-BD30-4183-9E55-FD3EEF13F032}"
+	ProjectSection(ProjectDependencies) = postProject
+		{658291C2-5419-4012-BD6A-C85AB86009EE} = {658291C2-5419-4012-BD6A-C85AB86009EE}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Status", "Status\Status.csproj", "{5EB4DCDF-0E44-4DB7-9B33-CEF19B9BB2B3}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ActiveState", "ActiveState\ActiveState.csproj", "{658291C2-5419-4012-BD6A-C85AB86009EE}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Shortcut", "Shortcut\Shortcut.csproj", "{877517D7-1F44-41C8-8B45-23070AC62845}"
+	ProjectSection(ProjectDependencies) = postProject
+		{658291C2-5419-4012-BD6A-C85AB86009EE} = {658291C2-5419-4012-BD6A-C85AB86009EE}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rollback", "Rollback\Rollback.csproj", "{BE5D8C31-E68D-493B-9314-AC33D5F83EFF}"
 EndProject
