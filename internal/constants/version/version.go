@@ -78,7 +78,6 @@ func (v *Incrementation) IncrementWithRevision(revision string) (*semver.Version
 
 // needsIncrement whether we need to an increment for the environment
 func needsIncrement(env Env, branch string) bool {
-	return true
 	return env != LocalEnv && (branch == "master" || branch == "unstable")
 }
 
@@ -147,7 +146,6 @@ func masterVersion(branchName string) (*semver.Version, error) {
 func (v *Incrementation) incrementFromEnvironment() (*semver.Version, error) {
 	switch v.env {
 	case LocalEnv:
-		// return v.increment()
 		return semver.New("0.0.0")
 	case RemoteEnv:
 		return v.increment()
