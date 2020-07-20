@@ -200,8 +200,6 @@ namespace StateDeploy
         {
             ActiveState.RollbarHelper.ConfigureRollbarSingleton();
 
-            ActiveState.RollbarHelper.Report("Deploy");
-
             string stateToolPath;
             var res = InstallStateTool(session, out stateToolPath);
             if (res != ActionResult.Success) {
