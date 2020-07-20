@@ -11,15 +11,7 @@ name: Build-Test-Deploy
 jobs:
   genversion:
     name: Generate Version
-    strategy:
-      matrix:
-        go-version:
-        - 1.13.x
-        platform:
-        - ubuntu-latest
-        - macos-latest
-        - windows-latest
-    runs-on: ${{ matrix.platform }}
+    runs-on: ubuntu-latest
     env:
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true
       GOFLAGS: -mod=vendor
@@ -50,6 +42,8 @@ jobs:
         path: build/
   build:
     name: Build
+    needs:
+    - generate_version
     strategy:
       matrix:
         go-version:
