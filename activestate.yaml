@@ -55,7 +55,7 @@ scripts:
       set -e
       $constants.SET_ENV
       mkdir -p build/
-      go run scripts/version-generator/main.go build/
+      go run scripts/version-generator/main.go unstable build/
   - name: generate-update
     language: bash
     description: Generate update files

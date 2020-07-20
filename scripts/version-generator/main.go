@@ -9,14 +9,12 @@ import (
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/condition"
-	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/pkg/errors"
 )
 
 func printUsage() {
 	fmt.Println("")
-	fmt.Println("<outputPath> The path to output version.json to")
+	fmt.Println("<branch> <outputPath> The path to output version.json to")
 }
 
 func main() {
@@ -27,14 +25,11 @@ func main() {
 
 func run() {
 	flag.Parse()
-	if flag.NArg() != 1 {
+	if flag.NArg() != 2 {
 		printUsage()
 		os.Exit(0)
 	}
-	branch := constants.BranchName
-	if branchOverride, ok := os.LookupEnv("BRANCH_OVERRIDE"); ok {
-		branch = branchOverride
-	}
+	branch := flag.Arg(0)
 
 	stateURL := "https://s3.ca-central-1.amazonaws.com/cli-update/update/state/%s/linux-amd64.json"
 	resp, err := http.Get(fmt.Sprintf(stateURL, branch))
@@ -43,10 +38,10 @@ func run() {
 	}
 	defer resp.Body.Close()
 
-	outputPath := flag.Arg(0)
-	fail := fileutils.Touch(filepath.Join(outputPath, "version.json"))
-	if fail != nil {
-		panic(errors.Wrap(fail.ToError(), "Could not create version file"))
+	outputPath := flag.Arg(1)
+	file, err := os.Create(filepath.Join(outputPath, "version.json"))
+	if err != nil {
+		panic(errors.Wrap(err, "Could not create version file"))
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
@@ -54,8 +49,8 @@ func run() {
 		panic(errors.Wrap(err, "Could not read response body"))
 	}
 
-	fail = fileutils.WriteFile(filepath.Join(outputPath, "version.json"), body)
-	if fail != nil {
-		panic(errors.Wrap(fail.ToError(), "Could not write version data to file"))
+	err = ioutil.WriteFile(file.Name(), body, 0644)
+	if err != nil {
+		panic(errors.Wrap(err, "Could not write version data to file"))
 	}
 }
