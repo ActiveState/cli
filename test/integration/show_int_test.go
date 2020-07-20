@@ -19,44 +19,26 @@ func (suite *ShowIntegrationTestSuite) TestShow() {
 	suite.PrepareActiveStateYAML(ts)
 
 	cp := ts.Spawn("show")
-	cp.Expect(`Name: project`)
-	cp.Expect(`Organization: ActiveState`)
+	cp.Expect(`Name: Show`)
+	cp.Expect(`Organization: cli-integration-tests`)
+	cp.Expect(`Visibility: Public`)
+	cp.Expect(`Latest Commit: d5d84598-fc2e-4a45-b075-a845e587b5bf`)
+	cp.Expect(`Platforms: `)
+	cp.Expect(` - Linux`)
+	cp.Expect(`Languages: `)
+	cp.Expect(` - python-3.6.6`)
+	cp.Expect(`Events: `)
+	cp.Expect(` - FIRST_INSTALL`)
+	cp.Expect(` - AFTER_UPDATE`)
+	cp.Expect(`Scripts: `)
+	cp.Expect(` debug`)
+	cp.Expect(` tests`)
 	cp.ExpectExitCode(0)
 }
 
 func (suite *ShowIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session) {
 	asyData := strings.TrimSpace(`
-project: "https://platform.activestate.com/ActiveState/project?commitID=00010001-0001-0001-0001-000100010001"
-namespace: github.com/ActiveState/CodeIntel
-environments: dev,qa,prod
-platforms:
-  - name: Linux64Label
-    os: linux
-    architecture: amd64
-    libc: glibc-2.25
-    compiler: gcc-7
-  - name: Windows10Label
-    os: windows
-    version: 10
-  - name: MacOSLabel
-    os: macos
-    version: 10.9
-    compiler: clang-4
-languages:
-  - name: Go
-    version: 1.10
-    constraints:
-        platform: Windows10Label,Linux64Label
-        environment: dev,qa,prod
-    packages:
-      - name: golang.org/x/crypto
-        version: "*"
-        build:
-          debug: $variable.DEBUG
-      - name: gopkg.in/yaml.v2
-        version: "2.*"
-        build:
-          override: --foo --bar --debug $variable.DEBUG --libDir $variable.PYTHONPATH --libc $platform.libc
+project: "https://platform.activestate.com/cli-integration-tests/Show?commitID=e8f3b07b-502f-4763-83c1-763b9b952e18"
 constants:
   - name: DEBUG
     value: true
@@ -66,13 +48,6 @@ constants:
         environment: dev,qa
   - name: PYTHONPATH
     value: '%projectDir%/src:%projectDir%/tests'
-secrets:
-  user:
-    - name: user-secret
-      description: user-secret-description
-  project:
-    - name: project-secret
-      description: project-secret-description
 events:
   - name: FIRST_INSTALL
     value: '%pythonExe% %projectDir%/setup.py prepare'

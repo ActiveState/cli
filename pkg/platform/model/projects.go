@@ -33,6 +33,9 @@ var (
 
 	// FailProjectNameConflict is a failure due to a project name conflict
 	FailProjectNameConflict = failures.Type("model.fail.projectconflict")
+
+	// FailProjectNotFound is a fialure due to a project not being found
+	FailProjectNotFound = failures.Type("model.fail.projectnotfound")
 )
 
 // FetchProjectByName fetches a project for an organization.
@@ -49,11 +52,10 @@ func FetchProjectByName(orgName string, projectName string) (*mono_models.Projec
 	}
 
 	if len(response.Projects) == 0 {
-		errMsg := "err_api_project_not_found"
 		if !authentication.Get().Authenticated() {
-			errMsg = "err_api_project_not_found_unauthenticated"
+			return nil, FailNoValidProject.New(locale.Tr("err_api_project_not_found_unauthenticated"), projectName, orgName)
 		}
-		return nil, FailNoValidProject.New(locale.Tr(errMsg, projectName, orgName))
+		return nil, FailProjectNotFound.New(locale.Tr("err_api_project_not_found", projectName, orgName))
 	}
 
 	return response.Projects[0].ToMonoProject()
