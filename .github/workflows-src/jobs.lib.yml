@@ -1,4 +1,4 @@
-#@ load("steps.lib.yml", "steps_preprocess", "steps_build", "steps_genupdate", "steps_installgo", "steps_setup", "steps_test", "steps_inttest", "steps_uploadartifacts", "steps_uploadsessartifacts", "steps_downloadsessartifacts", "steps_deletesessartifacts", "steps_deploy", "steps_build_state_msi", "steps_build_languages_msi", "steps_cleanbuild", "steps_validate", "steps_sign")
+#@ load("steps.lib.yml", "steps_genversion", "steps_preprocess", "steps_build", "steps_genupdate", "steps_installgo", "steps_setup", "steps_test", "steps_inttest", "steps_uploadartifacts", "steps_uploadsessartifacts", "steps_downloadsessartifacts", "steps_deletesessartifacts", "steps_deploy", "steps_build_state_msi", "steps_build_languages_msi", "steps_cleanbuild", "steps_validate", "steps_sign")
 
 strategy: &strategy
   matrix:
@@ -11,6 +11,20 @@ env: &env
   SHELL: bash
   GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+#@ def jobs_genversion():
+name: "Generate Version"
+strategy: *strategy
+runs-on: *runs-on
+env: *env
+timeout-minutes: 10
+steps:
+  - name: "Checkout code"
+    uses: actions/checkout@v2
+  - #@ steps_installgo()
+  - #@ steps_setup()
+  - #@ steps_genversion()
+  - #@ steps_uploadsessartifacts()
+
 #@ def jobs_build():
 name: Build
 strategy: *strategy
@@ -20,6 +34,7 @@ timeout-minutes: 10
 steps:
   - name: "Checkout code"
     uses: actions/checkout@v2
+  - #@ steps_downloadsessartifacts()
   - #@ steps_installgo()
   - #@ steps_setup()
   - #@ steps_preprocess()

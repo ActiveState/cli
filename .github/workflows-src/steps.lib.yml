@@ -1,3 +1,8 @@
+#@ def steps_genversion():
+name: "Generate Version"
+shell: bash
+run: state run generate-version
+---
 #@ def steps_build():
 name: Build
 shell: bash

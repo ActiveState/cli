@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net/http"
+	"path/filepath"
 	"regexp"
 
+	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/blang/semver"
 )
 
@@ -75,6 +77,7 @@ func (v *Incrementation) IncrementWithRevision(revision string) (*semver.Version
 
 // needsIncrement whether we need to an increment for the environment
 func needsIncrement(env Env, branch string) bool {
+	return true
 	return env != LocalEnv && (branch == "master" || branch == "unstable")
 }
 
@@ -89,19 +92,27 @@ func (v *Incrementation) Type() (string, error) {
 }
 
 func fetchLatestVersionString(branch string) (string, error) {
-	// linux-amd64.json is our single source of truth for the latest version number
-	stateURL := "https://s3.ca-central-1.amazonaws.com/cli-update/update/state/%s/linux-amd64.json"
-	resp, err := http.Get(fmt.Sprintf(stateURL, branch))
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
 	type versionJSON struct {
 		Version string
 	}
 	var v versionJSON
-	err = json.NewDecoder(resp.Body).Decode(&v)
+
+	rootPath, err := environment.GetRootPath()
+	if err != nil {
+		return "", err
+	}
+
+	versionFilePath := filepath.Join(rootPath, "build", "version.json")
+	if !fileutils.FileExists(versionFilePath) {
+		return "", errors.New("Version file does not exist")
+	}
+
+	data, fail := fileutils.ReadFile(versionFilePath)
+	if fail != nil {
+		return "", err
+	}
+
+	err = json.Unmarshal(data, &v)
 	if err != nil {
 		return "", err
 	}
@@ -133,6 +144,7 @@ func masterVersion(branchName string) (*semver.Version, error) {
 func (v *Incrementation) incrementFromEnvironment() (*semver.Version, error) {
 	switch v.env {
 	case LocalEnv:
+		// return v.increment()
 		return semver.New("0.0.0")
 	case RemoteEnv:
 		return v.increment()
