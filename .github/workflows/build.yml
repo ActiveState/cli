@@ -9,6 +9,45 @@ name: Build-Test-Deploy
     - synchronize
     - reopened
 jobs:
+  genversion:
+    name: Generate Version
+    strategy:
+      matrix:
+        go-version:
+        - 1.13.x
+        platform:
+        - ubuntu-latest
+        - macos-latest
+        - windows-latest
+    runs-on: ${{ matrix.platform }}
+    env:
+      ACTIVESTATE_CLI_DISABLE_RUNTIME: true
+      GOFLAGS: -mod=vendor
+      SHELL: bash
+      GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    timeout-minutes: 10
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - name: Install Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: ${{ matrix.go-version }}
+    - name: Setup
+      shell: bash
+      run: |
+        bin=$(pwd)/.github/deps/${{ runner.os }}/bin
+        echo "Adding $bin to PATH"
+        echo "::add-path::$bin"
+        printenv
+    - name: Generate Version
+      shell: bash
+      run: state run generate-version
+    - name: Upload Session Artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: session-build
+        path: build/
   build:
     name: Build
     strategy:
@@ -29,6 +68,11 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
+    - name: Download Session Artifacts
+      uses: actions/download-artifact@v2
+      with:
+        name: session-build
+        path: build/
     - name: Install Go
       uses: actions/setup-go@v2
       with:

@@ -24,6 +24,7 @@ steps:
   - #@ steps_setup()
   - #@ steps_genversion()
   - #@ steps_uploadsessartifacts()
+#@ end
 
 #@ def jobs_build():
 name: Build
