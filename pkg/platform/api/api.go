@@ -41,6 +41,7 @@ type RoundTripper struct{}
 // RoundTrip executes a single HTTP transaction, returning a Response for the provided Request.
 func (r *RoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	req.Header.Set("User-Agent", r.UserAgent())
+	req.Header.Set("X-Requestor", logging.UniqID())
 	return http.DefaultTransport.RoundTrip(req)
 }
 
