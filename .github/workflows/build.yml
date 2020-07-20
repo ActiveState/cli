@@ -176,6 +176,8 @@ jobs:
         - macos-latest
         - windows-latest
     runs-on: ${{ matrix.platform }}
+    needs:
+    - genversion
     env:
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true
       GOFLAGS: -mod=vendor

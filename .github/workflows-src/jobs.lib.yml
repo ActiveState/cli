@@ -66,6 +66,7 @@ steps:
 name: "Unit Test"
 strategy: *strategy
 runs-on: *runs-on
+needs: [ genversion ]
 env: *env
 timeout-minutes: 10
 steps:

@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 	"regexp"
 
-	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/blang/semver"
 )
@@ -80,9 +79,6 @@ func (v *Incrementation) IncrementWithRevision(revision string) (*semver.Version
 // needsIncrement whether we need to an increment for the environment
 func needsIncrement(env Env, branch string) bool {
 	return true
-	if condition.InTest() {
-		return false
-	}
 	return env != LocalEnv && (branch == "master" || branch == "unstable")
 }
 
@@ -149,10 +145,6 @@ func masterVersion(branchName string) (*semver.Version, error) {
 }
 
 func (v *Incrementation) incrementFromEnvironment() (*semver.Version, error) {
-	if condition.InTest() {
-		return semver.New("0.0.0")
-	}
-
 	switch v.env {
 	case LocalEnv:
 		// return v.increment()
