@@ -12,6 +12,14 @@ jobs:
   genversion:
     name: Generate Version
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version:
+        - 1.13.x
+        platform:
+        - ubuntu-latest
+        - macos-latest
+        - windows-latest
     env:
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true
       GOFLAGS: -mod=vendor
