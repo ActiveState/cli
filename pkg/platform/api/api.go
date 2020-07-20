@@ -8,10 +8,11 @@ import (
 
 	"github.com/alecthomas/template"
 
+	"github.com/ActiveState/sysinfo"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/sysinfo"
 )
 
 var (
@@ -34,17 +35,17 @@ var (
 	FailProjectNotFound = failures.Type("api.fail.project.not_found", FailNotFound)
 )
 
-// UserAgentTripper is an implementation of http.RoundTripper that adds our useragent
-type UserAgentTripper struct{}
+// RoundTripper is an implementation of http.RoundTripper that adds additional request information
+type RoundTripper struct{}
 
 // RoundTrip executes a single HTTP transaction, returning a Response for the provided Request.
-func (r *UserAgentTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+func (r *RoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	req.Header.Set("User-Agent", r.UserAgent())
 	return http.DefaultTransport.RoundTrip(req)
 }
 
 // UserAgent returns the user agent used by the State Tool
-func (r *UserAgentTripper) UserAgent() string {
+func (r *RoundTripper) UserAgent() string {
 	var osVersionStr string
 	osVersion, err := sysinfo.OSVersion()
 	if err != nil {
@@ -74,9 +75,9 @@ func (r *UserAgentTripper) UserAgent() string {
 	return userAgent.String()
 }
 
-// NewUserAgentTripper creates a new instance of UserAgentTripper
-func NewUserAgentTripper() http.RoundTripper {
-	return &UserAgentTripper{}
+// NewRoundTripper creates a new instance of RoundTripper
+func NewRoundTripper() http.RoundTripper {
+	return &RoundTripper{}
 }
 
 // ErrorCode tries to retrieve the code associated with an API error

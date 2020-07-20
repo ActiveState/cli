@@ -64,9 +64,9 @@ func InitClient() *Client {
 
 func NewClient(apiURL *url.URL) *Client {
 	transportRuntime := httptransport.New(apiURL.Host, apiURL.Path, []string{apiURL.Scheme})
-	transportRuntime.Transport = api.NewUserAgentTripper()
+	transportRuntime.Transport = api.NewRoundTripper()
 
-	//transportRuntime.SetDebug(true)
+	// transportRuntime.SetDebug(true)
 
 	return &Client{
 		client:    headchef_client.New(transportRuntime, strfmt.Default).HeadchefOperations,

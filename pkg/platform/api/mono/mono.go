@@ -27,9 +27,9 @@ func NewWithAuth(auth *runtime.ClientAuthInfoWriter) *mono_client.Mono {
 // Init initializes a new api client
 func Init(serviceURL *url.URL, auth *runtime.ClientAuthInfoWriter) *mono_client.Mono {
 	transportRuntime := httptransport.New(serviceURL.Host, serviceURL.Path, []string{serviceURL.Scheme})
-	transportRuntime.Transport = api.NewUserAgentTripper()
+	transportRuntime.Transport = api.NewRoundTripper()
 
-	//transportRuntime.SetDebug(true)
+	// transportRuntime.SetDebug(true)
 
 	if auth != nil {
 		transportRuntime.DefaultAuthentication = *auth
