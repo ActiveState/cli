@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"os"
 	"path/filepath"
 	"regexp"
 
 	"github.com/ActiveState/cli/internal/environment"
-	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/blang/semver"
 )
 
@@ -103,12 +104,12 @@ func fetchLatestVersionString(branch string) (string, error) {
 	}
 
 	versionFilePath := filepath.Join(rootPath, "build", "version.json")
-	if !fileutils.FileExists(versionFilePath) {
+	if _, err := os.Stat(versionFilePath); os.IsNotExist(err) {
 		return "", errors.New("Version file does not exist")
 	}
 
-	data, fail := fileutils.ReadFile(versionFilePath)
-	if fail != nil {
+	data, err := ioutil.ReadFile(versionFilePath)
+	if err != nil {
 		return "", err
 	}
 
