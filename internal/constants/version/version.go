@@ -103,10 +103,9 @@ func fetchLatestVersionString(branch string) (string, error) {
 	}
 
 	versionFilePath := filepath.Join(rootPath, "build", "version.json")
-	if _, err := os.Stat(versionFilePath); os.IsNotExist(err) {
-		return "", errors.New("Version file does not exist")
-	} else if err != nil {
-		return "", errors.New("Could not access version file")
+	_, err = os.Stat(versionFilePath)
+	if err != nil {
+		return "", fmt.Errorf("Could not access version file at: %s", versionFilePath)
 	}
 
 	data, err := ioutil.ReadFile(versionFilePath)
