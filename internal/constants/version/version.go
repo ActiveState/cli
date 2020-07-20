@@ -91,7 +91,7 @@ func (v *Incrementation) Type() (string, error) {
 	return Zeroed, nil
 }
 
-func fetchLatestVersionString(branch string) (string, error) {
+func latestVersionString(branch string) (string, error) {
 	type versionJSON struct {
 		Version string
 	}
@@ -122,7 +122,7 @@ func fetchLatestVersionString(branch string) (string, error) {
 }
 
 func masterVersion(branchName string) (*semver.Version, error) {
-	versionString, err := fetchLatestVersionString(branchName)
+	versionString, err := latestVersionString(branchName)
 	if err != nil {
 		return nil, err
 	}
