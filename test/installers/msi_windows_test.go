@@ -3,6 +3,7 @@ package installers_test
 import (
 	"fmt"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -20,7 +21,8 @@ var (
 		//"ActivePerl-5.28.msi",
 	}
 
-	checkPerlCmd = "perl -v"
+	checkPerlVersionCmd = "perl -v"
+	checkPerlModulesCmd = "perldoc -l DBD::Pg"
 
 	installAction   msiExecAction = "install"
 	uninstallAction msiExecAction = "uninstall"
@@ -49,7 +51,9 @@ func (a msiExecAction) cmd(msiPath string) string {
 	pwshCmdForm := `$proc = Start-Process msiexec.exe -Wait -ArgumentList ` +
 		`"%s %s /quiet /qn /norestart /log %s" -PassThru;` +
 		`$handle = $proc.Handle; $proc.WaitForExit();` +
-		`echo "exitcode:$($proc.ExitCode):";` // use to ensure exit code is exactly 0
+		`echo "exitcode:$($proc.ExitCode):";` + // use to ensure exit code is exactly 0
+		`refreshenv;` +
+		`echo "path~path=$($Env:Path)~"`
 	pwshCmd := fmt.Sprintf(pwshCmdForm, msiAct, msiPath, a.logFileName(msiPath))
 	return pwshCmd
 }
@@ -65,15 +69,6 @@ func versionFromMsiFileName(name string) string {
 	return name[i+1:]
 }
 
-func expectNone(cp *termtest.ConsoleProcess, fail func(...interface{}), values ...string) {
-	trimmed := cp.TrimmedSnapshot()
-	for _, val := range values {
-		if strings.Contains(trimmed, val) {
-			fail(fmt.Sprintf("incorrectly contains: %s", val))
-		}
-	}
-}
-
 type pwshSession struct {
 	*e2e.Session
 }
@@ -83,9 +78,23 @@ func newPwshSession(t *testing.T) *pwshSession {
 }
 
 func (s *pwshSession) Spawn(args ...string) *termtest.ConsoleProcess {
-	as := []string{"/c"}
-	as = append(as, args...)
-	return s.Session.SpawnCmd("powershell", args...)
+	return s.SpawnOpts(args)
+}
+
+func (s *pwshSession) SpawnOpts(args []string, opts ...e2e.SpawnOptions) *termtest.ConsoleProcess {
+	as := append([]string{"/c"}, args...)
+	opts = append(opts, e2e.WithArgs(as...))
+	return s.Session.SpawnCmdWithOpts("powershell", opts...)
+}
+
+var (
+	pathRegexp  = regexp.MustCompile("(?i).*?path~(path=.*?)~.*")
+	pathReplace = "${1}"
+)
+
+func currentPath(cp *termtest.ConsoleProcess) string {
+	pathInfo := cp.TrimmedSnapshot()
+	return pathRegexp.ReplaceAllString(pathInfo, pathReplace)
 }
 
 func TestActivePerl(t *testing.T) {
@@ -97,17 +106,25 @@ func TestActivePerl(t *testing.T) {
 			cp := s.Spawn(installAction.cmd(m.path))
 			cp.Expect("exitcode:0:", time.Minute*3)
 			cp.ExpectExitCode(0)
+			path := currentPath(cp)
 
-			cp = s.Spawn(checkPerlCmd)
+			checkPerlArgs := []string{checkPerlVersionCmd}
+			cp = s.SpawnOpts(checkPerlArgs, e2e.AppendEnv(path))
 			cp.Expect(m.version)
 			cp.Expect(asToken)
+			cp.ExpectExitCode(0)
+
+			checkPerlModsArgs := []string{checkPerlModulesCmd}
+			cp = s.SpawnOpts(checkPerlModsArgs, e2e.AppendEnv(path))
+			cp.Expect("Pg.pm")
 			cp.ExpectExitCode(0)
 
 			cp = s.Spawn(uninstallAction.cmd(m.path))
 			cp.Expect("exitcode:0:", time.Minute)
 			cp.ExpectExitCode(0)
+			path = currentPath(cp)
 
-			cp = s.Spawn(checkPerlCmd)
+			cp = s.SpawnOpts(checkPerlArgs, e2e.AppendEnv(path))
 			cp.Expect("'perl' is not recognized")
 			cp.ExpectNotExitCode(0)
 		})
