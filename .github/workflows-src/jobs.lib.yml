@@ -13,8 +13,7 @@ env: &env
 
 #@ def jobs_genversion():
 name: "Generate Version"
-strategy: *strategy
-runs-on: *runs-on
+runs-on: ubuntu-latest
 env: *env
 timeout-minutes: 10
 steps:
@@ -28,6 +27,7 @@ steps:
 
 #@ def jobs_build():
 name: Build
+needs: [ generate_version ]
 strategy: *strategy
 runs-on: *runs-on
 env: *env
