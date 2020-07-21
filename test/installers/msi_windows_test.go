@@ -2,24 +2,23 @@ package installers_test
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
-	"github.com/ActiveState/termtest"
 )
 
 var (
-	rootDir = `Z:\bin`
-	asToken = "ActiveState"
+	msiDir = mustFilepathAbs(`..\..\build\msi`)
+	logDir = mustFilepathAbs(`..\..\build`)
 
-	perlMsiFileNames = []string{
-		"ActivePerl-5.26.msi",
-		//"ActivePerl-5.28.msi",
-	}
+	perlMsiPrefix = "ActivePerl"
+	msiExt        = ".msi"
+
+	asToken = "ActiveState"
 
 	checkPerlVersionCmd = "perl -v"
 	checkPerlModulesCmd = "perldoc -l DBD::Pg"
@@ -33,11 +32,17 @@ type msiFile struct {
 	version string
 }
 
-func newMsiFile(filename string) *msiFile {
+func newMsiFile(filePath string) *msiFile {
 	return &msiFile{
-		path:    filepath.Join(rootDir, filename),
-		version: versionFromMsiFileName(filename),
+		path:    filePath,
+		version: versionFromMsiFileName(filePath),
 	}
+}
+
+func versionFromMsiFileName(name string) string {
+	name = strings.TrimSuffix(name, filepath.Ext(name))
+	i := strings.LastIndexByte(name, '-')
+	return name[i+1:]
 }
 
 type msiExecAction string
@@ -53,54 +58,56 @@ func (a msiExecAction) cmd(msiPath string) string {
 		`$handle = $proc.Handle; $proc.WaitForExit();` +
 		`echo "exitcode:$($proc.ExitCode):";` + // use to ensure exit code is exactly 0
 		`refreshenv;` +
-		`echo "path~path=$($Env:Path)~"`
+		`echo "path~path=$Env:Path~"`
 	pwshCmd := fmt.Sprintf(pwshCmdForm, msiAct, msiPath, a.logFileName(msiPath))
 	return pwshCmd
 }
 
 func (a msiExecAction) logFileName(msiPath string) string {
 	msiName := filepath.Base(strings.TrimSuffix(msiPath, filepath.Ext(msiPath)))
-	return fmt.Sprintf(`%s\%s_%s.log`, rootDir, msiName, string(a))
+	return fmt.Sprintf(`%s\%s_%s.log`, logDir, msiName, string(a))
 }
 
-func versionFromMsiFileName(name string) string {
-	name = strings.TrimSuffix(name, filepath.Ext(name))
-	i := strings.LastIndexByte(name, '-')
-	return name[i+1:]
+func execFilePaths(dir, prefix, ext string) ([]string, error) {
+	var filePaths []string
+	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		curBase := filepath.Base(path)
+		curExt := filepath.Ext(curBase)
+
+		if strings.HasPrefix(curBase, perlMsiPrefix) && curExt == ext {
+			filePaths = append(filePaths, path)
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return filePaths, nil
 }
 
-type pwshSession struct {
-	*e2e.Session
-}
-
-func newPwshSession(t *testing.T) *pwshSession {
-	return &pwshSession{e2e.New(t, false)}
-}
-
-func (s *pwshSession) Spawn(args ...string) *termtest.ConsoleProcess {
-	return s.SpawnOpts(args)
-}
-
-func (s *pwshSession) SpawnOpts(args []string, opts ...e2e.SpawnOptions) *termtest.ConsoleProcess {
-	as := append([]string{"/c"}, args...)
-	opts = append(opts, e2e.WithArgs(as...))
-	return s.Session.SpawnCmdWithOpts("powershell", opts...)
-}
-
-var (
-	pathRegexp  = regexp.MustCompile("(?i).*?path~(path=.*?)~.*")
-	pathReplace = "${1}"
-)
-
-func currentPath(cp *termtest.ConsoleProcess) string {
-	pathInfo := cp.TrimmedSnapshot()
-	return pathRegexp.ReplaceAllString(pathInfo, pathReplace)
+func mustFilepathAbs(path string) string {
+	p, err := filepath.Abs(path)
+	if err != nil {
+		panic(err)
+	}
+	return p
 }
 
 func TestActivePerl(t *testing.T) {
-	for _, msiFileName := range perlMsiFileNames {
-		t.Run(msiFileName, func(t *testing.T) {
-			m := newMsiFile(msiFileName)
+	perlMsiFilePaths, err := execFilePaths(msiDir, perlMsiPrefix, msiExt)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(perlMsiFilePaths) == 0 {
+		t.Fatalf("no %q msi files found in %q", perlMsiPrefix, msiDir)
+	}
+
+	for _, msiFilePath := range perlMsiFilePaths {
+		t.Run(filepath.Base(msiFilePath), func(t *testing.T) {
+			m := newMsiFile(msiFilePath)
 			s := newPwshSession(t)
 
 			cp := s.Spawn(installAction.cmd(m.path))
