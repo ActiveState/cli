@@ -14,7 +14,7 @@ import (
 
 func printUsage() {
 	fmt.Println("")
-	fmt.Println("<branch> <outputPath> The path to output version.json to")
+	fmt.Println("<outputPath> The path to output version.json to")
 }
 
 func main() {
@@ -25,20 +25,23 @@ func main() {
 
 func run() {
 	flag.Parse()
-	if flag.NArg() != 2 {
+	if flag.NArg() != 1 {
 		printUsage()
 		os.Exit(0)
 	}
-	branch := flag.Arg(0)
 
-	stateURL := "https://s3.ca-central-1.amazonaws.com/cli-update/update/state/%s/linux-amd64.json"
-	resp, err := http.Get(fmt.Sprintf(stateURL, branch))
+	resp, err := http.Get("https://s3.ca-central-1.amazonaws.com/cli-update/update/state/version.json")
 	if err != nil {
 		panic(errors.Wrap(err, "Could not get version file from S3"))
 	}
 	defer resp.Body.Close()
 
-	outputPath := flag.Arg(1)
+	outputPath := flag.Arg(0)
+	err = os.MkdirAll(outputPath, 0755)
+	if err != nil {
+		panic(errors.Wrap(err, "Could not create directory for version.json file"))
+	}
+
 	file, err := os.Create(filepath.Join(outputPath, "version.json"))
 	if err != nil {
 		panic(errors.Wrap(err, "Could not create version file"))
