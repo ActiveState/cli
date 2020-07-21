@@ -217,7 +217,6 @@ func run() {
 	createBuildDir()
 
 	// If dir is given create update for each file
-	fmt.Println("Path: ", appPath)
 	fi, err := os.Stat(appPath)
 	if err != nil {
 		panic(err)
