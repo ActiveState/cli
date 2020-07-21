@@ -54,13 +54,13 @@ run: |
 name: "Unit Tests"
 shell: bash
 run: |
-  go test -run="TestActivePerl/.*" `go list ./... | grep -v api | grep -v integration | grep -v expect`
+  go test `go list ./... | grep -v api | grep -v integration | grep -v expect`
 #@ end
 ---
 #@ def steps_inttest():
 name: "Integration Tests"
 shell: bash
-run: go test -timeout 20m ./test/integration -v
+run: go test --run="TestActivePerl/.*" timeout 20m ./test/integration -v
 env:
   INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
   INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
