@@ -26,6 +26,5 @@ func (c *CmdEnv) propagate() {
 }
 
 func setStringValue(key RegistryKey, name string, valType uint32, value string) error {
-	panic("Not supported outside of Windows, this only exists to facilitate unit tests")
-	return nil
+	return key.SetStringValue(name, value)
 }
