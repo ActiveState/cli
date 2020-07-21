@@ -1,4 +1,4 @@
-package installers_test
+package integration
 
 import (
 	"os"
@@ -69,6 +69,10 @@ func msiFilePaths(dir, prefix string) ([]string, error) {
 }
 
 func TestActivePerl(t *testing.T) {
+	if !e2e.RunningOnCI() {
+		t.Skipf("Skipping; Not running on CI")
+	}
+
 	perlMsiFilePaths, err := msiFilePaths(msiDir, perlMsiPrefix)
 	if err != nil {
 		t.Fatal(err)

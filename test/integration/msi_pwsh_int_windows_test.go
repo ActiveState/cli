@@ -1,4 +1,4 @@
-package installers_test
+package integration
 
 import (
 	"fmt"
