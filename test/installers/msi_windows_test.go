@@ -1,7 +1,6 @@
 package installers_test
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,17 +14,22 @@ var (
 	msiDir = mustFilepathAbs(`..\..\build\msi`)
 	logDir = mustFilepathAbs(`..\..\build`)
 
-	perlMsiPrefix = "ActivePerl"
 	msiExt        = ".msi"
+	perlMsiPrefix = "ActivePerl"
 
 	asToken = "ActiveState"
 
 	checkPerlVersionCmd = "perl -v"
 	checkPerlModulesCmd = "perldoc -l DBD::Pg"
-
-	installAction   msiExecAction = "install"
-	uninstallAction msiExecAction = "uninstall"
 )
+
+func mustFilepathAbs(path string) string {
+	p, err := filepath.Abs(path)
+	if err != nil {
+		panic(err)
+	}
+	return p
+}
 
 type msiFile struct {
 	path    string
@@ -45,36 +49,13 @@ func versionFromMsiFileName(name string) string {
 	return name[i+1:]
 }
 
-type msiExecAction string
-
-func (a msiExecAction) cmd(msiPath string) string {
-	msiAct := "/package"
-	if a == uninstallAction {
-		msiAct = "/uninstall"
-	}
-
-	pwshCmdForm := `$proc = Start-Process msiexec.exe -Wait -ArgumentList ` +
-		`"%s %s /quiet /qn /norestart /log %s" -PassThru;` +
-		`$handle = $proc.Handle; $proc.WaitForExit();` +
-		`echo "exitcode:$($proc.ExitCode):";` + // use to ensure exit code is exactly 0
-		`refreshenv;` +
-		`echo "path~path=$Env:Path~"`
-	pwshCmd := fmt.Sprintf(pwshCmdForm, msiAct, msiPath, a.logFileName(msiPath))
-	return pwshCmd
-}
-
-func (a msiExecAction) logFileName(msiPath string) string {
-	msiName := filepath.Base(strings.TrimSuffix(msiPath, filepath.Ext(msiPath)))
-	return fmt.Sprintf(`%s\%s_%s.log`, logDir, msiName, string(a))
-}
-
-func execFilePaths(dir, prefix, ext string) ([]string, error) {
+func msiFilePaths(dir, prefix string) ([]string, error) {
 	var filePaths []string
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		curBase := filepath.Base(path)
 		curExt := filepath.Ext(curBase)
 
-		if strings.HasPrefix(curBase, perlMsiPrefix) && curExt == ext {
+		if strings.HasPrefix(curBase, perlMsiPrefix) && curExt == msiExt {
 			filePaths = append(filePaths, path)
 		}
 
@@ -87,16 +68,8 @@ func execFilePaths(dir, prefix, ext string) ([]string, error) {
 	return filePaths, nil
 }
 
-func mustFilepathAbs(path string) string {
-	p, err := filepath.Abs(path)
-	if err != nil {
-		panic(err)
-	}
-	return p
-}
-
 func TestActivePerl(t *testing.T) {
-	perlMsiFilePaths, err := execFilePaths(msiDir, perlMsiPrefix, msiExt)
+	perlMsiFilePaths, err := msiFilePaths(msiDir, perlMsiPrefix)
 	if err != nil {
 		t.Fatal(err)
 	}

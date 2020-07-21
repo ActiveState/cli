@@ -1,12 +1,43 @@
 package installers_test
 
 import (
+	"fmt"
+	"path/filepath"
 	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/termtest"
 )
+
+var (
+	installAction   msiExecAction = "install"
+	uninstallAction msiExecAction = "uninstall"
+)
+
+type msiExecAction string
+
+func (a msiExecAction) cmd(msiPath string) string {
+	msiAct := "/package"
+	if a == uninstallAction {
+		msiAct = "/uninstall"
+	}
+
+	pwshCmdForm := `$proc = Start-Process msiexec.exe -Wait -ArgumentList ` +
+		`"%s %s /quiet /qn /norestart /log %s" -PassThru;` +
+		`$handle = $proc.Handle; $proc.WaitForExit();` +
+		`echo "exitcode:$($proc.ExitCode):";` + // use to ensure exit code is exactly 0
+		`refreshenv;` +
+		`echo "path~path=C:\Perl64\bin;$Env:Path~";` // use for subsequent console processes
+	pwshCmd := fmt.Sprintf(pwshCmdForm, msiAct, msiPath, a.logFileName(msiPath))
+	return pwshCmd
+}
+
+func (a msiExecAction) logFileName(msiPath string) string {
+	msiName := filepath.Base(strings.TrimSuffix(msiPath, filepath.Ext(msiPath)))
+	return fmt.Sprintf(`%s\%s_%s.log`, logDir, msiName, string(a))
+}
 
 type pwshSession struct {
 	*e2e.Session
