@@ -11,14 +11,15 @@ env: &env
   SHELL: bash
   GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-#@ def jobs_genversion():
-name: "Generate Version"
+#@ def jobs_prepare():
+name: "Prepare"
 runs-on: ubuntu-latest
 env: *env
 timeout-minutes: 10
 steps:
   - name: "Checkout code"
     uses: actions/checkout@v2
+  - #@ steps_validate()
   - #@ steps_installgo()
   - #@ steps_setup()
   - #@ steps_genversion()
@@ -27,7 +28,7 @@ steps:
 
 #@ def jobs_build():
 name: Build
-needs: [ genversion ]
+needs: [ prepare ]
 strategy: *strategy
 runs-on: *runs-on
 env: *env
@@ -66,7 +67,7 @@ steps:
 name: "Unit Test"
 strategy: *strategy
 runs-on: *runs-on
-needs: [ genversion ]
+needs: [ prepare ]
 env: *env
 timeout-minutes: 10
 steps:
@@ -104,7 +105,6 @@ timeout-minutes: 10
 steps:
   - name: "Checkout code"
     uses: actions/checkout@v2
-  - #@ steps_validate()
   - #@ steps_installgo()
   - #@ steps_setup()
   - #@ steps_downloadsessartifacts()
