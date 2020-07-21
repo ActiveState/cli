@@ -6,6 +6,7 @@ jobs:
   inttest:
     name: Integration Test
     strategy:
+      fail-fast: false
       matrix:
         go-version:
         - 1.13.x
