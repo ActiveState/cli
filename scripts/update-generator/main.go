@@ -96,6 +96,13 @@ func createUpdate(path string, platform string) {
 		panic(err)
 	}
 
+	versionPath := filepath.Join(genDir, "version.json")
+	fmt.Printf("Updating version file at %s\n", versionPath)
+	err = ioutil.WriteFile(versionPath, b, 0755)
+	if err != nil {
+		panic(err)
+	}
+
 	copy(jsonPath, filepath.Join(genDir, branch, version, platform+".json"))
 }
 
@@ -210,6 +217,7 @@ func run() {
 	createBuildDir()
 
 	// If dir is given create update for each file
+	fmt.Println("Path: ", appPath)
 	fi, err := os.Stat(appPath)
 	if err != nil {
 		panic(err)
