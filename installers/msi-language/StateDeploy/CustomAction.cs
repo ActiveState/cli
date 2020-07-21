@@ -164,7 +164,10 @@ namespace StateDeploy
                     outputBuilder.AppendFormat("Process returned with exit code: {0}", exitCode);
                     output = outputBuilder.ToString();
                     session.Log("returning due to return code - error");
-                    ActiveState.RollbarHelper.Report(string.Format("returning due to return code: {0} - error", exitCode));
+                    ActiveState.RollbarHelper.Report(
+                        string.Format("failed due to return code: {0} - error", exitCode), 
+                        new Dictionary<string, object> { { "output", output }, { "cmd", cmd } }
+                    );
                     return ActionResult.Failure;
                 }
             }
