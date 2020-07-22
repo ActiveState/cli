@@ -90,6 +90,35 @@ function errorOccured($suppress, $errMsg) {
     return $False, ""
 }
 
+function download([string] $url, [string] $out) {
+    $Stoploop = $false
+    [int]$Retrycount = "0"
+
+    do {
+        try {
+            $downloader = new-object System.Net.WebClient
+            if ($out -eq "") {
+                return $downloader.DownloadString($url)
+			}
+            else {
+                return $downloader.DownloadFile($url, $out)
+			}
+        }
+        catch {
+            if ($Retrycount -gt 5){
+                Write-Error "Could not Download after 5 retries."
+                throw $_
+            }
+            else {
+                Write-Host "Could not Download, retrying..."
+                Write-Host $_
+                $Retrycount = $Retrycount + 1
+            }
+        }
+    }
+    While ($true)
+}
+
 function hasWritePermission([string] $path)
 {
     # $user = "$env:userdomain\$env:username"
@@ -153,16 +182,14 @@ function fetchArtifacts($downloadDir, $statejson, $statepkg) {
     $STATEURL="https://s3.ca-central-1.amazonaws.com/cli-update/update/state"
     
     Write-Host "Preparing for installation...`n"
-    
-    $downloader = new-object System.Net.WebClient
 
     # Get version and checksum
     $jsonurl = "$STATEURL/$script:BRANCH/$statejson"
     Write-Host "Determining latest version...`n"
     try{
-        $branchJson = ConvertFrom-Json -InputObject $downloader.DownloadString($jsonurl)
+        $branchJson = ConvertFrom-Json -InputObject (download $jsonurl)
         $latestVersion = $branchJson.Version
-        $versionedJson = ConvertFrom-Json -InputObject $downloader.DownloadString("$STATEURL/$script:BRANCH/$latestVersion/$statejson")
+        $versionedJson = ConvertFrom-Json -InputObject (download "$STATEURL/$script:BRANCH/$latestVersion/$statejson")
     } catch [System.Exception] {
         Write-Warning "Unable to retrieve the latest version number"
         Write-Error $_.Exception.Message
@@ -180,7 +207,7 @@ function fetchArtifacts($downloadDir, $statejson, $statepkg) {
     $zipURL = "$STATEURL/$script:BRANCH/$latestVersion/$statepkg"
     Write-Host "Fetching the latest version: $latestVersion...`n"
     try{
-        $downloader.DownloadFile($zipURL, $zipPath)
+        download $zipURL $zipPath
     } catch [System.Exception] {
         Write-Warning "Could not install State Tool"
         Write-Warning "Could not access $zipURL"
