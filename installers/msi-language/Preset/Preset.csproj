@@ -8,8 +8,8 @@
     <ProjectGuid>{877517D7-1F44-41C8-8B45-23070AC62845}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Shortcut</RootNamespace>
-    <AssemblyName>Shortcut</AssemblyName>
+    <RootNamespace>Preset</RootNamespace>
+    <AssemblyName>Preset</AssemblyName>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>

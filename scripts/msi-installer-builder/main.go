@@ -70,7 +70,19 @@ func icon(p languagePreset) (string, error) {
 	if p == Perl {
 		return "assets/perl.ico", nil
 	}
-	return "", fmt.Errorf("No icon for language Preset %v", p)
+	return "", fmt.Errorf("No icon for language preset %v", p)
+}
+
+func releaseNotes(p languagePreset, version string) (string, error) {
+	if p == Perl {
+		vParts := strings.Split(version, ".")
+		if len(vParts) < 2 {
+			return "", fmt.Errorf("invalid version format")
+		}
+		majorMinor := strings.Join(vParts[0:2], ".")
+		return fmt.Sprintf("http://docs.activestate.com/activeperl/%s/get/relnotes/", majorMinor), nil
+	}
+	return "", fmt.Errorf("No release notes for language preset %v", p)
 }
 
 func normalize(preset languagePreset, c *config) (*config, error) {
@@ -87,6 +99,11 @@ func normalize(preset languagePreset, c *config) (*config, error) {
 		return c, err
 	}
 	c.Icon = ic
+
+	c.ReleaseNotes, err = releaseNotes(preset, c.Version)
+	if err != nil {
+		return c, err
+	}
 	return c, nil
 }
 
@@ -113,10 +130,9 @@ func parseArgs(args []string) (*config, error) {
 			Preset:              Perl.String(),
 			ProjectOwnerAndName: "ActiveState/ActivePerl-5.26",
 			Version:             "5.26.3000",
-			ReleaseNotes:        "http://docs.activestate.com/activeperl/5.26/get/relnotes/",
 		})
 	}
-	if len(os.Args) == 5 {
+	if len(os.Args) == 4 {
 		preset, err := parsePreset(os.Args[1])
 		if err != nil {
 			return nil, err
@@ -125,7 +141,6 @@ func parseArgs(args []string) (*config, error) {
 			Preset:              preset.String(),
 			ProjectOwnerAndName: os.Args[2],
 			Version:             os.Args[3],
-			ReleaseNotes:        os.Args[4],
 		})
 	}
 
@@ -133,7 +148,7 @@ func parseArgs(args []string) (*config, error) {
 		return baseConfig(), nil
 	}
 
-	return nil, fmt.Errorf("invalid arguments: Expected <preset> <owner/name> <version> <relNotes> | \"base\"")
+	return nil, fmt.Errorf("invalid arguments: Expected <preset> <owner/name> <version> | \"base\"")
 }
 
 func run(args []string) error {
