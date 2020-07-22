@@ -16,4 +16,6 @@ Click "Back" to review or change any of your installation settings.  Click "Canc
   <String Id="PrivacyConsentDlgNotice">ActiveState collects usage statistics and diagnostic data about failures. The collected data complies with the <![CDATA[<a href="https://www.activestate.com/company/privacy-policy/">ActiveState Privacy Policy</a>]]> and will be used to identify product enhancements, help fix defects, and prevent abuse.</String>
   <String Id="DescPL">Perl script</String>
   <String Id="ExplorerMenuOpenPL">Open</String>
+  <String Id="LoginDlg_Title">[ProductName] Login</String>
+  <String Id="LoginDlgTitle">{\WixUI_Font_Title}Login</String>
 </WixLocalization>

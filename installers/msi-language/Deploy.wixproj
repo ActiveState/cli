@@ -39,6 +39,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="CustomExitDlg.wxs" />
+    <Compile Include="Login.wxs" />
     <Compile Include="PrivacyConsentDlg.wxs" />
     <Compile Include="Product.wxs" />
   </ItemGroup>

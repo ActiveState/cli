@@ -59,7 +59,7 @@ namespace StateDeploy
             session.Log(string.Format("Running install command: {0}", installCmd));
 
             string output;
-            ActionResult result = RunCommand(session, installCmd, Shell.Powershell, out output);
+            ActionResult result = ActiveState.Command.Run(session, installCmd, ActiveState.Shell.Powershell, out output);
             if (result.Equals(ActionResult.UserExit))
             {
                 // Catch cancel and return
@@ -80,105 +80,47 @@ namespace StateDeploy
             return result;
         }
 
-        private static ActionResult RunCommand(Session session, string cmd, Shell shell, out string output)
+        private static ActionResult Login(Session session, string stateToolPath)
         {
-            var outputBuilder = new StringBuilder();
-            try
+            string username = session.CustomActionData["AS_USERNAME"];
+            string password = session.CustomActionData["AS_PASSWORD"];
+
+            if (username == "" && password == "")
             {
-                ProcessStartInfo procStartInfo;
-                switch(shell)
-                {
-                    case Shell.Powershell:
-                        var powershellExe = Path.Combine(Environment.SystemDirectory, "WindowsPowershell", "v1.0", "powershell.exe");
-                        if (!File.Exists(powershellExe))
-                        {
-                            session.Log("Did not find powershell @" + powershellExe);
-                            powershellExe = "powershell.exe";
-                        }
-                        procStartInfo = new ProcessStartInfo(powershellExe, cmd);
-                        break;
-                    default:
-                        procStartInfo = new ProcessStartInfo("cmd.exe", "/c " + cmd);
-                        break;
-                }
-
-                // The following commands are needed to redirect the standard output.
-                // This means that it will be redirected to the Process.StandardOutput StreamReader.
-                procStartInfo.RedirectStandardOutput = true;
-                procStartInfo.RedirectStandardError = true;
-                procStartInfo.UseShellExecute = false;
-                // Do not create the black window.
-                procStartInfo.CreateNoWindow = true;
-
-                Process proc = new Process();
-                proc.StartInfo = procStartInfo;
-
-                proc.OutputDataReceived += new DataReceivedEventHandler((sender, e) =>
-                {
-                    var line = e.Data;
-                    if (!String.IsNullOrEmpty(line))
-                    {
-                        session.Log("out: " + line);
-                        outputBuilder.Append("\n" + line);
-                    }
-                });
-                proc.ErrorDataReceived += new DataReceivedEventHandler((sender, e) =>
-                {
-                    // Prepend line numbers to each line of the output.
-                    if (!String.IsNullOrEmpty(e.Data))
-                    {
-                        session.Log("err: " + e.Data);
-                    }
-                });
-                proc.Start();
-
-                // Asynchronously read the standard output and standard error of the spawned process.
-                // This raises OutputDataReceived/ErrorDataReceived events for each line of output/errors.
-                proc.BeginOutputReadLine();
-                proc.BeginErrorReadLine();
-
-                while (!proc.HasExited)
-                {
-                    try
-                    {
-                        // This is just hear to throw an InstallCanceled Exception if necessary
-                        Status.ProgressBar.Increment(session, 0);
-                        Thread.Sleep(200);
-                    }
-                    catch (InstallCanceledException)
-                    {
-                        session.Log("Caught install cancelled exception");
-                        ActiveState.Process.KillProcessAndChildren(proc.Id);
-                        output = "process got interrupted.";
-                        return ActionResult.UserExit;
-                    }
-                }
-                proc.WaitForExit();
-
-                var exitCode = proc.ExitCode;
-                session.Log(String.Format("process returned with exit code: {0}", exitCode));
-                proc.Close();
-                if (exitCode != 0)
-                {
-                    outputBuilder.Append('\x00');
-                    outputBuilder.AppendFormat("Process returned with exit code: {0}", exitCode);
-                    output = outputBuilder.ToString();
-                    session.Log("returning due to return code - error");
-                    ActiveState.RollbarHelper.Report(string.Format("returning due to return code: {0} - error", exitCode));
-                    return ActionResult.Failure;
-                }
+                session.Log("No login information provided, not executing login");
+                return ActionResult.Success;
             }
-            catch (Exception objException)
+
+            session.Log(string.Format("Attempting to login as user: {0}", username));
+            string authCmd = stateToolPath + " auth" + " --username " + username + " --password " + password;
+            string output;
+            ActionResult runResult = ActiveState.Command.Run(session, authCmd, ActiveState.Shell.Cmd, out output);
+            if (runResult.Equals(ActionResult.UserExit))
             {
-                outputBuilder.Append('\x00');
-                var exceptionString = string.Format("Caught exception: {0}", objException);
-                outputBuilder.Append(exceptionString);
-                output = outputBuilder.ToString();
-                session.Log(exceptionString);
-                ActiveState.RollbarHelper.Report(exceptionString);
+                // Catch cancel and return
+                return runResult;
+            }
+            else if (runResult == ActionResult.Failure)
+            {
+                Record record = new Record();
+                session.Log(string.Format("Output: {0}", output));
+                var errorOutput = FormatErrorOutput(output);
+                record.FormatString = string.Format("Failed with error:\n{0}", errorOutput);
+
+                session.Message(InstallMessage.Error | (InstallMessage)MessageBoxButtons.OK, record);
+                return runResult;
+            }
+            // The auth command did not fail but the username we expected is not present in the output meaning
+            // another user is logged into the State Tool 
+            else if (!output.Contains(username))
+            {
+                Record record = new Record();
+                var errorOutput = string.Format("Could not log in as {0}, currently logged in as another user. To correct this please start a command prompt and execute {1} auth logout and try again", username, stateToolPath);
+                record.FormatString = string.Format("Failed with error:\n{0}", errorOutput);
+
+                session.Message(InstallMessage.Error | (InstallMessage)MessageBoxButtons.OK, record);
                 return ActionResult.Failure;
             }
-            output = outputBuilder.ToString();
             return ActionResult.Success;
         }
 
@@ -201,18 +143,20 @@ namespace StateDeploy
             ActiveState.RollbarHelper.ConfigureRollbarSingleton();
 
             string stateToolPath;
-            var res = InstallStateTool(session, out stateToolPath);
+            ActionResult res = InstallStateTool(session, out stateToolPath);
             if (res != ActionResult.Success) {
                 return res;
             }
             session.Log("Starting state deploy with state tool at " + stateToolPath);
 
-            Status.ProgressBar.StatusMessage(session, string.Format("Deploying project {0}...", session.CustomActionData["PROJECT_OWNER_AND_NAME"]));
-            MessageResult statusResult = Status.ProgressBar.StatusMessage(session, string.Format("Preparing deployment of {0}...", session.CustomActionData["PROJECT_OWNER_AND_NAME"]));
-            if (statusResult == MessageResult.Cancel)
+            res = Login(session, stateToolPath);
+            if (res.Equals(ActionResult.Failure))
             {
-                return ActionResult.UserExit;
+                return res;
             }
+
+            Status.ProgressBar.StatusMessage(session, string.Format("Deploying project {0}...", session.CustomActionData["PROJECT_OWNER_AND_NAME"]));
+            Status.ProgressBar.StatusMessage(session, string.Format("Preparing deployment of {0}...", session.CustomActionData["PROJECT_OWNER_AND_NAME"]));
 
             var sequence = new ReadOnlyCollection<InstallSequenceElement>(
                 new[]
@@ -233,7 +177,7 @@ namespace StateDeploy
                     Status.ProgressBar.StatusMessage(session, seq.Description);
 
                     string output;
-                    var runResult = RunCommand(session, deployCmd, Shell.Cmd, out output);
+                    var runResult = ActiveState.Command.Run(session, deployCmd, ActiveState.Shell.Cmd, out output);
                     if (runResult.Equals(ActionResult.UserExit))
                     {
                         // Catch cancel and return
