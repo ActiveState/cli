@@ -194,11 +194,6 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
-    - name: Download Session Artifacts
-      uses: actions/download-artifact@v2
-      with:
-        name: session-build-${{ matrix.platform }}
-        path: build/
     - name: Install Go
       uses: actions/setup-go@v2
       with:
