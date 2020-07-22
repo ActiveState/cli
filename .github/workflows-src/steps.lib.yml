@@ -154,6 +154,7 @@ env:
 ---
 #@ def steps_build_state_msi():
 name: "Build State MSI"
+if: matrix.os == 'windows-latest'
 shell: bash
 run: |
   echo $MSI_CERT_BASE64 | base64 --decode > Cert.p12
@@ -168,6 +169,7 @@ env:
 ---
 #@ def steps_build_languages_msi():
 name: "Build Languages MSI"
+if: matrix.os == 'windows-latest'
 shell: bash
 run: |
   echo $MSI_CERT_BASE64 | base64 --decode > Cert.p12
