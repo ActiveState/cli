@@ -194,6 +194,11 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
+    - name: Download Shared Artifacts
+      uses: actions/download-artifact@v2
+      with:
+        name: session-shared-build
+        path: build/
     - name: Install Go
       uses: actions/setup-go@v2
       with:
