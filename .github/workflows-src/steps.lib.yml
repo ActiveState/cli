@@ -10,6 +10,12 @@ shell: bash
 run: state run build
 #@ end
 ---
+#@ def steps_build_installscripts():
+name: Build Install Scripts
+shell: bash
+run: state run build-install-scripts
+#@ end
+---
 #@ def steps_sign():
 name: Sign
 shell: bash
@@ -30,7 +36,7 @@ shell: powershell
 run: |
    $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
    $cert.Import('Cert.p12',$env:CODE_SIGNING_PASSWD,'DefaultKeySet')
-   Set-AuthenticodeSignature -FilePath installers\install.ps1 -Certificate $cert
+   Set-AuthenticodeSignature -FilePath build\install.ps1 -Certificate $cert
 env:
   CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
 #@ end

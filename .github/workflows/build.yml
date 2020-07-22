@@ -95,6 +95,9 @@ jobs:
     - name: Build
       shell: bash
       run: state run build
+    - name: Build Install Scripts
+      shell: bash
+      run: state run build-install-scripts
     - name: Sign
       shell: bash
       if: runner.os == 'Windows'
@@ -111,7 +114,7 @@ jobs:
       run: |
         $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
         $cert.Import('Cert.p12',$env:CODE_SIGNING_PASSWD,'DefaultKeySet')
-        Set-AuthenticodeSignature -FilePath installers\install.ps1 -Certificate $cert
+        Set-AuthenticodeSignature -FilePath build\install.ps1 -Certificate $cert
       env:
         CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
     - name: Generate Update
