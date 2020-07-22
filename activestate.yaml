@@ -180,6 +180,7 @@ scripts:
       msbuild.exe installers/msi-language/Deploy.wixproj /target:Build "//p:Configuration=Release;Platform=x64;RunWixToolsOutOfProc=true;OutDir=$dir\\build\\msi-language\\"
       echo "Copying MSI to build/msi/${1##*/}.msi"
       cp build/msi-language/en-us/Deploy.msi "build/msi/${1##*/}.msi"
+      rm -Rf build/msi-language
   - name: build-base-language-msi
     description: |
       Builds the language MSI with no project information, requires that you have .NET 4.x installed and on PATH.
@@ -201,6 +202,7 @@ scripts:
       msbuild.exe installers/msi-language/Deploy.wixproj /target:Build "//p:Configuration=Release;Platform=x64;RunWixToolsOutOfProc=true;OutDir=$dir\\build\\msi-language\\"
       echo "Copying MSI to build/msi/base.msi"
       cp build/msi-language/en-us/Deploy.msi "build/msi/base.msi"
+      rm -Rf build/msi-language
   - name: build-workflows
     Description: Generates our github workflows
     value: |

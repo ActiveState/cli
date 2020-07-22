@@ -267,6 +267,11 @@ jobs:
       uses: actions/download-artifact@v2
       with:
         path: build/
+    - name: Sanitize All Session Artifacts
+      shell: bash
+      run: |
+        find . -mindepth 2 -maxdepth 2 -print0 | xargs -0 -I file rsync -av file .
+        rm -Rf session*
     - name: Preprocess
       shell: bash
       run: |
