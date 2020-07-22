@@ -91,7 +91,6 @@ function errorOccured($suppress, $errMsg) {
 }
 
 function download([string] $url, [string] $out) {
-    $Stoploop = $false
     [int]$Retrycount = "0"
 
     do {
