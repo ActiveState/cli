@@ -48,6 +48,14 @@ scripts:
       $constants.SET_ENV
       export GOOS=${1}
       go build -tags "internal $GO_BUILD_TAGS" -o ${2} $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
+  - name: generate-version
+    language: bash
+    description: Generate version file
+    value: |
+      set -e
+      $constants.SET_ENV
+      mkdir -p build/
+      go run scripts/version-generator/main.go build/update
   - name: generate-update
     language: bash
     description: Generate update files

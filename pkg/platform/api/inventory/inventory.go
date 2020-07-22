@@ -33,7 +33,7 @@ func Init() (inventory_operations.ClientService, runtime.ClientTransport) {
 // New initializes a new api client
 func New(serviceURL *url.URL) (inventory_operations.ClientService, runtime.ClientTransport) {
 	transportRuntime := httptransport.New(serviceURL.Host, serviceURL.Path, []string{serviceURL.Scheme})
-	transportRuntime.Transport = api.NewUserAgentTripper()
+	transportRuntime.Transport = api.NewRoundTripper()
 
 	//transportRuntime.SetDebug(true)
 

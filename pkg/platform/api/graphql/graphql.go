@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 
@@ -78,6 +79,8 @@ func (c *GQLClient) Run(request Request, response interface{}) error {
 	if bearerToken != "" {
 		graphRequest.Header.Set("Authorization", "Bearer "+bearerToken)
 	}
+
+	graphRequest.Header.Set("X-Requestor", logging.UniqID())
 
 	return c.graphqlClient.Run(ctx, graphRequest, response)
 }

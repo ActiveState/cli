@@ -195,39 +195,38 @@ func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGet
 		}
 	}
 
-	downloadArtfs, unpackArchives := runtimeAssembler.ArtifactsToDownloadAndUnpack()
+	downloadArtfs := runtimeAssembler.ArtifactsToDownload()
 
-	if len(downloadArtfs) == 0 && len(unpackArchives) == 0 {
-		// Already installed, no need to download or install
-		logging.Debug("Nothing to download")
-		return runtimeAssembler, false, nil
-	}
+	if len(downloadArtfs) != 0 {
+		if installer.onDownload != nil {
+			installer.onDownload()
+		}
 
-	if installer.onDownload != nil {
-		installer.onDownload()
-	}
+		progress := progress.New(mpb.WithOutput(os.Stderr))
+		defer progress.Close()
 
-	progress := progress.New(mpb.WithOutput(os.Stderr))
-	defer progress.Close()
+		unpackArchives := map[string]*HeadChefArtifact{}
+		if len(downloadArtfs) > 0 {
+			archives, fail := installer.runtimeDownloader.Download(downloadArtfs, runtimeAssembler, progress)
+			if fail != nil {
+				progress.Cancel()
+				return nil, false, fail
+			}
 
-	if len(downloadArtfs) > 0 {
-		archives, fail := installer.runtimeDownloader.Download(downloadArtfs, runtimeAssembler, progress)
+			for k, v := range archives {
+				unpackArchives[k] = v
+			}
+		}
+
+		fail = installer.InstallFromArchives(unpackArchives, runtimeAssembler, progress)
 		if fail != nil {
 			progress.Cancel()
 			return nil, false, fail
 		}
-
-		for k, v := range archives {
-			unpackArchives[k] = v
-		}
 	}
 
-	fail = installer.InstallFromArchives(unpackArchives, runtimeAssembler, progress)
-	if fail != nil {
-		progress.Cancel()
-		return nil, false, fail
-	}
-
+	// We still want to run PostInstall because even though no new artifact might be downloaded we still might be
+	// deleting some already cached ones
 	err := runtimeAssembler.PostInstall()
 	if err != nil {
 		return nil, false, failures.FailRuntime.Wrap(err, "error during post installation step")
