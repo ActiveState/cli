@@ -99,10 +99,10 @@ function download([string] $url, [string] $out) {
             $downloader = new-object System.Net.WebClient
             if ($out -eq "") {
                 return $downloader.DownloadString($url)
-			}
+            }
             else {
                 return $downloader.DownloadFile($url, $out)
-			}
+            }
         }
         catch {
             if ($Retrycount -gt 5){
