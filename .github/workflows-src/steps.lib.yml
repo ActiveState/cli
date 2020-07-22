@@ -72,6 +72,14 @@ env:
   INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
 #@ end
 ---
+#@ def steps_uploadsharedartifacts():
+name: "Upload Shared Artifacts"
+uses: actions/upload-artifact@v2
+with:
+  name: session-shared-build
+  path: build/
+#@ end
+---
 #@ def steps_uploadsessartifacts():
 name: "Upload Session Artifacts"
 uses: actions/upload-artifact@v2
@@ -85,6 +93,14 @@ name: "Upload Artifacts"
 uses: actions/upload-artifact@v2
 with:
   name: build
+  path: build/
+#@ end
+---
+#@ def steps_downloadsharedartifacts():
+name: "Download Shared Artifacts"
+uses: actions/download-artifact@v2
+with:
+  name: session-shared-build
   path: build/
 #@ end
 ---
@@ -108,6 +124,7 @@ name: "Cleanup Session Artifacts"
 uses: geekyeggo/delete-artifact@v1
 with:
   name: |
+    session-shared-build
     session-build-ubuntu-latest
     session-build-macos-latest
     session-build-windows-latest

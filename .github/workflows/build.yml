@@ -42,10 +42,10 @@ jobs:
     - name: Generate Version
       shell: bash
       run: state run generate-version
-    - name: Upload Session Artifacts
+    - name: Upload Shared Artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: session-build-${{ matrix.platform }}
+        name: session-shared-build
         path: build/
   build:
     name: Build
@@ -69,10 +69,10 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
-    - name: Download Session Artifacts
+    - name: Download Shared Artifacts
       uses: actions/download-artifact@v2
       with:
-        name: session-build-${{ matrix.platform }}
+        name: session-shared-build
         path: build/
     - name: Install Go
       uses: actions/setup-go@v2
@@ -323,6 +323,7 @@ jobs:
       uses: geekyeggo/delete-artifact@v1
       with:
         name: |
+          session-shared-build
           session-build-ubuntu-latest
           session-build-macos-latest
           session-build-windows-latest
