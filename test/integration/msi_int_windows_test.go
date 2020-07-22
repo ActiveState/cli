@@ -7,12 +7,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 )
 
 var (
-	msiDir = mustFilepathAbs(`..\..\build\msi`)
-	logDir = mustFilepathAbs(`..\..\build`)
+	msiDir = mustFilepathByProjectRoot(`/build/msi`)
+	logDir = mustFilepathByProjectRoot(`/build`)
 
 	msiExt        = ".msi"
 	perlMsiPrefix = "ActivePerl"
@@ -23,12 +24,9 @@ var (
 	checkPerlModulesCmd = "perldoc -l DBD::Pg"
 )
 
-func mustFilepathAbs(path string) string {
-	p, err := filepath.Abs(path)
-	if err != nil {
-		panic(err)
-	}
-	return p
+func mustFilepathByProjectRoot(path string) string {
+	root := environment.GetRootPathUnsafe()
+	return filepath.Join(root, path)
 }
 
 type msiFile struct {
@@ -69,7 +67,7 @@ func msiFilePaths(dir, prefix string) ([]string, error) {
 }
 
 func TestActivePerl(t *testing.T) {
-	if !e2e.RunningOnCI() {
+	if !e2e.RunningOnCI() && false {
 		t.Skipf("Skipping; Not running on CI")
 	}
 
