@@ -43,21 +43,6 @@ steps:
   - #@ steps_build()
   - #@ steps_sign()
   - #@ steps_genupdate()
-  - #@ steps_uploadsessartifacts()
-#@ end
-
-#@ def jobs_build_msi():
-name: Build MSI's
-runs-on: windows-latest
-needs: build
-env: *env
-timeout-minutes: 10
-steps:
-  - name: "Checkout code"
-    uses: actions/checkout@v2
-  - #@ steps_downloadsessartifacts()
-  - #@ steps_installgo()
-  - #@ steps_setup()
   - #@ steps_build_state_msi()
   - #@ steps_build_languages_msi()
   - #@ steps_uploadsessartifacts()
@@ -98,7 +83,7 @@ steps:
 
 #@ def jobs_deploy():
 name: Deploy
-needs: [ build, build_msi, unittest ]
+needs: [ build, unittest ]
 runs-on: ubuntu-latest
 env: *env
 timeout-minutes: 10

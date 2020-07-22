@@ -108,40 +108,6 @@ jobs:
     - name: Generate Update
       shell: bash
       run: state run generate-update
-    - name: Upload Session Artifacts
-      uses: actions/upload-artifact@v2
-      with:
-        name: session-build-${{ matrix.platform }}
-        path: build/
-  build_msi:
-    name: Build MSI's
-    runs-on: windows-latest
-    needs: build
-    env:
-      ACTIVESTATE_CLI_DISABLE_RUNTIME: true
-      GOFLAGS: -mod=vendor
-      SHELL: bash
-      GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    timeout-minutes: 10
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-    - name: Download Session Artifacts
-      uses: actions/download-artifact@v2
-      with:
-        name: session-build-${{ matrix.platform }}
-        path: build/
-    - name: Install Go
-      uses: actions/setup-go@v2
-      with:
-        go-version: ${{ matrix.go-version }}
-    - name: Setup
-      shell: bash
-      run: |
-        bin=$(pwd)/.github/deps/${{ runner.os }}/bin
-        echo "Adding $bin to PATH"
-        echo "::add-path::$bin"
-        printenv
     - name: Build State MSI
       shell: bash
       run: |
@@ -273,7 +239,6 @@ jobs:
     name: Deploy
     needs:
     - build
-    - build_msi
     - unittest
     runs-on: ubuntu-latest
     env:
