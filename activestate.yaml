@@ -137,8 +137,8 @@ scripts:
     if: eq .OS.Name "Windows"
     value: |
       set -e
-      if [ "$#" -ne 4 ]; then
-        echo "Required Arguments: <Owner/Name> <Version> <Release Notes URL> <Shortcuts> (comma-separated list of shortcuts to build)"
+      if [ "$#" -ne 5 ]; then
+        echo "Required Arguments: <Owner/Name> <Version> <Visibility> <Release Notes URL> <Shortcuts> (comma-separated list of shortcuts to build)"
         exit 1
       fi
 
@@ -164,8 +164,9 @@ scripts:
       sed -i "s^{{$(pad PROJECT_NAME)}}^${1##*/}^g" installers/msi-language/Product.wxs
 
       sed -i "s^{{VERSION}}^${2}^g" installers/msi-language/Product.wxs
-      sed -i "s^{{$(pad REL_NOTES)}}^${3}^g" installers/msi-language/Product.wxs
-      sed -i "s^{{$(pad SHORTCUTS)}}^${4}^g" installers/msi-language/Product.wxs
+      sed -i "s^{{$(pad PRIVATE)}}^${3}^g" installers/msi-language/Product.wxs
+      sed -i "s^{{$(pad REL_NOTES)}}^${4}^g" installers/msi-language/Product.wxs
+      sed -i "s^{{$(pad SHORTCUTS)}}^${5}^g" installers/msi-language/Product.wxs
       sed -i "s^{{ID}}^$(go run scripts/uuid-generator/main.go $1)^g" installers/msi-language/Product.wxs
       sed -i "s^{{ICON}}^./assets/perl.ico^g" installers/msi-language/Product.wxs
 
