@@ -1,4 +1,4 @@
-#@ load("steps.lib.yml", "steps_preprocess", "steps_build", "steps_genupdate", "steps_installgo", "steps_setup", "steps_test", "steps_inttest", "steps_uploadartifacts", "steps_uploadsessartifacts", "steps_downloadsessartifacts", "steps_deletesessartifacts", "steps_deploy", "steps_build_state_msi", "steps_build_languages_msi", "steps_cleanbuild", "steps_validate", "steps_sign")
+#@ load("steps.lib.yml", "steps_preprocess", "steps_build", "steps_genupdate", "steps_installgo", "steps_setup", "steps_test", "steps_inttest", "steps_uploadartifacts", "steps_uploadsessartifacts", "steps_downloadartifacts", "steps_downloadsessartifacts", "steps_deletesessartifacts", "steps_deploy", "steps_build_state_msi", "steps_build_languages_msi", "steps_cleanbuild", "steps_validate", "steps_sign")
 
 strategy: &strategy
   fail-fast: false
@@ -76,6 +76,7 @@ steps:
   - #@ steps_setup()
   - #@ steps_preprocess()
   - #@ steps_build()
+  - #@ steps_downloadartifacts()
   - #@ steps_inttest()
 #@ end
 

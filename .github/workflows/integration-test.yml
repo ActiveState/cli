@@ -47,6 +47,11 @@ jobs:
     - name: Build
       shell: bash
       run: state run build
+    - name: Download Artifacts
+      uses: actions/download-artifact@v2
+      with:
+        name: build
+        path: build/
     - name: Integration Tests
       shell: bash
       run: |
