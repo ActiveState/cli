@@ -24,6 +24,8 @@ namespace StateDeploy
     {
         public static ActionResult InstallStateTool(Session session, out string stateToolPath)
         {
+            ActiveState.RollbarHelper.ConfigureRollbarSingleton();
+
             stateToolPath = "";
             session.Log("Installing State Tool if necessary");
             if (session.CustomActionData["STATE_TOOL_INSTALLED"] == "true")
@@ -49,27 +51,33 @@ namespace StateDeploy
             catch (WebException e)
             {
                 session.Log(string.Format("Encoutered exception downloading file: {0}", e.ToString()));
+                ActiveState.RollbarHelper.Report(string.Format("Encoutered exception downloading file: {0}", e.ToString()));
                 return ActionResult.Failure;
             }
 
-            string installCmd = string.Format("Set-ExecutionPolicy Unrestricted -Scope Process; {0} -n -t {1}", scriptPath, installPath);
+            string installCmd = string.Format("Set-PSDebug -trace 2; Set-ExecutionPolicy Unrestricted -Scope Process; \"{0}\" -n -t \"{1}\"", scriptPath, installPath);
             session.Log(string.Format("Running install command: {0}", installCmd));
 
-            ActionResult result = RunCommand(session, installCmd, Shell.Powershell);
+            string output;
+            ActionResult result = RunCommand(session, installCmd, Shell.Powershell, out output);
             if (result.Equals(ActionResult.UserExit))
             {
                 // Catch cancel and return
+                return result;
+            }
+            else if (result.Equals(ActionResult.Failure))
+            {
+                Record record = new Record();
+                var errorOutput = FormatErrorOutput(output);
+                record.FormatString = String.Format("state tool installation failed with error:\n{0}", errorOutput);
+
+                MessageResult msgRes = session.Message(InstallMessage.Error | (InstallMessage)MessageBoxButtons.OK, record);
                 return result;
             }
             Status.ProgressBar.Increment(session, 1);
 
             stateToolPath = Path.Combine(installPath, "state.exe");
             return result;
-        }
-
-        private static ActionResult RunCommand(Session session, string cmd, Shell shell=Shell.Cmd)
-        {
-            return RunCommand(session, cmd, shell, out _);
         }
 
         private static ActionResult RunCommand(Session session, string cmd, Shell shell, out string output)
@@ -81,7 +89,13 @@ namespace StateDeploy
                 switch(shell)
                 {
                     case Shell.Powershell:
-                        procStartInfo = new ProcessStartInfo("powershell.exe", cmd);
+                        var powershellExe = Path.Combine(Environment.SystemDirectory, "WindowsPowershell", "v1.0", "powershell.exe");
+                        if (!File.Exists(powershellExe))
+                        {
+                            session.Log("Did not find powershell @" + powershellExe);
+                            powershellExe = "powershell.exe";
+                        }
+                        procStartInfo = new ProcessStartInfo(powershellExe, cmd);
                         break;
                     default:
                         procStartInfo = new ProcessStartInfo("cmd.exe", "/c " + cmd);
@@ -150,13 +164,21 @@ namespace StateDeploy
                     outputBuilder.AppendFormat("Process returned with exit code: {0}", exitCode);
                     output = outputBuilder.ToString();
                     session.Log("returning due to return code - error");
+                    ActiveState.RollbarHelper.Report(
+                        string.Format("failed due to return code: {0} - error", exitCode), 
+                        new Dictionary<string, object> { { "output", output }, { "cmd", cmd } }
+                    );
                     return ActionResult.Failure;
                 }
             }
             catch (Exception objException)
             {
+                outputBuilder.Append('\x00');
+                var exceptionString = string.Format("Caught exception: {0}", objException);
+                outputBuilder.Append(exceptionString);
                 output = outputBuilder.ToString();
-                session.Log(string.Format("Caught exception: {0}", objException));
+                session.Log(exceptionString);
+                ActiveState.RollbarHelper.Report(exceptionString);
                 return ActionResult.Failure;
             }
             output = outputBuilder.ToString();
@@ -179,6 +201,8 @@ namespace StateDeploy
         [CustomAction]
         public static ActionResult StateDeploy(Session session)
         {
+            ActiveState.RollbarHelper.ConfigureRollbarSingleton();
+
             string stateToolPath;
             var res = InstallStateTool(session, out stateToolPath);
             if (res != ActionResult.Success) {
@@ -232,6 +256,7 @@ namespace StateDeploy
             catch (Exception objException)
             {
                 session.Log(string.Format("Caught exception: {0}", objException));
+                ActiveState.RollbarHelper.Report(string.Format("Caught exception: {0}", objException));
                 return ActionResult.Failure;
             }
 

@@ -11,9 +11,10 @@ import (
 )
 
 type RegistryKeyMock struct {
-	getCalls []string
-	setCalls []string
-	delCalls []string
+	getCalls       []string
+	setCalls       []string
+	setExpandCalls []string
+	delCalls       []string
 
 	getResults map[string]RegistryValue
 	setResults map[string]error
@@ -35,6 +36,14 @@ func (r *RegistryKeyMock) GetStringValue(name string) (string, uint32, error) {
 
 func (r *RegistryKeyMock) SetStringValue(name, value string) error {
 	r.setCalls = append(r.setCalls, name+"="+value)
+	if v, ok := r.setResults[name]; ok {
+		return v
+	}
+	return nil
+}
+
+func (r *RegistryKeyMock) SetExpandStringValue(name, value string) error {
+	r.setExpandCalls = append(r.setExpandCalls, name+"="+value)
 	if v, ok := r.setResults[name]; ok {
 		return v
 	}
@@ -144,6 +153,7 @@ func TestCmdEnv_unset(t *testing.T) {
 
 			registryValidator(t, rm.getCalls, tt.want.registryGetCalls, "GET")
 			registryValidator(t, rm.setCalls, tt.want.registrySetCalls, "SET")
+			registryValidator(t, rm.setExpandCalls, &[]string{}, "EXPAND")
 			registryValidator(t, rm.delCalls, tt.want.registryDelCalls, "DEL")
 		})
 	}
@@ -320,7 +330,7 @@ func registryValidator(t *testing.T, got []string, want *[]string, name string) 
 			if exclude && contains {
 				t.Errorf("%s: should not contain: %s, calls: %v", name, v, got)
 			}
-			if ! exclude && ! contains {
+			if !exclude && !contains {
 				t.Errorf("%s: should have contained: %s, calls: %v", name, v, got)
 			}
 		}

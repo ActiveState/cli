@@ -10,8 +10,8 @@ import (
 	"runtime"
 
 	"github.com/ActiveState/archiver"
+
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/logging"
 )
 
 // SingleUnarchiver is an interface for an unarchiver that can unpack the next file
@@ -97,7 +97,7 @@ func (ua *Unarchiver) Unarchive(archiveStream io.Reader, archiveSize int64, dest
 			return
 		}
 
-		logging.Debug("Extracted %s File size: %d", f.Name(), f.Size())
+		//logging.Debug("Extracted %s File size: %d", f.Name(), f.Size())
 		ua.notifier(f.Name(), f.Size(), f.IsDir())
 	}
 

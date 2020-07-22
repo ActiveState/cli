@@ -1,4 +1,4 @@
-#@ load("steps.lib.yml", "steps_preprocess", "steps_build", "steps_genupdate", "steps_installgo", "steps_setup", "steps_test", "steps_inttest", "steps_uploadartifacts", "steps_uploadsessartifacts", "steps_downloadartifacts", "steps_downloadsessartifacts", "steps_deletesessartifacts", "steps_deploy", "steps_build_state_msi", "steps_build_languages_msi", "steps_cleanbuild", "steps_validate", "steps_sign")
+#@ load("steps.lib.yml", "steps_genversion", "steps_preprocess", "steps_build", "steps_genupdate", "steps_installgo", "steps_setup", "steps_test", "steps_inttest", "steps_uploadartifacts", "steps_uploadsessartifacts", "steps_downloadartifacts", "steps_downloadsessartifacts", "steps_deletesessartifacts", "steps_deploy", "steps_build_state_msi", "steps_build_languages_msi", "steps_cleanbuild", "steps_validate", "steps_sign")
 
 strategy: &strategy
   fail-fast: false
@@ -12,8 +12,24 @@ env: &env
   SHELL: bash
   GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+#@ def jobs_prepare():
+name: "Prepare"
+runs-on: ubuntu-latest
+env: *env
+timeout-minutes: 10
+steps:
+  - name: "Checkout code"
+    uses: actions/checkout@v2
+  - #@ steps_validate()
+  - #@ steps_installgo()
+  - #@ steps_setup()
+  - #@ steps_genversion()
+  - #@ steps_uploadsessartifacts()
+#@ end
+
 #@ def jobs_build():
 name: Build
+needs: [ prepare ]
 strategy: *strategy
 runs-on: *runs-on
 env: *env
@@ -21,6 +37,7 @@ timeout-minutes: 10
 steps:
   - name: "Checkout code"
     uses: actions/checkout@v2
+  - #@ steps_downloadsessartifacts()
   - #@ steps_installgo()
   - #@ steps_setup()
   - #@ steps_preprocess()
@@ -51,11 +68,13 @@ steps:
 name: "Unit Test"
 strategy: *strategy
 runs-on: *runs-on
+needs: [ prepare ]
 env: *env
 timeout-minutes: 10
 steps:
   - name: "Checkout code"
     uses: actions/checkout@v2
+  - #@ steps_downloadsessartifacts()
   - #@ steps_installgo()
   - #@ steps_setup()
   - #@ steps_preprocess()
@@ -89,7 +108,6 @@ timeout-minutes: 10
 steps:
   - name: "Checkout code"
     uses: actions/checkout@v2
-  - #@ steps_validate()
   - #@ steps_installgo()
   - #@ steps_setup()
   - #@ steps_downloadsessartifacts()

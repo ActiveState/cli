@@ -467,7 +467,7 @@ error_state_run_undefined_name:
 error_state_run_unknown_name:
   other: The script '{{.Name}}' is not defined in activestate.yaml.
 info_state_run_activating_state:
-  other: This script requires an activated state. Activating it now. To bypass this, use the --standalone flag.
+  other: "This script requires an activated state. Activating it now. To bypass this set `standalone: true` on this script in your activestate.yaml."
 error_state_run_activate:
   other: Unable to activate a state for running the script in. Try manually running "state activate" first.
 error_state_run_standalone_conflict:
@@ -547,7 +547,11 @@ env_inherit_inherit_aborted:
 show_project:
   other: Show information about a project
 arg_state_show_remote_description:
-  other: Path to project
+  other: Namespace of remote project
+private:
+  other: Private
+public:
+  other: Public
 field_namespace:
   other: Namespace
 field_platforms:

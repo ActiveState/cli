@@ -10,6 +10,8 @@ namespace Uninstall
         [CustomAction]
         public static ActionResult Uninstall(Session session)
         {
+            ActiveState.RollbarHelper.ConfigureRollbarSingleton();
+
             session.Log("Begin uninstallation");
 
             string installDir = session.CustomActionData["REMEMBER"];
@@ -18,6 +20,7 @@ namespace Uninstall
             if (result.Equals(ActionResult.Failure))
             {
                 session.Log("Could not remove installation directory");
+                ActiveState.RollbarHelper.Report("Could not remove installation directory");
                 return ActionResult.Failure;
             }
 
@@ -26,6 +29,7 @@ namespace Uninstall
             if (result.Equals(ActionResult.Failure))
             {
                 session.Log("Could not remove shortcuts directory");
+                ActiveState.RollbarHelper.Report("Could not remove shortcuts directory");
                 return ActionResult.Failure;
             }
 
@@ -47,6 +51,7 @@ namespace Uninstall
                 catch (IOException e)
                 {
                     session.Log(string.Format("Could not delete install directory, got error: {0}", e.ToString()));
+                    ActiveState.RollbarHelper.Report(string.Format("Could not delete install directory, got error: {0}", e.ToString()));
                     return ActionResult.Failure;
                 }
             }

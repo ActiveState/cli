@@ -11,6 +11,8 @@ namespace StateCommandExists
         {
             session.Log("Checking State Tool installation");
 
+            ActiveState.RollbarHelper.ConfigureRollbarSingleton();
+
             var values = Environment.GetEnvironmentVariable("PATH");
             foreach (var path in values.Split(Path.PathSeparator))
             {

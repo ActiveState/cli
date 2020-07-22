@@ -12,6 +12,8 @@ namespace Rollback
         {
             session.Log("Begin rollback of state tool installation and deploy");
 
+            ActiveState.RollbarHelper.ConfigureRollbarSingleton();
+
             RollbackStateToolInstall(session);
             RollbackDeploy(session);
             

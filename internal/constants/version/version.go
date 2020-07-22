@@ -4,9 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net/http"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"regexp"
 
+	"github.com/ActiveState/cli/internal/environment"
 	"github.com/blang/semver"
 )
 
@@ -88,20 +91,29 @@ func (v *Incrementation) Type() (string, error) {
 	return Zeroed, nil
 }
 
-func fetchLatestVersionString(branch string) (string, error) {
-	// linux-amd64.json is our single source of truth for the latest version number
-	stateURL := "https://s3.ca-central-1.amazonaws.com/cli-update/update/state/%s/linux-amd64.json"
-	resp, err := http.Get(fmt.Sprintf(stateURL, branch))
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
+func latestVersionString(branch string) (string, error) {
 	type versionJSON struct {
 		Version string
 	}
 	var v versionJSON
-	err = json.NewDecoder(resp.Body).Decode(&v)
+
+	rootPath, err := environment.GetRootPath()
+	if err != nil {
+		return "", err
+	}
+
+	versionFilePath := filepath.Join(rootPath, "build", "update", "version.json")
+	_, err = os.Stat(versionFilePath)
+	if err != nil {
+		return "", fmt.Errorf("Could not access version file at: %s", versionFilePath)
+	}
+
+	data, err := ioutil.ReadFile(versionFilePath)
+	if err != nil {
+		return "", err
+	}
+
+	err = json.Unmarshal(data, &v)
 	if err != nil {
 		return "", err
 	}
@@ -110,7 +122,7 @@ func fetchLatestVersionString(branch string) (string, error) {
 }
 
 func masterVersion(branchName string) (*semver.Version, error) {
-	versionString, err := fetchLatestVersionString(branchName)
+	versionString, err := latestVersionString(branchName)
 	if err != nil {
 		return nil, err
 	}
