@@ -217,7 +217,7 @@ jobs:
       run: state run build
     - name: Integration Tests
       shell: bash
-      run: go test --run="TestActivePerl/.*" timeout 20m ./test/integration -v
+      run: go test --run="TestActivePerl/.*" --timeout 20m ./test/integration -v
       env:
         INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
         INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
