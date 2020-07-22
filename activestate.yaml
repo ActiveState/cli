@@ -177,6 +177,7 @@ scripts:
       Builds the language MSI with no project information, requires that you have .NET 4.x installed and on PATH.
       The resulting MSI requires project information be injected in order to be functional.
     standalone: true
+    language: bash
     if: eq .OS.Name "Windows"
     value: |
       set -e
@@ -194,7 +195,8 @@ scripts:
       echo "Copying MSI to build/msi/base.msi"
       cp build/msi-language/en-us/Deploy.msi "build/msi/base.msi"
   - name: build-workflows
-    Description: Generates our github workflows
+    language: bash
+    description: Generates our github workflows
     value: |
       if ! type "ytt" &> /dev/null; then
         pushd ~
@@ -210,6 +212,7 @@ scripts:
       $scripts.build-for.path() "linux" ./.github/deps/Linux/bin/state
       $scripts.build-for.path() "darwin" ./.github/deps/macOS/bin/state
   - name: test
+    language: bash
     description: Runs unit tests (not integration tests)
     value: |
       ACTIVESTATE_PROJECT="" go test -parallel 12 $(go list ./... | grep -v /test/integration)
