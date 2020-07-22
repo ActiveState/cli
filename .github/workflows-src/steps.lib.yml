@@ -60,7 +60,9 @@ run: |
 #@ def steps_inttest():
 name: "Integration Tests"
 shell: bash
-run: go test --run="TestActivePerl/.*" --timeout 20m ./test/integration -v
+run: |
+  ls -l ./build/msi
+  go test --run="TestActivePerl/.*" --timeout 20m ./test/integration -v
 env:
   INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
   INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
