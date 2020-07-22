@@ -247,6 +247,11 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
+    - name: Download Session Artifacts
+      uses: actions/download-artifact@v2
+      with:
+        name: session-build
+        path: build/
     - name: Install Go
       uses: actions/setup-go@v2
       with:
@@ -268,11 +273,6 @@ jobs:
     - name: Build
       shell: bash
       run: state run build
-    - name: Download Artifacts
-      uses: actions/download-artifact@v2
-      with:
-        name: build
-        path: build/
     - name: Integration Tests
       shell: bash
       run: |
