@@ -70,7 +70,7 @@ env:
 name: "Upload Session Artifacts"
 uses: actions/upload-artifact@v2
 with:
-  name: session-build
+  name: session-build-${{ matrix.platform }}
   path: build/
 #@ end
 ---
@@ -82,20 +82,29 @@ with:
   path: build/
 #@ end
 ---
+#@ def steps_downloadallsessartifacts():
+name: "Download All Session Artifacts"
+uses: actions/download-artifact@v2
+with:
+  path: build/
+#@ end
+---
 #@ def steps_downloadsessartifacts():
 name: "Download Session Artifacts"
 uses: actions/download-artifact@v2
 with:
-  name: session-build
+  name: session-build-${{ matrix.platform }}
   path: build/
 #@ end
 ---
 #@ def steps_deletesessartifacts():
 name: "Cleanup Session Artifacts"
 uses: geekyeggo/delete-artifact@v1
-if: always()
 with:
-  name: session-build
+  name: |
+    session-build-ubuntu-latest
+    session-build-macos-latest
+    session-build-windows-latest
 #@ end
 ---
 #@ def steps_validate():
