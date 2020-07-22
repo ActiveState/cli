@@ -17,6 +17,7 @@ import (
 	vcsClient "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/version_control"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	auth "github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
 var (
@@ -537,7 +538,14 @@ func FetchOrderFromCommit(commitID strfmt.UUID) (*mono_models.Order, error) {
 	params := vcsClient.NewGetOrderParams()
 	params.CommitID = commitID
 
-	res, err := mono.New().VersionControl.GetOrder(params, nil)
+	var res *vcsClient.GetOrderOK
+	var err error
+	if auth.Get().Authenticated() {
+		res, err = mono.New().VersionControl.GetOrder(params, authentication.ClientAuth())
+	} else {
+		// Allow activation of public projects if user is not authenticated
+		res, err = mono.New().VersionControl.GetOrder(params, nil)
+	}
 	if err != nil {
 		return nil, errors.New(api.ErrorMessageFromPayload(err))
 	}
