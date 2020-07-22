@@ -105,6 +105,15 @@ jobs:
       env:
         CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
         MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
+    - name: Sign install.PS1
+      if: matrix.os == 'windows-latest'
+      shell: powershell
+      run: |
+        $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
+        $cert.Import('Cert.p12',$env:CODE_SIGNING_PASSWD,'DefaultKeySet')
+        Set-AuthenticodeSignature -FilePath installers\install.ps1 -Certificate $cert
+      env:
+        CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
     - name: Generate Update
       shell: bash
       run: state run generate-update
