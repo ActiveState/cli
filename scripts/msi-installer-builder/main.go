@@ -166,7 +166,7 @@ func run(args []string) error {
 		return err
 	}
 
-	f, err := os.OpenFile(filepath.FromSlash(OutFile), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0533)
+	f, err := os.Create(filepath.FromSlash(OutFile))
 	if err != nil {
 		return err
 	}
