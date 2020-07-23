@@ -138,7 +138,7 @@ scripts:
     value: |
       set -e
 
-      PROJECT_OWNER_NAME=${1:-ActiveState/ActivePerl-5.26}
+      PROJECT_OWNER_NAME=${2:-ActiveState/ActivePerl-5.26}
       PROJECT_NAME=${PROJECT_OWNER_NAME##*/}
 
       export GOFLAGS='-mod=vendor'
