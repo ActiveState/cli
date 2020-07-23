@@ -1,13 +1,25 @@
+#@ def steps_genversion():
+name: "Generate Version"
+shell: bash
+run: state run generate-version
+#@ end
+---
 #@ def steps_build():
 name: Build
 shell: bash
 run: state run build
 #@ end
 ---
+#@ def steps_build_installscripts():
+name: Build Install Scripts
+shell: bash
+run: state run build-install-scripts
+#@ end
+---
 #@ def steps_sign():
 name: Sign
 shell: bash
-if: matrix.os == 'windows-latest'
+if: runner.os == 'Windows'
 run: |
   echo $MSI_CERT_BASE64 | base64 --decode > Cert.p12
   export PATH=/c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/:/c/Program\ Files\ \(x86\)/Windows\ Kits/10/bin/10.0.16299.0/x86/:$PATH
@@ -15,6 +27,18 @@ run: |
 env:
   CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
   MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
+#@ end
+---
+#@ def steps_sign_installscript():
+name: "Sign install.PS1"
+if: runner.os == 'Windows'
+shell: powershell
+run: |
+   $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
+   $cert.Import('Cert.p12',$env:CODE_SIGNING_PASSWD,'DefaultKeySet')
+   Set-AuthenticodeSignature -FilePath build\install.ps1 -Certificate $cert
+env:
+  CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
 #@ end
 ---
 #@ def steps_genupdate():

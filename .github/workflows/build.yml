@@ -9,8 +9,48 @@ name: Build-Test-Deploy
     - synchronize
     - reopened
 jobs:
+  prepare:
+    name: Prepare
+    runs-on: ubuntu-latest
+    env:
+      ACTIVESTATE_CLI_DISABLE_RUNTIME: true
+      GOFLAGS: -mod=vendor
+      SHELL: bash
+      GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    timeout-minutes: 10
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - name: Validate
+      shell: bash
+      run: |
+        if [ "${GITHUB_REF##*/}" != "master" ] && [ "${{ contains(toJson(github.event.pull_request.labels), 'version:') }}" != "true" ]; then
+          echo "Version label must be set"
+          exit 1
+        fi
+    - name: Install Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: ${{ matrix.go-version }}
+    - name: Setup
+      shell: bash
+      run: |
+        bin=$(pwd)/.github/deps/${{ runner.os }}/bin
+        echo "Adding $bin to PATH"
+        echo "::add-path::$bin"
+        printenv
+    - name: Generate Version
+      shell: bash
+      run: state run generate-version
+    - name: Upload Session Artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: session-build
+        path: build/
   build:
     name: Build
+    needs:
+    - prepare
     strategy:
       matrix:
         go-version:
@@ -29,6 +69,11 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
+    - name: Download Session Artifacts
+      uses: actions/download-artifact@v2
+      with:
+        name: session-build
+        path: build/
     - name: Install Go
       uses: actions/setup-go@v2
       with:
@@ -50,9 +95,12 @@ jobs:
     - name: Build
       shell: bash
       run: state run build
+    - name: Build Install Scripts
+      shell: bash
+      run: state run build-install-scripts
     - name: Sign
       shell: bash
-      if: matrix.os == 'windows-latest'
+      if: runner.os == 'Windows'
       run: |
         echo $MSI_CERT_BASE64 | base64 --decode > Cert.p12
         export PATH=/c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/:/c/Program\ Files\ \(x86\)/Windows\ Kits/10/bin/10.0.16299.0/x86/:$PATH
@@ -60,6 +108,15 @@ jobs:
       env:
         CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
         MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
+    - name: Sign install.PS1
+      if: runner.os == 'Windows'
+      shell: powershell
+      run: |
+        $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
+        $cert.Import('Cert.p12',$env:CODE_SIGNING_PASSWD,'DefaultKeySet')
+        Set-AuthenticodeSignature -FilePath build\install.ps1 -Certificate $cert
+      env:
+        CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
     - name: Generate Update
       shell: bash
       run: state run generate-update
@@ -138,6 +195,8 @@ jobs:
         - macos-latest
         - windows-latest
     runs-on: ${{ matrix.platform }}
+    needs:
+    - prepare
     env:
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true
       GOFLAGS: -mod=vendor
@@ -147,6 +206,11 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
+    - name: Download Session Artifacts
+      uses: actions/download-artifact@v2
+      with:
+        name: session-build
+        path: build/
     - name: Install Go
       uses: actions/setup-go@v2
       with:
@@ -233,13 +297,6 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
-    - name: Validate
-      shell: bash
-      run: |
-        if [ "${GITHUB_REF##*/}" != "master" ] && [ "${{ contains(toJson(github.event.pull_request.labels), 'version:') }}" != "true" ]; then
-          echo "Version label must be set"
-          exit 1
-        fi
     - name: Install Go
       uses: actions/setup-go@v2
       with:

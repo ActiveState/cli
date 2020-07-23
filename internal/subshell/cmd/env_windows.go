@@ -33,3 +33,11 @@ func (c *CmdEnv) propagate() {
 	// Note: Always use SendNotifyMessageW here, as SendMessageW can hang forever (https://stackoverflow.com/a/1956702)
 	syscall.NewLazyDLL("user32.dll").NewProc("SendNotifyMessageW").Call(HwndBroadcast, WmSettingChange, 0, uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr("ENVIRONMENT"))))
 }
+
+func setStringValue(key RegistryKey, name string, valType uint32, value string) error {
+	f := key.SetStringValue
+	if valType == registry.EXPAND_SZ {
+		f = key.SetExpandStringValue
+	}
+	return f(name, value)
+}
