@@ -18,4 +18,8 @@ Click "Back" to review or change any of your installation settings.  Click "Canc
   <String Id="ExplorerMenuOpenPL">Open</String>
   <String Id="LoginDlg_Title">[ProductName] Login</String>
   <String Id="LoginDlgTitle">{\WixUI_Font_Title}Login</String>
+  <String Id="LoginDlgInfo">You are attempting to install a private project, this requires that you are logged in. Please enter your username and password below or use a time-based one-time password (TOTP). If you created your account via Github authentication please log into your account on a browser and create a password at your <![CDATA[<a href="https://platform.activestate.com/preferences/password/">password settings</a>]]> page</String>
+  <String Id="LoginDlgUsername">Username</String>
+  <String Id="LoginDlgPassword">Password</String>
+  <String Id="LoginDlgTOTP">TOTP</String>
 </WixLocalization>

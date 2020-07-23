@@ -15,6 +15,7 @@
 	<Property Id="VISIBILITY" Value="{{PRIVATE-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------}}" />
 	<Property Id="AS_USERNAME" Secure="yes" />
 	<Property Id="AS_PASSWORD" Secure="yes" />
+	<Property Id="AS_TOTP" Secure="yes" />
     <!-- End Configuration parameters -->
     
     <!-- Design assets -->
@@ -170,7 +171,7 @@
 
 		<Property Id="STATE_TOOL_PATH" Value="state.exe" />
 
-		<CustomAction Id="SetStateDeployPropertyValues" Property="StateDeploy" Value="INSTALLDIR=[INSTALLDIR];PROJECT_OWNER_AND_NAME=[PROJECT_OWNER_AND_NAME];IS_MODIFY=[IS_MODIFY];STATE_TOOL_INSTALLED=[STATE_TOOL_INSTALLED];STATE_TOOL_PATH=[STATE_TOOL_PATH];AS_USERNAME=[AS_USERNAME];AS_PASSWORD=[AS_PASSWORD]" />
+		<CustomAction Id="SetStateDeployPropertyValues" Property="StateDeploy" Value="INSTALLDIR=[INSTALLDIR];PROJECT_OWNER_AND_NAME=[PROJECT_OWNER_AND_NAME];IS_MODIFY=[IS_MODIFY];STATE_TOOL_INSTALLED=[STATE_TOOL_INSTALLED];STATE_TOOL_PATH=[STATE_TOOL_PATH];AS_USERNAME=[AS_USERNAME];AS_PASSWORD=[AS_PASSWORD];AS_TOTP=[AS_TOTP]" />
 		<CustomAction Id="SetUninstallProperties" Property="Uninstall" Value="REMEMBER=[REMEMBER];REMEMBER_SHORTCUTDIR=[REMEMBER_SHORTCUTDIR]" />
 		<CustomAction Id="SetShortcutInfo" Property="Shortcut" Value="INSTALLDIR=[INSTALLDIR];APP_START_MENU_PATH=[ApplicationProgramsFolder];SHORTCUTS=[SHORTCUTS]" />
 		<CustomAction Id="SetRollbackPropertyValues" Property="Rollback" Value="STATE_TOOL_INSTALLED=[STATE_TOOL_INSTALLED];INSTALLDIR=[INSTALLDIR]" />

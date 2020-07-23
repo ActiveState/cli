@@ -13,18 +13,22 @@
                 <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="!(loc.WixUICancel)">
                     <Publish Event="SpawnDialog" Value="CancelDlg">1</Publish>
                 </Control>
-                <Control Type="Edit" Id="UsernameEdit" Width="130" Height="15" X="68" Y="112" Property="AS_USERNAME" Indirect="no">
+                <Control Type="Edit" Id="UsernameEdit" Width="130" Height="15" X="116" Y="124" Property="AS_USERNAME" Indirect="no">
                 </Control>
-                <Control Type="Text" Id="PrivateProjectInfo" Width="263" Height="38" X="68" Y="56">
-                    <Text>You are attempting to install a private project, this requires that you are logged in. Please enter your username and password below.</Text>
+                <Control Type="Hyperlink" Id="PrivateProjectInfo" Width="312" Height="52" X="29" Y="56">
+                    <Text>!(loc.LoginDlgInfo)</Text>
                 </Control>
-                <Control Type="Text" Id="UsernameLabel" Width="47" Height="10" X="68" Y="98">
-                    <Text>Username</Text>
+                <Control Type="Text" Id="UsernameLabel" Width="47" Height="10" X="116" Y="109">
+                    <Text>!(loc.LoginDlgUsername)</Text>
                 </Control>
-                <Control Type="Text" Id="PasswordLabel" Width="47" Height="11" X="68" Y="135">
-                    <Text>Password</Text>
+                <Control Type="Text" Id="PasswordLabel" Width="47" Height="11" X="116" Y="146">
+                    <Text>!(loc.LoginDlgPassword)</Text>
                 </Control>
-                <Control Type="Edit" Id="PasswordEdit" Width="130" Height="15" X="68" Y="150" Property="AS_PASSWORD" Indirect="no" Password="yes" />
+                <Control Type="Edit" Id="PasswordEdit" Width="130" Height="15" X="116" Y="161" Property="AS_PASSWORD" Indirect="no" Password="yes" />
+                <Control Type="Edit" Id="TOTPEdit" Width="130" Height="15" X="116" Y="199" Property="AS_TOTP" Indirect="no" Password="yes" />
+                <Control Type="Text" Id="TOTPLabel" Width="47" Height="10" X="116" Y="184">
+                    <Text>!(loc.LoginDlgTOTP)</Text>
+                </Control>
             </Dialog>
         </UI>
     </Fragment>

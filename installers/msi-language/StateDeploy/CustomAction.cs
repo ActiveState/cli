@@ -84,15 +84,25 @@ namespace StateDeploy
         {
             string username = session.CustomActionData["AS_USERNAME"];
             string password = session.CustomActionData["AS_PASSWORD"];
+            string totp = session.CustomActionData["AS_TOTP"];
 
-            if (username == "" && password == "")
+            if (username == "" && password == "" && totp == "")
             {
                 session.Log("No login information provided, not executing login");
                 return ActionResult.Success;
             }
 
-            session.Log(string.Format("Attempting to login as user: {0}", username));
-            string authCmd = stateToolPath + " auth" + " --username " + username + " --password " + password;
+            string authCmd;
+            if (totp != "")
+            {
+                session.Log("Attempting to log in with TOTP token");
+                authCmd = stateToolPath + " auth" + " --totp " + totp;
+            } else
+            {
+                session.Log(string.Format("Attempting to login as user: {0}", username));
+                authCmd = stateToolPath + " auth" + " --username " + username + " --password " + password;
+            }
+
             string output;
             ActionResult runResult = ActiveState.Command.Run(session, authCmd, ActiveState.Shell.Cmd, out output);
             if (runResult.Equals(ActionResult.UserExit))
