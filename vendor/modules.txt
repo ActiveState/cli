@@ -10,16 +10,16 @@ github.com/ActiveState/go-colortext
 github.com/ActiveState/go-ogle-analytics
 # github.com/ActiveState/sysinfo v0.0.0-20200619170619-0582d42daf27
 github.com/ActiveState/sysinfo
-# github.com/ActiveState/termtest v0.5.1
+# github.com/ActiveState/termtest v0.5.2
 github.com/ActiveState/termtest
 github.com/ActiveState/termtest/internal/osutils
 github.com/ActiveState/termtest/internal/osutils/stacktrace
 # github.com/ActiveState/termtest/conpty v0.5.0
 github.com/ActiveState/termtest/conpty
-# github.com/ActiveState/termtest/expect v0.5.1
+# github.com/ActiveState/termtest/expect v0.5.2
 github.com/ActiveState/termtest/expect
 github.com/ActiveState/termtest/expect/internal/osutils
-# github.com/ActiveState/termtest/xpty v0.5.0
+# github.com/ActiveState/termtest/xpty v0.5.2
 github.com/ActiveState/termtest/xpty
 # github.com/ActiveState/vt10x v1.2.0
 github.com/ActiveState/vt10x
@@ -76,7 +76,7 @@ github.com/aws/aws-sdk-go/service/sts
 github.com/blang/semver
 # github.com/bndr/gotabulate v0.0.0-20170315142410-bc555436bfd5
 github.com/bndr/gotabulate
-# github.com/creack/pty v1.1.9
+# github.com/creack/pty v1.1.11
 github.com/creack/pty
 # github.com/dave/jennifer v0.18.0
 github.com/dave/jennifer/jen
@@ -354,8 +354,9 @@ golang.org/x/oauth2/google
 golang.org/x/oauth2/internal
 golang.org/x/oauth2/jws
 golang.org/x/oauth2/jwt
-# golang.org/x/sys v0.0.0-20200428200454-593003d681fa
+# golang.org/x/sys v0.0.0-20200722175500-76b94024e4b6
 golang.org/x/sys/cpu
+golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
 golang.org/x/sys/windows
 golang.org/x/sys/windows/registry
