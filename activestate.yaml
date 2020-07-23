@@ -137,13 +137,12 @@ scripts:
     if: eq .OS.Name "Windows"
     value: |
       set -e
-
-      PROJECT_OWNER_NAME=${2:-ActiveState/ActivePerl-5.26}
-      PROJECT_NAME=${PROJECT_OWNER_NAME##*/}
-
       export GOFLAGS='-mod=vendor'
 
       go run ./scripts/msi-installer-builder $*
+
+      PROJECT_OWNER_NAME=${2}
+      PROJECT_NAME=${PROJECT_OWNER_NAME##*/}
 
       dir=$(cmd //C echo %CD%)
 

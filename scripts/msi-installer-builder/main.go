@@ -124,14 +124,6 @@ func baseConfig() *config {
 }
 
 func parseArgs(args []string) (*config, error) {
-	if len(os.Args) == 1 {
-		// empty configuration for quick testing
-		return normalize(Perl, &config{
-			Preset:              Perl.String(),
-			ProjectOwnerAndName: "ActiveState/ActivePerl-5.26",
-			Version:             "5.26.3000",
-		})
-	}
 	if len(os.Args) == 4 {
 		preset, err := parsePreset(os.Args[1])
 		if err != nil {
