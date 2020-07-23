@@ -4,6 +4,7 @@ using System.Text;
 using System.Diagnostics;
 using System.Threading;
 using System.IO;
+using System.Collections.Generic;
 
 namespace ActiveState
 {
@@ -84,7 +85,7 @@ namespace ActiveState
                     catch (InstallCanceledException)
                     {
                         session.Log("Caught install cancelled exception");
-                        ActiveState.Process.KillProcessAndChildren(proc.Id);
+                        Process.KillProcessAndChildren(proc.Id);
                         output = "process got interrupted.";
                         return ActionResult.UserExit;
                     }
@@ -100,7 +101,10 @@ namespace ActiveState
                     outputBuilder.AppendFormat("Process returned with exit code: {0}", exitCode);
                     output = outputBuilder.ToString();
                     session.Log("returning due to return code - error");
-                    ActiveState.RollbarHelper.Report(string.Format("returning due to return code: {0} - error", exitCode));
+                    RollbarHelper.Report(
+                        string.Format("failed due to return code: {0} - error", exitCode),
+                        new Dictionary<string, object> { { "output", output }, { "cmd", cmd } }
+                    );
                     return ActionResult.Failure;
                 }
             }
@@ -111,7 +115,7 @@ namespace ActiveState
                 outputBuilder.Append(exceptionString);
                 output = outputBuilder.ToString();
                 session.Log(exceptionString);
-                ActiveState.RollbarHelper.Report(exceptionString);
+                RollbarHelper.Report(exceptionString);
                 return ActionResult.Failure;
             }
             output = outputBuilder.ToString();
