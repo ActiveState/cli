@@ -12,4 +12,5 @@ __PYCACHE__
 .idea
 .vs
 obj/
+bin/
 installers/msi-language/Product.wxs

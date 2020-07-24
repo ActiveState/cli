@@ -4,6 +4,7 @@ using Rollbar;
 using Rollbar.DTOs;
 using DeviceId;
 using System.Reflection;
+using System.Collections.Generic;
 
 namespace ActiveState
 {
@@ -28,6 +29,7 @@ namespace ActiveState
             {
                 Environment = rollbarEnvironment,
             };
+
             RollbarLocator.RollbarInstance
                 // minimally required Rollbar configuration:
                 .Configure(config)
@@ -67,9 +69,9 @@ namespace ActiveState
             RollbarLocator.RollbarInstance.Config.Person = person;
         }
 
-        public static void Report(string message)
+        public static void Report(string message, IDictionary<string, object> customFields = null )
         {
-                RollbarLocator.RollbarInstance.AsBlockingLogger(RollbarTimeout).Error(new GenericException(message));
+            RollbarLocator.RollbarInstance.AsBlockingLogger(RollbarTimeout).Error(new GenericException(message), customFields);
         }
 
     }

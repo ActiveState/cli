@@ -45,6 +45,7 @@ type config struct {
 	ReleaseNotes        string
 	Icon                string
 	ProjectOwnerAndName string
+	Visibility          string
 }
 
 func seededUUID(seed string) string {
@@ -85,10 +86,15 @@ func releaseNotes(p languagePreset, version string) (string, error) {
 	return "", fmt.Errorf("No release notes for language preset %v", p)
 }
 
+// normalizes and validates the configuration
 func normalize(preset languagePreset, c *config) (*config, error) {
 	parts := strings.SplitN(c.ProjectOwnerAndName, "/", 2)
 	if len(parts) != 2 {
 		return c, fmt.Errorf("Second argument must be of type owner/project")
+	}
+
+	if c.Visibility != "Public" && c.Visibility != "Private" {
+		return c, fmt.Errorf("Visibility needs to be set to 'Public' or 'Private'")
 	}
 
 	c.ProjectName = parts[1]
@@ -114,9 +120,10 @@ func pad(s string) string {
 func baseConfig() *config {
 	return &config{
 		ID:                  "FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF",
-		Version:             "255.255.255",
+		Version:             pad("VERSION"),
 		Icon:                "./assets/as.ico",
 		Preset:              Unknown.String(),
+		Visibility:          "Public",
 		ProjectOwnerAndName: pad("PROJECT_OWNER_AND_NAME"),
 		ReleaseNotes:        pad("RELEASE_NOTES"),
 		ProjectName:         pad("PROJECT_NAME"),
@@ -124,15 +131,16 @@ func baseConfig() *config {
 }
 
 func parseArgs(args []string) (*config, error) {
-	if len(os.Args) == 4 {
+	if len(os.Args) == 5 {
 		preset, err := parsePreset(os.Args[1])
 		if err != nil {
 			return nil, err
 		}
 		return normalize(preset, &config{
 			Preset:              preset.String(),
-			ProjectOwnerAndName: os.Args[2],
-			Version:             os.Args[3],
+			Visibility:          os.Args[2],
+			ProjectOwnerAndName: os.Args[3],
+			Version:             os.Args[4],
 		})
 	}
 
@@ -140,7 +148,7 @@ func parseArgs(args []string) (*config, error) {
 		return baseConfig(), nil
 	}
 
-	return nil, fmt.Errorf("invalid arguments: Expected <preset> <owner/name> <version> | \"base\"")
+	return nil, fmt.Errorf("invalid arguments: Expected <preset> <visibility> <owner/name> <version> | \"base\"")
 }
 
 func run(args []string) error {
