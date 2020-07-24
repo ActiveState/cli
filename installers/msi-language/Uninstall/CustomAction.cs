@@ -38,31 +38,44 @@ namespace Uninstall
 
             session.Log("Begin uninstallation");
 
+            ActionResult result;
             string installDir = session.CustomActionData["REMEMBER"];
-
-            ActionResult result = Remove.Dir(session, installDir);
-            if (result.Equals(ActionResult.Failure))
+            if (installDir != "")
             {
-                session.Log("Could not remove installation directory");
-                ActiveState.RollbarHelper.Report("Could not remove installation directory");
-                return ActionResult.Failure;
+                result = Remove.Dir(session, installDir);
+                if (result.Equals(ActionResult.Failure))
+                {
+                    session.Log("Could not remove installation directory");
+                    ActiveState.RollbarHelper.Report("Could not remove installation directory");
+                    return ActionResult.Failure;
+                }
+
+                result = Remove.EnvironmentEntries(session, installDir);
+                if (result.Equals(ActionResult.Failure))
+                {
+                    session.Log("Could not remove environment entries");
+                    ActiveState.RollbarHelper.Report("Could not remove environment entries");
+                    return ActionResult.Failure;
+                }
+            } else
+            {
+                session.Log("REMEMBER variable was not set in UNINSTALL");
             }
 
             string shortcutDir = session.CustomActionData["REMEMBER_SHORTCUTDIR"];
-            result = Remove.Dir(session, shortcutDir);
-            if (result.Equals(ActionResult.Failure))
-            {
-                session.Log("Could not remove shortcuts directory");
-                ActiveState.RollbarHelper.Report("Could not remove shortcuts directory");
-                return ActionResult.Failure;
-            }
 
-            result = Remove.EnvironmentEntries(session, installDir);
-            if (result.Equals(ActionResult.Failure))
+            if (shortcutDir != "")
             {
-                session.Log("Could not remove shortcuts directory");
-                ActiveState.RollbarHelper.Report("Could not remove shortcuts directory");
-                return ActionResult.Failure;
+                result = Remove.Dir(session, shortcutDir);
+                if (result.Equals(ActionResult.Failure))
+                {
+                    session.Log("Could not remove shortcuts directory");
+                    ActiveState.RollbarHelper.Report("Could not remove shortcuts directory");
+                    return ActionResult.Failure;
+                }
+            } else
+            {
+                session.Log("REMEMBER_SHORTCUTDIR was not set in UNINSTALL");
             }
 
             result = UninstallPreset(session);
