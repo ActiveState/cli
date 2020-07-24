@@ -40,13 +40,8 @@
 
     <SetDirectory Id="WINDOWSVOLUME" Value="[WindowsVolume]"/>
 
-	<!-- Build documentation URL shortcut -->
+  <!-- Application Programs Folder for Shortcuts -->
 	<DirectoryRef Id="ApplicationProgramsFolder">
-		<Component Id="ApplicationShortcut" Guid="9e688401-bf59-46c3-99ae-49295948f7b8">
-			<util:InternetShortcut Id="DocumentationShortcut" Name="Documentation" Target="[REL_NOTES]" IconFile="[#PerlIco]" Type="url" />
-			<RemoveFolder Id="CleanUpShortCut" Directory="ApplicationProgramsFolder" On="uninstall"/>
-			<RegistryValue Root="HKCU" Key="Software\[Manufacturer]\[ProductName]" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
-		</Component>
 	</DirectoryRef>
     
     <Feature Id='Complete' Level='1'>
@@ -152,7 +147,7 @@
 
 		<CustomAction Id="SetStateDeployPropertyValues" Property="StateDeploy" Value="INSTALLDIR=[INSTALLDIR];PROJECT_OWNER_AND_NAME=[PROJECT_OWNER_AND_NAME];IS_MODIFY=[IS_MODIFY];STATE_TOOL_INSTALLED=[STATE_TOOL_INSTALLED];STATE_TOOL_PATH=[STATE_TOOL_PATH]" />
 		<CustomAction Id="SetUninstallProperties" Property="Uninstall" Value="PRESET=[PRESET];REMEMBER=[REMEMBER];REMEMBER_SHORTCUTDIR=[REMEMBER_SHORTCUTDIR]" />
-		<CustomAction Id="SetPresetInfo" Property="Preset" Value="INSTALLDIR=[INSTALLDIR];APP_START_MENU_PATH=[ApplicationProgramsFolder];PRESET=[PRESET]" />
+		<CustomAction Id="SetPresetInfo" Property="Preset" Value="REL_NOTES=[REL_NOTES];INSTALLDIR=[INSTALLDIR];APP_START_MENU_PATH=[ApplicationProgramsFolder];PRESET=[PRESET]" />
 		<CustomAction Id="SetRollbackPropertyValues" Property="Rollback" Value="STATE_TOOL_INSTALLED=[STATE_TOOL_INSTALLED];INSTALLDIR=[INSTALLDIR]" />
 
 

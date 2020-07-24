@@ -89,6 +89,9 @@ namespace Preset
                 return ActionResult.Success;
             }
 
+            session.Log("Install Documentation link");
+            DocumentationShortcut();
+
             session.Log("install cmd-prompt shortcut");
             result = CmdPromptShortcut();
             if (result.Equals(ActionResult.Failure))
@@ -110,6 +113,31 @@ namespace Preset
             }
 
             return ActionResult.Success;
+        }
+
+        private void CreateInternetShortcut(string path, string url, string icon)
+        {
+            using (StreamWriter writer = new StreamWriter(path))
+            {
+                writer.WriteLine("[InternetShortcut]");
+                writer.WriteLine("URL=" + url);
+                writer.WriteLine("IconIndex=0");
+                writer.WriteLine("IconFile=" + icon);
+            }
+        }
+
+        private void DocumentationShortcut()
+        {
+            var installDir = session.CustomActionData["INSTALLDIR"];
+            session.Log("Installing Perl Documentation shortcut");
+
+            if (!Directory.Exists(appStartMenuPath))
+                Directory.CreateDirectory(appStartMenuPath);
+
+            var shortcutLocation = Path.Combine(appStartMenuPath, "Documentation.url");
+            var iconLocation = session.CustomActionData["INSTALLDIR"] + "perl.ico";
+
+            CreateInternetShortcut(shortcutLocation, session.CustomActionData["REL_NOTES"], iconLocation);
         }
 
         private ActionResult PerlCriticShortcut()
