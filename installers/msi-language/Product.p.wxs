@@ -48,9 +48,6 @@
 			<RegistryValue Root="HKCU" Key="Software\[Manufacturer]\[ProductName]" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
 		</Component>
 	</DirectoryRef>
-
-    <Property Id='PerlExe' Value='perl.exe' />
-    <Property Id='WPerlExe' Value='wperl.exe' />
     
     <Feature Id='Complete' Level='1'>
       <ComponentRef Id='DeployDir' />
