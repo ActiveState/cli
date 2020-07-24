@@ -163,7 +163,7 @@ scripts:
 
       go run ./scripts/msi-installer-builder $*
 
-      PROJECT_OWNER_NAME=${2}
+      PROJECT_OWNER_NAME=${3}
       PROJECT_NAME=${PROJECT_OWNER_NAME##*/}
 
       dir=$(cmd //C echo %CD%)
