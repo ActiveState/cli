@@ -181,6 +181,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="FileAssociation.cs" />
     <Compile Include="Command.cs" />
     <Compile Include="Rollbar.cs" />
     <Compile Include="Process.cs" />

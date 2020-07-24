@@ -70,6 +70,10 @@
       <Project>{658291c2-5419-4012-bd6a-c85ab86009ee}</Project>
       <Name>ActiveState</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Preset\Preset.csproj">
+      <Project>{877517d7-1f44-41c8-8b45-23070ac62845}</Project>
+      <Name>Preset</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
