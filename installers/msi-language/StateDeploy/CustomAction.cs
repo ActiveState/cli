@@ -63,6 +63,7 @@ namespace StateDeploy
             if (result.Equals(ActionResult.UserExit))
             {
                 // Catch cancel and return
+                ActiveState.RollbarHelper.Report("Installation exited prematurely due to UserExit (probably safe to ignore)");
                 return result;
             }
             else if (result.Equals(ActionResult.Failure))
@@ -72,11 +73,16 @@ namespace StateDeploy
                 record.FormatString = String.Format("state tool installation failed with error:\n{0}", errorOutput);
 
                 MessageResult msgRes = session.Message(InstallMessage.Error | (InstallMessage)MessageBoxButtons.OK, record);
+                ActiveState.RollbarHelper.Report(record.FormatString);
                 return result;
             }
             Status.ProgressBar.Increment(session, 1);
 
             stateToolPath = Path.Combine(installPath, "state.exe");
+            if ( ! File.Exists(stateToolPath))
+            {
+                ActiveState.RollbarHelper.Report("State tool installed without errors but its filePath does not exist");
+            }
             return result;
         }
 

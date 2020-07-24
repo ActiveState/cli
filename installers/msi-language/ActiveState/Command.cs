@@ -18,6 +18,7 @@ namespace ActiveState
     {
         public static ActionResult Run(Session session, string cmd, Shell shell, out string output)
         {
+            var errBuilder = new StringBuilder();
             var outputBuilder = new StringBuilder();
             try
             {
@@ -64,7 +65,7 @@ namespace ActiveState
                     if (!String.IsNullOrEmpty(e.Data))
                     {
                         session.Log("err: " + e.Data);
-                        outputBuilder.Append("\n" + e.Data);
+                        errBuilder.Append("\n" + e.Data);
                     }
                 });
                 proc.Start();
@@ -98,12 +99,21 @@ namespace ActiveState
                 if (exitCode != 0)
                 {
                     outputBuilder.Append('\x00');
-                    outputBuilder.AppendFormat("Process returned with exit code: {0}", exitCode);
+                    outputBuilder.AppendFormat(" -- Process returned with exit code: {0}", exitCode);
                     output = outputBuilder.ToString();
                     session.Log("returning due to return code - error");
+                    var title = output.Split('\n')[0];
+                    if (title.Length == 0)
+                    {
+                        title = output;
+                    }
+                    if (title.Length > 50)
+                    {
+                        title = title.Substring(0, 50);
+                    }
                     RollbarHelper.Report(
-                        string.Format("failed due to return code: {0} - error", exitCode),
-                        new Dictionary<string, object> { { "output", output }, { "cmd", cmd } }
+                        string.Format("failed due to return code: {0} - start: {1}", exitCode, title),
+                        new Dictionary<string, object> { { "output", output }, { "err", errBuilder.ToString() }, { "cmd", cmd } }
                     );
                     return ActionResult.Failure;
                 }
