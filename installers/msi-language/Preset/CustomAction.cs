@@ -142,7 +142,9 @@ namespace Preset
 
         private ActionResult PerlCriticShortcut()
         {
-            session.Log("Installing Perl Critic shortcut");
+            string shortcutLocation = Path.Combine(appStartMenuPath, "Perl Critic" + ".lnk");
+
+            session.Log("Installing Perl Critic shortcut @ {0}", shortcutLocation);
 
             string target = Path.Combine(session.CustomActionData["INSTALLDIR"], "bin", "wperl.exe");
             if (!System.IO.File.Exists(target))
@@ -163,7 +165,6 @@ namespace Preset
             if (!Directory.Exists(appStartMenuPath))
                 Directory.CreateDirectory(appStartMenuPath);
 
-            string shortcutLocation = Path.Combine(appStartMenuPath, "Perl Critic" + ".lnk");
             WshShell shell = new WshShell();
             IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(shortcutLocation);
 
@@ -177,7 +178,9 @@ namespace Preset
 
         private ActionResult CmdPromptShortcut()
         {
-            session.Log("Installing Cmd Prompt shortcut");
+            string shortcutLocation = Path.Combine(appStartMenuPath, "Developer Command Prompt.lnk");
+
+            session.Log("Installing Cmd Prompt shortcut at {0}", shortcutLocation);
 
             string target = Path.Combine(session.CustomActionData["INSTALLDIR"], "bin", "shell.bat");
             if (!System.IO.File.Exists(target))
@@ -190,7 +193,6 @@ namespace Preset
             if (!Directory.Exists(appStartMenuPath))
                 Directory.CreateDirectory(appStartMenuPath);
 
-            string shortcutLocation = Path.Combine(appStartMenuPath, "Developer Command Prompt.lnk");
             WshShell shell = new WshShell();
             IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(shortcutLocation);
 
