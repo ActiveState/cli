@@ -120,7 +120,7 @@ func pad(s string) string {
 func baseConfig() *config {
 	return &config{
 		ID:                  "FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF",
-		Version:             pad("VERSION"),
+		Version:             "255.255.255.65535",
 		Icon:                "./assets/as.ico",
 		Preset:              Unknown.String(),
 		Visibility:          "Public",
