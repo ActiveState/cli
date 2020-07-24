@@ -116,7 +116,7 @@ namespace StateDeploy
                 Record record = new Record();
                 session.Log(string.Format("Output: {0}", output));
                 var errorOutput = FormatErrorOutput(output);
-                record.FormatString = string.Format("Failed with error:\n{0}", errorOutput);
+                record.FormatString = string.Format("Platform login failed with error:\n{0}", errorOutput);
 
                 session.Message(InstallMessage.Error | (InstallMessage)MessageBoxButtons.OK, record);
                 return runResult;
@@ -126,7 +126,7 @@ namespace StateDeploy
             else if (!output.Contains(username))
             {
                 Record record = new Record();
-                var errorOutput = string.Format("Could not log in as {0}, currently logged in as another user. To correct this please start a command prompt and execute {1} auth logout and try again", username, stateToolPath);
+                var errorOutput = string.Format("Could not log in as {0}, currently logged in as another user. To correct this please start a command prompt and execute `{1} auth logout` and try again", username, stateToolPath);
                 record.FormatString = string.Format("Failed with error:\n{0}", errorOutput);
 
                 session.Message(InstallMessage.Error | (InstallMessage)MessageBoxButtons.OK, record);
