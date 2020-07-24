@@ -24,6 +24,8 @@ param (
     ,[Parameter(Mandatory=$False)][string]$activate = ""
 )
 
+Set-StrictMode -Off
+
 $script:NOPROMPT = $n
 $script:FORCEOVERWRITE = $f
 $script:TARGET = ($t).Trim()
