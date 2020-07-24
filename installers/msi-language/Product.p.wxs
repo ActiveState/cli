@@ -55,7 +55,6 @@
       <Component Id='cmpInstallerIco' Directory='INSTALLDIR' Guid='1069a43f-9ec5-4ad8-b15c-2452b56c9b04'>
         <File Id='InstallerIco' Source='{{.Icon}}' />
       </Component>
-	  <ComponentRef Id="ApplicationShortcut" />
     </Feature>
 
     <Property Id="REMEMBER">
