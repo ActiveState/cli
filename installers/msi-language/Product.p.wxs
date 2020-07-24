@@ -11,6 +11,11 @@
 	<!-- A comma separated list of shortcuts to be installed -->
 	<!-- Expected possible values: [PerlCritic,CmdPrompt] or supply None to build no shortcuts -->
 	<Property Id="SHORTCUTS" Value="{{SHORTCUTS-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------}}" />
+	<!-- Represents if this project is private or public -->
+	<Property Id="VISIBILITY" Value="{{PRIVATE-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------}}" />
+	<Property Id="AS_USERNAME" Secure="yes" />
+	<Property Id="AS_PASSWORD" Secure="yes" />
+	<Property Id="AS_TOTP" Secure="yes" />
     <!-- End Configuration parameters -->
     
     <!-- Design assets -->
@@ -117,11 +122,15 @@
 			<Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="PrivacyConsentDlg">NOT Installed</Publish>
 			<Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="VerifyReadyDlg">Installed AND PATCH</Publish>
 
-      <Publish Dialog="PrivacyConsentDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg">1</Publish>
-      <Publish Dialog="PrivacyConsentDlg" Control="Next" Event="NewDialog" Value="LicenseAgreementDlg">1</Publish>
+			<Publish Dialog="PrivacyConsentDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg">1</Publish>
+      		<Publish Dialog="PrivacyConsentDlg" Control="Next" Event="NewDialog" Value="LicenseAgreementDlg">1</Publish>
 
-      <Publish Dialog="LicenseAgreementDlg" Control="Back" Event="NewDialog" Value="PrivacyConsentDlg">1</Publish>
-			<Publish Dialog="LicenseAgreementDlg" Control="Next" Event="NewDialog" Value="InstallDirDlg">LicenseAccepted = "1"</Publish>
+      		<Publish Dialog="LicenseAgreementDlg" Control="Back" Event="NewDialog" Value="PrivacyConsentDlg">1</Publish>
+			<Publish Dialog="LicenseAgreementDlg" Control="Next" Event="NewDialog" Value="LoginDlg">LicenseAccepted = "1" AND VISIBILITY = "Private"</Publish>
+			<Publish Dialog="LicenseAgreementDlg" Control="Next" Event="NewDialog" Value="InstallDirDlg">LicenseAccepted = "1" AND VISIBILITY = "Public"</Publish>
+
+			<Publish Dialog="LoginDlg" Control="Back" Event="NewDialog" Value="LicenseAgreementDlg">1</Publish>
+			<Publish Dialog="LoginDlg" Control="Next" Event="NewDialog" Value="InstallDirDlg">1</Publish>
 
 			<Publish Dialog="InstallDirDlg" Control="Back" Event="NewDialog" Value="LicenseAgreementDlg">1</Publish>
 			<Publish Dialog="InstallDirDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg">1</Publish>
@@ -162,7 +171,7 @@
 
 		<Property Id="STATE_TOOL_PATH" Value="state.exe" />
 
-		<CustomAction Id="SetStateDeployPropertyValues" Property="StateDeploy" Value="INSTALLDIR=[INSTALLDIR];PROJECT_OWNER_AND_NAME=[PROJECT_OWNER_AND_NAME];IS_MODIFY=[IS_MODIFY];STATE_TOOL_INSTALLED=[STATE_TOOL_INSTALLED];STATE_TOOL_PATH=[STATE_TOOL_PATH]" />
+		<CustomAction Id="SetStateDeployPropertyValues" Property="StateDeploy" Value="INSTALLDIR=[INSTALLDIR];PROJECT_OWNER_AND_NAME=[PROJECT_OWNER_AND_NAME];IS_MODIFY=[IS_MODIFY];STATE_TOOL_INSTALLED=[STATE_TOOL_INSTALLED];STATE_TOOL_PATH=[STATE_TOOL_PATH];AS_USERNAME=[AS_USERNAME];AS_PASSWORD=[AS_PASSWORD];AS_TOTP=[AS_TOTP]" />
 		<CustomAction Id="SetUninstallProperties" Property="Uninstall" Value="REMEMBER=[REMEMBER];REMEMBER_SHORTCUTDIR=[REMEMBER_SHORTCUTDIR]" />
 		<CustomAction Id="SetShortcutInfo" Property="Shortcut" Value="INSTALLDIR=[INSTALLDIR];APP_START_MENU_PATH=[ApplicationProgramsFolder];SHORTCUTS=[SHORTCUTS]" />
 		<CustomAction Id="SetRollbackPropertyValues" Property="Rollback" Value="STATE_TOOL_INSTALLED=[STATE_TOOL_INSTALLED];INSTALLDIR=[INSTALLDIR]" />
