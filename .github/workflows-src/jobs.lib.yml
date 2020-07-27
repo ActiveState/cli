@@ -74,7 +74,7 @@ strategy: *strategy
 runs-on: *runs-on
 env: *env
 timeout-minutes: 25
-needs: [ build_msi ]
+needs: [ build ]
 steps:
   - name: "Checkout code"
     uses: actions/checkout@v2
