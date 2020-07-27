@@ -42,10 +42,10 @@ jobs:
     - name: Generate Version
       shell: bash
       run: state run generate-version
-    - name: Upload Session Artifacts
+    - name: Upload Shared Artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: session-build
+        name: session-shared-build
         path: build/
   build:
     name: Build
@@ -69,10 +69,10 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
-    - name: Download Session Artifacts
+    - name: Download Shared Artifacts
       uses: actions/download-artifact@v2
       with:
-        name: session-build
+        name: session-shared-build
         path: build/
     - name: Install Go
       uses: actions/setup-go@v2
@@ -120,41 +120,8 @@ jobs:
     - name: Generate Update
       shell: bash
       run: state run generate-update
-    - name: Upload Session Artifacts
-      uses: actions/upload-artifact@v2
-      with:
-        name: session-build
-        path: build/
-  build_msi:
-    name: Build MSI's
-    runs-on: windows-latest
-    needs: build
-    env:
-      ACTIVESTATE_CLI_DISABLE_RUNTIME: true
-      GOFLAGS: -mod=vendor
-      SHELL: bash
-      GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    timeout-minutes: 10
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-    - name: Download Session Artifacts
-      uses: actions/download-artifact@v2
-      with:
-        name: session-build
-        path: build/
-    - name: Install Go
-      uses: actions/setup-go@v2
-      with:
-        go-version: ${{ matrix.go-version }}
-    - name: Setup
-      shell: bash
-      run: |
-        bin=$(pwd)/.github/deps/${{ runner.os }}/bin
-        echo "Adding $bin to PATH"
-        echo "::add-path::$bin"
-        printenv
     - name: Build State MSI
+      if: runner.os == 'Windows'
       shell: bash
       run: |
         echo $MSI_CERT_BASE64 | base64 --decode > Cert.p12
@@ -166,6 +133,7 @@ jobs:
         CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
         MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
     - name: Build Languages MSI
+      if: runner.os == 'Windows'
       shell: bash
       run: |
         echo $MSI_CERT_BASE64 | base64 --decode > Cert.p12
@@ -182,7 +150,7 @@ jobs:
     - name: Upload Session Artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: session-build
+        name: session-build-${{ matrix.platform }}
         path: build/
   unittest:
     name: Unit Test
@@ -206,10 +174,10 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
-    - name: Download Session Artifacts
+    - name: Download Shared Artifacts
       uses: actions/download-artifact@v2
       with:
-        name: session-build
+        name: session-shared-build
         path: build/
     - name: Install Go
       uses: actions/setup-go@v2
@@ -285,7 +253,6 @@ jobs:
     name: Deploy
     needs:
     - build
-    - build_msi
     - unittest
     runs-on: ubuntu-latest
     env:
@@ -308,11 +275,16 @@ jobs:
         echo "Adding $bin to PATH"
         echo "::add-path::$bin"
         printenv
-    - name: Download Session Artifacts
+    - name: Download All Session Artifacts
       uses: actions/download-artifact@v2
       with:
-        name: session-build
         path: build/
+    - name: Sanitize All Session Artifacts
+      shell: bash
+      run: |
+        cd build
+        find . -mindepth 2 -maxdepth 2 -print0 | xargs -0 -I file rsync -av file .
+        rm -Rf session*
     - name: Preprocess
       shell: bash
       run: |
@@ -334,9 +306,12 @@ jobs:
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
     - name: Cleanup Session Artifacts
       uses: geekyeggo/delete-artifact@v1
-      if: always()
       with:
-        name: session-build
+        name: |
+          session-shared-build
+          session-build-ubuntu-latest
+          session-build-macos-latest
+          session-build-windows-latest
     - name: Upload Artifacts
       uses: actions/upload-artifact@v2
       with:

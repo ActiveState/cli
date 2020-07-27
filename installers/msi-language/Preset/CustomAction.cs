@@ -171,7 +171,7 @@ namespace Preset
             shortcut.Description = "Perl Critic";
             shortcut.IconLocation = session.CustomActionData["INSTALLDIR"] + "perl.ico";
             shortcut.TargetPath = target;
-            shortcut.Arguments = " -x " + perlCriticLocation;
+            shortcut.Arguments = " -x " + "\"" + perlCriticLocation + "\"";
             shortcut.Save();
             return ActionResult.Success;
         }
@@ -198,7 +198,7 @@ namespace Preset
 
             shortcut.Description = "Developer Command Prompt";
             shortcut.TargetPath = "%comspec%";
-            shortcut.Arguments = " /k " + target;
+            shortcut.Arguments = " /k " + "\"" + target + "\"";
             shortcut.Save();
             return ActionResult.Success;
         }
