@@ -86,6 +86,7 @@ name: "Integration Tests"
 shell: bash
 run: |
   ls -l ./build/msi
+  chmod +x ./build/msi/*.msi
   go test --run="TestActivePerl/.*" --timeout 20m ./test/integration -v
 env:
   INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
