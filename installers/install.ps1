@@ -229,7 +229,8 @@ function fetchArtifacts($downloadDir, $statejson, $statepkg) {
 
     # Extract binary from pkg and confirm checksum
     Write-Host "Extracting $statepkg...`n"
-    Expand-Archive $zipPath $downloadDir
+    # using LiteralPath argument prevents interpretation of wildcards in zipPath
+    Expand-Archive -LiteralPath $zipPath -DestinationPath $downloadDir
 }
 
 function test-64Bit() {
@@ -341,7 +342,7 @@ function install()
     Write-Host "`nInstalling to '$installDir'...`n" -ForegroundColor Yellow
     if ( -Not $script:NOPROMPT ) {
         if( -Not (promptYN "Continue?") ) {
-            return
+            return 2
         }
     }
 
