@@ -8,37 +8,25 @@ using System.Collections.Generic;
 
 namespace ActiveState
 {
-    public enum Shell
-    {
-        Cmd,
-        Powershell,
-    }
-
     public static class Command
     {
-        public static ActionResult Run(Session session, string cmd, Shell shell, out string output)
+        public static ActionResult Run(Session session, string cmd, string args, out string output)
         {
             var errBuilder = new StringBuilder();
             var outputBuilder = new StringBuilder();
             try
             {
-                ProcessStartInfo procStartInfo;
-                switch (shell)
+                if (cmd == "powershell")
                 {
-                    case Shell.Powershell:
-                        var powershellExe = Path.Combine(Environment.SystemDirectory, "WindowsPowershell", "v1.0", "powershell.exe");
-                        if (!File.Exists(powershellExe))
-                        {
-                            session.Log("Did not find powershell @" + powershellExe);
-                            powershellExe = "powershell.exe";
-                        }
-                        procStartInfo = new ProcessStartInfo(powershellExe, cmd);
-                        break;
-                    default:
-                        procStartInfo = new ProcessStartInfo("cmd.exe", "/c " + cmd);
-                        break;
+                    cmd = Path.Combine(Environment.SystemDirectory, "WindowsPowershell", "v1.0", "powershell.exe");
+                    if (!File.Exists(cmd))
+                    {
+                        session.Log("Did not find powershell @" + cmd);
+                        cmd = "powershell.exe";
+                    }
                 }
 
+                var procStartInfo = new ProcessStartInfo(cmd, args);
                 // The following commands are needed to redirect the standard output.
                 // This means that it will be redirected to the Process.StandardOutput StreamReader.
                 procStartInfo.RedirectStandardOutput = true;
