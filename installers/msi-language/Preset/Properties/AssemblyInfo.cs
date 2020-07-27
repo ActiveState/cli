@@ -5,10 +5,10 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Shortcut")]
-[assembly: AssemblyDescription("A custom action to install shortcuts")]
+[assembly: AssemblyTitle("Preset")]
+[assembly: AssemblyDescription("A custom action to install language presets")]
 [assembly: AssemblyCompany("ActiveState")]
-[assembly: AssemblyProduct("Shortcut")]
+[assembly: AssemblyProduct("Preset")]
 [assembly: AssemblyCopyright("Copyright ©  2020")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]

@@ -25,12 +25,14 @@ import (
 // forceFileExt is used in tests, do not use it for anything else
 var forceFileExt string
 
-func forwardIfWarranted(args []string, out output.Outputer, pj *project.Project) (int, error) {
+type forwardFunc func() (int, error)
+
+func forwardFn(args []string, out output.Outputer, pj *project.Project) (forwardFunc, error) {
 	if pj == nil {
-		return 0, nil
+		return nil, nil
 	}
 	if len(args) > 1 && args[1] == "update" {
-		return 0, nil // Handle updates through the latest state tool version available, ie the current one
+		return nil, nil // Handle updates through the latest state tool version available, ie the current one
 	}
 
 	// Retrieve the version info specified in the activestate.yaml
@@ -40,29 +42,33 @@ func forwardIfWarranted(args []string, out output.Outputer, pj *project.Project)
 		logging.Error("Could not parse version info from projectifle: %s", fail.Error())
 		if funk.Contains(args, "update") { // Handle use case of update being called as anything but the first argument (unlikely, but possible)
 			out.Error(locale.T("err_version_parse"))
-			return 0, nil
-		} else {
-			return 1, locale.WrapError(fail, "err_version_parse", "Could not determine the State Tool version to use to run this command.")
+			return nil, nil
 		}
+
+		return nil, locale.WrapError(fail, "err_version_parse", "Could not determine the State Tool version to use to run this command.")
 	}
 
 	// Check if we need to forward
 	if versionInfo == nil || (versionInfo.Version == constants.Version && versionInfo.Branch == constants.BranchName) {
+		return nil, nil
+	}
+
+	fn := func() (int, error) {
+		// Perform the forward
+		out.Notice(locale.Tr("forward_version", versionInfo.Version))
+		code, fail := forward(args, versionInfo)
+		if fail != nil {
+			out.Error(locale.T("forward_fail"))
+			return 1, fail
+		}
+		if code > 0 {
+			return code, locale.NewError("err_forward", "Error occurred while running older version of the state tool, you may want to 'state update'.")
+		}
+
 		return 0, nil
 	}
 
-	// Perform the forward
-	out.Notice(locale.Tr("forward_version", versionInfo.Version))
-	code, fail := forward(args, versionInfo)
-	if fail != nil {
-		out.Error(locale.T("forward_fail"))
-		return 1, fail
-	}
-	if code > 0 {
-		return code, locale.NewError("err_forward", "Error occurred while running older version of the state tool, you may want to 'state update'.")
-	}
-
-	return 0, nil
+	return fn, nil
 }
 
 // forward will forward the call to the appropriate State Tool version if necessary
