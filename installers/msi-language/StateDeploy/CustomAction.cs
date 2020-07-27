@@ -55,11 +55,11 @@ namespace StateDeploy
                 return ActionResult.Failure;
             }
 
-            string installCmd = string.Format("Set-PSDebug -trace 2; Set-ExecutionPolicy Unrestricted -Scope Process; \"{0}\" -n -t \"{1}\"", scriptPath, installPath);
+            string installCmd = string.Format("Set-PSDebug -trace 2; Set-ExecutionPolicy Unrestricted -Scope Process; & '{0}' -n -t \"\"\"{1}\"\"\"", scriptPath, installPath);
             session.Log(string.Format("Running install command: {0}", installCmd));
 
             string output;
-            ActionResult result = ActiveState.Command.Run(session, installCmd, ActiveState.Shell.Powershell, out output);
+            ActionResult result = ActiveState.Command.Run(session, "powershell", installCmd, out output);
             if (result.Equals(ActionResult.UserExit))
             {
                 // Catch cancel and return
@@ -81,7 +81,7 @@ namespace StateDeploy
             stateToolPath = Path.Combine(installPath, "state.exe");
             if ( ! File.Exists(stateToolPath))
             {
-                ActiveState.RollbarHelper.Report("State tool installed without errors but its filePath does not exist");
+                ActiveState.RollbarHelper.Report(String.Format("State tool installed without errors but its filePath does not exist.  install.ps1 output: {0}", FormatErrorOutput(output)));
             }
             return result;
         }
@@ -102,16 +102,16 @@ namespace StateDeploy
             if (totp != "")
             {
                 session.Log("Attempting to log in with TOTP token");
-                authCmd = stateToolPath + " auth" + " --totp " + totp;
+                authCmd = " auth" + " --totp " + totp;
             } else
             {
                 session.Log(string.Format("Attempting to login as user: {0}", username));
-                authCmd = stateToolPath + " auth" + " --username " + username + " --password " + password;
+                authCmd = " auth" + " --username " + username + " --password " + password;
             }
 
             string output;
             Status.ProgressBar.StatusMessage(session, "Authenticating...");
-            ActionResult runResult = ActiveState.Command.Run(session, authCmd, ActiveState.Shell.Cmd, out output);
+            ActionResult runResult = ActiveState.Command.Run(session, stateToolPath, authCmd, out output);
             if (runResult.Equals(ActionResult.UserExit))
             {
                 // Catch cancel and return
@@ -187,14 +187,14 @@ namespace StateDeploy
             {
                 foreach (var seq in sequence)
                 {
-                    string deployCmd = BuildDeployCmd(session, seq.SubCommand, stateToolPath);
+                    string deployCmd = BuildDeployCmd(session, seq.SubCommand);
                     session.Log(string.Format("Executing deploy command: {0}", deployCmd));
 
                     Status.ProgressBar.Increment(session, 1);
                     Status.ProgressBar.StatusMessage(session, seq.Description);
 
                     string output;
-                    var runResult = ActiveState.Command.Run(session, deployCmd, ActiveState.Shell.Cmd, out output);
+                    var runResult = ActiveState.Command.Run(session, stateToolPath, deployCmd, out output);
                     if (runResult.Equals(ActionResult.UserExit))
                     {
                         // Catch cancel and return
@@ -247,13 +247,13 @@ namespace StateDeploy
 
         }
 
-        private static string BuildDeployCmd(Session session, string subCommand, string stateToolPath)
+        private static string BuildDeployCmd(Session session, string subCommand)
         {
             string installDir = session.CustomActionData["INSTALLDIR"];
             string projectName = session.CustomActionData["PROJECT_OWNER_AND_NAME"];
             string isModify = session.CustomActionData["IS_MODIFY"];
 
-            StringBuilder deployCMDBuilder = new StringBuilder(stateToolPath + " deploy " + subCommand);
+            StringBuilder deployCMDBuilder = new StringBuilder(String.Format("deploy {0}", subCommand));
             if (isModify == "true")
             {
                 deployCMDBuilder.Append(" --force");
@@ -264,7 +264,7 @@ namespace StateDeploy
             // We quote the string here as Windows paths that contain spaces must be quoted.
             // We also account for a path ending with a slash and ensure that the quote character
             // isn't preserved.
-            deployCMDBuilder.AppendFormat(" {0} --path=\"{1}\\\"", projectName, @installDir);
+            deployCMDBuilder.AppendFormat(" {0} --path=\"{1}\\\"", projectName, installDir);
 
             return deployCMDBuilder.ToString();
         }

@@ -129,7 +129,7 @@ function hasWritePermission([string] $path)
     New-Item -Path (Join-Path $path $thefile) -ItemType File -ErrorAction 'SilentlyContinue' -ErrorVariable err
     $occurance = errorOccured $True $err
     #  If an error occurred and it's NOT and IOExpction error where the file already exists
-    if( $occurance[0] -And -Not ($occurance[1].exception.GetType().fullname -eq "System.IO.IOException" -And (Test-Path $path))){
+    if( $occurance[0] -And -Not ($occurance[1].exception.GetType().fullname -eq "System.IO.IOException" -And (Test-Path -LiteralPath $path))){
         return $False
     }
     Remove-Item -Path (Join-Path $path $thefile) -Force  -ErrorAction 'silentlycontinue' -ErrorVariable err
@@ -201,7 +201,7 @@ function fetchArtifacts($downloadDir, $statejson, $statepkg) {
     # Download pkg file
     $zipPath = Join-Path $downloadDir $statepkg
     # Clean it up to start but leave it behind when done 
-    if(Test-Path $downloadDir){
+    if(Test-Path -LiteralPath $downloadDir){
         Remove-Item $downloadDir -Recurse
     }
     New-Item -Path $downloadDir -ItemType Directory | Out-Null # There is output from this command, don't show the user.
@@ -229,7 +229,8 @@ function fetchArtifacts($downloadDir, $statejson, $statepkg) {
 
     # Extract binary from pkg and confirm checksum
     Write-Host "Extracting $statepkg...`n"
-    Expand-Archive $zipPath $downloadDir
+    # using LiteralPath argument prevents interpretation of wildcards in zipPath
+    Expand-Archive -LiteralPath $zipPath -DestinationPath $downloadDir
 }
 
 function test-64Bit() {
@@ -341,17 +342,17 @@ function install()
     Write-Host "`nInstalling to '$installDir'...`n" -ForegroundColor Yellow
     if ( -Not $script:NOPROMPT ) {
         if( -Not (promptYN "Continue?") ) {
-            return
+            return 2
         }
     }
 
     #  If the install dir doesn't exist
     $installPath = Join-Path $installDir $script:STATEEXE
-    if( -Not (Test-Path $installDir)) {
+    if( -Not (Test-Path -LiteralPath $installDir)) {
         Write-host "NOTE: $installDir will be created`n"
         New-Item -Path $installDir -ItemType Directory | Out-Null
     } else {
-        if(Test-Path $installPath -PathType Leaf) {
+        if(Test-Path -LiteralPath $installPath -PathType Leaf) {
             Remove-Item $installPath -Erroraction 'silentlycontinue' -ErrorVariable err
             $occurance = errorOccured $False $err
             if($occurance[0]){
