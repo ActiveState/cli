@@ -24,6 +24,8 @@ param (
     ,[Parameter(Mandatory=$False)][string]$activate = ""
 )
 
+Set-StrictMode -Off
+
 $script:NOPROMPT = $n
 $script:FORCEOVERWRITE = $f
 $script:TARGET = ($t).Trim()
@@ -90,6 +92,34 @@ function errorOccured($suppress, $errMsg) {
     return $False, ""
 }
 
+function download([string] $url, [string] $out) {
+    [int]$Retrycount = "0"
+
+    do {
+        try {
+            $downloader = new-object System.Net.WebClient
+            if ($out -eq "") {
+                return $downloader.DownloadString($url)
+            }
+            else {
+                return $downloader.DownloadFile($url, $out)
+            }
+        }
+        catch {
+            if ($Retrycount -gt 5){
+                Write-Error "Could not Download after 5 retries."
+                throw $_
+            }
+            else {
+                Write-Host "Could not Download, retrying..."
+                Write-Host $_
+                $Retrycount = $Retrycount + 1
+            }
+        }
+    }
+    While ($true)
+}
+
 function hasWritePermission([string] $path)
 {
     # $user = "$env:userdomain\$env:username"
@@ -99,7 +129,7 @@ function hasWritePermission([string] $path)
     New-Item -Path (Join-Path $path $thefile) -ItemType File -ErrorAction 'SilentlyContinue' -ErrorVariable err
     $occurance = errorOccured $True $err
     #  If an error occurred and it's NOT and IOExpction error where the file already exists
-    if( $occurance[0] -And -Not ($occurance[1].exception.GetType().fullname -eq "System.IO.IOException" -And (Test-Path $path))){
+    if( $occurance[0] -And -Not ($occurance[1].exception.GetType().fullname -eq "System.IO.IOException" -And (Test-Path -LiteralPath $path))){
         return $False
     }
     Remove-Item -Path (Join-Path $path $thefile) -Force  -ErrorAction 'silentlycontinue' -ErrorVariable err
@@ -153,16 +183,14 @@ function fetchArtifacts($downloadDir, $statejson, $statepkg) {
     $STATEURL="https://s3.ca-central-1.amazonaws.com/cli-update/update/state"
     
     Write-Host "Preparing for installation...`n"
-    
-    $downloader = new-object System.Net.WebClient
 
     # Get version and checksum
     $jsonurl = "$STATEURL/$script:BRANCH/$statejson"
     Write-Host "Determining latest version...`n"
     try{
-        $branchJson = ConvertFrom-Json -InputObject $downloader.DownloadString($jsonurl)
+        $branchJson = ConvertFrom-Json -InputObject (download $jsonurl)
         $latestVersion = $branchJson.Version
-        $versionedJson = ConvertFrom-Json -InputObject $downloader.DownloadString("$STATEURL/$script:BRANCH/$latestVersion/$statejson")
+        $versionedJson = ConvertFrom-Json -InputObject (download "$STATEURL/$script:BRANCH/$latestVersion/$statejson")
     } catch [System.Exception] {
         Write-Warning "Unable to retrieve the latest version number"
         Write-Error $_.Exception.Message
@@ -173,14 +201,14 @@ function fetchArtifacts($downloadDir, $statejson, $statepkg) {
     # Download pkg file
     $zipPath = Join-Path $downloadDir $statepkg
     # Clean it up to start but leave it behind when done 
-    if(Test-Path $downloadDir){
+    if(Test-Path -LiteralPath $downloadDir){
         Remove-Item $downloadDir -Recurse
     }
     New-Item -Path $downloadDir -ItemType Directory | Out-Null # There is output from this command, don't show the user.
     $zipURL = "$STATEURL/$script:BRANCH/$latestVersion/$statepkg"
     Write-Host "Fetching the latest version: $latestVersion...`n"
     try{
-        $downloader.DownloadFile($zipURL, $zipPath)
+        download $zipURL $zipPath
     } catch [System.Exception] {
         Write-Warning "Could not install State Tool"
         Write-Warning "Could not access $zipURL"
@@ -201,7 +229,8 @@ function fetchArtifacts($downloadDir, $statejson, $statepkg) {
 
     # Extract binary from pkg and confirm checksum
     Write-Host "Extracting $statepkg...`n"
-    Expand-Archive $zipPath $downloadDir
+    # using LiteralPath argument prevents interpretation of wildcards in zipPath
+    Expand-Archive -LiteralPath $zipPath -DestinationPath $downloadDir
 }
 
 function test-64Bit() {
@@ -313,17 +342,17 @@ function install()
     Write-Host "`nInstalling to '$installDir'...`n" -ForegroundColor Yellow
     if ( -Not $script:NOPROMPT ) {
         if( -Not (promptYN "Continue?") ) {
-            return
+            return 2
         }
     }
 
     #  If the install dir doesn't exist
     $installPath = Join-Path $installDir $script:STATEEXE
-    if( -Not (Test-Path $installDir)) {
+    if( -Not (Test-Path -LiteralPath $installDir)) {
         Write-host "NOTE: $installDir will be created`n"
         New-Item -Path $installDir -ItemType Directory | Out-Null
     } else {
-        if(Test-Path $installPath -PathType Leaf) {
+        if(Test-Path -LiteralPath $installPath -PathType Leaf) {
             Remove-Item $installPath -Erroraction 'silentlycontinue' -ErrorVariable err
             $occurance = errorOccured $False $err
             if($occurance[0]){

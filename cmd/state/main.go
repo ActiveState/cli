@@ -108,8 +108,12 @@ func run(args []string, out output.Outputer) (int, error) {
 	}
 
 	// Forward call to specific state tool version, if warranted
-	if code, fail := forwardIfWarranted(args, out, pj); fail != nil {
-		return code, fail
+	forward, err := forwardFn(args, out, pj)
+	if err != nil {
+		return 1, err
+	}
+	if forward != nil {
+		return forward()
 	}
 
 	// Check for deprecation
@@ -141,7 +145,7 @@ func run(args []string, out output.Outputer) (int, error) {
 
 	// Run the actual command
 	cmds := cmdtree.New(primer.New(pj, out, authentication.Get(), prompt.New(), sshell, conditional))
-	err := cmds.Execute(args[1:])
+	err = cmds.Execute(args[1:])
 
 	return unwrapError(err)
 }
