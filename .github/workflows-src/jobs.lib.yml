@@ -1,4 +1,4 @@
-#@ load("steps.lib.yml", "steps_genversion", "steps_preprocess", "steps_build", "steps_genupdate", "steps_installgo", "steps_setup", "steps_test", "steps_inttest", "steps_uploadartifacts", "steps_uploadsessartifacts", "steps_downloadsessartifacts", "steps_deletesessartifacts", "steps_deploy", "steps_build_state_msi", "steps_build_languages_msi", "steps_cleanbuild", "steps_validate", "steps_sign", "steps_sign_installscript", "steps_build_installscripts")
+#@ load("steps.lib.yml", "steps_genversion", "steps_preprocess", "steps_build", "steps_genupdate", "steps_installgo", "steps_setup", "steps_test", "steps_inttest", "steps_uploadartifacts", "steps_uploadsessartifacts", "steps_downloadsessartifacts", "steps_deletesessartifacts", "steps_deploy", "steps_build_state_msi", "steps_build_languages_msi", "steps_cleanbuild", "steps_validate", "steps_sign", "steps_sign_installscript", "steps_build_installscripts", "steps_uploadsharedartifacts", "steps_downloadsharedartifacts", "steps_downloadallsessartifacts", "steps_sanitizeallsessartifacts")
 
 strategy: &strategy
   matrix:
@@ -23,7 +23,7 @@ steps:
   - #@ steps_installgo()
   - #@ steps_setup()
   - #@ steps_genversion()
-  - #@ steps_uploadsessartifacts()
+  - #@ steps_uploadsharedartifacts()
 #@ end
 
 #@ def jobs_build():
@@ -36,7 +36,7 @@ timeout-minutes: 10
 steps:
   - name: "Checkout code"
     uses: actions/checkout@v2
-  - #@ steps_downloadsessartifacts()
+  - #@ steps_downloadsharedartifacts()
   - #@ steps_installgo()
   - #@ steps_setup()
   - #@ steps_preprocess()
@@ -45,21 +45,6 @@ steps:
   - #@ steps_sign()
   - #@ steps_sign_installscript()
   - #@ steps_genupdate()
-  - #@ steps_uploadsessartifacts()
-#@ end
-
-#@ def jobs_build_msi():
-name: Build MSI's
-runs-on: windows-latest
-needs: build
-env: *env
-timeout-minutes: 10
-steps:
-  - name: "Checkout code"
-    uses: actions/checkout@v2
-  - #@ steps_downloadsessartifacts()
-  - #@ steps_installgo()
-  - #@ steps_setup()
   - #@ steps_build_state_msi()
   - #@ steps_build_languages_msi()
   - #@ steps_uploadsessartifacts()
@@ -75,7 +60,7 @@ timeout-minutes: 10
 steps:
   - name: "Checkout code"
     uses: actions/checkout@v2
-  - #@ steps_downloadsessartifacts()
+  - #@ steps_downloadsharedartifacts()
   - #@ steps_installgo()
   - #@ steps_setup()
   - #@ steps_preprocess()
@@ -100,7 +85,7 @@ steps:
 
 #@ def jobs_deploy():
 name: Deploy
-needs: [ build, build_msi, unittest ]
+needs: [ build, unittest ]
 runs-on: ubuntu-latest
 env: *env
 timeout-minutes: 10
@@ -109,7 +94,8 @@ steps:
     uses: actions/checkout@v2
   - #@ steps_installgo()
   - #@ steps_setup()
-  - #@ steps_downloadsessartifacts()
+  - #@ steps_downloadallsessartifacts()
+  - #@ steps_sanitizeallsessartifacts()
   - #@ steps_preprocess()
   - #@ steps_cleanbuild()
   - #@ steps_deploy()

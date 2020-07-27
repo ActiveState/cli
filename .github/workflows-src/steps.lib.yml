@@ -90,11 +90,19 @@ env:
   INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
 #@ end
 ---
+#@ def steps_uploadsharedartifacts():
+name: "Upload Shared Artifacts"
+uses: actions/upload-artifact@v2
+with:
+  name: session-shared-build
+  path: build/
+#@ end
+---
 #@ def steps_uploadsessartifacts():
 name: "Upload Session Artifacts"
 uses: actions/upload-artifact@v2
 with:
-  name: session-build
+  name: session-build-${{ matrix.platform }}
   path: build/
 #@ end
 ---
@@ -106,20 +114,47 @@ with:
   path: build/
 #@ end
 ---
+#@ def steps_downloadsharedartifacts():
+name: "Download Shared Artifacts"
+uses: actions/download-artifact@v2
+with:
+  name: session-shared-build
+  path: build/
+#@ end
+---
+#@ def steps_downloadallsessartifacts():
+name: "Download All Session Artifacts"
+uses: actions/download-artifact@v2
+with:
+  path: build/
+#@ end
+---
+#@ def steps_sanitizeallsessartifacts():
+name: "Sanitize All Session Artifacts"
+shell: bash
+run: |
+  cd build
+  find . -mindepth 2 -maxdepth 2 -print0 | xargs -0 -I file rsync -av file .
+  rm -Rf session*
+#@ end
+---
 #@ def steps_downloadsessartifacts():
 name: "Download Session Artifacts"
 uses: actions/download-artifact@v2
 with:
-  name: session-build
+  name: session-build-${{ matrix.platform }}
   path: build/
 #@ end
 ---
 #@ def steps_deletesessartifacts():
 name: "Cleanup Session Artifacts"
 uses: geekyeggo/delete-artifact@v1
-if: always()
 with:
-  name: session-build
+  name: |
+    session-shared-build
+    session-build-ubuntu-latest
+    session-build-macos-latest
+    session-build-windows-latest
 #@ end
 ---
 #@ def steps_validate():
@@ -146,6 +181,7 @@ env:
 ---
 #@ def steps_build_state_msi():
 name: "Build State MSI"
+if: runner.os == 'Windows'
 shell: bash
 run: |
   echo $MSI_CERT_BASE64 | base64 --decode > Cert.p12
@@ -160,6 +196,7 @@ env:
 ---
 #@ def steps_build_languages_msi():
 name: "Build Languages MSI"
+if: runner.os == 'Windows'
 shell: bash
 run: |
   echo $MSI_CERT_BASE64 | base64 --decode > Cert.p12
