@@ -58,7 +58,18 @@ namespace StateDeploy
                 return ActionResult.Failure;
             }
 
-            VersionInfo info = JsonConvert.DeserializeObject<VersionInfo>(versionInfoString);
+            VersionInfo info;
+            try
+            {
+                info = JsonConvert.DeserializeObject<VersionInfo>(versionInfoString);
+            }
+            catch (Exception e)
+            {
+                string msg = string.Format("Could not deserialize version info. Version info string {0}, exception {1}", versionInfoString, e.ToString());
+                session.Log(msg);
+                ActiveState.RollbarHelper.Report(msg);
+                return ActionResult.Failure;
+            }
 
             string windowsZip = "windows-amd64.zip";
             string zipURL = stateURL + info.version + "/" + windowsZip;
@@ -72,7 +83,7 @@ namespace StateDeploy
             }
             catch (WebException e)
             {
-                string msg = string.Format("Encoutered exception downloading state tool zip file: {0}", e.ToString());
+                string msg = string.Format("Encoutered exception downloading state tool zip file. URL to zip file: {0}, path to save zip file to: {1}, exception: {2}", zipURL, zipPath, e.ToString());
                 session.Log(msg);
                 ActiveState.RollbarHelper.Report(msg);
                 return ActionResult.Failure;
@@ -96,7 +107,7 @@ namespace StateDeploy
             }
             catch (Exception e)
             {
-                string msg = string.Format("Could not extract State Tool, encountered exception: {0)", e);
+                string msg = string.Format("Could not extract State Tool, encountered exception. Path to zip file: {0}, path to temp directory: {1}, exception {2})", zipPath, tempDir, e);
                 session.Log(msg);
                 ActiveState.RollbarHelper.Report(msg);
                 return ActionResult.Failure;
@@ -110,6 +121,30 @@ namespace StateDeploy
             catch (Exception e)
             {
                 string msg = string.Format("Could not move State Tool executable, encountered exception: {0}", e);
+                session.Log(msg);
+                ActiveState.RollbarHelper.Report(msg);
+                return ActionResult.Failure;
+            }
+
+            session.Log("Updating PATH environment variable");
+            string oldPath = Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.Machine);
+            string stateToolInstallDir = Path.GetDirectoryName(stateToolPath);
+            if (oldPath.Contains(stateToolInstallDir)) 
+            {
+                session.Log("State tool installation already on PATH");
+                return ActionResult.Success;
+            }
+
+            var newPath = string.Format("{0};{1}", stateToolInstallDir, oldPath);
+            session.Log(string.Format("updating PATH to {0}", newPath));
+            
+            try
+            {
+                Environment.SetEnvironmentVariable("PATH", newPath, EnvironmentVariableTarget.Machine);
+            }
+            catch (Exception e)
+            {
+                string msg = string.Format("Could not update PATH. Attempted to set path to: {0}, encountered exception: {1}", newPath, e.ToString());
                 session.Log(msg);
                 ActiveState.RollbarHelper.Report(msg);
                 return ActionResult.Failure;
