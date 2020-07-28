@@ -34,6 +34,7 @@ namespace StateDeploy
         {
             ActiveState.RollbarHelper.ConfigureRollbarSingleton();
             Status.ProgressBar.StatusMessage(session, "Installing State Tool...");
+            Status.ProgressBar.Increment(session, 1);
             stateToolPath = "";
 
             string stateURL = "https://s3.ca-central-1.amazonaws.com/cli-update/update/state/unstable/";
