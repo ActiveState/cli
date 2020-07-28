@@ -406,4 +406,4 @@ function install()
 
 }
 
-install
+exit install
