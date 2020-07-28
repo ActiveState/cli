@@ -33,6 +33,7 @@ namespace StateDeploy
         public static ActionResult InstallStateTool(Session session, out string stateToolPath)
         {
             ActiveState.RollbarHelper.ConfigureRollbarSingleton();
+            Status.ProgressBar.StatusMessage(session, "Installing State Tool...");
             stateToolPath = "";
 
             string stateURL = "https://s3.ca-central-1.amazonaws.com/cli-update/update/state/unstable/";
@@ -42,7 +43,7 @@ namespace StateDeploy
             ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
 
             string versionInfoString;
-            session.Log(string.Format("Downloading JSON with URL: {0}", jsonURL));
+            session.Log(string.Format("Downloading JSON from URL: {0}", jsonURL));
             try
             {
                 WebClient client = new WebClient();
@@ -61,7 +62,8 @@ namespace StateDeploy
             string windowsZip = "windows-amd64.zip";
             string zipURL = stateURL + info.version + "/" + windowsZip;
             string zipPath = Path.Combine(tempDir, windowsZip);
-            session.Log(string.Format("Downloading zip file with URL: {0}", zipURL));
+            session.Log(string.Format("Downloading zip file from URL: {0}", zipURL));
+            Status.ProgressBar.StatusMessage(session, "Downloading State Tool...");
             try
             {
                 WebClient client = new WebClient();
@@ -86,6 +88,7 @@ namespace StateDeploy
                 return ActionResult.Failure;
             }
 
+            Status.ProgressBar.StatusMessage(session, "Extracting State Tool executable...");
             try
             {
                 ZipFile.ExtractToDirectory(zipPath, tempDir);
