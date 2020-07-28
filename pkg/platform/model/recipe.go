@@ -56,9 +56,14 @@ func FetchRawRecipeForCommitAndPlatform(commitID strfmt.UUID, owner, project str
 	return fetchRawRecipe(commitID, owner, project, &platform)
 }
 
+// FetchRecipeIDForCommit returns a recipe ID for a project based on the given commitID
+func FetchRecipeIDForCommit(commitID strfmt.UUID, owner, project, orgID string, private bool) (*strfmt.UUID, *failures.Failure) {
+	return fetchRecipeID(commitID, owner, project, orgID, private, nil)
+}
+
 // FetchRecipeIDForCommitAndPlatform returns a recipe ID for a project based on the given commitID and platform string
-func FetchRecipeIDForCommitAndPlatform(commitID strfmt.UUID, owner, project string, hostPlatform string) (*strfmt.UUID, *failures.Failure) {
-	return fetchRecipeID(commitID, owner, project, &hostPlatform)
+func FetchRecipeIDForCommitAndPlatform(commitID strfmt.UUID, owner, project, orgID string, private bool, hostPlatform string) (*strfmt.UUID, *failures.Failure) {
+	return fetchRecipeID(commitID, owner, project, orgID, private, &hostPlatform)
 }
 
 func fetchRawRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *string) (string, *failures.Failure) {
@@ -133,12 +138,15 @@ func commitToOrder(commitID strfmt.UUID, owner, project string, hostPlatform *st
 	return order, nil
 }
 
-func fetchRecipeID(commitID strfmt.UUID, owner, project string, hostPlatform *string) (*strfmt.UUID, *failures.Failure) {
+func fetchRecipeID(commitID strfmt.UUID, owner, project, orgID string, private bool, hostPlatform *string) (*strfmt.UUID, *failures.Failure) {
 	var err error
 	params := iop.NewSolveOrderParams()
 	params.Order, err = commitToOrder(commitID, owner, project, hostPlatform)
 	if err != nil {
 		return nil, FailOrderRecipes.Wrap(err)
+	}
+	if private {
+		params.OrganizationID = &orgID
 	}
 
 	client, _ := inventory.Init()
@@ -165,15 +173,25 @@ func fetchRecipeID(commitID strfmt.UUID, owner, project string, hostPlatform *st
 		}
 	}
 
-	// Because we filter platforms in the request we should only
-	// receive one recipe ID
-	if len(recipeID.Payload) != 1 {
-		return nil, FailOrderRecipes.New("err_recipe_payload")
+	if hostPlatform == nil {
+		hostPlatform = &HostPlatform
 	}
 
-	for _, id := range recipeID.Payload {
-		return id.RecipeID, nil
+	currentPlatformID, fail := filterPlatformIDs(*hostPlatform, runtime.GOARCH, params.Order.Platforms)
+	if fail != nil {
+		return nil, FailOrderRecipes.Wrap(fail)
 	}
 
-	return nil, FailNoData.New("err_recipe_not_found")
+	if len(currentPlatformID) != 1 {
+		// TODO: err
+		return nil, FailOrderRecipes.New("err_order_platform")
+	}
+
+	if _, ok := recipeID.Payload[currentPlatformID[0].String()]; !ok {
+		// TODO: locale entry
+		return nil, FailOrderRecipes.New("err_order_no_recipe")
+	}
+	return recipeID.Payload[currentPlatformID[0].String()].RecipeID, nil
+
+	// return nil, FailNoData.New("err_recipe_not_found")
 }
