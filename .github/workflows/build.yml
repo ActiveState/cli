@@ -176,7 +176,7 @@ jobs:
     - name: Download Session Artifacts
       uses: actions/download-artifact@v2
       with:
-        name: session-build-${{ matrix.platform }}
+        name: session-build-windows-latest
         path: build/
     - name: Install Go
       uses: actions/setup-go@v2
@@ -211,5 +211,5 @@ jobs:
     - name: Upload log Files
       uses: actions/upload-artifact@v2
       with:
-        name: session-build-${{ matrix.platform }}
+        name: activeperl-logs
         path: ActivePerl*.log
