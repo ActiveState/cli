@@ -58,7 +58,7 @@ func FetchRawRecipeForCommitAndPlatform(commitID strfmt.UUID, owner, project str
 
 // FetchRecipeIDForCommit returns a recipe ID for a project based on the given commitID and the current platform
 func FetchRecipeIDForCommit(commitID strfmt.UUID, owner, project, orgID string, private bool) (*strfmt.UUID, *failures.Failure) {
-	return fetchRecipeID(commitID, owner, project, orgID, private, nil)
+	return fetchRecipeID(commitID, owner, project, orgID, private, &HostPlatform)
 }
 
 // FetchRecipeIDForCommitAndPlatform returns a recipe ID for a project based on the given commitID and platform string
@@ -71,9 +71,17 @@ func fetchRawRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *s
 
 	var err error
 	params := iop.NewResolveRecipesParams()
-	params.Order, err = commitToOrder(commitID, owner, project, hostPlatform)
+	params.Order, err = commitToOrder(commitID, owner, project)
 	if err != nil {
 		return "", FailOrderRecipes.Wrap(err)
+	}
+
+	var fail *failures.Failure
+	if hostPlatform != nil {
+		params.Order.Platforms, fail = filterPlatformIDs(*hostPlatform, runtime.GOARCH, params.Order.Platforms)
+		if fail != nil {
+			return "", fail
+		}
 	}
 
 	recipe, err := inventory.ResolveRecipes(transport, params, authentication.ClientAuth())
@@ -104,7 +112,7 @@ func fetchRawRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *s
 	return recipe, nil
 }
 
-func commitToOrder(commitID strfmt.UUID, owner, project string, hostPlatform *string) (*inventory_models.V1Order, error) {
+func commitToOrder(commitID strfmt.UUID, owner, project string) (*inventory_models.V1Order, error) {
 	monoOrder, err := FetchOrderFromCommit(commitID)
 	if err != nil {
 		return nil, FailOrderRecipes.Wrap(err, locale.T("err_order_recipe")).ToError()
@@ -127,21 +135,13 @@ func commitToOrder(commitID strfmt.UUID, owner, project string, hostPlatform *st
 		Organization: owner,
 	}
 
-	var fail *failures.Failure
-	if hostPlatform != nil {
-		order.Platforms, fail = filterPlatformIDs(*hostPlatform, runtime.GOARCH, order.Platforms)
-		if fail != nil {
-			return nil, fail.ToError()
-		}
-	}
-
 	return order, nil
 }
 
 func fetchRecipeID(commitID strfmt.UUID, owner, project, orgID string, private bool, hostPlatform *string) (*strfmt.UUID, *failures.Failure) {
 	var err error
 	params := iop.NewSolveOrderParams()
-	params.Order, err = commitToOrder(commitID, owner, project, hostPlatform)
+	params.Order, err = commitToOrder(commitID, owner, project)
 	if err != nil {
 		return nil, FailOrderRecipes.Wrap(err)
 	}
@@ -171,10 +171,6 @@ func fetchRecipeID(commitID strfmt.UUID, owner, project, orgID string, private b
 			logging.Error("Unknown error while resolving order, error: %v, order: %s", err, string(orderBody))
 			return nil, FailOrderRecipes.Wrap(err, "err_order_unknown")
 		}
-	}
-
-	if hostPlatform == nil {
-		hostPlatform = &HostPlatform
 	}
 
 	platformIDs, fail := filterPlatformIDs(*hostPlatform, runtime.GOARCH, params.Order.Platforms)
