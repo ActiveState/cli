@@ -6,7 +6,6 @@ jobs:
   inttest:
     name: Integration Test
     strategy:
-      fail-fast: false
       matrix:
         go-version:
         - 1.13.x
@@ -21,16 +20,9 @@ jobs:
       SHELL: bash
       GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     timeout-minutes: 25
-    needs:
-    - build
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
-    - name: Download Session Artifacts
-      uses: actions/download-artifact@v2
-      with:
-        name: session-build-${{ matrix.platform }}
-        path: build/
     - name: Install Go
       uses: actions/setup-go@v2
       with:
@@ -54,10 +46,7 @@ jobs:
       run: state run build
     - name: Integration Tests
       shell: bash
-      run: |
-        ls -l ./build/msi
-        chmod +x ./build/msi/*.msi
-        go test --run="TestActivePerl/.*" --timeout 20m ./test/integration -v
+      run: go test -timeout 20m ./test/integration -v
       env:
         INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
         INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
