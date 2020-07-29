@@ -48,7 +48,7 @@ namespace StateDeploy
             }
             catch (Exception e)
             {
-                string msg = string.Format("Could not create directory at: {0}, encountered exception: {1}", tempDir, e.ToString());
+                string msg = string.Format("Could not create temp directory at: {0}, encountered exception: {1}", tempDir, e.ToString());
                 session.Log(msg);
                 ActiveState.RollbarHelper.Report(msg);
                 return ActionResult.Failure;
@@ -133,7 +133,7 @@ namespace StateDeploy
             }
             catch (Exception e)
             {
-                string msg = string.Format("Could not create directory at: {0}, encountered exception: {1}", stateToolInstallDir, e.ToString());
+                string msg = string.Format("Could not create State Tool install directory at: {0}, encountered exception: {1}", stateToolInstallDir, e.ToString());
                 session.Log(msg);
                 ActiveState.RollbarHelper.Report(msg);
                 return ActionResult.Failure;
@@ -162,7 +162,6 @@ namespace StateDeploy
 
             var newPath = string.Format("{0};{1}", stateToolInstallDir, oldPath);
             session.Log(string.Format("updating PATH to {0}", newPath));
-            
             try
             {
                 Environment.SetEnvironmentVariable("PATH", newPath, EnvironmentVariableTarget.Machine);
