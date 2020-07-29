@@ -391,7 +391,7 @@ err_api_org_not_found:
 err_api_project_not_found:
   other: The requested project {{.V0}} does not exist under {{.V1}}. Please ensure the owner is correct and that the project has been created.
 err_api_project_not_found_unauthenticated:
-  other: The requested project {{.V1}}/{{.V0}} could not be found. If this is a private project you may need to authenticate with 'state auth'.
+  other: The requested project {{.V0}}/{{.V1}} could not be found. If this is a private project you may need to authenticate with 'state auth'.
 err_api_member_not_found:
   other: Unable to find requested Member
 err_api_org_invite_expected_one_invite:
