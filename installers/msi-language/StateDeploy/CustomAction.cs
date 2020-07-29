@@ -1,8 +1,6 @@
 using Microsoft.Deployment.WindowsInstaller;
 using System;
 using System.Text;
-using System.Diagnostics;
-using System.Threading;
 using System.IO;
 using System.Net;
 using System.Collections.ObjectModel;
@@ -10,6 +8,9 @@ using System.Windows.Forms;
 using System.Linq;
 using System.Web.Script.Serialization;
 using System.Collections.Generic;
+using Newtonsoft.Json;
+using System.Security.Cryptography;
+using System.IO.Compression;
 
 namespace StateDeploy
 {
@@ -22,11 +23,17 @@ namespace StateDeploy
 
     public class CustomActions
     {
+
+        private class VersionInfo
+        {
+            public string version;
+            public string sha256v2;
+        }
+
         public static ActionResult InstallStateTool(Session session, out string stateToolPath)
         {
             ActiveState.RollbarHelper.ConfigureRollbarSingleton();
 
-            stateToolPath = "";
             session.Log("Installing State Tool if necessary");
             if (session.CustomActionData["STATE_TOOL_INSTALLED"] == "true")
             {
@@ -35,55 +42,166 @@ namespace StateDeploy
                 Status.ProgressBar.Increment(session, 1);
                 return ActionResult.Success;
             }
-
-            string tempDir = Path.GetTempPath();
-            string scriptPath = Path.Combine(tempDir, "install.ps1");
-            string installPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ActiveState", "bin");
-
+            
             Status.ProgressBar.StatusMessage(session, "Installing State Tool...");
+            Status.ProgressBar.Increment(session, 1);
+            stateToolPath = "";
 
-            ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
+            string stateURL = "https://s3.ca-central-1.amazonaws.com/cli-update/update/state/unstable/";
+            string windowsJSON = "windows-amd64.json";
+            string jsonURL = stateURL + windowsJSON;
+            string timeStamp = DateTime.Now.ToFileTime().ToString();
+            string tempDir = Path.Combine(Path.GetTempPath(), timeStamp);
+            session.Log(string.Format("Using temp path: {0}", tempDir));
             try
             {
-                WebClient client = new WebClient();
-                client.DownloadFile("https://platform.activestate.com/dl/cli/install.ps1", scriptPath);
+                Directory.CreateDirectory(tempDir);
             }
-            catch (WebException e)
+            catch (Exception e)
             {
-                session.Log(string.Format("Encoutered exception downloading file: {0}", e.ToString()));
-                ActiveState.RollbarHelper.Report(string.Format("Encoutered exception downloading file: {0}", e.ToString()));
+                string msg = string.Format("Could not create temp directory at: {0}, encountered exception: {1}", tempDir, e.ToString());
+                session.Log(msg);
+                ActiveState.RollbarHelper.Report(msg);
                 return ActionResult.Failure;
             }
 
-            string installCmd = string.Format("Set-PSDebug -trace 2; Set-ExecutionPolicy Unrestricted -Scope Process; & '{0}' -n -t \"\"\"{1}\"\"\"", scriptPath, installPath);
-            session.Log(string.Format("Running install command: {0}", installCmd));
+            ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
 
-            string output;
-            ActionResult result = ActiveState.Command.Run(session, "powershell", installCmd, out output);
-            if (result.Equals(ActionResult.UserExit))
+            string versionInfoString;
+            session.Log(string.Format("Downloading JSON from URL: {0}", jsonURL));
+            try
             {
-                // Catch cancel and return
-                ActiveState.RollbarHelper.Report("Installation exited prematurely due to UserExit (probably safe to ignore)");
-                return result;
+                WebClient client = new WebClient();
+                versionInfoString = client.DownloadString(jsonURL);
             }
-            else if (result.Equals(ActionResult.Failure))
+            catch (WebException e)
             {
-                Record record = new Record();
-                var errorOutput = FormatErrorOutput(output);
-                record.FormatString = String.Format("state tool installation failed with error:\n{0}", errorOutput);
+                string msg = string.Format("Encoutered exception downloading state tool json info file: {0}", e.ToString());
+                session.Log(msg);
+                ActiveState.RollbarHelper.Report(msg);
+                return ActionResult.Failure;
+            }
 
-                MessageResult msgRes = session.Message(InstallMessage.Error | (InstallMessage)MessageBoxButtons.OK, record);
-                ActiveState.RollbarHelper.Report(record.FormatString);
-                return result;
-            }
-            Status.ProgressBar.Increment(session, 1);
-
-            stateToolPath = Path.Combine(installPath, "state.exe");
-            if ( ! File.Exists(stateToolPath))
+            VersionInfo info;
+            try
             {
-                ActiveState.RollbarHelper.Report(String.Format("State tool installed without errors but its filePath does not exist.  install.ps1 output: {0}", FormatErrorOutput(output)));
+                info = JsonConvert.DeserializeObject<VersionInfo>(versionInfoString);
             }
-            return result;
+            catch (Exception e)
+            {
+                string msg = string.Format("Could not deserialize version info. Version info string {0}, exception {1}", versionInfoString, e.ToString());
+                session.Log(msg);
+                ActiveState.RollbarHelper.Report(msg);
+                return ActionResult.Failure;
+            }
+
+            string windowsZip = "windows-amd64.zip";
+            string zipPath = Path.Combine(tempDir, windowsZip);
+            string zipURL = stateURL + info.version + "/" + windowsZip;
+            session.Log(string.Format("Downloading zip file from URL: {0}", zipURL));
+            Status.ProgressBar.StatusMessage(session, "Downloading State Tool...");
+            try
+            {
+                WebClient client = new WebClient();
+                client.DownloadFile(zipURL, zipPath);
+            }
+            catch (WebException e)
+            {
+                string msg = string.Format("Encoutered exception downloading state tool zip file. URL to zip file: {0}, path to save zip file to: {1}, exception: {2}", zipURL, zipPath, e.ToString());
+                session.Log(msg);
+                ActiveState.RollbarHelper.Report(msg);
+                return ActionResult.Failure;
+            }
+
+            SHA256 sha = SHA256.Create();
+            FileStream fInfo = File.OpenRead(zipPath);
+            string zipHash = BitConverter.ToString(sha.ComputeHash(fInfo)).Replace("-", string.Empty).ToLower();
+            if (zipHash != info.sha256v2)
+            {
+                string msg = string.Format("SHA256 checksum did not match, expected: {0} actual: {1}", info.sha256v2, zipHash.ToString());
+                session.Log(msg);
+                ActiveState.RollbarHelper.Report(msg);
+                return ActionResult.Failure;
+            }
+
+            Status.ProgressBar.StatusMessage(session, "Extracting State Tool executable...");
+            try
+            {
+                ZipFile.ExtractToDirectory(zipPath, tempDir);
+            }
+            catch (Exception e)
+            {
+                string msg = string.Format("Could not extract State Tool, encountered exception. Path to zip file: {0}, path to temp directory: {1}, exception {2})", zipPath, tempDir, e);
+                session.Log(msg);
+                ActiveState.RollbarHelper.Report(msg);
+                return ActionResult.Failure;
+            }
+
+            string stateToolInstallDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ActiveState", "bin");
+            try
+            {
+                Directory.CreateDirectory(stateToolInstallDir);
+            }
+            catch (Exception e)
+            {
+                string msg = string.Format("Could not create State Tool install directory at: {0}, encountered exception: {1}", stateToolInstallDir, e.ToString());
+                session.Log(msg);
+                ActiveState.RollbarHelper.Report(msg);
+                return ActionResult.Failure;
+            }
+
+
+            stateToolPath = Path.Combine(stateToolInstallDir, "state.exe");
+            if (File.Exists(stateToolPath))
+            {
+                try
+                {
+                    File.Delete(stateToolPath);
+                }
+                catch (Exception e)
+                {
+                    string msg = string.Format("Could not remove existing temporary state tool executable at: {0}, encountered exception: {1}", stateToolPath, e.ToString());
+                    session.Log(msg);
+                    ActiveState.RollbarHelper.Report(msg);
+                    return ActionResult.Failure;
+                }
+            }
+
+            try
+            {
+                File.Move(Path.Combine(tempDir, "windows-amd64.exe"), stateToolPath);
+            }
+            catch (Exception e)
+            {
+                string msg = string.Format("Could not move State Tool executable to: {0}, encountered exception: {1}", stateToolPath, e);
+                session.Log(msg);
+                ActiveState.RollbarHelper.Report(msg);
+                return ActionResult.Failure;
+            }
+
+            session.Log("Updating PATH environment variable");
+            string oldPath = Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.Machine);
+            if (oldPath.Contains(stateToolInstallDir)) 
+            {
+                session.Log("State tool installation already on PATH");
+                return ActionResult.Success;
+            }
+
+            var newPath = string.Format("{0};{1}", stateToolInstallDir, oldPath);
+            session.Log(string.Format("updating PATH to {0}", newPath));
+            try
+            {
+                Environment.SetEnvironmentVariable("PATH", newPath, EnvironmentVariableTarget.Machine);
+            }
+            catch (Exception e)
+            {
+                string msg = string.Format("Could not update PATH. Attempted to set path to: {0}, encountered exception: {1}", newPath, e.ToString());
+                session.Log(msg);
+                ActiveState.RollbarHelper.Report(msg);
+                return ActionResult.Failure;
+            }
+
+            return ActionResult.Success;
         }
 
         private static ActionResult Login(Session session, string stateToolPath)
@@ -158,6 +276,16 @@ namespace StateDeploy
         public static ActionResult StateDeploy(Session session)
         {
             ActiveState.RollbarHelper.ConfigureRollbarSingleton();
+
+            if (!Environment.Is64BitOperatingSystem)
+            {
+                Record record = new Record();
+                record.FormatString = "This installer cannot be run on a 32-bit operating system";
+
+                ActiveState.RollbarHelper.Report(record.FormatString);
+                session.Message(InstallMessage.Error | (InstallMessage)MessageBoxButtons.OK, record);
+                return ActionResult.Failure;
+            }
 
             string stateToolPath;
             ActionResult res = InstallStateTool(session, out stateToolPath);
