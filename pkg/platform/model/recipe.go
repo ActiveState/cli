@@ -151,7 +151,7 @@ func fetchRecipeID(commitID strfmt.UUID, owner, project, orgID string, private b
 
 	client, _ := inventory.Init()
 
-	recipeID, err := client.SolveOrder(params, authentication.ClientAuth())
+	response, err := client.SolveOrder(params, authentication.ClientAuth())
 	if err != nil {
 		if err == context.DeadlineExceeded {
 			return nil, FailOrderRecipes.New("request_timed_out")
@@ -186,8 +186,8 @@ func fetchRecipeID(commitID strfmt.UUID, owner, project, orgID string, private b
 	}
 	platformID := platformIDs[0].String()
 
-	if _, ok := recipeID.Payload[platformID]; !ok {
+	if _, ok := response.Payload[platformID]; !ok {
 		return nil, FailOrderRecipes.New("err_recipe_not_found")
 	}
-	return recipeID.Payload[platformID].RecipeID, nil
+	return response.Payload[platformID].RecipeID, nil
 }
