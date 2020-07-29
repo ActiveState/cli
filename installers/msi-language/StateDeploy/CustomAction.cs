@@ -33,6 +33,16 @@ namespace StateDeploy
         public static ActionResult InstallStateTool(Session session, out string stateToolPath)
         {
             ActiveState.RollbarHelper.ConfigureRollbarSingleton();
+
+            session.Log("Installing State Tool if necessary");
+            if (session.CustomActionData["STATE_TOOL_INSTALLED"] == "true")
+            {
+                stateToolPath = session.CustomActionData["STATE_TOOL_PATH"];
+                session.Log("State Tool is installed, no installation required");
+                Status.ProgressBar.Increment(session, 1);
+                return ActionResult.Success;
+            }
+            
             Status.ProgressBar.StatusMessage(session, "Installing State Tool...");
             Status.ProgressBar.Increment(session, 1);
             stateToolPath = "";
@@ -85,8 +95,23 @@ namespace StateDeploy
             }
 
             string windowsZip = "windows-amd64.zip";
-            string zipURL = stateURL + info.version + "/" + windowsZip;
             string zipPath = Path.Combine(tempDir, windowsZip);
+            if (File.Exists(zipPath))
+            {
+                try
+                {
+                    File.Delete(zipPath);
+                }
+                catch (Exception e)
+                {
+                    string msg = string.Format("Could not delete existing temporary State Tool zip file at: {0}, encountered exception: {1}", zipPath, e.ToString());
+                    session.Log(msg);
+                    ActiveState.RollbarHelper.Report(msg);
+                    return ActionResult.Failure;
+                }
+            }
+
+            string zipURL = stateURL + info.version + "/" + windowsZip;
             session.Log(string.Format("Downloading zip file from URL: {0}", zipURL));
             Status.ProgressBar.StatusMessage(session, "Downloading State Tool...");
             try
@@ -111,6 +136,22 @@ namespace StateDeploy
                 session.Log(msg);
                 ActiveState.RollbarHelper.Report(msg);
                 return ActionResult.Failure;
+            }
+
+            string tempExecutablePath = Path.Combine(tempDir, "windows-amd64.exe");
+            if (File.Exists(tempExecutablePath))
+            {
+                try
+                {
+                    File.Delete(tempExecutablePath);
+                }
+                catch (Exception e)
+                {
+                    string msg = string.Format("Could not delete existing temporary State Tool executable at: {0}, encountered exception: {1}", tempExecutablePath, e.ToString());
+                    session.Log(msg);
+                    ActiveState.RollbarHelper.Report(msg);
+                    return ActionResult.Failure;
+                }
             }
 
             Status.ProgressBar.StatusMessage(session, "Extracting State Tool executable...");
@@ -139,14 +180,30 @@ namespace StateDeploy
                 return ActionResult.Failure;
             }
 
+
             stateToolPath = Path.Combine(stateToolInstallDir, "state.exe");
+            if (File.Exists(stateToolPath))
+            {
+                try
+                {
+                    File.Delete(stateToolPath);
+                }
+                catch (Exception e)
+                {
+                    string msg = string.Format("Could not remove existing temporary state tool executable at: {0}, encountered exception: {1}", stateToolPath, e.ToString());
+                    session.Log(msg);
+                    ActiveState.RollbarHelper.Report(msg);
+                    return ActionResult.Failure;
+                }
+            }
+
             try
             {
                 File.Move(Path.Combine(tempDir, "windows-amd64.exe"), stateToolPath);
             }
             catch (Exception e)
             {
-                string msg = string.Format("Could not move State Tool executable, encountered exception: {0}", e);
+                string msg = string.Format("Could not move State Tool executable to: {0}, encountered exception: {1}", stateToolPath, e);
                 session.Log(msg);
                 ActiveState.RollbarHelper.Report(msg);
                 return ActionResult.Failure;
