@@ -86,11 +86,17 @@ type Download struct {
 	commitID    strfmt.UUID
 	owner       string
 	projectName string
+	orgID       string
+	private     bool
 }
 
 // NewDownload creates a new RuntimeDownload using all custom args
 func NewDownload(commitID strfmt.UUID, owner, projectName string) Downloader {
-	return &Download{commitID, owner, projectName}
+	return &Download{
+		commitID:    commitID,
+		owner:       owner,
+		projectName: projectName,
+	}
 }
 
 // fetchRecipe juggles API's to get the build request that can be sent to the head-chef
@@ -100,7 +106,7 @@ func (r *Download) fetchRecipeID() (strfmt.UUID, *failures.Failure) {
 		return "", FailNoCommit.New(locale.T("err_no_commit"))
 	}
 
-	recipeID, fail := model.FetchRecipeIDForCommitAndPlatform(commitID, r.owner, r.projectName, model.HostPlatform)
+	recipeID, fail := model.FetchRecipeIDForCommitAndPlatform(commitID, r.owner, r.projectName, r.orgID, r.private, model.HostPlatform)
 	if fail != nil {
 		return "", fail
 	}
@@ -113,12 +119,14 @@ func (r *Download) fetchRecipeID() (strfmt.UUID, *failures.Failure) {
 func (r *Download) FetchArtifacts() (*FetchArtifactsResult, *failures.Failure) {
 	result := &FetchArtifactsResult{}
 
-	recipeID, fail := r.fetchRecipeID()
+	platProject, fail := model.FetchProjectByName(r.owner, r.projectName)
 	if fail != nil {
 		return nil, fail
 	}
+	r.orgID = platProject.OrganizationID.String()
+	r.private = platProject.Private
 
-	platProject, fail := model.FetchProjectByName(r.owner, r.projectName)
+	recipeID, fail := r.fetchRecipeID()
 	if fail != nil {
 		return nil, fail
 	}
