@@ -41,6 +41,19 @@ namespace StateDeploy
             string windowsJSON = "windows-amd64.json";
             string jsonURL = stateURL + windowsJSON;
             string tempDir = Path.Combine(Path.GetTempPath(), "ActiveState");
+            session.Log(string.Format("Using temp path: {0}", tempDir));
+            try
+            {
+                Directory.CreateDirectory(tempDir);
+            }
+            catch (Exception e)
+            {
+                string msg = string.Format("Could not create directory at: {0}, encountered exception: {1}", tempDir, e.ToString());
+                session.Log(msg);
+                ActiveState.RollbarHelper.Report(msg);
+                return ActionResult.Failure;
+            }
+
             ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
 
             string versionInfoString;
@@ -113,7 +126,20 @@ namespace StateDeploy
                 return ActionResult.Failure;
             }
 
-            stateToolPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ActiveState", "bin", "state.exe");
+            string stateToolInstallDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ActiveState", "bin");
+            try
+            {
+                Directory.CreateDirectory(stateToolInstallDir);
+            }
+            catch (Exception e)
+            {
+                string msg = string.Format("Could not create directory at: {0}, encountered exception: {1}", stateToolInstallDir, e.ToString());
+                session.Log(msg);
+                ActiveState.RollbarHelper.Report(msg);
+                return ActionResult.Failure;
+            }
+
+            stateToolPath = Path.Combine(stateToolInstallDir, "state.exe");
             try
             {
                 File.Move(Path.Combine(tempDir, "windows-amd64.exe"), stateToolPath);
@@ -128,7 +154,6 @@ namespace StateDeploy
 
             session.Log("Updating PATH environment variable");
             string oldPath = Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.Machine);
-            string stateToolInstallDir = Path.GetDirectoryName(stateToolPath);
             if (oldPath.Contains(stateToolInstallDir)) 
             {
                 session.Log("State tool installation already on PATH");
