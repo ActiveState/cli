@@ -50,7 +50,8 @@ namespace StateDeploy
             string stateURL = "https://s3.ca-central-1.amazonaws.com/cli-update/update/state/unstable/";
             string windowsJSON = "windows-amd64.json";
             string jsonURL = stateURL + windowsJSON;
-            string tempDir = Path.Combine(Path.GetTempPath(), "ActiveState");
+            string timeStamp = DateTime.Now.ToFileTime().ToString();
+            string tempDir = Path.Combine(Path.GetTempPath(), timeStamp);
             session.Log(string.Format("Using temp path: {0}", tempDir));
             try
             {
@@ -96,21 +97,6 @@ namespace StateDeploy
 
             string windowsZip = "windows-amd64.zip";
             string zipPath = Path.Combine(tempDir, windowsZip);
-            if (File.Exists(zipPath))
-            {
-                try
-                {
-                    File.Delete(zipPath);
-                }
-                catch (Exception e)
-                {
-                    string msg = string.Format("Could not delete existing temporary State Tool zip file at: {0}, encountered exception: {1}", zipPath, e.ToString());
-                    session.Log(msg);
-                    ActiveState.RollbarHelper.Report(msg);
-                    return ActionResult.Failure;
-                }
-            }
-
             string zipURL = stateURL + info.version + "/" + windowsZip;
             session.Log(string.Format("Downloading zip file from URL: {0}", zipURL));
             Status.ProgressBar.StatusMessage(session, "Downloading State Tool...");
@@ -136,22 +122,6 @@ namespace StateDeploy
                 session.Log(msg);
                 ActiveState.RollbarHelper.Report(msg);
                 return ActionResult.Failure;
-            }
-
-            string tempExecutablePath = Path.Combine(tempDir, "windows-amd64.exe");
-            if (File.Exists(tempExecutablePath))
-            {
-                try
-                {
-                    File.Delete(tempExecutablePath);
-                }
-                catch (Exception e)
-                {
-                    string msg = string.Format("Could not delete existing temporary State Tool executable at: {0}, encountered exception: {1}", tempExecutablePath, e.ToString());
-                    session.Log(msg);
-                    ActiveState.RollbarHelper.Report(msg);
-                    return ActionResult.Failure;
-                }
             }
 
             Status.ProgressBar.StatusMessage(session, "Extracting State Tool executable...");
