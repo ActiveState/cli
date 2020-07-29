@@ -1,7 +1,9 @@
 package integration
 
 import (
+	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -9,6 +11,8 @@ import (
 
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/autarch/testify/assert"
+	"github.com/autarch/testify/require"
 )
 
 var (
@@ -66,6 +70,20 @@ func msiFilePaths(dir, prefix string) ([]string, error) {
 	return filePaths, nil
 }
 
+func assertRegistryPathInclues(t *testing.T, path string) {
+	out, err := exec.Command("reg", "query", `HKLM\SYSTEM\ControlSet001\Control\Session Manager\Environment`, "/v", "Path").Output()
+	require.NoError(t, err)
+	assert.Contains(t, string(out), path, "Windows system PATH should contain our target dir")
+}
+
+func addPathToEnv(path string) string {
+	oldPath, ok := os.LookupEnv("PATH")
+	if !ok {
+		oldPath = ""
+	}
+	return fmt.Sprintf("PATH=%s;%s", path, oldPath)
+}
+
 func TestActivePerl(t *testing.T) {
 	if !e2e.RunningOnCI() && false {
 		t.Skipf("Skipping; Not running on CI")
@@ -80,33 +98,36 @@ func TestActivePerl(t *testing.T) {
 		t.Fatalf("no %q msi files found in %q", perlMsiPrefix, msiDir)
 	}
 
+	installPath := `C:\Perl64 with spaces`
+
 	for _, msiFilePath := range perlMsiFilePaths {
 		t.Run(filepath.Base(msiFilePath), func(t *testing.T) {
 			m := newMsiFile(msiFilePath)
 			s := newPwshSession(t)
 
-			cp := s.Spawn(installAction.cmd(m.path))
+			cp := s.Spawn(installAction.cmd(m.path, installPath))
 			cp.Expect("exitcode:0:", time.Minute*3)
 			cp.ExpectExitCode(0)
-			path := currentPath(cp)
 
+			assertRegistryPathInclues(t, installPath)
+
+			pathEnv := addPathToEnv(filepath.Join(installPath, "bin"))
 			checkPerlArgs := []string{checkPerlVersionCmd}
-			cp = s.SpawnOpts(checkPerlArgs, e2e.AppendEnv(path))
+			cp = s.SpawnOpts(checkPerlArgs, e2e.AppendEnv(pathEnv))
 			cp.Expect(m.version)
 			cp.Expect(asToken)
 			cp.ExpectExitCode(0)
 
 			checkPerlModsArgs := []string{checkPerlModulesCmd}
-			cp = s.SpawnOpts(checkPerlModsArgs, e2e.AppendEnv(path))
+			cp = s.SpawnOpts(checkPerlModsArgs, e2e.AppendEnv(pathEnv))
 			cp.Expect("Pg.pm")
 			cp.ExpectExitCode(0)
 
-			cp = s.Spawn(uninstallAction.cmd(m.path))
+			cp = s.Spawn(uninstallAction.cmd(m.path, installPath))
 			cp.Expect("exitcode:0:", time.Minute)
 			cp.ExpectExitCode(0)
-			path = currentPath(cp)
 
-			cp = s.SpawnOpts(checkPerlArgs, e2e.AppendEnv(path))
+			cp = s.SpawnOpts(checkPerlArgs, e2e.AppendEnv(pathEnv))
 			cp.Expect("'perl' is not recognized")
 			cp.ExpectNotExitCode(0)
 		})

@@ -3,10 +3,10 @@ package integration
 import (
 	"fmt"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/termtest"
 )
@@ -18,25 +18,23 @@ var (
 
 type msiExecAction string
 
-func (a msiExecAction) cmd(msiPath string) string {
+func (a msiExecAction) cmd(msiPath, installPath string) string {
 	msiAct := "/package"
 	if a == uninstallAction {
 		msiAct = "/uninstall"
 	}
 
 	pwshCmdForm := `$proc = Start-Process msiexec.exe -Wait -ArgumentList ` +
-		`"%s %s /quiet /qn /norestart /log %s" -PassThru;` +
-		`$handle = $proc.Handle; $proc.WaitForExit();` +
+		`'%s %s /quiet /qn /norestart /log %s INSTALLDIR="%s"' -PassThru;` +
 		`echo "exitcode:$($proc.ExitCode):";` + // use to ensure exit code is exactly 0
-		`refreshenv;` +
-		`echo "path~path=C:\Perl64\bin;$Env:Path~";` // use for subsequent console processes
-	pwshCmd := fmt.Sprintf(pwshCmdForm, msiAct, msiPath, a.logFileName(msiPath))
+		`exit $proc.ExitCode;`
+	pwshCmd := fmt.Sprintf(pwshCmdForm, msiAct, msiPath, a.logFileName(msiPath), installPath)
 	return pwshCmd
 }
 
 func (a msiExecAction) logFileName(msiPath string) string {
 	msiName := filepath.Base(strings.TrimSuffix(msiPath, filepath.Ext(msiPath)))
-	return fmt.Sprintf(`%s\%s_%s.log`, logDir, msiName, string(a))
+	return filepath.Join(environment.GetRootPathUnsafe(), fmt.Sprintf(`%s_%s.log`, msiName, string(a)))
 }
 
 type pwshSession struct {
@@ -55,14 +53,4 @@ func (s *pwshSession) SpawnOpts(args []string, opts ...e2e.SpawnOptions) *termte
 	as := append([]string{"/c"}, args...)
 	opts = append(opts, e2e.WithArgs(as...))
 	return s.Session.SpawnCmdWithOpts("powershell", opts...)
-}
-
-var (
-	pathRegexp  = regexp.MustCompile("(?i).*?path~(path=.*?)~.*")
-	pathReplace = "${1}"
-)
-
-func currentPath(cp *termtest.ConsoleProcess) string {
-	pathInfo := cp.TrimmedSnapshot()
-	return pathRegexp.ReplaceAllString(pathInfo, pathReplace)
 }
