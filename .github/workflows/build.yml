@@ -210,6 +210,7 @@ jobs:
         INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
     - name: Upload log Files
       uses: actions/upload-artifact@v2
+      if: ${{ always() }}
       with:
         name: activeperl-logs
         path: ActivePerl*.log
