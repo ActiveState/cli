@@ -250,6 +250,16 @@ namespace StateDeploy
         {
             ActiveState.RollbarHelper.ConfigureRollbarSingleton();
 
+            if (!Environment.Is64BitOperatingSystem)
+            {
+                Record record = new Record();
+                record.FormatString = "This installer cannot be run on a 32-bit operating system";
+
+                ActiveState.RollbarHelper.Report(record.FormatString);
+                session.Message(InstallMessage.Error | (InstallMessage)MessageBoxButtons.OK, record);
+                return ActionResult.Failure;
+            }
+
             string stateToolPath;
             ActionResult res = InstallStateTool(session, out stateToolPath);
             if (res != ActionResult.Success) {
