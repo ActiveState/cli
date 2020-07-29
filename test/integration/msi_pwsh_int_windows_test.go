@@ -45,12 +45,12 @@ func newPwshSession(t *testing.T) *pwshSession {
 	return &pwshSession{e2e.New(t, false)}
 }
 
-func (s *pwshSession) Spawn(args ...string) *termtest.ConsoleProcess {
-	return s.SpawnOpts(args)
+func (s *pwshSession) Spawn(arg string) *termtest.ConsoleProcess {
+	return s.SpawnOpts(arg)
 }
 
-func (s *pwshSession) SpawnOpts(args []string, opts ...e2e.SpawnOptions) *termtest.ConsoleProcess {
-	as := append([]string{"/c"}, args...)
+func (s *pwshSession) SpawnOpts(arg string, opts ...e2e.SpawnOptions) *termtest.ConsoleProcess {
+	as := append([]string{"/c"}, arg)
 	opts = append(opts, e2e.WithArgs(as...))
 	return s.Session.SpawnCmdWithOpts("powershell", opts...)
 }

@@ -2,7 +2,6 @@ package integration
 
 import (
 	"fmt"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -18,11 +17,6 @@ import (
 var (
 	msiDir = mustFilepathByProjectRoot(`/build/msi`)
 	logDir = mustFilepathByProjectRoot(`/build`)
-
-	msiExt        = ".msi"
-	perlMsiPrefix = "ActivePerl"
-
-	asToken = "ActiveState"
 
 	checkPerlVersionCmd = "perl -v"
 	checkPerlModulesCmd = "perldoc -l DBD::Pg"
@@ -51,26 +45,7 @@ func versionFromMsiFileName(name string) string {
 	return name[i+1:]
 }
 
-func msiFilePaths(dir, prefix string) ([]string, error) {
-	var filePaths []string
-	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-		curBase := filepath.Base(path)
-		curExt := filepath.Ext(curBase)
-
-		if strings.HasPrefix(curBase, perlMsiPrefix) && curExt == msiExt {
-			filePaths = append(filePaths, path)
-		}
-
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return filePaths, nil
-}
-
-func assertRegistryPathInclues(t *testing.T, path string) {
+func assertRegistryPathIncludes(t *testing.T, path string) {
 	out, err := exec.Command("reg", "query", `HKLM\SYSTEM\ControlSet001\Control\Session Manager\Environment`, "/v", "Path").Output()
 	require.NoError(t, err)
 	assert.Contains(t, string(out), path, "Windows system PATH should contain our target dir")
@@ -81,13 +56,9 @@ func TestActivePerl(t *testing.T) {
 		t.Skipf("Skipping; Not running on CI")
 	}
 
-	perlMsiFilePaths, err := msiFilePaths(msiDir, perlMsiPrefix)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if len(perlMsiFilePaths) == 0 {
-		t.Fatalf("no %q msi files found in %q", perlMsiPrefix, msiDir)
+	perlMsiFilePaths := []string{
+		filepath.Join(msiDir, "ActivePerl-5.26.msi"),
+		filepath.Join(msiDir, "ActivePerl-5.28.msi"),
 	}
 
 	installPath := `C:\Perl64 with spaces`
@@ -101,17 +72,15 @@ func TestActivePerl(t *testing.T) {
 			cp.Expect("exitcode:0:", time.Minute*3)
 			cp.ExpectExitCode(0)
 
-			assertRegistryPathInclues(t, installPath)
+			assertRegistryPathIncludes(t, installPath)
 
 			pathEnv := fmt.Sprintf("PATH=%s", filepath.Join(installPath, "bin"))
-			checkPerlArgs := []string{checkPerlVersionCmd}
-			cp = s.SpawnOpts(checkPerlArgs, e2e.AppendEnv(pathEnv))
+			cp = s.SpawnOpts("perl -v", e2e.AppendEnv(pathEnv))
 			cp.Expect(m.version)
-			cp.Expect(asToken)
+			cp.Expect("ActiveState")
 			cp.ExpectExitCode(0)
 
-			checkPerlModsArgs := []string{checkPerlModulesCmd}
-			cp = s.SpawnOpts(checkPerlModsArgs, e2e.AppendEnv(pathEnv))
+			cp = s.SpawnOpts("perldoc -l DBD::Pg", e2e.AppendEnv(pathEnv))
 			cp.Expect("Pg.pm")
 			cp.ExpectExitCode(0)
 
@@ -119,7 +88,7 @@ func TestActivePerl(t *testing.T) {
 			cp.Expect("exitcode:0:", time.Minute)
 			cp.ExpectExitCode(0)
 
-			cp = s.SpawnOpts(checkPerlArgs, e2e.AppendEnv(pathEnv))
+			cp = s.SpawnOpts("perl -v", e2e.AppendEnv(pathEnv))
 			cp.Expect("'perl' is not recognized")
 			cp.ExpectNotExitCode(0)
 		})
