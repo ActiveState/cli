@@ -76,14 +76,6 @@ func assertRegistryPathInclues(t *testing.T, path string) {
 	assert.Contains(t, string(out), path, "Windows system PATH should contain our target dir")
 }
 
-func addPathToEnv(path string) string {
-	oldPath, ok := os.LookupEnv("PATH")
-	if !ok {
-		oldPath = ""
-	}
-	return fmt.Sprintf("PATH=%s;%s", path, oldPath)
-}
-
 func TestActivePerl(t *testing.T) {
 	if !e2e.RunningOnCI() && false {
 		t.Skipf("Skipping; Not running on CI")
@@ -111,7 +103,7 @@ func TestActivePerl(t *testing.T) {
 
 			assertRegistryPathInclues(t, installPath)
 
-			pathEnv := addPathToEnv(filepath.Join(installPath, "bin"))
+			pathEnv := fmt.Sprintf("PATH=%s", filepath.Join(installPath, "bin"))
 			checkPerlArgs := []string{checkPerlVersionCmd}
 			cp = s.SpawnOpts(checkPerlArgs, e2e.AppendEnv(pathEnv))
 			cp.Expect(m.version)
