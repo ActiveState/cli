@@ -8,6 +8,8 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/pkg/project"
@@ -115,7 +117,9 @@ func (v *SubShell) Activate() *failures.Failure {
 
 	shellArgs := []string{"/K", v.rcFile.Name()}
 	if v.activateCommand != nil {
-		shellArgs = append(shellArgs, "/C", *v.activateCommand)
+		if fail := fileutils.AppendToFile(v.rcFile.Name(), []byte("\r\n" + *v.activateCommand + "\r\nexit")); fail != nil {
+			return fail
+		}
 	}
 
 	cmd := exec.Command("cmd", shellArgs...)
