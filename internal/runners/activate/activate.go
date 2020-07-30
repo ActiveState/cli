@@ -28,6 +28,7 @@ type Activate struct {
 type ActivateParams struct {
 	Namespace     *project.Namespaced
 	PreferredPath string
+	Command       string
 }
 
 type primeable interface {
@@ -97,6 +98,10 @@ func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc)
 		}
 		r.out.Print(env)
 		return nil
+	}
+
+	if params.Command != "" {
+		r.subshell.SetActivateCommand(params.Command)
 	}
 
 	return activatorLoop(r.out, r.subshell, targetPath, activate)

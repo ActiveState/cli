@@ -25,11 +25,12 @@ func init() {
 
 // SubShell covers the subshell.SubShell interface, reference that for documentation
 type SubShell struct {
-	binary string
-	rcFile *os.File
-	cmd    *exec.Cmd
-	env    map[string]string
-	fs     chan *failures.Failure
+	binary          string
+	rcFile          *os.File
+	cmd             *exec.Cmd
+	env             map[string]string
+	fs              chan *failures.Failure
+	activateCommand *string
 }
 
 // Shell - see subshell.SubShell
@@ -67,6 +68,11 @@ func (v *SubShell) SetupShellRcFile(targetDir string, env map[string]string, nam
 // SetEnv - see subshell.SetEnv
 func (v *SubShell) SetEnv(env map[string]string) {
 	v.env = env
+}
+
+// SetActivateCommand - see subshell.SetActivateCommand
+func (v *SubShell) SetActivateCommand(cmd string) {
+	v.activateCommand = &cmd
 }
 
 // Quote - see subshell.Quote
@@ -113,6 +119,9 @@ func (v *SubShell) Activate() *failures.Failure {
 	os.Setenv("ZDOTDIR", path)
 
 	shellArgs := []string{}
+	if v.activateCommand != nil {
+		shellArgs = append(shellArgs, "-c", *v.activateCommand)
+	}
 	cmd := exec.Command(v.Binary(), shellArgs...)
 
 	v.fs = sscommon.Start(cmd)
