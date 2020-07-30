@@ -7,6 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/export"
+	"github.com/ActiveState/cli/internal/runners/export/config"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
@@ -113,8 +114,8 @@ func newAPIKeyCommand(prime *primer.Values) *captain.Command {
 }
 
 func newExportConfigCommand(prime *primer.Values) *captain.Command {
-	config := export.NewConfig(prime)
-	var filters []string
+	runner := config.NewConfig(prime)
+	params := config.ConfigParams{}
 
 	return captain.NewCommand(
 		"config",
@@ -124,23 +125,13 @@ func newExportConfigCommand(prime *primer.Values) *captain.Command {
 				Name: "filter",
 				Description: locale.Tr(
 					"export_config_flag_filter_description",
-					strings.Join(export.SupportedFilters(), ", "),
+					strings.Join(config.SupportedFilters(), ", "),
 				),
-				Value: &filters,
+				Value: &params.Filters,
 			},
 		},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, _ []string) error {
-			params := export.ConfigParams{}
-			for _, f := range filters {
-				filter := export.Unset
-
-				err := filter.Set(f)
-				if err != nil {
-					return err
-				}
-				params.Filters = append(params.Filters, export.Filter(filter))
-			}
-			return config.Run(ccmd, params)
+			return runner.Run(ccmd, &params)
 		})
 }
