@@ -32,20 +32,6 @@ func (f Filter) String() string {
 	return lookup[Unknown]
 }
 
-type UnrecognizedFilterError struct {
-	Filter string
-	Opts   []string
-}
-
-func NewUnrecognizedFilterError(name string) *UnrecognizedFilterError {
-	return &UnrecognizedFilterError{name, supportedFilters()}
-}
-
-func (e *UnrecognizedFilterError) Error() string {
-	opts := strings.Join(e.Opts, ", ")
-	return locale.Tr("err_invalid_filter", e.Filter, opts)
-}
-
 func supportedFilters() []string {
 	var supported []string
 	for k, v := range lookup {
@@ -69,7 +55,7 @@ func (f *Filter) Set(value string) error {
 		}
 	}
 
-	return NewUnrecognizedFilterError(value)
+	return locale.NewError("err_invalid_filter", value, SupportedFilters())
 }
 
 func (f Filter) Type() string {
