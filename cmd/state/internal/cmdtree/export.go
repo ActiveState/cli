@@ -109,3 +109,40 @@ func newAPIKeyCommand(prime *primer.Values) *captain.Command {
 			return apikey.Run(params)
 		})
 }
+
+func newExportConfigCommand(prime *primer.Values) *captain.Command {
+	config := export.NewConfig(prime)
+	params := export.ConfigParams{}
+
+	return captain.NewCommand(
+		"config",
+		locale.T("export_config_cmd_description"),
+		[]*captain.Flag{
+			{
+				Name: "filter",
+				Description: locale.Tr(
+					"export_config_flag_filter_description",
+					export.RecognizedFilters(),
+				),
+				Value: &params.Filter,
+			},
+		},
+		[]*captain.Argument{},
+		func(ccmd *captain.Command, _ []string) error {
+			return config.Run(ccmd, params)
+		})
+}
+
+func newDirCommand(prime *primer.Values) *captain.Command {
+	dir := export.NewDirectory(prime)
+
+	return captain.NewCommand(
+		"dir",
+		locale.T("export_config_dir_description"),
+		[]*captain.Flag{},
+		[]*captain.Argument{},
+		func(_ *captain.Command, _ []string) error {
+			return dir.Run()
+		},
+	)
+}

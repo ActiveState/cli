@@ -50,6 +50,26 @@ func (suite *ExportIntegrationTestSuite) TestExport_InvalidPlatform() {
 	cp.ExpectExitCode(1)
 }
 
+func (suite *ExportIntegrationTestSuite) TestExport_ConfigDir() {
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	suite.PrepareActiveStateYAML(ts)
+	cp := ts.Spawn("export", "config", "dir")
+	cp.Expect("{\"dir\":\"")
+	cp.ExpectExitCode(0)
+}
+
+func (suite *ExportIntegrationTestSuite) TestExport_Config() {
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	suite.PrepareActiveStateYAML(ts)
+	cp := ts.Spawn("export", "config")
+	cp.Expect("Usage:")
+	cp.ExpectExitCode(0)
+}
+
 func TestExportIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(ExportIntegrationTestSuite))
 }

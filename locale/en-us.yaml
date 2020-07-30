@@ -978,6 +978,12 @@ export_new_api_key_arg_name:
   other: name
 export_new_api_key_arg_name_description:
   other: API key name
+export_config_cmd_description:
+  other: Export state tool configurations
+export_config_flag_filter_description:
+  other: "Filter configuration output. Accepts: {{.V0}}"
+export_config_dir_description:
+  other: Export the config directory details
 export_apikey_user_notice:
   other: "[BLUE]Note that this key is not stored by ActiveState. Please store the value for later use as you cannot retrieve it again.[/RESET]"
 err_apikey_name_required:
