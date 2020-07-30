@@ -32,6 +32,12 @@ func newActivateCommand(prime *primer.Values) *captain.Command {
 				Description: locale.T("flag_state_activate_path_description"),
 				Value:       &params.PreferredPath,
 			},
+			{
+				Name:        "command",
+				Shorthand:   "c",
+				Description: locale.Tl("flag_state_activate_cmd_description", "Run given command in the activated shell"),
+				Value:       &params.Command,
+			},
 		},
 		[]*captain.Argument{
 			&captain.Argument{

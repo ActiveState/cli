@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/pkg/project"
@@ -21,11 +22,12 @@ func init() {
 
 // SubShell covers the subshell.SubShell interface, reference that for documentation
 type SubShell struct {
-	binary string
-	rcFile *os.File
-	cmd    *exec.Cmd
-	env    map[string]string
-	fs     chan *failures.Failure
+	binary          string
+	rcFile          *os.File
+	cmd             *exec.Cmd
+	env             map[string]string
+	fs              chan *failures.Failure
+	activateCommand *string
 }
 
 // Shell - see subshell.SubShell
@@ -94,6 +96,11 @@ func (v *SubShell) SetEnv(env map[string]string) {
 	v.env = env
 }
 
+// SetActivateCommand - see subshell.SetActivateCommand
+func (v *SubShell) SetActivateCommand(cmd string) {
+	v.activateCommand = &cmd
+}
+
 // Quote - see subshell.Quote
 func (v *SubShell) Quote(value string) string {
 	return escaper.Quote(value)
@@ -108,6 +115,11 @@ func (v *SubShell) Activate() *failures.Failure {
 	}
 
 	shellArgs := []string{"/K", v.rcFile.Name()}
+	if v.activateCommand != nil {
+		if fail := fileutils.AppendToFile(v.rcFile.Name(), []byte("\r\n" + *v.activateCommand + "\r\nexit")); fail != nil {
+			return fail
+		}
+	}
 
 	cmd := exec.Command("cmd", shellArgs...)
 
