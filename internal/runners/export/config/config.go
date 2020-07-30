@@ -74,7 +74,7 @@ func (c *Config) Run(cmd *captain.Command, params *ConfigParams) error {
 func (c *Config) printOutput(output map[string]string) error {
 	data, err := json.Marshal(output)
 	if err != nil {
-		return locale.WrapError(err, "err_export_config_dir", "Could not marshal config data")
+		return locale.WrapError(err, "err_export_config_marshal", "Could not marshal config data")
 	}
 
 	c.out.Print(string(data))
