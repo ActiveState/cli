@@ -1,6 +1,8 @@
 package cmdtree
 
 import (
+	"strings"
+
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
@@ -112,7 +114,7 @@ func newAPIKeyCommand(prime *primer.Values) *captain.Command {
 
 func newExportConfigCommand(prime *primer.Values) *captain.Command {
 	config := export.NewConfig(prime)
-	params := export.ConfigParams{}
+	var filters []string
 
 	return captain.NewCommand(
 		"config",
@@ -122,13 +124,23 @@ func newExportConfigCommand(prime *primer.Values) *captain.Command {
 				Name: "filter",
 				Description: locale.Tr(
 					"export_config_flag_filter_description",
-					export.SupportedFilters(),
+					strings.Join(export.SupportedFilters(), ", "),
 				),
-				Value: &params.Filter,
+				Value: &filters,
 			},
 		},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, _ []string) error {
+			params := export.ConfigParams{}
+			for _, f := range filters {
+				filter := export.Unset
+
+				err := filter.Set(f)
+				if err != nil {
+					return err
+				}
+				params.Filters = append(params.Filters, export.Filter(filter))
+			}
 			return config.Run(ccmd, params)
 		})
 }

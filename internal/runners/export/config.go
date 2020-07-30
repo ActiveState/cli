@@ -14,13 +14,13 @@ import (
 type Filter int
 
 const (
-	Unknown Filter = iota
+	Unset Filter = iota
 	Dir
 )
 
 var lookup = map[Filter]string{
-	Unknown: "unknown",
-	Dir:     "dir",
+	Unset: "unset",
+	Dir:   "dir",
 }
 
 func (f Filter) String() string {
@@ -29,13 +29,13 @@ func (f Filter) String() string {
 			return v
 		}
 	}
-	return lookup[Unknown]
+	return lookup[Unset]
 }
 
-func supportedFilters() []string {
+func SupportedFilters() []string {
 	var supported []string
 	for k, v := range lookup {
-		if k != Unknown {
+		if k != Unset {
 			supported = append(supported, v)
 		}
 	}
@@ -43,19 +43,15 @@ func supportedFilters() []string {
 	return supported
 }
 
-func SupportedFilters() string {
-	return strings.Join(supportedFilters(), ", ")
-}
-
 func (f *Filter) Set(value string) error {
 	for k, v := range lookup {
-		if v == value && k != Unknown {
+		if v == value && k != Unset {
 			*f = k
 			return nil
 		}
 	}
 
-	return locale.NewError("err_invalid_filter", value, SupportedFilters())
+	return locale.NewError("err_invalid_filter", value, strings.Join(SupportedFilters(), ", "))
 }
 
 func (f Filter) Type() string {
@@ -67,11 +63,7 @@ type Config struct {
 }
 
 type ConfigParams struct {
-	Filter Filter
-}
-
-type configOutput struct {
-	Dir string `json:"dir"`
+	Filters []Filter
 }
 
 func NewConfig(prime primeable) *Config {
@@ -79,13 +71,31 @@ func NewConfig(prime primeable) *Config {
 }
 
 func (c *Config) Run(cmd *captain.Command, params ConfigParams) error {
-	output := configOutput{config.ConfigPath()}
+	output := map[string]string{
+		Dir.String(): config.ConfigPath(),
+	}
 
-	if params.Filter == Dir {
-		c.out.Print(output.Dir)
+	if params.Filters == nil {
+		return c.printOutput(output)
+
+	}
+
+	if len(params.Filters) == 1 {
+		c.out.Print(output[params.Filters[0].String()])
 		return nil
 	}
 
+	filteredOutput := map[string]string{}
+	for _, filter := range params.Filters {
+		if value, ok := output[filter.String()]; ok {
+			filteredOutput[filter.String()] = value
+		}
+	}
+
+	return c.printOutput(output)
+}
+
+func (c *Config) printOutput(output map[string]string) error {
 	data, err := json.Marshal(output)
 	if err != nil {
 		return locale.WrapError(err, "err_export_config_dir", "Could not marshal config data")
