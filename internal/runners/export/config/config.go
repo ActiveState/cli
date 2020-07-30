@@ -68,7 +68,7 @@ func (c *Config) Run(cmd *captain.Command, params *ConfigParams) error {
 		}
 	}
 
-	return c.printOutput(output)
+	return c.printOutput(filteredOutput)
 }
 
 func (c *Config) printOutput(output map[string]string) error {
