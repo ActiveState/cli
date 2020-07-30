@@ -46,14 +46,10 @@ func (e *UnrecognizedFilterError) Error() string {
 	return locale.Tr("err_invalid_filter", e.Filter, opts)
 }
 
-func recognizedFilter(f Filter) bool {
-	return f != Unknown
-}
-
 func supportedFilters() []string {
 	var supported []string
 	for k, v := range lookup {
-		if recognizedFilter(k) {
+		if k != Unknown {
 			supported = append(supported, v)
 		}
 	}
