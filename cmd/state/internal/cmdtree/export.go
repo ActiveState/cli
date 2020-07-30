@@ -122,7 +122,7 @@ func newExportConfigCommand(prime *primer.Values) *captain.Command {
 				Name: "filter",
 				Description: locale.Tr(
 					"export_config_flag_filter_description",
-					export.RecognizedFilters(),
+					export.SupportedFilters(),
 				),
 				Value: &params.Filter,
 			},
@@ -131,18 +131,4 @@ func newExportConfigCommand(prime *primer.Values) *captain.Command {
 		func(ccmd *captain.Command, _ []string) error {
 			return config.Run(ccmd, params)
 		})
-}
-
-func newDirCommand(prime *primer.Values) *captain.Command {
-	dir := export.NewDirectory(prime)
-
-	return captain.NewCommand(
-		"dir",
-		locale.T("export_config_dir_description"),
-		[]*captain.Flag{},
-		[]*captain.Argument{},
-		func(_ *captain.Command, _ []string) error {
-			return dir.Run()
-		},
-	)
 }

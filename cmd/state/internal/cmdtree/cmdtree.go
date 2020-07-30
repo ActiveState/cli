@@ -27,14 +27,12 @@ func New(prime *primer.Values) *CmdTree {
 	)
 
 	exportCmd := newExportCommand()
-	configCmd := newExportConfigCommand(prime)
-	configCmd.AddChildren(newDirCommand(prime))
 	exportCmd.AddChildren(
 		newRecipeCommand(),
 		newJWTCommand(),
 		newPrivateKeyCommand(),
 		newAPIKeyCommand(prime),
-		configCmd,
+		newExportConfigCommand(prime),
 	)
 
 	packagesCmd := newPackagesCommand(prime)

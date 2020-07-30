@@ -10,15 +10,74 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 )
 
+// Filter is the --filter flag for the export config command, it implements captain.FlagMarshaler
+type Filter int
+
 const (
-	FilterDir = "dir"
+	Unknown Filter = iota
+	Dir
 )
 
-func RecognizedFilters() string {
-	filterLookup := []string{
-		FilterDir,
+var lookup = map[Filter]string{
+	Unknown: "unknown",
+	Dir:     "dir",
+}
+
+func (f Filter) String() string {
+	for k, v := range lookup {
+		if k == f {
+			return v
+		}
 	}
-	return strings.Join(filterLookup, ",")
+	return lookup[Unknown]
+}
+
+type UnrecognizedFilterError struct {
+	Filter string
+	Opts   []string
+}
+
+func NewUnrecognizedFilterError(name string) *UnrecognizedFilterError {
+	return &UnrecognizedFilterError{name, supportedFilters()}
+}
+
+func (e *UnrecognizedFilterError) Error() string {
+	opts := strings.Join(e.Opts, ", ")
+	return locale.Tr("err_invalid_filter", e.Filter, opts)
+}
+
+func recognizedFilter(f Filter) bool {
+	return f != Unknown
+}
+
+func supportedFilters() []string {
+	var supported []string
+	for k, v := range lookup {
+		if recognizedFilter(k) {
+			supported = append(supported, v)
+		}
+	}
+
+	return supported
+}
+
+func SupportedFilters() string {
+	return strings.Join(supportedFilters(), ", ")
+}
+
+func (f *Filter) Set(value string) error {
+	for k, v := range lookup {
+		if v == value && k != Unknown {
+			*f = k
+			return nil
+		}
+	}
+
+	return NewUnrecognizedFilterError(value)
+}
+
+func (f Filter) Type() string {
+	return "filter"
 }
 
 type Config struct {
@@ -26,7 +85,11 @@ type Config struct {
 }
 
 type ConfigParams struct {
-	Filter string
+	Filter Filter
+}
+
+type configOutput struct {
+	Dir string `json:"dir"`
 }
 
 func NewConfig(prime primeable) *Config {
@@ -34,33 +97,18 @@ func NewConfig(prime primeable) *Config {
 }
 
 func (c *Config) Run(cmd *captain.Command, params ConfigParams) error {
-	if params.Filter == FilterDir {
-		c.out.Print(config.ConfigPath())
-		return nil
-	}
-	return cmd.Usage()
-
-}
-
-type Directory struct {
-	out output.Outputer
-}
-
-type directoryOutput struct {
-	Dir string `json:"dir"`
-}
-
-func NewDirectory(prime primeable) *Directory {
-	return &Directory{prime.Output()}
-}
-
-func (d *Directory) Run() error {
-	output := directoryOutput{config.ConfigPath()}
+	output := configOutput{config.ConfigPath()}
 
 	data, err := json.Marshal(output)
 	if err != nil {
 		return locale.WrapError(err, "err_export_config_dir", "Could not marshal config data")
 	}
-	d.out.Print(string(data))
+
+	if params.Filter == Dir {
+		c.out.Print(output.Dir)
+		return nil
+	}
+
+	c.out.Print(string(data))
 	return nil
 }

@@ -984,6 +984,8 @@ export_config_flag_filter_description:
   other: "Filter configuration output. Accepts: {{.V0}}"
 export_config_dir_description:
   other: Export the config directory details
+err_invalid_filter:
+  other: "Invalid filter specified: '{{.V0}}'; Supported filters: {{.V1}}"
 export_apikey_user_notice:
   other: "[BLUE]Note that this key is not stored by ActiveState. Please store the value for later use as you cannot retrieve it again.[/RESET]"
 err_apikey_name_required:
