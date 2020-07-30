@@ -8,10 +8,9 @@ require (
 	github.com/ActiveState/go-colortext v0.0.0-20190402165444-9cd201a66eb0
 	github.com/ActiveState/go-ogle-analytics v0.0.0-20170510030904-9b3f14901527
 	github.com/ActiveState/sysinfo v0.0.0-20200619170619-0582d42daf27
-	github.com/ActiveState/termtest v0.5.1
-	github.com/ActiveState/termtest/expect v0.5.1
+	github.com/ActiveState/termtest v0.5.3
+	github.com/ActiveState/termtest/expect v0.5.3
 	github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78
-	github.com/Netflix/go-expect v0.0.0-20200312175327-da48e75238e2 // indirect
 	github.com/PuerkitoBio/purell v1.1.0 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
@@ -21,7 +20,7 @@ require (
 	github.com/aws/aws-sdk-go v1.13.8
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/bndr/gotabulate v0.0.0-20170315142410-bc555436bfd5
-	github.com/creack/pty v1.1.9
+	github.com/creack/pty v1.1.11
 	github.com/dave/jennifer v0.18.0
 	github.com/denisbrodbeck/machineid v0.8.0
 	github.com/dsnet/compress v0.0.0-20171208185109-cc9eb1d7ad76 // indirect
@@ -91,7 +90,7 @@ require (
 	golang.org/x/crypto v0.0.0-20200427165652-729f1e841bcc
 	golang.org/x/net v0.0.0-20200324143707-d3edc9973b7e
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
-	golang.org/x/sys v0.0.0-20200428200454-593003d681fa
+	golang.org/x/sys v0.0.0-20200728102440-3e129f6d46b1
 	google.golang.org/genproto v0.0.0-20200331122359-1ee6d9798940
 	gopkg.in/AlecAivazis/survey.v1 v1.4.2
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
