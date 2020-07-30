@@ -10,13 +10,21 @@ import (
 type Filter int
 
 const (
-	Unset Filter = iota
-	Dir
+	Dir Filter = iota
 )
 
 var filterLookup = map[Filter]string{
-	Unset: "unset",
-	Dir:   "dir",
+	Dir: "dir",
+}
+
+func MakeFilter(value string) (*Filter, error) {
+	for k, v := range filterLookup {
+		if v == value {
+			return &k, nil
+		}
+	}
+
+	return nil, locale.NewError("err_invalid_filter", value, strings.Join(SupportedFilters(), ", "))
 }
 
 func (f Filter) String() string {
@@ -25,15 +33,13 @@ func (f Filter) String() string {
 			return v
 		}
 	}
-	return filterLookup[Unset]
+	return ""
 }
 
 func SupportedFilters() []string {
 	var supported []string
-	for k, v := range filterLookup {
-		if k != Unset {
-			supported = append(supported, v)
-		}
+	for _, v := range filterLookup {
+		supported = append(supported, v)
 	}
 
 	return supported
@@ -41,7 +47,7 @@ func SupportedFilters() []string {
 
 func (f *Filter) Set(value string) error {
 	for k, v := range filterLookup {
-		if v == value && k != Unset {
+		if v == value {
 			*f = k
 			return nil
 		}

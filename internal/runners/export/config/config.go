@@ -16,7 +16,7 @@ type Config struct {
 
 type ConfigParams struct {
 	Filters []string
-	filters []Filter
+	filters []*Filter
 }
 
 type primeable interface {
@@ -25,9 +25,8 @@ type primeable interface {
 
 func prepare(params *ConfigParams) error {
 	for _, f := range params.Filters {
-		filter := Unset
 
-		err := filter.Set(f)
+		filter, err := MakeFilter(f)
 		if err != nil {
 			return err
 		}
