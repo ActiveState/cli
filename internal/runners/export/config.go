@@ -95,14 +95,14 @@ func NewConfig(prime primeable) *Config {
 func (c *Config) Run(cmd *captain.Command, params ConfigParams) error {
 	output := configOutput{config.ConfigPath()}
 
-	data, err := json.Marshal(output)
-	if err != nil {
-		return locale.WrapError(err, "err_export_config_dir", "Could not marshal config data")
-	}
-
 	if params.Filter == Dir {
 		c.out.Print(output.Dir)
 		return nil
+	}
+
+	data, err := json.Marshal(output)
+	if err != nil {
+		return locale.WrapError(err, "err_export_config_dir", "Could not marshal config data")
 	}
 
 	c.out.Print(string(data))
