@@ -47,7 +47,7 @@ func (r *Push) Run() *failures.Failure {
 	// Create the project remotely if it doesn't already exist
 	pjm, fail := model.FetchProjectByName(pj.Owner(), pj.Name())
 	if fail != nil {
-		if !fail.Type.Matches(model.FailNoValidProject) {
+		if !fail.Type.Matches(model.FailProjectNotFound) {
 			return fail
 		}
 		// We have to reset handled failures since our legacy command handling still relies on this
