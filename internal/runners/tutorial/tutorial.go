@@ -1,0 +1,184 @@
+package tutorial
+
+import (
+	"fmt"
+	"os"
+	"os/exec"
+	"strings"
+	"time"
+
+	"github.com/skratchdot/open-golang/open"
+	"golang.org/x/crypto/ssh/terminal"
+
+	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/language"
+	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
+)
+
+type Tutorial struct {
+	outputer output.Outputer
+	auth     *authentication.Auth
+	prompt   prompt.Prompter
+}
+
+type primeable interface {
+	primer.Outputer
+	primer.Prompter
+	primer.Auther
+}
+
+func New(primer primeable) *Tutorial {
+	return &Tutorial{primer.Output(), primer.Auth(), primer.Prompt()}
+}
+
+type NewProjectParams struct {
+	ShowIntro bool
+	Language  language.Language
+}
+
+func (t *Tutorial) RunNewProject(params NewProjectParams) error {
+	if params.ShowIntro {
+		t.outputer.Print(locale.Tt("tutorial_newproject_intro"))
+	}
+
+	// Prompt for authentication
+	if !t.auth.Authenticated() {
+		if err := t.authFlow(); err != nil {
+			return err
+		}
+	}
+
+	// Prompt for language
+	lang := params.Language
+	if lang == language.Unset {
+		choice, fail := t.prompt.Select(
+			locale.Tl("tutorial_language", "What language would you like to use for your new runtime environment?"),
+			[]string{language.Perl.Text(), language.Python3.Text(), language.Python2.Text()},
+			"",
+		)
+		if fail != nil {
+			return locale.WrapInputError(fail, "err_tutorial_prompt_language", "Invalid response received.")
+		}
+		lang = language.MakeByText(choice)
+		if lang == language.Unknown || lang == language.Unset {
+			return locale.NewError("err_tutorial_language_unknown", "Invalid language selected: {{.V0}}.", choice)
+		}
+	}
+
+	name, fail := t.prompt.Input(locale.Tl("tutorial_prompt_projectname", "What do you want to name your project?"), lang.Text())
+	if fail != nil {
+		locale.WrapInputError(fail, "err_tutorial_prompt_projectname", "Invalid response received.")
+	}
+
+	homeDir, _ := fileutils.HomeDir()
+	dir, fail := t.prompt.Input(locale.Tl(
+		"tutorial_prompt_projectdir",
+		"What would you like your project directory to be? This is usually the root of your repository, or the place where you have your project dotfiles."), homeDir)
+	if fail != nil {
+		locale.WrapInputError(fail, "err_tutorial_prompt_projectdir", "Invalid response received.")
+	}
+
+	if fail := fileutils.MkdirUnlessExists(dir); fail != nil {
+		locale.WrapInputError(fail, "err_tutorial_mkdir", "Could not create directory: {{.V0}}.", dir)
+	}
+	if err := os.Chdir(dir); err != nil {
+		locale.WrapInputError(err, "err_tutorial_chdir", "Could not change directory to: {{.V0}}", dir)
+	}
+
+	if err := t.invoke("init", t.auth.WhoAmI()+"/"+name, lang.String(), "--path", dir); err != nil {
+		return locale.WrapInputError(err, "err_tutorial_state_init", "Could not initialize project.")
+	}
+
+	if err := t.invoke("push"); err != nil {
+		return locale.WrapInputError(err, "err_tutorial_state_push", "Could not push project to ActiveState Platform, try manually running `state push` from your project directory at {{.V0}}.", dir)
+	}
+
+	t.outputer.Print(locale.Tt(
+		"tutorial_newproject_outro", map[string]interface{}{
+			"Dir":  dir,
+			"URL":  fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, t.auth.WhoAmI(), name),
+			"Docs": constants.DocumentationURL,
+		}))
+
+	return nil
+}
+
+func (t *Tutorial) authFlow() error {
+	signIn := locale.Tl("tutorial_signin", "Sign In")
+	signUpCLI := locale.Tl("tutorial_createcli", "Create Account via Command Line")
+	signUpBrowser := locale.Tl("tutorial_createbrowser", "Create Account via Browser")
+	choices := []string{signIn, signUpCLI, signUpBrowser}
+	choice, fail := t.prompt.Select(
+		locale.Tl("tutorial_need_account", "In order to create a Virtual Runtime Environment you must have an ActiveState Platform account"),
+		choices,
+		signIn,
+	)
+	if fail != nil {
+		return locale.WrapInputError(fail, "err_tutorial_prompt_account", "Invalid response received.")
+	}
+
+	switch choice {
+	case signIn:
+		if err := t.invoke("auth"); err != nil {
+			return locale.WrapInputError(err, "err_tutorial_signin", "Sign in failed. You could try manually signing in by running `state auth`.")
+		}
+	case signUpCLI:
+		if err := t.invoke("auth", "signup"); err != nil {
+			return locale.WrapInputError(err, "err_tutorial_signup", "Sign up failed. You could try manually signing up by running `state auth signup`.")
+		}
+	case signUpBrowser:
+		err := open.Run(constants.PlatformSignupURL)
+		if err != nil {
+			return locale.WrapInputError(err, "err_tutorial_browser", "Could not open browser, please manually navigate to {{.V0}}.", constants.PlatformSignupURL)
+		}
+		t.outputer.Notice(locale.Tl("tutorial_signing_ready", "[BOLD]Please sign in once you have finished signing up via your browser.[/RESET]"))
+		if err := t.invoke("auth"); err != nil {
+			return locale.WrapInputError(err, "err_tutorial_signin", "Sign in failed. You could try manually signing in by running `state auth`.")
+		}
+	}
+
+	if err := config.Reload(); err != nil {
+		return locale.WrapError(fail, "err_tutorial_config", "Could not reload config after invoking `state auth ..`.")
+	}
+	if fail := t.auth.Authenticate(); fail != nil {
+		return locale.WrapError(fail, "err_tutorial_auth", "Could not authenticate after invoking `state auth ..`.")
+	}
+
+	return nil
+}
+
+func (t *Tutorial) invoke(args ...string) error {
+	t.outputer.Notice(locale.Tl("tutorial_invoking", "\n[INFO]Invoking `state {{.V0}}` ...[/RESET]", strings.Join(args, " ")))
+
+	termWidth, _, err := terminal.GetSize(int(os.Stdin.Fd()))
+	if err != nil {
+		logging.Debug("Cannot get terminal size: %v", err)
+		termWidth = 100
+	}
+
+	t.outputer.Notice("[INFO]" + strings.Repeat("-", termWidth) + "[/RESET]")
+	time.Sleep(time.Second)
+
+	exe, err := os.Executable()
+	if err != nil {
+		return locale.WrapError(err, "err_tutorial_invoke_exe", "Could not detect executable path of State Tool.")
+	}
+
+	cmd := exec.Command(exe, args...)
+	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
+	err = cmd.Run()
+	t.outputer.Notice("[INFO]" + strings.Repeat("-", termWidth) + "[/RESET]")
+
+	if err != nil {
+		return locale.WrapError(err, "err_tutorial_invoke_run", "Errors occurred while invoking State Tool command: `state {{.V0}}`.", strings.Join(args, " "))
+	}
+
+	return nil
+}
