@@ -51,8 +51,8 @@ func (f *Filter) Set(value string) error {
 	values := strings.Split(value, ",")
 	f.terms = make([]Term, 0)
 	for _, v := range values {
-		for k, filterString := range termLookup {
-			if filterString == v {
+		for k, termValue := range termLookup {
+			if termValue == v {
 				f.terms = append(f.terms, k)
 				continue
 			}
