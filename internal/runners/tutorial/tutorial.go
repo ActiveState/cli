@@ -44,6 +44,7 @@ type NewProjectParams struct {
 }
 
 func (t *Tutorial) RunNewProject(params NewProjectParams) error {
+	// Print intro
 	if params.ShowIntro {
 		t.outputer.Print(locale.Tt("tutorial_newproject_intro"))
 	}
@@ -72,11 +73,13 @@ func (t *Tutorial) RunNewProject(params NewProjectParams) error {
 		}
 	}
 
+	// Prompt for project name
 	name, fail := t.prompt.Input(locale.Tl("tutorial_prompt_projectname", "What do you want to name your project?"), lang.Text())
 	if fail != nil {
 		locale.WrapInputError(fail, "err_tutorial_prompt_projectname", "Invalid response received.")
 	}
 
+	// Prompt for project dir
 	homeDir, _ := fileutils.HomeDir()
 	dir, fail := t.prompt.Input(locale.Tl(
 		"tutorial_prompt_projectdir",
@@ -85,6 +88,7 @@ func (t *Tutorial) RunNewProject(params NewProjectParams) error {
 		locale.WrapInputError(fail, "err_tutorial_prompt_projectdir", "Invalid response received.")
 	}
 
+	// Create dir and switch to it
 	if fail := fileutils.MkdirUnlessExists(dir); fail != nil {
 		locale.WrapInputError(fail, "err_tutorial_mkdir", "Could not create directory: {{.V0}}.", dir)
 	}
@@ -92,14 +96,17 @@ func (t *Tutorial) RunNewProject(params NewProjectParams) error {
 		locale.WrapInputError(err, "err_tutorial_chdir", "Could not change directory to: {{.V0}}", dir)
 	}
 
+	// Run state init
 	if err := t.invoke("init", t.auth.WhoAmI()+"/"+name, lang.String(), "--path", dir); err != nil {
 		return locale.WrapInputError(err, "err_tutorial_state_init", "Could not initialize project.")
 	}
 
+	// Run state push
 	if err := t.invoke("push"); err != nil {
 		return locale.WrapInputError(err, "err_tutorial_state_push", "Could not push project to ActiveState Platform, try manually running `state push` from your project directory at {{.V0}}.", dir)
 	}
 
+	// Print outro
 	t.outputer.Print(locale.Tt(
 		"tutorial_newproject_outro", map[string]interface{}{
 			"Dir":  dir,
@@ -110,11 +117,15 @@ func (t *Tutorial) RunNewProject(params NewProjectParams) error {
 	return nil
 }
 
+// authFlow is invoked when the user is not authenticated, it will prompt for sign in or sign up
 func (t *Tutorial) authFlow() error {
+	// Sign in / Sign up choices
 	signIn := locale.Tl("tutorial_signin", "Sign In")
 	signUpCLI := locale.Tl("tutorial_createcli", "Create Account via Command Line")
 	signUpBrowser := locale.Tl("tutorial_createbrowser", "Create Account via Browser")
 	choices := []string{signIn, signUpCLI, signUpBrowser}
+
+	// Prompt for auth
 	choice, fail := t.prompt.Select(
 		locale.Tl("tutorial_need_account", "In order to create a Virtual Runtime Environment you must have an ActiveState Platform account"),
 		choices,
@@ -124,6 +135,7 @@ func (t *Tutorial) authFlow() error {
 		return locale.WrapInputError(fail, "err_tutorial_prompt_account", "Invalid response received.")
 	}
 
+	// Evaluate user selection
 	switch choice {
 	case signIn:
 		if err := t.invoke("auth"); err != nil {
@@ -144,6 +156,7 @@ func (t *Tutorial) authFlow() error {
 		}
 	}
 
+	// Reload authentication info
 	if err := config.Reload(); err != nil {
 		return locale.WrapError(fail, "err_tutorial_config", "Could not reload config after invoking `state auth ..`.")
 	}
@@ -154,18 +167,23 @@ func (t *Tutorial) authFlow() error {
 	return nil
 }
 
+// invoke will invoke a state tool command with the given args and prints a friendly message indicating what we're doing
 func (t *Tutorial) invoke(args ...string) error {
+	// Tell user we're invoking a state command
 	t.outputer.Notice(locale.Tl("tutorial_invoking", "\n[INFO]Invoking `state {{.V0}}` ...[/RESET]", strings.Join(args, " ")))
+	time.Sleep(time.Second)
 
+	// Get terminal width so we can print dashed line to call out state command output
 	termWidth, _, err := terminal.GetSize(int(os.Stdin.Fd()))
 	if err != nil {
 		logging.Debug("Cannot get terminal size: %v", err)
 		termWidth = 100
 	}
 
+	// print dashed line
 	t.outputer.Notice("[INFO]" + strings.Repeat("-", termWidth) + "[/RESET]")
-	time.Sleep(time.Second)
 
+	// Execute state command
 	exe, err := os.Executable()
 	if err != nil {
 		return locale.WrapError(err, "err_tutorial_invoke_exe", "Could not detect executable path of State Tool.")
@@ -174,6 +192,8 @@ func (t *Tutorial) invoke(args ...string) error {
 	cmd := exec.Command(exe, args...)
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 	err = cmd.Run()
+
+	// print dashed line
 	t.outputer.Notice("[INFO]" + strings.Repeat("-", termWidth) + "[/RESET]")
 
 	if err != nil {
