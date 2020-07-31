@@ -114,7 +114,7 @@ func newAPIKeyCommand(prime *primer.Values) *captain.Command {
 }
 
 func newExportConfigCommand(prime *primer.Values) *captain.Command {
-	runner := config.NewConfig(prime)
+	runner := config.New(prime)
 	params := config.ConfigParams{}
 
 	return captain.NewCommand(

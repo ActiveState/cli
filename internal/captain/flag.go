@@ -47,8 +47,6 @@ func (c *Command) setFlags(flags []*Flag) error {
 			flagSetter().BoolVarP(
 				v, flag.Name, flag.Shorthand, *v, flag.Description,
 			)
-		case *[]string:
-			flagSetter().StringSliceVarP(v, flag.Name, flag.Shorthand, *v, flag.Description)
 		case FlagMarshaler:
 			flagSetter().VarP(
 				v, flag.Name, flag.Shorthand, flag.Description,
