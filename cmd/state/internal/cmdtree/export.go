@@ -1,10 +1,13 @@
 package cmdtree
 
 import (
+	"strings"
+
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/export"
+	"github.com/ActiveState/cli/internal/runners/export/config"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
@@ -107,5 +110,28 @@ func newAPIKeyCommand(prime *primer.Values) *captain.Command {
 		func(ccmd *captain.Command, args []string) error {
 			params.IsAuthed = prime.Auth().Authenticated
 			return apikey.Run(params)
+		})
+}
+
+func newExportConfigCommand(prime *primer.Values) *captain.Command {
+	runner := config.New(prime)
+	params := config.ConfigParams{}
+
+	return captain.NewCommand(
+		"config",
+		locale.T("export_config_cmd_description"),
+		[]*captain.Flag{
+			{
+				Name: "filter",
+				Description: locale.Tr(
+					"export_config_flag_filter_description",
+					strings.Join(config.SupportedFilters(), ", "),
+				),
+				Value: &params.Filter,
+			},
+		},
+		[]*captain.Argument{},
+		func(ccmd *captain.Command, _ []string) error {
+			return runner.Run(ccmd, &params)
 		})
 }

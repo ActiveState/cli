@@ -32,6 +32,7 @@ func New(prime *primer.Values) *CmdTree {
 		newJWTCommand(),
 		newPrivateKeyCommand(),
 		newAPIKeyCommand(prime),
+		newExportConfigCommand(prime),
 	)
 
 	packagesCmd := newPackagesCommand(prime)
