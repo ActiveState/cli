@@ -34,7 +34,7 @@ func SupportedFilters() []string {
 	return supported
 }
 
-// Filters is the --filter flag for the export config command, it implements captain.FlagMarshaler
+// Filter is the --filter flag for the export config command, it implements captain.FlagMarshaler
 type Filter struct {
 	terms []Term
 }
@@ -66,5 +66,5 @@ func (f *Filter) Set(value string) error {
 }
 
 func (f Filter) Type() string {
-	return "filters"
+	return "filter"
 }
