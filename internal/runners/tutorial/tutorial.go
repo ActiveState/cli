@@ -3,22 +3,18 @@ package tutorial
 import (
 	"fmt"
 	"os"
-	"os/exec"
-	"strings"
-	"time"
 
 	"github.com/skratchdot/open-golang/open"
-	"golang.org/x/crypto/ssh/terminal"
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
@@ -97,12 +93,12 @@ func (t *Tutorial) RunNewProject(params NewProjectParams) error {
 	}
 
 	// Run state init
-	if err := t.invoke("init", t.auth.WhoAmI()+"/"+name, lang.String(), "--path", dir); err != nil {
+	if err := runbits.Invoke(t.outputer, "init", t.auth.WhoAmI()+"/"+name, lang.String(), "--path", dir); err != nil {
 		return locale.WrapInputError(err, "err_tutorial_state_init", "Could not initialize project.")
 	}
 
 	// Run state push
-	if err := t.invoke("push"); err != nil {
+	if err := runbits.Invoke(t.outputer, "push"); err != nil {
 		return locale.WrapInputError(err, "err_tutorial_state_push", "Could not push project to ActiveState Platform, try manually running `state push` from your project directory at {{.V0}}.", dir)
 	}
 
@@ -138,11 +134,11 @@ func (t *Tutorial) authFlow() error {
 	// Evaluate user selection
 	switch choice {
 	case signIn:
-		if err := t.invoke("auth"); err != nil {
+		if err := runbits.Invoke(t.outputer, "auth"); err != nil {
 			return locale.WrapInputError(err, "err_tutorial_signin", "Sign in failed. You could try manually signing in by running `state auth`.")
 		}
 	case signUpCLI:
-		if err := t.invoke("auth", "signup"); err != nil {
+		if err := runbits.Invoke(t.outputer, "auth", "signup"); err != nil {
 			return locale.WrapInputError(err, "err_tutorial_signup", "Sign up failed. You could try manually signing up by running `state auth signup`.")
 		}
 	case signUpBrowser:
@@ -151,7 +147,7 @@ func (t *Tutorial) authFlow() error {
 			return locale.WrapInputError(err, "err_tutorial_browser", "Could not open browser, please manually navigate to {{.V0}}.", constants.PlatformSignupURL)
 		}
 		t.outputer.Notice(locale.Tl("tutorial_signing_ready", "[BOLD]Please sign in once you have finished signing up via your browser.[/RESET]"))
-		if err := t.invoke("auth"); err != nil {
+		if err := runbits.Invoke(t.outputer, "auth"); err != nil {
 			return locale.WrapInputError(err, "err_tutorial_signin", "Sign in failed. You could try manually signing in by running `state auth`.")
 		}
 	}
@@ -162,42 +158,6 @@ func (t *Tutorial) authFlow() error {
 	}
 	if fail := t.auth.Authenticate(); fail != nil {
 		return locale.WrapError(fail, "err_tutorial_auth", "Could not authenticate after invoking `state auth ..`.")
-	}
-
-	return nil
-}
-
-// invoke will invoke a state tool command with the given args and prints a friendly message indicating what we're doing
-func (t *Tutorial) invoke(args ...string) error {
-	// Tell user we're invoking a state command
-	t.outputer.Notice(locale.Tl("tutorial_invoking", "\n[INFO]Invoking `state {{.V0}}` ...[/RESET]", strings.Join(args, " ")))
-	time.Sleep(time.Second)
-
-	// Get terminal width so we can print dashed line to call out state command output
-	termWidth, _, err := terminal.GetSize(int(os.Stdin.Fd()))
-	if err != nil {
-		logging.Debug("Cannot get terminal size: %v", err)
-		termWidth = 100
-	}
-
-	// print dashed line
-	t.outputer.Notice("[INFO]" + strings.Repeat("-", termWidth) + "[/RESET]")
-
-	// Execute state command
-	exe, err := os.Executable()
-	if err != nil {
-		return locale.WrapError(err, "err_tutorial_invoke_exe", "Could not detect executable path of State Tool.")
-	}
-
-	cmd := exec.Command(exe, args...)
-	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
-	err = cmd.Run()
-
-	// print dashed line
-	t.outputer.Notice("[INFO]" + strings.Repeat("-", termWidth) + "[/RESET]")
-
-	if err != nil {
-		return locale.WrapError(err, "err_tutorial_invoke_run", "Errors occurred while invoking State Tool command: `state {{.V0}}`.", strings.Join(args, " "))
 	}
 
 	return nil
