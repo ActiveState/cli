@@ -1563,6 +1563,17 @@ ppm_print_main:
         state help
 
     See "https://docs.activestate.com/platform/state/" for details.
+ppm_print_forward:
+  other: |
+    Your command has been forwarded to `{{.V0}}`. 
+    In the future you can run `{{.V0}}` directly instead of running `{{.V1}}`, which will eventually disappear entirely.
+
+    Note that `{{.V0}}` is not a direct analog for `{{.V1}}` and your command may have failed as a result. 
+    Please run `{{.V0}} --help` for further information on how to use it for your use-case.
+ppm_print_redundant:
+  other: |
+    ppm area and its subcommands have been made redundant thanks to State Tools use of virtual environments. 
+    You can simply start managing your packages, run `{{.V0}} --help` for more information.
 ppm_install_intent:
   other: add new packages to your project 
 ppm_upgrade_intent:

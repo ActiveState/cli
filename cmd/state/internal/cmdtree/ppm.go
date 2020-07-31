@@ -2,10 +2,14 @@ package cmdtree
 
 import (
 	"fmt"
+	"os"
+	"os/exec"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 func printSuggestion(ppmIntent, newCommand, docLink string) error {
@@ -23,7 +27,7 @@ func printMain() error {
 	return nil
 }
 
-func newPpmCommand() *captain.Command {
+func newPpmCommand(prime *primer.Values) *captain.Command {
 	rootCmd := captain.NewHiddenShimCommand(
 		"_ppm",
 		nil, nil,
@@ -33,14 +37,14 @@ func newPpmCommand() *captain.Command {
 					return printDefault()
 				}
 			}
-			return printMain()
+			return shim(prime, "ppm", "packages", args...)
 		},
 	)
 
 	var children []*captain.Command
-	children = addPackagesCommands(children)
+	children = addPackagesCommands(prime, children)
 	children = addRepositoryCommands(children)
-	children = addProjectCommands(children)
+	children = addProjectCommands(prime, children)
 	children = addVersionCommand(children)
 	children = addInfoCommand(children)
 	children = addOtherCommands(children)
@@ -49,27 +53,27 @@ func newPpmCommand() *captain.Command {
 	return rootCmd
 }
 
-func addPackagesCommands(cmds []*captain.Command) []*captain.Command {
+func addPackagesCommands(prime *primer.Values, cmds []*captain.Command) []*captain.Command {
 	return append(cmds,
 		captain.NewShimCommand(
 			"install",
 			"installs new packages",
-			func(_ *captain.Command, _ []string) error {
-				return printSuggestion(locale.T("ppm_install_intent"), "state packages add", "state/packages.html")
+			func(_ *captain.Command, args []string) error {
+				return shim(prime, "install", "packages add", args...)
 			},
 		),
 		captain.NewShimCommand(
 			"upgrade",
 			"upgrades installed packages",
-			func(_ *captain.Command, _ []string) error {
-				return printSuggestion(locale.T("ppm_upgrade_intent"), "state packages update", "state/packages.html")
+			func(_ *captain.Command, args []string) error {
+				return shim(prime, "upgrade", "packages update", args...)
 			},
 		),
 		captain.NewShimCommand(
 			"remove",
 			"removes installed packages",
-			func(_ *captain.Command, _ []string) error {
-				return printSuggestion(locale.T("ppm_remove_intent"), "state packages remove", "state/packages.html")
+			func(_ *captain.Command, args []string) error {
+				return shim(prime, "remove", "packages remove", args...)
 			},
 		),
 	)
@@ -87,21 +91,21 @@ func addVersionCommand(cmds []*captain.Command) []*captain.Command {
 	)
 }
 
-func addProjectCommands(cmds []*captain.Command) []*captain.Command {
+func addProjectCommands(prime *primer.Values, cmds []*captain.Command) []*captain.Command {
 	return append(cmds,
 		captain.NewShimCommand(
 			"area",
 			"organizes packages in different areas",
 			func(_ *captain.Command, _ []string) error {
-				fmt.Println(locale.T("ppm_area_message"))
+				fmt.Println(locale.Tr("ppm_print_redundant", "state packages"))
 				return nil
 			},
 		),
 		captain.NewShimCommand(
 			"list",
 			"lists installed packages",
-			func(_ *captain.Command, _ []string) error {
-				return printSuggestion(locale.T("ppm_list_intent"), "state packages", "state/packages.html")
+			func(_ *captain.Command, args []string) error {
+				return shim(prime, "list", "packages", args...)
 			},
 		),
 		//	Long:  strings.TrimSpace(locale.T("ppm_header_message")),
@@ -192,4 +196,42 @@ func addInfoCommand(cmds []*captain.Command) []*captain.Command {
 			return printMain()
 		},
 	))
+}
+
+func shim(prime *primer.Values, intercepted, replaced string, args ...string) error {
+	pj, fail := projectfile.GetSafe()
+	if fail != nil && !fail.Type.Matches(projectfile.FailNoProject) {
+		return locale.WrapError(fail.ToError(), "err_ppm_get_projectfile", "Encountered unexpected error loading projectfile")
+	}
+	stateCmd := "state"
+
+	if pj == nil {
+		// TODO: Invoke tutorial
+		prime.Output().Print("Tutorial")
+		return nil
+	}
+
+	commands := strings.Split(replaced, " ")
+	replacedArgs := args
+	if len(commands) > 1 {
+		replaced = commands[0]
+		replacedArgs = commands[1:]
+		replacedArgs = append(replacedArgs, args...)
+	}
+
+	prime.Output().Print(locale.Tr("ppm_print_forward", fmt.Sprintf("%s %s", stateCmd, replaced), intercepted))
+	return invoke(replaced, replacedArgs...)
+}
+
+func invoke(command string, args ...string) error {
+	executable, err := os.Executable()
+	if err != nil {
+		return locale.WrapError(err, "err_invoke_executable", "Could not find State Tool executable")
+	}
+
+	commandArgs := []string{command}
+	commandArgs = append(commandArgs, args...)
+	cmd := exec.Command(executable, commandArgs...)
+	cmd.Stdout, cmd.Stderr, cmd.Stdin = os.Stdout, os.Stderr, os.Stdout
+	return cmd.Run()
 }
