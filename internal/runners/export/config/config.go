@@ -15,7 +15,7 @@ type Config struct {
 }
 
 type ConfigParams struct {
-	Filters Filters
+	Filter Filter
 }
 
 type primeable interface {
@@ -32,14 +32,14 @@ func (c *Config) Run(cmd *captain.Command, params *ConfigParams) error {
 	}
 
 	filteredOutput := map[string]string{}
-	if params.Filters.filters == nil {
+	if params.Filter.terms == nil {
 		filteredOutput = output
 	}
 
-	for _, filter := range params.Filters.filters {
+	for _, filter := range params.Filter.terms {
 		if value, ok := output[filter.String()]; ok {
 			filteredOutput[filter.String()] = value
-			if len(params.Filters.filters) == 1 {
+			if len(params.Filter.terms) == 1 {
 				c.out.Print(value)
 				return nil
 			}

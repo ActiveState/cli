@@ -127,7 +127,7 @@ func newExportConfigCommand(prime *primer.Values) *captain.Command {
 					"export_config_flag_filter_description",
 					strings.Join(config.SupportedFilters(), ", "),
 				),
-				Value: &params.Filters,
+				Value: &params.Filter,
 			},
 		},
 		[]*captain.Argument{},

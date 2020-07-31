@@ -6,19 +6,18 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 )
 
-// Filter is the --filter flag for the export config command, it implements captain.FlagMarshaler
-type Filter int
+type Term int
 
 const (
-	Dir Filter = iota
+	Dir Term = iota
 )
 
-var filterLookup = map[Filter]string{
+var termLookup = map[Term]string{
 	Dir: "dir",
 }
 
-func (f Filter) String() string {
-	for k, v := range filterLookup {
+func (f Term) String() string {
+	for k, v := range termLookup {
 		if k == f {
 			return v
 		}
@@ -28,7 +27,7 @@ func (f Filter) String() string {
 
 func SupportedFilters() []string {
 	var supported []string
-	for _, v := range filterLookup {
+	for _, v := range termLookup {
 		supported = append(supported, v)
 	}
 
@@ -36,36 +35,36 @@ func SupportedFilters() []string {
 }
 
 // Filters is the --filter flag for the export config command, it implements captain.FlagMarshaler
-type Filters struct {
-	filters []Filter
+type Filter struct {
+	terms []Term
 }
 
-func (f Filters) String() string {
-	output := make([]string, len(f.filters))
-	for i, filter := range f.filters {
+func (f Filter) String() string {
+	output := make([]string, len(f.terms))
+	for i, filter := range f.terms {
 		output[i] = filter.String()
 	}
 	return strings.Join(output, ", ")
 }
 
-func (f *Filters) Set(value string) error {
+func (f *Filter) Set(value string) error {
 	values := strings.Split(value, ",")
-	f.filters = make([]Filter, 0)
+	f.terms = make([]Term, 0)
 	for _, v := range values {
-		for k, filterString := range filterLookup {
+		for k, filterString := range termLookup {
 			if filterString == v {
-				f.filters = append(f.filters, k)
+				f.terms = append(f.terms, k)
 				continue
 			}
 		}
 	}
 
-	if len(f.filters) == 0 {
+	if len(f.terms) == 0 {
 		return locale.NewError("err_invalid_filter", value, strings.Join(SupportedFilters(), ", "))
 	}
 	return nil
 }
 
-func (f Filters) Type() string {
+func (f Filter) Type() string {
 	return "filters"
 }
