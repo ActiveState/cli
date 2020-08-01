@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/textutils"
 	"github.com/skratchdot/open-golang/open"
 	"github.com/thoas/go-funk"
 )
@@ -96,8 +97,8 @@ func (cf *conversionFlow) runSurvey() (conversionResult, error) {
 		convertAnswerCreate,
 		locale.Tl("ppm_convert_answer_why", "Why is this necessary? I Just want to manage packages."),
 	}
-	choice, fail := cf.survey(locale.Tl(
-		"ppm_convert_create_question", "You need to create a runtime environment to proceed.\n"),
+	choice, fail := cf.survey(textutils.WordWrap(locale.Tl(
+		"ppm_convert_create_question", "You need to create a runtime environment to proceed.\n")),
 		choices, "")
 	if fail != nil {
 		return canceled, locale.WrapInputError(fail, "err_ppm_convert_interrupt", "Invalid response received.")
@@ -112,10 +113,10 @@ func (cf *conversionFlow) runSurvey() (conversionResult, error) {
 func (cf *conversionFlow) createVirtualEnv() error {
 	// TODO: start wizard
 
-	cf.out.Print(locale.Tl(
+	cf.out.Print(textutils.WordWrap(locale.Tl(
 		"ppm_convert_after_tutorial",
 		"For your convenience you can continue to use ppm commands once you’ve activated your virtual runtime environment. We’ll give you handy tips on how your commands map to State Tool so you can learn as you go.",
-	))
+	)))
 	return nil
 }
 
@@ -138,10 +139,10 @@ func (cf *conversionFlow) explainVirtualEnv() (conversionResult, error) {
 	}
 	// always add choices to create virtual environment and to say no again
 	choices = append(choices, convertAnswerCreate, no)
-	explanation := locale.Tl("ppm_convert_explanation", "State Tool was developed from the ground up with modern software development practices in mind. Development environments with globally installed language runtime environments are increasingly shunned by modern development practices, and as a result the State Tool and the ActiveState Platform tries to do away with them entirely.\n")
+	explanation := textutils.WordWrap(locale.Tl("ppm_convert_explanation", "State Tool was developed from the ground up with modern software development practices in mind. Development environments with globally installed language runtime environments are increasingly shunned by modern development practices, and as a result the State Tool and the ActiveState Platform tries to do away with them entirely.\n"))
 
 	// do not repeat the explanation if the function is called a second time
-	if !alreadySeenPlatformInfo && !alreadySeenStateToolInfo {
+	if alreadySeenPlatformInfo || alreadySeenStateToolInfo {
 		explanation = ""
 	}
 	choice, fail := cf.survey(explanation, choices, "")
@@ -189,7 +190,7 @@ func (cf *conversionFlow) wantGlobalPackageManagement() (conversionResult, error
 		locale.Tl("ppm_convert_reject", "I'd rather use conventional Perl tooling."),
 	}
 	choice, fail := cf.survey(
-		locale.Tl("ppm_convert_cpan_info", "You can still use conventional Perl tooling like CPAN, CPANM etc. But you will miss out on the added benefits of the ActiveState Platform.\n"),
+		textutils.WordWrap(locale.Tl("ppm_convert_cpan_info", "You can still use conventional Perl tooling like CPAN, CPANM etc. But you will miss out on the added benefits of the ActiveState Platform.\n")),
 		choices, "")
 
 	if fail != nil {
@@ -198,7 +199,7 @@ func (cf *conversionFlow) wantGlobalPackageManagement() (conversionResult, error
 	if choice == choices[0] {
 		return accepted, nil
 	}
-	cf.out.Print(locale.Tl("ppm_convert_reject_sorry", "We're sorry we can't help any further. We'd love to hear more about your use case to see if we can better meet your needs. Please consider posting at {{.V0}} or contacting {{.V1}}", constants.ForumsURL, constants.SupportEmail))
+	cf.out.Print(textutils.WordWrap(locale.Tl("ppm_convert_reject_sorry", "We're sorry we can't help any further. We'd love to hear more about your use case to see if we can better meet your needs. Please consider posting to our forum at {{.V0}}}.", constants.ForumsURL)))
 
 	return rejected, nil
 }

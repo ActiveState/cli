@@ -5,7 +5,6 @@ go 1.12
 require (
 	cloud.google.com/go v0.56.0
 	github.com/ActiveState/archiver v3.1.1+incompatible
-	github.com/ActiveState/go v0.0.0-20170614201249-0b81c023a722
 	github.com/ActiveState/go-colortext v0.0.0-20190402165444-9cd201a66eb0
 	github.com/ActiveState/go-ogle-analytics v0.0.0-20170510030904-9b3f14901527
 	github.com/ActiveState/sysinfo v0.0.0-20200619170619-0582d42daf27
@@ -25,6 +24,7 @@ require (
 	github.com/dave/jennifer v0.18.0
 	github.com/denisbrodbeck/machineid v0.8.0
 	github.com/dsnet/compress v0.0.0-20171208185109-cc9eb1d7ad76 // indirect
+	github.com/eidolon/wordwrap v0.0.0-20161011182207-e0f54129b8bb
 	github.com/fatih/color v1.5.0
 	github.com/felixge/fgprof v0.9.0
 	github.com/fsnotify/fsnotify v1.4.7

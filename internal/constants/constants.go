@@ -217,6 +217,3 @@ const RCAppendStopLine = "-- STOP ACTIVESTATE RUNTIME ENVIRONMENT"
 
 // ForumsURL is the URL to the state tool forums
 const ForumsURL = "https://community.activestate.com/c/state-tool/9"
-
-// SupportEmail is an email address at which users can contact us
-const SupportEmail = "support@activestate.com"
