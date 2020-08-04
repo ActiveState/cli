@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
@@ -74,7 +75,12 @@ func (s *Shim) shim(args ...string) error {
 func (s *Shim) executeShim(args ...string) error {
 	pj, fail := projectfile.GetSafe()
 	if fail != nil && !fail.Type.Matches(projectfile.FailNoProject) {
-		return locale.WrapError(fail.ToError(), "err_ppm_get_projectfile", "Encountered unexpected error loading projectfile")
+		return locale.WrapError(
+			fail.ToError(),
+			"err_ppm_get_projectfile",
+			"Encountered unexpected error parsing your activestate.yaml, please manually correct the yaml or if the issue is out of your hands consider letting us know about your issue at {{.V0}}",
+			constants.ForumsURL,
+		)
 	}
 	if pj == nil {
 		// TODO: Replace this function call when conversion flow is complete
