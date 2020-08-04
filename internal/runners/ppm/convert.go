@@ -3,6 +3,7 @@ package ppm
 import (
 	"os"
 	"os/exec"
+	"time"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
@@ -116,6 +117,11 @@ func (cf *conversionFlow) createVirtualEnv() error {
 	if err != nil {
 		return locale.WrapError(err, "err_ppm_convert_invoke_tutorial", "Errors occurred while invoking State Tool tutorial command.")
 	}
+
+	// print a new line to separate from the last tutorial message
+	cf.out.Print("\n")
+	// sleep for a second to give a visual feedback that we have returned to the conversion flow
+	time.Sleep(1 * time.Second)
 
 	cf.out.Print(textutils.WordWrap(locale.Tl(
 		"ppm_convert_after_tutorial",
