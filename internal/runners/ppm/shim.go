@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
@@ -99,8 +100,7 @@ func (s *Shim) executeShim(args ...string) error {
 	forwarded := []string{"state", s.replaced}
 	forwarded = append(forwarded, replacedArgs...)
 	s.out.Print(locale.Tr(s.localeID, strings.Join(forwarded, " "), s.intercepted))
-
-	return invoke(s.replaced, replacedArgs...)
+	return runbits.Invoke(s.out, forwarded[1:]...)
 }
 
 func invoke(command string, args ...string) error {
