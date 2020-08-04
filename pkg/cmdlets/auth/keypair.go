@@ -35,7 +35,6 @@ func generateKeypairForUser(passphrase string) *failures.Failure {
 	if failure != nil {
 		return failure
 	}
-	print.Line(locale.T("keypair_generate_success"))
 	return nil
 }
 

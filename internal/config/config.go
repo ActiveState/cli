@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 
@@ -13,22 +14,28 @@ var defaultConfig *Instance
 var exit = os.Exit
 
 func init() {
+	if err := Reload(); err != nil {
+		print.Error(err.Error())
+		os.Exit(1)
+	}
+}
+
+func Reload() error {
 	localPath := os.Getenv(C.ConfigEnvVarName)
 	if condition.InTest() {
 		var err error
 		localPath, err = ioutil.TempDir("", "cli-config")
 		if err != nil {
-			print.Error("Could not create temp dir: %v", err)
-			os.Exit(1)
+			return fmt.Errorf("Could not create temp dir: %w", err)
 		}
 		err = os.RemoveAll(localPath)
 		if err != nil {
-			print.Error("Could not remove generated config dir for tests: %v", err)
-			os.Exit(1)
+			return fmt.Errorf("Could not remove generated config dir for tests: %w", err)
 		}
 	}
 
 	defaultConfig = New(localPath)
+	return nil
 }
 
 // ConfigPath returns the directory in which we'll be storing all our appdata

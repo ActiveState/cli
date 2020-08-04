@@ -3,12 +3,13 @@ package analytics
 import (
 	"fmt"
 
+	ga "github.com/ActiveState/go-ogle-analytics"
+	"github.com/ActiveState/sysinfo"
+
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	ga "github.com/ActiveState/go-ogle-analytics"
-	"github.com/ActiveState/sysinfo"
 )
 
 var client *ga.Client
@@ -27,6 +28,9 @@ const ActBuildProject = "project"
 
 // CatPPMShimCmd is the event category used for PPM shim events
 const CatPPMShimCmd = "ppm-shim"
+
+// CatTutorial is the event category used for tutorial level events
+const CatTutorial = "tutorial"
 
 type customDimensions struct {
 	version    string

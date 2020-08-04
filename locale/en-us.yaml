@@ -249,7 +249,7 @@ err_auth_failed:
 err_auth_username_check:
   other: Could not validate username, check the error log for more information
 err_auth_failed_unknown_cause:
-  other: Authentication failed due to an unknown cause, check the error log for more information
+  other: "Authentication failed due to an unknown cause, error received: {{.V0}}"
 auth_err_password_prompt:
   other: The provided password is invalid
 confirm_password_account_creation:
@@ -260,8 +260,8 @@ err_username_taken:
   other: Username is already taken
 signup_description:
   other: Signup a new account
-err_auth_signup_email_exists:
-  other: An account with that email address already exists
+err_auth_signup_user_exists:
+  other: "An account with the given information already exists, error received: {{.V0}}"
 login_success_welcome_back:
   other: You have successfully authenticated, hello {{.Name}}!
 logged_in_as:
@@ -1606,7 +1606,7 @@ ppm_area_message:
     To fork an existing project, run:
     	state fork
     See https://docs.activestate.com/platform/state/fork.html for details.
-    	
+
     To create a new project, see the guide at https://docs.activestate.com/platform/state/start.html for details.
 ppm_list_intent:
   other: list the packages installed for a project
@@ -1617,3 +1617,23 @@ script_watcher_watch_file:
   other: "Watching file changes at: {{.V0}}"
 confirm_exit_on_error_prompt:
   other: Press enter to continue...
+tutorial_newproject_intro:
+  other: |
+    The State Tool lets you manage your own virtual runtime environments, allowing you to easily manage language versions
+    and packages on a per-project basis.
+    [[BR]][[BR]]
+    Once you have your Runtime Environment you'll be able to not only manage packages with your team mates, but also share
+    secrets (or store your own, for your eyes only), set up shared scrips and environment setups, and much more.
+    [[BR]][[BR]]
+    We'll help you create your first Runtime Environment, after that you can create as many as you want by running `state init`.
+    [[BR]]
+tutorial_newproject_outro:
+  other: |
+    Your Virtual Runtime Environment has been created.
+    [[BR]]
+    To start using your project simply run `state activate` from your project directory at {{.Dir}}.
+    [[BR]]
+    You can also manage your project in your browser at {{.URL}}.
+    [[BR]]
+    To create another project run `state init`, or if you want to find out more about the State Tool and what it can do
+    run `state --help` or check out {{.Docs}}
