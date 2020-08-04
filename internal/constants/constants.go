@@ -155,6 +155,9 @@ const DateTimeFormatUser = "2 Jan 2006 15:04"
 // PlatformSignupURL is the account creation url used by the platform
 const PlatformSignupURL = "https://platform.activestate.com" + "/create-account"
 
+// DocumentationURL is the url for the state tool documentation
+const DocumentationURL = "http://docs.activestate.com/platform/state/"
+
 // BugTrackerURL is the URL of our bug tracker
 const BugTrackerURL = "https://github.com/ActiveState/state-tool/issues"
 

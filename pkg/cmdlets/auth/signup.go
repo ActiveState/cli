@@ -10,6 +10,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/pkg/platform/api"
 
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 
@@ -20,7 +21,7 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/pkg/platform/api/mono"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/users"
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 var (
@@ -57,11 +58,13 @@ func Signup() *failures.Failure {
 		return fail.WithDescription("err_prompt_unknown")
 	}
 
-	doSignup(input)
+	if fail = doSignup(input); fail != nil {
+		return fail
+	}
 
 	if authentication.Get().Authenticated() {
-		if failure := generateKeypairForUser(input.Password); failure != nil {
-			return failure.WithDescription("keypair_err_save")
+		if fail := generateKeypairForUser(input.Password); fail != nil {
+			return fail.WithDescription("keypair_err_save")
 		}
 	}
 
@@ -201,10 +204,10 @@ func doSignup(input *signupInput) *failures.Failure {
 		// Authentication failed due to email already existing (username check already happened at this point)
 		case *users.AddUserConflict:
 			logging.Error("Encountered add user conflict: %v", err)
-			return FailAddUserConflict.New(locale.T("err_auth_signup_email_exists"))
+			return FailAddUserConflict.New(locale.T("err_auth_signup_user_exists", api.ErrorMessageFromPayload(err)))
 		default:
 			logging.Error("Encountered unknown error adding user: %v", err)
-			return FailAuthUnknown.New(locale.T("err_auth_failed_unknown_cause"))
+			return FailAuthUnknown.New(locale.T("err_auth_failed_unknown_cause", api.ErrorMessageFromPayload(err)))
 		}
 	}
 

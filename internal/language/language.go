@@ -123,6 +123,17 @@ func MakeByName(name string) Language {
 	return Unknown
 }
 
+// MakeByText will retrieve a language by a given text
+func MakeByText(text string) Language {
+	for i, data := range lookup {
+		if text == data.text {
+			return Language(i)
+		}
+	}
+
+	return Unknown
+}
+
 func (l Language) data() languageData {
 	i := int(l)
 	if i < 0 || i > len(lookup)-1 {

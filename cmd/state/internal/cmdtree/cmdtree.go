@@ -74,6 +74,9 @@ func New(prime *primer.Values) *CmdTree {
 		newDeployReportCommand(prime),
 	)
 
+	tutorialCmd := newTutorialCommand(prime)
+	tutorialCmd.AddChildren(newTutorialProjectCommand(prime))
+
 	stateCmd := newStateCommand(globals)
 	stateCmd.AddChildren(
 		newActivateCommand(prime),
@@ -98,6 +101,7 @@ func New(prime *primer.Values) *CmdTree {
 		newForkCommand(prime),
 		newPpmCommand(),
 		newInviteCommand(prime),
+		tutorialCmd,
 	)
 
 	applyLegacyChildren(stateCmd, globals)
