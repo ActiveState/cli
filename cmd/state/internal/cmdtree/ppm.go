@@ -202,8 +202,6 @@ func shim(prime *primer.Values, intercepted, replaced, localeID string, args ...
 	if fail != nil && !fail.Type.Matches(projectfile.FailNoProject) {
 		return locale.WrapError(fail.ToError(), "err_ppm_get_projectfile", "Encountered unexpected error loading projectfile")
 	}
-	stateCmd := "state"
-
 	if pj == nil {
 		// TODO: Replace this function call when conversion flow is complete
 		return tutorial()
@@ -217,7 +215,7 @@ func shim(prime *primer.Values, intercepted, replaced, localeID string, args ...
 		replacedArgs = append(replacedArgs, args...)
 	}
 
-	forwarded := []string{stateCmd, replaced}
+	forwarded := []string{"state", replaced}
 	forwarded = append(forwarded, replacedArgs...)
 	prime.Output().Print(locale.Tr(localeID, strings.Join(forwarded, " "), intercepted))
 
