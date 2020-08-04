@@ -105,3 +105,18 @@ func tutorial() error {
 	// Placeholder until conversion flow is complete
 	return nil
 }
+
+func (s *Shim) PrintSuggestion(ppmIntent, newCommand, docLink string) error {
+	s.out.Print(locale.Tr("ppm_print_suggestion", ppmIntent, newCommand, docLink))
+	return nil
+}
+
+func (s *Shim) PrintDefault() error {
+	s.out.Print(strings.TrimSpace(locale.T("ppm_header_message")))
+	return nil
+}
+
+func (s *Shim) PrintMain() error {
+	s.out.Print(locale.T("ppm_print_main"))
+	return nil
+}
