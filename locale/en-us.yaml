@@ -1567,6 +1567,10 @@ ppm_print_forward:
   other: |
     Your command has been forwarded to `{{.V0}}`. 
     In the future you can run `{{.V0}}` directly instead of running `{{.V1}}`, which will eventually disappear entirely.
+ppm_print_forward_failure:
+  other: |
+    Your command has been forwarded to `{{.V0}}`. 
+    In the future you can run `{{.V0}}` directly instead of running `{{.V1}}`, which will eventually disappear entirely.
 
     Note that `{{.V0}}` is not a direct analog for `{{.V1}}` and your command may have failed as a result. 
     Please run `{{.V0}} --help` for further information on how to use it for your use-case.

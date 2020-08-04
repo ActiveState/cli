@@ -37,7 +37,7 @@ func newPpmCommand(prime *primer.Values) *captain.Command {
 					return printDefault()
 				}
 			}
-			return shim(prime, "ppm", "packages", args...)
+			return shim(prime, "ppm", "packages", "ppm_print_forward", args...)
 		},
 	)
 
@@ -59,21 +59,21 @@ func addPackagesCommands(prime *primer.Values, cmds []*captain.Command) []*capta
 			"install",
 			"installs new packages",
 			func(_ *captain.Command, args []string) error {
-				return shim(prime, "install", "packages add", args...)
+				return shim(prime, "install", "packages add", "ppm_print_forward_failure", args...)
 			},
 		),
 		captain.NewShimCommand(
 			"upgrade",
 			"upgrades installed packages",
 			func(_ *captain.Command, args []string) error {
-				return shim(prime, "upgrade", "packages update", args...)
+				return shim(prime, "upgrade", "packages update", "ppm_print_forward_failure", args...)
 			},
 		),
 		captain.NewShimCommand(
 			"remove",
 			"removes installed packages",
 			func(_ *captain.Command, args []string) error {
-				return shim(prime, "remove", "packages remove", args...)
+				return shim(prime, "remove", "packages remove", "ppm_print_forward_failure", args...)
 			},
 		),
 	)
@@ -105,7 +105,7 @@ func addProjectCommands(prime *primer.Values, cmds []*captain.Command) []*captai
 			"list",
 			"lists installed packages",
 			func(_ *captain.Command, args []string) error {
-				return shim(prime, "list", "packages", args...)
+				return shim(prime, "list", "packages", "ppm_print_forward", args...)
 			},
 		),
 		//	Long:  strings.TrimSpace(locale.T("ppm_header_message")),
@@ -198,7 +198,7 @@ func addInfoCommand(cmds []*captain.Command) []*captain.Command {
 	))
 }
 
-func shim(prime *primer.Values, intercepted, replaced string, args ...string) error {
+func shim(prime *primer.Values, intercepted, replaced, localeID string, args ...string) error {
 	pj, fail := projectfile.GetSafe()
 	if fail != nil && !fail.Type.Matches(projectfile.FailNoProject) {
 		return locale.WrapError(fail.ToError(), "err_ppm_get_projectfile", "Encountered unexpected error loading projectfile")
@@ -206,9 +206,8 @@ func shim(prime *primer.Values, intercepted, replaced string, args ...string) er
 	stateCmd := "state"
 
 	if pj == nil {
-		// TODO: Invoke tutorial
-		prime.Output().Print("Tutorial")
-		return nil
+		// TODO: Replace this function call when conversion flow is complete
+		return tutorial()
 	}
 
 	commands := strings.Split(replaced, " ")
@@ -219,7 +218,10 @@ func shim(prime *primer.Values, intercepted, replaced string, args ...string) er
 		replacedArgs = append(replacedArgs, args...)
 	}
 
-	prime.Output().Print(locale.Tr("ppm_print_forward", fmt.Sprintf("%s %s", stateCmd, replaced), intercepted))
+	forwarded := []string{stateCmd, replaced}
+	forwarded = append(forwarded, replacedArgs...)
+	prime.Output().Print(locale.Tr(localeID, strings.Join(forwarded, " "), intercepted))
+
 	return invoke(replaced, replacedArgs...)
 }
 
@@ -234,4 +236,9 @@ func invoke(command string, args ...string) error {
 	cmd := exec.Command(executable, commandArgs...)
 	cmd.Stdout, cmd.Stderr, cmd.Stdin = os.Stdout, os.Stderr, os.Stdout
 	return cmd.Run()
+}
+
+func tutorial() error {
+	// Placeholder until conversion flow is complete
+	return nil
 }
