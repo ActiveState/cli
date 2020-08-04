@@ -6,6 +6,7 @@ import (
 
 	"github.com/skratchdot/open-golang/open"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -40,6 +41,8 @@ type NewProjectParams struct {
 }
 
 func (t *Tutorial) RunNewProject(params NewProjectParams) error {
+	analytics.EventWithLabel(analytics.CatTutorial, "run", fmt.Sprintf("showIntro=%v,language=%v", params.ShowIntro, params.Language.String()))
+
 	// Print intro
 	if params.ShowIntro {
 		t.outputer.Print(locale.Tt("tutorial_newproject_intro"))
@@ -67,6 +70,7 @@ func (t *Tutorial) RunNewProject(params NewProjectParams) error {
 		if lang == language.Unknown || lang == language.Unset {
 			return locale.NewError("err_tutorial_language_unknown", "Invalid language selected: {{.V0}}.", choice)
 		}
+		analytics.EventWithLabel(analytics.CatTutorial, "choose-language", lang.String())
 	}
 
 	// Prompt for project name
@@ -115,6 +119,8 @@ func (t *Tutorial) RunNewProject(params NewProjectParams) error {
 
 // authFlow is invoked when the user is not authenticated, it will prompt for sign in or sign up
 func (t *Tutorial) authFlow() error {
+	analytics.Event(analytics.CatTutorial, "authentication-flow")
+
 	// Sign in / Sign up choices
 	signIn := locale.Tl("tutorial_signin", "Sign In")
 	signUpCLI := locale.Tl("tutorial_createcli", "Create Account via Command Line")
@@ -134,14 +140,17 @@ func (t *Tutorial) authFlow() error {
 	// Evaluate user selection
 	switch choice {
 	case signIn:
+		analytics.EventWithLabel(analytics.CatTutorial, "authentication-action", "sign-in")
 		if err := runbits.Invoke(t.outputer, "auth"); err != nil {
 			return locale.WrapInputError(err, "err_tutorial_signin", "Sign in failed. You could try manually signing in by running `state auth`.")
 		}
 	case signUpCLI:
+		analytics.EventWithLabel(analytics.CatTutorial, "authentication-action", "sign-up")
 		if err := runbits.Invoke(t.outputer, "auth", "signup"); err != nil {
 			return locale.WrapInputError(err, "err_tutorial_signup", "Sign up failed. You could try manually signing up by running `state auth signup`.")
 		}
 	case signUpBrowser:
+		analytics.EventWithLabel(analytics.CatTutorial, "authentication-action", "sign-up-browser")
 		err := open.Run(constants.PlatformSignupURL)
 		if err != nil {
 			return locale.WrapInputError(err, "err_tutorial_browser", "Could not open browser, please manually navigate to {{.V0}}.", constants.PlatformSignupURL)
@@ -159,6 +168,8 @@ func (t *Tutorial) authFlow() error {
 	if fail := t.auth.Authenticate(); fail != nil {
 		return locale.WrapError(fail, "err_tutorial_auth", "Could not authenticate after invoking `state auth ..`.")
 	}
+
+	analytics.Event(analytics.CatTutorial, "authentication-flow-complete")
 
 	return nil
 }

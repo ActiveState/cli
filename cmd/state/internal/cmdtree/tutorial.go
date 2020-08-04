@@ -1,7 +1,9 @@
 package cmdtree
 
 import (
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/captain"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/tutorial"
@@ -45,7 +47,13 @@ func newTutorialProjectCommand(prime *primer.Values) *captain.Command {
 		},
 		nil,
 		func(ccmd *captain.Command, args []string) error {
-			return runner.RunNewProject(params)
+			err := runner.RunNewProject(params)
+			if err != nil {
+				analytics.EventWithLabel(analytics.CatTutorial, "error", errs.Join(err, " :: ").Error())
+			} else {
+				analytics.Event(analytics.CatTutorial, "completed")
+			}
+			return err
 		},
 	)
 
