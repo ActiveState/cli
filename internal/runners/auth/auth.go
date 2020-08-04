@@ -111,7 +111,11 @@ func userToJSON(username string) ([]byte, *failures.Failure) {
 	tier := organization.Tier
 	privateProjects := false
 	for _, t := range tiers {
-		privateProjects = (tier == t.Name && t.RequiresPayment)
+		if tier == t.Name && t.RequiresPayment {
+			privateProjects = true
+			break
+		}
+
 	}
 
 	userJ := userJSON{username, organization.URLname, tier, privateProjects}
