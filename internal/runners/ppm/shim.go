@@ -2,8 +2,6 @@ package ppm
 
 import (
 	"fmt"
-	"os"
-	"os/exec"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -101,19 +99,6 @@ func (s *Shim) executeShim(args ...string) error {
 	forwarded = append(forwarded, replacedArgs...)
 	s.out.Print(locale.Tr(s.localeID, strings.Join(forwarded, " "), s.intercepted))
 	return runbits.Invoke(s.out, forwarded[1:]...)
-}
-
-func invoke(command string, args ...string) error {
-	executable, err := os.Executable()
-	if err != nil {
-		return locale.WrapError(err, "err_invoke_executable", "Could not find State Tool executable")
-	}
-
-	commandArgs := []string{command}
-	commandArgs = append(commandArgs, args...)
-	cmd := exec.Command(executable, commandArgs...)
-	cmd.Stdout, cmd.Stderr, cmd.Stdin = os.Stdout, os.Stderr, os.Stdout
-	return cmd.Run()
 }
 
 func tutorial() error {
