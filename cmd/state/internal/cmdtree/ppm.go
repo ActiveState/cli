@@ -8,7 +8,7 @@ import (
 )
 
 func newPpmCommand(prime *primer.Values) *captain.Command {
-	shim := ppm.NewShim(prime.Output())
+	shim := ppm.NewShim(prime)
 	rootCmd := captain.NewHiddenShimCommand(
 		"_ppm",
 		nil, nil,
@@ -35,7 +35,7 @@ func newPpmCommand(prime *primer.Values) *captain.Command {
 }
 
 func addPackagesCommands(prime *primer.Values, cmds []*captain.Command) []*captain.Command {
-	shim := ppm.NewShim(prime.Output())
+	shim := ppm.NewShim(prime)
 	return append(cmds,
 		captain.NewShimCommand(
 			"install",
@@ -62,7 +62,7 @@ func addPackagesCommands(prime *primer.Values, cmds []*captain.Command) []*capta
 }
 
 func addVersionCommand(prime *primer.Values, cmds []*captain.Command) []*captain.Command {
-	shim := ppm.NewShim(prime.Output())
+	shim := ppm.NewShim(prime)
 	return append(cmds,
 		captain.NewShimCommand(
 			"version",
@@ -75,7 +75,7 @@ func addVersionCommand(prime *primer.Values, cmds []*captain.Command) []*captain
 }
 
 func addProjectCommands(prime *primer.Values, cmds []*captain.Command) []*captain.Command {
-	shim := ppm.NewShim(prime.Output())
+	shim := ppm.NewShim(prime)
 	return append(cmds,
 		captain.NewShimCommand(
 			"area",
@@ -112,7 +112,7 @@ func addProjectCommands(prime *primer.Values, cmds []*captain.Command) []*captai
 }
 
 func addRepositoryCommands(prime *primer.Values, cmds []*captain.Command) []*captain.Command {
-	shim := ppm.NewShim(prime.Output())
+	shim := ppm.NewShim(prime)
 	return append(cmds,
 		// The repo sub-commands in ppm configure alternative package
 		// directories. At this point, this is an unsupported functionality, as
@@ -151,7 +151,7 @@ func addRepositoryCommands(prime *primer.Values, cmds []*captain.Command) []*cap
 }
 
 func addOtherCommands(prime *primer.Values, cmds []*captain.Command) []*captain.Command {
-	shim := ppm.NewShim(prime.Output())
+	shim := ppm.NewShim(prime)
 	return append(cmds,
 		// The repo sub-commands in ppm configure alternative package
 		// directories. At this point, this is an unsupported functionality, as
@@ -175,7 +175,7 @@ func addOtherCommands(prime *primer.Values, cmds []*captain.Command) []*captain.
 }
 
 func addInfoCommand(prime *primer.Values, cmds []*captain.Command) []*captain.Command {
-	shim := ppm.NewShim(prime.Output())
+	shim := ppm.NewShim(prime)
 	return append(cmds, captain.NewShimCommand(
 		"info",
 		"prints ppm help message",
