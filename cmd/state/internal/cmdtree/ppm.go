@@ -1,7 +1,6 @@
 package cmdtree
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"strings"
@@ -12,18 +11,18 @@ import (
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
-func printSuggestion(ppmIntent, newCommand, docLink string) error {
-	fmt.Println(locale.Tr("ppm_print_suggestion", ppmIntent, newCommand, docLink))
+func printSuggestion(prime *primer.Values, ppmIntent, newCommand, docLink string) error {
+	prime.Output().Print(locale.Tr("ppm_print_suggestion", ppmIntent, newCommand, docLink))
 	return nil
 }
 
-func printDefault() error {
-	fmt.Println(strings.TrimSpace(locale.T("ppm_header_message")))
+func printDefault(prime *primer.Values) error {
+	prime.Output().Print(strings.TrimSpace(locale.T("ppm_header_message")))
 	return nil
 }
 
-func printMain() error {
-	fmt.Println(locale.T("ppm_print_main"))
+func printMain(prime *primer.Values) error {
+	prime.Output().Print(locale.T("ppm_print_main"))
 	return nil
 }
 
@@ -34,7 +33,7 @@ func newPpmCommand(prime *primer.Values) *captain.Command {
 		func(_ *captain.Command, args []string) error {
 			for _, arg := range args {
 				if arg == "--version" {
-					return printDefault()
+					return printDefault(prime)
 				}
 			}
 			return shim(prime, "ppm", "packages", "ppm_print_forward", args...)
@@ -43,11 +42,11 @@ func newPpmCommand(prime *primer.Values) *captain.Command {
 
 	var children []*captain.Command
 	children = addPackagesCommands(prime, children)
-	children = addRepositoryCommands(children)
+	children = addRepositoryCommands(prime, children)
 	children = addProjectCommands(prime, children)
-	children = addVersionCommand(children)
-	children = addInfoCommand(children)
-	children = addOtherCommands(children)
+	children = addVersionCommand(prime, children)
+	children = addInfoCommand(prime, children)
+	children = addOtherCommands(prime, children)
 
 	rootCmd.AddChildren(children...)
 	return rootCmd
@@ -79,13 +78,13 @@ func addPackagesCommands(prime *primer.Values, cmds []*captain.Command) []*capta
 	)
 }
 
-func addVersionCommand(cmds []*captain.Command) []*captain.Command {
+func addVersionCommand(prime *primer.Values, cmds []*captain.Command) []*captain.Command {
 	return append(cmds,
 		captain.NewShimCommand(
 			"version",
 			"print version info",
 			func(_ *captain.Command, _ []string) error {
-				return printDefault()
+				return printDefault(prime)
 			},
 		),
 	)
@@ -97,7 +96,7 @@ func addProjectCommands(prime *primer.Values, cmds []*captain.Command) []*captai
 			"area",
 			"organizes packages in different areas",
 			func(_ *captain.Command, _ []string) error {
-				fmt.Println(locale.Tr("ppm_print_redundant", "state packages"))
+				prime.Output().Print(locale.Tr("ppm_print_redundant", "state packages"))
 				return nil
 			},
 		),
@@ -113,7 +112,7 @@ func addProjectCommands(prime *primer.Values, cmds []*captain.Command) []*captai
 			"files",
 			"lists the full path name of the files belonging to the given package, one line per file.",
 			func(_ *captain.Command, _ []string) error {
-				return printDefault()
+				return printDefault(prime)
 			},
 		),
 		//	Long:  strings.TrimSpace(locale.T("ppm_header_message")),
@@ -121,13 +120,13 @@ func addProjectCommands(prime *primer.Values, cmds []*captain.Command) []*captai
 			"verify",
 			"checks that the installed files are present and unmodified.",
 			func(_ *captain.Command, _ []string) error {
-				return printDefault()
+				return printDefault(prime)
 			},
 		),
 	)
 }
 
-func addRepositoryCommands(cmds []*captain.Command) []*captain.Command {
+func addRepositoryCommands(prime *primer.Values, cmds []*captain.Command) []*captain.Command {
 	return append(cmds,
 		// The repo sub-commands in ppm configure alternative package
 		// directories. At this point, this is an unsupported functionality, as
@@ -138,34 +137,34 @@ func addRepositoryCommands(cmds []*captain.Command) []*captain.Command {
 			"repo",
 			"manages package repositories",
 			func(_ *captain.Command, _ []string) error {
-				return printDefault()
+				return printDefault(prime)
 			},
 		),
 		captain.NewShimCommand(
 			"search",
 			"searches for packages in all enabled repositories",
 			func(_ *captain.Command, _ []string) error {
-				return printSuggestion(locale.T("ppm_search_intent"), "state packages search", "state/packages.html")
+				return printSuggestion(prime, locale.T("ppm_search_intent"), "state packages search", "state/packages.html")
 			},
 		),
 		captain.NewShimCommand(
 			"describe",
 			"shows all properties from a particular package from the last search result",
 			func(_ *captain.Command, _ []string) error {
-				return printDefault()
+				return printDefault(prime)
 			},
 		),
 		captain.NewShimCommand(
 			"tree",
 			"shows all dependencies for a particular package.",
 			func(_ *captain.Command, _ []string) error {
-				return printDefault()
+				return printDefault(prime)
 			},
 		),
 	)
 }
 
-func addOtherCommands(cmds []*captain.Command) []*captain.Command {
+func addOtherCommands(prime *primer.Values, cmds []*captain.Command) []*captain.Command {
 	return append(cmds,
 		// The repo sub-commands in ppm configure alternative package
 		// directories. At this point, this is an unsupported functionality, as
@@ -175,25 +174,25 @@ func addOtherCommands(cmds []*captain.Command) []*captain.Command {
 			"config",
 			"configuration settings",
 			func(_ *captain.Command, _ []string) error {
-				return printDefault()
+				return printDefault(prime)
 			},
 		),
 		captain.NewShimCommand(
 			"gui",
 			"opens the graphical user-interface",
 			func(_ *captain.Command, _ []string) error {
-				return printDefault()
+				return printDefault(prime)
 			},
 		),
 	)
 }
 
-func addInfoCommand(cmds []*captain.Command) []*captain.Command {
+func addInfoCommand(prime *primer.Values, cmds []*captain.Command) []*captain.Command {
 	return append(cmds, captain.NewShimCommand(
 		"info",
 		"prints ppm help message",
 		func(_ *captain.Command, _ []string) error {
-			return printMain()
+			return printMain(prime)
 		},
 	))
 }

@@ -1576,7 +1576,7 @@ ppm_print_forward_failure:
     Please run `{{.V0}} --help` for further information on how to use it for your use-case.
 ppm_print_redundant:
   other: |
-    ppm area and its subcommands have been made redundant thanks to State Tools use of virtual environments. 
+    ppm area and its subcommands have been made redundant thanks to State Tool's use of virtual environments. 
     You can simply start managing your packages, run `{{.V0}} --help` for more information.
 ppm_install_intent:
   other: add new packages to your project 
