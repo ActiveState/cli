@@ -23,6 +23,9 @@ const CatRunCmd = "run-command"
 // CatBuild is the event category used for headchef builds
 const CatBuild = "build"
 
+// CatPpmConversion is the event category used for ppm-conversion events
+const CatPpmConversion = "ppm-conversion"
+
 // ActBuildProject is the event action for requesting a build for a specific project
 const ActBuildProject = "project"
 

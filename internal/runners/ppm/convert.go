@@ -1,8 +1,6 @@
 package ppm
 
 import (
-	"strings"
-
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
@@ -11,7 +9,6 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/textutils"
 	"github.com/skratchdot/open-golang/open"
-	"github.com/thoas/go-funk"
 )
 
 // convertAnswerCreate is the answer that the user can choose if they accept to create a virtual environment.  It is re-used at several places.
@@ -31,10 +28,10 @@ const (
 )
 
 type conversionFlow struct {
-	survey  surveySelectFunc
-	out     output.Outputer
-	openURI func(string) error
-	visited []string
+	survey    surveySelectFunc
+	out       output.Outputer
+	openURI   func(string) error
+	eventFunc analyticsEventFunc
 }
 
 // StartConversionFlowIfNecessary checks if the user is in a project directory.
@@ -42,9 +39,11 @@ type conversionFlow struct {
 func (p *Ppm) StartConversionFlowIfNecessary() error {
 	// start conversion flow only if we cannot find a project file
 	if p.project == nil {
-		cf := newConversionFlow(p.prompt.Select, p.out, open.Run)
+		cf := newConversionFlow(p.prompt.Select, p.out, open.Run, analytics.EventWithLabel)
 
-		r, err := cf.run(analytics.EventWithLabel)
+		analytics.Event(analytics.CatPpmConversion, "run")
+		r, err := cf.runSurvey()
+		analytics.EventWithLabel(analytics.CatPpmConversion, "completed", r.String())
 
 		if r == accepted {
 			cf.createVirtualEnv()
@@ -54,11 +53,12 @@ func (p *Ppm) StartConversionFlowIfNecessary() error {
 	return nil
 }
 
-func newConversionFlow(survey surveySelectFunc, out output.Outputer, openURI func(string) error) *conversionFlow {
+func newConversionFlow(survey surveySelectFunc, out output.Outputer, openURI func(string) error, eventFunc analyticsEventFunc) *conversionFlow {
 	cf := &conversionFlow{
-		survey:  survey,
-		out:     out,
-		openURI: openURI,
+		survey:    survey,
+		out:       out,
+		openURI:   openURI,
+		eventFunc: eventFunc,
 	}
 
 	return cf
@@ -76,20 +76,8 @@ func (r conversionResult) String() string {
 	return []string{"accepted", "rejected", "canceled"}[r]
 }
 
-func (cf *conversionFlow) SendAnalyticsEvent(eventFunc analyticsEventFunc, action string) {
-	visited := strings.Join(cf.visited, ",")
-	eventFunc("ppm_conversion", action, visited)
-}
-
-func (cf *conversionFlow) run(eventFunc analyticsEventFunc) (conversionResult, error) {
-	r, err := cf.runSurvey()
-
-	cf.SendAnalyticsEvent(eventFunc, r.String())
-	if err != nil {
-		return r, err
-	}
-
-	return r, nil
+func (cf *conversionFlow) SendClickEvent(what string) {
+	cf.eventFunc(analytics.CatPpmConversion, "click", what)
 }
 
 func (cf *conversionFlow) runSurvey() (conversionResult, error) {
@@ -106,8 +94,9 @@ func (cf *conversionFlow) runSurvey() (conversionResult, error) {
 	if choice == choices[0] {
 		return accepted, nil
 	}
-	cf.visited = append(cf.visited, askedWhy)
-	return cf.explainVirtualEnv()
+
+	cf.SendClickEvent("asked-why")
+	return cf.explainVirtualEnv(false, false)
 }
 
 func (cf *conversionFlow) createVirtualEnv() error {
@@ -120,14 +109,11 @@ func (cf *conversionFlow) createVirtualEnv() error {
 	return nil
 }
 
-func (cf *conversionFlow) explainVirtualEnv() (conversionResult, error) {
+func (cf *conversionFlow) explainVirtualEnv(alreadySeenStateToolInfo bool, alreadySeenPlatformInfo bool) (conversionResult, error) {
 	stateToolInfo := locale.Tl("ppm_convert_why_state_tool_info", "Find out more about the State Tool")
 	platformInfo := locale.Tl("ppm_convert_why_platform_info", "Find out more about the ActiveState Platform")
 	no := locale.Tl("ppm_convert_why_no", "But I NEED package management on my global install!")
 	var choices []string
-
-	alreadySeenStateToolInfo := funk.Contains(cf.visited, seenStateToolInfo)
-	alreadySeenPlatformInfo := funk.Contains(cf.visited, seenPlatformInfo)
 
 	// add choice to open State Tool marketing page (if not looked at before)
 	if !alreadySeenStateToolInfo {
@@ -153,19 +139,19 @@ func (cf *conversionFlow) explainVirtualEnv() (conversionResult, error) {
 
 	switch choice {
 	case stateToolInfo:
+		cf.SendClickEvent("state-tool-info")
 		cf.openInBrowser(locale.Tl("state_tool_info", "State Tool information"), constants.StateToolMarketingPage)
-		cf.visited = append(cf.visited, seenStateToolInfo)
 		// ask again
-		return cf.explainVirtualEnv()
+		return cf.explainVirtualEnv(true, alreadySeenPlatformInfo)
 	case platformInfo:
+		cf.SendClickEvent("platform-info")
 		cf.openInBrowser(locale.Tl("platform_info", "ActiveState Platform information"), constants.PlatformMarketingPage)
-		cf.visited = append(cf.visited, seenPlatformInfo)
 		// ask again
-		return cf.explainVirtualEnv()
+		return cf.explainVirtualEnv(alreadySeenStateToolInfo, true)
 	case convertAnswerCreate:
 		return accepted, nil
 	case no:
-		cf.visited = append(cf.visited, "still wanted ppm")
+		cf.SendClickEvent("still-wants-ppm")
 		return cf.wantGlobalPackageManagement()
 	}
 	return canceled, nil
