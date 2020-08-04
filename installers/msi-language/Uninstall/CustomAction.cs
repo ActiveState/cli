@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Windows.Forms;
 using ActiveState;
 using Microsoft.Deployment.WindowsInstaller;
 using Preset;
@@ -46,7 +47,11 @@ namespace Uninstall
                 if (result.Equals(ActionResult.Failure))
                 {
                     session.Log("Could not remove installation directory");
-                    ActiveState.RollbarHelper.Report("Could not remove installation directory");
+
+                    Record record = new Record();
+                    record.FormatString = string.Format("Could not remove installation directory entry at: {0}, please ensure no files in the directory are currently being used and try again", installDir);
+
+                    session.Message(InstallMessage.Error | (InstallMessage)MessageBoxButtons.OK, record);
                     return ActionResult.Failure;
                 }
 
@@ -100,7 +105,7 @@ namespace Uninstall
                 {
                     Directory.Delete(dir, true);
                 }
-                catch (IOException e)
+                catch (Exception e)
                 {
                     session.Log(string.Format("Could not delete install directory, got error: {0}", e.ToString()));
                     ActiveState.RollbarHelper.Report(string.Format("Could not delete install directory, got error: {0}", e.ToString()));
