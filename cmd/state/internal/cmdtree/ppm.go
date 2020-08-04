@@ -1,11 +1,14 @@
 package cmdtree
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/captain"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -198,12 +201,23 @@ func addInfoCommand(prime *primer.Values, cmds []*captain.Command) []*captain.Co
 }
 
 func shim(prime *primer.Values, intercepted, replaced, localeID string, args ...string) error {
+	err := shim(prime, intercepted, replaced, localeID, args...)
+	if err != nil {
+		analytics.EventWithLabel(analytics.CatPPMShimCmd, "error", errs.Join(err, " :: ").Error())
+	} else {
+		analytics.EventWithLabel(analytics.CatPPMShimCmd, "success", fmt.Sprintf("intercepted=%s, replaced=%s", intercepted, replaced))
+	}
+	return err
+}
+
+func executeShim(prime *primer.Values, intercepted, replaced, localeID string, args ...string) error {
 	pj, fail := projectfile.GetSafe()
 	if fail != nil && !fail.Type.Matches(projectfile.FailNoProject) {
 		return locale.WrapError(fail.ToError(), "err_ppm_get_projectfile", "Encountered unexpected error loading projectfile")
 	}
 	if pj == nil {
 		// TODO: Replace this function call when conversion flow is complete
+		analytics.Event(analytics.CatPPMShimCmd, "tutorial")
 		return tutorial()
 	}
 

@@ -25,6 +25,9 @@ const CatBuild = "build"
 // ActBuildProject is the event action for requesting a build for a specific project
 const ActBuildProject = "project"
 
+// CatPPMShimCmd is the event category used for PPM shim events
+const CatPPMShimCmd = "ppm-shim"
+
 type customDimensions struct {
 	version    string
 	branchName string
