@@ -1,6 +1,9 @@
 package ppm
 
 import (
+	"os"
+	"os/exec"
+
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
@@ -21,10 +24,10 @@ type analyticsEventFunc func(string, string, string)
 type surveySelectFunc func(message string, choices []string, defaultResponse string) (string, *failures.Failure)
 
 const (
-	askedWhy          string = "asked why"
-	seenStateToolInfo        = "visited state tool info"
-	seenPlatformInfo         = "visited platform info"
-	notConvinced             = "still wants ppm"
+	askedWhy          string = "asked-why"
+	seenStateToolInfo        = "state-tool-info"
+	seenPlatformInfo         = "platform-info"
+	notConvinced             = "still-wants-ppm"
 )
 
 type conversionFlow struct {
@@ -76,10 +79,12 @@ func (r conversionResult) String() string {
 	return []string{"accepted", "rejected", "canceled"}[r]
 }
 
-func (cf *conversionFlow) SendClickEvent(what string) {
+// sendClickEvent sends an analytics event if the user selects a menu-item that does not lead to a conclusive result
+func (cf *conversionFlow) sendClickEvent(what string) {
 	cf.eventFunc(analytics.CatPpmConversion, "click", what)
 }
 
+// runSurvey is the entry point to the conversion survey
 func (cf *conversionFlow) runSurvey() (conversionResult, error) {
 	choices := []string{
 		convertAnswerCreate,
@@ -95,12 +100,22 @@ func (cf *conversionFlow) runSurvey() (conversionResult, error) {
 		return accepted, nil
 	}
 
-	cf.SendClickEvent("asked-why")
+	cf.sendClickEvent(askedWhy)
 	return cf.explainVirtualEnv(false, false)
 }
 
 func (cf *conversionFlow) createVirtualEnv() error {
-	// TODO: start wizard
+	exe, err := os.Executable()
+	if err != nil {
+		return locale.WrapError(err, "err_ppm_convert_invoke_exe", "Could not detect executable path of State Tool.")
+	}
+
+	cmd := exec.Command(exe, "tutorial", "new-project")
+	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
+	err = cmd.Run()
+	if err != nil {
+		return locale.WrapError(err, "err_ppm_convert_invoke_tutorial", "Errors occurred while invoking State Tool tutorial command.")
+	}
 
 	cf.out.Print(textutils.WordWrap(locale.Tl(
 		"ppm_convert_after_tutorial",
@@ -139,19 +154,19 @@ func (cf *conversionFlow) explainVirtualEnv(alreadySeenStateToolInfo bool, alrea
 
 	switch choice {
 	case stateToolInfo:
-		cf.SendClickEvent("state-tool-info")
+		cf.sendClickEvent(stateToolInfo)
 		cf.openInBrowser(locale.Tl("state_tool_info", "State Tool information"), constants.StateToolMarketingPage)
 		// ask again
 		return cf.explainVirtualEnv(true, alreadySeenPlatformInfo)
 	case platformInfo:
-		cf.SendClickEvent("platform-info")
+		cf.sendClickEvent(platformInfo)
 		cf.openInBrowser(locale.Tl("platform_info", "ActiveState Platform information"), constants.PlatformMarketingPage)
 		// ask again
 		return cf.explainVirtualEnv(alreadySeenStateToolInfo, true)
 	case convertAnswerCreate:
 		return accepted, nil
 	case no:
-		cf.SendClickEvent("still-wants-ppm")
+		cf.sendClickEvent(notConvinced)
 		return cf.wantGlobalPackageManagement()
 	}
 	return canceled, nil
