@@ -76,7 +76,7 @@ func (t *Tutorial) RunNewProject(params NewProjectParams) error {
 	// Prompt for project name
 	name, fail := t.prompt.Input(locale.Tl("tutorial_prompt_projectname", "What do you want to name your project?"), lang.Text())
 	if fail != nil {
-		locale.WrapInputError(fail, "err_tutorial_prompt_projectname", "Invalid response received.")
+		return locale.WrapInputError(fail, "err_tutorial_prompt_projectname", "Invalid response received.")
 	}
 
 	// Prompt for project dir
@@ -85,15 +85,15 @@ func (t *Tutorial) RunNewProject(params NewProjectParams) error {
 		"tutorial_prompt_projectdir",
 		"What would you like your project directory to be? This is usually the root of your repository, or the place where you have your project dotfiles."), homeDir)
 	if fail != nil {
-		locale.WrapInputError(fail, "err_tutorial_prompt_projectdir", "Invalid response received.")
+		return locale.WrapInputError(fail, "err_tutorial_prompt_projectdir", "Invalid response received.")
 	}
 
 	// Create dir and switch to it
 	if fail := fileutils.MkdirUnlessExists(dir); fail != nil {
-		locale.WrapInputError(fail, "err_tutorial_mkdir", "Could not create directory: {{.V0}}.", dir)
+		return locale.WrapInputError(fail, "err_tutorial_mkdir", "Could not create directory: {{.V0}}.", dir)
 	}
 	if err := os.Chdir(dir); err != nil {
-		locale.WrapInputError(err, "err_tutorial_chdir", "Could not change directory to: {{.V0}}", dir)
+		return locale.WrapInputError(err, "err_tutorial_chdir", "Could not change directory to: {{.V0}}", dir)
 	}
 
 	// Run state init
