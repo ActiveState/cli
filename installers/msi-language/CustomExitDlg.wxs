@@ -14,12 +14,21 @@
         <Control Id="SuccessText" Type="Hyperlink" X="130" Y="80" Width="230" Height="65" Transparent="yes" Hidden="yes" Text="!(loc.ExitDialogSuccess)">
           <Condition Action="show">NOT Installed</Condition>
         </Control>
-        <Control Id="StateToolWizardActionCheckBox" Type="CheckBox" X="130" Y="145" Width="230" Height="10" CheckBoxValue="1" Property="STATE_TOOL_WIZARD_CHECK_BOX" Hidden="yes" Text="!(loc.ExitDialogStateToolAction)">
+        <!-- Separate the checkbox from the text, so we can have transparent backgrounds as described here: https://stackoverflow.com/questions/15331351/how-to-remove-white-background-from-wix-button-and-checkbox-property/15331550#15331550 (Option 2)-->
+        <Control Id="StateToolWizardActionCheckBox" Type="CheckBox" X="130" Y="145" Width="10" Height="10" CheckBoxValue="1" Property="STATE_TOOL_WIZARD_CHECK_BOX" Hidden="yes">
           <Condition Action="show">NOT Installed</Condition>
         </Control>
-        <Control Id="StateToolWizardReleaseNotesCheckBox" Type="CheckBox" X="130" Y="170" Width="230" Height="10" CheckBoxValue="1" Default="no" Property="STATE_TOOL_WIZARD_REL_NOTES_CHECK_BOX" Hidden="yes" Text="!(loc.ExitDialogReleaseNotesAction)">
+        <Control Id="StateToolWizardActionText" Type="Text" X="143" Y="145" Width="230" Height="10" Transparent="yes" Hidden="yes" Text="!(loc.ExitDialogStateToolAction)">
           <Condition Action="show">NOT Installed</Condition>
         </Control>
+
+        <Control Id="StateToolWizardReleaseNotesCheckBox" Type="CheckBox" X="130" Y="170" Width="10" Height="10" CheckBoxValue="1" Default="no" Property="STATE_TOOL_WIZARD_REL_NOTES_CHECK_BOX" Hidden="yes">
+          <Condition Action="show">NOT Installed</Condition>
+        </Control>
+        <Control Id="StateToolWizardReleaseNotesText" Type="Text" X="143" Y="170" Width="230" Height="10" Transparent="yes" Hidden="yes" Text="!(loc.ExitDialogReleaseNotesAction)">
+          <Condition Action="show">NOT Installed</Condition>
+        </Control>
+
 
       </Dialog>
 
