@@ -382,7 +382,7 @@ namespace StateDeploy
             string isModify = session.CustomActionData["IS_MODIFY"];
 
             StringBuilder deployCMDBuilder = new StringBuilder(String.Format("deploy {0}", subCommand));
-            if (isModify == "true")
+            if (isModify == "true" && subCommand == "symlink")
             {
                 deployCMDBuilder.Append(" --force");
             }
