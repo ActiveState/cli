@@ -72,7 +72,14 @@
 		<RegistrySearch Id="RememberShortcutProperty" Root="HKLM" Key="SOFTWARE\[Manufacturer]\[ProductName]" Name="ShortcutDir" Type="raw" />
 	</Property>
 
-		<Property Id="MSIUSEREALADMINDETECTION" Value="1" />
+    <!-- Find the default browser to open the release pages in -->
+    <Property Id="BROWSER">
+      <RegistrySearch Id='DefaultBrowser' Type='raw' Root='HKCR' Key='http\shell\open\command' />
+    </Property>
+
+    <Property Id="STATE_TOOL_WIZARD_CHECK_BOX" Value="1"></Property>
+
+    <Property Id="MSIUSEREALADMINDETECTION" Value="1" />
 
 		<UI Id="WixUI_InstallDir">
 			<TextStyle Id="WixUI_Font_Normal" FaceName="Tahoma" Size="8" />
@@ -100,6 +107,8 @@
 			<Publish Dialog="BrowseDlg" Control="OK" Event="SpawnDialog" Value="InvalidDirDlg" Order="4"><![CDATA[NOT WIXUI_DONTVALIDATEPATH AND WIXUI_INSTALLDIR_VALID<>"1"]]></Publish>
 
 			<Publish Dialog="CustomExitDialog" Control="Finish2" Event="EndDialog" Value="Return" Order="999">1</Publish>
+      <Publish Dialog="CustomExitDialog" Control="Finish2" Event="DoAction" Value="LaunchStateToolWizard">STATE_TOOL_WIZARD_CHECK_BOX=1 and NOT Installed</Publish>
+      <Publish Dialog="CustomExitDialog" Control="Finish2" Event="DoAction" Value="LaunchReleaseNotes">STATE_TOOL_WIZARD_REL_NOTES_CHECK_BOX=1 and NOT Installed</Publish>
 
 			<Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="PrivacyConsentDlg">NOT Installed</Publish>
 			<Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="VerifyReadyDlg">Installed AND PATCH</Publish>
@@ -136,7 +145,10 @@
 
 		</UI>
 
-		<UIRef Id="WixUI_Common" />
+    <CustomAction Id="LaunchStateToolWizard" Execute="immediate" Directory="INSTALLDIR" ExeCommand="cmd.exe /k [STATE_TOOL_PATH] tutorial new-project" Impersonate="yes" Return="asyncNoWait" />
+    <CustomAction Id='LaunchReleaseNotes' Execute="immediate" Directory="INSTALLDIR" ExeCommand="explorer.exe [REL_NOTES]" Impersonate="yes" Return="asyncNoWait" />
+
+    <UIRef Id="WixUI_Common" />
     <UIRef Id="CustomUI_PrivacyConsent" />
 
 		<Property Id="IS_MODIFY" Value="false" />
