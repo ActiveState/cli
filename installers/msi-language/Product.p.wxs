@@ -145,7 +145,7 @@
 
 		</UI>
 
-    <CustomAction Id="LaunchStateToolWizard" Execute="immediate" Directory="INSTALLDIR" ExeCommand="cmd.exe /k [STATE_TOOL_PATH] wizard create-project" Impersonate="yes" Return="asyncNoWait" />
+    <CustomAction Id="LaunchStateToolWizard" Execute="immediate" Directory="INSTALLDIR" ExeCommand="cmd.exe /k [STATE_TOOL_PATH] tutorial new-project" Impersonate="yes" Return="asyncNoWait" />
     <CustomAction Id='LaunchReleaseNotes' Execute="immediate" Directory="INSTALLDIR" ExeCommand="explorer.exe [REL_NOTES]" Impersonate="yes" Return="asyncNoWait" />
 
     <UIRef Id="WixUI_Common" />
