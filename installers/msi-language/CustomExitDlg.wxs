@@ -18,14 +18,14 @@
         <Control Id="StateToolWizardActionCheckBox" Type="CheckBox" X="130" Y="145" Width="10" Height="10" CheckBoxValue="1" Property="STATE_TOOL_WIZARD_CHECK_BOX" Hidden="yes">
           <Condition Action="show">NOT Installed</Condition>
         </Control>
-        <Control Id="StateToolWizardActionText" Type="Text" X="143" Y="145" Width="230" Height="10" Transparent="yes" Hidden="yes" Text="!(loc.ExitDialogStateToolAction)">
+        <Control Id="StateToolWizardActionText" Type="Text" X="143" Y="145" Width="215" Height="25" Transparent="yes" Hidden="yes" Text="!(loc.ExitDialogStateToolAction)">
           <Condition Action="show">NOT Installed</Condition>
         </Control>
 
         <Control Id="StateToolWizardReleaseNotesCheckBox" Type="CheckBox" X="130" Y="170" Width="10" Height="10" CheckBoxValue="1" Default="no" Property="STATE_TOOL_WIZARD_REL_NOTES_CHECK_BOX" Hidden="yes">
           <Condition Action="show">NOT Installed</Condition>
         </Control>
-        <Control Id="StateToolWizardReleaseNotesText" Type="Text" X="143" Y="170" Width="230" Height="10" Transparent="yes" Hidden="yes" Text="!(loc.ExitDialogReleaseNotesAction)">
+        <Control Id="StateToolWizardReleaseNotesText" Type="Text" X="143" Y="170" Width="215" Height="25" Transparent="yes" Hidden="yes" Text="!(loc.ExitDialogReleaseNotesAction)">
           <Condition Action="show">NOT Installed</Condition>
         </Control>
 
