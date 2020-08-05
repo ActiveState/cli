@@ -2,11 +2,14 @@ package analytics
 
 import (
 	"fmt"
+	"io/ioutil"
+	"path/filepath"
 
 	ga "github.com/ActiveState/go-ogle-analytics"
 	"github.com/ActiveState/sysinfo"
 
 	"github.com/ActiveState/cli/internal/condition"
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -30,12 +33,13 @@ const ActBuildProject = "project"
 const CatTutorial = "tutorial"
 
 type customDimensions struct {
-	version    string
-	branchName string
-	userID     string
-	output     string
-	osName     string
-	osVersion  string
+	version       string
+	branchName    string
+	userID        string
+	output        string
+	osName        string
+	osVersion     string
+	installSource string
 }
 
 func (d *customDimensions) SetOutput(output string) {
@@ -52,6 +56,7 @@ func (d *customDimensions) toMap() map[string]string {
 		"5": d.output,
 		"6": d.osName,
 		"7": d.osVersion,
+		"8": d.installSource,
 	}
 }
 
@@ -87,12 +92,21 @@ func setup() {
 		logging.SendToRollbarWhenReady("warning", fmt.Sprintf("Cannot detect the OS version: %v", err))
 	}
 
+	installFilePath := filepath.Join(config.ConfigPath(), "install.txt")
+	installFileData, err := ioutil.ReadFile(installFilePath)
+	installSource := string(installFileData)
+	if err != nil {
+		installSource = "unknown"
+		logging.Errorf("Could not read install file at path: %s, got error: %v", installFilePath, err)
+	}
+
 	CustomDimensions = &customDimensions{
-		version:    constants.Version,
-		branchName: constants.BranchName,
-		userID:     userIDString,
-		osName:     osName,
-		osVersion:  osVersion,
+		version:       constants.Version,
+		branchName:    constants.BranchName,
+		userID:        userIDString,
+		osName:        osName,
+		osVersion:     osVersion,
+		installSource: string(installSource),
 	}
 
 	client.ClientID(id)
