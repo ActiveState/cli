@@ -84,9 +84,7 @@ func (cf *ConversionFlow) runSurvey() (conversionResult, error) {
 		convertAnswerCreate,
 		locale.Tl("ppm_convert_answer_why", "Why is this necessary? I Just want to manage packages."),
 	}
-	choice, fail := cf.prompt.Select(locale.Tl(
-		"ppm_convert_create_question", "You need to create a runtime environment to proceed.\n"),
-		choices, "")
+	choice, fail := cf.prompt.Select(locale.T("ppm_convert_create_question"), choices, "")
 	if fail != nil {
 		return canceled, locale.WrapInputError(fail, "err_ppm_convert_interrupt", "Invalid response received.")
 	}

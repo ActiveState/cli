@@ -1647,4 +1647,7 @@ ppm_convert_explanation:
     Development environments with globally installed language runtime environments are increasingly
     shunned by modern development practices, and as a result the State Tool and the ActiveState Platform
     tries to do away with them entirely.
-
+ppm_convert_create_question:
+  other: |
+    PPM functionality has been transferred to the State Tool. In order to continue managing your packages
+    we need to create a virtual runtime environment for your project.
