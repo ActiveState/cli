@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"strings"
 
 	ga "github.com/ActiveState/go-ogle-analytics"
 	"github.com/ActiveState/sysinfo"
@@ -94,7 +95,7 @@ func setup() {
 
 	installFilePath := filepath.Join(config.ConfigPath(), "install.txt")
 	installFileData, err := ioutil.ReadFile(installFilePath)
-	installSource := string(installFileData)
+	installSource := strings.TrimSpace(string(installFileData))
 	if err != nil {
 		installSource = "unknown"
 		logging.Errorf("Could not read install file at path: %s, got error: %v", installFilePath, err)
@@ -106,7 +107,7 @@ func setup() {
 		userID:        userIDString,
 		osName:        osName,
 		osVersion:     osVersion,
-		installSource: string(installSource),
+		installSource: installSource,
 	}
 
 	client.ClientID(id)
