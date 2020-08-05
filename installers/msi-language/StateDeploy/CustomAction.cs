@@ -179,6 +179,37 @@ namespace StateDeploy
                 return ActionResult.Failure;
             }
 
+            string configDirCmd = " export" + " config" + " --filter=dir";
+            string output;
+            ActionResult runResult = ActiveState.Command.Run(session, stateToolPath, configDirCmd, out output);
+            session.Log("Writing install file...");
+            // We do not fail the installation if writing the install.txt file fails
+            if (runResult.Equals(ActionResult.Failure))
+            {
+                string msg = string.Format("Could not get config directory from State Tool");
+                session.Log(msg);
+                ActiveState.RollbarHelper.Report(msg);
+            }
+            else
+            {
+                string contents = "msi-ui";
+                if (session.CustomActionData["UI_LEVEL"] == "2")
+                {
+                    contents = "msi-silent";
+                }
+                try
+                {
+                    string installFilePath = Path.Combine(output.Trim(), "install.txt");
+                    File.WriteAllText(installFilePath, contents);
+                }
+                catch (Exception e)
+                {
+                    string msg = string.Format("Could not write install file at path: {0}, encountered exception: {1}", output, e.ToString());
+                    session.Log(msg);
+                    ActiveState.RollbarHelper.Report(msg);
+                }
+            }
+
             session.Log("Updating PATH environment variable");
             string oldPath = Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.Machine);
             if (oldPath.Contains(stateToolInstallDir)) 
