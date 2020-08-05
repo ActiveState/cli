@@ -11,7 +11,10 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/textutils"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/skratchdot/open-golang/open"
 )
 
@@ -31,20 +34,34 @@ const (
 	notConvinced             = "still-wants-ppm"
 )
 
-type conversionFlow struct {
-	survey    surveySelectFunc
-	out       output.Outputer
-	openURI   func(string) error
-	eventFunc analyticsEventFunc
+// ConversionFlowPrimeable defines interface needed to initialize a conversion flow
+type ConversionFlowPrimeable interface {
+	primer.Prompter
+	primer.Outputer
+	primer.Projecter
 }
 
-// StartConversionFlowIfNecessary checks if the user is in a project directory.
-// If not, they are asked to create a project, and (in a wizard-kind-of way) informed about the consequences.
-func (p *Ppm) StartConversionFlowIfNecessary() error {
-	// start conversion flow only if we cannot find a project file
-	if p.project == nil {
-		cf := newConversionFlow(p.prompt.Select, p.out, open.Run, analytics.EventWithLabel)
+// NewConversionFlow creates a new conversion flow structure
+func NewConversionFlow(prime ConversionFlowPrimeable) *ConversionFlow {
+	return &ConversionFlow{
+		prime.Prompt(),
+		prime.Output(),
+		prime.Project(),
+	}
+}
 
+// ConversionFlow manages a PPM conversion flow
+type ConversionFlow struct {
+	prompt  prompt.Prompter
+	out     output.Outputer
+	project *project.Project
+}
+
+// StartIfNecessary checks if the user is in a project directory.
+// If not, they are asked to create a project, and (in a wizard-kind-of way) informed about the consequences.
+func (cf *ConversionFlow) StartIfNecessary() error {
+	// start conversion flow only if we cannot find a project file
+	if cf.project == nil {
 		analytics.Event(analytics.CatPpmConversion, "run")
 		r, err := cf.runSurvey()
 		analytics.EventWithLabel(analytics.CatPpmConversion, "completed", r.String())
@@ -55,17 +72,6 @@ func (p *Ppm) StartConversionFlowIfNecessary() error {
 		return err
 	}
 	return nil
-}
-
-func newConversionFlow(survey surveySelectFunc, out output.Outputer, openURI func(string) error, eventFunc analyticsEventFunc) *conversionFlow {
-	cf := &conversionFlow{
-		survey:    survey,
-		out:       out,
-		openURI:   openURI,
-		eventFunc: eventFunc,
-	}
-
-	return cf
 }
 
 type conversionResult int
@@ -80,18 +86,13 @@ func (r conversionResult) String() string {
 	return []string{"accepted", "rejected", "canceled"}[r]
 }
 
-// sendClickEvent sends an analytics event if the user selects a menu-item that does not lead to a conclusive result
-func (cf *conversionFlow) sendClickEvent(what string) {
-	cf.eventFunc(analytics.CatPpmConversion, "click", what)
-}
-
 // runSurvey is the entry point to the conversion survey
-func (cf *conversionFlow) runSurvey() (conversionResult, error) {
+func (cf *ConversionFlow) runSurvey() (conversionResult, error) {
 	choices := []string{
 		convertAnswerCreate,
 		locale.Tl("ppm_convert_answer_why", "Why is this necessary? I Just want to manage packages."),
 	}
-	choice, fail := cf.survey(textutils.WordWrap(locale.Tl(
+	choice, fail := cf.prompt.Select(textutils.WordWrap(locale.Tl(
 		"ppm_convert_create_question", "You need to create a runtime environment to proceed.\n")),
 		choices, "")
 	if fail != nil {
@@ -101,11 +102,11 @@ func (cf *conversionFlow) runSurvey() (conversionResult, error) {
 		return accepted, nil
 	}
 
-	cf.sendClickEvent(askedWhy)
+	analytics.EventWithLabel(analytics.CatPpmConversion, "selection", askedWhy)
 	return cf.explainVirtualEnv(false, false)
 }
 
-func (cf *conversionFlow) createVirtualEnv() error {
+func (cf *ConversionFlow) createVirtualEnv() error {
 	exe, err := os.Executable()
 	if err != nil {
 		return locale.WrapError(err, "err_ppm_convert_invoke_exe", "Could not detect executable path of State Tool.")
@@ -130,7 +131,7 @@ func (cf *conversionFlow) createVirtualEnv() error {
 	return nil
 }
 
-func (cf *conversionFlow) explainVirtualEnv(alreadySeenStateToolInfo bool, alreadySeenPlatformInfo bool) (conversionResult, error) {
+func (cf *ConversionFlow) explainVirtualEnv(alreadySeenStateToolInfo bool, alreadySeenPlatformInfo bool) (conversionResult, error) {
 	stateToolInfo := locale.Tl("ppm_convert_why_state_tool_info", "Find out more about the State Tool")
 	platformInfo := locale.Tl("ppm_convert_why_platform_info", "Find out more about the ActiveState Platform")
 	no := locale.Tl("ppm_convert_why_no", "But I NEED package management on my global install!")
@@ -152,7 +153,7 @@ func (cf *conversionFlow) explainVirtualEnv(alreadySeenStateToolInfo bool, alrea
 	if alreadySeenPlatformInfo || alreadySeenStateToolInfo {
 		explanation = ""
 	}
-	choice, fail := cf.survey(explanation, choices, "")
+	choice, fail := cf.prompt.Select(explanation, choices, "")
 
 	if fail != nil {
 		return canceled, locale.WrapInputError(fail, "err_ppm_convert_info_interrupt", "Invalid response received.")
@@ -160,27 +161,27 @@ func (cf *conversionFlow) explainVirtualEnv(alreadySeenStateToolInfo bool, alrea
 
 	switch choice {
 	case stateToolInfo:
-		cf.sendClickEvent(stateToolInfo)
+		analytics.EventWithLabel(analytics.CatPpmConversion, "selection", stateToolInfo)
 		cf.openInBrowser(locale.Tl("state_tool_info", "State Tool information"), constants.StateToolMarketingPage)
 		// ask again
 		return cf.explainVirtualEnv(true, alreadySeenPlatformInfo)
 	case platformInfo:
-		cf.sendClickEvent(platformInfo)
+		analytics.EventWithLabel(analytics.CatPpmConversion, "selection", platformInfo)
 		cf.openInBrowser(locale.Tl("platform_info", "ActiveState Platform information"), constants.PlatformMarketingPage)
 		// ask again
 		return cf.explainVirtualEnv(alreadySeenStateToolInfo, true)
 	case convertAnswerCreate:
 		return accepted, nil
 	case no:
-		cf.sendClickEvent(notConvinced)
+		analytics.EventWithLabel(analytics.CatPpmConversion, "selection", notConvinced)
 		return cf.wantGlobalPackageManagement()
 	}
 	return canceled, nil
 }
 
-func (cf *conversionFlow) openInBrowser(what, url string) {
+func (cf *ConversionFlow) openInBrowser(what, url string) {
 	cf.out.Print(locale.Tl("ppm_convert_open_browser", "Opening {{.V0}} in your browser", what))
-	err := cf.openURI(url)
+	err := open.Run(url)
 	if err != nil {
 		logging.Error("Could not open %s in browser: %v", url, err)
 		cf.out.Error(locale.Tl(
@@ -191,12 +192,12 @@ func (cf *conversionFlow) openInBrowser(what, url string) {
 	}
 }
 
-func (cf *conversionFlow) wantGlobalPackageManagement() (conversionResult, error) {
+func (cf *ConversionFlow) wantGlobalPackageManagement() (conversionResult, error) {
 	choices := []string{
 		locale.Tl("ppm_convert_create_at_last", "Ok, let's set up a virtual runtime environment"),
 		locale.Tl("ppm_convert_reject", "I'd rather use conventional Perl tooling."),
 	}
-	choice, fail := cf.survey(
+	choice, fail := cf.prompt.Select(
 		textutils.WordWrap(locale.Tl("ppm_convert_cpan_info", "You can still use conventional Perl tooling like CPAN, CPANM etc. But you will miss out on the added benefits of the ActiveState Platform.\n")),
 		choices, "")
 
