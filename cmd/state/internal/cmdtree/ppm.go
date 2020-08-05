@@ -19,11 +19,11 @@ func newPpmCommand(prime *primer.Values) *captain.Command {
 					return shim.PrintDefault()
 				}
 			}
-			err := conversion.StartIfNecessary()
+			converted, err := conversion.StartIfNecessary()
 			if err != nil {
 				return err
 			}
-			return shim.RunPPM(args...)
+			return shim.RunPPM(converted, args...)
 		},
 	)
 
@@ -47,36 +47,36 @@ func addPackagesCommands(prime *primer.Values, cmds []*captain.Command) []*capta
 			"install",
 			"installs new packages",
 			func(_ *captain.Command, args []string) error {
-				err := conversion.StartIfNecessary()
+				converted, err := conversion.StartIfNecessary()
 				if err != nil {
 					return err
 				}
 
-				return shim.RunInstall(args...)
+				return shim.RunInstall(converted, args...)
 			},
 		),
 		captain.NewShimCommand(
 			"upgrade",
 			"upgrades installed packages",
 			func(_ *captain.Command, args []string) error {
-				err := conversion.StartIfNecessary()
+				converted, err := conversion.StartIfNecessary()
 				if err != nil {
 					return err
 				}
 
-				return shim.RunUpgrade(args...)
+				return shim.RunUpgrade(converted, args...)
 			},
 		),
 		captain.NewShimCommand(
 			"remove",
 			"removes installed packages",
 			func(_ *captain.Command, args []string) error {
-				err := conversion.StartIfNecessary()
+				converted, err := conversion.StartIfNecessary()
 				if err != nil {
 					return err
 				}
 
-				return shim.RunRemove(args...)
+				return shim.RunRemove(converted, args...)
 			},
 		),
 	)
@@ -103,7 +103,7 @@ func addProjectCommands(prime *primer.Values, cmds []*captain.Command) []*captai
 			"area",
 			"organizes packages in different areas",
 			func(_ *captain.Command, _ []string) error {
-				err := conversion.StartIfNecessary()
+				_, err := conversion.StartIfNecessary()
 				if err != nil {
 					return err
 				}
@@ -116,12 +116,12 @@ func addProjectCommands(prime *primer.Values, cmds []*captain.Command) []*captai
 			"list",
 			"lists installed packages",
 			func(_ *captain.Command, args []string) error {
-				err := conversion.StartIfNecessary()
+				converted, err := conversion.StartIfNecessary()
 				if err != nil {
 					return err
 				}
 
-				return shim.RunList(args...)
+				return shim.RunList(converted, args...)
 			},
 		),
 		//	Long:  strings.TrimSpace(locale.T("ppm_header_message")),
