@@ -154,9 +154,9 @@
 		<Property Id="IS_MODIFY" Value="false" />
 
 		<InstallUISequence>
-			<Custom Action="StateCommandExists" After="CostFinalize">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
-			<Custom Action="SetIsModify" After="StateCommandExists">(Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL"</Custom>
-			<Custom Action="SetInstallDirOnModify" After="SetIsModify">(Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL"</Custom>
+			<Custom Action="StateCommandExists" After="CostFinalize">NOT Installed OR (Installed AND NOT (REMOVE~="ALL"))</Custom>
+			<Custom Action="SetIsModify" After="StateCommandExists">(Installed AND NOT (REMOVE~="ALL"))</Custom>
+			<Custom Action="SetInstallDirOnModify" After="SetIsModify">(Installed AND NOT (REMOVE~="ALL"))</Custom>
     </InstallUISequence>
 
     <CustomAction Id="SetIsModify" Property="IS_MODIFY" Value="true" />
@@ -190,15 +190,15 @@
 		<CustomAction Id="Uninstall" Impersonate="no" BinaryKey="UninstallCA" DllEntry="Uninstall" Execute="deferred" Return="check" />
 
 		<InstallExecuteSequence>
-			<Custom Action="Status" After="InstallInitialize">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
-			<Custom Action="SetRollbackPropertyValues" After="Status">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
-			<Custom Action="SetStateDeployPropertyValues" After="SetRollbackPropertyValues">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
-			<Custom Action="Rollback" After="SetStateDeployPropertyValues">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
-			<Custom Action="StateDeploy" After="Rollback">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
-			<Custom Action="SetPresetInfo" After="CreateShortcuts">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
-			<Custom Action="Preset" After="SetPresetInfo">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
-			<Custom Action="SetUninstallProperties" After="RemoveFiles">REMOVE="ALL"</Custom>
-			<Custom Action="Uninstall" After="SetUninstallProperties">REMOVE="ALL"</Custom>
+			<Custom Action="Status" After="InstallInitialize">NOT Installed OR (Installed AND NOT (REMOVE~="ALL"))</Custom>
+			<Custom Action="SetRollbackPropertyValues" After="Status">NOT Installed OR (Installed AND NOT (REMOVE~="ALL"))</Custom>
+			<Custom Action="SetStateDeployPropertyValues" After="SetRollbackPropertyValues">NOT Installed OR (Installed AND NOT (REMOVE~="ALL"))</Custom>
+			<Custom Action="Rollback" After="SetStateDeployPropertyValues">NOT Installed OR (Installed AND NOT (REMOVE~="ALL"))</Custom>
+			<Custom Action="StateDeploy" After="Rollback">NOT Installed OR (Installed AND NOT (REMOVE~="ALL"))</Custom>
+			<Custom Action="SetPresetInfo" After="CreateShortcuts">NOT Installed OR (Installed AND NOT (REMOVE~="ALL"))</Custom>
+			<Custom Action="Preset" After="SetPresetInfo">NOT Installed OR (Installed AND NOT (REMOVE~="ALL"))</Custom>
+			<Custom Action="SetUninstallProperties" After="RemoveFiles">REMOVE~="ALL"</Custom>
+			<Custom Action="Uninstall" After="SetUninstallProperties">REMOVE~="ALL"</Custom>
 		</InstallExecuteSequence>
 	</Product>
 </Wix>
