@@ -21,19 +21,6 @@ import (
 // convertAnswerCreate is the answer that the user can choose if they accept to create a virtual environment.  It is re-used at several places.
 var convertAnswerCreate string = locale.Tl("ppm_convert_answer_create", "Create Virtual Runtime Environment")
 
-// analyticsEventFunc is used to send analytics event
-type analyticsEventFunc func(string, string, string)
-
-// surveySelectFunc displays a menu with options that the user can select
-type surveySelectFunc func(message string, choices []string, defaultResponse string) (string, *failures.Failure)
-
-const (
-	askedWhy          string = "asked-why"
-	seenStateToolInfo        = "state-tool-info"
-	seenPlatformInfo         = "platform-info"
-	notConvinced             = "still-wants-ppm"
-)
-
 // ConversionFlowPrimeable defines interface needed to initialize a conversion flow
 type ConversionFlowPrimeable interface {
 	primer.Prompter
