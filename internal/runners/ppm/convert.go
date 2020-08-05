@@ -55,12 +55,15 @@ func (cf *ConversionFlow) StartIfNecessary() error {
 		return locale.WrapError(err, "ppm_conversion_survey_error", "Conversion flow failed.")
 	}
 
-	if r == accepted {
-		err = cf.createVirtualEnv()
-		if err != nil {
-			analytics.EventWithLabel(analytics.CatPpmConversion, "error", errs.Join(err, " :: ").Error())
-			return locale.WrapError(err, "ppm_conversion_venv_error", "Failed to create a project.")
-		}
+	if r != accepted {
+		analytics.EventWithLabel(analytics.CatPpmConversion, "completed", r.String())
+		return locale.NewInputError("ppm_conversion_rejected", "User prefers not to create a virtual environment.")
+	}
+
+	err = cf.createVirtualEnv()
+	if err != nil {
+		analytics.EventWithLabel(analytics.CatPpmConversion, "error", errs.Join(err, " :: ").Error())
+		return locale.WrapError(err, "ppm_conversion_venv_error", "Failed to create a project.")
 	}
 	analytics.EventWithLabel(analytics.CatPpmConversion, "completed", r.String())
 	return nil
