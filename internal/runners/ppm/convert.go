@@ -128,10 +128,7 @@ func (cf *ConversionFlow) createVirtualEnv() error {
 	// sleep for a second to give a visual feedback that we have returned to the conversion flow
 	time.Sleep(1 * time.Second)
 
-	cf.out.Print(locale.Tl(
-		"ppm_convert_after_tutorial",
-		"For your convenience you can continue to use ppm commands once you’ve activated your virtual runtime environment. We’ll give you handy tips on how your commands map to State Tool so you can learn as you go.",
-	))
+	cf.out.Print(locale.T("ppm_convert_after_tutorial"))
 	return nil
 }
 
@@ -151,7 +148,7 @@ func (cf *ConversionFlow) explainVirtualEnv(alreadySeenStateToolInfo bool, alrea
 	}
 	// always add choices to create virtual environment and to say no again
 	choices = append(choices, convertAnswerCreate, no)
-	explanation := locale.Tl("ppm_convert_explanation", "State Tool was developed from the ground up with modern software development practices in mind. Development environments with globally installed language runtime environments are increasingly shunned by modern development practices, and as a result the State Tool and the ActiveState Platform tries to do away with them entirely.\n")
+	explanation := locale.T("ppm_convert_explanation")
 
 	// do not repeat the explanation if the function is called a second time
 	if alreadySeenPlatformInfo || alreadySeenStateToolInfo {
