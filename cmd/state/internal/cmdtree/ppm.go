@@ -7,28 +7,8 @@ import (
 	"github.com/ActiveState/cli/internal/runners/ppm"
 )
 
-<<<<<<< HEAD
 func newPpmCommand(prime *primer.Values) *captain.Command {
 	shim := ppm.NewShim(prime)
-=======
-func printSuggestion(ppmIntent, newCommand, docLink string) error {
-	fmt.Println(locale.Tr("ppm_print_suggestion", ppmIntent, newCommand, docLink))
-	return nil
-}
-
-func printDefault() error {
-	fmt.Println(strings.TrimSpace(locale.T("ppm_header_message")))
-	return nil
-}
-
-func printMain() error {
-	fmt.Println(locale.T("ppm_print_main"))
-	return nil
-}
-
-func newPpmCommand(prime *primer.Values) *captain.Command {
-	runner := ppm.New(prime)
->>>>>>> add conversion flow
 	rootCmd := captain.NewHiddenShimCommand(
 		"_ppm",
 		nil, nil,
@@ -38,95 +18,63 @@ func newPpmCommand(prime *primer.Values) *captain.Command {
 					return shim.PrintDefault()
 				}
 			}
-<<<<<<< HEAD
-			return shim.RunPPM(args...)
-=======
 			err := runner.StartConversionFlowIfNecessary()
 			if err != nil {
 				return err
 			}
-			return printMain()
->>>>>>> add conversion flow
+			return shim.RunPPM(args...)
 		},
 	)
 
 	var children []*captain.Command
-<<<<<<< HEAD
 	children = addPackagesCommands(prime, children)
 	children = addRepositoryCommands(prime, children)
 	children = addProjectCommands(prime, children)
 	children = addVersionCommand(prime, children)
 	children = addInfoCommand(prime, children)
 	children = addOtherCommands(prime, children)
-=======
-	children = addPackagesCommands(runner, children)
-	children = addRepositoryCommands(children)
-	children = addProjectCommands(runner, children)
-	children = addVersionCommand(children)
-	children = addInfoCommand(children)
-	children = addOtherCommands(children)
->>>>>>> add conversion flow
 
 	rootCmd.AddChildren(children...)
 	return rootCmd
 }
 
-<<<<<<< HEAD
 func addPackagesCommands(prime *primer.Values, cmds []*captain.Command) []*captain.Command {
 	shim := ppm.NewShim(prime)
-=======
-func addPackagesCommands(runner *ppm.Ppm, cmds []*captain.Command) []*captain.Command {
->>>>>>> add conversion flow
 	return append(cmds,
 		captain.NewShimCommand(
 			"install",
 			"installs new packages",
-<<<<<<< HEAD
 			func(_ *captain.Command, args []string) error {
-				return shim.RunInstall(args...)
-=======
-			func(_ *captain.Command, _ []string) error {
-				err := runner.StartConversionFlowIfNecessary()
+				err := shim.StartConversionFlowIfNecessary()
 				if err != nil {
 					return err
 				}
 
-				return printSuggestion(locale.T("ppm_install_intent"), "state packages add", "state/packages.html")
->>>>>>> add conversion flow
+				return shim.RunInstall(args...)
 			},
 		),
 		captain.NewShimCommand(
 			"upgrade",
 			"upgrades installed packages",
-<<<<<<< HEAD
 			func(_ *captain.Command, args []string) error {
-				return shim.RunUpgrade(args...)
-=======
-			func(_ *captain.Command, _ []string) error {
-				err := runner.StartConversionFlowIfNecessary()
+				err := shim.StartConversionFlowIfNecessary()
 				if err != nil {
 					return err
 				}
 
-				return printSuggestion(locale.T("ppm_upgrade_intent"), "state packages update", "state/packages.html")
->>>>>>> add conversion flow
+				return shim.RunUpgrade(args...)
 			},
 		),
 		captain.NewShimCommand(
 			"remove",
 			"removes installed packages",
-<<<<<<< HEAD
 			func(_ *captain.Command, args []string) error {
-				return shim.RunRemove(args...)
-=======
-			func(_ *captain.Command, _ []string) error {
-				err := runner.StartConversionFlowIfNecessary()
+				err := shim.StartConversionFlowIfNecessary()
 				if err != nil {
 					return err
 				}
 
-				return printSuggestion(locale.T("ppm_remove_intent"), "state packages remove", "state/packages.html")
->>>>>>> add conversion flow
+				return shim.RunRemove(args...)
 			},
 		),
 	)
@@ -145,45 +93,32 @@ func addVersionCommand(prime *primer.Values, cmds []*captain.Command) []*captain
 	)
 }
 
-<<<<<<< HEAD
 func addProjectCommands(prime *primer.Values, cmds []*captain.Command) []*captain.Command {
 	shim := ppm.NewShim(prime)
-=======
-func addProjectCommands(runner *ppm.Ppm, cmds []*captain.Command) []*captain.Command {
->>>>>>> add conversion flow
 	return append(cmds,
 		captain.NewShimCommand(
 			"area",
 			"organizes packages in different areas",
 			func(_ *captain.Command, _ []string) error {
-<<<<<<< HEAD
-				prime.Output().Print(locale.Tr("ppm_print_redundant", "state packages"))
-=======
-				err := runner.StartConversionFlowIfNecessary()
+				err := shim.StartConversionFlowIfNecessary()
 				if err != nil {
 					return err
 				}
 
-				fmt.Println(locale.T("ppm_area_message"))
->>>>>>> add conversion flow
+				prime.Output().Print(locale.Tr("ppm_print_redundant", "state packages"))
 				return nil
 			},
 		),
 		captain.NewShimCommand(
 			"list",
 			"lists installed packages",
-<<<<<<< HEAD
 			func(_ *captain.Command, args []string) error {
-				return shim.RunList(args...)
-=======
-			func(_ *captain.Command, _ []string) error {
-				err := runner.StartConversionFlowIfNecessary()
+				err := shim.StartConversionFlowIfNecessary()
 				if err != nil {
 					return err
 				}
 
-				return printSuggestion(locale.T("ppm_list_intent"), "state packages", "state/packages.html")
->>>>>>> add conversion flow
+				return shim.RunList(args...)
 			},
 		),
 		//	Long:  strings.TrimSpace(locale.T("ppm_header_message")),
