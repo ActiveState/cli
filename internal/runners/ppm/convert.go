@@ -7,6 +7,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -64,7 +65,11 @@ func (cf *ConversionFlow) StartIfNecessary() error {
 	if cf.project == nil {
 		analytics.Event(analytics.CatPpmConversion, "run")
 		r, err := cf.runSurvey()
-		analytics.EventWithLabel(analytics.CatPpmConversion, "completed", r.String())
+		if err != nil {
+			analytics.EventWithLabel(analytics.CatPpmConversion, "error", errs.Join(err, " :: ").Error())
+		} else {
+			analytics.EventWithLabel(analytics.CatPpmConversion, "completed", r.String())
+		}
 
 		if r == accepted {
 			cf.createVirtualEnv()
