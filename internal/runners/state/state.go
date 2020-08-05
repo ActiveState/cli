@@ -37,6 +37,7 @@ func execute(opts *Options, usageFunc func() error) error {
 
 	if opts.Version {
 		print.Info(locale.T("version_info", map[string]interface{}{
+			"License":  constants.LibraryLicense,
 			"Version":  constants.Version,
 			"Branch":   constants.BranchName,
 			"Revision": constants.RevisionHash,
