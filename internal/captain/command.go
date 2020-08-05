@@ -251,9 +251,11 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	if outputFlag != nil && outputFlag.Changed {
 		analytics.CustomDimensions.SetOutput(outputFlag.Value.String())
 	}
-	subCommandString := strings.Join(c.subcommandNames(), " ")
-	analytics.Event(analytics.CatRunCmd, subCommandString)
-
+	// "activate" GA events are handled in the runners, in order that we can add project ID as label
+	if cobraCmd.Name() != "activate" {
+		subCommandString := strings.Join(c.subcommandNames(), " ")
+		analytics.Event(analytics.CatRunCmd, subCommandString)
+	}
 	// Run OnUse functions for non-persistent flags
 	c.runFlags(false)
 

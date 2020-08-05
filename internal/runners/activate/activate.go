@@ -62,6 +62,11 @@ func sendProjectIDToAnalytics(namespace *project.Namespaced, configFile string) 
 		return
 	}
 	projectID := platProject.ProjectID.String()
+
+	// Send the project ID as part of the state activate command
+	analytics.EventWithLabel(
+		analytics.CatRunCmd, "activate", projectID,
+	)
 	analytics.EventWithLabel(
 		analytics.CatBuild, analytics.ActBuildProject, projectID,
 	)
