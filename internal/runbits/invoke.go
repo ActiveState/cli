@@ -41,7 +41,7 @@ func Invoke(out output.Outputer, args ...string) error {
 	return nil
 }
 
-// Invoke will invoke a state tool command with the given args and prints a friendly message indicating what we're doing
+// InvokeSilent just invokes a given state tool command in the background, silently from the user
 func InvokeSilent(args ...string) error {
 	// Execute state command
 	exe, err := os.Executable()

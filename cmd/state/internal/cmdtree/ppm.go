@@ -108,7 +108,7 @@ func addProjectCommands(prime *primer.Values, cmds []*captain.Command) []*captai
 					return err
 				}
 
-				prime.Output().Print(locale.Tr("ppm_print_redundant", "state packages"))
+				prime.Output().Print(locale.Tr("ppm_print_area_redundant", "state packages"))
 				return nil
 			},
 		),

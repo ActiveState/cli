@@ -1586,7 +1586,7 @@ ppm_print_forward_failure:
 
     Note that `[BOLD][BLUE]{{.V0}}[/RESET]` is not a direct analog for `[BOLD][BLUE]{{.V1}}[/RESET]` and your command may have failed as a result.
     Please run `[BOLD][BLUE]{{.V0}} --help[/RESET]` for further information on how to use it for your use-case.
-ppm_print_redundant:
+ppm_print_area_redundant:
   other: |
     `ppm area` and its subcommands have been made redundant thanks to State Tool's use of virtual environments.
     You can simply start managing your packages, run `[BOLD][BLUE]{{.V0}} --help[/RESET]` for more information.
