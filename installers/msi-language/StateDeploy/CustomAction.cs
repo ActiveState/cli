@@ -183,7 +183,7 @@ namespace StateDeploy
             string output;
             ActionResult runResult = ActiveState.Command.Run(session, stateToolPath, configDirCmd, out output);
             session.Log("Writing install file...");
-            // We do not fail the installation if writing the install.txt file fails
+            // We do not fail the installation if writing the installsource.txt file fails
             if (runResult.Equals(ActionResult.Failure))
             {
                 string msg = string.Format("Could not get config directory from State Tool");
@@ -199,7 +199,7 @@ namespace StateDeploy
                 }
                 try
                 {
-                    string installFilePath = Path.Combine(output.Trim(), "install.txt");
+                    string installFilePath = Path.Combine(output.Trim(), "installsource.txt");
                     File.WriteAllText(installFilePath, contents);
                 }
                 catch (Exception e)

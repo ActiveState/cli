@@ -93,7 +93,7 @@ func setup() {
 		logging.SendToRollbarWhenReady("warning", fmt.Sprintf("Cannot detect the OS version: %v", err))
 	}
 
-	installFilePath := filepath.Join(config.ConfigPath(), "install.txt")
+	installFilePath := filepath.Join(config.ConfigPath(), "installsource.txt")
 	installFileData, err := ioutil.ReadFile(installFilePath)
 	installSource := strings.TrimSpace(string(installFileData))
 	if err != nil {
