@@ -65,7 +65,7 @@ func (suite *PushIntegrationTestSuite) TestPush_AlreadyExists() {
 	wd := filepath.Join(cp.WorkDirectory(), namespace)
 	cp = ts.SpawnWithOpts(e2e.WithArgs("push"), e2e.WithWorkDirectory(wd))
 	cp.Expect(fmt.Sprintf("The project %s/%s already exists", username, "Python3"))
-	cp.ExpectExitCode(0)
+	cp.ExpectExitCode(1)
 }
 
 func TestPushIntegrationTestSuite(t *testing.T) {
