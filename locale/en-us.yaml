@@ -128,7 +128,9 @@ confirm_update_locked_version_prompt:
   other: "You ran update from a project directory with a locked State Tool version. This will update the version that your project is locked to. Are you sure you want to do this?"
 version_info:
   other: |
-    ActiveState CLI version {{.Version}}
+    ActiveState CLI by ActiveState Software Inc.
+    License {{.License}}
+    Version {{.Version}}
     Revision {{.Revision}}
     Branch {{.Branch}}
     Built {{.Date}}
