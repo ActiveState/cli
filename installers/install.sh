@@ -385,7 +385,7 @@ update_rc_file() {
 # Write install file
 STATEPATH=$INSTALLDIR/$STATEEXE
 CONFIGDIR=$($STATEPATH "export" "config" "--filter=dir")
-echo "install.sh" >> $CONFIGDIR/"install.txt"
+echo "install.sh" > $CONFIGDIR/"install.txt"
 
 # Check if the installation is in $PATH, if so we also check if the activate
 # flag was passed and attempt to activate the project
