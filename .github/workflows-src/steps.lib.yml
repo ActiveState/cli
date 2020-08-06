@@ -1,7 +1,7 @@
 #@ def steps_genbaseversion():
 name: "Generate Version"
 shell: bash
-run: state run generate-master-version
+run: state run generate-base-version
 #@ end
 ---
 #@ def steps_genupdateversion():

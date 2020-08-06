@@ -41,7 +41,7 @@ jobs:
         printenv
     - name: Generate Version
       shell: bash
-      run: state run generate-master-version
+      run: state run generate-base-version
     - name: Upload Shared Artifacts
       uses: actions/upload-artifact@v2
       with:
