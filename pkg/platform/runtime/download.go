@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"fmt"
 	"net/url"
 	"path"
 	"path/filepath"
@@ -115,18 +116,6 @@ func (r *Download) fetchRecipeID() (strfmt.UUID, *failures.Failure) {
 	return *recipeID, nil
 }
 
-func sendProjectIDToAnalytics(owner, projectName string) {
-	platProject, fail := model.FetchProjectByName(owner, projectName)
-	if fail != nil {
-		logging.Debug("error getting platform project: %v", fail.ToError())
-		return
-	}
-	projectID := platProject.ProjectID.String()
-	analytics.EventWithLabel(
-		analytics.CatBuild, analytics.ActBuildProject, projectID,
-	)
-}
-
 // FetchArtifacts will retrieve artifact information from the head-chef (eg language installers)
 // The first return argument specifies whether we are dealing with an alternative build
 func (r *Download) FetchArtifacts() (*FetchArtifactsResult, *failures.Failure) {
@@ -195,7 +184,9 @@ func (r *Download) FetchArtifacts() (*FetchArtifactsResult, *failures.Failure) {
 
 		case <-buildStatus.Started:
 			logging.Debug("BuildStarted")
-			sendProjectIDToAnalytics(r.owner, r.projectName)
+			analytics.EventWithLabel(
+				analytics.CatBuild, analytics.ActBuildProject, fmt.Sprintf("%s/%s", r.owner, r.projectName),
+			)
 			return result, FailBuildInProgress.New(locale.Tr("build_status_in_progress", r.projectURL()))
 
 		case fail := <-buildStatus.RunFail:
