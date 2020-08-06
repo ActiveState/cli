@@ -369,6 +369,13 @@ function install()
     }
     Move-Item (Join-Path $tmpParentPath $stateexe) $installPath
 
+    # Write install file
+    $StatePath = Join-Path -Path $installDir -ChildPath $script:STATEEXE
+    $Command = "$StatePath export config --filter=dir"
+    $ConfigDir = & Invoke-Expression $Command | Out-String
+    $InstallFilePath = Join-Path -Path $ConfigDir.Trim() -ChildPath "installsource.txt"
+    "install.ps1" | Out-File -FilePath $InstallFilePath
+
     # Check if installation is in $PATH
     if (isStateToolInstallationOnPath $installDir) {
         Write-Host "`nState Tool installation complete." -ForegroundColor Yellow
