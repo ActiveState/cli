@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -14,7 +12,6 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
-	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -49,24 +46,6 @@ func (r *Activate) Run(params *ActivateParams) error {
 	return r.run(params, activationLoop)
 }
 
-func sendProjectIDToAnalytics(namespace *project.Namespaced, configFile string) {
-	names, fail := project.ParseNamespaceOrConfigfile(namespace.String(), configFile)
-	if fail != nil {
-		logging.Debug("error resolving namespace: %v", fail.ToError())
-		return
-	}
-
-	platProject, fail := model.FetchProjectByName(names.Owner, names.Project)
-	if fail != nil {
-		logging.Debug("error getting platform project: %v", fail.ToError())
-		return
-	}
-	projectID := platProject.ProjectID.String()
-	analytics.EventWithLabel(
-		analytics.CatBuild, analytics.ActBuildProject, projectID,
-	)
-}
-
 func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc) error {
 	logging.Debug("Activate %v, %v", params.Namespace, params.PreferredPath)
 
@@ -80,8 +59,6 @@ func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc)
 			return err
 		}
 	}
-
-	go sendProjectIDToAnalytics(params.Namespace, filepath.Join(targetPath, constants.ConfigFileName))
 
 	// If we're not using plain output then we should just dump the environment information
 	if r.out.Type() != output.PlainFormatName {
