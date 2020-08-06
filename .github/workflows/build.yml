@@ -41,7 +41,7 @@ jobs:
         printenv
     - name: Generate Version
       shell: bash
-      run: state run generate-version
+      run: state run generate-master-version
     - name: Upload Shared Artifacts
       uses: actions/upload-artifact@v2
       with:
@@ -292,9 +292,14 @@ jobs:
           export BRANCH_OVERRIDE=unstable
         fi
         state run preprocess
+    - name: Generate Update Version
+      shell: bash
+      run: state run generate-update-version
     - name: Cleanup Build Dir
       shell: bash
-      run: rm build/state* || true
+      run: |
+        rm build/state* || true
+        rm build/update/base-version.json || true
     - name: Deploy
       shell: bash
       if: github.ref == 'refs/heads/master'
