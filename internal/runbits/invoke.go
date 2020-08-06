@@ -29,6 +29,20 @@ func Invoke(out output.Outputer, args ...string) error {
 	// print dashed line
 	out.Notice("[INFO]" + strings.Repeat("-", termWidth) + "[/RESET]")
 
+	err = InvokeSilent(args...)
+
+	// print dashed line
+	out.Notice("[INFO]" + strings.Repeat("-", termWidth) + "[/RESET]\n")
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// InvokeSilent just invokes a given state tool command in the background, silently from the user
+func InvokeSilent(args ...string) error {
 	// Execute state command
 	exe, err := os.Executable()
 	if err != nil {
@@ -38,9 +52,6 @@ func Invoke(out output.Outputer, args ...string) error {
 	cmd := exec.Command(exe, args...)
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 	err = cmd.Run()
-
-	// print dashed line
-	out.Notice("[INFO]" + strings.Repeat("-", termWidth) + "[/RESET]")
 
 	if err != nil {
 		return locale.WrapError(err, "err_tutorial_invoke_run", "Errors occurred while invoking State Tool command: `state {{.V0}}`.", strings.Join(args, " "))

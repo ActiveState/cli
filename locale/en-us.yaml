@@ -1573,19 +1573,23 @@ ppm_print_main:
     See "https://docs.activestate.com/platform/state/" for details.
 ppm_print_forward:
   other: |
-    Your command has been forwarded to `{{.V0}}`. 
-    In the future you can run `{{.V0}}` directly instead of running `{{.V1}}`, which will eventually disappear entirely.
+    Your command is being forwarded to `[BOLD][BLUE]{{.V0}}[/RESET]`.
+    In the future you can run `[BOLD][BLUE]{{.V0}}[/RESET]` directly instead of running `[BOLD][BLUE]{{.V1}}[/RESET]`, which will eventually disappear entirely.
+ppm_print_forward_after_convert:
+  other: |
+    Please navigate to your newly created project directory and run `[BOLD][BLUE]{{.V1}}[/RESET]` again.
+    You can also run `[BOLD][BLUE]{{.V0}}[/RESET]` directly instead of running `[BOLD][BLUE]{{.V1}}[/RESET]`, which will eventually disappear entirely.
 ppm_print_forward_failure:
   other: |
-    Your command has been forwarded to `{{.V0}}`. 
-    In the future you can run `{{.V0}}` directly instead of running `{{.V1}}`, which will eventually disappear entirely.
+    Your command is being forwarded to `[BOLD][BLUE]{{.V0}}[/RESET]`.
+    In the future you can run `[BOLD][BLUE]{{.V0}}[/RESET]` directly instead of running `[BOLD][BLUE]{{.V1}}[/RESET]`, which will eventually disappear entirely.
 
-    Note that `{{.V0}}` is not a direct analog for `{{.V1}}` and your command may have failed as a result. 
-    Please run `{{.V0}} --help` for further information on how to use it for your use-case.
-ppm_print_redundant:
+    Note that `[BOLD][BLUE]{{.V0}}[/RESET]` is not a direct analog for `[BOLD][BLUE]{{.V1}}[/RESET]` and your command may have failed as a result.
+    Please run `[BOLD][BLUE]{{.V0}} --help[/RESET]` for further information on how to use it for your use-case.
+ppm_print_area_redundant:
   other: |
-    ppm area and its subcommands have been made redundant thanks to State Tool's use of virtual environments. 
-    You can simply start managing your packages, run `{{.V0}} --help` for more information.
+    `ppm area` and its subcommands have been made redundant thanks to State Tool's use of virtual environments.
+    You can simply start managing your packages, run `[BOLD][BLUE]{{.V0}} --help[/RESET]` for more information.
 ppm_install_intent:
   other: add new packages to your project 
 ppm_upgrade_intent:
@@ -1630,13 +1634,12 @@ tutorial_newproject_intro:
 tutorial_newproject_outro:
   other: |
     Your Virtual Runtime Environment has been created.
-    [[BR]]
-    To start using your project simply run `state activate` from your project directory at {{.Dir}}.
-    [[BR]]
-    You can also manage your project in your browser at {{.URL}}.
-    [[BR]]
-    To create another project run `state init`, or if you want to find out more about the State Tool and what it can do
-    run `state --help` or check out {{.Docs}}
+    [[BR]][[BR]]
+    To start using your project simply run `[BOLD][BLUE]state activate[/RESET]` from your project directory at [BOLD][BLUE]{{.Dir}}[/RESET].
+    You can also manage your project in your browser at [BOLD][BLUE]{{.URL}}[/RESET].
+    [[BR]][[BR]]
+    To create another project run `[BOLD][BLUE]state init[/RESET]`, or if you want to find out more about the State Tool and what it can do
+    run `[BOLD][BLUE]state --help[/RESET]` or check out [BOLD][BLUE]{{.Docs}}[/RESET]
 ppm_convert_after_tutorial:
   other: |
     For your convenience you can continue to use ppm commands once you've activated your virtual runtime environment.
@@ -1644,10 +1647,11 @@ ppm_convert_after_tutorial:
 ppm_convert_explanation:
   other: |
     State Tool was developed from the ground up with modern software development practices in mind.
-    Development environments with globally installed language runtime environments are increasingly
-    shunned by modern development practices, and as a result the State Tool and the ActiveState Platform
-    tries to do away with them entirely.
+    [[BR]][[BR]]
+    Development environments with globally installed language runtime environments are increasingly shunned by modern
+    development practices, and as a result the State Tool and the ActiveState Platform tries to do away with them entirely.
+    [[BR]]
 ppm_convert_create_question:
   other: |
     PPM functionality has been transferred to the State Tool. In order to continue managing your packages
-    we need to create a virtual runtime environment for your project.
+    we need to create a virtual runtime environment for your project.[[BR]]

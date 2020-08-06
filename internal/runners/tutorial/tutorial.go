@@ -36,15 +36,15 @@ func New(primer primeable) *Tutorial {
 }
 
 type NewProjectParams struct {
-	ShowIntro bool
+	SkipIntro bool
 	Language  language.Language
 }
 
 func (t *Tutorial) RunNewProject(params NewProjectParams) error {
-	analytics.EventWithLabel(analytics.CatTutorial, "run", fmt.Sprintf("showIntro=%v,language=%v", params.ShowIntro, params.Language.String()))
+	analytics.EventWithLabel(analytics.CatTutorial, "run", fmt.Sprintf("skipIntro=%v,language=%v", params.SkipIntro, params.Language.String()))
 
 	// Print intro
-	if params.ShowIntro {
+	if !params.SkipIntro {
 		t.outputer.Print(locale.Tt("tutorial_newproject_intro"))
 	}
 

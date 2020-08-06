@@ -1,6 +1,8 @@
 package ppm
 
 import (
+	"github.com/skratchdot/open-golang/open"
+
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -11,7 +13,6 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/skratchdot/open-golang/open"
 )
 
 // convertAnswerCreate is the answer that the user can choose if they accept to create a virtual environment.  It is re-used at several places.
@@ -42,31 +43,31 @@ type ConversionFlow struct {
 
 // StartIfNecessary checks if the user is in a project directory.
 // If not, they are asked to create a project, and (in a wizard-kind-of way) informed about the consequences.
-func (cf *ConversionFlow) StartIfNecessary() error {
+func (cf *ConversionFlow) StartIfNecessary() (bool, error) {
 	// start conversion flow only if we cannot find a project file
 	if cf.project != nil {
-		return nil
+		return false, nil
 	}
 
 	analytics.Event(analytics.CatPpmConversion, "run")
 	r, err := cf.runSurvey()
 	if err != nil {
 		analytics.EventWithLabel(analytics.CatPpmConversion, "error", errs.Join(err, " :: ").Error())
-		return locale.WrapError(err, "ppm_conversion_survey_error", "Conversion flow failed.")
+		return true, locale.WrapError(err, "ppm_conversion_survey_error", "Conversion flow failed.")
 	}
 
 	if r != accepted {
 		analytics.EventWithLabel(analytics.CatPpmConversion, "completed", r.String())
-		return locale.NewInputError("ppm_conversion_rejected", "User prefers not to create a virtual environment.")
+		return true, locale.NewInputError("ppm_conversion_rejected", "Virtual environment creation cancelled.")
 	}
 
 	err = cf.createVirtualEnv()
 	if err != nil {
 		analytics.EventWithLabel(analytics.CatPpmConversion, "error", errs.Join(err, " :: ").Error())
-		return locale.WrapError(err, "ppm_conversion_venv_error", "Failed to create a project.")
+		return true, locale.WrapError(err, "ppm_conversion_venv_error", "Failed to create a project.")
 	}
 	analytics.EventWithLabel(analytics.CatPpmConversion, "completed", r.String())
-	return nil
+	return true, nil
 }
 
 type conversionResult int
@@ -87,10 +88,12 @@ func (cf *ConversionFlow) runSurvey() (conversionResult, error) {
 		convertAnswerCreate,
 		locale.Tl("ppm_convert_answer_why", "Why is this necessary? I Just want to manage packages."),
 	}
-	choice, fail := cf.prompt.Select(locale.T("ppm_convert_create_question"), choices, "")
+	choice, fail := cf.prompt.Select(locale.Tt("ppm_convert_create_question"), choices, "")
 	if fail != nil {
 		return canceled, locale.WrapInputError(fail, "err_ppm_convert_interrupt", "Invalid response received.")
 	}
+
+	cf.out.Print("") // Add some space before next prompt
 
 	eventChoices := map[string]string{
 		choices[0]: "create-virtual-env-1",
@@ -106,10 +109,12 @@ func (cf *ConversionFlow) runSurvey() (conversionResult, error) {
 }
 
 func (cf *ConversionFlow) createVirtualEnv() error {
-	err := runbits.Invoke(cf.out, "tutorial", "new-project")
+	err := runbits.InvokeSilent("tutorial", "new-project", "--skip-intro", "--language", "perl")
 	if err != nil {
 		return locale.WrapError(err, "err_ppm_convert_invoke_tutorial", "Errors occurred while invoking State Tool tutorial command.")
 	}
+
+	cf.out.Print("") // Add some space before next prompt
 
 	return nil
 }
@@ -130,17 +135,18 @@ func (cf *ConversionFlow) explainVirtualEnv(alreadySeenStateToolInfo bool, alrea
 	}
 	// always add choices to create virtual environment and to say no again
 	choices = append(choices, convertAnswerCreate, no)
-	explanation := locale.T("ppm_convert_explanation")
+	explanation := locale.Tt("ppm_convert_explanation")
 
 	// do not repeat the explanation if the function is called a second time
 	if alreadySeenPlatformInfo || alreadySeenStateToolInfo {
 		explanation = ""
 	}
-	choice, fail := cf.prompt.Select(explanation, choices, "")
 
+	choice, fail := cf.prompt.Select(explanation, choices, "")
 	if fail != nil {
 		return canceled, locale.WrapInputError(fail, "err_ppm_convert_info_interrupt", "Invalid response received.")
 	}
+	cf.out.Print("") // Add some space before next prompt
 
 	eventChoices := map[string]string{
 		stateToolInfo:       "show-state-tool-info",
@@ -192,6 +198,8 @@ func (cf *ConversionFlow) wantGlobalPackageManagement() (conversionResult, error
 		return canceled, locale.WrapInputError(fail, "err_ppm_convert_final_chance_interrupt", "Invalid response received.")
 	}
 
+	cf.out.Print("") // Add some space before next prompt
+
 	eventChoices := map[string]string{
 		ok:          "create-virtual-env-3",
 		perlTooling: "still-wants-perl-tooling",
@@ -201,7 +209,10 @@ func (cf *ConversionFlow) wantGlobalPackageManagement() (conversionResult, error
 	if choice == choices[0] {
 		return accepted, nil
 	}
-	cf.out.Print(locale.Tl("ppm_convert_reject_sorry", "We're sorry we can't help any further. We'd love to hear more about your use case to see if we can better meet your needs. Please consider posting to our forum at {{.V0}}}.", constants.ForumsURL))
+	cf.out.Print(locale.Tl(
+		"ppm_convert_reject_sorry",
+		"We're sorry we can't help any further. We'd love to hear more about your use case to see if we can better meet your needs. Please consider posting to our forum at {{.V0}}.",
+		constants.ForumsURL))
 
 	return rejected, nil
 }

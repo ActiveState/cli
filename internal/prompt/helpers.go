@@ -6,10 +6,13 @@ import (
 	"reflect"
 	"strings"
 
+	"gopkg.in/AlecAivazis/survey.v1"
+
 	"github.com/ActiveState/cli/internal/osutils/termsize"
 
-	"github.com/ActiveState/cli/internal/locale"
 	"gopkg.in/AlecAivazis/survey.v1/core"
+
+	"github.com/ActiveState/cli/internal/locale"
 )
 
 func init() {
@@ -20,6 +23,46 @@ func init() {
 	core.MarkedOptionIcon = "[x]"
 	core.UnmarkedOptionIcon = "[ ]"
 	core.ErrorTemplate = locale.Tt("survey_error_template")
+
+	// Drop questionicon from templates as it causes indented text
+	survey.SelectQuestionTemplate = `
+{{- if .ShowHelp }}{{- color "cyan"}}{{ HelpIcon }} {{ .Help }}{{color "reset"}}{{"\n"}}{{end}}
+{{- color "default+hb"}}{{ .Message }}{{color "reset"}}
+{{- if .ShowAnswer}}{{color "cyan"}} {{.Answer}}{{color "reset"}}{{"\n"}}
+{{- else}}
+  {{- if and .Help (not .ShowHelp)}} {{color "cyan"}}[{{ HelpInputRune }} for help]{{color "reset"}}{{end}}
+  {{- "\n"}}
+  {{- range $ix, $choice := .PageEntries}}
+    {{- if eq $ix $.SelectedIndex}}{{color "cyan+b"}}{{ SelectFocusIcon }} {{else}}{{color "default+hb"}}  {{end}}
+    {{- $choice}}
+    {{- color "reset"}}{{"\n"}}
+  {{- end}}
+{{- end}}`
+
+	survey.InputQuestionTemplate = `
+{{- if .ShowHelp }}{{- color "cyan"}}{{ HelpIcon }} {{ .Help }}{{color "reset"}}{{"\n"}}{{end}}
+{{- color "default+hb"}}{{ .Message }} {{color "reset"}}
+{{- if .ShowAnswer}}
+  {{- color "cyan"}}{{.Answer}}{{color "reset"}}{{"\n"}}
+{{- else }}
+  {{- if and .Help (not .ShowHelp)}}{{color "cyan"}}[{{ HelpInputRune }} for help]{{color "reset"}} {{end}}
+  {{- if .Default}}{{color "white"}}({{.Default}}) {{color "reset"}}{{end}}
+{{- end}}`
+
+	survey.ConfirmQuestionTemplate = `
+{{- if .ShowHelp }}{{- color "cyan"}}{{ HelpIcon }} {{ .Help }}{{color "reset"}}{{"\n"}}{{end}}
+{{- color "default+hb"}}{{ .Message }} {{color "reset"}}
+{{- if .Answer}}
+  {{- color "cyan"}}{{.Answer}}{{color "reset"}}{{"\n"}}
+{{- else }}
+  {{- if and .Help (not .ShowHelp)}}{{color "cyan"}}[{{ HelpInputRune }} for help]{{color "reset"}} {{end}}
+  {{- color "white"}}{{if .Default}}(Y/n) {{else}}(y/N) {{end}}{{color "reset"}}
+{{- end}}`
+
+	survey.PasswordQuestionTemplate = `
+{{- if .ShowHelp }}{{- color "cyan"}}{{ HelpIcon }} {{ .Help }}{{color "reset"}}{{"\n"}}{{end}}
+{{- color "default+hb"}}{{ .Message }} {{color "reset"}}
+{{- if and .Help (not .ShowHelp)}}{{color "cyan"}}[{{ HelpInputRune }} for help]{{color "reset"}} {{end}}`
 }
 
 // inputRequired does not allow an empty value
