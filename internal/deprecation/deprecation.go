@@ -17,6 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	constvers "github.com/ActiveState/cli/internal/constants/version"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 )
@@ -131,7 +132,7 @@ func (checker *Checker) check(versionNumber string) (*Info, *failures.Failure) {
 
 func (checker *Checker) shouldFetch() bool {
 	lastFetch := checker.config.GetTime(fetchKey)
-	if !lastFetch.IsZero() && time.Now().Before(lastFetch) {
+	if !lastFetch.IsZero() && time.Now().Before(lastFetch) && fileutils.FileExists(checker.deprecationFile) {
 		return false
 	}
 
