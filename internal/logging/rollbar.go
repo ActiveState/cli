@@ -16,6 +16,7 @@ type delayedLog struct {
 var delayedLogs []delayedLog
 
 func SetupRollbar() {
+	rollbar.SetLogger(&rollbar.SilentClientLogger{})
 	// set user to unknown (if it has not been set yet)
 	if _, ok := rollbar.Custom()["UserID"]; !ok {
 		UpdateRollbarPerson("unknown", "unknown", "unknown")
@@ -24,7 +25,6 @@ func SetupRollbar() {
 	rollbar.SetEnvironment(constants.BranchName)
 	rollbar.SetCodeVersion(constants.RevisionHash)
 	rollbar.SetServerRoot("github.com/ActiveState/cli")
-	rollbar.SetLogger(&rollbar.SilentClientLogger{})
 
 	// We can't use runtime.GOOS for the official platform field because rollbar sees that as a server-only platform
 	// (which we don't have credentials for). So we're faking it with a custom field untill rollbar gets their act together.
