@@ -1,7 +1,13 @@
-#@ def steps_genversion():
+#@ def steps_genmasterversion():
 name: "Generate Version"
 shell: bash
-run: state run generate-version
+run: state run generate-master-version
+#@ end
+---
+#@ def steps_genupdateversion():
+name: "Generate Update Version"
+shell: bash
+run: state run generate-update-version
 #@ end
 ---
 #@ def steps_build():
@@ -215,5 +221,7 @@ env:
 #@ def steps_cleanbuild():
 name: "Cleanup Build Dir"
 shell: bash
-run: rm build/state* || true
+run: |
+  rm build/state* || true
+  rm build/update/base-version.json || true
 #@ end

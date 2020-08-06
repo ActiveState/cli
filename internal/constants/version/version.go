@@ -102,7 +102,7 @@ func latestVersionString(branch string) (string, error) {
 		return "", err
 	}
 
-	versionFilePath := filepath.Join(rootPath, "build", "update", "version.json")
+	versionFilePath := filepath.Join(rootPath, "build", "update", "base-version.json")
 	_, err = os.Stat(versionFilePath)
 	if err != nil {
 		return "", fmt.Errorf("Could not access version file at: %s", versionFilePath)

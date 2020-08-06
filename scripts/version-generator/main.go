@@ -1,14 +1,15 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/condition"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/pkg/errors"
 )
 
@@ -23,6 +24,10 @@ func main() {
 	}
 }
 
+type current struct {
+	Version string
+}
+
 func run() {
 	flag.Parse()
 	if flag.NArg() != 1 {
@@ -30,30 +35,27 @@ func run() {
 		os.Exit(0)
 	}
 
-	resp, err := http.Get("https://s3.ca-central-1.amazonaws.com/cli-update/update/state/version.json")
-	if err != nil {
-		panic(errors.Wrap(err, "Could not get version file from S3"))
-	}
-	defer resp.Body.Close()
-
 	outputPath := flag.Arg(0)
-	err = os.MkdirAll(outputPath, 0755)
+	err := os.MkdirAll(outputPath, 0755)
 	if err != nil {
 		panic(errors.Wrap(err, "Could not create directory for version.json file"))
 	}
 
-	file, err := os.Create(filepath.Join(outputPath, "version.json"))
+	versionPath := filepath.Join(outputPath, "version.json")
+	file, err := os.Create(versionPath)
 	if err != nil {
 		panic(errors.Wrap(err, "Could not create version file"))
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	c := current{Version: constants.Version}
+	b, err := json.MarshalIndent(c, "", "    ")
 	if err != nil {
-		panic(errors.Wrap(err, "Could not read response body"))
+		fmt.Println("error:", err)
 	}
 
-	err = ioutil.WriteFile(file.Name(), body, 0644)
+	fmt.Printf("Updating version file at %s\n", versionPath)
+	err = ioutil.WriteFile(file.Name(), b, 0755)
 	if err != nil {
-		panic(errors.Wrap(err, "Could not write version data to file"))
+		panic(err)
 	}
 }
