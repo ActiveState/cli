@@ -22,7 +22,7 @@ func newActivateCommand(prime *primer.Values) *captain.Command {
 		Namespace: &project.Namespaced{},
 	}
 
-	return captain.NewCommand(
+	cmd := captain.NewCommand(
 		"activate",
 		locale.T("activate_project"),
 		[]*captain.Flag{
@@ -40,7 +40,7 @@ func newActivateCommand(prime *primer.Values) *captain.Command {
 			},
 		},
 		[]*captain.Argument{
-			&captain.Argument{
+			{
 				Name:        locale.T("arg_state_activate_namespace"),
 				Description: locale.T("arg_state_activate_namespace_description"),
 				Value:       params.Namespace,
@@ -49,5 +49,7 @@ func newActivateCommand(prime *primer.Values) *captain.Command {
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run(&params)
 		},
+		true,
 	)
+	return cmd
 }

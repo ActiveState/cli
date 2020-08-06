@@ -27,9 +27,12 @@ type Command struct {
 	arguments []*Argument
 
 	execute func(cmd *Command, args []string) error
+
+	// deferAnalytics should be set if the command handles the GA reporting in its execute function
+	deferAnalytics bool
 }
 
-func NewCommand(name, description string, flags []*Flag, args []*Argument, executor Executor) *Command {
+func NewCommand(name, description string, flags []*Flag, args []*Argument, executor Executor, deferAnalytics ...bool) *Command {
 	// Validate args
 	for idx, arg := range args {
 		if idx > 0 && arg.Required && !args[idx-1].Required {
@@ -62,6 +65,10 @@ func NewCommand(name, description string, flags []*Flag, args []*Argument, execu
 		// Silence errors and usage, we handle that ourselves
 		SilenceErrors: true,
 		SilenceUsage:  true,
+	}
+
+	if len(deferAnalytics) == 1 {
+		cmd.deferAnalytics = deferAnalytics[0]
 	}
 
 	if err := cmd.setFlags(flags); err != nil {
@@ -251,8 +258,8 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	if outputFlag != nil && outputFlag.Changed {
 		analytics.CustomDimensions.SetOutput(outputFlag.Value.String())
 	}
-	// "activate" GA events are handled in the runners, in order that we can add project ID as label
-	if cobraCmd.Name() != "activate" {
+	// Send  GA events unless they are handled in the runners...
+	if !c.deferAnalytics {
 		subCommandString := strings.Join(c.subcommandNames(), " ")
 		analytics.Event(analytics.CatRunCmd, subCommandString)
 	}
