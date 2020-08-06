@@ -140,7 +140,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchSimple() {
 	suite.PrepareActiveStateYAML(ts)
 
 	// Note that the expected strings might change due to inventory changes
-	cp := ts.Spawn("packages", "search", "request")
+	cp := ts.Spawn("packages", "search", "requests")
 	expectations := []string{
 		"Name",
 		"requests",
@@ -196,11 +196,10 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithLang() {
 	defer ts.Close()
 	suite.PrepareActiveStateYAML(ts)
 
-	cp := ts.Spawn("packages", "search", "moose", "--language=perl")
+	cp := ts.Spawn("packages", "search", "Moose", "--language=perl")
 	cp.Expect("Name")
-	cp.Expect("MooseX-Getopt")
-	cp.Expect("MooseX-Role-Parameterized")
-	cp.Expect("MooseX-Role-WithOverloading")
+	cp.Expect("Any-Moose")
+	cp.Expect("MooseFS")
 	cp.ExpectExitCode(0)
 }
 
