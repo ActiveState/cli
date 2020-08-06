@@ -1,4 +1,4 @@
-#@ def steps_genmasterversion():
+#@ def steps_genbaseversion():
 name: "Generate Version"
 shell: bash
 run: state run generate-master-version
