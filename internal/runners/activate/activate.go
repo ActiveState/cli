@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -59,6 +61,14 @@ func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc)
 			return err
 		}
 	}
+
+	// Send google analytics event with label set to project namespace
+	names, fail := project.ParseNamespaceOrConfigfile(params.Namespace.String(), filepath.Join(targetPath, constants.ConfigFileName))
+	if fail != nil {
+		names = &project.Namespaced{}
+		logging.Debug("error resolving namespace: %v", fail.ToError())
+	}
+	analytics.EventWithLabel(analytics.CatRunCmd, "activate", names.String())
 
 	// If we're not using plain output then we should just dump the environment information
 	if r.out.Type() != output.PlainFormatName {
