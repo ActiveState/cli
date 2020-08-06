@@ -98,7 +98,7 @@ func setup() {
 	installSource := strings.TrimSpace(string(installFileData))
 	if err != nil {
 		installSource = "unknown"
-		logging.Errorf("Could not read install file at path: %s, got error: %v", installFilePath, err)
+		logging.Debug("Could not read install file at path: %s, got error: %v", installFilePath, err)
 	}
 
 	CustomDimensions = &customDimensions{
