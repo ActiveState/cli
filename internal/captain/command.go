@@ -32,7 +32,7 @@ type Command struct {
 	deferAnalytics bool
 }
 
-func NewCommand(name, description string, flags []*Flag, args []*Argument, executor Executor, deferAnalytics ...bool) *Command {
+func NewCommand(name, description string, flags []*Flag, args []*Argument, executor Executor) *Command {
 	// Validate args
 	for idx, arg := range args {
 		if idx > 0 && arg.Required && !args[idx-1].Required {
@@ -65,10 +65,6 @@ func NewCommand(name, description string, flags []*Flag, args []*Argument, execu
 		// Silence errors and usage, we handle that ourselves
 		SilenceErrors: true,
 		SilenceUsage:  true,
-	}
-
-	if len(deferAnalytics) == 1 {
-		cmd.deferAnalytics = deferAnalytics[0]
 	}
 
 	if err := cmd.setFlags(flags); err != nil {
@@ -170,6 +166,10 @@ func (c *Command) Execute(args []string) error {
 
 func (c *Command) SetAliases(aliases ...string) {
 	c.cobra.Aliases = aliases
+}
+
+func (c *Command) SetDeferAnalytics(value bool) {
+	c.deferAnalytics = value
 }
 
 func (c *Command) SetDescription(description string) {

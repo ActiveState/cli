@@ -49,7 +49,7 @@ func newActivateCommand(prime *primer.Values) *captain.Command {
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run(&params)
 		},
-		true,
 	)
+	cmd.SetDeferAnalytics(true)
 	return cmd
 }
