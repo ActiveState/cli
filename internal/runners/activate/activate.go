@@ -65,6 +65,7 @@ func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc)
 	// Send google analytics event with label set to project namespace
 	names, fail := project.ParseNamespaceOrConfigfile(params.Namespace.String(), filepath.Join(targetPath, constants.ConfigFileName))
 	if fail != nil {
+		names = &project.Namespaced{}
 		logging.Debug("error resolving namespace: %v", fail.ToError())
 	}
 	analytics.EventWithLabel(analytics.CatRunCmd, "activate", names.String())
