@@ -270,7 +270,6 @@ func (suite *DeployIntegrationTestSuite) TestDeploySymlink() {
 	if runtime.GOOS == "linux" {
 		suite.True(fileutils.FileExists(filepath.Join(pathDir, "python3"+symlinkExt)), "Python3 symlink should have been written to PATH")
 	}
-	suite.True(fileutils.FileExists(filepath.Join(ts.Dirs.Work, "bin", "python3"+symlinkExt)), "Python3 symlink should have been written")
 }
 
 func (suite *DeployIntegrationTestSuite) TestDeployReport() {
