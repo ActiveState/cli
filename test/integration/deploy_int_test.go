@@ -162,6 +162,8 @@ func (suite *DeployIntegrationTestSuite) TestDeployPython() {
 		}
 	}()
 
+	fmt.Printf("binDir=%s, extraEnv=%+v\n", binDir, extraEnv)
+
 	ts := e2e.New(suite.T(), false, extraEnv...)
 	defer ts.Close()
 

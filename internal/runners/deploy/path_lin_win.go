@@ -3,6 +3,7 @@
 package deploy
 
 import (
+	"fmt"
 	"os"
 	"strings"
 
@@ -40,6 +41,7 @@ func usablePath() (string, error) {
 	}
 
 	if result != "" {
+		fmt.Printf("found usablePath at %s in %+v\n", result, paths)
 		return result, nil
 	}
 
