@@ -7,7 +7,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
-	"strings"
 	"testing"
 	"time"
 
@@ -63,16 +62,6 @@ func (suite *DeployIntegrationTestSuite) deploy(ts *e2e.Session, prj string) {
 		cp.Expect("restart")
 	}
 	cp.ExpectExitCode(0)
-}
-
-func cmdIfy(ts *e2e.Session, args ...string) *termtest.ConsoleProcess {
-	if runtime.GOOS != "windows" {
-		return ts.SpawnCmd(args[0], args[1:]...)
-	}
-
-	return ts.SpawnCmdWithOpts("cmd",
-		e2e.WithArgs("/c", strings.Join(args, " ")),
-		e2e.AppendEnv("PATHEXT=.COM;.EXE;.BAT;.LNK"))
 }
 
 func (suite *DeployIntegrationTestSuite) TestDeployPerl() {
