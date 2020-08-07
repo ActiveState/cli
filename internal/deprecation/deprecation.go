@@ -17,6 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	constvers "github.com/ActiveState/cli/internal/constants/version"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 )
@@ -130,9 +131,11 @@ func (checker *Checker) check(versionNumber string) (*Info, *failures.Failure) {
 }
 
 func (checker *Checker) shouldFetch() bool {
-	lastFetch := checker.config.GetTime(fetchKey)
-	if !lastFetch.IsZero() && time.Now().Before(lastFetch) {
-		return false
+	if fileutils.FileExists(checker.deprecationFile) {
+		lastFetch := checker.config.GetTime(fetchKey)
+		if !lastFetch.IsZero() && time.Now().Before(lastFetch) {
+			return false
+		}
 	}
 
 	checker.config.Set(fetchKey, time.Now().Add(15*time.Minute))
@@ -165,6 +168,7 @@ func (checker *Checker) fetchDeprecationInfoBody() (int, []byte, *failures.Failu
 
 func (checker *Checker) fetchDeprecationInfo() ([]Info, *failures.Failure) {
 	logging.Debug("Fetching deprecation information from S3")
+
 	code, body, fail := checker.fetchDeprecationInfoBody()
 	if fail != nil {
 		if fail.Type.Matches(FailTimeout) {
