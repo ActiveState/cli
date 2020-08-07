@@ -2,6 +2,7 @@ package integration
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -34,12 +35,14 @@ func (suite *DeployIntegrationTestSuite) deploy(ts *e2e.Session, prj string) {
 	var cp *termtest.ConsoleProcess
 	switch runtime.GOOS {
 	case "windows":
-		cp = ts.Spawn("deploy", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work)
+		cp = ts.SpawnWithOpts(
+			e2e.WithArgs("deploy", prj, "--path", ts.Dirs.Work),
+		)
 	case "darwin":
 		// On MacOS the command is the same as Linux, however some binaries
 		// already exist at /usr/local/bin so we use the --force flag
 		cp = ts.SpawnWithOpts(
-			e2e.WithArgs("deploy", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work, "--force"),
+			e2e.WithArgs("deploy", prj, "--path", ts.Dirs.Work, "--force"),
 			e2e.AppendEnv("SHELL=bash"),
 		)
 	default:
@@ -81,32 +84,81 @@ func (suite *DeployIntegrationTestSuite) TestDeployPerl() {
 		suite.T().Skip("Perl is not supported on Mac OS yet.")
 	}
 
-	ts := e2e.New(suite.T(), false)
+	binDir, extraEnv := suite.extraDeployEnvVars()
+	defer func() {
+		if binDir != "" {
+			os.RemoveAll(binDir)
+		}
+	}()
+
+	ts := e2e.New(suite.T(), false, extraEnv...)
 	defer ts.Close()
 
 	suite.deploy(ts, "ActiveState-CLI/Perl")
 
-	// Linux symlinks to /usr/local/bin, so we can verify right away
-	if runtime.GOOS == "linux" {
-		execPath, err := exec.LookPath("perl")
-		suite.Require().NoError(err)
-		link, err := os.Readlink(execPath)
-		suite.Require().NoError(err)
-		suite.Contains(link, ts.Dirs.Work, "python3 executable resolves to the one on our target dir")
+	suite.checkSymlink("perl", binDir, ts.Dirs.Work)
+
+	var cp *termtest.ConsoleProcess
+	if runtime.GOOS == "windows" {
+		cp = ts.SpawnCmdWithOpts(
+			"cmd.exe",
+			e2e.WithArgs("/k", filepath.Join(ts.Dirs.Work, "bin", "shell.bat")),
+			e2e.AppendEnv("PATHEXT=.COM;.EXE;.BAT;.LNK"),
+		)
+	} else {
+		cp = ts.SpawnCmdWithOpts("/bin/bash", e2e.AppendEnv("PROMPT_COMMAND="))
+		cp.SendLine(fmt.Sprintf("source %s\n", filepath.Join(ts.Dirs.Work, "bin", "shell.sh")))
 	}
 
 	// check that some of the installed binaries are use-able
-	cp := cmdIfy(ts, filepath.Join(ts.Dirs.Work, "bin", "perl"), "--version")
+	cp.SendLine("perl --version")
 	cp.Expect("This is perl 5")
-	cp.ExpectExitCode(0)
+	cp.SendLine("echo $?")
+	cp.Expect("0")
 
-	cp = cmdIfy(ts, filepath.Join(ts.Dirs.Work, "bin", "ptar"), "-h")
+	cp.SendLine("ptar -h")
 	cp.Expect("a tar-like program written in perl")
-	cp.Wait()
 
-	cp = cmdIfy(ts, filepath.Join(ts.Dirs.Work, "bin", "ppm"), "--version")
+	cp.SendLine("ppm --version")
 	cp.Expect("The Perl Package Manager (PPM) is no longer supported.")
+	cp.SendLine("echo $?")
+	cp.Expect("0")
+
+	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
+}
+
+func (suite *DeployIntegrationTestSuite) extraDeployEnvVars() (string, []string) {
+	if runtime.GOOS == "windows" {
+		return "", []string{"SHELL="}
+	}
+
+	binDir, err := ioutil.TempDir("", "")
+	suite.Require().NoError(err, "temporary bin directory")
+	oldPath, _ := os.LookupEnv("PATH")
+	modPath := fmt.Sprintf("%s%s%s", binDir, string(os.PathListSeparator), oldPath)
+	return binDir, []string{modPath, "SHELL=bash"}
+}
+
+func (suite *DeployIntegrationTestSuite) checkSymlink(name string, binDir, workDir string) {
+	// Linux symlinks to /usr/local/bin or the first write-able directory in PATH, so we can verify right away
+	if runtime.GOOS == "Linux" {
+		execPath, err := exec.LookPath(name)
+		// If not on PATH it needs to exist in the temporary directory
+		var execDir string
+		if err == nil {
+			execDir, _ = filepath.Split(execPath)
+		}
+		if err != nil || (execDir != "/usr/local/bin/" && execDir != "/usr/bin/") {
+			execPath = filepath.Join(binDir, name)
+			if !fileutils.FileExists(execPath) {
+				suite.Fail("Expected to find %s on PATH", name)
+			}
+		}
+		link, err := os.Readlink(execPath)
+		suite.Require().NoError(err)
+		suite.Contains(link, workDir, "%s executable resolves to the one on our target dir", name)
+	}
 }
 
 func (suite *DeployIntegrationTestSuite) TestDeployPython() {
@@ -114,36 +166,50 @@ func (suite *DeployIntegrationTestSuite) TestDeployPython() {
 		suite.T().Skipf("Skipping DeployIntegrationTestSuite when not running on CI, as it modifies bashrc/registry")
 	}
 
-	ts := e2e.New(suite.T(), false)
+	binDir, extraEnv := suite.extraDeployEnvVars()
+	defer func() {
+		if binDir != "" {
+			os.RemoveAll(binDir)
+		}
+	}()
+
+	ts := e2e.New(suite.T(), false, extraEnv...)
 	defer ts.Close()
 
 	suite.deploy(ts, "ActiveState-CLI/Python3")
 
-	// Linux symlinks to /usr/local/bin, so we can verify right away
-	if runtime.GOOS == "linux" {
-		execPath, err := exec.LookPath("python3")
-		suite.Require().NoError(err)
-		link, err := os.Readlink(execPath)
-		suite.Require().NoError(err)
-		suite.Contains(link, ts.Dirs.Work, "python3 executable resolves to the one on our target dir")
+	suite.checkSymlink("python3", binDir, ts.Dirs.Work)
+
+	var cp *termtest.ConsoleProcess
+	if runtime.GOOS == "windows" {
+		cp = ts.SpawnCmdWithOpts(
+			"cmd.exe",
+			e2e.WithArgs("/k", filepath.Join(ts.Dirs.Work, "bin", "shell.bat")),
+			e2e.AppendEnv("PATHEXT=.COM;.EXE;.BAT;.LNK"),
+		)
+	} else {
+		cp = ts.SpawnCmdWithOpts("/bin/bash", e2e.AppendEnv("PROMPT_COMMAND="))
+		cp.SendLine(fmt.Sprintf("source %s\n", filepath.Join(ts.Dirs.Work, "bin", "shell.sh")))
 	}
 
-	// check that some of the installed binaries are use-able
-	cp := cmdIfy(ts, filepath.Join(ts.Dirs.Work, "bin", "python3"), "--version")
+	cp.SendLine("python3 --version")
 	cp.Expect("Python 3")
-	cp.ExpectExitCode(0)
+	cp.SendLine("echo $?")
+	cp.Expect("0")
 
-	cp = cmdIfy(ts, filepath.Join(ts.Dirs.Work, "bin", "pip3"), "--version")
+	cp.SendLine("pip3 --version")
 	cp.Expect("pip")
-	cp.ExpectExitCode(0)
+	cp.SendLine("echo $?")
+	cp.Expect("0")
 
 	if runtime.GOOS == "darwin" {
 		// This is kept as a regression test, pyvenv used to have a relocation problem on MacOS
-		cp = cmdIfy(ts, filepath.Join(ts.Dirs.Work, "bin", "pyvenv"), "-h")
-		cp.ExpectExitCode(0)
+		cp.SendLine("pyvenv -h")
+		cp.SendLine("echo $?")
+		cp.Expect("0")
 	}
 
-	cp = cmdIfy(ts, filepath.Join(ts.Dirs.Work, "bin", "python3"), "-m", "pytest", "--version")
+	cp.SendLine("python3 -m pytest --version")
 	cp.Expect("This is pytest version")
 
 	if runtime.GOOS != "windows" {
@@ -152,6 +218,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployPython() {
 		cp.Expect(fmt.Sprintf("imported from %s", ts.Dirs.Work))
 	}
 
+	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 
 	suite.AssertConfig(ts)
@@ -243,7 +310,14 @@ func (suite *DeployIntegrationTestSuite) TestDeploySymlink() {
 		suite.T().Skipf("Skipping TestDeploySymlink when not running on CI, as it modifies PATH")
 	}
 
-	ts := e2e.New(suite.T(), false)
+	binDir, extraEnv := suite.extraDeployEnvVars()
+	defer func() {
+		if binDir != "" {
+			os.RemoveAll(binDir)
+		}
+	}()
+
+	ts := e2e.New(suite.T(), false, extraEnv...)
 	defer ts.Close()
 
 	// Install step is required
@@ -252,11 +326,9 @@ func (suite *DeployIntegrationTestSuite) TestDeploySymlink() {
 	cp.ExpectExitCode(1)
 	suite.InstallAndAssert(ts)
 
-	pathDir := fileutils.TempDirUnsafe()
 	if runtime.GOOS != "darwin" {
 		cp = ts.SpawnWithOpts(
 			e2e.WithArgs("deploy", "symlink", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work),
-			e2e.AppendEnv(fmt.Sprintf("PATH=%s", pathDir)), // Avoid conflicts
 		)
 	} else {
 		cp = ts.SpawnWithOpts(
@@ -267,9 +339,7 @@ func (suite *DeployIntegrationTestSuite) TestDeploySymlink() {
 	cp.Expect("Symlinking executables")
 	cp.ExpectExitCode(0)
 
-	if runtime.GOOS == "linux" {
-		suite.True(fileutils.FileExists(filepath.Join(pathDir, "python3"+symlinkExt)), "Python3 symlink should have been written to PATH")
-	}
+	suite.checkSymlink("python3", binDir, ts.Dirs.Work)
 }
 
 func (suite *DeployIntegrationTestSuite) TestDeployReport() {
@@ -304,6 +374,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployTwice() {
 	suite.InstallAndAssert(ts)
 
 	pathDir := fileutils.TempDirUnsafe()
+	defer os.RemoveAll(pathDir)
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("deploy", "symlink", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work),
 		e2e.AppendEnv(fmt.Sprintf("PATH=%s", pathDir)), // Avoid conflicts
