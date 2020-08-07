@@ -48,6 +48,11 @@ func CachePath() string {
 	return defaultConfig.CachePath()
 }
 
+// InstallSource returns the source of the State Tool installation
+func InstallSource() string {
+	return defaultConfig.InstallSource()
+}
+
 // Save the config state to the config file
 func Save() error {
 	return defaultConfig.Save()
