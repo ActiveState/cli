@@ -131,12 +131,15 @@ func (checker *Checker) check(versionNumber string) (*Info, *failures.Failure) {
 }
 
 func (checker *Checker) shouldFetch() bool {
+	if !fileutils.FileExists(checker.deprecationFile) {
+		return true
+	}
+
 	lastFetch := checker.config.GetTime(fetchKey)
-	if !lastFetch.IsZero() && time.Now().Before(lastFetch) && fileutils.FileExists(checker.deprecationFile) {
+	if !lastFetch.IsZero() && time.Now().Before(lastFetch) {
 		return false
 	}
 
-	checker.config.Set(fetchKey, time.Now().Add(15*time.Minute))
 	return true
 
 }
@@ -166,6 +169,8 @@ func (checker *Checker) fetchDeprecationInfoBody() (int, []byte, *failures.Failu
 
 func (checker *Checker) fetchDeprecationInfo() ([]Info, *failures.Failure) {
 	logging.Debug("Fetching deprecation information from S3")
+	checker.config.Set(fetchKey, time.Now().Add(15*time.Minute))
+
 	code, body, fail := checker.fetchDeprecationInfoBody()
 	if fail != nil {
 		if fail.Type.Matches(FailTimeout) {
