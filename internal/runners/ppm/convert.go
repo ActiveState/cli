@@ -4,7 +4,6 @@ import (
 	"github.com/skratchdot/open-golang/open"
 
 	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -86,7 +85,7 @@ func (r conversionResult) String() string {
 func (cf *ConversionFlow) runSurvey() (conversionResult, error) {
 	choices := []string{
 		convertAnswerCreate,
-		locale.Tl("ppm_convert_answer_why", "Why is this necessary? I Just want to manage packages."),
+		locale.Tl("ppm_convert_answer_why", "Why is this necessary? I Just want to manage dependencies"),
 	}
 	choice, fail := cf.prompt.Select(locale.Tt("ppm_convert_create_question"), choices, "")
 	if fail != nil {
@@ -105,7 +104,7 @@ func (cf *ConversionFlow) runSurvey() (conversionResult, error) {
 		return accepted, nil
 	}
 
-	return cf.explainVirtualEnv(false, false)
+	return cf.explainVirtualEnv()
 }
 
 func (cf *ConversionFlow) createVirtualEnv() error {
@@ -119,28 +118,13 @@ func (cf *ConversionFlow) createVirtualEnv() error {
 	return nil
 }
 
-func (cf *ConversionFlow) explainVirtualEnv(alreadySeenStateToolInfo bool, alreadySeenPlatformInfo bool) (conversionResult, error) {
-	stateToolInfo := locale.Tl("ppm_convert_why_state_tool_info", "Find out more about the State Tool")
-	platformInfo := locale.Tl("ppm_convert_why_platform_info", "Find out more about the ActiveState Platform")
-	no := locale.Tl("ppm_convert_why_no", "But I NEED package management on my global install!")
+func (cf *ConversionFlow) explainVirtualEnv() (conversionResult, error) {
+	no := locale.Tl("ppm_convert_why_no", "Best practices? No thanks")
 	var choices []string
 
-	// add choice to open State Tool marketing page (if not looked at before)
-	if !alreadySeenStateToolInfo {
-		choices = append(choices, stateToolInfo)
-	}
-	// add choice to open Platform marketing page (if not looked at before)
-	if !alreadySeenPlatformInfo {
-		choices = append(choices, platformInfo)
-	}
 	// always add choices to create virtual environment and to say no again
 	choices = append(choices, convertAnswerCreate, no)
 	explanation := locale.Tt("ppm_convert_explanation")
-
-	// do not repeat the explanation if the function is called a second time
-	if alreadySeenPlatformInfo || alreadySeenStateToolInfo {
-		explanation = ""
-	}
 
 	choice, fail := cf.prompt.Select(explanation, choices, "")
 	if fail != nil {
@@ -149,26 +133,16 @@ func (cf *ConversionFlow) explainVirtualEnv(alreadySeenStateToolInfo bool, alrea
 	cf.out.Print("") // Add some space before next prompt
 
 	eventChoices := map[string]string{
-		stateToolInfo:       "show-state-tool-info",
-		platformInfo:        "show-platform-info",
 		convertAnswerCreate: "create-virtual-env-2",
 		no:                  "still-wants-ppm",
 	}
 	analytics.EventWithLabel(analytics.CatPpmConversion, "selection", eventChoices[choice])
 
 	switch choice {
-	case stateToolInfo:
-		cf.openInBrowser(locale.Tl("state_tool_info", "State Tool information"), constants.StateToolMarketingPage)
-		// ask again
-		return cf.explainVirtualEnv(true, alreadySeenPlatformInfo)
-	case platformInfo:
-		cf.openInBrowser(locale.Tl("platform_info", "ActiveState Platform information"), constants.PlatformMarketingPage)
-		// ask again
-		return cf.explainVirtualEnv(alreadySeenStateToolInfo, true)
 	case convertAnswerCreate:
 		return accepted, nil
 	case no:
-		return cf.wantGlobalPackageManagement()
+		return cf.explainAskFeedback()
 	}
 	return canceled, nil
 }
@@ -186,13 +160,11 @@ func (cf *ConversionFlow) openInBrowser(what, url string) {
 	}
 }
 
-func (cf *ConversionFlow) wantGlobalPackageManagement() (conversionResult, error) {
+func (cf *ConversionFlow) explainAskFeedback() (conversionResult, error) {
 	ok := locale.Tl("ppm_convert_create_at_last", "Ok, let's set up a virtual runtime environment")
-	perlTooling := locale.Tl("ppm_convert_reject", "I'd rather use conventional Perl tooling.")
-	choices := []string{ok, perlTooling}
-	choice, fail := cf.prompt.Select(
-		locale.Tl("ppm_convert_cpan_info", "You can still use conventional Perl tooling like CPAN, CPANM etc. But you will miss out on the added benefits of the ActiveState Platform.\n"),
-		choices, "")
+	exit := locale.Tl("ppm_convert_reject", "Exit")
+	choices := []string{ok, exit}
+	choice, fail := cf.prompt.Select(locale.Tt("ppm_convert_ask_feedback"), choices, "")
 
 	if fail != nil {
 		return canceled, locale.WrapInputError(fail, "err_ppm_convert_final_chance_interrupt", "Invalid response received.")
@@ -201,18 +173,14 @@ func (cf *ConversionFlow) wantGlobalPackageManagement() (conversionResult, error
 	cf.out.Print("") // Add some space before next prompt
 
 	eventChoices := map[string]string{
-		ok:          "create-virtual-env-3",
-		perlTooling: "still-wants-perl-tooling",
+		ok:   "create-virtual-env-3",
+		exit: "exit",
 	}
 	analytics.EventWithLabel(analytics.CatPpmConversion, "selection", eventChoices[choice])
 
-	if choice == choices[0] {
+	if choice == ok {
 		return accepted, nil
 	}
-	cf.out.Print(locale.Tl(
-		"ppm_convert_reject_sorry",
-		"We're sorry we can't help any further. We'd love to hear more about your use case to see if we can better meet your needs. Please consider posting to our forum at {{.V0}}.",
-		constants.ForumsURL))
 
 	return rejected, nil
 }
