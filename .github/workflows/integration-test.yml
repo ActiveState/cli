@@ -44,6 +44,9 @@ jobs:
     - name: Build
       shell: bash
       run: state run build
+    - name: Generate Update
+      shell: bash
+      run: state run generate-update
     - name: Integration Tests
       shell: bash
       run: go test -timeout 20m ./test/integration -v

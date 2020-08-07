@@ -80,6 +80,7 @@ steps:
   - #@ steps_setup()
   - #@ steps_preprocess()
   - #@ steps_build()
+  - #@ steps_genupdate()
   - #@ steps_inttest()
 #@ end
 
