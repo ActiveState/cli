@@ -39,7 +39,7 @@ func (suite *UpdateIntegrationTestSuite) env(disableUpdates bool) []string {
 
 func (suite *UpdateIntegrationTestSuite) versionCompare(ts *e2e.Session, disableUpdates bool, expected string, matcher matcherFunc) {
 	cp := ts.SpawnWithOpts(e2e.WithArgs("--version"), e2e.AppendEnv(suite.env(disableUpdates)...), e2e.ReUseExecutable())
-	cp.Expect("ActiveState CLI by ActiveState Software Inc.")
+	cp.Expect("ActiveState CLI")
 	cp.Expect("Revision")
 	cp.ExpectExitCode(0)
 	regex := regexp.MustCompile(`\d+\.\d+\.\d+-(SHA)?[a-f0-9]+`)
@@ -75,7 +75,7 @@ func (suite *UpdateIntegrationTestSuite) TestAutoUpdateNoPermissions() {
 
 	cp := ts.SpawnWithOpts(e2e.WithArgs("--version"), e2e.AppendEnv(suite.env(false)...), e2e.NonWriteableBinDir())
 	cp.Expect("Could not update to the latest available version of the state tool due to insufficient permissions")
-	cp.Expect("ActiveState CLI by ActiveState Software Inc.")
+	cp.Expect("ActiveState CLI")
 	cp.Expect("Revision")
 	cp.ExpectExitCode(0)
 	regex := regexp.MustCompile(`\d+\.\d+\.\d+-(SHA)?[a-f0-9]+`)
