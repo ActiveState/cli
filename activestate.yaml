@@ -52,7 +52,7 @@ scripts:
     language: bash
     description: Generate version file
     value: |
-      mkdir -p build/
+      mkdir -p build/update
       wget -O build/update/version.json https://s3.ca-central-1.amazonaws.com/cli-update/update/state/version.json
   - name: generate-update
     language: bash
