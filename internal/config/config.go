@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path/filepath"
-	"strings"
 
 	"github.com/ActiveState/cli/internal/condition"
 	C "github.com/ActiveState/cli/internal/constants"
@@ -52,13 +50,7 @@ func CachePath() string {
 
 // InstallSource returns the source of the State Tool installation
 func InstallSource() string {
-	installFilePath := filepath.Join(ConfigPath(), "installsource.txt")
-	installFileData, err := ioutil.ReadFile(installFilePath)
-	installSource := strings.TrimSpace(string(installFileData))
-	if err != nil {
-		installSource = "unknown"
-	}
-	return installSource
+	return defaultConfig.InstallSource()
 }
 
 // Save the config state to the config file
