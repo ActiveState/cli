@@ -52,10 +52,8 @@ scripts:
     language: bash
     description: Generate version file
     value: |
-      set -e
-      $constants.SET_ENV
       mkdir -p build/
-      go run scripts/version-generator/main.go build/update
+      wget -O build/update/version.json https://s3.ca-central-1.amazonaws.com/cli-update/update/state/version.json
   - name: generate-update
     language: bash
     description: Generate update files
