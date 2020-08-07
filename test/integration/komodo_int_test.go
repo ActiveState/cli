@@ -58,7 +58,7 @@ func (suite *ExportIntegrationTestSuite) TestExport_EditorV0() {
 	cp := ts.Spawn("export", "jwt", "--output", "editor.v0")
 	cp.ExpectExitCode(0)
 	jwtRe := regexp.MustCompile("^[A-Za-z0-9-_=]+\\.[A-Za-z0-9-_=]+\\.?[A-Za-z0-9-_.+/=]*$")
-	suite.True(jwtRe.Match([]byte(cp.TrimmedSnapshot())))
+	suite.True(jwtRe.Match([]byte(cp.TrimmedSnapshot())), "did not match jwt in %s", cp.TrimmedSnapshot())
 }
 
 func (suite *ForkIntegrationTestSuite) TestFork_EditorV0() {
