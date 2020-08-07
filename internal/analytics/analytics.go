@@ -2,9 +2,6 @@ package analytics
 
 import (
 	"fmt"
-	"io/ioutil"
-	"path/filepath"
-	"strings"
 
 	ga "github.com/ActiveState/go-ogle-analytics"
 	"github.com/ActiveState/sysinfo"
@@ -93,21 +90,13 @@ func setup() {
 		logging.SendToRollbarWhenReady("warning", fmt.Sprintf("Cannot detect the OS version: %v", err))
 	}
 
-	installFilePath := filepath.Join(config.ConfigPath(), "installsource.txt")
-	installFileData, err := ioutil.ReadFile(installFilePath)
-	installSource := strings.TrimSpace(string(installFileData))
-	if err != nil {
-		installSource = "unknown"
-		logging.Debug("Could not read install file at path: %s, got error: %v", installFilePath, err)
-	}
-
 	CustomDimensions = &customDimensions{
 		version:       constants.Version,
 		branchName:    constants.BranchName,
 		userID:        userIDString,
 		osName:        osName,
 		osVersion:     osVersion,
-		installSource: installSource,
+		installSource: config.InstallSource(),
 	}
 
 	client.ClientID(id)
