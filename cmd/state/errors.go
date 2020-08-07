@@ -40,7 +40,7 @@ func unwrapError(err error) (int, error) {
 		logging.Error("Returning error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
 	}
 
-	// unwrap exit code before we remove un-localized
+	// unwrap exit code before we remove un-localized wrapped errors from err variable
 	code := unwrapExitCode(err)
 
 	if locale.IsError(err) {
