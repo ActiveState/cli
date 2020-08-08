@@ -252,6 +252,7 @@ jobs:
       env:
         INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
         INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
+        PLATFORM_API_KEY: ${{ secrets.PLATFORM_API_KEY }}
   deploy:
     name: Deploy
     needs:
@@ -286,6 +287,7 @@ jobs:
       shell: bash
       run: |
         cd build
+        rm -Rf session-shared-build
         find . -mindepth 2 -maxdepth 2 -print0 | xargs -0 -I file rsync -av file .
         rm -Rf session*
     - name: Preprocess

@@ -88,6 +88,7 @@ run: SHELL='' go test -timeout 20m ./test/integration -v
 env:
   INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
   INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
+  PLATFORM_API_KEY: ${{ secrets.PLATFORM_API_KEY }}
 #@ end
 ---
 #@ def steps_uploadsharedartifacts():
