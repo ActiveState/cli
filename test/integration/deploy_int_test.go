@@ -204,7 +204,8 @@ func (suite *DeployIntegrationTestSuite) TestDeployPython() {
 	if runtime.GOOS != "windows" {
 		// AzureCI has multiple representations for the work directory that
 		// may not agree when running tests
-		cp.Expect(fmt.Sprintf("imported from %s", ts.Dirs.Work))
+		cp.Expect("imported from")
+		cp.Expect(ts.Dirs.Work)
 	}
 
 	cp.SendLine("exit")
