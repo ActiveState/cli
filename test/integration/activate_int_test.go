@@ -2,6 +2,7 @@ package integration
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
@@ -170,12 +171,13 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
+	path, _ := os.LookupEnv("PATH")
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("activate", "ActiveState-CLI/Perl"),
 		e2e.AppendEnv(
 			"ACTIVESTATE_CLI_DISABLE_RUNTIME=false",
 			// add PATH to state tool executable
-			fmt.Sprintf("PATH=%s", ts.Dirs.Bin),
+			fmt.Sprintf("PATH=%s%s%s", ts.Dirs.Bin, string(os.PathListSeparator), path),
 		),
 	)
 	cp.Expect("Where would you like to checkout")
