@@ -125,7 +125,7 @@ func (suite *DeployIntegrationTestSuite) extraDeployEnvVars() (string, []string)
 	binDir, err := ioutil.TempDir("", "")
 	suite.Require().NoError(err, "temporary bin directory")
 	oldPath, _ := os.LookupEnv("PATH")
-	modPath := fmt.Sprintf("%s%s%s", binDir, string(os.PathListSeparator), oldPath)
+	modPath := fmt.Sprintf("PATH=%s%s%s", binDir, string(os.PathListSeparator), oldPath)
 	return binDir, []string{modPath, "SHELL=bash"}
 }
 
@@ -161,8 +161,6 @@ func (suite *DeployIntegrationTestSuite) TestDeployPython() {
 			os.RemoveAll(binDir)
 		}
 	}()
-
-	fmt.Printf("binDir=%s, extraEnv=%+v\n", binDir, extraEnv)
 
 	ts := e2e.New(suite.T(), false, extraEnv...)
 	defer ts.Close()
