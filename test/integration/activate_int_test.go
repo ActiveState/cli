@@ -172,7 +172,11 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
 
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("activate", "ActiveState-CLI/Perl"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.AppendEnv(
+			"ACTIVESTATE_CLI_DISABLE_RUNTIME=false",
+			// add PATH to state tool executable
+			fmt.Sprintf("PATH=%s", ts.Dirs.Bin),
+		),
 	)
 	cp.Expect("Where would you like to checkout")
 	cp.SendLine(cp.WorkDirectory())
