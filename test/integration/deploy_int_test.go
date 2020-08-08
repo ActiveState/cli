@@ -53,7 +53,9 @@ func (suite *DeployIntegrationTestSuite) deploy(ts *e2e.Session, prj string) {
 
 	cp.Expect("Installing", 20*time.Second)
 	cp.Expect("Configuring", 20*time.Second)
-	cp.Expect("Symlinking", 30*time.Second)
+	if runtime.GOOS != "windows" {
+		cp.Expect("Symlinking", 30*time.Second)
+	}
 	cp.Expect("Deployment Information", 60*time.Second)
 	cp.Expect(filepath.Join(ts.Dirs.Work, "target")) // expect bin dir
 	if runtime.GOOS == "windows" {
@@ -329,7 +331,9 @@ func (suite *DeployIntegrationTestSuite) TestDeploySymlink() {
 		)
 	}
 
-	cp.Expect("Symlinking executables")
+	if runtime.GOOS != "windows" {
+		cp.Expect("Symlinking executables")
+	}
 	cp.ExpectExitCode(0)
 
 	suite.checkSymlink("python3", binDir, filepath.Join(ts.Dirs.Work, "target"))
@@ -374,7 +378,10 @@ func (suite *DeployIntegrationTestSuite) TestDeployTwice() {
 	)
 	cp.ExpectExitCode(0)
 
-	suite.True(fileutils.FileExists(filepath.Join(ts.Dirs.Work, "target", "bin", "python3"+symlinkExt)), "Python3 symlink should have been written")
+	// we do not symlink on windows anymore
+	if runtime.GOOS != "windows" {
+		suite.True(fileutils.FileExists(filepath.Join(ts.Dirs.Work, "target", "bin", "python3"+symlinkExt)), "Python3 symlink should have been written")
+	}
 
 	// Running deploy a second time should not cause any errors (cache is properly picked up)
 	cpx := ts.SpawnWithOpts(
