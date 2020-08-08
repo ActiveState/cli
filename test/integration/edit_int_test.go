@@ -77,6 +77,9 @@ func (suite *EditIntegrationTestSuite) TestEdit() {
 }
 
 func (suite *EditIntegrationTestSuite) TestEdit_NonInteractive() {
+	if runtime.GOOS == "windows" && e2e.RunningOnCI() {
+		suite.T().Skip("Windows CI does not support ctrl-c interrupts.")
+	}
 	ts, env := suite.setup()
 	defer ts.Close()
 	extraEnv := e2e.AppendEnv("ACTIVESTATE_NONINTERACTIVE=true")
