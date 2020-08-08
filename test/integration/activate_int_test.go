@@ -253,6 +253,9 @@ func (suite *ActivateIntegrationTestSuite) TestInit_Activation_NoCommitID() {
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivate_InterruptedInstallation() {
+	if runtime.GOOS == "windows" && e2e.RunningOnCI() {
+		suite.T().Skip("interrupting installation does not work on Windows on CI")
+	}
 	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
 
@@ -262,8 +265,13 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_InterruptedInstallation(
 	// interrupting installation
 	cp.SendCtrlC()
 	cp.ExpectNotExitCode(0)
+}
 
-	cp = ts.SpawnWithOpts(
+func (suite *ActivateIntegrationTestSuite) TestActivate_FromCache() {
+	ts := e2e.New(suite.T(), true)
+	defer ts.Close()
+
+	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("activate", "ActiveState-CLI/small-python", "--path", ts.Dirs.Work),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
