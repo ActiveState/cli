@@ -7,6 +7,7 @@ import (
 	"github.com/ActiveState/sysinfo"
 
 	"github.com/ActiveState/cli/internal/condition"
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -36,12 +37,13 @@ const CatPPMShimCmd = "ppm-shim"
 const CatTutorial = "tutorial"
 
 type customDimensions struct {
-	version    string
-	branchName string
-	userID     string
-	output     string
-	osName     string
-	osVersion  string
+	version       string
+	branchName    string
+	userID        string
+	output        string
+	osName        string
+	osVersion     string
+	installSource string
 }
 
 func (d *customDimensions) SetOutput(output string) {
@@ -58,6 +60,7 @@ func (d *customDimensions) toMap() map[string]string {
 		"5": d.output,
 		"6": d.osName,
 		"7": d.osVersion,
+		"8": d.installSource,
 	}
 }
 
@@ -94,11 +97,12 @@ func setup() {
 	}
 
 	CustomDimensions = &customDimensions{
-		version:    constants.Version,
-		branchName: constants.BranchName,
-		userID:     userIDString,
-		osName:     osName,
-		osVersion:  osVersion,
+		version:       constants.Version,
+		branchName:    constants.BranchName,
+		userID:        userIDString,
+		osName:        osName,
+		osVersion:     osVersion,
+		installSource: config.InstallSource(),
 	}
 
 	client.ClientID(id)

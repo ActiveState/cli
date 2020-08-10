@@ -128,7 +128,9 @@ confirm_update_locked_version_prompt:
   other: "You ran update from a project directory with a locked State Tool version. This will update the version that your project is locked to. Are you sure you want to do this?"
 version_info:
   other: |
-    ActiveState CLI version {{.Version}}
+    ActiveState CLI by ActiveState Software Inc.
+    License {{.License}}
+    Version {{.Version}}
     Revision {{.Revision}}
     Branch {{.Branch}}
     Built {{.Date}}
@@ -1662,3 +1664,5 @@ ppm_convert_ask_feedback:
     We understand your need to do things traditionally, but we currently do not support it. We'd love to hear more about
     your use case to see if we can better meet your needs. Please consider posting to our forum at {{.V0}}.
     [[BR]]
+    To create another project run `state init`, or if you want to find out more about the State Tool and what it can do
+    run `state --help` or check out {{.Docs}}

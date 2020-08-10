@@ -72,7 +72,14 @@
 		<RegistrySearch Id="RememberShortcutProperty" Root="HKLM" Key="SOFTWARE\[Manufacturer]\[ProductName]" Name="ShortcutDir" Type="raw" />
 	</Property>
 
-		<Property Id="MSIUSEREALADMINDETECTION" Value="1" />
+    <!-- Find the default browser to open the release pages in -->
+    <Property Id="BROWSER">
+      <RegistrySearch Id='DefaultBrowser' Type='raw' Root='HKCR' Key='http\shell\open\command' />
+    </Property>
+
+    <Property Id="STATE_TOOL_WIZARD_CHECK_BOX" Value="1"></Property>
+
+    <Property Id="MSIUSEREALADMINDETECTION" Value="1" />
 
 		<UI Id="WixUI_InstallDir">
 			<TextStyle Id="WixUI_Font_Normal" FaceName="Tahoma" Size="8" />
@@ -100,6 +107,8 @@
 			<Publish Dialog="BrowseDlg" Control="OK" Event="SpawnDialog" Value="InvalidDirDlg" Order="4"><![CDATA[NOT WIXUI_DONTVALIDATEPATH AND WIXUI_INSTALLDIR_VALID<>"1"]]></Publish>
 
 			<Publish Dialog="CustomExitDialog" Control="Finish2" Event="EndDialog" Value="Return" Order="999">1</Publish>
+      <Publish Dialog="CustomExitDialog" Control="Finish2" Event="DoAction" Value="LaunchStateToolWizard">STATE_TOOL_WIZARD_CHECK_BOX=1 and NOT Installed</Publish>
+      <Publish Dialog="CustomExitDialog" Control="Finish2" Event="DoAction" Value="LaunchReleaseNotes">STATE_TOOL_WIZARD_REL_NOTES_CHECK_BOX=1 and NOT Installed</Publish>
 
 			<Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="PrivacyConsentDlg">NOT Installed</Publish>
 			<Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="VerifyReadyDlg">Installed AND PATCH</Publish>
@@ -136,15 +145,18 @@
 
 		</UI>
 
-		<UIRef Id="WixUI_Common" />
+    <CustomAction Id="LaunchStateToolWizard" Execute="immediate" Directory="INSTALLDIR" ExeCommand="cmd.exe /k [STATE_TOOL_PATH] tutorial new-project" Impersonate="yes" Return="asyncNoWait" />
+    <CustomAction Id='LaunchReleaseNotes' Execute="immediate" Directory="INSTALLDIR" ExeCommand="explorer.exe [REL_NOTES]" Impersonate="yes" Return="asyncNoWait" />
+
+    <UIRef Id="WixUI_Common" />
     <UIRef Id="CustomUI_PrivacyConsent" />
 
 		<Property Id="IS_MODIFY" Value="false" />
 
 		<InstallUISequence>
-			<Custom Action="StateCommandExists" After="CostFinalize">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
-			<Custom Action="SetIsModify" After="StateCommandExists">(Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL"</Custom>
-			<Custom Action="SetInstallDirOnModify" After="SetIsModify">(Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL"</Custom>
+			<Custom Action="StateCommandExists" After="CostFinalize">NOT Installed OR (Installed AND NOT (REMOVE~="ALL"))</Custom>
+			<Custom Action="SetIsModify" After="StateCommandExists">(Installed AND NOT (REMOVE~="ALL"))</Custom>
+			<Custom Action="SetInstallDirOnModify" After="SetIsModify">(Installed AND NOT (REMOVE~="ALL"))</Custom>
     </InstallUISequence>
 
     <CustomAction Id="SetIsModify" Property="IS_MODIFY" Value="true" />
@@ -153,7 +165,7 @@
 
 		<Property Id="STATE_TOOL_PATH" Value="state.exe" />
 
-		<CustomAction Id="SetStateDeployPropertyValues" Property="StateDeploy" Value="INSTALLDIR=[INSTALLDIR];PROJECT_OWNER_AND_NAME=[PROJECT_OWNER_AND_NAME];IS_MODIFY=[IS_MODIFY];STATE_TOOL_INSTALLED=[STATE_TOOL_INSTALLED];STATE_TOOL_PATH=[STATE_TOOL_PATH];AS_USERNAME=[AS_USERNAME];AS_PASSWORD=[AS_PASSWORD];AS_TOTP=[AS_TOTP]" />
+		<CustomAction Id="SetStateDeployPropertyValues" Property="StateDeploy" Value="INSTALLDIR=[INSTALLDIR];PROJECT_OWNER_AND_NAME=[PROJECT_OWNER_AND_NAME];IS_MODIFY=[IS_MODIFY];STATE_TOOL_INSTALLED=[STATE_TOOL_INSTALLED];STATE_TOOL_PATH=[STATE_TOOL_PATH];AS_USERNAME=[AS_USERNAME];AS_PASSWORD=[AS_PASSWORD];AS_TOTP=[AS_TOTP];UI_LEVEL=[UILevel]" />
 		<CustomAction Id="SetUninstallProperties" Property="Uninstall" Value="PRESET=[PRESET];REMEMBER=[REMEMBER];REMEMBER_SHORTCUTDIR=[REMEMBER_SHORTCUTDIR]" />
 		<CustomAction Id="SetPresetInfo" Property="Preset" Value="REL_NOTES=[REL_NOTES];INSTALLDIR=[INSTALLDIR];APP_START_MENU_PATH=[ApplicationProgramsFolder];PRESET=[PRESET]" />
 		<CustomAction Id="SetRollbackPropertyValues" Property="Rollback" Value="STATE_TOOL_INSTALLED=[STATE_TOOL_INSTALLED];INSTALLDIR=[INSTALLDIR]" />
@@ -178,15 +190,15 @@
 		<CustomAction Id="Uninstall" Impersonate="no" BinaryKey="UninstallCA" DllEntry="Uninstall" Execute="deferred" Return="check" />
 
 		<InstallExecuteSequence>
-			<Custom Action="Status" After="InstallInitialize">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
-			<Custom Action="SetRollbackPropertyValues" After="Status">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
-			<Custom Action="SetStateDeployPropertyValues" After="SetRollbackPropertyValues">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
-			<Custom Action="Rollback" After="SetStateDeployPropertyValues">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
-			<Custom Action="StateDeploy" After="Rollback">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
-			<Custom Action="SetPresetInfo" After="CreateShortcuts">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
-			<Custom Action="Preset" After="SetPresetInfo">NOT Installed OR ((Installed AND NOT REINSTALL) AND NOT REMOVE~="ALL")</Custom>
-			<Custom Action="SetUninstallProperties" After="RemoveFiles">REMOVE="ALL"</Custom>
-			<Custom Action="Uninstall" After="SetUninstallProperties">REMOVE="ALL"</Custom>
+			<Custom Action="Status" After="InstallInitialize">NOT Installed OR (Installed AND NOT (REMOVE~="ALL"))</Custom>
+			<Custom Action="SetRollbackPropertyValues" After="Status">NOT Installed OR (Installed AND NOT (REMOVE~="ALL"))</Custom>
+			<Custom Action="SetStateDeployPropertyValues" After="SetRollbackPropertyValues">NOT Installed OR (Installed AND NOT (REMOVE~="ALL"))</Custom>
+			<Custom Action="Rollback" After="SetStateDeployPropertyValues">NOT Installed OR (Installed AND NOT (REMOVE~="ALL"))</Custom>
+			<Custom Action="StateDeploy" After="Rollback">NOT Installed OR (Installed AND NOT (REMOVE~="ALL"))</Custom>
+			<Custom Action="SetPresetInfo" After="CreateShortcuts">NOT Installed OR (Installed AND NOT (REMOVE~="ALL"))</Custom>
+			<Custom Action="Preset" After="SetPresetInfo">NOT Installed OR (Installed AND NOT (REMOVE~="ALL"))</Custom>
+			<Custom Action="SetUninstallProperties" After="RemoveFiles">REMOVE~="ALL"</Custom>
+			<Custom Action="Uninstall" After="SetUninstallProperties">REMOVE~="ALL"</Custom>
 		</InstallExecuteSequence>
 	</Product>
 </Wix>

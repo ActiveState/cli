@@ -9,6 +9,9 @@ const LibraryOwner = "ActiveState"
 // LibraryNamespace is the namespace that the library belongs to
 const LibraryNamespace = "github.com/ActiveState/"
 
+// LibraryLicense is the license that the library is distributed under.
+const LibraryLicense = "BSD 3"
+
 // CommandName holds the name of our command
 const CommandName = "state"
 

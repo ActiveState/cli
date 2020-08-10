@@ -1,9 +1,11 @@
 package logging
 
 import (
+	"fmt"
 	"log"
 	"runtime"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/rollbar/rollbar-go"
 )
@@ -20,8 +22,9 @@ func SetupRollbar() {
 	if _, ok := rollbar.Custom()["UserID"]; !ok {
 		UpdateRollbarPerson("unknown", "unknown", "unknown")
 	}
+	fmt.Println("Using install source: ", config.InstallSource())
 	rollbar.SetToken(constants.RollbarToken)
-	rollbar.SetEnvironment(constants.BranchName)
+	rollbar.SetEnvironment(fmt.Sprintf("%s-%s", constants.BranchName, config.InstallSource()))
 	rollbar.SetCodeVersion(constants.RevisionHash)
 	rollbar.SetServerRoot("github.com/ActiveState/cli")
 	rollbar.SetLogger(&rollbar.SilentClientLogger{})

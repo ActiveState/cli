@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-openapi/strfmt"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/download"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
@@ -17,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/project"
 )
 
 // ensure that Downloader implements the Download interface
@@ -182,6 +184,13 @@ func (r *Download) FetchArtifacts() (*FetchArtifactsResult, *failures.Failure) {
 
 		case <-buildStatus.Started:
 			logging.Debug("BuildStarted")
+			namespaced := project.Namespaced{
+				Owner:   r.owner,
+				Project: r.projectName,
+			}
+			analytics.EventWithLabel(
+				analytics.CatBuild, analytics.ActBuildProject, namespaced.String(),
+			)
 			return result, FailBuildInProgress.New(locale.Tr("build_status_in_progress", r.projectURL()))
 
 		case fail := <-buildStatus.RunFail:
