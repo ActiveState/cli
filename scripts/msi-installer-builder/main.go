@@ -9,6 +9,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/google/uuid"
 )
 
@@ -42,6 +43,7 @@ type config struct {
 	ID                  string
 	ProjectName         string
 	Version             string
+	CommitID            string
 	ReleaseNotes        string
 	Icon                string
 	ProjectOwnerAndName string
@@ -100,6 +102,8 @@ func normalize(preset languagePreset, c *config) (*config, error) {
 	c.ProjectName = parts[1]
 	c.ID = seededUUID(c.ProjectOwnerAndName)
 
+	c.CommitID = constants.RevisionHash
+
 	ic, err := icon(preset)
 	if err != nil {
 		return c, err
@@ -124,6 +128,7 @@ func baseConfig() *config {
 		Icon:                "./assets/as.ico",
 		Preset:              Unknown.String(),
 		Visibility:          "Public",
+		CommitID:            constants.RevisionHash,
 		ProjectOwnerAndName: pad("PROJECT_OWNER_AND_NAME"),
 		ReleaseNotes:        pad("RELEASE_NOTES"),
 		ProjectName:         pad("PROJECT_NAME"),

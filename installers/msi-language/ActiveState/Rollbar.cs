@@ -20,14 +20,19 @@ namespace ActiveState
         /// <summary>
         /// Configures the Rollbar singleton-like notifier.
         /// </summary>
-        public static void ConfigureRollbarSingleton()
+        public static void ConfigureRollbarSingleton(string codeVersion)
         {
             const string rollbarAccessToken = "72be571d37fa4e54ac487f7d8d78a83f";
             const string rollbarEnvironment = "production";
 
-            var config = new RollbarConfig(rollbarAccessToken) // minimally required Rollbar configuration
+            var config = new RollbarConfig // minimally required Rollbar configuration
             {
+                AccessToken = rollbarAccessToken,
                 Environment = rollbarEnvironment,
+                Transform = payload =>
+                {
+                    payload.Data.CodeVersion = codeVersion;
+                }
             };
 
             RollbarLocator.RollbarInstance

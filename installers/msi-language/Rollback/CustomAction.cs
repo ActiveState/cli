@@ -12,7 +12,7 @@ namespace Rollback
         {
             session.Log("Begin rollback of state tool installation and deploy");
 
-            ActiveState.RollbarHelper.ConfigureRollbarSingleton();
+            ActiveState.RollbarHelper.ConfigureRollbarSingleton(session.CustomActionData["COMMIT_ID"]);
 
             RollbackStateToolInstall(session);
             RollbackDeploy(session);

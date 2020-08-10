@@ -35,7 +35,7 @@ namespace Uninstall
         [CustomAction]
         public static ActionResult Uninstall(Session session)
         {
-            ActiveState.RollbarHelper.ConfigureRollbarSingleton();
+            ActiveState.RollbarHelper.ConfigureRollbarSingleton(session.CustomActionData["COMMIT_ID"]);
 
             session.Log("Begin uninstallation");
 
