@@ -162,7 +162,7 @@ func (ar *AlternativeRuntime) IsInstalled() bool {
 }
 
 func (ar *AlternativeRuntime) downloadDirectory(artf *HeadChefArtifact) string {
-	return filepath.Join(ar.runtimeDir, "artifacts", hash.ShortHash(artf.ArtifactID.String()))
+	return filepath.Join(ar.runtimeDir, constants.LocalRuntimeEnvironmentDirectory, "artifacts", hash.ShortHash(artf.ArtifactID.String()))
 }
 
 // DownloadDirectory returns the local directory where the artifact files should
@@ -268,7 +268,10 @@ func (ar *AlternativeRuntime) PostUnpackArtifact(artf *HeadChefArtifact, tmpRunt
 	}
 
 	if err := os.RemoveAll(tmpRuntimeDir); err != nil {
-		logging.Error("removing %s after unpacking runtime: %v", tmpRuntimeDir, err)
+		logging.Error("removing tmpdir %s after unpacking runtime: %v", tmpRuntimeDir, err)
+	}
+	if err := os.Remove(archivePath); err != nil {
+		logging.Error("removing archive %s after unpacking runtime: %v", archivePath, err)
 	}
 	return nil
 }
