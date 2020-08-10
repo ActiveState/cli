@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/blang/semver"
+	goversion "github.com/hashicorp/go-version"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -77,10 +77,10 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_update() {
 	// assert that version number increased at least 3.8.1
 	output := cp.MatchState().TermState.StringBeforeCursor()
 	vs := versionRe.FindString(output)
-	v, err := semver.Parse(vs)
+	v, err := goversion.NewVersion(vs)
 	suite.Require().NoError(err, "parsing version %s", vs)
-	minVersion := semver.MustParse("3.8.1")
-	suite.True(v.GTE(minVersion), "%v >= 3.8.1", v)
+	minVersion := goversion.Must(goversion.NewVersion("3.8.1"))
+	suite.True(!v.LessThan(minVersion), "%v >= 3.8.1", v)
 }
 
 func (suite *LanguagesIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session) {

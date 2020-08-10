@@ -77,6 +77,9 @@ func (suite *EditIntegrationTestSuite) TestEdit() {
 }
 
 func (suite *EditIntegrationTestSuite) TestEdit_NonInteractive() {
+	if runtime.GOOS == "windows" && e2e.RunningOnCI() {
+		suite.T().Skip("Windows CI does not support ctrl-c interrupts.")
+	}
 	ts, env := suite.setup()
 	defer ts.Close()
 	extraEnv := e2e.AppendEnv("ACTIVESTATE_NONINTERACTIVE=true")
@@ -105,7 +108,9 @@ func (suite *EditIntegrationTestSuite) TestEdit_UpdateCorrectPlatform() {
 	pj, fail := project.FromPath(ts.Dirs.Work)
 	suite.Require().NoError(fail.ToError())
 
-	suite.Contains(pj.ScriptByName("test-script"), "more info!", "Output of edit command:\n%s", cp.Snapshot())
+	s := pj.ScriptByName("test-script")
+	suite.Require().NotNil(s, "test-script should not be empty")
+	suite.Contains(s.Value(), "more info!", "Output of edit command:\n%s", cp.Snapshot())
 }
 
 func TestEditIntegrationTestSuite(t *testing.T) {

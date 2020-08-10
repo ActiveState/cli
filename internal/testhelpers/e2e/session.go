@@ -81,7 +81,7 @@ func (s *Session) executablePath() string {
 	return exec
 }
 
-func New(t *testing.T, retainDirs bool) *Session {
+func New(t *testing.T, retainDirs bool, extraEnv ...string) *Session {
 	dirs, err := NewDirs("")
 	require.NoError(t, err)
 	var env []string
@@ -93,6 +93,11 @@ func New(t *testing.T, retainDirs bool) *Session {
 		"ACTIVESTATE_CLI_DISABLE_RUNTIME=true",
 		"ACTIVESTATE_PROJECT=",
 	}...)
+	// add bin path
+	oldPath, _ := os.LookupEnv("PATH")
+	env = append(env, fmt.Sprintf("PATH=%s%s%s", dirs.Bin, string(os.PathListSeparator), oldPath))
+	// add session environment variables
+	env = append(env, extraEnv...)
 
 	return &Session{Dirs: dirs, env: env, retainDirs: retainDirs, t: t}
 }

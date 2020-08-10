@@ -11,7 +11,8 @@ import (
 	"github.com/thoas/go-funk"
 )
 
-// usablePath will find a writable directory under PATH
+// usablePath will find the first writable directory under PATH
+// If on PATH and writable /usr/local/bin or /usr/bin are returned
 func usablePath() (string, error) {
 	paths := strings.Split(os.Getenv("PATH"), string(os.PathListSeparator))
 	if len(paths) == 0 {
@@ -28,11 +29,14 @@ func usablePath() (string, error) {
 			continue
 		}
 
-		// Record result
+		// check for preferred PATHs
 		if funk.Contains(preferredPaths, path) {
 			return path, nil
 		}
-		result = path
+		// use the first available directory in PATH
+		if result == "" {
+			result = path
+		}
 	}
 
 	if result != "" {
