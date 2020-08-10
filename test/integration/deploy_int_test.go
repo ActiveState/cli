@@ -2,7 +2,6 @@ package integration
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -75,19 +74,13 @@ func (suite *DeployIntegrationTestSuite) TestDeployPerl() {
 		suite.T().Skip("Perl is not supported on Mac OS yet.")
 	}
 
-	binDir, extraEnv := suite.extraDeployEnvVars()
-	defer func() {
-		if binDir != "" {
-			os.RemoveAll(binDir)
-		}
-	}()
-
+	extraEnv := suite.extraDeployEnvVars()
 	ts := e2e.New(suite.T(), false, extraEnv...)
 	defer ts.Close()
 
 	suite.deploy(ts, "ActiveState-CLI/Perl")
 
-	suite.checkSymlink("perl", binDir, filepath.Join(ts.Dirs.Work, "target"))
+	suite.checkSymlink("perl", ts.Dirs.Bin, filepath.Join(ts.Dirs.Work, "target"))
 
 	var cp *termtest.ConsoleProcess
 	if runtime.GOOS == "windows" {
@@ -119,16 +112,12 @@ func (suite *DeployIntegrationTestSuite) TestDeployPerl() {
 	cp.ExpectExitCode(0)
 }
 
-func (suite *DeployIntegrationTestSuite) extraDeployEnvVars() (string, []string) {
+func (suite *DeployIntegrationTestSuite) extraDeployEnvVars() []string {
 	if runtime.GOOS == "windows" {
-		return "", []string{"SHELL="}
+		return []string{"SHELL="}
 	}
 
-	binDir, err := ioutil.TempDir("", "")
-	suite.Require().NoError(err, "temporary bin directory")
-	oldPath, _ := os.LookupEnv("PATH")
-	modPath := fmt.Sprintf("PATH=%s%s%s", binDir, string(os.PathListSeparator), oldPath)
-	return binDir, []string{modPath, "SHELL=bash"}
+	return []string{"SHELL=bash"}
 }
 
 func (suite *DeployIntegrationTestSuite) checkSymlink(name string, binDir, workDir string) {
@@ -157,19 +146,14 @@ func (suite *DeployIntegrationTestSuite) TestDeployPython() {
 		suite.T().Skipf("Skipping DeployIntegrationTestSuite when not running on CI, as it modifies bashrc/registry")
 	}
 
-	binDir, extraEnv := suite.extraDeployEnvVars()
-	defer func() {
-		if binDir != "" {
-			os.RemoveAll(binDir)
-		}
-	}()
+	extraEnv := suite.extraDeployEnvVars()
 
 	ts := e2e.New(suite.T(), false, extraEnv...)
 	defer ts.Close()
 
 	suite.deploy(ts, "ActiveState-CLI/Python3")
 
-	suite.checkSymlink("python3", binDir, filepath.Join(ts.Dirs.Work, "target"))
+	suite.checkSymlink("python3", ts.Dirs.Bin, filepath.Join(ts.Dirs.Work, "target"))
 
 	var cp *termtest.ConsoleProcess
 	if runtime.GOOS == "windows" {
@@ -305,12 +289,7 @@ func (suite *DeployIntegrationTestSuite) TestDeploySymlink() {
 		suite.T().Skipf("Skipping TestDeploySymlink when not running on CI, as it modifies PATH")
 	}
 
-	binDir, extraEnv := suite.extraDeployEnvVars()
-	defer func() {
-		if binDir != "" {
-			os.RemoveAll(binDir)
-		}
-	}()
+	extraEnv := suite.extraDeployEnvVars()
 
 	ts := e2e.New(suite.T(), false, extraEnv...)
 	defer ts.Close()
@@ -336,7 +315,7 @@ func (suite *DeployIntegrationTestSuite) TestDeploySymlink() {
 	}
 	cp.ExpectExitCode(0)
 
-	suite.checkSymlink("python3", binDir, filepath.Join(ts.Dirs.Work, "target"))
+	suite.checkSymlink("python3", ts.Dirs.Bin, filepath.Join(ts.Dirs.Work, "target"))
 }
 
 func (suite *DeployIntegrationTestSuite) TestDeployReport() {
