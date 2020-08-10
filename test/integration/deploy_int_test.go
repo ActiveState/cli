@@ -74,8 +74,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployPerl() {
 		suite.T().Skip("Perl is not supported on Mac OS yet.")
 	}
 
-	extraEnv := suite.extraDeployEnvVars()
-	ts := e2e.New(suite.T(), false, extraEnv...)
+	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	suite.deploy(ts, "ActiveState-CLI/Perl")
@@ -87,17 +86,21 @@ func (suite *DeployIntegrationTestSuite) TestDeployPerl() {
 		cp = ts.SpawnCmdWithOpts(
 			"cmd.exe",
 			e2e.WithArgs("/k", filepath.Join(ts.Dirs.Work, "target", "bin", "shell.bat")),
-			e2e.AppendEnv("PATHEXT=.COM;.EXE;.BAT;.LNK"),
+			e2e.AppendEnv("PATHEXT=.COM;.EXE;.BAT;.LNK", "SHELL="),
 		)
 	} else {
 		cp = ts.SpawnCmdWithOpts("/bin/bash", e2e.AppendEnv("PROMPT_COMMAND="))
 		cp.SendLine(fmt.Sprintf("source %s\n", filepath.Join(ts.Dirs.Work, "target", "bin", "shell.sh")))
 	}
 
+	errorLevel := "echo $?"
+	if runtime.GOOS == "windows" {
+		errorLevel = `echo %ERRORLEVEL%`
+	}
 	// check that some of the installed binaries are use-able
 	cp.SendLine("perl --version")
 	cp.Expect("This is perl 5")
-	cp.SendLine("echo $?")
+	cp.SendLine(errorLevel)
 	cp.Expect("0")
 
 	cp.SendLine("ptar -h")
@@ -105,19 +108,11 @@ func (suite *DeployIntegrationTestSuite) TestDeployPerl() {
 
 	cp.SendLine("ppm --version")
 	cp.Expect("The Perl Package Manager (PPM) is no longer supported.")
-	cp.SendLine("echo $?")
+	cp.SendLine(errorLevel)
 	cp.Expect("0")
 
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
-}
-
-func (suite *DeployIntegrationTestSuite) extraDeployEnvVars() []string {
-	if runtime.GOOS == "windows" {
-		return []string{"SHELL="}
-	}
-
-	return []string{"SHELL=bash"}
 }
 
 func (suite *DeployIntegrationTestSuite) checkSymlink(name string, binDir, workDir string) {
@@ -146,9 +141,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployPython() {
 		suite.T().Skipf("Skipping DeployIntegrationTestSuite when not running on CI, as it modifies bashrc/registry")
 	}
 
-	extraEnv := suite.extraDeployEnvVars()
-
-	ts := e2e.New(suite.T(), false, extraEnv...)
+	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	suite.deploy(ts, "ActiveState-CLI/Python3")
@@ -160,21 +153,25 @@ func (suite *DeployIntegrationTestSuite) TestDeployPython() {
 		cp = ts.SpawnCmdWithOpts(
 			"cmd.exe",
 			e2e.WithArgs("/k", filepath.Join(ts.Dirs.Work, "target", "bin", "shell.bat")),
-			e2e.AppendEnv("PATHEXT=.COM;.EXE;.BAT;.LNK"),
+			e2e.AppendEnv("PATHEXT=.COM;.EXE;.BAT;.LNK", "SHELL="),
 		)
 	} else {
 		cp = ts.SpawnCmdWithOpts("/bin/bash", e2e.AppendEnv("PROMPT_COMMAND="))
 		cp.SendLine(fmt.Sprintf("source %s\n", filepath.Join(ts.Dirs.Work, "target", "bin", "shell.sh")))
 	}
 
+	errorLevel := "echo $?"
+	if runtime.GOOS == "windows" {
+		errorLevel = `echo %ERRORLEVEL%`
+	}
 	cp.SendLine("python3 --version")
 	cp.Expect("Python 3")
-	cp.SendLine("echo $?")
+	cp.SendLine(errorLevel)
 	cp.Expect("0")
 
 	cp.SendLine("pip3 --version")
 	cp.Expect("pip")
-	cp.SendLine("echo $?")
+	cp.SendLine(errorLevel)
 	cp.Expect("0")
 
 	if runtime.GOOS == "darwin" {
@@ -289,9 +286,7 @@ func (suite *DeployIntegrationTestSuite) TestDeploySymlink() {
 		suite.T().Skipf("Skipping TestDeploySymlink when not running on CI, as it modifies PATH")
 	}
 
-	extraEnv := suite.extraDeployEnvVars()
-
-	ts := e2e.New(suite.T(), false, extraEnv...)
+	ts := e2e.New(suite.T(), false, "SHELL=")
 	defer ts.Close()
 
 	// Install step is required
