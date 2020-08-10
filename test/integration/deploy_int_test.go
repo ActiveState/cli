@@ -116,24 +116,25 @@ func (suite *DeployIntegrationTestSuite) TestDeployPerl() {
 }
 
 func (suite *DeployIntegrationTestSuite) checkSymlink(name string, binDir, workDir string) {
-	// Linux symlinks to /usr/local/bin or the first write-able directory in PATH, so we can verify right away
-	if runtime.GOOS == "Linux" {
-		execPath, err := exec.LookPath(name)
-		// If not on PATH it needs to exist in the temporary directory
-		var execDir string
-		if err == nil {
-			execDir, _ = filepath.Split(execPath)
-		}
-		if err != nil || (execDir != "/usr/local/bin/" && execDir != "/usr/bin/") {
-			execPath = filepath.Join(binDir, name)
-			if !fileutils.FileExists(execPath) {
-				suite.Fail("Expected to find %s on PATH", name)
-			}
-		}
-		link, err := os.Readlink(execPath)
-		suite.Require().NoError(err)
-		suite.Contains(link, workDir, "%s executable resolves to the one on our target dir", name)
+	if runtime.GOOS != "Linux" {
+		return
 	}
+	// Linux symlinks to /usr/local/bin or the first write-able directory in PATH, so we can verify right away
+	execPath, err := exec.LookPath(name)
+	// If not on PATH it needs to exist in the temporary directory
+	var execDir string
+	if err == nil {
+		execDir, _ = filepath.Split(execPath)
+	}
+	if err != nil || (execDir != "/usr/local/bin/" && execDir != "/usr/bin/") {
+		execPath = filepath.Join(binDir, name)
+		if !fileutils.FileExists(execPath) {
+			suite.Fail("Expected to find %s on PATH", name)
+		}
+	}
+	link, err := os.Readlink(execPath)
+	suite.Require().NoError(err)
+	suite.Contains(link, workDir, "%s executable resolves to the one on our target dir", name)
 }
 
 func (suite *DeployIntegrationTestSuite) TestDeployPython() {
