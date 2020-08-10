@@ -2,6 +2,7 @@ using Microsoft.Deployment.WindowsInstaller;
 using System;
 using System.IO;
 using Uninstall;
+using ActiveState;
 
 namespace Rollback
 {
@@ -12,7 +13,7 @@ namespace Rollback
         {
             session.Log("Begin rollback of state tool installation and deploy");
 
-            ActiveState.RollbarHelper.ConfigureRollbarSingleton(session.CustomActionData["COMMIT_ID"]);
+            RollbarHelper.ConfigureRollbarSingleton(session.CustomActionData["COMMIT_ID"]);
 
             RollbackStateToolInstall(session);
             RollbackDeploy(session);
@@ -37,14 +38,19 @@ namespace Rollback
                 ActionResult result = Remove.Dir(session, stateToolInstallDir);
                 if (!result.Equals(ActionResult.Success))
                 {
-                    session.Log(string.Format("Not successful in removing State Tool installation directory, got action result: {0}", result));
+                    string msg = string.Format("Not successful in removing State Tool installation directory, got action result: {0}", result);
+                    session.Log(msg);
+                    RollbarReport.NonCritical(msg);
                 }
 
                 session.Log(string.Format("Removing environment entries containing: {0}", stateToolInstallDir));
                 result = Remove.EnvironmentEntries(session, stateToolInstallDir);
                 if (!result.Equals(ActionResult.Success))
                 {
-                    session.Log(string.Format("Not successful in removing State Tool environment entries, got action result: {0}", result));
+                    string msg = string.Format("Not successful in removing State Tool environment entries, got action result: {0}", result);
+                    session.Log(msg);
+                    RollbarReport.NonCritical(msg);
+
                 }
             }
 
@@ -56,13 +62,17 @@ namespace Rollback
             ActionResult result = Remove.Dir(session, session.CustomActionData["INSTALLDIR"]);
             if (!result.Equals(ActionResult.Success))
             {
-                session.Log(string.Format("Not successful in removing deploy directory, got action result: {0}", result));
+                string msg = string.Format("Not successful in removing deploy directory, got action result: {0}", result);
+                session.Log(msg);
+                RollbarReport.NonCritical(msg);
             }
 
             result = Remove.EnvironmentEntries(session, session.CustomActionData["INSTALLDIR"]);
             if (!result.Equals(ActionResult.Success))
             {
-                session.Log(string.Format("Not successful in removing Deployment environment entries, got action result: {0}", result));
+                string msg = string.Format("Not successful in removing Deployment environment entries, got action result: {0}", result);
+                session.Log(msg);
+                RollbarReport.NonCritical(msg);
             }
         }
     }

@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using Newtonsoft.Json;
 using System.Security.Cryptography;
 using System.IO.Compression;
+using ActiveState;
 
 namespace StateDeploy
 {
@@ -61,7 +62,7 @@ namespace StateDeploy
             {
                 string msg = string.Format("Could not create temp directory at: {0}, encountered exception: {1}", tempDir, e.ToString());
                 session.Log(msg);
-                ActiveState.RollbarHelper.Report(msg);
+                RollbarReport.Critical(msg);
                 return ActionResult.Failure;
             }
 
@@ -78,7 +79,7 @@ namespace StateDeploy
             {
                 string msg = string.Format("Encoutered exception downloading state tool json info file: {0}", e.ToString());
                 session.Log(msg);
-                ActiveState.RollbarHelper.Report(msg);
+                RollbarReport.Critical(msg);
                 return ActionResult.Failure;
             }
 
@@ -91,7 +92,7 @@ namespace StateDeploy
             {
                 string msg = string.Format("Could not deserialize version info. Version info string {0}, exception {1}", versionInfoString, e.ToString());
                 session.Log(msg);
-                ActiveState.RollbarHelper.Report(msg);
+                RollbarReport.Critical(msg);
                 return ActionResult.Failure;
             }
 
@@ -109,7 +110,7 @@ namespace StateDeploy
             {
                 string msg = string.Format("Encoutered exception downloading state tool zip file. URL to zip file: {0}, path to save zip file to: {1}, exception: {2}", zipURL, zipPath, e.ToString());
                 session.Log(msg);
-                ActiveState.RollbarHelper.Report(msg);
+                RollbarReport.Critical(msg);
                 return ActionResult.Failure;
             }
 
@@ -120,7 +121,7 @@ namespace StateDeploy
             {
                 string msg = string.Format("SHA256 checksum did not match, expected: {0} actual: {1}", info.sha256v2, zipHash.ToString());
                 session.Log(msg);
-                ActiveState.RollbarHelper.Report(msg);
+                RollbarReport.Critical(msg);
                 return ActionResult.Failure;
             }
 
@@ -133,7 +134,7 @@ namespace StateDeploy
             {
                 string msg = string.Format("Could not extract State Tool, encountered exception. Path to zip file: {0}, path to temp directory: {1}, exception {2})", zipPath, tempDir, e);
                 session.Log(msg);
-                ActiveState.RollbarHelper.Report(msg);
+                RollbarReport.Critical(msg);
                 return ActionResult.Failure;
             }
 
@@ -146,7 +147,7 @@ namespace StateDeploy
             {
                 string msg = string.Format("Could not create State Tool install directory at: {0}, encountered exception: {1}", stateToolInstallDir, e.ToString());
                 session.Log(msg);
-                ActiveState.RollbarHelper.Report(msg);
+                RollbarReport.Critical(msg);
                 return ActionResult.Failure;
             }
 
@@ -162,7 +163,7 @@ namespace StateDeploy
                 {
                     string msg = string.Format("Could not remove existing temporary state tool executable at: {0}, encountered exception: {1}", stateToolPath, e.ToString());
                     session.Log(msg);
-                    ActiveState.RollbarHelper.Report(msg);
+                    RollbarReport.Critical(msg);
                     return ActionResult.Failure;
                 }
             }
@@ -175,7 +176,7 @@ namespace StateDeploy
             {
                 string msg = string.Format("Could not move State Tool executable to: {0}, encountered exception: {1}", stateToolPath, e);
                 session.Log(msg);
-                ActiveState.RollbarHelper.Report(msg);
+                RollbarReport.Critical(msg);
                 return ActionResult.Failure;
             }
 
@@ -188,7 +189,7 @@ namespace StateDeploy
             {
                 string msg = string.Format("Could not get config directory from State Tool");
                 session.Log(msg);
-                ActiveState.RollbarHelper.Report(msg);
+                RollbarReport.NonCritical(msg);
             }
             else
             {
@@ -206,7 +207,7 @@ namespace StateDeploy
                 {
                     string msg = string.Format("Could not write install file at path: {0}, encountered exception: {1}", output, e.ToString());
                     session.Log(msg);
-                    ActiveState.RollbarHelper.Report(msg);
+                    RollbarReport.NonCritical(msg);
                 }
             }
 
@@ -228,7 +229,7 @@ namespace StateDeploy
             {
                 string msg = string.Format("Could not update PATH. Attempted to set path to: {0}, encountered exception: {1}", newPath, e.ToString());
                 session.Log(msg);
-                ActiveState.RollbarHelper.Report(msg);
+                RollbarReport.NonCritical(msg);
                 return ActionResult.Failure;
             }
 
@@ -313,7 +314,7 @@ namespace StateDeploy
                 Record record = new Record();
                 record.FormatString = "This installer cannot be run on a 32-bit operating system";
 
-                ActiveState.RollbarHelper.Report(record.FormatString);
+                RollbarReport.Critical(record.FormatString);
                 session.Message(InstallMessage.Error | (InstallMessage)MessageBoxButtons.OK, record);
                 return ActionResult.Failure;
             }
@@ -372,8 +373,9 @@ namespace StateDeploy
             }
             catch (Exception objException)
             {
-                session.Log(string.Format("Caught exception: {0}", objException));
-                ActiveState.RollbarHelper.Report(string.Format("Caught exception: {0}", objException));
+                string msg = string.Format("Caught exception: {0}", objException);
+                session.Log(msg);
+                RollbarReport.Critical(msg);
                 return ActionResult.Failure;
             }
 

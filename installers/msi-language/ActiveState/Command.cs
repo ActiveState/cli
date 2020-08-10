@@ -99,7 +99,7 @@ namespace ActiveState
                     {
                         title = title.Substring(0, 50);
                     }
-                    RollbarHelper.Report(
+                    RollbarReport.Critical(
                         string.Format("failed due to return code: {0} - start: {1}", exitCode, title),
                         new Dictionary<string, object> { { "output", output }, { "err", errBuilder.ToString() }, { "cmd", cmd } }
                     );
@@ -113,7 +113,7 @@ namespace ActiveState
                 outputBuilder.Append(exceptionString);
                 output = outputBuilder.ToString();
                 session.Log(exceptionString);
-                RollbarHelper.Report(exceptionString);
+                RollbarReport.NonCritical(exceptionString);
                 return ActionResult.Failure;
             }
             output = outputBuilder.ToString();
