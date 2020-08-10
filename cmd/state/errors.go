@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"os/exec"
 	"runtime/debug"
 	"time"
 
@@ -65,7 +64,7 @@ func unwrapError(err error) (int, error) {
 // unwrapExitCode checks if the given error is a failure of type FailExecCmdExit and
 // returns the ExitCode of the process that failed with this error
 func unwrapExitCode(errFail error) int {
-	var eerr *exec.ExitError
+	var eerr interface{ ExitCode() int }
 	isExitError := errors.As(errFail, &eerr)
 	if isExitError {
 		return eerr.ExitCode()
