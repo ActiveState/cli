@@ -147,6 +147,10 @@ jobs:
       env:
         CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
         MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
+    - name: MSI Integration Tests
+      if: runner.os == 'Windows'
+      shell: bash
+      run: SHELL='' go test -timeout 10m ./test/integration -v -run='TestLanguageMsi.*'
     - name: Upload Session Artifacts
       uses: actions/upload-artifact@v2
       with:
@@ -248,7 +252,7 @@ jobs:
       run: state run generate-update
     - name: Integration Tests
       shell: bash
-      run: SHELL='' go test -timeout 20m ./test/integration -v
+      run: SHELL='' go test -timeout 20m -tags 'state_int_tests' ./test/integration -v
       env:
         INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
         INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}

@@ -1,3 +1,5 @@
+// +build !state_int_tests
+
 package integration
 
 import (
@@ -51,7 +53,7 @@ func assertRegistryPathIncludes(t *testing.T, path string) {
 	assert.Contains(t, string(out), path, "Windows system PATH should contain our target dir")
 }
 
-func TestActivePerl(t *testing.T) {
+func TestLanguageMsiActivePerl(t *testing.T) {
 	if !e2e.RunningOnCI() && false {
 		t.Skipf("Skipping; Not running on CI")
 	}

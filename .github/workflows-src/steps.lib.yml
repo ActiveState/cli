@@ -84,11 +84,18 @@ run: |
 #@ def steps_inttest():
 name: "Integration Tests"
 shell: bash
-run: SHELL='' go test -timeout 20m ./test/integration -v
+run: SHELL='' go test -timeout 20m -tags 'state_int_tests' ./test/integration -v
 env:
   INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
   INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
   PLATFORM_API_KEY: ${{ secrets.PLATFORM_API_KEY }}
+#@ end
+---
+#@ def steps_msi_inttest():
+name: "MSI Integration Tests"
+if: runner.os == 'Windows'
+shell: bash
+run: SHELL='' go test -timeout 10m ./test/integration -v -run='TestLanguageMsi.*'
 #@ end
 ---
 #@ def steps_uploadsharedartifacts():
