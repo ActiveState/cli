@@ -247,7 +247,6 @@ func symlink(installPath string, overwrite bool, envGetter runtime.EnvGetter, ou
 		if err != nil {
 			return locale.WrapError(err, "err_usablepath", "Could not retrieve a usable PATH")
 		}
-		fmt.Printf("found usablePath at %s\n", path)
 	}
 
 	// Retrieve artifact binary directory
