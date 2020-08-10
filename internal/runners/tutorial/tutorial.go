@@ -36,15 +36,15 @@ func New(primer primeable) *Tutorial {
 }
 
 type NewProjectParams struct {
-	ShowIntro bool
+	SkipIntro bool
 	Language  language.Language
 }
 
 func (t *Tutorial) RunNewProject(params NewProjectParams) error {
-	analytics.EventWithLabel(analytics.CatTutorial, "run", fmt.Sprintf("showIntro=%v,language=%v", params.ShowIntro, params.Language.String()))
+	analytics.EventWithLabel(analytics.CatTutorial, "run", fmt.Sprintf("skipIntro=%v,language=%v", params.SkipIntro, params.Language.String()))
 
 	// Print intro
-	if params.ShowIntro {
+	if !params.SkipIntro {
 		t.outputer.Print(locale.Tt("tutorial_newproject_intro"))
 	}
 
@@ -59,7 +59,7 @@ func (t *Tutorial) RunNewProject(params NewProjectParams) error {
 	lang := params.Language
 	if lang == language.Unset {
 		choice, fail := t.prompt.Select(
-			locale.Tl("tutorial_language", "What language would you like to use for your new runtime environment?"),
+			locale.Tl("tutorial_language", "What language would you like to use for your new virtual environment?"),
 			[]string{language.Perl.Text(), language.Python3.Text(), language.Python2.Text()},
 			"",
 		)
@@ -83,7 +83,7 @@ func (t *Tutorial) RunNewProject(params NewProjectParams) error {
 	homeDir, _ := fileutils.HomeDir()
 	dir, fail := t.prompt.Input(locale.Tl(
 		"tutorial_prompt_projectdir",
-		"What would you like your project directory to be? This is usually the root of your repository, or the place where you have your project dotfiles."), homeDir)
+		"Where would you like your project directory to be mapped? This is usually the root of your repository, or the place where you have your project dotfiles."), homeDir)
 	if fail != nil {
 		return locale.WrapInputError(fail, "err_tutorial_prompt_projectdir", "Invalid response received.")
 	}
@@ -129,7 +129,7 @@ func (t *Tutorial) authFlow() error {
 
 	// Prompt for auth
 	choice, fail := t.prompt.Select(
-		locale.Tl("tutorial_need_account", "In order to create a Virtual Runtime Environment you must have an ActiveState Platform account"),
+		locale.Tl("tutorial_need_account", "In order to create a virtual environment you must have an ActiveState Platform account"),
 		choices,
 		signIn,
 	)

@@ -99,7 +99,7 @@ func New(prime *primer.Values) *CmdTree {
 		newPullCommand(prime),
 		newUpdateCommand(prime),
 		newForkCommand(prime),
-		newPpmCommand(),
+		newPpmCommand(prime),
 		newInviteCommand(prime),
 		tutorialCmd,
 	)

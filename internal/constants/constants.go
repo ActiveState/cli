@@ -200,6 +200,12 @@ const LocalRuntimeEnvironmentDirectory = "_runtime_env"
 // Check for existence of this file to ensure that the installation has not been interrupted prematurely.
 const RuntimeInstallationCompleteMarker = "support/completed"
 
+// StateToolMarketingPage links to the marketing page for the state tool
+const StateToolMarketingPage = "https://www.activestate.com/products/platform/state-tool/"
+
+// PlatformMarketingPage links to the marketing page for the ActiveState Platform
+const PlatformMarketingPage = "https://www.activestate.com/products/platform/"
+
 // TermsOfServiceURLText is the URL to get the current terms of service in txt form
 const TermsOfServiceURLText = "https://www.activestate.com/wp-content/uploads/2020/03/activestate_platform_terms_service_agreement.txt"
 
@@ -209,7 +215,7 @@ const TermsOfServiceURLLatest = "https://www.activestate.com/wp-content/uploads/
 // RCAppendStartLine is the start line used to denote our environment config in RC files
 const RCAppendStartLine = "-- START ACTIVESTATE RUNTIME ENVIRONMENT"
 
-// RCAppendEndLine is the end line used to denote our environment config in RC files
+// RCAppendStopLine is the end line used to denote our environment config in RC files
 const RCAppendStopLine = "-- STOP ACTIVESTATE RUNTIME ENVIRONMENT"
 
 // ForumsURL is the URL to the state tool forums

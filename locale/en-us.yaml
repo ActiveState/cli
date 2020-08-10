@@ -1573,6 +1573,25 @@ ppm_print_main:
         state help
 
     See "https://docs.activestate.com/platform/state/" for details.
+ppm_print_forward:
+  other: |
+    Your command is being forwarded to `[BOLD][BLUE]{{.V0}}[/RESET]`.
+    In the future you can run `[BOLD][BLUE]{{.V0}}[/RESET]` directly instead of running `[BOLD][BLUE]{{.V1}}[/RESET]`, which will soon be deprecated.
+ppm_print_forward_after_convert:
+  other: |
+    Please navigate to your newly created project directory and run `[BOLD][BLUE]{{.V1}}[/RESET]` again.
+    You can also run `[BOLD][BLUE]{{.V0}}[/RESET]` directly instead of running `[BOLD][BLUE]{{.V1}}[/RESET]`, which will soon be deprecated.
+ppm_print_forward_failure:
+  other: |
+    Your command is being forwarded to `[BOLD][BLUE]{{.V0}}[/RESET]`.
+    In the future you can run `[BOLD][BLUE]{{.V0}}[/RESET]` directly instead of running `[BOLD][BLUE]{{.V1}}[/RESET]`, which will soon be deprecated.
+
+    Note that `[BOLD][BLUE]{{.V0}}[/RESET]` is not a direct analog for `[BOLD][BLUE]{{.V1}}[/RESET]` and your command may have failed as a result.
+    Please run `[BOLD][BLUE]{{.V0}} --help[/RESET]` for further information on how to use it for your use-case.
+ppm_print_area_redundant:
+  other: |
+    `ppm area` and its subcommands have been made redundant thanks to State Tool's use of virtual environments.
+    You can simply start managing your packages, run `[BOLD][BLUE]{{.V0}} --help[/RESET]` for more information.
 ppm_install_intent:
   other: add new packages to your project 
 ppm_upgrade_intent:
@@ -1606,21 +1625,44 @@ confirm_exit_on_error_prompt:
   other: Press enter to continue...
 tutorial_newproject_intro:
   other: |
-    The State Tool lets you manage your own virtual runtime environments, allowing you to easily manage language versions
-    and packages on a per-project basis.
+    The State Tool lets you create and maintain  a set of virtual environments (eg., one per project), allowing you to
+    isolate and better manage language versions and dependencies  on a per-project basis.
     [[BR]][[BR]]
-    Once you have your Runtime Environment you'll be able to not only manage packages with your team mates, but also share
-    secrets (or store your own, for your eyes only), set up shared scrips and environment setups, and much more.
+    For every virtual environment, you'll be able to share the current configuration (language version & dependencies)
+    with your teammates so everyone stays in sync, as well as share secrets (or store your own, for your eyes only),
+    set up shared scripts, and much more.
     [[BR]][[BR]]
-    We'll help you create your first Runtime Environment, after that you can create as many as you want by running `state init`.
+    We'll help you create your first virtual environment, after that you can create as many as you want by running
+    `state init`.
     [[BR]]
 tutorial_newproject_outro:
   other: |
     Your Virtual Runtime Environment has been created.
+    [[BR]][[BR]]
+    To start using your project simply run `[BOLD][BLUE]state activate[/RESET]` from your project directory at [BOLD][BLUE]{{.Dir}}[/RESET].
+    You can also manage your project in your browser at [BOLD][BLUE]{{.URL}}[/RESET].
+    [[BR]][[BR]]
+    To create another project run `[BOLD][BLUE]state init[/RESET]`, or if you want to find out more about the State Tool and what it can do
+    run `[BOLD][BLUE]state --help[/RESET]` or check out [BOLD][BLUE]{{.Docs}}[/RESET]
+ppm_convert_after_tutorial:
+  other: |
+    For your convenience you can continue to use ppm commands once you've activated your virtual runtime environment.
+    We'll give you handy tips on how your commands map to State Tool so you can learn as you go.
+ppm_convert_explanation:
+  other: |
+    State Tool, like Perl 7, is being developed from the ground up with modern software development practices in mind.
+    Best practices suggest one environment per project, which is the State Tool’s default option.
+    State Tool was developed from the ground up with modern software development practices in mind.
     [[BR]]
-    To start using your project simply run `state activate` from your project directory at {{.Dir}}.
+ppm_convert_create_question:
+  other: |
+    PPM functionality is being replaced by the State Tool, which does things differently. For example, before you can
+    start managing dependencies, you need to create a new virtual environment for your Perl project.
     [[BR]]
-    You can also manage your project in your browser at {{.URL}}.
+ppm_convert_ask_feedback:
+  other: |
+    We understand your need to do things traditionally, but we currently do not support it. We'd love to hear more about
+    your use case to see if we can better meet your needs. Please consider posting to our forum at {{.V0}}.
     [[BR]]
     To create another project run `state init`, or if you want to find out more about the State Tool and what it can do
     run `state --help` or check out {{.Docs}}
