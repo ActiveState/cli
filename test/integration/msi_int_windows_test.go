@@ -1,5 +1,3 @@
-// +build !state_int_tests
-
 package integration
 
 import (

@@ -1,4 +1,4 @@
-#@ load("steps.lib.yml", "steps_genversion", "steps_preprocess", "steps_build", "steps_genupdate", "steps_installgo", "steps_setup", "steps_test", "steps_inttest", "steps_uploadartifacts", "steps_uploadsessartifacts", "steps_downloadsessartifacts", "steps_deletesessartifacts", "steps_deploy", "steps_build_state_msi", "steps_build_languages_msi", "steps_cleanbuild", "steps_validate", "steps_sign", "steps_sign_installscript", "steps_build_installscripts", "steps_uploadsharedartifacts", "steps_downloadsharedartifacts", "steps_downloadallsessartifacts", "steps_sanitizeallsessartifacts", "steps_msi_inttest")
+#@ load("steps.lib.yml", "steps_genversion", "steps_preprocess", "steps_build", "steps_genupdate", "steps_installgo", "steps_setup", "steps_test", "steps_inttest", "steps_uploadartifacts", "steps_uploadsessartifacts", "steps_downloadsessartifacts", "steps_deletesessartifacts", "steps_deploy", "steps_build_state_msi", "steps_build_languages_msi", "steps_cleanbuild", "steps_validate", "steps_sign", "steps_sign_installscript", "steps_build_installscripts", "steps_uploadsharedartifacts", "steps_downloadsharedartifacts", "steps_downloadallsessartifacts", "steps_sanitizeallsessartifacts")
 
 strategy: &strategy
   matrix:
@@ -47,7 +47,6 @@ steps:
   - #@ steps_genupdate()
   - #@ steps_build_state_msi()
   - #@ steps_build_languages_msi()
-  - #@ steps_msi_inttest()
   - #@ steps_uploadsessartifacts()
 #@ end
 
@@ -82,6 +81,7 @@ steps:
   - #@ steps_preprocess()
   - #@ steps_build()
   - #@ steps_genupdate()
+  - #@ steps_build_languages_msi()
   - #@ steps_inttest()
 #@ end
 
