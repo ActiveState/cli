@@ -4,6 +4,7 @@ import (
 	"github.com/skratchdot/open-golang/open"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -164,7 +165,9 @@ func (cf *ConversionFlow) explainAskFeedback() (conversionResult, error) {
 	ok := locale.Tl("ppm_convert_create_at_last", "Ok, let's set up a virtual runtime environment")
 	exit := locale.Tl("ppm_convert_reject", "Exit")
 	choices := []string{ok, exit}
-	choice, fail := cf.prompt.Select(locale.Tt("ppm_convert_ask_feedback"), choices, "")
+	choice, fail := cf.prompt.Select(locale.Tt("ppm_convert_ask_feedback", map[string]interface{}{
+		"ForumURL": constants.ForumsURL,
+	}), choices, "")
 
 	if fail != nil {
 		return canceled, locale.WrapInputError(fail, "err_ppm_convert_final_chance_interrupt", "Invalid response received.")

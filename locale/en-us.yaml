@@ -1660,5 +1660,5 @@ ppm_convert_create_question:
 ppm_convert_ask_feedback:
   other: |
     We understand your need to do things traditionally, but we currently do not support it. We'd love to hear more about
-    your use case to see if we can better meet your needs. Please consider posting to our forum at {{.V0}}.
+    your use case to see if we can better meet your needs. Please consider posting to our forum at {{.ForumURL}}.
     [[BR]]
