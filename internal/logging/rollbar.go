@@ -22,7 +22,6 @@ func SetupRollbar() {
 	if _, ok := rollbar.Custom()["UserID"]; !ok {
 		UpdateRollbarPerson("unknown", "unknown", "unknown")
 	}
-	fmt.Println("Using install source: ", config.InstallSource())
 	rollbar.SetToken(constants.RollbarToken)
 	rollbar.SetEnvironment(fmt.Sprintf("%s-%s", constants.BranchName, config.InstallSource()))
 	rollbar.SetCodeVersion(constants.RevisionHash)
