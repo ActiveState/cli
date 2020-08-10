@@ -122,6 +122,10 @@ func normalize(preset languagePreset, c *config) (*config, error) {
 }
 
 func commitID() (string, error) {
+	if sha, exists := os.LookupEnv("GITHUB_SHA"); exists {
+		return sha, nil
+	}
+
 	cmd := exec.Command("git", "rev-parse", "HEAD")
 	out, err := cmd.Output()
 	if err != nil {
