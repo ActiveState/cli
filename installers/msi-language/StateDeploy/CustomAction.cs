@@ -26,13 +26,13 @@ namespace StateDeploy
 
         private class VersionInfo
         {
-            public string version;
-            public string sha256v2;
+            public string version = "";
+            public string sha256v2 = "";
         }
 
         public static ActionResult InstallStateTool(Session session, out string stateToolPath)
         {
-            ActiveState.RollbarHelper.ConfigureRollbarSingleton();
+            ActiveState.RollbarHelper.ConfigureRollbarSingleton(session.CustomActionData["COMMIT_ID"]);
 
             session.Log("Installing State Tool if necessary");
             if (session.CustomActionData["STATE_TOOL_INSTALLED"] == "true")
@@ -306,7 +306,7 @@ namespace StateDeploy
         [CustomAction]
         public static ActionResult StateDeploy(Session session)
         {
-            ActiveState.RollbarHelper.ConfigureRollbarSingleton();
+            ActiveState.RollbarHelper.ConfigureRollbarSingleton(session.CustomActionData["COMMIT_ID"]);
 
             if (!Environment.Is64BitOperatingSystem)
             {

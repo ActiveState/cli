@@ -212,7 +212,7 @@ namespace Preset
         {
             session.Log("Begin InstallShortcuts");
 
-            ActiveState.RollbarHelper.ConfigureRollbarSingleton();
+            ActiveState.RollbarHelper.ConfigureRollbarSingleton(session.CustomActionData["COMMIT_ID"]);
 
             string presetStr = session.CustomActionData["PRESET"];
             string appStartMenuPath = session.CustomActionData["APP_START_MENU_PATH"];

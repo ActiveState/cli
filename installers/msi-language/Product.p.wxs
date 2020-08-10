@@ -78,8 +78,8 @@
     </Property>
 
     <Property Id="STATE_TOOL_WIZARD_CHECK_BOX" Value="1"></Property>
-
     <Property Id="MSIUSEREALADMINDETECTION" Value="1" />
+	<Property Id="COMMIT_ID" Value="{{.CommitID}}" />
 
 		<UI Id="WixUI_InstallDir">
 			<TextStyle Id="WixUI_Font_Normal" FaceName="Tahoma" Size="8" />
@@ -165,10 +165,14 @@
 
 		<Property Id="STATE_TOOL_PATH" Value="state.exe" />
 
-		<CustomAction Id="SetStateDeployPropertyValues" Property="StateDeploy" Value="INSTALLDIR=[INSTALLDIR];PROJECT_OWNER_AND_NAME=[PROJECT_OWNER_AND_NAME];IS_MODIFY=[IS_MODIFY];STATE_TOOL_INSTALLED=[STATE_TOOL_INSTALLED];STATE_TOOL_PATH=[STATE_TOOL_PATH];AS_USERNAME=[AS_USERNAME];AS_PASSWORD=[AS_PASSWORD];AS_TOTP=[AS_TOTP];UI_LEVEL=[UILevel]" />
-		<CustomAction Id="SetUninstallProperties" Property="Uninstall" Value="PRESET=[PRESET];REMEMBER=[REMEMBER];REMEMBER_SHORTCUTDIR=[REMEMBER_SHORTCUTDIR]" />
-		<CustomAction Id="SetPresetInfo" Property="Preset" Value="REL_NOTES=[REL_NOTES];INSTALLDIR=[INSTALLDIR];APP_START_MENU_PATH=[ApplicationProgramsFolder];PRESET=[PRESET]" />
-		<CustomAction Id="SetRollbackPropertyValues" Property="Rollback" Value="STATE_TOOL_INSTALLED=[STATE_TOOL_INSTALLED];INSTALLDIR=[INSTALLDIR]" />
+		<CustomAction 
+			Id="SetStateDeployPropertyValues" 
+			Property="StateDeploy" 
+			Value="INSTALLDIR=[INSTALLDIR];PROJECT_OWNER_AND_NAME=[PROJECT_OWNER_AND_NAME];IS_MODIFY=[IS_MODIFY];STATE_TOOL_INSTALLED=[STATE_TOOL_INSTALLED];STATE_TOOL_PATH=[STATE_TOOL_PATH];AS_USERNAME=[AS_USERNAME];AS_PASSWORD=[AS_PASSWORD];AS_TOTP=[AS_TOTP];UI_LEVEL=[UILevel];COMMIT_ID=[COMMIT_ID]" 
+		/>
+		<CustomAction Id="SetUninstallProperties" Property="Uninstall" Value="PRESET=[PRESET];REMEMBER=[REMEMBER];REMEMBER_SHORTCUTDIR=[REMEMBER_SHORTCUTDIR];COMMIT_ID=[COMMIT_ID]" />
+		<CustomAction Id="SetPresetInfo" Property="Preset" Value="REL_NOTES=[REL_NOTES];INSTALLDIR=[INSTALLDIR];APP_START_MENU_PATH=[ApplicationProgramsFolder];PRESET=[PRESET];COMMIT_ID=[COMMIT_ID]" />
+		<CustomAction Id="SetRollbackPropertyValues" Property="Rollback" Value="STATE_TOOL_INSTALLED=[STATE_TOOL_INSTALLED];INSTALLDIR=[INSTALLDIR];COMMIT_ID=[COMMIT_ID]" />
 
 
     <Binary Id="StateCommandCA" SourceFile="$(var.StateCommandExists.TargetDir)$(var.StateCommandExists.TargetName).CA.dll" />

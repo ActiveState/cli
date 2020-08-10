@@ -11,7 +11,7 @@ namespace StateCommandExists
         {
             session.Log("Checking State Tool installation");
 
-            ActiveState.RollbarHelper.ConfigureRollbarSingleton();
+            ActiveState.RollbarHelper.ConfigureRollbarSingleton(session["COMMIT_ID"]);
 
             var values = Environment.GetEnvironmentVariable("PATH");
             foreach (var path in values.Split(Path.PathSeparator))

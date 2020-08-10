@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"text/template"
@@ -42,6 +43,7 @@ type config struct {
 	ID                  string
 	ProjectName         string
 	Version             string
+	CommitID            string
 	ReleaseNotes        string
 	Icon                string
 	ProjectOwnerAndName string
@@ -100,6 +102,12 @@ func normalize(preset languagePreset, c *config) (*config, error) {
 	c.ProjectName = parts[1]
 	c.ID = seededUUID(c.ProjectOwnerAndName)
 
+	id, err := commitID()
+	if err != nil {
+		return c, err
+	}
+	c.CommitID = id
+
 	ic, err := icon(preset)
 	if err != nil {
 		return c, err
@@ -111,6 +119,16 @@ func normalize(preset languagePreset, c *config) (*config, error) {
 		return c, err
 	}
 	return c, nil
+}
+
+func commitID() (string, error) {
+	cmd := exec.Command("git", "rev-parse", "HEAD")
+	out, err := cmd.Output()
+	if err != nil {
+		return "", err
+	}
+
+	return strings.TrimSpace(string(out)), nil
 }
 
 func pad(s string) string {
