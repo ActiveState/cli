@@ -102,6 +102,7 @@ func normalize(preset languagePreset, c *config) (*config, error) {
 	c.ProjectName = parts[1]
 	c.ID = seededUUID(c.ProjectOwnerAndName)
 
+	fmt.Println("Using commitID: ", constants.RevisionHash)
 	c.CommitID = constants.RevisionHash
 
 	ic, err := icon(preset)
