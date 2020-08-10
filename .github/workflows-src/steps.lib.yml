@@ -88,7 +88,7 @@ run: SHELL='' go test -timeout 20m -tags 'state_int_tests' ./test/integration -v
 env:
   INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
   INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
-  PLATFORM_API_KEY: ${{ secrets.PLATFORM_API_KEY }}
+  PLATFORM_API_TOKEN: ${{ secrets.PLATFORM_API_TOKEN }}
 #@ end
 ---
 #@ def steps_msi_inttest():
