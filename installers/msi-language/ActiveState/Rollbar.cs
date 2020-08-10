@@ -73,13 +73,35 @@ namespace ActiveState
             person.UserName = userName;
             RollbarLocator.RollbarInstance.Config.Person = person;
         }
-
-        public static void Report(string message, IDictionary<string, object> customFields = null )
-        {
-            RollbarLocator.RollbarInstance.AsBlockingLogger(RollbarTimeout).Error(new GenericException(message), customFields);
-        }
-
     }
+}
+
+public class RollbarReport
+{
+    private static RollbarReport _instance;
+    private static object syncLock = new object();
+
+    public static readonly TimeSpan RollbarTimeout = TimeSpan.FromSeconds(10);
+
+    protected RollbarReport() { }
+
+    public static void Critical(string message, IDictionary<string, object> customFields = null)
+    {
+        lock (syncLock)
+        {
+            if (_instance == null)
+            {
+                _instance = new RollbarReport();
+                RollbarLocator.RollbarInstance.AsBlockingLogger(RollbarTimeout).Error(new GenericException(message), customFields);
+            }
+        }
+    }
+
+    public static void NonCritical(string message, IDictionary<string, object> customFields = null)
+    {
+        RollbarLocator.RollbarInstance.AsBlockingLogger(RollbarTimeout).Error(new GenericException(message), customFields);
+    }
+
 }
 
 public class GenericException : System.Exception
