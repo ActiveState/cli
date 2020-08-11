@@ -39,7 +39,9 @@ scripts:
     value: |
       set -e
       $constants.SET_ENV
-      go build -tags "$GO_BUILD_TAGS" -o $constants.BUILD_TARGET $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
+      export GOARCH=${1:-amd64}
+      export TARGET_SUFFIX=${1:-}
+      go build -tags "$GO_BUILD_TAGS" -o $constants.BUILD_TARGET${TARGET_SUFFIX} $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
   - name: build-for
     language: bash
     description: Builds the project with the specified OS as the target OS. (valid values darwin, linux, windows)
@@ -60,8 +62,11 @@ scripts:
     value: |
       set -e
       $constants.SET_ENV
+
+      export GOARCH=${1:-amd64}
+      export TARGET_SUFFIX=${1:-}
       mkdir -p build/update
-      go run scripts/update-generator/main.go -o build/update $constants.BUILD_TARGET
+      go run scripts/update-generator/main.go -o build/update $constants.BUILD_TARGET${TARGET_SUFFIX}
   - name: install
     language: bash
     description: Installs the current HEAD version into GOBIN

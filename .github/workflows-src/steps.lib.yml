@@ -10,6 +10,13 @@ shell: bash
 run: state run build
 #@ end
 ---
+#@ def steps_build_32bit():
+name: Build (32bit)
+shell: bash
+if: runner.os == 'Windows'
+run: state run build 386
+#@ end
+---
 #@ def steps_build_installscripts():
 name: Build Install Scripts
 shell: bash
@@ -45,6 +52,13 @@ env:
 name: "Generate Update"
 shell: bash
 run: state run generate-update
+#@ end
+---
+#@ def steps_genupdate_32bit():
+name: "Generate Update (32bit)"
+shell: bash
+if: runner.os == 'Windows'
+run: state run generate-update i386
 #@ end
 ---
 #@ def steps_installgo():

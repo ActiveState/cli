@@ -95,6 +95,10 @@ jobs:
     - name: Build
       shell: bash
       run: state run build
+    - name: Build (32bit)
+      shell: bash
+      if: runner.os == 'Windows'
+      run: state run build 386
     - name: Build Install Scripts
       shell: bash
       run: state run build-install-scripts
@@ -120,6 +124,10 @@ jobs:
     - name: Generate Update
       shell: bash
       run: state run generate-update
+    - name: Generate Update (32bit)
+      shell: bash
+      if: runner.os == 'Windows'
+      run: state run generate-update i386
     - name: Build State MSI
       if: runner.os == 'Windows'
       shell: bash
