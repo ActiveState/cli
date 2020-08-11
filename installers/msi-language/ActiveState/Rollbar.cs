@@ -78,28 +78,43 @@ namespace ActiveState
 
 public class RollbarReport
 {
-    private static RollbarReport _instance;
+    private enum Level
+    {
+        Critical,
+        Error
+    }
+
+    private static bool reported;
     private static object syncLock = new object();
 
     public static readonly TimeSpan RollbarTimeout = TimeSpan.FromSeconds(10);
 
-    protected RollbarReport() { }
-
     public static void Critical(string message, IDictionary<string, object> customFields = null)
     {
-        lock (syncLock)
-        {
-            if (_instance == null)
-            {
-                _instance = new RollbarReport();
-                RollbarLocator.RollbarInstance.AsBlockingLogger(RollbarTimeout).Critical(new GenericException(message), customFields);
-            }
-        }
+        Report(Level.Critical, message, customFields);
     }
 
     public static void Error(string message, IDictionary<string, object> customFields = null)
     {
-        RollbarLocator.RollbarInstance.AsBlockingLogger(RollbarTimeout).Error(new GenericException(message), customFields);
+        Report(Level.Error, message, customFields);
+    }
+
+    private static void Report(Level level, string message, IDictionary<string, object> customFields = null)
+    {
+        lock (syncLock)
+        {
+            if (!reported)
+            {
+                reported = true;
+                if (level == Level.Critical)
+                {
+                    RollbarLocator.RollbarInstance.AsBlockingLogger(RollbarTimeout).Critical(new GenericException(message), customFields);
+                } else
+                {
+                    RollbarLocator.RollbarInstance.AsBlockingLogger(RollbarTimeout).Error(new GenericException(message), customFields);
+                }
+            }
+        }
     }
 
 }
