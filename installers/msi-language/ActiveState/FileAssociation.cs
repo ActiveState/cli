@@ -31,7 +31,7 @@ namespace ActiveState
         {
             try
             {
-                // Do not throw if we the extension value was not set anymore, as it may have been deleted by a different programme.
+                // Do not throw if the extension value was not set anymore, as it may have been deleted by a different programme.
                 Registry.LocalMachine.DeleteValue(@"Software\Classes\" + Extension, false);
 
                 Registry.LocalMachine.DeleteSubKeyTree(@"Software\Classes\" + ProgId, true);
