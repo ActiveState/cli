@@ -14,6 +14,7 @@
 	<Property Id="AS_USERNAME" Secure="yes" />
 	<Property Id="AS_PASSWORD" Secure="yes" />
 	<Property Id="AS_TOTP" Secure="yes" />
+	<Property Id="CODE_INSTALLED" Value="false" />
     <!-- End Configuration parameters -->
     
     <!-- Design assets -->
@@ -154,8 +155,8 @@
 		<Property Id="IS_MODIFY" Value="false" />
 
 		<InstallUISequence>
-			<Custom Action="StateCommandExists" After="CostFinalize">NOT Installed OR (Installed AND NOT (REMOVE~="ALL"))</Custom>
-			<Custom Action="SetIsModify" After="StateCommandExists">(Installed AND NOT (REMOVE~="ALL"))</Custom>
+			<Custom Action="CommandsExist" After="CostFinalize">NOT Installed OR (Installed AND NOT (REMOVE~="ALL"))</Custom>
+			<Custom Action="SetIsModify" After="CommandsExist">(Installed AND NOT (REMOVE~="ALL"))</Custom>
 			<Custom Action="SetInstallDirOnModify" After="SetIsModify">(Installed AND NOT (REMOVE~="ALL"))</Custom>
     </InstallUISequence>
 
@@ -175,8 +176,8 @@
 		<CustomAction Id="SetRollbackPropertyValues" Property="Rollback" Value="STATE_TOOL_INSTALLED=[STATE_TOOL_INSTALLED];INSTALLDIR=[INSTALLDIR];COMMIT_ID=[COMMIT_ID]" />
 
 
-    <Binary Id="StateCommandCA" SourceFile="$(var.StateCommandExists.TargetDir)$(var.StateCommandExists.TargetName).CA.dll" />
-		<CustomAction Id="StateCommandExists" Impersonate="yes" BinaryKey="StateCommandCA" DllEntry="StateCommandExists" Return="check" />
+    <Binary Id="CommandsCA" SourceFile="$(var.StateCommandExists.TargetDir)$(var.StateCommandExists.TargetName).CA.dll" />
+		<CustomAction Id="CommandsExist" Impersonate="yes" BinaryKey="CommandsCA" DllEntry="CheckCommands" Return="check" />
 
 		<Binary Id="StatusCA" SourceFile="$(var.Status.TargetDir)$(var.Status.TargetName).CA.dll" />
 		<CustomAction Id="Status" Impersonate="no" BinaryKey="StatusCA" DllEntry="ResetProgress" Execute="deferred" Return="check" />

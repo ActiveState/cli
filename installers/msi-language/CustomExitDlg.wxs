@@ -22,12 +22,19 @@
           <Condition Action="show">NOT Installed</Condition>
         </Control>
 
-        <Control Id="StateToolWizardReleaseNotesCheckBox" Type="CheckBox" X="130" Y="170" Width="10" Height="10" CheckBoxValue="1" Default="no" Property="STATE_TOOL_WIZARD_REL_NOTES_CHECK_BOX" Hidden="yes">
-          <Condition Action="show">NOT Installed</Condition>
-        </Control>
-        <Control Id="StateToolWizardReleaseNotesText" Type="Text" X="143" Y="170" Width="215" Height="25" Transparent="yes" Hidden="yes" Text="!(loc.ExitDialogReleaseNotesAction)">
-          <Condition Action="show">NOT Installed</Condition>
-        </Control>
+		<Control Id="StateToolWizardReleaseNotesCheckBox" Type="CheckBox" X="130" Y="170" Width="10" Height="10" CheckBoxValue="1" Default="no" Property="STATE_TOOL_WIZARD_REL_NOTES_CHECK_BOX" Hidden="yes">
+			<Condition Action="show">NOT Installed</Condition>
+		</Control>
+		<Control Id="StateToolWizardReleaseNotesText" Type="Text" X="143" Y="170" Width="215" Height="25" Transparent="yes" Hidden="yes" Text="!(loc.ExitDialogReleaseNotesAction)">
+			<Condition Action="show">NOT Installed</Condition>
+		</Control>
+
+		<Control Id="InstallVSCodeExtensionCheckbox" Type="CheckBox" X="130" Y="195" Width="10" Height="10" CheckBoxValue="1" Default="no" Property="INSTALL_VSCODE_EXT" Hidden="yes">
+			<Condition Action="show">NOT Installed AND CODE_INSTALLED = "true"</Condition>
+		</Control>
+		<Control Id="InstallVSCodeExtensionText" Type="Text" X="143" Y="195" Width="215" Height="25" Transparent="yes" Hidden="yes" Text="!(loc.ExitDialogVSCodeAction)">
+			<Condition Action="show">NOT Installed AND CODE_INSTALLED = "true"</Condition>
+		</Control>
 
 
       </Dialog>
