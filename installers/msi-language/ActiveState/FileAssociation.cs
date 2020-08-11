@@ -29,9 +29,11 @@ namespace ActiveState
 
         public bool DeleteAssociation()
         {
-            // We only delete the ProgId entry, as the file extension entry could be modified by other programmes
             try
             {
+                // Do not throw if we the extension value was not set anymore, as it may have been deleted by a different programme.
+                Registry.LocalMachine.DeleteValue(@"Software\Classes\" + Extension, false);
+
                 Registry.LocalMachine.DeleteSubKeyTree(@"Software\Classes\" + ProgId, true);
                 return true;
             } catch (ArgumentException)
