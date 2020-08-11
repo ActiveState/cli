@@ -84,7 +84,7 @@ public class RollbarReport
         Error
     }
 
-    private static bool reported;
+    private static bool criticalReported;
     private static object syncLock = new object();
 
     public static readonly TimeSpan RollbarTimeout = TimeSpan.FromSeconds(10);
@@ -103,11 +103,11 @@ public class RollbarReport
     {
         lock (syncLock)
         {
-            if (!reported)
+            if (!criticalReported)
             {
-                reported = true;
                 if (level == Level.Critical)
                 {
+                    criticalReported = true;
                     RollbarLocator.RollbarInstance.AsBlockingLogger(RollbarTimeout).Critical(new GenericException(message), customFields);
                 } else
                 {
