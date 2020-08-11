@@ -299,10 +299,9 @@ function install()
         $stateexe="windows-amd64.exe"
 
     } else {
-        Write-Warning "x86 processors are not supported at this time"
-        Write-Warning "Contact ActiveState Support for assistance"
-        Write-Warning "Aborting installation"
-        return 1
+        $statejson="windows-386.json"
+        $statepkg="windows-386.zip"
+        $stateexe="windows-386.exe"
     }
 
     # Get the install directory and ensure we have permissions on it.
