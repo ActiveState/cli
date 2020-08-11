@@ -92,12 +92,12 @@ public class RollbarReport
             if (_instance == null)
             {
                 _instance = new RollbarReport();
-                RollbarLocator.RollbarInstance.AsBlockingLogger(RollbarTimeout).Error(new GenericException(message), customFields);
+                RollbarLocator.RollbarInstance.AsBlockingLogger(RollbarTimeout).Critical(new GenericException(message), customFields);
             }
         }
     }
 
-    public static void NonCritical(string message, IDictionary<string, object> customFields = null)
+    public static void Error(string message, IDictionary<string, object> customFields = null)
     {
         RollbarLocator.RollbarInstance.AsBlockingLogger(RollbarTimeout).Error(new GenericException(message), customFields);
     }

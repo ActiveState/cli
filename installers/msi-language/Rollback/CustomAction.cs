@@ -40,7 +40,7 @@ namespace Rollback
                 {
                     string msg = string.Format("Not successful in removing State Tool installation directory, got action result: {0}", result);
                     session.Log(msg);
-                    RollbarReport.NonCritical(msg);
+                    RollbarReport.Error(msg);
                 }
 
                 session.Log(string.Format("Removing environment entries containing: {0}", stateToolInstallDir));
@@ -49,7 +49,7 @@ namespace Rollback
                 {
                     string msg = string.Format("Not successful in removing State Tool environment entries, got action result: {0}", result);
                     session.Log(msg);
-                    RollbarReport.NonCritical(msg);
+                    RollbarReport.Error(msg);
 
                 }
             }
@@ -64,7 +64,7 @@ namespace Rollback
             {
                 string msg = string.Format("Not successful in removing deploy directory, got action result: {0}", result);
                 session.Log(msg);
-                RollbarReport.NonCritical(msg);
+                RollbarReport.Error(msg);
             }
 
             result = Remove.EnvironmentEntries(session, session.CustomActionData["INSTALLDIR"]);
@@ -72,7 +72,7 @@ namespace Rollback
             {
                 string msg = string.Format("Not successful in removing Deployment environment entries, got action result: {0}", result);
                 session.Log(msg);
-                RollbarReport.NonCritical(msg);
+                RollbarReport.Error(msg);
             }
         }
     }

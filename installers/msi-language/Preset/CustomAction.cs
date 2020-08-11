@@ -150,7 +150,7 @@ namespace Preset
             if (!System.IO.File.Exists(target))
             {
                 session.Log(string.Format("wperl.exe does not exist in path: {0}", target));
-                RollbarReport.NonCritical(string.Format("wperl.exe does not exist in path: {0}", target));
+                RollbarReport.Error(string.Format("wperl.exe does not exist in path: {0}", target));
                 return ActionResult.Failure;
             }
 
@@ -158,7 +158,7 @@ namespace Preset
             if (!System.IO.File.Exists(perlCriticLocation))
             {
                 session.Log(string.Format("perlcritic-gui does not exist in path: {0}", perlCriticLocation));
-                RollbarReport.NonCritical(string.Format("perlcritic-gui does not exist in path: {0}", perlCriticLocation));
+                RollbarReport.Error(string.Format("perlcritic-gui does not exist in path: {0}", perlCriticLocation));
                 return ActionResult.Failure;
             }
 
@@ -186,7 +186,7 @@ namespace Preset
             if (!System.IO.File.Exists(target))
             {
                 session.Log(string.Format("shell.bat does not exist in path: {0}", target));
-                RollbarReport.NonCritical(string.Format("shell.bat does not exist in path: {0}", target));
+                RollbarReport.Error(string.Format("shell.bat does not exist in path: {0}", target));
                 return ActionResult.Failure;
             }
 
@@ -212,7 +212,7 @@ namespace Preset
         {
             session.Log("Begin InstallPreset");
 
-            ActiveState.RollbarHelper.ConfigureRollbarSingleton(session.CustomActionData["COMMIT_ID"]);
+            RollbarHelper.ConfigureRollbarSingleton(session.CustomActionData["COMMIT_ID"]);
 
             string presetStr = session.CustomActionData["PRESET"];
             string appStartMenuPath = session.CustomActionData["APP_START_MENU_PATH"];
@@ -230,13 +230,13 @@ namespace Preset
                 var res = preset.Install();
                 if (res != ActionResult.Success)
                 {
-                    RollbarReport.NonCritical(string.Format("unexpected failure in Preset installation"));
+                    RollbarReport.Error(string.Format("unexpected failure in Preset installation"));
                 }
                 return res;
             }
             catch (Exception err)
             {
-                RollbarReport.NonCritical(string.Format("unknown error in language preset: {0}", err));
+                RollbarReport.Error(string.Format("unknown error in language preset: {0}", err));
                 return ActionResult.Failure;
             }
         }

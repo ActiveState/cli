@@ -113,7 +113,7 @@ namespace ActiveState
                 outputBuilder.Append(exceptionString);
                 output = outputBuilder.ToString();
                 session.Log(exceptionString);
-                RollbarReport.NonCritical(exceptionString);
+                RollbarReport.Error(exceptionString);
                 return ActionResult.Failure;
             }
             output = outputBuilder.ToString();

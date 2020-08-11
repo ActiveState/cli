@@ -33,7 +33,7 @@ namespace StateDeploy
 
         public static ActionResult InstallStateTool(Session session, out string stateToolPath)
         {
-            ActiveState.RollbarHelper.ConfigureRollbarSingleton(session.CustomActionData["COMMIT_ID"]);
+            RollbarHelper.ConfigureRollbarSingleton(session.CustomActionData["COMMIT_ID"]);
 
             session.Log("Installing State Tool if necessary");
             if (session.CustomActionData["STATE_TOOL_INSTALLED"] == "true")
@@ -189,7 +189,7 @@ namespace StateDeploy
             {
                 string msg = string.Format("Could not get config directory from State Tool");
                 session.Log(msg);
-                RollbarReport.NonCritical(msg);
+                RollbarReport.Error(msg);
             }
             else
             {
@@ -207,7 +207,7 @@ namespace StateDeploy
                 {
                     string msg = string.Format("Could not write install file at path: {0}, encountered exception: {1}", output, e.ToString());
                     session.Log(msg);
-                    RollbarReport.NonCritical(msg);
+                    RollbarReport.Error(msg);
                 }
             }
 
@@ -229,7 +229,7 @@ namespace StateDeploy
             {
                 string msg = string.Format("Could not update PATH. Attempted to set path to: {0}, encountered exception: {1}", newPath, e.ToString());
                 session.Log(msg);
-                RollbarReport.NonCritical(msg);
+                RollbarReport.Error(msg);
                 return ActionResult.Failure;
             }
 

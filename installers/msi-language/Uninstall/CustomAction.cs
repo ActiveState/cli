@@ -26,7 +26,7 @@ namespace Uninstall
             {
                 string msg = string.Format("unknown error during preset-uninstall {0}", err);
                 session.Log(msg);
-                RollbarReport.NonCritical(string.Format("unknown error during uninstall: {0}", err));
+                RollbarReport.Error(string.Format("unknown error during uninstall: {0}", err));
 
                 // We finish the uninstallation anyways, as otherwise the MSI becomes un-installable.  And that's bad!
                 return ActionResult.Success;
