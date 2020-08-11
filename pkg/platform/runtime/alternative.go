@@ -294,7 +294,7 @@ func (ar *AlternativeRuntime) PostInstall() error {
 
 	files, err := ioutil.ReadDir(ar.runtimeEnvBaseDir())
 	if err != nil {
-		return errs.Wrap(err, "could not find the runtime environment directory")
+		return errs.Wrap(err, "Could not find the runtime environment directory")
 	}
 
 	filenames := make([]string, 0, len(files))

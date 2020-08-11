@@ -183,18 +183,6 @@ func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGet
 		return runtimeAssembler, false, nil
 	}
 
-	if fileutils.DirExists(installer.params.RuntimeDir) {
-		empty, fail := fileutils.IsEmptyDir(installer.params.RuntimeDir)
-		if fail != nil {
-			logging.Error("Could not check if target runtime dir is empty, this could cause issues.. %v", fail)
-		} else if !empty {
-			logging.Debug("Removing existing runtime")
-			if err := os.RemoveAll(installer.params.RuntimeDir); err != nil {
-				logging.Error("Could not empty out target runtime dir prior to install, this could cause issues.. %v", err)
-			}
-		}
-	}
-
 	downloadArtfs := runtimeAssembler.ArtifactsToDownload()
 
 	if len(downloadArtfs) != 0 {

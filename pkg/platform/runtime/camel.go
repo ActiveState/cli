@@ -100,6 +100,17 @@ func (cr *CamelRuntime) ArtifactsToDownload() []*HeadChefArtifact {
 
 // PreInstall does nothing for camel builds
 func (cr *CamelRuntime) PreInstall() *failures.Failure {
+	if fileutils.DirExists(cr.runtimeDir) {
+		empty, fail := fileutils.IsEmptyDir(cr.runtimeDir)
+		if fail != nil {
+			logging.Error("Could not check if target runtime dir is empty, this could cause issues.. %v", fail)
+		} else if !empty {
+			logging.Debug("Removing existing runtime")
+			if err := os.RemoveAll(cr.runtimeDir); err != nil {
+				logging.Error("Could not empty out target runtime dir prior to install, this could cause issues.. %v", err)
+			}
+		}
+	}
 	return nil
 }
 
