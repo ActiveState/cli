@@ -229,7 +229,7 @@ namespace StateDeploy
             {
                 string msg = string.Format("Could not update PATH. Attempted to set path to: {0}, encountered exception: {1}", newPath, e.ToString());
                 session.Log(msg);
-                RollbarReport.Error(msg);
+                RollbarReport.Critical(msg);
                 return ActionResult.Failure;
             }
 

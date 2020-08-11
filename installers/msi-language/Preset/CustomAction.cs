@@ -236,7 +236,7 @@ namespace Preset
             }
             catch (Exception err)
             {
-                RollbarReport.Error(string.Format("unknown error in language preset: {0}", err));
+                RollbarReport.Critical(string.Format("unknown error in language preset: {0}", err));
                 return ActionResult.Failure;
             }
         }
