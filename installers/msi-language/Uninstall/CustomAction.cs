@@ -24,8 +24,9 @@ namespace Uninstall
                 return p.Uninstall();
             } catch (Exception err)
             {
-                session.Log(string.Format("unknown error during preset-uninstall {0}", err));
-                RollbarHelper.Report(string.Format("unknown error during uninstall: {0}", err));
+                string msg = string.Format("unknown error during preset-uninstall {0}", err);
+                session.Log(msg);
+                RollbarReport.Error(string.Format("unknown error during uninstall: {0}", err));
 
                 // We finish the uninstallation anyways, as otherwise the MSI becomes un-installable.  And that's bad!
                 return ActionResult.Success;
@@ -58,8 +59,9 @@ namespace Uninstall
                 result = Remove.EnvironmentEntries(session, installDir);
                 if (result.Equals(ActionResult.Failure))
                 {
-                    session.Log("Could not remove environment entries");
-                    ActiveState.RollbarHelper.Report("Could not remove environment entries");
+                    string msg = "Could not remove environment entries";
+                    session.Log(msg);
+                    RollbarReport.Critical(msg);
                     return ActionResult.Failure;
                 }
             } else
@@ -74,8 +76,9 @@ namespace Uninstall
                 result = Remove.Dir(session, shortcutDir);
                 if (result.Equals(ActionResult.Failure))
                 {
-                    session.Log("Could not remove shortcuts directory");
-                    ActiveState.RollbarHelper.Report("Could not remove shortcuts directory");
+                    string msg = "Could not remove shortcuts directory";
+                    session.Log(msg);
+                    RollbarReport.Critical(msg);
                     return ActionResult.Failure;
                 }
             } else
@@ -86,8 +89,9 @@ namespace Uninstall
             result = UninstallPreset(session);
             if (result.Equals(ActionResult.Failure))
             {
-                session.Log("Could not uninstall language preset");
-                ActiveState.RollbarHelper.Report("Could not uninstall language preset");
+                string msg = "Could not uninstall language preset";
+                session.Log(msg);
+                RollbarReport.Critical(msg);
                 return ActionResult.Failure;
             }
             return result;
@@ -107,8 +111,9 @@ namespace Uninstall
                 }
                 catch (Exception e)
                 {
-                    session.Log(string.Format("Could not delete install directory, got error: {0}", e.ToString()));
-                    ActiveState.RollbarHelper.Report(string.Format("Could not delete install directory, got error: {0}", e.ToString()));
+                    string msg = string.Format("Could not delete install directory, got error: {0}", e.ToString());
+                    session.Log(msg);
+                    RollbarReport.Critical(msg);
                     return ActionResult.Failure;
                 }
             }

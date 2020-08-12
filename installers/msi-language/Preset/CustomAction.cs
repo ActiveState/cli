@@ -150,7 +150,7 @@ namespace Preset
             if (!System.IO.File.Exists(target))
             {
                 session.Log(string.Format("wperl.exe does not exist in path: {0}", target));
-                ActiveState.RollbarHelper.Report(string.Format("wperl.exe does not exist in path: {0}", target));
+                RollbarReport.Error(string.Format("wperl.exe does not exist in path: {0}", target));
                 return ActionResult.Failure;
             }
 
@@ -158,7 +158,7 @@ namespace Preset
             if (!System.IO.File.Exists(perlCriticLocation))
             {
                 session.Log(string.Format("perlcritic-gui does not exist in path: {0}", perlCriticLocation));
-                ActiveState.RollbarHelper.Report(string.Format("perlcritic-gui does not exist in path: {0}", perlCriticLocation));
+                RollbarReport.Error(string.Format("perlcritic-gui does not exist in path: {0}", perlCriticLocation));
                 return ActionResult.Failure;
             }
 
@@ -186,7 +186,7 @@ namespace Preset
             if (!System.IO.File.Exists(target))
             {
                 session.Log(string.Format("shell.bat does not exist in path: {0}", target));
-                ActiveState.RollbarHelper.Report(string.Format("shell.bat does not exist in path: {0}", target));
+                RollbarReport.Error(string.Format("shell.bat does not exist in path: {0}", target));
                 return ActionResult.Failure;
             }
 
@@ -210,9 +210,9 @@ namespace Preset
         [CustomAction]
         public static ActionResult InstallPreset(Session session)
         {
-            session.Log("Begin InstallShortcuts");
+            session.Log("Begin InstallPreset");
 
-            ActiveState.RollbarHelper.ConfigureRollbarSingleton(session.CustomActionData["COMMIT_ID"]);
+            RollbarHelper.ConfigureRollbarSingleton(session.CustomActionData["COMMIT_ID"]);
 
             string presetStr = session.CustomActionData["PRESET"];
             string appStartMenuPath = session.CustomActionData["APP_START_MENU_PATH"];
@@ -230,13 +230,13 @@ namespace Preset
                 var res = preset.Install();
                 if (res != ActionResult.Success)
                 {
-                    RollbarHelper.Report(string.Format("unexpected failure in Preset installation"));
+                    RollbarReport.Error(string.Format("unexpected failure in Preset installation"));
                 }
                 return res;
             }
             catch (Exception err)
             {
-                RollbarHelper.Report(string.Format("unknown error in language preset: {0}", err));
+                RollbarReport.Critical(string.Format("unknown error in language preset: {0}", err));
                 return ActionResult.Failure;
             }
         }
