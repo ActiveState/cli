@@ -15,10 +15,11 @@ using System.IO.Compression;
 namespace StateDeploy
 {
 
-    enum Shell
-    {
-        Cmd,
-        Powershell,
+    private struct StateToolPaths {
+        public string JsonDescription;
+        public string ZipFile;
+
+        public string ExeFile;
     }
 
     public class CustomActions
@@ -28,6 +29,26 @@ namespace StateDeploy
         {
             public string version = "";
             public string sha256v2 = "";
+        }
+
+        public 
+
+        public static bool is64Bit() {
+            return System.Environment.Is64BitOperatingSystem;
+        }
+
+        public static StateToolPaths GetPaths() {
+            StateToolPaths paths;
+            if (is64Bit) {
+                paths.JsonDescription = "windows-amd64.json";
+                paths.ZipFile = "windows-amd64.zip";
+                paths.ExeFile = "windows-amd64.exe";
+            } else {
+                paths.JsonDescription = "windows-386.json";
+                paths.ZipFile = "windows-386.zip";
+                paths.ExeFile = "windows-386.exe";
+            }
+            return paths;
         }
 
         public static ActionResult InstallStateTool(Session session, out string stateToolPath)
@@ -47,9 +68,9 @@ namespace StateDeploy
             Status.ProgressBar.Increment(session, 1);
             stateToolPath = "";
 
+            var paths = GetPaths();
             string stateURL = "https://s3.ca-central-1.amazonaws.com/cli-update/update/state/unstable/";
-            string windowsJSON = "windows-amd64.json";
-            string jsonURL = stateURL + windowsJSON;
+            string jsonURL = stateURL + paths.JsonDescription;
             string timeStamp = DateTime.Now.ToFileTime().ToString();
             string tempDir = Path.Combine(Path.GetTempPath(), timeStamp);
             session.Log(string.Format("Using temp path: {0}", tempDir));
@@ -76,7 +97,7 @@ namespace StateDeploy
             }
             catch (WebException e)
             {
-                string msg = string.Format("Encoutered exception downloading state tool json info file: {0}", e.ToString());
+                string msg = string.Format("Encountered exception downloading state tool json info file: {0}", e.ToString());
                 session.Log(msg);
                 ActiveState.RollbarHelper.Report(msg);
                 return ActionResult.Failure;
@@ -95,9 +116,8 @@ namespace StateDeploy
                 return ActionResult.Failure;
             }
 
-            string windowsZip = "windows-amd64.zip";
             string zipPath = Path.Combine(tempDir, windowsZip);
-            string zipURL = stateURL + info.version + "/" + windowsZip;
+            string zipURL = stateURL + info.version + "/" + paths.ZipFile;
             session.Log(string.Format("Downloading zip file from URL: {0}", zipURL));
             Status.ProgressBar.StatusMessage(session, "Downloading State Tool...");
             try
@@ -169,7 +189,7 @@ namespace StateDeploy
 
             try
             {
-                File.Move(Path.Combine(tempDir, "windows-amd64.exe"), stateToolPath);
+                File.Move(Path.Combine(tempDir, paths.ExeFile), stateToolPath);
             }
             catch (Exception e)
             {
