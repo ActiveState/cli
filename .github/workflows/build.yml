@@ -127,7 +127,7 @@ jobs:
     - name: Generate Update (32bit)
       shell: bash
       if: runner.os == 'Windows'
-      run: state run generate-update i386
+      run: state run generate-update 386
     - name: Build State MSI
       if: runner.os == 'Windows'
       shell: bash

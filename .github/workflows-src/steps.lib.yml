@@ -58,7 +58,7 @@ run: state run generate-update
 name: "Generate Update (32bit)"
 shell: bash
 if: runner.os == 'Windows'
-run: state run generate-update i386
+run: state run generate-update 386
 #@ end
 ---
 #@ def steps_installgo():
