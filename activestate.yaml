@@ -10,6 +10,12 @@ constants:
   - name: BUILD_TARGET
     if: ne .OS.Name "Windows"
     value: ./build/state
+  - name: BUILD_TARGET_32bit
+    if: eq .OS.Name "Windows"
+    value: ./build/state32.exe
+  - name: BUILD_TARGET_32bit
+    if: ne .OS.Name "Windows"
+    value: ./build/state32
   - name: SET_ENV
     description: The environment settings used throughout our project
     value: |
@@ -39,9 +45,16 @@ scripts:
     value: |
       set -e
       $constants.SET_ENV
-      export GOARCH=${1:-amd64}
-      export TARGET_SUFFIX=${1:-}
-      go build -tags "$GO_BUILD_TAGS" -o $constants.BUILD_TARGET${TARGET_SUFFIX} $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
+
+      go build -tags "$GO_BUILD_TAGS" -o $constants.BUILD_TARGET $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
+  - name: build-32bit
+    language: bash
+    description: Builds the project with the host OS as the target OS for 32-bit architecture.
+    value: |
+      set -e
+      $constants.SET_ENV
+      export GOARCH=386
+      go build -tags "$GO_BUILD_TAGS" -o $constants.BUILD_TARGET_32bit $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
   - name: build-for
     language: bash
     description: Builds the project with the specified OS as the target OS. (valid values darwin, linux, windows)
@@ -67,6 +80,27 @@ scripts:
       export TARGET_SUFFIX=${1:-}
       mkdir -p build/update
       go run scripts/update-generator/main.go -o build/update $constants.BUILD_TARGET${TARGET_SUFFIX}
+  - name: generate-update-32bit
+    language: bash
+    description: Generate update files
+    value: |
+      set -e
+      $constants.SET_ENV
+
+      export GOARCH=386
+
+      mkdir -p build/update
+      go run scripts/update-generator/main.go -o build/update $constants.BUILD_TARGET_32bit
+  - name: sign-state-tool
+    if: eq .OS.Name "Windows"
+    language: bash
+    description: Signs the state tool with the signtool executable
+    value: |
+      set -e
+
+      # This assumes that a certificate file Cert.p12 file is unpacked in the current directory
+      signtool.exe sign -d "ActiveState State Tool" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ${constants.BUILD_TARGET}
+      signtool.exe sign -d "ActiveState State Tool (32bit)" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ${constants.BUILD_TARGET_32bit}
   - name: install
     language: bash
     description: Installs the current HEAD version into GOBIN

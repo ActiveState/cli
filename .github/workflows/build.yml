@@ -98,7 +98,7 @@ jobs:
     - name: Build (32bit)
       shell: bash
       if: runner.os == 'Windows'
-      run: state run build 386
+      run: state run build-32bit
     - name: Build Install Scripts
       shell: bash
       run: state run build-install-scripts
@@ -108,7 +108,8 @@ jobs:
       run: |
         echo $MSI_CERT_BASE64 | base64 --decode > Cert.p12
         export PATH=/c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/:/c/Program\ Files\ \(x86\)/Windows\ Kits/10/bin/10.0.16299.0/x86/:$PATH
-        signtool.exe sign -d "ActiveState State Tool" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} build/state.exe
+
+        state run sign-state-tool
       env:
         CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
         MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
@@ -127,7 +128,7 @@ jobs:
     - name: Generate Update (32bit)
       shell: bash
       if: runner.os == 'Windows'
-      run: state run generate-update 386
+      run: state run generate-update-32bit
     - name: Build State MSI
       if: runner.os == 'Windows'
       shell: bash
