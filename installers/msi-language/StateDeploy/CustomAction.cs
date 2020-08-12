@@ -15,15 +15,16 @@ using System.IO.Compression;
 namespace StateDeploy
 {
 
-    private struct StateToolPaths {
-        public string JsonDescription;
-        public string ZipFile;
-
-        public string ExeFile;
-    }
 
     public class CustomActions
     {
+        private struct StateToolPaths
+        {
+            public string JsonDescription;
+            public string ZipFile;
+
+            public string ExeFile;
+        }
 
         private class VersionInfo
         {
@@ -31,15 +32,13 @@ namespace StateDeploy
             public string sha256v2 = "";
         }
 
-        public 
-
-        public static bool is64Bit() {
+        private static bool is64Bit() {
             return System.Environment.Is64BitOperatingSystem;
         }
 
-        public static StateToolPaths GetPaths() {
+        private static StateToolPaths GetPaths() {
             StateToolPaths paths;
-            if (is64Bit) {
+            if (is64Bit()) {
                 paths.JsonDescription = "windows-amd64.json";
                 paths.ZipFile = "windows-amd64.zip";
                 paths.ExeFile = "windows-amd64.exe";
@@ -116,7 +115,7 @@ namespace StateDeploy
                 return ActionResult.Failure;
             }
 
-            string zipPath = Path.Combine(tempDir, windowsZip);
+            string zipPath = Path.Combine(tempDir, paths.ZipFile);
             string zipURL = stateURL + info.version + "/" + paths.ZipFile;
             session.Log(string.Format("Downloading zip file from URL: {0}", zipURL));
             Status.ProgressBar.StatusMessage(session, "Downloading State Tool...");
