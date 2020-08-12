@@ -194,10 +194,17 @@ func (ar *AlternativeRuntime) PreInstall() *failures.Failure {
 	ar.cache, delete = artifactsToKeepAndDelete(ar.cache, artifactsToUuids(ar.artifactsRequested))
 	for _, v := range delete {
 		for _, file := range v.Files {
+			if !fileutils.TargetExists(file) {
+				continue // don't care it's already deleted (might have been deleted by another artifact that supplied the same file)
+			}
 			if err := os.Remove(file); err != nil {
 				return failures.FailIO.Wrap(err, locale.Tl("err_rm_artf", "Could not remove old package file at {{.V0}}.", file))
 			}
 		}
+	}
+
+	if err := ar.storeArtifactCache(); err != nil {
+		return failures.FailIO.Wrap(err, locale.Tl("err_store_artf", "Could not store artifact cache."))
 	}
 
 	return nil
