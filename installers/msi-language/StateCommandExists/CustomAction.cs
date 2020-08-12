@@ -12,7 +12,6 @@ namespace StateCommandExists
             ActiveState.RollbarHelper.ConfigureRollbarSingleton(session["COMMIT_ID"]);
 
             CheckCommand(session, "state.exe", "STATE_TOOL_INSTALLED", "STATE_TOOL_PATH");
-            CheckCommand(session, "code", "CODE_INSTALLED", "CODE_PATH");
             CheckCommand(session, "code.cmd", "CODE_INSTALLED", "CODE_PATH");
             return ActionResult.Success;
         }
@@ -24,11 +23,8 @@ namespace StateCommandExists
             foreach (var path in values.Split(Path.PathSeparator))
             {
                 var fullPath = Path.Combine(path, command);
-                session.Log(string.Format("Checking path: {0}", fullPath));
                 if (File.Exists(fullPath))
                 {
-                    session.Log(string.Format("Setting {0} to {1}", installedProperty, "true"));
-                    session.Log(string.Format("Setting {0} to {1}", pathProperty, fullPath));
                     session[installedProperty] = "true";
                     session[pathProperty] = fullPath;
                     return;
