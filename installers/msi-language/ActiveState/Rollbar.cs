@@ -34,11 +34,13 @@ namespace ActiveState
                     payload.Data.CodeVersion = codeVersion;
                 }
             };
-
+            
+            /*
             RollbarLocator.RollbarInstance
                 // minimally required Rollbar configuration:
                 .Configure(config)
                 ;
+                */
 
             string deviceId = new DeviceIdBuilder()
                 .AddMachineName()
