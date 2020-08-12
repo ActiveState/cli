@@ -14,6 +14,7 @@
 	<Property Id="AS_USERNAME" Secure="yes" />
 	<Property Id="AS_PASSWORD" Secure="yes" />
 	<Property Id="AS_TOTP" Secure="yes" />
+	<Property Id="CODE_INSTALLED" Value="false" />
     <!-- End Configuration parameters -->
     
     <!-- Design assets -->
@@ -77,7 +78,7 @@
       <RegistrySearch Id='DefaultBrowser' Type='raw' Root='HKCR' Key='http\shell\open\command' />
     </Property>
 
-    <Property Id="STATE_TOOL_WIZARD_CHECK_BOX" Value="1"></Property>
+    <Property Id="STATE_TOOL_WIZARD_CHECK_BOX" Value="1" />
     <Property Id="MSIUSEREALADMINDETECTION" Value="1" />
 	<Property Id="COMMIT_ID" Value="{{.CommitID}}" />
 
@@ -107,8 +108,9 @@
 			<Publish Dialog="BrowseDlg" Control="OK" Event="SpawnDialog" Value="InvalidDirDlg" Order="4"><![CDATA[NOT WIXUI_DONTVALIDATEPATH AND WIXUI_INSTALLDIR_VALID<>"1"]]></Publish>
 
 			<Publish Dialog="CustomExitDialog" Control="Finish2" Event="EndDialog" Value="Return" Order="999">1</Publish>
-      <Publish Dialog="CustomExitDialog" Control="Finish2" Event="DoAction" Value="LaunchStateToolWizard">STATE_TOOL_WIZARD_CHECK_BOX=1 and NOT Installed</Publish>
-      <Publish Dialog="CustomExitDialog" Control="Finish2" Event="DoAction" Value="LaunchReleaseNotes">STATE_TOOL_WIZARD_REL_NOTES_CHECK_BOX=1 and NOT Installed</Publish>
+      		<Publish Dialog="CustomExitDialog" Control="Finish2" Event="DoAction" Value="LaunchStateToolWizard">STATE_TOOL_WIZARD_CHECK_BOX=1 and NOT Installed</Publish>
+      		<Publish Dialog="CustomExitDialog" Control="Finish2" Event="DoAction" Value="LaunchReleaseNotes">STATE_TOOL_WIZARD_REL_NOTES_CHECK_BOX=1 and NOT Installed</Publish>
+			<Publish Dialog="CustomExitDialog" Control="Finish2" Event="DoAction" Value="InstallVSCodeExt">INSTALL_VSCODE_EXT_CHECK_BOX=1 and NOT Installed</Publish>
 
 			<Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="PrivacyConsentDlg">NOT Installed</Publish>
 			<Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="VerifyReadyDlg">Installed AND PATCH</Publish>
@@ -145,8 +147,10 @@
 
 		</UI>
 
-    <CustomAction Id="LaunchStateToolWizard" Execute="immediate" Directory="INSTALLDIR" ExeCommand="cmd.exe /k [STATE_TOOL_PATH] tutorial new-project" Impersonate="yes" Return="asyncNoWait" />
+    <CustomAction Id="LaunchStateToolWizard" Execute="immediate" Directory="INSTALLDIR" ExeCommand="cmd.exe /k &quot;[STATE_TOOL_PATH]&quot; tutorial new-project" Impersonate="yes" Return="asyncNoWait" />
     <CustomAction Id='LaunchReleaseNotes' Execute="immediate" Directory="INSTALLDIR" ExeCommand="explorer.exe [REL_NOTES]" Impersonate="yes" Return="asyncNoWait" />
+	<CustomAction Id='InstallVSCodeExt' Execute="immediate" Directory="INSTALLDIR" ExeCommand="cmd.exe /c &quot;[CODE_PATH]&quot; --install-extension ActiveState.activestate-platform" Impersonate="yes" Return="asyncNoWait" />
+
 
     <UIRef Id="WixUI_Common" />
     <UIRef Id="CustomUI_PrivacyConsent" />
@@ -154,8 +158,8 @@
 		<Property Id="IS_MODIFY" Value="false" />
 
 		<InstallUISequence>
-			<Custom Action="StateCommandExists" After="CostFinalize">NOT Installed OR (Installed AND NOT (REMOVE~="ALL"))</Custom>
-			<Custom Action="SetIsModify" After="StateCommandExists">(Installed AND NOT (REMOVE~="ALL"))</Custom>
+			<Custom Action="CommandsExist" After="CostFinalize">NOT Installed OR (Installed AND NOT (REMOVE~="ALL"))</Custom>
+			<Custom Action="SetIsModify" After="CommandsExist">(Installed AND NOT (REMOVE~="ALL"))</Custom>
 			<Custom Action="SetInstallDirOnModify" After="SetIsModify">(Installed AND NOT (REMOVE~="ALL"))</Custom>
     </InstallUISequence>
 
@@ -175,8 +179,8 @@
 		<CustomAction Id="SetRollbackPropertyValues" Property="Rollback" Value="STATE_TOOL_INSTALLED=[STATE_TOOL_INSTALLED];INSTALLDIR=[INSTALLDIR];COMMIT_ID=[COMMIT_ID]" />
 
 
-    <Binary Id="StateCommandCA" SourceFile="$(var.StateCommandExists.TargetDir)$(var.StateCommandExists.TargetName).CA.dll" />
-		<CustomAction Id="StateCommandExists" Impersonate="yes" BinaryKey="StateCommandCA" DllEntry="StateCommandExists" Return="check" />
+    <Binary Id="CommandsCA" SourceFile="$(var.StateCommandExists.TargetDir)$(var.StateCommandExists.TargetName).CA.dll" />
+		<CustomAction Id="CommandsExist" Impersonate="yes" BinaryKey="CommandsCA" DllEntry="CheckCommands" Return="check" />
 
 		<Binary Id="StatusCA" SourceFile="$(var.Status.TargetDir)$(var.Status.TargetName).CA.dll" />
 		<CustomAction Id="Status" Impersonate="no" BinaryKey="StatusCA" DllEntry="ResetProgress" Execute="deferred" Return="check" />

@@ -7,25 +7,31 @@ namespace StateCommandExists
     public class CustomActions
     {
         [CustomAction]
-        public static ActionResult StateCommandExists(Session session)
-        {
-            session.Log("Checking State Tool installation");
-
+        public static ActionResult CheckCommands(Session session)
+        { 
             ActiveState.RollbarHelper.ConfigureRollbarSingleton(session["COMMIT_ID"]);
 
+            CheckCommand(session, "state.exe", "STATE_TOOL_INSTALLED", "STATE_TOOL_PATH");
+            CheckCommand(session, "code.cmd", "CODE_INSTALLED", "CODE_PATH");
+            return ActionResult.Success;
+        }
+
+        private static void CheckCommand(Session session, string command, string installedProperty, string pathProperty)
+        {
+            session.Log(string.Format("Checking installation of: {0}", command));
             var values = Environment.GetEnvironmentVariable("PATH");
             foreach (var path in values.Split(Path.PathSeparator))
             {
-                var fullPath = Path.Combine(path, "state.exe");
+                var fullPath = Path.Combine(path, command);
                 if (File.Exists(fullPath))
                 {
-                    session["STATE_TOOL_INSTALLED"] = "true";
-                    session["STATE_TOOL_PATH"] = fullPath;
-                    return ActionResult.Success;
+                    session[installedProperty] = "true";
+                    session[pathProperty] = fullPath;
+                    return;
                 }
             }
-            session["STATE_TOOL_INSTALLED"] = "false";
-            return ActionResult.Success;
+            session[installedProperty] = "false";
+            return;
         }
     }
 }
