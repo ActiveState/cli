@@ -857,6 +857,7 @@ func resolvedPathContainsParent(path, parentPath string) bool {
 	return path == parentPath || strings.HasPrefix(path, parentPath)
 }
 
+// SymlinkTarget retrieves the target of the given symlink
 func SymlinkTarget(symlink string) (string, error) {
 	fileInfo, err := os.Lstat(symlink)
 	if err != nil {
@@ -873,4 +874,18 @@ func SymlinkTarget(symlink string) (string, error) {
 	}
 
 	return evalDest, nil
+}
+
+// ListDir recursively lists filepaths under the given sourcePath
+// This does not follow symlinks
+func ListDir(sourcePath string, includeDirs bool) []string {
+	result := []string{}
+	filepath.Walk(sourcePath, func(path string, f os.FileInfo, err error) error {
+		if includeDirs == false && f.IsDir() {
+			return nil
+		}
+		result = append(result, path)
+		return nil
+	})
+	return result
 }

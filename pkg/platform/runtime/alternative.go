@@ -233,7 +233,11 @@ func (ar *AlternativeRuntime) PostUnpackArtifact(artf *HeadChefArtifact, tmpRunt
 
 	artMeta := artifactCacheMeta{*artf.ArtifactID, []string{}}
 	onMoveFile := func(fromPath, toPath string) {
-		artMeta.Files = append(artMeta.Files, toPath)
+		if fileutils.IsDir(toPath) {
+			artMeta.Files = append(artMeta.Files, fileutils.ListDir(toPath, false)...)
+		} else {
+			artMeta.Files = append(artMeta.Files, toPath)
+		}
 		cb()
 	}
 
