@@ -63,6 +63,7 @@ require (
 	github.com/mattn/go-isatty v0.0.3 // indirect
 	github.com/mattn/go-runewidth v0.0.4 // indirect
 	github.com/mgutz/ansi v0.0.0-20170206155736-9520e82c474b // indirect
+	github.com/mitchellh/go-wordwrap v1.0.0
 	github.com/mitchellh/mapstructure v0.0.0-20180203102830-a4e142e9c047 // indirect
 	github.com/nicksnyder/go-i18n v1.10.0
 	github.com/nwaples/rardecode v0.0.0-20171029023500-e06696f847ae // indirect

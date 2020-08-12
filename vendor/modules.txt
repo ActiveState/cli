@@ -224,6 +224,8 @@ github.com/mattn/go-runewidth
 github.com/mgutz/ansi
 # github.com/mitchellh/go-homedir v1.1.0
 github.com/mitchellh/go-homedir
+# github.com/mitchellh/go-wordwrap v1.0.0
+github.com/mitchellh/go-wordwrap
 # github.com/mitchellh/mapstructure v0.0.0-20180203102830-a4e142e9c047
 github.com/mitchellh/mapstructure
 # github.com/nicksnyder/go-i18n v1.10.0

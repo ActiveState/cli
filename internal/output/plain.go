@@ -11,6 +11,7 @@ import (
 
 	"github.com/bndr/gotabulate"
 	"github.com/go-openapi/strfmt"
+	"github.com/mitchellh/go-wordwrap"
 	"github.com/thoas/go-funk"
 	"golang.org/x/crypto/ssh/terminal"
 
@@ -82,10 +83,25 @@ func (f *Plain) write(writer io.Writer, value interface{}) {
 
 // writeNow is a little helper that just writes the given value to the requested writer (no marshalling)
 func (f *Plain) writeNow(writer io.Writer, value string) {
-	_, err := writeColorized(value, writer, !f.cfg.Colored)
+	_, err := writeColorized(wordWrap(value), writer, !f.cfg.Colored)
 	if err != nil {
 		logging.Errorf("Writing colored output failed: %v", err)
 	}
+}
+
+func wordWrap(text string) string {
+	maxTermWidth := 160
+	termWidth, _, err := terminal.GetSize(int(os.Stdin.Fd()))
+	if err != nil {
+		logging.Debug("Cannot get terminal size: %v", err)
+		return wordwrap.WrapString(text, uint(maxTermWidth))
+	}
+
+	if termWidth > maxTermWidth {
+		termWidth = maxTermWidth
+	}
+
+	return wordwrap.WrapString(text, uint(termWidth))
 }
 
 const nilText = "<nil>"
