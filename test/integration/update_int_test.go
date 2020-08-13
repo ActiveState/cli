@@ -74,7 +74,7 @@ func (suite *UpdateIntegrationTestSuite) TestAutoUpdateNoPermissions() {
 	defer ts.Close()
 
 	cp := ts.SpawnWithOpts(e2e.WithArgs("--version"), e2e.AppendEnv(suite.env(false)...), e2e.NonWriteableBinDir())
-	cp.Expect("Could not update to the latest available version of the state tool due to insufficient permissions")
+	cp.Expect("Could not update to the latest available version")
 	cp.Expect("ActiveState CLI")
 	cp.Expect("Revision")
 	cp.ExpectExitCode(0)
@@ -186,7 +186,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 	if os.Getenv("GIT_BRANCH") == "master" {
 		cp.ExpectRe("(Version updated|You are using the latest version available)", 60*time.Second)
 	} else {
-		cp.Expect("Downloading latest version of the state tool")
+		cp.Expect("Updating state tool:  Downloading latest version")
 		cp.Expect("Version updated", 60*time.Second)
 
 	}

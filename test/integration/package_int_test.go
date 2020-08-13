@@ -187,7 +187,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTermWrongTe
 	suite.PrepareActiveStateYAML(ts)
 
 	cp := ts.Spawn("packages", "search", "xxxrequestsxxx", "--exact-term")
-	cp.Expect("Currently no package of the provided name is available on the ActiveState Platform")
+	cp.Expect("Currently no package of the provided name")
 	cp.ExpectExitCode(0)
 }
 
@@ -209,7 +209,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithWrongLang() {
 	suite.PrepareActiveStateYAML(ts)
 
 	cp := ts.Spawn("packages", "search", "numpy", "--language=perl")
-	cp.Expect("Currently no package of the provided name is available on the ActiveState Platform")
+	cp.Expect("Currently no package of the provided name")
 	cp.ExpectExitCode(0)
 }
 

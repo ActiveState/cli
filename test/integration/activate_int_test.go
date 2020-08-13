@@ -14,7 +14,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 )
 
@@ -94,11 +93,7 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	)
 	cp.Expect("Where would you like to checkout")
 	cp.SendLine(cp.WorkDirectory())
-	cp.Expect("Downloading", 20*time.Second)
-	cp.Expect("Installing", 120*time.Second)
 	cp.Expect("activated state", 120*time.Second)
-
-	suite.assertCompletedStatusBarReport(cp.Snapshot())
 
 	// ensure that shell is functional
 	cp.WaitForInput()
@@ -246,7 +241,7 @@ func (suite *ActivateIntegrationTestSuite) TestInit_Activation_NoCommitID() {
 		e2e.WithArgs("activate"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect(locale.Tr("err_project_no_commit", url))
+	cp.Expect("The activatestate.yaml for the project")
 	cp.ExpectExitCode(1)
 }
 
@@ -258,8 +253,6 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_InterruptedInstallation(
 	defer ts.Close()
 
 	cp := ts.Spawn("deploy", "install", "ActiveState-CLI/small-python")
-	cp.Expect("Downloading")
-	cp.Expect("Installing")
 	// interrupting installation
 	cp.SendCtrlC()
 	cp.ExpectNotExitCode(0)
