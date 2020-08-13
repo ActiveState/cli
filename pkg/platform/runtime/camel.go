@@ -98,7 +98,7 @@ func (cr *CamelRuntime) ArtifactsToDownload() []*HeadChefArtifact {
 	return cr.artifacts
 }
 
-// PreInstall does nothing for camel builds
+// PreInstall attempts to clean the runtime-directory.  Failures are only logged to rollbar and do not cause the installation to fail.
 func (cr *CamelRuntime) PreInstall() *failures.Failure {
 	if fileutils.DirExists(cr.runtimeDir) {
 		empty, fail := fileutils.IsEmptyDir(cr.runtimeDir)
