@@ -73,6 +73,7 @@ steps:
 name: "Integration Test"
 strategy: *strategy
 runs-on: *runs-on
+needs: [ prepare ]
 env: *env
 timeout-minutes: 25
 steps:
