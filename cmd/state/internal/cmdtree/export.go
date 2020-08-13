@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/export"
 	"github.com/ActiveState/cli/internal/runners/export/config"
+	"github.com/ActiveState/cli/internal/runners/export/ghactions"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
@@ -133,5 +134,19 @@ func newExportConfigCommand(prime *primer.Values) *captain.Command {
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, _ []string) error {
 			return runner.Run(ccmd, &params)
+		})
+}
+
+func newExportGithubActionCommand(prime *primer.Values) *captain.Command {
+	runner := ghactions.New(prime)
+	params := ghactions.Params{}
+
+	return captain.NewCommand(
+		"github-actions",
+		locale.Tl("export_ghactions_description", "Create a github action workflow for your project"),
+		[]*captain.Flag{},
+		[]*captain.Argument{},
+		func(ccmd *captain.Command, _ []string) error {
+			return runner.Run(&params)
 		})
 }
