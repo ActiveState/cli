@@ -162,7 +162,7 @@ func (ar *AlternativeRuntime) IsInstalled() bool {
 }
 
 func (ar *AlternativeRuntime) downloadDirectory(artf *HeadChefArtifact) string {
-	return filepath.Join(ar.runtimeDir, "artifacts", hash.ShortHash(artf.ArtifactID.String()))
+	return filepath.Join(ar.runtimeDir, constants.LocalRuntimeEnvironmentDirectory, "artifacts", hash.ShortHash(artf.ArtifactID.String()))
 }
 
 // DownloadDirectory returns the local directory where the artifact files should
@@ -194,10 +194,17 @@ func (ar *AlternativeRuntime) PreInstall() *failures.Failure {
 	ar.cache, delete = artifactsToKeepAndDelete(ar.cache, artifactsToUuids(ar.artifactsRequested))
 	for _, v := range delete {
 		for _, file := range v.Files {
+			if !fileutils.TargetExists(file) {
+				continue // don't care it's already deleted (might have been deleted by another artifact that supplied the same file)
+			}
 			if err := os.Remove(file); err != nil {
 				return failures.FailIO.Wrap(err, locale.Tl("err_rm_artf", "Could not remove old package file at {{.V0}}.", file))
 			}
 		}
+	}
+
+	if err := ar.storeArtifactCache(); err != nil {
+		return failures.FailIO.Wrap(err, locale.Tl("err_store_artf", "Could not store artifact cache."))
 	}
 
 	return nil
@@ -233,7 +240,11 @@ func (ar *AlternativeRuntime) PostUnpackArtifact(artf *HeadChefArtifact, tmpRunt
 
 	artMeta := artifactCacheMeta{*artf.ArtifactID, []string{}}
 	onMoveFile := func(fromPath, toPath string) {
-		artMeta.Files = append(artMeta.Files, toPath)
+		if fileutils.IsDir(toPath) {
+			artMeta.Files = append(artMeta.Files, fileutils.ListDir(toPath, false)...)
+		} else {
+			artMeta.Files = append(artMeta.Files, toPath)
+		}
 		cb()
 	}
 
@@ -268,7 +279,10 @@ func (ar *AlternativeRuntime) PostUnpackArtifact(artf *HeadChefArtifact, tmpRunt
 	}
 
 	if err := os.RemoveAll(tmpRuntimeDir); err != nil {
-		logging.Error("removing %s after unpacking runtime: %v", tmpRuntimeDir, err)
+		logging.Error("removing tmpdir %s after unpacking runtime: %v", tmpRuntimeDir, err)
+	}
+	if err := os.Remove(archivePath); err != nil {
+		logging.Error("removing archive %s after unpacking runtime: %v", archivePath, err)
 	}
 	return nil
 }
@@ -291,7 +305,7 @@ func (ar *AlternativeRuntime) PostInstall() error {
 
 	files, err := ioutil.ReadDir(ar.runtimeEnvBaseDir())
 	if err != nil {
-		return errs.Wrap(err, "could not find the runtime environment directory")
+		return errs.Wrap(err, "Could not find the runtime environment directory")
 	}
 
 	filenames := make([]string, 0, len(files))
