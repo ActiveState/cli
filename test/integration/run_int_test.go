@@ -17,11 +17,12 @@ import (
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 type RunIntegrationTestSuite struct {
-	suite.Suite
+	tagsuite.Suite
 }
 
 func (suite *RunIntegrationTestSuite) createProjectFile(ts *e2e.Session) {
@@ -93,6 +94,7 @@ func (suite *RunIntegrationTestSuite) expectTerminateBatchJob(cp *termtest.Conso
 // - https://www.pivotaltracker.com/story/show/167523128
 // - https://www.pivotaltracker.com/story/show/169509213
 func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
+	suite.
 	if runtime.GOOS == "windows" && e2e.RunningOnCI() {
 		suite.T().Skip("Windows CI does not support ctrl-c events")
 	}

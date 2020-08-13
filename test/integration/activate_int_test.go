@@ -15,17 +15,20 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 )
 
 type ActivateIntegrationTestSuite struct {
-	suite.Suite
+	tagsuite.Suite
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivatePython3() {
+	suite.OnlyRunForTags("python", "activate", "critical")
 	suite.activatePython("3")
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivatePython3_zsh() {
+	suite.OnlyRunForTags("python", "activate", "shell")
 	if _, err := exec.LookPath("zsh"); err != nil {
 		suite.T().Skip("This test requires a zsh shell in your PATH")
 	}
@@ -33,10 +36,12 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePython3_zsh() {
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivatePython2() {
+	suite.OnlyRunForTags("python", "activate")
 	suite.activatePython("2")
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
+	suite.OnlyRunForTags("critical", "activate")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -52,6 +57,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
 
 // TestActivatePythonByHostOnly Tests whether we are only pulling in the build for the target host
 func (suite *ActivateIntegrationTestSuite) TestActivatePythonByHostOnly() {
+	suite.OnlyRunForTags("critical", "activate")
 	if runtime.GOOS != "linux" {
 		suite.T().Skip("not currently testing this OS")
 	}
@@ -121,6 +127,7 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivatePython3_Forward() {
+	suite.OnlyRunForTags("activate", "pull")
 	var project string
 	if runtime.GOOS == "darwin" {
 		project = "Activate-MacOS"
@@ -158,6 +165,7 @@ version: %s
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
+	suite.OnlyRunForTags("activate", "perl")
 	if runtime.GOOS == "darwin" {
 		suite.T().Skip("Perl not supported on macOS")
 	}
@@ -197,6 +205,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivate_Subdir() {
+	suite.OnlyRunForTags("activate")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	fail := fileutils.Mkdir(ts.Dirs.Work, "foo", "bar", "baz")
@@ -231,6 +240,7 @@ version: %s
 }
 
 func (suite *ActivateIntegrationTestSuite) TestInit_Activation_NoCommitID() {
+	suite.OnlyRunForTags("activate", "error")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -246,6 +256,7 @@ func (suite *ActivateIntegrationTestSuite) TestInit_Activation_NoCommitID() {
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivate_InterruptedInstallation() {
+	suite.OnlyRunForTags("activate")
 	if runtime.GOOS == "windows" && e2e.RunningOnCI() {
 		suite.T().Skip("interrupting installation does not work on Windows on CI")
 	}
@@ -259,6 +270,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_InterruptedInstallation(
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivate_FromCache() {
+	suite.OnlyRunForTags("activate", "critical")
 	ts := e2e.New(suite.T(), true)
 	err := ts.ClearCache()
 	suite.Require().NoError(err)
@@ -288,6 +300,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_FromCache() {
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivate_JSON() {
+	suite.OnlyRunForTags("activate", "output")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -299,6 +312,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_JSON() {
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivate_Command() {
+	suite.OnlyRunForTags("activate", "vscode")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
