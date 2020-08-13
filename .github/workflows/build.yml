@@ -238,6 +238,9 @@ jobs:
         echo "Adding $bin to PATH"
         echo "::add-path::$bin"
         printenv
+    - name: Generate Version
+      shell: bash
+      run: state run generate-version
     - name: Preprocess
       shell: bash
       run: |
