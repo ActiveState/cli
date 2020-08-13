@@ -78,9 +78,9 @@ timeout-minutes: 25
 steps:
   - name: "Checkout code"
     uses: actions/checkout@v2
+  - #@ steps_downloadsharedartifacts()
   - #@ steps_installgo()
   - #@ steps_setup()
-  - #@ steps_genversion()
   - #@ steps_preprocess()
   - #@ steps_build()
   - #@ steps_genupdate()
