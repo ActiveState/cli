@@ -267,6 +267,8 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_InterruptedInstallation(
 
 func (suite *ActivateIntegrationTestSuite) TestActivate_FromCache() {
 	ts := e2e.New(suite.T(), true)
+	err := ts.ClearCache()
+	suite.Require().NoError(err)
 	defer ts.Close()
 
 	cp := ts.SpawnWithOpts(

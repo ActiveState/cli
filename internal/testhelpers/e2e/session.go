@@ -102,6 +102,10 @@ func New(t *testing.T, retainDirs bool, extraEnv ...string) *Session {
 	return &Session{Dirs: dirs, env: env, retainDirs: retainDirs, t: t}
 }
 
+func (s *Session) ClearCache() error {
+	return os.RemoveAll(s.Dirs.Cache)
+}
+
 // Spawn spawns the state tool executable to be tested with arguments
 func (s *Session) Spawn(args ...string) *termtest.ConsoleProcess {
 	return s.SpawnCmdWithOpts(s.executablePath(), WithArgs(args...))
