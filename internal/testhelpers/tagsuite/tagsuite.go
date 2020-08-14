@@ -1,6 +1,7 @@
 package tagsuite
 
 import (
+	"fmt"
 	"os"
 	"strings"
 
@@ -17,6 +18,7 @@ type Suite struct {
 func (suite *Suite) OnlyRunForTags(tags ...string) {
 	setTagsString, _ := os.LookupEnv("TEST_SUITE_TAGS")
 
+	fmt.Println("Tags from environment: ", setTagsString)
 	// if no tags are defined, run the test
 	if setTagsString == "" {
 		return
