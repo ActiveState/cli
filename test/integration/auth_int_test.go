@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 )
 
 var uid uuid.UUID
@@ -25,10 +26,11 @@ func init() {
 }
 
 type AuthIntegrationTestSuite struct {
-	suite.Suite
+	tagsuite.Suite
 }
 
 func (suite *AuthIntegrationTestSuite) TestAuth() {
+	suite.OnlyRunForTags("auth", "critical")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	username := ts.CreateNewUser()
@@ -89,6 +91,7 @@ func (suite *AuthIntegrationTestSuite) authOutput(method string) {
 }
 
 func (suite *AuthIntegrationTestSuite) TestAuth_JsonOutput() {
+	suite.OnlyRunForTags("auth", "json")
 	suite.authOutput("json")
 }
 

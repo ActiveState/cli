@@ -4,14 +4,16 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/stretchr/testify/suite"
 )
 
 type PlatformsIntegrationTestSuite struct {
-	suite.Suite
+	tagsuite.Suite
 }
 
 func (suite *PlatformsIntegrationTestSuite) TestPlatforms_searchSimple() {
+	suite.OnlyRunForTags("platforms")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -33,6 +35,7 @@ func (suite *PlatformsIntegrationTestSuite) TestPlatforms_searchSimple() {
 }
 
 func (suite *PlatformsIntegrationTestSuite) TestPlatforms_listSimple() {
+	suite.OnlyRunForTags("platforms")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -54,6 +57,7 @@ func (suite *PlatformsIntegrationTestSuite) TestPlatforms_listSimple() {
 }
 
 func (suite *PlatformsIntegrationTestSuite) TestPlatforms_addRemoveSimple() {
+	suite.OnlyRunForTags("platforms")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 

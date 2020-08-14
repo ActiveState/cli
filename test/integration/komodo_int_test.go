@@ -14,6 +14,7 @@ import (
 )
 
 func (suite *ActivateIntegrationTestSuite) TestActivate_EditorV0() {
+	suite.OnlyRunForTags("activate", "komodo")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -25,10 +26,12 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_EditorV0() {
 }
 
 func (suite *AuthIntegrationTestSuite) TestAuthOutput_EditorV0() {
+	suite.OnlyRunForTags("auth", "vscode", "komodo")
 	suite.authOutput("editor.v0")
 }
 
 func (suite *AuthIntegrationTestSuite) TestAuth_EditorV0() {
+	suite.OnlyRunForTags("auth", "vscode", "komodo")
 	user := userJSON{
 		Username: "cli-integration-tests",
 		URLName:  "cli-integration-tests",
@@ -51,6 +54,7 @@ func (suite *AuthIntegrationTestSuite) TestAuth_EditorV0() {
 }
 
 func (suite *ExportIntegrationTestSuite) TestExport_EditorV0() {
+	suite.OnlyRunForTags("export", "vscode", "komodo")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -62,6 +66,7 @@ func (suite *ExportIntegrationTestSuite) TestExport_EditorV0() {
 }
 
 func (suite *ForkIntegrationTestSuite) TestFork_EditorV0() {
+	suite.OnlyRunForTags("fork", "vscode", "komodo")
 	ts := e2e.New(suite.T(), false)
 	defer suite.cleanup(ts)
 
@@ -92,6 +97,7 @@ func (suite *ForkIntegrationTestSuite) TestFork_EditorV0() {
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_EditorV0() {
+	suite.OnlyRunForTags("init", "vscode", "komodo")
 	suite.runInitTest(
 		true,
 		locale.T("editor_yaml"),
@@ -101,6 +107,7 @@ func (suite *InitIntegrationTestSuite) TestInit_EditorV0() {
 }
 
 func (suite *OrganizationsIntegrationTestSuite) TestOrganizations_EditorV0() {
+	suite.OnlyRunForTags("organizations", "vscode", "komodo")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -127,6 +134,7 @@ func (suite *OrganizationsIntegrationTestSuite) TestOrganizations_EditorV0() {
 }
 
 func (suite *PullIntegrationTestSuite) TestPull_EditorV0() {
+	suite.OnlyRunForTags("pull", "komodo")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -149,6 +157,7 @@ func (suite *PullIntegrationTestSuite) TestPull_EditorV0() {
 }
 
 func (suite *PushIntegrationTestSuite) TestPush_EditorV0() {
+	suite.OnlyRunForTags("push", "vscode", "komodo")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	username := ts.CreateNewUser()
@@ -169,6 +178,7 @@ func (suite *PushIntegrationTestSuite) TestPush_EditorV0() {
 }
 
 func (suite *RunIntegrationTestSuite) TestRun_EditorV0() {
+	suite.OnlyRunForTags("run", "komodo")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	suite.createProjectFile(ts)
@@ -183,6 +193,7 @@ func (suite *RunIntegrationTestSuite) TestRun_EditorV0() {
 }
 
 func (suite *ScriptsIntegrationTestSuite) TestScripts_EditorV0() {
+	suite.OnlyRunForTags("scripts", "komodo")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	suite.setupConfigFile(ts)
@@ -193,6 +204,7 @@ func (suite *ScriptsIntegrationTestSuite) TestScripts_EditorV0() {
 }
 
 func (suite *SecretsIntegrationTestSuite) TestSecretsOutput_EditorV0() {
+	suite.OnlyRunForTags("secrets", "komodo")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -219,6 +231,7 @@ func (suite *SecretsIntegrationTestSuite) TestSecretsOutput_EditorV0() {
 }
 
 func (suite *SecretsIntegrationTestSuite) TestSecretsGet_EditorV0() {
+	suite.OnlyRunForTags("secrets", "komodo")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 

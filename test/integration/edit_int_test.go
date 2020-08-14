@@ -13,12 +13,13 @@ import (
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 type EditIntegrationTestSuite struct {
-	suite.Suite
+	tagsuite.Suite
 }
 
 func (suite *EditIntegrationTestSuite) setup() (*e2e.Session, e2e.SpawnOptions) {
@@ -67,6 +68,7 @@ func (suite *EditIntegrationTestSuite) TearDownTest() {
 }
 
 func (suite *EditIntegrationTestSuite) TestEdit() {
+	suite.OnlyRunForTags("edit")
 	ts, env := suite.setup()
 	defer ts.Close()
 	cp := ts.SpawnWithOpts(e2e.WithArgs("scripts", "edit", "test-script"), env)
@@ -77,6 +79,7 @@ func (suite *EditIntegrationTestSuite) TestEdit() {
 }
 
 func (suite *EditIntegrationTestSuite) TestEdit_NonInteractive() {
+	suite.OnlyRunForTags("edit")
 	if runtime.GOOS == "windows" && e2e.RunningOnCI() {
 		suite.T().Skip("Windows CI does not support ctrl-c interrupts.")
 	}
@@ -93,6 +96,7 @@ func (suite *EditIntegrationTestSuite) TestEdit_NonInteractive() {
 }
 
 func (suite *EditIntegrationTestSuite) TestEdit_UpdateCorrectPlatform() {
+	suite.OnlyRunForTags("edit")
 	ts, env := suite.setup()
 	defer ts.Close()
 	cp := ts.SpawnWithOpts(

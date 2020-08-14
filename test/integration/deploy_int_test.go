@@ -15,10 +15,11 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 )
 
 type DeployIntegrationTestSuite struct {
-	suite.Suite
+	tagsuite.Suite
 }
 
 var symlinkExt = ""
@@ -66,6 +67,7 @@ func (suite *DeployIntegrationTestSuite) deploy(ts *e2e.Session, prj string) {
 }
 
 func (suite *DeployIntegrationTestSuite) TestDeployPerl() {
+	suite.OnlyRunForTags("perl", "deploy")
 	if !e2e.RunningOnCI() {
 		suite.T().Skipf("Skipping DeployIntegrationTestSuite when not running on CI, as it modifies bashrc/registry")
 	}
@@ -138,6 +140,7 @@ func (suite *DeployIntegrationTestSuite) checkSymlink(name string, binDir, workD
 }
 
 func (suite *DeployIntegrationTestSuite) TestDeployPython() {
+	suite.OnlyRunForTags("deploy", "python", "critical")
 	if !e2e.RunningOnCI() {
 		suite.T().Skipf("Skipping DeployIntegrationTestSuite when not running on CI, as it modifies bashrc/registry")
 	}
@@ -199,6 +202,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployPython() {
 }
 
 func (suite *DeployIntegrationTestSuite) TestDeployInstall() {
+	suite.OnlyRunForTags("deploy")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -227,6 +231,7 @@ func (suite *DeployIntegrationTestSuite) InstallAndAssert(ts *e2e.Session) {
 }
 
 func (suite *DeployIntegrationTestSuite) TestDeployConfigure() {
+	suite.OnlyRunForTags("deploy")
 	if !e2e.RunningOnCI() {
 		suite.T().Skipf("Skipping TestDeployConfigure when not running on CI, as it modifies bashrc/registry")
 	}
@@ -283,6 +288,7 @@ func (suite *DeployIntegrationTestSuite) AssertConfig(ts *e2e.Session) {
 }
 
 func (suite *DeployIntegrationTestSuite) TestDeploySymlink() {
+	suite.OnlyRunForTags("deploy")
 	if runtime.GOOS != "windows" && !e2e.RunningOnCI() {
 		suite.T().Skipf("Skipping TestDeploySymlink when not running on CI, as it modifies PATH")
 	}
@@ -315,6 +321,7 @@ func (suite *DeployIntegrationTestSuite) TestDeploySymlink() {
 }
 
 func (suite *DeployIntegrationTestSuite) TestDeployReport() {
+	suite.OnlyRunForTags("deploy")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -336,6 +343,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployReport() {
 }
 
 func (suite *DeployIntegrationTestSuite) TestDeployTwice() {
+	suite.OnlyRunForTags("deploy")
 	if runtime.GOOS == "darwin" || !e2e.RunningOnCI() {
 		suite.T().Skipf("Skipping TestDeployTwice when not running on CI or on MacOS, as it modifies PATH")
 	}
