@@ -209,7 +209,7 @@ jobs:
       run: |
         go test `go list ./... | grep -v api | grep -v integration | grep -v expect`
   inttest:
-    if: contains(github.event.pull_request.labels.*.name, 'run integration tests') || contains(github.event.pull_request.labels.*.name, 'run critical integration tests')
+    if: contains(github.event.pull_request.labels.*.name, 'run integration tests')
     name: Integration Test
     strategy:
       matrix:
