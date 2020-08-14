@@ -3,6 +3,44 @@ name: Integration Test
   schedule:
   - cron: 0 0 * * *
 jobs:
+  prepare:
+    name: Prepare
+    runs-on: ubuntu-latest
+    env:
+      ACTIVESTATE_CLI_DISABLE_RUNTIME: true
+      GOFLAGS: -mod=vendor
+      SHELL: bash
+      GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    timeout-minutes: 10
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - name: Validate
+      shell: bash
+      run: |
+        if [ "${GITHUB_REF##*/}" != "master" ] && [ "${{ contains(toJson(github.event.pull_request.labels), 'version:') }}" != "true" ]; then
+          echo "Version label must be set"
+          exit 1
+        fi
+    - name: Install Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: ${{ matrix.go-version }}
+    - name: Setup
+      shell: bash
+      run: |
+        bin=$(pwd)/.github/deps/${{ runner.os }}/bin
+        echo "Adding $bin to PATH"
+        echo "::add-path::$bin"
+        printenv
+    - name: Generate Version
+      shell: bash
+      run: state run generate-version
+    - name: Upload Shared Artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: session-shared-build
+        path: build/
   inttest:
     name: Integration Test
     strategy:
