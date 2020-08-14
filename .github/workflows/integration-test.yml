@@ -125,5 +125,4 @@ jobs:
       run: |
         mkdir -p int-test-results
         cat int-test-results.txt | go tool test2json > int-test-results/${{runner.os}}-results.json
-  analyze:
 
