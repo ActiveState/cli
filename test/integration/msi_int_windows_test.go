@@ -10,9 +10,13 @@ import (
 
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
-	"github.com/autarch/testify/assert"
-	"github.com/autarch/testify/require"
+	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/stretchr/testify/suite"
 )
+
+type LanguageMSITestSuite struct {
+	tagsuite.Suite
+}
 
 var (
 	msiDir = mustFilepathByProjectRoot(`/build/msi`)
@@ -45,15 +49,16 @@ func versionFromMsiFileName(name string) string {
 	return name[i+1:]
 }
 
-func assertRegistryPathIncludes(t *testing.T, path string) {
+func (suite *LanguageMSITestSuite) assertRegistryPathIncludes(path string) {
 	out, err := exec.Command("reg", "query", `HKLM\SYSTEM\ControlSet001\Control\Session Manager\Environment`, "/v", "Path").Output()
-	require.NoError(t, err)
-	assert.Contains(t, string(out), path, "Windows system PATH should contain our target dir")
+	suite.Require().NoError(err)
+	suite.Assert().Contains(string(out), path, "Windows system PATH should contain our target dir")
 }
 
-func TestLanguageMsiActivePerl(t *testing.T) {
+func (suite *LanguageMSITestSuite) TestActivePerl() {
+	suite.OnlyRunForTags("msi", "perl")
 	if !e2e.RunningOnCI() && false {
-		t.Skipf("Skipping; Not running on CI")
+		suite.T().Skipf("Skipping; Not running on CI")
 	}
 
 	perlMsiFilePaths := []string{
@@ -64,15 +69,15 @@ func TestLanguageMsiActivePerl(t *testing.T) {
 	installPath := `C:\Perl64 with spaces`
 
 	for _, msiFilePath := range perlMsiFilePaths {
-		t.Run(filepath.Base(msiFilePath), func(t *testing.T) {
+		suite.Run(filepath.Base(msiFilePath), func() {
 			m := newMsiFile(msiFilePath)
-			s := newPwshSession(t)
+			s := newPwshSession(suite.T())
 
 			cp := s.Spawn(installAction.cmd(m.path, installPath))
 			cp.Expect("exitcode:0:", time.Minute*3)
 			cp.ExpectExitCode(0)
 
-			assertRegistryPathIncludes(t, installPath)
+			suite.assertRegistryPathIncludes(installPath)
 
 			pathEnv := fmt.Sprintf("PATH=%s", filepath.Join(installPath, "bin"))
 			cp = s.SpawnOpts("perl -v", e2e.AppendEnv(pathEnv))
@@ -93,4 +98,8 @@ func TestLanguageMsiActivePerl(t *testing.T) {
 			cp.ExpectNotExitCode(0)
 		})
 	}
+}
+
+func TestLanguageMSITestSuite(t *testing.T) {
+	suite.Run(t, new(LanguageMSITestSuite))
 }
