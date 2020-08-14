@@ -104,6 +104,7 @@ run: |
   LABELS="${{ join(github.event.pull_request.labels.*.name, ',') }}"
   echo "$LABELS"
   IFS=',' read -r -a TESTS <<< "$LABELS"
+  TEST_SUITE_TAGS
   for i in "${TESTS[@]}"
   do
     :
@@ -111,7 +112,7 @@ run: |
     if [ "$START" == "run-int-test-only" ]; then
       TEST_SUITE=${i##*:}
       echo $TEST_SUITE
-      export TEST_SUITE_TAGS=$TEST_SUITE:$TEST_SUITE_TAGS
+      TEST_SUITE_TAGS="$TEST_SUITE:$TEST_SUITE_TAGS"
     fi
   done
 
