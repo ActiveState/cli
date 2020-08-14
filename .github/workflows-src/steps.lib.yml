@@ -104,7 +104,7 @@ run: |
   LABELS="${{ join(github.event.pull_request.labels.*.name, ',') }}"
   echo "$LABELS"
   IFS=',' read -r -a TESTS <<< "$LABELS"
-  TEST_SUITE_TAGS
+  TEST_SUITE_TAGS=""
   for i in "${TESTS[@]}"
   do
     :
