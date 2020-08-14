@@ -31,7 +31,3 @@ func (suite *Suite) OnlyRunForTags(tags ...string) {
 
 	suite.T().Skipf("Run only if any of the following tags are set: %s", strings.Join(tags, ", "))
 }
-
-// Run takes a testing suite and runs all of the tests attached
-// to it.
-func Run(t *testing.T, suite TestingSuite) {
