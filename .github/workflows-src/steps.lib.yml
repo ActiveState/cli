@@ -102,9 +102,18 @@ name: "Integration Tests"
 shell: bash
 run: |
   if [ "${{ contains(github.event.pull_request.labels.*.name, 'run critical integration tests') }}" == "true" ]; then
-    echo "${{ github.event.pull_request.labels.*.name }}"
-    export TEST_SUITE_TAGS="critical"
+    echo "${{ join(github.event.pull_request.labels.*.name, ",") }}"
+    
+    $LABELS=${{ join(github.event.pull_request.labels.*.name, ",") }}
+    for i in "${LABELS[@]}"
+    do
+      :
+      TEST_SUITE=${i##*:}
+      echo $TEST_SUITE
+      export TEST_SUITE_TAGS=$TESTS_SUITE:$TEST_SUITE_TAGS
+    done
   fi
+  
   SHELL='' go test -timeout 20m ./test/integration -v
 env:
   INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}

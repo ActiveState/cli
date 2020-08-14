@@ -59,7 +59,7 @@ jobs:
         - ubuntu-latest
         - macos-latest
         - windows-latest
-      fail-fast: true
+        fail-fast: true
     runs-on: ${{ matrix.platform }}
     env:
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true
@@ -168,7 +168,7 @@ jobs:
         - ubuntu-latest
         - macos-latest
         - windows-latest
-      fail-fast: true
+        fail-fast: true
     runs-on: ${{ matrix.platform }}
     needs:
     - prepare
@@ -219,7 +219,7 @@ jobs:
         - ubuntu-latest
         - macos-latest
         - windows-latest
-      fail-fast: false
+        fail-fast: false
     runs-on: ${{ matrix.platform }}
     needs:
     - prepare
@@ -278,27 +278,11 @@ jobs:
         MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
     - name: Integration Tests
       shell: bash
-      run: |
-        if [ "${{ contains(github.event.pull_request.labels.*.name, 'run critical integration tests') }}" == "true" ]; then
-          echo "${{ github.event.pull_request.labels.*.name }}"
-          export TEST_SUITE_TAGS="critical"
-        fi
-        SHELL='' go test -timeout 20m ./test/integration -v | tee int-results.txt
+      run: "if [ \"${{ contains(github.event.pull_request.labels.*.name, 'run critical integration tests') }}\" == \"true\" ]; then\n  echo \"${{ join(github.event.pull_request.labels.*.name, \",\") }}\"\n  \n  $LABELS=${{ join(github.event.pull_request.labels.*.name, \",\") }}\n  for i in \"${LABELS[@]}\"\n  do\n    :\n    TEST_SUITE=${i##*:}\n    echo $TEST_SUITE\n    export TEST_SUITE_TAGS=$TESTS_SUITE:$TEST_SUITE_TAGS\n  done\nfi\n\nSHELL='' go test -timeout 20m ./test/integration -v\n"
       env:
         INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
         INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
         PLATFORM_API_TOKEN: ${{ secrets.PLATFORM_API_TOKEN }}
-    - name: Results2Json
-      if: ${{ always() }}
-      shell: bash
-      run: |
-        mkdir -p int-test-results
-        cat int-test-results.txt | go tool test2json > int-test-results/${{ runner.os }}-results.json
-    - name: Upload Results
-      uses: actions/upload-artifact@v2
-      with:
-        name: int-test-results
-        path: int-test-results/
   deploy:
     name: Deploy
     needs:
