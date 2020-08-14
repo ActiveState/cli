@@ -15,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/fileevents"
 	"github.com/ActiveState/cli/internal/hail"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -57,7 +58,7 @@ func activationLoop(out output.Outputer, subs subshell.SubShell, targetPath stri
 			out.Error(locale.Tr("unstable_version_warning", constants.BugTrackerURL))
 		}
 
-		keepGoing, err := activator(out, subs)
+		keepGoing, err := activator(proj, out, subs)
 		if err != nil {
 			return err
 		}
@@ -74,11 +75,11 @@ func activationLoop(out output.Outputer, subs subshell.SubShell, targetPath stri
 	return nil
 }
 
-type activateFunc func(out output.Outputer, subs subshell.SubShell) (keepGoing bool, err error)
+type activateFunc func(proj *project.Project, out output.Outputer, subs subshell.SubShell) (keepGoing bool, err error)
 
 // activate will activate the venv and subshell. It is meant to be run in a loop
 // with the return value indicating whether another iteration is warranted.
-func activate(out output.Outputer, subs subshell.SubShell) (bool, error) {
+func activate(proj *project.Project, out output.Outputer, subs subshell.SubShell) (bool, error) {
 	projectfile.Reset()
 	venv := virtualenvironment.Get()
 	venv.OnDownloadArtifacts(func() { out.Notice(locale.T("downloading_artifacts")) })
@@ -110,6 +111,12 @@ func activate(out output.Outputer, subs subshell.SubShell) (bool, error) {
 	if fail != nil {
 		return false, locale.WrapError(err, "error_unable_to_monitor_pulls", "Failed to setup pull monitoring")
 	}
+
+	fe, err := fileevents.New(proj)
+	if err != nil {
+		return false, locale.WrapError(err, "err_activate_fileevents", "Could not start file event watcher.")
+	}
+	defer fe.Close()
 
 	return listenForReactivation(venv.ActivationID(), hails, subs)
 }

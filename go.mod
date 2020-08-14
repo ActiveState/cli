@@ -47,6 +47,7 @@ require (
 	github.com/hashicorp/go-version v1.1.0
 	github.com/hashicorp/hcl v0.0.0-20171017181929-23c074d0eceb // indirect
 	github.com/hectane/go-acl v0.0.0-20190604041725-da78bae5fc95
+	github.com/hpcloud/tail v1.0.0
 	github.com/iafan/cwalk v0.0.0-20191125092548-dd7f505d2f66
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/jarcoal/httpmock v1.0.3
@@ -95,8 +96,10 @@ require (
 	google.golang.org/genproto v0.0.0-20200331122359-1ee6d9798940
 	gopkg.in/AlecAivazis/survey.v1 v1.4.2
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
+	gopkg.in/fsnotify.v1 v1.4.7 // indirect
 	gopkg.in/ini.v1 v1.48.0 // indirect
 	gopkg.in/mgo.v2 v2.0.0-20160818020120-3f83fa500528 // indirect
 	gopkg.in/src-d/go-git.v4 v4.13.1
+	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v2 v2.2.2
 )

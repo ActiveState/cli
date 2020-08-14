@@ -341,6 +341,7 @@ func MakePackagesFromConstrainedEntities(items []ConstrainedEntity) (packages []
 type Event struct {
 	Name        string      `yaml:"name"`
 	Value       string      `yaml:"value"`
+	Scope       []string    `yaml:"scope"`
 	Conditional Conditional `yaml:"if"`
 	Constraints Constraint  `yaml:"constraints,omitempty"`
 }

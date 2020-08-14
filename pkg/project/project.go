@@ -588,6 +588,15 @@ func (e *Event) Value() string {
 	return value
 }
 
+// Scope returns the scope property of the event
+func (e *Event) Scope() []string {
+	result := []string{}
+	for _, s := range e.event.Scope {
+		result = append(result, Expand(s))
+	}
+	return result
+}
+
 // Script covers the command structure
 type Script struct {
 	script  *projectfile.Script

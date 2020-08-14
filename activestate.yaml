@@ -269,7 +269,7 @@ scripts:
     standalone: true
     value: dlv debug --headless --listen=:2346 --api-version=2 github.com/ActiveState/cli/cmd/state -- $@
 events:
-  - name: ACTIVATE
+  - name: activate
     if: ne .Shell "cmd"
     value: |
       if ! type "go" &> /dev/null; then
@@ -285,3 +285,6 @@ events:
         popd
       fi
       set +e # Take care not to run the shell too aggressively
+  - name: file-changed
+    scope: [ ".github/workflows-src" ]
+    value: build-workflows

@@ -77,6 +77,9 @@ func New(prime *primer.Values) *CmdTree {
 	tutorialCmd := newTutorialCommand(prime)
 	tutorialCmd.AddChildren(newTutorialProjectCommand(prime))
 
+	eventsCmd := newEventsCommand(prime)
+	eventsCmd.AddChildren(newEventsLogCommand(prime))
+
 	stateCmd := newStateCommand(globals)
 	stateCmd.AddChildren(
 		newActivateCommand(prime),
@@ -95,7 +98,7 @@ func New(prime *primer.Values) *CmdTree {
 		languagesCmd,
 		deployCmd,
 		scriptsCmd,
-		newEventsCommand(prime),
+		eventsCmd,
 		newPullCommand(prime),
 		newUpdateCommand(prime),
 		newForkCommand(prime),

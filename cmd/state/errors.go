@@ -101,7 +101,7 @@ func handlePanics(exiter func(int)) {
 
 		fmt.Fprintln(os.Stderr, fmt.Sprintf(`An unexpected error occurred while running the State Tool.
 Check the error log for more information.
-Your error log is located at: %s/log.txt`, config.ConfigPath()))
+Your error log is located at: %s/%s`, config.ConfigPath(), logging.FileName()))
 
 		time.Sleep(time.Second) // Give rollbar a second to complete its async request (switching this to sync isnt simple)
 		exiter(1)
