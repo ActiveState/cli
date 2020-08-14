@@ -102,7 +102,7 @@ name: "Integration Tests"
 shell: bash
 run: |
   if [ "${{ contains(github.event.pull_request.labels.*.name, 'run critical integration tests') }}" == "true" ]; then
-    $LABELS="${{ join(github.event.pull_request.labels.*.name, ',') }}"
+    LABELS="${{ join(github.event.pull_request.labels.*.name, ',') }}"
     echo "$LABELS"
     IFS=',' read -r -a TESTS <<< "$LABELS"
     for i in "${TESTS[@]}"
