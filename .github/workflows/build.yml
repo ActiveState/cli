@@ -278,7 +278,7 @@ jobs:
         MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
     - name: Integration Tests
       shell: bash
-      run: "if [ \"${{ contains(github.event.pull_request.labels.*.name, 'run critical integration tests') }}\" == \"true\" ]; then\n  echo \"${{ join(github.event.pull_request.labels.*.name, \",\") }}\"\n  \n  $LABELS=${{ join(github.event.pull_request.labels.*.name, \",\") }}\n  IFS=',' read -r -a TESTS <<< \"$LABELS\"\n  for i in \"${TESTS[@]}\"\n  do\n    :\n    TEST_SUITE=${i##*:}\n    echo $TEST_SUITE\n    export TEST_SUITE_TAGS=$TESTS_SUITE:$TEST_SUITE_TAGS\n  done\nfi\n\nSHELL='' go test -timeout 20m ./test/integration -v\n"
+      run: "if [ \"${{ contains(github.event.pull_request.labels.*.name, 'run critical integration tests') }}\" == \"true\" ]; then\n  echo \"${{ join(github.event.pull_request.labels.*.name, \",\") }}\"\n  \n  $LABELS=\"${{ join(github.event.pull_request.labels.*.name, \",\") }}\"\n  echo \"$LABELS\"\n  IFS=',' read -r -a TESTS <<< \"$LABELS\"\n  for i in \"${TESTS[@]}\"\n  do\n    :\n    TEST_SUITE=${i##*:}\n    echo $TEST_SUITE\n    export TEST_SUITE_TAGS=$TESTS_SUITE:$TEST_SUITE_TAGS\n  done\nfi\n\nSHELL='' go test -timeout 20m ./test/integration -v\n"
       env:
         INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
         INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
