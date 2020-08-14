@@ -295,6 +295,7 @@ jobs:
         done
 
         echo $TEST_SUITE_TAGS
+        export TEST_SUITE_TAGS="$TEST_SUITE_TAGS"
         SHELL='' go test -timeout 20m ./test/integration -v
       env:
         INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
