@@ -111,18 +111,19 @@ jobs:
     - name: Integration Tests
       shell: bash
       run: |
-        if [ "${{ contains(github.event.pull_request.labels.*.name, 'run critical integration tests') }}" == "true" ]; then
-          LABELS="${{ join(github.event.pull_request.labels.*.name, ',') }}"
-          echo "$LABELS"
-          IFS=',' read -r -a TESTS <<< "$LABELS"
-          for i in "${TESTS[@]}"
-          do
-            :
+        LABELS="${{ join(github.event.pull_request.labels.*.name, ',') }}"
+        echo "$LABELS"
+        IFS=',' read -r -a TESTS <<< "$LABELS"
+        for i in "${TESTS[@]}"
+        do
+          :
+          START=${i%:*}
+          if [ "$START" == "run-int-test-only" ]; then
             TEST_SUITE=${i##*:}
             echo $TEST_SUITE
             export TEST_SUITE_TAGS=$TESTS_SUITE:$TEST_SUITE_TAGS
-          done
-        fi
+          fi
+        done
 
         SHELL='' go test -timeout 20m ./test/integration -v
       env:
