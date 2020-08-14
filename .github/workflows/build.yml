@@ -283,11 +283,22 @@ jobs:
           echo "${{ github.event.pull_request.labels.*.name }}"
           export TEST_SUITE_TAGS="critical"
         fi
-        SHELL='' go test -timeout 20m ./test/integration -v
+        SHELL='' go test -timeout 20m ./test/integration -v | tee int-results.txt
       env:
         INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
         INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
         PLATFORM_API_TOKEN: ${{ secrets.PLATFORM_API_TOKEN }}
+    - name: Results2Json
+      if: ${{ always() }}
+      shell: bash
+      run: |
+        mkdir -p int-test-results
+        cat int-test-results.txt | go tool test2json > int-test-results/${{ runner.os }}-results.json
+    - name: Upload Results
+      uses: actions/upload-artifact@v2
+      with:
+        name: int-test-results
+        path: int-test-results/
   deploy:
     name: Deploy
     needs:
