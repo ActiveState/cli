@@ -8,6 +8,8 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/ActiveState/sysinfo"
+	"github.com/imdario/mergo"
 	"gopkg.in/yaml.v2"
 
 	"github.com/go-openapi/strfmt"
@@ -437,17 +439,40 @@ var persistentProject *Project
 
 // Parse the given filepath, which should be the full path to an activestate.yaml file
 func Parse(configFilepath string) (*Project, *failures.Failure) {
-	dat, err := ioutil.ReadFile(configFilepath)
+	projectDir := filepath.Dir(configFilepath)
+	files, err := ioutil.ReadDir(projectDir)
 	if err != nil {
-		return nil, failures.FailIO.Wrap(err)
+		return nil, failures.FailIO.Wrap(err, locale.Tl("err_project_readdir", "Could not check for project files in your project directory."))
 	}
 
-	project := Project{}
-	err = yaml.Unmarshal([]byte(dat), &project)
-	project.path = configFilepath
+	project, fail := parse(configFilepath)
+	if fail != nil {
+		return nil, fail
+	}
 
-	if err != nil {
-		return nil, FailParseProject.New(locale.T("err_project_parse", map[string]interface{}{"Error": err.Error()}))
+	re, _ := regexp.Compile(`activestate.(\w+).yaml`)
+	for _, file := range files {
+		match := re.FindStringSubmatch(file.Name())
+		if len(match) == 0 {
+			continue
+		}
+
+		// If an OS keyword was used ensure it matches our runtime
+		l := strings.ToLower
+		keyword := l(match[1])
+		if (keyword == l(sysinfo.Linux.String()) || keyword == l(sysinfo.Mac.String()) || keyword == l(sysinfo.Windows.String())) &&
+			keyword != l(sysinfo.OS().String()) {
+			logging.Debug("Not merging %s as we're not on %s", file.Name(), sysinfo.OS().String())
+			continue
+		}
+
+		secondaryProject, fail := parse(filepath.Join(projectDir, file.Name()))
+		if fail != nil {
+			return nil, fail
+		}
+		if err := mergo.Merge(project, *secondaryProject, mergo.WithAppendSlice); err != nil {
+			return nil, failures.FailMarshal.Wrap(err, locale.Tl("err_merge_project", "Could not merge {{.V0}} into your activestate.yaml", file.Name()))
+		}
 	}
 
 	if project.Variables != nil {
@@ -462,7 +487,7 @@ func Parse(configFilepath string) (*Project, *failures.Failure) {
 		project.Project = fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, project.Owner, project.Name)
 	}
 
-	fail := ValidateProjectURL(project.Project)
+	fail = ValidateProjectURL(project.Project)
 	if fail != nil {
 		return nil, fail
 	}
@@ -473,6 +498,24 @@ func Parse(configFilepath string) (*Project, *failures.Failure) {
 		project.Name = match[2]
 	}
 	storeProjectMapping(fmt.Sprintf("%s/%s", project.Owner, project.Name), filepath.Dir(project.path))
+
+	return project, nil
+}
+
+func parse(configFilepath string) (*Project, *failures.Failure) {
+	dat, err := ioutil.ReadFile(configFilepath)
+	if err != nil {
+		return nil, failures.FailIO.Wrap(err)
+	}
+
+	project := Project{}
+	err = yaml.Unmarshal([]byte(dat), &project)
+	project.path = configFilepath
+
+	if err != nil {
+		return nil, FailParseProject.New(
+			locale.Tl("err_project_parsed", "Project file `{{.V1}}` could not be parsed, the parser produced the following error: {{.V0}}", err.Error(), configFilepath))
+	}
 
 	return &project, nil
 }
@@ -508,6 +551,11 @@ func (p *Project) Reload() *failures.Failure {
 
 // Save the project to its activestate.yaml file
 func (p *Project) Save() *failures.Failure {
+	return p.save(p.Path())
+}
+
+// Save the project to its activestate.yaml file
+func (p *Project) save(path string) *failures.Failure {
 	dat, err := yaml.Marshal(p)
 	if err != nil {
 		return failures.FailMarshal.Wrap(err)
@@ -518,9 +566,9 @@ func (p *Project) Save() *failures.Failure {
 		return fail
 	}
 
-	logging.Debug("Saving %s", p.Path())
+	logging.Debug("Saving %s", path)
 
-	f, err := os.Create(p.Path())
+	f, err := os.Create(path)
 	if err != nil {
 		return failures.FailIO.Wrap(err)
 	}

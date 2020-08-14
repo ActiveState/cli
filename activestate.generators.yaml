@@ -1,0 +1,73 @@
+scripts:
+  - name: generate-api-client
+    language: bash
+    description: Generates the mono-api client files
+    value: |
+      WD=$(pwd)
+      pushd pkg/platform/api/mono
+      swagger generate client -f ${WD}/../TheHomeRepot/service/api/swagger/swagger.yaml -A mono -a mono_operations -m mono_models -c mono_client
+      popd
+  - name: generate-secrets-client
+    language: bash
+    description: Generates the secrets-api client files
+    value: |
+      WD=$(pwd)
+      pushd pkg/platform/api/secrets
+      swagger generate client -f ${WD}/../TheHomeRepot/service/secrets/api/swagger.yaml -A secrets -a secrets_operations -m secrets_models -c secrets_client
+      popd
+  - name: generate-headchef-client
+    language: bash
+    description: Generates the headchef-api client files
+    value: |
+      WD=$(pwd)
+      pushd pkg/platform/api/headchef
+      swagger generate client --with-flatten full -f ${WD}/../TheHomeRepot/service/head-chef/swagger.json -A headchef -a headchef_operations -m headchef_models -c headchef_client
+      popd
+  - name: generate-inventory-client
+    language: bash
+    description: Generates the inventory-api client files
+    value: |
+      WD=$(pwd)
+      pushd pkg/platform/api/inventory
+      swagger generate client --with-flatten full -f ${WD}/../TheHomeRepot/service/inventory-api-v1/swagger.json -A inventory -a inventory_operations -m inventory_models -c inventory_client
+      popd
+  - name: generate-clients
+    language: bash
+    description: Generates all api clients
+    value: |
+      $scripts.generate-api-client
+      $scripts.generate-secrets-client
+      $scripts.generate-headchef-client
+      $scripts.generate-inventory-client
+  - name: generate-locale
+    language: bash
+    description: Detects new localisation calls and generates placeholder entries in en-us.yaml
+    value: python3 scripts/locale-generator.py
+  - name: generate-version
+    language: bash
+    description: Generate version file
+    value: |
+      mkdir -p build/update
+      wget -O build/update/version.json https://s3.ca-central-1.amazonaws.com/cli-update/update/state/version.json
+  - name: generate-update
+    language: bash
+    description: Generate update files
+    value: |
+      set -e
+      $constants.SET_ENV
+
+      export GOARCH=${1:-amd64}
+      export TARGET_SUFFIX=${1:-}
+      mkdir -p build/update
+      go run scripts/update-generator/main.go -o build/update $constants.BUILD_TARGET${TARGET_SUFFIX}
+  - name: generate-update-32bit
+    language: bash
+    description: Generate update files
+    value: |
+      set -e
+      $constants.SET_ENV
+
+      export GOARCH=386
+
+      mkdir -p build/update
+      go run scripts/update-generator/main.go -o build/update $constants.BUILD_TARGET_32BIT
