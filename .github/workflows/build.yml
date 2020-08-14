@@ -59,6 +59,7 @@ jobs:
         - ubuntu-latest
         - macos-latest
         - windows-latest
+        fail-fast: true
     runs-on: ${{ matrix.platform }}
     env:
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true
@@ -167,6 +168,7 @@ jobs:
         - ubuntu-latest
         - macos-latest
         - windows-latest
+        fail-fast: true
     runs-on: ${{ matrix.platform }}
     needs:
     - prepare
@@ -217,6 +219,7 @@ jobs:
         - ubuntu-latest
         - macos-latest
         - windows-latest
+        fail-fast: false
     runs-on: ${{ matrix.platform }}
     needs:
     - prepare
