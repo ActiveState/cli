@@ -277,6 +277,7 @@ jobs:
       shell: bash
       run: |
         if [ "${{ contains(github.event.pull_request.labels.*.name, 'run critical integration tests') }}" == "true" ]; then
+          echo $(github.event.pull_request.labels.*.name)
           export TEST_SUITE_TAGS="critical"
         fi
         SHELL='' go test -timeout 20m ./test/integration -v
