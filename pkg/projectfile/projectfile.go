@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
+	"sync"
 
 	"gopkg.in/yaml.v2"
 
@@ -67,6 +68,8 @@ var strReg = fmt.Sprintf(`https:\/\/%s\/([\w_.-]*)\/([\w_.-]*)(?:\?commitID=)*(.
 
 // ProjectURLRe Regex used to validate project fields /orgname/projectname[?commitID=someUUID]
 var ProjectURLRe = regexp.MustCompile(strReg)
+
+var projectMapMutex = &sync.Mutex{}
 
 const LocalProjectsConfigKey = "projects"
 
@@ -901,6 +904,9 @@ func (p *Project) Persist() {
 // storeProjectMapping associates the namespace with the project
 // path in the config
 func storeProjectMapping(namespace, projectPath string) {
+	projectMapMutex.Lock()
+	defer projectMapMutex.Unlock()
+
 	projectPath = filepath.Clean(projectPath)
 
 	projects := viper.GetStringMapStringSlice(LocalProjectsConfigKey)
