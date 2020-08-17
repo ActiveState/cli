@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi" xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
-	<Product Id="{{.ID}}" Name="{{.ProjectName}}" Language="1033" Version="{{.Version}}" Manufacturer="ActiveState" UpgradeCode="{{.ID}}">
-		<Package Id='*' Keywords='Installer' Description="ActiveState Language Runtime"
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi" xmlns:util="http://schemas.microsoft.com/wix/UtilExtension" xmlns:netfx="http://schemas.microsoft.com/wix/NetFxExtension">
+    <Product Id="{{.ID}}" Name="{{.ProjectName}}" Language="1033" Version="{{.Version}}" Manufacturer="ActiveState" UpgradeCode="{{.ID}}">
+        <Package Id='*' Keywords='Installer' Description="ActiveState Language Runtime"
             Comments='State Tool is a registered trademark of ActiveState' Manufacturer='ActiveState'
             InstallerVersion='200' Languages='1033' Compressed='yes' SummaryCodepage='1252' InstallPrivileges='elevated' AdminImage='yes' InstallScope='perMachine' />
 
@@ -16,7 +16,12 @@
 	<Property Id="AS_TOTP" Secure="yes" />
 	<Property Id="CODE_INSTALLED" Value="false" />
     <!-- End Configuration parameters -->
-    
+
+    <PropertyRef Id="WIX_IS_NETFRAMEWORK_462_OR_LATER_INSTALLED"/>
+    <Condition Message="This application requires .NET Framework 4.5.2 or later. Please install the .NET Framework then run this installer again.  The installer can be downloaded from https://www.microsoft.com/en-us/download/details.aspx?id=42643.">
+      <![CDATA[TRUE]]>
+    </Condition>
+
     <!-- Design assets -->
     <WixVariable Id='WixUIBannerBmp' Value='assets\header.bmp'/>
     <WixVariable Id='WixUIDialogBmp' Value='assets\InstallGraphic.bmp'/>

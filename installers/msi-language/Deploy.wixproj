@@ -13,26 +13,26 @@
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
     <DefineConstants>Debug</DefineConstants>
-    <CompilerAdditionalOptions>-ext WixUIExtension -ext WixUtilExtension</CompilerAdditionalOptions>
-    <LinkerAdditionalOptions>-sice:ICE91 -sice:ICE64 -sice:ICE71 -sice:ICE68 -ext WixUIExtension -ext WixUtilExtension</LinkerAdditionalOptions>
+    <CompilerAdditionalOptions>-ext WixUIExtension -ext WixUtilExtension -ext WixNetFxExtension</CompilerAdditionalOptions>
+    <LinkerAdditionalOptions>-sice:ICE91 -sice:ICE64 -sice:ICE71 -sice:ICE68 -ext WixUIExtension -ext WixUtilExtension -ext WixNetFxExtension</LinkerAdditionalOptions>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
-    <CompilerAdditionalOptions>-ext WixUIExtension -ext WixUtilExtension</CompilerAdditionalOptions>
-    <LinkerAdditionalOptions>-sice:ICE91 -sice:ICE64 -sice:ICE71 -sice:ICE68 -ext WixUIExtension -ext WixUtilExtension</LinkerAdditionalOptions>
+    <CompilerAdditionalOptions>-ext WixUIExtension -ext WixUtilExtension -ext WixNetFxExtension</CompilerAdditionalOptions>
+    <LinkerAdditionalOptions>-sice:ICE91 -sice:ICE64 -sice:ICE71 -sice:ICE68 -ext WixUIExtension -ext WixUtilExtension -ext WixNetFxExtension</LinkerAdditionalOptions>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
     <DefineConstants>Debug</DefineConstants>
-    <CompilerAdditionalOptions>-ext WixUIExtension -ext WixUtilExtension</CompilerAdditionalOptions>
-    <LinkerAdditionalOptions>-ext WixUIExtension -ext WixUtilExtension</LinkerAdditionalOptions>
+    <CompilerAdditionalOptions>-ext WixUIExtension -ext WixUtilExtension -ext WixNetFxExtension</CompilerAdditionalOptions>
+    <LinkerAdditionalOptions>-ext WixUIExtension -ext WixUtilExtension -ext WixNetFxExtension</LinkerAdditionalOptions>
     <OutputPath>bin\$(Platform)\$(Configuration)\</OutputPath>
     <IntermediateOutputPath>obj\$(Platform)\$(Configuration)\</IntermediateOutputPath>
     <SuppressIces>ICE91;ICE64;ICE71;ICE69;ICE39</SuppressIces>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
-    <CompilerAdditionalOptions>-ext WixUIExtension -ext WixUtilExtension</CompilerAdditionalOptions>
-    <LinkerAdditionalOptions>-ext WixUIExtension -ext WixUtilExtension</LinkerAdditionalOptions>
+    <CompilerAdditionalOptions>-ext WixUIExtension -ext WixUtilExtension -ext WixNetFxExtension</CompilerAdditionalOptions>
+    <LinkerAdditionalOptions>-ext WixUIExtension -ext WixUtilExtension -ext WixNetFxExtension</LinkerAdditionalOptions>
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
     <SuppressIces>ICE91;ICE64;ICE71;ICE69;ICE39</SuppressIces>
