@@ -6,7 +6,9 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
+	"sync"
 
 	"gopkg.in/yaml.v2"
 
@@ -66,6 +68,8 @@ var strReg = fmt.Sprintf(`https:\/\/%s\/([\w_.-]*)\/([\w_.-]*)(?:\?commitID=)*(.
 
 // ProjectURLRe Regex used to validate project fields /orgname/projectname[?commitID=someUUID]
 var ProjectURLRe = regexp.MustCompile(strReg)
+
+var projectMapMutex = &sync.Mutex{}
 
 const LocalProjectsConfigKey = "projects"
 
@@ -741,9 +745,13 @@ func createCustom(params *CreateParams) (*Project, *failures.Failure) {
 	}
 	owner, project := match[1], match[2]
 
+	shell := "bash"
+	if runtime.GOOS == "windows" {
+		shell = "batch"
+	}
 	if params.Content == "" {
 		params.Content = locale.T("sample_yaml",
-			map[string]interface{}{"Owner": owner, "Project": project})
+			map[string]interface{}{"Owner": owner, "Project": project, "Shell": shell})
 	}
 
 	data := map[string]interface{}{
@@ -896,6 +904,9 @@ func (p *Project) Persist() {
 // storeProjectMapping associates the namespace with the project
 // path in the config
 func storeProjectMapping(namespace, projectPath string) {
+	projectMapMutex.Lock()
+	defer projectMapMutex.Unlock()
+
 	projectPath = filepath.Clean(projectPath)
 
 	projects := viper.GetStringMapStringSlice(LocalProjectsConfigKey)

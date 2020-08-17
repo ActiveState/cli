@@ -183,29 +183,16 @@ func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGet
 		return runtimeAssembler, false, nil
 	}
 
-	if fileutils.DirExists(installer.params.RuntimeDir) {
-		empty, fail := fileutils.IsEmptyDir(installer.params.RuntimeDir)
-		if fail != nil {
-			logging.Error("Could not check if target runtime dir is empty, this could cause issues.. %v", fail)
-		} else if !empty {
-			logging.Debug("Removing existing runtime")
-			if err := os.RemoveAll(installer.params.RuntimeDir); err != nil {
-				logging.Error("Could not empty out target runtime dir prior to install, this could cause issues.. %v", err)
-			}
-		}
-	}
-
 	downloadArtfs := runtimeAssembler.ArtifactsToDownload()
+	unpackArchives := map[string]*HeadChefArtifact{}
+	progress := progress.New(mpb.WithOutput(os.Stderr))
+	defer progress.Close()
 
 	if len(downloadArtfs) != 0 {
 		if installer.onDownload != nil {
 			installer.onDownload()
 		}
 
-		progress := progress.New(mpb.WithOutput(os.Stderr))
-		defer progress.Close()
-
-		unpackArchives := map[string]*HeadChefArtifact{}
 		if len(downloadArtfs) > 0 {
 			archives, fail := installer.runtimeDownloader.Download(downloadArtfs, runtimeAssembler, progress)
 			if fail != nil {
@@ -217,12 +204,12 @@ func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGet
 				unpackArchives[k] = v
 			}
 		}
+	}
 
-		fail = installer.InstallFromArchives(unpackArchives, runtimeAssembler, progress)
-		if fail != nil {
-			progress.Cancel()
-			return nil, false, fail
-		}
+	fail = installer.InstallFromArchives(unpackArchives, runtimeAssembler, progress)
+	if fail != nil {
+		progress.Cancel()
+		return nil, false, fail
 	}
 
 	// We still want to run PostInstall because even though no new artifact might be downloaded we still might be
@@ -258,18 +245,21 @@ func (installer *Installer) validateCheckpoint() *failures.Failure {
 // InstallFromArchives will unpack the installer archive, locate the install script, and then use the installer
 // script to install a runtime to the configured runtime dir. Any failures during this process will result in a
 // failed installation and the install-dir being removed.
-func (installer *Installer) InstallFromArchives(archives map[string]*HeadChefArtifact, a Assembler, progress *progress.Progress) *failures.Failure {
-	bar := progress.AddTotalBar(locale.T("installing"), len(archives))
+func (installer *Installer) InstallFromArchives(archives map[string]*HeadChefArtifact, a Assembler, pg *progress.Progress) *failures.Failure {
+	var bar *progress.TotalBar
+	if len(archives) > 0 {
+		bar = pg.AddTotalBar(locale.T("installing"), len(archives))
+	}
 
 	fail := a.PreInstall()
 	if fail != nil {
-		progress.Cancel()
+		pg.Cancel()
 		return fail
 	}
 
 	for archivePath, artf := range archives {
-		if fail := installer.InstallFromArchive(archivePath, artf, a, progress); fail != nil {
-			progress.Cancel()
+		if fail := installer.InstallFromArchive(archivePath, artf, a, pg); fail != nil {
+			pg.Cancel()
 			return fail
 		}
 		bar.Increment()
