@@ -554,6 +554,10 @@ private:
   other: Private
 public:
   other: Public
+field_package_name:
+  other: Name
+field_package_version:
+  other: Version
 field_namespace:
   other: Namespace
 field_platforms:
