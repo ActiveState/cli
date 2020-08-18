@@ -30,7 +30,7 @@ func newTutorialProjectCommand(prime *primer.Values) *captain.Command {
 
 	cmd := captain.NewCommand(
 		"new-project",
-		locale.Tl("tutorial_description", "Learn how to create new projects (ie. virtual environments)"),
+		locale.Tl("tutorial_description", "Learn how to create new projects. (ie. virtual environments)"),
 		[]*captain.Flag{
 			{
 				Name:        "skip-intro",
