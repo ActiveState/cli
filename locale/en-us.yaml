@@ -1630,8 +1630,8 @@ confirm_exit_on_error_prompt:
   other: Press enter to continue...
 tutorial_newproject_intro:
   other: |
-    The State Tool lets you create and maintain  a set of virtual environments (eg., one per project), allowing you to
-    isolate and better manage language versions and dependencies  on a per-project basis.
+    The State Tool lets you create and maintain a set of virtual environments (eg., one per project), allowing you to
+    isolate and better manage language versions and dependencies on a per-project basis.
     [[BR]][[BR]]
     For every virtual environment, you'll be able to share the current configuration (language version & dependencies)
     with your teammates so everyone stays in sync, as well as share secrets (or store your own, for your eyes only),

@@ -26,9 +26,7 @@ func newTutorialCommand(prime *primer.Values) *captain.Command {
 
 func newTutorialProjectCommand(prime *primer.Values) *captain.Command {
 	runner := tutorial.New(prime)
-	params := tutorial.NewProjectParams{
-		SkipIntro: true,
-	}
+	params := tutorial.NewProjectParams{}
 
 	cmd := captain.NewCommand(
 		"new-project",
