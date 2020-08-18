@@ -168,6 +168,10 @@ github.com/google/uuid
 github.com/googleapis/gax-go/v2
 # github.com/gorilla/websocket v1.4.0
 github.com/gorilla/websocket
+# github.com/hashicorp/go-cleanhttp v0.5.1
+github.com/hashicorp/go-cleanhttp
+# github.com/hashicorp/go-retryablehttp v0.6.7
+github.com/hashicorp/go-retryablehttp
 # github.com/hashicorp/go-version v1.1.0
 github.com/hashicorp/go-version
 # github.com/hashicorp/hcl v0.0.0-20171017181929-23c074d0eceb
