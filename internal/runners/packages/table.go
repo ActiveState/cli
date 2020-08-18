@@ -4,44 +4,69 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/bndr/gotabulate"
 )
 
-type table struct {
-	headers []string
-	data    [][]string
+type packageTable struct {
+	rows        []packageRow
+	emptyOutput string // string returned when table is empty
 }
 
-func newTable(headers []string, data [][]string) *table {
-	return &table{
-		headers: headers,
-		data:    data,
+type packageRow struct {
+	Pkg     string `json:"package"`
+	Version string `json:"version"`
+}
+
+func (t *packageTable) MarshalOutput(format output.Format) interface{} {
+	if format == output.PlainFormatName {
+		if len(t.rows) == 0 {
+			return t.emptyOutput
+		}
+		return t.output()
+	}
+
+	type packageRow struct {
+		Pkg     string `json:"package"`
+		Version string `json:"version"`
+	}
+
+	return t.rows
+}
+
+func newTable(rows []packageRow, emptyOutput string) *packageTable {
+	return &packageTable{
+		rows:        rows,
+		emptyOutput: emptyOutput,
 	}
 }
 
-func (t *table) output() string {
+func (t *packageTable) output() string {
 	if t == nil {
-		return ""
+		return t.emptyOutput
 	}
 
-	tab := gotabulate.Create(t.data)
-	tab.SetHeaders(t.headers)
+	headers := []string{
+		locale.T("package_name"),
+		locale.T("package_version"),
+	}
+
+	data := make([][]string, 0, len(t.rows))
+	for _, row := range t.rows {
+		data = append(data, []string{row.Pkg, row.Version})
+	}
+	tab := gotabulate.Create(data)
+	tab.SetHeaders(headers)
 	tab.SetAlign("left")
 
 	return tab.Render("simple")
 }
 
-func sortByFirstCol(rows [][]string) {
+func (t *packageTable) sortByPkg() {
 	less := func(i, j int) bool {
-		if len(rows[i]) == 0 {
-			return true
-		}
-		if len(rows[j]) == 0 {
-			return false
-		}
-
-		a := rows[i][0]
-		b := rows[j][0]
+		a := t.rows[i].Pkg
+		b := t.rows[j].Pkg
 
 		if strings.ToLower(a) < strings.ToLower(b) {
 			return true
@@ -50,7 +75,7 @@ func sortByFirstCol(rows [][]string) {
 		return a < b
 	}
 
-	sort.Slice(rows, less)
+	sort.Slice(t.rows, less)
 }
 
 func sortByFirstTwoCols(rows [][]string) {
