@@ -4,9 +4,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/bndr/gotabulate"
 )
 
 type packageTable struct {
@@ -15,8 +13,8 @@ type packageTable struct {
 }
 
 type packageRow struct {
-	Pkg     string `json:"package"`
-	Version string `json:"version"`
+	Pkg     string `json:"package" locale:"package_name,Name"`
+	Version string `json:"version" locale:"package_version,Version"`
 }
 
 func (t *packageTable) MarshalOutput(format output.Format) interface{} {
@@ -24,7 +22,7 @@ func (t *packageTable) MarshalOutput(format output.Format) interface{} {
 		if len(t.rows) == 0 {
 			return t.emptyOutput
 		}
-		return t.output()
+		return t.rows
 	}
 
 	type packageRow struct {
@@ -40,27 +38,6 @@ func newTable(rows []packageRow, emptyOutput string) *packageTable {
 		rows:        rows,
 		emptyOutput: emptyOutput,
 	}
-}
-
-func (t *packageTable) output() string {
-	if t == nil {
-		return t.emptyOutput
-	}
-
-	headers := []string{
-		locale.T("package_name"),
-		locale.T("package_version"),
-	}
-
-	data := make([][]string, 0, len(t.rows))
-	for _, row := range t.rows {
-		data = append(data, []string{row.Pkg, row.Version})
-	}
-	tab := gotabulate.Create(data)
-	tab.SetHeaders(headers)
-	tab.SetAlign("left")
-
-	return tab.Render("simple")
 }
 
 func (t *packageTable) sortByPkg() {
