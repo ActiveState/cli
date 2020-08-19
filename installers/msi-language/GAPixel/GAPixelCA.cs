@@ -75,11 +75,6 @@ namespace GAPixel
         public static ActionResult SendPixel(Session session)
         {
             var wv = System.Environment.OSVersion.VersionString;
-            if (System.Environment.OSVersion.Version.Major > 6)
-            {
-                session.Log("skipping GA tracking for Windows > 8.1 version is: {0} major version: {1}", wv, System.Environment.OSVersion.Version.Major);
-                return ActionResult.Success;
-            }
             string cid = GetInfo.GetUniqueId(session);
 
             session.Log(String.Format("Send Pixel to GA windows version={0}", wv)); ;
