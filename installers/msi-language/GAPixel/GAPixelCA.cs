@@ -1,12 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
 using Microsoft.Deployment.WindowsInstaller;
 using System.Management;
-using System.Threading;
 using System.Net;
 using Microsoft.Win32;
-using System.IO;
 
 namespace GAPixel
 {
@@ -24,36 +21,42 @@ namespace GAPixel
             }
         }
 
-        public static string GetUniqueId()
+        public static string GetUniqueId(Session session)
         {
             try
             {
                 var oMClass = new ManagementClass("Win32_NetworkAdapterConfiguration");
                 var colMObj = oMClass.GetInstances();
-                if (colMObj.Count > 0)
+                foreach (var objMO in colMObj)
                 {
-                    using (var enumer = colMObj.GetEnumerator())
+                    try
                     {
-                        enumer.MoveNext();
-                        var objMO = enumer.Current;
-                        return StringToGuid(objMO["MacAddress"].ToString()).ToString();
+                        var macAddress = objMO["MacAddress"].ToString();
+                        if (String.IsNullOrEmpty(macAddress))
+                        {
+                            continue;
+                        }
+                        // return on first found MAC address
+                        session.Log(String.Format("Found MAC={0}", macAddress));
+                        return StringToGuid(macAddress.ToString()).ToString();
+                    } catch(NullReferenceException)
+                    {
+                        continue;
                     }
-                }
-                else
-                {
-                    return Guid.NewGuid().ToString();
                 }
             }
             catch (Exception err)
             {
-                return Guid.NewGuid().ToString();
+                session.Log(String.Format("Error getting unique ID {0}", err));
             }
+            // fallback method
+            return Guid.NewGuid().ToString();
         }
     }
 
 
 
-    // copied from https://docs.microsoft.com/en-us/dotnet/framework/migration-guide/how-to-determine-which-versions-are-installed#query-the-registry-using-code
+    // modified from https://docs.microsoft.com/en-us/dotnet/framework/migration-guide/how-to-determine-which-versions-are-installed#query-the-registry-using-code
     // and from https://docs.microsoft.com/en-us/dotnet/framework/migration-guide/how-to-determine-which-versions-are-installed#query-the-registry-using-code-older-framework-versions
     public class GetDotNetVersion
     {
@@ -203,52 +206,50 @@ namespace GAPixel
     //      
     public class CustomActions
     {
+        // Modify WebClient so we can set a timeout
+        private class WebClient : System.Net.WebClient
+        {
+            public int Timeout { get; set; }
+
+            protected override WebRequest GetWebRequest(Uri uri)
+            {
+                WebRequest lWebRequest = base.GetWebRequest(uri);
+                lWebRequest.Timeout = Timeout;
+                ((HttpWebRequest)lWebRequest).ReadWriteTimeout = Timeout;
+                return lWebRequest;
+            }
+        }
+
         [CustomAction]
         public static ActionResult SendPixel(Session session)
         {
             var dnv = GetDotNetVersion.GetLatestVersion();
             var wv = System.Environment.OSVersion.VersionString;
-            string cid = GetInfo.GetUniqueId();
+            string cid = GetInfo.GetUniqueId(session);
 
             session.Log(String.Format("Send Pixel to GA windows version={0}, latest dotNet version={1}", wv, dnv)); ;
 
-            void Send()
+            /* I tried running the following in a thread, but unfortunately that thread got cancelled once the function returned.
+             * So, the dialog will "hang" in the beginning until the analytics tracking event has been send or timed out.
+             */
+            var client = new WebClient();
+            // set the timeout to 5 seconds
+            client.Timeout = 5 * 1000;
+            session.Log(String.Format("In Thread: send pixel to GA windows version={0}, latest dotNet version={1} cid={2}", wv, dnv, cid)); ;
+
+            // Call asynchronous network methods in a try/catch block to handle exceptions.
+            try
             {
-                var client = new WebClient();
-                session.Log(String.Format("In Thread: send pixel to GA windows version={0}, latest dotNet version={1} cid={2}", wv, dnv, cid)); ;
-
-                // Call asynchronous network methods in a try/catch block to handle exceptions.
-                try
-                {
-                    using (var data = client.OpenRead(
-                        String.Format(
-                            @"https://ssl.google-analytics.com/collect?v=1&t=event&tid=UA-118120158-1&cid={0}&ec=old_dotnet&ea={1}&el={2}", cid,
-    Uri.EscapeUriString(wv), Uri.EscapeUriString(dnv))))
-                    {
-                        using (var reader = new StreamReader(data))
-                        {
-                            var s = reader.ReadToEnd();
-                            session.Log(String.Format("GA resonded with {0}", s));
-                        }
-                    }
-                }
-                catch (WebException e)
-                {
-                    Console.WriteLine("\nException Caught!");
-                    Console.WriteLine("Message :{0} ", e.Message);
-                }
+                var s = client.DownloadString(String.Format(@"http://localhost:8000/collect?v=1&t=event&tid=UA-118120158-1&cid={0}&ec=old_dotnet&ea={1}&el={2}",
+                        cid, Uri.EscapeUriString(wv), Uri.EscapeUriString(dnv)));
+                session.Log(String.Format("GA resonded with {0}", s));
             }
-
-
-            var t = new Thread(Send);
-            t.Start();
-
-            t.Join();
+            catch (WebException e)
+            {
+                session.Log("Error sending tracking pixel: {0}", e.Message);
+            }
 
             return ActionResult.Success;
         }
-
-
-
     }
 }
