@@ -62,6 +62,7 @@ scripts:
       set -e
       $constants.SET_ENV
       export GOOS=${1}
+      [ -z "${2}" ] && >&2 echo "must provide output file as 2nd arg" && exit 1
       go build -tags "internal $GO_BUILD_TAGS" -o ${2} $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
   - name: generate-version
     language: bash

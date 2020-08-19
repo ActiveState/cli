@@ -101,7 +101,6 @@
 			<DialogRef Id="BrowseDlg" />
 			<DialogRef Id="DiskCostDlg" />
 			<DialogRef Id="ErrorDlg" />
-			<DialogRef Id="FatalError" />
 			<DialogRef Id="FilesInUse" />
 			<DialogRef Id="MsiRMFilesInUse" />
 			<DialogRef Id="PrepareDlg" />
@@ -117,6 +116,8 @@
       		<Publish Dialog="CustomExitDialog" Control="Finish2" Event="DoAction" Value="LaunchStateToolWizardNotInstalled">STATE_TOOL_WIZARD_CHECK_BOX=1 and NOT Installed and STATE_TOOL_INSTALLED = "false"</Publish>
 			<Publish Dialog="CustomExitDialog" Control="Finish2" Event="DoAction" Value="LaunchReleaseNotes">STATE_TOOL_WIZARD_REL_NOTES_CHECK_BOX=1 and NOT Installed</Publish>
 			<Publish Dialog="CustomExitDialog" Control="Finish2" Event="DoAction" Value="InstallVSCodeExt">INSTALL_VSCODE_EXT_CHECK_BOX=1 and NOT Installed</Publish>
+
+			<Publish Dialog="CustomFatalError" Control="Finish" Event="EndDialog" Value="Return" Order="999">1</Publish>
 
 			<Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="PrivacyConsentDlg">NOT Installed</Publish>
 			<Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="VerifyReadyDlg">Installed AND PATCH</Publish>
