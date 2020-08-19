@@ -142,8 +142,6 @@ err_project_file_unavailable:
   other: Could not load the project file
 err_project_unavailable:
   other: Could not load the project
-err_project_parse:
-  other: "Project file could not be parsed, the parser produced the following error: {{.Error}}"
 err_failure_test:
   other: one {{.V0}} three {{.V1}}
 distro_obtaining:
@@ -990,8 +988,6 @@ export_config_flag_filter_description:
   other: "Filter configuration output. Accepts: {{.V0}}"
 export_config_dir_description:
   other: Export the config directory details
-err_invalid_filter:
-  other: "Invalid filter term specified: '{{.V0}}'; Supported terms: {{.V1}}"
 export_apikey_user_notice:
   other: "[BLUE]Note that this key is not stored by ActiveState. Please store the value for later use as you cannot retrieve it again.[/RESET]"
 err_apikey_name_required:

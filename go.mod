@@ -49,6 +49,7 @@ require (
 	github.com/hashicorp/hcl v0.0.0-20171017181929-23c074d0eceb // indirect
 	github.com/hectane/go-acl v0.0.0-20190604041725-da78bae5fc95
 	github.com/iafan/cwalk v0.0.0-20191125092548-dd7f505d2f66
+	github.com/imdario/mergo v0.3.11
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/jarcoal/httpmock v1.0.3
 	github.com/jessevdk/go-flags v1.4.0
@@ -99,5 +100,5 @@ require (
 	gopkg.in/ini.v1 v1.48.0 // indirect
 	gopkg.in/mgo.v2 v2.0.0-20160818020120-3f83fa500528 // indirect
 	gopkg.in/src-d/go-git.v4 v4.13.1
-	gopkg.in/yaml.v2 v2.2.2
+	gopkg.in/yaml.v2 v2.3.0
 )
