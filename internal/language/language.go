@@ -70,19 +70,19 @@ var lookup = [...]languageData{
 	},
 	{
 		"bash", "Bash", ".sh", true, "", "",
-		Executable{"bash", true},
+		Executable{"", true},
 	},
 	{
 		"sh", "Shell", ".sh", true, "", "",
-		Executable{"sh", true},
+		Executable{"", true},
 	},
 	{
 		"batch", "Batch", ".bat", false, "", "",
-		Executable{"batch", true},
+		Executable{"", true},
 	},
 	{
 		"powershell", "PowerShell", ".ps1", false, "", "",
-		Executable{"powershell", true},
+		Executable{"", true},
 	},
 	{
 		"perl", "Perl", ".pl", true, "perl", "5.28.1",

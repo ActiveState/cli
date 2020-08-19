@@ -107,10 +107,9 @@ func run(out output.Outputer, subs subshell.SubShell, name string, args []string
 	)
 	path := os.Getenv("PATH")
 	for _, l := range script.Languages() {
-		if !pathProvidesExec(configCachePath(), l.Executable().Name(), path) {
+		if !pathProvidesExec(configCachePath(), l.String(), path) {
 			attempted = append(attempted, l.String())
 			continue
-			// return FailExecNotFound.New("error_state_run_unknown_exec")
 		}
 		lang = l
 		langExec = l.Executable()
@@ -155,6 +154,10 @@ func run(out output.Outputer, subs subshell.SubShell, name string, args []string
 			return err
 		}
 		path = env["PATH"]
+	}
+
+	if !langExec.Builtin() && !pathProvidesExec(configCachePath(), langExec.Name(), path) {
+		return FailExecNotFound.New("error_state_run_unknown_exec")
 	}
 
 	// Run the script.
@@ -218,6 +221,10 @@ func filterPrefixed(prefix string, paths []string) []string {
 }
 
 func applySuffix(suffix string, paths []string) []string {
+	if runtime.GOOS == "windows" {
+		suffix = suffix + ".exe"
+	}
+
 	for i, v := range paths {
 		paths[i] = filepath.Join(v, suffix)
 	}
