@@ -25,7 +25,7 @@ constants:
       PATH="${GOROOT}/bin:${GOPATH}/bin:${PATH}"
 scripts:
   - name: preprocess
-    language: bash
+    languages: [bash]
     description: Generates assets required by the project that aren't just specific to the build
     value: |
       set -e
@@ -40,7 +40,7 @@ scripts:
       go run scripts/constants-generator/main.go -- internal/constants/generated.go
       mkdir -p build/msi
   - name: build
-    language: bash
+    languages: [bash]
     description: Builds the project with the host OS as the target OS.
     value: |
       set -e
@@ -48,7 +48,7 @@ scripts:
 
       go build -tags "$GO_BUILD_TAGS" -o $constants.BUILD_TARGET $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
   - name: build-32bit
-    language: bash
+    languages: [bash]
     description: Builds the project with the host OS as the target OS for 32-bit architecture.
     value: |
       set -e
@@ -56,7 +56,7 @@ scripts:
       export GOARCH=386
       go build -tags "$GO_BUILD_TAGS" -o $constants.BUILD_TARGET_32BIT $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
   - name: build-for
-    language: bash
+    languages: [bash]
     description: Builds the project with the specified OS as the target OS. (valid values darwin, linux, windows)
     value: |
       set -e
@@ -64,13 +64,13 @@ scripts:
       export GOOS=${1}
       go build -tags "internal $GO_BUILD_TAGS" -o ${2} $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
   - name: generate-version
-    language: bash
+    languages: [bash]
     description: Generate version file
     value: |
       mkdir -p build/update
       wget -O build/update/version.json https://s3.ca-central-1.amazonaws.com/cli-update/update/state/version.json
   - name: generate-update
-    language: bash
+    languages: [bash]
     description: Generate update files
     value: |
       set -e
@@ -81,7 +81,7 @@ scripts:
       mkdir -p build/update
       go run scripts/update-generator/main.go -o build/update $constants.BUILD_TARGET${TARGET_SUFFIX}
   - name: generate-update-32bit
-    language: bash
+    languages: [bash]
     description: Generate update files
     value: |
       set -e
@@ -92,40 +92,40 @@ scripts:
       mkdir -p build/update
       go run scripts/update-generator/main.go -o build/update $constants.BUILD_TARGET_32BIT
   - name: install
-    language: bash
+    languages: [bash]
     description: Installs the current HEAD version into GOBIN
     value: |
       $constants.SET_ENV
       go install $constants.CLI_BUILDFLAGS $CLI_PKGS
   - name: deploy-updates
-    language: bash
+    languages: [bash]
     description: Deploys update files to S3. This steps is automated by CI and should never be ran manually unless you KNOW WHAT YOU'RE DOING.
     value: |
       set -e
       go run scripts/s3-deployer/main.go build/update ca-central-1 cli-update update/state
   - name: build-install-scripts
-    language: bash
+    languages: [bash]
     standalone: true
     if: eq .OS.Name "Windows"
     description: Copies install scripts to build dir, this script exists for transparency with CI behavior
     value: |
       cp installers/install.ps1 build/install.ps1
   - name: build-install-scripts
-    language: bash
+    languages: [bash]
     standalone: true
     if: ne .OS.Name "Windows"
     description: Copies install scripts to build dir, this script exists for transparency with CI behavior
     value: |
       cp installers/install.sh build/install.sh
   - name: deploy-installers
-    language: bash
+    languages: [bash]
     description: Deploys update files to S3. This steps is automated by CI and should never be ran manually unless you KNOW WHAT YOU'RE DOING.
     value: |
       go run scripts/s3-deployer/main.go build/install.sh ca-central-1 cli-update update/state/install.sh
       go run scripts/s3-deployer/main.go build/install.ps1 ca-central-1 cli-update update/state/install.ps1
       go run scripts/s3-deployer/main.go build/msi us-east-1 cli-msi /
   - name: generate-api-client
-    language: bash
+    languages: [bash]
     description: Generates the mono-api client files
     value: |
       WD=$(pwd)
@@ -133,7 +133,7 @@ scripts:
       swagger generate client -f ${WD}/../TheHomeRepot/service/api/swagger/swagger.yaml -A mono -a mono_operations -m mono_models -c mono_client
       popd
   - name: generate-secrets-client
-    language: bash
+    languages: [bash]
     description: Generates the secrets-api client files
     value: |
       WD=$(pwd)
@@ -141,7 +141,7 @@ scripts:
       swagger generate client -f ${WD}/../TheHomeRepot/service/secrets/api/swagger.yaml -A secrets -a secrets_operations -m secrets_models -c secrets_client
       popd
   - name: generate-headchef-client
-    language: bash
+    languages: [bash]
     description: Generates the headchef-api client files
     value: |
       WD=$(pwd)
@@ -149,7 +149,7 @@ scripts:
       swagger generate client --with-flatten full -f ${WD}/../TheHomeRepot/service/head-chef/swagger.json -A headchef -a headchef_operations -m headchef_models -c headchef_client
       popd
   - name: generate-inventory-client
-    language: bash
+    languages: [bash]
     description: Generates the inventory-api client files
     value: |
       WD=$(pwd)
@@ -157,7 +157,7 @@ scripts:
       swagger generate client --with-flatten full -f ${WD}/../TheHomeRepot/service/inventory-api-v1/swagger.json -A inventory -a inventory_operations -m inventory_models -c inventory_client
       popd
   - name: generate-clients
-    language: bash
+    languages: [bash]
     description: Generates all api clients
     value: |
       $scripts.generate-api-client
@@ -165,11 +165,11 @@ scripts:
       $scripts.generate-headchef-client
       $scripts.generate-inventory-client
   - name: generate-locale
-    language: bash
+    languages: [bash]
     description: Detects new localisation calls and generates placeholder entries in en-us.yaml
     value: python3 scripts/locale-generator.py
   - name: build-msi-state
-    language: bash
+    languages: [bash]
     description: Build the state tool MSI, requires that you have wixtools installed and on PATH
     standalone: true
     if: eq .OS.Name "Windows"
@@ -180,7 +180,7 @@ scripts:
       light.exe ./installers/msi-state/install.wixobj -o ./build/msi/state_tool.msi -sice:ICE91 -sice:ICE64 -ext WixUIExtension -ext WixUtilExtension
       rm ./build/msi/state_tool.wixpdb || true
   - name: build-msi-language
-    language: bash
+    languages: [bash]
     description: Builds the language MSI, requires that you have .NET 4.x installed and on PATH
     standalone: true
     if: eq .OS.Name "Windows"
@@ -204,7 +204,7 @@ scripts:
       Builds the language MSI with no project information, requires that you have .NET 4.x installed and on PATH.
       The resulting MSI requires project information be injected in order to be functional.
     standalone: true
-    language: bash
+    languages: [bash]
     if: eq .OS.Name "Windows"
     value: |
       set -e
@@ -220,7 +220,7 @@ scripts:
       cp build/msi-language/en-us/Deploy.msi "build/msi/base.msi"
       rm -Rf build/msi-language
   - name: build-workflows
-    language: bash
+    languages: [bash]
     description: Generates our github workflows
     value: |
       set -e
@@ -238,13 +238,13 @@ scripts:
       $scripts.build-for.path() "linux" ./.github/deps/Linux/bin/state
       $scripts.build-for.path() "darwin" ./.github/deps/macOS/bin/state
   - name: test
-    language: bash
+    languages: [bash]
     description: Runs unit tests (not integration tests)
     value: |
       ACTIVESTATE_PROJECT="" go test -parallel 12 $(go list ./... | grep -v /test/integration)
     standalone: true
   - name: integration-tests
-    language: bash
+    languages: [bash]
     description: Runs integration tests.
     value: |
       unset ACTIVESTATE_ACTIVATED
@@ -252,22 +252,27 @@ scripts:
       export INTEGRATION_TEST_PASSWORD=$secrets.project.INTEGRATION_TEST_PASSWORD
       go test ./test/integration -v "${@:1}" -timeout 20m
   - name: clean
-    language: bash
+    languages: [bash]
     description: Cleans out the build dir.
     value: |
       go clean
       rm -Rf build
   - name: run
-    language: bash
+    languages: [bash]
     description: Builds the State Tool and runs it with `--help`
     value: |
       $scripts.build
       build/state --help
   - name: debug
-    language: bash
+    languages: [bash]
     description: "Runs a remote debugger, that can be hooked into from your IDE, example usage: `state run debug activate` (will debug `state activate`)"
     standalone: true
     value: dlv debug --headless --listen=:2346 --api-version=2 github.com/ActiveState/cli/cmd/state -- $@
+  - name: testing
+    languages: [powershell, bash]
+    description: "Testing multiple languages"
+    standalone: true
+    value: blah
 events:
   - name: ACTIVATE
     if: ne .Shell "cmd"

@@ -26,8 +26,8 @@ import (
 var (
 	// FailScriptNotDefined indicates the user provided a script name that is not defined
 	FailScriptNotDefined = failures.Type("run.fail.scriptnotfound", failures.FailUser)
-	// FailStandalonConflict indicates when a script is run standalone, but unable to be so
-	FailStandalonConflict = failures.Type("run.fail.standaloneconflict", failures.FailUser)
+	// FailStandaloneConflict indicates when a script is run standalone, but unable to be so
+	FailStandaloneConflict = failures.Type("run.fail.standaloneconflict", failures.FailUser)
 	// FailExecNotFound indicates when the builtin language exec is not available
 	FailExecNotFound = failures.Type("run.fail.execnotfound", failures.FailUser)
 )
@@ -41,6 +41,30 @@ type Run struct {
 type primeable interface {
 	primer.Outputer
 	primer.Subsheller
+}
+
+// FallBackLanguageError error contains info realted to fallback languages durning
+// script execution
+type FallBackLanguageError struct {
+	Used      string
+	Attempted []string
+}
+
+// NewFallBackLanguageError simplifies construction
+func NewFallBackLanguageError(used string, attempted []string) *FallBackLanguageError {
+	return &FallBackLanguageError{
+		Used:      used,
+		Attempted: attempted,
+	}
+}
+
+func (e *FallBackLanguageError) Error() string {
+	return locale.Tl(
+		"err_script_fallback",
+		"Script execution fell back to {{.V0}} after {{.V1}} were not detected in your project or system. Please ensure your script is compatible with {{.V0}}, {{.V1}}",
+		e.Used,
+		strings.Join(e.Attempted, ", "),
+	)
 }
 
 // New constructs a new instance of Run.
@@ -76,11 +100,26 @@ func run(out output.Outputer, subs subshell.SubShell, name string, args []string
 		return fail
 	}
 
-	lang := script.Language()
+	var (
+		lang      language.Language
+		langExec  language.Executable
+		attempted []string
+	)
+	path := os.Getenv("PATH")
+	for _, l := range script.Languages() {
+		if !pathProvidesExec(configCachePath(), l.Executable().Name(), path) {
+			attempted = append(attempted, l.String())
+			continue
+			// return FailExecNotFound.New("error_state_run_unknown_exec")
+		}
+		lang = l
+		langExec = l.Executable()
+	}
+
 	if !lang.Recognized() {
 		warning := locale.Tl(
 			"run_warn_deprecated_script_without_language",
-			"[YELLOW]DEPRECATION WARNING: Scripts without a defined language currently fall back to using  the default shell for your platform. This fallback mechanic will soon stop working and a language will need to be explicitly defined for each script. Please configure the 'language' field with a valid option (one of {{.V0}})[/RESET]",
+			"[YELLOW]DEPRECATION WARNING: Scripts without a defined language currently fall back to using the default shell for your platform. This fallback mechanic will soon stop working and a language will need to be explicitly defined for each script. Please configure the 'language' field with a valid option (one of {{.V0}})[/RESET]",
 			strings.Join(language.RecognizedNames(), ", "),
 		)
 		out.Notice(warning)
@@ -88,12 +127,9 @@ func run(out output.Outputer, subs subshell.SubShell, name string, args []string
 		lang = language.MakeByShell(subs.Shell())
 	}
 
-	langExec := lang.Executable()
 	if script.Standalone() && !langExec.Builtin() {
-		return FailStandalonConflict.New("error_state_run_standalone_conflict")
+		return FailStandaloneConflict.New("error_state_run_standalone_conflict")
 	}
-
-	path := os.Getenv("PATH")
 
 	// Activate the state if needed.
 	if !script.Standalone() && !subshell.IsActivated() {
@@ -121,10 +157,6 @@ func run(out output.Outputer, subs subshell.SubShell, name string, args []string
 		path = env["PATH"]
 	}
 
-	if !langExec.Builtin() && !pathProvidesExec(configCachePath(), langExec.Name(), path) {
-		return FailExecNotFound.New("error_state_run_unknown_exec")
-	}
-
 	// Run the script.
 	scriptBlock := project.Expand(script.Value())
 	sf, fail := scriptfile.New(lang, script.Name(), scriptBlock)
@@ -135,7 +167,17 @@ func run(out output.Outputer, subs subshell.SubShell, name string, args []string
 
 	print.Info(locale.Tr("info_state_run_running", script.Name(), script.Source().Path()))
 	// ignore code for now, passing via failure
-	return subs.Run(sf.Filename(), args...)
+	err := subs.Run(sf.Filename(), args...)
+	if err != nil {
+		return locale.WrapError(
+			err,
+			"err_run_script",
+			"Script execution fell back to {{.V0}} after {{.V1}} was not detected in your project or system. Please ensure your script is compatible with and of {{.V0}}, {{.V1}}",
+			lang.String(),
+			strings.Join(attempted, ", "),
+		)
+	}
+	return nil
 }
 
 func configCachePath() string {

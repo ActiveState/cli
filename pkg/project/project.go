@@ -603,15 +603,16 @@ func (script *Script) SourceScript() *projectfile.Script { return script.script 
 // Name returns script name
 func (script *Script) Name() string { return script.script.Name }
 
-// Language returns the language of this script
-func (script *Script) Language() language.Language {
-	return script.script.Language
+// Languages returns the languages of this script
+func (script *Script) Languages() []language.Language {
+	return script.script.Languages
 }
 
 // LanguageSafe returns the language of this script. The returned
 // language is guaranteed to be of a known scripting language
 func (script *Script) LanguageSafe() language.Language {
-	lang := script.Language()
+	// TODO: Update?
+	lang := script.Languages()[0]
 	if !lang.Recognized() {
 		return defaultScriptLanguage()
 	}
