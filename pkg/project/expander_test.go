@@ -48,7 +48,7 @@ scripts:
   - name: recursive
     value: $scripts.recursive
   - name: pythonScript
-    language: Python3
+    languages: [python3]
     value: scriptValue
   - name: scriptPath
     value: $scripts.pythonScript.path()
