@@ -17,6 +17,8 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
@@ -232,14 +234,16 @@ scripts:
 }
 
 func TestPathProvidesExec(t *testing.T) {
-	tf, err := ioutil.TempFile("", "t*.t")
+	temp, err := ioutil.TempDir("", t.Name())
 	require.NoError(t, err)
-	defer os.Remove(tf.Name())
+	tf := filepath.Join(temp, "python3")
+	fail := fileutils.Touch(tf)
+	require.NoError(t, fail.ToError())
+	defer os.Remove(temp)
 
-	require.NoError(t, os.Chmod(tf.Name(), 0770))
+	require.NoError(t, os.Chmod(tf, 0770))
 
-	exec := filepath.Base(tf.Name())
-	temp := filepath.Dir(tf.Name())
+	exec := language.Python3
 
 	home, err := os.UserHomeDir()
 	require.NoError(t, err)
@@ -247,8 +251,8 @@ func TestPathProvidesExec(t *testing.T) {
 	paths := []string{temp, home}
 	pathStr := strings.Join(paths, string(os.PathListSeparator))
 
-	assert.True(t, pathProvidesExec(temp, exec, filepath.Dir(tf.Name())))
-	assert.True(t, pathProvidesExec(temp, exec, pathStr))
-	assert.False(t, pathProvidesExec(temp, "junk", pathStr))
-	assert.False(t, pathProvidesExec(temp, exec, ""))
+	assert.True(t, pathProvidesExec(temp, filepath.Dir(tf), exec))
+	assert.True(t, pathProvidesExec(temp, pathStr, exec))
+	assert.False(t, pathProvidesExec(temp, pathStr, language.Unknown))
+	assert.False(t, pathProvidesExec(temp, "", exec))
 }
