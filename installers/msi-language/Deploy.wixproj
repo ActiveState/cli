@@ -45,6 +45,14 @@
     <Compile Include="Product.wxs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="GAPixel\GAPixel.csproj">
+      <Name>GAPixel</Name>
+      <Project>{1d21e2bc-c88c-4578-9ff1-3663db6dd4cb}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>True</DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
+    </ProjectReference>
     <ProjectReference Include="Rollback\Rollback.csproj">
       <Name>Rollback</Name>
       <Project>{be5d8c31-e68d-493b-9314-ac33d5f83eff}</Project>
