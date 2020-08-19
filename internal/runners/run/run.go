@@ -107,23 +107,20 @@ func run(out output.Outputer, subs subshell.SubShell, name string, args []string
 	)
 	path := os.Getenv("PATH")
 	for _, l := range script.Languages() {
-		if !pathProvidesExec(configCachePath(), l.String(), path) {
-			attempted = append(attempted, l.String())
-			continue
+		if pathProvidesExec(configCachePath(), path, l) {
+			lang = l
+			langExec = l.Executable()
+			break
 		}
-		lang = l
-		langExec = l.Executable()
+		attempted = append(attempted, l.String())
 	}
 
 	if !lang.Recognized() {
-		warning := locale.Tl(
+		return locale.NewError(
 			"run_warn_deprecated_script_without_language",
 			"[YELLOW]DEPRECATION WARNING: Scripts without a defined language currently fall back to using the default shell for your platform. This fallback mechanic will soon stop working and a language will need to be explicitly defined for each script. Please configure the 'language' field with a valid option (one of {{.V0}})[/RESET]",
 			strings.Join(language.RecognizedNames(), ", "),
 		)
-		out.Notice(warning)
-
-		lang = language.MakeByShell(subs.Shell())
 	}
 
 	if script.Standalone() && !langExec.Builtin() {
@@ -156,7 +153,7 @@ func run(out output.Outputer, subs subshell.SubShell, name string, args []string
 		path = env["PATH"]
 	}
 
-	if !langExec.Builtin() && !pathProvidesExec(configCachePath(), langExec.Name(), path) {
+	if !langExec.Builtin() && !pathProvidesExec(configCachePath(), path, lang) {
 		return FailExecNotFound.New("error_state_run_unknown_exec")
 	}
 
@@ -175,7 +172,7 @@ func run(out output.Outputer, subs subshell.SubShell, name string, args []string
 		return locale.WrapError(
 			err,
 			"err_run_script",
-			"Script execution fell back to {{.V0}} after {{.V1}} was not detected in your project or system. Please ensure your script is compatible with and of {{.V0}}, {{.V1}}",
+			"Script execution fell back to {{.V0}} after {{.V1}} was not detected in your project or system. Please ensure your script is compatible with {{.V0}}, {{.V1}}",
 			lang.String(),
 			strings.Join(attempted, ", "),
 		)
@@ -190,9 +187,11 @@ func configCachePath() string {
 	return config.CachePath()
 }
 
-func pathProvidesExec(filterByPath, exec, path string) bool {
+func pathProvidesExec(filterByPath, path string, language language.Language) bool {
 	paths := splitPath(path)
-	if filterByPath != "" {
+	exec := language.String()
+	if language.Executable().Available() && filterByPath != "" {
+		exec = language.Executable().Name()
 		paths = filterPrefixed(filterByPath, paths)
 	}
 	paths = applySuffix(exec, paths)
