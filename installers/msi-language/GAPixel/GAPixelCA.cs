@@ -89,7 +89,7 @@ namespace GAPixel
             try
             {
                 var s = client.DownloadString(String.Format(
-                        @"https://ssl.google-analytics.com/collect?v=1&t=event&tid=UA-118120158-1&cid={0}&ec=old_dotnet&ea={1}",
+                        @"https://ssl.google-analytics.com/collect?v=1&t=event&tid=UA-118120158-2&cid={0}&ec=old_dotnet&ea={1}",
                         cid, Uri.EscapeUriString(wv)));
                 session.Log(String.Format("GA resonded with {0}", s));
             }
