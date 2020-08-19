@@ -240,7 +240,8 @@ namespace GAPixel
             // Call asynchronous network methods in a try/catch block to handle exceptions.
             try
             {
-                var s = client.DownloadString(String.Format(@"http://localhost:8000/collect?v=1&t=event&tid=UA-118120158-1&cid={0}&ec=old_dotnet&ea={1}&el={2}",
+                var s = client.DownloadString(String.Format(
+                        @"https://ssl.google-analytics.com/collect?v=1&t=event&tid=UA-118120158-1&cid={0}&ec=old_dotnet&ea={1}&el={2}",
                         cid, Uri.EscapeUriString(wv), Uri.EscapeUriString(dnv)));
                 session.Log(String.Format("GA resonded with {0}", s));
             }
