@@ -43,30 +43,6 @@ type primeable interface {
 	primer.Subsheller
 }
 
-// FallBackLanguageError error contains info realted to fallback languages durning
-// script execution
-type FallBackLanguageError struct {
-	Used      string
-	Attempted []string
-}
-
-// NewFallBackLanguageError simplifies construction
-func NewFallBackLanguageError(used string, attempted []string) *FallBackLanguageError {
-	return &FallBackLanguageError{
-		Used:      used,
-		Attempted: attempted,
-	}
-}
-
-func (e *FallBackLanguageError) Error() string {
-	return locale.Tl(
-		"err_script_fallback",
-		"Script execution fell back to {{.V0}} after {{.V1}} were not detected in your project or system. Please ensure your script is compatible with {{.V0}}, {{.V1}}",
-		e.Used,
-		strings.Join(e.Attempted, ", "),
-	)
-}
-
 // New constructs a new instance of Run.
 func New(prime primeable) *Run {
 	return &Run{
