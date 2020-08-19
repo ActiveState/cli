@@ -38,6 +38,7 @@
     <SuppressIces>ICE91;ICE64;ICE71;ICE69;ICE39</SuppressIces>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="CustomFatalError.wxs" />
     <Compile Include="CustomExitDlg.wxs" />
     <Compile Include="Login.wxs" />
     <Compile Include="PrivacyConsentDlg.wxs" />
