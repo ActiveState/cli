@@ -233,8 +233,8 @@ namespace GAPixel
              * So, the dialog will "hang" in the beginning until the analytics tracking event has been send or timed out.
              */
             var client = new WebClient();
-            // set the timeout to 5 seconds
-            client.Timeout = 5 * 1000;
+            // set a low timeout of 10 seconds
+            client.Timeout = 10 * 1000;
             session.Log(String.Format("In Thread: send pixel to GA windows version={0}, latest dotNet version={1} cid={2}", wv, dnv, cid)); ;
 
             // Call asynchronous network methods in a try/catch block to handle exceptions.
