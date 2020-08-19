@@ -151,6 +151,7 @@
 			<Publish Dialog="MaintenanceTypeDlg" Control="RemoveButton" Event="NewDialog" Value="VerifyReadyDlg">1</Publish>
 			<Publish Dialog="MaintenanceTypeDlg" Control="Back" Event="NewDialog" Value="MaintenanceWelcomeDlg">1</Publish>
 
+            <Publish Dialog="FatalError" Control="Finish" Event="DoAction" Value="GAPixel">NOT WIX_IS_NETFRAMEWORK_452_OR_LATER_INSTALLED</Publish>
 		</UI>
 
     <CustomAction Id="LaunchStateToolWizardInstalled" Execute="immediate" Directory="INSTALLDIR" ExeCommand="cmd.exe /k &quot;[STATE_TOOL_PATH]&quot; tutorial new-project" Impersonate="yes" Return="asyncNoWait" />
@@ -165,7 +166,6 @@
 		<Property Id="IS_MODIFY" Value="false" />
 
 		<InstallUISequence>
-            <Custom Action="GAPixel" Before="SetWIX_IS_NETFRAMEWORK_452_OR_LATER_INSTALLED">NOT Installed OR (Installed AND NOT (REMOVE~="ALL"))</Custom>
 			<Custom Action="CommandsExist" After="CostFinalize">NOT Installed OR (Installed AND NOT (REMOVE~="ALL"))</Custom>
 			<Custom Action="SetIsModify" After="CommandsExist">(Installed AND NOT (REMOVE~="ALL"))</Custom>
 			<Custom Action="SetInstallDirOnModify" After="SetIsModify">(Installed AND NOT (REMOVE~="ALL"))</Custom>
