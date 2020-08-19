@@ -118,8 +118,9 @@
 			<Publish Dialog="CustomExitDialog" Control="Finish2" Event="DoAction" Value="InstallVSCodeExt">INSTALL_VSCODE_EXT_CHECK_BOX=1 and NOT Installed</Publish>
 
 			<Publish Dialog="CustomFatalError" Control="Finish" Event="EndDialog" Value="Return" Order="999">1</Publish>
+            <Publish Dialog="CustomFatalError" Control="Finish" Event="DoAction" Value="GAPixel">NOT WIX_IS_NETFRAMEWORK_452_OR_LATER_INSTALLED</Publish>
 
-			<Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="PrivacyConsentDlg">NOT Installed</Publish>
+            <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="PrivacyConsentDlg">NOT Installed</Publish>
 			<Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="VerifyReadyDlg">Installed AND PATCH</Publish>
 
 			<Publish Dialog="PrivacyConsentDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg">1</Publish>
@@ -152,7 +153,6 @@
 			<Publish Dialog="MaintenanceTypeDlg" Control="RemoveButton" Event="NewDialog" Value="VerifyReadyDlg">1</Publish>
 			<Publish Dialog="MaintenanceTypeDlg" Control="Back" Event="NewDialog" Value="MaintenanceWelcomeDlg">1</Publish>
 
-            <Publish Dialog="FatalError" Control="Finish" Event="DoAction" Value="GAPixel">NOT WIX_IS_NETFRAMEWORK_452_OR_LATER_INSTALLED</Publish>
 		</UI>
 
     <CustomAction Id="LaunchStateToolWizardInstalled" Execute="immediate" Directory="INSTALLDIR" ExeCommand="cmd.exe /k &quot;[STATE_TOOL_PATH]&quot; tutorial new-project" Impersonate="yes" Return="asyncNoWait" />
