@@ -3,6 +3,7 @@ package project
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"regexp"
 	"runtime"
 	"strings"
@@ -611,12 +612,23 @@ func (script *Script) Languages() []language.Language {
 // LanguageSafe returns the language of this script. The returned
 // language is guaranteed to be of a known scripting language
 func (script *Script) LanguageSafe() language.Language {
-	// TODO: Update?
-	lang := script.Languages()[0]
+	lang := script.availableLanguage()
 	if !lang.Recognized() {
 		return defaultScriptLanguage()
 	}
 	return lang
+}
+
+func (script *Script) availableLanguage() language.Language {
+	for _, lang := range script.Languages() {
+		_, err := exec.LookPath(lang.String())
+		if err != nil {
+			logging.Debug("{{.V0}} not found on PATH", lang.String())
+			continue
+		}
+		return lang
+	}
+	return language.Unknown
 }
 
 func defaultScriptLanguage() language.Language {
