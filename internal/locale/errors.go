@@ -52,7 +52,7 @@ type ErrorInput interface {
 	InputError() bool
 }
 
-// NewError creates a new error, it does a locale.Tt lookup of the given id, if the lookup fails it will use the
+// NewError creates a new error, it does a locale.Tl lookup of the given id, if the lookup fails it will use the
 // locale string instead
 func NewError(id string, args ...string) error {
 	return WrapError(nil, id, args...)
