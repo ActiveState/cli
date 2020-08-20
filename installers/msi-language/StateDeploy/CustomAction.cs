@@ -12,6 +12,7 @@ using Newtonsoft.Json;
 using System.Security.Cryptography;
 using System.IO.Compression;
 using ActiveState;
+using System.Threading.Tasks;
 
 namespace StateDeploy
 {
@@ -51,21 +52,8 @@ namespace StateDeploy
             return paths;
         }
 
-        public static ActionResult InstallStateTool(Session session, out string stateToolPath)
-        {
-            RollbarHelper.ConfigureRollbarSingleton(session.CustomActionData["COMMIT_ID"]);
-
-            session.Log("Installing State Tool if necessary");
-            if (session.CustomActionData["STATE_TOOL_INSTALLED"] == "true")
-            {
-                stateToolPath = session.CustomActionData["STATE_TOOL_PATH"];
-                session.Log("State Tool is installed, no installation required");
-                Status.ProgressBar.Increment(session, 1);
-                return ActionResult.Success;
-            }
-            
-            Status.ProgressBar.StatusMessage(session, "Installing State Tool...");
-            Status.ProgressBar.Increment(session, 1);
+        private static ActionResult _installStateTool(Session session, out string stateToolPath)
+		{
             stateToolPath = "";
 
             var paths = GetPaths();
@@ -232,7 +220,7 @@ namespace StateDeploy
 
             session.Log("Updating PATH environment variable");
             string oldPath = Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.Machine);
-            if (oldPath.Contains(stateToolInstallDir)) 
+            if (oldPath.Contains(stateToolInstallDir))
             {
                 session.Log("State tool installation already on PATH");
                 return ActionResult.Success;
@@ -253,6 +241,34 @@ namespace StateDeploy
             }
 
             return ActionResult.Success;
+
+        }
+
+        public static ActionResult InstallStateTool(Session session, out string stateToolPath)
+        {
+            RollbarHelper.ConfigureRollbarSingleton(session.CustomActionData["COMMIT_ID"]);
+
+            session.Log("Installing State Tool if necessary");
+            if (session.CustomActionData["STATE_TOOL_INSTALLED"] == "true")
+            {
+                stateToolPath = session.CustomActionData["STATE_TOOL_PATH"];
+                session.Log("State Tool is installed, no installation required");
+                Status.ProgressBar.Increment(session, 1);
+                return ActionResult.Success;
+            }
+            
+            Status.ProgressBar.StatusMessage(session, "Installing State Tool...");
+            Status.ProgressBar.Increment(session, 1);
+
+            var ret = _installStateTool(session, out stateToolPath);
+            if (ret == ActionResult.Success)
+			{
+                TrackerSingleton.Instance.TrackEventInBackground("stage", "state-tool", "success");
+			} else if (ret == ActionResult.Failure)
+			{
+                TrackerSingleton.Instance.TrackEventInBackground("stage", "state-tool", "failure");
+            }
+            return ret;
         }
 
         private static ActionResult Login(Session session, string stateToolPath)
@@ -328,6 +344,8 @@ namespace StateDeploy
         {
             ActiveState.RollbarHelper.ConfigureRollbarSingleton(session.CustomActionData["COMMIT_ID"]);
 
+            TrackerSingleton.Instance.TrackEventInBackground("stage", "started", "");
+
             if (!Environment.Is64BitOperatingSystem)
             {
                 Record record = new Record();
@@ -362,6 +380,7 @@ namespace StateDeploy
                     new InstallSequenceElement("symlink", "Creating shortcut directory"),
                 });
 
+            bool artifactsFetched = false;
             try
             {
                 foreach (var seq in sequence)
@@ -386,8 +405,18 @@ namespace StateDeploy
                         record.FormatString = String.Format("{0} failed with error:\n{1}", seq.Description, errorOutput);
 
                         MessageResult msgRes = session.Message(InstallMessage.Error | (InstallMessage)MessageBoxButtons.OK, record);
+                        if (!artifactsFetched)
+						{
+                            TrackerSingleton.Instance.TrackEventSynchronously("stage", "artifacts", "failure");
+                        }
+                        TrackerSingleton.Instance.TrackEventSynchronously("stage", "finished", "failure");
                         return runResult;
                     }
+                    if (seq.SubCommand == "install")
+					{
+                        TrackerSingleton.Instance.TrackEventInBackground("stage", "artifacts", "success");
+                        artifactsFetched = true;
+					}
                 }
             }
             catch (Exception objException)
@@ -398,6 +427,7 @@ namespace StateDeploy
                 return ActionResult.Failure;
             }
 
+            TrackerSingleton.Instance.TrackEventSynchronously("stage", "finished", "success");
             Status.ProgressBar.Increment(session, 1);
             return ActionResult.Success;
         }

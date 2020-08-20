@@ -188,7 +188,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Class2.cs" />
+    <Compile Include="Tracker.cs" />
     <Compile Include="FileAssociation.cs" />
     <Compile Include="Command.cs" />
     <Compile Include="Rollbar.cs" />
@@ -201,6 +201,10 @@
     <None Include="RollbarPayloadsStore.db" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\GAPixel\GAPixel.csproj">
+      <Project>{1d21e2bc-c88c-4578-9ff1-3663db6dd4cb}</Project>
+      <Name>GAPixel</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Status\Status.csproj">
       <Project>{5eb4dcdf-0e44-4db7-9b33-cef19b9bb2b3}</Project>
       <Name>Status</Name>

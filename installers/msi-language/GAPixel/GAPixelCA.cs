@@ -21,8 +21,12 @@ namespace GAPixel
             }
         }
 
-        public static string GetUniqueId(Session session)
+        public static string GetUniqueId(Session session=null)
         {
+            if (session != null)
+			{
+                session.Log("generate unique session id");
+			}
             try
             {
                 var oMClass = new ManagementClass("Win32_NetworkAdapterConfiguration");
@@ -47,7 +51,10 @@ namespace GAPixel
             }
             catch (Exception err)
             {
-                session.Log(String.Format("Error getting unique ID {0}", err));
+                if (session != null)
+                {
+                    session.Log(String.Format("Error getting unique ID {0}", err));
+                }
             }
             // fallback GUID
             return "11111111--1111-1111-1111-111111111111";
