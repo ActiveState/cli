@@ -27,6 +27,7 @@ type PlainOpts string
 const (
 	SingleLineOpt PlainOpts = "singleLine"
 	EmptyNil      PlainOpts = "emptyNil"
+	HidePlain     PlainOpts = "hidePlain"
 )
 
 // Plain is our plain outputer, it uses reflect to marshal the data.
@@ -278,6 +279,10 @@ func sprintTable(slice []interface{}) (string, error) {
 		firstIteration := len(headers) == 0
 		row := []interface{}{}
 		for _, field := range meta {
+			if funk.Contains(field.opts, string(HidePlain)) {
+				continue
+			}
+
 			if firstIteration {
 				headers = append(headers, localizedField(field.l10n))
 				termWidth = termWidth - (len(headers) * 10) // Account for cell padding, cause gotabulate doesn't..
