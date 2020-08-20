@@ -51,7 +51,7 @@ project: "https://platform.activestate.com/ActiveState/project?commitID=00010001
 scripts:
   - name: run
     languages: [bash]
-    value: cmd /C echo foo
+    value: cmd.exe /C echo foo
     standalone: true
   `)
 	}
@@ -245,7 +245,12 @@ scripts:
 func TestPathProvidesExec(t *testing.T) {
 	temp, err := ioutil.TempDir("", t.Name())
 	require.NoError(t, err)
+
 	tf := filepath.Join(temp, "python3")
+	if runtime.GOOS == "windows" {
+		tf = filepath.Join(temp, "python3.exe")
+	}
+
 	fail := fileutils.Touch(tf)
 	require.NoError(t, fail.ToError())
 	defer os.Remove(temp)

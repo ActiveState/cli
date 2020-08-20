@@ -78,59 +78,59 @@ func run(out output.Outputer, subs subshell.SubShell, name string, args []string
 
 	var (
 		lang      language.Language
-		langExec  language.Executable
+		activated bool
 		attempted []string
 	)
 	path := os.Getenv("PATH")
 	for _, l := range script.Languages() {
+		if script.Standalone() && !l.Executable().Builtin() {
+			attempted = append(attempted, l.String())
+			continue
+		}
+
+		// Activate the state if needed.
+		if !script.Standalone() && !activated {
+			print.Info(locale.T("info_state_run_activating_state"))
+			venv := virtualenvironment.Init()
+			venv.OnDownloadArtifacts(func() { print.Line(locale.T("downloading_artifacts")) })
+			venv.OnInstallArtifacts(func() { print.Line(locale.T("installing_artifacts")) })
+
+			if fail := venv.Activate(); fail != nil {
+				logging.Errorf("Unable to activate state: %s", fail.Error())
+				return fail.WithDescription("error_state_run_activate")
+			}
+
+			env, err := venv.GetEnv(true, filepath.Dir(projectfile.Get().Path()))
+			if err != nil {
+				return err
+			}
+			subs.SetEnv(env)
+
+			// search the "clean" path first (PATHS that are set by venv)
+			env, err = venv.GetEnv(false, "")
+			if err != nil {
+				return err
+			}
+			path = env["PATH"] + string(os.PathSeparator) + path
+			activated = true
+		}
+
 		if pathProvidesExec(configCachePath(), path, l) {
 			lang = l
-			langExec = l.Executable()
 			break
 		}
 		attempted = append(attempted, l.String())
 	}
 
 	if !lang.Recognized() {
-		return locale.NewError(
-			"err_deprecated_script_without_language",
-			"Script language unknown or undefined. Please configure the 'languages' field with a valid option (one or more of {{.V0}})",
+		warning := locale.Tl(
+			"run_warn_deprecated_script_without_language",
+			"[YELLOW]DEPRECATION WARNING: Scripts without a defined language currently fall back to using  the default shell for your platform. This fallback mechanic will soon stop working and a language will need to be explicitly defined for each script. Please configure the 'language' field with a valid option (one of {{.V0}})[/RESET]",
 			strings.Join(language.RecognizedNames(), ", "),
 		)
-	}
+		out.Notice(warning)
 
-	if script.Standalone() && !langExec.Builtin() {
-		return FailStandaloneConflict.New("error_state_run_standalone_conflict")
-	}
-
-	// Activate the state if needed.
-	if !script.Standalone() && !subshell.IsActivated() {
-		print.Info(locale.T("info_state_run_activating_state"))
-		venv := virtualenvironment.Init()
-		venv.OnDownloadArtifacts(func() { print.Line(locale.T("downloading_artifacts")) })
-		venv.OnInstallArtifacts(func() { print.Line(locale.T("installing_artifacts")) })
-
-		if fail := venv.Activate(); fail != nil {
-			logging.Errorf("Unable to activate state: %s", fail.Error())
-			return fail.WithDescription("error_state_run_activate")
-		}
-
-		env, err := venv.GetEnv(true, filepath.Dir(projectfile.Get().Path()))
-		if err != nil {
-			return err
-		}
-		subs.SetEnv(env)
-
-		// get the "clean" path (only PATHS that are set by venv)
-		env, err = venv.GetEnv(false, "")
-		if err != nil {
-			return err
-		}
-		path = env["PATH"]
-	}
-
-	if !langExec.Builtin() && !pathProvidesExec(configCachePath(), path, lang) {
-		return FailExecNotFound.New("error_state_run_unknown_exec")
+		lang = language.MakeByShell(subs.Shell())
 	}
 
 	// Run the script.
@@ -140,18 +140,20 @@ func run(out output.Outputer, subs subshell.SubShell, name string, args []string
 		return fail.WithDescription("error_state_run_setup_scriptfile")
 	}
 	defer sf.Clean()
-
 	print.Info(locale.Tr("info_state_run_running", script.Name(), script.Source().Path()))
 	// ignore code for now, passing via failure
 	err := subs.Run(sf.Filename(), args...)
 	if err != nil {
-		return locale.WrapError(
-			err,
-			"err_run_script",
-			"Script execution fell back to {{.V0}} after {{.V1}} was not detected in your project or system. Please ensure your script is compatible with {{.V0}}, {{.V1}}",
-			lang.String(),
-			strings.Join(attempted, ", "),
-		)
+		if len(attempted) > 0 {
+			return locale.WrapError(
+				err,
+				"err_run_script",
+				"Script execution fell back to {{.V0}} after {{.V1}} was not detected in your project or system. Please ensure your script is compatible with {{.V0}}, {{.V1}}",
+				lang.String(),
+				strings.Join(attempted, ", "),
+			)
+		}
+		return err
 	}
 	return nil
 }
@@ -170,6 +172,10 @@ func pathProvidesExec(filterByPath, path string, language language.Language) boo
 		exec = language.Executable().Name()
 		paths = filterPrefixed(filterByPath, paths)
 	}
+	if language.Executable().Builtin() && runtime.GOOS == "windows" {
+		exec = exec + ".exe"
+	}
+
 	paths = applySuffix(exec, paths)
 
 	for _, p := range paths {
@@ -196,10 +202,6 @@ func filterPrefixed(prefix string, paths []string) []string {
 }
 
 func applySuffix(suffix string, paths []string) []string {
-	if runtime.GOOS == "windows" {
-		suffix = suffix + ".exe"
-	}
-
 	for i, v := range paths {
 		paths[i] = filepath.Join(v, suffix)
 	}
