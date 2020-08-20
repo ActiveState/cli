@@ -17,9 +17,9 @@
 	<Property Id="CODE_INSTALLED" Value="false" />
     <!-- End Configuration parameters -->
 
-    <PropertyRef Id="WIX_IS_NETFRAMEWORK_452_OR_LATER_INSTALLED"/>
-    <Condition Message="This application requires .NET Framework 4.5.2 or later. Please install the .NET Framework then run this installer again.  The installer can be downloaded from https://www.microsoft.com/en-us/download/details.aspx?id=42643.">
-      <![CDATA[Installed OR WIX_IS_NETFRAMEWORK_452_OR_LATER_INSTALLED]]>
+    <PropertyRef Id="WIX_IS_NETFRAMEWORK_45_OR_LATER_INSTALLED"/>
+    <Condition Message="This application requires .NET Framework 4.5.0 or later. Please install the .NET Framework then run this installer again.  The installer can be downloaded from https://www.microsoft.com/en-us/download/details.aspx?id=42643.">
+      <![CDATA[Installed OR WIX_IS_NETFRAMEWORK_45_OR_LATER_INSTALLED]]>
     </Condition>
 
     <!-- Design assets -->
@@ -118,7 +118,7 @@
 			<Publish Dialog="CustomExitDialog" Control="Finish2" Event="DoAction" Value="InstallVSCodeExt">INSTALL_VSCODE_EXT_CHECK_BOX=1 and NOT Installed</Publish>
 
 			<Publish Dialog="CustomFatalError" Control="Finish" Event="EndDialog" Value="Return" Order="999">1</Publish>
-            <Publish Dialog="CustomFatalError" Control="Finish" Event="DoAction" Value="GAPixel">NOT WIX_IS_NETFRAMEWORK_452_OR_LATER_INSTALLED</Publish>
+            <Publish Dialog="CustomFatalError" Control="Finish" Event="DoAction" Value="GAPixel">NOT WIX_IS_NETFRAMEWORK_45_OR_LATER_INSTALLED</Publish>
 
 			<Publish Dialog="UserExit" Control="Finish" Event="DoAction" Value="GAReportUserExit">1</Publish>
 
