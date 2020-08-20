@@ -78,10 +78,13 @@ func run(out output.Outputer, subs subshell.SubShell, name string, args []string
 
 	var (
 		lang      language.Language
-		activated bool
 		attempted []string
 	)
 	path := os.Getenv("PATH")
+	// IsActivated is unreliable currently. We store the activated
+	// value in a varaible to ensure we are not activating multiple
+	// types in the loop below
+	activated := subshell.IsActivated()
 	for _, l := range script.Languages() {
 		if script.Standalone() && !l.Executable().Builtin() {
 			attempted = append(attempted, l.String())
