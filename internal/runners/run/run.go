@@ -115,7 +115,7 @@ func run(out output.Outputer, subs subshell.SubShell, name string, args []string
 			activated = true
 		}
 
-		if pathProvidesExec(configCachePath(), path, l) {
+		if pathProvidesLang(path, l) {
 			lang = l
 			break
 		}
@@ -165,13 +165,16 @@ func configCachePath() string {
 	return config.CachePath()
 }
 
-func pathProvidesExec(filterByPath, path string, language language.Language) bool {
+func pathProvidesLang(path string, language language.Language) bool {
 	paths := splitPath(path)
-	exec := language.String()
-	if language.Executable().Available() && filterByPath != "" {
+
+	var exec string
+	if language.Executable().Available() {
 		exec = language.Executable().Name()
-		paths = filterPrefixed(filterByPath, paths)
+	} else {
+		exec = language.String()
 	}
+
 	if language.Executable().Builtin() && runtime.GOOS == "windows" {
 		exec = exec + ".exe"
 	}
@@ -188,17 +191,6 @@ func pathProvidesExec(filterByPath, path string, language language.Language) boo
 
 func splitPath(path string) []string {
 	return strings.Split(path, string(os.PathListSeparator))
-}
-
-func filterPrefixed(prefix string, paths []string) []string {
-	var ps []string
-	for _, p := range paths {
-		// Clean removes double slashes and relative path directories
-		if strings.HasPrefix(filepath.Clean(p), filepath.Clean(prefix)) {
-			ps = append(ps, p)
-		}
-	}
-	return ps
 }
 
 func applySuffix(suffix string, paths []string) []string {
