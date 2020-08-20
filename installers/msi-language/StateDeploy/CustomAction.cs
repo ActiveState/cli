@@ -258,6 +258,7 @@ namespace StateDeploy
                 stateToolPath = session.CustomActionData["STATE_TOOL_PATH"];
                 session.Log("State Tool is installed, no installation required");
                 Status.ProgressBar.Increment(session, 1);
+                TrackerSingleton.Instance.TrackEventInBackground(session, "stage", "state-tool", "skipped");
                 return ActionResult.Success;
             }
 
@@ -385,7 +386,6 @@ namespace StateDeploy
                     new InstallSequenceElement("symlink", "Creating shortcut directory"),
                 });
 
-            bool artifactsFetched = false;
             try
             {
                 foreach (var seq in sequence)
@@ -410,19 +410,12 @@ namespace StateDeploy
                         record.FormatString = String.Format("{0} failed with error:\n{1}", seq.Description, errorOutput);
 
                         MessageResult msgRes = session.Message(InstallMessage.Error | (InstallMessage)MessageBoxButtons.OK, record);
-                        if (!artifactsFetched)
-                        {
-                            TrackerSingleton.Instance.TrackEventSynchronously(session, "stage", "artifacts", "failure");
-                        }
-                        TrackerSingleton.Instance.TrackEventSynchronously(session, "stage", "finished", "failure");
+                        TrackerSingleton.Instance.TrackEventSynchronously(session, "stage", "artifacts", "failure");
+
                         return runResult;
                     }
-                    if (seq.SubCommand == "install")
-                    {
-                        TrackerSingleton.Instance.TrackEventInBackground(session, "stage", "artifacts", "success");
-                        artifactsFetched = true;
-                    }
                 }
+                TrackerSingleton.Instance.TrackEventInBackground(session, "stage", "artifacts", "success");
             }
             catch (Exception objException)
             {
@@ -432,7 +425,6 @@ namespace StateDeploy
                 return ActionResult.Failure;
             }
 
-            TrackerSingleton.Instance.TrackEventSynchronously(session, "stage", "finished", "success");
             Status.ProgressBar.Increment(session, 1);
             return ActionResult.Success;
         }
