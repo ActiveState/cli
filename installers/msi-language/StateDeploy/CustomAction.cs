@@ -34,17 +34,22 @@ namespace StateDeploy
             public string sha256v2 = "";
         }
 
-        private static bool is64Bit() {
+        private static bool is64Bit()
+        {
             return System.Environment.Is64BitOperatingSystem;
         }
 
-        private static StateToolPaths GetPaths() {
+        private static StateToolPaths GetPaths()
+        {
             StateToolPaths paths;
-            if (is64Bit()) {
+            if (is64Bit())
+            {
                 paths.JsonDescription = "windows-amd64.json";
                 paths.ZipFile = "windows-amd64.zip";
                 paths.ExeFile = "windows-amd64.exe";
-            } else {
+            }
+            else
+            {
                 paths.JsonDescription = "windows-386.json";
                 paths.ZipFile = "windows-386.zip";
                 paths.ExeFile = "windows-386.exe";
@@ -53,7 +58,7 @@ namespace StateDeploy
         }
 
         private static ActionResult _installStateTool(Session session, out string stateToolPath)
-		{
+        {
             stateToolPath = "";
 
             var paths = GetPaths();
@@ -256,16 +261,17 @@ namespace StateDeploy
                 Status.ProgressBar.Increment(session, 1);
                 return ActionResult.Success;
             }
-            
+
             Status.ProgressBar.StatusMessage(session, "Installing State Tool...");
             Status.ProgressBar.Increment(session, 1);
 
             var ret = _installStateTool(session, out stateToolPath);
             if (ret == ActionResult.Success)
-			{
+            {
                 TrackerSingleton.Instance.TrackEventInBackground("stage", "state-tool", "success");
-			} else if (ret == ActionResult.Failure)
-			{
+            }
+            else if (ret == ActionResult.Failure)
+            {
                 TrackerSingleton.Instance.TrackEventInBackground("stage", "state-tool", "failure");
             }
             return ret;
@@ -288,7 +294,8 @@ namespace StateDeploy
             {
                 session.Log("Attempting to log in with TOTP token");
                 authCmd = " auth" + " --totp " + totp;
-            } else
+            }
+            else
             {
                 session.Log(string.Format("Attempting to login as user: {0}", username));
                 authCmd = " auth" + " --username " + username + " --password " + password;
@@ -358,7 +365,8 @@ namespace StateDeploy
 
             string stateToolPath;
             ActionResult res = InstallStateTool(session, out stateToolPath);
-            if (res != ActionResult.Success) {
+            if (res != ActionResult.Success)
+            {
                 return res;
             }
             session.Log("Starting state deploy with state tool at " + stateToolPath);
@@ -406,17 +414,17 @@ namespace StateDeploy
 
                         MessageResult msgRes = session.Message(InstallMessage.Error | (InstallMessage)MessageBoxButtons.OK, record);
                         if (!artifactsFetched)
-						{
+                        {
                             TrackerSingleton.Instance.TrackEventSynchronously("stage", "artifacts", "failure");
                         }
                         TrackerSingleton.Instance.TrackEventSynchronously("stage", "finished", "failure");
                         return runResult;
                     }
                     if (seq.SubCommand == "install")
-					{
+                    {
                         TrackerSingleton.Instance.TrackEventInBackground("stage", "artifacts", "success");
                         artifactsFetched = true;
-					}
+                    }
                 }
             }
             catch (Exception objException)
@@ -477,6 +485,13 @@ namespace StateDeploy
             deployCMDBuilder.AppendFormat(" {0} --path=\"{1}\\\"", projectName, installDir);
 
             return deployCMDBuilder.ToString();
+        }
+
+        [CustomAction]
+        public static ActionResult GAUserExit(Session session)
+        {
+            TrackerSingleton.Instance.TrackEventSynchronously("user_cancel", "", "");
+            return ActionResult.Success;
         }
     }
 }
