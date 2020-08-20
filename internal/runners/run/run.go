@@ -128,7 +128,7 @@ func run(out output.Outputer, subs subshell.SubShell, name string, args []string
 	if !lang.Recognized() {
 		warning := locale.Tl(
 			"run_warn_deprecated_script_without_language",
-			"[YELLOW]DEPRECATION WARNING: Scripts without a defined language currently fall back to using  the default shell for your platform. This fallback mechanic will soon stop working and a language will need to be explicitly defined for each script. Please configure the 'language' field with a valid option (one of {{.V0}})[/RESET]",
+			"[YELLOW]DEPRECATION WARNING: Scripts without a recognized or defined language currently fall back to using the default shell for your platform. This fallback mechanic will soon stop working and a language will need to be explicitly defined for each script. Please configure the 'language' field with a valid option (one of {{.V0}})[/RESET]",
 			strings.Join(language.RecognizedNames(), ", "),
 		)
 		out.Notice(warning)

@@ -2,7 +2,6 @@ package integration
 
 import (
 	"fmt"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
@@ -212,32 +211,6 @@ func (suite *RunIntegrationTestSuite) TestRun_DeprecatedLackingLanguage() {
 
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
-}
-
-func (suite *RunIntegrationTestSuite) TestRun_BadLanguage() {
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	suite.createProjectFile(ts)
-
-	asyFilename := filepath.Join(ts.Dirs.Work, "activestate.yaml")
-	asyFile, err := os.OpenFile(asyFilename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	suite.Require().NoError(err, "config is opened for appending")
-	defer asyFile.Close()
-
-	_, err = asyFile.WriteString(strings.TrimPrefix(`
-- name: badLanguage
-  language: bax
-  value: echo "shouldn't show"
-`, "\n"))
-	suite.Require().NoError(err, "extra config is appended")
-
-	cp := ts.Spawn("run", "badLanguage")
-	cp.Expect("parser", 5*time.Second)
-	cp.Expect("Supported languages", 5*time.Second)
-
-	cp.SendLine("exit")
-	cp.ExpectNotExitCode(0)
 }
 
 func TestRunIntegrationTestSuite(t *testing.T) {
