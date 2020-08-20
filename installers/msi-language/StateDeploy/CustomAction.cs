@@ -489,6 +489,23 @@ namespace StateDeploy
          * all custom actions.
          */
 
+        [CustomAction]
+        public static ActionResult GAReportFailure(Session session)
+        {
+            session.Log("sending event about starting the MSI");
+            TrackerSingleton.Instance.TrackEventSynchronously(session, "stage", "finished", "failure");
+            return ActionResult.Success;
+        }
+
+        [CustomAction]
+        public static ActionResult GAReportSuccess(Session session)
+        {
+            session.Log("sending event about starting the MSI");
+            TrackerSingleton.Instance.TrackEventSynchronously(session, "stage", "finished", "success");
+            return ActionResult.Success;
+        }
+
+
         /// <summary>
         /// Reports the start of the MSI to google analytics
         /// </summary>

@@ -111,14 +111,17 @@
 			<Publish Dialog="BrowseDlg" Control="OK" Event="DoAction" Value="WixUIValidatePath" Order="3">1</Publish>
 			<Publish Dialog="BrowseDlg" Control="OK" Event="SpawnDialog" Value="InvalidDirDlg" Order="4"><![CDATA[NOT WIXUI_DONTVALIDATEPATH AND WIXUI_INSTALLDIR_VALID<>"1"]]></Publish>
 
-			<Publish Dialog="CustomExitDialog" Control="Finish2" Event="EndDialog" Value="Return" Order="999">1</Publish>
-      		<Publish Dialog="CustomExitDialog" Control="Finish2" Event="DoAction" Value="LaunchStateToolWizardInstalled">STATE_TOOL_WIZARD_CHECK_BOX=1 and NOT Installed and STATE_TOOL_INSTALLED = "true"</Publish>
-      		<Publish Dialog="CustomExitDialog" Control="Finish2" Event="DoAction" Value="LaunchStateToolWizardNotInstalled">STATE_TOOL_WIZARD_CHECK_BOX=1 and NOT Installed and STATE_TOOL_INSTALLED = "false"</Publish>
-			<Publish Dialog="CustomExitDialog" Control="Finish2" Event="DoAction" Value="LaunchReleaseNotes">STATE_TOOL_WIZARD_REL_NOTES_CHECK_BOX=1 and NOT Installed</Publish>
-			<Publish Dialog="CustomExitDialog" Control="Finish2" Event="DoAction" Value="InstallVSCodeExt">INSTALL_VSCODE_EXT_CHECK_BOX=1 and NOT Installed</Publish>
+			<Publish Dialog="CustomExitDialog" Control="Finish" Event="EndDialog" Value="Return" Order="999">1</Publish>
+      		<Publish Dialog="CustomExitDialog" Control="Finish" Event="DoAction" Value="LaunchStateToolWizardInstalled">STATE_TOOL_WIZARD_CHECK_BOX=1 and NOT Installed and STATE_TOOL_INSTALLED = "true"</Publish>
+      		<Publish Dialog="CustomExitDialog" Control="Finish" Event="DoAction" Value="LaunchStateToolWizardNotInstalled">STATE_TOOL_WIZARD_CHECK_BOX=1 and NOT Installed and STATE_TOOL_INSTALLED = "false"</Publish>
+			<Publish Dialog="CustomExitDialog" Control="Finish" Event="DoAction" Value="LaunchReleaseNotes">STATE_TOOL_WIZARD_REL_NOTES_CHECK_BOX=1 and NOT Installed</Publish>
+			<Publish Dialog="CustomExitDialog" Control="Finish" Event="DoAction" Value="InstallVSCodeExt">INSTALL_VSCODE_EXT_CHECK_BOX=1 and NOT Installed</Publish>
+            <Publish Dialog="CustomExitDialog" Control="Finish" Event="DoAction" Value="GAReportSuccess">1</Publish>
 
-			<Publish Dialog="CustomFatalError" Control="Finish" Event="EndDialog" Value="Return" Order="999">1</Publish>
+
+          <Publish Dialog="CustomFatalError" Control="Finish" Event="EndDialog" Value="Return" Order="999">1</Publish>
             <Publish Dialog="CustomFatalError" Control="Finish" Event="DoAction" Value="GAPixel">NOT WIX_IS_NETFRAMEWORK_45_OR_LATER_INSTALLED</Publish>
+            <Publish Dialog="CustomFatalError" Control="Finish" Event="DoAction" Value="GAReportFailure">1</Publish>
 
 			<Publish Dialog="UserExit" Control="Finish" Event="DoAction" Value="GAReportUserExit">1</Publish>
 
@@ -201,8 +204,10 @@
 
 		<Binary Id="StateDeployCA" SourceFile="$(var.StateDeploy.TargetDir)$(var.StateDeploy.TargetName).CA.dll" />
 		<CustomAction Id="StateDeploy" Impersonate="no" BinaryKey="StateDeployCA" DllEntry="StateDeploy" Execute="deferred" Return="check" />
-        <CustomAction Id="GAReportStart" Impersonate="yes" BinaryKey="StateDeployCA" DllEntry="GAReportStart" Execute="immediate" Return="ignore" />
-        <CustomAction Id="GAReportUserExit" Impersonate="yes" BinaryKey="StateDeployCA" DllEntry="GAReportUserExit" Execute="immediate" Return="ignore" />
+		<CustomAction Id="GAReportStart" Impersonate="yes" BinaryKey="StateDeployCA" DllEntry="GAReportStart" Execute="immediate" Return="ignore" />
+		<CustomAction Id="GAReportUserExit" Impersonate="yes" BinaryKey="StateDeployCA" DllEntry="GAReportUserExit" Execute="immediate" Return="ignore" />
+		<CustomAction Id="GAReportFailure" Impersonate="yes" BinaryKey="StateDeployCA" DllEntry="GAReportFailure" Execute="immediate" Return="ignore" />
+		<CustomAction Id="GAReportSuccess" Impersonate="yes" BinaryKey="StateDeployCA" DllEntry="GAReportSuccess" Execute="immediate" Return="ignore" />
 
 		<Binary Id="PresetCA" SourceFile="$(var.Preset.TargetDir)$(var.Preset.TargetName).CA.dll" />
 		<CustomAction Id="Preset" Impersonate="no" BinaryKey="PresetCA" DllEntry="InstallPreset" Execute="deferred" Return="check" />
