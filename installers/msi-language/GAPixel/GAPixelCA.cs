@@ -21,7 +21,7 @@ namespace GAPixel
             }
         }
 
-        public static string GetUniqueId(Session session)
+        public static string GetUniqueId(Session session=null)
         {
             try
             {
@@ -47,7 +47,10 @@ namespace GAPixel
             }
             catch (Exception err)
             {
-                session.Log(String.Format("Error getting unique ID {0}", err));
+                if (session != null)
+                {
+                    session.Log(String.Format("Error getting unique ID {0}", err));
+                }
             }
             // fallback GUID
             return "11111111--1111-1111-1111-111111111111";

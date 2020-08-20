@@ -58,6 +58,12 @@
     <Reference Include="DeviceId, Version=5.1.1.0, Culture=neutral, PublicKeyToken=f755c371b5c59c52, processorArchitecture=MSIL">
       <HintPath>..\packages\DeviceId.5.1.1\lib\net40\DeviceId.dll</HintPath>
     </Reference>
+    <Reference Include="GoogleAnalyticsTracker.Core, Version=4.5.0.0, Culture=neutral, PublicKeyToken=04ab204e84b117c0, processorArchitecture=MSIL">
+      <HintPath>..\packages\GoogleAnalyticsTracker.Core.4.5.0\lib\portable45-net45+win8+wpa81\GoogleAnalyticsTracker.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="GoogleAnalyticsTracker.Simple, Version=4.5.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\GoogleAnalyticsTracker.Simple.4.5.0\lib\portable45-net45+win8+wpa81\GoogleAnalyticsTracker.Simple.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.Data.Sqlite, Version=1.1.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Data.Sqlite.1.1.0\lib\net451\Microsoft.Data.Sqlite.dll</HintPath>
     </Reference>
@@ -182,6 +188,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Tracker.cs" />
     <Compile Include="FileAssociation.cs" />
     <Compile Include="Command.cs" />
     <Compile Include="Rollbar.cs" />
@@ -194,6 +201,10 @@
     <None Include="RollbarPayloadsStore.db" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\GAPixel\GAPixel.csproj">
+      <Project>{1d21e2bc-c88c-4578-9ff1-3663db6dd4cb}</Project>
+      <Name>GAPixel</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Status\Status.csproj">
       <Project>{5eb4dcdf-0e44-4db7-9b33-cef19b9bb2b3}</Project>
       <Name>Status</Name>
