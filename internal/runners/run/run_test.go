@@ -233,7 +233,7 @@ scripts:
 	projectfile.Reset()
 }
 
-func TestPathProvidesExec(t *testing.T) {
+func TestPathProvidesLang(t *testing.T) {
 	temp, err := ioutil.TempDir("", t.Name())
 	require.NoError(t, err)
 
@@ -256,8 +256,8 @@ func TestPathProvidesExec(t *testing.T) {
 	paths := []string{temp, home}
 	pathStr := strings.Join(paths, string(os.PathListSeparator))
 
-	assert.True(t, pathProvidesExec(temp, filepath.Dir(tf), exec))
-	assert.True(t, pathProvidesExec(temp, pathStr, exec))
-	assert.False(t, pathProvidesExec(temp, pathStr, language.Unknown))
-	assert.False(t, pathProvidesExec(temp, "", exec))
+	assert.True(t, pathProvidesLang(filepath.Dir(tf), exec))
+	assert.True(t, pathProvidesLang(pathStr, exec))
+	assert.False(t, pathProvidesLang(pathStr, language.Unknown))
+	assert.False(t, pathProvidesLang("", exec))
 }
