@@ -16,10 +16,11 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	promptMock "github.com/ActiveState/cli/internal/prompt/mock"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
+	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
 	authlet "github.com/ActiveState/cli/pkg/cmdlets/auth"
 	"github.com/ActiveState/cli/pkg/platform/api"
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
@@ -65,7 +66,6 @@ func TestRequireAuthenticationLogin(t *testing.T) {
 	setup(t)
 	user := setupUser()
 	pmock := promptMock.Init()
-	authlet.Prompter = pmock
 
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	secretsapiMock := httpmock.Activate(secretsapi.Get().BaseURI)
@@ -81,7 +81,7 @@ func TestRequireAuthenticationLogin(t *testing.T) {
 	pmock.OnMethod("Select").Once().Return(locale.T("prompt_login_action"), nil)
 	pmock.OnMethod("Input").Once().Return(user.Username, nil)
 	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
-	authlet.RequireAuthentication("")
+	authlet.RequireAuthentication("", outputhelper.NewCatcher(), pmock)
 
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
@@ -91,7 +91,6 @@ func TestRequireAuthenticationLoginFail(t *testing.T) {
 	setup(t)
 	user := setupUser()
 	pmock := promptMock.Init()
-	authlet.Prompter = pmock
 
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	defer httpmock.DeActivate()
@@ -103,7 +102,7 @@ func TestRequireAuthenticationLoginFail(t *testing.T) {
 	pmock.OnMethod("Select").Once().Return(locale.T("prompt_login_action"), nil)
 	pmock.OnMethod("Input").Once().Return("Iammeanttofail", nil)
 	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
-	fail = authlet.RequireAuthentication("")
+	fail = authlet.RequireAuthentication("", outputhelper.NewCatcher(), pmock)
 
 	assert.Nil(t, authentication.ClientAuth(), "Not Authenticated")
 	require.Error(t, fail.ToError(), "Failure occurred")
@@ -114,7 +113,6 @@ func TestRequireAuthenticationSignup(t *testing.T) {
 	setup(t)
 	user := setupUser()
 	pmock := promptMock.Init()
-	authlet.Prompter = pmock
 
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	secretsapiMock := httpmock.Activate(secretsapi.Get().BaseURI)
@@ -139,7 +137,7 @@ func TestRequireAuthenticationSignup(t *testing.T) {
 	pmock.OnMethod("InputSecret").Twice().Return(user.Password, nil)
 	pmock.OnMethod("Input").Once().Return(user.Name, nil)
 	pmock.OnMethod("Input").Once().Return(user.Email, nil)
-	authlet.RequireAuthentication("")
+	authlet.RequireAuthentication("", outputhelper.NewCatcher(), pmock)
 
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
@@ -149,7 +147,6 @@ func TestRequireAuthenticationSignupBrowser(t *testing.T) {
 	setup(t)
 	user := setupUser()
 	pmock := promptMock.Init()
-	authlet.Prompter = pmock
 
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	secretsapiMock := httpmock.Activate(secretsapi.Get().BaseURI)
@@ -171,7 +168,7 @@ func TestRequireAuthenticationSignupBrowser(t *testing.T) {
 	pmock.OnMethod("Select").Once().Return(locale.T("prompt_signup_browser_action"), nil)
 	pmock.OnMethod("Input").Once().Return("Iammeanttofail", nil)
 	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
-	authlet.RequireAuthentication("")
+	authlet.RequireAuthentication("", outputhelper.NewCatcher(), pmock)
 
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
 	assert.NoError(t, failures.Handled(), "No failure occurred")

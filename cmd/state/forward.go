@@ -16,7 +16,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -56,7 +55,7 @@ func forwardFn(args []string, out output.Outputer, pj *project.Project) (forward
 	fn := func() (int, error) {
 		// Perform the forward
 		out.Notice(locale.Tr("forward_version", versionInfo.Version))
-		code, fail := forward(args, versionInfo)
+		code, fail := forward(args, versionInfo, out)
 		if fail != nil {
 			out.Error(locale.T("forward_fail"))
 			return 1, fail
@@ -72,10 +71,10 @@ func forwardFn(args []string, out output.Outputer, pj *project.Project) (forward
 }
 
 // forward will forward the call to the appropriate State Tool version if necessary
-func forward(args []string, versionInfo *projectfile.VersionInfo) (int, *failures.Failure) {
+func forward(args []string, versionInfo *projectfile.VersionInfo, out output.Outputer) (int, *failures.Failure) {
 	logging.Debug("Forwarding to version %s/%s, arguments: %v", versionInfo.Branch, versionInfo.Version, args[1:])
 	binary := forwardBin(versionInfo)
-	fail := ensureForwardExists(binary, versionInfo)
+	fail := ensureForwardExists(binary, versionInfo, out)
 	if fail != nil {
 		return 1, fail
 	}
@@ -105,7 +104,7 @@ func forwardBin(versionInfo *projectfile.VersionInfo) string {
 	return filepath.Join(datadir, "version-cache", filename)
 }
 
-func ensureForwardExists(binary string, versionInfo *projectfile.VersionInfo) *failures.Failure {
+func ensureForwardExists(binary string, versionInfo *projectfile.VersionInfo, out output.Outputer) *failures.Failure {
 	if fileutils.FileExists(binary) {
 		return nil
 	}
@@ -127,7 +126,7 @@ func ensureForwardExists(binary string, versionInfo *projectfile.VersionInfo) *f
 		return failures.FailNetwork.New(locale.T("forward_fail_info"))
 	}
 
-	print.Line(locale.Tr("downloading_state_version", info.Version))
+	out.Notice(locale.Tr("downloading_state_version", info.Version))
 	err = up.Download(binary)
 	if err != nil {
 		return failures.FailNetwork.Wrap(err)

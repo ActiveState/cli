@@ -30,8 +30,17 @@ type Outputer interface {
 	Config() *Config
 }
 
+// lastCreated is here for specific legacy use cases
+var lastCreated Outputer
+
 // New constructs a new Outputer according to the given format name
 func New(formatName string, config *Config) (Outputer, *failures.Failure) {
+	var fail *failures.Failure
+	lastCreated, fail = new(formatName, config)
+	return lastCreated, fail
+}
+
+func new(formatName string, config *Config) (Outputer, *failures.Failure) {
 	logging.Debug("Requested outputer for %s", formatName)
 
 	format := Format(formatName)
@@ -55,6 +64,11 @@ func New(formatName string, config *Config) (Outputer, *failures.Failure) {
 	}
 
 	return nil, FailNotRecognized.New(locale.Tr("err_unknown_format", string(formatName)))
+}
+
+// Get is here for legacy use-cases, DO NOT USE IT FOR NEW CODE
+func Get() Outputer {
+	return lastCreated
 }
 
 // Config is the thing we pass to Outputer constructors

@@ -110,7 +110,9 @@ func (suite *EditIntegrationTestSuite) TestEdit_UpdateCorrectPlatform() {
 
 	s := pj.ScriptByName("test-script")
 	suite.Require().NotNil(s, "test-script should not be empty")
-	suite.Contains(s.Value(), "more info!", "Output of edit command:\n%s", cp.Snapshot())
+	v, err := s.Value()
+	suite.Require().NoError(err)
+	suite.Contains(v, "more info!", "Output of edit command:\n%s", cp.Snapshot())
 }
 
 func TestEditIntegrationTestSuite(t *testing.T) {

@@ -23,7 +23,6 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/internal/print"
 )
 
 var (
@@ -108,9 +107,6 @@ type Project struct {
 	Owner     string      `yaml:"owner,omitempty"`
 	Name      string      `yaml:"name,omitempty"`
 }
-
-// tracks deprecation warning; remove as soon as possible
-var warned bool
 
 // Platform covers the platform structure of our yaml
 type Platform struct {
@@ -459,11 +455,10 @@ func Parse(configFilepath string) (*Project, *failures.Failure) {
 	}
 
 	if project.Project == "" && project.Owner != "" && project.Name != "" {
-		if !warned {
-			print.Warning(locale.Tr("warn_deprecation_owner_name_fields", project.Owner, project.Name))
-			warned = true
-		}
 		project.Project = fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, project.Owner, project.Name)
+		if err := project.Save(); err != nil { // anyone still not respecting the deprecation warning by now is going to have to deal with their file being updated for them
+			logging.Error("Could not save projectfile after removing owner/name deprecation: %v", err)
+		}
 	}
 
 	fail := ValidateProjectURL(project.Project)

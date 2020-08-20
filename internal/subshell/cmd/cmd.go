@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -107,16 +108,16 @@ func (v *SubShell) Quote(value string) string {
 }
 
 // Activate - see subshell.SubShell
-func (v *SubShell) Activate() *failures.Failure {
+func (v *SubShell) Activate(out output.Outputer) *failures.Failure {
 	env := sscommon.EscapeEnv(v.env)
 	var fail *failures.Failure
-	if v.rcFile, fail = sscommon.SetupProjectRcFile("config.bat", ".bat", env); fail != nil {
+	if v.rcFile, fail = sscommon.SetupProjectRcFile("config.bat", ".bat", env, out); fail != nil {
 		return fail
 	}
 
 	shellArgs := []string{"/K", v.rcFile.Name()}
 	if v.activateCommand != nil {
-		if fail := fileutils.AppendToFile(v.rcFile.Name(), []byte("\r\n" + *v.activateCommand + "\r\nexit")); fail != nil {
+		if fail := fileutils.AppendToFile(v.rcFile.Name(), []byte("\r\n"+*v.activateCommand+"\r\nexit")); fail != nil {
 			return fail
 		}
 	}

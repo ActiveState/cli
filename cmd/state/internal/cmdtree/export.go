@@ -8,7 +8,6 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/export"
 	"github.com/ActiveState/cli/internal/runners/export/config"
-	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
 func newExportCommand() *captain.Command {
@@ -24,8 +23,8 @@ func newExportCommand() *captain.Command {
 		})
 }
 
-func newRecipeCommand() *captain.Command {
-	recipe := export.NewRecipe()
+func newRecipeCommand(prime *primer.Values) *captain.Command {
+	recipe := export.NewRecipe(prime)
 
 	params := export.RecipeParams{}
 
@@ -57,8 +56,8 @@ func newRecipeCommand() *captain.Command {
 		})
 }
 
-func newJWTCommand() *captain.Command {
-	jwt := export.NewJWT()
+func newJWTCommand(prime *primer.Values) *captain.Command {
+	jwt := export.NewJWT(prime)
 
 	params := export.JWTParams{}
 
@@ -68,14 +67,12 @@ func newJWTCommand() *captain.Command {
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
-			params.Auth = authentication.Get()
-
 			return jwt.Run(&params)
 		})
 }
 
-func newPrivateKeyCommand() *captain.Command {
-	privateKey := export.NewPrivateKey()
+func newPrivateKeyCommand(prime *primer.Values) *captain.Command {
+	privateKey := export.NewPrivateKey(prime)
 
 	params := export.PrivateKeyParams{}
 
@@ -85,8 +82,6 @@ func newPrivateKeyCommand() *captain.Command {
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
-			params.Auth = authentication.Get()
-
 			return privateKey.Run(&params)
 		})
 }

@@ -94,6 +94,9 @@ func run(args []string, out output.Outputer) (int, error) {
 		return code, err
 	}
 
+	// Set up prompter
+	prompter := prompt.New()
+
 	// Set up project (if we have a valid path)
 	var pj *project.Project
 	if pjPath != "" {
@@ -101,7 +104,7 @@ func run(args []string, out output.Outputer) (int, error) {
 		if fail != nil {
 			return 1, fail
 		}
-		pj, fail = project.New(pjf)
+		pj, fail = project.New(pjf, out, prompter)
 		if fail != nil {
 			return 1, fail
 		}
@@ -144,7 +147,7 @@ func run(args []string, out output.Outputer) (int, error) {
 	project.RegisterConditional(conditional)
 
 	// Run the actual command
-	cmds := cmdtree.New(primer.New(pj, out, authentication.Get(), prompt.New(), sshell, conditional))
+	cmds := cmdtree.New(primer.New(pj, out, authentication.Get(), prompter, sshell, conditional))
 	err = cmds.Execute(args[1:])
 
 	return unwrapError(err)
