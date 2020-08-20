@@ -21,7 +21,6 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
@@ -391,14 +390,14 @@ func MakeEventsFromConstrainedEntities(items []ConstrainedEntity) (events []*Eve
 
 // Script covers the script structure, which goes under Project
 type Script struct {
-	Name        string              `yaml:"name"`
-	Description string              `yaml:"description,omitempty"`
-	Value       string              `yaml:"value"`
-	Filename    string              `yaml:"filename,omitempty"`
-	Standalone  bool                `yaml:"standalone,omitempty"`
-	Languages   []language.Language `yaml:"languages,omitempty"`
-	Conditional Conditional         `yaml:"if"`
-	Constraints Constraint          `yaml:"constraints,omitempty"`
+	Name        string      `yaml:"name"`
+	Description string      `yaml:"description,omitempty"`
+	Value       string      `yaml:"value"`
+	Filename    string      `yaml:"filename,omitempty"`
+	Standalone  bool        `yaml:"standalone,omitempty"`
+	Language    string      `yaml:"language,omitempty"`
+	Conditional Conditional `yaml:"if"`
+	Constraints Constraint  `yaml:"constraints,omitempty"`
 }
 
 var _ ConstrainedEntity = Script{}

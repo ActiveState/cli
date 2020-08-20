@@ -605,7 +605,12 @@ func (script *Script) Name() string { return script.script.Name }
 
 // Languages returns the languages of this script
 func (script *Script) Languages() []language.Language {
-	return script.script.Languages
+	stringLanguages := strings.Split(script.script.Language, ",")
+	languages := make([]language.Language, len(stringLanguages))
+	for i, lang := range stringLanguages {
+		languages[i] = language.MakeByName(strings.TrimSpace(lang))
+	}
+	return languages
 }
 
 // LanguageSafe returns the first language of this script. The

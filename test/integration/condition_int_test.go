@@ -118,23 +118,23 @@ constants:
     if: ne .Shell ""
 scripts:
   - name: complex-true
-    languages: [bash]
+    language: bash
     standalone: true
     value: echo "I exist"
     if: or (eq .OS.Architecture "") (Contains .OS.Architecture "64")
   - name: complex-false
-    languages: [bash]
+    language: bash
     standalone: true
     value: echo "I exist"
     if: and (eq .OS.Architecture "") (Contains .OS.Architecture "64")
   - name: test
-    languages: [bash]
+    language: bash
     standalone: true
     value: echo wrong script
     if: false
   - name: test
     standalone: true
-    languages: [bash]
+    language: bash
     value: |
       echo ${constants.projectName}
       echo ${constants.projectOwner}
@@ -145,22 +145,22 @@ scripts:
       echo ${constants.shell}
     if: ne .Shell ""
   - name: test
-    languages: [bash]
+    language: bash
     standalone: true
     value: echo wrong script
     if: false
   - name: OSName
-    languages: [bash]
+    language: bash
     standalone: true
     value: echo using-windows
     if: eq .OS.Name "Windows"
   - name: OSName
-    languages: [bash]
+    language: bash
     standalone: true
     value: echo using-macos
     if: eq .OS.Name "MacOS"
   - name: OSName
-    languages: [bash]
+    language: bash
     standalone: true
     value: echo using-linux
     if: eq .OS.Name "Linux"
@@ -183,12 +183,12 @@ func (suite *ConditionIntegrationTestSuite) PrepareActiveStateYAMLWithSyntaxErro
 project: https://platform.activestate.com/ActiveState-CLI/test?commitID=9090c128-e948-4388-8f7f-96e2c1e00d98
 scripts:
   - name: test
-    languages: [bash]
+    language: bash
     standalone: true
     value: echo invalid value
     if: not a valid conditional
   - name: test
-    languages: [bash]
+    language: bash
     standalone: true
     value: echo valid value
     if: true

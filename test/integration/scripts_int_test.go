@@ -26,7 +26,7 @@ scripts:
       os: windows
   - name: second-script
     value: print("second script")
-    languages: [python3]
+    language: python3
 `)
 
 	ts.PrepareActiveStateYAML(configFileContent)

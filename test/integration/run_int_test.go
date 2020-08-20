@@ -61,7 +61,7 @@ scripts:
     os: windows
   - name: helloWorldPython
     value: print("Hello Python!")
-    languages: [python3]
+    language: python3
 `)
 
 	ts.PrepareActiveStateYAML(configFileContent)
@@ -227,7 +227,7 @@ func (suite *RunIntegrationTestSuite) TestRun_BadLanguage() {
 
 	_, err = asyFile.WriteString(strings.TrimPrefix(`
 - name: badLanguage
-  languages: [bax]
+  language: bax
   value: echo "shouldn't show"
 `, "\n"))
 	suite.Require().NoError(err, "extra config is appended")

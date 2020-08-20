@@ -19,7 +19,7 @@ constants:
       PATH="${GOROOT}/bin:${GOPATH}/bin:${PATH}"
 scripts:
   - name: preprocess
-    languages: [bash]
+    language: bash
     description: Generates assets required by the project that aren't just specific to the build
     value: |
       set -e
@@ -34,7 +34,7 @@ scripts:
       go run scripts/constants-generator/main.go -- internal/constants/generated.go
       mkdir -p build/msi
   - name: build
-    languages: [bash]
+    language: bash
     description: Builds the project with the host OS as the target OS.
     value: |
       set -e
@@ -42,7 +42,7 @@ scripts:
 
       go build -tags "$GO_BUILD_TAGS" -o $constants.BUILD_TARGET $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
   - name: build-32bit
-    languages: [bash]
+    language: bash
     description: Builds the project with the host OS as the target OS for 32-bit architecture.
     value: |
       set -e
@@ -50,7 +50,7 @@ scripts:
       export GOARCH=386
       go build -tags "$GO_BUILD_TAGS" -o $constants.BUILD_TARGET_32BIT $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
   - name: build-for
-    languages: [bash]
+    language: bash
     description: Builds the project with the specified OS as the target OS. (valid values darwin, linux, windows)
     value: |
       set -e
@@ -59,33 +59,33 @@ scripts:
       [ -z "${2}" ] && >&2 echo "must provide output file as 2nd arg" && exit 1
       go build -tags "internal $GO_BUILD_TAGS" -o ${2} $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
   - name: install
-    languages: [bash]
+    language: bash
     description: Installs the current HEAD version into GOBIN
     value: |
       $constants.SET_ENV
       go install $constants.CLI_BUILDFLAGS $CLI_PKGS
   - name: deploy-updates
-    languages: [bash]
+    language: bash
     description: Deploys update files to S3. This steps is automated by CI and should never be ran manually unless you KNOW WHAT YOU'RE DOING.
     value: |
       set -e
       go run scripts/s3-deployer/main.go build/update ca-central-1 cli-update update/state
   - name: build-install-scripts
-    languages: [bash]
+    language: bash
     standalone: true
     if: ne .OS.Name "Windows"
     description: Copies install scripts to build dir, this script exists for transparency with CI behavior
     value: |
       cp installers/install.sh build/install.sh
   - name: deploy-installers
-    languages: [bash]
+    language: bash
     description: Deploys update files to S3. This steps is automated by CI and should never be ran manually unless you KNOW WHAT YOU'RE DOING.
     value: |
       go run scripts/s3-deployer/main.go build/install.sh ca-central-1 cli-update update/state/install.sh
       go run scripts/s3-deployer/main.go build/install.ps1 ca-central-1 cli-update update/state/install.ps1
       go run scripts/s3-deployer/main.go build/msi us-east-1 cli-msi /
   - name: build-workflows
-    languages: [bash]
+    language: bash
     description: Generates our github workflows
     value: |
       set -e
@@ -103,13 +103,13 @@ scripts:
       $scripts.build-for.path() "linux" ./.github/deps/Linux/bin/state
       $scripts.build-for.path() "darwin" ./.github/deps/macOS/bin/state
   - name: test
-    languages: [bash]
+    language: bash
     description: Runs unit tests (not integration tests)
     value: |
       ACTIVESTATE_PROJECT="" go test -parallel 12 $(go list ./... | grep -v /test/integration)
     standalone: true
   - name: integration-tests
-    languages: [bash]
+    language: bash
     description: Runs integration tests.
     value: |
       unset ACTIVESTATE_ACTIVATED
@@ -117,24 +117,24 @@ scripts:
       export INTEGRATION_TEST_PASSWORD=$secrets.project.INTEGRATION_TEST_PASSWORD
       go test ./test/integration -v "${@:1}" -timeout 20m
   - name: clean
-    languages: [bash]
+    language: bash
     description: Cleans out the build dir.
     value: |
       go clean
       rm -Rf build
   - name: run
-    languages: [bash]
+    language: bash
     description: Builds the State Tool and runs it with `--help`
     value: |
       $scripts.build
       build/state --help
   - name: debug
-    languages: [bash]
+    language: bash
     description: "Runs a remote debugger, that can be hooked into from your IDE, example usage: `state run debug activate` (will debug `state activate`)"
     standalone: true
     value: dlv debug --headless --listen=:2346 --api-version=2 github.com/ActiveState/cli/cmd/state -- $@
   - name: testing
-    languages: [powershell, bash]
+    language: powershell,bash
     description: "Testing multiple languages"
     standalone: true
     value: blah

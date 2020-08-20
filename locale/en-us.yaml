@@ -1086,7 +1086,7 @@ sample_yaml:
     # This script uses a secret. Note that you can define your own secrets at
     # https://platform.activestate.com/{{.Owner}}/{{.Project}}/scripts
       - name: helloWorld
-        languages: [{{.Shell}}]
+        language: {{.Shell}}
         value: echo ${secrets.user.world}
     events:
       # This is the ACTIVATE event, it will run whenever a new virtual environment is created (eg. by running `state activate`)
