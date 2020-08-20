@@ -1002,8 +1002,6 @@ arg_platforms_shared_version:
   other: version
 arg_platforms_shared_version_description:
   other: Platform version (e.g. 12.04.2)
-field_platforms:
-  other: Platforms
 field_version:
   other: Version
 field_bitwidth:

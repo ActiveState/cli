@@ -50,9 +50,9 @@ func run(params *OrgParams, out output.Outputer) error {
 
 type orgData struct {
 	Name            string `json:"name,omitempty"`
-	URLName         string `json:"URLName,omitempty"`
-	Tier            string `json:"tier,omitempty"`
-	PrivateProjects bool   `json:"privateProjects"`
+	URLName         string `json:"URLName,omitempty" opts:"hidePlain"`
+	Tier            string `json:"tier,omitempty" locale:"tier,Tier"`
+	PrivateProjects bool   `json:"privateProjects" locale:"privateprojects,Private Projects"`
 }
 
 func newOrgData(orgs []*mono_models.Organization) ([]orgData, error) {
