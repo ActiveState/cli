@@ -4,7 +4,6 @@ import (
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/runners/run"
 )
 
@@ -26,7 +25,7 @@ func newRunCommand(prime *primer.Values) *captain.Command {
 		},
 		func(ccmd *captain.Command, args []string) error {
 			if name == "-h" || name == "--help" {
-				print.Line(ccmd.UsageText())
+				prime.Output().Print(ccmd.UsageText())
 				return nil
 			}
 

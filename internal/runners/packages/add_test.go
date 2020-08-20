@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 )
@@ -14,6 +15,10 @@ type primeMock struct {
 
 func (p *primeMock) Output() output.Outputer {
 	return p.out
+}
+
+func (p *primeMock) Prompt() prompt.Prompter {
+	return nil
 }
 
 func TestAdd(t *testing.T) {

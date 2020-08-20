@@ -141,7 +141,11 @@ func (v *VirtualEnvironment) GetEnv(inherit bool, projectDir string) (map[string
 			return env, fail.ToError()
 		}
 		for _, constant := range pj.Constants() {
-			env[constant.Name()] = constant.Value()
+			var err error
+			env[constant.Name()], err = constant.Value()
+			if err != nil {
+				return nil, locale.WrapError(err, "err_venv_constant_val", "Could not retrieve value for constant: `{{.Vp}}`.", constant.Name())
+			}
 		}
 	}
 

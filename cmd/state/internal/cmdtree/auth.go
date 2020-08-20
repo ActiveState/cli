@@ -3,11 +3,12 @@ package cmdtree
 import (
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/auth"
 )
 
-func newAuthCommand(globals *globalOptions) *captain.Command {
-	authRunner := auth.NewAuth()
+func newAuthCommand(prime *primer.Values) *captain.Command {
+	authRunner := auth.NewAuth(prime)
 
 	params := auth.AuthParams{}
 
@@ -42,15 +43,13 @@ func newAuthCommand(globals *globalOptions) *captain.Command {
 		},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
-			params.Output = globals.Output
-
 			return authRunner.Run(&params)
 		},
 	)
 }
 
-func newSignupCommand() *captain.Command {
-	signupRunner := auth.NewSignup()
+func newSignupCommand(prime *primer.Values) *captain.Command {
+	signupRunner := auth.NewSignup(prime)
 	return captain.NewCommand(
 		"signup",
 		locale.T("signup_description"),
@@ -62,8 +61,8 @@ func newSignupCommand() *captain.Command {
 	)
 }
 
-func newLogoutCommand() *captain.Command {
-	logoutRunner := auth.NewLogout()
+func newLogoutCommand(prime *primer.Values) *captain.Command {
+	logoutRunner := auth.NewLogout(prime)
 	return captain.NewCommand(
 		"logout",
 		locale.T("logout_description"),

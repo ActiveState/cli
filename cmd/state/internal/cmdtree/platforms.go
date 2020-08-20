@@ -45,7 +45,7 @@ func newPlatformsSearchCommand(prime *primer.Values) *captain.Command {
 }
 
 func newPlatformsAddCommand(prime *primer.Values) *captain.Command {
-	runner := platforms.NewAdd()
+	runner := platforms.NewAdd(prime)
 
 	params := platforms.AddRunParams{}
 

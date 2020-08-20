@@ -6,15 +6,16 @@ import (
 	"os"
 	"path/filepath"
 
+	"gopkg.in/src-d/go-git.v4"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"gopkg.in/src-d/go-git.v4"
 )
 
 var (
@@ -29,7 +30,7 @@ var (
 
 // Repository is the interface used to represent a version control system repository
 type Repository interface {
-	CloneProject(owner, name, path string) *failures.Failure
+	CloneProject(owner, name, path string, out output.Outputer) *failures.Failure
 }
 
 // NewRepo returns a new repository
@@ -43,7 +44,7 @@ type Repo struct {
 
 // CloneProject will attempt to clone the associalted public git repository
 // for the project identified by <owner>/<name> to the given directory
-func (r *Repo) CloneProject(owner, name, path string) *failures.Failure {
+func (r *Repo) CloneProject(owner, name, path string, out output.Outputer) *failures.Failure {
 	project, fail := model.FetchProjectByName(owner, name)
 	if fail != nil {
 		return fail
@@ -55,7 +56,7 @@ func (r *Repo) CloneProject(owner, name, path string) *failures.Failure {
 	}
 	defer os.RemoveAll(tempDir)
 
-	print.Info(locale.Tr("git_cloning_project", owner, name))
+	out.Print(locale.Tr("git_cloning_project", owner, name))
 	_, err = git.PlainClone(tempDir, false, &git.CloneOptions{
 		URL:      project.RepoURL.String(),
 		Progress: os.Stdout,
@@ -86,7 +87,7 @@ func ensureCorrectRepo(owner, name, projectFilePath string) *failures.Failure {
 		return fail
 	}
 
-	proj, fail := project.New(projectFile)
+	proj, fail := project.NewLegacy(projectFile)
 	if fail != nil {
 		return fail
 	}

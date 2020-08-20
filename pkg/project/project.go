@@ -10,11 +10,14 @@ import (
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/constraints"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/secrets"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -41,6 +44,8 @@ type Project struct {
 	owner       string
 	name        string
 	commitID    string
+	output.Outputer
+	prompt.Prompter
 }
 
 // Source returns the source projectfile
@@ -150,7 +155,7 @@ func (p *Project) Events() []*Event {
 	es := projectfile.MakeEventsFromConstrainedEntities(constrained)
 	events := make([]*Event, 0, len(es))
 	for _, e := range es {
-		events = append(events, &Event{e, p})
+		events = append(events, &Event{e, p, p.Outputer, p.Prompter})
 	}
 	return events
 }
@@ -164,7 +169,7 @@ func (p *Project) Scripts() []*Script {
 	scs := projectfile.MakeScriptsFromConstrainedEntities(constrained)
 	scripts := make([]*Script, 0, len(scs))
 	for _, s := range scs {
-		scripts = append(scripts, &Script{s, p})
+		scripts = append(scripts, &Script{s, p, p.Outputer, p.Prompter})
 	}
 	return scripts
 }
@@ -270,8 +275,8 @@ func Namespace(owner, project string) string {
 func (p *Project) Environments() string { return p.projectfile.Environments }
 
 // New creates a new Project struct
-func New(p *projectfile.Project) (*Project, *failures.Failure) {
-	project := &Project{projectfile: p}
+func New(p *projectfile.Project, out output.Outputer, prompt prompt.Prompter) (*Project, *failures.Failure) {
+	project := &Project{projectfile: p, Outputer: out, Prompter: prompt}
 	parts, fail := parseURL(p.Project)
 	if fail != nil {
 		return nil, fail
@@ -282,19 +287,24 @@ func New(p *projectfile.Project) (*Project, *failures.Failure) {
 	return project, nil
 }
 
+// NewLegacy is for legacy use-cases only, DO NOT USE
+func NewLegacy(p *projectfile.Project) (*Project, *failures.Failure) {
+	return New(p, output.Get(), prompt.New())
+}
+
 // Parse will parse the given projectfile and instantiate a Project struct with it
 func Parse(fpath string) (*Project, *failures.Failure) {
 	pjfile, fail := projectfile.Parse(fpath)
 	if fail != nil {
 		return nil, fail
 	}
-	return New(pjfile)
+	return New(pjfile, output.Get(), prompt.New())
 }
 
 // Get returns project struct. Quits execution if error occurs
 func Get() *Project {
 	pj := projectfile.Get()
-	project, fail := New(pj)
+	project, fail := New(pj, output.Get(), prompt.New())
 	if fail != nil {
 		failures.Handle(fail, locale.T("err_project_unavailable"))
 		os.Exit(1)
@@ -308,7 +318,7 @@ func GetSafe() (*Project, *failures.Failure) {
 	if fail != nil {
 		return nil, fail
 	}
-	project, fail := New(pjFile)
+	project, fail := New(pjFile, output.Get(), prompt.New())
 	if fail != nil {
 		return nil, fail
 	}
@@ -331,7 +341,7 @@ func FromPath(path string) (*Project, *failures.Failure) {
 	if fail != nil {
 		return nil, fail
 	}
-	project, fail := New(pjFile)
+	project, fail := New(pjFile, output.Get(), prompt.New())
 	if fail != nil {
 		return nil, fail
 	}
@@ -352,33 +362,28 @@ func (p *Platform) Source() *projectfile.Project { return p.project.projectfile 
 func (p *Platform) Name() string { return p.platform.Name }
 
 // Os returned with all secrets evaluated
-func (p *Platform) Os() string {
-	value := Expand(p.platform.Os)
-	return value
+func (p *Platform) Os() (string, error) {
+	return Expand(p.platform.Os, p.project.Outputer, p.project.Prompter)
 }
 
 // Version returned with all secrets evaluated
-func (p *Platform) Version() string {
-	value := Expand(p.platform.Version)
-	return value
+func (p *Platform) Version() (string, error) {
+	return Expand(p.platform.Version, p.project.Outputer, p.project.Prompter)
 }
 
 // Architecture with all secrets evaluated
-func (p *Platform) Architecture() string {
-	value := Expand(p.platform.Architecture)
-	return value
+func (p *Platform) Architecture() (string, error) {
+	return Expand(p.platform.Architecture, p.project.Outputer, p.project.Prompter)
 }
 
 // Libc returned are constrained and all secrets evaluated
-func (p *Platform) Libc() string {
-	value := Expand(p.platform.Libc)
-	return value
+func (p *Platform) Libc() (string, error) {
+	return Expand(p.platform.Libc, p.project.Outputer, p.project.Prompter)
 }
 
 // Compiler returned are constrained and all secrets evaluated
-func (p *Platform) Compiler() string {
-	value := Expand(p.platform.Compiler)
-	return value
+func (p *Platform) Compiler() (string, error) {
+	return Expand(p.platform.Compiler, p.project.Outputer, p.project.Prompter)
 }
 
 // Language covers the language structure
@@ -402,13 +407,16 @@ func (l *Language) ID() string {
 }
 
 // Build with all secrets evaluated
-func (l *Language) Build() *Build {
+func (l *Language) Build() (*Build, error) {
 	build := Build{}
 	for key, val := range l.language.Build {
-		newVal := Expand(val)
+		newVal, err := Expand(val, l.project.Outputer, l.project.Prompter)
+		if err != nil {
+			return nil, err
+		}
 		build[key] = newVal
 	}
-	return &build
+	return &build, nil
 }
 
 // Packages returned are constrained set
@@ -441,13 +449,16 @@ func (p *Package) Name() string { return p.pkg.Name }
 func (p *Package) Version() string { return p.pkg.Version }
 
 // Build returned with all secrets evaluated
-func (p *Package) Build() *Build {
+func (p *Package) Build() (*Build, error) {
 	build := Build{}
 	for key, val := range p.pkg.Build {
-		newVal := Expand(val)
+		newVal, err := Expand(val, p.project.Outputer, p.project.Prompter)
+		if err != nil {
+			return nil, err
+		}
 		build[key] = newVal
 	}
-	return &build
+	return &build, nil
 }
 
 // Constant covers the constant structure
@@ -460,8 +471,8 @@ type Constant struct {
 func (c *Constant) Name() string { return c.constant.Name }
 
 // Value returns constant value
-func (c *Constant) Value() string {
-	return Expand(c.constant.Value)
+func (c *Constant) Value() (string, error) {
+	return Expand(c.constant.Value, c.project.Outputer, c.project.Prompter)
 }
 
 // SecretScope defines the scope of a secret
@@ -538,13 +549,13 @@ func (s *Secret) ValueOrNil() (*string, *failures.Failure) {
 		category = UserCategory
 	}
 
-	value, fail := secretsExpander.Expand(category, s.secret.Name, false, s.project)
-	if fail != nil {
-		if fail.Type.Matches(secretsapi.FailUserSecretNotFound) {
+	value, err := secretsExpander.Expand(category, s.secret.Name, false, s.project)
+	if err != nil {
+		if errs.Matches(err, ErrSecretNotFound) {
 			return nil, nil
 		}
-		logging.Error("Could not expand secret %s, error: %s", s.Name(), fail.Error())
-		return nil, fail
+		logging.Error("Could not expand secret %s, error: %v", s.Name(), err)
+		return nil, failures.FailMisc.Wrap(err)
 	}
 	return &value, nil
 }
@@ -592,6 +603,8 @@ func (s *Secret) Save(value string) *failures.Failure {
 type Event struct {
 	event   *projectfile.Event
 	project *Project
+	output.Outputer
+	prompt.Prompter
 }
 
 // Source returns the source projectfile
@@ -601,9 +614,8 @@ func (e *Event) Source() *projectfile.Project { return e.project.projectfile }
 func (e *Event) Name() string { return e.event.Name }
 
 // Value returned with all secrets evaluated
-func (e *Event) Value() string {
-	value := Expand(e.event.Value)
-	return value
+func (e *Event) Value() (string, error) {
+	return Expand(e.event.Value, e.Outputer, e.Prompter)
 }
 
 // Scope returns the scope property of the event
@@ -619,6 +631,8 @@ func (e *Event) Scope() []string {
 type Script struct {
 	script  *projectfile.Script
 	project *Project
+	output.Outputer
+	prompt.Prompter
 }
 
 // Source returns the source projectfile
@@ -656,9 +670,8 @@ func defaultScriptLanguage() language.Language {
 func (script *Script) Description() string { return script.script.Description }
 
 // Value returned with all secrets evaluated
-func (script *Script) Value() string {
-	value := Expand(script.script.Value)
-	return value
+func (script *Script) Value() (string, error) {
+	return Expand(script.script.Value, script.Outputer, script.Prompter)
 }
 
 // Raw returns the script value with no secrets or constants expanded

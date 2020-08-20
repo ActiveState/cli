@@ -1,21 +1,24 @@
 package auth
 
-import authlet "github.com/ActiveState/cli/pkg/cmdlets/auth"
+import (
+	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/prompt"
+	authlet "github.com/ActiveState/cli/pkg/cmdlets/auth"
+)
 
-type Signup struct{}
+type Signup struct {
+	output.Outputer
+	prompt.Prompter
+}
 
-func NewSignup() *Signup {
-	return &Signup{}
+func NewSignup(prime primeable) *Signup {
+	return &Signup{prime.Output(), prime.Prompt()}
 }
 
 func (s *Signup) Run() error {
-	return runSignup()
-}
-
-func runSignup() error {
-	fail := authlet.Signup()
-	if fail != nil {
-		return fail.ToError()
+	err := authlet.Signup(s.Outputer, s.Prompter)
+	if err != nil {
+		return err
 	}
 
 	return nil

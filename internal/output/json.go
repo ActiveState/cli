@@ -26,12 +26,18 @@ func (f *JSON) Type() Format {
 
 // Print will marshal and print the given value to the output writer
 func (f *JSON) Print(value interface{}) {
-	value = prepareJSONValue(value)
-	b, err := json.Marshal(value)
-	if err != nil {
-		logging.Error("Could not marshal value, error: %v", err)
-		f.Error(locale.T("err_could_not_marshal_print"))
-		return
+	var b []byte
+	if v, isBlob := value.([]byte); isBlob {
+		b = v
+	} else {
+		value = prepareJSONValue(value)
+		var err error
+		b, err = json.Marshal(value)
+		if err != nil {
+			logging.Error("Could not marshal value, error: %v", err)
+			f.Error(locale.T("err_could_not_marshal_print"))
+			return
+		}
 	}
 
 	f.cfg.OutWriter.Write(b)
@@ -42,13 +48,20 @@ func (f *JSON) Print(value interface{}) {
 // that identifies it as an error
 // NOTE that JSON always prints to the output writer, the error writer is unused.
 func (f *JSON) Error(value interface{}) {
-	value = prepareJSONValue(value)
-	errStruct := struct{ Error interface{} }{value}
-	b, err := json.Marshal(errStruct)
-	if err != nil {
-		logging.Error("Could not marshal value, error: %v", err)
-		b = []byte(locale.T("err_could_not_marshal_print"))
+	var b []byte
+	if v, isBlob := value.([]byte); isBlob {
+		b = v
+	} else {
+		value = prepareJSONValue(value)
+		errStruct := struct{ Error interface{} }{value}
+		var err error
+		b, err = json.Marshal(errStruct)
+		if err != nil {
+			logging.Error("Could not marshal value, error: %v", err)
+			b = []byte(locale.T("err_could_not_marshal_print"))
+		}
 	}
+
 	f.cfg.OutWriter.Write(b)
 	f.cfg.OutWriter.Write([]byte("\x00\n")) // Terminate with NUL character so consumers can differentiate between multiple output messages
 }

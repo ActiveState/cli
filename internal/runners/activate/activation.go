@@ -42,7 +42,7 @@ func activationLoop(out output.Outputer, subs subshell.SubShell, targetPath stri
 			// something more actionable for the context they're in
 			return failures.FailUserInput.New("err_project_from_path")
 		}
-		updater.PrintUpdateMessage(proj.Source().Path())
+		updater.PrintUpdateMessage(proj.Source().Path(), out)
 		out.Notice(locale.T("info_activating_state", proj))
 
 		if proj.CommitID() == "" {
@@ -98,7 +98,7 @@ func activate(proj *project.Project, out output.Outputer, subs subshell.SubShell
 	}
 
 	subs.SetEnv(ve)
-	fail = subs.Activate()
+	fail = subs.Activate(out)
 	if fail != nil {
 		return false, locale.WrapError(err, "error_could_not_activate_subshell", "Could not activate a new subshell.")
 	}

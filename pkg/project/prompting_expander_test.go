@@ -16,6 +16,7 @@ import (
 	promptMock "github.com/ActiveState/cli/internal/prompt/mock"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
+	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/request/mock"
@@ -43,13 +44,12 @@ func (suite *VarPromptingExpanderTestSuite) BeforeTest(suiteName, testName strin
 	failures.ResetHandled()
 
 	suite.promptMock = promptMock.Init()
-	project.Prompter = suite.promptMock
 	pjFile, err := loadSecretsProject()
 	suite.Require().Nil(err, "Unmarshalled project YAML")
 	pjFile.Persist()
 	suite.projectFile = pjFile
 	var fail *failures.Failure
-	suite.project, fail = project.New(pjFile)
+	suite.project, fail = project.New(pjFile, outputhelper.NewCatcher(), suite.promptMock)
 	suite.NoError(fail.ToError(), "no failure should occur when loading project")
 
 	secretsClient := secretsapi_test.NewDefaultTestClient("bearing123")
@@ -85,7 +85,7 @@ func (suite *VarPromptingExpanderTestSuite) prepareWorkingExpander() project.Exp
 	return project.NewSecretPromptingExpander(suite.secretsClient)
 }
 
-func (suite *VarPromptingExpanderTestSuite) assertExpansionSaveFailure(secretName, expectedValue string, expectedFailureType *failures.FailureType) {
+func (suite *VarPromptingExpanderTestSuite) assertExpansionSaveFailure(secretName, expectedValue string) {
 	suite.secretsMock.RegisterWithResponder("PATCH", "/organizations/00010001-0001-0001-0001-000100010002/user_secrets", func(req *http.Request) (int, string) {
 		return 400, "something-happened"
 	})
@@ -93,10 +93,9 @@ func (suite *VarPromptingExpanderTestSuite) assertExpansionSaveFailure(secretNam
 
 	suite.promptMock.OnMethod("InputSecret").Once().Return(expectedValue, nil)
 	expanderFn := suite.prepareWorkingExpander()
-	expandedValue, failure := expanderFn(project.ProjectCategory, secretName, false, suite.project)
+	expandedValue, err := expanderFn(project.ProjectCategory, secretName, false, suite.project)
 
-	suite.Require().NotNil(failure)
-	suite.Truef(failure.Type.Matches(expectedFailureType), "unexpected failure type: %v, expected: %v", failure.Type.Name, expectedFailureType.Name)
+	suite.Require().NotNil(err)
 	suite.Zero(expandedValue)
 }
 
@@ -146,11 +145,11 @@ func (suite *VarPromptingExpanderTestSuite) TestSavesSecret() {
 }
 
 func (suite *VarPromptingExpanderTestSuite) TestSaveFails_NonProjectLevelSecret() {
-	suite.assertExpansionSaveFailure("org-secret", "not so amazing", secretsapi.FailSave)
+	suite.assertExpansionSaveFailure("org-secret", "not so amazing")
 }
 
 func (suite *VarPromptingExpanderTestSuite) TestSaveFails_ProjectLevelSecret() {
-	suite.assertExpansionSaveFailure("proj-secret", "utterly boring", secretsapi.FailSave)
+	suite.assertExpansionSaveFailure("proj-secret", "utterly boring")
 }
 
 func Test_SecretsPromptingExpander_TestSuite(t *testing.T) {

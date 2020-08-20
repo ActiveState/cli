@@ -14,12 +14,16 @@ type Catcher struct {
 }
 
 func NewCatcher() *Catcher {
+	return NewCatcherByFormat(output.PlainFormatName)
+}
+
+func NewCatcherByFormat(format output.Format) *Catcher {
 	catch := &Catcher{}
 
 	catch.outWriter = &bytes.Buffer{}
 	catch.errWriter = &bytes.Buffer{}
 
-	outputer, fail := output.NewPlain(&output.Config{
+	outputer, fail := output.New(string(format), &output.Config{
 		OutWriter:   catch.outWriter,
 		ErrWriter:   catch.errWriter,
 		Colored:     false,
@@ -30,7 +34,7 @@ func NewCatcher() *Catcher {
 		panic(fmt.Sprintf("Could not create plain outputer: %s", fail.Error()))
 	}
 
-	catch.Outputer = &outputer
+	catch.Outputer = outputer
 
 	return catch
 }

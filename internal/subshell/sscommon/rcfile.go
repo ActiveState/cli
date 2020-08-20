@@ -18,7 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -132,7 +132,7 @@ func SetupShellRcFile(rcFileName, templateName string, env map[string]string, na
 
 // SetupProjectRcFile creates a temporary RC file that our shell is initiated from, this allows us to template the logic
 // used for initialising the subshell
-func SetupProjectRcFile(templateName, ext string, env map[string]string) (*os.File, *failures.Failure) {
+func SetupProjectRcFile(templateName, ext string, env map[string]string, out output.Outputer) (*os.File, *failures.Failure) {
 	box := packr.NewBox("../../../assets/shells")
 	tpl := box.String(templateName)
 	prj := project.Get()
@@ -140,7 +140,11 @@ func SetupProjectRcFile(templateName, ext string, env map[string]string) (*os.Fi
 	userScripts := ""
 	for _, event := range prj.Events() {
 		if strings.ToLower(event.Name()) == "activate" {
-			userScripts = userScripts + "\n" + event.Value()
+			v, err := event.Value()
+			if err != nil {
+				return nil, failures.FailMisc.Wrap(err)
+			}
+			userScripts = userScripts + "\n" + v
 		}
 	}
 
@@ -165,7 +169,7 @@ func SetupProjectRcFile(templateName, ext string, env map[string]string) (*os.Fi
 	}
 
 	if len(inuse) > 0 {
-		print.Warning(locale.Tr("warn_script_name_in_use", strings.Join(inuse, "\n  - "), inuse[0], prj.NormalizedName(), explicitName))
+		out.Notice(locale.Tr("warn_script_name_in_use", strings.Join(inuse, "\n  - "), inuse[0], prj.NormalizedName(), explicitName))
 	}
 
 	rcData := map[string]interface{}{
@@ -181,8 +185,8 @@ func SetupProjectRcFile(templateName, ext string, env map[string]string) (*os.Fi
 		return nil, failures.FailTemplating.Wrap(err)
 	}
 
-	var out bytes.Buffer
-	err = t.Execute(&out, rcData)
+	var o bytes.Buffer
+	err = t.Execute(&o, rcData)
 	if err != nil {
 		return nil, failures.FailTemplating.Wrap(err)
 	}
@@ -193,9 +197,9 @@ func SetupProjectRcFile(templateName, ext string, env map[string]string) (*os.Fi
 	}
 	defer tmpFile.Close()
 
-	tmpFile.WriteString(out.String())
+	tmpFile.WriteString(o.String())
 
-	logging.Debug("Using project RC: %s", out.String())
+	logging.Debug("Using project RC: %s", o.String())
 
 	return tmpFile, nil
 }
