@@ -39,7 +39,6 @@ func setupProjectWithScriptsExpectingArgs(t *testing.T, cmdName string) *project
 project: "https://platform.activestate.com/ActiveState/project?commitID=00010001-0001-0001-0001-000100010001"
 scripts:
   - name: %s
-    language: bash
     standalone: true
     value: |
       echo "ARGS|${1}|${2}|${3}|${4}|"`, cmdName)
@@ -48,7 +47,6 @@ scripts:
 project: "https://platform.activestate.com/ActiveState/project?commitID=00010001-0001-0001-0001-000100010001"
 scripts:
   - name: %s
-    language: batch
     standalone: true
     value: |
       echo "ARGS|%%1|%%2|%%3|%%4|"`, cmdName)

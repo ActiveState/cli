@@ -41,7 +41,6 @@ func TestRunStandaloneCommand(t *testing.T) {
 project: "https://platform.activestate.com/ActiveState/project?commitID=00010001-0001-0001-0001-000100010001"
 scripts:
   - name: run
-    language: bash
     value: echo foo
     standalone: true
   `)
@@ -50,7 +49,6 @@ scripts:
 project: "https://platform.activestate.com/ActiveState/project?commitID=00010001-0001-0001-0001-000100010001"
 scripts:
   - name: run
-    language: bash
     value: cmd.exe /C echo foo
     standalone: true
   `)
@@ -108,7 +106,6 @@ func TestRunNoProjectInheritance(t *testing.T) {
 project: "https://platform.activestate.com/ActiveState/project?commitID=00010001-0001-0001-0001-000100010001"
 scripts:
   - name: run
-    language: bash
     value: echo $ACTIVESTATE_PROJECT
     standalone: true
 `)
@@ -117,7 +114,6 @@ scripts:
 project: "https://platform.activestate.com/ActiveState/project?commitID=00010001-0001-0001-0001-000100010001"
 scripts:
   - name: run
-    language: bash
     value: echo %ACTIVESTATE_PROJECT%
     standalone: true
 `)
@@ -143,7 +139,6 @@ func TestRunMissingCommandName(t *testing.T) {
 project: "https://platform.activestate.com/ActiveState/project?commitID=00010001-0001-0001-0001-000100010001"
 scripts:
   - name: run
-    language: bash
     value: whatever
   `)
 	err := yaml.Unmarshal([]byte(contents), project)
@@ -163,7 +158,6 @@ func TestRunUnknownCommandName(t *testing.T) {
 project: "https://platform.activestate.com/ActiveState/project?commitID=00010001-0001-0001-0001-000100010001"
 scripts:
   - name: run
-    language: bash
     value: whatever
   `)
 	err := yaml.Unmarshal([]byte(contents), project)
@@ -175,7 +169,7 @@ scripts:
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
 
-func estRunUnknownCommand(t *testing.T) {
+func TestRunUnknownCommand(t *testing.T) {
 	failures.ResetHandled()
 
 	project := &projectfile.Project{}
@@ -183,7 +177,6 @@ func estRunUnknownCommand(t *testing.T) {
 project: "https://platform.activestate.com/ActiveState/project?commitID=00010001-0001-0001-0001-000100010001"
 scripts:
   - name: run
-    language: bash
     value: whatever
     standalone: true
   `)
@@ -217,7 +210,6 @@ func TestRunActivatedCommand(t *testing.T) {
 project: "https://platform.activestate.com/ActiveState/project?commitID=00010001-0001-0001-0001-000100010001"
 scripts:
   - name: run
-    language: bash
     standalone: true
     value: echo foo`)
 	} else {
@@ -225,7 +217,6 @@ scripts:
 project: "https://platform.activestate.com/ActiveState/project?commitID=00010001-0001-0001-0001-000100010001"
 scripts:
   - name: run
-    language: bash
     standalone: true
     value: cmd /C echo foo`)
 	}

@@ -1,10 +1,8 @@
 project: "https://platform.activestate.com/ActiveState/project?commitID=00010001-0001-0001-0001-000100010001"
 scripts:
   - name: run
-    language: bash
     value: printenv
   - name: run
-    language: batch
     value: cmd.exe /C SET
     constraints:
         os: windows
