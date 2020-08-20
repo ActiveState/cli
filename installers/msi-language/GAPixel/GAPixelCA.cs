@@ -23,10 +23,6 @@ namespace GAPixel
 
         public static string GetUniqueId(Session session=null)
         {
-            if (session != null)
-			{
-                session.Log("generate unique session id");
-			}
             try
             {
                 var oMClass = new ManagementClass("Win32_NetworkAdapterConfiguration");

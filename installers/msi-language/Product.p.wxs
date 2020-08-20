@@ -120,7 +120,7 @@
 			<Publish Dialog="CustomFatalError" Control="Finish" Event="EndDialog" Value="Return" Order="999">1</Publish>
             <Publish Dialog="CustomFatalError" Control="Finish" Event="DoAction" Value="GAPixel">NOT WIX_IS_NETFRAMEWORK_452_OR_LATER_INSTALLED</Publish>
 
-			<Publish Dialog="UserExit" Control="Finish" Event="DoAction" Value="GAUserExit">1</Publish>
+			<Publish Dialog="UserExit" Control="Finish" Event="DoAction" Value="GAReportUserExit">1</Publish>
 
             <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="PrivacyConsentDlg">NOT Installed</Publish>
 			<Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="VerifyReadyDlg">Installed AND PATCH</Publish>
@@ -169,6 +169,7 @@
 		<Property Id="IS_MODIFY" Value="false" />
 
 		<InstallUISequence>
+            <Custom Action="GAReportStart" After="AppSearch">1</Custom>
 			<Custom Action="CommandsExist" After="CostFinalize">NOT Installed OR (Installed AND NOT (REMOVE~="ALL"))</Custom>
 			<Custom Action="SetIsModify" After="CommandsExist">(Installed AND NOT (REMOVE~="ALL"))</Custom>
 			<Custom Action="SetInstallDirOnModify" After="SetIsModify">(Installed AND NOT (REMOVE~="ALL"))</Custom>
@@ -200,7 +201,8 @@
 
 		<Binary Id="StateDeployCA" SourceFile="$(var.StateDeploy.TargetDir)$(var.StateDeploy.TargetName).CA.dll" />
 		<CustomAction Id="StateDeploy" Impersonate="no" BinaryKey="StateDeployCA" DllEntry="StateDeploy" Execute="deferred" Return="check" />
-        <CustomAction Id="GAUserExit" Impersonate="no" BinaryKey="StateDeployCA" DllEntry="GAUserExit" Execute="immediate" Return="ignore" />
+        <CustomAction Id="GAReportStart" Impersonate="yes" BinaryKey="StateDeployCA" DllEntry="GAReportStart" Execute="immediate" Return="ignore" />
+        <CustomAction Id="GAReportUserExit" Impersonate="yes" BinaryKey="StateDeployCA" DllEntry="GAReportUserExit" Execute="immediate" Return="ignore" />
 
 		<Binary Id="PresetCA" SourceFile="$(var.Preset.TargetDir)$(var.Preset.TargetName).CA.dll" />
 		<CustomAction Id="Preset" Impersonate="no" BinaryKey="PresetCA" DllEntry="InstallPreset" Execute="deferred" Return="check" />

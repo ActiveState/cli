@@ -17,7 +17,6 @@ using System.Threading.Tasks;
 namespace StateDeploy
 {
 
-
     public class CustomActions
     {
         private struct StateToolPaths
@@ -268,11 +267,11 @@ namespace StateDeploy
             var ret = _installStateTool(session, out stateToolPath);
             if (ret == ActionResult.Success)
             {
-                TrackerSingleton.Instance.TrackEventInBackground("stage", "state-tool", "success");
+                TrackerSingleton.Instance.TrackEventInBackground(session, "stage", "state-tool", "success");
             }
             else if (ret == ActionResult.Failure)
             {
-                TrackerSingleton.Instance.TrackEventInBackground("stage", "state-tool", "failure");
+                TrackerSingleton.Instance.TrackEventInBackground(session, "stage", "state-tool", "failure");
             }
             return ret;
         }
@@ -351,8 +350,6 @@ namespace StateDeploy
         {
             ActiveState.RollbarHelper.ConfigureRollbarSingleton(session.CustomActionData["COMMIT_ID"]);
 
-            TrackerSingleton.Instance.TrackEventInBackground("stage", "started", "");
-
             if (!Environment.Is64BitOperatingSystem)
             {
                 Record record = new Record();
@@ -415,14 +412,14 @@ namespace StateDeploy
                         MessageResult msgRes = session.Message(InstallMessage.Error | (InstallMessage)MessageBoxButtons.OK, record);
                         if (!artifactsFetched)
                         {
-                            TrackerSingleton.Instance.TrackEventSynchronously("stage", "artifacts", "failure");
+                            TrackerSingleton.Instance.TrackEventSynchronously(session, "stage", "artifacts", "failure");
                         }
-                        TrackerSingleton.Instance.TrackEventSynchronously("stage", "finished", "failure");
+                        TrackerSingleton.Instance.TrackEventSynchronously(session, "stage", "finished", "failure");
                         return runResult;
                     }
                     if (seq.SubCommand == "install")
                     {
-                        TrackerSingleton.Instance.TrackEventInBackground("stage", "artifacts", "success");
+                        TrackerSingleton.Instance.TrackEventInBackground(session, "stage", "artifacts", "success");
                         artifactsFetched = true;
                     }
                 }
@@ -435,7 +432,7 @@ namespace StateDeploy
                 return ActionResult.Failure;
             }
 
-            TrackerSingleton.Instance.TrackEventSynchronously("stage", "finished", "success");
+            TrackerSingleton.Instance.TrackEventSynchronously(session, "stage", "finished", "success");
             Status.ProgressBar.Increment(session, 1);
             return ActionResult.Success;
         }
@@ -487,10 +484,30 @@ namespace StateDeploy
             return deployCMDBuilder.ToString();
         }
 
+        /* The following two custom actions are added to this project (and not to a project
+         * with a more appropriate name) in hope that the TrackerSingleton ca be re-used between 
+         * all custom actions.
+         */
+
+        /// <summary>
+        /// Reports the start of the MSI to google analytics
+        /// </summary>
         [CustomAction]
-        public static ActionResult GAUserExit(Session session)
+        public static ActionResult GAReportStart(Session session)
         {
-            TrackerSingleton.Instance.TrackEventSynchronously("user_cancel", "", "");
+            session.Log("sending event about starting the MSI");
+            TrackerSingleton.Instance.TrackEventSynchronously(session, "stage", "started", "");
+            return ActionResult.Success;
+        }
+
+        /// <summary>
+        /// Reports a user cancellation event to google analytics
+        /// </summary>
+        [CustomAction]
+        public static ActionResult GAReportUserExit(Session session)
+        {
+            session.Log("sending user exit event");
+            TrackerSingleton.Instance.TrackEventSynchronously(session, "user_cancel", "", "");
             return ActionResult.Success;
         }
     }
