@@ -153,7 +153,6 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchSimple() {
 		"0.1.8",
 		"requests-aws-sign",
 		"0.1.5",
-		"---",
 	}
 	for _, expectation := range expectations {
 		cp.Expect(expectation)
@@ -173,7 +172,6 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTerm() {
 		"2.8.1",
 		"2.7.0",
 		"2.3",
-		"---",
 	}
 	for _, expectation := range expectations {
 		cp.Expect(expectation)
