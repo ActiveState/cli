@@ -155,8 +155,12 @@ func Tt(translationID string, args ...interface{}) string {
 
 	// For templates we want to manually specify the linebreaks as the way YAML gets parsed makes
 	// this very painful otherwise
-	translation = strings.Replace(translation, "\n", "", -1)
+
+	// Replace newlines in yaml strings with space to avoid concatenated words
+	translation = strings.Replace(translation, "\n", " ", -1)
 	translation = strings.Replace(translation, "{{BR}}", "\n", -1)
+	// Avoid indentation after newlines
+	translation = strings.Replace(translation, "\n ", "\n", -1)
 
 	translation = strings.Trim(translation, " ")
 	return translation
