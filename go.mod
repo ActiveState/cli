@@ -8,8 +8,8 @@ require (
 	github.com/ActiveState/go-colortext v0.0.0-20190402165444-9cd201a66eb0
 	github.com/ActiveState/go-ogle-analytics v0.0.0-20170510030904-9b3f14901527
 	github.com/ActiveState/sysinfo v0.0.0-20200619170619-0582d42daf27
-	github.com/ActiveState/termtest v0.5.3
-	github.com/ActiveState/termtest/expect v0.5.3
+	github.com/ActiveState/termtest v0.5.5
+	github.com/ActiveState/termtest/expect v0.5.6
 	github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78
 	github.com/PuerkitoBio/purell v1.1.0 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
@@ -93,7 +93,7 @@ require (
 	golang.org/x/crypto v0.0.0-20200427165652-729f1e841bcc
 	golang.org/x/net v0.0.0-20200324143707-d3edc9973b7e
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
-	golang.org/x/sys v0.0.0-20200728102440-3e129f6d46b1
+	golang.org/x/sys v0.0.0-20200821140526-fda516888d29
 	google.golang.org/genproto v0.0.0-20200331122359-1ee6d9798940
 	gopkg.in/AlecAivazis/survey.v1 v1.4.2
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
