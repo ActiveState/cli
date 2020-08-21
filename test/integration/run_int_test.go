@@ -236,7 +236,6 @@ func (suite *RunIntegrationTestSuite) TestRun_BadLanguage() {
 	cp.Expect("parser", 5*time.Second)
 	cp.Expect("Supported languages", 5*time.Second)
 
-	cp.SendLine("exit")
 	cp.ExpectNotExitCode(0)
 }
 
