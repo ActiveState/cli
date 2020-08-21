@@ -15,5 +15,6 @@ var (
 	sampleYAML  = locale.T("sample_yaml", map[string]interface{}{
 		"Owner":   testUser,
 		"Project": testProject,
+		"Shell":   "bash",
 	})
 )
