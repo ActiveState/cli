@@ -61,7 +61,8 @@ namespace ActiveState
         /// Sends a GA event and waits for the request to complete.
         /// </summary>
         public void TrackEventSynchronously(Session session, string category, string action, string label, long value=1)
-		{   session.Log("Sending event {0}/{1}/{2} for cid={3}", category, action, label, this._cid);
+        {
+            session.Log("Sending event {0}/{1}/{2} for cid={3}", category, action, label, this._cid);
             var t = Task.Run(() => TrackEventAsync(category, action, label, value));
             t.Wait();
         }
