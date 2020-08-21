@@ -36,8 +36,9 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 
 	wd := filepath.Join(cp.WorkDirectory(), namespace)
 	cp = ts.SpawnWithOpts(e2e.WithArgs("push"), e2e.WithWorkDirectory(wd))
-	cp.Expect(fmt.Sprintf("Project created at https://%s/%s/%s with language %s", constants.PlatformURL, username, pname, "python3"))
 	cp.ExpectExitCode(0)
+	suite.Contains(e2e.CleanOutput(cp.TrimmedSnapshot()), fmt.Sprintf("Project created at"))
+	suite.Contains(e2e.CleanOutput(cp.TrimmedSnapshot()), fmt.Sprintf("with language %s", "python3"))
 
 	// Check that languages were reset
 	pjfilepath := filepath.Join(ts.Dirs.Work, namespace, constants.ConfigFileName)

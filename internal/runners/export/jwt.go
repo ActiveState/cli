@@ -28,6 +28,8 @@ func (j *JWT) Run(params *JWTParams) error {
 		return failures.FailUser.New(locale.T("err_command_requires_auth"))
 	}
 
-	j.Outputer.Print(authentication.Get().BearerToken())
+	token := authentication.Get().BearerToken()
+	j.Outputer.Print(
+		output.NewFormatter(token).WithFormat(output.EditorV0FormatName, []byte(token)))
 	return nil
 }

@@ -69,7 +69,7 @@ func TestJSON_Print(t *testing.T) {
 				ErrWriter:   errWriter,
 				Colored:     false,
 				Interactive: false,
-			}}
+			}, true}
 
 			f.Print(tt.args.value)
 			assert.Equal(t, tt.expectedOut, outWriter.String(), "Output did not match")
@@ -105,9 +105,54 @@ func TestJSON_Notice(t *testing.T) {
 				ErrWriter:   errWriter,
 				Colored:     false,
 				Interactive: false,
-			}}
+			}, true}
 
 			f.Notice(tt.args.value)
+			assert.Equal(t, tt.expectedOut, outWriter.String(), "Output did not match")
+			assert.Equal(t, tt.expectedErr, errWriter.String(), "Errors did not match")
+		})
+	}
+}
+
+func TestJSON_Nullbyte(t *testing.T) {
+	type args struct {
+		value interface{}
+	}
+	tests := []struct {
+		name        string
+		nulByte     bool
+		args        args
+		expectedOut string
+		expectedErr string
+	}{
+		{
+			"no nulbyte",
+			false,
+			args{"hello"},
+			`"hello"` + "\n",
+			"",
+		},
+		{
+			"nulbyte",
+			true,
+			args{"hello"},
+			`"hello"` + "\x00\n",
+			"",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			outWriter := &bytes.Buffer{}
+			errWriter := &bytes.Buffer{}
+
+			f := &JSON{&Config{
+				OutWriter:   outWriter,
+				ErrWriter:   errWriter,
+				Colored:     false,
+				Interactive: false,
+			}, tt.nulByte}
+
+			f.Print(tt.args.value)
 			assert.Equal(t, tt.expectedOut, outWriter.String(), "Output did not match")
 			assert.Equal(t, tt.expectedErr, errWriter.String(), "Errors did not match")
 		})
