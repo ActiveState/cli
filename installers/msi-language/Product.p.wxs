@@ -116,14 +116,14 @@
       		<Publish Dialog="CustomExitDialog" Control="Finish" Event="DoAction" Value="LaunchStateToolWizardNotInstalled">STATE_TOOL_WIZARD_CHECK_BOX=1 and NOT Installed and STATE_TOOL_INSTALLED = "false"</Publish>
 			<Publish Dialog="CustomExitDialog" Control="Finish" Event="DoAction" Value="LaunchReleaseNotes">STATE_TOOL_WIZARD_REL_NOTES_CHECK_BOX=1 and NOT Installed</Publish>
 			<Publish Dialog="CustomExitDialog" Control="Finish" Event="DoAction" Value="InstallVSCodeExt">INSTALL_VSCODE_EXT_CHECK_BOX=1 and NOT Installed</Publish>
-            <Publish Dialog="CustomExitDialog" Control="Finish" Event="DoAction" Value="GAReportSuccess">1</Publish>
+            <Publish Dialog="CustomExitDialog" Control="Finish" Event="DoAction" Value="GAReportSuccess">NOT Installed OR REINSTALL OR (NOT REMOVE~="ALL")</Publish>
 
 
           <Publish Dialog="CustomFatalError" Control="Finish" Event="EndDialog" Value="Return" Order="999">1</Publish>
             <Publish Dialog="CustomFatalError" Control="Finish" Event="DoAction" Value="GAPixel">NOT WIX_IS_NETFRAMEWORK_45_OR_LATER_INSTALLED</Publish>
-            <Publish Dialog="CustomFatalError" Control="Finish" Event="DoAction" Value="GAReportFailure">1</Publish>
+            <Publish Dialog="CustomFatalError" Control="Finish" Event="DoAction" Value="GAReportFailure">NOT Installed OR REINSTALL OR (NOT REMOVE~="ALL")</Publish>
 
-			<Publish Dialog="UserExit" Control="Finish" Event="DoAction" Value="GAReportUserExit">1</Publish>
+			<Publish Dialog="UserExit" Control="Finish" Event="DoAction" Value="GAReportUserExit">NOT Installed OR REINSTALL OR (NOT REMOVE~="ALL")</Publish>
 
             <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="PrivacyConsentDlg">NOT Installed</Publish>
 			<Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="VerifyReadyDlg">Installed AND PATCH</Publish>
@@ -172,7 +172,7 @@
 		<Property Id="IS_MODIFY" Value="false" />
 
 		<InstallUISequence>
-            <Custom Action="GAReportStart" After="AppSearch">1</Custom>
+            <Custom Action="GAReportStart" After="AppSearch">Not Installed OR REINSTALL OR (NOT REMOVE~="ALL")</Custom>
 			<Custom Action="CommandsExist" After="CostFinalize">NOT Installed OR (Installed AND NOT (REMOVE~="ALL"))</Custom>
 			<Custom Action="SetIsModify" After="CommandsExist">(Installed AND NOT (REMOVE~="ALL"))</Custom>
 			<Custom Action="SetInstallDirOnModify" After="SetIsModify">(Installed AND NOT (REMOVE~="ALL"))</Custom>
