@@ -8,6 +8,7 @@ Click "Next" to continue or "Cancel" to exit the Setup Wizard.</String>
   <String Id="ExitDialogStateToolAction">Get started with the State Tool.</String>
   <String Id="ExitDialogReleaseNotesAction">Open Release Notes in your browser.</String>
   <String Id="ExitDialogVSCodeAction">Install ActiveState Platform VSCode Extension.</String>
+  <String Id="FatalErrorPrimary">If the problem you encountered is due to a bug or issue with the software please consider reporting it on <![CDATA[<a href="https://community.activestate.com">our forums</a>]]>.</String>
   <String Id="VerifyReadyDlgInstallText">Click Install to begin the installation of [ProductName]. Perl will be added to your path and file extensions associations for .pl and .wpl  will be created.
   
 Click "Back" to review or change any of your installation settings.  Click "Cancel" to exit the wizard.</String>

@@ -168,6 +168,10 @@ github.com/google/uuid
 github.com/googleapis/gax-go/v2
 # github.com/gorilla/websocket v1.4.0
 github.com/gorilla/websocket
+# github.com/hashicorp/go-cleanhttp v0.5.1
+github.com/hashicorp/go-cleanhttp
+# github.com/hashicorp/go-retryablehttp v0.6.7
+github.com/hashicorp/go-retryablehttp
 # github.com/hashicorp/go-version v1.1.0
 github.com/hashicorp/go-version
 # github.com/hashicorp/hcl v0.0.0-20171017181929-23c074d0eceb
@@ -186,6 +190,8 @@ github.com/hectane/go-acl
 github.com/hectane/go-acl/api
 # github.com/iafan/cwalk v0.0.0-20191125092548-dd7f505d2f66
 github.com/iafan/cwalk
+# github.com/imdario/mergo v0.3.11
+github.com/imdario/mergo
 # github.com/inconshreveable/mousetrap v1.0.0
 github.com/inconshreveable/mousetrap
 # github.com/jarcoal/httpmock v1.0.3
@@ -500,5 +506,5 @@ gopkg.in/src-d/go-git.v4/utils/merkletrie/internal/frame
 gopkg.in/src-d/go-git.v4/utils/merkletrie/noder
 # gopkg.in/warnings.v0 v0.1.2
 gopkg.in/warnings.v0
-# gopkg.in/yaml.v2 v2.2.2
+# gopkg.in/yaml.v2 v2.3.0
 gopkg.in/yaml.v2

@@ -44,10 +44,12 @@ require (
 	github.com/google/go-github/v29 v29.0.2
 	github.com/google/uuid v1.1.0
 	github.com/gorilla/websocket v1.4.0
+	github.com/hashicorp/go-retryablehttp v0.6.7
 	github.com/hashicorp/go-version v1.1.0
 	github.com/hashicorp/hcl v0.0.0-20171017181929-23c074d0eceb // indirect
 	github.com/hectane/go-acl v0.0.0-20190604041725-da78bae5fc95
 	github.com/iafan/cwalk v0.0.0-20191125092548-dd7f505d2f66
+	github.com/imdario/mergo v0.3.11
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/jarcoal/httpmock v1.0.3
 	github.com/jessevdk/go-flags v1.4.0
@@ -98,5 +100,5 @@ require (
 	gopkg.in/ini.v1 v1.48.0 // indirect
 	gopkg.in/mgo.v2 v2.0.0-20160818020120-3f83fa500528 // indirect
 	gopkg.in/src-d/go-git.v4 v4.13.1
-	gopkg.in/yaml.v2 v2.2.2
+	gopkg.in/yaml.v2 v2.3.0
 )
