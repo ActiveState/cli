@@ -516,7 +516,7 @@ namespace StateDeploy
         public static ActionResult GAReportUserExit(Session session)
         {
             session.Log("sending user exit event");
-            TrackerSingleton.Instance.TrackEventSynchronously(session, "user_cancel", "", "");
+            TrackerSingleton.Instance.TrackEventSynchronously(session, "stage", "user_cancel", "");
             return ActionResult.Success;
         }
     }
