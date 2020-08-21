@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -20,22 +21,33 @@ type InitIntegrationTestSuite struct {
 }
 
 func (suite *InitIntegrationTestSuite) TestInit() {
-	suite.runInitTest(false, sampleYAML, "python3")
+	suite.runInitTest(false, "sample_yaml", "python3")
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_SkeletonEditor() {
-	suite.runInitTest(false, locale.T("editor_yaml"), "python3", "--skeleton", "editor")
+	suite.runInitTest(false, "editor_yaml", "python3", "--skeleton", "editor")
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_Path() {
-	suite.runInitTest(true, sampleYAML, "python3")
+	suite.runInitTest(true, "sample_yaml", "python3")
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_Version() {
-	suite.runInitTest(false, sampleYAML, "python3@1.0")
+	suite.runInitTest(false, "sample_yaml", "python3@1.0")
 }
 
-func (suite *InitIntegrationTestSuite) runInitTest(addPath bool, config string, language string, args ...string) {
+func (suite *InitIntegrationTestSuite) runInitTest(addPath bool, configLocale, language string, args ...string) {
+	scriptLang := "bash"
+	if runtime.GOOS == "windows" {
+		scriptLang = "batch"
+	}
+
+	config := locale.T(configLocale, map[string]interface{}{
+		"Owner":   testUser,
+		"Project": testProject,
+		"Shell":   scriptLang,
+	})
+
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
