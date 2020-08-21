@@ -12,10 +12,10 @@ using Newtonsoft.Json;
 using System.Security.Cryptography;
 using System.IO.Compression;
 using ActiveState;
+using System.Threading.Tasks;
 
 namespace StateDeploy
 {
-
 
     public class CustomActions
     {
@@ -33,17 +33,22 @@ namespace StateDeploy
             public string sha256v2 = "";
         }
 
-        private static bool is64Bit() {
+        private static bool is64Bit()
+        {
             return System.Environment.Is64BitOperatingSystem;
         }
 
-        private static StateToolPaths GetPaths() {
+        private static StateToolPaths GetPaths()
+        {
             StateToolPaths paths;
-            if (is64Bit()) {
+            if (is64Bit())
+            {
                 paths.JsonDescription = "windows-amd64.json";
                 paths.ZipFile = "windows-amd64.zip";
                 paths.ExeFile = "windows-amd64.exe";
-            } else {
+            }
+            else
+            {
                 paths.JsonDescription = "windows-386.json";
                 paths.ZipFile = "windows-386.zip";
                 paths.ExeFile = "windows-386.exe";
@@ -51,21 +56,8 @@ namespace StateDeploy
             return paths;
         }
 
-        public static ActionResult InstallStateTool(Session session, out string stateToolPath)
+        private static ActionResult _installStateTool(Session session, out string stateToolPath)
         {
-            RollbarHelper.ConfigureRollbarSingleton(session.CustomActionData["COMMIT_ID"]);
-
-            session.Log("Installing State Tool if necessary");
-            if (session.CustomActionData["STATE_TOOL_INSTALLED"] == "true")
-            {
-                stateToolPath = session.CustomActionData["STATE_TOOL_PATH"];
-                session.Log("State Tool is installed, no installation required");
-                Status.ProgressBar.Increment(session, 1);
-                return ActionResult.Success;
-            }
-            
-            Status.ProgressBar.StatusMessage(session, "Installing State Tool...");
-            Status.ProgressBar.Increment(session, 1);
             stateToolPath = "";
 
             var paths = GetPaths();
@@ -232,7 +224,7 @@ namespace StateDeploy
 
             session.Log("Updating PATH environment variable");
             string oldPath = Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.Machine);
-            if (oldPath.Contains(stateToolInstallDir)) 
+            if (oldPath.Contains(stateToolInstallDir))
             {
                 session.Log("State tool installation already on PATH");
                 return ActionResult.Success;
@@ -253,6 +245,36 @@ namespace StateDeploy
             }
 
             return ActionResult.Success;
+
+        }
+
+        public static ActionResult InstallStateTool(Session session, out string stateToolPath)
+        {
+            RollbarHelper.ConfigureRollbarSingleton(session.CustomActionData["COMMIT_ID"]);
+
+            session.Log("Installing State Tool if necessary");
+            if (session.CustomActionData["STATE_TOOL_INSTALLED"] == "true")
+            {
+                stateToolPath = session.CustomActionData["STATE_TOOL_PATH"];
+                session.Log("State Tool is installed, no installation required");
+                Status.ProgressBar.Increment(session, 1);
+                TrackerSingleton.Instance.TrackEventInBackground(session, "stage", "state-tool", "skipped");
+                return ActionResult.Success;
+            }
+
+            Status.ProgressBar.StatusMessage(session, "Installing State Tool...");
+            Status.ProgressBar.Increment(session, 1);
+
+            var ret = _installStateTool(session, out stateToolPath);
+            if (ret == ActionResult.Success)
+            {
+                TrackerSingleton.Instance.TrackEventInBackground(session, "stage", "state-tool", "success");
+            }
+            else if (ret == ActionResult.Failure)
+            {
+                TrackerSingleton.Instance.TrackEventInBackground(session, "stage", "state-tool", "failure");
+            }
+            return ret;
         }
 
         private static ActionResult Login(Session session, string stateToolPath)
@@ -272,7 +294,8 @@ namespace StateDeploy
             {
                 session.Log("Attempting to log in with TOTP token");
                 authCmd = " auth" + " --totp " + totp;
-            } else
+            }
+            else
             {
                 session.Log(string.Format("Attempting to login as user: {0}", username));
                 authCmd = " auth" + " --username " + username + " --password " + password;
@@ -340,7 +363,8 @@ namespace StateDeploy
 
             string stateToolPath;
             ActionResult res = InstallStateTool(session, out stateToolPath);
-            if (res != ActionResult.Success) {
+            if (res != ActionResult.Success)
+            {
                 return res;
             }
             session.Log("Starting state deploy with state tool at " + stateToolPath);
@@ -386,9 +410,12 @@ namespace StateDeploy
                         record.FormatString = String.Format("{0} failed with error:\n{1}", seq.Description, errorOutput);
 
                         MessageResult msgRes = session.Message(InstallMessage.Error | (InstallMessage)MessageBoxButtons.OK, record);
+                        TrackerSingleton.Instance.TrackEventSynchronously(session, "stage", "artifacts", "failure");
+
                         return runResult;
                     }
                 }
+                TrackerSingleton.Instance.TrackEventInBackground(session, "stage", "artifacts", "success");
             }
             catch (Exception objException)
             {
@@ -447,6 +474,50 @@ namespace StateDeploy
             deployCMDBuilder.AppendFormat(" {0} --path=\"{1}\\\"", projectName, installDir);
 
             return deployCMDBuilder.ToString();
+        }
+
+        /* The following two custom actions are added to this project (and not to a project
+         * with a more appropriate name) in hope that the TrackerSingleton ca be re-used between 
+         * all custom actions.
+         */
+
+        [CustomAction]
+        public static ActionResult GAReportFailure(Session session)
+        {
+            session.Log("sending event about starting the MSI");
+            TrackerSingleton.Instance.TrackEventSynchronously(session, "stage", "finished", "failure");
+            return ActionResult.Success;
+        }
+
+        [CustomAction]
+        public static ActionResult GAReportSuccess(Session session)
+        {
+            session.Log("sending event about starting the MSI");
+            TrackerSingleton.Instance.TrackEventSynchronously(session, "stage", "finished", "success");
+            return ActionResult.Success;
+        }
+
+
+        /// <summary>
+        /// Reports the start of the MSI to google analytics
+        /// </summary>
+        [CustomAction]
+        public static ActionResult GAReportStart(Session session)
+        {
+            session.Log("sending event about starting the MSI");
+            TrackerSingleton.Instance.TrackEventSynchronously(session, "stage", "started", "");
+            return ActionResult.Success;
+        }
+
+        /// <summary>
+        /// Reports a user cancellation event to google analytics
+        /// </summary>
+        [CustomAction]
+        public static ActionResult GAReportUserExit(Session session)
+        {
+            session.Log("sending user exit event");
+            TrackerSingleton.Instance.TrackEventSynchronously(session, "user_cancel", "", "");
+            return ActionResult.Success;
         }
     }
 }

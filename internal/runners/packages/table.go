@@ -4,44 +4,46 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/bndr/gotabulate"
+	"github.com/ActiveState/cli/internal/output"
 )
 
-type table struct {
-	headers []string
-	data    [][]string
+type packageTable struct {
+	rows        []packageRow
+	emptyOutput string // string returned when table is empty
 }
 
-func newTable(headers []string, data [][]string) *table {
-	return &table{
-		headers: headers,
-		data:    data,
+type packageRow struct {
+	Pkg     string `json:"package" locale:"package_name,Name"`
+	Version string `json:"version" locale:"package_version,Version"`
+}
+
+func (t *packageTable) MarshalOutput(format output.Format) interface{} {
+	if format == output.PlainFormatName {
+		if len(t.rows) == 0 {
+			return t.emptyOutput
+		}
+		return t.rows
+	}
+
+	type packageRow struct {
+		Pkg     string `json:"package"`
+		Version string `json:"version"`
+	}
+
+	return t.rows
+}
+
+func newTable(rows []packageRow, emptyOutput string) *packageTable {
+	return &packageTable{
+		rows:        rows,
+		emptyOutput: emptyOutput,
 	}
 }
 
-func (t *table) output() string {
-	if t == nil {
-		return ""
-	}
-
-	tab := gotabulate.Create(t.data)
-	tab.SetHeaders(t.headers)
-	tab.SetAlign("left")
-
-	return tab.Render("simple")
-}
-
-func sortByFirstCol(rows [][]string) {
+func (t *packageTable) sortByPkg() {
 	less := func(i, j int) bool {
-		if len(rows[i]) == 0 {
-			return true
-		}
-		if len(rows[j]) == 0 {
-			return false
-		}
-
-		a := rows[i][0]
-		b := rows[j][0]
+		a := t.rows[i].Pkg
+		b := t.rows[j].Pkg
 
 		if strings.ToLower(a) < strings.ToLower(b) {
 			return true
@@ -50,7 +52,7 @@ func sortByFirstCol(rows [][]string) {
 		return a < b
 	}
 
-	sort.Slice(rows, less)
+	sort.Slice(t.rows, less)
 }
 
 func sortByFirstTwoCols(rows [][]string) {
