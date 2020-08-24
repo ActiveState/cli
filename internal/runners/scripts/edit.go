@@ -94,7 +94,7 @@ func createScriptFile(script *project.Script, expand bool) (*scriptfile.ScriptFi
 		scriptBlock = script.Value()
 	}
 
-	f, fail := scriptfile.NewAsSource(script.LanguageSafe(), script.Name(), scriptBlock)
+	f, fail := scriptfile.NewAsSource(script.LanguageSafe()[0], script.Name(), scriptBlock)
 	if fail != nil {
 		return f, errs.Wrap(fail, "Failed to create script file")
 	}

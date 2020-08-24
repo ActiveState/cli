@@ -613,24 +613,29 @@ func (script *Script) Languages() []language.Language {
 	return languages
 }
 
-// LanguageSafe returns the first language of this script. The
-// returned language is guaranteed to be of a known scripting language
-func (script *Script) LanguageSafe() language.Language {
-	lang := language.Unknown
-	if len(script.Languages()) > 0 {
-		lang = script.Languages()[0]
+// LanguageSafe returns the first languages of this script. The
+// returned languages are guaranteed to be of a known scripting language
+func (script *Script) LanguageSafe() []language.Language {
+	var langs []language.Language
+	for _, lang := range script.Languages() {
+		if !lang.Recognized() {
+			continue
+		}
+		langs = append(langs, lang)
 	}
-	if !lang.Recognized() {
+
+	if len(langs) == 0 {
 		return defaultScriptLanguage()
 	}
-	return lang
+
+	return langs
 }
 
-func defaultScriptLanguage() language.Language {
+func defaultScriptLanguage() []language.Language {
 	if runtime.GOOS == "windows" {
-		return language.Batch
+		return []language.Language{language.Batch}
 	}
-	return language.Sh
+	return []language.Language{language.Sh}
 }
 
 // Description returns script description

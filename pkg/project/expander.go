@@ -177,7 +177,7 @@ func expandPath(name string, script *Script) (string, *failures.Failure) {
 		return script.cachedFile(), nil
 	}
 
-	sf, fail := scriptfile.NewEmpty(script.LanguageSafe(), name)
+	sf, fail := scriptfile.NewEmpty(script.LanguageSafe()[0], name)
 	if fail != nil {
 		return "", fail
 	}
