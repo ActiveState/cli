@@ -81,43 +81,33 @@ func run(out output.Outputer, subs subshell.SubShell, name string, args []string
 		attempted []string
 	)
 	path := os.Getenv("PATH")
-	// IsActivated is unreliable currently. We store the activated
-	// value in a varaible to ensure we are not activating multiple
-	// types in the loop below
-	activated := subshell.IsActivated()
+	// Activate the state if needed.
+	if !script.Standalone() && subshell.IsActivated() {
+		print.Info(locale.T("info_state_run_activating_state"))
+		venv := virtualenvironment.Init()
+		venv.OnDownloadArtifacts(func() { print.Line(locale.T("downloading_artifacts")) })
+		venv.OnInstallArtifacts(func() { print.Line(locale.T("installing_artifacts")) })
+
+		if fail := venv.Activate(); fail != nil {
+			logging.Errorf("Unable to activate state: %s", fail.Error())
+			return fail.WithDescription("error_state_run_activate")
+		}
+
+		env, err := venv.GetEnv(true, filepath.Dir(projectfile.Get().Path()))
+		if err != nil {
+			return err
+		}
+		subs.SetEnv(env)
+
+		// search the "clean" path first (PATHS that are set by venv)
+		env, err = venv.GetEnv(false, "")
+		if err != nil {
+			return err
+		}
+		path = env["PATH"] + string(os.PathSeparator) + path
+	}
+
 	for _, l := range script.Languages() {
-		if script.Standalone() && !l.Executable().Builtin() {
-			attempted = append(attempted, l.String())
-			continue
-		}
-
-		// Activate the state if needed.
-		if !script.Standalone() && !activated {
-			print.Info(locale.T("info_state_run_activating_state"))
-			venv := virtualenvironment.Init()
-			venv.OnDownloadArtifacts(func() { print.Line(locale.T("downloading_artifacts")) })
-			venv.OnInstallArtifacts(func() { print.Line(locale.T("installing_artifacts")) })
-
-			if fail := venv.Activate(); fail != nil {
-				logging.Errorf("Unable to activate state: %s", fail.Error())
-				return fail.WithDescription("error_state_run_activate")
-			}
-
-			env, err := venv.GetEnv(true, filepath.Dir(projectfile.Get().Path()))
-			if err != nil {
-				return err
-			}
-			subs.SetEnv(env)
-
-			// search the "clean" path first (PATHS that are set by venv)
-			env, err = venv.GetEnv(false, "")
-			if err != nil {
-				return err
-			}
-			path = env["PATH"] + string(os.PathSeparator) + path
-			activated = true
-		}
-
 		if pathProvidesLang(path, l) {
 			lang = l
 			break
