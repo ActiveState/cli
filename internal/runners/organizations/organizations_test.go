@@ -10,8 +10,9 @@ import (
 
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
-	"github.com/ActiveState/cli/internal/testhelpers/osutil"
+	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	apiMock "github.com/ActiveState/cli/pkg/platform/api/mono/mock"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -29,6 +30,7 @@ func setupOrgTest(t *testing.T) *apiMock.Mock {
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 
 	httpmock.Register("POST", "/login")
+	httpmock.Register("GET", "/tiers")
 	authentication.Get().AuthenticateWithToken("")
 
 	amock := apiMock.Init()
@@ -47,14 +49,12 @@ func TestOrganizations(t *testing.T) {
 	setupOrgTest(t)
 
 	var execErr error
-	outStr, outErr := osutil.CaptureStdout(func() {
-		execErr = run(&OrgParams{})
-	})
-	require.NoError(t, outErr)
+	out := outputhelper.NewCatcher()
+	execErr = run(&OrgParams{}, out)
 	require.NoError(t, execErr)
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 
-	assert.Contains(t, outStr, "string")
+	assert.Contains(t, out.CombinedOutput(), "string")
 
 	tearDownOrgTest(t, nil)
 }
@@ -63,16 +63,13 @@ func TestOrganizationsJSONPaid(t *testing.T) {
 	aMock := setupOrgTest(t)
 	aMock.MockGetPaidTiers()
 
-	var execErr error
-	outStr, outErr := osutil.CaptureStdout(func() {
-		execErr = run(&OrgParams{Output: "json"})
-	})
+	out := outputhelper.NewCatcherByFormat(output.JSONFormatName)
+	execErr := run(&OrgParams{}, out)
 
-	require.NoError(t, outErr)
 	require.NoError(t, execErr)
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 
-	assert.Equal(t, "[{\"name\":\"string\",\"URLName\":\"string\",\"tier\":\"string\",\"privateProjects\":true}]\n", outStr, "Expect privateProjects to be true")
+	assert.Equal(t, "[{\"name\":\"string\",\"URLName\":\"string\",\"tier\":\"string\",\"privateProjects\":true}]\x00\n", out.Output(), "Expect privateProjects to be true")
 
 	tearDownOrgTest(t, aMock)
 }
@@ -81,32 +78,13 @@ func TestOrganizationsJSONFree(t *testing.T) {
 	aMock := setupOrgTest(t)
 	aMock.MockGetFreeTiers()
 
-	var execErr error
-	outStr, outErr := osutil.CaptureStdout(func() {
-		execErr = run(&OrgParams{Output: "json"})
-	})
+	out := outputhelper.NewCatcherByFormat(output.JSONFormatName)
+	execErr := run(&OrgParams{}, out)
 
-	require.NoError(t, outErr)
 	require.NoError(t, execErr)
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 
-	assert.Equal(t, "[{\"name\":\"string\",\"URLName\":\"string\",\"tier\":\"string\",\"privateProjects\":false}]\n", outStr, "Expect privateProjects to be false")
-
-	tearDownOrgTest(t, aMock)
-}
-
-func TestOrganizationsJSONBad(t *testing.T) {
-	aMock := setupOrgTest(t)
-	aMock.MockGetBadTiers()
-
-	var execErr error
-	outStr, outErr := osutil.CaptureStdout(func() {
-		execErr = run(&OrgParams{Output: "json"})
-	})
-
-	require.Error(t, execErr)
-	require.NoError(t, outErr)
-	assert.Equal(t, "", outStr, "Expect no output")
+	assert.Equal(t, "[{\"name\":\"string\",\"URLName\":\"string\",\"tier\":\"string\",\"privateProjects\":false}]\x00\n", out.Output(), "Expect privateProjects to be false")
 
 	tearDownOrgTest(t, aMock)
 }
@@ -120,7 +98,7 @@ func TestClientError(t *testing.T) {
 	httpmock.Register("POST", "/login")
 	authentication.Get().AuthenticateWithToken("")
 
-	err := run(&OrgParams{})
+	err := run(&OrgParams{}, outputhelper.NewCatcher())
 	require.Error(t, err)
 }
 
@@ -135,6 +113,6 @@ func TestAuthError(t *testing.T) {
 
 	httpmock.RegisterWithCode("GET", "/organizations", 401)
 
-	err := run(&OrgParams{})
+	err := run(&OrgParams{}, outputhelper.NewCatcher())
 	require.Error(t, err)
 }

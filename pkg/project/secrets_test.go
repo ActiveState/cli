@@ -5,11 +5,10 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/suite"
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
-	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
@@ -89,10 +88,9 @@ func (suite *SecretsExpanderTestSuite) prepareWorkingExpander() project.Expander
 	return project.NewSecretQuietExpander(suite.secretsClient)
 }
 
-func (suite *SecretsExpanderTestSuite) assertExpansionFailure(secretName string, expectedFailureType *failures.FailureType) {
-	value, fail := suite.prepareWorkingExpander()(project.ProjectCategory, secretName, false, suite.project)
-	suite.Require().Error(fail.ToError())
-	suite.Equal(expectedFailureType.Name, fail.Type.Name, "unexpected failure type")
+func (suite *SecretsExpanderTestSuite) assertExpansionFailure(secretName string) {
+	value, err := suite.prepareWorkingExpander()(project.ProjectCategory, secretName, false, suite.project)
+	suite.Require().Error(err)
 	suite.Zero(value)
 }
 
@@ -108,30 +106,30 @@ func (suite *SecretsExpanderTestSuite) assertExpansionSuccess(secretName string,
 
 func (suite *SecretsExpanderTestSuite) TestKeypairNotFound() {
 	expanderFn := project.NewSecretQuietExpander(suite.secretsClient)
-	value, failure := expanderFn(project.ProjectCategory, "undefined-secret", false, suite.project)
-	suite.Truef(failure.Type.Matches(keypairs.FailLoadNotFound), "unexpected failure type: %v", failure.Type)
+	value, err := expanderFn(project.ProjectCategory, "undefined-secret", false, suite.project)
+	suite.Error(err)
 	suite.Zero(value)
 }
 
 func (suite *SecretsExpanderTestSuite) TestNoAuth() {
 	authentication.Get().Logout()
 	expanderFn := project.NewSecretQuietExpander(suite.secretsClient)
-	value, failure := expanderFn(project.ProjectCategory, "undefined-secret", false, suite.project)
-	suite.Truef(failure.Type.Matches(project.FailNotAuthenticated), "unexpected failure type: %v", failure.Type)
+	value, err := expanderFn(project.ProjectCategory, "undefined-secret", false, suite.project)
+	suite.Error(err)
 	suite.Zero(value)
 }
 
 func (suite *SecretsExpanderTestSuite) TestDecodingFailed() {
-	suite.assertExpansionFailure("bad-base64-encoded-secret", keypairs.FailKeyDecode)
+	suite.assertExpansionFailure("bad-base64-encoded-secret")
 }
 
 func (suite *SecretsExpanderTestSuite) TestDecryptionFailed() {
-	suite.assertExpansionFailure("invalid-encryption-secret", keypairs.FailDecrypt)
+	suite.assertExpansionFailure("invalid-encryption-secret")
 }
 
 func (suite *SecretsExpanderTestSuite) TestSecretHasNoValue() {
 	// secret is defined in the project, but not in the database
-	suite.assertExpansionFailure("undefined-secret", secretsapi.FailUserSecretNotFound)
+	suite.assertExpansionFailure("undefined-secret")
 }
 
 func (suite *SecretsExpanderTestSuite) TestProjectSecret() {

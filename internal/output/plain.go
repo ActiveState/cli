@@ -19,6 +19,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 )
 
 type PlainOpts string
@@ -26,6 +27,7 @@ type PlainOpts string
 const (
 	SingleLineOpt PlainOpts = "singleLine"
 	EmptyNil      PlainOpts = "emptyNil"
+	HidePlain     PlainOpts = "hidePlain"
 )
 
 // Plain is our plain outputer, it uses reflect to marshal the data.
@@ -74,7 +76,7 @@ func (f *Plain) Config() *Config {
 func (f *Plain) write(writer io.Writer, value interface{}) {
 	v, err := sprint(value)
 	if err != nil {
-		logging.Errorf("Could not sprint value: %v, error: %v", value, err)
+		logging.Errorf("Could not sprint value: %v, error: %v, stack: %s", value, err, stacktrace.Get().String())
 		f.writeNow(f.cfg.ErrWriter, fmt.Sprintf("[RED]%s[/RESET]", locale.Tr("err_sprint", err.Error())))
 		return
 	}
@@ -106,6 +108,8 @@ func wordWrap(text string) string {
 
 const nilText = "<nil>"
 
+var byteType = reflect.TypeOf([]byte(nil))
+
 // sprint will marshal and return the given value as a string
 func sprint(value interface{}) (string, error) {
 	if value == nil {
@@ -114,6 +118,11 @@ func sprint(value interface{}) (string, error) {
 
 	if err, ok := value.(error); ok {
 		return err.Error(), nil
+	}
+
+	// Reflect doesn't handle []byte (easily)
+	if v, ok := value.([]byte); ok {
+		return string(v), nil
 	}
 
 	valueRfl := valueOf(value)
@@ -139,8 +148,8 @@ func sprint(value interface{}) (string, error) {
 		}
 		return sprintMap(value)
 
-	case reflect.Int, reflect.Int16, reflect.Int32, reflect.Int64,
-		reflect.Uint, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		return fmt.Sprintf("%d", value), nil
 
 	case reflect.Float32, reflect.Float64:
@@ -250,7 +259,7 @@ func sprintTable(slice []interface{}) (string, error) {
 	}
 
 	termWidth, _, err := terminal.GetSize(int(os.Stdin.Fd()))
-	if err != nil {
+	if err != nil || termWidth == 0 {
 		logging.Debug("Cannot get terminal size: %v", err)
 		termWidth = 100
 	}
@@ -270,6 +279,10 @@ func sprintTable(slice []interface{}) (string, error) {
 		firstIteration := len(headers) == 0
 		row := []interface{}{}
 		for _, field := range meta {
+			if funk.Contains(field.opts, string(HidePlain)) {
+				continue
+			}
+
 			if firstIteration {
 				headers = append(headers, localizedField(field.l10n))
 				termWidth = termWidth - (len(headers) * 10) // Account for cell padding, cause gotabulate doesn't..
@@ -292,6 +305,10 @@ func sprintTable(slice []interface{}) (string, error) {
 		}
 
 		rows = append(rows, row)
+	}
+
+	if termWidth == 0 {
+		termWidth = 100
 	}
 
 	t := gotabulate.Create(rows)

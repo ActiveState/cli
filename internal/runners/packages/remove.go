@@ -3,7 +3,7 @@ package packages
 import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/pkg/cmdlets/auth"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -17,18 +17,20 @@ type RemoveRunParams struct {
 // Remove manages the removing execution context.
 type Remove struct {
 	out output.Outputer
+	prompt.Prompter
 }
 
 // NewRemove prepares a removal execution context for use.
-func NewRemove(prime primer.Outputer) *Remove {
+func NewRemove(prime primeable) *Remove {
 	return &Remove{
-		out: prime.Output(),
+		prime.Output(),
+		prime.Prompt(),
 	}
 }
 
 // Run executes the remove behavior.
 func (r *Remove) Run(params RemoveRunParams) error {
-	fail := auth.RequireAuthentication(locale.T("auth_required_activate"))
+	fail := auth.RequireAuthentication(locale.T("auth_required_activate"), r.out, r.Prompter)
 	if fail != nil {
 		return fail.WithDescription("err_activate_auth_required")
 	}

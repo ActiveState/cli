@@ -11,15 +11,17 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
-type Recipe struct{}
+type Recipe struct {
+	output.Outputer
+}
 
-func NewRecipe() *Recipe {
-	return &Recipe{}
+func NewRecipe(prime primeable) *Recipe {
+	return &Recipe{prime.Output()}
 }
 
 type RecipeParams struct {
@@ -47,7 +49,7 @@ func (r *Recipe) Run(params *RecipeParams) error {
 		}
 	}
 
-	print.Line(string(data))
+	r.Outputer.Print(data)
 	return nil
 }
 
@@ -69,7 +71,7 @@ func beautifyJSON(d []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return d, nil
+	return out.Bytes(), nil
 }
 
 func fetchRecipe(proj *project.Project, commitID strfmt.UUID, platform string) (string, *failures.Failure) {

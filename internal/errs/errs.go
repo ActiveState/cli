@@ -9,7 +9,6 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
-	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/rtutils"
 )
 
@@ -76,7 +75,7 @@ func errIsNil(err error) bool {
 		logging.Error("MUST FIX: nil failure is being passed as non-nil error, os.Args: %v", os.Args)
 		if !rtutils.BuiltViaCI {
 			// Ensure we don't miss this while testing locally
-			print.Error("MUST FIX: nil failure is being passed as non-nil error")
+			fmt.Fprint(os.Stderr, "MUST FIX: nil failure is being passed as non-nil error")
 		}
 		return true
 	}
@@ -90,4 +89,15 @@ func InnerError(err error) error {
 		return InnerError(unwrapped)
 	}
 	return err
+}
+
+// Matches checks if err matches the given target errors type
+func Matches(err error, target error) bool {
+	for err != nil {
+		if errors.Is(err, target) {
+			return true
+		}
+		err = errors.Unwrap(err)
+	}
+	return false
 }

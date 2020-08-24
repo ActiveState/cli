@@ -41,7 +41,7 @@ func TestNew(t *testing.T) {
 			"editor.v0",
 			"editor.v0",
 			"hello",
-			`"hello"` + "\x00\n",
+			`"hello"` + "\n",
 			"",
 		},
 	}

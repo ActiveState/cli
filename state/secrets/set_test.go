@@ -22,7 +22,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api"
 	graphMock "github.com/ActiveState/cli/pkg/platform/api/graphql/request/mock"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
-	secrets_models "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
+	"github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/state/secrets"
 )
@@ -114,7 +114,7 @@ func (suite *VarSetCommandTestSuite) TestExecute_SetSecret() {
 		return 204, "empty-response"
 	})
 
-	cmd.Config().GetCobraCmd().SetArgs([]string{"set", "secret-name", "secret-value"})
+	cmd.Config().GetCobraCmd().SetArgs([]string{"set", "project.secret-name", "secret-value"})
 	execErr := cmd.Config().Execute()
 
 	suite.Require().NoError(execErr)

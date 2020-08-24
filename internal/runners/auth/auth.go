@@ -1,27 +1,33 @@
 package auth
 
 import (
-	"encoding/json"
-	"strings"
-
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/prompt"
 	authlet "github.com/ActiveState/cli/pkg/cmdlets/auth"
-	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
-type Auth struct{}
+type Auth struct {
+	output.Outputer
+	*authentication.Auth
+	prompt.Prompter
+}
 
-func NewAuth() *Auth {
-	return &Auth{}
+type primeable interface {
+	primer.Outputer
+	primer.Auther
+	primer.Prompter
+}
+
+func NewAuth(prime primeable) *Auth {
+	return &Auth{prime.Output(), prime.Auth(), prime.Prompt()}
 }
 
 type AuthParams struct {
-	Output   string
 	Token    string
 	Username string
 	Password string
@@ -30,82 +36,66 @@ type AuthParams struct {
 
 // Run runs our command
 func (a *Auth) Run(params *AuthParams) error {
-	return runAuth(params)
-}
-
-func runAuth(params *AuthParams) error {
-	auth := authentication.Get()
-
-	output := commands.Output(strings.ToLower(params.Output))
-	if !auth.Authenticated() {
-		return authenticate(params, auth)
-	}
-
-	logging.Debug("Already authenticated")
-	switch output {
-	case commands.JSON, commands.EditorV0, commands.Editor:
-		user, fail := userToJSON(auth.WhoAmI())
-		if fail != nil {
-			return fail.WithDescription("login_err_output")
+	if !a.Authenticated() {
+		if err := a.authenticate(params); err != nil {
+			return locale.WrapError(err, locale.Tl("err_auth_authenticate", "Could not authenticate."))
 		}
-		print.Line(string(user))
-	default:
-		print.Line(locale.T("logged_in_as", map[string]string{
-			"Name": auth.WhoAmI(),
-		}))
 	}
+
+	data, err := a.userData()
+	if err != nil {
+		return locale.WrapError(err, locale.Tl("err_auth_userdata", "Could not collect information about your account."))
+	}
+
+	a.Outputer.Print(
+		output.NewFormatter(data).
+			WithFormat(output.PlainFormatName, locale.T("logged_in_as", map[string]string{
+				"Name": a.Auth.WhoAmI(),
+			})),
+	)
 
 	return nil
 }
 
-func authenticate(params *AuthParams, auth *authentication.Auth) error {
+func (a *Auth) authenticate(params *AuthParams) error {
 	if params.Token == "" {
-		fail := authlet.AuthenticateWithInput(params.Username, params.Password, params.Totp)
+		fail := authlet.AuthenticateWithInput(params.Username, params.Password, params.Totp, a.Outputer, a.Prompter)
 		if fail != nil {
-			return fail.WithDescription("login_err_auth")
+			return fail.WithDescription("login_err_auth").ToError()
 		}
 	} else {
 		fail := tokenAuth(params.Token)
 		if fail != nil {
-			return fail.WithDescription("login_err_auth_token")
+			return fail.WithDescription("login_err_auth_token").ToError()
 		}
 	}
-	if !auth.Authenticated() {
-		return failures.FailUser.New(locale.T("login_err_auth"))
+	if !a.Auth.Authenticated() {
+		return failures.FailUser.New(locale.T("login_err_auth")).ToError()
 	}
-
-	switch commands.Output(strings.ToLower(params.Output)) {
-	case commands.JSON, commands.EditorV0, commands.Editor:
-		user, fail := userToJSON(auth.WhoAmI())
-		if fail != nil {
-			return fail.WithDescription("login_err_output")
-		}
-		print.Line(string(user))
-	default:
-		print.Line(locale.T("login_success_welcome_back", map[string]string{
-			"Name": auth.WhoAmI(),
-		}))
-	}
+	a.Outputer.Notice(locale.T("login_success_welcome_back", map[string]string{
+		"Name": a.Auth.WhoAmI(),
+	}))
 
 	return nil
 }
 
-func userToJSON(username string) ([]byte, *failures.Failure) {
-	type userJSON struct {
-		Username        string `json:"username,omitempty"`
-		URLName         string `json:"urlname,omitempty"`
-		Tier            string `json:"tier,omitempty"`
-		PrivateProjects bool   `json:"privateProjects"`
-	}
+type userData struct {
+	Username        string `json:"username,omitempty"`
+	URLName         string `json:"urlname,omitempty"`
+	Tier            string `json:"tier,omitempty"`
+	PrivateProjects bool   `json:"privateProjects"`
+}
 
+func (a *Auth) userData() (*userData, error) {
+	username := a.Auth.WhoAmI()
 	organization, fail := model.FetchOrgByURLName(username)
 	if fail != nil {
-		return nil, fail
+		return nil, fail.ToError()
 	}
 
 	tiers, fail := model.FetchTiers()
 	if fail != nil {
-		return nil, fail
+		return nil, fail.ToError()
 	}
 
 	tier := organization.Tier
@@ -118,11 +108,5 @@ func userToJSON(username string) ([]byte, *failures.Failure) {
 
 	}
 
-	userJ := userJSON{username, organization.URLname, tier, privateProjects}
-	bs, err := json.Marshal(userJ)
-	if err != nil {
-		return nil, failures.FailMarshal.Wrap(err)
-	}
-
-	return bs, nil
+	return &userData{username, organization.URLname, tier, privateProjects}, nil
 }

@@ -20,17 +20,17 @@ type CmdTree struct {
 func New(prime *primer.Values) *CmdTree {
 	globals := newGlobalOptions()
 
-	authCmd := newAuthCommand(globals)
+	authCmd := newAuthCommand(prime)
 	authCmd.AddChildren(
-		newSignupCommand(),
-		newLogoutCommand(),
+		newSignupCommand(prime),
+		newLogoutCommand(prime),
 	)
 
 	exportCmd := newExportCommand()
 	exportCmd.AddChildren(
-		newRecipeCommand(),
-		newJWTCommand(),
-		newPrivateKeyCommand(),
+		newRecipeCommand(prime),
+		newJWTCommand(prime),
+		newPrivateKeyCommand(prime),
 		newAPIKeyCommand(prime),
 		newExportConfigCommand(prime),
 		newExportGithubActionCommand(prime),
@@ -78,15 +78,15 @@ func New(prime *primer.Values) *CmdTree {
 	tutorialCmd := newTutorialCommand(prime)
 	tutorialCmd.AddChildren(newTutorialProjectCommand(prime))
 
-	stateCmd := newStateCommand(globals)
+	stateCmd := newStateCommand(globals, prime)
 	stateCmd.AddChildren(
 		newActivateCommand(prime),
-		newInitCommand(),
-		newPushCommand(),
+		newInitCommand(prime),
+		newPushCommand(prime),
 		newProjectsCommand(prime),
 		authCmd,
 		exportCmd,
-		newOrganizationsCommand(globals),
+		newOrganizationsCommand(prime),
 		newRunCommand(prime),
 		newShowCommand(prime),
 		packagesCmd,
@@ -122,10 +122,10 @@ func newGlobalOptions() *globalOptions {
 	return &globalOptions{}
 }
 
-func newStateCommand(globals *globalOptions) *captain.Command {
+func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Command {
 	opts := state.NewOptions()
 
-	runner := state.New(opts)
+	runner := state.New(opts, prime)
 	cmd := captain.NewCommand(
 		"state",
 		locale.T("state_description"),

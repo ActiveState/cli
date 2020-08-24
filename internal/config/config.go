@@ -7,7 +7,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/condition"
 	C "github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/print"
 )
 
 var defaultConfig *Instance
@@ -15,7 +14,7 @@ var exit = os.Exit
 
 func init() {
 	if err := Reload(); err != nil {
-		print.Error(err.Error())
+		fmt.Fprint(os.Stderr, err.Error())
 		os.Exit(1)
 	}
 }

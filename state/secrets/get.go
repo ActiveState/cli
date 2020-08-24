@@ -2,13 +2,14 @@ package secrets
 
 import (
 	"encoding/json"
+	"fmt"
+	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 )
 
@@ -53,11 +54,11 @@ func (cmd *Command) ExecuteGet(_ *cobra.Command, args []string) {
 			if secret.IsUser() {
 				err = "secrets_err_user_not_defined"
 			}
-			print.Error(locale.Tr(err, cmd.Args.Name))
+			fmt.Fprint(os.Stderr, locale.Tr(err, cmd.Args.Name))
 			cmd.config.Exiter(1)
 			return
 		}
-		print.Line(*valuePtr)
+		fmt.Fprint(os.Stdout, *valuePtr)
 	}
 }
 
@@ -69,6 +70,6 @@ func printJSON(secretJSON *SecretExport) {
 		failures.Handle(failures.FailMarshal.Wrap(err), locale.T("secrets_err"))
 	}
 
-	print.Line(string(data))
+	fmt.Fprint(os.Stdout, string(data))
 	return
 }
