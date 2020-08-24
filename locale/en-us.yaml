@@ -556,6 +556,8 @@ field_scripts:
   other: Scripts
 field_localcheckouts:
   other: Local Checkouts
+field_platforms:
+  other: Platforms
 err_cannot_obtain_dist:
   other: "Could not obtain distribution for language: {{.V0}}"
 err_already_active:
