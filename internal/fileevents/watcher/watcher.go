@@ -43,19 +43,19 @@ func New() (*Watcher, error) {
 				return
 			case event, ok := <-w.fswatcher.Events:
 				if !ok || w.onEvent == nil {
-					break
+					continue
 				}
 
 				if event.Op&fsnotify.Write != fsnotify.Write {
 					logging.Debug(event.String() + ": Skip")
-					break
+					continue
 				}
-				
+
 				logInfo(event.String())
 
 				if err := (*w.onEvent)(event.Name, logInfo); err != nil {
 					logError(errs.Join(err, ", ").Error())
-					break
+					continue
 				}
 			case err, ok := <-w.fswatcher.Errors:
 				if !ok {
