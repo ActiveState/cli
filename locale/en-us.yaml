@@ -142,8 +142,6 @@ err_project_file_unavailable:
   other: Could not load the project file
 err_project_unavailable:
   other: Could not load the project
-err_project_parse:
-  other: "Project file could not be parsed, the parser produced the following error: {{.Error}}"
 err_failure_test:
   other: one {{.V0}} three {{.V1}}
 distro_obtaining:
@@ -554,6 +552,10 @@ private:
   other: Private
 public:
   other: Public
+field_package_name:
+  other: Name
+field_package_version:
+  other: Version
 field_namespace:
   other: Namespace
 field_events:
@@ -982,8 +984,6 @@ export_config_flag_filter_description:
   other: "Filter configuration output. Accepts: {{.V0}}"
 export_config_dir_description:
   other: Export the config directory details
-err_invalid_filter:
-  other: "Invalid filter term specified: '{{.V0}}'; Supported terms: {{.V1}}"
 export_apikey_user_notice:
   other: "[BLUE]Note that this key is not stored by ActiveState. Please store the value for later use as you cannot retrieve it again.[/RESET]"
 err_apikey_name_required:
@@ -1082,6 +1082,7 @@ sample_yaml:
     # This script uses a secret. Note that you can define your own secrets at
     # https://platform.activestate.com/{{.Owner}}/{{.Project}}/scripts
       - name: helloWorld
+        language: {{.Shell}}
         value: echo ${secrets.user.world}
     events:
       # This is the ACTIVATE event, it will run whenever a new virtual environment is created (eg. by running `state activate`)
@@ -1621,8 +1622,8 @@ confirm_exit_on_error_prompt:
   other: Press enter to continue...
 tutorial_newproject_intro:
   other: |
-    The State Tool lets you create and maintain  a set of virtual environments (eg., one per project), allowing you to
-    isolate and better manage language versions and dependencies  on a per-project basis.
+    The State Tool lets you create and maintain a set of virtual environments (eg., one per project), allowing you to
+    isolate and better manage language versions and dependencies on a per-project basis.
     [[BR]][[BR]]
     For every virtual environment, you'll be able to share the current configuration (language version & dependencies)
     with your teammates so everyone stays in sync, as well as share secrets (or store your own, for your eyes only),

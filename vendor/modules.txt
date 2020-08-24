@@ -10,18 +10,18 @@ github.com/ActiveState/go-colortext
 github.com/ActiveState/go-ogle-analytics
 # github.com/ActiveState/sysinfo v0.0.0-20200619170619-0582d42daf27
 github.com/ActiveState/sysinfo
-# github.com/ActiveState/termtest v0.5.3
+# github.com/ActiveState/termtest v0.5.5
 github.com/ActiveState/termtest
 github.com/ActiveState/termtest/internal/osutils
 github.com/ActiveState/termtest/internal/osutils/stacktrace
 # github.com/ActiveState/termtest/conpty v0.5.0
 github.com/ActiveState/termtest/conpty
-# github.com/ActiveState/termtest/expect v0.5.3
+# github.com/ActiveState/termtest/expect v0.5.6
 github.com/ActiveState/termtest/expect
 github.com/ActiveState/termtest/expect/internal/osutils
-# github.com/ActiveState/termtest/xpty v0.5.3
+# github.com/ActiveState/termtest/xpty v0.5.5
 github.com/ActiveState/termtest/xpty
-# github.com/ActiveState/vt10x v1.2.0
+# github.com/ActiveState/vt10x v1.3.1
 github.com/ActiveState/vt10x
 # github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78
 github.com/Azure/go-ansiterm
@@ -168,6 +168,10 @@ github.com/google/uuid
 github.com/googleapis/gax-go/v2
 # github.com/gorilla/websocket v1.4.0
 github.com/gorilla/websocket
+# github.com/hashicorp/go-cleanhttp v0.5.1
+github.com/hashicorp/go-cleanhttp
+# github.com/hashicorp/go-retryablehttp v0.6.7
+github.com/hashicorp/go-retryablehttp
 # github.com/hashicorp/go-version v1.1.0
 github.com/hashicorp/go-version
 # github.com/hashicorp/hcl v0.0.0-20171017181929-23c074d0eceb
@@ -192,6 +196,8 @@ github.com/hpcloud/tail/watch
 github.com/hpcloud/tail/winfile
 # github.com/iafan/cwalk v0.0.0-20191125092548-dd7f505d2f66
 github.com/iafan/cwalk
+# github.com/imdario/mergo v0.3.11
+github.com/imdario/mergo
 # github.com/inconshreveable/mousetrap v1.0.0
 github.com/inconshreveable/mousetrap
 # github.com/jarcoal/httpmock v1.0.3
@@ -362,7 +368,7 @@ golang.org/x/oauth2/google
 golang.org/x/oauth2/internal
 golang.org/x/oauth2/jws
 golang.org/x/oauth2/jwt
-# golang.org/x/sys v0.0.0-20200728102440-3e129f6d46b1
+# golang.org/x/sys v0.0.0-20200821140526-fda516888d29
 golang.org/x/sys/cpu
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
@@ -510,5 +516,5 @@ gopkg.in/src-d/go-git.v4/utils/merkletrie/noder
 gopkg.in/tomb.v1
 # gopkg.in/warnings.v0 v0.1.2
 gopkg.in/warnings.v0
-# gopkg.in/yaml.v2 v2.2.2
+# gopkg.in/yaml.v2 v2.3.0
 gopkg.in/yaml.v2
