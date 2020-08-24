@@ -2,6 +2,7 @@ package authentication
 
 import (
 	"errors"
+	"fmt"
 	"os"
 
 	"github.com/go-openapi/runtime"
@@ -14,7 +15,6 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/mono"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client"
@@ -241,7 +241,7 @@ func (s *Auth) Client() *mono_client.Mono {
 	if !s.Authenticated() {
 		if fail := s.Authenticate(); fail != nil {
 			logging.Error("Trying to get the Client while not authenticated")
-			output.Get().Error(locale.T("err_api_not_authenticated"))
+			fmt.Fprint(os.Stderr, locale.T("err_api_not_authenticated"))
 			exit(1)
 			return nil
 		}
