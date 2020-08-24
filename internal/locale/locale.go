@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"text/template"
@@ -157,7 +158,8 @@ func Tt(translationID string, args ...interface{}) string {
 	// this very painful otherwise
 
 	// Replace newlines in yaml strings with space to avoid concatenated words
-	translation = strings.Replace(translation, "\n", " ", -1)
+	replaceRegex := regexp.MustCompile(`[\ ]?\n(\w|\{)`)
+	translation = replaceRegex.ReplaceAllString(translation, " $1")
 	translation = strings.Replace(translation, "{{BR}}", "\n", -1)
 	// Avoid indentation after newlines
 	translation = strings.Replace(translation, "\n ", "\n", -1)
