@@ -7,10 +7,10 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileevents/watcher"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/project"
@@ -32,7 +32,8 @@ func New(pj *project.Project) (*FileEvents, error) {
 		return nil, errs.Wrap(err, "Could not create watcher")
 	}
 
-	for _, event := range pj.Events() {
+	events := pj.Events()
+	for _, event := range events {
 		if event.Name() != eventName {
 			continue
 		}
@@ -54,12 +55,32 @@ func (fe *FileEvents) onEvent(affectedFilepath string, log logging.Logger) error
 			continue
 		}
 
-		trimmed := strings.TrimPrefix(strings.TrimPrefix(affectedFilepath, filepath.Dir(fe.pj.Source().Path())), string(filepath.Separator))
-		logging.Debug("checking %s against %v", trimmed, event.Scope())
+		eventPaths := event.Scope()
+		projectPath := filepath.Clean(filepath.Dir(fe.pj.Source().Path()))
+		affectedFilepath = filepath.Clean(affectedFilepath)
+
+		logging.Debug("checking %s against %v", affectedFilepath, eventPaths)
 
 		match := false
-		for _, s := range event.Scope() {
-			if strings.HasPrefix(trimmed, s) {
+		for _, eventPath := range eventPaths {
+			absoluteEventPath := filepath.Join(projectPath, eventPath)
+			absoluteEventPath = filepath.Clean(absoluteEventPath)
+
+			pathsEqual, err := fileutils.PathsEqual(affectedFilepath, absoluteEventPath)
+			if err != nil {
+				return locale.NewError("err_fileevent_equal", "Could not check if paths {{.V0}} and {{.V1}} are equal: {{.V2}}.", affectedFilepath, absoluteEventPath, err.Error())
+			}
+			if pathsEqual {
+				match = true
+				break
+			}
+
+			pathContainsParent, err := fileutils.PathContainsParent(affectedFilepath, absoluteEventPath)
+			if err != nil {
+				return locale.NewError("err_fileevent_equal", "Could not check if {{.V0}} is a child of {{.V1}}: {{.V2}}.", affectedFilepath, absoluteEventPath, err.Error())
+			}
+
+			if pathContainsParent {
 				match = true
 				break
 			}
@@ -69,7 +90,7 @@ func (fe *FileEvents) onEvent(affectedFilepath string, log logging.Logger) error
 		}
 
 		logger := func(msg string, args ...interface{}) {
-			log(fmt.Sprintf("`state run %s`: ", event.Value())+msg, args...)
+			log(fmt.Sprintf("%s: ", event.Value())+msg, args...)
 		}
 		err := runScript(event.Value(), logger)
 		if err != nil {

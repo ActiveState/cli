@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/google/uuid"
 	"gopkg.in/yaml.v2"
 
 	"github.com/go-openapi/strfmt"
@@ -17,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/hash"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -344,13 +346,23 @@ type Event struct {
 	Scope       []string    `yaml:"scope"`
 	Conditional Conditional `yaml:"if"`
 	Constraints Constraint  `yaml:"constraints,omitempty"`
+	id          string
 }
 
 var _ ConstrainedEntity = Event{}
 
 // ID returns the event name
 func (e Event) ID() string {
-	return e.Name
+	if e.id == "" {
+		id, err := uuid.NewUUID()
+		if err == nil {
+			logging.Error("UUID generation failed, defaulting to serialization")
+			e.id = hash.ShortHash(e.Name, e.Value, strings.Join(e.Scope, ""))
+		} else {
+			e.id = id.String()
+		}
+	}
+	return e.id
 }
 
 // ConstraintsFilter returns the event constraints

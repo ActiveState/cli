@@ -556,14 +556,10 @@ public:
   other: Public
 field_namespace:
   other: Namespace
-field_platforms:
-  other: Platforms
 field_events:
   other: Events
 field_scripts:
   other: Scripts
-field_languages:
-  other: Languages
 field_localcheckouts:
   other: Local Checkouts
 err_cannot_obtain_dist:

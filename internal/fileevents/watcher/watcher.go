@@ -46,11 +46,13 @@ func New() (*Watcher, error) {
 					break
 				}
 
-				if event.Op&fsnotify.Write != fsnotify.Write && event.Op&fsnotify.Remove != fsnotify.Remove {
+				if event.Op&fsnotify.Write != fsnotify.Write {
+					logging.Debug(event.String() + ": Skip")
 					break
 				}
-
+				
 				logInfo(event.String())
+
 				if err := (*w.onEvent)(event.Name, logInfo); err != nil {
 					logError(errs.Join(err, ", ").Error())
 					break

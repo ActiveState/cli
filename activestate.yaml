@@ -39,6 +39,9 @@ scripts:
       packr
       go run scripts/constants-generator/main.go -- internal/constants/generated.go
       mkdir -p build/msi
+  - name: packr
+    language: bash
+    value: packr
   - name: build
     language: bash
     description: Builds the project with the host OS as the target OS.
@@ -288,3 +291,6 @@ events:
   - name: file-changed
     scope: [ ".github/workflows-src" ]
     value: build-workflows
+  - name: file-changed
+    scope: [ "locale" ]
+    value: packr
