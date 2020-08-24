@@ -100,7 +100,7 @@ func run(out output.Outputer, subs subshell.SubShell, name string, args []string
 		if err != nil {
 			return err
 		}
-		path = env["PATH"] + string(os.PathListSeparator) + path
+		path = env["PATH"]
 	}
 
 	var (
@@ -109,10 +109,26 @@ func run(out output.Outputer, subs subshell.SubShell, name string, args []string
 	)
 	for _, l := range script.Languages() {
 		lang = l
-		if pathProvidesLang(path, l) {
+
+		var exec string
+		if lang.Executable().Available() {
+			exec = lang.Executable().Name()
+		} else {
+			exec = lang.String()
+		}
+
+		if lang.Executable().Builtin() && runtime.GOOS == "windows" {
+			exec = exec + ".exe"
+		}
+
+		if pathProvidesExec(path, exec) {
 			break
 		}
-		attempted = append(attempted, l.String())
+		attempted = append(attempted, lang.String())
+	}
+
+	if script.Standalone() && !lang.Executable().Builtin() {
+		return FailStandaloneConflict.New("error_state_run_standalone_conflict")
 	}
 
 	if lang == language.Unknown {
@@ -165,22 +181,9 @@ func configCachePath() string {
 	return config.CachePath()
 }
 
-func pathProvidesLang(path string, language language.Language) bool {
+func pathProvidesExec(path, exec string) bool {
 	paths := splitPath(path)
-
-	var exec string
-	if language.Executable().Available() {
-		exec = language.Executable().Name()
-	} else {
-		exec = language.String()
-	}
-
-	if language.Executable().Builtin() && runtime.GOOS == "windows" {
-		exec = exec + ".exe"
-	}
-
 	paths = applySuffix(exec, paths)
-
 	for _, p := range paths {
 		if isExecutableFile(p) {
 			return true
