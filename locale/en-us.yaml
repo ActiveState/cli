@@ -1631,6 +1631,7 @@ tutorial_newproject_intro:
     [[BR]][[BR]]
     We'll help you create your first virtual environment, after that you can create as many as you want by running
     `state init`.
+    [[BR]]
 tutorial_newproject_outro:
   other: |
     Your Virtual Runtime Environment has been created.
@@ -1649,10 +1650,12 @@ ppm_convert_explanation:
     State Tool, like Perl 7, is being developed from the ground up with modern software development practices in mind.
     Best practices suggest one environment per project, which is the State Tool’s default option.
     State Tool was developed from the ground up with modern software development practices in mind.
+    [[BR]]
 ppm_convert_create_question:
   other: |
     PPM functionality is being replaced by the State Tool, which does things differently. For example, before you can
     start managing dependencies, you need to create a new virtual environment for your Perl project.
+    [[BR]]
 ppm_convert_ask_feedback:
   other: |
     We understand your need to do things traditionally, but we currently do not support it. We'd love to hear more about
