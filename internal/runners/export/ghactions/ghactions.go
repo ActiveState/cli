@@ -58,7 +58,11 @@ func (g *GithubActions) Run(p *Params) error {
 			},
 		}
 		for _, constant := range job.Constants() {
-			workflowJob.Env[constant.Name()] = constant.Value()
+			v, err := constant.Value()
+			if err != nil {
+				return locale.WrapError(err, "err_ghac_constant", "Could not get value for constant: {{.V0}}.", constant.Name())
+			}
+			workflowJob.Env[constant.Name()] = v
 		}
 		for _, script := range job.Scripts() {
 			workflowJob.Steps = append(workflowJob.Steps, WorkflowStep{

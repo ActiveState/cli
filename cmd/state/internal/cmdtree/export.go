@@ -9,7 +9,6 @@ import (
 	"github.com/ActiveState/cli/internal/runners/export"
 	"github.com/ActiveState/cli/internal/runners/export/config"
 	"github.com/ActiveState/cli/internal/runners/export/ghactions"
-	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
 func newExportCommand() *captain.Command {
