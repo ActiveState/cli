@@ -6,7 +6,6 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/shirou/gopsutil/process"
 	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -14,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/process"
 	"github.com/ActiveState/cli/internal/subshell/bash"
 	"github.com/ActiveState/cli/internal/subshell/cmd"
 	"github.com/ActiveState/cli/internal/subshell/fish"
@@ -128,54 +128,5 @@ func New() SubShell {
 // IsActivated returns whether or not this process is being run in an activated
 // state.
 func IsActivated() bool {
-	pid := int32(os.Getpid())
-	ppid := int32(os.Getppid())
-
-	procInfoErrMsgFmt := "Could not detect process information: %v"
-
-	for ppid != 0 && pid != ppid {
-		pproc, err := process.NewProcess(ppid)
-		if err != nil {
-			if err != process.ErrorProcessNotRunning {
-				logging.Errorf(procInfoErrMsgFmt, err)
-			}
-			return false
-		}
-
-		cmdArgs, err := pproc.CmdlineSlice()
-		if err != nil {
-			logging.Errorf(procInfoErrMsgFmt, err)
-			return false
-		}
-
-		if isActivateCmdlineArgs(cmdArgs) {
-			return true
-		}
-
-		pid = ppid
-		ppid, err = pproc.Ppid()
-		if err != nil {
-			logging.Errorf(procInfoErrMsgFmt, err)
-			return false
-		}
-	}
-
-	return false
-}
-
-func isActivateCmdlineArgs(args []string) bool {
-	// look for the state tool command in the first argument
-	exec := filepath.Base(args[0])
-	if !strings.HasPrefix(exec, constants.CommandName) {
-		return false
-	}
-
-	// ensure that first argument (not prefixed with a dash) is "activate"
-	for _, arg := range args[1:] {
-		if arg == "activate" {
-			return true
-		}
-	}
-
-	return false
+	return process.ActivationPID() != -1
 }

@@ -33,6 +33,9 @@ scripts:
       packr
       go run scripts/constants-generator/main.go -- internal/constants/generated.go
       mkdir -p build/msi
+  - name: packr
+    language: bash
+    value: packr
   - name: build
     language: bash
     description: Builds the project with the host OS as the target OS.
@@ -134,7 +137,7 @@ scripts:
     standalone: true
     value: dlv debug --headless --listen=:2346 --api-version=2 github.com/ActiveState/cli/cmd/state -- $@
 events:
-  - name: ACTIVATE
+  - name: activate
     if: ne .Shell "cmd"
     value: |
       if ! type "go" &> /dev/null; then
@@ -150,3 +153,9 @@ events:
         popd
       fi
       set +e # Take care not to run the shell too aggressively
+  - name: file-changed
+    scope: [ ".github/workflows-src" ]
+    value: build-workflows
+  - name: file-changed
+    scope: [ "locale" ]
+    value: packr

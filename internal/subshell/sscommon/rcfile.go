@@ -139,7 +139,7 @@ func SetupProjectRcFile(templateName, ext string, env map[string]string, out out
 
 	userScripts := ""
 	for _, event := range prj.Events() {
-		if event.Name() == "ACTIVATE" {
+		if strings.ToLower(event.Name()) == "activate" {
 			v, err := event.Value()
 			if err != nil {
 				return nil, failures.FailMisc.Wrap(err)

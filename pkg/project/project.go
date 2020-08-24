@@ -609,6 +609,19 @@ func (e *Event) Value() (string, error) {
 	return Expand(e.event.Value, e.Outputer, e.Prompter)
 }
 
+// Scope returns the scope property of the event
+func (e *Event) Scope() ([]string, error) {
+	result := []string{}
+	for _, s := range e.event.Scope {
+		v, err := Expand(s, e.project.Outputer, e.project.Prompter)
+		if err != nil {
+			return result, err
+		}
+		result = append(result, v)
+	}
+	return result, nil
+}
+
 // Script covers the command structure
 type Script struct {
 	script  *projectfile.Script

@@ -188,6 +188,12 @@ github.com/hashicorp/hcl/json/token
 # github.com/hectane/go-acl v0.0.0-20190604041725-da78bae5fc95
 github.com/hectane/go-acl
 github.com/hectane/go-acl/api
+# github.com/hpcloud/tail v1.0.0
+github.com/hpcloud/tail
+github.com/hpcloud/tail/ratelimiter
+github.com/hpcloud/tail/util
+github.com/hpcloud/tail/watch
+github.com/hpcloud/tail/winfile
 # github.com/iafan/cwalk v0.0.0-20191125092548-dd7f505d2f66
 github.com/iafan/cwalk
 # github.com/imdario/mergo v0.3.11
@@ -453,6 +459,8 @@ google.golang.org/grpc/tap
 gopkg.in/AlecAivazis/survey.v1
 gopkg.in/AlecAivazis/survey.v1/core
 gopkg.in/AlecAivazis/survey.v1/terminal
+# gopkg.in/fsnotify.v1 v1.4.7
+gopkg.in/fsnotify.v1
 # gopkg.in/mgo.v2 v2.0.0-20160818020120-3f83fa500528
 gopkg.in/mgo.v2/bson
 gopkg.in/mgo.v2/internal/json
@@ -504,6 +512,8 @@ gopkg.in/src-d/go-git.v4/utils/merkletrie/filesystem
 gopkg.in/src-d/go-git.v4/utils/merkletrie/index
 gopkg.in/src-d/go-git.v4/utils/merkletrie/internal/frame
 gopkg.in/src-d/go-git.v4/utils/merkletrie/noder
+# gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7
+gopkg.in/tomb.v1
 # gopkg.in/warnings.v0 v0.1.2
 gopkg.in/warnings.v0
 # gopkg.in/yaml.v2 v2.3.0
