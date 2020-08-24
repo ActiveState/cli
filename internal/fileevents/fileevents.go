@@ -37,7 +37,11 @@ func New(pj *project.Project) (*FileEvents, error) {
 		if event.Name() != eventName {
 			continue
 		}
-		for _, s := range event.Scope() {
+		scope, err := event.Scope()
+		if err != nil {
+			return nil, locale.WrapError(err, "err_fileevent_scope", "Could not get scope for event: {{.V0}}.", event.Name())
+		}
+		for _, s := range scope {
 			if err := fe.watcher.Add(filepath.Join(filepath.Dir(pj.Source().Path()), s)); err != nil {
 				return nil, locale.WrapError(err, "err_fileevent_addwatcher", "Could not watch for file events on {{.V0}}.", s)
 			}
@@ -55,7 +59,11 @@ func (fe *FileEvents) onEvent(affectedFilepath string, log logging.Logger) error
 			continue
 		}
 
-		eventPaths := event.Scope()
+		eventPaths, err := event.Scope()
+		if err != nil {
+			return locale.WrapError(err, "err_fileevent_scope", "Could not get scope for event: {{.V0}}.", event.Name())
+		}
+
 		projectPath := filepath.Clean(filepath.Dir(fe.pj.Source().Path()))
 		affectedFilepath = filepath.Clean(affectedFilepath)
 
@@ -89,12 +97,17 @@ func (fe *FileEvents) onEvent(affectedFilepath string, log logging.Logger) error
 			continue
 		}
 
-		logger := func(msg string, args ...interface{}) {
-			log(fmt.Sprintf("%s: ", event.Value())+msg, args...)
-		}
-		err := runScript(event.Value(), logger)
+		value, err := event.Value()
 		if err != nil {
-			return locale.NewError("err_fileevent_cmd", "Could not run the script `{{.V0}}`, please ensure its name is valid and you can run `state run {{.V0}}`.", event.Value())
+			return locale.WrapError(err, "err_fileevent_scope", "Could not get value for event: {{.V0}}.", event.Name())
+		}
+
+		logger := func(msg string, args ...interface{}) {
+			log(fmt.Sprintf("%s: ", value)+msg, args...)
+		}
+		err = runScript(value, logger)
+		if err != nil {
+			return locale.NewError("err_fileevent_cmd", "Could not run the script `{{.V0}}`, please ensure its name is valid and you can run `state run {{.V0}}`.", value)
 		}
 	}
 	return nil

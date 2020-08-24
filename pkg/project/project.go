@@ -610,12 +610,16 @@ func (e *Event) Value() (string, error) {
 }
 
 // Scope returns the scope property of the event
-func (e *Event) Scope() []string {
+func (e *Event) Scope() ([]string, error) {
 	result := []string{}
 	for _, s := range e.event.Scope {
-		result = append(result, Expand(s))
+		v, err := Expand(s, e.project.Outputer, e.project.Prompter)
+		if err != nil {
+			return result, err
+		}
+		result = append(result, v)
 	}
-	return result
+	return result, nil
 }
 
 // Script covers the command structure
