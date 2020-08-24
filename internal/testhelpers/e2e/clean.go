@@ -2,7 +2,6 @@ package e2e
 
 import (
 	"os"
-	"regexp"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -81,7 +80,3 @@ func deleteUser(name string) error {
 	return nil
 }
 
-func CleanOutput(v string) string {
-	re, _ := regexp.Compile(`\s+`)
-	return re.ReplaceAllString(v, " ")
-}
