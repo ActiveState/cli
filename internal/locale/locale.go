@@ -159,7 +159,7 @@ func Tt(translationID string, args ...interface{}) string {
 
 	// Replace newlines in yaml strings with space to avoid concatenated words
 	replaceRegex := regexp.MustCompile(`\s*\n`)
-	translation = replaceRegex.ReplaceAllString(translation, " $1")
+	translation = replaceRegex.ReplaceAllString(translation, " ")
 	translation = strings.Replace(translation, "{{BR}}", "\n", -1)
 	// Avoid indentation after newlines
 	translation = strings.Replace(translation, "\n ", "\n", -1)
