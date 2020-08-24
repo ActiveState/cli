@@ -76,10 +76,6 @@ func run(out output.Outputer, subs subshell.SubShell, name string, args []string
 		return fail
 	}
 
-	var (
-		lang      language.Language
-		attempted []string
-	)
 	path := os.Getenv("PATH")
 	// Activate the state if needed.
 	if !script.Standalone() && subshell.IsActivated() {
@@ -107,12 +103,34 @@ func run(out output.Outputer, subs subshell.SubShell, name string, args []string
 		path = env["PATH"]
 	}
 
+	var (
+		lang      language.Language
+		attempted []string
+	)
 	for _, l := range script.Languages() {
+		lang = l
 		if pathProvidesLang(path, l) {
-			lang = l
 			break
 		}
 		attempted = append(attempted, l.String())
+	}
+
+	if lang == language.Unknown {
+		return locale.NewError(
+			"err_run_unknown_language",
+			"The language for this script is not supported. Please configure the 'language' field with a valid option (one, or more, of {{.V0}})", strings.Join(language.RecognizedNames(), ", "),
+		)
+	}
+
+	if lang == language.Unset {
+		warning := locale.Tl(
+			"run_warn_deprecated_script_without_language",
+			"[YELLOW]DEPRECATION WARNING: Scripts without defined language currently fall back to using the default shell for your platform. This fallback mechanic will soon stop working and a language will need to be explicitly defined for each script. Please configure the 'language' field with a valid option (one of {{.V0}})[/RESET]",
+			strings.Join(language.RecognizedNames(), ", "),
+		)
+		out.Notice(warning)
+
+		lang = language.MakeByShell(subs.Shell())
 	}
 
 	if !lang.Recognized() {
