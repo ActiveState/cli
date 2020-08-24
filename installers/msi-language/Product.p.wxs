@@ -17,9 +17,9 @@
 	<Property Id="CODE_INSTALLED" Value="false" />
     <!-- End Configuration parameters -->
 
-    <PropertyRef Id="WIX_IS_NETFRAMEWORK_452_OR_LATER_INSTALLED"/>
-    <Condition Message="This application requires .NET Framework 4.5.2 or later. Please install the .NET Framework then run this installer again.  The installer can be downloaded from https://www.microsoft.com/en-us/download/details.aspx?id=42643.">
-      <![CDATA[TRUE]]>
+    <PropertyRef Id="WIX_IS_NETFRAMEWORK_45_OR_LATER_INSTALLED"/>
+    <Condition Message="This application requires .NET Framework 4.5.0 or later. Please install the .NET Framework then run this installer again.  The installer can be downloaded from https://www.microsoft.com/en-us/download/details.aspx?id=42643.">
+      <![CDATA[Installed OR WIX_IS_NETFRAMEWORK_45_OR_LATER_INSTALLED]]>
     </Condition>
 
     <!-- Design assets -->
@@ -101,7 +101,6 @@
 			<DialogRef Id="BrowseDlg" />
 			<DialogRef Id="DiskCostDlg" />
 			<DialogRef Id="ErrorDlg" />
-			<DialogRef Id="FatalError" />
 			<DialogRef Id="FilesInUse" />
 			<DialogRef Id="MsiRMFilesInUse" />
 			<DialogRef Id="PrepareDlg" />
@@ -112,13 +111,21 @@
 			<Publish Dialog="BrowseDlg" Control="OK" Event="DoAction" Value="WixUIValidatePath" Order="3">1</Publish>
 			<Publish Dialog="BrowseDlg" Control="OK" Event="SpawnDialog" Value="InvalidDirDlg" Order="4"><![CDATA[NOT WIXUI_DONTVALIDATEPATH AND WIXUI_INSTALLDIR_VALID<>"1"]]></Publish>
 
-			<Publish Dialog="CustomExitDialog" Control="Finish2" Event="EndDialog" Value="Return" Order="999">1</Publish>
-      		<Publish Dialog="CustomExitDialog" Control="Finish2" Event="DoAction" Value="LaunchStateToolWizardInstalled">STATE_TOOL_WIZARD_CHECK_BOX=1 and NOT Installed and STATE_TOOL_INSTALLED = "true"</Publish>
-      		<Publish Dialog="CustomExitDialog" Control="Finish2" Event="DoAction" Value="LaunchStateToolWizardNotInstalled">STATE_TOOL_WIZARD_CHECK_BOX=1 and NOT Installed and STATE_TOOL_INSTALLED = "false"</Publish>
-			<Publish Dialog="CustomExitDialog" Control="Finish2" Event="DoAction" Value="LaunchReleaseNotes">STATE_TOOL_WIZARD_REL_NOTES_CHECK_BOX=1 and NOT Installed</Publish>
-			<Publish Dialog="CustomExitDialog" Control="Finish2" Event="DoAction" Value="InstallVSCodeExt">INSTALL_VSCODE_EXT_CHECK_BOX=1 and NOT Installed</Publish>
+			<Publish Dialog="CustomExitDialog" Control="Finish" Event="EndDialog" Value="Return" Order="999">1</Publish>
+      		<Publish Dialog="CustomExitDialog" Control="Finish" Event="DoAction" Value="LaunchStateToolWizardInstalled">STATE_TOOL_WIZARD_CHECK_BOX=1 and NOT Installed and STATE_TOOL_INSTALLED = "true"</Publish>
+      		<Publish Dialog="CustomExitDialog" Control="Finish" Event="DoAction" Value="LaunchStateToolWizardNotInstalled">STATE_TOOL_WIZARD_CHECK_BOX=1 and NOT Installed and STATE_TOOL_INSTALLED = "false"</Publish>
+			<Publish Dialog="CustomExitDialog" Control="Finish" Event="DoAction" Value="LaunchReleaseNotes">STATE_TOOL_WIZARD_REL_NOTES_CHECK_BOX=1 and NOT Installed</Publish>
+			<Publish Dialog="CustomExitDialog" Control="Finish" Event="DoAction" Value="InstallVSCodeExt">INSTALL_VSCODE_EXT_CHECK_BOX=1 and NOT Installed</Publish>
+            <Publish Dialog="CustomExitDialog" Control="Finish" Event="DoAction" Value="GAReportSuccess">NOT Installed OR REINSTALL OR (NOT REMOVE~="ALL")</Publish>
 
-			<Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="PrivacyConsentDlg">NOT Installed</Publish>
+
+          <Publish Dialog="CustomFatalError" Control="Finish" Event="EndDialog" Value="Return" Order="999">1</Publish>
+            <Publish Dialog="CustomFatalError" Control="Finish" Event="DoAction" Value="GAPixel">NOT WIX_IS_NETFRAMEWORK_45_OR_LATER_INSTALLED</Publish>
+            <Publish Dialog="CustomFatalError" Control="Finish" Event="DoAction" Value="GAReportFailure">NOT Installed OR REINSTALL OR (NOT REMOVE~="ALL")</Publish>
+
+			<Publish Dialog="UserExit" Control="Finish" Event="DoAction" Value="GAReportUserExit">NOT Installed OR REINSTALL OR (NOT REMOVE~="ALL")</Publish>
+
+            <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="PrivacyConsentDlg">NOT Installed</Publish>
 			<Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="VerifyReadyDlg">Installed AND PATCH</Publish>
 
 			<Publish Dialog="PrivacyConsentDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg">1</Publish>
@@ -165,6 +172,7 @@
 		<Property Id="IS_MODIFY" Value="false" />
 
 		<InstallUISequence>
+            <Custom Action="GAReportStart" After="AppSearch">Not Installed OR REINSTALL OR (NOT REMOVE~="ALL")</Custom>
 			<Custom Action="CommandsExist" After="CostFinalize">NOT Installed OR (Installed AND NOT (REMOVE~="ALL"))</Custom>
 			<Custom Action="SetIsModify" After="CommandsExist">(Installed AND NOT (REMOVE~="ALL"))</Custom>
 			<Custom Action="SetInstallDirOnModify" After="SetIsModify">(Installed AND NOT (REMOVE~="ALL"))</Custom>
@@ -185,8 +193,10 @@
 		<CustomAction Id="SetPresetInfo" Property="Preset" Value="REL_NOTES=[REL_NOTES];INSTALLDIR=[INSTALLDIR];APP_START_MENU_PATH=[ApplicationProgramsFolder];PRESET=[PRESET];COMMIT_ID=[COMMIT_ID]" />
 		<CustomAction Id="SetRollbackPropertyValues" Property="Rollback" Value="STATE_TOOL_INSTALLED=[STATE_TOOL_INSTALLED];INSTALLDIR=[INSTALLDIR];COMMIT_ID=[COMMIT_ID]" />
 
+        <Binary Id="GAPixelCA" SourceFile="$(var.GAPixel.TargetDir)$(var.GAPixel.TargetName).CA.dll" />
+        <CustomAction Id="GAPixel" Impersonate="yes" BinaryKey="GAPixelCA" DllEntry="SendPixel" Return="ignore" />
 
-    <Binary Id="CommandsCA" SourceFile="$(var.StateCommandExists.TargetDir)$(var.StateCommandExists.TargetName).CA.dll" />
+        <Binary Id="CommandsCA" SourceFile="$(var.StateCommandExists.TargetDir)$(var.StateCommandExists.TargetName).CA.dll" />
 		<CustomAction Id="CommandsExist" Impersonate="yes" BinaryKey="CommandsCA" DllEntry="CheckCommands" Return="check" />
 
 		<Binary Id="StatusCA" SourceFile="$(var.Status.TargetDir)$(var.Status.TargetName).CA.dll" />
@@ -194,6 +204,10 @@
 
 		<Binary Id="StateDeployCA" SourceFile="$(var.StateDeploy.TargetDir)$(var.StateDeploy.TargetName).CA.dll" />
 		<CustomAction Id="StateDeploy" Impersonate="no" BinaryKey="StateDeployCA" DllEntry="StateDeploy" Execute="deferred" Return="check" />
+		<CustomAction Id="GAReportStart" Impersonate="yes" BinaryKey="StateDeployCA" DllEntry="GAReportStart" Execute="immediate" Return="ignore" />
+		<CustomAction Id="GAReportUserExit" Impersonate="yes" BinaryKey="StateDeployCA" DllEntry="GAReportUserExit" Execute="immediate" Return="ignore" />
+		<CustomAction Id="GAReportFailure" Impersonate="yes" BinaryKey="StateDeployCA" DllEntry="GAReportFailure" Execute="immediate" Return="ignore" />
+		<CustomAction Id="GAReportSuccess" Impersonate="yes" BinaryKey="StateDeployCA" DllEntry="GAReportSuccess" Execute="immediate" Return="ignore" />
 
 		<Binary Id="PresetCA" SourceFile="$(var.Preset.TargetDir)$(var.Preset.TargetName).CA.dll" />
 		<CustomAction Id="Preset" Impersonate="no" BinaryKey="PresetCA" DllEntry="InstallPreset" Execute="deferred" Return="check" />

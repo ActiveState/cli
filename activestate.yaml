@@ -5,14 +5,8 @@ constants:
   - name: CLI_PKGS
     value: ./cmd/state
   - name: BUILD_TARGET
-    if: eq .OS.Name "Windows"
-    value: ./build/state.exe
-  - name: BUILD_TARGET
     if: ne .OS.Name "Windows"
     value: ./build/state
-  - name: BUILD_TARGET_32BIT
-    if: eq .OS.Name "Windows"
-    value: ./build/state32.exe
   - name: BUILD_TARGET_32BIT
     if: ne .OS.Name "Windows"
     value: ./build/state32
@@ -62,35 +56,8 @@ scripts:
       set -e
       $constants.SET_ENV
       export GOOS=${1}
+      [ -z "${2}" ] && >&2 echo "must provide output file as 2nd arg" && exit 1
       go build -tags "internal $GO_BUILD_TAGS" -o ${2} $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
-  - name: generate-version
-    language: bash
-    description: Generate version file
-    value: |
-      mkdir -p build/update
-      wget -O build/update/version.json https://s3.ca-central-1.amazonaws.com/cli-update/update/state/version.json
-  - name: generate-update
-    language: bash
-    description: Generate update files
-    value: |
-      set -e
-      $constants.SET_ENV
-
-      export GOARCH=${1:-amd64}
-      export TARGET_SUFFIX=${1:-}
-      mkdir -p build/update
-      go run scripts/update-generator/main.go -o build/update $constants.BUILD_TARGET${TARGET_SUFFIX}
-  - name: generate-update-32bit
-    language: bash
-    description: Generate update files
-    value: |
-      set -e
-      $constants.SET_ENV
-
-      export GOARCH=386
-
-      mkdir -p build/update
-      go run scripts/update-generator/main.go -o build/update $constants.BUILD_TARGET_32BIT
   - name: install
     language: bash
     description: Installs the current HEAD version into GOBIN
@@ -106,13 +73,6 @@ scripts:
   - name: build-install-scripts
     language: bash
     standalone: true
-    if: eq .OS.Name "Windows"
-    description: Copies install scripts to build dir, this script exists for transparency with CI behavior
-    value: |
-      cp installers/install.ps1 build/install.ps1
-  - name: build-install-scripts
-    language: bash
-    standalone: true
     if: ne .OS.Name "Windows"
     description: Copies install scripts to build dir, this script exists for transparency with CI behavior
     value: |
@@ -124,101 +84,6 @@ scripts:
       go run scripts/s3-deployer/main.go build/install.sh ca-central-1 cli-update update/state/install.sh
       go run scripts/s3-deployer/main.go build/install.ps1 ca-central-1 cli-update update/state/install.ps1
       go run scripts/s3-deployer/main.go build/msi us-east-1 cli-msi /
-  - name: generate-api-client
-    language: bash
-    description: Generates the mono-api client files
-    value: |
-      WD=$(pwd)
-      pushd pkg/platform/api/mono
-      swagger generate client -f ${WD}/../TheHomeRepot/service/api/swagger/swagger.yaml -A mono -a mono_operations -m mono_models -c mono_client
-      popd
-  - name: generate-secrets-client
-    language: bash
-    description: Generates the secrets-api client files
-    value: |
-      WD=$(pwd)
-      pushd pkg/platform/api/secrets
-      swagger generate client -f ${WD}/../TheHomeRepot/service/secrets/api/swagger.yaml -A secrets -a secrets_operations -m secrets_models -c secrets_client
-      popd
-  - name: generate-headchef-client
-    language: bash
-    description: Generates the headchef-api client files
-    value: |
-      WD=$(pwd)
-      pushd pkg/platform/api/headchef
-      swagger generate client --with-flatten full -f ${WD}/../TheHomeRepot/service/head-chef/swagger.json -A headchef -a headchef_operations -m headchef_models -c headchef_client
-      popd
-  - name: generate-inventory-client
-    language: bash
-    description: Generates the inventory-api client files
-    value: |
-      WD=$(pwd)
-      pushd pkg/platform/api/inventory
-      swagger generate client --with-flatten full -f ${WD}/../TheHomeRepot/service/inventory-api-v1/swagger.json -A inventory -a inventory_operations -m inventory_models -c inventory_client
-      popd
-  - name: generate-clients
-    language: bash
-    description: Generates all api clients
-    value: |
-      $scripts.generate-api-client
-      $scripts.generate-secrets-client
-      $scripts.generate-headchef-client
-      $scripts.generate-inventory-client
-  - name: generate-locale
-    language: bash
-    description: Detects new localisation calls and generates placeholder entries in en-us.yaml
-    value: python3 scripts/locale-generator.py
-  - name: build-msi-state
-    language: bash
-    description: Build the state tool MSI, requires that you have wixtools installed and on PATH
-    standalone: true
-    if: eq .OS.Name "Windows"
-    value: |
-      export GOFLAGS='-mod=vendor'
-      go build -o ./installers/msi-state/rmpath/rmpath.exe $constants.CLI_BUILDFLAGS ./installers/msi-state/rmpath/main.go
-      candle.exe ./installers/msi-state/install.wxs -o ./installers/msi-state/install.wixobj -ext WixUIExtension -ext WixUtilExtension
-      light.exe ./installers/msi-state/install.wixobj -o ./build/msi/state_tool.msi -sice:ICE91 -sice:ICE64 -ext WixUIExtension -ext WixUtilExtension
-      rm ./build/msi/state_tool.wixpdb || true
-  - name: build-msi-language
-    language: bash
-    description: Builds the language MSI, requires that you have .NET 4.x installed and on PATH
-    standalone: true
-    if: eq .OS.Name "Windows"
-    value: |
-      set -e
-      export GOFLAGS='-mod=vendor'
-
-      go run ./scripts/msi-installer-builder $*
-
-      PROJECT_OWNER_NAME=${3}
-      PROJECT_NAME=${PROJECT_OWNER_NAME##*/}
-
-      dir=$(cmd //C echo %CD%)
-
-      msbuild.exe installers/msi-language/Deploy.wixproj /target:Build "//p:Configuration=Release;Platform=x64;RunWixToolsOutOfProc=true;OutDir=$dir\\build\\msi-language\\"
-      echo "Copying MSI to build/msi/${PROJECT_NAME}.msi"
-      cp build/msi-language/en-us/Deploy.msi "build/msi/${PROJECT_NAME}.msi"
-      rm -Rf build/msi-language
-  - name: build-base-language-msi
-    description: |
-      Builds the language MSI with no project information, requires that you have .NET 4.x installed and on PATH.
-      The resulting MSI requires project information be injected in order to be functional.
-    standalone: true
-    language: bash
-    if: eq .OS.Name "Windows"
-    value: |
-      set -e
-
-      export GOFLAGS='-mod=vendor'
-      dir=$(cmd //C echo %CD%)
-
-      go run ./scripts/msi-installer-builder base
-
-      msbuild.exe installers/msi-language/Deploy.wixproj /target:Build "//p:Configuration=Release;Platform=x64;RunWixToolsOutOfProc=true;OutDir=$dir\\build\\msi-language\\"
-      echo "Copying MSI to build/msi/base.msi"
-      mkdir -p build/msi
-      cp build/msi-language/en-us/Deploy.msi "build/msi/base.msi"
-      rm -Rf build/msi-language
   - name: build-workflows
     language: bash
     description: Generates our github workflows

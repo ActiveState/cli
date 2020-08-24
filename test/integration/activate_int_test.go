@@ -246,8 +246,8 @@ func (suite *ActivateIntegrationTestSuite) TestInit_Activation_NoCommitID() {
 		e2e.WithArgs("activate"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
+	cp.ExpectLongString(locale.Tr("err_project_no_commit", url))
 	cp.ExpectExitCode(1)
-	suite.Contains(e2e.CleanOutput(cp.Snapshot()), locale.Tr("err_project_no_commit", url))
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivate_InterruptedInstallation() {

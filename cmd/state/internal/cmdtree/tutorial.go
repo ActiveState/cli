@@ -26,13 +26,11 @@ func newTutorialCommand(prime *primer.Values) *captain.Command {
 
 func newTutorialProjectCommand(prime *primer.Values) *captain.Command {
 	runner := tutorial.New(prime)
-	params := tutorial.NewProjectParams{
-		SkipIntro: true,
-	}
+	params := tutorial.NewProjectParams{}
 
 	cmd := captain.NewCommand(
 		"new-project",
-		locale.Tl("tutorial_description", "Learn how to create new projects (ie. virtual environments)"),
+		locale.Tl("tutorial_description", "Learn how to create new projects. (ie. virtual environments)"),
 		[]*captain.Flag{
 			{
 				Name:        "skip-intro",

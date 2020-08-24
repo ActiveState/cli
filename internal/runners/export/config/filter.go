@@ -60,7 +60,7 @@ func (f *Filter) Set(value string) error {
 	}
 
 	if len(f.terms) == 0 {
-		return locale.NewError("err_invalid_filter", value, strings.Join(SupportedFilters(), ", "))
+		return locale.NewError("err_invalid_filter", "Invalid filter term specified: '{{.V0}}'; Supported terms: {{.V1}}", value, strings.Join(SupportedFilters(), ", "))
 	}
 	return nil
 }
