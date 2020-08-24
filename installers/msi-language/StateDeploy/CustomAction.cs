@@ -251,6 +251,7 @@ namespace StateDeploy
         public static ActionResult InstallStateTool(Session session, out string stateToolPath)
         {
             RollbarHelper.ConfigureRollbarSingleton(session.CustomActionData["COMMIT_ID"]);
+            var productVersion = session.CustomActionData["PRODUCT_VERSION"];
 
             session.Log("Installing State Tool if necessary");
             if (session.CustomActionData["STATE_TOOL_INSTALLED"] == "true")
@@ -258,7 +259,7 @@ namespace StateDeploy
                 stateToolPath = session.CustomActionData["STATE_TOOL_PATH"];
                 session.Log("State Tool is installed, no installation required");
                 Status.ProgressBar.Increment(session, 1);
-                TrackerSingleton.Instance.TrackEventInBackground(session, "stage", "state-tool", "skipped");
+                TrackerSingleton.Instance.TrackEventInBackground(session, "stage", "state-tool", "skipped", productVersion);
                 return ActionResult.Success;
             }
 
@@ -268,11 +269,11 @@ namespace StateDeploy
             var ret = _installStateTool(session, out stateToolPath);
             if (ret == ActionResult.Success)
             {
-                TrackerSingleton.Instance.TrackEventInBackground(session, "stage", "state-tool", "success");
+                TrackerSingleton.Instance.TrackEventInBackground(session, "stage", "state-tool", "success", productVersion);
             }
             else if (ret == ActionResult.Failure)
             {
-                TrackerSingleton.Instance.TrackEventInBackground(session, "stage", "state-tool", "failure");
+                TrackerSingleton.Instance.TrackEventInBackground(session, "stage", "state-tool", "failure", productVersion);
             }
             return ret;
         }
@@ -349,6 +350,7 @@ namespace StateDeploy
         [CustomAction]
         public static ActionResult StateDeploy(Session session)
         {
+            var productVersion = session.CustomActionData["PRODUCT_VERSION"];
             ActiveState.RollbarHelper.ConfigureRollbarSingleton(session.CustomActionData["COMMIT_ID"]);
 
             if (!Environment.Is64BitOperatingSystem)
@@ -410,12 +412,12 @@ namespace StateDeploy
                         record.FormatString = String.Format("{0} failed with error:\n{1}", seq.Description, errorOutput);
 
                         MessageResult msgRes = session.Message(InstallMessage.Error | (InstallMessage)MessageBoxButtons.OK, record);
-                        TrackerSingleton.Instance.TrackEventSynchronously(session, "stage", "artifacts", "failure");
+                        TrackerSingleton.Instance.TrackEventSynchronously(session, "stage", "artifacts", "failure", productVersion);
 
                         return runResult;
                     }
                 }
-                TrackerSingleton.Instance.TrackEventInBackground(session, "stage", "artifacts", "success");
+                TrackerSingleton.Instance.TrackEventSynchronously(session, "stage", "artifacts", "success", productVersion);
             }
             catch (Exception objException)
             {
@@ -485,7 +487,7 @@ namespace StateDeploy
         public static ActionResult GAReportFailure(Session session)
         {
             session.Log("sending event about starting the MSI");
-            TrackerSingleton.Instance.TrackEventSynchronously(session, "stage", "finished", "failure");
+            TrackerSingleton.Instance.TrackEventSynchronously(session, "stage", "finished", "failure", session["ProductVersion"]);
             return ActionResult.Success;
         }
 
@@ -493,7 +495,7 @@ namespace StateDeploy
         public static ActionResult GAReportSuccess(Session session)
         {
             session.Log("sending event about starting the MSI");
-            TrackerSingleton.Instance.TrackEventSynchronously(session, "stage", "finished", "success");
+            TrackerSingleton.Instance.TrackEventSynchronously(session, "stage", "finished", "success", session["ProductVersion"]);
             return ActionResult.Success;
         }
 
@@ -505,7 +507,7 @@ namespace StateDeploy
         public static ActionResult GAReportStart(Session session)
         {
             session.Log("sending event about starting the MSI");
-            TrackerSingleton.Instance.TrackEventSynchronously(session, "stage", "started", "");
+            TrackerSingleton.Instance.TrackEventSynchronously(session, "stage", "started", "", session["ProductVersion"]);
             return ActionResult.Success;
         }
 
@@ -516,7 +518,7 @@ namespace StateDeploy
         public static ActionResult GAReportUserExit(Session session)
         {
             session.Log("sending user exit event");
-            TrackerSingleton.Instance.TrackEventSynchronously(session, "stage", "finished", "cancelled");
+            TrackerSingleton.Instance.TrackEventSynchronously(session, "stage", "finished", "cancelled", session["ProductVersion"]);
             return ActionResult.Success;
         }
     }
