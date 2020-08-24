@@ -4,7 +4,6 @@ using GoogleAnalyticsTracker.Core.TrackerParameters;
 using GoogleAnalyticsTracker.Simple;
 using Microsoft.Deployment.WindowsInstaller;
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 
@@ -21,15 +20,21 @@ namespace ActiveState
         public static TrackerSingleton Instance {  get { return lazy.Value; } }
 
         public TrackerSingleton()
-		{
+        {
             var simpleTrackerEnvironment = new SimpleTrackerEnvironment(Environment.OSVersion.Platform.ToString(),
                 Environment.OSVersion.Version.ToString(),
                 Environment.OSVersion.VersionString);
             this._tracker = new SimpleTracker(GoogleAnalyticsUserAgent, simpleTrackerEnvironment);
             this._cid = GetInfo.GetUniqueId();
-  		}
+        }
 
-        public async Task<TrackingResult> TrackEventAsync(string category, string action, string label, long value = 1)
+        private string modifyVersionString(string versionProperty)
+	{
+            var versionParts = versionProperty.Split('.');
+            return String.Format("{0}.{1}-CE", versionParts[0], versionParts[1]);
+	}
+
+        public async Task<TrackingResult> TrackEventAsync(string category, string action, string label, string msiVersion, long value = 1)
         {
             var eventTrackingParameters = new EventTracking
             {
@@ -40,6 +45,7 @@ namespace ActiveState
             };
 
             eventTrackingParameters.ClientId = this._cid;
+            eventTrackingParameters.SetCustomDimensions(new System.Collections.Generic.Dictionary<int, string> { { 1, msiVersion } });
 
             return await this._tracker.TrackAsync(eventTrackingParameters);
         }
@@ -51,19 +57,21 @@ namespace ActiveState
         /// The event can fail to be send if the main process gets cancelled before the task finishes.
         /// Use the synchronous version of this command in that case.
         /// </description>
-        public void TrackEventInBackground(Session session, string category, string action, string label, long value=1)
-		{
-            session.Log("Sending background event {0}/{1}/{2} for cid={3}", category, action, label, this._cid);
-            Task.Run(() => TrackEventAsync(category, action, label, value));
-		}
+        public void TrackEventInBackground(Session session, string category, string action, string label, string productVersion, long value=1)
+	{
+            var langVersion = modifyVersionString(productVersion);
+            session.Log("Sending background event {0}/{1}/{2} for cid={3} (custom dimension 1: {4})", category, action, label, this._cid, langVersion);
+            Task.Run(() => TrackEventAsync(category, action, label, langVersion, value));
+	}
 
         /// <summary>
         /// Sends a GA event and waits for the request to complete.
         /// </summary>
-        public void TrackEventSynchronously(Session session, string category, string action, string label, long value=1)
+        public void TrackEventSynchronously(Session session, string category, string action, string label, string productVersion, long value=1)
         {
-            session.Log("Sending event {0}/{1}/{2} for cid={3}", category, action, label, this._cid);
-            var t = Task.Run(() => TrackEventAsync(category, action, label, value));
+            var langVersion = modifyVersionString(productVersion);
+            session.Log("Sending event {0}/{1}/{2} for cid={3} (custom dimension 1: {4})", category, action, label, this._cid, langVersion);
+            var t = Task.Run(() => TrackEventAsync(category, action, label, langVersion, value));
             t.Wait();
         }
     }
