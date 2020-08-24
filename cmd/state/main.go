@@ -49,8 +49,7 @@ func main() {
 		osv, err := sysinfo.OSVersion()
 		if err != nil {
 			logging.Debug("Could not retrieve os version info: %v", err)
-		}
-		if osv.Major < 10 {
+		} else if osv.Major < 10 {
 			out.Notice(locale.Tr(
 				"windows_compatibility_warning",
 				constants.ForumsURL,
