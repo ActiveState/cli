@@ -104,7 +104,7 @@ func run(out output.Outputer, subs subshell.SubShell, name string, args []string
 		if err != nil {
 			return err
 		}
-		path = env["PATH"] + string(os.PathSeparator) + path
+		path = env["PATH"]
 	}
 
 	for _, l := range script.Languages() {
