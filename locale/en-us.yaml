@@ -1667,3 +1667,6 @@ ppm_convert_ask_feedback:
     [[BR]]
     To create another project run `state init`, or if you want to find out more about the State Tool and what it can do
     run `state --help` or check out {{.Docs}}
+windows_compatibility_warning:
+  other: |
+    Warning: State Tool is untested on Windows versions below 10. If you encounter issues please consider reporting them on {{.V0}}

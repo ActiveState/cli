@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"os/exec"
+	"runtime"
 
 	"github.com/ActiveState/cli/cmd/state/internal/cmdtree"
 	"github.com/ActiveState/cli/internal/config" // MUST be first!
@@ -23,6 +24,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/ActiveState/sysinfo"
 )
 
 // FailMainPanic is a failure due to a panic occuring while runnig the main function
@@ -41,6 +43,18 @@ func main() {
 	if fail != nil {
 		os.Stderr.WriteString(locale.Tr("err_main_outputer", fail.Error()))
 		os.Exit(1)
+	}
+
+	if runtime.GOOS == "windows" {
+		osv, err := sysinfo.OSVersion()
+		if err != nil {
+			logging.Debug("Could not retrieve os version info: %v", err)
+		} else if osv.Major < 10 {
+			out.Notice(locale.Tr(
+				"windows_compatibility_warning",
+				constants.ForumsURL,
+			))
+		}
 	}
 
 	// Set up our legacy outputer
