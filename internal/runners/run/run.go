@@ -156,7 +156,7 @@ func run(out output.Outputer, subs subshell.SubShell, name string, args []string
 	err := subs.Run(sf.Filename(), args...)
 	if err != nil {
 		if len(attempted) > 0 {
-			return locale.WrapError(
+			return locale.WrapInputError(
 				err,
 				"err_run_script",
 				"Script execution fell back to {{.V0}} after {{.V1}} was not detected in your project or system. Please ensure your script is compatible with {{.V0}}, {{.V1}}",
