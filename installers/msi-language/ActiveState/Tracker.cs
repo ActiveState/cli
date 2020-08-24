@@ -28,12 +28,6 @@ namespace ActiveState
             this._cid = GetInfo.GetUniqueId();
         }
 
-        private string modifyVersionString(string versionProperty)
-	{
-            var versionParts = versionProperty.Split('.');
-            return String.Format("{0}.{1}-CE", versionParts[0], versionParts[1]);
-	}
-
         public async Task<TrackingResult> TrackEventAsync(string category, string action, string label, string msiVersion, long value = 1)
         {
             var eventTrackingParameters = new EventTracking
@@ -57,9 +51,8 @@ namespace ActiveState
         /// The event can fail to be send if the main process gets cancelled before the task finishes.
         /// Use the synchronous version of this command in that case.
         /// </description>
-        public void TrackEventInBackground(Session session, string category, string action, string label, string productVersion, long value=1)
+        public void TrackEventInBackground(Session session, string category, string action, string label, string langVersion, long value=1)
 	{
-            var langVersion = modifyVersionString(productVersion);
             session.Log("Sending background event {0}/{1}/{2} for cid={3} (custom dimension 1: {4})", category, action, label, this._cid, langVersion);
             Task.Run(() => TrackEventAsync(category, action, label, langVersion, value));
 	}
@@ -67,9 +60,8 @@ namespace ActiveState
         /// <summary>
         /// Sends a GA event and waits for the request to complete.
         /// </summary>
-        public void TrackEventSynchronously(Session session, string category, string action, string label, string productVersion, long value=1)
+        public void TrackEventSynchronously(Session session, string category, string action, string label, string langVersion, long value=1)
         {
-            var langVersion = modifyVersionString(productVersion);
             session.Log("Sending event {0}/{1}/{2} for cid={3} (custom dimension 1: {4})", category, action, label, this._cid, langVersion);
             var t = Task.Run(() => TrackEventAsync(category, action, label, langVersion, value));
             t.Wait();
