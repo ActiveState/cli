@@ -102,6 +102,7 @@ type Project struct {
 	Secrets      *SecretScopes `yaml:"secrets,omitempty"`
 	Events       Events        `yaml:"events,omitempty"`
 	Scripts      Scripts       `yaml:"scripts,omitempty"`
+	Jobs         Jobs          `yaml:"jobs,omitempty"`
 	Private      bool          `yaml:"private,omitempty"`
 	path         string        // "private"
 
@@ -438,6 +439,16 @@ func MakeScriptsFromConstrainedEntities(items []ConstrainedEntity) (scripts []*S
 	}
 	return scripts
 }
+
+// Job covers the job structure, which goes under Project
+type Job struct {
+	Name      string   `yaml:"name"`
+	Constants []string `yaml:"constants"`
+	Scripts   []string `yaml:"scripts"`
+}
+
+// Jobs is a slice of jobs
+type Jobs []Job
 
 var persistentProject *Project
 

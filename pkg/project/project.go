@@ -83,6 +83,15 @@ func (p *Project) Constants() []*Constant {
 	return constants
 }
 
+// ConstantsAsMap returns constants defined as a map
+func (p *Project) ConstantsAsMap() map[string]interface{} {
+	result := map[string]interface{}{}
+	for _, c := range p.Constants() {
+		result[c.Name()] = c.Value()
+	}
+	return result
+}
+
 // ConstantByName returns a constant matching the given name (if any)
 func (p *Project) ConstantByName(name string) *Constant {
 	for _, constant := range p.Constants() {
@@ -168,6 +177,15 @@ func (p *Project) ScriptByName(name string) *Script {
 		}
 	}
 	return nil
+}
+
+// Jobs returns a reference to projectfile.Jobs
+func (p *Project) Jobs() []*Job {
+	jobs := []*Job{}
+	for _, j := range p.projectfile.Jobs {
+		jobs = append(jobs, &Job{&j, p})
+	}
+	return jobs
 }
 
 // URL returns the Project field of the project file
@@ -650,4 +668,34 @@ func (script *Script) setCachedFile(filename string) {
 // filename returns the name of the file associated with this script
 func (script *Script) cachedFile() string {
 	return script.script.Filename
+}
+
+// Job covers the command structure
+type Job struct {
+	job     *projectfile.Job
+	project *Project
+}
+
+func (j *Job) Name() string {
+	return j.job.Name
+}
+
+func (j *Job) Constants() []*Constant {
+	constants := []*Constant{}
+	for _, constantName := range j.job.Constants {
+		if constant := j.project.ConstantByName(constantName); constant != nil {
+			constants = append(constants, constant)
+		}
+	}
+	return constants
+}
+
+func (j *Job) Scripts() []*Script {
+	scripts := []*Script{}
+	for _, scriptName := range j.job.Scripts {
+		if script := j.project.ScriptByName(scriptName); script != nil {
+			scripts = append(scripts, script)
+		}
+	}
+	return scripts
 }
