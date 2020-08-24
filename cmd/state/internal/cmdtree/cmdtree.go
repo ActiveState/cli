@@ -33,6 +33,7 @@ func New(prime *primer.Values) *CmdTree {
 		newPrivateKeyCommand(prime),
 		newAPIKeyCommand(prime),
 		newExportConfigCommand(prime),
+		newExportGithubActionCommand(prime),
 	)
 
 	packagesCmd := newPackagesCommand(prime)
