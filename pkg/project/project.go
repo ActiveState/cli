@@ -88,15 +88,6 @@ func (p *Project) Constants() []*Constant {
 	return constants
 }
 
-// ConstantsAsMap returns constants defined as a map
-func (p *Project) ConstantsAsMap() map[string]interface{} {
-	result := map[string]interface{}{}
-	for _, c := range p.Constants() {
-		result[c.Name()] = c.Value()
-	}
-	return result
-}
-
 // ConstantByName returns a constant matching the given name (if any)
 func (p *Project) ConstantByName(name string) *Constant {
 	for _, constant := range p.Constants() {
