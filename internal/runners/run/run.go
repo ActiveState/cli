@@ -132,7 +132,7 @@ func run(out output.Outputer, subs subshell.SubShell, name string, args []string
 	}
 
 	if lang == language.Unknown {
-		return locale.NewError(
+		return locale.NewInputError(
 			"err_run_unknown_language",
 			"The language for this script is not supported. Please configure the 'language' field with a valid option (one, or more, of {{.V0}})", strings.Join(language.RecognizedNames(), ", "),
 		)
