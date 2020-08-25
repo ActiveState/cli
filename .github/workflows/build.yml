@@ -105,7 +105,12 @@ jobs:
     - name: Sign
       shell: bash
       if: runner.os == 'Windows'
-      run: "echo $MSI_CERT_BASE64 | base64 --decode > Cert.p12\nexport PATH=/c/Program\\ Files\\ \\(x86\\)/WiX\\ Toolset\\ v3.11/bin/:/c/Program\\ Files\\ \\(x86\\)/Windows\\ Kits/10/bin/10.0.16299.0/x86/:$PATH\n\nsigntool.exe sign -d \"ActiveState State Tool\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/state.exe \nsigntool.exe sign -d \"ActiveState State Tool (32bit)\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/state32.exe \n"
+      run: "echo $MSI_CERT_BASE64 | base64 --decode > Cert.p12\nexport PATH=/c/Program\\
+        Files\\ \\(x86\\)/WiX\\ Toolset\\ v3.11/bin/:/c/Program\\ Files\\ \\(x86\\)/Windows\\
+        Kits/10/bin/10.0.16299.0/x86/:$PATH\n\nsigntool.exe sign -d \"ActiveState
+        State Tool\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/state.exe \nsigntool.exe
+        sign -d \"ActiveState State Tool (32bit)\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD}
+        ./build/state32.exe \n"
       env:
         CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
         MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
@@ -206,6 +211,73 @@ jobs:
       shell: bash
       run: |
         go test `go list ./... | grep -v api | grep -v integration | grep -v expect`
+  name: Critical Integration Test
+  strategy:
+    matrix:
+      go-version:
+      - 1.13.x
+      platform:
+      - ubuntu-latest
+      - macos-latest
+      - windows-latest
+  runs-on: ${{ matrix.platform }}
+  env:
+    ACTIVESTATE_CLI_DISABLE_RUNTIME: true
+    GOFLAGS: -mod=vendor
+    SHELL: bash
+    GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  timeout-minutes: 25
+  steps:
+  - name: Checkout code
+    uses: actions/checkout@v2
+  - name: Install Go
+    uses: actions/setup-go@v2
+    with:
+      go-version: ${{ matrix.go-version }}
+  - name: Setup
+    shell: bash
+    run: |
+      bin=$(pwd)/.github/deps/${{ runner.os }}/bin
+      echo "Adding $bin to PATH"
+      echo "::add-path::$bin"
+      printenv
+  - name: Preprocess
+    shell: bash
+    run: |
+      if [[ "${GITHUB_REF##*/}" == "master" ]]; then
+        export BRANCH_OVERRIDE=unstable
+      fi
+      state run preprocess
+  - name: Build
+    shell: bash
+    run: state run build
+  - name: Generate Update
+    shell: bash
+    run: state run generate-update
+  - name: Build Languages MSI
+    if: runner.os == 'Windows'
+    shell: bash
+    run: |
+      echo $MSI_CERT_BASE64 | base64 --decode > Cert.p12
+      export PATH=/c/Program\ Files\ \(x86\)/Microsoft\ Visual\ Studio/2019/Enterprise/MSBuild/Current/Bin/:/c/Program\ Files\ \(x86\)/Windows\ Kits/10/bin/10.0.16299.0/x86/:$PATH
+      export SHELL=bash
+      state run build-msi-language Perl Public ActiveState/ActivePerl-5.26 5.26.3001
+      signtool.exe sign -d "ActiveState Language Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/msi/ActivePerl-5.26.msi
+      state run build-msi-language Perl Public ActiveState/ActivePerl-5.28 5.28.1001
+      signtool.exe sign -d "ActiveState Language Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/msi/ActivePerl-5.28.msi
+      state run build-base-language-msi
+    env:
+      CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
+      MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
+  - name: Critical Integration Tests
+    shell: bash
+    run: |
+      export SHELL=''
+      go test -timeout 10m github.com/ActiveState/cli/test/integration -test.v -test.run "^TestLanguageMsiActivePerl|TestDeployIntegrationTestSuite|TestInitIntegrationTestSuite|TestPushIntegrationTestSuite|TestUpdateIntegrationTestSuite$"
+    env:
+      INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
+      INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
+      PLATFORM_API_TOKEN: ${{ secrets.PLATFORM_API_TOKEN }}
   inttest:
     if: contains(github.event.pull_request.labels.*.name, 'run integration tests')
     name: Integration Test
