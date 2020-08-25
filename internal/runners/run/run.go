@@ -13,7 +13,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
@@ -58,7 +57,7 @@ func (r *Run) Run(name string, args []string) error {
 
 func run(out output.Outputer, subs subshell.SubShell, name string, args []string) error {
 	if authentication.Get().Authenticated() {
-		checker.RunCommitsBehindNotifier()
+		checker.RunCommitsBehindNotifier(out)
 	}
 
 	logging.Debug("Execute")
@@ -79,10 +78,10 @@ func run(out output.Outputer, subs subshell.SubShell, name string, args []string
 	path := os.Getenv("PATH")
 	// Activate the state if needed.
 	if !script.Standalone() && !subshell.IsActivated() {
-		print.Info(locale.T("info_state_run_activating_state"))
+		out.Notice(locale.T("info_state_run_activating_state"))
 		venv := virtualenvironment.Init()
-		venv.OnDownloadArtifacts(func() { print.Line(locale.T("downloading_artifacts")) })
-		venv.OnInstallArtifacts(func() { print.Line(locale.T("installing_artifacts")) })
+		venv.OnDownloadArtifacts(func() { out.Notice(locale.T("downloading_artifacts")) })
+		venv.OnInstallArtifacts(func() { out.Notice(locale.T("installing_artifacts")) })
 
 		if fail := venv.Activate(); fail != nil {
 			logging.Errorf("Unable to activate state: %s", fail.Error())
@@ -149,14 +148,18 @@ func run(out output.Outputer, subs subshell.SubShell, name string, args []string
 		lang = language.MakeByShell(subs.Shell())
 	}
 
-	// Run the script.
-	scriptBlock := project.Expand(script.Value())
+	scriptBlock, err := script.Value()
+	if err != nil {
+		return locale.WrapError(err, "err_run_scriptval", "Could not get script value.")
+	}
+
 	sf, fail := scriptfile.New(lang, script.Name(), scriptBlock)
 	if fail != nil {
 		return fail.WithDescription("error_state_run_setup_scriptfile")
 	}
 	defer sf.Clean()
-	print.Info(locale.Tr("info_state_run_running", script.Name(), script.Source().Path()))
+
+	out.Notice(locale.Tr("info_state_run_running", script.Name(), script.Source().Path()))
 	// ignore code for now, passing via failure
 	err := subs.Run(sf.Filename(), args...)
 	if err != nil {

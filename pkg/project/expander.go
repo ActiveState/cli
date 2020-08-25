@@ -3,6 +3,9 @@ package project
 import (
 	"regexp"
 
+	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/pkg/projectfile"
 
@@ -11,7 +14,6 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/failures"
-	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/prompt"
 )
 
@@ -38,43 +40,30 @@ var (
 	FailVarNotFound = failures.Type("project.fail.vars.notfound", FailExpandVariable)
 )
 
-var lastFailure *failures.Failure
-
-// Failure retrieves the latest failure
-func Failure() *failures.Failure {
-	return lastFailure
-}
-
 // Expand will detect the active project and invoke ExpandFromProject with the given string
-func Expand(s string) string {
+func Expand(s string, out output.Outputer, prompt prompt.Prompter) (string, error) {
 	return ExpandFromProject(s, Get())
-}
-
-// Prompter is accessible so tests can overwrite it with Mock.  Do not use if you're not writing code for this package
-var Prompter prompt.Prompter
-
-func init() {
-	Prompter = prompt.New()
 }
 
 // ExpandFromProject searches for $category.name-style variables in the given
 // string and substitutes them with their contents, derived from the given
 // project, and subject to the given constraints (if any).
-func ExpandFromProject(s string, p *Project) string {
+func ExpandFromProject(s string, p *Project) (string, error) {
 	return limitExpandFromProject(0, s, p)
 }
 
 // limitExpandFromProject limits the depth of an expansion to avoid infinite expansion of a value.
-func limitExpandFromProject(depth int, s string, p *Project) string {
-	lastFailure = nil
+func limitExpandFromProject(depth int, s string, p *Project) (string, error) {
 	if depth > constants.ExpanderMaxDepth {
-		lastFailure = FailExpandVariableRecursion.New("error_expand_variable_infinite_recursion", s)
-		print.Warning(lastFailure.Error())
-		return ""
+		return "", locale.NewInputError("err_expand_recursion", "Infinite recursion trying to expand variable '{{.V0}}'", s)
 	}
 
 	regex := regexp.MustCompile("\\${?(\\w+)\\.([\\w-]+)+\\.?([\\w-]+)?(\\(\\))?}?")
+	var err error
 	expanded := rxutils.ReplaceAllStringSubmatchFunc(regex, s, func(groups []string) string {
+		if err != nil {
+			return ""
+		}
 		var variable, category, name, meta string
 		var isFunction bool
 
@@ -91,33 +80,32 @@ func limitExpandFromProject(depth int, s string, p *Project) string {
 		var value string
 
 		if expanderFn, foundExpander := expanderRegistry[category]; foundExpander {
-			var failure *failures.Failure
-
-			if value, failure = expanderFn(name, meta, isFunction, p); failure != nil {
-				lastFailure = FailExpandVariableBadName.New("error_expand_variable_project_unknown_name", variable, failure.Error())
-				print.Warning(lastFailure.Error())
+			var err2 error
+			if value, err2 = expanderFn(name, meta, isFunction, p); err2 != nil {
+				err = errs.Wrap(err2, "Could not expand %s.%s", category, name)
+				return ""
 			}
 		} else {
-			lastFailure = FailExpandVariableBadCategory.New("error_expand_variable_project_unknown_category", variable, category)
-			print.Warning(lastFailure.Error())
+			err = locale.NewInputError("err_expand_category", "Error expanding variable '{{.V0}}': unknown category '{{.V1}}'", variable, category)
+			return ""
 		}
 
 		if value != "" {
-			value = limitExpandFromProject(depth+1, value, p)
+			value, err = limitExpandFromProject(depth+1, value, p)
 		}
 		return value
 	})
 
-	return expanded
+	return expanded, err
 }
 
 // ExpanderFunc defines an Expander function which can expand the name for a category. An Expander expects the name
 // to be expanded along with the project-file definition. It will return the expanded value of the name
 // or a Failure if expansion was unsuccessful.
-type ExpanderFunc func(name string, meta string, isFunction bool, project *Project) (string, *failures.Failure)
+type ExpanderFunc func(name string, meta string, isFunction bool, project *Project) (string, error)
 
 // PlatformExpander expends metadata about the current platform.
-func PlatformExpander(name string, meta string, isFunction bool, project *Project) (string, *failures.Failure) {
+func PlatformExpander(name string, meta string, isFunction bool, project *Project) (string, error) {
 	projectFile := project.Source()
 	for _, platform := range projectFile.Platforms {
 		if !constraints.PlatformMatches(platform) {
@@ -138,18 +126,18 @@ func PlatformExpander(name string, meta string, isFunction bool, project *Projec
 		case "compiler":
 			return platform.Compiler, nil
 		default:
-			return "", FailExpandVariableBadName.New("error_expand_variable_project_unrecognized_platform_var", name)
+			return "", locale.NewInputError("err_expand_platform", "Unrecognized platform variable '{{.V0}}'", name)
 		}
 	}
 	return "", nil
 }
 
 // EventExpander expands events defined in the project-file.
-func EventExpander(name string, meta string, isFunction bool, project *Project) (string, *failures.Failure) {
+func EventExpander(name string, meta string, isFunction bool, project *Project) (string, error) {
 	projectFile := project.Source()
 	constrained, err := constraints.FilterUnconstrained(pConditional, projectFile.Events.AsConstrainedEntities())
 	if err != nil {
-		return "", failures.FailTemplating.Wrap(err)
+		return "", err
 	}
 	for _, v := range constrained {
 		if v.ID() == name {
@@ -160,7 +148,7 @@ func EventExpander(name string, meta string, isFunction bool, project *Project) 
 }
 
 // ScriptExpander expands scripts defined in the project-file.
-func ScriptExpander(name string, meta string, isFunction bool, project *Project) (string, *failures.Failure) {
+func ScriptExpander(name string, meta string, isFunction bool, project *Project) (string, error) {
 	script := project.ScriptByName(name)
 	if script == nil {
 		return "", nil
@@ -172,7 +160,7 @@ func ScriptExpander(name string, meta string, isFunction bool, project *Project)
 	return script.Raw(), nil
 }
 
-func expandPath(name string, script *Script) (string, *failures.Failure) {
+func expandPath(name string, script *Script) (string, error) {
 	if script.cachedFile() != "" {
 		return script.cachedFile(), nil
 	}
@@ -184,24 +172,28 @@ func expandPath(name string, script *Script) (string, *failures.Failure) {
 
 	sf, fail := scriptfile.NewEmpty(languages[0], name)
 	if fail != nil {
-		return "", fail
+		return "", fail.ToError()
 	}
 	script.setCachedFile(sf.Filename())
 
-	fail = sf.Write(script.Value())
+	v, err := script.Value()
+	if err != nil {
+		return "", err
+	}
+	fail = sf.Write(v)
 	if fail != nil {
-		return "", fail
+		return "", fail.ToError()
 	}
 
 	return sf.Filename(), nil
 }
 
 // ConstantExpander expands constants defined in the project-file.
-func ConstantExpander(name string, meta string, isFunction bool, project *Project) (string, *failures.Failure) {
+func ConstantExpander(name string, meta string, isFunction bool, project *Project) (string, error) {
 	projectFile := project.Source()
 	constrained, err := constraints.FilterUnconstrained(pConditional, projectFile.Constants.AsConstrainedEntities())
 	if err != nil {
-		return "", failures.FailTemplating.Wrap(err)
+		return "", err
 	}
 	for _, v := range constrained {
 		if v.ID() == name {

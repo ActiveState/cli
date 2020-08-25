@@ -14,7 +14,7 @@ import (
 
 func newActivateCommand(prime *primer.Values) *captain.Command {
 	prompter := prompt.New()
-	checkout := activate.NewCheckout(git.NewRepo())
+	checkout := activate.NewCheckout(git.NewRepo(), prime)
 	namespaceSelect := activate.NewNamespaceSelect(viper.GetViper(), prompter)
 	runner := activate.NewActivate(prime, namespaceSelect, checkout)
 

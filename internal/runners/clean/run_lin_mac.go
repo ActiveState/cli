@@ -4,11 +4,12 @@ package clean
 
 import (
 	"os"
-	"path/filepath"
+
+	"github.com/ActiveState/cli/internal/logging"
 )
 
 func removeConfig(configPath string) error {
-	file, err := os.Open(filepath.Join(configPath, "log.txt"))
+	file, err := os.Open(logging.FilePath())
 	if err != nil {
 		return err
 	}

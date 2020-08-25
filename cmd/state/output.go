@@ -8,7 +8,6 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/terminal"
 
 	survey "gopkg.in/AlecAivazis/survey.v1/core"
@@ -70,6 +69,5 @@ func initOutput(flags outputFlags, formatName string) (output.Outputer, *failure
 // terminal does not support it, or if requested by the output arguments
 func setPrinterColors(flags outputFlags) {
 	disableColor := flags.DisableColor()
-	print.DisableColor = disableColor
 	survey.DisableColor = disableColor
 }

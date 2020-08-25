@@ -1,6 +1,8 @@
 package secrets
 
 import (
+	"fmt"
+	"os"
 	"strconv"
 
 	"github.com/spf13/cobra"
@@ -8,7 +10,6 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/secrets"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/platform/api"
@@ -91,6 +92,6 @@ func synchronizeEachOrgMember(secretsClient *secretsapi.Client, org *mono_models
 		}
 	}
 
-	print.Line(locale.Tr("secrets_sync_results_message", strconv.Itoa(updatedCtr), org.Name))
+	fmt.Fprint(os.Stdout, locale.Tr("secrets_sync_results_message", strconv.Itoa(updatedCtr), org.Name))
 	return nil
 }

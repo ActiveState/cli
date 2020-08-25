@@ -91,7 +91,11 @@ func (e *Edit) editScript(script *project.Script, params *EditParams) error {
 func createScriptFile(script *project.Script, expand bool) (*scriptfile.ScriptFile, error) {
 	scriptBlock := script.Raw()
 	if expand {
-		scriptBlock = script.Value()
+		var err error
+		scriptBlock, err = script.Value()
+		if err != nil {
+			return nil, errs.Wrap(err, "Could not get script value")
+		}
 	}
 
 	languages := script.LanguageSafe()
