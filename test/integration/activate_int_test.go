@@ -61,8 +61,12 @@ func (suite *ActivateIntegrationTestSuite) TestActivateNotOnPath() {
 	cp.Expect("activated state", 20*time.Second)
 	cp.WaitForInput(10 * time.Second)
 
-	cp.SendLine("alias state")
-	cp.Expect("/bin/state")
+	if runtime.GOOS == "windows" {
+		cp.SendLine("doskey /macros | findstr state=")
+	} else {
+		cp.SendLine("alias state")
+	}
+	cp.Expect("state=")
 
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
