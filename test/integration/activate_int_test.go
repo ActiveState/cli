@@ -68,6 +68,9 @@ func (suite *ActivateIntegrationTestSuite) TestActivateNotOnPath() {
 	}
 	cp.Expect("state=")
 
+	cp.SendLine("state --version")
+	cp.Expect("ActiveState")
+
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 }
