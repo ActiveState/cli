@@ -245,7 +245,7 @@ func TestPathProvidesLang(t *testing.T) {
 
 	require.NoError(t, os.Chmod(tf, 0770))
 
-	exec := language.Python3
+	exec := language.Python3.String()
 
 	home, err := os.UserHomeDir()
 	require.NoError(t, err)
@@ -253,8 +253,8 @@ func TestPathProvidesLang(t *testing.T) {
 	paths := []string{temp, home}
 	pathStr := strings.Join(paths, string(os.PathListSeparator))
 
-	assert.True(t, pathProvidesLang(filepath.Dir(tf), exec))
-	assert.True(t, pathProvidesLang(pathStr, exec))
-	assert.False(t, pathProvidesLang(pathStr, language.Unknown))
-	assert.False(t, pathProvidesLang("", exec))
+	assert.True(t, pathProvidesExec(filepath.Dir(tf), exec))
+	assert.True(t, pathProvidesExec(pathStr, exec))
+	assert.False(t, pathProvidesExec(pathStr, language.Unknown.String()))
+	assert.False(t, pathProvidesExec("", exec))
 }
