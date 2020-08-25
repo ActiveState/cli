@@ -4,7 +4,6 @@ using GoogleAnalyticsTracker.Core.TrackerParameters;
 using GoogleAnalyticsTracker.Simple;
 using Microsoft.Deployment.WindowsInstaller;
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 
