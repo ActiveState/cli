@@ -13,7 +13,7 @@ jobs:
   prepare: #@ jobs_prepare()
   build: #@ jobs_build()
   unittest: #@ jobs_unittest()
-  inttest_critical: #@ template.replace(jobs_inttestcrit())
+  inttest_critical: #@ jobs_inttestcrit()
   inttest:
     if: contains(github.event.pull_request.labels.*.name, 'run integration tests')
     _: #@ template.replace(jobs_inttest())
