@@ -386,15 +386,15 @@ func TestFilterUnconstrained(t *testing.T) {
 	for _, c := range cases {
 
 		t.Run(c.Name, func(tt *testing.T) {
-			items := make(projectfile.Events, 0, 4)
+			items := make(projectfile.Constants, 0, 4)
 			for i := 0; i < 3; i++ {
-				items = append(items, projectfile.Event{
+				items = append(items, &projectfile.Constant{
 					Name:        fmt.Sprintf("event%d", i),
 					Constraints: mockConstraint(sliceContains(c.Selected, i) || c.Override),
 				})
 			}
 			if c.Override {
-				items = append(items, projectfile.Event{
+				items = append(items, &projectfile.Constant{
 					Name:        "event0",
 					Constraints: mockConstraint(true, "TEST_ENV"),
 				})
@@ -403,10 +403,10 @@ func TestFilterUnconstrained(t *testing.T) {
 			constrained, err := FilterUnconstrained(nil, items.AsConstrainedEntities())
 			require.NoError(tt, err)
 
-			res := projectfile.MakeEventsFromConstrainedEntities(constrained)
-			expected := make([]*projectfile.Event, 0, len(c.Selected))
+			res := projectfile.MakeConstantsFromConstrainedEntities(constrained)
+			expected := make([]*projectfile.Constant, 0, len(c.Selected))
 			for _, ii := range c.Selected {
-				expected = append(expected, &items[ii])
+				expected = append(expected, items[ii])
 			}
 			sort.Slice(res, func(i, j int) bool {
 				return res[i].Name < res[j].Name
