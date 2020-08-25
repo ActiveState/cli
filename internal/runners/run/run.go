@@ -1,6 +1,7 @@
 package run
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -106,6 +107,8 @@ func run(out output.Outputer, subs subshell.SubShell, name string, args []string
 		lang      language.Language
 		attempted []string
 	)
+	fmt.Println("langs: ", script.Languages())
+	fmt.Println(len(script.Languages()))
 	for _, l := range script.Languages() {
 		lang = l
 
@@ -126,10 +129,6 @@ func run(out output.Outputer, subs subshell.SubShell, name string, args []string
 		attempted = append(attempted, lang.String())
 	}
 
-	if script.Standalone() && !lang.Executable().Builtin() {
-		return FailStandaloneConflict.New("error_state_run_standalone_conflict")
-	}
-
 	if lang == language.Unknown {
 		return locale.NewInputError(
 			"err_run_unknown_language",
@@ -146,6 +145,10 @@ func run(out output.Outputer, subs subshell.SubShell, name string, args []string
 		out.Notice(warning)
 
 		lang = language.MakeByShell(subs.Shell())
+	}
+
+	if script.Standalone() && !lang.Executable().Builtin() {
+		return FailStandaloneConflict.New("error_state_run_standalone_conflict")
 	}
 
 	scriptBlock, err := script.Value()
