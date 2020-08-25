@@ -20,7 +20,7 @@ func Invoke(out output.Outputer, args ...string) error {
 	time.Sleep(time.Second)
 
 	// Get terminal width so we can print dashed line to call out state command output
-	termWidth, _, err := terminal.GetSize(int(os.Stdin.Fd()))
+	termWidth, _, err := terminal.GetSize(int(os.Stdout.Fd()))
 	if err != nil {
 		logging.Debug("Cannot get terminal size: %v", err)
 		termWidth = 100
