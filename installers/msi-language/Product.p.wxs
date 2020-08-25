@@ -160,8 +160,8 @@
 
 		</UI>
 
-    <CustomAction Id="LaunchStateToolWizardInstalled" Execute="immediate" Directory="INSTALLDIR" ExeCommand="cmd.exe /k &quot;[STATE_TOOL_PATH]&quot; tutorial new-project" Impersonate="yes" Return="asyncNoWait" />
-    <CustomAction Id="LaunchStateToolWizardNotInstalled" Execute="immediate" Directory="INSTALLDIR" ExeCommand="cmd.exe /k &quot;[AppDataFolder]\ActiveState\bin\state.exe&quot; tutorial new-project" Impersonate="yes" Return="asyncNoWait" />
+    <CustomAction Id="LaunchStateToolWizardInstalled" Execute="immediate" Directory="INSTALLDIR" ExeCommand="cmd.exe /k &quot;set PATH=[STATE_TOOL_PATH];%PATH% &amp;&amp; state tutorial new-project&quot;" Impersonate="yes" Return="asyncNoWait" />
+    <CustomAction Id="LaunchStateToolWizardNotInstalled" Execute="immediate" Directory="INSTALLDIR" ExeCommand="cmd.exe /k &quot;set PATH=[AppDataFolder]\ActiveState\bin\;%PATH% &amp;&amp; state tutorial new-project&quot;" Impersonate="yes" Return="asyncNoWait" />
 	<CustomAction Id='LaunchReleaseNotes' Execute="immediate" Directory="INSTALLDIR" ExeCommand="explorer.exe [REL_NOTES]" Impersonate="yes" Return="asyncNoWait" />
 	<CustomAction Id='InstallVSCodeExt' Execute="immediate" Directory="INSTALLDIR" ExeCommand="cmd.exe /c &quot;[CODE_PATH]&quot; --install-extension ActiveState.activestate-platform" Impersonate="yes" Return="asyncNoWait" />
 
