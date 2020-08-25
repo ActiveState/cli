@@ -68,23 +68,23 @@
       </Component>
     </Feature>
 
-    <Property Id="REMEMBER">
+    <Property Id="REMEMBER" Secure="yes">
 			<!-- Retrieve the value of the installation directory from the registry -->
 			<RegistrySearch Id="RememberProperty" Root="HKLM" Key="SOFTWARE\[Manufacturer]\[ProductName]" Name="InstallDir" Type="raw" />
 		</Property>
 
-	<Property Id="REMEMBER_SHORTCUTDIR">
+	<Property Id="REMEMBER_SHORTCUTDIR" Secure="yes">
 		<!-- Retrieve the value of the installation directory from the registry -->
 		<RegistrySearch Id="RememberShortcutProperty" Root="HKLM" Key="SOFTWARE\[Manufacturer]\[ProductName]" Name="ShortcutDir" Type="raw" />
 	</Property>
 
     <!-- Find the default browser to open the release pages in -->
-    <Property Id="BROWSER">
+    <Property Id="BROWSER" Secure="yes">
       <RegistrySearch Id='DefaultBrowser' Type='raw' Root='HKCR' Key='http\shell\open\command' />
     </Property>
 
-    <Property Id="STATE_TOOL_WIZARD_CHECK_BOX" Value="1" />
-    <Property Id="MSIUSEREALADMINDETECTION" Value="1" />
+    <Property Id="STATE_TOOL_WIZARD_CHECK_BOX" Value="1" Secure="yes" />
+    <Property Id="MSIUSEREALADMINDETECTION" Value="1" Secure="yes" />
 	<Property Id="COMMIT_ID" Value="{{.CommitID}}" />
 
 		<UI Id="WixUI_InstallDir">
@@ -169,7 +169,7 @@
     <UIRef Id="WixUI_Common" />
     <UIRef Id="CustomUI_PrivacyConsent" />
 
-		<Property Id="IS_MODIFY" Value="false" />
+    <Property Id="IS_MODIFY" Value="false" Secure="yes"/>
 
 		<InstallUISequence>
             <Custom Action="GAReportStart" After="AppSearch">Not Installed OR REINSTALL OR (NOT REMOVE~="ALL")</Custom>
@@ -182,7 +182,7 @@
 		
 		<CustomAction Id="SetInstallDirOnModify" Directory="INSTALLDIR" Value="[REMEMBER]" />
 
-		<Property Id="STATE_TOOL_PATH" Value="state.exe" />
+		<Property Id="STATE_TOOL_PATH" Value="state.exe" Secure="yes"/>
 
 		<CustomAction 
 			Id="SetStateDeployPropertyValues" 
