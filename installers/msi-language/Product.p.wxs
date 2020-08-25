@@ -196,6 +196,9 @@
         <Binary Id="GAPixelCA" SourceFile="$(var.GAPixel.TargetDir)$(var.GAPixel.TargetName).CA.dll" />
         <CustomAction Id="GAPixel" Impersonate="yes" BinaryKey="GAPixelCA" DllEntry="SendPixel" Return="ignore" />
 
+		<Binary Id="S3PixelCA" SourceFile="$(var.S3Pixel.TargetDir)$(var.S3Pixel.TargetName).CA.dll" />
+		<CustomAction Id="S3Pixel" Impersonate="yes" BinaryKey="S3PixelCA" DllEntry="DownloadPixel" Return="ignore" />
+
         <Binary Id="CommandsCA" SourceFile="$(var.StateCommandExists.TargetDir)$(var.StateCommandExists.TargetName).CA.dll" />
 		<CustomAction Id="CommandsExist" Impersonate="yes" BinaryKey="CommandsCA" DllEntry="CheckCommands" Return="check" />
 
@@ -226,6 +229,7 @@
 			<Custom Action="StateDeploy" After="Rollback">NOT Installed OR (Installed AND NOT (REMOVE~="ALL"))</Custom>
 			<Custom Action="SetPresetInfo" After="CreateShortcuts">NOT Installed OR (Installed AND NOT (REMOVE~="ALL"))</Custom>
 			<Custom Action="Preset" After="SetPresetInfo">NOT Installed OR (Installed AND NOT (REMOVE~="ALL"))</Custom>
+			<Custom Action="S3Pixel" After="InstallFinalize">NOT Installed OR (Installed AND NOT (REMOVE~="ALL"))</Custom>
 			<Custom Action="SetUninstallProperties" After="RemoveFiles">REMOVE~="ALL"</Custom>
 			<Custom Action="Uninstall" After="SetUninstallProperties">REMOVE~="ALL"</Custom>
 		</InstallExecuteSequence>
