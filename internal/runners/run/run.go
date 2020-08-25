@@ -161,7 +161,7 @@ func run(out output.Outputer, subs subshell.SubShell, name string, args []string
 
 	out.Notice(locale.Tr("info_state_run_running", script.Name(), script.Source().Path()))
 	// ignore code for now, passing via failure
-	err := subs.Run(sf.Filename(), args...)
+	err = subs.Run(sf.Filename(), args...)
 	if err != nil {
 		if len(attempted) > 0 {
 			return locale.WrapInputError(
