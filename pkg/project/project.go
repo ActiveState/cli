@@ -625,13 +625,15 @@ func (script *Script) LanguageSafe() []language.Language {
 	}
 
 	if len(langs) == 0 {
-		return defaultScriptLanguage()
+		return DefaultScriptLanguage()
 	}
 
 	return langs
 }
 
-func defaultScriptLanguage() []language.Language {
+// DefaultScriptLanguage returns the default script language for
+// the current platform. (ie. batch or bash)
+func DefaultScriptLanguage() []language.Language {
 	if runtime.GOOS == "windows" {
 		return []language.Language{language.Batch}
 	}
