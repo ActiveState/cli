@@ -183,8 +183,8 @@ func SetupProjectRcFile(templateName, ext string, env map[string]string) (*os.Fi
 		return nil, failures.FailOS.Wrap(err)
 	}
 
-	pathVal, ok := env["PATH"]
-	if !ok || !inPath(pathVal, filepath.Dir(currExecAbsPath)) {
+	pathList, ok := env["PATH"]
+	if !ok || !inPathList(pathList, filepath.Dir(currExecAbsPath)) {
 		rcData["ExecAlias"] = currExecAbsPath
 	}
 
@@ -221,8 +221,8 @@ func absPathToCurrentExec() (string, error) {
 	return fileutils.ResolvePath(exec)
 }
 
-func inPath(pathVal, dir string) bool {
-	paths := strings.Split(pathVal, string(os.PathListSeparator))
+func inPathList(pathList, dir string) bool {
+	paths := strings.Split(pathList, string(os.PathListSeparator))
 	for _, path := range paths {
 		if path == dir {
 			return true
