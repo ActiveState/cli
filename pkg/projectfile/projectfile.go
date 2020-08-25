@@ -10,8 +10,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/google/uuid"
 	"github.com/ActiveState/sysinfo"
+	"github.com/google/uuid"
 	"github.com/imdario/mergo"
 	"gopkg.in/yaml.v2"
 
@@ -358,7 +358,7 @@ var _ ConstrainedEntity = Event{}
 func (e Event) ID() string {
 	if e.id == "" {
 		id, err := uuid.NewUUID()
-		if err == nil {
+		if err != nil {
 			logging.Error("UUID generation failed, defaulting to serialization")
 			e.id = hash.ShortHash(e.Name, e.Value, strings.Join(e.Scope, ""))
 		} else {
