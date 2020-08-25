@@ -93,7 +93,7 @@ func (f *Plain) writeNow(writer io.Writer, value string) {
 
 func wordWrap(text string) string {
 	maxTermWidth := 160
-	termWidth, _, err := terminal.GetSize(int(os.Stdin.Fd()))
+	termWidth, _, err := terminal.GetSize(int(os.Stdout.Fd()))
 	if err != nil {
 		logging.Debug("Cannot get terminal size: %v", err)
 		return wordwrap.WrapString(text, uint(maxTermWidth))
@@ -258,7 +258,7 @@ func sprintTable(slice []interface{}) (string, error) {
 		return "", nil
 	}
 
-	termWidth, _, err := terminal.GetSize(int(os.Stdin.Fd()))
+	termWidth, _, err := terminal.GetSize(int(os.Stdout.Fd()))
 	if err != nil || termWidth == 0 {
 		logging.Debug("Cannot get terminal size: %v", err)
 		termWidth = 100
