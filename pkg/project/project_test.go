@@ -207,19 +207,19 @@ func (suite *ProjectTestSuite) TestScripts() {
 		suite.Equal("foo", name, "Names should match (Linux)")
 		suite.Equal("foo Linux", value, "Value should match (Linux)")
 		suite.Equal("foo $platform.name", raw, "Raw value should match (Linux)")
-		suite.Equal(language.Sh, safe, "Safe language should match (Linux)")
+		suite.Equal([]language.Language{language.Sh}, safe, "Safe language should match (Linux)")
 		suite.True(standalone, "Standalone value should match (Linux)")
 	} else if runtime.GOOS == "windows" {
 		suite.Equal("bar", name, "Name should match (Windows)")
 		suite.Equal("bar Windows", value, "Value should match (Windows)")
 		suite.Equal("bar $platform.name", raw, "Raw value should match (Windows)")
-		suite.Equal(language.Batch, safe, "Safe language should match (Windows)")
+		suite.Equal([]language.Language{language.Batch}, safe, "Safe language should match (Windows)")
 		suite.True(standalone, "Standalone value should match (Windows)")
 	} else if runtime.GOOS == "darwin" {
 		suite.Equal("baz", name, "Names should match (OSX)")
 		suite.Equal("baz OSX", value, "Value should match (OSX)")
 		suite.Equal("baz $platform.name", raw, "Raw value should match (OSX)")
-		suite.Equal(language.Sh, safe, "Language should match (OSX)")
+		suite.Equal([]language.Language{language.Sh}, safe, "Language should match (OSX)")
 		suite.True(standalone, "Standalone value should match (OSX)")
 	}
 }
