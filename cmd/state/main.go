@@ -7,6 +7,9 @@ import (
 	"os/exec"
 	"runtime"
 
+	"github.com/ActiveState/sysinfo"
+	"github.com/rollbar/rollbar-go"
+
 	"github.com/ActiveState/cli/cmd/state/internal/cmdtree"
 	"github.com/ActiveState/cli/internal/config" // MUST be first!
 	"github.com/ActiveState/cli/internal/constants"
@@ -24,7 +27,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/ActiveState/sysinfo"
 )
 
 // FailMainPanic is a failure due to a panic occuring while runnig the main function
@@ -33,6 +35,7 @@ var FailMainPanic = failures.Type("main.fail.panic", failures.FailUser)
 func main() {
 	// Set up logging
 	logging.SetupRollbar()
+	defer rollbar.Close()
 
 	// Handle panics gracefully
 	defer handlePanics(os.Exit)
