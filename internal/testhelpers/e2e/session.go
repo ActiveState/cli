@@ -82,6 +82,10 @@ func (s *Session) executablePath() string {
 }
 
 func New(t *testing.T, retainDirs bool, extraEnv ...string) *Session {
+	return new(t, retainDirs, true, extraEnv...)
+}
+
+func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session {
 	dirs, err := NewDirs("")
 	require.NoError(t, err)
 	var env []string
@@ -93,13 +97,25 @@ func New(t *testing.T, retainDirs bool, extraEnv ...string) *Session {
 		"ACTIVESTATE_CLI_DISABLE_RUNTIME=true",
 		"ACTIVESTATE_PROJECT=",
 	}...)
-	// add bin path
-	oldPath, _ := os.LookupEnv("PATH")
-	env = append(env, fmt.Sprintf("PATH=%s%s%s", dirs.Bin, string(os.PathListSeparator), oldPath))
+
+	if updatePath {
+		// add bin path
+		oldPath, _ := os.LookupEnv("PATH")
+		newPath := fmt.Sprintf(
+			"PATH=%s%s%s",
+			dirs.Bin, string(os.PathListSeparator), oldPath,
+		)
+		env = append(env, newPath)
+	}
+
 	// add session environment variables
 	env = append(env, extraEnv...)
 
 	return &Session{Dirs: dirs, env: env, retainDirs: retainDirs, t: t}
+}
+
+func NewNoPathUpdate(t *testing.T, retainDirs bool, extraEnv ...string) *Session {
+	return new(t, retainDirs, false, extraEnv...)
 }
 
 // Spawn spawns the state tool executable to be tested with arguments
