@@ -14,7 +14,7 @@ DOSKEY {{$K}}=state run {{$CMD}}
 {{end}}
 
 {{ if .ExecAlias }}
-DOSKEY state='{{.ExecAlias}}'
+DOSKEY state='{{.ExecAlias}} $*'
 {{ end }}
 
 cd {{.WD}}
