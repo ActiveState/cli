@@ -16,6 +16,10 @@ setenv {{$K}} "{{$V}}:$PATH"
 alias {{$K}} 'state run {{$CMD}}'
 {{end}}
 
+{{ if .ExecAlias }}
+alias state='{{.ExecAlias}}'
+{{ end }}
+
 cd "{{.WD}}"
 
 {{.UserScripts}}

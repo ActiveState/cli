@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"text/template"
 
@@ -176,6 +177,17 @@ func SetupProjectRcFile(templateName, ext string, env map[string]string) (*os.Fi
 		"UserScripts": userScripts,
 		"Scripts":     scripts,
 	}
+
+	currExecAbsPath, err := absPathToCurrentExec()
+	if err != nil {
+		return nil, failures.FailOS.Wrap(err)
+	}
+
+	pathVal, ok := env["PATH"]
+	if !ok || !inPath(pathVal, filepath.Dir(currExecAbsPath)) {
+		rcData["ExecAlias"] = currExecAbsPath
+	}
+
 	t, err := template.New("rcfile").Parse(tpl)
 	if err != nil {
 		return nil, failures.FailTemplating.Wrap(err)
@@ -198,4 +210,23 @@ func SetupProjectRcFile(templateName, ext string, env map[string]string) (*os.Fi
 	logging.Debug("Using project RC: %s", out.String())
 
 	return tmpFile, nil
+}
+
+func absPathToCurrentExec() (string, error) {
+	exec, err := os.Executable()
+	if err != nil {
+		return "", err
+	}
+
+	return fileutils.ResolvePath(exec)
+}
+
+func inPath(pathVal, dir string) bool {
+	paths := strings.Split(pathVal, string(os.PathListSeparator))
+	for _, path := range paths {
+		if path == dir {
+			return true
+		}
+	}
+	return false
 }

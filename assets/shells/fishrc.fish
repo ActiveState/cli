@@ -14,6 +14,10 @@ set -xg {{$K}} "{{$V}}"
 alias {{$K}}='state run {{$CMD}}'
 {{end}}
 
+{{ if .ExecAlias }}
+alias state='{{.ExecAlias}}'
+{{ end }}
+
 cd "{{.WD}}"
 
 {{.UserScripts}}
