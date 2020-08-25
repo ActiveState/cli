@@ -33,7 +33,7 @@ func SetupRollbar() {
 		dateTime = t.Format("2006-01-02T15:04:05-0700") // ISO 8601
 	}
 
-	rollbar.SetCodeVersion(fmt.Sprintf("%s-%s", constants.RevisionHash, dateTime))
+	rollbar.SetCodeVersion(fmt.Sprintf("%s-%s", dateTime, constants.RevisionHashShort))
 	rollbar.SetServerRoot("github.com/ActiveState/cli")
 	rollbar.SetLogger(&rollbar.SilentClientLogger{})
 
