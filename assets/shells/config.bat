@@ -10,7 +10,7 @@ set {{$K}}={{$V}}
 {{- end}}
 
 {{range $K, $CMD := .Scripts}}
-DOSKEY {{$K}}=state run {{$CMD}}
+DOSKEY {{$K}}=state run "{{$CMD}}" $*
 {{end}}
 
 {{ if .ExecAlias }}
