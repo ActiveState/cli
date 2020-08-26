@@ -15,9 +15,16 @@ namespace ActiveState
 	public Logging(Session session, string installdir)
 	{
 	    this._session = session;
-	    this._logFileName = Path.Combine(installdir, "install.log");
 
             this._initialized = false;
+
+            if (String.IsNullOrEmpty(installdir))
+	    {
+                session.Log("cannot create logger, installdir is empty");
+                return;
+	    }
+            this._logFileName = Path.Combine(installdir, "install.log");
+
             try
             {
                 this._sw = File.AppendText(this._logFileName);
