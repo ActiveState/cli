@@ -161,34 +161,22 @@ namespace StateDeploy
                 RollbarReport.Critical(msg);
                 return ActionResult.Failure;
             }
-
+            
 
             stateToolPath = Path.Combine(stateToolInstallDir, "state.exe");
-            if (File.Exists(stateToolPath))
+            if (!File.Exists(stateToolPath))
             {
                 try
                 {
-                    File.Delete(stateToolPath);
+                    File.Move(Path.Combine(tempDir, paths.ExeFile), stateToolPath);
                 }
                 catch (Exception e)
                 {
-                    string msg = string.Format("Could not remove existing temporary state tool executable at: {0}, encountered exception: {1}", stateToolPath, e.ToString());
+                    string msg = string.Format("Could not move State Tool executable to: {0}, encountered exception: {1}", stateToolPath, e);
                     session.Log(msg);
                     RollbarReport.Critical(msg);
                     return ActionResult.Failure;
                 }
-            }
-
-            try
-            {
-                File.Move(Path.Combine(tempDir, paths.ExeFile), stateToolPath);
-            }
-            catch (Exception e)
-            {
-                string msg = string.Format("Could not move State Tool executable to: {0}, encountered exception: {1}", stateToolPath, e);
-                session.Log(msg);
-                RollbarReport.Critical(msg);
-                return ActionResult.Failure;
             }
 
             string configDirCmd = " export" + " config" + " --filter=dir";
