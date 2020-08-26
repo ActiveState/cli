@@ -58,13 +58,20 @@ namespace StateDeploy
 
         private static ActionResult _installStateTool(Session session, out string stateToolPath)
         {
-            stateToolPath = "";
-
             var paths = GetPaths();
             string stateURL = "https://s3.ca-central-1.amazonaws.com/cli-update/update/state/unstable/";
             string jsonURL = stateURL + paths.JsonDescription;
             string timeStamp = DateTime.Now.ToFileTime().ToString();
             string tempDir = Path.Combine(Path.GetTempPath(), timeStamp);
+            string stateToolInstallDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ActiveState", "bin");
+            stateToolPath = Path.Combine(stateToolInstallDir, "state.exe");
+
+            if (File.Exists(stateToolPath))
+            {
+                session.Log("Using existing State Tool executable at install path");
+                return ActionResult.Success;
+            }
+
             session.Log(string.Format("Using temp path: {0}", tempDir));
             try
             {
@@ -149,7 +156,6 @@ namespace StateDeploy
                 return ActionResult.Failure;
             }
 
-            string stateToolInstallDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ActiveState", "bin");
             try
             {
                 Directory.CreateDirectory(stateToolInstallDir);
@@ -161,24 +167,7 @@ namespace StateDeploy
                 RollbarReport.Critical(msg);
                 return ActionResult.Failure;
             }
-
-
-            stateToolPath = Path.Combine(stateToolInstallDir, "state.exe");
-            if (File.Exists(stateToolPath))
-            {
-                try
-                {
-                    File.Delete(stateToolPath);
-                }
-                catch (Exception e)
-                {
-                    string msg = string.Format("Could not remove existing temporary state tool executable at: {0}, encountered exception: {1}", stateToolPath, e.ToString());
-                    session.Log(msg);
-                    RollbarReport.Critical(msg);
-                    return ActionResult.Failure;
-                }
-            }
-
+            
             try
             {
                 File.Move(Path.Combine(tempDir, paths.ExeFile), stateToolPath);
@@ -190,6 +179,7 @@ namespace StateDeploy
                 RollbarReport.Critical(msg);
                 return ActionResult.Failure;
             }
+            
 
             string configDirCmd = " export" + " config" + " --filter=dir";
             string output;
