@@ -51,18 +51,18 @@ namespace ActiveState
         /// The event can fail to be send if the main process gets cancelled before the task finishes.
         /// Use the synchronous version of this command in that case.
         /// </description>
-        public void TrackEventInBackground(Session session, string category, string action, string label, string langVersion, long value=1)
+        public void TrackEventInBackground(ActiveState.Logging log, string category, string action, string label, string langVersion, long value=1)
 	{
-            session.Log("Sending background event {0}/{1}/{2} for cid={3} (custom dimension 1: {4})", category, action, label, this._cid, langVersion);
+            log.Log("Sending background event {0}/{1}/{2} for cid={3} (custom dimension 1: {4})", category, action, label, this._cid, langVersion);
             Task.Run(() => TrackEventAsync(category, action, label, langVersion, value));
 	}
 
         /// <summary>
         /// Sends a GA event and waits for the request to complete.
         /// </summary>
-        public void TrackEventSynchronously(Session session, string category, string action, string label, string langVersion, long value=1)
+        public void TrackEventSynchronously(ActiveState.Logging log, string category, string action, string label, string langVersion, long value=1)
         {
-            session.Log("Sending event {0}/{1}/{2} for cid={3} (custom dimension 1: {4})", category, action, label, this._cid, langVersion);
+            log.Log("Sending event {0}/{1}/{2} for cid={3} (custom dimension 1: {4})", category, action, label, this._cid, langVersion);
             var t = Task.Run(() => TrackEventAsync(category, action, label, langVersion, value));
             t.Wait();
         }
