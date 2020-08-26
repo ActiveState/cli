@@ -18,12 +18,18 @@ namespace ActiveState
 
             this._initialized = false;
 
+            /* My initial idea was to write all the logging in a log file relative to the installation directory.
+             * As there is not much time to test if that might intefer with the actual installation, I am pausing that
+             * in attempt and instead write to a temporary file */
             if (String.IsNullOrEmpty(installdir))
 	    {
                 session.Log("cannot create logger, installdir is empty");
                 return;
 	    }
-            this._logFileName = Path.Combine(installdir, "install.log");
+
+            /* Note, that this will also include errors from previous installation attempts, as we are just appending.
+             * That might be useful in some cases... */
+            this._logFileName = Path.Combine(Path.GetTempPath(), "activestate-msi-install.log");
 
             try
             {
@@ -41,7 +47,10 @@ namespace ActiveState
         // A derived class should not be able to override this method.
         public void Dispose()
         {
-            this._sw.Dispose();
+            if (this._sw != null)
+            {
+                this._sw.Dispose();
+            }
         }
 
         public Session Session()
@@ -84,7 +93,14 @@ namespace ActiveState
 	    }
             try
             {
-                return File.ReadAllText(this._logFileName);
+                // open log file with shared access
+                using (var fs = File.Open(this._logFileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+		{
+                    using (var sr = new StreamReader(fs))
+                    {
+                        return sr.ReadToEnd();
+                    }
+		}
             } catch (Exception err)
 	    {
                 return String.Format("Error reading from log file: {0}", err.ToString());

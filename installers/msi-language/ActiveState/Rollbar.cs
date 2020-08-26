@@ -106,7 +106,9 @@ public class RollbarReport
 		{
                     customFields = new Dictionary<string, object>();
 		}
-                customFields.Add("log", log.GetLog());
+                var logHistory = log.GetLog();
+                log.Session().Log("Sending log history to rollbar: {0}", logHistory);
+                customFields.Add("log", logHistory);
 	    }
             if (!criticalReported)
             {
