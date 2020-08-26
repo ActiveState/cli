@@ -18,6 +18,14 @@ func (e ErrNotAvailable) Error() string { return "" }
 
 // GetSecret accesses the payload for the given secret
 func GetSecret(name string) (string, error) {
+	// We have run into instances where secretmanager.NewClient can panic
+	// when it tries to determine if it is running on Google Compute Engine
+	defer func() {
+		if r := recover(); r != nil {
+			logging.Error("Recovered from panic attempting to get gcloud secret: %v", r)
+		}
+	}()
+
 	// Create the client.
 	ctx := context.Background()
 	client, err := secretmanager.NewClient(ctx)
