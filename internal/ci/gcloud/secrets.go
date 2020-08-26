@@ -8,6 +8,7 @@ import (
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"
 	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
 
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 )
 
@@ -17,12 +18,12 @@ type ErrNotAvailable struct{}
 func (e ErrNotAvailable) Error() string { return "" }
 
 // GetSecret accesses the payload for the given secret
-func GetSecret(name string) (string, error) {
+func GetSecret(name string) (tkn string, err error) {
 	// We have run into instances where secretmanager.NewClient can panic
 	// when it tries to determine if it is running on Google Compute Engine
 	defer func() {
 		if r := recover(); r != nil {
-			logging.Error("Recovered from panic attempting to get gcloud secret: %v", r)
+			err = locale.NewError("err_gcloud_panic", fmt.Sprintf("Recovered from panic attempting to get gcloud secret: %v", r))
 		}
 	}()
 
