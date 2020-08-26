@@ -87,12 +87,15 @@ namespace StateDeploy
 
             ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
 
-            string versionInfoString;
+            string versionInfoString = "unset";
             log.Log(string.Format("Downloading JSON from URL: {0}", jsonURL));
             try
             {
-                WebClient client = new WebClient();
-                versionInfoString = client.DownloadString(jsonURL);
+                RetryHelper.RetryOnException(log, 3, TimeSpan.FromSeconds(2), () =>
+                {
+                    var client = new WebClient();
+                    versionInfoString = client.DownloadString(jsonURL);
+                });
             }
             catch (WebException e)
             {
@@ -121,8 +124,11 @@ namespace StateDeploy
             Status.ProgressBar.StatusMessage(log.Session(), "Downloading State Tool...");
             try
             {
-                WebClient client = new WebClient();
-                client.DownloadFile(zipURL, zipPath);
+                RetryHelper.RetryOnException(log, 3, TimeSpan.FromSeconds(2), () =>
+                {
+                    var client = new WebClient();
+                    client.DownloadFile(zipURL, zipPath);
+                });
             }
             catch (WebException e)
             {
