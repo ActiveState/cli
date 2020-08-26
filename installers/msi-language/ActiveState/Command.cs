@@ -96,10 +96,6 @@ namespace ActiveState
                     {
                         title = output;
                     }
-                    if (title.Length > 50)
-                    {
-                        title = title.Substring(0, 50);
-                    }
                     RollbarReport.Critical(
                         string.Format("failed due to return code: {0} - start: {1}", exitCode, title),
                         log,
