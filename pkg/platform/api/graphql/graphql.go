@@ -3,6 +3,7 @@ package graphql
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"time"
 
@@ -48,7 +49,9 @@ func New(url string, common Header, bearerToken BearerTokenProvider, timeout tim
 	}
 
 	retryClient := retryablehttp.NewClient()
-	retryClient.Logger = nil
+	retryClient.Logger = nil                    // silence debugging
+	retryClient.HTTPClient = http.DefaultClient // use default: httpmock registers w/default
+
 	retryOpt := graphql.WithHTTPClient(retryClient.StandardClient())
 
 	return &GQLClient{
