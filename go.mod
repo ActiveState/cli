@@ -95,7 +95,6 @@ require (
 	golang.org/x/net v0.0.0-20200813134508-3edf25e44fcc
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 	golang.org/x/sys v0.0.0-20200821140526-fda516888d29
-	golang.org/x/tools v0.0.0-20200826040757-bc8aaaa29e06 // indirect
 	google.golang.org/genproto v0.0.0-20200815001618-f69a88009b70
 	gopkg.in/AlecAivazis/survey.v1 v1.4.2
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
