@@ -1,21 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi" xmlns:util="http://schemas.microsoft.com/wix/UtilExtension" xmlns:netfx="http://schemas.microsoft.com/wix/NetFxExtension">
-    <Product Id="{{.ID}}" Name="{{.ProjectName}}" Language="1033" Version="{{.Version}}" Manufacturer="ActiveState" UpgradeCode="{{.ID}}">
-        <Package Id='*' Keywords='Installer' Description="ActiveState Language Runtime"
+	<Product Id="{{.ID}}" Name="{{.ProjectName}}" Language="1033" Version="{{.Version}}" Manufacturer="ActiveState" UpgradeCode="{{.ID}}">
+		<Package Id='*' Keywords='Installer' Description="ActiveState Language Runtime"
             Comments='State Tool is a registered trademark of ActiveState' Manufacturer='ActiveState'
             InstallerVersion='200' Languages='1033' Compressed='yes' SummaryCodepage='1252' InstallPrivileges='elevated' AdminImage='yes' InstallScope='perMachine' />
 
-    <!-- Configuration parameters -->
+		<!-- Configuration parameters -->
     <Property Id="PROJECT_OWNER_AND_NAME" Value="{{.ProjectOwnerAndName}}" />
     <Property Id="REL_NOTES" Value="{{.ReleaseNotes}}" />
     <Property Id="PRESET" Value="{{.Preset}}" />
-	<!-- Represents if this project is private or public -->
-	<Property Id="VISIBILITY" Value="{{.Visibility}}" />
-	<Property Id="AS_USERNAME" Secure="yes" />
-	<Property Id="AS_PASSWORD" Secure="yes" />
-	<Property Id="AS_TOTP" Secure="yes" />
-	<Property Id="CODE_INSTALLED" Value="false" />
-    <!-- End Configuration parameters -->
+		<!-- Represents if this project is private or public -->
+		<Property Id="VISIBILITY" Value="{{.Visibility}}" />
+		<Property Id="AS_USERNAME" Secure="yes" />
+		<Property Id="AS_PASSWORD" Secure="yes" />
+		<Property Id="AS_TOTP" Secure="yes" />
+		<Property Id="CODE_INSTALLED" Value="false" />
+		<!-- End Configuration parameters -->
 
     <PropertyRef Id="WIX_IS_NETFRAMEWORK_45_OR_LATER_INSTALLED"/>
     <Condition Message="This application requires .NET Framework 4.5.0 or later. Please install the .NET Framework then run this installer again.  The installer can be downloaded from https://www.microsoft.com/en-us/download/details.aspx?id=42643.">
@@ -27,7 +27,7 @@
     <WixVariable Id='WixUIDialogBmp' Value='assets\InstallGraphic.bmp'/>
     <WixVariable Id="WixUILicenseRtf" Value="assets\license.rtf" />
     <Icon Id="InstallerIcon" SourceFile="{{.Icon}}"/>
-	<Property Id="ARPPRODUCTICON" Value="InstallerIcon" />
+		<Property Id="ARPPRODUCTICON" Value="InstallerIcon" />
     <!-- End Design assets -->
 
     <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
@@ -51,9 +51,9 @@
 
     <SetDirectory Id="WINDOWSVOLUME" Value="[WindowsVolume]"/>
 
-  <!-- Application Programs Folder for Shortcuts -->
-	<DirectoryRef Id="ApplicationProgramsFolder">
-	</DirectoryRef>
+		<!-- Application Programs Folder for Shortcuts -->
+		<DirectoryRef Id="ApplicationProgramsFolder">
+		</DirectoryRef>
     
     <Feature Id='Complete' Level='1'>
       <ComponentRef Id='DeployDir' />
@@ -73,10 +73,10 @@
 			<RegistrySearch Id="RememberProperty" Root="HKLM" Key="SOFTWARE\[Manufacturer]\[ProductName]" Name="InstallDir" Type="raw" />
 		</Property>
 
-	<Property Id="REMEMBER_SHORTCUTDIR" Secure="yes">
-		<!-- Retrieve the value of the installation directory from the registry -->
-		<RegistrySearch Id="RememberShortcutProperty" Root="HKLM" Key="SOFTWARE\[Manufacturer]\[ProductName]" Name="ShortcutDir" Type="raw" />
-	</Property>
+		<Property Id="REMEMBER_SHORTCUTDIR" Secure="yes">
+			<!-- Retrieve the value of the installation directory from the registry -->
+			<RegistrySearch Id="RememberShortcutProperty" Root="HKLM" Key="SOFTWARE\[Manufacturer]\[ProductName]" Name="ShortcutDir" Type="raw" />
+		</Property>
 
     <!-- Find the default browser to open the release pages in -->
     <Property Id="BROWSER" Secure="yes">
@@ -84,8 +84,8 @@
     </Property>
 
     <Property Id="STATE_TOOL_WIZARD_CHECK_BOX" Value="1" Secure="yes" />
-    <Property Id="MSIUSEREALADMINDETECTION" Value="1" Secure="yes" />
-	<Property Id="COMMIT_ID" Value="{{.CommitID}}" />
+    <Property Id="MSIUSEREALADMINDETECTION" Value="1" Secure="yes" /
+		<Property Id="COMMIT_ID" Value="{{.CommitID}}" />
 
 		<UI Id="WixUI_InstallDir">
 			<TextStyle Id="WixUI_Font_Normal" FaceName="Tahoma" Size="8" />
@@ -113,27 +113,27 @@
 		  <Publish Dialog="BrowseDlg" Control="OK" Event="SpawnDialog" Value="InvalidDirDlg" Order="5"><![CDATA[NOT WIXUI_DONTVALIDATEPATH AND WIXUI_INSTALLDIR_VALID<>"1"]]></Publish>
 		  <Publish Dialog="BrowseDlg" Control="OK" Event="SpawnDialog" Value="NonEmptyDirDlg" Order="6"><![CDATA[NOT WIXUI_DONTVALIDATEPATH AND VALIDATE_FOLDER_CLEAN<>"1"]]></Publish>
 
-			<Publish Dialog="CustomExitDialog" Control="Finish" Event="EndDialog" Value="Return" Order="999">1</Publish>
-      		<Publish Dialog="CustomExitDialog" Control="Finish" Event="DoAction" Value="LaunchStateToolWizardInstalled">STATE_TOOL_WIZARD_CHECK_BOX=1 and NOT Installed and STATE_TOOL_INSTALLED = "true"</Publish>
-      		<Publish Dialog="CustomExitDialog" Control="Finish" Event="DoAction" Value="LaunchStateToolWizardNotInstalled">STATE_TOOL_WIZARD_CHECK_BOX=1 and NOT Installed and STATE_TOOL_INSTALLED = "false"</Publish>
+
+		  <Publish Dialog="CustomExitDialog" Control="Finish" Event="EndDialog" Value="Return" Order="999">1</Publish>
+      <Publish Dialog="CustomExitDialog" Control="Finish" Event="DoAction" Value="LaunchStateToolWizardInstalled">STATE_TOOL_WIZARD_CHECK_BOX=1 and NOT Installed and STATE_TOOL_INSTALLED = "true"</Publish>
+      <Publish Dialog="CustomExitDialog" Control="Finish" Event="DoAction" Value="LaunchStateToolWizardNotInstalled">STATE_TOOL_WIZARD_CHECK_BOX=1 and NOT Installed and STATE_TOOL_INSTALLED = "false"</Publish>
 			<Publish Dialog="CustomExitDialog" Control="Finish" Event="DoAction" Value="LaunchReleaseNotes">STATE_TOOL_WIZARD_REL_NOTES_CHECK_BOX=1 and NOT Installed</Publish>
 			<Publish Dialog="CustomExitDialog" Control="Finish" Event="DoAction" Value="InstallVSCodeExt">INSTALL_VSCODE_EXT_CHECK_BOX=1 and NOT Installed</Publish>
-            <Publish Dialog="CustomExitDialog" Control="Finish" Event="DoAction" Value="GAReportSuccess">NOT Installed OR REINSTALL OR (NOT REMOVE~="ALL")</Publish>
+			<Publish Dialog="CustomExitDialog" Control="Finish" Event="DoAction" Value="GAReportSuccess">NOT Installed OR (Installed AND NOT (REMOVE~="ALL"))</Publish>
 
+			<Publish Dialog="CustomFatalError" Control="Finish" Event="EndDialog" Value="Return" Order="999">1</Publish>
+			<Publish Dialog="CustomFatalError" Control="Finish" Event="DoAction" Value="GAPixel">NOT WIX_IS_NETFRAMEWORK_45_OR_LATER_INSTALLED</Publish>
+      <Publish Dialog="CustomFatalError" Control="Finish" Event="DoAction" Value="GAReportFailure">NOT Installed OR (Installed AND NOT (REMOVE~="ALL"))</Publish>
 
-          <Publish Dialog="CustomFatalError" Control="Finish" Event="EndDialog" Value="Return" Order="999">1</Publish>
-            <Publish Dialog="CustomFatalError" Control="Finish" Event="DoAction" Value="GAPixel">NOT WIX_IS_NETFRAMEWORK_45_OR_LATER_INSTALLED</Publish>
-            <Publish Dialog="CustomFatalError" Control="Finish" Event="DoAction" Value="GAReportFailure">NOT Installed OR REINSTALL OR (NOT REMOVE~="ALL")</Publish>
+			<Publish Dialog="UserExit" Control="Finish" Event="DoAction" Value="GAReportUserExit">NOT Installed OR (Installed AND NOT (REMOVE~="ALL"))</Publish>
 
-			<Publish Dialog="UserExit" Control="Finish" Event="DoAction" Value="GAReportUserExit">NOT Installed OR REINSTALL OR (NOT REMOVE~="ALL")</Publish>
-
-            <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="PrivacyConsentDlg">NOT Installed</Publish>
+      <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="PrivacyConsentDlg">NOT Installed</Publish>
 			<Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="VerifyReadyDlg">Installed AND PATCH</Publish>
 
 			<Publish Dialog="PrivacyConsentDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg">1</Publish>
-      		<Publish Dialog="PrivacyConsentDlg" Control="Next" Event="NewDialog" Value="LicenseAgreementDlg">1</Publish>
+      <Publish Dialog="PrivacyConsentDlg" Control="Next" Event="NewDialog" Value="LicenseAgreementDlg">1</Publish>
 
-      		<Publish Dialog="LicenseAgreementDlg" Control="Back" Event="NewDialog" Value="PrivacyConsentDlg">1</Publish>
+      <Publish Dialog="LicenseAgreementDlg" Control="Back" Event="NewDialog" Value="PrivacyConsentDlg">1</Publish>
 			<Publish Dialog="LicenseAgreementDlg" Control="Next" Event="NewDialog" Value="LoginDlg">LicenseAccepted = "1" AND VISIBILITY = "Private"</Publish>
 			<Publish Dialog="LicenseAgreementDlg" Control="Next" Event="NewDialog" Value="InstallDirDlg">LicenseAccepted = "1" AND VISIBILITY = "Public"</Publish>
 
@@ -165,10 +165,10 @@
 
 		</UI>
 
-    <CustomAction Id="LaunchStateToolWizardInstalled" Execute="immediate" Directory="INSTALLDIR" ExeCommand="cmd.exe /k &quot;set PATH=[STATE_TOOL_PATH];%PATH% &amp;&amp; state tutorial new-project&quot;" Impersonate="yes" Return="asyncNoWait" />
+		<CustomAction Id="LaunchStateToolWizardInstalled" Execute="immediate" Directory="INSTALLDIR" ExeCommand="cmd.exe /k &quot;set PATH=[STATE_TOOL_PATH];%PATH% &amp;&amp; state tutorial new-project&quot;" Impersonate="yes" Return="asyncNoWait" />
     <CustomAction Id="LaunchStateToolWizardNotInstalled" Execute="immediate" Directory="INSTALLDIR" ExeCommand="cmd.exe /k &quot;set PATH=[AppDataFolder]\ActiveState\bin\;%PATH% &amp;&amp; state tutorial new-project&quot;" Impersonate="yes" Return="asyncNoWait" />
-	<CustomAction Id='LaunchReleaseNotes' Execute="immediate" Directory="INSTALLDIR" ExeCommand="explorer.exe [REL_NOTES]" Impersonate="yes" Return="asyncNoWait" />
-	<CustomAction Id='InstallVSCodeExt' Execute="immediate" Directory="INSTALLDIR" ExeCommand="cmd.exe /c &quot;[CODE_PATH]&quot; --install-extension ActiveState.activestate-platform" Impersonate="yes" Return="asyncNoWait" />
+		<CustomAction Id='LaunchReleaseNotes' Execute="immediate" Directory="INSTALLDIR" ExeCommand="explorer.exe [REL_NOTES]" Impersonate="yes" Return="asyncNoWait" />
+		<CustomAction Id='InstallVSCodeExt' Execute="immediate" Directory="INSTALLDIR" ExeCommand="cmd.exe /c &quot;[CODE_PATH]&quot; --install-extension ActiveState.activestate-platform" Impersonate="yes" Return="asyncNoWait" />
 
 
     <UIRef Id="WixUI_Common" />
@@ -177,7 +177,7 @@
     <Property Id="IS_MODIFY" Value="false" Secure="yes"/>
 
 		<InstallUISequence>
-            <Custom Action="GAReportStart" After="AppSearch">Not Installed OR REINSTALL OR (NOT REMOVE~="ALL")</Custom>
+      <Custom Action="GAReportStart" After="AppSearch">NOT Installed OR (Installed AND NOT (REMOVE~="ALL"))</Custom>
 			<Custom Action="CommandsExist" After="CostFinalize">NOT Installed OR (Installed AND NOT (REMOVE~="ALL"))</Custom>
 			<Custom Action="SetIsModify" After="CommandsExist">(Installed AND NOT (REMOVE~="ALL"))</Custom>
 			<Custom Action="SetInstallDirOnModify" After="SetIsModify">(Installed AND NOT (REMOVE~="ALL"))</Custom>
@@ -198,13 +198,13 @@
 		<CustomAction Id="SetPresetInfo" Property="Preset" Value="REL_NOTES=[REL_NOTES];INSTALLDIR=[INSTALLDIR];APP_START_MENU_PATH=[ApplicationProgramsFolder];PRESET=[PRESET];COMMIT_ID=[COMMIT_ID]" />
 		<CustomAction Id="SetRollbackPropertyValues" Property="Rollback" Value="STATE_TOOL_INSTALLED=[STATE_TOOL_INSTALLED];INSTALLDIR=[INSTALLDIR];COMMIT_ID=[COMMIT_ID]" />
 
-        <Binary Id="GAPixelCA" SourceFile="$(var.GAPixel.TargetDir)$(var.GAPixel.TargetName).CA.dll" />
-        <CustomAction Id="GAPixel" Impersonate="yes" BinaryKey="GAPixelCA" DllEntry="SendPixel" Return="ignore" />
+    <Binary Id="GAPixelCA" SourceFile="$(var.GAPixel.TargetDir)$(var.GAPixel.TargetName).CA.dll" />
+    <CustomAction Id="GAPixel" Impersonate="yes" BinaryKey="GAPixelCA" DllEntry="SendPixel" Return="ignore" />
 
 		<Binary Id="S3PixelCA" SourceFile="$(var.S3Pixel.TargetDir)$(var.S3Pixel.TargetName).CA.dll" />
 		<CustomAction Id="S3Pixel" Impersonate="yes" BinaryKey="S3PixelCA" DllEntry="DownloadPixel" Return="ignore" />
 
-        <Binary Id="CommandsCA" SourceFile="$(var.StateCommandExists.TargetDir)$(var.StateCommandExists.TargetName).CA.dll" />
+    <Binary Id="CommandsCA" SourceFile="$(var.StateCommandExists.TargetDir)$(var.StateCommandExists.TargetName).CA.dll" />
 		<CustomAction Id="CommandsExist" Impersonate="yes" BinaryKey="CommandsCA" DllEntry="CheckCommands" Return="check" />
 
 		<Binary Id="StatusCA" SourceFile="$(var.Status.TargetDir)$(var.Status.TargetName).CA.dll" />
