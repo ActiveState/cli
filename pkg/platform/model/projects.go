@@ -35,7 +35,7 @@ var (
 	FailProjectNameConflict = failures.Type("model.fail.projectconflict")
 
 	// FailProjectNotFound is a fialure due to a project not being found
-	FailProjectNotFound = failures.Type("model.fail.projectnotfound")
+	FailProjectNotFound = failures.Type("model.fail.projectnotfound", failures.FailNonFatal)
 )
 
 // FetchProjectByName fetches a project for an organization.
