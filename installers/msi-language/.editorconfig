@@ -4,7 +4,7 @@ root = true
 end_of_line = lf
 insert_final_newline = true
 
-[*.{wxs,wxl}]
+[*.{wxs,wxl,p.wxs}]
 indent_style = tab
 indent_size = 2
 tabsize = 2
