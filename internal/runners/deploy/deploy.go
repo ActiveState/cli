@@ -186,7 +186,7 @@ func ensurePathIsClean(path string) error {
 	}
 	empty, fail := fileutils.IsEmptyDir(path)
 	if fail != nil {
-		return errs.Wrap(fail, "Failed to check if {{.V0}} is empty.", path)
+		return errs.Wrap(fail, "Failed to check if %s is empty.", path)
 	}
 	if !empty {
 		return locale.NewError("deploy_install_path_not_empty", "The installation directory {{.V0}} needs to be empty.", path)
