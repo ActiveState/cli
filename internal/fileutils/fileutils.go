@@ -889,3 +889,19 @@ func ListDir(sourcePath string, includeDirs bool) []string {
 	})
 	return result
 }
+
+// PathInList returns whether the provided path list contains the provided
+// path.
+func PathInList(listSep, pathList, path string) (bool, error) {
+	paths := strings.Split(pathList, listSep)
+	for _, p := range paths {
+		equal, err := PathsEqual(p, path)
+		if err != nil {
+			return false, err
+		}
+		if equal {
+			return true, nil
+		}
+	}
+	return false, nil
+}

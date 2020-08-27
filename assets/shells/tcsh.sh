@@ -13,7 +13,7 @@ setenv {{$K}} "{{$V}}:$PATH"
 {{- end}}
 
 {{range $K, $CMD := .Scripts}}
-alias {{$K}} 'state run {{$CMD}}'
+alias {{$K}} '{{.Exec}} run {{$CMD}}'
 {{end}}
 
 {{ if .ExecAlias }}

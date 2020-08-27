@@ -19,6 +19,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/project"
@@ -176,16 +177,21 @@ func SetupProjectRcFile(templateName, ext string, env map[string]string) (*os.Fi
 		"WD":          virtualenvironment.Get().WorkingDirectory(),
 		"UserScripts": userScripts,
 		"Scripts":     scripts,
+		"Exec":        constants.CommandName,
 	}
 
-	currExecAbsPath, err := absPathToCurrentExec()
+	currExecAbsPath, err := osutils.Executable()
 	if err != nil {
 		return nil, failures.FailOS.Wrap(err)
 	}
+	currExecAbsDir := filepath.Dir(currExecAbsPath)
 
+	listSep := string(os.PathListSeparator)
 	pathList, ok := env["PATH"]
-	if !ok || !inPathList(pathList, filepath.Dir(currExecAbsPath)) {
+	inPathList, err := fileutils.PathInList(listSep, pathList, currExecAbsDir)
+	if !ok || !inPathList {
 		rcData["ExecAlias"] = currExecAbsPath
+		rcData["Exec"] = currExecAbsPath
 	}
 
 	t, err := template.New("rcfile").Parse(tpl)
@@ -210,23 +216,4 @@ func SetupProjectRcFile(templateName, ext string, env map[string]string) (*os.Fi
 	logging.Debug("Using project RC: %s", out.String())
 
 	return tmpFile, nil
-}
-
-func absPathToCurrentExec() (string, error) {
-	exec, err := os.Executable()
-	if err != nil {
-		return "", err
-	}
-
-	return fileutils.ResolvePath(exec)
-}
-
-func inPathList(pathList, dir string) bool {
-	paths := strings.Split(pathList, string(os.PathListSeparator))
-	for _, path := range paths {
-		if path == dir {
-			return true
-		}
-	}
-	return false
 }
