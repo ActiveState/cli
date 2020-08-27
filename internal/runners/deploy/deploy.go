@@ -177,7 +177,29 @@ func runStepsWithFuncs(targetPath string, force, userScope bool, namespace proje
 
 type installFunc func(path string, installer installable, out output.Outputer) (runtime.EnvGetter, error)
 
+func ensurePathIsClean(path string) error {
+	if !fileutils.TargetExists(path) {
+		return nil
+	}
+	if !fileutils.IsDir(path) {
+		return locale.NewError("deploy_install_path_no_directory", "The installation target {{.V0}} needs to be a directory.", path)
+	}
+	empty, fail := fileutils.IsEmptyDir(path)
+	if fail != nil {
+		return errs.Wrap(fail, "Failed to check if %s is empty.", path)
+	}
+	if !empty {
+		return locale.NewError("deploy_install_path_not_empty", "The installation directory {{.V0}} needs to be empty.", path)
+	}
+	return nil
+}
+
 func install(path string, installer installable, out output.Outputer) (runtime.EnvGetter, error) {
+	// check that path is empty or does not exist yet
+	err := ensurePathIsClean(path)
+	if err != nil {
+		return nil, locale.WrapError(err, "deploy_ensure_path_is_clean", "Could not ensure that installation path is clean.")
+	}
 	out.Notice(locale.T("deploy_install"))
 	envGetter, installed, fail := installer.Install()
 	if fail != nil {

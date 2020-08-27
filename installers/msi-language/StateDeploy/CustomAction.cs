@@ -538,5 +538,33 @@ namespace StateDeploy
                 return ActionResult.Success;
             }
         }
+
+        [CustomAction]
+        public static ActionResult ValidateInstallFolder(Session session)
+        {
+            using (var log = new ActiveState.Logging(session, session["INSTALLDIR"]))
+            {
+                var installFolder = session["INSTALLDIR"];
+                log.Log("Checking folder {0}", installFolder);
+
+                session["VALIDATE_FOLDER_CLEAN"] = "0";
+                if (!Directory.Exists(installFolder))
+                {
+                    log.Log("Folder {0} does not exist.  Let's proceed.", installFolder);
+                    session["VALIDATE_FOLDER_CLEAN"] = "1";
+                    return ActionResult.Success;
+                }
+
+                if (Directory.EnumerateFileSystemEntries(installFolder).Any())
+                {
+                    log.Log("Selected installation folder {0} exists and is not empty.", installFolder);
+                    return ActionResult.Success;
+                };
+
+                log.Log("Selected installation folder {0} exists, but is empty.  All good.", installFolder);
+                session["VALIDATE_FOLDER_CLEAN"] = "1";
+                return ActionResult.Success;
+            }
+        }
     }
 }
