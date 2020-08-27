@@ -200,19 +200,6 @@ namespace StateDeploy
                     contents = "msi-silent";
                 }
 
-                // The State Tool should have created the config directory, but incase not
-                // we create it here.
-                try
-                {
-                    Directory.CreateDirectory(output.Trim());
-                }
-                catch (Exception e)
-                {
-                    string msg = string.Format("Could not create State Tool configuration directory at: {0}, encountered exception: {1}", output.Trim(), e.ToString());
-                    session.Log(msg);
-                    RollbarReport.Critical(msg);
-                }
-
                 try
                 {
                     string installFilePath = Path.Combine(output.Trim(), "installsource.txt");
