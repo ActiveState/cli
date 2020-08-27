@@ -32,6 +32,8 @@ namespace ActiveState
                 procStartInfo.RedirectStandardOutput = true;
                 procStartInfo.RedirectStandardError = true;
                 procStartInfo.UseShellExecute = false;
+                procStartInfo.StandardOutputEncoding = Encoding.UTF8;
+                procStartInfo.StandardErrorEncoding = Encoding.UTF8;
                 // Do not create the black window.
                 procStartInfo.CreateNoWindow = true;
 
