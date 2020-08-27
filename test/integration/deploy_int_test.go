@@ -198,6 +198,21 @@ func (suite *DeployIntegrationTestSuite) TestDeployPython() {
 	suite.AssertConfig(ts)
 }
 
+func (suite *DeployIntegrationTestSuite) TestDeployInstallNonEmptyDirectory() {
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	targetDir := filepath.Join(ts.Dirs.Work, "target")
+	fail := fileutils.MkdirUnlessExists(targetDir)
+	suite.Require().NoError(fail.ToError(), "error creating target directory")
+	fail = fileutils.Touch(filepath.Join(targetDir, "dummy"))
+	suite.Require().NoError(fail.ToError(), "error creating a dummy file in target directory")
+
+	cp := ts.Spawn("deploy", "install", "ActiveState-CLI/Python3", "--path", targetDir)
+	cp.ExpectLongString("needs to be empty")
+	cp.ExpectNotExitCode(0)
+}
+
 func (suite *DeployIntegrationTestSuite) TestDeployInstall() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
