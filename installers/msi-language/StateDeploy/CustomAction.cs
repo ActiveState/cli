@@ -199,7 +199,6 @@ namespace StateDeploy
                 {
                     contents = "msi-silent";
                 }
-
                 try
                 {
                     string installFilePath = Path.Combine(output.Trim(), "installsource.txt");
