@@ -198,7 +198,7 @@ func install(path string, installer installable, out output.Outputer) (runtime.E
 	// check that path is empty or does not exist yet
 	err := ensurePathIsClean(path)
 	if err != nil {
-		return nil, err
+		return nil, locale.WrapError(err, "deploy_ensure_path_is_clean", "Could not ensure that installation path is clean.")
 	}
 	out.Notice(locale.T("deploy_install"))
 	envGetter, installed, fail := installer.Install()
