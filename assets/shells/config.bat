@@ -13,7 +13,6 @@ set {{$K}}={{$V}}
 
 {{ if .ExecAlias }}
 {{$execCmd = .ExecAlias}}
-
 DOSKEY {{.ExecName}}="{{.ExecAlias}}" $*
 {{ end }}
 
