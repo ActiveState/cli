@@ -188,6 +188,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Logging.cs" />
+    <Compile Include="Retry.cs" />
     <Compile Include="Tracker.cs" />
     <Compile Include="FileAssociation.cs" />
     <Compile Include="Command.cs" />

@@ -97,6 +97,18 @@ run: |
   go test `go list ./... | grep -v api | grep -v integration | grep -v expect`
 #@ end
 ---
+#@ def steps_inttestcrit():
+name: "Critical Integration Tests"
+shell: bash
+run: |
+  export SHELL=''
+  go test -timeout 10m github.com/ActiveState/cli/test/integration -test.v -test.run "^TestLanguageMsiActivePerl|TestDeployIntegrationTestSuite|TestInitIntegrationTestSuite|TestPushIntegrationTestSuite|TestUpdateIntegrationTestSuite$"
+env:
+  INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
+  INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
+  PLATFORM_API_TOKEN: ${{ secrets.PLATFORM_API_TOKEN }}
+#@ end
+---
 #@ def steps_inttest():
 name: "Integration Tests"
 shell: bash

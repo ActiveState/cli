@@ -402,14 +402,6 @@ secrets_expander_err_empty_name:
   other: Expander handle can not be an empty string
 secrets_expander_err_undefined:
   other: Expander must be defined
-error_expand_variable_infinite_recursion:
-  other: Infinite recursion trying to expand variable '{{.V0}}'
-error_expand_variable_project_unknown_category:
-  other: "Error expanding variable '{{.V0}}': unknown category '{{.V1}}'"
-error_expand_variable_project_unknown_name:
-  other: "Error expanding variable '{{.V0}}': {{.V1}}"
-error_expand_variable_project_unrecognized_platform_var:
-  other: "Unrecognized platform variable '{{.V0}}'"
 run_description:
   other: Run your project scripts
 scripts_description:
@@ -467,7 +459,7 @@ error_state_run_undefined_name:
 error_state_run_unknown_name:
   other: The script '{{.Name}}' is not defined in activestate.yaml.
 info_state_run_activating_state:
-  other: "This script requires an activated state. Activating it now. To bypass this set `standalone: true` on this script in your activestate.yaml."
+  other: "[INFO]This script requires an activated state. Activating it now. To bypass this set `standalone: true` on this script in your activestate.yaml.[/RESET]"
 error_state_run_activate:
   other: Unable to activate a state for running the script in. Try manually running "state activate" first.
 error_state_run_standalone_conflict:
@@ -477,7 +469,7 @@ error_state_run_unknown_exec:
 error_state_run_setup_scriptfile:
   other: Cannot setup runnable on-disk script file.
 info_state_run_running:
-  other: "Running user-defined script: {{.V0}}\nDefined in {{.V1}}"
+  other: "[INFO]Running user-defined script: {{.V0}}\nDefined in {{.V1}}[/RESET]"
 error_state_run_error:
   other: Failed to run script.
 error_state_run_no_shell:
@@ -558,16 +550,14 @@ field_package_version:
   other: Version
 field_namespace:
   other: Namespace
-field_platforms:
-  other: Platforms
 field_events:
   other: Events
 field_scripts:
   other: Scripts
-field_languages:
-  other: Languages
 field_localcheckouts:
   other: Local Checkouts
+field_platforms:
+  other: Platforms
 err_cannot_obtain_dist:
   other: "Could not obtain distribution for language: {{.V0}}"
 err_already_active:
@@ -655,12 +645,10 @@ secrets_err_base64_decoding:
   other: Error base64 decoding variable value
 secrets_err_no_publickey_found:
   other: Unable to find any public-key for User
-secrets_err_value_prompt:
-  other: The provided variable value is invalid
 secrets_expand_err_undefined:
   other: "Secret `{{.V0}}` not defined in project"
 secrets_expand_err_not_found:
-  other: "unable to obtain value for variable `{{.V0}}`"
+  other: "Unable to obtain value for secret: `{{.V0}}.`"
 secrets_expand_err_no_access:
   other: You are not a member of organization '{{.V0}}' and therefore cannot access secrets belonging to its projects
 secrets_err_invalid_store:
@@ -755,13 +743,13 @@ err_command_requires_auth:
   other: You need to be authenticated to run this command. Authenticate by running `state auth`.
 warn_script_name_in_use:
   other: |
-    The following script names are already in use:
+    [YELLOW]The following script names are already in use:
 
       - {{.V0}}
 
     These scripts were not aliased during activation but can still be run using `state run`, eg. `state run {{.V1}}`.
 
-    Note that you can also access scripts by prefixing their script with your project name ({{.V2}}), eg. `{{.V3}}`
+    Note that you can also access scripts by prefixing their script with your project name ({{.V2}}), eg. `{{.V3}}`[/RESET]
 
 warn_move_incompatible_modes:
   other: "Permissions of files {{.V0}} and {{.V1}} differ. Using permissions of {{.V0}}"
@@ -782,7 +770,7 @@ err_invalid_version:
 err_update_version:
   other: "Failed to automatically update your locked version schema. Please manually remove your 'version' and 'branch' fields in your activestate.yaml and substitute them for 'lock: <branch>@<version>'."
 downloading_state_version:
-  other: "Downloading State Tool version {{.V0}}, as specified by your activestate.yaml (this only needs to happen once for each version you specify)."
+  other: "[INFO]Downloading State Tool version {{.V0}}, as specified by your activestate.yaml (this only needs to happen once for each version you specify).[/RESET]"
 forward_fail:
   other: Could not forward command to the appropriate State Tool version
 forward_fail_with_error:
@@ -791,18 +779,18 @@ forward_fail_info:
   other: The requested version of the State Tool does not exist, please ensure the version and branch are correct.
 update_available:
   other: |
-    A new update is available!
+    [INFO]A new update is available!
 
     Your version: {{.V0}}
     Available Version: {{.V1}}
 
-    You can update by running `state update`
+    You can update by running `state update`[/RESET]
 runtime_update_notice_known_count:
-  other: Your activestate.yaml is {{.V0}} commits behind.
+  other: "[INFO]Your activestate.yaml is {{.V0}} commits behind.[/RESET]"
 runtime_update_notice_unknown_count:
-  other: Your activestate.yaml is behind.
+  other: "[INFO]Your activestate.yaml is behind.[/RESET]"
 runtime_update_help:
-  other: Run `state pull` to pull in the latest runtime environment as defined in your project on https://platform.activestate.com/{{.V0}}/{{.V1}}
+  other: "[INFO]Run `state pull` to pull in the latest runtime environment as defined in your project on https://platform.activestate.com/{{.V0}}/{{.V1}}[/RESET]"
 err_no_credentials:
   other: Cannot authenticate without credentials
 err_token_list:
@@ -1016,8 +1004,6 @@ arg_platforms_shared_version:
   other: version
 arg_platforms_shared_version_description:
   other: Platform version (e.g. 12.04.2)
-field_platforms:
-  other: Platforms
 field_version:
   other: Version
 field_bitwidth:
@@ -1031,9 +1017,9 @@ commit_message_add_language:
 commit_message_removed_language:
   other: "Removed language: {{.V0}} {{.V1}}"
 downloading_artifacts:
-  other: Downloading required artifacts
+  other: "[INFO]Downloading required artifacts[/RESET]"
 installing_artifacts:
-  other: Installing required artifacts
+  other: "[INFO]Installing required artifacts[/RESET]"
 fileutils_err_ammend_file:
   other: "Could not edit file: '{{.V0}}'"
 err_auth_empty_token:
@@ -1667,3 +1653,6 @@ ppm_convert_ask_feedback:
     [[BR]]
     To create another project run `state init`, or if you want to find out more about the State Tool and what it can do
     run `state --help` or check out {{.Docs}}
+windows_compatibility_warning:
+  other: |
+    Warning: State Tool is untested on Windows versions below 10. If you encounter issues please consider reporting them on {{.V0}}

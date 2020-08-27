@@ -13,7 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/secrets"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
@@ -46,8 +46,10 @@ type SecretExport struct {
 	Value       string `json:"value,omitempty"`
 }
 
+var out output.Outputer
+
 // NewCommand creates a new Keypair command.
-func NewCommand(secretsClient *secretsapi.Client, output *string) *Command {
+func NewCommand(secretsClient *secretsapi.Client, outFormat *string) *Command {
 	var flagFilter string
 
 	c := Command{
@@ -68,7 +70,7 @@ func NewCommand(secretsClient *secretsapi.Client, output *string) *Command {
 	}
 
 	c.Flags.Filter = &flagFilter
-	c.Flags.Output = output
+	c.Flags.Output = outFormat
 	c.config.Run = c.Execute
 	c.config.PersistentPreRun = c.checkSecretsAccess
 
@@ -85,7 +87,7 @@ func (cmd *Command) checkSecretsAccess(_ *cobra.Command, _ []string) {
 		failures.Handle(fail, locale.T("secrets_err_access"))
 	}
 	if !allowed {
-		print.Warning(locale.T("secrets_warning_no_access"))
+		fmt.Fprint(os.Stderr, locale.T("secrets_warning_no_access"))
 		cmd.config.Exiter(1)
 	}
 }
@@ -98,7 +100,7 @@ func (cmd *Command) Config() *commands.Command {
 // Execute processes the secrets command.
 func (cmd *Command) Execute(_ *cobra.Command, args []string) {
 	if strings.HasPrefix(os.Args[1], "var") {
-		print.Warning(locale.T("secrets_warn_deprecated_var"))
+		fmt.Fprint(os.Stderr, locale.T("secrets_warn_deprecated_var"))
 	}
 
 	defs, fail := definedSecrets(cmd.secretsClient, *cmd.Flags.Filter)
@@ -121,7 +123,7 @@ func (cmd *Command) Execute(_ *cobra.Command, args []string) {
 			return
 		}
 
-		print.Line(string(data))
+		fmt.Fprint(os.Stdout, string(data))
 		return
 	default:
 		rows, fail := secretsToRows(secretExports)
@@ -134,7 +136,7 @@ func (cmd *Command) Execute(_ *cobra.Command, args []string) {
 		t.SetHeaders([]string{locale.T("secrets_header_name"), locale.T("secrets_header_scope"), locale.T("secrets_header_value"), locale.T("secrets_header_description"), locale.T("secrets_header_usage")})
 		t.SetHideLines([]string{"betweenLine", "top", "aboveTitle", "LineTop", "LineBottom", "bottomLine"}) // Don't print whitespace lines
 		t.SetAlign("left")
-		print.Line(t.Render("simple"))
+		fmt.Fprint(os.Stdout, t.Render("simple"))
 	}
 }
 

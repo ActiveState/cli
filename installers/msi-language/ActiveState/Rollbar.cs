@@ -16,7 +16,6 @@ namespace ActiveState
     {
         public static readonly TimeSpan RollbarTimeout = TimeSpan.FromSeconds(10);
 
-
         /// <summary>
         /// Configures the Rollbar singleton-like notifier.
         /// </summary>
@@ -34,13 +33,7 @@ namespace ActiveState
                     payload.Data.CodeVersion = codeVersion;
                 }
             };
-            
-            /*
-            RollbarLocator.RollbarInstance
-                // minimally required Rollbar configuration:
-                .Configure(config)
-                ;
-                */
+            RollbarLocator.RollbarInstance.Configure(config);
 
             string deviceId = new DeviceIdBuilder()
                 .AddMachineName()
@@ -91,20 +84,32 @@ public class RollbarReport
 
     public static readonly TimeSpan RollbarTimeout = TimeSpan.FromSeconds(10);
 
-    public static void Critical(string message, IDictionary<string, object> customFields = null)
+    public static void Critical(string message, ActiveState.Logging log, IDictionary<string, object> customFields = null)
     {
-        Report(Level.Critical, message, customFields);
+        Report(Level.Critical, message, log, customFields);
     }
 
-    public static void Error(string message, IDictionary<string, object> customFields = null)
+    public static void Error(string message, ActiveState.Logging log, IDictionary<string, object> customFields = null)
     {
-        Report(Level.Error, message, customFields);
+        Report(Level.Error, message, log, customFields);
     }
 
-    private static void Report(Level level, string message, IDictionary<string, object> customFields = null)
+    private static void Report(Level level, string message, ActiveState.Logging log, IDictionary<string, object> customFields = null)
     {
         lock (syncLock)
         {
+            // Add log if specified
+            if (log != null)
+	    {
+                // create a custom fields dictionary if necessary
+                if (customFields == null)
+		{
+                    customFields = new Dictionary<string, object>();
+		}
+                var logHistory = log.GetLog();
+                log.Session().Log("Sending log history to rollbar: {0}", logHistory);
+                customFields.Add("log", logHistory);
+	    }
             if (!criticalReported)
             {
                 if (level == Level.Critical)

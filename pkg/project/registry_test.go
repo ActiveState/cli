@@ -3,19 +3,19 @@ package project_test
 import (
 	"testing"
 
-	"github.com/ActiveState/cli/internal/failures"
-	"github.com/ActiveState/cli/pkg/project"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/ActiveState/cli/pkg/project"
 )
 
 func TestRegisterExpander_RequiresNonBlankName(t *testing.T) {
-	failure := project.RegisterExpander("", func(n string, _ string, _ bool, p *project.Project) (string, *failures.Failure) {
+	failure := project.RegisterExpander("", func(n string, _ string, _ bool, p *project.Project) (string, error) {
 		return "", nil
 	})
 	assert.True(t, failure.Type.Matches(project.FailExpanderBadName))
 	assert.False(t, project.IsRegistered(""))
 
-	failure = project.RegisterExpander(" \n \t\f ", func(n string, _ string, _ bool, p *project.Project) (string, *failures.Failure) {
+	failure = project.RegisterExpander(" \n \t\f ", func(n string, _ string, _ bool, p *project.Project) (string, error) {
 		return "", nil
 	})
 	assert.True(t, failure.Type.Matches(project.FailExpanderBadName))
@@ -30,7 +30,7 @@ func TestRegisterExpander_FuncCannotBeNil(t *testing.T) {
 
 func TestRegisterExpander(t *testing.T) {
 	assert.False(t, project.IsRegistered("lobsters"))
-	failure := project.RegisterExpander("lobsters", func(n string, _ string, _ bool, p *project.Project) (string, *failures.Failure) {
+	failure := project.RegisterExpander("lobsters", func(n string, _ string, _ bool, p *project.Project) (string, error) {
 		return "", nil
 	})
 	assert.Nil(t, failure)

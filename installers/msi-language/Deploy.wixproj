@@ -69,6 +69,14 @@
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
       <RefTargetDir>INSTALLFOLDER</RefTargetDir>
     </ProjectReference>
+    <ProjectReference Include="S3Pixel\S3Pixel.csproj">
+      <Name>S3Pixel</Name>
+      <Project>{1cf9f568-6ab3-48a4-bec5-cc3e993259a0}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>True</DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
+    </ProjectReference>
     <ProjectReference Include="StateCommandExists\StateCommandExists.csproj">
       <Name>StateCommandExists</Name>
       <Project>{adebe963-f9b2-4860-8512-364a7c78b757}</Project>

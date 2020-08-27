@@ -21,7 +21,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
@@ -92,7 +91,7 @@ func (u *Updater) CanUpdate() bool {
 
 // PrintUpdateMessage will print a message to stdout when an update is available.
 // This will only print the message if the current project has a version lock AND if an update is available
-func PrintUpdateMessage(pjPath string) {
+func PrintUpdateMessage(pjPath string, out output.Outputer) {
 	if versionInfo, _ := projectfile.ParseVersionInfo(pjPath); versionInfo == nil {
 		return
 	}
@@ -110,7 +109,7 @@ func PrintUpdateMessage(pjPath string) {
 	}
 
 	if info != nil && info.Version != constants.Version {
-		print.Warning(locale.Tr("update_available", constants.Version, info.Version))
+		out.Notice(locale.Tr("update_available", constants.Version, info.Version))
 	}
 }
 

@@ -18,7 +18,6 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
-	authlet "github.com/ActiveState/cli/pkg/cmdlets/auth"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	secretsModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -43,7 +42,6 @@ func (suite *LoginWithKeypairTestSuite) BeforeTest(suiteName, testName string) {
 	suite.Require().NoError(err, "Should detect root path")
 	os.Chdir(filepath.Join(root, "test"))
 	suite.promptMock = promptMock.Init()
-	authlet.Prompter = suite.promptMock
 
 	setup(suite.T())
 }
@@ -57,6 +55,8 @@ func (suite *LoginWithKeypairTestSuite) mockSuccessfulLogin() {
 	suite.platformMock.Register("GET", "/apikeys")
 	suite.platformMock.RegisterWithResponse("DELETE", "/apikeys/"+constants.APITokenName, 200, "/apikeys/"+constants.APITokenNamePrefix)
 	suite.platformMock.Register("POST", "/apikeys")
+	suite.platformMock.Register("GET", "/tiers")
+	suite.platformMock.Register("GET", "/organizations/test")
 }
 
 func (suite *LoginWithKeypairTestSuite) TestSuccessfulPassphraseMatch() {
@@ -66,7 +66,7 @@ func (suite *LoginWithKeypairTestSuite) TestSuccessfulPassphraseMatch() {
 	suite.promptMock.OnMethod("Input").Once().Return("testuser", nil)
 	suite.promptMock.OnMethod("InputSecret").Once().Return("foo", nil)
 
-	err := runAuth(&AuthParams{})
+	err := runAuth(&AuthParams{}, suite.promptMock)
 	suite.Require().NoError(err, "Executed with error")
 	suite.Require().NoError(failures.Handled(), "Unexpected Failure")
 	suite.NotNil(authentication.ClientAuth(), "Should have been authenticated")
@@ -94,7 +94,7 @@ func (suite *LoginWithKeypairTestSuite) TestPassphraseMismatch_HasLocalPrivateKe
 	suite.promptMock.OnMethod("Input").Once().Return("testuser", nil)
 	suite.promptMock.OnMethod("InputSecret").Once().Return("bar", nil)
 
-	err := runAuth(&AuthParams{})
+	err := runAuth(&AuthParams{}, suite.promptMock)
 	suite.Require().NoError(err, "Executed with error")
 	suite.Require().NoError(failures.Handled(), "Unexpected Failure")
 	suite.NotNil(authentication.ClientAuth(), "Should have been authenticated")
@@ -126,7 +126,7 @@ func (suite *LoginWithKeypairTestSuite) TestPassphraseMismatch_NoLocalPrivateKey
 	// passphrase mismatch, prompt for old passphrase
 	suite.promptMock.OnMethod("InputSecret").Once().Return("foo", nil)
 
-	err := runAuth(&AuthParams{})
+	err := runAuth(&AuthParams{}, suite.promptMock)
 	suite.Require().NoError(err, "Executed with error")
 	suite.Require().NoError(failures.Handled(), "Unexpected Failure")
 	suite.NotNil(authentication.ClientAuth(), "Should have been authenticated")
@@ -160,7 +160,7 @@ func (suite *LoginWithKeypairTestSuite) TestPassphraseMismatch_HasMismatchedLoca
 	// passphrase mismatch, prompt for old passphrase
 	suite.promptMock.OnMethod("InputSecret").Once().Return("foo", nil)
 
-	err := runAuth(&AuthParams{})
+	err := runAuth(&AuthParams{}, suite.promptMock)
 	suite.Require().NoError(err, "Executed with error")
 	suite.Require().NoError(failures.Handled(), "Unexpected Failure")
 	suite.NotNil(authentication.ClientAuth(), "Should have been authenticated")
@@ -199,7 +199,7 @@ func (suite *LoginWithKeypairTestSuite) TestPassphraseMismatch_OldPasswordMismat
 	// user wants to generate a new keypair
 	suite.promptMock.OnMethod("Confirm").Once().Return(true, nil)
 
-	err := runAuth(&AuthParams{})
+	err := runAuth(&AuthParams{}, suite.promptMock)
 	suite.Require().NoError(err, "Executed with error")
 	suite.Require().NoError(failures.Handled(), "Unexpected Failure")
 	suite.NotNil(authentication.ClientAuth(), "Should have been authenticated")
@@ -230,7 +230,7 @@ func (suite *LoginWithKeypairTestSuite) TestPassphraseMismatch_OldPasswordMismat
 	// user wants to generate a new keypair
 	suite.promptMock.OnMethod("Confirm").Once().Return(true, nil)
 
-	err := runAuth(&AuthParams{})
+	err := runAuth(&AuthParams{}, suite.promptMock)
 	suite.Require().Error(err)
 	suite.Nil(authentication.ClientAuth(), "Should not have been authenticated")
 
