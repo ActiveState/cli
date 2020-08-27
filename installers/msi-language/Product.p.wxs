@@ -109,7 +109,9 @@
 			<DialogRef Id="UserExit" />
 
 			<Publish Dialog="BrowseDlg" Control="OK" Event="DoAction" Value="WixUIValidatePath" Order="3">1</Publish>
-			<Publish Dialog="BrowseDlg" Control="OK" Event="SpawnDialog" Value="InvalidDirDlg" Order="4"><![CDATA[NOT WIXUI_DONTVALIDATEPATH AND WIXUI_INSTALLDIR_VALID<>"1"]]></Publish>
+			<Publish Dialog="BrowseDlg" Control="OK" Event="DoAction" Value="ValidateInstallFolder" Order="4">1</Publish>
+		  <Publish Dialog="BrowseDlg" Control="OK" Event="SpawnDialog" Value="InvalidDirDlg" Order="5"><![CDATA[NOT WIXUI_DONTVALIDATEPATH AND WIXUI_INSTALLDIR_VALID<>"1"]]></Publish>
+		  <Publish Dialog="BrowseDlg" Control="OK" Event="SpawnDialog" Value="NonEmptyDirDlg" Order="6"><![CDATA[NOT WIXUI_DONTVALIDATEPATH AND VALIDATE_FOLDER_CLEAN<>"1"]]></Publish>
 
 			<Publish Dialog="CustomExitDialog" Control="Finish" Event="EndDialog" Value="Return" Order="999">1</Publish>
       		<Publish Dialog="CustomExitDialog" Control="Finish" Event="DoAction" Value="LaunchStateToolWizardInstalled">STATE_TOOL_WIZARD_CHECK_BOX=1 and NOT Installed and STATE_TOOL_INSTALLED = "true"</Publish>
@@ -142,8 +144,11 @@
 			<Publish Dialog="InstallDirDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg">1</Publish>
 			<Publish Dialog="InstallDirDlg" Control="Next" Event="SetTargetPath" Value="[WIXUI_INSTALLDIR]" Order="1">1</Publish>
 			<Publish Dialog="InstallDirDlg" Control="Next" Event="DoAction" Value="WixUIValidatePath" Order="2">NOT WIXUI_DONTVALIDATEPATH</Publish>
-			<Publish Dialog="InstallDirDlg" Control="Next" Event="SpawnDialog" Value="InvalidDirDlg" Order="3"><![CDATA[NOT WIXUI_DONTVALIDATEPATH AND WIXUI_INSTALLDIR_VALID<>"1"]]></Publish>
-			<Publish Dialog="InstallDirDlg" Control="Next" Event="NewDialog" Value="VerifyReadyDlg" Order="4">WIXUI_DONTVALIDATEPATH OR WIXUI_INSTALLDIR_VALID="1"</Publish>
+
+			<Publish Dialog="InstallDirDlg" Control="Next" Event="DoAction" Value="ValidateInstallFolder" Order="3">NOT WIXUI_DONTVALIDATEPATH</Publish>
+			<Publish Dialog="InstallDirDlg" Control="Next" Event="SpawnDialog" Value="InvalidDirDlg" Order="4"><![CDATA[NOT WIXUI_DONTVALIDATEPATH AND WIXUI_INSTALLDIR_VALID<>"1"]]></Publish>
+			<Publish Dialog="InstallDirDlg" Control="Next" Event="SpawnDialog" Value="NonEmptyDirDlg" Order="5"><![CDATA[NOT WIXUI_DONTVALIDATEPATH AND VALIDATE_FOLDER_CLEAN<>"1"]]></Publish>
+			<Publish Dialog="InstallDirDlg" Control="Next" Event="NewDialog" Value="VerifyReadyDlg" Order="6">WIXUI_DONTVALIDATEPATH OR (WIXUI_INSTALLDIR_VALID="1" AND VALIDATE_FOLDER_CLEAN="1")</Publish>
 			<Publish Dialog="InstallDirDlg" Control="ChangeFolder" Property="_BrowseProperty" Value="[WIXUI_INSTALLDIR]" Order="1">1</Publish>
 			<Publish Dialog="InstallDirDlg" Control="ChangeFolder" Event="SpawnDialog" Value="BrowseDlg" Order="2">1</Publish>
 
@@ -211,6 +216,7 @@
 		<CustomAction Id="GAReportUserExit" Impersonate="yes" BinaryKey="StateDeployCA" DllEntry="GAReportUserExit" Execute="immediate" Return="ignore" />
 		<CustomAction Id="GAReportFailure" Impersonate="yes" BinaryKey="StateDeployCA" DllEntry="GAReportFailure" Execute="immediate" Return="ignore" />
 		<CustomAction Id="GAReportSuccess" Impersonate="yes" BinaryKey="StateDeployCA" DllEntry="GAReportSuccess" Execute="immediate" Return="ignore" />
+    <CustomAction Id="ValidateInstallFolder" Impersonate="yes" BinaryKey="StateDeployCA" DllEntry="ValidateInstallFolder" Execute="immediate" Return="check" />
 
 		<Binary Id="PresetCA" SourceFile="$(var.Preset.TargetDir)$(var.Preset.TargetName).CA.dll" />
 		<CustomAction Id="Preset" Impersonate="no" BinaryKey="PresetCA" DllEntry="InstallPreset" Execute="deferred" Return="check" />

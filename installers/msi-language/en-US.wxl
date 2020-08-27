@@ -24,4 +24,5 @@ Click "Back" to review or change any of your installation settings.  Click "Canc
   <String Id="LoginDlgUsername">Username</String>
   <String Id="LoginDlgPassword">Password</String>
   <String Id="LoginDlgTOTP">TOTP</String>
+  <String Id="NonEmptyDirDlgText">The installation directory must be non-existent or empty.</String>
 </WixLocalization>
