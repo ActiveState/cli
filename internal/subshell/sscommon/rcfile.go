@@ -177,7 +177,7 @@ func SetupProjectRcFile(templateName, ext string, env map[string]string) (*os.Fi
 		"WD":          virtualenvironment.Get().WorkingDirectory(),
 		"UserScripts": userScripts,
 		"Scripts":     scripts,
-		"Exec":        constants.CommandName,
+		"ExecName":    constants.CommandName,
 	}
 
 	currExecAbsPath, err := osutils.Executable()
@@ -190,8 +190,7 @@ func SetupProjectRcFile(templateName, ext string, env map[string]string) (*os.Fi
 	pathList, ok := env["PATH"]
 	inPathList, err := fileutils.PathInList(listSep, pathList, currExecAbsDir)
 	if !ok || !inPathList {
-		rcData["ExecAlias"] = currExecAbsPath
-		rcData["Exec"] = currExecAbsPath
+		rcData["ExecAlias"] = currExecAbsPath // alias {ExecName}={ExecAlias}
 	}
 
 	t, err := template.New("rcfile").Parse(tpl)
