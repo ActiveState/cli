@@ -8,14 +8,13 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/progress"
-	"github.com/ActiveState/cli/retryhttp"
-
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/progress"
+	"github.com/ActiveState/cli/internal/retryhttp"
 )
 
 // Get takes a URL and returns the contents as bytes

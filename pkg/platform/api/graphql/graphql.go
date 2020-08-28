@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/retryhttp"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/ActiveState/cli/retryhttp"
 
 	"github.com/machinebox/graphql"
 )
