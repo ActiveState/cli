@@ -47,8 +47,7 @@ func httpGet(url string) ([]byte, *failures.Failure) {
 func httpGetWithProgress(url string, progress *progress.Progress) ([]byte, *failures.Failure) {
 	logging.Debug("Retrieving url: %s", url)
 	client := retryablehttp.NewClient()
-	// By default this library logs debug messages to stdout/stderr
-	client.Logger = nil
+	client.Logger = logging.CurrentHandler()
 	resp, err := client.Get(url)
 	if err != nil {
 		return nil, failures.FailNetwork.Wrap(err)
