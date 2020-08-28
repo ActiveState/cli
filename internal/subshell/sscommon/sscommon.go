@@ -129,7 +129,7 @@ func runWithCmd(env []string, name string, args ...string) error {
 				"Cannot translate Windows path ({{.V0}}) to bash path.", name,
 			)
 		}
-		args = append([]string{"-c", linPath}, args...)
+		args = append([]string{linPath}, args...)
 		name = "bash"
 	default:
 		return failures.FailUser.New("err_sscommon_unsupported_language", ext)
