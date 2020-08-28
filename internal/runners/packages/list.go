@@ -139,7 +139,7 @@ func fetchCheckpoint(commit *strfmt.UUID) (model.Checkpoint, *failures.Failure) 
 		return nil, model.FailNoData.New(locale.T("package_no_data"))
 	}
 
-	return model.FilterCheckpointPackages(checkpoint), fail
+	return checkpoint, fail
 }
 
 func newFilteredRequirementsTable(requirements model.Checkpoint, filter string) *packageTable {
