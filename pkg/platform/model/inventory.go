@@ -15,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/retryhttp"
 )
 
 var (
@@ -125,6 +126,7 @@ func searchIngredients(limit int, language, name string) ([]*IngredientAndVersio
 	params.SetQ(&name)
 	params.SetNamespace("language/" + language)
 	params.SetLimit(&lim)
+	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
 
 	res, err := client.GetNamespaceIngredients(params, authentication.ClientAuth())
 	if err != nil {
@@ -144,6 +146,7 @@ func FetchPlatforms() ([]*Platform, *failures.Failure) {
 		params := inventory_operations.NewGetPlatformsParams()
 		limit := int64(99999)
 		params.SetLimit(&limit)
+		params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
 
 		response, err := client.GetPlatforms(params)
 		if err != nil {
@@ -336,6 +339,7 @@ func FetchLanguages() ([]Language, *failures.Failure) {
 	params.SetNamespace("language")
 	limit := int64(10000)
 	params.SetLimit(&limit)
+	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
 
 	res, err := client.GetNamespaceIngredients(params, authentication.ClientAuth())
 	if err != nil {

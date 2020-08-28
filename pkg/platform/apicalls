@@ -1,9 +1,10 @@
 #! /usr/bin/env bash
 
 function availableCalls() {
-	grep "func.*Client) \w*(params.*error) {" * -r |
+	grep "func.*Client) \w*(params.*error) {" ./api/* -r |
 		grep -E "(\w|/)*.go:.*\w\(params" -o |
 		sed 's/:func (\w* \*Client) /\t/g; s/(params//g' |
+		sed 's#^/##g' |
 		column -c 2
 }
 
@@ -13,6 +14,8 @@ function probableCalls() {
 }
 
 function main() {
+	echo "This is \"best effort\" since it is based on text and not AST analysis."
+
 	local line file func lastFile pkg
 	echo "$(availableCalls)" | while read -r line; do
 		file="${line%%$'\t'*}"

@@ -15,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_client"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_client/headchef_operations"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
+	"github.com/ActiveState/cli/retryhttp"
 )
 
 var (
@@ -134,6 +135,7 @@ func (r *Client) reqBuild(buildReq *headchef_models.V1BuildRequest, buildStatus 
 	startParams := headchef_operations.StartBuildV1Params{
 		Context:      context.Background(),
 		BuildRequest: buildReq,
+		HTTPClient:   retryhttp.DefaultClient.StandardClient(),
 	}
 
 	created, accepted, err := r.client.StartBuildV1(&startParams)
