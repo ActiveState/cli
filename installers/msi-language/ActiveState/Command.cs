@@ -32,6 +32,13 @@ namespace ActiveState
                 procStartInfo.RedirectStandardOutput = true;
                 procStartInfo.RedirectStandardError = true;
                 procStartInfo.UseShellExecute = false;
+                procStartInfo.StandardOutputEncoding = Encoding.UTF8;
+                procStartInfo.StandardErrorEncoding = Encoding.UTF8;
+                if (cmd.Contains("state.exe"))
+                {
+                    procStartInfo.EnvironmentVariables["VERBOSE"] = "true";
+                    procStartInfo.EnvironmentVariables["ACTIVESTATE_NONINTERACTIVE"] = "true";
+                }
                 // Do not create the black window.
                 procStartInfo.CreateNoWindow = true;
 

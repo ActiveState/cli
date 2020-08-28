@@ -2,16 +2,12 @@ package updater
 
 import (
 	"errors"
-	"io/ioutil"
 	"os"
-	"path/filepath"
 	"strconv"
 	"time"
 
-	"github.com/ActiveState/cli/internal/config" // MUST be first!
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -68,27 +64,6 @@ func AutoUpdate(pjPath string, out output.Outputer) (updated bool, resultVersion
 		return false, ""
 	}
 
-	// Determine whether or not an update check has been performed today.
-	updateCheckMarker := filepath.Join(config.ConfigPath(), "update-check")
-	marker, err := os.Stat(updateCheckMarker)
-	if err != nil {
-		// Marker does not exist. Create it.
-		err = ioutil.WriteFile(updateCheckMarker, []byte(""), 0666)
-		if err != nil {
-			logging.Error("Unable to create/write update marker: %s", err)
-			_ = fileutils.LogPath(config.ConfigPath())
-			return false, ""
-		}
-	} else {
-		// Check to see if it has been 24 hours since the last update check. If not,
-		// skip another check.
-		nextCheckTime := marker.ModTime().Add(24 * time.Hour)
-		if time.Now().Before(nextCheckTime) {
-			logging.Debug("Not checking for updates until %s", nextCheckTime)
-			return false, ""
-		}
-	}
-
 	// Check for an update, but timeout after one second.
 	logging.Debug("Checking for updates.")
 	update := Updater{
@@ -124,14 +99,6 @@ func AutoUpdate(pjPath string, out output.Outputer) (updated bool, resultVersion
 			out.Error(locale.T("auto_update_permission_err"))
 		}
 		logging.Error("Unable to self update: %s", err)
-		return false, ""
-	}
-
-	// Touch the update check marker so the next check will not happen for another
-	// day.
-	err = os.Chtimes(updateCheckMarker, time.Now(), time.Now())
-	if err != nil {
-		logging.Error("Unable to update modification times of check marker: %s", err)
 		return false, ""
 	}
 

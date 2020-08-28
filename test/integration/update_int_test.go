@@ -1,11 +1,13 @@
 package integration
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"strings"
 	"testing"
 	"time"
 
@@ -25,7 +27,7 @@ type matcherFunc func(expected interface{}, actual interface{}, msgAndArgs ...in
 func (suite *UpdateIntegrationTestSuite) env(disableUpdates bool) []string {
 	env := []string{
 		"ACTIVESTATE_CLI_AUTO_UPDATE_TIMEOUT=10",
-		"ACTIVESTATE_CLI_UPDATE_BRANCH=master",
+		"ACTIVESTATE_CLI_UPDATE_BRANCH=unstable",
 	}
 
 	if disableUpdates {
@@ -38,18 +40,21 @@ func (suite *UpdateIntegrationTestSuite) env(disableUpdates bool) []string {
 }
 
 func (suite *UpdateIntegrationTestSuite) versionCompare(ts *e2e.Session, disableUpdates bool, expected string, matcher matcherFunc) {
-	cp := ts.SpawnWithOpts(e2e.WithArgs("--version"), e2e.AppendEnv(suite.env(disableUpdates)...), e2e.ReUseExecutable())
-	cp.Expect("ActiveState CLI")
-	cp.Expect("Revision")
+	type versionData struct {
+		Version string `json:"version"`
+	}
+
+	// Ensure we always use a unique exe for updates
+	ts.UseDistinctStateExe()
+
+	cp := ts.SpawnWithOpts(e2e.WithArgs("--version", "--output=json"), e2e.AppendEnv(suite.env(disableUpdates)...))
 	cp.ExpectExitCode(0)
-	regex := regexp.MustCompile(`\d+\.\d+\.\d+-(SHA)?[a-f0-9]+`)
-	resultVersions := regex.FindAllString(cp.TrimmedSnapshot(), -1)
 
-	suite.GreaterOrEqual(len(resultVersions), 1,
-		fmt.Sprintf("Must have more than 0 matches (the first one being the 'Updating from X to Y' message, matched versions: %v, output:\n\n%s", resultVersions, cp.Snapshot()),
-	)
+	version := versionData{}
+	out := strings.Trim(cp.TrimmedSnapshot(), "\x00")
+	json.Unmarshal([]byte(out), &version)
 
-	_ = matcher(expected, resultVersions[len(resultVersions)-1], fmt.Sprintf("Version could not be matched, output:\n\n%s", cp.Snapshot()))
+	matcher(expected, version.Version, fmt.Sprintf("Version could not be matched, output:\n\n%s", out))
 }
 
 func (suite *UpdateIntegrationTestSuite) TestAutoUpdateDisabled() {
@@ -59,10 +64,26 @@ func (suite *UpdateIntegrationTestSuite) TestAutoUpdateDisabled() {
 	suite.versionCompare(ts, true, constants.Version, suite.Equal)
 }
 
+func (suite *UpdateIntegrationTestSuite) TestNoAutoUpdate() {
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	// update should not run because the exe is less than a day old
+	suite.versionCompare(ts, false, constants.Version, suite.Equal)
+}
+
 func (suite *UpdateIntegrationTestSuite) TestAutoUpdate() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
+	// use unique exe
+	ts.UseDistinctStateExe()
+
+	// Spoof modtime
+	t := time.Now().Add(-25 * time.Hour)
+	os.Chtimes(ts.ExecutablePath(), t, t)
+
+	// update should run because the exe is more than a day old
 	suite.versionCompare(ts, false, constants.Version, suite.NotEqual)
 }
 
@@ -72,6 +93,13 @@ func (suite *UpdateIntegrationTestSuite) TestAutoUpdateNoPermissions() {
 	}
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
+
+	// use unique exe
+	ts.UseDistinctStateExe()
+
+	// Spoof modtime
+	t := time.Now().Add(-25 * time.Hour)
+	os.Chtimes(ts.ExecutablePath(), t, t)
 
 	cp := ts.SpawnWithOpts(e2e.WithArgs("--version"), e2e.AppendEnv(suite.env(false)...), e2e.NonWriteableBinDir())
 	cp.Expect("insufficient permissions")
@@ -95,6 +123,9 @@ func (suite *UpdateIntegrationTestSuite) TestLocked() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
+	// Ensure we always use a unique exe for updates
+	ts.UseDistinctStateExe()
+
 	pjfile.SetPath(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))
 	pjfile.Save()
 
@@ -117,6 +148,9 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmationNegative() 
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
+
+	// Ensure we always use a unique exe for updates
+	ts.UseDistinctStateExe()
 
 	pjfile.SetPath(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))
 	pjfile.Save()
@@ -142,6 +176,9 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmationPositive() 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
+	// Ensure we always use a unique exe for updates
+	ts.UseDistinctStateExe()
+
 	pjfile.SetPath(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))
 	pjfile.Save()
 
@@ -166,6 +203,9 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmationForce() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
+	// Ensure we always use a unique exe for updates
+	ts.UseDistinctStateExe()
+
 	pjfile.SetPath(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))
 	pjfile.Save()
 
@@ -180,6 +220,9 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmationForce() {
 func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
+
+	// Ensure we always use a unique exe for updates
+	ts.UseDistinctStateExe()
 
 	cp := ts.SpawnWithOpts(e2e.WithArgs("update"), e2e.AppendEnv(suite.env(false)...))
 	// on master branch, we might already have the latest version available
@@ -212,6 +255,13 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateNoPermissions() {
 	}
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
+
+	// use unique exe
+	ts.UseDistinctStateExe()
+
+	// Spoof modtime
+	t := time.Now().Add(-25 * time.Hour)
+	os.Chtimes(ts.ExecutablePath(), t, t)
 
 	cp := ts.SpawnWithOpts(e2e.WithArgs("update"), e2e.AppendEnv(suite.env(true)...), e2e.NonWriteableBinDir())
 	// on master branch, we might already have the latest version available

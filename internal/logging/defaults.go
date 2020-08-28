@@ -101,6 +101,13 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 	return nil
 }
 
+// Printf satifies a Logger interface allowing us to funnel our
+// logging handlers to 3rd party libraries
+func (l *fileHandler) Printf(msg string, args ...interface{}) {
+	logMsg := fmt.Sprintf("Third party log message: %s", msg)
+	l.Emit(getContext("DEBUG", 1), logMsg, args...)
+}
+
 func init() {
 	handler := &fileHandler{DefaultFormatter, nil, os.Getenv("VERBOSE") != ""}
 	SetHandler(handler)
