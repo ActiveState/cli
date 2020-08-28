@@ -19,6 +19,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/progress"
+	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/ActiveState/cli/internal/unarchiver"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
@@ -387,7 +388,18 @@ func installPPMShim(binPath string) error {
 	// remove shim if it existed before, so we can overwrite (ok to drop error here)
 	_ = os.Remove(shim)
 
-	err := ioutil.WriteFile(shim, ppmBytes, 0755)
+	exe, err := os.Executable()
+	if err != nil {
+		return errs.Wrap(err, "Could not get executable")
+	}
+
+	tplParams := map[string]interface{}{"exe": exe}
+	ppmStr, err := strutils.ParseTemplate(string(ppmBytes), tplParams)
+	if err != nil {
+		return errs.Wrap(err, "Could not parse ppm.sh template")
+	}
+
+	err = ioutil.WriteFile(shim, []byte(ppmStr), 0755)
 	if err != nil {
 		return errs.Wrap(err, "failed to write shim command %s", shim)
 	}
@@ -397,7 +409,12 @@ func installPPMShim(binPath string) error {
 		// remove shim if it existed before, so we can overwrite (ok to drop error here)
 		_ = os.Remove(shim)
 
-		err := ioutil.WriteFile(shim, ppmBatBytes, 0755)
+		ppmBatStr, err := strutils.ParseTemplate(string(ppmBatBytes), tplParams)
+		if err != nil {
+			return errs.Wrap(err, "Could not parse ppm.sh template")
+		}
+
+		err = ioutil.WriteFile(shim, []byte(ppmBatStr), 0755)
 		if err != nil {
 			return errs.Wrap(err, "failed to write shim command %s", shim)
 		}
