@@ -1,12 +1,18 @@
 package runtime
 
 import (
+	"fmt"
 	"io/ioutil"
+	"os"
+	"path/filepath"
+	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	graphMock "github.com/ActiveState/cli/pkg/platform/api/graphql/request/mock"
@@ -72,6 +78,25 @@ func (suite *InternalTestSuite) TestValidateCheckpointPrePlatform() {
 	suite.graphMock.CheckpointWithPrePlatform(graphMock.NoOptions)
 	fail := suite.installer.validateCheckpoint()
 	suite.Equal(FailPrePlatformNotSupported.Name, fail.Type.Name)
+}
+
+func (suite *InternalTestSuite) TestPPMShim() {
+	dir := fileutils.TempDirUnsafe()
+	err := installPPMShim(dir)
+	suite.Require().NoError(err)
+
+	exe, err := os.Executable()
+	suite.Require().NoError(err)
+
+	suite.FileExists(filepath.Join(dir, "ppm"))
+	p := string(fileutils.ReadFileUnsafe(filepath.Join(dir, "ppm")))
+	suite.True(strings.Index(p, exe) != -1, fmt.Sprintf("%s should contain %s", p, exe))
+	if runtime.GOOS == "windows" {
+		suite.FileExists(filepath.Join(dir, "ppm.bat"))
+		p = string(fileutils.ReadFileUnsafe(filepath.Join(dir, "ppm.bat")))
+		suite.True(strings.Index(p, exe) != -1, fmt.Sprintf("%s should contain %s", p, exe))
+	}
+
 }
 
 func TestInternalTestSuite(t *testing.T) {
