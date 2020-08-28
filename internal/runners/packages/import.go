@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/pkg/cmdlets/auth"
+	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/reqsimport"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -86,7 +87,7 @@ func (i *Import) Run(params ImportRunParams) error {
 
 	changeset, err := fetchImportChangeset(reqsimport.Init(), params.FileName, params.Language)
 	if err != nil {
-		return fail.WithDescription("err_obtaining_change_request")
+		return locale.WrapError(err, "err_obtaining_change_request", "Could not process change set: {{.V0}}.", api.ErrorMessageFromPayload(err))
 	}
 
 	if len(reqs) > 0 {
