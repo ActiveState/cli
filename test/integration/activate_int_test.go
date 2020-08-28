@@ -51,6 +51,30 @@ func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
 	cp.ExpectExitCode(123, 10*time.Second)
 }
 
+func (suite *ActivateIntegrationTestSuite) TestActivateNotOnPath() {
+	ts := e2e.NewNoPathUpdate(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("activate", "ActiveState-CLI/Python3")
+	cp.Expect("Where would you like to checkout")
+	cp.SendLine(cp.WorkDirectory())
+	cp.Expect("activated state", 20*time.Second)
+	cp.WaitForInput(10 * time.Second)
+
+	if runtime.GOOS == "windows" {
+		cp.SendLine("doskey /macros | findstr state=")
+	} else {
+		cp.SendLine("alias state")
+	}
+	cp.Expect("state=")
+
+	cp.SendLine("state --version")
+	cp.Expect("ActiveState")
+
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
+}
+
 // TestActivatePythonByHostOnly Tests whether we are only pulling in the build for the target host
 func (suite *ActivateIntegrationTestSuite) TestActivatePythonByHostOnly() {
 	if runtime.GOOS != "linux" {
