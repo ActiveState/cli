@@ -3,12 +3,13 @@ package cmdtree
 import (
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/initialize"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
-func newInitCommand() *captain.Command {
-	initRunner := initialize.New()
+func newInitCommand(prime *primer.Values) *captain.Command {
+	initRunner := initialize.New(prime)
 
 	params := initialize.RunParams{
 		Namespace: &project.Namespaced{},
@@ -38,6 +39,12 @@ func newInitCommand() *captain.Command {
 				Name:   "language",
 				Value:  &params.Language,
 				Hidden: true,
+			},
+			{
+				Name:        "private",
+				Shorthand:   "",
+				Description: locale.T("flag_state_init_private_flag_description"),
+				Value:       &params.Private,
 			},
 		},
 		[]*captain.Argument{

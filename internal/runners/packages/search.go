@@ -5,6 +5,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -22,9 +23,9 @@ type Search struct {
 }
 
 // NewSearch prepares a searching execution context for use.
-func NewSearch(out output.Outputer) *Search {
+func NewSearch(prime primer.Outputer) *Search {
 	return &Search{
-		out: out,
+		out: prime.Output(),
 	}
 }
 
@@ -46,14 +47,8 @@ func (s *Search) Run(params SearchRunParams) error {
 	if fail != nil {
 		return fail.WithDescription("package_err_cannot_obtain_search_results")
 	}
-	if len(packages) == 0 {
-		s.out.Print(locale.T("package_search_no_packages"))
-		return nil
-	}
-
 	table := newPackagesTable(packages)
-
-	s.out.Print(table.output())
+	s.out.Print(table)
 
 	return nil
 }
@@ -71,14 +66,9 @@ func targetedLanguage(languageOpt string) (string, *failures.Failure) {
 	return model.DefaultLanguageForProject(proj.Owner(), proj.Name())
 }
 
-func newPackagesTable(packages []*model.IngredientAndVersion) *table {
+func newPackagesTable(packages []*model.IngredientAndVersion) *packageTable {
 	if packages == nil {
 		return nil
-	}
-
-	headers := []string{
-		locale.T("package_name"),
-		locale.T("package_version"),
 	}
 
 	filterNilStr := func(s *string) string {
@@ -88,14 +78,14 @@ func newPackagesTable(packages []*model.IngredientAndVersion) *table {
 		return *s
 	}
 
-	rows := make([][]string, 0, len(packages))
+	rows := make([]packageRow, 0, len(packages))
 	for _, pack := range packages {
-		row := []string{
+		row := packageRow{
 			filterNilStr(pack.Ingredient.Name),
 			filterNilStr(pack.Version.Version),
 		}
 		rows = append(rows, row)
 	}
 
-	return newTable(headers, rows)
+	return newTable(rows, locale.T("package_search_no_packages"))
 }

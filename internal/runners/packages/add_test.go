@@ -3,9 +3,23 @@ package packages
 import (
 	"testing"
 
+	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 )
+
+type primeMock struct {
+	out output.Outputer
+}
+
+func (p *primeMock) Output() output.Outputer {
+	return p.out
+}
+
+func (p *primeMock) Prompt() prompt.Prompter {
+	return nil
+}
 
 func TestAdd(t *testing.T) {
 	regCommitError := func() {
@@ -28,7 +42,7 @@ func TestAdd(t *testing.T) {
 		t.Run(tn, func(t *testing.T) {
 			out := outputhelper.NewCatcher()
 			params := AddRunParams{Name: tt.namevers}
-			runner := NewAdd(out.Outputer)
+			runner := NewAdd(&primeMock{out.Outputer})
 
 			run := func() error {
 				tt.registerMocks()

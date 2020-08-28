@@ -3,6 +3,7 @@ package events
 import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -11,10 +12,15 @@ type Events struct {
 	out     output.Outputer
 }
 
-func New(pj *project.Project, out output.Outputer) *Events {
+type primeable interface {
+	primer.Projecter
+	primer.Outputer
+}
+
+func New(prime primeable) *Events {
 	return &Events{
-		pj,
-		out,
+		prime.Project(),
+		prime.Output(),
 	}
 }
 
@@ -32,9 +38,13 @@ func (e *Events) Run() error {
 
 	rows := []Event{}
 	for _, event := range e.project.Events() {
+		v, err := event.Value()
+		if err != nil {
+			return locale.NewError("err_events_val", "Could not get value for event: {{.V0}}.", event.Name())
+		}
 		rows = append(rows, Event{
 			event.Name(),
-			event.Value(),
+			v,
 		})
 	}
 

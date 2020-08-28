@@ -1,18 +1,14 @@
 package cmdtree
 
 import (
-	"github.com/ActiveState/cli/internal/prompt"
-	"github.com/ActiveState/cli/internal/runners/fork"
-	"github.com/ActiveState/cli/pkg/platform/authentication"
-
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/pkg/project"
+	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/runners/fork"
 )
 
-func newForkCommand(pj *project.Project, auth *authentication.Auth, output output.Outputer, prompter prompt.Prompter) *captain.Command {
-	runner := fork.New(pj, auth, output, prompter)
+func newForkCommand(prime *primer.Values) *captain.Command {
+	runner := fork.New(prime)
 	params := &fork.Params{}
 
 	return captain.NewCommand(

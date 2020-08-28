@@ -1,11 +1,13 @@
 package scripts
 
 import (
+	"github.com/bndr/gotabulate"
+
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/bndr/gotabulate"
 )
 
 type Scripts struct {
@@ -13,8 +15,16 @@ type Scripts struct {
 	output  output.Outputer
 }
 
-func NewScripts(pj *project.Project, output output.Outputer) *Scripts {
-	return &Scripts{pj, output}
+type primeable interface {
+	primer.Projecter
+	primer.Outputer
+}
+
+func NewScripts(prime primeable) *Scripts {
+	return &Scripts{
+		prime.Project(),
+		prime.Output(),
+	}
 }
 
 type scriptLine struct {

@@ -6,26 +6,27 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/shirou/gopsutil/process"
 	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
-	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/process"
 	"github.com/ActiveState/cli/internal/subshell/bash"
 	"github.com/ActiveState/cli/internal/subshell/cmd"
 	"github.com/ActiveState/cli/internal/subshell/fish"
 	"github.com/ActiveState/cli/internal/subshell/tcsh"
 	"github.com/ActiveState/cli/internal/subshell/zsh"
+	"github.com/ActiveState/cli/pkg/project"
 )
 
 // SubShell defines the interface for our virtual environment packages, which should be contained in a sub-directory
 // under the same directory as this file
 type SubShell interface {
 	// Activate the given subshell
-	Activate() *failures.Failure
+	Activate(out output.Outputer) *failures.Failure
 
 	// Failures returns a channel to receive failures
 	Failures() <-chan *failures.Failure
@@ -48,19 +49,24 @@ type SubShell interface {
 	// WriteUserEnv writes the given env map to the users environment
 	WriteUserEnv(map[string]string, bool) *failures.Failure
 
+	// SetupShellRcFile writes a script or source-able file that updates the environment variables and sets the prompt
+	SetupShellRcFile(string, map[string]string, project.Namespaced) error
+
 	// Shell returns an identifiable string representing the shell, eg. bash, zsh
 	Shell() string
 
 	// SetEnv sets the environment up for the given subshell
 	SetEnv(env map[string]string)
 
+	// SetActivateCommand sets the command that should be ran once activated
+	SetActivateCommand(string)
+
 	// Quote will quote the given string, escaping any characters that need escaping
 	Quote(value string) string
 }
 
 // Get returns the subshell relevant to the current process, but does not activate it
-func Get() (SubShell, *failures.Failure) {
-	var T = locale.T
+func New() SubShell {
 	binary := os.Getenv("SHELL")
 	if binary == "" {
 		if runtime.GOOS == "windows" {
@@ -97,9 +103,15 @@ func Get() (SubShell, *failures.Failure) {
 	case "cmd":
 		subs = &cmd.SubShell{}
 	default:
-		return nil, failures.FailUser.New(T("error_unsupported_shell", map[string]interface{}{
-			"Shell": name,
-		}))
+		logging.Errorf("Unsupported shell: %s, defaulting to OS default.", name)
+		switch runtime.GOOS {
+		case "windows":
+			return &cmd.SubShell{}
+		case "darwin":
+			return &zsh.SubShell{}
+		default:
+			return &bash.SubShell{}
+		}
 	}
 
 	logging.Debug("Using binary: %s", binary)
@@ -110,60 +122,11 @@ func Get() (SubShell, *failures.Failure) {
 	})
 	subs.SetEnv(osutils.EnvSliceToMap(env))
 
-	return subs, nil
+	return subs
 }
 
 // IsActivated returns whether or not this process is being run in an activated
 // state.
 func IsActivated() bool {
-	pid := int32(os.Getpid())
-	ppid := int32(os.Getppid())
-
-	procInfoErrMsgFmt := "Could not detect process information: %v"
-
-	for ppid != 0 && pid != ppid {
-		pproc, err := process.NewProcess(ppid)
-		if err != nil {
-			if err != process.ErrorProcessNotRunning {
-				logging.Errorf(procInfoErrMsgFmt, err)
-			}
-			return false
-		}
-
-		cmdArgs, err := pproc.CmdlineSlice()
-		if err != nil {
-			logging.Errorf(procInfoErrMsgFmt, err)
-			return false
-		}
-
-		if isActivateCmdlineArgs(cmdArgs) {
-			return true
-		}
-
-		pid = ppid
-		ppid, err = pproc.Ppid()
-		if err != nil {
-			logging.Errorf(procInfoErrMsgFmt, err)
-			return false
-		}
-	}
-
-	return false
-}
-
-func isActivateCmdlineArgs(args []string) bool {
-	// look for the state tool command in the first argument
-	exec := filepath.Base(args[0])
-	if !strings.HasPrefix(exec, constants.CommandName) {
-		return false
-	}
-
-	// ensure that first argument (not prefixed with a dash) is "activate"
-	for _, arg := range args[1:] {
-		if arg == "activate" {
-			return true
-		}
-	}
-
-	return false
+	return process.ActivationPID() != -1
 }

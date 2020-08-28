@@ -9,7 +9,9 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
+	"github.com/ActiveState/cli/pkg/project"
 )
 
 var escaper *osutils.ShellEscape
@@ -20,11 +22,12 @@ func init() {
 
 // SubShell covers the subshell.SubShell interface, reference that for documentation
 type SubShell struct {
-	binary string
-	rcFile *os.File
-	cmd    *exec.Cmd
-	env    map[string]string
-	fs     chan *failures.Failure
+	binary          string
+	rcFile          *os.File
+	cmd             *exec.Cmd
+	env             map[string]string
+	fs              chan *failures.Failure
+	activateCommand *string
 }
 
 // Shell - see subshell.SubShell
@@ -53,9 +56,20 @@ func (v *SubShell) WriteUserEnv(env map[string]string, _ bool) *failures.Failure
 	return sscommon.WriteRcFile("fishrc_append.fish", filepath.Join(homeDir, ".config/fish/config.fish"), env)
 }
 
+// SetupShellRcFile - subshell.SubShell
+func (v *SubShell) SetupShellRcFile(targetDir string, env map[string]string, namespace project.Namespaced) error {
+	env = sscommon.EscapeEnv(env)
+	return sscommon.SetupShellRcFile(filepath.Join(targetDir, "shell.fish"), "fishrc_global.fish", env, namespace)
+}
+
 // SetEnv - see subshell.SetEnv
 func (v *SubShell) SetEnv(env map[string]string) {
 	v.env = env
+}
+
+// SetActivateCommand - see subshell.SetActivateCommand
+func (v *SubShell) SetActivateCommand(cmd string) {
+	v.activateCommand = &cmd
 }
 
 // Quote - see subshell.Quote
@@ -64,14 +78,17 @@ func (v *SubShell) Quote(value string) string {
 }
 
 // Activate - see subshell.SubShell
-func (v *SubShell) Activate() *failures.Failure {
+func (v *SubShell) Activate(out output.Outputer) *failures.Failure {
 	env := sscommon.EscapeEnv(v.env)
 	var fail *failures.Failure
-	if v.rcFile, fail = sscommon.SetupProjectRcFile("fishrc.fish", "", env); fail != nil {
+	if v.rcFile, fail = sscommon.SetupProjectRcFile("fishrc.fish", "", env, out); fail != nil {
 		return fail
 	}
 
 	shellArgs := []string{"-i", "-C", fmt.Sprintf("source %s", v.rcFile.Name())}
+	if v.activateCommand != nil {
+		shellArgs = append(shellArgs, "-c", *v.activateCommand)
+	}
 	cmd := exec.Command(v.Binary(), shellArgs...)
 
 	v.fs = sscommon.Start(cmd)

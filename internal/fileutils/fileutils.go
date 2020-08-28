@@ -16,6 +16,8 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/iafan/cwalk"
+
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
@@ -74,21 +76,38 @@ func ReplaceAll(filename, find string, replace string, include includeFunc) erro
 		return nil
 	}
 
-	findBytes := []byte(find)
-	replaceBytes := []byte(replace)
+	changed, byts, err := replaceInFile(fileBytes, find, replace)
+	if err != nil {
+		return err
+	}
+
+	// skip writing file, if we did not change anything
+	if !changed {
+		return nil
+	}
+
+	return WriteFile(filename, byts).ToError()
+}
+
+// replaceInFile replaces all occurrences of oldpath with newpath
+// For binary files with nul-terminated strings, it ensures that the replaces strings are still valid nul-terminated strings and the returned buffer has the same size as the input buffer buf.
+// The first return argument denotes whether at least one file has been replaced
+func replaceInFile(buf []byte, oldpath, newpath string) (bool, []byte, error) {
+	findBytes := []byte(oldpath)
+	replaceBytes := []byte(newpath)
 	replaceBytesLen := len(replaceBytes)
 
 	// Check if the file is a binary file. If so, the search and replace byte
 	// arrays must be of equal length (replacement being NUL-padded as necessary).
 	var replaceRegex *regexp.Regexp
-	quoteEscapeFind := regexp.QuoteMeta(find)
+	quoteEscapeFind := regexp.QuoteMeta(oldpath)
 
 	// Ensure we replace both types of backslashes on Windows
 	if runtime.GOOS == "windows" {
 		quoteEscapeFind = strings.ReplaceAll(quoteEscapeFind, `\\`, `(\\|\\\\)`)
 	}
-	if IsBinary(fileBytes) {
-		logging.Debug("Assuming file '%s' is a binary file", filename)
+	if IsBinary(buf) {
+		//logging.Debug("Assuming file '%s' is a binary file", filename)
 
 		regexExpandBytes := []byte("${1}")
 		// Must account for the expand characters (ie. '${1}') in the
@@ -99,33 +118,31 @@ func ReplaceAll(filename, find string, replace string, include includeFunc) erro
 		replaceRegex = regexp.MustCompile(fmt.Sprintf(`%s([^\x00]*)`, quoteEscapeFind))
 		if replaceBytesLen > len(findBytes) {
 			logging.Errorf("Replacement text too long: %s, original text: %s", string(replaceBytes), string(findBytes))
-			return errors.New("replacement text cannot be longer than search text in a binary file")
+			return false, nil, errors.New("replacement text cannot be longer than search text in a binary file")
 		} else if len(findBytes) > replaceBytesLen {
 			// Pad replacement with NUL bytes.
-			logging.Debug("Padding replacement text by %d byte(s)", len(findBytes)-len(replaceBytes))
+			//logging.Debug("Padding replacement text by %d byte(s)", len(findBytes)-len(replaceBytes))
 			paddedReplaceBytes := make([]byte, len(findBytes)+len(regexExpandBytes))
 			copy(paddedReplaceBytes, replaceBytes)
 			replaceBytes = paddedReplaceBytes
 		}
 	} else {
 		replaceRegex = regexp.MustCompile(fmt.Sprintf(`%s`, quoteEscapeFind))
-		logging.Debug("Assuming file '%s' is a text file", filename)
+		//logging.Debug("Assuming file '%s' is a text file", filename)
 	}
 
-	replaced := replaceRegex.ReplaceAll(fileBytes, replaceBytes)
-	buffer := bytes.NewBuffer([]byte{})
-	buffer.Write(replaced)
+	replaced := replaceRegex.ReplaceAll(buf, replaceBytes)
 
-	return WriteFile(filename, buffer.Bytes()).ToError()
+	return !bytes.Equal(replaced, buf), replaced, nil
 }
 
 // ReplaceAllInDirectory walks the given directory and invokes ReplaceAll on each file
 func ReplaceAllInDirectory(path, find string, replace string, include includeFunc) error {
-	err := filepath.Walk(path, func(path string, f os.FileInfo, err error) error {
+	err := cwalk.Walk(path, func(subpath string, f os.FileInfo, err error) error {
 		if f.IsDir() {
 			return nil
 		}
-		return ReplaceAll(path, find, replace, include)
+		return ReplaceAll(filepath.Join(path, subpath), find, replace, include)
 	})
 
 	if err != nil {
@@ -435,7 +452,7 @@ func IsEmptyDir(path string) (bool, *failures.Failure) {
 }
 
 // MoveAllFilesCallback is invoked for every file that we move
-type MoveAllFilesCallback func()
+type MoveAllFilesCallback func(fromPath, toPath string)
 
 // MoveAllFilesRecursively moves files and directories from one directory to another.
 // Unlike in MoveAllFiles, the destination directory does not need to be empty, and
@@ -494,7 +511,7 @@ func MoveAllFilesRecursively(fromPath, toPath string, cb MoveAllFilesCallback) *
 			if err != nil {
 				return failures.FailOS.Wrap(err)
 			}
-			cb()
+			cb(subFromPath, subToPath)
 		}
 	}
 	return nil
@@ -840,6 +857,7 @@ func resolvedPathContainsParent(path, parentPath string) bool {
 	return path == parentPath || strings.HasPrefix(path, parentPath)
 }
 
+// SymlinkTarget retrieves the target of the given symlink
 func SymlinkTarget(symlink string) (string, error) {
 	fileInfo, err := os.Lstat(symlink)
 	if err != nil {
@@ -856,4 +874,18 @@ func SymlinkTarget(symlink string) (string, error) {
 	}
 
 	return evalDest, nil
+}
+
+// ListDir recursively lists filepaths under the given sourcePath
+// This does not follow symlinks
+func ListDir(sourcePath string, includeDirs bool) []string {
+	result := []string{}
+	filepath.Walk(sourcePath, func(path string, f os.FileInfo, err error) error {
+		if includeDirs == false && f.IsDir() {
+			return nil
+		}
+		result = append(result, path)
+		return nil
+	})
+	return result
 }

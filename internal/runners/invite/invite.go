@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -29,8 +30,18 @@ type invite struct {
 	prompt  prompt.Prompter
 }
 
-func New(pj *project.Project, out output.Outputer, prompt prompt.Prompter) *invite {
-	return &invite{pj, out, prompt}
+type primeable interface {
+	primer.Projecter
+	primer.Outputer
+	primer.Prompter
+}
+
+func New(prime primeable) *invite {
+	return &invite{
+		prime.Project(),
+		prime.Output(),
+		prime.Prompt(),
+	}
 }
 
 func (i *invite) Run(params *Params) error {

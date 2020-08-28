@@ -6,11 +6,13 @@ import (
 	"os/exec"
 	"os/signal"
 	"path/filepath"
+	"reflect"
 	"runtime"
 	"strings"
 
+	"github.com/fsnotify/fsnotify"
+
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
@@ -19,8 +21,6 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/fsnotify/fsnotify"
 )
 
 // The default open command and editors based on platform
@@ -43,8 +43,11 @@ type Edit struct {
 }
 
 // NewEdit creates a new Edit runner
-func NewEdit(pj *project.Project, output output.Outputer) *Edit {
-	return &Edit{pj, output}
+func NewEdit(prime primeable) *Edit {
+	return &Edit{
+		prime.Project(),
+		prime.Output(),
+	}
 }
 
 func (e *Edit) Run(params *EditParams) error {
@@ -88,7 +91,11 @@ func (e *Edit) editScript(script *project.Script, params *EditParams) error {
 func createScriptFile(script *project.Script, expand bool) (*scriptfile.ScriptFile, error) {
 	scriptBlock := script.Raw()
 	if expand {
-		scriptBlock = script.Value()
+		var err error
+		scriptBlock, err = script.Value()
+		if err != nil {
+			return nil, errs.Wrap(err, "Could not get script value")
+		}
 	}
 
 	f, fail := scriptfile.NewAsSource(script.LanguageSafe(), script.Name(), scriptBlock)
@@ -324,14 +331,27 @@ func updateProjectFile(scriptFile *scriptfile.ScriptFile, name string) error {
 		return errs.Wrap(fail, "Failed to read script file %s.", scriptFile.Filename())
 	}
 
-	projectFile := projectfile.Get()
-	i := constraints.MostSpecificUnconstrained(name, projectFile.Scripts.AsConstrainedEntities())
-	if i < 0 { // no script found
-		return nil
+	pj := project.Get()
+	pjf := pj.Source()
+	script := pj.ScriptByName(name)
+	if script == nil {
+		return locale.NewError("err_update_script_cannot_find", "Could not find the source script to update.")
 	}
-	projectFile.Scripts[i].Value = string(updatedScript)
 
-	fail = projectFile.Save()
+	idx := -1
+	for i, s := range pjf.Scripts {
+		if reflect.DeepEqual(s, *script.SourceScript()) {
+			idx = i
+			break
+		}
+	}
+	if idx == -1 {
+		return locale.NewError("err_update_script_cannot_find", "Could not find the source script to update.")
+	}
+
+	pjf.Scripts[idx].Value = string(updatedScript)
+
+	fail = pjf.Save()
 	if fail != nil {
 		return errs.Wrap(fail, "Failed to save project file.")
 	}

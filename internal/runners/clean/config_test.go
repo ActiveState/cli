@@ -9,7 +9,7 @@ import (
 )
 
 func (suite *CleanTestSuite) TestConfig() {
-	runner := NewConfig(&testOutputer{}, &confirmMock{confirm: true})
+	runner := newConfig(&testOutputer{}, &confirmMock{confirm: true})
 	runner.path = suite.configPath
 	err := runner.Run(&ConfigParams{})
 	suite.Require().NoError(err)
@@ -27,7 +27,7 @@ func (suite *CleanTestSuite) TestConfig() {
 }
 
 func (suite *CleanTestSuite) TestConfig_PromptNo() {
-	runner := NewConfig(&testOutputer{}, &confirmMock{})
+	runner := newConfig(&testOutputer{}, &confirmMock{})
 	runner.path = suite.configPath
 	err := runner.Run(&ConfigParams{})
 	suite.Require().NoError(err)
@@ -43,7 +43,7 @@ func (suite *CleanTestSuite) TestConfig_Activated() {
 		os.Unsetenv(constants.ActivatedStateEnvVarName)
 	}()
 
-	runner := NewConfig(&testOutputer{}, &confirmMock{})
+	runner := newConfig(&testOutputer{}, &confirmMock{})
 	runner.path = suite.configPath
 	err := runner.Run(&ConfigParams{})
 	suite.Require().Error(err)

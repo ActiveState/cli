@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"io"
 	"io/ioutil"
-	"net/http"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -16,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/hashicorp/go-retryablehttp"
 )
 
 // Get takes a URL and returns the contents as bytes
@@ -46,7 +46,10 @@ func httpGet(url string) ([]byte, *failures.Failure) {
 
 func httpGetWithProgress(url string, progress *progress.Progress) ([]byte, *failures.Failure) {
 	logging.Debug("Retrieving url: %s", url)
-	resp, err := http.Get(url)
+	client := retryablehttp.NewClient()
+	// By default this library logs debug messages to stdout/stderr
+	client.Logger = nil
+	resp, err := client.Get(url)
 	if err != nil {
 		return nil, failures.FailNetwork.Wrap(err)
 	}

@@ -87,7 +87,7 @@ type InstallerParams struct {
 
 func NewInstallerParams(runtimeDir string, commitID strfmt.UUID, owner string, projectName string) InstallerParams {
 	if runtimeDir == "" {
-		runtimeDir = installPath(owner, projectName)
+		runtimeDir = InstallPath(owner, projectName)
 	}
 	return InstallerParams{runtimeDir, commitID, owner, projectName}
 }
@@ -97,14 +97,14 @@ func NewInstaller(commitID strfmt.UUID, owner, projectName string) (*Installer, 
 	logging.Debug("cache path: %s", config.CachePath())
 	return NewInstallerByParams(
 		InstallerParams{
-			installPath(owner, projectName),
+			InstallPath(owner, projectName),
 			commitID,
 			owner,
 			projectName,
 		})
 }
 
-func installPath(owner, projectName string) string {
+func InstallPath(owner, projectName string) string {
 	if runtime.GOOS == "darwin" {
 		// mac doesn't use relocation so we can safely use a longer path
 		return filepath.Join(config.CachePath(), owner, projectName)
@@ -183,42 +183,26 @@ func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGet
 		return runtimeAssembler, false, nil
 	}
 
-	if fileutils.DirExists(installer.params.RuntimeDir) {
-		empty, fail := fileutils.IsEmptyDir(installer.params.RuntimeDir)
-		if fail != nil {
-			logging.Error("Could not check if target runtime dir is empty, this could cause issues.. %v", fail)
-		} else if !empty {
-			logging.Debug("Removing existing runtime")
-			if err := os.RemoveAll(installer.params.RuntimeDir); err != nil {
-				logging.Error("Could not empty out target runtime dir prior to install, this could cause issues.. %v", err)
-			}
-		}
-	}
-
-	downloadArtfs, unpackArchives := runtimeAssembler.ArtifactsToDownloadAndUnpack()
-
-	if len(downloadArtfs) == 0 && len(unpackArchives) == 0 {
-		// Already installed, no need to download or install
-		logging.Debug("Nothing to download")
-		return runtimeAssembler, false, nil
-	}
-
-	if installer.onDownload != nil {
-		installer.onDownload()
-	}
-
+	downloadArtfs := runtimeAssembler.ArtifactsToDownload()
+	unpackArchives := map[string]*HeadChefArtifact{}
 	progress := progress.New(mpb.WithOutput(os.Stderr))
 	defer progress.Close()
 
-	if len(downloadArtfs) > 0 {
-		archives, fail := installer.runtimeDownloader.Download(downloadArtfs, runtimeAssembler, progress)
-		if fail != nil {
-			progress.Cancel()
-			return nil, false, fail
+	if len(downloadArtfs) != 0 {
+		if installer.onDownload != nil {
+			installer.onDownload()
 		}
 
-		for k, v := range archives {
-			unpackArchives[k] = v
+		if len(downloadArtfs) > 0 {
+			archives, fail := installer.runtimeDownloader.Download(downloadArtfs, runtimeAssembler, progress)
+			if fail != nil {
+				progress.Cancel()
+				return nil, false, fail
+			}
+
+			for k, v := range archives {
+				unpackArchives[k] = v
+			}
 		}
 	}
 
@@ -228,6 +212,8 @@ func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGet
 		return nil, false, fail
 	}
 
+	// We still want to run PostInstall because even though no new artifact might be downloaded we still might be
+	// deleting some already cached ones
 	err := runtimeAssembler.PostInstall()
 	if err != nil {
 		return nil, false, failures.FailRuntime.Wrap(err, "error during post installation step")
@@ -259,18 +245,21 @@ func (installer *Installer) validateCheckpoint() *failures.Failure {
 // InstallFromArchives will unpack the installer archive, locate the install script, and then use the installer
 // script to install a runtime to the configured runtime dir. Any failures during this process will result in a
 // failed installation and the install-dir being removed.
-func (installer *Installer) InstallFromArchives(archives map[string]*HeadChefArtifact, a Assembler, progress *progress.Progress) *failures.Failure {
-	bar := progress.AddTotalBar(locale.T("installing"), len(archives))
+func (installer *Installer) InstallFromArchives(archives map[string]*HeadChefArtifact, a Assembler, pg *progress.Progress) *failures.Failure {
+	var bar *progress.TotalBar
+	if len(archives) > 0 {
+		bar = pg.AddTotalBar(locale.T("installing"), len(archives))
+	}
 
 	fail := a.PreInstall()
 	if fail != nil {
-		progress.Cancel()
+		pg.Cancel()
 		return fail
 	}
 
 	for archivePath, artf := range archives {
-		if fail := installer.InstallFromArchive(archivePath, artf, a, progress); fail != nil {
-			progress.Cancel()
+		if fail := installer.InstallFromArchive(archivePath, artf, a, pg); fail != nil {
+			pg.Cancel()
 			return fail
 		}
 		bar.Increment()

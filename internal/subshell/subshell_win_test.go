@@ -22,8 +22,7 @@ func TestBash(t *testing.T) {
 	setup(t)
 
 	os.Setenv("SHELL", `C:\Program Files\bash.exe`)
-	subs, fail := Get()
-	require.NoError(t, fail.ToError())
+	subs := New()
 	assert.Equal(t, `C:\Program Files\bash.exe`, subs.Binary())
 
 }
@@ -33,8 +32,7 @@ func TestBashDontEscapeSpace(t *testing.T) {
 
 	// Reproduce bug in which paths are being incorrectly escaped on windows
 	os.Setenv("SHELL", `C:\Program\ Files\bash.exe`)
-	subs, fail := Get()
-	require.NoError(t, fail.ToError())
+	subs := New()
 	assert.Equal(t, `C:\Program Files\bash.exe`, subs.Binary())
 }
 
@@ -48,8 +46,7 @@ func TestRunCommandNoProjectEnv(t *testing.T) {
 	os.Setenv("ACTIVESTATE_PROJECT", "SHOULD NOT BE SET")
 	os.Unsetenv("SHELL")
 
-	subs, fail := Get()
-	require.NoError(t, fail.ToError())
+	subs := New()
 
 	data := []byte("echo --EMPTY-- %ACTIVESTATE_PROJECT% --EMPTY--")
 	filename, fail := fileutils.WriteTempFile("", "test*.bat", data, 0700)
@@ -76,8 +73,7 @@ func TestRunCommandError(t *testing.T) {
 
 	os.Unsetenv("SHELL")
 
-	subs, fail := Get()
-	require.NoError(t, fail.ToError())
+	subs := New()
 
 	err := subs.Run("some-file-that-doesnt-exist.bat")
 	assert.Error(t, err, "Returns an error")

@@ -10,17 +10,18 @@ import (
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/pkg/platform/api"
 
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/pkg/platform/api/mono"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/users"
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 var (
@@ -40,45 +41,46 @@ type signupInput struct {
 }
 
 // Signup will prompt the user to create an account
-func Signup() *failures.Failure {
+func Signup(out output.Outputer, prompt prompt.Prompter) error {
 	input := &signupInput{}
 
-	accepted, fail := promptTOS()
+	accepted, fail := promptTOS(out, prompt)
 	if fail != nil {
 		return fail
 	}
 	if !accepted {
-		print.Warning(locale.T("tos_not_accepted"))
-		return nil
+		return locale.NewInputError("tos_not_accepted", "")
 	}
 
-	fail = promptForSignup(input)
+	fail = promptForSignup(input, out, prompt)
 	if fail != nil {
-		return fail.WithDescription("err_prompt_unknown")
+		return fail.WithDescription("err_prompt_unknown").ToError()
 	}
 
-	doSignup(input)
+	if fail = doSignup(input, out); fail != nil {
+		return fail.ToError()
+	}
 
 	if authentication.Get().Authenticated() {
-		if failure := generateKeypairForUser(input.Password); failure != nil {
-			return failure.WithDescription("keypair_err_save")
+		if fail := generateKeypairForUser(input.Password); fail != nil {
+			return fail.WithDescription("keypair_err_save").ToError()
 		}
 	}
 
 	return nil
 }
 
-func signupFromLogin(username string, password string) *failures.Failure {
+func signupFromLogin(username string, password string, out output.Outputer, prompt prompt.Prompter) *failures.Failure {
 	input := &signupInput{}
 
 	input.Username = username
 	input.Password = password
-	err := promptForSignup(input)
+	err := promptForSignup(input, out, prompt)
 	if err != nil {
 		return failures.FailUserInput.Wrap(err)
 	}
 
-	return doSignup(input)
+	return doSignup(input, out)
 }
 
 func downloadTOS() (string, *failures.Failure) {
@@ -103,14 +105,15 @@ func downloadTOS() (string, *failures.Failure) {
 	return tosPath, nil
 }
 
-func promptTOS() (bool, *failures.Failure) {
+func promptTOS(out output.Outputer, prompt prompt.Prompter) (bool, *failures.Failure) {
 	choices := []string{
 		locale.T("tos_accept"),
 		locale.T("tos_not_accept"),
 		locale.T("tos_show_full"),
 	}
-	print.Line(locale.Tr("tos_disclaimer", constants.TermsOfServiceURLLatest))
-	choice, fail := Prompter.Select(locale.T("tos_acceptance"), choices, locale.T("tos_accept"))
+
+	out.Notice(locale.Tl("tos_disclaimer", constants.TermsOfServiceURLLatest))
+	choice, fail := prompt.Select(locale.T("tos_acceptance"), choices, locale.T("tos_accept"))
 	if fail != nil {
 		return false, fail
 	}
@@ -130,24 +133,24 @@ func promptTOS() (bool, *failures.Failure) {
 		if err != nil {
 			return false, failures.FailIO.Wrap(err)
 		}
-		print.Line(string(tos))
-		return Prompter.Confirm(locale.T("tos_acceptance"), true)
+		out.Print(tos)
+		return prompt.Confirm(locale.T("tos_acceptance"), true)
 	}
 
 	return false, nil
 }
 
-func promptForSignup(input *signupInput) *failures.Failure {
+func promptForSignup(input *signupInput, out output.Outputer, prompter prompt.Prompter) *failures.Failure {
 	var fail *failures.Failure
 
 	if input.Username != "" {
-		print.Line(locale.T("confirm_password_account_creation"))
+		out.Notice(locale.T("confirm_password_account_creation"))
 	} else {
-		input.Username, fail = Prompter.Input(locale.T("username_prompt_signup"), "", prompt.InputRequired)
+		input.Username, fail = prompter.Input(locale.T("username_prompt_signup"), "", prompt.InputRequired)
 		if fail != nil {
 			return fail
 		}
-		input.Password, fail = Prompter.InputSecret(locale.T("password_prompt_signup"), prompt.InputRequired)
+		input.Password, fail = prompter.InputSecret(locale.T("password_prompt_signup"), prompt.InputRequired)
 		if fail != nil {
 			return fail
 		}
@@ -162,7 +165,7 @@ func promptForSignup(input *signupInput) *failures.Failure {
 		return nil
 	}
 
-	input.Password2, fail = Prompter.InputSecret(locale.T("password_prompt_confirm"), prompt.InputRequired)
+	input.Password2, fail = prompter.InputSecret(locale.T("password_prompt_confirm"), prompt.InputRequired)
 	if fail != nil {
 		return fail
 	}
@@ -171,19 +174,19 @@ func promptForSignup(input *signupInput) *failures.Failure {
 		return FailInvalidPassword.Wrap(err)
 	}
 
-	input.Name, fail = Prompter.Input(locale.T("name_prompt"), "", prompt.InputRequired)
+	input.Name, fail = prompter.Input(locale.T("name_prompt"), "", prompt.InputRequired)
 	if fail != nil {
 		return fail
 	}
 
-	input.Email, fail = Prompter.Input(locale.T("email_prompt"), "", prompt.InputRequired)
+	input.Email, fail = prompter.Input(locale.T("email_prompt"), "", prompt.InputRequired)
 	if fail != nil {
 		return fail
 	}
 	return nil
 }
 
-func doSignup(input *signupInput) *failures.Failure {
+func doSignup(input *signupInput, out output.Outputer) *failures.Failure {
 	params := users.NewAddUserParams()
 	eulaHelper := true
 	params.SetUser(&mono_models.UserEditable{
@@ -201,10 +204,10 @@ func doSignup(input *signupInput) *failures.Failure {
 		// Authentication failed due to email already existing (username check already happened at this point)
 		case *users.AddUserConflict:
 			logging.Error("Encountered add user conflict: %v", err)
-			return FailAddUserConflict.New(locale.T("err_auth_signup_email_exists"))
+			return FailAddUserConflict.New(locale.T("err_auth_signup_user_exists", api.ErrorMessageFromPayload(err)))
 		default:
 			logging.Error("Encountered unknown error adding user: %v", err)
-			return FailAuthUnknown.New(locale.T("err_auth_failed_unknown_cause"))
+			return FailAuthUnknown.New(locale.T("err_auth_failed_unknown_cause", api.ErrorMessageFromPayload(err)))
 		}
 	}
 
@@ -216,7 +219,7 @@ func doSignup(input *signupInput) *failures.Failure {
 		return fail
 	}
 
-	print.Line(locale.T("signup_success", map[string]string{
+	out.Notice(locale.T("signup_success", map[string]string{
 		"Email": addUserOK.Payload.User.Email,
 	}))
 

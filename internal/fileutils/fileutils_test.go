@@ -431,7 +431,7 @@ func TestMoveAllFilesRecursively(t *testing.T) {
 
 	counter := mock.NewMockIncrementer()
 
-	MoveAllFilesRecursively(fromDir, toDir, func() { counter.Increment() })
+	MoveAllFilesRecursively(fromDir, toDir, func(string, string) { counter.Increment() })
 
 	assertFileWithContent(t, "1", toDir, "only_in_1", "t1")
 	assertFileWithContent(t, "1", toDir, "in_1_and_2", "only_in_1")

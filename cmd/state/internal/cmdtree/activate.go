@@ -5,24 +5,24 @@ import (
 
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runners/activate"
 	"github.com/ActiveState/cli/pkg/cmdlets/git"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
-func newActivateCommand(out output.Outputer) *captain.Command {
+func newActivateCommand(prime *primer.Values) *captain.Command {
 	prompter := prompt.New()
-	checkout := activate.NewCheckout(git.NewRepo())
+	checkout := activate.NewCheckout(git.NewRepo(), prime)
 	namespaceSelect := activate.NewNamespaceSelect(viper.GetViper(), prompter)
-	runner := activate.NewActivate(out, namespaceSelect, checkout)
+	runner := activate.NewActivate(prime, namespaceSelect, checkout)
 
 	params := activate.ActivateParams{
 		Namespace: &project.Namespaced{},
 	}
 
-	return captain.NewCommand(
+	cmd := captain.NewCommand(
 		"activate",
 		locale.T("activate_project"),
 		[]*captain.Flag{
@@ -32,9 +32,15 @@ func newActivateCommand(out output.Outputer) *captain.Command {
 				Description: locale.T("flag_state_activate_path_description"),
 				Value:       &params.PreferredPath,
 			},
+			{
+				Name:        "command",
+				Shorthand:   "c",
+				Description: locale.Tl("flag_state_activate_cmd_description", "Run given command in the activated shell"),
+				Value:       &params.Command,
+			},
 		},
 		[]*captain.Argument{
-			&captain.Argument{
+			{
 				Name:        locale.T("arg_state_activate_namespace"),
 				Description: locale.T("arg_state_activate_namespace_description"),
 				Value:       params.Namespace,
@@ -44,4 +50,6 @@ func newActivateCommand(out output.Outputer) *captain.Command {
 			return runner.Run(&params)
 		},
 	)
+	cmd.SetDeferAnalytics(true)
+	return cmd
 }

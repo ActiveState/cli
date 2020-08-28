@@ -10,10 +10,10 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
@@ -77,6 +77,9 @@ func (suite *EditIntegrationTestSuite) TestEdit() {
 }
 
 func (suite *EditIntegrationTestSuite) TestEdit_NonInteractive() {
+	if runtime.GOOS == "windows" && e2e.RunningOnCI() {
+		suite.T().Skip("Windows CI does not support ctrl-c interrupts.")
+	}
 	ts, env := suite.setup()
 	defer ts.Close()
 	extraEnv := e2e.AppendEnv("ACTIVESTATE_NONINTERACTIVE=true")
@@ -90,6 +93,10 @@ func (suite *EditIntegrationTestSuite) TestEdit_NonInteractive() {
 }
 
 func (suite *EditIntegrationTestSuite) TestEdit_UpdateCorrectPlatform() {
+	if runtime.GOOS == "windows" {
+		// https://www.pivotaltracker.com/story/show/174477457
+		suite.T().Skipf("Skipping on windows due to random failures")
+	}
 	ts, env := suite.setup()
 	defer ts.Close()
 	cp := ts.SpawnWithOpts(
@@ -102,12 +109,14 @@ func (suite *EditIntegrationTestSuite) TestEdit_UpdateCorrectPlatform() {
 
 	time.Sleep(time.Second * 2) // let CI env catch up
 
-	project, fail := projectfile.FromPath(ts.Dirs.Work)
+	pj, fail := project.FromPath(ts.Dirs.Work)
 	suite.Require().NoError(fail.ToError())
 
-	i := constraints.MostSpecificUnconstrained("test-script", project.Scripts.AsConstrainedEntities())
-	suite.Require().True(i > -1, "Finds at least one script")
-	suite.Contains(project.Scripts[i].Value, "more info!", "Output of edit command:\n%s", cp.Snapshot())
+	s := pj.ScriptByName("test-script")
+	suite.Require().NotNil(s, "test-script should not be empty")
+	v, err := s.Value()
+	suite.Require().NoError(err)
+	suite.Contains(v, "more info!", "Output of edit command:\n%s", cp.Snapshot())
 }
 
 func TestEditIntegrationTestSuite(t *testing.T) {

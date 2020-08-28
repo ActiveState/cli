@@ -5,13 +5,13 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"runtime"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestCreateUpdate(t *testing.T) {
@@ -39,9 +39,6 @@ func TestCreateUpdate(t *testing.T) {
 	assert.FileExists(t, filepath.Join(dir, constants.BranchName, defaultPlatform+".json"), "Should create update bits")
 	assert.FileExists(t, filepath.Join(dir, constants.BranchName, "1.0", defaultPlatform+".json"), "Should create update bits")
 	assert.FileExists(t, filepath.Join(dir, constants.BranchName, "1.0", defaultPlatform+ext), "Should create update bits")
-	if runtime.GOOS != "windows" {
-		assert.FileExists(t, filepath.Join(dir, constants.BranchName, "1.0", defaultPlatform+".gz"), "Should create fallback bits")
-	}
 
 	// Test with branch override
 	os.Chdir(environment.GetRootPathUnsafe())
@@ -54,7 +51,4 @@ func TestCreateUpdate(t *testing.T) {
 	assert.FileExists(t, filepath.Join(dir, branchName, defaultPlatform+".json"), "Should create update bits")
 	assert.FileExists(t, filepath.Join(dir, branchName, "1.0", defaultPlatform+".json"), "Should create update bits")
 	assert.FileExists(t, filepath.Join(dir, branchName, "1.0", defaultPlatform+ext), "Should create update bits")
-	if runtime.GOOS != "windows" {
-		assert.FileExists(t, filepath.Join(dir, branchName, "1.0", defaultPlatform+".gz"), "Should create update bits")
-	}
 }

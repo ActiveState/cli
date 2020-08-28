@@ -1,12 +1,14 @@
 package platforms
 
 import (
+	"github.com/go-openapi/strfmt"
+
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/go-openapi/strfmt"
 )
 
 var (
@@ -26,9 +28,9 @@ type List struct {
 }
 
 // NewList prepares a list execution context for use.
-func NewList(out output.Outputer) *List {
+func NewList(prime primer.Outputer) *List {
 	return &List{
-		out: out,
+		out: prime.Output(),
 	}
 }
 

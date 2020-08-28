@@ -1,17 +1,14 @@
 package cmdtree
 
 import (
-	"github.com/ActiveState/cli/internal/prompt"
-	"github.com/ActiveState/cli/internal/runners/invite"
-	"github.com/ActiveState/cli/pkg/project"
-
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/runners/invite"
 )
 
-func newInviteCommand(pj *project.Project, out output.Outputer, prompt prompt.Prompter) *captain.Command {
-	inviteRunner := invite.New(pj, out, prompt)
+func newInviteCommand(prime *primer.Values) *captain.Command {
+	inviteRunner := invite.New(prime)
 
 	params := invite.Params{}
 

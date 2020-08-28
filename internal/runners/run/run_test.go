@@ -11,13 +11,13 @@ import (
 	"github.com/kami-zh/go-capturer"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
-	"github.com/ActiveState/cli/internal/testhelpers/osutil"
+	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 	rtMock "github.com/ActiveState/cli/pkg/platform/runtime/mock"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -54,7 +54,7 @@ scripts:
 	assert.Nil(t, err, "Unmarshalled YAML")
 	project.Persist()
 
-	err = run(outputhelper.NewCatcher(), "run", nil)
+	err = run(outputhelper.NewCatcher(), subshell.New(), "run", nil)
 	assert.NoError(t, err, "No error occurred")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
@@ -84,7 +84,7 @@ func TestEnvIsSet(t *testing.T) {
 	}()
 
 	out := capturer.CaptureOutput(func() {
-		err = run(outputhelper.NewCatcher(), "run", nil)
+		err = run(outputhelper.NewCatcher(), subshell.New(), "run", nil)
 		assert.NoError(t, err, "No error occurred")
 		assert.NoError(t, failures.Handled(), "No failure occurred")
 	})
@@ -119,13 +119,11 @@ scripts:
 	assert.Nil(t, err, "Unmarshalled YAML")
 	project.Persist()
 
-	out, err := osutil.CaptureStdout(func() {
-		rerr := run(outputhelper.NewCatcher(), "run", nil)
-		assert.NoError(t, rerr, "No error occurred")
-		assert.NoError(t, failures.Handled(), "No failure occurred")
-	})
-	require.NoError(t, err, "Executed without error")
-	assert.Contains(t, out, "Running user-defined script: run")
+	out := outputhelper.NewCatcher()
+	rerr := run(out, subshell.New(), "run", nil)
+	assert.NoError(t, rerr, "No error occurred")
+	assert.NoError(t, failures.Handled(), "No failure occurred")
+	assert.Contains(t, out.CombinedOutput(), "Running user-defined script: run")
 }
 
 func TestRunMissingCommandName(t *testing.T) {
@@ -142,7 +140,7 @@ scripts:
 	assert.Nil(t, err, "Unmarshalled YAML")
 	project.Persist()
 
-	err = run(outputhelper.NewCatcher(), "", nil)
+	err = run(outputhelper.NewCatcher(), subshell.New(), "", nil)
 	assert.Error(t, err, "Error occurred")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
@@ -161,7 +159,7 @@ scripts:
 	assert.Nil(t, err, "Unmarshalled YAML")
 	project.Persist()
 
-	err = run(outputhelper.NewCatcher(), "unknown", nil)
+	err = run(outputhelper.NewCatcher(), subshell.New(), "unknown", nil)
 	assert.Error(t, err, "Error occurred")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
@@ -181,7 +179,7 @@ scripts:
 	assert.Nil(t, err, "Unmarshalled YAML")
 	project.Persist()
 
-	err = run(outputhelper.NewCatcher(), "run", nil)
+	err = run(outputhelper.NewCatcher(), subshell.New(), "run", nil)
 	assert.Error(t, err, "Error occurred")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
@@ -222,7 +220,7 @@ scripts:
 	project.Persist()
 
 	// Run the command.
-	err = run(outputhelper.NewCatcher(), "run", nil)
+	err = run(outputhelper.NewCatcher(), subshell.New(), "run", nil)
 	assert.NoError(t, err, "No error occurred")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 

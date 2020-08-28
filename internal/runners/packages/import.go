@@ -7,6 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/pkg/cmdlets/auth"
 	"github.com/ActiveState/cli/pkg/platform/api"
@@ -48,12 +49,19 @@ func NewImportRunParams() *ImportRunParams {
 // Import manages the importing execution context.
 type Import struct {
 	out output.Outputer
+	prompt.Prompter
+}
+
+type primeable interface {
+	primer.Outputer
+	primer.Prompter
 }
 
 // NewImport prepares an importation execution context for use.
-func NewImport(out output.Outputer) *Import {
+func NewImport(prime primeable) *Import {
 	return &Import{
-		out: out,
+		prime.Output(),
+		prime.Prompt(),
 	}
 }
 
@@ -65,7 +73,7 @@ func (i *Import) Run(params ImportRunParams) error {
 		params.FileName = defaultImportFile
 	}
 
-	fail := auth.RequireAuthentication(locale.T("auth_required_activate"))
+	fail := auth.RequireAuthentication(locale.T("auth_required_activate"), i.out, i.Prompter)
 	if fail != nil {
 		return fail.WithDescription("err_activate_auth_required")
 	}

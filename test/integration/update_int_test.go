@@ -39,7 +39,7 @@ func (suite *UpdateIntegrationTestSuite) env(disableUpdates bool) []string {
 
 func (suite *UpdateIntegrationTestSuite) versionCompare(ts *e2e.Session, disableUpdates bool, expected string, matcher matcherFunc) {
 	cp := ts.SpawnWithOpts(e2e.WithArgs("--version"), e2e.AppendEnv(suite.env(disableUpdates)...), e2e.ReUseExecutable())
-	cp.Expect("ActiveState CLI version ")
+	cp.Expect("ActiveState CLI")
 	cp.Expect("Revision")
 	cp.ExpectExitCode(0)
 	regex := regexp.MustCompile(`\d+\.\d+\.\d+-(SHA)?[a-f0-9]+`)
@@ -74,8 +74,8 @@ func (suite *UpdateIntegrationTestSuite) TestAutoUpdateNoPermissions() {
 	defer ts.Close()
 
 	cp := ts.SpawnWithOpts(e2e.WithArgs("--version"), e2e.AppendEnv(suite.env(false)...), e2e.NonWriteableBinDir())
-	cp.Expect("Could not update to the latest available version of the state tool due to insufficient permissions")
-	cp.Expect("ActiveState CLI version ")
+	cp.Expect("insufficient permissions")
+	cp.Expect("ActiveState CLI")
 	cp.Expect("Revision")
 	cp.ExpectExitCode(0)
 	regex := regexp.MustCompile(`\d+\.\d+\.\d+-(SHA)?[a-f0-9]+`)
@@ -112,8 +112,7 @@ func (suite *UpdateIntegrationTestSuite) TestLocked() {
 func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmationNegative() {
 	pjfile := projectfile.Project{
 		Project: lockedProjectURL(),
-		Version: constants.Version,
-		Branch:  constants.BranchName,
+		Lock:    fmt.Sprintf("%s@%s", constants.Version, constants.BranchName),
 	}
 
 	ts := e2e.New(suite.T(), false)
@@ -137,8 +136,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmationNegative() 
 func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmationPositive() {
 	pjfile := projectfile.Project{
 		Project: lockedProjectURL(),
-		Version: constants.Version,
-		Branch:  constants.BranchName,
+		Lock:    fmt.Sprintf("%s@%s", constants.Version, constants.BranchName),
 	}
 
 	ts := e2e.New(suite.T(), false)
@@ -162,8 +160,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmationPositive() 
 func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmationForce() {
 	pjfile := projectfile.Project{
 		Project: lockedProjectURL(),
-		Version: constants.Version,
-		Branch:  constants.BranchName,
+		Lock:    fmt.Sprintf("%s@%s", constants.Version, constants.BranchName),
 	}
 
 	ts := e2e.New(suite.T(), false)
@@ -187,9 +184,9 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 	cp := ts.SpawnWithOpts(e2e.WithArgs("update"), e2e.AppendEnv(suite.env(false)...))
 	// on master branch, we might already have the latest version available
 	if os.Getenv("GIT_BRANCH") == "master" {
-		cp.ExpectRe("(Version updated|You are using the latest version available)", 60*time.Second)
+		cp.ExpectRe("(Version updated|You are using the latest)", 60*time.Second)
 	} else {
-		cp.Expect("Downloading latest version of the state tool")
+		cp.Expect("Downloading latest")
 		cp.Expect("Version updated", 60*time.Second)
 
 	}

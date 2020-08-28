@@ -1,11 +1,15 @@
 package logging
 
 import (
+	"fmt"
 	"log"
 	"runtime"
+	"time"
 
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/rollbar/rollbar-go"
+
+	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
 )
 
 type delayedLog struct {
@@ -21,8 +25,15 @@ func SetupRollbar() {
 		UpdateRollbarPerson("unknown", "unknown", "unknown")
 	}
 	rollbar.SetToken(constants.RollbarToken)
-	rollbar.SetEnvironment(constants.BranchName)
-	rollbar.SetCodeVersion(constants.RevisionHash)
+	rollbar.SetEnvironment(fmt.Sprintf("%s-%s", constants.BranchName, config.InstallSource()))
+
+	dateTime := constants.Date
+	t, err := time.Parse(constants.DateTimeFormatRecord, constants.Date)
+	if err == nil {
+		dateTime = t.Format("2006-01-02T15:04:05-0700") // ISO 8601
+	}
+
+	rollbar.SetCodeVersion(fmt.Sprintf("%s-%s", dateTime, constants.RevisionHashShort))
 	rollbar.SetServerRoot("github.com/ActiveState/cli")
 	rollbar.SetLogger(&rollbar.SilentClientLogger{})
 

@@ -5,13 +5,17 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"testing"
+	"text/template"
+
+	"github.com/ActiveState/sysinfo"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/ActiveState/sysinfo"
-	"github.com/stretchr/testify/assert"
 )
 
 var cwd string
@@ -382,26 +386,27 @@ func TestFilterUnconstrained(t *testing.T) {
 	for _, c := range cases {
 
 		t.Run(c.Name, func(tt *testing.T) {
-			items := make(projectfile.Events, 0, 4)
+			items := make(projectfile.Constants, 0, 4)
 			for i := 0; i < 3; i++ {
-				items = append(items, projectfile.Event{
+				items = append(items, &projectfile.Constant{
 					Name:        fmt.Sprintf("event%d", i),
 					Constraints: mockConstraint(sliceContains(c.Selected, i) || c.Override),
 				})
 			}
 			if c.Override {
-				items = append(items, projectfile.Event{
+				items = append(items, &projectfile.Constant{
 					Name:        "event0",
 					Constraints: mockConstraint(true, "TEST_ENV"),
 				})
 			}
 
-			res := projectfile.MakeEventsFromConstrainedEntities(
-				FilterUnconstrained(items.AsConstrainedEntities()),
-			)
-			expected := make([]*projectfile.Event, 0, len(c.Selected))
+			constrained, err := FilterUnconstrained(nil, items.AsConstrainedEntities())
+			require.NoError(tt, err)
+
+			res := projectfile.MakeConstantsFromConstrainedEntities(constrained)
+			expected := make([]*projectfile.Constant, 0, len(c.Selected))
 			for _, ii := range c.Selected {
-				expected = append(expected, &items[ii])
+				expected = append(expected, items[ii])
 			}
 			sort.Slice(res, func(i, j int) bool {
 				return res[i].Name < res[j].Name
@@ -412,36 +417,93 @@ func TestFilterUnconstrained(t *testing.T) {
 	}
 }
 
-func TestMostSpecificUnconstrained(t *testing.T) {
-	os.Setenv("ACTIVESTATE_ENVIRONMENT", "TEST_ENV")
-	defer os.Unsetenv("ACTIVESTATE_ENVIRONMENT")
-
-	cases := []struct {
-		Name  string
-		Item  string
-		Index int
-	}{
-		{"select most specific", "event0", 3},
-		{"select none", "none", -1},
-		{"select simple", "event1", 1},
+func TestConditional_Eval(t *testing.T) {
+	type fields struct {
+		params map[string]interface{}
+		funcs  template.FuncMap
 	}
-
-	for _, c := range cases {
-		t.Run(c.Name, func(tt *testing.T) {
-			items := make(projectfile.Events, 0, 4)
-			for i := 0; i < 3; i++ {
-				items = append(items, projectfile.Event{
-					Name:        fmt.Sprintf("event%d", i),
-					Constraints: mockConstraint(true),
-				})
+	tests := []struct {
+		name        string
+		fields      fields
+		conditional string
+		want        bool
+		wantErr     bool
+	}{
+		{
+			"Basic Conditional",
+			fields{
+				map[string]interface{}{"value": true},
+				map[string]interface{}{},
+			},
+			".value",
+			true,
+			false,
+		},
+		{
+			"Basic Negative Conditional",
+			fields{
+				map[string]interface{}{"value": false},
+				map[string]interface{}{},
+			},
+			".value",
+			false,
+			false,
+		},
+		{
+			"Multiple Conditionals",
+			fields{
+				map[string]interface{}{"value1": "v1", "value2": "v2"},
+				map[string]interface{}{},
+			},
+			`or (eq .value1 "v1") (eq .value2 "notv2")`,
+			true,
+			false,
+		},
+		{
+			"Multiple Conditionals with False",
+			fields{
+				map[string]interface{}{"value1": "v1", "value2": "v2"},
+				map[string]interface{}{},
+			},
+			`and (eq .value1 "v1") (eq .value2 "notv2")`,
+			false,
+			false,
+		},
+		{
+			"Custom Functions",
+			fields{
+				map[string]interface{}{"value1": "foobar"},
+				map[string]interface{}{"HasPrefix": strings.HasPrefix},
+			},
+			`HasPrefix .value1 "foo"`,
+			true,
+			false,
+		},
+		{
+			"Invalid Conditional",
+			fields{
+				map[string]interface{}{},
+				map[string]interface{}{},
+			},
+			`I am not a conditional`,
+			false,
+			true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := &Conditional{
+				params: tt.fields.params,
+				funcs:  tt.fields.funcs,
 			}
-			items = append(items, projectfile.Event{
-				Name:        "event0",
-				Constraints: mockConstraint(true, "TEST_ENV"),
-			})
-
-			index := MostSpecificUnconstrained(c.Item, items.AsConstrainedEntities())
-			assert.Equal(t, c.Index, index)
+			got, err := c.Eval(tt.conditional)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Eval() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("Eval() got = %v, want %v", got, tt.want)
+			}
 		})
 	}
 }

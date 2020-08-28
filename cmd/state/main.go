@@ -5,18 +5,26 @@ import (
 	"errors"
 	"os"
 	"os/exec"
+	"runtime"
+
+	"github.com/ActiveState/sysinfo"
+	"github.com/rollbar/rollbar-go"
 
 	"github.com/ActiveState/cli/cmd/state/internal/cmdtree"
 	"github.com/ActiveState/cli/internal/config" // MUST be first!
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/deprecation"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/internal/prompt"
 	_ "github.com/ActiveState/cli/internal/prompt" // Sets up survey defaults
+	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -27,6 +35,7 @@ var FailMainPanic = failures.Type("main.fail.panic", failures.FailUser)
 func main() {
 	// Set up logging
 	logging.SetupRollbar()
+	defer rollbar.Close()
 
 	// Handle panics gracefully
 	defer handlePanics(os.Exit)
@@ -37,6 +46,18 @@ func main() {
 	if fail != nil {
 		os.Stderr.WriteString(locale.Tr("err_main_outputer", fail.Error()))
 		os.Exit(1)
+	}
+
+	if runtime.GOOS == "windows" {
+		osv, err := sysinfo.OSVersion()
+		if err != nil {
+			logging.Debug("Could not retrieve os version info: %v", err)
+		} else if osv.Major < 10 {
+			out.Notice(locale.Tr(
+				"windows_compatibility_warning",
+				constants.ForumsURL,
+			))
+		}
 	}
 
 	// Set up our legacy outputer
@@ -90,6 +111,9 @@ func run(args []string, out output.Outputer) (int, error) {
 		return code, err
 	}
 
+	// Set up prompter
+	prompter := prompt.New()
+
 	// Set up project (if we have a valid path)
 	var pj *project.Project
 	if pjPath != "" {
@@ -97,15 +121,19 @@ func run(args []string, out output.Outputer) (int, error) {
 		if fail != nil {
 			return 1, fail
 		}
-		pj, fail = project.New(pjf)
+		pj, fail = project.New(pjf, out, prompter)
 		if fail != nil {
 			return 1, fail
 		}
 	}
 
 	// Forward call to specific state tool version, if warranted
-	if code, fail := forwardIfWarranted(args, out, pj); fail != nil {
-		return code, fail
+	forward, err := forwardFn(args, out, pj)
+	if err != nil {
+		return 1, err
+	}
+	if forward != nil {
+		return forward()
 	}
 
 	// Check for deprecation
@@ -122,9 +150,22 @@ func run(args []string, out output.Outputer) (int, error) {
 		}
 	}
 
+	pjOwner := ""
+	pjNamespace := ""
+	pjName := ""
+	if pj != nil {
+		pjOwner = pj.Owner()
+		pjNamespace = pj.Namespace()
+		pjName = pj.Name()
+	}
+	// Set up conditional, which accesses a lot of primer data
+	sshell := subshell.New()
+	conditional := constraints.NewPrimeConditional(pjOwner, pjName, pjNamespace, sshell.Shell())
+	project.RegisterConditional(conditional)
+
 	// Run the actual command
-	cmds := cmdtree.New(pj, out, prompt.New())
-	err := cmds.Execute(args[1:])
+	cmds := cmdtree.New(primer.New(pj, out, authentication.Get(), prompter, sshell, conditional))
+	err = cmds.Execute(args[1:])
 
 	return unwrapError(err)
 }

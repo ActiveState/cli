@@ -1,11 +1,14 @@
 package cmdtree
 
 import (
+	"strings"
+
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/export"
-	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/internal/runners/export/config"
+	"github.com/ActiveState/cli/internal/runners/export/ghactions"
 )
 
 func newExportCommand() *captain.Command {
@@ -21,8 +24,8 @@ func newExportCommand() *captain.Command {
 		})
 }
 
-func newRecipeCommand() *captain.Command {
-	recipe := export.NewRecipe()
+func newRecipeCommand(prime *primer.Values) *captain.Command {
+	recipe := export.NewRecipe(prime)
 
 	params := export.RecipeParams{}
 
@@ -54,8 +57,8 @@ func newRecipeCommand() *captain.Command {
 		})
 }
 
-func newJWTCommand() *captain.Command {
-	jwt := export.NewJWT()
+func newJWTCommand(prime *primer.Values) *captain.Command {
+	jwt := export.NewJWT(prime)
 
 	params := export.JWTParams{}
 
@@ -65,14 +68,12 @@ func newJWTCommand() *captain.Command {
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
-			params.Auth = authentication.Get()
-
 			return jwt.Run(&params)
 		})
 }
 
-func newPrivateKeyCommand() *captain.Command {
-	privateKey := export.NewPrivateKey()
+func newPrivateKeyCommand(prime *primer.Values) *captain.Command {
+	privateKey := export.NewPrivateKey(prime)
 
 	params := export.PrivateKeyParams{}
 
@@ -82,16 +83,12 @@ func newPrivateKeyCommand() *captain.Command {
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
-			params.Auth = authentication.Get()
-
 			return privateKey.Run(&params)
 		})
 }
 
-func newAPIKeyCommand(outputer output.Outputer) *captain.Command {
-	auth := authentication.Get()
-
-	apikey := export.NewAPIKey(auth, outputer)
+func newAPIKeyCommand(prime *primer.Values) *captain.Command {
+	apikey := export.NewAPIKey(prime)
 	params := export.APIKeyRunParams{}
 
 	return captain.NewCommand(
@@ -107,7 +104,44 @@ func newAPIKeyCommand(outputer output.Outputer) *captain.Command {
 			},
 		},
 		func(ccmd *captain.Command, args []string) error {
-			params.IsAuthed = auth.Authenticated
+			params.IsAuthed = prime.Auth().Authenticated
 			return apikey.Run(params)
+		})
+}
+
+func newExportConfigCommand(prime *primer.Values) *captain.Command {
+	runner := config.New(prime)
+	params := config.ConfigParams{}
+
+	return captain.NewCommand(
+		"config",
+		locale.T("export_config_cmd_description"),
+		[]*captain.Flag{
+			{
+				Name: "filter",
+				Description: locale.Tr(
+					"export_config_flag_filter_description",
+					strings.Join(config.SupportedFilters(), ", "),
+				),
+				Value: &params.Filter,
+			},
+		},
+		[]*captain.Argument{},
+		func(ccmd *captain.Command, _ []string) error {
+			return runner.Run(ccmd, &params)
+		})
+}
+
+func newExportGithubActionCommand(prime *primer.Values) *captain.Command {
+	runner := ghactions.New(prime)
+	params := ghactions.Params{}
+
+	return captain.NewCommand(
+		"github-actions",
+		locale.Tl("export_ghactions_description", "Create a github action workflow for your project"),
+		[]*captain.Flag{},
+		[]*captain.Argument{},
+		func(ccmd *captain.Command, _ []string) error {
+			return runner.Run(&params)
 		})
 }

@@ -1,7 +1,9 @@
 package failures
 
 import (
+	"errors"
 	"fmt"
+	"os"
 	"reflect"
 	"runtime"
 	"strconv"
@@ -12,7 +14,6 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
-	"github.com/ActiveState/cli/internal/print"
 )
 
 var (
@@ -26,6 +27,9 @@ var (
 
 	// FailDeveloper identifies a failure as being caused by the developer (eg. a codepath that should never happen unless a developer messed up)
 	FailDeveloper = Type("failures.fail.developer")
+
+	// FailMisc is what we can use while we phase out failures
+	FailMisc = Type("failures.fail.misc")
 
 	// FailIO identifies a failure as an IO failure
 	FailIO = Type("failures.fail.io")
@@ -102,6 +106,20 @@ func (f *FailureType) Matches(m *FailureType) bool {
 	return false
 }
 
+// Matches is used to match a stack of wrapped errors to a failure type
+func Matches(err error, t *FailureType) bool {
+	for err != nil {
+		var fail *Failure
+		if isFailure := errors.As(err, &fail); isFailure {
+			if fail.Type.Matches(t) {
+				return true
+			}
+		}
+		err = errors.Unwrap(err)
+	}
+	return false
+}
+
 // New creates a failure struct with the given info
 func (f *FailureType) New(message string, params ...string) *Failure {
 	var input = map[string]interface{}{}
@@ -116,7 +134,7 @@ func (f *FailureType) New(message string, params ...string) *Failure {
 	if !f.Matches(FailUser) && !f.Matches(FailNonFatal) {
 		logger = logging.Error
 	}
-	logger("%s. Failure: %s File: %s, Line: %d", message, f.Name, file, line)
+	logger(message)
 
 	return &Failure{message, f, file, line, stacktrace.Get(), nil}
 }
@@ -162,6 +180,11 @@ func (e *Failure) ToError() error {
 	return e
 }
 
+// Unwrap returns the parent error, if one exists
+func (e *Failure) Unwrap() error {
+	return e.err
+}
+
 // WithDescription is a convenience method that emulates the behavior of using Handle()
 // while allowing the normal propagation of errors up the stack. Instead of sending a
 // failure to Handle() and then returning, please add the description with this method
@@ -187,7 +210,7 @@ func (e *Failure) Handle(description string) {
 		logging.Warning(description)
 
 		// Descriptions are always communicated to the user
-		print.Error(description)
+		fmt.Fprint(os.Stderr, description)
 	}
 }
 

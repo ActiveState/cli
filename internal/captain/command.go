@@ -27,6 +27,9 @@ type Command struct {
 	arguments []*Argument
 
 	execute func(cmd *Command, args []string) error
+
+	// deferAnalytics should be set if the command handles the GA reporting in its execute function
+	deferAnalytics bool
 }
 
 func NewCommand(name, description string, flags []*Flag, args []*Argument, executor Executor) *Command {
@@ -165,6 +168,10 @@ func (c *Command) SetAliases(aliases ...string) {
 	c.cobra.Aliases = aliases
 }
 
+func (c *Command) SetDeferAnalytics(value bool) {
+	c.deferAnalytics = value
+}
+
 func (c *Command) SetDescription(description string) {
 	c.cobra.Short = description
 }
@@ -251,9 +258,11 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	if outputFlag != nil && outputFlag.Changed {
 		analytics.CustomDimensions.SetOutput(outputFlag.Value.String())
 	}
-	subCommandString := strings.Join(c.subcommandNames(), " ")
-	analytics.Event(analytics.CatRunCmd, subCommandString)
-
+	// Send  GA events unless they are handled in the runners...
+	if !c.deferAnalytics {
+		subCommandString := strings.Join(c.subcommandNames(), " ")
+		analytics.Event(analytics.CatRunCmd, subCommandString)
+	}
 	// Run OnUse functions for non-persistent flags
 	c.runFlags(false)
 

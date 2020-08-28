@@ -1,8 +1,6 @@
 using Microsoft.Deployment.WindowsInstaller;
 using System;
 using System.Text;
-using System.Diagnostics;
-using System.Threading;
 using System.IO;
 using System.Net;
 using System.Collections.ObjectModel;
@@ -10,140 +8,325 @@ using System.Windows.Forms;
 using System.Linq;
 using System.Web.Script.Serialization;
 using System.Collections.Generic;
+using Newtonsoft.Json;
+using System.Security.Cryptography;
+using System.IO.Compression;
+using ActiveState;
+using System.Threading.Tasks;
 
 namespace StateDeploy
 {
+
     public class CustomActions
     {
-        public static ActionResult InstallStateTool(Session session, out string stateToolPath)
+        private struct StateToolPaths
         {
-            stateToolPath = "";
-            session.Log("Installing State Tool if necessary");
-            if (session.CustomActionData["STATE_TOOL_INSTALLED"] == "true")
+            public string JsonDescription;
+            public string ZipFile;
+
+            public string ExeFile;
+        }
+
+        private class VersionInfo
+        {
+            public string version = "";
+            public string sha256v2 = "";
+        }
+
+        private static bool is64Bit()
+        {
+            return System.Environment.Is64BitOperatingSystem;
+        }
+
+        private static StateToolPaths GetPaths()
+        {
+            StateToolPaths paths;
+            if (is64Bit())
             {
-                stateToolPath = session.CustomActionData["STATE_TOOL_PATH"];
-                session.Log("State Tool is installed, no installation required");
-                Status.ProgressBar.Increment(session, 1);
+                paths.JsonDescription = "windows-amd64.json";
+                paths.ZipFile = "windows-amd64.zip";
+                paths.ExeFile = "windows-amd64.exe";
+            }
+            else
+            {
+                paths.JsonDescription = "windows-386.json";
+                paths.ZipFile = "windows-386.zip";
+                paths.ExeFile = "windows-386.exe";
+            }
+            return paths;
+        }
+
+        private static ActionResult _installStateTool(ActiveState.Logging log, out string stateToolPath)
+        {
+            var paths = GetPaths();
+            string stateURL = "https://s3.ca-central-1.amazonaws.com/cli-update/update/state/unstable/";
+            string jsonURL = stateURL + paths.JsonDescription;
+            string timeStamp = DateTime.Now.ToFileTime().ToString();
+            string tempDir = Path.Combine(Path.GetTempPath(), timeStamp);
+            string stateToolInstallDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ActiveState", "bin");
+            stateToolPath = Path.Combine(stateToolInstallDir, "state.exe");
+
+            if (File.Exists(stateToolPath))
+            {
+                log.Log("Using existing State Tool executable at install path");
                 return ActionResult.Success;
             }
 
-            string tempDir = Path.GetTempPath();
-            string scriptPath = Path.Combine(tempDir, "install.ps1");
-            string installPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ActiveState", "bin");
-
-            Status.ProgressBar.StatusMessage(session, "Installing State Tool...");
-
-            ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
+            log.Log(string.Format("Using temp path: {0}", tempDir));
             try
             {
-                WebClient client = new WebClient();
-                client.DownloadFile("https://platform.activestate.com/dl/cli/install.ps1", scriptPath);
+                Directory.CreateDirectory(tempDir);
+            }
+            catch (Exception e)
+            {
+                string msg = string.Format("Could not create temp directory at: {0}, encountered exception: {1}", tempDir, e.ToString());
+                log.Log(msg);
+                RollbarReport.Critical(msg, log);
+                return ActionResult.Failure;
+            }
+
+            ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
+
+            string versionInfoString = "unset";
+            log.Log(string.Format("Downloading JSON from URL: {0}", jsonURL));
+            try
+            {
+                RetryHelper.RetryOnException(log, 3, TimeSpan.FromSeconds(2), () =>
+                {
+                    var client = new WebClient();
+                    versionInfoString = client.DownloadString(jsonURL);
+                });
             }
             catch (WebException e)
             {
-                session.Log(string.Format("Encoutered exception downloading file: {0}", e.ToString()));
+                string msg = string.Format("Encountered exception downloading state tool json info file: {0}", e.ToString());
+                log.Log(msg);
+                RollbarReport.Critical(msg, log);
                 return ActionResult.Failure;
             }
 
-            string installCmd = string.Format("powershell \"{0} -n -t {1}\"", scriptPath, installPath);
-            session.Log(string.Format("Running install command: {0}", installCmd));
-
-            ActionResult result = RunCommand(session, installCmd);
-            if (result.Equals(ActionResult.UserExit))
-            {
-                // Catch cancel and return
-                return result;
-            }
-            Status.ProgressBar.Increment(session, 1);
-
-            stateToolPath = Path.Combine(installPath, "state.exe");
-            return result;
-        }
-
-        private static ActionResult RunCommand(Session session, string cmd)
-        {
-            return RunCommand(session, cmd, out _);
-        }
-
-        private static ActionResult RunCommand(Session session, string cmd, out string output)
-        {
-            var outputBuilder = new StringBuilder();
+            VersionInfo info;
             try
             {
-                ProcessStartInfo procStartInfo = new ProcessStartInfo("cmd.exe", "/c " + cmd);
-
-                // The following commands are needed to redirect the standard output.
-                // This means that it will be redirected to the Process.StandardOutput StreamReader.
-                procStartInfo.RedirectStandardOutput = true;
-                procStartInfo.RedirectStandardError = true;
-                procStartInfo.UseShellExecute = false;
-                // Do not create the black window.
-                procStartInfo.CreateNoWindow = true;
-
-                Process proc = new Process();
-                proc.StartInfo = procStartInfo;
-
-                proc.OutputDataReceived += new DataReceivedEventHandler((sender, e) =>
-                {
-                    var line = e.Data;
-                    if (!String.IsNullOrEmpty(line))
-                    {
-                        session.Log("out: " + line);
-                        outputBuilder.Append("\n" + line);
-                    }
-                });
-                proc.ErrorDataReceived += new DataReceivedEventHandler((sender, e) =>
-                {
-                    // Prepend line numbers to each line of the output.
-                    if (!String.IsNullOrEmpty(e.Data))
-                    {
-                        session.Log("err: " + e.Data);
-                    }
-                });
-                proc.Start();
-
-                // Asynchronously read the standard output and standard error of the spawned process.
-                // This raises OutputDataReceived/ErrorDataReceived events for each line of output/errors.
-                proc.BeginOutputReadLine();
-                proc.BeginErrorReadLine();
-
-                while (!proc.HasExited)
-                {
-                    try
-                    {
-                        // This is just hear to throw an InstallCanceled Exception if necessary
-                        Status.ProgressBar.Increment(session, 0);
-                        Thread.Sleep(200);
-                    }
-                    catch (InstallCanceledException)
-                    {
-                        session.Log("Caught install cancelled exception");
-                        ActiveState.Process.KillProcessAndChildren(proc.Id);
-                        output = "process got interrupted.";
-                        return ActionResult.UserExit;
-                    }
-                }
-                proc.WaitForExit();
-
-                var exitCode = proc.ExitCode;
-                session.Log(String.Format("process returned with exit code: {0}", exitCode));
-                proc.Close();
-                if (exitCode != 0)
-                {
-                    outputBuilder.Append('\x00');
-                    outputBuilder.AppendFormat("Process returned with exit code: {0}", exitCode);
-                    output = outputBuilder.ToString();
-                    session.Log("returning due to return code - error");
-                    return ActionResult.Failure;
-                }
+                info = JsonConvert.DeserializeObject<VersionInfo>(versionInfoString);
             }
-            catch (Exception objException)
+            catch (Exception e)
             {
-                output = outputBuilder.ToString();
-                session.Log(string.Format("Caught exception: {0}", objException));
+                string msg = string.Format("Could not deserialize version info. Version info string {0}, exception {1}", versionInfoString, e.ToString());
+                log.Log(msg);
+                RollbarReport.Critical(msg, log);
                 return ActionResult.Failure;
             }
-            output = outputBuilder.ToString();
+
+            string zipPath = Path.Combine(tempDir, paths.ZipFile);
+            string zipURL = stateURL + info.version + "/" + paths.ZipFile;
+            log.Log(string.Format("Downloading zip file from URL: {0}", zipURL));
+            Status.ProgressBar.StatusMessage(log.Session(), "Downloading State Tool...");
+            try
+            {
+                RetryHelper.RetryOnException(log, 3, TimeSpan.FromSeconds(2), () =>
+                {
+                    var client = new WebClient();
+                    client.DownloadFile(zipURL, zipPath);
+                });
+            }
+            catch (WebException e)
+            {
+                string msg = string.Format("Encoutered exception downloading state tool zip file. URL to zip file: {0}, path to save zip file to: {1}, exception: {2}", zipURL, zipPath, e.ToString());
+                log.Log(msg);
+                RollbarReport.Critical(msg, log);
+                return ActionResult.Failure;
+            }
+
+            SHA256 sha = SHA256.Create();
+            FileStream fInfo = File.OpenRead(zipPath);
+            string zipHash = BitConverter.ToString(sha.ComputeHash(fInfo)).Replace("-", string.Empty).ToLower();
+            if (zipHash != info.sha256v2)
+            {
+                string msg = string.Format("SHA256 checksum did not match, expected: {0} actual: {1}", info.sha256v2, zipHash.ToString());
+                log.Log(msg);
+                RollbarReport.Critical(msg, log);
+                return ActionResult.Failure;
+            }
+
+            Status.ProgressBar.StatusMessage(log.Session(), "Extracting State Tool executable...");
+            try
+            {
+                ZipFile.ExtractToDirectory(zipPath, tempDir);
+            }
+            catch (Exception e)
+            {
+                string msg = string.Format("Could not extract State Tool, encountered exception. Path to zip file: {0}, path to temp directory: {1}, exception {2})", zipPath, tempDir, e);
+                log.Log(msg);
+                RollbarReport.Critical(msg, log);
+                return ActionResult.Failure;
+            }
+
+            try
+            {
+                Directory.CreateDirectory(stateToolInstallDir);
+            }
+            catch (Exception e)
+            {
+                string msg = string.Format("Could not create State Tool install directory at: {0}, encountered exception: {1}", stateToolInstallDir, e.ToString());
+                log.Log(msg);
+                RollbarReport.Critical(msg, log);
+                return ActionResult.Failure;
+            }
+            
+            try
+            {
+                File.Move(Path.Combine(tempDir, paths.ExeFile), stateToolPath);
+            }
+            catch (Exception e)
+            {
+                string msg = string.Format("Could not move State Tool executable to: {0}, encountered exception: {1}", stateToolPath, e);
+                log.Log(msg);
+                RollbarReport.Critical(msg, log);
+                return ActionResult.Failure;
+            }
+            
+
+            string configDirCmd = " export" + " config" + " --filter=dir";
+            string output;
+            ActionResult runResult = ActiveState.Command.Run(log, stateToolPath, configDirCmd, out output);
+            log.Log("Writing install file...");
+            // We do not fail the installation if writing the installsource.txt file fails
+            if (runResult.Equals(ActionResult.Failure))
+            {
+                string msg = string.Format("Could not get config directory from State Tool");
+                log.Log(msg);
+                RollbarReport.Error(msg, log);
+            }
+            else
+            {
+                string contents = "msi-ui";
+                if (log.Session().CustomActionData["UI_LEVEL"] == "2")
+                {
+                    contents = "msi-silent";
+                }
+                try
+                {
+                    string installFilePath = Path.Combine(output.Trim(), "installsource.txt");
+                    File.WriteAllText(installFilePath, contents);
+                }
+                catch (Exception e)
+                {
+                    string msg = string.Format("Could not write install file at path: {0}, encountered exception: {1}", output, e.ToString());
+                    log.Log(msg);
+                    RollbarReport.Error(msg, log);
+                }
+            }
+
+            log.Log("Updating PATH environment variable");
+            string oldPath = Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.Machine);
+            if (oldPath.Contains(stateToolInstallDir))
+            {
+                log.Log("State tool installation already on PATH");
+                return ActionResult.Success;
+            }
+
+            var newPath = string.Format("{0};{1}", stateToolInstallDir, oldPath);
+            log.Log(string.Format("updating PATH to {0}", newPath));
+            try
+            {
+                Environment.SetEnvironmentVariable("PATH", newPath, EnvironmentVariableTarget.Machine);
+            }
+            catch (Exception e)
+            {
+                string msg = string.Format("Could not update PATH. Attempted to set path to: {0}, encountered exception: {1}", newPath, e.ToString());
+                log.Log(msg);
+                RollbarReport.Critical(msg, log);
+                return ActionResult.Failure;
+            }
+
+            return ActionResult.Success;
+
+        }
+
+        public static ActionResult InstallStateTool(ActiveState.Logging log, out string stateToolPath)
+        {
+            RollbarHelper.ConfigureRollbarSingleton(log.Session().CustomActionData["COMMIT_ID"]);
+            var productVersion = log.Session().CustomActionData["PRODUCT_VERSION"];
+
+            log.Log("Installing State Tool if necessary");
+            if (log.Session().CustomActionData["STATE_TOOL_INSTALLED"] == "true")
+            {
+                stateToolPath = log.Session().CustomActionData["STATE_TOOL_PATH"];
+                log.Log("State Tool is installed, no installation required");
+                Status.ProgressBar.Increment(log.Session(), 1);
+                TrackerSingleton.Instance.TrackEventInBackground(log, "stage", "state-tool", "skipped", productVersion);
+                return ActionResult.Success;
+            }
+
+            Status.ProgressBar.StatusMessage(log.Session(), "Installing State Tool...");
+            Status.ProgressBar.Increment(log.Session(), 1);
+
+            var ret = _installStateTool(log, out stateToolPath);
+            if (ret == ActionResult.Success)
+            {
+                TrackerSingleton.Instance.TrackEventInBackground(log, "stage", "state-tool", "success", productVersion);
+            }
+            else if (ret == ActionResult.Failure)
+            {
+                TrackerSingleton.Instance.TrackEventInBackground(log, "stage", "state-tool", "failure", productVersion);
+            }
+            return ret;
+        }
+
+        private static ActionResult Login(ActiveState.Logging log, string stateToolPath)
+        {
+            string username = log.Session().CustomActionData["AS_USERNAME"];
+            string password = log.Session().CustomActionData["AS_PASSWORD"];
+            string totp = log.Session().CustomActionData["AS_TOTP"];
+
+            if (username == "" && password == "" && totp == "")
+            {
+                log.Log("No login information provided, not executing login");
+                return ActionResult.Success;
+            }
+
+            string authCmd;
+            if (totp != "")
+            {
+                log.Log("Attempting to log in with TOTP token");
+                authCmd = " auth" + " --totp " + totp;
+            }
+            else
+            {
+                log.Log(string.Format("Attempting to login as user: {0}", username));
+                authCmd = " auth" + " --username " + username + " --password " + password;
+            }
+
+            string output;
+            Status.ProgressBar.StatusMessage(log.Session(), "Authenticating...");
+            ActionResult runResult = ActiveState.Command.Run(log, stateToolPath, authCmd, out output);
+            if (runResult.Equals(ActionResult.UserExit))
+            {
+                // Catch cancel and return
+                return runResult;
+            }
+            else if (runResult == ActionResult.Failure)
+            {
+                Record record = new Record();
+                log.Log(string.Format("Output: {0}", output));
+                var errorOutput = FormatErrorOutput(output);
+                record.FormatString = string.Format("Platform login failed with error:\n{0}", errorOutput);
+
+                log.Session().Message(InstallMessage.Error | (InstallMessage)MessageBoxButtons.OK, record);
+                return runResult;
+            }
+            // The auth command did not fail but the username we expected is not present in the output meaning
+            // another user is logged into the State Tool 
+            else if (!output.Contains(username))
+            {
+                Record record = new Record();
+                var errorOutput = string.Format("Could not log in as {0}, currently logged in as another user. To correct this please start a command prompt and execute `{1} auth logout` and try again", username, stateToolPath);
+                record.FormatString = string.Format("Failed with error:\n{0}", errorOutput);
+
+                log.Session().Message(InstallMessage.Error | (InstallMessage)MessageBoxButtons.OK, record);
+                return ActionResult.Failure;
+            }
             return ActionResult.Success;
         }
 
@@ -159,28 +342,41 @@ namespace StateDeploy
             }
         };
 
+        private static ActionResult run(ActiveState.Logging log)
+	{
+            var productVersion = log.Session().CustomActionData["PRODUCT_VERSION"];
 
-        [CustomAction]
-        public static ActionResult StateDeploy(Session session)
-        {
+            if (!Environment.Is64BitOperatingSystem)
+            {
+                Record record = new Record();
+                record.FormatString = "This installer cannot be run on a 32-bit operating system";
+
+                RollbarReport.Critical(record.FormatString, log);
+                log.Session().Message(InstallMessage.Error | (InstallMessage)MessageBoxButtons.OK, record);
+                return ActionResult.Failure;
+            }
+
             string stateToolPath;
-            var res = InstallStateTool(session, out stateToolPath);
-            if (res != ActionResult.Success) {
+            ActionResult res = InstallStateTool(log, out stateToolPath);
+            if (res != ActionResult.Success)
+            {
                 return res;
             }
-            session.Log("Starting state deploy with state tool at " + stateToolPath);
+            log.Log("Starting state deploy with state tool at " + stateToolPath);
 
-            Status.ProgressBar.StatusMessage(session, string.Format("Deploying project {0}...", session.CustomActionData["PROJECT_OWNER_AND_NAME"]));
-            MessageResult statusResult = Status.ProgressBar.StatusMessage(session, string.Format("Preparing deployment of {0}...", session.CustomActionData["PROJECT_OWNER_AND_NAME"]));
-            if (statusResult == MessageResult.Cancel)
+            res = Login(log, stateToolPath);
+            if (res.Equals(ActionResult.Failure))
             {
-                return ActionResult.UserExit;
+                return res;
             }
+
+            Status.ProgressBar.StatusMessage(log.Session(), string.Format("Deploying project {0}...", log.Session().CustomActionData["PROJECT_OWNER_AND_NAME"]));
+            Status.ProgressBar.StatusMessage(log.Session(), string.Format("Preparing deployment of {0}...", log.Session().CustomActionData["PROJECT_OWNER_AND_NAME"]));
 
             var sequence = new ReadOnlyCollection<InstallSequenceElement>(
                 new[]
                 {
-                    new InstallSequenceElement("install", string.Format("Installing {0}", session.CustomActionData["PROJECT_OWNER_AND_NAME"])),
+                    new InstallSequenceElement("install", string.Format("Installing {0}", log.Session().CustomActionData["PROJECT_OWNER_AND_NAME"])),
                     new InstallSequenceElement("configure", "Updating system environment"),
                     new InstallSequenceElement("symlink", "Creating shortcut directory"),
                 });
@@ -189,14 +385,14 @@ namespace StateDeploy
             {
                 foreach (var seq in sequence)
                 {
-                    string deployCmd = BuildDeployCmd(session, seq.SubCommand, stateToolPath);
-                    session.Log(string.Format("Executing deploy command: {0}", deployCmd));
+                    string deployCmd = BuildDeployCmd(log, seq.SubCommand);
+                    log.Log(string.Format("Executing deploy command: {0}", deployCmd));
 
-                    Status.ProgressBar.Increment(session, 1);
-                    Status.ProgressBar.StatusMessage(session, seq.Description);
+                    Status.ProgressBar.Increment(log.Session(), 1);
+                    Status.ProgressBar.StatusMessage(log.Session(), seq.Description);
 
                     string output;
-                    var runResult = RunCommand(session, deployCmd, out output);
+                    var runResult = ActiveState.Command.Run(log, stateToolPath, deployCmd, out output);
                     if (runResult.Equals(ActionResult.UserExit))
                     {
                         // Catch cancel and return
@@ -208,19 +404,36 @@ namespace StateDeploy
                         var errorOutput = FormatErrorOutput(output);
                         record.FormatString = String.Format("{0} failed with error:\n{1}", seq.Description, errorOutput);
 
-                        MessageResult msgRes = session.Message(InstallMessage.Error | (InstallMessage)MessageBoxButtons.OK, record);
+                        MessageResult msgRes = log.Session().Message(InstallMessage.Error | (InstallMessage)MessageBoxButtons.OK, record);
+                        TrackerSingleton.Instance.TrackEventSynchronously(log, "stage", "artifacts", "failure", productVersion);
+
                         return runResult;
                     }
                 }
+                TrackerSingleton.Instance.TrackEventSynchronously(log, "stage", "artifacts", "success", productVersion);
             }
             catch (Exception objException)
             {
-                session.Log(string.Format("Caught exception: {0}", objException));
+                string msg = string.Format("Caught exception: {0}", objException);
+                log.Log(msg);
+                RollbarReport.Critical(msg, log);
                 return ActionResult.Failure;
             }
 
-            Status.ProgressBar.Increment(session, 1);
+            Status.ProgressBar.Increment(log.Session(), 1);
             return ActionResult.Success;
+
+        }
+
+
+        [CustomAction]
+        public static ActionResult StateDeploy(Session session)
+        {
+            ActiveState.RollbarHelper.ConfigureRollbarSingleton(session.CustomActionData["COMMIT_ID"]);
+            using (var log = new ActiveState.Logging(session, session.CustomActionData["INSTALLDIR"]))
+	    {
+                return run(log);
+	    }
         }
 
         /// <summary>
@@ -248,14 +461,14 @@ namespace StateDeploy
 
         }
 
-        private static string BuildDeployCmd(Session session, string subCommand, string stateToolPath)
+        private static string BuildDeployCmd(ActiveState.Logging log, string subCommand)
         {
-            string installDir = session.CustomActionData["INSTALLDIR"];
-            string projectName = session.CustomActionData["PROJECT_OWNER_AND_NAME"];
-            string isModify = session.CustomActionData["IS_MODIFY"];
+            string installDir = log.Session().CustomActionData["INSTALLDIR"];
+            string projectName = log.Session().CustomActionData["PROJECT_OWNER_AND_NAME"];
+            string isModify = log.Session().CustomActionData["IS_MODIFY"];
 
-            StringBuilder deployCMDBuilder = new StringBuilder(stateToolPath + " deploy " + subCommand);
-            if (isModify == "true")
+            StringBuilder deployCMDBuilder = new StringBuilder(String.Format("deploy {0}", subCommand));
+            if (isModify == "true" && subCommand == "symlink")
             {
                 deployCMDBuilder.Append(" --force");
             }
@@ -265,9 +478,93 @@ namespace StateDeploy
             // We quote the string here as Windows paths that contain spaces must be quoted.
             // We also account for a path ending with a slash and ensure that the quote character
             // isn't preserved.
-            deployCMDBuilder.AppendFormat(" {0} --path=\"{1}\\\"", projectName, @installDir);
+            deployCMDBuilder.AppendFormat(" {0} --path=\"{1}\\\"", projectName, installDir);
 
             return deployCMDBuilder.ToString();
+        }
+
+        /* The following two custom actions are added to this project (and not to a project
+         * with a more appropriate name) in hope that the TrackerSingleton ca be re-used between 
+         * all custom actions.
+         */
+
+        [CustomAction]
+        public static ActionResult GAReportFailure(Session session)
+        {
+            using (var log = new ActiveState.Logging(session, session["INSTALLDIR"]))
+            {
+                log.Log("sending event about starting the MSI");
+                TrackerSingleton.Instance.TrackEventSynchronously(log, "stage", "finished", "failure", log.Session()["ProductVersion"]);
+                return ActionResult.Success;
+            }
+        }
+
+        [CustomAction]
+        public static ActionResult GAReportSuccess(Session session)
+        {
+            using (var log = new ActiveState.Logging(session, session["INSTALLDIR"]))
+            {
+                log.Log("sending event about starting the MSI");
+                TrackerSingleton.Instance.TrackEventSynchronously(log, "stage", "finished", "success", log.Session()["ProductVersion"]);
+                return ActionResult.Success;
+            }
+        }
+
+
+        /// <summary>
+        /// Reports the start of the MSI to google analytics
+        /// </summary>
+        [CustomAction]
+        public static ActionResult GAReportStart(Session session)
+        {
+            using (var log = new ActiveState.Logging(session, session["INSTALLDIR"]))
+            {
+                log.Log("sending event about starting the MSI");
+                TrackerSingleton.Instance.TrackEventSynchronously(log, "stage", "started", "", log.Session()["ProductVersion"]);
+                return ActionResult.Success;
+            }
+        }
+
+        /// <summary>
+        /// Reports a user cancellation event to google analytics
+        /// </summary>
+        [CustomAction]
+        public static ActionResult GAReportUserExit(Session session)
+        {
+            using (var log = new ActiveState.Logging(session, session["INSTALLDIR"]))
+            {
+                log.Log("sending user exit event");
+                TrackerSingleton.Instance.TrackEventSynchronously(log, "stage", "finished", "cancelled", log.Session()["ProductVersion"]);
+                return ActionResult.Success;
+            }
+        }
+
+        [CustomAction]
+        public static ActionResult ValidateInstallFolder(Session session)
+        {
+            using (var log = new ActiveState.Logging(session, session["INSTALLDIR"]))
+            {
+                var installFolder = session["INSTALLDIR"];
+                log.Log("Checking folder {0}", installFolder);
+
+                session["VALIDATE_FOLDER_CLEAN"] = "0";
+                if (!Directory.Exists(installFolder))
+                {
+                    log.Log("Folder {0} does not exist.  Let's proceed.", installFolder);
+                    session["VALIDATE_FOLDER_CLEAN"] = "1";
+                    return ActionResult.Success;
+                }
+
+                if (Directory.EnumerateFileSystemEntries(installFolder).Any())
+                {
+                    log.Log("Selected installation folder {0} exists and is not empty.", installFolder);
+                    return ActionResult.Success;
+                };
+
+                log.Log("Selected installation folder {0} exists, but is empty.  All good.", installFolder);
+                session["VALIDATE_FOLDER_CLEAN"] = "1";
+                return ActionResult.Success;
+            }
         }
     }
 }

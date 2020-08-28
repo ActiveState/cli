@@ -10,6 +10,7 @@ import (
 type RegistryKey interface {
 	GetStringValue(name string) (val string, valtype uint32, err error)
 	SetStringValue(name, value string) error
+	SetExpandStringValue(name, value string) error
 	DeleteValue(name string) error
 	Close() error
 }
@@ -61,7 +62,7 @@ func (c *CmdEnv) unset(name, ifValueEquals string) *failures.Failure {
 	}
 
 	// Check for backup value
-	backupValue, _, err := key.GetStringValue(envBackupName(name))
+	backupValue, valType, err := key.GetStringValue(envBackupName(name))
 	realError := err != nil && !IsNotExistError(err)
 	backupExists := err == nil
 
@@ -73,7 +74,7 @@ func (c *CmdEnv) unset(name, ifValueEquals string) *failures.Failure {
 		if err := key.DeleteValue(envBackupName(name)); err != nil {
 			return failures.FailOS.Wrap(err, locale.T("err_windows_registry"))
 		}
-		return failures.FailOS.Wrap(key.SetStringValue(name, backupValue))
+		return failures.FailOS.Wrap(setStringValue(key, name, valType, backupValue))
 	}
 	return failures.FailOS.Wrap(key.DeleteValue(name))
 }
@@ -87,17 +88,17 @@ func (c *CmdEnv) set(name, newValue string) *failures.Failure {
 	defer key.Close()
 
 	// Check if we're going to be overriding
-	oldValue, _, err := key.GetStringValue(name)
+	oldValue, valType, err := key.GetStringValue(name)
 	if err != nil && !IsNotExistError(err) {
 		return failures.FailOS.Wrap(err, locale.T("err_windows_registry"))
 	} else if err == nil {
 		// Save backup
-		if err2 := key.SetStringValue(envBackupName(name), oldValue); err2 != nil {
+		if err2 := setStringValue(key, envBackupName(name), valType, oldValue); err2 != nil {
 			return failures.FailOS.Wrap(err2, locale.T("err_windows_registry"))
 		}
 	}
 
-	return failures.FailOS.Wrap(key.SetStringValue(name, newValue))
+	return failures.FailOS.Wrap(setStringValue(key, name, valType, newValue))
 }
 
 // getUserEnv retrieves a variable from the user environment, this prioritizes a backup if it exists

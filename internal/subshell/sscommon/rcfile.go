@@ -13,11 +13,12 @@ import (
 	"github.com/mash/go-tempfile-suffix"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -94,17 +95,56 @@ func cleanRcFile(path string) *failures.Failure {
 	return fileutils.WriteFile(path, []byte(strings.Join(fileContents, fileutils.LineEnd)))
 }
 
-// SetupRcFile creates a temporary RC file that our shell is initiated from, this allows us to template the logic
+// SetupShellRcFile create a rc file to activate a runtime (without a project being present)
+func SetupShellRcFile(rcFileName, templateName string, env map[string]string, namespace project.Namespaced) error {
+	box := packr.NewBox("../../../assets/shells")
+	tpl := box.String(templateName)
+
+	rcData := map[string]interface{}{
+		"Env":     env,
+		"Project": namespace.String(),
+	}
+	t, err := template.New("rcfile").Parse(tpl)
+	if err != nil {
+		return errs.Wrap(err, "Failed to parse template file.")
+	}
+
+	var out bytes.Buffer
+	err = t.Execute(&out, rcData)
+	if err != nil {
+		return errs.Wrap(err, "failed to execute template.")
+	}
+
+	f, err := os.Create(rcFileName)
+	if err != nil {
+		return locale.WrapError(err, "sscommon_rc_file_creation_err", "Failed to create file {{.V0}}", rcFileName)
+	}
+	defer f.Close()
+
+	f.WriteString(out.String())
+
+	err = os.Chmod(rcFileName, 0755)
+	if err != nil {
+		return errs.Wrap(err, "Failed to set executable flag.")
+	}
+	return nil
+}
+
+// SetupProjectRcFile creates a temporary RC file that our shell is initiated from, this allows us to template the logic
 // used for initialising the subshell
-func SetupProjectRcFile(templateName, ext string, env map[string]string) (*os.File, *failures.Failure) {
+func SetupProjectRcFile(templateName, ext string, env map[string]string, out output.Outputer) (*os.File, *failures.Failure) {
 	box := packr.NewBox("../../../assets/shells")
 	tpl := box.String(templateName)
 	prj := project.Get()
 
 	userScripts := ""
 	for _, event := range prj.Events() {
-		if event.Name() == "ACTIVATE" {
-			userScripts = userScripts + "\n" + event.Value()
+		if strings.ToLower(event.Name()) == "activate" {
+			v, err := event.Value()
+			if err != nil {
+				return nil, failures.FailMisc.Wrap(err)
+			}
+			userScripts = userScripts + "\n" + v
 		}
 	}
 
@@ -129,7 +169,7 @@ func SetupProjectRcFile(templateName, ext string, env map[string]string) (*os.Fi
 	}
 
 	if len(inuse) > 0 {
-		print.Warning(locale.Tr("warn_script_name_in_use", strings.Join(inuse, "\n  - "), inuse[0], prj.NormalizedName(), explicitName))
+		out.Notice(locale.Tr("warn_script_name_in_use", strings.Join(inuse, "\n  - "), inuse[0], prj.NormalizedName(), explicitName))
 	}
 
 	rcData := map[string]interface{}{
@@ -145,8 +185,8 @@ func SetupProjectRcFile(templateName, ext string, env map[string]string) (*os.Fi
 		return nil, failures.FailTemplating.Wrap(err)
 	}
 
-	var out bytes.Buffer
-	err = t.Execute(&out, rcData)
+	var o bytes.Buffer
+	err = t.Execute(&o, rcData)
 	if err != nil {
 		return nil, failures.FailTemplating.Wrap(err)
 	}
@@ -157,9 +197,9 @@ func SetupProjectRcFile(templateName, ext string, env map[string]string) (*os.Fi
 	}
 	defer tmpFile.Close()
 
-	tmpFile.WriteString(out.String())
+	tmpFile.WriteString(o.String())
 
-	logging.Debug("Using project RC: %s", out.String())
+	logging.Debug("Using project RC: %s", o.String())
 
 	return tmpFile, nil
 }

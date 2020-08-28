@@ -17,15 +17,15 @@ import (
 	"github.com/ActiveState/cli/internal/condition"
 	C "github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
-	"github.com/ActiveState/cli/internal/print"
 )
 
 // Instance holds our main config logic
 type Instance struct {
-	configDir *configdir.Config
-	cacheDir  *configdir.Config
-	localPath string
-	Exit      func(code int)
+	configDir     *configdir.Config
+	cacheDir      *configdir.Config
+	localPath     string
+	installSource string
+	Exit          func(code int)
 }
 
 // New creates a new config instance
@@ -38,6 +38,7 @@ func New(localPath string) *Instance {
 	instance.ensureConfigExists()
 	instance.ensureCacheExists()
 	instance.ReadInConfig()
+	instance.readInstallSource()
 
 	return instance
 }
@@ -75,6 +76,11 @@ func (i *Instance) ConfigPath() string {
 // CachePath returns the path at which our cache is stored
 func (i *Instance) CachePath() string {
 	return i.cacheDir.Path
+}
+
+// InstallSource returns the installation source of the State Tool
+func (i *Instance) InstallSource() string {
+	return i.installSource
 }
 
 // ReadInConfig reads in config from the config file
@@ -163,9 +169,9 @@ func (i *Instance) ensureCacheExists() {
 }
 
 func (i *Instance) exit(message string, a ...interface{}) {
-	print.Error(message, a...)
+	fmt.Fprintf(os.Stderr, message, a...)
 	if funk.Contains(os.Args, "-v") || condition.InTest() {
-		print.Error(stacktrace.Get().String())
+		fmt.Fprint(os.Stderr, stacktrace.Get().String())
 	}
 	i.Exit(1)
 }
@@ -180,4 +186,13 @@ func tempDir(prefix string) (string, error) {
 	}
 
 	return ioutil.TempDir("", prefix)
+}
+
+func (i *Instance) readInstallSource() {
+	installFilePath := filepath.Join(i.configDir.Path, "installsource.txt")
+	installFileData, err := ioutil.ReadFile(installFilePath)
+	i.installSource = strings.TrimSpace(string(installFileData))
+	if err != nil {
+		i.installSource = "unknown"
+	}
 }

@@ -4,11 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"os/exec"
 	"runtime/debug"
 	"time"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
@@ -40,6 +38,9 @@ func unwrapError(err error) (int, error) {
 		logging.Error("Returning error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
 	}
 
+	// unwrap exit code before we remove un-localized wrapped errors from err variable
+	code := unwrapExitCode(err)
+
 	if locale.IsError(err) {
 		err = locale.JoinErrors(err, "\n")
 	} else if isErrs && !hasMarshaller {
@@ -51,7 +52,6 @@ func unwrapError(err error) (int, error) {
 		}
 	}
 
-	code := unwrapExitCode(err)
 	if isSilentFail(err) {
 		logging.Debug("Suppressing silent failure: %v", err.Error())
 		err = nil
@@ -63,12 +63,16 @@ func unwrapError(err error) (int, error) {
 // unwrapExitCode checks if the given error is a failure of type FailExecCmdExit and
 // returns the ExitCode of the process that failed with this error
 func unwrapExitCode(errFail error) int {
-	if eerr, ok := errFail.(*exec.ExitError); ok {
+	var eerr interface{ ExitCode() int }
+	isExitError := errors.As(errFail, &eerr)
+	if isExitError {
 		return eerr.ExitCode()
 	}
 
-	fail, ok := errFail.(*failures.Failure)
-	if !ok {
+	// failure might be in the error stack
+	var fail *failures.Failure
+	isFailure := errors.As(errFail, &fail)
+	if !isFailure {
 		return 1
 	}
 
@@ -77,12 +81,12 @@ func unwrapExitCode(errFail error) int {
 	}
 	err := fail.ToError()
 
-	eerr, ok := err.(*exec.ExitError)
-	if !ok {
-		return 1
+	isExitError = errors.As(err, &eerr)
+	if isExitError {
+		return eerr.ExitCode()
 	}
 
-	return eerr.ExitCode()
+	return 1
 }
 
 func handlePanics(exiter func(int)) {
@@ -96,7 +100,7 @@ func handlePanics(exiter func(int)) {
 
 		fmt.Fprintln(os.Stderr, fmt.Sprintf(`An unexpected error occurred while running the State Tool.
 Check the error log for more information.
-Your error log is located at: %s/log.txt`, config.ConfigPath()))
+Your error log is located at: %s`, logging.FilePath()))
 
 		time.Sleep(time.Second) // Give rollbar a second to complete its async request (switching this to sync isnt simple)
 		exiter(1)

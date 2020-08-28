@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -26,9 +27,9 @@ type List struct {
 }
 
 // NewList prepares a list execution context for use.
-func NewList(out output.Outputer) *List {
+func NewList(prime primer.Outputer) *List {
 	return &List{
-		out: out,
+		out: prime.Output(),
 	}
 }
 
@@ -60,20 +61,11 @@ func (l *List) Run(params ListRunParams) error {
 	if fail != nil {
 		return fail.WithDescription("package_err_cannot_fetch_checkpoint")
 	}
-	if len(checkpoint) == 0 {
-		l.out.Print(locale.T("package_list_no_packages"))
-		return nil
-	}
 
 	table := newFilteredRequirementsTable(checkpoint, params.Name)
-	sortByFirstCol(table.data)
+	table.sortByPkg()
 
-	output := table.output()
-	if output == "" {
-		output = locale.T("package_list_no_packages")
-	}
-
-	l.out.Print(output)
+	l.out.Print(table)
 	return nil
 }
 
@@ -150,18 +142,13 @@ func fetchCheckpoint(commit *strfmt.UUID) (model.Checkpoint, *failures.Failure) 
 	return model.FilterCheckpointPackages(checkpoint), fail
 }
 
-func newFilteredRequirementsTable(requirements model.Checkpoint, filter string) *table {
+func newFilteredRequirementsTable(requirements model.Checkpoint, filter string) *packageTable {
 	if requirements == nil {
 		logging.Debug("requirements is nil")
 		return nil
 	}
 
-	headers := []string{
-		locale.T("package_name"),
-		locale.T("package_version"),
-	}
-
-	rows := make([][]string, 0, len(requirements))
+	rows := make([]packageRow, 0, len(requirements))
 	for _, req := range requirements {
 		if !strings.Contains(req.Requirement, filter) {
 			continue
@@ -172,12 +159,12 @@ func newFilteredRequirementsTable(requirements model.Checkpoint, filter string) 
 			versionConstraint = "Auto"
 		}
 
-		row := []string{
+		row := packageRow{
 			req.Requirement,
 			versionConstraint,
 		}
 		rows = append(rows, row)
 	}
 
-	return newTable(headers, rows)
+	return newTable(rows, locale.T("package_list_no_packages"))
 }

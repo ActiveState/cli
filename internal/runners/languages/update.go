@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/blang/semver"
+	goversion "github.com/hashicorp/go-version"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
@@ -17,8 +18,8 @@ type Update struct {
 	out output.Outputer
 }
 
-func NewUpdate(out output.Outputer) *Update {
-	return &Update{out}
+func NewUpdate(prime primer.Outputer) *Update {
+	return &Update{prime.Output()}
 }
 
 type UpdateParams struct {
@@ -128,24 +129,24 @@ func latestVersionTestable(name string, fetchVersions fetchVersionsFunc) (string
 	}
 
 	result := struct {
-		semver  *semver.Version
+		ver     *goversion.Version
 		version string
 	}{
 		nil, "",
 	}
 	for _, version := range versions {
-		v, err := semver.ParseTolerant(version)
+		v, err := goversion.NewVersion(version)
 		if err != nil {
 			return "", fmt.Errorf("could not parse version: %s, error: %w", version, err)
 		}
 
-		if result.semver == nil || v.Compare(*result.semver) == 1 {
+		if result.ver == nil || v.Compare(result.ver) == 1 {
 			result.version = version
-			result.semver = &v
+			result.ver = v
 		}
 	}
 
-	if result.semver == nil {
+	if result.ver == nil {
 		return "", errors.New("no language versions could be found")
 	}
 

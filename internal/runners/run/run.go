@@ -12,7 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
@@ -33,24 +33,31 @@ var (
 
 // Run contains the run execution context.
 type Run struct {
-	out output.Outputer
+	out      output.Outputer
+	subshell subshell.SubShell
+}
+
+type primeable interface {
+	primer.Outputer
+	primer.Subsheller
 }
 
 // New constructs a new instance of Run.
-func New(out output.Outputer) *Run {
+func New(prime primeable) *Run {
 	return &Run{
-		out: out,
+		prime.Output(),
+		prime.Subshell(),
 	}
 }
 
 // Run runs the Run run runner.
 func (r *Run) Run(name string, args []string) error {
-	return run(r.out, name, args)
+	return run(r.out, r.subshell, name, args)
 }
 
-func run(out output.Outputer, name string, args []string) error {
+func run(out output.Outputer, subs subshell.SubShell, name string, args []string) error {
 	if authentication.Get().Authenticated() {
-		checker.RunCommitsBehindNotifier()
+		checker.RunCommitsBehindNotifier(out)
 	}
 
 	logging.Debug("Execute")
@@ -66,11 +73,6 @@ func run(out output.Outputer, name string, args []string) error {
 			locale.T("error_state_run_unknown_name", map[string]string{"Name": name}),
 		)
 		return fail
-	}
-
-	subs, fail := subshell.Get()
-	if fail != nil {
-		return fail.WithDescription("error_state_run_no_shell")
 	}
 
 	lang := script.Language()
@@ -94,10 +96,10 @@ func run(out output.Outputer, name string, args []string) error {
 
 	// Activate the state if needed.
 	if !script.Standalone() && !subshell.IsActivated() {
-		print.Info(locale.T("info_state_run_activating_state"))
+		out.Notice(locale.T("info_state_run_activating_state"))
 		venv := virtualenvironment.Init()
-		venv.OnDownloadArtifacts(func() { print.Line(locale.T("downloading_artifacts")) })
-		venv.OnInstallArtifacts(func() { print.Line(locale.T("installing_artifacts")) })
+		venv.OnDownloadArtifacts(func() { out.Notice(locale.T("downloading_artifacts")) })
+		venv.OnInstallArtifacts(func() { out.Notice(locale.T("installing_artifacts")) })
 
 		if fail := venv.Activate(); fail != nil {
 			logging.Errorf("Unable to activate state: %s", fail.Error())
@@ -122,15 +124,18 @@ func run(out output.Outputer, name string, args []string) error {
 		return FailExecNotFound.New("error_state_run_unknown_exec")
 	}
 
-	// Run the script.
-	scriptBlock := project.Expand(script.Value())
+	scriptBlock, err := script.Value()
+	if err != nil {
+		return locale.WrapError(err, "err_run_scriptval", "Could not get script value.")
+	}
+
 	sf, fail := scriptfile.New(lang, script.Name(), scriptBlock)
 	if fail != nil {
 		return fail.WithDescription("error_state_run_setup_scriptfile")
 	}
 	defer sf.Clean()
 
-	print.Info(locale.Tr("info_state_run_running", script.Name(), script.Source().Path()))
+	out.Notice(locale.Tr("info_state_run_running", script.Name(), script.Source().Path()))
 	// ignore code for now, passing via failure
 	return subs.Run(sf.Filename(), args...)
 }

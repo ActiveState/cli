@@ -7,6 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/project"
@@ -23,10 +24,15 @@ type Update struct {
 	out     output.Outputer
 }
 
-func New(pj *project.Project, out output.Outputer) *Update {
+type primeable interface {
+	primer.Projecter
+	primer.Outputer
+}
+
+func New(prime primeable) *Update {
 	return &Update{
-		pj,
-		out,
+		prime.Project(),
+		prime.Output(),
 	}
 }
 
@@ -52,17 +58,14 @@ func run(lock, isLocked, force bool, runLock, runUpdateLock, runUpdateGlobal, co
 func (u *Update) runLock() error {
 	u.out.Notice(locale.Tl("locking_version", "Locking State Tool to the current version."))
 
-	if u.project.Version() != "" {
+	if u.project.Lock() != "" {
 		u.out.Print(locale.Tl("lock_project_uptodate", "Your project is already locked, did you mean to run 'state update' (without the --lock flag)?"))
 		return nil
 	}
 
-	pj := u.project.Source()
-	pj.Branch = constants.BranchName
-	pj.Version = constants.Version
-
-	if fail := pj.Save(); fail != nil {
-		return locale.WrapError(fail, "err_update_save", "Failed to update your activestate.yaml with the new version.")
+	err := projectfile.AddLockInfo(u.project.Source().Path(), constants.BranchName, constants.Version)
+	if err != nil {
+		return locale.WrapError(err, "err_update_projectfile", "Could not update projectfile")
 	}
 
 	u.out.Print(locale.Tl("version_locked", "Version locked at {{.V0}}", constants.Version))
@@ -82,12 +85,9 @@ func (u *Update) runUpdateLock() error {
 		return nil
 	}
 
-	pj := u.project.Source()
-	pj.Branch = constants.BranchName
-	pj.Version = info.Version
-
-	if fail := pj.Save(); fail != nil {
-		return locale.WrapError(fail, "err_update_save", "Failed to update your activestate.yaml with the new version.")
+	err = projectfile.AddLockInfo(u.project.Source().Path(), info.Version, constants.BranchName)
+	if err != nil {
+		return locale.WrapError(err, "err_update_projectfile", "Could not replace update in projectfile")
 	}
 
 	u.out.Print(locale.Tl("version_lock_updated", "Locked version updated to {{.V0}}", constants.Version))
@@ -115,7 +115,7 @@ func (u *Update) runUpdateGlobal() error {
 		return locale.WrapError(err, "err_update_failed", "Update failed, please try again later or try reinstalling the State Tool.")
 	}
 
-	u.out.Print(locale.Tl("version_updated", "Version updated to {{.V0}}", info.Version))
+	u.out.Print(locale.Tl("version_updated", "Version updated to {{.V0}}@{{.V1}}", constants.BranchName, info.Version))
 	return nil
 }
 
@@ -137,5 +137,11 @@ func confirmUpdateLock() error {
 
 func isLocked() bool {
 	pj, fail := projectfile.GetSafe()
-	return fail == nil && pj.Version != ""
+
+	// Support deprecated way of representing a locked version
+	if pj != nil && pj.Branch != "" && pj.Version != "" {
+		return true
+	}
+
+	return fail == nil && pj.Lock != ""
 }

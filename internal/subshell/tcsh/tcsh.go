@@ -8,7 +8,9 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
+	"github.com/ActiveState/cli/pkg/project"
 )
 
 var escaper *osutils.ShellEscape
@@ -19,11 +21,12 @@ func init() {
 
 // SubShell covers the subshell.SubShell interface, reference that for documentation
 type SubShell struct {
-	binary string
-	rcFile *os.File
-	cmd    *exec.Cmd
-	env    map[string]string
-	fs     chan *failures.Failure
+	binary          string
+	rcFile          *os.File
+	cmd             *exec.Cmd
+	env             map[string]string
+	fs              chan *failures.Failure
+	activateCommand *string
 }
 
 // Shell - see subshell.SubShell
@@ -52,9 +55,20 @@ func (v *SubShell) WriteUserEnv(env map[string]string, _ bool) *failures.Failure
 	return sscommon.WriteRcFile("tcshrc_append.sh", filepath.Join(homeDir, ".tcshrc"), env)
 }
 
+// SetupShellRcFile - subshell.SubShell
+func (v *SubShell) SetupShellRcFile(targetDir string, env map[string]string, namespace project.Namespaced) error {
+	env = sscommon.EscapeEnv(env)
+	return sscommon.SetupShellRcFile(filepath.Join(targetDir, "shell.tcsh"), "tcsh_global.sh", env, namespace)
+}
+
 // SetEnv - see subshell.SetEnv
 func (v *SubShell) SetEnv(env map[string]string) {
 	v.env = env
+}
+
+// SetActivateCommand - see subshell.SetActivateCommand
+func (v *SubShell) SetActivateCommand(cmd string) {
+	v.activateCommand = &cmd
 }
 
 // Quote - see subshell.Quote
@@ -63,7 +77,7 @@ func (v *SubShell) Quote(value string) string {
 }
 
 // Activate - see subshell.SubShell
-func (v *SubShell) Activate() *failures.Failure {
+func (v *SubShell) Activate(out output.Outputer) *failures.Failure {
 	// This is horrible but it works.  tcsh doesn't offer a way to override the rc file and
 	// doesn't let us run a script and then drop to interactive mode.  So we source the
 	// state rc file and then chain an exec which inherits the environment we just set up.
@@ -74,11 +88,14 @@ func (v *SubShell) Activate() *failures.Failure {
 	// hack to make it work.
 	env := sscommon.EscapeEnv(v.env)
 	var fail *failures.Failure
-	if v.rcFile, fail = sscommon.SetupProjectRcFile("tcsh.sh", "", env); fail != nil {
+	if v.rcFile, fail = sscommon.SetupProjectRcFile("tcsh.sh", "", env, out); fail != nil {
 		return fail
 	}
 
 	shellArgs := []string{"-c", "source " + v.rcFile.Name() + " ; exec " + v.Binary()}
+	if v.activateCommand != nil {
+		shellArgs[len(shellArgs)-1] = shellArgs[len(shellArgs)-1] + " && " + *v.activateCommand
+	}
 	cmd := exec.Command(v.Binary(), shellArgs...)
 
 	v.fs = sscommon.Start(cmd)

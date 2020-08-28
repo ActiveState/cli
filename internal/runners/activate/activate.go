@@ -11,8 +11,9 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
-	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -20,41 +21,31 @@ type Activate struct {
 	namespaceSelect  namespaceSelectAble
 	activateCheckout CheckoutAble
 	out              output.Outputer
+	subshell         subshell.SubShell
 }
 
 type ActivateParams struct {
 	Namespace     *project.Namespaced
 	PreferredPath string
+	Command       string
 }
 
-func NewActivate(out output.Outputer, namespaceSelect namespaceSelectAble, activateCheckout CheckoutAble) *Activate {
+type primeable interface {
+	primer.Outputer
+	primer.Subsheller
+}
+
+func NewActivate(prime primeable, namespaceSelect namespaceSelectAble, activateCheckout CheckoutAble) *Activate {
 	return &Activate{
 		namespaceSelect,
 		activateCheckout,
-		out,
+		prime.Output(),
+		prime.Subshell(),
 	}
 }
 
 func (r *Activate) Run(params *ActivateParams) error {
 	return r.run(params, activationLoop)
-}
-
-func sendProjectIDToAnalytics(namespace *project.Namespaced, configFile string) {
-	names, fail := project.ParseNamespaceOrConfigfile(namespace.String(), configFile)
-	if fail != nil {
-		logging.Debug("error resolving namespace: %v", fail.ToError())
-		return
-	}
-
-	platProject, fail := model.FetchProjectByName(names.Owner, names.Project)
-	if fail != nil {
-		logging.Debug("error getting platform project: %v", fail.ToError())
-		return
-	}
-	projectID := platProject.ProjectID.String()
-	analytics.EventWithLabel(
-		analytics.CatBuild, analytics.ActBuildProject, projectID,
-	)
 }
 
 func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc) error {
@@ -71,7 +62,13 @@ func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc)
 		}
 	}
 
-	go sendProjectIDToAnalytics(params.Namespace, filepath.Join(targetPath, constants.ConfigFileName))
+	// Send google analytics event with label set to project namespace
+	names, fail := project.ParseNamespaceOrConfigfile(params.Namespace.String(), filepath.Join(targetPath, constants.ConfigFileName))
+	if fail != nil {
+		names = &project.Namespaced{}
+		logging.Debug("error resolving namespace: %v", fail.ToError())
+	}
+	analytics.EventWithLabel(analytics.CatRunCmd, "activate", names.String())
 
 	// If we're not using plain output then we should just dump the environment information
 	if r.out.Type() != output.PlainFormatName {
@@ -90,7 +87,11 @@ func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc)
 		return nil
 	}
 
-	return activatorLoop(r.out, targetPath, activate)
+	if params.Command != "" {
+		r.subshell.SetActivateCommand(params.Command)
+	}
+
+	return activatorLoop(r.out, r.subshell, targetPath, activate)
 }
 
 func (r *Activate) setupPath(namespace string, preferredPath string) (string, error) {

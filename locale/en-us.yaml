@@ -74,6 +74,8 @@ arg_state_activate_namespace:
   other: ORG/PROJECT
 arg_state_activate_namespace_description:
   other: The namespace of the project that you wish to activate
+flag_state_init_private_flag_description:
+  other: Create a private project
 flag_state_locale_description:
   other: Set the localisation
 flag_state_verbose_description:
@@ -126,7 +128,9 @@ confirm_update_locked_version_prompt:
   other: "You ran update from a project directory with a locked State Tool version. This will update the version that your project is locked to. Are you sure you want to do this?"
 version_info:
   other: |
-    ActiveState CLI version {{.Version}}
+    ActiveState CLI by ActiveState Software Inc.
+    License {{.License}}
+    Version {{.Version}}
     Revision {{.Revision}}
     Branch {{.Branch}}
     Built {{.Date}}
@@ -138,8 +142,6 @@ err_project_file_unavailable:
   other: Could not load the project file
 err_project_unavailable:
   other: Could not load the project
-err_project_parse:
-  other: "Project file could not be parsed, the parser produced the following error: {{.Error}}"
 err_failure_test:
   other: one {{.V0}} three {{.V1}}
 distro_obtaining:
@@ -247,7 +249,7 @@ err_auth_failed:
 err_auth_username_check:
   other: Could not validate username, check the error log for more information
 err_auth_failed_unknown_cause:
-  other: Authentication failed due to an unknown cause, check the error log for more information
+  other: "Authentication failed due to an unknown cause, error received: {{.V0}}"
 auth_err_password_prompt:
   other: The provided password is invalid
 confirm_password_account_creation:
@@ -258,8 +260,8 @@ err_username_taken:
   other: Username is already taken
 signup_description:
   other: Signup a new account
-err_auth_signup_email_exists:
-  other: An account with that email address already exists
+err_auth_signup_user_exists:
+  other: "An account with the given information already exists, error received: {{.V0}}"
 login_success_welcome_back:
   other: You have successfully authenticated, hello {{.Name}}!
 logged_in_as:
@@ -389,7 +391,7 @@ err_api_org_not_found:
 err_api_project_not_found:
   other: The requested project {{.V0}} does not exist under {{.V1}}. Please ensure the owner is correct and that the project has been created.
 err_api_project_not_found_unauthenticated:
-  other: The requested project {{.V1}}/{{.V0}} could not be found. If this is a private project you may need to authenticate with 'state auth'.
+  other: The requested project {{.V0}}/{{.V1}} could not be found. If this is a private project you may need to authenticate with 'state auth'.
 err_api_member_not_found:
   other: Unable to find requested Member
 err_api_org_invite_expected_one_invite:
@@ -400,14 +402,6 @@ secrets_expander_err_empty_name:
   other: Expander handle can not be an empty string
 secrets_expander_err_undefined:
   other: Expander must be defined
-error_expand_variable_infinite_recursion:
-  other: Infinite recursion trying to expand variable '{{.V0}}'
-error_expand_variable_project_unknown_category:
-  other: "Error expanding variable '{{.V0}}': unknown category '{{.V1}}'"
-error_expand_variable_project_unknown_name:
-  other: "Error expanding variable '{{.V0}}': {{.V1}}"
-error_expand_variable_project_unrecognized_platform_var:
-  other: "Unrecognized platform variable '{{.V0}}'"
 run_description:
   other: Run your project scripts
 scripts_description:
@@ -465,7 +459,7 @@ error_state_run_undefined_name:
 error_state_run_unknown_name:
   other: The script '{{.Name}}' is not defined in activestate.yaml.
 info_state_run_activating_state:
-  other: This script requires an activated state. Activating it now. To bypass this, use the --standalone flag.
+  other: "[INFO]This script requires an activated state. Activating it now. To bypass this set `standalone: true` on this script in your activestate.yaml.[/RESET]"
 error_state_run_activate:
   other: Unable to activate a state for running the script in. Try manually running "state activate" first.
 error_state_run_standalone_conflict:
@@ -475,7 +469,7 @@ error_state_run_unknown_exec:
 error_state_run_setup_scriptfile:
   other: Cannot setup runnable on-disk script file.
 info_state_run_running:
-  other: "Running user-defined script: {{.V0}}\nDefined in {{.V1}}"
+  other: "[INFO]Running user-defined script: {{.V0}}\nDefined in {{.V1}}[/RESET]"
 error_state_run_error:
   other: Failed to run script.
 error_state_run_no_shell:
@@ -545,17 +539,25 @@ env_inherit_inherit_aborted:
 show_project:
   other: Show information about a project
 arg_state_show_remote_description:
-  other: Path to project
+  other: Namespace of remote project
+private:
+  other: Private
+public:
+  other: Public
+field_package_name:
+  other: Name
+field_package_version:
+  other: Version
 field_namespace:
   other: Namespace
-field_platforms:
-  other: Platforms
 field_events:
   other: Events
 field_scripts:
   other: Scripts
-field_languages:
-  other: Languages
+field_localcheckouts:
+  other: Local Checkouts
+field_platforms:
+  other: Platforms
 err_cannot_obtain_dist:
   other: "Could not obtain distribution for language: {{.V0}}"
 err_already_active:
@@ -643,12 +645,10 @@ secrets_err_base64_decoding:
   other: Error base64 decoding variable value
 secrets_err_no_publickey_found:
   other: Unable to find any public-key for User
-secrets_err_value_prompt:
-  other: The provided variable value is invalid
 secrets_expand_err_undefined:
   other: "Secret `{{.V0}}` not defined in project"
 secrets_expand_err_not_found:
-  other: "unable to obtain value for variable `{{.V0}}`"
+  other: "Unable to obtain value for secret: `{{.V0}}.`"
 secrets_expand_err_no_access:
   other: You are not a member of organization '{{.V0}}' and therefore cannot access secrets belonging to its projects
 secrets_err_invalid_store:
@@ -743,13 +743,13 @@ err_command_requires_auth:
   other: You need to be authenticated to run this command. Authenticate by running `state auth`.
 warn_script_name_in_use:
   other: |
-    The following script names are already in use:
+    [YELLOW]The following script names are already in use:
 
       - {{.V0}}
 
     These scripts were not aliased during activation but can still be run using `state run`, eg. `state run {{.V1}}`.
 
-    Note that you can also access scripts by prefixing their script with your project name ({{.V2}}), eg. `{{.V3}}`
+    Note that you can also access scripts by prefixing their script with your project name ({{.V2}}), eg. `{{.V3}}`[/RESET]
 
 warn_move_incompatible_modes:
   other: "Permissions of files {{.V0}} and {{.V1}} differ. Using permissions of {{.V0}}"
@@ -767,8 +767,10 @@ err_version_parse:
   other:  Could not determine the State Tool version to use to run this command. Please ensure the project field in your activestate.yaml is formatted correctly.
 err_invalid_version:
   other: "Invalid version specified in your activestate.yaml, should be in the format of: {number}.{number}.{number}-{hash}"
+err_update_version:
+  other: "Failed to automatically update your locked version schema. Please manually remove your 'version' and 'branch' fields in your activestate.yaml and substitute them for 'lock: <branch>@<version>'."
 downloading_state_version:
-  other: "Downloading State Tool version {{.V0}}, as specified by your activestate.yaml (this only needs to happen once for each version you specify)."
+  other: "[INFO]Downloading State Tool version {{.V0}}, as specified by your activestate.yaml (this only needs to happen once for each version you specify).[/RESET]"
 forward_fail:
   other: Could not forward command to the appropriate State Tool version
 forward_fail_with_error:
@@ -777,18 +779,18 @@ forward_fail_info:
   other: The requested version of the State Tool does not exist, please ensure the version and branch are correct.
 update_available:
   other: |
-    A new update is available!
+    [INFO]A new update is available!
 
     Your version: {{.V0}}
     Available Version: {{.V1}}
 
-    You can update by running `state update`
+    You can update by running `state update`[/RESET]
 runtime_update_notice_known_count:
-  other: Your activestate.yaml is {{.V0}} commits behind.
+  other: "[INFO]Your activestate.yaml is {{.V0}} commits behind.[/RESET]"
 runtime_update_notice_unknown_count:
-  other: Your activestate.yaml is behind.
+  other: "[INFO]Your activestate.yaml is behind.[/RESET]"
 runtime_update_help:
-  other: Run `state pull` to pull in the latest runtime environment as defined in your project on https://platform.activestate.com/{{.V0}}/{{.V1}}
+  other: "[INFO]Run `state pull` to pull in the latest runtime environment as defined in your project on https://platform.activestate.com/{{.V0}}/{{.V1}}[/RESET]"
 err_no_credentials:
   other: Cannot authenticate without credentials
 err_token_list:
@@ -968,6 +970,12 @@ export_new_api_key_arg_name:
   other: name
 export_new_api_key_arg_name_description:
   other: API key name
+export_config_cmd_description:
+  other: Export state tool configurations
+export_config_flag_filter_description:
+  other: "Filter configuration output. Accepts: {{.V0}}"
+export_config_dir_description:
+  other: Export the config directory details
 export_apikey_user_notice:
   other: "[BLUE]Note that this key is not stored by ActiveState. Please store the value for later use as you cannot retrieve it again.[/RESET]"
 err_apikey_name_required:
@@ -996,8 +1004,6 @@ arg_platforms_shared_version:
   other: version
 arg_platforms_shared_version_description:
   other: Platform version (e.g. 12.04.2)
-field_platforms:
-  other: Platforms
 field_version:
   other: Version
 field_bitwidth:
@@ -1011,9 +1017,9 @@ commit_message_add_language:
 commit_message_removed_language:
   other: "Removed language: {{.V0}} {{.V1}}"
 downloading_artifacts:
-  other: Downloading required artifacts
+  other: "[INFO]Downloading required artifacts[/RESET]"
 installing_artifacts:
-  other: Installing required artifacts
+  other: "[INFO]Installing required artifacts[/RESET]"
 fileutils_err_ammend_file:
   other: "Could not edit file: '{{.V0}}'"
 err_auth_empty_token:
@@ -1066,6 +1072,7 @@ sample_yaml:
     # This script uses a secret. Note that you can define your own secrets at
     # https://platform.activestate.com/{{.Owner}}/{{.Project}}/scripts
       - name: helloWorld
+        language: {{.Shell}}
         value: echo ${secrets.user.world}
     events:
       # This is the ACTIVATE event, it will run whenever a new virtual environment is created (eg. by running `state activate`)
@@ -1313,8 +1320,8 @@ field_organization:
   other: Organization
 request_timed_out:
   other: A request for data took too long - Trying again may help
-err_recipe_payload:
-  other: Received multiple platform recipes where only one was expected
+err_recipe_platforms:
+  other: Filter returned multiple platform IDs where only one was expected
 no_commits:
   other: No commits exist yet for {{.V0}}
 err_orgs_length:
@@ -1358,13 +1365,15 @@ clean_description:
 uninstall_description:
   other: Remove the State Tool, installed languages, and any configuration files
 cache_description:
-  other: Removes all cached Runtime Environments
+  other: Removes cached Runtime Environments
 config_description:
   other: Removes global State Tool configuration. Project configuration will not be affected.
 flag_state_clean_uninstall_force_description:
   other: Run uninstall operation without prompts
 flag_state_clean_cache_force_description:
   other: Run clean cache operation without prompts
+arg_state_clean_cache_project_description:
+  other: The project to be removed from the local cache. Must be in the format of <Owner>/<ProjectName>
 flag_state_clean_config_force_description:
   other: Run clean config operation without prompts
 err_uninstall_activated:
@@ -1377,6 +1386,8 @@ uninstall_confirm:
   other: You are about to remove the State Tool, installed laguage runtimes, and all configuration information. Continue?
 clean_cache_confirm:
   other: You are about to remove the State Tool cache directory. Continue?
+clean_cache_artifact_confirm:
+  other: You are about the remove the cached runtime for {{.V0}}. Continue?
 clean_config_confirm:
   other: You are about the remove the State Tool config directory. Continue?
 clean_success_message:
@@ -1549,6 +1560,25 @@ ppm_print_main:
         state help
 
     See "https://docs.activestate.com/platform/state/" for details.
+ppm_print_forward:
+  other: |
+    Your command is being forwarded to `[BOLD][BLUE]{{.V0}}[/RESET]`.
+    In the future you can run `[BOLD][BLUE]{{.V0}}[/RESET]` directly instead of running `[BOLD][BLUE]{{.V1}}[/RESET]`, which will soon be deprecated.
+ppm_print_forward_after_convert:
+  other: |
+    Please navigate to your newly created project directory and run `[BOLD][BLUE]{{.V1}}[/RESET]` again.
+    You can also run `[BOLD][BLUE]{{.V0}}[/RESET]` directly instead of running `[BOLD][BLUE]{{.V1}}[/RESET]`, which will soon be deprecated.
+ppm_print_forward_failure:
+  other: |
+    Your command is being forwarded to `[BOLD][BLUE]{{.V0}}[/RESET]`.
+    In the future you can run `[BOLD][BLUE]{{.V0}}[/RESET]` directly instead of running `[BOLD][BLUE]{{.V1}}[/RESET]`, which will soon be deprecated.
+
+    Note that `[BOLD][BLUE]{{.V0}}[/RESET]` is not a direct analog for `[BOLD][BLUE]{{.V1}}[/RESET]` and your command may have failed as a result.
+    Please run `[BOLD][BLUE]{{.V0}} --help[/RESET]` for further information on how to use it for your use-case.
+ppm_print_area_redundant:
+  other: |
+    `ppm area` and its subcommands have been made redundant thanks to State Tool's use of virtual environments.
+    You can simply start managing your packages, run `[BOLD][BLUE]{{.V0}} --help[/RESET]` for more information.
 ppm_install_intent:
   other: add new packages to your project 
 ppm_upgrade_intent:
@@ -1569,7 +1599,7 @@ ppm_area_message:
     To fork an existing project, run:
     	state fork
     See https://docs.activestate.com/platform/state/fork.html for details.
-    	
+
     To create a new project, see the guide at https://docs.activestate.com/platform/state/start.html for details.
 ppm_list_intent:
   other: list the packages installed for a project
@@ -1580,3 +1610,49 @@ script_watcher_watch_file:
   other: "Watching file changes at: {{.V0}}"
 confirm_exit_on_error_prompt:
   other: Press enter to continue...
+tutorial_newproject_intro:
+  other: |
+    The State Tool lets you create and maintain a set of virtual environments (eg., one per project), allowing you to
+    isolate and better manage language versions and dependencies on a per-project basis.
+    [[BR]][[BR]]
+    For every virtual environment, you'll be able to share the current configuration (language version & dependencies)
+    with your teammates so everyone stays in sync, as well as share secrets (or store your own, for your eyes only),
+    set up shared scripts, and much more.
+    [[BR]][[BR]]
+    We'll help you create your first virtual environment, after that you can create as many as you want by running
+    `state init`.
+    [[BR]]
+tutorial_newproject_outro:
+  other: |
+    Your Virtual Runtime Environment has been created.
+    [[BR]][[BR]]
+    To start using your project simply run `[BOLD][BLUE]state activate[/RESET]` from your project directory at [BOLD][BLUE]{{.Dir}}[/RESET].
+    You can also manage your project in your browser at [BOLD][BLUE]{{.URL}}[/RESET].
+    [[BR]][[BR]]
+    To create another project run `[BOLD][BLUE]state init[/RESET]`, or if you want to find out more about the State Tool and what it can do
+    run `[BOLD][BLUE]state --help[/RESET]` or check out [BOLD][BLUE]{{.Docs}}[/RESET]
+ppm_convert_after_tutorial:
+  other: |
+    For your convenience you can continue to use ppm commands once you've activated your virtual runtime environment.
+    We'll give you handy tips on how your commands map to State Tool so you can learn as you go.
+ppm_convert_explanation:
+  other: |
+    State Tool, like Perl 7, is being developed from the ground up with modern software development practices in mind.
+    Best practices suggest one environment per project, which is the State Tool’s default option.
+    State Tool was developed from the ground up with modern software development practices in mind.
+    [[BR]]
+ppm_convert_create_question:
+  other: |
+    PPM functionality is being replaced by the State Tool, which does things differently. For example, before you can
+    start managing dependencies, you need to create a new virtual environment for your Perl project.
+    [[BR]]
+ppm_convert_ask_feedback:
+  other: |
+    We understand your need to do things traditionally, but we currently do not support it. We'd love to hear more about
+    your use case to see if we can better meet your needs. Please consider posting to our forum at {{.ForumURL}}.
+    [[BR]]
+    To create another project run `state init`, or if you want to find out more about the State Tool and what it can do
+    run `state --help` or check out {{.Docs}}
+windows_compatibility_warning:
+  other: |
+    Warning: State Tool is untested on Windows versions below 10. If you encounter issues please consider reporting them on {{.V0}}

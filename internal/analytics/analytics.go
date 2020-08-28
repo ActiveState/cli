@@ -3,12 +3,14 @@ package analytics
 import (
 	"fmt"
 
+	ga "github.com/ActiveState/go-ogle-analytics"
+	"github.com/ActiveState/sysinfo"
+
 	"github.com/ActiveState/cli/internal/condition"
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	ga "github.com/ActiveState/go-ogle-analytics"
-	"github.com/ActiveState/sysinfo"
 )
 
 var client *ga.Client
@@ -22,16 +24,26 @@ const CatRunCmd = "run-command"
 // CatBuild is the event category used for headchef builds
 const CatBuild = "build"
 
+// CatPpmConversion is the event category used for ppm-conversion events
+const CatPpmConversion = "ppm-conversion"
+
 // ActBuildProject is the event action for requesting a build for a specific project
 const ActBuildProject = "project"
 
+// CatPPMShimCmd is the event category used for PPM shim events
+const CatPPMShimCmd = "ppm-shim"
+
+// CatTutorial is the event category used for tutorial level events
+const CatTutorial = "tutorial"
+
 type customDimensions struct {
-	version    string
-	branchName string
-	userID     string
-	output     string
-	osName     string
-	osVersion  string
+	version       string
+	branchName    string
+	userID        string
+	output        string
+	osName        string
+	osVersion     string
+	installSource string
 }
 
 func (d *customDimensions) SetOutput(output string) {
@@ -48,6 +60,7 @@ func (d *customDimensions) toMap() map[string]string {
 		"5": d.output,
 		"6": d.osName,
 		"7": d.osVersion,
+		"8": d.installSource,
 	}
 }
 
@@ -84,11 +97,12 @@ func setup() {
 	}
 
 	CustomDimensions = &customDimensions{
-		version:    constants.Version,
-		branchName: constants.BranchName,
-		userID:     userIDString,
-		osName:     osName,
-		osVersion:  osVersion,
+		version:       constants.Version,
+		branchName:    constants.BranchName,
+		userID:        userIDString,
+		osName:        osName,
+		osVersion:     osVersion,
+		installSource: config.InstallSource(),
 	}
 
 	client.ClientID(id)

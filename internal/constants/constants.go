@@ -9,6 +9,9 @@ const LibraryOwner = "ActiveState"
 // LibraryNamespace is the namespace that the library belongs to
 const LibraryNamespace = "github.com/ActiveState/"
 
+// LibraryLicense is the license that the library is distributed under.
+const LibraryLicense = "BSD 3"
+
 // CommandName holds the name of our command
 const CommandName = "state"
 
@@ -87,6 +90,9 @@ const ArtifactFile = "artifact.json"
 // ArtifactArchiveName is the standardized name of an artifact archive
 const ArtifactArchiveName = "artifact.tar.gz"
 
+// ArtifactCacheFileName is the standardized name of an artifact cache file
+const ArtifactCacheFileName = "artifact_cache.json"
+
 // DefaultNamespaceDomain is the domain used when no namespace is given and one has to be constructed
 const DefaultNamespaceDomain = "github.com"
 
@@ -149,8 +155,14 @@ const DateFormatUser = "January 02, 2006"
 // DateTimeFormatUser is the datetime format we use when communicating with the end-user
 const DateTimeFormatUser = "2 Jan 2006 15:04"
 
+// DateTimeFormatRecord is the datetime format we use when recording for internal use
+const DateTimeFormatRecord = "Mon Jan 2 2006 15:04:05 -0700 MST"
+
 // PlatformSignupURL is the account creation url used by the platform
 const PlatformSignupURL = "https://platform.activestate.com" + "/create-account"
+
+// DocumentationURL is the url for the state tool documentation
+const DocumentationURL = "http://docs.activestate.com/platform/state/"
 
 // BugTrackerURL is the URL of our bug tracker
 const BugTrackerURL = "https://github.com/ActiveState/state-tool/issues"
@@ -191,6 +203,12 @@ const LocalRuntimeEnvironmentDirectory = "_runtime_env"
 // Check for existence of this file to ensure that the installation has not been interrupted prematurely.
 const RuntimeInstallationCompleteMarker = "support/completed"
 
+// StateToolMarketingPage links to the marketing page for the state tool
+const StateToolMarketingPage = "https://www.activestate.com/products/platform/state-tool/"
+
+// PlatformMarketingPage links to the marketing page for the ActiveState Platform
+const PlatformMarketingPage = "https://www.activestate.com/products/platform/"
+
 // TermsOfServiceURLText is the URL to get the current terms of service in txt form
 const TermsOfServiceURLText = "https://www.activestate.com/wp-content/uploads/2020/03/activestate_platform_terms_service_agreement.txt"
 
@@ -200,8 +218,8 @@ const TermsOfServiceURLLatest = "https://www.activestate.com/wp-content/uploads/
 // RCAppendStartLine is the start line used to denote our environment config in RC files
 const RCAppendStartLine = "-- START ACTIVESTATE RUNTIME ENVIRONMENT"
 
-// RCAppendEndLine is the end line used to denote our environment config in RC files
+// RCAppendStopLine is the end line used to denote our environment config in RC files
 const RCAppendStopLine = "-- STOP ACTIVESTATE RUNTIME ENVIRONMENT"
 
 // ForumsURL is the URL to the state tool forums
-const ForumsURL = "https://community.activestate.com/c/state-tool/9"
+const ForumsURL = "https://community.activestate.com/c/state-tool/"

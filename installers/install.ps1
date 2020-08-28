@@ -24,6 +24,8 @@ param (
     ,[Parameter(Mandatory=$False)][string]$activate = ""
 )
 
+Set-StrictMode -Off
+
 $script:NOPROMPT = $n
 $script:FORCEOVERWRITE = $f
 $script:TARGET = ($t).Trim()
@@ -80,9 +82,7 @@ function promptYN([string]$msg)
     return $True
 }
 
-function errorOccured($suppress) {
-    $errMsg = $Error[0]
-    $Error.Clear()
+function errorOccured($suppress, $errMsg) {
     if($errMsg) {
         if (-Not $suppress){
             Write-Warning $errMsg
@@ -92,58 +92,51 @@ function errorOccured($suppress) {
     return $False, ""
 }
 
+function download([string] $url, [string] $out) {
+    [int]$Retrycount = "0"
+
+    do {
+        try {
+            $downloader = new-object System.Net.WebClient
+            if ($out -eq "") {
+                return $downloader.DownloadString($url)
+            }
+            else {
+                return $downloader.DownloadFile($url, $out)
+            }
+        }
+        catch {
+            if ($Retrycount -gt 5){
+                Write-Error "Could not Download after 5 retries."
+                throw $_
+            }
+            else {
+                Write-Host "Could not Download, retrying..."
+                Write-Host $_
+                $Retrycount = $Retrycount + 1
+            }
+        }
+    }
+    While ($true)
+}
+
 function hasWritePermission([string] $path)
 {
     # $user = "$env:userdomain\$env:username"
     # $acl = Get-Acl $path -ErrorAction 'silentlycontinue'
     # return (($acl.Access | Select-Object -ExpandProperty IdentityReference) -contains $user)
     $thefile = "activestate-perms"
-    New-Item -Path (Join-Path $path $thefile) -ItemType File -ErrorAction 'silentlycontinue'
-    $occurance = errorOccured $True
+    New-Item -Path (Join-Path $path $thefile) -ItemType File -ErrorAction 'SilentlyContinue' -ErrorVariable err
+    $occurance = errorOccured $True $err
     #  If an error occurred and it's NOT and IOExpction error where the file already exists
-    if( $occurance[0] -And -Not ($occurance[1].exception.GetType().fullname -eq "System.IO.IOException" -And (Test-Path $path))){
+    if( $occurance[0] -And -Not ($occurance[1].exception.GetType().fullname -eq "System.IO.IOException" -And (Test-Path -LiteralPath $path))){
         return $False
     }
-    Remove-Item -Path (Join-Path $path $thefile) -Force  -ErrorAction 'silentlycontinue'
-    if((errorOccured $True)[0]){
+    Remove-Item -Path (Join-Path $path $thefile) -Force  -ErrorAction 'silentlycontinue' -ErrorVariable err
+    if((errorOccured $True $err)[0]){
         return $False
     }
     return $True
-}
-
-function checkPermsRecur([string] $path)
-{
-    $orig = $path
-    # recurse up to the drive root if we have to
-    while ($path -ne "") {
-        if (Test-Path $path){
-            if (-Not (hasWritePermission $path)){
-                Write-Warning "You do not have permission to write to '$path'.  Are you running as admin?"
-                return $False
-            } else {
-                return $True
-            }
-        }
-        $path = split-path $path
-    }
-    Write-Warning "'$orig' is not a valid path"
-    return $False
-}
-
-function isValidFolder([string] $path)
-{      
-    if($path[1] -ne ":"){
-        Write-Warning "Must provide an absolute path."
-        return $False
-    }
-    if(Test-Path $path){
-        #it's a folder
-        if (-Not (Test-Path $path -PathType 'Container')){
-            Write-Warning "'$path' exists and is not a directory"
-            return $False
-        }
-    }
-    return checkPermsRecur $path
 }
 
 # isStateToolInstallationOnPath returns true if the State Tool's installation directory is in the current PATH
@@ -190,16 +183,14 @@ function fetchArtifacts($downloadDir, $statejson, $statepkg) {
     $STATEURL="https://s3.ca-central-1.amazonaws.com/cli-update/update/state"
     
     Write-Host "Preparing for installation...`n"
-    
-    $downloader = new-object System.Net.WebClient
 
     # Get version and checksum
     $jsonurl = "$STATEURL/$script:BRANCH/$statejson"
     Write-Host "Determining latest version...`n"
     try{
-        $branchJson = ConvertFrom-Json -InputObject $downloader.DownloadString($jsonurl)
+        $branchJson = ConvertFrom-Json -InputObject (download $jsonurl)
         $latestVersion = $branchJson.Version
-        $versionedJson = ConvertFrom-Json -InputObject $downloader.DownloadString("$STATEURL/$script:BRANCH/$latestVersion/$statejson")
+        $versionedJson = ConvertFrom-Json -InputObject (download "$STATEURL/$script:BRANCH/$latestVersion/$statejson")
     } catch [System.Exception] {
         Write-Warning "Unable to retrieve the latest version number"
         Write-Error $_.Exception.Message
@@ -210,14 +201,14 @@ function fetchArtifacts($downloadDir, $statejson, $statepkg) {
     # Download pkg file
     $zipPath = Join-Path $downloadDir $statepkg
     # Clean it up to start but leave it behind when done 
-    if(Test-Path $downloadDir){
+    if(Test-Path -LiteralPath $downloadDir){
         Remove-Item $downloadDir -Recurse
     }
     New-Item -Path $downloadDir -ItemType Directory | Out-Null # There is output from this command, don't show the user.
     $zipURL = "$STATEURL/$script:BRANCH/$latestVersion/$statepkg"
     Write-Host "Fetching the latest version: $latestVersion...`n"
     try{
-        $downloader.DownloadFile($zipURL, $zipPath)
+        download $zipURL $zipPath
     } catch [System.Exception] {
         Write-Warning "Could not install State Tool"
         Write-Warning "Could not access $zipURL"
@@ -238,7 +229,8 @@ function fetchArtifacts($downloadDir, $statejson, $statepkg) {
 
     # Extract binary from pkg and confirm checksum
     Write-Host "Extracting $statepkg...`n"
-    Expand-Archive $zipPath $downloadDir
+    # using LiteralPath argument prevents interpretation of wildcards in zipPath
+    Expand-Archive -LiteralPath $zipPath -DestinationPath $downloadDir
 }
 
 function test-64Bit() {
@@ -307,10 +299,9 @@ function install()
         $stateexe="windows-amd64.exe"
 
     } else {
-        Write-Warning "x86 processors are not supported at this time"
-        Write-Warning "Contact ActiveState Support for assistance"
-        Write-Warning "Aborting installation"
-        return 1
+        $statejson="windows-386.json"
+        $statepkg="windows-386.zip"
+        $stateexe="windows-386.exe"
     }
 
     # Get the install directory and ensure we have permissions on it.
@@ -350,19 +341,19 @@ function install()
     Write-Host "`nInstalling to '$installDir'...`n" -ForegroundColor Yellow
     if ( -Not $script:NOPROMPT ) {
         if( -Not (promptYN "Continue?") ) {
-            return
+            return 2
         }
     }
 
     #  If the install dir doesn't exist
     $installPath = Join-Path $installDir $script:STATEEXE
-    if( -Not (Test-Path $installDir)) {
+    if( -Not (Test-Path -LiteralPath $installDir)) {
         Write-host "NOTE: $installDir will be created`n"
         New-Item -Path $installDir -ItemType Directory | Out-Null
     } else {
-        if(Test-Path $installPath -PathType Leaf) {
-            Remove-Item $installPath -Erroraction 'silentlycontinue'
-            $occurance = errorOccured $False
+        if(Test-Path -LiteralPath $installPath -PathType Leaf) {
+            Remove-Item $installPath -Erroraction 'silentlycontinue' -ErrorVariable err
+            $occurance = errorOccured $False $err
             if($occurance[0]){
                 Write-Host "Aborting Installation" -ForegroundColor Yellow
                 return 1
@@ -376,6 +367,13 @@ function install()
         return 1
     }
     Move-Item (Join-Path $tmpParentPath $stateexe) $installPath
+
+    # Write install file
+    $StatePath = Join-Path -Path $installDir -ChildPath $script:STATEEXE
+    $Command = "$StatePath export config --filter=dir"
+    $ConfigDir = & Invoke-Expression $Command | Out-String
+    $InstallFilePath = Join-Path -Path $ConfigDir.Trim() -ChildPath "installsource.txt"
+    "install.ps1" | Out-File -FilePath $InstallFilePath
 
     # Check if installation is in $PATH
     if (isStateToolInstallationOnPath $installDir) {
@@ -414,4 +412,4 @@ function install()
 
 }
 
-install
+exit install

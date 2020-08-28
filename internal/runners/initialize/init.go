@@ -12,7 +12,8 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -23,12 +24,23 @@ type RunParams struct {
 	Path      string
 	Style     string
 	Language  string
+	Private   bool
 	language  language.Supported
 	version   string
 }
 
 // Initialize stores scope-related dependencies.
 type Initialize struct {
+	output.Outputer
+}
+
+type primeable interface {
+	primer.Outputer
+}
+
+// New returns a prepared ptr to Initialize instance.
+func New(prime primeable) *Initialize {
+	return &Initialize{prime.Output()}
 }
 
 func prepare(params *RunParams) error {
@@ -100,23 +112,18 @@ func prepare(params *RunParams) error {
 	return nil
 }
 
-// New returns a prepared ptr to Initialize instance.
-func New() *Initialize {
-	return &Initialize{}
-}
-
 // Run kicks-off the runner.
 func (r *Initialize) Run(params *RunParams) error {
-	_, err := run(params)
+	_, err := run(params, r.Outputer)
 	return err
 }
 
-func run(params *RunParams) (string, error) {
+func run(params *RunParams, out output.Outputer) (string, error) {
 	if err := prepare(params); err != nil {
 		return "", err
 	}
 
-	logging.Debug("Init: %s/%s", params.Namespace.Owner, params.Namespace.Project)
+	logging.Debug("Init: %s/%s %v", params.Namespace.Owner, params.Namespace.Project, params.Private)
 
 	createParams := &projectfile.CreateParams{
 		Owner:           params.Namespace.Owner,
@@ -124,6 +131,7 @@ func run(params *RunParams) (string, error) {
 		Language:        params.language.String(),
 		LanguageVersion: params.version,
 		Directory:       params.Path,
+		Private:         params.Private,
 	}
 
 	if params.Style == SkeletonEditor {
@@ -135,7 +143,7 @@ func run(params *RunParams) (string, error) {
 		return "", fail
 	}
 
-	print.Line(locale.Tr(
+	out.Notice(locale.Tr(
 		"init_success",
 		params.Namespace.Owner,
 		params.Namespace.Project,

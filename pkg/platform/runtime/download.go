@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-openapi/strfmt"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/download"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
@@ -15,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -86,17 +88,17 @@ type Download struct {
 	commitID    strfmt.UUID
 	owner       string
 	projectName string
-}
-
-// InitDownload creates a new RuntimeDownload instance and assumes default values for everything but the target dir
-func InitDownload() Downloader {
-	pj := project.Get()
-	return NewDownload(pj.CommitUUID(), pj.Owner(), pj.Name())
+	orgID       string
+	private     bool
 }
 
 // NewDownload creates a new RuntimeDownload using all custom args
 func NewDownload(commitID strfmt.UUID, owner, projectName string) Downloader {
-	return &Download{commitID, owner, projectName}
+	return &Download{
+		commitID:    commitID,
+		owner:       owner,
+		projectName: projectName,
+	}
 }
 
 // fetchRecipe juggles API's to get the build request that can be sent to the head-chef
@@ -106,7 +108,7 @@ func (r *Download) fetchRecipeID() (strfmt.UUID, *failures.Failure) {
 		return "", FailNoCommit.New(locale.T("err_no_commit"))
 	}
 
-	recipeID, fail := model.FetchRecipeIDForCommitAndPlatform(commitID, r.owner, r.projectName, model.HostPlatform)
+	recipeID, fail := model.FetchRecipeIDForCommitAndPlatform(commitID, r.owner, r.projectName, r.orgID, r.private, model.HostPlatform)
 	if fail != nil {
 		return "", fail
 	}
@@ -119,12 +121,14 @@ func (r *Download) fetchRecipeID() (strfmt.UUID, *failures.Failure) {
 func (r *Download) FetchArtifacts() (*FetchArtifactsResult, *failures.Failure) {
 	result := &FetchArtifactsResult{}
 
-	recipeID, fail := r.fetchRecipeID()
+	platProject, fail := model.FetchProjectByName(r.owner, r.projectName)
 	if fail != nil {
 		return nil, fail
 	}
+	r.orgID = platProject.OrganizationID.String()
+	r.private = platProject.Private
 
-	platProject, fail := model.FetchProjectByName(r.owner, r.projectName)
+	recipeID, fail := r.fetchRecipeID()
 	if fail != nil {
 		return nil, fail
 	}
@@ -180,6 +184,13 @@ func (r *Download) FetchArtifacts() (*FetchArtifactsResult, *failures.Failure) {
 
 		case <-buildStatus.Started:
 			logging.Debug("BuildStarted")
+			namespaced := project.Namespaced{
+				Owner:   r.owner,
+				Project: r.projectName,
+			}
+			analytics.EventWithLabel(
+				analytics.CatBuild, analytics.ActBuildProject, namespaced.String(),
+			)
 			return result, FailBuildInProgress.New(locale.Tr("build_status_in_progress", r.projectURL()))
 
 		case fail := <-buildStatus.RunFail:
@@ -217,6 +228,21 @@ func (r *Download) Download(artifacts []*HeadChefArtifact, dp DownloadDirectoryP
 		if fail != nil {
 			return files, fail
 		}
+
+		// Ideally we'd be passing authentication down the chain somehow, but for now this would require way too much
+		// additional plumbing, so we're going to use the global version until the higher level architecture is refactored
+		auth := authentication.Get()
+		uid := "00000000-0000-0000-0000-000000000000"
+		if auth.Authenticated() {
+			uid = auth.UserID().String()
+		}
+
+		q := u.Query()
+		q.Set("x-uuid", uid) // x-uuid is used so our analytics can filter out activator traffic
+
+		// Disabled for now as `x-` seems to interact with signing negatively
+		// And adding it to the URL to be signed just drops it from the resulting URL
+		// u.RawQuery = q.Encode()
 
 		targetDir, fail := dp.DownloadDirectory(artf)
 		if fail != nil {

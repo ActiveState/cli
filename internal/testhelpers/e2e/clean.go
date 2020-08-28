@@ -79,3 +79,4 @@ func deleteUser(name string) error {
 
 	return nil
 }
+

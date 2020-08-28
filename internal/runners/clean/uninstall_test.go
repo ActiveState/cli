@@ -3,8 +3,6 @@ package clean
 import (
 	"io/ioutil"
 	"os"
-	"path/filepath"
-	"runtime"
 	"testing"
 	"time"
 
@@ -58,16 +56,10 @@ func (suite *CleanTestSuite) SetupTest() {
 	suite.cachePath, err = ioutil.TempDir("", "")
 	suite.Require().NoError(err)
 	suite.Require().DirExists(suite.cachePath)
-
-	if runtime.GOOS != "windows" {
-		fail := fileutils.Touch(filepath.Join(suite.configPath, "log.txt"))
-		suite.Require().NoError(fail.ToError())
-		suite.Require().FileExists(filepath.Join(suite.configPath, "log.txt"))
-	}
 }
 
 func (suite *CleanTestSuite) TestUninstall() {
-	runner, err := NewUninstall(&testOutputer{}, &confirmMock{confirm: true})
+	runner, err := newUninstall(&testOutputer{}, &confirmMock{confirm: true})
 	suite.Require().NoError(err)
 	runner.configPath = suite.configPath
 	runner.cachePath = suite.cachePath
@@ -88,7 +80,7 @@ func (suite *CleanTestSuite) TestUninstall() {
 }
 
 func (suite *CleanTestSuite) TestUninstall_PromptNo() {
-	runner, err := NewUninstall(&testOutputer{}, &confirmMock{})
+	runner, err := newUninstall(&testOutputer{}, &confirmMock{})
 	suite.Require().NoError(err)
 	err = runner.Run(&UninstallParams{})
 	suite.Require().NoError(err)
@@ -104,7 +96,7 @@ func (suite *CleanTestSuite) TestUninstall_Activated() {
 		os.Unsetenv(constants.ActivatedStateEnvVarName)
 	}()
 
-	runner, err := NewUninstall(&testOutputer{}, &confirmMock{})
+	runner, err := newUninstall(&testOutputer{}, &confirmMock{})
 	suite.Require().NoError(err)
 	err = runner.Run(&UninstallParams{})
 	suite.Require().Error(err)

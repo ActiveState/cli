@@ -172,7 +172,9 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
 
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("activate", "ActiveState-CLI/Perl"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.AppendEnv(
+			"ACTIVESTATE_CLI_DISABLE_RUNTIME=false",
+		),
 	)
 	cp.Expect("Where would you like to checkout")
 	cp.SendLine(cp.WorkDirectory())
@@ -191,9 +193,9 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
 	cp.Expect("cache")
 	cp.Expect("Pg.pm")
 
-	// Expect PPM to be installed
+	// Expect PPM shim to be installed
 	cp.SendLine("ppm")
-	cp.Expect("The Perl Package Manager(PPM) is no longer supported.")
+	cp.Expect("Your command is being forwarded to `state packages`.")
 
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
@@ -244,11 +246,14 @@ func (suite *ActivateIntegrationTestSuite) TestInit_Activation_NoCommitID() {
 		e2e.WithArgs("activate"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect(locale.Tr("err_project_no_commit", url))
+	cp.ExpectLongString(locale.Tr("err_project_no_commit", url))
 	cp.ExpectExitCode(1)
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivate_InterruptedInstallation() {
+	if runtime.GOOS == "windows" && e2e.RunningOnCI() {
+		suite.T().Skip("interrupting installation does not work on Windows on CI")
+	}
 	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
 
@@ -258,8 +263,13 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_InterruptedInstallation(
 	// interrupting installation
 	cp.SendCtrlC()
 	cp.ExpectNotExitCode(0)
+}
 
-	cp = ts.SpawnWithOpts(
+func (suite *ActivateIntegrationTestSuite) TestActivate_FromCache() {
+	ts := e2e.New(suite.T(), true)
+	defer ts.Close()
+
+	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("activate", "ActiveState-CLI/small-python", "--path", ts.Dirs.Work),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
@@ -290,6 +300,17 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_JSON() {
 	cp.Expect("Where would you like to checkout")
 	cp.SendLine(cp.WorkDirectory())
 	cp.Expect(`"ACTIVESTATE_ACTIVATED":"`)
+	cp.ExpectExitCode(0)
+}
+
+func (suite *ActivateIntegrationTestSuite) TestActivate_Command() {
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("activate", "ActiveState-CLI/Python3", "-c", "echo CUSTOM_COMMAND")
+	cp.Expect("Where would you like to checkout")
+	cp.SendLine(cp.WorkDirectory())
+	cp.Expect("CUSTOM_COMMAND")
 	cp.ExpectExitCode(0)
 }
 

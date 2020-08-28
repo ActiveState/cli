@@ -92,14 +92,25 @@ func (cr *CamelRuntime) DownloadDirectory(artf *HeadChefArtifact) (string, *fail
 	return downloadDir, nil
 }
 
-// ArtifactsToDownloadAndUnpack returns the artifacts that we need to download for this project
+// ArtifactsToDownload returns the artifacts that we need to download for this project
 // It filters out all artifacts for which the final installation directory does not include a completion marker yet
-func (cr *CamelRuntime) ArtifactsToDownloadAndUnpack() ([]*HeadChefArtifact, map[string]*HeadChefArtifact) {
-	return cr.artifacts, map[string]*HeadChefArtifact{}
+func (cr *CamelRuntime) ArtifactsToDownload() []*HeadChefArtifact {
+	return cr.artifacts
 }
 
-// PreInstall does nothing for camel builds
+// PreInstall attempts to clean the runtime-directory.  Failures are only logged to rollbar and do not cause the installation to fail.
 func (cr *CamelRuntime) PreInstall() *failures.Failure {
+	if fileutils.DirExists(cr.runtimeDir) {
+		empty, fail := fileutils.IsEmptyDir(cr.runtimeDir)
+		if fail != nil {
+			logging.Error("Could not check if target runtime dir is empty, this could cause issues.. %v", fail)
+		} else if !empty {
+			logging.Debug("Removing existing runtime")
+			if err := os.RemoveAll(cr.runtimeDir); err != nil {
+				logging.Error("Could not empty out target runtime dir prior to install, this could cause issues.. %v", err)
+			}
+		}
+	}
 	return nil
 }
 
@@ -162,7 +173,7 @@ func (cr *CamelRuntime) PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir
 		if os.IsPermission(underlyingError) {
 			return FailRuntimeInstallation.New("installer_err_runtime_move_files_access_denied", cr.runtimeDir, constants.ForumsURL)
 		}
-		return FailRuntimeInstallation.New("installer_err_runtime_move_files_failed", tmpInstallDir, cr.runtimeDir)
+		return FailRuntimeInstallation.Wrap(underlyingError, "installer_err_runtime_move_files_failed", tmpInstallDir, cr.runtimeDir)
 	}
 
 	tmpMetaFile := filepath.Join(tmpRuntimeDir, archiveName, constants.RuntimeMetaFile)
@@ -327,7 +338,7 @@ func (cr *CamelRuntime) GetEnv(inherit bool, projectDir string) (map[string]stri
 	templateMeta := struct {
 		ProjectDir string
 	}{projectDir}
-	
+
 	resultEnv := map[string]string{}
 	for k, v := range env {
 		if v == deleteMarker {

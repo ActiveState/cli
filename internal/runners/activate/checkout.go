@@ -3,9 +3,9 @@ package activate
 import (
 	"path/filepath"
 
-	"github.com/ActiveState/cli/internal/fileutils"
-
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/cmdlets/git"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -21,10 +21,11 @@ type CheckoutAble interface {
 // It does not activate any environment
 type Checkout struct {
 	repo git.Repository
+	output.Outputer
 }
 
-func NewCheckout(repo git.Repository) *Checkout {
-	return &Checkout{repo}
+func NewCheckout(repo git.Repository, prime primeable) *Checkout {
+	return &Checkout{repo, prime.Output()}
 }
 
 func (r *Checkout) Run(namespace string, targetPath string) error {
@@ -45,7 +46,7 @@ func (r *Checkout) Run(namespace string, targetPath string) error {
 
 	// Clone the related repo, if it is defined
 	if pj.RepoURL != nil {
-		fail = r.repo.CloneProject(ns.Owner, ns.Project, targetPath)
+		fail = r.repo.CloneProject(ns.Owner, ns.Project, targetPath, r.Outputer)
 		if fail != nil {
 			return fail
 		}

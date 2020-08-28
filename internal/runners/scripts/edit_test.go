@@ -53,7 +53,7 @@ scripts:
 	fail := suite.projectFile.Save()
 	suite.Require().NoError(err, "should be able to save in temp dir")
 
-	suite.project, fail = project.New(suite.projectFile)
+	suite.project, fail = project.New(suite.projectFile, nil, nil)
 	suite.Require().NoError(fail.ToError(), "unexpected error creating project")
 
 	suite.originalEditor = os.Getenv("EDITOR")
@@ -87,7 +87,9 @@ func (suite *EditTestSuite) TestCreateScriptFile_Expand() {
 
 	content, fail := fileutils.ReadFile(suite.scriptFile.Filename())
 	suite.Require().NoError(fail.ToError(), "unexpected error reading file contents")
-	suite.Equal(script.Value(), string(content))
+	v, err := script.Value()
+	suite.Require().NoError(err)
+	suite.Equal(v, string(content))
 }
 
 func (suite *EditTestSuite) TestGetOpenCmd_EditorSet() {
@@ -206,11 +208,15 @@ func (suite *EditTestSuite) TestUpdateProjectFile() {
 	suite.scriptFile, err = createScriptFile(replace, false)
 	suite.Require().NoError(err, "unexpected error creating script file")
 
-	err = updateProjectFile(suite.scriptFile, "hello")
+	err = updateProjectFile(suite.scriptFile, "replace")
 	suite.Require().NoError(err, "should be able to update script file")
 
 	updatedProject := project.Get()
-	suite.Equal(replace.Value(), updatedProject.ScriptByName("hello").Value())
+	v1, err := replace.Value()
+	suite.Require().NoError(err)
+	v2, err := updatedProject.ScriptByName("replace").Value()
+	suite.Require().NoError(err)
+	suite.Equal(v1, v2)
 }
 
 func TestEditSuite(t *testing.T) {

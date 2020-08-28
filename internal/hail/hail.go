@@ -38,7 +38,7 @@ func newReceived(openedAt time.Time, data []byte, fail *failures.Failure) *Recei
 // Send sends a hail by saving data to the file located by the file name
 // provided.
 func Send(file string, data []byte) *failures.Failure {
-	f, err := os.OpenFile(file, os.O_TRUNC|os.O_WRONLY, 0660)
+	f, err := os.OpenFile(file, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0660)
 	if err != nil {
 		return failures.FailOS.Wrap(err)
 	}

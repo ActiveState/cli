@@ -6,20 +6,27 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
+	"sync"
 
+	"github.com/ActiveState/sysinfo"
+	"github.com/google/uuid"
+	"github.com/imdario/mergo"
 	"gopkg.in/yaml.v2"
 
 	"github.com/go-openapi/strfmt"
+	"github.com/spf13/viper"
+	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/hash"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/internal/print"
 )
 
 var (
@@ -65,11 +72,16 @@ var strReg = fmt.Sprintf(`https:\/\/%s\/([\w_.-]*)\/([\w_.-]*)(?:\?commitID=)*(.
 // ProjectURLRe Regex used to validate project fields /orgname/projectname[?commitID=someUUID]
 var ProjectURLRe = regexp.MustCompile(strReg)
 
+var projectMapMutex = &sync.Mutex{}
+
+const LocalProjectsConfigKey = "projects"
+
 // VersionInfo is used in cases where we only care about parsing the version field. In all other cases the version is parsed via
 // the Project struct
 type VersionInfo struct {
 	Branch  string `yaml:"branch"`
 	Version string `yaml:"version"`
+	Lock    string `yaml:"lock"`
 }
 
 // ProjectSimple reflects a bare basic project structure
@@ -83,6 +95,7 @@ type Project struct {
 	Namespace    string        `yaml:"namespace,omitempty"`
 	Branch       string        `yaml:"branch,omitempty"`
 	Version      string        `yaml:"version,omitempty"`
+	Lock         string        `yaml:"lock,omitempty"`
 	Environments string        `yaml:"environments,omitempty"`
 	Platforms    []Platform    `yaml:"platforms,omitempty"`
 	Languages    Languages     `yaml:"languages,omitempty"`
@@ -90,6 +103,8 @@ type Project struct {
 	Secrets      *SecretScopes `yaml:"secrets,omitempty"`
 	Events       Events        `yaml:"events,omitempty"`
 	Scripts      Scripts       `yaml:"scripts,omitempty"`
+	Jobs         Jobs          `yaml:"jobs,omitempty"`
+	Private      bool          `yaml:"private,omitempty"`
 	path         string        // "private"
 
 	// Deprecated
@@ -97,9 +112,6 @@ type Project struct {
 	Owner     string      `yaml:"owner,omitempty"`
 	Name      string      `yaml:"name,omitempty"`
 }
-
-// tracks deprecation warning; remove as soon as possible
-var warned bool
 
 // Platform covers the platform structure of our yaml
 type Platform struct {
@@ -117,11 +129,12 @@ type Build map[string]string
 
 // Language covers the language structure, which goes under Project
 type Language struct {
-	Name        string     `yaml:"name"`
-	Version     string     `yaml:"version,omitempty"`
-	Constraints Constraint `yaml:"constraints,omitempty"`
-	Build       Build      `yaml:"build,omitempty"`
-	Packages    Packages   `yaml:"packages,omitempty"`
+	Name        string      `yaml:"name"`
+	Version     string      `yaml:"version,omitempty"`
+	Conditional Conditional `yaml:"if"`
+	Constraints Constraint  `yaml:"constraints,omitempty"`
+	Build       Build       `yaml:"build,omitempty"`
+	Packages    Packages    `yaml:"packages,omitempty"`
 }
 
 var _ ConstrainedEntity = Language{}
@@ -134,6 +147,10 @@ func (l Language) ID() string {
 // ConstraintsFilter returns the language constraints
 func (l Language) ConstraintsFilter() Constraint {
 	return l.Constraints
+}
+
+func (l Language) ConditionalFilter() Conditional {
+	return l.Conditional
 }
 
 // Languages is a slice of Language definitions
@@ -160,9 +177,10 @@ func MakeLanguagesFromConstrainedEntities(items []ConstrainedEntity) (languages 
 
 // Constant covers the constant structure, which goes under Project
 type Constant struct {
-	Name        string     `yaml:"name"`
-	Value       string     `yaml:"value"`
-	Constraints Constraint `yaml:"constraints,omitempty"`
+	Name        string      `yaml:"name"`
+	Value       string      `yaml:"value"`
+	Conditional Conditional `yaml:"if"`
+	Constraints Constraint  `yaml:"constraints,omitempty"`
 }
 
 var _ ConstrainedEntity = &Constant{}
@@ -175,6 +193,10 @@ func (c *Constant) ID() string {
 // ConstraintsFilter returns the constant constraints
 func (c *Constant) ConstraintsFilter() Constraint {
 	return c.Constraints
+}
+
+func (c *Constant) ConditionalFilter() Conditional {
+	return c.Conditional
 }
 
 // Constants is a slice of constant values
@@ -207,9 +229,10 @@ type SecretScopes struct {
 
 // Secret covers the variable structure, which goes under Project
 type Secret struct {
-	Name        string     `yaml:"name"`
-	Description string     `yaml:"description"`
-	Constraints Constraint `yaml:"constraints"`
+	Name        string      `yaml:"name"`
+	Description string      `yaml:"description"`
+	Conditional Conditional `yaml:"if"`
+	Constraints Constraint  `yaml:"constraints"`
 }
 
 var _ ConstrainedEntity = &Secret{}
@@ -222,6 +245,10 @@ func (s *Secret) ID() string {
 // ConstraintsFilter returns the secret constraints
 func (s *Secret) ConstraintsFilter() Constraint {
 	return s.Constraints
+}
+
+func (s *Secret) ConditionalFilter() Conditional {
+	return s.Conditional
 }
 
 // Secrets is a slice of Secret definitions
@@ -246,6 +273,10 @@ func MakeSecretsFromConstrainedEntities(items []ConstrainedEntity) (secrets []*S
 	return secrets
 }
 
+// Conditional is an `if` conditional that when evalutes to true enables the entity its under
+// it is meant to replace Constraints
+type Conditional string
+
 // Constraint covers the constraint structure, which can go under almost any other struct
 type Constraint struct {
 	OS          string `yaml:"os,omitempty"`
@@ -260,14 +291,17 @@ type ConstrainedEntity interface {
 
 	// ConstraintsFilter returns the specified constraints for this entity
 	ConstraintsFilter() Constraint
+
+	ConditionalFilter() Conditional
 }
 
 // Package covers the package structure, which goes under the language struct
 type Package struct {
-	Name        string     `yaml:"name"`
-	Version     string     `yaml:"version"`
-	Constraints Constraint `yaml:"constraints,omitempty"`
-	Build       Build      `yaml:"build,omitempty"`
+	Name        string      `yaml:"name"`
+	Version     string      `yaml:"version"`
+	Conditional Conditional `yaml:"if"`
+	Constraints Constraint  `yaml:"constraints,omitempty"`
+	Build       Build       `yaml:"build,omitempty"`
 }
 
 var _ ConstrainedEntity = Package{}
@@ -280,6 +314,10 @@ func (p Package) ID() string {
 // ConstraintsFilter returns the package constraints
 func (p Package) ConstraintsFilter() Constraint {
 	return p.Constraints
+}
+
+func (p Package) ConditionalFilter() Conditional {
+	return p.Conditional
 }
 
 // Packages is a slice of Package configurations
@@ -306,21 +344,37 @@ func MakePackagesFromConstrainedEntities(items []ConstrainedEntity) (packages []
 
 // Event covers the event structure, which goes under Project
 type Event struct {
-	Name        string     `yaml:"name"`
-	Value       string     `yaml:"value"`
-	Constraints Constraint `yaml:"constraints,omitempty"`
+	Name        string      `yaml:"name"`
+	Value       string      `yaml:"value"`
+	Scope       []string    `yaml:"scope"`
+	Conditional Conditional `yaml:"if"`
+	Constraints Constraint  `yaml:"constraints,omitempty"`
+	id          string
 }
 
 var _ ConstrainedEntity = Event{}
 
 // ID returns the event name
 func (e Event) ID() string {
-	return e.Name
+	if e.id == "" {
+		id, err := uuid.NewUUID()
+		if err != nil {
+			logging.Error("UUID generation failed, defaulting to serialization")
+			e.id = hash.ShortHash(e.Name, e.Value, strings.Join(e.Scope, ""))
+		} else {
+			e.id = id.String()
+		}
+	}
+	return e.id
 }
 
 // ConstraintsFilter returns the event constraints
 func (e Event) ConstraintsFilter() Constraint {
 	return e.Constraints
+}
+
+func (e Event) ConditionalFilter() Conditional {
+	return e.Conditional
 }
 
 // Events is a slice of Event definitions
@@ -353,6 +407,7 @@ type Script struct {
 	Filename    string            `yaml:"filename,omitempty"`
 	Standalone  bool              `yaml:"standalone,omitempty"`
 	Language    language.Language `yaml:"language,omitempty"`
+	Conditional Conditional       `yaml:"if"`
 	Constraints Constraint        `yaml:"constraints,omitempty"`
 }
 
@@ -366,6 +421,10 @@ func (s Script) ID() string {
 // ConstraintsFilter returns the script constraints
 func (s Script) ConstraintsFilter() Constraint {
 	return s.Constraints
+}
+
+func (s Script) ConditionalFilter() Conditional {
+	return s.Conditional
 }
 
 // Scripts is a slice of scripts
@@ -390,21 +449,54 @@ func MakeScriptsFromConstrainedEntities(items []ConstrainedEntity) (scripts []*S
 	return scripts
 }
 
+// Job covers the job structure, which goes under Project
+type Job struct {
+	Name      string   `yaml:"name"`
+	Constants []string `yaml:"constants"`
+	Scripts   []string `yaml:"scripts"`
+}
+
+// Jobs is a slice of jobs
+type Jobs []Job
+
 var persistentProject *Project
 
 // Parse the given filepath, which should be the full path to an activestate.yaml file
-func Parse(filepath string) (*Project, *failures.Failure) {
-	dat, err := ioutil.ReadFile(filepath)
+func Parse(configFilepath string) (*Project, *failures.Failure) {
+	projectDir := filepath.Dir(configFilepath)
+	files, err := ioutil.ReadDir(projectDir)
 	if err != nil {
-		return nil, failures.FailIO.Wrap(err)
+		return nil, failures.FailIO.Wrap(err, locale.Tl("err_project_readdir", "Could not check for project files in your project directory."))
 	}
 
-	project := Project{}
-	err = yaml.Unmarshal([]byte(dat), &project)
-	project.path = filepath
+	project, fail := parse(configFilepath)
+	if fail != nil {
+		return nil, fail
+	}
 
-	if err != nil {
-		return nil, FailParseProject.New(locale.T("err_project_parse", map[string]interface{}{"Error": err.Error()}))
+	re, _ := regexp.Compile(`activestate.(\w+).yaml`)
+	for _, file := range files {
+		match := re.FindStringSubmatch(file.Name())
+		if len(match) == 0 {
+			continue
+		}
+
+		// If an OS keyword was used ensure it matches our runtime
+		l := strings.ToLower
+		keyword := l(match[1])
+		if (keyword == l(sysinfo.Linux.String()) || keyword == l(sysinfo.Mac.String()) || keyword == l(sysinfo.Windows.String())) &&
+			keyword != l(sysinfo.OS().String()) {
+			logging.Debug("Not merging %s as we're not on %s", file.Name(), sysinfo.OS().String())
+			continue
+		}
+
+		secondaryProject, fail := parse(filepath.Join(projectDir, file.Name()))
+		if fail != nil {
+			return nil, fail
+		}
+		if err := mergo.Merge(project, *secondaryProject, mergo.WithAppendSlice); err != nil {
+			return nil, failures.FailMarshal.Wrap(err, locale.Tl("err_merge_project", "Could not merge {{.V0}} into your activestate.yaml", file.Name()))
+		}
 	}
 
 	if project.Variables != nil {
@@ -412,11 +504,40 @@ func Parse(filepath string) (*Project, *failures.Failure) {
 	}
 
 	if project.Project == "" && project.Owner != "" && project.Name != "" {
-		if !warned {
-			print.Warning(locale.Tr("warn_deprecation_owner_name_fields", project.Owner, project.Name))
-			warned = true
-		}
 		project.Project = fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, project.Owner, project.Name)
+		if err := project.Save(); err != nil { // anyone still not respecting the deprecation warning by now is going to have to deal with their file being updated for them
+			logging.Error("Could not save projectfile after removing owner/name deprecation: %v", err)
+		}
+	}
+
+	fail = ValidateProjectURL(project.Project)
+	if fail != nil {
+		return nil, fail
+	}
+
+	if project.Owner == "" && project.Name == "" {
+		match := ProjectURLRe.FindStringSubmatch(project.Project)
+		project.Owner = match[1]
+		project.Name = match[2]
+	}
+	storeProjectMapping(fmt.Sprintf("%s/%s", project.Owner, project.Name), filepath.Dir(project.path))
+
+	return project, nil
+}
+
+func parse(configFilepath string) (*Project, *failures.Failure) {
+	dat, err := ioutil.ReadFile(configFilepath)
+	if err != nil {
+		return nil, failures.FailIO.Wrap(err)
+	}
+
+	project := Project{}
+	err = yaml.Unmarshal([]byte(dat), &project)
+	project.path = configFilepath
+
+	if err != nil {
+		return nil, FailParseProject.New(
+			locale.Tl("err_project_parsed", "Project file `{{.V1}}` could not be parsed, the parser produced the following error: {{.V0}}", err.Error(), configFilepath))
 	}
 
 	return &project, nil
@@ -453,6 +574,11 @@ func (p *Project) Reload() *failures.Failure {
 
 // Save the project to its activestate.yaml file
 func (p *Project) Save() *failures.Failure {
+	return p.save(p.Path())
+}
+
+// Save the project to its activestate.yaml file
+func (p *Project) save(path string) *failures.Failure {
 	dat, err := yaml.Marshal(p)
 	if err != nil {
 		return failures.FailMarshal.Wrap(err)
@@ -463,9 +589,9 @@ func (p *Project) Save() *failures.Failure {
 		return fail
 	}
 
-	logging.Debug("Saving %s", p.Path())
+	logging.Debug("Saving %s", path)
 
-	f, err := os.Create(p.Path())
+	f, err := os.Create(path)
 	if err != nil {
 		return failures.FailIO.Wrap(err)
 	}
@@ -475,6 +601,7 @@ func (p *Project) Save() *failures.Failure {
 	if err != nil {
 		return failures.FailIO.Wrap(err)
 	}
+	storeProjectMapping(fmt.Sprintf("%s/%s", p.Owner, p.Name), filepath.Dir(p.Path()))
 
 	return nil
 }
@@ -629,6 +756,7 @@ type CreateParams struct {
 	Content         string
 	Language        string
 	LanguageVersion string
+	Private         bool
 	path            string
 	projectURL      string
 }
@@ -684,9 +812,13 @@ func createCustom(params *CreateParams) (*Project, *failures.Failure) {
 	}
 	owner, project := match[1], match[2]
 
+	shell := "bash"
+	if runtime.GOOS == "windows" {
+		shell = "batch"
+	}
 	if params.Content == "" {
 		params.Content = locale.T("sample_yaml",
-			map[string]interface{}{"Owner": owner, "Project": project})
+			map[string]interface{}{"Owner": owner, "Project": project, "Shell": shell})
 	}
 
 	data := map[string]interface{}{
@@ -694,6 +826,7 @@ func createCustom(params *CreateParams) (*Project, *failures.Failure) {
 		"LanguageName":    params.Language,
 		"LanguageVersion": params.LanguageVersion,
 		"Content":         params.Content,
+		"Private":         params.Private,
 	}
 
 	template, fail := loadTemplate(params.path, data)
@@ -722,8 +855,8 @@ func validateCreateParams(params *CreateParams) *failures.Failure {
 	}
 }
 
-// ParseVersionInfo parses the version field from the projectfile, and ONLY the version field. This is to ensure it doesn't
-// trip over older activestate.yaml's with breaking changes
+// ParseVersionInfo parses the lock field from the projectfile and updates
+// the activestate.yaml if an older version representation is present
 func ParseVersionInfo(projectFilePath string) (*VersionInfo, *failures.Failure) {
 	if !fileutils.FileExists(projectFilePath) {
 		return nil, nil
@@ -735,22 +868,86 @@ func ParseVersionInfo(projectFilePath string) (*VersionInfo, *failures.Failure) 
 	}
 
 	versionStruct := VersionInfo{}
-	err = yaml.Unmarshal([]byte(dat), &versionStruct)
+	err = yaml.Unmarshal(dat, &versionStruct)
 	if err != nil {
 		return nil, FailParseProject.Wrap(err)
 	}
 
-	if versionStruct.Version == "" {
+	if versionStruct.Branch != "" && versionStruct.Version != "" {
+		err = AddLockInfo(projectFilePath, versionStruct.Branch, versionStruct.Version)
+		if err != nil {
+			return nil, FailParseProject.Wrap(err, locale.T("err_update_version"))
+		}
+		return ParseVersionInfo(projectFilePath)
+	}
+
+	if versionStruct.Lock == "" {
 		return nil, nil
 	}
 
-	version := strings.TrimSpace(versionStruct.Version)
-	match, fail := regexp.MatchString(`^\d+\.\d+\.\d+-(SHA)?[a-f0-9]+`, version)
+	lock := strings.TrimSpace(versionStruct.Lock)
+	match, fail := regexp.MatchString(`^([\w\/\-]+@)\d+\.\d+\.\d+-(SHA)?[a-f0-9]+`, lock)
 	if fail != nil || !match {
-		return &versionStruct, FailInvalidVersion.New(locale.T("err_invalid_version"))
+		return nil, FailInvalidVersion.New(locale.T("err_invalid_version"))
 	}
 
-	return &versionStruct, nil
+	split := strings.Split(versionStruct.Lock, "@")
+	if len(split) != 2 {
+		return nil, FailInvalidVersion.New(locale.T("err_invalid_version"))
+	}
+
+	return &VersionInfo{
+		Branch:  split[0],
+		Version: split[1],
+	}, nil
+}
+
+// AddLockInfo adds the lock field to activestate.yaml
+func AddLockInfo(projectFilePath, branch, version string) error {
+	data, err := cleanVersionInfo(projectFilePath)
+	if err != nil {
+		return locale.WrapError(err, "err_clean_projectfile", "Could not remove old version information from projectfile", projectFilePath)
+	}
+
+	lockRegex := regexp.MustCompile(`(?m)^lock:.*`)
+	if lockRegex.Match(data) {
+		versionUpdate := []byte(fmt.Sprintf("lock: %s@%s", branch, version))
+		replaced := lockRegex.ReplaceAll(data, versionUpdate)
+		return ioutil.WriteFile(projectFilePath, replaced, 0644)
+	}
+
+	projectRegex := regexp.MustCompile(fmt.Sprintf("(?m:(^project:\\s*%s))", ProjectURLRe))
+	lockString := fmt.Sprintf("%s@%s", branch, version)
+	lockUpdate := []byte(fmt.Sprintf("${1}\nlock: %s", lockString))
+
+	data, err = ioutil.ReadFile(projectFilePath)
+	if err != nil {
+		return err
+	}
+
+	updated := projectRegex.ReplaceAll(data, lockUpdate)
+
+	return ioutil.WriteFile(projectFilePath, updated, 0644)
+}
+
+func cleanVersionInfo(projectFilePath string) ([]byte, error) {
+	data, err := ioutil.ReadFile(projectFilePath)
+	if err != nil {
+		return nil, locale.WrapError(err, "err_read_projectfile", "Failed to read the activestate.yaml at: %s", projectFilePath)
+	}
+
+	branchRegex := regexp.MustCompile(`(?m:^branch:\s*\w+\n)`)
+	clean := branchRegex.ReplaceAll(data, []byte(""))
+
+	versionRegex := regexp.MustCompile(`(?m:^version:\s*\d+.\d+.\d+-[A-Za-z0-9]+\n)`)
+	clean = versionRegex.ReplaceAll(clean, []byte(""))
+
+	err = ioutil.WriteFile(projectFilePath, clean, 0644)
+	if err != nil {
+		return nil, locale.WrapError(err, "err_write_clean_projectfile", "Could not write cleaned projectfile information")
+	}
+
+	return clean, nil
 }
 
 // Reset the current state, which unsets the persistent project
@@ -769,4 +966,46 @@ func (p *Project) Persist() {
 	}
 	persistentProject = p
 	os.Setenv(constants.ProjectEnvVarName, p.Path())
+}
+
+// storeProjectMapping associates the namespace with the project
+// path in the config
+func storeProjectMapping(namespace, projectPath string) {
+	projectMapMutex.Lock()
+	defer projectMapMutex.Unlock()
+
+	projectPath = filepath.Clean(projectPath)
+
+	projects := viper.GetStringMapStringSlice(LocalProjectsConfigKey)
+	if projects == nil {
+		projects = make(map[string][]string)
+	}
+
+	paths := projects[namespace]
+	if paths == nil {
+		paths = make([]string, 0)
+	}
+
+	if !funk.Contains(paths, projectPath) {
+		paths = append(paths, projectPath)
+	}
+
+	projects[namespace] = paths
+	viper.Set(LocalProjectsConfigKey, projects)
+}
+
+// CleanProjectMapping removes projects that no longer exist
+// on a user's filesystem from the projects config entry
+func CleanProjectMapping() {
+	projects := viper.GetStringMapStringSlice(LocalProjectsConfigKey)
+
+	for namespace, paths := range projects {
+		for _, path := range paths {
+			if !fileutils.DirExists(path) {
+				delete(projects, namespace)
+			}
+		}
+	}
+
+	viper.Set("projects", projects)
 }

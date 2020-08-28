@@ -3,15 +3,14 @@ module github.com/ActiveState/cli
 go 1.12
 
 require (
-	cloud.google.com/go v0.56.0
+	cloud.google.com/go v0.64.0
 	github.com/ActiveState/archiver v3.1.1+incompatible
 	github.com/ActiveState/go-colortext v0.0.0-20190402165444-9cd201a66eb0
 	github.com/ActiveState/go-ogle-analytics v0.0.0-20170510030904-9b3f14901527
 	github.com/ActiveState/sysinfo v0.0.0-20200619170619-0582d42daf27
-	github.com/ActiveState/termtest v0.5.1
-	github.com/ActiveState/termtest/expect v0.5.1
+	github.com/ActiveState/termtest v0.5.5
+	github.com/ActiveState/termtest/expect v0.5.6
 	github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78
-	github.com/Netflix/go-expect v0.0.0-20200312175327-da48e75238e2 // indirect
 	github.com/PuerkitoBio/purell v1.1.0 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
@@ -21,11 +20,12 @@ require (
 	github.com/aws/aws-sdk-go v1.13.8
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/bndr/gotabulate v0.0.0-20170315142410-bc555436bfd5
-	github.com/creack/pty v1.1.9
+	github.com/creack/pty v1.1.11
 	github.com/dave/jennifer v0.18.0
 	github.com/denisbrodbeck/machineid v0.8.0
 	github.com/dsnet/compress v0.0.0-20171208185109-cc9eb1d7ad76 // indirect
 	github.com/fatih/color v1.5.0
+	github.com/felixge/fgprof v0.9.0
 	github.com/fsnotify/fsnotify v1.4.7
 	github.com/go-ini/ini v1.32.0 // indirect
 	github.com/go-ole/go-ole v1.2.4
@@ -44,9 +44,13 @@ require (
 	github.com/google/go-github/v29 v29.0.2
 	github.com/google/uuid v1.1.0
 	github.com/gorilla/websocket v1.4.0
+	github.com/hashicorp/go-retryablehttp v0.6.7
 	github.com/hashicorp/go-version v1.1.0
 	github.com/hashicorp/hcl v0.0.0-20171017181929-23c074d0eceb // indirect
 	github.com/hectane/go-acl v0.0.0-20190604041725-da78bae5fc95
+	github.com/hpcloud/tail v1.0.0
+	github.com/iafan/cwalk v0.0.0-20191125092548-dd7f505d2f66
+	github.com/imdario/mergo v0.3.11
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/jarcoal/httpmock v1.0.3
 	github.com/jessevdk/go-flags v1.4.0
@@ -62,6 +66,7 @@ require (
 	github.com/mattn/go-isatty v0.0.3 // indirect
 	github.com/mattn/go-runewidth v0.0.4 // indirect
 	github.com/mgutz/ansi v0.0.0-20170206155736-9520e82c474b // indirect
+	github.com/mitchellh/go-wordwrap v1.0.0
 	github.com/mitchellh/mapstructure v0.0.0-20180203102830-a4e142e9c047 // indirect
 	github.com/nicksnyder/go-i18n v1.10.0
 	github.com/nwaples/rardecode v0.0.0-20171029023500-e06696f847ae // indirect
@@ -86,15 +91,17 @@ require (
 	github.com/ulikunitz/xz v0.5.4 // indirect
 	github.com/vbauerster/mpb/v4 v4.10.0
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
-	golang.org/x/crypto v0.0.0-20200427165652-729f1e841bcc
-	golang.org/x/net v0.0.0-20200324143707-d3edc9973b7e
+	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
+	golang.org/x/net v0.0.0-20200813134508-3edf25e44fcc
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
-	golang.org/x/sys v0.0.0-20200428200454-593003d681fa
-	google.golang.org/genproto v0.0.0-20200331122359-1ee6d9798940
+	golang.org/x/sys v0.0.0-20200821140526-fda516888d29
+	google.golang.org/genproto v0.0.0-20200815001618-f69a88009b70
 	gopkg.in/AlecAivazis/survey.v1 v1.4.2
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
+	gopkg.in/fsnotify.v1 v1.4.7 // indirect
 	gopkg.in/ini.v1 v1.48.0 // indirect
 	gopkg.in/mgo.v2 v2.0.0-20160818020120-3f83fa500528 // indirect
 	gopkg.in/src-d/go-git.v4 v4.13.1
-	gopkg.in/yaml.v2 v2.2.2
+	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
+	gopkg.in/yaml.v2 v2.3.0
 )

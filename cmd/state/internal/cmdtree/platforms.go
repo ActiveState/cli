@@ -3,13 +3,13 @@ package cmdtree
 import (
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/platforms"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
-func newPlatformsCommand(out output.Outputer) *captain.Command {
-	runner := platforms.NewList(out)
+func newPlatformsCommand(prime *primer.Values) *captain.Command {
+	runner := platforms.NewList(prime)
 
 	params := platforms.ListRunParams{}
 
@@ -30,8 +30,8 @@ func newPlatformsCommand(out output.Outputer) *captain.Command {
 	)
 }
 
-func newPlatformsSearchCommand(out output.Outputer) *captain.Command {
-	runner := platforms.NewSearch(out)
+func newPlatformsSearchCommand(prime *primer.Values) *captain.Command {
+	runner := platforms.NewSearch(prime)
 
 	return captain.NewCommand(
 		"search",
@@ -44,8 +44,8 @@ func newPlatformsSearchCommand(out output.Outputer) *captain.Command {
 	)
 }
 
-func newPlatformsAddCommand(out output.Outputer) *captain.Command {
-	runner := platforms.NewAdd()
+func newPlatformsAddCommand(prime *primer.Values) *captain.Command {
+	runner := platforms.NewAdd(prime)
 
 	params := platforms.AddRunParams{}
 
@@ -85,7 +85,7 @@ func newPlatformsAddCommand(out output.Outputer) *captain.Command {
 	)
 }
 
-func newPlatformsRemoveCommand(out output.Outputer) *captain.Command {
+func newPlatformsRemoveCommand(prime *primer.Values) *captain.Command {
 	runner := platforms.NewRemove()
 
 	params := platforms.RemoveRunParams{}

@@ -10,11 +10,14 @@ import (
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/constraints"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/secrets"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -27,12 +30,22 @@ var FailProjectNotLoaded = failures.Type("project.fail.notparsed", failures.Fail
 // Build covers the build structure
 type Build map[string]string
 
+var pConditional *constraints.Conditional
+
+// RegisterConditional is a a temporary method for registering our conditional as a global
+// yes this is bad, but at the time of implementation refactoring the project package to not be global is out of scope
+func RegisterConditional(conditional *constraints.Conditional) {
+	pConditional = conditional
+}
+
 // Project covers the platform structure
 type Project struct {
 	projectfile *projectfile.Project
 	owner       string
 	name        string
 	commitID    string
+	output.Outputer
+	prompt.Prompter
 }
 
 // Source returns the source projectfile
@@ -49,9 +62,11 @@ func (p *Project) Platforms() []*Platform {
 
 // Languages returns a reference to projectfile.Languages
 func (p *Project) Languages() []*Language {
-	ls := projectfile.MakeLanguagesFromConstrainedEntities(
-		constraints.FilterUnconstrained(p.projectfile.Languages.AsConstrainedEntities()),
-	)
+	constrained, err := constraints.FilterUnconstrained(pConditional, p.projectfile.Languages.AsConstrainedEntities())
+	if err != nil {
+		logging.Warning("Could not filter unconstrained languages: %v", err)
+	}
+	ls := projectfile.MakeLanguagesFromConstrainedEntities(constrained)
 	languages := []*Language{}
 	for _, l := range ls {
 		languages = append(languages, &Language{l, p})
@@ -61,9 +76,11 @@ func (p *Project) Languages() []*Language {
 
 // Constants returns a reference to projectfile.Constants
 func (p *Project) Constants() []*Constant {
-	cs := projectfile.MakeConstantsFromConstrainedEntities(
-		constraints.FilterUnconstrained(p.projectfile.Constants.AsConstrainedEntities()),
-	)
+	constrained, err := constraints.FilterUnconstrained(pConditional, p.projectfile.Constants.AsConstrainedEntities())
+	if err != nil {
+		logging.Warning("Could not filter unconstrained constants: %v", err)
+	}
+	cs := projectfile.MakeConstantsFromConstrainedEntities(constrained)
 	constants := []*Constant{}
 	for _, c := range cs {
 		constants = append(constants, &Constant{c, p})
@@ -88,17 +105,21 @@ func (p *Project) Secrets() []*Secret {
 		return secrets
 	}
 	if p.projectfile.Secrets.User != nil {
-		secs := projectfile.MakeSecretsFromConstrainedEntities(
-			constraints.FilterUnconstrained(p.projectfile.Secrets.User.AsConstrainedEntities()),
-		)
+		constrained, err := constraints.FilterUnconstrained(pConditional, p.projectfile.Secrets.User.AsConstrainedEntities())
+		if err != nil {
+			logging.Warning("Could not filter unconstrained user secrets: %v", err)
+		}
+		secs := projectfile.MakeSecretsFromConstrainedEntities(constrained)
 		for _, s := range secs {
 			secrets = append(secrets, p.NewSecret(s, SecretScopeUser))
 		}
 	}
 	if p.projectfile.Secrets.Project != nil {
-		secs := projectfile.MakeSecretsFromConstrainedEntities(
-			constraints.FilterUnconstrained(p.projectfile.Secrets.Project.AsConstrainedEntities()),
-		)
+		constrained, err := constraints.FilterUnconstrained(pConditional, p.projectfile.Secrets.Project.AsConstrainedEntities())
+		if err != nil {
+			logging.Warning("Could not filter unconstrained project secrets: %v", err)
+		}
+		secs := projectfile.MakeSecretsFromConstrainedEntities(constrained)
 		for _, secret := range secs {
 			secrets = append(secrets, p.NewSecret(secret, SecretScopeProject))
 		}
@@ -118,24 +139,28 @@ func (p *Project) SecretByName(name string, scope SecretScope) *Secret {
 
 // Events returns a reference to projectfile.Events
 func (p *Project) Events() []*Event {
-	es := projectfile.MakeEventsFromConstrainedEntities(
-		constraints.FilterUnconstrained(p.projectfile.Events.AsConstrainedEntities()),
-	)
+	constrained, err := constraints.FilterUnconstrained(pConditional, p.projectfile.Events.AsConstrainedEntities())
+	if err != nil {
+		logging.Warning("Could not filter unconstrained events: %v", err)
+	}
+	es := projectfile.MakeEventsFromConstrainedEntities(constrained)
 	events := make([]*Event, 0, len(es))
 	for _, e := range es {
-		events = append(events, &Event{e, p})
+		events = append(events, &Event{e, p, p.Outputer, p.Prompter})
 	}
 	return events
 }
 
 // Scripts returns a reference to projectfile.Scripts
 func (p *Project) Scripts() []*Script {
-	scs := projectfile.MakeScriptsFromConstrainedEntities(
-		constraints.FilterUnconstrained(p.projectfile.Scripts.AsConstrainedEntities()),
-	)
+	constrained, err := constraints.FilterUnconstrained(pConditional, p.projectfile.Scripts.AsConstrainedEntities())
+	if err != nil {
+		logging.Warning("Could not filter unconstrained scripts: %v", err)
+	}
+	scs := projectfile.MakeScriptsFromConstrainedEntities(constrained)
 	scripts := make([]*Script, 0, len(scs))
 	for _, s := range scs {
-		scripts = append(scripts, &Script{s, p})
+		scripts = append(scripts, &Script{s, p, p.Outputer, p.Prompter})
 	}
 	return scripts
 }
@@ -148,6 +173,15 @@ func (p *Project) ScriptByName(name string) *Script {
 		}
 	}
 	return nil
+}
+
+// Jobs returns a reference to projectfile.Jobs
+func (p *Project) Jobs() []*Job {
+	jobs := []*Job{}
+	for _, j := range p.projectfile.Jobs {
+		jobs = append(jobs, &Job{&j, p})
+	}
+	return jobs
 }
 
 // URL returns the Project field of the project file
@@ -184,6 +218,10 @@ func (p *Project) Name() string {
 	return p.name
 }
 
+func (p *Project) Private() bool {
+	return p.Source().Private
+}
+
 // CommitID returns project commitID
 func (p *Project) CommitID() string {
 	return p.commitID
@@ -213,6 +251,9 @@ func (p *Project) Version() string { return p.projectfile.Version }
 // Branch returns branch that we're pinned to (useless unless version is also set)
 func (p *Project) Branch() string { return p.projectfile.Branch }
 
+// Lock returns the lock information for this project
+func (p *Project) Lock() string { return p.projectfile.Lock }
+
 // Namespace returns project namespace
 func (p *Project) Namespace() string { return Namespace(p.owner, p.name) }
 
@@ -225,8 +266,8 @@ func Namespace(owner, project string) string {
 func (p *Project) Environments() string { return p.projectfile.Environments }
 
 // New creates a new Project struct
-func New(p *projectfile.Project) (*Project, *failures.Failure) {
-	project := &Project{projectfile: p}
+func New(p *projectfile.Project, out output.Outputer, prompt prompt.Prompter) (*Project, *failures.Failure) {
+	project := &Project{projectfile: p, Outputer: out, Prompter: prompt}
 	parts, fail := parseURL(p.Project)
 	if fail != nil {
 		return nil, fail
@@ -237,19 +278,24 @@ func New(p *projectfile.Project) (*Project, *failures.Failure) {
 	return project, nil
 }
 
+// NewLegacy is for legacy use-cases only, DO NOT USE
+func NewLegacy(p *projectfile.Project) (*Project, *failures.Failure) {
+	return New(p, output.Get(), prompt.New())
+}
+
 // Parse will parse the given projectfile and instantiate a Project struct with it
 func Parse(fpath string) (*Project, *failures.Failure) {
 	pjfile, fail := projectfile.Parse(fpath)
 	if fail != nil {
 		return nil, fail
 	}
-	return New(pjfile)
+	return New(pjfile, output.Get(), prompt.New())
 }
 
 // Get returns project struct. Quits execution if error occurs
 func Get() *Project {
 	pj := projectfile.Get()
-	project, fail := New(pj)
+	project, fail := New(pj, output.Get(), prompt.New())
 	if fail != nil {
 		failures.Handle(fail, locale.T("err_project_unavailable"))
 		os.Exit(1)
@@ -263,7 +309,7 @@ func GetSafe() (*Project, *failures.Failure) {
 	if fail != nil {
 		return nil, fail
 	}
-	project, fail := New(pjFile)
+	project, fail := New(pjFile, output.Get(), prompt.New())
 	if fail != nil {
 		return nil, fail
 	}
@@ -286,7 +332,7 @@ func FromPath(path string) (*Project, *failures.Failure) {
 	if fail != nil {
 		return nil, fail
 	}
-	project, fail := New(pjFile)
+	project, fail := New(pjFile, output.Get(), prompt.New())
 	if fail != nil {
 		return nil, fail
 	}
@@ -307,33 +353,28 @@ func (p *Platform) Source() *projectfile.Project { return p.project.projectfile 
 func (p *Platform) Name() string { return p.platform.Name }
 
 // Os returned with all secrets evaluated
-func (p *Platform) Os() string {
-	value := Expand(p.platform.Os)
-	return value
+func (p *Platform) Os() (string, error) {
+	return Expand(p.platform.Os, p.project.Outputer, p.project.Prompter)
 }
 
 // Version returned with all secrets evaluated
-func (p *Platform) Version() string {
-	value := Expand(p.platform.Version)
-	return value
+func (p *Platform) Version() (string, error) {
+	return Expand(p.platform.Version, p.project.Outputer, p.project.Prompter)
 }
 
 // Architecture with all secrets evaluated
-func (p *Platform) Architecture() string {
-	value := Expand(p.platform.Architecture)
-	return value
+func (p *Platform) Architecture() (string, error) {
+	return Expand(p.platform.Architecture, p.project.Outputer, p.project.Prompter)
 }
 
 // Libc returned are constrained and all secrets evaluated
-func (p *Platform) Libc() string {
-	value := Expand(p.platform.Libc)
-	return value
+func (p *Platform) Libc() (string, error) {
+	return Expand(p.platform.Libc, p.project.Outputer, p.project.Prompter)
 }
 
 // Compiler returned are constrained and all secrets evaluated
-func (p *Platform) Compiler() string {
-	value := Expand(p.platform.Compiler)
-	return value
+func (p *Platform) Compiler() (string, error) {
+	return Expand(p.platform.Compiler, p.project.Outputer, p.project.Prompter)
 }
 
 // Language covers the language structure
@@ -357,21 +398,25 @@ func (l *Language) ID() string {
 }
 
 // Build with all secrets evaluated
-func (l *Language) Build() *Build {
+func (l *Language) Build() (*Build, error) {
 	build := Build{}
 	for key, val := range l.language.Build {
-		newVal := Expand(val)
+		newVal, err := Expand(val, l.project.Outputer, l.project.Prompter)
+		if err != nil {
+			return nil, err
+		}
 		build[key] = newVal
 	}
-	return &build
+	return &build, nil
 }
 
 // Packages returned are constrained set
 func (l *Language) Packages() []Package {
-
-	ps := projectfile.MakePackagesFromConstrainedEntities(
-		constraints.FilterUnconstrained(l.language.Packages.AsConstrainedEntities()),
-	)
+	constrained, err := constraints.FilterUnconstrained(pConditional, l.language.Packages.AsConstrainedEntities())
+	if err != nil {
+		logging.Warning("Could not filter unconstrained packages: %v", err)
+	}
+	ps := projectfile.MakePackagesFromConstrainedEntities(constrained)
 	validPackages := make([]Package, 0, len(ps))
 	for _, pkg := range ps {
 		validPackages = append(validPackages, Package{pkg: pkg, project: l.project})
@@ -395,13 +440,16 @@ func (p *Package) Name() string { return p.pkg.Name }
 func (p *Package) Version() string { return p.pkg.Version }
 
 // Build returned with all secrets evaluated
-func (p *Package) Build() *Build {
+func (p *Package) Build() (*Build, error) {
 	build := Build{}
 	for key, val := range p.pkg.Build {
-		newVal := Expand(val)
+		newVal, err := Expand(val, p.project.Outputer, p.project.Prompter)
+		if err != nil {
+			return nil, err
+		}
 		build[key] = newVal
 	}
-	return &build
+	return &build, nil
 }
 
 // Constant covers the constant structure
@@ -414,8 +462,8 @@ type Constant struct {
 func (c *Constant) Name() string { return c.constant.Name }
 
 // Value returns constant value
-func (c *Constant) Value() string {
-	return Expand(c.constant.Value)
+func (c *Constant) Value() (string, error) {
+	return Expand(c.constant.Value, c.project.Outputer, c.project.Prompter)
 }
 
 // SecretScope defines the scope of a secret
@@ -492,13 +540,13 @@ func (s *Secret) ValueOrNil() (*string, *failures.Failure) {
 		category = UserCategory
 	}
 
-	value, fail := secretsExpander.Expand(category, s.secret.Name, false, s.project)
-	if fail != nil {
-		if fail.Type.Matches(secretsapi.FailUserSecretNotFound) {
+	value, err := secretsExpander.Expand(category, s.secret.Name, false, s.project)
+	if err != nil {
+		if errs.Matches(err, ErrSecretNotFound) {
 			return nil, nil
 		}
-		logging.Error("Could not expand secret %s, error: %s", s.Name(), fail.Error())
-		return nil, fail
+		logging.Error("Could not expand secret %s, error: %v", s.Name(), err)
+		return nil, failures.FailMisc.Wrap(err)
 	}
 	return &value, nil
 }
@@ -546,6 +594,8 @@ func (s *Secret) Save(value string) *failures.Failure {
 type Event struct {
 	event   *projectfile.Event
 	project *Project
+	output.Outputer
+	prompt.Prompter
 }
 
 // Source returns the source projectfile
@@ -555,19 +605,36 @@ func (e *Event) Source() *projectfile.Project { return e.project.projectfile }
 func (e *Event) Name() string { return e.event.Name }
 
 // Value returned with all secrets evaluated
-func (e *Event) Value() string {
-	value := Expand(e.event.Value)
-	return value
+func (e *Event) Value() (string, error) {
+	return Expand(e.event.Value, e.Outputer, e.Prompter)
+}
+
+// Scope returns the scope property of the event
+func (e *Event) Scope() ([]string, error) {
+	result := []string{}
+	for _, s := range e.event.Scope {
+		v, err := Expand(s, e.project.Outputer, e.project.Prompter)
+		if err != nil {
+			return result, err
+		}
+		result = append(result, v)
+	}
+	return result, nil
 }
 
 // Script covers the command structure
 type Script struct {
 	script  *projectfile.Script
 	project *Project
+	output.Outputer
+	prompt.Prompter
 }
 
 // Source returns the source projectfile
 func (script *Script) Source() *projectfile.Project { return script.project.projectfile }
+
+// SourceScript returns the source script
+func (script *Script) SourceScript() *projectfile.Script { return script.script }
 
 // Name returns script name
 func (script *Script) Name() string { return script.script.Name }
@@ -598,9 +665,8 @@ func defaultScriptLanguage() language.Language {
 func (script *Script) Description() string { return script.script.Description }
 
 // Value returned with all secrets evaluated
-func (script *Script) Value() string {
-	value := Expand(script.script.Value)
-	return value
+func (script *Script) Value() (string, error) {
+	return Expand(script.script.Value, script.Outputer, script.Prompter)
 }
 
 // Raw returns the script value with no secrets or constants expanded
@@ -619,4 +685,34 @@ func (script *Script) setCachedFile(filename string) {
 // filename returns the name of the file associated with this script
 func (script *Script) cachedFile() string {
 	return script.script.Filename
+}
+
+// Job covers the command structure
+type Job struct {
+	job     *projectfile.Job
+	project *Project
+}
+
+func (j *Job) Name() string {
+	return j.job.Name
+}
+
+func (j *Job) Constants() []*Constant {
+	constants := []*Constant{}
+	for _, constantName := range j.job.Constants {
+		if constant := j.project.ConstantByName(constantName); constant != nil {
+			constants = append(constants, constant)
+		}
+	}
+	return constants
+}
+
+func (j *Job) Scripts() []*Script {
+	scripts := []*Script{}
+	for _, scriptName := range j.job.Scripts {
+		if script := j.project.ScriptByName(scriptName); script != nil {
+			scripts = append(scripts, script)
+		}
+	}
+	return scripts
 }

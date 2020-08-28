@@ -36,7 +36,7 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 
 	wd := filepath.Join(cp.WorkDirectory(), namespace)
 	cp = ts.SpawnWithOpts(e2e.WithArgs("push"), e2e.WithWorkDirectory(wd))
-	cp.Expect(fmt.Sprintf("Project created at https://%s/%s/%s with language %s", constants.PlatformURL, username, pname, "python3"))
+	cp.ExpectLongString(fmt.Sprintf("Project created at https://%s/%s/%s with language %s", constants.PlatformURL, username, pname, "python3"))
 	cp.ExpectExitCode(0)
 
 	// Check that languages were reset
@@ -65,7 +65,7 @@ func (suite *PushIntegrationTestSuite) TestPush_AlreadyExists() {
 	wd := filepath.Join(cp.WorkDirectory(), namespace)
 	cp = ts.SpawnWithOpts(e2e.WithArgs("push"), e2e.WithWorkDirectory(wd))
 	cp.Expect(fmt.Sprintf("The project %s/%s already exists", username, "Python3"))
-	cp.ExpectExitCode(0)
+	cp.ExpectExitCode(1)
 }
 
 func TestPushIntegrationTestSuite(t *testing.T) {

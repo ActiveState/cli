@@ -7,11 +7,11 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/pkg/platform/api/mono"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/users"
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
@@ -38,15 +38,15 @@ var (
 )
 
 // Authenticate will prompt the user for authentication
-func Authenticate() *failures.Failure {
-	return AuthenticateWithInput("", "", "")
+func Authenticate(out output.Outputer, prompt prompt.Prompter) *failures.Failure {
+	return AuthenticateWithInput("", "", "", out, prompt)
 }
 
 // AuthenticateWithInput will prompt the user for authentication if the input doesn't already provide it
-func AuthenticateWithInput(username, password, totp string) *failures.Failure {
+func AuthenticateWithInput(username, password, totp string, out output.Outputer, prompt prompt.Prompter) *failures.Failure {
 	logging.Debug("AuthenticateWithInput")
 	credentials := &mono_models.Credentials{Username: username, Password: password, Totp: totp}
-	if err := promptForLogin(credentials); err != nil {
+	if err := promptForLogin(credentials, prompt); err != nil {
 		return failures.FailUserInput.Wrap(err)
 	}
 
@@ -57,12 +57,12 @@ func AuthenticateWithInput(username, password, totp string) *failures.Failure {
 			if !uniqueUsername(credentials) {
 				return fail
 			}
-			fail = promptSignup(credentials)
+			fail = promptSignup(credentials, out, prompt)
 			if fail != nil {
 				return fail
 			}
 		case authentication.FailAuthNeedToken:
-			fail = promptToken(credentials)
+			fail = promptToken(credentials, out, prompt)
 			if fail != nil {
 				return fail
 			}
@@ -73,7 +73,7 @@ func AuthenticateWithInput(username, password, totp string) *failures.Failure {
 
 	if authentication.Get().Authenticated() {
 		secretsapi.InitializeClient()
-		fail = ensureUserKeypair(credentials.Password)
+		fail = ensureUserKeypair(credentials.Password, out, prompt)
 		if fail != nil {
 			return fail
 		}
@@ -84,32 +84,32 @@ func AuthenticateWithInput(username, password, totp string) *failures.Failure {
 
 // RequireAuthentication will prompt the user for authentication if they are not already authenticated. If the authentication
 // is not succesful it will return a failure
-func RequireAuthentication(message string) *failures.Failure {
+func RequireAuthentication(message string, out output.Outputer, prompt prompt.Prompter) *failures.Failure {
 	if authentication.Get().Authenticated() {
 		return nil
 	}
 
-	print.Info(message)
+	out.Print(message)
 
 	choices := []string{locale.T("prompt_login_action"), locale.T("prompt_signup_action"), locale.T("prompt_signup_browser_action")}
-	choice, fail := Prompter.Select(locale.T("prompt_login_or_signup"), choices, "")
+	choice, fail := prompt.Select(locale.T("prompt_login_or_signup"), choices, "")
 	if fail != nil {
 		return fail
 	}
 
 	switch choice {
 	case locale.T("prompt_login_action"):
-		fail = Authenticate()
+		fail = Authenticate(out, prompt)
 	case locale.T("prompt_signup_action"):
-		fail = Signup()
+		fail = failures.FailMisc.Wrap(Signup(out, prompt))
 	case locale.T("prompt_signup_browser_action"):
 		err := OpenURI(constants.PlatformSignupURL)
 		if err != nil {
 			logging.Error("Could not open browser: %v", err)
 			return FailBrowserOpen.New(locale.Tr("err_browser_open", constants.PlatformSignupURL))
 		}
-		print.Info(locale.T("prompt_login_after_browser_signup"))
-		Authenticate()
+		out.Notice(locale.T("prompt_login_after_browser_signup"))
+		Authenticate(out, prompt)
 	}
 
 	if !authentication.Get().Authenticated() {
@@ -119,17 +119,17 @@ func RequireAuthentication(message string) *failures.Failure {
 	return nil
 }
 
-func promptForLogin(credentials *mono_models.Credentials) *failures.Failure {
+func promptForLogin(credentials *mono_models.Credentials, prompter prompt.Prompter) *failures.Failure {
 	var fail *failures.Failure
 	if credentials.Username == "" {
-		credentials.Username, fail = Prompter.Input(locale.T("username_prompt"), "", prompt.InputRequired)
+		credentials.Username, fail = prompter.Input(locale.T("username_prompt"), "", prompt.InputRequired)
 		if fail != nil {
 			return FailLoginPrompt.Wrap(fail.ToError())
 		}
 	}
 
 	if credentials.Password == "" {
-		credentials.Password, fail = Prompter.InputSecret(locale.T("password_prompt"), prompt.InputRequired)
+		credentials.Password, fail = prompter.InputSecret(locale.T("password_prompt"), prompt.InputRequired)
 		if fail != nil {
 			return FailLoginPrompt.Wrap(fail.ToError())
 		}
@@ -161,26 +161,26 @@ func uniqueUsername(credentials *mono_models.Credentials) bool {
 	return true
 }
 
-func promptSignup(credentials *mono_models.Credentials) *failures.Failure {
-	yesSignup, fail := Prompter.Confirm(locale.T("prompt_login_to_signup"), true)
+func promptSignup(credentials *mono_models.Credentials, out output.Outputer, prompt prompt.Prompter) *failures.Failure {
+	yesSignup, fail := prompt.Confirm(locale.T("prompt_login_to_signup"), true)
 	if fail != nil {
 		return fail
 	}
 	if yesSignup {
-		return signupFromLogin(credentials.Username, credentials.Password)
+		return signupFromLogin(credentials.Username, credentials.Password, out, prompt)
 	}
 
 	return nil
 }
 
-func promptToken(credentials *mono_models.Credentials) *failures.Failure {
+func promptToken(credentials *mono_models.Credentials, out output.Outputer, prompt prompt.Prompter) *failures.Failure {
 	var fail *failures.Failure
-	credentials.Totp, fail = Prompter.Input(locale.T("totp_prompt"), "")
+	credentials.Totp, fail = prompt.Input(locale.T("totp_prompt"), "")
 	if fail != nil {
 		return fail
 	}
 	if credentials.Totp == "" {
-		print.Line(locale.T("login_cancelled"))
+		out.Notice(locale.T("login_cancelled"))
 		return FailEmptyToken.New(locale.T("err_auth_empty_token"))
 	}
 
