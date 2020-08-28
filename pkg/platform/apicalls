@@ -10,13 +10,30 @@ function availableCalls() {
 
 function probableCalls() {
 	local func="${1}"
-	grep ".*=.*${func}(.*" * -nr | grep ".*.go:\d*:func" -v
+	grep ".*=.*${func}(.*" * -nr |
+		grep ".*.go:\d*:func" -v
+}
+
+function flagsBool() {
+	local args=${1}
+	local flags=${@:2}
+	[[ "${args}" == "--" ]] && echo "false" && return
+
+	for arg in ${args}; do
+		for flag in ${flags}; do
+			[[ "${arg}" == "${flag}" ]] && echo true && return
+		done
+	done
+
+	echo "false" && return
 }
 
 function main() {
+	local shouldRepeatMethods="$(flagsBool "${*}" "-r" "--repeat-methods")"
+
 	echo "This is \"best effort\" since it is based on text and not AST analysis."
 
-	local line file func lastFile pkg
+	local file func lastFile pkg funcInfo
 	echo "$(availableCalls)" | while read -r line; do
 		file="${line%%$'\t'*}"
 		func="${line##*$'\t'}"
@@ -27,14 +44,18 @@ function main() {
 			lastFile="${file}"
 		fi
 
-		echo -e "\t${pkg}.Client.${func}"
+		funcInfo="\t${pkg}.Client.${func}"
+		echo -e "${funcInfo}"
 
-		local l
 		echo "$(probableCalls "${func}")" | while read -r l; do
 			[[ -z "${l}" ]] && continue
-			echo -e "\t\t${l}"
+
+			l="$(echo "${l}" | tr -s "\t")"
+
+			$shouldRepeatMethods && echo -en "${funcInfo}" || echo -en "\t"
+			echo -e "\t${l}"
 		done
 	done
 }
 
-main
+[[ $# -gt 0 ]] && main ${@} || main "--"
