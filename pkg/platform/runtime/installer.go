@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/go-openapi/strfmt"
 	"github.com/gobuffalo/packr"
@@ -187,7 +188,7 @@ func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGet
 	downloadArtfs := runtimeAssembler.ArtifactsToDownload()
 	unpackArchives := map[string]*HeadChefArtifact{}
 	progressBar := progress.New(mpb.WithOutput(os.Stderr))
-	if os.Getenv(constants.NonInteractive) == "true" {
+	if strings.ToLower(os.Getenv(constants.NonInteractive)) == "true" {
 		progressBar = progress.New(mpb.WithOutput(nil))
 	}
 	defer progressBar.Close()
