@@ -45,7 +45,7 @@ func (suite *UpdateIntegrationTestSuite) versionCompare(ts *e2e.Session, disable
 	}
 
 	// Ensure we always use a unique exe for updates
-	ts.UseDistinctExe()
+	ts.UseDistinctStateExe()
 
 	cp := ts.SpawnWithOpts(e2e.WithArgs("--version", "--output=json"), e2e.AppendEnv(suite.env(disableUpdates)...))
 	cp.ExpectExitCode(0)
@@ -77,7 +77,7 @@ func (suite *UpdateIntegrationTestSuite) TestAutoUpdate() {
 	defer ts.Close()
 
 	// use unique exe
-	ts.UseDistinctExe()
+	ts.UseDistinctStateExe()
 
 	// Spoof modtime
 	t := time.Now().Add(-25 * time.Hour)
@@ -95,7 +95,7 @@ func (suite *UpdateIntegrationTestSuite) TestAutoUpdateNoPermissions() {
 	defer ts.Close()
 
 	// use unique exe
-	ts.UseDistinctExe()
+	ts.UseDistinctStateExe()
 
 	// Spoof modtime
 	t := time.Now().Add(-25 * time.Hour)
@@ -124,7 +124,7 @@ func (suite *UpdateIntegrationTestSuite) TestLocked() {
 	defer ts.Close()
 
 	// Ensure we always use a unique exe for updates
-	ts.UseDistinctExe()
+	ts.UseDistinctStateExe()
 
 	pjfile.SetPath(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))
 	pjfile.Save()
@@ -150,7 +150,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmationNegative() 
 	defer ts.Close()
 
 	// Ensure we always use a unique exe for updates
-	ts.UseDistinctExe()
+	ts.UseDistinctStateExe()
 
 	pjfile.SetPath(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))
 	pjfile.Save()
@@ -177,7 +177,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmationPositive() 
 	defer ts.Close()
 
 	// Ensure we always use a unique exe for updates
-	ts.UseDistinctExe()
+	ts.UseDistinctStateExe()
 
 	pjfile.SetPath(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))
 	pjfile.Save()
@@ -204,7 +204,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmationForce() {
 	defer ts.Close()
 
 	// Ensure we always use a unique exe for updates
-	ts.UseDistinctExe()
+	ts.UseDistinctStateExe()
 
 	pjfile.SetPath(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))
 	pjfile.Save()
@@ -222,7 +222,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 	defer ts.Close()
 
 	// Ensure we always use a unique exe for updates
-	ts.UseDistinctExe()
+	ts.UseDistinctStateExe()
 
 	cp := ts.SpawnWithOpts(e2e.WithArgs("update"), e2e.AppendEnv(suite.env(false)...))
 	// on master branch, we might already have the latest version available
@@ -257,7 +257,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateNoPermissions() {
 	defer ts.Close()
 
 	// use unique exe
-	ts.UseDistinctExe()
+	ts.UseDistinctStateExe()
 
 	// Spoof modtime
 	t := time.Now().Add(-25 * time.Hour)

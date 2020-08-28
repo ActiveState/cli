@@ -68,7 +68,7 @@ func (s *Session) ExecutablePath() string {
 }
 
 // UniqueExe ensures the executable is unique to this instance
-func (s *Session) UseDistinctExe() {
+func (s *Session) UseDistinctStateExe() {
 	execu := filepath.Join(s.Dirs.Bin, filepath.Base(s.exe))
 	if fileutils.TargetExists(execu) {
 		return
