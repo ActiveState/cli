@@ -37,6 +37,7 @@ namespace ActiveState
                 if (cmd.Contains("state.exe"))
                 {
                     procStartInfo.EnvironmentVariables["VERBOSE"] = "true";
+                    procStartInfo.EnvironmentVariables["ACTIVESTATE_NONINTERACTIVE"] = "true";
                 }
                 // Do not create the black window.
                 procStartInfo.CreateNoWindow = true;

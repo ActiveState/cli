@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/go-openapi/strfmt"
 	"github.com/gobuffalo/packr"
@@ -12,6 +13,7 @@ import (
 	"github.com/vbauerster/mpb/v4"
 
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -185,8 +187,11 @@ func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGet
 
 	downloadArtfs := runtimeAssembler.ArtifactsToDownload()
 	unpackArchives := map[string]*HeadChefArtifact{}
-	progress := progress.New(mpb.WithOutput(os.Stderr))
-	defer progress.Close()
+	progressBar := progress.New(mpb.WithOutput(os.Stderr))
+	if strings.ToLower(os.Getenv(constants.NonInteractive)) == "true" {
+		progressBar = progress.New(mpb.WithOutput(nil))
+	}
+	defer progressBar.Close()
 
 	if len(downloadArtfs) != 0 {
 		if installer.onDownload != nil {
@@ -194,9 +199,9 @@ func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGet
 		}
 
 		if len(downloadArtfs) > 0 {
-			archives, fail := installer.runtimeDownloader.Download(downloadArtfs, runtimeAssembler, progress)
+			archives, fail := installer.runtimeDownloader.Download(downloadArtfs, runtimeAssembler, progressBar)
 			if fail != nil {
-				progress.Cancel()
+				progressBar.Cancel()
 				return nil, false, fail
 			}
 
@@ -206,9 +211,9 @@ func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGet
 		}
 	}
 
-	fail = installer.InstallFromArchives(unpackArchives, runtimeAssembler, progress)
+	fail = installer.InstallFromArchives(unpackArchives, runtimeAssembler, progressBar)
 	if fail != nil {
-		progress.Cancel()
+		progressBar.Cancel()
 		return nil, false, fail
 	}
 
