@@ -62,7 +62,7 @@ func (l *List) Run(params ListRunParams) error {
 		return fail.WithDescription("package_err_cannot_fetch_checkpoint")
 	}
 
-	table := newFilteredRequirementsTable(checkpoint, params.Name)
+	table := newFilteredRequirementsTable(model.FilterCheckpointPackages(checkpoint), params.Name)
 	table.sortByPkg()
 
 	l.out.Print(table)
