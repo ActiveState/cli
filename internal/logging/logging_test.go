@@ -35,6 +35,8 @@ func (l *Test1Handler) Emit(ctx *MessageContext, message string, args ...interfa
 	return nil
 }
 
+func (l *Test1Handler) Printf(msg string, args ...interface{}) {}
+
 func (l *Test1Handler) Reset() {
 	l.messages = make([]string, 0)
 }
@@ -147,6 +149,9 @@ func (l *TestHandler) Output() io.Writer {
 }
 
 func (l *TestHandler) SetVerbose(v bool) {
+}
+
+func (l *TestHandler) Printf(msg string, args ...interface{}) {
 }
 
 func Test_Handler(t *testing.T) {
