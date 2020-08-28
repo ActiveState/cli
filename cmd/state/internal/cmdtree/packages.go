@@ -133,12 +133,6 @@ func newPackagesImportCommand(prime *primer.Values) *captain.Command {
 				Value:       &params.FileName,
 				Required:    true,
 			},
-			{
-				Name:        locale.Tl("import_language", "Language"),
-				Description: locale.Tl("package_import_flag_lang_description", "Which language to address, eg. python, perl"),
-				Value:       &params.Language,
-				Required:    true,
-			},
 		},
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run(*params)
