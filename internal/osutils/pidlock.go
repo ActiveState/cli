@@ -60,8 +60,8 @@ func (pl *PidLock) TryLock() (locked bool, err error) {
 			return false, errs.Wrap(err, "failed to parse PID from lockfile %s", pl.path)
 		}
 		if PidExists(int(pid)) {
-			msg := fmt.Sprintf("cannot acquire lock: pid %d exists", pid)
-			return false, NewAlreadyLockedError(err, pl.path, msg)
+			err := fmt.Errorf("pid %d exists", pid)
+			return false, NewAlreadyLockedError(err, pl.path, "pid parsed")
 		}
 	}
 
