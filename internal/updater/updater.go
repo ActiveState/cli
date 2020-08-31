@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/url"
@@ -188,6 +189,11 @@ func (u *Updater) update(out output.Outputer) error {
 	// same new state tool version several times.
 	_, err = pl.TryLock()
 	if err != nil {
+		if inProgErr := new(*osutils.AlreadyLockedError); errors.As(err, inProgErr) {
+			logging.Debug("Already updating: %s", errs.Join(*inProgErr, ": "))
+			return nil
+
+		}
 		return errs.Wrap(err, "failed to acquire lock for update process")
 	}
 

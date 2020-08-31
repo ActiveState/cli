@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 )
 
 // PidLock represents a lock file that can be used for exclusive access to
@@ -44,7 +45,7 @@ func (pl *PidLock) TryLock() (locked bool, err error) {
 	err = LockFile(pl.file)
 	if err != nil {
 		// if lock cannot be acquired it usually means that another process is holding the lock
-		return false, errs.Wrap(err, "failed to acquire exclusive lock for lock file %s", pl.path)
+		return false, NewAlreadyLockedError(err, pl.path, "cannot acquire exclusive lock")
 	}
 
 	// check if PID can be read and if so, if the process is running
@@ -59,7 +60,8 @@ func (pl *PidLock) TryLock() (locked bool, err error) {
 			return false, errs.Wrap(err, "failed to parse PID from lockfile %s", pl.path)
 		}
 		if PidExists(int(pid)) {
-			return false, errs.New("cannot acquire lock: pid %d exists", pid)
+			msg := fmt.Sprintf("cannot acquire lock: pid %d exists", pid)
+			return false, NewAlreadyLockedError(err, pl.path, msg)
 		}
 	}
 
@@ -91,4 +93,33 @@ func (pl *PidLock) Close(keepFile ...bool) error {
 		return errs.Wrap(err, "failed to remove lock file")
 	}
 	return nil
+}
+
+// AlreadyLockedError manages info that clarifies why a lock has failed, but
+// is still likely valid.
+type AlreadyLockedError struct {
+	err   error
+	file  string
+	msg   string
+	stack *stacktrace.Stacktrace
+}
+
+// NewAlreadyLockedError returns a new AlreadyLockedError.
+func NewAlreadyLockedError(err error, file, msg string) *AlreadyLockedError {
+	return &AlreadyLockedError{err, file, msg, stacktrace.Get()}
+}
+
+// Error implements the error interface.
+func (e *AlreadyLockedError) Error() string {
+	return fmt.Sprintf("file %q is already locked: %s", e.file, e.msg)
+}
+
+// Unwrap allows the unwrapping of a causing error.
+func (e *AlreadyLockedError) Unwrap() error {
+	return e.err
+}
+
+// Stack implements the errs.Error interface.
+func (e *AlreadyLockedError) Stack() *stacktrace.Stacktrace {
+	return e.stack
 }
