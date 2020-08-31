@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"text/template"
 
@@ -18,6 +19,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/project"
@@ -179,7 +181,22 @@ func SetupProjectRcFile(templateName, ext string, env map[string]string, out out
 		"WD":          virtualenvironment.Get().WorkingDirectory(),
 		"UserScripts": userScripts,
 		"Scripts":     scripts,
+		"ExecName":    constants.CommandName,
 	}
+
+	currExecAbsPath, err := osutils.Executable()
+	if err != nil {
+		return nil, failures.FailOS.Wrap(err)
+	}
+	currExecAbsDir := filepath.Dir(currExecAbsPath)
+
+	listSep := string(os.PathListSeparator)
+	pathList, ok := env["PATH"]
+	inPathList, err := fileutils.PathInList(listSep, pathList, currExecAbsDir)
+	if !ok || !inPathList {
+		rcData["ExecAlias"] = currExecAbsPath // alias {ExecName}={ExecAlias}
+	}
+
 	t, err := template.New("rcfile").Parse(tpl)
 	if err != nil {
 		return nil, failures.FailTemplating.Wrap(err)

@@ -11,6 +11,7 @@ import (
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/retryhttp"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_client"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_client/headchef_operations"
@@ -134,6 +135,7 @@ func (r *Client) reqBuild(buildReq *headchef_models.V1BuildRequest, buildStatus 
 	startParams := headchef_operations.StartBuildV1Params{
 		Context:      context.Background(),
 		BuildRequest: buildReq,
+		HTTPClient:   retryhttp.DefaultClient.StandardClient(),
 	}
 
 	created, accepted, err := r.client.StartBuildV1(&startParams)

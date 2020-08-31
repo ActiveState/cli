@@ -5,6 +5,8 @@ import (
 
 	"github.com/go-openapi/strfmt"
 
+	"github.com/ActiveState/sysinfo"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
@@ -14,8 +16,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
-	"github.com/ActiveState/sysinfo"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 var (

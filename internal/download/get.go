@@ -8,14 +8,13 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/progress"
-
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
-	"github.com/hashicorp/go-retryablehttp"
+	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/progress"
+	"github.com/ActiveState/cli/internal/retryhttp"
 )
 
 // Get takes a URL and returns the contents as bytes
@@ -46,8 +45,7 @@ func httpGet(url string) ([]byte, *failures.Failure) {
 
 func httpGetWithProgress(url string, progress *progress.Progress) ([]byte, *failures.Failure) {
 	logging.Debug("Retrieving url: %s", url)
-	client := retryablehttp.NewClient()
-	client.Logger = logging.CurrentHandler()
+	client := retryhttp.DefaultClient
 	resp, err := client.Get(url)
 	if err != nil {
 		return nil, failures.FailNetwork.Wrap(err)
