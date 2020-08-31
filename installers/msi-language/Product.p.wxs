@@ -83,7 +83,7 @@
 			<RegistrySearch Id='DefaultBrowser' Type='raw' Root='HKCR' Key='http\shell\open\command' />
 		</Property>
 
-		<Property Id="STATE_TOOL_WIZARD_CHECK_BOX" Value="1" Secure="yes" />
+		<Property Id="STATE_TOOL_WIZARD_CHECK_BOX" Value="0" Secure="yes" />
 		<Property Id="MSIUSEREALADMINDETECTION" Value="1" Secure="yes" />
 		<Property Id="COMMIT_ID" Value="{{.CommitID}}" />
 
