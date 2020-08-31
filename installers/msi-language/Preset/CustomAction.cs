@@ -15,11 +15,11 @@ namespace Preset
 
     public class ParsePreset
     {
-        public static LanguagePreset Parse(string ps, ActiveState.Logging log, string installDir, string appStartMenuPath)
+        public static LanguagePreset Parse(string ps, Session session, string installDir, string appStartMenuPath)
         {
             if (ps == "Perl")
             {
-                return new PerlPreset(log, installDir, appStartMenuPath);
+                return new PerlPreset(session, installDir, appStartMenuPath);
             }
             return null;
         }
@@ -27,7 +27,7 @@ namespace Preset
 
     public class PerlPreset : Preset.LanguagePreset
     {
-        private ActiveState.Logging log;
+        private Session session;
         private string appStartMenuPath;
         private string installPath;
 
@@ -36,24 +36,24 @@ namespace Preset
             ".PL", ".WPL"
         };
 
-        public PerlPreset(ActiveState.Logging log, string installPath, string appStartMenuPath)
+        public PerlPreset(Session session, string installPath, string appStartMenuPath)
         {
-            this.log = log;
+            this.session = session;
             this.appStartMenuPath = appStartMenuPath;
             this.installPath = installPath;
         }
 
         public ActionResult Uninstall()
         {
-            log.Log("un-installing perl file associations");
+            session.Log("un-installing perl file associations");
             FileAssociation.EnsureAssociationsDeleted(associations());
 
-            log.Log("removing from PATHEXT");
+            session.Log("removing from PATHEXT");
             var oldPathExt = Environment.GetEnvironmentVariable("PATHEXT", EnvironmentVariableTarget.Machine);
             var newPathExt = String.Join(";", oldPathExt.Split(';').Where(x => !PathExtensions.Contains(x)).ToArray());
             if (newPathExt != oldPathExt)
             {
-                log.Log(string.Format("updating PATHEXT to {0}", newPathExt));
+                session.Log(string.Format("updating PATHEXT to {0}", newPathExt));
                 Environment.SetEnvironmentVariable("PATHEXT", newPathExt, EnvironmentVariableTarget.Machine);
             }
 
@@ -80,31 +80,31 @@ namespace Preset
 
         public ActionResult Install()
         {
-            log.Log("Install PerlCritic shortcut");
+            session.Log("Install PerlCritic shortcut");
             var result = PerlCriticShortcut();
             if (result.Equals(ActionResult.Failure))
             {
-                log.Log("Could not create Perl Critic shortcut");
+                session.Log("Could not create Perl Critic shortcut");
                 // Do not fail if we cannot create shortcut
                 return ActionResult.Success;
             }
 
-            log.Log("Install Documentation link");
+            session.Log("Install Documentation link");
             DocumentationShortcut();
 
-            log.Log("install cmd-prompt shortcut");
+            session.Log("install cmd-prompt shortcut");
             result = CmdPromptShortcut();
             if (result.Equals(ActionResult.Failure))
             {
-                log.Log("Could not create Command Prompt shortcut");
+                session.Log("Could not create Command Prompt shortcut");
                 // Do not fail if we cannot create shortcut
                 return ActionResult.Success;
             }
 
-            log.Log("installing perl file associations");
+            session.Log("installing perl file associations");
             FileAssociation.EnsureAssociationsSet(associations());
 
-            log.Log("updating PATHEXT");
+            session.Log("updating PATHEXT");
             var oldPathExt = Environment.GetEnvironmentVariable("PATHEXT", EnvironmentVariableTarget.Machine);
             var exts = String.Join(";", oldPathExt.Split(';').Concat(PathExtensions).Distinct().ToArray());
             if (exts != oldPathExt)
@@ -128,37 +128,37 @@ namespace Preset
 
         private void DocumentationShortcut()
         {
-            var installDir = log.Session().CustomActionData["INSTALLDIR"];
-            log.Log("Installing Perl Documentation shortcut");
+            var installDir = session.CustomActionData["INSTALLDIR"];
+            session.Log("Installing Perl Documentation shortcut");
 
             if (!Directory.Exists(appStartMenuPath))
                 Directory.CreateDirectory(appStartMenuPath);
 
             var shortcutLocation = Path.Combine(appStartMenuPath, "Documentation.url");
-            var iconLocation = log.Session().CustomActionData["INSTALLDIR"] + "perl.ico";
+            var iconLocation = session.CustomActionData["INSTALLDIR"] + "perl.ico";
 
-            CreateInternetShortcut(shortcutLocation, log.Session().CustomActionData["REL_NOTES"], iconLocation);
+            CreateInternetShortcut(shortcutLocation, session.CustomActionData["REL_NOTES"], iconLocation);
         }
 
         private ActionResult PerlCriticShortcut()
         {
             string shortcutLocation = Path.Combine(appStartMenuPath, "Perl Critic" + ".lnk");
 
-            log.Log("Installing Perl Critic shortcut @ {0}", shortcutLocation);
+            session.Log("Installing Perl Critic shortcut @ {0}", shortcutLocation);
 
-            string target = Path.Combine(log.Session().CustomActionData["INSTALLDIR"], "bin", "wperl.exe");
+            string target = Path.Combine(session.CustomActionData["INSTALLDIR"], "bin", "wperl.exe");
             if (!System.IO.File.Exists(target))
             {
-                log.Log(string.Format("wperl.exe does not exist in path: {0}", target));
-                RollbarReport.Error(string.Format("wperl.exe does not exist in path: {0}", target), this.log);
+                session.Log(string.Format("wperl.exe does not exist in path: {0}", target));
+                RollbarReport.Error(string.Format("wperl.exe does not exist in path: {0}", target), session);
                 return ActionResult.Failure;
             }
 
-            string perlCriticLocation = Path.Combine(log.Session().CustomActionData["INSTALLDIR"], "bin", "perlcritic-gui");
+            string perlCriticLocation = Path.Combine(session.CustomActionData["INSTALLDIR"], "bin", "perlcritic-gui");
             if (!System.IO.File.Exists(perlCriticLocation))
             {
-                log.Log(string.Format("perlcritic-gui does not exist in path: {0}", perlCriticLocation));
-                RollbarReport.Error(string.Format("perlcritic-gui does not exist in path: {0}", perlCriticLocation), log);
+                session.Log(string.Format("perlcritic-gui does not exist in path: {0}", perlCriticLocation));
+                RollbarReport.Error(string.Format("perlcritic-gui does not exist in path: {0}", perlCriticLocation), session);
                 return ActionResult.Failure;
             }
 
@@ -169,7 +169,7 @@ namespace Preset
             IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(shortcutLocation);
 
             shortcut.Description = "Perl Critic";
-            shortcut.IconLocation = log.Session().CustomActionData["INSTALLDIR"] + "perl.ico";
+            shortcut.IconLocation = session.CustomActionData["INSTALLDIR"] + "perl.ico";
             shortcut.TargetPath = target;
             shortcut.Arguments = " -x " + "\"" + perlCriticLocation + "\"";
             shortcut.Save();
@@ -180,13 +180,13 @@ namespace Preset
         {
             string shortcutLocation = Path.Combine(appStartMenuPath, "Developer Command Prompt.lnk");
 
-            log.Log("Installing Cmd Prompt shortcut at {0}", shortcutLocation);
+            session.Log("Installing Cmd Prompt shortcut at {0}", shortcutLocation);
 
-            string target = Path.Combine(log.Session().CustomActionData["INSTALLDIR"], "bin", "shell.bat");
+            string target = Path.Combine(session.CustomActionData["INSTALLDIR"], "bin", "shell.bat");
             if (!System.IO.File.Exists(target))
             {
-                log.Log(string.Format("shell.bat does not exist in path: {0}", target));
-                RollbarReport.Error(string.Format("shell.bat does not exist in path: {0}", target), log);
+                session.Log(string.Format("shell.bat does not exist in path: {0}", target));
+                RollbarReport.Error(string.Format("shell.bat does not exist in path: {0}", target), session);
                 return ActionResult.Failure;
             }
 
@@ -215,30 +215,27 @@ namespace Preset
             string installDir = session.CustomActionData["INSTALLDIR"];
 
             RollbarHelper.ConfigureRollbarSingleton(session.CustomActionData["COMMIT_ID"]);
-            using (var log = new ActiveState.Logging(session, installDir))
+
+            var preset = Preset.ParsePreset.Parse(presetStr, session, installDir, appStartMenuPath);
+            if (preset == null)
             {
+                session.Log("No valid preset set");
+                return ActionResult.Failure;
+            }
 
-                var preset = Preset.ParsePreset.Parse(presetStr, log, installDir, appStartMenuPath);
-                if (preset == null)
+            try
+            {
+                var res = preset.Install();
+                if (res != ActionResult.Success)
                 {
-                    log.Log("No valid preset set");
-                    return ActionResult.Failure;
+                    RollbarReport.Error(string.Format("unexpected failure in Preset installation"), session);
                 }
-
-                try
-                {
-                    var res = preset.Install();
-                    if (res != ActionResult.Success)
-                    {
-                        RollbarReport.Error(string.Format("unexpected failure in Preset installation"), log);
-                    }
-                    return res;
-                }
-                catch (Exception err)
-                {
-                    RollbarReport.Critical(string.Format("unknown error in language preset: {0}", err), log);
-                    return ActionResult.Failure;
-                }
+                return res;
+            }
+            catch (Exception err)
+            {
+                RollbarReport.Critical(string.Format("unknown error in language preset: {0}", err), session);
+                return ActionResult.Failure;
             }
         }
     }

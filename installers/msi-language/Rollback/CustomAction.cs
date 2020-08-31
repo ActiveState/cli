@@ -14,23 +14,21 @@ namespace Rollback
             var installDir = session.CustomActionData["INSTALLDIR"];
             RollbarHelper.ConfigureRollbarSingleton(session.CustomActionData["COMMIT_ID"]);
 
-            using (var log = new ActiveState.Logging(session, installDir))
-            {
-                log.Log("Begin rollback of state tool installation and deploy");
+            session.Log("Begin rollback of state tool installation and deploy");
 
-                RollbackStateToolInstall(log);
-                RollbackDeploy(log);
+            RollbackStateToolInstall(session);
+            RollbackDeploy(session);
 
-                // This custom action should not abort on failure, just report
-                return ActionResult.Success;
-            }
+            // This custom action should not abort on failure, just report
+            return ActionResult.Success;
+            
         }
 
-        private static void RollbackStateToolInstall(ActiveState.Logging log)
+        private static void RollbackStateToolInstall(Session session)
         {
-            if (log.Session().CustomActionData["STATE_TOOL_INSTALLED"] == "false")
+            if (session.CustomActionData["STATE_TOOL_INSTALLED"] == "false")
             {
-                Status.ProgressBar.StatusMessage(log.Session(), "Rolling back State Tool installation");
+                Status.ProgressBar.StatusMessage(session, "Rolling back State Tool installation");
                 // If we installed the state tool then we want to remove it
                 // along with any environment entries.
                 // We cannot pass data between non-immediate custom actions
@@ -38,45 +36,45 @@ namespace Rollback
                 // state deploy custom acion.
                 string stateToolInstallDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ActiveState", "bin");
 
-                log.Log(string.Format("Attemping to remove State Tool installation directory: {0}", stateToolInstallDir));
-                ActionResult result = Remove.Dir(log, stateToolInstallDir);
+                session.Log(string.Format("Attemping to remove State Tool installation directory: {0}", stateToolInstallDir));
+                ActionResult result = Remove.Dir(session, stateToolInstallDir);
                 if (!result.Equals(ActionResult.Success))
                 {
                     string msg = string.Format("Not successful in removing State Tool installation directory, got action result: {0}", result);
-                    log.Log(msg);
-                    RollbarReport.Error(msg, log);
+                    session.Log(msg);
+                    RollbarReport.Error(msg, session);
                 }
 
-                log.Log(string.Format("Removing environment entries containing: {0}", stateToolInstallDir));
-                result = Remove.EnvironmentEntries(log, stateToolInstallDir);
+                session.Log(string.Format("Removing environment entries containing: {0}", stateToolInstallDir));
+                result = Remove.EnvironmentEntries(session, stateToolInstallDir);
                 if (!result.Equals(ActionResult.Success))
                 {
                     string msg = string.Format("Not successful in removing State Tool environment entries, got action result: {0}", result);
-                    log.Log(msg);
-                    RollbarReport.Error(msg, log);
+                    session.Log(msg);
+                    RollbarReport.Error(msg, session);
 
                 }
             }
 
         }
 
-        private static void RollbackDeploy(ActiveState.Logging log)
+        private static void RollbackDeploy(Session session)
         {
-            Status.ProgressBar.StatusMessage(log.Session(), "Rolling back language installation");
-            ActionResult result = Remove.Dir(log, log.Session().CustomActionData["INSTALLDIR"]);
+            Status.ProgressBar.StatusMessage(session, "Rolling back language installation");
+            ActionResult result = Remove.Dir(session, session.CustomActionData["INSTALLDIR"]);
             if (!result.Equals(ActionResult.Success))
             {
                 string msg = string.Format("Not successful in removing deploy directory, got action result: {0}", result);
-                log.Log(msg);
-                RollbarReport.Error(msg, log);
+                session.Log(msg);
+                RollbarReport.Error(msg, session);
             }
 
-            result = Remove.EnvironmentEntries(log, log.Session().CustomActionData["INSTALLDIR"]);
+            result = Remove.EnvironmentEntries(session, session.CustomActionData["INSTALLDIR"]);
             if (!result.Equals(ActionResult.Success))
             {
                 string msg = string.Format("Not successful in removing Deployment environment entries, got action result: {0}", result);
-                log.Log(msg);
-                RollbarReport.Error(msg, log);
+                session.Log(msg);
+                RollbarReport.Error(msg, session);
             }
         }
     }

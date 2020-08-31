@@ -10,7 +10,7 @@ namespace ActiveState
 {
     public static class Command
     {
-        public static ActionResult Run(ActiveState.Logging log, string cmd, string args, out string output)
+        public static ActionResult Run(Session session, string cmd, string args, out string output)
         {
             var errBuilder = new StringBuilder();
             var outputBuilder = new StringBuilder();
@@ -21,7 +21,7 @@ namespace ActiveState
                     cmd = Path.Combine(Environment.SystemDirectory, "WindowsPowershell", "v1.0", "powershell.exe");
                     if (!File.Exists(cmd))
                     {
-                        log.Log("Did not find powershell @" + cmd);
+                        session.Log("Did not find powershell @" + cmd);
                         cmd = "powershell.exe";
                     }
                 }
@@ -50,7 +50,7 @@ namespace ActiveState
                     var line = e.Data;
                     if (!String.IsNullOrEmpty(line))
                     {
-                        log.Log("out: " + line);
+                        session.Log("out: " + line);
                         outputBuilder.Append("\n" + line);
                     }
                 });
@@ -60,7 +60,7 @@ namespace ActiveState
                     if (!String.IsNullOrEmpty(e.Data))
                     {
                         // We do not write stderr to our own log, as it comprises the progress bar output
-                        log.Session().Log("err: " + e.Data);
+                        session.Log("err: " + e.Data);
                         errBuilder.Append("\n" + e.Data);
                     }
                 });
@@ -76,12 +76,12 @@ namespace ActiveState
                     try
                     {
                         // This is just hear to throw an InstallCanceled Exception if necessary
-                        Status.ProgressBar.Increment(log.Session(), 0);
+                        Status.ProgressBar.Increment(session, 0);
                         Thread.Sleep(200);
                     }
                     catch (InstallCanceledException)
                     {
-                        log.Log("Caught install cancelled exception");
+                        session.Log("Caught install cancelled exception");
                         Process.KillProcessAndChildren(proc.Id);
                         output = "process got interrupted.";
                         return ActionResult.UserExit;
@@ -90,14 +90,14 @@ namespace ActiveState
                 proc.WaitForExit();
 
                 var exitCode = proc.ExitCode;
-                log.Log(String.Format("process returned with exit code: {0}", exitCode));
+                session.Log(String.Format("process returned with exit code: {0}", exitCode));
                 proc.Close();
                 if (exitCode != 0)
                 {
                     outputBuilder.Append('\x00');
                     outputBuilder.AppendFormat(" -- Process returned with exit code: {0}", exitCode);
                     output = outputBuilder.ToString();
-                    log.Log("returning due to return code - error");
+                    session.Log("returning due to return code - error");
                     var title = output.Split('\n')[0];
                     if (title.Length == 0)
                     {
@@ -105,7 +105,7 @@ namespace ActiveState
                     }
                     RollbarReport.Critical(
                         string.Format("failed due to return code: {0} - start: {1}", exitCode, title),
-                        log,
+                        session,
                         new Dictionary<string, object> { { "output", output }, { "err", errBuilder.ToString() }, { "cmd", cmd } }
                     );
                     return ActionResult.Failure;
@@ -117,8 +117,8 @@ namespace ActiveState
                 var exceptionString = string.Format("Caught exception: {0}", objException);
                 outputBuilder.Append(exceptionString);
                 output = outputBuilder.ToString();
-                log.Log(exceptionString);
-                RollbarReport.Error(exceptionString, log);
+                session.Log(exceptionString);
+                RollbarReport.Error(exceptionString, session);
                 return ActionResult.Failure;
             }
             output = outputBuilder.ToString();

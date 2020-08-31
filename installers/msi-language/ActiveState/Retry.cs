@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Deployment.WindowsInstaller;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,7 +9,7 @@ namespace ActiveState
 {
     public static class RetryHelper
     {
-	public static void RetryOnException(ActiveState.Logging log, int times, TimeSpan delay, Action operation)
+	public static void RetryOnException(Session session, int times, TimeSpan delay, Action operation)
 	{
 	    var attempts = 0;
 	    do
@@ -26,7 +27,7 @@ namespace ActiveState
 			throw;
 		    }
 
-		    log.Log("Exception caught on attempt #{0}, will retry after {1}, error was: {2}", attempts, delay, err);
+		    session.Log("Exception caught on attempt #{0}, will retry after {1}, error was: {2}", attempts, delay, err);
 
 		    Thread.Sleep(delay);
 		}
