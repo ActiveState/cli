@@ -2,6 +2,7 @@ package osutils
 
 import (
 	"context"
+	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -77,7 +78,8 @@ func Test_acquirePidLockProcesses(t *testing.T) {
 			// trying to acquire the lock in this process should fail
 			ok, err := pl.TryLock()
 			assert.False(tt, ok)
-			assert.Error(tt, err)
+			alreadyErr := &AlreadyLockedError{}
+			assert.True(tt, errors.As(err, &alreadyErr))
 
 			err = pl.Close()
 			require.NoError(tt, err)
@@ -100,7 +102,6 @@ func Test_acquirePidLockProcesses(t *testing.T) {
 
 			done := make(chan string, numProcesses+1)
 			defer close(done)
-
 			var wg sync.WaitGroup
 			defer wg.Wait()
 
