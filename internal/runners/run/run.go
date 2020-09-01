@@ -75,7 +75,7 @@ func run(out output.Outputer, subs subshell.SubShell, name string, args []string
 		return fail
 	}
 
-	path := os.Getenv("PATH")
+	var venvPath string
 	// Activate the state if needed.
 	if !script.Standalone() && !subshell.IsActivated() {
 		out.Notice(locale.T("info_state_run_activating_state"))
@@ -99,37 +99,44 @@ func run(out output.Outputer, subs subshell.SubShell, name string, args []string
 		if err != nil {
 			return err
 		}
-		path = env["PATH"]
+		venvPath = env["PATH"]
 	}
 
-	var (
-		lang      language.Language
-		attempted []string
-	)
-	for _, l := range script.Languages() {
-		lang = l
+	lang := language.Unknown
+	if len(script.Languages()) == 0 {
+		lang = language.Unset
+	}
 
-		var exec string
-		if lang.Executable().Available() {
-			exec = lang.Executable().Name()
+	var attempted []string
+	for _, l := range script.Languages() {
+		var path, exec string
+		if l.Executable().Available() {
+			exec = l.Executable().Name()
+			path = venvPath
 		} else {
-			exec = lang.String()
+			exec = l.String()
+			path = os.Getenv("PATH")
 		}
 
-		if lang.Executable().Builtin() && runtime.GOOS == "windows" {
+		if l.Executable().Builtin() && runtime.GOOS == "windows" {
 			exec = exec + ".exe"
 		}
 
 		if pathProvidesExec(path, exec) {
+			lang = l
 			break
 		}
-		attempted = append(attempted, lang.String())
+		attempted = append(attempted, l.String())
+	}
+
+	if script.Standalone() && !lang.Executable().Builtin() {
+		return FailStandaloneConflict.New("error_state_run_standalone_conflict")
 	}
 
 	if lang == language.Unknown {
 		return locale.NewInputError(
 			"err_run_unknown_language",
-			"The language for this script is not supported. Please configure the 'language' field with a valid option (one, or more, of {{.V0}})", strings.Join(language.RecognizedNames(), ", "),
+			"The language for this script is not supported or not available on your system. Please configure the 'language' field with a valid option (one, or more, of: {{.V0}})", strings.Join(language.RecognizedNames(), ", "),
 		)
 	}
 
@@ -142,10 +149,6 @@ func run(out output.Outputer, subs subshell.SubShell, name string, args []string
 		out.Notice(warning)
 
 		lang = language.MakeByShell(subs.Shell())
-	}
-
-	if script.Standalone() && !lang.Executable().Builtin() {
-		return FailStandaloneConflict.New("error_state_run_standalone_conflict")
 	}
 
 	scriptBlock, err := script.Value()
