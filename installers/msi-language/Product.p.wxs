@@ -14,6 +14,8 @@
 		<Property Id="AS_USERNAME" Secure="yes" />
 		<Property Id="AS_PASSWORD" Secure="yes" />
 		<Property Id="AS_TOTP" Secure="yes" />
+		<Property Id="NETWORK_ERROR" Value="false" />
+		<Property Id="NETWORK_ERROR_MESSAGE" Value="Network error" />
 		<Property Id="CODE_INSTALLED" Value="false" />
 		<Property Id="MsiLogging" Value="Iwearucmopvx" />
 		<!-- End Configuration parameters -->
@@ -116,7 +118,6 @@
 			<Publish Dialog="BrowseDlg" Control="OK" Event="SpawnDialog" Value="InvalidDirDlg" Order="5"><![CDATA[NOT WIXUI_DONTVALIDATEPATH AND WIXUI_INSTALLDIR_VALID<>"1"]]></Publish>
 			<Publish Dialog="BrowseDlg" Control="OK" Event="SpawnDialog" Value="NonEmptyDirDlg" Order="6"><![CDATA[NOT WIXUI_DONTVALIDATEPATH AND VALIDATE_FOLDER_CLEAN<>"1"]]></Publish>
 
-
 			<Publish Dialog="CustomExitDialog" Control="Finish" Event="EndDialog" Value="Return" Order="999">1</Publish>
 			<Publish Dialog="CustomExitDialog" Control="Finish" Event="DoAction" Value="LaunchStateToolWizardInstalled">STATE_TOOL_WIZARD_CHECK_BOX=1 and NOT Installed and STATE_TOOL_INSTALLED = "true"</Publish>
 			<Publish Dialog="CustomExitDialog" Control="Finish" Event="DoAction" Value="LaunchStateToolWizardNotInstalled">STATE_TOOL_WIZARD_CHECK_BOX=1 and NOT Installed and STATE_TOOL_INSTALLED = "false"</Publish>
@@ -195,12 +196,11 @@
 		<CustomAction
 			Id="SetStateDeployPropertyValues"
 			Property="StateDeploy"
-			Value="INSTALLDIR=[INSTALLDIR];PROJECT_OWNER_AND_NAME=[PROJECT_OWNER_AND_NAME];IS_MODIFY=[IS_MODIFY];STATE_TOOL_INSTALLED=[STATE_TOOL_INSTALLED];STATE_TOOL_PATH=[STATE_TOOL_PATH];AS_USERNAME=[AS_USERNAME];AS_PASSWORD=[AS_PASSWORD];AS_TOTP=[AS_TOTP];UI_LEVEL=[UILevel];COMMIT_ID=[COMMIT_ID];PRODUCT_VERSION=[ProductVersion];SESSION_ID=[SESSION_ID];MsiLogFileLocation=[MsiLogFileLocation]"
+			Value="INSTALLDIR=[INSTALLDIR];PROJECT_OWNER_AND_NAME=[PROJECT_OWNER_AND_NAME];IS_MODIFY=[IS_MODIFY];STATE_TOOL_INSTALLED=[STATE_TOOL_INSTALLED];STATE_TOOL_PATH=[STATE_TOOL_PATH];AS_USERNAME=[AS_USERNAME];AS_PASSWORD=[AS_PASSWORD];AS_TOTP=[AS_TOTP];UI_LEVEL=[UILevel];COMMIT_ID=[COMMIT_ID];PRODUCT_VERSION=[ProductVersion];SESSION_ID=[SESSION_ID];MsiLogFileLocation=[MsiLogFileLocation];NETWORK_ERROR=[NETWORK_ERROR];NETWORK_ERROR_MESSAGE=[NETWORK_ERROR_MESSAGE]"
 		/>
 		<CustomAction Id="SetUninstallProperties" Property="Uninstall" Value="PRESET=[PRESET];REMEMBER=[REMEMBER];REMEMBER_SHORTCUTDIR=[REMEMBER_SHORTCUTDIR];COMMIT_ID=[COMMIT_ID];MsiLogFileLocation=[MsiLogFileLocation]" />
 		<CustomAction Id="SetPresetInfo" Property="Preset" Value="REL_NOTES=[REL_NOTES];INSTALLDIR=[INSTALLDIR];APP_START_MENU_PATH=[ApplicationProgramsFolder];PRESET=[PRESET];COMMIT_ID=[COMMIT_ID];MsiLogFileLocation=[MsiLogFileLocation]" />
 		<CustomAction Id="SetRollbackPropertyValues" Property="Rollback" Value="STATE_TOOL_INSTALLED=[STATE_TOOL_INSTALLED];INSTALLDIR=[INSTALLDIR];COMMIT_ID=[COMMIT_ID];MsiLogFileLocation=[MsiLogFileLocation]" />
-
 
 		<Binary Id="GAPixelCA" SourceFile="$(var.GAPixel.TargetDir)$(var.GAPixel.TargetName).CA.dll" />
 		<CustomAction Id="GAPixel" Impersonate="yes" BinaryKey="GAPixelCA" DllEntry="SendPixel" Return="ignore" />

@@ -100,7 +100,9 @@ namespace StateDeploy
             {
                 string msg = string.Format("Encountered exception downloading state tool json info file: {0}", e.ToString());
                 session.Log(msg);
-                RollbarReport.Critical(msg, session);
+                session.CustomActionData["NETWORK_ERROR"] = "true";
+                session.Log("Setting network error message to: {0}", e.Message);
+                session.CustomActionData["NETWORK_ERROR_MESSAGE"] = e.Message;
                 return ActionResult.Failure;
             }
 
@@ -133,7 +135,8 @@ namespace StateDeploy
             {
                 string msg = string.Format("Encoutered exception downloading state tool zip file. URL to zip file: {0}, path to save zip file to: {1}, exception: {2}", zipURL, zipPath, e.ToString());
                 session.Log(msg);
-                RollbarReport.Critical(msg, session);
+                session.CustomActionData["NETWORK_ERROR"] = "true";
+                session.CustomActionData["NETWORK_ERROR_MESSAGE"] = e.Message;
                 return ActionResult.Failure;
             }
 
