@@ -19,6 +19,7 @@
 		<!-- End Configuration parameters -->
 
 		<Property Id="SESSION_ID" Value="unset" Secure="yes" Admin="yes" />
+		<Property Id="PRIVACY_ACCEPTED" Value="no" Secure="yes" Admin="yes" />
 
 		<PropertyRef Id="WIX_IS_NETFRAMEWORK_45_OR_LATER_INSTALLED"/>
 		<Condition Message="This application requires .NET Framework 4.5.0 or later. Please install the .NET Framework then run this installer again.  The installer can be downloaded from https://www.microsoft.com/en-us/download/details.aspx?id=42643.">
@@ -134,6 +135,7 @@
 
 			<Publish Dialog="PrivacyConsentDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg">1</Publish>
 			<Publish Dialog="PrivacyConsentDlg" Control="Next" Event="NewDialog" Value="LicenseAgreementDlg">1</Publish>
+			<Publish Dialog="PrivacyConsentDlg" Control="Next" Property="PRIVACY_ACCEPTED" Value="1">1</Publish>
 
 			<Publish Dialog="LicenseAgreementDlg" Control="Back" Event="NewDialog" Value="PrivacyConsentDlg">1</Publish>
 			<Publish Dialog="LicenseAgreementDlg" Control="Next" Event="NewDialog" Value="LoginDlg">LicenseAccepted = "1" AND VISIBILITY = "Private"</Publish>
@@ -195,11 +197,11 @@
 		<CustomAction
 			Id="SetStateDeployPropertyValues"
 			Property="StateDeploy"
-			Value="INSTALLDIR=[INSTALLDIR];PROJECT_OWNER_AND_NAME=[PROJECT_OWNER_AND_NAME];IS_MODIFY=[IS_MODIFY];STATE_TOOL_INSTALLED=[STATE_TOOL_INSTALLED];STATE_TOOL_PATH=[STATE_TOOL_PATH];AS_USERNAME=[AS_USERNAME];AS_PASSWORD=[AS_PASSWORD];AS_TOTP=[AS_TOTP];UI_LEVEL=[UILevel];COMMIT_ID=[COMMIT_ID];PRODUCT_VERSION=[ProductVersion];SESSION_ID=[SESSION_ID];MsiLogFileLocation=[MsiLogFileLocation]"
+			Value="INSTALLDIR=[INSTALLDIR];PROJECT_OWNER_AND_NAME=[PROJECT_OWNER_AND_NAME];IS_MODIFY=[IS_MODIFY];STATE_TOOL_INSTALLED=[STATE_TOOL_INSTALLED];STATE_TOOL_PATH=[STATE_TOOL_PATH];AS_USERNAME=[AS_USERNAME];AS_PASSWORD=[AS_PASSWORD];AS_TOTP=[AS_TOTP];UI_LEVEL=[UILevel];COMMIT_ID=[COMMIT_ID];PRODUCT_VERSION=[ProductVersion];SESSION_ID=[SESSION_ID];MsiLogFileLocation=[MsiLogFileLocation];PRIVACY_ACCEPTED=[PRIVACY_ACCEPTED]"
 		/>
-		<CustomAction Id="SetUninstallProperties" Property="Uninstall" Value="PRESET=[PRESET];REMEMBER=[REMEMBER];REMEMBER_SHORTCUTDIR=[REMEMBER_SHORTCUTDIR];COMMIT_ID=[COMMIT_ID];MsiLogFileLocation=[MsiLogFileLocation]" />
-		<CustomAction Id="SetPresetInfo" Property="Preset" Value="REL_NOTES=[REL_NOTES];INSTALLDIR=[INSTALLDIR];APP_START_MENU_PATH=[ApplicationProgramsFolder];PRESET=[PRESET];COMMIT_ID=[COMMIT_ID];MsiLogFileLocation=[MsiLogFileLocation]" />
-		<CustomAction Id="SetRollbackPropertyValues" Property="Rollback" Value="STATE_TOOL_INSTALLED=[STATE_TOOL_INSTALLED];INSTALLDIR=[INSTALLDIR];COMMIT_ID=[COMMIT_ID];MsiLogFileLocation=[MsiLogFileLocation]" />
+		<CustomAction Id="SetUninstallProperties" Property="Uninstall" Value="PRESET=[PRESET];REMEMBER=[REMEMBER];REMEMBER_SHORTCUTDIR=[REMEMBER_SHORTCUTDIR];COMMIT_ID=[COMMIT_ID];MsiLogFileLocation=[MsiLogFileLocation];PRIVACY_ACCEPTED=[PRIVACY_ACCEPTED]" />
+		<CustomAction Id="SetPresetInfo" Property="Preset" Value="REL_NOTES=[REL_NOTES];INSTALLDIR=[INSTALLDIR];APP_START_MENU_PATH=[ApplicationProgramsFolder];PRESET=[PRESET];COMMIT_ID=[COMMIT_ID];MsiLogFileLocation=[MsiLogFileLocation];PRIVACY_ACCEPTED=[PRIVACY_ACCEPTED]" />
+		<CustomAction Id="SetRollbackPropertyValues" Property="Rollback" Value="STATE_TOOL_INSTALLED=[STATE_TOOL_INSTALLED];INSTALLDIR=[INSTALLDIR];COMMIT_ID=[COMMIT_ID];MsiLogFileLocation=[MsiLogFileLocation];PRIVACY_ACCEPTED=[PRIVACY_ACCEPTED]" />
 
 
 		<Binary Id="GAPixelCA" SourceFile="$(var.GAPixel.TargetDir)$(var.GAPixel.TargetName).CA.dll" />

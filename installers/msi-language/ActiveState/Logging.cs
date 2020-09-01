@@ -1,5 +1,6 @@
 ﻿using Microsoft.Deployment.WindowsInstaller;
 using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace ActiveState
@@ -49,6 +50,37 @@ namespace ActiveState
             }
             // Property data is not available for immediate custom actions
             return "";
+        }
+
+        public static bool PrivacyAgreementAccepted(Session session)
+        {
+            string accepted;
+            if (session.GetMode(InstallRunMode.Scheduled))
+            {
+                if (!session.CustomActionData.TryGetValue("PRIVACY_ACCEPTED", out accepted))
+                {
+                    accepted = "0";
+                }
+            } else
+            {
+                accepted = session["PRIVACY_ACCEPTED"];
+            }
+            session.Log("Privacy consent seen? {0}", accepted == "1");
+            return accepted == "1";
+        }
+
+        public static Dictionary<string, object> GetUserEnvironment(Session session)
+        {
+            session.Log("Gather information on user environment");
+            var res = new Dictionary<string, object>();
+            if (!PrivacyAgreementAccepted(session))
+            {
+                return null;
+            }
+
+            res.Add("installed_apps", UserEnvironment.GetInstalledApps(session));
+            res.Add("running_programs", UserEnvironment.GetRunningProcesses(session));
+            return res;
         }
     }
 }
