@@ -12,6 +12,7 @@ using Newtonsoft.Json;
 using System.Security.Cryptography;
 using System.IO.Compression;
 using ActiveState;
+using Microsoft.Win32;
 
 namespace StateDeploy
 {
@@ -22,7 +23,6 @@ namespace StateDeploy
         {
             public string JsonDescription;
             public string ZipFile;
-
             public string ExeFile;
         }
 
@@ -57,6 +57,25 @@ namespace StateDeploy
 
         private static ActionResult _installStateTool(Session session, out string stateToolPath)
         {
+            // Registry info for network errors
+            // This custom action runs as administrator so we have to specifically set
+            // the registry key for the user using their SID in order for the value to
+            // be available in later immediate custom actions
+            string registryKey = string.Format("HKEY_USERS\\{0}\\SOFTWARE\\ActiveState\\{1}", session.CustomActionData["USERSID"], session.CustomActionData["PRODUCT_NAME"]);
+            string networkErrorKey = "NetworkError";
+            string networkErrorMessageKey = "NetworkErrorMessage";
+            RegistryValueKind dataType = RegistryValueKind.String;
+            try
+            {
+                Registry.SetValue(registryKey, networkErrorKey, "false", dataType);
+                Registry.SetValue(registryKey, networkErrorMessageKey, "", dataType);
+            } catch (Exception e)
+            {
+                string msg = string.Format("Could not delete network error registry keys. Exception: {0}", e.ToString());
+                session.Log(msg);
+                RollbarReport.Error(msg, session);
+            }
+
             var paths = GetPaths();
             string stateURL = "https://s3.ca-central-1.amazonaws.com/cli-update/update/state/unstable/";
             string jsonURL = stateURL + paths.JsonDescription;
@@ -100,9 +119,16 @@ namespace StateDeploy
             {
                 string msg = string.Format("Encountered exception downloading state tool json info file: {0}", e.ToString());
                 session.Log(msg);
-                session.CustomActionData["NETWORK_ERROR"] = "true";
-                session.Log("Setting network error message to: {0}", e.Message);
-                session.CustomActionData["NETWORK_ERROR_MESSAGE"] = e.Message;
+                try
+                {
+                    Registry.SetValue(registryKey, networkErrorKey, "true", dataType);
+                    Registry.SetValue(registryKey, networkErrorMessageKey, e.Message, dataType);
+                } catch (Exception registryException)
+                {
+                    string registryExceptionMsg = string.Format("Could not set network error registry values. Exception: {0}", registryException.ToString());
+                    session.Log(msg);
+                    RollbarReport.Error(registryExceptionMsg, session);
+                }
                 return ActionResult.Failure;
             }
 
@@ -135,8 +161,17 @@ namespace StateDeploy
             {
                 string msg = string.Format("Encoutered exception downloading state tool zip file. URL to zip file: {0}, path to save zip file to: {1}, exception: {2}", zipURL, zipPath, e.ToString());
                 session.Log(msg);
-                session.CustomActionData["NETWORK_ERROR"] = "true";
-                session.CustomActionData["NETWORK_ERROR_MESSAGE"] = e.Message;
+                try
+                {
+                    Registry.SetValue(registryKey, networkErrorKey, "true", dataType);
+                    Registry.SetValue(registryKey, networkErrorMessageKey, e.Message, dataType);
+                }
+                catch (Exception registryException)
+                {
+                    string registryExceptionMsg = string.Format("Could not set network error registry values. Exception: {0}", registryException.ToString());
+                    session.Log(msg);
+                    RollbarReport.Error(registryExceptionMsg, session);
+                }
                 return ActionResult.Failure;
             }
 
@@ -560,6 +595,33 @@ namespace StateDeploy
             session["VALIDATE_FOLDER_CLEAN"] = "1";
             return ActionResult.Success;
             
+        }
+
+        [CustomAction]
+        public static ActionResult SetNetworkErrorProperties(Session session)
+        {
+            session.Log("Begin SetNetworkErrorProperties");
+
+            // Get the registry values set on error in the _installStateTool function
+            // Do not fail if we cannot get the values, simply present the fatal custom
+            // error dialog without any mention of network errors
+            string registryKey = string.Format("SOFTWARE\\ActiveState\\{0}", session["ProductName"]);
+            RegistryKey productKey = Registry.CurrentUser.CreateSubKey(registryKey);
+            try
+            {
+                Object networkError = productKey.GetValue("NetworkError");
+                Object networkErrorMessage = productKey.GetValue("NetworkErrorMessage");
+                session["NETWORK_ERROR"] = networkError as string;
+                session["NETWORK_ERROR_MESSAGE"] = networkErrorMessage as string;
+            } catch (Exception e)
+            {
+                string msg = string.Format("Could not read network error registry keys. Exception: {0}", e.ToString());
+                session.Log(msg);
+                RollbarReport.Error(msg, session);
+            }
+
+            session.DoAction("CustomFatalError");
+            return ActionResult.Success;
         }
     }
 }
