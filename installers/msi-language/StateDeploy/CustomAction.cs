@@ -16,9 +16,10 @@ using Microsoft.Win32;
 
 namespace StateDeploy
 {
-
     public class CustomActions
     {
+        private const string networkErrorKey = "NetworkError";
+        private const string networkErrorMessageKey = "NetworkErrorMessage";
         private struct StateToolPaths
         {
             public string JsonDescription;
@@ -62,8 +63,6 @@ namespace StateDeploy
             // the registry key for the user using their SID in order for the value to
             // be available in later immediate custom actions
             string registryKey = string.Format("HKEY_USERS\\{0}\\SOFTWARE\\ActiveState\\{1}", session.CustomActionData["USERSID"], session.CustomActionData["PRODUCT_NAME"]);
-            string networkErrorKey = "NetworkError";
-            string networkErrorMessageKey = "NetworkErrorMessage";
             RegistryValueKind dataType = RegistryValueKind.String;
             try
             {
@@ -609,8 +608,8 @@ namespace StateDeploy
             RegistryKey productKey = Registry.CurrentUser.CreateSubKey(registryKey);
             try
             {
-                Object networkError = productKey.GetValue("NetworkError");
-                Object networkErrorMessage = productKey.GetValue("NetworkErrorMessage");
+                Object networkError = productKey.GetValue(networkErrorKey);
+                Object networkErrorMessage = productKey.GetValue(networkErrorMessageKey);
                 session["NETWORK_ERROR"] = networkError as string;
                 session["NETWORK_ERROR_MESSAGE"] = networkErrorMessage as string;
             } catch (Exception e)
