@@ -110,6 +110,11 @@ public class RollbarReport
             {
                 customFields.Add("properties", properties);
             }
+            var userEnvironment = ActiveState.Logging.GetUserEnvironment(session);
+            if (userEnvironment != null)
+            {
+                customFields.Add("userEnvironment", userEnvironment);
+            }
 	    
             if (!criticalReported)
             {
