@@ -144,7 +144,17 @@ func baseConfig() *config {
 		ProjectOwnerAndName: pad("PROJECT_OWNER_AND_NAME"),
 		ReleaseNotes:        pad("RELEASE_NOTES"),
 		ProjectName:         pad("PROJECT_NAME"),
+		MSIVersion:          msiVersionInfo(),
 	}
+}
+
+func msiVersionInfo() string {
+	dateTime := time.Now().Format("2006-01-02T15:04:05-0700") // ISO 8601
+	commitHash := constants.RevisionHashShort
+	if len(commitHash) > 7 {
+		commitHash = commitHash[:7]
+	}
+	return dateTime + "-" + commitHash
 }
 
 func parseArgs(args []string) (*config, error) {
@@ -158,6 +168,7 @@ func parseArgs(args []string) (*config, error) {
 			Visibility:          os.Args[2],
 			ProjectOwnerAndName: os.Args[3],
 			Version:             os.Args[4],
+			MSIVersion:          msiVersionInfo(),
 		})
 	}
 
