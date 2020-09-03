@@ -11,10 +11,20 @@ import (
 func TestParseNamespace(t *testing.T) {
 	_, fail := ParseNamespace("valid/namespace")
 	assert.NoError(t, fail.ToError(), "should parse a valid namespace")
+
+	_, fail = ParseNamespace("valid/namespace#a10-b11c12-d13e14-f15")
+	assert.NoError(t, fail.ToError(), "should parse a valid namespace")
+
+	_, fail = ParseNamespace("valid/namespace#")
+	assert.NoError(t, fail.ToError(), "should parse a valid namespace")
 }
 
 func TestParseNamespace_Invalid(t *testing.T) {
 	_, fail := ParseNamespace("invalid-namespace")
+	assert.Error(t, fail.ToError(), "should get error with invalid namespace")
+	assert.Equal(t, FailInvalidNamespace.Name, fail.Type.Name)
+
+	_, fail = ParseNamespace("valid/namespace#invalidcommitid")
 	assert.Error(t, fail.ToError(), "should get error with invalid namespace")
 	assert.Equal(t, FailInvalidNamespace.Name, fail.Type.Name)
 }
@@ -34,8 +44,10 @@ func TestParseNamespaceOrConfigfile(t *testing.T) {
 		expected   *Namespaced
 	}{
 		{"InvalidConfigfile", "", invalidConfigFile, nil},
-		{"FromConfigFile", "", validConfigFile, &Namespaced{Owner: "ActiveState", Project: "CodeIntel"}},
+		{"FromConfigFile", "", validConfigFile, &Namespaced{Owner: "ActiveState", Project: "CodeIntel", CommitID: "d7ebc72"}},
 		{"FromNamespace", "valid/namespace", invalidConfigFile, &Namespaced{Owner: "valid", Project: "namespace"}},
+		{"FromNamespace", "valid/namespace#a10-b11c12", invalidConfigFile, &Namespaced{Owner: "valid", Project: "namespace", CommitID: "a10-b11c12"}},
+		{"FromNamespace", "valid/namespace#", invalidConfigFile, &Namespaced{Owner: "valid", Project: "namespace"}},
 		{"InvalidNamespace", "invalid-namespace", invalidConfigFile, nil},
 	}
 
@@ -50,7 +62,7 @@ func TestParseNamespaceOrConfigfile(t *testing.T) {
 			if fail != nil {
 				t.Fatalf("expected no error, got: %v", fail.ToError())
 			}
-			assert.Equal(t, *ns, *tt.expected)
+			assert.Equal(t, *tt.expected, *ns)
 		})
 	}
 }

@@ -14,12 +14,13 @@ import (
 var FailInvalidNamespace = failures.Type("project.fail.invalidnamespace", failures.FailUserInput)
 
 // NamespaceRegex matches the org and project name in a namespace, eg. ORG/PROJECT
-const NamespaceRegex = `^([\w-_]+)\/([\w-_\.]+)$`
+const NamespaceRegex = `^([\w-_]+)\/([\w-_\.]+)(?:#([-a-fA-F0-9]*))?$`
 
 // Namespaced represents a project namespace of the form <OWNER>/<PROJECT>
 type Namespaced struct {
-	Owner   string
-	Project string
+	Owner    string
+	Project  string
+	CommitID string
 }
 
 // Set implements the captain argmarshaler interface.
@@ -50,6 +51,7 @@ func (ns *Namespaced) String() string {
 	return fmt.Sprintf("%s%s%s", ns.Owner, sep, ns.Project)
 }
 
+// Type returns the human readable type name of Namespaced.
 func (ns *Namespaced) Type() string {
 	return "namespace"
 }
@@ -71,14 +73,20 @@ func (ns *Namespaced) Validate() *failures.Failure {
 func ParseNamespace(raw string) (*Namespaced, *failures.Failure) {
 	rx := regexp.MustCompile(NamespaceRegex)
 	groups := rx.FindStringSubmatch(raw)
-	if len(groups) != 3 {
+	if len(groups) < 3 {
 		return nil, FailInvalidNamespace.New(locale.Tr("err_invalid_namespace", raw))
 	}
 
-	return &Namespaced{
+	names := Namespaced{
 		Owner:   groups[1],
 		Project: groups[2],
-	}, nil
+	}
+
+	if len(groups) > 3 {
+		names.CommitID = groups[3]
+	}
+
+	return &names, nil
 }
 
 // ParseNamespaceOrConfigfile returns a valid project namespace.
@@ -93,6 +101,7 @@ func ParseNamespaceOrConfigfile(raw string, configFile string) (*Namespaced, *fa
 		var names Namespaced
 		names.Owner = prj.Owner()
 		names.Project = prj.Name()
+		names.CommitID = prj.CommitID()
 		return &names, nil
 	}
 
