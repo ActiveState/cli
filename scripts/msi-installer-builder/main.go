@@ -118,12 +118,7 @@ func normalize(preset languagePreset, c *config) (*config, error) {
 	}
 
 	if c.MSIVersion == "" {
-		dateTime := time.Now().Format("2006-01-02T15:04:05-0700") // ISO 8601
-		commitHash := constants.RevisionHashShort
-		if len(commitHash) > 7 {
-			commitHash = commitHash[:7]
-		}
-		c.MSIVersion = dateTime + "-" + commitHash
+		c.MSIVersion = msiVersionInfo()
 	}
 
 	return c, nil
