@@ -289,7 +289,7 @@ namespace StateDeploy
                 stateToolPath = session.CustomActionData["STATE_TOOL_PATH"];
                 session.Log("State Tool is installed, no installation required");
                 Status.ProgressBar.Increment(session, 1);
-                TrackerSingleton.Instance.TrackEventInBackground(session, sessionID, "stage", "state-tool", "skipped", productVersion);
+                TrackerSingleton.Instance.TrackEventSynchronously(session, sessionID, "stage", "state-tool", "skipped", productVersion);
 
                 return ActionResult.Success;
             }
@@ -300,11 +300,11 @@ namespace StateDeploy
             var ret = _installStateTool(session, out stateToolPath);
             if (ret == ActionResult.Success)
             {
-                TrackerSingleton.Instance.TrackEventInBackground(session, sessionID, "stage", "state-tool", "success", productVersion);
+                TrackerSingleton.Instance.TrackEventSynchronously(session, sessionID, "stage", "state-tool", "success", productVersion);
             }
             else if (ret == ActionResult.Failure)
             {
-                TrackerSingleton.Instance.TrackEventInBackground(session, sessionID, "stage", "state-tool", "failure", productVersion);
+                TrackerSingleton.Instance.TrackEventSynchronously(session, sessionID, "stage", "state-tool", "failure", productVersion);
             }
             return ret;
         }
