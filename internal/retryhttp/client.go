@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/go-cleanhttp"
 	"github.com/hashicorp/go-retryablehttp"
 
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -37,6 +38,12 @@ type Logger interface {
 }
 
 var DefaultClient = NewClient(30*time.Second, 5)
+
+func init() {
+	if condition.InTest() {
+		DefaultClient.HTTPClient = http.DefaultClient
+	}
+}
 
 type Client struct {
 	*retryablehttp.Client
