@@ -82,10 +82,11 @@ namespace ActiveState
             var pid = System.Diagnostics.Process.GetCurrentProcess().Id;
 
             session.Log("Sending background event {0}/{1}/{2} for cid={3} (custom dimension 1: {4}, pid={5})", category, action, label, this._cid, langVersion, pid);
-            Task.WhenAll(
-                TrackEventAsync(sessionID, category, action, label, langVersion, value),
-                TrackS3Event(session, sessionID, category, action, label)
-            );
+            Task.Run(async () =>
+            {
+                await TrackEventAsync(sessionID, category, action, label, langVersion, value);
+                await TrackS3Event(session, sessionID, category, action, label);
+            });
         }
 
         /// <summary>
@@ -96,10 +97,11 @@ namespace ActiveState
             var pid = System.Diagnostics.Process.GetCurrentProcess().Id;
 
             session.Log("Sending event {0}/{1}/{2} for cid={3} (custom dimension 1: {4}, pid={5})", category, action, label, this._cid, langVersion, pid);
-            var t = Task.WhenAll(
-                TrackEventAsync(sessionID, category, action, label, langVersion, value),
-                TrackS3Event(session, sessionID, category, action, label)
-            );
+            var t = Task.Run(async () =>
+            {
+                await TrackEventAsync(sessionID, category, action, label, langVersion, value);
+                await TrackS3Event(session, sessionID, category, action, label);
+            });
             t.Wait();
         }
     }
