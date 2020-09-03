@@ -531,7 +531,7 @@ namespace StateDeploy
         [CustomAction]
         public static ActionResult GAReportFailure(Session session)
         {
-            session.Log("sending event about starting the MSI");
+            session.Log("sending event about MSI failure");
             TrackerSingleton.Instance.TrackEventSynchronously(session, session["SESSION_ID"], "stage", "finished", "failure", session["ProductVersion"]);
             return ActionResult.Success;
         }
@@ -539,7 +539,7 @@ namespace StateDeploy
         [CustomAction]
         public static ActionResult GAReportSuccess(Session session)
         {
-            session.Log("sending event about starting the MSI");
+            session.Log("sending event about MSI success");
             TrackerSingleton.Instance.TrackEventSynchronously(session, session["SESSION_ID"], "stage", "finished", "success", session["ProductVersion"]);
             return ActionResult.Success;
         }
@@ -564,6 +564,17 @@ namespace StateDeploy
         {
             session.Log("sending user exit event");
             TrackerSingleton.Instance.TrackEventSynchronously(session, session["SESSION_ID"], "stage", "finished", "cancelled", session["ProductVersion"]);
+            return ActionResult.Success;
+        }
+
+        /// <summary>
+        /// Reports a user network error event to google analytics
+        /// </summary>
+        [CustomAction]
+        public static ActionResult GAReportUserNetwork(Session session)
+        {
+            session.Log("sending user network error event");
+            TrackerSingleton.Instance.TrackEventSynchronously(session, session["SESSION_ID"], "stage", "finished", "network", session["ProductVersion"]);
             return ActionResult.Success;
         }
 
@@ -616,6 +627,7 @@ namespace StateDeploy
                 RollbarReport.Error(msg, session);
             }
 
+            session.DoAction("GAReportUserNetwork");
             session.DoAction("CustomFatalError");
             return ActionResult.Success;
         }

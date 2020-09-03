@@ -218,6 +218,7 @@
 		<CustomAction Id="GAReportStart" Impersonate="yes" BinaryKey="StateDeployCA" DllEntry="GAReportStart" Execute="immediate" Return="ignore" />
 		<CustomAction Id="GAReportUserExit" Impersonate="yes" BinaryKey="StateDeployCA" DllEntry="GAReportUserExit" Execute="immediate" Return="ignore" />
 		<CustomAction Id="GAReportFailure" Impersonate="yes" BinaryKey="StateDeployCA" DllEntry="GAReportFailure" Execute="immediate" Return="ignore" />
+		<CustomAction Id="GAReportUserNetwork" Impersonate="yes" BinaryKey="StateDeployCA" DllEntry="GAReportUserNetwork" Execute="immediate" Return="ignore" />
 		<CustomAction Id="GAReportSuccess" Impersonate="yes" BinaryKey="StateDeployCA" DllEntry="GAReportSuccess" Execute="immediate" Return="ignore" />
 		<CustomAction Id="ValidateInstallFolder" Impersonate="yes" BinaryKey="StateDeployCA" DllEntry="ValidateInstallFolder" Execute="immediate" Return="check" />
 		<CustomAction Id="SetSessionID" Impersonate="yes" BinaryKey="StateDeployCA" DllEntry="SetSessionID" Execute="immediate" Return="check" />
