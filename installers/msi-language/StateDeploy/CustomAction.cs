@@ -20,6 +20,7 @@ namespace StateDeploy
     {
         private const string networkErrorKey = "NetworkError";
         private const string networkErrorMessageKey = "NetworkErrorMessage";
+        private const string sessionIDKey = "SessionID";
 
         private struct StateToolPaths
         {
@@ -277,9 +278,8 @@ namespace StateDeploy
                 RollbarReport.Error(registryExceptionMsg, session);
             }
         }
-        public static ActionResult InstallStateTool(Session session, out string stateToolPath)
+        public static ActionResult InstallStateTool(Session session, string sessionID, out string stateToolPath)
         {
-            var sessionID = session.CustomActionData["SESSION_ID"];
             RollbarHelper.ConfigureRollbarSingleton(session.CustomActionData["COMMIT_ID"]);
             var productVersion = session.CustomActionData["PRODUCT_VERSION"];
 
@@ -380,7 +380,34 @@ namespace StateDeploy
         private static ActionResult run(Session session)
         {
             var sessionID = session.CustomActionData["SESSION_ID"];
+            var uiLevel = session.CustomActionData["UI_LEVEL"];
             var productVersion = session.CustomActionData["PRODUCT_VERSION"];
+
+            if (sessionID == "unset")
+            {
+                if (uiLevel != "2" /* no ui */ && uiLevel != "3" /* basic ui */)
+                {
+                    RollbarReport.Error("SessionID is 'unset' during state deploy while UI is activated", session);
+                }
+                // set sessionID to a new GUID
+                sessionID = Guid.NewGuid().ToString();
+                // also track the start event, because it has not been tracked yet
+                TrackerSingleton.Instance.TrackEventSynchronously(session, sessionID, "stage", "started", "", productVersion);
+            }
+
+            // save the session id
+            string registryKey = string.Format("HKEY_USERS\\{0}\\SOFTWARE\\ActiveState\\{1}", session.CustomActionData["USERSID"], session.CustomActionData["PRODUCT_NAME"]);
+            RegistryValueKind registryEntryDataType = RegistryValueKind.String;
+            try
+            {
+                Registry.SetValue(registryKey, sessionIDKey, sessionID, registryEntryDataType);
+            }
+            catch (Exception e)
+            {
+                string msg = string.Format("Could not set sessin id registry keys. Exception: {0}", e.ToString());
+                session.Log(msg);
+                RollbarReport.Error(msg, session);
+            }
 
             if (!Environment.Is64BitOperatingSystem)
             {
@@ -393,7 +420,7 @@ namespace StateDeploy
             }
 
             string stateToolPath;
-            ActionResult res = InstallStateTool(session, out stateToolPath);
+            ActionResult res = InstallStateTool(session, sessionID, out stateToolPath);
             if (res != ActionResult.Success)
             {
                 return res;
@@ -532,7 +559,20 @@ namespace StateDeploy
         public static ActionResult GAReportFailure(Session session)
         {
             session.Log("sending event about MSI failure");
-            TrackerSingleton.Instance.TrackEventSynchronously(session, session["SESSION_ID"], "stage", "finished", "failure", session["ProductVersion"]);
+            var sessionID = GetSessionIDForExitAction(session);
+            if (sessionID == "unset")
+            {
+                // this can happen if an installation error happens before we could initialize the session id and send the start event
+
+                // So, we create a new session id,
+                sessionID = Guid.NewGuid().ToString();
+                // ... send the start event, because it hasn't been done yet
+                TrackerSingleton.Instance.TrackEventSynchronously(session, sessionID, "stage", "started", "", session["ProductVersion"]);
+                // ... and send a rollbar log so we know what might have caused the issue
+                RollbarReport.Error(String.Format("MSI failed before Session ID could be set"), session);
+            }
+
+            TrackerSingleton.Instance.TrackEventSynchronously(session, sessionID, "stage", "finished", "failure", session["ProductVersion"]);
             return ActionResult.Success;
         }
 
@@ -540,7 +580,13 @@ namespace StateDeploy
         public static ActionResult GAReportSuccess(Session session)
         {
             session.Log("sending event about MSI success");
-            TrackerSingleton.Instance.TrackEventSynchronously(session, session["SESSION_ID"], "stage", "finished", "success", session["ProductVersion"]);
+            var sessionID = GetSessionIDForExitAction(session);
+            if (sessionID == "unset")
+            {
+                // this should never happen, so we log it to rollbar
+                RollbarReport.Error(String.Format("No session ID found, when trying to send stage/finished/success event"), session);
+            }
+            TrackerSingleton.Instance.TrackEventSynchronously(session, sessionID, "stage", "finished", "success", session["ProductVersion"]);
             return ActionResult.Success;
         }
 
@@ -556,6 +602,31 @@ namespace StateDeploy
             return ActionResult.Success;
         }
 
+        public static string GetSessionIDForExitAction(Session session)
+        {
+            var sessionID = session["SESSION_ID"];
+            if (sessionID != "unset")
+            {
+                return sessionID;
+            }
+
+            // try to get sessionID from registry
+            var registryKey = string.Format("SOFTWARE\\ActiveState\\{0}", session["ProductName"]);
+            RegistryKey productKey = Registry.CurrentUser.CreateSubKey(registryKey);
+            try
+            {
+                Object sessionIDObj = productKey.GetValue(sessionIDKey);
+                return sessionIDObj as string;
+            }
+            catch (Exception e)
+            {
+                string msg = string.Format("Could not read session id from registry. Exception: {0}", e.ToString());
+                session.Log(msg);
+            }
+
+            return "unset";
+        }
+
         /// <summary>
         /// Reports a user cancellation event to google analytics
         /// </summary>
@@ -563,7 +634,15 @@ namespace StateDeploy
         public static ActionResult GAReportUserExit(Session session)
         {
             session.Log("sending user exit event");
-            TrackerSingleton.Instance.TrackEventSynchronously(session, session["SESSION_ID"], "stage", "finished", "cancelled", session["ProductVersion"]);
+            var sessionID = GetSessionIDForExitAction(session);
+            if (sessionID == "unset")
+            {
+                // This can happen, when the user cancelled on the Welcome Dialog, before the session id has been generated.
+                sessionID = Guid.NewGuid().ToString();
+                // No "stage/started" event should have been sent at this point, so we do that here
+                TrackerSingleton.Instance.TrackEventSynchronously(session, sessionID, "stage", "started", "", session["ProductVersion"]);
+            }
+            TrackerSingleton.Instance.TrackEventSynchronously(session, sessionID, "stage", "finished", "cancelled", session["ProductVersion"]);
             return ActionResult.Success;
         }
 
@@ -573,8 +652,15 @@ namespace StateDeploy
         [CustomAction]
         public static ActionResult GAReportUserNetwork(Session session)
         {
+            var sessionID = GetSessionIDForExitAction(session);
+            if (sessionID == "unset")
+            {
+                // this should never happen, so we log it to rollbar
+                RollbarReport.Error(String.Format("No session ID found, when trying to send stage/finished/success event"), session);
+            }
+
             session.Log("sending user network error event");
-            TrackerSingleton.Instance.TrackEventSynchronously(session, session["SESSION_ID"], "stage", "finished", "user_network", session["ProductVersion"]);
+            TrackerSingleton.Instance.TrackEventSynchronously(session, sessionID, "stage", "finished", "user_network", session["ProductVersion"]);
             return ActionResult.Success;
         }
 
