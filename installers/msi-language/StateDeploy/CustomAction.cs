@@ -627,7 +627,13 @@ namespace StateDeploy
                 RollbarReport.Error(msg, session);
             }
 
-            session.DoAction("GAReportUserNetwork");
+            if (session["NETWORK_ERROR"] == "true") {
+                session.DoAction("GAReportUserNetwork");
+            } else
+            {
+                session.DoAction("GAReportFailure");
+            }
+
             session.DoAction("CustomFatalError");
             return ActionResult.Success;
         }

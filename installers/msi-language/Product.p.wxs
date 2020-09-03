@@ -127,7 +127,6 @@
 
 			<Publish Dialog="CustomFatalError" Control="Finish" Event="EndDialog" Value="Return" Order="999">1</Publish>
 			<Publish Dialog="CustomFatalError" Control="Finish" Event="DoAction" Value="GAPixel">NOT WIX_IS_NETFRAMEWORK_45_OR_LATER_INSTALLED</Publish>
-			<Publish Dialog="CustomFatalError" Control="Finish" Event="DoAction" Value="GAReportFailure">NOT REMOVE~="ALL"</Publish>
 
 			<Publish Dialog="UserExit" Control="Finish" Event="DoAction" Value="GAReportUserExit">NOT REMOVE~="ALL"</Publish>
 
