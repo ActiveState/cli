@@ -574,7 +574,7 @@ namespace StateDeploy
         public static ActionResult GAReportUserNetwork(Session session)
         {
             session.Log("sending user network error event");
-            TrackerSingleton.Instance.TrackEventSynchronously(session, session["SESSION_ID"], "stage", "finished", "network", session["ProductVersion"]);
+            TrackerSingleton.Instance.TrackEventSynchronously(session, session["SESSION_ID"], "stage", "finished", "user_network", session["ProductVersion"]);
             return ActionResult.Success;
         }
 
