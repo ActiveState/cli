@@ -46,9 +46,9 @@ func TestClient_Get(t *testing.T) {
 				t.Errorf("Error should not be nil")
 				return
 			}
-			werr := &userNetworkError{}
+			werr := &UserNetworkError{}
 			if !errors.As(err, &werr) {
-				t.Errorf("Error cannot be unwrapped to userNetworkError")
+				t.Errorf("Error cannot be unwrapped to UserNetworkError")
 			}
 			if werr._testCode != tt.wantErrCode {
 				t.Errorf("Error codes not equal:\n1: %d\n2: %d", werr._testCode, tt.wantErrCode)
