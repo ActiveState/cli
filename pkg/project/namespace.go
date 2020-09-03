@@ -7,6 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/go-openapi/strfmt"
 )
 
 // FailInvalidNamespace indicates the provided string is not a valid
@@ -20,7 +21,7 @@ const NamespaceRegex = `^([\w-_]+)\/([\w-_\.]+)(?:#([-a-fA-F0-9]*))?$`
 type Namespaced struct {
 	Owner    string
 	Project  string
-	CommitID string
+	CommitID *strfmt.UUID
 }
 
 // Set implements the captain argmarshaler interface.
@@ -44,11 +45,15 @@ func (ns *Namespaced) String() string {
 		return ""
 	}
 
-	var sep string
+	var sep, commitSep, commitID string
 	if ns.IsValid() {
 		sep = "/"
+		if ns.CommitID != nil {
+			commitSep = "#"
+			commitID = ns.CommitID.String()
+		}
 	}
-	return fmt.Sprintf("%s%s%s", ns.Owner, sep, ns.Project)
+	return fmt.Sprintf("%s%s%s%s%s", ns.Owner, sep, ns.Project, commitSep, commitID)
 }
 
 // Type returns the human readable type name of Namespaced.
@@ -82,8 +87,9 @@ func ParseNamespace(raw string) (*Namespaced, *failures.Failure) {
 		Project: groups[2],
 	}
 
-	if len(groups) > 3 {
-		names.CommitID = groups[3]
+	if len(groups) > 3 && len(groups[3]) > 0 {
+		uuid := strfmt.UUID(groups[3])
+		names.CommitID = &uuid
 	}
 
 	return &names, nil
@@ -98,10 +104,18 @@ func ParseNamespaceOrConfigfile(raw string, configFile string) (*Namespaced, *fa
 		if fail != nil {
 			return nil, FailInputSecretValue.New(locale.Tr("err_invalid_namespace", raw))
 		}
-		var names Namespaced
-		names.Owner = prj.Owner()
-		names.Project = prj.Name()
-		names.CommitID = prj.CommitID()
+
+		names := Namespaced{
+			Owner:   prj.Owner(),
+			Project: prj.Name(),
+		}
+
+		prjCommitID := prj.CommitID()
+		if prjCommitID != "" {
+			uuid := strfmt.UUID(prjCommitID)
+			names.CommitID = &uuid
+		}
+
 		return &names, nil
 	}
 
