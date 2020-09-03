@@ -44,6 +44,7 @@ require (
 	github.com/google/go-github/v29 v29.0.2
 	github.com/google/uuid v1.1.0
 	github.com/gorilla/websocket v1.4.0
+	github.com/hashicorp/go-cleanhttp v0.5.1
 	github.com/hashicorp/go-retryablehttp v0.6.7
 	github.com/hashicorp/go-version v1.1.0
 	github.com/hashicorp/hcl v0.0.0-20171017181929-23c074d0eceb // indirect
