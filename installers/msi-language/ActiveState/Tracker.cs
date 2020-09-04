@@ -70,6 +70,17 @@ namespace ActiveState
             session.Log("Successfully downloaded S3 pixel string");
         }
 
+        private string computeSessionID(string msiLogFileName)
+        {
+            using (var md5 = System.Security.Cryptography.MD5.Create())
+            {
+                byte[] inputBytes = System.Text.Encoding.ASCII.GetBytes(this._cid + msiLogFileName);
+                byte[] hashBytes = md5.ComputeHash(inputBytes);
+
+                return new Guid(hashBytes).ToString();
+            }
+        }
+
         /// <summary>
         /// Sends a GA event in background (fires and forgets)
         /// </summary>
@@ -77,10 +88,11 @@ namespace ActiveState
         /// The event can fail to be send if the main process gets cancelled before the task finishes.
         /// Use the synchronous version of this command in that case.
         /// </description>
-        public void TrackEventInBackground(Session session, string sessionID, string category, string action, string label, string langVersion, long value = 1)
+        public void TrackEventInBackground(Session session, string msiLogFileName, string category, string action, string label, string langVersion, long value = 1)
         {
             var pid = System.Diagnostics.Process.GetCurrentProcess().Id;
 
+            var sessionID = computeSessionID(msiLogFileName);
             session.Log("Sending background event {0}/{1}/{2} for cid={3} (custom dimension 1: {4}, pid={5})", category, action, label, this._cid, langVersion, pid);
             Task.WhenAll(
                 TrackEventAsync(sessionID, category, action, label, langVersion, value),
@@ -91,11 +103,12 @@ namespace ActiveState
         /// <summary>
         /// Sends a GA event and waits for the request to complete.
         /// </summary>
-        public void TrackEventSynchronously(Session session, string sessionID, string category, string action, string label, string langVersion, long value = 1)
+        public void TrackEventSynchronously(Session session, string msiLogFileName, string category, string action, string label, string langVersion, long value = 1)
         {
             var pid = System.Diagnostics.Process.GetCurrentProcess().Id;
 
             session.Log("Sending event {0}/{1}/{2} for cid={3} (custom dimension 1: {4}, pid={5})", category, action, label, this._cid, langVersion, pid);
+            var sessionID = computeSessionID(msiLogFileName);
             var t = Task.WhenAll(
                 TrackEventAsync(sessionID, category, action, label, langVersion, value),
                 TrackS3Event(session, sessionID, category, action, label)
