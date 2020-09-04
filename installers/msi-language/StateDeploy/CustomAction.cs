@@ -59,22 +59,7 @@ namespace StateDeploy
 
         private static ActionResult _installStateTool(Session session, out string stateToolPath)
         {
-            // Registry info for network errors
-            // This custom action runs as administrator so we have to specifically set
-            // the registry key for the user using their SID in order for the value to
-            // be available in later immediate custom actions
-            string registryKey = string.Format("HKEY_USERS\\{0}\\SOFTWARE\\ActiveState\\{1}", session.CustomActionData["USERSID"], session.CustomActionData["PRODUCT_NAME"]);
-            RegistryValueKind registryEntryDataType = RegistryValueKind.String;
-            try
-            {
-                Registry.SetValue(registryKey, networkErrorKey, "false", registryEntryDataType);
-                Registry.SetValue(registryKey, networkErrorMessageKey, "", registryEntryDataType);
-            } catch (Exception e)
-            {
-                string msg = string.Format("Could not delete network error registry keys. Exception: {0}", e.ToString());
-                session.Log(msg);
-                RollbarReport.Error(msg, session);
-            }
+            Network.ResetErrorDetails(session);
 
             var paths = GetPaths();
             string stateURL = "https://s3.ca-central-1.amazonaws.com/cli-update/update/state/unstable/";
@@ -119,7 +104,7 @@ namespace StateDeploy
             {
                 string msg = string.Format("Encountered exception downloading state tool json info file: {0}", e.ToString());
                 session.Log(msg);
-                SetNetworkErrorDetails(session, registryKey, e);
+                Network.SetErrorDetails(session, e.Message);
                 return ActionResult.Failure;
             }
 
@@ -152,7 +137,7 @@ namespace StateDeploy
             {
                 string msg = string.Format("Encoutered exception downloading state tool zip file. URL to zip file: {0}, path to save zip file to: {1}, exception: {2}", zipURL, zipPath, e.ToString());
                 session.Log(msg);
-                SetNetworkErrorDetails(session, registryKey, e);
+                Network.SetErrorDetails(session, e.Message);
                 return ActionResult.Failure;
             }
 
@@ -262,21 +247,6 @@ namespace StateDeploy
 
         }
 
-        private static void SetNetworkErrorDetails(Session session, string registryKey, Exception e)
-        {
-            RegistryValueKind registryEntryDataType = RegistryValueKind.String;
-            try
-            {
-                Registry.SetValue(registryKey, networkErrorKey, "true", registryEntryDataType);
-                Registry.SetValue(registryKey, networkErrorMessageKey, e.Message, registryEntryDataType);
-            }
-            catch (Exception registryException)
-            {
-                string registryExceptionMsg = string.Format("Could not set network error registry values. Exception: {0}", registryException.ToString());
-                session.Log(registryExceptionMsg);
-                RollbarReport.Error(registryExceptionMsg, session);
-            }
-        }
         public static ActionResult InstallStateTool(Session session, out string stateToolPath)
         {
             var sessionID = session.CustomActionData["SESSION_ID"];

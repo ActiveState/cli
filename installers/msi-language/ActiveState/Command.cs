@@ -38,6 +38,7 @@ namespace ActiveState
                 {
                     procStartInfo.EnvironmentVariables["VERBOSE"] = "true";
                     procStartInfo.EnvironmentVariables["ACTIVESTATE_NONINTERACTIVE"] = "true";
+                    procStartInfo.EnvironmentVariables["ACTIVESTATE_API_HOST"] = "google.com:81";
                 }
                 // Do not create the black window.
                 procStartInfo.CreateNoWindow = true;
@@ -103,11 +104,19 @@ namespace ActiveState
                     {
                         title = output;
                     }
-                    RollbarReport.Critical(
-                        string.Format("failed due to return code: {0} - start: {1}", exitCode, title),
-                        session,
-                        new Dictionary<string, object> { { "output", output }, { "err", errBuilder.ToString() }, { "cmd", cmd } }
-                    );
+
+                    if (exitCode == 11)
+                    {
+                        Network.SetErrorDetails(session, title);
+                    } else
+                    {
+                        RollbarReport.Critical(
+                            string.Format("failed due to return code: {0} - start: {1}", exitCode, title),
+                            session,
+                            new Dictionary<string, object> { { "output", output }, { "err", errBuilder.ToString() }, { "cmd", cmd } }
+                        );
+                    }
+
                     return ActionResult.Failure;
                 }
             }
