@@ -151,7 +151,7 @@ namespace StateDeploy
             }
             catch (WebException e)
             {
-                string msg = string.Format("Encoutered exception downloading state tool zip file. URL to zip file: {0}, path to save zip file to: {1}, exception: {2}", zipURL, zipPath, e.ToString());
+                string msg = string.Format("Encountered exception downloading state tool zip file. URL to zip file: {0}, path to save zip file to: {1}, exception: {2}", zipURL, zipPath, e.ToString());
                 session.Log(msg);
                 SetNetworkErrorDetails(session, registryKey, e);
                 return ActionResult.Failure;
@@ -390,9 +390,7 @@ namespace StateDeploy
                     RollbarReport.Error("SessionID is 'unset' during state deploy while UI is activated", session);
                 }
                 // set sessionID to a new GUID
-                sessionID = NewSessionID();
-                // also track the start event, because it has not been tracked yet
-                TrackerSingleton.Instance.TrackEventSynchronously(session, sessionID, "stage", "started", "", productVersion);
+                sessionID = NewSessionID(session, productVersion);
             }
 
             // save the session id
@@ -556,7 +554,7 @@ namespace StateDeploy
                 session.Log(msg);
                 RollbarReport.Error(msg, session);
             }
-            session["SESSION_ID"] = NewSessionID();
+            session["SESSION_ID"] = NewSessionID(session, session["ProductVersion"]);
             return ActionResult.Success;
         }
 
@@ -570,9 +568,7 @@ namespace StateDeploy
                 // this can happen if an installation error happens before we could initialize the session id and send the start event
 
                 // So, we create a new session id,
-                sessionID = NewSessionID();
-                // ... send the start event, because it hasn't been done yet
-                TrackerSingleton.Instance.TrackEventSynchronously(session, sessionID, "stage", "started", "", session["ProductVersion"]);
+                sessionID = NewSessionID(session, session["ProductVersion"]);
                 // ... and send a rollbar log so we know what might have caused the issue
                 RollbarReport.Error("MSI failed before Session ID could be set", session);
             }
@@ -596,17 +592,6 @@ namespace StateDeploy
         }
 
 
-        /// <summary>
-        /// Reports the start of the MSI to google analytics
-        /// </summary>
-        [CustomAction]
-        public static ActionResult GAReportStart(Session session)
-        {
-            session.Log("sending event about starting the MSI");
-            TrackerSingleton.Instance.TrackEventSynchronously(session, session["SESSION_ID"], "stage", "started", "", session["ProductVersion"]);
-            return ActionResult.Success;
-        }
-
         public static string GetSessionIDForExitAction(Session session)
         {
             var sessionID = session["SESSION_ID"];
@@ -621,7 +606,7 @@ namespace StateDeploy
             try
             {
                 Object sessionIDObj = productKey.GetValue(sessionIDKey);
-                return sessionIDObj as string;
+                sessionID = sessionIDObj as string;
             }
             catch (Exception e)
             {
@@ -629,11 +614,27 @@ namespace StateDeploy
                 session.Log(msg);
             }
 
-            return "unset";
+            // clear sessionID value, as it should not be used afterwards anymore
+            RegistryValueKind registryEntryDataType = RegistryValueKind.String;
+            try {
+                Registry.SetValue(registryKey, sessionIDKey, "unset", registryEntryDataType);
+            }
+            catch (Exception e)
+            {
+                string msg = string.Format("Could not clear session id from registry. Exception: {0}", e.ToString());
+                session.Log(msg);
+            }
+
+            return sessionID;
         }
 
-        private static string NewSessionID() {
-            return Guid.NewGuid().ToString();
+        private static string NewSessionID(Session session, string productVersion) {
+            var sessionID = Guid.NewGuid().ToString();
+
+            session.Log("sending event about starting the MSI");
+            TrackerSingleton.Instance.TrackEventSynchronously(session, sessionID, "stage", "started", "", productVersion);
+
+            return sessionID;
         }
 
         /// <summary>
@@ -647,9 +648,7 @@ namespace StateDeploy
             if (sessionID == "unset")
             {
                 // This can happen, when the user cancelled on the Welcome Dialog, before the session id has been generated.
-                sessionID = NewSessionID();
-                // No "stage/started" event should have been sent at this point, so we do that here
-                TrackerSingleton.Instance.TrackEventSynchronously(session, sessionID, "stage", "started", "", session["ProductVersion"]);
+                sessionID = NewSessionID(session, session["ProductVersion"]);
             }
             TrackerSingleton.Instance.TrackEventSynchronously(session, sessionID, "stage", "finished", "cancelled", session["ProductVersion"]);
             return ActionResult.Success;
