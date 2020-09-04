@@ -150,7 +150,7 @@ func Test_runStepsWithFuncs(t *testing.T) {
 			catcher := outputhelper.NewCatcher()
 			forceOverwrite := true
 			userScope := false
-			namespace := project.Namespaced{"owner", "project"}
+			namespace := project.Namespaced{"owner", "project", nil}
 			err := runStepsWithFuncs("", forceOverwrite, userScope, namespace, tt.args.step, tt.args.installer, catcher.Outputer, nil, installFunc, configFunc, symlinkFunc, reportFunc)
 			if err != tt.want.err {
 				t.Errorf("runStepsWithFuncs() error = %v, wantErr %v", err, tt.want.err)
