@@ -352,7 +352,7 @@ namespace StateDeploy
                 return runResult;
             }
             // The auth command did not fail but the username we expected is not present in the output meaning
-            // another user is logged into the State Tool 
+            // another user is logged into the State Tool
             else if (!output.Contains(username))
             {
                 Record record = new Record();
@@ -390,7 +390,7 @@ namespace StateDeploy
                     RollbarReport.Error("SessionID is 'unset' during state deploy while UI is activated", session);
                 }
                 // set sessionID to a new GUID
-                sessionID = Guid.NewGuid().ToString();
+                sessionID = NewSessionID();
                 // also track the start event, because it has not been tracked yet
                 TrackerSingleton.Instance.TrackEventSynchronously(session, sessionID, "stage", "started", "", productVersion);
             }
@@ -544,14 +544,19 @@ namespace StateDeploy
         }
 
         /* The following custom actions are added to this project (and not to a project
-         * with a more appropriate name) in hope that the TrackerSingleton ca be re-used between 
+         * with a more appropriate name) in hope that the TrackerSingleton ca be re-used between
          * all custom actions.
          */
 
         [CustomAction]
         public static ActionResult SetSessionID(Session session)
         {
-            session["SESSION_ID"] = Guid.NewGuid().ToString();
+            if (session["SESSION_ID"] != "unset") {
+                var msg = "In SetSessionID, but SESSION_ID is already set";
+                session.Log(msg);
+                RollbarReport.Error(msg, session);
+            }
+            session["SESSION_ID"] = NewSessionID();
             return ActionResult.Success;
         }
 
@@ -565,11 +570,11 @@ namespace StateDeploy
                 // this can happen if an installation error happens before we could initialize the session id and send the start event
 
                 // So, we create a new session id,
-                sessionID = Guid.NewGuid().ToString();
+                sessionID = NewSessionID();
                 // ... send the start event, because it hasn't been done yet
                 TrackerSingleton.Instance.TrackEventSynchronously(session, sessionID, "stage", "started", "", session["ProductVersion"]);
                 // ... and send a rollbar log so we know what might have caused the issue
-                RollbarReport.Error(String.Format("MSI failed before Session ID could be set"), session);
+                RollbarReport.Error("MSI failed before Session ID could be set", session);
             }
 
             TrackerSingleton.Instance.TrackEventSynchronously(session, sessionID, "stage", "finished", "failure", session["ProductVersion"]);
@@ -584,7 +589,7 @@ namespace StateDeploy
             if (sessionID == "unset")
             {
                 // this should never happen, so we log it to rollbar
-                RollbarReport.Error(String.Format("No session ID found, when trying to send stage/finished/success event"), session);
+                RollbarReport.Error("No session ID found, when trying to send stage/finished/success event", session);
             }
             TrackerSingleton.Instance.TrackEventSynchronously(session, sessionID, "stage", "finished", "success", session["ProductVersion"]);
             return ActionResult.Success;
@@ -627,6 +632,10 @@ namespace StateDeploy
             return "unset";
         }
 
+        private static string NewSessionID() {
+            return Guid.NewGuid().ToString();
+        }
+
         /// <summary>
         /// Reports a user cancellation event to google analytics
         /// </summary>
@@ -638,7 +647,7 @@ namespace StateDeploy
             if (sessionID == "unset")
             {
                 // This can happen, when the user cancelled on the Welcome Dialog, before the session id has been generated.
-                sessionID = Guid.NewGuid().ToString();
+                sessionID = NewSessionID();
                 // No "stage/started" event should have been sent at this point, so we do that here
                 TrackerSingleton.Instance.TrackEventSynchronously(session, sessionID, "stage", "started", "", session["ProductVersion"]);
             }
@@ -656,7 +665,7 @@ namespace StateDeploy
             if (sessionID == "unset")
             {
                 // this should never happen, so we log it to rollbar
-                RollbarReport.Error(String.Format("No session ID found, when trying to send stage/finished/success event"), session);
+                RollbarReport.Error("No session ID found, when trying to send stage/finished/success event", session);
             }
 
             session.Log("sending user network error event");
@@ -687,7 +696,7 @@ namespace StateDeploy
             session.Log("Selected installation folder {0} exists, but is empty.  All good.", installFolder);
             session["VALIDATE_FOLDER_CLEAN"] = "1";
             return ActionResult.Success;
-            
+
         }
 
         [CustomAction]
