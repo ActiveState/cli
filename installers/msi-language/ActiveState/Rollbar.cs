@@ -118,13 +118,20 @@ public class RollbarReport
 	    
             if (!criticalReported)
             {
-                if (level == Level.Critical)
+                try
                 {
-                    criticalReported = true;
-                    RollbarLocator.RollbarInstance.AsBlockingLogger(RollbarTimeout).Critical(new GenericException(message), customFields);
-                } else
+                    if (level == Level.Critical)
+                    {
+                        criticalReported = true;
+                        RollbarLocator.RollbarInstance.AsBlockingLogger(RollbarTimeout).Critical(new GenericException(message), customFields);
+                    }
+                    else
+                    {
+                        RollbarLocator.RollbarInstance.AsBlockingLogger(RollbarTimeout).Error(new GenericException(message), customFields);
+                    }
+                } catch (System.Exception e)
                 {
-                    RollbarLocator.RollbarInstance.AsBlockingLogger(RollbarTimeout).Error(new GenericException(message), customFields);
+                    session.Log("Logging to rollbar failed with error: {0}", e);
                 }
             }
         }
