@@ -118,7 +118,7 @@ func normalize(preset languagePreset, c *config) (*config, error) {
 	}
 
 	if c.MSIVersion == "" {
-		c.MSIVersion = msiVersionInfo()
+		return c, fmt.Errorf("MSI version info must be set")
 	}
 
 	return c, nil
