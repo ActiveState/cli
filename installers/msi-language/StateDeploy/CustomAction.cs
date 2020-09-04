@@ -616,8 +616,10 @@ namespace StateDeploy
 
             // clear sessionID value, as it should not be used afterwards anymore
             RegistryValueKind registryEntryDataType = RegistryValueKind.String;
-            try {
-                Registry.SetValue(registryKey, sessionIDKey, "unset", registryEntryDataType);
+            productKey = Registry.CurrentUser.OpenSubKey(registryKey, true);
+            try
+            {
+                productKey.SetValue(sessionIDKey, "unset", registryEntryDataType);
             }
             catch (Exception e)
             {
