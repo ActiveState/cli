@@ -315,7 +315,7 @@ namespace StateDeploy
             {
                 Record record = new Record();
                 session.Log(string.Format("Output: {0}", output));
-                var errorOutput = FormatErrorOutput(output);
+                var errorOutput = Command.FormatErrorOutput(output);
                 record.FormatString = string.Format("Platform login failed with error:\n{0}", errorOutput);
 
                 session.Message(InstallMessage.Error | (InstallMessage)MessageBoxButtons.OK, record);
@@ -407,7 +407,7 @@ namespace StateDeploy
                     else if (runResult == ActionResult.Failure)
                     {
                         Record record = new Record();
-                        var errorOutput = FormatErrorOutput(output);
+                        var errorOutput = Command.FormatErrorOutput(output);
                         record.FormatString = String.Format("{0} failed with error:\n{1}", seq.Description, errorOutput);
 
                         MessageResult msgRes = session.Message(InstallMessage.Error | (InstallMessage)MessageBoxButtons.OK, record);
@@ -437,31 +437,6 @@ namespace StateDeploy
         {
             ActiveState.RollbarHelper.ConfigureRollbarSingleton(session.CustomActionData["MSI_VERSION"]);
             return run(session);
-        }
-
-        /// <summary>
-        /// FormatErrorOutput formats the output of a state tool command optimized for display in an error dialog
-        /// </summary>
-        /// <param name="cmdOutput">
-        /// the output from a state tool command run with `--output=json`
-        /// </param>
-        private static string FormatErrorOutput(string cmdOutput)
-        {
-            return string.Join("\n", cmdOutput.Split('\x00').Select(blob =>
-            {
-                try
-                {
-                    var json = new JavaScriptSerializer();
-                    var data = json.Deserialize<Dictionary<string, string>>(blob);
-                    var error = data["Error"];
-                    return error;
-                }
-                catch (Exception)
-                {
-                    return blob;
-                }
-            }).ToList());
-
         }
 
         private static string BuildDeployCmd(Session session, string subCommand)
