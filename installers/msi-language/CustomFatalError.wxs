@@ -24,7 +24,7 @@
 				<Control Id="CustomTextNetworkErrorDetails" Type="Text" X="135" Y="120" Width="220" Height="60" Transparent="yes" Hidden="yes" Text="!(loc.NetworkErrorDetails)">
 					<Condition Action="show">NETWORK_ERROR = "true"</Condition>
 				</Control>
-				<Control Id="CustomTextNetworkErrorReporting" Type="Hyperlink" X="135" Y="180" Width="220" Height="20" Transparent="yes" Hidden="yes" Text="!(loc.NetworkErrorReporting)">
+				<Control Id="CustomTextNetworkErrorReporting" Type="Hyperlink" X="135" Y="190" Width="220" Height="20" Transparent="yes" Hidden="yes" Text="!(loc.NetworkErrorReporting)">
 					<Condition Action="show">NETWORK_ERROR = "true"</Condition>
 				</Control>
 				<Control Id="Description2FatalError" Type="Text" X="135" Y="140" Width="220" Height="20" Transparent="yes" Hidden="yes" NoPrefix="yes" Text="!(loc.FatalErrorDescription2)">
