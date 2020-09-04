@@ -278,7 +278,7 @@ namespace StateDeploy
                 RollbarReport.Error(registryExceptionMsg, session);
             }
         }
-        public static ActionResult InstallStateTool(Session session, string sessionID, out string stateToolPath)
+        public static ActionResult InstallStateTool(Session session, string msiLogFileName, out string stateToolPath)
         {
             RollbarHelper.ConfigureRollbarSingleton(session.CustomActionData["COMMIT_ID"]);
             var productVersion = session.CustomActionData["PRODUCT_VERSION"];
@@ -289,7 +289,7 @@ namespace StateDeploy
                 stateToolPath = session.CustomActionData["STATE_TOOL_PATH"];
                 session.Log("State Tool is installed, no installation required");
                 Status.ProgressBar.Increment(session, 1);
-                TrackerSingleton.Instance.TrackEventSynchronously(session, sessionID, "stage", "state-tool", "skipped", productVersion);
+                TrackerSingleton.Instance.TrackEventSynchronously(session, msiLogFileName, "stage", "state-tool", "skipped", productVersion);
 
                 return ActionResult.Success;
             }
@@ -300,11 +300,11 @@ namespace StateDeploy
             var ret = _installStateTool(session, out stateToolPath);
             if (ret == ActionResult.Success)
             {
-                TrackerSingleton.Instance.TrackEventSynchronously(session, sessionID, "stage", "state-tool", "success", productVersion);
+                TrackerSingleton.Instance.TrackEventSynchronously(session, msiLogFileName, "stage", "state-tool", "success", productVersion);
             }
             else if (ret == ActionResult.Failure)
             {
-                TrackerSingleton.Instance.TrackEventSynchronously(session, sessionID, "stage", "state-tool", "failure", productVersion);
+                TrackerSingleton.Instance.TrackEventSynchronously(session, msiLogFileName, "stage", "state-tool", "failure", productVersion);
             }
             return ret;
         }
@@ -379,32 +379,14 @@ namespace StateDeploy
 
         private static ActionResult run(Session session)
         {
-            var sessionID = session.CustomActionData["SESSION_ID"];
+            var msiLogFileName = session.CustomActionData["MsiLogFileLocation"];
             var uiLevel = session.CustomActionData["UI_LEVEL"];
             var productVersion = session.CustomActionData["PRODUCT_VERSION"];
 
-            if (sessionID == "unset")
+            if (uiLevel == "2" /* no ui */ || uiLevel == "3" /* basic ui */)
             {
-                if (uiLevel != "2" /* no ui */ && uiLevel != "3" /* basic ui */)
-                {
-                    RollbarReport.Error("SessionID is 'unset' during state deploy while UI is activated", session);
-                }
-                // set sessionID to a new GUID
-                sessionID = NewSessionID(session, productVersion);
-            }
-
-            // save the session id
-            string registryKey = string.Format("HKEY_USERS\\{0}\\SOFTWARE\\ActiveState\\{1}", session.CustomActionData["USERSID"], session.CustomActionData["PRODUCT_NAME"]);
-            RegistryValueKind registryEntryDataType = RegistryValueKind.String;
-            try
-            {
-                Registry.SetValue(registryKey, sessionIDKey, sessionID, registryEntryDataType);
-            }
-            catch (Exception e)
-            {
-                string msg = string.Format("Could not set sessin id registry keys. Exception: {0}", e.ToString());
-                session.Log(msg);
-                RollbarReport.Error(msg, session);
+                // we have to send the start event, because it has not triggered before
+                reportStartEvent(session, msiLogFileName);
             }
 
             if (!Environment.Is64BitOperatingSystem)
@@ -418,7 +400,7 @@ namespace StateDeploy
             }
 
             string stateToolPath;
-            ActionResult res = InstallStateTool(session, sessionID, out stateToolPath);
+            ActionResult res = InstallStateTool(session, msiLogFileName, out stateToolPath);
             if (res != ActionResult.Success)
             {
                 return res;
@@ -466,12 +448,12 @@ namespace StateDeploy
                         record.FormatString = String.Format("{0} failed with error:\n{1}", seq.Description, errorOutput);
 
                         MessageResult msgRes = session.Message(InstallMessage.Error | (InstallMessage)MessageBoxButtons.OK, record);
-                        TrackerSingleton.Instance.TrackEventSynchronously(session, sessionID, "stage", "artifacts", "failure", productVersion);
+                        TrackerSingleton.Instance.TrackEventSynchronously(session, msiLogFileName, "stage", "artifacts", "failure", productVersion);
 
                         return runResult;
                     }
                 }
-                TrackerSingleton.Instance.TrackEventSynchronously(session, sessionID, "stage", "artifacts", "success", productVersion);
+                TrackerSingleton.Instance.TrackEventSynchronously(session, msiLogFileName, "stage", "artifacts", "success", productVersion);
             }
             catch (Exception objException)
             {
@@ -546,97 +528,37 @@ namespace StateDeploy
          * all custom actions.
          */
 
-        [CustomAction]
-        public static ActionResult SetSessionID(Session session)
+        public static void reportStartEvent(Session session, string msiLogFileName)
         {
-            if (session["SESSION_ID"] != "unset") {
-                var msg = "In SetSessionID, but SESSION_ID is already set";
-                session.Log(msg);
-                RollbarReport.Error(msg, session);
-            }
-            session["SESSION_ID"] = NewSessionID(session, session["ProductVersion"]);
+            session.Log("sending MSI start - event");
+            TrackerSingleton.Instance.TrackEventSynchronously(session, msiLogFileName, "stage", "started", "", session["ProductVersion"]);
+        }
+
+        [CustomAction]
+        public static ActionResult GAReportStart(Session session)
+        {
+            reportStartEvent(session, session["MsiLogFileLocation"]);
             return ActionResult.Success;
         }
 
         [CustomAction]
         public static ActionResult GAReportFailure(Session session)
         {
+            var msiLogFileName = session["MsiLogFileLocation"];
             session.Log("sending event about MSI failure");
-            var sessionID = GetSessionIDForExitAction(session);
-            if (sessionID == "unset")
-            {
-                // this can happen if an installation error happens before we could initialize the session id and send the start event
 
-                // So, we create a new session id,
-                sessionID = NewSessionID(session, session["ProductVersion"]);
-                // ... and send a rollbar log so we know what might have caused the issue
-                RollbarReport.Error("MSI failed before Session ID could be set", session);
-            }
-
-            TrackerSingleton.Instance.TrackEventSynchronously(session, sessionID, "stage", "finished", "failure", session["ProductVersion"]);
+            TrackerSingleton.Instance.TrackEventSynchronously(session, msiLogFileName, "stage", "finished", "failure", session["ProductVersion"]);
             return ActionResult.Success;
         }
 
         [CustomAction]
         public static ActionResult GAReportSuccess(Session session)
         {
+            var msiLogFileName = session["MsiLogFileLocation"];
             session.Log("sending event about MSI success");
-            var sessionID = GetSessionIDForExitAction(session);
-            if (sessionID == "unset")
-            {
-                // this should never happen, so we log it to rollbar
-                RollbarReport.Error("No session ID found, when trying to send stage/finished/success event", session);
-            }
-            TrackerSingleton.Instance.TrackEventSynchronously(session, sessionID, "stage", "finished", "success", session["ProductVersion"]);
+
+            TrackerSingleton.Instance.TrackEventSynchronously(session, msiLogFileName, "stage", "finished", "success", session["ProductVersion"]);
             return ActionResult.Success;
-        }
-
-
-        public static string GetSessionIDForExitAction(Session session)
-        {
-            var sessionID = session["SESSION_ID"];
-            if (sessionID != "unset")
-            {
-                return sessionID;
-            }
-
-            // try to get sessionID from registry
-            var registryKey = string.Format("SOFTWARE\\ActiveState\\{0}", session["ProductName"]);
-            RegistryKey productKey = Registry.CurrentUser.CreateSubKey(registryKey);
-            try
-            {
-                Object sessionIDObj = productKey.GetValue(sessionIDKey);
-                sessionID = sessionIDObj as string;
-            }
-            catch (Exception e)
-            {
-                string msg = string.Format("Could not read session id from registry. Exception: {0}", e.ToString());
-                session.Log(msg);
-            }
-
-            // clear sessionID value, as it should not be used afterwards anymore
-            RegistryValueKind registryEntryDataType = RegistryValueKind.String;
-            productKey = Registry.CurrentUser.OpenSubKey(registryKey, true);
-            try
-            {
-                productKey.SetValue(sessionIDKey, "unset", registryEntryDataType);
-            }
-            catch (Exception e)
-            {
-                string msg = string.Format("Could not clear session id from registry. Exception: {0}", e.ToString());
-                session.Log(msg);
-            }
-
-            return sessionID;
-        }
-
-        private static string NewSessionID(Session session, string productVersion) {
-            var sessionID = Guid.NewGuid().ToString();
-
-            session.Log("sending event about starting the MSI");
-            TrackerSingleton.Instance.TrackEventSynchronously(session, sessionID, "stage", "started", "", productVersion);
-
-            return sessionID;
         }
 
         /// <summary>
@@ -645,14 +567,10 @@ namespace StateDeploy
         [CustomAction]
         public static ActionResult GAReportUserExit(Session session)
         {
+            var msiLogFileName = session["MsiLogFileLocation"];
+
             session.Log("sending user exit event");
-            var sessionID = GetSessionIDForExitAction(session);
-            if (sessionID == "unset")
-            {
-                // This can happen, when the user cancelled on the Welcome Dialog, before the session id has been generated.
-                sessionID = NewSessionID(session, session["ProductVersion"]);
-            }
-            TrackerSingleton.Instance.TrackEventSynchronously(session, sessionID, "stage", "finished", "cancelled", session["ProductVersion"]);
+            TrackerSingleton.Instance.TrackEventSynchronously(session, msiLogFileName, "stage", "finished", "cancelled", session["ProductVersion"]);
             return ActionResult.Success;
         }
 
@@ -662,15 +580,10 @@ namespace StateDeploy
         [CustomAction]
         public static ActionResult GAReportUserNetwork(Session session)
         {
-            var sessionID = GetSessionIDForExitAction(session);
-            if (sessionID == "unset")
-            {
-                // this should never happen, so we log it to rollbar
-                RollbarReport.Error("No session ID found, when trying to send stage/finished/success event", session);
-            }
+            var msiLogFileName = session["MsiLogFileLocation"];
 
             session.Log("sending user network error event");
-            TrackerSingleton.Instance.TrackEventSynchronously(session, sessionID, "stage", "finished", "user_network", session["ProductVersion"]);
+            TrackerSingleton.Instance.TrackEventSynchronously(session, msiLogFileName, "stage", "finished", "user_network", session["ProductVersion"]);
             return ActionResult.Success;
         }
 
