@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 	"text/template"
+	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/google/uuid"
@@ -48,6 +49,7 @@ type config struct {
 	Icon                string
 	ProjectOwnerAndName string
 	Visibility          string
+	MSIVersion          string
 }
 
 func seededUUID(seed string) string {
@@ -114,6 +116,11 @@ func normalize(preset languagePreset, c *config) (*config, error) {
 	if err != nil {
 		return c, err
 	}
+
+	if c.MSIVersion == "" {
+		return c, fmt.Errorf("MSI version info must be set")
+	}
+
 	return c, nil
 }
 
@@ -132,7 +139,17 @@ func baseConfig() *config {
 		ProjectOwnerAndName: pad("PROJECT_OWNER_AND_NAME"),
 		ReleaseNotes:        pad("RELEASE_NOTES"),
 		ProjectName:         pad("PROJECT_NAME"),
+		MSIVersion:          msiVersionInfo(),
 	}
+}
+
+func msiVersionInfo() string {
+	dateTime := time.Now().Format("2006-01-02T15:04:05-0700") // ISO 8601
+	commitHash := constants.RevisionHashShort
+	if len(commitHash) > 7 {
+		commitHash = commitHash[:7]
+	}
+	return dateTime + "-" + commitHash
 }
 
 func parseArgs(args []string) (*config, error) {
@@ -146,6 +163,7 @@ func parseArgs(args []string) (*config, error) {
 			Visibility:          os.Args[2],
 			ProjectOwnerAndName: os.Args[3],
 			Version:             os.Args[4],
+			MSIVersion:          msiVersionInfo(),
 		})
 	}
 

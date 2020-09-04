@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/progress"
 	"github.com/ActiveState/cli/internal/retryhttp"
@@ -48,7 +49,11 @@ func httpGetWithProgress(url string, progress *progress.Progress) ([]byte, *fail
 	client := retryhttp.DefaultClient
 	resp, err := client.Get(url)
 	if err != nil {
-		return nil, failures.FailNetwork.Wrap(err)
+		code := -1
+		if resp != nil {
+			code = resp.StatusCode
+		}
+		return nil, failures.FailNetwork.Wrap(err, locale.Tl("err_network_get", "Status code: {{.V0}}", strconv.Itoa(code)))
 	}
 	defer resp.Body.Close()
 

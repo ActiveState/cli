@@ -9,7 +9,7 @@ namespace StateCommandExists
         [CustomAction]
         public static ActionResult CheckCommands(Session session)
         {
-            ActiveState.RollbarHelper.ConfigureRollbarSingleton(session["COMMIT_ID"]);
+            ActiveState.RollbarHelper.ConfigureRollbarSingleton(session["MSI_VERSION"]);
             CheckCommand(session, "state.exe", "STATE_TOOL_INSTALLED", "STATE_TOOL_PATH");
             CheckCommand(session, "code.cmd", "CODE_INSTALLED", "CODE_PATH");
             return ActionResult.Success;

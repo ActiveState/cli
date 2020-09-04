@@ -280,7 +280,7 @@ namespace StateDeploy
         }
         public static ActionResult InstallStateTool(Session session, string msiLogFileName, out string stateToolPath)
         {
-            RollbarHelper.ConfigureRollbarSingleton(session.CustomActionData["COMMIT_ID"]);
+            RollbarHelper.ConfigureRollbarSingleton(session.CustomActionData["MSI_VERSION"]);
             var productVersion = session.CustomActionData["PRODUCT_VERSION"];
 
             session.Log("Installing State Tool if necessary");
@@ -472,7 +472,7 @@ namespace StateDeploy
         [CustomAction]
         public static ActionResult StateDeploy(Session session)
         {
-            ActiveState.RollbarHelper.ConfigureRollbarSingleton(session.CustomActionData["COMMIT_ID"]);
+            ActiveState.RollbarHelper.ConfigureRollbarSingleton(session.CustomActionData["MSI_VERSION"]);
             return run(session);
         }
 
