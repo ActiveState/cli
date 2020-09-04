@@ -386,7 +386,7 @@ namespace StateDeploy
             if (uiLevel == "2" /* no ui */ || uiLevel == "3" /* basic ui */)
             {
                 // we have to send the start event, because it has not triggered before
-                reportStartEvent(session, msiLogFileName, productVersion);
+                reportStartEvent(session, msiLogFileName, productVersion, uiLevel);
             }
 
             if (!Environment.Is64BitOperatingSystem)
@@ -528,16 +528,16 @@ namespace StateDeploy
          * all custom actions.
          */
 
-        public static void reportStartEvent(Session session, string msiLogFileName, string productVersion)
+        public static void reportStartEvent(Session session, string msiLogFileName, string productVersion, string uiLevel)
         {
             session.Log("sending MSI start - event");
-            TrackerSingleton.Instance.TrackEventSynchronously(session, msiLogFileName, "stage", "started", "", productVersion);
+            TrackerSingleton.Instance.TrackEventSynchronously(session, msiLogFileName, "stage", "started", uiLevel, productVersion);
         }
 
         [CustomAction]
         public static ActionResult GAReportStart(Session session)
         {
-            reportStartEvent(session, session["MsiLogFileLocation"], session["ProductVersion"]);
+            reportStartEvent(session, session["MsiLogFileLocation"], session["ProductVersion"], session["UILeve"]);
             return ActionResult.Success;
         }
 
