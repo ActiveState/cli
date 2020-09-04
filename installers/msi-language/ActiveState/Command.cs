@@ -40,7 +40,6 @@ namespace ActiveState
                 {
                     procStartInfo.EnvironmentVariables["VERBOSE"] = "true";
                     procStartInfo.EnvironmentVariables["ACTIVESTATE_NONINTERACTIVE"] = "true";
-                    procStartInfo.EnvironmentVariables["ACTIVESTATE_API_HOST"] = "google.com:81";
                 }
                 // Do not create the black window.
                 procStartInfo.CreateNoWindow = true;
