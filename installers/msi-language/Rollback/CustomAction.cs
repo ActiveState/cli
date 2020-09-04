@@ -12,7 +12,7 @@ namespace Rollback
         public static ActionResult Rollback(Session session)
         {
             var installDir = session.CustomActionData["INSTALLDIR"];
-            RollbarHelper.ConfigureRollbarSingleton(session.CustomActionData["COMMIT_ID"]);
+            RollbarHelper.ConfigureRollbarSingleton(session.CustomActionData["MSI_VERSION"]);
 
             session.Log("Begin rollback of state tool installation and deploy");
 
