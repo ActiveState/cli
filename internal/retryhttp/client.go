@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/go-retryablehttp"
 
 	"github.com/ActiveState/cli/internal/condition"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 )
@@ -25,6 +26,10 @@ func (e *UserNetworkError) Error() string {
 func (e *UserNetworkError) ExitCode() int {
 	return 11
 }
+
+var solutionLocale = locale.Tl("err_user_network_solution",
+	`Please ensure your device has access to internet during installation. Make sure software like Firewalls or Anti-Virus are not blocking your connectivity.`+
+		`If your issue persists consider reporting it on our forums at {{.V0}}.`, constants.ForumsURL)
 
 type Logger interface {
 	Printf(string, ...interface{})
@@ -66,11 +71,11 @@ func normalizeResponse(res *http.Response, err error) (*http.Response, error) {
 	if res != nil {
 		switch res.StatusCode {
 		case 408:
-			return res, locale.WrapInputError(&UserNetworkError{408}, "err_user_network_server_timeout", "Request failed due to timeout during communication with server.")
+			return res, locale.WrapInputError(&UserNetworkError{408}, "err_user_network_server_timeout", "Request failed due to timeout during communication with server. {{.V0}}", solutionLocale)
 		case 425:
-			return res, locale.WrapInputError(&UserNetworkError{425}, "err_user_network_tooearly", "Request failed due to retrying connection too fast.")
+			return res, locale.WrapInputError(&UserNetworkError{425}, "err_user_network_tooearly", "Request failed due to retrying connection too fast. {{.V0}}", solutionLocale)
 		case 429:
-			return res, locale.WrapInputError(&UserNetworkError{429}, "err_user_network_toomany", "Request failed due to too many requests.")
+			return res, locale.WrapInputError(&UserNetworkError{429}, "err_user_network_toomany", "Request failed due to too many requests. {{.V0}}", solutionLocale)
 		}
 	}
 	return res, err
@@ -78,7 +83,7 @@ func normalizeResponse(res *http.Response, err error) (*http.Response, error) {
 
 func normalizeRetryResponse(res *http.Response, err error, numTries int) (*http.Response, error) {
 	if err2, ok := err.(net.Error); ok && err2.Timeout() {
-		return res, locale.WrapInputError(&UserNetworkError{-1}, "err_user_network_timeout", "Request failed due to timeout.")
+		return res, locale.WrapInputError(&UserNetworkError{-1}, "err_user_network_timeout", "Request failed due to timeout. {{.V0}}", solutionLocale)
 	}
 	return res, err
 }
@@ -97,3 +102,4 @@ func NewClient(timeout time.Duration, retries int) *Client {
 		Client: retryClient,
 	}
 }
+
