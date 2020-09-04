@@ -45,15 +45,11 @@ func (ns *Namespaced) String() string {
 		return ""
 	}
 
-	var sep, commitSep, commitID string
+	var sep string
 	if ns.IsValid() {
 		sep = "/"
-		if ns.CommitID != nil {
-			commitSep = "#"
-			commitID = ns.CommitID.String()
-		}
 	}
-	return fmt.Sprintf("%s%s%s%s%s", ns.Owner, sep, ns.Project, commitSep, commitID)
+	return fmt.Sprintf("%s%s%s", ns.Owner, sep, ns.Project)
 }
 
 // Type returns the human readable type name of Namespaced.
