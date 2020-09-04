@@ -537,7 +537,7 @@ namespace StateDeploy
         [CustomAction]
         public static ActionResult GAReportStart(Session session)
         {
-            reportStartEvent(session, session["MsiLogFileLocation"], session["ProductVersion"], session["UILeve"]);
+            reportStartEvent(session, session["MsiLogFileLocation"], session["ProductVersion"], session["UILevel"]);
             return ActionResult.Success;
         }
 
