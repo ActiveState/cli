@@ -214,7 +214,7 @@ namespace Preset
             string appStartMenuPath = session.CustomActionData["APP_START_MENU_PATH"];
             string installDir = session.CustomActionData["INSTALLDIR"];
 
-            RollbarHelper.ConfigureRollbarSingleton(session.CustomActionData["COMMIT_ID"]);
+            RollbarHelper.ConfigureRollbarSingleton(session.CustomActionData["MSI_VERSION"]);
 
             var preset = Preset.ParsePreset.Parse(presetStr, session, installDir, appStartMenuPath);
             if (preset == null)
