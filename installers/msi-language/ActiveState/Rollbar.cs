@@ -6,6 +6,7 @@ using DeviceId;
 using System.Reflection;
 using System.Collections.Generic;
 using Microsoft.Deployment.WindowsInstaller;
+using ActiveState;
 
 namespace ActiveState
 {
@@ -118,13 +119,41 @@ public class RollbarReport
 	    
             if (!criticalReported)
             {
-                if (level == Level.Critical)
+                try
                 {
-                    criticalReported = true;
-                    RollbarLocator.RollbarInstance.AsBlockingLogger(RollbarTimeout).Critical(new GenericException(message), customFields);
-                } else
+                    if (level == Level.Critical)
+                    {
+                        criticalReported = true;
+                        RollbarLocator.RollbarInstance.AsBlockingLogger(RollbarTimeout).Critical(new GenericException(message), customFields);
+                    }
+                    else
+                    {
+                        RollbarLocator.RollbarInstance.AsBlockingLogger(RollbarTimeout).Error(new GenericException(message), customFields);
+                    }
+                } catch (System.Exception e)
                 {
-                    RollbarLocator.RollbarInstance.AsBlockingLogger(RollbarTimeout).Error(new GenericException(message), customFields);
+
+                    string msiLogFileName = "";
+                    string productVersion = "";
+                    if (session.GetMode(InstallRunMode.Scheduled))
+                    {
+                        if (session.CustomActionData.ContainsKey("MsiLogFileLocation"))
+                        {
+                            msiLogFileName = session.CustomActionData["MsiLogFileLocation"];
+                        }
+                        if (session.CustomActionData.ContainsKey("PRODUCT_VERSION"))
+                        {
+                            productVersion = session.CustomActionData["PRODUCT_VERSION"];
+                        }
+                    }
+                    else if (!session.GetMode(InstallRunMode.Scheduled))
+                    {
+                        msiLogFileName = session["MsiLogFileLocation"];
+                        productVersion = session["ProductVersion"];
+                    }
+
+                    TrackerSingleton.Instance.TrackEventSynchronously(session, msiLogFileName, "error", "rollbar", "", productVersion);
+                    session.Log("Logging to rollbar failed with error: {0}", e);
                 }
             }
         }
