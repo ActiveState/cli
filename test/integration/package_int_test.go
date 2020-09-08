@@ -272,7 +272,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_import() {
 		cp.ExpectExitCode(0, time.Second*60)
 
 		suite.Run("already added", func() {
-			cp := ts.Spawn("packages", "import")
+			cp := ts.Spawn("packages", "import", "requirements.txt")
 			cp.Expect("Are you sure you want to do this")
 			cp.SendLine("n")
 			cp.ExpectNotExitCode(0, time.Second*60)

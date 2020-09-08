@@ -103,9 +103,10 @@ func (i *Import) Run(params ImportRunParams) error {
 		return locale.WrapError(err, "err_obtaining_change_request", "Could not process change set: {{.V0}}.", api.ErrorMessageFromPayload(err))
 	}
 
-	if len(reqs) > 0 {
+	packageReqs := model.FilterCheckpointPackages(reqs)
+	if len(packageReqs) > 0 {
 		force := params.Force
-		fail = removeRequirements(prompt.New(), proj.Owner(), proj.Name(), force, model.FilterCheckpointPackages(reqs))
+		fail = removeRequirements(prompt.New(), proj.Owner(), proj.Name(), force, packageReqs)
 		if fail != nil {
 			return fail.WithDescription("err_cannot_remove_existing")
 		}
