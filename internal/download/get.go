@@ -15,14 +15,15 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/progress"
+	"github.com/ActiveState/cli/internal/retryfn"
 	"github.com/ActiveState/cli/internal/retryhttp"
 )
 
 // Get takes a URL and returns the contents as bytes
-var Get func(url string) ([]byte, *failures.Failure)
+var Get func(url string) ([]byte, error)
 
 // GetWithProgress takes a URL and returns the contents as bytes, it takes an optional second arg which will spawn a progressbar
-var GetWithProgress func(url string, progress *progress.Progress) ([]byte, *failures.Failure)
+var GetWithProgress func(url string, progress *progress.Progress) ([]byte, error)
 
 func init() {
 	SetMocking(condition.InTest())
@@ -39,66 +40,72 @@ func SetMocking(useMocking bool) {
 	}
 }
 
-func httpGet(url string) ([]byte, *failures.Failure) {
+func httpGet(url string) ([]byte, error) {
 	logging.Debug("Retrieving url: %s", url)
 	return httpGetWithProgress(url, nil)
 }
 
-func httpGetWithProgress(url string, progress *progress.Progress) ([]byte, *failures.Failure) {
-	logging.Debug("Retrieving url: %s", url)
-	client := retryhttp.DefaultClient
-	resp, err := client.Get(url)
-	if err != nil {
-		code := -1
-		if resp != nil {
-			code = resp.StatusCode
-		}
-		return nil, failures.FailNetwork.Wrap(err, locale.Tl("err_network_get", "Status code: {{.V0}}", strconv.Itoa(code)))
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		return nil, failures.FailNetwork.New("err_invalid_status_code", strconv.Itoa(resp.StatusCode))
-	}
-
-	var total int
-	length := resp.Header.Get("Content-Length")
-	if length == "" {
-		total = 1
-	} else {
-		total, err = strconv.Atoi(length)
+func httpGetWithProgress(url string, progress *progress.Progress) ([]byte, error) {
+	var bs []byte
+	fn := func() error {
+		logging.Debug("Retrieving url: %s", url)
+		client := retryhttp.DefaultClient
+		resp, err := client.Get(url)
 		if err != nil {
-			logging.Debug("Content-length: %v", length)
-			return nil, failures.FailInput.Wrap(err)
+			code := -1
+			if resp != nil {
+				code = resp.StatusCode
+			}
+			return failures.FailNetwork.Wrap(err, locale.Tl("err_network_get", "Status code: {{.V0}}", strconv.Itoa(code)))
 		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != 200 {
+			return failures.FailNetwork.New("err_invalid_status_code", strconv.Itoa(resp.StatusCode))
+		}
+
+		var total int
+		length := resp.Header.Get("Content-Length")
+		if length == "" {
+			total = 1
+		} else {
+			total, err = strconv.Atoi(length)
+			if err != nil {
+				logging.Debug("Content-length: %v", length)
+				return failures.FailInput.Wrap(err)
+			}
+		}
+
+		bar := progress.AddByteProgressBar(int64(total))
+		src := bar.ProxyReader(resp.Body)
+		var dst bytes.Buffer
+
+		_, err = io.Copy(&dst, src)
+		if err != nil {
+			return failures.FailInput.Wrap(err)
+		}
+
+		if !bar.Completed() {
+			// Failsafe, so we don't get blocked by a progressbar
+			bar.IncrBy(total)
+		}
+
+		bs = dst.Bytes()
+
+		return nil
+
 	}
 
-	bar := progress.AddByteProgressBar(int64(total))
-
-	src := resp.Body
-	var dst bytes.Buffer
-
-	src = bar.ProxyReader(resp.Body)
-
-	_, err = io.Copy(&dst, src)
-	if err != nil {
-		return nil, failures.FailInput.Wrap(err)
-	}
-
-	if !bar.Completed() {
-		// Failsafe, so we don't get blocked by a progressbar
-		bar.IncrBy(total)
-	}
-
-	return dst.Bytes(), nil
+	retryFn := retryfn.New(2, fn)
+	return bs, retryFn.Run()
 }
 
-func _testHTTPGetWithProgress(url string, progress *progress.Progress) ([]byte, *failures.Failure) {
+func _testHTTPGetWithProgress(url string, progress *progress.Progress) ([]byte, error) {
 	return _testHTTPGet(url)
 }
 
 // _testHTTPGet is used when in tests, this cannot be in the test itself as that would limit it to only that one test
-func _testHTTPGet(url string) ([]byte, *failures.Failure) {
+func _testHTTPGet(url string) ([]byte, error) {
 	path := strings.Replace(url, constants.APIArtifactURL, "", 1)
 	path = filepath.Join(environment.GetRootPathUnsafe(), "test", path)
 
