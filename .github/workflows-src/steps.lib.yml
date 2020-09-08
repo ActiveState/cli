@@ -112,7 +112,7 @@ env:
 #@ def steps_inttest():
 name: "Integration Tests"
 shell: bash
-run: SHELL='' go test -timeout 20m ./test/integration -v
+run: SHELL='' go test -timeout 20m ./test/integration -v -run="TestActivateIntegrationTestSuite/TestActivateUsingCommitID"
 env:
   INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
   INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
