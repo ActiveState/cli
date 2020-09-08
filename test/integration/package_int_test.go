@@ -260,14 +260,14 @@ func (suite *PackageIntegrationTestSuite) TestPackage_import() {
 	suite.Run("invalid requirements.txt", func() {
 		ts.PrepareFile(reqsFilePath, badReqsData)
 
-		cp := ts.Spawn("packages", "import")
+		cp := ts.Spawn("packages", "import", "requirements.txt")
 		cp.ExpectNotExitCode(0, time.Second*60)
 	})
 
 	suite.Run("valid requirements.txt", func() {
 		ts.PrepareFile(reqsFilePath, reqsData)
 
-		cp := ts.Spawn("packages", "import")
+		cp := ts.Spawn("packages", "import", "requirements.txt")
 		cp.Expect("state pull")
 		cp.ExpectExitCode(0, time.Second*60)
 
