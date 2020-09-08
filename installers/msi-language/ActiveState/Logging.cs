@@ -52,6 +52,16 @@ namespace ActiveState
             return "";
         }
 
+        public static string GetInstallMode(Session session)
+        {
+            if (session.GetMode(InstallRunMode.Scheduled))
+            {
+                return session.CustomActionData["INSTALL_MODE"];
+            }
+            // Property data is not available for immediate custom actions
+            return session["INSTALL_MODE"];
+        }
+
         public static bool PrivacyAgreementAccepted(Session session)
         {
             string accepted;

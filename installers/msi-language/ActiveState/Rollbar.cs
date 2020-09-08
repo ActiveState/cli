@@ -105,18 +105,23 @@ public class RollbarReport
 		    {
                 customFields = new Dictionary<string, object>();
 		    }
-            customFields.Add("log", ActiveState.Logging.GetLog(session));
-            string properties = ActiveState.Logging.GetProperties(session);
+            customFields.Add("log", Logging.GetLog(session));
+            string properties = Logging.GetProperties(session);
             if (properties != "")
             {
                 customFields.Add("properties", properties);
             }
-            var userEnvironment = ActiveState.Logging.GetUserEnvironment(session);
+            var userEnvironment = Logging.GetUserEnvironment(session);
             if (userEnvironment != null)
             {
                 customFields.Add("userEnvironment", userEnvironment);
             }
-	    
+            string installMode = Logging.GetInstallMode(session);
+            if (installMode != "")
+            {
+                customFields.Add("installMode", installMode);
+            }
+
             if (!criticalReported)
             {
                 try
