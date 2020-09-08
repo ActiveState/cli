@@ -506,13 +506,18 @@ namespace StateDeploy
             string installDir = session.CustomActionData["INSTALLDIR"];
             string projectName = session.CustomActionData["PROJECT_OWNER_AND_NAME"];
             string isModify = session.CustomActionData["IS_MODIFY"];
+            string commitID = session.CustomActionData["COMMIT_ID"];
 
             StringBuilder deployCMDBuilder = new StringBuilder(String.Format("deploy {0}", subCommand));
             if (isModify == "true" && subCommand == "symlink")
             {
                 deployCMDBuilder.Append(" --force");
             }
-
+            // Add commitID if requested
+            if (subCommand == "install" && commitID != "latest")
+            {
+                projectName += "#" + commitID;
+            }
             deployCMDBuilder.Append(" --output json");
 
             // We quote the string here as Windows paths that contain spaces must be quoted.
