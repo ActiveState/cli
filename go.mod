@@ -18,6 +18,7 @@ require (
 	github.com/asaskevich/govalidator v0.0.0-20180315120708-ccb8e960c48f // indirect
 	github.com/autarch/testify v1.2.2
 	github.com/aws/aws-sdk-go v1.34.19
+	github.com/aws/aws-sdk-go-v2 v0.24.1
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/bndr/gotabulate v0.0.0-20170315142410-bc555436bfd5
 	github.com/creack/pty v1.1.11

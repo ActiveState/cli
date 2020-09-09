@@ -4,7 +4,6 @@ import (
 	"io/ioutil"
 	"net/url"
 	"path/filepath"
-	"strings"
 
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
@@ -73,14 +72,8 @@ func (m *Manager) Job(entry *Entry) {
 		return
 	}
 
-	var fail *failures.Failure
-	var bytes []byte
-	if strings.Contains(u.Host, ".s3.") {
-		bytes, err = s3GetWithProgress(u, m.progress)
-		fail = failures.FailNetwork.Wrap(err)
-	} else {
-		bytes, fail = httpGetWithProgress(entry.Download, m.progress)
-	}
+	bytes, err := s3GetWithProgress(u, m.progress)
+	fail := failures.FailNetwork.Wrap(err)
 
 	if fail != nil {
 		m.failure = fail
