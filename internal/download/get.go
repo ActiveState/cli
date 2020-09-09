@@ -56,12 +56,20 @@ func httpGetWithProgress(url string, progress *progress.Progress) ([]byte, error
 			if resp != nil {
 				code = resp.StatusCode
 			}
-			return failures.FailNetwork.Wrap(err, locale.Tl("err_network_get", "Status code: {{.V0}}", strconv.Itoa(code)))
+			fail := failures.FailNetwork.Wrap(err, locale.Tl("err_network_get", "Status code: {{.V0}}", strconv.Itoa(code)))
+			return &retryfn.ControlError{
+				Cause: fail,
+				Type:  retryfn.Halt,
+			}
 		}
 		defer resp.Body.Close()
 
 		if resp.StatusCode != 200 {
-			return failures.FailNetwork.New("err_invalid_status_code", strconv.Itoa(resp.StatusCode))
+			fail := failures.FailNetwork.New("err_invalid_status_code", strconv.Itoa(resp.StatusCode))
+			return &retryfn.ControlError{
+				Cause: fail,
+				Type:  retryfn.Halt,
+			}
 		}
 
 		var total int
