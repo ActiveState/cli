@@ -6,6 +6,7 @@ using DeviceId;
 using System.Reflection;
 using System.Collections.Generic;
 using Microsoft.Deployment.WindowsInstaller;
+using ActiveState;
 
 namespace ActiveState
 {
@@ -104,27 +105,60 @@ public class RollbarReport
 		    {
                 customFields = new Dictionary<string, object>();
 		    }
-            customFields.Add("log", ActiveState.Logging.GetLog(session));
-            string properties = ActiveState.Logging.GetProperties(session);
+            customFields.Add("log", Logging.GetLog(session));
+            string properties = Logging.GetProperties(session);
             if (properties != "")
             {
                 customFields.Add("properties", properties);
             }
-            var userEnvironment = ActiveState.Logging.GetUserEnvironment(session);
+            var userEnvironment = Logging.GetUserEnvironment(session);
             if (userEnvironment != null)
             {
                 customFields.Add("userEnvironment", userEnvironment);
             }
-	    
+            string installMode = Logging.GetInstallMode(session);
+            if (installMode != "")
+            {
+                customFields.Add("installMode", installMode);
+            }
+
             if (!criticalReported)
             {
-                if (level == Level.Critical)
+                try
                 {
-                    criticalReported = true;
-                    RollbarLocator.RollbarInstance.AsBlockingLogger(RollbarTimeout).Critical(new GenericException(message), customFields);
-                } else
+                    if (level == Level.Critical)
+                    {
+                        criticalReported = true;
+                        RollbarLocator.RollbarInstance.AsBlockingLogger(RollbarTimeout).Critical(new GenericException(message), customFields);
+                    }
+                    else
+                    {
+                        RollbarLocator.RollbarInstance.AsBlockingLogger(RollbarTimeout).Error(new GenericException(message), customFields);
+                    }
+                } catch (System.Exception e)
                 {
-                    RollbarLocator.RollbarInstance.AsBlockingLogger(RollbarTimeout).Error(new GenericException(message), customFields);
+
+                    string msiLogFileName = "";
+                    string productVersion = "";
+                    if (session.GetMode(InstallRunMode.Scheduled))
+                    {
+                        if (session.CustomActionData.ContainsKey("MsiLogFileLocation"))
+                        {
+                            msiLogFileName = session.CustomActionData["MsiLogFileLocation"];
+                        }
+                        if (session.CustomActionData.ContainsKey("PRODUCT_VERSION"))
+                        {
+                            productVersion = session.CustomActionData["PRODUCT_VERSION"];
+                        }
+                    }
+                    else if (!session.GetMode(InstallRunMode.Scheduled))
+                    {
+                        msiLogFileName = session["MsiLogFileLocation"];
+                        productVersion = session["ProductVersion"];
+                    }
+
+                    TrackerSingleton.Instance.TrackEventSynchronously(session, msiLogFileName, "error", "rollbar", "", productVersion);
+                    session.Log("Logging to rollbar failed with error: {0}", e);
                 }
             }
         }
