@@ -680,20 +680,23 @@ func trialRename(src, dst string) bool {
 
 	tmpFileBase := "test.ext"
 	tmpFileData := []byte("data")
-	tmpSrcName := filepath.Join(src, tmpFileBase)
+	tmpDir, err := ioutil.TempDir(src, "trial-rename")
+	if err != nil {
+		logging.Debug("Could not create temp dir: %v", err)
+		return false
+	}
+	defer func() { os.RemoveAll(tmpDir) }()
 
+	tmpSrcName := filepath.Join(tmpDir, tmpFileBase)
 	if err := ioutil.WriteFile(tmpSrcName, tmpFileData, 0660); err != nil {
 		return false
 	}
 
-	cleanupFile := tmpSrcName
-	defer func() { _ = os.Remove(cleanupFile) }()
-
-	tmpDstFile := filepath.Join(dst, tmpFileBase)
-	if err := os.Rename(tmpSrcName, tmpDstFile); err != nil {
+	tmpDestDir := filepath.Join(dst, filepath.Base(tmpDir))
+	if err := os.Rename(tmpDir, tmpDestDir); err != nil {
 		return false
 	}
-	cleanupFile = tmpDstFile
+	os.RemoveAll(tmpDestDir)
 
 	return true
 }
