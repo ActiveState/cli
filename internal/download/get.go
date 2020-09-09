@@ -3,14 +3,18 @@ package download
 import (
 	"bytes"
 	"io"
-	"io/ioutil"
-	"path/filepath"
+	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/condition"
-	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/environment"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -18,33 +22,12 @@ import (
 	"github.com/ActiveState/cli/internal/retryhttp"
 )
 
-// Get takes a URL and returns the contents as bytes
-var Get func(url string) ([]byte, *failures.Failure)
-
-// GetWithProgress takes a URL and returns the contents as bytes, it takes an optional second arg which will spawn a progressbar
-var GetWithProgress func(url string, progress *progress.Progress) ([]byte, *failures.Failure)
-
 func init() {
-	SetMocking(condition.InTest())
-}
-
-// SetMocking sets the correct Get methods for testing
-func SetMocking(useMocking bool) {
-	if useMocking {
-		Get = _testHTTPGet
-		GetWithProgress = _testHTTPGetWithProgress
-	} else {
-		Get = httpGet
-		GetWithProgress = httpGetWithProgress
-	}
-}
-
-func httpGet(url string) ([]byte, *failures.Failure) {
-	logging.Debug("Retrieving url: %s", url)
-	return httpGetWithProgress(url, nil)
 }
 
 func httpGetWithProgress(url string, progress *progress.Progress) ([]byte, *failures.Failure) {
+	logging.Debug("Downloading via https")
+	return nil, failures.FailNetwork.New("Wrong getter")
 	logging.Debug("Retrieving url: %s", url)
 	client := retryhttp.NewClient(0 /* 0 = no timeout */, 5)
 	resp, err := client.Get(url)
@@ -93,19 +76,80 @@ func httpGetWithProgress(url string, progress *progress.Progress) ([]byte, *fail
 	return dst.Bytes(), nil
 }
 
-func _testHTTPGetWithProgress(url string, progress *progress.Progress) ([]byte, *failures.Failure) {
-	return _testHTTPGet(url)
+// RoundTripper is an implementation of http.RoundTripper that adds additional request information
+type RoundTripper struct {
+	params url.Values
 }
 
-// _testHTTPGet is used when in tests, this cannot be in the test itself as that would limit it to only that one test
-func _testHTTPGet(url string) ([]byte, *failures.Failure) {
-	path := strings.Replace(url, constants.APIArtifactURL, "", 1)
-	path = filepath.Join(environment.GetRootPathUnsafe(), "test", path)
+// RoundTrip executes a single HTTP transaction, returning a Response for the provided Request.
+func (r *RoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	req.Header.Set("X-Amz-Algorithm", r.params.Get("X-Amz-Algorithm"))
+	req.Header.Set("X-Amz-Credential", r.params.Get("X-Amz-Credential"))
+	req.Header.Set("X-Amz-Signature", r.params.Get("X-Amz-Signature"))
+	return http.DefaultTransport.RoundTrip(req)
+}
 
-	body, err := ioutil.ReadFile(path)
+func s3GetWithProgress(url *url.URL, progress *progress.Progress) ([]byte, error) {
+	logging.Debug("Downloading via s3")
+
+	query := url.Query()
+
+	sess, err := session.NewSession(&aws.Config{
+		Region:                        aws.String("us-east-1"),
+		CredentialsChainVerboseErrors: aws.Bool(true),
+		HTTPClient:                    &http.Client{Transport: &RoundTripper{query}},
+		Credentials:                   credentials.NewStaticCredentials(query.Get("X-Amz-Credential"), query.Get("X-Amz-Signature"), ""),
+	})
 	if err != nil {
-		return nil, failures.FailIO.Wrap(err)
+		return nil, errs.Wrap(err, "Could not create aws session")
 	}
 
-	return body, nil
+	domain := strings.SplitN(url.Host, ".", 2)
+	bucket := domain[0]
+	key := url.Path
+
+	s3sess := s3.New(sess)
+	head, err := s3sess.HeadObject(&s3.HeadObjectInput{
+		Bucket:               aws.String(bucket),
+		Key:                  aws.String(key),
+		SSECustomerAlgorithm: aws.String(query.Get("X-Amz-Algorithm")),
+		SSECustomerKey:       aws.String(query.Get("X-Amz-Credential")),
+		SSECustomerKeyMD5:    aws.String(query.Get("X-Amz-Signature")),
+	})
+	if err != nil {
+		return nil, locale.WrapError(err, "err_dl_s3head", "Requesting download meta information failed due to underlying S3 error: {{.V0}}.", err.Error())
+	}
+
+	var length int64
+	if head != nil && head.ContentLength != nil {
+		length = *head.ContentLength
+	}
+
+	// Record progress
+	bar := progress.AddByteProgressBar(length)
+	cb := func(length int) {
+		if !bar.Completed() {
+			// Failsafe, so we don't get blocked by a progressbar
+			bar.IncrBy(length)
+		}
+	}
+
+	// Prepare result recorder
+	b := []byte{}
+	w := NewWriteAtBuffer(b, cb)
+
+	downloader := s3manager.NewDownloader(sess)
+	_, err = downloader.Download(w,
+		&s3.GetObjectInput{
+			Bucket:               aws.String(bucket),
+			Key:                  aws.String(key),
+			SSECustomerAlgorithm: aws.String(query.Get("X-Amz-Algorithm")),
+			SSECustomerKey:       aws.String(query.Get("X-Amz-Credential")),
+			SSECustomerKeyMD5:    aws.String(query.Get("X-Amz-Signature")),
+		})
+	if err != nil {
+		return nil, locale.WrapError(err, "err_dl_s3", "Downloading failed due to underlying S3 error: {{.V0}}.", err.Error())
+	}
+
+	return w.Bytes(), nil
 }

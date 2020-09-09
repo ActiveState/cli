@@ -2,7 +2,9 @@ package download
 
 import (
 	"io/ioutil"
+	"net/url"
 	"path/filepath"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
@@ -64,7 +66,21 @@ func (m *Manager) Job(entry *Entry) {
 		return
 	}
 
-	bytes, fail := GetWithProgress(entry.Download, m.progress)
+	u, err := url.Parse(entry.Download)
+	if err != nil {
+		m.failure = failures.FailNetwork.Wrap(err, locale.Tl("err_dl_url", "Invalid URL: {{.V0}}.", entry.Download))
+		logging.Debug("Failure occured: %v", m.failure)
+		return
+	}
+
+	var fail *failures.Failure
+	var bytes []byte
+	if strings.Contains(u.Host, ".s3.") {
+		bytes, err = s3GetWithProgress(u, m.progress)
+		fail = failures.FailNetwork.Wrap(err)
+	} else {
+		bytes, fail = httpGetWithProgress(entry.Download, m.progress)
+	}
 
 	if fail != nil {
 		m.failure = fail
@@ -78,7 +94,7 @@ func (m *Manager) Job(entry *Entry) {
 		return
 	}
 
-	err := ioutil.WriteFile(entry.Path, bytes, 0666)
+	err = ioutil.WriteFile(entry.Path, bytes, 0666)
 	if err != nil {
 		m.failure = failures.FailIO.Wrap(err)
 	}
