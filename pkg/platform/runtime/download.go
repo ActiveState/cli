@@ -77,7 +77,7 @@ type DownloadDirectoryProvider interface {
 type Downloader interface {
 	// Download will attempt to download some runtime locally and return back the filename of
 	// the downloaded archive or a Failure.
-	Download(artifacts []*HeadChefArtifact, d DownloadDirectoryProvider, progress *progress.Progress) (files map[string]*HeadChefArtifact, fail *failures.Failure)
+	Download(artifacts []*HeadChefArtifact, d DownloadDirectoryProvider, progress *progress.Progress) (files map[string]*HeadChefArtifact, err error)
 
 	// FetchArtifacts will fetch artifact
 	FetchArtifacts() (*FetchArtifactsResult, *failures.Failure)
@@ -215,7 +215,7 @@ func (r *Download) projectURL() string {
 }
 
 // Download is the main function used to kick off the runtime download
-func (r *Download) Download(artifacts []*HeadChefArtifact, dp DownloadDirectoryProvider, progress *progress.Progress) (files map[string]*HeadChefArtifact, fail *failures.Failure) {
+func (r *Download) Download(artifacts []*HeadChefArtifact, dp DownloadDirectoryProvider, progress *progress.Progress) (files map[string]*HeadChefArtifact, err error) {
 	files = map[string]*HeadChefArtifact{}
 	entries := []*download.Entry{}
 
