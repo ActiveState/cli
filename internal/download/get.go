@@ -1,8 +1,9 @@
 package download
 
 import (
-	"context"
+	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -16,9 +17,19 @@ import (
 	"github.com/ActiveState/cli/internal/progress"
 )
 
+type logger struct{}
 
-func s3GetWithProgress(url *url.URL, progress *progress.Progress) ([]byte, error) {
-	logging.Debug("Downloading via s3")
+func (l *logger) Log(v ...interface{}) {
+	logging.Debug("AWS: %v", v...)
+}
+
+func s3GetWithProgress(urlStr string, progress *progress.Progress) ([]byte, error) {
+	logging.Debug("Downloading via s3: %s", urlStr)
+
+	url, err := url.Parse(urlStr)
+	if err != nil {
+		return nil, errs.Wrap(err, "Invalid URL: %s", urlStr)
+	}
 
 	s3m := parseS3URL(url)
 
@@ -27,24 +38,29 @@ func s3GetWithProgress(url *url.URL, progress *progress.Progress) ([]byte, error
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not load default AWS config.")
 	}
-	config.Region = s3m.Region
-	config.EndpointResolver = aws.ResolveWithEndpointURL(url.String())
-	config.Credentials = aws.AnonymousCredentials
 
-	// Read size of object
-	s3sess := s3.New(config)
-	headReq := s3sess.HeadObjectRequest(&s3.HeadObjectInput{
-		Bucket: aws.String(s3m.Bucket),
-		Key:    aws.String(s3m.Key),
-	})
-	headRes, err := headReq.Send(context.Background())
+	config.Region = s3m.Region
+	config.EndpointResolver = aws.ResolveWithEndpointURL(urlStr)
+	config.Credentials = aws.AnonymousCredentials
+	config.Logger = &logger{}
+	// config.LogLevel = aws.LogDebug
+
+	// Grab file size
+	var length int64 = 0
+	res, err := http.Get(urlStr)
 	if err != nil {
-		return nil, locale.WrapError(err, "err_dl_s3head", "Requesting download meta information failed due to underlying S3 error: {{.V0}}.", err.Error())
+		logging.Debug("Could not grab url: %v", err)
+	} else if res.StatusCode != http.StatusOK {
+		logging.Debug("Could not grab url due to statuscode: %d", res.StatusCode)
+	} else {
+		lengthInt, err := strconv.Atoi(res.Header.Get("Content-Length"))
+		if err != nil {
+			logging.Debug("Could not grab content-length: %v", err)
+		} else {
+			length = int64(lengthInt)
+		}
 	}
-	var length int64
-	if headRes != nil && headRes.ContentLength != nil {
-		length = *headRes.ContentLength
-	}
+	res.Body.Close() // we're just looking at the header
 
 	// Record progress
 	bar := progress.AddByteProgressBar(length)
@@ -61,6 +77,12 @@ func s3GetWithProgress(url *url.URL, progress *progress.Progress) ([]byte, error
 
 	// Download object
 	dl := s3manager.NewDownloader(config)
+	dl.RequestOptions = append(dl.RequestOptions, func(r *aws.Request) {
+		r.Handlers.Build.PushBack(func(r *aws.Request) {
+			r.HTTPRequest.URL.RawQuery = url.RawQuery
+		})
+	})
+
 	_, err = dl.Download(w,
 		&s3.GetObjectInput{
 			Bucket: aws.String(s3m.Bucket),
@@ -69,6 +91,8 @@ func s3GetWithProgress(url *url.URL, progress *progress.Progress) ([]byte, error
 	if err != nil {
 		return nil, locale.WrapError(err, "err_dl_s3", "Downloading failed due to underlying S3 error: {{.V0}}.", err.Error())
 	}
+
+	bar.Abort(true) // ensure we don't get stuck on an incomplete bar
 
 	return w.Bytes(), nil
 }
