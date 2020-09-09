@@ -105,7 +105,12 @@ jobs:
     - name: Sign
       shell: bash
       if: runner.os == 'Windows'
-      run: "echo $MSI_CERT_BASE64 | base64 --decode > Cert.p12\nexport PATH=/c/Program\\ Files\\ \\(x86\\)/WiX\\ Toolset\\ v3.11/bin/:/c/Program\\ Files\\ \\(x86\\)/Windows\\ Kits/10/bin/10.0.16299.0/x86/:$PATH\n\nsigntool.exe sign -d \"ActiveState State Tool\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/state.exe \nsigntool.exe sign -d \"ActiveState State Tool (32bit)\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/state32.exe \n"
+      run: "echo $MSI_CERT_BASE64 | base64 --decode > Cert.p12\nexport PATH=/c/Program\\
+        Files\\ \\(x86\\)/WiX\\ Toolset\\ v3.11/bin/:/c/Program\\ Files\\ \\(x86\\)/Windows\\
+        Kits/10/bin/10.0.16299.0/x86/:$PATH\n\nsigntool.exe sign -d \"ActiveState
+        State Tool\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/state.exe \nsigntool.exe
+        sign -d \"ActiveState State Tool (32bit)\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD}
+        ./build/state32.exe \n"
       env:
         CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
         MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
