@@ -85,18 +85,23 @@ func (d *Deploy) Run(params *Params) error {
 }
 
 func (d *Deploy) createInstaller(namespace project.Namespaced, path string) (installable, string, error) {
-	branch, fail := d.DefaultBranchForProjectName(namespace.Owner, namespace.Project)
-	if fail != nil {
-		return nil, "", errs.Wrap(fail, "Could not create installer")
+	commitID := namespace.CommitID
+	if commitID == nil {
+		branch, fail := d.DefaultBranchForProjectName(namespace.Owner, namespace.Project)
+		if fail != nil {
+			return nil, "", errs.Wrap(fail, "Could not create installer")
+		}
+
+		if branch.CommitID == nil {
+			return nil, "", locale.NewInputError(
+				"err_deploy_no_commits",
+				"The project '{{.V0}}' does not have any packages configured, please add add some packages first.", namespace.String())
+		}
+
+		commitID = branch.CommitID
 	}
 
-	if branch.CommitID == nil {
-		return nil, "", locale.NewInputError(
-			"err_deploy_no_commits",
-			"The project '{{.V0}}' does not have any packages configured, please add add some packages first.", namespace.String())
-	}
-
-	installable, cacheDir, fail := d.NewRuntimeInstaller(*branch.CommitID, namespace.Owner, namespace.Project, path)
+	installable, cacheDir, fail := d.NewRuntimeInstaller(*commitID, namespace.Owner, namespace.Project, path)
 	return installable, cacheDir, fail.ToError()
 }
 

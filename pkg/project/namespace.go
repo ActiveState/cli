@@ -7,6 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/go-openapi/strfmt"
 )
 
 // FailInvalidNamespace indicates the provided string is not a valid
@@ -14,12 +15,13 @@ import (
 var FailInvalidNamespace = failures.Type("project.fail.invalidnamespace", failures.FailUserInput)
 
 // NamespaceRegex matches the org and project name in a namespace, eg. ORG/PROJECT
-const NamespaceRegex = `^([\w-_]+)\/([\w-_\.]+)$`
+const NamespaceRegex = `^([\w-_]+)\/([\w-_\.]+)(?:#([-a-fA-F0-9]*))?$`
 
 // Namespaced represents a project namespace of the form <OWNER>/<PROJECT>
 type Namespaced struct {
-	Owner   string
-	Project string
+	Owner    string
+	Project  string
+	CommitID *strfmt.UUID
 }
 
 // Set implements the captain argmarshaler interface.
@@ -50,6 +52,7 @@ func (ns *Namespaced) String() string {
 	return fmt.Sprintf("%s%s%s", ns.Owner, sep, ns.Project)
 }
 
+// Type returns the human readable type name of Namespaced.
 func (ns *Namespaced) Type() string {
 	return "namespace"
 }
@@ -71,14 +74,21 @@ func (ns *Namespaced) Validate() *failures.Failure {
 func ParseNamespace(raw string) (*Namespaced, *failures.Failure) {
 	rx := regexp.MustCompile(NamespaceRegex)
 	groups := rx.FindStringSubmatch(raw)
-	if len(groups) != 3 {
+	if len(groups) < 3 {
 		return nil, FailInvalidNamespace.New(locale.Tr("err_invalid_namespace", raw))
 	}
 
-	return &Namespaced{
+	names := Namespaced{
 		Owner:   groups[1],
 		Project: groups[2],
-	}, nil
+	}
+
+	if len(groups) > 3 && len(groups[3]) > 0 {
+		uuid := strfmt.UUID(groups[3])
+		names.CommitID = &uuid
+	}
+
+	return &names, nil
 }
 
 // ParseNamespaceOrConfigfile returns a valid project namespace.
@@ -90,9 +100,18 @@ func ParseNamespaceOrConfigfile(raw string, configFile string) (*Namespaced, *fa
 		if fail != nil {
 			return nil, FailInputSecretValue.New(locale.Tr("err_invalid_namespace", raw))
 		}
-		var names Namespaced
-		names.Owner = prj.Owner()
-		names.Project = prj.Name()
+
+		names := Namespaced{
+			Owner:   prj.Owner(),
+			Project: prj.Name(),
+		}
+
+		prjCommitID := prj.CommitID()
+		if prjCommitID != "" {
+			uuid := strfmt.UUID(prjCommitID)
+			names.CommitID = &uuid
+		}
+
 		return &names, nil
 	}
 
