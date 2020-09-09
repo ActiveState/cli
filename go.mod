@@ -17,7 +17,7 @@ require (
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 	github.com/asaskevich/govalidator v0.0.0-20180315120708-ccb8e960c48f // indirect
 	github.com/autarch/testify v1.2.2
-	github.com/aws/aws-sdk-go v1.13.8
+	github.com/aws/aws-sdk-go v1.34.19
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/bndr/gotabulate v0.0.0-20170315142410-bc555436bfd5
 	github.com/creack/pty v1.1.11
@@ -55,7 +55,6 @@ require (
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/jarcoal/httpmock v1.0.3
 	github.com/jessevdk/go-flags v1.4.0
-	github.com/jmespath/go-jmespath v0.0.0-20160202185014-0b12d6b521d8 // indirect
 	github.com/kami-zh/go-capturer v0.0.0-20171211120116-e492ea43421d
 	github.com/kardianos/osext v0.0.0-20170510131534-ae77be60afb1
 	github.com/machinebox/graphql v0.2.2
@@ -75,7 +74,7 @@ require (
 	github.com/pelletier/go-toml v1.1.0 // indirect
 	github.com/phayes/permbits v0.0.0-20190108233746-1efae4548023
 	github.com/pierrec/lz4 v0.0.0-20190222153722-062282ea0dcf // indirect
-	github.com/pkg/errors v0.8.1
+	github.com/pkg/errors v0.9.1
 	github.com/posener/wstest v0.0.0-20180216222922-04b166ca0bf1
 	github.com/rollbar/rollbar-go v1.1.0
 	github.com/shibukawa/configdir v0.0.0-20170330084843-e180dbdc8da0
