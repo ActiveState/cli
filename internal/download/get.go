@@ -60,7 +60,10 @@ func s3GetWithProgress(urlStr string, progress *progress.Progress) ([]byte, erro
 			length = int64(lengthInt)
 		}
 	}
-	res.Body.Close() // we're just looking at the header
+
+	// Close early cause we're just looking at the header
+	// Yes normally you'd use a HEAD for this, but S3 presigned URLs don't support HEAD requests
+	res.Body.Close()
 
 	// Record progress
 	bar := progress.AddByteProgressBar(length)
@@ -79,6 +82,7 @@ func s3GetWithProgress(urlStr string, progress *progress.Progress) ([]byte, erro
 	dl := s3manager.NewDownloader(config)
 	dl.RequestOptions = append(dl.RequestOptions, func(r *aws.Request) {
 		r.Handlers.Build.PushBack(func(r *aws.Request) {
+			// Work around AWS rewriting our query in the wrong order, causing signing to fail
 			r.HTTPRequest.URL.RawQuery = url.RawQuery
 		})
 	})
