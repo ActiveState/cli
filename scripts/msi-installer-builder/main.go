@@ -44,12 +44,12 @@ type config struct {
 	ID                  string
 	ProjectName         string
 	Version             string
-	CommitID            string
 	ReleaseNotes        string
 	Icon                string
 	ProjectOwnerAndName string
 	Visibility          string
 	MSIVersion          string
+	CommitID            string
 }
 
 func seededUUID(seed string) string {
@@ -104,8 +104,6 @@ func normalize(preset languagePreset, c *config) (*config, error) {
 	c.ProjectName = parts[1]
 	c.ID = seededUUID(c.ProjectOwnerAndName)
 
-	c.CommitID = constants.RevisionHash
-
 	ic, err := icon(preset)
 	if err != nil {
 		return c, err
@@ -135,10 +133,10 @@ func baseConfig() *config {
 		Icon:                "./assets/as.ico",
 		Preset:              Unknown.String(),
 		Visibility:          "Public",
-		CommitID:            constants.RevisionHash,
 		ProjectOwnerAndName: pad("PROJECT_OWNER_AND_NAME"),
 		ReleaseNotes:        pad("RELEASE_NOTES"),
 		ProjectName:         pad("PROJECT_NAME"),
+		CommitID:            pad("COMMIT_ID"),
 		MSIVersion:          msiVersionInfo(),
 	}
 }
@@ -153,10 +151,14 @@ func msiVersionInfo() string {
 }
 
 func parseArgs(args []string) (*config, error) {
-	if len(os.Args) == 5 {
+	if len(os.Args) >= 5 {
 		preset, err := parsePreset(os.Args[1])
 		if err != nil {
 			return nil, err
+		}
+		commitID := "latest"
+		if len(os.Args) >= 6 {
+			commitID = os.Args[5]
 		}
 		return normalize(preset, &config{
 			Preset:              preset.String(),
@@ -164,6 +166,7 @@ func parseArgs(args []string) (*config, error) {
 			ProjectOwnerAndName: os.Args[3],
 			Version:             os.Args[4],
 			MSIVersion:          msiVersionInfo(),
+			CommitID:            commitID,
 		})
 	}
 
@@ -171,7 +174,7 @@ func parseArgs(args []string) (*config, error) {
 		return baseConfig(), nil
 	}
 
-	return nil, fmt.Errorf("invalid arguments: Expected <preset> <visibility> <owner/name> <version> | \"base\"")
+	return nil, fmt.Errorf("invalid arguments: Expected <preset> <visibility> <owner/name> <version> [<commitID>] | \"base\"")
 }
 
 func run(args []string) error {
