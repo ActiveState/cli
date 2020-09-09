@@ -459,7 +459,7 @@ namespace StateDeploy
                 deployCMDBuilder.Append(" --force");
             }
             // Add commitID if requested
-            if (subCommand == "install" && commitID != "latest")
+            if (commitID != "latest")
             {
                 projectName += "#" + commitID;
             }
