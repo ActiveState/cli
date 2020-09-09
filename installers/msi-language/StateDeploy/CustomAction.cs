@@ -60,22 +60,7 @@ namespace StateDeploy
 
         private static ActionResult _installStateTool(Session session, out string stateToolPath)
         {
-            // Registry info for network errors
-            // This custom action runs as administrator so we have to specifically set
-            // the registry key for the user using their SID in order for the value to
-            // be available in later immediate custom actions
-            string registryKey = string.Format("HKEY_USERS\\{0}\\SOFTWARE\\ActiveState\\{1}", session.CustomActionData["USERSID"], session.CustomActionData["PRODUCT_NAME"]);
-            RegistryValueKind registryEntryDataType = RegistryValueKind.String;
-            try
-            {
-                Registry.SetValue(registryKey, networkErrorKey, "false", registryEntryDataType);
-                Registry.SetValue(registryKey, networkErrorMessageKey, "", registryEntryDataType);
-            } catch (Exception e)
-            {
-                string msg = string.Format("Could not delete network error registry keys. Exception: {0}", e.ToString());
-                session.Log(msg);
-                RollbarReport.Error(msg, session);
-            }
+            Network.ResetErrorDetails(session);
 
             var paths = GetPaths();
             string stateURL = "https://s3.ca-central-1.amazonaws.com/cli-update/update/state/unstable/";
@@ -120,7 +105,7 @@ namespace StateDeploy
             {
                 string msg = string.Format("Encountered exception downloading state tool json info file: {0}", e.ToString());
                 session.Log(msg);
-                SetNetworkErrorDetails(session, registryKey, e);
+                Network.SetErrorDetails(session, e.Message);
                 return ActionResult.Failure;
             }
 
@@ -153,7 +138,7 @@ namespace StateDeploy
             {
                 string msg = string.Format("Encountered exception downloading state tool zip file. URL to zip file: {0}, path to save zip file to: {1}, exception: {2}", zipURL, zipPath, e.ToString());
                 session.Log(msg);
-                SetNetworkErrorDetails(session, registryKey, e);
+                Network.SetErrorDetails(session, e.Message);
                 return ActionResult.Failure;
             }
 
@@ -263,21 +248,6 @@ namespace StateDeploy
 
         }
 
-        private static void SetNetworkErrorDetails(Session session, string registryKey, Exception e)
-        {
-            RegistryValueKind registryEntryDataType = RegistryValueKind.String;
-            try
-            {
-                Registry.SetValue(registryKey, networkErrorKey, "true", registryEntryDataType);
-                Registry.SetValue(registryKey, networkErrorMessageKey, e.Message, registryEntryDataType);
-            }
-            catch (Exception registryException)
-            {
-                string registryExceptionMsg = string.Format("Could not set network error registry values. Exception: {0}", registryException.ToString());
-                session.Log(registryExceptionMsg);
-                RollbarReport.Error(registryExceptionMsg, session);
-            }
-        }
         public static ActionResult InstallStateTool(Session session, string msiLogFileName, out string stateToolPath)
         {
             RollbarHelper.ConfigureRollbarSingleton(session.CustomActionData["MSI_VERSION"]);
@@ -345,7 +315,7 @@ namespace StateDeploy
             {
                 Record record = new Record();
                 session.Log(string.Format("Output: {0}", output));
-                var errorOutput = FormatErrorOutput(output);
+                var errorOutput = Command.FormatErrorOutput(output);
                 record.FormatString = string.Format("Platform login failed with error:\n{0}", errorOutput);
 
                 session.Message(InstallMessage.Error | (InstallMessage)MessageBoxButtons.OK, record);
@@ -444,7 +414,7 @@ namespace StateDeploy
                     else if (runResult == ActionResult.Failure)
                     {
                         Record record = new Record();
-                        var errorOutput = FormatErrorOutput(output);
+                        var errorOutput = Command.FormatErrorOutput(output);
                         record.FormatString = String.Format("{0} failed with error:\n{1}", seq.Description, errorOutput);
 
                         MessageResult msgRes = session.Message(InstallMessage.Error | (InstallMessage)MessageBoxButtons.OK, record);
@@ -474,31 +444,6 @@ namespace StateDeploy
         {
             ActiveState.RollbarHelper.ConfigureRollbarSingleton(session.CustomActionData["MSI_VERSION"]);
             return run(session);
-        }
-
-        /// <summary>
-        /// FormatErrorOutput formats the output of a state tool command optimized for display in an error dialog
-        /// </summary>
-        /// <param name="cmdOutput">
-        /// the output from a state tool command run with `--output=json`
-        /// </param>
-        private static string FormatErrorOutput(string cmdOutput)
-        {
-            return string.Join("\n", cmdOutput.Split('\x00').Select(blob =>
-            {
-                try
-                {
-                    var json = new JavaScriptSerializer();
-                    var data = json.Deserialize<Dictionary<string, string>>(blob);
-                    var error = data["Error"];
-                    return error;
-                }
-                catch (Exception)
-                {
-                    return blob;
-                }
-            }).ToList());
-
         }
 
         private static string BuildDeployCmd(Session session, string subCommand)

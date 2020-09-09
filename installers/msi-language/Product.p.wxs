@@ -17,6 +17,7 @@
 		<Property Id="AS_TOTP" Secure="yes" />
 		<Property Id="NETWORK_ERROR" Value="false" />
 		<Property Id="NETWORK_ERROR_MESSAGE" Value="Network error" />
+		<Property Id="INSTALL_MODE" Value="Install" />
 		<Property Id="CODE_INSTALLED" Value="false" />
 		<Property Id="MsiLogging" Value="Iwearucmopvx" />
 		<!-- End Configuration parameters -->
@@ -196,7 +197,7 @@
 		<CustomAction
 			Id="SetStateDeployPropertyValues"
 			Property="StateDeploy"
-			Value="INSTALLDIR=[INSTALLDIR];PROJECT_OWNER_AND_NAME=[PROJECT_OWNER_AND_NAME];IS_MODIFY=[IS_MODIFY];STATE_TOOL_INSTALLED=[STATE_TOOL_INSTALLED];STATE_TOOL_PATH=[STATE_TOOL_PATH];AS_USERNAME=[AS_USERNAME];AS_PASSWORD=[AS_PASSWORD];AS_TOTP=[AS_TOTP];UI_LEVEL=[UILevel];MSI_VERSION=[MSI_VERSION];PRODUCT_VERSION=[ProductVersion];MsiLogFileLocation=[MsiLogFileLocation];PRIVACY_ACCEPTED=[PRIVACY_ACCEPTED];NETWORK_ERROR=[NETWORK_ERROR];NETWORK_ERROR_MESSAGE=[NETWORK_ERROR_MESSAGE];PRODUCT_NAME=[ProductName];USERSID=[UserSID];COMMIT_ID=[CommitID]"
+			Value="INSTALLDIR=[INSTALLDIR];PROJECT_OWNER_AND_NAME=[PROJECT_OWNER_AND_NAME];IS_MODIFY=[IS_MODIFY];STATE_TOOL_INSTALLED=[STATE_TOOL_INSTALLED];STATE_TOOL_PATH=[STATE_TOOL_PATH];AS_USERNAME=[AS_USERNAME];AS_PASSWORD=[AS_PASSWORD];AS_TOTP=[AS_TOTP];UI_LEVEL=[UILevel];MSI_VERSION=[MSI_VERSION];PRODUCT_VERSION=[ProductVersion];MsiLogFileLocation=[MsiLogFileLocation];PRIVACY_ACCEPTED=[PRIVACY_ACCEPTED];NETWORK_ERROR=[NETWORK_ERROR];NETWORK_ERROR_MESSAGE=[NETWORK_ERROR_MESSAGE];PRODUCT_NAME=[ProductName];USERSID=[UserSID];COMMIT_ID=[CommitID];INSTALL_MODE=[INSTALL_MODE]"
 		/>
 		<CustomAction Id="SetUninstallProperties" Property="Uninstall" Value="PRESET=[PRESET];REMEMBER=[REMEMBER];REMEMBER_SHORTCUTDIR=[REMEMBER_SHORTCUTDIR];MSI_VERSION=[MSI_VERSION];MsiLogFileLocation=[MsiLogFileLocation];PRIVACY_ACCEPTED=[PRIVACY_ACCEPTED]" />
 		<CustomAction Id="SetPresetInfo" Property="Preset" Value="REL_NOTES=[REL_NOTES];INSTALLDIR=[INSTALLDIR];APP_START_MENU_PATH=[ApplicationProgramsFolder];PRESET=[PRESET];MSI_VERSION=[MSI_VERSION];MsiLogFileLocation=[MsiLogFileLocation];PRIVACY_ACCEPTED=[PRIVACY_ACCEPTED]" />
@@ -210,6 +211,10 @@
 
 		<Binary Id="StatusCA" SourceFile="$(var.Status.TargetDir)$(var.Status.TargetName).CA.dll" />
 		<CustomAction Id="Status" Impersonate="no" BinaryKey="StatusCA" DllEntry="ResetProgress" Execute="deferred" Return="check" />
+		<CustomAction Id="SetInstallMode" Impersonate="yes" BinaryKey="StatusCA" DllEntry="SetInstallMode" Execute="immediate" Return="check" />
+		<CustomAction Id="SetUninstallMode" Impersonate="yes" BinaryKey="StatusCA" DllEntry="SetUninstallMode" Execute="immediate" Return="check" />
+		<CustomAction Id="SetModifyMode" Impersonate="yes" BinaryKey="StatusCA" DllEntry="SetModifyMode" Execute="immediate" Return="check" />
+		<CustomAction Id="SetRepairMode" Impersonate="yes" BinaryKey="StatusCA" DllEntry="SetRepairMode" Execute="immediate" Return="check" />
 
 		<Binary Id="StateDeployCA" SourceFile="$(var.StateDeploy.TargetDir)$(var.StateDeploy.TargetName).CA.dll" />
 		<CustomAction Id="StateDeploy" Impersonate="no" BinaryKey="StateDeployCA" DllEntry="StateDeploy" Execute="deferred" Return="check" />
@@ -234,12 +239,16 @@
 			<Custom Action="Status" After="InstallInitialize">NOT REMOVE~="ALL"</Custom>
 			<Custom Action="SetRollbackPropertyValues" After="Status">NOT REMOVE~="ALL"</Custom>
 			<Custom Action="SetStateDeployPropertyValues" After="SetRollbackPropertyValues">NOT REMOVE~="ALL"</Custom>
+			<Custom Action="SetInstallMode" After="SetRollbackPropertyValues">NOT Installed</Custom>
+			<Custom Action="SetModifyMode" After="SetRollbackPropertyValues">Installed AND NOT REINSTALL AND NOT REMOVE~="ALL"</Custom>
+			<Custom Action="SetRepairMode" After="SetRollbackPropertyValues">REINSTALL~="ALL" OR REINSTALL~="COMPLETE"</Custom>
 			<Custom Action="Rollback" After="SetStateDeployPropertyValues">NOT REMOVE~="ALL"</Custom>
 			<Custom Action="StateDeploy" After="Rollback">NOT REMOVE~="ALL"</Custom>
 			<Custom Action="SetPresetInfo" After="CreateShortcuts">NOT REMOVE~="ALL"</Custom>
 			<Custom Action="Preset" After="SetPresetInfo">NOT REMOVE~="ALL"</Custom>
 			<Custom Action="GAReportSuccess" After="InstallFinalize">NOT REMOVE~="ALL"</Custom>
-			<Custom Action="SetUninstallProperties" After="RemoveFiles">REMOVE~="ALL"</Custom>
+			<Custom Action="SetUninstallMode" After="RemoveFiles">REMOVE~="ALL"</Custom>
+			<Custom Action="SetUninstallProperties" After="SetUninstallMode">REMOVE~="ALL"</Custom>
 			<Custom Action="Uninstall" After="SetUninstallProperties">REMOVE~="ALL"</Custom>
 		</InstallExecuteSequence>
 	</Product>
