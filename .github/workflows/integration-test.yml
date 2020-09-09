@@ -64,7 +64,7 @@ jobs:
         MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
     - name: Integration Tests
       shell: bash
-      run: SHELL='' go test -timeout 20m ./test/integration -v -run="TestActivateIntegrationTestSuite/TestActivateUsingCommitID"
+      run: SHELL='' go test -timeout 20m ./test/integration -v
       env:
         INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
         INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
