@@ -79,6 +79,8 @@ func s3GetWithProgress(url *url.URL, progress *progress.Progress) ([]byte, error
 
 	// Record progress
 	bar := progress.AddByteProgressBar(length)
+	defer bar.Abort(true) // ensure we don't get stuck on an incomplete bar
+
 	cb := func(length int) {
 		if !bar.Completed() {
 			// Failsafe, so we don't get blocked by a progressbar
@@ -105,8 +107,6 @@ func s3GetWithProgress(url *url.URL, progress *progress.Progress) ([]byte, error
 	if err != nil {
 		return nil, locale.WrapError(err, "err_dl_s3", "Downloading failed due to underlying S3 error: {{.V0}}.", err.Error())
 	}
-
-	bar.Abort(true) // ensure we don't get stuck on an incomplete bar
 
 	return w.Bytes(), nil
 }
