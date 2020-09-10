@@ -2,7 +2,6 @@ package retryhttp
 
 import (
 	"net/http"
-	"sync"
 
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/hashicorp/go-retryablehttp"
@@ -11,13 +10,12 @@ import (
 // RoundTripper implements the http.RoundTripper interface, using a retrying
 // HTTP client to execute requests.
 type RoundTripper struct {
-	Client *Client
-	once   sync.Once
+	client *Client
 }
 
 func (rt *RoundTripper) init() {
-	if rt.Client == nil {
-		rt.Client = DefaultClient
+	if rt.client == nil {
+		rt.client = DefaultClient
 	}
 }
 
@@ -28,5 +26,5 @@ func (rt *RoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 		return nil, locale.WrapError(err, "err_retry_convert_req", "Could not convert request to retryable format")
 	}
 
-	return rt.Client.Do(retryableReq)
+	return rt.client.Do(retryableReq)
 }
