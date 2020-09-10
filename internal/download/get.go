@@ -1,6 +1,7 @@
 package download
 
 import (
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -123,17 +124,32 @@ func parseS3URL(url *url.URL) (s3Meta, error) {
 	if len(domain) != 4 {
 		return r, locale.NewError("err_s3_host", "API responded with an invalid artifact host: {{.V0}}.", url.Host)
 	}
-	if strings.HasSuffix(url.Host, ".s3.amazonaws.com") { // https://bucket-name.s3.amazonaws.com/key-name
-		r.Bucket = domain[0]
-		r.Region = constants.DefaultS3Region
-	} else if domain[1] == "s3" && domain[3] == "amazonaws" { // https://bucket-name.s3.Region.amazonaws.com/key-name
-		r.Bucket = domain[0]
-		r.Region = domain[2]
-	} else { // https://s3.Region.amazonaws.com/bucket-name/key-name
-		r.Bucket = strings.SplitN(url.Path, "/", 1)[0]
-		r.Region = domain[1]
+
+	// https://bucket-name.s3.amazonaws.com/key-name
+	if strings.HasSuffix(url.Host, ".s3.amazonaws.com") {
+		return s3Meta{
+			domain[0],
+			constants.DefaultS3Region,
+			url.Path,
+		}, nil
 	}
-	return r, nil
+
+	// https://bucket-name.s3.Region.amazonaws.com/key-name
+	if domain[1] == "s3" && domain[3] == "amazonaws.com" {
+		return s3Meta{
+			domain[0],
+			domain[2],
+			url.Path,
+		}, nil
+	}
+
+	// https://s3.Region.amazonaws.com/bucket-name/key-name
+	path := strings.Split(url.Path, "/")
+	return s3Meta{
+		path[1],
+		domain[1],
+		fmt.Sprintf("/%s", strings.Join(path[2:len(path)], "/")),
+	}, nil
 }
 
 func _testGetWithProgress(url *url.URL, progress *progress.Progress) ([]byte, error) {
