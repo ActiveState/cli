@@ -1,6 +1,7 @@
 package retryhttp
 
 import (
+	"errors"
 	"net"
 	"net/http"
 	"net/url"
@@ -67,6 +68,12 @@ func (c *Client) Do(req *retryablehttp.Request) (*http.Response, error) {
 	return normalizeResponse(c.Client.Do(req))
 }
 
+func (c *Client) StandardClient() *http.Client {
+	return &http.Client{
+		Transport: &RoundTripper{Client: c},
+	}
+}
+
 func normalizeResponse(res *http.Response, err error) (*http.Response, error) {
 	if res != nil {
 		switch res.StatusCode {
@@ -78,6 +85,12 @@ func normalizeResponse(res *http.Response, err error) (*http.Response, error) {
 			return res, locale.WrapInputError(&UserNetworkError{429}, "err_user_network_toomany", "Request failed due to too many requests. {{.V0}}", solutionLocale)
 		}
 	}
+
+	var dnsError *net.DNSError
+	if errors.Is(err, dnsError) {
+		return res, locale.WrapError(&UserNetworkError{}, "err_user_network_dns", "Request failed due to DNS error. {{.V0}}", solutionLocale)
+	}
+
 	return res, err
 }
 
@@ -102,4 +115,3 @@ func NewClient(timeout time.Duration, retries int) *Client {
 		Client: retryClient,
 	}
 }
-
