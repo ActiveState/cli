@@ -125,7 +125,7 @@ func parseS3URL(url *url.URL) (s3Meta, error) {
 	}
 	if strings.HasSuffix(url.Host, ".s3.amazonaws.com") { // https://bucket-name.s3.amazonaws.com/key-name
 		r.Bucket = domain[0]
-		r.Region = "us-east-1"
+		r.Region = constants.DefaultS3Region
 	} else if domain[1] == "s3" && domain[3] == "amazonaws" { // https://bucket-name.s3.Region.amazonaws.com/key-name
 		r.Bucket = domain[0]
 		r.Region = domain[2]
