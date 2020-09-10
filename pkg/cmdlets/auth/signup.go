@@ -112,7 +112,7 @@ func promptTOS(out output.Outputer, prompt prompt.Prompter) (bool, *failures.Fai
 		locale.T("tos_show_full"),
 	}
 
-	out.Notice(locale.Tl("tos_disclaimer", constants.TermsOfServiceURLLatest))
+	out.Notice(locale.Tr("tos_disclaimer", constants.TermsOfServiceURLLatest))
 	choice, fail := prompt.Select(locale.T("tos_acceptance"), choices, locale.T("tos_accept"))
 	if fail != nil {
 		return false, fail
@@ -204,10 +204,10 @@ func doSignup(input *signupInput, out output.Outputer) *failures.Failure {
 		// Authentication failed due to email already existing (username check already happened at this point)
 		case *users.AddUserConflict:
 			logging.Error("Encountered add user conflict: %v", err)
-			return FailAddUserConflict.New(locale.T("err_auth_signup_user_exists", api.ErrorMessageFromPayload(err)))
+			return FailAddUserConflict.New(locale.Tr("err_auth_signup_user_exists", api.ErrorMessageFromPayload(err)))
 		default:
 			logging.Error("Encountered unknown error adding user: %v", err)
-			return FailAuthUnknown.New(locale.T("err_auth_failed_unknown_cause", api.ErrorMessageFromPayload(err)))
+			return FailAuthUnknown.New(locale.Tr("err_auth_failed_unknown_cause", api.ErrorMessageFromPayload(err)))
 		}
 	}
 
