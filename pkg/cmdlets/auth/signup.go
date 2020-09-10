@@ -112,7 +112,7 @@ func promptTOS(out output.Outputer, prompt prompt.Prompter) (bool, *failures.Fai
 		locale.T("tos_show_full"),
 	}
 
-	out.Notice(locale.Tl("tos_disclaimer", constants.TermsOfServiceURLLatest))
+	out.Notice(locale.Tr("tos_disclaimer", constants.TermsOfServiceURLLatest))
 	choice, fail := prompt.Select(locale.T("tos_acceptance"), choices, locale.T("tos_accept"))
 	if fail != nil {
 		return false, fail
