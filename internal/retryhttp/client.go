@@ -70,7 +70,7 @@ func (c *Client) Do(req *retryablehttp.Request) (*http.Response, error) {
 
 func (c *Client) StandardClient() *http.Client {
 	return &http.Client{
-		Transport: &RoundTripper{Client: c},
+		Transport: &RoundTripper{client: c},
 	}
 }
 
