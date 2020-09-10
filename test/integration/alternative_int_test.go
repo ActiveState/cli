@@ -7,12 +7,66 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/unarchiver"
+	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/stretchr/testify/suite"
 )
 
 type AlternativeArtifactIntegrationTestSuite struct {
 	suite.Suite
+}
+
+func (suite *AlternativeArtifactIntegrationTestSuite) TestRelocation() {
+	artifactKey := "language/perl/5.32.0/3/7c76e6a6-3c41-5f68-a7f2-5468fe1b0919/artifact.tar.gz"
+	if runtime.GOOS == "windows" {
+		artifactKey = "language/perl/5.32.0/3/6864c481-ff89-550d-9c61-a17ae57b7024/artifact.tar.gz"
+	}
+	sess, err := session.NewSessionWithOptions(session.Options{
+		Profile: "default",
+		Config:  aws.Config{Region: aws.String("us-east-1")},
+	})
+	suite.Require().NoError(err, "could not create aws session")
+	s3c := s3.New(sess)
+	object := &s3.GetObjectInput{
+		Bucket: aws.String("as-builds"),
+		Key:    aws.String(artifactKey),
+	}
+	resp, err := s3c.GetObject(object)
+	suite.Require().NoError(err, "could not download artifact test tarball")
+	artBody, err := ioutil.ReadAll(resp.Body)
+	suite.Require().NoError(err, "could not read artifact body")
+
+	ts := e2e.New(suite.T(), false)
+	artTgz := filepath.Join(ts.Dirs.Work, "artifacts.tar.gz")
+	err = ioutil.WriteFile(artTgz, artBody, 0666)
+	suite.Require().NoError(err, "failed to write artifacts file")
+
+	installDir := filepath.Join(ts.Dirs.Cache, "installdir")
+	tgz := unarchiver.NewTarGz()
+	artTgzFile, artTgzSize, err := tgz.PrepareUnpacking(artTgz, installDir)
+	defer artTgzFile.Close()
+	suite.Require().NoError(err, "failed to prepare unpacking of artifact tarball")
+	err = tgz.Unarchive(artTgzFile, artTgzSize, installDir)
+	suite.Require().NoError(err, "failed to unarchive the artifact")
+	edFile := filepath.Join(installDir, "runtime.json")
+	ed, fail := envdef.NewEnvironmentDefinition(edFile)
+	suite.Require().NoError(fail.ToError(), "failed to create environment definition file")
+
+	constants := envdef.NewConstants(installDir)
+	ed = ed.ExpandVariables(constants)
+	err = ed.ApplyFileTransforms(installDir, constants)
+	suite.Require().NoError(err, "failed to apply file transformations.")
+
+	env := ed.GetEnv(true)
+
+	cp := ts.SpawnCmdWithOpts("perl", e2e.WithArgs("--version"), e2e.AppendEnv(osutils.EnvMapToSlice(env)...))
+	cp.Expect("5.32")
+	cp.ExpectExitCode(0)
 }
 
 func (suite *AlternativeArtifactIntegrationTestSuite) TestActivateRuby() {
