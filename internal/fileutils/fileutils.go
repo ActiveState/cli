@@ -670,42 +670,12 @@ func TempDirUnsafe() string {
 	return f
 }
 
-func trialRename(src, dst string) bool {
-	if !DirExists(src) {
-		return false
-	}
-	if !DirExists(dst) {
-		return false
-	}
-
-	tmpFileBase := "test.ext"
-	tmpFileData := []byte("data")
-	tmpDir, err := ioutil.TempDir(src, "trial-rename")
-	if err != nil {
-		logging.Debug("Could not create temp dir: %v", err)
-		return false
-	}
-	defer func() { os.RemoveAll(tmpDir) }()
-
-	tmpSrcName := filepath.Join(tmpDir, tmpFileBase)
-	if err := ioutil.WriteFile(tmpSrcName, tmpFileData, 0660); err != nil {
-		return false
-	}
-
-	tmpDestDir := filepath.Join(dst, filepath.Base(tmpDir))
-	if err := os.Rename(tmpDir, tmpDestDir); err != nil {
-		return false
-	}
-	os.RemoveAll(tmpDestDir)
-
-	return true
-}
-
 // MoveAllFilesCrossDisk will move all of the files/dirs within one directory
 // to another directory even across disks. Both directories must already exist.
 func MoveAllFilesCrossDisk(src, dst string) *failures.Failure {
-	if trialRename(src, dst) {
-		return MoveAllFiles(src, dst)
+	fail := MoveAllFiles(src, dst)
+	if fail != nil {
+		logging.Error("Move all files failed with error: {{.V0}}. Falling back to copy files", fail)
 	}
 
 	return copyFiles(src, dst, true)
