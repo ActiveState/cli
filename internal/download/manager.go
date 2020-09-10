@@ -72,7 +72,7 @@ func (m *Manager) Job(entry *Entry) {
 		return
 	}
 
-	bytes, err := s3GetWithProgress(u, m.progress)
+	bytes, err := GetWithProgress(u, m.progress)
 	fail := failures.FailNetwork.Wrap(err)
 
 	if fail != nil {

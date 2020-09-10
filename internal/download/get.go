@@ -1,8 +1,10 @@
 package download
 
 import (
+	"io/ioutil"
 	"net/http"
 	"net/url"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -13,11 +15,30 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 
+	"github.com/ActiveState/cli/internal/condition"
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/progress"
 )
+
+// GetWithProgress takes a URL and returns the contents as bytes, it takes an optional second arg which will spawn a progressbar
+var GetWithProgress func(url *url.URL, progress *progress.Progress) ([]byte, error)
+
+func init() {
+	SetMocking(condition.InTest())
+}
+
+// SetMocking sets the correct Get methods for testing
+func SetMocking(useMocking bool) {
+	if useMocking {
+		GetWithProgress = _testGetWithProgress
+	} else {
+		GetWithProgress = s3GetWithProgress
+	}
+}
 
 func s3GetWithProgress(url *url.URL, progress *progress.Progress) ([]byte, error) {
 	logging.Debug("Downloading via s3")
@@ -107,4 +128,21 @@ func parseS3URL(url *url.URL) s3Meta {
 		r.Region = domain[1]
 	}
 	return r
+}
+
+func _testGetWithProgress(url *url.URL, progress *progress.Progress) ([]byte, error) {
+	return _testGet(url)
+}
+
+// _testGet is used when in tests, this cannot be in the test itself as that would limit it to only that one test
+func _testGet(url *url.URL) ([]byte, error) {
+	path := strings.Replace(url.String(), constants.APIArtifactURL, "", 1)
+	path = filepath.Join(environment.GetRootPathUnsafe(), "test", path)
+
+	body, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	return body, nil
 }
