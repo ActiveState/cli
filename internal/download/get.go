@@ -1,111 +1,110 @@
 package download
 
 import (
-	"bytes"
-	"io"
-	"io/ioutil"
-	"path/filepath"
+	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/condition"
-	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/environment"
-	"github.com/ActiveState/cli/internal/failures"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/request"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/progress"
-	"github.com/ActiveState/cli/internal/retryhttp"
 )
 
-// Get takes a URL and returns the contents as bytes
-var Get func(url string) ([]byte, *failures.Failure)
+func s3GetWithProgress(url *url.URL, progress *progress.Progress) ([]byte, error) {
+	logging.Debug("Downloading via s3")
 
-// GetWithProgress takes a URL and returns the contents as bytes, it takes an optional second arg which will spawn a progressbar
-var GetWithProgress func(url string, progress *progress.Progress) ([]byte, *failures.Failure)
+	s3m := parseS3URL(url)
 
-func init() {
-	SetMocking(condition.InTest())
-}
-
-// SetMocking sets the correct Get methods for testing
-func SetMocking(useMocking bool) {
-	if useMocking {
-		Get = _testHTTPGet
-		GetWithProgress = _testHTTPGetWithProgress
-	} else {
-		Get = httpGet
-		GetWithProgress = httpGetWithProgress
-	}
-}
-
-func httpGet(url string) ([]byte, *failures.Failure) {
-	logging.Debug("Retrieving url: %s", url)
-	return httpGetWithProgress(url, nil)
-}
-
-func httpGetWithProgress(url string, progress *progress.Progress) ([]byte, *failures.Failure) {
-	logging.Debug("Retrieving url: %s", url)
-	client := retryhttp.NewClient(0 /* 0 = no timeout */, 5)
-	resp, err := client.Get(url)
+	// Prepare AWS session
+	sess, err := session.NewSession(&aws.Config{
+		Region:      aws.String(s3m.Region),
+		Credentials: credentials.AnonymousCredentials,
+	})
 	if err != nil {
-		code := -1
-		if resp != nil {
-			code = resp.StatusCode
-		}
-		return nil, failures.FailNetwork.Wrap(err, locale.Tl("err_network_get", "Status code: {{.V0}}", strconv.Itoa(code)))
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		return nil, failures.FailNetwork.New("err_invalid_status_code", strconv.Itoa(resp.StatusCode))
+		return nil, errs.Wrap(err, "Could not create aws session")
 	}
 
-	var total int
-	length := resp.Header.Get("Content-Length")
-	if length == "" {
-		total = 1
+	// Grab file size
+	var length int64 = 0
+	res, err := http.Get(url.String())
+	if err != nil {
+		logging.Debug("Could not grab url: %v", err)
+	} else if res.StatusCode != http.StatusOK {
+		logging.Debug("Could not grab url due to statuscode: %d", res.StatusCode)
 	} else {
-		total, err = strconv.Atoi(length)
+		lengthInt, err := strconv.Atoi(res.Header.Get("Content-Length"))
 		if err != nil {
-			logging.Debug("Content-length: %v", length)
-			return nil, failures.FailInput.Wrap(err)
+			logging.Debug("Could not grab content-length: %v", err)
+		} else {
+			length = int64(lengthInt)
 		}
 	}
 
-	bar := progress.AddByteProgressBar(int64(total))
+	// Close early cause we're just looking at the header
+	// Yes normally you'd use a HEAD for this, but S3 presigned URLs don't support HEAD requests
+	res.Body.Close()
 
-	src := resp.Body
-	var dst bytes.Buffer
+	// Record progress
+	bar := progress.AddByteProgressBar(length)
+	cb := func(length int) {
+		if !bar.Completed() {
+			// Failsafe, so we don't get blocked by a progressbar
+			bar.IncrBy(length)
+		}
+	}
 
-	src = bar.ProxyReader(resp.Body)
+	// Prepare result recorder
+	b := []byte{}
+	w := NewWriteAtBuffer(b, cb)
 
-	_, err = io.Copy(&dst, src)
+	dl := s3manager.NewDownloader(sess)
+	dl.RequestOptions = append(dl.RequestOptions, func(r *request.Request) {
+		r.Handlers.Build.PushBack(func(r *request.Request) {
+			// Work around AWS rewriting our query in the wrong order, causing signing to fail
+			r.HTTPRequest.URL.RawQuery = url.RawQuery
+		})
+	})
+	_, err = dl.Download(w,
+		&s3.GetObjectInput{
+			Bucket: aws.String(s3m.Bucket),
+			Key:    aws.String(s3m.Key),
+		})
 	if err != nil {
-		return nil, failures.FailInput.Wrap(err)
+		return nil, locale.WrapError(err, "err_dl_s3", "Downloading failed due to underlying S3 error: {{.V0}}.", err.Error())
 	}
 
-	if !bar.Completed() {
-		// Failsafe, so we don't get blocked by a progressbar
-		bar.IncrBy(total)
-	}
+	bar.Abort(true) // ensure we don't get stuck on an incomplete bar
 
-	return dst.Bytes(), nil
+	return w.Bytes(), nil
 }
 
-func _testHTTPGetWithProgress(url string, progress *progress.Progress) ([]byte, *failures.Failure) {
-	return _testHTTPGet(url)
+type s3Meta struct {
+	Bucket string
+	Region string
+	Key    string
 }
 
-// _testHTTPGet is used when in tests, this cannot be in the test itself as that would limit it to only that one test
-func _testHTTPGet(url string) ([]byte, *failures.Failure) {
-	path := strings.Replace(url, constants.APIArtifactURL, "", 1)
-	path = filepath.Join(environment.GetRootPathUnsafe(), "test", path)
-
-	body, err := ioutil.ReadFile(path)
-	if err != nil {
-		return nil, failures.FailIO.Wrap(err)
+func parseS3URL(url *url.URL) s3Meta {
+	r := s3Meta{Key: url.Path}
+	domain := strings.SplitN(url.Host, ".", 5)
+	if strings.HasSuffix(url.Host, ".s3.amazonaws.com") { // https://bucket-name.s3.amazonaws.com/key-name
+		r.Bucket = domain[0]
+		r.Region = "us-east-1"
+	} else if domain[1] == "s3" && domain[3] == "amazonaws" { // https://bucket-name.s3.Region.amazonaws.com/key-name
+		r.Bucket = domain[0]
+		r.Region = domain[2]
+	} else { // https://s3.Region.amazonaws.com/bucket-name/key-name
+		r.Bucket = strings.SplitN(url.Path, "/", 1)[0]
+		r.Region = domain[1]
 	}
-
-	return body, nil
+	return r
 }
