@@ -43,7 +43,10 @@ func SetMocking(useMocking bool) {
 func s3GetWithProgress(url *url.URL, progress *progress.Progress) ([]byte, error) {
 	logging.Debug("Downloading via s3")
 
-	s3m := parseS3URL(url)
+	s3m, err := parseS3URL(url)
+	if err != nil {
+		return nil, locale.WrapError(err, "err_s3_parseurl", "Could not parse the artifact URL.")
+	}
 
 	// Prepare AWS session
 	sess, err := session.NewSession(&aws.Config{
@@ -114,9 +117,12 @@ type s3Meta struct {
 	Key    string
 }
 
-func parseS3URL(url *url.URL) s3Meta {
+func parseS3URL(url *url.URL) (s3Meta, error) {
 	r := s3Meta{Key: url.Path}
-	domain := strings.SplitN(url.Host, ".", 5)
+	domain := strings.SplitN(url.Host, ".", 4)
+	if len(domain) != 3 {
+		return r, locale.NewError("err_s3_host", "API responded with an invalid artifact host: {{.V0}}.", url.Host)
+	}
 	if strings.HasSuffix(url.Host, ".s3.amazonaws.com") { // https://bucket-name.s3.amazonaws.com/key-name
 		r.Bucket = domain[0]
 		r.Region = "us-east-1"
@@ -127,7 +133,7 @@ func parseS3URL(url *url.URL) s3Meta {
 		r.Bucket = strings.SplitN(url.Path, "/", 1)[0]
 		r.Region = domain[1]
 	}
-	return r
+	return r, nil
 }
 
 func _testGetWithProgress(url *url.URL, progress *progress.Progress) ([]byte, error) {
