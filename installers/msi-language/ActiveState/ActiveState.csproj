@@ -126,7 +126,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Network.cs" />
+    <Compile Include="Error.cs" />
     <Compile Include="UserEnvironment.cs" />
     <Compile Include="Logging.cs" />
     <Compile Include="Retry.cs" />

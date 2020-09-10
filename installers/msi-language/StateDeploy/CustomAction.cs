@@ -18,10 +18,6 @@ namespace StateDeploy
 {
     public class CustomActions
     {
-        private const string networkErrorKey = "NetworkError";
-        private const string networkErrorMessageKey = "NetworkErrorMessage";
-        private const string sessionIDKey = "SessionID";
-
         private struct StateToolPaths
         {
             public string JsonDescription;
@@ -60,7 +56,7 @@ namespace StateDeploy
 
         private static ActionResult _installStateTool(Session session, out string stateToolPath)
         {
-            Network.ResetErrorDetails(session);
+            Error.ResetErrorDetails(session);
 
             var paths = GetPaths();
             string stateURL = "https://s3.ca-central-1.amazonaws.com/cli-update/update/state/unstable/";
@@ -105,7 +101,7 @@ namespace StateDeploy
             {
                 string msg = string.Format("Encountered exception downloading state tool json info file: {0}", e.ToString());
                 session.Log(msg);
-                Network.SetErrorDetails(session, e.Message);
+                NetworkError.SetDetails(session, e.Message);
                 return ActionResult.Failure;
             }
 
@@ -138,7 +134,7 @@ namespace StateDeploy
             {
                 string msg = string.Format("Encountered exception downloading state tool zip file. URL to zip file: {0}, path to save zip file to: {1}, exception: {2}", zipURL, zipPath, e.ToString());
                 session.Log(msg);
-                Network.SetErrorDetails(session, e.Message);
+                NetworkError.SetDetails(session, e.Message);
                 return ActionResult.Failure;
             }
 
@@ -564,9 +560,13 @@ namespace StateDeploy
         }
 
         [CustomAction]
-        public static ActionResult SetNetworkErrorProperties(Session session)
+        public static ActionResult CustomOnError(Session session)
         {
-            session.Log("Begin SetNetworkErrorProperties");
+            // TODO: Rather than using NETWORK_ERROR and PATH_ERROR just have an ERROR
+            // property that contains the type of error (ie. Network or Path). This means
+            // the error key does not need to be specific to anything and will simplify
+            // the code.
+            session.Log("Begin SetError");
 
             // Get the registry values set on error in the _installStateTool function
             // Do not fail if we cannot get the values, simply present the fatal custom
@@ -575,10 +575,10 @@ namespace StateDeploy
             RegistryKey productKey = Registry.CurrentUser.CreateSubKey(registryKey);
             try
             {
-                Object networkError = productKey.GetValue(networkErrorKey);
-                Object networkErrorMessage = productKey.GetValue(networkErrorMessageKey);
-                session["NETWORK_ERROR"] = networkError as string;
-                session["NETWORK_ERROR_MESSAGE"] = networkErrorMessage as string;
+                Object errorType = productKey.GetValue(Error.TypeRegistryKey);
+                Object errorMessage = productKey.GetValue(Error.MessageRegistryKey);
+                session["ERROR"] = errorType as string;
+                session["ERROR_MESSAGE"] = errorMessage as string;
             } catch (Exception e)
             {
                 string msg = string.Format("Could not read network error registry keys. Exception: {0}", e.ToString());
@@ -586,14 +586,21 @@ namespace StateDeploy
                 RollbarReport.Error(msg, session);
             }
 
-            if (session["NETWORK_ERROR"] == "true") {
+            if (session["ERROR"] == NetworkError.Type()) {
                 session.DoAction("GAReportUserNetwork");
-            } else
+                session.DoAction("CustomNetworkError");
+                // TODO: Show custom error screen
+            } else if (session["ERROR"] == PathError.Type()) {
+                // TODO: Report path error and show path error screen
+                session.DoAction("CustomFatalError");
+            }
+            else
             {
                 session.DoAction("GAReportFailure");
+                session.DoAction("CustomFatalError");
+                // TODO: Show regular CustomFatalError screen
             }
 
-            session.DoAction("CustomFatalError");
             return ActionResult.Success;
         }
     }

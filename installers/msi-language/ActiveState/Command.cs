@@ -103,7 +103,13 @@ namespace ActiveState
                         output = outputBuilder.ToString();
                         string message = FormatErrorOutput(output);
                         session.Log("Message details: {0}", message);
-                        Network.SetErrorDetails(session, message);
+                        NetworkError.SetDetails(session, message);
+                    } else if (outputBuilder.ToString().Contains("Could not update PATH"))
+                    {
+                        output = outputBuilder.ToString();
+                        string message = FormatErrorOutput(output);
+                        session.Log("Message details: {0}", message);
+                        PathError.SetDetails(session, message);
                     } else
                     {
                         outputBuilder.AppendFormat(" -- Process returned with exit code: {0}", exitCode);
