@@ -120,7 +120,7 @@ type s3Meta struct {
 func parseS3URL(url *url.URL) (s3Meta, error) {
 	r := s3Meta{Key: url.Path}
 	domain := strings.SplitN(url.Host, ".", 4)
-	if len(domain) != 3 {
+	if len(domain) != 4 {
 		return r, locale.NewError("err_s3_host", "API responded with an invalid artifact host: {{.V0}}.", url.Host)
 	}
 	if strings.HasSuffix(url.Host, ".s3.amazonaws.com") { // https://bucket-name.s3.amazonaws.com/key-name
