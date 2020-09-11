@@ -41,6 +41,7 @@ namespace ActiveState
         {
             string registryKey = string.Format("HKEY_USERS\\{0}\\SOFTWARE\\ActiveState\\{1}", session.CustomActionData["USERSID"], session.CustomActionData["PRODUCT_NAME"]);
             RegistryValueKind registryEntryDataType = RegistryValueKind.String;
+            session.Log("Setting registry key: {0}", registryKey);
             try
             {
                 Registry.SetValue(registryKey, TypeRegistryKey, errorType, registryEntryDataType);
@@ -55,12 +56,13 @@ namespace ActiveState
         }
     }
 
-    public class PathError
+    public class SecurityError
     {
-        private const string type = "Path";
+        private const string type = "Antivirus";
 
         public static void SetDetails(Session session, string msg)
         {
+            session.Log("Setting security error details");
             Error.SetDetails(session, type, msg);
         }
 
@@ -76,6 +78,7 @@ namespace ActiveState
 
         public static void SetDetails(Session session, string msg)
         {
+            session.Log("Setting network error details");
             Error.SetDetails(session, "Network", msg);
         }
 

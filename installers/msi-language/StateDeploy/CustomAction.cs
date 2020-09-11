@@ -234,14 +234,13 @@ namespace StateDeploy
             }
             catch (Exception e)
             {
-                string msg = string.Format("Could not update PATH. Attempted to set path to: {0}, encountered exception: {1}", newPath, e.ToString());
+                string msg = string.Format("Could not update PATH. Encountered exception: {0}", e.Message);
                 session.Log(msg);
-                RollbarReport.Critical(msg, session);
+                SecurityError.SetDetails(session, msg);
                 return ActionResult.Failure;
             }
 
             return ActionResult.Success;
-
         }
 
         public static ActionResult InstallStateTool(Session session, string msiLogFileName, out string stateToolPath)
@@ -533,6 +532,19 @@ namespace StateDeploy
             return ActionResult.Success;
         }
 
+        /// <summary>
+        /// Reports a user network error event to google analytics
+        /// </summary>
+        [CustomAction]
+        public static ActionResult GAReportUserSecurity(Session session)
+        {
+            var msiLogFileName = session["MsiLogFileLocation"];
+
+            session.Log("sending antivirus error event");
+            TrackerSingleton.Instance.TrackEventSynchronously(session, msiLogFileName, "stage", "finished", "user_security", session["ProductVersion"]);
+            return ActionResult.Success;
+        }
+
         [CustomAction]
         public static ActionResult ValidateInstallFolder(Session session)
         {
@@ -587,18 +599,19 @@ namespace StateDeploy
             }
 
             if (session["ERROR"] == NetworkError.Type()) {
+                session.Log("Network error type");
                 session.DoAction("GAReportUserNetwork");
                 session.DoAction("CustomNetworkError");
-                // TODO: Show custom error screen
-            } else if (session["ERROR"] == PathError.Type()) {
-                // TODO: Report path error and show path error screen
-                session.DoAction("CustomFatalError");
+            } else if (session["ERROR"] == SecurityError.Type()) {
+                session.Log("Path error type");
+                session.DoAction("GAReportUserSecurity");
+                session.DoAction("CustomSecurityError");
             }
             else
             {
+                session.Log("Default error type");
                 session.DoAction("GAReportFailure");
                 session.DoAction("CustomFatalError");
-                // TODO: Show regular CustomFatalError screen
             }
 
             return ActionResult.Success;

@@ -97,19 +97,13 @@ namespace ActiveState
                 if (exitCode != 0)
                 {
                     outputBuilder.Append('\x00');
-                    session.Log("returning due to return code - error");
+                    session.Log("returning due to return code: {0}", exitCode);
                     if (exitCode == 11)
                     {
                         output = outputBuilder.ToString();
                         string message = FormatErrorOutput(output);
                         session.Log("Message details: {0}", message);
                         NetworkError.SetDetails(session, message);
-                    } else if (outputBuilder.ToString().Contains("Could not update PATH"))
-                    {
-                        output = outputBuilder.ToString();
-                        string message = FormatErrorOutput(output);
-                        session.Log("Message details: {0}", message);
-                        PathError.SetDetails(session, message);
                     } else
                     {
                         outputBuilder.AppendFormat(" -- Process returned with exit code: {0}", exitCode);
