@@ -16,7 +16,7 @@
 		<Property Id="AS_PASSWORD" Secure="yes" />
 		<Property Id="AS_TOTP" Secure="yes" />
 		<Property Id="ERROR" Value="none" />
-		<Property Id="ERROR_MESSAGE" Value="Network error" />
+		<Property Id="ERROR_MESSAGE" Value="none" />
 		<Property Id="INSTALL_MODE" Value="Install" />
 		<Property Id="CODE_INSTALLED" Value="false" />
 		<Property Id="MsiLogging" Value="Iwearucmopvx" />
