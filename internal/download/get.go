@@ -63,7 +63,7 @@ func s3GetWithProgress(url *url.URL, progress *progress.Progress) ([]byte, error
 	res, err := http.Get(url.String())
 	if err != nil {
 		logging.Debug("Could not grab url: %v", err)
-	} else if res.StatusCode != http.StatusOK {
+	} else if res != nil && res.StatusCode != http.StatusOK {
 		logging.Debug("Could not grab url due to statuscode: %d", res.StatusCode)
 	} else {
 		lengthInt, err := strconv.Atoi(res.Header.Get("Content-Length"))
