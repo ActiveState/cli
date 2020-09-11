@@ -101,7 +101,7 @@ namespace StateDeploy
             {
                 string msg = string.Format("Encountered exception downloading state tool json info file: {0}", e.ToString());
                 session.Log(msg);
-                NetworkError.SetDetails(session, e.Message);
+                new NetworkError().SetDetails(session, e.Message);
                 return ActionResult.Failure;
             }
 
@@ -134,7 +134,7 @@ namespace StateDeploy
             {
                 string msg = string.Format("Encountered exception downloading state tool zip file. URL to zip file: {0}, path to save zip file to: {1}, exception: {2}", zipURL, zipPath, e.ToString());
                 session.Log(msg);
-                NetworkError.SetDetails(session, e.Message);
+                new NetworkError().SetDetails(session, e.Message);
                 return ActionResult.Failure;
             }
 
@@ -236,7 +236,7 @@ namespace StateDeploy
             {
                 string msg = string.Format("Could not update PATH. Encountered exception: {0}", e.Message);
                 session.Log(msg);
-                SecurityError.SetDetails(session, msg);
+                new SecurityError().SetDetails(session, msg);
                 return ActionResult.Failure;
             }
 
@@ -598,11 +598,11 @@ namespace StateDeploy
                 RollbarReport.Error(msg, session);
             }
 
-            if (session["ERROR"] == NetworkError.Type()) {
+            if (session["ERROR"] == new NetworkError().Type()) {
                 session.Log("Network error type");
                 session.DoAction("GAReportUserNetwork");
                 session.DoAction("CustomNetworkError");
-            } else if (session["ERROR"] == SecurityError.Type()) {
+            } else if (session["ERROR"] == new SecurityError().Type()) {
                 session.Log("Path error type");
                 session.DoAction("GAReportUserSecurity");
                 session.DoAction("CustomSecurityError");

@@ -8,6 +8,7 @@ namespace ActiveState
     {
         public const string TypeRegistryKey = "Error";
         public const string MessageRegistryKey = "ErrorMessage";
+        protected string type;
 
         /// <summary>
         /// ResetErrorDetails clears the registry entries for network errors.
@@ -56,35 +57,39 @@ namespace ActiveState
         }
     }
 
-    public class SecurityError
+    public abstract class ErrorType
     {
-        private const string type = "Antivirus";
-
-        public static void SetDetails(Session session, string msg)
+        public abstract string type { get; }
+        public void SetDetails(Session session, string msg)
         {
-            session.Log("Setting security error details");
             Error.SetDetails(session, type, msg);
         }
 
-        public static string Type()
+        public string Type()
         {
             return type;
         }
     }
 
-    public class NetworkError
+    public class SecurityError : ErrorType
     {
-        private const string type = "Network";
-
-        public static void SetDetails(Session session, string msg)
+        public override string type
         {
-            session.Log("Setting network error details");
-            Error.SetDetails(session, "Network", msg);
+            get
+            {
+                return "Antivirus";
+            }
         }
+    }
 
-        public static string Type()
+    public class NetworkError : ErrorType
+    {
+        public override string type
         {
-            return type;
+            get
+            {
+                return "Network";
+            }
         }
     }
 }

@@ -103,7 +103,7 @@ namespace ActiveState
                         output = outputBuilder.ToString();
                         string message = FormatErrorOutput(output);
                         session.Log("Message details: {0}", message);
-                        NetworkError.SetDetails(session, message);
+                        new NetworkError().SetDetails(session, message);
                     } else
                     {
                         outputBuilder.AppendFormat(" -- Process returned with exit code: {0}", exitCode);
