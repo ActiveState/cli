@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -12,6 +13,9 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/unarchiver"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -25,32 +29,32 @@ func (suite *AlternativeArtifactIntegrationTestSuite) TestRelocation() {
 	if runtime.GOOS == "darwin" {
 		suite.T().Skip("No relocatable alternative artifacts for MacOS available yet.")
 	}
-	/*
-		artifactKey := "language/perl/5.32.0/3/7c76e6a6-3c41-5f68-a7f2-5468fe1b0919/artifact.tar.gz"
-		if runtime.GOOS == "windows" {
-			artifactKey = "language/perl/5.32.0/3/6864c481-ff89-550d-9c61-a17ae57b7024/artifact.tar.gz"
-		}
-		sess, err := session.NewSessionWithOptions(session.Options{
-			Profile: "default",
-			Config:  aws.Config{Region: aws.String("us-east-1")},
-		})
-		suite.Require().NoError(err, "could not create aws session")
-		s3c := s3.New(sess)
-		object := &s3.GetObjectInput{
-			Bucket: aws.String("as-builds"),
-			Key:    aws.String(artifactKey),
-		}
-		resp, err := s3c.GetObject(object)
-		suite.Require().NoError(err, "could not download artifact test tarball")
+	artifactKey := "language/perl/5.32.0/3/7c76e6a6-3c41-5f68-a7f2-5468fe1b0919/artifact.tar.gz"
+	matchReString := `-Dprefix=([^ ]+)/installdir`
+	if runtime.GOOS == "windows" {
+		artifactKey = "language/perl/5.32.0/3/6864c481-ff89-550d-9c61-a17ae57b7024/artifact.tar.gz"
+		matchReString = `-L\"([^ ]+)installdir`
+	}
+	sess, err := session.NewSessionWithOptions(session.Options{
+		Profile: "default",
+		Config:  aws.Config{Region: aws.String("us-east-1")},
+	})
+	suite.Require().NoError(err, "could not create aws session")
+	s3c := s3.New(sess)
+	object := &s3.GetObjectInput{
+		Bucket: aws.String("as-builds"),
+		Key:    aws.String(artifactKey),
+	}
+	resp, err := s3c.GetObject(object)
+	suite.Require().NoError(err, "could not download artifact test tarball")
 
-		artBody, err := ioutil.ReadAll(resp.Body)
-		suite.Require().NoError(err, "could not read artifact body")
-	*/
+	artBody, err := ioutil.ReadAll(resp.Body)
+	suite.Require().NoError(err, "could not read artifact body")
 	ts := e2e.New(suite.T(), true)
-	// artTgz := filepath.Join(ts.Dirs.Work, "artifact.tar.gz")
-	artTgz := filepath.Join("/home/martin/projects/ActiveState/cli", "artifact.tar.gz")
-	// err = ioutil.WriteFile(artTgz, artBody, 0666)
-	// suite.Require().NoError(err, "failed to write artifacts file")
+	artTgz := filepath.Join(ts.Dirs.Work, "artifact.tar.gz")
+
+	err = ioutil.WriteFile(artTgz, artBody, 0666)
+	suite.Require().NoError(err, "failed to write artifacts file")
 
 	installDir := filepath.Join(ts.Dirs.Cache, "installdir")
 	tgz := unarchiver.NewTarGz()
@@ -67,14 +71,15 @@ func (suite *AlternativeArtifactIntegrationTestSuite) TestRelocation() {
 	ed = ed.ExpandVariables(constants)
 	env := ed.GetEnv(true)
 
-	cp := ts.SpawnCmdWithOpts("/bin/bash", e2e.WithArgs("-c", "perl -V"), e2e.AppendEnv(osutils.EnvMapToSlice(env)...))
+	cp := ts.SpawnCmdWithOpts("cmd", e2e.WithArgs("/c", "perl -V"), e2e.AppendEnv(osutils.EnvMapToSlice(env)...))
 
 	// Find prefix directory as returned by `perl -V`
-	matchReString := `-Dprefix=([^ ]+)/installdir`
 
 	// Check that the prefix is NOT yet set to the installation directory
-	cp.ExpectRe(matchReString)
+	cp.ExpectLongString("installdir")
+	fmt.Printf("%s\n", cp.TrimmedSnapshot())
 	matchRe := regexp.MustCompile(matchReString)
+	cp.Snapshot()
 	res := matchRe.FindStringSubmatch(cp.TrimmedSnapshot())
 	suite.Require().Len(res, 2)
 	suite.NotEqual(filepath.Clean(ts.Dirs.Cache), filepath.Clean(res[1]))
@@ -84,16 +89,16 @@ func (suite *AlternativeArtifactIntegrationTestSuite) TestRelocation() {
 	err = ed.ApplyFileTransforms(ts.Dirs.Cache, constants)
 	suite.Require().NoError(err, "failed to apply file transformations.")
 
-	cp = ts.SpawnCmdWithOpts("/bin/bash", e2e.WithArgs("-c", "perl -V"), e2e.AppendEnv(osutils.EnvMapToSlice(env)...))
+	cp = ts.SpawnCmdWithOpts("cmd", e2e.WithArgs("/c", "perl -V"), e2e.AppendEnv(osutils.EnvMapToSlice(env)...))
 
 	// Check that the prefix now IS set to the installation directory
-	cp.ExpectRe(matchReString)
+	cp.ExpectLongString("installdir")
 	res = matchRe.FindStringSubmatch(cp.TrimmedSnapshot())
 	suite.Require().Len(res, 2)
 	suite.Equal(filepath.Clean(ts.Dirs.Cache), filepath.Clean(res[1]))
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnCmdWithOpts("/bin/bash", e2e.WithArgs("-c", "perl --version"), e2e.AppendEnv(osutils.EnvMapToSlice(env)...))
+	cp = ts.SpawnCmdWithOpts("cmd", e2e.WithArgs("/c", "perl --version"), e2e.AppendEnv(osutils.EnvMapToSlice(env)...))
 	cp.Expect("v5.32.0")
 	cp.ExpectExitCode(0)
 }

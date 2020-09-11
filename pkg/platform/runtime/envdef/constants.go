@@ -7,6 +7,6 @@ type Constants map[string]string
 // Currently it only has one field `INSTALLDIR`
 func NewConstants(installdir string) Constants {
 	return map[string]string{
-		"INSTALLDIR": installdir,
+		`${INSTALLDIR}`: installdir,
 	}
 }

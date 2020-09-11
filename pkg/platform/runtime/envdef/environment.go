@@ -134,7 +134,7 @@ func (ed *EnvironmentDefinition) WriteFile(filepath string) error {
 func (ed *EnvironmentDefinition) ExpandVariables(constants Constants) *EnvironmentDefinition {
 	res := ed
 	for k, v := range constants {
-		res = ed.ReplaceString(fmt.Sprintf("${%s}", k), v)
+		res = ed.ReplaceString(k, v)
 	}
 	return res
 }

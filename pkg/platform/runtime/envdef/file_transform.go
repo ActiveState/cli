@@ -34,7 +34,8 @@ type ConstTransform struct {
 func (ft *FileTransform) applyConstTransforms(constants Constants) (Constants, error) {
 	cs := constants
 	for _, ct := range ft.ConstTransforms {
-		r, err := regexp.Compile(ct.Pattern)
+		fmt.Printf("pattern=%q\n", ct.Pattern)
+		r, err := regexp.Compile(regexp.QuoteMeta(ct.Pattern))
 		if err != nil {
 			return cs, errs.Wrap(err, "Failed to compile regexp pattern in const_transform.")
 		}
@@ -90,7 +91,7 @@ func (ft *FileTransform) relocateFile(fileBytes []byte, replacement string) ([]b
 func expandConstants(in string, constants Constants) string {
 	res := in
 	for k, v := range constants {
-		res = strings.ReplaceAll(res, fmt.Sprintf("${%s}", k), v)
+		res = strings.ReplaceAll(res, k, v)
 	}
 	return res
 }
@@ -100,6 +101,7 @@ func (ft *FileTransform) ApplyTransform(baseDir string, constants Constants) err
 	// compute transformed constants
 	tcs, err := ft.applyConstTransforms(constants)
 	if err != nil {
+		fmt.Printf("%v\n", err)
 		return errs.Wrap(err, "Failed to apply the constant transformation to replacement text.")
 	}
 	replacement := expandConstants(ft.With, tcs)
