@@ -50,7 +50,7 @@
 						<RegistryValue Root='HKLM' Key='SOFTWARE\[Manufacturer]\[ProductName]' Type='string' Value='' KeyPath='yes' />
 					</Component>
 					<Directory Id="ProgramMenuFolder">
-						<Directory Id="ApplicationProgramsFolder" Name="[ProductName]"/>
+						<Directory Id="ApplicationProgramsFolder" Name="{{.ProjectName}}"/>
 					</Directory>
 				</Directory>
 			</Directory>

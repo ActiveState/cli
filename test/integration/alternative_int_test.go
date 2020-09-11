@@ -1,7 +1,6 @@
 package integration
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -77,7 +76,6 @@ func (suite *AlternativeArtifactIntegrationTestSuite) TestRelocation() {
 
 	// Check that the prefix is NOT yet set to the installation directory
 	cp.ExpectLongString("installdir")
-	fmt.Printf("%s\n", cp.TrimmedSnapshot())
 	matchRe := regexp.MustCompile(matchReString)
 	cp.Snapshot()
 	res := matchRe.FindStringSubmatch(cp.TrimmedSnapshot())
