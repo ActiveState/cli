@@ -63,6 +63,7 @@ func (ft *FileTransform) relocateFile(fileBytes []byte, replacement string) ([]b
 	if len(*ft.PadWith) != 1 {
 		return fileBytes, errs.New("Padding character needs to have exactly one byte, got %d", len(*ft.PadWith))
 	}
+	pad := []byte(*ft.PadWith)[0]
 
 	// replacement should be shorter than search string
 	if len(replacementBytes) > len(findBytes) {
@@ -70,16 +71,18 @@ func (ft *FileTransform) relocateFile(fileBytes []byte, replacement string) ([]b
 		return fileBytes, locale.NewError("file_transform_replacement_too_long", "Replacement text cannot be longer than search text in a binary file.")
 	}
 
-	regexExpandBytes := []byte("${1}")
 	// Must account for the expand characters (ie. '${1}') in the
 	// replacement bytes in order for the binary paddding to be correct
+	regexExpandBytes := []byte("${1}")
 	replacementBytes = append(replacementBytes, regexExpandBytes...)
 
-	pad := []byte(*ft.PadWith)[0]
+	// paddedReplaceBytes is the replacement string plus the padding bytes added to the end
+	// It shall look like this: `<replacementBytes>${1}<padding>` with `len(replacementBytes)+len(padding)=len(findBytes)`
 	paddedReplaceBytes := bytes.Repeat([]byte{pad}, len(findBytes)+len(regexExpandBytes))
 	copy(paddedReplaceBytes, replacementBytes)
 
 	quoteEscapeFind := regexp.QuoteMeta(ft.Pattern)
+	// replacementRegex matches the search Pattern plus subsequent text up to the string termination character (pad, which usually is 0x00)
 	replacementRegex, err := regexp.Compile(fmt.Sprintf(`%s([^\\x%02x]*)`, quoteEscapeFind, pad))
 	if err != nil {
 		return fileBytes, errs.Wrap(err, "Failed to compile replacement regular expression.")
