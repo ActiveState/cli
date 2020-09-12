@@ -54,6 +54,7 @@ func (ft *FileTransform) relocateFile(fileBytes []byte, replacement string) ([]b
 	findBytes := []byte(ft.Pattern)
 	replacementBytes := []byte(replacement)
 
+	// If `pad_width == null`, no padding is necessary and we can just replace the string and return
 	if ft.PadWith == nil {
 		return bytes.ReplaceAll(fileBytes, findBytes, replacementBytes), nil
 	}
