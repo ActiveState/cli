@@ -12,7 +12,6 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 
@@ -59,12 +58,7 @@ func createSession() {
 	var err error
 	sess, err = session.NewSessionWithOptions(session.Options{
 		Profile: awsProfileName,
-		Config: aws.Config{
-			Region:                        aws.String(awsRegionName),
-			CredentialsChainVerboseErrors: aws.Bool(true),
-			Credentials:                   credentials.NewEnvCredentials(),
-		},
-		SharedConfigState: session.SharedConfigEnable,
+		Config:  aws.Config{Region: aws.String(awsRegionName)},
 	})
 	if err != nil {
 		log.Fatalf("failed to create session, %s", err.Error())
