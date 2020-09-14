@@ -1,7 +1,9 @@
 ﻿using Microsoft.Deployment.WindowsInstaller;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Net;
 
 namespace ActiveState
 {
@@ -60,6 +62,31 @@ namespace ActiveState
             }
             // Property data is not available for immediate custom actions
             return session["INSTALL_MODE"];
+        }
+
+        private class Localization
+        {
+            [JsonProperty(PropertyName = "country_name")]
+            public string Country { get; set; }
+        }
+
+        public static string GetCountry(Session session)
+        {
+            string locationJSON = "";
+            try
+            {
+                using (WebClient wc = new WebClient())
+                {
+                    locationJSON = wc.DownloadString("https://freegeoip.app/json/");
+                }
+            }
+            catch (WebException e)
+            {
+                session.Log("Could not get location JSON. Exception: {0}", e.ToString());
+            }
+
+            Localization loc = JsonConvert.DeserializeObject<Localization>(locationJSON);
+            return loc.Country;
         }
 
         public static bool PrivacyAgreementAccepted(Session session)

@@ -121,6 +121,11 @@ public class RollbarReport
             {
                 customFields.Add("installMode", installMode);
             }
+            string country= Logging.GetCountry(session);
+            if (country != "")
+            {
+                customFields.Add("country", country);
+            }
 
             if (!criticalReported)
             {
