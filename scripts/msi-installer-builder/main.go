@@ -19,6 +19,7 @@ type languagePreset int
 // Language presets
 const (
 	Perl languagePreset = iota
+	ActivePerl
 	Python
 	Unknown
 )
@@ -26,6 +27,9 @@ const (
 func (lp languagePreset) String() string {
 	if lp == Perl {
 		return "Perl"
+	}
+	if lp == ActivePerl {
+		return "ActivePerl"
 	}
 	if lp == Python {
 		return "Python"
@@ -65,6 +69,9 @@ func parsePreset(p string) (languagePreset, error) {
 	if strings.ToLower(p) == "perl" {
 		return Perl, nil
 	}
+	if strings.ToLower(p) == "activeperl" {
+		return ActivePerl, nil
+	}
 	if strings.ToLower(p) == "python" {
 		return Python, nil
 	}
@@ -72,20 +79,23 @@ func parsePreset(p string) (languagePreset, error) {
 }
 
 func icon(p languagePreset) (string, error) {
-	if p == Perl {
+	if p == Perl || p == ActivePerl {
 		return "assets/perl.ico", nil
 	}
 	return "", fmt.Errorf("No icon for language preset %v", p)
 }
 
-func releaseNotes(p languagePreset, version string) (string, error) {
-	if p == Perl {
-		vParts := strings.Split(version, ".")
+func releaseNotes(p languagePreset, c *config) (string, error) {
+	if p == ActivePerl {
+		vParts := strings.Split(c.Version, ".")
 		if len(vParts) < 2 {
 			return "", fmt.Errorf("invalid version format")
 		}
 		majorMinor := strings.Join(vParts[0:2], ".")
 		return fmt.Sprintf("http://docs.activestate.com/activeperl/%s/get/relnotes/", majorMinor), nil
+	}
+	if p == Perl {
+		return fmt.Sprintf("http://platform.activestate.com/%s", c.ProjectOwnerAndName), nil
 	}
 	return "", fmt.Errorf("No release notes for language preset %v", p)
 }
@@ -110,7 +120,7 @@ func normalize(preset languagePreset, c *config) (*config, error) {
 	}
 	c.Icon = ic
 
-	c.ReleaseNotes, err = releaseNotes(preset, c.Version)
+	c.ReleaseNotes, err = releaseNotes(preset, c)
 	if err != nil {
 		return c, err
 	}

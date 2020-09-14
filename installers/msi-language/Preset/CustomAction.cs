@@ -17,6 +17,11 @@ namespace Preset
     {
         public static LanguagePreset Parse(string ps, Session session, string installDir, string appStartMenuPath)
         {
+            session.Log("Preset value: {0}", ps);
+            if (ps == "ActivePerl")
+            {
+                return new ActivePerlPreset(session, installDir, appStartMenuPath);
+            }
             if (ps == "Perl")
             {
                 return new PerlPreset(session, installDir, appStartMenuPath);
@@ -25,7 +30,7 @@ namespace Preset
         }
     };
 
-    public class PerlPreset : Preset.LanguagePreset
+    public class PerlPreset : LanguagePreset
     {
         private Session session;
         private string appStartMenuPath;
@@ -80,27 +85,6 @@ namespace Preset
 
         public ActionResult Install()
         {
-            session.Log("Install PerlCritic shortcut");
-            var result = PerlCriticShortcut();
-            if (result.Equals(ActionResult.Failure))
-            {
-                session.Log("Could not create Perl Critic shortcut");
-                // Do not fail if we cannot create shortcut
-                return ActionResult.Success;
-            }
-
-            session.Log("Install Documentation link");
-            DocumentationShortcut();
-
-            session.Log("install cmd-prompt shortcut");
-            result = CmdPromptShortcut();
-            if (result.Equals(ActionResult.Failure))
-            {
-                session.Log("Could not create Command Prompt shortcut");
-                // Do not fail if we cannot create shortcut
-                return ActionResult.Success;
-            }
-
             session.Log("installing perl file associations");
             FileAssociation.EnsureAssociationsSet(associations());
 
@@ -112,18 +96,19 @@ namespace Preset
                 Environment.SetEnvironmentVariable("PATHEXT", exts, EnvironmentVariableTarget.Machine);
             }
 
-            return ActionResult.Success;
-        }
-
-        private void CreateInternetShortcut(string path, string url, string icon)
-        {
-            using (StreamWriter writer = new StreamWriter(path))
+            session.Log("install cmd-prompt shortcut");
+            ActionResult result = CmdPromptShortcut();
+            if (result.Equals(ActionResult.Failure))
             {
-                writer.WriteLine("[InternetShortcut]");
-                writer.WriteLine("URL=" + url);
-                writer.WriteLine("IconIndex=0");
-                writer.WriteLine("IconFile=" + icon);
+                session.Log("Could not create Command Prompt shortcut");
+                // Do not fail if we cannot create shortcut
+                return ActionResult.Success;
             }
+
+            session.Log("Install Documentation link");
+            DocumentationShortcut();
+
+            return ActionResult.Success;
         }
 
         private void DocumentationShortcut()
@@ -138,6 +123,86 @@ namespace Preset
             var iconLocation = session.CustomActionData["INSTALLDIR"] + "perl.ico";
 
             CreateInternetShortcut(shortcutLocation, session.CustomActionData["REL_NOTES"], iconLocation);
+        }
+
+        private void CreateInternetShortcut(string path, string url, string icon)
+        {
+            using (StreamWriter writer = new StreamWriter(path))
+            {
+                writer.WriteLine("[InternetShortcut]");
+                writer.WriteLine("URL=" + url);
+                writer.WriteLine("IconIndex=0");
+                writer.WriteLine("IconFile=" + icon);
+            }
+        }
+
+        private ActionResult CmdPromptShortcut()
+        {
+            string shortcutLocation = Path.Combine(appStartMenuPath, "Developer Command Prompt.lnk");
+
+            session.Log("Installing Cmd Prompt shortcut at {0}", shortcutLocation);
+
+            string target = Path.Combine(session.CustomActionData["INSTALLDIR"], "bin", "shell.bat");
+            if (!System.IO.File.Exists(target))
+            {
+                session.Log(string.Format("shell.bat does not exist in path: {0}", target));
+                RollbarReport.Error(string.Format("shell.bat does not exist in path: {0}", target), session);
+                return ActionResult.Failure;
+            }
+
+            if (!Directory.Exists(appStartMenuPath))
+                Directory.CreateDirectory(appStartMenuPath);
+
+            WshShell shell = new WshShell();
+            IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(shortcutLocation);
+
+            shortcut.Description = "Developer Command Prompt";
+            shortcut.TargetPath = "%comspec%";
+            shortcut.Arguments = " /k " + "\"" + target + "\"";
+            shortcut.Save();
+            return ActionResult.Success;
+        }
+
+    }
+
+    public class ActivePerlPreset : LanguagePreset
+    {
+        private Session session;
+        private string appStartMenuPath;
+        private string installPath;
+        private LanguagePreset perlPreset;
+
+        static string[] PathExtensions =
+        {
+            ".PL", ".WPL"
+        };
+
+        public ActivePerlPreset(Session session, string installPath, string appStartMenuPath)
+        {
+            this.session = session;
+            this.appStartMenuPath = appStartMenuPath;
+            this.installPath = installPath;
+            this.perlPreset = new PerlPreset(session, installPath, appStartMenuPath);
+        }
+
+        public ActionResult Uninstall()
+        {
+            return this.perlPreset.Uninstall();
+        }
+
+        public ActionResult Install()
+        {
+            session.Log("Install PerlCritic shortcut");
+            var result = PerlCriticShortcut();
+            if (result.Equals(ActionResult.Failure))
+            {
+                session.Log("Could not create Perl Critic shortcut");
+                // Do not fail if we cannot create shortcut
+                return ActionResult.Success;
+            }
+
+
+            return this.perlPreset.Install();
         }
 
         private ActionResult PerlCriticShortcut()
@@ -172,33 +237,6 @@ namespace Preset
             shortcut.IconLocation = session.CustomActionData["INSTALLDIR"] + "perl.ico";
             shortcut.TargetPath = target;
             shortcut.Arguments = " -x " + "\"" + perlCriticLocation + "\"";
-            shortcut.Save();
-            return ActionResult.Success;
-        }
-
-        private ActionResult CmdPromptShortcut()
-        {
-            string shortcutLocation = Path.Combine(appStartMenuPath, "Developer Command Prompt.lnk");
-
-            session.Log("Installing Cmd Prompt shortcut at {0}", shortcutLocation);
-
-            string target = Path.Combine(session.CustomActionData["INSTALLDIR"], "bin", "shell.bat");
-            if (!System.IO.File.Exists(target))
-            {
-                session.Log(string.Format("shell.bat does not exist in path: {0}", target));
-                RollbarReport.Error(string.Format("shell.bat does not exist in path: {0}", target), session);
-                return ActionResult.Failure;
-            }
-
-            if (!Directory.Exists(appStartMenuPath))
-                Directory.CreateDirectory(appStartMenuPath);
-
-            WshShell shell = new WshShell();
-            IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(shortcutLocation);
-
-            shortcut.Description = "Developer Command Prompt";
-            shortcut.TargetPath = "%comspec%";
-            shortcut.Arguments = " /k " + "\"" + target + "\"";
             shortcut.Save();
             return ActionResult.Success;
         }
