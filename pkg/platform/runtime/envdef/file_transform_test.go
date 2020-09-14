@@ -64,19 +64,15 @@ func TestApplyConstTransforms(t *testing.T) {
 	}{
 		{
 			"double-slashes", `[{"pattern":
-			   "\\"
-			, "with": "\\\\", "in": ["${INSTALLDIR}"]}]`,
+			   "\\",
+			"with": "\\\\", "in": ["INSTALLDIR"]}]`,
 			false, `C:\\an\\installdir`,
 		},
 		{
 			"unchanged", `[]`, false, "C:\\an\\installdir",
 		},
 		{
-			"invalid-regexp", `[{"pattern": "(", "with": "", "in": ["${INSTALLDIR}"]}]`,
-			true, "",
-		},
-		{
-			"invalid-constant", `[{"pattern": "\\", "with": "\\\\", "in": ["${INVALID}"]}]`,
+			"invalid-constant", `[{"pattern": "\\", "with": "\\\\", "in": ["INVALID"]}]`,
 			true, "",
 		},
 	}
@@ -95,7 +91,7 @@ func TestApplyConstTransforms(t *testing.T) {
 				tt.Fatalf("applyConstTransforms returned with err: %v", err)
 			}
 			if err == nil {
-				assert.Equal(tt, c.Expected, res["${INSTALLDIR}"])
+				assert.Equal(tt, c.Expected, res["INSTALLDIR"])
 			}
 		})
 	}
