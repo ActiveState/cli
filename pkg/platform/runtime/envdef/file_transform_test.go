@@ -1,9 +1,11 @@
 package envdef
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/autarch/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestRelocateFile(t *testing.T) {
@@ -33,7 +35,6 @@ func TestRelocateFile(t *testing.T) {
 	}
 
 	for _, c := range cases {
-
 		t.Run(c.Name, func(tt *testing.T) {
 			ft := &FileTransform{
 				Pattern: "/abcdef",
@@ -50,4 +51,53 @@ func TestRelocateFile(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestApplyConstTransforms(t *testing.T) {
+	cs := NewConstants(`C:\an\installdir`)
+
+	cases := []struct {
+		Name          string
+		TransformJSON string
+		HasError      bool
+		Expected      string
+	}{
+		{
+			"double-slashes", `[{"pattern":
+			   "\\"
+			, "with": "\\\\", "in": ["${INSTALLDIR}"]}]`,
+			false, `C:\\an\\installdir`,
+		},
+		{
+			"unchanged", `[]`, false, "C:\\an\\installdir",
+		},
+		{
+			"invalid-regexp", `[{"pattern": "(", "with": "", "in": ["${INSTALLDIR}"]}]`,
+			true, "",
+		},
+		{
+			"invalid-constant", `[{"pattern": "\\", "with": "\\\\", "in": ["${INVALID}"]}]`,
+			true, "",
+		},
+	}
+
+	//
+	for _, c := range cases {
+		t.Run(c.Name, func(tt *testing.T) {
+			var ct []ConstTransform
+			err := json.Unmarshal([]byte(c.TransformJSON), &ct)
+			require.NoError(tt, err)
+			ft := &FileTransform{
+				ConstTransforms: ct,
+			}
+			res, err := ft.applyConstTransforms(cs)
+			if c.HasError != (err != nil) {
+				tt.Fatalf("applyConstTransforms returned with err: %v", err)
+			}
+			if err == nil {
+				assert.Equal(tt, c.Expected, res["${INSTALLDIR}"])
+			}
+		})
+	}
+
 }

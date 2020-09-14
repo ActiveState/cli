@@ -2,6 +2,7 @@ package envdef
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
@@ -23,18 +24,39 @@ type FileTransform struct {
 	PadWith         *string          `json:"pad_with"`
 }
 
+// RawString is a raw encoded JSON object.
+// It implements json.Unmarshaler and can be used to delay JSON decoding
+type RawString string
+
+// UnmarshalJSON sets *m to a copy of data.
+func (m *RawString) UnmarshalJSON(data []byte) error {
+	if m == nil {
+		return errors.New("RawString: UnmarshalJSON on nil pointer")
+	}
+
+	if len(data) < 2 || data[0] != '"' || data[len(data)-1] != '"' {
+		return errors.New("RawString: expected JSON string")
+	}
+	*m += RawString(data[1 : len(data)-1])
+	return nil
+}
+
 // ConstTransform is a transformation that should be applied to substituted constants prior to substitution in files
 type ConstTransform struct {
-	In      []string `json:"in"` // List of constants to apply this transform to
-	Pattern string   `json:"pattern"`
-	With    string   `json:"with"`
+	In      []string  `json:"in"` // List of constants to apply this transform to
+	Pattern RawString `json:"pattern"`
+	With    string    `json:"with"`
 }
 
 // applyConstTransforms applies the constant transforms to the Constants values
 func (ft *FileTransform) applyConstTransforms(constants Constants) (Constants, error) {
-	cs := constants
+	// copy constants, such that we don't change it
+	cs := make(Constants)
+	for k, v := range constants {
+		cs[k] = v
+	}
 	for _, ct := range ft.ConstTransforms {
-		r, err := regexp.Compile(regexp.QuoteMeta(ct.Pattern))
+		r, err := regexp.Compile(string(ct.Pattern))
 		if err != nil {
 			return cs, errs.Wrap(err, "Failed to compile regexp pattern in const_transform.")
 		}
@@ -43,7 +65,7 @@ func (ft *FileTransform) applyConstTransforms(constants Constants) (Constants, e
 			if !ok {
 				return cs, errs.New("Do not know what to replace constant %s with.", inVar)
 			}
-			cs[inVar] = r.ReplaceAllString(inSubst, ct.With)
+			cs[inVar] = r.ReplaceAllString(inSubst, string(ct.With))
 		}
 	}
 
