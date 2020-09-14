@@ -10,8 +10,9 @@ Click "Next" to continue or "Cancel" to exit the Setup Wizard.</String>
   <String Id="ExitDialogVSCodeAction">Install ActiveState Platform VSCode Extension.</String>
   <String Id="FatalErrorPrimary">If the problem you encountered is due to a bug or issue with the software please consider reporting it on <![CDATA[<a href="https://community.activestate.com">our forums</a>]]>.</String>
   <String Id="NetworkErrorPrimary">We have detected a network issue preventing installation. In order to download required components, please ensure your device has access to internet during installation. Make sure software like Firewalls or Anti-Virus are not blocking your connectivity.</String>
-	<String Id="NetworkErrorDetails">Problem Details: [NETWORK_ERROR_MESSAGE]</String>
-	<String Id="NetworkErrorReporting">If you're still not able to complete the installation successfully, please consider reporting it on <![CDATA[<a href="https://community.activestate.com">our forums</a>]]>.</String>
+	<String Id="ErrorDetails">Problem Details: [ERROR_MESSAGE]</String>
+	<String Id="ErrorReporting">If you're still not able to complete the installation successfully, please consider reporting it on <![CDATA[<a href="https://community.activestate.com">our forums</a>]]>.</String>
+	<String Id="AVErrorPrimary">We have detected a security issue preventing installation. In order to install required components, please ensure your antivirus or security software is not preventing installation.</String>
   <String Id="VerifyReadyDlgInstallText">Click Install to begin the installation of [ProductName]. Perl will be added to your path and file extensions associations for .pl and .wpl  will be created.
   
 Click "Back" to review or change any of your installation settings.  Click "Cancel" to exit the wizard.</String>
