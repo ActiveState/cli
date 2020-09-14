@@ -163,8 +163,9 @@ func (suite *EnvironmentTestSuite) TestFindBinPathFor() {
 		}`), &ed1)
 	require.NoError(suite.T(), err, "un-marshaling test json blob")
 
+	constants := envdef.NewConstants(tmpDir)
 	// expand variables
-	ed1.ExpandVariables(tmpDir)
+	ed1.ExpandVariables(constants)
 
 	suite.Assert().Equal("", ed1.FindBinPathFor("executable"), "executable should not exist")
 

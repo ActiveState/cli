@@ -410,6 +410,8 @@ flag_json_desc:
   other: Changes output to machine-readable JSON
 runtime_alternative_failed_artifact_order:
   other: "Could not write runtime.json file: internal error"
+runtime_alternative_file_transforms_err:
+  other: "Could not apply necessary file transformations after unpacking."
 runtime_alternative_failed_destination:
   other: Installation failed due to to failed write to directory {{.V0}}
 scripts_col_name:
