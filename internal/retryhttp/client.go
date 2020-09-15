@@ -88,7 +88,7 @@ func normalizeResponse(res *http.Response, err error) (*http.Response, error) {
 	}
 
 	var dnsError *net.DNSError
-	if errors.Is(err, dnsError) {
+	if errors.As(err, &dnsError) {
 		return res, locale.WrapError(&UserNetworkError{}, "err_user_network_dns", "Request failed due to DNS error: {{.V0}}. {{.V1}}", err.Error(), solutionLocale)
 	}
 
