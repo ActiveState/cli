@@ -49,7 +49,7 @@ func httpGetWithProgress(url string, progress *progress.Progress) ([]byte, error
 	var bs []byte
 	fn := func() error {
 		logging.Debug("Retrieving url: %s", url)
-		client := retryhttp.DefaultClient
+		client := retryhttp.NewClientFromExisting(retryhttp.DefaultClient, 3)
 		resp, err := client.Get(url)
 		if err != nil {
 			code := -1
@@ -104,7 +104,7 @@ func httpGetWithProgress(url string, progress *progress.Progress) ([]byte, error
 
 	}
 
-	retryFn := retryfn.New(2, fn)
+	retryFn := retryfn.New(3, fn)
 	return bs, retryFn.Run()
 }
 

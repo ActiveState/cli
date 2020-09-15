@@ -124,3 +124,15 @@ func NewClient(timeout time.Duration, retries int) *Client {
 		Client: retryClient,
 	}
 }
+
+func NewClientFromExisting(c *Client, retries int) *Client {
+	retryClient := retryablehttp.NewClient()
+	retryClient.Logger = logging.CurrentHandler()
+	retryClient.HTTPClient = c.Client
+	retryClient.RetryMax = retries
+	retryClient.ErrorHandler = c.ErrorHandler
+
+	return &Client{
+		Client: retryClient,
+	}
+}
