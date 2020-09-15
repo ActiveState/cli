@@ -19,6 +19,7 @@ type languagePreset int
 // Language presets
 const (
 	Perl languagePreset = iota
+	ActivePerl
 	Python
 	Unknown
 )
@@ -26,6 +27,9 @@ const (
 func (lp languagePreset) String() string {
 	if lp == Perl {
 		return "Perl"
+	}
+	if lp == ActivePerl {
+		return "ActivePerl"
 	}
 	if lp == Python {
 		return "Python"
@@ -44,12 +48,12 @@ type config struct {
 	ID                  string
 	ProjectName         string
 	Version             string
-	CommitID            string
 	ReleaseNotes        string
 	Icon                string
 	ProjectOwnerAndName string
 	Visibility          string
 	MSIVersion          string
+	CommitID            string
 }
 
 func seededUUID(seed string) string {
@@ -65,6 +69,9 @@ func parsePreset(p string) (languagePreset, error) {
 	if strings.ToLower(p) == "perl" {
 		return Perl, nil
 	}
+	if strings.ToLower(p) == "activeperl" {
+		return ActivePerl, nil
+	}
 	if strings.ToLower(p) == "python" {
 		return Python, nil
 	}
@@ -72,20 +79,23 @@ func parsePreset(p string) (languagePreset, error) {
 }
 
 func icon(p languagePreset) (string, error) {
-	if p == Perl {
+	if p == Perl || p == ActivePerl {
 		return "assets/perl.ico", nil
 	}
 	return "", fmt.Errorf("No icon for language preset %v", p)
 }
 
-func releaseNotes(p languagePreset, version string) (string, error) {
-	if p == Perl {
-		vParts := strings.Split(version, ".")
+func releaseNotes(p languagePreset, c *config) (string, error) {
+	if p == ActivePerl {
+		vParts := strings.Split(c.Version, ".")
 		if len(vParts) < 2 {
 			return "", fmt.Errorf("invalid version format")
 		}
 		majorMinor := strings.Join(vParts[0:2], ".")
 		return fmt.Sprintf("http://docs.activestate.com/activeperl/%s/get/relnotes/", majorMinor), nil
+	}
+	if p == Perl {
+		return fmt.Sprintf("http://platform.activestate.com/%s", c.ProjectOwnerAndName), nil
 	}
 	return "", fmt.Errorf("No release notes for language preset %v", p)
 }
@@ -104,15 +114,13 @@ func normalize(preset languagePreset, c *config) (*config, error) {
 	c.ProjectName = parts[1]
 	c.ID = seededUUID(c.ProjectOwnerAndName)
 
-	c.CommitID = constants.RevisionHash
-
 	ic, err := icon(preset)
 	if err != nil {
 		return c, err
 	}
 	c.Icon = ic
 
-	c.ReleaseNotes, err = releaseNotes(preset, c.Version)
+	c.ReleaseNotes, err = releaseNotes(preset, c)
 	if err != nil {
 		return c, err
 	}
@@ -135,10 +143,10 @@ func baseConfig() *config {
 		Icon:                "./assets/as.ico",
 		Preset:              Unknown.String(),
 		Visibility:          "Public",
-		CommitID:            constants.RevisionHash,
 		ProjectOwnerAndName: pad("PROJECT_OWNER_AND_NAME"),
 		ReleaseNotes:        pad("RELEASE_NOTES"),
 		ProjectName:         pad("PROJECT_NAME"),
+		CommitID:            pad("COMMIT_ID"),
 		MSIVersion:          msiVersionInfo(),
 	}
 }
@@ -153,10 +161,14 @@ func msiVersionInfo() string {
 }
 
 func parseArgs(args []string) (*config, error) {
-	if len(os.Args) == 5 {
+	if len(os.Args) >= 5 {
 		preset, err := parsePreset(os.Args[1])
 		if err != nil {
 			return nil, err
+		}
+		commitID := "latest"
+		if len(os.Args) >= 6 {
+			commitID = os.Args[5]
 		}
 		return normalize(preset, &config{
 			Preset:              preset.String(),
@@ -164,6 +176,7 @@ func parseArgs(args []string) (*config, error) {
 			ProjectOwnerAndName: os.Args[3],
 			Version:             os.Args[4],
 			MSIVersion:          msiVersionInfo(),
+			CommitID:            commitID,
 		})
 	}
 
@@ -171,7 +184,7 @@ func parseArgs(args []string) (*config, error) {
 		return baseConfig(), nil
 	}
 
-	return nil, fmt.Errorf("invalid arguments: Expected <preset> <visibility> <owner/name> <version> | \"base\"")
+	return nil, fmt.Errorf("invalid arguments: Expected <preset> <visibility> <owner/name> <version> [<commitID>] | \"base\"")
 }
 
 func run(args []string) error {

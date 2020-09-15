@@ -85,18 +85,23 @@ func (d *Deploy) Run(params *Params) error {
 }
 
 func (d *Deploy) createInstaller(namespace project.Namespaced, path string) (installable, string, error) {
-	branch, fail := d.DefaultBranchForProjectName(namespace.Owner, namespace.Project)
-	if fail != nil {
-		return nil, "", errs.Wrap(fail, "Could not create installer")
+	commitID := namespace.CommitID
+	if commitID == nil {
+		branch, fail := d.DefaultBranchForProjectName(namespace.Owner, namespace.Project)
+		if fail != nil {
+			return nil, "", errs.Wrap(fail, "Could not create installer")
+		}
+
+		if branch.CommitID == nil {
+			return nil, "", locale.NewInputError(
+				"err_deploy_no_commits",
+				"The project '{{.V0}}' does not have any packages configured, please add add some packages first.", namespace.String())
+		}
+
+		commitID = branch.CommitID
 	}
 
-	if branch.CommitID == nil {
-		return nil, "", locale.NewInputError(
-			"err_deploy_no_commits",
-			"The project '{{.V0}}' does not have any packages configured, please add add some packages first.", namespace.String())
-	}
-
-	installable, cacheDir, fail := d.NewRuntimeInstaller(*branch.CommitID, namespace.Owner, namespace.Project, path)
+	installable, cacheDir, fail := d.NewRuntimeInstaller(*commitID, namespace.Owner, namespace.Project, path)
 	return installable, cacheDir, fail.ToError()
 }
 
@@ -177,29 +182,7 @@ func runStepsWithFuncs(targetPath string, force, userScope bool, namespace proje
 
 type installFunc func(path string, installer installable, out output.Outputer) (runtime.EnvGetter, error)
 
-func ensurePathIsClean(path string) error {
-	if !fileutils.TargetExists(path) {
-		return nil
-	}
-	if !fileutils.IsDir(path) {
-		return locale.NewError("deploy_install_path_no_directory", "The installation target {{.V0}} needs to be a directory.", path)
-	}
-	empty, fail := fileutils.IsEmptyDir(path)
-	if fail != nil {
-		return errs.Wrap(fail, "Failed to check if %s is empty.", path)
-	}
-	if !empty {
-		return locale.NewError("deploy_install_path_not_empty", "The installation directory {{.V0}} needs to be empty.", path)
-	}
-	return nil
-}
-
 func install(path string, installer installable, out output.Outputer) (runtime.EnvGetter, error) {
-	// check that path is empty or does not exist yet
-	err := ensurePathIsClean(path)
-	if err != nil {
-		return nil, locale.WrapError(err, "deploy_ensure_path_is_clean", "Could not ensure that installation path is clean.")
-	}
 	out.Notice(locale.T("deploy_install"))
 	envGetter, installed, fail := installer.Install()
 	if fail != nil {

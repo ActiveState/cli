@@ -5,6 +5,8 @@ using System.Diagnostics;
 using System.Threading;
 using System.IO;
 using System.Collections.Generic;
+using System.Linq;
+using System.Web.Script.Serialization;
 
 namespace ActiveState
 {
@@ -95,19 +97,29 @@ namespace ActiveState
                 if (exitCode != 0)
                 {
                     outputBuilder.Append('\x00');
-                    outputBuilder.AppendFormat(" -- Process returned with exit code: {0}", exitCode);
-                    output = outputBuilder.ToString();
-                    session.Log("returning due to return code - error");
-                    var title = output.Split('\n')[0];
-                    if (title.Length == 0)
+                    session.Log("returning due to return code: {0}", exitCode);
+                    if (exitCode == 11)
                     {
-                        title = output;
+                        output = outputBuilder.ToString();
+                        string message = FormatErrorOutput(output);
+                        session.Log("Message details: {0}", message);
+                        new NetworkError().SetDetails(session, message);
+                    } else
+                    {
+                        outputBuilder.AppendFormat(" -- Process returned with exit code: {0}", exitCode);
+                        output = outputBuilder.ToString();
+                        var title = output.Split('\n')[0];
+                        if (title.Length == 0)
+                        {
+                            title = output;
+                        }
+                        RollbarReport.Critical(
+                            string.Format("failed due to return code: {0} - start: {1}", exitCode, title),
+                            session,
+                            new Dictionary<string, object> { { "output", output }, { "err", errBuilder.ToString() }, { "cmd", cmd } }
+                        );
                     }
-                    RollbarReport.Critical(
-                        string.Format("failed due to return code: {0} - start: {1}", exitCode, title),
-                        session,
-                        new Dictionary<string, object> { { "output", output }, { "err", errBuilder.ToString() }, { "cmd", cmd } }
-                    );
+
                     return ActionResult.Failure;
                 }
             }
@@ -123,6 +135,31 @@ namespace ActiveState
             }
             output = outputBuilder.ToString();
             return ActionResult.Success;
+        }
+
+        /// <summary>
+        /// FormatErrorOutput formats the output of a state tool command optimized for display in an error dialog
+        /// </summary>
+        /// <param name="cmdOutput">
+        /// the output from a state tool command run with `--output=json`
+        /// </param>
+        public static string FormatErrorOutput(string cmdOutput)
+        {
+            return string.Join("\n", cmdOutput.Split('\x00').Select(blob =>
+            {
+                try
+                {
+                    var json = new JavaScriptSerializer();
+                    var data = json.Deserialize<Dictionary<string, string>>(blob);
+                    var error = data["Error"];
+                    return error;
+                }
+                catch (Exception)
+                {
+                    return blob;
+                }
+            }).ToList());
+
         }
     }
 }

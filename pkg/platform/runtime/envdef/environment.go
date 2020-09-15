@@ -20,6 +20,9 @@ type EnvironmentDefinition struct {
 	// Env is a list of environment variables to be set
 	Env []EnvironmentVariable `json:"env"`
 
+	// Transforms is a list of file transformations
+	Transforms []FileTransform `json:"file_transforms"`
+
 	// InstallDir is the directory (inside the artifact tarball) that needs to be installed on the user's computer
 	InstallDir string `json:"installdir"`
 }
@@ -128,8 +131,12 @@ func (ed *EnvironmentDefinition) WriteFile(filepath string) error {
 // ExpandVariables expands substitution strings specified in the environment variable values.
 // Right now, the only valid substition string is `${INSTALLDIR}` which is being replaced
 // with the base of the installation directory for a given project
-func (ed *EnvironmentDefinition) ExpandVariables(installationDirectory string) *EnvironmentDefinition {
-	return ed.ReplaceString("${INSTALLDIR}", installationDirectory)
+func (ed *EnvironmentDefinition) ExpandVariables(constants Constants) *EnvironmentDefinition {
+	res := ed
+	for k, v := range constants {
+		res = ed.ReplaceString(fmt.Sprintf("${%s}", k), v)
+	}
+	return res
 }
 
 // ReplaceString replaces the string `from` with its `replacement` value

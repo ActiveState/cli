@@ -18,10 +18,6 @@ namespace StateDeploy
 {
     public class CustomActions
     {
-        private const string networkErrorKey = "NetworkError";
-        private const string networkErrorMessageKey = "NetworkErrorMessage";
-        private const string sessionIDKey = "SessionID";
-
         private struct StateToolPaths
         {
             public string JsonDescription;
@@ -60,22 +56,7 @@ namespace StateDeploy
 
         private static ActionResult _installStateTool(Session session, out string stateToolPath)
         {
-            // Registry info for network errors
-            // This custom action runs as administrator so we have to specifically set
-            // the registry key for the user using their SID in order for the value to
-            // be available in later immediate custom actions
-            string registryKey = string.Format("HKEY_USERS\\{0}\\SOFTWARE\\ActiveState\\{1}", session.CustomActionData["USERSID"], session.CustomActionData["PRODUCT_NAME"]);
-            RegistryValueKind registryEntryDataType = RegistryValueKind.String;
-            try
-            {
-                Registry.SetValue(registryKey, networkErrorKey, "false", registryEntryDataType);
-                Registry.SetValue(registryKey, networkErrorMessageKey, "", registryEntryDataType);
-            } catch (Exception e)
-            {
-                string msg = string.Format("Could not delete network error registry keys. Exception: {0}", e.ToString());
-                session.Log(msg);
-                RollbarReport.Error(msg, session);
-            }
+            Error.ResetErrorDetails(session);
 
             var paths = GetPaths();
             string stateURL = "https://s3.ca-central-1.amazonaws.com/cli-update/update/state/unstable/";
@@ -120,7 +101,7 @@ namespace StateDeploy
             {
                 string msg = string.Format("Encountered exception downloading state tool json info file: {0}", e.ToString());
                 session.Log(msg);
-                SetNetworkErrorDetails(session, registryKey, e);
+                new NetworkError().SetDetails(session, e.Message);
                 return ActionResult.Failure;
             }
 
@@ -153,7 +134,7 @@ namespace StateDeploy
             {
                 string msg = string.Format("Encountered exception downloading state tool zip file. URL to zip file: {0}, path to save zip file to: {1}, exception: {2}", zipURL, zipPath, e.ToString());
                 session.Log(msg);
-                SetNetworkErrorDetails(session, registryKey, e);
+                new NetworkError().SetDetails(session, e.Message);
                 return ActionResult.Failure;
             }
 
@@ -253,31 +234,15 @@ namespace StateDeploy
             }
             catch (Exception e)
             {
-                string msg = string.Format("Could not update PATH. Attempted to set path to: {0}, encountered exception: {1}", newPath, e.ToString());
+                string msg = string.Format("Could not update PATH. Encountered exception: {0}", e.Message);
                 session.Log(msg);
-                RollbarReport.Critical(msg, session);
+                new SecurityError().SetDetails(session, msg);
                 return ActionResult.Failure;
             }
 
             return ActionResult.Success;
-
         }
 
-        private static void SetNetworkErrorDetails(Session session, string registryKey, Exception e)
-        {
-            RegistryValueKind registryEntryDataType = RegistryValueKind.String;
-            try
-            {
-                Registry.SetValue(registryKey, networkErrorKey, "true", registryEntryDataType);
-                Registry.SetValue(registryKey, networkErrorMessageKey, e.Message, registryEntryDataType);
-            }
-            catch (Exception registryException)
-            {
-                string registryExceptionMsg = string.Format("Could not set network error registry values. Exception: {0}", registryException.ToString());
-                session.Log(registryExceptionMsg);
-                RollbarReport.Error(registryExceptionMsg, session);
-            }
-        }
         public static ActionResult InstallStateTool(Session session, string msiLogFileName, out string stateToolPath)
         {
             RollbarHelper.ConfigureRollbarSingleton(session.CustomActionData["MSI_VERSION"]);
@@ -345,7 +310,7 @@ namespace StateDeploy
             {
                 Record record = new Record();
                 session.Log(string.Format("Output: {0}", output));
-                var errorOutput = FormatErrorOutput(output);
+                var errorOutput = Command.FormatErrorOutput(output);
                 record.FormatString = string.Format("Platform login failed with error:\n{0}", errorOutput);
 
                 session.Message(InstallMessage.Error | (InstallMessage)MessageBoxButtons.OK, record);
@@ -386,7 +351,7 @@ namespace StateDeploy
             if (uiLevel == "2" /* no ui */ || uiLevel == "3" /* basic ui */)
             {
                 // we have to send the start event, because it has not triggered before
-                reportStartEvent(session, msiLogFileName, productVersion);
+                reportStartEvent(session, msiLogFileName, productVersion, uiLevel);
             }
 
             if (!Environment.Is64BitOperatingSystem)
@@ -444,7 +409,7 @@ namespace StateDeploy
                     else if (runResult == ActionResult.Failure)
                     {
                         Record record = new Record();
-                        var errorOutput = FormatErrorOutput(output);
+                        var errorOutput = Command.FormatErrorOutput(output);
                         record.FormatString = String.Format("{0} failed with error:\n{1}", seq.Description, errorOutput);
 
                         MessageResult msgRes = session.Message(InstallMessage.Error | (InstallMessage)MessageBoxButtons.OK, record);
@@ -476,43 +441,23 @@ namespace StateDeploy
             return run(session);
         }
 
-        /// <summary>
-        /// FormatErrorOutput formats the output of a state tool command optimized for display in an error dialog
-        /// </summary>
-        /// <param name="cmdOutput">
-        /// the output from a state tool command run with `--output=json`
-        /// </param>
-        private static string FormatErrorOutput(string cmdOutput)
-        {
-            return string.Join("\n", cmdOutput.Split('\x00').Select(blob =>
-            {
-                try
-                {
-                    var json = new JavaScriptSerializer();
-                    var data = json.Deserialize<Dictionary<string, string>>(blob);
-                    var error = data["Error"];
-                    return error;
-                }
-                catch (Exception)
-                {
-                    return blob;
-                }
-            }).ToList());
-
-        }
-
         private static string BuildDeployCmd(Session session, string subCommand)
         {
             string installDir = session.CustomActionData["INSTALLDIR"];
             string projectName = session.CustomActionData["PROJECT_OWNER_AND_NAME"];
             string isModify = session.CustomActionData["IS_MODIFY"];
+            string commitID = session.CustomActionData["COMMIT_ID"];
 
             StringBuilder deployCMDBuilder = new StringBuilder(String.Format("deploy {0}", subCommand));
             if (isModify == "true" && subCommand == "symlink")
             {
                 deployCMDBuilder.Append(" --force");
             }
-
+            // Add commitID if requested
+            if (commitID != "latest")
+            {
+                projectName += "#" + commitID;
+            }
             deployCMDBuilder.Append(" --output json");
 
             // We quote the string here as Windows paths that contain spaces must be quoted.
@@ -528,16 +473,16 @@ namespace StateDeploy
          * all custom actions.
          */
 
-        public static void reportStartEvent(Session session, string msiLogFileName, string productVersion)
+        public static void reportStartEvent(Session session, string msiLogFileName, string productVersion, string uiLevel)
         {
             session.Log("sending MSI start - event");
-            TrackerSingleton.Instance.TrackEventSynchronously(session, msiLogFileName, "stage", "started", "", productVersion);
+            TrackerSingleton.Instance.TrackEventSynchronously(session, msiLogFileName, "stage", "started", uiLevel, productVersion);
         }
 
         [CustomAction]
         public static ActionResult GAReportStart(Session session)
         {
-            reportStartEvent(session, session["MsiLogFileLocation"], session["ProductVersion"]);
+            reportStartEvent(session, session["MsiLogFileLocation"], session["ProductVersion"], session["UILevel"]);
             return ActionResult.Success;
         }
 
@@ -587,6 +532,19 @@ namespace StateDeploy
             return ActionResult.Success;
         }
 
+        /// <summary>
+        /// Reports a user network error event to google analytics
+        /// </summary>
+        [CustomAction]
+        public static ActionResult GAReportUserSecurity(Session session)
+        {
+            var msiLogFileName = session["MsiLogFileLocation"];
+
+            session.Log("sending antivirus error event");
+            TrackerSingleton.Instance.TrackEventSynchronously(session, msiLogFileName, "stage", "finished", "user_security", session["ProductVersion"]);
+            return ActionResult.Success;
+        }
+
         [CustomAction]
         public static ActionResult ValidateInstallFolder(Session session)
         {
@@ -614,9 +572,13 @@ namespace StateDeploy
         }
 
         [CustomAction]
-        public static ActionResult SetNetworkErrorProperties(Session session)
+        public static ActionResult CustomOnError(Session session)
         {
-            session.Log("Begin SetNetworkErrorProperties");
+            // TODO: Rather than using NETWORK_ERROR and PATH_ERROR just have an ERROR
+            // property that contains the type of error (ie. Network or Path). This means
+            // the error key does not need to be specific to anything and will simplify
+            // the code.
+            session.Log("Begin SetError");
 
             // Get the registry values set on error in the _installStateTool function
             // Do not fail if we cannot get the values, simply present the fatal custom
@@ -625,10 +587,10 @@ namespace StateDeploy
             RegistryKey productKey = Registry.CurrentUser.CreateSubKey(registryKey);
             try
             {
-                Object networkError = productKey.GetValue(networkErrorKey);
-                Object networkErrorMessage = productKey.GetValue(networkErrorMessageKey);
-                session["NETWORK_ERROR"] = networkError as string;
-                session["NETWORK_ERROR_MESSAGE"] = networkErrorMessage as string;
+                Object errorType = productKey.GetValue(Error.TypeRegistryKey);
+                Object errorMessage = productKey.GetValue(Error.MessageRegistryKey);
+                session["ERROR"] = errorType as string;
+                session["ERROR_MESSAGE"] = errorMessage as string;
             } catch (Exception e)
             {
                 string msg = string.Format("Could not read network error registry keys. Exception: {0}", e.ToString());
@@ -636,14 +598,22 @@ namespace StateDeploy
                 RollbarReport.Error(msg, session);
             }
 
-            if (session["NETWORK_ERROR"] == "true") {
+            if (session["ERROR"] == new NetworkError().Type()) {
+                session.Log("Network error type");
                 session.DoAction("GAReportUserNetwork");
-            } else
+                session.DoAction("CustomNetworkError");
+            } else if (session["ERROR"] == new SecurityError().Type()) {
+                session.Log("Path error type");
+                session.DoAction("GAReportUserSecurity");
+                session.DoAction("CustomSecurityError");
+            }
+            else
             {
+                session.Log("Default error type");
                 session.DoAction("GAReportFailure");
+                session.DoAction("CustomFatalError");
             }
 
-            session.DoAction("CustomFatalError");
             return ActionResult.Success;
         }
     }

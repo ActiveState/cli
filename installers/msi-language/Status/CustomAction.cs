@@ -10,6 +10,42 @@ namespace Status
             session.Log("reset progress bar");
             return ProgressBar.Reset(session);
         }
+
+        [CustomAction]
+        public static ActionResult SetInstallMode(Session session)
+        {
+            string mode = "Install";
+            session.Log("Setting install mode to {0}", mode);
+            session["INSTALL_MODE"] = mode;
+            return ActionResult.Success;
+        }
+
+        [CustomAction]
+        public static ActionResult SetUninstallMode(Session session)
+        {
+            string mode = "Uninstall";
+            session.Log("Setting install mode to {0}", mode);
+            session["INSTALL_MODE"] = mode;
+            return ActionResult.Success;
+        }
+
+        [CustomAction]
+        public static ActionResult SetModifyMode(Session session)
+        {
+            string mode = "Modify";
+            session.Log("Setting install mode to {0}", mode);
+            session["INSTALL_MODE"] = "Modify";
+            return ActionResult.Success;
+        }
+
+        [CustomAction]
+        public static ActionResult SetRepairMode(Session session)
+        {
+            string mode = "Repair";
+            session.Log("Setting install mode to {0}", mode);
+            session["INSTALL_MODE"] = mode;
+            return ActionResult.Success;
+        }
     }
 
     public class ProgressBar

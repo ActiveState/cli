@@ -39,9 +39,13 @@ func (r *Checkout) Run(namespace string, targetPath string) error {
 		return fail
 	}
 
-	branch, fail := model.DefaultBranchForProject(pj)
-	if fail != nil {
-		return fail
+	commitID := ns.CommitID
+	if commitID == nil {
+		branch, fail := model.DefaultBranchForProject(pj)
+		if fail != nil {
+			return fail
+		}
+		commitID = branch.CommitID
 	}
 
 	// Clone the related repo, if it is defined
@@ -58,7 +62,7 @@ func (r *Checkout) Run(namespace string, targetPath string) error {
 		fail = projectfile.Create(&projectfile.CreateParams{
 			Owner:     ns.Owner,
 			Project:   ns.Project,
-			CommitID:  branch.CommitID,
+			CommitID:  commitID,
 			Directory: targetPath,
 		})
 		if fail != nil {

@@ -1,9 +1,11 @@
 package retryhttp
 
 import (
+	"errors"
 	"net"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/go-cleanhttp"
@@ -67,6 +69,12 @@ func (c *Client) Do(req *retryablehttp.Request) (*http.Response, error) {
 	return normalizeResponse(c.Client.Do(req))
 }
 
+func (c *Client) StandardClient() *http.Client {
+	return &http.Client{
+		Transport: &RoundTripper{client: c},
+	}
+}
+
 func normalizeResponse(res *http.Response, err error) (*http.Response, error) {
 	if res != nil {
 		switch res.StatusCode {
@@ -78,6 +86,20 @@ func normalizeResponse(res *http.Response, err error) (*http.Response, error) {
 			return res, locale.WrapInputError(&UserNetworkError{429}, "err_user_network_toomany", "Request failed due to too many requests. {{.V0}}", solutionLocale)
 		}
 	}
+
+	var dnsError *net.DNSError
+	if errors.Is(err, dnsError) {
+		return res, locale.WrapError(&UserNetworkError{}, "err_user_network_dns", "Request failed due to DNS error: {{.V0}}. {{.V1}}", err.Error(), solutionLocale)
+	}
+
+	// Due to Go's handling of these types of errors and due to Windows localizing the errors in question we have to rely on the `wsarecv:` keyword to capture a series
+	// of user facing network issues. Theoretically this could cause some false positives, but at the time of writing I could not find any instances on rollbar
+	// where `wsarecv:` was being reported as anything other than a network issue caused by the user or their network
+	if err != nil && strings.Contains(err.Error(), "wsarecv:") {
+		logging.Error("Non-Critical User Network Issue, please vet for false-positive: %v", err) // Logging so we can vet for false positives
+		return res, locale.WrapError(&UserNetworkError{}, "err_user_network_wsarecv", "Request failed due to user network error: {{.V0}}. {{.V1}}", err.Error(), solutionLocale)
+	}
+
 	return res, err
 }
 
@@ -102,4 +124,3 @@ func NewClient(timeout time.Duration, retries int) *Client {
 		Client: retryClient,
 	}
 }
-

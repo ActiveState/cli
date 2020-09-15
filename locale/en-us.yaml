@@ -410,6 +410,8 @@ flag_json_desc:
   other: Changes output to machine-readable JSON
 runtime_alternative_failed_artifact_order:
   other: "Could not write runtime.json file: internal error"
+runtime_alternative_file_transforms_err:
+  other: "Could not apply necessary file transformations after unpacking."
 runtime_alternative_failed_destination:
   other: Installation failed due to to failed write to directory {{.V0}}
 scripts_col_name:
@@ -901,7 +903,7 @@ err_activate_namespace:
 err_activate_create_project:
   other: Could not create new project
 err_invalid_namespace:
-  other: "Invalid namespace: {{.V0}}. Should be in the format of ORGANISATION_NAME/PROJECT_NAME. Names should be alphanumeric and may contain dashes and periods."
+  other: "Invalid namespace: {{.V0}}. Should be in the format of ORGANISATION_NAME/PROJECT_NAME, and can optionally contain a #COMMIT_ID suffix. Names should be alphanumeric and may contain dashes and periods."
 err_could_not_get_commit_behind_count:
   other: Could not obtain commit history properly
 err_must_create_project:
