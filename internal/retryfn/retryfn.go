@@ -70,20 +70,23 @@ func (rf *RetryFn) Run() error {
 	for i := rf.tries; i > 0; i-- {
 		rf.calls++
 
-		if err = rf.fn(); err != nil {
-			cerr := &ControlError{}
-			if errors.As(err, &cerr) {
-				switch cerr.Type {
-				case Unset, Unknown:
-					err = cerr.Cause
-					continue
+		err = rf.fn()
+		if err == nil {
+			continue
+		}
 
-				case Halt:
-					return cerr.Cause
-				}
-			}
+		cerr := &ControlError{}
+		if !errors.As(err, &cerr) {
+			continue
+		}
 
-			break
+		switch cerr.Type {
+		case Unset, Unknown:
+			err = cerr.Cause
+			continue
+
+		case Halt:
+			return cerr.Cause
 		}
 	}
 

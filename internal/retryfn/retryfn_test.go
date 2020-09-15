@@ -6,7 +6,10 @@ import (
 	"testing"
 )
 
-var errStoreMax = errors.New("max stored")
+var (
+	errStoreMax    = errors.New("max stored")
+	errNoNegatives = errors.New("will not handle negative integers")
+)
 
 type store struct {
 	max int
@@ -14,9 +17,17 @@ type store struct {
 }
 
 func (s *store) bump(n int) error {
+	if n < 0 {
+		return &ControlError{
+			Cause: errNoNegatives,
+			Type:  Halt,
+		}
+	}
+
 	if len(s.ns) >= s.max {
 		return errStoreMax
 	}
+
 	s.ns = append(s.ns, n)
 	return nil
 }
@@ -24,13 +35,12 @@ func (s *store) bump(n int) error {
 func TestRetryFn(t *testing.T) {
 	t.Run("no error", func(t *testing.T) {
 		out := []int{1, 2, 3, 4, 5, 6}
-		var ns []int
+		s := store{max: len(out)}
 
 		var i int
 		fn := func() error {
 			i++
-			ns = append(ns, i)
-			return nil
+			return s.bump(i)
 		}
 
 		retryFn := New(len(out), fn)
@@ -40,46 +50,70 @@ func TestRetryFn(t *testing.T) {
 			t.Fatalf("run error: got %v, want nil", err)
 		}
 
-		got := retryFn.Calls()
-		if got != i {
-			t.Fatalf("call count: got %v, want %v", got, i)
+		gotCalls := retryFn.Calls()
+		wantCalls := len(out)
+		if gotCalls != wantCalls {
+			t.Fatalf("call count: got %v, want %v", gotCalls, wantCalls)
 		}
 
-		if !reflect.DeepEqual(ns, out) {
-			t.Errorf("equal slices: got %v, want %v", ns, out)
+		if !reflect.DeepEqual(s.ns, out) {
+			t.Errorf("equal slices: got %v, want %v", s.ns, out)
 		}
 	})
 
-	t.Run("force error via max", func(t *testing.T) {
-		var ns []int
+	t.Run("force error via max and continue calling", func(t *testing.T) {
+		out := []int{1, 2, 3, 4, 5, 6}
 
-		s := store{max: 6}
-		extraIterations := 3
+		s := store{max: len(out)}
+		tryTotal := s.max + 3
 
 		var i int
 		fn := func() error {
 			i++
-			if err := s.bump(i); err != nil {
-				return err
-			}
-			ns = append(ns, i)
-			return nil
+			return s.bump(i)
 		}
 
-		retryFn := New(s.max+extraIterations, fn)
+		retryFn := New(tryTotal, fn)
 
 		err := retryFn.Run()
 		if !errors.Is(err, errStoreMax) {
-			t.Fatalf("run error: got %v, want ErrStoreMax", err)
+			t.Fatalf("run error: got %v, want errStoreMax", err)
 		}
 
-		got := retryFn.Calls()
-		if got != i {
-			t.Fatalf("call count: got %v, want %v", got, i)
+		gotCalls := retryFn.Calls()
+		if gotCalls != tryTotal {
+			t.Fatalf("call count: got %v, want %v", gotCalls, tryTotal)
 		}
 
-		if !reflect.DeepEqual(s.ns, ns) {
-			t.Errorf("equal slices: got %v, want %v", s.ns, ns)
+		if !reflect.DeepEqual(s.ns, out) {
+			t.Errorf("equal slices: got %v, want %v", s.ns, out)
+		}
+	})
+
+	t.Run("halt immediately", func(t *testing.T) {
+		var out []int
+
+		s := store{max: 9001}
+
+		fn := func() error {
+			return s.bump(-1)
+		}
+
+		retryFn := New(s.max, fn)
+
+		err := retryFn.Run()
+		if !errors.Is(err, errNoNegatives) {
+			t.Fatalf("run error: got %v, want errNoNegatives", err)
+		}
+
+		gotCalls := retryFn.Calls()
+		wantCalls := 1
+		if gotCalls != wantCalls {
+			t.Fatalf("call count: got %v, want %v", gotCalls, wantCalls)
+		}
+
+		if !reflect.DeepEqual(s.ns, out) {
+			t.Errorf("equal slices: got %v, want %v", s.ns, out)
 		}
 	})
 }
