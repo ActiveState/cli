@@ -11,7 +11,6 @@ import (
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/progress"
@@ -56,19 +55,21 @@ func httpGetWithProgress(url string, progress *progress.Progress) ([]byte, error
 			if resp != nil {
 				code = resp.StatusCode
 			}
-			fail := failures.FailNetwork.Wrap(err, locale.Tl("err_network_get", "Status code: {{.V0}}", strconv.Itoa(code)))
-			return &retryfn.ControlError{
-				Cause: fail,
-				Type:  retryfn.Halt,
-			}
+			return locale.NewError(
+				"err_network_get",
+				"Status code: {{.V0}}",
+				strconv.Itoa(code),
+			)
 		}
 		defer resp.Body.Close()
 
 		if resp.StatusCode != 200 {
-			fail := failures.FailNetwork.New("err_invalid_status_code", strconv.Itoa(resp.StatusCode))
 			return &retryfn.ControlError{
-				Cause: fail,
-				Type:  retryfn.Halt,
+				Cause: locale.NewError(
+					"err_invalid_status_code",
+					strconv.Itoa(resp.StatusCode),
+				),
+				Type: retryfn.Halt,
 			}
 		}
 
@@ -80,7 +81,7 @@ func httpGetWithProgress(url string, progress *progress.Progress) ([]byte, error
 			total, err = strconv.Atoi(length)
 			if err != nil {
 				logging.Debug("Content-length: %v", length)
-				return failures.FailInput.Wrap(err)
+				return err
 			}
 		}
 
@@ -90,7 +91,7 @@ func httpGetWithProgress(url string, progress *progress.Progress) ([]byte, error
 
 		_, err = io.Copy(&dst, src)
 		if err != nil {
-			return failures.FailInput.Wrap(err)
+			return err
 		}
 
 		if !bar.Completed() {
@@ -119,7 +120,7 @@ func _testHTTPGet(url string) ([]byte, error) {
 
 	body, err := ioutil.ReadFile(path)
 	if err != nil {
-		return nil, failures.FailIO.Wrap(err)
+		return nil, err
 	}
 
 	return body, nil
