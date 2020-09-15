@@ -4,7 +4,6 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -79,7 +78,7 @@ func (m *Manager) Job(entry *Entry) {
 
 	err = ioutil.WriteFile(entry.Path, bytes, 0666)
 	if err != nil {
-		m.err = failures.FailIO.Wrap(err)
+		m.err = err
 	}
 }
 
