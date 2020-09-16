@@ -45,7 +45,7 @@ func httpGet(url string) ([]byte, *failures.Failure) {
 }
 
 func httpGetWithProgress(url string, progress *progress.Progress) ([]byte, *failures.Failure) {
-	return httpGetWithProgressRetry(url, progress, 0, 3)
+	return httpGetWithProgressRetry(url, progress, 1, 3)
 }
 
 func httpGetWithProgressRetry(url string, progress *progress.Progress, attempt int, retries int) ([]byte, *failures.Failure) {
@@ -94,7 +94,7 @@ func httpGetWithProgressRetry(url string, progress *progress.Progress, attempt i
 	_, err = io.Copy(&dst, src)
 	if err != nil {
 		logging.Debug("Reading body failed: %s", err)
-		if attempt < retries {
+		if attempt <= retries {
 			return httpGetWithProgressRetry(url, progress, attempt + 1, retriesg)
 		}
 		return nil, failures.FailNetwork.Wrap(err)
