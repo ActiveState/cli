@@ -45,12 +45,12 @@ func httpGet(url string) ([]byte, *failures.Failure) {
 }
 
 func httpGetWithProgress(url string, progress *progress.Progress) ([]byte, *failures.Failure) {
-	return httpGetWithProgressRetry(url, progress, 3)
+	return httpGetWithProgressRetry(url, progress, 0, 3)
 }
 
-func httpGetWithProgressRetry(url string, progress *progress.Progress, attempt int) ([]byte, *failures.Failure) {
+func httpGetWithProgressRetry(url string, progress *progress.Progress, attempt int, retries int) ([]byte, *failures.Failure) {
 	logging.Debug("Retrieving url: %s, attempt: %d", url, attempt)
-	client := retryhttp.NewClient(0 /* 0 = no timeout */, 3)
+	client := retryhttp.NewClient(0 /* 0 = no timeout */, retries)
 	resp, err := client.Get(url)
 	if err != nil {
 		code := -1
@@ -78,7 +78,7 @@ func httpGetWithProgressRetry(url string, progress *progress.Progress, attempt i
 	}
 
 	bar := progress.AddByteProgressBar(int64(total))
-	
+
 	// Ensure bar is always closed (especially for retries)
 	defer func() {
 		if !bar.Completed() {
@@ -95,7 +95,7 @@ func httpGetWithProgressRetry(url string, progress *progress.Progress, attempt i
 	if err != nil {
 		logging.Debug("Reading body failed: %s", err)
 		if attempt < 3 {
-			return httpGetWithProgressRetry(url, progress, attempt + 1)
+			return httpGetWithProgressRetry(url, progress, attempt + 1, retries)
 		}
 		return nil, failures.FailNetwork.Wrap(err)
 	}
