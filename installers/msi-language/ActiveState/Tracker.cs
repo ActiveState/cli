@@ -29,8 +29,9 @@ namespace ActiveState
             this._cid = GetInfo.GetUniqueId();
         }
 
-        public async Task<TrackingResult> TrackEventAsync(string sessionID, string category, string action, string label, string msiVersion, long value = 1)
+        public async Task<TrackingResult> TrackEventAsync(Session session, string sessionID, string category, string action, string label, string msiVersion, long value = 1)
         {
+            session.Log("Sending GA Event");
             var eventTrackingParameters = new EventTracking
             {
                 Category = category,
@@ -57,7 +58,9 @@ namespace ActiveState
             session.Log(string.Format("Downloading S3 pixel from URL: {0}", pixelURL));
             try
             {
-                WebClient client = new WebClient();
+                var client = new TimeoutWebClient();
+                // never attempt to send pixel for more than 15 seconds, as it blocks the entire MSI
+                client.Timeout = 15 * 1000;
                 await client.DownloadStringTaskAsync(pixelURL);
             }
             catch (WebException e)
@@ -95,7 +98,7 @@ namespace ActiveState
             var sessionID = computeSessionID(msiLogFileName);
             session.Log("Sending background event {0}/{1}/{2} for cid={3} (custom dimension 1: {4}, pid={5})", category, action, label, this._cid, langVersion, pid);
             Task.WhenAll(
-                TrackEventAsync(sessionID, category, action, label, langVersion, value),
+                TrackEventAsync(session, sessionID, category, action, label, langVersion, value),
                 TrackS3Event(session, sessionID, category, action, label)
             );
         }
@@ -110,10 +113,14 @@ namespace ActiveState
             session.Log("Sending event {0}/{1}/{2} for cid={3} (custom dimension 1: {4}, pid={5})", category, action, label, this._cid, langVersion, pid);
             var sessionID = computeSessionID(msiLogFileName);
             var t = Task.WhenAll(
-                TrackEventAsync(sessionID, category, action, label, langVersion, value),
+                TrackEventAsync(session, sessionID, category, action, label, langVersion, value),
                 TrackS3Event(session, sessionID, category, action, label)
             );
-            t.Wait();
+            var completed = t.Wait(TimeSpan.FromSeconds(15));
+            if (!completed)
+            {
+                session.Log("Abandoning tracking event task after timeout.");
+            }
         }
     }
 };

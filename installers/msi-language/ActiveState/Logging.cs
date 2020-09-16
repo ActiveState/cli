@@ -72,21 +72,20 @@ namespace ActiveState
 
         public static string GetCountry(Session session)
         {
-            string locationJSON = "";
             try
             {
                 using (WebClient wc = new WebClient())
                 {
-                    locationJSON = wc.DownloadString("https://freegeoip.app/json/");
+                    var locationJSON = wc.DownloadString("https://freegeoip.app/json/");
+                    Localization loc = JsonConvert.DeserializeObject<Localization>(locationJSON);
+                    return loc.Country;
                 }
             }
             catch (WebException e)
             {
                 session.Log("Could not get location JSON. Exception: {0}", e.ToString());
+                return "unknown";
             }
-
-            Localization loc = JsonConvert.DeserializeObject<Localization>(locationJSON);
-            return loc.Country;
         }
 
         public static bool PrivacyAgreementAccepted(Session session)
