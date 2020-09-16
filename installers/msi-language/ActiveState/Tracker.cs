@@ -29,7 +29,7 @@ namespace ActiveState
             this._cid = GetInfo.GetUniqueId();
         }
 
-        public async Task<TrackingResult> TrackEventAsync(Session session, string sessionID, string sessionID, string category, string action, string label, string msiVersion, long value = 1)
+        public async Task<TrackingResult> TrackEventAsync(Session session, string sessionID, string category, string action, string label, string productVersion, long value = 1)
         {
             session.Log("Sending GA Event");
             var eventTrackingParameters = new EventTracking
