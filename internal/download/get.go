@@ -94,8 +94,8 @@ func httpGetWithProgressRetry(url string, progress *progress.Progress, attempt i
 	_, err = io.Copy(&dst, src)
 	if err != nil {
 		logging.Debug("Reading body failed: %s", err)
-		if attempt < 3 {
-			return httpGetWithProgressRetry(url, progress, attempt + 1, retries)
+		if attempt < retries {
+			return httpGetWithProgressRetry(url, progress, attempt + 1, retriesg)
 		}
 		return nil, failures.FailNetwork.Wrap(err)
 	}
