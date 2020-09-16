@@ -16,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/progress"
 	"github.com/ActiveState/cli/internal/retryfn"
 	"github.com/ActiveState/cli/internal/retryhttp"
+	"github.com/ActiveState/cli/internal/stdhttp"
 )
 
 // Get takes a URL and returns the contents as bytes
@@ -48,7 +49,7 @@ func httpGetWithProgress(url string, progress *progress.Progress) ([]byte, error
 	var bs []byte
 	fn := func() error {
 		logging.Debug("Retrieving url: %s", url)
-		client := retryhttp.NewClientFromExisting(retryhttp.DefaultClient, 3)
+		client := retryhttp.NewClient(stdhttp.DefaultClient, 3)
 		resp, err := client.Get(url)
 		if err != nil {
 			code := -1

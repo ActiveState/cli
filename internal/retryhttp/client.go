@@ -6,15 +6,14 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-	"time"
 
-	"github.com/hashicorp/go-cleanhttp"
 	"github.com/hashicorp/go-retryablehttp"
 
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/stdhttp"
 )
 
 type UserNetworkError struct {
@@ -37,7 +36,7 @@ type Logger interface {
 	Printf(string, ...interface{})
 }
 
-var DefaultClient = NewClient(30*time.Second, 5)
+var DefaultClient = NewClient(stdhttp.DefaultClient, 5)
 
 func init() {
 	if condition.InTest() {
@@ -110,27 +109,12 @@ func normalizeRetryResponse(res *http.Response, err error, numTries int) (*http.
 	return res, err
 }
 
-func NewClient(timeout time.Duration, retries int) *Client {
+func NewClient(client *http.Client, retries int) *Client {
 	retryClient := retryablehttp.NewClient()
 	retryClient.Logger = logging.CurrentHandler()
-	retryClient.HTTPClient = &http.Client{
-		Transport: cleanhttp.DefaultPooledTransport(),
-		Timeout:   timeout,
-	}
+	retryClient.HTTPClient = client
 	retryClient.RetryMax = retries
 	retryClient.ErrorHandler = normalizeRetryResponse
-
-	return &Client{
-		Client: retryClient,
-	}
-}
-
-func NewClientFromExisting(c *Client, retries int) *Client {
-	retryClient := retryablehttp.NewClient()
-	retryClient.Logger = logging.CurrentHandler()
-	retryClient.HTTPClient = c.Client.HTTPClient
-	retryClient.RetryMax = retries
-	retryClient.ErrorHandler = c.ErrorHandler
 
 	return &Client{
 		Client: retryClient,
