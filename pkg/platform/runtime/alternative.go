@@ -238,7 +238,7 @@ func (ar *AlternativeRuntime) PostUnpackArtifact(artf *HeadChefArtifact, tmpRunt
 	}
 	constants := envdef.NewConstants(ar.runtimeDir)
 	envDef = envDef.ExpandVariables(constants)
-	err := envDef.ApplyFileTransforms(ar.runtimeDir, constants)
+	err := envDef.ApplyFileTransforms(tmpRuntimeDir, constants)
 	if err != nil {
 		return failures.FailRuntime.Wrap(err, "runtime_alternative_file_transforms_err")
 	}
