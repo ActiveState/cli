@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using Newtonsoft.Json;
 using System.Security.Cryptography;
 using System.IO.Compression;
+using System.Windows.Forms.VisualStyles;
 using ActiveState;
 using Microsoft.Win32;
 
@@ -515,8 +516,8 @@ namespace StateDeploy
             var msiLogFileName = session["MsiLogFileLocation"];
 
             session.Log("sending user exit event");
-            session.Log("LAST_DIALOG: " + session.CustomActionData["LAST_DIALOG"]);
             TrackerSingleton.Instance.TrackEventSynchronously(session, msiLogFileName, "stage", "finished", "cancelled", session["ProductVersion"]);
+            TrackerSingleton.Instance.TrackEventSynchronously(session, msiLogFileName, "exits", session["LAST_DIALOG"], "cancelled", session["ProductVersion"]);
             return ActionResult.Success;
         }
 
@@ -530,6 +531,7 @@ namespace StateDeploy
 
             session.Log("sending user network error event");
             TrackerSingleton.Instance.TrackEventSynchronously(session, msiLogFileName, "stage", "finished", "user_network", session["ProductVersion"]);
+            TrackerSingleton.Instance.TrackEventSynchronously(session, msiLogFileName, "exits", session["LAST_DIALOG"], "user_network", session["ProductVersion"]);
             return ActionResult.Success;
         }
 
@@ -543,6 +545,7 @@ namespace StateDeploy
 
             session.Log("sending antivirus error event");
             TrackerSingleton.Instance.TrackEventSynchronously(session, msiLogFileName, "stage", "finished", "user_security", session["ProductVersion"]);
+            TrackerSingleton.Instance.TrackEventSynchronously(session, msiLogFileName, "exits", session["LAST_DIALOG"], "user_security", session["ProductVersion"]);
             return ActionResult.Success;
         }
 
@@ -614,6 +617,21 @@ namespace StateDeploy
                 session.DoAction("GAReportFailure");
                 session.DoAction("CustomFatalError");
             }
+
+            return ActionResult.Success;
+        }
+
+
+        [CustomAction]
+        public static ActionResult CustomUserExit(Session session)
+        {
+            session.Log("Begin CustomUserExit");
+
+            if (session["INSTALL_MODE"] == "Install") {
+                session.DoAction("GAReportUserExit");
+            }
+
+            session.DoAction("CustomUserExitDialog");
 
             return ActionResult.Success;
         }

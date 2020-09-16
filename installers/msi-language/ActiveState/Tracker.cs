@@ -105,6 +105,12 @@ namespace ActiveState
         /// </summary>
         public void TrackEventSynchronously(Session session, string msiLogFileName, string category, string action, string label, string productVersion, long value = 1)
         {
+            if (productVersion == "0.0.0")
+            {
+                session.Log("Not tracking events when version is 0.0.0");
+                return;
+            }
+
             var pid = System.Diagnostics.Process.GetCurrentProcess().Id;
 
             session.Log("Sending event {0}/{1}/{2} for cid={3} (custom dimension 1: {4}, pid={5})", category, action, label, this._cid, productVersion, pid);
