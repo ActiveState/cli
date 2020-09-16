@@ -45,8 +45,12 @@ func httpGet(url string) ([]byte, *failures.Failure) {
 }
 
 func httpGetWithProgress(url string, progress *progress.Progress) ([]byte, *failures.Failure) {
-	logging.Debug("Retrieving url: %s", url)
-	client := retryhttp.NewClient(0 /* 0 = no timeout */, 5)
+	return httpGetWithProgressRetry(url, progress, 3)
+}
+
+func httpGetWithProgressRetry(url string, progress *progress.Progress, attempt int) ([]byte, *failures.Failure) {
+	logging.Debug("Retrieving url: %s, attempt: %d", url, attempt)
+	client := retryhttp.NewClient(0 /* 0 = no timeout */, 3)
 	resp, err := client.Get(url)
 	if err != nil {
 		code := -1
@@ -74,6 +78,13 @@ func httpGetWithProgress(url string, progress *progress.Progress) ([]byte, *fail
 	}
 
 	bar := progress.AddByteProgressBar(int64(total))
+	
+	// Ensure bar is always closed (especially for retries)
+	defer func() {
+		if !bar.Completed() {
+			bar.Abort(true)
+		}
+	}()
 
 	src := resp.Body
 	var dst bytes.Buffer
@@ -82,7 +93,11 @@ func httpGetWithProgress(url string, progress *progress.Progress) ([]byte, *fail
 
 	_, err = io.Copy(&dst, src)
 	if err != nil {
-		return nil, failures.FailInput.Wrap(err)
+		logging.Debug("Reading body failed: %s", err)
+		if attempt < 3 {
+			return httpGetWithProgressRetry(url, progress, attempt + 1)
+		}
+		return nil, failures.FailNetwork.Wrap(err)
 	}
 
 	if !bar.Completed() {
