@@ -59,7 +59,7 @@ namespace StateDeploy
             Error.ResetErrorDetails(session);
 
             var paths = GetPaths();
-            string stateURL = "https://d48aen5u765n1.cloudfront.net/cli-update/update/state/unstable/";
+            string stateURL = "https://d48aen5u765n1.cloudfront.net/update/state/unstable/";
             string jsonURL = stateURL + paths.JsonDescription;
             string timeStamp = DateTime.Now.ToFileTime().ToString();
             string tempDir = Path.Combine(Path.GetTempPath(), timeStamp);
