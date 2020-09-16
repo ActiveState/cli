@@ -50,7 +50,7 @@ namespace Status
 
     public class ProgressBar
     {
-        // Set max scale high so we can safely increment by 1 in while loops
+        // Set max scale high so incrementing in loops looks correct
         public static string max = "1000";
 
         public static ActionResult Reset(Session session)
@@ -75,11 +75,11 @@ namespace Status
             return session.Message(InstallMessage.ActionStart, record);
         }
 
-        public static MessageResult Increment(Session session, int percentage)
+        public static MessageResult Increment(Session session, int increment)
         {
             var record = new Record(3);
             record[1] = 2; // "ProgressReport" message 
-            record[2] = percentage.ToString(); // ticks to increment 
+            record[2] = increment.ToString(); // ticks to increment 
             record[3] = 0; // ignore 
             return session.Message(InstallMessage.Progress, record);
         }
