@@ -22,6 +22,11 @@
 		<Property Id="MsiLogging" Value="Iwearucmopvx" />
 		<!-- End Configuration parameters -->
 
+		<!-- Disable Modification -->
+		<Property Id="ARPNOREPAIR" Value="yes" Secure="yes" />
+		<Property Id="ARPNOMODIFY" Value="yes" Secure="yes" />
+		<!-- End Disable Modification -->
+
 		<Property Id="LAST_DIALOG" Value="unset" Secure="yes" Admin="yes" />
 		<Property Id="PRIVACY_ACCEPTED" Value="no" Secure="yes" Admin="yes" />
 

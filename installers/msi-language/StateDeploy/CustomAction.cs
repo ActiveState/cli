@@ -593,6 +593,7 @@ namespace StateDeploy
             {
                 Object errorType = productKey.GetValue(Error.TypeRegistryKey);
                 Object errorMessage = productKey.GetValue(Error.MessageRegistryKey);
+                session.Log("errorType={0}, error_message={1}", errorType, errorMessage);
                 session["ERROR"] = errorType as string;
                 session["ERROR_MESSAGE"] = errorMessage as string;
             } catch (Exception e)
