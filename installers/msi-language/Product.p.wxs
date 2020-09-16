@@ -22,6 +22,7 @@
 		<Property Id="MsiLogging" Value="Iwearucmopvx" />
 		<!-- End Configuration parameters -->
 
+		<Property Id="LAST_DIALOG" Value="unset" Secure="yes" Admin="yes" />
 		<Property Id="PRIVACY_ACCEPTED" Value="no" Secure="yes" Admin="yes" />
 
 		<PropertyRef Id="WIX_IS_NETFRAMEWORK_45_OR_LATER_INSTALLED"/>
@@ -115,6 +116,12 @@
 			<DialogRef Id="ResumeDlg" />
 			<DialogRef Id="UserExit" />
 
+			<Publish Dialog="PrivacyConsentDlg" Control="Next" Property="LAST_DIALOG" Value="PrivacyConsentDlg">1</Publish>
+			<Publish Dialog="ProgressDlg" Control="Next" Property="LAST_DIALOG" Value="ProgressDlg">1</Publish>
+			<Publish Dialog="WelcomeDlg" Control="Next" Property="LAST_DIALOG" Value="WelcomeDlg">1</Publish>
+			<Publish Dialog="LicenseAgreementDlg" Control="Next" Property="LAST_DIALOG" Value="LicenseAgreementDlg">1</Publish>
+			<Publish Dialog="InstallDirDlg" Control="Next" Property="LAST_DIALOG" Value="InstallDirDlg">1</Publish>
+
 			<Publish Dialog="BrowseDlg" Control="OK" Event="DoAction" Value="WixUIValidatePath" Order="3">1</Publish>
 			<Publish Dialog="BrowseDlg" Control="OK" Event="DoAction" Value="ValidateInstallFolder" Order="4">1</Publish>
 			<Publish Dialog="BrowseDlg" Control="OK" Event="SpawnDialog" Value="InvalidDirDlg" Order="5"><![CDATA[NOT WIXUI_DONTVALIDATEPATH AND WIXUI_INSTALLDIR_VALID<>"1"]]></Publish>
@@ -134,8 +141,6 @@
 
 			<Publish Dialog="CustomSecurityError" Control="Finish" Event="EndDialog" Value="Return" Order="999">1</Publish>
 			<Publish Dialog="CustomSecurityError" Control="Finish" Event="DoAction" Value="GAPixel">NOT WIX_IS_NETFRAMEWORK_45_OR_LATER_INSTALLED</Publish>
-
-			<Publish Dialog="UserExit" Control="Finish" Event="DoAction" Value="GAReportUserExit">NOT REMOVE~="ALL"</Publish>
 
 			<Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="PrivacyConsentDlg">NOT Installed</Publish>
 			<Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="VerifyReadyDlg">Installed AND PATCH</Publish>
@@ -193,6 +198,7 @@
 			<Custom Action="SetIsModify" After="CommandsExist">(Installed AND NOT (REMOVE~="ALL"))</Custom>
 			<Custom Action="SetInstallDirOnModify" After="SetIsModify">(Installed AND NOT (REMOVE~="ALL"))</Custom>
 			<Custom Action="CustomOnError" OnExit="error">NOT REMOVE~="ALL"</Custom>
+			<Custom Action="GAReportUserExit" Before="UserExit">NOT REMOVE~="ALL"</Custom>
 		</InstallUISequence>
 
 		<AdminUISequence>

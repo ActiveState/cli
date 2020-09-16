@@ -515,6 +515,7 @@ namespace StateDeploy
             var msiLogFileName = session["MsiLogFileLocation"];
 
             session.Log("sending user exit event");
+            session.Log("LAST_DIALOG: " + session.CustomActionData["LAST_DIALOG"]);
             TrackerSingleton.Instance.TrackEventSynchronously(session, msiLogFileName, "stage", "finished", "cancelled", session["ProductVersion"]);
             return ActionResult.Success;
         }
