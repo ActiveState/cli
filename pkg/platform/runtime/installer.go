@@ -200,10 +200,10 @@ func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGet
 		}
 
 		if len(downloadArtfs) > 0 {
-			archives, err := installer.runtimeDownloader.Download(downloadArtfs, runtimeAssembler, progressBar)
-			if err != nil {
+			archives, fail := installer.runtimeDownloader.Download(downloadArtfs, runtimeAssembler, progressBar)
+			if fail != nil {
 				progressBar.Cancel()
-				return nil, false, failures.FailIO.Wrap(err)
+				return nil, false, fail
 			}
 
 			for k, v := range archives {
