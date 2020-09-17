@@ -1,7 +1,10 @@
 #@ def steps_genversion():
 name: "Generate Version"
 shell: bash
-run: state run generate-version
+run: |
+  if [[ "${GITHUB_REF##*/}" == "master" ]]; then
+    state run generate-version
+  fi
 #@ end
 ---
 #@ def steps_build():
