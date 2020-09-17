@@ -161,7 +161,7 @@ namespace StateDeploy
             {
                 return result;
             }
-            
+
 
             SHA256 sha = SHA256.Create();
             FileStream fInfo = File.OpenRead(zipPath);
@@ -234,7 +234,7 @@ namespace StateDeploy
                 try
                 {
                     string installFilePath = Path.Combine(output.Trim(), "installsource.txt");
-                    File.WriteAllText(installFilePath, contents);
+                    File.WriteAllText(installFilePath, contents, Encoding.ASCII);
                 }
                 catch (Exception e)
                 {
