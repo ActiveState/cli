@@ -58,12 +58,17 @@ namespace ActiveState
             session.Log(string.Format("Downloading S3 pixel from URL: {0}", pixelURL));
             try
             {
-                var client = new TimeoutWebClient();
-                // never attempt to send pixel for more than 15 seconds, as it blocks the entire MSI
-                client.Timeout = 15 * 1000;
-                await client.DownloadStringTaskAsync(pixelURL);
+                // retry up to 3 times to download the S3 pixel
+                RetryHelper.RetryOnException(session, 3, TimeSpan.FromSeconds(1), () =>
+                {
+                    var client = new TimeoutWebClient();
+                    // tr tp complete an s3 tracking event in seven seconds or less.
+                    client.Timeout = 7 * 1000;
+                    var res = client.DownloadString(pixelURL);
+                    session.Log("Received response {0}", res);
+                });
             }
-            catch (WebException e)
+            catch (Exception e)
             {
                 string msg = string.Format("Encountered exception downloading S3 pixel file: {0}", e.ToString());
                 session.Log(msg);
