@@ -127,12 +127,12 @@
 			<Publish Dialog="InstallDirDlg" Control="Cancel" Property="LAST_DIALOG" Value="InstallDirDlg">1</Publish>
 			<Publish Dialog="VerifyReadyDlg" Control="Cancel" Property="LAST_DIALOG" Value="VerifyReadyDlg">1</Publish>
 
-			<Publish Dialog="PrivacyConsentDlg" Control="Next" Property="LAST_DIALOG" Value="Post-PrivacyConsentDlg">1</Publish>
-			<Publish Dialog="ProgressDlg" Control="Next" Property="LAST_DIALOG" Value="Post-ProgressDlg">1</Publish>
-			<Publish Dialog="WelcomeDlg" Control="Next" Property="LAST_DIALOG" Value="Post-WelcomeDlg">1</Publish>
-			<Publish Dialog="LicenseAgreementDlg" Control="Next" Property="LAST_DIALOG" Value="Post-LicenseAgreementDlg">1</Publish>
-			<Publish Dialog="InstallDirDlg" Control="Next" Property="LAST_DIALOG" Value="Post-InstallDirDlg">1</Publish>
-			<Publish Dialog="VerifyReadyDlg" Control="Next" Property="LAST_DIALOG" Value="Post-VerifyReadyDlg">1</Publish>
+			<Publish Dialog="PrivacyConsentDlg" Control="Next" Property="LAST_DIALOG" Value="Post_PrivacyConsentDlg">1</Publish>
+			<Publish Dialog="ProgressDlg" Control="Next" Property="LAST_DIALOG" Value="Post_ProgressDlg">1</Publish>
+			<Publish Dialog="WelcomeDlg" Control="Next" Property="LAST_DIALOG" Value="Post_WelcomeDlg">1</Publish>
+			<Publish Dialog="LicenseAgreementDlg" Control="Next" Property="LAST_DIALOG" Value="Post_LicenseAgreementDlg">1</Publish>
+			<Publish Dialog="InstallDirDlg" Control="Next" Property="LAST_DIALOG" Value="Post_InstallDirDlg">1</Publish>
+			<Publish Dialog="VerifyReadyDlg" Control="Install" Property="LAST_DIALOG" Value="Post_VerifyReadyDlg">1</Publish>
 
 			<Publish Dialog="BrowseDlg" Control="OK" Event="DoAction" Value="WixUIValidatePath" Order="3">1</Publish>
 			<Publish Dialog="BrowseDlg" Control="OK" Event="DoAction" Value="ValidateInstallFolder" Order="4">1</Publish>
