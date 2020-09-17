@@ -61,14 +61,11 @@ namespace ActiveState
                 // retry up to 3 times to download the S3 pixel
                 RetryHelper.RetryOnException(session, 3, TimeSpan.FromSeconds(1), () =>
                 {
-                    Task.Run(async () =>
-                    {
-                        var client = new TimeoutWebClient();
-                        // tr tp complete an s3 tracking event in seven seconds or less.
-                        client.Timeout = 7 * 1000;
-                        var res = await client.DownloadStringTaskAsync(pixelURL);
-                        session.Log("Received response {0}", res);
-                    }).Wait();
+                    var client = new TimeoutWebClient();
+                    // tr tp complete an s3 tracking event in seven seconds or less.
+                    client.Timeout = 7 * 1000;
+                    var res = client.DownloadString(pixelURL);
+                    session.Log("Received response {0}", res);
                 });
             }
             catch (Exception e)
