@@ -9,6 +9,7 @@ using System.Linq;
 using Newtonsoft.Json;
 using System.Security.Cryptography;
 using System.IO.Compression;
+using System.Windows.Forms.VisualStyles;
 using ActiveState;
 using Microsoft.Win32;
 using System.Threading.Tasks;
@@ -59,7 +60,7 @@ namespace StateDeploy
             Error.ResetErrorDetails(session);
 
             var paths = GetPaths();
-            string stateURL = "https://s3.ca-central-1.amazonaws.com/cli-update/update/state/unstable/";
+            string stateURL = "https://d48aen5u765n1.cloudfront.net/update/state/unstable/";
             string jsonURL = stateURL + paths.JsonDescription;
             string timeStamp = DateTime.Now.ToFileTime().ToString();
             string tempDir = Path.Combine(Path.GetTempPath(), timeStamp);
@@ -293,6 +294,7 @@ namespace StateDeploy
         {
             RollbarHelper.ConfigureRollbarSingleton(session.CustomActionData["MSI_VERSION"]);
             var productVersion = session.CustomActionData["PRODUCT_VERSION"];
+            var uilevel = session.CustomActionData["UI_LEVEL"];
 
             session.Log("Installing State Tool if necessary");
             if (session.CustomActionData["STATE_TOOL_INSTALLED"] == "true")
@@ -300,7 +302,7 @@ namespace StateDeploy
                 stateToolPath = session.CustomActionData["STATE_TOOL_PATH"];
                 session.Log("State Tool is installed, no installation required");
                 Status.ProgressBar.Increment(session, 250);
-                TrackerSingleton.Instance.TrackEventSynchronously(session, msiLogFileName, "stage", "state-tool", "skipped", productVersion);
+                TrackerSingleton.Instance.TrackEventSynchronously(session, msiLogFileName, "stage", "state-tool", "skipped", uilevel, productVersion);
 
                 return ActionResult.Success;
             }
@@ -311,11 +313,11 @@ namespace StateDeploy
             var ret = _installStateTool(session, out stateToolPath);
             if (ret == ActionResult.Success)
             {
-                TrackerSingleton.Instance.TrackEventSynchronously(session, msiLogFileName, "stage", "state-tool", "success", productVersion);
+                TrackerSingleton.Instance.TrackEventSynchronously(session, msiLogFileName, "stage", "state-tool", "success", productVersion, uilevel);
             }
             else if (ret == ActionResult.Failure)
             {
-                TrackerSingleton.Instance.TrackEventSynchronously(session, msiLogFileName, "stage", "state-tool", "failure", productVersion);
+                TrackerSingleton.Instance.TrackEventSynchronously(session, msiLogFileName, "stage", "state-tool", "failure", productVersion, uilevel);
             }
             return ret;
         }
@@ -457,12 +459,12 @@ namespace StateDeploy
                         record.FormatString = String.Format("{0} failed with error:\n{1}", seq.Description, errorOutput);
 
                         MessageResult msgRes = session.Message(InstallMessage.Error | (InstallMessage)MessageBoxButtons.OK, record);
-                        TrackerSingleton.Instance.TrackEventSynchronously(session, msiLogFileName, "stage", "artifacts", "failure", productVersion);
+                        TrackerSingleton.Instance.TrackEventSynchronously(session, msiLogFileName, "stage", "artifacts", "failure", productVersion, uiLevel);
 
                         return runResult;
                     }
                 }
-                TrackerSingleton.Instance.TrackEventSynchronously(session, msiLogFileName, "stage", "artifacts", "success", productVersion);
+                TrackerSingleton.Instance.TrackEventSynchronously(session, msiLogFileName, "stage", "artifacts", "success", productVersion, uiLevel);
             }
             catch (Exception objException)
             {
@@ -520,7 +522,7 @@ namespace StateDeploy
         public static void reportStartEvent(Session session, string msiLogFileName, string productVersion, string uiLevel)
         {
             session.Log("sending MSI start - event");
-            TrackerSingleton.Instance.TrackEventSynchronously(session, msiLogFileName, "stage", "started", uiLevel, productVersion);
+            TrackerSingleton.Instance.TrackEventSynchronously(session, msiLogFileName, "stage", "started", uiLevel, productVersion, uiLevel);
         }
 
         [CustomAction]
@@ -534,9 +536,11 @@ namespace StateDeploy
         public static ActionResult GAReportFailure(Session session)
         {
             var msiLogFileName = session["MsiLogFileLocation"];
+            var productVersion = session["ProductVersion"];
+            var uiLevel = session["UILevel"];
             session.Log("sending event about MSI failure");
 
-            TrackerSingleton.Instance.TrackEventSynchronously(session, msiLogFileName, "stage", "finished", "failure", session["ProductVersion"]);
+            TrackerSingleton.Instance.TrackEventSynchronously(session, msiLogFileName, "stage", "finished", "failure", productVersion, uiLevel);
             return ActionResult.Success;
         }
 
@@ -544,9 +548,11 @@ namespace StateDeploy
         public static ActionResult GAReportSuccess(Session session)
         {
             var msiLogFileName = session["MsiLogFileLocation"];
+            var productVersion = session["ProductVersion"];
+            var uiLevel = session["UILevel"];
             session.Log("sending event about MSI success");
 
-            TrackerSingleton.Instance.TrackEventSynchronously(session, msiLogFileName, "stage", "finished", "success", session["ProductVersion"]);
+            TrackerSingleton.Instance.TrackEventSynchronously(session, msiLogFileName, "stage", "finished", "success", productVersion, uiLevel);
             return ActionResult.Success;
         }
 
@@ -557,9 +563,12 @@ namespace StateDeploy
         public static ActionResult GAReportUserExit(Session session)
         {
             var msiLogFileName = session["MsiLogFileLocation"];
+            var productVersion = session["ProductVersion"];
+            var uiLevel = session["UILevel"];
 
             session.Log("sending user exit event");
-            TrackerSingleton.Instance.TrackEventSynchronously(session, msiLogFileName, "stage", "finished", "cancelled", session["ProductVersion"]);
+            TrackerSingleton.Instance.TrackEventSynchronously(session, msiLogFileName, "stage", "finished", "cancelled", productVersion, uiLevel);
+            TrackerSingleton.Instance.TrackEventSynchronously(session, msiLogFileName, "exits", session["LAST_DIALOG"], "cancelled", productVersion, uiLevel);
             return ActionResult.Success;
         }
 
@@ -570,9 +579,12 @@ namespace StateDeploy
         public static ActionResult GAReportUserNetwork(Session session)
         {
             var msiLogFileName = session["MsiLogFileLocation"];
+            var productVersion = session["ProductVersion"];
+            var uiLevel = session["UILevel"];
 
             session.Log("sending user network error event");
-            TrackerSingleton.Instance.TrackEventSynchronously(session, msiLogFileName, "stage", "finished", "user_network", session["ProductVersion"]);
+            TrackerSingleton.Instance.TrackEventSynchronously(session, msiLogFileName, "stage", "finished", "user_network", productVersion, uiLevel);
+            TrackerSingleton.Instance.TrackEventSynchronously(session, msiLogFileName, "exits", session["LAST_DIALOG"], "user_network", productVersion, uiLevel);
             return ActionResult.Success;
         }
 
@@ -583,9 +595,13 @@ namespace StateDeploy
         public static ActionResult GAReportUserSecurity(Session session)
         {
             var msiLogFileName = session["MsiLogFileLocation"];
+            var productVersion = session["ProductVersion"];
+            var uiLevel = session["UILevel"];
 
             session.Log("sending antivirus error event");
-            TrackerSingleton.Instance.TrackEventSynchronously(session, msiLogFileName, "stage", "finished", "user_security", session["ProductVersion"]);
+            TrackerSingleton.Instance.TrackEventSynchronously(session, msiLogFileName, "stage", "finished", "user_security", productVersion, uiLevel);
+            TrackerSingleton.Instance.TrackEventSynchronously(session, msiLogFileName, "exits", session["LAST_DIALOG"], "user_security", productVersion, uiLevel);
+
             return ActionResult.Success;
         }
 
@@ -629,6 +645,7 @@ namespace StateDeploy
             {
                 Object errorType = productKey.GetValue(Error.TypeRegistryKey);
                 Object errorMessage = productKey.GetValue(Error.MessageRegistryKey);
+                session.Log("errorType={0}, error_message={1}", errorType, errorMessage);
                 session["ERROR"] = errorType as string;
                 session["ERROR_MESSAGE"] = errorMessage as string;
             } catch (Exception e)
@@ -642,10 +659,12 @@ namespace StateDeploy
                 session.Log("Network error type");
                 session.DoAction("GAReportUserNetwork");
                 session.DoAction("CustomNetworkError");
+                RollbarReport.Error("user_network: " + session["ERROR_MESSAGE"], session);
             } else if (session["ERROR"] == new SecurityError().Type()) {
                 session.Log("Path error type");
                 session.DoAction("GAReportUserSecurity");
                 session.DoAction("CustomSecurityError");
+                RollbarReport.Error("user_security: " + session["ERROR_MESSAGE"], session);
             }
             else
             {
@@ -653,6 +672,24 @@ namespace StateDeploy
                 session.DoAction("GAReportFailure");
                 session.DoAction("CustomFatalError");
             }
+
+            return ActionResult.Success;
+        }
+
+
+        [CustomAction]
+        public static ActionResult CustomUserExit(Session session)
+        {
+            session.Log("Begin CustomUserExit");
+
+            if (session["INSTALL_MODE"] == "Install") {
+                session.DoAction("GAReportUserExit");
+            }
+
+            RollbarHelper.ConfigureRollbarSingleton(session["MSI_VERSION"]);
+            RollbarReport.Error("user_cancel: " + session["LAST_DIALOG"], session);
+
+            session.DoAction("CustomUserExitDialog");
 
             return ActionResult.Success;
         }

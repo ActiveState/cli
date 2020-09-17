@@ -127,6 +127,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Error.cs" />
+    <Compile Include="TimeoutWebClient.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="UserEnvironment.cs" />
     <Compile Include="Logging.cs" />
     <Compile Include="Retry.cs" />
