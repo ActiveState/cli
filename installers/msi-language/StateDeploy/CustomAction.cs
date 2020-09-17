@@ -546,6 +546,7 @@ namespace StateDeploy
             session.Log("sending antivirus error event");
             TrackerSingleton.Instance.TrackEventSynchronously(session, msiLogFileName, "stage", "finished", "user_security", session["ProductVersion"]);
             TrackerSingleton.Instance.TrackEventSynchronously(session, msiLogFileName, "exits", session["LAST_DIALOG"], "user_security", session["ProductVersion"]);
+
             return ActionResult.Success;
         }
 
@@ -607,10 +608,12 @@ namespace StateDeploy
                 session.Log("Network error type");
                 session.DoAction("GAReportUserNetwork");
                 session.DoAction("CustomNetworkError");
+                RollbarReport.Error("user_network: " + session["ERROR_MESSAGE"], session);
             } else if (session["ERROR"] == new SecurityError().Type()) {
                 session.Log("Path error type");
                 session.DoAction("GAReportUserSecurity");
                 session.DoAction("CustomSecurityError");
+                RollbarReport.Error("user_security: " + session["ERROR_MESSAGE"], session);
             }
             else
             {
@@ -631,6 +634,9 @@ namespace StateDeploy
             if (session["INSTALL_MODE"] == "Install") {
                 session.DoAction("GAReportUserExit");
             }
+
+            RollbarHelper.ConfigureRollbarSingleton(session["MSI_VERSION"]);
+            RollbarReport.Error("user_cancel: " + session["LAST_DIALOG"], session);
 
             session.DoAction("CustomUserExitDialog");
 
