@@ -129,19 +129,7 @@ namespace StateDeploy
 
             Task incrementTask = Task.Run(() =>
             {
-                if (token.IsCancellationRequested)
-                {
-                    token.ThrowIfCancellationRequested();
-                }
-                for (int i = 0; i <= 50; i++)
-                {
-                    if (token.IsCancellationRequested)
-                    {
-                        token.ThrowIfCancellationRequested();
-                    }
-                    Status.ProgressBar.Increment(session, 1);
-                    Thread.Sleep(150);
-                }
+                incrementProgressBar(session, 50, token);
             });
 
             Task<ActionResult> downloadTask = Task.Run(() =>
@@ -165,15 +153,14 @@ namespace StateDeploy
                 return ActionResult.Success;
             });
 
-            try
+            Task waitTask = Task.Run(() =>
             {
                 incrementTask.Wait();
-            } catch (OperationCanceledException)
-            {
-                session.Log("Increment progress bar was cancelled");
-            }
+            });
 
             ActionResult result = downloadTask.Result;
+            tokenSource.Cancel();
+            waitTask.Wait();
             if (result.Equals(ActionResult.Failure))
             {
                 return result;
@@ -286,6 +273,25 @@ namespace StateDeploy
 
             Status.ProgressBar.Increment(session, 50);
             return ActionResult.Success;
+        }
+
+        private static void incrementProgressBar(Session session, int limit, CancellationToken ct)
+        {
+            if (ct.IsCancellationRequested)
+            {
+                session.Log("Cancelling incrementProgressBar");
+                return;
+            }
+            for (int i = 0; i <= limit; i++)
+            {
+                if (ct.IsCancellationRequested)
+                {
+                    session.Log("Cancelling incrementProgressBar");
+                    return;
+                }
+                Status.ProgressBar.Increment(session, 1);
+                Thread.Sleep(150);
+            }
         }
 
         public static ActionResult InstallStateTool(Session session, string msiLogFileName, out string stateToolPath)
