@@ -153,14 +153,9 @@ namespace StateDeploy
                 return ActionResult.Success;
             });
 
-            Task waitTask = Task.Run(() =>
-            {
-                incrementTask.Wait();
-            });
-
             ActionResult result = downloadTask.Result;
             tokenSource.Cancel();
-            waitTask.Wait();
+            incrementTask.Wait();
             if (result.Equals(ActionResult.Failure))
             {
                 return result;
