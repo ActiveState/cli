@@ -3,6 +3,8 @@ name: "Generate Version"
 shell: bash
 run: |
   if [[ "${GITHUB_REF##*/}" == "master" ]]; then
+    state run generate-version master
+  else
     state run generate-version
   fi
 #@ end

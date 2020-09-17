@@ -43,6 +43,8 @@ jobs:
       shell: bash
       run: |
         if [[ "${GITHUB_REF##*/}" == "master" ]]; then
+          state run generate-version master
+        else
           state run generate-version
         fi
     - name: Upload Shared Artifacts
