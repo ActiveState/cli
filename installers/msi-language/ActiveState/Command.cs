@@ -87,11 +87,11 @@ namespace ActiveState
                         // This is to update the progress bar and listen for a cancel event
                         if (count < limit) {
                             Status.ProgressBar.Increment(session, 1);
-                            Thread.Sleep(200);
+                            Thread.Sleep(150);
                         } else
                         {
                             Status.ProgressBar.Increment(session, 0);
-                            Thread.Sleep(200);
+                            Thread.Sleep(150);
                         }
                     }
                     catch (InstallCanceledException)

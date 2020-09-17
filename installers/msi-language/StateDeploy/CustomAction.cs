@@ -140,7 +140,7 @@ namespace StateDeploy
                         token.ThrowIfCancellationRequested();
                     }
                     Status.ProgressBar.Increment(session, 1);
-                    Thread.Sleep(200);
+                    Thread.Sleep(150);
                 }
             });
 
@@ -617,10 +617,6 @@ namespace StateDeploy
         [CustomAction]
         public static ActionResult CustomOnError(Session session)
         {
-            // TODO: Rather than using NETWORK_ERROR and PATH_ERROR just have an ERROR
-            // property that contains the type of error (ie. Network or Path). This means
-            // the error key does not need to be specific to anything and will simplify
-            // the code.
             session.Log("Begin SetError");
 
             // Get the registry values set on error in the _installStateTool function
