@@ -123,6 +123,7 @@
 			<Publish Dialog="PrivacyConsentDlg" Control="Cancel" Property="LAST_DIALOG" Value="PrivacyConsentDlg">1</Publish>
 			<Publish Dialog="ProgressDlg" Control="Cancel" Property="LAST_DIALOG" Value="ProgressDlg">1</Publish>
 			<Publish Dialog="WelcomeDlg" Control="Cancel" Property="LAST_DIALOG" Value="WelcomeDlg">1</Publish>
+			<Publish Dialog="MaintenanceWelcomeDlg" Control="Cancel" Property="LAST_DIALOG" Value="MaintenanceWelcomeDlg">1</Publish>
 			<Publish Dialog="LicenseAgreementDlg" Control="Cancel" Property="LAST_DIALOG" Value="LicenseAgreementDlg">1</Publish>
 			<Publish Dialog="InstallDirDlg" Control="Cancel" Property="LAST_DIALOG" Value="InstallDirDlg">1</Publish>
 			<Publish Dialog="VerifyReadyDlg" Control="Cancel" Property="LAST_DIALOG" Value="VerifyReadyDlg">1</Publish>
@@ -130,6 +131,7 @@
 			<Publish Dialog="PrivacyConsentDlg" Control="Next" Property="LAST_DIALOG" Value="Post_PrivacyConsentDlg">1</Publish>
 			<Publish Dialog="ProgressDlg" Control="Next" Property="LAST_DIALOG" Value="Post_ProgressDlg">1</Publish>
 			<Publish Dialog="WelcomeDlg" Control="Next" Property="LAST_DIALOG" Value="Post_WelcomeDlg">1</Publish>
+			<Publish Dialog="MaintenanceWelcomeDlg" Control="Next" Property="LAST_DIALOG" Value="Post_MaintenanceWelcomeDlg">1</Publish>
 			<Publish Dialog="LicenseAgreementDlg" Control="Next" Property="LAST_DIALOG" Value="Post_LicenseAgreementDlg">1</Publish>
 			<Publish Dialog="InstallDirDlg" Control="Next" Property="LAST_DIALOG" Value="Post_InstallDirDlg">1</Publish>
 			<Publish Dialog="VerifyReadyDlg" Control="Install" Property="LAST_DIALOG" Value="Post_VerifyReadyDlg">1</Publish>
