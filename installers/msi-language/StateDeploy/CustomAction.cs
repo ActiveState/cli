@@ -6,14 +6,14 @@ using System.Net;
 using System.Collections.ObjectModel;
 using System.Windows.Forms;
 using System.Linq;
-using System.Web.Script.Serialization;
-using System.Collections.Generic;
 using Newtonsoft.Json;
 using System.Security.Cryptography;
 using System.IO.Compression;
 using System.Windows.Forms.VisualStyles;
 using ActiveState;
 using Microsoft.Win32;
+using System.Threading.Tasks;
+using System.Threading;
 
 namespace StateDeploy
 {
@@ -70,6 +70,7 @@ namespace StateDeploy
             if (File.Exists(stateToolPath))
             {
                 session.Log("Using existing State Tool executable at install path");
+                Status.ProgressBar.Increment(session, 200);
                 return ActionResult.Success;
             }
 
@@ -123,21 +124,44 @@ namespace StateDeploy
             string zipURL = stateURL + info.version + "/" + paths.ZipFile;
             session.Log(string.Format("Downloading zip file from URL: {0}", zipURL));
             Status.ProgressBar.StatusMessage(session, "Downloading State Tool...");
-            try
+
+            var tokenSource = new CancellationTokenSource();
+            var token = tokenSource.Token;
+
+            Task incrementTask = Task.Run(() =>
             {
-                RetryHelper.RetryOnException(session, 3, TimeSpan.FromSeconds(2), () =>
+                incrementProgressBar(session, 50, token);
+            });
+
+            Task<ActionResult> downloadTask = Task.Run(() =>
+            {
+                try
                 {
-                    var client = new WebClient();
-                    client.DownloadFile(zipURL, zipPath);
-                });
-            }
-            catch (WebException e)
+                    RetryHelper.RetryOnException(session, 3, TimeSpan.FromSeconds(2), () =>
+                    {
+                        var client = new WebClient();
+                        client.DownloadFile(zipURL, zipPath);
+                    });
+                }
+                catch (WebException e)
+                {
+                    string msg = string.Format("Encountered exception downloading state tool zip file. URL to zip file: {0}, path to save zip file to: {1}, exception: {2}", zipURL, zipPath, e.ToString());
+                    session.Log(msg);
+                    new NetworkError().SetDetails(session, e.Message);
+                    return ActionResult.Failure;
+                }
+
+                return ActionResult.Success;
+            });
+
+            ActionResult result = downloadTask.Result;
+            tokenSource.Cancel();
+            incrementTask.Wait();
+            if (result.Equals(ActionResult.Failure))
             {
-                string msg = string.Format("Encountered exception downloading state tool zip file. URL to zip file: {0}, path to save zip file to: {1}, exception: {2}", zipURL, zipPath, e.ToString());
-                session.Log(msg);
-                new NetworkError().SetDetails(session, e.Message);
-                return ActionResult.Failure;
+                return result;
             }
+            
 
             SHA256 sha = SHA256.Create();
             FileStream fInfo = File.OpenRead(zipPath);
@@ -151,6 +175,7 @@ namespace StateDeploy
             }
 
             Status.ProgressBar.StatusMessage(session, "Extracting State Tool executable...");
+            Status.ProgressBar.Increment(session, 50);
             try
             {
                 ZipFile.ExtractToDirectory(zipPath, tempDir);
@@ -220,6 +245,7 @@ namespace StateDeploy
             }
 
             session.Log("Updating PATH environment variable");
+            Status.ProgressBar.Increment(session, 50);
             string oldPath = Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.Machine);
             if (oldPath.Contains(stateToolInstallDir))
             {
@@ -241,7 +267,27 @@ namespace StateDeploy
                 return ActionResult.Failure;
             }
 
+            Status.ProgressBar.Increment(session, 50);
             return ActionResult.Success;
+        }
+
+        private static void incrementProgressBar(Session session, int limit, CancellationToken ct)
+        {
+            if (ct.IsCancellationRequested)
+            {
+                session.Log("Cancelling incrementProgressBar");
+                return;
+            }
+            for (int i = 0; i <= limit; i++)
+            {
+                if (ct.IsCancellationRequested)
+                {
+                    session.Log("Cancelling incrementProgressBar");
+                    return;
+                }
+                Status.ProgressBar.Increment(session, 1);
+                Thread.Sleep(150);
+            }
         }
 
         public static ActionResult InstallStateTool(Session session, string msiLogFileName, out string stateToolPath)
@@ -255,14 +301,14 @@ namespace StateDeploy
             {
                 stateToolPath = session.CustomActionData["STATE_TOOL_PATH"];
                 session.Log("State Tool is installed, no installation required");
-                Status.ProgressBar.Increment(session, 1);
+                Status.ProgressBar.Increment(session, 250);
                 TrackerSingleton.Instance.TrackEventSynchronously(session, msiLogFileName, "stage", "state-tool", "skipped", uilevel, productVersion);
 
                 return ActionResult.Success;
             }
 
             Status.ProgressBar.StatusMessage(session, "Installing State Tool...");
-            Status.ProgressBar.Increment(session, 1);
+            Status.ProgressBar.Increment(session, 50);
 
             var ret = _installStateTool(session, out stateToolPath);
             if (ret == ActionResult.Success)
@@ -398,11 +444,9 @@ namespace StateDeploy
                     string deployCmd = BuildDeployCmd(session, seq.SubCommand);
                     session.Log(string.Format("Executing deploy command: {0}", deployCmd));
 
-                    Status.ProgressBar.Increment(session, 1);
                     Status.ProgressBar.StatusMessage(session, seq.Description);
-
                     string output;
-                    var runResult = ActiveState.Command.Run(session, stateToolPath, deployCmd, out output);
+                    var runResult = ActiveState.Command.RunWithProgress(session, stateToolPath, deployCmd, 200, out output);
                     if (runResult.Equals(ActionResult.UserExit))
                     {
                         // Catch cancel and return
@@ -430,7 +474,7 @@ namespace StateDeploy
                 return ActionResult.Failure;
             }
 
-            Status.ProgressBar.Increment(session, 1);
+            Status.ProgressBar.Increment(session, 100);
             return ActionResult.Success;
 
         }
@@ -590,10 +634,6 @@ namespace StateDeploy
         [CustomAction]
         public static ActionResult CustomOnError(Session session)
         {
-            // TODO: Rather than using NETWORK_ERROR and PATH_ERROR just have an ERROR
-            // property that contains the type of error (ie. Network or Path). This means
-            // the error key does not need to be specific to anything and will simplify
-            // the code.
             session.Log("Begin SetError");
 
             // Get the registry values set on error in the _installStateTool function

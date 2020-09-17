@@ -12,7 +12,13 @@ namespace ActiveState
 {
     public static class Command
     {
+
         public static ActionResult Run(Session session, string cmd, string args, out string output)
+        {
+            return RunWithProgress(session, cmd, args, 0, out output);
+        }
+
+        public static ActionResult RunWithProgress(Session session, string cmd, string args, int limit, out string output)
         {
             var errBuilder = new StringBuilder();
             var outputBuilder = new StringBuilder();
@@ -73,13 +79,20 @@ namespace ActiveState
                 proc.BeginOutputReadLine();
                 proc.BeginErrorReadLine();
 
+                int count = 0;
                 while (!proc.HasExited)
                 {
                     try
                     {
-                        // This is just hear to throw an InstallCanceled Exception if necessary
-                        Status.ProgressBar.Increment(session, 0);
-                        Thread.Sleep(200);
+                        // This is to update the progress bar and listen for a cancel event
+                        if (count < limit) {
+                            Status.ProgressBar.Increment(session, 1);
+                            Thread.Sleep(150);
+                        } else
+                        {
+                            Status.ProgressBar.Increment(session, 0);
+                            Thread.Sleep(150);
+                        }
                     }
                     catch (InstallCanceledException)
                     {
