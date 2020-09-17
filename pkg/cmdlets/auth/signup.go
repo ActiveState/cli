@@ -10,6 +10,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/api"
 
@@ -44,15 +45,15 @@ type signupInput struct {
 func Signup(out output.Outputer, prompt prompt.Prompter) error {
 	input := &signupInput{}
 
-	accepted, fail := promptTOS(out, prompt)
-	if fail != nil {
-		return fail
+	accepted, err := promptTOS(out, prompt)
+	if err != nil {
+		return err
 	}
 	if !accepted {
 		return locale.NewInputError("tos_not_accepted", "")
 	}
 
-	fail = promptForSignup(input, out, prompt)
+	fail := promptForSignup(input, out, prompt)
 	if fail != nil {
 		return fail.WithDescription("err_prompt_unknown").ToError()
 	}
@@ -83,29 +84,32 @@ func signupFromLogin(username string, password string, out output.Outputer, prom
 	return doSignup(input, out)
 }
 
-func downloadTOS() (string, *failures.Failure) {
+func downloadTOS() (string, error) {
 	resp, err := http.Get(constants.TermsOfServiceURLText)
 	if err != nil {
-		return "", failures.FailIO.Wrap(err)
+		return "", errs.Wrap(err, "Failed to download the Terms Of Service document.")
+	}
+	if resp.StatusCode != http.StatusOK {
+		return "", errs.New("The server responded with status '%s' when trying to download the Terms Of Service document.", resp.Status)
 	}
 	defer resp.Body.Close()
 
 	tosPath := filepath.Join(config.ConfigPath(), "platform_tos.txt")
 	tosFile, err := os.Create(tosPath)
 	if err != nil {
-		return "", failures.FailIO.Wrap(err)
+		return "", errs.Wrap(err, "Could not create Terms Of Service file in configuration directory.")
 	}
 	defer tosFile.Close()
 
 	_, err = io.Copy(tosFile, resp.Body)
 	if err != nil {
-		return "", failures.FailIO.Wrap(err)
+		return "", errs.Wrap(err, "Failed to write Terms Of Service file contents.")
 	}
 
 	return tosPath, nil
 }
 
-func promptTOS(out output.Outputer, prompt prompt.Prompter) (bool, *failures.Failure) {
+func promptTOS(out output.Outputer, prompt prompt.Prompter) (bool, error) {
 	choices := []string{
 		locale.T("tos_accept"),
 		locale.T("tos_not_accept"),
@@ -124,9 +128,9 @@ func promptTOS(out output.Outputer, prompt prompt.Prompter) (bool, *failures.Fai
 	case locale.T("tos_not_accept"):
 		return false, nil
 	case locale.T("tos_show_full"):
-		tosFilePath, fail := downloadTOS()
-		if fail != nil {
-			return false, fail.WithDescription("err_download_tos")
+		tosFilePath, err := downloadTOS()
+		if err != nil {
+			return false, locale.WrapError(err, "err_download_tos")
 		}
 
 		tos, err := ioutil.ReadFile(tosFilePath)
