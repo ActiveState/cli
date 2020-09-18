@@ -5,12 +5,20 @@ using System.Diagnostics;
 using System.Threading;
 using System.IO;
 using System.Collections.Generic;
+using System.Linq;
+using System.Web.Script.Serialization;
 
 namespace ActiveState
 {
     public static class Command
     {
+
         public static ActionResult Run(Session session, string cmd, string args, out string output)
+        {
+            return RunWithProgress(session, cmd, args, 0, out output);
+        }
+
+        public static ActionResult RunWithProgress(Session session, string cmd, string args, int limit, out string output)
         {
             var errBuilder = new StringBuilder();
             var outputBuilder = new StringBuilder();
@@ -32,6 +40,13 @@ namespace ActiveState
                 procStartInfo.RedirectStandardOutput = true;
                 procStartInfo.RedirectStandardError = true;
                 procStartInfo.UseShellExecute = false;
+                procStartInfo.StandardOutputEncoding = Encoding.UTF8;
+                procStartInfo.StandardErrorEncoding = Encoding.UTF8;
+                if (cmd.Contains("state.exe"))
+                {
+                    procStartInfo.EnvironmentVariables["VERBOSE"] = "true";
+                    procStartInfo.EnvironmentVariables["ACTIVESTATE_NONINTERACTIVE"] = "true";
+                }
                 // Do not create the black window.
                 procStartInfo.CreateNoWindow = true;
 
@@ -52,6 +67,7 @@ namespace ActiveState
                     // Prepend line numbers to each line of the output.
                     if (!String.IsNullOrEmpty(e.Data))
                     {
+                        // We do not write stderr to our own log, as it comprises the progress bar output
                         session.Log("err: " + e.Data);
                         errBuilder.Append("\n" + e.Data);
                     }
@@ -63,13 +79,20 @@ namespace ActiveState
                 proc.BeginOutputReadLine();
                 proc.BeginErrorReadLine();
 
+                int count = 0;
                 while (!proc.HasExited)
                 {
                     try
                     {
-                        // This is just hear to throw an InstallCanceled Exception if necessary
-                        Status.ProgressBar.Increment(session, 0);
-                        Thread.Sleep(200);
+                        // This is to update the progress bar and listen for a cancel event
+                        if (count < limit) {
+                            Status.ProgressBar.Increment(session, 1);
+                            Thread.Sleep(150);
+                        } else
+                        {
+                            Status.ProgressBar.Increment(session, 0);
+                            Thread.Sleep(150);
+                        }
                     }
                     catch (InstallCanceledException)
                     {
@@ -87,22 +110,29 @@ namespace ActiveState
                 if (exitCode != 0)
                 {
                     outputBuilder.Append('\x00');
-                    outputBuilder.AppendFormat(" -- Process returned with exit code: {0}", exitCode);
-                    output = outputBuilder.ToString();
-                    session.Log("returning due to return code - error");
-                    var title = output.Split('\n')[0];
-                    if (title.Length == 0)
+                    session.Log("returning due to return code: {0}", exitCode);
+                    if (exitCode == 11)
                     {
-                        title = output;
-                    }
-                    if (title.Length > 50)
+                        output = outputBuilder.ToString();
+                        string message = FormatErrorOutput(output);
+                        session.Log("Message details: {0}", message);
+                        new NetworkError().SetDetails(session, message);
+                    } else
                     {
-                        title = title.Substring(0, 50);
+                        outputBuilder.AppendFormat(" -- Process returned with exit code: {0}", exitCode);
+                        output = outputBuilder.ToString();
+                        var title = output.Split('\n')[0];
+                        if (title.Length == 0)
+                        {
+                            title = output;
+                        }
+                        RollbarReport.Critical(
+                            string.Format("failed due to return code: {0} - start: {1}", exitCode, title),
+                            session,
+                            new Dictionary<string, object> { { "output", output }, { "err", errBuilder.ToString() }, { "cmd", cmd } }
+                        );
                     }
-                    RollbarReport.Critical(
-                        string.Format("failed due to return code: {0} - start: {1}", exitCode, title),
-                        new Dictionary<string, object> { { "output", output }, { "err", errBuilder.ToString() }, { "cmd", cmd } }
-                    );
+
                     return ActionResult.Failure;
                 }
             }
@@ -113,11 +143,36 @@ namespace ActiveState
                 outputBuilder.Append(exceptionString);
                 output = outputBuilder.ToString();
                 session.Log(exceptionString);
-                RollbarReport.Error(exceptionString);
+                RollbarReport.Error(exceptionString, session);
                 return ActionResult.Failure;
             }
             output = outputBuilder.ToString();
             return ActionResult.Success;
+        }
+
+        /// <summary>
+        /// FormatErrorOutput formats the output of a state tool command optimized for display in an error dialog
+        /// </summary>
+        /// <param name="cmdOutput">
+        /// the output from a state tool command run with `--output=json`
+        /// </param>
+        public static string FormatErrorOutput(string cmdOutput)
+        {
+            return string.Join("\n", cmdOutput.Split('\x00').Select(blob =>
+            {
+                try
+                {
+                    var json = new JavaScriptSerializer();
+                    var data = json.Deserialize<Dictionary<string, string>>(blob);
+                    var error = data["Error"];
+                    return error;
+                }
+                catch (Exception)
+                {
+                    return blob;
+                }
+            }).ToList());
+
         }
     }
 }

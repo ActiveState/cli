@@ -155,6 +155,9 @@ const DateFormatUser = "January 02, 2006"
 // DateTimeFormatUser is the datetime format we use when communicating with the end-user
 const DateTimeFormatUser = "2 Jan 2006 15:04"
 
+// DateTimeFormatRecord is the datetime format we use when recording for internal use
+const DateTimeFormatRecord = "Mon Jan 2 2006 15:04:05 -0700 MST"
+
 // PlatformSignupURL is the account creation url used by the platform
 const PlatformSignupURL = "https://platform.activestate.com" + "/create-account"
 

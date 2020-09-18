@@ -125,6 +125,7 @@ type LoggingHandler interface {
 	SetVerbose(bool)
 	Output() io.Writer
 	Emit(ctx *MessageContext, message string, args ...interface{}) error
+	Printf(msg string, args ...interface{})
 }
 
 type strandardHandler struct {
@@ -146,6 +147,13 @@ func (l *strandardHandler) Output() io.Writer {
 func (l *strandardHandler) Emit(ctx *MessageContext, message string, args ...interface{}) error {
 	fmt.Fprintln(os.Stderr, l.formatter.Format(ctx, message, args...))
 	return nil
+}
+
+// Printf satifies a Logger interface allowing us to funnel our
+// logging handlers to 3rd party libraries
+func (l *strandardHandler) Printf(msg string, args ...interface{}) {
+	logMsg := fmt.Sprintf("Third party log message: %s", msg)
+	l.Emit(getContext("DEBUG", 1), logMsg, args...)
 }
 
 var currentHandler LoggingHandler = &strandardHandler{

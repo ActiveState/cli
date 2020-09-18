@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"reflect"
 
+	tmock "github.com/stretchr/testify/mock"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/cmdlets/git"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	tmock "github.com/stretchr/testify/mock"
 )
 
 var _ git.Repository = (*Mock)(nil)
@@ -25,7 +27,7 @@ func Init() *Mock {
 
 // CloneProject will attempt to clone the associalted public git repository
 // for the project identified by <owner>/<name> to the given directory
-func (m *Mock) CloneProject(owner, name, path string) *failures.Failure {
+func (m *Mock) CloneProject(owner, name, path string, out output.Outputer) *failures.Failure {
 	args := m.Called(path)
 
 	dummyID := "00010001-0001-0001-0001-000100010001"

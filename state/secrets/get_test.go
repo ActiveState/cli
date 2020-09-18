@@ -98,7 +98,7 @@ func (suite *SecretsGetCommandTestSuite) assertExpansionFailure(secretName strin
 	handled := failures.Handled()
 	failure, ok := handled.(*failures.Failure)
 	suite.Require().Truef(ok, "got %v, wanted failure", handled)
-	suite.Equalf(expectedFailureType, failure.Type, "unexpected failure type: %v", failure.Type)
+	suite.True(failures.Matches(failure, expectedFailureType), "unexpected failure type: %v", failure.Type)
 }
 
 func (suite *SecretsGetCommandTestSuite) assertExpansion(secretName string, expectedExpansionValue string, expectedExitCode int) {
@@ -130,11 +130,11 @@ func (suite *SecretsGetCommandTestSuite) TestCommandConfig() {
 }
 
 func (suite *SecretsGetCommandTestSuite) TestDecodingFailed() {
-	suite.assertExpansionFailure("bad-base64-encoded-secret", keypairs.FailKeyDecode, 1)
+	suite.assertExpansionFailure("project.bad-base64-encoded-secret", keypairs.FailKeyDecode, 1)
 }
 
 func (suite *SecretsGetCommandTestSuite) TestDecryptionFailed() {
-	suite.assertExpansionFailure("invalid-encryption-secret", keypairs.FailDecrypt, 1)
+	suite.assertExpansionFailure("project.invalid-encryption-secret", keypairs.FailDecrypt, 1)
 }
 
 func (suite *SecretsGetCommandTestSuite) TestSecretHasNoValue() {

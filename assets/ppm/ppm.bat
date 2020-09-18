@@ -1,3 +1,3 @@
 @echo off
 
-state.exe _ppm %*
+{{.exe}} _ppm %*

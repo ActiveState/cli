@@ -93,6 +93,10 @@ func (suite *EditIntegrationTestSuite) TestEdit_NonInteractive() {
 }
 
 func (suite *EditIntegrationTestSuite) TestEdit_UpdateCorrectPlatform() {
+	if runtime.GOOS == "windows" {
+		// https://www.pivotaltracker.com/story/show/174477457
+		suite.T().Skipf("Skipping on windows due to random failures")
+	}
 	ts, env := suite.setup()
 	defer ts.Close()
 	cp := ts.SpawnWithOpts(
@@ -110,7 +114,9 @@ func (suite *EditIntegrationTestSuite) TestEdit_UpdateCorrectPlatform() {
 
 	s := pj.ScriptByName("test-script")
 	suite.Require().NotNil(s, "test-script should not be empty")
-	suite.Contains(s.Value(), "more info!", "Output of edit command:\n%s", cp.Snapshot())
+	v, err := s.Value()
+	suite.Require().NoError(err)
+	suite.Contains(v, "more info!", "Output of edit command:\n%s", cp.Snapshot())
 }
 
 func TestEditIntegrationTestSuite(t *testing.T) {

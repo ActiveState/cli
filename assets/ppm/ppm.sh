@@ -1,3 +1,3 @@
 #!/bin/sh
 
-state _ppm $*
+{{.exe}} _ppm $*

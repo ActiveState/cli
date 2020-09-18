@@ -38,9 +38,13 @@ func (e *Events) Run() error {
 
 	rows := []Event{}
 	for _, event := range e.project.Events() {
+		v, err := event.Value()
+		if err != nil {
+			return locale.NewError("err_events_val", "Could not get value for event: {{.V0}}.", event.Name())
+		}
 		rows = append(rows, Event{
 			event.Name(),
-			event.Value(),
+			v,
 		})
 	}
 

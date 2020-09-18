@@ -236,7 +236,12 @@ func (ar *AlternativeRuntime) PostUnpackArtifact(artf *HeadChefArtifact, tmpRunt
 	if fail != nil {
 		return fail
 	}
-	envDef = envDef.ExpandVariables(ar.runtimeDir)
+	constants := envdef.NewConstants(ar.runtimeDir)
+	envDef = envDef.ExpandVariables(constants)
+	err := envDef.ApplyFileTransforms(tmpRuntimeDir, constants)
+	if err != nil {
+		return failures.FailRuntime.Wrap(err, "runtime_alternative_file_transforms_err")
+	}
 
 	artMeta := artifactCacheMeta{*artf.ArtifactID, []string{}}
 	onMoveFile := func(fromPath, toPath string) {
@@ -273,7 +278,7 @@ func (ar *AlternativeRuntime) PostUnpackArtifact(artf *HeadChefArtifact, tmpRunt
 	// copy the runtime environment file to the installation directory.
 	// The file name is based on the artifact order index, such that we can
 	// ensure the environment definition files can be read in the correct order.
-	err := envDef.WriteFile(filepath.Join(ar.runtimeEnvBaseDir(), fmt.Sprintf("%06d.json", artifactIndex)))
+	err = envDef.WriteFile(filepath.Join(ar.runtimeEnvBaseDir(), fmt.Sprintf("%06d.json", artifactIndex)))
 	if err != nil {
 		return failures.FailRuntime.Wrap(err, "runtime_alternative_failed_destination", ar.runtimeEnvBaseDir())
 	}

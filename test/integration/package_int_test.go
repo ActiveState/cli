@@ -6,8 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 )
 
 type PackageIntegrationTestSuite struct {
@@ -185,7 +186,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTermWrongTe
 	suite.PrepareActiveStateYAML(ts)
 
 	cp := ts.Spawn("packages", "search", "xxxrequestsxxx", "--exact-term")
-	cp.Expect("Currently no package of the provided name")
+	cp.ExpectLongString("Currently no package of the provided name is available on the ActiveState Platform")
 	cp.ExpectExitCode(0)
 }
 
@@ -207,7 +208,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithWrongLang() {
 	suite.PrepareActiveStateYAML(ts)
 
 	cp := ts.Spawn("packages", "search", "numpy", "--language=perl")
-	cp.Expect("Currently no package of the provided name")
+	cp.ExpectLongString("Currently no package of the provided name is available on the ActiveState Platform")
 	cp.ExpectExitCode(0)
 }
 
@@ -259,19 +260,19 @@ func (suite *PackageIntegrationTestSuite) TestPackage_import() {
 	suite.Run("invalid requirements.txt", func() {
 		ts.PrepareFile(reqsFilePath, badReqsData)
 
-		cp := ts.Spawn("packages", "import")
+		cp := ts.Spawn("packages", "import", "requirements.txt")
 		cp.ExpectNotExitCode(0, time.Second*60)
 	})
 
 	suite.Run("valid requirements.txt", func() {
 		ts.PrepareFile(reqsFilePath, reqsData)
 
-		cp := ts.Spawn("packages", "import")
+		cp := ts.Spawn("packages", "import", "requirements.txt")
 		cp.Expect("state pull")
 		cp.ExpectExitCode(0, time.Second*60)
 
 		suite.Run("already added", func() {
-			cp := ts.Spawn("packages", "import")
+			cp := ts.Spawn("packages", "import", "requirements.txt")
 			cp.Expect("Are you sure you want to do this")
 			cp.SendLine("n")
 			cp.ExpectNotExitCode(0, time.Second*60)

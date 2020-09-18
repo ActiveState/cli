@@ -9,8 +9,15 @@ set {{$K}}={{$V}}
 {{- end}}
 {{- end}}
 
+{{$execCmd := .ExecName}}
+
+{{ if .ExecAlias }}
+{{$execCmd = .ExecAlias}}
+DOSKEY {{.ExecName}}="{{.ExecAlias}}" $*
+{{ end }}
+
 {{range $K, $CMD := .Scripts}}
-DOSKEY {{$K}}=state run {{$CMD}}
+DOSKEY {{$K}}="{{$execCmd}}" run "{{$CMD}}" $*
 {{end}}
 
 cd {{.WD}}

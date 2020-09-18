@@ -3,7 +3,8 @@ package platforms
 import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -15,11 +16,17 @@ type AddRunParams struct {
 }
 
 // Add manages the adding execution context.
-type Add struct{}
+type Add struct {
+	output.Outputer
+}
+
+type primeable interface {
+	primer.Outputer
+}
 
 // NewAdd prepares an add execution context for use.
-func NewAdd() *Add {
-	return &Add{}
+func NewAdd(prime primeable) *Add {
+	return &Add{prime.Output()}
 }
 
 // Run executes the add behavior.
@@ -40,7 +47,7 @@ func (a *Add) Run(ps AddRunParams) error {
 		return fail
 	}
 
-	print.Line(locale.Tr("platform_added", params.Name, params.Version))
+	a.Outputer.Notice(locale.Tr("platform_added", params.Name, params.Version))
 
 	return nil
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/retryhttp"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory"
 	iop "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
@@ -71,6 +72,7 @@ func fetchRawRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *s
 
 	var err error
 	params := iop.NewResolveRecipesParams()
+	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
 	params.Order, err = commitToOrder(commitID, owner, project)
 	if err != nil {
 		return "", FailOrderRecipes.Wrap(err)
@@ -141,6 +143,7 @@ func commitToOrder(commitID strfmt.UUID, owner, project string) (*inventory_mode
 func fetchRecipeID(commitID strfmt.UUID, owner, project, orgID string, private bool, hostPlatform *string) (*strfmt.UUID, *failures.Failure) {
 	var err error
 	params := iop.NewSolveOrderParams()
+	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
 	params.Order, err = commitToOrder(commitID, owner, project)
 	if err != nil {
 		return nil, FailOrderRecipes.Wrap(err)

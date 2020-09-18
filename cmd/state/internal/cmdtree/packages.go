@@ -121,17 +121,19 @@ func newPackagesImportCommand(prime *primer.Values) *captain.Command {
 		locale.T("package_import_cmd_description"),
 		[]*captain.Flag{
 			{
-				Name:        "file",
-				Description: locale.T("package_import_flag_filename_description"),
-				Value:       &params.FileName,
-			},
-			{
 				Name:        "force",
 				Description: locale.T("package_import_flag_force_description"),
 				Value:       &params.Force,
 			},
 		},
-		[]*captain.Argument{},
+		[]*captain.Argument{
+			{
+				Name:        locale.Tl("import_file", "File"),
+				Description: locale.T("package_import_flag_filename_description"),
+				Value:       &params.FileName,
+				Required:    true,
+			},
+		},
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run(*params)
 		},

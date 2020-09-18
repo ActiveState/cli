@@ -17,7 +17,6 @@ import (
 	"github.com/ActiveState/cli/internal/condition"
 	C "github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
-	"github.com/ActiveState/cli/internal/print"
 )
 
 // Instance holds our main config logic
@@ -170,9 +169,9 @@ func (i *Instance) ensureCacheExists() {
 }
 
 func (i *Instance) exit(message string, a ...interface{}) {
-	print.Error(message, a...)
+	fmt.Fprintf(os.Stderr, message, a...)
 	if funk.Contains(os.Args, "-v") || condition.InTest() {
-		print.Error(stacktrace.Get().String())
+		fmt.Fprint(os.Stderr, stacktrace.Get().String())
 	}
 	i.Exit(1)
 }

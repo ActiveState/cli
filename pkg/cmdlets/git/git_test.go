@@ -17,6 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
+	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -111,7 +112,7 @@ func (suite *GitTestSuite) TestCloneProjectRepo() {
 	targetDir := filepath.Join(suite.dir, "target-clone-dir")
 
 	repo := NewRepo()
-	fail := repo.CloneProject("test-owner", "test-project", targetDir)
+	fail := repo.CloneProject("test-owner", "test-project", targetDir, outputhelper.NewCatcher())
 	suite.Require().NoError(fail.ToError(), "should clone without issue")
 	suite.FileExists(filepath.Join(targetDir, "activestate.yaml"), "activestate.yaml file should have been cloned")
 	suite.FileExists(filepath.Join(targetDir, "test-file"), "tempororary file should have been cloned")

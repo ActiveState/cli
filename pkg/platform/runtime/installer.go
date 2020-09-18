@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/go-openapi/strfmt"
 	"github.com/gobuffalo/packr"
@@ -12,6 +13,7 @@ import (
 	"github.com/vbauerster/mpb/v4"
 
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -19,6 +21,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/progress"
+	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/ActiveState/cli/internal/unarchiver"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
@@ -185,8 +188,11 @@ func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGet
 
 	downloadArtfs := runtimeAssembler.ArtifactsToDownload()
 	unpackArchives := map[string]*HeadChefArtifact{}
-	progress := progress.New(mpb.WithOutput(os.Stderr))
-	defer progress.Close()
+	progressBar := progress.New(mpb.WithOutput(os.Stderr))
+	if strings.ToLower(os.Getenv(constants.NonInteractive)) == "true" {
+		progressBar = progress.New(mpb.WithOutput(nil))
+	}
+	defer progressBar.Close()
 
 	if len(downloadArtfs) != 0 {
 		if installer.onDownload != nil {
@@ -194,9 +200,9 @@ func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGet
 		}
 
 		if len(downloadArtfs) > 0 {
-			archives, fail := installer.runtimeDownloader.Download(downloadArtfs, runtimeAssembler, progress)
+			archives, fail := installer.runtimeDownloader.Download(downloadArtfs, runtimeAssembler, progressBar)
 			if fail != nil {
-				progress.Cancel()
+				progressBar.Cancel()
 				return nil, false, fail
 			}
 
@@ -206,9 +212,9 @@ func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGet
 		}
 	}
 
-	fail = installer.InstallFromArchives(unpackArchives, runtimeAssembler, progress)
+	fail = installer.InstallFromArchives(unpackArchives, runtimeAssembler, progressBar)
 	if fail != nil {
-		progress.Cancel()
+		progressBar.Cancel()
 		return nil, false, fail
 	}
 
@@ -387,7 +393,18 @@ func installPPMShim(binPath string) error {
 	// remove shim if it existed before, so we can overwrite (ok to drop error here)
 	_ = os.Remove(shim)
 
-	err := ioutil.WriteFile(shim, ppmBytes, 0755)
+	exe, err := os.Executable()
+	if err != nil {
+		return errs.Wrap(err, "Could not get executable")
+	}
+
+	tplParams := map[string]interface{}{"exe": exe}
+	ppmStr, err := strutils.ParseTemplate(string(ppmBytes), tplParams)
+	if err != nil {
+		return errs.Wrap(err, "Could not parse ppm.sh template")
+	}
+
+	err = ioutil.WriteFile(shim, []byte(ppmStr), 0755)
 	if err != nil {
 		return errs.Wrap(err, "failed to write shim command %s", shim)
 	}
@@ -397,7 +414,12 @@ func installPPMShim(binPath string) error {
 		// remove shim if it existed before, so we can overwrite (ok to drop error here)
 		_ = os.Remove(shim)
 
-		err := ioutil.WriteFile(shim, ppmBatBytes, 0755)
+		ppmBatStr, err := strutils.ParseTemplate(string(ppmBatBytes), tplParams)
+		if err != nil {
+			return errs.Wrap(err, "Could not parse ppm.sh template")
+		}
+
+		err = ioutil.WriteFile(shim, []byte(ppmBatStr), 0755)
 		if err != nil {
 			return errs.Wrap(err, "failed to write shim command %s", shim)
 		}

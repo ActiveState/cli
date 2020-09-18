@@ -73,7 +73,10 @@ func (f *Fork) run(params *Params) error {
 		return locale.NewInputError("err_auth_required", "Authentication is required, please authenticate by running 'state auth'")
 	}
 
-	target := &project.Namespaced{params.Organization, params.Name}
+	target := &project.Namespaced{
+		Owner:   params.Organization,
+		Project: params.Name,
+	}
 
 	if target.Owner == "" {
 		var err error

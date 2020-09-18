@@ -7,25 +7,27 @@ import (
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
-type PrivateKey struct{}
+type PrivateKey struct {
+	output.Outputer
+	*authentication.Auth
+}
 
-func NewPrivateKey() *PrivateKey {
-	return &PrivateKey{}
+func NewPrivateKey(prime primeable) *PrivateKey {
+	return &PrivateKey{prime.Output(), prime.Auth()}
 }
 
 type PrivateKeyParams struct {
-	Auth *authentication.Auth
 }
 
 // Run processes the `export recipe` command.
 func (p *PrivateKey) Run(params *PrivateKeyParams) error {
 	logging.Debug("Execute")
 
-	if !params.Auth.Authenticated() {
+	if !p.Auth.Authenticated() {
 		return failures.FailUser.New(locale.T("err_command_requires_auth"))
 	}
 
@@ -35,6 +37,6 @@ func (p *PrivateKey) Run(params *PrivateKeyParams) error {
 		return fail
 	}
 
-	print.Line(string(contents))
+	p.Outputer.Print(string(contents))
 	return nil
 }

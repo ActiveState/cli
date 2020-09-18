@@ -34,6 +34,8 @@ func TestExample(t *testing.T) {
 	assert.True(t, errors.As(err, &myErrorCopy), "Error can be accessed as myErrorCopy")
 	assert.True(t, errors.Is(err, myError), "err is equivalent to myError") // ptrs same addr, non-ptrs struct equality
 
+	assert.True(t, errs.Matches(err, myError), "err is equivalent to &MyError") // ptrs same addr, non-ptrs struct equality
+
 	// Create user input error
 	err = locale.NewInputError("", "Invalid input!")
 	assert.Error(t, err)

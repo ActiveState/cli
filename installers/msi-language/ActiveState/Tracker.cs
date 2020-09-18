@@ -4,33 +4,34 @@ using GoogleAnalyticsTracker.Core.TrackerParameters;
 using GoogleAnalyticsTracker.Simple;
 using Microsoft.Deployment.WindowsInstaller;
 using System;
-using System.Collections.Generic;
+using System.Net;
 using System.Threading.Tasks;
 
 
 namespace ActiveState
 {
     public sealed class TrackerSingleton
-	{
+    {
         private static readonly Lazy<TrackerSingleton> lazy = new Lazy<TrackerSingleton>(() => new TrackerSingleton());
         private static string GoogleAnalyticsUserAgent = "UA-118120158-2";
 
         private readonly SimpleTracker _tracker;
         private readonly string _cid;
 
-        public static TrackerSingleton Instance {  get { return lazy.Value; } }
+        public static TrackerSingleton Instance { get { return lazy.Value; } }
 
         public TrackerSingleton()
-		{
+        {
             var simpleTrackerEnvironment = new SimpleTrackerEnvironment(Environment.OSVersion.Platform.ToString(),
                 Environment.OSVersion.Version.ToString(),
                 Environment.OSVersion.VersionString);
             this._tracker = new SimpleTracker(GoogleAnalyticsUserAgent, simpleTrackerEnvironment);
             this._cid = GetInfo.GetUniqueId();
-  		}
+        }
 
-        public async Task<TrackingResult> TrackEventAsync(string category, string action, string label, long value = 1)
+        public async Task<TrackingResult> TrackEventAsync(Session session, string sessionID, string category, string action, string label, string productVersion, string uilevel, long value = 1)
         {
+            session.Log("Sending GA Event");
             var eventTrackingParameters = new EventTracking
             {
                 Category = category,
@@ -40,8 +41,55 @@ namespace ActiveState
             };
 
             eventTrackingParameters.ClientId = this._cid;
+            eventTrackingParameters.SetCustomDimensions(new System.Collections.Generic.Dictionary<int, string> {
+                { 1, productVersion },
+                { 2, sessionID },
+                { 3, uilevel },
+            });
 
             return await this._tracker.TrackAsync(eventTrackingParameters);
+        }
+
+        public async Task TrackS3Event(Session session, string sessionID, string category, string action, string label)
+        {
+            string pixelURL = string.Format(
+                "https://cli-msi.s3.amazonaws.com/pixel.txt?x-referrer={0}&x-session={1}&x-event={2}&x-event-category={3}&x-event-value={4}",
+                this._cid, sessionID, action, category, label
+            );
+            session.Log(string.Format("Downloading S3 pixel from URL: {0}", pixelURL));
+            try
+            {
+                await Task.Run(() =>
+                {
+                    // retry up to 3 times to download the S3 pixel
+                    RetryHelper.RetryOnException(session, 3, TimeSpan.FromSeconds(1), () =>
+                    {
+                        var client = new TimeoutWebClient();
+                        // try to complete an s3 tracking event in seven seconds or less.
+                        client.Timeout = 7 * 1000;
+                        var res = client.DownloadString(pixelURL);
+                        session.Log("Received response {0}", res);
+                    });
+                });
+            }
+            catch (Exception e)
+            {
+                string msg = string.Format("Encountered exception downloading S3 pixel file: {0}", e.ToString());
+                session.Log(msg);
+                RollbarReport.Error(msg, session);
+            }
+            session.Log("Successfully downloaded S3 pixel string");
+        }
+
+        private string computeSessionID(string msiLogFileName)
+        {
+            using (var md5 = System.Security.Cryptography.MD5.Create())
+            {
+                byte[] inputBytes = System.Text.Encoding.ASCII.GetBytes(this._cid + msiLogFileName);
+                byte[] hashBytes = md5.ComputeHash(inputBytes);
+
+                return new Guid(hashBytes).ToString();
+            }
         }
 
         /// <summary>
@@ -51,19 +99,42 @@ namespace ActiveState
         /// The event can fail to be send if the main process gets cancelled before the task finishes.
         /// Use the synchronous version of this command in that case.
         /// </description>
-        public void TrackEventInBackground(Session session, string category, string action, string label, long value=1)
-		{
-            session.Log("Sending background event {0}/{1}/{2} for cid={3}", category, action, label, this._cid);
-            Task.Run(() => TrackEventAsync(category, action, label, value));
-		}
+        public void TrackEventInBackground(Session session, string msiLogFileName, string category, string action, string label, string productVersion, string uilevel, long value = 1)
+        {
+            var pid = System.Diagnostics.Process.GetCurrentProcess().Id;
+
+            var sessionID = computeSessionID(msiLogFileName);
+            session.Log("Sending background event {0}/{1}/{2} for cid={3} (custom dimension 1: {4}, pid={5})", category, action, label, this._cid, productVersion, pid);
+            Task.WhenAll(
+                TrackEventAsync(session, sessionID, category, action, label, productVersion, uilevel, value),
+                TrackS3Event(session, sessionID, category, action, label)
+            );
+        }
 
         /// <summary>
         /// Sends a GA event and waits for the request to complete.
         /// </summary>
-        public async void TrackEventSynchronously(Session session, string category, string action, string label, long value=1)
-		{
-            session.Log("Sending event {0}/{1}/{2} for cid={3}", category, action, label, this._cid);
-            await TrackEventAsync(category, action, label, value);
+        public void TrackEventSynchronously(Session session, string msiLogFileName, string category, string action, string label, string productVersion, string uilevel, long value = 1)
+        {
+            if (productVersion == "0.0.0")
+            {
+                session.Log("Not tracking events when version is 0.0.0");
+                return;
+            }
+
+            var pid = System.Diagnostics.Process.GetCurrentProcess().Id;
+
+            session.Log("Sending event {0}/{1}/{2} for cid={3} (custom dimension 1: {4}, pid={5})", category, action, label, this._cid, productVersion, pid);
+            var sessionID = computeSessionID(msiLogFileName);
+            var t = Task.WhenAll(
+                TrackEventAsync(session, sessionID, category, action, label, productVersion, uilevel, value),
+                TrackS3Event(session, sessionID, category, action, label)
+            );
+            var completed = t.Wait(TimeSpan.FromSeconds(15));
+            if (!completed)
+            {
+                session.Log("Abandoning tracking event task after timeout.");
+            }
         }
     }
 };
