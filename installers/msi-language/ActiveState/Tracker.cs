@@ -59,14 +59,17 @@ namespace ActiveState
             session.Log(string.Format("Downloading S3 pixel from URL: {0}", pixelURL));
             try
             {
-                // retry up to 3 times to download the S3 pixel
-                RetryHelper.RetryOnException(session, 3, TimeSpan.FromSeconds(1), () =>
+                await Task.Run(() =>
                 {
-                    var client = new TimeoutWebClient();
-                    // tr tp complete an s3 tracking event in seven seconds or less.
-                    client.Timeout = 7 * 1000;
-                    var res = client.DownloadString(pixelURL);
-                    session.Log("Received response {0}", res);
+                    // retry up to 3 times to download the S3 pixel
+                    RetryHelper.RetryOnException(session, 3, TimeSpan.FromSeconds(1), () =>
+                    {
+                        var client = new TimeoutWebClient();
+                        // try to complete an s3 tracking event in seven seconds or less.
+                        client.Timeout = 7 * 1000;
+                        var res = client.DownloadString(pixelURL);
+                        session.Log("Received response {0}", res);
+                    });
                 });
             }
             catch (Exception e)
@@ -75,7 +78,6 @@ namespace ActiveState
                 session.Log(msg);
                 RollbarReport.Error(msg, session);
             }
-
             session.Log("Successfully downloaded S3 pixel string");
         }
 
