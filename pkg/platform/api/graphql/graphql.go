@@ -43,11 +43,12 @@ func Get() *GQLClient {
 }
 
 func New(url string, common Header, bearerToken BearerTokenProvider, timeout time.Duration) *GQLClient {
+	defClient := retryhttp.DefaultClient
 	if timeout == 0 {
-		timeout = time.Second * 60
+		timeout = retryhttp.DefaultTimeout
 	}
 
-	retryOpt := graphql.WithHTTPClient(retryhttp.DefaultClient.StandardClient())
+	retryOpt := graphql.WithHTTPClient(defClient.StandardClient())
 
 	return &GQLClient{
 		graphqlClient: graphql.NewClient(url, retryOpt),

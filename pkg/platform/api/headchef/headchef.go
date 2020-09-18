@@ -132,10 +132,19 @@ func (b *BuildParams) WriteToRequest(req runtime.ClientRequest, reg strfmt.Regis
 }
 
 func (r *Client) reqBuild(buildReq *headchef_models.V1BuildRequest, buildStatus *BuildStatus) {
+	defClient := retryhttp.DefaultClient
+	timeout := defClient.HTTPClient.Timeout
+	if timeout == 0 {
+		timeout = retryhttp.DefaultTimeout
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
 	startParams := headchef_operations.StartBuildV1Params{
-		Context:      context.Background(),
+		Context:      ctx,
 		BuildRequest: buildReq,
-		HTTPClient:   retryhttp.DefaultClient.StandardClient(),
+		HTTPClient:   defClient.StandardClient(),
 	}
 
 	created, accepted, err := r.client.StartBuildV1(&startParams)

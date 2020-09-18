@@ -1,6 +1,7 @@
 package model
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
@@ -118,15 +119,24 @@ func SearchIngredientsStrict(language, name string) ([]*IngredientAndVersion, *f
 }
 
 func searchIngredients(limit int, language, name string) ([]*IngredientAndVersion, *failures.Failure) {
+	defClient := retryhttp.DefaultClient
+	timeout := defClient.HTTPClient.Timeout
+	if timeout == 0 {
+		timeout = retryhttp.DefaultTimeout
+	}
+
 	lim := int64(limit)
 
 	client := inventory.Get()
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
 
-	params := inventory_operations.NewGetNamespaceIngredientsParams()
+	params := inventory_operations.NewGetNamespaceIngredientsParamsWithContext(ctx)
+	params.SetHTTPClient(defClient.StandardClient())
+	params.SetTimeout(timeout)
 	params.SetQ(&name)
 	params.SetNamespace("language/" + language)
 	params.SetLimit(&lim)
-	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
 
 	res, err := client.GetNamespaceIngredients(params, authentication.ClientAuth())
 	if err != nil {
@@ -141,12 +151,21 @@ func searchIngredients(limit int, language, name string) ([]*IngredientAndVersio
 
 func FetchPlatforms() ([]*Platform, *failures.Failure) {
 	if platformCache == nil {
-		client := inventory.Get()
+		defClient := retryhttp.DefaultClient
+		timeout := defClient.HTTPClient.Timeout
+		if timeout == 0 {
+			timeout = retryhttp.DefaultTimeout
+		}
 
-		params := inventory_operations.NewGetPlatformsParams()
+		client := inventory.Get()
+		ctx, cancel := context.WithTimeout(context.Background(), timeout)
+		defer cancel()
+
+		params := inventory_operations.NewGetPlatformsParamsWithContext(ctx)
+		params.SetHTTPClient(defClient.StandardClient())
+		params.SetTimeout(timeout)
 		limit := int64(99999)
 		params.SetLimit(&limit)
-		params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
 
 		response, err := client.GetPlatforms(params)
 		if err != nil {
@@ -333,13 +352,22 @@ func FetchLanguageVersions(name string) ([]string, *failures.Failure) {
 }
 
 func FetchLanguages() ([]Language, *failures.Failure) {
-	client := inventory.Get()
+	defClient := retryhttp.DefaultClient
+	timeout := defClient.HTTPClient.Timeout
+	if timeout == 0 {
+		timeout = retryhttp.DefaultTimeout
+	}
 
-	params := inventory_operations.NewGetNamespaceIngredientsParams()
+	client := inventory.Get()
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	params := inventory_operations.NewGetNamespaceIngredientsParamsWithContext(ctx)
+	params.SetHTTPClient(defClient.StandardClient())
+	params.SetTimeout(timeout)
 	params.SetNamespace("language")
 	limit := int64(10000)
 	params.SetLimit(&limit)
-	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
 
 	res, err := client.GetNamespaceIngredients(params, authentication.ClientAuth())
 	if err != nil {

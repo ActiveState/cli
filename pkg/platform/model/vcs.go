@@ -1,6 +1,7 @@
 package model
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"regexp"
@@ -536,9 +537,19 @@ func ChangesetFromRequirements(op Operation, reqs Checkpoint) Changeset {
 
 // FetchOrderFromCommit retrieves an order from a given commit ID
 func FetchOrderFromCommit(commitID strfmt.UUID) (*mono_models.Order, error) {
-	params := vcsClient.NewGetOrderParams()
+	defClient := retryhttp.DefaultClient
+	timeout := defClient.HTTPClient.Timeout
+	if timeout == 0 {
+		timeout = retryhttp.DefaultTimeout
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	params := vcsClient.NewGetOrderParamsWithContext(ctx)
+	params.SetHTTPClient(defClient.StandardClient())
+	params.SetTimeout(timeout)
 	params.CommitID = commitID
-	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
 
 	var res *vcsClient.GetOrderOK
 	var err error
