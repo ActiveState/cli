@@ -130,7 +130,7 @@ func promptTOS(out output.Outputer, prompt prompt.Prompter) (bool, error) {
 	case locale.T("tos_show_full"):
 		tosFilePath, err := downloadTOS()
 		if err != nil {
-			return false, locale.WrapError(err, "err_download_tos")
+			return false, locale.WrapError(err, "err_download_tos", "Could not download terms of service file.")
 		}
 
 		tos, err := ioutil.ReadFile(tosFilePath)
