@@ -348,7 +348,7 @@ namespace StateDeploy
 
             string output;
             Status.ProgressBar.StatusMessage(session, "Authenticating...");
-            ActionResult runResult = ActiveState.Command.Run(session, stateToolPath, authCmd, out output);
+            ActionResult runResult = ActiveState.Command.RunAuthCommand(session, stateToolPath, authCmd, out output);
             if (runResult.Equals(ActionResult.UserExit))
             {
                 // Catch cancel and return
