@@ -642,9 +642,11 @@ func (script *Script) Name() string { return script.script.Name }
 // Languages returns the languages of this script
 func (script *Script) Languages() []language.Language {
 	stringLanguages := strings.Split(script.script.Language, ",")
-	languages := make([]language.Language, len(stringLanguages))
-	for i, lang := range stringLanguages {
-		languages[i] = language.MakeByName(strings.TrimSpace(lang))
+	languages := make([]language.Language, 0)
+	for _, lang := range stringLanguages {
+		if lang != "" {
+			languages = append(languages, language.MakeByName(strings.TrimSpace(lang)))
+		}
 	}
 	return languages
 }

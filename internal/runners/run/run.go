@@ -104,7 +104,14 @@ func run(out output.Outputer, subs subshell.SubShell, name string, args []string
 
 	lang := language.Unknown
 	if len(script.Languages()) == 0 {
-		lang = language.Unset
+		warning := locale.Tl(
+			"run_warn_deprecated_script_without_language",
+			"[YELLOW]DEPRECATION WARNING: Scripts without a defined language currently fall back to using the default shell for your platform. This fallback mechanic will soon stop working and a language will need to be explicitly defined for each script. Please configure the 'language' field with a valid option (one of {{.V0}})[/RESET]",
+			strings.Join(language.RecognizedNames(), ", "),
+		)
+		out.Notice(warning)
+
+		lang = language.MakeByShell(subs.Shell())
 	}
 
 	var attempted []string
@@ -138,17 +145,6 @@ func run(out output.Outputer, subs subshell.SubShell, name string, args []string
 			"err_run_unknown_language",
 			"The language for this script is not supported or not available on your system. Please configure the 'language' field with a valid option (one, or more, of: {{.V0}})", strings.Join(language.RecognizedNames(), ", "),
 		)
-	}
-
-	if lang == language.Unset {
-		warning := locale.Tl(
-			"run_warn_deprecated_script_without_language",
-			"[YELLOW]DEPRECATION WARNING: Scripts without a defined language currently fall back to using the default shell for your platform. This fallback mechanic will soon stop working and a language will need to be explicitly defined for each script. Please configure the 'language' field with a valid option (one of {{.V0}})[/RESET]",
-			strings.Join(language.RecognizedNames(), ", "),
-		)
-		out.Notice(warning)
-
-		lang = language.MakeByShell(subs.Shell())
 	}
 
 	scriptBlock, err := script.Value()
