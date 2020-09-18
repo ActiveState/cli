@@ -73,7 +73,11 @@ func fetchRawRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *s
 
 	var err error
 	defClient := retryhttp.DefaultClient
-	timeout := defClient.HTTPClient.Timeout * time.Duration(defClient.RetryMax)
+	clientTimeout := defClient.HTTPClient.Timeout
+	if clientTimeout == 0 {
+		clientTimeout = retryhttp.DefaultTimeout
+	}
+	timeout := clientTimeout * time.Duration(defClient.RetryMax)
 
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
@@ -151,7 +155,11 @@ func commitToOrder(commitID strfmt.UUID, owner, project string) (*inventory_mode
 func fetchRecipeID(commitID strfmt.UUID, owner, project, orgID string, private bool, hostPlatform *string) (*strfmt.UUID, *failures.Failure) {
 	var err error
 	defClient := retryhttp.DefaultClient
-	timeout := defClient.HTTPClient.Timeout * time.Duration(defClient.RetryMax)
+	clientTimeout := defClient.HTTPClient.Timeout
+	if clientTimeout == 0 {
+		clientTimeout = retryhttp.DefaultTimeout
+	}
+	timeout := clientTimeout * time.Duration(defClient.RetryMax)
 
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()

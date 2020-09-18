@@ -37,7 +37,10 @@ type Logger interface {
 	Printf(string, ...interface{})
 }
 
-var DefaultClient = NewClient(30*time.Second, 5)
+var (
+	DefaultTimeout = time.Second * 30
+	DefaultClient  = NewClient(DefaultTimeout, 5)
+)
 
 func init() {
 	if condition.InTest() {
