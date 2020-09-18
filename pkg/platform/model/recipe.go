@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"runtime"
-	"time"
 
 	"github.com/go-openapi/strfmt"
 
@@ -73,11 +72,10 @@ func fetchRawRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *s
 
 	var err error
 	defClient := retryhttp.DefaultClient
-	clientTimeout := defClient.HTTPClient.Timeout
-	if clientTimeout == 0 {
-		clientTimeout = retryhttp.DefaultTimeout
+	timeout := defClient.HTTPClient.Timeout
+	if timeout == 0 {
+		timeout = retryhttp.DefaultTimeout
 	}
-	timeout := clientTimeout * time.Duration(defClient.RetryMax)
 
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
@@ -155,11 +153,10 @@ func commitToOrder(commitID strfmt.UUID, owner, project string) (*inventory_mode
 func fetchRecipeID(commitID strfmt.UUID, owner, project, orgID string, private bool, hostPlatform *string) (*strfmt.UUID, *failures.Failure) {
 	var err error
 	defClient := retryhttp.DefaultClient
-	clientTimeout := defClient.HTTPClient.Timeout
-	if clientTimeout == 0 {
-		clientTimeout = retryhttp.DefaultTimeout
+	timeout := defClient.HTTPClient.Timeout
+	if timeout == 0 {
+		timeout = retryhttp.DefaultTimeout
 	}
-	timeout := clientTimeout * time.Duration(defClient.RetryMax)
 
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
