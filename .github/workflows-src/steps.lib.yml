@@ -132,6 +132,10 @@ env:
   INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
   INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
   PLATFORM_API_TOKEN: ${{ secrets.PLATFORM_API_TOKEN }}
+  # Note: The AWS access tokens are needed to download temporary artifacts in alternative_int_test.go
+  # Remove these lines, once these changes are not necessary anymore.  
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 #@ end
 ---
 #@ def steps_uploadsharedartifacts():

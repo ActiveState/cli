@@ -28,6 +28,9 @@ func (suite *AlternativeArtifactIntegrationTestSuite) TestRelocation() {
 	if runtime.GOOS == "darwin" {
 		suite.T().Skip("No relocatable alternative artifacts for MacOS available yet.")
 	}
+
+	// IMPORTANT: When the following code is replaced by a simple `state activate` of an alternative project,
+	// please ensure that the AWS credentials are removed from `.github/workflows-src/steps.lib.yml`
 	artifactKey := "language/perl/5.32.0/3/7c76e6a6-3c41-5f68-a7f2-5468fe1b0919/artifact.tar.gz"
 	matchReString := `-Dprefix=([^ ]+)/installdir`
 	if runtime.GOOS == "windows" {
