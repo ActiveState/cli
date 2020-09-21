@@ -115,10 +115,10 @@ func normalizeRetryResponse(res *http.Response, err error, numTries int) (*http.
 }
 
 func NewClient(timeout time.Duration, retries int) *Client {
-	if timeout == 0 {
+	if timeout < 0 {
 		timeout = DefaultTimeout
 	}
-	if retries == 0 {
+	if retries < 0 {
 		retries = DefaultRetries
 	}
 
