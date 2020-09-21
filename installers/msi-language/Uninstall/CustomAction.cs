@@ -26,7 +26,7 @@ namespace Uninstall
             {
                 string msg = string.Format("unknown error during preset-uninstall {0}", err);
                 session.Log(msg);
-                RollbarReport.Error(string.Format("unknown error during uninstall: {0}", err));
+                RollbarReport.Error(string.Format("unknown error during uninstall: {0}", err), session);
 
                 // We finish the uninstallation anyways, as otherwise the MSI becomes un-installable.  And that's bad!
                 return ActionResult.Success;
@@ -36,12 +36,12 @@ namespace Uninstall
         [CustomAction]
         public static ActionResult Uninstall(Session session)
         {
-            ActiveState.RollbarHelper.ConfigureRollbarSingleton(session.CustomActionData["COMMIT_ID"]);
-
+            ActiveState.RollbarHelper.ConfigureRollbarSingleton(session.CustomActionData["MSI_VERSION"]);
+            string installDir = session.CustomActionData["REMEMBER"];
+            
             session.Log("Begin uninstallation");
 
             ActionResult result;
-            string installDir = session.CustomActionData["REMEMBER"];
             if (installDir != "")
             {
                 result = Remove.Dir(session, installDir);
@@ -61,10 +61,11 @@ namespace Uninstall
                 {
                     string msg = "Could not remove environment entries";
                     session.Log(msg);
-                    RollbarReport.Critical(msg);
+                    RollbarReport.Critical(msg, session);
                     return ActionResult.Failure;
                 }
-            } else
+            }
+            else
             {
                 session.Log("REMEMBER variable was not set in UNINSTALL");
             }
@@ -78,10 +79,11 @@ namespace Uninstall
                 {
                     string msg = "Could not remove shortcuts directory";
                     session.Log(msg);
-                    RollbarReport.Critical(msg);
+                    RollbarReport.Critical(msg, session);
                     return ActionResult.Failure;
                 }
-            } else
+            }
+            else
             {
                 session.Log("REMEMBER_SHORTCUTDIR was not set in UNINSTALL");
             }
@@ -91,10 +93,11 @@ namespace Uninstall
             {
                 string msg = "Could not uninstall language preset";
                 session.Log(msg);
-                RollbarReport.Critical(msg);
+                RollbarReport.Critical(msg, session);
                 return ActionResult.Failure;
             }
             return result;
+            
         }
     }
     public class Remove
@@ -113,7 +116,7 @@ namespace Uninstall
                 {
                     string msg = string.Format("Could not delete install directory, got error: {0}", e.ToString());
                     session.Log(msg);
-                    RollbarReport.Critical(msg);
+                    RollbarReport.Critical(msg, session);
                     return ActionResult.Failure;
                 }
             }

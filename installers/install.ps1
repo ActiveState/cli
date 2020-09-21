@@ -373,7 +373,7 @@ function install()
     $Command = "$StatePath export config --filter=dir"
     $ConfigDir = & Invoke-Expression $Command | Out-String
     $InstallFilePath = Join-Path -Path $ConfigDir.Trim() -ChildPath "installsource.txt"
-    "install.ps1" | Out-File -FilePath $InstallFilePath
+    "install.ps1" | Out-File -Encoding ascii -FilePath $InstallFilePath
 
     # Check if installation is in $PATH
     if (isStateToolInstallationOnPath $installDir) {

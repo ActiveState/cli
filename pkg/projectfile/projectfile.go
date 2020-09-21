@@ -11,6 +11,7 @@ import (
 	"sync"
 
 	"github.com/ActiveState/sysinfo"
+	"github.com/google/uuid"
 	"github.com/imdario/mergo"
 	"gopkg.in/yaml.v2"
 
@@ -21,11 +22,11 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/hash"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/internal/print"
 )
 
 var (
@@ -102,6 +103,7 @@ type Project struct {
 	Secrets      *SecretScopes `yaml:"secrets,omitempty"`
 	Events       Events        `yaml:"events,omitempty"`
 	Scripts      Scripts       `yaml:"scripts,omitempty"`
+	Jobs         Jobs          `yaml:"jobs,omitempty"`
 	Private      bool          `yaml:"private,omitempty"`
 	path         string        // "private"
 
@@ -110,9 +112,6 @@ type Project struct {
 	Owner     string      `yaml:"owner,omitempty"`
 	Name      string      `yaml:"name,omitempty"`
 }
-
-// tracks deprecation warning; remove as soon as possible
-var warned bool
 
 // Platform covers the platform structure of our yaml
 type Platform struct {
@@ -347,15 +346,26 @@ func MakePackagesFromConstrainedEntities(items []ConstrainedEntity) (packages []
 type Event struct {
 	Name        string      `yaml:"name"`
 	Value       string      `yaml:"value"`
+	Scope       []string    `yaml:"scope"`
 	Conditional Conditional `yaml:"if"`
 	Constraints Constraint  `yaml:"constraints,omitempty"`
+	id          string
 }
 
 var _ ConstrainedEntity = Event{}
 
 // ID returns the event name
 func (e Event) ID() string {
-	return e.Name
+	if e.id == "" {
+		id, err := uuid.NewUUID()
+		if err != nil {
+			logging.Error("UUID generation failed, defaulting to serialization")
+			e.id = hash.ShortHash(e.Name, e.Value, strings.Join(e.Scope, ""))
+		} else {
+			e.id = id.String()
+		}
+	}
+	return e.id
 }
 
 // ConstraintsFilter returns the event constraints
@@ -439,6 +449,16 @@ func MakeScriptsFromConstrainedEntities(items []ConstrainedEntity) (scripts []*S
 	return scripts
 }
 
+// Job covers the job structure, which goes under Project
+type Job struct {
+	Name      string   `yaml:"name"`
+	Constants []string `yaml:"constants"`
+	Scripts   []string `yaml:"scripts"`
+}
+
+// Jobs is a slice of jobs
+type Jobs []Job
+
 var persistentProject *Project
 
 // Parse the given filepath, which should be the full path to an activestate.yaml file
@@ -484,11 +504,10 @@ func Parse(configFilepath string) (*Project, *failures.Failure) {
 	}
 
 	if project.Project == "" && project.Owner != "" && project.Name != "" {
-		if !warned {
-			print.Warning(locale.Tr("warn_deprecation_owner_name_fields", project.Owner, project.Name))
-			warned = true
-		}
 		project.Project = fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, project.Owner, project.Name)
+		if err := project.Save(); err != nil { // anyone still not respecting the deprecation warning by now is going to have to deal with their file being updated for them
+			logging.Error("Could not save projectfile after removing owner/name deprecation: %v", err)
+		}
 	}
 
 	fail = ValidateProjectURL(project.Project)

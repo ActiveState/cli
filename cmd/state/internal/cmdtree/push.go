@@ -1,14 +1,16 @@
 package cmdtree
 
 import (
+	"github.com/spf13/viper"
+
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/push"
-	"github.com/spf13/viper"
 )
 
-func newPushCommand() *captain.Command {
-	pushRunner := push.NewPush(viper.GetViper())
+func newPushCommand(prime *primer.Values) *captain.Command {
+	pushRunner := push.NewPush(viper.GetViper(), prime)
 
 	return captain.NewCommand(
 		"push",

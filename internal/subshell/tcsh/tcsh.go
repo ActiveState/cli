@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -76,7 +77,7 @@ func (v *SubShell) Quote(value string) string {
 }
 
 // Activate - see subshell.SubShell
-func (v *SubShell) Activate() *failures.Failure {
+func (v *SubShell) Activate(out output.Outputer) *failures.Failure {
 	// This is horrible but it works.  tcsh doesn't offer a way to override the rc file and
 	// doesn't let us run a script and then drop to interactive mode.  So we source the
 	// state rc file and then chain an exec which inherits the environment we just set up.
@@ -87,7 +88,7 @@ func (v *SubShell) Activate() *failures.Failure {
 	// hack to make it work.
 	env := sscommon.EscapeEnv(v.env)
 	var fail *failures.Failure
-	if v.rcFile, fail = sscommon.SetupProjectRcFile("tcsh.sh", "", env); fail != nil {
+	if v.rcFile, fail = sscommon.SetupProjectRcFile("tcsh.sh", "", env, out); fail != nil {
 		return fail
 	}
 

@@ -216,9 +216,6 @@ func (suite *RunIntegrationTestSuite) TestRun_DeprecatedLackingLanguage() {
 	cp := ts.Spawn("run", "helloWorld")
 	cp.Expect("DEPRECATION", 5*time.Second)
 	cp.Expect("Hello", 5*time.Second)
-
-	cp.SendLine("exit")
-	cp.ExpectExitCode(0)
 }
 
 func (suite *RunIntegrationTestSuite) TestRun_BadLanguage() {
@@ -243,9 +240,6 @@ func (suite *RunIntegrationTestSuite) TestRun_BadLanguage() {
 	cp := ts.Spawn("run", "badLanguage")
 	cp.Expect("parser", 5*time.Second)
 	cp.Expect("Supported languages", 5*time.Second)
-
-	cp.SendLine("exit")
-	cp.ExpectNotExitCode(0)
 }
 
 func TestRunIntegrationTestSuite(t *testing.T) {

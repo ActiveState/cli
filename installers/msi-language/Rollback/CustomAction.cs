@@ -11,15 +11,17 @@ namespace Rollback
         [CustomAction]
         public static ActionResult Rollback(Session session)
         {
-            session.Log("Begin rollback of state tool installation and deploy");
+            var installDir = session.CustomActionData["INSTALLDIR"];
+            RollbarHelper.ConfigureRollbarSingleton(session.CustomActionData["MSI_VERSION"]);
 
-            RollbarHelper.ConfigureRollbarSingleton(session.CustomActionData["COMMIT_ID"]);
+            session.Log("Begin rollback of state tool installation and deploy");
 
             RollbackStateToolInstall(session);
             RollbackDeploy(session);
-            
+
             // This custom action should not abort on failure, just report
             return ActionResult.Success;
+            
         }
 
         private static void RollbackStateToolInstall(Session session)
@@ -40,7 +42,7 @@ namespace Rollback
                 {
                     string msg = string.Format("Not successful in removing State Tool installation directory, got action result: {0}", result);
                     session.Log(msg);
-                    RollbarReport.Error(msg);
+                    RollbarReport.Error(msg, session);
                 }
 
                 session.Log(string.Format("Removing environment entries containing: {0}", stateToolInstallDir));
@@ -49,7 +51,7 @@ namespace Rollback
                 {
                     string msg = string.Format("Not successful in removing State Tool environment entries, got action result: {0}", result);
                     session.Log(msg);
-                    RollbarReport.Error(msg);
+                    RollbarReport.Error(msg, session);
 
                 }
             }
@@ -64,7 +66,7 @@ namespace Rollback
             {
                 string msg = string.Format("Not successful in removing deploy directory, got action result: {0}", result);
                 session.Log(msg);
-                RollbarReport.Error(msg);
+                RollbarReport.Error(msg, session);
             }
 
             result = Remove.EnvironmentEntries(session, session.CustomActionData["INSTALLDIR"]);
@@ -72,7 +74,7 @@ namespace Rollback
             {
                 string msg = string.Format("Not successful in removing Deployment environment entries, got action result: {0}", result);
                 session.Log(msg);
-                RollbarReport.Error(msg);
+                RollbarReport.Error(msg, session);
             }
         }
     }

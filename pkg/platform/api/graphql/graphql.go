@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/retryhttp"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 
@@ -46,8 +47,10 @@ func New(url string, common Header, bearerToken BearerTokenProvider, timeout tim
 		timeout = time.Second * 60
 	}
 
+	retryOpt := graphql.WithHTTPClient(retryhttp.DefaultClient.StandardClient())
+
 	return &GQLClient{
-		graphqlClient: graphql.NewClient(url),
+		graphqlClient: graphql.NewClient(url, retryOpt),
 		common:        common,
 		tokenProvider: bearerToken,
 		timeout:       timeout,

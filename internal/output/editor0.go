@@ -21,6 +21,7 @@ func (f *EditorV0) Type() Format {
 
 func NewEditorV0(config *Config) (EditorV0, *failures.Failure) {
 	json, fail := NewJSON(config)
+	json.printNUL = false
 	if fail != nil {
 		return EditorV0{}, fail
 	}

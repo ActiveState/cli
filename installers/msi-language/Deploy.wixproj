@@ -40,7 +40,11 @@
   <ItemGroup>
     <Compile Include="CustomFatalError.wxs" />
     <Compile Include="CustomExitDlg.wxs" />
+    <Compile Include="CustomUserExitDialog.wxs" />
+    <Compile Include="CustomNetworkError.wxs" />
+    <Compile Include="CustomSecurityError.wxs" />
     <Compile Include="Login.wxs" />
+    <Compile Include="NonEmptyDirDlg.wxs" />
     <Compile Include="PrivacyConsentDlg.wxs" />
     <Compile Include="Product.wxs" />
   </ItemGroup>

@@ -8,6 +8,8 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"sort"
+	"strings"
 
 	"github.com/rollbar/rollbar-go"
 
@@ -36,9 +38,27 @@ func (l *fileHandler) Output() io.Writer {
 	return l.file
 }
 
+func FileName() string {
+	return FileNameFor(os.Getpid())
+}
+
+func FileNameFor(pid int) string {
+	return fmt.Sprintf("%d%s", pid, FileNameSuffix)
+}
+
+func FilePath() string {
+	return filepath.Join(config.ConfigPath(), FileName())
+}
+
+func FilePathFor(filename string) string {
+	return filepath.Join(config.ConfigPath(), filename)
+}
+
+const FileNameSuffix = ".log"
+
 func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interface{}) error {
 	datadir := config.ConfigPath()
-	filename := filepath.Join(datadir, "log.txt")
+	filename := filepath.Join(datadir, FileName())
 
 	if ctx.Level == "ERROR" && (constants.BranchName == constants.StableBranch || constants.BranchName == constants.UnstableBranch) {
 		data := map[string]interface{}{}
@@ -81,7 +101,36 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 	return nil
 }
 
+// Printf satifies a Logger interface allowing us to funnel our
+// logging handlers to 3rd party libraries
+func (l *fileHandler) Printf(msg string, args ...interface{}) {
+	logMsg := fmt.Sprintf("Third party log message: %s", msg)
+	l.Emit(getContext("DEBUG", 1), logMsg, args...)
+}
+
 func init() {
 	handler := &fileHandler{DefaultFormatter, nil, os.Getenv("VERBOSE") != ""}
 	SetHandler(handler)
+
+	// Clean up old log files
+	datadir := config.ConfigPath()
+	files, err := ioutil.ReadDir(datadir)
+	if err != nil {
+		Error("Could not scan config dir to clean up stale logs: %v", err)
+		return
+	}
+
+	sort.Slice(files, func(i, j int) bool { return files[i].ModTime().After(files[j].ModTime()) })
+
+	c := 0
+	for _, file := range files {
+		if strings.HasSuffix(file.Name(), FileNameSuffix) {
+			c = c + 1
+			if c > 9 {
+				if err := os.Remove(filepath.Join(datadir, file.Name())); err != nil {
+					Error("Could not clean up old log: %s, error: %v", file.Name(), err)
+				}
+			}
+		}
+	}
 }

@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/thoas/go-funk"
 
@@ -22,7 +23,7 @@ func autoUpdate(args []string, out output.Outputer, pjPath string) (bool, int, e
 	updateIsRunning := funk.Contains(args, "update")
 	testsAreRunning := condition.InTest()
 
-	if testsAreRunning || updateIsRunning || disableAutoUpdate || disableAutoUpdateCauseCI {
+	if testsAreRunning || updateIsRunning || disableAutoUpdate || disableAutoUpdateCauseCI || !exeOverDayOld() {
 		return false, 0, nil
 	}
 
@@ -56,4 +57,19 @@ func relaunch() (int, error) {
 	}
 
 	return osutils.CmdExitCode(cmd), nil
+}
+
+func exeOverDayOld() bool {
+	exe, err := os.Executable()
+	if err != nil {
+		logging.Error("Could not grab executable, error: %v", err)
+		return false
+	}
+	stat, err := os.Stat(exe)
+	if err != nil {
+		logging.Error("Could not stat file: %s, error: %v", exe)
+		return false
+	}
+	diff := time.Now().Sub(stat.ModTime())
+	return diff > 24*time.Hour
 }

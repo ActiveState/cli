@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/url"
@@ -21,7 +22,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
@@ -92,7 +92,7 @@ func (u *Updater) CanUpdate() bool {
 
 // PrintUpdateMessage will print a message to stdout when an update is available.
 // This will only print the message if the current project has a version lock AND if an update is available
-func PrintUpdateMessage(pjPath string) {
+func PrintUpdateMessage(pjPath string, out output.Outputer) {
 	if versionInfo, _ := projectfile.ParseVersionInfo(pjPath); versionInfo == nil {
 		return
 	}
@@ -110,7 +110,7 @@ func PrintUpdateMessage(pjPath string) {
 	}
 
 	if info != nil && info.Version != constants.Version {
-		print.Warning(locale.Tr("update_available", constants.Version, info.Version))
+		out.Notice(locale.Tr("update_available", constants.Version, info.Version))
 	}
 }
 
@@ -189,6 +189,11 @@ func (u *Updater) update(out output.Outputer) error {
 	// same new state tool version several times.
 	_, err = pl.TryLock()
 	if err != nil {
+		if inProgErr := new(*osutils.AlreadyLockedError); errors.As(err, inProgErr) {
+			logging.Debug("Already updating: %s", errs.Join(*inProgErr, ": "))
+			return nil
+
+		}
 		return errs.Wrap(err, "failed to acquire lock for update process")
 	}
 

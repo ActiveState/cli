@@ -5,6 +5,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/pkg/cmdlets/auth"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -12,14 +13,14 @@ import (
 
 const latestVersion = "latest"
 
-func executeAddUpdate(out output.Outputer, language, name, version string, operation model.Operation) error {
+func executeAddUpdate(out output.Outputer, prompt prompt.Prompter, language, name, version string, operation model.Operation) error {
 	// Use our own interpolation string since we don't want to assume our swagger schema will never change
 	var operationStr = "add"
 	if operation == model.OperationUpdated {
 		operationStr = "update"
 	}
 
-	fail := auth.RequireAuthentication(locale.T("auth_required_activate"))
+	fail := auth.RequireAuthentication(locale.T("auth_required_activate"), out, prompt)
 	if fail != nil {
 		return fail.WithDescription("err_activate_auth_required")
 	}

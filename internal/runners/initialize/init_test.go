@@ -15,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
+	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -193,7 +194,7 @@ func TestInitialize_Run(t *testing.T) {
 				Namespace: tt.args.namespace,
 				Path:      tt.args.path,
 				Language:  tt.args.language,
-			})
+			}, outputhelper.NewCatcher())
 			path = osutil.PrepareDir(path)
 
 			if tt.wantErr != nil {

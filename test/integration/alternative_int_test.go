@@ -4,15 +4,101 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/unarchiver"
+	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/stretchr/testify/suite"
 )
 
 type AlternativeArtifactIntegrationTestSuite struct {
 	suite.Suite
+}
+
+// TestRelocation currently only tests the relocation mechanic for a Perl artifact.
+// The artifact is downloaded directly form S3.  As soon as the artifacts are part of the platform ingredient library, this test should be rewritten, such that it relies on a `state activate` command.
+func (suite *AlternativeArtifactIntegrationTestSuite) TestRelocation() {
+	if runtime.GOOS == "darwin" {
+		suite.T().Skip("No relocatable alternative artifacts for MacOS available yet.")
+	}
+	artifactKey := "language/perl/5.32.0/3/7c76e6a6-3c41-5f68-a7f2-5468fe1b0919/artifact.tar.gz"
+	matchReString := `-Dprefix=([^ ]+)/installdir`
+	if runtime.GOOS == "windows" {
+		artifactKey = "language/perl/5.32.0/3/6864c481-ff89-550d-9c61-a17ae57b7024/artifact.tar.gz"
+		matchReString = `-L\"([^ ]+)installdir`
+	}
+	sess, err := session.NewSessionWithOptions(session.Options{
+		Profile: "default",
+		Config:  aws.Config{Region: aws.String("us-east-1")},
+	})
+	suite.Require().NoError(err, "could not create aws session")
+	s3c := s3.New(sess)
+	object := &s3.GetObjectInput{
+		Bucket: aws.String("as-builds"),
+		Key:    aws.String(artifactKey),
+	}
+	resp, err := s3c.GetObject(object)
+	suite.Require().NoError(err, "could not download artifact test tarball")
+
+	artBody, err := ioutil.ReadAll(resp.Body)
+	suite.Require().NoError(err, "could not read artifact body")
+	ts := e2e.New(suite.T(), true)
+	artTgz := filepath.Join(ts.Dirs.Work, "artifact.tar.gz")
+
+	err = ioutil.WriteFile(artTgz, artBody, 0666)
+	suite.Require().NoError(err, "failed to write artifacts file")
+
+	installDir := filepath.Join(ts.Dirs.Cache, "installdir")
+	tgz := unarchiver.NewTarGz()
+	artTgzFile, artTgzSize, err := tgz.PrepareUnpacking(artTgz, ts.Dirs.Cache)
+	defer artTgzFile.Close()
+	suite.Require().NoError(err, "failed to prepare unpacking of artifact tarball")
+	err = tgz.Unarchive(artTgzFile, artTgzSize, ts.Dirs.Cache)
+	suite.Require().NoError(err, "failed to unarchive the artifact")
+	edFile := filepath.Join(ts.Dirs.Cache, "runtime.json")
+	ed, fail := envdef.NewEnvironmentDefinition(edFile)
+	suite.Require().NoError(fail.ToError(), "failed to create environment definition file")
+
+	constants := envdef.NewConstants(installDir)
+	ed = ed.ExpandVariables(constants)
+	env := ed.GetEnv(true)
+
+	cp := ts.SpawnCmdWithOpts("cmd", e2e.WithArgs("/c", "perl -V"), e2e.AppendEnv(osutils.EnvMapToSlice(env)...))
+
+	// Find prefix directory as returned by `perl -V`
+
+	// Check that the prefix is NOT yet set to the installation directory
+	cp.ExpectLongString("installdir")
+	matchRe := regexp.MustCompile(matchReString)
+	cp.Snapshot()
+	res := matchRe.FindStringSubmatch(cp.TrimmedSnapshot())
+	suite.Require().Len(res, 2)
+	suite.NotEqual(filepath.Clean(ts.Dirs.Cache), filepath.Clean(res[1]))
+	cp.ExpectExitCode(0)
+
+	// Apply the file transformations (relocations)
+	err = ed.ApplyFileTransforms(ts.Dirs.Cache, constants)
+	suite.Require().NoError(err, "failed to apply file transformations.")
+
+	cp = ts.SpawnCmdWithOpts("cmd", e2e.WithArgs("/c", "perl -V"), e2e.AppendEnv(osutils.EnvMapToSlice(env)...))
+
+	// Check that the prefix now IS set to the installation directory
+	cp.ExpectLongString("installdir")
+	res = matchRe.FindStringSubmatch(cp.TrimmedSnapshot())
+	suite.Require().Len(res, 2)
+	suite.Equal(filepath.Clean(ts.Dirs.Cache), filepath.Clean(res[1]))
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnCmdWithOpts("cmd", e2e.WithArgs("/c", "perl --version"), e2e.AppendEnv(osutils.EnvMapToSlice(env)...))
+	cp.Expect("v5.32.0")
+	cp.ExpectExitCode(0)
 }
 
 func (suite *AlternativeArtifactIntegrationTestSuite) TestActivateRuby() {

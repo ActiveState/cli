@@ -3,9 +3,9 @@ package activate
 import (
 	"path/filepath"
 
-	"github.com/ActiveState/cli/internal/fileutils"
-
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/cmdlets/git"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -21,10 +21,11 @@ type CheckoutAble interface {
 // It does not activate any environment
 type Checkout struct {
 	repo git.Repository
+	output.Outputer
 }
 
-func NewCheckout(repo git.Repository) *Checkout {
-	return &Checkout{repo}
+func NewCheckout(repo git.Repository, prime primeable) *Checkout {
+	return &Checkout{repo, prime.Output()}
 }
 
 func (r *Checkout) Run(namespace string, targetPath string) error {
@@ -38,14 +39,18 @@ func (r *Checkout) Run(namespace string, targetPath string) error {
 		return fail
 	}
 
-	branch, fail := model.DefaultBranchForProject(pj)
-	if fail != nil {
-		return fail
+	commitID := ns.CommitID
+	if commitID == nil {
+		branch, fail := model.DefaultBranchForProject(pj)
+		if fail != nil {
+			return fail
+		}
+		commitID = branch.CommitID
 	}
 
 	// Clone the related repo, if it is defined
 	if pj.RepoURL != nil {
-		fail = r.repo.CloneProject(ns.Owner, ns.Project, targetPath)
+		fail = r.repo.CloneProject(ns.Owner, ns.Project, targetPath, r.Outputer)
 		if fail != nil {
 			return fail
 		}
@@ -57,7 +62,7 @@ func (r *Checkout) Run(namespace string, targetPath string) error {
 		fail = projectfile.Create(&projectfile.CreateParams{
 			Owner:     ns.Owner,
 			Project:   ns.Project,
-			CommitID:  branch.CommitID,
+			CommitID:  commitID,
 			Directory: targetPath,
 		})
 		if fail != nil {

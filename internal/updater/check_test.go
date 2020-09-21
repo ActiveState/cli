@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/ActiveState/cli/internal/config" // MUST be first!
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
@@ -35,11 +34,6 @@ func setup(t *testing.T, withVersion bool) {
 func TestTimedCheck(t *testing.T) {
 	setup(t, false)
 
-	updateCheckMarker := filepath.Join(config.ConfigPath(), "update-check")
-	os.Remove(updateCheckMarker) // remove if exists
-	_, err := os.Stat(updateCheckMarker)
-	assert.Error(t, err, "update-check marker does not exist")
-
 	httpmock.Activate(constants.APIUpdateURL)
 	defer httpmock.DeActivate()
 
@@ -50,27 +44,10 @@ func TestTimedCheck(t *testing.T) {
 	assert.True(t, update, "Should want to update")
 	// It should notify about and update attempt
 	assert.NotEqual(t, "", strings.TrimSpace(out.CombinedOutput()))
-
-	stat, err := os.Stat(updateCheckMarker)
-	assert.NoError(t, err, "update-check marker was created")
-	modTime := stat.ModTime()
-
-	out = outputhelper.NewCatcher()
-	update, _ = AutoUpdate(configPath, out.Outputer)
-	assert.False(t, update, "Should not want to update")
-	stat, err = os.Stat(updateCheckMarker)
-	assert.NoError(t, err, "update-check marker still exists")
-	assert.Equal(t, modTime, stat.ModTime(), "update-check marker will not be modified for at least a day")
-	assert.Equal(t, "", strings.TrimSpace(out.CombinedOutput()))
 }
 
 func TestTimedCheckLockedVersion(t *testing.T) {
 	setup(t, true)
-
-	updateCheckMarker := filepath.Join(config.ConfigPath(), "update-check")
-	os.Remove(updateCheckMarker) // remove if exists
-	_, err := os.Stat(updateCheckMarker)
-	assert.Error(t, err, "update-check marker does not exist")
 
 	out := outputhelper.NewCatcher()
 	update, _ := AutoUpdate(configPathWithVersion, out.Outputer)

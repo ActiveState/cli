@@ -1,6 +1,7 @@
 package project
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -9,9 +10,8 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/secrets"
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	secretsModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -39,12 +39,6 @@ const ProjectCategory = "project"
 func init() {
 	expander := NewSecretPromptingExpander(secretsapi.Get())
 	RegisterExpander("secrets", expander)
-
-	// Deprecation mechanic
-	RegisterExpander("variables", func(name string, meta string, isFunction bool, project *Project) (string, *failures.Failure) {
-		print.Warning(locale.Tr("secrets_warn_deprecated_var_expand", name))
-		return expander(name, meta, isFunction, project)
-	})
 }
 
 // SecretAccess is used to track secrets that were requested
@@ -259,8 +253,10 @@ func (e *SecretExpander) SecretsAccessed() []*SecretAccess {
 // SecretFunc defines what our expander functions will be returning
 type SecretFunc func(name string, project *Project) (string, *failures.Failure)
 
+var ErrSecretNotFound = errors.New("secret not found")
+
 // Expand will expand a variable to a secret value, if no secret exists it will return an empty string
-func (e *SecretExpander) Expand(category string, name string, isFunction bool, project *Project) (string, *failures.Failure) {
+func (e *SecretExpander) Expand(category string, name string, isFunction bool, project *Project) (string, error) {
 	isUser := category == UserCategory
 
 	if e.project == nil {
@@ -272,7 +268,7 @@ func (e *SecretExpander) Expand(category string, name string, isFunction bool, p
 
 	keypair, fail := e.KeyPair()
 	if fail != nil {
-		return "", fail
+		return "", fail.ToError()
 	}
 
 	if knownValue, exists := e.cachedSecrets[category+name]; exists {
@@ -281,11 +277,11 @@ func (e *SecretExpander) Expand(category string, name string, isFunction bool, p
 
 	userSecret, fail := e.FindSecret(name, isUser)
 	if fail != nil {
-		return "", fail
+		return "", fail.ToError()
 	}
 
 	if userSecret == nil {
-		return "", secretsapi.FailUserSecretNotFound.New("secrets_expand_err_not_found", name)
+		return "", locale.WrapInputError(ErrSecretNotFound, "secrets_expand_err_not_found", "Unable to obtain value for secret: `{{.V0}}.`", name)
 	}
 
 	decrBytes, fail := keypair.DecodeAndDecrypt(*userSecret.Value)
@@ -299,7 +295,7 @@ func (e *SecretExpander) Expand(category string, name string, isFunction bool, p
 }
 
 // ExpandWithPrompt will expand a variable to a secret value, if no secret exists the user will be prompted
-func (e *SecretExpander) ExpandWithPrompt(category string, name string, isFunction bool, project *Project) (string, *failures.Failure) {
+func (e *SecretExpander) ExpandWithPrompt(category string, name string, isFunction bool, project *Project) (string, error) {
 	isUser := category == UserCategory
 
 	if knownValue, exists := e.cachedSecrets[category+name]; exists {
@@ -315,12 +311,12 @@ func (e *SecretExpander) ExpandWithPrompt(category string, name string, isFuncti
 
 	keypair, fail := e.KeyPair()
 	if fail != nil {
-		return "", fail
+		return "", fail.ToError()
 	}
 
 	value, fail := e.FetchSecret(name, isUser)
 	if fail != nil && !fail.Type.Matches(secretsapi.FailUserSecretNotFound) {
-		return "", fail
+		return "", fail.ToError()
 	}
 
 	if fail == nil {
@@ -341,9 +337,9 @@ func (e *SecretExpander) ExpandWithPrompt(category string, name string, isFuncti
 		description = def.Description
 	}
 
-	print.Line(locale.Tr("secret_value_prompt_summary", name, description, scope, locale.T("secret_prompt_"+scope)))
-	if value, fail = Prompter.InputSecret(locale.Tr("secret_value_prompt", name)); fail != nil {
-		return "", FailInputSecretValue.New("secrets_err_value_prompt")
+	project.Outputer.Notice(locale.Tr("secret_value_prompt_summary", name, description, scope, locale.T("secret_prompt_"+scope)))
+	if value, fail = project.Prompter.InputSecret(locale.Tr("secret_value_prompt", name)); fail != nil {
+		return "", locale.NewInputError("secrets_err_value_prompt", "The provided secret value is invalid.")
 	}
 
 	pj, fail := e.Project()

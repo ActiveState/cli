@@ -14,6 +14,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 )
@@ -53,6 +54,44 @@ func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
 
 	cp.SendLine("exit 123")
 	cp.ExpectExitCode(123, 10*time.Second)
+}
+
+func (suite *ActivateIntegrationTestSuite) TestActivateUsingCommitID() {
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("activate", "ActiveState-CLI/Python3#6d9280e7-75eb-401a-9e71-0d99759fbad3")
+	cp.Expect("Where would you like to checkout")
+	cp.SendLine(cp.WorkDirectory())
+	cp.Expect("activated state", 20*time.Second)
+	cp.WaitForInput(10 * time.Second)
+
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
+}
+
+func (suite *ActivateIntegrationTestSuite) TestActivateNotOnPath() {
+	ts := e2e.NewNoPathUpdate(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("activate", "ActiveState-CLI/Python3")
+	cp.Expect("Where would you like to checkout")
+	cp.SendLine(cp.WorkDirectory())
+	cp.Expect("activated state", 20*time.Second)
+	cp.WaitForInput(10 * time.Second)
+
+	if runtime.GOOS == "windows" {
+		cp.SendLine("doskey /macros | findstr state=")
+	} else {
+		cp.SendLine("alias state")
+	}
+	cp.Expect("state=")
+
+	cp.SendLine("state --version")
+	cp.Expect("ActiveState")
+
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
 }
 
 // TestActivatePythonByHostOnly Tests whether we are only pulling in the build for the target host
@@ -251,7 +290,7 @@ func (suite *ActivateIntegrationTestSuite) TestInit_Activation_NoCommitID() {
 		e2e.WithArgs("activate"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("The activatestate.yaml for the project")
+	cp.ExpectLongString(locale.Tr("err_project_no_commit", url))
 	cp.ExpectExitCode(1)
 }
 

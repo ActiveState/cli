@@ -4,8 +4,8 @@ import (
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/internal/print"
-
+	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 
@@ -23,10 +23,15 @@ type configGetter interface {
 
 type Push struct {
 	config configGetter
+	output.Outputer
 }
 
-func NewPush(config *viper.Viper) *Push {
-	return &Push{config}
+type primeable interface {
+	primer.Outputer
+}
+
+func NewPush(config *viper.Viper, prime primeable) *Push {
+	return &Push{config, prime.Output()}
 }
 
 func (r *Push) Run() *failures.Failure {
@@ -59,7 +64,7 @@ func (r *Push) Run() *failures.Failure {
 		if pj.CommitID() == "" {
 			return failures.FailUserInput.New("push_already_exists", pj.Owner(), pj.Name())
 		} else {
-			print.Info(locale.T("push_up_to_date"))
+			r.Outputer.Notice(locale.T("push_up_to_date"))
 		}
 		return nil
 	}
@@ -69,7 +74,7 @@ func (r *Push) Run() *failures.Failure {
 		return fail
 	}
 
-	print.Info(locale.Tr("push_creating_project", pj.Owner(), pj.Name()))
+	r.Outputer.Notice(locale.Tr("push_creating_project", pj.Owner(), pj.Name()))
 	var commitID strfmt.UUID
 	pjm, commitID, fail = model.CreateProject(pj.Owner(), pj.Name(), model.HostPlatform, lang, langVersion, pj.Private())
 	if fail != nil {
@@ -81,7 +86,7 @@ func (r *Push) Run() *failures.Failure {
 	pjf.Languages = nil
 	pjf.Save()
 
-	print.Info(locale.Tr("push_project_created", pj.Source().Project, lang.String(), langVersion))
+	r.Outputer.Notice(locale.Tr("push_project_created", pj.Source().Project, lang.String(), langVersion))
 	pj.Source().SetCommit(commitID.String())
 
 	return nil

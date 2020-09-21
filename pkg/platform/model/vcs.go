@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/retryhttp"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/mono"
 	vcsClient "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/version_control"
@@ -537,6 +538,7 @@ func ChangesetFromRequirements(op Operation, reqs Checkpoint) Changeset {
 func FetchOrderFromCommit(commitID strfmt.UUID) (*mono_models.Order, error) {
 	params := vcsClient.NewGetOrderParams()
 	params.CommitID = commitID
+	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
 
 	var res *vcsClient.GetOrderOK
 	var err error

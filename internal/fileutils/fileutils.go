@@ -670,39 +670,12 @@ func TempDirUnsafe() string {
 	return f
 }
 
-func trialRename(src, dst string) bool {
-	if !DirExists(src) {
-		return false
-	}
-	if !DirExists(dst) {
-		return false
-	}
-
-	tmpFileBase := "test.ext"
-	tmpFileData := []byte("data")
-	tmpSrcName := filepath.Join(src, tmpFileBase)
-
-	if err := ioutil.WriteFile(tmpSrcName, tmpFileData, 0660); err != nil {
-		return false
-	}
-
-	cleanupFile := tmpSrcName
-	defer func() { _ = os.Remove(cleanupFile) }()
-
-	tmpDstFile := filepath.Join(dst, tmpFileBase)
-	if err := os.Rename(tmpSrcName, tmpDstFile); err != nil {
-		return false
-	}
-	cleanupFile = tmpDstFile
-
-	return true
-}
-
 // MoveAllFilesCrossDisk will move all of the files/dirs within one directory
 // to another directory even across disks. Both directories must already exist.
 func MoveAllFilesCrossDisk(src, dst string) *failures.Failure {
-	if trialRename(src, dst) {
-		return MoveAllFiles(src, dst)
+	fail := MoveAllFiles(src, dst)
+	if fail != nil {
+		logging.Error("Move all files failed with error: {{.V0}}. Falling back to copy files", fail)
 	}
 
 	return copyFiles(src, dst, true)
@@ -888,4 +861,20 @@ func ListDir(sourcePath string, includeDirs bool) []string {
 		return nil
 	})
 	return result
+}
+
+// PathInList returns whether the provided path list contains the provided
+// path.
+func PathInList(listSep, pathList, path string) (bool, error) {
+	paths := strings.Split(pathList, listSep)
+	for _, p := range paths {
+		equal, err := PathsEqual(p, path)
+		if err != nil {
+			return false, err
+		}
+		if equal {
+			return true, nil
+		}
+	}
+	return false, nil
 }

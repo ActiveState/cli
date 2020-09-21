@@ -8,11 +8,12 @@ import (
 
 	"github.com/ActiveState/cli/pkg/projectfile"
 
+	"github.com/stretchr/testify/suite"
+
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/stretchr/testify/suite"
 )
 
 type ProjectTestSuite struct {
@@ -83,23 +84,28 @@ func (suite *ProjectTestSuite) TestPlatforms() {
 	name := plat.Name()
 	suite.Equal("fullexample", name, "Names should match")
 
-	os := plat.Os()
+	os, err := plat.Os()
+	suite.NoError(err)
 	suite.Equal("darwin", os, "OS should match")
 
 	var version string
-	version = plat.Version()
+	suite.NoError(err)
+	version, err = plat.Version()
 	suite.Equal("10.0", version, "Version should match")
 
 	var arch string
-	arch = plat.Architecture()
+	arch, err = plat.Architecture()
+	suite.NoError(err)
 	suite.Equal("x386", arch, "Arch should match")
 
 	var libc string
-	libc = plat.Libc()
+	libc, err = plat.Libc()
+	suite.NoError(err)
 	suite.Equal("gnu", libc, "Libc should match")
 
 	var compiler string
-	compiler = plat.Compiler()
+	compiler, err = plat.Compiler()
+	suite.NoError(err)
 	suite.Equal("gcc", compiler, "Compiler should match")
 }
 
@@ -109,7 +115,8 @@ func (suite *ProjectTestSuite) TestEvents() {
 
 	event := events[0]
 	name := event.Name()
-	value := event.Value()
+	value, err := event.Value()
+	suite.NoError(err)
 
 	if runtime.GOOS == "linux" {
 		suite.Equal("foo", name, "Names should match (Linux)")
@@ -131,7 +138,8 @@ func (suite *ProjectTestSuite) TestLanguages() {
 	name := lang.Name()
 	version := lang.Version()
 	id := lang.ID()
-	build := lang.Build()
+	build, err := lang.Build()
+	suite.NoError(err)
 
 	if runtime.GOOS == "linux" {
 		suite.Equal("foo", name, "Names should match (Linux)")
@@ -165,7 +173,8 @@ func (suite *ProjectTestSuite) TestPackages() {
 	pkg := packages[0]
 	name := pkg.Name()
 	version := pkg.Version()
-	build := pkg.Build()
+	build, err := pkg.Build()
+	suite.NoError(err)
 
 	if runtime.GOOS == "linux" {
 		suite.Equal("foo", name, "Names should match (Linux)")
@@ -188,7 +197,8 @@ func (suite *ProjectTestSuite) TestScripts() {
 
 	script := scripts[0]
 	name := script.Name()
-	value := script.Value()
+	value, err := script.Value()
+	suite.NoError(err)
 	raw := script.Raw()
 	safe := script.LanguageSafe()
 	standalone := script.Standalone()
@@ -222,19 +232,25 @@ func (suite *ProjectTestSuite) TestScriptByName() {
 		script = suite.project.ScriptByName("foo")
 		suite.Require().NotNil(script)
 		suite.Equal("foo", script.Name(), "Names should match (Linux)")
-		suite.Equal("foo Linux", script.Value(), "Value should match (Linux)")
+		v, err := script.Value()
+		suite.NoError(err)
+		suite.Equal("foo Linux", v, "Value should match (Linux)")
 		suite.True(script.Standalone(), "Standalone value should match (Linux)")
 	} else if runtime.GOOS == "windows" {
 		script = suite.project.ScriptByName("bar")
 		suite.Require().NotNil(script)
 		suite.Equal("bar", script.Name(), "Name should match (Windows)")
-		suite.Equal("bar Windows", script.Value(), "Value should match (Windows)")
+		v, err := script.Value()
+		suite.NoError(err)
+		suite.Equal("bar Windows", v, "Value should match (Windows)")
 		suite.True(script.Standalone(), "Standalone value should match (Windows)")
 	} else if runtime.GOOS == "darwin" {
 		script = suite.project.ScriptByName("baz")
 		suite.Require().NotNil(script)
 		suite.Equal("baz", script.Name(), "Names should match (OSX)")
-		suite.Equal("baz OSX", script.Value(), "Value should match (OSX)")
+		v, err := script.Value()
+		suite.NoError(err)
+		suite.Equal("baz OSX", v, "Value should match (OSX)")
 		suite.True(script.Standalone(), "Standalone value should match (OSX)")
 	}
 }
@@ -245,7 +261,8 @@ func (suite *ProjectTestSuite) TestConstants() {
 	constant := constants[0]
 
 	name := constant.Name()
-	value := constant.Value()
+	value, err := constant.Value()
+	suite.NoError(err)
 
 	if runtime.GOOS == "linux" {
 		suite.Equal("foo", name, "Names should match (Linux)")

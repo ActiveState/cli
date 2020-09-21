@@ -3,7 +3,7 @@ package packages
 import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -16,12 +16,14 @@ type AddRunParams struct {
 // Add manages the adding execution context.
 type Add struct {
 	out output.Outputer
+	prompt.Prompter
 }
 
 // NewAdd prepares an addition execution context for use.
-func NewAdd(prime primer.Outputer) *Add {
+func NewAdd(prime primeable) *Add {
 	return &Add{
-		out: prime.Output(),
+		prime.Output(),
+		prime.Prompt(),
 	}
 }
 
@@ -37,5 +39,5 @@ func (a *Add) Run(params AddRunParams) error {
 
 	name, version := splitNameAndVersion(params.Name)
 
-	return executeAddUpdate(a.out, language, name, version, model.OperationAdded)
+	return executeAddUpdate(a.out, a.Prompter, language, name, version, model.OperationAdded)
 }
