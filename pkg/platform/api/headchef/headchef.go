@@ -1,7 +1,6 @@
 package headchef
 
 import (
-	"context"
 	"fmt"
 	"net/url"
 	"time"
@@ -133,12 +132,9 @@ func (b *BuildParams) WriteToRequest(req runtime.ClientRequest, reg strfmt.Regis
 
 func (r *Client) reqBuild(buildReq *headchef_models.V1BuildRequest, buildStatus *BuildStatus) {
 	defClient := retryhttp.DefaultClient
-	timeout := defClient.HTTPClient.Timeout
-	if timeout == 0 {
-		timeout = retryhttp.DefaultTimeout
-	}
+	timeout := defClient.MaxTimeout(retryhttp.DefaultTimeout)
 
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := retryhttp.NewContext(nil, timeout)
 	defer cancel()
 
 	startParams := headchef_operations.StartBuildV1Params{

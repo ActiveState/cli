@@ -72,12 +72,9 @@ func fetchRawRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *s
 
 	var err error
 	defClient := retryhttp.DefaultClient
-	timeout := defClient.HTTPClient.Timeout
-	if timeout == 0 {
-		timeout = retryhttp.DefaultTimeout
-	}
+	timeout := defClient.MaxTimeout(retryhttp.DefaultTimeout)
 
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := retryhttp.NewContext(nil, timeout)
 	defer cancel()
 
 	params := iop.NewResolveRecipesParamsWithContext(ctx)
@@ -153,12 +150,9 @@ func commitToOrder(commitID strfmt.UUID, owner, project string) (*inventory_mode
 func fetchRecipeID(commitID strfmt.UUID, owner, project, orgID string, private bool, hostPlatform *string) (*strfmt.UUID, *failures.Failure) {
 	var err error
 	defClient := retryhttp.DefaultClient
-	timeout := defClient.HTTPClient.Timeout
-	if timeout == 0 {
-		timeout = retryhttp.DefaultTimeout
-	}
+	timeout := defClient.MaxTimeout(retryhttp.DefaultTimeout)
 
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := retryhttp.NewContext(nil, timeout)
 	defer cancel()
 
 	params := iop.NewSolveOrderParamsWithContext(ctx)

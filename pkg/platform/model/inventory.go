@@ -1,7 +1,6 @@
 package model
 
 import (
-	"context"
 	"fmt"
 	"strconv"
 	"strings"
@@ -120,15 +119,12 @@ func SearchIngredientsStrict(language, name string) ([]*IngredientAndVersion, *f
 
 func searchIngredients(limit int, language, name string) ([]*IngredientAndVersion, *failures.Failure) {
 	defClient := retryhttp.DefaultClient
-	timeout := defClient.HTTPClient.Timeout
-	if timeout == 0 {
-		timeout = retryhttp.DefaultTimeout
-	}
+	timeout := defClient.MaxTimeout(retryhttp.DefaultTimeout)
 
 	lim := int64(limit)
 
 	client := inventory.Get()
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := retryhttp.NewContext(nil, timeout)
 	defer cancel()
 
 	params := inventory_operations.NewGetNamespaceIngredientsParamsWithContext(ctx)
@@ -152,13 +148,10 @@ func searchIngredients(limit int, language, name string) ([]*IngredientAndVersio
 func FetchPlatforms() ([]*Platform, *failures.Failure) {
 	if platformCache == nil {
 		defClient := retryhttp.DefaultClient
-		timeout := defClient.HTTPClient.Timeout
-		if timeout == 0 {
-			timeout = retryhttp.DefaultTimeout
-		}
+		timeout := defClient.MaxTimeout(retryhttp.DefaultTimeout)
 
 		client := inventory.Get()
-		ctx, cancel := context.WithTimeout(context.Background(), timeout)
+		ctx, cancel := retryhttp.NewContext(nil, timeout)
 		defer cancel()
 
 		params := inventory_operations.NewGetPlatformsParamsWithContext(ctx)
@@ -353,13 +346,10 @@ func FetchLanguageVersions(name string) ([]string, *failures.Failure) {
 
 func FetchLanguages() ([]Language, *failures.Failure) {
 	defClient := retryhttp.DefaultClient
-	timeout := defClient.HTTPClient.Timeout
-	if timeout == 0 {
-		timeout = retryhttp.DefaultTimeout
-	}
+	timeout := defClient.MaxTimeout(retryhttp.DefaultTimeout)
 
 	client := inventory.Get()
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := retryhttp.NewContext(nil, timeout)
 	defer cancel()
 
 	params := inventory_operations.NewGetNamespaceIngredientsParamsWithContext(ctx)
