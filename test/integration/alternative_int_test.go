@@ -37,6 +37,7 @@ func (suite *AlternativeArtifactIntegrationTestSuite) TestRelocation() {
 	artifactKey := "language/perl/5.32.0/3/7c76e6a6-3c41-5f68-a7f2-5468fe1b0919/artifact.tar.gz"
 	matchReString := `-Dprefix=([^ ]+)/installdir`
 	if runtime.GOOS == "windows" {
+		suite.T().Skip("Temporary artifact tarball for windows is currently broken.")
 		shell = "cmd"
 		shellArg0 = "/c"
 		artifactKey = "language/perl/5.32.0/3/6864c481-ff89-550d-9c61-a17ae57b7024/artifact.tar.gz"
