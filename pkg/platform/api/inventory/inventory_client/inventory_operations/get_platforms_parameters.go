@@ -234,7 +234,7 @@ func (o *GetPlatformsParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.
 
 	if o.Page != nil {
 
-		// query param page
+		// query parretry.Client.HTTPClient.Timeout
 		var qrPage int64
 		if o.Page != nil {
 			qrPage = *o.Page

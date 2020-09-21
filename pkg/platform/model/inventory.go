@@ -118,18 +118,16 @@ func SearchIngredientsStrict(language, name string) ([]*IngredientAndVersion, *f
 }
 
 func searchIngredients(limit int, language, name string) ([]*IngredientAndVersion, *failures.Failure) {
-	defClient := retryhttp.DefaultClient
-	timeout := defClient.MaxTimeout(retryhttp.DefaultTimeout)
+	retry := retryhttp.New(retryhttp.DefaultClient)
+	defer retry.Close()
 
 	lim := int64(limit)
 
 	client := inventory.Get()
-	ctx, cancel := retryhttp.NewContext(nil, timeout)
-	defer cancel()
 
-	params := inventory_operations.NewGetNamespaceIngredientsParamsWithContext(ctx)
-	params.SetHTTPClient(defClient.StandardClient())
-	params.SetTimeout(timeout)
+	params := inventory_operations.NewGetNamespaceIngredientsParamsWithContext(retry.Context)
+	params.SetHTTPClient(retry.Client.StandardClient())
+	params.SetTimeout(retry.Client.HTTPClient.Timeout)
 	params.SetQ(&name)
 	params.SetNamespace("language/" + language)
 	params.SetLimit(&lim)
@@ -147,16 +145,14 @@ func searchIngredients(limit int, language, name string) ([]*IngredientAndVersio
 
 func FetchPlatforms() ([]*Platform, *failures.Failure) {
 	if platformCache == nil {
-		defClient := retryhttp.DefaultClient
-		timeout := defClient.MaxTimeout(retryhttp.DefaultTimeout)
+		retry := retryhttp.New(retryhttp.DefaultClient)
+		defer retry.Close()
 
 		client := inventory.Get()
-		ctx, cancel := retryhttp.NewContext(nil, timeout)
-		defer cancel()
 
-		params := inventory_operations.NewGetPlatformsParamsWithContext(ctx)
-		params.SetHTTPClient(defClient.StandardClient())
-		params.SetTimeout(timeout)
+		params := inventory_operations.NewGetPlatformsParamsWithContext(retry.Context)
+		params.SetHTTPClient(retry.Client.StandardClient())
+		params.SetTimeout(retry.Client.HTTPClient.Timeout)
 		limit := int64(99999)
 		params.SetLimit(&limit)
 
@@ -345,16 +341,14 @@ func FetchLanguageVersions(name string) ([]string, *failures.Failure) {
 }
 
 func FetchLanguages() ([]Language, *failures.Failure) {
-	defClient := retryhttp.DefaultClient
-	timeout := defClient.MaxTimeout(retryhttp.DefaultTimeout)
+	retry := retryhttp.New(retryhttp.DefaultClient)
+	defer retry.Close()
 
 	client := inventory.Get()
-	ctx, cancel := retryhttp.NewContext(nil, timeout)
-	defer cancel()
 
-	params := inventory_operations.NewGetNamespaceIngredientsParamsWithContext(ctx)
-	params.SetHTTPClient(defClient.StandardClient())
-	params.SetTimeout(timeout)
+	params := inventory_operations.NewGetNamespaceIngredientsParamsWithContext(retry.Context)
+	params.SetHTTPClient(retry.Client.StandardClient())
+	params.SetTimeout(retry.Client.HTTPClient.Timeout)
 	params.SetNamespace("language")
 	limit := int64(10000)
 	params.SetLimit(&limit)

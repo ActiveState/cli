@@ -1,7 +1,6 @@
 package retryhttp
 
 import (
-	"context"
 	"errors"
 	"net"
 	"net/http"
@@ -40,7 +39,8 @@ type Logger interface {
 
 var (
 	DefaultTimeout = time.Second * 30
-	DefaultClient  = NewClient(DefaultTimeout, 5)
+	DefaultRetries = 5
+	DefaultClient  = NewClient(DefaultTimeout, DefaultRetries)
 )
 
 func init() {
@@ -79,16 +79,6 @@ func (c *Client) StandardClient() *http.Client {
 	}
 }
 
-func (c *Client) MaxTimeout(fallbacks ...time.Duration) time.Duration {
-	to := c.HTTPClient.Timeout
-	for _, fb := range fallbacks {
-		if to < fb {
-			to = fb
-		}
-	}
-	return to
-}
-
 func normalizeResponse(res *http.Response, err error) (*http.Response, error) {
 	if res != nil {
 		switch res.StatusCode {
@@ -125,6 +115,13 @@ func normalizeRetryResponse(res *http.Response, err error, numTries int) (*http.
 }
 
 func NewClient(timeout time.Duration, retries int) *Client {
+	if timeout == 0 {
+		timeout = DefaultTimeout
+	}
+	if retries == 0 {
+		retries = DefaultRetries
+	}
+
 	retryClient := retryablehttp.NewClient()
 	retryClient.Logger = logging.CurrentHandler()
 	retryClient.HTTPClient = &http.Client{
@@ -137,13 +134,4 @@ func NewClient(timeout time.Duration, retries int) *Client {
 	return &Client{
 		Client: retryClient,
 	}
-}
-
-// NewContext returns a context with timeout provided. If no initial context is
-// provided context.Background will be used.
-func NewContext(ctx context.Context, timeout time.Duration) (context.Context, context.CancelFunc) {
-	if ctx == nil {
-		ctx = context.Background()
-	}
-	return context.WithTimeout(ctx, timeout)
 }
