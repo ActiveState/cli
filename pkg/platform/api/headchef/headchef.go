@@ -131,10 +131,7 @@ func (b *BuildParams) WriteToRequest(req runtime.ClientRequest, reg strfmt.Regis
 }
 
 func (r *Client) reqBuild(buildReq *headchef_models.V1BuildRequest, buildStatus *BuildStatus) {
-	timeout := time.Second * 60
-	retries := 3
-
-	retry := retryhttp.New(retryhttp.NewClient(timeout, retries))
+	retry := retryhttp.New(retryhttp.NewClient(time.Second * 60, 3))
 	defer retry.Close()
 
 	startParams := headchef_operations.StartBuildV1Params{
