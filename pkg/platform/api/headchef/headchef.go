@@ -1,6 +1,7 @@
 package headchef
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 	"time"
@@ -132,10 +133,10 @@ func (b *BuildParams) WriteToRequest(req runtime.ClientRequest, reg strfmt.Regis
 
 func (r *Client) reqBuild(buildReq *headchef_models.V1BuildRequest, buildStatus *BuildStatus) {
 	startParams := headchef_operations.StartBuildV1Params{
+		Context:      context.Background(),
 		BuildRequest: buildReq,
 		HTTPClient:   retryhttp.DefaultClient.StandardClient(),
 	}
-	startParams.SetTimeout(time.Second * 60)
 
 	created, accepted, err := r.client.StartBuildV1(&startParams)
 
