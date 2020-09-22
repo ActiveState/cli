@@ -123,10 +123,10 @@ func searchIngredients(limit int, language, name string) ([]*IngredientAndVersio
 	client := inventory.Get()
 
 	params := inventory_operations.NewGetNamespaceIngredientsParams()
-	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
 	params.SetQ(&name)
 	params.SetNamespace("language/" + language)
 	params.SetLimit(&lim)
+	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
 
 	res, err := client.GetNamespaceIngredients(params, authentication.ClientAuth())
 	if err != nil {
@@ -144,9 +144,9 @@ func FetchPlatforms() ([]*Platform, *failures.Failure) {
 		client := inventory.Get()
 
 		params := inventory_operations.NewGetPlatformsParams()
-		params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
 		limit := int64(99999)
 		params.SetLimit(&limit)
+		params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
 
 		response, err := client.GetPlatforms(params)
 		if err != nil {
@@ -336,10 +336,10 @@ func FetchLanguages() ([]Language, *failures.Failure) {
 	client := inventory.Get()
 
 	params := inventory_operations.NewGetNamespaceIngredientsParams()
-	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
 	params.SetNamespace("language")
 	limit := int64(10000)
 	params.SetLimit(&limit)
+	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
 
 	res, err := client.GetNamespaceIngredients(params, authentication.ClientAuth())
 	if err != nil {

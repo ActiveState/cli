@@ -537,8 +537,8 @@ func ChangesetFromRequirements(op Operation, reqs Checkpoint) Changeset {
 // FetchOrderFromCommit retrieves an order from a given commit ID
 func FetchOrderFromCommit(commitID strfmt.UUID) (*mono_models.Order, error) {
 	params := vcsClient.NewGetOrderParams()
-	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
 	params.CommitID = commitID
+	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
 
 	var res *vcsClient.GetOrderOK
 	var err error
