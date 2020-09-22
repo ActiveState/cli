@@ -46,9 +46,8 @@ func New(url string, common Header, bearerToken BearerTokenProvider, timeout tim
 	if timeout == 0 {
 		timeout = time.Second * 60
 	}
-	client := retryhttp.NewClient(timeout, -1)
 
-	retryOpt := graphql.WithHTTPClient(client.StandardClient())
+	retryOpt := graphql.WithHTTPClient(retryhttp.DefaultClient.StandardClient())
 
 	return &GQLClient{
 		graphqlClient: graphql.NewClient(url, retryOpt),
