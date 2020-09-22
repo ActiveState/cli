@@ -127,7 +127,6 @@ func searchIngredients(limit int, language, name string) ([]*IngredientAndVersio
 
 	params := inventory_operations.NewGetNamespaceIngredientsParamsWithContext(retry.Context)
 	params.SetHTTPClient(retry.Client.StandardClient())
-	params.SetTimeout(retry.Client.HTTPClient.Timeout)
 	params.SetQ(&name)
 	params.SetNamespace("language/" + language)
 	params.SetLimit(&lim)
@@ -152,7 +151,6 @@ func FetchPlatforms() ([]*Platform, *failures.Failure) {
 
 		params := inventory_operations.NewGetPlatformsParamsWithContext(retry.Context)
 		params.SetHTTPClient(retry.Client.StandardClient())
-		params.SetTimeout(retry.Client.HTTPClient.Timeout)
 		limit := int64(99999)
 		params.SetLimit(&limit)
 
@@ -348,7 +346,6 @@ func FetchLanguages() ([]Language, *failures.Failure) {
 
 	params := inventory_operations.NewGetNamespaceIngredientsParamsWithContext(retry.Context)
 	params.SetHTTPClient(retry.Client.StandardClient())
-	params.SetTimeout(retry.Client.HTTPClient.Timeout)
 	params.SetNamespace("language")
 	limit := int64(10000)
 	params.SetLimit(&limit)

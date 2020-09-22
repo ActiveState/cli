@@ -76,7 +76,6 @@ func fetchRawRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *s
 
 	params := iop.NewResolveRecipesParamsWithContext(retry.Context)
 	params.SetHTTPClient(retry.Client.StandardClient())
-	params.SetTimeout(retry.Client.HTTPClient.Timeout)
 	params.Order, err = commitToOrder(commitID, owner, project)
 	if err != nil {
 		return "", FailOrderRecipes.Wrap(err)
@@ -151,7 +150,6 @@ func fetchRecipeID(commitID strfmt.UUID, owner, project, orgID string, private b
 
 	params := iop.NewSolveOrderParamsWithContext(retry.Context)
 	params.SetHTTPClient(retry.Client.StandardClient())
-	params.SetTimeout(retry.Client.HTTPClient.Timeout)
 	params.Order, err = commitToOrder(commitID, owner, project)
 	if err != nil {
 		return nil, FailOrderRecipes.Wrap(err)
