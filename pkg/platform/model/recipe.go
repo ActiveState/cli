@@ -72,7 +72,7 @@ func fetchRawRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *s
 	_, transport := inventory.Init()
 
 	var err error
-	retry := retryhttp.New(retryhttp.DefaultClient)
+	retry := retryhttp.New(retryhttp.NewClient(time.Second*60, -1))
 	defer retry.Close()
 
 	params := iop.NewResolveRecipesParamsWithContext(retry.Context)
