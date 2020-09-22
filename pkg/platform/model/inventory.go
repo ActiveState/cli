@@ -118,15 +118,12 @@ func SearchIngredientsStrict(language, name string) ([]*IngredientAndVersion, *f
 }
 
 func searchIngredients(limit int, language, name string) ([]*IngredientAndVersion, *failures.Failure) {
-	retry := retryhttp.New(retryhttp.NewClient(time.Second*60, -1))
-	defer retry.Close()
-
 	lim := int64(limit)
 
 	client := inventory.Get()
 
-	params := inventory_operations.NewGetNamespaceIngredientsParamsWithContext(retry.Context)
-	params.SetHTTPClient(retry.Client.StandardClient())
+	params := inventory_operations.NewGetNamespaceIngredientsParams()
+	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
 	params.SetQ(&name)
 	params.SetNamespace("language/" + language)
 	params.SetLimit(&lim)
@@ -144,13 +141,10 @@ func searchIngredients(limit int, language, name string) ([]*IngredientAndVersio
 
 func FetchPlatforms() ([]*Platform, *failures.Failure) {
 	if platformCache == nil {
-		retry := retryhttp.New(retryhttp.NewClient(time.Second*60, -1))
-		defer retry.Close()
-
 		client := inventory.Get()
 
-		params := inventory_operations.NewGetPlatformsParamsWithContext(retry.Context)
-		params.SetHTTPClient(retry.Client.StandardClient())
+		params := inventory_operations.NewGetPlatformsParams()
+		params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
 		limit := int64(99999)
 		params.SetLimit(&limit)
 
@@ -339,13 +333,10 @@ func FetchLanguageVersions(name string) ([]string, *failures.Failure) {
 }
 
 func FetchLanguages() ([]Language, *failures.Failure) {
-	retry := retryhttp.New(retryhttp.NewClient(time.Second*60, -1))
-	defer retry.Close()
-
 	client := inventory.Get()
 
-	params := inventory_operations.NewGetNamespaceIngredientsParamsWithContext(retry.Context)
-	params.SetHTTPClient(retry.Client.StandardClient())
+	params := inventory_operations.NewGetNamespaceIngredientsParams()
+	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
 	params.SetNamespace("language")
 	limit := int64(10000)
 	params.SetLimit(&limit)

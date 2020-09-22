@@ -72,11 +72,9 @@ func fetchRawRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *s
 	_, transport := inventory.Init()
 
 	var err error
-	retry := retryhttp.New(retryhttp.NewClient(time.Second*60, -1))
-	defer retry.Close()
-
-	params := iop.NewResolveRecipesParamsWithContext(retry.Context)
-	params.SetHTTPClient(retry.Client.StandardClient())
+	params := iop.NewResolveRecipesParams()
+	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
+	params.SetTimeout(time.Second * 60)
 	params.Order, err = commitToOrder(commitID, owner, project)
 	if err != nil {
 		return "", FailOrderRecipes.Wrap(err)
@@ -146,11 +144,9 @@ func commitToOrder(commitID strfmt.UUID, owner, project string) (*inventory_mode
 
 func fetchRecipeID(commitID strfmt.UUID, owner, project, orgID string, private bool, hostPlatform *string) (*strfmt.UUID, *failures.Failure) {
 	var err error
-	retry := retryhttp.New(retryhttp.NewClient(time.Second*60, -1))
-	defer retry.Close()
-
-	params := iop.NewSolveOrderParamsWithContext(retry.Context)
-	params.SetHTTPClient(retry.Client.StandardClient())
+	params := iop.NewSolveOrderParams()
+	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
+	params.SetTimeout(time.Second * 60)
 	params.Order, err = commitToOrder(commitID, owner, project)
 	if err != nil {
 		return nil, FailOrderRecipes.Wrap(err)
