@@ -541,7 +541,6 @@ func FetchOrderFromCommit(commitID strfmt.UUID) (*mono_models.Order, error) {
 
 	params := vcsClient.NewGetOrderParamsWithContext(retry.Context)
 	params.SetHTTPClient(retry.Client.StandardClient())
-	params.SetTimeout(retry.Client.HTTPClient.Timeout)
 	params.CommitID = commitID
 
 	var res *vcsClient.GetOrderOK
