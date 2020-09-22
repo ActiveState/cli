@@ -43,12 +43,6 @@ var (
 	DefaultClient  = NewClient(DefaultTimeout, DefaultRetries)
 )
 
-func init() {
-	if condition.InTest() {
-		DefaultClient.HTTPClient = http.DefaultClient
-	}
-}
-
 type Client struct {
 	*retryablehttp.Client
 }
@@ -125,7 +119,7 @@ func NewClient(timeout time.Duration, retries int) *Client {
 	retryClient := retryablehttp.NewClient()
 	retryClient.Logger = logging.CurrentHandler()
 	retryClient.HTTPClient = &http.Client{
-		Transport: cleanhttp.DefaultPooledTransport(),
+		Transport: transport(),
 		Timeout:   timeout,
 	}
 	retryClient.RetryMax = retries
@@ -134,4 +128,11 @@ func NewClient(timeout time.Duration, retries int) *Client {
 	return &Client{
 		Client: retryClient,
 	}
+}
+
+func transport() http.RoundTripper {
+	if condition.InTest() {
+		return http.DefaultClient.Transport
+	}
+	return cleanhttp.DefaultPooledTransport()
 }
