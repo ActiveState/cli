@@ -17,7 +17,7 @@ func TestClient_Get(t *testing.T) {
 	}{
 		{
 			"Produces timeout error",
-			NewClient(1*time.Microsecond, 0),
+			NewClient(1*time.Millisecond, 0),
 			"/200?sleep=30000",
 			-1,
 		},

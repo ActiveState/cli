@@ -37,9 +37,7 @@ func (h *Handle) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(code)
-
-	sleepParam := r.Header.Get("sleep")
+	sleepParam := r.URL.Query().Get("sleep")
 	if sleepParam != "" {
 		sleepLen, err := strconv.Atoi(sleepParam)
 		if err != nil {
@@ -50,4 +48,6 @@ func (h *Handle) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		time.Sleep(time.Millisecond * time.Duration(sleepLen))
 	}
+
+	w.WriteHeader(code)
 }
