@@ -953,7 +953,7 @@ err_pull_get_latest_commit_id:
 err_os_not_a_directory:
   other: Expected '{{.V0}}' to be a valid directory
 unstable_version_warning:
-  other: "[YELLOW]The State Tool is currently in beta, we are actively changing and adding features based on developer feedback.[/RESET]"
+  other: "[YELLOW]The State Tool is currently in beta. We are actively changing and adding features based on developer feedback.[/RESET]"
 export_cmd_description:
   other: Print information based on the provided subcommand
 export_recipe_cmd_description:
@@ -1379,13 +1379,13 @@ arg_state_clean_cache_project_description:
 flag_state_clean_config_force_description:
   other: Run clean config operation without prompts
 err_uninstall_activated:
-  other: Cannot uninstall the State Tool while in an activated state. Please deactivate and try again
+  other: Cannot uninstall the State Tool while in an activated state. Please deactivate and try again.
 err_clean_cache_activated:
   other: Cannot remove the cache directory while in an activated state. Please deactivate and try again.
 err_clean_config_activated:
   other: Cannot remove the config directory while in an activated state. Please deactivate and try again.
 uninstall_confirm:
-  other: You are about to remove the State Tool, installed laguage runtimes, and all configuration information. Continue?
+  other: You are about to remove the State Tool, installed language runtimes, and all configuration information. Continue?
 clean_cache_confirm:
   other: You are about to remove the State Tool cache directory. Continue?
 clean_cache_artifact_confirm:

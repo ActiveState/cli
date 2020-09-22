@@ -4,55 +4,64 @@ import (
 	"errors"
 	"testing"
 	"time"
+
+	"github.com/ActiveState/cli/internal/testhelpers/srvstatus"
 )
 
 func TestClient_Get(t *testing.T) {
 	tests := []struct {
 		name        string
 		client      *Client
-		url         string
+		path        string
 		wantErrCode int
 	}{
 		{
 			"Produces timeout error",
-			NewClient(1*time.Microsecond, 0),
-			"https://httpstat.us/200?sleep=30000",
+			NewClient(1*time.Millisecond, 0),
+			"/200?sleep=30000",
 			-1,
 		},
 		{
 			"Produces server timeout error",
 			DefaultClient,
-			"https://httpstat.us/408",
+			"/408",
 			408,
 		},
 		{
 			"Produces too early error",
 			DefaultClient,
-			"https://httpstat.us/425",
+			"/425",
 			425,
 		},
 		{
 			"Produces too many error",
 			NewClient(10*time.Second, 0), // 429 causes retries
-			"https://httpstat.us/429",
+			"/429",
 			429,
 		},
 	}
+
+	srv := srvstatus.New()
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := tt.client
-			_, err := c.Get(tt.url)
-			if (err != nil) != true {
+			c.HTTPClient.Transport = srv.Client().Transport
+
+			resp, err := c.Get(srv.URL + tt.path)
+			if err == nil {
 				t.Errorf("Error should not be nil")
+				if resp.StatusCode != tt.wantErrCode {
+					t.Errorf("server status code: got %d, want %d", resp.StatusCode, tt.wantErrCode)
+				}
 				return
 			}
 			werr := &UserNetworkError{}
 			if !errors.As(err, &werr) {
-				t.Errorf("Error cannot be unwrapped to UserNetworkError")
+				t.Fatalf("Error cannot be unwrapped to UserNetworkError")
 			}
 			if werr._testCode != tt.wantErrCode {
-				t.Errorf("Error codes not equal:\n1: %d\n2: %d", werr._testCode, tt.wantErrCode)
-				return
+				t.Errorf("Wrapped error codes not equal:\n1: %d\n2: %d", werr._testCode, tt.wantErrCode)
 			}
 		})
 	}
