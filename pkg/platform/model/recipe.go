@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"runtime"
+	"time"
 
 	"github.com/go-openapi/strfmt"
 
@@ -145,7 +146,7 @@ func commitToOrder(commitID strfmt.UUID, owner, project string) (*inventory_mode
 
 func fetchRecipeID(commitID strfmt.UUID, owner, project, orgID string, private bool, hostPlatform *string) (*strfmt.UUID, *failures.Failure) {
 	var err error
-	retry := retryhttp.New(retryhttp.DefaultClient)
+	retry := retryhttp.New(retryhttp.NewClient(time.Second*60, -1))
 	defer retry.Close()
 
 	params := iop.NewSolveOrderParamsWithContext(retry.Context)

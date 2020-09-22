@@ -118,7 +118,7 @@ func SearchIngredientsStrict(language, name string) ([]*IngredientAndVersion, *f
 }
 
 func searchIngredients(limit int, language, name string) ([]*IngredientAndVersion, *failures.Failure) {
-	retry := retryhttp.New(retryhttp.DefaultClient)
+	retry := retryhttp.New(retryhttp.NewClient(time.Second*60, -1))
 	defer retry.Close()
 
 	lim := int64(limit)
@@ -144,7 +144,7 @@ func searchIngredients(limit int, language, name string) ([]*IngredientAndVersio
 
 func FetchPlatforms() ([]*Platform, *failures.Failure) {
 	if platformCache == nil {
-		retry := retryhttp.New(retryhttp.DefaultClient)
+		retry := retryhttp.New(retryhttp.NewClient(time.Second*60, -1))
 		defer retry.Close()
 
 		client := inventory.Get()
@@ -339,7 +339,7 @@ func FetchLanguageVersions(name string) ([]string, *failures.Failure) {
 }
 
 func FetchLanguages() ([]Language, *failures.Failure) {
-	retry := retryhttp.New(retryhttp.DefaultClient)
+	retry := retryhttp.New(retryhttp.NewClient(time.Second*60, -1))
 	defer retry.Close()
 
 	client := inventory.Get()
