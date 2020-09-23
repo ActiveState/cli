@@ -207,7 +207,7 @@ func TestInitialize_Run(t *testing.T) {
 				t.Fatalf("Unexpected error: %v", err)
 			}
 
-			if confirmPath(path, tt.wantPath) {
+			if confirmPath(t, path, tt.wantPath) {
 				t.Errorf("Initialize.run() path = %s, wantPath %s", path, tt.wantPath)
 			}
 			configFile := fileutils.Join(tt.wantPath, constants.ConfigFileName)
@@ -236,9 +236,18 @@ func TestInitialize_Run(t *testing.T) {
 	}
 }
 
-func confirmPath(path, want string) bool {
+func confirmPath(t *testing.T, path, want string) bool {
 	if runtime.GOOS == "windows" {
-		return path != want
+		longPath, err := fileutils.GetLongPathName(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		longWant, err := fileutils.GetLongPathName(want)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return longPath != longWant
 	}
 	wantEval, _ := filepath.EvalSymlinks(want)
 	return path != wantEval
