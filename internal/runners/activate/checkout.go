@@ -56,6 +56,11 @@ func (r *Checkout) Run(namespace string, targetPath string) error {
 		}
 	}
 
+	language, fail := model.DefaultLanguageForProject(ns.Owner, ns.Project)
+	if fail != nil {
+		return fail
+	}
+
 	// Create the config file, if the repo clone didn't already create it
 	configFile := filepath.Join(targetPath, constants.ConfigFileName)
 	if !fileutils.FileExists(configFile) {
@@ -64,6 +69,7 @@ func (r *Checkout) Run(namespace string, targetPath string) error {
 			Project:   ns.Project,
 			CommitID:  commitID,
 			Directory: targetPath,
+			Language:  language,
 		})
 		if fail != nil {
 			return fail

@@ -1068,6 +1068,27 @@ language_name_unknown:
   other: Unknown
 language_unknown_options:
   other: Unknown options
+sample_yaml_perl:
+  other: |
+    scripts:
+    # This script uses a secret. Note that you can define your own secrets at
+    # https://platform.activestate.com/{{.Owner}}/{{.Project}}/scripts
+      - name: helloWorld
+        language: {{.Shell}}
+        value: echo ${secrets.user.world}
+      - name: activationMessage
+        language: perl
+        value: |
+          print "You are now in an 'activated state', this will give you a virtual environment to work in that doesn't affect the rest of your system.\n\n";
+          print "Your 'activated state' allows you to manage packages, scripts, secrets and more via the activestate.yaml file at the root of your project directory.\n\n";
+          print "To manage packages use the `state packages` command. For more information about package management, use `state packages --help`. For more information about the State Tool use `state help`.\n\n";
+          print "To access additional features of the ActiveState Platform and use a web-based interface for managing your project, you can visit https://platform.activestate.com/{{.Owner}}/{{.Project}}.\n\n";
+          print "Edit your activestate.yaml to remove this message.\n\n";
+    events:
+      # This is the ACTIVATE event, it will run whenever a new virtual environment is created (eg. by running `state activate`)
+      # On Linux and macOS this will be ran as part of your shell's rc file, so you can use it to set up aliases, functions, environment variables, etc.
+      - name: ACTIVATE
+        value: $scripts.activationMessage.path()
 sample_yaml:
   other: |
     scripts:
