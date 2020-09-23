@@ -20,7 +20,6 @@ func newPrepareCommand(prime *primer.Values) *captain.Command {
 	)
 
 	cmd.SetHidden(true)
-	cmd.SetDeferAnalytics(true) // ?
 
 	return cmd
 }
