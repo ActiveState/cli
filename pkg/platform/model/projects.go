@@ -86,7 +86,7 @@ func DefaultLanguageForProject(orgName, projectName string) (Language, *failures
 	return languages[0], nil
 }
 
-// DefaultLanguageNameForProject fetches the name of default language belonging to the given project
+// DefaultLanguageNameForProject fetches the name of the default language belonging to the given project
 func DefaultLanguageNameForProject(orgName, projectName string) (string, *failures.Failure) {
 	languages, fail := FetchLanguagesForProject(orgName, projectName)
 	if fail != nil {
