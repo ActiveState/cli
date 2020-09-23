@@ -29,7 +29,7 @@ namespace ActiveState
             this._cid = GetInfo.GetUniqueId();
         }
 
-        public async Task<TrackingResult> TrackEventAsync(Session session, string sessionID, string category, string action, string label, string productVersion, string uilevel, long value = 1)
+        private async Task<TrackingResult> TrackEventAsync(Session session, string category, string action, string label, GACustomDimensions gd, long value = 1)
         {
             session.Log("Sending GA Event");
             var eventTrackingParameters = new EventTracking
@@ -42,9 +42,10 @@ namespace ActiveState
 
             eventTrackingParameters.ClientId = this._cid;
             eventTrackingParameters.SetCustomDimensions(new System.Collections.Generic.Dictionary<int, string> {
-                { 1, productVersion },
-                { 2, sessionID },
-                { 3, uilevel },
+                { 1, gd.productVersion },
+                { 2, gd.sessionID },
+                { 3, gd.uiLevel },
+                { 4, gd.installMode },
             });
 
             return await this._tracker.TrackAsync(eventTrackingParameters);
@@ -81,15 +82,46 @@ namespace ActiveState
             session.Log("Successfully downloaded S3 pixel string");
         }
 
-        private string computeSessionID(string msiLogFileName)
+        internal class GACustomDimensions
         {
-            using (var md5 = System.Security.Cryptography.MD5.Create())
-            {
-                byte[] inputBytes = System.Text.Encoding.ASCII.GetBytes(this._cid + msiLogFileName);
-                byte[] hashBytes = md5.ComputeHash(inputBytes);
+            public string productVersion;
+            public string sessionID;
+            public string uiLevel;
+            public string installMode;
 
-                return new Guid(hashBytes).ToString();
+            public GACustomDimensions(Session session, string cid)
+            {
+                this.productVersion = getValueFromSession(session, "ProductVersion", "PRODUCT_VERSION");
+                var msiLogFileName = getValueFromSession(session, "MsiLogFileLocation", "MsiLogFileLocation");
+                this.sessionID = computeSessionID(cid, msiLogFileName);
+                this.uiLevel = getValueFromSession(session, "UILevel", "UI_LEVEL");
+                this.installMode = getValueFromSession(session, "INSTALL_MODE", "INSTALL_MODE");
             }
+
+            private string computeSessionID(string cid, string msiLogFileName)
+            {
+                using (var md5 = System.Security.Cryptography.MD5.Create())
+                {
+                    byte[] inputBytes = System.Text.Encoding.ASCII.GetBytes(cid + msiLogFileName);
+                    byte[] hashBytes = md5.ComputeHash(inputBytes);
+
+                    return new Guid(hashBytes).ToString();
+                }
+            }
+
+
+            private string getValueFromSession(Session session, string key1, string key2)
+            {
+                if (!session.GetMode(InstallRunMode.Scheduled))
+                {
+                    return session[key1];
+                }
+                if (session.CustomActionData.ContainsKey(key2)) {
+                    return session.CustomActionData[key2];
+                }
+                return "";
+            }
+
         }
 
         /// <summary>
@@ -99,36 +131,33 @@ namespace ActiveState
         /// The event can fail to be send if the main process gets cancelled before the task finishes.
         /// Use the synchronous version of this command in that case.
         /// </description>
-        public void TrackEventInBackground(Session session, string msiLogFileName, string category, string action, string label, string productVersion, string uilevel, long value = 1)
+        public void TrackEventInBackground(Session session, string msiLogFileName, string category, string action, string label, long value = 1)
         {
-            var pid = System.Diagnostics.Process.GetCurrentProcess().Id;
-
-            var sessionID = computeSessionID(msiLogFileName);
-            session.Log("Sending background event {0}/{1}/{2} for cid={3} (custom dimension 1: {4}, pid={5})", category, action, label, this._cid, productVersion, pid);
+            var cd = new GACustomDimensions(session, this._cid);
+            session.Log("Sending background event {0}/{1}/{2} for cid={3} (custom dimension 1: {4})", category, action, label, this._cid, cd.productVersion);
             Task.WhenAll(
-                TrackEventAsync(session, sessionID, category, action, label, productVersion, uilevel, value),
-                TrackS3Event(session, sessionID, category, action, label)
+                TrackEventAsync(session, category, action, label, cd, value),
+                TrackS3Event(session, cd.sessionID, category, action, label)
             );
         }
 
         /// <summary>
         /// Sends a GA event and waits for the request to complete.
         /// </summary>
-        public void TrackEventSynchronously(Session session, string msiLogFileName, string category, string action, string label, string productVersion, string uilevel, long value = 1)
+        public void TrackEventSynchronously(Session session, string category, string action, string label, long value = 1)
         {
-            if (productVersion == "0.0.0")
+            var cd = new GACustomDimensions(session, this._cid);
+
+            if (cd.productVersion == "0.0.0")
             {
                 session.Log("Not tracking events when version is 0.0.0");
                 return;
             }
 
-            var pid = System.Diagnostics.Process.GetCurrentProcess().Id;
-
-            session.Log("Sending event {0}/{1}/{2} for cid={3} (custom dimension 1: {4}, pid={5})", category, action, label, this._cid, productVersion, pid);
-            var sessionID = computeSessionID(msiLogFileName);
+            session.Log("Sending event {0}/{1}/{2} for cid={3} (custom dimension 1: {4})", category, action, label, this._cid, cd.productVersion);
             var t = Task.WhenAll(
-                TrackEventAsync(session, sessionID, category, action, label, productVersion, uilevel, value),
-                TrackS3Event(session, sessionID, category, action, label)
+                TrackEventAsync(session, category, action, label, cd, value),
+                TrackS3Event(session, cd.sessionID, category, action, label)
             );
             var completed = t.Wait(TimeSpan.FromSeconds(15));
             if (!completed)
