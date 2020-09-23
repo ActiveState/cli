@@ -346,7 +346,6 @@ manual_installation_instructions() {
   echo "You can update your \$PATH by running 'export PATH=\$PATH:$INSTALLDIR'."
   echo "To make the changes to your path permanent please add the line"
   echo "'export PATH=\$PATH:$INSTALLDIR' to your $RC_FILE file"
-  echo "Then run 'state _prepare' to prepare your system and ensure the state tool is installed correctly"
   activation_warning
   exit 0
 }
