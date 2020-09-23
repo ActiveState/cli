@@ -2,6 +2,8 @@ package activate
 
 import (
 	"path/filepath"
+	"strconv"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -10,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/blang/semver"
 )
 
 type CheckoutAble interface {
@@ -56,9 +59,9 @@ func (r *Checkout) Run(namespace string, targetPath string) error {
 		}
 	}
 
-	language, fail := model.DefaultLanguageForProject(ns.Owner, ns.Project)
-	if fail != nil {
-		return fail
+	language, err := getLanguage(ns.Owner, ns.Project)
+	if err != nil {
+		return err
 	}
 
 	// Create the config file, if the repo clone didn't already create it
@@ -77,4 +80,22 @@ func (r *Checkout) Run(namespace string, targetPath string) error {
 	}
 
 	return nil
+}
+
+func getLanguage(owner, project string) (string, error) {
+	modelLanguage, fail := model.DefaultLanguageForProject(owner, project)
+	if fail != nil {
+		return "", fail
+	}
+
+	language := modelLanguage.Name
+	if strings.ToLower(modelLanguage.Name) == "python" {
+		version, err := semver.Parse(modelLanguage.Version)
+		if err != nil {
+			return language, err
+		}
+		language = modelLanguage.Name + strconv.FormatUint(version.Major, 10)
+	}
+
+	return language, nil
 }

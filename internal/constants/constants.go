@@ -223,6 +223,3 @@ const RCAppendStopLine = "-- STOP ACTIVESTATE RUNTIME ENVIRONMENT"
 
 // ForumsURL is the URL to the state tool forums
 const ForumsURL = "https://community.activestate.com/c/state-tool/"
-
-// PerlLanguageName is the name of the Perl programming language
-const PerlLanguageName = "perl"
