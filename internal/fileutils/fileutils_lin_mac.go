@@ -22,9 +22,3 @@ func IsExecutable(path string) bool {
 func IsWritable(path string) bool {
 	return unix.Access(path, unix.W_OK) == nil
 }
-
-// GetLongPath name returns the Windows long path (ie. ~1 notation is expanded)
-// This function does not alter the path in any way on Linux or MacOS
-func GetLongPathName(path string) (string error) {
-	return path, nil
-}

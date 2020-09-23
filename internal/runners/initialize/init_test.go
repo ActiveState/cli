@@ -238,12 +238,12 @@ func TestInitialize_Run(t *testing.T) {
 
 func confirmPath(t *testing.T, path, want string) bool {
 	if runtime.GOOS == "windows" {
-		longPath, err := fileutils.GetLongPathName(path)
+		longPath, err := osutil.GetLongPathName(path)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		longWant, err := fileutils.GetLongPathName(want)
+		longWant, err := osutil.GetLongPathName(want)
 		if err != nil {
 			t.Fatal(err)
 		}
