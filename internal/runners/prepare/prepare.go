@@ -21,7 +21,5 @@ func New(out output.Outputer) *Prepare {
 func (r *Prepare) Run() error {
 	logging.Debug("ExecutePrepare")
 
-	r.out.Notice("Prepared")
-
 	return nil
 }
