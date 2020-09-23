@@ -135,7 +135,9 @@
 			<Publish Dialog="LicenseAgreementDlg" Control="Next" Property="LAST_DIALOG" Value="Post_LicenseAgreementDlg">1</Publish>
 			<Publish Dialog="InstallDirDlg" Control="Next" Property="LAST_DIALOG" Value="Post_InstallDirDlg">1</Publish>
 			<Publish Dialog="VerifyReadyDlg" Control="Install" Property="LAST_DIALOG" Value="Post_VerifyReadyDlg">1</Publish>
+			<Publish Dialog="VerifyReadyDlg" Control="InstallNoShield" Property="LAST_DIALOG" Value="Post_VerifyReadyDlg">1</Publish>
 
+			
 			<Publish Dialog="BrowseDlg" Control="OK" Event="DoAction" Value="WixUIValidatePath" Order="3">1</Publish>
 			<Publish Dialog="BrowseDlg" Control="OK" Event="DoAction" Value="ValidateInstallFolder" Order="4">1</Publish>
 			<Publish Dialog="BrowseDlg" Control="OK" Event="SpawnDialog" Value="InvalidDirDlg" Order="5"><![CDATA[NOT WIXUI_DONTVALIDATEPATH AND WIXUI_INSTALLDIR_VALID<>"1"]]></Publish>
