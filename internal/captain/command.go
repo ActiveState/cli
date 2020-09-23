@@ -172,6 +172,10 @@ func (c *Command) SetDeferAnalytics(value bool) {
 	c.deferAnalytics = value
 }
 
+func (c *Command) SetHidden(value bool) {
+	c.cobra.Hidden = value
+}
+
 func (c *Command) SetDescription(description string) {
 	c.cobra.Short = description
 }
