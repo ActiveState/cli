@@ -1258,7 +1258,7 @@ err_incompatible_move_file_dir:
     Could not move {{.V0}} to {{.V1}}.  One is a file, the other a directory.
     This indicates that the requested build may be corrupted.
 err_init_file_exists:
-  other: The target directory '{{.V0}}' already contains an activestate.yaml.
+  other: The target directory '{{.V0}}' already contains an activestate.yaml. Please change the current working directory or use the --path flag.
 init_success:
   other: |
     Project '{{.V0}}/{{.V1}}' has been successfully initialized at '{{.V2}}'.
