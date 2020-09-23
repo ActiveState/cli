@@ -23,8 +23,8 @@
 		<!-- End Configuration parameters -->
 
 		<!-- Disable Modification -->
-		<Property Id="ARPNOREPAIR" Value="yes" Secure="yes" />
-		<Property Id="ARPNOMODIFY" Value="yes" Secure="yes" />
+		<Property Id="ARPNOREPAIR" Value="1" Secure="yes" />
+		<Property Id="ARPNOMODIFY" Value="1" Secure="yes" />
 		<!-- End Disable Modification -->
 
 		<Property Id="LAST_DIALOG" Value="unset" Secure="yes" Admin="yes" />
@@ -124,17 +124,23 @@
 			<Publish Dialog="ProgressDlg" Control="Cancel" Property="LAST_DIALOG" Value="ProgressDlg">1</Publish>
 			<Publish Dialog="WelcomeDlg" Control="Cancel" Property="LAST_DIALOG" Value="WelcomeDlg">1</Publish>
 			<Publish Dialog="MaintenanceWelcomeDlg" Control="Cancel" Property="LAST_DIALOG" Value="MaintenanceWelcomeDlg">1</Publish>
+			<Publish Dialog="MaintenanceTypeDlg" Control="Cancel" Property="LAST_DIALOG" Value="RemoveDlg">1</Publish>
 			<Publish Dialog="LicenseAgreementDlg" Control="Cancel" Property="LAST_DIALOG" Value="LicenseAgreementDlg">1</Publish>
 			<Publish Dialog="InstallDirDlg" Control="Cancel" Property="LAST_DIALOG" Value="InstallDirDlg">1</Publish>
-			<Publish Dialog="VerifyReadyDlg" Control="Cancel" Property="LAST_DIALOG" Value="VerifyReadyDlg">1</Publish>
+			<Publish Dialog="VerifyReadyDlg" Control="Cancel" Property="LAST_DIALOG" Value="VerifyReadyDlg">NOT Installed</Publish>
+			<Publish Dialog="VerifyReadyDlg" Control="Cancel" Property="LAST_DIALOG" Value="VerifyRemoveReadyDlg">WixUI_InstallMode = "Remove"</Publish>
 
 			<Publish Dialog="PrivacyConsentDlg" Control="Next" Property="LAST_DIALOG" Value="Post_PrivacyConsentDlg">1</Publish>
 			<Publish Dialog="ProgressDlg" Control="Next" Property="LAST_DIALOG" Value="Post_ProgressDlg">1</Publish>
 			<Publish Dialog="WelcomeDlg" Control="Next" Property="LAST_DIALOG" Value="Post_WelcomeDlg">1</Publish>
 			<Publish Dialog="MaintenanceWelcomeDlg" Control="Next" Property="LAST_DIALOG" Value="Post_MaintenanceWelcomeDlg">1</Publish>
+			<Publish Dialog="MaintenanceTypeDlg" Control="RemoveButton" Property="LAST_DIALOG" Value="Post_RemoveDlg">1</Publish>
 			<Publish Dialog="LicenseAgreementDlg" Control="Next" Property="LAST_DIALOG" Value="Post_LicenseAgreementDlg">1</Publish>
 			<Publish Dialog="InstallDirDlg" Control="Next" Property="LAST_DIALOG" Value="Post_InstallDirDlg">1</Publish>
-			<Publish Dialog="VerifyReadyDlg" Control="Install" Property="LAST_DIALOG" Value="Post_VerifyReadyDlg">1</Publish>
+			<Publish Dialog="VerifyReadyDlg" Control="Install" Property="LAST_DIALOG" Value="Post_VerifyReadyDlg">NOT Installed</Publish>
+			<Publish Dialog="VerifyReadyDlg" Control="InstallNoShield" Property="LAST_DIALOG" Value="Post_VerifyReadyDlg">NOT Installed</Publish>
+			<Publish Dialog="VerifyReadyDlg" Control="Remove" Property="LAST_DIALOG" Value="Post_VerifyRemoveReadyDlg">WixUI_InstallMode = "Remove"</Publish>
+			<Publish Dialog="VerifyReadyDlg" Control="RemoveNoShield" Property="LAST_DIALOG" Value="Post_VerifyRemoveReadyDlg">WixUI_InstallMode = "Remove"</Publish>
 
 			<Publish Dialog="BrowseDlg" Control="OK" Event="DoAction" Value="WixUIValidatePath" Order="3">1</Publish>
 			<Publish Dialog="BrowseDlg" Control="OK" Event="DoAction" Value="ValidateInstallFolder" Order="4">1</Publish>
