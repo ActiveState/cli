@@ -169,7 +169,6 @@ function warningIfadmin() {
 }
 
 function runPreparationStep($installDirectory) {
-    Write-Host "Running prepare step.`n" -ForegroundColor Yellow
     &$installDirectory\$script:STATEEXE _prepare | Write-Host
     return $LASTEXITCODE
 }
