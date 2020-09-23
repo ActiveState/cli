@@ -213,6 +213,10 @@
 		<InstallUISequence>
 			<Custom Action="CommandsExist" After="CostFinalize">NOT REMOVE~="ALL"</Custom>
 			<Custom Action="GAReportStart" After="CostFinalize">NOT REMOVE~="ALL"</Custom>
+			<Custom Action="SetInstallMode" After="CostFinalize">Not Installed</Custom>
+			<Custom Action="SetModifyMode" After="CostFinalize">Installed</Custom>
+			<Custom Action="SetRepairMode" After="SetModifyMode">REINSTALL~="ALL" OR REINSTALL~="COMPLETE"</Custom>
+			<Custom Action="SetUninstallMode" After="SetModifyMode">REMOVE~="ALL"</Custom>
 			<Custom Action="SetIsModify" After="CommandsExist">(Installed AND NOT (REMOVE~="ALL"))</Custom>
 			<Custom Action="SetInstallDirOnModify" After="SetIsModify">(Installed AND NOT (REMOVE~="ALL"))</Custom>
 			<Custom Action="CustomOnError" OnExit="error">NOT REMOVE~="ALL"</Custom>
