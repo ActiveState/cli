@@ -44,10 +44,10 @@ func (r *Prepare) Run() error {
 	}
 
 	if runtime.GOOS == "windows" {
-		r.out.Print(locale.T("update_path_windows", binDir))
-		r.out.Print(locale.T("update_path_windows_permanent", binDir))
+		r.out.Print(locale.Tr("update_path_windows", binDir))
+		r.out.Print(locale.Tr("update_path_windows_permanent", binDir))
 	}
-	r.out.Print(locale.T("update_path", binDir))
+	r.out.Print(locale.Tr("update_path", binDir))
 
 	return nil
 }
