@@ -358,6 +358,11 @@ manual_update_instructions() {
   exit 0
 }
 
+prepare_update_instructions() {
+  echo "Please add the line `export PATH=$PATH:$1` to your $RCFILE."
+  echo "Please either run `source $RC_FILE` or start a new login shell."
+}
+
 # Prints a warning if an activation was requested and State Tool is not in the PATH
 activation_warning() {
   if [ -n "$ACTIVATE" ]; then
@@ -392,7 +397,17 @@ echo "install.sh" > $CONFIGDIR/"installsource.txt"
 if [ "`dirname \`which $STATEEXE\` 2>/dev/null`" = "$INSTALLDIR" ]; then
   info "State Tool installation complete."
 
-  $STATEEXE _prepare || exit $?
+  $PREPAREDIR=$($STATEEXE _prepare || exit $?)
+
+  if [ -w "$RC_FILE" ]; then
+    pathenv="export PATH=\"\$PATH:$PREPAREDIR\" # ActiveState Binary Directory"
+    echo "" >> "$RC_FILE"
+    echo "$pathenv" >> "$RC_FILE"
+  else
+    prepare_update_instructions
+  fi
+
+
 
   if [ -n "${ACTIVATE}" ]; then
     # switch this shell to interactive mode

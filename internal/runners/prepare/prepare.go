@@ -38,16 +38,12 @@ func (r *Prepare) Run() error {
 		return fail.ToError()
 	}
 
-	err = updateEnvironment(binDir)
-	if err != nil {
-		locale.WrapError(err, "err_prepare_upadte_path", "Could not update environment to include installation details")
-	}
-
 	if runtime.GOOS == "windows" {
 		r.out.Print(locale.Tr("update_path_windows", binDir))
 		r.out.Print(locale.Tr("update_path_windows_permanent", binDir))
 	}
 	r.out.Print(locale.Tr("update_path", binDir))
+	r.out.Print(locale.Tr("update_path_permanent", binDir))
 
 	return nil
 }

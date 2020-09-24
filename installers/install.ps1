@@ -139,6 +139,29 @@ function hasWritePermission([string] $path)
     return $True
 }
 
+function updatePath($dir) {
+    # Update PATH for State Tool installation directory
+    $envTarget = [EnvironmentVariableTarget]::User
+    $envTargetName = "user"
+    if (isAdmin) {
+        $envTarget = [EnvironmentVariableTarget]::Machine
+	    $envTargetName = "system"
+    }
+
+    Write-Host "Updating environment...`n"
+    Write-Host "Adding $dir to $envTargetName PATH`n"
+    # This only sets it in the registry and it will NOT be accessible in the current session
+    [Environment]::SetEnvironmentVariable(
+        'Path',
+        $dir + ";" + [Environment]::GetEnvironmentVariable(
+            'Path', [EnvironmentVariableTarget]::Machine),
+        $envTarget)
+
+    notifySettingChange
+
+    $env:Path = $dir + ";" + $env:Path
+}
+
 # isStateToolInstallationOnPath returns true if the State Tool's installation directory is in the current PATH
 function isStateToolInstallationOnPath($installDirectory) {
     $existing = getExistingOnPath
@@ -169,7 +192,8 @@ function warningIfadmin() {
 }
 
 function runPreparationStep($installDirectory) {
-    &$installDirectory\$script:STATEEXE _prepare | Write-Host
+    $binDir = (&$installDirectory\$script:STATEEXE _prepare | Write-Host) | Out-String
+    updatePath $binDir
     return $LASTEXITCODE
 }
 
@@ -394,26 +418,7 @@ function install()
         return
     }
 
-    # Update PATH for State Tool installation directory
-    $envTarget = [EnvironmentVariableTarget]::User
-    $envTargetName = "user"
-    if (isAdmin) {
-        $envTarget = [EnvironmentVariableTarget]::Machine
-	    $envTargetName = "system"
-    }
-
-    Write-Host "Updating environment...`n"
-    Write-Host "Adding $installDir to $envTargetName PATH`n"
-    # This only sets it in the registry and it will NOT be accessible in the current session
-    [Environment]::SetEnvironmentVariable(
-        'Path',
-        $installDir + ";" + [Environment]::GetEnvironmentVariable(
-            'Path', [EnvironmentVariableTarget]::Machine),
-        $envTarget)
-
-    notifySettingChange
-
-    $env:Path = $installDir + ";" + $env:Path
+    updatePath($installDir)
 
     warningIfAdmin
     Write-Host "State Tool successfully installed to: $installDir." -ForegroundColor Yellow
