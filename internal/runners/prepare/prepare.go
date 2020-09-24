@@ -1,6 +1,12 @@
 package prepare
 
 import (
+	"os"
+	"path/filepath"
+	"runtime"
+
+	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 )
@@ -20,6 +26,28 @@ func New(out output.Outputer) *Prepare {
 // Run executes the prepare behavior.
 func (r *Prepare) Run() error {
 	logging.Debug("ExecutePrepare")
+
+	wd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+
+	binDir := filepath.Join(wd, "bin")
+	fail := fileutils.Mkdir(binDir)
+	if fail != nil {
+		return fail.ToError()
+	}
+
+	err = updateEnvironment(binDir)
+	if err != nil {
+		locale.WrapError(err, "err_prepare_upadte_path", "Could not update environment to include installation details")
+	}
+
+	if runtime.GOOS == "windows" {
+		r.out.Print(locale.T("update_path_windows", binDir))
+		r.out.Print(locale.T("update_path_windows_permanent", binDir))
+	}
+	r.out.Print(locale.T("update_path", binDir))
 
 	return nil
 }

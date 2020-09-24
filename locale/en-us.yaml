@@ -1658,3 +1658,9 @@ ppm_convert_ask_feedback:
 windows_compatibility_warning:
   other: |
     Warning: State Tool is untested on Windows versions below 10. If you encounter issues please consider reporting them on {{.V0}}
+update_path_windows:
+  other: "To add the installation directory to your path run `set PATH=%PATH%;{{.V0}}"
+update_path_windows_permanent:
+  other: "To make this PATH update permanent please add {{.V0}} to the user environment variables in the System Properties dialog"
+update_path:
+  other: "To add the installation directory to your path run `export PATH=%PATH:{{.V0}}"
