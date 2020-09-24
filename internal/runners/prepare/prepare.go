@@ -3,10 +3,8 @@ package prepare
 import (
 	"os"
 	"path/filepath"
-	"runtime"
 
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 )
@@ -38,12 +36,7 @@ func (r *Prepare) Run() error {
 		return fail.ToError()
 	}
 
-	if runtime.GOOS == "windows" {
-		r.out.Print(locale.Tr("update_path_windows", binDir))
-		r.out.Print(locale.Tr("update_path_windows_permanent", binDir))
-	}
-	r.out.Print(locale.Tr("update_path", binDir))
-	r.out.Print(locale.Tr("update_path_permanent", binDir))
+	r.out.Print(binDir)
 
 	return nil
 }

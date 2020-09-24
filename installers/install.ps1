@@ -139,27 +139,33 @@ function hasWritePermission([string] $path)
     return $True
 }
 
-function updatePath($dir) {
-    # Update PATH for State Tool installation directory
+function updateEnv([string] $key, [string] $value, [bool] $tryAdmin, [bool] $append) {
     $envTarget = [EnvironmentVariableTarget]::User
     $envTargetName = "user"
-    if (isAdmin) {
+    $admin = isAdmin
+    if ($tryAdmin -And $admin) {
         $envTarget = [EnvironmentVariableTarget]::Machine
-	    $envTargetName = "system"
+        $envTargetName = "system"
     }
 
     Write-Host "Updating environment...`n"
-    Write-Host "Adding $dir to $envTargetName PATH`n"
+    Write-Host "Adding $value to $envTargetName $key`n"
+
+    $envValue = $value + ";" + [Environment]::GetEnvironmentVariable($key, [EnvironmentVariableTarget]::Machine)
+    if ($append) {
+        $envValue = [Environment]::GetEnvironmentVariable($key, [EnvironmentVariableTarget]::Machine) + ";" + $value
+    }
+
     # This only sets it in the registry and it will NOT be accessible in the current session
     [Environment]::SetEnvironmentVariable(
-        'Path',
-        $dir + ";" + [Environment]::GetEnvironmentVariable(
-            'Path', [EnvironmentVariableTarget]::Machine),
-        $envTarget)
+        $key,
+        $envValue,
+        $envTarget
+    )
 
     notifySettingChange
 
-    $env:Path = $dir + ";" + $env:Path
+    $env:Path = $value + ";" + $env:Path
 }
 
 # isStateToolInstallationOnPath returns true if the State Tool's installation directory is in the current PATH
@@ -192,8 +198,13 @@ function warningIfadmin() {
 }
 
 function runPreparationStep($installDirectory) {
-    $binDir = (&$installDirectory\$script:STATEEXE _prepare | Write-Host) | Out-String
-    updatePath $binDir
+    $StatePath = Join-Path -Path $installDirectory -ChildPath $script:STATEEXE
+    $Command = "$StatePath _prepare"
+    $binDir = & Invoke-Expression $Command | Out-String
+    updateEnv "PATH" $binDir $false $false
+    updateEnv "PATHEXT" ".LNK" $true $true
+
+    Write-Host "If you are using multiple shells please add $binDir to your user PATH via the System Properties dialog"
     return $LASTEXITCODE
 }
 
@@ -418,7 +429,8 @@ function install()
         return
     }
 
-    updatePath($installDir)
+    # Update PATH for State Tool installation directory
+    updateEnv "PATH" $installDir $true $false
 
     warningIfAdmin
     Write-Host "State Tool successfully installed to: $installDir." -ForegroundColor Yellow
