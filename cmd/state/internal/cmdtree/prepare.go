@@ -7,7 +7,7 @@ import (
 )
 
 func newPrepareCommand(prime *primer.Values) *captain.Command {
-	runner := prepare.New(prime.Output())
+	runner := prepare.New(prime)
 
 	cmd := captain.NewCommand(
 		"_prepare",
