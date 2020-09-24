@@ -75,7 +75,11 @@ func run(out output.Outputer, subs subshell.SubShell, name string, args []string
 		return fail
 	}
 
-	var venvPath string
+	// venvExePath stores a virtual environment's PATH value. If the script
+	// requires activation this is the PATH we should be searching for
+	// executables in.
+	var venvExePath string
+
 	// Activate the state if needed.
 	if !script.Standalone() && !subshell.IsActivated() {
 		out.Notice(locale.T("info_state_run_activating_state"))
@@ -99,7 +103,7 @@ func run(out output.Outputer, subs subshell.SubShell, name string, args []string
 		if err != nil {
 			return err
 		}
-		venvPath = env["PATH"]
+		venvExePath = env["PATH"]
 	}
 
 	lang := language.Unknown
@@ -116,20 +120,20 @@ func run(out output.Outputer, subs subshell.SubShell, name string, args []string
 
 	var attempted []string
 	for _, l := range script.Languages() {
-		var path, exec string
+		var path, execPath string
 		if l.Executable().Available() {
-			exec = l.Executable().Name()
-			path = venvPath
+			execPath = l.Executable().Name()
+			path = venvExePath
 		} else {
-			exec = l.String()
+			execPath = l.String()
 			path = os.Getenv("PATH")
 		}
 
 		if l.Executable().Builtin() && runtime.GOOS == "windows" {
-			exec = exec + ".exe"
+			execPath = execPath + ".exe"
 		}
 
-		if pathProvidesExec(path, exec) {
+		if pathProvidesExec(path, execPath) {
 			lang = l
 			break
 		}
