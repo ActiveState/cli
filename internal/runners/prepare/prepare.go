@@ -1,9 +1,9 @@
 package prepare
 
 import (
-	"os"
 	"path/filepath"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -25,12 +25,7 @@ func New(out output.Outputer) *Prepare {
 func (r *Prepare) Run() error {
 	logging.Debug("ExecutePrepare")
 
-	wd, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-
-	binDir := filepath.Join(wd, "bin")
+	binDir := filepath.Join(config.CachePath(), "prepareBin")
 	fail := fileutils.Mkdir(binDir)
 	if fail != nil {
 		return fail.ToError()
