@@ -147,6 +147,14 @@ with:
   path: build/
 #@ end
 ---
+#@ def steps_uploadlogs():
+name: "Upload logs"
+uses: actions/upload-artifact@v2
+with:
+  name: logs
+  path: logs/
+#@ end
+---
 #@ def steps_downloadsharedartifacts():
 name: "Download Shared Artifacts"
 uses: actions/download-artifact@v2
