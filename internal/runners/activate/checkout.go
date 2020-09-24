@@ -2,8 +2,6 @@ package activate
 
 import (
 	"path/filepath"
-	"strconv"
-	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -13,7 +11,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/blang/semver"
 )
 
 type CheckoutAble interface {
@@ -86,17 +83,12 @@ func (r *Checkout) Run(namespace string, targetPath string) error {
 func getLanguage(owner, project string) (string, error) {
 	modelLanguage, fail := model.DefaultLanguageForProject(owner, project)
 	if fail != nil {
-		return "", fail
+		return "", fail.ToError()
 	}
 
-	lang := modelLanguage.Name
-	if strings.ToLower(modelLanguage.Name) == language.Python2.Requirement() {
-		version, err := semver.Parse(modelLanguage.Version)
-		if err != nil {
-			return lang, err
-		}
-		lang = modelLanguage.Name + strconv.FormatUint(version.Major, 10)
+	lang, err := language.MakeByNameAndVersion(modelLanguage.Name, modelLanguage.Version)
+	if err != nil {
+		return "", err
 	}
-
-	return lang, nil
+	return lang.String(), nil
 }
