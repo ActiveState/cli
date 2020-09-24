@@ -112,14 +112,19 @@ namespace ActiveState
 
             private string getValueFromSession(Session session, string key1, string key2)
             {
-                if (!session.GetMode(InstallRunMode.Scheduled))
-                {
-                    return session[key1];
+                try {
+                    if (!session.GetMode(InstallRunMode.Scheduled))
+                    {
+                        return session[key1];
+                    }
+                    if (session.CustomActionData.ContainsKey(key2)) {
+                        return session.CustomActionData[key2];
+                    }
+                    return "";
+                } catch (Exception err) {
+                    session.Log("Error getting value for key {0} from session object: {1}", key1, err);
+                    return "error";
                 }
-                if (session.CustomActionData.ContainsKey(key2)) {
-                    return session.CustomActionData[key2];
-                }
-                return "";
             }
 
         }

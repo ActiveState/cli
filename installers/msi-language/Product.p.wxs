@@ -137,7 +137,7 @@
 			<Publish Dialog="VerifyReadyDlg" Control="Install" Property="LAST_DIALOG" Value="Post_VerifyReadyDlg">1</Publish>
 			<Publish Dialog="VerifyReadyDlg" Control="InstallNoShield" Property="LAST_DIALOG" Value="Post_VerifyReadyDlg">1</Publish>
 
-			
+
 			<Publish Dialog="BrowseDlg" Control="OK" Event="DoAction" Value="WixUIValidatePath" Order="3">1</Publish>
 			<Publish Dialog="BrowseDlg" Control="OK" Event="DoAction" Value="ValidateInstallFolder" Order="4">1</Publish>
 			<Publish Dialog="BrowseDlg" Control="OK" Event="SpawnDialog" Value="InvalidDirDlg" Order="5"><![CDATA[NOT WIXUI_DONTVALIDATEPATH AND WIXUI_INSTALLDIR_VALID<>"1"]]></Publish>
@@ -239,7 +239,7 @@
 			Property="StateDeploy"
 			Value="INSTALLDIR=[INSTALLDIR];PROJECT_OWNER_AND_NAME=[PROJECT_OWNER_AND_NAME];IS_MODIFY=[IS_MODIFY];STATE_TOOL_INSTALLED=[STATE_TOOL_INSTALLED];STATE_TOOL_PATH=[STATE_TOOL_PATH];AS_USERNAME=[AS_USERNAME];AS_PASSWORD=[AS_PASSWORD];AS_TOTP=[AS_TOTP];UI_LEVEL=[UILevel];MSI_VERSION=[MSI_VERSION];PRODUCT_VERSION=[ProductVersion];MsiLogFileLocation=[MsiLogFileLocation];PRIVACY_ACCEPTED=[PRIVACY_ACCEPTED];ERROR=[ERROR];ERROR_MESSAGE=[ERROR_MESSAGE];PRODUCT_NAME=[ProductName];USERSID=[UserSID];COMMIT_ID=[CommitID];INSTALL_MODE=[INSTALL_MODE]"
 		/>
-		<CustomAction Id="SetUninstallProperties" Property="Uninstall" Value="PRESET=[PRESET];REMEMBER=[REMEMBER];REMEMBER_SHORTCUTDIR=[REMEMBER_SHORTCUTDIR];MSI_VERSION=[MSI_VERSION];MsiLogFileLocation=[MsiLogFileLocation];PRIVACY_ACCEPTED=[PRIVACY_ACCEPTED]" />
+		<CustomAction Id="SetUninstallProperties" Property="Uninstall" Value="PRESET=[PRESET];REMEMBER=[REMEMBER];REMEMBER_SHORTCUTDIR=[REMEMBER_SHORTCUTDIR];MSI_VERSION=[MSI_VERSION];MsiLogFileLocation=[MsiLogFileLocation];PRIVACY_ACCEPTED=[PRIVACY_ACCEPTED];INSTALL_MODE=[INSTALL_MODE]" />
 		<CustomAction Id="SetPresetInfo" Property="Preset" Value="REL_NOTES=[REL_NOTES];INSTALLDIR=[INSTALLDIR];APP_START_MENU_PATH=[ApplicationProgramsFolder];PRESET=[PRESET];MSI_VERSION=[MSI_VERSION];MsiLogFileLocation=[MsiLogFileLocation];PRIVACY_ACCEPTED=[PRIVACY_ACCEPTED];INSTALL_MODE=[INSTALL_MODE]" />
 		<CustomAction Id="SetRollbackPropertyValues" Property="Rollback" Value="STATE_TOOL_INSTALLED=[STATE_TOOL_INSTALLED];INSTALLDIR=[INSTALLDIR];MSI_VERSION=[MSI_VERSION];MsiLogFileLocation=[MsiLogFileLocation];PRIVACY_ACCEPTED=[PRIVACY_ACCEPTED];INSTALL_MODE=[INSTALL_MODE]" />
 
