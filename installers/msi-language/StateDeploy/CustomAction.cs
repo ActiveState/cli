@@ -267,6 +267,25 @@ namespace StateDeploy
                 return ActionResult.Failure;
             }
 
+            session.Log("Running prepare step...");
+            string prepareCmd = " _prepare";
+            string prepareOutput;
+            ActionResult prepareRunResult = ActiveState.Command.Run(session, stateToolPath, prepareCmd, out prepareOutput);
+            if (prepareRunResult.Equals(ActionResult.Failure))
+            {
+                //RollbarReport.Error(msg, session); ??
+                Record record = new Record();
+                var errorOutput = Command.FormatErrorOutput(prepareOutput);
+                record.FormatString = string.Format("state _prepare failed with error:\n{0}", errorOutput);
+
+                session.Message(InstallMessage.Error | (InstallMessage)MessageBoxButtons.OK, record);
+                return prepareRunResult;
+            }
+            else
+            {
+                session.Log(string.Format("Prepare Output: {0}", prepareOutput));
+            }
+
             Status.ProgressBar.Increment(session, 50);
             return ActionResult.Success;
         }
