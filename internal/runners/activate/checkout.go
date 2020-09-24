@@ -7,6 +7,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/cmdlets/git"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -88,14 +89,14 @@ func getLanguage(owner, project string) (string, error) {
 		return "", fail
 	}
 
-	language := modelLanguage.Name
-	if strings.ToLower(modelLanguage.Name) == "python" {
+	lang := modelLanguage.Name
+	if strings.ToLower(modelLanguage.Name) == language.Python2.Requirement() {
 		version, err := semver.Parse(modelLanguage.Version)
 		if err != nil {
-			return language, err
+			return lang, err
 		}
-		language = modelLanguage.Name + strconv.FormatUint(version.Major, 10)
+		lang = modelLanguage.Name + strconv.FormatUint(version.Major, 10)
 	}
 
-	return language, nil
+	return lang, nil
 }
