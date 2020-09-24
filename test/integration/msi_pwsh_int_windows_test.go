@@ -34,7 +34,7 @@ func (a msiExecAction) cmd(msiPath, installPath string) string {
 
 func (a msiExecAction) logFileName(msiPath string) string {
 	msiName := filepath.Base(strings.TrimSuffix(msiPath, filepath.Ext(msiPath)))
-	return filepath.Join(environment.GetRootPathUnsafe(), fmt.Sprintf(`%s_%s.log`, msiName, string(a)))
+	return filepath.Join(environment.GetRootPathUnsafe(), logDir, fmt.Sprintf(`%s_%s.log`, msiName, string(a)))
 }
 
 type pwshSession struct {
