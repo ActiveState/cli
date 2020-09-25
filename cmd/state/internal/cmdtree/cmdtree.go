@@ -106,6 +106,7 @@ func New(prime *primer.Values) *CmdTree {
 		newPpmCommand(prime),
 		newInviteCommand(prime),
 		tutorialCmd,
+		newPrepareCommand(prime),
 	)
 
 	applyLegacyChildren(stateCmd, globals)
