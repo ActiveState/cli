@@ -47,7 +47,7 @@ func (v *SubShell) SetBinary(binary string) {
 }
 
 // WriteUserEnv - see subshell.SubShell
-func (v *SubShell) WriteUserEnv(env map[string]string, userScope bool) *failures.Failure {
+func (v *SubShell) WriteUserEnv(env map[string]string, envType sscommon.EnvType, userScope bool) *failures.Failure {
 	cmdEnv := NewCmdEnv(userScope)
 
 	// Clean up old entries

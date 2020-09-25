@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/internal/subshell/sscommon"
 )
 
 type primeable interface {
@@ -48,9 +49,10 @@ func (r *Prepare) Run() error {
 		"PATH": fmt.Sprintf("%s%s%s", binDir, string(os.PathListSeparator), os.Getenv("PATH")),
 	}
 
-	fail = r.subshell.WriteUserEnv(envUpdates, true)
+	fail = r.subshell.WriteUserEnv(envUpdates, sscommon.Default, true)
 	if fail != nil {
-		return locale.WrapError(fail.ToError(), "err_prepare_update_env", "Could not update user environment")
+		logging.Debug("Encountered failure attempting to update user environment: %s", fail.ToError())
+		r.out.Notice("Could not update user environment")
 	}
 
 	if runtime.GOOS == "windows" {
