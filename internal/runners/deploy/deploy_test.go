@@ -9,6 +9,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/runners/activate"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
@@ -269,7 +270,7 @@ func Test_uniqueExes(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := uniqueExes(tt.bins, tt.pathext)
+			got, err := activate.UniqueExes(tt.bins, tt.pathext)
 			if err != nil {
 				t.Errorf("uniqueExes error: %v", err)
 				t.FailNow()

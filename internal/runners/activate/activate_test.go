@@ -35,7 +35,7 @@ func (n *namespaceSelectMock) Run(namespace string, preferredPath string) (strin
 	return n.resultPath, n.resultErr
 }
 
-var activatorMock = func(out output.Outputer, subs subshell.SubShell, targetPath string, activator activateFunc) error {
+var activatorMock = func(out output.Outputer, cfg DefaultConfigurer, subs subshell.SubShell, targetPath string, setDefault bool, activator activateFunc) error {
 	return nil
 }
 
@@ -62,21 +62,21 @@ func TestActivate_run(t *testing.T) {
 		{
 			"expect no error",
 			fields{&namespaceSelectMock{"defer", nil}, &checkoutMock{}},
-			args{&ActivateParams{&project.Namespaced{"foo", "bar", nil}, tempDir, ""}, activatorMock},
+			args{&ActivateParams{&project.Namespaced{"foo", "bar", nil}, tempDir, "", false}, activatorMock},
 			false,
 			true,
 		},
 		{
 			"expect no error, expect checkout",
 			fields{&namespaceSelectMock{"defer", nil}, &checkoutMock{}},
-			args{&ActivateParams{&project.Namespaced{"foo", "bar", nil}, tempDir, ""}, activatorMock},
+			args{&ActivateParams{&project.Namespaced{"foo", "bar", nil}, tempDir, "", false}, activatorMock},
 			false,
 			true,
 		},
 		{
 			"expect error",
 			fields{&namespaceSelectMock{tempDir, errors.New("mocked error")}, &checkoutMock{errors.New("mocked error"), true}},
-			args{&ActivateParams{&project.Namespaced{"foo", "bar", nil}, "", ""}, activatorMock},
+			args{&ActivateParams{&project.Namespaced{"foo", "bar", nil}, "", "", false}, activatorMock},
 			true,
 			true,
 		},
