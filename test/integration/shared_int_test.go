@@ -9,11 +9,12 @@ import (
 )
 
 var (
-	testUser    = "test-user"
-	testProject = "test-project"
-	namespace   = fmt.Sprintf("%s/%s", testUser, testProject)
-	url         = fmt.Sprintf("https://%s/%s", constants.PlatformURL, namespace)
-	sampleYAML  = ""
+	testUser          = "test-user"
+	testProject       = "test-project"
+	namespace         = fmt.Sprintf("%s/%s", testUser, testProject)
+	url               = fmt.Sprintf("https://%s/%s", constants.PlatformURL, namespace)
+	sampleYAMLPython2 = ""
+	sampleYAMLPython3 = ""
 )
 
 func init() {
@@ -21,9 +22,16 @@ func init() {
 	if runtime.GOOS == "windows" {
 		shell = "batch"
 	}
-	sampleYAML = locale.T("sample_yaml", map[string]interface{}{
-		"Owner":   testUser,
-		"Project": testProject,
-		"Shell":   shell,
+	sampleYAMLPython2 = locale.T("sample_yaml_python", map[string]interface{}{
+		"Owner":    testUser,
+		"Project":  testProject,
+		"Shell":    shell,
+		"Language": "python2",
+	})
+	sampleYAMLPython3 = locale.T("sample_yaml_python", map[string]interface{}{
+		"Owner":    testUser,
+		"Project":  testProject,
+		"Shell":    shell,
+		"Language": "python3",
 	})
 }
