@@ -142,7 +142,34 @@ public class RollbarReport
                     }
                 } catch (System.Exception e)
                 {
-                    TrackerSingleton.Instance.TrackEventSynchronously(session, "error", "rollbar", "");
+
+                    string msiLogFileName = "";
+                    string productVersion = "";
+                    string uilevel = "";
+                    if (session.GetMode(InstallRunMode.Scheduled))
+                    {
+                        if (session.CustomActionData.ContainsKey("MsiLogFileLocation"))
+                        {
+                            msiLogFileName = session.CustomActionData["MsiLogFileLocation"];
+                        }
+                        if (session.CustomActionData.ContainsKey("PRODUCT_VERSION"))
+                        {
+                            productVersion = session.CustomActionData["PRODUCT_VERSION"];
+                        }
+                        if (session.CustomActionData.ContainsKey("UI_LEVEL"))
+                        {
+                            uilevel = session.CustomActionData["UI_LEVEL"];
+                        }
+
+                    }
+                    else if (!session.GetMode(InstallRunMode.Scheduled))
+                    {
+                        msiLogFileName = session["MsiLogFileLocation"];
+                        productVersion = session["ProductVersion"];
+                        uilevel = session["UILevel"];
+                    }
+
+                    TrackerSingleton.Instance.TrackEventSynchronously(session, msiLogFileName, "error", "rollbar", "", productVersion, uilevel);
                     session.Log("Logging to rollbar failed with error: {0}", e);
                 }
             }

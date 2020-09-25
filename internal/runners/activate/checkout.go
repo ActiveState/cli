@@ -5,7 +5,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/cmdlets/git"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -57,11 +56,6 @@ func (r *Checkout) Run(namespace string, targetPath string) error {
 		}
 	}
 
-	language, err := getLanguage(ns.Owner, ns.Project)
-	if err != nil {
-		return err
-	}
-
 	// Create the config file, if the repo clone didn't already create it
 	configFile := filepath.Join(targetPath, constants.ConfigFileName)
 	if !fileutils.FileExists(configFile) {
@@ -70,7 +64,6 @@ func (r *Checkout) Run(namespace string, targetPath string) error {
 			Project:   ns.Project,
 			CommitID:  commitID,
 			Directory: targetPath,
-			Language:  language,
 		})
 		if fail != nil {
 			return fail
@@ -78,17 +71,4 @@ func (r *Checkout) Run(namespace string, targetPath string) error {
 	}
 
 	return nil
-}
-
-func getLanguage(owner, project string) (string, error) {
-	modelLanguage, fail := model.DefaultLanguageForProject(owner, project)
-	if fail != nil {
-		return "", fail.ToError()
-	}
-
-	lang, err := language.MakeByNameAndVersion(modelLanguage.Name, modelLanguage.Version)
-	if err != nil {
-		return "", err
-	}
-	return lang.String(), nil
 }

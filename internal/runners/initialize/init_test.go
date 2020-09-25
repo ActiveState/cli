@@ -111,8 +111,8 @@ func TestInitialize_Run(t *testing.T) {
 				language: language.Python2.String(),
 			},
 			nil,
-			tempDirWithFile,
-			tempDirWithFile,
+			osutil.PrepareDir(fileutils.Join(tempDirWithFile, "foo/bar")),
+			osutil.PrepareDir(fileutils.Join(tempDirWithFile, "foo/bar")),
 			language.Python2.String(),
 			"",
 		},
@@ -207,7 +207,7 @@ func TestInitialize_Run(t *testing.T) {
 				t.Fatalf("Unexpected error: %v", err)
 			}
 
-			if confirmPath(t, path, tt.wantPath) {
+			if confirmPath(path, tt.wantPath) {
 				t.Errorf("Initialize.run() path = %s, wantPath %s", path, tt.wantPath)
 			}
 			configFile := fileutils.Join(tt.wantPath, constants.ConfigFileName)
@@ -236,18 +236,9 @@ func TestInitialize_Run(t *testing.T) {
 	}
 }
 
-func confirmPath(t *testing.T, path, want string) bool {
+func confirmPath(path, want string) bool {
 	if runtime.GOOS == "windows" {
-		longPath, err := osutil.GetLongPathName(path)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		longWant, err := osutil.GetLongPathName(want)
-		if err != nil {
-			t.Fatal(err)
-		}
-		return longPath != longWant
+		return path != want
 	}
 	wantEval, _ := filepath.EvalSymlinks(want)
 	return path != wantEval

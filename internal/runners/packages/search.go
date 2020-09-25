@@ -63,7 +63,7 @@ func targetedLanguage(languageOpt string) (string, *failures.Failure) {
 		return "", fail
 	}
 
-	return model.DefaultLanguageNameForProject(proj.Owner(), proj.Name())
+	return model.DefaultLanguageForProject(proj.Owner(), proj.Name())
 }
 
 func newPackagesTable(packages []*model.IngredientAndVersion) *packageTable {

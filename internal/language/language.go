@@ -2,12 +2,10 @@ package language
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/blang/semver"
 )
 
 // Language tracks the languages potentially used.
@@ -123,18 +121,6 @@ func MakeByName(name string) Language {
 	}
 
 	return Unknown
-}
-
-// MakeByNameAndVersion will retrieve a language by a given name and version.
-func MakeByNameAndVersion(name, version string) (Language, error) {
-	if strings.ToLower(name) == Python2.Requirement() {
-		version, err := semver.Parse(version)
-		if err != nil {
-			return Unknown, err
-		}
-		name = name + strconv.FormatUint(version.Major, 10)
-	}
-	return MakeByName(name), nil
 }
 
 // MakeByText will retrieve a language by a given text

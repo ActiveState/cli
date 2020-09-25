@@ -816,14 +816,9 @@ func createCustom(params *CreateParams) (*Project, *failures.Failure) {
 	if runtime.GOOS == "windows" {
 		shell = "batch"
 	}
-
-	yaml := "sample_yaml_python"
-	if strings.ToLower(params.Language) == language.Perl.String() {
-		yaml = "sample_yaml_perl"
-	}
 	if params.Content == "" {
-		params.Content = locale.T(yaml,
-			map[string]interface{}{"Owner": owner, "Project": project, "Shell": shell, "Language": params.Language})
+		params.Content = locale.T("sample_yaml",
+			map[string]interface{}{"Owner": owner, "Project": project, "Shell": shell})
 	}
 
 	data := map[string]interface{}{
