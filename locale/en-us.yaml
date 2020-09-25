@@ -1068,7 +1068,7 @@ language_name_unknown:
   other: Unknown
 language_unknown_options:
   other: Unknown options
-sample_yaml:
+sample_yaml_perl:
   other: |
     scripts:
     # This script uses a secret. Note that you can define your own secrets at
@@ -1076,31 +1076,52 @@ sample_yaml:
       - name: helloWorld
         language: {{.Shell}}
         value: echo ${secrets.user.world}
+      - name: activationMessage
+        language: perl
+        value: |
+          print <<EOT;
+          You are now in an 'activated state', this will give you a virtual environment to work in that doesn't affect the rest of your system.
+
+          Your 'activated state' allows you to manage packages, scripts, secrets and more via the activestate.yaml file at the root of your project directory.
+
+          To manage packages use the `state packages` command. For more information about package management, use `state packages --help`. For more information about the State Tool use `state help`.
+
+          To access additional features of the ActiveState Platform and use a web-based interface for managing your project, you can visit https://platform.activestate.com/{{.Owner}}/{{.Project}}.
+
+          Edit your activestate.yaml to remove this message.
+          EOT
     events:
       # This is the ACTIVATE event, it will run whenever a new virtual environment is created (eg. by running `state activate`)
       # On Linux and macOS this will be ran as part of your shell's rc file, so you can use it to set up aliases, functions, environment variables, etc.
       - name: ACTIVATE
-        constraints: 
-          os: macos,linux 
+        value: $scripts.activationMessage.path()
+sample_yaml_python:
+  other: |
+    scripts:
+    # This script uses a secret. Note that you can define your own secrets at
+    # https://platform.activestate.com/{{.Owner}}/{{.Project}}/scripts
+      - name: helloWorld
+        language: {{.Shell}}
+        value: echo ${secrets.user.world}
+      - name: activationMessage
+        language: {{.Language}}
         value: |
-          echo "You are now in an 'activated state', this will give you a virtual environment to work in that doesn't affect the rest of your system."
-          echo ""
-          echo "Your 'activated state' allows you to define scripts, events and constants via the activestate.yaml file at the root of your project directory."
-          echo ""
-          echo "To expand your language and/or package selection, or to define client-side encrypted secrets, please visit https://platform.activestate.com/{{.Owner}}/{{.Project}}."
-          echo ""
-          echo "To try out scripts with client-side encrypted secrets we've created a simple script for you in your activestate.yaml, try it out by running 'helloWorld'"
+          print(""" 
+          You are now in an 'activated state', this will give you a virtual environment to work in that doesn't affect the rest of your system.
+
+          Your 'activated state' allows you to manage packages, scripts, secrets and more via the activestate.yaml file at the root of your project directory.
+
+          To manage packages use the `state packages` command. For more information about package management, use `state packages --help`. For more information about the State Tool use `state help`.
+
+          To access additional features of the ActiveState Platform and use a web-based interface for managing your project, you can visit https://platform.activestate.com/{{.Owner}}/{{.Project}}.
+
+          Edit your activestate.yaml to remove this message.
+          """)
+    events:
+      # This is the ACTIVATE event, it will run whenever a new virtual environment is created (eg. by running `state activate`)
+      # On Linux and macOS this will be ran as part of your shell's rc file, so you can use it to set up aliases, functions, environment variables, etc.
       - name: ACTIVATE
-        constraints: 
-          os: windows 
-        value: |
-          echo You are now in an 'activated state', this will give you a virtual environment to work in that doesn't affect the rest of your system.
-          echo. 
-          echo Your 'activated state' allows you to define scripts, events and constants via the activestate.yaml file at the root of your project directory.
-          echo. 
-          echo To expand your language and/or package selection, or to define client-side encrypted secrets, please visit https://platform.activestate.com/{{.Owner}}/{{.Project}}.
-          echo. 
-          echo To try out scripts with client-side encrypted secrets we've created a simple script for you in your activestate.yaml, try it out by running 'helloWorld'
+        value: $scripts.activationMessage.path()
 editor_yaml:
   other: |
     scripts:
@@ -1258,7 +1279,7 @@ err_incompatible_move_file_dir:
     Could not move {{.V0}} to {{.V1}}.  One is a file, the other a directory.
     This indicates that the requested build may be corrupted.
 err_init_file_exists:
-  other: The target directory '{{.V0}}' already contains an activestate.yaml.
+  other: The target directory '{{.V0}}' already contains an activestate.yaml. Please change the current working directory or use the --path flag.
 init_success:
   other: |
     Project '{{.V0}}/{{.V1}}' has been successfully initialized at '{{.V2}}'.
