@@ -54,9 +54,9 @@ func (r *Prepare) Run() error {
 	}
 
 	if runtime.GOOS == "windows" {
-		r.out.Print(locale.Tr("prepare_instructions_lin_mac", binDir))
-	} else {
 		r.out.Print(locale.Tr("prepare_instructions_windows", binDir))
+	} else {
+		r.out.Print(locale.Tr("prepare_instructions_lin_mac", binDir))
 	}
 
 	return nil
