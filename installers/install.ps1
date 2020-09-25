@@ -74,14 +74,12 @@ function isAdmin
 function promptYN([string]$msg)
 {
     $response = Read-Host -Prompt $msg" [y/N]`n"
-
     if ( -Not ($response.ToLower() -eq "y") )
     {
         return $False
     }
     return $True
 }
-
 function errorOccured($suppress, $errMsg) {
     if($errMsg) {
         if (-Not $suppress){
@@ -91,10 +89,8 @@ function errorOccured($suppress, $errMsg) {
     }
     return $False, ""
 }
-
 function download([string] $url, [string] $out) {
     [int]$Retrycount = "0"
-
     do {
         try {
             $downloader = new-object System.Net.WebClient
@@ -119,7 +115,6 @@ function download([string] $url, [string] $out) {
     }
     While ($true)
 }
-
 function hasWritePermission([string] $path)
 {
     # $user = "$env:userdomain\$env:username"
@@ -138,42 +133,11 @@ function hasWritePermission([string] $path)
     }
     return $True
 }
-
-function updateEnv([string] $key, [string] $value, [bool] $tryAdmin, [bool] $append) {
-    $envTarget = [EnvironmentVariableTarget]::User
-    $envTargetName = "user"
-    $admin = isAdmin
-    if ($tryAdmin -And $admin) {
-        $envTarget = [EnvironmentVariableTarget]::Machine
-        $envTargetName = "system"
-    }
-
-    Write-Host "Updating environment...`n"
-    Write-Host "Adding $value to $envTargetName $key`n"
-
-    $envValue = $value + ";" + [Environment]::GetEnvironmentVariable($key, [EnvironmentVariableTarget]::Machine)
-    if ($append) {
-        $envValue = [Environment]::GetEnvironmentVariable($key, [EnvironmentVariableTarget]::Machine) + ";" + $value
-    }
-
-    # This only sets it in the registry and it will NOT be accessible in the current session
-    [Environment]::SetEnvironmentVariable(
-        $key,
-        $envValue,
-        $envTarget
-    )
-
-    notifySettingChange
-
-    $env:Path = $value + ";" + $env:Path
-}
-
 # isStateToolInstallationOnPath returns true if the State Tool's installation directory is in the current PATH
 function isStateToolInstallationOnPath($installDirectory) {
     $existing = getExistingOnPath
     $existing -eq $installDirectory
 }
-
 function getExistingOnPath(){
     $path = (get-command $script:STATEEXE -ErrorAction 'silentlycontinue').Source
     if ($null -eq $path) {
@@ -182,7 +146,6 @@ function getExistingOnPath(){
        (Resolve-Path (split-path -Path $path -Parent)).Path
     }
 }
-
 function activateIfRequested() {
     if ( $script:ACTIVATE -ne "" ) {
         # This creates an interactive sub-shell.
@@ -190,7 +153,6 @@ function activateIfRequested() {
         &$script:STATEEXE activate $script:ACTIVATE
     }
 }
-
 function warningIfadmin() {
     if ( (IsAdmin) -and -not (Test-Path env:CI) ) {
         Write-Warning "It is recommended to use the State Tool in a new terminal session without admin privileges.`n"
@@ -198,20 +160,13 @@ function warningIfadmin() {
 }
 
 function runPreparationStep($installDirectory) {
-    $StatePath = Join-Path -Path $installDirectory -ChildPath $script:STATEEXE
-    $Command = "$StatePath _prepare"
-    $binDir = & Invoke-Expression $Command | Out-String
-    updateEnv "PATH" $binDir $false $false
-    updateEnv "PATHEXT" ".LNK" $true $true
-
-    Write-Host "If you are using multiple shells please add $binDir to your user PATH via the System Properties dialog"
+    &$installDirectory\$script:STATEEXE _prepare | Write-Host
     return $LASTEXITCODE
 }
 
 function displayConsent() {
     $consentText="
 ActiveState collects usage statistics and diagnostic data about failures. The collected data complies with ActiveState Privacy Policy (https://www.activestate.com/company/privacy-policy/) and will be used to identify product enhancements, help fix defects, and prevent abuse.
-
 By running the State Tool installer you consent to the Privacy Policy. This is required for the State Tool to operate while we are still in beta.
 "
     Write-Host $consentText
@@ -223,7 +178,6 @@ function fetchArtifacts($downloadDir, $statejson, $statepkg) {
     $STATEURL="https://s3.ca-central-1.amazonaws.com/cli-update/update/state"
     
     Write-Host "Preparing for installation...`n"
-
     # Get version and checksum
     $jsonurl = "$STATEURL/$script:BRANCH/$statejson"
     Write-Host "Determining latest version...`n"
@@ -255,7 +209,6 @@ function fetchArtifacts($downloadDir, $statejson, $statepkg) {
         Write-Error $_.Exception.Message
         return 1
     }
-
     # Check the sums
     Write-Host "Verifying checksums...`n"
     $hash = (Get-FileHash -Path $zipPath -Algorithm SHA256).Hash
@@ -272,20 +225,16 @@ function fetchArtifacts($downloadDir, $statejson, $statepkg) {
     # using LiteralPath argument prevents interpretation of wildcards in zipPath
     Expand-Archive -LiteralPath $zipPath -DestinationPath $downloadDir
 }
-
 function test-64Bit() {
     return (test-is64bitOS -or test-wow64 -or test-64bitWMI -or test-64bitPtr)
 }
-
 function test-is64bitOS() {
     return [System.Environment]::Is64BitOperatingSystem
 }
-
 function test-wow64() {
     # Only 64 bit Operating Systems should have this directory
     return test-path (join-path $env:WinDir "SysWow64") 
 }
-
 function test-64bitWMI() {
     if ((Get-WmiObject Win32_OperatingSystem).OSArchitecture -eq "64-bit") {
         return $True
@@ -293,13 +242,11 @@ function test-64bitWMI() {
         return $False
     }
 }
-
 function test-64bitPtr() {
     # The int pointer size is 8 for 64 bit Operating Systems and
     # 4 for 32 bit
     return [IntPtr]::size -eq 8
 }
-
 function install()
 {
     $USAGE="install.ps1 [flags]
@@ -311,22 +258,17 @@ function install()
     -f <file>            Default 'state.exe'.  Binary filename to use
     -activate <project>  Activate a project when State Tools is correctly installed
     -h                   Show usage information (what you're currently reading)"
-
     # Ensure errors from previously run commands are not reported during install
     $Error.Clear()
-
     displayConsent
-
     if ($h) {
         Write-Host $USAGE
         return
     }
-
     if ($script:NOPROMPT -and $script:ACTIVATE -ne "" ) {
         Write-Warning "Flags -n and -activate cannot be set at the same time."
         return 1
     }
-
     if ($script:FORCEOVERWRITE -and ( -not $script:NOPROMPT) ) {
         Write-Warning "Flag -f also requires -n"
         return 1
@@ -337,13 +279,11 @@ function install()
         $statejson="windows-amd64.json"
         $statepkg="windows-amd64.zip"
         $stateexe="windows-amd64.exe"
-
     } else {
         $statejson="windows-386.json"
         $statepkg="windows-386.zip"
         $stateexe="windows-386.exe"
     }
-
     # Get the install directory and ensure we have permissions on it.
     # If the user provided an install dir we do no verification.
     if ($script:TARGET) {
@@ -356,7 +296,6 @@ function install()
             return 1
         }
     }
-
     # stop if previous installation is detected, unless
     # - A. a different target directory has been specified
     # - B. FORCEOVERWRITE is true
@@ -376,7 +315,6 @@ function install()
             }
         }
     }
-
     # Install binary
     Write-Host "`nInstalling to '$installDir'...`n" -ForegroundColor Yellow
     if ( -Not $script:NOPROMPT ) {
@@ -384,7 +322,6 @@ function install()
             return 2
         }
     }
-
     #  If the install dir doesn't exist
     $installPath = Join-Path $installDir $script:STATEEXE
     if( -Not (Test-Path -LiteralPath $installDir)) {
@@ -428,15 +365,26 @@ function install()
         activateIfRequested
         return
     }
-
     # Update PATH for State Tool installation directory
-    updateEnv "PATH" $installDir $true $false
-
+    $envTarget = [EnvironmentVariableTarget]::User
+    $envTargetName = "user"
+    if (isAdmin) {
+        $envTarget = [EnvironmentVariableTarget]::Machine
+	    $envTargetName = "system"
+    }
+    Write-Host "Updating environment...`n"
+    Write-Host "Adding $installDir to $envTargetName PATH`n"
+    # This only sets it in the registry and it will NOT be accessible in the current session
+    [Environment]::SetEnvironmentVariable(
+        'Path',
+        $installDir + ";" + [Environment]::GetEnvironmentVariable(
+            'Path', [EnvironmentVariableTarget]::Machine),
+        $envTarget)
+    notifySettingChange
+    $env:Path = $installDir + ";" + $env:Path
     warningIfAdmin
     Write-Host "State Tool successfully installed to: $installDir." -ForegroundColor Yellow
     Write-Host "Please close your Powershell prompt and open a CMD prompt in order to start using the 'state.exe' program.  Powershell support is coming soon." -ForegroundColor Yellow
     activateIfRequested
-
 }
-
 exit install

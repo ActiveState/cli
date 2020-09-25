@@ -247,64 +247,43 @@ namespace StateDeploy
             session.Log("Updating PATH environment variable");
             Status.ProgressBar.Increment(session, 50);
             string oldPath = Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.Machine);
-            if (!oldPath.Contains(stateToolInstallDir))
+            if (oldPath.Contains(stateToolInstallDir))
             {
-                var newPath = string.Format("{0};{1}", stateToolInstallDir, oldPath);
-                session.Log(string.Format("updating PATH to {0}", newPath));
-                try
-                {
-                    Environment.SetEnvironmentVariable("PATH", newPath, EnvironmentVariableTarget.Machine);
-                }
-                catch (Exception e)
-                {
-                    string msg = string.Format("Could not update PATH. Encountered exception: {0}", e.Message);
-                    session.Log(msg);
-                    new SecurityError().SetDetails(session, msg);
-                    return ActionResult.Failure;
-                }
+                session.Log("State tool installation already on PATH");
+                return ActionResult.Success;
+            }
+
+            var newPath = string.Format("{0};{1}", stateToolInstallDir, oldPath);
+            session.Log(string.Format("updating PATH to {0}", newPath));
+            try
+            {
+                Environment.SetEnvironmentVariable("PATH", newPath, EnvironmentVariableTarget.Machine);
+            }
+            catch (Exception e)
+            {
+                string msg = string.Format("Could not update PATH. Encountered exception: {0}", e.Message);
+                session.Log(msg);
+                new SecurityError().SetDetails(session, msg);
+                return ActionResult.Failure;
             }
 
             session.Log("Running prepare step...");
             string prepareCmd = " _prepare";
             string prepareOutput;
-            ActionResult prepareRunResult = Command.Run(session, stateToolPath, prepareCmd, out prepareOutput);
-            if (!prepareRunResult.Equals(ActionResult.Failure))
+            ActionResult prepareRunResult = ActiveState.Command.Run(session, stateToolPath, prepareCmd, out prepareOutput);
+            if (prepareRunResult.Equals(ActionResult.Failure))
+            {
+                //RollbarReport.Error(msg, session); ??
+                Record record = new Record();
+                var errorOutput = Command.FormatErrorOutput(prepareOutput);
+                record.FormatString = string.Format("state _prepare failed with error:\n{0}", errorOutput);
+
+                session.Message(InstallMessage.Error | (InstallMessage)MessageBoxButtons.OK, record);
+                return prepareRunResult;
+            }
+            else
             {
                 session.Log(string.Format("Prepare Output: {0}", prepareOutput));
-                session.Log("Updating PATH environment variable to include prepare directory");
-                string originalUserPath = Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.User);
-                string pathWithPrepare = string.Format("{0};{1}", prepareOutput, originalUserPath);
-                session.Log(string.Format("updating PATH to {0}", pathWithPrepare));
-                try
-                {
-                    Environment.SetEnvironmentVariable("PATH", pathWithPrepare, EnvironmentVariableTarget.User);
-                }
-                catch (Exception e)
-                {
-                    // Do not fail if we cannot update PATH with prepare directory
-                    session.Log(string.Format("Could not update PATH. Encountered exception: {0}", e.ToString()));
-                }
-
-                session.Log("Updating PATHEXT environment variable to include symlinks");
-                string originalPathExt = Environment.GetEnvironmentVariable("PATHEXT", EnvironmentVariableTarget.User);
-                string pathExtWithLnk = string.Format("{0};{1}", originalPathExt, ".LNK");
-                session.Log("updating PATHEXT to {0}", pathExtWithLnk);
-                try
-                {
-                    Environment.SetEnvironmentVariable("PATHEXT", pathExtWithLnk, EnvironmentVariableTarget.User);
-                }
-                catch (Exception e)
-                {
-                    // Do not fail if we cannot update PATHEXT with .LNK extension
-                    session.Log(string.Format("Could not update PATHEXT. Ecountered exception: {0}", e.ToString()));
-                }
-            } else
-            {
-                // Do not fail is prepare step has failed
-                var errorOutput = Command.FormatErrorOutput(prepareOutput);
-                string msg = string.Format("state _prepare failed with error:\n{0}", errorOutput);
-                session.Log(msg);
-                RollbarReport.Error(msg, session);
             }
 
             Status.ProgressBar.Increment(session, 50);
