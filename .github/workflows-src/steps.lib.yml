@@ -149,6 +149,7 @@ with:
 ---
 #@ def steps_uploadlogs():
 name: "Upload logs"
+if: ${{ always() }}
 uses: actions/upload-artifact@v2
 with:
   name: logs
