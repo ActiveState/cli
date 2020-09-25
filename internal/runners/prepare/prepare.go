@@ -38,7 +38,6 @@ func New(prime primeable) *Prepare {
 func (r *Prepare) Run() error {
 	logging.Debug("ExecutePrepare")
 
-	pathListSeparator := string(os.PathListSeparator)
 	binDir := filepath.Join(config.CachePath(), "prepareBin")
 	fail := fileutils.Mkdir(binDir)
 	if fail != nil {
@@ -46,7 +45,7 @@ func (r *Prepare) Run() error {
 	}
 
 	envUpdates := map[string]string{
-		"PATH": fmt.Sprintf("%s%s%s", binDir, pathListSeparator, os.Getenv("PATH")),
+		"PATH": fmt.Sprintf("%s%s%s", binDir, string(os.PathListSeparator), os.Getenv("PATH")),
 	}
 
 	fail = r.subshell.WriteUserEnv(envUpdates, true)
