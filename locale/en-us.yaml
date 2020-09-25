@@ -1658,3 +1658,7 @@ ppm_convert_ask_feedback:
 windows_compatibility_warning:
   other: |
     Warning: State Tool is untested on Windows versions below 10. If you encounter issues please consider reporting them on {{.V0}}
+prepare_instructions_lin_mac:
+  other: "To add the global installations directory to your environment please add the line `export PATH={{.V0}}:$PATH` to your RC file"
+prepare_instructions_windows:
+  other: "To add the global installations directory to your environment please att the line path {{.V0}} to your user PATH in the System Properties dialog"
