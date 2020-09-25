@@ -102,6 +102,7 @@ name: "Critical Integration Tests"
 shell: bash
 run: |
   export SHELL=''
+  mkdir -p logs
   go test -timeout 10m github.com/ActiveState/cli/test/integration -test.v -test.run "^TestLanguageMsiActivePerl|TestDeployIntegrationTestSuite|TestInitIntegrationTestSuite|TestPushIntegrationTestSuite|TestUpdateIntegrationTestSuite$"
 env:
   INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
@@ -112,7 +113,10 @@ env:
 #@ def steps_inttest():
 name: "Integration Tests"
 shell: bash
-run: SHELL='' go test -timeout 20m ./test/integration -v
+run: |
+  export SHELL=''
+  mkdir -p logs
+  go test -timeout 20m ./test/integration -v
 env:
   INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
   INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
@@ -141,6 +145,15 @@ uses: actions/upload-artifact@v2
 with:
   name: build
   path: build/
+#@ end
+---
+#@ def steps_uploadlogs():
+name: "Upload logs"
+if: ${{ always() }}
+uses: actions/upload-artifact@v2
+with:
+  name: logs
+  path: logs/
 #@ end
 ---
 #@ def steps_downloadsharedartifacts():
