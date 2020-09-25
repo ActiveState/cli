@@ -40,11 +40,11 @@ For usage information please refer to the [State Tool Documentation](http://docs
    * **Unit tests\*:** `state run test`
    * **Integration tests:** `state run integration-tests`
 
-<sup?>
+<sup>
 * Our unit tests are in a state of slowly being converted to standalone
  integration tests, meaning that while we refer to them as unit tests
  they still contain a lot of tests that are better described as integration tests.
-</sup?>
+</sup>
 
 ### Refactoring
 
