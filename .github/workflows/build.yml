@@ -105,12 +105,7 @@ jobs:
     - name: Sign
       shell: bash
       if: runner.os == 'Windows'
-      run: "echo $MSI_CERT_BASE64 | base64 --decode > Cert.p12\nexport PATH=/c/Program\\
-        Files\\ \\(x86\\)/WiX\\ Toolset\\ v3.11/bin/:/c/Program\\ Files\\ \\(x86\\)/Windows\\
-        Kits/10/bin/10.0.16299.0/x86/:$PATH\n\nsigntool.exe sign -d \"ActiveState
-        State Tool\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/state.exe \nsigntool.exe
-        sign -d \"ActiveState State Tool (32bit)\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD}
-        ./build/state32.exe \n"
+      run: "echo $MSI_CERT_BASE64 | base64 --decode > Cert.p12\nexport PATH=/c/Program\\ Files\\ \\(x86\\)/WiX\\ Toolset\\ v3.11/bin/:/c/Program\\ Files\\ \\(x86\\)/Windows\\ Kits/10/bin/10.0.16299.0/x86/:$PATH\n\nsigntool.exe sign -d \"ActiveState State Tool\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/state.exe \nsigntool.exe sign -d \"ActiveState State Tool (32bit)\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/state32.exe \n"
       env:
         CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
         MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
@@ -275,11 +270,17 @@ jobs:
       shell: bash
       run: |
         export SHELL=''
+        mkdir -p logs
         go test -timeout 10m github.com/ActiveState/cli/test/integration -test.v -test.run "^TestLanguageMsiActivePerl|TestDeployIntegrationTestSuite|TestInitIntegrationTestSuite|TestPushIntegrationTestSuite|TestUpdateIntegrationTestSuite$"
       env:
         INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
         INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
         PLATFORM_API_TOKEN: ${{ secrets.PLATFORM_API_TOKEN }}
+    - name: Upload logs
+      uses: actions/upload-artifact@v2
+      with:
+        name: logs
+        path: logs/
   inttest:
     if: contains(github.event.pull_request.labels.*.name, 'run integration tests')
     name: Integration Test
@@ -342,7 +343,10 @@ jobs:
         MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
     - name: Integration Tests
       shell: bash
-      run: SHELL='' go test -timeout 20m ./test/integration -v
+      run: |
+        export SHELL=''
+        mkdir -p logs
+        go test -timeout 20m ./test/integration -v
       env:
         INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
         INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
