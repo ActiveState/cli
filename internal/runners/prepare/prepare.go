@@ -41,7 +41,7 @@ func (r *Prepare) Run() error {
 	binDir := filepath.Join(config.CachePath(), "bin")
 	fail := fileutils.Mkdir(binDir)
 	if fail != nil {
-		return locale.WrapError(fail.ToError(), "err_prepare_bin_dir", "Could not create global installations directory")
+		return locale.WrapError(fail.ToError(), "err_prepare_bin_dir", "Could not create bin directory")
 	}
 
 	envUpdates := map[string]string{
