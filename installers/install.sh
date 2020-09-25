@@ -391,9 +391,6 @@ echo "install.sh" > $CONFIGDIR/"installsource.txt"
 # flag was passed and attempt to activate the project
 if [ "`dirname \`which $STATEEXE\` 2>/dev/null`" = "$INSTALLDIR" ]; then
   info "State Tool installation complete."
-
-  $STATEEXE _prepare || exit $?
-
   if [ -n "${ACTIVATE}" ]; then
     # switch this shell to interactive mode
     set -i
