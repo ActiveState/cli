@@ -28,9 +28,9 @@ import (
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
-type activationLoopFunc func(out output.Outputer, subs subshell.SubShell, targetPath string, activator activateFunc) error
+type activationLoopFunc func(out output.Outputer, config DefaultConfigurer, subs subshell.SubShell, targetPath string, setDefault bool, activator activateFunc) error
 
-func activationLoop(out output.Outputer, subs subshell.SubShell, targetPath string, activator activateFunc) error {
+func activationLoop(out output.Outputer, config DefaultConfigurer, subs subshell.SubShell, targetPath string, setDefault bool, activator activateFunc) error {
 	// activate should be continually called while returning true
 	// looping here provides a layer of scope to handle printing output
 	var proj *project.Project
@@ -58,7 +58,7 @@ func activationLoop(out output.Outputer, subs subshell.SubShell, targetPath stri
 			out.Error(locale.Tr("unstable_version_warning", constants.BugTrackerURL))
 		}
 
-		keepGoing, err := activator(proj, out, subs)
+		keepGoing, err := activator(proj, out, config, subs, setDefault)
 		if err != nil {
 			return err
 		}
@@ -75,19 +75,40 @@ func activationLoop(out output.Outputer, subs subshell.SubShell, targetPath stri
 	return nil
 }
 
-type activateFunc func(proj *project.Project, out output.Outputer, subs subshell.SubShell) (keepGoing bool, err error)
+type activateFunc func(proj *project.Project, out output.Outputer, config DefaultConfigurer, subs subshell.SubShell, setDefault bool) (keepGoing bool, err error)
 
 // activate will activate the venv and subshell. It is meant to be run in a loop
 // with the return value indicating whether another iteration is warranted.
-func activate(proj *project.Project, out output.Outputer, subs subshell.SubShell) (bool, error) {
+func activate(proj *project.Project, out output.Outputer, cfg DefaultConfigurer, subs subshell.SubShell, setDefault bool) (bool, error) {
 	projectfile.Reset()
 	venv := virtualenvironment.Get()
+
+	alreadyActivated := os.Getenv(constants.ActivatedStateEnvVarName) != ""
+
+	// if we are already activated and --default flag is set, just setup the default activation directory
+	if setDefault && alreadyActivated {
+		venv.ActivateRuntime()
+		// TODO: This should fail if a project name is defined that is different from the already activated project
+		err := SetupDefaultActivation(cfg, out, venv)
+		if err != nil {
+			return false, locale.WrapError(err, "default_setup_err", "Failed to set up the default activation for {{.V0}}.", proj.Name())
+		}
+		return false, nil
+	}
+
 	venv.OnDownloadArtifacts(func() { out.Notice(locale.T("downloading_artifacts")) })
 	venv.OnInstallArtifacts(func() { out.Notice(locale.T("installing_artifacts")) })
 	venv.OnUseCache(func() { out.Notice(locale.T("using_cached_env")) })
 	fail := venv.Activate()
 	if fail != nil {
 		return false, locale.WrapError(fail, "error_could_not_activate_venv", "Could not activate project. If this is a private project ensure that you are authenticated.")
+	}
+
+	if setDefault {
+		err := SetupDefaultActivation(cfg, out, venv)
+		if err != nil {
+			return false, locale.WrapError(err, "default_setup_err", "Failed to set up the default activation for {{.V0}}.", proj.Name())
+		}
 	}
 
 	ignoreWindowsInterrupts()

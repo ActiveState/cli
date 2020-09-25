@@ -2,6 +2,7 @@ package activate
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -15,12 +16,14 @@ import (
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/spf13/viper"
 )
 
 type Activate struct {
 	namespaceSelect  namespaceSelectAble
 	activateCheckout CheckoutAble
 	out              output.Outputer
+	config           DefaultConfigurer
 	subshell         subshell.SubShell
 }
 
@@ -28,6 +31,7 @@ type ActivateParams struct {
 	Namespace     *project.Namespaced
 	PreferredPath string
 	Command       string
+	SetDefault    bool
 }
 
 type primeable interface {
@@ -40,6 +44,7 @@ func NewActivate(prime primeable, namespaceSelect namespaceSelectAble, activateC
 		namespaceSelect,
 		activateCheckout,
 		prime.Output(),
+		viper.GetViper(),
 		prime.Subshell(),
 	}
 }
@@ -49,7 +54,7 @@ func (r *Activate) Run(params *ActivateParams) error {
 }
 
 func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc) error {
-	logging.Debug("Activate %v, %v", params.Namespace, params.PreferredPath)
+	logging.Debug("Activate with namespace=%v, path=%v", params.Namespace, params.PreferredPath)
 
 	targetPath, err := r.setupPath(params.Namespace.String(), params.PreferredPath)
 	if err != nil {
@@ -73,7 +78,19 @@ func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc)
 	// If we're not using plain output then we should just dump the environment information
 	if r.out.Type() != output.PlainFormatName {
 		venv := virtualenvironment.Get()
-		if fail := venv.Activate(); fail != nil {
+		activeProject := os.Getenv(constants.ActivatedStateEnvVarName) != ""
+		if activeProject && params.SetDefault {
+			// The following reads in the environment information (GetEnv() function) for the still active project
+
+			// TODO: This probably does not work, if we are trying to set a not-activated project as the default
+			fail := venv.ActivateRuntime()
+			if fail != nil {
+				return locale.WrapError(fail.ToError(), "error_could_not_get_venv", "Could not get the environment information for project.")
+			}
+
+		}
+		fail := venv.Activate()
+		if fail != nil {
 			return locale.WrapError(fail.ToError(), "error_could_not_activate_venv", "Could not activate project. If this is a private project ensure that you are authenticated.")
 		}
 		env, err := venv.GetEnv(false, targetPath)
@@ -91,7 +108,7 @@ func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc)
 		r.subshell.SetActivateCommand(params.Command)
 	}
 
-	return activatorLoop(r.out, r.subshell, targetPath, activate)
+	return activatorLoop(r.out, r.config, r.subshell, targetPath, params.SetDefault, activate)
 }
 
 func (r *Activate) setupPath(namespace string, preferredPath string) (string, error) {

@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/gobuffalo/packr"
-	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
@@ -18,6 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/runners/activate"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -260,13 +260,13 @@ func symlink(installPath string, overwrite bool, envGetter runtime.EnvGetter, ou
 		bins = strings.Split(p, string(os.PathListSeparator))
 	}
 
-	exes, err := executables(bins)
+	exes, err := activate.Executables(bins)
 	if err != nil {
 		return locale.WrapError(err, "err_symlink_exes", "Could not detect executables")
 	}
 
 	// Remove duplicate executables as per PATH and PATHEXT
-	exes, err = uniqueExes(exes, os.Getenv("PATHEXT"))
+	exes, err = activate.UniqueExes(exes, os.Getenv("PATHEXT"))
 	if err != nil {
 		return locale.WrapError(err, "err_unique_exes", "Could not detect unique executables, make sure your PATH and PATHEXT environment variables are properly configured.")
 	}
@@ -279,16 +279,6 @@ func symlink(installPath string, overwrite bool, envGetter runtime.EnvGetter, ou
 	}
 
 	return nil
-}
-
-func symlinkName(targetDir string, path string) string {
-	target := filepath.Clean(filepath.Join(targetDir, filepath.Base(path)))
-	if rt.GOOS != "windows" {
-		return target
-	}
-
-	oldExt := filepath.Ext(target)
-	return target[0:len(target)-len(oldExt)] + ".lnk"
 }
 
 // symlinkWithTarget creates symlinks in the target path of all executables found in the bins dir
@@ -307,7 +297,7 @@ func symlinkWithTarget(overwrite bool, symlinkPath string, exePaths []string, ou
 	}
 
 	for _, exePath := range exePaths {
-		symlink := symlinkName(symlinkPath, exePath)
+		symlink := activate.SymlinkName(symlinkPath, exePath)
 
 		// If the link already exists we may have to overwrite it, skip it, or fail..
 		if fileutils.TargetExists(symlink) {
@@ -350,71 +340,6 @@ type exeFile struct {
 	fpath string
 	name  string
 	ext   string
-}
-
-// executables will return all the executables that need to be symlinked in the various provided bin directories
-func executables(bins []string) ([]string, error) {
-	exes := []string{}
-
-	for _, bin := range bins {
-		err := filepath.Walk(bin, func(fpath string, info os.FileInfo, err error) error {
-			// Filter out files that are not executable
-			if info == nil || info.IsDir() || !fileutils.IsExecutable(fpath) { // check if executable by anyone
-				return nil // not executable
-			}
-
-			exes = append(exes, fpath)
-			return nil
-		})
-		if err != nil {
-			return exes, errs.Wrap(err, "Error while walking path")
-		}
-	}
-
-	return exes, nil
-}
-
-func uniqueExes(exePaths []string, pathext string) ([]string, error) {
-	pathExt := strings.Split(strings.ToLower(pathext), ";")
-	exeFiles := map[string]exeFile{}
-	result := []string{}
-
-	for _, exePath := range exePaths {
-		if rt.GOOS == "windows" {
-			exePath = strings.ToLower(exePath) // Windows is case-insensitive
-		}
-
-		exe := exeFile{exePath, "", ""}
-		ext := filepath.Ext(exePath)
-
-		// We only set the executable extension if PATHEXT is present.
-		// Some macOS builds can contain binaries with periods in their
-		// names and we do not want to strip off suffixes after the period.
-		if funk.Contains(pathExt, ext) {
-			exe.ext = filepath.Ext(exePath)
-		}
-		exe.name = strings.TrimSuffix(filepath.Base(exePath), exe.ext)
-
-		if prevExe, exists := exeFiles[exe.name]; exists {
-			pathsEqual, err := fileutils.PathsEqual(filepath.Dir(exe.fpath), filepath.Dir(prevExe.fpath))
-			if err != nil {
-				return result, errs.Wrap(err, "Could not compare paths")
-			}
-			if !pathsEqual {
-				continue // Earlier PATH entries win
-			}
-			if funk.IndexOf(pathExt, prevExe.ext) < funk.IndexOf(pathExt, exe.ext) {
-				continue // Earlier PATHEXT entries win
-			}
-		}
-
-		exeFiles[exe.name] = exe
-	}
-
-	for _, exe := range exeFiles {
-		result = append(result, exe.fpath)
-	}
-	return result, nil
 }
 
 type Report struct {

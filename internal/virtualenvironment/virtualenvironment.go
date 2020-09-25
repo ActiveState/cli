@@ -71,7 +71,7 @@ func (v *VirtualEnvironment) Activate() *failures.Failure {
 	}
 
 	if strings.ToLower(os.Getenv(constants.DisableRuntime)) != "true" {
-		if failure := v.activateRuntime(); failure != nil {
+		if failure := v.ActivateRuntime(); failure != nil {
 			return failure
 		}
 	}
@@ -88,8 +88,8 @@ func (v *VirtualEnvironment) OnInstallArtifacts(f func()) { v.onInstallArtifacts
 // OnUseCache will call the given function when the cached runtime is used
 func (v *VirtualEnvironment) OnUseCache(f func()) { v.onUseCache = f }
 
-// activateRuntime sets up a runtime environment
-func (v *VirtualEnvironment) activateRuntime() *failures.Failure {
+// ActivateRuntime sets up a runtime environment
+func (v *VirtualEnvironment) ActivateRuntime() *failures.Failure {
 	pj := project.Get()
 	installer, fail := runtime.NewInstaller(pj.CommitUUID(), pj.Owner(), pj.Name())
 	if fail != nil {

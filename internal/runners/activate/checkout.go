@@ -17,7 +17,7 @@ type CheckoutAble interface {
 }
 
 // Checkout will checkout the given platform project at the given path
-// This includes cloning an associatd repository and creating the activestate.yaml
+// This includes cloning an associated repository and creating the activestate.yaml
 // It does not activate any environment
 type Checkout struct {
 	repo git.Repository
