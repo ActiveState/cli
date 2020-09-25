@@ -73,7 +73,21 @@ func FetchOrganizationProjects(orgName string) ([]*mono_models.Project, *failure
 }
 
 // DefaultLanguageForProject fetches the default language belonging to the given project
-func DefaultLanguageForProject(orgName, projectName string) (string, *failures.Failure) {
+func DefaultLanguageForProject(orgName, projectName string) (Language, *failures.Failure) {
+	languages, fail := FetchLanguagesForProject(orgName, projectName)
+	if fail != nil {
+		return Language{}, fail
+	}
+
+	if len(languages) == 0 {
+		return Language{}, failures.FailUser.New(locale.T("err_no_languages"))
+	}
+
+	return languages[0], nil
+}
+
+// DefaultLanguageNameForProject fetches the name of the default language belonging to the given project
+func DefaultLanguageNameForProject(orgName, projectName string) (string, *failures.Failure) {
 	languages, fail := FetchLanguagesForProject(orgName, projectName)
 	if fail != nil {
 		return "", fail
