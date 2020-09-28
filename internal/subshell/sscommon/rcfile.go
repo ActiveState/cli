@@ -25,18 +25,37 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
-func WriteRcFile(rcTemplateName string, path string, envType EnvType, env map[string]string) *failures.Failure {
+var (
+	Deploy EnvData = EnvData{
+		constants.RCAppendDeployStartLine,
+		constants.RCAppendDeployStopLine,
+		"user_deploy_env",
+	}
+	Default EnvData = EnvData{
+		constants.RCAppendDefaultStartLine,
+		constants.RCAppendDefaultStopLine,
+		"user_default_env",
+	}
+)
+
+type EnvData struct {
+	Start string
+	Stop  string
+	Key   string
+}
+
+func WriteRcFile(rcTemplateName string, path string, data EnvData, env map[string]string) *failures.Failure {
 	if fail := fileutils.Touch(path); fail != nil {
 		return fail
 	}
 
 	rcData := map[string]interface{}{
-		"Start": envType.start(),
-		"Stop":  envType.stop(),
+		"Start": data.Start,
+		"Stop":  data.Stop,
 		"Env":   env,
 	}
 
-	if fail := cleanRcFile(path, envType.data()); fail != nil {
+	if fail := cleanRcFile(path, data); fail != nil {
 		return fail
 	}
 
@@ -59,7 +78,7 @@ func WriteRcFile(rcTemplateName string, path string, envType EnvType, env map[st
 	return fileutils.AppendToFile(path, []byte(fileutils.LineEnd+out.String()))
 }
 
-func cleanRcFile(path string, data envData) *failures.Failure {
+func cleanRcFile(path string, data EnvData) *failures.Failure {
 	readFile, err := os.Open(path)
 
 	if err != nil {
@@ -75,7 +94,7 @@ func cleanRcFile(path string, data envData) *failures.Failure {
 		text := scanner.Text()
 
 		// Detect start line
-		if strings.Contains(text, data.start) {
+		if strings.Contains(text, data.Start) {
 			logging.Debug("Cleaning previous RC lines from %s", path)
 			strip = true
 		}
@@ -89,7 +108,7 @@ func cleanRcFile(path string, data envData) *failures.Failure {
 		fileContents = append(fileContents, scanner.Text())
 
 		// Detect stop line
-		if strings.Contains(text, data.stop) {
+		if strings.Contains(text, data.Stop) {
 			strip = false
 		}
 	}

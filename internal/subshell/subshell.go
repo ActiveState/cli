@@ -48,7 +48,7 @@ type SubShell interface {
 	SetBinary(string)
 
 	// WriteUserEnv writes the given env map to the users environment
-	WriteUserEnv(map[string]string, sscommon.EnvType, bool) *failures.Failure
+	WriteUserEnv(map[string]string, sscommon.EnvData, bool) *failures.Failure
 
 	// SetupShellRcFile writes a script or source-able file that updates the environment variables and sets the prompt
 	SetupShellRcFile(string, map[string]string, project.Namespaced) error

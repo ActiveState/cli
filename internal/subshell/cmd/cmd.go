@@ -47,11 +47,11 @@ func (v *SubShell) SetBinary(binary string) {
 }
 
 // WriteUserEnv - see subshell.SubShell
-func (v *SubShell) WriteUserEnv(env map[string]string, envType sscommon.EnvType, userScope bool) *failures.Failure {
+func (v *SubShell) WriteUserEnv(env map[string]string, envType sscommon.EnvData, userScope bool) *failures.Failure {
 	cmdEnv := NewCmdEnv(userScope)
 
 	// Clean up old entries
-	oldEnv := viper.GetStringMap(envType.ConfigKey())
+	oldEnv := viper.GetStringMap(envType.Key)
 	for k, v := range oldEnv {
 		if fail := cmdEnv.unset(k, v.(string)); fail != nil {
 			return fail
@@ -59,7 +59,7 @@ func (v *SubShell) WriteUserEnv(env map[string]string, envType sscommon.EnvType,
 	}
 
 	// Store new entries
-	viper.Set(envType.ConfigKey(), env)
+	viper.Set(envType.Key, env)
 
 	for k, v := range env {
 		value := v
