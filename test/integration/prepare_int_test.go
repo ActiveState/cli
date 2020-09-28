@@ -1,13 +1,13 @@
 package integration
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -26,9 +26,12 @@ func (suite *PrepareIntegrationTestSuite) TestPrepare() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("_prepare")
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("_prepare"),
+		e2e.AppendEnv(fmt.Sprintf("ACTIVESTATE_CLI_CONFIGDIR=%s", ts.Dirs.Work)),
+	)
 	cp.ExpectExitCode(0)
-	suite.AssertConfig(filepath.Join(config.CachePath(), "bin"))
+	suite.AssertConfig(filepath.Join(ts.Dirs.Work, "bin"))
 }
 
 func (suite *PrepareIntegrationTestSuite) AssertConfig(target string) {
@@ -40,6 +43,7 @@ func (suite *PrepareIntegrationTestSuite) AssertConfig(target string) {
 		bashContents := fileutils.ReadFileUnsafe(filepath.Join(homeDir, ".bashrc"))
 		suite.Contains(string(bashContents), constants.RCAppendDefaultStartLine, "bashrc should contain our RC Append Start line")
 		suite.Contains(string(bashContents), constants.RCAppendDefaultStopLine, "bashrc should contain our RC Append Stop line")
+		suite.Contains(string(bashContents), target, "bashrc should contain our target dir")
 	} else {
 		// Test registry
 		out, err := exec.Command("reg", "query", `HKLM\SYSTEM\ControlSet001\Control\Session Manager\Environment`, "/v", "Path").Output()
