@@ -250,21 +250,22 @@ namespace StateDeploy
             if (oldPath.Contains(stateToolInstallDir))
             {
                 session.Log("State tool installation already on PATH");
-                return ActionResult.Success;
             }
-
-            var newPath = string.Format("{0};{1}", stateToolInstallDir, oldPath);
-            session.Log(string.Format("updating PATH to {0}", newPath));
-            try
+            else
             {
-                Environment.SetEnvironmentVariable("PATH", newPath, EnvironmentVariableTarget.Machine);
-            }
-            catch (Exception e)
-            {
-                string msg = string.Format("Could not update PATH. Encountered exception: {0}", e.Message);
-                session.Log(msg);
-                new SecurityError().SetDetails(session, msg);
-                return ActionResult.Failure;
+                var newPath = string.Format("{0};{1}", stateToolInstallDir, oldPath);
+                session.Log(string.Format("updating PATH to {0}", newPath));
+                try
+                {
+                    Environment.SetEnvironmentVariable("PATH", newPath, EnvironmentVariableTarget.Machine);
+                }
+                catch (Exception e)
+                {
+                    string msg = string.Format("Could not update PATH. Encountered exception: {0}", e.Message);
+                    session.Log(msg);
+                    new SecurityError().SetDetails(session, msg);
+                    return ActionResult.Failure;
+                }
             }
 
             session.Log("Running prepare step...");
@@ -273,7 +274,10 @@ namespace StateDeploy
             ActionResult prepareRunResult = ActiveState.Command.Run(session, stateToolPath, prepareCmd, out prepareOutput);
             if (prepareRunResult.Equals(ActionResult.Failure))
             {
-                //RollbarReport.Error(msg, session); ??
+                string msg = string.Format("`state _prepare` returned with error: {0}", prepareOutput);
+                session.Log(msg);
+                RollbarReport.Critical(msg, session);
+
                 Record record = new Record();
                 var errorOutput = Command.FormatErrorOutput(prepareOutput);
                 record.FormatString = string.Format("state _prepare failed with error:\n{0}", errorOutput);
