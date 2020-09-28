@@ -46,7 +46,7 @@ func (suite *PrepareIntegrationTestSuite) AssertConfig(target string) {
 		suite.Contains(string(bashContents), target, "bashrc should contain our target dir")
 	} else {
 		// Test registry
-		out, err := exec.Command("reg", "query", `HKLM\SYSTEM\ControlSet001\Control\Session Manager\Environment`, "/v", "Path").Output()
+		out, err := exec.Command("reg", "query", `HKCU\Environment`, "/v", "Path").Output()
 		suite.Require().NoError(err)
 		path, err := osutil.GetLongPathName(target)
 		suite.Require().NoError(err)
