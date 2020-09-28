@@ -51,7 +51,7 @@ func (v *SubShell) WriteUserEnv(env map[string]string, envType sscommon.EnvType,
 	cmdEnv := NewCmdEnv(userScope)
 
 	// Clean up old entries
-	oldEnv := viper.GetStringMap("user_env")
+	oldEnv := viper.GetStringMap(envType.ConfigKey())
 	for k, v := range oldEnv {
 		if fail := cmdEnv.unset(k, v.(string)); fail != nil {
 			return fail
@@ -59,7 +59,7 @@ func (v *SubShell) WriteUserEnv(env map[string]string, envType sscommon.EnvType,
 	}
 
 	// Store new entries
-	viper.Set("user_env", env)
+	viper.Set(envType.ConfigKey(), env)
 
 	for k, v := range env {
 		value := v

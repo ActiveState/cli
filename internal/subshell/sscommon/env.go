@@ -12,16 +12,19 @@ const (
 type envData struct {
 	start string
 	stop  string
+	key   string
 }
 
 var lookup = [...]envData{
 	{
 		constants.RCAppendDeployStartLine,
 		constants.RCAppendDeployStopLine,
+		"user_deploy_env",
 	},
 	{
 		constants.RCAppendDefaultStartLine,
 		constants.RCAppendDefaultStopLine,
+		"user_default_env",
 	},
 }
 
@@ -39,4 +42,8 @@ func (e EnvType) start() string {
 
 func (e EnvType) stop() string {
 	return e.data().stop
+}
+
+func (e EnvType) ConfigKey() string {
+	return e.data().key
 }
