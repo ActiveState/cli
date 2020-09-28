@@ -104,6 +104,7 @@ steps:
   - #@ steps_genupdate()
   - #@ steps_build_languages_msi()
   - #@ steps_inttest()
+  - #@ steps_uploadlogs()
 #@ end
 
 #@ def jobs_deploy():
