@@ -49,6 +49,9 @@ func (r *Prepare) Run() error {
 
 	fail = r.subshell.WriteUserEnv(envUpdates, sscommon.Default, true)
 	if fail != nil {
+		if runtime.GOOS != "linux" {
+			return locale.WrapError(fail.ToError(), "err_prepare_update_env", "Could not update user environment")
+		}
 		logging.Debug("Encountered failure attempting to update user environment: %s", fail.ToError())
 		r.out.Notice("Could not update user environment")
 	}
