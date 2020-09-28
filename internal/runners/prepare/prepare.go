@@ -1,8 +1,6 @@
 package prepare
 
 import (
-	"fmt"
-	"os"
 	"path/filepath"
 	"runtime"
 
@@ -46,7 +44,7 @@ func (r *Prepare) Run() error {
 	}
 
 	envUpdates := map[string]string{
-		"PATH": fmt.Sprintf("%s%s%s", binDir, string(os.PathListSeparator), os.Getenv("PATH")),
+		"PATH": binDir,
 	}
 
 	fail = r.subshell.WriteUserEnv(envUpdates, sscommon.Default, true)
