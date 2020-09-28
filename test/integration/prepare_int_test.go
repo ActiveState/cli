@@ -1,7 +1,6 @@
 package integration
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -28,10 +27,10 @@ func (suite *PrepareIntegrationTestSuite) TestPrepare() {
 
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("_prepare"),
-		e2e.AppendEnv(fmt.Sprintf("ACTIVESTATE_CLI_CONFIGDIR=%s", ts.Dirs.Work)),
+		// e2e.AppendEnv(fmt.Sprintf("ACTIVESTATE_CLI_CONFIGDIR=%s", ts.Dirs.Work)),
 	)
 	cp.ExpectExitCode(0)
-	suite.AssertConfig(filepath.Join(ts.Dirs.Work, "bin"))
+	suite.AssertConfig(filepath.Join(ts.Dirs.Cache, "bin"))
 }
 
 func (suite *PrepareIntegrationTestSuite) AssertConfig(target string) {
