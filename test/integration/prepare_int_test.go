@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -47,7 +48,9 @@ func (suite *PrepareIntegrationTestSuite) AssertConfig(target string) {
 		// Test registry
 		out, err := exec.Command("reg", "query", `HKLM\SYSTEM\ControlSet001\Control\Session Manager\Environment`, "/v", "Path").Output()
 		suite.Require().NoError(err)
-		suite.Contains(string(out), target, "Windows system PATH should contain our target dir")
+		path, err := osutil.GetLongPathName(target)
+		suite.Require().NoError(err)
+		suite.Contains(string(out), path, "Windows system PATH should contain our target dir")
 	}
 }
 
