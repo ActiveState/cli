@@ -38,14 +38,13 @@ func (suite *PrepareIntegrationTestSuite) AssertConfig(target string) {
 		suite.Require().NoError(err)
 
 		bashContents := fileutils.ReadFileUnsafe(filepath.Join(homeDir, ".bashrc"))
-		suite.Contains(string(bashContents), constants.RCAppendDeployStartLine, "bashrc should contain our RC Append Start line")
-		suite.Contains(string(bashContents), constants.RCAppendDeployStopLine, "bashrc should contain our RC Append Stop line")
-		suite.Contains(string(bashContents), filepath.Join(target, "target"), "bashrc should contain our target dir")
+		suite.Contains(string(bashContents), constants.RCAppendDefaultStartLine, "bashrc should contain our RC Append Start line")
+		suite.Contains(string(bashContents), constants.RCAppendDefaultStopLine, "bashrc should contain our RC Append Stop line")
 	} else {
 		// Test registry
 		out, err := exec.Command("reg", "query", `HKLM\SYSTEM\ControlSet001\Control\Session Manager\Environment`, "/v", "Path").Output()
 		suite.Require().NoError(err)
-		suite.Contains(string(out), filepath.Join(target, "target"), "Windows system PATH should contain our target dir")
+		suite.Contains(string(out), target, "Windows system PATH should contain our target dir")
 	}
 }
 
