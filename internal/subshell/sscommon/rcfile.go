@@ -29,7 +29,7 @@ var (
 	Deploy EnvData = EnvData{
 		constants.RCAppendDeployStartLine,
 		constants.RCAppendDeployStopLine,
-		"user_deploy_env",
+		"user_env",
 	}
 	Default EnvData = EnvData{
 		constants.RCAppendDefaultStartLine,
