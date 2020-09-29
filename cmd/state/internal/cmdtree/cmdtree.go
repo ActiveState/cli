@@ -201,6 +201,11 @@ func (ct *CmdTree) Execute(args []string) error {
 	return ct.cmd.Execute(args)
 }
 
+// Command returns the root command of the CmdTree
+func (ct *CmdTree) Command() *captain.Command {
+	return ct.cmd
+}
+
 // applyLegacyChildren will register any commands and expanders
 func applyLegacyChildren(cmd *captain.Command, globals *globalOptions) {
 	logging.Debug("register")

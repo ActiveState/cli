@@ -19,7 +19,8 @@ type cobraCommander interface {
 type Executor func(cmd *Command, args []string) error
 
 type Command struct {
-	cobra *cobra.Command
+	cobra    *cobra.Command
+	commands []*Command
 
 	name string
 
@@ -30,6 +31,8 @@ type Command struct {
 
 	// deferAnalytics should be set if the command handles the GA reporting in its execute function
 	deferAnalytics bool
+
+	skipUpdate bool
 }
 
 func NewCommand(name, description string, flags []*Flag, args []*Argument, executor Executor) *Command {
@@ -48,6 +51,7 @@ func NewCommand(name, description string, flags []*Flag, args []*Argument, execu
 		execute:   executor,
 		arguments: args,
 		flags:     flags,
+		commands:  make([]*Command, 0),
 	}
 
 	short := description
@@ -172,6 +176,10 @@ func (c *Command) SetDeferAnalytics(value bool) {
 	c.deferAnalytics = value
 }
 
+func (c *Command) SetSkipUpdate(value bool) {
+	c.skipUpdate = value
+}
+
 func (c *Command) SetHidden(value bool) {
 	c.cobra.Hidden = value
 }
@@ -206,8 +214,13 @@ func (c *Command) Arguments() []*Argument {
 	return c.arguments
 }
 
+func (c *Command) SkipUpdate() bool {
+	return c.skipUpdate
+}
+
 func (c *Command) AddChildren(children ...*Command) {
 	for _, child := range children {
+		c.commands = append(c.commands, child)
 		c.cobra.AddCommand(child.cobra)
 	}
 }
@@ -216,6 +229,20 @@ func (c *Command) AddLegacyChildren(children ...cobraCommander) {
 	for _, child := range children {
 		c.cobra.AddCommand(child.GetCobraCmd())
 	}
+}
+
+func (c *Command) Find(args []string) *Command {
+	if len(args) < 2 {
+		return nil
+	}
+
+	for _, cmd := range c.commands {
+		if cmd.cobra.Use == args[1] {
+			return cmd
+		}
+	}
+
+	return nil
 }
 
 func (c *Command) flagByName(name string, persistOnly bool) *Flag {

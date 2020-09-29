@@ -1,4 +1,4 @@
-package main
+package updater
 
 import (
 	"os"
@@ -8,17 +8,17 @@ import (
 
 	"github.com/thoas/go-funk"
 
+	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/updater"
 )
 
-func autoUpdate(args []string, out output.Outputer, pjPath string) (bool, int, error) {
-	disableAutoUpdate := strings.ToLower(os.Getenv(constants.DisableUpdates)) == "true"
+func AutoUpdate(args []string, cmd *captain.Command, out output.Outputer, pjPath string) (bool, int, error) {
+	disableAutoUpdate := disableAutoUpdate(args, cmd)
 	disableAutoUpdateCauseCI := (os.Getenv("CI") != "" || os.Getenv("BUILDER_OUTPUT") != "") && strings.ToLower(os.Getenv(constants.DisableUpdates)) != "false"
 	updateIsRunning := funk.Contains(args, "update")
 	testsAreRunning := condition.InTest()
@@ -27,16 +27,28 @@ func autoUpdate(args []string, out output.Outputer, pjPath string) (bool, int, e
 		return false, 0, nil
 	}
 
-	updated, resultVersion := updater.AutoUpdate(pjPath, out)
+	updated, resultVersion := autoUpdate(pjPath, out)
 	if !updated {
 		return false, 0, nil
 	}
 
-	defer updater.Cleanup()
+	defer Cleanup()
 
 	out.Notice(locale.Tr("auto_update_to_version", constants.Version, resultVersion))
 	code, err := relaunch()
 	return true, code, err
+}
+
+func disableAutoUpdate(args []string, cmd *captain.Command) bool {
+	if strings.ToLower(os.Getenv(constants.DisableUpdates)) == "true" {
+		return true
+	}
+
+	child := cmd.Find(args)
+	if child == nil {
+		return false
+	}
+	return child.SkipUpdate()
 }
 
 // When an update was found and applied, re-launch the update with the current

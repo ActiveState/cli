@@ -24,6 +24,7 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	_ "github.com/ActiveState/cli/internal/prompt" // Sets up survey defaults
 	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -106,11 +107,6 @@ func run(args []string, out output.Outputer) (int, error) {
 		return 1, fail
 	}
 
-	// Auto update to latest state tool version, only runs once per day
-	if updated, code, err := autoUpdate(args, out, pjPath); err != nil || updated {
-		return code, err
-	}
-
 	// Set up prompter
 	prompter := prompt.New()
 
@@ -165,6 +161,12 @@ func run(args []string, out output.Outputer) (int, error) {
 
 	// Run the actual command
 	cmds := cmdtree.New(primer.New(pj, out, authentication.Get(), prompter, sshell, conditional))
+
+	// Auto update to latest state tool version, only runs once per day
+	if updated, code, err := updater.AutoUpdate(args, cmds.Command(), out, pjPath); err != nil || updated {
+		return code, err
+	}
+
 	err = cmds.Execute(args[1:])
 
 	return unwrapError(err)

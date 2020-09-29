@@ -33,6 +33,7 @@ func newShimCommand(prime *primer.Values) *captain.Command {
 			return runner.Run(params, args...)
 		},
 	)
+	cmd.SetSkipUpdate(true)
 
 	return cmd
 }
