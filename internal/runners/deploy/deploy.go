@@ -10,7 +10,6 @@ import (
 	"github.com/gobuffalo/packr"
 	"github.com/thoas/go-funk"
 
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -218,12 +217,7 @@ func configure(installpath string, envGetter runtime.EnvGetter, out output.Outpu
 
 	out.Notice(locale.Tr("deploy_configure_shell", sshell.Shell()))
 
-	envData := sscommon.EnvData{
-		constants.RCAppendDeployStartLine,
-		constants.RCAppendDeployStopLine,
-		"user_env",
-	}
-	fail := sshell.WriteUserEnv(env, envData, userScope)
+	fail := sshell.WriteUserEnv(env, sscommon.Deploy, userScope)
 	if fail != nil {
 		return locale.WrapError(fail, "err_deploy_subshell_write", "Could not write environment information to your shell configuration.")
 	}

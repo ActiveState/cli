@@ -5,7 +5,6 @@ import (
 	"runtime"
 
 	"github.com/ActiveState/cli/internal/config"
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -48,18 +47,13 @@ func (r *Prepare) Run() error {
 		"PATH": binDir,
 	}
 
-	data := sscommon.EnvData{
-		constants.RCAppendDefaultStartLine,
-		constants.RCAppendDefaultStopLine,
-		"user_default_env",
-	}
-	fail = r.subshell.WriteUserEnv(envUpdates, data, true)
+	fail = r.subshell.WriteUserEnv(envUpdates, sscommon.Default, true)
 	if fail != nil {
 		if runtime.GOOS != "linux" {
 			return locale.WrapError(fail.ToError(), "err_prepare_update_env", "Could not update user environment")
 		}
 		logging.Debug("Encountered failure attempting to update user environment: %s", fail.ToError())
-		r.out.Notice("Could not update user environment")
+		r.out.Notice(locale.T("prepare_env_warning"))
 	}
 
 	if runtime.GOOS == "windows" {

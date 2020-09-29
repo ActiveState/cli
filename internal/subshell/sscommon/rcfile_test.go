@@ -4,7 +4,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 )
@@ -34,16 +33,7 @@ func TestWriteRcFile(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := WriteRcFile(
-				tt.args.rcTemplateName,
-				tt.args.path,
-				EnvData{
-					constants.RCAppendDeployStartLine,
-					constants.RCAppendDeployStopLine,
-					"user_env",
-				},
-				tt.args.env,
-			); !reflect.DeepEqual(got, tt.want) {
+			if got := WriteRcFile(tt.args.rcTemplateName, tt.args.path, Deploy, tt.args.env); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("WriteRcFile() = %v, want %v", got, tt.want)
 			}
 			if !fileutils.FileExists(tt.args.path) {
