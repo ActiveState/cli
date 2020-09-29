@@ -16,7 +16,7 @@ import (
 
 var (
 	msiDir = mustFilepathByProjectRoot(`/build/msi`)
-	logDir = mustFilepathByProjectRoot(`/logs`)
+	logDir = mustFilepathByProjectRoot(`/build`)
 
 	checkPerlVersionCmd = "perl -v"
 	checkPerlModulesCmd = "perldoc -l DBD::Pg"

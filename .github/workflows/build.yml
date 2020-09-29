@@ -270,18 +270,13 @@ jobs:
       shell: bash
       run: |
         export SHELL=''
-        mkdir -p logs
+        set +e
         go test -timeout 10m github.com/ActiveState/cli/test/integration -test.v -test.run "^TestLanguageMsiActivePerl|TestDeployIntegrationTestSuite|TestInitIntegrationTestSuite|TestPushIntegrationTestSuite|TestUpdateIntegrationTestSuite$"
+        head -n-0 build/*log
       env:
         INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
         INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
         PLATFORM_API_TOKEN: ${{ secrets.PLATFORM_API_TOKEN }}
-    - name: Upload logs
-      if: ${{ always() }}
-      uses: actions/upload-artifact@v2
-      with:
-        name: logs
-        path: logs/
   inttest:
     if: contains(github.event.pull_request.labels.*.name, 'run integration tests')
     name: Integration Test
@@ -346,18 +341,13 @@ jobs:
       shell: bash
       run: |
         export SHELL=''
-        mkdir -p logs
+        set +e
         go test -timeout 20m ./test/integration -v
+        head -n-0 build/*log
       env:
         INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
         INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
         PLATFORM_API_TOKEN: ${{ secrets.PLATFORM_API_TOKEN }}
-    - name: Upload logs
-      if: ${{ always() }}
-      uses: actions/upload-artifact@v2
-      with:
-        name: logs
-        path: logs/
   deploy:
     name: Deploy
     needs:
