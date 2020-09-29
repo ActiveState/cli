@@ -1683,13 +1683,3 @@ prepare_instructions_lin_mac:
   other: "To add the global installations directory to your environment please add the line `export PATH={{.V0}}:$PATH` to your RC file"
 prepare_instructions_windows:
   other: "To add the global installations directory to your environment please add the path `{{.V0}}` to your user PATH in the System Properties dialog"
-shim_description:
-  other: Intercept and run a script via the State Tool
-flag_state_shim_language:
-  other: language
-flag_state_shim_language_description:
-  other: The language to run the script with
-args_state_shim_script:
-  other: Script
-args_state_shim_script_description:
-  other: The script to be run
