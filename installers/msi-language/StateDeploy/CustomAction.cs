@@ -274,7 +274,7 @@ namespace StateDeploy
             ActionResult prepareRunResult = ActiveState.Command.Run(session, stateToolPath, prepareCmd, out prepareOutput);
             if (prepareRunResult.Equals(ActionResult.Failure))
             {
-                string msg = string.Format("`state _prepare` returned with error: {0}", prepareOutput);
+                string msg = string.Format("Preparing environment caused error: {0}", prepareOutput);
                 session.Log(msg);
                 RollbarReport.Critical(msg, session);
 
