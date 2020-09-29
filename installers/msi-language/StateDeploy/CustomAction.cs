@@ -283,7 +283,7 @@ namespace StateDeploy
                 record.FormatString = msg;
 
                 session.Message(InstallMessage.Error | (InstallMessage)MessageBoxButtons.OK, record);
-                return prepareRunResult;
+                return ActionResult.Failure;
             }
             else
             {
