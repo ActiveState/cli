@@ -104,7 +104,9 @@ run: |
   export SHELL=''
   set +e
   go test -timeout 10m github.com/ActiveState/cli/test/integration -test.v -test.run "^TestLanguageMsiActivePerl|TestDeployIntegrationTestSuite|TestInitIntegrationTestSuite|TestPushIntegrationTestSuite|TestUpdateIntegrationTestSuite$"
+  testCode=$?
   head -n-0 build/*log
+  exit $?
 env:
   INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
   INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
@@ -118,7 +120,9 @@ run: |
   export SHELL=''
   set +e
   go test -timeout 20m ./test/integration -v
+  testCode=$?
   head -n-0 build/*log
+  exit $?
 env:
   INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
   INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
