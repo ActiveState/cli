@@ -25,19 +25,6 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
-var (
-	Deploy EnvData = EnvData{
-		constants.RCAppendDeployStartLine,
-		constants.RCAppendDeployStopLine,
-		"user_env",
-	}
-	Default EnvData = EnvData{
-		constants.RCAppendDefaultStartLine,
-		constants.RCAppendDefaultStopLine,
-		"user_default_env",
-	}
-)
-
 type EnvData struct {
 	Start string
 	Stop  string
