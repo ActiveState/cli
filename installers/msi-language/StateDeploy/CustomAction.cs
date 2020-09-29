@@ -280,7 +280,7 @@ namespace StateDeploy
 
                 Record record = new Record();
                 var errorOutput = Command.FormatErrorOutput(prepareOutput);
-                record.FormatString = string.Format("state _prepare failed with error:\n{0}", errorOutput);
+                record.FormatString = msg;
 
                 session.Message(InstallMessage.Error | (InstallMessage)MessageBoxButtons.OK, record);
                 return prepareRunResult;
