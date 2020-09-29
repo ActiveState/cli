@@ -1679,3 +1679,13 @@ ppm_convert_ask_feedback:
 windows_compatibility_warning:
   other: |
     Warning: State Tool is untested on Windows versions below 10. If you encounter issues please consider reporting them on {{.V0}}
+shim_description:
+  other: Intercept and run a script via the State Tool
+flag_state_shim_language:
+  other: language
+flag_state_shim_language_description:
+  other: The language to run the script with
+args_state_shim_script:
+  other: Script
+args_state_shim_script_description:
+  other: The script to be run

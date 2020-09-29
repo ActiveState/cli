@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/path"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/internal/subshell"
@@ -92,7 +93,7 @@ func run(out output.Outputer, subs subshell.SubShell, name string, args []string
 		return FailStandalonConflict.New("error_state_run_standalone_conflict")
 	}
 
-	path := os.Getenv("PATH")
+	envPath := os.Getenv("PATH")
 
 	// Activate the state if needed.
 	if !script.Standalone() && !subshell.IsActivated() {
@@ -117,10 +118,10 @@ func run(out output.Outputer, subs subshell.SubShell, name string, args []string
 		if err != nil {
 			return err
 		}
-		path = env["PATH"]
+		envPath = env["PATH"]
 	}
 
-	if !langExec.Builtin() && !pathProvidesExec(configCachePath(), langExec.Name(), path) {
+	if !langExec.Builtin() && !path.ProvidesExecutable(configCachePath(), langExec.Name(), envPath) {
 		return FailExecNotFound.New("error_state_run_unknown_exec")
 	}
 
@@ -145,54 +146,4 @@ func configCachePath() string {
 		return "" // empty string value will skip path filtering in subsequent logic
 	}
 	return config.CachePath()
-}
-
-func pathProvidesExec(filterByPath, exec, path string) bool {
-	paths := splitPath(path)
-	if filterByPath != "" {
-		paths = filterPrefixed(filterByPath, paths)
-	}
-	paths = applySuffix(exec, paths)
-
-	for _, p := range paths {
-		if isExecutableFile(p) {
-			return true
-		}
-	}
-	return false
-}
-
-func splitPath(path string) []string {
-	return strings.Split(path, string(os.PathListSeparator))
-}
-
-func filterPrefixed(prefix string, paths []string) []string {
-	var ps []string
-	for _, p := range paths {
-		// Clean removes double slashes and relative path directories
-		if strings.HasPrefix(filepath.Clean(p), filepath.Clean(prefix)) {
-			ps = append(ps, p)
-		}
-	}
-	return ps
-}
-
-func applySuffix(suffix string, paths []string) []string {
-	for i, v := range paths {
-		paths[i] = filepath.Join(v, suffix)
-	}
-	return paths
-}
-
-func isExecutableFile(name string) bool {
-	f, err := os.Stat(name)
-	if err != nil { // unlikely unless file does not exist
-		return false
-	}
-
-	if runtime.GOOS == "windows" {
-		return f.Mode()&0400 != 0
-	}
-
-	return f.Mode()&0110 != 0
 }
