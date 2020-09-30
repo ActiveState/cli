@@ -19,6 +19,7 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/activate"
 	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
@@ -216,7 +217,7 @@ func configure(installpath string, envGetter runtime.EnvGetter, out output.Outpu
 
 	out.Notice(locale.Tr("deploy_configure_shell", sshell.Shell()))
 
-	fail := sshell.WriteUserEnv(env, userScope)
+	fail := sshell.WriteUserEnv(env, sscommon.Deploy, userScope)
 	if fail != nil {
 		return locale.WrapError(fail, "err_deploy_subshell_write", "Could not write environment information to your shell configuration.")
 	}

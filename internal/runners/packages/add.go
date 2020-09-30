@@ -32,7 +32,7 @@ func (a *Add) Run(params AddRunParams) error {
 	logging.Debug("ExecuteAdd")
 
 	pj := project.Get()
-	language, fail := model.DefaultLanguageForProject(pj.Owner(), pj.Name())
+	language, fail := model.DefaultLanguageNameForProject(pj.Owner(), pj.Name())
 	if fail != nil {
 		return fail.WithDescription("err_fetch_languages")
 	}
