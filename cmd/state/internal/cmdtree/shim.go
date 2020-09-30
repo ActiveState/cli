@@ -24,7 +24,7 @@ func newShimCommand(prime *primer.Values) *captain.Command {
 		[]*captain.Argument{
 			{
 				Name:        locale.T("args_state_shim_script"),
-				Description: locale.T("args_state_shim_description"),
+				Description: locale.T("args_state_shim_script_description"),
 				Required:    true,
 				Value:       &params.Script,
 			},
