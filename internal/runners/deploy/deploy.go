@@ -282,6 +282,17 @@ func symlink(installPath string, overwrite bool, envGetter runtime.EnvGetter, ou
 	return nil
 }
 
+// SymlinkTargetPath adds the .lnk file ending on windows
+func symlinkTargetPath(targetDir string, path string) string {
+	target := filepath.Clean(filepath.Join(targetDir, filepath.Base(path)))
+	if rt.GOOS != "windows" {
+		return target
+	}
+
+	oldExt := filepath.Ext(target)
+	return target[0:len(target)-len(oldExt)] + ".lnk"
+}
+
 // symlinkWithTarget creates symlinks in the target path of all executables found in the bins dir
 // It overwrites existing files, if the overwrite flag is set.
 // On Windows the same executable name can have several file extensions,
@@ -298,7 +309,7 @@ func symlinkWithTarget(overwrite bool, symlinkPath string, exePaths []string, ou
 	}
 
 	for _, exePath := range exePaths {
-		symlink := activate.SymlinkTargetPath(symlinkPath, exePath)
+		symlink := symlinkTargetPath(symlinkPath, exePath)
 
 		// If the link already exists we may have to overwrite it, skip it, or fail..
 		if fileutils.TargetExists(symlink) {

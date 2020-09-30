@@ -202,17 +202,6 @@ func shim(fpath, shimPath string) error {
 	return nil
 }
 
-// SymlinkTargetPath adds the .lnk file ending on windows
-func SymlinkTargetPath(targetDir string, path string) string {
-	target := filepath.Clean(filepath.Join(targetDir, filepath.Base(path)))
-	if rt.GOOS != "windows" {
-		return target
-	}
-
-	oldExt := filepath.Ext(target)
-	return target[0:len(target)-len(oldExt)] + ".lnk"
-}
-
 func needsRollback() bool {
 	return true
 }
