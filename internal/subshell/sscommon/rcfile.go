@@ -25,23 +25,43 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
-func WriteRcFile(rcTemplateName string, path string, env map[string]string) *failures.Failure {
+var (
+	Deploy EnvData = EnvData{
+		constants.RCAppendDeployStartLine,
+		constants.RCAppendDeployStopLine,
+		"user_env",
+	}
+	Default EnvData = EnvData{
+		constants.RCAppendDefaultStartLine,
+		constants.RCAppendDefaultStopLine,
+		"user_default_env",
+	}
+)
+
+type EnvData struct {
+	Start string
+	Stop  string
+	Key   string
+}
+
+func WriteRcFile(rcTemplateName string, path string, data EnvData, env map[string]string) *failures.Failure {
 	if fail := fileutils.Touch(path); fail != nil {
 		return fail
 	}
 
-	if fail := cleanRcFile(path); fail != nil {
+	rcData := map[string]interface{}{
+		"Start": data.Start,
+		"Stop":  data.Stop,
+		"Env":   env,
+	}
+
+	if fail := cleanRcFile(path, data); fail != nil {
 		return fail
 	}
 
 	box := packr.NewBox("../../../assets/shells")
 	tpl := box.String(rcTemplateName)
 
-	rcData := map[string]interface{}{
-		"Start": constants.RCAppendStartLine,
-		"Stop":  constants.RCAppendStopLine,
-		"Env":   env,
-	}
 	t, err := template.New("rcfile_append").Parse(tpl)
 	if err != nil {
 		return failures.FailTemplating.Wrap(err)
@@ -58,7 +78,7 @@ func WriteRcFile(rcTemplateName string, path string, env map[string]string) *fai
 	return fileutils.AppendToFile(path, []byte(fileutils.LineEnd+out.String()))
 }
 
-func cleanRcFile(path string) *failures.Failure {
+func cleanRcFile(path string, data EnvData) *failures.Failure {
 	readFile, err := os.Open(path)
 
 	if err != nil {
@@ -74,7 +94,7 @@ func cleanRcFile(path string) *failures.Failure {
 		text := scanner.Text()
 
 		// Detect start line
-		if strings.Contains(text, constants.RCAppendStartLine) {
+		if strings.Contains(text, data.Start) {
 			logging.Debug("Cleaning previous RC lines from %s", path)
 			strip = true
 		}
@@ -88,7 +108,7 @@ func cleanRcFile(path string) *failures.Failure {
 		fileContents = append(fileContents, scanner.Text())
 
 		// Detect stop line
-		if strings.Contains(text, constants.RCAppendStopLine) {
+		if strings.Contains(text, data.Stop) {
 			strip = false
 		}
 	}
