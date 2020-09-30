@@ -32,11 +32,11 @@ type exeFile struct {
 }
 
 func getDefaultProjectPath(d DefaultConfigurer) string {
-	return d.GetString("default")
+	return d.GetString("default_project_path")
 }
 
 func setDefaultProjectPath(d DefaultConfigurer, path string) {
-	d.Set("default", path)
+	d.Set("default_project_path", path)
 }
 
 type primable interface {
