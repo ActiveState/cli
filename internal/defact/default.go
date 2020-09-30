@@ -1,4 +1,4 @@
-package activate
+package defact
 
 import (
 	"io/ioutil"
@@ -180,20 +180,15 @@ func shim(fpath, shimPath string) error {
 		"command": filepath.Base(fpath),
 		"target":  fpath,
 	}
-	box := packr.NewBox("../../../assets/shim")
-	var shimStr string
-	if rt.GOOS != "windows" {
-		shimBytes := box.Bytes("shim.sh")
-		shimStr, err = strutils.ParseTemplate(string(shimBytes), tplParams)
-		if err != nil {
-			return errs.Wrap(err, "Could not parse shim.sh template")
-		}
-	} else {
-		shimBytes := box.Bytes("shim.bat")
-		shimStr, err = strutils.ParseTemplate(string(shimBytes), tplParams)
-		if err != nil {
-			return errs.Wrap(err, "Could not parse shim.bat template")
-		}
+	box := packr.NewBox("../../assets/shim")
+	boxFile := "shim.sh"
+	if rt.GOOS == "windows" {
+		boxFile = "shim.bat"
+	}
+	shimBytes := box.Bytes(boxFile)
+	shimStr, err := strutils.ParseTemplate(string(shimBytes), tplParams)
+	if err != nil {
+		return errs.Wrap(err, "Could not parse %s template", boxFile)
 	}
 
 	err = ioutil.WriteFile(shimPath, []byte(shimStr), 0755)

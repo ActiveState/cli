@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/defact"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/subshell"
@@ -35,7 +36,7 @@ func (n *namespaceSelectMock) Run(namespace string, preferredPath string) (strin
 	return n.resultPath, n.resultErr
 }
 
-var activatorMock = func(out output.Outputer, cfg DefaultConfigurer, subs subshell.SubShell, targetPath string, setDefault bool, activator activateFunc) error {
+var activatorMock = func(out output.Outputer, cfg defact.DefaultConfigurer, subs subshell.SubShell, targetPath string, setDefault bool, activator activateFunc) error {
 	return nil
 }
 

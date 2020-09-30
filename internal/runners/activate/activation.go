@@ -13,6 +13,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/defact"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileevents"
@@ -28,9 +29,9 @@ import (
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
-type activationLoopFunc func(out output.Outputer, config DefaultConfigurer, subs subshell.SubShell, targetPath string, setDefault bool, activator activateFunc) error
+type activationLoopFunc func(out output.Outputer, config defact.DefaultConfigurer, subs subshell.SubShell, targetPath string, setDefault bool, activator activateFunc) error
 
-func activationLoop(out output.Outputer, config DefaultConfigurer, subs subshell.SubShell, targetPath string, setDefault bool, activator activateFunc) error {
+func activationLoop(out output.Outputer, config defact.DefaultConfigurer, subs subshell.SubShell, targetPath string, setDefault bool, activator activateFunc) error {
 	// activate should be continually called while returning true
 	// looping here provides a layer of scope to handle printing output
 	var proj *project.Project
@@ -75,11 +76,11 @@ func activationLoop(out output.Outputer, config DefaultConfigurer, subs subshell
 	return nil
 }
 
-type activateFunc func(proj *project.Project, out output.Outputer, config DefaultConfigurer, subs subshell.SubShell, setDefault bool) (keepGoing bool, err error)
+type activateFunc func(proj *project.Project, out output.Outputer, config defact.DefaultConfigurer, subs subshell.SubShell, setDefault bool) (keepGoing bool, err error)
 
 // activate will activate the venv and subshell. It is meant to be run in a loop
 // with the return value indicating whether another iteration is warranted.
-func activate(proj *project.Project, out output.Outputer, cfg DefaultConfigurer, subs subshell.SubShell, setDefault bool) (bool, error) {
+func activate(proj *project.Project, out output.Outputer, cfg defact.DefaultConfigurer, subs subshell.SubShell, setDefault bool) (bool, error) {
 	projectfile.Reset()
 	venv := virtualenvironment.Get()
 
@@ -89,7 +90,7 @@ func activate(proj *project.Project, out output.Outputer, cfg DefaultConfigurer,
 	if setDefault && alreadyActivated {
 		venv.ActivateRuntime()
 		// TODO: This should fail if a project name is defined that is different from the already activated project
-		err := SetupDefaultActivation(cfg, out, venv)
+		err := defact.SetupDefaultActivation(cfg, out, venv)
 		if err != nil {
 			return false, locale.WrapError(err, "default_setup_err", "Failed to set up the default activation for {{.V0}}.", proj.Name())
 		}
@@ -105,7 +106,7 @@ func activate(proj *project.Project, out output.Outputer, cfg DefaultConfigurer,
 	}
 
 	if setDefault {
-		err := SetupDefaultActivation(cfg, out, venv)
+		err := defact.SetupDefaultActivation(cfg, out, venv)
 		if err != nil {
 			return false, locale.WrapError(err, "default_setup_err", "Failed to set up the default activation for {{.V0}}.", proj.Name())
 		}

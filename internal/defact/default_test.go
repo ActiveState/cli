@@ -1,4 +1,4 @@
-package activate
+package defact
 
 import (
 	"reflect"

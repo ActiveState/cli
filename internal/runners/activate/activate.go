@@ -7,6 +7,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/defact"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -23,7 +24,7 @@ type Activate struct {
 	namespaceSelect  namespaceSelectAble
 	activateCheckout CheckoutAble
 	out              output.Outputer
-	config           DefaultConfigurer
+	config           defact.DefaultConfigurer
 	subshell         subshell.SubShell
 }
 
@@ -31,7 +32,7 @@ type ActivateParams struct {
 	Namespace     *project.Namespaced
 	PreferredPath string
 	Command       string
-	SetDefault    bool
+	Default       bool
 }
 
 type primeable interface {
@@ -79,7 +80,7 @@ func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc)
 	if r.out.Type() != output.PlainFormatName {
 		venv := virtualenvironment.Get()
 		activeProject := os.Getenv(constants.ActivatedStateEnvVarName) != ""
-		if activeProject && params.SetDefault {
+		if activeProject && params.Default {
 			// The following reads in the environment information (GetEnv() function) for the still active project
 
 			// TODO: This probably does not work, if we are trying to set a not-activated project as the default
@@ -108,7 +109,7 @@ func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc)
 		r.subshell.SetActivateCommand(params.Command)
 	}
 
-	return activatorLoop(r.out, r.config, r.subshell, targetPath, params.SetDefault, activate)
+	return activatorLoop(r.out, r.config, r.subshell, targetPath, params.Default, activate)
 }
 
 func (r *Activate) setupPath(namespace string, preferredPath string) (string, error) {
