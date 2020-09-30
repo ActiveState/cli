@@ -86,7 +86,7 @@ func rollbackShims(cfg DefaultConfigurer) error {
 		// remove shim if it links to old project path or target does not exist anymore
 		err = os.Remove(fn)
 		if err != nil {
-			return locale.WrapError(err, "rollback_remove_err", "Failed to remove symlink {{.V0}}", fn)
+			return locale.WrapError(err, "rollback_remove_err", "Failed to remove shim {{.V0}}", fn)
 		}
 	}
 	return nil

@@ -2,4 +2,4 @@
 
 # target: {{.target}}
 
-{{.exe}} _ppm {{.command}} %*
+{{.exe}} shim -- {{.command}} %*

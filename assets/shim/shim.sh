@@ -2,4 +2,4 @@
 
 # target: {{.target}}
 
-{{.exe}} _shim {{.command}} $*
+{{.exe}} shim -- {{.command}} $*
