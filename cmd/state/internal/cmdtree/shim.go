@@ -30,6 +30,9 @@ func newShimCommand(prime *primer.Values) *captain.Command {
 			},
 		},
 		func(ccmd *captain.Command, args []string) error {
+			if len(args) > 0 {
+				args = args[1:]
+			}
 			return runner.Run(params, args...)
 		},
 	)
