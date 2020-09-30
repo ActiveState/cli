@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/condition"
 	C "github.com/ActiveState/cli/internal/constants"
@@ -45,6 +46,10 @@ func ConfigPath() string {
 // CachePath returns the path to an activestate cache dir.
 func CachePath() string {
 	return defaultConfig.CachePath()
+}
+
+func GlobalBinPath() string {
+	return filepath.Join(defaultConfig.CachePath(), "bin")
 }
 
 // InstallSource returns the source of the State Tool installation

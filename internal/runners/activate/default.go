@@ -4,15 +4,19 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	rt "runtime"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
+	"github.com/gobuffalo/packr"
 	"github.com/thoas/go-funk"
 )
 
@@ -27,15 +31,6 @@ type exeFile struct {
 	ext   string
 }
 
-// TODO sync with Mike's PR
-func getGlobalBinDir(d DefaultConfigurer) (string, error) {
-	binDir := d.GetString("global_bin_dir")
-	if !fileutils.DirExists(binDir) {
-		return binDir, errs.New("Could not find default installation directory.")
-	}
-	return binDir, nil
-}
-
 func getDefaultProjectPath(d DefaultConfigurer) string {
 	return d.GetString("default")
 }
@@ -48,35 +43,27 @@ type primable interface {
 	primer.Outputer
 }
 
-// NewDefaultActivation initializes a DefaultActivation struct
-// TODO: implement for windows
-func isLink(fn string) bool {
-	return fileutils.IsSymlink(fn)
-}
-
-// TODO: implement for windows
-func linkTarget(fn string) (string, error) {
-	return fileutils.ResolvePath(fn)
-}
-
-// TODO: implement for windows
-func link(fpath, symlink string) error {
-	err := os.Symlink(fpath, symlink)
+// gets the intended target for a shim
+func shimTarget(fn string) (string, error) {
+	contents, err := ioutil.ReadFile(fn)
 	if err != nil {
-		return locale.WrapInputError(
-			err, "err_default_symlink",
-			"Cannot create symlink at {{.V0}}, ensure you have permissions to write to {{.V1}}.", symlink, filepath.Dir(symlink),
-		)
+		return "", err
 	}
-	return nil
+
+	targetRe := regexp.MustCompile("^ target: (.)$")
+	target := targetRe.FindString(string(contents))
+	if target == "" {
+		return "", errs.New("Target file is not a shim.")
+	}
+
+	return target, nil
 }
 
-func rollbackSymlinks(config DefaultConfigurer) error {
-	projectPath := getDefaultProjectPath(config)
-	binDir, err := getGlobalBinDir(config)
-	if err != nil {
-		return err
-	}
+// rollbackShims removes all shims in the global binary directory that target a previous default project
+// If the target of a shim does not exist anymore, the shim is also removed.
+func rollbackShims(cfg DefaultConfigurer) error {
+	projectPath := getDefaultProjectPath(cfg)
+	binDir := config.GlobalBinPath()
 
 	// remove symlinks pointing to default project
 	files, err := ioutil.ReadDir(binDir)
@@ -85,18 +72,17 @@ func rollbackSymlinks(config DefaultConfigurer) error {
 	}
 	for _, f := range files {
 		fn := f.Name()
-		if !isLink(fn) {
+		target, err := shimTarget(fn)
+		if err != nil {
 			continue
 		}
-		target, err := linkTarget(fn)
-		if err != nil {
-			return locale.WrapError(err, "rollback_resolve_err", "Failed to resolve target of link {{.V0}}", fn)
-		}
+
+		// TODO: Decide if we need to do these checks...
 		if fileutils.TargetExists(target) && (projectPath == "" || !strings.HasPrefix(target, projectPath)) {
 			continue
 		}
 
-		// remove symlink if it links to old project path or target does not exist anymore
+		// remove shim if it links to old project path or target does not exist anymore
 		err = os.Remove(fn)
 		if err != nil {
 			return locale.WrapError(err, "rollback_remove_err", "Failed to remove symlink {{.V0}}", fn)
@@ -171,8 +157,53 @@ func UniqueExes(exePaths []string, pathext string) ([]string, error) {
 	return result, nil
 }
 
-// SymlinkName adds the .lnk file ending on windows
-func SymlinkName(targetDir string, path string) string {
+// shimTargetPath returns the full path to the shim target (adds .bat on Windows)
+func shimTargetPath(targetDir string, path string) string {
+	target := filepath.Clean(filepath.Join(targetDir, filepath.Base(path)))
+	if rt.GOOS != "windows" {
+		return target
+	}
+
+	oldExt := filepath.Ext(target)
+	return target[0:len(target)-len(oldExt)] + ".bat"
+}
+
+func shim(fpath, shimPath string) error {
+	exe, err := os.Executable()
+	if err != nil {
+		return errs.Wrap(err, "Could not get State Tool executable")
+	}
+
+	tplParams := map[string]interface{}{
+		"exe":     exe,
+		"command": filepath.Base(fpath),
+		"target":  fpath,
+	}
+	box := packr.NewBox("../../../assets/shim")
+	var shimStr string
+	if rt.GOOS != "windows" {
+		shimBytes := box.Bytes("shim.sh")
+		shimStr, err = strutils.ParseTemplate(string(shimBytes), tplParams)
+		if err != nil {
+			return errs.Wrap(err, "Could not parse shim.sh template")
+		}
+	} else {
+		shimBytes := box.Bytes("shim.bat")
+		shimStr, err = strutils.ParseTemplate(string(shimBytes), tplParams)
+		if err != nil {
+			return errs.Wrap(err, "Could not parse shim.bat template")
+		}
+	}
+
+	err = ioutil.WriteFile(fpath, []byte(shimStr), 0755)
+	if err != nil {
+		return errs.Wrap(err, "failed to write shim command %s", shim)
+	}
+	return nil
+}
+
+// SymlinkTargetPath adds the .lnk file ending on windows
+func SymlinkTargetPath(targetDir string, path string) string {
 	target := filepath.Clean(filepath.Join(targetDir, filepath.Base(path)))
 	if rt.GOOS != "windows" {
 		return target
@@ -186,25 +217,25 @@ func needsRollback() bool {
 	return true
 }
 
-// symlinkWithTarget creates symlinks in the target path of all executables found in the bins dir
+// shimsWithTarget creates shims in the target path of all executables found in the bins dir
 // It overwrites existing files, if the overwrite flag is set.
 // On Windows the same executable name can have several file extensions,
-// therefore executables are only symlinked if it has not been symlinked to a
+// therefore executables are only shimmed if it has not been shimmed for a
 // target (with the same or a different extension) from a different directory.
-// Also: Only the executable with the highest priority according to pathExt is symlinked.
-func symlinkWithTarget(symlinkPath string, exePaths []string, out output.Outputer) error {
+// Also: Only the executable with the highest priority according to pathExt is shimmed.
+func shimsWithTarget(targetPath string, exePaths []string, out output.Outputer) error {
+	out.Print(locale.Tl("default_shim", "Writing default installation to {{.V0}}.", targetPath))
 	for _, exePath := range exePaths {
-		symlink := SymlinkName(symlinkPath, exePath)
+		shimPath := shimTargetPath(targetPath, exePath)
 
-		// If the link already exists we may have to overwrite it, skip it, or fail..
-		if fileutils.TargetExists(symlink) {
-			// This should not happen as we are always deleting old symlinks before
+		// The link should not exist as we are always rolling back old shims before we run this code.
+		if fileutils.TargetExists(shimPath) {
 			return locale.NewInputError(
 				"err_default_symlink_target_exists",
-				"Cannot create symlink as the target already exists: {{.V0}}.", symlink)
+				"Cannot create shim as the target already exists: {{.V0}}.", shimPath)
 		}
 
-		if err := link(exePath, symlink); err != nil {
+		if err := shim(exePath, shimPath); err != nil {
 			return err
 		}
 	}
@@ -213,7 +244,7 @@ func symlinkWithTarget(symlinkPath string, exePaths []string, out output.Outpute
 }
 
 // SetupDefaultActivation sets symlinks in the global bin directory to the currently activated runtime
-func SetupDefaultActivation(config DefaultConfigurer, output output.Outputer, envGetter runtime.EnvGetter) error {
+func SetupDefaultActivation(cfg DefaultConfigurer, output output.Outputer, envGetter runtime.EnvGetter) error {
 	env, err := envGetter.GetEnv(false, "")
 	if err != nil {
 		return err
@@ -221,7 +252,7 @@ func SetupDefaultActivation(config DefaultConfigurer, output output.Outputer, en
 
 	if needsRollback() {
 		// roll back old symlinks
-		rollbackSymlinks(config)
+		rollbackShims(cfg)
 	}
 
 	// Retrieve artifact binary directory
@@ -241,10 +272,7 @@ func SetupDefaultActivation(config DefaultConfigurer, output output.Outputer, en
 		return locale.WrapError(err, "err_unique_exes", "Could not detect unique executables, make sure your PATH and PATHEXT environment variables are properly configured.")
 	}
 
-	binDir, err := getGlobalBinDir(config)
-	if err != nil {
-		return err
-	}
+	binDir := config.GlobalBinPath()
 
-	return symlinkWithTarget(binDir, exes, output)
+	return shimsWithTarget(binDir, exes, output)
 }

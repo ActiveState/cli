@@ -352,6 +352,36 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_Command() {
 	cp.ExpectExitCode(0)
 }
 
+func (suite *ActivateIntegrationTestSuite) TestActivate_Default() {
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("activate", "ActiveState-CLI/small-python", "--default")
+	cp.Expect("Where would you like to checkout")
+	cp.SendLine(cp.WorkDirectory())
+
+	cp.Expect("Downloading", 20*time.Second)
+	cp.Expect("Installing", 120*time.Second)
+	cp.Expect("activated state", 120*time.Second)
+
+	suite.assertCompletedStatusBarReport(cp.Snapshot())
+
+	// ensure that shell is functional
+	cp.WaitForInput()
+	cp.SendLine("state activate --default ActiveState-CLI/Python2")
+	cp.Expect("error message")
+
+	cp.SendLine("state activate --default")
+	cp.Expect("all fine, just setting up default links")
+
+	cp.SendLine("exit 0")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnCmd(filepath.Join(ts.Dirs.Cache, "python"), "--version")
+	cp.Expect("ActiveState")
+	cp.ExpectExitCode(0)
+}
+
 func TestActivateIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(ActivateIntegrationTestSuite))
 }
