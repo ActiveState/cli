@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/strutils"
@@ -195,7 +196,7 @@ func shim(fpath, shimPath string) error {
 		}
 	}
 
-	err = ioutil.WriteFile(fpath, []byte(shimStr), 0755)
+	err = ioutil.WriteFile(shimPath, []byte(shimStr), 0755)
 	if err != nil {
 		return errs.Wrap(err, "failed to write shim command %s", shimPath)
 	}
@@ -224,6 +225,7 @@ func shimsWithTarget(targetPath string, exePaths []string, out output.Outputer) 
 				"Cannot create shim as the target already exists: {{.V0}}.", shimPath)
 		}
 
+		logging.Debug("Shimming %s at %s", exePath, shimPath)
 		if err := shim(exePath, shimPath); err != nil {
 			return err
 		}
