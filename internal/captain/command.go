@@ -32,7 +32,8 @@ type Command struct {
 	// deferAnalytics should be set if the command handles the GA reporting in its execute function
 	deferAnalytics bool
 
-	skipUpdate bool
+	skipUpdate           bool
+	skipDeprecationCheck bool
 }
 
 func NewCommand(name, description string, flags []*Flag, args []*Argument, executor Executor) *Command {
@@ -180,6 +181,10 @@ func (c *Command) SetSkipUpdate(value bool) {
 	c.skipUpdate = value
 }
 
+func (c *Command) SetSkipDeprecationCheck(value bool) {
+	c.skipDeprecationCheck = value
+}
+
 func (c *Command) SetHidden(value bool) {
 	c.cobra.Hidden = value
 }
@@ -218,6 +223,10 @@ func (c *Command) SkipUpdate() bool {
 	return c.skipUpdate
 }
 
+func (c *Command) SkipDeprecationCheck() bool {
+	return c.skipDeprecationCheck
+}
+
 func (c *Command) AddChildren(children ...*Command) {
 	for _, child := range children {
 		c.commands = append(c.commands, child)
@@ -232,16 +241,34 @@ func (c *Command) AddLegacyChildren(children ...cobraCommander) {
 }
 
 func (c *Command) Find(args []string) *Command {
-	if len(args) < 2 {
-		return nil
+	var innerFind func(*Command, []string) (*Command, []string)
+
+	innerFind = func(innerCmd *Command, innerArgs []string) (*Command, []string) {
+		if len(innerArgs) == 0 {
+			return innerCmd, innerArgs
+		}
+
+		cmd := innerCmd.findNext(innerArgs[0])
+		if cmd != nil {
+			return innerFind(cmd, innerArgs[1:])
+		}
+		return innerCmd, innerArgs
 	}
 
+	if len(args) < 2 {
+		return c
+	}
+
+	found, _ := innerFind(c, args[1:])
+	return found
+}
+
+func (c *Command) findNext(next string) *Command {
 	for _, cmd := range c.commands {
-		if cmd.cobra.Use == args[1] {
+		if cmd.cobra.Use == next {
 			return cmd
 		}
 	}
-
 	return nil
 }
 
