@@ -298,7 +298,7 @@ func symlinkWithTarget(overwrite bool, symlinkPath string, exePaths []string, ou
 	}
 
 	for _, exePath := range exePaths {
-		symlink := activate.SymlinkName(symlinkPath, exePath)
+		symlink := activate.SymlinkTargetPath(symlinkPath, exePath)
 
 		// If the link already exists we may have to overwrite it, skip it, or fail..
 		if fileutils.TargetExists(symlink) {
