@@ -269,7 +269,7 @@ namespace StateDeploy
             }
 
             session.Log("Running prepare step...");
-            string prepareCmd = " _prepare --output=json";
+            string prepareCmd = " _prepare";
             string prepareOutput;
             ActionResult prepareRunResult = ActiveState.Command.Run(session, stateToolPath, prepareCmd, out prepareOutput);
             if (prepareRunResult.Equals(ActionResult.Failure))
