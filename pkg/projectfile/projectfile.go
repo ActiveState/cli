@@ -669,10 +669,22 @@ func GetProjectFilePath() (string, *failures.Failure) {
 		logging.Warning("Could not get project root path: %v", err)
 		return "", FailProjectFileRoot.Wrap(err)
 	}
+
 	path, fail := fileutils.FindFileInPath(root, constants.ConfigFileName)
+	if fail == nil {
+		return path, nil
+	}
+
+	defaultProjectPath := viper.GetString("default_project_path")
+	if defaultProjectPath == "" {
+		return "", FailNoProject.Wrap(fail, locale.T("err_no_projectfile"))
+	}
+
+	path, fail = fileutils.FindFileInPath(defaultProjectPath, constants.ConfigFileName)
 	if fail != nil {
 		return "", FailNoProject.Wrap(fail, locale.T("err_no_projectfile"))
 	}
+
 	return path, nil
 }
 
