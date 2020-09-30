@@ -121,8 +121,8 @@ run: |
   set +e
   go test -timeout 20m ./test/integration -v
   testCode=$?
-  head -n-0 build/*log
-  exit $?
+  head -n-0 build/*log 2>/dev/null
+  exit ${testCode}
 env:
   INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
   INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
