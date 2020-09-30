@@ -45,14 +45,14 @@ func (v *SubShell) SetBinary(binary string) {
 }
 
 // WriteUserEnv - see subshell.SubShell
-func (v *SubShell) WriteUserEnv(env map[string]string, _ bool) *failures.Failure {
+func (v *SubShell) WriteUserEnv(env map[string]string, envType sscommon.EnvData, _ bool) *failures.Failure {
 	homeDir, err := fileutils.HomeDir()
 	if err != nil {
 		return failures.FailIO.Wrap(err)
 	}
 
 	env = sscommon.EscapeEnv(env)
-	return sscommon.WriteRcFile("bashrc_append.sh", filepath.Join(homeDir, ".bashrc"), env)
+	return sscommon.WriteRcFile("bashrc_append.sh", filepath.Join(homeDir, ".bashrc"), envType, env)
 }
 
 // SetupShellRcFile - subshell.SubShell
