@@ -83,6 +83,7 @@ func NewChecker(timeout time.Duration, configuration configable) *Checker {
 
 func Check(cmd *captain.Command, args []string) (*Info, *failures.Failure) {
 	if disableCheck(cmd, args) {
+		logging.Debug("Not running deprecation check")
 		return nil, nil
 	}
 	return check()
