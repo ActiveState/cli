@@ -13,6 +13,7 @@ import (
 	"github.com/hashicorp/go-version"
 	"github.com/spf13/viper"
 
+	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	constvers "github.com/ActiveState/cli/internal/constants/version"
@@ -80,8 +81,23 @@ func NewChecker(timeout time.Duration, configuration configable) *Checker {
 	}
 }
 
+func Check(cmd *captain.Command, args []string) (*Info, *failures.Failure) {
+	if disableCheck(cmd, args) {
+		return nil, nil
+	}
+	return check()
+}
+
+func disableCheck(cmd *captain.Command, args []string) bool {
+	child := cmd.Find(args)
+	if child == nil {
+		return false
+	}
+	return child.SkipDeprecationCheck()
+}
+
 // Check will run a Checker.Check with defaults
-func Check() (*Info, *failures.Failure) {
+func check() (*Info, *failures.Failure) {
 	return CheckVersionNumber(constants.VersionNumber)
 }
 

@@ -34,6 +34,7 @@ func newShimCommand(prime *primer.Values) *captain.Command {
 		},
 	)
 	cmd.SetSkipUpdate(true)
+	cmd.SetSkipDeprecationCheck(true)
 
 	return cmd
 }

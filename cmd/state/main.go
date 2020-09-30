@@ -132,20 +132,6 @@ func run(args []string, out output.Outputer) (int, error) {
 		return forward()
 	}
 
-	// Check for deprecation
-	deprecated, fail := deprecation.Check()
-	if fail != nil {
-		logging.Error("Could not check for deprecation: %s", fail.Error())
-	}
-	if deprecated != nil {
-		date := deprecated.Date.Format(constants.DateFormatUser)
-		if !deprecated.DateReached {
-			out.Notice(locale.Tr("warn_deprecation", date, deprecated.Reason))
-		} else {
-			return 1, locale.NewInputError("err_deprecation", "You are running a version of the State Tool that is no longer supported! Reason: {{.V1}}", date, deprecated.Reason)
-		}
-	}
-
 	pjOwner := ""
 	pjNamespace := ""
 	pjName := ""
@@ -167,7 +153,20 @@ func run(args []string, out output.Outputer) (int, error) {
 		return code, err
 	}
 
-	err = cmds.Execute(args[1:])
+	// Check for deprecation
+	deprecated, fail := deprecation.Check(cmds.Command(), args)
+	if fail != nil {
+		logging.Error("Could not check for deprecation: %s", fail.Error())
+	}
+	if deprecated != nil {
+		date := deprecated.Date.Format(constants.DateFormatUser)
+		if !deprecated.DateReached {
+			out.Notice(locale.Tr("warn_deprecation", date, deprecated.Reason))
+		} else {
+			return 1, locale.NewInputError("err_deprecation", "You are running a version of the State Tool that is no longer supported! Reason: {{.V1}}", date, deprecated.Reason)
+		}
+	}
 
+	err = cmds.Execute(args[1:])
 	return unwrapError(err)
 }
