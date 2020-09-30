@@ -197,7 +197,7 @@ func shim(fpath, shimPath string) error {
 
 	err = ioutil.WriteFile(fpath, []byte(shimStr), 0755)
 	if err != nil {
-		return errs.Wrap(err, "failed to write shim command %s", shim)
+		return errs.Wrap(err, "failed to write shim command %s", shimPath)
 	}
 	return nil
 }
