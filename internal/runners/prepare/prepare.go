@@ -1,7 +1,6 @@
 package prepare
 
 import (
-	"path/filepath"
 	"runtime"
 
 	"github.com/ActiveState/cli/internal/config"
@@ -37,7 +36,7 @@ func New(prime primeable) *Prepare {
 func (r *Prepare) Run() error {
 	logging.Debug("ExecutePrepare")
 
-	binDir := filepath.Join(config.CachePath(), "bin")
+	binDir := config.GlobalBinPath()
 	fail := fileutils.Mkdir(binDir)
 	if fail != nil {
 		return locale.WrapError(fail.ToError(), "err_prepare_bin_dir", "Could not create bin directory")
