@@ -1,7 +1,6 @@
 package run
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -226,26 +225,4 @@ scripts:
 
 	// Reset.
 	projectfile.Reset()
-}
-
-func TestPathProvidesExec(t *testing.T) {
-	tf, err := ioutil.TempFile("", "t*.t")
-	require.NoError(t, err)
-	defer os.Remove(tf.Name())
-
-	require.NoError(t, os.Chmod(tf.Name(), 0770))
-
-	exec := filepath.Base(tf.Name())
-	temp := filepath.Dir(tf.Name())
-
-	home, err := os.UserHomeDir()
-	require.NoError(t, err)
-
-	paths := []string{temp, home}
-	pathStr := strings.Join(paths, string(os.PathListSeparator))
-
-	assert.True(t, pathProvidesExec(temp, exec, filepath.Dir(tf.Name())))
-	assert.True(t, pathProvidesExec(temp, exec, pathStr))
-	assert.False(t, pathProvidesExec(temp, "junk", pathStr))
-	assert.False(t, pathProvidesExec(temp, exec, ""))
 }
