@@ -8,7 +8,6 @@ import (
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/path"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/scriptfile"
@@ -19,8 +18,6 @@ import (
 )
 
 type Shim struct {
-	// TODO: May not need the subshell or outputter
-	out      output.Outputer
 	subshell subshell.SubShell
 }
 
@@ -36,7 +33,6 @@ type Params struct {
 
 func New(prime primeable) *Shim {
 	return &Shim{
-		prime.Output(),
 		prime.Subshell(),
 	}
 }
@@ -64,7 +60,7 @@ func (s *Shim) Run(params Params, args ...string) error {
 
 		if fail := venv.Activate(); fail != nil {
 			logging.Errorf("Unable to activate state: %s", fail.Error())
-			return fail.WithDescription("error_state_run_activate")
+			return locale.WrapError(fail.ToError(), "err_shim_activate", "Could not activate environment for shim command")
 		}
 
 		env, err := venv.GetEnv(true, filepath.Dir(projectfile.Get().Path()))
