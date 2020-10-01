@@ -94,13 +94,8 @@ func activate(proj *project.Project, out output.Outputer, cfg defact.DefaultConf
 	alreadyActivated := activeProject != ""
 
 	// handle case, if we are already activated
-	if alreadyActivated {
-		if setDefault && activeProject != proj.Name() {
-			return false, locale.NewError("default_activation_conflicting_project", "Trying to set {{.V0}} as default project, while in an activated environment for {{.V1}}. Please de-activate this project first.", proj.Name(), activeProject)
-		}
-		if !setDefault {
-			return false, locale.NewError("err_already_active", "You cannot activate a new state when you are already in an activated state. You are in an activated state for project: {{.V0}}", proj.Name())
-		}
+	if alreadyActivated && !setDefault {
+		return false, locale.NewError("err_already_active", "You cannot activate a new state when you are already in an activated state. You are in an activated state for project: {{.V0}}", proj.Name())
 	}
 
 	logging.Debug("Setting up virtual Environment")
@@ -114,6 +109,7 @@ func activate(proj *project.Project, out output.Outputer, cfg defact.DefaultConf
 	}
 
 	if setDefault {
+		logging.Debug("Setting up default activation for %s", proj.Name())
 		err := defact.SetupDefaultActivation(cfg, out, venv)
 		if err != nil {
 			return false, locale.WrapError(err, "default_setup_err", "Failed to set up the default activation for {{.V0}}.", proj.Name())

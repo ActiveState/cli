@@ -149,8 +149,10 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	cp.SendLine(pythonExe + " -c \"import pytest; print(pytest.__doc__)\"")
 	cp.Expect("unit and functional testing")
 
-	cp.SendLine("state activate --default ActiveState-CLI/small-python")
-	cp.ExpectLongString("Please de-activate this project first.")
+	/*
+		cp.SendLine(fmt.Sprintf("state activate --default ActiveState-CLI/small-python --path %s", filepath.Join(cp.WorkDirectory(), "small-python")))
+		cp.ExpectLongString("Please de-activate this project first.")
+	*/
 
 	cp.SendLine("state activate --default")
 	cp.Expect("Writing default installation to")
@@ -169,7 +171,7 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	cp.ExpectExitCode(0)
 
 	// check that default activation works
-	cp = ts.SpawnCmd(filepath.Join(ts.Dirs.Cache, "python"), "-c", "import sys; print(sys.copyright)")
+	cp = ts.SpawnCmd(filepath.Join(ts.Dirs.Cache, "bin", "python"), "-c", "import sys; print(sys.copyright)")
 	cp.Expect("ActiveState Software Inc.")
 	cp.ExpectExitCode(0)
 
