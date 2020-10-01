@@ -168,6 +168,11 @@ function warningIfadmin() {
     }
 }
 
+function runPreparationStep($installDirectory) {
+    &$installDirectory\$script:STATEEXE _prepare | Write-Host
+    return $LASTEXITCODE
+}
+
 function displayConsent() {
     $consentText="
 ActiveState collects usage statistics and diagnostic data about failures. The collected data complies with ActiveState Privacy Policy (https://www.activestate.com/company/privacy-policy/) and will be used to identify product enhancements, help fix defects, and prevent abuse.
@@ -374,6 +379,11 @@ function install()
     $ConfigDir = & Invoke-Expression $Command | Out-String
     $InstallFilePath = Join-Path -Path $ConfigDir.Trim() -ChildPath "installsource.txt"
     "install.ps1" | Out-File -Encoding ascii -FilePath $InstallFilePath
+
+    $prepExitCode = runPreparationStep $installDir
+    if ($prepExitCode -ne 0) {
+	    return $prepExitCode
+    }
 
     # Check if installation is in $PATH
     if (isStateToolInstallationOnPath $installDir) {
