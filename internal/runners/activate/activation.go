@@ -3,6 +3,7 @@ package activate
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"os/signal"
 	"path"
@@ -84,23 +85,25 @@ func activate(proj *project.Project, out output.Outputer, cfg defact.DefaultConf
 	projectfile.Reset()
 	venv := virtualenvironment.Get()
 
-	alreadyActivated := os.Getenv(constants.ActivatedStateEnvVarName) != ""
-
-	// if we are already activated and --default flag is set, just setup the default activation directory
-	if setDefault && alreadyActivated {
-		venv.ActivateRuntime()
-		// TODO: This should fail if a project name is defined that is different from the already activated project
-		err := defact.SetupDefaultActivation(cfg, out, venv)
-		if err != nil {
-			return false, locale.WrapError(err, "default_setup_err", "Failed to set up the default activation for {{.V0}}.", proj.Name())
-		}
-		return false, nil
-	}
-
 	venv.OnDownloadArtifacts(func() { out.Notice(locale.T("downloading_artifacts")) })
 	venv.OnInstallArtifacts(func() { out.Notice(locale.T("installing_artifacts")) })
 	venv.OnUseCache(func() { out.Notice(locale.T("using_cached_env")) })
-	fail := venv.Activate()
+
+	activeProject := os.Getenv(constants.ActivatedStateEnvVarName)
+	alreadyActivated := activeProject != ""
+
+	// handle case, if we are already activated
+	if alreadyActivated {
+		if setDefault && activeProject != proj.Name() {
+			return false, locale.NewError("default_activation_conflicting_project", "Trying to set {{.V0}} as default project, while in an activated environment for {{.V1}}. Please de-activate this project first.", proj.Name(), activeProject)
+		}
+		if !setDefault {
+			return false, locale.NewError("err_already_active", "You cannot activate a new state when you are already in an activated state. You are in an activated state for project: {{.V0}}", proj.Name())
+		}
+	}
+
+	logging.Debug("Setting up virtual Environment")
+	fail := venv.Setup(true)
 	if fail != nil {
 		return false, locale.WrapError(fail, "error_could_not_activate_venv", "Could not activate project. If this is a private project ensure that you are authenticated.")
 	}
@@ -117,6 +120,15 @@ func activate(proj *project.Project, out output.Outputer, cfg defact.DefaultConf
 	ve, err := venv.GetEnv(false, filepath.Dir(projectfile.Get().Path()))
 	if err != nil {
 		return false, locale.WrapError(err, "error_could_not_activate_venv", "Could not retrieve environment information.")
+	}
+
+	// If we're not using plain output then we should just dump the environment information
+	if out.Type() != output.PlainFormatName {
+		if out.Type() == output.EditorV0FormatName {
+			fmt.Println("[activated-JSON]")
+		}
+		out.Print(ve)
+		return false, nil
 	}
 
 	subs.SetEnv(ve)

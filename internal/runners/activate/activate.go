@@ -1,21 +1,17 @@
 package activate
 
 import (
-	"fmt"
-	"os"
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/defact"
 	"github.com/ActiveState/cli/internal/failures"
-	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/subshell"
-	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/spf13/viper"
 )
@@ -75,35 +71,6 @@ func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc)
 		logging.Debug("error resolving namespace: %v", fail.ToError())
 	}
 	analytics.EventWithLabel(analytics.CatRunCmd, "activate", names.String())
-
-	// If we're not using plain output then we should just dump the environment information
-	if r.out.Type() != output.PlainFormatName {
-		venv := virtualenvironment.Get()
-		activeProject := os.Getenv(constants.ActivatedStateEnvVarName) != ""
-		if activeProject && params.Default {
-			// The following reads in the environment information (GetEnv() function) for the still active project
-
-			// TODO: This probably does not work, if we are trying to set a not-activated project as the default
-			fail := venv.ActivateRuntime()
-			if fail != nil {
-				return locale.WrapError(fail.ToError(), "error_could_not_get_venv", "Could not get the environment information for project.")
-			}
-
-		}
-		fail := venv.Activate()
-		if fail != nil {
-			return locale.WrapError(fail.ToError(), "error_could_not_activate_venv", "Could not activate project. If this is a private project ensure that you are authenticated.")
-		}
-		env, err := venv.GetEnv(false, targetPath)
-		if err != nil {
-			return locale.WrapError(err, "err_activate_getenv", "Could not build environment for your runtime environment.")
-		}
-		if r.out.Type() == output.EditorV0FormatName {
-			fmt.Println("[activated-JSON]")
-		}
-		r.out.Print(env)
-		return nil
-	}
 
 	if params.Command != "" {
 		r.subshell.SetActivateCommand(params.Command)

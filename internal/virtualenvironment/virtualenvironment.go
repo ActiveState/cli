@@ -71,7 +71,7 @@ func (v *VirtualEnvironment) Activate() *failures.Failure {
 	}
 
 	if strings.ToLower(os.Getenv(constants.DisableRuntime)) != "true" {
-		if failure := v.ActivateRuntime(); failure != nil {
+		if failure := v.Setup(true); failure != nil {
 			return failure
 		}
 	}
@@ -88,24 +88,32 @@ func (v *VirtualEnvironment) OnInstallArtifacts(f func()) { v.onInstallArtifacts
 // OnUseCache will call the given function when the cached runtime is used
 func (v *VirtualEnvironment) OnUseCache(f func()) { v.onUseCache = f }
 
-// ActivateRuntime sets up a runtime environment
-func (v *VirtualEnvironment) ActivateRuntime() *failures.Failure {
+// Setup sets up a runtime environment that is fully functional.
+func (v *VirtualEnvironment) Setup(installIfNecessary bool) *failures.Failure {
 	pj := project.Get()
 	installer, fail := runtime.NewInstaller(pj.CommitUUID(), pj.Owner(), pj.Name())
 	if fail != nil {
 		return fail
 	}
 
-	installer.OnDownload(v.onDownloadArtifacts)
+	if installIfNecessary {
+		installer.OnDownload(v.onDownloadArtifacts)
 
-	rt, installed, fail := installer.Install()
-	if fail != nil {
-		return fail
-	}
+		rt, installed, fail := installer.Install()
+		if fail != nil {
+			return fail
+		}
 
-	v.getEnv = rt.GetEnv
-	if !installed && v.onUseCache != nil {
-		v.onUseCache()
+		v.getEnv = rt.GetEnv
+		if !installed && v.onUseCache != nil {
+			v.onUseCache()
+		}
+	} else {
+		rt, fail := installer.Env()
+		if fail != nil {
+			return fail
+		}
+		v.getEnv = rt.GetEnv
 	}
 
 	return nil
