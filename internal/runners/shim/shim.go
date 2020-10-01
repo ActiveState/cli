@@ -1,14 +1,13 @@
 package shim
 
 import (
-	"os"
+	"fmt"
 	"path/filepath"
+	"strings"
 
-	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/path"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/internal/subshell"
@@ -26,34 +25,14 @@ type primeable interface {
 	primer.Subsheller
 }
 
-type Params struct {
-	Script   string
-	Language string
-}
-
 func New(prime primeable) *Shim {
 	return &Shim{
 		prime.Subshell(),
 	}
 }
 
-func (s *Shim) Run(params Params, args ...string) error {
-	var lang language.Language
-	if params.Language != "" {
-		lang = language.MakeByName(params.Language)
-	} else {
-		for _, l := range project.Get().Languages() {
-			// Use first language found
-			lang = language.MakeByName(l.Name())
-			break
-		}
-	}
-	if !lang.Recognized() {
-		return locale.NewError("err_shim_language", "Unsupported language")
-	}
-
-	envPath := os.Getenv("PATH")
-	if !subshell.IsActivated() {
+func (s *Shim) Run(args ...string) error {
+	if project.Get() != nil && !subshell.IsActivated() {
 		venv := virtualenvironment.Init()
 		venv.OnDownloadArtifacts(func() {})
 		venv.OnInstallArtifacts(func() {})
@@ -68,28 +47,21 @@ func (s *Shim) Run(params Params, args ...string) error {
 			return err
 		}
 		s.subshell.SetEnv(env)
-
-		// get the "clean" path (only PATHS that are set by venv)
-		env, err = venv.GetEnv(false, "")
-		if err != nil {
-			return err
-		}
-		envPath = env["PATH"]
 	}
 
-	if !path.ProvidesExecutable("", lang.Executable().Name(), envPath) {
-		return locale.NewError("err_shim_exec", "Path does not contain: {{.V0}}", lang.Executable().Name())
+	if len(args) == 0 {
+		return nil
 	}
 
-	scriptBlock, fail := fileutils.ReadFile(params.Script)
-	if fail != nil {
-		return locale.WrapError(fail.ToError(), "err_shim_read_script", "Could not read script file at: {{.V0}}", params.Script)
+	lang := language.Bash
+	if s.subshell.Binary() == "cmd" {
+		lang = language.Batch
 	}
 
-	sf, fail := scriptfile.New(lang, filepath.Base(params.Script), string(scriptBlock))
+	sf, fail := scriptfile.New(lang, fmt.Sprintf("state-shim-%s", args[0]), strings.Join(args, " "))
 	if fail != nil {
 		return locale.WrapError(fail.ToError(), "err_shim_create_scriptfile", "Could not generate script")
 	}
 
-	return s.subshell.Run(sf.Filename(), args...)
+	return s.subshell.Run(sf.Filename())
 }
