@@ -1,4 +1,4 @@
-package updater
+package main
 
 import (
 	"os"

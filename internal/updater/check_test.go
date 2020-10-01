@@ -40,7 +40,7 @@ func TestTimedCheck(t *testing.T) {
 	updatemocks.MockUpdater(t, os.Args[0], constants.BranchName, "1.2.3-123")
 
 	out := outputhelper.NewCatcher()
-	update, _ := autoUpdate(configPath, out.Outputer)
+	update, _ := AutoUpdate(configPath, out.Outputer)
 	assert.True(t, update, "Should want to update")
 	// It should notify about and update attempt
 	assert.NotEqual(t, "", strings.TrimSpace(out.CombinedOutput()))
@@ -50,7 +50,7 @@ func TestTimedCheckLockedVersion(t *testing.T) {
 	setup(t, true)
 
 	out := outputhelper.NewCatcher()
-	update, _ := autoUpdate(configPathWithVersion, out.Outputer)
+	update, _ := AutoUpdate(configPathWithVersion, out.Outputer)
 	assert.False(t, update, "Should not want to update because we're using a locked version")
 	assert.Equal(t, "", strings.TrimSpace(out.CombinedOutput()))
 }

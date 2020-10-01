@@ -32,8 +32,7 @@ type Command struct {
 	// deferAnalytics should be set if the command handles the GA reporting in its execute function
 	deferAnalytics bool
 
-	skipUpdate           bool
-	skipDeprecationCheck bool
+	skipChecks bool
 }
 
 func NewCommand(name, description string, flags []*Flag, args []*Argument, executor Executor) *Command {
@@ -177,12 +176,8 @@ func (c *Command) SetDeferAnalytics(value bool) {
 	c.deferAnalytics = value
 }
 
-func (c *Command) SetSkipUpdate(value bool) {
-	c.skipUpdate = value
-}
-
-func (c *Command) SetSkipDeprecationCheck(value bool) {
-	c.skipDeprecationCheck = value
+func (c *Command) SetSkipChecks(value bool) {
+	c.skipChecks = value
 }
 
 func (c *Command) SetHidden(value bool) {
@@ -219,12 +214,8 @@ func (c *Command) Arguments() []*Argument {
 	return c.arguments
 }
 
-func (c *Command) SkipUpdate() bool {
-	return c.skipUpdate
-}
-
-func (c *Command) SkipDeprecationCheck() bool {
-	return c.skipDeprecationCheck
+func (c *Command) SkipChecks() bool {
+	return c.skipChecks
 }
 
 func (c *Command) AddChildren(children ...*Command) {

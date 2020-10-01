@@ -24,7 +24,6 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	_ "github.com/ActiveState/cli/internal/prompt" // Sets up survey defaults
 	"github.com/ActiveState/cli/internal/subshell"
-	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -148,22 +147,29 @@ func run(args []string, out output.Outputer) (int, error) {
 	// Run the actual command
 	cmds := cmdtree.New(primer.New(pj, out, authentication.Get(), prompter, sshell, conditional))
 
-	// Auto update to latest state tool version, only runs once per day
-	if updated, code, err := updater.AutoUpdate(args, cmds.Command(), out, pjPath); err != nil || updated {
-		return code, err
+	var skipChecks bool
+	child := cmds.Command().Find(args)
+	if child != nil {
+		skipChecks = child.SkipChecks()
 	}
+	if !skipChecks {
+		// Auto update to latest state tool version, only runs once per day
+		if updated, code, err := autoUpdate(args, out, pjPath); err != nil || updated {
+			return code, err
+		}
 
-	// Check for deprecation
-	deprecated, fail := deprecation.Check(cmds.Command(), args)
-	if fail != nil {
-		logging.Error("Could not check for deprecation: %s", fail.Error())
-	}
-	if deprecated != nil {
-		date := deprecated.Date.Format(constants.DateFormatUser)
-		if !deprecated.DateReached {
-			out.Notice(locale.Tr("warn_deprecation", date, deprecated.Reason))
-		} else {
-			return 1, locale.NewInputError("err_deprecation", "You are running a version of the State Tool that is no longer supported! Reason: {{.V1}}", date, deprecated.Reason)
+		// Check for deprecation
+		deprecated, fail := deprecation.Check()
+		if fail != nil {
+			logging.Error("Could not check for deprecation: %s", fail.Error())
+		}
+		if deprecated != nil {
+			date := deprecated.Date.Format(constants.DateFormatUser)
+			if !deprecated.DateReached {
+				out.Notice(locale.Tr("warn_deprecation", date, deprecated.Reason))
+			} else {
+				return 1, locale.NewInputError("err_deprecation", "You are running a version of the State Tool that is no longer supported! Reason: {{.V1}}", date, deprecated.Reason)
+			}
 		}
 	}
 

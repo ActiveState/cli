@@ -23,8 +23,7 @@ func newShimCommand(prime *primer.Values) *captain.Command {
 			return runner.Run(args...)
 		},
 	)
-	cmd.SetSkipUpdate(true)
-	cmd.SetSkipDeprecationCheck(true)
+	cmd.SetSkipChecks(true)
 	cmd.SetDisableFlagParsing(true)
 
 	return cmd
