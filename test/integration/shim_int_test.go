@@ -2,6 +2,7 @@ package integration
 
 import (
 	"fmt"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -35,7 +36,10 @@ print("Hello World!")
 	fail := fileutils.WriteFile(testScript, []byte(scriptBlock))
 	suite.Require().NoError(fail.ToError())
 
-	cp := ts.Spawn("shim", "--", "python3", fmt.Sprintf("%s", testScript))
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("shim", "--", "python3", fmt.Sprintf("%s", testScript)),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
 	cp.Expect("Hello World!")
 	cp.ExpectExitCode(0)
 }
@@ -55,7 +59,10 @@ sys.exit(42)
 	fail := fileutils.WriteFile(testScript, []byte(scriptBlock))
 	suite.Require().NoError(fail.ToError())
 
-	cp := ts.Spawn("shim", "--", "python3", fmt.Sprintf("%s", testScript))
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("shim", "--", "python3", fmt.Sprintf("%s", testScript)),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
 	cp.ExpectExitCode(42)
 }
 
@@ -89,7 +96,10 @@ print("Your arguments are: {}, {}, {}".format(arg_1, arg_2, arg_3))
 		"secondArgument",
 		"thirdArgument",
 	}
-	cp := ts.Spawn("shim", "--", "python3", fmt.Sprintf("%s", testScript), args[0], args[1], args[2])
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("shim", "--", "python3", fmt.Sprintf("%s", testScript), args[0], args[1], args[2]),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
 	cp.Expect("Number of arguments: 3")
 	cp.ExpectLongString(fmt.Sprintf("Your arguments are: %s, %s, %s", args[0], args[1], args[2]))
 	cp.ExpectExitCode(0)
@@ -110,9 +120,34 @@ print("Hello {}!".format(name))
 	fail := fileutils.WriteFile(testScript, []byte(scriptBlock))
 	suite.Require().NoError(fail.ToError())
 
-	cp := ts.Spawn("shim", "--", "python3", fmt.Sprintf("%s", testScript))
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("shim", "--", "python3", fmt.Sprintf("%s", testScript)),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
 	cp.SendLine("ActiveState")
 	cp.Expect("Hello ActiveState!")
+	cp.ExpectExitCode(0)
+}
+
+func (suite *ShimIntegrationTestSuite) TestShim_SystemPython() {
+	_, err := exec.LookPath("python3")
+	if err != nil {
+		suite.T().Skip("Cannot run test if system does not have python installation")
+	}
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	scriptBlock := `
+print("Hello World!")
+`
+
+	testScript := filepath.Join(fmt.Sprintf("%s/%s.py", ts.Dirs.Work, suite.T().Name()))
+	fail := fileutils.WriteFile(testScript, []byte(scriptBlock))
+	suite.Require().NoError(fail.ToError())
+
+	cp := ts.Spawn("shim", "--", "python3", testScript)
+	cp.Expect("Hello World!")
 	cp.ExpectExitCode(0)
 }
 
