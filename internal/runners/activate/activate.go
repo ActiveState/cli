@@ -95,9 +95,8 @@ func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc)
 
 func (r *Activate) setupPath(namespace string, preferredPath string) (string, error) {
 	var (
-		targetPath string
-		proj       *project.Project
-		fail       *failures.Failure
+		proj *project.Project
+		fail *failures.Failure
 	)
 
 	switch {
@@ -108,11 +107,9 @@ func (r *Activate) setupPath(namespace string, preferredPath string) (string, er
 			return "", err
 		}
 		proj, fail = project.FromPath(namesPath)
-		targetPath = namesPath
 	// Use the user provided path
 	case preferredPath != "":
 		proj, fail = project.FromPath(preferredPath)
-		targetPath = preferredPath
 	// normal project getter - falls back to default project if none found in working directory
 	default:
 		proj, fail = project.GetSafe()
