@@ -9,6 +9,7 @@ import (
 	"path"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"syscall"
 	"time"
 
@@ -103,9 +104,13 @@ func activate(proj *project.Project, out output.Outputer, cfg defact.DefaultConf
 	}
 
 	logging.Debug("Setting up virtual Environment")
-	fail := venv.Setup(true)
-	if fail != nil {
-		return false, locale.WrapError(fail, "error_could_not_activate_venv", "Could not activate project. If this is a private project ensure that you are authenticated.")
+	if strings.ToLower(os.Getenv(constants.DisableRuntime)) == "true" {
+		logging.Debug("Skipping runtime activation")
+	} else {
+		fail := venv.Setup(true)
+		if fail != nil {
+			return false, locale.WrapError(fail, "error_could_not_activate_venv", "Could not activate project. If this is a private project ensure that you are authenticated.")
+		}
 	}
 
 	if setDefault {
