@@ -3,7 +3,6 @@ package shim
 import (
 	"fmt"
 	"path/filepath"
-	"strings"
 
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
@@ -54,14 +53,16 @@ func (s *Shim) Run(args ...string) error {
 	}
 
 	lang := language.Bash
+	scriptArgs := fmt.Sprintf("%s $@", args[0])
 	if s.subshell.Binary() == "cmd" {
 		lang = language.Batch
+		scriptArgs = fmt.Sprintf("%s %*", args[0])
 	}
 
-	sf, fail := scriptfile.New(lang, fmt.Sprintf("state-shim-%s", args[0]), strings.Join(args, " "))
+	sf, fail := scriptfile.New(lang, fmt.Sprintf("state-shim-%s", args[0]), scriptArgs)
 	if fail != nil {
 		return locale.WrapError(fail.ToError(), "err_shim_create_scriptfile", "Could not generate script")
 	}
 
-	return s.subshell.Run(sf.Filename())
+	return s.subshell.Run(sf.Filename(), args[1:]...)
 }
