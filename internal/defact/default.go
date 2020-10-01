@@ -44,7 +44,8 @@ type primable interface {
 	primer.Outputer
 }
 
-// gets the intended target for a shim
+// isShimAndTargetsDir check if the specified filename is (probably) a shim and targets a file in the specified directory
+// This function is used during rollback to clean old shims
 func isShimAndTargetsDir(filename, dir string) bool {
 	contents, err := ioutil.ReadFile(filename)
 	if err != nil {
