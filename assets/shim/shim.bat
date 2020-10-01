@@ -2,4 +2,4 @@
 
 REM State Tool Shim Target: {{.target}}
 
-{{.exe}} _shim -- {{.command}} %*
+{{.exe}} shim -- {{.command}} %*
