@@ -244,8 +244,8 @@ func TestPathProvidesExec(t *testing.T) {
 	paths := []string{temp, home}
 	pathStr := strings.Join(paths, string(os.PathListSeparator))
 
-	assert.True(t, pathprovidesExec(temp, exec, filepath.Dir(tf.Name())))
-	assert.True(t, pathprovidesExec(temp, exec, pathStr))
-	assert.False(t, pathprovidesExec(temp, "junk", pathStr))
-	assert.False(t, pathprovidesExec(temp, exec, ""))
+	assert.True(t, pathProvidesExec(temp, exec, filepath.Dir(tf.Name())))
+	assert.True(t, pathProvidesExec(temp, exec, pathStr))
+	assert.False(t, pathProvidesExec(temp, "junk", pathStr))
+	assert.False(t, pathProvidesExec(temp, exec, ""))
 }

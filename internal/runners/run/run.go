@@ -120,7 +120,7 @@ func run(out output.Outputer, subs subshell.SubShell, name string, args []string
 		envPath = env["PATH"]
 	}
 
-	if !langExec.Builtin() && !pathprovidesExec(configCachePath(), langExec.Name(), envPath) {
+	if !langExec.Builtin() && !pathProvidesExec(configCachePath(), langExec.Name(), envPath) {
 		return FailExecNotFound.New("error_state_run_unknown_exec")
 	}
 
@@ -147,7 +147,7 @@ func configCachePath() string {
 	return config.CachePath()
 }
 
-func pathprovidesExec(filterByPath, exec, path string) bool {
+func pathProvidesExec(filterByPath, exec, path string) bool {
 	paths := splitPath(path)
 	if filterByPath != "" {
 		paths = filterPrefixed(filterByPath, paths)
