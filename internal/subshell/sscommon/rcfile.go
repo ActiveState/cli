@@ -163,13 +163,16 @@ func SetupProjectRcFile(templateName, ext string, env map[string]string, out out
 	userScripts := ""
 	activatedKey := fmt.Sprintf("activated_%s", prj.Namespace())
 	for _, event := range prj.Events() {
-		if (strings.ToLower(event.Name()) == "first-activate" && !viper.GetBool(activatedKey)) || event.Name() == "activate" {
-			v, err := event.Value()
-			if err != nil {
-				return nil, failures.FailMisc.Wrap(err)
-			}
-			userScripts = userScripts + "\n" + v
+		v, err := event.Value()
+		if err != nil {
+			return nil, failures.FailMisc.Wrap(err)
+		}
+		if strings.ToLower(event.Name()) == "first-activate" && !viper.GetBool(activatedKey) {
+			userScripts = v + "\n" + userScripts
 			viper.Set(activatedKey, true)
+		}
+		if event.Name() == "activate" {
+			userScripts = userScripts + "\n" + v
 		}
 	}
 
