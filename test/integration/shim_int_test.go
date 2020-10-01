@@ -31,7 +31,7 @@ func (suite *ShimIntegrationTestSuite) TestShim_Basic() {
 print("Hello World!")
 	`
 
-	testScript := filepath.Join(fmt.Sprintf("%s/%s.pl", ts.Dirs.Work, suite.T().Name()))
+	testScript := filepath.Join(fmt.Sprintf("%s/%s.py", ts.Dirs.Work, suite.T().Name()))
 	fail := fileutils.WriteFile(testScript, []byte(scriptBlock))
 	suite.Require().NoError(fail.ToError())
 
@@ -51,7 +51,7 @@ import sys
 sys.exit(42)
 `
 
-	testScript := filepath.Join(fmt.Sprintf("%s/%s.pl", ts.Dirs.Work, suite.T().Name()))
+	testScript := filepath.Join(fmt.Sprintf("%s/%s.py", ts.Dirs.Work, suite.T().Name()))
 	fail := fileutils.WriteFile(testScript, []byte(scriptBlock))
 	suite.Require().NoError(fail.ToError())
 
@@ -80,7 +80,7 @@ print("Number of arguments:", len(sys.argv))
 print("Your arguments are: {}, {}, {}".format(arg_1, arg_2, arg_3))
 `
 
-	testScript := filepath.Join(fmt.Sprintf("%s/%s.pl", ts.Dirs.Work, suite.T().Name()))
+	testScript := filepath.Join(fmt.Sprintf("%s/%s.py", ts.Dirs.Work, suite.T().Name()))
 	fail := fileutils.WriteFile(testScript, []byte(scriptBlock))
 	suite.Require().NoError(fail.ToError())
 
@@ -106,7 +106,7 @@ name = input("Enter your name: ")
 print("Hello {}!".format(name))
 `
 
-	testScript := filepath.Join(fmt.Sprintf("%s/%s.pl", ts.Dirs.Work, suite.T().Name()))
+	testScript := filepath.Join(fmt.Sprintf("%s/%s.py", ts.Dirs.Work, suite.T().Name()))
 	fail := fileutils.WriteFile(testScript, []byte(scriptBlock))
 	suite.Require().NoError(fail.ToError())
 
