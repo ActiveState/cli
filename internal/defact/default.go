@@ -174,7 +174,7 @@ func shimTargetPath(targetDir string, path string) string {
 	return target[0:len(target)-len(oldExt)] + ".bat"
 }
 
-func shim(fpath, shimPath string) error {
+func createShimFile(fpath, shimPath string) error {
 	logging.Debug("Shimming %s at %s", fpath, shimPath)
 	exe, err := os.Executable()
 	if err != nil {
@@ -204,13 +204,13 @@ func shim(fpath, shimPath string) error {
 	return nil
 }
 
-// createShims creates shims in the target path of all executables found in the bins dir
+// createShimFiles creates shims in the target path of all executables found in the bins dir
 // It overwrites existing files, if the overwrite flag is set.
 // On Windows the same executable name can have several file extensions,
 // therefore executables are only shimmed if it has not been shimmed for a
 // target (with the same or a different extension) from a different directory.
 // Also: Only the executable with the highest priority according to pathExt is shimmed.
-func createShims(targetPath string, exePaths []string) error {
+func createShimFiles(targetPath string, exePaths []string) error {
 	for _, exePath := range exePaths {
 		shimPath := shimTargetPath(targetPath, exePath)
 
@@ -220,7 +220,7 @@ func createShims(targetPath string, exePaths []string) error {
 			continue
 		}
 
-		if err := shim(exePath, shimPath); err != nil {
+		if err := createShimFile(exePath, shimPath); err != nil {
 			return err
 		}
 	}
@@ -258,5 +258,5 @@ func SetupDefaultActivation(cfg DefaultConfigurer, output output.Outputer, envGe
 	binDir := config.GlobalBinPath()
 
 	output.Print(locale.Tl("default_shim", "Writing default installation to {{.V0}}.", binDir))
-	return createShims(binDir, exes)
+	return createShimFiles(binDir, exes)
 }
