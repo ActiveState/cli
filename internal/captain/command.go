@@ -12,6 +12,8 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 )
 
+var cobraMapping map[*cobra.Command]*Command = make(map[*cobra.Command]*Command)
+
 type cobraCommander interface {
 	GetCobraCmd() *cobra.Command
 }
@@ -76,6 +78,7 @@ func NewCommand(name, description string, flags []*Flag, args []*Argument, execu
 	}
 	cmd.SetUsageTemplate("usage_tpl")
 
+	cobraMapping[cmd.cobra] = cmd
 	return cmd
 }
 
@@ -231,27 +234,12 @@ func (c *Command) AddLegacyChildren(children ...cobraCommander) {
 	}
 }
 
-func (c *Command) Find(args []string) *Command {
-	var innerFind func(*Command, []string) (*Command, []string)
-
-	innerFind = func(innerCmd *Command, innerArgs []string) (*Command, []string) {
-		if len(innerArgs) == 0 {
-			return innerCmd, innerArgs
-		}
-
-		cmd := innerCmd.findNext(innerArgs[0])
-		if cmd != nil {
-			return innerFind(cmd, innerArgs[1:])
-		}
-		return innerCmd, innerArgs
+func (c *Command) Find(args []string) (*Command, error) {
+	foundCobra, _, err := c.cobra.Find(args)
+	if err != nil {
+		return nil, err
 	}
-
-	if len(args) < 2 {
-		return c
-	}
-
-	found, _ := innerFind(c, args[1:])
-	return found
+	return cobraMapping[foundCobra], nil
 }
 
 func (c *Command) findNext(next string) *Command {
