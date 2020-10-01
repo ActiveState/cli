@@ -149,6 +149,12 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	cp.SendLine(pythonExe + " -c \"import pytest; print(pytest.__doc__)\"")
 	cp.Expect("unit and functional testing")
 
+	cp.SendLine("state activate --default ActiveState-CLI/small-python")
+	cp.ExpectLongString("Please de-activate this project first.")
+
+	cp.SendLine("state activate --default")
+	cp.Expect("Writing default installation to")
+
 	// test that other executables that use python work as well
 	pipExe := "pip" + version
 	cp.SendLine(fmt.Sprintf("%s --version", pipExe))
@@ -161,6 +167,12 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	// de-activate shell
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
+
+	// check that default activation works
+	cp = ts.SpawnCmd(filepath.Join(ts.Dirs.Cache, "python"), "-c", "import sys; print(sys.copyright)")
+	cp.Expect("ActiveState Software Inc.")
+	cp.ExpectExitCode(0)
+
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivatePython3_Forward() {
@@ -349,36 +361,6 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_Command() {
 	cp.Expect("Where would you like to checkout")
 	cp.SendLine(cp.WorkDirectory())
 	cp.Expect("CUSTOM_COMMAND")
-	cp.ExpectExitCode(0)
-}
-
-func (suite *ActivateIntegrationTestSuite) TestActivate_Default() {
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	cp := ts.Spawn("activate", "ActiveState-CLI/small-python", "--default")
-	cp.Expect("Where would you like to checkout")
-	cp.SendLine(cp.WorkDirectory())
-
-	cp.Expect("Downloading", 20*time.Second)
-	cp.Expect("Installing", 120*time.Second)
-	cp.Expect("activated state", 120*time.Second)
-
-	suite.assertCompletedStatusBarReport(cp.Snapshot())
-
-	// ensure that shell is functional
-	cp.WaitForInput()
-	cp.SendLine("state activate --default ActiveState-CLI/Python2")
-	cp.Expect("error message")
-
-	cp.SendLine("state activate --default")
-	cp.Expect("all fine, just setting up default links")
-
-	cp.SendLine("exit 0")
-	cp.ExpectExitCode(0)
-
-	cp = ts.SpawnCmd(filepath.Join(ts.Dirs.Cache, "python"), "--version")
-	cp.Expect("ActiveState")
 	cp.ExpectExitCode(0)
 }
 
