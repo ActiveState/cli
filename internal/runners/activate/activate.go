@@ -113,7 +113,7 @@ func (r *Activate) setupPath(namespace string, preferredPath string) (string, er
 	case preferredPath != "":
 		proj, fail = project.FromPath(preferredPath)
 		targetPath = preferredPath
-	// Get path from working directory
+	// normal project getter - falls back to default project if none found in working directory
 	default:
 		proj, fail = project.GetSafe()
 	}
