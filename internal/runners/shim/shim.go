@@ -31,7 +31,13 @@ func New(prime primeable) *Shim {
 }
 
 func (s *Shim) Run(args ...string) error {
-	if project.Get() != nil && !subshell.IsActivated() {
+	project, fail := project.GetSafe()
+	if fail != nil {
+		// Do not fail if we can't find the projectfile
+		logging.Debug("Project not found, error: %v", fail)
+	}
+
+	if project != nil && !subshell.IsActivated() {
 		venv := virtualenvironment.Init()
 		venv.OnDownloadArtifacts(func() {})
 		venv.OnInstallArtifacts(func() {})
