@@ -118,7 +118,7 @@ func (r *Activate) setupPath(namespace string, preferredPath string) (string, er
 		proj, fail = project.GetSafe()
 	}
 	if fail != nil {
-		return targetPath, fail
+		return "", fail.ToError()
 	}
 
 	return filepath.Dir(proj.Source().Path()), nil
