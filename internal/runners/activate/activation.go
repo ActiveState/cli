@@ -137,7 +137,7 @@ func activate(proj *project.Project, out output.Outputer, cfg defact.DefaultConf
 	}
 
 	subs.SetEnv(ve)
-	fail = subs.Activate(out)
+	fail := subs.Activate(out)
 	if fail != nil {
 		return false, locale.WrapError(err, "error_could_not_activate_subshell", "Could not activate a new subshell.")
 	}
