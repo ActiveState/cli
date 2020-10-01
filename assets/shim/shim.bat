@@ -1,5 +1,5 @@
 @echo off
 
-# target: {{.target}}
+REM State Tool Shim Target: {{.target}}
 
-{{.exe}} shim -- {{.command}} %*
+{{.exe}} _shim -- {{.command}} %*

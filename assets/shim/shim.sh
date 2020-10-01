@@ -1,5 +1,5 @@
 #!/bin/sh
 
-# target: {{.target}}
+# State Tool Shim Target: {{.target}}
 
-{{.exe}} shim -- {{.command}} $*
+{{.exe}} _shim -- {{.command}} $*

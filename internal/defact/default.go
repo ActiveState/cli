@@ -45,19 +45,29 @@ type primable interface {
 }
 
 // gets the intended target for a shim
-func shimTarget(fn string) (string, error) {
-	contents, err := ioutil.ReadFile(fn)
+func isShimAndTargetsDir(filename, dir string) bool {
+	contents, err := ioutil.ReadFile(filename)
 	if err != nil {
-		return "", err
+		logging.Debug("Could not read file contents of shim candidate %s: %v", filename, err)
+		return false
 	}
 
-	targetRe := regexp.MustCompile("^ target: (.)$")
+	targetRe := regexp.MustCompile("^(?:REM|#) State Tool Shim Target: (.*)$")
 	target := targetRe.FindString(string(contents))
 	if target == "" {
-		return "", errs.New("Target file is not a shim.")
+		return false
 	}
 
-	return target, nil
+	if dir == "" {
+		return true
+	}
+
+	res, err := fileutils.PathContainsParent(target, dir)
+	if err != nil {
+		logging.Debug("Error determining if path %s is child of path %s: %v", target, dir, err)
+		return false
+	}
+	return res
 }
 
 // rollbackShims removes all shims in the global binary directory that target a previous default project
@@ -72,21 +82,14 @@ func rollbackShims(cfg DefaultConfigurer) error {
 		return err
 	}
 	for _, f := range files {
-		fn := f.Name()
-		target, err := shimTarget(fn)
-		if err != nil {
-			continue
-		}
-
-		// TODO: Decide if we need to do these checks...
-		if fileutils.TargetExists(target) && (projectPath == "" || !strings.HasPrefix(target, projectPath)) {
+		if !isShimAndTargetsDir(f.Name(), projectPath) {
 			continue
 		}
 
 		// remove shim if it links to old project path or target does not exist anymore
-		err = os.Remove(fn)
+		err = os.Remove(f.Name())
 		if err != nil {
-			return locale.WrapError(err, "rollback_remove_err", "Failed to remove shim {{.V0}}", fn)
+			return locale.WrapError(err, "rollback_remove_err", "Failed to remove shim {{.V0}}", f.Name())
 		}
 	}
 	return nil
@@ -170,6 +173,7 @@ func shimTargetPath(targetDir string, path string) string {
 }
 
 func shim(fpath, shimPath string) error {
+	logging.Debug("Shimming %s at %s", fpath, shimPath)
 	exe, err := os.Executable()
 	if err != nil {
 		return errs.Wrap(err, "Could not get State Tool executable")
@@ -202,25 +206,22 @@ func needsRollback() bool {
 	return true
 }
 
-// shimsWithTarget creates shims in the target path of all executables found in the bins dir
+// createShims creates shims in the target path of all executables found in the bins dir
 // It overwrites existing files, if the overwrite flag is set.
 // On Windows the same executable name can have several file extensions,
 // therefore executables are only shimmed if it has not been shimmed for a
 // target (with the same or a different extension) from a different directory.
 // Also: Only the executable with the highest priority according to pathExt is shimmed.
-func shimsWithTarget(targetPath string, exePaths []string, out output.Outputer) error {
-	out.Print(locale.Tl("default_shim", "Writing default installation to {{.V0}}.", targetPath))
+func createShims(targetPath string, exePaths []string) error {
 	for _, exePath := range exePaths {
 		shimPath := shimTargetPath(targetPath, exePath)
 
 		// The link should not exist as we are always rolling back old shims before we run this code.
 		if fileutils.TargetExists(shimPath) {
-			return locale.NewInputError(
-				"err_default_symlink_target_exists",
-				"Cannot create shim as the target already exists: {{.V0}}.", shimPath)
+			logging.Error("Cannot create shim as target already exists: {{.V0}}.", shimPath)
+			continue
 		}
 
-		logging.Debug("Shimming %s at %s", exePath, shimPath)
 		if err := shim(exePath, shimPath); err != nil {
 			return err
 		}
@@ -260,5 +261,6 @@ func SetupDefaultActivation(cfg DefaultConfigurer, output output.Outputer, envGe
 
 	binDir := config.GlobalBinPath()
 
-	return shimsWithTarget(binDir, exes, output)
+	output.Print(locale.Tl("default_shim", "Writing default installation to {{.V0}}.", binDir))
+	return createShims(binDir, exes)
 }
