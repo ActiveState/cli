@@ -21,7 +21,7 @@ type Dirs struct {
 	DefaultBin string
 }
 
-// NewDirs creates all temprorary directories
+// NewDirs creates all temporary directories
 func NewDirs(base string) (*Dirs, error) {
 	if base == "" {
 		tmpDir, err := ioutil.TempDir("", "")

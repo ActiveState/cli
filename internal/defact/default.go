@@ -52,9 +52,10 @@ func isShimAndTargetsDir(filename, dir string) bool {
 		return false
 	}
 
-	targetRe := regexp.MustCompile("^(?:REM|#) State Tool Shim Target: (.*)$")
-	target := targetRe.FindString(string(contents))
-	if target == "" {
+	targetRe := regexp.MustCompile("(?m)^(?:REM|#) State Tool Shim Target: (.*)$")
+	target := targetRe.FindStringSubmatch(string(contents))
+
+	if len(target) != 2 {
 		return false
 	}
 
@@ -62,7 +63,7 @@ func isShimAndTargetsDir(filename, dir string) bool {
 		return true
 	}
 
-	res, err := fileutils.PathContainsParent(target, dir)
+	res, err := fileutils.PathContainsParent(target[1], dir)
 	if err != nil {
 		logging.Debug("Error determining if path %s is child of path %s: %v", target, dir, err)
 		return false
@@ -73,7 +74,6 @@ func isShimAndTargetsDir(filename, dir string) bool {
 // rollbackShims removes all shims in the global binary directory that target a previous default project
 // If the target of a shim does not exist anymore, the shim is also removed.
 func rollbackShims(cfg DefaultConfigurer) error {
-	projectPath := getDefaultProjectPath(cfg)
 	binDir := config.GlobalBinPath()
 
 	// remove symlinks pointing to default project
@@ -82,14 +82,15 @@ func rollbackShims(cfg DefaultConfigurer) error {
 		return err
 	}
 	for _, f := range files {
-		if !isShimAndTargetsDir(f.Name(), projectPath) {
+		fn := filepath.Join(binDir, f.Name())
+		if !isShimAndTargetsDir(fn, config.CachePath()) {
 			continue
 		}
 
 		// remove shim if it links to old project path or target does not exist anymore
-		err = os.Remove(f.Name())
+		err = os.Remove(fn)
 		if err != nil {
-			return locale.WrapError(err, "rollback_remove_err", "Failed to remove shim {{.V0}}", f.Name())
+			return locale.WrapError(err, "rollback_remove_err", "Failed to remove shim {{.V0}}", fn)
 		}
 	}
 	return nil
@@ -218,7 +219,7 @@ func createShims(targetPath string, exePaths []string) error {
 
 		// The link should not exist as we are always rolling back old shims before we run this code.
 		if fileutils.TargetExists(shimPath) {
-			logging.Error("Cannot create shim as target already exists: {{.V0}}.", shimPath)
+			logging.Error("Cannot create shim as target already exists: %s.", shimPath)
 			continue
 		}
 

@@ -1,12 +1,14 @@
 package activate
 
 import (
+	"os"
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/defact"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
@@ -52,6 +54,27 @@ func (r *Activate) Run(params *ActivateParams) error {
 
 func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc) error {
 	logging.Debug("Activate with namespace=%v, path=%v", params.Namespace, params.PreferredPath)
+
+	activeProjectDir := os.Getenv(constants.ActivatedStateEnvVarName)
+	alreadyActivated := activeProjectDir != ""
+
+	// handle case, if we are already activated
+	if alreadyActivated {
+		if params.Default && params.Namespace.IsValid() {
+			return locale.NewError("err_default_with_name_already_active", "Trying to set {{.V0}} as default project while in activated environment.  Please de-activate the current runtime.", params.Namespace.String())
+		}
+		if !params.Default {
+			actProj, fail := project.FromPath(activeProjectDir)
+			var actProjName string
+			if fail != nil {
+				logging.Error("Failed to read project for activated environment.")
+				actProjName = ""
+			} else {
+				actProjName = actProj.Name()
+			}
+			return locale.NewError("err_already_active", "You cannot activate a new state when you are already in an activated state. You are in an activated state for project: {{.V0}}", actProjName)
+		}
+	}
 
 	targetPath, err := r.setupPath(params.Namespace.String(), params.PreferredPath)
 	if err != nil {

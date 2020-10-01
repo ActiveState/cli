@@ -90,14 +90,6 @@ func activate(proj *project.Project, out output.Outputer, cfg defact.DefaultConf
 	venv.OnInstallArtifacts(func() { out.Notice(locale.T("installing_artifacts")) })
 	venv.OnUseCache(func() { out.Notice(locale.T("using_cached_env")) })
 
-	activeProject := os.Getenv(constants.ActivatedStateEnvVarName)
-	alreadyActivated := activeProject != ""
-
-	// handle case, if we are already activated
-	if alreadyActivated && !setDefault {
-		return false, locale.NewError("err_already_active", "You cannot activate a new state when you are already in an activated state. You are in an activated state for project: {{.V0}}", proj.Name())
-	}
-
 	logging.Debug("Setting up virtual Environment")
 	if strings.ToLower(os.Getenv(constants.DisableRuntime)) == "true" {
 		logging.Debug("Skipping runtime activation")

@@ -149,6 +149,9 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	cp.SendLine(pythonExe + " -c \"import pytest; print(pytest.__doc__)\"")
 	cp.Expect("unit and functional testing")
 
+	cp.SendLine("state activate ActiveState-CLI/small-python --default")
+	cp.Expect("Please de-activate the current runtime")
+
 	cp.SendLine("state activate --default")
 	cp.Expect("Writing default installation to")
 
