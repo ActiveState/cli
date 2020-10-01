@@ -16,15 +16,10 @@ func newShimCommand(prime *primer.Values) *captain.Command {
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
-			if len(args) > 0 && args[0] == "--" {
-				args = args[1:]
-			}
-
 			return runner.Run(args...)
 		},
 	)
 	cmd.SetSkipChecks(true)
-	cmd.SetDisableFlagParsing(true)
 
 	return cmd
 }
