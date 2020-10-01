@@ -1,9 +1,14 @@
 package defact
 
 import (
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"reflect"
 	"sort"
 	"testing"
+
+	"github.com/autarch/testify/require"
 )
 
 func Test_uniqueExes(t *testing.T) {
@@ -57,4 +62,17 @@ func Test_uniqueExes(t *testing.T) {
 			}
 		})
 	}
+}
+
+func Test_shims(t *testing.T) {
+	td, err := ioutil.TempDir("", "")
+	require.NoError(t, err)
+	defer os.RemoveAll(td)
+	shimFile := filepath.Join(td, "shim")
+	err = createShimFile(filepath.FromSlash("/abc/def/python"), shimFile)
+	require.NoError(t, err)
+
+	require.True(t, isShimAndTargetsDir(shimFile, ""))
+	require.True(t, isShimAndTargetsDir(shimFile, filepath.FromSlash("/abc/def")))
+	require.False(t, isShimAndTargetsDir(shimFile, filepath.FromSlash("/some/other/dir")))
 }
