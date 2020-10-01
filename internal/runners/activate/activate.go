@@ -9,7 +9,6 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/subshell"
@@ -97,25 +96,27 @@ func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc)
 func (r *Activate) setupPath(namespace string, preferredPath string) (string, error) {
 	var (
 		targetPath string
-		err        error
+		proj       *project.Project
+		fail       *failures.Failure
 	)
 
 	switch {
 	// Checkout via namespace (eg. state activate org/project) and set resulting path
 	case namespace != "":
-		targetPath, err = r.namespaceSelect.Run(namespace, preferredPath)
+		namesPath, err := r.namespaceSelect.Run(namespace, preferredPath)
+		if err != nil {
+			return "", err
+		}
+		proj, fail = project.FromPath(namesPath)
+		targetPath = namesPath
 	// Use the user provided path
 	case preferredPath != "":
-		targetPath, err = preferredPath, nil
+		proj, fail = project.FromPath(preferredPath)
+		targetPath = preferredPath
 	// Get path from working directory
 	default:
-		targetPath, err = osutils.Getwd()
+		proj, fail = project.GetSafe()
 	}
-	if err != nil {
-		return "", err
-	}
-
-	proj, fail := project.FromPath(targetPath)
 	if fail != nil {
 		return targetPath, fail
 	}
