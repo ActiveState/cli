@@ -204,10 +204,6 @@ func shim(fpath, shimPath string) error {
 	return nil
 }
 
-func needsRollback() bool {
-	return true
-}
-
 // createShims creates shims in the target path of all executables found in the bins dir
 // It overwrites existing files, if the overwrite flag is set.
 // On Windows the same executable name can have several file extensions,
@@ -239,10 +235,8 @@ func SetupDefaultActivation(cfg DefaultConfigurer, output output.Outputer, envGe
 		return err
 	}
 
-	if needsRollback() {
-		// roll back old symlinks
-		rollbackShims(cfg)
-	}
+	// roll back old symlinks
+	rollbackShims(cfg)
 
 	// Retrieve artifact binary directory
 	var bins []string
