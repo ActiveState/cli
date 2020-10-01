@@ -35,7 +35,7 @@ print("Hello World!")
 	fail := fileutils.WriteFile(testScript, []byte(scriptBlock))
 	suite.Require().NoError(fail.ToError())
 
-	cp := ts.Spawn("shim", "--language", "python3", fmt.Sprintf("%s", testScript))
+	cp := ts.Spawn("shim", "--", "python3", fmt.Sprintf("%s", testScript))
 	cp.Expect("Hello World!")
 	cp.ExpectExitCode(0)
 }
@@ -55,7 +55,7 @@ sys.exit(42)
 	fail := fileutils.WriteFile(testScript, []byte(scriptBlock))
 	suite.Require().NoError(fail.ToError())
 
-	cp := ts.Spawn("shim", "--language", "python3", fmt.Sprintf("%s", testScript))
+	cp := ts.Spawn("shim", "--", "python3", fmt.Sprintf("%s", testScript))
 	cp.ExpectExitCode(42)
 }
 
@@ -89,7 +89,7 @@ print("Your arguments are: {}, {}, {}".format(arg_1, arg_2, arg_3))
 		"secondArgument",
 		"thirdArgument",
 	}
-	cp := ts.Spawn("shim", "--language", "python3", fmt.Sprintf("%s", testScript), args[0], args[1], args[2])
+	cp := ts.Spawn("shim", "--", "python3", fmt.Sprintf("%s", testScript), args[0], args[1], args[2])
 	cp.Expect("Number of arguments: 3")
 	cp.ExpectLongString(fmt.Sprintf("Your arguments are: %s, %s, %s", args[0], args[1], args[2]))
 	cp.ExpectExitCode(0)
@@ -110,7 +110,7 @@ print("Hello {}!".format(name))
 	fail := fileutils.WriteFile(testScript, []byte(scriptBlock))
 	suite.Require().NoError(fail.ToError())
 
-	cp := ts.Spawn("shim", "--language", "python3", fmt.Sprintf("%s", testScript))
+	cp := ts.Spawn("shim", "--", "python3", fmt.Sprintf("%s", testScript))
 	cp.SendLine("ActiveState")
 	cp.Expect("Hello ActiveState!")
 	cp.ExpectExitCode(0)
