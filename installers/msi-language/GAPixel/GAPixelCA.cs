@@ -16,6 +16,7 @@ namespace GAPixel
             try
             {
                 var baseKey = Registry.CurrentUser;
+                // In Scheduled Mode, when run as Administrator, we have to use HKEY_USERS/<USERSID> as baseKey 
                 if (session.GetMode(InstallRunMode.Scheduled) && session.CustomActionData.ContainsKey("USERSID"))
                 {
                     baseKey = Registry.Users.OpenSubKey(session.CustomActionData["USERSID"], true);
