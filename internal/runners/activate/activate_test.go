@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/subshell"
@@ -16,9 +17,13 @@ import (
 type checkoutMock struct {
 	resultErr error
 	called    bool
+	cb        func()
 }
 
 func (c *checkoutMock) Run(namespace string, path string) error {
+	if c.cb != nil {
+		c.cb()
+	}
 	c.called = true
 	return c.resultErr
 }
@@ -40,9 +45,15 @@ var activatorMock = func(out output.Outputer, subs subshell.SubShell, targetPath
 }
 
 func TestActivate_run(t *testing.T) {
-	var tempDir = fileutils.TempDirUnsafe()
+	var tempDir1 = fileutils.TempDirUnsafe()
+	var tempDir2 = fileutils.TempDirUnsafe()
+	var tempDir3 = fileutils.TempDirUnsafe()
 	var tempDirWithConfig = fileutils.TempDirUnsafe()
-	fileutils.WriteFile(filepath.Join(tempDirWithConfig, constants.ConfigFileName), []byte(""))
+
+	createCfg := func(path, namespace string) {
+		fileutils.WriteFile(filepath.Join(path, constants.ConfigFileName), []byte("project: https://"+constants.PlatformURL+"/"+namespace))
+	}
+	createCfg(tempDirWithConfig, "")
 
 	type fields struct {
 		namespaceSelect  namespaceSelectAble
@@ -61,21 +72,21 @@ func TestActivate_run(t *testing.T) {
 	}{
 		{
 			"expect no error",
-			fields{&namespaceSelectMock{"defer", nil}, &checkoutMock{}},
-			args{&ActivateParams{&project.Namespaced{"foo", "bar", nil}, tempDir, ""}, activatorMock},
+			fields{&namespaceSelectMock{"defer", nil}, &checkoutMock{cb: func() { createCfg(tempDir1, "foo/bar") }}},
+			args{&ActivateParams{&project.Namespaced{"foo", "bar", nil}, tempDir1, ""}, activatorMock},
 			false,
 			true,
 		},
 		{
 			"expect no error, expect checkout",
-			fields{&namespaceSelectMock{"defer", nil}, &checkoutMock{}},
-			args{&ActivateParams{&project.Namespaced{"foo", "bar", nil}, tempDir, ""}, activatorMock},
+			fields{&namespaceSelectMock{"defer", nil}, &checkoutMock{cb: func() { createCfg(tempDir2, "foo/bar") }}},
+			args{&ActivateParams{&project.Namespaced{"foo", "bar", nil}, tempDir2, ""}, activatorMock},
 			false,
 			true,
 		},
 		{
 			"expect error",
-			fields{&namespaceSelectMock{tempDir, errors.New("mocked error")}, &checkoutMock{errors.New("mocked error"), true}},
+			fields{&namespaceSelectMock{tempDir3, errors.New("mocked error")}, &checkoutMock{resultErr: errors.New("mocked error"), called: true}},
 			args{&ActivateParams{&project.Namespaced{"foo", "bar", nil}, "", ""}, activatorMock},
 			true,
 			true,
@@ -89,7 +100,7 @@ func TestActivate_run(t *testing.T) {
 				out:              outputhelper.NewCatcher().Outputer,
 			}
 			if err := r.run(tt.args.params, tt.args.activatorLoop); (err != nil) != tt.wantErr {
-				t.Errorf("Activate.run() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Activate.run() error = %v, wantErr %v", errs.Join(err, ": "), tt.wantErr)
 			}
 			if checkoutCalled := r.activateCheckout.(*checkoutMock).called; checkoutCalled != tt.wantCheckout {
 				t.Errorf("Activate.run() checkout = %v, wantCheckout %v", checkoutCalled, tt.wantCheckout)
@@ -150,13 +161,13 @@ func TestActivate_setupPath(t *testing.T) {
 			r := &Activate{
 				namespaceSelect: tt.fields.namespaceSelect,
 			}
-			got, err := r.setupPath(tt.args.namespace, tt.args.preferredPath)
+			got, err := r.pathToUse(tt.args.namespace, tt.args.preferredPath)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("Activate.setupPath() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Activate.pathToUse() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if got != tt.want {
-				t.Errorf("Activate.setupPath() = %v, want %v", got, tt.want)
+				t.Errorf("Activate.pathToUse() = %v, want %v", got, tt.want)
 			}
 		})
 	}
