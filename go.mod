@@ -43,7 +43,7 @@ require (
 	github.com/golang/snappy v0.0.1 // indirect
 	github.com/google/go-github/v29 v29.0.2
 	github.com/google/uuid v1.1.0
-	github.com/gorilla/websocket v1.4.0
+	github.com/gorilla/websocket v1.4.2
 	github.com/hashicorp/go-cleanhttp v0.5.1
 	github.com/hashicorp/go-retryablehttp v0.6.7
 	github.com/hashicorp/go-version v1.1.0
