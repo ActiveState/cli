@@ -329,6 +329,10 @@ github.com/prometheus/client_model v0.0.0-20190812154241-14fe0d1b01d4/go.mod h1:
 github.com/rogpeppe/go-internal v1.3.0/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFRclV5y23lUDJ4=
 github.com/rollbar/rollbar-go v1.1.0 h1:3ysiHp3ep8W50ykgBMCKXJGaK2Jdivru7SW9EYfAo+M=
 github.com/rollbar/rollbar-go v1.1.0/go.mod h1:AcFs5f0I+c71bpHlXNNDbOWJiKwjFDtISeXco0L5PKQ=
+github.com/sacOO7/go-logger v0.0.0-20180719173527-9ac9add5a50d h1:5T+fbRuQbpi+WZtB2yfuu59r00F6T2HV/zGYrwX8nvE=
+github.com/sacOO7/go-logger v0.0.0-20180719173527-9ac9add5a50d/go.mod h1:L5EJe2k8GwpBoGXDRLAEs58R239jpZuE7NNEtW+T7oo=
+github.com/sacOO7/gowebsocket v0.0.0-20180719182212-1436bb906a4e h1:yG1sLAkFltiFiwIpKdiA2CVIPxRL4P9OywNnfq45ivg=
+github.com/sacOO7/gowebsocket v0.0.0-20180719182212-1436bb906a4e/go.mod h1:4a2a9BlxB807BaME8FJzQRLrZwYKj0cWjon25PlIssM=
 github.com/sergi/go-diff v1.0.0 h1:Kpca3qRNrduNnOQeazBd0ysaKrUJiIuISHxogkT9RPQ=
 github.com/sergi/go-diff v1.0.0/go.mod h1:0CfEIISq7TuYL3j771MWULgwwjU+GofnZX9QAmXWZgo=
 github.com/shibukawa/configdir v0.0.0-20170330084843-e180dbdc8da0 h1:Xuk8ma/ibJ1fOy4Ee11vHhUFHQNpHhrBneOCNHVXS5w=

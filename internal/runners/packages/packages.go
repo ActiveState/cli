@@ -3,11 +3,14 @@ package packages
 import (
 	"strings"
 
+	"github.com/go-openapi/strfmt"
+
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/pkg/cmdlets/auth"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -42,9 +45,14 @@ func executeAddUpdate(out output.Outputer, prompt prompt.Prompter, language, nam
 
 	// Commit the package
 	pj := project.Get()
-	fail = model.CommitPackage(pj.Owner(), pj.Name(), operation, name, version)
+	commitID, fail := model.CommitPackage(pj.Owner(), pj.Name(), operation, name, version)
 	if fail != nil {
-		return fail.WithDescription("err_package_" + operationStr)
+		return fail.WithDescription("err_package_" + operationStr).ToError()
+	}
+
+	err = updateRuntime(commitID, pj.Owner(), pj.Name())
+	if err != nil {
+		return locale.WrapError(err, "Could not update runtime environment.")
 	}
 
 	// Print the result
@@ -54,8 +62,24 @@ func executeAddUpdate(out output.Outputer, prompt prompt.Prompter, language, nam
 		out.Print(locale.Tr("package_"+operationStr, name))
 	}
 
-	// Remind user to update their activestate.yaml
-	out.Notice(locale.T("package_update_config_file"))
+	return nil
+}
+
+func updateRuntime(commitID strfmt.UUID, owner, projectName string) error {
+	installable, fail := runtime.NewInstaller(
+		commitID,
+		owner,
+		projectName,
+	)
+	if fail != nil {
+		return locale.WrapError(fail, "Could not create installer.")
+	}
+
+	_, _, fail = installable.Install()
+	if fail != nil {
+		return locale.WrapError(fail, "Could not install dependencies.")
+	}
+
 	return nil
 }
 

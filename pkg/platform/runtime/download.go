@@ -14,8 +14,10 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/progress"
 	"github.com/ActiveState/cli/pkg/platform/api"
+	"github.com/ActiveState/cli/pkg/platform/api/buildlogstream"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -119,8 +121,6 @@ func (r *Download) fetchRecipeID() (strfmt.UUID, *failures.Failure) {
 // FetchArtifacts will retrieve artifact information from the head-chef (eg language installers)
 // The first return argument specifies whether we are dealing with an alternative build
 func (r *Download) FetchArtifacts() (*FetchArtifactsResult, *failures.Failure) {
-	result := &FetchArtifactsResult{}
-
 	platProject, fail := model.FetchProjectByName(r.owner, r.projectName)
 	if fail != nil {
 		return nil, fail
@@ -143,6 +143,12 @@ func (r *Download) FetchArtifacts() (*FetchArtifactsResult, *failures.Failure) {
 	if commitID == nil {
 		return nil, FailNoCommitID.New("fetch_err_runtime_no_commitid")
 	}
+
+	return r.fetchArtifacts(*commitID, recipeID, platProject)
+}
+
+func (r *Download) fetchArtifacts(commitID, recipeID strfmt.UUID, platProject *mono_models.Project) (*FetchArtifactsResult, *failures.Failure) {
+	result := &FetchArtifactsResult{}
 
 	buildAnnotations := headchef.BuildAnnotations{
 		CommitID:     commitID.String(),
@@ -182,7 +188,7 @@ func (r *Download) FetchArtifacts() (*FetchArtifactsResult, *failures.Failure) {
 			logging.Debug("BuildFailed: %s", msg)
 			return result, FailBuildFailed.New(locale.Tr("build_status_failed", r.projectURL(), msg))
 
-		case <-buildStatus.Started:
+		case resp := <-buildStatus.Started:
 			logging.Debug("BuildStarted")
 			namespaced := project.Namespaced{
 				Owner:   r.owner,
@@ -191,7 +197,17 @@ func (r *Download) FetchArtifacts() (*FetchArtifactsResult, *failures.Failure) {
 			analytics.EventWithLabel(
 				analytics.CatBuild, analytics.ActBuildProject, namespaced.String(),
 			)
-			return result, FailBuildInProgress.New(locale.Tr("build_status_in_progress", r.projectURL()))
+
+			// For non-alternate builds we do not support in-progress builds
+			engine := BuildEngineFromResponse(resp)
+			if engine != Alternative && engine != Hybrid {
+				return result, FailBuildInProgress.New(locale.Tr("build_status_in_progress", r.projectURL()))
+			}
+
+			if err := r.waitForArtifacts(recipeID); err != nil {
+				return nil, failures.FailMisc.Wrap(err, locale.Tl("err_wait_artifacts", "Error happened while waiting for packages"))
+			}
+			return r.fetchArtifacts(commitID, recipeID, platProject)
 
 		case fail := <-buildStatus.RunFail:
 			logging.Debug("Failure: %v", fail)
@@ -206,6 +222,15 @@ func (r *Download) FetchArtifacts() (*FetchArtifactsResult, *failures.Failure) {
 			}
 		}
 	}
+}
+
+func (r *Download) waitForArtifacts(recipeID strfmt.UUID) error {
+	logstream := buildlogstream.NewRequest(recipeID)
+	if err := logstream.Wait(); err != nil {
+		return locale.WrapError(err, "err_wait_artifacts_logstream", "Error happened while waiting for builds to complete")
+	}
+
+	return nil
 }
 
 func (r *Download) projectURL() string {

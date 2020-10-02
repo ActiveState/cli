@@ -78,6 +78,8 @@ require (
 	github.com/pkg/errors v0.8.1
 	github.com/posener/wstest v0.0.0-20180216222922-04b166ca0bf1
 	github.com/rollbar/rollbar-go v1.1.0
+	github.com/sacOO7/go-logger v0.0.0-20180719173527-9ac9add5a50d // indirect
+	github.com/sacOO7/gowebsocket v0.0.0-20180719182212-1436bb906a4e
 	github.com/shibukawa/configdir v0.0.0-20170330084843-e180dbdc8da0
 	github.com/shirou/gopsutil v2.19.12+incompatible
 	github.com/skratchdot/open-golang v0.0.0-20190104022628-a2dfa6d0dab6

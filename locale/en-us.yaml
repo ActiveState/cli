@@ -1679,3 +1679,11 @@ ppm_convert_ask_feedback:
 windows_compatibility_warning:
   other: |
     Warning: State Tool is untested on Windows versions below 10. If you encounter issues please consider reporting them on {{.V0}}
+artifact_started:
+  other: "Building: {{.V0}}"
+artifact_started_cached:
+  other: "Retrieving Cached: {{.V0}}"
+artifact_succeeded:
+  other: "Completed: {{.V0}} ({{.V1}}/{{.V2}})"
+artifact_failed:
+  other: "Failed: {{.V0}}. Error returned: {{.V1}}"

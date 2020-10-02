@@ -186,6 +186,8 @@ func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGet
 		return runtimeAssembler, false, nil
 	}
 
+
+
 	downloadArtfs := runtimeAssembler.ArtifactsToDownload()
 	unpackArchives := map[string]*HeadChefArtifact{}
 	progressBar := progress.New(mpb.WithOutput(os.Stderr))

@@ -25,6 +25,9 @@ const (
 	// ServiceHeadChef is our service that's used to kick off and track builds
 	ServiceHeadChef = "headchef"
 
+	// ServiceHeadChefWS is the websocket service on headchef
+	BuildLogStreamer = "buildlog-streamer"
+
 	// ServiceInventory is our service that's used to query available inventory and dependencies
 	ServiceInventory = "inventory"
 
@@ -50,6 +53,11 @@ var urlsByService = map[Service]*url.URL{
 		Scheme: "https",
 		Host:   constants.DefaultAPIHost,
 		Path:   constants.HeadChefAPIPath,
+	},
+	BuildLogStreamer: {
+		Scheme: "wss",
+		Host:   constants.DefaultAPIHost,
+		Path:   constants.BuildLogStreamerPath,
 	},
 	ServiceInventory: {
 		Scheme: "https",

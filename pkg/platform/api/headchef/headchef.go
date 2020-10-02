@@ -26,7 +26,7 @@ var (
 )
 
 type BuildStatus struct {
-	Started   chan struct{}
+	Started   chan *headchef_models.BuildStatusResponse
 	Failed    chan string
 	Completed chan *headchef_models.BuildStatusResponse
 	RunFail   chan *failures.Failure
@@ -40,7 +40,7 @@ type BuildAnnotations struct {
 
 func NewBuildStatus() *BuildStatus {
 	return &BuildStatus{
-		Started:   make(chan struct{}),
+		Started:   make(chan *headchef_models.BuildStatusResponse),
 		Failed:    make(chan string),
 		Completed: make(chan *headchef_models.BuildStatusResponse),
 		RunFail:   make(chan *failures.Failure),
@@ -148,7 +148,7 @@ func (r *Client) reqBuild(buildReq *headchef_models.V1BuildRequest, buildStatus 
 		}
 		buildStatus.RunFail <- FailBuildReqErrorResp.New(msg)
 	case accepted != nil:
-		buildStatus.Started <- struct{}{}
+		buildStatus.Started <- accepted.Payload
 	case created != nil:
 		if created.Payload.Type == nil {
 			requestBytes, err := buildReq.MarshalBinary()
@@ -168,11 +168,12 @@ func (r *Client) reqBuild(buildReq *headchef_models.V1BuildRequest, buildStatus 
 
 		switch payloadType {
 		case headchef_models.BuildStatusResponseTypeBuildCompleted:
+			buildStatus.Started <- created.Payload // TODO: Remove after testing
 			buildStatus.Completed <- created.Payload
 		case headchef_models.BuildStatusResponseTypeBuildFailed:
 			buildStatus.Failed <- created.Payload.Message
 		case headchef_models.BuildStatusResponseTypeBuildStarted:
-			buildStatus.Started <- struct{}{}
+			buildStatus.Started <- created.Payload
 		default:
 			msg := fmt.Sprintf(
 				"created response cannot be handled: unknown type %q",
