@@ -663,8 +663,11 @@ func GetProjectFilePath() (string, *failures.Failure) {
 	}
 	for _, getProjectFilePath := range lookup {
 		path, fail := getProjectFilePath()
-		if path != "" || fail != nil {
-			return path, fail
+		if fail != nil {
+			return "", fail
+		}
+		if path == "" {
+			continue
 		}
 	}
 
