@@ -666,8 +666,8 @@ func GetProjectFilePath() (string, *failures.Failure) {
 		if fail != nil {
 			return "", fail
 		}
-		if path == "" {
-			continue
+		if path != "" {
+			return path, nil
 		}
 	}
 
