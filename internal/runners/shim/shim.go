@@ -59,7 +59,7 @@ func (s *Shim) Run(args ...string) error {
 	}
 
 	lang := language.Bash
-	scriptArgs := fmt.Sprintf("%s $@", args[0])
+	scriptArgs := fmt.Sprintf("%s \"$@\"", args[0])
 	if s.subshell.Binary() == "cmd" {
 		lang = language.Batch
 		scriptArgs = fmt.Sprintf("%s %%*", args[0])
