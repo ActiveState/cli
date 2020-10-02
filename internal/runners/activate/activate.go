@@ -123,7 +123,6 @@ func (r *Activate) pathToUse(namespace string, preferredPath string) (string, er
 		return preferredPath, nil
 	default:
 		// Get path from working directory
-		var fail *failures.Failure
 		targetPath, fail := projectfile.GetProjectFilePath()
 		return filepath.Dir(targetPath), fail.ToError()
 	}
