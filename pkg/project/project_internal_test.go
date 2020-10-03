@@ -45,6 +45,15 @@ func (suite *ProjectInternalTestSuite) TestPassParseURLNoCommit() {
 	suite.Equal("", meta.commitID, "They should match")
 }
 
+func (suite *ProjectInternalTestSuite) TestPassParseURLWithCommitPath() {
+	// url pass including commitID
+	meta, fail := parseURL("https://platform.activestate.com/commit/00010001-0001-0001-0001-000100010001")
+	suite.NoError(fail.ToError(), "Should load project without issue.")
+	suite.Equal("", meta.owner, "They should match")
+	suite.Equal("", meta.name, "They should match")
+	suite.Equal("00010001-0001-0001-0001-000100010001", meta.commitID, "They should match")
+}
+
 func (suite *ProjectInternalTestSuite) TestFailParseURL() {
 	// url fail
 	_, fail := parseURL("Thisisnotavalidaprojecturl")
