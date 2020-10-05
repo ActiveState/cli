@@ -239,7 +239,10 @@ func (c *Command) Find(args []string) (*Command, error) {
 	if err != nil {
 		return nil, err
 	}
-	return cobraMapping[foundCobra], nil
+	if cmd, ok := cobraMapping[foundCobra]; ok {
+		return cmd, nil
+	}
+	return nil, locale.NewError("err_captain_cmd_find", fmt.Sprintf("Could not find Command with args: %s", args))
 }
 
 func (c *Command) findNext(next string) *Command {
