@@ -168,7 +168,6 @@ func (r *Client) reqBuild(buildReq *headchef_models.V1BuildRequest, buildStatus 
 
 		switch payloadType {
 		case headchef_models.BuildStatusResponseTypeBuildCompleted:
-			buildStatus.Started <- created.Payload // TODO: Remove after testing
 			buildStatus.Completed <- created.Payload
 		case headchef_models.BuildStatusResponseTypeBuildFailed:
 			buildStatus.Failed <- created.Payload.Message

@@ -82,8 +82,6 @@ type activateFunc func(proj *project.Project, out output.Outputer, subs subshell
 func activate(proj *project.Project, out output.Outputer, subs subshell.SubShell) (bool, error) {
 	projectfile.Reset()
 	venv := virtualenvironment.Get()
-	venv.OnDownloadArtifacts(func() { out.Notice(locale.T("downloading_artifacts")) })
-	venv.OnInstallArtifacts(func() { out.Notice(locale.T("installing_artifacts")) })
 	venv.OnUseCache(func() { out.Notice(locale.T("using_cached_env")) })
 	fail := venv.Activate()
 	if fail != nil {

@@ -18,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -101,7 +102,7 @@ func (d *Deploy) createInstaller(namespace project.Namespaced, path string) (ins
 		commitID = branch.CommitID
 	}
 
-	installable, cacheDir, fail := d.NewRuntimeInstaller(*commitID, namespace.Owner, namespace.Project, path)
+	installable, cacheDir, fail := d.NewRuntimeInstaller(*commitID, namespace.Owner, namespace.Project, path, runbits.NewRuntimeMessageHandler(d.output))
 	return installable, cacheDir, fail.ToError()
 }
 

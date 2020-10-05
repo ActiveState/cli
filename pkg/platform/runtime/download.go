@@ -92,14 +92,16 @@ type Download struct {
 	projectName string
 	orgID       string
 	private     bool
+	msgHandler  buildlogstream.MessageHandler
 }
 
 // NewDownload creates a new RuntimeDownload using all custom args
-func NewDownload(commitID strfmt.UUID, owner, projectName string) Downloader {
+func NewDownload(commitID strfmt.UUID, owner, projectName string, msgHandler buildlogstream.MessageHandler) Downloader {
 	return &Download{
 		commitID:    commitID,
 		owner:       owner,
 		projectName: projectName,
+		msgHandler:  msgHandler,
 	}
 }
 
@@ -225,7 +227,7 @@ func (r *Download) fetchArtifacts(commitID, recipeID strfmt.UUID, platProject *m
 }
 
 func (r *Download) waitForArtifacts(recipeID strfmt.UUID) error {
-	logstream := buildlogstream.NewRequest(recipeID)
+	logstream := buildlogstream.NewRequest(recipeID, r.msgHandler)
 	if err := logstream.Wait(); err != nil {
 		return locale.WrapError(err, "err_wait_artifacts_logstream", "Error happened while waiting for builds to complete")
 	}

@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/pkg/cmdlets/auth"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
@@ -50,7 +51,7 @@ func executeAddUpdate(out output.Outputer, prompt prompt.Prompter, language, nam
 		return fail.WithDescription("err_package_" + operationStr).ToError()
 	}
 
-	err = updateRuntime(commitID, pj.Owner(), pj.Name())
+	err = updateRuntime(commitID, pj.Owner(), pj.Name(), runbits.NewRuntimeMessageHandler(out))
 	if err != nil {
 		return locale.WrapError(err, "Could not update runtime environment.")
 	}
@@ -65,11 +66,12 @@ func executeAddUpdate(out output.Outputer, prompt prompt.Prompter, language, nam
 	return nil
 }
 
-func updateRuntime(commitID strfmt.UUID, owner, projectName string) error {
+func updateRuntime(commitID strfmt.UUID, owner, projectName string, msgHandler runtime.MessageHandler) error {
 	installable, fail := runtime.NewInstaller(
 		commitID,
 		owner,
 		projectName,
+		msgHandler,
 	)
 	if fail != nil {
 		return locale.WrapError(fail, "Could not create installer.")

@@ -1,8 +1,9 @@
 package mock
 
 import (
-	"github.com/ActiveState/cli/internal/failures"
 	testifyMock "github.com/stretchr/testify/mock"
+
+	"github.com/ActiveState/cli/internal/failures"
 )
 
 // Installer is a testify Mock object.
@@ -33,8 +34,3 @@ func (installer *Installer) InstallFromArchive(archive string) *failures.Failure
 	return nil
 }
 
-// OnDownload registers a function to be called when a download occurs
-func (installer *Installer) OnDownload(f func()) {}
-
-// OnInstall registers a function to be called when an install occurs
-func (installer *Installer) OnInstall(f func()) {}

@@ -1680,9 +1680,9 @@ windows_compatibility_warning:
   other: |
     Warning: State Tool is untested on Windows versions below 10. If you encounter issues please consider reporting them on {{.V0}}
 artifact_started:
-  other: "Building: {{.V0}}"
+  other: "Build Starting Remotely: {{.V0}}"
 artifact_started_cached:
-  other: "Retrieving Cached: {{.V0}}"
+  other: "Already Cached: {{.V0}}"
 artifact_succeeded:
   other: "Completed: {{.V0}} ({{.V1}}/{{.V2}})"
 artifact_failed:

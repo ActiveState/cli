@@ -145,12 +145,11 @@ func (f *FailureType) Wrap(err error, message ...string) *Failure {
 		return nil
 	}
 
-	var errMsg string
 	if len(message) > 0 {
-		errMsg = fmt.Sprintf("%v: %s", strings.Join(message, ": "), err)
+		err = fmt.Errorf("%s: %w", strings.Join(message, ": "), err)
 	}
 	logging.Debug("Failure '%s' wrapped: %v", f.Name, err)
-	fail := f.New(errMsg)
+	fail := f.New(err.Error())
 	fail.err = err
 	return fail
 }

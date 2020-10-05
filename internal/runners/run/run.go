@@ -98,8 +98,6 @@ func run(out output.Outputer, subs subshell.SubShell, name string, args []string
 	if !script.Standalone() && !subshell.IsActivated() {
 		out.Notice(locale.T("info_state_run_activating_state"))
 		venv := virtualenvironment.Init()
-		venv.OnDownloadArtifacts(func() { out.Notice(locale.T("downloading_artifacts")) })
-		venv.OnInstallArtifacts(func() { out.Notice(locale.T("installing_artifacts")) })
 
 		if fail := venv.Activate(); fail != nil {
 			logging.Errorf("Unable to activate state: %s", fail.Error())
