@@ -151,6 +151,28 @@ print("Hello World!")
 	cp.ExpectExitCode(0)
 }
 
+func (suite *ShimIntegrationTestSuite) TestShim_NoDoubleDash() {
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	suite.createProjectFile(ts)
+
+	scriptBlock := `
+print("Hello World!")
+	`
+
+	testScript := filepath.Join(fmt.Sprintf("%s/%s.py", ts.Dirs.Work, suite.T().Name()))
+	fail := fileutils.WriteFile(testScript, []byte(scriptBlock))
+	suite.Require().NoError(fail.ToError())
+
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("shim", "python3", fmt.Sprintf("%s", testScript)),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("Hello World!")
+	cp.ExpectExitCode(0)
+}
+
 func TestShimIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(ShimIntegrationTestSuite))
 }
