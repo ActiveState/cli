@@ -30,11 +30,12 @@ func executeAddUpdate(out output.Outputer, prompt prompt.Prompter, language, nam
 	}
 
 	// Verify that the provided package actually exists (the vcs API doesn't care)
+	var ingredient *model.IngredientAndVersion
 	var err error
 	if version == "" {
-		_, err = model.IngredientWithLatestVersion(language, name)
+		ingredient, err = model.IngredientWithLatestVersion(language, name)
 	} else {
-		_, err = model.IngredientByNameAndVersion(language, name, version)
+		ingredient, err = model.IngredientByNameAndVersion(language, name, version)
 	}
 	if err != nil {
 		return locale.WrapError(err, "package_ingredient_err", "Failed to resolve an ingredient named {{.V0}}.", name)
@@ -42,7 +43,7 @@ func executeAddUpdate(out output.Outputer, prompt prompt.Prompter, language, nam
 
 	// Commit the package
 	pj := project.Get()
-	fail = model.CommitPackage(pj.Owner(), pj.Name(), operation, name, version)
+	fail = model.CommitPackage(pj.Owner(), pj.Name(), operation, name, ingredient.Namespace, version)
 	if fail != nil {
 		return fail.WithDescription("err_package_" + operationStr)
 	}

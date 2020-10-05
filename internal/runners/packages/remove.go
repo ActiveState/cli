@@ -37,7 +37,17 @@ func (r *Remove) Run(params RemoveRunParams) error {
 
 	// Commit the package
 	pj := project.Get()
-	fail = model.CommitPackage(pj.Owner(), pj.Name(), model.OperationRemoved, params.Name, "")
+	language, fail := model.DefaultLanguageNameForProject(pj.Owner(), pj.Name())
+	if fail != nil {
+		return fail.WithDescription("err_fetch_languages")
+	}
+
+	ingredient, err := model.IngredientWithLatestVersion(language, params.Name)
+	if err != nil {
+		return locale.WrapError(err, "err_remove_get_package", "Could not find package to remove")
+	}
+
+	fail = model.CommitPackage(pj.Owner(), pj.Name(), model.OperationRemoved, params.Name, ingredient.Namespace, "")
 	if fail != nil {
 		return fail.WithDescription("err_package_removed")
 	}

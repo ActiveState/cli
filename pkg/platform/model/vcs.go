@@ -64,8 +64,11 @@ const (
 	// NamespaceLanguageMatch is the namespace used for language requirements
 	NamespaceLanguageMatch = `^language$`
 
-	// NamespacePackageMatch is the namespace used for package requirements
-	NamespacePackageMatch = `^language\/\w+$`
+	// NamespaceLanguagePackageMatch is the namespace used for language package requirements
+	NamespaceLanguagePackageMatch = `^language\/\w+$`
+
+	// NamespaceBundlePackageMatch is the namespace used for bundle package requirements
+	NamespaceBundlePackageMatch = `^bundles\/\w+$`
 
 	// NamespacePrePlatformMatch is the namespace used for pre-platform bits
 	NamespacePrePlatformMatch = `^pre-platform-installer$`
@@ -87,8 +90,8 @@ func NamespaceMatch(query string, namespace NamespaceMatchable) bool {
 type Namespace string
 
 // NamespacePackage creates a new package namespace
-func NamespacePackage(language string) Namespace {
-	return Namespace(fmt.Sprintf("language/%s", language))
+func NamespacePackage(namespace, language string) Namespace {
+	return Namespace(fmt.Sprintf("%s/%s", namespace, language))
 }
 
 // NamespaceLanguage provides the base language namespace.
@@ -243,7 +246,7 @@ func UpdateBranchCommit(branchID strfmt.UUID, commitID strfmt.UUID) *failures.Fa
 }
 
 // CommitPackage commits a single package commit
-func CommitPackage(projectOwner, projectName string, operation Operation, packageName, packageVersion string) *failures.Failure {
+func CommitPackage(projectOwner, projectName string, operation Operation, packageName, packageNamespace, packageVersion string) *failures.Failure {
 	proj, fail := FetchProjectByName(projectOwner, projectName)
 	if fail != nil {
 		return fail
@@ -278,7 +281,7 @@ func CommitPackage(projectOwner, projectName string, operation Operation, packag
 	}
 
 	commit, fail := AddCommit(*branch.CommitID, locale.Tr(message, packageName, packageVersion),
-		operation, NamespacePackage(languages[0].Name),
+		operation, NamespacePackage(packageNamespace, languages[0].Name),
 		packageName, packageVersion)
 	if fail != nil {
 		return fail
