@@ -11,7 +11,6 @@ import (
 	"github.com/rollbar/rollbar-go"
 
 	"github.com/ActiveState/cli/cmd/state/internal/cmdtree"
-	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config" // MUST be first!
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/constraints"
@@ -148,13 +147,11 @@ func run(args []string, out output.Outputer) (int, error) {
 	// Run the actual command
 	cmds := cmdtree.New(primer.New(pj, out, authentication.Get(), prompter, sshell, conditional))
 
-	var child *captain.Command
-	if len(args) != 0 {
-		child, err = cmds.Command().Find(args[1:])
-		if err != nil {
-			logging.Debug("Could not find child command, error: %v", err)
-		}
+	child, err := cmds.Command().Find(args[1:])
+	if err != nil {
+		logging.Debug("Could not find child command, error: %v", err)
 	}
+
 	if child != nil && !child.SkipChecks() {
 		// Auto update to latest state tool version, only runs once per day
 		if updated, code, err := autoUpdate(args, out, pjPath); err != nil || updated {
