@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -156,6 +157,10 @@ func searchIngredients(limit int, language, name string) ([]*IngredientAndVersio
 		}
 		results = append(results, &ingredient)
 	}
+
+	sort.SliceStable(results, func(i, j int) bool {
+		return *results[i].V1IngredientAndVersion.Ingredient.Name < *results[j].V1IngredientAndVersion.Ingredient.Name
+	})
 
 	return results, nil
 }
