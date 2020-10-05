@@ -1687,3 +1687,9 @@ artifact_succeeded:
   other: "Completed: {{.V0}} ({{.V1}}/{{.V2}})"
 artifact_failed:
   other: "Failed: {{.V0}}. Error returned: {{.V1}}"
+prepare_instructions_lin_mac:
+  other: "To add the global installations directory to your environment please add the line `export PATH={{.V0}}:$PATH` to your RC file"
+prepare_instructions_windows:
+  other: "To add the global installations directory to your environment please add the path `{{.V0}}` to your user PATH in the System Properties dialog"
+prepare_env_warning:
+  other: Could not update user environment
