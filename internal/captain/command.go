@@ -237,12 +237,12 @@ func (c *Command) AddLegacyChildren(children ...cobraCommander) {
 func (c *Command) Find(args []string) (*Command, error) {
 	foundCobra, _, err := c.cobra.Find(args)
 	if err != nil {
-		return nil, err
+		return nil, locale.WrapError(err, "err_captain_cobra_find", fmt.Sprintf("Could not find child Command with args: %s", args))
 	}
 	if cmd, ok := cobraMapping[foundCobra]; ok {
 		return cmd, nil
 	}
-	return nil, locale.NewError("err_captain_cmd_find", fmt.Sprintf("Could not find Command with args: %s", args))
+	return nil, locale.NewError("err_captain_cmd_find", fmt.Sprintf("Could not find child Command with args: %s", args))
 }
 
 func (c *Command) findNext(next string) *Command {
