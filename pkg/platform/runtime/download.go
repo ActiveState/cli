@@ -121,27 +121,39 @@ func (r *Download) fetchRecipeID() (strfmt.UUID, *failures.Failure) {
 func (r *Download) FetchArtifacts() (*FetchArtifactsResult, *failures.Failure) {
 	result := &FetchArtifactsResult{}
 
-	platProject, fail := model.FetchProjectByName(r.owner, r.projectName)
-	if fail != nil {
-		return nil, fail
-	}
-	r.orgID = platProject.OrganizationID.String()
-	r.private = platProject.Private
-
-	recipeID, fail := r.fetchRecipeID()
-	if fail != nil {
-		return nil, fail
-	}
-
 	var commitID *strfmt.UUID
-	for _, branch := range platProject.Branches {
-		if branch.Default {
-			commitID = branch.CommitID
-			break
+	var recipeID strfmt.UUID
+	orgID := strfmt.UUID("00000000-0000-0000-0000-000000000000")
+	projectID := strfmt.UUID("00000000-0000-0000-0000-000000000000")
+	var fail *failures.Failure
+
+	if r.owner != "" || r.projectName != "" {
+		platProject, fail := model.FetchProjectByName(r.owner, r.projectName)
+		if fail != nil {
+			return nil, fail
 		}
+
+		projectID = platProject.ProjectID
+		orgID = platProject.OrganizationID
+		r.orgID = platProject.OrganizationID.String()
+		r.private = platProject.Private
+
+		for _, branch := range platProject.Branches {
+			if branch.Default {
+				commitID = branch.CommitID
+				break
+			}
+		}
+		if commitID == nil {
+			return nil, FailNoCommitID.New("fetch_err_runtime_no_commitid")
+		}
+	} else {
+		commitID = &r.commitID
 	}
-	if commitID == nil {
-		return nil, FailNoCommitID.New("fetch_err_runtime_no_commitid")
+
+	recipeID, fail = r.fetchRecipeID()
+	if fail != nil {
+		return nil, fail
 	}
 
 	buildAnnotations := headchef.BuildAnnotations{
@@ -151,7 +163,7 @@ func (r *Download) FetchArtifacts() (*FetchArtifactsResult, *failures.Failure) {
 	}
 
 	logging.Debug("sending request to head-chef")
-	buildRequest, fail := headchef.NewBuildRequest(recipeID, platProject.OrganizationID, platProject.ProjectID, buildAnnotations)
+	buildRequest, fail := headchef.NewBuildRequest(recipeID, orgID, projectID, buildAnnotations)
 	if fail != nil {
 		return result, fail
 	}
