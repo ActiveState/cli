@@ -129,7 +129,7 @@ func artifactMap(recipeID strfmt.UUID) (map[strfmt.UUID]artifactMapping, error) 
 	}
 
 	for _, re := range recipe.ResolvedIngredients {
-		if re.Ingredient.PrimaryNamespace != nil && *re.Ingredient.PrimaryNamespace == "builder" {
+		if re.Ingredient.PrimaryNamespace != nil && (*re.Ingredient.PrimaryNamespace == "builder" || *re.Ingredient.PrimaryNamespace == "builder-lib") {
 			continue
 		}
 		artifactMap[re.ArtifactID] = artifactMapping{
