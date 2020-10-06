@@ -40,9 +40,6 @@ func (s *Shim) Run(args ...string) error {
 
 	if project != nil && !subshell.IsActivated() {
 		venv := virtualenvironment.Init()
-		venv.OnDownloadArtifacts(func() {})
-		venv.OnInstallArtifacts(func() {})
-
 		if fail := venv.Activate(); fail != nil {
 			logging.Errorf("Unable to activate state: %s", fail.Error())
 			return locale.WrapError(fail.ToError(), "err_shim_activate", "Could not activate environment for shim command")
