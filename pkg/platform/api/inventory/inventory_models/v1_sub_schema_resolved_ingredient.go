@@ -38,6 +38,9 @@ type V1SubSchemaResolvedIngredient struct {
 	// Required: true
 	Ingredient *V1Ingredient `json:"ingredient"`
 
+	// The ingredient options of the resolved ingredient which had their conditions met by the recipe
+	IngredientOptions []*V1SubSchemaIngredientOption `json:"ingredient_options"`
+
 	// ingredient version
 	// Required: true
 	IngredientVersion *V1IngredientVersion `json:"ingredient_version"`
@@ -70,6 +73,10 @@ func (m *V1SubSchemaResolvedIngredient) Validate(formats strfmt.Registry) error 
 	}
 
 	if err := m.validateIngredient(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateIngredientOptions(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -184,6 +191,31 @@ func (m *V1SubSchemaResolvedIngredient) validateIngredient(formats strfmt.Regist
 			}
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (m *V1SubSchemaResolvedIngredient) validateIngredientOptions(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.IngredientOptions) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.IngredientOptions); i++ {
+		if swag.IsZero(m.IngredientOptions[i]) { // not required
+			continue
+		}
+
+		if m.IngredientOptions[i] != nil {
+			if err := m.IngredientOptions[i].Validate(formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("ingredient_options" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
 	}
 
 	return nil

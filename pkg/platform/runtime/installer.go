@@ -23,6 +23,7 @@ import (
 	"github.com/ActiveState/cli/internal/progress"
 	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/ActiveState/cli/internal/unarchiver"
+	"github.com/ActiveState/cli/pkg/platform/api/buildlogstream"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
@@ -71,14 +72,17 @@ var (
 	FailRuntimeUnknownEngine = failures.Type("runtime.runtime.unknownengine", FailRuntimeInvalid)
 )
 
+type MessageHandler interface {
+	buildlogstream.MessageHandler
+	DownloadStarting()
+}
+
 // Installer implements an Installer that works with a runtime.Downloader and a
 // runtime.Installer. Effectively, upon calling Install, the Installer will first
 // try and Download an archive, then it will try to install that downloaded archive.
 type Installer struct {
 	params            InstallerParams
 	runtimeDownloader Downloader
-	onDownload        func()
-	onInstall         func()
 }
 
 type InstallerParams struct {
@@ -86,17 +90,18 @@ type InstallerParams struct {
 	CommitID    strfmt.UUID
 	Owner       string
 	ProjectName string
+	msgHandler  MessageHandler
 }
 
-func NewInstallerParams(runtimeDir string, commitID strfmt.UUID, owner string, projectName string) InstallerParams {
+func NewInstallerParams(runtimeDir string, commitID strfmt.UUID, owner string, projectName string, msgHandler MessageHandler) InstallerParams {
 	if runtimeDir == "" {
 		runtimeDir = InstallPath(owner, projectName)
 	}
-	return InstallerParams{runtimeDir, commitID, owner, projectName}
+	return InstallerParams{runtimeDir, commitID, owner, projectName, msgHandler}
 }
 
 // NewInstaller creates a new RuntimeInstaller
-func NewInstaller(commitID strfmt.UUID, owner, projectName string) (*Installer, *failures.Failure) {
+func NewInstaller(commitID strfmt.UUID, owner, projectName string, msgHandler MessageHandler) (*Installer, *failures.Failure) {
 	logging.Debug("cache path: %s", config.CachePath())
 	return NewInstallerByParams(
 		InstallerParams{
@@ -104,6 +109,7 @@ func NewInstaller(commitID strfmt.UUID, owner, projectName string) (*Installer, 
 			commitID,
 			owner,
 			projectName,
+			msgHandler,
 		})
 }
 
@@ -120,7 +126,7 @@ func InstallPath(owner, projectName string) string {
 // exists as a directory or can be created.
 func NewInstallerByParams(params InstallerParams) (*Installer, *failures.Failure) {
 	installer := &Installer{
-		runtimeDownloader: NewDownload(params.CommitID, params.Owner, params.ProjectName),
+		runtimeDownloader: NewDownload(params.CommitID, params.Owner, params.ProjectName, params.msgHandler),
 		params:            params,
 	}
 
@@ -186,6 +192,8 @@ func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGet
 		return runtimeAssembler, false, nil
 	}
 
+
+
 	downloadArtfs := runtimeAssembler.ArtifactsToDownload()
 	unpackArchives := map[string]*HeadChefArtifact{}
 	progressBar := progress.New(mpb.WithOutput(os.Stderr))
@@ -195,8 +203,8 @@ func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGet
 	defer progressBar.Close()
 
 	if len(downloadArtfs) != 0 {
-		if installer.onDownload != nil {
-			installer.onDownload()
+		if installer.params.msgHandler != nil {
+			installer.params.msgHandler.DownloadStarting()
 		}
 
 		if len(downloadArtfs) > 0 {
@@ -347,11 +355,6 @@ func (installer *Installer) unpackArchive(ua unarchiver.Unarchiver, archivePath 
 	upb.ReScale(numUnpackedFiles)
 
 	return tmpRuntimeDir, upb, nil
-}
-
-// OnDownload registers a function to be called when a download occurs
-func (installer *Installer) OnDownload(f func()) {
-	installer.onDownload = f
 }
 
 // validateArchive ensures the given path to archive is an actual file and that its suffix is a well-known

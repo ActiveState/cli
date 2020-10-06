@@ -13,6 +13,8 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -31,8 +33,6 @@ type getEnvFunc func(inherit bool, projectDir string) (map[string]string, error)
 type VirtualEnvironment struct {
 	project             *project.Project
 	activationID        string
-	onDownloadArtifacts func()
-	onInstallArtifacts  func()
 	onUseCache          func()
 	getEnv              getEnvFunc
 }
@@ -79,24 +79,22 @@ func (v *VirtualEnvironment) Activate() *failures.Failure {
 	return nil
 }
 
-// OnDownloadArtifacts will call the given function when artifacts are being downloaded
-func (v *VirtualEnvironment) OnDownloadArtifacts(f func()) { v.onDownloadArtifacts = f }
-
-// OnInstallArtifacts will call the given function when artifacts are being installed
-func (v *VirtualEnvironment) OnInstallArtifacts(f func()) { v.onInstallArtifacts = f }
-
 // OnUseCache will call the given function when the cached runtime is used
 func (v *VirtualEnvironment) OnUseCache(f func()) { v.onUseCache = f }
 
 // activateRuntime sets up a runtime environment
 func (v *VirtualEnvironment) activateRuntime() *failures.Failure {
+	// To avoid too much throw away refactoring we're using `output.Get()` here
+	// The idea being this runtime code should be eliminated from virtualenv altogether, and refactoring dependant
+	// code to pass this information in for the meantime just leads to more throwaway code then there already is
+	out := output.Get()
+	msgHandler := runbits.NewRuntimeMessageHandler(out)
+
 	pj := project.Get()
-	installer, fail := runtime.NewInstaller(pj.CommitUUID(), pj.Owner(), pj.Name())
+	installer, fail := runtime.NewInstaller(pj.CommitUUID(), pj.Owner(), pj.Name(), msgHandler)
 	if fail != nil {
 		return fail
 	}
-
-	installer.OnDownload(v.onDownloadArtifacts)
 
 	rt, installed, fail := installer.Install()
 	if fail != nil {
