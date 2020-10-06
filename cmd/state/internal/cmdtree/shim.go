@@ -1,8 +1,6 @@
 package cmdtree
 
 import (
-	"strings"
-
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
@@ -23,8 +21,5 @@ func newShimCommand(prime *primer.Values) *captain.Command {
 	)
 	cmd.SetSkipChecks(true)
 
-	if !strings.Contains(strings.Join(prime.Args(), " "), " -- ") {
-		cmd.SetDisableFlagParsing(true)
-	}
 	return cmd
 }

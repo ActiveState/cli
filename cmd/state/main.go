@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"strings"
 
 	"github.com/ActiveState/sysinfo"
 	"github.com/rollbar/rollbar-go"
@@ -145,11 +146,19 @@ func run(args []string, out output.Outputer) (int, error) {
 	project.RegisterConditional(conditional)
 
 	// Run the actual command
-	cmds := cmdtree.New(primer.New(pj, out, authentication.Get(), prompter, sshell, conditional, args))
+	cmds := cmdtree.New(primer.New(pj, out, authentication.Get(), prompter, sshell, conditional))
 
 	child, err := cmds.Command().Find(args[1:])
 	if err != nil {
 		logging.Debug("Could not find child command, error: %v", err)
+	}
+
+	// Cobra will handle the `--` delimiter if flag parsing is enabled.
+	// If the delimeter is not present we have to disable flag parsing
+	// to ensure flags are passed to the shimmed command rather than
+	// parsed as a flag for `state shim`
+	if !strings.Contains(strings.Join(args, " "), " -- ") {
+		child.SetDisableFlagParsing(true)
 	}
 
 	if child != nil && !child.SkipChecks() {
