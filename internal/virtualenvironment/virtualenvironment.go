@@ -95,7 +95,7 @@ func (v *VirtualEnvironment) activateRuntime() *failures.Failure {
 	if err != nil {
 		return failures.FailInvalidArgument.Wrap(err, locale.Tl("venv_invalid_uuid", "Could not determine commit ID."))
 	}
-	installer, fail := runtime.NewInstaller(CommitUUID, pj.Owner(), pj.Name())
+	installer, fail := runtime.NewInstaller(*commitUUID, pj.Owner(), pj.Name())
 	if fail != nil {
 		return fail
 	}

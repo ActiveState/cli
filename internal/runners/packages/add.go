@@ -39,5 +39,5 @@ func (a *Add) Run(params AddRunParams) error {
 
 	name, version := splitNameAndVersion(params.Name)
 
-	return executeAddUpdate(a.out, a.Prompter, language, name, version, model.OperationAdded)
+	return execute(a.out, a.Prompter, language, name, version, model.OperationAdded)
 }
