@@ -28,7 +28,10 @@ type V1IngredientVersionRevisionCoreAllOf0 struct {
 	// dependency sets
 	DependencySets []*V1IngredientVersionRevisionCoreAllOf0DependencySetsItems `json:"dependency_sets"`
 
-	// Whether or not this revision is indemnified for customers paying for indemnification
+	// ingredient options
+	IngredientOptions []*V1SubSchemaIngredientOption `json:"ingredient_options"`
+
+	// Whether or not this revision is indemnified for customers paying for indemnification. If set to null, then this will use the is_indemnified value of the previous revision or false if this is the first revision.
 	IsIndemnified *bool `json:"is_indemnified,omitempty"`
 
 	// Whether or not this is a stable release of the package
@@ -54,6 +57,10 @@ func (m *V1IngredientVersionRevisionCoreAllOf0) Validate(formats strfmt.Registry
 	var res []error
 
 	if err := m.validateDependencySets(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateIngredientOptions(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -86,6 +93,31 @@ func (m *V1IngredientVersionRevisionCoreAllOf0) validateDependencySets(formats s
 			if err := m.DependencySets[i].Validate(formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("dependency_sets" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *V1IngredientVersionRevisionCoreAllOf0) validateIngredientOptions(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.IngredientOptions) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.IngredientOptions); i++ {
+		if swag.IsZero(m.IngredientOptions[i]) { // not required
+			continue
+		}
+
+		if m.IngredientOptions[i] != nil {
+			if err := m.IngredientOptions[i].Validate(formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("ingredient_options" + "." + strconv.Itoa(i))
 				}
 				return err
 			}

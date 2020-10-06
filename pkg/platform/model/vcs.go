@@ -142,7 +142,7 @@ func CommitHistory(ownerName, projectName string) ([]*mono_models.Commit, *failu
 	return commits, nil
 }
 
-// CommitHistory will return the commit history for the given owner / project
+// CommitHistoryPaged will return the commit history for the given owner / project
 func CommitHistoryPaged(ownerName, projectName string, offset, limit int64) (*mono_models.CommitHistoryInfo, *failures.Failure) {
 	latestCID, fail := LatestCommitID(ownerName, projectName)
 	if fail != nil {
@@ -244,13 +244,14 @@ func UpdateBranchCommit(branchID strfmt.UUID, commitID strfmt.UUID) *failures.Fa
 
 // CommitPackage commits a package to an existing parent commit
 func CommitPackage(parentCommitID strfmt.UUID, operation Operation, packageName, packageVersion string) (strfmt.UUID, *failures.Failure) {
+	var commitID strfmt.UUID
 	languages, fail := FetchLanguagesForCommit(parentCommitID)
 	if fail != nil {
-		return "", fail
+		return commitID, fail
 	}
 
 	if len(languages) == 0 {
-		return "", FailNoLanguages.New(locale.T("err_project_no_languages"))
+		return commitID, FailNoLanguages.New(locale.T("err_project_no_languages"))
 	}
 
 	var message string
@@ -270,29 +271,30 @@ func CommitPackage(parentCommitID strfmt.UUID, operation Operation, packageName,
 }
 
 // CommitPackageInBranch commits a single package commit and updates the project's VCS branch
-func CommitPackageInBranch(projectOwner, projectName string, operation Operation, packageName, packageVersion string) *failures.Failure {
+func CommitPackageInBranch(projectOwner, projectName string, operation Operation, packageName, packageVersion string) (strfmt.UUID, *failures.Failure) {
+	var commitID strfmt.UUID
 	proj, fail := FetchProjectByName(projectOwner, projectName)
 	if fail != nil {
-		return fail
+		return commitID, fail
 	}
 
 	branch, fail := DefaultBranchForProject(proj)
 	if fail != nil {
-		return fail
+		return commitID, fail
 	}
 
 	if branch.CommitID == nil {
-		return FailNoCommit.New(locale.T("err_project_no_languages"))
+		return commitID, FailNoCommit.New(locale.T("err_project_no_languages"))
 	}
 
-	commitID, fail := CommitPackage(*branch.CommitID, operation, packageName, packageVersion)
+	commitID, fail = CommitPackage(*branch.CommitID, operation, packageName, packageVersion)
 
 	fail = UpdateBranchCommit(branch.BranchID, commitID)
 	if fail != nil {
-		return fail
+		return commitID, fail
 	}
 
-	return nil
+	return commitID, nil
 }
 
 // CommitChangeset commits multiple changes in one commit

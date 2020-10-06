@@ -13,7 +13,9 @@ import (
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
+	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	graphMock "github.com/ActiveState/cli/pkg/platform/api/graphql/request/mock"
 	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
@@ -50,7 +52,8 @@ func (suite *InternalTestSuite) BeforeTest(suiteName, testName string) {
 	suite.Require().NoError(err)
 
 	var fail *failures.Failure
-	suite.installer, fail = NewInstallerByParams(NewInstallerParams(suite.cacheDir, "00010001-0001-0001-0001-000100010001", "string", "string"))
+	msgHandler := runbits.NewRuntimeMessageHandler(&outputhelper.TestOutputer{})
+	suite.installer, fail = NewInstallerByParams(NewInstallerParams(suite.cacheDir, "00010001-0001-0001-0001-000100010001", "string", "string", msgHandler))
 	suite.Require().NoError(fail.ToError())
 	suite.Require().NotNil(suite.installer)
 
@@ -65,8 +68,9 @@ func (suite *InternalTestSuite) AfterTest(suiteName, testName string) {
 }
 
 func (suite *InternalTestSuite) TestValidateCheckpointNoCommit() {
+	msgHandler := runbits.NewRuntimeMessageHandler(&outputhelper.TestOutputer{})
 	var fail *failures.Failure
-	suite.installer, fail = NewInstallerByParams(NewInstallerParams(suite.cacheDir, "", "string", "string"))
+	suite.installer, fail = NewInstallerByParams(NewInstallerParams(suite.cacheDir, "", "string", "string", msgHandler))
 	suite.Require().NoError(fail.ToError())
 	suite.Require().NotNil(suite.installer)
 

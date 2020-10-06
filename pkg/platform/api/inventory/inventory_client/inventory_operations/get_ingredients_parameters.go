@@ -81,21 +81,11 @@ for the get ingredients operation typically these are written to a http.Request
 */
 type GetIngredientsParams struct {
 
-	/*IncludePrivate
-	  Include private ingredients from all organizations. Only available to superusers.
-
-	*/
-	IncludePrivate *bool
 	/*Limit
 	  The maximum number of items returned per page
 
 	*/
 	Limit *int64
-	/*OrganizationID
-	  Include ingredient information for private ingredients belong to this organization. The requesting user must be a member of the relevant organization.
-
-	*/
-	OrganizationID *string
 	/*Page
 	  The page number returned
 
@@ -140,17 +130,6 @@ func (o *GetIngredientsParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
-// WithIncludePrivate adds the includePrivate to the get ingredients params
-func (o *GetIngredientsParams) WithIncludePrivate(includePrivate *bool) *GetIngredientsParams {
-	o.SetIncludePrivate(includePrivate)
-	return o
-}
-
-// SetIncludePrivate adds the includePrivate to the get ingredients params
-func (o *GetIngredientsParams) SetIncludePrivate(includePrivate *bool) {
-	o.IncludePrivate = includePrivate
-}
-
 // WithLimit adds the limit to the get ingredients params
 func (o *GetIngredientsParams) WithLimit(limit *int64) *GetIngredientsParams {
 	o.SetLimit(limit)
@@ -160,17 +139,6 @@ func (o *GetIngredientsParams) WithLimit(limit *int64) *GetIngredientsParams {
 // SetLimit adds the limit to the get ingredients params
 func (o *GetIngredientsParams) SetLimit(limit *int64) {
 	o.Limit = limit
-}
-
-// WithOrganizationID adds the organizationID to the get ingredients params
-func (o *GetIngredientsParams) WithOrganizationID(organizationID *string) *GetIngredientsParams {
-	o.SetOrganizationID(organizationID)
-	return o
-}
-
-// SetOrganizationID adds the organizationId to the get ingredients params
-func (o *GetIngredientsParams) SetOrganizationID(organizationID *string) {
-	o.OrganizationID = organizationID
 }
 
 // WithPage adds the page to the get ingredients params
@@ -192,22 +160,6 @@ func (o *GetIngredientsParams) WriteToRequest(r runtime.ClientRequest, reg strfm
 	}
 	var res []error
 
-	if o.IncludePrivate != nil {
-
-		// query param include_private
-		var qrIncludePrivate bool
-		if o.IncludePrivate != nil {
-			qrIncludePrivate = *o.IncludePrivate
-		}
-		qIncludePrivate := swag.FormatBool(qrIncludePrivate)
-		if qIncludePrivate != "" {
-			if err := r.SetQueryParam("include_private", qIncludePrivate); err != nil {
-				return err
-			}
-		}
-
-	}
-
 	if o.Limit != nil {
 
 		// query param limit
@@ -218,22 +170,6 @@ func (o *GetIngredientsParams) WriteToRequest(r runtime.ClientRequest, reg strfm
 		qLimit := swag.FormatInt64(qrLimit)
 		if qLimit != "" {
 			if err := r.SetQueryParam("limit", qLimit); err != nil {
-				return err
-			}
-		}
-
-	}
-
-	if o.OrganizationID != nil {
-
-		// query param organization_id
-		var qrOrganizationID string
-		if o.OrganizationID != nil {
-			qrOrganizationID = *o.OrganizationID
-		}
-		qOrganizationID := qrOrganizationID
-		if qOrganizationID != "" {
-			if err := r.SetQueryParam("organization_id", qOrganizationID); err != nil {
 				return err
 			}
 		}

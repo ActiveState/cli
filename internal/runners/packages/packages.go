@@ -7,15 +7,18 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/pkg/cmdlets/auth"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/go-openapi/strfmt"
 )
 
 const latestVersion = "latest"
 
-func execute(out output.Outputer, prompt prompt.Prompter, language, name, version string, operation model.Operation) error {
+func executePackageOperation(out output.Outputer, prompt prompt.Prompter, language, name, version string, operation model.Operation) error {
 	// Use our own interpolation string since we don't want to assume our swagger schema will never change
 	var operationStr = "add"
 	if operation == model.OperationUpdated {
@@ -78,22 +81,43 @@ func execute(out output.Outputer, prompt prompt.Prompter, language, name, versio
 		out.Notice(locale.Tr("package_headless_project_creation", newCommitID.String()))
 
 	} else {
-		// Commit the package
-		fail := model.CommitPackageInBranch(pj.Owner(), pj.Name(), operation, name, version)
+		commitID, fail := model.CommitPackageInBranch(pj.Owner(), pj.Name(), operation, name, version)
 		if fail != nil {
-			return fail.WithDescription("err_package_" + operationStr)
+			return fail.WithDescription("err_package_" + string(operation)).ToError()
+		}
+
+		err = updateRuntime(commitID, pj.Owner(), pj.Name(), runbits.NewRuntimeMessageHandler(out))
+		if err != nil {
+			return locale.WrapError(err, "Could not update runtime environment.")
 		}
 
 		// Print the result
 		if version != "" {
-			out.Print(locale.Tr("package_version_"+operationStr, name, version))
+			out.Print(locale.Tr("package_version_"+string(operation), name, version))
 		} else {
-			out.Print(locale.Tr("package_"+operationStr, name))
+			out.Print(locale.Tr("package_"+string(operation), name))
 		}
-
-		// Remind user to update their activestate.yaml
-		out.Notice(locale.T("package_update_config_file"))
 	}
+
+	return nil
+}
+
+func updateRuntime(commitID strfmt.UUID, owner, projectName string, msgHandler runtime.MessageHandler) error {
+	installable, fail := runtime.NewInstaller(
+		commitID,
+		owner,
+		projectName,
+		msgHandler,
+	)
+	if fail != nil {
+		return locale.WrapError(fail, "Could not create installer.")
+	}
+
+	_, _, fail = installable.Install()
+	if fail != nil {
+		return locale.WrapError(fail, "Could not install dependencies.")
+	}
+
 	return nil
 }
 

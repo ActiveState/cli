@@ -30,5 +30,5 @@ func NewRemove(prime primeable) *Remove {
 func (r *Remove) Run(params RemoveRunParams) error {
 	logging.Debug("ExecuteRemove")
 
-	return execute(r.out, r.Prompter, "", params.Name, "", model.OperationRemoved)
+	return executePackageOperation(r.out, r.Prompter, "", params.Name, "", model.OperationRemoved)
 }

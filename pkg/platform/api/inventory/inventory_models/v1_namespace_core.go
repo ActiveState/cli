@@ -6,6 +6,8 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"encoding/json"
+
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -19,24 +21,51 @@ import (
 // swagger:model v1NamespaceCore
 type V1NamespaceCore struct {
 
-	// is case sensitive
+	// is public
 	// Required: true
-	IsCaseSensitive *bool `json:"is_case_sensitive"`
+	IsPublic *bool `json:"is_public"`
+
+	// The algorithm to use for name normalization in this namespace
+	// Required: true
+	// Enum: [none python]
+	NameNormalizationAlgorithm *string `json:"name_normalization_algorithm"`
 
 	// namespace
 	// Required: true
 	Namespace *string `json:"namespace"`
+
+	// owner platform organization id
+	// Required: true
+	// Format: uuid
+	OwnerPlatformOrganizationID *strfmt.UUID `json:"owner_platform_organization_id"`
+
+	// The algorithm to use for version parsing in this namespace
+	// Required: true
+	// Enum: [feature generic perl python semver]
+	VersionParsingAlgorithm *string `json:"version_parsing_algorithm"`
 }
 
 // Validate validates this v1 namespace core
 func (m *V1NamespaceCore) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateIsCaseSensitive(formats); err != nil {
+	if err := m.validateIsPublic(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateNameNormalizationAlgorithm(formats); err != nil {
 		res = append(res, err)
 	}
 
 	if err := m.validateNamespace(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateOwnerPlatformOrganizationID(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateVersionParsingAlgorithm(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -46,9 +75,52 @@ func (m *V1NamespaceCore) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *V1NamespaceCore) validateIsCaseSensitive(formats strfmt.Registry) error {
+func (m *V1NamespaceCore) validateIsPublic(formats strfmt.Registry) error {
 
-	if err := validate.Required("is_case_sensitive", "body", m.IsCaseSensitive); err != nil {
+	if err := validate.Required("is_public", "body", m.IsPublic); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+var v1NamespaceCoreTypeNameNormalizationAlgorithmPropEnum []interface{}
+
+func init() {
+	var res []string
+	if err := json.Unmarshal([]byte(`["none","python"]`), &res); err != nil {
+		panic(err)
+	}
+	for _, v := range res {
+		v1NamespaceCoreTypeNameNormalizationAlgorithmPropEnum = append(v1NamespaceCoreTypeNameNormalizationAlgorithmPropEnum, v)
+	}
+}
+
+const (
+
+	// V1NamespaceCoreNameNormalizationAlgorithmNone captures enum value "none"
+	V1NamespaceCoreNameNormalizationAlgorithmNone string = "none"
+
+	// V1NamespaceCoreNameNormalizationAlgorithmPython captures enum value "python"
+	V1NamespaceCoreNameNormalizationAlgorithmPython string = "python"
+)
+
+// prop value enum
+func (m *V1NamespaceCore) validateNameNormalizationAlgorithmEnum(path, location string, value string) error {
+	if err := validate.Enum(path, location, value, v1NamespaceCoreTypeNameNormalizationAlgorithmPropEnum); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *V1NamespaceCore) validateNameNormalizationAlgorithm(formats strfmt.Registry) error {
+
+	if err := validate.Required("name_normalization_algorithm", "body", m.NameNormalizationAlgorithm); err != nil {
+		return err
+	}
+
+	// value enum
+	if err := m.validateNameNormalizationAlgorithmEnum("name_normalization_algorithm", "body", *m.NameNormalizationAlgorithm); err != nil {
 		return err
 	}
 
@@ -58,6 +130,71 @@ func (m *V1NamespaceCore) validateIsCaseSensitive(formats strfmt.Registry) error
 func (m *V1NamespaceCore) validateNamespace(formats strfmt.Registry) error {
 
 	if err := validate.Required("namespace", "body", m.Namespace); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *V1NamespaceCore) validateOwnerPlatformOrganizationID(formats strfmt.Registry) error {
+
+	if err := validate.Required("owner_platform_organization_id", "body", m.OwnerPlatformOrganizationID); err != nil {
+		return err
+	}
+
+	if err := validate.FormatOf("owner_platform_organization_id", "body", "uuid", m.OwnerPlatformOrganizationID.String(), formats); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+var v1NamespaceCoreTypeVersionParsingAlgorithmPropEnum []interface{}
+
+func init() {
+	var res []string
+	if err := json.Unmarshal([]byte(`["feature","generic","perl","python","semver"]`), &res); err != nil {
+		panic(err)
+	}
+	for _, v := range res {
+		v1NamespaceCoreTypeVersionParsingAlgorithmPropEnum = append(v1NamespaceCoreTypeVersionParsingAlgorithmPropEnum, v)
+	}
+}
+
+const (
+
+	// V1NamespaceCoreVersionParsingAlgorithmFeature captures enum value "feature"
+	V1NamespaceCoreVersionParsingAlgorithmFeature string = "feature"
+
+	// V1NamespaceCoreVersionParsingAlgorithmGeneric captures enum value "generic"
+	V1NamespaceCoreVersionParsingAlgorithmGeneric string = "generic"
+
+	// V1NamespaceCoreVersionParsingAlgorithmPerl captures enum value "perl"
+	V1NamespaceCoreVersionParsingAlgorithmPerl string = "perl"
+
+	// V1NamespaceCoreVersionParsingAlgorithmPython captures enum value "python"
+	V1NamespaceCoreVersionParsingAlgorithmPython string = "python"
+
+	// V1NamespaceCoreVersionParsingAlgorithmSemver captures enum value "semver"
+	V1NamespaceCoreVersionParsingAlgorithmSemver string = "semver"
+)
+
+// prop value enum
+func (m *V1NamespaceCore) validateVersionParsingAlgorithmEnum(path, location string, value string) error {
+	if err := validate.Enum(path, location, value, v1NamespaceCoreTypeVersionParsingAlgorithmPropEnum); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *V1NamespaceCore) validateVersionParsingAlgorithm(formats strfmt.Registry) error {
+
+	if err := validate.Required("version_parsing_algorithm", "body", m.VersionParsingAlgorithm); err != nil {
+		return err
+	}
+
+	// value enum
+	if err := m.validateVersionParsingAlgorithmEnum("version_parsing_algorithm", "body", *m.VersionParsingAlgorithm); err != nil {
 		return err
 	}
 

@@ -18,15 +18,16 @@ type installable interface {
 }
 
 // newInstallerFunc defines a testable type for runtime.InitInstaller
-type newInstallerFunc func(commitID strfmt.UUID, owner, projectName string, targetDir string) (installable, string, *failures.Failure)
+type newInstallerFunc func(commitID strfmt.UUID, owner, projectName string, targetDir string, msgHandler runtime.MessageHandler) (installable, string, *failures.Failure)
 
 // newInstaller wraps runtime.newInstaller so we can modify the return types
-func newInstaller(commitID strfmt.UUID, owner, projectName, targetDir string) (installable, string, *failures.Failure) {
+func newInstaller(commitID strfmt.UUID, owner, projectName, targetDir string, msgHandler runtime.MessageHandler) (installable, string, *failures.Failure) {
 	params := runtime.NewInstallerParams(
 		targetDir,
 		commitID,
 		owner,
 		projectName,
+		msgHandler,
 	)
 	installable, fail := runtime.NewInstallerByParams(params)
 	return installable, params.RuntimeDir, fail

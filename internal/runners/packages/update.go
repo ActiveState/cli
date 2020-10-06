@@ -47,5 +47,5 @@ func (u *Update) Run(params UpdateRunParams) error {
 		version = *ingredientVersion.Version.Version
 	}
 
-	return execute(u.out, u.Prompter, language, name, version, model.OperationUpdated)
+	return executePackageOperation(u.out, u.Prompter, language, name, version, model.OperationUpdated)
 }
