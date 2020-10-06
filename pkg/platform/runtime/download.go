@@ -128,7 +128,9 @@ func (r *Download) FetchArtifacts() (*FetchArtifactsResult, *failures.Failure) {
 	projectID := strfmt.UUID(constants.ValidZeroUUID)
 	var fail *failures.Failure
 
-	if r.owner != "" || r.projectName != "" {
+	if r.commitID != "" {
+		commitID = &r.commitID
+	} else {
 		platProject, fail := model.FetchProjectByName(r.owner, r.projectName)
 		if fail != nil {
 			return nil, fail
@@ -148,8 +150,6 @@ func (r *Download) FetchArtifacts() (*FetchArtifactsResult, *failures.Failure) {
 		if commitID == nil {
 			return nil, FailNoCommitID.New("fetch_err_runtime_no_commitid")
 		}
-	} else {
-		commitID = &r.commitID
 	}
 
 	recipeID, fail = r.fetchRecipeID()
