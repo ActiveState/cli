@@ -87,7 +87,7 @@ func (r *Push) Run() *failures.Failure {
 	pjf.Save()
 
 	r.Outputer.Notice(locale.Tr("push_project_created", pj.Source().Project, lang.String(), langVersion))
-	pj.Source().SetCommit(commitID.String())
+	pj.Source().SetCommit(commitID.String(), false)
 
 	return nil
 }

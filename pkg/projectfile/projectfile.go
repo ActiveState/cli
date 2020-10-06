@@ -555,6 +555,7 @@ func (p *Project) SetPath(path string) {
 
 // ValidateProjectURL validates the configured project URL
 func ValidateProjectURL(url string) *failures.Failure {
+	// Note: This line also matches headless commit URLs: match == {'commit', '<commit_id>'}
 	match := ProjectURLRe.FindStringSubmatch(url)
 	if len(match) < 3 {
 		return FailParseProject.New(locale.T("err_bad_project_url"))
@@ -608,7 +609,8 @@ func (p *Project) save(path string) *failures.Failure {
 
 // SetCommit sets the commit id within the current project file. This is done
 // in-place so that line order is preserved.
-func (p *Project) SetCommit(commitID string) *failures.Failure {
+// If headless is true, the project is defined by a commit-id only
+func (p *Project) SetCommit(commitID string, headless bool) *failures.Failure {
 	fp, fail := GetProjectFilePath()
 	if fail != nil {
 		return fail
@@ -619,7 +621,7 @@ func (p *Project) SetCommit(commitID string) *failures.Failure {
 		return failures.FailOS.Wrap(err)
 	}
 
-	out, fail := setCommitInYAML(data, commitID)
+	out, fail := setCommitInYAML(data, commitID, headless)
 	if fail != nil {
 		return fail
 	}
@@ -635,16 +637,19 @@ func (p *Project) SetCommit(commitID string) *failures.Failure {
 var (
 	// regex captures from "project:" (at start of line) to last "/" and
 	// everything after until a "?" or newline is reached. Everything after
-	// that is targeted, but not captured so that only the first capture
-	// group can be used in the replace value.
-	setCommitRE = regexp.MustCompile(`(?m:^(project:.*\/[^?\r\n]*).*)`)
+	// that is targeted, but not captured so that only the first two capture
+	// groups can be used in the replace value.
+	setCommitRE = regexp.MustCompile(`(?m:^(project:.*\/)([^?\r\n]*).*)`)
 )
 
-func setCommitInYAML(data []byte, commitID string) ([]byte, *failures.Failure) {
+func setCommitInYAML(data []byte, commitID string, anonymous bool) ([]byte, *failures.Failure) {
 	if commitID == "" {
 		return nil, failures.FailDeveloper.New("commitID must not be empty")
 	}
-	commitQryParam := []byte("$1?commitID=" + commitID)
+	commitQryParam := []byte("$1$2?commitID=" + commitID)
+	if anonymous {
+		commitQryParam = []byte("$1/commit/" + commitID)
+	}
 
 	out := setCommitRE.ReplaceAll(data, commitQryParam)
 	if !strings.Contains(string(out), commitID) {

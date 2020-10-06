@@ -3,26 +3,44 @@ package packages
 import (
 	"strings"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/pkg/cmdlets/auth"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
 const latestVersion = "latest"
 
-func executeAddUpdate(out output.Outputer, prompt prompt.Prompter, language, name, version string, operation model.Operation) error {
+func executeUpdate(out output.Outputer, prompt prompt.Prompter, language, name, version string, operation model.Operation) error {
 	// Use our own interpolation string since we don't want to assume our swagger schema will never change
 	var operationStr = "add"
 	if operation == model.OperationUpdated {
 		operationStr = "update"
+	} else if operation == model.OperationRemoved {
+		operationStr = "removed"
 	}
 
-	fail := auth.RequireAuthentication(locale.T("auth_required_activate"), out, prompt)
-	if fail != nil {
-		return fail.WithDescription("err_activate_auth_required")
+	isHeadless := false
+	if !authentication.Get().Authenticated() {
+		anonymousOk, fail := prompt.Confirm(locale.T("prompt_headless_anonymous"), true)
+		if fail != nil {
+			// TODO: Maybe ignore on interrupt?
+			return errs.Wrap(fail.ToError(), "Error prompting to proceed anonymously during headless commit.")
+		}
+		isHeadless = anonymousOk
+	}
+
+	// Note: User also lands here if answering No to the question about anonymous commit.
+	// TODO: ACs didn't mention that.  Okay?
+	if !isHeadless {
+		fail := auth.RequireAuthentication(locale.T("auth_required_activate"), out, prompt)
+		if fail != nil {
+			return fail.WithDescription("err_activate_auth_required")
+		}
 	}
 
 	if strings.ToLower(version) == latestVersion {
@@ -31,31 +49,46 @@ func executeAddUpdate(out output.Outputer, prompt prompt.Prompter, language, nam
 
 	// Verify that the provided package actually exists (the vcs API doesn't care)
 	var err error
-	if version == "" {
-		_, err = model.IngredientWithLatestVersion(language, name)
-	} else {
-		_, err = model.IngredientByNameAndVersion(language, name, version)
-	}
-	if err != nil {
-		return locale.WrapError(err, "package_ingredient_err", "Failed to resolve an ingredient named {{.V0}}.", name)
+	if operation != model.OperationRemoved {
+		if version == "" {
+			_, err = model.IngredientWithLatestVersion(language, name)
+		} else {
+			_, err = model.IngredientByNameAndVersion(language, name, version)
+		}
+		if err != nil {
+			return locale.WrapError(err, "package_ingredient_err", "Failed to resolve an ingredient named {{.V0}}.", name)
+		}
 	}
 
-	// Commit the package
 	pj := project.Get()
-	fail = model.CommitPackage(pj.Owner(), pj.Name(), operation, name, version)
-	if fail != nil {
-		return fail.WithDescription("err_package_" + operationStr)
-	}
-
-	// Print the result
-	if version != "" {
-		out.Print(locale.Tr("package_version_"+operationStr, name, version))
+	if isHeadless {
+		parentCommitID := pj.CommitUUID()
+		commitID, fail := model.CommitPackage(parentCommitID, operation, name, version)
+		if fail != nil {
+			return locale.WrapError(fail.ToError(), "package_headless_"+operationStr+"_err", "Failed to TODO...")
+		}
+		fail = pj.Source().SetCommit(commitID.String(), true)
+		if fail != nil {
+			return locale.WrapError(fail.ToError(), "package_headless_"+operationStr+"_set_commit_err", "Failed to TODO...")
+		}
+		out.Notice(locale.T("package_headless_" + operationStr))
 	} else {
-		out.Print(locale.Tr("package_"+operationStr, name))
-	}
+		// Commit the package
+		fail := model.CommitPackageInBranch(pj.Owner(), pj.Name(), operation, name, version)
+		if fail != nil {
+			return fail.WithDescription("err_package_" + operationStr)
+		}
 
-	// Remind user to update their activestate.yaml
-	out.Notice(locale.T("package_update_config_file"))
+		// Print the result
+		if version != "" {
+			out.Print(locale.Tr("package_version_"+operationStr, name, version))
+		} else {
+			out.Print(locale.Tr("package_"+operationStr, name))
+		}
+
+		// Remind user to update their activestate.yaml
+		out.Notice(locale.T("package_update_config_file"))
+	}
 	return nil
 }
 

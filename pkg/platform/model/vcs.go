@@ -242,8 +242,35 @@ func UpdateBranchCommit(branchID strfmt.UUID, commitID strfmt.UUID) *failures.Fa
 	return nil
 }
 
-// CommitPackage commits a single package commit
-func CommitPackage(projectOwner, projectName string, operation Operation, packageName, packageVersion string) *failures.Failure {
+// CommitPackage commits a package to an existing parent commit
+func CommitPackage(parentCommitID strfmt.UUID, operation Operation, packageName, packageVersion string) (strfmt.UUID, *failures.Failure) {
+	languages, fail := FetchLanguagesForCommit(parentCommitID)
+	if fail != nil {
+		return "", fail
+	}
+
+	if len(languages) == 0 {
+		return "", FailNoLanguages.New(locale.T("err_project_no_languages"))
+	}
+
+	var message string
+	switch operation {
+	case OperationAdded:
+		message = "commit_message_add_package"
+	case OperationUpdated:
+		message = "commit_message_updated_package"
+	case OperationRemoved:
+		message = "commit_message_removed_package"
+	}
+
+	commit, fail := AddCommit(parentCommitID, locale.Tr(message, packageName, packageVersion),
+		operation, NamespacePackage(languages[0].Name),
+		packageName, packageVersion)
+	return commit.CommitID, fail
+}
+
+// CommitPackageInBranch commits a single package commit and updates the project's VCS branch
+func CommitPackageInBranch(projectOwner, projectName string, operation Operation, packageName, packageVersion string) *failures.Failure {
 	proj, fail := FetchProjectByName(projectOwner, projectName)
 	if fail != nil {
 		return fail
@@ -258,33 +285,9 @@ func CommitPackage(projectOwner, projectName string, operation Operation, packag
 		return FailNoCommit.New(locale.T("err_project_no_languages"))
 	}
 
-	languages, fail := FetchLanguagesForCommit(*branch.CommitID)
-	if fail != nil {
-		return fail
-	}
+	commitID, fail := CommitPackage(*branch.CommitID, operation, packageName, packageVersion)
 
-	if len(languages) == 0 {
-		return FailNoLanguages.New(locale.T("err_project_no_languages"))
-	}
-
-	var message string
-	switch operation {
-	case OperationAdded:
-		message = "commit_message_add_package"
-	case OperationUpdated:
-		message = "commit_message_updated_package"
-	case OperationRemoved:
-		message = "commit_message_removed_package"
-	}
-
-	commit, fail := AddCommit(*branch.CommitID, locale.Tr(message, packageName, packageVersion),
-		operation, NamespacePackage(languages[0].Name),
-		packageName, packageVersion)
-	if fail != nil {
-		return fail
-	}
-
-	fail = UpdateBranchCommit(branch.BranchID, commit.CommitID)
+	fail = UpdateBranchCommit(branch.BranchID, commitID)
 	if fail != nil {
 		return fail
 	}
