@@ -145,7 +145,7 @@ func run(args []string, out output.Outputer) (int, error) {
 	project.RegisterConditional(conditional)
 
 	// Run the actual command
-	cmds := cmdtree.New(primer.New(pj, out, authentication.Get(), prompter, sshell, conditional))
+	cmds := cmdtree.New(primer.New(pj, out, authentication.Get(), prompter, sshell, conditional, args))
 
 	child, err := cmds.Command().Find(args[1:])
 	if err != nil {

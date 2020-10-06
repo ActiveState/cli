@@ -18,15 +18,17 @@ type Values struct {
 	prompt      prompt.Prompter
 	subshell    subshell.SubShell
 	conditional *constraints.Conditional
+	args        []string
 }
 
-func New(project *project.Project, output output.Outputer, auth *authentication.Auth, prompt prompt.Prompter, subshell subshell.SubShell, conditional *constraints.Conditional) *Values {
+func New(project *project.Project, output output.Outputer, auth *authentication.Auth, prompt prompt.Prompter, subshell subshell.SubShell, conditional *constraints.Conditional, args []string) *Values {
 	v := &Values{
 		output:      output,
 		auth:        auth,
 		prompt:      prompt,
 		subshell:    subshell,
 		conditional: conditional,
+		args:        args,
 	}
 	if project != nil {
 		v.project = project
@@ -63,6 +65,10 @@ type Conditioner interface {
 	Conditional() *constraints.Conditional
 }
 
+type Arger interface {
+	Args() []string
+}
+
 func (v *Values) Project() *project.Project {
 	return v.project
 }
@@ -89,4 +95,8 @@ func (v *Values) Subshell() subshell.SubShell {
 
 func (v *Values) Conditional() *constraints.Conditional {
 	return v.conditional
+}
+
+func (v *Values) Args() []string {
+	return v.args
 }
