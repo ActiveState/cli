@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -22,26 +23,38 @@ func (suite *ShimIntegrationTestSuite) createProjectFile(ts *e2e.Session) {
 	`))
 }
 
-func (suite *ShimIntegrationTestSuite) TestShim_Basic() {
+func (suite *ShimIntegrationTestSuite) TestShim_Environment() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	suite.createProjectFile(ts)
 
 	scriptBlock := `
-print("Hello World!")
+echo $PATH
 	`
+	filename := fmt.Sprintf("%s/%s.sh", ts.Dirs.Work, suite.T().Name())
+	if runtime.GOOS == "windows" {
+		scriptBlock = `echo %PATH%`
+		filename = fmt.Sprintf("%s/%s.bat", ts.Dirs.Work, suite.T().Name())
+	}
 
-	testScript := filepath.Join(fmt.Sprintf("%s/%s.py", ts.Dirs.Work, suite.T().Name()))
+	testScript := filepath.Join(filename)
 	fail := fileutils.WriteFile(testScript, []byte(scriptBlock))
 	suite.Require().NoError(fail.ToError())
 
+	if runtime.GOOS != "windows" {
+		cp := ts.SpawnCmd("chmod", "+x", testScript)
+		cp.ExpectExitCode(0)
+	}
+
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("shim", "--", "python3", fmt.Sprintf("%s", testScript)),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.WithArgs("shim", testScript),
 	)
-	cp.Expect("Hello World!")
 	cp.ExpectExitCode(0)
+	output := cp.TrimmedSnapshot()
+	if !strings.Contains(output, ts.Dirs.Bin) {
+		suite.T().Fatal("PATH was not updated to contain cache directory")
+	}
 }
 
 func (suite *ShimIntegrationTestSuite) TestShim_ExitCode() {
@@ -51,17 +64,25 @@ func (suite *ShimIntegrationTestSuite) TestShim_ExitCode() {
 	suite.createProjectFile(ts)
 
 	scriptBlock := `
-import sys
-sys.exit(42)
-`
+exit 42
+	`
+	filename := fmt.Sprintf("%s/%s.sh", ts.Dirs.Work, suite.T().Name())
+	if runtime.GOOS == "windows" {
+		scriptBlock = `EXIT 42`
+		filename = fmt.Sprintf("%s/%s.bat", ts.Dirs.Work, suite.T().Name())
+	}
 
-	testScript := filepath.Join(fmt.Sprintf("%s/%s.py", ts.Dirs.Work, suite.T().Name()))
+	testScript := filepath.Join(filename)
 	fail := fileutils.WriteFile(testScript, []byte(scriptBlock))
 	suite.Require().NoError(fail.ToError())
 
+	if runtime.GOOS != "windows" {
+		cp := ts.SpawnCmd("chmod", "+x", testScript)
+		cp.ExpectExitCode(0)
+	}
+
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("shim", "--", "python3", fmt.Sprintf("%s", testScript)),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.WithArgs("shim", "--", testScript),
 	)
 	cp.ExpectExitCode(42)
 }
@@ -73,35 +94,40 @@ func (suite *ShimIntegrationTestSuite) TestShim_Args() {
 	suite.createProjectFile(ts)
 
 	scriptBlock := `
-import sys
-# Remove script path from argument list
-sys.argv.pop(0)
-
-# Printing str(sys.argv) introduces formatting that the 
-# integration tests do not like
-arg_1 = sys.argv[0]
-arg_2 = sys.argv[1]
-arg_3 = sys.argv[2]
-
-print("Number of arguments:", len(sys.argv))
-print("Your arguments are: {}, {}, {}".format(arg_1, arg_2, arg_3))
+echo "Number of arguments: $#"
+for i; do
+    echo $i
+done
 `
 
-	testScript := filepath.Join(fmt.Sprintf("%s/%s.py", ts.Dirs.Work, suite.T().Name()))
+	filename := fmt.Sprintf("%s/%s.sh", ts.Dirs.Work, suite.T().Name())
+	if runtime.GOOS == "windows" {
+		scriptBlock = `echo %PATH%`
+		filename = fmt.Sprintf("%s/%s.bat", ts.Dirs.Work, suite.T().Name())
+	}
+
+	testScript := filepath.Join(filename)
 	fail := fileutils.WriteFile(testScript, []byte(scriptBlock))
 	suite.Require().NoError(fail.ToError())
+
+	if runtime.GOOS != "windows" {
+		cp := ts.SpawnCmd("chmod", "+x", testScript)
+		cp.ExpectExitCode(0)
+	}
 
 	args := []string{
 		"firstArgument",
 		"secondArgument",
 		"thirdArgument",
 	}
+
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("shim", "--", "python3", fmt.Sprintf("%s", testScript), args[0], args[1], args[2]),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.WithArgs("shim", "--", fmt.Sprintf("%s", testScript), args[0], args[1], args[2]),
 	)
 	cp.Expect("Number of arguments: 3")
-	cp.ExpectLongString(fmt.Sprintf("Your arguments are: %s, %s, %s", args[0], args[1], args[2]))
+	cp.Expect(args[0])
+	cp.Expect(args[1])
+	cp.Expect(args[2])
 	cp.ExpectExitCode(0)
 }
 
@@ -112,16 +138,29 @@ func (suite *ShimIntegrationTestSuite) TestShim_Input() {
 	suite.createProjectFile(ts)
 
 	scriptBlock := `
-name = input("Enter your name: ")
-print("Hello {}!".format(name))
+echo "Enter your name: "
+read name
+echo "Hello $name!"
 `
 
-	testScript := filepath.Join(fmt.Sprintf("%s/%s.py", ts.Dirs.Work, suite.T().Name()))
+	filename := fmt.Sprintf("%s/%s.sh", ts.Dirs.Work, suite.T().Name())
+	if runtime.GOOS == "windows" {
+		scriptBlock = `set /P name="Enter your name: "
+		echo Hello %name%!`
+		filename = fmt.Sprintf("%s/%s.bat", ts.Dirs.Work, suite.T().Name())
+	}
+
+	testScript := filepath.Join(filename)
 	fail := fileutils.WriteFile(testScript, []byte(scriptBlock))
 	suite.Require().NoError(fail.ToError())
 
+	if runtime.GOOS != "windows" {
+		cp := ts.SpawnCmd("chmod", "+x", testScript)
+		cp.ExpectExitCode(0)
+	}
+
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("shim", "--", "python3", fmt.Sprintf("%s", testScript)),
+		e2e.WithArgs("shim", "--", fmt.Sprintf("%s", testScript)),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.SendLine("ActiveState")
@@ -152,23 +191,23 @@ print("Hello World!")
 }
 
 func (suite *ShimIntegrationTestSuite) TestShim_NoDoubleDash() {
+	_, err := exec.LookPath("python3")
+	if err != nil {
+		suite.T().Skip("Cannot run test if system does not have python installation")
+	}
+
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.createProjectFile(ts)
-
 	scriptBlock := `
 print("Hello World!")
-	`
+`
 
 	testScript := filepath.Join(fmt.Sprintf("%s/%s.py", ts.Dirs.Work, suite.T().Name()))
 	fail := fileutils.WriteFile(testScript, []byte(scriptBlock))
 	suite.Require().NoError(fail.ToError())
 
-	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("shim", "python3", fmt.Sprintf("%s", testScript)),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-	)
+	cp := ts.Spawn("shim", "python3", testScript)
 	cp.Expect("Hello World!")
 	cp.ExpectExitCode(0)
 }
