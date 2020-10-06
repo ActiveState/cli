@@ -35,7 +35,6 @@ func executeUpdate(out output.Outputer, prompt prompt.Prompter, language, name, 
 	}
 
 	// Note: User also lands here if answering No to the question about anonymous commit.
-	// TODO: ACs didn't mention that.  Okay?
 	if !isHeadless {
 		fail := auth.RequireAuthentication(locale.T("auth_required_activate"), out, prompt)
 		if fail != nil {
