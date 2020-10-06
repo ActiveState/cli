@@ -12,6 +12,7 @@ import (
 
 	"github.com/gobuffalo/packr"
 	"github.com/mash/go-tempfile-suffix"
+	"github.com/spf13/viper"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -160,12 +161,17 @@ func SetupProjectRcFile(templateName, ext string, env map[string]string, out out
 	prj := project.Get()
 
 	userScripts := ""
+	activatedKey := fmt.Sprintf("activated_%s", prj.Namespace())
 	for _, event := range prj.Events() {
-		if strings.ToLower(event.Name()) == "activate" {
-			v, err := event.Value()
-			if err != nil {
-				return nil, failures.FailMisc.Wrap(err)
-			}
+		v, err := event.Value()
+		if err != nil {
+			return nil, failures.FailMisc.Wrap(err)
+		}
+		if strings.ToLower(event.Name()) == "first-activate" && !viper.GetBool(activatedKey) {
+			userScripts = v + "\n" + userScripts
+			viper.Set(activatedKey, true)
+		}
+		if event.Name() == "activate" {
 			userScripts = userScripts + "\n" + v
 		}
 	}

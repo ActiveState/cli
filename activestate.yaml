@@ -109,7 +109,7 @@ scripts:
     language: bash
     description: Runs unit tests (not integration tests)
     value: |
-      ACTIVESTATE_PROJECT="" go test -parallel 12 $(go list ./... | grep -v /test/integration)
+      ACTIVESTATE_PROJECT="" go test -parallel 12 "$@" $(go list ./... | grep -v /test/integration)
     standalone: true
   - name: integration-tests
     language: bash

@@ -77,11 +77,6 @@ type SolveOrderParams struct {
 
 	/*Order*/
 	Order *inventory_models.V1Order
-	/*OrganizationID
-	  Include ingredient information for private ingredients belong to this organization. The requesting user must be a member of the relevant organization.
-
-	*/
-	OrganizationID *string
 	/*UseRecipeStore
 	  Whether to check if this order has already been solved and retrieve the result from the recipe store or, if false, to force the order to be solved anew
 
@@ -137,17 +132,6 @@ func (o *SolveOrderParams) SetOrder(order *inventory_models.V1Order) {
 	o.Order = order
 }
 
-// WithOrganizationID adds the organizationID to the solve order params
-func (o *SolveOrderParams) WithOrganizationID(organizationID *string) *SolveOrderParams {
-	o.SetOrganizationID(organizationID)
-	return o
-}
-
-// SetOrganizationID adds the organizationId to the solve order params
-func (o *SolveOrderParams) SetOrganizationID(organizationID *string) {
-	o.OrganizationID = organizationID
-}
-
 // WithUseRecipeStore adds the useRecipeStore to the solve order params
 func (o *SolveOrderParams) WithUseRecipeStore(useRecipeStore *bool) *SolveOrderParams {
 	o.SetUseRecipeStore(useRecipeStore)
@@ -171,22 +155,6 @@ func (o *SolveOrderParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Re
 		if err := r.SetBodyParam(o.Order); err != nil {
 			return err
 		}
-	}
-
-	if o.OrganizationID != nil {
-
-		// query param organization_id
-		var qrOrganizationID string
-		if o.OrganizationID != nil {
-			qrOrganizationID = *o.OrganizationID
-		}
-		qOrganizationID := qrOrganizationID
-		if qOrganizationID != "" {
-			if err := r.SetQueryParam("organization_id", qOrganizationID); err != nil {
-				return err
-			}
-		}
-
 	}
 
 	if o.UseRecipeStore != nil {

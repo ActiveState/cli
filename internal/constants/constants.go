@@ -137,6 +137,9 @@ const SecretsURL = "https://platform.activestate.com" + SecretsAPIPath
 // HeadChefAPIPath is the api path used for the headchef api
 const HeadChefAPIPath = "/sv/head-chef"
 
+// BuildLogStreamerPath is the websocket API used for streaming build results
+const BuildLogStreamerPath = "/sv/build-log-streamer"
+
 // InventoryAPIPath is the api path used for the secrets api
 const InventoryAPIPath = "/sv/inventory-api-v1"
 

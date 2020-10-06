@@ -663,35 +663,59 @@ func setCommitInYAML(data []byte, commitID string) ([]byte, *failures.Failure) {
 
 // GetProjectFilePath returns the path to the project activestate.yaml
 func GetProjectFilePath() (string, *failures.Failure) {
-	projectFilePath := os.Getenv(constants.ProjectEnvVarName)
-	if projectFilePath != "" {
-		if !fileutils.FileExists(projectFilePath) {
-			return "", FailNoProjectFromEnv.New(locale.Tr("err_project_env_file_not_exist", projectFilePath))
+	lookup := []func() (string, *failures.Failure){
+		getProjectFilePathFromEnv,
+		getProjectFilePathFromWd,
+		getProjectFilePathFromDefault,
+	}
+	for _, getProjectFilePath := range lookup {
+		path, fail := getProjectFilePath()
+		if fail != nil {
+			return "", fail
 		}
-		return projectFilePath, nil
+		if path != "" {
+			return path, nil
+		}
 	}
 
+	return "", FailNoProject.New(locale.T("err_no_projectfile"))
+}
+
+func getProjectFilePathFromEnv() (string, *failures.Failure) {
+	projectFilePath := os.Getenv(constants.ProjectEnvVarName)
+	if projectFilePath != "" {
+		if fileutils.FileExists(projectFilePath) {
+			return projectFilePath, nil
+		}
+		return "", FailNoProjectFromEnv.New(locale.Tr("err_project_env_file_not_exist", projectFilePath))
+	}
+	return "", nil
+}
+
+func getProjectFilePathFromWd() (string, *failures.Failure) {
 	root, err := osutils.Getwd()
 	if err != nil {
-		logging.Warning("Could not get project root path: %v", err)
-		return "", FailProjectFileRoot.Wrap(err)
+		return "", failures.FailIO.Wrap(err, locale.Tl("err_wd", "Could not get working directory"))
 	}
 
 	path, fail := fileutils.FindFileInPath(root, constants.ConfigFileName)
-	if fail == nil {
-		return path, nil
+	if fail != nil && !fail.Type.Matches(fileutils.FailFindInPathNotFound) {
+		return "", fail
 	}
 
+	return path, nil
+}
+
+func getProjectFilePathFromDefault() (string, *failures.Failure) {
 	defaultProjectPath := viper.GetString("default_project_path")
 	if defaultProjectPath == "" {
-		return "", FailNoProject.Wrap(fail, locale.T("err_no_projectfile"))
+		return "", nil
 	}
 
-	path, fail = fileutils.FindFileInPath(defaultProjectPath, constants.ConfigFileName)
-	if fail != nil {
-		return "", FailNoProject.Wrap(fail, locale.T("err_no_projectfile"))
+	path, fail := fileutils.FindFileInPath(defaultProjectPath, constants.ConfigFileName)
+	if fail != nil && !fail.Type.Matches(fileutils.FailFindInPathNotFound) {
+		return "", fail
 	}
-
 	return path, nil
 }
 
