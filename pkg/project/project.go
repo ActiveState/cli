@@ -240,7 +240,7 @@ func (p *Project) CommitUUID() strfmt.UUID {
 	return strfmt.UUID(p.commitID)
 }
 
-func (p *Project) HasPlatformPath() bool {
+func (p *Project) IsHeadless() bool {
 	return p.name != "" && p.owner != ""
 }
 
