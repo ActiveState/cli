@@ -9,12 +9,12 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 type Activate struct {
@@ -51,19 +51,38 @@ func (r *Activate) Run(params *ActivateParams) error {
 func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc) error {
 	logging.Debug("Activate %v, %v", params.Namespace, params.PreferredPath)
 
-	targetPath, err := r.setupPath(params.Namespace.String(), params.PreferredPath)
+	pathToUse, err := r.pathToUse(params.Namespace.String(), params.PreferredPath)
 	if err != nil {
+		return locale.WrapError(err, "err_activate_pathtouse", "Could not figure out what path to use.")
+	}
+
+	projectToUse, err := r.projectToUse(pathToUse)
+	if err != nil {
+		return locale.WrapError(err, "err_activate_projecttouse", "Could not figure out what project to use.")
+	}
+
+	// Run checkout if no project was given
+	if projectToUse == nil {
 		if !params.Namespace.IsValid() {
-			return failures.FailUserInput.Wrap(err)
+			return locale.WrapError(err, "err_namespace_invalid", "Invalid namespace: {{.V0}}.", params.Namespace.String())
 		}
-		err := r.activateCheckout.Run(params.Namespace.String(), targetPath)
+
+		err := r.activateCheckout.Run(params.Namespace.String(), pathToUse)
 		if err != nil {
 			return err
 		}
+
+		var fail *failures.Failure
+		projectToUse, fail = project.FromPath(pathToUse)
+		if fail != nil {
+			return locale.WrapError(fail, "err_activate_projectfrompath", "Something went wrong while creating project files.")
+		}
 	}
 
+	projectPath := filepath.Dir(projectToUse.Source().Path())
+
 	// Send google analytics event with label set to project namespace
-	names, fail := project.ParseNamespaceOrConfigfile(params.Namespace.String(), filepath.Join(targetPath, constants.ConfigFileName))
+	names, fail := project.ParseNamespaceOrConfigfile(params.Namespace.String(), filepath.Join(projectPath, constants.ConfigFileName))
 	if fail != nil {
 		names = &project.Namespaced{}
 		logging.Debug("error resolving namespace: %v", fail.ToError())
@@ -76,7 +95,7 @@ func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc)
 		if fail := venv.Activate(); fail != nil {
 			return locale.WrapError(fail.ToError(), "error_could_not_activate_venv", "Could not activate project. If this is a private project ensure that you are authenticated.")
 		}
-		env, err := venv.GetEnv(false, targetPath)
+		env, err := venv.GetEnv(false, projectPath)
 		if err != nil {
 			return locale.WrapError(err, "err_activate_getenv", "Could not build environment for your runtime environment.")
 		}
@@ -91,34 +110,28 @@ func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc)
 		r.subshell.SetActivateCommand(params.Command)
 	}
 
-	return activatorLoop(r.out, r.subshell, targetPath, activate)
+	return activatorLoop(r.out, r.subshell, projectPath, activate)
 }
 
-func (r *Activate) setupPath(namespace string, preferredPath string) (string, error) {
-	var (
-		targetPath string
-		err        error
-	)
-
+func (r *Activate) pathToUse(namespace string, preferredPath string) (string, error) {
 	switch {
-	// Checkout via namespace (eg. state activate org/project) and set resulting path
 	case namespace != "":
-		targetPath, err = r.namespaceSelect.Run(namespace, preferredPath)
-	// Use the user provided path
+		// Checkout via namespace (eg. state activate org/project) and set resulting path
+		return r.namespaceSelect.Run(namespace, preferredPath)
 	case preferredPath != "":
-		targetPath, err = preferredPath, nil
-	// Get path from working directory
+		// Use the user provided path
+		return preferredPath, nil
 	default:
-		targetPath, err = osutils.Getwd()
+		// Get path from working directory
+		targetPath, fail := projectfile.GetProjectFilePath()
+		return filepath.Dir(targetPath), fail.ToError()
 	}
-	if err != nil {
-		return "", err
-	}
+}
 
-	proj, fail := project.FromPath(targetPath)
-	if fail != nil {
-		return targetPath, fail
+func (r *Activate) projectToUse(path string) (*project.Project, error) {
+	projectToUse, fail := project.FromPath(path)
+	if fail != nil && !fail.Type.Matches(projectfile.FailNoProject) {
+		return nil, locale.WrapError(fail, "err_activate_projectpath", "Could not find a valid project path.")
 	}
-
-	return filepath.Dir(proj.Source().Path()), nil
+	return projectToUse, nil
 }

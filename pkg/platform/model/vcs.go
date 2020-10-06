@@ -243,28 +243,29 @@ func UpdateBranchCommit(branchID strfmt.UUID, commitID strfmt.UUID) *failures.Fa
 }
 
 // CommitPackage commits a single package commit
-func CommitPackage(projectOwner, projectName string, operation Operation, packageName, packageVersion string) *failures.Failure {
+func CommitPackage(projectOwner, projectName string, operation Operation, packageName, packageVersion string) (strfmt.UUID, *failures.Failure) {
+	commitID := strfmt.UUID("")
 	proj, fail := FetchProjectByName(projectOwner, projectName)
 	if fail != nil {
-		return fail
+		return commitID, fail
 	}
 
 	branch, fail := DefaultBranchForProject(proj)
 	if fail != nil {
-		return fail
+		return commitID, fail
 	}
 
 	if branch.CommitID == nil {
-		return FailNoCommit.New(locale.T("err_project_no_languages"))
+		return commitID, FailNoCommit.New(locale.T("err_project_no_languages"))
 	}
 
 	languages, fail := FetchLanguagesForCommit(*branch.CommitID)
 	if fail != nil {
-		return fail
+		return commitID, fail
 	}
 
 	if len(languages) == 0 {
-		return FailNoLanguages.New(locale.T("err_project_no_languages"))
+		return commitID, FailNoLanguages.New(locale.T("err_project_no_languages"))
 	}
 
 	var message string
@@ -281,15 +282,15 @@ func CommitPackage(projectOwner, projectName string, operation Operation, packag
 		operation, NamespacePackage(languages[0].Name),
 		packageName, packageVersion)
 	if fail != nil {
-		return fail
+		return commitID, fail
 	}
 
 	fail = UpdateBranchCommit(branch.BranchID, commit.CommitID)
 	if fail != nil {
-		return fail
+		return commitID, fail
 	}
 
-	return nil
+	return commit.CommitID, nil
 }
 
 // CommitChangeset commits multiple changes in one commit

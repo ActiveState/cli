@@ -47,21 +47,6 @@ func TestPersist(t *testing.T) {
 	assert.True(t, v1 == v2, "Should return same pointer")
 }
 
-func TestEvents(t *testing.T) {
-	venv := Init()
-	onDownloadCalled := false
-	onInstallCalled := false
-
-	venv.OnDownloadArtifacts(func() { onDownloadCalled = true })
-	venv.OnInstallArtifacts(func() { onInstallCalled = true })
-
-	venv.onDownloadArtifacts()
-	venv.onInstallArtifacts()
-
-	assert.True(t, onDownloadCalled, "OnDownloadArtifacts is triggered")
-	assert.True(t, onInstallCalled, "OnInstallArtifacts is triggered")
-}
-
 func TestActivateFailureUnknownLanguage(t *testing.T) {
 	setup(t)
 	defer teardown()
