@@ -15,7 +15,7 @@ import (
 
 const latestVersion = "latest"
 
-func executeUpdate(out output.Outputer, prompt prompt.Prompter, language, name, version string, operation model.Operation) error {
+func execute(out output.Outputer, prompt prompt.Prompter, language, name, version string, operation model.Operation) error {
 	// Use our own interpolation string since we don't want to assume our swagger schema will never change
 	var operationStr = "add"
 	if operation == model.OperationUpdated {
@@ -66,14 +66,17 @@ func executeUpdate(out output.Outputer, prompt prompt.Prompter, language, name, 
 			return locale.WrapError(err, "package_headless_invalid_commit_id", "Failed to determine current commit.")
 		}
 
+		newCommitID, fail := model.CommitPackage(*parentCommitID, operation, name, version)
 		if fail != nil {
-			return locale.WrapError(fail.ToError(), "package_headless_"+operationStr+"_err", "Failed to TODO...")
+			return locale.WrapError(fail.ToError(), "err_package_"+operationStr)
 		}
-		fail = pj.Source().SetCommit(commitID.String(), true)
+		fail = pj.Source().SetCommit(newCommitID.String(), true)
 		if fail != nil {
-			return locale.WrapError(fail.ToError(), "package_headless_"+operationStr+"_set_commit_err", "Failed to TODO...")
+			return locale.WrapError(fail.ToError(), "package_headless_"+operationStr+"_set_commit_err")
 		}
-		out.Notice(locale.T("package_headless_" + operationStr))
+		out.Notice(locale.Tr("package_headless_"+operationStr, name))
+		out.Notice(locale.Tr("package_headless_project_creation", newCommitID.String()))
+
 	} else {
 		// Commit the package
 		fail := model.CommitPackageInBranch(pj.Owner(), pj.Name(), operation, name, version)
