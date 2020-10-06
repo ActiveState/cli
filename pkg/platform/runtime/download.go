@@ -8,6 +8,7 @@ import (
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/download"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
@@ -123,8 +124,8 @@ func (r *Download) FetchArtifacts() (*FetchArtifactsResult, *failures.Failure) {
 
 	var commitID *strfmt.UUID
 	var recipeID strfmt.UUID
-	orgID := strfmt.UUID("00000000-0000-0000-0000-000000000000")
-	projectID := strfmt.UUID("00000000-0000-0000-0000-000000000000")
+	orgID := strfmt.UUID(constants.ValidZeroUUID)
+	projectID := strfmt.UUID(constants.ValidZeroUUID)
 	var fail *failures.Failure
 
 	if r.owner != "" || r.projectName != "" {
