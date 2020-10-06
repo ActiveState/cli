@@ -65,7 +65,7 @@ func (s *Shim) Run(args ...string) error {
 		scriptArgs = fmt.Sprintf("%s %%*", args[0])
 	}
 
-	sf, fail := scriptfile.New(lang, fmt.Sprintf("state-shim-%s", args[0]), scriptArgs)
+	sf, fail := scriptfile.New(lang, "state-shim", scriptArgs)
 	if fail != nil {
 		return locale.WrapError(fail.ToError(), "err_shim_create_scriptfile", "Could not generate script")
 	}
