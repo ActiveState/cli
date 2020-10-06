@@ -88,7 +88,7 @@ func IngredientWithLatestVersion(language, name string) (*IngredientAndVersion, 
 	}
 
 	if latest == nil {
-		return nil, locale.NewInputError("inventory_ingredient_no_version_available", "No versions are available for package {{.V1}} on the ActiveState Platform", name)
+		return nil, locale.NewInputError("inventory_ingredient_no_version_available", "No versions are available for package {{.V0}} on the ActiveState Platform", name)
 	}
 	return latest, nil
 }

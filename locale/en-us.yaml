@@ -1699,3 +1699,8 @@ prepare_instructions_windows:
   other: "To add the global installations directory to your environment please add the path `{{.V0}}` to your user PATH in the System Properties dialog"
 prepare_env_warning:
   other: Could not update user environment
+prompt_headless_anonymous:
+  other: |
+    You're about to add packages as an anonymous user, you might 
+    want to authenticate first using `state auth` if you already have 
+    an account. Do you want to continue as an anonymous user?
