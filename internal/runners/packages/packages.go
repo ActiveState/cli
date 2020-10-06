@@ -61,8 +61,11 @@ func executeUpdate(out output.Outputer, prompt prompt.Prompter, language, name, 
 
 	pj := project.Get()
 	if isHeadless {
-		parentCommitID := pj.CommitUUID()
-		commitID, fail := model.CommitPackage(parentCommitID, operation, name, version)
+		parentCommitID, err := pj.CommitUUID()
+		if err != nil {
+			return locale.WrapError(err, "package_headless_invalid_commit_id", "Failed to determine current commit.")
+		}
+
 		if fail != nil {
 			return locale.WrapError(fail.ToError(), "package_headless_"+operationStr+"_err", "Failed to TODO...")
 		}

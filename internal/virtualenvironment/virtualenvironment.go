@@ -91,7 +91,11 @@ func (v *VirtualEnvironment) OnUseCache(f func()) { v.onUseCache = f }
 // activateRuntime sets up a runtime environment
 func (v *VirtualEnvironment) activateRuntime() *failures.Failure {
 	pj := project.Get()
-	installer, fail := runtime.NewInstaller(pj.CommitUUID(), pj.Owner(), pj.Name())
+	commitUUID, err := pj.CommitUUID()
+	if err != nil {
+		return failures.FailInvalidArgument.Wrap(err, locale.Tl("venv_invalid_uuid", "Could not determine commit ID."))
+	}
+	installer, fail := runtime.NewInstaller(CommitUUID, pj.Owner(), pj.Name())
 	if fail != nil {
 		return fail
 	}
