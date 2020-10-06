@@ -3,6 +3,7 @@ package shim
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
@@ -60,9 +61,9 @@ func (s *Shim) Run(args ...string) error {
 
 	lang := language.Bash
 	scriptArgs := fmt.Sprintf(`%s "$@"`, args[0])
-	if s.subshell.Binary() == "cmd" {
+	if strings.Contains(s.subshell.Binary(), "cmd") {
 		lang = language.Batch
-		scriptArgs = fmt.Sprintf("%s %%*", args[0])
+		scriptArgs = fmt.Sprintf("@ECHO OFF\n%s %%*", args[0])
 	}
 
 	sf, fail := scriptfile.New(lang, "state-shim", scriptArgs)
