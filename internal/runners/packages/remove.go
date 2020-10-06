@@ -39,7 +39,7 @@ func (r *Remove) Run(params RemoveRunParams) error {
 	pj := project.Get()
 	language, fail := model.DefaultLanguageNameForProject(pj.Owner(), pj.Name())
 	if fail != nil {
-		return locale.WrapError(err, "err_fetch_languages")
+		return locale.WrapError(fail.ToError(), "err_fetch_languages")
 	}
 
 	ingredient, err := model.IngredientWithLatestVersion(language, params.Name)

@@ -21,11 +21,11 @@ func (suite *VCSTestSuite) TestNamespaceMatch() {
 	suite.False(model.NamespaceMatch(" language ", model.NamespaceLanguageMatch))
 	suite.False(model.NamespaceMatch("not-language", model.NamespaceLanguageMatch))
 
-	suite.True(model.NamespaceMatch("language/foo", model.NamespaceLanguagePackageMatch))
-	suite.False(model.NamespaceMatch(" language/foo", model.NamespaceLanguagePackageMatch))
+	suite.True(model.NamespaceMatch("language/foo", model.NamespacePackageMatch))
+	suite.False(model.NamespaceMatch(" language/foo", model.NamespacePackageMatch))
 
-	suite.True(model.NamespaceMatch("bundles/foo", model.NamespaceBundlesPackageMatch))
-	suite.False(model.NamespaceMatch(" bundles/foo", model.NamespaceBundlesPackageMatch))
+	suite.True(model.NamespaceMatch("bundles/foo", model.NamespaceBundlesMatch))
+	suite.False(model.NamespaceMatch(" bundles/foo", model.NamespaceBundlesMatch))
 
 	suite.True(model.NamespaceMatch("pre-platform-installer", model.NamespacePrePlatformMatch))
 	suite.False(model.NamespaceMatch(" pre-platform-installer ", model.NamespacePrePlatformMatch))

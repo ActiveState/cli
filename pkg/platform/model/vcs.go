@@ -64,11 +64,11 @@ const (
 	// NamespaceLanguageMatch is the namespace used for language requirements
 	NamespaceLanguageMatch = `^language$`
 
-	// NamespaceLanguagePackageMatch is the namespace used for language package requirements
-	NamespaceLanguagePackageMatch = `^language\/\w+$`
+	// NamespacePackageMatch is the namespace used for language package requirements
+	NamespacePackageMatch = `^language\/\w+$`
 
-	// NamespaceBundlesPackageMatch is the namespace used for bundle package requirements
-	NamespaceBundlesPackageMatch = `^bundles\/\w+$`
+	// NamespaceBundlesMatch is the namespace used for bundle package requirements
+	NamespaceBundlesMatch = `^bundles\/\w+$`
 
 	// NamespacePrePlatformMatch is the namespace used for pre-platform bits
 	NamespacePrePlatformMatch = `^pre-platform-installer$`

@@ -112,7 +112,7 @@ func FilterCheckpointPackages(chkPt Checkpoint) Checkpoint {
 
 	checkpoint := Checkpoint{}
 	for _, requirement := range chkPt {
-		if !NamespaceMatch(requirement.Namespace, NamespaceLanguagePackageMatch) && !NamespaceMatch(requirement.Namespace, NamespaceBundlesPackageMatch) {
+		if !NamespaceMatch(requirement.Namespace, NamespacePackageMatch) && !NamespaceMatch(requirement.Namespace, NamespaceBundlesMatch) {
 			continue
 		}
 
