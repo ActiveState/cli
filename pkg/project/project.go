@@ -241,7 +241,7 @@ func (p *Project) CommitUUID() strfmt.UUID {
 }
 
 func (p *Project) IsHeadless() bool {
-	return p.name != "" && p.owner != ""
+	return p.commitID != "" && (p.name == "" || p.owner == "")
 }
 
 // NormalizedName returns the project name in a normalized format (alphanumeric, lowercase)
