@@ -157,7 +157,7 @@ func run(args []string, out output.Outputer) (int, error) {
 	// If the delimeter is not present we have to disable flag parsing
 	// to ensure flags are passed to the shimmed command rather than
 	// parsed as a flag for `state shim`
-	if !strings.Contains(strings.Join(args, " "), " -- ") {
+	if child.Use() == "shim" && !strings.Contains(strings.Join(args, " "), " -- ") {
 		child.SetDisableFlagParsing(true)
 	}
 

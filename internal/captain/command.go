@@ -152,6 +152,10 @@ func NewShimCommand(name, description string, executor Executor) *Command {
 	return cmd
 }
 
+func (c *Command) Use() string {
+	return c.cobra.Use
+}
+
 func (c *Command) Usage() error {
 	return c.cobra.Usage()
 }
