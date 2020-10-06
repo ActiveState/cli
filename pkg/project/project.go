@@ -205,6 +205,11 @@ func parseURL(url string) (*urlMeta, *failures.Failure) {
 	if len(match) == 4 {
 		parts.commitID = match[3]
 	}
+
+	// For headless commits, owner == commit, and name == commitID
+	if parts.owner == "commit" {
+		parts.commitID = parts.name
+	}
 	return &parts, nil
 }
 
