@@ -106,6 +106,8 @@ info_reactivating:
   other: "[BLUE]Reactivating state[/RESET]"
 info_deactivated:
   other: "[BLUE]Deactivated {{.Owner}}/{{.Name}}[/RESET]"
+info_deactivated_by_commit:
+  other: "[BLUE]Deactivated[/RESET]"
 venv_installer_is_nil:
   other: Provided installer should not be nil
 error_unsupported_language:
@@ -160,6 +162,8 @@ err_invalid_status_code:
   other: "Invalid status code: {{.V0}}"
 info_activating_state:
   other: "[BLUE]Activating state: {{.Owner}}/{{.Name}}[/RESET]"
+info_activating_state_by_commit:
+  other: "[BLUE]Activating state[/RESET]"
 info_state_active_repoexists:
   other: "Repo already exists: {{.Path}}"
 panic_couldnt_detect_wd:
