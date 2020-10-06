@@ -4,10 +4,12 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/spf13/viper"
+
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/defact"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/globaldefault"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
@@ -15,14 +17,13 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/spf13/viper"
 )
 
 type Activate struct {
 	namespaceSelect  namespaceSelectAble
 	activateCheckout CheckoutAble
 	out              output.Outputer
-	config           defact.DefaultConfigurer
+	config           globaldefault.DefaultConfigurer
 	subshell         subshell.SubShell
 }
 

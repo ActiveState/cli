@@ -8,17 +8,17 @@ import (
 	"os/signal"
 	"path"
 	"path/filepath"
-	"runtime"
+	rt "runtime"
 	"strings"
 	"syscall"
 	"time"
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/defact"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileevents"
+	"github.com/ActiveState/cli/internal/globaldefault"
 	"github.com/ActiveState/cli/internal/hail"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -27,13 +27,14 @@ import (
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
-type activationLoopFunc func(out output.Outputer, config defact.DefaultConfigurer, subs subshell.SubShell, targetPath string, setDefault bool, activator activateFunc) error
+type activationLoopFunc func(out output.Outputer, config globaldefault.DefaultConfigurer, subs subshell.SubShell, targetPath string, setDefault bool, activator activateFunc) error
 
-func activationLoop(out output.Outputer, config defact.DefaultConfigurer, subs subshell.SubShell, targetPath string, setDefault bool, activator activateFunc) error {
+func activationLoop(out output.Outputer, config globaldefault.DefaultConfigurer, subs subshell.SubShell, targetPath string, setDefault bool, activator activateFunc) error {
 	// activate should be continually called while returning true
 	// looping here provides a layer of scope to handle printing output
 	var proj *project.Project
@@ -78,13 +79,14 @@ func activationLoop(out output.Outputer, config defact.DefaultConfigurer, subs s
 	return nil
 }
 
-type activateFunc func(proj *project.Project, out output.Outputer, config defact.DefaultConfigurer, subs subshell.SubShell, setDefault bool) (keepGoing bool, err error)
+type activateFunc func(proj *project.Project, out output.Outputer, config globaldefault.DefaultConfigurer, subs subshell.SubShell, setDefault bool) (keepGoing bool, err error)
 
 // activate will activate the venv and subshell. It is meant to be run in a loop
 // with the return value indicating whether another iteration is warranted.
-func activate(proj *project.Project, out output.Outputer, cfg defact.DefaultConfigurer, subs subshell.SubShell, setDefault bool) (bool, error) {
+func activate(proj *project.Project, out output.Outputer, cfg globaldefault.DefaultConfigurer, subs subshell.SubShell, setDefault bool) (bool, error) {
 	projectfile.Reset()
-	venv := virtualenvironment.Get()
+	runtime := runtime.NewRuntime(proj.CommitUUID(), proj.Owner(), proj.Name())
+	venv := virtualenvironment.New(runtime)
 
 	venv.OnDownloadArtifacts(func() { out.Notice(locale.T("downloading_artifacts")) })
 	venv.OnInstallArtifacts(func() { out.Notice(locale.T("installing_artifacts")) })
@@ -102,7 +104,8 @@ func activate(proj *project.Project, out output.Outputer, cfg defact.DefaultConf
 
 	if setDefault {
 		logging.Debug("Setting up default activation for %s", proj.Name())
-		err := defact.SetupDefaultActivation(cfg, out, venv)
+		out.Print(locale.Tl("default_shim", "Setting runtime environment as system default."))
+		err := globaldefault.SetupDefaultActivation(cfg, runtime)
 		if err != nil {
 			return false, locale.WrapError(err, "default_setup_err", "Failed to set up the default activation for {{.V0}}.", proj.Name())
 		}
@@ -149,7 +152,7 @@ func activate(proj *project.Project, out output.Outputer, cfg defact.DefaultConf
 }
 
 func ignoreWindowsInterrupts() {
-	if runtime.GOOS == "windows" {
+	if rt.GOOS == "windows" {
 		c := make(chan os.Signal, 1)
 		signal.Notify(c, syscall.SIGINT)
 		go func() {

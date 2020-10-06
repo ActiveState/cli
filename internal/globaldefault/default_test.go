@@ -1,4 +1,4 @@
-package defact
+package globaldefault
 
 import (
 	"io/ioutil"
@@ -72,7 +72,7 @@ func Test_shims(t *testing.T) {
 	err = createShimFile(filepath.FromSlash("/abc/def/python"), shimFile)
 	require.NoError(t, err)
 
-	require.True(t, isShimAndTargetsDir(shimFile, ""))
-	require.True(t, isShimAndTargetsDir(shimFile, filepath.FromSlash("/abc/def")))
-	require.False(t, isShimAndTargetsDir(shimFile, filepath.FromSlash("/some/other/dir")))
+	require.True(t, isShimFor(shimFile, ""))
+	require.True(t, isShimFor(shimFile, filepath.FromSlash("/abc/def")))
+	require.False(t, isShimFor(shimFile, filepath.FromSlash("/some/other/dir")))
 }

@@ -1,4 +1,4 @@
-package defact
+package globaldefault
 
 import (
 	"io/ioutil"
@@ -8,17 +8,16 @@ import (
 	rt "runtime"
 	"strings"
 
+	"github.com/gobuffalo/packr"
+	"github.com/thoas/go-funk"
+
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
-	"github.com/gobuffalo/packr"
-	"github.com/thoas/go-funk"
 )
 
 type DefaultConfigurer interface {
@@ -32,21 +31,9 @@ type exeFile struct {
 	ext   string
 }
 
-func getDefaultProjectPath(d DefaultConfigurer) string {
-	return d.GetString("default_project_path")
-}
-
-func setDefaultProjectPath(d DefaultConfigurer, path string) {
-	d.Set("default_project_path", path)
-}
-
-type primable interface {
-	primer.Outputer
-}
-
-// isShimAndTargetsDir check if the specified filename is (probably) a shim and targets a file in the specified directory
+// isShimFor check if the specified filename is (probably) a shim and targets a file in the specified directory
 // This function is used during rollback to clean old shims
-func isShimAndTargetsDir(filename, dir string) bool {
+func isShimFor(filename, dir string) bool {
 	contents, err := ioutil.ReadFile(filename)
 	if err != nil {
 		logging.Debug("Could not read file contents of shim candidate %s: %v", filename, err)
@@ -84,7 +71,7 @@ func rollbackShims(cfg DefaultConfigurer) error {
 	}
 	for _, f := range files {
 		fn := filepath.Join(binDir, f.Name())
-		if !isShimAndTargetsDir(fn, config.CachePath()) {
+		if !isShimFor(fn, config.CachePath()) {
 			continue
 		}
 
@@ -229,18 +216,25 @@ func createShimFiles(targetPath string, exePaths []string) error {
 }
 
 // SetupDefaultActivation sets symlinks in the global bin directory to the currently activated runtime
-func SetupDefaultActivation(cfg DefaultConfigurer, output output.Outputer, envGetter runtime.EnvGetter) error {
-	env, err := envGetter.GetEnv(false, "")
+func SetupDefaultActivation(cfg DefaultConfigurer, runtime *runtime.Runtime) error {
+	env, fail := runtime.Env()
+	if fail != nil {
+		return errs.Wrap(fail, "Could not get runtime env")
+	}
+
+	envMap, err := env.GetEnv(false, "")
 	if err != nil {
-		return err
+		return errs.Wrap(err, "Could not get env")
 	}
 
 	// roll back old symlinks
-	rollbackShims(cfg)
+	if err := rollbackShims(cfg); err != nil {
+		return locale.WrapError(err, "err_rollback_shim", "Could not roll back previous shim installation.")
+	}
 
 	// Retrieve artifact binary directory
 	var bins []string
-	if p, ok := env["PATH"]; ok {
+	if p, ok := envMap["PATH"]; ok {
 		bins = strings.Split(p, string(os.PathListSeparator))
 	}
 
@@ -256,7 +250,5 @@ func SetupDefaultActivation(cfg DefaultConfigurer, output output.Outputer, envGe
 	}
 
 	binDir := config.GlobalBinPath()
-
-	output.Print(locale.Tl("default_shim", "Writing default installation to {{.V0}}.", binDir))
 	return createShimFiles(binDir, exes)
 }

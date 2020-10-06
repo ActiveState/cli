@@ -85,30 +85,26 @@ type Downloader interface {
 
 // Download is the main struct for orchestrating the download of all the artifacts belonging to a runtime
 type Download struct {
-	commitID    strfmt.UUID
-	owner       string
-	projectName string
-	orgID       string
-	private     bool
+	runtime *Runtime
+	orgID   string
+	private bool
 }
 
 // NewDownload creates a new RuntimeDownload using all custom args
-func NewDownload(commitID strfmt.UUID, owner, projectName string) Downloader {
+func NewDownload(runtime *Runtime) Downloader {
 	return &Download{
-		commitID:    commitID,
-		owner:       owner,
-		projectName: projectName,
+		runtime: runtime,
 	}
 }
 
 // fetchRecipe juggles API's to get the build request that can be sent to the head-chef
 func (r *Download) fetchRecipeID() (strfmt.UUID, *failures.Failure) {
-	commitID := strfmt.UUID(r.commitID)
+	commitID := strfmt.UUID(r.runtime.CommitID)
 	if commitID == "" {
 		return "", FailNoCommit.New(locale.T("err_no_commit"))
 	}
 
-	recipeID, fail := model.FetchRecipeIDForCommitAndPlatform(commitID, r.owner, r.projectName, r.orgID, r.private, model.HostPlatform)
+	recipeID, fail := model.FetchRecipeIDForCommitAndPlatform(commitID, r.runtime.Owner, r.runtime.ProjectName, r.orgID, r.private, model.HostPlatform)
 	if fail != nil {
 		return "", fail
 	}
@@ -121,7 +117,7 @@ func (r *Download) fetchRecipeID() (strfmt.UUID, *failures.Failure) {
 func (r *Download) FetchArtifacts() (*FetchArtifactsResult, *failures.Failure) {
 	result := &FetchArtifactsResult{}
 
-	platProject, fail := model.FetchProjectByName(r.owner, r.projectName)
+	platProject, fail := model.FetchProjectByName(r.runtime.Owner, r.runtime.ProjectName)
 	if fail != nil {
 		return nil, fail
 	}
@@ -146,8 +142,8 @@ func (r *Download) FetchArtifacts() (*FetchArtifactsResult, *failures.Failure) {
 
 	buildAnnotations := headchef.BuildAnnotations{
 		CommitID:     commitID.String(),
-		Project:      r.projectName,
-		Organization: r.owner,
+		Project:      r.runtime.ProjectName,
+		Organization: r.runtime.Owner,
 	}
 
 	logging.Debug("sending request to head-chef")
@@ -185,8 +181,8 @@ func (r *Download) FetchArtifacts() (*FetchArtifactsResult, *failures.Failure) {
 		case <-buildStatus.Started:
 			logging.Debug("BuildStarted")
 			namespaced := project.Namespaced{
-				Owner:   r.owner,
-				Project: r.projectName,
+				Owner:   r.runtime.Owner,
+				Project: r.runtime.ProjectName,
 			}
 			analytics.EventWithLabel(
 				analytics.CatBuild, analytics.ActBuildProject, namespaced.String(),
@@ -210,7 +206,7 @@ func (r *Download) FetchArtifacts() (*FetchArtifactsResult, *failures.Failure) {
 
 func (r *Download) projectURL() string {
 	url := api.GetServiceURL(api.ServiceHeadChef)
-	url.Path = path.Join(r.owner, r.projectName)
+	url.Path = path.Join(r.runtime.Owner, r.runtime.ProjectName)
 	return url.String()
 }
 

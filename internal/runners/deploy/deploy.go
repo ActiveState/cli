@@ -9,10 +9,10 @@ import (
 
 	"github.com/gobuffalo/packr"
 
-	"github.com/ActiveState/cli/internal/defact"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/globaldefault"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
@@ -261,13 +261,13 @@ func symlink(installPath string, overwrite bool, envGetter runtime.EnvGetter, ou
 		bins = strings.Split(p, string(os.PathListSeparator))
 	}
 
-	exes, err := defact.Executables(bins)
+	exes, err := globaldefault.Executables(bins)
 	if err != nil {
 		return locale.WrapError(err, "err_symlink_exes", "Could not detect executables")
 	}
 
 	// Remove duplicate executables as per PATH and PATHEXT
-	exes, err = defact.UniqueExes(exes, os.Getenv("PATHEXT"))
+	exes, err = globaldefault.UniqueExes(exes, os.Getenv("PATHEXT"))
 	if err != nil {
 		return locale.WrapError(err, "err_unique_exes", "Could not detect unique executables, make sure your PATH and PATHEXT environment variables are properly configured.")
 	}
