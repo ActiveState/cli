@@ -94,15 +94,21 @@ func (suite *ShimIntegrationTestSuite) TestShim_Args() {
 	suite.createProjectFile(ts)
 
 	scriptBlock := `
-echo "Number of arguments: $#"
 for i; do
     echo $i
 done
+echo "Number of arguments: $#"
 `
 
 	filename := fmt.Sprintf("%s/%s.sh", ts.Dirs.Work, suite.T().Name())
 	if runtime.GOOS == "windows" {
-		scriptBlock = `echo %PATH%`
+		scriptBlock = `
+		set argCount=0
+		for %%a in (%*) do (
+			echo %%a
+			set /A argCount+=1
+		)
+		echo Number of arguments: %argCount%`
 		filename = fmt.Sprintf("%s/%s.bat", ts.Dirs.Work, suite.T().Name())
 	}
 
@@ -124,10 +130,10 @@ done
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("shim", "--", fmt.Sprintf("%s", testScript), args[0], args[1], args[2]),
 	)
-	cp.Expect("Number of arguments: 3")
 	cp.Expect(args[0])
 	cp.Expect(args[1])
 	cp.Expect(args[2])
+	cp.Expect(fmt.Sprintf("Number of arguments: %d", len(args)))
 	cp.ExpectExitCode(0)
 }
 
@@ -161,7 +167,6 @@ echo "Hello $name!"
 
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("shim", "--", fmt.Sprintf("%s", testScript)),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.SendLine("ActiveState")
 	cp.Expect("Hello ActiveState!")
