@@ -37,13 +37,10 @@ func (r *Remove) Run(params RemoveRunParams) error {
 
 	// Commit the package
 	pj := project.Get()
-	_, fail = model.CommitPackage(pj.Owner(), pj.Name(), model.OperationRemoved, params.Name, "")
+	language, fail := model.DefaultLanguageNameForProject(pj.Owner(), pj.Name())
 	if fail != nil {
-		return fail.WithDescription("err_package_removed")
+		return fail.WithDescription("err_fetch_languages")
 	}
 
-	// Print the result
-	r.out.Print(locale.Tr("package_removed", params.Name))
-
-	return nil
+	return executePackageOperation(r.out, r.Prompter, language, params.Name, "", model.OperationRemoved)
 }

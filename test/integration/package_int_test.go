@@ -281,7 +281,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_import() {
 	})
 }
 
-func (suite *PackageIntegrationTestSuite) TestPackage_add() {
+func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 	if runtime.GOOS == "darwin" {
 		suite.T().Skip("Skipping mac for now as the builds are still too unreliable")
 		return

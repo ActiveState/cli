@@ -17,13 +17,7 @@ import (
 
 const latestVersion = "latest"
 
-func executeAddUpdate(out output.Outputer, prompt prompt.Prompter, language, name, version string, operation model.Operation) error {
-	// Use our own interpolation string since we don't want to assume our swagger schema will never change
-	var operationStr = "add"
-	if operation == model.OperationUpdated {
-		operationStr = "update"
-	}
-
+func executePackageOperation(out output.Outputer, prompt prompt.Prompter, language, name, version string, operation model.Operation) error {
 	fail := auth.RequireAuthentication(locale.T("auth_required_activate"), out, prompt)
 	if fail != nil {
 		return fail.WithDescription("err_activate_auth_required")
@@ -48,7 +42,7 @@ func executeAddUpdate(out output.Outputer, prompt prompt.Prompter, language, nam
 	pj := project.Get()
 	commitID, fail := model.CommitPackage(pj.Owner(), pj.Name(), operation, name, version)
 	if fail != nil {
-		return fail.WithDescription("err_package_" + operationStr).ToError()
+		return fail.WithDescription("err_package_" + string(operation)).ToError()
 	}
 
 	err = updateRuntime(commitID, pj.Owner(), pj.Name(), runbits.NewRuntimeMessageHandler(out))
@@ -58,9 +52,9 @@ func executeAddUpdate(out output.Outputer, prompt prompt.Prompter, language, nam
 
 	// Print the result
 	if version != "" {
-		out.Print(locale.Tr("package_version_"+operationStr, name, version))
+		out.Print(locale.Tr("package_version_"+string(operation), name, version))
 	} else {
-		out.Print(locale.Tr("package_"+operationStr, name))
+		out.Print(locale.Tr("package_"+string(operation), name))
 	}
 
 	return nil
