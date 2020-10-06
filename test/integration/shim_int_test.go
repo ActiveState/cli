@@ -2,6 +2,7 @@ package integration
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
@@ -29,9 +30,7 @@ func (suite *ShimIntegrationTestSuite) TestShim_Environment() {
 
 	suite.createProjectFile(ts)
 
-	scriptBlock := `
-echo $PATH
-	`
+	scriptBlock := `echo $PATH`
 	filename := fmt.Sprintf("%s/%s.sh", ts.Dirs.Work, suite.T().Name())
 	if runtime.GOOS == "windows" {
 		scriptBlock = `echo %PATH%`
@@ -42,10 +41,8 @@ echo $PATH
 	fail := fileutils.WriteFile(testScript, []byte(scriptBlock))
 	suite.Require().NoError(fail.ToError())
 
-	if runtime.GOOS != "windows" {
-		cp := ts.SpawnCmd("chmod", "+x", testScript)
-		cp.ExpectExitCode(0)
-	}
+	err := os.Chmod(testScript, 0777)
+	suite.Require().NoError(err)
 
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("shim", testScript),
@@ -63,9 +60,7 @@ func (suite *ShimIntegrationTestSuite) TestShim_ExitCode() {
 
 	suite.createProjectFile(ts)
 
-	scriptBlock := `
-exit 42
-	`
+	scriptBlock := `exit 42`
 	filename := fmt.Sprintf("%s/%s.sh", ts.Dirs.Work, suite.T().Name())
 	if runtime.GOOS == "windows" {
 		scriptBlock = `EXIT 42`
@@ -76,10 +71,8 @@ exit 42
 	fail := fileutils.WriteFile(testScript, []byte(scriptBlock))
 	suite.Require().NoError(fail.ToError())
 
-	if runtime.GOOS != "windows" {
-		cp := ts.SpawnCmd("chmod", "+x", testScript)
-		cp.ExpectExitCode(0)
-	}
+	err := os.Chmod(testScript, 0777)
+	suite.Require().NoError(err)
 
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("shim", "--", testScript),
@@ -116,10 +109,8 @@ echo "Number of arguments: $#"
 	fail := fileutils.WriteFile(testScript, []byte(scriptBlock))
 	suite.Require().NoError(fail.ToError())
 
-	if runtime.GOOS != "windows" {
-		cp := ts.SpawnCmd("chmod", "+x", testScript)
-		cp.ExpectExitCode(0)
-	}
+	err := os.Chmod(testScript, 0777)
+	suite.Require().NoError(err)
 
 	args := []string{
 		"firstArgument",
@@ -160,10 +151,8 @@ echo "Hello $name!"
 	fail := fileutils.WriteFile(testScript, []byte(scriptBlock))
 	suite.Require().NoError(fail.ToError())
 
-	if runtime.GOOS != "windows" {
-		cp := ts.SpawnCmd("chmod", "+x", testScript)
-		cp.ExpectExitCode(0)
-	}
+	err := os.Chmod(testScript, 0777)
+	suite.Require().NoError(err)
 
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("shim", "--", fmt.Sprintf("%s", testScript)),
@@ -182,9 +171,7 @@ func (suite *ShimIntegrationTestSuite) TestShim_SystemPython() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	scriptBlock := `
-print("Hello World!")
-`
+	scriptBlock := `print("Hello World!")`
 
 	testScript := filepath.Join(fmt.Sprintf("%s/%s.py", ts.Dirs.Work, suite.T().Name()))
 	fail := fileutils.WriteFile(testScript, []byte(scriptBlock))
@@ -204,9 +191,7 @@ func (suite *ShimIntegrationTestSuite) TestShim_NoDoubleDash() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	scriptBlock := `
-print("Hello World!")
-`
+	scriptBlock := `print("Hello World!")`
 
 	testScript := filepath.Join(fmt.Sprintf("%s/%s.py", ts.Dirs.Work, suite.T().Name()))
 	fail := fileutils.WriteFile(testScript, []byte(scriptBlock))
