@@ -77,6 +77,14 @@ const (
 	NamespaceCamelFlagsMatch = `^camel-flags$`
 )
 
+const (
+	// PackageNamespacePrefix is the namespace prefix for packages
+	PackageNamespacePrefix = "language"
+
+	// BundlesNamespacePrefix is the namespace prefix for bundles
+	BundlesNamespacePrefix = "bundles"
+)
+
 // NamespaceMatch Checks if the given namespace query matches the given namespace
 func NamespaceMatch(query string, namespace NamespaceMatchable) bool {
 	match, err := regexp.Match(string(namespace), []byte(query))

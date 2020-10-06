@@ -37,14 +37,6 @@ type IngredientAndVersion struct {
 // Platform is a sane version of whatever the hell it is go-swagger thinks it's doing
 type Platform = inventory_models.V1Platform
 
-const (
-	// PackageNamespacePrefix is the namespace prefix for packages
-	PackageNamespacePrefix = "language"
-
-	// BundlesNamespacePrefix is the namespace prefix for bundles
-	BundlesNamespacePrefix = "bundles"
-)
-
 var platformCache []*Platform
 
 // IngredientByNameAndVersion fetches an ingredient that matches the given name and version. If version is empty the first
