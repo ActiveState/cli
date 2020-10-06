@@ -90,8 +90,13 @@ func NamespaceMatch(query string, namespace NamespaceMatchable) bool {
 type Namespace string
 
 // NamespacePackage creates a new package namespace
-func NamespacePackage(namespace, language string) Namespace {
-	return Namespace(fmt.Sprintf("%s/%s", namespace, language))
+func NamespacePackage(language string) Namespace {
+	return Namespace(fmt.Sprintf("language/%s", language))
+}
+
+// NamespaceBundles creates a new bundles namespace
+func NamespaceBundles(language string) Namespace {
+	return Namespace(fmt.Sprintf("bundles/%s", language))
 }
 
 // NamespaceLanguage provides the base language namespace.
@@ -280,8 +285,13 @@ func CommitPackage(projectOwner, projectName string, operation Operation, packag
 		message = "commit_message_removed_package"
 	}
 
+	namespace := NamespacePackage(languages[0].Name)
+	if packageNamespace == BundlesNamespacePrefix {
+		namespace = NamespaceBundles(languages[0].Name)
+	}
+
 	commit, fail := AddCommit(*branch.CommitID, locale.Tr(message, packageName, packageVersion),
-		operation, NamespacePackage(packageNamespace, languages[0].Name),
+		operation, namespace,
 		packageName, packageVersion)
 	if fail != nil {
 		return fail

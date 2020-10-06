@@ -37,6 +37,14 @@ type IngredientAndVersion struct {
 // Platform is a sane version of whatever the hell it is go-swagger thinks it's doing
 type Platform = inventory_models.V1Platform
 
+const (
+	// PackageNamespacePrefix is the namespace prefix for packages
+	PackageNamespacePrefix = "language"
+
+	// BundlesNamespacePrefix is the namespace prefix for bundles
+	BundlesNamespacePrefix = "bundles"
+)
+
 var platformCache []*Platform
 
 // IngredientByNameAndVersion fetches an ingredient that matches the given name and version. If version is empty the first
@@ -131,12 +139,12 @@ func SearchIngredientsStrict(language, name string) ([]*IngredientAndVersion, *f
 }
 
 func searchIngredients(limit int, language, name string) ([]*IngredientAndVersion, *failures.Failure) {
-	langResults, fail := searchIngredientsNamespace(limit, "language", language, name)
+	langResults, fail := searchIngredientsNamespace(limit, PackageNamespacePrefix, language, name)
 	if fail != nil {
 		return nil, fail
 	}
 
-	bundlesResults, fail := searchIngredientsNamespace(limit, "bundles", language, name)
+	bundlesResults, fail := searchIngredientsNamespace(limit, BundlesNamespacePrefix, language, name)
 	if fail != nil {
 		return nil, fail
 	}
@@ -145,7 +153,7 @@ func searchIngredients(limit int, language, name string) ([]*IngredientAndVersio
 	for _, res := range langResults {
 		ingredient := IngredientAndVersion{
 			res.V1IngredientAndVersion,
-			"language",
+			PackageNamespacePrefix,
 		}
 		results = append(results, &ingredient)
 	}
@@ -153,7 +161,7 @@ func searchIngredients(limit int, language, name string) ([]*IngredientAndVersio
 	for _, res := range bundlesResults {
 		ingredient := IngredientAndVersion{
 			res.V1IngredientAndVersion,
-			"bundles",
+			BundlesNamespacePrefix,
 		}
 		results = append(results, &ingredient)
 	}
