@@ -6,10 +6,11 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 )
 
 func (suite *CleanTestSuite) TestCache() {
-	runner := newCache(&testOutputer{}, &confirmMock{confirm: true})
+	runner := newCache(&outputhelper.TestOutputer{}, &confirmMock{confirm: true})
 	runner.path = suite.cachePath
 	err := runner.Run(&CacheParams{})
 	suite.Require().NoError(err)
@@ -27,7 +28,7 @@ func (suite *CleanTestSuite) TestCache() {
 }
 
 func (suite *CleanTestSuite) TestCache_PromptNo() {
-	runner := newCache(&testOutputer{}, &confirmMock{})
+	runner := newCache(&outputhelper.TestOutputer{}, &confirmMock{})
 	runner.path = suite.cachePath
 	err := runner.Run(&CacheParams{})
 	suite.Require().NoError(err)
@@ -43,7 +44,7 @@ func (suite *CleanTestSuite) TestCache_Activated() {
 		os.Unsetenv(constants.ActivatedStateEnvVarName)
 	}()
 
-	runner := newCache(&testOutputer{}, &confirmMock{})
+	runner := newCache(&outputhelper.TestOutputer{}, &confirmMock{})
 	runner.path = suite.cachePath
 	err := runner.Run(&CacheParams{})
 	suite.Require().Error(err)

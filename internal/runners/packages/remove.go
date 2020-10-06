@@ -42,21 +42,5 @@ func (r *Remove) Run(params RemoveRunParams) error {
 		return locale.WrapError(fail, "err_fetch_languages")
 	}
 
-	ingredient, err := model.IngredientWithLatestVersion(language, params.Name)
-	if err != nil {
-		return locale.WrapError(err, "err_remove_get_package", "Could not find package to remove")
-	}
-
-	fail = model.CommitPackage(pj.Owner(), pj.Name(), model.OperationRemoved, params.Name, ingredient.Namespace, "")
-	if fail != nil {
-		return fail.WithDescription("err_package_removed").ToError()
-	}
-
-	// Print the result
-	r.out.Print(locale.Tr("package_removed", params.Name))
-
-	// Remind user to update their activestate.yaml
-	r.out.Notice(locale.T("package_update_config_file"))
-
-	return nil
+	return executePackageOperation(r.out, r.Prompter, language, params.Name, "", model.OperationRemoved)
 }

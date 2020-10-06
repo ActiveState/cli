@@ -11,7 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 )
 
 type confirmMock struct {
@@ -21,14 +21,6 @@ type confirmMock struct {
 func (c *confirmMock) Confirm(message string, defaultChoice bool) (bool, *failures.Failure) {
 	return c.confirm, nil
 }
-
-type testOutputer struct{}
-
-func (o *testOutputer) Type() output.Format      { return "" }
-func (o *testOutputer) Print(value interface{})  {}
-func (o *testOutputer) Error(value interface{})  {}
-func (o *testOutputer) Notice(value interface{}) {}
-func (o *testOutputer) Config() *output.Config   { return nil }
 
 type CleanTestSuite struct {
 	suite.Suite
@@ -59,7 +51,7 @@ func (suite *CleanTestSuite) SetupTest() {
 }
 
 func (suite *CleanTestSuite) TestUninstall() {
-	runner, err := newUninstall(&testOutputer{}, &confirmMock{confirm: true})
+	runner, err := newUninstall(&outputhelper.TestOutputer{}, &confirmMock{confirm: true})
 	suite.Require().NoError(err)
 	runner.configPath = suite.configPath
 	runner.cachePath = suite.cachePath
@@ -80,7 +72,7 @@ func (suite *CleanTestSuite) TestUninstall() {
 }
 
 func (suite *CleanTestSuite) TestUninstall_PromptNo() {
-	runner, err := newUninstall(&testOutputer{}, &confirmMock{})
+	runner, err := newUninstall(&outputhelper.TestOutputer{}, &confirmMock{})
 	suite.Require().NoError(err)
 	err = runner.Run(&UninstallParams{})
 	suite.Require().NoError(err)
@@ -96,7 +88,7 @@ func (suite *CleanTestSuite) TestUninstall_Activated() {
 		os.Unsetenv(constants.ActivatedStateEnvVarName)
 	}()
 
-	runner, err := newUninstall(&testOutputer{}, &confirmMock{})
+	runner, err := newUninstall(&outputhelper.TestOutputer{}, &confirmMock{})
 	suite.Require().NoError(err)
 	err = runner.Run(&UninstallParams{})
 	suite.Require().Error(err)
