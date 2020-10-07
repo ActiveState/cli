@@ -123,15 +123,10 @@ func (r *Download) fetchRecipeID() (strfmt.UUID, *failures.Failure) {
 // FetchArtifacts will retrieve artifact information from the head-chef (eg language installers)
 // The first return argument specifies whether we are dealing with an alternative build
 func (r *Download) FetchArtifacts() (*FetchArtifactsResult, *failures.Failure) {
-	commitID := strfmt.UUID(constants.ValidZeroUUID)
-	recipeID := strfmt.UUID(constants.ValidZeroUUID)
 	orgID := strfmt.UUID(constants.ValidZeroUUID)
 	projectID := strfmt.UUID(constants.ValidZeroUUID)
-	var fail *failures.Failure
 
-	if r.commitID != "" {
-		commitID = r.commitID
-	} else {
+	if r.owner != "" && r.projectName != "" {
 		platProject, fail := model.FetchProjectByName(r.owner, r.projectName)
 		if fail != nil {
 			return nil, fail
@@ -141,26 +136,14 @@ func (r *Download) FetchArtifacts() (*FetchArtifactsResult, *failures.Failure) {
 		orgID = platProject.OrganizationID
 		r.orgID = platProject.OrganizationID.String()
 		r.private = platProject.Private
-
-		var branchCommitID *strfmt.UUID
-		for _, branch := range platProject.Branches {
-			if branch.Default {
-				branchCommitID = branch.CommitID
-				break
-			}
-		}
-		if branchCommitID == nil {
-			return nil, FailNoCommitID.New("fetch_err_runtime_no_commitid")
-		}
-		commitID = *branchCommitID
 	}
 
-	recipeID, fail = r.fetchRecipeID()
+	recipeID, fail := r.fetchRecipeID()
 	if fail != nil {
 		return nil, fail
 	}
 
-	return r.fetchArtifacts(commitID, recipeID, orgID, projectID)
+	return r.fetchArtifacts(r.commitID, recipeID, orgID, projectID)
 }
 
 func (r *Download) fetchArtifacts(commitID, recipeID, orgID, projectID strfmt.UUID) (*FetchArtifactsResult, *failures.Failure) {
