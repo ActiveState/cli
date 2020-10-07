@@ -32,14 +32,14 @@ func NewRemove(prime primeable) *Remove {
 func (r *Remove) Run(params RemoveRunParams) error {
 	fail := auth.RequireAuthentication(locale.T("auth_required_activate"), r.out, r.Prompter)
 	if fail != nil {
-		return fail.WithDescription("err_activate_auth_required")
+		return fail.WithDescription("err_activate_auth_required").ToError()
 	}
 
 	// Commit the package
 	pj := project.Get()
 	language, fail := model.DefaultLanguageNameForProject(pj.Owner(), pj.Name())
 	if fail != nil {
-		return fail.WithDescription("err_fetch_languages")
+		return locale.WrapError(fail, "err_fetch_languages")
 	}
 
 	return executePackageOperation(r.out, r.Prompter, language, params.Name, "", model.OperationRemoved)
