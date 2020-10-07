@@ -3,10 +3,8 @@ package packages
 import (
 	"strings"
 
-	"github.com/ActiveState/cli/internal/errs"
-	"github.com/go-openapi/strfmt"
-
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
@@ -24,9 +22,9 @@ const latestVersion = "latest"
 
 func executePackageOperation(out output.Outputer, prompt prompt.Prompter, language, name, version string, operation model.Operation) error {
 	// Use our own interpolation string since we don't want to assume our swagger schema will never change
-	var operationStr = "add"
+	var operationStr = "added"
 	if operation == model.OperationUpdated {
-		operationStr = "update"
+		operationStr = "updated"
 	} else if operation == model.OperationRemoved {
 		operationStr = "removed"
 	}
@@ -84,7 +82,7 @@ func executePackageOperation(out output.Outputer, prompt prompt.Prompter, langua
 		out.Notice(locale.Tr("package_headless_"+operationStr, name))
 		out.Notice(locale.Tr("package_headless_project_creation", newCommitID.String()))
 	} else {
-		commitID, fail := model.CommitPackage(pj.Owner(), pj.Name(), operation, name, version)
+		commitID, fail := model.CommitPackageInBranch(pj.Owner(), pj.Name(), operation, name, version)
 		if fail != nil {
 			return fail.WithDescription("err_package_" + string(operation)).ToError()
 		}
@@ -99,7 +97,7 @@ func executePackageOperation(out output.Outputer, prompt prompt.Prompter, langua
 				constants.PlatformURL, pj.Owner(), pj.Name()))
 		} else {
 			// Only update commit ID if the runtime update worked
-			if fail := pj.Source().SetCommit(commitID.String()); fail != nil {
+			if fail := pj.Source().SetCommit(commitID.String(), false); fail != nil {
 				return fail.WithDescription("err_package_update_pjfile")
 			}
 		}

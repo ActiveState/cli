@@ -1244,17 +1244,17 @@ package_version_updated:
   other: "Package updated: {{.V0}}@{{.V1}}"
 package_ingredient_err:
   other: Failed to resolve an ingredient named {{.V0}}.
-package_headless_add_set_commit_err:
+package_headless_added_set_commit_err:
   other: "Failed to add package: Could not write new commit ID to activestate.yaml."
-package_headless_update_set_commit_err:
+package_headless_updated_set_commit_err:
   other: "Failed to update package: Could not write new commit ID to activestate.yaml."
-package_headless_remove_set_commit_err:
+package_headless_removed_set_commit_err:
   other: "Failed to update package: Could not write new commit ID to activestate.yaml."
-package_headless_add:
+package_headless_added:
   other: "Package added: {{.V0}}"
-package_headless_update:
+package_headless_updated:
   other: "Package updated: {{.V0}}"
-package_headless_remove:
+package_headless_removed:
   other: "Package removed: {{.V0}}"
 package_headless_project_creation:
   other: "For additional features like sharing your runtime, version control and much more, create a project from your commit at https://platform.activestate.com/commit/{{.V0}}."
