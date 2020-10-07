@@ -205,7 +205,7 @@ func AddChangeset(parentCommitID strfmt.UUID, commitMessage string, changeset Ch
 		ParentCommitID: parentCommitID,
 	})
 
-	res, err := authentication.Client().VersionControl.AddCommit(params, authentication.ClientAuth())
+	res, err := mono.New().VersionControl.AddCommit(params, authentication.ClientAuth())
 	if err != nil {
 		logging.Error("AddCommit Error: %s", err.Error())
 		return nil, FailAddCommit.New(locale.Tr("err_add_commit", api.ErrorMessageFromPayload(err)))
@@ -267,7 +267,10 @@ func CommitPackage(parentCommitID strfmt.UUID, operation Operation, packageName,
 	commit, fail := AddCommit(parentCommitID, locale.Tr(message, packageName, packageVersion),
 		operation, NamespacePackage(languages[0].Name),
 		packageName, packageVersion)
-	return commit.CommitID, fail
+	if fail != nil {
+		return commitID, fail
+	}
+	return commit.CommitID, nil
 }
 
 // CommitPackageInBranch commits a single package commit and updates the project's VCS branch
