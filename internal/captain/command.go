@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 )
@@ -241,7 +242,7 @@ func (c *Command) AddLegacyChildren(children ...cobraCommander) {
 func (c *Command) Find(args []string) (*Command, error) {
 	foundCobra, _, err := c.cobra.Find(args)
 	if err != nil {
-		return nil, err
+		return nil, errs.Wrap(err, "Could not fine child command with args: %s", strings.Join(args, " "))
 	}
 	if cmd, ok := cobraMapping[foundCobra]; ok {
 		return cmd, nil
