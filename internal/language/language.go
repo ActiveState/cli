@@ -2,12 +2,10 @@ package language
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/blang/semver"
 )
 
 // Language tracks the languages potentially used.
@@ -128,11 +126,11 @@ func MakeByName(name string) Language {
 // MakeByNameAndVersion will retrieve a language by a given name and version.
 func MakeByNameAndVersion(name, version string) (Language, error) {
 	if strings.ToLower(name) == Python2.Requirement() {
-		version, err := semver.Parse(version)
-		if err != nil {
-			return Unknown, err
+		if len(version) == 0 {
+			return Unknown, locale.NewError("err_language_make_version", "Invalid version number, should be of format <major>.<minor>.<patch>")
 		}
-		name = name + strconv.FormatUint(version.Major, 10)
+		parts := strings.Split(version, ".")
+		name = name + parts[0]
 	}
 	return MakeByName(name), nil
 }
