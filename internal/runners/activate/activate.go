@@ -1,7 +1,7 @@
 package activate
 
 import (
-	"os"
+	"fmt"
 	"path/filepath"
 
 	"github.com/spf13/viper"
@@ -12,11 +12,12 @@ import (
 	"github.com/ActiveState/cli/internal/globaldefault"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 type Activate struct {
@@ -54,80 +55,89 @@ func (r *Activate) Run(params *ActivateParams) error {
 }
 
 func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc) error {
-	logging.Debug("Activate with namespace=%v, path=%v", params.Namespace, params.PreferredPath)
+	logging.Debug("Activate %v, %v", params.Namespace, params.PreferredPath)
 
-	activeProjectDir := os.Getenv(constants.ActivatedStateEnvVarName)
-	alreadyActivated := activeProjectDir != ""
-
-	// handle case, if we are already activated
-	if alreadyActivated {
-		if params.Default && params.Namespace.IsValid() {
-			return locale.NewError("err_default_with_name_already_active", "Trying to set {{.V0}} as default project while in activated environment.  Please de-activate the current runtime.", params.Namespace.String())
-		}
-		if !params.Default {
-			actProj, fail := project.FromPath(activeProjectDir)
-			var actProjName string
-			if fail != nil {
-				logging.Error("Failed to read project for activated environment.")
-				actProjName = ""
-			} else {
-				actProjName = actProj.Name()
-			}
-			return locale.NewError("err_already_active", "You cannot activate a new state when you are already in an activated state. You are in an activated state for project: {{.V0}}", actProjName)
-		}
+	pathToUse, err := r.pathToUse(params.Namespace.String(), params.PreferredPath)
+	if err != nil {
+		return locale.WrapError(err, "err_activate_pathtouse", "Could not figure out what path to use.")
 	}
 
-	targetPath, err := r.setupPath(params.Namespace.String(), params.PreferredPath)
+	projectToUse, err := r.projectToUse(pathToUse)
 	if err != nil {
+		return locale.WrapError(err, "err_activate_projecttouse", "Could not figure out what project to use.")
+	}
+
+	// Run checkout if no project was given
+	if projectToUse == nil {
 		if !params.Namespace.IsValid() {
-			return failures.FailUserInput.Wrap(err)
+			return locale.WrapError(err, "err_namespace_invalid", "Invalid namespace: {{.V0}}.", params.Namespace.String())
 		}
-		err := r.activateCheckout.Run(params.Namespace.String(), targetPath)
+
+		err := r.activateCheckout.Run(params.Namespace.String(), pathToUse)
 		if err != nil {
 			return err
 		}
+
+		var fail *failures.Failure
+		projectToUse, fail = project.FromPath(pathToUse)
+		if fail != nil {
+			return locale.WrapError(fail, "err_activate_projectfrompath", "Something went wrong while creating project files.")
+		}
 	}
 
+	projectPath := filepath.Dir(projectToUse.Source().Path())
+
 	// Send google analytics event with label set to project namespace
-	names, fail := project.ParseNamespaceOrConfigfile(params.Namespace.String(), filepath.Join(targetPath, constants.ConfigFileName))
+	names, fail := project.ParseNamespaceOrConfigfile(params.Namespace.String(), filepath.Join(projectPath, constants.ConfigFileName))
 	if fail != nil {
 		names = &project.Namespaced{}
 		logging.Debug("error resolving namespace: %v", fail.ToError())
 	}
 	analytics.EventWithLabel(analytics.CatRunCmd, "activate", names.String())
 
+	// If we're not using plain output then we should just dump the environment information
+	if r.out.Type() != output.PlainFormatName {
+		venv := virtualenvironment.Get()
+		if fail := venv.Activate(); fail != nil {
+			return locale.WrapError(fail.ToError(), "error_could_not_activate_venv", "Could not activate project. If this is a private project ensure that you are authenticated.")
+		}
+		env, err := venv.GetEnv(false, projectPath)
+		if err != nil {
+			return locale.WrapError(err, "err_activate_getenv", "Could not build environment for your runtime environment.")
+		}
+		if r.out.Type() == output.EditorV0FormatName {
+			fmt.Println("[activated-JSON]")
+		}
+		r.out.Print(env)
+		return nil
+	}
+
 	if params.Command != "" {
 		r.subshell.SetActivateCommand(params.Command)
 	}
 
-	return activatorLoop(r.out, r.config, r.subshell, targetPath, params.Default, activate)
+	return activatorLoop(r.out, r.config, r.subshell, projectPath, params.Default, activate)
 }
 
-func (r *Activate) setupPath(namespace string, preferredPath string) (string, error) {
-	var (
-		targetPath string
-		err        error
-	)
-
+func (r *Activate) pathToUse(namespace string, preferredPath string) (string, error) {
 	switch {
-	// Checkout via namespace (eg. state activate org/project) and set resulting path
 	case namespace != "":
-		targetPath, err = r.namespaceSelect.Run(namespace, preferredPath)
-	// Use the user provided path
+		// Checkout via namespace (eg. state activate org/project) and set resulting path
+		return r.namespaceSelect.Run(namespace, preferredPath)
 	case preferredPath != "":
-		targetPath, err = preferredPath, nil
-	// Get path from working directory
+		// Use the user provided path
+		return preferredPath, nil
 	default:
-		targetPath, err = osutils.Getwd()
+		// Get path from working directory
+		targetPath, fail := projectfile.GetProjectFilePath()
+		return filepath.Dir(targetPath), fail.ToError()
 	}
-	if err != nil {
-		return "", err
-	}
+}
 
-	proj, fail := project.FromPath(targetPath)
-	if fail != nil {
-		return targetPath, fail
+func (r *Activate) projectToUse(path string) (*project.Project, error) {
+	projectToUse, fail := project.FromPath(path)
+	if fail != nil && !fail.Type.Matches(projectfile.FailNoProject) {
+		return nil, locale.WrapError(fail, "err_activate_projectpath", "Could not find a valid project path.")
 	}
-
-	return filepath.Dir(proj.Source().Path()), nil
+	return projectToUse, nil
 }

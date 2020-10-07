@@ -20,6 +20,7 @@ import (
 	"github.com/ActiveState/cli/internal/progress"
 	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/ActiveState/cli/internal/unarchiver"
+	"github.com/ActiveState/cli/pkg/platform/api/buildlogstream"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
@@ -68,17 +69,18 @@ var (
 	FailRuntimeUnknownEngine = failures.Type("runtime.runtime.unknownengine", FailRuntimeInvalid)
 )
 
+type MessageHandler interface {
+	buildlogstream.MessageHandler
+	DownloadStarting()
+}
+
 // Installer implements an Installer that works with a runtime.Downloader and a
 // runtime.Installer. Effectively, upon calling Install, the Installer will first
 // try and Download an archive, then it will try to install that downloaded archive.
 type Installer struct {
 	runtime           *Runtime
 	runtimeDownloader Downloader
-	onDownload        func()
-	onInstall         func()
 }
-
-
 
 // NewInstaller creates a new RuntimeInstaller
 func NewInstaller(runtime *Runtime) *Installer {
@@ -149,6 +151,8 @@ func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGet
 		return runtimeAssembler, false, nil
 	}
 
+
+
 	downloadArtfs := runtimeAssembler.ArtifactsToDownload()
 	unpackArchives := map[string]*HeadChefArtifact{}
 	progressBar := progress.New(mpb.WithOutput(os.Stderr))
@@ -158,8 +162,8 @@ func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGet
 	defer progressBar.Close()
 
 	if len(downloadArtfs) != 0 {
-		if installer.onDownload != nil {
-			installer.onDownload()
+		if installer.runtime.msgHandler != nil {
+			installer.runtime.msgHandler.DownloadStarting()
 		}
 
 		if len(downloadArtfs) > 0 {
@@ -310,11 +314,6 @@ func (installer *Installer) unpackArchive(ua unarchiver.Unarchiver, archivePath 
 	upb.ReScale(numUnpackedFiles)
 
 	return tmpRuntimeDir, upb, nil
-}
-
-// OnDownload registers a function to be called when a download occurs
-func (installer *Installer) OnDownload(f func()) {
-	installer.onDownload = f
 }
 
 // validateArchive ensures the given path to archive is an actual file and that its suffix is a well-known

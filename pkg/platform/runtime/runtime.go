@@ -22,10 +22,11 @@ type Runtime struct {
 	CommitID    strfmt.UUID
 	Owner       string
 	ProjectName string
+	msgHandler  MessageHandler
 }
 
-func NewRuntime(commitID strfmt.UUID, owner string, projectName string) *Runtime {
-	return &Runtime{InstallPath(owner, projectName), commitID, owner, projectName}
+func NewRuntime(commitID strfmt.UUID, owner string, projectName string, msgHandler MessageHandler) *Runtime {
+	return &Runtime{InstallPath(owner, projectName), commitID, owner, projectName, msgHandler}
 }
 
 func InstallPath(owner, projectName string) string {

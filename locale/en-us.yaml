@@ -1206,7 +1206,7 @@ err_cannot_remove_existing:
   other: "The already configured packages were not able to be overwritten"
 err_branch_not_bare:
   other: Branch is not bare and is unable to be initialized as such
-err_package_add:
+err_package_added:
   other: Failed to add package
 package_err_cannot_fetch_checkpoint:
   other: Cannot fetch checkpoint for package listing
@@ -1230,17 +1230,17 @@ package_name:
   other: Name
 package_version:
   other: Version
-package_add:
+package_added:
   other: "Package added: {{.V0}}"
-package_version_add:
+package_version_added:
   other: "Package added: {{.V0}}@{{.V1}}"
-err_package_update:
+err_package_updated:
   other: Failed to update package
 err_package_project_no_commit:
   other: Could not find commit for project {{.V0}}
-package_update:
+package_updated:
   other: "Package updated: {{.V0}}"
-package_version_update:
+package_version_updated:
   other: "Package updated: {{.V0}}@{{.V1}}"
 package_ingredient_err:
   other: Failed to resolve an ingredient named {{.V0}}.
@@ -1679,9 +1679,19 @@ ppm_convert_ask_feedback:
 windows_compatibility_warning:
   other: |
     Warning: State Tool is untested on Windows versions below 10. If you encounter issues please consider reporting them on {{.V0}}
+artifact_started:
+  other: "Build Starting Remotely: {{.V0}}"
+artifact_started_cached:
+  other: "Already Cached: {{.V0}}"
+artifact_succeeded:
+  other: "Completed: {{.V0}} ({{.V1}}/{{.V2}})"
+artifact_failed:
+  other: "Failed: {{.V0}}. Error returned: {{.V1}}"
 prepare_instructions_lin_mac:
   other: "To add the global installations directory to your environment please add the line `export PATH={{.V0}}:$PATH` to your RC file"
 prepare_instructions_windows:
   other: "To add the global installations directory to your environment please add the path `{{.V0}}` to your user PATH in the System Properties dialog"
 prepare_env_warning:
   other: Could not update user environment
+err_package_update_pjfile:
+  other: "Coult not update your activestate.yaml with the new commit ID. Please run `state pull` manually."

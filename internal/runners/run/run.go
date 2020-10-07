@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
@@ -101,10 +102,8 @@ func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, nam
 	// Activate the state if needed.
 	if !script.Standalone() && !subshell.IsActivated() {
 		out.Notice(locale.T("info_state_run_activating_state"))
-		runtime := runtime.NewRuntime(proj.CommitUUID(), proj.Owner(), proj.Name())
+		runtime := runtime.NewRuntime(proj.CommitUUID(), proj.Owner(), proj.Name(), runbits.NewRuntimeMessageHandler(out))
 		venv := virtualenvironment.New(runtime)
-		venv.OnDownloadArtifacts(func() { out.Notice(locale.T("downloading_artifacts")) })
-		venv.OnInstallArtifacts(func() { out.Notice(locale.T("installing_artifacts")) })
 
 		if fail := venv.Activate(); fail != nil {
 			logging.Errorf("Unable to activate state: %s", fail.Error())

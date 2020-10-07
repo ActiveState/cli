@@ -25,8 +25,6 @@ var FailAlreadyActive = failures.Type("virtualenvironment.fail.alreadyactive", f
 // VirtualEnvironment represents our virtual environment, it pulls together and virtualizes the runtime environment
 type VirtualEnvironment struct {
 	activationID        string
-	onDownloadArtifacts func()
-	onInstallArtifacts  func()
 	onUseCache          func()
 	runtime             *runtime.Runtime
 }
@@ -72,22 +70,14 @@ func (v *VirtualEnvironment) Activate() *failures.Failure {
 	return nil
 }
 
-// OnDownloadArtifacts will call the given function when artifacts are being downloaded
-func (v *VirtualEnvironment) OnDownloadArtifacts(f func()) { v.onDownloadArtifacts = f }
-
-// OnInstallArtifacts will call the given function when artifacts are being installed
-func (v *VirtualEnvironment) OnInstallArtifacts(f func()) { v.onInstallArtifacts = f }
-
 // OnUseCache will call the given function when the cached runtime is used
 func (v *VirtualEnvironment) OnUseCache(f func()) { v.onUseCache = f }
 
 // Setup sets up a runtime environment that is fully functional.
 func (v *VirtualEnvironment) Setup(installIfNecessary bool) *failures.Failure {
-	installer := runtime.NewInstaller(v.runtime)
 
 	if installIfNecessary {
-		installer.OnDownload(v.onDownloadArtifacts)
-
+		installer := runtime.NewInstaller(v.runtime)
 		_, installed, fail := installer.Install()
 		if fail != nil {
 			return fail
@@ -97,7 +87,7 @@ func (v *VirtualEnvironment) Setup(installIfNecessary bool) *failures.Failure {
 			v.onUseCache()
 		}
 	} else {
-		_, fail := installer.Env()
+		_, fail := v.runtime.Env()
 		if fail != nil {
 			return fail
 		}

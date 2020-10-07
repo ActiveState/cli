@@ -3,7 +3,6 @@ package activate
 import (
 	"context"
 	"errors"
-	"fmt"
 	"os"
 	"os/signal"
 	"path"
@@ -23,6 +22,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
@@ -85,11 +85,9 @@ type activateFunc func(proj *project.Project, out output.Outputer, config global
 // with the return value indicating whether another iteration is warranted.
 func activate(proj *project.Project, out output.Outputer, cfg globaldefault.DefaultConfigurer, subs subshell.SubShell, setDefault bool) (bool, error) {
 	projectfile.Reset()
-	runtime := runtime.NewRuntime(proj.CommitUUID(), proj.Owner(), proj.Name())
+	runtime := runtime.NewRuntime(proj.CommitUUID(), proj.Owner(), proj.Name(), runbits.NewRuntimeMessageHandler(out))
 	venv := virtualenvironment.New(runtime)
 
-	venv.OnDownloadArtifacts(func() { out.Notice(locale.T("downloading_artifacts")) })
-	venv.OnInstallArtifacts(func() { out.Notice(locale.T("installing_artifacts")) })
 	venv.OnUseCache(func() { out.Notice(locale.T("using_cached_env")) })
 
 	logging.Debug("Setting up virtual Environment")
@@ -116,15 +114,6 @@ func activate(proj *project.Project, out output.Outputer, cfg globaldefault.Defa
 	ve, err := venv.GetEnv(false, filepath.Dir(projectfile.Get().Path()))
 	if err != nil {
 		return false, locale.WrapError(err, "error_could_not_activate_venv", "Could not retrieve environment information.")
-	}
-
-	// If we're not using plain output then we should just dump the environment information
-	if out.Type() != output.PlainFormatName {
-		if out.Type() == output.EditorV0FormatName {
-			fmt.Println("[activated-JSON]")
-		}
-		out.Print(ve)
-		return false, nil
 	}
 
 	subs.SetEnv(ve)

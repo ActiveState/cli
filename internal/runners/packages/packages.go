@@ -3,23 +3,23 @@ package packages
 import (
 	"strings"
 
+	"github.com/go-openapi/strfmt"
+
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/pkg/cmdlets/auth"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
 const latestVersion = "latest"
 
-func executeAddUpdate(out output.Outputer, prompt prompt.Prompter, language, name, version string, operation model.Operation) error {
-	// Use our own interpolation string since we don't want to assume our swagger schema will never change
-	var operationStr = "add"
-	if operation == model.OperationUpdated {
-		operationStr = "update"
-	}
-
+func executePackageOperation(out output.Outputer, prompt prompt.Prompter, language, name, version string, operation model.Operation) error {
 	fail := auth.RequireAuthentication(locale.T("auth_required_activate"), out, prompt)
 	if fail != nil {
 		return fail.WithDescription("err_activate_auth_required")
@@ -42,20 +42,49 @@ func executeAddUpdate(out output.Outputer, prompt prompt.Prompter, language, nam
 
 	// Commit the package
 	pj := project.Get()
-	fail = model.CommitPackage(pj.Owner(), pj.Name(), operation, name, version)
+	commitID, fail := model.CommitPackage(pj.Owner(), pj.Name(), operation, name, version)
 	if fail != nil {
-		return fail.WithDescription("err_package_" + operationStr)
+		return fail.WithDescription("err_package_" + string(operation)).ToError()
+	}
+
+	err = updateRuntime(commitID, pj.Owner(), pj.Name(), runbits.NewRuntimeMessageHandler(out))
+	if err != nil {
+		if !failures.Matches(err, runtime.FailBuildInProgress) {
+			return locale.WrapError(err, "Could not update runtime environment. To manually update your environment run `state pull`.")
+		}
+		out.Notice(locale.Tl("package_build_in_progress",
+			"A new build with your changes has been started remotely, please run `state pull` when the build has finished. You can track the build at https://{{.V0}}/{{.V1}}/{{.V2}}.",
+			constants.PlatformURL, pj.Owner(), pj.Name()))
+	} else {
+		// Only update commit ID if the runtime update worked
+		if fail := pj.Source().SetCommit(commitID.String()); fail != nil {
+			return fail.WithDescription("err_package_update_pjfile")
+		}
 	}
 
 	// Print the result
 	if version != "" {
-		out.Print(locale.Tr("package_version_"+operationStr, name, version))
+		out.Print(locale.Tr("package_version_"+string(operation), name, version))
 	} else {
-		out.Print(locale.Tr("package_"+operationStr, name))
+		out.Print(locale.Tr("package_"+string(operation), name))
 	}
 
-	// Remind user to update their activestate.yaml
-	out.Notice(locale.T("package_update_config_file"))
+	return nil
+}
+
+func updateRuntime(commitID strfmt.UUID, owner, projectName string, msgHandler runtime.MessageHandler) error {
+	installable := runtime.NewInstaller(runtime.NewRuntime(
+		commitID,
+		owner,
+		projectName,
+		msgHandler,
+	))
+
+	_, _, fail := installable.Install()
+	if fail != nil {
+		return locale.WrapError(fail, "Could not install dependencies.")
+	}
+
 	return nil
 }
 

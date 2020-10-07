@@ -250,21 +250,44 @@ namespace StateDeploy
             if (oldPath.Contains(stateToolInstallDir))
             {
                 session.Log("State tool installation already on PATH");
-                return ActionResult.Success;
+            }
+            else
+            {
+                var newPath = string.Format("{0};{1}", stateToolInstallDir, oldPath);
+                session.Log(string.Format("updating PATH to {0}", newPath));
+                try
+                {
+                    Environment.SetEnvironmentVariable("PATH", newPath, EnvironmentVariableTarget.Machine);
+                }
+                catch (Exception e)
+                {
+                    string msg = string.Format("Could not update PATH. Encountered exception: {0}", e.Message);
+                    session.Log(msg);
+                    new SecurityError().SetDetails(session, msg);
+                    return ActionResult.Failure;
+                }
             }
 
-            var newPath = string.Format("{0};{1}", stateToolInstallDir, oldPath);
-            session.Log(string.Format("updating PATH to {0}", newPath));
-            try
+            session.Log("Running prepare step...");
+            string prepareCmd = " _prepare";
+            string prepareOutput;
+            ActionResult prepareRunResult = ActiveState.Command.Run(session, stateToolPath, prepareCmd, out prepareOutput);
+            if (prepareRunResult.Equals(ActionResult.Failure))
             {
-                Environment.SetEnvironmentVariable("PATH", newPath, EnvironmentVariableTarget.Machine);
-            }
-            catch (Exception e)
-            {
-                string msg = string.Format("Could not update PATH. Encountered exception: {0}", e.Message);
+                string msg = string.Format("Preparing environment caused error: {0}", prepareOutput);
                 session.Log(msg);
-                new SecurityError().SetDetails(session, msg);
+                RollbarReport.Critical(msg, session);
+
+                Record record = new Record();
+                var errorOutput = Command.FormatErrorOutput(prepareOutput);
+                record.FormatString = msg;
+
+                session.Message(InstallMessage.Error | (InstallMessage)MessageBoxButtons.OK, record);
                 return ActionResult.Failure;
+            }
+            else
+            {
+                session.Log(string.Format("Prepare Output: {0}", prepareOutput));
             }
 
             Status.ProgressBar.Increment(session, 50);

@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
@@ -278,6 +279,7 @@ func TestGetProjectFilePath(t *testing.T) {
 	assert.NoError(t, err, "Should detect root path")
 	cwd, err := os.Getwd()
 	assert.NoError(t, err, "Should fetch cwd")
+	defer os.Chdir(cwd) // restore
 	os.Chdir(filepath.Join(root, "pkg", "projectfile", "testdata"))
 
 	configPath, fail := GetProjectFilePath()
@@ -298,7 +300,17 @@ func TestGetProjectFilePath(t *testing.T) {
 	require.Nil(t, fail)
 	assert.Equal(t, expectedPath, configPath, "Project path is properly detected using the ProjectEnvVarName")
 
-	os.Chdir(cwd) // restore
+	os.Unsetenv(constants.ProjectEnvVarName)
+	tmpDir, err := ioutil.TempDir("", "")
+	assert.NoError(t, err, "Should create temp dir")
+	defer os.RemoveAll(tmpDir)
+	os.Chdir(tmpDir)
+	_, fail = GetProjectFilePath()
+	assert.Error(t, fail.ToError(), "GetProjectFilePath should fail")
+	viper.SetDefault("default_project_path", expectedPath)
+	configPath, fail = GetProjectFilePath()
+	assert.NoError(t, fail.ToError(), "GetProjectFilePath should succeed")
+	assert.Equal(t, expectedPath, configPath, "Project path is properly detected using default path from config")
 }
 
 // TestGet the config
