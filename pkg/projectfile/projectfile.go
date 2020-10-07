@@ -628,8 +628,7 @@ func (p *Project) SetCommit(commitID string) *failures.Failure {
 		return failures.FailOS.Wrap(err)
 	}
 
-	Reset()
-	return nil
+	return p.Reload()
 }
 
 var (

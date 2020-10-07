@@ -3,6 +3,7 @@ package cmdtree
 import (
 	"github.com/spf13/viper"
 
+	"github.com/ActiveState/cli/cmd/state/internal/headless"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
@@ -47,7 +48,9 @@ func newActivateCommand(prime *primer.Values) *captain.Command {
 			},
 		},
 		func(_ *captain.Command, _ []string) error {
-			return runner.Run(&params)
+			err := runner.Run(&params)
+			headless.Notify(prime, err, "activate")
+			return err
 		},
 	)
 	cmd.SetDeferAnalytics(true)

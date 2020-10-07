@@ -1,6 +1,7 @@
 package cmdtree
 
 import (
+	"github.com/ActiveState/cli/cmd/state/internal/headless"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
@@ -34,7 +35,9 @@ func newPackagesCommand(prime *primer.Values) *captain.Command {
 		},
 		[]*captain.Argument{},
 		func(_ *captain.Command, _ []string) error {
-			return runner.Run(params)
+			err := runner.Run(params)
+			headless.Notify(prime, err)
+			return err
 		},
 	)
 	cmd.SetAliases("pkg", "package")
@@ -60,7 +63,9 @@ func newPackagesAddCommand(prime *primer.Values) *captain.Command {
 			},
 		},
 		func(_ *captain.Command, _ []string) error {
-			return runner.Run(params)
+			err := runner.Run(params)
+			headless.Notify(prime, err, "packages_add")
+			return err
 		},
 	)
 }
@@ -83,7 +88,9 @@ func newPackagesUpdateCommand(prime *primer.Values) *captain.Command {
 			},
 		},
 		func(_ *captain.Command, _ []string) error {
-			return runner.Run(params)
+			err := runner.Run(params)
+			headless.Notify(prime, err, "packages_update")
+			return err
 		},
 	)
 }
@@ -106,7 +113,9 @@ func newPackagesRemoveCommand(prime *primer.Values) *captain.Command {
 			},
 		},
 		func(_ *captain.Command, _ []string) error {
-			return runner.Run(params)
+			err := runner.Run(params)
+			headless.Notify(prime, err, "packages_remove")
+			return err
 		},
 	)
 }
@@ -135,7 +144,9 @@ func newPackagesImportCommand(prime *primer.Values) *captain.Command {
 			},
 		},
 		func(_ *captain.Command, _ []string) error {
-			return runner.Run(*params)
+			err := runner.Run(*params)
+			headless.Notify(prime, err)
+			return err
 		},
 	)
 }
@@ -169,7 +180,9 @@ func newPackagesSearchCommand(prime *primer.Values) *captain.Command {
 			},
 		},
 		func(_ *captain.Command, _ []string) error {
-			return runner.Run(params)
+			err := runner.Run(params)
+			headless.Notify(prime, err)
+			return err
 		},
 	)
 }
