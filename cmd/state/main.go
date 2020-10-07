@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
-	"strings"
 
 	"github.com/ActiveState/sysinfo"
 	"github.com/rollbar/rollbar-go"
@@ -146,39 +145,30 @@ func run(args []string, out output.Outputer) (int, error) {
 	project.RegisterConditional(conditional)
 
 	// Run the actual command
-	cmds := cmdtree.New(primer.New(pj, out, authentication.Get(), prompter, sshell, conditional))
+	cmds := cmdtree.New(primer.New(pj, out, authentication.Get(), prompter, sshell, conditional), args...)
 
 	child, err := cmds.Command().Find(args[1:])
 	if err != nil {
 		logging.Debug("Could not find child command, error: %v", err)
 	}
-	if child != nil {
-		// Cobra will handle the `--` delimiter if flag parsing is enabled.
-		// If the delimeter is not present we have to disable flag parsing
-		// to ensure flags are passed to the shimmed command rather than
-		// parsed as a flag for `state shim`
-		if child.Use() == "shim" && !strings.Contains(strings.Join(args, " "), " -- ") {
-			child.SetDisableFlagParsing(true)
+
+	if child != nil && !child.SkipChecks() {
+		// Auto update to latest state tool version, only runs once per day
+		if updated, code, err := autoUpdate(args, out, pjPath); err != nil || updated {
+			return code, err
 		}
 
-		if !child.SkipChecks() {
-			// Auto update to latest state tool version, only runs once per day
-			if updated, code, err := autoUpdate(args, out, pjPath); err != nil || updated {
-				return code, err
-			}
-
-			// Check for deprecation
-			deprecated, fail := deprecation.Check()
-			if fail != nil {
-				logging.Error("Could not check for deprecation: %s", fail.Error())
-			}
-			if deprecated != nil {
-				date := deprecated.Date.Format(constants.DateFormatUser)
-				if !deprecated.DateReached {
-					out.Notice(locale.Tr("warn_deprecation", date, deprecated.Reason))
-				} else {
-					return 1, locale.NewInputError("err_deprecation", "You are running a version of the State Tool that is no longer supported! Reason: {{.V1}}", date, deprecated.Reason)
-				}
+		// Check for deprecation
+		deprecated, fail := deprecation.Check()
+		if fail != nil {
+			logging.Error("Could not check for deprecation: %s", fail.Error())
+		}
+		if deprecated != nil {
+			date := deprecated.Date.Format(constants.DateFormatUser)
+			if !deprecated.DateReached {
+				out.Notice(locale.Tr("warn_deprecation", date, deprecated.Reason))
+			} else {
+				return 1, locale.NewInputError("err_deprecation", "You are running a version of the State Tool that is no longer supported! Reason: {{.V1}}", date, deprecated.Reason)
 			}
 		}
 	}

@@ -17,7 +17,7 @@ type CmdTree struct {
 }
 
 // New prepares a CmdTree.
-func New(prime *primer.Values) *CmdTree {
+func New(prime *primer.Values, args ...string) *CmdTree {
 	globals := newGlobalOptions()
 
 	authCmd := newAuthCommand(prime)
@@ -107,7 +107,7 @@ func New(prime *primer.Values) *CmdTree {
 		newInviteCommand(prime),
 		tutorialCmd,
 		newPrepareCommand(prime),
-		newShimCommand(prime),
+		newShimCommand(prime, args...),
 	)
 
 	applyLegacyChildren(stateCmd, globals)
