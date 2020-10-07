@@ -242,7 +242,7 @@ func (c *Command) AddLegacyChildren(children ...cobraCommander) {
 func (c *Command) Find(args []string) (*Command, error) {
 	foundCobra, _, err := c.cobra.Find(args)
 	if err != nil {
-		return nil, errs.Wrap(err, "Could not fine child command with args: %s", strings.Join(args, " "))
+		return nil, errs.Wrap(err, "Could not find child command with args: %s", strings.Join(args, " "))
 	}
 	if cmd, ok := cobraMapping[foundCobra]; ok {
 		return cmd, nil
