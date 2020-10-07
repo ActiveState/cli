@@ -241,7 +241,8 @@ func (p *Project) CommitUUID() strfmt.UUID {
 }
 
 func (p *Project) IsHeadless() bool {
-	return p.commitID != "" && (p.name == "" || p.owner == "")
+	match := projectfile.CommitURLRe.FindStringSubmatch(p.URL())
+	return len(match) > 1
 }
 
 // NormalizedName returns the project name in a normalized format (alphanumeric, lowercase)
