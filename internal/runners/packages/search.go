@@ -2,10 +2,10 @@ package packages
 
 import (
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/headless"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -19,18 +19,26 @@ type SearchRunParams struct {
 
 // Search manages the searching execution context.
 type Search struct {
-	out output.Outputer
+	out  output.Outputer
+	proj *project.Project
 }
 
 // NewSearch prepares a searching execution context for use.
-func NewSearch(prime primer.Outputer) *Search {
+func NewSearch(prime primeable) *Search {
 	return &Search{
-		out: prime.Output(),
+		out:  prime.Output(),
+		proj: prime.Project(),
 	}
 }
 
 // Run is executed when `state packages search` is ran
 func (s *Search) Run(params SearchRunParams) error {
+	err := s.run(params)
+	headless.Notify(s.out, s.proj, err)
+	return err
+}
+
+func (s *Search) run(params SearchRunParams) error {
 	logging.Debug("ExecuteSearch")
 
 	language, fail := targetedLanguage(params.Language)

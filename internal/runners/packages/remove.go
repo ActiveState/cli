@@ -1,6 +1,7 @@
 package packages
 
 import (
+	"github.com/ActiveState/cli/internal/headless"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
@@ -16,7 +17,8 @@ type RemoveRunParams struct {
 
 // Remove manages the removing execution context.
 type Remove struct {
-	out output.Outputer
+	out  output.Outputer
+	proj *project.Project
 	prompt.Prompter
 }
 
@@ -24,12 +26,19 @@ type Remove struct {
 func NewRemove(prime primeable) *Remove {
 	return &Remove{
 		prime.Output(),
+		prime.Project(),
 		prime.Prompt(),
 	}
 }
 
 // Run executes the remove behavior.
 func (r *Remove) Run(params RemoveRunParams) error {
+	err := r.run(params)
+	headless.Notify(r.out, r.proj, err, "packages_remove")
+	return err
+}
+
+func (r *Remove) run(params RemoveRunParams) error {
 	fail := auth.RequireAuthentication(locale.T("auth_required_activate"), r.out, r.Prompter)
 	if fail != nil {
 		return fail.WithDescription("err_activate_auth_required")

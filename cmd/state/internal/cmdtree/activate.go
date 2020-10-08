@@ -4,7 +4,6 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/ActiveState/cli/internal/captain"
-	"github.com/ActiveState/cli/internal/headless"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
@@ -48,9 +47,7 @@ func newActivateCommand(prime *primer.Values) *captain.Command {
 			},
 		},
 		func(_ *captain.Command, _ []string) error {
-			err := runner.Run(&params)
-			headless.Notify(prime, err, "activate")
-			return err
+			return runner.Run(&params)
 		},
 	)
 	cmd.SetDeferAnalytics(true)

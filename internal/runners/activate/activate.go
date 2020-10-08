@@ -7,6 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/headless"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -21,6 +22,7 @@ type Activate struct {
 	namespaceSelect  namespaceSelectAble
 	activateCheckout CheckoutAble
 	out              output.Outputer
+	proj             *project.Project
 	subshell         subshell.SubShell
 }
 
@@ -32,6 +34,7 @@ type ActivateParams struct {
 
 type primeable interface {
 	primer.Outputer
+	primer.Projecter
 	primer.Subsheller
 }
 
@@ -40,12 +43,15 @@ func NewActivate(prime primeable, namespaceSelect namespaceSelectAble, activateC
 		namespaceSelect,
 		activateCheckout,
 		prime.Output(),
+		prime.Project(),
 		prime.Subshell(),
 	}
 }
 
 func (r *Activate) Run(params *ActivateParams) error {
-	return r.run(params, activationLoop)
+	err := r.run(params, activationLoop)
+	headless.Notify(r.out, r.proj, err, "activate")
+	return err
 }
 
 func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc) error {
