@@ -158,8 +158,9 @@ func CreateEmptyProject(owner, name string, private bool) (*mono_models.Project,
 // MakeProjectPrivate turns the given project private
 func MakeProjectPrivate(owner, name string) *failures.Failure {
 	editParams := projects.NewEditProjectParams()
+	yes := true
 	editParams.SetProject(&mono_models.ProjectEditable{
-		Private: true,
+		Private: &yes,
 	})
 	editParams.SetOrganizationName(owner)
 	editParams.SetProjectName(name)

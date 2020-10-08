@@ -18,11 +18,14 @@ type ProjectEditable struct {
 	// description
 	Description string `json:"description,omitempty"`
 
+	// managed
+	Managed *bool `json:"managed,omitempty"`
+
 	// name
 	Name string `json:"name,omitempty"`
 
 	// private
-	Private bool `json:"private,omitempty"`
+	Private *bool `json:"private,omitempty"`
 }
 
 // Validate validates this project editable
