@@ -245,8 +245,6 @@ func (p *Project) NormalizedName() string {
 	return strings.ToLower(rx.ReplaceAllString(p.Name(), ""))
 }
 
-func (p *Project) IsHeadless() bool { return true }
-
 // Version returns project version
 func (p *Project) Version() string { return p.projectfile.Version }
 
