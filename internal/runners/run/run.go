@@ -92,7 +92,7 @@ func run(out output.Outputer, subs subshell.SubShell, name string, args []string
 		return FailStandalonConflict.New("error_state_run_standalone_conflict")
 	}
 
-	path := os.Getenv("PATH")
+	envPath := os.Getenv("PATH")
 
 	// Activate the state if needed.
 	if !script.Standalone() && !subshell.IsActivated() {
@@ -115,10 +115,10 @@ func run(out output.Outputer, subs subshell.SubShell, name string, args []string
 		if err != nil {
 			return err
 		}
-		path = env["PATH"]
+		envPath = env["PATH"]
 	}
 
-	if !langExec.Builtin() && !pathProvidesExec(configCachePath(), langExec.Name(), path) {
+	if !langExec.Builtin() && !pathProvidesExec(configCachePath(), langExec.Name(), envPath) {
 		return FailExecNotFound.New("error_state_run_unknown_exec")
 	}
 
