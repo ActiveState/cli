@@ -38,6 +38,12 @@ func newActivateCommand(prime *primer.Values) *captain.Command {
 				Description: locale.Tl("flag_state_activate_cmd_description", "Run given command in the activated shell"),
 				Value:       &params.Command,
 			},
+			{
+				Name:        "replace",
+				Shorthand:   "",
+				Description: locale.Tl("flag_state_activate_replace_description", "Replace project url for this project."),
+				Value:       &params.Replace,
+			},
 		},
 		[]*captain.Argument{
 			{
@@ -47,6 +53,20 @@ func newActivateCommand(prime *primer.Values) *captain.Command {
 			},
 		},
 		func(_ *captain.Command, _ []string) error {
+			if params.Replace {
+				if !params.Namespace.IsValid() {
+					return locale.NewInputError(
+						"activate_flag_replace_needs_namespace",
+						"A namespace needs to be specified when --replace option is set.",
+					)
+				}
+				if params.PreferredPath != "" {
+					return locale.NewInputError(
+						"activate_flag_replace_and_path_incompatible",
+						"The flags --path and --replace are mutually exclusive.",
+					)
+				}
+			}
 			return runner.Run(&params)
 		},
 	)

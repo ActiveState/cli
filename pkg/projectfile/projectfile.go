@@ -20,6 +20,7 @@ import (
 	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/hash"
@@ -613,15 +614,37 @@ func (p *Project) save(path string) *failures.Failure {
 	return nil
 }
 
+func (p *Project) SetNamespaceAndCommit(owner, project, commitID string) error {
+	data, err := ioutil.ReadFile(p.path)
+	if err != nil {
+		return err
+	}
+
+	namespace := fmt.Sprintf("%s/%s", owner, project)
+
+	if commitID == "" {
+		return errs.New("commitID must not be empty")
+	}
+	commitQryParam := []byte(fmt.Sprintf("project: https://%s/%s?commitID=%s", constants.DefaultAPIHost, namespace, commitID))
+
+	out := setCommitRE.ReplaceAll(data, commitQryParam)
+	if !strings.Contains(string(out), commitID) {
+		return locale.NewError(
+			"err_set_namespace_and_commit_id", "Failed to set namespace {{.V0}} in activestate.yaml.", namespace)
+	}
+
+	if err := ioutil.WriteFile(p.path, out, 0664); err != nil {
+		return failures.FailOS.Wrap(err)
+	}
+
+	Reset()
+	return nil
+}
+
 // SetCommit sets the commit id within the current project file. This is done
 // in-place so that line order is preserved.
 func (p *Project) SetCommit(commitID string) *failures.Failure {
-	fp, fail := GetProjectFilePath()
-	if fail != nil {
-		return fail
-	}
-
-	data, err := ioutil.ReadFile(fp)
+	data, err := ioutil.ReadFile(p.path)
 	if err != nil {
 		return failures.FailOS.Wrap(err)
 	}
@@ -631,7 +654,7 @@ func (p *Project) SetCommit(commitID string) *failures.Failure {
 		return fail
 	}
 
-	if err := ioutil.WriteFile(fp, out, 0664); err != nil {
+	if err := ioutil.WriteFile(p.path, out, 0664); err != nil {
 		return failures.FailOS.Wrap(err)
 	}
 

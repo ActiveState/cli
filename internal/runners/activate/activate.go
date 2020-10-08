@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -29,6 +30,7 @@ type ActivateParams struct {
 	Namespace     *project.Namespaced
 	PreferredPath string
 	Command       string
+	Replace       bool
 }
 
 type primeable interface {
@@ -54,9 +56,21 @@ func (r *Activate) Run(params *ActivateParams) error {
 func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc) error {
 	logging.Debug("Activate %v, %v", params.Namespace, params.PreferredPath)
 
-	pathToUse, err := r.pathToUse(params.Namespace.String(), params.PreferredPath)
-	if err != nil {
-		return locale.WrapError(err, "err_activate_pathtouse", "Could not figure out what path to use.")
+	var (
+		pathToUse string
+	)
+	if params.Replace {
+		targetPath, fail := projectfile.GetProjectFilePath()
+		if fail != nil {
+			return locale.WrapError(fail.ToError(), "err_activate_replace_pathtouse", "Could not determine path to activestate.yaml.")
+		}
+		pathToUse = filepath.Dir(targetPath)
+	} else {
+		var err error
+		pathToUse, err = r.pathToUse(params.Namespace.String(), params.PreferredPath)
+		if err != nil {
+			return locale.WrapError(err, "err_activate_pathtouse", "Could not figure out what path to use.")
+		}
 	}
 
 	projectToUse, err := r.projectToUse(pathToUse)
@@ -84,12 +98,28 @@ func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc)
 
 	projectPath := filepath.Dir(projectToUse.Source().Path())
 
-	// Send google analytics event with label set to project namespace
-	names, fail := project.ParseNamespaceOrConfigfile(params.Namespace.String(), filepath.Join(projectPath, constants.ConfigFileName))
-	if fail != nil {
-		names = &project.Namespaced{}
-		logging.Debug("error resolving namespace: %v", fail.ToError())
+	names := params.Namespace
+	if params.Replace {
+		if names.CommitID == nil || *names.CommitID == "" {
+			latestID, fail := model.LatestCommitID(names.Owner, names.Project)
+			if fail != nil {
+				return locale.WrapInputError(fail.ToError(), "err_set_namespace_retrieve_commit", "Could not retrieve the latest commit for the specified project {{.V0}}.", names.String())
+			}
+			names.CommitID = latestID
+		}
+		err := projectToUse.Source().SetNamespaceAndCommit(names.Owner, names.Project, names.CommitID.String())
+		if err != nil {
+			return locale.WrapError(err, "err_activate_replace_write_commit", "Failed to write new namespace to activestate.yaml.")
+		}
+	} else {
+		var fail *failures.Failure
+		names, fail = project.ParseNamespaceOrConfigfile(params.Namespace.String(), filepath.Join(projectPath, constants.ConfigFileName))
+		if fail != nil {
+			names = &project.Namespaced{}
+			logging.Debug("error resolving namespace: %v", fail.ToError())
+		}
 	}
+	// Send google analytics event with label set to project namespace
 	analytics.EventWithLabel(analytics.CatRunCmd, "activate", names.String())
 
 	// If we're not using plain output then we should just dump the environment information
