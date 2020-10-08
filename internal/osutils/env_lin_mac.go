@@ -25,6 +25,6 @@ func OpenSystemKey(path string) (RegistryKey, error) {
 func PropagateEnv() {
 }
 
-func setStringValue(key RegistryKey, name string, valType uint32, value string) error {
+func SetStringValue(key RegistryKey, name string, valType uint32, value string) error {
 	return key.SetStringValue(name, value)
 }
