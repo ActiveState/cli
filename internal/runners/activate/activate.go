@@ -1,30 +1,33 @@
 package activate
 
 import (
-	"fmt"
 	"path/filepath"
 
 	"github.com/spf13/viper"
 
 	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/globaldefault"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/subshell"
-	"github.com/ActiveState/cli/internal/virtualenvironment"
+	"github.com/ActiveState/cli/internal/updater"
+	"github.com/ActiveState/cli/pkg/cmdlets/git"
+	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 type Activate struct {
-	namespaceSelect  namespaceSelectAble
-	activateCheckout CheckoutAble
+	namespaceSelect  *NamespaceSelect
+	activateCheckout *Checkout
 	out              output.Outputer
-	config           globaldefault.DefaultConfigurer
+	config           configAble
 	subshell         subshell.SubShell
 }
 
@@ -38,12 +41,13 @@ type ActivateParams struct {
 type primeable interface {
 	primer.Outputer
 	primer.Subsheller
+	primer.Prompter
 }
 
-func NewActivate(prime primeable, namespaceSelect namespaceSelectAble, activateCheckout CheckoutAble) *Activate {
+func NewActivate(prime primeable) *Activate {
 	return &Activate{
-		namespaceSelect,
-		activateCheckout,
+		NewNamespaceSelect(viper.GetViper(), prime),
+		NewCheckout(git.NewRepo(), prime),
 		prime.Output(),
 		viper.GetViper(),
 		prime.Subshell(),
@@ -51,72 +55,64 @@ func NewActivate(prime primeable, namespaceSelect namespaceSelectAble, activateC
 }
 
 func (r *Activate) Run(params *ActivateParams) error {
-	return r.run(params, activationLoop)
+	return r.run(params)
 }
 
-func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc) error {
+func (r *Activate) run(params *ActivateParams) error {
 	logging.Debug("Activate %v, %v", params.Namespace, params.PreferredPath)
 
+	// Detect target path
 	pathToUse, err := r.pathToUse(params.Namespace.String(), params.PreferredPath)
 	if err != nil {
 		return locale.WrapError(err, "err_activate_pathtouse", "Could not figure out what path to use.")
 	}
 
-	projectToUse, err := r.projectToUse(pathToUse)
+	// Detect target project
+	proj, err := r.projectToUse(pathToUse)
 	if err != nil {
 		return locale.WrapError(err, "err_activate_projecttouse", "Could not figure out what project to use.")
 	}
 
 	// Run checkout if no project was given
-	if projectToUse == nil {
-		if !params.Namespace.IsValid() {
-			return locale.WrapError(err, "err_namespace_invalid", "Invalid namespace: {{.V0}}.", params.Namespace.String())
+	if proj == nil {
+		if params.Namespace == nil {
+			return locale.NewInputError("err_activate_nonamespace", "Please provide a namespace (see `state activate --help` for more info).")
 		}
 
-		err := r.activateCheckout.Run(params.Namespace.String(), pathToUse)
+		err := r.activateCheckout.Run(params.Namespace, pathToUse)
 		if err != nil {
 			return err
 		}
 
 		var fail *failures.Failure
-		projectToUse, fail = project.FromPath(pathToUse)
+		proj, fail = project.FromPath(pathToUse)
 		if fail != nil {
 			return locale.WrapError(fail, "err_activate_projectfrompath", "Something went wrong while creating project files.")
 		}
 	}
 
-	projectPath := filepath.Dir(projectToUse.Source().Path())
+	proj.Source().Persist()
 
 	// Send google analytics event with label set to project namespace
-	names, fail := project.ParseNamespaceOrConfigfile(params.Namespace.String(), filepath.Join(projectPath, constants.ConfigFileName))
-	if fail != nil {
-		names = &project.Namespaced{}
-		logging.Debug("error resolving namespace: %v", fail.ToError())
-	}
-	analytics.EventWithLabel(analytics.CatRunCmd, "activate", names.String())
-
-	// If we're not using plain output then we should just dump the environment information
-	if r.out.Type() != output.PlainFormatName {
-		venv := virtualenvironment.Get()
-		if fail := venv.Activate(); fail != nil {
-			return locale.WrapError(fail.ToError(), "error_could_not_activate_venv", "Could not activate project. If this is a private project ensure that you are authenticated.")
-		}
-		env, err := venv.GetEnv(false, projectPath)
-		if err != nil {
-			return locale.WrapError(err, "err_activate_getenv", "Could not build environment for your runtime environment.")
-		}
-		if r.out.Type() == output.EditorV0FormatName {
-			fmt.Println("[activated-JSON]")
-		}
-		r.out.Print(env)
-		return nil
-	}
+	analytics.EventWithLabel(analytics.CatRunCmd, "activate", proj.Namespace().String())
 
 	if params.Command != "" {
 		r.subshell.SetActivateCommand(params.Command)
 	}
 
-	return activatorLoop(r.out, r.config, r.subshell, projectPath, params.Default, activate)
+	runtime := runtime.NewRuntime(proj.CommitUUID(), proj.Owner(), proj.Name(), runbits.NewRuntimeMessageHandler(r.out))
+	if params.Default {
+		globaldefault.SetupDefaultActivation(r.config, runtime)
+	}
+
+	updater.PrintUpdateMessage(proj.Source().Path(), r.out)
+	r.out.Notice(locale.T("info_activating_state", proj))
+
+	if proj.CommitID() == "" {
+		return errs.New(locale.Tr("err_project_no_commit", model.ProjectURL(proj.Owner(), proj.Name(), "")))
+	}
+
+	return r.activateAndWait(proj, runtime)
 }
 
 func (r *Activate) pathToUse(namespace string, preferredPath string) (string, error) {
