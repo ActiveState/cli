@@ -1,5 +1,5 @@
 @echo off
 
-REM {{.denote}}: {{.languages}}
+REM {{.denote}}
 
 {{.exe}} shim -- {{.command}} %*

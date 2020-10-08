@@ -1,5 +1,5 @@
 #!/bin/sh
 
-# {{.denote}}: {{.languages}}
+# {{.denote}}
 
 {{.exe}} shim -- {{.command}} $*

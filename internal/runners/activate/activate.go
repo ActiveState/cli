@@ -102,7 +102,10 @@ func (r *Activate) run(params *ActivateParams) error {
 
 	runtime := runtime.NewRuntime(proj.CommitUUID(), proj.Owner(), proj.Name(), runbits.NewRuntimeMessageHandler(r.out))
 	if params.Default {
-		globaldefault.SetupDefaultActivation(r.config, runtime)
+		err := globaldefault.SetupDefaultActivation(r.subshell, r.config, runtime, filepath.Dir(proj.Source().Path()))
+		if err != nil {
+			return locale.WrapError(err, "err_activate_default", "Could not configure your project as the default.")
+		}
 	}
 
 	updater.PrintUpdateMessage(proj.Source().Path(), r.out)

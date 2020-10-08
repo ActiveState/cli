@@ -255,7 +255,10 @@ func (p *Project) Branch() string { return p.projectfile.Branch }
 func (p *Project) Lock() string { return p.projectfile.Lock }
 
 // Namespace returns project namespace
-func (p *Project) Namespace() *Namespaced { return &Namespaced{p.owner, p.name} }
+func (p *Project) Namespace() *Namespaced {
+	commitID := strfmt.UUID(p.commitID)
+	return &Namespaced{p.owner, p.name, &commitID}
+}
 
 // Environments returns project environment
 func (p *Project) Environments() string { return p.projectfile.Environments }

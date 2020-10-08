@@ -232,3 +232,6 @@ const RCAppendDefaultStopLine = "-- STOP ACTIVESTATE DEFAULT RUNTIME ENVIRONMENT
 
 // ForumsURL is the URL to the state tool forums
 const ForumsURL = "https://community.activestate.com/c/state-tool/"
+
+// GlobalDefaultPrefname is the pref that holds the path to the globally defaulted project
+const GlobalDefaultPrefname = "default_project_path"

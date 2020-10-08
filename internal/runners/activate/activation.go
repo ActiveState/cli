@@ -10,6 +10,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/fileevents"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
@@ -18,6 +19,8 @@ import (
 )
 
 func (r *Activate) activateAndWait(proj *project.Project, runtime *runtime.Runtime) error {
+	logging.Debug("Activating and waiting")
+	
 	err := os.Chdir(filepath.Dir(proj.Source().Path()))
 	if err != nil {
 		return err
