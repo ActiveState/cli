@@ -611,11 +611,7 @@ func (p *Project) save(path string) *failures.Failure {
 // in-place so that line order is preserved.
 // If headless is true, the project is defined by a commit-id only
 func (p *Project) SetCommit(commitID string, headless bool) *failures.Failure {
-	fp, fail := GetProjectFilePath()
-	if fail != nil {
-		return fail
-	}
-
+	fp := p.path
 	data, err := ioutil.ReadFile(fp)
 	if err != nil {
 		return failures.FailOS.Wrap(err)
@@ -635,20 +631,22 @@ func (p *Project) SetCommit(commitID string, headless bool) *failures.Failure {
 }
 
 var (
-	// regex captures from "project:" (at start of line) to last "/" and
-	// everything after until a "?" or newline is reached. Everything after
-	// that is targeted, but not captured so that only the first two capture
+	// regex captures three groups:
+	// 1. from "project:" (at start of line) to protocol ("https://")
+	// 2. the domain name
+	// 3. the url part until a "?" or newline is reached.
+	// Everything after that is targeted, but not captured so that only the first three capture
 	// groups can be used in the replace value.
-	setCommitRE = regexp.MustCompile(`(?m:^(project:.*\/)([^?\r\n]*).*)`)
+	setCommitRE = regexp.MustCompile(`(?m:^(project: *https?:\/\/)([^\/]*\/)(.*\/[^?\r\n]*).*)`)
 )
 
 func setCommitInYAML(data []byte, commitID string, anonymous bool) ([]byte, *failures.Failure) {
 	if commitID == "" {
 		return nil, failures.FailDeveloper.New("commitID must not be empty")
 	}
-	commitQryParam := []byte("$1$2?commitID=" + commitID)
+	commitQryParam := []byte("$1$2$3?commitID=" + commitID)
 	if anonymous {
-		commitQryParam = []byte("$1/commit/" + commitID)
+		commitQryParam = []byte(fmt.Sprintf("${1}${2}commit/%s", commitID))
 	}
 
 	out := setCommitRE.ReplaceAll(data, commitQryParam)

@@ -379,20 +379,26 @@ project: https://example.com/xowner/xproject?commitID=123
 `)
 	expectedYAML := bytes.Replace(exampleYAML, []byte("123"), []byte("987"), 1) // must be 1
 
-	_, fail := setCommitInYAML(exampleYAML, "")
+	_, fail := setCommitInYAML(exampleYAML, "", false)
 	assert.Equal(t, failures.FailDeveloper.Name, fail.Type.Name)
 
-	_, fail = setCommitInYAML([]byte(""), "123")
+	_, fail = setCommitInYAML([]byte(""), "123", false)
 	assert.Equal(t, FailSetCommitID.Name, fail.Type.Name)
 
-	out0, fail := setCommitInYAML(exampleYAML, "987")
+	out0, fail := setCommitInYAML(exampleYAML, "987", false)
 	assert.NoError(t, fail.ToError())
 	assert.Equal(t, string(expectedYAML), string(out0))
 
 	exampleYAMLNoID := bytes.Replace(exampleYAML, []byte("?commitID=123"), nil, 1)
-	out1, fail := setCommitInYAML(exampleYAMLNoID, "987")
+	out1, fail := setCommitInYAML(exampleYAMLNoID, "987", false)
 	assert.NoError(t, fail.ToError())
 	assert.Equal(t, string(expectedYAML), string(out1))
+
+	// anonymous commits
+	expectedYAML = bytes.Replace(exampleYAML, []byte("xowner/xproject?commitID=123"), []byte("commit/987"), 1)
+	out2, fail := setCommitInYAML(exampleYAML, "987", true)
+	assert.NoError(t, fail.ToError())
+	assert.Equal(t, string(expectedYAML), string(out2))
 }
 
 func TestSetCommitInYAML_NoCommitID(t *testing.T) {
@@ -407,7 +413,7 @@ project: https://example.com/xowner/xproject?commitID=123
 123: xvalue
 `)
 
-	out, fail := setCommitInYAML(exampleYAML, "123")
+	out, fail := setCommitInYAML(exampleYAML, "123", false)
 	assert.NoError(t, fail.ToError())
 	assert.Equal(t, string(expectedYAML), string(out))
 }
