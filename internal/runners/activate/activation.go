@@ -42,8 +42,14 @@ func activationLoop(out output.Outputer, subs subshell.SubShell, targetPath stri
 			// something more actionable for the context they're in
 			return failures.FailUserInput.New("err_project_from_path")
 		}
+
 		updater.PrintUpdateMessage(proj.Source().Path(), out)
-		out.Notice(locale.T("info_activating_state", proj))
+
+		if proj.IsHeadless() {
+			out.Notice(locale.T("info_activating_state_by_commit"))
+		} else {
+			out.Notice(locale.T("info_activating_state", proj))
+		}
 
 		if proj.CommitID() == "" {
 			return errors.New(locale.Tr("err_project_no_commit", model.ProjectURL(proj.Owner(), proj.Name(), "")))
@@ -67,10 +73,14 @@ func activationLoop(out output.Outputer, subs subshell.SubShell, targetPath stri
 			break
 		}
 
-		out.Notice(locale.T("info_reactivating", proj))
+		out.Notice(locale.T("info_reactivating"))
 	}
 
-	out.Notice(locale.T("info_deactivated", proj))
+	if proj.IsHeadless() {
+		out.Notice(locale.T("info_deactivated_by_commit"))
+	} else {
+		out.Notice(locale.T("info_deactivated", proj))
+	}
 
 	return nil
 }
