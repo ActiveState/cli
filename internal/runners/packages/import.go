@@ -72,7 +72,7 @@ func NewImport(prime primeable) *Import {
 // Run executes the import behavior.
 func (i *Import) Run(params ImportRunParams) error {
 	err := i.run(params)
-	headless.Notify(i.out, i.proj, err)
+	headless.Notify(i.out, i.proj, err, "packages")
 	return err
 }
 

@@ -34,7 +34,7 @@ func NewUpdate(prime primeable) *Update {
 // Run executes the update behavior.
 func (u *Update) Run(params UpdateRunParams) error {
 	err := u.Run(params)
-	headless.Notify(u.out, u.proj, err, "packages_update")
+	headless.Notify(u.out, u.proj, err, "packages")
 	return err
 }
 

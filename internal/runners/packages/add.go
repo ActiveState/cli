@@ -33,7 +33,7 @@ func NewAdd(prime primeable) *Add {
 // Run executes the add behavior.
 func (a *Add) Run(params AddRunParams) error {
 	err := a.run(params)
-	headless.Notify(a.out, a.proj, err, "packages_add")
+	headless.Notify(a.out, a.proj, err, "packages")
 	return err
 }
 

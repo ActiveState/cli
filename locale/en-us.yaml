@@ -1709,3 +1709,9 @@ prepare_env_warning:
   other: Could not update user environment
 err_package_update_pjfile:
   other: "Coult not update your activestate.yaml with the new commit ID. Please run `state pull` manually."
+message_headless:
+  other: "[BLUE]You're currently using this tool anonymously. Sign-up for an account on the ActiveState Platform to create your own version of this project that lets you fully customize, share with a team, versioned backup, and more. Visit https://platform.activestate.com to sign up.[/RESET]"
+message_headless_packages:
+  other: "[BLUE]You've modified this project, and will be able to continue to do so locally. Converting your changes into a project on the ActiveState Platform can make your changes available on any machine.[/RESET]"
+message_headless_activate:
+  other: "[BLUE]Now that your project is activated -- if you ever need to add or remove packages, you can do so with `state package add`. Type `state package --help` for more info, or `state learn` for common commands.[/RESET]"

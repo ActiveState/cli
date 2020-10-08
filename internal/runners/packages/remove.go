@@ -34,7 +34,7 @@ func NewRemove(prime primeable) *Remove {
 // Run executes the remove behavior.
 func (r *Remove) Run(params RemoveRunParams) error {
 	err := r.run(params)
-	headless.Notify(r.out, r.proj, err, "packages_remove")
+	headless.Notify(r.out, r.proj, err, "packages")
 	return err
 }
 
