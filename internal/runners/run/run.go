@@ -8,6 +8,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/headless"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -34,11 +35,13 @@ var (
 // Run contains the run execution context.
 type Run struct {
 	out      output.Outputer
+	proj     *project.Project
 	subshell subshell.SubShell
 }
 
 type primeable interface {
 	primer.Outputer
+	primer.Projecter
 	primer.Subsheller
 }
 
@@ -46,13 +49,16 @@ type primeable interface {
 func New(prime primeable) *Run {
 	return &Run{
 		prime.Output(),
+		prime.Project(),
 		prime.Subshell(),
 	}
 }
 
 // Run runs the Run run runner.
 func (r *Run) Run(name string, args []string) error {
-	return run(r.out, r.subshell, name, args)
+	err := run(r.out, r.subshell, name, args)
+	headless.Notify(r.out, r.proj, err)
+	return err
 }
 
 func run(out output.Outputer, subs subshell.SubShell, name string, args []string) error {
