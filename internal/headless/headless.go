@@ -11,7 +11,7 @@ import (
 // particular headless message is outputted immediately before the general
 // message.
 func Notify(out output.Outputer, proj *project.Project, err error, cmdNames ...string) {
-	if err != nil || true /*!proj.IsHeadless()*/ {
+	if err != nil || !proj.IsHeadless() {
 		return
 	}
 
