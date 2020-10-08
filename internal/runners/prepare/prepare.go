@@ -120,7 +120,12 @@ func setStateProtocol() error {
 	}
 	defer commandKey.Close()
 
-	err = commandKey.SetStringValue("", fmt.Sprintf(`cmd /k "%s <hiddencommmand> %%1"`, os.Args[0]))
+	exe, err := os.Executable()
+	if err != nil {
+		return locale.WrapError(err, "err_prepare_executable", "Could not get current executable")
+	}
+
+	err = commandKey.SetStringValue("", fmt.Sprintf(`cmd /k "%s _protocol %%1"`, exe))
 	if err != nil {
 		return locale.WrapError(err, "err_prepare_command_set", "Could not set command value in registry")
 	}
