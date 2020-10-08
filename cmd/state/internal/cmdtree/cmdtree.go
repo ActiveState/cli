@@ -17,7 +17,7 @@ type CmdTree struct {
 }
 
 // New prepares a CmdTree.
-func New(prime *primer.Values) *CmdTree {
+func New(prime *primer.Values, args ...string) *CmdTree {
 	globals := newGlobalOptions()
 
 	authCmd := newAuthCommand(prime)
@@ -108,6 +108,7 @@ func New(prime *primer.Values) *CmdTree {
 		tutorialCmd,
 		newPrepareCommand(prime),
 		newProtocolCommand(prime),
+		newShimCommand(prime, args...),
 	)
 
 	applyLegacyChildren(stateCmd, globals)
@@ -199,6 +200,11 @@ func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Comm
 // Execute runs the CmdTree using the provided CLI arguments.
 func (ct *CmdTree) Execute(args []string) error {
 	return ct.cmd.Execute(args)
+}
+
+// Command returns the root command of the CmdTree
+func (ct *CmdTree) Command() *captain.Command {
+	return ct.cmd
 }
 
 // applyLegacyChildren will register any commands and expanders

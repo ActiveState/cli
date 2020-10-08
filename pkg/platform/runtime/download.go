@@ -8,6 +8,7 @@ import (
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/download"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
@@ -17,7 +18,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/buildlogstream"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
-	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -123,33 +123,30 @@ func (r *Download) fetchRecipeID() (strfmt.UUID, *failures.Failure) {
 // FetchArtifacts will retrieve artifact information from the head-chef (eg language installers)
 // The first return argument specifies whether we are dealing with an alternative build
 func (r *Download) FetchArtifacts() (*FetchArtifactsResult, *failures.Failure) {
-	platProject, fail := model.FetchProjectByName(r.owner, r.projectName)
-	if fail != nil {
-		return nil, fail
+	orgID := strfmt.UUID(constants.ValidZeroUUID)
+	projectID := strfmt.UUID(constants.ValidZeroUUID)
+
+	if r.owner != "" && r.projectName != "" {
+		platProject, fail := model.FetchProjectByName(r.owner, r.projectName)
+		if fail != nil {
+			return nil, fail
+		}
+
+		projectID = platProject.ProjectID
+		orgID = platProject.OrganizationID
+		r.orgID = platProject.OrganizationID.String()
+		r.private = platProject.Private
 	}
-	r.orgID = platProject.OrganizationID.String()
-	r.private = platProject.Private
 
 	recipeID, fail := r.fetchRecipeID()
 	if fail != nil {
 		return nil, fail
 	}
 
-	var commitID *strfmt.UUID
-	for _, branch := range platProject.Branches {
-		if branch.Default {
-			commitID = branch.CommitID
-			break
-		}
-	}
-	if commitID == nil {
-		return nil, FailNoCommitID.New("fetch_err_runtime_no_commitid")
-	}
-
-	return r.fetchArtifacts(*commitID, recipeID, platProject)
+	return r.fetchArtifacts(r.commitID, recipeID, orgID, projectID)
 }
 
-func (r *Download) fetchArtifacts(commitID, recipeID strfmt.UUID, platProject *mono_models.Project) (*FetchArtifactsResult, *failures.Failure) {
+func (r *Download) fetchArtifacts(commitID, recipeID, orgID, projectID strfmt.UUID) (*FetchArtifactsResult, *failures.Failure) {
 	result := &FetchArtifactsResult{}
 
 	buildAnnotations := headchef.BuildAnnotations{
@@ -159,7 +156,7 @@ func (r *Download) fetchArtifacts(commitID, recipeID strfmt.UUID, platProject *m
 	}
 
 	logging.Debug("sending request to head-chef")
-	buildRequest, fail := headchef.NewBuildRequest(recipeID, platProject.OrganizationID, platProject.ProjectID, buildAnnotations)
+	buildRequest, fail := headchef.NewBuildRequest(recipeID, orgID, projectID, buildAnnotations)
 	if fail != nil {
 		return result, fail
 	}
@@ -209,7 +206,7 @@ func (r *Download) fetchArtifacts(commitID, recipeID strfmt.UUID, platProject *m
 			if err := r.waitForArtifacts(recipeID); err != nil {
 				return nil, failures.FailMisc.Wrap(err, locale.Tl("err_wait_artifacts", "Error happened while waiting for packages"))
 			}
-			return r.fetchArtifacts(commitID, recipeID, platProject)
+			return r.fetchArtifacts(commitID, recipeID, orgID, projectID)
 
 		case fail := <-buildStatus.RunFail:
 			logging.Debug("Failure: %v", fail)

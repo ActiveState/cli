@@ -8,9 +8,12 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 )
+
+var cobraMapping map[*cobra.Command]*Command = make(map[*cobra.Command]*Command)
 
 type cobraCommander interface {
 	GetCobraCmd() *cobra.Command
@@ -19,7 +22,8 @@ type cobraCommander interface {
 type Executor func(cmd *Command, args []string) error
 
 type Command struct {
-	cobra *cobra.Command
+	cobra    *cobra.Command
+	commands []*Command
 
 	name string
 
@@ -30,6 +34,8 @@ type Command struct {
 
 	// deferAnalytics should be set if the command handles the GA reporting in its execute function
 	deferAnalytics bool
+
+	skipChecks bool
 }
 
 func NewCommand(name, description string, flags []*Flag, args []*Argument, executor Executor) *Command {
@@ -48,6 +54,7 @@ func NewCommand(name, description string, flags []*Flag, args []*Argument, execu
 		execute:   executor,
 		arguments: args,
 		flags:     flags,
+		commands:  make([]*Command, 0),
 	}
 
 	short := description
@@ -72,6 +79,7 @@ func NewCommand(name, description string, flags []*Flag, args []*Argument, execu
 	}
 	cmd.SetUsageTemplate("usage_tpl")
 
+	cobraMapping[cmd.cobra] = cmd
 	return cmd
 }
 
@@ -145,6 +153,10 @@ func NewShimCommand(name, description string, executor Executor) *Command {
 	return cmd
 }
 
+func (c *Command) Use() string {
+	return c.cobra.Use
+}
+
 func (c *Command) Usage() error {
 	return c.cobra.Usage()
 }
@@ -170,6 +182,10 @@ func (c *Command) SetAliases(aliases ...string) {
 
 func (c *Command) SetDeferAnalytics(value bool) {
 	c.deferAnalytics = value
+}
+
+func (c *Command) SetSkipChecks(value bool) {
+	c.skipChecks = value
 }
 
 func (c *Command) SetHidden(value bool) {
@@ -206,8 +222,13 @@ func (c *Command) Arguments() []*Argument {
 	return c.arguments
 }
 
+func (c *Command) SkipChecks() bool {
+	return c.skipChecks
+}
+
 func (c *Command) AddChildren(children ...*Command) {
 	for _, child := range children {
+		c.commands = append(c.commands, child)
 		c.cobra.AddCommand(child.cobra)
 	}
 }
@@ -216,6 +237,26 @@ func (c *Command) AddLegacyChildren(children ...cobraCommander) {
 	for _, child := range children {
 		c.cobra.AddCommand(child.GetCobraCmd())
 	}
+}
+
+func (c *Command) Find(args []string) (*Command, error) {
+	foundCobra, _, err := c.cobra.Find(args)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not find child command with args: %s", strings.Join(args, " "))
+	}
+	if cmd, ok := cobraMapping[foundCobra]; ok {
+		return cmd, nil
+	}
+	return nil, locale.NewError("err_captain_cmd_find", "Could not find child Command with args: {{.V0}}", strings.Join(args, " "))
+}
+
+func (c *Command) findNext(next string) *Command {
+	for _, cmd := range c.commands {
+		if cmd.cobra.Use == next {
+			return cmd
+		}
+	}
+	return nil
 }
 
 func (c *Command) flagByName(name string, persistOnly bool) *Flag {

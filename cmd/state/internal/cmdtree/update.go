@@ -12,7 +12,7 @@ func newUpdateCommand(prime *primer.Values) *captain.Command {
 	runner := update.New(prime)
 	params := update.Params{}
 
-	return captain.NewCommand(
+	cmd := captain.NewCommand(
 		"update",
 		locale.Tl("update_description", "Updates the State Tool to the latest available version"),
 		[]*captain.Flag{
@@ -34,5 +34,8 @@ func newUpdateCommand(prime *primer.Values) *captain.Command {
 		[]*captain.Argument{},
 		func(cmd *captain.Command, args []string) error {
 			return runner.Run(&params)
-		})
+		},
+	)
+	cmd.SetSkipChecks(true)
+	return cmd
 }
