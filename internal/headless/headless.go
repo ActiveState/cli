@@ -1,6 +1,7 @@
 package headless
 
 import (
+	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/project"
@@ -20,4 +21,15 @@ func Notify(out output.Outputer, proj *project.Project, err error, cmdNames ...s
 	}
 
 	out.Notice(locale.T("message_headless"))
+}
+
+// NotifyFn constructs a captain.Executor based middleware that calls Notify.
+func NotifyFn(out output.Outputer, proj *project.Project) func(captain.Executor) captain.Executor {
+	return func(fn captain.Executor) captain.Executor {
+		return func(c *captain.Command, args []string) error {
+			err := fn(c, args)
+			Notify(out, proj, err)
+			return err
+		}
+	}
 }

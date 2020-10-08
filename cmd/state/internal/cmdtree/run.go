@@ -2,6 +2,7 @@ package cmdtree
 
 import (
 	"github.com/ActiveState/cli/internal/captain"
+	"github.com/ActiveState/cli/internal/headless"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/run"
@@ -11,6 +12,8 @@ func newRunCommand(prime *primer.Values) *captain.Command {
 	runner := run.New(prime)
 
 	var name string
+
+	notify := headless.NotifyFn(prime.Output(), prime.Project())
 
 	cmd := captain.NewCommand(
 		"run",
@@ -23,7 +26,7 @@ func newRunCommand(prime *primer.Values) *captain.Command {
 				Value:       &name,
 			},
 		},
-		func(ccmd *captain.Command, args []string) error {
+		notify(func(ccmd *captain.Command, args []string) error {
 			if name == "-h" || name == "--help" {
 				prime.Output().Print(ccmd.UsageText())
 				return nil
@@ -34,7 +37,7 @@ func newRunCommand(prime *primer.Values) *captain.Command {
 			}
 
 			return runner.Run(name, args)
-		},
+		}),
 	)
 	cmd.SetDisableFlagParsing(true)
 
