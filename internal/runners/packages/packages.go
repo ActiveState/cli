@@ -65,51 +65,52 @@ func executePackageOperation(out output.Outputer, prompt prompt.Prompter, langua
 	}
 
 	pj := project.Get()
+	var commitID strfmt.UUID
 	if isHeadless {
 		parentCommitID, err := pj.CommitUUID()
 		if err != nil {
 			return locale.WrapError(err, "package_headless_invalid_commit_id", "Failed to determine current commit.")
 		}
 
-		newCommitID, fail := model.CommitPackage(*parentCommitID, operation, name, version)
+		var fail *failures.Failure
+		commitID, fail = model.CommitPackage(*parentCommitID, operation, name, version)
 		if fail != nil {
 			return locale.WrapError(fail.ToError(), "err_package_"+operationStr)
 		}
-		fail = pj.Source().SetCommit(newCommitID.String(), true)
-		if fail != nil {
-			return locale.WrapError(fail.ToError(), "package_headless_"+operationStr+"_set_commit_err")
-		}
-		out.Notice(locale.Tr("package_headless_"+operationStr, name))
-		out.Notice(locale.Tr("package_headless_project_creation", newCommitID.String()))
 	} else {
-		commitID, fail := model.CommitPackageInBranch(pj.Owner(), pj.Name(), operation, name, version)
+		var fail *failures.Failure
+		commitID, fail = model.CommitPackageInBranch(pj.Owner(), pj.Name(), operation, name, version)
 		if fail != nil {
 			return fail.WithDescription("err_package_" + string(operation)).ToError()
 		}
+	}
 
-		err = updateRuntime(commitID, pj.Owner(), pj.Name(), runbits.NewRuntimeMessageHandler(out))
-		if err != nil {
-			if !failures.Matches(err, runtime.FailBuildInProgress) {
-				return locale.WrapError(err, "Could not update runtime environment. To manually update your environment run `state pull`.")
-			}
-			out.Notice(locale.Tl("package_build_in_progress",
-				"A new build with your changes has been started remotely, please run `state pull` when the build has finished. You can track the build at https://{{.V0}}/{{.V1}}/{{.V2}}.",
-				constants.PlatformURL, pj.Owner(), pj.Name()))
-		} else {
-			// Only update commit ID if the runtime update worked
-			if fail := pj.Source().SetCommit(commitID.String(), false); fail != nil {
-				return fail.WithDescription("err_package_update_pjfile")
-			}
+	err = updateRuntime(commitID, pj.Owner(), pj.Name(), runbits.NewRuntimeMessageHandler(out))
+	if err != nil {
+		if !failures.Matches(err, runtime.FailBuildInProgress) {
+			return locale.WrapError(err, "Could not update runtime environment. To manually update your environment run `state pull`.")
 		}
-
-		// Print the result
-		if version != "" {
-			out.Print(locale.Tr("package_version_"+string(operation), name, version))
-		} else {
-			out.Print(locale.Tr("package_"+string(operation), name))
+		out.Notice(locale.Tl("package_build_in_progress",
+			"A new build with your changes has been started remotely, please run `state pull` when the build has finished. You can track the build at https://{{.V0}}/{{.V1}}/{{.V2}}.",
+			constants.PlatformURL, pj.Owner(), pj.Name()))
+	} else {
+		// Only update commit ID if the runtime update worked
+		if fail := pj.Source().SetCommit(commitID.String(), isHeadless); fail != nil {
+			return fail.WithDescription("err_package_update_pjfile")
 		}
 	}
 
+	// Print the result
+	if version != "" {
+		out.Print(locale.Tr("package_version_"+string(operation), name, version))
+	} else {
+		out.Print(locale.Tr("package_"+string(operation), name))
+	}
+
+	// print message on how to create a project from a headless state
+	if isHeadless {
+		out.Notice(locale.Tr("package_headless_project_creation", commitID.String()))
+	}
 	return nil
 }
 
