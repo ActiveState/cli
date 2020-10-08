@@ -36,7 +36,11 @@ func (p *Protocol) Run(params Params) error {
 		return locale.WrapError(err, "err_protocol_parse", "Invailid URL provided: {{.V0}}", params.URL)
 	}
 	namespace := strings.TrimLeft(parsed.Path, "/")
-	flag := fmt.Sprintf("--%s", parsed.Fragment)
+
+	var flag string
+	if parsed.Fragment != "" {
+		flag = fmt.Sprintf("--%s", parsed.Fragment)
+	}
 
 	return runbits.InvokeSilent("activate", namespace, flag)
 }
