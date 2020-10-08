@@ -14,12 +14,18 @@ func IsNotExistError(err error) bool {
 
 func OpenUserKey(path string) (RegistryKey, error) {
 	panic("Not supported outside of Windows, this only exists to facilitate unit tests")
-	return nil, nil
 }
 
 func OpenSystemKey(path string) (RegistryKey, error) {
 	panic("Not supported outside of Windows, this only exists to facilitate unit tests")
-	return nil, nil
+}
+
+func CreateUserKey(path string) (RegistryKey, bool, error) {
+	panic("Not supported outside of Windows, this only exists to facilitate unit tests")
+}
+
+func CreateCurrentUserKey(path string) (RegistryKey, bool, error) {
+	panic("Not supported outside of Windows, this only exists to facilitate unit tests")
 }
 
 func PropagateEnv() {
