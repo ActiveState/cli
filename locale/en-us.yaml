@@ -1244,12 +1244,6 @@ package_version_updated:
   other: "Package updated: {{.V0}}@{{.V1}}"
 package_ingredient_err:
   other: Failed to resolve an ingredient named {{.V0}}.
-package_headless_added_set_commit_err:
-  other: "Failed to add package: Could not write new commit ID to activestate.yaml."
-package_headless_updated_set_commit_err:
-  other: "Failed to update package: Could not write new commit ID to activestate.yaml."
-package_headless_removed_set_commit_err:
-  other: "Failed to update package: Could not write new commit ID to activestate.yaml."
 package_headless_added:
   other: "Package added: {{.V0}}"
 package_headless_updated:
