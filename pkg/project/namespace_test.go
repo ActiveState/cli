@@ -4,9 +4,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/environment"
 	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/ActiveState/cli/internal/environment"
 )
 
 func newUUID(uuid string) *strfmt.UUID {
@@ -60,7 +61,7 @@ func TestParseNamespaceOrConfigfile(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			ns, fail := ParseNamespaceOrConfigfile(tt.namespace, tt.configFile)
+			ns, fail := NameSpaceForConfig(tt.namespace, tt.configFile)
 			if tt.expected == nil {
 				assert.Error(t, fail.ToError())
 				return

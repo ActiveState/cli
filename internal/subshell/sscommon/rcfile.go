@@ -161,7 +161,7 @@ func SetupProjectRcFile(templateName, ext string, env map[string]string, out out
 	prj := project.Get()
 
 	userScripts := ""
-	activatedKey := fmt.Sprintf("activated_%s", prj.Namespace())
+	activatedKey := fmt.Sprintf("activated_%s", prj.Namespace().String())
 	for _, event := range prj.Events() {
 		v, err := event.Value()
 		if err != nil {
