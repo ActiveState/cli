@@ -29,15 +29,6 @@ type VirtualEnvironment struct {
 	runtime             *runtime.Runtime
 }
 
-// Get returns a persisted version of VirtualEnvironment{}
-func Get() *VirtualEnvironment {
-	if persisted == nil {
-		persisted = Init()
-	}
-
-	return persisted
-}
-
 // Init creates an instance of VirtualEnvironment{} with default settings
 func Init() *VirtualEnvironment {
 	return &VirtualEnvironment{
@@ -102,14 +93,18 @@ func (v *VirtualEnvironment) Setup(installIfNecessary bool) *failures.Failure {
 // GetEnv returns a map of the cumulative environment variables for all active virtual environments
 func (v *VirtualEnvironment) GetEnv(inherit bool, projectDir string) (map[string]string, error) {
 	envMap := make(map[string]string)
-	env, fail := v.runtime.Env()
-	if fail != nil {
-		return envMap, errs.Wrap(fail, "Could not initialize runtime env")
-	}
-	var err error
-	envMap, err = env.GetEnv(inherit, projectDir)
-	if err != nil {
-		return envMap, err
+
+	// Source runtime environment information
+	if strings.ToLower(os.Getenv(constants.DisableRuntime)) != "true" {
+		env, fail := v.runtime.Env()
+		if fail != nil {
+			return envMap, errs.Wrap(fail, "Could not initialize runtime env")
+		}
+		var err error
+		envMap, err = env.GetEnv(inherit, projectDir)
+		if err != nil {
+			return envMap, err
+		}
 	}
 
 	if projectDir != "" {

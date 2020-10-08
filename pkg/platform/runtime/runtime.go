@@ -36,6 +36,10 @@ func NewRuntime(commitID strfmt.UUID, owner string, projectName string, msgHandl
 	return &Runtime{installPath, commitID, owner, projectName, msgHandler}
 }
 
+func (r *Runtime) SetInstallPath(installPath string) {
+	r.runtimeDir = installPath
+}
+
 func (r *Runtime) InstallPath() string {
 	return r.runtimeDir
 }

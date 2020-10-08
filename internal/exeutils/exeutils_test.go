@@ -1,16 +1,9 @@
-package globaldefault
+package exeutils
 
 import (
-	"io/ioutil"
-	"os"
-	"path/filepath"
 	"reflect"
 	"sort"
 	"testing"
-
-	"github.com/autarch/testify/require"
-
-	"github.com/ActiveState/cli/internal/exeutils"
 )
 
 func Test_uniqueExes(t *testing.T) {
@@ -53,7 +46,7 @@ func Test_uniqueExes(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := exeutils.UniqueExes(tt.bins, tt.pathext)
+			got, err := UniqueExes(tt.bins, tt.pathext)
 			if err != nil {
 				t.Errorf("uniqueExes error: %v", err)
 				t.FailNow()
@@ -64,17 +57,4 @@ func Test_uniqueExes(t *testing.T) {
 			}
 		})
 	}
-}
-
-func Test_shims(t *testing.T) {
-	td, err := ioutil.TempDir("", "")
-	require.NoError(t, err)
-	defer os.RemoveAll(td)
-	shimFile := filepath.Join(td, "shim")
-	err = createShimFile(filepath.FromSlash("/abc/def/python"), shimFile)
-	require.NoError(t, err)
-
-	require.True(t, isShimFor(shimFile, ""))
-	require.True(t, isShimFor(shimFile, filepath.FromSlash("/abc/def")))
-	require.False(t, isShimFor(shimFile, filepath.FromSlash("/some/other/dir")))
 }

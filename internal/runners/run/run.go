@@ -21,7 +21,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 var (
@@ -72,7 +71,7 @@ func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, nam
 	}
 
 	// Determine which project script to run based on the given script name.
-	script := project.Get().ScriptByName(name)
+	script := proj.ScriptByName(name)
 	if script == nil {
 		fail := FailScriptNotDefined.New(
 			locale.T("error_state_run_unknown_name", map[string]string{"Name": name}),
@@ -110,7 +109,7 @@ func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, nam
 			return fail.WithDescription("error_state_run_activate")
 		}
 
-		env, err := venv.GetEnv(true, filepath.Dir(projectfile.Get().Path()))
+		env, err := venv.GetEnv(true, filepath.Dir(proj.Source().Path()))
 		if err != nil {
 			return err
 		}

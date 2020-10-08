@@ -46,30 +46,18 @@ func TestParseNamespaceOrConfigfile(t *testing.T) {
 
 	var tests = []struct {
 		name       string
-		namespace  string
 		configFile string
 		expected   *Namespaced
 	}{
-		{"InvalidConfigfile", "", invalidConfigFile, nil},
-		{"FromConfigFile", "", validConfigFile, &Namespaced{Owner: "ActiveState", Project: "CodeIntel", CommitID: newUUID("d7ebc72")}},
-		{"FromNamespace", "valid/namespace", invalidConfigFile, &Namespaced{Owner: "valid", Project: "namespace"}},
-		{"FromNamespaceWithCommitID", "valid/namespace#a10-b11c12", invalidConfigFile, &Namespaced{Owner: "valid", Project: "namespace", CommitID: newUUID("a10-b11c12")}},
-		{"FromNamespaceWithEmptyCommitID", "valid/namespace#", invalidConfigFile, &Namespaced{Owner: "valid", Project: "namespace"}},
-		{"InvalidNamespace", "invalid-namespace", invalidConfigFile, nil},
+		{"InvalidConfigfile", invalidConfigFile, nil},
+		{"FromConfigFile", validConfigFile, &Namespaced{Owner: "ActiveState", Project: "CodeIntel", CommitID: newUUID("d7ebc72")}},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			ns, fail := NameSpaceForConfig(tt.namespace, tt.configFile)
-			if tt.expected == nil {
-				assert.Error(t, fail.ToError())
-				return
-			}
-			if fail != nil {
-				t.Fatalf("expected no error, got: %v", fail.ToError())
-			}
-			assert.Equal(t, *tt.expected, *ns)
+			ns := NameSpaceForConfig(tt.configFile)
+			assert.Equal(t, tt.expected, ns)
 		})
 	}
 }
