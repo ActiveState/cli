@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
@@ -33,8 +32,7 @@ func executePackageOperation(out output.Outputer, prompt prompt.Prompter, langua
 	if !authentication.Get().Authenticated() {
 		anonymousOk, fail := prompt.Confirm(locale.T("prompt_headless_anonymous"), true)
 		if fail != nil {
-			// TODO: Maybe ignore on interrupt?
-			return errs.Wrap(fail.ToError(), "Error prompting to proceed anonymously during headless commit.")
+			return locale.WrapInputError(fail.ToError(), "Failed to determine if it is okay to proceed without authorization.")
 		}
 		isHeadless = anonymousOk
 	}
