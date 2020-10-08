@@ -1,4 +1,4 @@
-package cmd
+package osutils
 
 import (
 	"errors"
@@ -12,6 +12,14 @@ const (
 	HwndBroadcast   = uintptr(0xffff)
 	WmSettingChange = uintptr(0x001A)
 )
+
+type RegistryKey interface {
+	GetStringValue(name string) (val string, valtype uint32, err error)
+	SetStringValue(name, value string) error
+	SetExpandStringValue(name, value string) error
+	DeleteValue(name string) error
+	Close() error
+}
 
 func notExistError() error {
 	return registry.ErrNotExist
@@ -29,12 +37,12 @@ func IsNotExistError(err error) bool {
 	return errors.Is(err, registry.ErrNotExist)
 }
 
-func (c *CmdEnv) propagate() {
+func PropagateEnv() {
 	// Note: Always use SendNotifyMessageW here, as SendMessageW can hang forever (https://stackoverflow.com/a/1956702)
 	syscall.NewLazyDLL("user32.dll").NewProc("SendNotifyMessageW").Call(HwndBroadcast, WmSettingChange, 0, uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr("ENVIRONMENT"))))
 }
 
-func setStringValue(key RegistryKey, name string, valType uint32, value string) error {
+func SetStringValue(key RegistryKey, name string, valType uint32, value string) error {
 	f := key.SetStringValue
 	if valType == registry.EXPAND_SZ {
 		f = key.SetExpandStringValue

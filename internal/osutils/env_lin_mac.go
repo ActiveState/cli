@@ -1,6 +1,6 @@
 // +build !windows
 
-package cmd
+package osutils
 
 import "errors"
 
@@ -22,7 +22,7 @@ func OpenSystemKey(path string) (RegistryKey, error) {
 	return nil, nil
 }
 
-func (c *CmdEnv) propagate() {
+func PropagateEnv() {
 }
 
 func setStringValue(key RegistryKey, name string, valType uint32, value string) error {
