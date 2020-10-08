@@ -25,6 +25,14 @@ func OpenSystemKey(path string) (RegistryKey, error) {
 	return registry.OpenKey(registry.LOCAL_MACHINE, path, registry.ALL_ACCESS)
 }
 
+func CreateUserKey(path string) (RegistryKey, bool, error) {
+	return registry.CreateKey(registry.USERS, path, registry.ALL_ACCESS)
+}
+
+func CreateCurrentUserKey(path string) (RegistryKey, bool, error) {
+	return registry.CreateKey(registry.CURRENT_USER, path, registry.ALL_ACCESS)
+}
+
 func IsNotExistError(err error) bool {
 	return errors.Is(err, registry.ErrNotExist)
 }
