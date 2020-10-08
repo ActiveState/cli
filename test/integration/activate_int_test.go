@@ -239,6 +239,36 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
 	cp.ExpectExitCode(0)
 }
 
+func (suite *ActivateIntegrationTestSuite) TestActivate_Replace() {
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("activate", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work),
+	)
+	cp.Expect("Activating state: ActiveState-CLI/Python3")
+
+	cp.WaitForInput()
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("activate", "ActiveState/ActivePerl-5.26", "--replace"),
+		e2e.WithWorkDirectory(ts.Dirs.Bin),
+	)
+	cp.ExpectLongString("No activestate.yaml file exists in the current working directory or its parent directories.")
+	cp.ExpectExitCode(1)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("activate", "ActiveState/ActivePerl-5.26", "--replace"),
+	)
+	cp.Expect("Activating state: ActiveState/ActivePerl-5.26")
+
+	cp.WaitForInput()
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
+}
+
 func (suite *ActivateIntegrationTestSuite) TestActivate_Subdir() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
