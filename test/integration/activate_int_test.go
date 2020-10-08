@@ -367,3 +367,19 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_Command() {
 func TestActivateIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(ActivateIntegrationTestSuite))
 }
+
+func (suite *ActivateIntegrationTestSuite) TestActivateCommitURL() {
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	// https://platform.activestate.com/ActiveState-CLI/Python3/customize?commitID=fbc613d6-b0b1-4f84-b26e-4aa5869c4e54
+	commitID := "fbc613d6-b0b1-4f84-b26e-4aa5869c4e54"
+	contents := fmt.Sprintf("project: https://platform.activestate.com/commit/%s\n", commitID)
+	ts.PrepareActiveStateYAML(contents)
+
+	// Ensure we have the most up to date version of the project before activating
+	cp := ts.Spawn("activate")
+	cp.Expect("Activating state")
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
+}

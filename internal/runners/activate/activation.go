@@ -66,8 +66,6 @@ func (r *Activate) activateAndWait(proj *project.Project, runtime *runtime.Runti
 		return locale.WrapError(fail, "error_in_active_subshell", "Failure encountered in active subshell")
 	}
 
-	r.out.Notice(locale.T("info_deactivated", proj))
-
 	return nil
 }
 

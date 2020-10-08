@@ -109,13 +109,28 @@ func (r *Activate) run(params *ActivateParams) error {
 	}
 
 	updater.PrintUpdateMessage(proj.Source().Path(), r.out)
-	r.out.Notice(locale.T("info_activating_state", proj))
+
+	if proj.IsHeadless() {
+		r.out.Notice(locale.T("info_activating_state_by_commit"))
+	} else {
+		r.out.Notice(locale.T("info_activating_state", proj))
+	}
 
 	if proj.CommitID() == "" {
 		return errs.New(locale.Tr("err_project_no_commit", model.ProjectURL(proj.Owner(), proj.Name(), "")))
 	}
 
-	return r.activateAndWait(proj, runtime)
+	if err := r.activateAndWait(proj, runtime); err != nil {
+		return locale.WrapError(err, "err_activate_wait", "Could not activate runtime environment.")
+	}
+
+	if proj.IsHeadless() {
+		r.out.Notice(locale.T("info_deactivated_by_commit"))
+	} else {
+		r.out.Notice(locale.T("info_deactivated", proj))
+	}
+
+	return nil
 }
 
 func (r *Activate) pathToUse(namespace string, preferredPath string) (string, error) {

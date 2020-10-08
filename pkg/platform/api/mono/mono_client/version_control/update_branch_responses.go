@@ -47,6 +47,12 @@ func (o *UpdateBranchReader) ReadResponse(response runtime.ClientResponse, consu
 			return nil, err
 		}
 		return nil, result
+	case 409:
+		result := NewUpdateBranchConflict()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
 	case 500:
 		result := NewUpdateBranchInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -165,7 +171,7 @@ func NewUpdateBranchNotFound() *UpdateBranchNotFound {
 
 /*UpdateBranchNotFound handles this case with default header values.
 
-branch was not found
+Branch Not Found
 */
 type UpdateBranchNotFound struct {
 	Payload *mono_models.Message
@@ -180,6 +186,39 @@ func (o *UpdateBranchNotFound) GetPayload() *mono_models.Message {
 }
 
 func (o *UpdateBranchNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(mono_models.Message)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
+		return err
+	}
+
+	return nil
+}
+
+// NewUpdateBranchConflict creates a UpdateBranchConflict with default headers values
+func NewUpdateBranchConflict() *UpdateBranchConflict {
+	return &UpdateBranchConflict{}
+}
+
+/*UpdateBranchConflict handles this case with default header values.
+
+Conflict
+*/
+type UpdateBranchConflict struct {
+	Payload *mono_models.Message
+}
+
+func (o *UpdateBranchConflict) Error() string {
+	return fmt.Sprintf("[PUT /vcs/branch/{branchID}][%d] updateBranchConflict  %+v", 409, o.Payload)
+}
+
+func (o *UpdateBranchConflict) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
+func (o *UpdateBranchConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
 

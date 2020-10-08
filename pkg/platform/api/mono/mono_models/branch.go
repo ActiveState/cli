@@ -44,6 +44,10 @@ type Branch struct {
 	// The branch_id of the branch that this branch tracks
 	// Format: uuid
 	Tracks *strfmt.UUID `json:"tracks,omitempty"`
+
+	// The commit in the upstream branch that this branch forked from
+	// Format: uuid
+	UpstreamCommitID *strfmt.UUID `json:"upstream_commit_id,omitempty"`
 }
 
 // Validate validates this branch
@@ -67,6 +71,10 @@ func (m *Branch) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateTracks(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateUpstreamCommitID(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -168,6 +176,19 @@ func (m *Branch) validateTracks(formats strfmt.Registry) error {
 	}
 
 	if err := validate.FormatOf("tracks", "body", "uuid", m.Tracks.String(), formats); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *Branch) validateUpstreamCommitID(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.UpstreamCommitID) { // not required
+		return nil
+	}
+
+	if err := validate.FormatOf("upstream_commit_id", "body", "uuid", m.UpstreamCommitID.String(), formats); err != nil {
 		return err
 	}
 

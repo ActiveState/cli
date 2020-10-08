@@ -23,6 +23,9 @@ type BranchEditable struct {
 	// Format: uuid
 	CommitID *strfmt.UUID `json:"commitID,omitempty"`
 
+	// The human readable label or name of the branch.
+	Label *string `json:"label,omitempty"`
+
 	// The tracking method used
 	// Enum: [ignore auto_update notify]
 	TrackingType *string `json:"tracking_type,omitempty"`
