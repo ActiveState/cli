@@ -7,7 +7,6 @@ import (
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
-	"github.com/ActiveState/cli/internal/headless"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -49,9 +48,7 @@ func NewActivate(prime primeable, namespaceSelect namespaceSelectAble, activateC
 }
 
 func (r *Activate) Run(params *ActivateParams) error {
-	err := r.run(params, activationLoop)
-	headless.Notify(r.out, r.proj, err, "activate")
-	return err
+	return r.run(params, activationLoop)
 }
 
 func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc) error {
