@@ -1694,6 +1694,6 @@ prepare_instructions_windows:
 prepare_env_warning:
   other: Could not update user environment
 prepare_protocol_warning:
-  other: Could not create state protocol
+  other: Could not add state protocol
 err_package_update_pjfile:
   other: "Coult not update your activestate.yaml with the new commit ID. Please run `state pull` manually."
