@@ -1,5 +1,5 @@
 #!/bin/sh
 
-# State Tool Shim Target: {{.target}}
+# {{.denote}}: {{.languages}}
 
 {{.exe}} shim -- {{.command}} $*

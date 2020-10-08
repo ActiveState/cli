@@ -129,11 +129,11 @@ func (installer *Installer) Assembler() (Assembler, *failures.Failure) {
 
 	switch artifacts.BuildEngine {
 	case Alternative:
-		return NewAlternativeRuntime(artifacts.Artifacts, installer.runtime.RuntimeDir, artifacts.RecipeID)
+		return NewAlternativeRuntime(artifacts.Artifacts, installer.runtime.runtimeDir, artifacts.RecipeID)
 	case Camel:
-		return NewCamelRuntime(installer.runtime.CommitID, artifacts.Artifacts, installer.runtime.RuntimeDir)
+		return NewCamelRuntime(installer.runtime.commitID, artifacts.Artifacts, installer.runtime.runtimeDir)
 	case Hybrid:
-		cr, fail := NewCamelRuntime(installer.runtime.CommitID, artifacts.Artifacts, installer.runtime.RuntimeDir)
+		cr, fail := NewCamelRuntime(installer.runtime.commitID, artifacts.Artifacts, installer.runtime.runtimeDir)
 		if fail != nil {
 			return nil, fail
 		}
@@ -197,11 +197,11 @@ func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGet
 
 // validateCheckpoint tries to see if the checkpoint has any chance of succeeding
 func (installer *Installer) validateCheckpoint() *failures.Failure {
-	if installer.runtime.CommitID == "" {
+	if installer.runtime.commitID == "" {
 		return FailNoCommitID.New("installer_err_runtime_no_commitid")
 	}
 
-	checkpoint, _, fail := model.FetchCheckpointForCommit(installer.runtime.CommitID)
+	checkpoint, _, fail := model.FetchCheckpointForCommit(installer.runtime.commitID)
 	if fail != nil {
 		return fail
 	}
@@ -249,7 +249,7 @@ func (installer *Installer) InstallFromArchive(archivePath string, artf *HeadChe
 		return fail
 	}
 
-	installDir := installer.runtime.RuntimeDir
+	installDir := installer.runtime.runtimeDir
 	tmpRuntimeDir, upb, fail := installer.unpackArchive(a.Unarchiver(), archivePath, installDir, progress)
 	if fail != nil {
 		removeInstallDir(installDir)

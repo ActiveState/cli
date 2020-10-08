@@ -18,24 +18,26 @@ import (
 )
 
 type Runtime struct {
-	RuntimeDir  string
-	CommitID    strfmt.UUID
-	Owner       string
-	ProjectName string
+	runtimeDir  string
+	commitID    strfmt.UUID
+	owner       string
+	projectName string
 	msgHandler  MessageHandler
 }
 
 func NewRuntime(commitID strfmt.UUID, owner string, projectName string, msgHandler MessageHandler) *Runtime {
-	return &Runtime{InstallPath(owner, projectName), commitID, owner, projectName, msgHandler}
-}
-
-func InstallPath(owner, projectName string) string {
+	var installPath string
 	if runtime.GOOS == "darwin" {
 		// mac doesn't use relocation so we can safely use a longer path
-		return filepath.Join(config.CachePath(), owner, projectName)
+		installPath = filepath.Join(config.CachePath(), owner, projectName)
 	} else {
-		return filepath.Join(config.CachePath(), hash.ShortHash(owner, projectName))
+		installPath = filepath.Join(config.CachePath(), hash.ShortHash(owner, projectName))
 	}
+	return &Runtime{installPath, commitID, owner, projectName, msgHandler}
+}
+
+func (r *Runtime) InstallPath() string {
+	return r.runtimeDir
 }
 
 // Env will grab the environment information for the given runtime.

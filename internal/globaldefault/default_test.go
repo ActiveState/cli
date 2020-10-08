@@ -9,6 +9,8 @@ import (
 	"testing"
 
 	"github.com/autarch/testify/require"
+
+	"github.com/ActiveState/cli/internal/exeutils"
 )
 
 func Test_uniqueExes(t *testing.T) {
@@ -51,7 +53,7 @@ func Test_uniqueExes(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := UniqueExes(tt.bins, tt.pathext)
+			got, err := exeutils.UniqueExes(tt.bins, tt.pathext)
 			if err != nil {
 				t.Errorf("uniqueExes error: %v", err)
 				t.FailNow()

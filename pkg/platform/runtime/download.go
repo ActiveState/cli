@@ -101,12 +101,12 @@ func NewDownload(runtime *Runtime) Downloader {
 
 // fetchRecipe juggles API's to get the build request that can be sent to the head-chef
 func (r *Download) fetchRecipeID() (strfmt.UUID, *failures.Failure) {
-	commitID := r.runtime.CommitID
+	commitID := r.runtime.commitID
 	if commitID == "" {
 		return "", FailNoCommit.New(locale.T("err_no_commit"))
 	}
 
-	recipeID, fail := model.FetchRecipeIDForCommitAndPlatform(commitID, r.runtime.Owner, r.runtime.ProjectName, r.orgID, r.private, model.HostPlatform)
+	recipeID, fail := model.FetchRecipeIDForCommitAndPlatform(commitID, r.runtime.owner, r.runtime.projectName, r.orgID, r.private, model.HostPlatform)
 	if fail != nil {
 		return "", fail
 	}
@@ -117,7 +117,7 @@ func (r *Download) fetchRecipeID() (strfmt.UUID, *failures.Failure) {
 // FetchArtifacts will retrieve artifact information from the head-chef (eg language installers)
 // The first return argument specifies whether we are dealing with an alternative build
 func (r *Download) FetchArtifacts() (*FetchArtifactsResult, *failures.Failure) {
-	platProject, fail := model.FetchProjectByName(r.runtime.Owner, r.runtime.ProjectName)
+	platProject, fail := model.FetchProjectByName(r.runtime.owner, r.runtime.projectName)
 	if fail != nil {
 		return nil, fail
 	}
@@ -148,8 +148,8 @@ func (r *Download) fetchArtifacts(commitID, recipeID strfmt.UUID, platProject *m
 
 	buildAnnotations := headchef.BuildAnnotations{
 		CommitID:     commitID.String(),
-		Project:      r.runtime.ProjectName,
-		Organization: r.runtime.Owner,
+		Project:      r.runtime.projectName,
+		Organization: r.runtime.owner,
 	}
 
 	logging.Debug("sending request to head-chef")
@@ -187,8 +187,8 @@ func (r *Download) fetchArtifacts(commitID, recipeID strfmt.UUID, platProject *m
 		case resp := <-buildStatus.Started:
 			logging.Debug("BuildStarted")
 			namespaced := project.Namespaced{
-				Owner:   r.runtime.Owner,
-				Project: r.runtime.ProjectName,
+				Owner:   r.runtime.owner,
+				Project: r.runtime.projectName,
 			}
 			analytics.EventWithLabel(
 				analytics.CatBuild, analytics.ActBuildProject, namespaced.String(),
@@ -231,7 +231,7 @@ func (r *Download) waitForArtifacts(recipeID strfmt.UUID) error {
 
 func (r *Download) projectURL() string {
 	url := api.GetServiceURL(api.ServiceHeadChef)
-	url.Path = path.Join(r.runtime.Owner, r.runtime.ProjectName)
+	url.Path = path.Join(r.runtime.owner, r.runtime.projectName)
 	return url.String()
 }
 

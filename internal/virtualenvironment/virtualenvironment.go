@@ -75,7 +75,10 @@ func (v *VirtualEnvironment) OnUseCache(f func()) { v.onUseCache = f }
 
 // Setup sets up a runtime environment that is fully functional.
 func (v *VirtualEnvironment) Setup(installIfNecessary bool) *failures.Failure {
-
+	logging.Debug("Setting up virtual Environment")
+	if strings.ToLower(os.Getenv(constants.DisableRuntime)) == "true" {
+		return nil
+	}
 	if installIfNecessary {
 		installer := runtime.NewInstaller(v.runtime)
 		_, installed, fail := installer.Install()
