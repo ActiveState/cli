@@ -42,7 +42,7 @@ func (p *Protocol) Run(params Params) error {
 		return locale.WrapError(fail, "err_protocol_namespace", "{{.V0}} is not a valid namespace", trimmedPath)
 	}
 
-	if parsed.Fragment != "" && parsed.Fragment != "replace" {
+	if parsed.Fragment == "" || parsed.Fragment != "replace" {
 		return locale.NewError("err_protocol_flag", "Invalid URL fragment, the only supported URL fragment is 'replace'")
 	}
 
