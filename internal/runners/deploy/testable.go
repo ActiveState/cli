@@ -20,8 +20,7 @@ type newInstallerFunc func(rt *runtime.Runtime) installable
 
 // newInstaller wraps runtime.newInstaller so we can modify the return types
 func newInstaller(rt *runtime.Runtime) installable {
-	installable := runtime.NewInstaller(rt)
-	return installable
+	return runtime.NewInstaller(rt)
 }
 
 // defaultBranchForProjectNameFunc defines a testable type for model.DefaultBranchForProjectName

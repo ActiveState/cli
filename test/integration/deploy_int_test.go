@@ -217,7 +217,10 @@ func (suite *DeployIntegrationTestSuite) TestDeployInstall() {
 }
 
 func (suite *DeployIntegrationTestSuite) InstallAndAssert(ts *e2e.Session) {
-	cp := ts.Spawn("deploy", "install", "ActiveState-CLI/Python3", "--path", filepath.Join(ts.Dirs.Work, "target"))
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("deploy", "install", "ActiveState-CLI/Python3", "--path", filepath.Join(ts.Dirs.Work, "target")),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
 
 	cp.Expect("Installing Runtime")
 	cp.Expect("Downloading")
@@ -230,12 +233,14 @@ func (suite *DeployIntegrationTestSuite) TestDeployConfigure() {
 	if !e2e.RunningOnCI() {
 		suite.T().Skipf("Skipping TestDeployConfigure when not running on CI, as it modifies bashrc/registry")
 	}
-
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	// Install step is required
-	cp := ts.Spawn("deploy", "configure", "ActiveState-CLI/Python3", "--path", filepath.Join(ts.Dirs.Work, "target"))
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("deploy", "configure", "ActiveState-CLI/Python3", "--path", filepath.Join(ts.Dirs.Work, "target")),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
 	cp.Expect("need to run the install step")
 	cp.ExpectExitCode(1)
 	suite.InstallAndAssert(ts)
@@ -244,9 +249,13 @@ func (suite *DeployIntegrationTestSuite) TestDeployConfigure() {
 		cp = ts.SpawnWithOpts(
 			e2e.WithArgs("deploy", "configure", "ActiveState-CLI/Python3", "--path", filepath.Join(ts.Dirs.Work, "target")),
 			e2e.AppendEnv("SHELL=bash"),
+			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 		)
 	} else {
-		cp = ts.Spawn("deploy", "configure", "ActiveState-CLI/Python3", "--path", filepath.Join(ts.Dirs.Work, "target"))
+		cp = ts.SpawnWithOpts(
+			e2e.WithArgs("deploy", "configure", "ActiveState-CLI/Python3", "--path", filepath.Join(ts.Dirs.Work, "target")),
+			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		)
 	}
 
 	cp.Expect("Configuring shell", 60*time.Second)
@@ -254,7 +263,10 @@ func (suite *DeployIntegrationTestSuite) TestDeployConfigure() {
 	suite.AssertConfig(ts)
 
 	if runtime.GOOS == "windows" {
-		cp = ts.Spawn("deploy", "configure", "ActiveState-CLI/Python3", "--path", filepath.Join(ts.Dirs.Work, "target"), "--user")
+		cp = ts.SpawnWithOpts(
+			e2e.WithArgs("deploy", "configure", "ActiveState-CLI/Python3", "--path", filepath.Join(ts.Dirs.Work, "target"), "--user"),
+			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		)
 		cp.Expect("Configuring shell", 60*time.Second)
 		cp.ExpectExitCode(0)
 
@@ -291,7 +303,10 @@ func (suite *DeployIntegrationTestSuite) TestDeploySymlink() {
 	defer ts.Close()
 
 	// Install step is required
-	cp := ts.Spawn("deploy", "symlink", "ActiveState-CLI/Python3", "--path", filepath.Join(ts.Dirs.Work, "target"))
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("deploy", "symlink", "ActiveState-CLI/Python3", "--path", filepath.Join(ts.Dirs.Work, "target")),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
 	cp.Expect("need to run the install step")
 	cp.ExpectExitCode(1)
 	suite.InstallAndAssert(ts)
@@ -299,10 +314,12 @@ func (suite *DeployIntegrationTestSuite) TestDeploySymlink() {
 	if runtime.GOOS != "darwin" {
 		cp = ts.SpawnWithOpts(
 			e2e.WithArgs("deploy", "symlink", "ActiveState-CLI/Python3", "--path", filepath.Join(ts.Dirs.Work, "target")),
+			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 		)
 	} else {
 		cp = ts.SpawnWithOpts(
 			e2e.WithArgs("deploy", "symlink", "ActiveState-CLI/Python3", "--path", filepath.Join(ts.Dirs.Work, "target"), "--force"),
+			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 		)
 	}
 
@@ -319,12 +336,18 @@ func (suite *DeployIntegrationTestSuite) TestDeployReport() {
 	defer ts.Close()
 
 	// Install step is required
-	cp := ts.Spawn("deploy", "report", "ActiveState-CLI/Python3", "--path", filepath.Join(ts.Dirs.Work, "target"))
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("deploy", "report", "ActiveState-CLI/Python3", "--path", filepath.Join(ts.Dirs.Work, "target")),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
 	cp.Expect("need to run the install step")
 	cp.ExpectExitCode(1)
 	suite.InstallAndAssert(ts)
 
-	cp = ts.Spawn("deploy", "report", "ActiveState-CLI/Python3", "--path", filepath.Join(ts.Dirs.Work, "target"))
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("deploy", "report", "ActiveState-CLI/Python3", "--path", filepath.Join(ts.Dirs.Work, "target")),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
 	cp.Expect("Deployment Information")
 	cp.Expect(filepath.Join(ts.Dirs.Work, "target")) // expect bin dir
 	if runtime.GOOS == "windows" {
@@ -350,6 +373,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployTwice() {
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("deploy", "symlink", "ActiveState-CLI/Python3", "--path", filepath.Join(ts.Dirs.Work, "target")),
 		e2e.AppendEnv(fmt.Sprintf("PATH=%s", pathDir)), // Avoid conflicts
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.ExpectExitCode(0)
 
@@ -362,6 +386,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployTwice() {
 	cpx := ts.SpawnWithOpts(
 		e2e.WithArgs("deploy", "symlink", "ActiveState-CLI/Python3", "--path", filepath.Join(ts.Dirs.Work, "target")),
 		e2e.AppendEnv(fmt.Sprintf("PATH=%s", pathDir)), // Avoid conflicts
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cpx.ExpectExitCode(0)
 }

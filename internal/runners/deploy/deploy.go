@@ -78,7 +78,7 @@ func (d *Deploy) Run(params *Params) error {
 	}
 
 	targetPath := params.Path
-	runtime, installer, err := d.createRuntimeInstaller(params.Namespace)
+	runtime, installer, err := d.createRuntimeInstaller(params.Namespace, targetPath)
 	if err != nil {
 		return locale.WrapError(
 			err, "err_deploy_create_install",
@@ -88,7 +88,7 @@ func (d *Deploy) Run(params *Params) error {
 	return runSteps(targetPath, params.Force, params.UserScope, params.Namespace, d.step, runtime, installer, d.output, d.subshell)
 }
 
-func (d *Deploy) createRuntimeInstaller(namespace project.Namespaced) (*runtime.Runtime, installable, error) {
+func (d *Deploy) createRuntimeInstaller(namespace project.Namespaced, targetPath string) (*runtime.Runtime, installable, error) {
 	commitID := namespace.CommitID
 	if commitID == nil {
 		branch, fail := d.DefaultBranchForProjectName(namespace.Owner, namespace.Project)
@@ -106,6 +106,7 @@ func (d *Deploy) createRuntimeInstaller(namespace project.Namespaced) (*runtime.
 	}
 
 	runtime := runtime.NewRuntime(*commitID, namespace.Owner, namespace.Project, runbits.NewRuntimeMessageHandler(d.output))
+	runtime.SetInstallPath(targetPath)
 	return runtime, d.NewRuntimeInstaller(runtime), nil
 }
 

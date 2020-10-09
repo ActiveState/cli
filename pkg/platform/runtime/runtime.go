@@ -15,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/hash"
 	"github.com/ActiveState/cli/internal/language"
+	"github.com/ActiveState/cli/internal/logging"
 )
 
 type Runtime struct {
@@ -37,6 +38,7 @@ func NewRuntime(commitID strfmt.UUID, owner string, projectName string, msgHandl
 }
 
 func (r *Runtime) SetInstallPath(installPath string) {
+	logging.Debug("SetInstallPath: %s", installPath)
 	r.runtimeDir = installPath
 }
 
