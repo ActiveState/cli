@@ -37,7 +37,7 @@ ARCH="amd64"
 NOPROMPT=false
 FORCEOVERWRITE=false
 
-if [ -z "${TERM}" ] || [ "${TERM}" == "dumb" ]; then
+if [ -z "${TERM}" ] || [ "${TERM}" = "dumb" ]; then
   OUTPUT_BOLD=""
   OUTPUT_WARN=""
   OUTPUT_ERROR=""
@@ -246,7 +246,7 @@ INSTALLDIR="`dirname \`which $STATEEXE\` 2>/dev/null`"
 # - FORCEOVERWRITE is specified OR
 # - a TARGET directory is specified that differs from INSTALLDIR
 if [ ! -z "$INSTALLDIR" ] && ( ! $FORCEOVERWRITE ) && ( \
-      [ -z $TARGET ] || [ $TARGET == $INSTALLDIR ] \
+      [ -z $TARGET ] || [ "$TARGET" = "$INSTALLDIR" ] \
    ); then
   warn "Previous installation detected at $INSTALLDIR"
   echo "To update the State Tool to the latest version, please run 'state update'."
@@ -346,26 +346,12 @@ manual_installation_instructions() {
   echo "You can update your \$PATH by running 'export PATH=\$PATH:$INSTALLDIR'."
   echo "To make the changes to your path permanent please add the line"
   echo "'export PATH=\$PATH:$INSTALLDIR' to your $RC_FILE file"
-  activation_warning
-  exit 0
 }
 
 manual_update_instructions() {
   info "State Tool installation complete."
   echo "Please either run 'source $RC_FILE' or start a new login shell in "
   echo "order to start using the '$STATEEXE' program."
-  activation_warning
-  exit 0
-}
-
-# Prints a warning if an activation was requested and State Tool is not in the PATH
-activation_warning() {
-  if [ -n "$ACTIVATE" ]; then
-    echo
-    warn "Cannot activate ${ACTIVATE} yet."
-    echo "In order to activate a project, the State Tool needs to be installed in your PATH first."
-    echo "To manually activate the project run 'state activate ${ACTIVATE}' once 'state' is on your PATH"
-  fi
 }
 
 update_rc_file() {
@@ -387,22 +373,14 @@ STATEPATH=$INSTALLDIR/$STATEEXE
 CONFIGDIR=$($STATEPATH "export" "config" "--filter=dir")
 echo "install.sh" > $CONFIGDIR/"installsource.txt"
 
+$STATEPATH _prepare || exit $?
+
 # Check if the installation is in $PATH, if so we also check if the activate
 # flag was passed and attempt to activate the project
 if [ "`dirname \`which $STATEEXE\` 2>/dev/null`" = "$INSTALLDIR" ]; then
   info "State Tool installation complete."
-
-  $STATEEXE _prepare || exit $?
-
-  if [ -n "${ACTIVATE}" ]; then
-    # switch this shell to interactive mode
-    set -i
-    # control flow of this script ends with this line: replace the shell with the activated project's shell
-    exec $STATEEXE activate ${ACTIVATE}
-  fi
-  info "You may now start using the '$STATEEXE' program."
-  exit 0
 fi
+
 
 if $NOPROMPT; then
   update_rc_file
@@ -419,3 +397,11 @@ else
     manual_update_instructions
   fi
 fi
+
+if [ -n "${ACTIVATE}" ]; then
+  # switch this shell to interactive mode
+  set -i
+  # control flow of this script ends with this line: replace the shell with the activated project's shell
+  exec $STATEPATH activate ${ACTIVATE}
+fi
+info "You may now start using the '$STATEEXE' program."
