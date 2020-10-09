@@ -35,6 +35,7 @@ func (suite *DeployIntegrationTestSuite) deploy(ts *e2e.Session, prj string) {
 	case "windows":
 		cp = ts.SpawnWithOpts(
 			e2e.WithArgs("deploy", prj, "--path", filepath.Join(ts.Dirs.Work, "target")),
+			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 		)
 	case "darwin":
 		// On MacOS the command is the same as Linux, however some binaries
