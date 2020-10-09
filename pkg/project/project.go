@@ -195,22 +195,25 @@ type urlMeta struct {
 	commitID string
 }
 
-func parseURL(url string) (*urlMeta, *failures.Failure) {
+func parseURL(url string) (urlMeta, *failures.Failure) {
 	fail := projectfile.ValidateProjectURL(url)
 	if fail != nil {
-		return nil, fail
+		return urlMeta{}, fail
 	}
-	match := projectfile.ProjectURLRe.FindStringSubmatch(url)
+
+	match := projectfile.CommitURLRe.FindStringSubmatch(url)
+	if len(match) > 1 {
+		parts := urlMeta{"", "", match[1]}
+		return parts, nil
+	}
+
+	match = projectfile.ProjectURLRe.FindStringSubmatch(url)
 	parts := urlMeta{match[1], match[2], ""}
 	if len(match) == 4 {
 		parts.commitID = match[3]
 	}
 
-	// For headless commits, owner == commit, and name == commitID
-	if parts.owner == "commit" {
-		parts.commitID = parts.name
-	}
-	return &parts, nil
+	return parts, nil
 }
 
 // Owner returns project owner
@@ -244,6 +247,11 @@ func (p *Project) CommitUUID() (*strfmt.UUID, error) {
 	}
 
 	return &uuid, nil
+}
+
+func (p *Project) IsHeadless() bool {
+	match := projectfile.CommitURLRe.FindStringSubmatch(p.URL())
+	return len(match) > 1
 }
 
 // NormalizedName returns the project name in a normalized format (alphanumeric, lowercase)

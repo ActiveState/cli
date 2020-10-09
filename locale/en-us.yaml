@@ -106,6 +106,8 @@ info_reactivating:
   other: "[BLUE]Reactivating state[/RESET]"
 info_deactivated:
   other: "[BLUE]Deactivated {{.Owner}}/{{.Name}}[/RESET]"
+info_deactivated_by_commit:
+  other: "[BLUE]Deactivated[/RESET]"
 venv_installer_is_nil:
   other: Provided installer should not be nil
 error_unsupported_language:
@@ -160,6 +162,8 @@ err_invalid_status_code:
   other: "Invalid status code: {{.V0}}"
 info_activating_state:
   other: "[BLUE]Activating state: {{.Owner}}/{{.Name}}[/RESET]"
+info_activating_state_by_commit:
+  other: "[BLUE]Activating state[/RESET]"
 info_state_active_repoexists:
   other: "Repo already exists: {{.Path}}"
 panic_couldnt_detect_wd:
@@ -1687,6 +1691,16 @@ ppm_convert_ask_feedback:
 windows_compatibility_warning:
   other: |
     Warning: State Tool is untested on Windows versions below 10. If you encounter issues please consider reporting them on {{.V0}}
+shim_description:
+  other: Intercept and run a script via the State Tool
+flag_state_shim_language:
+  other: language
+flag_state_shim_language_description:
+  other: The language to run the script with
+args_state_shim_script:
+  other: Script
+args_state_shim_script_description:
+  other: The script to be run
 artifact_started:
   other: "Build Starting Remotely: {{.V0}}"
 artifact_started_cached:

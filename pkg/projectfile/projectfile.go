@@ -67,10 +67,17 @@ var (
 	FailProjectFileRoot = failures.Type("projectfile.fail.projectfileroot", failures.FailNonFatal)
 )
 
-var strReg = fmt.Sprintf(`https:\/\/%s\/([\w_.-]*)\/([\w_.-]*)(?:\?commitID=)*(.*)`, strings.Replace(constants.PlatformURL, ".", "\\.", -1))
+var (
+	regexPlatformURL = strings.Replace(constants.PlatformURL, ".", "\\.", -1)
 
-// ProjectURLRe Regex used to validate project fields /orgname/projectname[?commitID=someUUID]
-var ProjectURLRe = regexp.MustCompile(strReg)
+	urlProjectRegexStr = fmt.Sprintf(`https:\/\/%s\/([\w_.-]*)\/([\w_.-]*)(?:\?commitID=)*(.*)`, regexPlatformURL)
+	urlCommitRegexStr  = fmt.Sprintf(`https:\/\/%s\/commit\/(.*)`, regexPlatformURL)
+
+	// ProjectURLRe Regex used to validate project fields /orgname/projectname[?commitID=someUUID]
+	ProjectURLRe = regexp.MustCompile(urlProjectRegexStr)
+	// CommitURLRe Regex used to validate commit info /commit/someUUID
+	CommitURLRe = regexp.MustCompile(urlCommitRegexStr)
+)
 
 var projectMapMutex = &sync.Mutex{}
 

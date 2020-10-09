@@ -24,6 +24,7 @@ func autoUpdate(args []string, out output.Outputer, pjPath string) (bool, int, e
 	testsAreRunning := condition.InTest()
 
 	if testsAreRunning || updateIsRunning || disableAutoUpdate || disableAutoUpdateCauseCI || !exeOverDayOld() {
+		logging.Debug("Not running auto updates")
 		return false, 0, nil
 	}
 

@@ -29,6 +29,12 @@ func (o *GetCommitHistoryReader) ReadResponse(response runtime.ClientResponse, c
 			return nil, err
 		}
 		return result, nil
+	case 403:
+		result := NewGetCommitHistoryForbidden()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
 	case 404:
 		result := NewGetCommitHistoryNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -71,6 +77,39 @@ func (o *GetCommitHistoryOK) GetPayload() *mono_models.CommitHistoryInfo {
 func (o *GetCommitHistoryOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.CommitHistoryInfo)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
+		return err
+	}
+
+	return nil
+}
+
+// NewGetCommitHistoryForbidden creates a GetCommitHistoryForbidden with default headers values
+func NewGetCommitHistoryForbidden() *GetCommitHistoryForbidden {
+	return &GetCommitHistoryForbidden{}
+}
+
+/*GetCommitHistoryForbidden handles this case with default header values.
+
+Forbidden
+*/
+type GetCommitHistoryForbidden struct {
+	Payload *mono_models.Message
+}
+
+func (o *GetCommitHistoryForbidden) Error() string {
+	return fmt.Sprintf("[GET /vcs/history/{commitID}][%d] getCommitHistoryForbidden  %+v", 403, o.Payload)
+}
+
+func (o *GetCommitHistoryForbidden) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
+func (o *GetCommitHistoryForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

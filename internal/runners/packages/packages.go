@@ -50,16 +50,19 @@ func executePackageOperation(out output.Outputer, prompt prompt.Prompter, langua
 	}
 
 	// Verify that the provided package actually exists (the vcs API doesn't care)
+	ingredientNamespace := ""
 	var err error
 	if operation != model.OperationRemoved {
+		var ingredient *model.IngredientAndVersion
 		if version == "" {
-			_, err = model.IngredientWithLatestVersion(language, name)
+			ingredient, err = model.IngredientWithLatestVersion(language, name)
 		} else {
-			_, err = model.IngredientByNameAndVersion(language, name, version)
+			ingredient, err = model.IngredientByNameAndVersion(language, name, version)
 		}
 		if err != nil {
 			return locale.WrapError(err, "package_ingredient_err", "Failed to resolve an ingredient named {{.V0}}.", name)
 		}
+		ingredientNamespace = ingredient.Namespace
 	}
 
 	pj := project.Get()
@@ -71,13 +74,13 @@ func executePackageOperation(out output.Outputer, prompt prompt.Prompter, langua
 		}
 
 		var fail *failures.Failure
-		commitID, fail = model.CommitPackage(*parentCommitID, operation, name, version)
+		commitID, fail = model.CommitPackage(*parentCommitID, operation, name, ingredientNamespace, version)
 		if fail != nil {
 			return locale.WrapError(fail.ToError(), "err_package_"+operationStr)
 		}
 	} else {
 		var fail *failures.Failure
-		commitID, fail = model.CommitPackageInBranch(pj.Owner(), pj.Name(), operation, name, version)
+		commitID, fail = model.CommitPackageInBranch(pj.Owner(), pj.Name(), operation, ingredientNamespace, name, version)
 		if fail != nil {
 			return fail.WithDescription("err_package_" + string(operation)).ToError()
 		}

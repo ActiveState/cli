@@ -64,14 +64,25 @@ const (
 	// NamespaceLanguageMatch is the namespace used for language requirements
 	NamespaceLanguageMatch = `^language$`
 
-	// NamespacePackageMatch is the namespace used for package requirements
+	// NamespacePackageMatch is the namespace used for language package requirements
 	NamespacePackageMatch = `^language\/\w+$`
+
+	// NamespaceBundlesMatch is the namespace used for bundle package requirements
+	NamespaceBundlesMatch = `^bundles\/\w+$`
 
 	// NamespacePrePlatformMatch is the namespace used for pre-platform bits
 	NamespacePrePlatformMatch = `^pre-platform-installer$`
 
 	// NamespaceCamelFlagsMatch is the namespace used for passing camel flags
 	NamespaceCamelFlagsMatch = `^camel-flags$`
+)
+
+const (
+	// PackageNamespacePrefix is the namespace prefix for packages
+	PackageNamespacePrefix = "language"
+
+	// BundlesNamespacePrefix is the namespace prefix for bundles
+	BundlesNamespacePrefix = "bundles"
 )
 
 // NamespaceMatch Checks if the given namespace query matches the given namespace
@@ -89,6 +100,11 @@ type Namespace string
 // NamespacePackage creates a new package namespace
 func NamespacePackage(language string) Namespace {
 	return Namespace(fmt.Sprintf("language/%s", language))
+}
+
+// NamespaceBundles creates a new bundles namespace
+func NamespaceBundles(language string) Namespace {
+	return Namespace(fmt.Sprintf("bundles/%s", language))
 }
 
 // NamespaceLanguage provides the base language namespace.
@@ -243,7 +259,7 @@ func UpdateBranchCommit(branchID strfmt.UUID, commitID strfmt.UUID) *failures.Fa
 }
 
 // CommitPackage commits a package to an existing parent commit
-func CommitPackage(parentCommitID strfmt.UUID, operation Operation, packageName, packageVersion string) (strfmt.UUID, *failures.Failure) {
+func CommitPackage(parentCommitID strfmt.UUID, operation Operation, packageName, packageNamespace, packageVersion string) (strfmt.UUID, *failures.Failure) {
 	var commitID strfmt.UUID
 	languages, fail := FetchLanguagesForCommit(parentCommitID)
 	if fail != nil {
@@ -264,9 +280,16 @@ func CommitPackage(parentCommitID strfmt.UUID, operation Operation, packageName,
 		message = "commit_message_removed_package"
 	}
 
-	commit, fail := AddCommit(parentCommitID, locale.Tr(message, packageName, packageVersion),
-		operation, NamespacePackage(languages[0].Name),
-		packageName, packageVersion)
+	namespace := NamespacePackage(languages[0].Name)
+	if packageNamespace == BundlesNamespacePrefix {
+		namespace = NamespaceBundles(languages[0].Name)
+	}
+
+	commit, fail := AddCommit(
+		parentCommitID, locale.Tr(message, packageName, packageVersion),
+		operation, namespace,
+		packageName, packageVersion,
+	)
 	if fail != nil {
 		return commitID, fail
 	}
@@ -274,8 +297,8 @@ func CommitPackage(parentCommitID strfmt.UUID, operation Operation, packageName,
 }
 
 // CommitPackageInBranch commits a single package commit and updates the project's VCS branch
-func CommitPackageInBranch(projectOwner, projectName string, operation Operation, packageName, packageVersion string) (strfmt.UUID, *failures.Failure) {
-	var commitID strfmt.UUID
+func CommitPackageInBranch(projectOwner, projectName string, operation Operation, packageName, packageNamespace, packageVersion string) (strfmt.UUID, *failures.Failure) {
+	commitID := strfmt.UUID("")
 	proj, fail := FetchProjectByName(projectOwner, projectName)
 	if fail != nil {
 		return commitID, fail
@@ -290,7 +313,7 @@ func CommitPackageInBranch(projectOwner, projectName string, operation Operation
 		return commitID, FailNoCommit.New(locale.T("err_project_no_languages"))
 	}
 
-	commitID, fail = CommitPackage(*branch.CommitID, operation, packageName, packageVersion)
+	commitID, fail = CommitPackage(*branch.CommitID, operation, packageName, packageVersion, packageNamespace)
 
 	fail = UpdateBranchCommit(branch.BranchID, commitID)
 	if fail != nil {
