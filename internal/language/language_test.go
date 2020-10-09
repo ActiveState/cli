@@ -116,3 +116,59 @@ func TestRecognizedSupporteds(t *testing.T) {
 		assert.NotEmpty(t, l.Executable().Name())
 	}
 }
+
+func TestMakeByNameAndVersion(t *testing.T) {
+	type args struct {
+		name    string
+		version string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    Language
+		wantErr bool
+	}{
+		{
+			"Valid Python3 version",
+			args{"python", "3.6.6"},
+			Python3,
+			false,
+		},
+		{
+			"Valid Python2 version",
+			args{"python", "2.7.18"},
+			Python2,
+			false,
+		},
+		{
+			"Valid Python2 invalid patch",
+			args{"python", "2.7.18.1"},
+			Python2,
+			false,
+		},
+		{
+			"Invalid version",
+			args{"python", ""},
+			Unknown,
+			true,
+		},
+		{
+			"Valid Perl version",
+			args{"perl", "5.28.1"},
+			Perl,
+			false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := MakeByNameAndVersion(tt.args.name, tt.args.version)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("MakeByNameAndVersion() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("MakeByNameAndVersion() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
