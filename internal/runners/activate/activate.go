@@ -92,23 +92,10 @@ func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc)
 	}
 
 	projectPath := filepath.Dir(projectToUse.Source().Path())
-
 	names := params.Namespace
-	if params.Replace {
-		if names.CommitID == nil || *names.CommitID == "" {
-			latestID, fail := model.LatestCommitID(names.Owner, names.Project)
-			if fail != nil {
-				return locale.WrapInputError(fail.ToError(), "err_set_namespace_retrieve_commit", "Could not retrieve the latest commit for the specified project {{.V0}}.", names.String())
-			}
-			names.CommitID = latestID
-		}
-		err := projectToUse.Source().SetNamespaceAndCommit(names.Owner, names.Project, names.CommitID.String())
-		if err != nil {
-			return locale.WrapError(err, "err_activate_replace_write_commit", "Failed to write new namespace to activestate.yaml.")
-		}
-	} else {
+	if !params.Replace {
 		var fail *failures.Failure
-		names, fail = project.ParseNamespaceOrConfigfile(params.Namespace.String(), filepath.Join(projectPath, constants.ConfigFileName))
+		names, fail = project.ParseNamespaceOrConfigfile(names.String(), filepath.Join(projectPath, constants.ConfigFileName))
 		if fail != nil {
 			names = &project.Namespaced{}
 			logging.Debug("error resolving namespace: %v", fail.ToError())
@@ -116,6 +103,11 @@ func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc)
 	}
 	// Send google analytics event with label set to project namespace
 	analytics.EventWithLabel(analytics.CatRunCmd, "activate", names.String())
+
+	// on --replace, replace namespace and commit id in as.yaml
+	if params.Replace {
+		updateProjectFile(projectToUse.Source(), names)
+	}
 
 	// If we're not using plain output then we should just dump the environment information
 	if r.out.Type() != output.PlainFormatName {
@@ -139,6 +131,26 @@ func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc)
 	}
 
 	return activatorLoop(r.out, r.subshell, projectPath, activate)
+}
+
+func updateProjectFile(prjFile *projectfile.Project, names *project.Namespaced) error {
+	if names.CommitID == nil || *names.CommitID == "" {
+		latestID, fail := model.LatestCommitID(names.Owner, names.Project)
+		if fail != nil {
+			return locale.WrapInputError(fail.ToError(), "err_set_namespace_retrieve_commit", "Could not retrieve the latest commit for the specified project {{.V0}}.", names.String())
+		}
+		names.CommitID = latestID
+	}
+
+	err := prjFile.SetNamespace(names.String())
+	if err != nil {
+		return locale.WrapError(err, "err_activate_replace_write_namespace", "Failed to write new namespace to activestate.yaml.")
+	}
+	fail := prjFile.SetCommit(names.CommitID.String())
+	if fail != nil {
+		return locale.WrapError(fail.ToError(), "err_activate_replace_write_commit", "Failed to write commitID to activestate.yaml.")
+	}
+	return nil
 }
 
 func (r *Activate) pathToUse(namespace string, preferredPath string) (string, error) {

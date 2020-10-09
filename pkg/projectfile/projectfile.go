@@ -614,30 +614,25 @@ func (p *Project) save(path string) *failures.Failure {
 	return nil
 }
 
-func (p *Project) SetNamespaceAndCommit(owner, project, commitID string) error {
+func (p *Project) SetNamespace(namespace string) error {
 	data, err := ioutil.ReadFile(p.path)
 	if err != nil {
-		return err
+		return errs.Wrap(err, "Failed to read project file %s.", p.path)
 	}
 
-	namespace := fmt.Sprintf("%s/%s", owner, project)
-
-	if commitID == "" {
-		return errs.New("commitID must not be empty")
-	}
-	commitQryParam := []byte(fmt.Sprintf("project: https://%s/%s?commitID=%s", constants.DefaultAPIHost, namespace, commitID))
-
-	out := setCommitRE.ReplaceAll(data, commitQryParam)
-	if !strings.Contains(string(out), commitID) {
-		return locale.NewError(
-			"err_set_namespace_and_commit_id", "Failed to set namespace {{.V0}} in activestate.yaml.", namespace)
+	out, err := setNamespaceInYAML(data, namespace)
+	if err != nil {
+		return errs.Wrap(err, "Failed to update namespace in project file.")
 	}
 
 	if err := ioutil.WriteFile(p.path, out, 0664); err != nil {
-		return failures.FailOS.Wrap(err)
+		return errs.Wrap(err, "Failed to write project file %s", p.path)
 	}
 
-	Reset()
+	fail := p.Reload()
+	if fail != nil {
+		return errs.Wrap(fail.ToError(), "Failed to reload updated projectfile.")
+	}
 	return nil
 }
 
@@ -662,18 +657,31 @@ func (p *Project) SetCommit(commitID string) *failures.Failure {
 }
 
 var (
-	// regex captures from "project:" (at start of line) to last "/" and
-	// everything after until a "?" or newline is reached. Everything after
-	// that is targeted, but not captured so that only the first capture
-	// group can be used in the replace value.
-	setCommitRE = regexp.MustCompile(`(?m:^(project:.*\/[^?\r\n]*).*)`)
+	// regex captures three groups:
+	// 1. from "project:" (at start of line) to protocol ("https://")
+	// 2. the domain name
+	// 3. the url part until a "?" or newline is reached.
+	// Everything after that is targeted, but not captured so that only the first three capture
+	// groups can be used in the replace value.
+	setCommitRE = regexp.MustCompile(`(?m:^(project: *https?:\/\/)([^\/]*\/)(.*\/[^?\r\n]*).*)`)
 )
+
+func setNamespaceInYAML(data []byte, namespace string) ([]byte, error) {
+	commitQryParam := []byte(fmt.Sprintf("${1}${2}%s", namespace))
+
+	out := setCommitRE.ReplaceAll(data, commitQryParam)
+	if !strings.Contains(string(out), namespace) {
+		return nil, locale.NewError(
+			"err_set_namespace", "Failed to set namespace {{.V0}} in activestate.yaml.", namespace)
+	}
+	return out, nil
+}
 
 func setCommitInYAML(data []byte, commitID string) ([]byte, *failures.Failure) {
 	if commitID == "" {
 		return nil, failures.FailDeveloper.New("commitID must not be empty")
 	}
-	commitQryParam := []byte("$1?commitID=" + commitID)
+	commitQryParam := []byte("$1$2$3?commitID=" + commitID)
 
 	out := setCommitRE.ReplaceAll(data, commitQryParam)
 	if !strings.Contains(string(out), commitID) {
