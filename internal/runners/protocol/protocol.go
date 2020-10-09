@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/pkg/project"
 )
 
 type primeable interface {
@@ -35,12 +36,16 @@ func (p *Protocol) Run(params Params) error {
 	if err != nil {
 		return locale.WrapError(err, "err_protocol_parse", "Invailid URL provided: {{.V0}}", params.URL)
 	}
-	namespace := strings.TrimLeft(parsed.Path, "/")
+	trimmedPath := strings.TrimLeft(parsed.Path, "/")
+	namespace, fail := project.ParseNamespace(trimmedPath)
+	if fail != nil {
+		return locale.WrapError(fail, "err_protocol_namespace", "{{.V0}} is not a valid namespace", trimmedPath)
+	}
 
 	var flag string
 	if parsed.Fragment != "" {
 		flag = fmt.Sprintf("--%s", parsed.Fragment)
 	}
 
-	return runbits.InvokeSilent("activate", namespace, flag)
+	return runbits.InvokeSilent("activate", namespace.String(), flag)
 }
