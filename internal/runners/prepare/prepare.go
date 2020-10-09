@@ -76,7 +76,7 @@ func (r *Prepare) Run() error {
 	return nil
 }
 
-var (
+const (
 	protocolKey        = `SOFTWARE\Classes\state`
 	protocolCommandKey = `SOFTWARE\Classes\state\shell\open\command`
 )
