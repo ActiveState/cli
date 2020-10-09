@@ -11,7 +11,7 @@ func newProtocolCommand(prime *primer.Values) *captain.Command {
 	runner := protocol.New(prime)
 	params := protocol.Params{}
 
-	return captain.NewCommand(
+	cmd := captain.NewCommand(
 		"_protocol",
 		locale.Tl("protocol_description", "Process URLs with that use the state protocol"),
 		[]*captain.Flag{},
@@ -27,4 +27,7 @@ func newProtocolCommand(prime *primer.Values) *captain.Command {
 			return runner.Run(params)
 		},
 	)
+	cmd.SetHidden(true)
+
+	return cmd
 }
