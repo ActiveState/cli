@@ -56,21 +56,16 @@ func (r *Activate) Run(params *ActivateParams) error {
 func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc) error {
 	logging.Debug("Activate %v, %v", params.Namespace, params.PreferredPath)
 
-	var (
-		pathToUse string
-	)
+	nSpace := params.Namespace.String()
+	path := params.PreferredPath
 	if params.Replace {
-		targetPath, fail := projectfile.GetProjectFilePath()
-		if fail != nil {
-			return locale.WrapError(fail.ToError(), "err_activate_replace_pathtouse", "Could not determine path to activestate.yaml.")
-		}
-		pathToUse = filepath.Dir(targetPath)
-	} else {
-		var err error
-		pathToUse, err = r.pathToUse(params.Namespace.String(), params.PreferredPath)
-		if err != nil {
-			return locale.WrapError(err, "err_activate_pathtouse", "Could not figure out what path to use.")
-		}
+		nSpace = ""
+		path = ""
+	}
+
+	pathToUse, err := r.pathToUse(nSpace, path)
+	if err != nil {
+		return locale.WrapError(err, "err_activate_pathtouse", "Could not figure out what path to use.")
 	}
 
 	projectToUse, err := r.projectToUse(pathToUse)
