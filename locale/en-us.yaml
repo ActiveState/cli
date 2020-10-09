@@ -1708,7 +1708,7 @@ prepare_instructions_windows:
 prepare_env_warning:
   other: Could not update user environment
 err_package_update_pjfile:
-  other: "Coult not update your activestate.yaml with the new commit ID. Please run `state pull` manually."
+  other: "Could not update your activestate.yaml with the new commit ID. Please run `state pull` manually."
 message_headless:
   other: "[BLUE]You're currently using this tool anonymously. Sign-up for an account on the ActiveState Platform to create your own version of this project that lets you fully customize, share with a team, versioned backup, and more. Visit https://platform.activestate.com to sign up.[/RESET]"
 message_headless_packages:
