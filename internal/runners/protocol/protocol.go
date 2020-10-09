@@ -42,10 +42,9 @@ func (p *Protocol) Run(params Params) error {
 		return locale.WrapError(fail, "err_protocol_namespace", "{{.V0}} is not a valid namespace", trimmedPath)
 	}
 
-	var flag string
-	if parsed.Fragment != "" {
-		flag = fmt.Sprintf("--%s", parsed.Fragment)
+	if parsed.Fragment != "" && parsed.Fragment != "replace" {
+		return locale.NewError("err_protocol_flag", "Invalid URL fragment, the only supported URL fragment is 'replace'")
 	}
 
-	return runbits.InvokeSilent("activate", namespace.String(), flag)
+	return runbits.InvokeSilent("activate", namespace.String(), fmt.Sprintf("--%s", parsed.Fragment))
 }
