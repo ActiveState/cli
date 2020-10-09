@@ -1707,5 +1707,7 @@ prepare_instructions_windows:
   other: "To add the global installations directory to your environment please add the path `{{.V0}}` to your user PATH in the System Properties dialog"
 prepare_env_warning:
   other: Could not update user environment
+prepare_protocol_warning:
+  other: Could not add state protocol
 err_package_update_pjfile:
   other: "Coult not update your activestate.yaml with the new commit ID. Please run `state pull` manually."

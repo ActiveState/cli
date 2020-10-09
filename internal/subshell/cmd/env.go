@@ -5,17 +5,10 @@ import (
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/osutils"
 )
 
-type RegistryKey interface {
-	GetStringValue(name string) (val string, valtype uint32, err error)
-	SetStringValue(name, value string) error
-	SetExpandStringValue(name, value string) error
-	DeleteValue(name string) error
-	Close() error
-}
-
-type OpenKeyFn func(path string) (RegistryKey, error)
+type OpenKeyFn func(path string) (osutils.RegistryKey, error)
 
 type CmdEnv struct {
 	openKeyFn OpenKeyFn
@@ -24,11 +17,14 @@ type CmdEnv struct {
 }
 
 func NewCmdEnv(userScope bool) *CmdEnv {
-	openKeyFn := OpenSystemKey
+	openKeyFn := osutils.OpenSystemKey
 	if userScope {
-		openKeyFn = OpenUserKey
+		openKeyFn = osutils.OpenUserKey
 	}
-	return &CmdEnv{openKeyFn, userScope}
+	return &CmdEnv{
+		openKeyFn: openKeyFn,
+		userScope: userScope,
+	}
 }
 
 func getEnvironmentPath(userScope bool) string {
@@ -50,7 +46,7 @@ func (c *CmdEnv) unset(name, ifValueEquals string) *failures.Failure {
 
 	v, _, err := key.GetStringValue(name)
 	if err != nil {
-		if IsNotExistError(err) {
+		if osutils.IsNotExistError(err) {
 			return nil
 		}
 		return failures.FailOS.Wrap(err, locale.T("err_windows_registry"))
@@ -63,7 +59,7 @@ func (c *CmdEnv) unset(name, ifValueEquals string) *failures.Failure {
 
 	// Check for backup value
 	backupValue, valType, err := key.GetStringValue(envBackupName(name))
-	realError := err != nil && !IsNotExistError(err)
+	realError := err != nil && !osutils.IsNotExistError(err)
 	backupExists := err == nil
 
 	if realError {
@@ -74,7 +70,7 @@ func (c *CmdEnv) unset(name, ifValueEquals string) *failures.Failure {
 		if err := key.DeleteValue(envBackupName(name)); err != nil {
 			return failures.FailOS.Wrap(err, locale.T("err_windows_registry"))
 		}
-		return failures.FailOS.Wrap(setStringValue(key, name, valType, backupValue))
+		return failures.FailOS.Wrap(osutils.SetStringValue(key, name, valType, backupValue))
 	}
 	return failures.FailOS.Wrap(key.DeleteValue(name))
 }
@@ -89,16 +85,16 @@ func (c *CmdEnv) set(name, newValue string) *failures.Failure {
 
 	// Check if we're going to be overriding
 	oldValue, valType, err := key.GetStringValue(name)
-	if err != nil && !IsNotExistError(err) {
+	if err != nil && !osutils.IsNotExistError(err) {
 		return failures.FailOS.Wrap(err, locale.T("err_windows_registry"))
 	} else if err == nil {
 		// Save backup
-		if err2 := setStringValue(key, envBackupName(name), valType, oldValue); err2 != nil {
+		if err2 := osutils.SetStringValue(key, envBackupName(name), valType, oldValue); err2 != nil {
 			return failures.FailOS.Wrap(err2, locale.T("err_windows_registry"))
 		}
 	}
 
-	return failures.FailOS.Wrap(setStringValue(key, name, valType, newValue))
+	return failures.FailOS.Wrap(osutils.SetStringValue(key, name, valType, newValue))
 }
 
 // getUserEnv retrieves a variable from the user environment, this prioritizes a backup if it exists
@@ -111,14 +107,14 @@ func (c *CmdEnv) get(name string) (string, *failures.Failure) {
 
 	// Return the backup version if it exists
 	originalValue, _, err := key.GetStringValue(envBackupName(name))
-	if err != nil && !IsNotExistError(err) {
+	if err != nil && !osutils.IsNotExistError(err) {
 		return "", failures.FailOS.Wrap(err, locale.T("err_windows_registry"))
 	} else if err == nil {
 		return originalValue, nil
 	}
 
 	v, _, err := key.GetStringValue(name)
-	if err != nil && !IsNotExistError(err) {
+	if err != nil && !osutils.IsNotExistError(err) {
 		return v, failures.FailOS.Wrap(err, locale.T("err_windows_registry"))
 	}
 	return v, nil

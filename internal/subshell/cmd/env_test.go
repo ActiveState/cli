@@ -8,6 +8,7 @@ import (
 	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/osutils"
 )
 
 type RegistryKeyMock struct {
@@ -31,7 +32,7 @@ func (r *RegistryKeyMock) GetStringValue(name string) (string, uint32, error) {
 	if v, ok := r.getResults[name]; ok {
 		return v.Value, 0, v.Error
 	}
-	return "", 0, notExistError()
+	return "", 0, osutils.NotExistError()
 }
 
 func (r *RegistryKeyMock) SetStringValue(name, value string) error {
@@ -62,7 +63,7 @@ func (r *RegistryKeyMock) Close() error {
 	return nil
 }
 
-func openKeyMock(path string) (RegistryKey, error) {
+func openKeyMock(path string) (osutils.RegistryKey, error) {
 	return &RegistryKeyMock{}, nil
 }
 
@@ -142,7 +143,7 @@ func TestCmdEnv_unset(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &CmdEnv{
-				openKeyFn: func(path string) (RegistryKey, error) {
+				openKeyFn: func(path string) (osutils.RegistryKey, error) {
 					return tt.fields.registryMock, tt.fields.openKeyErr
 				},
 			}
@@ -213,7 +214,7 @@ func TestCmdEnv_set(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &CmdEnv{
-				openKeyFn: func(path string) (RegistryKey, error) {
+				openKeyFn: func(path string) (osutils.RegistryKey, error) {
 					return tt.fields.registryMock, tt.fields.openKeyErr
 				},
 			}
@@ -296,7 +297,7 @@ func TestCmdEnv_get(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &CmdEnv{
-				openKeyFn: func(path string) (RegistryKey, error) {
+				openKeyFn: func(path string) (osutils.RegistryKey, error) {
 					return tt.fields.registryMock, tt.fields.openKeyErr
 				},
 			}
