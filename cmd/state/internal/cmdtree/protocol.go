@@ -13,7 +13,7 @@ func newProtocolCommand(prime *primer.Values) *captain.Command {
 
 	cmd := captain.NewCommand(
 		"_protocol",
-		locale.Tl("protocol_description", "Process URLs with that use the state protocol"),
+		locale.Tl("protocol_description", "Process URLs that use the state protocol"),
 		[]*captain.Flag{},
 		[]*captain.Argument{
 			{
