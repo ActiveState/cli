@@ -13,7 +13,7 @@ const (
 	WmSettingChange = uintptr(0x001A)
 )
 
-func notExistError() error {
+func NotExistError() error {
 	return registry.ErrNotExist
 }
 

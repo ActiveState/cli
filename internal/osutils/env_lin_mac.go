@@ -4,7 +4,7 @@ package osutils
 
 import "errors"
 
-func notExistError() error {
+func NotExistError() error {
 	return errors.New("NOT_EXIST_ERROR")
 }
 
