@@ -6,10 +6,10 @@ import (
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/failures"
-	"github.com/ActiveState/cli/internal/headless"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -23,26 +23,18 @@ type ListRunParams struct {
 
 // List manages the listing execution context.
 type List struct {
-	out  output.Outputer
-	proj *project.Project
+	out output.Outputer
 }
 
 // NewList prepares a list execution context for use.
-func NewList(prime primeable) *List {
+func NewList(prime primer.Outputer) *List {
 	return &List{
-		out:  prime.Output(),
-		proj: prime.Project(),
+		out: prime.Output(),
 	}
 }
 
 // Run executes the list behavior.
 func (l *List) Run(params ListRunParams) error {
-	err := l.run(params)
-	headless.Notify(l.out, l.proj, err)
-	return err
-}
-
-func (l *List) run(params ListRunParams) error {
 	logging.Debug("ExecuteList")
 
 	var commit *strfmt.UUID

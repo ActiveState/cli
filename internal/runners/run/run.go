@@ -8,7 +8,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/failures"
-	"github.com/ActiveState/cli/internal/headless"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -56,9 +55,7 @@ func New(prime primeable) *Run {
 
 // Run runs the Run run runner.
 func (r *Run) Run(name string, args []string) error {
-	err := run(r.out, r.subshell, name, args)
-	headless.Notify(r.out, r.proj, err)
-	return err
+	return run(r.out, r.subshell, name, args)
 }
 
 func run(out output.Outputer, subs subshell.SubShell, name string, args []string) error {

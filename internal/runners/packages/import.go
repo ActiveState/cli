@@ -4,7 +4,6 @@ import (
 	"io/ioutil"
 
 	"github.com/ActiveState/cli/internal/failures"
-	"github.com/ActiveState/cli/internal/headless"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -49,8 +48,7 @@ func NewImportRunParams() *ImportRunParams {
 
 // Import manages the importing execution context.
 type Import struct {
-	out  output.Outputer
-	proj *project.Project
+	out output.Outputer
 	prompt.Prompter
 }
 
@@ -64,19 +62,12 @@ type primeable interface {
 func NewImport(prime primeable) *Import {
 	return &Import{
 		prime.Output(),
-		prime.Project(),
 		prime.Prompt(),
 	}
 }
 
 // Run executes the import behavior.
 func (i *Import) Run(params ImportRunParams) error {
-	err := i.run(params)
-	headless.Notify(i.out, i.proj, err, "packages")
-	return err
-}
-
-func (i *Import) run(params ImportRunParams) error {
 	logging.Debug("ExecuteImport")
 
 	if params.FileName == "" {
