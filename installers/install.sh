@@ -399,8 +399,6 @@ else
 fi
 
 if [ -n "${ACTIVATE}" ]; then
-  # switch this shell to interactive mode
-  set -i
   # control flow of this script ends with this line: replace the shell with the activated project's shell
   exec $STATEPATH activate ${ACTIVATE}
 fi
