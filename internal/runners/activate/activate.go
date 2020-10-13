@@ -86,9 +86,15 @@ func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc)
 	// on --replace, replace namespace and commit id in as.yaml
 	if params.ReplaceWith.IsValid() {
 		var err error
-		projectToUse, err = updateProject(projectToUse.Source(), params.ReplaceWith)
+		err = updateProjectFile(projectToUse.Source(), params.ReplaceWith)
 		if err != nil {
 			return locale.WrapError(err, "err_activate_replace_write", "Could not update the project file with new namespace.")
+		}
+		var fail *failures.Failure
+		// re-read the project file and return the updated project
+		projectToUse, fail = project.Parse(projectToUse.Source().Path())
+		if fail != nil {
+			return locale.WrapError(fail.ToError(), "err_activate_reload", "Could not reload project.")
 		}
 	}
 
@@ -121,30 +127,28 @@ func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc)
 	return activatorLoop(r.out, r.subshell, projectPath, activate)
 }
 
-func updateProject(prjFile *projectfile.Project, names *project.Namespaced) (*project.Project, error) {
+func updateProjectFile(prjFile *projectfile.Project, names *project.Namespaced) error {
+	var commitID string
 	if names.CommitID == nil || *names.CommitID == "" {
 		latestID, fail := model.LatestCommitID(names.Owner, names.Project)
 		if fail != nil {
-			return nil, locale.WrapInputError(fail.ToError(), "err_set_namespace_retrieve_commit", "Could not retrieve the latest commit for the specified project {{.V0}}.", names.String())
+			return locale.WrapInputError(fail.ToError(), "err_set_namespace_retrieve_commit", "Could not retrieve the latest commit for the specified project {{.V0}}.", names.String())
 		}
-		names.CommitID = latestID
+		commitID = latestID.String()
+	} else {
+		commitID = names.CommitID.String()
 	}
 
 	err := prjFile.SetNamespace(names.String())
 	if err != nil {
-		return nil, locale.WrapError(err, "err_activate_replace_write_namespace", "Failed to write new namespace to activestate.yaml.")
+		return locale.WrapError(err, "err_activate_replace_write_namespace", "Failed to write new namespace to activestate.yaml.")
 	}
-	fail := prjFile.SetCommit(names.CommitID.String())
+	fail := prjFile.SetCommit(commitID)
 	if fail != nil {
-		return nil, locale.WrapError(fail.ToError(), "err_activate_replace_write_commit", "Failed to write commitID to activestate.yaml.")
+		return locale.WrapError(fail.ToError(), "err_activate_replace_write_commit", "Failed to write commitID to activestate.yaml.")
 	}
 
-	// re-read the project file and return the updated project
-	projectToUse, fail := project.Parse(prjFile.Path())
-	if fail != nil {
-		return nil, locale.WrapError(fail.ToError(), "err_activate_reload", "Could not reload project.")
-	}
-	return projectToUse, nil
+	return nil
 }
 
 func (r *Activate) pathToUse(namespace string, preferredPath string) (string, error) {
