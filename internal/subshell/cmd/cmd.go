@@ -82,7 +82,7 @@ func (v *SubShell) WriteUserEnv(env map[string]string, envType sscommon.EnvData,
 		}
 	}
 
-	cmdEnv.propagate()
+	osutils.PropagateEnv()
 	return nil
 }
 

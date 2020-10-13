@@ -149,6 +149,12 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	cp.SendLine(pythonExe + " -c \"import pytest; print(pytest.__doc__)\"")
 	cp.Expect("unit and functional testing")
 
+	cp.SendLine("state activate ActiveState-CLI/small-python --default")
+	cp.Expect("Please de-activate the current runtime")
+
+	cp.SendLine("state activate --default")
+	cp.Expect("Writing default installation to")
+
 	// test that other executables that use python work as well
 	pipExe := "pip" + version
 	cp.SendLine(fmt.Sprintf("%s --version", pipExe))
@@ -161,6 +167,12 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	// de-activate shell
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
+
+	// check that default activation works
+	cp = ts.SpawnCmd(filepath.Join(ts.Dirs.DefaultBin, "python"), "-c", "import sys; print(sys.copyright)")
+	cp.Expect("ActiveState Software Inc.")
+	cp.ExpectExitCode(0)
+
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivatePython3_Forward() {

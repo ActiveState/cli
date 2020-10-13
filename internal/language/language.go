@@ -128,6 +128,10 @@ func MakeByName(name string) Language {
 // MakeByNameAndVersion will retrieve a language by a given name and version.
 func MakeByNameAndVersion(name, version string) (Language, error) {
 	if strings.ToLower(name) == Python2.Requirement() {
+		parts := strings.Split(version, ".")
+		if len(parts) > 3 {
+			version = strings.Join(parts[:len(parts)-1], ".")
+		}
 		version, err := semver.Parse(version)
 		if err != nil {
 			return Unknown, err

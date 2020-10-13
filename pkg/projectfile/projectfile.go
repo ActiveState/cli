@@ -633,8 +633,7 @@ func (p *Project) SetCommit(commitID string, headless bool) *failures.Failure {
 		return failures.FailOS.Wrap(err)
 	}
 
-	Reset()
-	return nil
+	return p.Reload()
 }
 
 var (
@@ -710,7 +709,7 @@ func getProjectFilePathFromWd() (string, *failures.Failure) {
 }
 
 func getProjectFilePathFromDefault() (string, *failures.Failure) {
-	defaultProjectPath := viper.GetString("default_project_path")
+	defaultProjectPath := viper.GetString(constants.GlobalDefaultPrefname)
 	if defaultProjectPath == "" {
 		return "", nil
 	}

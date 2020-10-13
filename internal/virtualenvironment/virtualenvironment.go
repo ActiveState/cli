@@ -3,12 +3,12 @@ package virtualenvironment
 import (
 	"os"
 	"path/filepath"
-	rt "runtime"
 	"strings"
 
 	"github.com/google/uuid"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -24,40 +24,25 @@ var persisted *VirtualEnvironment
 // FailAlreadyActive is a failure given when a project is already active
 var FailAlreadyActive = failures.Type("virtualenvironment.fail.alreadyactive", failures.FailUser)
 
-// OS is used by tests to spoof a different value
-var OS = rt.GOOS
-
-type getEnvFunc func(inherit bool, projectDir string) (map[string]string, error)
-
 // VirtualEnvironment represents our virtual environment, it pulls together and virtualizes the runtime environment
 type VirtualEnvironment struct {
 	project      *project.Project
 	activationID string
 	onUseCache   func()
-	getEnv       getEnvFunc
-}
-
-// Get returns a persisted version of VirtualEnvironment{}
-func Get() *VirtualEnvironment {
-	if persisted == nil {
-		persisted = Init()
-	}
-
-	return persisted
+	runtime      *runtime.Runtime
 }
 
 // Init creates an instance of VirtualEnvironment{} with default settings
 func Init() *VirtualEnvironment {
 	return &VirtualEnvironment{
-		project:      project.Get(),
 		activationID: uuid.New().String(),
 	}
 }
 
-func New(getEnv getEnvFunc) *VirtualEnvironment {
+func New(runtime *runtime.Runtime) *VirtualEnvironment {
 	return &VirtualEnvironment{
 		activationID: uuid.New().String(),
-		getEnv:       getEnv,
+		runtime:      runtime,
 	}
 }
 
@@ -67,11 +52,11 @@ func (v *VirtualEnvironment) Activate() *failures.Failure {
 
 	activeProject := os.Getenv(constants.ActivatedStateEnvVarName)
 	if activeProject != "" {
-		return FailAlreadyActive.New("err_already_active", v.project.Owner()+"/"+v.project.Name())
+		return FailAlreadyActive.New("err_already_active")
 	}
 
 	if strings.ToLower(os.Getenv(constants.DisableRuntime)) != "true" {
-		if failure := v.activateRuntime(); failure != nil {
+		if failure := v.Setup(true); failure != nil {
 			return failure
 		}
 	}
@@ -82,32 +67,38 @@ func (v *VirtualEnvironment) Activate() *failures.Failure {
 // OnUseCache will call the given function when the cached runtime is used
 func (v *VirtualEnvironment) OnUseCache(f func()) { v.onUseCache = f }
 
-// activateRuntime sets up a runtime environment
-func (v *VirtualEnvironment) activateRuntime() *failures.Failure {
-	// To avoid too much throw away refactoring we're using `output.Get()` here
-	// The idea being this runtime code should be eliminated from virtualenv altogether, and refactoring dependant
-	// code to pass this information in for the meantime just leads to more throwaway code then there already is
-	out := output.Get()
-	msgHandler := runbits.NewRuntimeMessageHandler(out)
-
-	pj := project.Get()
-	commitUUID, err := pj.CommitUUID()
-	if err != nil {
-		return failures.FailInvalidArgument.Wrap(err, locale.Tl("venv_invalid_uuid", "Could not determine commit ID."))
+// Setup sets up a runtime environment that is fully functional.
+func (v *VirtualEnvironment) Setup(installIfNecessary bool) *failures.Failure {
+	logging.Debug("Setting up virtual Environment")
+	if strings.ToLower(os.Getenv(constants.DisableRuntime)) == "true" {
+		return nil
 	}
-	installer, fail := runtime.NewInstaller(*commitUUID, pj.Owner(), pj.Name(), msgHandler)
-	if fail != nil {
-		return fail
-	}
+	if installIfNecessary {
+		// To avoid too much throw away refactoring we're using `output.Get()` here
+		// The idea being this runtime code should be eliminated from virtualenv altogether, and refactoring dependant
+		// code to pass this information in for the meantime just leads to more throwaway code then there already is
+		out := output.Get()
+		msgHandler := runbits.NewRuntimeMessageHandler(out)
 
-	rt, installed, fail := installer.Install()
-	if fail != nil {
-		return fail
-	}
+		pj := project.Get()
+		commitUUID, err := pj.CommitUUID()
+		if err != nil {
+			return failures.FailInvalidArgument.Wrap(err, locale.Tl("venv_invalid_uuid", "Could not determine commit ID."))
+		}
+		installer := runtime.NewInstaller(v.runtime)
+		_, installed, fail := installer.Install()
+		if fail != nil {
+			return fail
+		}
 
-	v.getEnv = rt.GetEnv
-	if !installed && v.onUseCache != nil {
-		v.onUseCache()
+		if !installed && v.onUseCache != nil {
+			v.onUseCache()
+		}
+	} else {
+		_, fail := v.runtime.Env()
+		if fail != nil {
+			return fail
+		}
 	}
 
 	return nil
@@ -115,47 +106,44 @@ func (v *VirtualEnvironment) activateRuntime() *failures.Failure {
 
 // GetEnv returns a map of the cumulative environment variables for all active virtual environments
 func (v *VirtualEnvironment) GetEnv(inherit bool, projectDir string) (map[string]string, error) {
-	env := make(map[string]string)
-	if v.getEnv == nil {
-		// if runtime is not explicitly disabled, this is an error
-		if os.Getenv(constants.DisableRuntime) != "true" {
-			return nil, locale.NewError(
-				"err_get_env_unactivated", "Trying to set up an environment in an un-activated environment.  This should not happen.  Please report this issue in our forum: %s",
-				constants.ForumsURL,
-			)
+	envMap := make(map[string]string)
+
+	// Source runtime environment information
+	if strings.ToLower(os.Getenv(constants.DisableRuntime)) != "true" {
+		env, fail := v.runtime.Env()
+		if fail != nil {
+			return envMap, errs.Wrap(fail, "Could not initialize runtime env")
 		}
-		env["PATH"] = os.Getenv("PATH")
-	} else {
 		var err error
-		env, err = v.getEnv(inherit, projectDir)
+		envMap, err = env.GetEnv(inherit, projectDir)
 		if err != nil {
-			return env, err
+			return envMap, err
 		}
 	}
 
 	if projectDir != "" {
-		env[constants.ActivatedStateEnvVarName] = projectDir
-		env[constants.ActivatedStateIDEnvVarName] = v.activationID
+		envMap[constants.ActivatedStateEnvVarName] = projectDir
+		envMap[constants.ActivatedStateIDEnvVarName] = v.activationID
 
 		// Get project from explicitly defined configuration file
 		pj, fail := project.Parse(filepath.Join(projectDir, constants.ConfigFileName))
 		if fail != nil {
-			return env, fail.ToError()
+			return envMap, fail.ToError()
 		}
 		for _, constant := range pj.Constants() {
 			var err error
-			env[constant.Name()], err = constant.Value()
+			envMap[constant.Name()], err = constant.Value()
 			if err != nil {
-				return nil, locale.WrapError(err, "err_venv_constant_val", "Could not retrieve value for constant: `{{.Vp}}`.", constant.Name())
+				return nil, locale.WrapError(err, "err_venv_constant_val", "Could not retrieve value for constant: `{{.V0}}`.", constant.Name())
 			}
 		}
 	}
 
 	if inherit {
-		return inheritEnv(env), nil
+		return inheritEnv(envMap), nil
 	}
 
-	return env, nil
+	return envMap, nil
 }
 
 // WorkingDirectory returns the working directory to use for the current environment

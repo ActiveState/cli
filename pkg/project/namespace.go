@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"regexp"
 
+	"github.com/go-openapi/strfmt"
+
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/go-openapi/strfmt"
 )
 
 // FailInvalidNamespace indicates the provided string is not a valid
@@ -22,6 +23,19 @@ type Namespaced struct {
 	Owner    string
 	Project  string
 	CommitID *strfmt.UUID
+}
+
+func NewNamespace(owner, project, commitID string) *Namespaced {
+	ns := &Namespaced{
+		owner,
+		project,
+		nil,
+	}
+	if commitID != "" {
+		commitUUID := strfmt.UUID(commitID)
+		ns.CommitID = &commitUUID
+	}
+	return ns
 }
 
 // Set implements the captain argmarshaler interface.
@@ -91,29 +105,28 @@ func ParseNamespace(raw string) (*Namespaced, *failures.Failure) {
 	return &names, nil
 }
 
-// ParseNamespaceOrConfigfile returns a valid project namespace.
+// NameSpaceForConfig returns a valid project namespace.
 // This version prefers to create a namespace from a configFile if it exists
-func ParseNamespaceOrConfigfile(raw string, configFile string) (*Namespaced, *failures.Failure) {
-
-	if fileutils.FileExists(configFile) {
-		prj, fail := FromPath(configFile)
-		if fail != nil {
-			return nil, FailInputSecretValue.New(locale.Tr("err_invalid_namespace", raw))
-		}
-
-		names := Namespaced{
-			Owner:   prj.Owner(),
-			Project: prj.Name(),
-		}
-
-		prjCommitID := prj.CommitID()
-		if prjCommitID != "" {
-			uuid := strfmt.UUID(prjCommitID)
-			names.CommitID = &uuid
-		}
-
-		return &names, nil
+func NameSpaceForConfig(configFile string) *Namespaced {
+	if !fileutils.FileExists(configFile) {
+		return nil
 	}
 
-	return ParseNamespace(raw)
+	prj, fail := FromPath(configFile)
+	if fail != nil {
+		return nil
+	}
+
+	names := Namespaced{
+		Owner:   prj.Owner(),
+		Project: prj.Name(),
+	}
+
+	prjCommitID := prj.CommitID()
+	if prjCommitID != "" {
+		uuid := strfmt.UUID(prjCommitID)
+		names.CommitID = &uuid
+	}
+
+	return &names
 }

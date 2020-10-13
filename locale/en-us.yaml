@@ -567,7 +567,7 @@ field_platforms:
 err_cannot_obtain_dist:
   other: "Could not obtain distribution for language: {{.V0}}"
 err_already_active:
-  other: "You cannot activate a new state when you are already in an activated state. You are in an activated state for project: {{.V0}}"
+  other: "You cannot activate a new state when you are already in an activated state."
 run_listing_scripts:
   other: "Available Scripts: "
 
@@ -1722,3 +1722,11 @@ prompt_headless_anonymous:
     an account. Do you want to continue as an anonymous user?
 err_package_update_pjfile:
   other: "Could not update your activestate.yaml with the new commit ID. Please run `state pull` manually."
+prepare_protocol_warning:
+  other: Could not add state protocol
+message_headless:
+  other: "[BLUE]You're currently using this tool anonymously. Sign-up for an account on the ActiveState Platform to create your own version of this project that lets you fully customize, share with a team, versioned backup, and more. Visit https://platform.activestate.com to sign up.[/RESET]"
+message_headless_packages:
+  other: "[BLUE]You've modified this project, and will be able to continue to do so locally. Converting your changes into a project on the ActiveState Platform can make your changes available on any machine.[/RESET]"
+message_headless_activate:
+  other: "[BLUE]Now that your project is activated -- if you ever need to add or remove packages, you can do so with `state package add`. Type `state package --help` for more info, or `state learn` for common commands.[/RESET]"

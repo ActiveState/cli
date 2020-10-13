@@ -1,6 +1,7 @@
 package packages
 
 import (
+	"github.com/ActiveState/cli/internal/headless"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -16,7 +17,8 @@ type UpdateRunParams struct {
 
 // Update manages the updating execution context.
 type Update struct {
-	out output.Outputer
+	out  output.Outputer
+	proj *project.Project
 	prompt.Prompter
 }
 
@@ -24,12 +26,19 @@ type Update struct {
 func NewUpdate(prime primeable) *Update {
 	return &Update{
 		prime.Output(),
+		prime.Project(),
 		prime.Prompt(),
 	}
 }
 
 // Run executes the update behavior.
 func (u *Update) Run(params UpdateRunParams) error {
+	err := u.Run(params)
+	headless.Notify(u.out, u.proj, err, "packages")
+	return err
+}
+
+func (u *Update) run(params UpdateRunParams) error {
 	logging.Debug("ExecuteUpdate")
 
 	pj := project.Get()
