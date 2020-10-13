@@ -312,8 +312,6 @@ organization_name:
   other: Organization Name
 organization_no_orgs:
   other: You are not a member of any organizations
-organizations_list_info:
-  other: Here are the organizations you are a part of.
 project:
   other: Project
 project_name:
@@ -1016,8 +1014,6 @@ field_version:
   other: Version
 field_bitwidth:
   other: Bit Width
-added_platforms_info:
-  other: Here are all the platforms that have been added to this runtime.
 commit_message_add_platform:
   other: "Added platform: {{.V0}} {{.V1}}bit {{.V2}}"
 commit_message_removed_platform:
@@ -1262,8 +1258,6 @@ package_update_config_file:
   other: To ensure your local project is synchronized with the ActiveState platform please use `state pull`
 inventory_ingredient_not_available:
   other: The package {{.V0}} is not available on the ActiveState Platform, or does not have a matching version
-packages_added_info:
-  other: Here are all of the packages that have been added to this runtime.
 command_flag_no_such_flag:
   other: "No such flag: {{.V0}}"
 command_flag_invalid_value:

@@ -44,7 +44,7 @@ func (l *List) Run(ps ListRunParams) error {
 		return err
 	}
 
-	l.out.Print(locale.T("added_platforms_info"))
+	l.out.Print(locale.Tl("added_platforms_info", "Here are all the platforms that have been added to this runtime."))
 	l.out.Print(listing)
 	return nil
 }
