@@ -124,9 +124,9 @@ type Project struct {
 	parsedURL    ProjectUrl    // parsed url data
 
 	// Deprecated
-	Variables interface{} `yaml:"variables,omitempty"`
-	Owner     string      `yaml:"owner,omitempty"`
-	Name      string      `yaml:"name,omitempty"`
+	Variables       interface{} `yaml:"variables,omitempty"`
+	deprecatedOwner string      `yaml:"owner,omitempty"`
+	deprecatedName  string      `yaml:"name,omitempty"`
 }
 
 // Platform covers the platform structure of our yaml
@@ -519,8 +519,9 @@ func Parse(configFilepath string) (*Project, *failures.Failure) {
 		return nil, FailValidate.New("variable_field_deprecation_warning")
 	}
 
-	if project.Project == "" && project.Owner != "" && project.Name != "" {
-		project.Project = fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, project.Owner, project.Name)
+	// If as.yaml has deprecated flags `owner` and `name`, construct a project file URL from these fields
+	if project.Project == "" && project.deprecatedOwner != "" && project.deprecatedName != "" {
+		project.Project = fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, project.Owner(), project.Name())
 		if err := project.Save(); err != nil { // anyone still not respecting the deprecation warning by now is going to have to deal with their file being updated for them
 			logging.Error("Could not save projectfile after removing owner/name deprecation: %v", err)
 		}
