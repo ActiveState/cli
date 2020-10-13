@@ -12,9 +12,7 @@ import (
 func newTutorialCommand(prime *primer.Values) *captain.Command {
 	cmd := captain.NewCommand(
 		"tutorial",
-		locale.T("tutorial_title"),
 		locale.Tl("tutorial_description", "Learn how to use the State Tool"),
-		prime.Output(),
 		nil,
 		nil,
 		func(ccmd *captain.Command, args []string) error {
@@ -32,9 +30,7 @@ func newTutorialProjectCommand(prime *primer.Values) *captain.Command {
 
 	cmd := captain.NewCommand(
 		"new-project",
-		locale.T("tutorial_new_project"),
 		locale.Tl("tutorial_description", "Learn how to create new projects. (ie. virtual environments)"),
-		prime.Output(),
 		[]*captain.Flag{
 			{
 				Name:        "skip-intro",

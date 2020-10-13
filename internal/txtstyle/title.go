@@ -1,4 +1,4 @@
-package output
+package txtstyle
 
 import (
 	"unicode/utf8"
@@ -9,24 +9,23 @@ const (
 	DefaultTitlePadding = 3
 )
 
-// StyledTitle represents the config of a styled title. It does not, currently,
+// Title represents the config of a styled title. It does not, currently,
 // support combining diactics (more info: https://play.golang.org/p/VmHyq3JJ7On).
-type StyledTitle struct {
+type Title struct {
 	Text    string
 	Padding int
 }
 
-// NewStyledTitle provides a construction of StyledTitle using the default
-// title padding.
-func NewStyledTitle(text string) *StyledTitle {
-	return &StyledTitle{
+// NewTitle provides a construction of Title using the default title padding.
+func NewTitle(text string) *Title {
+	return &Title{
 		Text:    text,
 		Padding: DefaultTitlePadding,
 	}
 }
 
 // String implements the fmt.Stringer interface.
-func (t *StyledTitle) String() string {
+func (t *Title) String() string {
 	titleLen := utf8.RuneCountInString(t.Text) // NOTE: ignores effects of combining diacritics
 	lineLen := titleLen + 2 + 2*t.Padding + 1  // text, border, padding, newline
 

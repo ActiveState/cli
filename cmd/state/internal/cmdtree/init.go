@@ -17,9 +17,7 @@ func newInitCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"init",
-		locale.T("init_title"),
 		locale.T("init_description"),
-		prime.Output(),
 		[]*captain.Flag{
 			{
 				Name:        "path",

@@ -1,11 +1,11 @@
-package output
+package txtstyle
 
 import (
 	"strings"
 	"testing"
 )
 
-func TestStyledTitleString(t *testing.T) {
+func TestTitleString(t *testing.T) {
 	tests := []struct {
 		test  string
 		title string
@@ -21,7 +21,7 @@ func TestStyledTitleString(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		got := NewStyledTitle(tt.title).String()
+		got := NewTitle(tt.title).String()
 		if got != tt.want {
 			t.Errorf("%s:\ngot\n%v\nwant\n%v", tt.test, got, tt.want)
 		}

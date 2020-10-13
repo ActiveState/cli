@@ -14,9 +14,7 @@ func newAuthCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"auth",
-		locale.T("auth_title"),
 		locale.T("auth_description"),
-		prime.Output(),
 		[]*captain.Flag{
 			{
 				Name:        "token",
@@ -54,9 +52,7 @@ func newSignupCommand(prime *primer.Values) *captain.Command {
 	signupRunner := auth.NewSignup(prime)
 	return captain.NewCommand(
 		"signup",
-		locale.T("signup_title"),
 		locale.T("signup_description"),
-		prime.Output(),
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
@@ -69,9 +65,7 @@ func newLogoutCommand(prime *primer.Values) *captain.Command {
 	logoutRunner := auth.NewLogout(prime)
 	return captain.NewCommand(
 		"logout",
-		locale.T("logout_title"),
 		locale.T("logout_description"),
-		prime.Output(),
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {

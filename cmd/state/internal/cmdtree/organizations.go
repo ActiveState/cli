@@ -14,9 +14,7 @@ func newOrganizationsCommand(prime *primer.Values) *captain.Command {
 
 	cmd := captain.NewCommand(
 		"organizations",
-		locale.T("organizations_title"),
 		locale.T("organizations_description"),
-		prime.Output(),
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, _ []string) error {

@@ -12,9 +12,7 @@ func newEventsCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"events",
-		locale.T("events_title"),
 		locale.Tl("events_description", "Manage project events"),
-		prime.Output(),
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(cmd *captain.Command, args []string) error {
@@ -28,9 +26,7 @@ func newEventsLogCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"log",
-		locale.T("events_log_title"),
 		locale.Tl("events_log_description", "View a log of events"),
-		prime.Output(),
 		[]*captain.Flag{
 			{
 				Name:        "follow",

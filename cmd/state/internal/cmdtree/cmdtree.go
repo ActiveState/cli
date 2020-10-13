@@ -26,7 +26,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		newLogoutCommand(prime),
 	)
 
-	exportCmd := newExportCommand(prime)
+	exportCmd := newExportCommand()
 	exportCmd.AddChildren(
 		newRecipeCommand(prime),
 		newJWTCommand(prime),
@@ -134,9 +134,7 @@ func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Comm
 	runner := state.New(opts, prime)
 	cmd := captain.NewCommand(
 		"state",
-		"",
 		locale.T("state_description"),
-		prime.Output(),
 		[]*captain.Flag{
 			{
 				Name:        "locale",

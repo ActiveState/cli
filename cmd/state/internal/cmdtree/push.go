@@ -14,9 +14,7 @@ func newPushCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"push",
-		locale.T("push_title"),
 		locale.T("push_description"),
-		prime.Output(),
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {

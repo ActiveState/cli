@@ -116,6 +116,10 @@ func sprint(value interface{}) (string, error) {
 		return nilText, nil
 	}
 
+	if stringer, ok := value.(fmt.Stringer); ok {
+		return stringer.String(), nil
+	}
+
 	if err, ok := value.(error); ok {
 		return err.Error(), nil
 	}
