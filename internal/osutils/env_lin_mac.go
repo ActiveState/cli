@@ -1,10 +1,10 @@
 // +build !windows
 
-package cmd
+package osutils
 
 import "errors"
 
-func notExistError() error {
+func NotExistError() error {
 	return errors.New("NOT_EXIST_ERROR")
 }
 
@@ -14,17 +14,23 @@ func IsNotExistError(err error) bool {
 
 func OpenUserKey(path string) (RegistryKey, error) {
 	panic("Not supported outside of Windows, this only exists to facilitate unit tests")
-	return nil, nil
 }
 
 func OpenSystemKey(path string) (RegistryKey, error) {
 	panic("Not supported outside of Windows, this only exists to facilitate unit tests")
-	return nil, nil
 }
 
-func (c *CmdEnv) propagate() {
+func CreateUserKey(path string) (RegistryKey, bool, error) {
+	panic("Not supported outside of Windows, this only exists to facilitate unit tests")
 }
 
-func setStringValue(key RegistryKey, name string, valType uint32, value string) error {
+func CreateCurrentUserKey(path string) (RegistryKey, bool, error) {
+	panic("Not supported outside of Windows, this only exists to facilitate unit tests")
+}
+
+func PropagateEnv() {
+}
+
+func SetStringValue(key RegistryKey, name string, valType uint32, value string) error {
 	return key.SetStringValue(name, value)
 }

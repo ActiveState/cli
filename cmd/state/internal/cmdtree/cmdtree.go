@@ -107,6 +107,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		newInviteCommand(prime),
 		tutorialCmd,
 		newPrepareCommand(prime),
+		newProtocolCommand(prime),
 		newShimCommand(prime, args...),
 	)
 
