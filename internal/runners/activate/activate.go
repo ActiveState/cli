@@ -97,20 +97,10 @@ func (r *Activate) run(params *ActivateParams) error {
 
 	// on --replace, replace namespace and commit id in as.yaml
 	if params.ReplaceWith.IsValid() {
-		var err error
-		err = updateProjectFile(proj.Source(), params.ReplaceWith)
-		if err != nil {
-			return locale.WrapError(err, "err_activate_replace_write", "Could not update the project file with new namespace.")
-		}
-		var fail *failures.Failure
-
-		// re-read the project file and return the updated project
-		proj, fail = project.Parse(proj.Source().Path())
-		if fail != nil {
-			return locale.WrapError(fail.ToError(), "err_activate_reload", "Could not reload project.")
+		if err := updateProjectFile(proj, params.ReplaceWith); err != nil {
+			return locale.WrapError(err, "err_activate_replace_write", "Could not update the project file with a new namespace.")
 		}
 	}
-
 	proj.Source().Persist()
 
 	// Send google analytics event with label set to project namespace
@@ -153,7 +143,7 @@ func (r *Activate) run(params *ActivateParams) error {
 	return nil
 }
 
-func updateProjectFile(prjFile *projectfile.Project, names *project.Namespaced) error {
+func updateProjectFile(prj *project.Project, names *project.Namespaced) error {
 	var commitID string
 	if names.CommitID == nil || *names.CommitID == "" {
 		latestID, fail := model.LatestCommitID(names.Owner, names.Project)
@@ -165,13 +155,13 @@ func updateProjectFile(prjFile *projectfile.Project, names *project.Namespaced) 
 		commitID = names.CommitID.String()
 	}
 
-	err := prjFile.SetNamespace(names.String())
+	err := prj.Source().SetNamespace(names.Owner, names.Project)
 	if err != nil {
-		return locale.WrapError(err, "err_activate_replace_write_namespace", "Failed to write new namespace to activestate.yaml.")
+		return locale.WrapError(err, "err_activate_replace_write_namespace", "Failed to update project namespace.")
 	}
-	fail := prjFile.SetCommit(commitID)
+	fail := prj.Source().SetCommit(commitID)
 	if fail != nil {
-		return locale.WrapError(fail.ToError(), "err_activate_replace_write_commit", "Failed to write commitID to activestate.yaml.")
+		return locale.WrapError(fail.ToError(), "err_activate_replace_write_commit", "Failed to update commitID.")
 	}
 
 	return nil

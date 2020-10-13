@@ -80,6 +80,13 @@ var (
 	CommitURLRe = regexp.MustCompile(urlCommitRegexStr)
 )
 
+// ProjectUrl comprises all fields of a parsed project URL
+type ProjectUrl struct {
+	Owner    string
+	Name     string
+	CommitID string
+}
+
 var projectMapMutex = &sync.Mutex{}
 
 const LocalProjectsConfigKey = "projects"
@@ -114,6 +121,7 @@ type Project struct {
 	Jobs         Jobs          `yaml:"jobs,omitempty"`
 	Private      bool          `yaml:"private,omitempty"`
 	path         string        // "private"
+	parsedURL    ProjectUrl    // parsed url data
 
 	// Deprecated
 	Variables interface{} `yaml:"variables,omitempty"`
@@ -523,12 +531,12 @@ func Parse(configFilepath string) (*Project, *failures.Failure) {
 		return nil, fail
 	}
 
-	if project.Owner == "" && project.Name == "" {
-		match := ProjectURLRe.FindStringSubmatch(project.Project)
-		project.Owner = match[1]
-		project.Name = match[2]
+	project.parsedURL, err = project.ParseURL()
+	if err != nil {
+		return nil, failures.FailUserInput.New("parse_project_file_url_err")
 	}
-	storeProjectMapping(fmt.Sprintf("%s/%s", project.Owner, project.Name), filepath.Dir(project.path))
+
+	storeProjectMapping(fmt.Sprintf("%s/%s", project.Owner(), project.Name()), filepath.Dir(project.path))
 
 	return project, nil
 }
@@ -549,6 +557,21 @@ func parse(configFilepath string) (*Project, *failures.Failure) {
 	}
 
 	return &project, nil
+}
+
+// Owner returns the project namespace's organization
+func (p *Project) Owner() string {
+	return p.parsedURL.Owner
+}
+
+// Name returns the project namespace's name
+func (p *Project) Name() string {
+	return p.parsedURL.Name
+}
+
+// CommitID returns the commit ID specified in the project
+func (p *Project) CommitID() string {
+	return p.parsedURL.CommitID
 }
 
 // Path returns the project's activestate.yaml file path.
@@ -585,6 +608,32 @@ func (p *Project) Save() *failures.Failure {
 	return p.save(p.Path())
 }
 
+// ParseURL returns the parsed fields of a Project URL
+func (p *Project) ParseURL() (ProjectUrl, error) {
+	return parseURL(p.Project)
+}
+
+func parseURL(url string) (ProjectUrl, error) {
+	fail := ValidateProjectURL(url)
+	if fail != nil {
+		return ProjectUrl{}, fail.ToError()
+	}
+
+	match := CommitURLRe.FindStringSubmatch(url)
+	if len(match) > 1 {
+		parts := ProjectUrl{"", "", match[1]}
+		return parts, nil
+	}
+
+	match = ProjectURLRe.FindStringSubmatch(url)
+	parts := ProjectUrl{match[1], match[2], ""}
+	if len(match) == 4 {
+		parts.CommitID = match[3]
+	}
+
+	return parts, nil
+}
+
 // Save the project to its activestate.yaml file
 func (p *Project) save(path string) *failures.Failure {
 	dat, err := yaml.Marshal(p)
@@ -609,21 +658,27 @@ func (p *Project) save(path string) *failures.Failure {
 	if err != nil {
 		return failures.FailIO.Wrap(err)
 	}
-	storeProjectMapping(fmt.Sprintf("%s/%s", p.Owner, p.Name), filepath.Dir(p.Path()))
+	storeProjectMapping(fmt.Sprintf("%s/%s", p.parsedURL.Owner, p.parsedURL.Name), filepath.Dir(p.Path()))
 
 	return nil
 }
 
-func (p *Project) SetNamespace(namespace string) error {
+// SetNamespace updates the namespace in the project file
+func (p *Project) SetNamespace(owner, project string) error {
 	data, err := ioutil.ReadFile(p.path)
 	if err != nil {
 		return errs.Wrap(err, "Failed to read project file %s.", p.path)
 	}
 
+	namespace := fmt.Sprintf("%s/%s", owner, project)
 	out, err := setNamespaceInYAML(data, namespace)
 	if err != nil {
 		return errs.Wrap(err, "Failed to update namespace in project file.")
 	}
+
+	// keep parsed url components in sync
+	p.parsedURL.Owner = owner
+	p.parsedURL.Name = project
 
 	if err := ioutil.WriteFile(p.path, out, 0664); err != nil {
 		return errs.Wrap(err, "Failed to write project file %s", p.path)
