@@ -707,7 +707,7 @@ func getProjectFilePathFromWd() (string, *failures.Failure) {
 }
 
 func getProjectFilePathFromDefault() (string, *failures.Failure) {
-	defaultProjectPath := viper.GetString("default_project_path")
+	defaultProjectPath := viper.GetString(constants.GlobalDefaultPrefname)
 	if defaultProjectPath == "" {
 		return "", nil
 	}

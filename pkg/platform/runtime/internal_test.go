@@ -51,10 +51,10 @@ func (suite *InternalTestSuite) BeforeTest(suiteName, testName string) {
 	suite.downloadDir, err = ioutil.TempDir("", "cli-installer-test-download")
 	suite.Require().NoError(err)
 
-	var fail *failures.Failure
 	msgHandler := runbits.NewRuntimeMessageHandler(&outputhelper.TestOutputer{})
-	suite.installer, fail = NewInstallerByParams(NewInstallerParams(suite.cacheDir, "00010001-0001-0001-0001-000100010001", "string", "string", msgHandler))
-	suite.Require().NoError(fail.ToError())
+	r := NewRuntime("00010001-0001-0001-0001-000100010001", "string", "string", msgHandler)
+	r.SetInstallPath(suite.cacheDir)
+	suite.installer = NewInstaller(r)
 	suite.Require().NotNil(suite.installer)
 
 	suite.graphMock = graphMock.Init()
@@ -70,8 +70,9 @@ func (suite *InternalTestSuite) AfterTest(suiteName, testName string) {
 func (suite *InternalTestSuite) TestValidateCheckpointNoCommit() {
 	msgHandler := runbits.NewRuntimeMessageHandler(&outputhelper.TestOutputer{})
 	var fail *failures.Failure
-	suite.installer, fail = NewInstallerByParams(NewInstallerParams(suite.cacheDir, "", "string", "string", msgHandler))
-	suite.Require().NoError(fail.ToError())
+	r := NewRuntime("", "string", "string", msgHandler)
+	r.SetInstallPath(suite.cacheDir)
+	suite.installer = NewInstaller(r)
 	suite.Require().NotNil(suite.installer)
 
 	fail = suite.installer.validateCheckpoint()

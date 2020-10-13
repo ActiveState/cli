@@ -268,11 +268,9 @@ func (p *Project) Branch() string { return p.projectfile.Branch }
 func (p *Project) Lock() string { return p.projectfile.Lock }
 
 // Namespace returns project namespace
-func (p *Project) Namespace() string { return Namespace(p.owner, p.name) }
-
-// Namespace returns the namespaced version of the given owner and project name
-func Namespace(owner, project string) string {
-	return fmt.Sprintf("%s/%s", owner, project)
+func (p *Project) Namespace() *Namespaced {
+	commitID := strfmt.UUID(p.commitID)
+	return &Namespaced{p.owner, p.name, &commitID}
 }
 
 // Environments returns project environment

@@ -40,7 +40,7 @@ func newHistoryCommand(prime *primer.Values) *captain.Command {
 				if fail != nil {
 					return fail
 				}
-				namespace = pj.Namespace()
+				namespace = pj.Namespace().String()
 			}
 
 			nsMeta, fail := project.ParseNamespace(namespace)

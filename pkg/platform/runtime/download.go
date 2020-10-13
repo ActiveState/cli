@@ -87,32 +87,26 @@ type Downloader interface {
 
 // Download is the main struct for orchestrating the download of all the artifacts belonging to a runtime
 type Download struct {
-	commitID    strfmt.UUID
-	owner       string
-	projectName string
-	orgID       string
-	private     bool
-	msgHandler  buildlogstream.MessageHandler
+	runtime *Runtime
+	orgID   string
+	private bool
 }
 
 // NewDownload creates a new RuntimeDownload using all custom args
-func NewDownload(commitID strfmt.UUID, owner, projectName string, msgHandler buildlogstream.MessageHandler) Downloader {
+func NewDownload(runtime *Runtime) Downloader {
 	return &Download{
-		commitID:    commitID,
-		owner:       owner,
-		projectName: projectName,
-		msgHandler:  msgHandler,
+		runtime: runtime,
 	}
 }
 
 // fetchRecipe juggles API's to get the build request that can be sent to the head-chef
 func (r *Download) fetchRecipeID() (strfmt.UUID, *failures.Failure) {
-	commitID := strfmt.UUID(r.commitID)
+	commitID := r.runtime.commitID
 	if commitID == "" {
 		return "", FailNoCommit.New(locale.T("err_no_commit"))
 	}
 
-	recipeID, fail := model.FetchRecipeIDForCommitAndPlatform(commitID, r.owner, r.projectName, r.orgID, r.private, model.HostPlatform)
+	recipeID, fail := model.FetchRecipeIDForCommitAndPlatform(commitID, r.runtime.owner, r.runtime.projectName, r.orgID, r.private, model.HostPlatform)
 	if fail != nil {
 		return "", fail
 	}
@@ -126,8 +120,8 @@ func (r *Download) FetchArtifacts() (*FetchArtifactsResult, *failures.Failure) {
 	orgID := strfmt.UUID(constants.ValidZeroUUID)
 	projectID := strfmt.UUID(constants.ValidZeroUUID)
 
-	if r.owner != "" && r.projectName != "" {
-		platProject, fail := model.FetchProjectByName(r.owner, r.projectName)
+	if r.runtime.owner != "" && r.runtime.projectName != "" {
+		platProject, fail := model.FetchProjectByName(r.runtime.owner, r.runtime.projectName)
 		if fail != nil {
 			return nil, fail
 		}
@@ -143,7 +137,7 @@ func (r *Download) FetchArtifacts() (*FetchArtifactsResult, *failures.Failure) {
 		return nil, fail
 	}
 
-	return r.fetchArtifacts(r.commitID, recipeID, orgID, projectID)
+	return r.fetchArtifacts(r.runtime.commitID, recipeID, orgID, projectID)
 }
 
 func (r *Download) fetchArtifacts(commitID, recipeID, orgID, projectID strfmt.UUID) (*FetchArtifactsResult, *failures.Failure) {
@@ -151,8 +145,8 @@ func (r *Download) fetchArtifacts(commitID, recipeID, orgID, projectID strfmt.UU
 
 	buildAnnotations := headchef.BuildAnnotations{
 		CommitID:     commitID.String(),
-		Project:      r.projectName,
-		Organization: r.owner,
+		Project:      r.runtime.projectName,
+		Organization: r.runtime.owner,
 	}
 
 	logging.Debug("sending request to head-chef")
@@ -190,8 +184,8 @@ func (r *Download) fetchArtifacts(commitID, recipeID, orgID, projectID strfmt.UU
 		case resp := <-buildStatus.Started:
 			logging.Debug("BuildStarted")
 			namespaced := project.Namespaced{
-				Owner:   r.owner,
-				Project: r.projectName,
+				Owner:   r.runtime.owner,
+				Project: r.runtime.projectName,
 			}
 			analytics.EventWithLabel(
 				analytics.CatBuild, analytics.ActBuildProject, namespaced.String(),
@@ -224,7 +218,7 @@ func (r *Download) fetchArtifacts(commitID, recipeID, orgID, projectID strfmt.UU
 }
 
 func (r *Download) waitForArtifacts(recipeID strfmt.UUID) error {
-	logstream := buildlogstream.NewRequest(recipeID, r.msgHandler)
+	logstream := buildlogstream.NewRequest(recipeID, r.runtime.msgHandler)
 	if err := logstream.Wait(); err != nil {
 		return locale.WrapError(err, "err_wait_artifacts_logstream", "Error happened while waiting for builds to complete")
 	}
@@ -234,7 +228,7 @@ func (r *Download) waitForArtifacts(recipeID strfmt.UUID) error {
 
 func (r *Download) projectURL() string {
 	url := api.GetServiceURL(api.ServiceHeadChef)
-	url.Path = path.Join(r.owner, r.projectName)
+	url.Path = path.Join(r.runtime.owner, r.runtime.projectName)
 	return url.String()
 }
 
