@@ -1,6 +1,9 @@
 package prepare
 
 import (
+	"fmt"
+	"os"
+	"os/user"
 	"runtime"
 
 	"github.com/ActiveState/cli/internal/globaldefault"
