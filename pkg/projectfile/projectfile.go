@@ -704,6 +704,7 @@ func (p *Project) SetCommit(commitID string) *failures.Failure {
 	if fail != nil {
 		return fail
 	}
+	p.parsedURL.CommitID = commitID
 
 	if err := ioutil.WriteFile(p.path, out, 0664); err != nil {
 		return failures.FailOS.Wrap(err)
