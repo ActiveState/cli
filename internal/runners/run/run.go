@@ -34,11 +34,13 @@ var (
 // Run contains the run execution context.
 type Run struct {
 	out      output.Outputer
+	proj     *project.Project
 	subshell subshell.SubShell
 }
 
 type primeable interface {
 	primer.Outputer
+	primer.Projecter
 	primer.Subsheller
 }
 
@@ -46,6 +48,7 @@ type primeable interface {
 func New(prime primeable) *Run {
 	return &Run{
 		prime.Output(),
+		prime.Project(),
 		prime.Subshell(),
 	}
 }

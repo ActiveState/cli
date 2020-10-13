@@ -21,6 +21,7 @@ type Activate struct {
 	namespaceSelect  namespaceSelectAble
 	activateCheckout CheckoutAble
 	out              output.Outputer
+	proj             *project.Project
 	subshell         subshell.SubShell
 }
 
@@ -32,6 +33,7 @@ type ActivateParams struct {
 
 type primeable interface {
 	primer.Outputer
+	primer.Projecter
 	primer.Subsheller
 }
 
@@ -40,6 +42,7 @@ func NewActivate(prime primeable, namespaceSelect namespaceSelectAble, activateC
 		namespaceSelect,
 		activateCheckout,
 		prime.Output(),
+		prime.Project(),
 		prime.Subshell(),
 	}
 }

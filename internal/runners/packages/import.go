@@ -55,6 +55,7 @@ type Import struct {
 type primeable interface {
 	primer.Outputer
 	primer.Prompter
+	primer.Projecter
 }
 
 // NewImport prepares an importation execution context for use.

@@ -17,6 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileevents"
 	"github.com/ActiveState/cli/internal/hail"
+	"github.com/ActiveState/cli/internal/headless"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -125,6 +126,8 @@ func activate(proj *project.Project, out output.Outputer, subs subshell.SubShell
 		return false, locale.WrapError(err, "err_activate_fileevents", "Could not start file event watcher.")
 	}
 	defer fe.Close()
+
+	headless.Notify(out, proj, nil, "activate")
 
 	return listenForReactivation(venv.ActivationID(), hails, subs)
 }
