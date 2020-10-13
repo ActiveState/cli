@@ -3,7 +3,7 @@ package run
 import (
 	"os"
 	"path/filepath"
-	"runtime"
+	rt "runtime"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/config"
@@ -13,13 +13,14 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 var (
@@ -36,12 +37,14 @@ type Run struct {
 	out      output.Outputer
 	proj     *project.Project
 	subshell subshell.SubShell
+	project  *project.Project
 }
 
 type primeable interface {
 	primer.Outputer
 	primer.Projecter
 	primer.Subsheller
+	primer.Projecter
 }
 
 // New constructs a new instance of Run.
@@ -50,15 +53,16 @@ func New(prime primeable) *Run {
 		prime.Output(),
 		prime.Project(),
 		prime.Subshell(),
+		prime.Project(),
 	}
 }
 
 // Run runs the Run run runner.
 func (r *Run) Run(name string, args []string) error {
-	return run(r.out, r.subshell, name, args)
+	return run(r.out, r.subshell, r.project, name, args)
 }
 
-func run(out output.Outputer, subs subshell.SubShell, name string, args []string) error {
+func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, name string, args []string) error {
 	if authentication.Get().Authenticated() {
 		checker.RunCommitsBehindNotifier(out)
 	}
@@ -70,7 +74,7 @@ func run(out output.Outputer, subs subshell.SubShell, name string, args []string
 	}
 
 	// Determine which project script to run based on the given script name.
-	script := project.Get().ScriptByName(name)
+	script := proj.ScriptByName(name)
 	if script == nil {
 		fail := FailScriptNotDefined.New(
 			locale.T("error_state_run_unknown_name", map[string]string{"Name": name}),
@@ -100,14 +104,15 @@ func run(out output.Outputer, subs subshell.SubShell, name string, args []string
 	// Activate the state if needed.
 	if !script.Standalone() && !subshell.IsActivated() {
 		out.Notice(locale.T("info_state_run_activating_state"))
-		venv := virtualenvironment.Init()
+		runtime := runtime.NewRuntime(proj.CommitUUID(), proj.Owner(), proj.Name(), runbits.NewRuntimeMessageHandler(out))
+		venv := virtualenvironment.New(runtime)
 
 		if fail := venv.Activate(); fail != nil {
 			logging.Errorf("Unable to activate state: %s", fail.Error())
 			return fail.WithDescription("error_state_run_activate")
 		}
 
-		env, err := venv.GetEnv(true, filepath.Dir(projectfile.Get().Path()))
+		env, err := venv.GetEnv(true, filepath.Dir(proj.Source().Path()))
 		if err != nil {
 			return err
 		}
@@ -142,7 +147,7 @@ func run(out output.Outputer, subs subshell.SubShell, name string, args []string
 }
 
 func configCachePath() string {
-	if runtime.GOOS == "darwin" { // runtime loading is not yet supported in darwin systems
+	if rt.GOOS == "darwin" { // runtime loading is not yet supported in darwin systems
 		return "" // empty string value will skip path filtering in subsequent logic
 	}
 	return config.CachePath()
@@ -191,7 +196,7 @@ func isExecutableFile(name string) bool {
 		return false
 	}
 
-	if runtime.GOOS == "windows" {
+	if rt.GOOS == "windows" {
 		return f.Mode()&0400 != 0
 	}
 

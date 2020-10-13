@@ -4,18 +4,15 @@ import (
 	"fmt"
 	"os"
 	"os/user"
-	"path/filepath"
 	"runtime"
 
-	"github.com/ActiveState/cli/internal/config"
-	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/globaldefault"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/subshell"
-	"github.com/ActiveState/cli/internal/subshell/sscommon"
 )
 
 type primeable interface {
@@ -48,29 +45,18 @@ func (r *Prepare) Run() error {
 		}
 	}
 
-	binDir := filepath.Join(config.CachePath(), "bin")
-	fail := fileutils.Mkdir(binDir)
-	if fail != nil {
-		return locale.WrapError(fail.ToError(), "err_prepare_bin_dir", "Could not create bin directory")
-	}
-
-	envUpdates := map[string]string{
-		"PATH": binDir,
-	}
-
-	fail = r.subshell.WriteUserEnv(envUpdates, sscommon.Default, true)
-	if fail != nil {
+	if err := globaldefault.Prepare(r.subshell); err != nil {
 		if runtime.GOOS != "linux" {
-			return locale.WrapError(fail.ToError(), "err_prepare_update_env", "Could not update user environment")
+			return locale.WrapError(err, "err_prepare_update_env", "Could not prepare environment.")
 		}
-		logging.Debug("Encountered failure attempting to update user environment: %s", fail.ToError())
+		logging.Debug("Encountered failure attempting to update user environment: %s", err)
 		r.out.Notice(locale.T("prepare_env_warning"))
 	}
 
 	if runtime.GOOS == "windows" {
-		r.out.Print(locale.Tr("prepare_instructions_windows", binDir))
+		r.out.Print(locale.Tr("prepare_instructions_windows", globaldefault.BinDir()))
 	} else {
-		r.out.Print(locale.Tr("prepare_instructions_lin_mac", binDir))
+		r.out.Print(locale.Tr("prepare_instructions_lin_mac", globaldefault.BinDir()))
 	}
 
 	return nil

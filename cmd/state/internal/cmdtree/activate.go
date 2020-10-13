@@ -1,22 +1,15 @@
 package cmdtree
 
 import (
-	"github.com/spf13/viper"
-
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runners/activate"
-	"github.com/ActiveState/cli/pkg/cmdlets/git"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
 func newActivateCommand(prime *primer.Values) *captain.Command {
-	prompter := prompt.New()
-	checkout := activate.NewCheckout(git.NewRepo(), prime)
-	namespaceSelect := activate.NewNamespaceSelect(viper.GetViper(), prompter)
-	runner := activate.NewActivate(prime, namespaceSelect, checkout)
+	runner := activate.NewActivate(prime)
 
 	params := activate.ActivateParams{
 		Namespace: &project.Namespaced{},
@@ -37,6 +30,11 @@ func newActivateCommand(prime *primer.Values) *captain.Command {
 				Shorthand:   "c",
 				Description: locale.Tl("flag_state_activate_cmd_description", "Run given command in the activated shell"),
 				Value:       &params.Command,
+			},
+			{
+				Name:        "default",
+				Description: locale.Tl("flag_state_activate_default_description", "Configures the project to be the global default project"),
+				Value:       &params.Default,
 			},
 		},
 		[]*captain.Argument{

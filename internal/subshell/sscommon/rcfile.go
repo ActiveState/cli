@@ -22,7 +22,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -161,7 +160,7 @@ func SetupProjectRcFile(templateName, ext string, env map[string]string, out out
 	prj := project.Get()
 
 	userScripts := ""
-	activatedKey := fmt.Sprintf("activated_%s", prj.Namespace())
+	activatedKey := fmt.Sprintf("activated_%s", prj.Namespace().String())
 	for _, event := range prj.Events() {
 		v, err := event.Value()
 		if err != nil {
@@ -200,11 +199,16 @@ func SetupProjectRcFile(templateName, ext string, env map[string]string, out out
 		out.Notice(locale.Tr("warn_script_name_in_use", strings.Join(inuse, "\n  - "), inuse[0], prj.NormalizedName(), explicitName))
 	}
 
+	wd, err := osutils.Getwd()
+	if err != nil {
+		return nil, failures.FailMisc.Wrap(err, locale.Tr("err_subshell_wd", "Could not get working directory."))
+	}
+
 	rcData := map[string]interface{}{
 		"Owner":       prj.Owner(),
 		"Name":        prj.Name(),
 		"Env":         env,
-		"WD":          virtualenvironment.Get().WorkingDirectory(),
+		"WD":          wd,
 		"UserScripts": userScripts,
 		"Scripts":     scripts,
 		"ExecName":    constants.CommandName,

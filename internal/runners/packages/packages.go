@@ -74,17 +74,14 @@ func executePackageOperation(out output.Outputer, prompt prompt.Prompter, langua
 }
 
 func updateRuntime(commitID strfmt.UUID, owner, projectName string, msgHandler runtime.MessageHandler) error {
-	installable, fail := runtime.NewInstaller(
+	installable := runtime.NewInstaller(runtime.NewRuntime(
 		commitID,
 		owner,
 		projectName,
 		msgHandler,
-	)
-	if fail != nil {
-		return locale.WrapError(fail, "Could not create installer.")
-	}
+	))
 
-	_, _, fail = installable.Install()
+	_, _, fail := installable.Install()
 	if fail != nil {
 		return locale.WrapError(fail, "Could not install dependencies.")
 	}
