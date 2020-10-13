@@ -37,14 +37,12 @@ type Run struct {
 	out      output.Outputer
 	proj     *project.Project
 	subshell subshell.SubShell
-	project  *project.Project
 }
 
 type primeable interface {
 	primer.Outputer
 	primer.Projecter
 	primer.Subsheller
-	primer.Projecter
 }
 
 // New constructs a new instance of Run.
@@ -53,13 +51,12 @@ func New(prime primeable) *Run {
 		prime.Output(),
 		prime.Project(),
 		prime.Subshell(),
-		prime.Project(),
 	}
 }
 
 // Run runs the Run run runner.
 func (r *Run) Run(name string, args []string) error {
-	return run(r.out, r.subshell, r.project, name, args)
+	return run(r.out, r.subshell, r.proj, name, args)
 }
 
 func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, name string, args []string) error {
