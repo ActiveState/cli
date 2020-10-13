@@ -20,7 +20,9 @@ func newHistoryCommand(prime *primer.Values) *captain.Command {
 	opts := HistoryOpts{}
 	return captain.NewCommand(
 		"history",
+		locale.T("history_title"),
 		locale.T("history_cmd_description"),
+		prime.Output(),
 		[]*captain.Flag{
 			{
 				Name:        "namespace",

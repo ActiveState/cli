@@ -11,12 +11,14 @@ import (
 	"github.com/ActiveState/cli/internal/runners/export/ghactions"
 )
 
-func newExportCommand() *captain.Command {
+func newExportCommand(prime *primer.Values) *captain.Command {
 	runner := export.NewExport()
 
 	return captain.NewCommand(
 		"export",
+		locale.T("export_title"),
 		locale.T("export_cmd_description"),
+		prime.Output(),
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
@@ -31,7 +33,9 @@ func newRecipeCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"recipe",
+		locale.T("export_recipe_title"),
 		locale.T("export_recipe_cmd_description"),
+		prime.Output(),
 		[]*captain.Flag{
 			{
 				Name:        "pretty",
@@ -64,7 +68,9 @@ func newJWTCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"jwt",
+		locale.T("export_jwt_title"),
 		locale.T("export_jwt_cmd_description"),
+		prime.Output(),
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
@@ -79,7 +85,9 @@ func newPrivateKeyCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"private-key",
+		locale.T("export_privkey_title"),
 		locale.T("export_privkey_cmd_description"),
+		prime.Output(),
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
@@ -93,7 +101,9 @@ func newAPIKeyCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"new-api-key",
+		locale.T("export_new_api_key_title"),
 		locale.T("export_new_api_key_cmd_description"),
+		prime.Output(),
 		[]*captain.Flag{},
 		[]*captain.Argument{
 			{
@@ -115,7 +125,9 @@ func newExportConfigCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"config",
+		locale.T("export_config_title"),
 		locale.T("export_config_cmd_description"),
+		prime.Output(),
 		[]*captain.Flag{
 			{
 				Name: "filter",
@@ -138,7 +150,9 @@ func newExportGithubActionCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"github-actions",
+		locale.T("export_ghactions_title"),
 		locale.Tl("export_ghactions_description", "Create a github action workflow for your project"),
+		prime.Output(),
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, _ []string) error {

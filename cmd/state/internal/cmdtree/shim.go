@@ -14,7 +14,9 @@ func newShimCommand(prime *primer.Values, args ...string) *captain.Command {
 
 	cmd := captain.NewCommand(
 		"shim",
+		locale.T("shim_title"),
 		locale.T("shim_description"),
+		prime.Output(),
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {

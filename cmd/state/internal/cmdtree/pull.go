@@ -12,7 +12,9 @@ func newPullCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"pull",
+		locale.T("pull_title"),
 		locale.Tl("pull_description", "Pull in the latest version of your project from the ActiveState Platform"),
+		prime.Output(),
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(cmd *captain.Command, args []string) error {
