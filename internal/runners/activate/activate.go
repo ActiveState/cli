@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -30,7 +29,7 @@ type ActivateParams struct {
 	Namespace     *project.Namespaced
 	PreferredPath string
 	Command       string
-	Replace       bool
+	ReplaceWith   *project.Namespaced
 }
 
 type primeable interface {
@@ -58,10 +57,6 @@ func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc)
 
 	nSpace := params.Namespace.String()
 	path := params.PreferredPath
-	if params.Replace {
-		nSpace = ""
-		path = ""
-	}
 
 	pathToUse, err := r.pathToUse(nSpace, path)
 	if err != nil {
@@ -91,30 +86,26 @@ func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc)
 		}
 	}
 
-	projectPath := filepath.Dir(projectToUse.Source().Path())
-	names := params.Namespace
-	if !params.Replace {
-		var fail *failures.Failure
-		names, fail = project.ParseNamespaceOrConfigfile(names.String(), filepath.Join(projectPath, constants.ConfigFileName))
-		if fail != nil {
-			names = &project.Namespaced{}
-			logging.Debug("error resolving namespace: %v", fail.ToError())
+	// on --replace, replace namespace and commit id in as.yaml
+	if params.ReplaceWith.IsValid() {
+		var err error
+		projectToUse, err = updateProject(projectToUse.Source(), params.ReplaceWith)
+		if err != nil {
+			return locale.WrapError(err, "err_activate_replace_write", "Could not update the project file with new namespace.")
 		}
 	}
+
 	// Send google analytics event with label set to project namespace
-	analytics.EventWithLabel(analytics.CatRunCmd, "activate", names.String())
+	analytics.EventWithLabel(analytics.CatRunCmd, "activate", projectToUse.Namespace())
 
-	// on --replace, replace namespace and commit id in as.yaml
-	if params.Replace {
-		updateProjectFile(projectToUse.Source(), names)
-	}
-
+	projectPath := filepath.Dir(projectToUse.Source().Path())
 	// If we're not using plain output then we should just dump the environment information
 	if r.out.Type() != output.PlainFormatName {
 		venv := virtualenvironment.Get()
 		if fail := venv.Activate(); fail != nil {
 			return locale.WrapError(fail.ToError(), "error_could_not_activate_venv", "Could not activate project. If this is a private project ensure that you are authenticated.")
 		}
+
 		env, err := venv.GetEnv(false, projectPath)
 		if err != nil {
 			return locale.WrapError(err, "err_activate_getenv", "Could not build environment for your runtime environment.")
@@ -133,24 +124,30 @@ func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc)
 	return activatorLoop(r.out, r.subshell, projectPath, activate)
 }
 
-func updateProjectFile(prjFile *projectfile.Project, names *project.Namespaced) error {
+func updateProject(prjFile *projectfile.Project, names *project.Namespaced) (*project.Project, error) {
 	if names.CommitID == nil || *names.CommitID == "" {
 		latestID, fail := model.LatestCommitID(names.Owner, names.Project)
 		if fail != nil {
-			return locale.WrapInputError(fail.ToError(), "err_set_namespace_retrieve_commit", "Could not retrieve the latest commit for the specified project {{.V0}}.", names.String())
+			return nil, locale.WrapInputError(fail.ToError(), "err_set_namespace_retrieve_commit", "Could not retrieve the latest commit for the specified project {{.V0}}.", names.String())
 		}
 		names.CommitID = latestID
 	}
 
 	err := prjFile.SetNamespace(names.String())
 	if err != nil {
-		return locale.WrapError(err, "err_activate_replace_write_namespace", "Failed to write new namespace to activestate.yaml.")
+		return nil, locale.WrapError(err, "err_activate_replace_write_namespace", "Failed to write new namespace to activestate.yaml.")
 	}
 	fail := prjFile.SetCommit(names.CommitID.String())
 	if fail != nil {
-		return locale.WrapError(fail.ToError(), "err_activate_replace_write_commit", "Failed to write commitID to activestate.yaml.")
+		return nil, locale.WrapError(fail.ToError(), "err_activate_replace_write_commit", "Failed to write commitID to activestate.yaml.")
 	}
-	return nil
+
+	// re-read the project file and return the updated project
+	projectToUse, fail := project.Parse(prjFile.Path())
+	if fail != nil {
+		return nil, locale.WrapError(fail.ToError(), "err_activate_reload", "Could not reload project.")
+	}
+	return projectToUse, nil
 }
 
 func (r *Activate) pathToUse(namespace string, preferredPath string) (string, error) {
