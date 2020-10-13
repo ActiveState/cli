@@ -45,7 +45,7 @@ func Prepare(subshell subshell.SubShell) error {
 	}
 
 	if fail := fileutils.MkdirUnlessExists(binDir); fail != nil {
-		return locale.WrapError(fail.ToError(), "err_prepare_bin_dir", "Could not create bin directory.")
+		return locale.WrapError(fail.ToError(), "err_globaldefault_bin_dir", "Could not create bin directory.")
 	}
 
 	envUpdates := map[string]string{
@@ -53,7 +53,7 @@ func Prepare(subshell subshell.SubShell) error {
 	}
 
 	if fail := subshell.WriteUserEnv(envUpdates, sscommon.Default, true); fail != nil {
-		return locale.WrapError(fail.ToError(), "err_prepare_update_env", "Could not write to user environment.")
+		return locale.WrapError(fail.ToError(), "err_globaldefault_update_env", "Could not write to user environment.")
 	}
 
 	return nil
@@ -107,8 +107,6 @@ func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, r
 	return nil
 }
 
-// cleanup removes all shims in the global binary directory that target a previous default project
-// If the target of a shim does not exist anymore, the shim is also removed.
 func cleanup() error {
 	binDir := BinDir()
 	if fail := fileutils.MkdirUnlessExists(binDir); fail != nil {
@@ -127,7 +125,6 @@ func cleanup() error {
 
 		fn := filepath.Join(binDir, f.Name())
 
-		// remove shim if it links to old project path or target does not exist anymore
 		err = os.Remove(fn)
 		if err != nil {
 			return locale.WrapError(err, "rollback_remove_err", "Failed to remove shim {{.V0}}", fn)

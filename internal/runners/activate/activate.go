@@ -75,7 +75,7 @@ func (r *Activate) run(params *ActivateParams) error {
 
 	// Run checkout if no project was given
 	if proj == nil {
-		if params.Namespace == nil {
+		if params.Namespace == nil || !params.Namespace.IsValid() {
 			return locale.NewInputError("err_activate_nonamespace", "Please provide a namespace (see `state activate --help` for more info).")
 		}
 
