@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/output/txtstyle"
 )
 
 var cobraMapping map[*cobra.Command]*Command = make(map[*cobra.Command]*Command)
@@ -340,9 +341,8 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 
 	}
 
-	if c.out != nil && c.title != "" && c.out.Type() == output.PlainFormatName {
-		title := output.NewStyledTitle(c.title)
-		c.out.Notice(title.String())
+	if c.out != nil && c.title != "" {
+		c.out.Notice(txtstyle.NewTitle(c.title))
 	}
 
 	return c.execute(c, args)
