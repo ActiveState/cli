@@ -81,6 +81,15 @@ var TableFormats = map[string]TableFormat{
 		TitleRow:        Row{"|", " ", "|"},
 		Padding:         1,
 	},
+	"standard": TableFormat{
+		LineTop:         Line{"", "-", "  ", ""},
+		LineBelowHeader: Line{"", "\u2500", "\u2500", ""},
+		LineBottom:      Line{"", "-", "  ", ""},
+		HeaderRow:       Row{"[BOLD]", "  ", "[/RESET]"},
+		DataRow:         Row{"", "  ", ""},
+		TitleRow:        Row{"", "  ", ""},
+		Padding:         1,
+	},
 }
 
 // Minimum padding that will be applied
