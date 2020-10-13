@@ -44,6 +44,7 @@ func run(params *OrgParams, out output.Outputer) error {
 		return locale.WrapError(err, "err_run_orgs_data", "Could not collect information about your organizations.")
 	}
 
+	out.Print(locale.T("organizations_list_info"))
 	out.Print(data)
 	return nil
 }

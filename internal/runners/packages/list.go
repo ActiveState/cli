@@ -65,6 +65,7 @@ func (l *List) Run(params ListRunParams) error {
 	table := newFilteredRequirementsTable(model.FilterCheckpointPackages(checkpoint), params.Name)
 	table.sortByPkg()
 
+	l.out.Print(locale.T("packages_added_info"))
 	l.out.Print(table)
 	return nil
 }

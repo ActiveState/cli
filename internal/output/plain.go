@@ -320,8 +320,7 @@ func sprintTable(slice []interface{}) (string, error) {
 	// Don't print whitespace lines
 	t.SetHideLines([]string{"betweenLine", "top", "aboveTitle", "LineTop", "LineBottom", "bottomLine"})
 	t.SetAlign("left")
-	tableFormat := tabulate.TableFormats["standard"]
-	t.TableFormat = tableFormat
+	t.TableFormat = tabulate.TableFormats["standard"]
 	render := t.Render()
 	return strings.TrimSuffix(render, "\n"), nil
 }
