@@ -136,7 +136,7 @@ func run(args []string, out output.Outputer) (int, error) {
 	pjName := ""
 	if pj != nil {
 		pjOwner = pj.Owner()
-		pjNamespace = pj.Namespace()
+		pjNamespace = pj.Namespace().String()
 		pjName = pj.Name()
 	}
 	// Set up conditional, which accesses a lot of primer data

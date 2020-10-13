@@ -567,7 +567,7 @@ field_platforms:
 err_cannot_obtain_dist:
   other: "Could not obtain distribution for language: {{.V0}}"
 err_already_active:
-  other: "You cannot activate a new state when you are already in an activated state. You are in an activated state for project: {{.V0}}"
+  other: "You cannot activate a new state when you are already in an activated state."
 run_listing_scripts:
   other: "Available Scripts: "
 

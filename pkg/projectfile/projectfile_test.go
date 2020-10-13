@@ -307,7 +307,7 @@ func TestGetProjectFilePath(t *testing.T) {
 	os.Chdir(tmpDir)
 	_, fail = GetProjectFilePath()
 	assert.Error(t, fail.ToError(), "GetProjectFilePath should fail")
-	viper.SetDefault("default_project_path", expectedPath)
+	viper.SetDefault(constants.GlobalDefaultPrefname, expectedPath)
 	configPath, fail = GetProjectFilePath()
 	assert.NoError(t, fail.ToError(), "GetProjectFilePath should succeed")
 	assert.Equal(t, expectedPath, configPath, "Project path is properly detected using default path from config")

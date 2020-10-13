@@ -14,7 +14,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
 	pmock "github.com/ActiveState/cli/internal/progress/mock"
@@ -60,9 +59,9 @@ func (suite *InstallerTestSuite) BeforeTest(suiteName, testName string) {
 	suite.prg = pmock.NewTestProgress()
 
 	msgHandler := runbits.NewRuntimeMessageHandler(&outputhelper.TestOutputer{})
-	var fail *failures.Failure
-	suite.installer, fail = runtime.NewInstallerByParams(runtime.NewInstallerParams(suite.cacheDir, "00010001-0001-0001-0001-000100010001", "string", "string", msgHandler))
-	suite.Require().NoError(fail.ToError())
+	r := runtime.NewRuntime("00010001-0001-0001-0001-000100010001", "string", "string", msgHandler)
+	r.SetInstallPath(suite.cacheDir)
+	suite.installer = runtime.NewInstaller(r)
 	suite.Require().NotNil(suite.installer)
 }
 
