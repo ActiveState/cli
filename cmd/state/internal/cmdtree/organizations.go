@@ -14,7 +14,7 @@ func newOrganizationsCommand(prime *primer.Values) *captain.Command {
 
 	cmd := captain.NewCommand(
 		"organizations",
-		locale.T("organizations_title"),
+		locale.Tl("organizations_title", "Listing Organizations"),
 		locale.T("organizations_description"),
 		prime.Output(),
 		[]*captain.Flag{},

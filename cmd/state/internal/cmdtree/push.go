@@ -14,7 +14,7 @@ func newPushCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"push",
-		locale.T("push_title"),
+		locale.Tl("push_title", "Pushing Local Project"),
 		locale.T("push_description"),
 		prime.Output(),
 		[]*captain.Flag{},

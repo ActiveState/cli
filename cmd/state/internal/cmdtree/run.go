@@ -14,7 +14,7 @@ func newRunCommand(prime *primer.Values) *captain.Command {
 
 	cmd := captain.NewCommand(
 		"run",
-		locale.T("run_title"),
+		locale.Tl("run_title", "Running Script"),
 		locale.T("run_description"),
 		prime.Output(),
 		nil,

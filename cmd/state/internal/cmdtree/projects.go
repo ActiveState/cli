@@ -13,7 +13,7 @@ func newProjectsCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"projects",
-		locale.T("project_title"),
+		locale.Tl("projects_title", "Listing Projects"),
 		locale.T("projects_description"),
 		prime.Output(),
 		[]*captain.Flag{},

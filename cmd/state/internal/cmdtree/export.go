@@ -16,7 +16,7 @@ func newExportCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"export",
-		locale.T("export_title"),
+		locale.Tl("export_title", "Exporting Information"),
 		locale.T("export_cmd_description"),
 		prime.Output(),
 		[]*captain.Flag{},
@@ -33,7 +33,7 @@ func newRecipeCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"recipe",
-		locale.T("export_recipe_title"),
+		locale.Tl("export_recipe_title", "Exporting Recipe Data"),
 		locale.T("export_recipe_cmd_description"),
 		prime.Output(),
 		[]*captain.Flag{
@@ -68,7 +68,7 @@ func newJWTCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"jwt",
-		locale.T("export_jwt_title"),
+		locale.Tl("export_jwt_title", "Exporting Credentials"),
 		locale.T("export_jwt_cmd_description"),
 		prime.Output(),
 		[]*captain.Flag{},
@@ -85,7 +85,7 @@ func newPrivateKeyCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"private-key",
-		locale.T("export_privkey_title"),
+		locale.Tl("export_privkey_title", "Exporting Private Key"),
 		locale.T("export_privkey_cmd_description"),
 		prime.Output(),
 		[]*captain.Flag{},
@@ -101,7 +101,7 @@ func newAPIKeyCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"new-api-key",
-		locale.T("export_new_api_key_title"),
+		locale.Tl("export_new_api_key_title", "Exporting New API Key"),
 		locale.T("export_new_api_key_cmd_description"),
 		prime.Output(),
 		[]*captain.Flag{},
@@ -125,7 +125,7 @@ func newExportConfigCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"config",
-		locale.T("export_config_title"),
+		locale.Tl("export_config_title", "Export Configuration Data"),
 		locale.T("export_config_cmd_description"),
 		prime.Output(),
 		[]*captain.Flag{
@@ -150,7 +150,7 @@ func newExportGithubActionCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"github-actions",
-		locale.T("export_ghactions_title"),
+		locale.Tl("export_ghactions_title", "Exporting Github Action Workflow"),
 		locale.Tl("export_ghactions_description", "Create a github action workflow for your project"),
 		prime.Output(),
 		[]*captain.Flag{},

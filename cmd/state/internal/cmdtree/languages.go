@@ -13,7 +13,7 @@ func newLanguagesCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"languages",
-		locale.T("languages_title"),
+		locale.Tl("languages_title", "Listing Languages"),
 		locale.T("languages_cmd_description"),
 		prime.Output(),
 		[]*captain.Flag{},
@@ -37,7 +37,7 @@ func newLanguageUpdateCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"update",
-		locale.T("languages_update_title"),
+		locale.Tl("languages_update_title", "Updating Languages"),
 		locale.T("languages_update_cmd_description"),
 		prime.Output(),
 		[]*captain.Flag{},

@@ -36,7 +36,7 @@ func newDeployCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"deploy",
-		locale.T("deploy_title"),
+		locale.Tl("deploy_title", "Deploying Runtime"),
 		locale.T("deploy_cmd_description"),
 		prime.Output(),
 		flags,
@@ -60,7 +60,7 @@ func newDeployInstallCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"install",
-		locale.T("deploy_install_title"),
+		locale.Tl("deploy_install_title", "Installing Runtime (Unconfigured)"),
 		locale.T("deploy_install_cmd_description"),
 		prime.Output(),
 		[]*captain.Flag{
@@ -105,7 +105,7 @@ func newDeployConfigureCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"configure",
-		locale.T("deploy_configure_title"),
+		locale.Tl("deploy_configure_title", "Configuring Runtime For Your Shell"),
 		locale.T("deploy_configure_cmd_description"),
 		prime.Output(),
 		flags,
@@ -129,7 +129,7 @@ func newDeploySymlinkCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"symlink",
-		locale.T("deploy_symlink_title"),
+		locale.Tl("deploy_symlink_title", "Symlinking Executables"),
 		locale.T("deploy_symlink_cmd_description"),
 		prime.Output(),
 		[]*captain.Flag{
@@ -164,7 +164,7 @@ func newDeployReportCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"report",
-		locale.T("deploy_report_title"),
+		locale.Tl("deploy_report_title", "Reporting Deployment Information"),
 		locale.T("deploy_report_cmd_description"),
 		prime.Output(),
 		[]*captain.Flag{

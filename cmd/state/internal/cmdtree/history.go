@@ -10,17 +10,17 @@ import (
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
-type HistoryOpts struct {
+type historyOpts struct {
 	Namespace string
 }
 
 func newHistoryCommand(prime *primer.Values) *captain.Command {
 	initRunner := history.NewHistory()
 
-	opts := HistoryOpts{}
+	opts := historyOpts{}
 	return captain.NewCommand(
 		"history",
-		locale.T("history_title"),
+		locale.Tl("history_title", "Viewing Project History"),
 		locale.T("history_cmd_description"),
 		prime.Output(),
 		[]*captain.Flag{

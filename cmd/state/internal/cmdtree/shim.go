@@ -14,7 +14,7 @@ func newShimCommand(prime *primer.Values, args ...string) *captain.Command {
 
 	cmd := captain.NewCommand(
 		"shim",
-		locale.T("shim_title"),
+		locale.Tl("shim_title", "Shimming"),
 		locale.T("shim_description"),
 		prime.Output(),
 		[]*captain.Flag{},

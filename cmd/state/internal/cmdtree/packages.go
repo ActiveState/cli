@@ -14,7 +14,7 @@ func newPackagesCommand(prime *primer.Values) *captain.Command {
 
 	cmd := captain.NewCommand(
 		"packages",
-		locale.T("package_title"),
+		locale.Tl("package_title", "Listing Packages"),
 		locale.T("package_cmd_description"),
 		prime.Output(),
 		[]*captain.Flag{
@@ -51,7 +51,7 @@ func newPackagesAddCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"add",
-		locale.T("package_add_title"),
+		locale.Tl("package_add_title", "Adding Package"),
 		locale.T("package_add_cmd_description"),
 		prime.Output(),
 		[]*captain.Flag{},
@@ -76,7 +76,7 @@ func newPackagesUpdateCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"update",
-		locale.T("package_update_title"),
+		locale.Tl("package_update_title", "Updating Packages"),
 		locale.T("package_update_cmd_description"),
 		prime.Output(),
 		[]*captain.Flag{},
@@ -101,7 +101,7 @@ func newPackagesRemoveCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"remove",
-		locale.T("package_remove_title"),
+		locale.Tl("package_remove_title", "Removing Package"),
 		locale.T("package_remove_cmd_description"),
 		prime.Output(),
 		[]*captain.Flag{},
@@ -126,7 +126,7 @@ func newPackagesImportCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"import",
-		locale.T("package_import_title"),
+		locale.Tl("package_import_title", "Importing Packages"),
 		locale.T("package_import_cmd_description"),
 		prime.Output(),
 		[]*captain.Flag{
@@ -157,7 +157,7 @@ func newPackagesSearchCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"search",
-		locale.T("package_search_title"),
+		locale.Tl("package_search_title", "Searching Packages"),
 		locale.T("package_search_cmd_description"),
 		prime.Output(),
 		[]*captain.Flag{
