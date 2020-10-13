@@ -31,7 +31,7 @@ const (
 )
 
 // Plain is our plain outputer, it uses reflect to marshal the data.
-// Color tags are supported as [RED]foo[/RESET]
+// Semantic highlighting tags are supported as [INFO]foo[/RESET]
 // Table output is supported if you pass a slice of structs
 // Struct keys are localized by sending them to the locale library as field_key (lowercase)
 type Plain struct {
@@ -54,17 +54,16 @@ func (f *Plain) Print(value interface{}) {
 	f.write(f.cfg.OutWriter, "\n")
 }
 
-// Error will marshal and print the given value to the error writer, it wraps it in red colored text but otherwise the
+// Error will marshal and print the given value to the error writer, it wraps it in the error format but otherwise the
 // only thing that identifies it as an error is the channel it writes it to
 func (f *Plain) Error(value interface{}) {
-	f.write(f.cfg.ErrWriter, fmt.Sprintf("[RED]%s[/RESET]\n", value))
+	f.write(f.cfg.ErrWriter, fmt.Sprintf("[ERROR]%s[/RESET]\n", value))
 }
 
-// Notice will marshal and print the given value to the error writer, it wraps it in red colored text but otherwise the
+// Notice will marshal and print the given value to the error writer, it wraps it in the notice format but otherwise the
 // only thing that identifies it as an error is the channel it writes it to
 func (f *Plain) Notice(value interface{}) {
-	f.write(f.cfg.ErrWriter, value)
-	f.write(f.cfg.ErrWriter, "\n")
+	f.write(f.cfg.ErrWriter, fmt.Sprintf("[NOTICE]%s[/RESET]\n", value))
 }
 
 // Config returns the Config struct for the active instance
@@ -77,7 +76,7 @@ func (f *Plain) write(writer io.Writer, value interface{}) {
 	v, err := sprint(value)
 	if err != nil {
 		logging.Errorf("Could not sprint value: %v, error: %v, stack: %s", value, err, stacktrace.Get().String())
-		f.writeNow(f.cfg.ErrWriter, fmt.Sprintf("[RED]%s[/RESET]", locale.Tr("err_sprint", err.Error())))
+		f.writeNow(f.cfg.ErrWriter, fmt.Sprintf("[ERROR]%s[/RESET]", locale.Tr("err_sprint", err.Error())))
 		return
 	}
 	f.writeNow(writer, v)

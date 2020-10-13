@@ -12,11 +12,61 @@ var colorRx *regexp.Regexp
 
 func init() {
 	var err error
-	colorRx, err = regexp.Compile(`\[(BOLD|UNDERLINE|BLACK|RED|GREEN|YELLOW|BLUE|MAGENTA|CYAN|WHITE|INFO|/RESET)!?\]`)
+	colorRx, err = regexp.Compile(`\[(HEADING|NOTICE|INFO|ERROR|DISABLED|HIGHLIGHT|/RESET)!?\]`)
 	if err != nil {
 		panic(fmt.Sprintf("Could not compile regex: %v", err))
 	}
 }
+
+type ColorTheme interface {
+	Heading(writer io.Writer)
+	Notice(writer io.Writer)
+	Info(writer io.Writer)
+	Error(writer io.Writer)
+	Disabled(writer io.Writer)
+	Highlight(writer io.Writer)
+	Reset(writer io.Writer)
+}
+
+type defaultColorTheme struct{}
+
+// Heading switches to bold and bright foreground
+func (dct defaultColorTheme) Heading(writer io.Writer) {
+	ct.Foreground(writer, ct.White, true)
+	ct.ChangeStyle(writer, ct.Bold)
+}
+
+// Notice switches to bright foreground
+func (dct defaultColorTheme) Notice(writer io.Writer) {
+	ct.Foreground(writer, ct.White, true)
+}
+
+// Info switches to green foreground
+func (dct defaultColorTheme) Info(writer io.Writer) {
+	ct.Foreground(writer, ct.Green, false)
+}
+
+// Error switches to red foreground
+func (dct defaultColorTheme) Error(writer io.Writer) {
+	ct.Foreground(writer, ct.Red, false)
+}
+
+// Disabled switches to bright black foreground
+func (dct defaultColorTheme) Disabled(writer io.Writer) {
+	ct.Foreground(writer, ct.Black, true)
+}
+
+// Highlight switches to teal foreground
+func (dct defaultColorTheme) Highlight(writer io.Writer) {
+	ct.Foreground(writer, ct.Cyan, true)
+}
+
+// Highlight switches to teal foreground
+func (dct defaultColorTheme) Reset(writer io.Writer) {
+	ct.Reset(writer)
+}
+
+var activeColorTheme ColorTheme = defaultColorTheme{}
 
 // writeColorized will replace `[COLORNAME]foo[/RESET]` with shell colors, or strip color tags if stripColors=true
 func writeColorized(value string, writer io.Writer, stripColors bool) (int, error) {
@@ -30,15 +80,14 @@ func writeColorized(value string, writer io.Writer, stripColors bool) (int, erro
 		}
 
 		if !stripColors {
-			brighten := value[end-2:end-1] == "!"
 			groupName := value[groupStart:groupEnd]
-			colorize(writer, groupName, brighten)
+			colorize(activeColorTheme, writer, groupName)
 		}
 
 		pos = end
 	}
 
-	return writer.Write([]byte(value[pos:len(value)]))
+	return writer.Write([]byte(value[pos:]))
 }
 
 // StripColorCodes strips color codes from a string
@@ -46,31 +95,20 @@ func StripColorCodes(value string) string {
 	return colorRx.ReplaceAllString(value, "")
 }
 
-func colorize(writer io.Writer, colorName string, brighten bool) {
-	switch colorName {
-	case `BOLD`:
-		ct.ChangeStyle(writer, ct.Bold)
-	case `UNDERLINE`:
-		ct.ChangeStyle(writer, ct.Underline)
-	case `BLACK`:
-		ct.Foreground(writer, ct.Black, brighten)
-	case `RED`:
-		ct.Foreground(writer, ct.Red, brighten)
-	case `GREEN`:
-		ct.Foreground(writer, ct.Green, brighten)
-	case `YELLOW`:
-		ct.Foreground(writer, ct.Yellow, brighten)
-	case `BLUE`:
-		ct.Foreground(writer, ct.Blue, brighten)
-	case `MAGENTA`:
-		ct.Foreground(writer, ct.Magenta, brighten)
-	case `CYAN`:
-		ct.Foreground(writer, ct.Cyan, brighten)
-	case `WHITE`:
-		ct.Foreground(writer, ct.White, brighten)
+func colorize(ct ColorTheme, writer io.Writer, arg string) {
+	switch arg {
+	case `HEADING`:
+		ct.Heading(writer)
+	case `NOTICE`:
+		ct.Notice(writer)
 	case `INFO`:
-		ct.Foreground(writer, ct.Blue, brighten)
-		ct.ChangeStyle(writer, ct.Bold)
+		ct.Info(writer)
+	case `ERROR`:
+		ct.Error(writer)
+	case `DISABLED`:
+		ct.Disabled(writer)
+	case `HIGHLIGHT`:
+		ct.Highlight(writer)
 	case `/RESET`:
 		ct.Reset(writer)
 	}
