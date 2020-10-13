@@ -58,7 +58,7 @@ func newActivateCommand(prime *primer.Values) *captain.Command {
 				if params.PreferredPath != "" {
 					return locale.NewInputError(
 						"activate_flag_replace_and_path_incompatible",
-						"The flags --path and --replace-with are mutually exclusive.",
+						"The flags --path and --replace are mutually exclusive.",
 					)
 				}
 

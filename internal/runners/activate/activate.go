@@ -55,10 +55,7 @@ func (r *Activate) Run(params *ActivateParams) error {
 func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc) error {
 	logging.Debug("Activate %v, %v", params.Namespace, params.PreferredPath)
 
-	nSpace := params.Namespace.String()
-	path := params.PreferredPath
-
-	pathToUse, err := r.pathToUse(nSpace, path)
+	pathToUse, err := r.pathToUse(params.Namespace.String(), params.PreferredPath)
 	if err != nil {
 		return locale.WrapError(err, "err_activate_pathtouse", "Could not figure out what path to use.")
 	}
