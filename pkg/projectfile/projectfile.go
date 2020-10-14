@@ -526,20 +526,29 @@ func Parse(configFilepath string) (*Project, *failures.Failure) {
 			logging.Error("Could not save projectfile after removing owner/name deprecation: %v", err)
 		}
 	}
-
-	fail = ValidateProjectURL(project.Project)
+	fail = project.Init()
 	if fail != nil {
 		return nil, fail
-	}
-
-	project.parsedURL, err = project.parseURL()
-	if err != nil {
-		return nil, failures.FailUserInput.New("parse_project_file_url_err")
 	}
 
 	storeProjectMapping(fmt.Sprintf("%s/%s", project.Owner(), project.Name()), filepath.Dir(project.path))
 
 	return project, nil
+}
+
+// Init initializes the parsedURL field from the project url string
+func (p *Project) Init() *failures.Failure {
+	fail := ValidateProjectURL(p.Project)
+	if fail != nil {
+		return fail
+	}
+
+	parsedURL, err := p.parseURL()
+	if err != nil {
+		return failures.FailUserInput.New("parse_project_file_url_err")
+	}
+	p.parsedURL = parsedURL
+	return nil
 }
 
 func parse(configFilepath string) (*Project, *failures.Failure) {
