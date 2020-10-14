@@ -24,7 +24,6 @@ var FailAlreadyActive = failures.Type("virtualenvironment.fail.alreadyactive", f
 
 // VirtualEnvironment represents our virtual environment, it pulls together and virtualizes the runtime environment
 type VirtualEnvironment struct {
-	project      *project.Project
 	activationID string
 	onUseCache   func()
 	runtime      *runtime.Runtime
