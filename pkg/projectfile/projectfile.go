@@ -20,6 +20,7 @@ import (
 	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/hash"
@@ -79,6 +80,13 @@ var (
 	CommitURLRe = regexp.MustCompile(urlCommitRegexStr)
 )
 
+// projectURL comprises all fields of a parsed project URL
+type projectURL struct {
+	Owner    string
+	Name     string
+	CommitID string
+}
+
 var projectMapMutex = &sync.Mutex{}
 
 const LocalProjectsConfigKey = "projects"
@@ -113,11 +121,12 @@ type Project struct {
 	Jobs         Jobs          `yaml:"jobs,omitempty"`
 	Private      bool          `yaml:"private,omitempty"`
 	path         string        // "private"
+	parsedURL    projectURL    // parsed url data
 
 	// Deprecated
-	Variables interface{} `yaml:"variables,omitempty"`
-	Owner     string      `yaml:"owner,omitempty"`
-	Name      string      `yaml:"name,omitempty"`
+	Variables       interface{} `yaml:"variables,omitempty"`
+	deprecatedOwner string      `yaml:"owner,omitempty"`
+	deprecatedName  string      `yaml:"name,omitempty"`
 }
 
 // Platform covers the platform structure of our yaml
@@ -510,26 +519,36 @@ func Parse(configFilepath string) (*Project, *failures.Failure) {
 		return nil, FailValidate.New("variable_field_deprecation_warning")
 	}
 
-	if project.Project == "" && project.Owner != "" && project.Name != "" {
-		project.Project = fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, project.Owner, project.Name)
+	// If as.yaml has deprecated flags `owner` and `name`, construct a project file URL from these fields
+	if project.Project == "" && project.deprecatedOwner != "" && project.deprecatedName != "" {
+		project.Project = fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, project.Owner(), project.Name())
 		if err := project.Save(); err != nil { // anyone still not respecting the deprecation warning by now is going to have to deal with their file being updated for them
 			logging.Error("Could not save projectfile after removing owner/name deprecation: %v", err)
 		}
 	}
-
-	fail = ValidateProjectURL(project.Project)
+	fail = project.Init()
 	if fail != nil {
 		return nil, fail
 	}
 
-	if project.Owner == "" && project.Name == "" {
-		match := ProjectURLRe.FindStringSubmatch(project.Project)
-		project.Owner = match[1]
-		project.Name = match[2]
-	}
-	storeProjectMapping(fmt.Sprintf("%s/%s", project.Owner, project.Name), filepath.Dir(project.path))
+	storeProjectMapping(fmt.Sprintf("%s/%s", project.Owner(), project.Name()), filepath.Dir(project.path))
 
 	return project, nil
+}
+
+// Init initializes the parsedURL field from the project url string
+func (p *Project) Init() *failures.Failure {
+	fail := ValidateProjectURL(p.Project)
+	if fail != nil {
+		return fail
+	}
+
+	parsedURL, err := p.parseURL()
+	if err != nil {
+		return failures.FailUserInput.New("parse_project_file_url_err")
+	}
+	p.parsedURL = parsedURL
+	return nil
 }
 
 func parse(configFilepath string) (*Project, *failures.Failure) {
@@ -548,6 +567,21 @@ func parse(configFilepath string) (*Project, *failures.Failure) {
 	}
 
 	return &project, nil
+}
+
+// Owner returns the project namespace's organization
+func (p *Project) Owner() string {
+	return p.parsedURL.Owner
+}
+
+// Name returns the project namespace's name
+func (p *Project) Name() string {
+	return p.parsedURL.Name
+}
+
+// CommitID returns the commit ID specified in the project
+func (p *Project) CommitID() string {
+	return p.parsedURL.CommitID
 }
 
 // Path returns the project's activestate.yaml file path.
@@ -584,6 +618,32 @@ func (p *Project) Save() *failures.Failure {
 	return p.save(p.Path())
 }
 
+// parseURL returns the parsed fields of a Project URL
+func (p *Project) parseURL() (projectURL, error) {
+	return parseURL(p.Project)
+}
+
+func parseURL(url string) (projectURL, error) {
+	fail := ValidateProjectURL(url)
+	if fail != nil {
+		return projectURL{}, fail.ToError()
+	}
+
+	match := CommitURLRe.FindStringSubmatch(url)
+	if len(match) > 1 {
+		parts := projectURL{"", "", match[1]}
+		return parts, nil
+	}
+
+	match = ProjectURLRe.FindStringSubmatch(url)
+	parts := projectURL{match[1], match[2], ""}
+	if len(match) == 4 {
+		parts.CommitID = match[3]
+	}
+
+	return parts, nil
+}
+
 // Save the project to its activestate.yaml file
 func (p *Project) save(path string) *failures.Failure {
 	dat, err := yaml.Marshal(p)
@@ -608,20 +668,43 @@ func (p *Project) save(path string) *failures.Failure {
 	if err != nil {
 		return failures.FailIO.Wrap(err)
 	}
-	storeProjectMapping(fmt.Sprintf("%s/%s", p.Owner, p.Name), filepath.Dir(p.Path()))
+	storeProjectMapping(fmt.Sprintf("%s/%s", p.parsedURL.Owner, p.parsedURL.Name), filepath.Dir(p.Path()))
 
+	return nil
+}
+
+// SetNamespace updates the namespace in the project file
+func (p *Project) SetNamespace(owner, project string) error {
+	data, err := ioutil.ReadFile(p.path)
+	if err != nil {
+		return errs.Wrap(err, "Failed to read project file %s.", p.path)
+	}
+
+	namespace := fmt.Sprintf("%s/%s", owner, project)
+	out, err := setNamespaceInYAML(data, namespace)
+	if err != nil {
+		return errs.Wrap(err, "Failed to update namespace in project file.")
+	}
+
+	// keep parsed url components in sync
+	p.parsedURL.Owner = owner
+	p.parsedURL.Name = project
+
+	if err := ioutil.WriteFile(p.path, out, 0664); err != nil {
+		return errs.Wrap(err, "Failed to write project file %s", p.path)
+	}
+
+	fail := p.Reload()
+	if fail != nil {
+		return errs.Wrap(fail.ToError(), "Failed to reload updated projectfile.")
+	}
 	return nil
 }
 
 // SetCommit sets the commit id within the current project file. This is done
 // in-place so that line order is preserved.
 func (p *Project) SetCommit(commitID string) *failures.Failure {
-	fp, fail := GetProjectFilePath()
-	if fail != nil {
-		return fail
-	}
-
-	data, err := ioutil.ReadFile(fp)
+	data, err := ioutil.ReadFile(p.path)
 	if err != nil {
 		return failures.FailOS.Wrap(err)
 	}
@@ -630,8 +713,9 @@ func (p *Project) SetCommit(commitID string) *failures.Failure {
 	if fail != nil {
 		return fail
 	}
+	p.parsedURL.CommitID = commitID
 
-	if err := ioutil.WriteFile(fp, out, 0664); err != nil {
+	if err := ioutil.WriteFile(p.path, out, 0664); err != nil {
 		return failures.FailOS.Wrap(err)
 	}
 
@@ -639,18 +723,31 @@ func (p *Project) SetCommit(commitID string) *failures.Failure {
 }
 
 var (
-	// regex captures from "project:" (at start of line) to last "/" and
-	// everything after until a "?" or newline is reached. Everything after
-	// that is targeted, but not captured so that only the first capture
-	// group can be used in the replace value.
-	setCommitRE = regexp.MustCompile(`(?m:^(project:.*\/[^?\r\n]*).*)`)
+	// regex captures three groups:
+	// 1. from "project:" (at start of line) to protocol ("https://")
+	// 2. the domain name
+	// 3. the url part until a "?" or newline is reached.
+	// Everything after that is targeted, but not captured so that only the first three capture
+	// groups can be used in the replace value.
+	setCommitRE = regexp.MustCompile(`(?m:^(project: *https?:\/\/)([^\/]*\/)(.*\/[^?\r\n]*).*)`)
 )
+
+func setNamespaceInYAML(data []byte, namespace string) ([]byte, error) {
+	commitQryParam := []byte(fmt.Sprintf("${1}${2}%s", namespace))
+
+	out := setCommitRE.ReplaceAll(data, commitQryParam)
+	if !strings.Contains(string(out), namespace) {
+		return nil, locale.NewError(
+			"err_set_namespace", "Failed to set namespace {{.V0}} in activestate.yaml.", namespace)
+	}
+	return out, nil
+}
 
 func setCommitInYAML(data []byte, commitID string) ([]byte, *failures.Failure) {
 	if commitID == "" {
 		return nil, failures.FailDeveloper.New("commitID must not be empty")
 	}
-	commitQryParam := []byte("$1?commitID=" + commitID)
+	commitQryParam := []byte("$1$2$3?commitID=" + commitID)
 
 	out := setCommitRE.ReplaceAll(data, commitQryParam)
 	if !strings.Contains(string(out), commitID) {
