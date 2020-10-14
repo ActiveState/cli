@@ -34,17 +34,6 @@ type scriptsTable struct {
 	rows []scriptLine
 }
 
-func (t scriptsTable) MarshalOutput(format output.Format) interface{} {
-	if format == output.PlainFormatName {
-		if len(t.rows) == 0 {
-			return locale.Tl("scripts_no_scripts", "There are not scripts for this project.")
-		}
-		return t.rows
-	}
-
-	return t.rows
-}
-
 func (s *Scripts) Run() error {
 	logging.Debug("Execute scripts command")
 
