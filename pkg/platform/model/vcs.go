@@ -9,6 +9,7 @@ import (
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -296,31 +297,25 @@ func CommitPackage(parentCommitID strfmt.UUID, operation Operation, packageName,
 	return commit.CommitID, nil
 }
 
-// CommitPackageInBranch commits a single package commit and updates the project's VCS branch
-func CommitPackageInBranch(projectOwner, projectName string, operation Operation, packageName, packageNamespace, packageVersion string) (strfmt.UUID, *failures.Failure) {
-	commitID := strfmt.UUID("")
+// UpdateProjectBranchCommit updates the vcs branch for a given project with a new commitID
+func UpdateProjectBranchCommit(projectOwner, projectName string, commitID strfmt.UUID) error {
+
 	proj, fail := FetchProjectByName(projectOwner, projectName)
 	if fail != nil {
-		return commitID, fail
+		return errs.Wrap(fail.ToError(), "Failed to fetch project.")
 	}
 
 	branch, fail := DefaultBranchForProject(proj)
 	if fail != nil {
-		return commitID, fail
+		return errs.Wrap(fail.ToError(), "Failed to get default branch for project %s.", proj.Name)
 	}
-
-	if branch.CommitID == nil {
-		return commitID, FailNoCommit.New(locale.T("err_project_no_languages"))
-	}
-
-	commitID, fail = CommitPackage(*branch.CommitID, operation, packageName, packageVersion, packageNamespace)
 
 	fail = UpdateBranchCommit(branch.BranchID, commitID)
 	if fail != nil {
-		return commitID, fail
+		return errs.Wrap(fail.ToError(), "Failed to update commitID in project branch.")
 	}
 
-	return commitID, nil
+	return nil
 }
 
 // CommitChangeset commits multiple changes in one commit

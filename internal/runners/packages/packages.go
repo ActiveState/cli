@@ -54,19 +54,17 @@ func executePackageOperation(out output.Outputer, prompt prompt.Prompter, langua
 	}
 
 	pj := project.Get()
-	var commitID strfmt.UUID
-	if isHeadless {
-		parentCommitID := pj.CommitUUID()
-		var fail *failures.Failure
-		commitID, fail = model.CommitPackage(parentCommitID, operation, name, ingredient.Namespace, version)
-		if fail != nil {
-			return locale.WrapError(fail.ToError(), "err_package_"+string(operation))
-		}
-	} else {
-		var fail *failures.Failure
-		commitID, fail = model.CommitPackageInBranch(pj.Owner(), pj.Name(), operation, ingredient.Namespace, name, version)
-		if fail != nil {
-			return fail.WithDescription("err_package_" + string(operation)).ToError()
+
+	parentCommitID := pj.CommitUUID()
+	commitID, fail := model.CommitPackage(parentCommitID, operation, name, ingredient.Namespace, version)
+	if fail != nil {
+		return locale.WrapError(fail.ToError(), "err_package_"+string(operation))
+	}
+
+	if !isHeadless {
+		err := model.UpdateProjectBranchCommit(pj.Owner(), pj.Name(), commitID)
+		if err != nil {
+			return locale.WrapError(err, "err_package_"+string(operation))
 		}
 	}
 
