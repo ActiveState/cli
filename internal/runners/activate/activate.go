@@ -110,11 +110,7 @@ func (r *Activate) run(params *ActivateParams) error {
 		r.subshell.SetActivateCommand(params.Command)
 	}
 
-	commitUUID, err := proj.CommitUUID()
-	if err != nil {
-		return locale.WrapError(err, "err_activate_invalid_commit_id", "Could not determine a valid commit ID.")
-	}
-	runtime := runtime.NewRuntime(commitUUID, proj.Owner(), proj.Name(), runbits.NewRuntimeMessageHandler(r.out))
+	runtime := runtime.NewRuntime(proj.CommitUUID(), proj.Owner(), proj.Name(), runbits.NewRuntimeMessageHandler(r.out))
 	if params.Default {
 		err := globaldefault.SetupDefaultActivation(r.subshell, r.config, runtime, filepath.Dir(proj.Source().Path()))
 		if err != nil {
@@ -163,7 +159,7 @@ func updateProjectFile(prj *project.Project, names *project.Namespaced) error {
 	if err != nil {
 		return locale.WrapError(err, "err_activate_replace_write_namespace", "Failed to update project namespace.")
 	}
-	fail := prj.Source().SetCommit(commitID)
+	fail := prj.Source().SetCommit(commitID, prj.IsHeadless())
 	if fail != nil {
 		return locale.WrapError(fail.ToError(), "err_activate_replace_write_commit", "Failed to update commitID.")
 	}

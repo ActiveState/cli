@@ -101,11 +101,7 @@ func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, nam
 	// Activate the state if needed.
 	if !script.Standalone() && !subshell.IsActivated() {
 		out.Notice(locale.T("info_state_run_activating_state"))
-		commitUUID, err := proj.CommitUUID()
-		if err != nil {
-			return err
-		}
-		runtime := runtime.NewRuntime(commitUUID, proj.Owner(), proj.Name(), runbits.NewRuntimeMessageHandler(out))
+		runtime := runtime.NewRuntime(proj.CommitUUID(), proj.Owner(), proj.Name(), runbits.NewRuntimeMessageHandler(out))
 		venv := virtualenvironment.New(runtime)
 
 		if fail := venv.Activate(); fail != nil {

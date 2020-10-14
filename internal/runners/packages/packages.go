@@ -56,11 +56,7 @@ func executePackageOperation(out output.Outputer, prompt prompt.Prompter, langua
 	pj := project.Get()
 	var commitID strfmt.UUID
 	if isHeadless {
-		parentCommitID, err := pj.CommitUUID()
-		if err != nil {
-			return locale.WrapError(err, "package_headless_invalid_commit_id", "Failed to determine current commit.")
-		}
-
+		parentCommitID := pj.CommitUUID()
 		var fail *failures.Failure
 		commitID, fail = model.CommitPackage(parentCommitID, operation, name, ingredient.Namespace, version)
 		if fail != nil {
