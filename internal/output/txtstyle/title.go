@@ -2,6 +2,8 @@ package txtstyle
 
 import (
 	"unicode/utf8"
+
+	"github.com/ActiveState/cli/internal/output"
 )
 
 const (
@@ -24,7 +26,7 @@ func NewTitle(text string) *Title {
 	}
 }
 
-// String implements the fmt.Stringer interface.
+// String implements fmt.Stringer.
 func (t *Title) String() string {
 	titleLen := utf8.RuneCountInString(t.Text) // NOTE: ignores effects of combining diacritics
 	lineLen := titleLen + 2 + 2*t.Padding + 1  // text, border, padding, newline
@@ -69,4 +71,12 @@ func (t *Title) String() string {
 	}
 
 	return string(rs[:len(rs)-1]) // drop ending newline
+}
+
+// MarshalOutput implements output.Marshaller.
+func (t *Title) MarshalOutput(format output.Format) interface{} {
+	if format == output.PlainFormatName {
+		return t.String()
+	}
+	return output.Suppress
 }

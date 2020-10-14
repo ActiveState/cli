@@ -116,17 +116,13 @@ func sprint(value interface{}) (string, error) {
 		return nilText, nil
 	}
 
-	if stringer, ok := value.(fmt.Stringer); ok {
-		return stringer.String(), nil
-	}
-
-	if err, ok := value.(error); ok {
-		return err.Error(), nil
-	}
-
-	// Reflect doesn't handle []byte (easily)
-	if v, ok := value.([]byte); ok {
-		return string(v), nil
+	switch t := value.(type) {
+	case fmt.Stringer:
+		return t.String(), nil
+	case error:
+		return t.Error(), nil
+	case []byte: // Reflect doesn't handle []byte (easily)
+		return string(t), nil
 	}
 
 	valueRfl := valueOf(value)
