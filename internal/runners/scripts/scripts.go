@@ -68,7 +68,6 @@ func (s *Scripts) Run() error {
 		}
 		rows = append(rows, row)
 	}
-	s.output.Print(locale.Tl("list_scripts_info", "Here are all of the scripts for the project: {{.V0}}/{{.V1}}", owner, name))
 	s.output.Print(rows)
 
 	return nil

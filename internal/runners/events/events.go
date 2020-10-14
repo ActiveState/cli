@@ -51,7 +51,6 @@ func (e *Events) Run() error {
 		return nil
 	}
 
-	e.out.Print(locale.Tl("list_events_info", "Here are all the events for your current project"))
 	e.out.Print(rows)
 	return nil
 }

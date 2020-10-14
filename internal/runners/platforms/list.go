@@ -4,7 +4,6 @@ import (
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/failures"
-	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
@@ -44,7 +43,6 @@ func (l *List) Run(ps ListRunParams) error {
 		return err
 	}
 
-	l.out.Print(locale.Tl("added_platforms_info", "Here are all the platforms that have been added to this runtime."))
 	l.out.Print(listing)
 	return nil
 }
