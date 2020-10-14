@@ -31,9 +31,15 @@ func (t *Title) String() string {
 
 	rs := make([]rune, 5*lineLen)
 
-	rs[0], rs[lineLen-2] = '╔', '╗'
-	rs[lineLen*4], rs[len(rs)-2] = '╚', '╝'
-	copy(rs[lineLen*2+t.Padding+1:], []rune(t.Text))
+	topLf := 0
+	topRt := lineLen - 2
+	btmLf := lineLen * 4
+	btmRt := len(rs) - 2
+	titleBgn := lineLen*2 + t.Padding + 1
+
+	rs[topLf], rs[topRt] = '╔', '╗'
+	rs[btmLf], rs[btmRt] = '╚', '╝'
+	copy(rs[titleBgn:], []rune(t.Text))
 
 	for i := range rs {
 		// IS not empty
@@ -41,20 +47,20 @@ func (t *Title) String() string {
 			continue
 		}
 
-		// IS end of line
+		// IS end (control) of line
 		if i%lineLen == lineLen-1 {
 			rs[i] = '\n'
 			continue
 		}
 
 		// IS between top two corners OR between bottom two corners
-		if (i > 0 && i < lineLen-2) || (i > lineLen*4 && i < lineLen*5-2) {
+		if (i > topLf && i < topRt) || (i > btmLf && i < btmRt) {
 			rs[i] = '═'
 			continue
 		}
 
-		// IS not in first AND not in last line AND start or end of line
-		if i > lineLen-1 && i < lineLen*4-1 && (i%lineLen == 0 || i%lineLen == lineLen-2) {
+		// IS not in first line AND not in last line AND start or end (content) of line
+		if i > topRt && i < btmLf && (i%lineLen == 0 || i%lineLen == lineLen-2) {
 			rs[i] = '║'
 			continue
 		}
