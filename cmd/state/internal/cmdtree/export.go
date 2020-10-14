@@ -125,7 +125,7 @@ func newExportConfigCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"config",
-		locale.Tl("export_config_title", "Export Configuration Data"),
+		locale.Tl("export_config_title", "Exporting Configuration Data"),
 		locale.T("export_config_cmd_description"),
 		prime.Output(),
 		[]*captain.Flag{
