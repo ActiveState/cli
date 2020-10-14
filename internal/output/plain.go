@@ -332,6 +332,9 @@ func sprintTable(slice []interface{}) (string, error) {
 		Padding:         1,
 	}
 
+	// Adjust padding value for the above table format
+	tabulate.MIN_PADDING = 4
+
 	render := t.Render("standard")
 	return strings.TrimSuffix(render, "\n"), nil
 }
