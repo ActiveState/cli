@@ -20,8 +20,10 @@ import (
 const latestVersion = "latest"
 
 func executePackageOperation(out output.Outputer, authentication *authentication.Auth, prompt prompt.Prompter, language, name, version string, operation model.Operation) error {
-	isHeadless := false
-	if !authentication.Authenticated() {
+	pj := project.Get()
+
+	isHeadless := pj.IsHeadless()
+	if !isHeadless && !authentication.Authenticated() {
 		anonymousOk, fail := prompt.Confirm(locale.T("prompt_headless_anonymous"), true)
 		if fail != nil {
 			return locale.WrapInputError(fail.ToError(), "Authentication cancelled.")
@@ -52,8 +54,6 @@ func executePackageOperation(out output.Outputer, authentication *authentication
 	if err != nil {
 		return locale.WrapError(err, "package_ingredient_err", "Failed to resolve an ingredient named {{.V0}}.", name)
 	}
-
-	pj := project.Get()
 
 	parentCommitID := pj.CommitUUID()
 	commitID, fail := model.CommitPackage(parentCommitID, operation, name, ingredient.Namespace, version)
