@@ -35,7 +35,6 @@ type TableFormat struct {
 	Padding         int
 	HeaderHide      bool
 	FitScreen       bool
-	PaddingTop      bool
 }
 
 // Represents a Line
@@ -90,7 +89,6 @@ var TableFormats = map[string]TableFormat{
 		DataRow:         Row{"", "", ""},
 		TitleRow:        Row{"", "", ""},
 		Padding:         1,
-		PaddingTop:      true,
 	},
 }
 
@@ -333,10 +331,6 @@ func (t *Tabulate) Render(format ...interface{}) string {
 
 	// Join lines
 	var buffer bytes.Buffer
-	if t.TableFormat.PaddingTop {
-		buffer.WriteString("\n")
-	}
-
 	for _, line := range lines {
 		buffer.WriteString(line + "\n")
 	}

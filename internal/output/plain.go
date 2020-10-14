@@ -28,6 +28,7 @@ const (
 	SingleLineOpt PlainOpts = "singleLine"
 	EmptyNil      PlainOpts = "emptyNil"
 	HidePlain     PlainOpts = "hidePlain"
+	HideKey       PlainOpts = "hideKey"
 )
 
 // Plain is our plain outputer, it uses reflect to marshal the data.
@@ -190,8 +191,12 @@ func sprintStruct(value interface{}) (string, error) {
 			stringValue = "\n" + stringValue
 		}
 
-		key := localizedField(field.l10n)
-		result = append(result, fmt.Sprintf("%s: %s", key, stringValue))
+		if !funk.Contains(field.opts, string(HideKey)) {
+			key := localizedField(field.l10n)
+			result = append(result, fmt.Sprintf("%s: %s", key, stringValue))
+		} else {
+			result = append(result, stringValue)
+		}
 	}
 
 	return strings.Join(result, "\n"), nil

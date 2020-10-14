@@ -4,7 +4,9 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/table"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
@@ -39,13 +41,13 @@ func run(params *OrgParams, out output.Outputer) error {
 		return nil
 	}
 
-	data, err := newOrgData(orgs)
+	rows, err := newOrgData(orgs)
 	if err != nil {
 		return locale.WrapError(err, "err_run_orgs_data", "Could not collect information about your organizations.")
 	}
 
-	out.Print(locale.Tl("organizations_list_info", "Here are the organizations you are a part of."))
-	out.Print(data)
+	table := table.NewTable(rows, locale.Tl("organizations_list_info", "Here are the organizations for the user: {{.V0}}.", authentication.Get().WhoAmI()), locale.Tl("orgs_empty", "No organizations found for the user: {{.V0}}", authentication.Get().WhoAmI()))
+	out.Print(table)
 	return nil
 }
 

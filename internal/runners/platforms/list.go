@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/table"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -44,8 +45,8 @@ func (l *List) Run(ps ListRunParams) error {
 		return err
 	}
 
-	l.out.Print(locale.Tl("added_platforms_info", "Here are all the platforms that have been added to this runtime."))
-	l.out.Print(listing)
+	table := table.NewTable(listing, locale.Tl("added_platforms_info", "Here are all the platforms that have been added to this runtime."), locale.Tl("platforms_list_no_platforms", "This project has no platforms to list."))
+	l.out.Print(table)
 	return nil
 }
 
@@ -54,7 +55,7 @@ type Listing struct {
 	Platforms []*Platform `json:"platforms"`
 }
 
-func newListing(commitID, projName, projOrg string) (*Listing, error) {
+func newListing(commitID, projName, projOrg string) ([]*Platform, error) {
 	targetCommitID, err := targetedCommitID(commitID, projName, projOrg)
 	if err != nil {
 		return nil, err
@@ -65,11 +66,7 @@ func newListing(commitID, projName, projOrg string) (*Listing, error) {
 		return nil, fail
 	}
 
-	listing := Listing{
-		Platforms: makePlatformsFromModelPlatforms(platforms),
-	}
-
-	return &listing, nil
+	return makePlatformsFromModelPlatforms(platforms), nil
 }
 
 func targetedCommitID(commitID, projName, projOrg string) (*strfmt.UUID, error) {
