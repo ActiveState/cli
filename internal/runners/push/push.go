@@ -3,7 +3,6 @@ package push
 import (
 	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -24,14 +23,16 @@ type configGetter interface {
 type Push struct {
 	config configGetter
 	output.Outputer
+	project *project.Project
 }
 
 type primeable interface {
 	primer.Outputer
+	primer.Projecter
 }
 
 func NewPush(config *viper.Viper, prime primeable) *Push {
-	return &Push{config, prime.Output()}
+	return &Push{config, prime.Output(), prime.Project()}
 }
 
 func (r *Push) Run() *failures.Failure {
@@ -39,18 +40,12 @@ func (r *Push) Run() *failures.Failure {
 		return failures.FailUserInput.New("err_api_not_authenticated")
 	}
 
-	wd, err := osutils.Getwd()
-	if err != nil {
-		return failures.FailIO.Wrap(err, locale.T("err_wd"))
-	}
-
-	pj, fail := project.FromPath(wd)
-	if fail != nil {
-		return fail
+	if r.project != nil && r.project.IsHeadless() {
+		return failures.FailUserInput.Wrap(locale.NewInputError("err_push_headless", "You must first create a project. Please visit {{.V0}} to create your project.", r.project.URL()))
 	}
 
 	// Create the project remotely if it doesn't already exist
-	pjm, fail := model.FetchProjectByName(pj.Owner(), pj.Name())
+	pjm, fail := model.FetchProjectByName(r.project.Owner(), r.project.Name())
 	if fail != nil {
 		if !fail.Type.Matches(model.FailProjectNotFound) {
 			return fail
@@ -61,33 +56,33 @@ func (r *Push) Run() *failures.Failure {
 	}
 
 	if pjm != nil {
-		if pj.CommitID() == "" {
-			return failures.FailUserInput.New("push_already_exists", pj.Owner(), pj.Name())
+		if r.project.CommitID() == "" {
+			return failures.FailUserInput.New("push_already_exists", r.project.Owner(), r.project.Name())
 		} else {
 			r.Outputer.Notice(locale.T("push_up_to_date"))
 		}
 		return nil
 	}
 
-	lang, langVersion, fail := r.languageForProject(pj)
+	lang, langVersion, fail := r.languageForProject(r.project)
 	if fail != nil {
 		return fail
 	}
 
-	r.Outputer.Notice(locale.Tr("push_creating_project", pj.Owner(), pj.Name()))
+	r.Outputer.Notice(locale.Tr("push_creating_project", r.project.Owner(), r.project.Name()))
 	var commitID strfmt.UUID
-	pjm, commitID, fail = model.CreateProject(pj.Owner(), pj.Name(), model.HostPlatform, lang, langVersion, pj.Private())
+	pjm, commitID, fail = model.CreateProject(r.project.Owner(), r.project.Name(), model.HostPlatform, lang, langVersion, r.project.Private())
 	if fail != nil {
 		return fail
 	}
 
 	// Remove temporary language entry
-	pjf := pj.Source()
+	pjf := r.project.Source()
 	pjf.Languages = nil
 	pjf.Save()
 
-	r.Outputer.Notice(locale.Tr("push_project_created", pj.Source().Project, lang.String(), langVersion))
-	pj.Source().SetCommit(commitID.String())
+	r.Outputer.Notice(locale.Tr("push_project_created", r.project.URL(), lang.String(), langVersion))
+	r.project.Source().SetCommit(commitID.String())
 
 	return nil
 }
