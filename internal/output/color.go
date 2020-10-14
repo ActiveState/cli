@@ -12,7 +12,7 @@ var colorRx *regexp.Regexp
 
 func init() {
 	var err error
-	colorRx, err = regexp.Compile(`\[(HEADING|NOTICE|INFO|ERROR|DISABLED|HIGHLIGHT|/RESET)!?\]`)
+	colorRx, err = regexp.Compile(`\[(HEADING|NOTICE|INFO|ERROR|DISABLED|ACTIONABLE|/RESET)!?\]`)
 	if err != nil {
 		panic(fmt.Sprintf("Could not compile regex: %v", err))
 	}
@@ -24,7 +24,7 @@ type ColorTheme interface {
 	Info(writer io.Writer)
 	Error(writer io.Writer)
 	Disabled(writer io.Writer)
-	Highlight(writer io.Writer)
+	Actionable(writer io.Writer)
 	Reset(writer io.Writer)
 }
 
@@ -56,12 +56,12 @@ func (dct defaultColorTheme) Disabled(writer io.Writer) {
 	ct.Foreground(writer, ct.Black, true)
 }
 
-// Highlight switches to teal foreground
-func (dct defaultColorTheme) Highlight(writer io.Writer) {
+// Actionable switches to teal foreground
+func (dct defaultColorTheme) Actionable(writer io.Writer) {
 	ct.Foreground(writer, ct.Cyan, true)
 }
 
-// Highlight switches to teal foreground
+// Reset re-sets all color settings
 func (dct defaultColorTheme) Reset(writer io.Writer) {
 	ct.Reset(writer)
 }
@@ -107,8 +107,8 @@ func colorize(ct ColorTheme, writer io.Writer, arg string) {
 		ct.Error(writer)
 	case `DISABLED`:
 		ct.Disabled(writer)
-	case `HIGHLIGHT`:
-		ct.Highlight(writer)
+	case `ACTIONABLE`:
+		ct.Actionable(writer)
 	case `/RESET`:
 		ct.Reset(writer)
 	}

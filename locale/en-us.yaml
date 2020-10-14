@@ -1374,7 +1374,7 @@ namespace_label_platform:
 namespace_label_preplatform:
   other: "Bits"
 history_commit:
-  other: "[HIGHLIGHT]commit {{.V0}}[/RESET]"
+  other: "[NOTICE]commit {{.V0}}[/RESET]"
 history_author:
   other: "Author: {{.V0}}"
 history_date:
@@ -1452,7 +1452,7 @@ update_attempt:
     [INFO]Updating state tool:  Downloading latest version of the state tool...[/RESET]
 auto_update_to_version:
   other: |
-    [INFO]Updated from [HIGHLIGHT]{{.V0}}[/RESET] [INFO]to[/RESET] [HIGHLIGHT]{{.V1}}[/RESET].
+    [INFO]Updated from {{.V0}} to {{.V1}}[/RESET].
     [INFO]To avoid auto updating run 'state update --lock' (only recommended for production environments).[/RESET]
 auto_update_permission_err:
   other: |
@@ -1460,7 +1460,7 @@ auto_update_permission_err:
     To manually update, run 'state update' as a privileged user.
     If you want the state tool to auto-update, please re-install it in a user-writable directory.
 forward_version:
-  other: "[INFO]Using locked state tool version [HIGHLIGHT]{{.V0}}[/RESET]."
+  other: "[INFO]Using locked state tool version {{.V0}}[/RESET]."
 err_project_env_file_not_exist:
   other: |
     Your activated environment appears to have been corrupted because the activestate.yaml cannot be found anymore.
@@ -1589,23 +1589,23 @@ ppm_print_main:
     See "https://docs.activestate.com/platform/state/" for details.
 ppm_print_forward:
   other: |
-    Your command is being forwarded to `[HIGHLIGHT]{{.V0}}[/RESET]`.
-    In the future you can run `[HIGHLIGHT]{{.V0}}[/RESET]` directly instead of running `[HIGHLIGHT]{{.V1}}[/RESET]`, which will soon be deprecated.
+    Your command is being forwarded to `[ACTIONABLE]{{.V0}}[/RESET]`.
+    In the future you can run `[ACTIONABLE]{{.V0}}[/RESET]` directly instead of running `[ACTIONABLE]{{.V1}}[/RESET]`, which will soon be deprecated.
 ppm_print_forward_after_convert:
   other: |
-    Please navigate to your newly created project directory and run `[HIGHLIGHT]{{.V1}}[/RESET]` again.
-    You can also run `[HIGHLIGHT]{{.V0}}[/RESET]` directly instead of running `[HIGHLIGHT]{{.V1}}[/RESET]`, which will soon be deprecated.
+    Please navigate to your newly created project directory and run `[ACTIONABLE]{{.V1}}[/RESET]` again.
+    You can also run `[ACTIONABLE]{{.V0}}[/RESET]` directly instead of running `[ACTIONABLE]{{.V1}}[/RESET]`, which will soon be deprecated.
 ppm_print_forward_failure:
   other: |
-    Your command is being forwarded to `[HIGHLIGHT]{{.V0}}[/RESET]`.
-    In the future you can run `[HIGHLIGHT]{{.V0}}[/RESET]` directly instead of running `[HIGHLIGHT]{{.V1}}[/RESET]`, which will soon be deprecated.
+    Your command is being forwarded to `[ACTIONABLE]{{.V0}}[/RESET]`.
+    In the future you can run `[ACTIONABLE]{{.V0}}[/RESET]` directly instead of running `[ACTIONABLE]{{.V1}}[/RESET]`, which will soon be deprecated.
 
-    Note that `[HIGHLIGHT]{{.V0}}[/RESET]` is not a direct analog for `[HIGHLIGHT]{{.V1}}[/RESET]` and your command may have failed as a result.
-    Please run `[HIGHLIGHT]{{.V0}} --help[/RESET]` for further information on how to use it for your use-case.
+    Note that `[ACTIONABLE]{{.V0}}[/RESET]` is not a direct analog for `[ACTIONABLE]{{.V1}}[/RESET]` and your command may have failed as a result.
+    Please run `[ACTIONABLE]{{.V0}} --help[/RESET]` for further information on how to use it for your use-case.
 ppm_print_area_redundant:
   other: |
     `ppm area` and its subcommands have been made redundant thanks to State Tool's use of virtual environments.
-    You can simply start managing your packages, run `[HIGHLIGHT]{{.V0}} --help[/RESET]` for more information.
+    You can simply start managing your packages, run `[ACTIONABLE]{{.V0}} --help[/RESET]` for more information.
 ppm_install_intent:
   other: add new packages to your project 
 ppm_upgrade_intent:
@@ -1653,11 +1653,11 @@ tutorial_newproject_outro:
   other: |
     Your Virtual Runtime Environment has been created.
     [[BR]][[BR]]
-    To start using your project simply run `[HIGHLIGHT]state activate[/RESET]` from your project directory at [HIGHLIGHT]{{.Dir}}[/RESET].
-    You can also manage your project in your browser at [HIGHLIGHT]{{.URL}}[/RESET].
+    To start using your project simply run `[ACTIONABLE]state activate[/RESET]` from your project directory at [ACTIONABLE]{{.Dir}}[/RESET].
+    You can also manage your project in your browser at [ACTIONABLE]{{.URL}}[/RESET].
     [[BR]][[BR]]
-    To create another project run `[HIGHLIGHT]state init[/RESET]`, or if you want to find out more about the State Tool and what it can do
-    run `[HIGHLIGHT]state --help[/RESET]` or check out [HIGHLIGHT]{{.Docs}}[/RESET]
+    To create another project run `[ACTIONABLE]state init[/RESET]`, or if you want to find out more about the State Tool and what it can do
+    run `[ACTIONABLE]state --help[/RESET]` or check out [ACTIONABLE]{{.Docs}}[/RESET]
 ppm_convert_after_tutorial:
   other: |
     For your convenience you can continue to use ppm commands once you've activated your virtual runtime environment.
@@ -1710,4 +1710,4 @@ prepare_env_warning:
 prepare_protocol_warning:
   other: Could not add state protocol
 err_package_update_pjfile:
-  other: "Coult not update your activestate.yaml with the new commit ID. Please run `state pull` manually."
+  other: "Could not update your activestate.yaml with the new commit ID. Please run `state pull` manually."

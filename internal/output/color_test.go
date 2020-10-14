@@ -50,13 +50,13 @@ func Test_writeColorized(t *testing.T) {
 		{
 			`highlight`,
 			false,
-			`highlight: [HIGHLIGHT]value[/RESET] -- end`,
+			`highlight: [ACTIONABLE]value[/RESET] -- end`,
 			"highlight: \x1b[0;36;1mvalue\x1b[0m -- end",
 		},
 		{
 			`stripped`,
 			true,
-			`white: [ERROR]value[/RESET] [HIGHLIGHT]highlighted value[/RESET] -- end`,
+			`white: [ERROR]value[/RESET] [ACTIONABLE]highlighted value[/RESET] -- end`,
 			"white: value highlighted value -- end",
 		},
 	}
