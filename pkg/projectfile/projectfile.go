@@ -596,6 +596,7 @@ func (p *Project) SetPath(path string) {
 
 // ValidateProjectURL validates the configured project URL
 func ValidateProjectURL(url string) *failures.Failure {
+	// Note: This line also matches headless commit URLs: match == {'commit', '<commit_id>'}
 	match := ProjectURLRe.FindStringSubmatch(url)
 	if len(match) < 3 {
 		return FailParseProject.New(locale.T("err_bad_project_url"))
@@ -623,6 +624,19 @@ func (p *Project) parseURL() (projectURL, error) {
 	return parseURL(p.Project)
 }
 
+func validateUUID(uuidStr string) error {
+	if ok := strfmt.Default.Validates("uuid", uuidStr); !ok {
+		return locale.NewError("invalid_uuid_val", "Invalid commit ID {{.V0}} in activestate.yaml.  You could replace it with 'latest'", uuidStr)
+	}
+
+	var uuid strfmt.UUID
+	if err := uuid.UnmarshalText([]byte(uuidStr)); err != nil {
+		return locale.WrapError(err, "err_commit_id_unmarshal", "Failed to unmarshal the commit id {{.V0}} read from activestate.yaml.", uuidStr)
+	}
+
+	return nil
+}
+
 func parseURL(url string) (projectURL, error) {
 	fail := ValidateProjectURL(url)
 	if fail != nil {
@@ -639,6 +653,12 @@ func parseURL(url string) (projectURL, error) {
 	parts := projectURL{match[1], match[2], ""}
 	if len(match) == 4 {
 		parts.CommitID = match[3]
+	}
+
+	if parts.CommitID != "" {
+		if err := validateUUID(parts.CommitID); err != nil {
+			return projectURL{}, err
+		}
 	}
 
 	return parts, nil
@@ -703,13 +723,14 @@ func (p *Project) SetNamespace(owner, project string) error {
 
 // SetCommit sets the commit id within the current project file. This is done
 // in-place so that line order is preserved.
-func (p *Project) SetCommit(commitID string) *failures.Failure {
+// If headless is true, the project is defined by a commit-id only
+func (p *Project) SetCommit(commitID string, headless bool) *failures.Failure {
 	data, err := ioutil.ReadFile(p.path)
 	if err != nil {
 		return failures.FailOS.Wrap(err)
 	}
 
-	out, fail := setCommitInYAML(data, commitID)
+	out, fail := setCommitInYAML(data, commitID, headless)
 	if fail != nil {
 		return fail
 	}
@@ -743,11 +764,14 @@ func setNamespaceInYAML(data []byte, namespace string) ([]byte, error) {
 	return out, nil
 }
 
-func setCommitInYAML(data []byte, commitID string) ([]byte, *failures.Failure) {
+func setCommitInYAML(data []byte, commitID string, anonymous bool) ([]byte, *failures.Failure) {
 	if commitID == "" {
 		return nil, failures.FailDeveloper.New("commitID must not be empty")
 	}
 	commitQryParam := []byte("$1$2$3?commitID=" + commitID)
+	if anonymous {
+		commitQryParam = []byte(fmt.Sprintf("${1}${2}commit/%s", commitID))
+	}
 
 	out := setCommitRE.ReplaceAll(data, commitQryParam)
 	if !strings.Contains(string(out), commitID) {

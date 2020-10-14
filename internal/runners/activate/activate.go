@@ -159,7 +159,7 @@ func updateProjectFile(prj *project.Project, names *project.Namespaced) error {
 	if err != nil {
 		return locale.WrapError(err, "err_activate_replace_write_namespace", "Failed to update project namespace.")
 	}
-	fail := prj.Source().SetCommit(commitID)
+	fail := prj.Source().SetCommit(commitID, prj.IsHeadless())
 	if fail != nil {
 		return locale.WrapError(fail.ToError(), "err_activate_replace_write_commit", "Failed to update commitID.")
 	}

@@ -83,7 +83,7 @@ func AuthenticateWithInput(username, password, totp string, out output.Outputer,
 }
 
 // RequireAuthentication will prompt the user for authentication if they are not already authenticated. If the authentication
-// is not succesful it will return a failure
+// is not successful it will return a failure
 func RequireAuthentication(message string, out output.Outputer, prompt prompt.Prompter) *failures.Failure {
 	if authentication.Get().Authenticated() {
 		return nil

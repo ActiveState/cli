@@ -6,6 +6,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -20,6 +21,7 @@ type Update struct {
 	out  output.Outputer
 	proj *project.Project
 	prompt.Prompter
+	auth *authentication.Auth
 }
 
 // NewUpdate prepares an update execution context for use.
@@ -28,6 +30,7 @@ func NewUpdate(prime primeable) *Update {
 		prime.Output(),
 		prime.Project(),
 		prime.Prompt(),
+		prime.Auth(),
 	}
 }
 
@@ -41,8 +44,7 @@ func (u *Update) Run(params UpdateRunParams) error {
 func (u *Update) run(params UpdateRunParams) error {
 	logging.Debug("ExecuteUpdate")
 
-	pj := project.Get()
-	language, fail := model.DefaultLanguageNameForProject(pj.Owner(), pj.Name())
+	language, fail := model.DefaultLanguageNameForProject(u.proj.Owner(), u.proj.Name())
 	if fail != nil {
 		return fail.WithDescription("err_fetch_languages")
 	}
@@ -56,5 +58,5 @@ func (u *Update) run(params UpdateRunParams) error {
 		version = *ingredientVersion.Version.Version
 	}
 
-	return executePackageOperation(u.out, u.Prompter, language, name, version, model.OperationUpdated)
+	return executePackageOperation(u.proj, u.out, u.auth, u.Prompter, language, name, version, model.OperationUpdated)
 }

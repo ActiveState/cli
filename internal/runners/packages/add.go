@@ -5,6 +5,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -19,6 +20,7 @@ type Add struct {
 	out  output.Outputer
 	proj *project.Project
 	prompt.Prompter
+	auth *authentication.Auth
 }
 
 // NewAdd prepares an addition execution context for use.
@@ -27,6 +29,7 @@ func NewAdd(prime primeable) *Add {
 		prime.Output(),
 		prime.Project(),
 		prime.Prompt(),
+		prime.Auth(),
 	}
 }
 
@@ -40,13 +43,12 @@ func (a *Add) Run(params AddRunParams) error {
 func (a *Add) run(params AddRunParams) error {
 	logging.Debug("ExecuteAdd")
 
-	pj := project.Get()
-	language, fail := model.DefaultLanguageNameForProject(pj.Owner(), pj.Name())
+	language, fail := model.DefaultLanguageNameForProject(a.proj.Owner(), a.proj.Name())
 	if fail != nil {
 		return fail.WithDescription("err_fetch_languages")
 	}
 
 	name, version := splitNameAndVersion(params.Name)
 
-	return executePackageOperation(a.out, a.Prompter, language, name, version, model.OperationAdded)
+	return executePackageOperation(a.proj, a.out, a.auth, a.Prompter, language, name, version, model.OperationAdded)
 }

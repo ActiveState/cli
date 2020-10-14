@@ -9,6 +9,7 @@ import (
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -158,7 +159,7 @@ func CommitHistory(ownerName, projectName string) ([]*mono_models.Commit, *failu
 	return commits, nil
 }
 
-// CommitHistory will return the commit history for the given owner / project
+// CommitHistoryPaged will return the commit history for the given owner / project
 func CommitHistoryPaged(ownerName, projectName string, offset, limit int64) (*mono_models.CommitHistoryInfo, *failures.Failure) {
 	latestCID, fail := LatestCommitID(ownerName, projectName)
 	if fail != nil {
@@ -221,7 +222,7 @@ func AddChangeset(parentCommitID strfmt.UUID, commitMessage string, changeset Ch
 		ParentCommitID: parentCommitID,
 	})
 
-	res, err := authentication.Client().VersionControl.AddCommit(params, authentication.ClientAuth())
+	res, err := mono.New().VersionControl.AddCommit(params, authentication.ClientAuth())
 	if err != nil {
 		logging.Error("AddCommit Error: %s", err.Error())
 		return nil, FailAddCommit.New(locale.Tr("err_add_commit", api.ErrorMessageFromPayload(err)))
@@ -258,24 +259,10 @@ func UpdateBranchCommit(branchID strfmt.UUID, commitID strfmt.UUID) *failures.Fa
 	return nil
 }
 
-// CommitPackage commits a single package commit
-func CommitPackage(projectOwner, projectName string, operation Operation, packageName, packageNamespace, packageVersion string) (strfmt.UUID, *failures.Failure) {
-	commitID := strfmt.UUID("")
-	proj, fail := FetchProjectByName(projectOwner, projectName)
-	if fail != nil {
-		return commitID, fail
-	}
-
-	branch, fail := DefaultBranchForProject(proj)
-	if fail != nil {
-		return commitID, fail
-	}
-
-	if branch.CommitID == nil {
-		return commitID, FailNoCommit.New(locale.T("err_project_no_languages"))
-	}
-
-	languages, fail := FetchLanguagesForCommit(*branch.CommitID)
+// CommitPackage commits a package to an existing parent commit
+func CommitPackage(parentCommitID strfmt.UUID, operation Operation, packageName, packageNamespace, packageVersion string) (strfmt.UUID, *failures.Failure) {
+	var commitID strfmt.UUID
+	languages, fail := FetchLanguagesForCommit(parentCommitID)
 	if fail != nil {
 		return commitID, fail
 	}
@@ -299,19 +286,36 @@ func CommitPackage(projectOwner, projectName string, operation Operation, packag
 		namespace = NamespaceBundles(languages[0].Name)
 	}
 
-	commit, fail := AddCommit(*branch.CommitID, locale.Tr(message, packageName, packageVersion),
+	commit, fail := AddCommit(
+		parentCommitID, locale.Tr(message, packageName, packageVersion),
 		operation, namespace,
-		packageName, packageVersion)
+		packageName, packageVersion,
+	)
 	if fail != nil {
 		return commitID, fail
 	}
-
-	fail = UpdateBranchCommit(branch.BranchID, commit.CommitID)
-	if fail != nil {
-		return commitID, fail
-	}
-
 	return commit.CommitID, nil
+}
+
+// UpdateProjectBranchCommit updates the vcs branch for a given project with a new commitID
+func UpdateProjectBranchCommit(projectOwner, projectName string, commitID strfmt.UUID) error {
+
+	proj, fail := FetchProjectByName(projectOwner, projectName)
+	if fail != nil {
+		return errs.Wrap(fail.ToError(), "Failed to fetch project.")
+	}
+
+	branch, fail := DefaultBranchForProject(proj)
+	if fail != nil {
+		return errs.Wrap(fail.ToError(), "Failed to get default branch for project %s.", proj.Name)
+	}
+
+	fail = UpdateBranchCommit(branch.BranchID, commitID)
+	if fail != nil {
+		return errs.Wrap(fail.ToError(), "Failed to update commitID in project branch.")
+	}
+
+	return nil
 }
 
 // CommitChangeset commits multiple changes in one commit

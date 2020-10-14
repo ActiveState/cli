@@ -281,6 +281,42 @@ func (suite *PackageIntegrationTestSuite) TestPackage_import() {
 	})
 }
 
+func (suite *PackageIntegrationTestSuite) TestPackage_headless_operation() {
+	if runtime.GOOS == "darwin" {
+		suite.T().Skip("Skipping mac for now as the builds are still too unreliable")
+		return
+	}
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("activate", "ActiveState-CLI/small-python", "--path", ts.Dirs.Work, "--output=json")
+	cp.ExpectExitCode(0)
+
+	suite.Run("packages add", func() {
+		cp := ts.Spawn("packages", "add", "dateparser@0.7.2")
+		cp.ExpectLongString("Do you wan to continue as an anonymous user?")
+		cp.Send("Y")
+		cp.Expect("(?:package added|project is currently building)")
+		cp.ExpectExitCode(1)
+	})
+
+	suite.Run("packages update", func() {
+		cp := ts.Spawn("packages", "update", "dateparser@0.7.6")
+		cp.ExpectLongString("Do you wan to continue as an anonymous user?")
+		cp.Send("Y")
+		cp.Expect("(?:package updated|project is currently building)")
+		cp.ExpectExitCode(1)
+	})
+
+	suite.Run("packages remove", func() {
+		cp := ts.Spawn("packages", "remove", "dateparser")
+		cp.ExpectLongString("Do you wan to continue as an anonymous user?")
+		cp.Send("Y")
+		cp.ExpectRe("(?:package removed|project is currently building)")
+		cp.ExpectExitCode(1)
+	})
+}
+
 func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 	if runtime.GOOS == "darwin" {
 		suite.T().Skip("Skipping mac for now as the builds are still too unreliable")

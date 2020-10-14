@@ -1248,6 +1248,14 @@ package_version_updated:
   other: "Package updated: {{.V0}}@{{.V1}}"
 package_ingredient_err:
   other: Failed to resolve an ingredient named {{.V0}}.
+package_headless_added:
+  other: "Package added: {{.V0}}"
+package_headless_updated:
+  other: "Package updated: {{.V0}}"
+package_headless_removed:
+  other: "Package removed: {{.V0}}"
+package_headless_project_creation:
+  other: "For additional features like sharing your runtime, version control and much more, create a project from your commit at https://platform.activestate.com/commit/{{.V0}}."
 err_package_removed:
   other: Failed to remove package
 err_packages_removed:
@@ -1707,10 +1715,15 @@ prepare_instructions_windows:
   other: "To add the global installations directory to your environment please add the path `{{.V0}}` to your user PATH in the System Properties dialog"
 prepare_env_warning:
   other: Could not update user environment
-prepare_protocol_warning:
-  other: Could not add state protocol
+prompt_headless_anonymous:
+  other: |
+    You're about to add packages as an anonymous user, you might 
+    want to authenticate first using `state auth` if you already have 
+    an account. Do you want to continue as an anonymous user?
 err_package_update_pjfile:
   other: "Could not update your activestate.yaml with the new commit ID. Please run `state pull` manually."
+prepare_protocol_warning:
+  other: Could not add state protocol
 message_headless:
   other: "[BLUE]You're currently using this tool anonymously. Sign-up for an account on the ActiveState Platform to create your own version of this project that lets you fully customize, share with a team, versioned backup, and more. Visit https://platform.activestate.com to sign up.[/RESET]"
 message_headless_packages:
