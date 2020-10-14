@@ -80,8 +80,8 @@ var (
 	CommitURLRe = regexp.MustCompile(urlCommitRegexStr)
 )
 
-// ProjectUrl comprises all fields of a parsed project URL
-type ProjectUrl struct {
+// projectURL comprises all fields of a parsed project URL
+type projectURL struct {
 	Owner    string
 	Name     string
 	CommitID string
@@ -121,7 +121,7 @@ type Project struct {
 	Jobs         Jobs          `yaml:"jobs,omitempty"`
 	Private      bool          `yaml:"private,omitempty"`
 	path         string        // "private"
-	parsedURL    ProjectUrl    // parsed url data
+	parsedURL    projectURL    // parsed url data
 
 	// Deprecated
 	Variables       interface{} `yaml:"variables,omitempty"`
@@ -532,7 +532,7 @@ func Parse(configFilepath string) (*Project, *failures.Failure) {
 		return nil, fail
 	}
 
-	project.parsedURL, err = project.ParseURL()
+	project.parsedURL, err = project.parseURL()
 	if err != nil {
 		return nil, failures.FailUserInput.New("parse_project_file_url_err")
 	}
@@ -609,25 +609,25 @@ func (p *Project) Save() *failures.Failure {
 	return p.save(p.Path())
 }
 
-// ParseURL returns the parsed fields of a Project URL
-func (p *Project) ParseURL() (ProjectUrl, error) {
+// parseURL returns the parsed fields of a Project URL
+func (p *Project) parseURL() (projectURL, error) {
 	return parseURL(p.Project)
 }
 
-func parseURL(url string) (ProjectUrl, error) {
+func parseURL(url string) (projectURL, error) {
 	fail := ValidateProjectURL(url)
 	if fail != nil {
-		return ProjectUrl{}, fail.ToError()
+		return projectURL{}, fail.ToError()
 	}
 
 	match := CommitURLRe.FindStringSubmatch(url)
 	if len(match) > 1 {
-		parts := ProjectUrl{"", "", match[1]}
+		parts := projectURL{"", "", match[1]}
 		return parts, nil
 	}
 
 	match = ProjectURLRe.FindStringSubmatch(url)
-	parts := ProjectUrl{match[1], match[2], ""}
+	parts := projectURL{match[1], match[2], ""}
 	if len(match) == 4 {
 		parts.CommitID = match[3]
 	}
