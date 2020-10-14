@@ -236,17 +236,17 @@ func (p *Project) CommitID() string {
 }
 
 // CommitUUID returns project commitID in UUID format
-func (p *Project) CommitUUID() (*strfmt.UUID, error) {
+func (p *Project) CommitUUID() (strfmt.UUID, error) {
 	if ok := strfmt.Default.Validates("uuid", p.commitID); !ok {
-		return nil, locale.NewError("invalid_uuid_val", "Invalid commit ID {{.V0}} in activestate.yaml.  You could replace it with 'latest'", p.commitID)
+		return "", locale.NewError("invalid_uuid_val", "Invalid commit ID {{.V0}} in activestate.yaml.  You could replace it with 'latest'", p.commitID)
 	}
 
 	var uuid strfmt.UUID
 	if err := uuid.UnmarshalText([]byte(p.commitID)); err != nil {
-		return nil, locale.WrapError(err, "err_commit_id_unmarshal", "Failed to unmarshal the commit id {{.V0}} read from activestate.yaml.", p.commitID)
+		return "", locale.WrapError(err, "err_commit_id_unmarshal", "Failed to unmarshal the commit id {{.V0}} read from activestate.yaml.", p.commitID)
 	}
 
-	return &uuid, nil
+	return uuid, nil
 }
 
 func (p *Project) IsHeadless() bool {

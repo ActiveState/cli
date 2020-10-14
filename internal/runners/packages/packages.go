@@ -74,7 +74,7 @@ func executePackageOperation(out output.Outputer, prompt prompt.Prompter, langua
 		}
 
 		var fail *failures.Failure
-		commitID, fail = model.CommitPackage(*parentCommitID, operation, name, ingredientNamespace, version)
+		commitID, fail = model.CommitPackage(parentCommitID, operation, name, ingredientNamespace, version)
 		if fail != nil {
 			return locale.WrapError(fail.ToError(), "err_package_"+operationStr)
 		}

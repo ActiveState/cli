@@ -13,8 +13,6 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -74,17 +72,6 @@ func (v *VirtualEnvironment) Setup(installIfNecessary bool) *failures.Failure {
 		return nil
 	}
 	if installIfNecessary {
-		// To avoid too much throw away refactoring we're using `output.Get()` here
-		// The idea being this runtime code should be eliminated from virtualenv altogether, and refactoring dependant
-		// code to pass this information in for the meantime just leads to more throwaway code then there already is
-		out := output.Get()
-		msgHandler := runbits.NewRuntimeMessageHandler(out)
-
-		pj := project.Get()
-		commitUUID, err := pj.CommitUUID()
-		if err != nil {
-			return failures.FailInvalidArgument.Wrap(err, locale.Tl("venv_invalid_uuid", "Could not determine commit ID."))
-		}
 		installer := runtime.NewInstaller(v.runtime)
 		_, installed, fail := installer.Install()
 		if fail != nil {
