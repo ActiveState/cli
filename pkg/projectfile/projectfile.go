@@ -121,7 +121,7 @@ type Project struct {
 	Jobs         Jobs          `yaml:"jobs,omitempty"`
 	Private      bool          `yaml:"private,omitempty"`
 	path         string        // "private"
-	parsedURL    *projectURL   // parsed url data
+	parsedURL    projectURL    // parsed url data
 
 	// Deprecated
 	Variables       interface{} `yaml:"variables,omitempty"`
@@ -527,42 +527,19 @@ func Parse(configFilepath string) (*Project, *failures.Failure) {
 		}
 	}
 
-	// memoize the parsed url structure
-	_, fail = project.memoizedParsedURL()
+	fail = ValidateProjectURL(project.Project)
 	if fail != nil {
 		return nil, fail
+	}
+
+	project.parsedURL, err = project.parseURL()
+	if err != nil {
+		return nil, failures.FailUserInput.New("parse_project_file_url_err")
 	}
 
 	storeProjectMapping(fmt.Sprintf("%s/%s", project.Owner(), project.Name()), filepath.Dir(project.path))
 
 	return project, nil
-}
-
-func (p *Project) mustParsedURL() projectURL {
-	res, fail := p.memoizedParsedURL()
-	if fail != nil {
-		logging.Error("mustParsedURL could not resolve parsed projectURL: %v", fail.ToError())
-		return projectURL{}
-	}
-	return res
-}
-
-// initParsedURL memoizes the parsedURL a project.  This function can be called after un-marshaling a projectfile.
-func (p *Project) memoizedParsedURL() (projectURL, *failures.Failure) {
-	if p.parsedURL != nil {
-		return *p.parsedURL, nil
-	}
-	fail := ValidateProjectURL(p.Project)
-	if fail != nil {
-		return projectURL{}, fail
-	}
-
-	var err error
-	p.parsedURL, err = p.parseURL()
-	if err != nil {
-		return projectURL{}, failures.FailUserInput.New("parse_project_file_url_err")
-	}
-	return *p.parsedURL, nil
 }
 
 func parse(configFilepath string) (*Project, *failures.Failure) {
@@ -585,17 +562,17 @@ func parse(configFilepath string) (*Project, *failures.Failure) {
 
 // Owner returns the project namespace's organization
 func (p *Project) Owner() string {
-	return p.mustParsedURL().Owner
+	return p.parsedURL.Owner
 }
 
 // Name returns the project namespace's name
 func (p *Project) Name() string {
-	return p.mustParsedURL().Name
+	return p.parsedURL.Name
 }
 
 // CommitID returns the commit ID specified in the project
 func (p *Project) CommitID() string {
-	return p.mustParsedURL().CommitID
+	return p.parsedURL.CommitID
 }
 
 // Path returns the project's activestate.yaml file path.
@@ -633,20 +610,20 @@ func (p *Project) Save() *failures.Failure {
 }
 
 // parseURL returns the parsed fields of a Project URL
-func (p *Project) parseURL() (*projectURL, error) {
+func (p *Project) parseURL() (projectURL, error) {
 	return parseURL(p.Project)
 }
 
-func parseURL(url string) (*projectURL, error) {
+func parseURL(url string) (projectURL, error) {
 	fail := ValidateProjectURL(url)
 	if fail != nil {
-		return nil, fail.ToError()
+		return projectURL{}, fail.ToError()
 	}
 
 	match := CommitURLRe.FindStringSubmatch(url)
 	if len(match) > 1 {
 		parts := projectURL{"", "", match[1]}
-		return &parts, nil
+		return parts, nil
 	}
 
 	match = ProjectURLRe.FindStringSubmatch(url)
@@ -655,7 +632,7 @@ func parseURL(url string) (*projectURL, error) {
 		parts.CommitID = match[3]
 	}
 
-	return &parts, nil
+	return parts, nil
 }
 
 // Save the project to its activestate.yaml file
@@ -682,7 +659,7 @@ func (p *Project) save(path string) *failures.Failure {
 	if err != nil {
 		return failures.FailIO.Wrap(err)
 	}
-	storeProjectMapping(fmt.Sprintf("%s/%s", p.mustParsedURL().Owner, p.mustParsedURL().Name), filepath.Dir(p.Path()))
+	storeProjectMapping(fmt.Sprintf("%s/%s", p.parsedURL.Owner, p.parsedURL.Name), filepath.Dir(p.Path()))
 
 	return nil
 }
