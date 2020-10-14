@@ -19,9 +19,7 @@ import (
 
 const latestVersion = "latest"
 
-func executePackageOperation(out output.Outputer, authentication *authentication.Auth, prompt prompt.Prompter, language, name, version string, operation model.Operation) error {
-	pj := project.Get()
-
+func executePackageOperation(pj *project.Project, out output.Outputer, authentication *authentication.Auth, prompt prompt.Prompter, language, name, version string, operation model.Operation) error {
 	isHeadless := pj.IsHeadless()
 	if !isHeadless && !authentication.Authenticated() {
 		anonymousOk, fail := prompt.Confirm(locale.T("prompt_headless_anonymous"), true)

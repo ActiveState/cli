@@ -44,11 +44,10 @@ func (r *Remove) Run(params RemoveRunParams) error {
 
 func (r *Remove) run(params RemoveRunParams) error {
 	// Commit the package
-	pj := project.Get()
-	language, fail := model.DefaultLanguageNameForProject(pj.Owner(), pj.Name())
+	language, fail := model.DefaultLanguageNameForProject(r.proj.Owner(), r.proj.Name())
 	if fail != nil {
 		return locale.WrapError(fail, "err_fetch_languages")
 	}
 
-	return executePackageOperation(r.out, r.auth, r.Prompter, language, params.Name, "", model.OperationRemoved)
+	return executePackageOperation(r.proj, r.out, r.auth, r.Prompter, language, params.Name, "", model.OperationRemoved)
 }

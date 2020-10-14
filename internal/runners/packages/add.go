@@ -43,13 +43,12 @@ func (a *Add) Run(params AddRunParams) error {
 func (a *Add) run(params AddRunParams) error {
 	logging.Debug("ExecuteAdd")
 
-	pj := project.Get()
-	language, fail := model.DefaultLanguageNameForProject(pj.Owner(), pj.Name())
+	language, fail := model.DefaultLanguageNameForProject(a.proj.Owner(), a.proj.Name())
 	if fail != nil {
 		return fail.WithDescription("err_fetch_languages")
 	}
 
 	name, version := splitNameAndVersion(params.Name)
 
-	return executePackageOperation(a.out, a.auth, a.Prompter, language, name, version, model.OperationAdded)
+	return executePackageOperation(a.proj, a.out, a.auth, a.Prompter, language, name, version, model.OperationAdded)
 }
