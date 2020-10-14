@@ -155,7 +155,7 @@ func (t *Tutorial) authFlow() error {
 		if err != nil {
 			return locale.WrapInputError(err, "err_tutorial_browser", "Could not open browser, please manually navigate to {{.V0}}.", constants.PlatformSignupURL)
 		}
-		t.outputer.Notice(locale.Tl("tutorial_signing_ready", "[BOLD]Please sign in once you have finished signing up via your browser.[/RESET]"))
+		t.outputer.Notice(locale.Tl("tutorial_signing_ready", "[NOTICE]Please sign in once you have finished signing up via your browser.[/RESET]"))
 		if err := runbits.Invoke(t.outputer, "auth"); err != nil {
 			return locale.WrapInputError(err, "err_tutorial_signin", "Sign in failed. You could try manually signing in by running `state auth`.")
 		}
