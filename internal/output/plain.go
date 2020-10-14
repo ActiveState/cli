@@ -326,7 +326,7 @@ func sprintTable(slice []interface{}) (string, error) {
 		LineTop:         tabulate.Line{"", "-", "", ""},
 		LineBelowHeader: tabulate.Line{"", "\u2500", "", ""},
 		LineBottom:      tabulate.Line{"", "-", "", ""},
-		HeaderRow:       tabulate.Row{"[BOLD]", "", "[/RESET]"},
+		HeaderRow:       tabulate.Row{"[HEADING]", "", "[/RESET]"},
 		DataRow:         tabulate.Row{"", "", ""},
 		TitleRow:        tabulate.Row{"", "", ""},
 		Padding:         1,
