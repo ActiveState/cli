@@ -19,9 +19,9 @@ import (
 
 const latestVersion = "latest"
 
-func executePackageOperation(out output.Outputer, prompt prompt.Prompter, language, name, version string, operation model.Operation) error {
+func executePackageOperation(out output.Outputer, authentication *authentication.Auth, prompt prompt.Prompter, language, name, version string, operation model.Operation) error {
 	isHeadless := false
-	if !authentication.Get().Authenticated() {
+	if !authentication.Authenticated() {
 		anonymousOk, fail := prompt.Confirm(locale.T("prompt_headless_anonymous"), true)
 		if fail != nil {
 			return locale.WrapInputError(fail.ToError(), "Authentication cancelled.")
