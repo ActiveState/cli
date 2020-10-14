@@ -36,13 +36,7 @@ var nonemptyBasic = strings.TrimSpace(`
 ╚═══════════════╝
 `)
 
-var emptyBasic = strings.TrimSpace(`
-╔══════╗
-║      ║
-║      ║
-║      ║
-╚══════╝
-`)
+var emptyBasic = ``
 
 var nonemptyLong = strings.TrimSpace(`
 ╔══════════════════════════════════════════════╗

@@ -28,6 +28,10 @@ func NewTitle(text string) *Title {
 
 // String implements fmt.Stringer.
 func (t *Title) String() string {
+	if t.Text == "" {
+		return ""
+	}
+
 	titleLen := utf8.RuneCountInString(t.Text) // NOTE: ignores effects of combining diacritics
 	lineLen := titleLen + 2 + 2*t.Padding + 1  // text, border, padding, newline
 
