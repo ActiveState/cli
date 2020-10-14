@@ -20,14 +20,6 @@ import (
 const latestVersion = "latest"
 
 func executePackageOperation(out output.Outputer, prompt prompt.Prompter, language, name, version string, operation model.Operation) error {
-	// Use our own interpolation string since we don't want to assume our swagger schema will never change
-	var operationStr = "added"
-	if operation == model.OperationUpdated {
-		operationStr = "updated"
-	} else if operation == model.OperationRemoved {
-		operationStr = "removed"
-	}
-
 	isHeadless := false
 	if !authentication.Get().Authenticated() {
 		anonymousOk, fail := prompt.Confirm(locale.T("prompt_headless_anonymous"), true)
@@ -76,7 +68,7 @@ func executePackageOperation(out output.Outputer, prompt prompt.Prompter, langua
 		var fail *failures.Failure
 		commitID, fail = model.CommitPackage(parentCommitID, operation, name, ingredientNamespace, version)
 		if fail != nil {
-			return locale.WrapError(fail.ToError(), "err_package_"+operationStr)
+			return locale.WrapError(fail.ToError(), "err_package_"+string(operation))
 		}
 	} else {
 		var fail *failures.Failure
