@@ -153,17 +153,17 @@ func TestPlain_Print(t *testing.T) {
 				"field_value3: false\n" +
 				"field_value4: \n - 1\n - true\n - 1.10\n - field_v: value\n - 1\n - 2\n" +
 				"field_value5: \nfield_v: value\nfield_x: xalue\n" +
-				"field_value6: \n" +
+				"field_value6: \n\n" +
 				" field_header1    field_header2    field_header3   \n" +
 				"\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n" +
 				" 111              222              <nil>           \n" +
-				"field_value7: \n" +
+				"field_value7: \n\n" +
 				" field_header1    field_header2    field_header3   \n" +
 				"\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n" +
 				" 111              222              <nil>           \n" +
 				"field_nil3: \n - <nil>\n - <nil>\n - <nil>\n" +
 				"field_nil5: \n\n" +
-				"field_nil6: \n" +
+				"field_nil6: \n\n" +
 				" field_n   \n" +
 				"\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n" +
 				" <nil>     \n" +
@@ -178,7 +178,7 @@ func TestPlain_Print(t *testing.T) {
 				{"valueB.1", nilStr("valueB.2"), nil},
 				{"valueC.1", nilStr("valueC.2"), nilStr("valueC.3")},
 			}},
-			" field_header1    field_header2    field_header3   \n" +
+			"\n field_header1    field_header2    field_header3   \n" +
 				"\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n" +
 				" valueA.1         <nil>            valueA.3        \n" +
 				" valueB.1         valueB.2         <nil>           \n" +
@@ -192,7 +192,7 @@ func TestPlain_Print(t *testing.T) {
 				{"valueB.1", nilStr("valueB.2"), nil},
 				{"valueC.1", nilStr("valueC.2"), nilStr("valueC.3")},
 			}},
-			" field_header1    field_header2    field_header3   \n" +
+			"\n field_header1    field_header2    field_header3   \n" +
 				"\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n" +
 				" valueA.1         <nil>            valueA.3        \n" +
 				" valueB.1         valueB.2         <nil>           \n" +
