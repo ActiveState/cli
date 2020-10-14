@@ -35,22 +35,21 @@ type TableFormat struct {
 	Padding         int
 	HeaderHide      bool
 	FitScreen       bool
-	PaddingTop      bool
 }
 
 // Represents a Line
 type Line struct {
-	begin string
-	hline string
-	sep   string
-	end   string
+	Begin string
+	Hline string
+	Sep   string
+	End   string
 }
 
 // Represents a Row
 type Row struct {
-	begin string
-	sep   string
-	end   string
+	Begin string
+	Sep   string
+	End   string
 }
 
 // Table Formats that are available to the user
@@ -82,20 +81,10 @@ var TableFormats = map[string]TableFormat{
 		TitleRow:        Row{"|", " ", "|"},
 		Padding:         1,
 	},
-	"standard": TableFormat{
-		LineTop:         Line{"", "-", "", ""},
-		LineBelowHeader: Line{"", "\u2500", "", ""},
-		LineBottom:      Line{"", "-", "", ""},
-		HeaderRow:       Row{"[BOLD]", "", "[/RESET]"},
-		DataRow:         Row{"", "", ""},
-		TitleRow:        Row{"", "", ""},
-		Padding:         1,
-		PaddingTop:      true,
-	},
 }
 
 // Minimum padding that will be applied
-var MIN_PADDING = 4
+var MIN_PADDING = 5
 
 // Main Tabulate structure
 type Tabulate struct {
@@ -187,22 +176,22 @@ func (t *Tabulate) buildLine(padded_widths []int, padding []int, l Line) string 
 
 	for i, _ := range cells {
 		b := createBuffer()
-		b.Write(l.hline, padding[i]+MIN_PADDING)
+		b.Write(l.Hline, padding[i]+MIN_PADDING)
 		cells[i] = b.String()
 	}
 
 	var buffer bytes.Buffer
-	buffer.WriteString(l.begin)
+	buffer.WriteString(l.Begin)
 
 	// Print contents
 	for i := 0; i < len(cells); i++ {
 		buffer.WriteString(cells[i])
 		if i != len(cells)-1 {
-			buffer.WriteString(l.sep)
+			buffer.WriteString(l.Sep)
 		}
 	}
 
-	buffer.WriteString(l.end)
+	buffer.WriteString(l.End)
 	return buffer.String()
 }
 
@@ -210,7 +199,7 @@ func (t *Tabulate) buildLine(padded_widths []int, padding []int, l Line) string 
 func (t *Tabulate) buildRow(elements []string, padded_widths []int, paddings []int, d Row) string {
 
 	var buffer bytes.Buffer
-	buffer.WriteString(d.begin)
+	buffer.WriteString(d.Begin)
 	padFunc := t.getAlignFunc()
 	// Print contents
 	for i := 0; i < len(padded_widths); i++ {
@@ -222,11 +211,11 @@ func (t *Tabulate) buildRow(elements []string, padded_widths []int, paddings []i
 		}
 		buffer.WriteString(output)
 		if i != len(padded_widths)-1 {
-			buffer.WriteString(d.sep)
+			buffer.WriteString(d.Sep)
 		}
 	}
 
-	buffer.WriteString(d.end)
+	buffer.WriteString(d.End)
 	return buffer.String()
 }
 
@@ -286,7 +275,7 @@ func (t *Tabulate) Render(format ...interface{}) string {
 	}
 
 	// Calculate total width of the table
-	totalWidth := len(t.TableFormat.DataRow.sep) * (len(cols) - 1) // Include all but the final separator
+	totalWidth := len(t.TableFormat.DataRow.Sep) * (len(cols) - 1) // Include all but the final separator
 	for _, w := range padded_widths {
 		totalWidth += w
 	}
@@ -333,10 +322,6 @@ func (t *Tabulate) Render(format ...interface{}) string {
 
 	// Join lines
 	var buffer bytes.Buffer
-	if t.TableFormat.PaddingTop {
-		buffer.WriteString("\n")
-	}
-
 	for _, line := range lines {
 		buffer.WriteString(line + "\n")
 	}
