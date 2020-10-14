@@ -24,7 +24,7 @@ func executePackageOperation(out output.Outputer, prompt prompt.Prompter, langua
 	if !authentication.Get().Authenticated() {
 		anonymousOk, fail := prompt.Confirm(locale.T("prompt_headless_anonymous"), true)
 		if fail != nil {
-			return locale.WrapInputError(fail.ToError(), "Failed to determine if it is okay to proceed without authorization.")
+			return locale.WrapInputError(fail.ToError(), "Authentication cancelled.")
 		}
 		isHeadless = anonymousOk
 	}
