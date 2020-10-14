@@ -401,6 +401,23 @@ project: https://example.com/xowner/xproject?commitID=123
 	assert.Equal(t, string(expectedYAML), string(out2))
 }
 
+func TestSetNamespaceInYAML(t *testing.T) {
+	exampleYAML := []byte(`
+junk: xgarbage
+project: https://example.com/xowner/xproject?commitID=123
+123: xvalue
+`)
+	expectedYAML := []byte(`
+junk: xgarbage
+project: https://example.com/yowner/yproject
+123: xvalue
+`)
+
+	out, err := setNamespaceInYAML(exampleYAML, "yowner/yproject")
+	assert.NoError(t, err)
+	assert.Equal(t, string(expectedYAML), string(out))
+}
+
 func TestSetCommitInYAML_NoCommitID(t *testing.T) {
 	exampleYAML := []byte(`
 junk: xgarbage

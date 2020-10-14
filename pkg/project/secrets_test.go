@@ -43,6 +43,10 @@ project: "https://platform.activestate.com/SecretOrg/SecretProject?commitID=0001
 	if err != nil {
 		return nil, err
 	}
+	fail := pjfile.Init()
+	if err != nil {
+		return nil, fail.ToError()
+	}
 
 	return pjfile, nil
 }
