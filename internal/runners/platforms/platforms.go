@@ -20,7 +20,7 @@ type Platform struct {
 func (l *Listing) MarshalOutput(format output.Format) interface{} {
 	if format == output.PlainFormatName {
 		if len(l.Platforms) == 0 {
-			return ""
+			return locale.Tl("platforms_list_no_platforms", "There are no platforms for this project.")
 		}
 		return l.Platforms
 	}
