@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
@@ -14,6 +15,17 @@ type Platform struct {
 	Name     string `json:"name"`
 	Version  string `json:"version"`
 	BitWidth string `json:"bitWidth"`
+}
+
+func (l *Listing) MarshalOutput(format output.Format) interface{} {
+	if format == output.PlainFormatName {
+		if len(l.Platforms) == 0 {
+			return ""
+		}
+		return l.Platforms
+	}
+
+	return l.Platforms
 }
 
 func makePlatformsFromModelPlatforms(platforms []*model.Platform) []*Platform {

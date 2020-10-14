@@ -6,7 +6,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/table"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -67,7 +66,7 @@ func targetedLanguage(languageOpt string) (string, *failures.Failure) {
 	return model.DefaultLanguageNameForProject(proj.Owner(), proj.Name())
 }
 
-func newPackagesTable(packages []*model.IngredientAndVersion) *table.Table {
+func newPackagesTable(packages []*model.IngredientAndVersion) *packageTable {
 	if packages == nil {
 		return nil
 	}
@@ -88,5 +87,5 @@ func newPackagesTable(packages []*model.IngredientAndVersion) *table.Table {
 		rows = append(rows, row)
 	}
 
-	return table.NewTable(rows, locale.Tl("packages_search_info", "Here are your package search results"), locale.T("package_search_no_packages"))
+	return newTable(rows, locale.T("package_search_no_packages"))
 }

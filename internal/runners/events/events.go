@@ -4,7 +4,6 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/table"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -47,7 +46,12 @@ func (e *Events) Run() error {
 		})
 	}
 
-	table := table.NewTable(rows, locale.Tl("list_events_info", "Here are all the events for your current project"), locale.Tl("events_empty", "No events found for the current project"))
-	e.out.Print(table)
+	if len(rows) == 0 {
+		e.out.Print(locale.Tl("events_empty", "No events found for the current project"))
+		return nil
+	}
+
+	e.out.Print(locale.Tl("list_events_info", "Here are all the events for your current project"))
+	e.out.Print(rows)
 	return nil
 }

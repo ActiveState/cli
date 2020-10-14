@@ -10,7 +10,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/table"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -64,7 +63,9 @@ func (l *List) Run(params ListRunParams) error {
 	}
 
 	table := newFilteredRequirementsTable(model.FilterCheckpointPackages(checkpoint), params.Name)
+	table.sortByPkg()
 
+	l.out.Print(locale.Tl("packages_added_info", "Here are all of the packages that have been added to this runtime."))
 	l.out.Print(table)
 	return nil
 }
@@ -142,7 +143,7 @@ func fetchCheckpoint(commit *strfmt.UUID) (model.Checkpoint, *failures.Failure) 
 	return checkpoint, fail
 }
 
-func newFilteredRequirementsTable(requirements model.Checkpoint, filter string) *table.Table {
+func newFilteredRequirementsTable(requirements model.Checkpoint, filter string) *packageTable {
 	if requirements == nil {
 		logging.Debug("requirements is nil")
 		return nil
@@ -165,7 +166,6 @@ func newFilteredRequirementsTable(requirements model.Checkpoint, filter string) 
 		}
 		rows = append(rows, row)
 	}
-	sortByPkg(rows)
 
-	return table.NewTable(rows, locale.Tl("packages_added_info", "Here are all of the packages that have been added to this runtime."), locale.T("package_list_no_packages"))
+	return newTable(rows, locale.T("package_list_no_packages"))
 }

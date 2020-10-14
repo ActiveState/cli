@@ -3,12 +3,13 @@ package packages
 import (
 	"sort"
 	"strings"
+
+	"github.com/ActiveState/cli/internal/output"
 )
 
 type packageTable struct {
-	Info        string       `locale:"info" opts:"hideKey"`
-	Rows        []packageRow `locale:"rows" opts:"hideKey"`
-	emptyOutput string       // string returned when table is empty
+	rows        []packageRow
+	emptyOutput string // string returned when table is empty
 }
 
 type packageRow struct {
@@ -16,10 +17,33 @@ type packageRow struct {
 	Version string `json:"version" locale:"package_version,Version"`
 }
 
-func sortByPkg(rows []packageRow) {
+func (t *packageTable) MarshalOutput(format output.Format) interface{} {
+	if format == output.PlainFormatName {
+		if len(t.rows) == 0 {
+			return t.emptyOutput
+		}
+		return t.rows
+	}
+
+	type packageRow struct {
+		Pkg     string `json:"package"`
+		Version string `json:"version"`
+	}
+
+	return t.rows
+}
+
+func newTable(rows []packageRow, emptyOutput string) *packageTable {
+	return &packageTable{
+		rows:        rows,
+		emptyOutput: emptyOutput,
+	}
+}
+
+func (t *packageTable) sortByPkg() {
 	less := func(i, j int) bool {
-		a := rows[i].Pkg
-		b := rows[j].Pkg
+		a := t.rows[i].Pkg
+		b := t.rows[j].Pkg
 
 		if strings.ToLower(a) < strings.ToLower(b) {
 			return true
@@ -28,7 +52,7 @@ func sortByPkg(rows []packageRow) {
 		return a < b
 	}
 
-	sort.Slice(rows, less)
+	sort.Slice(t.rows, less)
 }
 
 func sortByFirstTwoCols(rows [][]string) {
