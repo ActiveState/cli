@@ -10,6 +10,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/internal/unarchiver"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 	"github.com/aws/aws-sdk-go/aws"
@@ -19,12 +20,13 @@ import (
 )
 
 type AlternativeArtifactIntegrationTestSuite struct {
-	suite.Suite
+	tagsuite.Suite
 }
 
 // TestRelocation currently only tests the relocation mechanic for a Perl artifact.
 // The artifact is downloaded directly form S3.  As soon as the artifacts are part of the platform ingredient library, this test should be rewritten, such that it relies on a `state activate` command.
 func (suite *AlternativeArtifactIntegrationTestSuite) TestRelocation() {
+	suite.OnlyRunForTags("alternative")
 	if runtime.GOOS == "darwin" {
 		suite.T().Skip("No relocatable alternative artifacts for MacOS available yet.")
 	}
@@ -111,6 +113,7 @@ func (suite *AlternativeArtifactIntegrationTestSuite) TestRelocation() {
 }
 
 func (suite *AlternativeArtifactIntegrationTestSuite) TestActivateRuby() {
+	suite.OnlyRunForTags("alternative")
 	suite.T().Skip("requires a working PR branch for now.")
 	if runtime.GOOS != "linux" {
 		suite.T().Skip("only works on linux")
