@@ -21,26 +21,18 @@ import (
 
 type configAble interface {
 	Set(key string, value interface{})
+	GetString(key string) string
 	GetStringSlice(key string) []string
-}
-
-type promptAble interface {
-	Input(message, defaultResponse string, flags ...prompt.ValidatorFlag) (string, *failures.Failure)
-	Select(message string, choices []string, defaultResponse string) (string, *failures.Failure)
-}
-
-type namespaceSelectAble interface {
-	Run(namespace string, preferredPath string) (string, error)
 }
 
 // NamespaceSelect will select the right directory associated with a namespace, and chdir into it
 type NamespaceSelect struct {
 	config   configAble
-	prompter promptAble
+	prompter prompt.Prompter
 }
 
-func NewNamespaceSelect(config configAble, prompter promptAble) *NamespaceSelect {
-	return &NamespaceSelect{config, prompter}
+func NewNamespaceSelect(config configAble, prime primeable) *NamespaceSelect {
+	return &NamespaceSelect{config, prime.Prompt()}
 }
 
 func (r *NamespaceSelect) Run(namespace string, preferredPath string) (string, error) {

@@ -17,7 +17,7 @@ type CmdTree struct {
 }
 
 // New prepares a CmdTree.
-func New(prime *primer.Values) *CmdTree {
+func New(prime *primer.Values, args ...string) *CmdTree {
 	globals := newGlobalOptions()
 
 	authCmd := newAuthCommand(prime)
@@ -26,7 +26,7 @@ func New(prime *primer.Values) *CmdTree {
 		newLogoutCommand(prime),
 	)
 
-	exportCmd := newExportCommand()
+	exportCmd := newExportCommand(prime)
 	exportCmd.AddChildren(
 		newRecipeCommand(prime),
 		newJWTCommand(prime),
@@ -106,6 +106,9 @@ func New(prime *primer.Values) *CmdTree {
 		newPpmCommand(prime),
 		newInviteCommand(prime),
 		tutorialCmd,
+		newPrepareCommand(prime),
+		newProtocolCommand(prime),
+		newShimCommand(prime, args...),
 	)
 
 	applyLegacyChildren(stateCmd, globals)
@@ -131,7 +134,9 @@ func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Comm
 	runner := state.New(opts, prime)
 	cmd := captain.NewCommand(
 		"state",
+		"",
 		locale.T("state_description"),
+		prime.Output(),
 		[]*captain.Flag{
 			{
 				Name:        "locale",
@@ -197,6 +202,11 @@ func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Comm
 // Execute runs the CmdTree using the provided CLI arguments.
 func (ct *CmdTree) Execute(args []string) error {
 	return ct.cmd.Execute(args)
+}
+
+// Command returns the root command of the CmdTree
+func (ct *CmdTree) Command() *captain.Command {
+	return ct.cmd
 }
 
 // applyLegacyChildren will register any commands and expanders

@@ -5,58 +5,47 @@ using System.Management;
 using System.Net;
 using Microsoft.Win32;
 
+
 namespace GAPixel
 {
     public class GetInfo
     {
 
-        private static Guid StringToGuid(string input)
-        {
-            using (System.Security.Cryptography.MD5 md5 = System.Security.Cryptography.MD5.Create())
-            {
-                byte[] inputBytes = System.Text.Encoding.ASCII.GetBytes(input);
-                byte[] hashBytes = md5.ComputeHash(inputBytes);
-
-                return new Guid(hashBytes);
-            }
-        }
-
-        public static string GetUniqueId(Session session=null)
+        public static string GetOrCreateNewCid(Session session)
         {
             try
             {
-                var oMClass = new ManagementClass("Win32_NetworkAdapterConfiguration");
-                var colMObj = oMClass.GetInstances();
-                foreach (var objMO in colMObj)
+                var baseKey = Registry.CurrentUser;
+                // In Scheduled Mode, when run as Administrator, we have to use HKEY_USERS/<USERSID> as baseKey 
+                if (session.GetMode(InstallRunMode.Scheduled) && session.CustomActionData.ContainsKey("USERSID"))
                 {
-                    try
-                    {
-                        var macAddress = objMO["MacAddress"].ToString();
-                        if (String.IsNullOrEmpty(macAddress))
-                        {
-                            continue;
-                        }
-                        // return on first found MAC address
-                        return StringToGuid(macAddress.ToString()).ToString();
-                    }
-                    catch (NullReferenceException)
-                    {
-                        continue;
-                    }
+                    baseKey = Registry.Users.OpenSubKey(session.CustomActionData["USERSID"], true);
                 }
+                var keyPath = @"Software\ActiveState";
+                var key = baseKey.CreateSubKey(keyPath);
+                var cidObj = key.GetValue("CID");
+                string cid;
+                if (cidObj != null)
+                {
+                    cid = cidObj.ToString();
+                }
+                else {
+                    cid = Guid.NewGuid().ToString();
+                    key.SetValue("CID", cid, RegistryValueKind.String);
+                }
+                return cid;
             }
             catch (Exception err)
             {
                 if (session != null)
                 {
-                    session.Log(String.Format("Error getting unique ID {0}", err));
+                    session.Log("Error creating or getting CID: {0}", err);
                 }
+                // fallback GUID
+                return "11111111--1111-1111-1111-111111111111";
             }
-            // fallback GUID
-            return "11111111--1111-1111-1111-111111111111";
         }
     }
-
 
     public class CustomActions
     {
@@ -78,7 +67,7 @@ namespace GAPixel
         public static ActionResult SendPixel(Session session)
         {
             var wv = System.Environment.OSVersion.VersionString;
-            string cid = GetInfo.GetUniqueId(session);
+            string cid = GetInfo.GetOrCreateNewCid(session);
 
             session.Log(String.Format("Send Pixel to GA windows version={0}", wv)); ;
 

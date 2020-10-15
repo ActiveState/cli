@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/retryhttp"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory"
@@ -28,9 +30,12 @@ var (
 )
 
 // IngredientAndVersion is a sane version of whatever the hell it is go-swagger thinks it's doing
-type IngredientAndVersion = inventory_models.V1IngredientAndVersion
+type IngredientAndVersion struct {
+	*inventory_models.V1IngredientAndVersion
+	Namespace string
+}
 
-// Platforms is a sane version of whatever the hell it is go-swagger thinks it's doing
+// Platform is a sane version of whatever the hell it is go-swagger thinks it's doing
 type Platform = inventory_models.V1Platform
 
 var platformCache []*Platform
@@ -53,7 +58,10 @@ func IngredientByNameAndVersion(language, name, version string) (*IngredientAndV
 		}
 		v := ingredient.Version.Version
 		if v != nil && *v == version {
-			return ingredient, nil
+			return &IngredientAndVersion{
+				ingredient.V1IngredientAndVersion,
+				ingredient.Namespace,
+			}, nil
 		}
 	}
 
@@ -78,17 +86,23 @@ func IngredientWithLatestVersion(language, name string) (*IngredientAndVersion, 
 		}
 
 		if latest == nil {
-			latest = res
+			latest = &IngredientAndVersion{
+				res.V1IngredientAndVersion,
+				res.Namespace,
+			}
 			continue
 		}
 
 		if res.Version.ReleaseTimestamp != nil && time.Time(*res.Version.ReleaseTimestamp).After(time.Time(*latest.Version.ReleaseTimestamp)) {
-			latest = res
+			latest = &IngredientAndVersion{
+				res.V1IngredientAndVersion,
+				res.Namespace,
+			}
 		}
 	}
 
 	if latest == nil {
-		return nil, locale.NewInputError("inventory_ingredient_no_version_available", "No versions are available for package {{.V1}} on the ActiveState Platform", name)
+		return nil, locale.NewInputError("inventory_ingredient_no_version_available", "No versions are available for package {{.V0}} on the ActiveState Platform", name)
 	}
 	return latest, nil
 }
@@ -118,17 +132,55 @@ func SearchIngredientsStrict(language, name string) ([]*IngredientAndVersion, *f
 }
 
 func searchIngredients(limit int, language, name string) ([]*IngredientAndVersion, *failures.Failure) {
+	langResults, fail := searchIngredientsNamespace(limit, PackageNamespacePrefix, language, name)
+	if fail != nil {
+		return nil, fail
+	}
+
+	bundlesResults, fail := searchIngredientsNamespace(limit, BundlesNamespacePrefix, language, name)
+	if fail != nil {
+		logging.Error("Searching in bundles namespace failed with error: %s", fail.ToError())
+	}
+
+	var results []*IngredientAndVersion
+	for _, res := range langResults {
+		ingredient := IngredientAndVersion{
+			res.V1IngredientAndVersion,
+			PackageNamespacePrefix,
+		}
+		results = append(results, &ingredient)
+	}
+
+	if bundlesResults != nil {
+		for _, res := range bundlesResults {
+			ingredient := IngredientAndVersion{
+				res.V1IngredientAndVersion,
+				BundlesNamespacePrefix,
+			}
+			results = append(results, &ingredient)
+		}
+	}
+
+	sort.SliceStable(results, func(i, j int) bool {
+		return *results[i].V1IngredientAndVersion.Ingredient.Name < *results[j].V1IngredientAndVersion.Ingredient.Name
+	})
+
+	return results, nil
+}
+
+func searchIngredientsNamespace(limit int, namespace, language, name string) ([]*IngredientAndVersion, *failures.Failure) {
 	lim := int64(limit)
 
 	client := inventory.Get()
 
+	namespaceAndLanguage := fmt.Sprintf("%s/%s", namespace, language)
 	params := inventory_operations.NewGetNamespaceIngredientsParams()
 	params.SetQ(&name)
-	params.SetNamespace("language/" + language)
+	params.SetNamespace(namespaceAndLanguage)
 	params.SetLimit(&lim)
 	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
 
-	res, err := client.GetNamespaceIngredients(params, authentication.ClientAuth())
+	results, err := client.GetNamespaceIngredients(params, authentication.ClientAuth())
 	if err != nil {
 		if gniErr, ok := err.(*inventory_operations.GetNamespaceIngredientsDefault); ok {
 			return nil, FailIngredients.New(*gniErr.Payload.Message)
@@ -136,7 +188,11 @@ func searchIngredients(limit int, language, name string) ([]*IngredientAndVersio
 		return nil, FailIngredients.Wrap(err)
 	}
 
-	return res.Payload.IngredientsAndVersions, nil
+	ingredients := []*IngredientAndVersion{}
+	for _, res := range results.Payload.IngredientsAndVersions {
+		ingredients = append(ingredients, &IngredientAndVersion{res, namespaceAndLanguage})
+	}
+	return ingredients, nil
 }
 
 func FetchPlatforms() ([]*Platform, *failures.Failure) {

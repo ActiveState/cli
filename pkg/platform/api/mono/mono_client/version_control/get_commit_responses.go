@@ -29,6 +29,12 @@ func (o *GetCommitReader) ReadResponse(response runtime.ClientResponse, consumer
 			return nil, err
 		}
 		return result, nil
+	case 403:
+		result := NewGetCommitForbidden()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
 	case 404:
 		result := NewGetCommitNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -71,6 +77,39 @@ func (o *GetCommitOK) GetPayload() *mono_models.Commit {
 func (o *GetCommitOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Commit)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
+		return err
+	}
+
+	return nil
+}
+
+// NewGetCommitForbidden creates a GetCommitForbidden with default headers values
+func NewGetCommitForbidden() *GetCommitForbidden {
+	return &GetCommitForbidden{}
+}
+
+/*GetCommitForbidden handles this case with default header values.
+
+Forbidden
+*/
+type GetCommitForbidden struct {
+	Payload *mono_models.Message
+}
+
+func (o *GetCommitForbidden) Error() string {
+	return fmt.Sprintf("[GET /vcs/commits/{commitID}][%d] getCommitForbidden  %+v", 403, o.Payload)
+}
+
+func (o *GetCommitForbidden) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
+func (o *GetCommitForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

@@ -32,6 +32,9 @@ type V1Order struct {
 	// Format: uuid
 	OrderID *strfmt.UUID `json:"order_id"`
 
+	// The builds flags (if any) for each platform ID. Keys must be platform IDs contained in the `platforms` field.
+	PlatformBuildFlags map[string][]V1OrderPlatformBuildFlagsAdditionalPropertiesItems `json:"platform_build_flags,omitempty"`
+
 	// List of platform IDs for the order
 	// Required: true
 	// Unique: true
@@ -58,6 +61,10 @@ func (m *V1Order) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateOrderID(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validatePlatformBuildFlags(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -91,6 +98,34 @@ func (m *V1Order) validateOrderID(formats strfmt.Registry) error {
 
 	if err := validate.FormatOf("order_id", "body", "uuid", m.OrderID.String(), formats); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (m *V1Order) validatePlatformBuildFlags(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.PlatformBuildFlags) { // not required
+		return nil
+	}
+
+	for k := range m.PlatformBuildFlags {
+
+		if err := validate.Required("platform_build_flags"+"."+k, "body", m.PlatformBuildFlags[k]); err != nil {
+			return err
+		}
+
+		for i := 0; i < len(m.PlatformBuildFlags[k]); i++ {
+
+			if err := m.PlatformBuildFlags[k][i].Validate(formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("platform_build_flags" + "." + k + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+
+		}
+
 	}
 
 	return nil

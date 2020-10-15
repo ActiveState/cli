@@ -6,103 +6,75 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"strconv"
-
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
-	"github.com/go-openapi/validate"
 )
 
 // V1Revision Revision
 //
-// The properties of any revisioned resource which can be modified by a new revision
+// The properties of any revisioned resource which can be modified by a new revision. Includes provided features used by most revisioned resources.
 //
 // swagger:model v1Revision
 type V1Revision struct {
+	V1RevisionAllOf0
 
-	// The platform user_id for the author of the revision. This will be automatically populated for writes based on the credentials you provide to the API.
-	// Format: uuid
-	AuthorPlatformUserID strfmt.UUID `json:"author_platform_user_id,omitempty"`
+	V1RevisionBase
+}
 
-	// A comment describing the revision.
-	// Required: true
-	Comment *string `json:"comment"`
+// UnmarshalJSON unmarshals this object from a JSON structure
+func (m *V1Revision) UnmarshalJSON(raw []byte) error {
+	// AO0
+	var aO0 V1RevisionAllOf0
+	if err := swag.ReadJSON(raw, &aO0); err != nil {
+		return err
+	}
+	m.V1RevisionAllOf0 = aO0
 
-	// Whether this revision should be considered 'stable'. When a new stable revision is created, it supercedes any existing stable revision and becomes the default revision of the revisioned resource going forward.
-	IsStableRevision *bool `json:"is_stable_revision,omitempty"`
+	// AO1
+	var aO1 V1RevisionBase
+	if err := swag.ReadJSON(raw, &aO1); err != nil {
+		return err
+	}
+	m.V1RevisionBase = aO1
 
-	// provided features
-	// Required: true
-	ProvidedFeatures []*V1SubSchemaProvidedFeature `json:"provided_features"`
+	return nil
+}
+
+// MarshalJSON marshals this object to a JSON structure
+func (m V1Revision) MarshalJSON() ([]byte, error) {
+	_parts := make([][]byte, 0, 2)
+
+	aO0, err := swag.WriteJSON(m.V1RevisionAllOf0)
+	if err != nil {
+		return nil, err
+	}
+	_parts = append(_parts, aO0)
+
+	aO1, err := swag.WriteJSON(m.V1RevisionBase)
+	if err != nil {
+		return nil, err
+	}
+	_parts = append(_parts, aO1)
+	return swag.ConcatJSON(_parts...), nil
 }
 
 // Validate validates this v1 revision
 func (m *V1Revision) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateAuthorPlatformUserID(formats); err != nil {
+	// validation for a type composition with V1RevisionAllOf0
+	if err := m.V1RevisionAllOf0.Validate(formats); err != nil {
 		res = append(res, err)
 	}
-
-	if err := m.validateComment(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateProvidedFeatures(formats); err != nil {
+	// validation for a type composition with V1RevisionBase
+	if err := m.V1RevisionBase.Validate(formats); err != nil {
 		res = append(res, err)
 	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-func (m *V1Revision) validateAuthorPlatformUserID(formats strfmt.Registry) error {
-
-	if swag.IsZero(m.AuthorPlatformUserID) { // not required
-		return nil
-	}
-
-	if err := validate.FormatOf("author_platform_user_id", "body", "uuid", m.AuthorPlatformUserID.String(), formats); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *V1Revision) validateComment(formats strfmt.Registry) error {
-
-	if err := validate.Required("comment", "body", m.Comment); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *V1Revision) validateProvidedFeatures(formats strfmt.Registry) error {
-
-	if err := validate.Required("provided_features", "body", m.ProvidedFeatures); err != nil {
-		return err
-	}
-
-	for i := 0; i < len(m.ProvidedFeatures); i++ {
-		if swag.IsZero(m.ProvidedFeatures[i]) { // not required
-			continue
-		}
-
-		if m.ProvidedFeatures[i] != nil {
-			if err := m.ProvidedFeatures[i].Validate(formats); err != nil {
-				if ve, ok := err.(*errors.Validation); ok {
-					return ve.ValidateName("provided_features" + "." + strconv.Itoa(i))
-				}
-				return err
-			}
-		}
-
-	}
-
 	return nil
 }
 

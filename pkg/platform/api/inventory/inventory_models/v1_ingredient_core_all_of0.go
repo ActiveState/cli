@@ -21,6 +21,9 @@ type V1IngredientCoreAllOf0 struct {
 	// Required: true
 	Name *string `json:"name"`
 
+	// The normalized name of the ingredient. This will be ignored when creating new ingredients, as the service calculates this internally.
+	NormalizedName string `json:"normalized_name,omitempty"`
+
 	// The UUID of the organization the ingredient belongs to, if it is private to a particular organization
 	// Format: uuid
 	OrganizationID strfmt.UUID `json:"organization_id,omitempty"`

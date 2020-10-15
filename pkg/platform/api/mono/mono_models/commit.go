@@ -27,7 +27,7 @@ type Commit struct {
 	// Format: date-time
 	AtTime strfmt.DateTime `json:"atTime,omitempty"`
 
-	// the user that authored this commit
+	// the id of the user that authored this commit
 	// Format: uuid
 	Author strfmt.UUID `json:"author,omitempty"`
 
@@ -46,6 +46,9 @@ type Commit struct {
 	// Read Only: true
 	// Format: uuid
 	ParentCommitID strfmt.UUID `json:"parentCommitID,omitempty"`
+
+	// the name of the user that authored this commit
+	Username string `json:"username,omitempty"`
 }
 
 // Validate validates this commit

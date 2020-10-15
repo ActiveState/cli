@@ -8,12 +8,14 @@ import (
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/download"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/progress"
 	"github.com/ActiveState/cli/pkg/platform/api"
+	"github.com/ActiveState/cli/pkg/platform/api/buildlogstream"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -85,30 +87,26 @@ type Downloader interface {
 
 // Download is the main struct for orchestrating the download of all the artifacts belonging to a runtime
 type Download struct {
-	commitID    strfmt.UUID
-	owner       string
-	projectName string
-	orgID       string
-	private     bool
+	runtime *Runtime
+	orgID   string
+	private bool
 }
 
 // NewDownload creates a new RuntimeDownload using all custom args
-func NewDownload(commitID strfmt.UUID, owner, projectName string) Downloader {
+func NewDownload(runtime *Runtime) Downloader {
 	return &Download{
-		commitID:    commitID,
-		owner:       owner,
-		projectName: projectName,
+		runtime: runtime,
 	}
 }
 
 // fetchRecipe juggles API's to get the build request that can be sent to the head-chef
 func (r *Download) fetchRecipeID() (strfmt.UUID, *failures.Failure) {
-	commitID := strfmt.UUID(r.commitID)
+	commitID := r.runtime.commitID
 	if commitID == "" {
 		return "", FailNoCommit.New(locale.T("err_no_commit"))
 	}
 
-	recipeID, fail := model.FetchRecipeIDForCommitAndPlatform(commitID, r.owner, r.projectName, r.orgID, r.private, model.HostPlatform)
+	recipeID, fail := model.FetchRecipeIDForCommitAndPlatform(commitID, r.runtime.owner, r.runtime.projectName, r.orgID, r.private, model.HostPlatform)
 	if fail != nil {
 		return "", fail
 	}
@@ -119,39 +117,40 @@ func (r *Download) fetchRecipeID() (strfmt.UUID, *failures.Failure) {
 // FetchArtifacts will retrieve artifact information from the head-chef (eg language installers)
 // The first return argument specifies whether we are dealing with an alternative build
 func (r *Download) FetchArtifacts() (*FetchArtifactsResult, *failures.Failure) {
-	result := &FetchArtifactsResult{}
+	orgID := strfmt.UUID(constants.ValidZeroUUID)
+	projectID := strfmt.UUID(constants.ValidZeroUUID)
 
-	platProject, fail := model.FetchProjectByName(r.owner, r.projectName)
-	if fail != nil {
-		return nil, fail
+	if r.runtime.owner != "" && r.runtime.projectName != "" {
+		platProject, fail := model.FetchProjectByName(r.runtime.owner, r.runtime.projectName)
+		if fail != nil {
+			return nil, fail
+		}
+
+		projectID = platProject.ProjectID
+		orgID = platProject.OrganizationID
+		r.orgID = platProject.OrganizationID.String()
+		r.private = platProject.Private
 	}
-	r.orgID = platProject.OrganizationID.String()
-	r.private = platProject.Private
 
 	recipeID, fail := r.fetchRecipeID()
 	if fail != nil {
 		return nil, fail
 	}
 
-	var commitID *strfmt.UUID
-	for _, branch := range platProject.Branches {
-		if branch.Default {
-			commitID = branch.CommitID
-			break
-		}
-	}
-	if commitID == nil {
-		return nil, FailNoCommitID.New("fetch_err_runtime_no_commitid")
-	}
+	return r.fetchArtifacts(r.runtime.commitID, recipeID, orgID, projectID)
+}
+
+func (r *Download) fetchArtifacts(commitID, recipeID, orgID, projectID strfmt.UUID) (*FetchArtifactsResult, *failures.Failure) {
+	result := &FetchArtifactsResult{}
 
 	buildAnnotations := headchef.BuildAnnotations{
 		CommitID:     commitID.String(),
-		Project:      r.projectName,
-		Organization: r.owner,
+		Project:      r.runtime.projectName,
+		Organization: r.runtime.owner,
 	}
 
 	logging.Debug("sending request to head-chef")
-	buildRequest, fail := headchef.NewBuildRequest(recipeID, platProject.OrganizationID, platProject.ProjectID, buildAnnotations)
+	buildRequest, fail := headchef.NewBuildRequest(recipeID, orgID, projectID, buildAnnotations)
 	if fail != nil {
 		return result, fail
 	}
@@ -182,16 +181,26 @@ func (r *Download) FetchArtifacts() (*FetchArtifactsResult, *failures.Failure) {
 			logging.Debug("BuildFailed: %s", msg)
 			return result, FailBuildFailed.New(locale.Tr("build_status_failed", r.projectURL(), msg))
 
-		case <-buildStatus.Started:
+		case resp := <-buildStatus.Started:
 			logging.Debug("BuildStarted")
 			namespaced := project.Namespaced{
-				Owner:   r.owner,
-				Project: r.projectName,
+				Owner:   r.runtime.owner,
+				Project: r.runtime.projectName,
 			}
 			analytics.EventWithLabel(
 				analytics.CatBuild, analytics.ActBuildProject, namespaced.String(),
 			)
-			return result, FailBuildInProgress.New(locale.Tr("build_status_in_progress", r.projectURL()))
+
+			// For non-alternate builds we do not support in-progress builds
+			engine := BuildEngineFromResponse(resp)
+			if engine != Alternative && engine != Hybrid {
+				return result, FailBuildInProgress.New(locale.Tr("build_status_in_progress", r.projectURL()))
+			}
+
+			if err := r.waitForArtifacts(recipeID); err != nil {
+				return nil, failures.FailMisc.Wrap(err, locale.Tl("err_wait_artifacts", "Error happened while waiting for packages"))
+			}
+			return r.fetchArtifacts(commitID, recipeID, orgID, projectID)
 
 		case fail := <-buildStatus.RunFail:
 			logging.Debug("Failure: %v", fail)
@@ -208,9 +217,18 @@ func (r *Download) FetchArtifacts() (*FetchArtifactsResult, *failures.Failure) {
 	}
 }
 
+func (r *Download) waitForArtifacts(recipeID strfmt.UUID) error {
+	logstream := buildlogstream.NewRequest(recipeID, r.runtime.msgHandler)
+	if err := logstream.Wait(); err != nil {
+		return locale.WrapError(err, "err_wait_artifacts_logstream", "Error happened while waiting for builds to complete")
+	}
+
+	return nil
+}
+
 func (r *Download) projectURL() string {
 	url := api.GetServiceURL(api.ServiceHeadChef)
-	url.Path = path.Join(r.owner, r.projectName)
+	url.Path = path.Join(r.runtime.owner, r.runtime.projectName)
 	return url.String()
 }
 

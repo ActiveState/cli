@@ -12,6 +12,7 @@ import (
 
 	"github.com/gobuffalo/packr"
 	"github.com/mash/go-tempfile-suffix"
+	"github.com/spf13/viper"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -21,27 +22,46 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
-func WriteRcFile(rcTemplateName string, path string, env map[string]string) *failures.Failure {
+var (
+	Deploy EnvData = EnvData{
+		constants.RCAppendDeployStartLine,
+		constants.RCAppendDeployStopLine,
+		"user_env",
+	}
+	Default EnvData = EnvData{
+		constants.RCAppendDefaultStartLine,
+		constants.RCAppendDefaultStopLine,
+		"user_default_env",
+	}
+)
+
+type EnvData struct {
+	Start string
+	Stop  string
+	Key   string
+}
+
+func WriteRcFile(rcTemplateName string, path string, data EnvData, env map[string]string) *failures.Failure {
 	if fail := fileutils.Touch(path); fail != nil {
 		return fail
 	}
 
-	if fail := cleanRcFile(path); fail != nil {
+	rcData := map[string]interface{}{
+		"Start": data.Start,
+		"Stop":  data.Stop,
+		"Env":   env,
+	}
+
+	if fail := cleanRcFile(path, data); fail != nil {
 		return fail
 	}
 
 	box := packr.NewBox("../../../assets/shells")
 	tpl := box.String(rcTemplateName)
 
-	rcData := map[string]interface{}{
-		"Start": constants.RCAppendStartLine,
-		"Stop":  constants.RCAppendStopLine,
-		"Env":   env,
-	}
 	t, err := template.New("rcfile_append").Parse(tpl)
 	if err != nil {
 		return failures.FailTemplating.Wrap(err)
@@ -58,7 +78,7 @@ func WriteRcFile(rcTemplateName string, path string, env map[string]string) *fai
 	return fileutils.AppendToFile(path, []byte(fileutils.LineEnd+out.String()))
 }
 
-func cleanRcFile(path string) *failures.Failure {
+func cleanRcFile(path string, data EnvData) *failures.Failure {
 	readFile, err := os.Open(path)
 
 	if err != nil {
@@ -74,7 +94,7 @@ func cleanRcFile(path string) *failures.Failure {
 		text := scanner.Text()
 
 		// Detect start line
-		if strings.Contains(text, constants.RCAppendStartLine) {
+		if strings.Contains(text, data.Start) {
 			logging.Debug("Cleaning previous RC lines from %s", path)
 			strip = true
 		}
@@ -88,7 +108,7 @@ func cleanRcFile(path string) *failures.Failure {
 		fileContents = append(fileContents, scanner.Text())
 
 		// Detect stop line
-		if strings.Contains(text, constants.RCAppendStopLine) {
+		if strings.Contains(text, data.Stop) {
 			strip = false
 		}
 	}
@@ -140,12 +160,17 @@ func SetupProjectRcFile(templateName, ext string, env map[string]string, out out
 	prj := project.Get()
 
 	userScripts := ""
+	activatedKey := fmt.Sprintf("activated_%s", prj.Namespace().String())
 	for _, event := range prj.Events() {
-		if strings.ToLower(event.Name()) == "activate" {
-			v, err := event.Value()
-			if err != nil {
-				return nil, failures.FailMisc.Wrap(err)
-			}
+		v, err := event.Value()
+		if err != nil {
+			return nil, failures.FailMisc.Wrap(err)
+		}
+		if strings.ToLower(event.Name()) == "first-activate" && !viper.GetBool(activatedKey) {
+			userScripts = v + "\n" + userScripts
+			viper.Set(activatedKey, true)
+		}
+		if event.Name() == "activate" {
 			userScripts = userScripts + "\n" + v
 		}
 	}
@@ -174,11 +199,16 @@ func SetupProjectRcFile(templateName, ext string, env map[string]string, out out
 		out.Notice(locale.Tr("warn_script_name_in_use", strings.Join(inuse, "\n  - "), inuse[0], prj.NormalizedName(), explicitName))
 	}
 
+	wd, err := osutils.Getwd()
+	if err != nil {
+		return nil, failures.FailMisc.Wrap(err, locale.Tr("err_subshell_wd", "Could not get working directory."))
+	}
+
 	rcData := map[string]interface{}{
 		"Owner":       prj.Owner(),
 		"Name":        prj.Name(),
 		"Env":         env,
-		"WD":          virtualenvironment.Get().WorkingDirectory(),
+		"WD":          wd,
 		"UserScripts": userScripts,
 		"Scripts":     scripts,
 		"ExecName":    constants.CommandName,

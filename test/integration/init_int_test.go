@@ -21,7 +21,7 @@ type InitIntegrationTestSuite struct {
 }
 
 func (suite *InitIntegrationTestSuite) TestInit() {
-	suite.runInitTest(false, "sample_yaml", "python3")
+	suite.runInitTest(false, sampleYAMLPython3, "python3")
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_SkeletonEditor() {
@@ -29,11 +29,11 @@ func (suite *InitIntegrationTestSuite) TestInit_SkeletonEditor() {
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_Path() {
-	suite.runInitTest(true, "sample_yaml", "python3")
+	suite.runInitTest(true, sampleYAMLPython3, "python3")
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_Version() {
-	suite.runInitTest(false, "sample_yaml", "python3@1.0")
+	suite.runInitTest(false, sampleYAMLPython3, "python3@1.0")
 }
 
 func (suite *InitIntegrationTestSuite) runInitTest(addPath bool, configLocale, language string, args ...string) {

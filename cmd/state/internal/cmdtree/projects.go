@@ -13,7 +13,9 @@ func newProjectsCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"projects",
+		locale.Tl("projects_title", "Listing Projects"),
 		locale.T("projects_description"),
+		prime.Output(),
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
