@@ -6,9 +6,9 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/runners/secrets"
 	"github.com/ActiveState/cli/internal/runners/state"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
-	"github.com/ActiveState/cli/state/secrets"
 )
 
 // CmdTree manages a tree of captain.Command instances.

@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/runners/secrets"
 	"github.com/ActiveState/cli/internal/testhelpers/exiter"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
@@ -22,7 +23,6 @@ import (
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/ActiveState/cli/state/secrets"
 )
 
 type SecretsGetCommandTestSuite struct {

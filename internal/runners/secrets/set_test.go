@@ -16,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/runners/secrets"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
@@ -24,7 +25,6 @@ import (
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/ActiveState/cli/state/secrets"
 )
 
 type VarSetCommandTestSuite struct {
@@ -43,7 +43,7 @@ func (suite *VarSetCommandTestSuite) SetupSuite() {
 	path, err := environment.GetRootPath()
 	suite.Require().NoError(err, "error obtaining root path")
 
-	suite.testdataDir = filepath.Join(path, "state", "secrets", "testdata")
+	suite.testdataDir = filepath.Join(path, "internal", "runners", "secrets", "testdata")
 	suite.configDir = filepath.Join(suite.testdataDir, "generated", "config")
 }
 

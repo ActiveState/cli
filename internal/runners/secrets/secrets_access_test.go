@@ -10,6 +10,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/runners/secrets"
 	"github.com/ActiveState/cli/internal/testhelpers/exiter"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
@@ -17,7 +18,6 @@ import (
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/ActiveState/cli/state/secrets"
 	"github.com/kami-zh/go-capturer"
 	"github.com/stretchr/testify/suite"
 )
@@ -35,7 +35,7 @@ type SecretsAccessTestSuite struct {
 func (suite *SecretsAccessTestSuite) BeforeTest(suiteName, testName string) {
 	root, err := environment.GetRootPath()
 	suite.Require().NoError(err, "Should detect root path")
-	err = os.Chdir(filepath.Join(root, "state", "secrets", "testdata", "access"))
+	err = os.Chdir(filepath.Join(root, "internal", "runners", "secrets", "testdata", "access"))
 	suite.Require().NoError(err, "Should chdir")
 
 	secretsClient := secretsapi_test.NewDefaultTestClient("bearing123")
