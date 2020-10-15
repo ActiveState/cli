@@ -5,7 +5,7 @@ import (
 	"io"
 	"regexp"
 
-	ct "github.com/ActiveState/go-colortext"
+	"github.com/ActiveState/cli/internal/output/colorstyle"
 )
 
 var colorRx *regexp.Regexp
@@ -32,38 +32,39 @@ type defaultColorTheme struct{}
 
 // Heading switches to bold and bright foreground
 func (dct defaultColorTheme) Heading(writer io.Writer) {
-	ct.Foreground(writer, ct.White, true)
-	ct.ChangeStyle(writer, ct.Bold)
+	c := colorstyle.New(writer)
+	c.SetStyle(colorstyle.Default, true)
+	c.SetStyle(colorstyle.Bold, false)
 }
 
 // Notice switches to bright foreground
 func (dct defaultColorTheme) Notice(writer io.Writer) {
-	ct.Foreground(writer, ct.White, true)
+	colorstyle.New(writer).SetStyle(colorstyle.Default, true)
 }
 
 // Info switches to green foreground
 func (dct defaultColorTheme) Info(writer io.Writer) {
-	ct.Foreground(writer, ct.Green, false)
+	colorstyle.New(writer).SetStyle(colorstyle.Green, false)
 }
 
 // Error switches to red foreground
 func (dct defaultColorTheme) Error(writer io.Writer) {
-	ct.Foreground(writer, ct.Red, false)
+	colorstyle.New(writer).SetStyle(colorstyle.Red, false)
 }
 
 // Disabled switches to bright black foreground
 func (dct defaultColorTheme) Disabled(writer io.Writer) {
-	ct.Foreground(writer, ct.Black, true)
+	colorstyle.New(writer).SetStyle(colorstyle.Black, true)
 }
 
 // Actionable switches to teal foreground
 func (dct defaultColorTheme) Actionable(writer io.Writer) {
-	ct.Foreground(writer, ct.Cyan, true)
+	colorstyle.New(writer).SetStyle(colorstyle.Cyan, true)
 }
 
 // Reset re-sets all color settings
 func (dct defaultColorTheme) Reset(writer io.Writer) {
-	ct.Reset(writer)
+	colorstyle.New(writer).SetStyle(colorstyle.Default, false)
 }
 
 var activeColorTheme ColorTheme = defaultColorTheme{}
