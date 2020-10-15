@@ -9,7 +9,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/bndr/gotabulate"
 	"github.com/go-openapi/strfmt"
 	"github.com/mitchellh/go-wordwrap"
 	"github.com/thoas/go-funk"
@@ -20,6 +19,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
+	"github.com/ActiveState/cli/internal/tabulate"
 )
 
 type PlainOpts string
@@ -284,7 +284,7 @@ func sprintTable(slice []interface{}) (string, error) {
 
 			if firstIteration {
 				headers = append(headers, localizedField(field.l10n))
-				termWidth = termWidth - (len(headers) * 10) // Account for cell padding, cause gotabulate doesn't..
+				termWidth = termWidth - (len(headers) * 10) // Account for cell padding, cause tabulate doesn't..
 			}
 
 			stringValue, err := sprint(field.value)
@@ -310,7 +310,7 @@ func sprintTable(slice []interface{}) (string, error) {
 		termWidth = 100
 	}
 
-	t := gotabulate.Create(rows)
+	t := tabulate.Create(rows)
 	t.SetWrapDelimiter(' ')
 	t.SetWrapStrings(true)
 	t.SetMaxCellSize(termWidth)
@@ -320,7 +320,21 @@ func sprintTable(slice []interface{}) (string, error) {
 	t.SetHideLines([]string{"betweenLine", "top", "aboveTitle", "LineTop", "LineBottom", "bottomLine"})
 	t.SetAlign("left")
 
-	render := t.Render("simple")
+	// Set our own custom table format
+	tabulate.TableFormats["standard"] = tabulate.TableFormat{
+		LineTop:         tabulate.Line{"", "-", "", ""},
+		LineBelowHeader: tabulate.Line{"", "\u2500", "", ""},
+		LineBottom:      tabulate.Line{"", "-", "", ""},
+		HeaderRow:       tabulate.Row{"[HEADING]", "", "[/RESET]"},
+		DataRow:         tabulate.Row{"", "", ""},
+		TitleRow:        tabulate.Row{"", "", ""},
+		Padding:         1,
+	}
+
+	// Adjust padding value for the above table format
+	tabulate.MIN_PADDING = 4
+
+	render := t.Render("standard")
 	return strings.TrimSuffix(render, "\n"), nil
 }
 
