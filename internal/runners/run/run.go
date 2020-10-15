@@ -126,12 +126,13 @@ func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, nam
 		var path, execPath string
 		if l.Executable().Available() {
 			execPath = l.Executable().Name()
+			path = venvExePath
 		} else {
 			execPath = l.String()
 			path = os.Getenv("PATH")
 		}
 
-		if l.Executable().Builtin() && runtime.GOOS == "windows" {
+		if l.Executable().Builtin() && rt.GOOS == "windows" {
 			execPath = execPath + ".exe"
 		}
 
@@ -165,6 +166,13 @@ func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, nam
 	defer sf.Clean()
 
 	out.Notice(locale.Tr("info_state_run_running", script.Name(), script.Source().Path()))
+	// ignore code for now, passing via failure
+	err = subs.Run(sf.Filename(), args...)
+	if err != nil {
+		if len(attempted) > 0 {
+			return locale.WrapInputError(
+				err,
+				"err_run_script",
 				"Script execution fell back to {{.V0}} after {{.V1}} was not detected in your project or system. Please ensure your script is compatible with {{.V0}}, {{.V1}}",
 				lang.String(),
 				strings.Join(attempted, ", "),
