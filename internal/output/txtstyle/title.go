@@ -1,6 +1,8 @@
 package txtstyle
 
 import (
+	"regexp"
+	"strings"
 	"unicode/utf8"
 
 	"github.com/ActiveState/cli/internal/output"
@@ -34,14 +36,15 @@ func (t *Title) String() string {
 
 	titleLen := utf8.RuneCountInString(t.Text) // NOTE: ignores effects of combining diacritics
 	lineLen := titleLen + 2 + 2*t.Padding + 1  // text, border, padding, newline
+	lines := 3
 
-	rs := make([]rune, 5*lineLen)
+	rs := make([]rune, lines*lineLen)
 
 	topLf := 0
 	topRt := lineLen - 2
-	btmLf := lineLen * 4
+	btmLf := lineLen * (lines - 1)
 	btmRt := len(rs) - 2
-	titleBgn := lineLen*2 + t.Padding + 1
+	titleBgn := lineLen + t.Padding + 1
 
 	rs[topLf], rs[topRt] = '╔', '╗'
 	rs[btmLf], rs[btmRt] = '╚', '╝'
@@ -74,7 +77,19 @@ func (t *Title) String() string {
 		rs[i] = ' '
 	}
 
-	return string(rs[:len(rs)-1]) // drop ending newline
+	prefix := "[DISABLED]"
+	suffix := "[/RESET]"
+	outLines := strings.Split(string(rs), "\n")
+	for i, line := range outLines {
+		if i == 0 || i == len(outLines)-2 {
+			outLines[i] = prefix + line + suffix
+		} else {
+			re := regexp.MustCompile(`║(.*)║`)
+			outLines[i] = re.ReplaceAllString(line, prefix+"║"+suffix+"[HEADING]$1[/RESET]"+prefix+"║")
+		}
+	}
+
+	return strings.Join(outLines, "\n") + "\n"
 }
 
 // MarshalOutput implements output.Marshaller.
