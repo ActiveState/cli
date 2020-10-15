@@ -10,14 +10,16 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/stretchr/testify/suite"
 )
 
 type PrepareIntegrationTestSuite struct {
-	suite.Suite
+	tagsuite.Suite
 }
 
 func (suite *PrepareIntegrationTestSuite) TestPrepare() {
+	suite.OnlyRunForTags("prepare")
 	if !e2e.RunningOnCI() {
 		suite.T().Skipf("Skipping TestPrepare when not running on CI or on MacOS, as it modifies PATH")
 	}
