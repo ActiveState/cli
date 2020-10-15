@@ -5,14 +5,16 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/stretchr/testify/suite"
 )
 
 type EventsIntegrationTestSuite struct {
-	suite.Suite
+	tagsuite.Suite
 }
 
 func (suite *EventsIntegrationTestSuite) TestEvents_FirstActivate() {
+	suite.OnlyRunForTags("events")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
