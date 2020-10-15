@@ -18,10 +18,6 @@ type packageRow struct {
 }
 
 func (t *packageTable) MarshalOutput(format output.Format) interface{} {
-	if t == nil {
-		return nil
-	}
-
 	if format == output.PlainFormatName {
 		if len(t.rows) == 0 {
 			return t.emptyOutput
