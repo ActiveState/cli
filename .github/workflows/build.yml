@@ -283,7 +283,6 @@ jobs:
         INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
         PLATFORM_API_TOKEN: ${{ secrets.PLATFORM_API_TOKEN }}
   inttest:
-    if: contains(github.event.pull_request.labels.*.name, 'run-int-test-only')
     name: Integration Test
     strategy:
       matrix:

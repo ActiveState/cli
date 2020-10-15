@@ -17,7 +17,6 @@ jobs:
     if: github.ref != 'refs/heads/master'
     _: #@ template.replace(jobs_inttestcrit())
   inttest:
-    if: contains(github.event.pull_request.labels.*.name, 'run-int-test-only')
     _: #@ template.replace(jobs_inttest())
   deploy: #@ jobs_deploy()
 
