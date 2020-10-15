@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
@@ -277,6 +278,7 @@ func TestGetProjectFilePath(t *testing.T) {
 	assert.NoError(t, err, "Should detect root path")
 	cwd, err := os.Getwd()
 	assert.NoError(t, err, "Should fetch cwd")
+	defer os.Chdir(cwd) // restore
 	os.Chdir(filepath.Join(root, "pkg", "projectfile", "testdata"))
 
 	configPath, fail := GetProjectFilePath()
@@ -297,7 +299,17 @@ func TestGetProjectFilePath(t *testing.T) {
 	require.Nil(t, fail)
 	assert.Equal(t, expectedPath, configPath, "Project path is properly detected using the ProjectEnvVarName")
 
-	os.Chdir(cwd) // restore
+	os.Unsetenv(constants.ProjectEnvVarName)
+	tmpDir, err := ioutil.TempDir("", "")
+	assert.NoError(t, err, "Should create temp dir")
+	defer os.RemoveAll(tmpDir)
+	os.Chdir(tmpDir)
+	_, fail = GetProjectFilePath()
+	assert.Error(t, fail.ToError(), "GetProjectFilePath should fail")
+	viper.SetDefault(constants.GlobalDefaultPrefname, expectedPath)
+	configPath, fail = GetProjectFilePath()
+	assert.NoError(t, fail.ToError(), "GetProjectFilePath should succeed")
+	assert.Equal(t, expectedPath, configPath, "Project path is properly detected using default path from config")
 }
 
 // TestGet the config
@@ -420,8 +432,11 @@ func TestNewProjectfile(t *testing.T) {
 
 func TestValidateProjectURL(t *testing.T) {
 	fail := ValidateProjectURL("https://example.com/xowner/xproject")
-	assert.Error(t, fail.ToError(), "This is an invalid project URL, good catch!")
+	assert.Error(t, fail.ToError(), "This should be an invalid project URL")
 
 	fail = ValidateProjectURL("https://platform.activestate.com/xowner/xproject")
-	assert.Nil(t, fail, "This is an invalid project URL, good catch!")
+	assert.Nil(t, fail, "This should not be an invalid project URL")
+
+	fail = ValidateProjectURL("https://platform.activestate.com/commit/commitid")
+	assert.Nil(t, fail, "This should not be an invalid project URL using the commit path")
 }

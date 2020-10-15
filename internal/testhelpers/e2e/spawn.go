@@ -38,11 +38,3 @@ func NonWriteableBinDir() SpawnOptions {
 		return nil
 	}
 }
-
-// ReUseExecutable skips the step of copying the executable to a session directory and instead uses the executable that is in that directory already
-func ReUseExecutable() SpawnOptions {
-	return func(opts *Options) error {
-		opts.ReUseExecutables = true
-		return nil
-	}
-}

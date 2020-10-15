@@ -51,6 +51,44 @@ func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
 	cp.ExpectExitCode(123, 10*time.Second)
 }
 
+func (suite *ActivateIntegrationTestSuite) TestActivateUsingCommitID() {
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("activate", "ActiveState-CLI/Python3#6d9280e7-75eb-401a-9e71-0d99759fbad3")
+	cp.Expect("Where would you like to checkout")
+	cp.SendLine(cp.WorkDirectory())
+	cp.Expect("activated state", 20*time.Second)
+	cp.WaitForInput(10 * time.Second)
+
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
+}
+
+func (suite *ActivateIntegrationTestSuite) TestActivateNotOnPath() {
+	ts := e2e.NewNoPathUpdate(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("activate", "ActiveState-CLI/Python3")
+	cp.Expect("Where would you like to checkout")
+	cp.SendLine(cp.WorkDirectory())
+	cp.Expect("activated state", 20*time.Second)
+	cp.WaitForInput(10 * time.Second)
+
+	if runtime.GOOS == "windows" {
+		cp.SendLine("doskey /macros | findstr state=")
+	} else {
+		cp.SendLine("alias state")
+	}
+	cp.Expect("state=")
+
+	cp.SendLine("state --version")
+	cp.Expect("ActiveState")
+
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
+}
+
 // TestActivatePythonByHostOnly Tests whether we are only pulling in the build for the target host
 func (suite *ActivateIntegrationTestSuite) TestActivatePythonByHostOnly() {
 	if runtime.GOOS != "linux" {
@@ -111,6 +149,12 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	cp.SendLine(pythonExe + " -c \"import pytest; print(pytest.__doc__)\"")
 	cp.Expect("unit and functional testing")
 
+	cp.SendLine("state activate ActiveState-CLI/small-python --default")
+	cp.Expect("Please de-activate the current runtime")
+
+	cp.SendLine("state activate --default")
+	cp.Expect("Writing default installation to")
+
 	// test that other executables that use python work as well
 	pipExe := "pip" + version
 	cp.SendLine(fmt.Sprintf("%s --version", pipExe))
@@ -123,6 +167,12 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	// de-activate shell
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
+
+	// check that default activation works
+	cp = ts.SpawnCmd(filepath.Join(ts.Dirs.DefaultBin, "python"), "-c", "import sys; print(sys.copyright)")
+	cp.Expect("ActiveState Software Inc.")
+	cp.ExpectExitCode(0)
+
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivatePython3_Forward() {
@@ -316,4 +366,20 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_Command() {
 
 func TestActivateIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(ActivateIntegrationTestSuite))
+}
+
+func (suite *ActivateIntegrationTestSuite) TestActivateCommitURL() {
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	// https://platform.activestate.com/ActiveState-CLI/Python3/customize?commitID=fbc613d6-b0b1-4f84-b26e-4aa5869c4e54
+	commitID := "fbc613d6-b0b1-4f84-b26e-4aa5869c4e54"
+	contents := fmt.Sprintf("project: https://platform.activestate.com/commit/%s\n", commitID)
+	ts.PrepareActiveStateYAML(contents)
+
+	// Ensure we have the most up to date version of the project before activating
+	cp := ts.Spawn("activate")
+	cp.Expect("Activating state")
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
 }

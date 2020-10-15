@@ -8,14 +8,14 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/progress"
-
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
-	"github.com/hashicorp/go-retryablehttp"
+	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/progress"
+	"github.com/ActiveState/cli/internal/retryhttp"
 )
 
 // Get takes a URL and returns the contents as bytes
@@ -45,13 +45,19 @@ func httpGet(url string) ([]byte, *failures.Failure) {
 }
 
 func httpGetWithProgress(url string, progress *progress.Progress) ([]byte, *failures.Failure) {
-	logging.Debug("Retrieving url: %s", url)
-	client := retryablehttp.NewClient()
-	// By default this library logs debug messages to stdout/stderr
-	client.Logger = nil
+	return httpGetWithProgressRetry(url, progress, 1, 3)
+}
+
+func httpGetWithProgressRetry(url string, progress *progress.Progress, attempt int, retries int) ([]byte, *failures.Failure) {
+	logging.Debug("Retrieving url: %s, attempt: %d", url, attempt)
+	client := retryhttp.NewClient(0 /* 0 = no timeout */, retries)
 	resp, err := client.Get(url)
 	if err != nil {
-		return nil, failures.FailNetwork.Wrap(err)
+		code := -1
+		if resp != nil {
+			code = resp.StatusCode
+		}
+		return nil, failures.FailNetwork.Wrap(err, locale.Tl("err_network_get", "Status code: {{.V0}}", strconv.Itoa(code)))
 	}
 	defer resp.Body.Close()
 
@@ -73,6 +79,13 @@ func httpGetWithProgress(url string, progress *progress.Progress) ([]byte, *fail
 
 	bar := progress.AddByteProgressBar(int64(total))
 
+	// Ensure bar is always closed (especially for retries)
+	defer func() {
+		if !bar.Completed() {
+			bar.Abort(true)
+		}
+	}()
+
 	src := resp.Body
 	var dst bytes.Buffer
 
@@ -80,7 +93,11 @@ func httpGetWithProgress(url string, progress *progress.Progress) ([]byte, *fail
 
 	_, err = io.Copy(&dst, src)
 	if err != nil {
-		return nil, failures.FailInput.Wrap(err)
+		logging.Debug("Reading body failed: %s", err)
+		if attempt <= retries {
+			return httpGetWithProgressRetry(url, progress, attempt + 1, retries)
+		}
+		return nil, failures.FailNetwork.Wrap(err)
 	}
 
 	if !bar.Completed() {

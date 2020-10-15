@@ -12,8 +12,12 @@ setenv {{$K}} "{{$V}}:$PATH"
 {{- end}}
 {{- end}}
 
+{{ if .ExecAlias }}
+alias {{.ExecName}}='{{.ExecAlias}}'
+{{ end }}
+
 {{range $K, $CMD := .Scripts}}
-alias {{$K}} 'state run {{$CMD}}'
+alias {{$K}} '{{$.ExecName}} run {{$CMD}}'
 {{end}}
 
 cd "{{.WD}}"

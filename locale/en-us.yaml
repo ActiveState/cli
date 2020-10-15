@@ -103,9 +103,11 @@ error_unsupported_shell:
 err_output_flag_value_invalid:
   other: Could not recognize output type
 info_reactivating:
-  other: "[BLUE]Reactivating state[/RESET]"
+  other: "[INFO]Reactivating state[/RESET]"
 info_deactivated:
-  other: "[BLUE]Deactivated {{.Owner}}/{{.Name}}[/RESET]"
+  other: "[INFO]Deactivated {{.Owner}}/{{.Name}}[/RESET]"
+info_deactivated_by_commit:
+  other: "[INFO]Deactivated[/RESET]"
 venv_installer_is_nil:
   other: Provided installer should not be nil
 error_unsupported_language:
@@ -159,7 +161,9 @@ err_artifact_no_parent:
 err_invalid_status_code:
   other: "Invalid status code: {{.V0}}"
 info_activating_state:
-  other: "[BLUE]Activating state: {{.Owner}}/{{.Name}}[/RESET]"
+  other: "[INFO]Activating state: {{.Owner}}/{{.Name}}[/RESET]"
+info_activating_state_by_commit:
+  other: "[INFO]Activating state[/RESET]"
 info_state_active_repoexists:
   other: "Repo already exists: {{.Path}}"
 panic_couldnt_detect_wd:
@@ -410,6 +414,8 @@ flag_json_desc:
   other: Changes output to machine-readable JSON
 runtime_alternative_failed_artifact_order:
   other: "Could not write runtime.json file: internal error"
+runtime_alternative_file_transforms_err:
+  other: "Could not apply necessary file transformations after unpacking."
 runtime_alternative_failed_destination:
   other: Installation failed due to to failed write to directory {{.V0}}
 scripts_col_name:
@@ -561,7 +567,7 @@ field_platforms:
 err_cannot_obtain_dist:
   other: "Could not obtain distribution for language: {{.V0}}"
 err_already_active:
-  other: "You cannot activate a new state when you are already in an activated state. You are in an activated state for project: {{.V0}}"
+  other: "You cannot activate a new state when you are already in an activated state."
 run_listing_scripts:
   other: "Available Scripts: "
 
@@ -743,7 +749,7 @@ err_command_requires_auth:
   other: You need to be authenticated to run this command. Authenticate by running `state auth`.
 warn_script_name_in_use:
   other: |
-    [YELLOW]The following script names are already in use:
+    [NOTICE]The following script names are already in use:
 
       - {{.V0}}
 
@@ -901,7 +907,7 @@ err_activate_namespace:
 err_activate_create_project:
   other: Could not create new project
 err_invalid_namespace:
-  other: "Invalid namespace: {{.V0}}. Should be in the format of ORGANISATION_NAME/PROJECT_NAME. Names should be alphanumeric and may contain dashes and periods."
+  other: "Invalid namespace: {{.V0}}. Should be in the format of ORGANISATION_NAME/PROJECT_NAME, and can optionally contain a #COMMIT_ID suffix. Names should be alphanumeric and may contain dashes and periods."
 err_could_not_get_commit_behind_count:
   other: Could not obtain commit history properly
 err_must_create_project:
@@ -914,7 +920,7 @@ activate_namespace_location:
   other: Where would you like to checkout {{.V0}}?
 warn_deprecation:
   other: |
-    [YELLOW]You are running a deprecated version of the State Tool. This version will stop working as of {{.V0}}. 
+    [NOTICE]You are running a deprecated version of the State Tool. This version will stop working as of {{.V0}}. 
 
     Reason for deprecation: 
       {{.V1}}
@@ -922,7 +928,7 @@ warn_deprecation:
     Please update soon![/RESET]
 err_deprecation:
   other: |
-    [RED]You are running a version of the State Tool that is no longer supported! You will be encountering issues.
+    [ERROR]You are running a version of the State Tool that is no longer supported! You will be encountering issues.
 
     Reason for deprecation: 
       {{.V1}}
@@ -951,7 +957,7 @@ err_pull_get_latest_commit_id:
 err_os_not_a_directory:
   other: Expected '{{.V0}}' to be a valid directory
 unstable_version_warning:
-  other: "[YELLOW]The State Tool is currently in beta, we are actively changing and adding features based on developer feedback.[/RESET]"
+  other: "[NOTICE]The State Tool is currently in beta. We are actively changing and adding features based on developer feedback.[/RESET]"
 export_cmd_description:
   other: Print information based on the provided subcommand
 export_recipe_cmd_description:
@@ -977,7 +983,7 @@ export_config_flag_filter_description:
 export_config_dir_description:
   other: Export the config directory details
 export_apikey_user_notice:
-  other: "[BLUE]Note that this key is not stored by ActiveState. Please store the value for later use as you cannot retrieve it again.[/RESET]"
+  other: "[INFO]Note that this key is not stored by ActiveState. Please store the value for later use as you cannot retrieve it again.[/RESET]"
 err_apikey_name_required:
   other: An API key name is required.
 err_cannot_obtain_apikey:
@@ -1066,7 +1072,7 @@ language_name_unknown:
   other: Unknown
 language_unknown_options:
   other: Unknown options
-sample_yaml:
+sample_yaml_perl:
   other: |
     scripts:
     # This script uses a secret. Note that you can define your own secrets at
@@ -1074,31 +1080,52 @@ sample_yaml:
       - name: helloWorld
         language: {{.Shell}}
         value: echo ${secrets.user.world}
+      - name: activationMessage
+        language: perl
+        value: |
+          print <<EOT;
+          You are now in an 'activated state', this will give you a virtual environment to work in that doesn't affect the rest of your system.
+
+          Your 'activated state' allows you to manage packages, scripts, secrets and more via the activestate.yaml file at the root of your project directory.
+
+          To manage packages use the `state packages` command. For more information about package management, use `state packages --help`. For more information about the State Tool use `state help`.
+
+          To access additional features of the ActiveState Platform and use a web-based interface for managing your project, you can visit https://platform.activestate.com/{{.Owner}}/{{.Project}}.
+
+          Edit your activestate.yaml to remove this message.
+          EOT
     events:
       # This is the ACTIVATE event, it will run whenever a new virtual environment is created (eg. by running `state activate`)
       # On Linux and macOS this will be ran as part of your shell's rc file, so you can use it to set up aliases, functions, environment variables, etc.
       - name: ACTIVATE
-        constraints: 
-          os: macos,linux 
+        value: $scripts.activationMessage.path()
+sample_yaml_python:
+  other: |
+    scripts:
+    # This script uses a secret. Note that you can define your own secrets at
+    # https://platform.activestate.com/{{.Owner}}/{{.Project}}/scripts
+      - name: helloWorld
+        language: {{.Shell}}
+        value: echo ${secrets.user.world}
+      - name: activationMessage
+        language: {{.Language}}
         value: |
-          echo "You are now in an 'activated state', this will give you a virtual environment to work in that doesn't affect the rest of your system."
-          echo ""
-          echo "Your 'activated state' allows you to define scripts, events and constants via the activestate.yaml file at the root of your project directory."
-          echo ""
-          echo "To expand your language and/or package selection, or to define client-side encrypted secrets, please visit https://platform.activestate.com/{{.Owner}}/{{.Project}}."
-          echo ""
-          echo "To try out scripts with client-side encrypted secrets we've created a simple script for you in your activestate.yaml, try it out by running 'helloWorld'"
+          print(""" 
+          You are now in an 'activated state', this will give you a virtual environment to work in that doesn't affect the rest of your system.
+
+          Your 'activated state' allows you to manage packages, scripts, secrets and more via the activestate.yaml file at the root of your project directory.
+
+          To manage packages use the `state packages` command. For more information about package management, use `state packages --help`. For more information about the State Tool use `state help`.
+
+          To access additional features of the ActiveState Platform and use a web-based interface for managing your project, you can visit https://platform.activestate.com/{{.Owner}}/{{.Project}}.
+
+          Edit your activestate.yaml to remove this message.
+          """)
+    events:
+      # This is the ACTIVATE event, it will run whenever a new virtual environment is created (eg. by running `state activate`)
+      # On Linux and macOS this will be ran as part of your shell's rc file, so you can use it to set up aliases, functions, environment variables, etc.
       - name: ACTIVATE
-        constraints: 
-          os: windows 
-        value: |
-          echo You are now in an 'activated state', this will give you a virtual environment to work in that doesn't affect the rest of your system.
-          echo. 
-          echo Your 'activated state' allows you to define scripts, events and constants via the activestate.yaml file at the root of your project directory.
-          echo. 
-          echo To expand your language and/or package selection, or to define client-side encrypted secrets, please visit https://platform.activestate.com/{{.Owner}}/{{.Project}}.
-          echo. 
-          echo To try out scripts with client-side encrypted secrets we've created a simple script for you in your activestate.yaml, try it out by running 'helloWorld'
+        value: $scripts.activationMessage.path()
 editor_yaml:
   other: |
     scripts:
@@ -1183,7 +1210,7 @@ err_cannot_remove_existing:
   other: "The already configured packages were not able to be overwritten"
 err_branch_not_bare:
   other: Branch is not bare and is unable to be initialized as such
-err_package_add:
+err_package_added:
   other: Failed to add package
 package_err_cannot_fetch_checkpoint:
   other: Cannot fetch checkpoint for package listing
@@ -1207,17 +1234,17 @@ package_name:
   other: Name
 package_version:
   other: Version
-package_add:
+package_added:
   other: "Package added: {{.V0}}"
-package_version_add:
+package_version_added:
   other: "Package added: {{.V0}}@{{.V1}}"
-err_package_update:
+err_package_updated:
   other: Failed to update package
 err_package_project_no_commit:
   other: Could not find commit for project {{.V0}}
-package_update:
+package_updated:
   other: "Package updated: {{.V0}}"
-package_version_update:
+package_version_updated:
   other: "Package updated: {{.V0}}@{{.V1}}"
 package_ingredient_err:
   other: Failed to resolve an ingredient named {{.V0}}.
@@ -1256,7 +1283,7 @@ err_incompatible_move_file_dir:
     Could not move {{.V0}} to {{.V1}}.  One is a file, the other a directory.
     This indicates that the requested build may be corrupted.
 err_init_file_exists:
-  other: The target directory '{{.V0}}' already contains an activestate.yaml.
+  other: The target directory '{{.V0}}' already contains an activestate.yaml. Please change the current working directory or use the --path flag.
 init_success:
   other: |
     Project '{{.V0}}/{{.V1}}' has been successfully initialized at '{{.V2}}'.
@@ -1347,7 +1374,7 @@ namespace_label_platform:
 namespace_label_preplatform:
   other: "Bits"
 history_commit:
-  other: "[BLUE]commit {{.V0}}[/RESET]"
+  other: "[NOTICE]commit {{.V0}}[/RESET]"
 history_author:
   other: "Author: {{.V0}}"
 history_date:
@@ -1377,13 +1404,13 @@ arg_state_clean_cache_project_description:
 flag_state_clean_config_force_description:
   other: Run clean config operation without prompts
 err_uninstall_activated:
-  other: Cannot uninstall the State Tool while in an activated state. Please deactivate and try again
+  other: Cannot uninstall the State Tool while in an activated state. Please deactivate and try again.
 err_clean_cache_activated:
   other: Cannot remove the cache directory while in an activated state. Please deactivate and try again.
 err_clean_config_activated:
   other: Cannot remove the config directory while in an activated state. Please deactivate and try again.
 uninstall_confirm:
-  other: You are about to remove the State Tool, installed laguage runtimes, and all configuration information. Continue?
+  other: You are about to remove the State Tool, installed language runtimes, and all configuration information. Continue?
 clean_cache_confirm:
   other: You are about to remove the State Tool cache directory. Continue?
 clean_cache_artifact_confirm:
@@ -1419,21 +1446,21 @@ err_order_bad_request:
 err_order_unknown:
   other: Unknown error resolving order"
 using_cached_env:
-  other: "[BLUE]Reusing cached runtime environment[/RESET]"
+  other: "[INFO]Reusing cached runtime environment[/RESET]"
 update_attempt:
   other: |
-    [BLUE]Updating state tool:  Downloading latest version of the state tool...[/RESET]
+    [INFO]Updating state tool:  Downloading latest version of the state tool...[/RESET]
 auto_update_to_version:
   other: |
-    [BLUE]Updated from [BOLD]{{.V0}}[/RESET] [BLUE]to[/RESET] [BOLD]{{.V1}}[/RESET].
-    [BLUE]To avoid auto updating run 'state update --lock' (only recommended for production environments).[/RESET]
+    [INFO]Updated from {{.V0}} to {{.V1}}[/RESET].
+    [INFO]To avoid auto updating run 'state update --lock' (only recommended for production environments).[/RESET]
 auto_update_permission_err:
   other: |
     Could not update to the latest available version of the state tool due to insufficient permissions.
     To manually update, run 'state update' as a privileged user.
     If you want the state tool to auto-update, please re-install it in a user-writable directory.
 forward_version:
-  other: "[BLUE]Using locked state tool version [BOLD]{{.V0}}[/RESET]."
+  other: "[INFO]Using locked state tool version {{.V0}}[/RESET]."
 err_project_env_file_not_exist:
   other: |
     Your activated environment appears to have been corrupted because the activestate.yaml cannot be found anymore.
@@ -1458,16 +1485,16 @@ err_deploy_run_install:
 err_deploy_path_noperm:
   other: "No permission to create symlinks on any of the PATH entries: {{.V0}}"
 deploy_install:
-  other: "[BLUE]Installing Runtime Environment[/RESET]"
+  other: "[INFO]Installing Runtime Environment[/RESET]"
 deploy_configure_shell:
-  other: "[BLUE]Configuring shell: {{.V0}} (set the SHELL environment variable to use a different shell)[/RESET]"
+  other: "[INFO]Configuring shell: {{.V0}} (set the SHELL environment variable to use a different shell)[/RESET]"
 deploy_symlink:
-  other: "[BLUE]Symlinking executables to: {{.V0}}[/RESET]"
+  other: "[INFO]Symlinking executables to: {{.V0}}[/RESET]"
 deploy_overwrite_target:
   other: "Overwriting existing target: {{.V0}}"
 deploy_info:
   other: |
-    [BLUE]Deployment Information:[/RESET]
+    [INFO]Deployment Information:[/RESET]
     This information is provided for your reference, for most common use-cases you do not need to do anything with this.
 deploy_cmd_description:
   other: |
@@ -1489,12 +1516,12 @@ field_environment:
 deploy_restart_shell:
   other: |
 
-    [BLUE][BOLD]Please restart your terminal or start a new terminal session in order to start using the newly configured Runtime Environment.[/RESET]
+    [NOTICE]Please restart your terminal or start a new terminal session in order to start using the newly configured Runtime Environment.[/RESET]
 deploy_restart_cmd:
   other: |
 
-    [BLUE][BOLD]Please log out and back in again in order to start using the newly configured Runtime Environment.[/RESET]
-    [BLUE][BOLD]Alternatively, you can run `setenv` from the installation directory to update your environment[/RESET]
+    [NOTICE]Please log out and back in again in order to start using the newly configured Runtime Environment.[/RESET]
+    [NOTICE]Alternatively, you can run `setenv` from the installation directory to update your environment[/RESET]
 flag_state_deploy_path_description:
   other: The path to deploy the runtime installation files to. This directory will not be affected by 'state clean'
 flag_state_deploy_force_description:
@@ -1562,23 +1589,23 @@ ppm_print_main:
     See "https://docs.activestate.com/platform/state/" for details.
 ppm_print_forward:
   other: |
-    Your command is being forwarded to `[BOLD][BLUE]{{.V0}}[/RESET]`.
-    In the future you can run `[BOLD][BLUE]{{.V0}}[/RESET]` directly instead of running `[BOLD][BLUE]{{.V1}}[/RESET]`, which will soon be deprecated.
+    Your command is being forwarded to `[ACTIONABLE]{{.V0}}[/RESET]`.
+    In the future you can run `[ACTIONABLE]{{.V0}}[/RESET]` directly instead of running `[ACTIONABLE]{{.V1}}[/RESET]`, which will soon be deprecated.
 ppm_print_forward_after_convert:
   other: |
-    Please navigate to your newly created project directory and run `[BOLD][BLUE]{{.V1}}[/RESET]` again.
-    You can also run `[BOLD][BLUE]{{.V0}}[/RESET]` directly instead of running `[BOLD][BLUE]{{.V1}}[/RESET]`, which will soon be deprecated.
+    Please navigate to your newly created project directory and run `[ACTIONABLE]{{.V1}}[/RESET]` again.
+    You can also run `[ACTIONABLE]{{.V0}}[/RESET]` directly instead of running `[ACTIONABLE]{{.V1}}[/RESET]`, which will soon be deprecated.
 ppm_print_forward_failure:
   other: |
-    Your command is being forwarded to `[BOLD][BLUE]{{.V0}}[/RESET]`.
-    In the future you can run `[BOLD][BLUE]{{.V0}}[/RESET]` directly instead of running `[BOLD][BLUE]{{.V1}}[/RESET]`, which will soon be deprecated.
+    Your command is being forwarded to `[ACTIONABLE]{{.V0}}[/RESET]`.
+    In the future you can run `[ACTIONABLE]{{.V0}}[/RESET]` directly instead of running `[ACTIONABLE]{{.V1}}[/RESET]`, which will soon be deprecated.
 
-    Note that `[BOLD][BLUE]{{.V0}}[/RESET]` is not a direct analog for `[BOLD][BLUE]{{.V1}}[/RESET]` and your command may have failed as a result.
-    Please run `[BOLD][BLUE]{{.V0}} --help[/RESET]` for further information on how to use it for your use-case.
+    Note that `[ACTIONABLE]{{.V0}}[/RESET]` is not a direct analog for `[ACTIONABLE]{{.V1}}[/RESET]` and your command may have failed as a result.
+    Please run `[ACTIONABLE]{{.V0}} --help[/RESET]` for further information on how to use it for your use-case.
 ppm_print_area_redundant:
   other: |
     `ppm area` and its subcommands have been made redundant thanks to State Tool's use of virtual environments.
-    You can simply start managing your packages, run `[BOLD][BLUE]{{.V0}} --help[/RESET]` for more information.
+    You can simply start managing your packages, run `[ACTIONABLE]{{.V0}} --help[/RESET]` for more information.
 ppm_install_intent:
   other: add new packages to your project 
 ppm_upgrade_intent:
@@ -1605,7 +1632,7 @@ ppm_list_intent:
   other: list the packages installed for a project
 deploy_usable_path:
   other: |
-    [YELLOW]Please ensure '{{.V0}}' exists and is on your PATH.[/RESET]
+    [NOTICE]Please ensure '{{.V0}}' exists and is on your PATH.[/RESET]
 script_watcher_watch_file:
   other: "Watching file changes at: {{.V0}}"
 confirm_exit_on_error_prompt:
@@ -1626,11 +1653,11 @@ tutorial_newproject_outro:
   other: |
     Your Virtual Runtime Environment has been created.
     [[BR]][[BR]]
-    To start using your project simply run `[BOLD][BLUE]state activate[/RESET]` from your project directory at [BOLD][BLUE]{{.Dir}}[/RESET].
-    You can also manage your project in your browser at [BOLD][BLUE]{{.URL}}[/RESET].
+    To start using your project simply run `[ACTIONABLE]state activate[/RESET]` from your project directory at [ACTIONABLE]{{.Dir}}[/RESET].
+    You can also manage your project in your browser at [ACTIONABLE]{{.URL}}[/RESET].
     [[BR]][[BR]]
-    To create another project run `[BOLD][BLUE]state init[/RESET]`, or if you want to find out more about the State Tool and what it can do
-    run `[BOLD][BLUE]state --help[/RESET]` or check out [BOLD][BLUE]{{.Docs}}[/RESET]
+    To create another project run `[ACTIONABLE]state init[/RESET]`, or if you want to find out more about the State Tool and what it can do
+    run `[ACTIONABLE]state --help[/RESET]` or check out [ACTIONABLE]{{.Docs}}[/RESET]
 ppm_convert_after_tutorial:
   other: |
     For your convenience you can continue to use ppm commands once you've activated your virtual runtime environment.
@@ -1656,3 +1683,31 @@ ppm_convert_ask_feedback:
 windows_compatibility_warning:
   other: |
     Warning: State Tool is untested on Windows versions below 10. If you encounter issues please consider reporting them on {{.V0}}
+shim_description:
+  other: Intercept and run a script via the State Tool
+flag_state_shim_language:
+  other: language
+flag_state_shim_language_description:
+  other: The language to run the script with
+args_state_shim_script:
+  other: Script
+args_state_shim_script_description:
+  other: The script to be run
+artifact_started:
+  other: "Build Starting Remotely: {{.V0}}"
+artifact_started_cached:
+  other: "Already Cached: {{.V0}}"
+artifact_succeeded:
+  other: "Completed: {{.V0}} ({{.V1}}/{{.V2}})"
+artifact_failed:
+  other: "Failed: {{.V0}}. Error returned: {{.V1}}"
+prepare_instructions_lin_mac:
+  other: "To add the global installations directory to your environment please add the line `export PATH={{.V0}}:$PATH` to your RC file"
+prepare_instructions_windows:
+  other: "To add the global installations directory to your environment please add the path `{{.V0}}` to your user PATH in the System Properties dialog"
+prepare_env_warning:
+  other: Could not update user environment
+prepare_protocol_warning:
+  other: Could not add state protocol
+err_package_update_pjfile:
+  other: "Could not update your activestate.yaml with the new commit ID. Please run `state pull` manually."

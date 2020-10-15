@@ -195,17 +195,25 @@ type urlMeta struct {
 	commitID string
 }
 
-func parseURL(url string) (*urlMeta, *failures.Failure) {
+func parseURL(url string) (urlMeta, *failures.Failure) {
 	fail := projectfile.ValidateProjectURL(url)
 	if fail != nil {
-		return nil, fail
+		return urlMeta{}, fail
 	}
-	match := projectfile.ProjectURLRe.FindStringSubmatch(url)
+
+	match := projectfile.CommitURLRe.FindStringSubmatch(url)
+	if len(match) > 1 {
+		parts := urlMeta{"", "", match[1]}
+		return parts, nil
+	}
+
+	match = projectfile.ProjectURLRe.FindStringSubmatch(url)
 	parts := urlMeta{match[1], match[2], ""}
 	if len(match) == 4 {
 		parts.commitID = match[3]
 	}
-	return &parts, nil
+
+	return parts, nil
 }
 
 // Owner returns project owner
@@ -232,6 +240,11 @@ func (p *Project) CommitUUID() strfmt.UUID {
 	return strfmt.UUID(p.commitID)
 }
 
+func (p *Project) IsHeadless() bool {
+	match := projectfile.CommitURLRe.FindStringSubmatch(p.URL())
+	return len(match) > 1
+}
+
 // NormalizedName returns the project name in a normalized format (alphanumeric, lowercase)
 func (p *Project) NormalizedName() string {
 	rx, err := regexp.Compile("[^a-zA-Z0-9]+")
@@ -255,11 +268,9 @@ func (p *Project) Branch() string { return p.projectfile.Branch }
 func (p *Project) Lock() string { return p.projectfile.Lock }
 
 // Namespace returns project namespace
-func (p *Project) Namespace() string { return Namespace(p.owner, p.name) }
-
-// Namespace returns the namespaced version of the given owner and project name
-func Namespace(owner, project string) string {
-	return fmt.Sprintf("%s/%s", owner, project)
+func (p *Project) Namespace() *Namespaced {
+	commitID := strfmt.UUID(p.commitID)
+	return &Namespaced{p.owner, p.name, &commitID}
 }
 
 // Environments returns project environment

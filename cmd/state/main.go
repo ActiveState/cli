@@ -7,6 +7,9 @@ import (
 	"os/exec"
 	"runtime"
 
+	"github.com/ActiveState/sysinfo"
+	"github.com/rollbar/rollbar-go"
+
 	"github.com/ActiveState/cli/cmd/state/internal/cmdtree"
 	"github.com/ActiveState/cli/internal/config" // MUST be first!
 	"github.com/ActiveState/cli/internal/constants"
@@ -24,7 +27,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/ActiveState/sysinfo"
 )
 
 // FailMainPanic is a failure due to a panic occuring while runnig the main function
@@ -33,6 +35,7 @@ var FailMainPanic = failures.Type("main.fail.panic", failures.FailUser)
 func main() {
 	// Set up logging
 	logging.SetupRollbar()
+	defer rollbar.Close()
 
 	// Handle panics gracefully
 	defer handlePanics(os.Exit)
@@ -103,11 +106,6 @@ func run(args []string, out output.Outputer) (int, error) {
 		return 1, fail
 	}
 
-	// Auto update to latest state tool version, only runs once per day
-	if updated, code, err := autoUpdate(args, out, pjPath); err != nil || updated {
-		return code, err
-	}
-
 	// Set up prompter
 	prompter := prompt.New()
 
@@ -133,26 +131,12 @@ func run(args []string, out output.Outputer) (int, error) {
 		return forward()
 	}
 
-	// Check for deprecation
-	deprecated, fail := deprecation.Check()
-	if fail != nil {
-		logging.Error("Could not check for deprecation: %s", fail.Error())
-	}
-	if deprecated != nil {
-		date := deprecated.Date.Format(constants.DateFormatUser)
-		if !deprecated.DateReached {
-			out.Notice(locale.Tr("warn_deprecation", date, deprecated.Reason))
-		} else {
-			return 1, locale.NewInputError("err_deprecation", "You are running a version of the State Tool that is no longer supported! Reason: {{.V1}}", date, deprecated.Reason)
-		}
-	}
-
 	pjOwner := ""
 	pjNamespace := ""
 	pjName := ""
 	if pj != nil {
 		pjOwner = pj.Owner()
-		pjNamespace = pj.Namespace()
+		pjNamespace = pj.Namespace().String()
 		pjName = pj.Name()
 	}
 	// Set up conditional, which accesses a lot of primer data
@@ -161,8 +145,34 @@ func run(args []string, out output.Outputer) (int, error) {
 	project.RegisterConditional(conditional)
 
 	// Run the actual command
-	cmds := cmdtree.New(primer.New(pj, out, authentication.Get(), prompter, sshell, conditional))
-	err = cmds.Execute(args[1:])
+	cmds := cmdtree.New(primer.New(pj, out, authentication.Get(), prompter, sshell, conditional), args...)
 
+	child, err := cmds.Command().Find(args[1:])
+	if err != nil {
+		logging.Debug("Could not find child command, error: %v", err)
+	}
+
+	if child != nil && !child.SkipChecks() {
+		// Auto update to latest state tool version, only runs once per day
+		if updated, code, err := autoUpdate(args, out, pjPath); err != nil || updated {
+			return code, err
+		}
+
+		// Check for deprecation
+		deprecated, fail := deprecation.Check()
+		if fail != nil {
+			logging.Error("Could not check for deprecation: %s", fail.Error())
+		}
+		if deprecated != nil {
+			date := deprecated.Date.Format(constants.DateFormatUser)
+			if !deprecated.DateReached {
+				out.Notice(locale.Tr("warn_deprecation", date, deprecated.Reason))
+			} else {
+				return 1, locale.NewInputError("err_deprecation", "You are running a version of the State Tool that is no longer supported! Reason: {{.V1}}", date, deprecated.Reason)
+			}
+		}
+	}
+
+	err = cmds.Execute(args[1:])
 	return unwrapError(err)
 }

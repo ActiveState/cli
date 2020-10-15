@@ -32,21 +32,15 @@ func NewRemove(prime primeable) *Remove {
 func (r *Remove) Run(params RemoveRunParams) error {
 	fail := auth.RequireAuthentication(locale.T("auth_required_activate"), r.out, r.Prompter)
 	if fail != nil {
-		return fail.WithDescription("err_activate_auth_required")
+		return fail.WithDescription("err_activate_auth_required").ToError()
 	}
 
 	// Commit the package
 	pj := project.Get()
-	fail = model.CommitPackage(pj.Owner(), pj.Name(), model.OperationRemoved, params.Name, "")
+	language, fail := model.DefaultLanguageNameForProject(pj.Owner(), pj.Name())
 	if fail != nil {
-		return fail.WithDescription("err_package_removed")
+		return locale.WrapError(fail, "err_fetch_languages")
 	}
 
-	// Print the result
-	r.out.Print(locale.Tr("package_removed", params.Name))
-
-	// Remind user to update their activestate.yaml
-	r.out.Notice(locale.T("package_update_config_file"))
-
-	return nil
+	return executePackageOperation(r.out, r.Prompter, language, params.Name, "", model.OperationRemoved)
 }

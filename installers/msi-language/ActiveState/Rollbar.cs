@@ -5,6 +5,8 @@ using Rollbar.DTOs;
 using DeviceId;
 using System.Reflection;
 using System.Collections.Generic;
+using Microsoft.Deployment.WindowsInstaller;
+using ActiveState;
 
 namespace ActiveState
 {
@@ -15,7 +17,6 @@ namespace ActiveState
     public static class RollbarHelper
     {
         public static readonly TimeSpan RollbarTimeout = TimeSpan.FromSeconds(10);
-
 
         /// <summary>
         /// Configures the Rollbar singleton-like notifier.
@@ -34,13 +35,7 @@ namespace ActiveState
                     payload.Data.CodeVersion = codeVersion;
                 }
             };
-            
-            /*
-            RollbarLocator.RollbarInstance
-                // minimally required Rollbar configuration:
-                .Configure(config)
-                ;
-                */
+            RollbarLocator.RollbarInstance.Configure(config);
 
             string deviceId = new DeviceIdBuilder()
                 .AddMachineName()
@@ -91,29 +86,64 @@ public class RollbarReport
 
     public static readonly TimeSpan RollbarTimeout = TimeSpan.FromSeconds(10);
 
-    public static void Critical(string message, IDictionary<string, object> customFields = null)
+    public static void Critical(string message, Session session, IDictionary<string, object> customFields = null)
     {
-        Report(Level.Critical, message, customFields);
+        Report(Level.Critical, message, session, customFields);
     }
 
-    public static void Error(string message, IDictionary<string, object> customFields = null)
+    public static void Error(string message, Session session, IDictionary<string, object> customFields = null)
     {
-        Report(Level.Error, message, customFields);
+        Report(Level.Error, message, session, customFields);
     }
 
-    private static void Report(Level level, string message, IDictionary<string, object> customFields = null)
+    private static void Report(Level level, string message, Session session, IDictionary<string, object> customFields = null)
     {
         lock (syncLock)
         {
+            // create a custom fields dictionary if necessary
+            if (customFields == null)
+		    {
+                customFields = new Dictionary<string, object>();
+		    }
+            customFields.Add("log", Logging.GetLog(session));
+            string properties = Logging.GetProperties(session);
+            if (properties != "")
+            {
+                customFields.Add("properties", properties);
+            }
+            var userEnvironment = Logging.GetUserEnvironment(session);
+            if (userEnvironment != null)
+            {
+                customFields.Add("userEnvironment", userEnvironment);
+            }
+            string installMode = Logging.GetInstallMode(session);
+            if (installMode != "")
+            {
+                customFields.Add("installMode", installMode);
+            }
+            string country= Logging.GetCountry(session);
+            if (country != "")
+            {
+                customFields.Add("country", country);
+            }
+
             if (!criticalReported)
             {
-                if (level == Level.Critical)
+                try
                 {
-                    criticalReported = true;
-                    RollbarLocator.RollbarInstance.AsBlockingLogger(RollbarTimeout).Critical(new GenericException(message), customFields);
-                } else
+                    if (level == Level.Critical)
+                    {
+                        criticalReported = true;
+                        RollbarLocator.RollbarInstance.AsBlockingLogger(RollbarTimeout).Critical(new GenericException(message), customFields);
+                    }
+                    else
+                    {
+                        RollbarLocator.RollbarInstance.AsBlockingLogger(RollbarTimeout).Error(new GenericException(message), customFields);
+                    }
+                } catch (System.Exception e)
                 {
-                    RollbarLocator.RollbarInstance.AsBlockingLogger(RollbarTimeout).Error(new GenericException(message), customFields);
+                    TrackerSingleton.Instance.TrackEventSynchronously(session, "error", "rollbar", "");
+                    session.Log("Logging to rollbar failed with error: {0}", e);
                 }
             }
         }

@@ -16,12 +16,14 @@ import (
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 	rtMock "github.com/ActiveState/cli/pkg/platform/runtime/mock"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
@@ -33,11 +35,11 @@ func init() {
 func TestRunStandaloneCommand(t *testing.T) {
 	failures.ResetHandled()
 
-	project := &projectfile.Project{}
+	pjfile := &projectfile.Project{}
 	var contents string
 	if runtime.GOOS != "windows" {
 		contents = strings.TrimSpace(`
-project: "https://platform.activestate.com/ActiveState/project?commitID=00010001-0001-0001-0001-000100010001"
+project: "https://platform.activestate.com/ActiveState/pjfile?commitID=00010001-0001-0001-0001-000100010001"
 scripts:
   - name: run
     value: echo foo
@@ -45,18 +47,21 @@ scripts:
   `)
 	} else {
 		contents = strings.TrimSpace(`
-project: "https://platform.activestate.com/ActiveState/project?commitID=00010001-0001-0001-0001-000100010001"
+project: "https://platform.activestate.com/ActiveState/pjfile?commitID=00010001-0001-0001-0001-000100010001"
 scripts:
   - name: run
     value: cmd.exe /C echo foo
     standalone: true
   `)
 	}
-	err := yaml.Unmarshal([]byte(contents), project)
+	err := yaml.Unmarshal([]byte(contents), pjfile)
 	assert.Nil(t, err, "Unmarshalled YAML")
-	project.Persist()
+	pjfile.Persist()
 
-	err = run(outputhelper.NewCatcher(), subshell.New(), "run", nil)
+	proj, fail := project.New(pjfile, nil, nil)
+	require.NoError(t, fail.ToError())
+
+	err = run(outputhelper.NewCatcher(), subshell.New(), proj, "run", []string{})
 	assert.NoError(t, err, "No error occurred")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
@@ -74,9 +79,12 @@ func TestEnvIsSet(t *testing.T) {
 	require.NoError(t, err, "should detect root path")
 	prjPath := filepath.Join(root, "internal", "runners", "run", "testdata", "printEnv", "activestate.yaml")
 
-	project, fail := projectfile.Parse(prjPath)
-	require.NoError(t, fail.ToError(), "parsing project file")
-	project.Persist()
+	pjfile, fail := projectfile.Parse(prjPath)
+	require.NoError(t, fail.ToError(), "parsing pjfile file")
+	pjfile.Persist()
+
+	proj, fail := project.New(pjfile, nil, nil)
+	require.NoError(t, fail.ToError())
 
 	os.Setenv("TEST_KEY_EXISTS", "true")
 	os.Setenv(constants.DisableRuntime, "true")
@@ -86,8 +94,8 @@ func TestEnvIsSet(t *testing.T) {
 	}()
 
 	out := capturer.CaptureOutput(func() {
-		err = run(outputhelper.NewCatcher(), subshell.New(), "run", nil)
-		assert.NoError(t, err, "No error occurred")
+		err = run(outputhelper.NewCatcher(), subshell.New(), proj, "run", nil)
+		assert.NoError(t, err, "Error: "+errs.Join(err, ": ").Error())
 		assert.NoError(t, failures.Handled(), "No failure occurred")
 	})
 
@@ -98,11 +106,11 @@ func TestEnvIsSet(t *testing.T) {
 func TestRunNoProjectInheritance(t *testing.T) {
 	failures.ResetHandled()
 
-	project := &projectfile.Project{}
+	pjfile := &projectfile.Project{}
 	var contents string
 	if runtime.GOOS != "windows" {
 		contents = strings.TrimSpace(`
-project: "https://platform.activestate.com/ActiveState/project?commitID=00010001-0001-0001-0001-000100010001"
+project: "https://platform.activestate.com/ActiveState/pjfile?commitID=00010001-0001-0001-0001-000100010001"
 scripts:
   - name: run
     value: echo $ACTIVESTATE_PROJECT
@@ -110,19 +118,22 @@ scripts:
 `)
 	} else {
 		contents = strings.TrimSpace(`
-project: "https://platform.activestate.com/ActiveState/project?commitID=00010001-0001-0001-0001-000100010001"
+project: "https://platform.activestate.com/ActiveState/pjfile?commitID=00010001-0001-0001-0001-000100010001"
 scripts:
   - name: run
     value: echo %ACTIVESTATE_PROJECT%
     standalone: true
 `)
 	}
-	err := yaml.Unmarshal([]byte(contents), project)
+	err := yaml.Unmarshal([]byte(contents), pjfile)
 	assert.Nil(t, err, "Unmarshalled YAML")
-	project.Persist()
+	pjfile.Persist()
+
+	proj, fail := project.New(pjfile, nil, nil)
+	require.NoError(t, fail.ToError())
 
 	out := outputhelper.NewCatcher()
-	rerr := run(out, subshell.New(), "run", nil)
+	rerr := run(out, subshell.New(), proj, "run", nil)
 	assert.NoError(t, rerr, "No error occurred")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 	assert.Contains(t, out.CombinedOutput(), "Running user-defined script: run")
@@ -131,18 +142,21 @@ scripts:
 func TestRunMissingCommandName(t *testing.T) {
 	failures.ResetHandled()
 
-	project := &projectfile.Project{}
+	pjfile := &projectfile.Project{}
 	contents := strings.TrimSpace(`
-project: "https://platform.activestate.com/ActiveState/project?commitID=00010001-0001-0001-0001-000100010001"
+project: "https://platform.activestate.com/ActiveState/pjfile?commitID=00010001-0001-0001-0001-000100010001"
 scripts:
   - name: run
     value: whatever
   `)
-	err := yaml.Unmarshal([]byte(contents), project)
+	err := yaml.Unmarshal([]byte(contents), pjfile)
 	assert.Nil(t, err, "Unmarshalled YAML")
-	project.Persist()
+	pjfile.Persist()
 
-	err = run(outputhelper.NewCatcher(), subshell.New(), "", nil)
+	proj, fail := project.New(pjfile, nil, nil)
+	require.NoError(t, fail.ToError())
+
+	err = run(outputhelper.NewCatcher(), subshell.New(), proj, "", nil)
 	assert.Error(t, err, "Error occurred")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
@@ -150,18 +164,21 @@ scripts:
 func TestRunUnknownCommandName(t *testing.T) {
 	failures.ResetHandled()
 
-	project := &projectfile.Project{}
+	pjfile := &projectfile.Project{}
 	contents := strings.TrimSpace(`
-project: "https://platform.activestate.com/ActiveState/project?commitID=00010001-0001-0001-0001-000100010001"
+project: "https://platform.activestate.com/ActiveState/pjfile?commitID=00010001-0001-0001-0001-000100010001"
 scripts:
   - name: run
     value: whatever
   `)
-	err := yaml.Unmarshal([]byte(contents), project)
+	err := yaml.Unmarshal([]byte(contents), pjfile)
 	assert.Nil(t, err, "Unmarshalled YAML")
-	project.Persist()
+	pjfile.Persist()
 
-	err = run(outputhelper.NewCatcher(), subshell.New(), "unknown", nil)
+	proj, fail := project.New(pjfile, nil, nil)
+	require.NoError(t, fail.ToError())
+
+	err = run(outputhelper.NewCatcher(), subshell.New(), proj, "unknown", nil)
 	assert.Error(t, err, "Error occurred")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
@@ -169,19 +186,22 @@ scripts:
 func TestRunUnknownCommand(t *testing.T) {
 	failures.ResetHandled()
 
-	project := &projectfile.Project{}
+	pjfile := &projectfile.Project{}
 	contents := strings.TrimSpace(`
-project: "https://platform.activestate.com/ActiveState/project?commitID=00010001-0001-0001-0001-000100010001"
+project: "https://platform.activestate.com/ActiveState/pjfile?commitID=00010001-0001-0001-0001-000100010001"
 scripts:
   - name: run
     value: whatever
     standalone: true
   `)
-	err := yaml.Unmarshal([]byte(contents), project)
+	err := yaml.Unmarshal([]byte(contents), pjfile)
 	assert.Nil(t, err, "Unmarshalled YAML")
-	project.Persist()
+	pjfile.Persist()
 
-	err = run(outputhelper.NewCatcher(), subshell.New(), "run", nil)
+	proj, fail := project.New(pjfile, nil, nil)
+	require.NoError(t, fail.ToError())
+
+	err = run(outputhelper.NewCatcher(), subshell.New(), proj, "run", nil)
 	assert.Error(t, err, "Error occurred")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
@@ -199,30 +219,33 @@ func TestRunActivatedCommand(t *testing.T) {
 	os.RemoveAll(filepath.Join(datadir, "languages"))
 	os.RemoveAll(filepath.Join(datadir, "artifacts"))
 
-	// Setup the project.
-	project := &projectfile.Project{}
+	// Setup the pjfile.
+	pjfile := &projectfile.Project{}
 	var contents string
 	if runtime.GOOS != "windows" {
 		contents = strings.TrimSpace(`
-project: "https://platform.activestate.com/ActiveState/project?commitID=00010001-0001-0001-0001-000100010001"
+project: "https://platform.activestate.com/ActiveState/pjfile?commitID=00010001-0001-0001-0001-000100010001"
 scripts:
   - name: run
     standalone: true
     value: echo foo`)
 	} else {
 		contents = strings.TrimSpace(`
-project: "https://platform.activestate.com/ActiveState/project?commitID=00010001-0001-0001-0001-000100010001"
+project: "https://platform.activestate.com/ActiveState/pjfile?commitID=00010001-0001-0001-0001-000100010001"
 scripts:
   - name: run
     standalone: true
     value: cmd /C echo foo`)
 	}
-	err = yaml.Unmarshal([]byte(contents), project)
+	err = yaml.Unmarshal([]byte(contents), pjfile)
 	assert.Nil(t, err, "Unmarshalled YAML")
-	project.Persist()
+	pjfile.Persist()
+
+	proj, fail := project.New(pjfile, nil, nil)
+	require.NoError(t, fail.ToError())
 
 	// Run the command.
-	err = run(outputhelper.NewCatcher(), subshell.New(), "run", nil)
+	err = run(outputhelper.NewCatcher(), subshell.New(), proj, "run", nil)
 	assert.NoError(t, err, "No error occurred")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 

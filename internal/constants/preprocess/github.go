@@ -7,10 +7,11 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/constants/version"
 	"github.com/google/go-github/v29/github"
 	"golang.org/x/oauth2"
+
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/constants/version"
 )
 
 const labelPrefix = "version: "
@@ -24,6 +25,10 @@ type GithubIncrementStateStore struct {
 
 // NewGithubIncrementStateStore returns an initialized Github client
 func NewGithubIncrementStateStore(token string) *GithubIncrementStateStore {
+	if onCI() && token == "" {
+		panic("Github token should not be empty when running on CI")
+	}
+
 	ts := oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: token},
 	)

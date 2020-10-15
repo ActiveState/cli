@@ -10,15 +10,27 @@ type Marshaller interface {
 }
 
 func (m *Mediator) Print(v interface{}) {
-	m.Outputer.Print(mediatorValue(v, m.format))
+	if v = mediatorValue(v, m.format); v == Suppress {
+		return
+	}
+
+	m.Outputer.Print(v)
 }
 
 func (m *Mediator) Error(v interface{}) {
-	m.Outputer.Error(mediatorValue(v, m.format))
+	if v = mediatorValue(v, m.format); v == Suppress {
+		return
+	}
+
+	m.Outputer.Error(v)
 }
 
 func (m *Mediator) Notice(v interface{}) {
-	m.Outputer.Notice(mediatorValue(v, m.format))
+	if v = mediatorValue(v, m.format); v == Suppress {
+		return
+	}
+
+	m.Outputer.Notice(v)
 }
 
 func mediatorValue(v interface{}, format Format) interface{} {

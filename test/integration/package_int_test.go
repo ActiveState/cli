@@ -3,6 +3,7 @@ package integration
 import (
 	"fmt"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -260,23 +261,59 @@ func (suite *PackageIntegrationTestSuite) TestPackage_import() {
 	suite.Run("invalid requirements.txt", func() {
 		ts.PrepareFile(reqsFilePath, badReqsData)
 
-		cp := ts.Spawn("packages", "import")
+		cp := ts.Spawn("packages", "import", "requirements.txt")
 		cp.ExpectNotExitCode(0, time.Second*60)
 	})
 
 	suite.Run("valid requirements.txt", func() {
 		ts.PrepareFile(reqsFilePath, reqsData)
 
-		cp := ts.Spawn("packages", "import")
+		cp := ts.Spawn("packages", "import", "requirements.txt")
 		cp.Expect("state pull")
 		cp.ExpectExitCode(0, time.Second*60)
 
 		suite.Run("already added", func() {
-			cp := ts.Spawn("packages", "import")
+			cp := ts.Spawn("packages", "import", "requirements.txt")
 			cp.Expect("Are you sure you want to do this")
 			cp.SendLine("n")
 			cp.ExpectNotExitCode(0, time.Second*60)
 		})
+	})
+}
+
+func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
+	if runtime.GOOS == "darwin" {
+		suite.T().Skip("Skipping mac for now as the builds are still too unreliable")
+		return
+	}
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	username := ts.CreateNewUser()
+	namespace := fmt.Sprintf("%s/%s", username, "python3-pkgtest")
+
+	cp := ts.Spawn("fork", "ActiveState-CLI/Python3", "--org", username, "--name", "python3-pkgtest")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("activate", namespace, "--path="+ts.Dirs.Work, "--output=json")
+	cp.ExpectExitCode(0)
+
+	suite.Run("packages add", func() {
+		cp := ts.Spawn("packages", "add", "dateparser@0.7.2")
+		cp.Expect("(?:package added|project is currently building)")
+		cp.ExpectExitCode(1)
+	})
+
+	suite.Run("packages update", func() {
+		cp := ts.Spawn("packages", "update", "dateparser@0.7.6")
+		cp.Expect("(?:package updated|project is currently building)")
+		cp.ExpectExitCode(1)
+	})
+
+	suite.Run("packages remove", func() {
+		cp := ts.Spawn("packages", "remove", "dateparser")
+		cp.ExpectRe("(?:package removed|project is currently building)")
+		cp.ExpectExitCode(1)
 	})
 }
 

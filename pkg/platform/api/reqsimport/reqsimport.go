@@ -62,9 +62,10 @@ func Init() *ReqsImport {
 
 // Changeset posts requirements data to a backend service and returns a
 // Changeset that can be committed to a project.
-func (ri *ReqsImport) Changeset(data []byte) (model.Changeset, error) {
+func (ri *ReqsImport) Changeset(data []byte, lang string) (model.Changeset, error) {
 	reqPayload := &TranslationReqMsg{
-		Data: string(data),
+		Data:     string(data),
+		Language: lang,
 	}
 	respPayload := &TranslationRespMsg{}
 
@@ -83,7 +84,8 @@ func (ri *ReqsImport) Changeset(data []byte) (model.Changeset, error) {
 // TranslationReqMsg represents the message sent to the requirements
 // translation service.
 type TranslationReqMsg struct {
-	Data string `json:"requirements"`
+	Data     string `json:"requirements"`
+	Language string `json:"language"`
 }
 
 // TranslationRespMsg represents the message returned by the requirements

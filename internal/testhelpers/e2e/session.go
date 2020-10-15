@@ -36,6 +36,7 @@ type Session struct {
 	// users created during session
 	users []string
 	t     *testing.T
+	exe   string
 }
 
 // Options for spawning a testable terminal process
@@ -43,8 +44,6 @@ type Options struct {
 	termtest.Options
 	// removes write-permissions in the bin directory from which executables are spawned.
 	NonWriteableBinDir bool
-	// re-use the executables written to the session's bin directory
-	ReUseExecutables bool
 }
 
 var (
@@ -63,8 +62,36 @@ func init() {
 	}
 }
 
-// executablePath returns the path to the state tool that we want to test
-func (s *Session) executablePath() string {
+// ExecutablePath returns the path to the state tool that we want to test
+func (s *Session) ExecutablePath() string {
+	return s.exe
+}
+
+// UniqueExe ensures the executable is unique to this instance
+func (s *Session) UseDistinctStateExe() {
+	execu := filepath.Join(s.Dirs.Bin, filepath.Base(s.exe))
+	if fileutils.TargetExists(execu) {
+		return
+	}
+
+	fail := fileutils.CopyFile(s.exe, execu)
+	require.NoError(s.t, fail.ToError())
+
+	// Ensure modTime is the same as source exe
+	stat, err := os.Stat(s.exe)
+	require.NoError(s.t, err)
+	t := stat.ModTime()
+	require.NoError(s.t, os.Chtimes(execu, t, t))
+
+	permissions, _ := permbits.Stat(execu)
+	permissions.SetUserExecute(true)
+	require.NoError(s.t, permbits.Chmod(execu, permissions))
+
+	s.exe = execu
+}
+
+// sourceExecutablePath returns the path to the state tool that we want to test
+func executablePath(t *testing.T) string {
 	ext := ""
 	if runtime.GOOS == "windows" {
 		ext = ".exe"
@@ -75,13 +102,17 @@ func (s *Session) executablePath() string {
 
 	exec := filepath.Join(root, subdir, name)
 	if !fileutils.FileExists(exec) {
-		s.t.Fatal("E2E tests require a State Tool binary. Run `state run build`.")
+		t.Fatal("E2E tests require a State Tool binary. Run `state run build`.")
 	}
 
 	return exec
 }
 
 func New(t *testing.T, retainDirs bool, extraEnv ...string) *Session {
+	return new(t, retainDirs, true, extraEnv...)
+}
+
+func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session {
 	dirs, err := NewDirs("")
 	require.NoError(t, err)
 	var env []string
@@ -93,23 +124,35 @@ func New(t *testing.T, retainDirs bool, extraEnv ...string) *Session {
 		"ACTIVESTATE_CLI_DISABLE_RUNTIME=true",
 		"ACTIVESTATE_PROJECT=",
 	}...)
-	// add bin path
-	oldPath, _ := os.LookupEnv("PATH")
-	env = append(env, fmt.Sprintf("PATH=%s%s%s", dirs.Bin, string(os.PathListSeparator), oldPath))
+
+	if updatePath {
+		// add bin path
+		oldPath, _ := os.LookupEnv("PATH")
+		newPath := fmt.Sprintf(
+			"PATH=%s%s%s",
+			dirs.Bin, string(os.PathListSeparator), oldPath,
+		)
+		env = append(env, newPath)
+	}
+
 	// add session environment variables
 	env = append(env, extraEnv...)
 
-	return &Session{Dirs: dirs, env: env, retainDirs: retainDirs, t: t}
+	return &Session{Dirs: dirs, env: env, retainDirs: retainDirs, t: t, exe: executablePath(t)}
+}
+
+func NewNoPathUpdate(t *testing.T, retainDirs bool, extraEnv ...string) *Session {
+	return new(t, retainDirs, false, extraEnv...)
 }
 
 // Spawn spawns the state tool executable to be tested with arguments
 func (s *Session) Spawn(args ...string) *termtest.ConsoleProcess {
-	return s.SpawnCmdWithOpts(s.executablePath(), WithArgs(args...))
+	return s.SpawnCmdWithOpts(s.exe, WithArgs(args...))
 }
 
 // SpawnWithOpts spawns the state tool executable to be tested with arguments
 func (s *Session) SpawnWithOpts(opts ...SpawnOptions) *termtest.ConsoleProcess {
-	return s.SpawnCmdWithOpts(s.executablePath(), opts...)
+	return s.SpawnCmdWithOpts(s.exe, opts...)
 }
 
 // SpawnCmd executes an executable in a pseudo-terminal for integration tests
@@ -142,22 +185,7 @@ func (s *Session) SpawnCmdWithOpts(exe string, opts ...SpawnOptions) *termtest.C
 		opt(&pOpts)
 	}
 
-	execu := exe
-	// if executable is provided as absolute path, copy it to temporary directory
-	// do not copy if file is a symlink
-	if !fileutils.IsSymlink(exe) && filepath.IsAbs(exe) {
-		execu = filepath.Join(s.Dirs.Bin, filepath.Base(exe))
-		if !(fileutils.TargetExists(execu) && pOpts.ReUseExecutables) {
-			fail := fileutils.CopyFile(exe, execu)
-			require.NoError(s.t, fail.ToError())
-
-			permissions, _ := permbits.Stat(execu)
-			permissions.SetUserExecute(true)
-			require.NoError(s.t, permbits.Chmod(execu, permissions))
-		}
-	}
-
-	pOpts.Options.CmdName = execu
+	pOpts.Options.CmdName = exe
 
 	if pOpts.NonWriteableBinDir {
 		// make bin dir read-only

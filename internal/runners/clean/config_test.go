@@ -6,10 +6,11 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 )
 
 func (suite *CleanTestSuite) TestConfig() {
-	runner := newConfig(&testOutputer{}, &confirmMock{confirm: true})
+	runner := newConfig(&outputhelper.TestOutputer{}, &confirmMock{confirm: true})
 	runner.path = suite.configPath
 	err := runner.Run(&ConfigParams{})
 	suite.Require().NoError(err)
@@ -27,7 +28,7 @@ func (suite *CleanTestSuite) TestConfig() {
 }
 
 func (suite *CleanTestSuite) TestConfig_PromptNo() {
-	runner := newConfig(&testOutputer{}, &confirmMock{})
+	runner := newConfig(&outputhelper.TestOutputer{}, &confirmMock{})
 	runner.path = suite.configPath
 	err := runner.Run(&ConfigParams{})
 	suite.Require().NoError(err)
@@ -43,7 +44,7 @@ func (suite *CleanTestSuite) TestConfig_Activated() {
 		os.Unsetenv(constants.ActivatedStateEnvVarName)
 	}()
 
-	runner := newConfig(&testOutputer{}, &confirmMock{})
+	runner := newConfig(&outputhelper.TestOutputer{}, &confirmMock{})
 	runner.path = suite.configPath
 	err := runner.Run(&ConfigParams{})
 	suite.Require().Error(err)

@@ -14,7 +14,9 @@ func newPackagesCommand(prime *primer.Values) *captain.Command {
 
 	cmd := captain.NewCommand(
 		"packages",
+		locale.Tl("package_title", "Listing Packages"),
 		locale.T("package_cmd_description"),
+		prime.Output(),
 		[]*captain.Flag{
 			{
 				Name:        "commit",
@@ -49,7 +51,9 @@ func newPackagesAddCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"add",
+		locale.Tl("package_add_title", "Adding Package"),
 		locale.T("package_add_cmd_description"),
+		prime.Output(),
 		[]*captain.Flag{},
 		[]*captain.Argument{
 			{
@@ -72,7 +76,9 @@ func newPackagesUpdateCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"update",
+		locale.Tl("package_update_title", "Updating Packages"),
 		locale.T("package_update_cmd_description"),
+		prime.Output(),
 		[]*captain.Flag{},
 		[]*captain.Argument{
 			{
@@ -95,7 +101,9 @@ func newPackagesRemoveCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"remove",
+		locale.Tl("package_remove_title", "Removing Package"),
 		locale.T("package_remove_cmd_description"),
+		prime.Output(),
 		[]*captain.Flag{},
 		[]*captain.Argument{
 			{
@@ -118,20 +126,24 @@ func newPackagesImportCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"import",
+		locale.Tl("package_import_title", "Importing Packages"),
 		locale.T("package_import_cmd_description"),
+		prime.Output(),
 		[]*captain.Flag{
-			{
-				Name:        "file",
-				Description: locale.T("package_import_flag_filename_description"),
-				Value:       &params.FileName,
-			},
 			{
 				Name:        "force",
 				Description: locale.T("package_import_flag_force_description"),
 				Value:       &params.Force,
 			},
 		},
-		[]*captain.Argument{},
+		[]*captain.Argument{
+			{
+				Name:        locale.Tl("import_file", "File"),
+				Description: locale.T("package_import_flag_filename_description"),
+				Value:       &params.FileName,
+				Required:    true,
+			},
+		},
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run(*params)
 		},
@@ -145,7 +157,9 @@ func newPackagesSearchCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"search",
+		locale.Tl("package_search_title", "Searching Packages"),
 		locale.T("package_search_cmd_description"),
+		prime.Output(),
 		[]*captain.Flag{
 			{
 				Name:        "language",

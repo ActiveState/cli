@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/retryhttp"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/mono"
 	vcsClient "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/version_control"
@@ -63,14 +64,25 @@ const (
 	// NamespaceLanguageMatch is the namespace used for language requirements
 	NamespaceLanguageMatch = `^language$`
 
-	// NamespacePackageMatch is the namespace used for package requirements
+	// NamespacePackageMatch is the namespace used for language package requirements
 	NamespacePackageMatch = `^language\/\w+$`
+
+	// NamespaceBundlesMatch is the namespace used for bundle package requirements
+	NamespaceBundlesMatch = `^bundles\/\w+$`
 
 	// NamespacePrePlatformMatch is the namespace used for pre-platform bits
 	NamespacePrePlatformMatch = `^pre-platform-installer$`
 
 	// NamespaceCamelFlagsMatch is the namespace used for passing camel flags
 	NamespaceCamelFlagsMatch = `^camel-flags$`
+)
+
+const (
+	// PackageNamespacePrefix is the namespace prefix for packages
+	PackageNamespacePrefix = "language"
+
+	// BundlesNamespacePrefix is the namespace prefix for bundles
+	BundlesNamespacePrefix = "bundles"
 )
 
 // NamespaceMatch Checks if the given namespace query matches the given namespace
@@ -88,6 +100,11 @@ type Namespace string
 // NamespacePackage creates a new package namespace
 func NamespacePackage(language string) Namespace {
 	return Namespace(fmt.Sprintf("language/%s", language))
+}
+
+// NamespaceBundles creates a new bundles namespace
+func NamespaceBundles(language string) Namespace {
+	return Namespace(fmt.Sprintf("bundles/%s", language))
 }
 
 // NamespaceLanguage provides the base language namespace.
@@ -242,28 +259,29 @@ func UpdateBranchCommit(branchID strfmt.UUID, commitID strfmt.UUID) *failures.Fa
 }
 
 // CommitPackage commits a single package commit
-func CommitPackage(projectOwner, projectName string, operation Operation, packageName, packageVersion string) *failures.Failure {
+func CommitPackage(projectOwner, projectName string, operation Operation, packageName, packageNamespace, packageVersion string) (strfmt.UUID, *failures.Failure) {
+	commitID := strfmt.UUID("")
 	proj, fail := FetchProjectByName(projectOwner, projectName)
 	if fail != nil {
-		return fail
+		return commitID, fail
 	}
 
 	branch, fail := DefaultBranchForProject(proj)
 	if fail != nil {
-		return fail
+		return commitID, fail
 	}
 
 	if branch.CommitID == nil {
-		return FailNoCommit.New(locale.T("err_project_no_languages"))
+		return commitID, FailNoCommit.New(locale.T("err_project_no_languages"))
 	}
 
 	languages, fail := FetchLanguagesForCommit(*branch.CommitID)
 	if fail != nil {
-		return fail
+		return commitID, fail
 	}
 
 	if len(languages) == 0 {
-		return FailNoLanguages.New(locale.T("err_project_no_languages"))
+		return commitID, FailNoLanguages.New(locale.T("err_project_no_languages"))
 	}
 
 	var message string
@@ -276,19 +294,24 @@ func CommitPackage(projectOwner, projectName string, operation Operation, packag
 		message = "commit_message_removed_package"
 	}
 
+	namespace := NamespacePackage(languages[0].Name)
+	if packageNamespace == BundlesNamespacePrefix {
+		namespace = NamespaceBundles(languages[0].Name)
+	}
+
 	commit, fail := AddCommit(*branch.CommitID, locale.Tr(message, packageName, packageVersion),
-		operation, NamespacePackage(languages[0].Name),
+		operation, namespace,
 		packageName, packageVersion)
 	if fail != nil {
-		return fail
+		return commitID, fail
 	}
 
 	fail = UpdateBranchCommit(branch.BranchID, commit.CommitID)
 	if fail != nil {
-		return fail
+		return commitID, fail
 	}
 
-	return nil
+	return commit.CommitID, nil
 }
 
 // CommitChangeset commits multiple changes in one commit
@@ -537,6 +560,7 @@ func ChangesetFromRequirements(op Operation, reqs Checkpoint) Changeset {
 func FetchOrderFromCommit(commitID strfmt.UUID) (*mono_models.Order, error) {
 	params := vcsClient.NewGetOrderParams()
 	params.CommitID = commitID
+	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
 
 	var res *vcsClient.GetOrderOK
 	var err error

@@ -173,7 +173,7 @@ func (cr *CamelRuntime) PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir
 		if os.IsPermission(underlyingError) {
 			return FailRuntimeInstallation.New("installer_err_runtime_move_files_access_denied", cr.runtimeDir, constants.ForumsURL)
 		}
-		return FailRuntimeInstallation.New("installer_err_runtime_move_files_failed", tmpInstallDir, cr.runtimeDir)
+		return FailRuntimeInstallation.Wrap(underlyingError, "installer_err_runtime_move_files_failed", tmpInstallDir, cr.runtimeDir)
 	}
 
 	tmpMetaFile := filepath.Join(tmpRuntimeDir, archiveName, constants.RuntimeMetaFile)
@@ -338,7 +338,7 @@ func (cr *CamelRuntime) GetEnv(inherit bool, projectDir string) (map[string]stri
 	templateMeta := struct {
 		ProjectDir string
 	}{projectDir}
-	
+
 	resultEnv := map[string]string{}
 	for k, v := range env {
 		if v == deleteMarker {

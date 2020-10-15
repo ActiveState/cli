@@ -8,6 +8,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
 )
 
@@ -108,4 +109,14 @@ func EnvMapToSlice(envMap map[string]string) []string {
 	}
 
 	return env
+}
+
+// Executable returns the resolved path to the currently running executable.
+func Executable() (string, error) {
+	exec, err := os.Executable()
+	if err != nil {
+		return "", err
+	}
+
+	return fileutils.ResolvePath(exec)
 }

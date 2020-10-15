@@ -66,10 +66,17 @@ var (
 	FailProjectFileRoot = failures.Type("projectfile.fail.projectfileroot", failures.FailNonFatal)
 )
 
-var strReg = fmt.Sprintf(`https:\/\/%s\/([\w_.-]*)\/([\w_.-]*)(?:\?commitID=)*(.*)`, strings.Replace(constants.PlatformURL, ".", "\\.", -1))
+var (
+	regexPlatformURL = strings.Replace(constants.PlatformURL, ".", "\\.", -1)
 
-// ProjectURLRe Regex used to validate project fields /orgname/projectname[?commitID=someUUID]
-var ProjectURLRe = regexp.MustCompile(strReg)
+	urlProjectRegexStr = fmt.Sprintf(`https:\/\/%s\/([\w_.-]*)\/([\w_.-]*)(?:\?commitID=)*(.*)`, regexPlatformURL)
+	urlCommitRegexStr  = fmt.Sprintf(`https:\/\/%s\/commit\/(.*)`, regexPlatformURL)
+
+	// ProjectURLRe Regex used to validate project fields /orgname/projectname[?commitID=someUUID]
+	ProjectURLRe = regexp.MustCompile(urlProjectRegexStr)
+	// CommitURLRe Regex used to validate commit info /commit/someUUID
+	CommitURLRe = regexp.MustCompile(urlCommitRegexStr)
+)
 
 var projectMapMutex = &sync.Mutex{}
 
@@ -357,7 +364,7 @@ var _ ConstrainedEntity = Event{}
 func (e Event) ID() string {
 	if e.id == "" {
 		id, err := uuid.NewUUID()
-		if err == nil {
+		if err != nil {
 			logging.Error("UUID generation failed, defaulting to serialization")
 			e.id = hash.ShortHash(e.Name, e.Value, strings.Join(e.Scope, ""))
 		} else {
@@ -655,22 +662,58 @@ func setCommitInYAML(data []byte, commitID string) ([]byte, *failures.Failure) {
 
 // GetProjectFilePath returns the path to the project activestate.yaml
 func GetProjectFilePath() (string, *failures.Failure) {
-	projectFilePath := os.Getenv(constants.ProjectEnvVarName)
-	if projectFilePath != "" {
-		if !fileutils.FileExists(projectFilePath) {
-			return "", FailNoProjectFromEnv.New(locale.Tr("err_project_env_file_not_exist", projectFilePath))
+	lookup := []func() (string, *failures.Failure){
+		getProjectFilePathFromEnv,
+		getProjectFilePathFromWd,
+		getProjectFilePathFromDefault,
+	}
+	for _, getProjectFilePath := range lookup {
+		path, fail := getProjectFilePath()
+		if fail != nil {
+			return "", fail
 		}
-		return projectFilePath, nil
+		if path != "" {
+			return path, nil
+		}
 	}
 
+	return "", FailNoProject.New(locale.T("err_no_projectfile"))
+}
+
+func getProjectFilePathFromEnv() (string, *failures.Failure) {
+	projectFilePath := os.Getenv(constants.ProjectEnvVarName)
+	if projectFilePath != "" {
+		if fileutils.FileExists(projectFilePath) {
+			return projectFilePath, nil
+		}
+		return "", FailNoProjectFromEnv.New(locale.Tr("err_project_env_file_not_exist", projectFilePath))
+	}
+	return "", nil
+}
+
+func getProjectFilePathFromWd() (string, *failures.Failure) {
 	root, err := osutils.Getwd()
 	if err != nil {
-		logging.Warning("Could not get project root path: %v", err)
-		return "", FailProjectFileRoot.Wrap(err)
+		return "", failures.FailIO.Wrap(err, locale.Tl("err_wd", "Could not get working directory"))
 	}
+
 	path, fail := fileutils.FindFileInPath(root, constants.ConfigFileName)
-	if fail != nil {
-		return "", FailNoProject.Wrap(fail, locale.T("err_no_projectfile"))
+	if fail != nil && !fail.Type.Matches(fileutils.FailFindInPathNotFound) {
+		return "", fail
+	}
+
+	return path, nil
+}
+
+func getProjectFilePathFromDefault() (string, *failures.Failure) {
+	defaultProjectPath := viper.GetString(constants.GlobalDefaultPrefname)
+	if defaultProjectPath == "" {
+		return "", nil
+	}
+
+	path, fail := fileutils.FindFileInPath(defaultProjectPath, constants.ConfigFileName)
+	if fail != nil && !fail.Type.Matches(fileutils.FailFindInPathNotFound) {
+		return "", fail
 	}
 	return path, nil
 }
@@ -815,9 +858,14 @@ func createCustom(params *CreateParams) (*Project, *failures.Failure) {
 	if runtime.GOOS == "windows" {
 		shell = "batch"
 	}
+
+	yaml := "sample_yaml_python"
+	if strings.ToLower(params.Language) == language.Perl.String() {
+		yaml = "sample_yaml_perl"
+	}
 	if params.Content == "" {
-		params.Content = locale.T("sample_yaml",
-			map[string]interface{}{"Owner": owner, "Project": project, "Shell": shell})
+		params.Content = locale.T(yaml,
+			map[string]interface{}{"Owner": owner, "Project": project, "Shell": shell, "Language": params.Language})
 	}
 
 	data := map[string]interface{}{

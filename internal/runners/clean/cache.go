@@ -78,7 +78,9 @@ func (c *Cache) removeProject(namespace string, force bool) error {
 	if fail != nil {
 		return locale.WrapError(fail.ToError(), "err_clean_cache_invalid_namespace", "Namespace argument is not of the correct format")
 	}
-	projectInstallPath := runtime.InstallPath(parsed.Owner, parsed.Project)
+
+	runtime := runtime.NewRuntime("", parsed.Owner, parsed.Project, nil)
+	projectInstallPath := runtime.InstallPath()
 
 	logging.Debug("Remove project path: %s", projectInstallPath)
 	err := os.RemoveAll(projectInstallPath)

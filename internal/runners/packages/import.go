@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/pkg/cmdlets/auth"
+	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/reqsimport"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -27,12 +28,13 @@ type Confirmer interface {
 // ChangesetProvider describes the behavior required to convert some file data
 // into a changeset.
 type ChangesetProvider interface {
-	Changeset([]byte) (model.Changeset, error)
+	Changeset(contents []byte, lang string) (model.Changeset, error)
 }
 
 // ImportRunParams tracks the info required for running Import.
 type ImportRunParams struct {
 	FileName string
+	Language string
 	Force    bool
 }
 
@@ -91,14 +93,20 @@ func (i *Import) Run(params ImportRunParams) error {
 		return fail.WithDescription("package_err_cannot_fetch_checkpoint")
 	}
 
-	changeset, err := fetchImportChangeset(reqsimport.Init(), params.FileName)
-	if err != nil {
-		return fail.WithDescription("err_obtaining_change_request")
+	lang, fail := model.CheckpointToLanguage(reqs)
+	if fail != nil {
+		return locale.WrapInputError(fail, "err_import_language", "Your project does not have a language associated with it, please add a language first.")
 	}
 
-	if len(reqs) > 0 {
+	changeset, err := fetchImportChangeset(reqsimport.Init(), params.FileName, lang.Name)
+	if err != nil {
+		return locale.WrapError(err, "err_obtaining_change_request", "Could not process change set: {{.V0}}.", api.ErrorMessageFromPayload(err))
+	}
+
+	packageReqs := model.FilterCheckpointPackages(reqs)
+	if len(packageReqs) > 0 {
 		force := params.Force
-		fail = removeRequirements(prompt.New(), proj.Owner(), proj.Name(), force, reqs)
+		fail = removeRequirements(prompt.New(), proj.Owner(), proj.Name(), force, packageReqs)
 		if fail != nil {
 			return fail.WithDescription("err_cannot_remove_existing")
 		}
@@ -124,7 +132,7 @@ func removeRequirements(conf Confirmer, pjOwner, pjName string, force bool, reqs
 			return fail
 		}
 		if !confirmed {
-			return failures.FailUserInput.New("err_action_was_not_confirmed")
+			return failures.FailUserInput.New(locale.Tl("err_action_was_not_confirmed", "Cancelled Import."))
 		}
 	}
 
@@ -139,13 +147,13 @@ func removeRequirements(conf Confirmer, pjOwner, pjName string, force bool, reqs
 	return nil
 }
 
-func fetchImportChangeset(cp ChangesetProvider, file string) (model.Changeset, error) {
+func fetchImportChangeset(cp ChangesetProvider, file string, lang string) (model.Changeset, error) {
 	data, err := ioutil.ReadFile(file)
 	if err != nil {
 		return nil, err
 	}
 
-	changeset, err := cp.Changeset(data)
+	changeset, err := cp.Changeset(data, lang)
 	if err != nil {
 		return nil, err
 	}

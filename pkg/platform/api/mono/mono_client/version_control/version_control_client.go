@@ -29,6 +29,8 @@ type Client struct {
 type ClientService interface {
 	AddCommit(params *AddCommitParams, authInfo runtime.ClientAuthInfoWriter) (*AddCommitOK, error)
 
+	DeleteBranch(params *DeleteBranchParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteBranchOK, error)
+
 	GetBranch(params *GetBranchParams, authInfo runtime.ClientAuthInfoWriter) (*GetBranchOK, error)
 
 	GetCheckpoint(params *GetCheckpointParams, authInfo runtime.ClientAuthInfoWriter) (*GetCheckpointOK, error)
@@ -38,6 +40,12 @@ type ClientService interface {
 	GetCommitHistory(params *GetCommitHistoryParams, authInfo runtime.ClientAuthInfoWriter) (*GetCommitHistoryOK, error)
 
 	GetOrder(params *GetOrderParams, authInfo runtime.ClientAuthInfoWriter) (*GetOrderOK, error)
+
+	GetOrderFromCheckpoint(params *GetOrderFromCheckpointParams) (*GetOrderFromCheckpointOK, error)
+
+	GetRevertCommit(params *GetRevertCommitParams, authInfo runtime.ClientAuthInfoWriter) (*GetRevertCommitOK, error)
+
+	MergeBranch(params *MergeBranchParams, authInfo runtime.ClientAuthInfoWriter) (*MergeBranchOK, error)
 
 	UpdateBranch(params *UpdateBranchParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateBranchOK, error)
 
@@ -76,6 +84,41 @@ func (a *Client) AddCommit(params *AddCommitParams, authInfo runtime.ClientAuthI
 	// unexpected success response
 	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for addCommit: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+  DeleteBranch Delete the branch and all descendent forks that are of the same project.  Removes 'tracks' and 'tracking_type' data from all descendent forks in different projects.
+*/
+func (a *Client) DeleteBranch(params *DeleteBranchParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteBranchOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewDeleteBranchParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "deleteBranch",
+		Method:             "DELETE",
+		PathPattern:        "/vcs/branch/{branchID}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http", "https"},
+		Params:             params,
+		Reader:             &DeleteBranchReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*DeleteBranchOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for deleteBranch: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -251,6 +294,110 @@ func (a *Client) GetOrder(params *GetOrderParams, authInfo runtime.ClientAuthInf
 	// unexpected success response
 	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for getOrder: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+  GetOrderFromCheckpoint get order from checkpoint API
+*/
+func (a *Client) GetOrderFromCheckpoint(params *GetOrderFromCheckpointParams) (*GetOrderFromCheckpointOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetOrderFromCheckpointParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getOrderFromCheckpoint",
+		Method:             "POST",
+		PathPattern:        "/vcs/order",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http", "https"},
+		Params:             params,
+		Reader:             &GetOrderFromCheckpointReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*GetOrderFromCheckpointOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for getOrderFromCheckpoint: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+  GetRevertCommit get revert commit API
+*/
+func (a *Client) GetRevertCommit(params *GetRevertCommitParams, authInfo runtime.ClientAuthInfoWriter) (*GetRevertCommitOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetRevertCommitParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getRevertCommit",
+		Method:             "GET",
+		PathPattern:        "/vcs/commits/{commitFromID}/revert/{commitToID}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http", "https"},
+		Params:             params,
+		Reader:             &GetRevertCommitReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*GetRevertCommitOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for getRevertCommit: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+  MergeBranch merge branch API
+*/
+func (a *Client) MergeBranch(params *MergeBranchParams, authInfo runtime.ClientAuthInfoWriter) (*MergeBranchOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewMergeBranchParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "mergeBranch",
+		Method:             "POST",
+		PathPattern:        "/vcs/branch/{branchID}/merge",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http", "https"},
+		Params:             params,
+		Reader:             &MergeBranchReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*MergeBranchOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for mergeBranch: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

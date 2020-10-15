@@ -12,7 +12,9 @@ func newScriptsCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"scripts",
+		locale.Tl("scripts_title", "Listing Scripts"),
 		locale.T("scripts_description"),
+		prime.Output(),
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
@@ -26,7 +28,9 @@ func newScriptsEditCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"edit",
+		locale.Tl("scripts_edit_title", "Editing Script"),
 		locale.T("edit_description"),
+		prime.Output(),
 		[]*captain.Flag{
 			{
 				Name:        "expand",

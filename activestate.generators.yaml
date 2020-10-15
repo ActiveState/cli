@@ -23,6 +23,14 @@ scripts:
       pushd pkg/platform/api/headchef
       swagger generate client --with-flatten full -f ${WD}/../TheHomeRepot/service/head-chef/swagger.json -A headchef -a headchef_operations -m headchef_models -c headchef_client
       popd
+  - name: generate-logstreamer-client
+    language: bash
+    description: Generates the buildlog-streamer client files
+    value: |
+      WD=$(pwd)
+      pushd pkg/platform/api/buildlogstream
+      swagger generate client --with-flatten full -f ${WD}/../TheHomeRepot/service/build-log-streamer/swagger.yaml -A buildlogstream -a buildlogstream_operations -m buildlogstream_models -c buildlogstream_client
+      popd
   - name: generate-inventory-client
     language: bash
     description: Generates the inventory-api client files

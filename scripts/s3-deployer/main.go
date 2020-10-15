@@ -54,8 +54,6 @@ func run() {
 }
 
 func createSession() {
-	// Enable loading shared config file
-	os.Setenv("aws_SDK_LOAD_CONFIG", "1")
 	// Specify profile to load for the session's config
 	var err error
 	sess, err = session.NewSessionWithOptions(session.Options{

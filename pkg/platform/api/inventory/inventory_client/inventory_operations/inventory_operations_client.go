@@ -27,6 +27,10 @@ type Client struct {
 type ClientService interface {
 	AddAuthor(params *AddAuthorParams, authInfo runtime.ClientAuthInfoWriter) (*AddAuthorCreated, error)
 
+	AddBuildFlag(params *AddBuildFlagParams, authInfo runtime.ClientAuthInfoWriter) (*AddBuildFlagCreated, error)
+
+	AddBuildFlagRevision(params *AddBuildFlagRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*AddBuildFlagRevisionOK, error)
+
 	AddBuildScript(params *AddBuildScriptParams, authInfo runtime.ClientAuthInfoWriter) (*AddBuildScriptCreated, error)
 
 	AddCPUArchitecture(params *AddCPUArchitectureParams, authInfo runtime.ClientAuthInfoWriter) (*AddCPUArchitectureCreated, error)
@@ -91,6 +95,10 @@ type ClientService interface {
 
 	GetAuthors(params *GetAuthorsParams) (*GetAuthorsOK, error)
 
+	GetBuildFlag(params *GetBuildFlagParams) (*GetBuildFlagOK, error)
+
+	GetBuildFlags(params *GetBuildFlagsParams) (*GetBuildFlagsOK, error)
+
 	GetBuildScript(params *GetBuildScriptParams) (*GetBuildScriptOK, error)
 
 	GetBuildScripts(params *GetBuildScriptsParams) (*GetBuildScriptsOK, error)
@@ -153,7 +161,7 @@ type ClientService interface {
 
 	GetNamespaceIngredients(params *GetNamespaceIngredientsParams, authInfo runtime.ClientAuthInfoWriter) (*GetNamespaceIngredientsOK, error)
 
-	GetNamespaces(params *GetNamespacesParams) (*GetNamespacesOK, error)
+	GetNamespaces(params *GetNamespacesParams, authInfo runtime.ClientAuthInfoWriter) (*GetNamespacesOK, error)
 
 	GetOperatingSystem(params *GetOperatingSystemParams) (*GetOperatingSystemOK, error)
 
@@ -179,6 +187,8 @@ type ClientService interface {
 
 	HealthCheck(params *HealthCheckParams) (*HealthCheckOK, error)
 
+	NormalizeNames(params *NormalizeNamesParams, authInfo runtime.ClientAuthInfoWriter) (*NormalizeNamesOK, error)
+
 	ReadinessCheck(params *ReadinessCheckParams) (*ReadinessCheckOK, error)
 
 	ResolveRecipes(params *ResolveRecipesParams, authInfo runtime.ClientAuthInfoWriter) (*ResolveRecipesOK, error)
@@ -196,6 +206,8 @@ type ClientService interface {
 	UpdatePatch(params *UpdatePatchParams, authInfo runtime.ClientAuthInfoWriter) (*UpdatePatchOK, error)
 
 	UpdatePlatform(params *UpdatePlatformParams, authInfo runtime.ClientAuthInfoWriter) (*UpdatePlatformOK, error)
+
+	ValidateRecipe(params *ValidateRecipeParams) (*ValidateRecipeOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
@@ -231,6 +243,74 @@ func (a *Client) AddAuthor(params *AddAuthorParams, authInfo runtime.ClientAuthI
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*AddAuthorDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  AddBuildFlag Add a new build flag
+*/
+func (a *Client) AddBuildFlag(params *AddBuildFlagParams, authInfo runtime.ClientAuthInfoWriter) (*AddBuildFlagCreated, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewAddBuildFlagParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "addBuildFlag",
+		Method:             "POST",
+		PathPattern:        "/v1/build-flags",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &AddBuildFlagReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*AddBuildFlagCreated)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*AddBuildFlagDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  AddBuildFlagRevision Add a new revision of this build flag
+*/
+func (a *Client) AddBuildFlagRevision(params *AddBuildFlagRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*AddBuildFlagRevisionOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewAddBuildFlagRevisionParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "addBuildFlagRevision",
+		Method:             "POST",
+		PathPattern:        "/v1/build-flags/{build_flag_id}/revisions",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &AddBuildFlagRevisionReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*AddBuildFlagRevisionOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*AddBuildFlagRevisionDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
@@ -1321,6 +1401,72 @@ func (a *Client) GetAuthors(params *GetAuthorsParams) (*GetAuthorsOK, error) {
 }
 
 /*
+  GetBuildFlag Retrieve a build flag
+*/
+func (a *Client) GetBuildFlag(params *GetBuildFlagParams) (*GetBuildFlagOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetBuildFlagParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getBuildFlag",
+		Method:             "GET",
+		PathPattern:        "/v1/build-flags/{build_flag_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetBuildFlagReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*GetBuildFlagOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetBuildFlagDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  GetBuildFlags Retrieve a paged set of build flags
+*/
+func (a *Client) GetBuildFlags(params *GetBuildFlagsParams) (*GetBuildFlagsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetBuildFlagsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getBuildFlags",
+		Method:             "GET",
+		PathPattern:        "/v1/build-flags",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetBuildFlagsReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*GetBuildFlagsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetBuildFlagsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
   GetBuildScript Retrieve a single build script
 */
 func (a *Client) GetBuildScript(params *GetBuildScriptParams) (*GetBuildScriptOK, error) {
@@ -2356,7 +2502,7 @@ func (a *Client) GetNamespaceIngredients(params *GetNamespaceIngredientsParams, 
 /*
   GetNamespaces Retrieve all namespaces
 */
-func (a *Client) GetNamespaces(params *GetNamespacesParams) (*GetNamespacesOK, error) {
+func (a *Client) GetNamespaces(params *GetNamespacesParams, authInfo runtime.ClientAuthInfoWriter) (*GetNamespacesOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetNamespacesParams()
@@ -2371,6 +2517,7 @@ func (a *Client) GetNamespaces(params *GetNamespacesParams) (*GetNamespacesOK, e
 		Schemes:            []string{"http"},
 		Params:             params,
 		Reader:             &GetNamespacesReader{formats: a.formats},
+		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
 	})
@@ -2784,6 +2931,40 @@ func (a *Client) HealthCheck(params *HealthCheckParams) (*HealthCheckOK, error) 
 }
 
 /*
+  NormalizeNames Normalize a list of names according to the namespace's name normalization rules.
+*/
+func (a *Client) NormalizeNames(params *NormalizeNamesParams, authInfo runtime.ClientAuthInfoWriter) (*NormalizeNamesOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewNormalizeNamesParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "normalizeNames",
+		Method:             "POST",
+		PathPattern:        "/v1/namespaces/normalized-names",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &NormalizeNamesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*NormalizeNamesOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*NormalizeNamesDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
   ReadinessCheck readiness check API
 */
 func (a *Client) ReadinessCheck(params *ReadinessCheckParams) (*ReadinessCheckOK, error) {
@@ -3087,6 +3268,39 @@ func (a *Client) UpdatePlatform(params *UpdatePlatformParams, authInfo runtime.C
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*UpdatePlatformDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ValidateRecipe Given a single recipe, this endpoint tells you if the recipe is valid. If not, it returns one more errors explaining the problem(s).
+*/
+func (a *Client) ValidateRecipe(params *ValidateRecipeParams) (*ValidateRecipeOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewValidateRecipeParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "validateRecipe",
+		Method:             "POST",
+		PathPattern:        "/v1/recipes/validation",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &ValidateRecipeReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ValidateRecipeOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ValidateRecipeDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

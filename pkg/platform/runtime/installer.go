@@ -5,21 +5,22 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 
-	"github.com/go-openapi/strfmt"
 	"github.com/gobuffalo/packr"
 	"github.com/google/uuid"
 	"github.com/vbauerster/mpb/v4"
 
-	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/hash"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/progress"
+	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/ActiveState/cli/internal/unarchiver"
+	"github.com/ActiveState/cli/pkg/platform/api/buildlogstream"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
@@ -68,60 +69,27 @@ var (
 	FailRuntimeUnknownEngine = failures.Type("runtime.runtime.unknownengine", FailRuntimeInvalid)
 )
 
+type MessageHandler interface {
+	buildlogstream.MessageHandler
+	DownloadStarting()
+}
+
 // Installer implements an Installer that works with a runtime.Downloader and a
 // runtime.Installer. Effectively, upon calling Install, the Installer will first
 // try and Download an archive, then it will try to install that downloaded archive.
 type Installer struct {
-	params            InstallerParams
+	runtime           *Runtime
 	runtimeDownloader Downloader
-	onDownload        func()
-	onInstall         func()
-}
-
-type InstallerParams struct {
-	RuntimeDir  string
-	CommitID    strfmt.UUID
-	Owner       string
-	ProjectName string
-}
-
-func NewInstallerParams(runtimeDir string, commitID strfmt.UUID, owner string, projectName string) InstallerParams {
-	if runtimeDir == "" {
-		runtimeDir = InstallPath(owner, projectName)
-	}
-	return InstallerParams{runtimeDir, commitID, owner, projectName}
 }
 
 // NewInstaller creates a new RuntimeInstaller
-func NewInstaller(commitID strfmt.UUID, owner, projectName string) (*Installer, *failures.Failure) {
-	logging.Debug("cache path: %s", config.CachePath())
-	return NewInstallerByParams(
-		InstallerParams{
-			InstallPath(owner, projectName),
-			commitID,
-			owner,
-			projectName,
-		})
-}
-
-func InstallPath(owner, projectName string) string {
-	if runtime.GOOS == "darwin" {
-		// mac doesn't use relocation so we can safely use a longer path
-		return filepath.Join(config.CachePath(), owner, projectName)
-	} else {
-		return filepath.Join(config.CachePath(), hash.ShortHash(owner, projectName))
-	}
-}
-
-// NewInstallerByParams creates a new RuntimeInstaller after verifying the provided install-dir
-// exists as a directory or can be created.
-func NewInstallerByParams(params InstallerParams) (*Installer, *failures.Failure) {
+func NewInstaller(runtime *Runtime) *Installer {
 	installer := &Installer{
-		runtimeDownloader: NewDownload(params.CommitID, params.Owner, params.ProjectName),
-		params:            params,
+		runtime:           runtime,
+		runtimeDownloader: NewDownload(runtime),
 	}
 
-	return installer, nil
+	return installer
 }
 
 // Install will download the installer archive and invoke InstallFromArchive
@@ -161,11 +129,11 @@ func (installer *Installer) Assembler() (Assembler, *failures.Failure) {
 
 	switch artifacts.BuildEngine {
 	case Alternative:
-		return NewAlternativeRuntime(artifacts.Artifacts, installer.params.RuntimeDir, artifacts.RecipeID)
+		return NewAlternativeRuntime(artifacts.Artifacts, installer.runtime.runtimeDir, artifacts.RecipeID)
 	case Camel:
-		return NewCamelRuntime(installer.params.CommitID, artifacts.Artifacts, installer.params.RuntimeDir)
+		return NewCamelRuntime(installer.runtime.commitID, artifacts.Artifacts, installer.runtime.runtimeDir)
 	case Hybrid:
-		cr, fail := NewCamelRuntime(installer.params.CommitID, artifacts.Artifacts, installer.params.RuntimeDir)
+		cr, fail := NewCamelRuntime(installer.runtime.commitID, artifacts.Artifacts, installer.runtime.runtimeDir)
 		if fail != nil {
 			return nil, fail
 		}
@@ -185,18 +153,21 @@ func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGet
 
 	downloadArtfs := runtimeAssembler.ArtifactsToDownload()
 	unpackArchives := map[string]*HeadChefArtifact{}
-	progress := progress.New(mpb.WithOutput(os.Stderr))
-	defer progress.Close()
+	progressBar := progress.New(mpb.WithOutput(os.Stderr))
+	if strings.ToLower(os.Getenv(constants.NonInteractive)) == "true" {
+		progressBar = progress.New(mpb.WithOutput(nil))
+	}
+	defer progressBar.Close()
 
 	if len(downloadArtfs) != 0 {
-		if installer.onDownload != nil {
-			installer.onDownload()
+		if installer.runtime.msgHandler != nil {
+			installer.runtime.msgHandler.DownloadStarting()
 		}
 
 		if len(downloadArtfs) > 0 {
-			archives, fail := installer.runtimeDownloader.Download(downloadArtfs, runtimeAssembler, progress)
+			archives, fail := installer.runtimeDownloader.Download(downloadArtfs, runtimeAssembler, progressBar)
 			if fail != nil {
-				progress.Cancel()
+				progressBar.Cancel()
 				return nil, false, fail
 			}
 
@@ -206,9 +177,9 @@ func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGet
 		}
 	}
 
-	fail = installer.InstallFromArchives(unpackArchives, runtimeAssembler, progress)
+	fail = installer.InstallFromArchives(unpackArchives, runtimeAssembler, progressBar)
 	if fail != nil {
-		progress.Cancel()
+		progressBar.Cancel()
 		return nil, false, fail
 	}
 
@@ -224,11 +195,11 @@ func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGet
 
 // validateCheckpoint tries to see if the checkpoint has any chance of succeeding
 func (installer *Installer) validateCheckpoint() *failures.Failure {
-	if installer.params.CommitID == "" {
+	if installer.runtime.commitID == "" {
 		return FailNoCommitID.New("installer_err_runtime_no_commitid")
 	}
 
-	checkpoint, _, fail := model.FetchCheckpointForCommit(installer.params.CommitID)
+	checkpoint, _, fail := model.FetchCheckpointForCommit(installer.runtime.commitID)
 	if fail != nil {
 		return fail
 	}
@@ -276,7 +247,7 @@ func (installer *Installer) InstallFromArchive(archivePath string, artf *HeadChe
 		return fail
 	}
 
-	installDir := installer.params.RuntimeDir
+	installDir := installer.runtime.runtimeDir
 	tmpRuntimeDir, upb, fail := installer.unpackArchive(a.Unarchiver(), archivePath, installDir, progress)
 	if fail != nil {
 		removeInstallDir(installDir)
@@ -343,11 +314,6 @@ func (installer *Installer) unpackArchive(ua unarchiver.Unarchiver, archivePath 
 	return tmpRuntimeDir, upb, nil
 }
 
-// OnDownload registers a function to be called when a download occurs
-func (installer *Installer) OnDownload(f func()) {
-	installer.onDownload = f
-}
-
 // validateArchive ensures the given path to archive is an actual file and that its suffix is a well-known
 // suffix for tar+gz files.
 func (installer *Installer) validateArchive(ua unarchiver.Unarchiver, archivePath string) *failures.Failure {
@@ -387,7 +353,18 @@ func installPPMShim(binPath string) error {
 	// remove shim if it existed before, so we can overwrite (ok to drop error here)
 	_ = os.Remove(shim)
 
-	err := ioutil.WriteFile(shim, ppmBytes, 0755)
+	exe, err := os.Executable()
+	if err != nil {
+		return errs.Wrap(err, "Could not get executable")
+	}
+
+	tplParams := map[string]interface{}{"exe": exe}
+	ppmStr, err := strutils.ParseTemplate(string(ppmBytes), tplParams)
+	if err != nil {
+		return errs.Wrap(err, "Could not parse ppm.sh template")
+	}
+
+	err = ioutil.WriteFile(shim, []byte(ppmStr), 0755)
 	if err != nil {
 		return errs.Wrap(err, "failed to write shim command %s", shim)
 	}
@@ -397,7 +374,12 @@ func installPPMShim(binPath string) error {
 		// remove shim if it existed before, so we can overwrite (ok to drop error here)
 		_ = os.Remove(shim)
 
-		err := ioutil.WriteFile(shim, ppmBatBytes, 0755)
+		ppmBatStr, err := strutils.ParseTemplate(string(ppmBatBytes), tplParams)
+		if err != nil {
+			return errs.Wrap(err, "Could not parse ppm.sh template")
+		}
+
+		err = ioutil.WriteFile(shim, []byte(ppmBatStr), 0755)
 		if err != nil {
 			return errs.Wrap(err, "failed to write shim command %s", shim)
 		}

@@ -43,6 +43,9 @@ type User struct {
 	// Format: date-time
 	Expires *strfmt.DateTime `json:"expires,omitempty"`
 
+	// is paid user
+	IsPaidUser *bool `json:"isPaidUser,omitempty"`
+
 	// last login
 	// Format: date-time
 	LastLogin *strfmt.DateTime `json:"lastLogin,omitempty"`
