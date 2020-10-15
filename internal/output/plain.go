@@ -322,9 +322,7 @@ func sprintTable(slice []interface{}) (string, error) {
 
 	// Set our own custom table format
 	tabulate.TableFormats["standard"] = tabulate.TableFormat{
-		LineTop:         tabulate.Line{"", "-", "", ""},
-		LineBelowHeader: tabulate.Line{"", "\u2500", "", ""},
-		LineBottom:      tabulate.Line{"", "-", "", ""},
+		LineBelowHeader: tabulate.Line{"[DISABLED]", "\u2500", "", "[/RESET]"},
 		HeaderRow:       tabulate.Row{"[HEADING]", "", "[/RESET]"},
 		DataRow:         tabulate.Row{"", "", ""},
 		TitleRow:        tabulate.Row{"", "", ""},
