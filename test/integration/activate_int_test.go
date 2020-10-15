@@ -57,6 +57,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivateUsingCommitID() {
+	suite.OnlyRunForTags("critical", "activate")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -71,6 +72,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateUsingCommitID() {
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivateNotOnPath() {
+	suite.OnlyRunForTags("critical", "activate")
 	ts := e2e.NewNoPathUpdate(suite.T(), false)
 	defer ts.Close()
 
