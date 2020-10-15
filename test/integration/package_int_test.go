@@ -162,12 +162,12 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchSimple() {
 		"2.8.1",
 		"requests3",
 		"3.0.0a1",
-		"requests-auth",
-		"5.1.0",
-		"requests-aws",
-		"0.1.8",
-		"requests-aws-sign",
-		"0.1.5",
+		"requestsauth",
+		"0.1.1",
+		"requestsaws",
+		"0.1.1",
+		"requestsawssign",
+		"0.1.1",
 	}
 	for _, expectation := range expectations {
 		cp.Expect(expectation)
@@ -215,7 +215,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithLang() {
 	cp := ts.Spawn("packages", "search", "Moose", "--language=perl")
 	cp.Expect("Name")
 	cp.Expect("Any-Moose")
-	cp.Expect("MooseFS")
+	cp.Expect("Moose")
 	cp.ExpectExitCode(0)
 }
 

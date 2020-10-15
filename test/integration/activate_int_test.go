@@ -79,7 +79,6 @@ func (suite *ActivateIntegrationTestSuite) TestActivateNotOnPath() {
 	cp := ts.Spawn("activate", "ActiveState-CLI/Python3")
 	cp.Expect("Where would you like to checkout")
 	cp.SendLine(cp.WorkDirectory())
-	cp.Expect("activated state", 20*time.Second)
 	cp.WaitForInput(10 * time.Second)
 
 	if runtime.GOOS == "windows" {
@@ -140,7 +139,6 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	)
 	cp.Expect("Where would you like to checkout")
 	cp.SendLine(cp.WorkDirectory())
-	cp.Expect("activated state", 120*time.Second)
 
 	// ensure that shell is functional
 	cp.WaitForInput()
@@ -236,7 +234,6 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
 	cp.SendLine(cp.WorkDirectory())
 	cp.Expect("Downloading", 20*time.Second)
 	cp.Expect("Installing", 120*time.Second)
-	cp.Expect("activated state", 120*time.Second)
 
 	suite.assertCompletedStatusBarReport(cp.Snapshot())
 
