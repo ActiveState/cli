@@ -687,9 +687,6 @@ namespace StateDeploy
                 session.DoAction("GAReportUserExit");
             }
 
-            RollbarHelper.ConfigureRollbarSingleton(session["MSI_VERSION"]);
-            RollbarReport.Error("user_cancel: " + session["LAST_DIALOG"], session);
-
             session.DoAction("CustomUserExitDialog");
 
             return ActionResult.Success;

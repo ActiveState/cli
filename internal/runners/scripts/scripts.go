@@ -1,8 +1,6 @@
 package scripts
 
 import (
-	"github.com/bndr/gotabulate"
-
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -32,39 +30,8 @@ type scriptLine struct {
 	Description string `json:"description,omitempty"`
 }
 
-type outputFormat []scriptLine
-
-func (f outputFormat) MarshalOutput(format output.Format) interface{} {
-	if format == output.PlainFormatName {
-		return f.formatScriptsList()
-	}
-	return f
-}
-
-// formatScriptsList formats a lists of all of the scripts defined for this project.
-func (f outputFormat) formatScriptsList() string {
-	hdrs, rows := f.scriptsTable()
-	t := gotabulate.Create(rows)
-	t.SetHeaders(hdrs)
-	t.SetAlign("left")
-
-	return t.Render("simple")
-}
-
-func (f outputFormat) scriptsTable() (hdrs []string, rows [][]string) {
-	for _, s := range f {
-		row := []string{
-			s.Name, s.Description,
-		}
-		rows = append(rows, row)
-	}
-
-	hdrs = []string{
-		locale.T("scripts_col_name"),
-		locale.T("scripts_col_description"),
-	}
-
-	return hdrs, rows
+type scriptsTable struct {
+	rows []scriptLine
 }
 
 func (s *Scripts) Run() error {
@@ -83,7 +50,7 @@ func (s *Scripts) Run() error {
 
 	name, owner := s.project.Name(), s.project.Owner()
 	logging.Debug("listing scripts for org=%s, project=%s", owner, name)
-	var rows outputFormat
+	var rows []scriptLine
 	for _, s := range scripts {
 		row := scriptLine{
 			s.Name(), s.Description(),

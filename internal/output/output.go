@@ -18,6 +18,14 @@ const (
 	EditorV0FormatName Format = "editor.v0" // for Komodo: alias of "json"
 )
 
+// Behavior defines control tokens that affect printing behavior.
+type Behavior int
+
+// Behavior tokens.
+const (
+	Suppress Behavior = iota
+)
+
 // FailNotRecognized is a failure due to the format not being recognized
 var FailNotRecognized = failures.Type("output.fail.not.recognized", failures.FailInput)
 
