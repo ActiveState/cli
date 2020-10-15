@@ -99,11 +99,6 @@ type GetNamespaceIngredientsParams struct {
 
 	*/
 	ExcludeFeatures *bool
-	/*IncludePrivate
-	  Include private ingredients from all organizations. Only available to superusers.
-
-	*/
-	IncludePrivate *bool
 	/*Limit
 	  The maximum number of items returned per page
 
@@ -116,11 +111,6 @@ type GetNamespaceIngredientsParams struct {
 	MaxVersionsPerIngredient *int64
 	/*Namespace*/
 	Namespace string
-	/*OrganizationID
-	  Include ingredient information for private ingredients belong to this organization. The requesting user must be a member of the relevant organization.
-
-	*/
-	OrganizationID *string
 	/*Page
 	  The page number returned
 
@@ -197,17 +187,6 @@ func (o *GetNamespaceIngredientsParams) SetExcludeFeatures(excludeFeatures *bool
 	o.ExcludeFeatures = excludeFeatures
 }
 
-// WithIncludePrivate adds the includePrivate to the get namespace ingredients params
-func (o *GetNamespaceIngredientsParams) WithIncludePrivate(includePrivate *bool) *GetNamespaceIngredientsParams {
-	o.SetIncludePrivate(includePrivate)
-	return o
-}
-
-// SetIncludePrivate adds the includePrivate to the get namespace ingredients params
-func (o *GetNamespaceIngredientsParams) SetIncludePrivate(includePrivate *bool) {
-	o.IncludePrivate = includePrivate
-}
-
 // WithLimit adds the limit to the get namespace ingredients params
 func (o *GetNamespaceIngredientsParams) WithLimit(limit *int64) *GetNamespaceIngredientsParams {
 	o.SetLimit(limit)
@@ -239,17 +218,6 @@ func (o *GetNamespaceIngredientsParams) WithNamespace(namespace string) *GetName
 // SetNamespace adds the namespace to the get namespace ingredients params
 func (o *GetNamespaceIngredientsParams) SetNamespace(namespace string) {
 	o.Namespace = namespace
-}
-
-// WithOrganizationID adds the organizationID to the get namespace ingredients params
-func (o *GetNamespaceIngredientsParams) WithOrganizationID(organizationID *string) *GetNamespaceIngredientsParams {
-	o.SetOrganizationID(organizationID)
-	return o
-}
-
-// SetOrganizationID adds the organizationId to the get namespace ingredients params
-func (o *GetNamespaceIngredientsParams) SetOrganizationID(organizationID *string) {
-	o.OrganizationID = organizationID
 }
 
 // WithPage adds the page to the get namespace ingredients params
@@ -325,22 +293,6 @@ func (o *GetNamespaceIngredientsParams) WriteToRequest(r runtime.ClientRequest, 
 
 	}
 
-	if o.IncludePrivate != nil {
-
-		// query param include_private
-		var qrIncludePrivate bool
-		if o.IncludePrivate != nil {
-			qrIncludePrivate = *o.IncludePrivate
-		}
-		qIncludePrivate := swag.FormatBool(qrIncludePrivate)
-		if qIncludePrivate != "" {
-			if err := r.SetQueryParam("include_private", qIncludePrivate); err != nil {
-				return err
-			}
-		}
-
-	}
-
 	if o.Limit != nil {
 
 		// query param limit
@@ -380,22 +332,6 @@ func (o *GetNamespaceIngredientsParams) WriteToRequest(r runtime.ClientRequest, 
 		if err := r.SetQueryParam("namespace", qNamespace); err != nil {
 			return err
 		}
-	}
-
-	if o.OrganizationID != nil {
-
-		// query param organization_id
-		var qrOrganizationID string
-		if o.OrganizationID != nil {
-			qrOrganizationID = *o.OrganizationID
-		}
-		qOrganizationID := qrOrganizationID
-		if qOrganizationID != "" {
-			if err := r.SetQueryParam("organization_id", qOrganizationID); err != nil {
-				return err
-			}
-		}
-
 	}
 
 	if o.Page != nil {

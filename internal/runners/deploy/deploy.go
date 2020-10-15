@@ -8,9 +8,9 @@ import (
 	"strings"
 
 	"github.com/gobuffalo/packr"
-	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
@@ -18,7 +18,9 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
@@ -74,26 +76,28 @@ func (d *Deploy) Run(params *Params) error {
 			return locale.NewError("err_deploy_admin_privileges_required", "Administrator rights are required for this command to modify the system PATH.  If you want to deploy to the user environment, please adjust the command line flags.")
 		}
 	}
-	installer, targetPath, err := d.createInstaller(params.Namespace, params.Path)
+
+	targetPath := params.Path
+	runtime, installer, err := d.createRuntimeInstaller(params.Namespace, targetPath)
 	if err != nil {
 		return locale.WrapError(
 			err, "err_deploy_create_install",
 			"Could not initialize an installer for {{.V0}}.", params.Namespace.String())
 	}
 
-	return runSteps(targetPath, params.Force, params.UserScope, params.Namespace, d.step, installer, d.output, d.subshell)
+	return runSteps(targetPath, params.Force, params.UserScope, params.Namespace, d.step, runtime, installer, d.output, d.subshell)
 }
 
-func (d *Deploy) createInstaller(namespace project.Namespaced, path string) (installable, string, error) {
+func (d *Deploy) createRuntimeInstaller(namespace project.Namespaced, targetPath string) (*runtime.Runtime, installable, error) {
 	commitID := namespace.CommitID
 	if commitID == nil {
 		branch, fail := d.DefaultBranchForProjectName(namespace.Owner, namespace.Project)
 		if fail != nil {
-			return nil, "", errs.Wrap(fail, "Could not create installer")
+			return nil, nil, errs.Wrap(fail, "Could not create installer")
 		}
 
 		if branch.CommitID == nil {
-			return nil, "", locale.NewInputError(
+			return nil, nil, locale.NewInputError(
 				"err_deploy_no_commits",
 				"The project '{{.V0}}' does not have any packages configured, please add add some packages first.", namespace.String())
 		}
@@ -101,20 +105,20 @@ func (d *Deploy) createInstaller(namespace project.Namespaced, path string) (ins
 		commitID = branch.CommitID
 	}
 
-	installable, cacheDir, fail := d.NewRuntimeInstaller(*commitID, namespace.Owner, namespace.Project, path)
-	return installable, cacheDir, fail.ToError()
+	runtime := runtime.NewRuntime(*commitID, namespace.Owner, namespace.Project, runbits.NewRuntimeMessageHandler(d.output))
+	runtime.SetInstallPath(targetPath)
+	return runtime, d.NewRuntimeInstaller(runtime), nil
 }
 
-func runSteps(targetPath string, force bool, userScope bool, namespace project.Namespaced, step Step, installer installable, out output.Outputer, subshell subshell.SubShell) error {
+func runSteps(targetPath string, force bool, userScope bool, namespace project.Namespaced, step Step, runtime *runtime.Runtime, installer installable, out output.Outputer, subshell subshell.SubShell) error {
 	return runStepsWithFuncs(
-		targetPath, force, userScope, namespace, step, installer, out, subshell,
+		targetPath, force, userScope, namespace, step, runtime, installer, out, subshell,
 		install, configure, symlink, report)
 }
 
-func runStepsWithFuncs(targetPath string, force, userScope bool, namespace project.Namespaced, step Step, installer installable, out output.Outputer, subshell subshell.SubShell, installf installFunc, configuref configureFunc, symlinkf symlinkFunc, reportf reportFunc) error {
+func runStepsWithFuncs(targetPath string, force, userScope bool, namespace project.Namespaced, step Step, rt *runtime.Runtime, installer installable, out output.Outputer, subshell subshell.SubShell, installf installFunc, configuref configureFunc, symlinkf symlinkFunc, reportf reportFunc) error {
 	logging.Debug("runSteps: %s", step.String())
 
-	var envGetter runtime.EnvGetter
 	var fail *failures.Failure
 
 	installed, fail := installer.IsInstalled()
@@ -128,8 +132,7 @@ func runStepsWithFuncs(targetPath string, force, userScope bool, namespace proje
 
 	if step == UnsetStep || step == InstallStep {
 		logging.Debug("Running install step")
-		var err error
-		if envGetter, err = installf(targetPath, installer, out); err != nil {
+		if err := installf(targetPath, installer, out); err != nil {
 			return err
 		}
 
@@ -139,12 +142,7 @@ func runStepsWithFuncs(targetPath string, force, userScope bool, namespace proje
 	}
 	if step == UnsetStep || step == ConfigureStep {
 		logging.Debug("Running configure step")
-		if envGetter == nil {
-			if envGetter, fail = installer.Env(); fail != nil {
-				return errs.Wrap(fail, "Could not retrieve env for Configure step")
-			}
-		}
-		if err := configuref(targetPath, envGetter, out, subshell, namespace, userScope); err != nil {
+		if err := configuref(targetPath, rt, out, subshell, namespace, userScope); err != nil {
 			return err
 		}
 		if step == UnsetStep {
@@ -153,12 +151,7 @@ func runStepsWithFuncs(targetPath string, force, userScope bool, namespace proje
 	}
 	if step == UnsetStep || step == SymlinkStep {
 		logging.Debug("Running symlink step")
-		if envGetter == nil {
-			if envGetter, fail = installer.Env(); fail != nil {
-				return errs.Wrap(fail, "Could not retrieve env for Symlink step")
-			}
-		}
-		if err := symlinkf(targetPath, force, envGetter, out); err != nil {
+		if err := symlinkf(targetPath, force, rt, out); err != nil {
 			return err
 		}
 		if step == UnsetStep {
@@ -167,12 +160,7 @@ func runStepsWithFuncs(targetPath string, force, userScope bool, namespace proje
 	}
 	if step == UnsetStep || step == ReportStep {
 		logging.Debug("Running report step")
-		if envGetter == nil {
-			if envGetter, fail = installer.Env(); fail != nil {
-				return errs.Wrap(fail, "Could not retrieve env for Report step")
-			}
-		}
-		if err := reportf(targetPath, envGetter, out); err != nil {
+		if err := reportf(targetPath, rt, out); err != nil {
 			return err
 		}
 	}
@@ -180,13 +168,13 @@ func runStepsWithFuncs(targetPath string, force, userScope bool, namespace proje
 	return nil
 }
 
-type installFunc func(path string, installer installable, out output.Outputer) (runtime.EnvGetter, error)
+type installFunc func(path string, installer installable, out output.Outputer) error
 
-func install(path string, installer installable, out output.Outputer) (runtime.EnvGetter, error) {
+func install(path string, installer installable, out output.Outputer) error {
 	out.Notice(locale.T("deploy_install"))
-	envGetter, installed, fail := installer.Install()
+	_, installed, fail := installer.Install()
 	if fail != nil {
-		return envGetter, locale.WrapError(fail, "deploy_install_failed", "Installation failed.")
+		return locale.WrapError(fail, "deploy_install_failed", "Installation failed.")
 	}
 	if !installed {
 		out.Notice(locale.T("using_cached_env"))
@@ -197,18 +185,18 @@ func install(path string, installer installable, out output.Outputer) (runtime.E
 		contents := box.Bytes("setenv.bat")
 		fail = fileutils.WriteFile(filepath.Join(path, "setenv.bat"), contents)
 		if fail != nil {
-			return envGetter, locale.WrapError(fail.ToError(), "err_deploy_write_setenv", "Could not create setenv batch scriptfile at path: %s", path)
+			return locale.WrapError(fail.ToError(), "err_deploy_write_setenv", "Could not create setenv batch scriptfile at path: %s", path)
 		}
 	}
 
 	out.Print(locale.Tl("deploy_install_done", "Installation completed"))
-	return envGetter, nil
+	return nil
 }
 
-type configureFunc func(installpath string, envGetter runtime.EnvGetter, out output.Outputer, sshell subshell.SubShell, namespace project.Namespaced, userScope bool) error
+type configureFunc func(installpath string, runtime *runtime.Runtime, out output.Outputer, sshell subshell.SubShell, namespace project.Namespaced, userScope bool) error
 
-func configure(installpath string, envGetter runtime.EnvGetter, out output.Outputer, sshell subshell.SubShell, namespace project.Namespaced, userScope bool) error {
-	venv := virtualenvironment.New(envGetter.GetEnv)
+func configure(installpath string, runtime *runtime.Runtime, out output.Outputer, sshell subshell.SubShell, namespace project.Namespaced, userScope bool) error {
+	venv := virtualenvironment.New(runtime)
 	env, err := venv.GetEnv(false, "")
 	if err != nil {
 		return err
@@ -216,7 +204,7 @@ func configure(installpath string, envGetter runtime.EnvGetter, out output.Outpu
 
 	out.Notice(locale.Tr("deploy_configure_shell", sshell.Shell()))
 
-	fail := sshell.WriteUserEnv(env, userScope)
+	fail := sshell.WriteUserEnv(env, sscommon.Deploy, userScope)
 	if fail != nil {
 		return locale.WrapError(fail, "err_deploy_subshell_write", "Could not write environment information to your shell configuration.")
 	}
@@ -236,10 +224,10 @@ func configure(installpath string, envGetter runtime.EnvGetter, out output.Outpu
 	return nil
 }
 
-type symlinkFunc func(installPath string, overwrite bool, envGetter runtime.EnvGetter, out output.Outputer) error
+type symlinkFunc func(installPath string, overwrite bool, runtime *runtime.Runtime, out output.Outputer) error
 
-func symlink(installPath string, overwrite bool, envGetter runtime.EnvGetter, out output.Outputer) error {
-	venv := virtualenvironment.New(envGetter.GetEnv)
+func symlink(installPath string, overwrite bool, runtime *runtime.Runtime, out output.Outputer) error {
+	venv := virtualenvironment.New(runtime)
 	env, err := venv.GetEnv(false, "")
 	if err != nil {
 		return err
@@ -260,13 +248,13 @@ func symlink(installPath string, overwrite bool, envGetter runtime.EnvGetter, ou
 		bins = strings.Split(p, string(os.PathListSeparator))
 	}
 
-	exes, err := executables(bins)
+	exes, err := exeutils.Executables(bins)
 	if err != nil {
 		return locale.WrapError(err, "err_symlink_exes", "Could not detect executables")
 	}
 
 	// Remove duplicate executables as per PATH and PATHEXT
-	exes, err = uniqueExes(exes, os.Getenv("PATHEXT"))
+	exes, err = exeutils.UniqueExes(exes, os.Getenv("PATHEXT"))
 	if err != nil {
 		return locale.WrapError(err, "err_unique_exes", "Could not detect unique executables, make sure your PATH and PATHEXT environment variables are properly configured.")
 	}
@@ -281,7 +269,8 @@ func symlink(installPath string, overwrite bool, envGetter runtime.EnvGetter, ou
 	return nil
 }
 
-func symlinkName(targetDir string, path string) string {
+// SymlinkTargetPath adds the .lnk file ending on windows
+func symlinkTargetPath(targetDir string, path string) string {
 	target := filepath.Clean(filepath.Join(targetDir, filepath.Base(path)))
 	if rt.GOOS != "windows" {
 		return target
@@ -307,7 +296,7 @@ func symlinkWithTarget(overwrite bool, symlinkPath string, exePaths []string, ou
 	}
 
 	for _, exePath := range exePaths {
-		symlink := symlinkName(symlinkPath, exePath)
+		symlink := symlinkTargetPath(symlinkPath, exePath)
 
 		// If the link already exists we may have to overwrite it, skip it, or fail..
 		if fileutils.TargetExists(symlink) {
@@ -352,80 +341,15 @@ type exeFile struct {
 	ext   string
 }
 
-// executables will return all the executables that need to be symlinked in the various provided bin directories
-func executables(bins []string) ([]string, error) {
-	exes := []string{}
-
-	for _, bin := range bins {
-		err := filepath.Walk(bin, func(fpath string, info os.FileInfo, err error) error {
-			// Filter out files that are not executable
-			if info == nil || info.IsDir() || !fileutils.IsExecutable(fpath) { // check if executable by anyone
-				return nil // not executable
-			}
-
-			exes = append(exes, fpath)
-			return nil
-		})
-		if err != nil {
-			return exes, errs.Wrap(err, "Error while walking path")
-		}
-	}
-
-	return exes, nil
-}
-
-func uniqueExes(exePaths []string, pathext string) ([]string, error) {
-	pathExt := strings.Split(strings.ToLower(pathext), ";")
-	exeFiles := map[string]exeFile{}
-	result := []string{}
-
-	for _, exePath := range exePaths {
-		if rt.GOOS == "windows" {
-			exePath = strings.ToLower(exePath) // Windows is case-insensitive
-		}
-
-		exe := exeFile{exePath, "", ""}
-		ext := filepath.Ext(exePath)
-
-		// We only set the executable extension if PATHEXT is present.
-		// Some macOS builds can contain binaries with periods in their
-		// names and we do not want to strip off suffixes after the period.
-		if funk.Contains(pathExt, ext) {
-			exe.ext = filepath.Ext(exePath)
-		}
-		exe.name = strings.TrimSuffix(filepath.Base(exePath), exe.ext)
-
-		if prevExe, exists := exeFiles[exe.name]; exists {
-			pathsEqual, err := fileutils.PathsEqual(filepath.Dir(exe.fpath), filepath.Dir(prevExe.fpath))
-			if err != nil {
-				return result, errs.Wrap(err, "Could not compare paths")
-			}
-			if !pathsEqual {
-				continue // Earlier PATH entries win
-			}
-			if funk.IndexOf(pathExt, prevExe.ext) < funk.IndexOf(pathExt, exe.ext) {
-				continue // Earlier PATHEXT entries win
-			}
-		}
-
-		exeFiles[exe.name] = exe
-	}
-
-	for _, exe := range exeFiles {
-		result = append(result, exe.fpath)
-	}
-	return result, nil
-}
-
 type Report struct {
 	BinaryDirectories []string
 	Environment       map[string]string
 }
 
-type reportFunc func(path string, envGetter runtime.EnvGetter, out output.Outputer) error
+type reportFunc func(path string, runtime *runtime.Runtime, out output.Outputer) error
 
-func report(path string, envGetter runtime.EnvGetter, out output.Outputer) error {
-	venv := virtualenvironment.New(envGetter.GetEnv)
+func report(path string, runtime *runtime.Runtime, out output.Outputer) error {
+	venv := virtualenvironment.New(runtime)
 	env, err := venv.GetEnv(false, "")
 	if err != nil {
 		return err

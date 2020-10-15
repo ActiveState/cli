@@ -6,7 +6,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/termtest"
 )
@@ -34,7 +33,7 @@ func (a msiExecAction) cmd(msiPath, installPath string) string {
 
 func (a msiExecAction) logFileName(msiPath string) string {
 	msiName := filepath.Base(strings.TrimSuffix(msiPath, filepath.Ext(msiPath)))
-	return filepath.Join(environment.GetRootPathUnsafe(), fmt.Sprintf(`%s_%s.log`, msiName, string(a)))
+	return filepath.Join(logDir, fmt.Sprintf(`%s_%s.log`, msiName, string(a)))
 }
 
 type pwshSession struct {

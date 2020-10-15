@@ -38,60 +38,17 @@ func teardown() {
 	rtMock.Close()
 }
 
-func TestPersist(t *testing.T) {
-	setup(t)
-	defer teardown()
-
-	v1 := Get()
-	v2 := Get()
-	assert.True(t, v1 == v2, "Should return same pointer")
-}
-
-func TestEvents(t *testing.T) {
-	venv := Init()
-	onDownloadCalled := false
-	onInstallCalled := false
-
-	venv.OnDownloadArtifacts(func() { onDownloadCalled = true })
-	venv.OnInstallArtifacts(func() { onInstallCalled = true })
-
-	venv.onDownloadArtifacts()
-	venv.onInstallArtifacts()
-
-	assert.True(t, onDownloadCalled, "OnDownloadArtifacts is triggered")
-	assert.True(t, onInstallCalled, "OnInstallArtifacts is triggered")
-}
-
-func TestActivateFailureUnknownLanguage(t *testing.T) {
-	setup(t)
-	defer teardown()
-
-	os.Setenv(constants.DisableRuntime, "false")
-	defer os.Unsetenv(constants.DisableRuntime)
-
-	project := projectfile.Get()
-	project.Languages = append(project.Languages, projectfile.Language{
-		Name: "foo",
-	})
-	project.Persist()
-
-	venv := Init()
-	err := venv.Activate()
-	assert.Error(t, err, "Should not activate due to unknown language")
-}
-
 func TestActivateFailureAlreadyActive(t *testing.T) {
 	setup(t)
 	defer teardown()
 
 	os.Setenv(constants.ActivatedStateEnvVarName, "test")
 
-	venv := Init()
+	venv := New(nil)
 	failure := venv.Activate()
-	namespace := venv.project.Owner() + "/" + venv.project.Name()
 	require.NotNil(t, failure, "expected a failure")
 	assert.Equal(t, FailAlreadyActive, failure.Type)
-	assert.Equal(t, locale.Tr("err_already_active", namespace), failure.Error())
+	assert.Equal(t, locale.Tr("err_already_active"), failure.Error())
 }
 
 func TestEnv(t *testing.T) {
@@ -104,7 +61,7 @@ func TestEnv(t *testing.T) {
 	os.Setenv(constants.ProjectEnvVarName, projectfile.Get().Path())
 	defer os.Unsetenv(constants.ProjectEnvVarName)
 
-	venv := Init()
+	venv := New(nil)
 	env, err := venv.GetEnv(false, filepath.Dir(projectfile.Get().Path()))
 	require.NoError(t, err)
 
@@ -141,7 +98,7 @@ languages:
 	yaml.Unmarshal([]byte(dat), &project)
 	project.Persist()
 
-	venv := Init()
+	venv := New(nil)
 	fail := venv.Activate()
 	require.NoError(t, fail.ToError(), "Should activate")
 }

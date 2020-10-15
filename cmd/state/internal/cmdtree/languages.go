@@ -13,7 +13,9 @@ func newLanguagesCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"languages",
+		locale.Tl("languages_title", "Listing Languages"),
 		locale.T("languages_cmd_description"),
+		prime.Output(),
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, _ []string) error {
@@ -35,7 +37,9 @@ func newLanguageUpdateCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"update",
+		locale.Tl("languages_update_title", "Updating Languages"),
 		locale.T("languages_update_cmd_description"),
+		prime.Output(),
 		[]*captain.Flag{},
 		[]*captain.Argument{
 			{

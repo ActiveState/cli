@@ -5,6 +5,8 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/language"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/cmdlets/git"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -12,12 +14,9 @@ import (
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
-type CheckoutAble interface {
-	Run(namespace string, path string) error
-}
 
 // Checkout will checkout the given platform project at the given path
-// This includes cloning an associatd repository and creating the activestate.yaml
+// This includes cloning an associated repository and creating the activestate.yaml
 // It does not activate any environment
 type Checkout struct {
 	repo git.Repository
@@ -28,10 +27,9 @@ func NewCheckout(repo git.Repository, prime primeable) *Checkout {
 	return &Checkout{repo, prime.Output()}
 }
 
-func (r *Checkout) Run(namespace string, targetPath string) error {
-	ns, fail := project.ParseNamespace(namespace)
-	if fail != nil {
-		return fail
+func (r *Checkout) Run(ns *project.Namespaced, targetPath string) error {
+	if !ns.IsValid() {
+		return locale.NewError("err_namespace_invalid", "Invalid namespace: {{.V0}}.", ns.String())
 	}
 
 	pj, fail := model.FetchProjectByName(ns.Owner, ns.Project)
@@ -56,6 +54,11 @@ func (r *Checkout) Run(namespace string, targetPath string) error {
 		}
 	}
 
+	language, err := getLanguage(ns.Owner, ns.Project)
+	if err != nil {
+		return err
+	}
+
 	// Create the config file, if the repo clone didn't already create it
 	configFile := filepath.Join(targetPath, constants.ConfigFileName)
 	if !fileutils.FileExists(configFile) {
@@ -64,6 +67,7 @@ func (r *Checkout) Run(namespace string, targetPath string) error {
 			Project:   ns.Project,
 			CommitID:  commitID,
 			Directory: targetPath,
+			Language:  language,
 		})
 		if fail != nil {
 			return fail
@@ -71,4 +75,17 @@ func (r *Checkout) Run(namespace string, targetPath string) error {
 	}
 
 	return nil
+}
+
+func getLanguage(owner, project string) (string, error) {
+	modelLanguage, fail := model.DefaultLanguageForProject(owner, project)
+	if fail != nil {
+		return "", fail.ToError()
+	}
+
+	lang, err := language.MakeByNameAndVersion(modelLanguage.Name, modelLanguage.Version)
+	if err != nil {
+		return "", err
+	}
+	return lang.String(), nil
 }

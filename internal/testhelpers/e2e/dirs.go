@@ -23,9 +23,11 @@ type Dirs struct {
 	Bin string
 	// Work is the working directory where the activestate.yaml file would live, and that is the PWD for tested console processes
 	Work string
+	// DefaultBin is the bin directory for our default installation
+	DefaultBin string
 }
 
-// NewDirs creates all temprorary directories
+// NewDirs creates all temporary directories
 func NewDirs(base string) (*Dirs, error) {
 	if base == "" {
 		tmpDir, err := ioutil.TempDir("", "")
@@ -44,8 +46,9 @@ func NewDirs(base string) (*Dirs, error) {
 	config := filepath.Join(base, "config")
 	bin := filepath.Join(base, "bin")
 	work := filepath.Join(base, "work")
+	defaultBin := filepath.Join(base, "cache", "bin")
 
-	subdirs := []string{config, cache, bin, work}
+	subdirs := []string{config, cache, bin, work, defaultBin}
 	for _, subdir := range subdirs {
 		if err := os.MkdirAll(subdir, 0700); err != nil {
 			return nil, err
@@ -53,11 +56,12 @@ func NewDirs(base string) (*Dirs, error) {
 	}
 
 	dirs := Dirs{
-		base:   base,
-		Config: config,
-		Cache:  cache,
-		Bin:    bin,
-		Work:   work,
+		base:       base,
+		Config:     config,
+		Cache:      cache,
+		Bin:        bin,
+		Work:       work,
+		DefaultBin: defaultBin,
 	}
 
 	return &dirs, nil

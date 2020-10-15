@@ -37,13 +37,11 @@ type Logger interface {
 	Printf(string, ...interface{})
 }
 
-var DefaultClient = NewClient(30*time.Second, 5)
-
-func init() {
-	if condition.InTest() {
-		DefaultClient.HTTPClient = http.DefaultClient
-	}
-}
+var (
+	DefaultTimeout = time.Second * 30
+	DefaultRetries = 5
+	DefaultClient  = NewClient(DefaultTimeout, DefaultRetries)
+)
 
 type Client struct {
 	*retryablehttp.Client
@@ -111,10 +109,17 @@ func normalizeRetryResponse(res *http.Response, err error, numTries int) (*http.
 }
 
 func NewClient(timeout time.Duration, retries int) *Client {
+	if timeout < 0 {
+		timeout = DefaultTimeout
+	}
+	if retries < 0 {
+		retries = DefaultRetries
+	}
+
 	retryClient := retryablehttp.NewClient()
 	retryClient.Logger = logging.CurrentHandler()
 	retryClient.HTTPClient = &http.Client{
-		Transport: cleanhttp.DefaultPooledTransport(),
+		Transport: transport(),
 		Timeout:   timeout,
 	}
 	retryClient.RetryMax = retries
@@ -123,4 +128,11 @@ func NewClient(timeout time.Duration, retries int) *Client {
 	return &Client{
 		Client: retryClient,
 	}
+}
+
+func transport() http.RoundTripper {
+	if condition.InTest() {
+		return http.DefaultClient.Transport
+	}
+	return cleanhttp.DefaultPooledTransport()
 }

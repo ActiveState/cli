@@ -9,7 +9,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/bndr/gotabulate"
 	"github.com/go-openapi/strfmt"
 	"github.com/mitchellh/go-wordwrap"
 	"github.com/thoas/go-funk"
@@ -20,6 +19,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
+	"github.com/ActiveState/cli/internal/tabulate"
 )
 
 type PlainOpts string
@@ -31,7 +31,7 @@ const (
 )
 
 // Plain is our plain outputer, it uses reflect to marshal the data.
-// Color tags are supported as [RED]foo[/RESET]
+// Semantic highlighting tags are supported as [INFO]foo[/RESET]
 // Table output is supported if you pass a slice of structs
 // Struct keys are localized by sending them to the locale library as field_key (lowercase)
 type Plain struct {
@@ -54,17 +54,16 @@ func (f *Plain) Print(value interface{}) {
 	f.write(f.cfg.OutWriter, "\n")
 }
 
-// Error will marshal and print the given value to the error writer, it wraps it in red colored text but otherwise the
+// Error will marshal and print the given value to the error writer, it wraps it in the error format but otherwise the
 // only thing that identifies it as an error is the channel it writes it to
 func (f *Plain) Error(value interface{}) {
-	f.write(f.cfg.ErrWriter, fmt.Sprintf("[RED]%s[/RESET]\n", value))
+	f.write(f.cfg.ErrWriter, fmt.Sprintf("[ERROR]%s[/RESET]\n", value))
 }
 
-// Notice will marshal and print the given value to the error writer, it wraps it in red colored text but otherwise the
+// Notice will marshal and print the given value to the error writer, it wraps it in the notice format but otherwise the
 // only thing that identifies it as an error is the channel it writes it to
 func (f *Plain) Notice(value interface{}) {
-	f.write(f.cfg.ErrWriter, value)
-	f.write(f.cfg.ErrWriter, "\n")
+	f.write(f.cfg.ErrWriter, fmt.Sprintf("[NOTICE]%s[/RESET]\n", value))
 }
 
 // Config returns the Config struct for the active instance
@@ -77,7 +76,7 @@ func (f *Plain) write(writer io.Writer, value interface{}) {
 	v, err := sprint(value)
 	if err != nil {
 		logging.Errorf("Could not sprint value: %v, error: %v, stack: %s", value, err, stacktrace.Get().String())
-		f.writeNow(f.cfg.ErrWriter, fmt.Sprintf("[RED]%s[/RESET]", locale.Tr("err_sprint", err.Error())))
+		f.writeNow(f.cfg.ErrWriter, fmt.Sprintf("[ERROR]%s[/RESET]", locale.Tr("err_sprint", err.Error())))
 		return
 	}
 	f.writeNow(writer, v)
@@ -116,13 +115,13 @@ func sprint(value interface{}) (string, error) {
 		return nilText, nil
 	}
 
-	if err, ok := value.(error); ok {
-		return err.Error(), nil
-	}
-
-	// Reflect doesn't handle []byte (easily)
-	if v, ok := value.([]byte); ok {
-		return string(v), nil
+	switch t := value.(type) {
+	case fmt.Stringer:
+		return t.String(), nil
+	case error:
+		return t.Error(), nil
+	case []byte: // Reflect doesn't handle []byte (easily)
+		return string(t), nil
 	}
 
 	valueRfl := valueOf(value)
@@ -285,7 +284,7 @@ func sprintTable(slice []interface{}) (string, error) {
 
 			if firstIteration {
 				headers = append(headers, localizedField(field.l10n))
-				termWidth = termWidth - (len(headers) * 10) // Account for cell padding, cause gotabulate doesn't..
+				termWidth = termWidth - (len(headers) * 10) // Account for cell padding, cause tabulate doesn't..
 			}
 
 			stringValue, err := sprint(field.value)
@@ -311,7 +310,7 @@ func sprintTable(slice []interface{}) (string, error) {
 		termWidth = 100
 	}
 
-	t := gotabulate.Create(rows)
+	t := tabulate.Create(rows)
 	t.SetWrapDelimiter(' ')
 	t.SetWrapStrings(true)
 	t.SetMaxCellSize(termWidth)
@@ -321,7 +320,21 @@ func sprintTable(slice []interface{}) (string, error) {
 	t.SetHideLines([]string{"betweenLine", "top", "aboveTitle", "LineTop", "LineBottom", "bottomLine"})
 	t.SetAlign("left")
 
-	render := t.Render("simple")
+	// Set our own custom table format
+	tabulate.TableFormats["standard"] = tabulate.TableFormat{
+		LineTop:         tabulate.Line{"", "-", "", ""},
+		LineBelowHeader: tabulate.Line{"", "\u2500", "", ""},
+		LineBottom:      tabulate.Line{"", "-", "", ""},
+		HeaderRow:       tabulate.Row{"[HEADING]", "", "[/RESET]"},
+		DataRow:         tabulate.Row{"", "", ""},
+		TitleRow:        tabulate.Row{"", "", ""},
+		Padding:         1,
+	}
+
+	// Adjust padding value for the above table format
+	tabulate.MIN_PADDING = 4
+
+	render := t.Render("standard")
 	return strings.TrimSuffix(render, "\n"), nil
 }
 

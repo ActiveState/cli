@@ -32,12 +32,12 @@ func (a *Add) Run(params AddRunParams) error {
 	logging.Debug("ExecuteAdd")
 
 	pj := project.Get()
-	language, fail := model.DefaultLanguageForProject(pj.Owner(), pj.Name())
+	language, fail := model.DefaultLanguageNameForProject(pj.Owner(), pj.Name())
 	if fail != nil {
 		return fail.WithDescription("err_fetch_languages")
 	}
 
 	name, version := splitNameAndVersion(params.Name)
 
-	return executeAddUpdate(a.out, a.Prompter, language, name, version, model.OperationAdded)
+	return executePackageOperation(a.out, a.Prompter, language, name, version, model.OperationAdded)
 }

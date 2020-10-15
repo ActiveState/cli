@@ -34,8 +34,6 @@ func (e *Events) Run() error {
 		return locale.NewInputError("err_events_noproject", "You have to be inside a project folder to be able to view its events. Project folders contain an activestate.yaml.")
 	}
 
-	e.out.Notice(locale.Tl("events_listing", "Listing configured events"))
-
 	rows := []Event{}
 	for _, event := range e.project.Events() {
 		v, err := event.Value()

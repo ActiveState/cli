@@ -19,6 +19,9 @@ import (
 // swagger:model Order
 type Order struct {
 
+	// annotations
+	Annotations *OrderAnnotations `json:"annotations,omitempty"`
+
 	// Flags for camel
 	CamelFlags []string `json:"camel_flags"`
 
@@ -32,6 +35,9 @@ type Order struct {
 	// requirements
 	Requirements []*SolverRequirement `json:"requirements"`
 
+	// solver version
+	SolverVersion *int64 `json:"solver_version,omitempty"`
+
 	// timestamp
 	// Format: date-time
 	Timestamp strfmt.DateTime `json:"timestamp,omitempty"`
@@ -40,6 +46,10 @@ type Order struct {
 // Validate validates this order
 func (m *Order) Validate(formats strfmt.Registry) error {
 	var res []error
+
+	if err := m.validateAnnotations(formats); err != nil {
+		res = append(res, err)
+	}
 
 	if err := m.validateOrderID(formats); err != nil {
 		res = append(res, err)
@@ -60,6 +70,24 @@ func (m *Order) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *Order) validateAnnotations(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.Annotations) { // not required
+		return nil
+	}
+
+	if m.Annotations != nil {
+		if err := m.Annotations.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("annotations")
+			}
+			return err
+		}
+	}
+
 	return nil
 }
 

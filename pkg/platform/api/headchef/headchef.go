@@ -11,6 +11,7 @@ import (
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/retryhttp"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_client"
@@ -26,7 +27,7 @@ var (
 )
 
 type BuildStatus struct {
-	Started   chan struct{}
+	Started   chan *headchef_models.BuildStatusResponse
 	Failed    chan string
 	Completed chan *headchef_models.BuildStatusResponse
 	RunFail   chan *failures.Failure
@@ -40,7 +41,7 @@ type BuildAnnotations struct {
 
 func NewBuildStatus() *BuildStatus {
 	return &BuildStatus{
-		Started:   make(chan struct{}),
+		Started:   make(chan *headchef_models.BuildStatusResponse),
 		Failed:    make(chan string),
 		Completed: make(chan *headchef_models.BuildStatusResponse),
 		RunFail:   make(chan *failures.Failure),
@@ -64,6 +65,7 @@ func InitClient() *Client {
 }
 
 func NewClient(apiURL *url.URL) *Client {
+	logging.Debug("apiURL: %s", apiURL.String())
 	transportRuntime := httptransport.New(apiURL.Host, apiURL.Path, []string{apiURL.Scheme})
 	transportRuntime.Transport = api.NewRoundTripper()
 
@@ -148,7 +150,7 @@ func (r *Client) reqBuild(buildReq *headchef_models.V1BuildRequest, buildStatus 
 		}
 		buildStatus.RunFail <- FailBuildReqErrorResp.New(msg)
 	case accepted != nil:
-		buildStatus.Started <- struct{}{}
+		buildStatus.Started <- accepted.Payload
 	case created != nil:
 		if created.Payload.Type == nil {
 			requestBytes, err := buildReq.MarshalBinary()
@@ -172,7 +174,7 @@ func (r *Client) reqBuild(buildReq *headchef_models.V1BuildRequest, buildStatus 
 		case headchef_models.BuildStatusResponseTypeBuildFailed:
 			buildStatus.Failed <- created.Payload.Message
 		case headchef_models.BuildStatusResponseTypeBuildStarted:
-			buildStatus.Started <- struct{}{}
+			buildStatus.Started <- created.Payload
 		default:
 			msg := fmt.Sprintf(
 				"created response cannot be handled: unknown type %q",

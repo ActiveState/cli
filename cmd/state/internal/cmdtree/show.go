@@ -14,7 +14,9 @@ func newShowCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"show",
+		locale.Tl("show_title", "Showing Project Details"),
 		locale.T("show_project"),
+		prime.Output(),
 		nil,
 		[]*captain.Argument{
 			{

@@ -15,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
@@ -60,13 +61,16 @@ scripts:
 func captureExecCommand(t *testing.T, tmplCmdName, cmdName string, cmdArgs []string) (string, error) {
 	failures.ResetHandled()
 
-	project := setupProjectWithScriptsExpectingArgs(t, tmplCmdName)
-	project.Persist()
+	pjfile := setupProjectWithScriptsExpectingArgs(t, tmplCmdName)
+	pjfile.Persist()
 	defer projectfile.Reset()
+
+	proj, fail := project.New(pjfile, nil, nil)
+	require.NoError(t, fail.ToError())
 
 	var err error
 	outStr, outErr := osutil.CaptureStdout(func() {
-		err = run(outputhelper.NewCatcher(), subshell.New(), cmdName, cmdArgs)
+		err = run(outputhelper.NewCatcher(), subshell.New(), proj, cmdName, cmdArgs)
 	})
 	require.NoError(t, outErr, "error capturing stdout")
 	require.NoError(t, failures.Handled(), "No failures handled")

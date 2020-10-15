@@ -15,10 +15,20 @@ namespace ActiveState
 
         public static ActionResult Run(Session session, string cmd, string args, out string output)
         {
-            return RunWithProgress(session, cmd, args, 0, out output);
+            return RunInternal(session, cmd, args, 0, true, out output);
         }
 
         public static ActionResult RunWithProgress(Session session, string cmd, string args, int limit, out string output)
+        {
+            return RunInternal(session, cmd, args, limit, true, out output);
+        }
+
+        public static ActionResult RunAuthCommand(Session session, string cmd, string args, out string output)
+        {
+            return RunInternal(session, cmd, args, 0, false, out output);
+        }
+
+        private static ActionResult RunInternal(Session session, string cmd, string args, int limit, bool reportCmd, out string output)
         {
             var errBuilder = new StringBuilder();
             var outputBuilder = new StringBuilder();
@@ -126,10 +136,15 @@ namespace ActiveState
                         {
                             title = output;
                         }
+                        var customData = new Dictionary<string, object> { { "output", output }, { "err", errBuilder.ToString() } };
+                        if (reportCmd)
+                        {
+                            customData["cmd"] = cmd;
+                        }
                         RollbarReport.Critical(
                             string.Format("failed due to return code: {0} - start: {1}", exitCode, title),
                             session,
-                            new Dictionary<string, object> { { "output", output }, { "err", errBuilder.ToString() }, { "cmd", cmd } }
+                            customData
                         );
                     }
 

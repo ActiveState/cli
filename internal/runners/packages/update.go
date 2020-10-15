@@ -33,7 +33,7 @@ func (u *Update) Run(params UpdateRunParams) error {
 	logging.Debug("ExecuteUpdate")
 
 	pj := project.Get()
-	language, fail := model.DefaultLanguageForProject(pj.Owner(), pj.Name())
+	language, fail := model.DefaultLanguageNameForProject(pj.Owner(), pj.Name())
 	if fail != nil {
 		return fail.WithDescription("err_fetch_languages")
 	}
@@ -47,5 +47,5 @@ func (u *Update) Run(params UpdateRunParams) error {
 		version = *ingredientVersion.Version.Version
 	}
 
-	return executeAddUpdate(u.out, u.Prompter, language, name, version, model.OperationUpdated)
+	return executePackageOperation(u.out, u.Prompter, language, name, version, model.OperationUpdated)
 }

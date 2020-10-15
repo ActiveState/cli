@@ -137,6 +137,9 @@ const SecretsURL = "https://platform.activestate.com" + SecretsAPIPath
 // HeadChefAPIPath is the api path used for the headchef api
 const HeadChefAPIPath = "/sv/head-chef"
 
+// BuildLogStreamerPath is the websocket API used for streaming build results
+const BuildLogStreamerPath = "/sv/build-log-streamer"
+
 // InventoryAPIPath is the api path used for the secrets api
 const InventoryAPIPath = "/sv/inventory-api-v1"
 
@@ -182,6 +185,7 @@ const (
 	Win10Bit64UUID = "78977bc8-0f32-519d-80f3-9043f059398c"
 	LinuxBit64UUID = "681d5381-518c-5f4c-b367-df05c8d525e2"
 	MacBit64UUID   = "96b7e6f2-bebf-564c-bc1c-f04482398f38"
+	ValidZeroUUID  = "00000000-0000-0000-0000-000000000000"
 )
 
 // ActivePythonDistsDir represents the base name of a directory where ActivePython dists will be installed under.
@@ -215,11 +219,20 @@ const TermsOfServiceURLText = "https://www.activestate.com/wp-content/uploads/20
 // TermsOfServiceURLLatest is the URL to get the latest terms of service in PDF form
 const TermsOfServiceURLLatest = "https://www.activestate.com/wp-content/uploads/2018/10/activestate_platform_terms_service_agreement.pdf"
 
-// RCAppendStartLine is the start line used to denote our environment config in RC files
-const RCAppendStartLine = "-- START ACTIVESTATE RUNTIME ENVIRONMENT"
+// RCAppendDeployStartLine is the start line used to denote our deploy environment config in RC files
+const RCAppendDeployStartLine = "-- START ACTIVESTATE DEPLOY RUNTIME ENVIRONMENT"
 
-// RCAppendStopLine is the end line used to denote our environment config in RC files
-const RCAppendStopLine = "-- STOP ACTIVESTATE RUNTIME ENVIRONMENT"
+// RCAppendDeployStopLine is the end line used to denote our deploy environment config in RC files
+const RCAppendDeployStopLine = "-- STOP ACTIVESTATE DEPLOY RUNTIME ENVIRONMENT"
+
+// RCAppendDefaultStartLine is the start line used to denote our default environment config in RC files
+const RCAppendDefaultStartLine = "-- START ACTIVESTATE DEFAULT RUNTIME ENVIRONMENT"
+
+// RCAppendDefaultStopLine is the end line used to denote our default environment config in RC files
+const RCAppendDefaultStopLine = "-- STOP ACTIVESTATE DEFAULT RUNTIME ENVIRONMENT"
 
 // ForumsURL is the URL to the state tool forums
 const ForumsURL = "https://community.activestate.com/c/state-tool/"
+
+// GlobalDefaultPrefname is the pref that holds the path to the globally defaulted project
+const GlobalDefaultPrefname = "default_project_path"

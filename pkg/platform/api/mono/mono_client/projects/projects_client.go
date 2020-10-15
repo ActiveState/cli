@@ -27,6 +27,8 @@ type Client struct {
 
 // ClientService is the interface for Client methods
 type ClientService interface {
+	AddBranch(params *AddBranchParams, authInfo runtime.ClientAuthInfoWriter) (*AddBranchOK, error)
+
 	AddDistro(params *AddDistroParams, authInfo runtime.ClientAuthInfoWriter) (*AddDistroOK, error)
 
 	AddFormat(params *AddFormatParams, authInfo runtime.ClientAuthInfoWriter) (*AddFormatOK, error)
@@ -60,6 +62,43 @@ type ClientService interface {
 	ListReleases(params *ListReleasesParams, authInfo runtime.ClientAuthInfoWriter) (*ListReleasesOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
+}
+
+/*
+  AddBranch adds branch
+
+  Add a branch on the specified project
+*/
+func (a *Client) AddBranch(params *AddBranchParams, authInfo runtime.ClientAuthInfoWriter) (*AddBranchOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewAddBranchParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "addBranch",
+		Method:             "POST",
+		PathPattern:        "/projects/{projectID}/branches",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http", "https"},
+		Params:             params,
+		Reader:             &AddBranchReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*AddBranchOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for addBranch: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
