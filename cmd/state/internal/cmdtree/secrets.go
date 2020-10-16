@@ -1,7 +1,6 @@
 package cmdtree
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/captain"
@@ -30,7 +29,6 @@ func newSecretsCommand(secretsClient *secretsapi.Client, prime *primer.Values) *
 		},
 		nil,
 		func(_ *captain.Command, args []string) error {
-			fmt.Println(args)
 			if len(args) > 0 && strings.HasPrefix(args[0], "var") {
 				prime.Output().Error(locale.T("secrets_warn_deprecated_var"))
 			}
