@@ -21,6 +21,7 @@ import (
 
 type listPrimeable interface {
 	primer.Outputer
+	primer.Projecter
 }
 
 type ListRunParams struct {
@@ -30,21 +31,23 @@ type ListRunParams struct {
 type List struct {
 	secretsClient *secretsapi.Client
 	out           output.Outputer
+	proj          *project.Project
 }
 
 func NewList(client *secretsapi.Client, p listPrimeable) *List {
 	return &List{
 		secretsClient: client,
 		out:           p.Output(),
+		proj:          p.Project(),
 	}
 }
 
 func (l *List) Run(params ListRunParams) error {
-	if err := CheckSecretsAccess(); err != nil {
+	if err := checkSecretsAccess(l.proj); err != nil {
 		return err
 	}
 
-	defs, fail := definedSecrets(l.secretsClient, params.Filter)
+	defs, fail := definedSecrets(l.proj, l.secretsClient, params.Filter)
 	if fail != nil {
 		return fail.WithDescription(locale.T("secrets_err_defined"))
 	}
@@ -78,8 +81,8 @@ func (l *List) Run(params ListRunParams) error {
 	}
 }
 
-func CheckSecretsAccess() error {
-	allowed, fail := access.Secrets(project.Get().Owner())
+func checkSecretsAccess(proj *project.Project) error {
+	allowed, fail := access.Secrets(proj.Owner())
 	if fail != nil {
 		return fail.WithDescription(locale.T("secrets_err_access"))
 	}
@@ -89,24 +92,22 @@ func CheckSecretsAccess() error {
 	return nil
 }
 
-func definedSecrets(secCli *secretsapi.Client, filter string) ([]*secretsModels.SecretDefinition, *failures.Failure) {
-	prj := project.Get()
-	logging.Debug("listing variables for org=%s, project=%s", prj.Owner(), prj.Name())
+func definedSecrets(proj *project.Project, secCli *secretsapi.Client, filter string) ([]*secretsModels.SecretDefinition, *failures.Failure) {
+	logging.Debug("listing variables for org=%s, project=%s", proj.Owner(), proj.Name())
 
-	secretDefs, fail := secrets.DefsByProject(secCli, prj.Owner(), prj.Name())
+	secretDefs, fail := secrets.DefsByProject(secCli, proj.Owner(), proj.Name())
 	if fail != nil {
 		return nil, fail
 	}
 
 	if filter != "" {
-		secretDefs = filterSecrets(secretDefs, filter)
+		secretDefs = filterSecrets(proj, secretDefs, filter)
 	}
 
 	return secretDefs, nil
 }
 
-func filterSecrets(secrectDefs []*secretsModels.SecretDefinition, filter string) []*secretsModels.SecretDefinition {
-	prj := project.Get()
+func filterSecrets(proj *project.Project, secrectDefs []*secretsModels.SecretDefinition, filter string) []*secretsModels.SecretDefinition {
 	secrectDefsFiltered := []*secretsModels.SecretDefinition{}
 
 	oldExpander := project.RegisteredExpander("secrets")
@@ -114,9 +115,9 @@ func filterSecrets(secrectDefs []*secretsModels.SecretDefinition, filter string)
 		defer project.RegisterExpander("secrets", oldExpander)
 	}
 
-	expander := project.NewSecretExpander(secretsapi.Get(), prj)
+	expander := project.NewSecretExpander(secretsapi.Get(), proj)
 	project.RegisterExpander("secrets", expander.Expand)
-	project.ExpandFromProject(fmt.Sprintf("$%s", filter), prj)
+	project.ExpandFromProject(fmt.Sprintf("$%s", filter), proj)
 	accessedSecrets := expander.SecretsAccessed()
 	if accessedSecrets == nil {
 		return secrectDefsFiltered

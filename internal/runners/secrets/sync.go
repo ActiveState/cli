@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/secrets"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
@@ -18,26 +19,31 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
+type syncPrimeable interface {
+	primer.Projecter
+}
+
 type SyncRunParams struct {
 }
 
 type Sync struct {
 	secretsClient *secretsapi.Client
+	proj          *project.Project
 }
 
-func NewSync(client *secretsapi.Client) *Sync {
+func NewSync(client *secretsapi.Client, p syncPrimeable) *Sync {
 	return &Sync{
 		secretsClient: client,
+		proj:          p.Project(),
 	}
 }
 
 func (s *Sync) Run(params SyncRunParams) error {
-	if err := CheckSecretsAccess(); err != nil {
+	if err := checkSecretsAccess(s.proj); err != nil {
 		return err
 	}
 
-	project := project.Get()
-	org, failure := model.FetchOrgByURLName(project.Owner())
+	org, failure := model.FetchOrgByURLName(s.proj.Owner())
 
 	if failure == nil {
 		failure = synchronizeEachOrgMember(s.secretsClient, org)

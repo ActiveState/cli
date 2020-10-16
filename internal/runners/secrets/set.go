@@ -2,7 +2,13 @@ package secrets
 
 import (
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/pkg/project"
 )
+
+type setPrimeable interface {
+	primer.Projecter
+}
 
 type SetRunParams struct {
 	Name  string
@@ -10,14 +16,17 @@ type SetRunParams struct {
 }
 
 type Set struct {
+	proj *project.Project
 }
 
-func NewSet() *Set {
-	return &Set{}
+func NewSet(p setPrimeable) *Set {
+	return &Set{
+		proj: p.Project(),
+	}
 }
 
 func (s *Set) Run(params SetRunParams) error {
-	if err := CheckSecretsAccess(); err != nil {
+	if err := checkSecretsAccess(s.proj); err != nil {
 		return err
 	}
 

@@ -9,10 +9,12 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/pkg/project"
 )
 
 type getPrimeable interface {
 	primer.Outputer
+	primer.Projecter
 }
 
 type GetRunParams struct {
@@ -20,17 +22,19 @@ type GetRunParams struct {
 }
 
 type Get struct {
-	out output.Outputer
+	proj *project.Project
+	out  output.Outputer
 }
 
 func NewGet(p getPrimeable) *Get {
 	return &Get{
-		out: p.Output(),
+		out:  p.Output(),
+		proj: p.Project(),
 	}
 }
 
 func (g *Get) Run(params GetRunParams) error {
-	if err := CheckSecretsAccess(); err != nil {
+	if err := checkSecretsAccess(g.proj); err != nil {
 		return err
 	}
 

@@ -68,7 +68,7 @@ func newSecretsGetCommand(prime *primer.Values) *captain.Command {
 }
 
 func newSecretsSetCommand(prime *primer.Values) *captain.Command {
-	runner := secrets.NewSet()
+	runner := secrets.NewSet(prime)
 
 	params := secrets.SetRunParams{}
 
@@ -99,7 +99,7 @@ func newSecretsSetCommand(prime *primer.Values) *captain.Command {
 }
 
 func newSecretsSyncCommand(secretsClient *secretsapi.Client, prime *primer.Values) *captain.Command {
-	runner := secrets.NewSync(secretsClient)
+	runner := secrets.NewSync(secretsClient, prime)
 
 	params := secrets.SyncRunParams{}
 
