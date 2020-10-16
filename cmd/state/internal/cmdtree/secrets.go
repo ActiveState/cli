@@ -23,7 +23,7 @@ func newSecretsCommand(secretsClient *secretsapi.Client, prime *primer.Values) *
 		[]*captain.Flag{
 			{
 				Name:        "filter-usedby",
-				Description: "secrets_flag_filter",
+				Description: locale.T("secrets_flag_filter"),
 				Value:       &params.Filter,
 			},
 		},
@@ -55,8 +55,8 @@ func newSecretsGetCommand(prime *primer.Values) *captain.Command {
 		nil,
 		[]*captain.Argument{
 			{
-				Name:        "secrets_get_arg_name",
-				Description: "secrets_get_arg_name_description",
+				Name:        locale.T("secrets_get_arg_name"),
+				Description: locale.T("secrets_get_arg_name_description"),
 				Value:       &params.Name,
 				Required:    true,
 			},
@@ -80,14 +80,14 @@ func newSecretsSetCommand(prime *primer.Values) *captain.Command {
 		nil,
 		[]*captain.Argument{
 			{
-				Name:        "secrets_set_arg_name",
-				Description: "secrets_set_arg_name_description",
+				Name:        locale.T("secrets_set_arg_name_name"),
+				Description: locale.T("secrets_set_arg_name_description"),
 				Value:       &params.Name,
 				Required:    true,
 			},
 			{
-				Name:        "secrets_get_arg_name",
-				Description: "secrets_get_arg_name_description",
+				Name:        locale.T("secrets_set_arg_value_name"),
+				Description: locale.T("secrets_set_arg_value_description"),
 				Value:       &params.Value,
 				Required:    true,
 			},
