@@ -1,0 +1,119 @@
+package cmdtree
+
+import (
+	"fmt"
+	"strings"
+
+	"github.com/ActiveState/cli/internal/captain"
+	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/runners/secrets"
+	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
+)
+
+func newSecretsCommand(secretsClient *secretsapi.Client, prime *primer.Values) *captain.Command {
+	runner := secrets.NewList(secretsClient, prime)
+
+	params := secrets.ListRunParams{}
+
+	ccmd := captain.NewCommand(
+		"secrets",
+		locale.Tl("secrets_title", "Listing Secrets"),
+		locale.T("secrets_cmd_description"),
+		prime.Output(),
+		[]*captain.Flag{
+			{
+				Name:        "filter-usedby",
+				Description: "secrets_flag_filter",
+				Value:       &params.Filter,
+			},
+		},
+		nil,
+		func(_ *captain.Command, args []string) error {
+			fmt.Println(args)
+			if len(args) > 0 && strings.HasPrefix(args[0], "var") {
+				prime.Output().Error(locale.T("secrets_warn_deprecated_var"))
+			}
+
+			return runner.Run(params)
+		},
+	)
+
+	ccmd.SetAliases("variables", "vars")
+
+	return ccmd
+}
+
+func newSecretsGetCommand(prime *primer.Values) *captain.Command {
+	runner := secrets.NewGet(prime)
+
+	params := secrets.GetRunParams{}
+
+	return captain.NewCommand(
+		"get",
+		locale.Tl("secrets_get_title", "Getting Secret"),
+		locale.T("secrets_get_cmd_description"),
+		prime.Output(),
+		nil,
+		[]*captain.Argument{
+			{
+				Name:        "secrets_get_arg_name",
+				Description: "secrets_get_arg_name_description",
+				Value:       &params.Name,
+				Required:    true,
+			},
+		},
+		func(_ *captain.Command, _ []string) error {
+			return runner.Run(params)
+		},
+	)
+}
+
+func newSecretsSetCommand(prime *primer.Values) *captain.Command {
+	runner := secrets.NewSet()
+
+	params := secrets.SetRunParams{}
+
+	return captain.NewCommand(
+		"set",
+		locale.Tl("secrets_set_title", "Setting Secret"),
+		locale.T("secrets_set_cmd_description"),
+		prime.Output(),
+		nil,
+		[]*captain.Argument{
+			{
+				Name:        "secrets_set_arg_name",
+				Description: "secrets_set_arg_name_description",
+				Value:       &params.Name,
+				Required:    true,
+			},
+			{
+				Name:        "secrets_get_arg_name",
+				Description: "secrets_get_arg_name_description",
+				Value:       &params.Value,
+				Required:    true,
+			},
+		},
+		func(_ *captain.Command, _ []string) error {
+			return runner.Run(params)
+		},
+	)
+}
+
+func newSecretsSyncCommand(secretsClient *secretsapi.Client, prime *primer.Values) *captain.Command {
+	runner := secrets.NewSync(secretsClient)
+
+	params := secrets.SyncRunParams{}
+
+	return captain.NewCommand(
+		"sync",
+		locale.Tl("secrets_sync_title", "Synchronizing Secrets"),
+		locale.T("secrets_sync_cmd_description"),
+		prime.Output(),
+		nil,
+		nil,
+		func(_ *captain.Command, _ []string) error {
+			return runner.Run(params)
+		},
+	)
+}

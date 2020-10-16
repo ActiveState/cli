@@ -4,38 +4,35 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"strings"
-
-	"github.com/spf13/cobra"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/pkg/cmdlets/commands"
+	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 )
 
-func buildGetCommand(cmd *Command) *commands.Command {
-	return &commands.Command{
-		Name:        "get",
-		Description: "secrets_get_cmd_description",
-		Run:         cmd.ExecuteGet,
+type getPrimeable interface {
+	primer.Outputer
+}
 
-		Arguments: []*commands.Argument{
-			&commands.Argument{
-				Name:        "secrets_get_arg_name",
-				Description: "secrets_get_arg_name_description",
-				Variable:    &cmd.Args.Name,
-				Required:    true,
-			},
-		},
+type GetRunParams struct {
+	Name string
+}
+
+type Get struct {
+	out output.Outputer
+}
+
+func NewGet(p getPrimeable) *Get {
+	return &Get{
+		out: p.Output(),
 	}
 }
 
-// ExecuteGet processes the `secrets get` command.
-func (cmd *Command) ExecuteGet(_ *cobra.Command, args []string) {
-	secret, valuePtr, fail := getSecretWithValue(cmd.Args.Name)
+func (g *Get) Run(params GetRunParams) error {
+	secret, valuePtr, fail := getSecretWithValue(params.Name)
 	if fail != nil {
-		failures.Handle(fail, locale.T("secrets_err"))
-		return
+		return fail.WithDescription(locale.T("secrets_err"))
 	}
 
 	var value string
@@ -45,31 +42,34 @@ func (cmd *Command) ExecuteGet(_ *cobra.Command, args []string) {
 		value = *valuePtr
 	}
 
-	switch commands.Output(strings.ToLower(*cmd.Flags.Output)) {
-	case commands.JSON, commands.EditorV0, commands.Editor:
-		printJSON(&SecretExport{secret.Name(), secret.Scope(), secret.Description(), valuePtr != nil, value})
+	switch g.out.Type() {
+	case output.JSONFormatName, output.EditorV0FormatName, output.EditorFormatName:
+		fail := printJSON(&SecretExport{secret.Name(), secret.Scope(), secret.Description(), valuePtr != nil, value})
+		if fail != nil {
+			return fail.WithDescription(locale.T("secrets_err"))
+		}
 	default:
 		if valuePtr == nil {
-			err := "secrets_err_project_not_defined"
+			l10nKey := "secrets_err_project_not_defined"
 			if secret.IsUser() {
-				err = "secrets_err_user_not_defined"
+				l10nKey = "secrets_err_user_not_defined"
 			}
-			fmt.Fprint(os.Stderr, locale.Tr(err, cmd.Args.Name))
-			cmd.config.Exiter(1)
-			return
+			return locale.NewError(l10nKey, params.Name)
 		}
 		fmt.Fprint(os.Stdout, *valuePtr)
 	}
+
+	return nil
 }
 
-func printJSON(secretJSON *SecretExport) {
+func printJSON(secretJSON *SecretExport) *failures.Failure {
 	var data []byte
 
 	data, err := json.Marshal(secretJSON)
 	if err != nil {
-		failures.Handle(failures.FailMarshal.Wrap(err), locale.T("secrets_err"))
+		return failures.FailMarshal.Wrap(err)
 	}
 
 	fmt.Fprint(os.Stdout, string(data))
-	return
+	return nil
 }

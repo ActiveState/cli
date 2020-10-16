@@ -5,13 +5,10 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/spf13/cobra"
-
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/secrets"
-	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
@@ -21,26 +18,32 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
-func buildSyncCommand(cmd *Command) *commands.Command {
-	return &commands.Command{
-		Name:        "sync",
-		Description: "secrets_sync_cmd_description",
-		Run:         cmd.ExecuteSync,
+type SyncRunParams struct {
+}
+
+type Sync struct {
+	secretsClient *secretsapi.Client
+}
+
+func NewSync(client *secretsapi.Client) *Sync {
+	return &Sync{
+		secretsClient: client,
 	}
 }
 
-// ExecuteSync processes the `secrets sync` command.
-func (cmd *Command) ExecuteSync(_ *cobra.Command, args []string) {
+func (s *Sync) Run(params SyncRunParams) error {
 	project := project.Get()
 	org, failure := model.FetchOrgByURLName(project.Owner())
 
 	if failure == nil {
-		failure = synchronizeEachOrgMember(cmd.secretsClient, org)
+		failure = synchronizeEachOrgMember(s.secretsClient, org)
 	}
 
 	if failure != nil {
-		failures.Handle(failure, locale.T("secrets_err"))
+		failure.WithDescription(locale.T("secrets_err"))
 	}
+
+	return nil
 }
 
 func synchronizeEachOrgMember(secretsClient *secretsapi.Client, org *mono_models.Organization) *failures.Failure {

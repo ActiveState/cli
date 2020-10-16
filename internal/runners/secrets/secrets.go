@@ -4,132 +4,66 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/bndr/gotabulate"
-	"github.com/spf13/cobra"
 
 	"github.com/ActiveState/cli/internal/access"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/secrets"
-	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	secretsModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
-// Command represents the secrets command and its dependencies.
-type Command struct {
-	config        *commands.Command
+type listPrimeable interface {
+	primer.Outputer
+}
+
+type ListRunParams struct {
+	Filter string
+}
+
+type List struct {
 	secretsClient *secretsapi.Client
+	out           output.Outputer
+}
 
-	Args struct {
-		Name            string
-		Value           string
-		ShareUserHandle string
-	}
-
-	Flags struct {
-		Filter *string
-		Output *string
+func NewList(client *secretsapi.Client, p listPrimeable) *List {
+	return &List{
+		secretsClient: client,
+		out:           p.Output(),
 	}
 }
 
-type SecretExport struct {
-	Name        string `json:"name"`
-	Scope       string `json:"scope"`
-	Description string `json:"description"`
-	HasValue    bool   `json:"has_value"`
-	Value       string `json:"value,omitempty"`
-}
-
-var out output.Outputer
-
-// NewCommand creates a new Keypair command.
-func NewCommand(secretsClient *secretsapi.Client, outFormat *string) *Command {
-	var flagFilter string
-
-	c := Command{
-		secretsClient: secretsClient,
-		config: &commands.Command{
-			Name:        "secrets",
-			Aliases:     []string{"variables", "vars"},
-			Description: "secrets_cmd_description",
-			Flags: []*commands.Flag{
-				{
-					Name:        "filter-usedby",
-					Description: "secrets_flag_filter",
-					Type:        commands.TypeString,
-					StringVar:   &flagFilter,
-				},
-			},
-		},
-	}
-
-	c.Flags.Filter = &flagFilter
-	c.Flags.Output = outFormat
-	c.config.Run = c.Execute
-	c.config.PersistentPreRun = c.checkSecretsAccess
-
-	c.config.Append(buildGetCommand(&c))
-	c.config.Append(buildSetCommand(&c))
-	c.config.Append(buildSyncCommand(&c))
-
-	return &c
-}
-
-func (cmd *Command) checkSecretsAccess(_ *cobra.Command, _ []string) {
-	allowed, fail := access.Secrets(project.Get().Owner())
+func (l *List) Run(params ListRunParams) error {
+	//c.config.PersistentPreRun = c.checkSecretsAccess
+	defs, fail := definedSecrets(l.secretsClient, params.Filter)
 	if fail != nil {
-		failures.Handle(fail, locale.T("secrets_err_access"))
-	}
-	if !allowed {
-		fmt.Fprint(os.Stderr, locale.T("secrets_warning_no_access"))
-		cmd.config.Exiter(1)
-	}
-}
-
-// Config returns the underlying commands.Command definition.
-func (cmd *Command) Config() *commands.Command {
-	return cmd.config
-}
-
-// Execute processes the secrets command.
-func (cmd *Command) Execute(_ *cobra.Command, args []string) {
-	if strings.HasPrefix(os.Args[1], "var") {
-		fmt.Fprint(os.Stderr, locale.T("secrets_warn_deprecated_var"))
-	}
-
-	defs, fail := definedSecrets(cmd.secretsClient, *cmd.Flags.Filter)
-	if fail != nil {
-		failures.Handle(fail, locale.T("secrets_err_defined"))
-		return
+		return fail.WithDescription(locale.T("secrets_err_defined"))
 	}
 
 	secretExports, fail := defsToSecrets(defs)
 	if fail != nil {
-		failures.Handle(fail, locale.T("secrets_err_values"))
-		return
+		return fail.WithDescription(locale.T("secrets_err_values"))
 	}
 
-	switch commands.Output(strings.ToLower(*cmd.Flags.Output)) {
-	case commands.JSON, commands.EditorV0, commands.Editor:
+	switch l.out.Type() {
+	case output.JSONFormatName, output.EditorV0FormatName, output.EditorFormatName:
 		data, fail := secretsAsJSON(secretExports)
 		if fail != nil {
-			failures.Handle(fail, locale.T("secrets_err_output"))
-			return
+			return fail.WithDescription(locale.T("secrets_err_output"))
 		}
 
 		fmt.Fprint(os.Stdout, string(data))
-		return
+		return nil
 	default:
 		rows, fail := secretsToRows(secretExports)
 		if fail != nil {
-			failures.Handle(fail, locale.T("secrets_err_output"))
-			return
+			return fail.WithDescription(locale.T("secrets_err_output"))
 		}
 
 		t := gotabulate.Create(rows)
@@ -137,7 +71,19 @@ func (cmd *Command) Execute(_ *cobra.Command, args []string) {
 		t.SetHideLines([]string{"betweenLine", "top", "aboveTitle", "LineTop", "LineBottom", "bottomLine"}) // Don't print whitespace lines
 		t.SetAlign("left")
 		fmt.Fprint(os.Stdout, t.Render("simple"))
+		return nil
 	}
+}
+
+func CheckSecretsAccess() error {
+	allowed, fail := access.Secrets(project.Get().Owner())
+	if fail != nil {
+		return fail.WithDescription(locale.T("secrets_err_access"))
+	}
+	if !allowed {
+		return locale.NewError("secrets_warning_no_access")
+	}
+	return nil
 }
 
 func definedSecrets(secCli *secretsapi.Client, filter string) ([]*secretsModels.SecretDefinition, *failures.Failure) {
@@ -242,4 +188,12 @@ func ptrToString(s *string, fieldName string) (string, *failures.Failure) {
 		return "", failures.FailVerify.New("secrets_err_missing_field", fieldName)
 	}
 	return *s, nil
+}
+
+type SecretExport struct {
+	Name        string `json:"name"`
+	Scope       string `json:"scope"`
+	Description string `json:"description"`
+	HasValue    bool   `json:"has_value"`
+	Value       string `json:"value,omitempty"`
 }
