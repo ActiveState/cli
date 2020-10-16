@@ -82,7 +82,7 @@ func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, nam
 	// venvExePath stores a virtual environment's PATH value. If the script
 	// requires activation this is the PATH we should be searching for
 	// executables in.
-	var venvExePath string
+	path := os.Getenv("PATH")
 
 	// Activate the state if needed.
 	if !script.Standalone() && !subshell.IsActivated() {
@@ -106,7 +106,7 @@ func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, nam
 		if err != nil {
 			return err
 		}
-		venvExePath = env["PATH"]
+		path = env["PATH"]
 	}
 
 	lang := language.Unknown
@@ -123,13 +123,11 @@ func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, nam
 
 	var attempted []string
 	for _, l := range script.Languages() {
-		var path, execPath string
+		var execPath string
 		if l.Executable().Available() {
 			execPath = l.Executable().Name()
-			path = venvExePath
 		} else {
 			execPath = l.String()
-			path = os.Getenv("PATH")
 		}
 
 		if l.Executable().Builtin() && rt.GOOS == "windows" {
@@ -148,6 +146,14 @@ func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, nam
 	}
 
 	if lang == language.Unknown {
+		if len(attempted) > 0 {
+			return locale.NewInputError(
+				"err_run_unknown_language_fallback",
+				"The language for this script is not supported or not available on your system. Attempted script execution with: {{.V0}}. Please configure the 'language' field with an available option (one, or more, of: {{.V1}})",
+				strings.Join(attempted, ", "),
+				strings.Join(language.RecognizedNames(), ", "),
+			)
+		}
 		return locale.NewInputError(
 			"err_run_unknown_language",
 			"The language for this script is not supported or not available on your system. Please configure the 'language' field with a valid option (one, or more, of: {{.V0}})", strings.Join(language.RecognizedNames(), ", "),
@@ -173,7 +179,7 @@ func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, nam
 			return locale.WrapInputError(
 				err,
 				"err_run_script",
-				"Script execution fell back to {{.V0}} after {{.V1}} was not detected in your project or system. Please ensure your script is compatible with {{.V0}}, {{.V1}}",
+				"Script execution fell back to {{.V0}} after {{.V1}} was not detected in your project or system. Please ensure your script is compatible with one, or more, of: {{.V0}}, {{.V1}}",
 				lang.String(),
 				strings.Join(attempted, ", "),
 			)
