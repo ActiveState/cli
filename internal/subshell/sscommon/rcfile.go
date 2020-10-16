@@ -196,7 +196,8 @@ func SetupProjectRcFile(templateName, ext string, env map[string]string, out out
 	}
 
 	if len(inuse) > 0 {
-		out.Notice(locale.Tr("warn_script_name_in_use", strings.Join(inuse, "\n  - "), inuse[0], prj.NormalizedName(), explicitName))
+		out.Notice(output.Heading(locale.Tl("warn_scriptinuse_title", "Warning: Script Names Already In Use")))
+		out.Notice(locale.Tr("warn_script_name_in_use", strings.Join(inuse, "\n  [DISABLED]-[/RESET] "), inuse[0], explicitName))
 	}
 
 	wd, err := osutils.Getwd()

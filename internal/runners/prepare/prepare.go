@@ -41,6 +41,7 @@ func (r *Prepare) Run() error {
 	if runtime.GOOS == "windows" {
 		err := setStateProtocol()
 		if err != nil {
+			r.out.Notice(output.Heading(locale.Tl("warning", "Warning")))
 			r.out.Notice(locale.T("prepare_protocol_warning"))
 		}
 	}
@@ -50,6 +51,7 @@ func (r *Prepare) Run() error {
 			return locale.WrapError(err, "err_prepare_update_env", "Could not prepare environment.")
 		}
 		logging.Debug("Encountered failure attempting to update user environment: %s", err)
+		r.out.Notice(output.Heading(locale.Tl("warning", "Warning")))
 		r.out.Notice(locale.T("prepare_env_warning"))
 	}
 

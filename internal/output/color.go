@@ -12,7 +12,7 @@ var colorRx *regexp.Regexp
 
 func init() {
 	var err error
-	colorRx, err = regexp.Compile(`\[(HEADING|NOTICE|INFO|ERROR|DISABLED|ACTIONABLE|/RESET)!?\]`)
+	colorRx, err = regexp.Compile(`\[(HEADING|NOTICE|SUCCESS|ERROR|DISABLED|ACTIONABLE|/RESET)!?\]`)
 	if err != nil {
 		panic(fmt.Sprintf("Could not compile regex: %v", err))
 	}
@@ -21,7 +21,7 @@ func init() {
 type ColorTheme interface {
 	Heading(writer io.Writer)
 	Notice(writer io.Writer)
-	Info(writer io.Writer)
+	Success(writer io.Writer)
 	Error(writer io.Writer)
 	Disabled(writer io.Writer)
 	Actionable(writer io.Writer)
@@ -42,8 +42,8 @@ func (dct defaultColorTheme) Notice(writer io.Writer) {
 	colorstyle.New(writer).SetStyle(colorstyle.Default, true)
 }
 
-// Info switches to green foreground
-func (dct defaultColorTheme) Info(writer io.Writer) {
+// Success switches to green foreground
+func (dct defaultColorTheme) Success(writer io.Writer) {
 	colorstyle.New(writer).SetStyle(colorstyle.Green, false)
 }
 
@@ -102,8 +102,8 @@ func colorize(ct ColorTheme, writer io.Writer, arg string) {
 		ct.Heading(writer)
 	case `NOTICE`:
 		ct.Notice(writer)
-	case `INFO`:
-		ct.Info(writer)
+	case `SUCCESS`:
+		ct.Success(writer)
 	case `ERROR`:
 		ct.Error(writer)
 	case `DISABLED`:

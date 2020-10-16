@@ -35,6 +35,7 @@ func autoUpdate(args []string, out output.Outputer, pjPath string) (bool, int, e
 
 	defer updater.Cleanup()
 
+	out.Notice(output.Heading(locale.Tl("auto_update_title", "Auto Update")))
 	out.Notice(locale.Tr("auto_update_to_version", constants.Version, resultVersion))
 	code, err := relaunch()
 	return true, code, err

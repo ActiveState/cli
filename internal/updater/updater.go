@@ -110,6 +110,7 @@ func PrintUpdateMessage(pjPath string, out output.Outputer) {
 	}
 
 	if info != nil && info.Version != constants.Version {
+		out.Notice(output.Heading(locale.Tl("update_available_title", "Update Available")))
 		out.Notice(locale.Tr("update_available", constants.Version, info.Version))
 	}
 }

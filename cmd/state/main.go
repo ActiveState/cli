@@ -53,6 +53,7 @@ func main() {
 		if err != nil {
 			logging.Debug("Could not retrieve os version info: %v", err)
 		} else if osv.Major < 10 {
+			out.Notice(output.Heading(locale.Tl("compatibility_warning", "Compatibility Warning")))
 			out.Notice(locale.Tr(
 				"windows_compatibility_warning",
 				constants.ForumsURL,
@@ -166,6 +167,7 @@ func run(args []string, out output.Outputer) (int, error) {
 		if deprecated != nil {
 			date := deprecated.Date.Format(constants.DateFormatUser)
 			if !deprecated.DateReached {
+				out.Notice(output.Heading(locale.Tl("deprecation_title", "Deprecation Warning")))
 				out.Notice(locale.Tr("warn_deprecation", date, deprecated.Reason))
 			} else {
 				return 1, locale.NewInputError("err_deprecation", "You are running a version of the State Tool that is no longer supported! Reason: {{.V1}}", date, deprecated.Reason)

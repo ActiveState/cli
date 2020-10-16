@@ -89,7 +89,7 @@ func (t *Title) String() string {
 		}
 	}
 
-	return strings.Join(outLines, "\n") + "\n"
+	return strings.TrimSpace(strings.Join(outLines, "\n"))
 }
 
 // MarshalOutput implements output.Marshaller.

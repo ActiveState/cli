@@ -135,27 +135,17 @@ func runStepsWithFuncs(targetPath string, force, userScope bool, namespace proje
 		if err := installf(targetPath, installer, out); err != nil {
 			return err
 		}
-
-		if step == UnsetStep {
-			out.Notice("") // Some space between steps
-		}
 	}
 	if step == UnsetStep || step == ConfigureStep {
 		logging.Debug("Running configure step")
 		if err := configuref(targetPath, rt, out, subshell, namespace, userScope); err != nil {
 			return err
 		}
-		if step == UnsetStep {
-			out.Notice("") // Some space between steps
-		}
 	}
 	if step == UnsetStep || step == SymlinkStep {
 		logging.Debug("Running symlink step")
 		if err := symlinkf(targetPath, force, rt, out); err != nil {
 			return err
-		}
-		if step == UnsetStep {
-			out.Notice("") // Some space between steps
 		}
 	}
 	if step == UnsetStep || step == ReportStep {
@@ -171,7 +161,7 @@ func runStepsWithFuncs(targetPath string, force, userScope bool, namespace proje
 type installFunc func(path string, installer installable, out output.Outputer) error
 
 func install(path string, installer installable, out output.Outputer) error {
-	out.Notice(locale.T("deploy_install"))
+	out.Notice(output.Heading(locale.T("deploy_install")))
 	_, installed, fail := installer.Install()
 	if fail != nil {
 		return locale.WrapError(fail, "deploy_install_failed", "Installation failed.")
@@ -202,7 +192,7 @@ func configure(installpath string, runtime *runtime.Runtime, out output.Outputer
 		return err
 	}
 
-	out.Notice(locale.Tr("deploy_configure_shell", sshell.Shell()))
+	out.Notice(output.Heading(locale.Tr("deploy_configure_shell", sshell.Shell())))
 
 	fail := sshell.WriteUserEnv(env, sscommon.Deploy, userScope)
 	if fail != nil {
@@ -287,7 +277,7 @@ func symlinkTargetPath(targetDir string, path string) string {
 // target (with the same or a different extension) from a different directory.
 // Also: Only the executable with the highest priority according to pathExt is symlinked.
 func symlinkWithTarget(overwrite bool, symlinkPath string, exePaths []string, out output.Outputer) error {
-	out.Notice(locale.Tr("deploy_symlink", symlinkPath))
+	out.Notice(output.Heading(locale.Tr("deploy_symlink", symlinkPath)))
 
 	if fail := fileutils.MkdirUnlessExists(symlinkPath); fail != nil {
 		return locale.WrapInputError(
@@ -361,7 +351,7 @@ func report(path string, runtime *runtime.Runtime, out output.Outputer) error {
 		bins = strings.Split(path, string(os.PathListSeparator))
 	}
 
-	out.Notice(locale.T("deploy_info"))
+	out.Notice(output.Heading(locale.T("deploy_info")))
 
 	out.Print(Report{
 		BinaryDirectories: bins,

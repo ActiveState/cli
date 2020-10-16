@@ -121,9 +121,9 @@ func (r *Activate) run(params *ActivateParams) error {
 	updater.PrintUpdateMessage(proj.Source().Path(), r.out)
 
 	if proj.IsHeadless() {
-		r.out.Notice(locale.T("info_activating_state_by_commit"))
+		r.out.Notice(output.Heading(locale.T("info_activating_state_by_commit")))
 	} else {
-		r.out.Notice(locale.T("info_activating_state", proj))
+		r.out.Notice(output.Heading(locale.T("info_activating_state", proj)))
 	}
 
 	if proj.CommitID() == "" {

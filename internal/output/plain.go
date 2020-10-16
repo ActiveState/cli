@@ -30,8 +30,10 @@ const (
 	HidePlain     PlainOpts = "hidePlain"
 )
 
+const dash = "\u2500"
+
 // Plain is our plain outputer, it uses reflect to marshal the data.
-// Semantic highlighting tags are supported as [INFO]foo[/RESET]
+// Semantic highlighting tags are supported as [NOTICE]foo[/RESET]
 // Table output is supported if you pass a slice of structs
 // Struct keys are localized by sending them to the locale library as field_key (lowercase)
 type Plain struct {
@@ -63,8 +65,9 @@ func (f *Plain) Error(value interface{}) {
 // Notice will marshal and print the given value to the error writer, it wraps it in the notice format but otherwise the
 // only thing that identifies it as an error is the channel it writes it to
 func (f *Plain) Notice(value interface{}) {
-	f.write(f.cfg.ErrWriter, fmt.Sprintf("[NOTICE]%s[/RESET]\n", value))
+	f.write(f.cfg.ErrWriter, fmt.Sprintf("%s\n", value))
 }
+
 
 // Config returns the Config struct for the active instance
 func (f *Plain) Config() *Config {
@@ -322,7 +325,7 @@ func sprintTable(slice []interface{}) (string, error) {
 
 	// Set our own custom table format
 	tabulate.TableFormats["standard"] = tabulate.TableFormat{
-		LineBelowHeader: tabulate.Line{"[DISABLED]", "\u2500", "", "[/RESET]"},
+		LineBelowHeader: tabulate.Line{"[DISABLED]", dash, "", "[/RESET]"},
 		HeaderRow:       tabulate.Row{"[HEADING]", "", "[/RESET]"},
 		DataRow:         tabulate.Row{"", "", ""},
 		TitleRow:        tabulate.Row{"", "", ""},

@@ -32,7 +32,7 @@ func Test_writeColorized(t *testing.T) {
 		{
 			`info`,
 			false,
-			`info: [INFO]value[/RESET]] -- end`,
+			`info: [NOTICE]value[/RESET]] -- end`,
 			"info: \x1b[32mvalue\x1b[0m] -- end",
 		},
 		{
