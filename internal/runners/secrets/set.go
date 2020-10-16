@@ -17,6 +17,10 @@ func NewSet() *Set {
 }
 
 func (s *Set) Run(params SetRunParams) error {
+	if err := CheckSecretsAccess(); err != nil {
+		return err
+	}
+
 	secret, fail := getSecret(params.Name)
 	if fail != nil {
 		return fail.WithDescription(locale.T("secrets_err"))

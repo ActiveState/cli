@@ -40,7 +40,10 @@ func NewList(client *secretsapi.Client, p listPrimeable) *List {
 }
 
 func (l *List) Run(params ListRunParams) error {
-	//c.config.PersistentPreRun = c.checkSecretsAccess
+	if err := CheckSecretsAccess(); err != nil {
+		return err
+	}
+
 	defs, fail := definedSecrets(l.secretsClient, params.Filter)
 	if fail != nil {
 		return fail.WithDescription(locale.T("secrets_err_defined"))

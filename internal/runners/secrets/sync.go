@@ -32,6 +32,10 @@ func NewSync(client *secretsapi.Client) *Sync {
 }
 
 func (s *Sync) Run(params SyncRunParams) error {
+	if err := CheckSecretsAccess(); err != nil {
+		return err
+	}
+
 	project := project.Get()
 	org, failure := model.FetchOrgByURLName(project.Owner())
 

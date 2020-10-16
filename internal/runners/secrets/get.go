@@ -30,6 +30,10 @@ func NewGet(p getPrimeable) *Get {
 }
 
 func (g *Get) Run(params GetRunParams) error {
+	if err := CheckSecretsAccess(); err != nil {
+		return err
+	}
+
 	secret, valuePtr, fail := getSecretWithValue(params.Name)
 	if fail != nil {
 		return fail.WithDescription(locale.T("secrets_err"))
