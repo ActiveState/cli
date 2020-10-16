@@ -53,7 +53,7 @@ func (r *Activate) activateAndWait(proj *project.Project, runtime *runtime.Runti
 
 	r.subshell.SetEnv(ve)
 	if fail = r.subshell.Activate(r.out); fail != nil {
-		return locale.WrapError(err, "error_could_not_activate_subshell", "Could not activate a new subshell.")
+		return locale.WrapError(fail, "error_could_not_activate_subshell", "Could not activate a new subshell.")
 	}
 
 	fe, err := fileevents.New(proj)

@@ -16,15 +16,19 @@ const (
 // Title represents the config of a styled title. It does not, currently,
 // support combining diactics (more info: https://play.golang.org/p/VmHyq3JJ7On).
 type Title struct {
-	Text    string
-	Padding int
+	Text      string
+	Heading   string
+	Padding   int
+	ColorCode string
 }
 
 // NewTitle provides a construction of Title using the default title padding.
 func NewTitle(text string) *Title {
 	return &Title{
-		Text:    text,
-		Padding: DefaultTitlePadding,
+		Text:      text,
+		Heading:   "",
+		Padding:   DefaultTitlePadding,
+		ColorCode: "DISABLED",
 	}
 }
 
@@ -77,7 +81,11 @@ func (t *Title) String() string {
 		rs[i] = ' '
 	}
 
-	prefix := "[DISABLED]"
+	if t.Heading != "" {
+		copy(rs[topLf+1:], []rune(t.Heading))
+	}
+
+	prefix := "[" + t.ColorCode + "]"
 	suffix := "[/RESET]"
 	outLines := strings.Split(string(rs), "\n")
 	for i, line := range outLines {
