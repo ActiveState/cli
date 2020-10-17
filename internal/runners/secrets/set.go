@@ -30,7 +30,7 @@ func (s *Set) Run(params SetRunParams) error {
 		return err
 	}
 
-	secret, fail := getSecret(params.Name)
+	secret, fail := getSecret(s.proj, params.Name)
 	if fail != nil {
 		return fail.WithDescription(locale.T("secrets_err"))
 	}

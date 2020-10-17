@@ -1,11 +1,6 @@
 package secrets
 
 import (
-	"encoding/json"
-	"fmt"
-	"os"
-
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
@@ -38,46 +33,75 @@ func (g *Get) Run(params GetRunParams) error {
 		return err
 	}
 
-	secret, valuePtr, fail := getSecretWithValue(params.Name)
+	secret, valuePtr, fail := getSecretWithValue(g.proj, params.Name)
 	if fail != nil {
 		return fail.WithDescription(locale.T("secrets_err"))
 	}
 
-	var value string
-	if valuePtr == nil {
-		value = ""
-	} else {
-		value = *valuePtr
+	data := newGetOutput(params.Name, secret, valuePtr)
+	if err := data.Validate(g.out.Type()); err != nil {
+		return err
 	}
 
-	switch g.out.Type() {
-	case output.JSONFormatName, output.EditorV0FormatName, output.EditorFormatName:
-		fail := printJSON(&SecretExport{secret.Name(), secret.Scope(), secret.Description(), valuePtr != nil, value})
-		if fail != nil {
-			return fail.WithDescription(locale.T("secrets_err"))
-		}
-	default:
-		if valuePtr == nil {
-			l10nKey := "secrets_err_project_not_defined"
-			if secret.IsUser() {
-				l10nKey = "secrets_err_user_not_defined"
-			}
-			return locale.NewError(l10nKey, params.Name)
-		}
-		fmt.Fprint(os.Stdout, *valuePtr)
-	}
+	g.out.Print(data)
 
 	return nil
 }
 
-func printJSON(secretJSON *SecretExport) *failures.Failure {
-	var data []byte
+type getOutput struct {
+	reqSecret string
+	secret    *project.Secret
+	valuePtr  *string
+}
 
-	data, err := json.Marshal(secretJSON)
-	if err != nil {
-		return failures.FailMarshal.Wrap(err)
+func newGetOutput(reqSecret string, secret *project.Secret, valuePtr *string) *getOutput {
+	return &getOutput{
+		reqSecret: reqSecret,
+		secret:    secret,
+		valuePtr:  valuePtr,
+	}
+}
+
+func (d *getOutput) Validate(format output.Format) error {
+	switch format {
+	case output.JSONFormatName, output.EditorV0FormatName, output.EditorFormatName:
+		return nil
+	default:
+		if d.valuePtr == nil {
+			return newValuePtrIsNilError(d.reqSecret, d.secret.IsUser())
+		}
+		return nil
+	}
+}
+
+func (d *getOutput) MarshalOutput(format output.Format) interface{} {
+	value := ""
+	if d.valuePtr != nil {
+		value = *d.valuePtr
 	}
 
-	fmt.Fprint(os.Stdout, string(data))
-	return nil
+	switch format {
+	case output.JSONFormatName, output.EditorV0FormatName, output.EditorFormatName:
+		return &SecretExport{
+			d.secret.Name(),
+			d.secret.Scope(),
+			d.secret.Description(),
+			d.valuePtr != nil,
+			value,
+		}
+
+	default:
+		return value
+	}
+}
+
+func newValuePtrIsNilError(reqSecret string, isUser bool) error {
+	l10nKey := "secrets_err_project_not_defined"
+	l10nVal := "Secret has not been defined: {{.V0}}. Either define it by running 'state secrets set {{.V0}}' or have someone in your organization sync with you by having them run 'state secrets sync'."
+	if isUser {
+		l10nKey = "secrets_err_user_not_defined"
+		l10nVal = "Secret has not been defined: {{.V0}}. Define it by running 'state secrets set {{.V0}}'."
+	}
+
+	return locale.NewError(l10nKey, l10nVal, reqSecret)
 }

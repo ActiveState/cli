@@ -101,8 +101,6 @@ func newSecretsSetCommand(prime *primer.Values) *captain.Command {
 func newSecretsSyncCommand(secretsClient *secretsapi.Client, prime *primer.Values) *captain.Command {
 	runner := secrets.NewSync(secretsClient, prime)
 
-	params := secrets.SyncRunParams{}
-
 	return captain.NewCommand(
 		"sync",
 		locale.Tl("secrets_sync_title", "Synchronizing Secrets"),
@@ -111,7 +109,7 @@ func newSecretsSyncCommand(secretsClient *secretsapi.Client, prime *primer.Value
 		nil,
 		nil,
 		func(_ *captain.Command, _ []string) error {
-			return runner.Run(params)
+			return runner.Run()
 		},
 	)
 }

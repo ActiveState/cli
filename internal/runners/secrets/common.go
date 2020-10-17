@@ -7,10 +7,10 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
-func getSecret(namespace string) (*project.Secret, *failures.Failure) {
+func getSecret(proj *project.Project, namespace string) (*project.Secret, *failures.Failure) {
 	n := strings.Split(namespace, ".")
 	if len(n) != 2 {
-		return nil, failures.FailUserInput.New("secrets_err_invalid_namespace")
+		return nil, failures.FailUserInput.New("secrets_err_invalid_namespace", namespace)
 	}
 
 	secretScope, fail := project.NewSecretScope(n[0])
@@ -19,11 +19,11 @@ func getSecret(namespace string) (*project.Secret, *failures.Failure) {
 	}
 	secretName := n[1]
 
-	return project.Get().InitSecret(secretName, secretScope), nil
+	return proj.InitSecret(secretName, secretScope), nil
 }
 
-func getSecretWithValue(name string) (*project.Secret, *string, *failures.Failure) {
-	secret, fail := getSecret(name)
+func getSecretWithValue(proj *project.Project, name string) (*project.Secret, *string, *failures.Failure) {
+	secret, fail := getSecret(proj, name)
 	if fail != nil {
 		return nil, nil, fail
 	}

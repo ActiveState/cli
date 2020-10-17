@@ -1,13 +1,12 @@
 package secrets
 
 import (
-	"fmt"
-	"os"
 	"strconv"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/secrets"
 	"github.com/ActiveState/cli/pkg/platform/api"
@@ -21,58 +20,60 @@ import (
 
 type syncPrimeable interface {
 	primer.Projecter
-}
-
-type SyncRunParams struct {
+	primer.Outputer
 }
 
 type Sync struct {
 	secretsClient *secretsapi.Client
 	proj          *project.Project
+	out           output.Outputer
 }
 
 func NewSync(client *secretsapi.Client, p syncPrimeable) *Sync {
 	return &Sync{
 		secretsClient: client,
 		proj:          p.Project(),
+		out:           p.Output(),
 	}
 }
 
-func (s *Sync) Run(params SyncRunParams) error {
+func (s *Sync) Run() error {
 	if err := checkSecretsAccess(s.proj); err != nil {
 		return err
 	}
 
-	org, failure := model.FetchOrgByURLName(s.proj.Owner())
-
-	if failure == nil {
-		failure = synchronizeEachOrgMember(s.secretsClient, org)
+	org, fail := model.FetchOrgByURLName(s.proj.Owner())
+	if fail != nil {
+		return fail.WithDescription(locale.T("secrets_err"))
 	}
 
-	if failure != nil {
-		failure.WithDescription(locale.T("secrets_err"))
+	updatedCount, fail := synchronizeEachOrgMember(s.secretsClient, org)
+	if fail != nil {
+		return fail.WithDescription(locale.T("secrets_err"))
 	}
+
+	s.out.Print(locale.Tr("secrets_sync_results_message", strconv.Itoa(updatedCount), org.Name))
 
 	return nil
 }
 
-func synchronizeEachOrgMember(secretsClient *secretsapi.Client, org *mono_models.Organization) *failures.Failure {
-	sourceKeypair, failure := secrets.LoadKeypairFromConfigDir()
-	if failure != nil {
-		return failure
+func synchronizeEachOrgMember(secretsClient *secretsapi.Client, org *mono_models.Organization) (count int, f *failures.Failure) {
+	sourceKeypair, fail := secrets.LoadKeypairFromConfigDir()
+	if fail != nil {
+		return 0, fail
 	}
 
-	members, failure := model.FetchOrgMembers(org.URLname)
-	if failure != nil {
-		return failure
+	members, fail := model.FetchOrgMembers(org.URLname)
+	if fail != nil {
+		return 0, fail
 	}
 
-	currentUserID, failure := secretsClient.AuthenticatedUserID()
-	if failure != nil {
-		return failure
+	currentUserID, fail := secretsClient.AuthenticatedUserID()
+	if fail != nil {
+		return 0, fail
 	}
 
-	updatedCtr := int(0)
+	var updatedCtr int
 	for _, member := range members {
 		if currentUserID != member.User.UserID {
 			params := secretsapiClient.NewDiffUserSecretsParams()
@@ -85,26 +86,25 @@ func synchronizeEachOrgMember(secretsClient *secretsapi.Client, org *mono_models
 				case 404:
 					continue // nothing to do when no diff for a user, move on to next one
 				case 401:
-					return api.FailAuth.New("err_api_not_authenticated")
+					return updatedCtr, api.FailAuth.New("err_api_not_authenticated")
 				default:
 					logging.Debug("unknown error diffing user secrets with %s: %v", member.User.UserID.String(), err)
-					return api.FailUnknown.Wrap(err)
+					return updatedCtr, api.FailUnknown.Wrap(err)
 				}
 			}
 
 			targetShares, fail := secrets.ShareFromDiff(sourceKeypair, diffPayloadOk.Payload)
 			if fail != nil {
-				return fail
+				return updatedCtr, fail
 			}
 
 			fail = secretsapi.SaveSecretShares(secretsClient, org, member.User, targetShares)
 			if fail != nil {
-				return fail
+				return updatedCtr, fail
 			}
 			updatedCtr++
 		}
 	}
 
-	fmt.Fprint(os.Stdout, locale.Tr("secrets_sync_results_message", strconv.Itoa(updatedCtr), org.Name))
-	return nil
+	return updatedCtr, nil
 }
