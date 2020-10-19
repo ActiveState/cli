@@ -4,13 +4,15 @@ import (
 	"os"
 	"testing"
 
+	"github.com/spf13/viper"
+
+	"github.com/ActiveState/cli/internal/colorize"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/constants/version"
 	depMock "github.com/ActiveState/cli/internal/deprecation/mock"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
-	"github.com/spf13/viper"
 
 	"github.com/stretchr/testify/suite"
 )
@@ -35,7 +37,7 @@ func (suite *MainTestSuite) TestDeprecated() {
 	suite.Require().Equal(0, exitCode, "Should exit with code 0, output: %s", catcher.CombinedOutput())
 
 	if version.NumberIsProduction(constants.VersionNumber) {
-		suite.Require().Contains(catcher.CombinedOutput(), output.StripColorCodes(locale.Tr("warn_deprecation", "")[0:50]))
+		suite.Require().Contains(catcher.CombinedOutput(), colorize.StripColorCodes(locale.Tr("warn_deprecation", "")[0:50]))
 	}
 }
 

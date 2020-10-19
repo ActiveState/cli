@@ -1,7 +1,7 @@
 // +build !windows
 // Can't test this on Windows since on Windows it sends process instructions to change colors
 
-package output
+package colorize
 
 import (
 	"bytes"
@@ -63,7 +63,7 @@ func Test_writeColorized(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			writer := &bytes.Buffer{}
-			writeColorized(tt.value, writer, tt.strip)
+			Colorize(tt.value, writer, tt.strip)
 			assert.Equal(t, tt.expected, writer.String(), "Output did not match")
 		})
 	}

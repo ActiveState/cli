@@ -14,6 +14,7 @@ import (
 	"github.com/thoas/go-funk"
 	"golang.org/x/crypto/ssh/terminal"
 
+	"github.com/ActiveState/cli/internal/colorize"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
@@ -87,7 +88,7 @@ func (f *Plain) write(writer io.Writer, value interface{}) {
 
 // writeNow is a little helper that just writes the given value to the requested writer (no marshalling)
 func (f *Plain) writeNow(writer io.Writer, value string) {
-	_, err := writeColorized(wordWrap(value), writer, !f.cfg.Colored)
+	_, err := colorize.Colorize(wordWrap(value), writer, !f.cfg.Colored)
 	if err != nil {
 		logging.Errorf("Writing colored output failed: %v", err)
 	}
