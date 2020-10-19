@@ -12,26 +12,31 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 type InitIntegrationTestSuite struct {
-	suite.Suite
+	tagsuite.Suite
 }
 
 func (suite *InitIntegrationTestSuite) TestInit() {
+	suite.OnlyRunForTags(tagsuite.Init, tagsuite.Critical)
 	suite.runInitTest(false, sampleYAMLPython3, "python3")
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_SkeletonEditor() {
+	suite.OnlyRunForTags(tagsuite.Init)
 	suite.runInitTest(false, locale.T("editor_yaml"), "python3", "--skeleton", "editor")
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_Path() {
+	suite.OnlyRunForTags(tagsuite.Init)
 	suite.runInitTest(true, sampleYAMLPython3, "python3")
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_Version() {
+	suite.OnlyRunForTags(tagsuite.Init)
 	suite.runInitTest(false, sampleYAMLPython3, "python3@1.0")
 }
 
@@ -66,6 +71,7 @@ func (suite *InitIntegrationTestSuite) runInitTest(addPath bool, config string, 
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_NoLanguage() {
+	suite.OnlyRunForTags(tagsuite.Init)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
