@@ -650,26 +650,43 @@ func (script *Script) SourceScript() *projectfile.Script { return script.script 
 // Name returns script name
 func (script *Script) Name() string { return script.script.Name }
 
-// Language returns the language of this script
-func (script *Script) Language() language.Language {
-	return script.script.Language
-}
-
-// LanguageSafe returns the language of this script. The returned
-// language is guaranteed to be of a known scripting language
-func (script *Script) LanguageSafe() language.Language {
-	lang := script.Language()
-	if !lang.Recognized() {
-		return defaultScriptLanguage()
+// Languages returns the languages of this script
+func (script *Script) Languages() []language.Language {
+	stringLanguages := strings.Split(script.script.Language, ",")
+	languages := make([]language.Language, 0)
+	for _, lang := range stringLanguages {
+		if lang != "" {
+			languages = append(languages, language.MakeByName(strings.TrimSpace(lang)))
+		}
 	}
-	return lang
+	return languages
 }
 
-func defaultScriptLanguage() language.Language {
+// LanguageSafe returns the first languages of this script. The
+// returned languages are guaranteed to be of a known scripting language
+func (script *Script) LanguageSafe() []language.Language {
+	var langs []language.Language
+	for _, lang := range script.Languages() {
+		if !lang.Recognized() {
+			continue
+		}
+		langs = append(langs, lang)
+	}
+
+	if len(langs) == 0 {
+		return DefaultScriptLanguage()
+	}
+
+	return langs
+}
+
+// DefaultScriptLanguage returns the default script language for
+// the current platform. (ie. batch or bash)
+func DefaultScriptLanguage() []language.Language {
 	if runtime.GOOS == "windows" {
-		return language.Batch
+		return []language.Language{language.Batch}
 	}
-	return language.Sh
+	return []language.Language{language.Sh}
 }
 
 // Description returns script description
