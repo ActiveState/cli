@@ -171,7 +171,7 @@ func (suite *PushIntegrationTestSuite) TestPush_EditorV0() {
 func (suite *RunIntegrationTestSuite) TestRun_EditorV0() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
-	suite.createProjectFile(ts)
+	suite.createProjectFile(ts, 3)
 
 	ts.LoginAsPersistentUser()
 	defer ts.LogoutUser()

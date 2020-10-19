@@ -23,14 +23,14 @@ type RunIntegrationTestSuite struct {
 	suite.Suite
 }
 
-func (suite *RunIntegrationTestSuite) createProjectFile(ts *e2e.Session) {
+func (suite *RunIntegrationTestSuite) createProjectFile(ts *e2e.Session, pythonVersion int) {
 	root := environment.GetRootPathUnsafe()
 	interruptScript := filepath.Join(root, "test", "integration", "assets", "run", "interrupt.go")
 	fileutils.CopyFile(interruptScript, filepath.Join(ts.Dirs.Work, "interrupt.go"))
 
 	// ActiveState-CLI/Python3 is just a place-holder that is never used
-	configFileContent := strings.TrimSpace(`
-project: https://platform.activestate.com/ActiveState-CLI/Python3?commitID=fbc613d6-b0b1-4f84-b26e-4aa5869c4e54
+	configFileContent := strings.TrimSpace(fmt.Sprintf(`
+project: https://platform.activestate.com/ActiveState-CLI/Python%d?commitID=fbc613d6-b0b1-4f84-b26e-4aa5869c4e54
 scripts:
   - name: test-interrupt
     description: A script that sleeps for a very long time.  It should be interrupted.  The first interrupt does not terminate.
@@ -61,7 +61,12 @@ scripts:
   - name: helloWorldPython
     value: print("Hello Python!")
     language: python3
-`)
+  - name: helloWorldMultiple
+    value: |
+      import sys
+      print(sys.version)
+    language: python2,python3
+`, pythonVersion))
 
 	ts.PrepareActiveStateYAML(configFileContent)
 }
@@ -98,7 +103,7 @@ func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.createProjectFile(ts)
+	suite.createProjectFile(ts, 3)
 	ts.LoginAsPersistentUser()
 	defer ts.LogoutUser()
 
@@ -127,7 +132,7 @@ func (suite *RunIntegrationTestSuite) TestOneInterrupt() {
 	}
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
-	suite.createProjectFile(ts)
+	suite.createProjectFile(ts, 3)
 
 	ts.LoginAsPersistentUser()
 	defer ts.LogoutUser()
@@ -150,7 +155,7 @@ func (suite *RunIntegrationTestSuite) TestTwoInterrupts() {
 	}
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
-	suite.createProjectFile(ts)
+	suite.createProjectFile(ts, 3)
 
 	ts.LoginAsPersistentUser()
 	defer ts.LogoutUser()
@@ -171,7 +176,7 @@ func (suite *RunIntegrationTestSuite) TestTwoInterrupts() {
 func (suite *RunIntegrationTestSuite) TestRun_Help() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
-	suite.createProjectFile(ts)
+	suite.createProjectFile(ts, 3)
 
 	cp := ts.Spawn("run", "-h")
 	cp.Expect("Usage")
@@ -183,7 +188,7 @@ func (suite *RunIntegrationTestSuite) TestRun_Unauthenticated() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.createProjectFile(ts)
+	suite.createProjectFile(ts, 3)
 
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("activate"),
@@ -203,11 +208,61 @@ func (suite *RunIntegrationTestSuite) TestRun_DeprecatedLackingLanguage() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.createProjectFile(ts)
+	suite.createProjectFile(ts, 3)
 
 	cp := ts.Spawn("run", "helloWorld")
 	cp.Expect("DEPRECATION", 5*time.Second)
 	cp.Expect("Hello", 5*time.Second)
+}
+
+func (suite *RunIntegrationTestSuite) TestRun_MultipleLanguagesPython2() {
+	if runtime.GOOS == "windows" && e2e.RunningOnCI() {
+		suite.T().Skip("Windows CI does not support ctrl-c events")
+	}
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+	suite.createProjectFile(ts, 2)
+
+	ts.LoginAsPersistentUser()
+	defer ts.LogoutUser()
+
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("activate"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("Activating state: ActiveState-CLI/Python2")
+	cp.WaitForInput(120 * time.Second)
+
+	cp.SendLine(fmt.Sprintf("%s run helloWorldMultiple", cp.Executable()))
+	cp.Expect("2")
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
+}
+
+func (suite *RunIntegrationTestSuite) TestRun_MultipleLanguagesPython3() {
+	if runtime.GOOS == "windows" && e2e.RunningOnCI() {
+		suite.T().Skip("Windows CI does not support ctrl-c events")
+	}
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+	suite.createProjectFile(ts, 3)
+
+	ts.LoginAsPersistentUser()
+	defer ts.LogoutUser()
+
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("activate"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("Activating state: ActiveState-CLI/Python3")
+	cp.WaitForInput(120 * time.Second)
+
+	cp.SendLine(fmt.Sprintf("%s run helloWorldMultiple", cp.Executable()))
+	cp.Expect("3")
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
 }
 
 func TestRunIntegrationTestSuite(t *testing.T) {
