@@ -55,7 +55,7 @@ func newSecretsGetCommand(prime *primer.Values) *captain.Command {
 		nil,
 		[]*captain.Argument{
 			{
-				Name:        locale.T("secrets_get_arg_name"),
+				Name:        locale.T("secrets_get_arg_name_name"),
 				Description: locale.T("secrets_get_arg_name_description"),
 				Value:       &params.Name,
 				Required:    true,

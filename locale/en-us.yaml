@@ -577,7 +577,7 @@ secrets_flag_filter:
   other: Show only secrets that match the given filter. The filter value is the config path that you want to see secrets for, eg. constants.foo, scripts.foo, secrets.project.foo, etc.
 secrets_get_cmd_description:
   other: Get the value of a secret
-secrets_get_arg_name:
+secrets_get_arg_name_name:
   other: namespace
 secrets_get_arg_name_description:
   other: Namespace of secret is 'SCOPE.NAME'. eg. 'user.mySecret' or 'project.ourSecret'
