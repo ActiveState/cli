@@ -6,6 +6,7 @@ See license.txt in same directory for license information
 */
 
 import (
+	"io"
 	"syscall"
 	"unsafe"
 )
@@ -69,7 +70,7 @@ func init() {
 type Styler struct {
 }
 
-func New(writer io.Writer) ColorStyler {
+func New(writer io.Writer) *Styler {
 	return &Styler{}
 }
 
