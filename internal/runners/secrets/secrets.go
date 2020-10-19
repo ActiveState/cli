@@ -22,16 +22,19 @@ type listPrimeable interface {
 	primer.Projecter
 }
 
+// ListRunParams tracks the info required for running List.
 type ListRunParams struct {
 	Filter string
 }
 
+// List manages the listing execution context.
 type List struct {
 	secretsClient *secretsapi.Client
 	out           output.Outputer
 	proj          *project.Project
 }
 
+// NewList prepares a list execution context for use.
 func NewList(client *secretsapi.Client, p listPrimeable) *List {
 	return &List{
 		secretsClient: client,
@@ -40,6 +43,7 @@ func NewList(client *secretsapi.Client, p listPrimeable) *List {
 	}
 }
 
+// Run executes the list behavior.
 func (l *List) Run(params ListRunParams) error {
 	if err := checkSecretsAccess(l.proj); err != nil {
 		return err
@@ -194,6 +198,8 @@ func ptrToString(s *string, fieldName string) (string, *failures.Failure) {
 	return *s, nil
 }
 
+// SecretExport defines important information about a secret that should be
+// displayed.
 type SecretExport struct {
 	Name        string `json:"name"`
 	Scope       string `json:"scope"`

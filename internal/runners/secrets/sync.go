@@ -23,12 +23,14 @@ type syncPrimeable interface {
 	primer.Outputer
 }
 
+// Sync manages the synchronization execution context.
 type Sync struct {
 	secretsClient *secretsapi.Client
 	proj          *project.Project
 	out           output.Outputer
 }
 
+// NewSync prepares a sync execution context for use.
 func NewSync(client *secretsapi.Client, p syncPrimeable) *Sync {
 	return &Sync{
 		secretsClient: client,
@@ -37,6 +39,7 @@ func NewSync(client *secretsapi.Client, p syncPrimeable) *Sync {
 	}
 }
 
+// Run executes the sync behavior.
 func (s *Sync) Run() error {
 	if err := checkSecretsAccess(s.proj); err != nil {
 		return err

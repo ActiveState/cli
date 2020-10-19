@@ -12,15 +12,18 @@ type getPrimeable interface {
 	primer.Projecter
 }
 
+// GetRunParams tracks the info required for running Get.
 type GetRunParams struct {
 	Name string
 }
 
+// Get manages the getting execution context.
 type Get struct {
 	proj *project.Project
 	out  output.Outputer
 }
 
+// NewGet prepares a get execution context for use.
 func NewGet(p getPrimeable) *Get {
 	return &Get{
 		out:  p.Output(),
@@ -28,6 +31,7 @@ func NewGet(p getPrimeable) *Get {
 	}
 }
 
+// Run executes the get behavior.
 func (g *Get) Run(params GetRunParams) error {
 	if err := checkSecretsAccess(g.proj); err != nil {
 		return err
