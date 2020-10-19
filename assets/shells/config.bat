@@ -22,4 +22,8 @@ DOSKEY {{$K}}="{{$execCmd}}" run "{{$CMD}}" $*
 
 cd {{.WD}}
 
+echo {{.ActivateEventMessage}}
+
 {{.UserScripts}}
+
+echo {{.ActivatedMessage}}
