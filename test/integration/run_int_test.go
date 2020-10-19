@@ -58,10 +58,7 @@ scripts:
     value: echo Hello World!
     constraints:
     os: windows
-  - name: helloWorldPython
-    value: print("Hello Python!")
-    language: python3
-  - name: helloWorldMultiple
+  - name: testMultipleLanguages
     value: |
       import sys
       print(sys.version)
@@ -110,6 +107,9 @@ func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
 	cp := ts.Spawn("activate")
 	cp.Expect("Activating state: ActiveState-CLI/Python3")
 	cp.WaitForInput(10 * time.Second)
+
+	cp.SendLine(fmt.Sprintf("%s run testMultipleLanguages", cp.Executable()))
+	cp.Expect("3")
 
 	cp.SendLine(fmt.Sprintf("%s run test-interrupt", cp.Executable()))
 	cp.Expect("Start of script", 5*time.Second)
@@ -188,17 +188,17 @@ func (suite *RunIntegrationTestSuite) TestRun_Unauthenticated() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.createProjectFile(ts, 3)
+	suite.createProjectFile(ts, 2)
 
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("activate"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Activating state: ActiveState-CLI/Python3")
+	cp.Expect("Activating state: ActiveState-CLI/Python2")
 	cp.WaitForInput(120 * time.Second)
 
-	cp.SendLine(fmt.Sprintf("%s run helloWorldPython", cp.Executable()))
-	cp.Expect("Hello Python!", 5*time.Second)
+	cp.SendLine(fmt.Sprintf("%s run testMultipleLanguages", cp.Executable()))
+	cp.Expect("2")
 
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
@@ -213,56 +213,6 @@ func (suite *RunIntegrationTestSuite) TestRun_DeprecatedLackingLanguage() {
 	cp := ts.Spawn("run", "helloWorld")
 	cp.Expect("DEPRECATION", 5*time.Second)
 	cp.Expect("Hello", 5*time.Second)
-}
-
-func (suite *RunIntegrationTestSuite) TestRun_MultipleLanguagesPython2() {
-	if runtime.GOOS == "windows" && e2e.RunningOnCI() {
-		suite.T().Skip("Windows CI does not support ctrl-c events")
-	}
-
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-	suite.createProjectFile(ts, 2)
-
-	ts.LoginAsPersistentUser()
-	defer ts.LogoutUser()
-
-	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("activate"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-	)
-	cp.Expect("Activating state: ActiveState-CLI/Python2")
-	cp.WaitForInput(120 * time.Second)
-
-	cp.SendLine(fmt.Sprintf("%s run helloWorldMultiple", cp.Executable()))
-	cp.Expect("2")
-	cp.SendLine("exit")
-	cp.ExpectExitCode(0)
-}
-
-func (suite *RunIntegrationTestSuite) TestRun_MultipleLanguagesPython3() {
-	if runtime.GOOS == "windows" && e2e.RunningOnCI() {
-		suite.T().Skip("Windows CI does not support ctrl-c events")
-	}
-
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-	suite.createProjectFile(ts, 3)
-
-	ts.LoginAsPersistentUser()
-	defer ts.LogoutUser()
-
-	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("activate"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-	)
-	cp.Expect("Activating state: ActiveState-CLI/Python3")
-	cp.WaitForInput(120 * time.Second)
-
-	cp.SendLine(fmt.Sprintf("%s run helloWorldMultiple", cp.Executable()))
-	cp.Expect("3")
-	cp.SendLine("exit")
-	cp.ExpectExitCode(0)
 }
 
 func TestRunIntegrationTestSuite(t *testing.T) {
