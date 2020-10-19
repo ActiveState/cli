@@ -51,8 +51,8 @@ var (
 	kernel32 = syscall.NewLazyDLL("kernel32.dll")
 
 	procGetStdHandle               = kernel32.NewProc("GetStdHandle")
-	procSetconsoleTextAttribute    = kernel32.NewProc("SetconsoleTextAttribute")
-	procGetconsoleScreenBufferInfo = kernel32.NewProc("GetconsoleScreenBufferInfo")
+	procSetconsoleTextAttribute    = kernel32.NewProc("SetConsoleTextAttribute")
+	procGetconsoleScreenBufferInfo = kernel32.NewProc("GetConsoleScreenBufferInfo")
 
 	hStdout    uintptr
 	bufferInfo *consoleBuffer
