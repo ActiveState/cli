@@ -21,22 +21,22 @@ type InitIntegrationTestSuite struct {
 }
 
 func (suite *InitIntegrationTestSuite) TestInit() {
-	suite.OnlyRunForTags("init", "critical")
+	suite.OnlyRunForTags(tagsuite.Init, tagsuite.Critical)
 	suite.runInitTest(false, sampleYAMLPython3, "python3")
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_SkeletonEditor() {
-	suite.OnlyRunForTags("init")
+	suite.OnlyRunForTags(tagsuite.Init)
 	suite.runInitTest(false, locale.T("editor_yaml"), "python3", "--skeleton", "editor")
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_Path() {
-	suite.OnlyRunForTags("init")
+	suite.OnlyRunForTags(tagsuite.Init)
 	suite.runInitTest(true, sampleYAMLPython3, "python3")
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_Version() {
-	suite.OnlyRunForTags("init")
+	suite.OnlyRunForTags(tagsuite.Init)
 	suite.runInitTest(false, sampleYAMLPython3, "python3@1.0")
 }
 
@@ -71,7 +71,7 @@ func (suite *InitIntegrationTestSuite) runInitTest(addPath bool, config string, 
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_NoLanguage() {
-	suite.OnlyRunForTags("init")
+	suite.OnlyRunForTags(tagsuite.Init)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 

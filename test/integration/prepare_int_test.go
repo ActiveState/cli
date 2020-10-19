@@ -19,7 +19,7 @@ type PrepareIntegrationTestSuite struct {
 }
 
 func (suite *PrepareIntegrationTestSuite) TestPrepare() {
-	suite.OnlyRunForTags("prepare")
+	suite.OnlyRunForTags(tagsuite.Prepare)
 	if !e2e.RunningOnCI() {
 		suite.T().Skipf("Skipping TestPrepare when not running on CI or on MacOS, as it modifies PATH")
 	}

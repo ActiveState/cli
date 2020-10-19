@@ -24,12 +24,12 @@ type ActivateIntegrationTestSuite struct {
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivatePython3() {
-	suite.OnlyRunForTags("python", "activate", "critical")
+	suite.OnlyRunForTags(tagsuite.Python, tagsuite.Activate, tagsuite.Critical)
 	suite.activatePython("3")
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivatePython3_zsh() {
-	suite.OnlyRunForTags("python", "activate", "shell")
+	suite.OnlyRunForTags(tagsuite.Python, tagsuite.Activate, tagsuite.Shell)
 	if _, err := exec.LookPath("zsh"); err != nil {
 		suite.T().Skip("This test requires a zsh shell in your PATH")
 	}
@@ -37,12 +37,12 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePython3_zsh() {
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivatePython2() {
-	suite.OnlyRunForTags("python", "activate")
+	suite.OnlyRunForTags(tagsuite.Python, tagsuite.Activate)
 	suite.activatePython("2")
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
-	suite.OnlyRunForTags("critical", "activate")
+	suite.OnlyRunForTags(tagsuite.Critical, tagsuite.Activate)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -57,7 +57,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivateUsingCommitID() {
-	suite.OnlyRunForTags("critical", "activate")
+	suite.OnlyRunForTags(tagsuite.Critical, tagsuite.Activate)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -72,7 +72,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateUsingCommitID() {
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivateNotOnPath() {
-	suite.OnlyRunForTags("critical", "activate")
+	suite.OnlyRunForTags(tagsuite.Critical, tagsuite.Activate)
 	ts := e2e.NewNoPathUpdate(suite.T(), false)
 	defer ts.Close()
 
@@ -97,7 +97,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateNotOnPath() {
 
 // TestActivatePythonByHostOnly Tests whether we are only pulling in the build for the target host
 func (suite *ActivateIntegrationTestSuite) TestActivatePythonByHostOnly() {
-	suite.OnlyRunForTags("critical", "activate")
+	suite.OnlyRunForTags(tagsuite.Critical, tagsuite.Activate)
 	if runtime.GOOS != "linux" {
 		suite.T().Skip("not currently testing this OS")
 	}
@@ -143,7 +143,7 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	// ensure that shell is functional
 	cp.WaitForInput()
 
-	pythonExe := "python" + version
+	pythonExe := tagsuite.Python + version
 
 	cp.SendLine(pythonExe + " -c \"import sys; print(sys.copyright)\"")
 	cp.Expect("ActiveState Software Inc.")
@@ -178,7 +178,7 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivatePython3_Forward() {
-	suite.OnlyRunForTags("activate", "pull")
+	suite.OnlyRunForTags(tagsuite.Activate, tagsuite.Pull)
 	var project string
 	if runtime.GOOS == "darwin" {
 		project = "Activate-MacOS"
@@ -216,7 +216,7 @@ version: %s
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
-	suite.OnlyRunForTags("activate", "perl")
+	suite.OnlyRunForTags(tagsuite.Activate, tagsuite.Perl)
 	if runtime.GOOS == "darwin" {
 		suite.T().Skip("Perl not supported on macOS")
 	}
@@ -255,7 +255,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivate_Subdir() {
-	suite.OnlyRunForTags("activate")
+	suite.OnlyRunForTags(tagsuite.Activate)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	fail := fileutils.Mkdir(ts.Dirs.Work, "foo", "bar", "baz")
@@ -290,7 +290,7 @@ version: %s
 }
 
 func (suite *ActivateIntegrationTestSuite) TestInit_Activation_NoCommitID() {
-	suite.OnlyRunForTags("activate", "error")
+	suite.OnlyRunForTags(tagsuite.Activate, tagsuite.Error)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -306,7 +306,7 @@ func (suite *ActivateIntegrationTestSuite) TestInit_Activation_NoCommitID() {
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivate_InterruptedInstallation() {
-	suite.OnlyRunForTags("activate")
+	suite.OnlyRunForTags(tagsuite.Activate)
 	if runtime.GOOS == "windows" && e2e.RunningOnCI() {
 		suite.T().Skip("interrupting installation does not work on Windows on CI")
 	}
@@ -320,7 +320,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_InterruptedInstallation(
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivate_FromCache() {
-	suite.OnlyRunForTags("activate", "critical")
+	suite.OnlyRunForTags(tagsuite.Activate, tagsuite.Critical)
 	ts := e2e.New(suite.T(), true)
 	err := ts.ClearCache()
 	suite.Require().NoError(err)
@@ -350,7 +350,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_FromCache() {
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivate_JSON() {
-	suite.OnlyRunForTags("activate", "output")
+	suite.OnlyRunForTags(tagsuite.Activate, tagsuite.Output)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -362,7 +362,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_JSON() {
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivate_Command() {
-	suite.OnlyRunForTags("activate", "vscode")
+	suite.OnlyRunForTags(tagsuite.Activate, tagsuite.VSCode)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 

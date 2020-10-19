@@ -30,7 +30,7 @@ type AuthIntegrationTestSuite struct {
 }
 
 func (suite *AuthIntegrationTestSuite) TestAuth() {
-	suite.OnlyRunForTags("auth", "critical")
+	suite.OnlyRunForTags(tagsuite.Auth, tagsuite.Critical)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	username := ts.CreateNewUser()
@@ -41,7 +41,7 @@ func (suite *AuthIntegrationTestSuite) TestAuth() {
 }
 
 func (suite *AuthIntegrationTestSuite) interactiveLogin(ts *e2e.Session, username string) {
-	cp := ts.Spawn("auth")
+	cp := ts.Spawn(tagsuite.Auth)
 	cp.Expect("username:")
 	cp.SendLine(username)
 	cp.Expect("password:")
@@ -91,7 +91,7 @@ func (suite *AuthIntegrationTestSuite) authOutput(method string) {
 }
 
 func (suite *AuthIntegrationTestSuite) TestAuth_JsonOutput() {
-	suite.OnlyRunForTags("auth", "json")
+	suite.OnlyRunForTags(tagsuite.Auth, tagsuite.JSON)
 	suite.authOutput("json")
 }
 

@@ -56,7 +56,7 @@ func (suite *LanguageMSITestSuite) assertRegistryPathIncludes(path string) {
 }
 
 func (suite *LanguageMSITestSuite) TestActivePerl() {
-	suite.OnlyRunForTags("msi", "perl")
+	suite.OnlyRunForTags(tagsuite.MSI, tagsuite.Perl)
 	if !e2e.RunningOnCI() && false {
 		suite.T().Skipf("Skipping; Not running on CI")
 	}

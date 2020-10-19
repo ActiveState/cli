@@ -14,7 +14,7 @@ type PullIntegrationTestSuite struct {
 }
 
 func (suite *PullIntegrationTestSuite) TestPull() {
-	suite.OnlyRunForTags("pull")
+	suite.OnlyRunForTags(tagsuite.Pull)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 

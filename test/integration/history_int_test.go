@@ -13,7 +13,7 @@ type HistoryIntegrationTestSuite struct {
 }
 
 func (suite *HistoryIntegrationTestSuite) TestHistory_History() {
-	suite.OnlyRunForTags("history")
+	suite.OnlyRunForTags(tagsuite.History)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 

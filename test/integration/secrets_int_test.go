@@ -16,7 +16,7 @@ type SecretsIntegrationTestSuite struct {
 }
 
 func (suite *SecretsIntegrationTestSuite) TestSecrets_JSON() {
-	suite.OnlyRunForTags("secrets", "json")
+	suite.OnlyRunForTags(tagsuite.Secrets, tagsuite.JSON)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 

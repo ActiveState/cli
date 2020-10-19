@@ -94,7 +94,7 @@ func (suite *RunIntegrationTestSuite) expectTerminateBatchJob(cp *termtest.Conso
 // - https://www.pivotaltracker.com/story/show/167523128
 // - https://www.pivotaltracker.com/story/show/169509213
 func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
-	suite.OnlyRunForTags("run", "activate", "interrupt")
+	suite.OnlyRunForTags(tagsuite.Run, tagsuite.Activate, tagsuite.Interrupt)
 	if runtime.GOOS == "windows" && e2e.RunningOnCI() {
 		suite.T().Skip("Windows CI does not support ctrl-c events")
 	}
@@ -125,7 +125,7 @@ func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
 }
 
 func (suite *RunIntegrationTestSuite) TestOneInterrupt() {
-	suite.OnlyRunForTags("run", "interrupt", "critical")
+	suite.OnlyRunForTags(tagsuite.Run, tagsuite.Interrupt, tagsuite.Critical)
 	if runtime.GOOS == "windows" && e2e.RunningOnCI() {
 		suite.T().Skip("Windows CI does not support ctrl-c events")
 	}
@@ -149,7 +149,7 @@ func (suite *RunIntegrationTestSuite) TestOneInterrupt() {
 }
 
 func (suite *RunIntegrationTestSuite) TestTwoInterrupts() {
-	suite.OnlyRunForTags("run", "interrupt")
+	suite.OnlyRunForTags(tagsuite.Run, tagsuite.Interrupt)
 	if runtime.GOOS == "windows" && e2e.RunningOnCI() {
 		suite.T().Skip("Windows CI does not support ctrl-c events")
 	}
@@ -174,7 +174,7 @@ func (suite *RunIntegrationTestSuite) TestTwoInterrupts() {
 }
 
 func (suite *RunIntegrationTestSuite) TestRun_Help() {
-	suite.OnlyRunForTags("run")
+	suite.OnlyRunForTags(tagsuite.Run)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	suite.createProjectFile(ts)
@@ -186,7 +186,7 @@ func (suite *RunIntegrationTestSuite) TestRun_Help() {
 }
 
 func (suite *RunIntegrationTestSuite) TestRun_Unauthenticated() {
-	suite.OnlyRunForTags("run")
+	suite.OnlyRunForTags(tagsuite.Run)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -207,7 +207,7 @@ func (suite *RunIntegrationTestSuite) TestRun_Unauthenticated() {
 }
 
 func (suite *RunIntegrationTestSuite) TestRun_DeprecatedLackingLanguage() {
-	suite.OnlyRunForTags("run")
+	suite.OnlyRunForTags(tagsuite.Run)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -219,7 +219,7 @@ func (suite *RunIntegrationTestSuite) TestRun_DeprecatedLackingLanguage() {
 }
 
 func (suite *RunIntegrationTestSuite) TestRun_BadLanguage() {
-	suite.OnlyRunForTags("run")
+	suite.OnlyRunForTags(tagsuite.Run)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 

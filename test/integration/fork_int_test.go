@@ -22,7 +22,7 @@ func (suite *ForkIntegrationTestSuite) cleanup(ts *e2e.Session) {
 }
 
 func (suite *ForkIntegrationTestSuite) TestFork() {
-	suite.OnlyRunForTags("fork")
+	suite.OnlyRunForTags(tagsuite.Fork)
 	ts := e2e.New(suite.T(), false)
 	defer suite.cleanup(ts)
 
@@ -39,7 +39,7 @@ func (suite *ForkIntegrationTestSuite) TestFork() {
 }
 
 func (suite *ForkIntegrationTestSuite) TestFork_FailNameExists() {
-	suite.OnlyRunForTags("fork")
+	suite.OnlyRunForTags(tagsuite.Fork)
 	ts := e2e.New(suite.T(), false)
 	defer suite.cleanup(ts)
 	ts.LoginAsPersistentUser()

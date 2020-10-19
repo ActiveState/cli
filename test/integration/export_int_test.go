@@ -13,7 +13,7 @@ type ExportIntegrationTestSuite struct {
 }
 
 func (suite *ExportIntegrationTestSuite) TestExport_Export() {
-	suite.OnlyRunForTags("export")
+	suite.OnlyRunForTags(tagsuite.Export)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -24,7 +24,7 @@ func (suite *ExportIntegrationTestSuite) TestExport_Export() {
 }
 
 func (suite *ExportIntegrationTestSuite) TestExport_ExportArg() {
-	suite.OnlyRunForTags("export")
+	suite.OnlyRunForTags(tagsuite.Export)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -35,7 +35,7 @@ func (suite *ExportIntegrationTestSuite) TestExport_ExportArg() {
 }
 
 func (suite *ExportIntegrationTestSuite) TestExport_ExportPlatform() {
-	suite.OnlyRunForTags("export")
+	suite.OnlyRunForTags(tagsuite.Export)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -46,7 +46,7 @@ func (suite *ExportIntegrationTestSuite) TestExport_ExportPlatform() {
 }
 
 func (suite *ExportIntegrationTestSuite) TestExport_InvalidPlatform() {
-	suite.OnlyRunForTags("export")
+	suite.OnlyRunForTags(tagsuite.Export)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -56,7 +56,7 @@ func (suite *ExportIntegrationTestSuite) TestExport_InvalidPlatform() {
 }
 
 func (suite *ExportIntegrationTestSuite) TestExport_ConfigDir() {
-	suite.OnlyRunForTags("export")
+	suite.OnlyRunForTags(tagsuite.Export)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -66,7 +66,7 @@ func (suite *ExportIntegrationTestSuite) TestExport_ConfigDir() {
 }
 
 func (suite *ExportIntegrationTestSuite) TestExport_Config() {
-	suite.OnlyRunForTags("export")
+	suite.OnlyRunForTags(tagsuite.Export)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 

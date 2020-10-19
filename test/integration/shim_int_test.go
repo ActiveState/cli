@@ -26,7 +26,7 @@ func (suite *ShimIntegrationTestSuite) createProjectFile(ts *e2e.Session) {
 }
 
 func (suite *ShimIntegrationTestSuite) TestShim_Environment() {
-	suite.OnlyRunForTags("shim")
+	suite.OnlyRunForTags(tagsuite.Shim)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -57,7 +57,7 @@ func (suite *ShimIntegrationTestSuite) TestShim_Environment() {
 }
 
 func (suite *ShimIntegrationTestSuite) TestShim_ExitCode() {
-	suite.OnlyRunForTags("shim")
+	suite.OnlyRunForTags(tagsuite.Shim)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -84,7 +84,7 @@ func (suite *ShimIntegrationTestSuite) TestShim_ExitCode() {
 }
 
 func (suite *ShimIntegrationTestSuite) TestShim_Args() {
-	suite.OnlyRunForTags("shim")
+	suite.OnlyRunForTags(tagsuite.Shim)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -133,7 +133,7 @@ echo "Number of arguments: $#"
 }
 
 func (suite *ShimIntegrationTestSuite) TestShim_Input() {
-	suite.OnlyRunForTags("shim")
+	suite.OnlyRunForTags(tagsuite.Shim)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -168,7 +168,7 @@ echo "Hello $name!"
 }
 
 func (suite *ShimIntegrationTestSuite) TestShim_SystemPython() {
-	suite.OnlyRunForTags("shim")
+	suite.OnlyRunForTags(tagsuite.Shim)
 	_, err := exec.LookPath("python3")
 	if err != nil {
 		suite.T().Skip("Cannot run test if system does not have python installation")
@@ -189,7 +189,7 @@ func (suite *ShimIntegrationTestSuite) TestShim_SystemPython() {
 }
 
 func (suite *ShimIntegrationTestSuite) TestShim_NoDoubleDash() {
-	suite.OnlyRunForTags("shim")
+	suite.OnlyRunForTags(tagsuite.Shim)
 	_, err := exec.LookPath("python3")
 	if err != nil {
 		suite.T().Skip("Cannot run test if system does not have python installation")

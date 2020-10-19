@@ -14,7 +14,7 @@ type EventsIntegrationTestSuite struct {
 }
 
 func (suite *EventsIntegrationTestSuite) TestEvents_FirstActivate() {
-	suite.OnlyRunForTags("events")
+	suite.OnlyRunForTags(tagsuite.Events)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 

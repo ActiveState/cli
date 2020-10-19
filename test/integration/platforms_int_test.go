@@ -13,7 +13,7 @@ type PlatformsIntegrationTestSuite struct {
 }
 
 func (suite *PlatformsIntegrationTestSuite) TestPlatforms_searchSimple() {
-	suite.OnlyRunForTags("platforms")
+	suite.OnlyRunForTags(tagsuite.Platforms)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -35,7 +35,7 @@ func (suite *PlatformsIntegrationTestSuite) TestPlatforms_searchSimple() {
 }
 
 func (suite *PlatformsIntegrationTestSuite) TestPlatforms_listSimple() {
-	suite.OnlyRunForTags("platforms")
+	suite.OnlyRunForTags(tagsuite.Platforms)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -57,7 +57,7 @@ func (suite *PlatformsIntegrationTestSuite) TestPlatforms_listSimple() {
 }
 
 func (suite *PlatformsIntegrationTestSuite) TestPlatforms_addRemoveSimple() {
-	suite.OnlyRunForTags("platforms")
+	suite.OnlyRunForTags(tagsuite.Platforms)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 

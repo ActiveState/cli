@@ -14,7 +14,7 @@ type ShowIntegrationTestSuite struct {
 }
 
 func (suite *ShowIntegrationTestSuite) TestShow() {
-	suite.OnlyRunForTags("show", "vscode")
+	suite.OnlyRunForTags(tagsuite.Show, tagsuite.VSCode)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 

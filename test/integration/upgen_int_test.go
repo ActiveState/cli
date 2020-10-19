@@ -21,7 +21,7 @@ type UpdateGenIntegrationTestSuite struct {
 }
 
 func (suite *UpdateGenIntegrationTestSuite) TestUpdateBits() {
-	suite.OnlyRunForTags("cli-deploy", "critical")
+	suite.OnlyRunForTags(tagsuite.CLIDeploy, tagsuite.Critical)
 	root := environment.GetRootPathUnsafe()
 
 	ext := ".tar.gz"

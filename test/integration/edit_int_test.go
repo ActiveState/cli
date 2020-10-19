@@ -68,7 +68,7 @@ func (suite *EditIntegrationTestSuite) TearDownTest() {
 }
 
 func (suite *EditIntegrationTestSuite) TestEdit() {
-	suite.OnlyRunForTags("edit")
+	suite.OnlyRunForTags(tagsuite.Edit)
 	ts, env := suite.setup()
 	defer ts.Close()
 	cp := ts.SpawnWithOpts(e2e.WithArgs("scripts", "edit", "test-script"), env)
@@ -79,7 +79,7 @@ func (suite *EditIntegrationTestSuite) TestEdit() {
 }
 
 func (suite *EditIntegrationTestSuite) TestEdit_NonInteractive() {
-	suite.OnlyRunForTags("edit")
+	suite.OnlyRunForTags(tagsuite.Edit)
 	if runtime.GOOS == "windows" && e2e.RunningOnCI() {
 		suite.T().Skip("Windows CI does not support ctrl-c interrupts.")
 	}
@@ -96,7 +96,7 @@ func (suite *EditIntegrationTestSuite) TestEdit_NonInteractive() {
 }
 
 func (suite *EditIntegrationTestSuite) TestEdit_UpdateCorrectPlatform() {
-	suite.OnlyRunForTags("edit")
+	suite.OnlyRunForTags(tagsuite.Edit)
 	if runtime.GOOS == "windows" {
 		// https://www.pivotaltracker.com/story/show/174477457
 		suite.T().Skipf("Skipping on windows due to random failures")

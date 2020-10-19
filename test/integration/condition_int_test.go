@@ -16,7 +16,7 @@ type ConditionIntegrationTestSuite struct {
 }
 
 func (suite *ConditionIntegrationTestSuite) TestCondition() {
-	suite.OnlyRunForTags("condition")
+	suite.OnlyRunForTags(tagsuite.Condition)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -56,7 +56,7 @@ func (suite *ConditionIntegrationTestSuite) TestCondition() {
 }
 
 func (suite *ConditionIntegrationTestSuite) TestConditionOSName() {
-	suite.OnlyRunForTags("condition")
+	suite.OnlyRunForTags(tagsuite.Condition)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -76,7 +76,7 @@ func (suite *ConditionIntegrationTestSuite) TestConditionOSName() {
 }
 
 func (suite *ConditionIntegrationTestSuite) TestConditionSyntaxError() {
-	suite.OnlyRunForTags("condition")
+	suite.OnlyRunForTags(tagsuite.Condition)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 

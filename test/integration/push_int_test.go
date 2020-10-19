@@ -20,7 +20,7 @@ type PushIntegrationTestSuite struct {
 }
 
 func (suite *PushIntegrationTestSuite) TestInitAndPush() {
-	suite.OnlyRunForTags("push")
+	suite.OnlyRunForTags(tagsuite.Push)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	ts.LoginAsPersistentUser()
@@ -51,7 +51,7 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 }
 
 func (suite *PushIntegrationTestSuite) TestPush_AlreadyExists() {
-	suite.OnlyRunForTags("push")
+	suite.OnlyRunForTags(tagsuite.Push)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	ts.LoginAsPersistentUser()

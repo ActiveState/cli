@@ -20,7 +20,7 @@ type LanguagesIntegrationTestSuite struct {
 }
 
 func (suite *LanguagesIntegrationTestSuite) TestLanguages_list() {
-	suite.OnlyRunForTags("languages")
+	suite.OnlyRunForTags(tagsuite.Languages)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -34,7 +34,7 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_list() {
 }
 
 func (suite *LanguagesIntegrationTestSuite) TestLanguages_update() {
-	suite.OnlyRunForTags("languages")
+	suite.OnlyRunForTags(tagsuite.Languages)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
