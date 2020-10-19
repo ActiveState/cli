@@ -3,9 +3,6 @@ package secrets
 import (
 	"encoding/json"
 	"fmt"
-	"os"
-
-	"github.com/bndr/gotabulate"
 
 	"github.com/ActiveState/cli/internal/access"
 	"github.com/ActiveState/cli/internal/failures"
@@ -17,6 +14,7 @@ import (
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	secretsModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/bndr/gotabulate"
 )
 
 type listPrimeable interface {
@@ -51,34 +49,14 @@ func (l *List) Run(params ListRunParams) error {
 	if fail != nil {
 		return fail.WithDescription(locale.T("secrets_err_defined"))
 	}
-
-	secretExports, fail := defsToSecrets(defs)
+	exports, fail := defsToSecrets(defs)
 	if fail != nil {
 		return fail.WithDescription(locale.T("secrets_err_values"))
 	}
 
-	switch l.out.Type() {
-	case output.JSONFormatName, output.EditorV0FormatName, output.EditorFormatName:
-		data, fail := secretsAsJSON(secretExports)
-		if fail != nil {
-			return fail.WithDescription(locale.T("secrets_err_output"))
-		}
+	l.out.Print(secretExports(exports))
 
-		fmt.Fprint(os.Stdout, string(data))
-		return nil
-	default:
-		rows, fail := secretsToRows(secretExports)
-		if fail != nil {
-			return fail.WithDescription(locale.T("secrets_err_output"))
-		}
-
-		t := gotabulate.Create(rows)
-		t.SetHeaders([]string{locale.T("secrets_header_name"), locale.T("secrets_header_scope"), locale.T("secrets_header_value"), locale.T("secrets_header_description"), locale.T("secrets_header_usage")})
-		t.SetHideLines([]string{"betweenLine", "top", "aboveTitle", "LineTop", "LineBottom", "bottomLine"}) // Don't print whitespace lines
-		t.SetAlign("left")
-		fmt.Fprint(os.Stdout, t.Render("simple"))
-		return nil
-	}
+	return nil
 }
 
 func checkSecretsAccess(proj *project.Project) error {
@@ -133,6 +111,28 @@ func filterSecrets(proj *project.Project, secrectDefs []*secretsModels.SecretDef
 	}
 
 	return secrectDefsFiltered
+}
+
+type secretExports []*SecretExport
+
+func (es secretExports) MarshalOutput(format output.Format) interface{} {
+	switch format {
+	case output.JSONFormatName, output.EditorV0FormatName, output.EditorFormatName:
+		return es
+
+	default:
+		rows, fail := secretsToRows(es)
+		if fail != nil {
+			return fail.WithDescription(locale.T("secrets_err_output"))
+		}
+
+		t := gotabulate.Create(rows)
+		t.SetHeaders([]string{locale.T("secrets_header_name"), locale.T("secrets_header_scope"), locale.T("secrets_header_value"), locale.T("secrets_header_description"), locale.T("secrets_header_usage")})
+		t.SetHideLines([]string{"betweenLine", "top", "aboveTitle", "LineTop", "LineBottom", "bottomLine"}) // Don't print whitespace lines
+		t.SetAlign("left")
+
+		return t.Render("simple")
+	}
 }
 
 func defsToSecrets(defs []*secretsModels.SecretDefinition) ([]*SecretExport, *failures.Failure) {
