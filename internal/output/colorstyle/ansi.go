@@ -1,10 +1,12 @@
+// +build !windows
+
 package colorstyle
 
 import (
 	"io"
 )
 
-type ANSI struct {
+type Styler struct {
 	writer io.Writer
 }
 
@@ -23,11 +25,11 @@ var ansiStyleMap = map[Style]string{
 	White:     "\x1b[0;37",
 }
 
-func NewANSI(writer io.Writer) *ANSI {
-	return &ANSI{writer}
+func New(writer io.Writer) *Styler {
+	return &Styler{writer}
 }
 
-func (w *ANSI) SetStyle(s Style, bright bool) {
+func (w *Styler) SetStyle(s Style, bright bool) {
 	resolvedStyle := ansiStyleMap[s]
 	if bright {
 		resolvedStyle = resolvedStyle + ";1"

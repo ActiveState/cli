@@ -16,7 +16,3 @@ const (
 	Cyan
 	White
 )
-
-type ColorStyler interface {
-	SetStyle(s Style, bright bool)
-}

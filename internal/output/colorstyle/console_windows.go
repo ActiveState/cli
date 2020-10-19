@@ -66,14 +66,14 @@ func init() {
 	syscall.LoadDLL("")
 }
 
-type Console struct {
+type Styler struct {
 }
 
-func NewConsole() *Console {
-	return &Console{}
+func New(writer io.Writer) ColorStyler {
+	return &Styler{}
 }
 
-func (n *Console) SetStyle(s Style, bright bool) {
+func (n *Styler) SetStyle(s Style, bright bool) {
 	if s == Bold || s == Underline {
 		return // underline/bold is not supported on windows
 	}
