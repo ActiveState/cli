@@ -12,6 +12,7 @@ type Styler struct {
 
 var ansiStyleMap = map[Style]string{
 	Default:   "\x1b[39",
+	Dim:       "\x1b[2",
 	Reset:     "\x1b[0",
 	Reversed:  "\x1b[7",
 	Bold:      "\x1b[1",

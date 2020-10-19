@@ -82,6 +82,9 @@ func (n *Styler) SetStyle(s Style, bright bool) {
 	attr := uint16(0)
 	if s == Default || s == Reset {
 		attr = bufferInfo.WAttributes
+	} else if s == Dim {
+		attr = bufferInfo.WAttributes
+		bright = true
 	} else {
 		if style, ok := consoleStyleMap[s]; ok {
 			attr = attr & ^consoleColorMask | style

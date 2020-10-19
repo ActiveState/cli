@@ -56,7 +56,7 @@ func (dct defaultColorTheme) Error(writer io.Writer) {
 
 // Disabled switches to bright black foreground
 func (dct defaultColorTheme) Disabled(writer io.Writer) {
-	colorstyle.New(writer).SetStyle(colorstyle.Black, true)
+	colorstyle.New(writer).SetStyle(colorstyle.Dim, false)
 }
 
 // Actionable switches to teal foreground
