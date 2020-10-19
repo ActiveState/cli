@@ -43,7 +43,7 @@ const (
 	Shell         = "shell"
 	Shim          = "shim"
 	Show          = "show"
-	Update        = "Update"
+	Update        = "update"
 	VSCode        = "vscode"
 )
 
