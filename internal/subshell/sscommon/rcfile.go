@@ -170,7 +170,7 @@ func SetupProjectRcFile(templateName, ext string, env map[string]string, out out
 			userScripts = v + "\n" + userScripts
 			viper.Set(activatedKey, true)
 		}
-		if event.Name() == "activate" {
+		if strings.ToLower(event.Name()) == "activate" {
 			userScripts = userScripts + "\n" + v
 		}
 	}

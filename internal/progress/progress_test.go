@@ -31,23 +31,29 @@ func (dz *devZero) Close() error {
 }
 
 func expectPercentage(t *testing.T, buf *bytes.Buffer, expected int) {
-
-	time.Sleep(200 * time.Millisecond)
-	outputLines := strings.Split(strings.TrimSpace(buf.String()), "\n")
-	lastFiveOffset := len(outputLines) - 5
-	if lastFiveOffset < 0 {
-		lastFiveOffset = 0
-	}
-	output := strings.Join(outputLines[lastFiveOffset:], "\n")
-	// remove non-printable characters
-	re := regexp.MustCompile("[[:^print:]]")
-	stripped := re.ReplaceAllLiteralString(output, "")
-
 	expectedTotal := fmt.Sprintf("%d %%", expected)
+	var stripped string
 
-	if strings.Count(stripped, expectedTotal) == 0 {
-		t.Errorf("expected output bar %s to be at %d %%", stripped, expected)
+	// try three times to match the expected string
+	for retry := 0; retry < 3; retry++ {
+		time.Sleep(200 * time.Millisecond)
+		outputLines := strings.Split(strings.TrimSpace(buf.String()), "\n")
+		lastFiveOffset := len(outputLines) - 5
+		if lastFiveOffset < 0 {
+			lastFiveOffset = 0
+		}
+		output := strings.Join(outputLines[lastFiveOffset:], "\n")
+		// remove non-printable characters
+		re := regexp.MustCompile("[[:^print:]]")
+		stripped = re.ReplaceAllLiteralString(output, "")
+
+		if strings.Count(stripped, expectedTotal) > 0 {
+			return
+		}
 	}
+
+	// have not found the expected string after three attempts
+	t.Errorf("expected output bar %s to be at %d %%", stripped, expected)
 }
 
 // Test the unpack bar with two times re-scaling
