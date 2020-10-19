@@ -66,7 +66,7 @@ func (dct defaultColorTheme) Actionable(writer io.Writer) {
 
 // Reset re-sets all color settings
 func (dct defaultColorTheme) Reset(writer io.Writer) {
-	colorstyle.New(writer).SetStyle(colorstyle.Default, false)
+	colorstyle.New(writer).SetStyle(colorstyle.Reset, false)
 }
 
 var activeColorTheme ColorTheme = defaultColorTheme{}

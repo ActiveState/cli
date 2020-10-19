@@ -80,7 +80,7 @@ func (n *Styler) SetStyle(s Style, bright bool) {
 	}
 
 	attr := uint16(0)
-	if s == Default {
+	if s == Default || s == Reset {
 		attr = bufferInfo.WAttributes
 	} else {
 		if style, ok := consoleStyleMap[s]; ok {

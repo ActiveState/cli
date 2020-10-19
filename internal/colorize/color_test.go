@@ -21,19 +21,13 @@ func Test_writeColorized(t *testing.T) {
 			`heading`,
 			false,
 			`heading: [HEADING]value[/RESET] -- end`,
-			"heading: \x1b[0;1m\x1b[1mvalue\x1b[0m -- end",
+			"heading: \x1b[39;1m\x1b[1mvalue\x1b[0m -- end",
 		},
 		{
 			`notice`,
 			false,
 			`notice: [NOTICE]value[/RESET] -- end`,
-			"notice: \x1b[0;1mvalue\x1b[0m -- end",
-		},
-		{
-			`info`,
-			false,
-			`info: [NOTICE]value[/RESET]] -- end`,
-			"info: \x1b[32mvalue\x1b[0m] -- end",
+			"notice: \x1b[39;1mvalue\x1b[0m -- end",
 		},
 		{
 			`error`,

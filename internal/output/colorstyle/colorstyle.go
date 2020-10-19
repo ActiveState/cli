@@ -4,6 +4,7 @@ type Style int
 
 const (
 	Default = Style(iota)
+	Reset   = Style(iota)
 	Reversed
 	Bold
 	Underline
