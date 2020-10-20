@@ -82,7 +82,7 @@ func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, nam
 	// venvExePath stores a virtual environment's PATH value. If the script
 	// requires activation this is the PATH we should be searching for
 	// executables in.
-	var venvExePath string
+	venvExePath := os.Getenv("PATH")
 
 	// Activate the state if needed.
 	if !script.Standalone() && !subshell.IsActivated() {
@@ -100,12 +100,6 @@ func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, nam
 			return err
 		}
 		subs.SetEnv(env)
-
-		// search the "clean" path first (PATHS that are set by venv)
-		env, err = venv.GetEnv(false, "")
-		if err != nil {
-			return err
-		}
 		venvExePath = env["PATH"]
 	}
 
@@ -124,20 +118,17 @@ func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, nam
 	var attempted []string
 	for _, l := range script.Languages() {
 		var execPath string
-		var searchExePath string
 		if l.Executable().Available() {
 			execPath = l.Executable().Name()
-			searchExePath = venvExePath
 		} else {
 			execPath = l.String()
-			searchExePath = os.Getenv("PATH")
 		}
 
 		if l.Executable().Builtin() && rt.GOOS == "windows" {
 			execPath = execPath + ".exe"
 		}
 
-		if pathProvidesExec(searchExePath, execPath) {
+		if pathProvidesExec(venvExePath, execPath) {
 			lang = l
 			break
 		}
