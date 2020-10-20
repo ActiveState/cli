@@ -206,6 +206,7 @@ func (suite *RunIntegrationTestSuite) TestRun_Unauthenticated() {
 
 	cp.SendLine(fmt.Sprintf("%s run testMultipleLanguages", cp.Executable()))
 	cp.Expect("2")
+	cp.WaitForInput(120 * time.Second)
 
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
@@ -243,8 +244,7 @@ func (suite *RunIntegrationTestSuite) TestRun_BadLanguage() {
 	suite.Require().NoError(err, "extra config is appended")
 
 	cp := ts.Spawn("run", "badLanguage")
-	cp.Expect("parser", 5*time.Second)
-	cp.Expect("Supported languages", 5*time.Second)
+	cp.Expect("The language for this script is not supported", 5*time.Second)
 }
 
 func TestRunIntegrationTestSuite(t *testing.T) {
