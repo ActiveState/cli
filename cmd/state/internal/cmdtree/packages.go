@@ -16,6 +16,7 @@ func newPackagesCommand(prime *primer.Values) *captain.Command {
 		"packages",
 		locale.Tl("package_title", "Listing Packages"),
 		locale.T("package_cmd_description"),
+		prime.Output(),
 		[]*captain.Flag{
 			{
 				Name:        "commit",
@@ -52,6 +53,7 @@ func newPackagesAddCommand(prime *primer.Values) *captain.Command {
 		"add",
 		locale.Tl("package_add_title", "Adding Package"),
 		locale.T("package_add_cmd_description"),
+		prime.Output(),
 		[]*captain.Flag{},
 		[]*captain.Argument{
 			{
@@ -76,6 +78,7 @@ func newPackagesUpdateCommand(prime *primer.Values) *captain.Command {
 		"update",
 		locale.Tl("package_update_title", "Updating Packages"),
 		locale.T("package_update_cmd_description"),
+		prime.Output(),
 		[]*captain.Flag{},
 		[]*captain.Argument{
 			{
@@ -100,6 +103,7 @@ func newPackagesRemoveCommand(prime *primer.Values) *captain.Command {
 		"remove",
 		locale.Tl("package_remove_title", "Removing Package"),
 		locale.T("package_remove_cmd_description"),
+		prime.Output(),
 		[]*captain.Flag{},
 		[]*captain.Argument{
 			{
@@ -124,6 +128,7 @@ func newPackagesImportCommand(prime *primer.Values) *captain.Command {
 		"import",
 		locale.Tl("package_import_title", "Importing Packages"),
 		locale.T("package_import_cmd_description"),
+		prime.Output(),
 		[]*captain.Flag{
 			{
 				Name:        "force",
@@ -154,6 +159,7 @@ func newPackagesSearchCommand(prime *primer.Values) *captain.Command {
 		"search",
 		locale.Tl("package_search_title", "Searching Packages"),
 		locale.T("package_search_cmd_description"),
+		prime.Output(),
 		[]*captain.Flag{
 			{
 				Name:        "language",

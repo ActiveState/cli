@@ -16,6 +16,7 @@ func newAuthCommand(prime *primer.Values) *captain.Command {
 		"auth",
 		locale.Tl("auth_title", "Signing In To The ActiveState Platform"),
 		locale.T("auth_description"),
+		prime.Output(),
 		[]*captain.Flag{
 			{
 				Name:        "token",
@@ -55,6 +56,7 @@ func newSignupCommand(prime *primer.Values) *captain.Command {
 		"signup",
 		locale.Tl("signup_title", "Signing Up With The ActiveState Platform"),
 		locale.T("signup_description"),
+		prime.Output(),
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
@@ -69,6 +71,7 @@ func newLogoutCommand(prime *primer.Values) *captain.Command {
 		"logout",
 		locale.Tl("logout_title", "Logging Out Of The ActiveState Platform"),
 		locale.T("logout_description"),
+		prime.Output(),
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {

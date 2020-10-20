@@ -136,6 +136,7 @@ func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Comm
 		"state",
 		"",
 		locale.T("state_description"),
+		prime.Output(),
 		[]*captain.Flag{
 			{
 				Name:        "locale",
