@@ -14,7 +14,6 @@ func newAuthCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"auth",
-		locale.Tl("auth_title", "Signing In To The ActiveState Platform"),
 		locale.T("auth_description"),
 		[]*captain.Flag{
 			{
@@ -53,7 +52,6 @@ func newSignupCommand(prime *primer.Values) *captain.Command {
 	signupRunner := auth.NewSignup(prime)
 	return captain.NewCommand(
 		"signup",
-		locale.Tl("signup_title", "Signing Up With The ActiveState Platform"),
 		locale.T("signup_description"),
 		[]*captain.Flag{},
 		[]*captain.Argument{},
@@ -67,7 +65,6 @@ func newLogoutCommand(prime *primer.Values) *captain.Command {
 	logoutRunner := auth.NewLogout(prime)
 	return captain.NewCommand(
 		"logout",
-		locale.Tl("logout_title", "Logging Out Of The ActiveState Platform"),
 		locale.T("logout_description"),
 		[]*captain.Flag{},
 		[]*captain.Argument{},

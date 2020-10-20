@@ -981,7 +981,7 @@ export_config_flag_filter_description:
 export_config_dir_description:
   other: Export the config directory details
 export_apikey_user_notice:
-  other: "Note that this key is not stored by ActiveState. Please store the value for later use as you cannot retrieve it again."
+  other: "This key is not stored by ActiveState. Please store the value for later use as you cannot retrieve it again."
 err_apikey_name_required:
   other: An API key name is required.
 err_cannot_obtain_apikey:

@@ -28,8 +28,9 @@ func (j *JWT) Run(params *JWTParams) error {
 		return failures.FailUser.New(locale.T("err_command_requires_auth"))
 	}
 
+	j.Outputer.Notice(output.Title(locale.Tl("export_jwt_title", "Exporting Credentials")))
+
 	token := authentication.Get().BearerToken()
-	j.Outputer.Print(
-		output.NewFormatter(token).WithFormat(output.EditorV0FormatName, []byte(token)))
+	j.Outputer.Print(output.NewFormatter(token).WithFormat(output.EditorV0FormatName, []byte(token)))
 	return nil
 }

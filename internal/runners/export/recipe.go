@@ -49,6 +49,8 @@ func (r *Recipe) Run(params *RecipeParams) error {
 		}
 	}
 
+	r.Outputer.Notice(output.Title(locale.Tl("export_recipe_title", "Exporting Recipe Data")))
+
 	r.Outputer.Print(data)
 	return nil
 }

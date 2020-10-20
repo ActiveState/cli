@@ -119,6 +119,8 @@ func (f *Fork) run(params *Params) error {
 		}
 	}
 
+	f.out.Notice(output.Title(locale.Tl("fork_title", "Forking Project")))
+
 	f.out.Print(&outputFormat{
 		locale.Tl("fork_success", "Your fork has been successfully created at https://{{.V0}}/{{.V1}}.", constants.PlatformURL, target.String()),
 		&params.Namespace,

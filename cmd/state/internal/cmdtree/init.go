@@ -17,7 +17,6 @@ func newInitCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"init",
-		locale.Tl("init_title", "Initializing Project"),
 		locale.T("init_description"),
 		[]*captain.Flag{
 			{

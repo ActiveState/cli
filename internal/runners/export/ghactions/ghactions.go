@@ -78,6 +78,8 @@ func (g *GithubActions) Run(p *Params) error {
 		return locale.NewError("err_ghac_marshal", "Failed to create yaml file: {{.V0}}", err.Error())
 	}
 
+	g.output.Notice(output.Title(locale.Tl("export_ghactions_title", "Exporting Github Action Workflow")))
+
 	g.output.Print(string(out))
 	return nil
 }

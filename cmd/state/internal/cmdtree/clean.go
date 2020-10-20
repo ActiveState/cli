@@ -10,7 +10,6 @@ import (
 func newCleanCommand(prime *primer.Values) *captain.Command {
 	return captain.NewCommand(
 		"clean",
-		locale.Tl("clean_title", "Cleaning Resources"),
 		locale.T("clean_description"),
 		[]*captain.Flag{},
 		[]*captain.Argument{},
@@ -25,7 +24,6 @@ func newUninstallCommand(prime *primer.Values) *captain.Command {
 	params := clean.UninstallParams{}
 	return captain.NewCommand(
 		"uninstall",
-		locale.Tl("clean_uninstall_title", "Uninstalling"),
 		locale.T("uninstall_description"),
 		[]*captain.Flag{
 			{
@@ -52,7 +50,6 @@ func newCacheCommand(prime *primer.Values) *captain.Command {
 	params := clean.CacheParams{}
 	return captain.NewCommand(
 		"cache",
-		locale.Tl("clean_cache_title", "Cleaning Cached Runtimes"),
 		locale.T("cache_description"),
 		[]*captain.Flag{
 			{
@@ -81,7 +78,6 @@ func newConfigCommand(prime *primer.Values) *captain.Command {
 	params := clean.ConfigParams{}
 	return captain.NewCommand(
 		"config",
-		locale.Tl("clean_config_title", "Cleaning Configuration"),
 		locale.T("config_description"),
 		[]*captain.Flag{
 			{

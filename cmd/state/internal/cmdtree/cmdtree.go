@@ -134,7 +134,6 @@ func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Comm
 	runner := state.New(opts, prime)
 	cmd := captain.NewCommand(
 		"state",
-		"",
 		locale.T("state_description"),
 		[]*captain.Flag{
 			{

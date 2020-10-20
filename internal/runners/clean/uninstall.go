@@ -57,6 +57,8 @@ func (u *Uninstall) Run(params *UninstallParams) error {
 		return errors.New(locale.T("err_uninstall_activated"))
 	}
 
+	u.out.Notice(output.Title(locale.Tl("clean_uninstall_title", "Uninstalling")))
+
 	if !params.Force {
 		ok, fail := u.confirm.Confirm(locale.T("uninstall_confirm"), false)
 		if fail != nil {

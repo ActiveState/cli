@@ -13,7 +13,6 @@ func newForkCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"fork",
-		locale.Tl("fork_title", "Forking Project"),
 		locale.Tl("fork_description", "Fork an existing ActiveState Platform project"),
 		[]*captain.Flag{
 			{

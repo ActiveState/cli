@@ -26,8 +26,6 @@ type Command struct {
 	cobra    *cobra.Command
 	commands []*Command
 
-	title string
-
 	flags     []*Flag
 	arguments []*Argument
 
@@ -41,7 +39,7 @@ type Command struct {
 	out output.Outputer
 }
 
-func NewCommand(name, title, description string, flags []*Flag, args []*Argument, executor Executor) *Command {
+func NewCommand(name, description string, flags []*Flag, args []*Argument, executor Executor) *Command {
 	// Validate args
 	for idx, arg := range args {
 		if idx > 0 && arg.Required && !args[idx-1].Required {
@@ -54,7 +52,6 @@ func NewCommand(name, title, description string, flags []*Flag, args []*Argument
 	}
 
 	cmd := &Command{
-		title:     title,
 		execute:   executor,
 		arguments: args,
 		flags:     flags,

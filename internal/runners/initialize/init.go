@@ -130,12 +130,15 @@ func run(params *RunParams, out output.Outputer) (string, error) {
 		return "", fail
 	}
 
-	out.Notice(locale.Tr(
+	out.Notice(output.Title(locale.Tl("init_title", "Initializing Project")))
+
+	outputString := locale.Tr(
 		"init_success",
 		params.Namespace.Owner,
 		params.Namespace.Project,
 		params.Path,
-	))
+	)
+	out.Print(output.NewFormatter(output.Suppress).WithFormat(output.PlainFormatName, outputString))
 
 	return params.Path, nil
 }

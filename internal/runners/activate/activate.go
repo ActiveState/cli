@@ -120,14 +120,14 @@ func (r *Activate) run(params *ActivateParams) error {
 
 	updater.PrintUpdateMessage(proj.Source().Path(), r.out)
 
-	if proj.IsHeadless() {
-		r.out.Notice(output.Heading(locale.T("info_activating_state_by_commit")))
-	} else {
-		r.out.Notice(output.Heading(locale.T("info_activating_state", proj)))
-	}
-
 	if proj.CommitID() == "" {
 		return errs.New(locale.Tr("err_project_no_commit", model.ProjectURL(proj.Owner(), proj.Name(), "")))
+	}
+
+	if proj.IsHeadless() {
+		r.out.Notice(output.Title(locale.T("info_activating_state_by_commit")))
+	} else {
+		r.out.Notice(output.Title(locale.T("info_activating_state", proj)))
 	}
 
 	if err := r.activateAndWait(proj, runtime); err != nil {

@@ -37,6 +37,8 @@ func (p *PrivateKey) Run(params *PrivateKeyParams) error {
 		return fail
 	}
 
+	p.Outputer.Notice(output.Title(locale.Tl("export_privkey_title", "Exporting Private Key")))
+
 	p.Outputer.Print(string(contents))
 	return nil
 }

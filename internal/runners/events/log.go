@@ -42,6 +42,8 @@ func (e *EventLog) Run(params *EventLogParams) error {
 		return locale.NewError("err_invalid_rx", "Could not create regex matcher. Please contact support, this should not happen.")
 	}
 
+	e.out.Notice(output.Title(locale.Tl("events_log_title", "Showing Events Log")))
+
 	for line := range tailer.Lines {
 		if matcher.MatchString(line.Text) {
 			e.out.Print(line.Text)

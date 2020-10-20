@@ -67,7 +67,11 @@ func (k *APIKey) Run(params APIKeyRunParams) error {
 		return fail.WithDescription("err_cannot_obtain_apikey")
 	}
 
-	k.out.Notice(locale.T("export_apikey_user_notice"))
+	k.out.Notice(output.Title(locale.Tl("export_new_api_key_title", "Exporting New API Key")))
+
+	k.out.Notice(output.Heading(locale.Tl("notice", "Notice")))
+	k.out.Notice(locale.T("export_apikey_user_notice") + "\n")
+
 	k.out.Print(key)
 	return nil
 }

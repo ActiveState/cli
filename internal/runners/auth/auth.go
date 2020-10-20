@@ -37,6 +37,7 @@ type AuthParams struct {
 // Run runs our command
 func (a *Auth) Run(params *AuthParams) error {
 	if !a.Authenticated() {
+		a.Outputer.Notice(output.Title(locale.Tl("auth_title", "Authenticating With The ActiveState Platform")))
 		if err := a.authenticate(params); err != nil {
 			return locale.WrapError(err, locale.Tl("err_auth_authenticate", "Could not authenticate."))
 		}
@@ -46,6 +47,8 @@ func (a *Auth) Run(params *AuthParams) error {
 	if err != nil {
 		return locale.WrapError(err, locale.Tl("err_auth_userdata", "Could not collect information about your account."))
 	}
+
+	a.Outputer.Notice(output.Title(locale.Tl("auth_title", "Account Information")))
 
 	a.Outputer.Print(
 		output.NewFormatter(data).

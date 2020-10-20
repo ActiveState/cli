@@ -17,6 +17,8 @@ func NewLogout(prime primeable) *Logout {
 }
 
 func (l *Logout) Run() error {
+	l.Outputer.Notice(output.Title(locale.Tl("logout_title", "Logging Out Of The ActiveState Platform")))
+
 	l.Auth.Logout()
 	keypairs.DeleteWithDefaults()
 	l.Outputer.Notice(output.Heading(locale.Tl("authentication_title", "Authentication")))
