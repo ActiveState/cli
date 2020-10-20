@@ -16,7 +16,7 @@ import (
 // Invoke will invoke a state tool command with the given args and prints a friendly message indicating what we're doing
 func Invoke(out output.Outputer, args ...string) error {
 	// Tell user we're invoking a state command
-	out.Notice(locale.Tl("tutorial_invoking", "\n[INFO]Invoking `state {{.V0}}` ...[/RESET]", strings.Join(args, " ")))
+	out.Notice(locale.Tl("tutorial_invoking", "\n[NOTICE]Invoking `state {{.V0}}` ...[/RESET]", strings.Join(args, " ")))
 	time.Sleep(time.Second)
 
 	// Get terminal width so we can print dashed line to call out state command output
@@ -27,12 +27,12 @@ func Invoke(out output.Outputer, args ...string) error {
 	}
 
 	// print dashed line
-	out.Notice("[INFO]" + strings.Repeat("-", termWidth) + "[/RESET]")
+	out.Notice("[NOTICE]" + strings.Repeat("-", termWidth) + "[/RESET]")
 
 	err = InvokeSilent(args...)
 
 	// print dashed line
-	out.Notice("[INFO]" + strings.Repeat("-", termWidth) + "[/RESET]\n")
+	out.Notice("[NOTICE]" + strings.Repeat("-", termWidth) + "[/RESET]\n")
 
 	if err != nil {
 		return err

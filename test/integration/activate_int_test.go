@@ -44,7 +44,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
 	cp := ts.Spawn("activate", "ActiveState-CLI/Python3")
 	cp.Expect("Where would you like to checkout")
 	cp.SendLine(cp.WorkDirectory())
-	cp.Expect("activated state", 20*time.Second)
+	cp.Expect("You're Activated", 20*time.Second)
 	cp.WaitForInput(10 * time.Second)
 
 	cp.SendLine("exit 123")
@@ -58,7 +58,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateUsingCommitID() {
 	cp := ts.Spawn("activate", "ActiveState-CLI/Python3#6d9280e7-75eb-401a-9e71-0d99759fbad3")
 	cp.Expect("Where would you like to checkout")
 	cp.SendLine(cp.WorkDirectory())
-	cp.Expect("activated state", 20*time.Second)
+	cp.Expect("You're Activated", 20*time.Second)
 	cp.WaitForInput(10 * time.Second)
 
 	cp.SendLine("exit")
@@ -72,7 +72,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateNotOnPath() {
 	cp := ts.Spawn("activate", "ActiveState-CLI/Python3")
 	cp.Expect("Where would you like to checkout")
 	cp.SendLine(cp.WorkDirectory())
-	cp.Expect("activated state", 20*time.Second)
+	cp.Expect("You're Activated", 20*time.Second)
 	cp.WaitForInput(10 * time.Second)
 
 	if runtime.GOOS == "windows" {

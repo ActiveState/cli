@@ -15,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/deprecation"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -53,6 +54,7 @@ func main() {
 		if err != nil {
 			logging.Debug("Could not retrieve os version info: %v", err)
 		} else if osv.Major < 10 {
+			out.Notice(output.Heading(locale.Tl("compatibility_warning", "Compatibility Warning")))
 			out.Notice(locale.Tr(
 				"windows_compatibility_warning",
 				constants.ForumsURL,
@@ -147,12 +149,12 @@ func run(args []string, out output.Outputer) (int, error) {
 	// Run the actual command
 	cmds := cmdtree.New(primer.New(pj, out, authentication.Get(), prompter, sshell, conditional), args...)
 
-	child, err := cmds.Command().Find(args[1:])
+	childCmd, err := cmds.Command().Find(args[1:])
 	if err != nil {
 		logging.Debug("Could not find child command, error: %v", err)
 	}
 
-	if child != nil && !child.SkipChecks() {
+	if childCmd != nil && !childCmd.SkipChecks() {
 		// Auto update to latest state tool version, only runs once per day
 		if updated, code, err := autoUpdate(args, out, pjPath); err != nil || updated {
 			return code, err
@@ -166,6 +168,7 @@ func run(args []string, out output.Outputer) (int, error) {
 		if deprecated != nil {
 			date := deprecated.Date.Format(constants.DateFormatUser)
 			if !deprecated.DateReached {
+				out.Notice(output.Heading(locale.Tl("deprecation_title", "Deprecation Warning")))
 				out.Notice(locale.Tr("warn_deprecation", date, deprecated.Reason))
 			} else {
 				return 1, locale.NewInputError("err_deprecation", "You are running a version of the State Tool that is no longer supported! Reason: {{.V1}}", date, deprecated.Reason)
@@ -174,5 +177,13 @@ func run(args []string, out output.Outputer) (int, error) {
 	}
 
 	err = cmds.Execute(args[1:])
+	if err != nil {
+		cmdName := ""
+		if childCmd != nil {
+			cmdName = childCmd.Use() + " "
+		}
+		err = errs.SetTips(err, locale.Tl("err_tip_run_help", "Run → [ACTIONABLE]state {{.V0}}--help[/RESET]", cmdName))
+	}
+
 	return unwrapError(err)
 }

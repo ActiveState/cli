@@ -72,6 +72,7 @@ var (
 type MessageHandler interface {
 	buildlogstream.MessageHandler
 	DownloadStarting()
+	InstallStarting()
 }
 
 // Installer implements an Installer that works with a runtime.Downloader and a
@@ -153,21 +154,23 @@ func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGet
 
 	downloadArtfs := runtimeAssembler.ArtifactsToDownload()
 	unpackArchives := map[string]*HeadChefArtifact{}
-	progressBar := progress.New(mpb.WithOutput(os.Stderr))
-	if strings.ToLower(os.Getenv(constants.NonInteractive)) == "true" {
-		progressBar = progress.New(mpb.WithOutput(nil))
-	}
-	defer progressBar.Close()
 
+	progressOut := os.Stderr
+	if strings.ToLower(os.Getenv(constants.NonInteractive)) == "true" {
+		progressOut = nil
+	}
+
+	downloadProgress := progress.New(mpb.WithOutput(progressOut))
 	if len(downloadArtfs) != 0 {
 		if installer.runtime.msgHandler != nil {
 			installer.runtime.msgHandler.DownloadStarting()
 		}
 
 		if len(downloadArtfs) > 0 {
-			archives, fail := installer.runtimeDownloader.Download(downloadArtfs, runtimeAssembler, progressBar)
+			archives, fail := installer.runtimeDownloader.Download(downloadArtfs, runtimeAssembler, downloadProgress)
 			if fail != nil {
-				progressBar.Cancel()
+				downloadProgress.Cancel()
+				downloadProgress.Close()
 				return nil, false, fail
 			}
 
@@ -176,12 +179,20 @@ func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGet
 			}
 		}
 	}
+	downloadProgress.Close()
 
-	fail = installer.InstallFromArchives(unpackArchives, runtimeAssembler, progressBar)
+	if installer.runtime.msgHandler != nil {
+		installer.runtime.msgHandler.InstallStarting()
+	}
+
+	installProgress := progress.New(mpb.WithOutput(progressOut))
+	fail = installer.InstallFromArchives(unpackArchives, runtimeAssembler, installProgress)
 	if fail != nil {
-		progressBar.Cancel()
+		installProgress.Cancel()
+		installProgress.Close()
 		return nil, false, fail
 	}
+	installProgress.Close()
 
 	// We still want to run PostInstall because even though no new artifact might be downloaded we still might be
 	// deleting some already cached ones

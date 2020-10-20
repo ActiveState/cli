@@ -5,16 +5,76 @@ import (
 	"fmt"
 	"os"
 	"runtime/debug"
+	"strings"
 	"time"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/output/txtstyle"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 )
+
+type ErrorTips interface {
+	ErrorTips() []string
+}
+
+type OutputError struct {
+	error
+}
+
+func (o *OutputError) MarshalOutput(f output.Format) interface{} {
+	if f != output.PlainFormatName {
+		return o.error
+	}
+
+	// Print header
+	errs := locale.UnwrapError(o.error)
+	title := txtstyle.NewTitle(trimError(locale.ErrorMessage(o.error)))
+	title.Heading = locale.Tl("err_heading", " ERROR! ")
+	title.ColorCode = "ERROR"
+
+	var outLines []string
+	outLines = append(outLines, title.String())
+
+	// Print what happened
+	if len(errs) > 1 {
+		outLines = append(outLines, output.Heading(locale.Tl("err_what_happened", "Here's What Happened")).String())
+
+		for _, errv := range errs[1:] {
+			outLines = append(outLines, fmt.Sprintf(" [ERROR]x[/RESET] %s", trimError(locale.ErrorMessage(errv))))
+		}
+	}
+
+	// Concatenate error tips
+	errorTips := []string{}
+	err := o.error
+	for err != nil {
+		if v, ok := err.(ErrorTips); ok {
+			errorTips = append(errorTips, v.ErrorTips()...)
+		}
+		err = errors.Unwrap(err)
+	}
+	errorTips = append(errorTips, locale.Tl("err_help_forum", "Community → [ACTIONABLE]{{.V0}}[/RESET]", constants.ForumsURL))
+
+	// Print tips
+	outLines = append(outLines, output.Heading(locale.Tl("err_more_help", "Need More Help?")).String())
+	for _, tip := range errorTips {
+		outLines = append(outLines, fmt.Sprintf(" [DISABLED]-[/RESET] %s", trimError(tip)))
+	}
+	return "\n" + strings.Join(outLines, "\n")
+}
+
+func trimError(msg string) string {
+	if strings.Count(msg, ".") > 1 || strings.Count(msg, ",") > 0 {
+		return msg // Don't trim dots if we have multiple sentences.
+	}
+	return strings.TrimRight(msg, " .")
+}
 
 func unwrapError(err error) (int, error) {
 	// Ensure we are dealing with an error rather than a failure in disguise
@@ -41,9 +101,7 @@ func unwrapError(err error) (int, error) {
 	// unwrap exit code before we remove un-localized wrapped errors from err variable
 	code := unwrapExitCode(err)
 
-	if locale.IsError(err) {
-		err = locale.JoinErrors(err, "\n")
-	} else if isErrs && !hasMarshaller {
+	if !locale.IsError(err) && isErrs && !hasMarshaller {
 		logging.Error("MUST ADDRESS: Error does not have localization: %s", errs.Join(err, "\n").Error())
 
 		// If this wasn't built via CI then this is a dev workstation, and we should be more aggressive
@@ -57,7 +115,7 @@ func unwrapError(err error) (int, error) {
 		err = nil
 	}
 
-	return code, err
+	return code, &OutputError{err}
 }
 
 // unwrapExitCode checks if the given error is a failure of type FailExecCmdExit and

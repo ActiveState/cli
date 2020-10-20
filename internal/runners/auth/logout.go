@@ -19,6 +19,7 @@ func NewLogout(prime primeable) *Logout {
 func (l *Logout) Run() error {
 	l.Auth.Logout()
 	keypairs.DeleteWithDefaults()
+	l.Outputer.Notice(output.Heading(locale.Tl("authentication_title", "Authentication")))
 	l.Outputer.Notice(locale.T("logged_out"))
 	return nil
 }

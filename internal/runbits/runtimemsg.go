@@ -16,7 +16,11 @@ func NewRuntimeMessageHandler(out output.Outputer) *RuntimeMessageHandler {
 }
 
 func (r *RuntimeMessageHandler) DownloadStarting() {
-	r.out.Notice(locale.T("downloading_artifacts"))
+	r.out.Notice(output.Heading(locale.T("downloading_artifacts")))
+}
+
+func (r *RuntimeMessageHandler) InstallStarting() {
+	r.out.Notice(output.Heading(locale.T("installing_artifacts")))
 }
 
 func (r *RuntimeMessageHandler) BuildStarting(totalArtifacts int) {

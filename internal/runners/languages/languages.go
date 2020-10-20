@@ -31,6 +31,13 @@ type Listing struct {
 	Languages []model.Language `json:"languages"`
 }
 
+func (l Listing) MarshalOutput(f output.Format) interface{} {
+	if f == output.PlainFormatName {
+		return l.Languages
+	}
+	return l
+}
+
 func (l *Languages) Run(params *LanguagesParams) error {
 	langs, err := model.FetchLanguagesForProject(params.owner, params.projectName)
 	if err != nil {
