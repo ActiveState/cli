@@ -26,8 +26,8 @@ import (
 var (
 	// FailScriptNotDefined indicates the user provided a script name that is not defined
 	FailScriptNotDefined = failures.Type("run.fail.scriptnotfound", failures.FailUser)
-	// FailStandalonConflict indicates when a script is run standalone, but unable to be so
-	FailStandalonConflict = failures.Type("run.fail.standaloneconflict", failures.FailUser)
+	// FailStandaloneConflict indicates when a script is run standalone, but unable to be so
+	FailStandaloneConflict = failures.Type("run.fail.standaloneconflict", failures.FailUser)
 	// FailExecNotFound indicates when the builtin language exec is not available
 	FailExecNotFound = failures.Type("run.fail.execnotfound", failures.FailUser)
 )
@@ -79,24 +79,10 @@ func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, nam
 		return fail
 	}
 
-	lang := script.Language()
-	if !lang.Recognized() {
-		warning := locale.Tl(
-			"run_warn_deprecated_script_without_language",
-			"[NOTICE]DEPRECATION WARNING: Scripts without a defined language currently fall back to using  the default shell for your platform. This fallback mechanic will soon stop working and a language will need to be explicitly defined for each script. Please configure the 'language' field with a valid option (one of {{.V0}})[/RESET]",
-			strings.Join(language.RecognizedNames(), ", "),
-		)
-		out.Notice(warning)
-
-		lang = language.MakeByShell(subs.Shell())
-	}
-
-	langExec := lang.Executable()
-	if script.Standalone() && !langExec.Builtin() {
-		return FailStandalonConflict.New("error_state_run_standalone_conflict")
-	}
-
-	envPath := os.Getenv("PATH")
+	// venvExePath stores a virtual environment's PATH value. If the script
+	// requires activation this is the PATH we should be searching for
+	// executables in.
+	venvExePath := os.Getenv("PATH")
 
 	// Activate the state if needed.
 	if !script.Standalone() && !subshell.IsActivated() {
@@ -115,16 +101,63 @@ func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, nam
 		}
 		subs.SetEnv(env)
 
-		// get the "clean" path (only PATHS that are set by venv)
+		// search the "clean" path first (PATHS that are set by venv)
 		env, err = venv.GetEnv(false, "")
 		if err != nil {
 			return err
 		}
-		envPath = env["PATH"]
+		venvExePath = env["PATH"]
 	}
 
-	if !langExec.Builtin() && !pathProvidesExec(configCachePath(), langExec.Name(), envPath) {
-		return FailExecNotFound.New("error_state_run_unknown_exec")
+	lang := language.Unknown
+	if len(script.Languages()) == 0 {
+		warning := locale.Tl(
+			"run_warn_deprecated_script_without_language",
+			"[YELLOW]DEPRECATION WARNING: Scripts without a defined language currently fall back to using the default shell for your platform. This fallback mechanic will soon stop working and a language will need to be explicitly defined for each script. Please configure the 'language' field with a valid option (one of {{.V0}})[/RESET]",
+			strings.Join(language.RecognizedNames(), ", "),
+		)
+		out.Notice(warning)
+
+		lang = language.MakeByShell(subs.Shell())
+	}
+
+	var attempted []string
+	for _, l := range script.Languages() {
+		var execPath string
+		if l.Executable().Available() {
+			execPath = l.Executable().Name()
+		} else {
+			execPath = l.String()
+		}
+
+		if l.Executable().Builtin() && rt.GOOS == "windows" {
+			execPath = execPath + ".exe"
+		}
+
+		if pathProvidesExec(venvExePath, execPath) {
+			lang = l
+			break
+		}
+		attempted = append(attempted, l.String())
+	}
+
+	if script.Standalone() && !lang.Executable().Builtin() {
+		return FailStandaloneConflict.New("error_state_run_standalone_conflict")
+	}
+
+	if lang == language.Unknown {
+		if len(attempted) > 0 {
+			return locale.NewInputError(
+				"err_run_unknown_language_fallback",
+				"The language for this script is not supported or not available on your system. Attempted script execution with: {{.V0}}. Please configure the 'language' field with an available option (one, or more, of: {{.V1}})",
+				strings.Join(attempted, ", "),
+				strings.Join(language.RecognizedNames(), ", "),
+			)
+		}
+		return locale.NewInputError(
+			"err_run_unknown_language",
+			"The language for this script is not supported or not available on your system. Please configure the 'language' field with a valid option (one, or more, of: {{.V0}})", strings.Join(language.RecognizedNames(), ", "),
+		)
 	}
 
 	scriptBlock, err := script.Value()
@@ -140,7 +173,20 @@ func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, nam
 
 	out.Notice(locale.Tr("info_state_run_running", script.Name(), script.Source().Path()))
 	// ignore code for now, passing via failure
-	return subs.Run(sf.Filename(), args...)
+	err = subs.Run(sf.Filename(), args...)
+	if err != nil {
+		if len(attempted) > 0 {
+			return locale.WrapInputError(
+				err,
+				"err_run_script",
+				"Script execution fell back to {{.V0}} after {{.V1}} was not detected in your project or system. Please ensure your script is compatible with one, or more, of: {{.V0}}, {{.V1}}",
+				lang.String(),
+				strings.Join(attempted, ", "),
+			)
+		}
+		return err
+	}
+	return nil
 }
 
 func configCachePath() string {
@@ -150,13 +196,9 @@ func configCachePath() string {
 	return config.CachePath()
 }
 
-func pathProvidesExec(filterByPath, exec, path string) bool {
+func pathProvidesExec(path, exec string) bool {
 	paths := splitPath(path)
-	if filterByPath != "" {
-		paths = filterPrefixed(filterByPath, paths)
-	}
 	paths = applySuffix(exec, paths)
-
 	for _, p := range paths {
 		if isExecutableFile(p) {
 			return true
@@ -167,17 +209,6 @@ func pathProvidesExec(filterByPath, exec, path string) bool {
 
 func splitPath(path string) []string {
 	return strings.Split(path, string(os.PathListSeparator))
-}
-
-func filterPrefixed(prefix string, paths []string) []string {
-	var ps []string
-	for _, p := range paths {
-		// Clean removes double slashes and relative path directories
-		if strings.HasPrefix(filepath.Clean(p), filepath.Clean(prefix)) {
-			ps = append(ps, p)
-		}
-	}
-	return ps
 }
 
 func applySuffix(suffix string, paths []string) []string {

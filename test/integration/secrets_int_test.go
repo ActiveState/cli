@@ -6,15 +6,17 @@ import (
 
 	"github.com/ActiveState/cli/internal/runners/secrets"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/stretchr/testify/suite"
 )
 
 type SecretsIntegrationTestSuite struct {
-	suite.Suite
+	tagsuite.Suite
 	originalWd string
 }
 
 func (suite *SecretsIntegrationTestSuite) TestSecrets_JSON() {
+	suite.OnlyRunForTags(tagsuite.Secrets, tagsuite.JSON)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 

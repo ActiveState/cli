@@ -145,6 +145,10 @@ func NewNoPathUpdate(t *testing.T, retainDirs bool, extraEnv ...string) *Session
 	return new(t, retainDirs, false, extraEnv...)
 }
 
+func (s *Session) ClearCache() error {
+	return os.RemoveAll(s.Dirs.Cache)
+}
+
 // Spawn spawns the state tool executable to be tested with arguments
 func (s *Session) Spawn(args ...string) *termtest.ConsoleProcess {
 	return s.SpawnCmdWithOpts(s.exe, WithArgs(args...))

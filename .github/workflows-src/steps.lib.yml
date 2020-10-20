@@ -117,16 +117,29 @@ env:
 name: "Integration Tests"
 shell: bash
 run: |
-  export SHELL=''
-  set +e
-  go test -timeout 20m ./test/integration -v
-  testCode=$?
-  head -n-0 build/*log 2>/dev/null
-  exit ${testCode}
+  LABELS="${{ join(github.event.pull_request.labels.*.name, ',') }}"
+  IFS=',' read -r -a TESTS <<< "$LABELS"
+  TEST_SUITE_TAGS=""
+  for i in "${TESTS[@]}"
+  do
+    :
+    START=${i%:*}
+    if [ "$START" == "run-int-test-only" ]; then
+      TEST_SUITE=${i##*:}
+      TEST_SUITE_TAGS="$TEST_SUITE:$TEST_SUITE_TAGS"
+    fi
+  done
+
+  export TEST_SUITE_TAGS="$TEST_SUITE_TAGS"
+  SHELL='' go test -timeout 20m ./test/integration -v
 env:
   INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
   INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
   PLATFORM_API_TOKEN: ${{ secrets.PLATFORM_API_TOKEN }}
+  # Note: The AWS access tokens are needed to download temporary artifacts in alternative_int_test.go
+  # Remove these lines, once these changes are not necessary anymore.  
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 #@ end
 ---
 #@ def steps_uploadsharedartifacts():

@@ -408,14 +408,14 @@ func MakeEventsFromConstrainedEntities(items []ConstrainedEntity) (events []*Eve
 
 // Script covers the script structure, which goes under Project
 type Script struct {
-	Name        string            `yaml:"name"`
-	Description string            `yaml:"description,omitempty"`
-	Value       string            `yaml:"value"`
-	Filename    string            `yaml:"filename,omitempty"`
-	Standalone  bool              `yaml:"standalone,omitempty"`
-	Language    language.Language `yaml:"language,omitempty"`
-	Conditional Conditional       `yaml:"if"`
-	Constraints Constraint        `yaml:"constraints,omitempty"`
+	Name        string      `yaml:"name"`
+	Description string      `yaml:"description,omitempty"`
+	Value       string      `yaml:"value"`
+	Filename    string      `yaml:"filename,omitempty"`
+	Standalone  bool        `yaml:"standalone,omitempty"`
+	Language    string      `yaml:"language,omitempty"`
+	Conditional Conditional `yaml:"if"`
+	Constraints Constraint  `yaml:"constraints,omitempty"`
 }
 
 var _ ConstrainedEntity = Script{}

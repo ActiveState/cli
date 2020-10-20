@@ -17,21 +17,22 @@ import (
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 type RunIntegrationTestSuite struct {
-	suite.Suite
+	tagsuite.Suite
 }
 
-func (suite *RunIntegrationTestSuite) createProjectFile(ts *e2e.Session) {
+func (suite *RunIntegrationTestSuite) createProjectFile(ts *e2e.Session, pythonVersion int) {
 	root := environment.GetRootPathUnsafe()
 	interruptScript := filepath.Join(root, "test", "integration", "assets", "run", "interrupt.go")
 	fileutils.CopyFile(interruptScript, filepath.Join(ts.Dirs.Work, "interrupt.go"))
 
 	// ActiveState-CLI/Python3 is just a place-holder that is never used
-	configFileContent := strings.TrimSpace(`
-project: https://platform.activestate.com/ActiveState-CLI/Python3?commitID=fbc613d6-b0b1-4f84-b26e-4aa5869c4e54
+	configFileContent := strings.TrimSpace(fmt.Sprintf(`
+project: https://platform.activestate.com/ActiveState-CLI/Python%d?commitID=fbc613d6-b0b1-4f84-b26e-4aa5869c4e54
 scripts:
   - name: test-interrupt
     description: A script that sleeps for a very long time.  It should be interrupted.  The first interrupt does not terminate.
@@ -59,10 +60,12 @@ scripts:
     value: echo Hello World!
     constraints:
     os: windows
-  - name: helloWorldPython
-    value: print("Hello Python!")
-    language: python3
-`)
+  - name: testMultipleLanguages
+    value: |
+      import sys
+      print(sys.version)
+    language: python2,python3
+`, pythonVersion))
 
 	ts.PrepareActiveStateYAML(configFileContent)
 }
@@ -93,19 +96,23 @@ func (suite *RunIntegrationTestSuite) expectTerminateBatchJob(cp *termtest.Conso
 // - https://www.pivotaltracker.com/story/show/167523128
 // - https://www.pivotaltracker.com/story/show/169509213
 func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
+	suite.OnlyRunForTags(tagsuite.Run, tagsuite.Activate, tagsuite.Interrupt)
 	if runtime.GOOS == "windows" && e2e.RunningOnCI() {
 		suite.T().Skip("Windows CI does not support ctrl-c events")
 	}
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.createProjectFile(ts)
+	suite.createProjectFile(ts, 3)
 	ts.LoginAsPersistentUser()
 	defer ts.LogoutUser()
 
 	cp := ts.Spawn("activate")
 	cp.Expect("Activating state: ActiveState-CLI/Python3")
 	cp.WaitForInput(10 * time.Second)
+
+	cp.SendLine(fmt.Sprintf("%s run testMultipleLanguages", cp.Executable()))
+	cp.Expect("3")
 
 	cp.SendLine(fmt.Sprintf("%s run test-interrupt", cp.Executable()))
 	cp.Expect("Start of script", 5*time.Second)
@@ -123,12 +130,13 @@ func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
 }
 
 func (suite *RunIntegrationTestSuite) TestOneInterrupt() {
+	suite.OnlyRunForTags(tagsuite.Run, tagsuite.Interrupt, tagsuite.Critical)
 	if runtime.GOOS == "windows" && e2e.RunningOnCI() {
 		suite.T().Skip("Windows CI does not support ctrl-c events")
 	}
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
-	suite.createProjectFile(ts)
+	suite.createProjectFile(ts, 3)
 
 	ts.LoginAsPersistentUser()
 	defer ts.LogoutUser()
@@ -146,12 +154,13 @@ func (suite *RunIntegrationTestSuite) TestOneInterrupt() {
 }
 
 func (suite *RunIntegrationTestSuite) TestTwoInterrupts() {
+	suite.OnlyRunForTags(tagsuite.Run, tagsuite.Interrupt)
 	if runtime.GOOS == "windows" && e2e.RunningOnCI() {
 		suite.T().Skip("Windows CI does not support ctrl-c events")
 	}
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
-	suite.createProjectFile(ts)
+	suite.createProjectFile(ts, 3)
 
 	ts.LoginAsPersistentUser()
 	defer ts.LogoutUser()
@@ -170,9 +179,10 @@ func (suite *RunIntegrationTestSuite) TestTwoInterrupts() {
 }
 
 func (suite *RunIntegrationTestSuite) TestRun_Help() {
+	suite.OnlyRunForTags(tagsuite.Run)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
-	suite.createProjectFile(ts)
+	suite.createProjectFile(ts, 3)
 
 	cp := ts.Spawn("run", "-h")
 	cp.Expect("Usage")
@@ -181,30 +191,32 @@ func (suite *RunIntegrationTestSuite) TestRun_Help() {
 }
 
 func (suite *RunIntegrationTestSuite) TestRun_Unauthenticated() {
+	suite.OnlyRunForTags(tagsuite.Run)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.createProjectFile(ts)
+	suite.createProjectFile(ts, 2)
 
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("activate"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Activating state: ActiveState-CLI/Python3")
+	cp.Expect("Activating state: ActiveState-CLI/Python2")
 	cp.WaitForInput(120 * time.Second)
 
-	cp.SendLine(fmt.Sprintf("%s run helloWorldPython", cp.Executable()))
-	cp.Expect("Hello Python!", 5*time.Second)
+	cp.SendLine(fmt.Sprintf("%s run testMultipleLanguages", cp.Executable()))
+	cp.Expect("2")
 
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 }
 
 func (suite *RunIntegrationTestSuite) TestRun_DeprecatedLackingLanguage() {
+	suite.OnlyRunForTags(tagsuite.Run)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.createProjectFile(ts)
+	suite.createProjectFile(ts, 3)
 
 	cp := ts.Spawn("run", "helloWorld")
 	cp.Expect("DEPRECATION", 5*time.Second)
@@ -212,10 +224,11 @@ func (suite *RunIntegrationTestSuite) TestRun_DeprecatedLackingLanguage() {
 }
 
 func (suite *RunIntegrationTestSuite) TestRun_BadLanguage() {
+	suite.OnlyRunForTags(tagsuite.Run)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.createProjectFile(ts)
+	suite.createProjectFile(ts, 3)
 
 	asyFilename := filepath.Join(ts.Dirs.Work, "activestate.yaml")
 	asyFile, err := os.OpenFile(asyFilename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)

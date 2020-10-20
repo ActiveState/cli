@@ -10,6 +10,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/internal/unarchiver"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 	"github.com/aws/aws-sdk-go/aws"
@@ -19,18 +20,28 @@ import (
 )
 
 type AlternativeArtifactIntegrationTestSuite struct {
-	suite.Suite
+	tagsuite.Suite
 }
 
 // TestRelocation currently only tests the relocation mechanic for a Perl artifact.
 // The artifact is downloaded directly form S3.  As soon as the artifacts are part of the platform ingredient library, this test should be rewritten, such that it relies on a `state activate` command.
 func (suite *AlternativeArtifactIntegrationTestSuite) TestRelocation() {
+	suite.OnlyRunForTags(tagsuite.Alternative)
 	if runtime.GOOS == "darwin" {
 		suite.T().Skip("No relocatable alternative artifacts for MacOS available yet.")
 	}
+
+	// IMPORTANT: When the following code is replaced by a simple `state activate` of an alternative project,
+	// please ensure that the AWS credentials are removed from `.github/workflows-src/steps.lib.yml`
+
+	shell := "bash"
+	shellArg0 := "-c"
 	artifactKey := "language/perl/5.32.0/3/7c76e6a6-3c41-5f68-a7f2-5468fe1b0919/artifact.tar.gz"
 	matchReString := `-Dprefix=([^ ]+)/installdir`
 	if runtime.GOOS == "windows" {
+		suite.T().Skip("Temporary artifact tarball for windows is currently broken.")
+		shell = "cmd"
+		shellArg0 = "/c"
 		artifactKey = "language/perl/5.32.0/3/6864c481-ff89-550d-9c61-a17ae57b7024/artifact.tar.gz"
 		matchReString = `-L\"([^ ]+)installdir`
 	}
@@ -70,7 +81,7 @@ func (suite *AlternativeArtifactIntegrationTestSuite) TestRelocation() {
 	ed = ed.ExpandVariables(constants)
 	env := ed.GetEnv(true)
 
-	cp := ts.SpawnCmdWithOpts("cmd", e2e.WithArgs("/c", "perl -V"), e2e.AppendEnv(osutils.EnvMapToSlice(env)...))
+	cp := ts.SpawnCmdWithOpts(shell, e2e.WithArgs(shellArg0, "perl -V"), e2e.AppendEnv(osutils.EnvMapToSlice(env)...))
 
 	// Find prefix directory as returned by `perl -V`
 
@@ -87,7 +98,7 @@ func (suite *AlternativeArtifactIntegrationTestSuite) TestRelocation() {
 	err = ed.ApplyFileTransforms(ts.Dirs.Cache, constants)
 	suite.Require().NoError(err, "failed to apply file transformations.")
 
-	cp = ts.SpawnCmdWithOpts("cmd", e2e.WithArgs("/c", "perl -V"), e2e.AppendEnv(osutils.EnvMapToSlice(env)...))
+	cp = ts.SpawnCmdWithOpts(shell, e2e.WithArgs(shellArg0, "perl -V"), e2e.AppendEnv(osutils.EnvMapToSlice(env)...))
 
 	// Check that the prefix now IS set to the installation directory
 	cp.ExpectLongString("installdir")
@@ -96,12 +107,13 @@ func (suite *AlternativeArtifactIntegrationTestSuite) TestRelocation() {
 	suite.Equal(filepath.Clean(ts.Dirs.Cache), filepath.Clean(res[1]))
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnCmdWithOpts("cmd", e2e.WithArgs("/c", "perl --version"), e2e.AppendEnv(osutils.EnvMapToSlice(env)...))
+	cp = ts.SpawnCmdWithOpts(shell, e2e.WithArgs(shellArg0, "perl --version"), e2e.AppendEnv(osutils.EnvMapToSlice(env)...))
 	cp.Expect("v5.32.0")
 	cp.ExpectExitCode(0)
 }
 
 func (suite *AlternativeArtifactIntegrationTestSuite) TestActivateRuby() {
+	suite.OnlyRunForTags(tagsuite.Alternative)
 	suite.T().Skip("requires a working PR branch for now.")
 	if runtime.GOOS != "linux" {
 		suite.T().Skip("only works on linux")
