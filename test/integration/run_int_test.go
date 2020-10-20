@@ -114,13 +114,18 @@ func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
 	cp.SendLine(fmt.Sprintf("%s run testMultipleLanguages", cp.Executable()))
 	cp.Expect("3")
 
-	cp.SendLine(fmt.Sprintf("%s run test-interrupt", cp.Executable()))
-	cp.Expect("Start of script", 5*time.Second)
-	cp.SendCtrlC()
-	cp.Expect("received interrupt", 3*time.Second)
-	cp.Expect("After first sleep or interrupt", 2*time.Second)
-	cp.SendCtrlC()
-	suite.expectTerminateBatchJob(cp)
+	// TODO: This test appears to have some compatibility issues with Go 1.15 on CI.
+	// Re-enable the interrupt portion of this test once we have updated the Go version
+	// See related stories:
+	// https://www.pivotaltracker.com/story/show/175365457
+	// https://www.pivotaltracker.com/story/show/175365586
+	// cp.SendLine(fmt.Sprintf("%s run test-interrupt", cp.Executable()))
+	// cp.Expect("Start of script", 5*time.Second)
+	// cp.SendCtrlC()
+	// cp.Expect("received interrupt", 3*time.Second)
+	// cp.Expect("After first sleep or interrupt", 2*time.Second)
+	// cp.SendCtrlC()
+	// suite.expectTerminateBatchJob(cp)
 
 	cp.SendLine("exit 0")
 	cp.ExpectExitCode(0)
