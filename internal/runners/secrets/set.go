@@ -36,11 +36,11 @@ func (s *Set) Run(params SetRunParams) error {
 
 	secret, fail := getSecret(s.proj, params.Name)
 	if fail != nil {
-		return fail.WithDescription(locale.T("secrets_err"))
+		return locale.WrapError(fail, "secrets_err")
 	}
 
 	if fail = secret.Save(params.Value); fail != nil {
-		return fail.WithDescription(locale.T("secrets_err"))
+		return locale.WrapError(fail, "secrets_err")
 	}
 
 	return nil

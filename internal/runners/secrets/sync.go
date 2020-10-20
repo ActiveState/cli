@@ -47,12 +47,12 @@ func (s *Sync) Run() error {
 
 	org, fail := model.FetchOrgByURLName(s.proj.Owner())
 	if fail != nil {
-		return fail.WithDescription(locale.T("secrets_err"))
+		return locale.WrapError(fail, "secrets_err")
 	}
 
 	updatedCount, fail := synchronizeEachOrgMember(s.secretsClient, org)
 	if fail != nil {
-		return fail.WithDescription(locale.T("secrets_err"))
+		return locale.WrapError(fail, "secrets_err")
 	}
 
 	s.out.Print(locale.Tr("secrets_sync_results_message", strconv.Itoa(updatedCount), org.Name))

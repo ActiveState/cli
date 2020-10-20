@@ -39,12 +39,12 @@ func (g *Get) Run(params GetRunParams) error {
 
 	secret, valuePtr, fail := getSecretWithValue(g.proj, params.Name)
 	if fail != nil {
-		return fail.WithDescription(locale.T("secrets_err"))
+		return locale.WrapError(fail, "secrets_err")
 	}
 
 	data := newGetOutput(params.Name, secret, valuePtr)
 	if err := data.Validate(g.out.Type()); err != nil {
-		return err
+		return locale.WrapError(err, "secrets_err")
 	}
 
 	g.out.Print(data)

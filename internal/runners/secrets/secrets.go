@@ -51,11 +51,11 @@ func (l *List) Run(params ListRunParams) error {
 
 	defs, fail := definedSecrets(l.proj, l.secretsClient, params.Filter)
 	if fail != nil {
-		return fail.WithDescription(locale.T("secrets_err_defined"))
+		return locale.WrapError(fail, "secrets_err_defined")
 	}
 	exports, fail := defsToSecrets(defs)
 	if fail != nil {
-		return fail.WithDescription(locale.T("secrets_err_values"))
+		return locale.WrapError(fail, "secrets_err_values")
 	}
 
 	l.out.Print(secretExports(exports))
@@ -66,7 +66,7 @@ func (l *List) Run(params ListRunParams) error {
 func checkSecretsAccess(proj *project.Project) error {
 	allowed, fail := access.Secrets(proj.Owner())
 	if fail != nil {
-		return fail.WithDescription(locale.T("secrets_err_access"))
+		return locale.WrapError(fail, "secrets_err_access")
 	}
 	if !allowed {
 		return locale.NewError("secrets_warning_no_access")
@@ -96,7 +96,6 @@ func filterSecrets(proj *project.Project, secrectDefs []*secretsModels.SecretDef
 	if oldExpander != nil {
 		defer project.RegisterExpander("secrets", oldExpander)
 	}
-
 	expander := project.NewSecretExpander(secretsapi.Get(), proj)
 	project.RegisterExpander("secrets", expander.Expand)
 	project.ExpandFromProject(fmt.Sprintf("$%s", filter), proj)
