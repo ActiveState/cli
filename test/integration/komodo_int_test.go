@@ -239,6 +239,7 @@ func (suite *SecretsIntegrationTestSuite) TestSecretsGet_EditorV0() {
 
 	ts.LoginAsPersistentUser()
 	cp := ts.Spawn("secrets", "set", "project.test-secret", "test-value", "--output", "editor.v0")
+	suite.Empty(cp.TrimmedSnapshot())
 	cp.ExpectExitCode(0)
 	cp = ts.Spawn("secrets", "get", "project.test-secret", "--output", "editor.v0")
 	cp.ExpectExitCode(0)
