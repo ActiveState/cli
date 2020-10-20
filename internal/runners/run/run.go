@@ -100,6 +100,12 @@ func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, nam
 			return err
 		}
 		subs.SetEnv(env)
+
+		// search the "clean" path first (PATHS that are set by venv)
+		env, err = venv.GetEnv(false, "")
+		if err != nil {
+			return err
+		}
 		venvExePath = env["PATH"]
 	}
 
@@ -118,17 +124,20 @@ func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, nam
 	var attempted []string
 	for _, l := range script.Languages() {
 		var execPath string
+		var searchPath string
 		if l.Executable().Available() {
 			execPath = l.Executable().Name()
+			searchPath = venvExePath
 		} else {
 			execPath = l.String()
+			searchPath = os.Getenv("PATH")
 		}
 
 		if l.Executable().Builtin() && rt.GOOS == "windows" {
 			execPath = execPath + ".exe"
 		}
 
-		if pathProvidesExec(venvExePath, execPath) {
+		if pathProvidesExec(searchPath, execPath) {
 			lang = l
 			break
 		}
