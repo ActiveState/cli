@@ -70,7 +70,7 @@ func (o *OutputError) MarshalOutput(f output.Format) interface{} {
 }
 
 func trimError(msg string) string {
-	if strings.Count(msg, ".") > 1 || strings.Count(msg, ",") > 1 {
+	if strings.Count(msg, ".") > 1 || strings.Count(msg, ",") > 0 {
 		return msg // Don't trim dots if we have multiple sentences.
 	}
 	return strings.TrimRight(msg, " .")
