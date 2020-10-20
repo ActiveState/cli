@@ -1,11 +1,12 @@
 package cmdtree
 
 import (
+	"github.com/spf13/viper"
+
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/projects"
-	"github.com/spf13/viper"
 )
 
 func newProjectsCommand(prime *primer.Values) *captain.Command {
@@ -15,7 +16,6 @@ func newProjectsCommand(prime *primer.Values) *captain.Command {
 		"projects",
 		locale.Tl("projects_title", "Listing Projects"),
 		locale.T("projects_description"),
-		prime.Output(),
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {

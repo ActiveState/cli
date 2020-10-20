@@ -12,7 +12,6 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/output/txtstyle"
 )
 
 var cobraMapping map[*cobra.Command]*Command = make(map[*cobra.Command]*Command)
@@ -42,7 +41,7 @@ type Command struct {
 	out output.Outputer
 }
 
-func NewCommand(name, title, description string, out output.Outputer, flags []*Flag, args []*Argument, executor Executor) *Command {
+func NewCommand(name, title, description string, flags []*Flag, args []*Argument, executor Executor) *Command {
 	// Validate args
 	for idx, arg := range args {
 		if idx > 0 && arg.Required && !args[idx-1].Required {
@@ -60,7 +59,6 @@ func NewCommand(name, title, description string, out output.Outputer, flags []*F
 		arguments: args,
 		flags:     flags,
 		commands:  make([]*Command, 0),
-		out:       out,
 	}
 
 	short := description
@@ -339,10 +337,6 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 			)
 		}
 
-	}
-
-	if c.out != nil && c.title != "" {
-		c.out.Notice(txtstyle.NewTitle(c.title))
 	}
 
 	return c.execute(c, args)

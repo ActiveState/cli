@@ -15,7 +15,6 @@ func newForkCommand(prime *primer.Values) *captain.Command {
 		"fork",
 		locale.Tl("fork_title", "Forking Project"),
 		locale.Tl("fork_description", "Fork an existing ActiveState Platform project"),
-		prime.Output(),
 		[]*captain.Flag{
 			{
 				Name:        "org",

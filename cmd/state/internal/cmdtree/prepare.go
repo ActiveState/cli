@@ -14,7 +14,6 @@ func newPrepareCommand(prime *primer.Values) *captain.Command {
 		"_prepare",
 		locale.Tl("prepare_title", "Preparing Environment"),
 		locale.Tl("prepare_description", "Prepare environment for use with the State Tool."),
-		prime.Output(),
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(_ *captain.Command, _ []string) error {

@@ -20,7 +20,6 @@ func newActivateCommand(prime *primer.Values) *captain.Command {
 		"activate",
 		locale.Tl("activate_title", "Activating Your Runtime"),
 		locale.T("activate_project"),
-		prime.Output(),
 		[]*captain.Flag{
 			{
 				Name:        "path",

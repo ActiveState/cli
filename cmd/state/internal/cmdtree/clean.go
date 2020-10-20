@@ -12,7 +12,6 @@ func newCleanCommand(prime *primer.Values) *captain.Command {
 		"clean",
 		locale.Tl("clean_title", "Cleaning Resources"),
 		locale.T("clean_description"),
-		prime.Output(),
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, _ []string) error {
@@ -28,7 +27,6 @@ func newUninstallCommand(prime *primer.Values) *captain.Command {
 		"uninstall",
 		locale.Tl("clean_uninstall_title", "Uninstalling"),
 		locale.T("uninstall_description"),
-		prime.Output(),
 		[]*captain.Flag{
 			{
 				Name:        "force",
@@ -56,7 +54,6 @@ func newCacheCommand(prime *primer.Values) *captain.Command {
 		"cache",
 		locale.Tl("clean_cache_title", "Cleaning Cached Runtimes"),
 		locale.T("cache_description"),
-		prime.Output(),
 		[]*captain.Flag{
 			{
 				Name:        "force",
@@ -86,7 +83,6 @@ func newConfigCommand(prime *primer.Values) *captain.Command {
 		"config",
 		locale.Tl("clean_config_title", "Cleaning Configuration"),
 		locale.T("config_description"),
-		prime.Output(),
 		[]*captain.Flag{
 			{
 				Name:        "force",

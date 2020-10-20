@@ -16,7 +16,6 @@ func newUpdateCommand(prime *primer.Values) *captain.Command {
 		"update",
 		locale.Tl("update_title", "Updating The State Tool"),
 		locale.Tl("update_description", "Updates the State Tool to the latest available version"),
-		prime.Output(),
 		[]*captain.Flag{
 			{
 				Name: "lock",

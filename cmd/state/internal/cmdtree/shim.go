@@ -16,7 +16,6 @@ func newShimCommand(prime *primer.Values, args ...string) *captain.Command {
 		"shim",
 		locale.Tl("shim_title", "Shimming"),
 		locale.T("shim_description"),
-		prime.Output(),
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
