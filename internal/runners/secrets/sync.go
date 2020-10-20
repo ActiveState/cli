@@ -42,7 +42,7 @@ func NewSync(client *secretsapi.Client, p syncPrimeable) *Sync {
 // Run executes the sync behavior.
 func (s *Sync) Run() error {
 	if err := checkSecretsAccess(s.proj); err != nil {
-		return err
+		return locale.WrapError(err, "secrets_err")
 	}
 
 	org, fail := model.FetchOrgByURLName(s.proj.Owner())

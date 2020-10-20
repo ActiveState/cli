@@ -34,7 +34,7 @@ func NewGet(p getPrimeable) *Get {
 // Run executes the get behavior.
 func (g *Get) Run(params GetRunParams) error {
 	if err := checkSecretsAccess(g.proj); err != nil {
-		return err
+		return locale.WrapError(err, "secrets_err")
 	}
 
 	secret, valuePtr, fail := getSecretWithValue(g.proj, params.Name)

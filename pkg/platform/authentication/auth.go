@@ -235,23 +235,36 @@ func (s *Auth) Logout() {
 
 // Client will return an API client that has authentication set up
 func (s *Auth) Client() *mono_client.Mono {
+	client, err := s.ClientSafe()
+	if err != nil {
+		logging.Error("Trying to get the Client while not authenticated")
+		fmt.Fprint(os.Stderr, locale.T("err_api_not_authenticated"))
+		exit(1)
+	}
+
+	return client
+}
+
+// ClientSafe will return an API client that has authentication set up
+func (s *Auth) ClientSafe() (*mono_client.Mono, *failures.Failure) {
 	if s.client == nil {
 		s.client = mono.NewWithAuth(s.clientAuth)
 	}
 	if !s.Authenticated() {
 		if fail := s.Authenticate(); fail != nil {
-			logging.Error("Trying to get the Client while not authenticated")
-			fmt.Fprint(os.Stderr, locale.T("err_api_not_authenticated"))
-			exit(1)
-			return nil
+			return nil, fail.WithDescription(locale.T("err_api_not_authenticated"))
 		}
 	}
-	return s.client
+	return s.client, nil
 }
 
 // CreateToken will create an API token for the current authenticated user
 func (s *Auth) CreateToken() *failures.Failure {
-	client := s.Client()
+	client, fail := s.ClientSafe()
+	if fail != nil {
+		return fail
+	}
+
 	tokensOK, err := client.Authentication.ListTokens(nil, s.ClientAuth())
 	if err != nil {
 		return FailTokenList.New(locale.Tr("err_token_list", err.Error()))
@@ -285,7 +298,12 @@ func (s *Auth) NewAPIKey(name string) (string, *failures.Failure) {
 	params := authentication.NewAddTokenParams()
 	params.SetTokenOptions(&mono_models.TokenEditable{Name: name})
 
-	tokenOK, err := s.Client().Authentication.AddToken(params, s.ClientAuth())
+	client, fail := s.ClientSafe()
+	if fail != nil {
+		return "", fail
+	}
+
+	tokenOK, err := client.Authentication.AddToken(params, s.ClientAuth())
 	if err != nil {
 		return "", FailTokenCreate.New(locale.Tr("err_token_create", err.Error()))
 	}

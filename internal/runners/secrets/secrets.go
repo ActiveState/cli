@@ -46,7 +46,7 @@ func NewList(client *secretsapi.Client, p listPrimeable) *List {
 // Run executes the list behavior.
 func (l *List) Run(params ListRunParams) error {
 	if err := checkSecretsAccess(l.proj); err != nil {
-		return err
+		return locale.WrapError(err, "secrets_err")
 	}
 
 	defs, fail := definedSecrets(l.proj, l.secretsClient, params.Filter)
