@@ -70,8 +70,6 @@ func (i *invite) Run(params *Params) error {
 		return locale.WrapError(err, "err_caninvite", "Cannot invite users to {{.V0}}.", org.String())
 	}
 
-	i.out.Notice(output.Title(locale.Tl("invite_title", "Inviting New Members")))
-
 	sent, err := i.send(org.String(), role == Owner, emails)
 	if sent > 0 {
 		i.out.Notice(locale.Tl(

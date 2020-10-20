@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
 	authlet "github.com/ActiveState/cli/pkg/cmdlets/auth"
@@ -17,8 +16,6 @@ func NewSignup(prime primeable) *Signup {
 }
 
 func (s *Signup) Run() error {
-	s.Outputer.Notice(output.Title(locale.Tl("signup_title", "Signing Up With The ActiveState Platform")))
-
 	err := authlet.Signup(s.Outputer, s.Prompter)
 	if err != nil {
 		return err

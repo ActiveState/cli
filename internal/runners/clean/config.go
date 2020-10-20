@@ -38,8 +38,6 @@ func (c *Config) Run(params *ConfigParams) error {
 		return errors.New(locale.T("err_clean_cache_activated"))
 	}
 
-	c.output.Notice(output.Title(locale.Tl("clean_config_title", "Cleaning Configuration")))
-
 	if !params.Force {
 		ok, fail := c.confirm.Confirm(locale.T("clean_config_confirm"), false)
 		if fail != nil {

@@ -53,8 +53,6 @@ func (h *History) Run(params *HistoryParams) error {
 		return fail
 	}
 
-	params.out.Notice(output.Title(locale.Tl("history_title", "Viewing Project History")))
-
 	fail = printCommits(params.out, commits, orgs)
 	if fail != nil {
 		return fail

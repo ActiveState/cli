@@ -43,7 +43,7 @@ func run(params *OrgParams, out output.Outputer) error {
 	if err != nil {
 		return locale.WrapError(err, "err_run_orgs_data", "Could not collect information about your organizations.")
 	}
-	
+
 	out.Print(data)
 	return nil
 }

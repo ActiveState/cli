@@ -85,8 +85,6 @@ func (d *Deploy) Run(params *Params) error {
 			"Could not initialize an installer for {{.V0}}.", params.Namespace.String())
 	}
 
-	d.output.Notice(output.Title(locale.Tl("deploy_title", "Deploying Runtime")))
-
 	return runSteps(targetPath, params.Force, params.UserScope, params.Namespace, d.step, runtime, installer, d.output, d.subshell)
 }
 

@@ -12,6 +12,7 @@ func newEventsCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"events",
+		locale.Tl("events_title", "Listing Events"),
 		locale.Tl("events_description", "Manage project events"),
 		[]*captain.Flag{},
 		[]*captain.Argument{},
@@ -26,6 +27,7 @@ func newEventsLogCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"log",
+		locale.Tl("events_log_title", "Showing Events Log"),
 		locale.Tl("events_log_description", "View a log of events"),
 		[]*captain.Flag{
 			{

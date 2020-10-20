@@ -14,6 +14,7 @@ func newInviteCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"invite",
+		locale.Tl("invite_title", "Inviting New Members"),
 		locale.Tl("invite_description", "Invite new members to an organization"),
 		[]*captain.Flag{
 			{

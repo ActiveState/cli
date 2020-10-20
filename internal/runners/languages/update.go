@@ -48,8 +48,6 @@ func (u *Update) Run(params *UpdateParams) error {
 		return err
 	}
 
-	u.out.Notice(output.Title(locale.Tl("languages_update_title", "Updating Languages")))
-
 	return addLanguage(params, lang)
 }
 

@@ -3,8 +3,6 @@ package output
 import (
 	"fmt"
 	"strings"
-
-	"github.com/ActiveState/cli/internal/output/txtstyle"
 )
 
 type Heading string
@@ -19,14 +17,4 @@ func (h Heading) MarshalOutput(f Format) interface{} {
 		return Suppress
 	}
 	return h.String()
-}
-
-type Title string
-
-func (t Title) String() string {
-	return txtstyle.NewTitle(string(t)).String()
-}
-
-func (t Title) MarshalOutput(f Format) interface{} {
-	return txtstyle.NewTitle(string(t)).MarshalOutput(f)
 }

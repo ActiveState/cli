@@ -3,7 +3,6 @@ package config
 import (
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
-	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 )
@@ -25,15 +24,15 @@ func New(prime primeable) *Config {
 }
 
 func (c *Config) Run(cmd *captain.Command, params *ConfigParams) error {
-	outputData := map[string]string{
+	output := map[string]string{
 		Dir.String(): config.ConfigPath(),
 	}
 
-	filteredOutput := outputData
+	filteredOutput := output
 	if params.Filter.terms != nil {
 		filteredOutput = map[string]string{}
 		for _, term := range params.Filter.terms {
-			if value, ok := outputData[term.String()]; ok {
+			if value, ok := output[term.String()]; ok {
 				filteredOutput[term.String()] = value
 				if len(params.Filter.terms) == 1 {
 					c.out.Print(value)
@@ -42,8 +41,6 @@ func (c *Config) Run(cmd *captain.Command, params *ConfigParams) error {
 			}
 		}
 	}
-
-	c.out.Notice(output.Title(locale.Tl("export_config_title", "Exporting Configuration Data")))
 
 	c.out.Print(filteredOutput)
 	return nil

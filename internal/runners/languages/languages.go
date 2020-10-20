@@ -3,7 +3,6 @@ package languages
 import (
 	"strings"
 
-	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -46,8 +45,6 @@ func (l *Languages) Run(params *LanguagesParams) error {
 	}
 
 	formatLangs(langs)
-
-	l.out.Notice(output.Title(locale.Tl("languages_title", "Listing Languages")))
 
 	l.out.Print(Listing{langs})
 	return nil

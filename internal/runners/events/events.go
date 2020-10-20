@@ -46,8 +46,6 @@ func (e *Events) Run() error {
 		})
 	}
 
-	e.out.Notice(output.Title(locale.Tl("events_title", "Listing Events")))
-
 	if len(rows) == 0 {
 		e.out.Print(locale.Tl("events_empty", "No events found for the current project"))
 		return nil

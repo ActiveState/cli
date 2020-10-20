@@ -41,8 +41,6 @@ func (c *Cache) Run(params *CacheParams) error {
 		return errors.New(locale.T("err_clean_cache_activated"))
 	}
 
-	c.output.Notice(output.Title(locale.Tl("clean_cache_title", "Cleaning Cached Runtimes")))
-
 	if params.Project != "" {
 		return c.removeProject(params.Project, params.Force)
 	}
