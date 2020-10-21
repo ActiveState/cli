@@ -50,7 +50,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
 	cp.Expect("Where would you like to checkout")
 	cp.SendLine(cp.WorkDirectory())
 	cp.Expect("activated state", 20*time.Second)
-	cp.WaitForInput(10 * time.Second)
+	// cp.WaitForInput(10 * time.Second)
 
 	cp.SendLine("exit 123")
 	cp.ExpectExitCode(123, 10*time.Second)
@@ -65,7 +65,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateUsingCommitID() {
 	cp.Expect("Where would you like to checkout")
 	cp.SendLine(cp.WorkDirectory())
 	cp.Expect("activated state", 20*time.Second)
-	cp.WaitForInput(10 * time.Second)
+	// cp.WaitForInput(10 * time.Second)
 
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
@@ -79,7 +79,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateNotOnPath() {
 	cp := ts.Spawn("activate", "ActiveState-CLI/Python3")
 	cp.Expect("Where would you like to checkout")
 	cp.SendLine(cp.WorkDirectory())
-	cp.WaitForInput(10 * time.Second)
+	//  cp.WaitForInput(10 * time.Second)
 
 	if runtime.GOOS == "windows" {
 		cp.SendLine("doskey /macros | findstr state=")
@@ -110,7 +110,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePythonByHostOnly() {
 
 	cp.Expect("Activating state")
 	cp.Expect("activated state", 120*time.Second)
-	cp.WaitForInput()
+	// cp.WaitForInput()
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 }
@@ -141,7 +141,7 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	cp.SendLine(cp.WorkDirectory())
 
 	// ensure that shell is functional
-	cp.WaitForInput()
+	// cp.WaitForInput()
 
 	pythonExe := tagsuite.Python + version
 
@@ -210,7 +210,7 @@ version: %s
 	c2.Expect(fmt.Sprintf("Activating state: ActiveState-CLI/%s", project))
 
 	// not waiting for activation, as we test that part in a different test
-	c2.WaitForInput()
+	// c2.WaitForInput()
 	c2.SendLine("exit")
 	c2.ExpectExitCode(0)
 }
@@ -239,7 +239,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
 	suite.assertCompletedStatusBarReport(cp.Snapshot())
 
 	// ensure that shell is functional
-	cp.WaitForInput()
+	// cp.WaitForInput()
 
 	cp.SendLine("perldoc -l DBD::Pg")
 	// Expect the source code to be installed in the cache directory
@@ -284,7 +284,7 @@ version: %s
 	)
 	c2.Expect("Activating state: ActiveState-CLI/Python3")
 
-	c2.WaitForInput()
+	// c2.WaitForInput()
 	c2.SendLine("exit")
 	c2.ExpectExitCode(0)
 
