@@ -159,7 +159,7 @@ err_artifact_no_parent:
 err_invalid_status_code:
   other: "Invalid status code: {{.V0}}"
 info_activating_state:
-  other: "Activating state: {{.Owner}}/{{.Name}}"
+  other: "Activating state: [ACTIONABLE]{{.Owner}}/{{.Name}}[/RESET]"
 info_activating_state_by_commit:
   other: "Activating state"
 info_state_active_repoexists:

@@ -103,7 +103,7 @@ func (t *Title) String() string {
 	out := strings.Join(outLines, "\n")
 	out = strings.Replace(out, text, t.Text, 1)
 
-	return strings.TrimSpace(out)
+	return strings.TrimSpace(out) + "\n"
 }
 
 // MarshalOutput implements output.Marshaller.
