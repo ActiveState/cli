@@ -477,6 +477,9 @@ func TestResolveUniquePath(t *testing.T) {
 	if runtime.GOOS == "darwin" {
 		expectedPath, err = filepath.EvalSymlinks(targetPath)
 		require.NoError(t, err)
+	} else if runtime.GOOS == "windows" {
+		expectedPath, err = GetLongPathName(targetPath)
+		require.NoError(t, err)
 	}
 
 	fail := Touch(targetPath)
