@@ -2,7 +2,10 @@ package captain
 
 import (
 	"fmt"
+	"os"
 	"strings"
+	"text/template"
+	"unicode"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -11,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/output/txtstyle"
 )
@@ -40,6 +44,84 @@ type Command struct {
 	skipChecks bool
 
 	out output.Outputer
+}
+
+type CommandGroup struct {
+	Message  string
+	Commands []*Command
+}
+
+type Templater struct {
+	rootCmd       *Command
+	commandGroups []CommandGroup
+}
+
+func NewTemplater(rootCmd *Command, cmdGroups []CommandGroup) *Templater {
+	return &Templater{
+		rootCmd:       rootCmd,
+		commandGroups: cmdGroups,
+	}
+}
+
+func (t *Templater) UsageFunc() func(c *cobra.Command) error {
+	return func(c *cobra.Command) error {
+		tpl := template.New("root_usage_tpl")
+		tpl.Funcs(t.templateFuncs())
+		localizedArgs := []map[string]string{}
+		for _, arg := range t.rootCmd.Arguments() {
+			req := ""
+			if arg.Required {
+				req = "1"
+			}
+			localizedArgs = append(localizedArgs, map[string]string{
+				"Name":        locale.T(arg.Name),
+				"Description": locale.T(arg.Description),
+				"Required":    req,
+			})
+		}
+		template.Must(tpl.Parse(locale.Tt("root_usage_tpl", map[string]interface{}{
+			"Arguments": localizedArgs,
+		})))
+		return tpl.Execute(os.Stdout, c)
+	}
+}
+
+func (t *Templater) cmdGroupsString(c *cobra.Command) string {
+	var groups []string
+	for _, cmdGroup := range t.cmdGroups(c) {
+		cmds := []string{cmdGroup.Message}
+		for _, cmd := range cmdGroup.Commands {
+			if cmd.cobra.IsAvailableCommand() {
+				cmds = append(cmds, "  "+rpad(cmd.Use(), cmd.cobra.NamePadding())+" "+cmd.Description())
+			}
+		}
+		groups = append(groups, strings.Join(cmds, "\n"))
+	}
+	return strings.Join(groups, "\n\n")
+}
+
+func (t *Templater) cmdGroups(c *cobra.Command) []CommandGroup {
+	if len(t.commandGroups) > 0 && c == t.rootCmd.cobra {
+		return t.commandGroups
+	}
+	return nil
+}
+
+func (t *Templater) templateFuncs() template.FuncMap {
+	return template.FuncMap{
+		"CmdGroupsString":         t.cmdGroupsString,
+		"trimTrailingWhitespaces": trimTrailingWhitespaces,
+		"rpad":                    rpad,
+	}
+}
+
+func rpad(s string, padding int) string {
+	template := fmt.Sprintf("%%-%ds", padding)
+	return fmt.Sprintf(template, s)
+}
+
+func trimTrailingWhitespaces(s string) string {
+	return strings.TrimRightFunc(s, unicode.IsSpace)
 }
 
 func NewCommand(name, title, description string, out output.Outputer, flags []*Flag, args []*Argument, executor Executor) *Command {
@@ -83,6 +165,8 @@ func NewCommand(name, title, description string, out output.Outputer, flags []*F
 	if err := cmd.setFlags(flags); err != nil {
 		panic(err)
 	}
+	// TODO: Set a default usage func here so the child commands
+	// do no inherit the root commands usage func
 	cmd.SetUsageTemplate("usage_tpl")
 
 	cobraMapping[cmd.cobra] = cmd
@@ -175,6 +259,10 @@ func (c *Command) Help() string {
 	return fmt.Sprintf("%s\n\n%s", c.cobra.Short, c.UsageText())
 }
 
+func (c *Command) Description() string {
+	return c.cobra.Short
+}
+
 func (c *Command) Execute(args []string) error {
 	c.cobra.SetArgs(args)
 	err := c.cobra.Execute()
@@ -200,6 +288,10 @@ func (c *Command) SetHidden(value bool) {
 
 func (c *Command) SetDescription(description string) {
 	c.cobra.Short = description
+}
+
+func (c *Command) SetUsageFunc(usage func(c *cobra.Command) error) {
+	c.cobra.SetUsageFunc(usage)
 }
 
 func (c *Command) SetUsageTemplate(usageTemplate string) {
@@ -245,6 +337,15 @@ func (c *Command) AddLegacyChildren(children ...cobraCommander) {
 	}
 }
 
+func (c *Command) FindSafe(args []string) *Command {
+	cmd, err := c.Find(args)
+	if err != nil {
+		logging.Debug("Could not find command, error: %v", err)
+		return nil
+	}
+	return cmd
+}
+
 func (c *Command) Find(args []string) (*Command, error) {
 	foundCobra, _, err := c.cobra.Find(args)
 	if err != nil {
@@ -254,15 +355,6 @@ func (c *Command) Find(args []string) (*Command, error) {
 		return cmd, nil
 	}
 	return nil, locale.NewError("err_captain_cmd_find", "Could not find child Command with args: {{.V0}}", strings.Join(args, " "))
-}
-
-func (c *Command) findNext(next string) *Command {
-	for _, cmd := range c.commands {
-		if cmd.cobra.Use == next {
-			return cmd
-		}
-	}
-	return nil
 }
 
 func (c *Command) flagByName(name string, persistOnly bool) *Flag {

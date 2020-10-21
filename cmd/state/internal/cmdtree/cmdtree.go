@@ -113,6 +113,70 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 
 	applyLegacyChildren(stateCmd, globals)
 
+	groups := []captain.CommandGroup{
+		{
+			Message: "Package Management:",
+			Commands: []*captain.Command{
+				stateCmd.FindSafe([]string{"packages", "add"}),
+				stateCmd.FindSafe([]string{"packages", "remove"}),
+				stateCmd.FindSafe([]string{"packages", "import"}),
+				stateCmd.FindSafe([]string{"packages", "search"}),
+				stateCmd.FindSafe([]string{"packages"}),
+			},
+		},
+		{
+			Message: "Environment Management:",
+			Commands: []*captain.Command{
+				stateCmd.FindSafe([]string{"activate"}),
+				stateCmd.FindSafe([]string{"init"}),
+				stateCmd.FindSafe([]string{"clean"}),
+				stateCmd.FindSafe([]string{"deploy"}),
+			},
+		},
+		{
+			Message: "Platform Tools:",
+			Commands: []*captain.Command{
+				stateCmd.FindSafe([]string{"auth"}),
+				stateCmd.FindSafe([]string{"invite"}),
+				stateCmd.FindSafe([]string{"organizations"}),
+				stateCmd.FindSafe([]string{"platforms"}),
+				stateCmd.FindSafe([]string{"projects"}),
+				stateCmd.FindSafe([]string{"show"}),
+			},
+		},
+		{
+			Message: "Automation:",
+			Commands: []*captain.Command{
+				stateCmd.FindSafe([]string{"events"}),
+				stateCmd.FindSafe([]string{"scripts"}),
+				// Cannot find legacy children
+				// stateCmd.FindSafe([]string{"secrets"}),
+			},
+		},
+		{
+			Message: "Version Control:",
+			Commands: []*captain.Command{
+				stateCmd.FindSafe([]string{"fork"}),
+				stateCmd.FindSafe([]string{"pull"}),
+				stateCmd.FindSafe([]string{"push"}),
+				stateCmd.FindSafe([]string{"history"}),
+			},
+		},
+		{
+			Message: "Utilities:",
+			Commands: []*captain.Command{
+				stateCmd.FindSafe([]string{"update"}),
+				// There is no help command
+				// stateCmd.FindSafe([]string{"help"}),
+				stateCmd.FindSafe([]string{"export"}),
+			},
+		},
+	}
+
+	templater := captain.NewTemplater(stateCmd, groups)
+
+	stateCmd.SetUsageFunc(templater.UsageFunc())
+
 	return &CmdTree{
 		cmd: stateCmd,
 	}
@@ -194,7 +258,8 @@ func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Comm
 		},
 	)
 
-	cmd.SetUsageTemplate("usage_tpl")
+	// This should not be used in favor of the new template above
+	// cmd.SetUsageTemplate("usage_tpl")
 
 	return cmd
 }
