@@ -625,8 +625,6 @@ secrets_value_unset:
   other: Unset
 secrets_value_secret:
   other: <encrypted>
-secrets_err:
-  other: Error managing user's Secrets
 secrets_err_defined:
   other: Failed to obtain defined secrets
 secrets_err_values:
