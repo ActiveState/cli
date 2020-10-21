@@ -31,16 +31,16 @@ func NewSet(p setPrimeable) *Set {
 // Run executes the set behavior.
 func (s *Set) Run(params SetRunParams) error {
 	if err := checkSecretsAccess(s.proj); err != nil {
-		return locale.WrapError(err, "secrets_err")
+		return err
 	}
 
 	secret, fail := getSecret(s.proj, params.Name)
 	if fail != nil {
-		return locale.WrapError(fail, "secrets_err")
+		return locale.WrapError(fail, "secrets_err_values")
 	}
 
 	if fail = secret.Save(params.Value); fail != nil {
-		return locale.WrapError(fail, "secrets_err")
+		return locale.WrapError(fail, "secrets_err_try_save", "Cannot save secret")
 	}
 
 	return nil

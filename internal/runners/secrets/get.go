@@ -34,17 +34,17 @@ func NewGet(p getPrimeable) *Get {
 // Run executes the get behavior.
 func (g *Get) Run(params GetRunParams) error {
 	if err := checkSecretsAccess(g.proj); err != nil {
-		return locale.WrapError(err, "secrets_err")
+		return err
 	}
 
 	secret, valuePtr, fail := getSecretWithValue(g.proj, params.Name)
 	if fail != nil {
-		return locale.WrapError(fail, "secrets_err")
+		return locale.WrapError(fail, "secrets_err_values")
 	}
 
 	data := newGetOutput(params.Name, secret, valuePtr)
 	if err := data.Validate(g.out.Type()); err != nil {
-		return locale.WrapError(err, "secrets_err")
+		return err
 	}
 
 	g.out.Print(data)
@@ -66,6 +66,7 @@ func newGetOutput(reqSecret string, secret *project.Secret, valuePtr *string) *g
 	}
 }
 
+// Validate returns a directly usable error.
 func (d *getOutput) Validate(format output.Format) error {
 	switch format {
 	case output.JSONFormatName, output.EditorV0FormatName, output.EditorFormatName:

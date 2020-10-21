@@ -46,7 +46,7 @@ func NewList(client *secretsapi.Client, p listPrimeable) *List {
 // Run executes the list behavior.
 func (l *List) Run(params ListRunParams) error {
 	if err := checkSecretsAccess(l.proj); err != nil {
-		return locale.WrapError(err, "secrets_err")
+		return err
 	}
 
 	defs, fail := definedSecrets(l.proj, l.secretsClient, params.Filter)
@@ -63,6 +63,8 @@ func (l *List) Run(params ListRunParams) error {
 	return nil
 }
 
+// checkSecretsAccess is reusable "runner-level" logic and provides a directly
+// usable error.
 func checkSecretsAccess(proj *project.Project) error {
 	allowed, fail := access.Secrets(proj.Owner())
 	if fail != nil {

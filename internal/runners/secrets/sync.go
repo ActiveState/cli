@@ -42,17 +42,17 @@ func NewSync(client *secretsapi.Client, p syncPrimeable) *Sync {
 // Run executes the sync behavior.
 func (s *Sync) Run() error {
 	if err := checkSecretsAccess(s.proj); err != nil {
-		return locale.WrapError(err, "secrets_err")
+		return err
 	}
 
 	org, fail := model.FetchOrgByURLName(s.proj.Owner())
 	if fail != nil {
-		return locale.WrapError(fail, "secrets_err")
+		return locale.WrapError(fail, "secrets_err_fetch_org", "Cannot fetch org")
 	}
 
 	updatedCount, fail := synchronizeEachOrgMember(s.secretsClient, org)
 	if fail != nil {
-		return locale.WrapError(fail, "secrets_err")
+		return locale.WrapError(fail, "secrets_err_sync", "Cannot synchronize secrets")
 	}
 
 	s.out.Print(locale.Tr("secrets_sync_results_message", strconv.Itoa(updatedCount), org.Name))

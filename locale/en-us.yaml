@@ -630,7 +630,7 @@ secrets_err:
 secrets_err_defined:
   other: Failed to obtain defined secrets
 secrets_err_values:
-  other: Failed to obtain secret values
+  other: Failed to obtain secret value(s)
 secrets_err_access:
   other: Unable to check access to project secrets. You will not be able to access any secrets for this project
 secrets_warning_no_access:
