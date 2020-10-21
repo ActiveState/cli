@@ -464,3 +464,54 @@ func TestIsSameOrInsideOf(t *testing.T) {
 	insideOf = resolvedPathContainsParent(setSep("../../internalfileutils"), setSep("../../internal"))
 	assert.False(t, insideOf)
 }
+
+func TestResolveUniquePath(t *testing.T) {
+	tempDir, err := ioutil.TempDir("", "")
+	require.NoError(t, err)
+
+	defer os.RemoveAll(tempDir)
+
+	expectedPath := filepath.Join(tempDir, "target")
+
+	shortPath, err := GetShortPathName(expectedPath)
+	require.NoError(t, err)
+
+	fail := Touch(expectedPath)
+	require.NoError(t, fail.ToError())
+
+	sep := string(os.PathSeparator)
+
+	cases := []struct {
+		name string
+		path string
+	}{
+		{"identity", expectedPath},
+		{"with slashes", tempDir + sep + sep + "target" + sep},
+		{"short path", shortPath},
+	}
+
+	if runtime.GOOS != "windows" {
+		err = os.Symlink("target", filepath.Join(tempDir, "symlink"))
+		require.NoError(t, err)
+		cases = append(cases, struct {
+			name string
+			path string
+		}{"symlink", filepath.Join(tempDir, "symlink")})
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(tt *testing.T) {
+			res, err := ResolveUniquePath(c.path)
+			assert.NoError(tt, err)
+			assert.Equal(tt, expectedPath, res)
+		})
+	}
+
+	t.Run("non-existent", func(tt *testing.T) {
+		nonExistent := filepath.Join(tempDir, "non-existent")
+
+		res, err := ResolveUniquePath(nonExistent)
+		assert.NoError(tt, err)
+		assert.Equal(tt, nonExistent, res)
+	})
+}
