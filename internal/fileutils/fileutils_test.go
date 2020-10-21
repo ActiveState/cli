@@ -473,11 +473,11 @@ func TestResolveUniquePath(t *testing.T) {
 
 	expectedPath := filepath.Join(tempDir, "target")
 
-	shortPath, err := GetShortPathName(expectedPath)
-	require.NoError(t, err)
-
 	fail := Touch(expectedPath)
 	require.NoError(t, fail.ToError())
+
+	shortPath, err := GetShortPathName(expectedPath)
+	require.NoError(t, err, "Could not shorten path name.")
 
 	sep := string(os.PathSeparator)
 
