@@ -35,7 +35,7 @@ func NewRuntime(projectDir string, commitID strfmt.UUID, owner string, projectNa
 		logging.Debug("In NewRuntime: resolved project dir is: %s", resolvedProjectDir)
 	}
 
-	installPath := filepath.Join(config.CachePath(), hash.ShortHash(owner, projectName, resolvedProjectDir))
+	installPath := filepath.Join(config.CachePath(), hash.ShortHash(resolvedProjectDir))
 	return &Runtime{installPath, commitID, owner, projectName, msgHandler}, nil
 }
 
