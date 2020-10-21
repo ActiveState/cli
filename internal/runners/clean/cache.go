@@ -48,7 +48,6 @@ func (c *Cache) Run(params *CacheParams) error {
 	if params.Project != "" {
 		paths := runbits.AvailableProjectPaths(c.config, params.Project)
 
-		// TODO: Info-box or question on whether we should remove
 		for _, projectPath := range paths {
 			err := c.removeProjectCache(projectPath, params.Project, params.Force)
 			if err != nil {
