@@ -776,7 +776,7 @@ func ResolvePath(path string) (string, error) {
 // with the best effort attempt to produce the same result for all possible paths to the
 // given target.
 func ResolveUniquePath(path string) (string, error) {
-	evalPath, err := ResolvePath(path)
+	evalPath, err := ResolvePath(filepath.Clean(path))
 	if err != nil {
 		return "", errs.Wrap(err, "cannot resolve path")
 	}
@@ -786,10 +786,10 @@ func ResolveUniquePath(path string) (string, error) {
 		// GetLongPathName can fail on unsupported file-systems or if evalPath is not a physical path.
 		// => just log the error and resume with resolved path
 		logging.Error("could not resolve long version of %s: %v", evalPath, err)
-		longPath = evalPath
+		return evalPath, nil
 	}
 
-	return filepath.Clean(longPath), nil
+	return longPath, nil
 }
 
 // PathsEqual checks whether the paths given all resolve to the same path
