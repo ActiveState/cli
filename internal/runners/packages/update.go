@@ -44,7 +44,7 @@ func (u *Update) Run(params UpdateRunParams) error {
 func (u *Update) run(params UpdateRunParams) error {
 	logging.Debug("ExecuteUpdate")
 
-	language, fail := model.DefaultLanguageNameForProject(u.proj.Owner(), u.proj.Name())
+	language, fail := model.LanguageForCommit(u.proj.CommitUUID())
 	if fail != nil {
 		return fail.WithDescription("err_fetch_languages")
 	}

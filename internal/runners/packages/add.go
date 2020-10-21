@@ -43,7 +43,7 @@ func (a *Add) Run(params AddRunParams) error {
 func (a *Add) run(params AddRunParams) error {
 	logging.Debug("ExecuteAdd")
 
-	language, fail := model.DefaultLanguageNameForProject(a.proj.Owner(), a.proj.Name())
+	language, fail := model.LanguageForCommit(a.proj.CommitUUID())
 	if fail != nil {
 		return fail.WithDescription("err_fetch_languages")
 	}
