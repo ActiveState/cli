@@ -44,14 +44,14 @@ func newPackagesCommand(prime *primer.Values) *captain.Command {
 	return cmd
 }
 
-func newPackagesAddCommand(prime *primer.Values) *captain.Command {
+func newInstallCommand(prime *primer.Values) *captain.Command {
 	runner := packages.NewAdd(prime)
 
 	params := packages.AddRunParams{}
 
 	return captain.NewCommand(
-		"add",
-		locale.Tl("package_add_title", "Adding Package"),
+		"install",
+		locale.Tl("package_add_title", "Installing Package"),
 		locale.T("package_add_cmd_description"),
 		prime.Output(),
 		[]*captain.Flag{},
@@ -69,39 +69,14 @@ func newPackagesAddCommand(prime *primer.Values) *captain.Command {
 	)
 }
 
-func newPackagesUpdateCommand(prime *primer.Values) *captain.Command {
-	runner := packages.NewUpdate(prime)
-
-	params := packages.UpdateRunParams{}
-
-	return captain.NewCommand(
-		"update",
-		locale.Tl("package_update_title", "Updating Packages"),
-		locale.T("package_update_cmd_description"),
-		prime.Output(),
-		[]*captain.Flag{},
-		[]*captain.Argument{
-			{
-				Name:        locale.T("package_arg_nameversion"),
-				Description: locale.T("package_arg_nameversion_description"),
-				Value:       &params.Name,
-				Required:    true,
-			},
-		},
-		func(_ *captain.Command, _ []string) error {
-			return runner.Run(params)
-		},
-	)
-}
-
-func newPackagesRemoveCommand(prime *primer.Values) *captain.Command {
+func newUninstallCommand(prime *primer.Values) *captain.Command {
 	runner := packages.NewRemove(prime)
 
 	params := packages.RemoveRunParams{}
 
 	return captain.NewCommand(
-		"remove",
-		locale.Tl("package_remove_title", "Removing Package"),
+		"uninstall",
+		locale.Tl("package_remove_title", "Uninstalling Package"),
 		locale.T("package_remove_cmd_description"),
 		prime.Output(),
 		[]*captain.Flag{},
@@ -119,7 +94,7 @@ func newPackagesRemoveCommand(prime *primer.Values) *captain.Command {
 	)
 }
 
-func newPackagesImportCommand(prime *primer.Values) *captain.Command {
+func newImportCommand(prime *primer.Values) *captain.Command {
 	runner := packages.NewImport(prime)
 
 	params := packages.NewImportRunParams()
@@ -150,7 +125,7 @@ func newPackagesImportCommand(prime *primer.Values) *captain.Command {
 	)
 }
 
-func newPackagesSearchCommand(prime *primer.Values) *captain.Command {
+func newSearchCommand(prime *primer.Values) *captain.Command {
 	runner := packages.NewSearch(prime)
 
 	params := packages.SearchRunParams{}
