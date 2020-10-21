@@ -463,7 +463,7 @@ error_state_run_undefined_name:
 error_state_run_unknown_name:
   other: The script '{{.Name}}' is not defined in activestate.yaml.
 info_state_run_activating_state:
-  other: "[NOTICE]This script requires an activated state. Activating it now. To bypass this set `standalone: true` on this script in your activestate.yaml.[/RESET]"
+  other: "Activating runtime environment. To bypass this enter an activated state via `state activate` or if you do not require a runtime environment add `standalone: true` to script in your activestate.yaml."
 error_state_run_activate:
   other: Unable to activate a state for running the script in. Try manually running "state activate" first.
 error_state_run_standalone_conflict:
