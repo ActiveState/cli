@@ -479,7 +479,7 @@ func TestResolveUniquePath(t *testing.T) {
 	expectedPath := targetPath
 	// On MacOS the ioutil.TempDir returns a symlink to the temporary directory
 	if runtime.GOOS == "darwin" {
-		expectedPath, err = ResolvePath(targetPath)
+		expectedPath, err = filepath.EvalSymlinks(targetPath)
 		require.NoError(t, err)
 	} else if runtime.GOOS == "windows" {
 		expectedPath, err = GetLongPathName(targetPath)
@@ -496,7 +496,7 @@ func TestResolveUniquePath(t *testing.T) {
 		path string
 	}{
 		{"identity", targetPath},
-		{"with slashes", tempDir + sep + sep + "target_long" + sep},
+		{"with slashes", tempDir + sep + "." + sep + "target_long" + sep},
 		{"short path", shortPath},
 	}
 
