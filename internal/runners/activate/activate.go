@@ -100,7 +100,10 @@ func (r *Activate) run(params *ActivateParams) error {
 		r.subshell.SetActivateCommand(params.Command)
 	}
 
-	runtime := runtime.NewRuntime(proj.CommitUUID(), proj.Owner(), proj.Name(), runbits.NewRuntimeMessageHandler(r.out))
+	runtime, err := runtime.NewRuntime(proj.Source().Path(), proj.CommitUUID(), proj.Owner(), proj.Name(), runbits.NewRuntimeMessageHandler(r.out))
+	if err != nil {
+		return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
+	}
 	if params.Default {
 		err := globaldefault.SetupDefaultActivation(r.subshell, r.config, runtime, filepath.Dir(proj.Source().Path()))
 		if err != nil {

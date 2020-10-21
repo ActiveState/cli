@@ -52,7 +52,7 @@ func (suite *InternalTestSuite) BeforeTest(suiteName, testName string) {
 	suite.Require().NoError(err)
 
 	msgHandler := runbits.NewRuntimeMessageHandler(&outputhelper.TestOutputer{})
-	r := NewRuntime("00010001-0001-0001-0001-000100010001", "string", "string", msgHandler)
+	r := NewRuntime("", "00010001-0001-0001-0001-000100010001", "string", "string", msgHandler)
 	r.SetInstallPath(suite.cacheDir)
 	suite.installer = NewInstaller(r)
 	suite.Require().NotNil(suite.installer)
@@ -70,7 +70,7 @@ func (suite *InternalTestSuite) AfterTest(suiteName, testName string) {
 func (suite *InternalTestSuite) TestValidateCheckpointNoCommit() {
 	msgHandler := runbits.NewRuntimeMessageHandler(&outputhelper.TestOutputer{})
 	var fail *failures.Failure
-	r := NewRuntime("", "string", "string", msgHandler)
+	r := NewRuntime("", "", "string", "string", msgHandler)
 	r.SetInstallPath(suite.cacheDir)
 	suite.installer = NewInstaller(r)
 	suite.Require().NotNil(suite.installer)
