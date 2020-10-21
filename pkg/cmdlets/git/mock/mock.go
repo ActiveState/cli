@@ -32,7 +32,7 @@ func (m *Mock) CloneProject(owner, name, path string, out output.Outputer) *fail
 
 	dummyID := "00010001-0001-0001-0001-000100010001"
 	projectURL := fmt.Sprintf("https://%s/%s/%s?commitID=%s", constants.PlatformURL, owner, name, dummyID)
-	_, fail := projectfile.CreateWithProjectURL(projectURL, path)
+	_, fail := projectfile.TestOnlyCreateWithProjectURL(projectURL, path)
 	if fail != nil {
 		return fail
 	}

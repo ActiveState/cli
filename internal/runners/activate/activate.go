@@ -128,7 +128,8 @@ func (r *Activate) run(params *ActivateParams) error {
 	}
 
 	if proj.CommitID() == "" {
-		return errs.New(locale.Tr("err_project_no_commit", model.ProjectURL(proj.Owner(), proj.Name(), "")))
+		err := locale.NewInputError("err_project_no_commit", "Your project does not have a commit ID, please run `state push` first.", model.ProjectURL(proj.Owner(), proj.Name(), ""))
+		return errs.AddTips(err, "Run → [ACTIONABLE]state push[/RESET] to create your project")
 	}
 
 	if err := r.activateAndWait(proj, runtime); err != nil {
