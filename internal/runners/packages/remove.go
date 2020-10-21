@@ -44,7 +44,7 @@ func (r *Remove) Run(params RemoveRunParams) error {
 
 func (r *Remove) run(params RemoveRunParams) error {
 	// Commit the package
-	language, fail := model.DefaultLanguageNameForProject(r.proj.Owner(), r.proj.Name())
+	language, fail := model.LanguageForCommit(r.proj.CommitUUID())
 	if fail != nil {
 		return locale.WrapError(fail, "err_fetch_languages")
 	}

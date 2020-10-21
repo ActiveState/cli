@@ -191,7 +191,7 @@ func (e *Failure) Unwrap() error {
 // failure to Handle() and then returning, please add the description with this method
 // and use the modified failure as the return value.
 func (e *Failure) WithDescription(message string) *Failure {
-	e.Message = locale.T(message) + "\n" + e.Message
+	e.Message = locale.T(message) + ": " + e.Message
 	return e
 }
 
