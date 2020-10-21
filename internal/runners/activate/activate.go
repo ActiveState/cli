@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/output/txtstyle"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/subshell"
@@ -121,9 +122,9 @@ func (r *Activate) run(params *ActivateParams) error {
 	updater.PrintUpdateMessage(proj.Source().Path(), r.out)
 
 	if proj.IsHeadless() {
-		r.out.Notice(output.Heading(locale.T("info_activating_state_by_commit")))
+		r.out.Notice(txtstyle.NewTitle(locale.T("info_activating_state_by_commit")))
 	} else {
-		r.out.Notice(output.Heading(locale.T("info_activating_state", proj)))
+		r.out.Notice(txtstyle.NewTitle(locale.T("info_activating_state", proj)))
 	}
 
 	if proj.CommitID() == "" {
