@@ -136,7 +136,7 @@ func (f *FailureType) New(message string, params ...string) *Failure {
 	}
 	logger(message)
 
-	return &Failure{message, f, file, line, stacktrace.Get(), nil}
+	return &Failure{message, f, file, line, stacktrace.Get(), nil, []string{}}
 }
 
 // Wrap wraps another error
@@ -162,6 +162,7 @@ type Failure struct {
 	Line    int
 	Trace   *stacktrace.Stacktrace
 	err     error
+	tips    []string
 }
 
 // Error returns the failure message, cannot be a pointer as it breaks the error interface
@@ -225,6 +226,14 @@ func (e *Failure) InputError() bool {
 		return false
 	}
 	return e.Type.User
+}
+
+func (f *Failure) ErrorTips() []string {
+	return f.tips
+}
+
+func (f *Failure) AddTips(tips ...string) {
+	f.tips = append(f.tips, tips...)
 }
 
 // Type returns a FailureType that can be used to create your own failure types

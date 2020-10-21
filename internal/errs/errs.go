@@ -19,7 +19,7 @@ type Error interface {
 }
 
 type ErrorTips interface {
-	SetTips(...string)
+	AddTips(...string)
 	ErrorTips() []string
 }
 
@@ -36,8 +36,8 @@ func (e *WrappedErr) ErrorTips() []string {
 	return e.tips
 }
 
-func (e *WrappedErr) SetTips(tips ...string) {
-	e.tips = tips
+func (e *WrappedErr) AddTips(tips ...string) {
+	e.tips = append(e.tips, tips...)
 }
 
 // Unwrap returns the parent error, if one exists
@@ -93,9 +93,9 @@ func (e *ErrorWithTips) ErrorTips() []string {
 	return e.tips
 }
 
-func SetTips(err error, tips ...string) error {
+func AddTips(err error, tips ...string) error {
 	if v, ok := err.(ErrorTips); ok {
-		v.SetTips(tips...)
+		v.AddTips(tips...)
 		return err
 	}
 	return &ErrorWithTips{err, tips}
