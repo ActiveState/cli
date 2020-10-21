@@ -234,6 +234,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
 	cp.SendLine(cp.WorkDirectory())
 	cp.Expect("Downloading", 20*time.Second)
 	cp.Expect("Installing", 120*time.Second)
+	cp.Expect("activated state")
 
 	suite.assertCompletedStatusBarReport(cp.Snapshot())
 
