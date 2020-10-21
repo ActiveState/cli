@@ -472,6 +472,10 @@ func TestResolveUniquePath(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	targetPath := filepath.Join(tempDir, "target")
+
+	fail := Touch(targetPath)
+	require.NoError(t, fail.ToError())
+
 	expectedPath := targetPath
 	// On MacOS the ioutil.TempDir returns a symlink to the temporary directory
 	if runtime.GOOS == "darwin" {
@@ -481,9 +485,6 @@ func TestResolveUniquePath(t *testing.T) {
 		expectedPath, err = GetLongPathName(targetPath)
 		require.NoError(t, err)
 	}
-
-	fail := Touch(targetPath)
-	require.NoError(t, fail.ToError())
 
 	shortPath, err := GetShortPathName(targetPath)
 	require.NoError(t, err, "Could not shorten path name.")
