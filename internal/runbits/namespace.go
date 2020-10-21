@@ -15,6 +15,7 @@ type ConfigAble interface {
 	GetStringSlice(key string) []string
 }
 
+// AvailableProjectPaths returns the paths of all projects associated with the namespace
 func AvailableProjectPaths(c ConfigAble, namespace string) []string {
 	key := fmt.Sprintf("project_%s", namespace)
 	paths := c.GetStringSlice(key)
