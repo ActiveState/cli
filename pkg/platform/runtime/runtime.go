@@ -8,10 +8,10 @@ import (
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/hash"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 )
 
@@ -30,7 +30,7 @@ func NewRuntime(projectDir string, commitID strfmt.UUID, owner string, projectNa
 		projectDir = strings.TrimSuffix(projectDir, constants.ConfigFileName)
 		resolvedProjectDir, err = fileutils.ResolveUniquePath(projectDir)
 		if err != nil {
-			return nil, errs.Wrap(err, "Failed to resolve unique file path to project dir")
+			return nil, locale.WrapError(err, "err_new_runtime_unique_path", "Failed to resolve a unique file path to the project dir.")
 		}
 		logging.Debug("In NewRuntime: resolved project dir is: %s", resolvedProjectDir)
 	}
