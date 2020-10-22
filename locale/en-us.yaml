@@ -1156,7 +1156,7 @@ package_cmd_description:
   other: Manage packages used in your project
 users_plural:
   other: users
-package_add_cmd_description:
+package_install_cmd_description:
   other: Add a new package to your project
 package_list_cmd_description:
   other: List the packages currently used by this project

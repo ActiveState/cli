@@ -11,22 +11,22 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
-// AddRunParams tracks the info required for running Add.
-type AddRunParams struct {
+// InstallRunParams tracks the info required for running Install.
+type InstallRunParams struct {
 	Name string
 }
 
-// Add manages the adding execution context.
-type Add struct {
+// Install manages the installing execution context.
+type Install struct {
 	out  output.Outputer
 	proj *project.Project
 	prompt.Prompter
 	auth *authentication.Auth
 }
 
-// NewAdd prepares an addition execution context for use.
-func NewAdd(prime primeable) *Add {
-	return &Add{
+// NewInstall prepares an installation execution context for use.
+func NewInstall(prime primeable) *Install {
+	return &Install{
 		prime.Output(),
 		prime.Project(),
 		prime.Prompt(),
@@ -34,15 +34,15 @@ func NewAdd(prime primeable) *Add {
 	}
 }
 
-// Run executes the add behavior.
-func (a *Add) Run(params AddRunParams) error {
+// Run executes the install behavior.
+func (a *Install) Run(params InstallRunParams) error {
 	err := a.run(params)
 	headless.Notify(a.out, a.proj, err, "packages")
 	return err
 }
 
-func (a *Add) run(params AddRunParams) error {
-	logging.Debug("ExecuteAddUpdate")
+func (a *Install) run(params InstallRunParams) error {
+	logging.Debug("ExecuteInstall")
 
 	language, fail := model.LanguageForCommit(a.proj.CommitUUID())
 	if fail != nil {

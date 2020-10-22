@@ -45,14 +45,14 @@ func newPackagesCommand(prime *primer.Values) *captain.Command {
 }
 
 func newInstallCommand(prime *primer.Values) *captain.Command {
-	runner := packages.NewAdd(prime)
+	runner := packages.NewInstall(prime)
 
-	params := packages.AddRunParams{}
+	params := packages.InstallRunParams{}
 
 	return captain.NewCommand(
 		"install",
-		locale.Tl("package_add_title", "Installing Package"),
-		locale.T("package_add_cmd_description"),
+		locale.Tl("package_install_title", "Installing Package"),
+		locale.T("package_install_cmd_description"),
 		prime.Output(),
 		[]*captain.Flag{},
 		[]*captain.Argument{
