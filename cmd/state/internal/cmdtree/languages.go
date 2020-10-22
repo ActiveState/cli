@@ -19,13 +19,7 @@ func newLanguagesCommand(prime *primer.Values) *captain.Command {
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, _ []string) error {
-			proj, fail := project.GetSafe()
-			if fail != nil {
-				return fail
-			}
-
-			params := languages.NewLanguagesParams(proj.Owner(), proj.Name())
-			return runner.Run(&params)
+			return runner.Run()
 		},
 	)
 }

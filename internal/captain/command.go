@@ -224,6 +224,26 @@ func (c *Command) SetDisableFlagParsing(b bool) {
 	c.cobra.DisableFlagParsing = b
 }
 
+func (c *Command) Name() string {
+	return c.cobra.Use
+}
+
+func (c *Command) Title() string {
+	return c.title
+}
+
+func (c *Command) Description() string {
+	return c.cobra.Long
+}
+
+func (c *Command) Flags() []*Flag {
+	return c.flags
+}
+
+func (c *Command) Executor() Executor {
+	return c.execute
+}
+
 func (c *Command) Arguments() []*Argument {
 	return c.arguments
 }

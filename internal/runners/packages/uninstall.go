@@ -11,22 +11,22 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
-// RemoveRunParams tracks the info required for running Remove.
-type RemoveRunParams struct {
+// UninstallRunParams tracks the info required for running Uninstall.
+type UninstallRunParams struct {
 	Name string
 }
 
-// Remove manages the removing execution context.
-type Remove struct {
+// Uninstall manages the uninstalling execution context.
+type Uninstall struct {
 	out  output.Outputer
 	proj *project.Project
 	prompt.Prompter
 	auth *authentication.Auth
 }
 
-// NewRemove prepares a removal execution context for use.
-func NewRemove(prime primeable) *Remove {
-	return &Remove{
+// NewUninstall prepares an uninstallation execution context for use.
+func NewUninstall(prime primeable) *Uninstall {
+	return &Uninstall{
 		prime.Output(),
 		prime.Project(),
 		prime.Prompt(),
@@ -34,17 +34,17 @@ func NewRemove(prime primeable) *Remove {
 	}
 }
 
-// Run executes the remove behavior.
-func (r *Remove) Run(params RemoveRunParams) error {
-	logging.Debug("ExecuteRemove")
+// Run executes the uninstall behavior.
+func (r *Uninstall) Run(params UninstallRunParams) error {
+	logging.Debug("ExecuteUninstall")
 	err := r.run(params)
 	headless.Notify(r.out, r.proj, err, "packages")
 	return err
 }
 
-func (r *Remove) run(params RemoveRunParams) error {
+func (r *Uninstall) run(params UninstallRunParams) error {
 	// Commit the package
-	language, fail := model.DefaultLanguageNameForProject(r.proj.Owner(), r.proj.Name())
+	language, fail := model.LanguageForCommit(r.proj.CommitUUID())
 	if fail != nil {
 		return locale.WrapError(fail, "err_fetch_languages")
 	}

@@ -1156,13 +1156,13 @@ package_cmd_description:
   other: Manage packages used in your project
 users_plural:
   other: users
-package_add_cmd_description:
+package_install_cmd_description:
   other: Add a new package to your project
 package_list_cmd_description:
   other: List the packages currently used by this project
 package_update_cmd_description:
   other: Update a package in your project to the latest available version
-package_remove_cmd_description:
+package_uninstall_cmd_description:
   other: Remove a package from your project
 package_import_cmd_description:
   other: Import packages from a list of dependencies
