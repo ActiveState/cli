@@ -149,8 +149,6 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 			Commands: []*captain.Command{
 				stateCmd.FindSafe([]string{"events"}),
 				stateCmd.FindSafe([]string{"scripts"}),
-				// Cannot find legacy children
-				// stateCmd.FindSafe([]string{"secrets"}),
 			},
 		},
 		{
@@ -166,16 +164,16 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 			Message: "Utilities:",
 			Commands: []*captain.Command{
 				stateCmd.FindSafe([]string{"update"}),
-				// There is no help command
-				// stateCmd.FindSafe([]string{"help"}),
 				stateCmd.FindSafe([]string{"export"}),
 			},
 		},
 	}
 
-	templater := captain.NewTemplater(stateCmd, groups)
-
-	stateCmd.SetUsageFunc(templater.UsageFunc())
+	templater := captain.Templater{
+		Cmd:           stateCmd,
+		CommandGroups: groups,
+	}
+	stateCmd.SetUsageFunc(templater.RootCmdUsageFunc())
 
 	return &CmdTree{
 		cmd: stateCmd,

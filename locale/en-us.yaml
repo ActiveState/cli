@@ -19,57 +19,8 @@ events_header_value:
   other: Value
 root_usage_tpl:
   other: "
-[[if .HasAvailableSubCommands]][[CmdGroupsString .]][[BR]][[BR]][[end]]
-Usage:
-  [[if .Runnable]][[BR]]
-  [[.UseLine]] 
-{{ range $key, $argument := .Arguments }}<{{$argument.Name}}> {{ end }}
-  [[end]]
-  [[if .HasAvailableSubCommands]][[BR]]
-    [[.CommandPath]] [command]
-  [[end]]
-
-[[if gt (len .Aliases) 0]]
-[[BR]][[BR]]Aliases:[[BR]]
-  [[.NameAndAliases]][[end]]
-
-[[if .HasExample]]
-[[BR]][[BR]]
-Examples:[[BR]]
-  [[.Example]]
-[[end]]
-
-[[if .HasAvailableLocalFlags]]
-[[BR]][[BR]]
-Flags:
-[[BR]][[.LocalFlags.FlagUsages | trimTrailingWhitespaces]]
-[[end]]
-
-[[if .HasAvailableInheritedFlags]]
-[[BR]][[BR]]
-Global Flags: 
-[[BR]][[.InheritedFlags.FlagUsages | trimTrailingWhitespaces]]
-[[end]]
-
-{{if gt (len .Arguments) 0}}
-[[BR]][[BR]]
-Arguments:[[BR]]
-  {{ range $key, $argument := .Arguments }}
-  <{{$argument.Name}}> {{if gt (len $argument.Required) 0}}          {{else}}(optional){{end}} {{$argument.Description}}[[BR]]
-  {{ end }}
-{{end}}
-
-[[if .HasHelpSubCommands]]
-[[BR]][[BR]]
-Additional help topics: [[range .Commands]]
-[[if .IsAdditionalHelpTopicCommand]][[BR]]
-  [[rpad .CommandPath .CommandPathPadding]] [[.Short]]
-[[end]][[end]][[end]]
-
-[[if .HasAvailableSubCommands]]
-[[BR]][[BR]]
-Use \"[[.CommandPath]] [command] --help\" for more information about a command.[[end]][[BR]]
-"
+[[if .HasAvailableSubCommands]][[CmdGroupsString .]][[BR]][[BR]][[end -]]
+[[template \"usage_tpl\" .]]"
 usage_tpl:
   other: "
 Usage:
@@ -91,7 +42,7 @@ Examples:[[BR]]
   [[.Example]]
 [[end]]
 
-[[if .HasAvailableSubCommands]][[BR]][[BR]]Available Commands:
+[[if and .HasAvailableSubCommands (not {{.isRootCmd}})]][[BR]][[BR]]Available Commands:
 [[range .Commands]][[if (or .IsAvailableCommand (eq .Name \"help\"))]][[BR]]
   [[rpad .Name .NamePadding ]] [[.Short]]
 [[end]][[end]][[end]]

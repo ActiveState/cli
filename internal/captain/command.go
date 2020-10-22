@@ -2,10 +2,7 @@ package captain
 
 import (
 	"fmt"
-	"os"
 	"strings"
-	"text/template"
-	"unicode"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -51,79 +48,6 @@ type CommandGroup struct {
 	Commands []*Command
 }
 
-type Templater struct {
-	rootCmd       *Command
-	commandGroups []CommandGroup
-}
-
-func NewTemplater(rootCmd *Command, cmdGroups []CommandGroup) *Templater {
-	return &Templater{
-		rootCmd:       rootCmd,
-		commandGroups: cmdGroups,
-	}
-}
-
-func (t *Templater) UsageFunc() func(c *cobra.Command) error {
-	return func(c *cobra.Command) error {
-		tpl := template.New("root_usage_tpl")
-		tpl.Funcs(t.templateFuncs())
-		localizedArgs := []map[string]string{}
-		for _, arg := range t.rootCmd.Arguments() {
-			req := ""
-			if arg.Required {
-				req = "1"
-			}
-			localizedArgs = append(localizedArgs, map[string]string{
-				"Name":        locale.T(arg.Name),
-				"Description": locale.T(arg.Description),
-				"Required":    req,
-			})
-		}
-		template.Must(tpl.Parse(locale.Tt("root_usage_tpl", map[string]interface{}{
-			"Arguments": localizedArgs,
-		})))
-		return tpl.Execute(os.Stdout, c)
-	}
-}
-
-func (t *Templater) cmdGroupsString(c *cobra.Command) string {
-	var groups []string
-	for _, cmdGroup := range t.cmdGroups(c) {
-		cmds := []string{cmdGroup.Message}
-		for _, cmd := range cmdGroup.Commands {
-			if cmd.cobra.IsAvailableCommand() {
-				cmds = append(cmds, "  "+rpad(cmd.Use(), cmd.cobra.NamePadding())+" "+cmd.Description())
-			}
-		}
-		groups = append(groups, strings.Join(cmds, "\n"))
-	}
-	return strings.Join(groups, "\n\n")
-}
-
-func (t *Templater) cmdGroups(c *cobra.Command) []CommandGroup {
-	if len(t.commandGroups) > 0 && c == t.rootCmd.cobra {
-		return t.commandGroups
-	}
-	return nil
-}
-
-func (t *Templater) templateFuncs() template.FuncMap {
-	return template.FuncMap{
-		"CmdGroupsString":         t.cmdGroupsString,
-		"trimTrailingWhitespaces": trimTrailingWhitespaces,
-		"rpad":                    rpad,
-	}
-}
-
-func rpad(s string, padding int) string {
-	template := fmt.Sprintf("%%-%ds", padding)
-	return fmt.Sprintf(template, s)
-}
-
-func trimTrailingWhitespaces(s string) string {
-	return strings.TrimRightFunc(s, unicode.IsSpace)
-}
-
 func NewCommand(name, title, description string, out output.Outputer, flags []*Flag, args []*Argument, executor Executor) *Command {
 	// Validate args
 	for idx, arg := range args {
@@ -165,9 +89,8 @@ func NewCommand(name, title, description string, out output.Outputer, flags []*F
 	if err := cmd.setFlags(flags); err != nil {
 		panic(err)
 	}
-	// TODO: Set a default usage func here so the child commands
-	// do no inherit the root commands usage func
-	cmd.SetUsageTemplate("usage_tpl")
+	templater := &Templater{cmd, nil}
+	cmd.SetUsageFunc(templater.defaultUsageFunc())
 
 	cobraMapping[cmd.cobra] = cmd
 	return cmd
@@ -295,21 +218,7 @@ func (c *Command) SetUsageFunc(usage func(c *cobra.Command) error) {
 }
 
 func (c *Command) SetUsageTemplate(usageTemplate string) {
-	localizedArgs := []map[string]string{}
-	for _, arg := range c.Arguments() {
-		req := ""
-		if arg.Required {
-			req = "1"
-		}
-		localizedArgs = append(localizedArgs, map[string]string{
-			"Name":        locale.T(arg.Name),
-			"Description": locale.T(arg.Description),
-			"Required":    req,
-		})
-	}
-	c.cobra.SetUsageTemplate(locale.Tt(usageTemplate, map[string]interface{}{
-		"Arguments": localizedArgs,
-	}))
+	c.cobra.SetUsageTemplate(localizedTemplate(c, usageTemplate))
 }
 
 func (c *Command) SetDisableFlagParsing(b bool) {
