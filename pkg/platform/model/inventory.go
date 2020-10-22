@@ -11,6 +11,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/retryhttp"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory"
@@ -138,7 +139,7 @@ func searchIngredients(limit int, language, name string) ([]*IngredientAndVersio
 
 	bundlesResults, fail := searchIngredientsNamespace(limit, BundlesNamespacePrefix, language, name)
 	if fail != nil {
-		return nil, fail
+		logging.Error("Searching in bundles namespace failed with error: %s", fail.ToError())
 	}
 
 	var results []*IngredientAndVersion
@@ -150,12 +151,14 @@ func searchIngredients(limit int, language, name string) ([]*IngredientAndVersio
 		results = append(results, &ingredient)
 	}
 
-	for _, res := range bundlesResults {
-		ingredient := IngredientAndVersion{
-			res.V1IngredientAndVersion,
-			BundlesNamespacePrefix,
+	if bundlesResults != nil {
+		for _, res := range bundlesResults {
+			ingredient := IngredientAndVersion{
+				res.V1IngredientAndVersion,
+				BundlesNamespacePrefix,
+			}
+			results = append(results, &ingredient)
 		}
-		results = append(results, &ingredient)
 	}
 
 	sort.SliceStable(results, func(i, j int) bool {

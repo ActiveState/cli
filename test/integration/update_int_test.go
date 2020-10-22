@@ -15,11 +15,12 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 type UpdateIntegrationTestSuite struct {
-	suite.Suite
+	tagsuite.Suite
 }
 
 type matcherFunc func(expected interface{}, actual interface{}, msgAndArgs ...interface{}) bool
@@ -58,6 +59,7 @@ func (suite *UpdateIntegrationTestSuite) versionCompare(ts *e2e.Session, disable
 }
 
 func (suite *UpdateIntegrationTestSuite) TestAutoUpdateDisabled() {
+	suite.OnlyRunForTags(tagsuite.Update)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -65,6 +67,7 @@ func (suite *UpdateIntegrationTestSuite) TestAutoUpdateDisabled() {
 }
 
 func (suite *UpdateIntegrationTestSuite) TestNoAutoUpdate() {
+	suite.OnlyRunForTags(tagsuite.Update)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -73,6 +76,7 @@ func (suite *UpdateIntegrationTestSuite) TestNoAutoUpdate() {
 }
 
 func (suite *UpdateIntegrationTestSuite) TestAutoUpdate() {
+	suite.OnlyRunForTags(tagsuite.Update, tagsuite.Critical)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -88,6 +92,7 @@ func (suite *UpdateIntegrationTestSuite) TestAutoUpdate() {
 }
 
 func (suite *UpdateIntegrationTestSuite) TestAutoUpdateNoPermissions() {
+	suite.OnlyRunForTags(tagsuite.Update)
 	if runtime.GOOS == "windows" {
 		suite.T().Skip("Skipping permission test on Windows, as CI on Windows is running as Administrator and is allowed to do EVERYTHING")
 	}
@@ -117,6 +122,7 @@ func (suite *UpdateIntegrationTestSuite) TestAutoUpdateNoPermissions() {
 }
 
 func (suite *UpdateIntegrationTestSuite) TestLocked() {
+	suite.OnlyRunForTags(tagsuite.Update)
 	pjfile := projectfile.Project{
 		Project: lockedProjectURL(),
 	}
@@ -141,6 +147,7 @@ func (suite *UpdateIntegrationTestSuite) TestLocked() {
 }
 
 func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmationNegative() {
+	suite.OnlyRunForTags(tagsuite.Update)
 	pjfile := projectfile.Project{
 		Project: lockedProjectURL(),
 		Lock:    fmt.Sprintf("%s@%s", constants.Version, constants.BranchName),
@@ -168,6 +175,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmationNegative() 
 // TestUpdateLockedConfirmationPositive does not verify the effects of the
 // update behavior. That is left to TestUpdate.
 func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmationPositive() {
+	suite.OnlyRunForTags(tagsuite.Update)
 	pjfile := projectfile.Project{
 		Project: lockedProjectURL(),
 		Lock:    fmt.Sprintf("%s@%s", constants.Version, constants.BranchName),
@@ -195,6 +203,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmationPositive() 
 // TestUpdateLockedConfirmationForce does not verify the effects of the
 // update behavior. That is left to TestUpdate.
 func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmationForce() {
+	suite.OnlyRunForTags(tagsuite.Update)
 	pjfile := projectfile.Project{
 		Project: lockedProjectURL(),
 		Lock:    fmt.Sprintf("%s@%s", constants.Version, constants.BranchName),
@@ -218,6 +227,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmationForce() {
 }
 
 func (suite *UpdateIntegrationTestSuite) TestUpdate() {
+	suite.OnlyRunForTags(tagsuite.Update, tagsuite.Critical)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -229,7 +239,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 	if os.Getenv("GIT_BRANCH") == "master" {
 		cp.ExpectRe("(Version updated|You are using the latest)", 60*time.Second)
 	} else {
-		cp.Expect("Downloading latest")
+		cp.Expect("Updating state tool:  Downloading latest version")
 		cp.Expect("Version updated", 60*time.Second)
 
 	}
@@ -250,6 +260,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 }
 
 func (suite *UpdateIntegrationTestSuite) TestUpdateNoPermissions() {
+	suite.OnlyRunForTags(tagsuite.Update)
 	if runtime.GOOS == "windows" {
 		suite.T().Skip("Skipping permission test on Windows, as CI on Windows is running as Administrator and is allowed to do EVERYTHING")
 	}

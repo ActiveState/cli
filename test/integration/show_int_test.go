@@ -5,14 +5,16 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/stretchr/testify/suite"
 )
 
 type ShowIntegrationTestSuite struct {
-	suite.Suite
+	tagsuite.Suite
 }
 
 func (suite *ShowIntegrationTestSuite) TestShow() {
+	suite.OnlyRunForTags(tagsuite.Show, tagsuite.VSCode)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 

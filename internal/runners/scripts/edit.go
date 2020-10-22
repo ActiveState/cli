@@ -98,7 +98,12 @@ func createScriptFile(script *project.Script, expand bool) (*scriptfile.ScriptFi
 		}
 	}
 
-	f, fail := scriptfile.NewAsSource(script.LanguageSafe(), script.Name(), scriptBlock)
+	languages := script.LanguageSafe()
+	if len(languages) == 0 {
+		languages = project.DefaultScriptLanguage()
+	}
+
+	f, fail := scriptfile.NewAsSource(languages[0], script.Name(), scriptBlock)
 	if fail != nil {
 		return f, errs.Wrap(fail, "Failed to create script file")
 	}

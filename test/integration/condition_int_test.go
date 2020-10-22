@@ -8,13 +8,15 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 )
 
 type ConditionIntegrationTestSuite struct {
-	suite.Suite
+	tagsuite.Suite
 }
 
 func (suite *ConditionIntegrationTestSuite) TestCondition() {
+	suite.OnlyRunForTags(tagsuite.Condition)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -54,6 +56,7 @@ func (suite *ConditionIntegrationTestSuite) TestCondition() {
 }
 
 func (suite *ConditionIntegrationTestSuite) TestConditionOSName() {
+	suite.OnlyRunForTags(tagsuite.Condition)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -73,6 +76,7 @@ func (suite *ConditionIntegrationTestSuite) TestConditionOSName() {
 }
 
 func (suite *ConditionIntegrationTestSuite) TestConditionSyntaxError() {
+	suite.OnlyRunForTags(tagsuite.Condition)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 

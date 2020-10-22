@@ -1,4 +1,4 @@
-#@ load("jobs.lib.yml", "jobs_inttest")
+#@ load("jobs.lib.yml", "jobs_inttest", "jobs_prepare")
 name: "Integration Test"
 
 "on":
@@ -6,4 +6,5 @@ name: "Integration Test"
     - cron: "0 0 * * *"
 
 jobs:
+  prepare: #@ jobs_prepare()
   inttest: #@ jobs_inttest()

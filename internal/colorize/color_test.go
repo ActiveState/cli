@@ -39,7 +39,7 @@ func Test_writeColorized(t *testing.T) {
 			`disabled`,
 			false,
 			`disabled: [DISABLED]value[/RESET] -- end`,
-			"disabled: \x1b[30;1mvalue\x1b[0m -- end",
+			"disabled: \x1b[2mvalue\x1b[0m -- end",
 		},
 		{
 			`highlight`,

@@ -7,10 +7,11 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 )
 
 type ForkIntegrationTestSuite struct {
-	suite.Suite
+	tagsuite.Suite
 	username string
 }
 
@@ -21,6 +22,7 @@ func (suite *ForkIntegrationTestSuite) cleanup(ts *e2e.Session) {
 }
 
 func (suite *ForkIntegrationTestSuite) TestFork() {
+	suite.OnlyRunForTags(tagsuite.Fork)
 	ts := e2e.New(suite.T(), false)
 	defer suite.cleanup(ts)
 
@@ -37,6 +39,7 @@ func (suite *ForkIntegrationTestSuite) TestFork() {
 }
 
 func (suite *ForkIntegrationTestSuite) TestFork_FailNameExists() {
+	suite.OnlyRunForTags(tagsuite.Fork)
 	ts := e2e.New(suite.T(), false)
 	defer suite.cleanup(ts)
 	ts.LoginAsPersistentUser()

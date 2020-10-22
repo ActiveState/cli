@@ -10,15 +10,17 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 type PushIntegrationTestSuite struct {
-	suite.Suite
+	tagsuite.Suite
 	username string
 }
 
 func (suite *PushIntegrationTestSuite) TestInitAndPush() {
+	suite.OnlyRunForTags(tagsuite.Push)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	ts.LoginAsPersistentUser()
@@ -49,6 +51,7 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 }
 
 func (suite *PushIntegrationTestSuite) TestPush_AlreadyExists() {
+	suite.OnlyRunForTags(tagsuite.Push)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	ts.LoginAsPersistentUser()

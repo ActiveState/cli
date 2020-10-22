@@ -3,6 +3,44 @@ name: Integration Test
   schedule:
   - cron: 0 0 * * *
 jobs:
+  prepare:
+    name: Prepare
+    runs-on: ubuntu-latest
+    env:
+      ACTIVESTATE_CLI_DISABLE_RUNTIME: true
+      GOFLAGS: -mod=vendor
+      SHELL: bash
+      GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    timeout-minutes: 10
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - name: Validate
+      shell: bash
+      run: |
+        if [ "${GITHUB_REF##*/}" != "master" ] && [ "${{ contains(toJson(github.event.pull_request.labels), 'version:') }}" != "true" ]; then
+          echo "Version label must be set"
+          exit 1
+        fi
+    - name: Install Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: ${{ matrix.go-version }}
+    - name: Setup
+      shell: bash
+      run: |
+        bin=$(pwd)/.github/deps/${{ runner.os }}/bin
+        echo "Adding $bin to PATH"
+        echo "::add-path::$bin"
+        printenv
+    - name: Generate Version
+      shell: bash
+      run: state run generate-version
+    - name: Upload Shared Artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: session-shared-build
+        path: build/
   inttest:
     name: Integration Test
     strategy:
@@ -15,6 +53,8 @@ jobs:
         - windows-latest
       fail-fast: false
     runs-on: ${{ matrix.platform }}
+    needs:
+    - prepare
     env:
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true
       GOFLAGS: -mod=vendor
@@ -24,6 +64,11 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
+    - name: Download Shared Artifacts
+      uses: actions/download-artifact@v2
+      with:
+        name: session-shared-build
+        path: build/
     - name: Install Go
       uses: actions/setup-go@v2
       with:
@@ -66,13 +111,24 @@ jobs:
     - name: Integration Tests
       shell: bash
       run: |
-        export SHELL=''
-        set +e
-        go test -timeout 20m ./test/integration -v
-        testCode=$?
-        head -n-0 build/*log 2>/dev/null
-        exit ${testCode}
+        LABELS="${{ join(github.event.pull_request.labels.*.name, ',') }}"
+        IFS=',' read -r -a TESTS <<< "$LABELS"
+        TEST_SUITE_TAGS=""
+        for i in "${TESTS[@]}"
+        do
+          :
+          START=${i%:*}
+          if [ "$START" == "run-int-test-only" ]; then
+            TEST_SUITE=${i##*:}
+            TEST_SUITE_TAGS="$TEST_SUITE:$TEST_SUITE_TAGS"
+          fi
+        done
+
+        export TEST_SUITE_TAGS="$TEST_SUITE_TAGS"
+        SHELL='' go test -timeout 20m ./test/integration -v
       env:
         INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
         INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
         PLATFORM_API_TOKEN: ${{ secrets.PLATFORM_API_TOKEN }}
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
