@@ -25,29 +25,18 @@ func init() {
 	core.ErrorTemplate = locale.Tt("survey_error_template")
 
 	// Drop questionicon from templates as it causes indented text
-	survey.SelectQuestionTemplate = `
-{{- if .ShowHelp }}{{- color "cyan"}}{{ HelpIcon }} {{ .Help }}{{color "reset"}}{{"\n"}}{{end}}
-{{- color "default+hb"}}{{ .Message }}{{color "reset"}}
-{{- if .ShowAnswer}}{{color "cyan"}} {{.Answer}}{{color "reset"}}{{"\n"}}
-{{- else}}
-  {{- if and .Help (not .ShowHelp)}} {{color "cyan"}}[{{ HelpInputRune }} for help]{{color "reset"}}{{end}}
-  {{- "\n"}}
-  {{- range $ix, $choice := .PageEntries}}
-    {{- if eq $ix $.SelectedIndex}}{{color "cyan+b"}}{{ SelectFocusIcon }} {{else}}{{color "default+hb"}}  {{end}}
-    {{- $choice}}
-    {{- color "reset"}}{{"\n"}}
-  {{- end}}
-{{- end}}`
+	survey.SelectQuestionTemplate = `{{ .Message }}
+{{- "\n\n"}}
+{{- range $ix, $choice := .PageEntries}}
+	{{- if eq $ix $.SelectedIndex}}{{color "cyan"}}{{ SelectFocusIcon }} {{else}}  {{end}}
+	{{- $choice}}
+	{{- color "reset"}}{{"\n"}}
+{{- end}}
+{{- "\n"}}`
 
-	survey.InputQuestionTemplate = `
-{{- if .ShowHelp }}{{- color "cyan"}}{{ HelpIcon }} {{ .Help }}{{color "reset"}}{{"\n"}}{{end}}
-{{- color "default+hb"}}{{ .Message }} {{color "reset"}}
-{{- if .ShowAnswer}}
-  {{- color "cyan"}}{{.Answer}}{{color "reset"}}{{"\n"}}
-{{- else }}
-  {{- if and .Help (not .ShowHelp)}}{{color "cyan"}}[{{ HelpInputRune }} for help]{{color "reset"}} {{end}}
-  {{- if .Default}}{{color "white"}}({{.Default}}) {{color "reset"}}{{end}}
-{{- end}}`
+	survey.InputQuestionTemplate = `{{- if .Answer}}{{color "reset"}}{{- "\n"}}{{else}}
+{{- if ne .Message ""}}{{- .Message }}{{- "\n"}}{{end}}
+{{- " > "}}{{- color "cyan"}}{{end}}`
 
 	survey.ConfirmQuestionTemplate = `
 {{- if .ShowHelp }}{{- color "cyan"}}{{ HelpIcon }} {{ .Help }}{{color "reset"}}{{"\n"}}{{end}}

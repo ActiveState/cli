@@ -66,6 +66,8 @@ func (r *Activate) Run(params *ActivateParams) error {
 func (r *Activate) run(params *ActivateParams) error {
 	logging.Debug("Activate %v, %v", params.Namespace, params.PreferredPath)
 
+	r.out.Notice(txtstyle.NewTitle(locale.T("info_activating_state")))
+
 	// Detect target path
 	pathToUse, err := r.pathToUse(params.Namespace.String(), params.PreferredPath)
 	if err != nil {
@@ -120,12 +122,6 @@ func (r *Activate) run(params *ActivateParams) error {
 	}
 
 	updater.PrintUpdateMessage(proj.Source().Path(), r.out)
-
-	if proj.IsHeadless() {
-		r.out.Notice(txtstyle.NewTitle(locale.T("info_activating_state_by_commit")))
-	} else {
-		r.out.Notice(txtstyle.NewTitle(locale.T("info_activating_state", proj)))
-	}
 
 	if proj.CommitID() == "" {
 		err := locale.NewInputError("err_project_no_commit", "Your project does not have a commit ID, please run `state push` first.", model.ProjectURL(proj.Owner(), proj.Name(), ""))

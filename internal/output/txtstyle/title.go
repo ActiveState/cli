@@ -11,7 +11,7 @@ import (
 
 const (
 	// DefaultTitlePadding is the padding character length.
-	DefaultTitlePadding = 3
+	DefaultTitlePadding = 1
 )
 
 // Title represents the config of a styled title. It does not, currently,
@@ -103,7 +103,7 @@ func (t *Title) String() string {
 	out := strings.Join(outLines, "\n")
 	out = strings.Replace(out, text, t.Text, 1)
 
-	return strings.TrimSpace(out) + "\n"
+	return strings.TrimSpace(out)
 }
 
 // MarshalOutput implements output.Marshaller.

@@ -20,3 +20,16 @@ func (h Heading) MarshalOutput(f Format) interface{} {
 	}
 	return h.String()
 }
+
+type SubHeading string
+
+func (h SubHeading) String() string {
+	return fmt.Sprintf("\n[HEADING]%s[/RESET]", string(h))
+}
+
+func (h SubHeading) MarshalOutput(f Format) interface{} {
+	if f != PlainFormatName {
+		return Suppress
+	}
+	return h.String()
+}

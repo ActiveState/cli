@@ -338,7 +338,7 @@ func (e *SecretExpander) ExpandWithPrompt(category string, name string, isFuncti
 	}
 
 	project.Outputer.Notice(locale.Tr("secret_value_prompt_summary", name, description, scope, locale.T("secret_prompt_"+scope)))
-	if value, fail = project.Prompter.InputSecret(locale.Tr("secret_value_prompt", name)); fail != nil {
+	if value, fail = project.Prompter.InputSecret(locale.Tl("secret_expand", "Secret Expansion"), locale.Tr("secret_value_prompt", name)); fail != nil {
 		return "", locale.NewInputError("secrets_err_value_prompt", "The provided secret value is invalid.")
 	}
 

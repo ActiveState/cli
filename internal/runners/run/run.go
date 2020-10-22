@@ -61,10 +61,6 @@ func (r *Run) Run(name string, args []string) error {
 }
 
 func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, name string, args []string) error {
-	if authentication.Get().Authenticated() {
-		checker.RunCommitsBehindNotifier(out)
-	}
-
 	logging.Debug("Execute")
 
 	if name == "" {
@@ -81,6 +77,10 @@ func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, nam
 	}
 
 	out.Notice(txtstyle.NewTitle(locale.Tl("run_script_title", "Running Script: [ACTIONABLE]{{.V0}}[/RESET]", script.Name())))
+
+	if authentication.Get().Authenticated() {
+		checker.RunCommitsBehindNotifier(out)
+	}
 
 	lang := script.Language()
 	if !lang.Recognized() {

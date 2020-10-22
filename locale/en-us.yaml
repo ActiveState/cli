@@ -159,9 +159,7 @@ err_artifact_no_parent:
 err_invalid_status_code:
   other: "Invalid status code: {{.V0}}"
 info_activating_state:
-  other: "Activating state: [ACTIONABLE]{{.Owner}}/{{.Name}}[/RESET]"
-info_activating_state_by_commit:
-  other: "Activating state"
+  other: "Activating Virtual Environment"
 info_state_active_repoexists:
   other: "Repo already exists: {{.Path}}"
 panic_couldnt_detect_wd:
@@ -463,7 +461,7 @@ error_state_run_undefined_name:
 error_state_run_unknown_name:
   other: The script '{{.Name}}' is not defined in activestate.yaml.
 info_state_run_activating_state:
-  other: "Activating runtime environment. To bypass this enter an activated state via `state activate` or if you do not require a runtime environment add `standalone: true` to script in your activestate.yaml."
+  other: "Activating runtime environment. To bypass this enter an activated state via `[ACTIONABLE]state activate[/RESET]` or if you do not require a runtime environment add `[ACTIONABLE]standalone: true[/RESET]` to script in your [NOTICE]activestate.yaml[/RESET]."
 error_state_run_activate:
   other: Unable to activate a state for running the script in. Try manually running "state activate" first.
 error_state_run_standalone_conflict:
@@ -781,18 +779,18 @@ forward_fail_info:
   other: The requested version of the State Tool does not exist, please ensure the version and branch are correct.
 update_available:
   other: |
-    [NOTICE]A new update is available!
+    A new update is available!
 
-    Your version: {{.V0}}
-    Available Version: {{.V1}}
+    Your version: [NOTICE]{{.V0}}[/RESET]
+    Available Version: [NOTICE]{{.V1}}[/RESET]
 
-    You can update by running `state update`[/RESET]
+    You can update by running `[ACTIONABLE]state update[/RESET]`
 runtime_update_notice_known_count:
-  other: "[NOTICE]Your activestate.yaml is {{.V0}} commits behind.[/RESET]"
+  other: "Your activestate.yaml is [NOTICE]{{.V0}}[/RESET] commits behind."
 runtime_update_notice_unknown_count:
-  other: "[NOTICE]Your activestate.yaml is behind.[/RESET]"
+  other: "Your activestate.yaml is behind."
 runtime_update_help:
-  other: "[NOTICE]Run `state pull` to pull in the latest runtime environment as defined in your project on https://platform.activestate.com/{{.V0}}/{{.V1}}[/RESET]"
+  other: "Run `[ACTIONABLE]state pull[/RESET]` to pull in the latest runtime environment as defined in your project on [NOTICE]https://platform.activestate.com/{{.V0}}/{{.V1}}[/RESET]"
 err_no_credentials:
   other: Cannot authenticate without credentials
 err_token_list:
@@ -1672,3 +1670,5 @@ message_headless_packages:
   other: "You've modified this project, and will be able to continue to do so locally. Converting your changes into a project on the ActiveState Platform can make your changes available on any machine."
 message_headless_activate:
   other: "Now that your project is activated -- if you ever need to add or remove packages, you can do so with `state package add`. Type `state package --help` for more info, or `state learn` for common commands."
+confirm:
+  other: Please Confirm
