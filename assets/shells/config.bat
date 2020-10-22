@@ -1,5 +1,7 @@
 @echo off
+{{if ne .Owner ""}}
 SET PROMPT=[{{.Owner}}/{{.Name}}]$S$P$G
+{{end}}
 
 {{- range $K, $V := .Env}}
 {{- if eq $K "PATH"}}
