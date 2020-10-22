@@ -470,8 +470,6 @@ error_state_run_unknown_exec:
   other: An executable language interpreter matching the script cannot be found. Please use a language defined in your project on the platform.
 error_state_run_setup_scriptfile:
   other: Cannot setup runnable on-disk script file.
-info_state_run_running:
-  other: "[NOTICE]Running user-defined script: {{.V0}}\nDefined in {{.V1}}[/RESET]"
 error_state_run_error:
   other: Failed to run script.
 error_state_run_no_shell:
