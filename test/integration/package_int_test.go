@@ -30,19 +30,6 @@ func (suite *PackageIntegrationTestSuite) TestPackage_listingSimple() {
 	cp.ExpectExitCode(0)
 }
 
-func (suite *PackageIntegrationTestSuite) TestPackage_listCommand() {
-	suite.OnlyRunForTags(tagsuite.Package)
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	suite.PrepareActiveStateYAML(ts)
-
-	cp := ts.Spawn("packages", "list")
-	cp.Expect("Name")
-	cp.Expect("pytest")
-	cp.ExpectExitCode(0)
-}
-
 func (suite *PackageIntegrationTestSuite) TestPackages_project() {
 	suite.OnlyRunForTags(tagsuite.Package)
 	ts := e2e.New(suite.T(), false)
@@ -155,7 +142,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchSimple() {
 	suite.PrepareActiveStateYAML(ts)
 
 	// Note that the expected strings might change due to inventory changes
-	cp := ts.Spawn("packages", "search", "requests")
+	cp := ts.Spawn("search", "requests")
 	expectations := []string{
 		"Name",
 		"requests",
@@ -181,7 +168,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTerm() {
 	defer ts.Close()
 	suite.PrepareActiveStateYAML(ts)
 
-	cp := ts.Spawn("packages", "search", "requests", "--exact-term")
+	cp := ts.Spawn("search", "requests", "--exact-term")
 	expectations := []string{
 		"Name",
 		"requests",
@@ -201,7 +188,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTermWrongTe
 	defer ts.Close()
 	suite.PrepareActiveStateYAML(ts)
 
-	cp := ts.Spawn("packages", "search", "xxxrequestsxxx", "--exact-term")
+	cp := ts.Spawn("search", "xxxrequestsxxx", "--exact-term")
 	cp.ExpectLongString("Currently no package of the provided name is available on the ActiveState Platform")
 	cp.ExpectExitCode(0)
 }
@@ -212,7 +199,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithLang() {
 	defer ts.Close()
 	suite.PrepareActiveStateYAML(ts)
 
-	cp := ts.Spawn("packages", "search", "Moose", "--language=perl")
+	cp := ts.Spawn("search", "Moose", "--language=perl")
 	cp.Expect("Name")
 	cp.Expect("Any-Moose")
 	cp.Expect("Moose")
@@ -225,7 +212,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithWrongLang() {
 	defer ts.Close()
 	suite.PrepareActiveStateYAML(ts)
 
-	cp := ts.Spawn("packages", "search", "numpy", "--language=perl")
+	cp := ts.Spawn("search", "numpy", "--language=perl")
 	cp.ExpectLongString("Currently no package of the provided name is available on the ActiveState Platform")
 	cp.ExpectExitCode(0)
 }
@@ -236,7 +223,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithBadLang() {
 	defer ts.Close()
 	suite.PrepareActiveStateYAML(ts)
 
-	cp := ts.Spawn("packages", "search", "numpy", "--language=bad")
+	cp := ts.Spawn("search", "numpy", "--language=bad")
 	cp.Expect("Cannot obtain search")
 	cp.ExpectExitCode(1)
 }
@@ -280,19 +267,19 @@ func (suite *PackageIntegrationTestSuite) TestPackage_import() {
 	suite.Run("invalid requirements.txt", func() {
 		ts.PrepareFile(reqsFilePath, badReqsData)
 
-		cp := ts.Spawn("packages", "import", "requirements.txt")
+		cp := ts.Spawn("import", "requirements.txt")
 		cp.ExpectNotExitCode(0, time.Second*60)
 	})
 
 	suite.Run("valid requirements.txt", func() {
 		ts.PrepareFile(reqsFilePath, reqsData)
 
-		cp := ts.Spawn("packages", "import", "requirements.txt")
+		cp := ts.Spawn("import", "requirements.txt")
 		cp.Expect("state pull")
 		cp.ExpectExitCode(0, time.Second*60)
 
 		suite.Run("already added", func() {
-			cp := ts.Spawn("packages", "import", "requirements.txt")
+			cp := ts.Spawn("import", "requirements.txt")
 			cp.Expect("Are you sure you want to do this")
 			cp.SendLine("n")
 			cp.ExpectNotExitCode(0, time.Second*60)
@@ -311,24 +298,24 @@ func (suite *PackageIntegrationTestSuite) TestPackage_headless_operation() {
 	cp := ts.Spawn("activate", "ActiveState-CLI/small-python", "--path", ts.Dirs.Work, "--output=json")
 	cp.ExpectExitCode(0)
 
-	suite.Run("packages install", func() {
-		cp := ts.Spawn("packages", "install", "dateparser@0.7.2")
+	suite.Run("install", func() {
+		cp := ts.Spawn("install", "dateparser@0.7.2")
 		cp.ExpectLongString("Do you wan to continue as an anonymous user?")
 		cp.Send("Y")
 		cp.Expect("(?:package added|project is currently building)")
 		cp.ExpectExitCode(1)
 	})
 
-	suite.Run("packages install (update)", func() {
-		cp := ts.Spawn("packages", "install", "dateparser@0.7.6")
+	suite.Run("install (update)", func() {
+		cp := ts.Spawn("install", "dateparser@0.7.6")
 		cp.ExpectLongString("Do you wan to continue as an anonymous user?")
 		cp.Send("Y")
 		cp.Expect("(?:package updated|project is currently building)")
 		cp.ExpectExitCode(1)
 	})
 
-	suite.Run("packages remove", func() {
-		cp := ts.Spawn("packages", "remove", "dateparser")
+	suite.Run("uninstall", func() {
+		cp := ts.Spawn("uninstall", "dateparser")
 		cp.ExpectLongString("Do you wan to continue as an anonymous user?")
 		cp.Send("Y")
 		cp.ExpectRe("(?:package removed|project is currently building)")
@@ -354,20 +341,20 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 	cp = ts.Spawn("activate", namespace, "--path="+ts.Dirs.Work, "--output=json")
 	cp.ExpectExitCode(0)
 
-	suite.Run("packages install", func() {
-		cp := ts.Spawn("packages", "install", "dateparser@0.7.2")
+	suite.Run("install", func() {
+		cp := ts.Spawn("install", "dateparser@0.7.2")
 		cp.Expect("(?:package added|project is currently building)")
 		cp.ExpectExitCode(1)
 	})
 
-	suite.Run("packages install (update)", func() {
-		cp := ts.Spawn("packages", "install", "dateparser@0.7.6")
+	suite.Run("install (update)", func() {
+		cp := ts.Spawn("install", "dateparser@0.7.6")
 		cp.Expect("(?:package updated|project is currently building)")
 		cp.ExpectExitCode(1)
 	})
 
-	suite.Run("packages remove", func() {
-		cp := ts.Spawn("packages", "remove", "dateparser")
+	suite.Run("uninstall", func() {
+		cp := ts.Spawn("uninstall", "dateparser")
 		cp.ExpectRe("(?:package removed|project is currently building)")
 		cp.ExpectExitCode(1)
 	})
