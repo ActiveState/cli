@@ -311,16 +311,16 @@ func (suite *PackageIntegrationTestSuite) TestPackage_headless_operation() {
 	cp := ts.Spawn("activate", "ActiveState-CLI/small-python", "--path", ts.Dirs.Work, "--output=json")
 	cp.ExpectExitCode(0)
 
-	suite.Run("packages add", func() {
-		cp := ts.Spawn("packages", "add", "dateparser@0.7.2")
+	suite.Run("packages install", func() {
+		cp := ts.Spawn("packages", "install", "dateparser@0.7.2")
 		cp.ExpectLongString("Do you wan to continue as an anonymous user?")
 		cp.Send("Y")
 		cp.Expect("(?:package added|project is currently building)")
 		cp.ExpectExitCode(1)
 	})
 
-	suite.Run("packages update", func() {
-		cp := ts.Spawn("packages", "update", "dateparser@0.7.6")
+	suite.Run("packages install (update)", func() {
+		cp := ts.Spawn("packages", "install", "dateparser@0.7.6")
 		cp.ExpectLongString("Do you wan to continue as an anonymous user?")
 		cp.Send("Y")
 		cp.Expect("(?:package updated|project is currently building)")
@@ -354,14 +354,14 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 	cp = ts.Spawn("activate", namespace, "--path="+ts.Dirs.Work, "--output=json")
 	cp.ExpectExitCode(0)
 
-	suite.Run("packages add", func() {
-		cp := ts.Spawn("packages", "add", "dateparser@0.7.2")
+	suite.Run("packages install", func() {
+		cp := ts.Spawn("packages", "install", "dateparser@0.7.2")
 		cp.Expect("(?:package added|project is currently building)")
 		cp.ExpectExitCode(1)
 	})
 
-	suite.Run("packages update", func() {
-		cp := ts.Spawn("packages", "update", "dateparser@0.7.6")
+	suite.Run("packages install (update)", func() {
+		cp := ts.Spawn("packages", "install", "dateparser@0.7.6")
 		cp.Expect("(?:package updated|project is currently building)")
 		cp.ExpectExitCode(1)
 	})
