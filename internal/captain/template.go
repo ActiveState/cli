@@ -41,7 +41,7 @@ func (t *Templater) cmdGroupsString(c *cobra.Command) string {
 		cmds := []string{cmdGroup.Message}
 		for _, cmd := range cmdGroup.Commands {
 			if cmd.cobra.IsAvailableCommand() {
-				cmds = append(cmds, "  "+rpad(cmd.Use(), cmd.cobra.NamePadding())+" "+cmd.Description())
+				cmds = append(cmds, fmt.Sprintf("  %s %s", rpad(cmd.Use(), cmd.cobra.NamePadding()), cmd.Description()))
 			}
 		}
 		groups = append(groups, strings.Join(cmds, "\n"))
