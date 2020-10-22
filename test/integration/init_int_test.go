@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -27,7 +26,7 @@ func (suite *InitIntegrationTestSuite) TestInit() {
 
 func (suite *InitIntegrationTestSuite) TestInit_SkeletonEditor() {
 	suite.OnlyRunForTags(tagsuite.Init)
-	suite.runInitTest(false, locale.T("editor_yaml"), "python3", "--skeleton", "editor")
+	suite.runInitTest(false, sampleYAMLEditor, "python3", "--skeleton", "editor")
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_Path() {

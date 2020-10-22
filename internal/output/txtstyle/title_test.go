@@ -31,15 +31,15 @@ func TestTitleString(t *testing.T) {
 }
 
 var nonemptyBasic = strings.TrimSpace(`
-╔═══════════════╗
-║   Platforms   ║
-╚═══════════════╝
+╔═══════════╗
+║ Platforms ║
+╚═══════════╝
 `)
 
 var emptyBasic = ``
 
 var nonemptyLong = strings.TrimSpace(`
-╔══════════════════════════════════════════════╗
-║   Activating the "ActiveState/cli" runtime   ║
-╚══════════════════════════════════════════════╝
+╔══════════════════════════════════════════╗
+║ Activating the "ActiveState/cli" runtime ║
+╚══════════════════════════════════════════╝
 `)

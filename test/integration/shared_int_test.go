@@ -18,6 +18,7 @@ var (
 	url               = fmt.Sprintf("https://%s/%s", constants.PlatformURL, namespace)
 	sampleYAMLPython2 = ""
 	sampleYAMLPython3 = ""
+	sampleYAMLEditor  = ""
 )
 
 func init() {
@@ -48,6 +49,10 @@ func init() {
 			"Language": "python3",
 			"LangExe":  language.MakeByName("python3").Executable().Filename(),
 		})
+	if err != nil {
+		panic(err.Error())
+	}
+	sampleYAMLEditor, err = strutils.ParseTemplate(box.String("activestate.yaml.editor.tpl"), nil)
 	if err != nil {
 		panic(err.Error())
 	}
