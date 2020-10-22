@@ -9,7 +9,6 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/spf13/viper"
@@ -17,7 +16,7 @@ import (
 
 type Cache struct {
 	output  output.Outputer
-	config  runbits.ConfigAble
+	config  project.ConfigAble
 	confirm confirmAble
 	path    string
 }
@@ -31,7 +30,7 @@ func NewCache(prime primeable) *Cache {
 	return newCache(prime.Output(), viper.GetViper(), prime.Prompt())
 }
 
-func newCache(output output.Outputer, cfg runbits.ConfigAble, confirm confirmAble) *Cache {
+func newCache(output output.Outputer, cfg project.ConfigAble, confirm confirmAble) *Cache {
 	return &Cache{
 		output:  output,
 		config:  cfg,
@@ -46,7 +45,7 @@ func (c *Cache) Run(params *CacheParams) error {
 	}
 
 	if params.Project != "" {
-		paths := runbits.AvailableProjectPaths(c.config, params.Project)
+		paths := project.AvailableProjectPaths(c.config, params.Project)
 
 		for _, projectPath := range paths {
 			err := c.removeProjectCache(projectPath, params.Project, params.Force)

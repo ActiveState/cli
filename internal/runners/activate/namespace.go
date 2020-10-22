@@ -9,7 +9,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/prompt"
-	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/pkg/project"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -52,7 +51,7 @@ func (r *NamespaceSelect) Run(namespace string, preferredPath string) (string, e
 
 	// Save path for future use
 	key := fmt.Sprintf("project_%s", namespace)
-	paths := runbits.AvailableProjectPaths(r.config, namespace)
+	paths := project.AvailableProjectPaths(r.config, namespace)
 	paths = append(paths, targetPath)
 	r.config.Set(key, paths)
 
@@ -66,7 +65,7 @@ func (r *NamespaceSelect) Run(namespace string, preferredPath string) (string, e
 
 func (r *NamespaceSelect) promptForPath(namespace string) (string, error) {
 	// If no targetPath was given try to get it from our config (ie. previous activations)
-	paths := runbits.AvailableProjectPaths(r.config, namespace)
+	paths := project.AvailableProjectPaths(r.config, namespace)
 	if len(paths) > 0 {
 		targetPath, err := r.promptAvailablePaths(paths)
 		if err != nil {
