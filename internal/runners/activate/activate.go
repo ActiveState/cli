@@ -60,6 +60,16 @@ func (r *Activate) Run(params *ActivateParams) error {
 func (r *Activate) run(params *ActivateParams) error {
 	logging.Debug("Activate %v, %v", params.Namespace, params.PreferredPath)
 
+	alreadyActivated := subshell.IsActivated()
+	if alreadyActivated {
+		if !params.Default {
+			return locale.NewInputError("err_already_activated", "You cannot activate a new project when you are already in an activated state.")
+		}
+		if params.Namespace == nil || params.Namespace.IsValid() {
+			return locale.NewInputError("err_conflicting_default_while_activated", "Cannot set {{.V0}} as the global default project while in an activated state.", params.Namespace.String())
+		}
+	}
+
 	// Detect target path
 	pathToUse, err := r.pathToUse(params.Namespace.String(), params.PreferredPath)
 	if err != nil {
@@ -107,6 +117,11 @@ func (r *Activate) run(params *ActivateParams) error {
 		err := globaldefault.SetupDefaultActivation(r.subshell, r.config, runtime, filepath.Dir(proj.Source().Path()))
 		if err != nil {
 			return locale.WrapError(err, "err_activate_default", "Could not configure your project as the default.")
+		}
+
+		r.out.Notice(locale.Tl("global_default_set", "Successfully configured {{.V0}} as the global default project.", proj.Namespace().String()))
+		if alreadyActivated {
+			return nil
 		}
 	}
 
