@@ -37,31 +37,31 @@ func (s *Shim) RunPPM(converted bool, args ...string) error {
 
 func (s *Shim) RunInstall(converted bool, args ...string) error {
 	if converted {
-		s.printForwardInfo("ppm install", "packages install", "ppm_print_forward_after_convert")
+		s.printForwardInfo("ppm install", "install", "ppm_print_forward_after_convert")
 		return nil
 	} else {
-		s.printForwardInfo("ppm install", "packages install", "ppm_print_forward_failure")
-		return s.shim("install", "packages install", args...)
+		s.printForwardInfo("ppm install", "install", "ppm_print_forward_failure")
+		return s.shim("install", "install", args...)
 	}
 }
 
 func (s *Shim) RunUpgrade(converted bool, args ...string) error {
 	if converted {
-		s.printForwardInfo("ppm upgrade", "packages install", "ppm_print_forward_after_convert")
+		s.printForwardInfo("ppm upgrade", "install", "ppm_print_forward_after_convert")
 		return nil
 	} else {
-		s.printForwardInfo("ppm upgrade", "packages install", "ppm_print_forward_failure")
-		return s.shim("upgrade", "packages install", args...)
+		s.printForwardInfo("ppm upgrade", "install", "ppm_print_forward_failure")
+		return s.shim("upgrade", "install", args...)
 	}
 }
 
 func (s *Shim) RunRemove(converted bool, args ...string) error {
 	if converted {
-		s.printForwardInfo("ppm remove", "packages remove", "ppm_print_forward_after_convert")
+		s.printForwardInfo("ppm remove", "uninstall", "ppm_print_forward_after_convert")
 		return nil
 	} else {
-		s.printForwardInfo("ppm remove", "packages remove", "ppm_print_forward_failure")
-		return s.shim("remove", "packages remove", args...)
+		s.printForwardInfo("ppm remove", "uninstall", "ppm_print_forward_failure")
+		return s.shim("remove", "uninstall", args...)
 	}
 }
 
