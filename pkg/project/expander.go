@@ -165,7 +165,12 @@ func expandPath(name string, script *Script) (string, error) {
 		return script.cachedFile(), nil
 	}
 
-	sf, fail := scriptfile.NewEmpty(script.LanguageSafe(), name)
+	languages := script.LanguageSafe()
+	if len(languages) == 0 {
+		languages = DefaultScriptLanguage()
+	}
+
+	sf, fail := scriptfile.NewEmpty(languages[0], name)
 	if fail != nil {
 		return "", fail.ToError()
 	}

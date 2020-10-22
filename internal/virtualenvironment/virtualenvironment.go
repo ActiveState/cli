@@ -29,13 +29,6 @@ type VirtualEnvironment struct {
 	runtime      *runtime.Runtime
 }
 
-// Init creates an instance of VirtualEnvironment{} with default settings
-func Init() *VirtualEnvironment {
-	return &VirtualEnvironment{
-		activationID: uuid.New().String(),
-	}
-}
-
 func New(runtime *runtime.Runtime) *VirtualEnvironment {
 	return &VirtualEnvironment{
 		activationID: uuid.New().String(),

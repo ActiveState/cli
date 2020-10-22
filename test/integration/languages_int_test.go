@@ -12,13 +12,15 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 )
 
 type LanguagesIntegrationTestSuite struct {
-	suite.Suite
+	tagsuite.Suite
 }
 
 func (suite *LanguagesIntegrationTestSuite) TestLanguages_list() {
+	suite.OnlyRunForTags(tagsuite.Languages)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -32,6 +34,7 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_list() {
 }
 
 func (suite *LanguagesIntegrationTestSuite) TestLanguages_update() {
+	suite.OnlyRunForTags(tagsuite.Languages)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 

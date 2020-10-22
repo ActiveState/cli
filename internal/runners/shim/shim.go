@@ -8,26 +8,34 @@ import (
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
+	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 type Shim struct {
 	subshell subshell.SubShell
+	proj     *project.Project
+	out      output.Outputer
 }
 
 type primeable interface {
 	primer.Outputer
 	primer.Subsheller
+	primer.Projecter
 }
 
 func New(prime primeable) *Shim {
 	return &Shim{
 		prime.Subshell(),
+		prime.Project(),
+		prime.Output(),
 	}
 }
 
@@ -39,7 +47,8 @@ func (s *Shim) Run(args ...string) error {
 	}
 
 	if project != nil && !subshell.IsActivated() {
-		venv := virtualenvironment.Init()
+		runtime := runtime.NewRuntime(s.proj.CommitUUID(), s.proj.Owner(), s.proj.Name(), runbits.NewRuntimeMessageHandler(s.out))
+		venv := virtualenvironment.New(runtime)
 		if fail := venv.Activate(); fail != nil {
 			logging.Errorf("Unable to activate state: %s", fail.Error())
 			return locale.WrapError(fail.ToError(), "err_shim_activate", "Could not activate environment for shim command")

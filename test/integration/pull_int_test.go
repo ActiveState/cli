@@ -6,13 +6,15 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 )
 
 type PullIntegrationTestSuite struct {
-	suite.Suite
+	tagsuite.Suite
 }
 
 func (suite *PullIntegrationTestSuite) TestPull() {
+	suite.OnlyRunForTags(tagsuite.Pull)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 

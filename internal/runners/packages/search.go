@@ -67,8 +67,9 @@ func targetedLanguage(languageOpt string) (string, *failures.Failure) {
 }
 
 func newPackagesTable(packages []*model.IngredientAndVersion) *packageTable {
+	var rows []packageRow
 	if packages == nil {
-		return nil
+		return newTable(rows, locale.T("package_search_no_packages"))
 	}
 
 	filterNilStr := func(s *string) string {
@@ -78,7 +79,6 @@ func newPackagesTable(packages []*model.IngredientAndVersion) *packageTable {
 		return *s
 	}
 
-	rows := make([]packageRow, 0, len(packages))
 	for _, pack := range packages {
 		row := packageRow{
 			filterNilStr(pack.Ingredient.Name),

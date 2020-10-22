@@ -18,6 +18,8 @@ import (
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 	rtMock "github.com/ActiveState/cli/pkg/platform/runtime/mock"
@@ -48,7 +50,7 @@ scripts:
 project: "https://platform.activestate.com/ActiveState/pjfile?commitID=00010001-0001-0001-0001-000100010001"
 scripts:
   - name: run
-    value: cmd /C echo foo
+    value: cmd.exe /C echo foo
     standalone: true
   `)
 	}
@@ -181,7 +183,7 @@ scripts:
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
 
-func estRunUnknownCommand(t *testing.T) {
+func TestRunUnknownCommand(t *testing.T) {
 	failures.ResetHandled()
 
 	pjfile := &projectfile.Project{}
@@ -251,15 +253,22 @@ scripts:
 	projectfile.Reset()
 }
 
-func TestPathProvidesExec(t *testing.T) {
-	tf, err := ioutil.TempFile("", "t*.t")
+func TestPathProvidesLang(t *testing.T) {
+	temp, err := ioutil.TempDir("", t.Name())
 	require.NoError(t, err)
-	defer os.Remove(tf.Name())
 
-	require.NoError(t, os.Chmod(tf.Name(), 0770))
+	tf := filepath.Join(temp, "python3")
+	if runtime.GOOS == "windows" {
+		tf = filepath.Join(temp, "python3.exe")
+	}
 
-	exec := filepath.Base(tf.Name())
-	temp := filepath.Dir(tf.Name())
+	fail := fileutils.Touch(tf)
+	require.NoError(t, fail.ToError())
+	defer os.Remove(temp)
+
+	require.NoError(t, os.Chmod(tf, 0770))
+
+	exec := language.Python3.Executable().Name()
 
 	home, err := os.UserHomeDir()
 	require.NoError(t, err)
@@ -267,8 +276,8 @@ func TestPathProvidesExec(t *testing.T) {
 	paths := []string{temp, home}
 	pathStr := strings.Join(paths, string(os.PathListSeparator))
 
-	assert.True(t, pathProvidesExec(temp, exec, filepath.Dir(tf.Name())))
-	assert.True(t, pathProvidesExec(temp, exec, pathStr))
-	assert.False(t, pathProvidesExec(temp, "junk", pathStr))
-	assert.False(t, pathProvidesExec(temp, exec, ""))
+	assert.True(t, pathProvidesExec(filepath.Dir(tf), exec))
+	assert.True(t, pathProvidesExec(pathStr, exec))
+	assert.False(t, pathProvidesExec(pathStr, language.Unknown.String()))
+	assert.False(t, pathProvidesExec("", exec))
 }
