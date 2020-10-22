@@ -49,7 +49,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
 	cp := ts.Spawn("activate", "ActiveState-CLI/Python3")
 	cp.Expect("Where would you like to checkout")
 	cp.SendLine(cp.WorkDirectory())
-	cp.Expect("Activating state:", 20*time.Second)
+	cp.Expect("activated state", 20*time.Second)
 	cp.WaitForInput(20 * time.Second)
 
 	cp.SendLine("exit 123")
@@ -64,7 +64,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateUsingCommitID() {
 	cp := ts.Spawn("activate", "ActiveState-CLI/Python3#6d9280e7-75eb-401a-9e71-0d99759fbad3")
 	cp.Expect("Where would you like to checkout")
 	cp.SendLine(cp.WorkDirectory())
-	cp.Expect("Activating state:", 20*time.Second)
+	cp.Expect("activated state", 10*time.Second)
 	cp.WaitForInput(20 * time.Second)
 
 	cp.SendLine("exit")
@@ -159,7 +159,7 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	cp.ExpectLongString("Cannot set something/else as the global default project while in an activated state.")
 
 	cp.SendLine("state activate --default")
-	cp.Expect(fmt.Sprintf("Successfully configured %s as the global default project.", namespace))
+	cp.ExpectLongString(fmt.Sprintf("Successfully configured %s as the global default project.", namespace))
 
 	// test that other executables that use python work as well
 	pipExe := "pip" + version
