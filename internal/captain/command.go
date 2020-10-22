@@ -249,7 +249,7 @@ func (c *Command) AddLegacyChildren(children ...cobraCommander) {
 func (c *Command) FindSafe(args []string) *Command {
 	cmd, err := c.Find(args)
 	if err != nil {
-		logging.Debug("Could not find command, error: %v", err)
+		logging.Debug("Could not find command with args: %s. Error: %v", args, err)
 		return nil
 	}
 	return cmd
