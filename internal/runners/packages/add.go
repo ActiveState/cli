@@ -2,6 +2,7 @@ package packages
 
 import (
 	"github.com/ActiveState/cli/internal/headless"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
@@ -41,14 +42,26 @@ func (a *Add) Run(params AddRunParams) error {
 }
 
 func (a *Add) run(params AddRunParams) error {
-	logging.Debug("ExecuteAdd")
+	logging.Debug("ExecuteAddUpdate")
 
 	language, fail := model.LanguageForCommit(a.proj.CommitUUID())
 	if fail != nil {
-		return fail.WithDescription("err_fetch_languages")
+		return locale.WrapError(fail.ToError(), "err_fetch_languages")
 	}
 
 	name, version := splitNameAndVersion(params.Name)
 
-	return executePackageOperation(a.proj, a.out, a.auth, a.Prompter, language, name, version, model.OperationAdded)
+	operation := model.OperationAdded
+	hasPkg, err := model.HasPackage(a.proj.CommitUUID(), name)
+	if err != nil {
+		return locale.WrapError(
+			err, "err_checking_package_exists",
+			"Cannot verify if package is already in use.",
+		)
+	}
+	if hasPkg {
+		operation = model.OperationUpdated
+	}
+
+	return executePackageOperation(a.proj, a.out, a.auth, a.Prompter, language, name, version, operation)
 }
