@@ -11,10 +11,12 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/spf13/viper"
 )
 
 type Cache struct {
 	output  output.Outputer
+	config  project.ConfigAble
 	confirm confirmAble
 	path    string
 }
@@ -25,12 +27,13 @@ type CacheParams struct {
 }
 
 func NewCache(prime primeable) *Cache {
-	return newCache(prime.Output(), prime.Prompt())
+	return newCache(prime.Output(), viper.GetViper(), prime.Prompt())
 }
 
-func newCache(output output.Outputer, confirm confirmAble) *Cache {
+func newCache(output output.Outputer, cfg project.ConfigAble, confirm confirmAble) *Cache {
 	return &Cache{
 		output:  output,
+		config:  cfg,
 		confirm: confirm,
 		path:    config.CachePath(),
 	}
@@ -42,7 +45,14 @@ func (c *Cache) Run(params *CacheParams) error {
 	}
 
 	if params.Project != "" {
-		return c.removeProject(params.Project, params.Force)
+		paths := project.AvailableProjectPaths(c.config, params.Project)
+
+		for _, projectPath := range paths {
+			err := c.removeProjectCache(projectPath, params.Project, params.Force)
+			if err != nil {
+				return err
+			}
+		}
 	}
 
 	return c.removeCache(c.path, params.Force)
@@ -63,7 +73,7 @@ func (c *Cache) removeCache(path string, force bool) error {
 	return removeCache(c.path)
 }
 
-func (c *Cache) removeProject(namespace string, force bool) error {
+func (c *Cache) removeProjectCache(projectDir, namespace string, force bool) error {
 	if !force {
 		ok, fail := c.confirm.Confirm(locale.Tr("clean_cache_artifact_confirm", namespace), false)
 		if fail != nil {
@@ -79,11 +89,14 @@ func (c *Cache) removeProject(namespace string, force bool) error {
 		return locale.WrapError(fail.ToError(), "err_clean_cache_invalid_namespace", "Namespace argument is not of the correct format")
 	}
 
-	runtime := runtime.NewRuntime("", parsed.Owner, parsed.Project, nil)
+	runtime, err := runtime.NewRuntime(projectDir, "", parsed.Owner, parsed.Project, nil)
+	if err != nil {
+		return locale.WrapError(err, "err_clean_cache_runtime_init", "Could not determine cache directory for project used in {{.V0}}", projectDir)
+	}
 	projectInstallPath := runtime.InstallPath()
 
 	logging.Debug("Remove project path: %s", projectInstallPath)
-	err := os.RemoveAll(projectInstallPath)
+	err = os.RemoveAll(projectInstallPath)
 	if err != nil {
 		return locale.WrapError(err, "err_clean_remove_artifact", "Could not remove cached runtime environment for project: {{.V0}}", namespace)
 	}

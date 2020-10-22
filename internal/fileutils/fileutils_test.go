@@ -464,3 +464,64 @@ func TestIsSameOrInsideOf(t *testing.T) {
 	insideOf = resolvedPathContainsParent(setSep("../../internalfileutils"), setSep("../../internal"))
 	assert.False(t, insideOf)
 }
+
+func TestResolveUniquePath(t *testing.T) {
+	tempDir, err := ioutil.TempDir("", "")
+	require.NoError(t, err)
+
+	defer os.RemoveAll(tempDir)
+
+	targetPath := filepath.Join(tempDir, "target_long")
+
+	fail := Touch(targetPath)
+	require.NoError(t, fail.ToError())
+
+	expectedPath := targetPath
+	// On MacOS the ioutil.TempDir returns a symlink to the temporary directory
+	if runtime.GOOS == "darwin" {
+		expectedPath, err = filepath.EvalSymlinks(targetPath)
+		require.NoError(t, err)
+	} else if runtime.GOOS == "windows" {
+		expectedPath, err = GetLongPathName(targetPath)
+		require.NoError(t, err)
+	}
+
+	shortPath, err := GetShortPathName(targetPath)
+	require.NoError(t, err, "Could not shorten path name.")
+
+	sep := string(os.PathSeparator)
+
+	cases := []struct {
+		name string
+		path string
+	}{
+		{"identity", targetPath},
+		{"with slashes", tempDir + sep + "." + sep + "target_long" + sep},
+		{"short path", shortPath},
+	}
+
+	if runtime.GOOS != "windows" {
+		err = os.Symlink("target_long", filepath.Join(tempDir, "symlink"))
+		require.NoError(t, err)
+		cases = append(cases, struct {
+			name string
+			path string
+		}{"symlink", filepath.Join(tempDir, "symlink")})
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(tt *testing.T) {
+			res, err := ResolveUniquePath(c.path)
+			assert.NoError(tt, err)
+			assert.Equal(tt, expectedPath, res)
+		})
+	}
+
+	t.Run("non-existent", func(tt *testing.T) {
+		nonExistent := filepath.Join(tempDir, "non-existent")
+
+		res, err := ResolveUniquePath(nonExistent)
+		assert.NoError(tt, err)
+		assert.Equal(tt, nonExistent, res)
+	})
+}

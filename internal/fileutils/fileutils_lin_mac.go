@@ -4,7 +4,9 @@ package fileutils
 
 import (
 	"os"
+	"path/filepath"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"golang.org/x/sys/unix"
 )
 
@@ -21,4 +23,17 @@ func IsExecutable(path string) bool {
 // IsWritable returns true if the given path is writable
 func IsWritable(path string) bool {
 	return unix.Access(path, unix.W_OK) == nil
+}
+
+// ResolveUniquePath gets the absolute location of the provided path
+// with the best effort attempt to produce the same result for all possible paths to the
+// given target.
+func ResolveUniquePath(path string) (string, error) {
+	// "un-clean" file paths seem to confuse the EvalSymlinks function on MacOS, so we have to clean the path here.
+	evalPath, err := ResolvePath(filepath.Clean(path))
+	if err != nil {
+		return "", errs.Wrap(err, "cannot resolve path")
+	}
+
+	return filepath.Clean(evalPath), nil
 }

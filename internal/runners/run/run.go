@@ -87,7 +87,10 @@ func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, nam
 	// Activate the state if needed.
 	if !script.Standalone() && !subshell.IsActivated() {
 		out.Notice(locale.T("info_state_run_activating_state"))
-		runtime := runtime.NewRuntime(proj.CommitUUID(), proj.Owner(), proj.Name(), runbits.NewRuntimeMessageHandler(out))
+		runtime, err := runtime.NewRuntime(proj.Source().Path(), proj.CommitUUID(), proj.Owner(), proj.Name(), runbits.NewRuntimeMessageHandler(out))
+		if err != nil {
+			return locale.WrapError(err, "err_run_runtime_init", "Failed to initialize runtime.")
+		}
 		venv := virtualenvironment.New(runtime)
 
 		if fail := venv.Activate(); fail != nil {

@@ -6,7 +6,6 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/globaldefault"
 	"github.com/ActiveState/cli/internal/locale"
@@ -100,7 +99,10 @@ func (r *Activate) run(params *ActivateParams) error {
 		r.subshell.SetActivateCommand(params.Command)
 	}
 
-	runtime := runtime.NewRuntime(proj.CommitUUID(), proj.Owner(), proj.Name(), runbits.NewRuntimeMessageHandler(r.out))
+	runtime, err := runtime.NewRuntime(proj.Source().Path(), proj.CommitUUID(), proj.Owner(), proj.Name(), runbits.NewRuntimeMessageHandler(r.out))
+	if err != nil {
+		return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
+	}
 	if params.Default {
 		err := globaldefault.SetupDefaultActivation(r.subshell, r.config, runtime, filepath.Dir(proj.Source().Path()))
 		if err != nil {
@@ -117,7 +119,7 @@ func (r *Activate) run(params *ActivateParams) error {
 	}
 
 	if proj.CommitID() == "" {
-		return errs.New(locale.Tr("err_project_no_commit", model.ProjectURL(proj.Owner(), proj.Name(), "")))
+		return locale.NewInputError("err_project_no_commit", "", model.ProjectURL(proj.Owner(), proj.Name(), ""))
 	}
 
 	if err := r.activateAndWait(proj, runtime); err != nil {

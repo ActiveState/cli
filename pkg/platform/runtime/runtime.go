@@ -2,13 +2,16 @@ package runtime
 
 import (
 	"path/filepath"
-	"runtime"
+	"strings"
 
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/hash"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 )
 
@@ -20,15 +23,20 @@ type Runtime struct {
 	msgHandler  MessageHandler
 }
 
-func NewRuntime(commitID strfmt.UUID, owner string, projectName string, msgHandler MessageHandler) *Runtime {
-	var installPath string
-	if runtime.GOOS == "darwin" {
-		// mac doesn't use relocation so we can safely use a longer path
-		installPath = filepath.Join(config.CachePath(), owner, projectName)
-	} else {
-		installPath = filepath.Join(config.CachePath(), hash.ShortHash(owner, projectName))
+func NewRuntime(projectDir string, commitID strfmt.UUID, owner string, projectName string, msgHandler MessageHandler) (*Runtime, error) {
+	var resolvedProjectDir string
+	if projectDir != "" {
+		var err error
+		projectDir = strings.TrimSuffix(projectDir, constants.ConfigFileName)
+		resolvedProjectDir, err = fileutils.ResolveUniquePath(projectDir)
+		if err != nil {
+			return nil, locale.WrapError(err, "err_new_runtime_unique_path", "Failed to resolve a unique file path to the project dir.")
+		}
+		logging.Debug("In NewRuntime: resolved project dir is: %s", resolvedProjectDir)
 	}
-	return &Runtime{installPath, commitID, owner, projectName, msgHandler}
+
+	installPath := filepath.Join(config.CachePath(), hash.ShortHash(resolvedProjectDir))
+	return &Runtime{installPath, commitID, owner, projectName, msgHandler}, nil
 }
 
 func (r *Runtime) SetInstallPath(installPath string) {

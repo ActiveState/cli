@@ -9,8 +9,17 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 )
 
+type configMock struct{}
+
+func (c *configMock) Set(key string, value interface{}) {}
+func (c *configMock) GetString(key string) string       { return "" }
+
+func (c *configMock) GetStringSlice(key string) []string {
+	return []string{}
+}
+
 func (suite *CleanTestSuite) TestCache() {
-	runner := newCache(&outputhelper.TestOutputer{}, &confirmMock{confirm: true})
+	runner := newCache(&outputhelper.TestOutputer{}, &configMock{}, &confirmMock{confirm: true})
 	runner.path = suite.cachePath
 	err := runner.Run(&CacheParams{})
 	suite.Require().NoError(err)
@@ -28,7 +37,7 @@ func (suite *CleanTestSuite) TestCache() {
 }
 
 func (suite *CleanTestSuite) TestCache_PromptNo() {
-	runner := newCache(&outputhelper.TestOutputer{}, &confirmMock{})
+	runner := newCache(&outputhelper.TestOutputer{}, &configMock{}, &confirmMock{})
 	runner.path = suite.cachePath
 	err := runner.Run(&CacheParams{})
 	suite.Require().NoError(err)
@@ -44,7 +53,7 @@ func (suite *CleanTestSuite) TestCache_Activated() {
 		os.Unsetenv(constants.ActivatedStateEnvVarName)
 	}()
 
-	runner := newCache(&outputhelper.TestOutputer{}, &confirmMock{})
+	runner := newCache(&outputhelper.TestOutputer{}, &configMock{}, &confirmMock{})
 	runner.path = suite.cachePath
 	err := runner.Run(&CacheParams{})
 	suite.Require().Error(err)
