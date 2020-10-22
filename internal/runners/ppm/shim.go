@@ -37,21 +37,21 @@ func (s *Shim) RunPPM(converted bool, args ...string) error {
 
 func (s *Shim) RunInstall(converted bool, args ...string) error {
 	if converted {
-		s.printForwardInfo("ppm install", "packages add", "ppm_print_forward_after_convert")
+		s.printForwardInfo("ppm install", "packages install", "ppm_print_forward_after_convert")
 		return nil
 	} else {
-		s.printForwardInfo("ppm install", "packages add", "ppm_print_forward_failure")
-		return s.shim("install", "packages add", args...)
+		s.printForwardInfo("ppm install", "packages install", "ppm_print_forward_failure")
+		return s.shim("install", "packages install", args...)
 	}
 }
 
 func (s *Shim) RunUpgrade(converted bool, args ...string) error {
 	if converted {
-		s.printForwardInfo("ppm upgrade", "packages update", "ppm_print_forward_after_convert")
+		s.printForwardInfo("ppm upgrade", "packages install", "ppm_print_forward_after_convert")
 		return nil
 	} else {
-		s.printForwardInfo("ppm upgrade", "packages update", "ppm_print_forward_failure")
-		return s.shim("upgrade", "packages update", args...)
+		s.printForwardInfo("ppm upgrade", "packages install", "ppm_print_forward_failure")
+		return s.shim("upgrade", "packages install", args...)
 	}
 }
 
