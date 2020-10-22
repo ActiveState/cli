@@ -120,6 +120,7 @@ func (r *Activate) run(params *ActivateParams) error {
 		}
 
 		r.out.Notice(locale.Tl("global_default_set", "Successfully configured {{.V0}} as the global default project.", proj.Namespace().String()))
+
 		if alreadyActivated {
 			return nil
 		}
