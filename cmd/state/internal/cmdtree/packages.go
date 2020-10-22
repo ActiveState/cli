@@ -70,14 +70,14 @@ func newInstallCommand(prime *primer.Values) *captain.Command {
 }
 
 func newUninstallCommand(prime *primer.Values) *captain.Command {
-	runner := packages.NewRemove(prime)
+	runner := packages.NewUninstall(prime)
 
-	params := packages.RemoveRunParams{}
+	params := packages.UninstallRunParams{}
 
 	return captain.NewCommand(
 		"uninstall",
-		locale.Tl("package_remove_title", "Uninstalling Package"),
-		locale.T("package_remove_cmd_description"),
+		locale.Tl("package_uninstall_title", "Uninstalling Package"),
+		locale.T("package_uninstall_cmd_description"),
 		prime.Output(),
 		[]*captain.Flag{},
 		[]*captain.Argument{
