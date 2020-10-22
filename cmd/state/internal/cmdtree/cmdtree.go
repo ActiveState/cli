@@ -256,9 +256,6 @@ func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Comm
 		},
 	)
 
-	// This should not be used in favor of the new template above
-	// cmd.SetUsageTemplate("usage_tpl")
-
 	return cmd
 }
 
