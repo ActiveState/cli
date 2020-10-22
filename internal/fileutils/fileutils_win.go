@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/gobuffalo/packr"
 	"github.com/google/uuid"
@@ -85,4 +86,24 @@ func isWritableTempFile(path string) bool {
 	}
 
 	return true
+}
+
+// ResolveUniquePath gets the absolute location of the provided path
+// with the best effort attempt to produce the same result for all possible paths to the
+// given target.
+func ResolveUniquePath(path string) (string, error) {
+	evalPath, err := ResolvePath(filepath.Clean(path))
+	if err != nil {
+		return "", errs.Wrap(err, "cannot resolve path")
+	}
+
+	longPath, err := GetLongPathName(evalPath)
+	if err != nil {
+		// GetLongPathName can fail on unsupported file-systems or if evalPath is not a physical path.
+		// => just log the error and resume with resolved path
+		logging.Error("could not resolve long version of %s: %v", evalPath, err)
+		return filepath.Clean(evalPath), nil
+	}
+
+	return filepath.Clean(longPath), nil
 }
