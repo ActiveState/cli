@@ -59,7 +59,6 @@ func (suite *ProjectTestSuite) TestProject() {
 	suite.Equal("00010001-0001-0001-0001-000100010001", suite.project.CommitID(), "Values should match")
 	suite.Equal("ActiveState", suite.project.Owner(), "Values should match")
 	suite.Equal("ActiveState/project", suite.project.Namespace().String(), "Values should match")
-	suite.Equal("my/name/space", suite.project.Source().Namespace, "Values should match")
 	suite.Equal("something", suite.project.Environments(), "Values should match")
 	suite.Equal("1.0", suite.project.Version(), "Values should match")
 }
@@ -71,7 +70,6 @@ func (suite *ProjectTestSuite) TestWhenInSubDirectories() {
 	suite.Equal("project", suite.project.Name(), "Values should match")
 	suite.Equal("ActiveState", suite.project.Owner(), "Values should match")
 	suite.Equal("ActiveState/project", suite.project.Namespace().String(), "Values should match")
-	suite.Equal("my/name/space", suite.project.Source().Namespace, "Values should match")
 	suite.Equal("something", suite.project.Environments(), "Values should match")
 	suite.Equal("1.0", suite.project.Version(), "Values should match")
 }
