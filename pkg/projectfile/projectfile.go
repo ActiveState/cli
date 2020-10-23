@@ -99,7 +99,6 @@ type ProjectSimple struct {
 // Project covers the top level project structure of our yaml
 type Project struct {
 	Project      string        `yaml:"project"`
-	Namespace    string        `yaml:"namespace,omitempty"`
 	Branch       string        `yaml:"branch,omitempty"`
 	Version      string        `yaml:"version,omitempty"`
 	Lock         string        `yaml:"lock,omitempty"`
@@ -113,11 +112,7 @@ type Project struct {
 	Jobs         Jobs          `yaml:"jobs,omitempty"`
 	Private      bool          `yaml:"private,omitempty"`
 	path         string        // "private"
-
-	// Deprecated
-	Variables interface{} `yaml:"variables,omitempty"`
-	Owner     string      `yaml:"owner,omitempty"`
-	Name      string      `yaml:"name,omitempty"`
+	namespace    string        // for project "mapping"
 }
 
 // Platform covers the platform structure of our yaml
@@ -506,28 +501,16 @@ func Parse(configFilepath string) (*Project, *failures.Failure) {
 		}
 	}
 
-	if project.Variables != nil {
-		return nil, FailValidate.New("variable_field_deprecation_warning")
-	}
-
-	if project.Project == "" && project.Owner != "" && project.Name != "" {
-		project.Project = fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, project.Owner, project.Name)
-		if err := project.Save(); err != nil { // anyone still not respecting the deprecation warning by now is going to have to deal with their file being updated for them
-			logging.Error("Could not save projectfile after removing owner/name deprecation: %v", err)
-		}
-	}
-
-	fail = ValidateProjectURL(project.Project)
-	if fail != nil {
+	if fail = ValidateProjectURL(project.Project); fail != nil {
 		return nil, fail
 	}
 
-	if project.Owner == "" && project.Name == "" {
-		match := ProjectURLRe.FindStringSubmatch(project.Project)
-		project.Owner = match[1]
-		project.Name = match[2]
-	}
-	storeProjectMapping(fmt.Sprintf("%s/%s", project.Owner, project.Name), filepath.Dir(project.path))
+	match := ProjectURLRe.FindStringSubmatch(project.Project)
+	projOwner := match[1]
+	projName := match[2]
+	project.namespace = fmt.Sprintf("%s/%s", projOwner, projName)
+
+	storeProjectMapping(project.namespace, filepath.Dir(project.Path()))
 
 	return project, nil
 }
@@ -608,7 +591,7 @@ func (p *Project) save(path string) *failures.Failure {
 	if err != nil {
 		return failures.FailIO.Wrap(err)
 	}
-	storeProjectMapping(fmt.Sprintf("%s/%s", p.Owner, p.Name), filepath.Dir(p.Path()))
+	storeProjectMapping(p.namespace, filepath.Dir(p.Path()))
 
 	return nil
 }
