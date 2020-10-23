@@ -40,11 +40,6 @@ func New(runtime *runtime.Runtime) *VirtualEnvironment {
 func (v *VirtualEnvironment) Activate() *failures.Failure {
 	logging.Debug("Activating Virtual Environment")
 
-	activeProject := os.Getenv(constants.ActivatedStateEnvVarName)
-	if activeProject != "" {
-		return FailAlreadyActive.New("err_already_active")
-	}
-
 	if strings.ToLower(os.Getenv(constants.DisableRuntime)) != "true" {
 		if failure := v.Setup(true); failure != nil {
 			return failure

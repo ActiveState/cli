@@ -12,7 +12,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
-	"github.com/ActiveState/cli/internal/locale"
 	rtmock "github.com/ActiveState/cli/pkg/platform/runtime/mock"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -36,19 +35,6 @@ func setup(t *testing.T) {
 func teardown() {
 	projectfile.Reset()
 	rtMock.Close()
-}
-
-func TestActivateFailureAlreadyActive(t *testing.T) {
-	setup(t)
-	defer teardown()
-
-	os.Setenv(constants.ActivatedStateEnvVarName, "test")
-
-	venv := New(nil)
-	failure := venv.Activate()
-	require.NotNil(t, failure, "expected a failure")
-	assert.Equal(t, FailAlreadyActive, failure.Type)
-	assert.Equal(t, locale.Tr("err_already_active"), failure.Error())
 }
 
 func TestEnv(t *testing.T) {
