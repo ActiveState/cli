@@ -15,6 +15,7 @@ func newEventsCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("events_title", "Listing Events"),
 		locale.Tl("events_description", "Manage project events"),
 		prime.Output(),
+		[]captain.CommandGroup{},
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(cmd *captain.Command, args []string) error {
@@ -31,6 +32,7 @@ func newEventsLogCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("events_log_title", "Showing Events Log"),
 		locale.Tl("events_log_description", "View a log of events"),
 		prime.Output(),
+		[]captain.CommandGroup{},
 		[]*captain.Flag{
 			{
 				Name:        "follow",

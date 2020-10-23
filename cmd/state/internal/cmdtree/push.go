@@ -17,6 +17,7 @@ func newPushCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("push_title", "Pushing Local Project"),
 		locale.T("push_description"),
 		prime.Output(),
+		[]captain.CommandGroup{},
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {

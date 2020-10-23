@@ -113,68 +113,6 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 
 	applyLegacyChildren(stateCmd, globals)
 
-	groups := []captain.CommandGroup{
-		{
-			Message: "Package Management:",
-			Commands: []*captain.Command{
-				stateCmd.FindSafe([]string{"packages", "add"}),
-				stateCmd.FindSafe([]string{"packages", "remove"}),
-				stateCmd.FindSafe([]string{"packages", "import"}),
-				stateCmd.FindSafe([]string{"packages", "search"}),
-				stateCmd.FindSafe([]string{"packages"}),
-			},
-		},
-		{
-			Message: "Environment Management:",
-			Commands: []*captain.Command{
-				stateCmd.FindSafe([]string{"activate"}),
-				stateCmd.FindSafe([]string{"init"}),
-				stateCmd.FindSafe([]string{"clean"}),
-				stateCmd.FindSafe([]string{"deploy"}),
-			},
-		},
-		{
-			Message: "Platform Tools:",
-			Commands: []*captain.Command{
-				stateCmd.FindSafe([]string{"auth"}),
-				stateCmd.FindSafe([]string{"invite"}),
-				stateCmd.FindSafe([]string{"organizations"}),
-				stateCmd.FindSafe([]string{"platforms"}),
-				stateCmd.FindSafe([]string{"projects"}),
-				stateCmd.FindSafe([]string{"show"}),
-			},
-		},
-		{
-			Message: "Automation:",
-			Commands: []*captain.Command{
-				stateCmd.FindSafe([]string{"events"}),
-				stateCmd.FindSafe([]string{"scripts"}),
-			},
-		},
-		{
-			Message: "Version Control:",
-			Commands: []*captain.Command{
-				stateCmd.FindSafe([]string{"fork"}),
-				stateCmd.FindSafe([]string{"pull"}),
-				stateCmd.FindSafe([]string{"push"}),
-				stateCmd.FindSafe([]string{"history"}),
-			},
-		},
-		{
-			Message: "Utilities:",
-			Commands: []*captain.Command{
-				stateCmd.FindSafe([]string{"update"}),
-				stateCmd.FindSafe([]string{"export"}),
-			},
-		},
-	}
-
-	templater := captain.Templater{
-		Cmd:           stateCmd,
-		CommandGroups: groups,
-	}
-	stateCmd.SetUsageFunc(templater.RootCmdUsageFunc())
-
 	return &CmdTree{
 		cmd: stateCmd,
 	}
@@ -199,6 +137,55 @@ func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Comm
 		"",
 		locale.T("state_description"),
 		prime.Output(),
+		[]captain.CommandGroup{
+			{
+				Message:  locale.Tl("packages_group_message", "Package Management"),
+				Commands: []string{"packages"},
+			},
+			{
+				Message: locale.Tl("environment_group_message", "Environment Management"),
+				Commands: []string{
+					"activate",
+					"init",
+					"clean",
+					"deploy",
+				},
+			},
+			{
+				Message: locale.Tl("platform_group_messages", "Platform Tools"),
+				Commands: []string{
+					"auth",
+					"invite",
+					"organizations",
+					"platforms",
+					"projects",
+					"show",
+				},
+			},
+			{
+				Message: locale.Tl("automation_group_messages", "Automation"),
+				Commands: []string{
+					"events",
+					"scripts",
+				},
+			},
+			{
+				Message: locale.Tl("version_control_group_messages", "Version Control"),
+				Commands: []string{
+					"fork",
+					"pull",
+					"push",
+					"history",
+				},
+			},
+			{
+				Message: locale.Tl("utilities_group_message", "Utilities"),
+				Commands: []string{
+					"update",
+					"export",
+				},
+			},
+		},
 		[]*captain.Flag{
 			{
 				Name:        "locale",

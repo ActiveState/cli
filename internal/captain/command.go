@@ -2,7 +2,9 @@ package captain
 
 import (
 	"fmt"
+	"os"
 	"strings"
+	"text/template"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -30,6 +32,8 @@ type Command struct {
 
 	title string
 
+	groups []CommandGroup
+
 	flags     []*Flag
 	arguments []*Argument
 
@@ -45,10 +49,10 @@ type Command struct {
 
 type CommandGroup struct {
 	Message  string
-	Commands []*Command
+	Commands []string
 }
 
-func NewCommand(name, title, description string, out output.Outputer, flags []*Flag, args []*Argument, executor Executor) *Command {
+func NewCommand(name, title, description string, out output.Outputer, groups []CommandGroup, flags []*Flag, args []*Argument, executor Executor) *Command {
 	// Validate args
 	for idx, arg := range args {
 		if idx > 0 && arg.Required && !args[idx-1].Required {
@@ -64,6 +68,7 @@ func NewCommand(name, title, description string, out output.Outputer, flags []*F
 		title:     title,
 		execute:   executor,
 		arguments: args,
+		groups:    groups,
 		flags:     flags,
 		commands:  make([]*Command, 0),
 		out:       out,
@@ -89,8 +94,8 @@ func NewCommand(name, title, description string, out output.Outputer, flags []*F
 	if err := cmd.setFlags(flags); err != nil {
 		panic(err)
 	}
-	templater := &Templater{cmd, nil}
-	cmd.SetUsageFunc(templater.defaultUsageFunc())
+
+	cmd.SetUsageFunc(defaultUsageFunc(cmd))
 
 	cobraMapping[cmd.cobra] = cmd
 	return cmd
@@ -231,6 +236,10 @@ func (c *Command) Arguments() []*Argument {
 
 func (c *Command) SkipChecks() bool {
 	return c.skipChecks
+}
+
+func (c *Command) NamePadding() int {
+	return c.cobra.NamePadding()
 }
 
 func (c *Command) AddChildren(children ...*Command) {
@@ -421,4 +430,13 @@ func setupSensibleErrors(err error) error {
 	}
 
 	return err
+}
+
+func defaultUsageFunc(cmd *Command) func(c *cobra.Command) error {
+	return func(c *cobra.Command) error {
+		tpl := template.New("usage_tpl")
+		tpl.Funcs(templateFuncs(cmd))
+		template.Must(tpl.Parse(localizedTemplate(cmd, "usage_tpl")))
+		return tpl.Execute(os.Stdout, c)
+	}
 }

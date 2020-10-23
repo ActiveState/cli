@@ -17,12 +17,17 @@ events_header_event:
   other: Event
 events_header_value:
   other: Value
-root_usage_tpl:
-  other: "
-[[if .HasAvailableSubCommands]][[CmdGroupsString .]][[BR]][[BR]][[end -]]
-[[template \"usage_tpl\" .]]"
 usage_tpl:
   other: "
+[[if gt (len commandGroups) 0]]
+  [[- range $cmdGroup := commandGroups]]
+   [[- $cmdGroup.Message]]:[[BR]]
+    [[range $name := $cmdGroup.Commands]]
+      [[$cmd := findCmd $name]]
+      [[rpad $cmd.Use $cmd.NamePadding]][[$cmd.Description]][[BR]]
+    [[end]][[BR]]
+  [[end -]]
+[[end -]]
 Usage:
   [[if .Runnable]][[BR]]
   [[.UseLine]] 
