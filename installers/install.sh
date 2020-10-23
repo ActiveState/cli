@@ -168,6 +168,11 @@ if $FORCEOVERWRITE && ( ! $NOPROMPT ); then
   exit 1
 fi
 
+echo "\
+\033[2m╔═══════════════════════╗
+║ \033[0m\033[39;1mInstalling State Tool\033[0m \033[2m║
+╚═══════════════════════╝\033[0m"
+
 CONSENT_TEXT="\
 
 ActiveState collects usage statistics and diagnostic data about failures. The collected data complies with ActiveState Privacy Policy (https://www.activestate.com/company/privacy-policy/) and will be used to identify product enhancements, help fix defects, and prevent abuse.
@@ -401,5 +406,9 @@ fi
 if [ -n "${ACTIVATE}" ]; then
   # control flow of this script ends with this line: replace the shell with the activated project's shell
   exec $STATEPATH activate ${ACTIVATE}
+else
+  echo "\n\
+\033[32m╔══════════════════════╗
+║ \033[0m\033[39;1mState Tool Installed\033[0m \033[32m║
+╚══════════════════════╝\033[0m"
 fi
-info "You may now start using the '$STATEEXE' program."

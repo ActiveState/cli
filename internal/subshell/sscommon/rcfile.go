@@ -225,7 +225,7 @@ func SetupProjectRcFile(templateName, ext string, env map[string]string, out out
 		"UserScripts":          userScripts,
 		"Scripts":              scripts,
 		"ExecName":             constants.CommandName,
-		"ActivatedMessage":     colorize.ColorizedOrStrip(activatedMessage.String(), isConsole),
+		"ActivatedMessage":     "\n" + colorize.ColorizedOrStrip(activatedMessage.String(), isConsole),
 		"ActivateEventMessage": colorize.ColorizedOrStrip(activateEvtMessage, isConsole),
 	}
 

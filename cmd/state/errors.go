@@ -14,7 +14,6 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/output/txtstyle"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 )
@@ -32,22 +31,14 @@ func (o *OutputError) MarshalOutput(f output.Format) interface{} {
 		return o.error
 	}
 
-	// Print header
-	errs := locale.UnwrapError(o.error)
-	title := txtstyle.NewTitle(trimError(locale.ErrorMessage(o.error)))
-	title.Heading = locale.Tl("err_heading", " ERROR! ")
-	title.ColorCode = "ERROR"
-
 	var outLines []string
-	outLines = append(outLines, title.String())
 
 	// Print what happened
-	if len(errs) > 1 {
-		outLines = append(outLines, output.Heading(locale.Tl("err_what_happened", "Here's What Happened")).String())
+	outLines = append(outLines, output.Heading(locale.Tl("err_what_happened", "[ERROR]Something Went Wrong[/RESET]")).String())
 
-		for _, errv := range errs[1:] {
-			outLines = append(outLines, fmt.Sprintf(" [ERROR]x[/RESET] %s", trimError(locale.ErrorMessage(errv))))
-		}
+	errs := locale.UnwrapError(o.error)
+	for _, errv := range errs {
+		outLines = append(outLines, fmt.Sprintf(" [NOTICE][ERROR]x[/RESET] %s", trimError(locale.ErrorMessage(errv))))
 	}
 
 	// Concatenate error tips
@@ -66,7 +57,7 @@ func (o *OutputError) MarshalOutput(f output.Format) interface{} {
 	for _, tip := range errorTips {
 		outLines = append(outLines, fmt.Sprintf(" [DISABLED]-[/RESET] %s", trimError(tip)))
 	}
-	return "\n" + strings.Join(outLines, "\n")
+	return strings.Join(outLines, "\n")
 }
 
 func trimError(msg string) string {

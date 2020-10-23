@@ -439,17 +439,17 @@ func TestNewProjectfile(t *testing.T) {
 	assert.NoError(t, err, "Should be no error when getting a temp directory")
 	os.Chdir(dir)
 
-	pjFile, fail := CreateWithProjectURL("https://platform.activestate.com/xowner/xproject", dir)
+	pjFile, fail := TestOnlyCreateWithProjectURL("https://platform.activestate.com/xowner/xproject", dir)
 	assert.NoError(t, fail.ToError(), "There should be no error when loading from a path")
-	assert.Equal(t, "helloWorld", pjFile.Scripts[0].Name)
+	assert.Equal(t, "activationMessage", pjFile.Scripts[0].Name)
 
-	_, fail = CreateWithProjectURL("https://platform.activestate.com/xowner/xproject", "")
+	_, fail = TestOnlyCreateWithProjectURL("https://platform.activestate.com/xowner/xproject", "")
 	assert.Error(t, fail.ToError(), "We don't accept blank paths")
 
 	setCwd(t, "")
 	dir, err = os.Getwd()
 	assert.NoError(t, err, "Should be no error when getting the CWD")
-	_, fail = CreateWithProjectURL("https://platform.activestate.com/xowner/xproject", dir)
+	_, fail = TestOnlyCreateWithProjectURL("https://platform.activestate.com/xowner/xproject", dir)
 	assert.Error(t, fail.ToError(), "Cannot create new project if existing as.yaml ...exists")
 }
 

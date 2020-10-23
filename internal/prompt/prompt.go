@@ -1,18 +1,20 @@
 package prompt
 
 import (
+	"gopkg.in/AlecAivazis/survey.v1"
+
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
-	survey "gopkg.in/AlecAivazis/survey.v1"
+	"github.com/ActiveState/cli/internal/output"
 )
 
 // Prompter is the interface used to run our prompt from, useful for mocking in tests
 type Prompter interface {
-	Input(message, defaultResponse string, flags ...ValidatorFlag) (string, *failures.Failure)
-	InputAndValidate(message, defaultResponse string, validator ValidatorFunc, flags ...ValidatorFlag) (string, *failures.Failure)
-	Select(message string, choices []string, defaultResponse string) (string, *failures.Failure)
-	Confirm(message string, defaultChoice bool) (bool, *failures.Failure)
-	InputSecret(message string, flags ...ValidatorFlag) (string, *failures.Failure)
+	Input(title, message, defaultResponse string, flags ...ValidatorFlag) (string, *failures.Failure)
+	InputAndValidate(title, message, defaultResponse string, validator ValidatorFunc, flags ...ValidatorFlag) (string, *failures.Failure)
+	Select(title, message string, choices []string, defaultResponse string) (string, *failures.Failure)
+	Confirm(title, message string, defaultChoice bool) (bool, *failures.Failure)
+	InputSecret(title, message string, flags ...ValidatorFlag) (string, *failures.Failure)
 }
 
 // FailPromptUnknownValidator handles unknown validator erros
@@ -23,11 +25,13 @@ var FailPromptUnknownValidator = failures.Type("prompt.unknownvalidator")
 type ValidatorFunc = survey.Validator
 
 // Prompt is our main promptig struct
-type Prompt struct{}
+type Prompt struct {
+	out output.Outputer
+}
 
 // New creates a new prompter
 func New() Prompter {
-	return &Prompt{}
+	return &Prompt{output.Get()}
 }
 
 // ValidatorFlag represents flags for prompt functions to change their behavior on.
@@ -42,14 +46,14 @@ const (
 )
 
 // Input prompts the user for input.  The user can specify available validation flags to trigger validation of responses
-func (p *Prompt) Input(message, defaultResponse string, flags ...ValidatorFlag) (string, *failures.Failure) {
-	return p.InputAndValidate(message, defaultResponse, func(val interface{}) error {
+func (p *Prompt) Input(title, message, defaultResponse string, flags ...ValidatorFlag) (string, *failures.Failure) {
+	return p.InputAndValidate(title, message, defaultResponse, func(val interface{}) error {
 		return nil
 	}, flags...)
 }
 
 // InputAndValidate prompts an input field and allows you to specfiy a custom validation function as well as the built in flags
-func (p *Prompt) InputAndValidate(message, defaultResponse string, validator ValidatorFunc, flags ...ValidatorFlag) (string, *failures.Failure) {
+func (p *Prompt) InputAndValidate(title, message, defaultResponse string, validator ValidatorFunc, flags ...ValidatorFlag) (string, *failures.Failure) {
 	var response string
 	flagValidators, fail := processValidators(flags)
 	if fail != nil {
@@ -59,10 +63,25 @@ func (p *Prompt) InputAndValidate(message, defaultResponse string, validator Val
 		validator = wrapValidators(append(flagValidators, validator))
 	}
 
-	err := survey.AskOne(&survey.Input{
+	if title != "" {
+		p.out.Notice(output.SubHeading(title))
+	}
+
+	// We handle defaults more clearly than the survey package can
+	if defaultResponse != "" {
+		v, fail := p.Select("", formatMessage(message), []string{defaultResponse, locale.Tl("prompt_custom", "Custom Value")}, defaultResponse)
+		if fail != nil {
+			return "", fail
+		}
+		if v == defaultResponse {
+			return v, nil
+		}
+		message = ""
+	}
+
+	err := survey.AskOne(&Input{&survey.Input{
 		Message: formatMessage(message),
-		Default: defaultResponse,
-	}, &response, validator)
+	}}, &response, validator)
 	if err != nil {
 		return "", failures.FailUserInput.Wrap(err)
 	}
@@ -71,13 +90,16 @@ func (p *Prompt) InputAndValidate(message, defaultResponse string, validator Val
 }
 
 // Select prompts the user to select one entry from multiple choices
-func (p *Prompt) Select(message string, choices []string, defaultChoice string) (string, *failures.Failure) {
+func (p *Prompt) Select(title, message string, choices []string, defaultChoice string) (string, *failures.Failure) {
+	if title != "" {
+		p.out.Notice(output.SubHeading(title))
+	}
 	var response string
-	err := survey.AskOne(&survey.Select{
+	err := survey.AskOne(&Select{&survey.Select{
 		Message: formatMessage(message),
 		Options: choices,
 		Default: defaultChoice,
-	}, &response, nil)
+	}}, &response, nil)
 	if err != nil {
 		return "", failures.FailUserInput.Wrap(err)
 	}
@@ -85,12 +107,16 @@ func (p *Prompt) Select(message string, choices []string, defaultChoice string) 
 }
 
 // Confirm prompts user for yes or no response.
-func (p *Prompt) Confirm(message string, defaultChoice bool) (bool, *failures.Failure) {
+func (p *Prompt) Confirm(title, message string, defaultChoice bool) (bool, *failures.Failure) {
+	if title != "" {
+		p.out.Notice(output.SubHeading(title))
+	}
+
 	var resp bool
-	err := survey.AskOne(&survey.Confirm{
+	err := survey.AskOne(&Confirm{&survey.Confirm{
 		Message: message,
 		Default: defaultChoice,
-	}, &resp, nil)
+	}}, &resp, nil)
 	if err != nil {
 		return false, failures.FailUserInput.Wrap(err)
 	}
@@ -99,11 +125,15 @@ func (p *Prompt) Confirm(message string, defaultChoice bool) (bool, *failures.Fa
 
 // InputSecret prompts the user for input and obfuscates the text in stdout.
 // Will fail if empty.
-func (p *Prompt) InputSecret(message string, flags ...ValidatorFlag) (string, *failures.Failure) {
+func (p *Prompt) InputSecret(title, message string, flags ...ValidatorFlag) (string, *failures.Failure) {
 	var response string
 	validators, fail := processValidators(flags)
 	if fail != nil {
 		return "", fail
+	}
+
+	if title != "" {
+		p.out.Notice(output.SubHeading(title))
 	}
 
 	err := survey.AskOne(&survey.Password{

@@ -5,12 +5,13 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/ActiveState/cli/internal/colorize"
 	"github.com/ActiveState/cli/internal/output"
 )
 
 const (
 	// DefaultTitlePadding is the padding character length.
-	DefaultTitlePadding = 3
+	DefaultTitlePadding = 1
 )
 
 // Title represents the config of a styled title. It does not, currently,
@@ -38,8 +39,10 @@ func (t *Title) String() string {
 		return ""
 	}
 
-	titleLen := utf8.RuneCountInString(t.Text) // NOTE: ignores effects of combining diacritics
-	lineLen := titleLen + 2 + 2*t.Padding + 1  // text, border, padding, newline
+	text := colorize.StripColorCodes(t.Text)
+
+	titleLen := utf8.RuneCountInString(text)  // NOTE: ignores effects of combining diacritics
+	lineLen := titleLen + 2 + 2*t.Padding + 1 // text, border, padding, newline
 	lines := 3
 
 	rs := make([]rune, lines*lineLen)
@@ -52,7 +55,7 @@ func (t *Title) String() string {
 
 	rs[topLf], rs[topRt] = '╔', '╗'
 	rs[btmLf], rs[btmRt] = '╚', '╝'
-	copy(rs[titleBgn:], []rune(t.Text))
+	copy(rs[titleBgn:], []rune(text))
 
 	for i := range rs {
 		// IS not empty
@@ -97,7 +100,10 @@ func (t *Title) String() string {
 		}
 	}
 
-	return strings.TrimSpace(strings.Join(outLines, "\n"))
+	out := strings.Join(outLines, "\n")
+	out = strings.Replace(out, text, t.Text, 1)
+
+	return strings.TrimSpace(out)
 }
 
 // MarshalOutput implements output.Marshaller.

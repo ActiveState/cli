@@ -47,8 +47,8 @@ func (e *LocalizedError) ErrorTips() []string {
 	return e.tips
 }
 
-func (e *LocalizedError) SetTips(tips ...string) {
-	e.tips = tips
+func (e *LocalizedError) AddTips(tips ...string) {
+	e.tips = append(e.tips, tips...)
 }
 
 // ErrorLocalizer represents a localized error

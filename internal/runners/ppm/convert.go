@@ -88,7 +88,7 @@ func (cf *ConversionFlow) runSurvey() (conversionResult, error) {
 		convertAnswerCreate,
 		locale.Tl("ppm_convert_answer_why", "Why is this necessary? I Just want to manage dependencies"),
 	}
-	choice, fail := cf.prompt.Select(locale.Tt("ppm_convert_create_question"), choices, "")
+	choice, fail := cf.prompt.Select("", locale.Tt("ppm_convert_create_question"), choices, "")
 	if fail != nil {
 		return canceled, locale.WrapInputError(fail, "err_ppm_convert_interrupt", "Invalid response received.")
 	}
@@ -127,7 +127,7 @@ func (cf *ConversionFlow) explainVirtualEnv() (conversionResult, error) {
 	choices = append(choices, convertAnswerCreate, no)
 	explanation := locale.Tt("ppm_convert_explanation")
 
-	choice, fail := cf.prompt.Select(explanation, choices, "")
+	choice, fail := cf.prompt.Select("", explanation, choices, "")
 	if fail != nil {
 		return canceled, locale.WrapInputError(fail, "err_ppm_convert_info_interrupt", "Invalid response received.")
 	}
@@ -165,7 +165,7 @@ func (cf *ConversionFlow) explainAskFeedback() (conversionResult, error) {
 	ok := locale.Tl("ppm_convert_create_at_last", "Ok, let's set up a virtual runtime environment")
 	exit := locale.Tl("ppm_convert_reject", "Exit")
 	choices := []string{ok, exit}
-	choice, fail := cf.prompt.Select(locale.Tt("ppm_convert_ask_feedback", map[string]interface{}{
+	choice, fail := cf.prompt.Select("", locale.Tt("ppm_convert_ask_feedback", map[string]interface{}{
 		"ForumURL": constants.ForumsURL,
 	}), choices, "")
 

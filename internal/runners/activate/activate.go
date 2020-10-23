@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/output/txtstyle"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/subshell"
@@ -64,6 +65,8 @@ func (r *Activate) Run(params *ActivateParams) error {
 
 func (r *Activate) run(params *ActivateParams) error {
 	logging.Debug("Activate %v, %v", params.Namespace, params.PreferredPath)
+
+	r.out.Notice(txtstyle.NewTitle(locale.T("info_activating_state")))
 
 	// Detect target path
 	pathToUse, err := r.pathToUse(params.Namespace.String(), params.PreferredPath)
@@ -120,14 +123,9 @@ func (r *Activate) run(params *ActivateParams) error {
 
 	updater.PrintUpdateMessage(proj.Source().Path(), r.out)
 
-	if proj.IsHeadless() {
-		r.out.Notice(output.Heading(locale.T("info_activating_state_by_commit")))
-	} else {
-		r.out.Notice(output.Heading(locale.T("info_activating_state", proj)))
-	}
-
 	if proj.CommitID() == "" {
-		return errs.New(locale.Tr("err_project_no_commit", model.ProjectURL(proj.Owner(), proj.Name(), "")))
+		err := locale.NewInputError("err_project_no_commit", "Your project does not have a commit ID, please run `state push` first.", model.ProjectURL(proj.Owner(), proj.Name(), ""))
+		return errs.AddTips(err, "Run → [ACTIONABLE]state push[/RESET] to create your project")
 	}
 
 	if err := r.activateAndWait(proj, runtime); err != nil {

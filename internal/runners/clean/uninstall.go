@@ -13,7 +13,7 @@ import (
 )
 
 type confirmAble interface {
-	Confirm(message string, defaultChoice bool) (bool, *failures.Failure)
+	Confirm(title, message string, defaultChoice bool) (bool, *failures.Failure)
 }
 
 type Uninstall struct {
@@ -58,7 +58,7 @@ func (u *Uninstall) Run(params *UninstallParams) error {
 	}
 
 	if !params.Force {
-		ok, fail := u.confirm.Confirm(locale.T("uninstall_confirm"), false)
+		ok, fail := u.confirm.Confirm(locale.T("confirm"), locale.T("uninstall_confirm"), false)
 		if fail != nil {
 			return fail.ToError()
 		}

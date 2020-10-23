@@ -159,9 +159,7 @@ err_artifact_no_parent:
 err_invalid_status_code:
   other: "Invalid status code: {{.V0}}"
 info_activating_state:
-  other: "Activating state: {{.Owner}}/{{.Name}}"
-info_activating_state_by_commit:
-  other: "Activating state"
+  other: "Activating Virtual Environment"
 info_state_active_repoexists:
   other: "Repo already exists: {{.Path}}"
 panic_couldnt_detect_wd:
@@ -385,7 +383,7 @@ projects_description:
 projects_list_description:
   other: List your platform projects
 err_api_not_authenticated:
-  other: You are not authenticated, authenticate with `state auth`. For more information run `state auth --help`.
+  other: You are not authenticated, authenticate with `[ACTIONABLE]state auth[/RESET]`.
 err_api_forbidden:
   other: You are not allowed to access or modify the requested resource
 err_api_org_not_found:
@@ -463,7 +461,7 @@ error_state_run_undefined_name:
 error_state_run_unknown_name:
   other: The script '{{.Name}}' is not defined in activestate.yaml.
 info_state_run_activating_state:
-  other: "[NOTICE]This script requires an activated state. Activating it now. To bypass this set `standalone: true` on this script in your activestate.yaml.[/RESET]"
+  other: "Activating runtime environment. To bypass this enter an activated state via `[ACTIONABLE]state activate[/RESET]` or if you do not require a runtime environment add `[ACTIONABLE]standalone: true[/RESET]` to the script in your [NOTICE]activestate.yaml[/RESET]."
 error_state_run_activate:
   other: Unable to activate a state for running the script in. Try manually running "state activate" first.
 error_state_run_standalone_conflict:
@@ -472,8 +470,6 @@ error_state_run_unknown_exec:
   other: An executable language interpreter matching the script cannot be found. Please use a language defined in your project on the platform.
 error_state_run_setup_scriptfile:
   other: Cannot setup runnable on-disk script file.
-info_state_run_running:
-  other: "[NOTICE]Running user-defined script: {{.V0}}\nDefined in {{.V1}}[/RESET]"
 error_state_run_error:
   other: Failed to run script.
 error_state_run_no_shell:
@@ -698,9 +694,7 @@ variable_field_deprecation_warning:
 pull_not_updated:
   other: Your activestate.yaml is already up to date!
 pull_updated:
-  other: |
-    Your activestate.yaml has been updated to the latest version available.
-    If you have any active instances of this project open in other terminals, please exit and re-activate them to pick up the latest changes.
+  other: Your activestate.yaml has been updated to the latest version available.
 keypair_cmd_description:
   other: Manage Your Keypair
 keypair_generate_cmd_description:
@@ -783,18 +777,18 @@ forward_fail_info:
   other: The requested version of the State Tool does not exist, please ensure the version and branch are correct.
 update_available:
   other: |
-    [NOTICE]A new update is available!
+    A new update is available!
 
-    Your version: {{.V0}}
-    Available Version: {{.V1}}
+    Your version: [NOTICE]{{.V0}}[/RESET]
+    Available Version: [NOTICE]{{.V1}}[/RESET]
 
-    You can update by running `state update`[/RESET]
+    You can update by running `[ACTIONABLE]state update[/RESET]`
 runtime_update_notice_known_count:
-  other: "[NOTICE]Your activestate.yaml is {{.V0}} commits behind.[/RESET]"
+  other: "Your activestate.yaml is [NOTICE]{{.V0}}[/RESET] commits behind."
 runtime_update_notice_unknown_count:
-  other: "[NOTICE]Your activestate.yaml is behind.[/RESET]"
+  other: "Your activestate.yaml is behind."
 runtime_update_help:
-  other: "[NOTICE]Run `state pull` to pull in the latest runtime environment as defined in your project on https://platform.activestate.com/{{.V0}}/{{.V1}}[/RESET]"
+  other: "Run `[ACTIONABLE]state pull[/RESET]` to pull in the latest runtime environment as defined in your project on [NOTICE]https://platform.activestate.com/{{.V0}}/{{.V1}}[/RESET]"
 err_no_credentials:
   other: Cannot authenticate without credentials
 err_token_list:
@@ -1070,60 +1064,6 @@ language_name_unknown:
   other: Unknown
 language_unknown_options:
   other: Unknown options
-sample_yaml_perl:
-  other: |
-    scripts:
-    # This script uses a secret. Note that you can define your own secrets at
-    # https://platform.activestate.com/{{.Owner}}/{{.Project}}/scripts
-      - name: helloWorld
-        language: {{.Shell}}
-        value: echo ${secrets.user.world}
-      - name: activationMessage
-        language: perl
-        value: |
-          print <<EOT;
-          You are now in an 'activated state', this will give you a virtual environment to work in that doesn't affect the rest of your system.
-
-          Your 'activated state' allows you to manage packages, scripts, secrets and more via the activestate.yaml file at the root of your project directory.
-
-          To manage packages use the `state packages` command. For more information about package management, use `state packages --help`. For more information about the State Tool use `state help`.
-
-          To access additional features of the ActiveState Platform and use a web-based interface for managing your project, you can visit https://platform.activestate.com/{{.Owner}}/{{.Project}}.
-
-          Edit your activestate.yaml to remove this message.
-          EOT
-    events:
-      # This is the ACTIVATE event, it will run whenever a new virtual environment is created (eg. by running `state activate`)
-      # On Linux and macOS this will be ran as part of your shell's rc file, so you can use it to set up aliases, functions, environment variables, etc.
-      - name: ACTIVATE
-        value: $scripts.activationMessage.path()
-sample_yaml_python:
-  other: |
-    scripts:
-    # This script uses a secret. Note that you can define your own secrets at
-    # https://platform.activestate.com/{{.Owner}}/{{.Project}}/scripts
-      - name: helloWorld
-        language: {{.Shell}}
-        value: echo ${secrets.user.world}
-      - name: activationMessage
-        language: {{.Language}}
-        value: |
-          print(""" 
-          You are now in an 'activated state', this will give you a virtual environment to work in that doesn't affect the rest of your system.
-
-          Your 'activated state' allows you to manage packages, scripts, secrets and more via the activestate.yaml file at the root of your project directory.
-
-          To manage packages use the `state packages` command. For more information about package management, use `state packages --help`. For more information about the State Tool use `state help`.
-
-          To access additional features of the ActiveState Platform and use a web-based interface for managing your project, you can visit https://platform.activestate.com/{{.Owner}}/{{.Project}}.
-
-          Edit your activestate.yaml to remove this message.
-          """)
-    events:
-      # This is the ACTIVATE event, it will run whenever a new virtual environment is created (eg. by running `state activate`)
-      # On Linux and macOS this will be ran as part of your shell's rc file, so you can use it to set up aliases, functions, environment variables, etc.
-      - name: ACTIVATE
-        value: $scripts.activationMessage.path()
 editor_yaml:
   other: |
     scripts:
@@ -1292,9 +1232,9 @@ err_init_file_exists:
   other: The target directory '{{.V0}}' already contains an activestate.yaml. Please change the current working directory or use the --path flag.
 init_success:
   other: |
-    Project '{{.V0}}/{{.V1}}' has been successfully initialized at '{{.V2}}'.
-    You should run 'state push' before activating your project for the first time.
-    Once pushed you can activate your project with 'state activate'.
+    Project '[NOTICE]{{.V0}}/{{.V1}}[/RESET]' has been successfully initialized at '[NOTICE]{{.V2}}[/RESET]'.
+    You should run `[ACTIONABLE]state push[/RESET]` before activating your project for the first time.
+    Once pushed you can activate your project with `[ACTIONABLE]state activate[/RESET]`.
 flag_state_init_skeleton_description:
   other: "The activestate.yaml template to use with project file creation. Accepts: {{.V0}}"
 arg_state_init_namespace:
@@ -1426,7 +1366,7 @@ clean_config_confirm:
 clean_success_message:
   other: "Successfully removed State Tool and related files\n"
 push_already_exists:
-  other: The project {{.V0}}/{{.V1}} already exists on the platform. To start using the latest version please run 'state pull'.
+  other: The project {{.V0}}/{{.V1}} already exists on the platform. To start using the latest version please run `[ACTIONABLE]state pull[/RESET]`.
 languages_cmd_description:
   other: View the languages of a project
 languages_update_cmd_description:
@@ -1553,9 +1493,9 @@ err_corrupted_build_request_response:
 err_arg_required:
   other: "The following argument is required:\n  Name: {{.V0}}\n  Description: {{.V1}}"
 err_init_no_language:
-  other: "You need to supply the [language] argument, run 'state init --help' for more information."
+  other: "You need to supply the [NOTICE]language[/RESET] argument, run '[ACTIONABLE]state init --help[/RESET]' for more information."
 err_project_no_commit:
-  other: The activatestate.yaml for the project {{.V0}} does not contain a commit ID. If this project was created with 'state init', please run 'state push' and try again.
+  other: The activatestate.yaml for the project '[NOTICE]{{.V0}}[/RESET]' does not contain a commit ID. If this project was created with '[NOTICE]state init[/RESET]', please run `[ACTIONABLE]state push[/RESET]` and try again.
 err_bad_platform_version:
   other: You have to supply a platform version.
 platform_added:
@@ -1728,3 +1668,5 @@ message_headless_packages:
   other: "You've modified this project, and will be able to continue to do so locally. Converting your changes into a project on the ActiveState Platform can make your changes available on any machine."
 message_headless_activate:
   other: "Now that your project is activated -- if you ever need to add or remove packages, you can do so with `state package add`. Type `state package --help` for more info, or `state learn` for common commands."
+confirm:
+  other: Please Confirm

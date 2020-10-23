@@ -22,7 +22,7 @@ const (
 
 // Confirmer describes the behavior required to prompt a user for confirmation.
 type Confirmer interface {
-	Confirm(msg string, defaultOpt bool) (bool, *failures.Failure)
+	Confirm(title, msg string, defaultOpt bool) (bool, *failures.Failure)
 }
 
 // ChangesetProvider describes the behavior required to convert some file data
@@ -129,7 +129,7 @@ func removeRequirements(conf Confirmer, pjOwner, pjName string, force bool, reqs
 	if !force {
 		msg := locale.T("confirm_remove_existing_prompt")
 
-		confirmed, fail := conf.Confirm(msg, false)
+		confirmed, fail := conf.Confirm(locale.T("confirm"), msg, false)
 		if fail != nil {
 			return fail
 		}

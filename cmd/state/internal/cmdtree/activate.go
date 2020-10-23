@@ -18,7 +18,7 @@ func newActivateCommand(prime *primer.Values) *captain.Command {
 
 	cmd := captain.NewCommand(
 		"activate",
-		locale.Tl("activate_title", "Activating Your Runtime"),
+		"",
 		locale.T("activate_project"),
 		prime.Output(),
 		[]*captain.Flag{

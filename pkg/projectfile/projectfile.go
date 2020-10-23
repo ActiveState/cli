@@ -11,6 +11,7 @@ import (
 	"sync"
 
 	"github.com/ActiveState/sysinfo"
+	"github.com/gobuffalo/packr"
 	"github.com/google/uuid"
 	"github.com/imdario/mergo"
 	"gopkg.in/yaml.v2"
@@ -28,6 +29,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/strutils"
 )
 
 var (
@@ -924,22 +926,23 @@ type CreateParams struct {
 	projectURL      string
 }
 
-// CreateWithProjectURL a new activestate.yaml with default content
-func CreateWithProjectURL(projectURL, path string) (*Project, *failures.Failure) {
+// TestOnlyCreateWithProjectURL a new activestate.yaml with default content
+func TestOnlyCreateWithProjectURL(projectURL, path string) (*Project, *failures.Failure) {
 	return createCustom(&CreateParams{
 		projectURL: projectURL,
 		Directory:  path,
-	})
+	}, language.Python3)
 }
 
 // Create will create a new activestate.yaml with a projectURL for the given details
 func Create(params *CreateParams) *failures.Failure {
-	fail := validateCreateParams(params)
+	lang := language.MakeByName(params.Language)
+	fail := validateCreateParams(params, lang)
 	if fail != nil {
 		return fail
 	}
 
-	_, fail = createCustom(params)
+	_, fail = createCustom(params, lang)
 	if fail != nil {
 		return fail
 	}
@@ -947,7 +950,7 @@ func Create(params *CreateParams) *failures.Failure {
 	return nil
 }
 
-func createCustom(params *CreateParams) (*Project, *failures.Failure) {
+func createCustom(params *CreateParams, lang language.Language) (*Project, *failures.Failure) {
 	fail := fileutils.MkdirUnlessExists(params.Directory)
 	if fail != nil {
 		return nil, fail
@@ -980,29 +983,33 @@ func createCustom(params *CreateParams) (*Project, *failures.Failure) {
 		shell = "batch"
 	}
 
-	yaml := "sample_yaml_python"
-	if strings.ToLower(params.Language) == language.Perl.String() {
-		yaml = "sample_yaml_perl"
-	}
-	if params.Content == "" {
-		params.Content = locale.T(yaml,
-			map[string]interface{}{"Owner": owner, "Project": project, "Shell": shell, "Language": params.Language})
+	box := packr.NewBox("../../assets/")
+
+	content := params.Content
+	if content == "" {
+		var err error
+		content, err = strutils.ParseTemplate(
+			box.String("activestate.yaml."+strings.TrimRight(lang.String(), "23")+".tpl"),
+			map[string]interface{}{"Owner": owner, "Project": project, "Shell": shell, "Language": lang.String(), "LangExe": lang.Executable().Filename()})
+		if err != nil {
+			return nil, failures.FailMisc.Wrap(err)
+		}
 	}
 
 	data := map[string]interface{}{
 		"Project":         params.projectURL,
 		"LanguageName":    params.Language,
 		"LanguageVersion": params.LanguageVersion,
-		"Content":         params.Content,
+		"Content":         content,
 		"Private":         params.Private,
 	}
 
-	template, fail := loadTemplate(params.path, data)
-	if fail != nil {
-		return nil, fail
+	fileContents, err := strutils.ParseTemplate(box.String("activestate.yaml.tpl"), data)
+	if err != nil {
+		return nil, failures.FailMisc.Wrap(err)
 	}
 
-	fail = fileutils.WriteFile(params.path, []byte(template.String()))
+	fail = fileutils.WriteFile(params.path, []byte(fileContents))
 	if fail != nil {
 		return nil, fail
 	}
@@ -1010,14 +1017,19 @@ func createCustom(params *CreateParams) (*Project, *failures.Failure) {
 	return Parse(params.path)
 }
 
-func validateCreateParams(params *CreateParams) *failures.Failure {
+func validateCreateParams(params *CreateParams, lang language.Language) *failures.Failure {
+	langValidErr := lang.Validate()
 	switch {
+	case langValidErr != nil:
+		return failures.FailUserInput.Wrap(langValidErr)
+	case params.Directory == "":
+		return FailNewBlankPath.New(locale.T("err_project_require_path"))
+	case params.projectURL != "":
+		return nil // Owner and Project not required when projectURL is set
 	case params.Owner == "":
 		return FailNewBlankOwner.New("err_project_require_owner")
 	case params.Project == "":
 		return FailNewBlankProject.New("err_project_require_name")
-	case params.Directory == "":
-		return FailNewBlankPath.New(locale.T("err_project_require_path"))
 	default:
 		return nil
 	}

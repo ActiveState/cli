@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/output/txtstyle"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/scriptfile"
@@ -60,10 +61,6 @@ func (r *Run) Run(name string, args []string) error {
 }
 
 func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, name string, args []string) error {
-	if authentication.Get().Authenticated() {
-		checker.RunCommitsBehindNotifier(out)
-	}
-
 	logging.Debug("Execute")
 
 	if name == "" {
@@ -79,6 +76,12 @@ func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, nam
 		return fail
 	}
 
+	out.Notice(txtstyle.NewTitle(locale.Tl("run_script_title", "Running Script: [ACTIONABLE]{{.V0}}[/RESET]", script.Name())))
+
+	if authentication.Get().Authenticated() {
+		checker.RunCommitsBehindNotifier(out)
+	}
+
 	// venvExePath stores a virtual environment's PATH value. If the script
 	// requires activation this is the PATH we should be searching for
 	// executables in.
@@ -86,6 +89,7 @@ func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, nam
 
 	// Activate the state if needed.
 	if !script.Standalone() && !subshell.IsActivated() {
+		out.Notice(output.Heading(locale.Tl("notice", "Notice")))
 		out.Notice(locale.T("info_state_run_activating_state"))
 		runtime := runtime.NewRuntime(proj.CommitUUID(), proj.Owner(), proj.Name(), runbits.NewRuntimeMessageHandler(out))
 		venv := virtualenvironment.New(runtime)
@@ -113,9 +117,10 @@ func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, nam
 	if len(script.Languages()) == 0 {
 		warning := locale.Tl(
 			"run_warn_deprecated_script_without_language",
-			"[YELLOW]DEPRECATION WARNING: Scripts without a defined language currently fall back to using the default shell for your platform. This fallback mechanic will soon stop working and a language will need to be explicitly defined for each script. Please configure the 'language' field with a valid option (one of {{.V0}})[/RESET]",
+			"Scripts without a defined language currently fall back to using the default shell for your platform. This fallback mechanic will soon stop working and a language will need to be explicitly defined for each script. Please configure the '[ACTIONABLE]language[/RESET]' field with a valid option (one of [ACTIONABLE]{{.V0}}[/RESET])",
 			strings.Join(language.RecognizedNames(), ", "),
 		)
+		out.Notice(output.Heading(locale.Tl("deprecation_warning", "Deprecation Warning!")))
 		out.Notice(warning)
 
 		lang = language.MakeByShell(subs.Shell())
@@ -174,7 +179,7 @@ func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, nam
 	}
 	defer sf.Clean()
 
-	out.Notice(locale.Tr("info_state_run_running", script.Name(), script.Source().Path()))
+	out.Notice(output.Heading(locale.Tl("script_output", "Script Output")))
 	// ignore code for now, passing via failure
 	err = subs.Run(sf.Filename(), args...)
 	if err != nil {
