@@ -44,7 +44,7 @@ func (u *Update) Run(params UpdateRunParams) error {
 		if err != nil {
 			return locale.WrapError(err, "package_ingredient_err", "Failed to resolve an ingredient named {{.V0}}.", name)
 		}
-		version = *ingredientVersion.Version.Version
+		version = ingredientVersion.Version
 	}
 
 	return executePackageOperation(u.out, u.Prompter, language, name, version, model.OperationUpdated)
