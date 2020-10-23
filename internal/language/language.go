@@ -177,6 +177,14 @@ func (l *Language) Recognized() bool {
 	return l != nil && *l != Unset && *l != Unknown
 }
 
+// Validate ensures that the current language is recognized
+func (l *Language) Validate() error {
+	if !l.Recognized() {
+		return NewUnrecognizedLanguageError(l.String(), RecognizedNames())
+	}
+	return nil
+}
+
 // Ext return the file extension for the language.
 func (l Language) Ext() string {
 	return l.data().ext

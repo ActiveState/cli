@@ -1018,9 +1018,10 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, *fail
 }
 
 func validateCreateParams(params *CreateParams, lang language.Language) *failures.Failure {
+	langValidErr := lang.Validate()
 	switch {
-	case !lang.Recognized():
-		return failures.FailUserInput.New(locale.Tl("err_invalid_language", "Invalid Language: {{.V0}}.", params.Language))
+	case langValidErr != nil:
+		return failures.FailUserInput.Wrap(langValidErr)
 	case params.Directory == "":
 		return FailNewBlankPath.New(locale.T("err_project_require_path"))
 	case params.projectURL != "":
