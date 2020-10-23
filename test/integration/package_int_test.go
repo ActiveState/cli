@@ -214,8 +214,9 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithLang() {
 
 	cp := ts.Spawn("packages", "search", "Moose", "--language=perl")
 	cp.Expect("Name")
-	cp.Expect("Any-Moose")
 	cp.Expect("Moose")
+	cp.Expect("MooseFS")
+	cp.Expect("MooseX-ABC")
 	cp.ExpectExitCode(0)
 }
 
@@ -320,20 +321,20 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 
 	suite.Run("packages add", func() {
 		cp := ts.Spawn("packages", "add", "dateparser@0.7.2")
-		cp.Expect("(?:package added|project is currently building)")
-		cp.ExpectExitCode(1)
+		cp.ExpectRe("(?:Package added|The project is currently building)")
+		cp.Wait()
 	})
 
 	suite.Run("packages update", func() {
 		cp := ts.Spawn("packages", "update", "dateparser@0.7.6")
-		cp.Expect("(?:package updated|project is currently building)")
-		cp.ExpectExitCode(1)
+		cp.ExpectRe("(?:Package updated|The project is currently building)")
+		cp.Wait()
 	})
 
 	suite.Run("packages remove", func() {
 		cp := ts.Spawn("packages", "remove", "dateparser")
-		cp.ExpectRe("(?:package removed|project is currently building)")
-		cp.ExpectExitCode(1)
+		cp.ExpectRe("(?:Package removed|The project is currently building)")
+		cp.Wait()
 	})
 }
 
