@@ -24,6 +24,7 @@ func loadProject(t *testing.T) *project.Project {
 	pjFile := &projectfile.Project{}
 	contents := strings.TrimSpace(`
 project: "https://platform.activestate.com/Expander/general?commitID=00010001-0001-0001-0001-000100010001"
+lock: branchname@0.0.0-SHA123abcd
 platforms:
   - name: Linux
     os: linux
@@ -61,6 +62,19 @@ scripts:
 	pjFile.Persist()
 
 	return project.Get()
+}
+
+func TestExpandTopLevel(t *testing.T) {
+	prj := loadProject(t)
+
+	expanded, err := project.ExpandFromProject("$project", prj)
+	assert.NoError(t, err, "Ran without failure")
+
+	assert.Equal(t, "https://platform.activestate.com/Expander/general?commitID=00010001-0001-0001-0001-000100010001", expanded)
+
+	expanded, err = project.ExpandFromProject("$lock", prj)
+	assert.NoError(t, err, "Ran without failure")
+	assert.Equal(t, "branchname@0.0.0-SHA123abcd", expanded)
 }
 
 func TestExpandProjectPlatformOs(t *testing.T) {

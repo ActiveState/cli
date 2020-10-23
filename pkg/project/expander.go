@@ -58,7 +58,7 @@ func limitExpandFromProject(depth int, s string, p *Project) (string, error) {
 		return "", locale.NewInputError("err_expand_recursion", "Infinite recursion trying to expand variable '{{.V0}}'", s)
 	}
 
-	regex := regexp.MustCompile("\\${?(\\w+)\\.([\\w-]+)+\\.?([\\w-]+)?(\\(\\))?}?")
+	regex := regexp.MustCompile(`\${?(\w+)\.?([\w-]+)?\.?([\w-]+)?(\(\))?}?`)
 	var err error
 	expanded := rxutils.ReplaceAllStringSubmatchFunc(regex, s, func(groups []string) string {
 		if err != nil {
@@ -68,8 +68,13 @@ func limitExpandFromProject(depth int, s string, p *Project) (string, error) {
 		var isFunction bool
 
 		variable = groups[0]
-		category = groups[1]
-		name = groups[2]
+		name = groups[1]
+		category = "toplevel"
+
+		if len(groups) > 2 {
+			category = groups[1]
+			name = groups[2]
+		}
 		if len(groups) > 3 {
 			meta = groups[3]
 		}
@@ -199,6 +204,17 @@ func ConstantExpander(name string, meta string, isFunction bool, project *Projec
 		if v.ID() == name {
 			return projectfile.MakeConstantsFromConstrainedEntities([]projectfile.ConstrainedEntity{v})[0].Value, nil
 		}
+	}
+	return "", nil
+}
+
+func TopLevelExpander(name string, _ string, _ bool, project *Project) (string, error) {
+	projectFile := project.Source()
+	switch name {
+	case "project":
+		return projectFile.Project, nil
+	case "lock":
+		return projectFile.Lock, nil
 	}
 	return "", nil
 }
