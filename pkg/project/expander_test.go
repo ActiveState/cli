@@ -113,7 +113,7 @@ func TestExpandProjectConstant(t *testing.T) {
 func TestExpandProjectSecret(t *testing.T) {
 	pj := loadProject(t)
 
-	project.RegisterExpander("secrets", func(category string, meta string, isFunction bool, pj *project.Project) (string, error) {
+	project.RegisterExpander("secrets", func(_ string, category string, meta string, isFunction bool, pj *project.Project) (string, error) {
 		if category == project.ProjectCategory {
 			return "proj-value", nil
 		}

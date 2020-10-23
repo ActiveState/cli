@@ -66,11 +66,12 @@ func limitExpandFromProject(depth int, s string, p *Project) (string, error) {
 		}
 		var variable, category, name, meta string
 		var isFunction bool
-
 		variable = groups[0]
-		name = groups[1]
-		category = "toplevel"
 
+		if len(groups) == 2 {
+			category = "toplevel"
+			name = groups[1]
+		}
 		if len(groups) > 2 {
 			category = groups[1]
 			name = groups[2]
@@ -86,7 +87,7 @@ func limitExpandFromProject(depth int, s string, p *Project) (string, error) {
 
 		if expanderFn, foundExpander := expanderRegistry[category]; foundExpander {
 			var err2 error
-			if value, err2 = expanderFn(name, meta, isFunction, p); err2 != nil {
+			if value, err2 = expanderFn(variable, name, meta, isFunction, p); err2 != nil {
 				err = errs.Wrap(err2, "Could not expand %s.%s", category, name)
 				return ""
 			}
@@ -95,7 +96,7 @@ func limitExpandFromProject(depth int, s string, p *Project) (string, error) {
 			return ""
 		}
 
-		if value != "" {
+		if value != "" && value != variable {
 			value, err = limitExpandFromProject(depth+1, value, p)
 		}
 		return value
@@ -107,10 +108,10 @@ func limitExpandFromProject(depth int, s string, p *Project) (string, error) {
 // ExpanderFunc defines an Expander function which can expand the name for a category. An Expander expects the name
 // to be expanded along with the project-file definition. It will return the expanded value of the name
 // or a Failure if expansion was unsuccessful.
-type ExpanderFunc func(name string, meta string, isFunction bool, project *Project) (string, error)
+type ExpanderFunc func(variable, name, meta string, isFunction bool, project *Project) (string, error)
 
 // PlatformExpander expends metadata about the current platform.
-func PlatformExpander(name string, meta string, isFunction bool, project *Project) (string, error) {
+func PlatformExpander(_ string, name string, meta string, isFunction bool, project *Project) (string, error) {
 	projectFile := project.Source()
 	for _, platform := range projectFile.Platforms {
 		if !constraints.PlatformMatches(platform) {
@@ -138,7 +139,7 @@ func PlatformExpander(name string, meta string, isFunction bool, project *Projec
 }
 
 // EventExpander expands events defined in the project-file.
-func EventExpander(name string, meta string, isFunction bool, project *Project) (string, error) {
+func EventExpander(_ string, name string, meta string, isFunction bool, project *Project) (string, error) {
 	projectFile := project.Source()
 	constrained, err := constraints.FilterUnconstrained(pConditional, projectFile.Events.AsConstrainedEntities())
 	if err != nil {
@@ -153,7 +154,7 @@ func EventExpander(name string, meta string, isFunction bool, project *Project) 
 }
 
 // ScriptExpander expands scripts defined in the project-file.
-func ScriptExpander(name string, meta string, isFunction bool, project *Project) (string, error) {
+func ScriptExpander(_ string, name string, meta string, isFunction bool, project *Project) (string, error) {
 	script := project.ScriptByName(name)
 	if script == nil {
 		return "", nil
@@ -194,7 +195,7 @@ func expandPath(name string, script *Script) (string, error) {
 }
 
 // ConstantExpander expands constants defined in the project-file.
-func ConstantExpander(name string, meta string, isFunction bool, project *Project) (string, error) {
+func ConstantExpander(_ string, name string, meta string, isFunction bool, project *Project) (string, error) {
 	projectFile := project.Source()
 	constrained, err := constraints.FilterUnconstrained(pConditional, projectFile.Constants.AsConstrainedEntities())
 	if err != nil {
@@ -208,7 +209,7 @@ func ConstantExpander(name string, meta string, isFunction bool, project *Projec
 	return "", nil
 }
 
-func TopLevelExpander(name string, _ string, _ bool, project *Project) (string, error) {
+func TopLevelExpander(variable string, name string, _ string, _ bool, project *Project) (string, error) {
 	projectFile := project.Source()
 	switch name {
 	case "project":
@@ -216,5 +217,5 @@ func TopLevelExpander(name string, _ string, _ bool, project *Project) (string, 
 	case "lock":
 		return projectFile.Lock, nil
 	}
-	return "", nil
+	return variable, nil
 }
