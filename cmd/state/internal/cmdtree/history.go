@@ -23,7 +23,6 @@ func newHistoryCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("history_title", "Viewing Project History"),
 		locale.T("history_cmd_description"),
 		prime.Output(),
-		[]captain.CommandGroup{},
 		[]*captain.Flag{
 			{
 				Name:        "namespace",
@@ -54,5 +53,5 @@ func newHistoryCommand(prime *primer.Values) *captain.Command {
 			params := history.NewHistoryParams(nsMeta.Owner, nsMeta.Project, prime)
 			return initRunner.Run(&params)
 		},
-	)
+	).SetGroup(VCSGroup)
 }

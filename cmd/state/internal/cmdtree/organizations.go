@@ -17,7 +17,6 @@ func newOrganizationsCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("organizations_title", "Listing Organizations"),
 		locale.T("organizations_description"),
 		prime.Output(),
-		[]captain.CommandGroup{},
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, _ []string) error {
@@ -25,6 +24,7 @@ func newOrganizationsCommand(prime *primer.Values) *captain.Command {
 		},
 	)
 
+	cmd.SetGroup(PlatformGroup)
 	cmd.SetAliases("orgs")
 
 	return cmd

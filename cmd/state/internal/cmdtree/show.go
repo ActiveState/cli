@@ -17,7 +17,6 @@ func newShowCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("show_title", "Showing Project Details"),
 		locale.T("show_project"),
 		prime.Output(),
-		[]captain.CommandGroup{},
 		nil,
 		[]*captain.Argument{
 			{
@@ -29,5 +28,5 @@ func newShowCommand(prime *primer.Values) *captain.Command {
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run(params)
 		},
-	)
+	).SetGroup(EnvironmentGroup)
 }

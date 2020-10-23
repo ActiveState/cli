@@ -17,7 +17,6 @@ func newRunCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("run_title", "Running Script"),
 		locale.T("run_description"),
 		prime.Output(),
-		[]captain.CommandGroup{},
 		nil,
 		[]*captain.Argument{
 			{
@@ -39,6 +38,8 @@ func newRunCommand(prime *primer.Values) *captain.Command {
 			return runner.Run(name, args)
 		},
 	)
+
+	cmd.SetGroup(EnvironmentGroup)
 	cmd.SetDisableFlagParsing(true)
 
 	return cmd

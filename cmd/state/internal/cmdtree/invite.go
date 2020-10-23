@@ -17,7 +17,6 @@ func newInviteCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("invite_title", "Inviting New Members"),
 		locale.Tl("invite_description", "Invite new members to an organization"),
 		prime.Output(),
-		[]captain.CommandGroup{},
 		[]*captain.Flag{
 			{
 				Name:        "organization",
@@ -41,5 +40,5 @@ func newInviteCommand(prime *primer.Values) *captain.Command {
 		func(ccmd *captain.Command, _ []string) error {
 			return inviteRunner.Run(&params)
 		},
-	)
+	).SetGroup(PlatformGroup)
 }

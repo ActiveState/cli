@@ -17,7 +17,6 @@ func newShimCommand(prime *primer.Values, args ...string) *captain.Command {
 		"",
 		locale.T("shim_description"),
 		prime.Output(),
-		[]captain.CommandGroup{},
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
@@ -33,6 +32,8 @@ func newShimCommand(prime *primer.Values, args ...string) *captain.Command {
 	if !strings.Contains(strings.Join(args, " "), " -- ") {
 		cmd.SetDisableFlagParsing(true)
 	}
+
+	cmd.SetGroup(EnvironmentGroup)
 
 	return cmd
 }

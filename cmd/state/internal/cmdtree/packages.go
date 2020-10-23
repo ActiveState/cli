@@ -17,7 +17,6 @@ func newPackagesCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("package_title", "Listing Packages"),
 		locale.T("package_cmd_description"),
 		prime.Output(),
-		[]captain.CommandGroup{},
 		[]*captain.Flag{
 			{
 				Name:        "commit",
@@ -40,6 +39,8 @@ func newPackagesCommand(prime *primer.Values) *captain.Command {
 			return runner.Run(params)
 		},
 	)
+
+	cmd.SetGroup(PackagesGroup)
 	cmd.SetAliases("pkg", "package")
 
 	return cmd
@@ -55,7 +56,6 @@ func newInstallCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("package_install_title", "Installing Package"),
 		locale.T("package_install_cmd_description"),
 		prime.Output(),
-		[]captain.CommandGroup{},
 		[]*captain.Flag{},
 		[]*captain.Argument{
 			{
@@ -68,7 +68,7 @@ func newInstallCommand(prime *primer.Values) *captain.Command {
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run(params)
 		},
-	)
+	).SetGroup(PackagesGroup)
 }
 
 func newUninstallCommand(prime *primer.Values) *captain.Command {
@@ -81,7 +81,6 @@ func newUninstallCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("package_uninstall_title", "Uninstalling Package"),
 		locale.T("package_uninstall_cmd_description"),
 		prime.Output(),
-		[]captain.CommandGroup{},
 		[]*captain.Flag{},
 		[]*captain.Argument{
 			{
@@ -94,7 +93,7 @@ func newUninstallCommand(prime *primer.Values) *captain.Command {
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run(params)
 		},
-	)
+	).SetGroup(PackagesGroup)
 }
 
 func newImportCommand(prime *primer.Values) *captain.Command {
@@ -107,7 +106,6 @@ func newImportCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("package_import_title", "Importing Packages"),
 		locale.T("package_import_cmd_description"),
 		prime.Output(),
-		[]captain.CommandGroup{},
 		[]*captain.Flag{
 			{
 				Name:        "force",
@@ -126,7 +124,7 @@ func newImportCommand(prime *primer.Values) *captain.Command {
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run(*params)
 		},
-	)
+	).SetGroup(PackagesGroup)
 }
 
 func newSearchCommand(prime *primer.Values) *captain.Command {
@@ -139,7 +137,6 @@ func newSearchCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("package_search_title", "Searching Packages"),
 		locale.T("package_search_cmd_description"),
 		prime.Output(),
-		[]captain.CommandGroup{},
 		[]*captain.Flag{
 			{
 				Name:        "language",
@@ -163,5 +160,5 @@ func newSearchCommand(prime *primer.Values) *captain.Command {
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run(params)
 		},
-	)
+	).SetGroup(PackagesGroup)
 }

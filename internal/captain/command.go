@@ -1,11 +1,13 @@
 package captain
 
 import (
+	"bytes"
 	"fmt"
-	"os"
 	"strings"
 	"text/template"
+	"unicode"
 
+	"github.com/gobuffalo/packr"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
@@ -26,13 +28,15 @@ type cobraCommander interface {
 
 type Executor func(cmd *Command, args []string) error
 
+type CommandGroup string
+
 type Command struct {
 	cobra    *cobra.Command
 	commands []*Command
 
 	title string
 
-	groups []CommandGroup
+	group CommandGroup
 
 	flags     []*Flag
 	arguments []*Argument
@@ -47,12 +51,7 @@ type Command struct {
 	out output.Outputer
 }
 
-type CommandGroup struct {
-	Message  string
-	Commands []string
-}
-
-func NewCommand(name, title, description string, out output.Outputer, groups []CommandGroup, flags []*Flag, args []*Argument, executor Executor) *Command {
+func NewCommand(name, title, description string, out output.Outputer, flags []*Flag, args []*Argument, executor Executor) *Command {
 	// Validate args
 	for idx, arg := range args {
 		if idx > 0 && arg.Required && !args[idx-1].Required {
@@ -68,7 +67,6 @@ func NewCommand(name, title, description string, out output.Outputer, groups []C
 		title:     title,
 		execute:   executor,
 		arguments: args,
-		groups:    groups,
 		flags:     flags,
 		commands:  make([]*Command, 0),
 		out:       out,
@@ -95,7 +93,14 @@ func NewCommand(name, title, description string, out output.Outputer, groups []C
 		panic(err)
 	}
 
-	cmd.SetUsageFunc(defaultUsageFunc(cmd))
+	cmd.cobra.SetUsageFunc(func(c *cobra.Command) error {
+		err := cmd.Usage()
+		if err != nil {
+			// Cobra doesn't return this error for us, so we have to ensure it's logged
+			logging.Error("Error while running usage: %v", err)
+		}
+		return err
+	})
 
 	cobraMapping[cmd.cobra] = cmd
 	return cmd
@@ -166,17 +171,11 @@ func NewShimCommand(name, description string, executor Executor) *Command {
 		RunE:               cmd.runner,
 	}
 
-	cmd.SetUsageTemplate("usage_tpl")
-
 	return cmd
 }
 
 func (c *Command) Use() string {
 	return c.cobra.Use
-}
-
-func (c *Command) Usage() error {
-	return c.cobra.Usage()
 }
 
 func (c *Command) UsageText() string {
@@ -218,14 +217,6 @@ func (c *Command) SetDescription(description string) {
 	c.cobra.Short = description
 }
 
-func (c *Command) SetUsageFunc(usage func(c *cobra.Command) error) {
-	c.cobra.SetUsageFunc(usage)
-}
-
-func (c *Command) SetUsageTemplate(usageTemplate string) {
-	c.cobra.SetUsageTemplate(localizedTemplate(c, usageTemplate))
-}
-
 func (c *Command) SetDisableFlagParsing(b bool) {
 	c.cobra.DisableFlagParsing = b
 }
@@ -254,8 +245,15 @@ func (c *Command) Arguments() []*Argument {
 	return c.arguments
 }
 
-func (c *Command) CommandGroups() []CommandGroup {
-	return c.groups
+// SetGroup sets the group this command belongs to. This defaults to empty, meaning the command is ungrouped.
+// Realistically only top level commands really need a group.
+func (c *Command) SetGroup(group CommandGroup) *Command {
+	c.group = group
+	return c
+}
+
+func (c *Command) Group() CommandGroup {
+	return c.group
 }
 
 func (c *Command) SkipChecks() bool {
@@ -456,11 +454,51 @@ func setupSensibleErrors(err error) error {
 	return err
 }
 
-func defaultUsageFunc(cmd *Command) func(c *cobra.Command) error {
-	return func(c *cobra.Command) error {
-		tpl := template.New("usage_tpl")
-		tpl.Funcs(templateFuncs(cmd))
-		template.Must(tpl.Parse(localizedTemplate(cmd, "usage_tpl")))
-		return tpl.Execute(os.Stdout, c)
+func (cmd *Command) Usage() error {
+	tpl := template.New("usage")
+	tpl.Funcs(template.FuncMap{
+		"Group": func() string { return string(cmd.group) },
+		"Find":  func(name string) *Command { return cmd.FindSafe([]string{name}) },
+
+		// template functions inherited from cobra
+		"rpad": func(s string, padding int) string {
+			template := fmt.Sprintf("%%-%ds", padding)
+			return fmt.Sprintf(template, s)
+		},
+		"trimTrailingWhitespaces": func(s string) string {
+			return strings.TrimRightFunc(s, unicode.IsSpace)
+		},
+	})
+
+	box := packr.NewBox("../../assets")
+
+	var err error
+	if tpl, err = tpl.Parse(box.String("usage.tpl")); err != nil {
+		return errs.Wrap(err, "Could not parse template")
 	}
+
+	localizedArgs := []map[string]string{}
+	for _, arg := range cmd.Arguments() {
+		req := ""
+		if arg.Required {
+			req = "1"
+		}
+		localizedArgs = append(localizedArgs, map[string]string{
+			"Name":        arg.Name,
+			"Description": arg.Description,
+			"Required":    req,
+		})
+	}
+
+	var out bytes.Buffer
+	if err := tpl.Execute(&out, map[string]interface{}{
+		"Cmd":   cmd,
+		"Cobra": cmd.cobra,
+	}); err != nil {
+		return errs.Wrap(err, "Could not execute template")
+	}
+
+	cmd.out.Print(out.String())
+
+	return nil
 }

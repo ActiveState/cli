@@ -21,7 +21,6 @@ func newActivateCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("activate_title", "Activating Your Runtime"),
 		locale.T("activate_project"),
 		prime.Output(),
-		[]captain.CommandGroup{},
 		[]*captain.Flag{
 			{
 				Name:        "path",
@@ -72,6 +71,7 @@ func newActivateCommand(prime *primer.Values) *captain.Command {
 			return runner.Run(&params)
 		},
 	)
+	cmd.SetGroup(EnvironmentGroup)
 	cmd.SetDeferAnalytics(true)
 	return cmd
 }

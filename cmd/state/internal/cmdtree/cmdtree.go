@@ -135,6 +135,15 @@ type globalOptions struct {
 	Monochrome bool
 }
 
+var (
+	PackagesGroup    = captain.CommandGroup(locale.Tl("group_packages", "Package Management"))
+	EnvironmentGroup = captain.CommandGroup(locale.Tl("group_environment", "Environment Management"))
+	PlatformGroup    = captain.CommandGroup(locale.Tl("group_tools", "Platform"))
+	AutomationGroup  = captain.CommandGroup(locale.Tl("group_automation", "Automation"))
+	VCSGroup         = captain.CommandGroup(locale.Tl("group_vcs", "Version Control"))
+	UtilsGroup       = captain.CommandGroup(locale.Tl("group_utils", "Utilities"))
+)
+
 func newGlobalOptions() *globalOptions {
 	return &globalOptions{}
 }
@@ -148,55 +157,6 @@ func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Comm
 		"",
 		locale.T("state_description"),
 		prime.Output(),
-		[]captain.CommandGroup{
-			{
-				Message:  locale.Tl("packages_group_message", "Package Management"),
-				Commands: []string{"packages"},
-			},
-			{
-				Message: locale.Tl("environment_group_message", "Environment Management"),
-				Commands: []string{
-					"activate",
-					"init",
-					"clean",
-					"deploy",
-				},
-			},
-			{
-				Message: locale.Tl("platform_group_messages", "Platform Tools"),
-				Commands: []string{
-					"auth",
-					"invite",
-					"organizations",
-					"platforms",
-					"projects",
-					"show",
-				},
-			},
-			{
-				Message: locale.Tl("automation_group_messages", "Automation"),
-				Commands: []string{
-					"events",
-					"scripts",
-				},
-			},
-			{
-				Message: locale.Tl("version_control_group_messages", "Version Control"),
-				Commands: []string{
-					"fork",
-					"pull",
-					"push",
-					"history",
-				},
-			},
-			{
-				Message: locale.Tl("utilities_group_message", "Utilities"),
-				Commands: []string{
-					"update",
-					"export",
-				},
-			},
-		},
 		[]*captain.Flag{
 			{
 				Name:        "locale",
@@ -289,7 +249,6 @@ func (a *addCmdAs) deprecatedAlias(aliased *captain.Command, name string) {
 		aliased.Title(),
 		aliased.Description(),
 		a.prime.Output(),
-		aliased.CommandGroups(),
 		aliased.Flags(),
 		aliased.Arguments(),
 		func(c *captain.Command, args []string) error {

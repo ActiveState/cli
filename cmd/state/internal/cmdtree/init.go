@@ -20,7 +20,6 @@ func newInitCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("init_title", "Initializing Project"),
 		locale.T("init_description"),
 		prime.Output(),
-		[]captain.CommandGroup{},
 		[]*captain.Flag{
 			{
 				Name:        "path",
@@ -66,5 +65,5 @@ func newInitCommand(prime *primer.Values) *captain.Command {
 		func(ccmd *captain.Command, _ []string) error {
 			return initRunner.Run(&params)
 		},
-	)
+	).SetGroup(EnvironmentGroup)
 }
