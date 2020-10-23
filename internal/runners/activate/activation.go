@@ -9,6 +9,7 @@ import (
 	"syscall"
 
 	"github.com/ActiveState/cli/internal/fileevents"
+	"github.com/ActiveState/cli/internal/headless"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -20,7 +21,7 @@ import (
 
 func (r *Activate) activateAndWait(proj *project.Project, runtime *runtime.Runtime) error {
 	logging.Debug("Activating and waiting")
-	
+
 	err := os.Chdir(filepath.Dir(proj.Source().Path()))
 	if err != nil {
 		return err
@@ -52,7 +53,7 @@ func (r *Activate) activateAndWait(proj *project.Project, runtime *runtime.Runti
 
 	r.subshell.SetEnv(ve)
 	if fail = r.subshell.Activate(r.out); fail != nil {
-		return locale.WrapError(err, "error_could_not_activate_subshell", "Could not activate a new subshell.")
+		return locale.WrapError(fail, "error_could_not_activate_subshell", "Could not activate a new subshell.")
 	}
 
 	fe, err := fileevents.New(proj)
@@ -60,6 +61,8 @@ func (r *Activate) activateAndWait(proj *project.Project, runtime *runtime.Runti
 		return locale.WrapError(err, "err_activate_fileevents", "Could not start file event watcher.")
 	}
 	defer fe.Close()
+
+	headless.Notify(r.out, proj, nil, "activate")
 
 	fail = <-r.subshell.Failures()
 	if fail != nil {

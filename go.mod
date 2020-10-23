@@ -5,7 +5,6 @@ go 1.12
 require (
 	cloud.google.com/go v0.64.0
 	github.com/ActiveState/archiver v3.1.1+incompatible
-	github.com/ActiveState/go-colortext v0.0.0-20190402165444-9cd201a66eb0
 	github.com/ActiveState/go-ogle-analytics v0.0.0-20170510030904-9b3f14901527
 	github.com/ActiveState/sysinfo v0.0.0-20200619170619-0582d42daf27
 	github.com/ActiveState/termtest v0.5.5
@@ -78,8 +77,6 @@ require (
 	github.com/pkg/errors v0.8.1
 	github.com/posener/wstest v0.0.0-20180216222922-04b166ca0bf1
 	github.com/rollbar/rollbar-go v1.1.0
-	github.com/sacOO7/go-logger v0.0.0-20180719173527-9ac9add5a50d // indirect
-	github.com/sacOO7/gowebsocket v0.0.0-20180719182212-1436bb906a4e // indirect
 	github.com/shibukawa/configdir v0.0.0-20170330084843-e180dbdc8da0
 	github.com/shirou/gopsutil v2.19.12+incompatible
 	github.com/skratchdot/open-golang v0.0.0-20190104022628-a2dfa6d0dab6

@@ -86,9 +86,9 @@ func DefaultLanguageForProject(orgName, projectName string) (Language, *failures
 	return languages[0], nil
 }
 
-// DefaultLanguageNameForProject fetches the name of the default language belonging to the given project
-func DefaultLanguageNameForProject(orgName, projectName string) (string, *failures.Failure) {
-	languages, fail := FetchLanguagesForProject(orgName, projectName)
+// LanguageForCommit fetches the name of the language belonging to the given commit
+func LanguageForCommit(commitID strfmt.UUID) (string, *failures.Failure) {
+	languages, fail := FetchLanguagesForCommit(commitID)
 	if fail != nil {
 		return "", fail
 	}

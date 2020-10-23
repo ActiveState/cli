@@ -49,7 +49,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
 	cp := ts.Spawn("activate", "ActiveState-CLI/Python3")
 	cp.Expect("Where would you like to checkout")
 	cp.SendLine(cp.WorkDirectory())
-	cp.Expect("activated state", 20*time.Second)
+	cp.Expect("You're Activated", 20*time.Second)
 	cp.WaitForInput(10 * time.Second)
 
 	cp.SendLine("exit 123")
@@ -64,7 +64,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateUsingCommitID() {
 	cp := ts.Spawn("activate", "ActiveState-CLI/Python3#6d9280e7-75eb-401a-9e71-0d99759fbad3")
 	cp.Expect("Where would you like to checkout")
 	cp.SendLine(cp.WorkDirectory())
-	cp.Expect("activated state", 20*time.Second)
+	cp.Expect("You're Activated", 20*time.Second)
 	cp.WaitForInput(10 * time.Second)
 
 	cp.SendLine("exit")
@@ -79,6 +79,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateNotOnPath() {
 	cp := ts.Spawn("activate", "ActiveState-CLI/Python3")
 	cp.Expect("Where would you like to checkout")
 	cp.SendLine(cp.WorkDirectory())
+	cp.Expect("You're Activated", 20*time.Second)
 	cp.WaitForInput(10 * time.Second)
 
 	if runtime.GOOS == "windows" {
@@ -250,6 +251,36 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
 	cp.SendLine("ppm")
 	cp.Expect("Your command is being forwarded to `state packages`.")
 
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
+}
+
+func (suite *ActivateIntegrationTestSuite) TestActivate_Replace() {
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("activate", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work),
+	)
+	cp.Expect("Activating state: ActiveState-CLI/Python3")
+
+	cp.WaitForInput()
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("activate", "ActiveState/ActivePerl-5.26", "--replace"),
+		e2e.WithWorkDirectory(ts.Dirs.Bin),
+	)
+	cp.ExpectLongString("No activestate.yaml file exists in the current working directory or its parent directories.")
+	cp.ExpectExitCode(1)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("activate", "ActiveState/ActivePerl-5.26", "--replace"),
+	)
+	cp.Expect("Activating state: ActiveState/ActivePerl-5.26")
+
+	cp.WaitForInput()
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 }

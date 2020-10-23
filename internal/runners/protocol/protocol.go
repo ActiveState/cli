@@ -46,5 +46,5 @@ func (p *Protocol) Run(params Params) error {
 		return locale.NewError("err_protocol_flag", "Invalid URL fragment, the only supported URL fragment is 'replace'")
 	}
 
-	return runbits.InvokeSilent("activate", namespace.String(), fmt.Sprintf("--%s", parsed.Fragment))
+	return runbits.InvokeSilent("activate", fmt.Sprintf("--%s", parsed.Fragment), namespace.String())
 }

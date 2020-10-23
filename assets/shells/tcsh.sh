@@ -22,4 +22,8 @@ alias {{$K}} '{{$.ExecName}} run {{$CMD}}'
 
 cd "{{.WD}}"
 
+echo "{{.ActivateEventMessage}}"
+
 {{.UserScripts}}
+
+echo "{{.ActivatedMessage}}"

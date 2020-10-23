@@ -14,6 +14,7 @@ import (
 	"github.com/mash/go-tempfile-suffix"
 	"github.com/spf13/viper"
 
+	"github.com/ActiveState/cli/internal/colorize"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
@@ -22,6 +23,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/output/txtstyle"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -196,7 +198,8 @@ func SetupProjectRcFile(templateName, ext string, env map[string]string, out out
 	}
 
 	if len(inuse) > 0 {
-		out.Notice(locale.Tr("warn_script_name_in_use", strings.Join(inuse, "\n  - "), inuse[0], prj.NormalizedName(), explicitName))
+		out.Notice(output.Heading(locale.Tl("warn_scriptinuse_title", "Warning: Script Names Already In Use")))
+		out.Notice(locale.Tr("warn_script_name_in_use", strings.Join(inuse, "\n  [DISABLED]-[/RESET] "), inuse[0], explicitName))
 	}
 
 	wd, err := osutils.Getwd()
@@ -204,14 +207,26 @@ func SetupProjectRcFile(templateName, ext string, env map[string]string, out out
 		return nil, failures.FailMisc.Wrap(err, locale.Tr("err_subshell_wd", "Could not get working directory."))
 	}
 
+	isConsole := ext == ".bat" // yeah this is a dirty cheat, should find something more deterministic
+
+	activatedMessage := txtstyle.NewTitle(locale.Tl("youre_activated", "You're Activated!"))
+	activatedMessage.ColorCode = "SUCCESS"
+
+	var activateEvtMessage string
+	if userScripts != "" {
+		activateEvtMessage = output.Heading(locale.Tl("activate_event_message", "Running Activation Events")).String()
+	}
+
 	rcData := map[string]interface{}{
-		"Owner":       prj.Owner(),
-		"Name":        prj.Name(),
-		"Env":         env,
-		"WD":          wd,
-		"UserScripts": userScripts,
-		"Scripts":     scripts,
-		"ExecName":    constants.CommandName,
+		"Owner":                prj.Owner(),
+		"Name":                 prj.Name(),
+		"Env":                  env,
+		"WD":                   wd,
+		"UserScripts":          userScripts,
+		"Scripts":              scripts,
+		"ExecName":             constants.CommandName,
+		"ActivatedMessage":     colorize.ColorizedOrStrip(activatedMessage.String(), isConsole),
+		"ActivateEventMessage": colorize.ColorizedOrStrip(activateEvtMessage, isConsole),
 	}
 
 	currExecAbsPath, err := osutils.Executable()

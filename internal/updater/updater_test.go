@@ -12,10 +12,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/ActiveState/cli/internal/colorize"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 	"github.com/ActiveState/cli/internal/testhelpers/updatemocks"
@@ -67,7 +67,7 @@ func TestPrintUpdateMessage(t *testing.T) {
 	out := outputhelper.NewCatcher()
 	PrintUpdateMessage(configPathWithVersion, out)
 
-	assert.Contains(t, out.CombinedOutput(), output.StripColorCodes(locale.Tr("update_available", constants.Version, "1.2.3-456")), "Should print an update message")
+	assert.Contains(t, out.CombinedOutput(), colorize.StripColorCodes(locale.Tr("update_available", constants.Version, "1.2.3-456")), "Should print an update message")
 }
 
 func TestPrintUpdateMessageEmpty(t *testing.T) {

@@ -6,33 +6,39 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/project"
 )
 
 type Languages struct {
-	out output.Outputer
+	out     output.Outputer
+	project *project.Project
 }
 
-func NewLanguages(prime primer.Outputer) *Languages {
+type primeable interface {
+	primer.Outputer
+	primer.Projecter
+}
+
+func NewLanguages(prime primeable) *Languages {
 	return &Languages{
-		out: prime.Output(),
+		prime.Output(),
+		prime.Project(),
 	}
-}
-
-type LanguagesParams struct {
-	owner       string
-	projectName string
-}
-
-func NewLanguagesParams(owner, projectName string) LanguagesParams {
-	return LanguagesParams{owner, projectName}
 }
 
 type Listing struct {
 	Languages []model.Language `json:"languages"`
 }
 
-func (l *Languages) Run(params *LanguagesParams) error {
-	langs, err := model.FetchLanguagesForProject(params.owner, params.projectName)
+func (l Listing) MarshalOutput(f output.Format) interface{} {
+	if f == output.PlainFormatName {
+		return l.Languages
+	}
+	return l
+}
+
+func (l *Languages) Run() error {
+	langs, err := model.FetchLanguagesForCommit(l.project.CommitUUID())
 	if err != nil {
 		return err
 	}

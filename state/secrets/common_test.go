@@ -24,5 +24,10 @@ scripts:
 		return nil, err
 	}
 
+	fail := project.Init()
+	if fail != nil {
+		return nil, fail.ToError()
+	}
+
 	return project, nil
 }

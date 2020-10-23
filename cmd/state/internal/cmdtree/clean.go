@@ -23,7 +23,7 @@ func newCleanCommand(prime *primer.Values) *captain.Command {
 	)
 }
 
-func newUninstallCommand(prime *primer.Values) *captain.Command {
+func newCleanUninstallCommand(prime *primer.Values) *captain.Command {
 	params := clean.UninstallParams{}
 	return captain.NewCommand(
 		"uninstall",
@@ -51,7 +51,7 @@ func newUninstallCommand(prime *primer.Values) *captain.Command {
 	)
 }
 
-func newCacheCommand(prime *primer.Values) *captain.Command {
+func newCleanCacheCommand(prime *primer.Values) *captain.Command {
 	runner := clean.NewCache(prime)
 	params := clean.CacheParams{}
 	return captain.NewCommand(
@@ -82,7 +82,7 @@ func newCacheCommand(prime *primer.Values) *captain.Command {
 	)
 }
 
-func newConfigCommand(prime *primer.Values) *captain.Command {
+func newCleanConfigCommand(prime *primer.Values) *captain.Command {
 	runner := clean.NewConfig(prime)
 	params := clean.ConfigParams{}
 	return captain.NewCommand(

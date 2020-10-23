@@ -28,6 +28,7 @@ type Activate struct {
 	activateCheckout *Checkout
 	out              output.Outputer
 	config           configAble
+	proj             *project.Project
 	subshell         subshell.SubShell
 }
 
@@ -35,11 +36,13 @@ type ActivateParams struct {
 	Namespace     *project.Namespaced
 	PreferredPath string
 	Command       string
+	ReplaceWith   *project.Namespaced
 	Default       bool
 }
 
 type primeable interface {
 	primer.Outputer
+	primer.Projecter
 	primer.Subsheller
 	primer.Prompter
 }
@@ -50,6 +53,7 @@ func NewActivate(prime primeable) *Activate {
 		NewCheckout(git.NewRepo(), prime),
 		prime.Output(),
 		viper.GetViper(),
+		prime.Project(),
 		prime.Subshell(),
 	}
 }
@@ -91,6 +95,12 @@ func (r *Activate) run(params *ActivateParams) error {
 		}
 	}
 
+	// on --replace, replace namespace and commit id in as.yaml
+	if params.ReplaceWith.IsValid() {
+		if err := updateProjectFile(proj, params.ReplaceWith); err != nil {
+			return locale.WrapError(err, "err_activate_replace_write", "Could not update the project file with a new namespace.")
+		}
+	}
 	proj.Source().Persist()
 
 	// Send google analytics event with label set to project namespace
@@ -111,9 +121,9 @@ func (r *Activate) run(params *ActivateParams) error {
 	updater.PrintUpdateMessage(proj.Source().Path(), r.out)
 
 	if proj.IsHeadless() {
-		r.out.Notice(locale.T("info_activating_state_by_commit"))
+		r.out.Notice(output.Heading(locale.T("info_activating_state_by_commit")))
 	} else {
-		r.out.Notice(locale.T("info_activating_state", proj))
+		r.out.Notice(output.Heading(locale.T("info_activating_state", proj)))
 	}
 
 	if proj.CommitID() == "" {
@@ -128,6 +138,30 @@ func (r *Activate) run(params *ActivateParams) error {
 		r.out.Notice(locale.T("info_deactivated_by_commit"))
 	} else {
 		r.out.Notice(locale.T("info_deactivated", proj))
+	}
+
+	return nil
+}
+
+func updateProjectFile(prj *project.Project, names *project.Namespaced) error {
+	var commitID string
+	if names.CommitID == nil || *names.CommitID == "" {
+		latestID, fail := model.LatestCommitID(names.Owner, names.Project)
+		if fail != nil {
+			return locale.WrapInputError(fail.ToError(), "err_set_namespace_retrieve_commit", "Could not retrieve the latest commit for the specified project {{.V0}}.", names.String())
+		}
+		commitID = latestID.String()
+	} else {
+		commitID = names.CommitID.String()
+	}
+
+	err := prj.Source().SetNamespace(names.Owner, names.Project)
+	if err != nil {
+		return locale.WrapError(err, "err_activate_replace_write_namespace", "Failed to update project namespace.")
+	}
+	fail := prj.Source().SetCommit(commitID, prj.IsHeadless())
+	if fail != nil {
+		return locale.WrapError(fail.ToError(), "err_activate_replace_write_commit", "Failed to update commitID.")
 	}
 
 	return nil

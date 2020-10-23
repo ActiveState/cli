@@ -114,12 +114,10 @@ error_unsupported_shell:
   other: "You are using an unsupported shell: {{.Shell}}"
 err_output_flag_value_invalid:
   other: Could not recognize output type
-info_reactivating:
-  other: "[INFO]Reactivating state[/RESET]"
 info_deactivated:
-  other: "[INFO]Deactivated {{.Owner}}/{{.Name}}[/RESET]"
+  other: "[DISABLED]Deactivated {{.Owner}}/{{.Name}}[/RESET]"
 info_deactivated_by_commit:
-  other: "[INFO]Deactivated[/RESET]"
+  other: "[DISABLED]Deactivated[/RESET]"
 venv_installer_is_nil:
   other: Provided installer should not be nil
 error_unsupported_language:
@@ -173,9 +171,9 @@ err_artifact_no_parent:
 err_invalid_status_code:
   other: "Invalid status code: {{.V0}}"
 info_activating_state:
-  other: "[INFO]Activating state: {{.Owner}}/{{.Name}}[/RESET]"
+  other: "Activating state: {{.Owner}}/{{.Name}}"
 info_activating_state_by_commit:
-  other: "[INFO]Activating state[/RESET]"
+  other: "Activating state"
 info_state_active_repoexists:
   other: "Repo already exists: {{.Path}}"
 panic_couldnt_detect_wd:
@@ -477,7 +475,7 @@ error_state_run_undefined_name:
 error_state_run_unknown_name:
   other: The script '{{.Name}}' is not defined in activestate.yaml.
 info_state_run_activating_state:
-  other: "[INFO]This script requires an activated state. Activating it now. To bypass this set `standalone: true` on this script in your activestate.yaml.[/RESET]"
+  other: "[NOTICE]This script requires an activated state. Activating it now. To bypass this set `standalone: true` on this script in your activestate.yaml.[/RESET]"
 error_state_run_activate:
   other: Unable to activate a state for running the script in. Try manually running "state activate" first.
 error_state_run_standalone_conflict:
@@ -487,7 +485,7 @@ error_state_run_unknown_exec:
 error_state_run_setup_scriptfile:
   other: Cannot setup runnable on-disk script file.
 info_state_run_running:
-  other: "[INFO]Running user-defined script: {{.V0}}\nDefined in {{.V1}}[/RESET]"
+  other: "[NOTICE]Running user-defined script: {{.V0}}\nDefined in {{.V1}}[/RESET]"
 error_state_run_error:
   other: Failed to run script.
 error_state_run_no_shell:
@@ -761,13 +759,13 @@ err_command_requires_auth:
   other: You need to be authenticated to run this command. Authenticate by running `state auth`.
 warn_script_name_in_use:
   other: |
-    [NOTICE]The following script names are already in use:
+    The following scripts should be renamed:
 
-      - {{.V0}}
+      [DISABLED]-[/RESET] {{.V0}}
 
-    These scripts were not aliased during activation but can still be run using `state run`, eg. `state run {{.V1}}`.
+    These scripts were not aliased during activation but can still be run using `[ACTIONABLE]state run[/RESET]`, eg. `[ACTIONABLE]state run {{.V1}}[/RESET]`.
 
-    Note that you can also access scripts by prefixing their script with your project name ({{.V2}}), eg. `{{.V3}}`[/RESET]
+    Note that you can also access scripts by prefixing their script with your project name, eg. `[ACTIONABLE]{{.V2}}[/RESET]`
 
 warn_move_incompatible_modes:
   other: "Permissions of files {{.V0}} and {{.V1}} differ. Using permissions of {{.V0}}"
@@ -788,7 +786,7 @@ err_invalid_version:
 err_update_version:
   other: "Failed to automatically update your locked version schema. Please manually remove your 'version' and 'branch' fields in your activestate.yaml and substitute them for 'lock: <branch>@<version>'."
 downloading_state_version:
-  other: "[INFO]Downloading State Tool version {{.V0}}, as specified by your activestate.yaml (this only needs to happen once for each version you specify).[/RESET]"
+  other: "[NOTICE]Downloading State Tool version {{.V0}}, as specified by your activestate.yaml (this only needs to happen once for each version you specify).[/RESET]"
 forward_fail:
   other: Could not forward command to the appropriate State Tool version
 forward_fail_with_error:
@@ -797,18 +795,18 @@ forward_fail_info:
   other: The requested version of the State Tool does not exist, please ensure the version and branch are correct.
 update_available:
   other: |
-    [INFO]A new update is available!
+    [NOTICE]A new update is available!
 
     Your version: {{.V0}}
     Available Version: {{.V1}}
 
     You can update by running `state update`[/RESET]
 runtime_update_notice_known_count:
-  other: "[INFO]Your activestate.yaml is {{.V0}} commits behind.[/RESET]"
+  other: "[NOTICE]Your activestate.yaml is {{.V0}} commits behind.[/RESET]"
 runtime_update_notice_unknown_count:
-  other: "[INFO]Your activestate.yaml is behind.[/RESET]"
+  other: "[NOTICE]Your activestate.yaml is behind.[/RESET]"
 runtime_update_help:
-  other: "[INFO]Run `state pull` to pull in the latest runtime environment as defined in your project on https://platform.activestate.com/{{.V0}}/{{.V1}}[/RESET]"
+  other: "[NOTICE]Run `state pull` to pull in the latest runtime environment as defined in your project on https://platform.activestate.com/{{.V0}}/{{.V1}}[/RESET]"
 err_no_credentials:
   other: Cannot authenticate without credentials
 err_token_list:
@@ -932,7 +930,7 @@ activate_namespace_location:
   other: Where would you like to checkout {{.V0}}?
 warn_deprecation:
   other: |
-    [NOTICE]You are running a deprecated version of the State Tool. This version will stop working as of {{.V0}}. 
+    [NOTICE]You are running a deprecated version of the State Tool. This version will stop working as of {{.V0}}.
 
     Reason for deprecation: 
       {{.V1}}
@@ -995,7 +993,7 @@ export_config_flag_filter_description:
 export_config_dir_description:
   other: Export the config directory details
 export_apikey_user_notice:
-  other: "[INFO]Note that this key is not stored by ActiveState. Please store the value for later use as you cannot retrieve it again.[/RESET]"
+  other: "Note that this key is not stored by ActiveState. Please store the value for later use as you cannot retrieve it again."
 err_apikey_name_required:
   other: An API key name is required.
 err_cannot_obtain_apikey:
@@ -1035,9 +1033,9 @@ commit_message_add_language:
 commit_message_removed_language:
   other: "Removed language: {{.V0}} {{.V1}}"
 downloading_artifacts:
-  other: "[INFO]Downloading required artifacts[/RESET]"
+  other: "Downloading required artifacts"
 installing_artifacts:
-  other: "[INFO]Installing required artifacts[/RESET]"
+  other: "Installing required artifacts"
 fileutils_err_ammend_file:
   other: "Could not edit file: '{{.V0}}'"
 err_auth_empty_token:
@@ -1170,13 +1168,13 @@ package_cmd_description:
   other: Manage packages used in your project
 users_plural:
   other: users
-package_add_cmd_description:
+package_install_cmd_description:
   other: Add a new package to your project
 package_list_cmd_description:
   other: List the packages currently used by this project
 package_update_cmd_description:
   other: Update a package in your project to the latest available version
-package_remove_cmd_description:
+package_uninstall_cmd_description:
   other: Remove a package from your project
 package_import_cmd_description:
   other: Import packages from a list of dependencies
@@ -1260,6 +1258,14 @@ package_version_updated:
   other: "Package updated: {{.V0}}@{{.V1}}"
 package_ingredient_err:
   other: Failed to resolve an ingredient named {{.V0}}.
+package_headless_added:
+  other: "Package added: {{.V0}}"
+package_headless_updated:
+  other: "Package updated: {{.V0}}"
+package_headless_removed:
+  other: "Package removed: {{.V0}}"
+package_headless_project_creation:
+  other: "For additional features like sharing your runtime, version control and much more, create a project from your commit at https://platform.activestate.com/commit/{{.V0}}."
 err_package_removed:
   other: Failed to remove package
 err_packages_removed:
@@ -1458,21 +1464,21 @@ err_order_bad_request:
 err_order_unknown:
   other: Unknown error resolving order"
 using_cached_env:
-  other: "[INFO]Reusing cached runtime environment[/RESET]"
+  other: "Reusing cached runtime environment"
 update_attempt:
   other: |
-    [INFO]Updating state tool:  Downloading latest version of the state tool...[/RESET]
+    Updating state tool:  Downloading latest version of the state tool...
 auto_update_to_version:
   other: |
-    [INFO]Updated from {{.V0}} to {{.V1}}[/RESET].
-    [INFO]To avoid auto updating run 'state update --lock' (only recommended for production environments).[/RESET]
+    Updated from [NOTICE]{{.V0}}[/RESET] to [NOTICE]{{.V1}}[/RESET].
+    To avoid auto updating run 'state update --lock' (only recommended for production environments).
 auto_update_permission_err:
   other: |
     Could not update to the latest available version of the state tool due to insufficient permissions.
     To manually update, run 'state update' as a privileged user.
     If you want the state tool to auto-update, please re-install it in a user-writable directory.
 forward_version:
-  other: "[INFO]Using locked state tool version {{.V0}}[/RESET]."
+  other: "Using locked state tool version: [NOTICE]{{.V0}}[/RESET]."
 err_project_env_file_not_exist:
   other: |
     Your activated environment appears to have been corrupted because the activestate.yaml cannot be found anymore.
@@ -1497,16 +1503,16 @@ err_deploy_run_install:
 err_deploy_path_noperm:
   other: "No permission to create symlinks on any of the PATH entries: {{.V0}}"
 deploy_install:
-  other: "[INFO]Installing Runtime Environment[/RESET]"
+  other: "Installing Runtime Environment"
 deploy_configure_shell:
-  other: "[INFO]Configuring shell: {{.V0}} (set the SHELL environment variable to use a different shell)[/RESET]"
+  other: "Configuring shell: {{.V0}}"
 deploy_symlink:
-  other: "[INFO]Symlinking executables to: {{.V0}}[/RESET]"
+  other: "Symlinking executables to: {{.V0}}"
 deploy_overwrite_target:
   other: "Overwriting existing target: {{.V0}}"
 deploy_info:
   other: |
-    [INFO]Deployment Information:[/RESET]
+    [NOTICE]Deployment Information:[/RESET]
     This information is provided for your reference, for most common use-cases you do not need to do anything with this.
 deploy_cmd_description:
   other: |
@@ -1719,7 +1725,18 @@ prepare_instructions_windows:
   other: "To add the global installations directory to your environment please add the path `{{.V0}}` to your user PATH in the System Properties dialog"
 prepare_env_warning:
   other: Could not update user environment
-prepare_protocol_warning:
-  other: Could not add state protocol
+prompt_headless_anonymous:
+  other: |
+    You're about to add packages as an anonymous user, you might
+    want to authenticate first using `state auth` if you already have
+    an account. Do you want to continue as an anonymous user?
 err_package_update_pjfile:
   other: "Could not update your activestate.yaml with the new commit ID. Please run `state pull` manually."
+prepare_protocol_warning:
+  other: Could not add state protocol
+message_headless:
+  other: "You're currently using this tool anonymously. Sign-up for an account on the ActiveState Platform to create your own version of this project that lets you fully customize, share with a team, versioned backup, and more. Visit https://platform.activestate.com to sign up."
+message_headless_packages:
+  other: "You've modified this project, and will be able to continue to do so locally. Converting your changes into a project on the ActiveState Platform can make your changes available on any machine."
+message_headless_activate:
+  other: "Now that your project is activated -- if you ever need to add or remove packages, you can do so with `state package add`. Type `state package --help` for more info, or `state learn` for common commands."

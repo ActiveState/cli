@@ -293,7 +293,7 @@ func (c *Command) AddFlag(flag *Flag) error {
 	case TypeBool:
 		flagSetter().BoolVarP(flag.BoolVar, flag.Name, flag.Shorthand, flag.BoolValue, T(flag.Description))
 	default:
-		return failures.FailInput.New("Unknown type:" + string(flag.Type))
+		return failures.FailInput.New("Unknown type:" + fmt.Sprint(flag.Type))
 	}
 
 	return nil

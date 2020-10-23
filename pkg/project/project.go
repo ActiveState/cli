@@ -41,9 +41,6 @@ func RegisterConditional(conditional *constraints.Conditional) {
 // Project covers the platform structure
 type Project struct {
 	projectfile *projectfile.Project
-	owner       string
-	name        string
-	commitID    string
 	output.Outputer
 	prompt.Prompter
 }
@@ -189,41 +186,14 @@ func (p *Project) URL() string {
 	return p.projectfile.Project
 }
 
-type urlMeta struct {
-	owner    string
-	name     string
-	commitID string
-}
-
-func parseURL(url string) (urlMeta, *failures.Failure) {
-	fail := projectfile.ValidateProjectURL(url)
-	if fail != nil {
-		return urlMeta{}, fail
-	}
-
-	match := projectfile.CommitURLRe.FindStringSubmatch(url)
-	if len(match) > 1 {
-		parts := urlMeta{"", "", match[1]}
-		return parts, nil
-	}
-
-	match = projectfile.ProjectURLRe.FindStringSubmatch(url)
-	parts := urlMeta{match[1], match[2], ""}
-	if len(match) == 4 {
-		parts.commitID = match[3]
-	}
-
-	return parts, nil
-}
-
 // Owner returns project owner
 func (p *Project) Owner() string {
-	return p.owner
+	return p.projectfile.Owner()
 }
 
 // Name returns project name
 func (p *Project) Name() string {
-	return p.name
+	return p.projectfile.Name()
 }
 
 func (p *Project) Private() bool {
@@ -232,12 +202,12 @@ func (p *Project) Private() bool {
 
 // CommitID returns project commitID
 func (p *Project) CommitID() string {
-	return p.commitID
+	return p.projectfile.CommitID()
 }
 
 // CommitUUID returns project commitID in UUID format
 func (p *Project) CommitUUID() strfmt.UUID {
-	return strfmt.UUID(p.commitID)
+	return strfmt.UUID(p.CommitID())
 }
 
 func (p *Project) IsHeadless() bool {
@@ -269,8 +239,8 @@ func (p *Project) Lock() string { return p.projectfile.Lock }
 
 // Namespace returns project namespace
 func (p *Project) Namespace() *Namespaced {
-	commitID := strfmt.UUID(p.commitID)
-	return &Namespaced{p.owner, p.name, &commitID}
+	commitID := strfmt.UUID(p.projectfile.CommitID())
+	return &Namespaced{p.projectfile.Owner(), p.projectfile.Name(), &commitID}
 }
 
 // Environments returns project environment
@@ -279,13 +249,6 @@ func (p *Project) Environments() string { return p.projectfile.Environments }
 // New creates a new Project struct
 func New(p *projectfile.Project, out output.Outputer, prompt prompt.Prompter) (*Project, *failures.Failure) {
 	project := &Project{projectfile: p, Outputer: out, Prompter: prompt}
-	parts, fail := parseURL(p.Project)
-	if fail != nil {
-		return nil, fail
-	}
-	project.owner = parts.owner
-	project.name = parts.name
-	project.commitID = parts.commitID
 	return project, nil
 }
 
