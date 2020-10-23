@@ -441,7 +441,7 @@ func TestNewProjectfile(t *testing.T) {
 
 	pjFile, fail := TestOnlyCreateWithProjectURL("https://platform.activestate.com/xowner/xproject", dir)
 	assert.NoError(t, fail.ToError(), "There should be no error when loading from a path")
-	assert.Equal(t, "helloWorld", pjFile.Scripts[0].Name)
+	assert.Equal(t, "activationMessage", pjFile.Scripts[0].Name)
 
 	_, fail = TestOnlyCreateWithProjectURL("https://platform.activestate.com/xowner/xproject", "")
 	assert.Error(t, fail.ToError(), "We don't accept blank paths")
