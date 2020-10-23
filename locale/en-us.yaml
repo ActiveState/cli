@@ -24,7 +24,7 @@ usage_tpl:
    [[- $cmdGroup.Message]]:[[BR]]
     [[range $name := $cmdGroup.Commands]]
       [[$cmd := findCmd $name]]
-      [[rpad $cmd.Use $cmd.NamePadding]][[$cmd.Description]][[BR]]
+      [[rpad $cmd.Use $cmd.NamePadding]][[$cmd.ShortDescription]][[BR]]
     [[end]][[BR]]
   [[end -]]
 [[end -]]
