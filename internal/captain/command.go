@@ -187,7 +187,7 @@ func (c *Command) Help() string {
 	return fmt.Sprintf("%s\n\n%s", c.cobra.Short, c.UsageText())
 }
 
-func (c *Command) Description() string {
+func (c *Command) ShortDescription() string {
 	return c.cobra.Short
 }
 
@@ -252,6 +252,10 @@ func (c *Command) Executor() Executor {
 
 func (c *Command) Arguments() []*Argument {
 	return c.arguments
+}
+
+func (c *Command) CommandGroups() []CommandGroup {
+	return c.groups
 }
 
 func (c *Command) SkipChecks() bool {

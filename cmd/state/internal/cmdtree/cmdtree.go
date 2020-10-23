@@ -289,6 +289,7 @@ func (a *addCmdAs) deprecatedAlias(aliased *captain.Command, name string) {
 		aliased.Title(),
 		aliased.Description(),
 		a.prime.Output(),
+		aliased.CommandGroups(),
 		aliased.Flags(),
 		aliased.Arguments(),
 		func(c *captain.Command, args []string) error {
