@@ -42,7 +42,7 @@ var platformCache []*Platform
 // IngredientByNameAndVersion fetches an ingredient that matches the given name and version. If version is empty the first
 // matching ingredient will be returned.
 func IngredientByNameAndVersion(language, name, version string) (*IngredientAndVersion, error) {
-	results, fail := searchIngredients(9001, language, name)
+	results, fail := searchIngredients(50, language, name)
 	if fail != nil {
 		return nil, fail.ToError()
 	}
@@ -72,7 +72,7 @@ func IngredientByNameAndVersion(language, name, version string) (*IngredientAndV
 
 // IngredientWithLatestVersion will grab the latest available ingredient and ingredientVersion that matches the ingredient name
 func IngredientWithLatestVersion(language, name string) (*IngredientAndVersion, error) {
-	results, fail := searchIngredients(9001, language, name)
+	results, fail := searchIngredients(50, language, name)
 	if fail != nil {
 		return nil, fail.ToError()
 	}
