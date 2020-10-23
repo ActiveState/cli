@@ -160,7 +160,7 @@ func searchIngredientsNamespace(limit int, namespace, language, name string) ([]
 
 	results, err := client.SearchIngredients(params, authentication.ClientAuth())
 	if err != nil {
-		if gniErr, ok := err.(*inventory_operations.GetNamespaceIngredientsDefault); ok {
+		if gniErr, ok := err.(*inventory_operations.SearchIngredientsDefault); ok {
 			return nil, FailIngredients.New(*gniErr.Payload.Message)
 		}
 		return nil, FailIngredients.Wrap(err)
