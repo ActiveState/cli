@@ -695,8 +695,6 @@ secrets_row_value_set:
   other: Defined
 secrets_row_value_unset:
   other: Undefined
-variable_field_deprecation_warning:
-  other: The variable field has been deprecated in favour of secrets and constants. Please update your activestate.yaml.
 pull_not_updated:
   other: Your activestate.yaml is already up to date!
 pull_updated:
