@@ -75,6 +75,10 @@ func TestExpandTopLevel(t *testing.T) {
 	expanded, err = project.ExpandFromProject("$lock", prj)
 	assert.NoError(t, err, "Ran without failure")
 	assert.Equal(t, "branchname@0.0.0-SHA123abcd", expanded)
+
+	expanded, err = project.ExpandFromProject("$notcovered", prj)
+	assert.NoError(t, err, "Ran without failure")
+	assert.Equal(t, "$notcovered", expanded)
 }
 
 func TestExpandProjectPlatformOs(t *testing.T) {
