@@ -28,7 +28,10 @@ type V1IngredientVersionAllOf3AllOf0 struct {
 	// dependency sets
 	DependencySets []*V1IngredientVersionAllOf3AllOf0DependencySetsItems `json:"dependency_sets"`
 
-	// Whether or not this revision is indemnified for customers paying for indemnification
+	// ingredient options
+	IngredientOptions []*V1IngredientVersionAllOf3AllOf0IngredientOptionsItems `json:"ingredient_options"`
+
+	// Whether or not this revision is indemnified for customers paying for indemnification. If set to null, then this will use the is_indemnified value of the previous revision or false if this is the first revision.
 	IsIndemnified *bool `json:"is_indemnified,omitempty"`
 
 	// Whether or not this is a stable release of the package
@@ -42,7 +45,7 @@ type V1IngredientVersionAllOf3AllOf0 struct {
 	// Format: uri
 	PlatformSourceURI *strfmt.URI `json:"platform_source_uri,omitempty"`
 
-	// The SPDX license expression based on runner an automated scanner to determine the package's licensing
+	// The SPDX license expression based on running an automated scanner to determine the package's licensing
 	ScannerLicenseExpression string `json:"scanner_license_expression,omitempty"`
 
 	// A checksum of the source distribution. The actual type of the checksum (MD5, S3 Etag, etc.) is not specified. It's assumed that the system that populates and uses this data will know how to work with these checksums.
@@ -54,6 +57,10 @@ func (m *V1IngredientVersionAllOf3AllOf0) Validate(formats strfmt.Registry) erro
 	var res []error
 
 	if err := m.validateDependencySets(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateIngredientOptions(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -86,6 +93,31 @@ func (m *V1IngredientVersionAllOf3AllOf0) validateDependencySets(formats strfmt.
 			if err := m.DependencySets[i].Validate(formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("dependency_sets" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *V1IngredientVersionAllOf3AllOf0) validateIngredientOptions(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.IngredientOptions) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.IngredientOptions); i++ {
+		if swag.IsZero(m.IngredientOptions[i]) { // not required
+			continue
+		}
+
+		if m.IngredientOptions[i] != nil {
+			if err := m.IngredientOptions[i].Validate(formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("ingredient_options" + "." + strconv.Itoa(i))
 				}
 				return err
 			}

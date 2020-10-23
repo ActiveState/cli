@@ -10,9 +10,10 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
-	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	strfmt "github.com/go-openapi/strfmt"
+
+	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // ReadinessCheckReader is a Reader for the ReadinessCheck structure.
@@ -23,12 +24,14 @@ type ReadinessCheckReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *ReadinessCheckReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
+
 	case 200:
 		result := NewReadinessCheckOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
+
 	default:
 		result := NewReadinessCheckDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -56,10 +59,6 @@ type ReadinessCheckOK struct {
 
 func (o *ReadinessCheckOK) Error() string {
 	return fmt.Sprintf("[GET /readiness-check][%d] readinessCheckOK  %+v", 200, o.Payload)
-}
-
-func (o *ReadinessCheckOK) GetPayload() bool {
-	return o.Payload
 }
 
 func (o *ReadinessCheckOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -96,10 +95,6 @@ func (o *ReadinessCheckDefault) Code() int {
 
 func (o *ReadinessCheckDefault) Error() string {
 	return fmt.Sprintf("[GET /readiness-check][%d] readinessCheck default  %+v", o._statusCode, o.Payload)
-}
-
-func (o *ReadinessCheckDefault) GetPayload() *inventory_models.RestAPIError {
-	return o.Payload
 }
 
 func (o *ReadinessCheckDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

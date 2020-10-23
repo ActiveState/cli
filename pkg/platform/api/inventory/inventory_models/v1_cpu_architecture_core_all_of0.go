@@ -8,20 +8,21 @@ package inventory_models
 import (
 	"encoding/json"
 
+	strfmt "github.com/go-openapi/strfmt"
+
 	"github.com/go-openapi/errors"
-	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // V1CPUArchitectureCoreAllOf0 v1 Cpu architecture core all of0
-//
 // swagger:model v1CpuArchitectureCoreAllOf0
 type V1CPUArchitectureCoreAllOf0 struct {
 
 	// bit width
+	// Required: true
 	// Enum: [32 64]
-	BitWidth string `json:"bit_width,omitempty"`
+	BitWidth *string `json:"bit_width"`
 
 	// The name of the CPU architecture
 	// Required: true
@@ -77,12 +78,12 @@ func (m *V1CPUArchitectureCoreAllOf0) validateBitWidthEnum(path, location string
 
 func (m *V1CPUArchitectureCoreAllOf0) validateBitWidth(formats strfmt.Registry) error {
 
-	if swag.IsZero(m.BitWidth) { // not required
-		return nil
+	if err := validate.Required("bit_width", "body", m.BitWidth); err != nil {
+		return err
 	}
 
 	// value enum
-	if err := m.validateBitWidthEnum("bit_width", "body", m.BitWidth); err != nil {
+	if err := m.validateBitWidthEnum("bit_width", "body", *m.BitWidth); err != nil {
 		return err
 	}
 

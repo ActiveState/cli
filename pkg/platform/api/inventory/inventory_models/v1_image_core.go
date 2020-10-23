@@ -6,20 +6,20 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	strfmt "github.com/go-openapi/strfmt"
+
 	"github.com/go-openapi/errors"
-	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // V1ImageCore Image Core
 //
 // The properties of an image needed to create a new one
-//
 // swagger:model v1ImageCore
 type V1ImageCore struct {
 	V1ImageCoreAllOf0
 
-	V1ImageRevisionCore
+	V1ImageCoreAllOf1
 }
 
 // UnmarshalJSON unmarshals this object from a JSON structure
@@ -32,11 +32,11 @@ func (m *V1ImageCore) UnmarshalJSON(raw []byte) error {
 	m.V1ImageCoreAllOf0 = aO0
 
 	// AO1
-	var aO1 V1ImageRevisionCore
+	var aO1 V1ImageCoreAllOf1
 	if err := swag.ReadJSON(raw, &aO1); err != nil {
 		return err
 	}
-	m.V1ImageRevisionCore = aO1
+	m.V1ImageCoreAllOf1 = aO1
 
 	return nil
 }
@@ -51,11 +51,12 @@ func (m V1ImageCore) MarshalJSON() ([]byte, error) {
 	}
 	_parts = append(_parts, aO0)
 
-	aO1, err := swag.WriteJSON(m.V1ImageRevisionCore)
+	aO1, err := swag.WriteJSON(m.V1ImageCoreAllOf1)
 	if err != nil {
 		return nil, err
 	}
 	_parts = append(_parts, aO1)
+
 	return swag.ConcatJSON(_parts...), nil
 }
 
@@ -67,8 +68,8 @@ func (m *V1ImageCore) Validate(formats strfmt.Registry) error {
 	if err := m.V1ImageCoreAllOf0.Validate(formats); err != nil {
 		res = append(res, err)
 	}
-	// validation for a type composition with V1ImageRevisionCore
-	if err := m.V1ImageRevisionCore.Validate(formats); err != nil {
+	// validation for a type composition with V1ImageCoreAllOf1
+	if err := m.V1ImageCoreAllOf1.Validate(formats); err != nil {
 		res = append(res, err)
 	}
 

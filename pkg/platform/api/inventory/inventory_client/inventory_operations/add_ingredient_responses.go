@@ -10,9 +10,10 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
-	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	strfmt "github.com/go-openapi/strfmt"
+
+	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // AddIngredientReader is a Reader for the AddIngredient structure.
@@ -23,18 +24,21 @@ type AddIngredientReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *AddIngredientReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
+
 	case 201:
 		result := NewAddIngredientCreated()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
+
 	case 400:
 		result := NewAddIngredientBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
+
 	default:
 		result := NewAddIngredientDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -64,10 +68,6 @@ func (o *AddIngredientCreated) Error() string {
 	return fmt.Sprintf("[POST /v1/ingredients][%d] addIngredientCreated  %+v", 201, o.Payload)
 }
 
-func (o *AddIngredientCreated) GetPayload() *inventory_models.V1Ingredient {
-	return o.Payload
-}
-
 func (o *AddIngredientCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(inventory_models.V1Ingredient)
@@ -95,10 +95,6 @@ type AddIngredientBadRequest struct {
 
 func (o *AddIngredientBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/ingredients][%d] addIngredientBadRequest  %+v", 400, o.Payload)
-}
-
-func (o *AddIngredientBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
-	return o.Payload
 }
 
 func (o *AddIngredientBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -137,10 +133,6 @@ func (o *AddIngredientDefault) Code() int {
 
 func (o *AddIngredientDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/ingredients][%d] addIngredient default  %+v", o._statusCode, o.Payload)
-}
-
-func (o *AddIngredientDefault) GetPayload() *inventory_models.RestAPIError {
-	return o.Payload
 }
 
 func (o *AddIngredientDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

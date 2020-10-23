@@ -8,8 +8,9 @@ package inventory_models
 import (
 	"strconv"
 
+	strfmt "github.com/go-openapi/strfmt"
+
 	"github.com/go-openapi/errors"
-	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
@@ -17,7 +18,6 @@ import (
 // V1Order Order
 //
 // An order to create recipes for a set of requirements, for one or more platforms.
-//
 // swagger:model v1Order
 type V1Order struct {
 
@@ -43,7 +43,7 @@ type V1Order struct {
 	// The list of required features needed to satisfy this order
 	// Required: true
 	// Min Items: 1
-	Requirements []*V1SubSchemaOrderRequirement `json:"requirements"`
+	Requirements []*V1OrderRequirementsItems `json:"requirements"`
 
 	// The version of the solver to use to solve this order. If not specified, the solver version will be selected automatically.
 	// Maximum: 1

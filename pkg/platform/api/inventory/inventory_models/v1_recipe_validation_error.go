@@ -8,8 +8,9 @@ package inventory_models
 import (
 	"strconv"
 
+	strfmt "github.com/go-openapi/strfmt"
+
 	"github.com/go-openapi/errors"
-	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
@@ -17,7 +18,6 @@ import (
 // V1RecipeValidationError Recipe Validation Error
 //
 // An error for when an invalid recipe is supplied to the validation endpoint.
-//
 // swagger:model v1RecipeValidationError
 type V1RecipeValidationError struct {
 

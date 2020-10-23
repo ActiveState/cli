@@ -10,9 +10,10 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
-	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	strfmt "github.com/go-openapi/strfmt"
+
+	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // AddCPUArchitectureCPUExtensionReader is a Reader for the AddCPUArchitectureCPUExtension structure.
@@ -23,18 +24,21 @@ type AddCPUArchitectureCPUExtensionReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *AddCPUArchitectureCPUExtensionReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
+
 	case 200:
 		result := NewAddCPUArchitectureCPUExtensionOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
+
 	case 400:
 		result := NewAddCPUArchitectureCPUExtensionBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
+
 	default:
 		result := NewAddCPUArchitectureCPUExtensionDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -64,10 +68,6 @@ func (o *AddCPUArchitectureCPUExtensionOK) Error() string {
 	return fmt.Sprintf("[POST /v1/cpu-architectures/{cpu_architecture_id}/extensions][%d] addCpuArchitectureCpuExtensionOK  %+v", 200, o.Payload)
 }
 
-func (o *AddCPUArchitectureCPUExtensionOK) GetPayload() *inventory_models.V1CPUExtension {
-	return o.Payload
-}
-
 func (o *AddCPUArchitectureCPUExtensionOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(inventory_models.V1CPUExtension)
@@ -95,10 +95,6 @@ type AddCPUArchitectureCPUExtensionBadRequest struct {
 
 func (o *AddCPUArchitectureCPUExtensionBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/cpu-architectures/{cpu_architecture_id}/extensions][%d] addCpuArchitectureCpuExtensionBadRequest  %+v", 400, o.Payload)
-}
-
-func (o *AddCPUArchitectureCPUExtensionBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
-	return o.Payload
 }
 
 func (o *AddCPUArchitectureCPUExtensionBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -137,10 +133,6 @@ func (o *AddCPUArchitectureCPUExtensionDefault) Code() int {
 
 func (o *AddCPUArchitectureCPUExtensionDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/cpu-architectures/{cpu_architecture_id}/extensions][%d] addCpuArchitectureCpuExtension default  %+v", o._statusCode, o.Payload)
-}
-
-func (o *AddCPUArchitectureCPUExtensionDefault) GetPayload() *inventory_models.RestAPIError {
-	return o.Payload
 }
 
 func (o *AddCPUArchitectureCPUExtensionDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

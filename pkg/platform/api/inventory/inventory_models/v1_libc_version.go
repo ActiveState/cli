@@ -6,22 +6,22 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	strfmt "github.com/go-openapi/strfmt"
+
 	"github.com/go-openapi/errors"
-	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // V1LibcVersion Libc Version
 //
 // The full libc version data model
-//
 // swagger:model v1LibcVersion
 type V1LibcVersion struct {
 	V1LibcVersionAllOf0
 
-	V1LibcVersionCore
+	V1LibcVersionAllOf1
 
-	V1SubSchemaRevisionedResource
+	V1LibcVersionAllOf2
 }
 
 // UnmarshalJSON unmarshals this object from a JSON structure
@@ -34,18 +34,18 @@ func (m *V1LibcVersion) UnmarshalJSON(raw []byte) error {
 	m.V1LibcVersionAllOf0 = aO0
 
 	// AO1
-	var aO1 V1LibcVersionCore
+	var aO1 V1LibcVersionAllOf1
 	if err := swag.ReadJSON(raw, &aO1); err != nil {
 		return err
 	}
-	m.V1LibcVersionCore = aO1
+	m.V1LibcVersionAllOf1 = aO1
 
 	// AO2
-	var aO2 V1SubSchemaRevisionedResource
+	var aO2 V1LibcVersionAllOf2
 	if err := swag.ReadJSON(raw, &aO2); err != nil {
 		return err
 	}
-	m.V1SubSchemaRevisionedResource = aO2
+	m.V1LibcVersionAllOf2 = aO2
 
 	return nil
 }
@@ -60,17 +60,18 @@ func (m V1LibcVersion) MarshalJSON() ([]byte, error) {
 	}
 	_parts = append(_parts, aO0)
 
-	aO1, err := swag.WriteJSON(m.V1LibcVersionCore)
+	aO1, err := swag.WriteJSON(m.V1LibcVersionAllOf1)
 	if err != nil {
 		return nil, err
 	}
 	_parts = append(_parts, aO1)
 
-	aO2, err := swag.WriteJSON(m.V1SubSchemaRevisionedResource)
+	aO2, err := swag.WriteJSON(m.V1LibcVersionAllOf2)
 	if err != nil {
 		return nil, err
 	}
 	_parts = append(_parts, aO2)
+
 	return swag.ConcatJSON(_parts...), nil
 }
 
@@ -82,12 +83,12 @@ func (m *V1LibcVersion) Validate(formats strfmt.Registry) error {
 	if err := m.V1LibcVersionAllOf0.Validate(formats); err != nil {
 		res = append(res, err)
 	}
-	// validation for a type composition with V1LibcVersionCore
-	if err := m.V1LibcVersionCore.Validate(formats); err != nil {
+	// validation for a type composition with V1LibcVersionAllOf1
+	if err := m.V1LibcVersionAllOf1.Validate(formats); err != nil {
 		res = append(res, err)
 	}
-	// validation for a type composition with V1SubSchemaRevisionedResource
-	if err := m.V1SubSchemaRevisionedResource.Validate(formats); err != nil {
+	// validation for a type composition with V1LibcVersionAllOf2
+	if err := m.V1LibcVersionAllOf2.Validate(formats); err != nil {
 		res = append(res, err)
 	}
 

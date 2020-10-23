@@ -19,6 +19,10 @@ import (
 // swagger:model restApiValidationErrorAllOf0
 type RestAPIValidationErrorAllOf0 struct {
 
+	// Link to an existing conflicting resource
+	// Format: uri
+	Existing strfmt.URI `json:"existing,omitempty"`
+
 	// message
 	// Required: true
 	Message *string `json:"message"`
@@ -28,6 +32,10 @@ type RestAPIValidationErrorAllOf0 struct {
 func (m *RestAPIValidationErrorAllOf0) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateExisting(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateMessage(formats); err != nil {
 		res = append(res, err)
 	}
@@ -35,6 +43,19 @@ func (m *RestAPIValidationErrorAllOf0) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *RestAPIValidationErrorAllOf0) validateExisting(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.Existing) { // not required
+		return nil
+	}
+
+	if err := validate.FormatOf("existing", "body", "uri", m.Existing.String(), formats); err != nil {
+		return err
+	}
+
 	return nil
 }
 

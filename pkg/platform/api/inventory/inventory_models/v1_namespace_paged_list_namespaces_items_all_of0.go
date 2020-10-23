@@ -25,6 +25,11 @@ type V1NamespacePagedListNamespacesItemsAllOf0 struct {
 	// Required: true
 	// Format: uuid
 	NamespaceID *strfmt.UUID `json:"namespace_id"`
+
+	// Describes the meaning of the type field
+	// Required: true
+	// Read Only: true
+	TypeDescription string `json:"type_description"`
 }
 
 // Validate validates this v1 namespace paged list namespaces items all of0
@@ -36,6 +41,10 @@ func (m *V1NamespacePagedListNamespacesItemsAllOf0) Validate(formats strfmt.Regi
 	}
 
 	if err := m.validateNamespaceID(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateTypeDescription(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -70,6 +79,15 @@ func (m *V1NamespacePagedListNamespacesItemsAllOf0) validateNamespaceID(formats 
 	}
 
 	if err := validate.FormatOf("namespace_id", "body", "uuid", m.NamespaceID.String(), formats); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *V1NamespacePagedListNamespacesItemsAllOf0) validateTypeDescription(formats strfmt.Registry) error {
+
+	if err := validate.RequiredString("type_description", "body", string(m.TypeDescription)); err != nil {
 		return err
 	}
 

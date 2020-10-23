@@ -8,20 +8,20 @@ package inventory_models
 import (
 	"strconv"
 
+	strfmt "github.com/go-openapi/strfmt"
+
 	"github.com/go-openapi/errors"
-	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // V1RevisionAllOf0 v1 revision all of0
-//
 // swagger:model v1RevisionAllOf0
 type V1RevisionAllOf0 struct {
 
 	// provided features
 	// Required: true
-	ProvidedFeatures []*V1SubSchemaProvidedFeature `json:"provided_features"`
+	ProvidedFeatures []*V1RevisionAllOf0ProvidedFeaturesItems `json:"provided_features"`
 }
 
 // Validate validates this v1 revision all of0

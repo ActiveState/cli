@@ -6,20 +6,20 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	strfmt "github.com/go-openapi/strfmt"
+
 	"github.com/go-openapi/errors"
-	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // V1Namespace namespace
 //
 // The full namespace data model
-//
 // swagger:model v1Namespace
 type V1Namespace struct {
 	V1NamespaceAllOf0
 
-	V1NamespaceCore
+	V1NamespaceAllOf1
 }
 
 // UnmarshalJSON unmarshals this object from a JSON structure
@@ -32,11 +32,11 @@ func (m *V1Namespace) UnmarshalJSON(raw []byte) error {
 	m.V1NamespaceAllOf0 = aO0
 
 	// AO1
-	var aO1 V1NamespaceCore
+	var aO1 V1NamespaceAllOf1
 	if err := swag.ReadJSON(raw, &aO1); err != nil {
 		return err
 	}
-	m.V1NamespaceCore = aO1
+	m.V1NamespaceAllOf1 = aO1
 
 	return nil
 }
@@ -51,11 +51,12 @@ func (m V1Namespace) MarshalJSON() ([]byte, error) {
 	}
 	_parts = append(_parts, aO0)
 
-	aO1, err := swag.WriteJSON(m.V1NamespaceCore)
+	aO1, err := swag.WriteJSON(m.V1NamespaceAllOf1)
 	if err != nil {
 		return nil, err
 	}
 	_parts = append(_parts, aO1)
+
 	return swag.ConcatJSON(_parts...), nil
 }
 
@@ -67,8 +68,8 @@ func (m *V1Namespace) Validate(formats strfmt.Registry) error {
 	if err := m.V1NamespaceAllOf0.Validate(formats); err != nil {
 		res = append(res, err)
 	}
-	// validation for a type composition with V1NamespaceCore
-	if err := m.V1NamespaceCore.Validate(formats); err != nil {
+	// validation for a type composition with V1NamespaceAllOf1
+	if err := m.V1NamespaceAllOf1.Validate(formats); err != nil {
 		res = append(res, err)
 	}
 

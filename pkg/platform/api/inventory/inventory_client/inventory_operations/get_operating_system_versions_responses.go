@@ -10,9 +10,10 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
-	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	strfmt "github.com/go-openapi/strfmt"
+
+	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // GetOperatingSystemVersionsReader is a Reader for the GetOperatingSystemVersions structure.
@@ -23,12 +24,14 @@ type GetOperatingSystemVersionsReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetOperatingSystemVersionsReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
+
 	case 200:
 		result := NewGetOperatingSystemVersionsOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
+
 	default:
 		result := NewGetOperatingSystemVersionsDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -56,10 +59,6 @@ type GetOperatingSystemVersionsOK struct {
 
 func (o *GetOperatingSystemVersionsOK) Error() string {
 	return fmt.Sprintf("[GET /v1/operating-systems/{operating_system_id}/versions][%d] getOperatingSystemVersionsOK  %+v", 200, o.Payload)
-}
-
-func (o *GetOperatingSystemVersionsOK) GetPayload() *inventory_models.V1OperatingSystemVersionPagedList {
-	return o.Payload
 }
 
 func (o *GetOperatingSystemVersionsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -98,10 +97,6 @@ func (o *GetOperatingSystemVersionsDefault) Code() int {
 
 func (o *GetOperatingSystemVersionsDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/operating-systems/{operating_system_id}/versions][%d] getOperatingSystemVersions default  %+v", o._statusCode, o.Payload)
-}
-
-func (o *GetOperatingSystemVersionsDefault) GetPayload() *inventory_models.RestAPIError {
-	return o.Payload
 }
 
 func (o *GetOperatingSystemVersionsDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

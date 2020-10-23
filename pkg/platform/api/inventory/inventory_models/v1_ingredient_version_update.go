@@ -6,8 +6,9 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	strfmt "github.com/go-openapi/strfmt"
+
 	"github.com/go-openapi/errors"
-	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
@@ -15,7 +16,6 @@ import (
 // V1IngredientVersionUpdate Ingredient Version Core
 //
 // The fields of an ingredient version that can be updated
-//
 // swagger:model v1IngredientVersionUpdate
 type V1IngredientVersionUpdate struct {
 

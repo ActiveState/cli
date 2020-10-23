@@ -10,9 +10,10 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
-	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	strfmt "github.com/go-openapi/strfmt"
+
+	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // GetGpuArchitectureReader is a Reader for the GetGpuArchitecture structure.
@@ -23,12 +24,14 @@ type GetGpuArchitectureReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetGpuArchitectureReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
+
 	case 200:
 		result := NewGetGpuArchitectureOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
+
 	default:
 		result := NewGetGpuArchitectureDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -56,10 +59,6 @@ type GetGpuArchitectureOK struct {
 
 func (o *GetGpuArchitectureOK) Error() string {
 	return fmt.Sprintf("[GET /v1/gpu-architectures/{gpu_architecture_id}][%d] getGpuArchitectureOK  %+v", 200, o.Payload)
-}
-
-func (o *GetGpuArchitectureOK) GetPayload() *inventory_models.V1GpuArchitecture {
-	return o.Payload
 }
 
 func (o *GetGpuArchitectureOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -98,10 +97,6 @@ func (o *GetGpuArchitectureDefault) Code() int {
 
 func (o *GetGpuArchitectureDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/gpu-architectures/{gpu_architecture_id}][%d] getGpuArchitecture default  %+v", o._statusCode, o.Payload)
-}
-
-func (o *GetGpuArchitectureDefault) GetPayload() *inventory_models.RestAPIError {
-	return o.Payload
 }
 
 func (o *GetGpuArchitectureDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

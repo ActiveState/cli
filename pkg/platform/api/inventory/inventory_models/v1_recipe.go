@@ -8,8 +8,9 @@ package inventory_models
 import (
 	"strconv"
 
+	strfmt "github.com/go-openapi/strfmt"
+
 	"github.com/go-openapi/errors"
-	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
@@ -17,7 +18,6 @@ import (
 // V1Recipe Recipe
 //
 // A recipe contains all required information (ingredient versions, platform, build options, etc.) to build a project for a single platform.
-//
 // swagger:model v1Recipe
 type V1Recipe struct {
 
@@ -30,14 +30,14 @@ type V1Recipe struct {
 
 	// image
 	// Required: true
-	Image *V1Image `json:"image"`
+	Image *V1RecipeImage `json:"image"`
 
 	// If all of the resolved ingredients resolved to indemnified versions, then this will be true.
 	IsIndemnified *bool `json:"is_indemnified,omitempty"`
 
 	// platform
 	// Required: true
-	Platform *V1Platform `json:"platform"`
+	Platform *V1RecipePlatform `json:"platform"`
 
 	// This recipe's ID. Identical recipes will have the same ID.
 	// Required: true
@@ -52,7 +52,7 @@ type V1Recipe struct {
 	// Required: true
 	// Min Items: 1
 	// Unique: true
-	ResolvedIngredients []*V1SubSchemaResolvedIngredient `json:"resolved_ingredients"`
+	ResolvedIngredients []*V1RecipeResolvedIngredientsItems `json:"resolved_ingredients"`
 
 	// The version of the solver that was used to create this recipe
 	// Required: true

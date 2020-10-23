@@ -10,9 +10,10 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
-	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	strfmt "github.com/go-openapi/strfmt"
+
+	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // GetIngredientVersionsReader is a Reader for the GetIngredientVersions structure.
@@ -23,12 +24,14 @@ type GetIngredientVersionsReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetIngredientVersionsReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
+
 	case 200:
 		result := NewGetIngredientVersionsOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
+
 	default:
 		result := NewGetIngredientVersionsDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -56,10 +59,6 @@ type GetIngredientVersionsOK struct {
 
 func (o *GetIngredientVersionsOK) Error() string {
 	return fmt.Sprintf("[GET /v1/ingredients/{ingredient_id}/versions][%d] getIngredientVersionsOK  %+v", 200, o.Payload)
-}
-
-func (o *GetIngredientVersionsOK) GetPayload() *inventory_models.V1IngredientVersionPagedList {
-	return o.Payload
 }
 
 func (o *GetIngredientVersionsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -98,10 +97,6 @@ func (o *GetIngredientVersionsDefault) Code() int {
 
 func (o *GetIngredientVersionsDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/ingredients/{ingredient_id}/versions][%d] getIngredientVersions default  %+v", o._statusCode, o.Payload)
-}
-
-func (o *GetIngredientVersionsDefault) GetPayload() *inventory_models.RestAPIError {
-	return o.Payload
 }
 
 func (o *GetIngredientVersionsDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

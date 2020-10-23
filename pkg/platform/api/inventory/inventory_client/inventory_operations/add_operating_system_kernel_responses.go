@@ -10,9 +10,10 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
-	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	strfmt "github.com/go-openapi/strfmt"
+
+	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // AddOperatingSystemKernelReader is a Reader for the AddOperatingSystemKernel structure.
@@ -23,18 +24,21 @@ type AddOperatingSystemKernelReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *AddOperatingSystemKernelReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
+
 	case 200:
 		result := NewAddOperatingSystemKernelOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
+
 	case 400:
 		result := NewAddOperatingSystemKernelBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
+
 	default:
 		result := NewAddOperatingSystemKernelDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -64,10 +68,6 @@ func (o *AddOperatingSystemKernelOK) Error() string {
 	return fmt.Sprintf("[POST /v1/operating-systems/{operating_system_id}/kernels][%d] addOperatingSystemKernelOK  %+v", 200, o.Payload)
 }
 
-func (o *AddOperatingSystemKernelOK) GetPayload() *inventory_models.V1Kernel {
-	return o.Payload
-}
-
 func (o *AddOperatingSystemKernelOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(inventory_models.V1Kernel)
@@ -95,10 +95,6 @@ type AddOperatingSystemKernelBadRequest struct {
 
 func (o *AddOperatingSystemKernelBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/operating-systems/{operating_system_id}/kernels][%d] addOperatingSystemKernelBadRequest  %+v", 400, o.Payload)
-}
-
-func (o *AddOperatingSystemKernelBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
-	return o.Payload
 }
 
 func (o *AddOperatingSystemKernelBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -137,10 +133,6 @@ func (o *AddOperatingSystemKernelDefault) Code() int {
 
 func (o *AddOperatingSystemKernelDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/operating-systems/{operating_system_id}/kernels][%d] addOperatingSystemKernel default  %+v", o._statusCode, o.Payload)
-}
-
-func (o *AddOperatingSystemKernelDefault) GetPayload() *inventory_models.RestAPIError {
-	return o.Payload
 }
 
 func (o *AddOperatingSystemKernelDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

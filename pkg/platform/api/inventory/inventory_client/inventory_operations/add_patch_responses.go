@@ -10,9 +10,10 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
-	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	strfmt "github.com/go-openapi/strfmt"
+
+	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // AddPatchReader is a Reader for the AddPatch structure.
@@ -23,18 +24,21 @@ type AddPatchReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *AddPatchReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
+
 	case 201:
 		result := NewAddPatchCreated()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
+
 	case 400:
 		result := NewAddPatchBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
+
 	default:
 		result := NewAddPatchDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -64,10 +68,6 @@ func (o *AddPatchCreated) Error() string {
 	return fmt.Sprintf("[POST /v1/patches][%d] addPatchCreated  %+v", 201, o.Payload)
 }
 
-func (o *AddPatchCreated) GetPayload() *inventory_models.V1Patch {
-	return o.Payload
-}
-
 func (o *AddPatchCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(inventory_models.V1Patch)
@@ -95,10 +95,6 @@ type AddPatchBadRequest struct {
 
 func (o *AddPatchBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/patches][%d] addPatchBadRequest  %+v", 400, o.Payload)
-}
-
-func (o *AddPatchBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
-	return o.Payload
 }
 
 func (o *AddPatchBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -137,10 +133,6 @@ func (o *AddPatchDefault) Code() int {
 
 func (o *AddPatchDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/patches][%d] addPatch default  %+v", o._statusCode, o.Payload)
-}
-
-func (o *AddPatchDefault) GetPayload() *inventory_models.RestAPIError {
-	return o.Payload
 }
 
 func (o *AddPatchDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

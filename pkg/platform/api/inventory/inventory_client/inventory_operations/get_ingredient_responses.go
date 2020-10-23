@@ -10,9 +10,10 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
-	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	strfmt "github.com/go-openapi/strfmt"
+
+	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // GetIngredientReader is a Reader for the GetIngredient structure.
@@ -23,12 +24,14 @@ type GetIngredientReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetIngredientReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
+
 	case 200:
 		result := NewGetIngredientOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
+
 	default:
 		result := NewGetIngredientDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -56,10 +59,6 @@ type GetIngredientOK struct {
 
 func (o *GetIngredientOK) Error() string {
 	return fmt.Sprintf("[GET /v1/ingredients/{ingredient_id}][%d] getIngredientOK  %+v", 200, o.Payload)
-}
-
-func (o *GetIngredientOK) GetPayload() *inventory_models.V1Ingredient {
-	return o.Payload
 }
 
 func (o *GetIngredientOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -98,10 +97,6 @@ func (o *GetIngredientDefault) Code() int {
 
 func (o *GetIngredientDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/ingredients/{ingredient_id}][%d] getIngredient default  %+v", o._statusCode, o.Payload)
-}
-
-func (o *GetIngredientDefault) GetPayload() *inventory_models.RestAPIError {
-	return o.Payload
 }
 
 func (o *GetIngredientDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

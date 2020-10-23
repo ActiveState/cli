@@ -8,8 +8,9 @@ package inventory_models
 import (
 	"strconv"
 
+	strfmt "github.com/go-openapi/strfmt"
+
 	"github.com/go-openapi/errors"
-	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
@@ -17,21 +18,20 @@ import (
 // V1BuildFlagPagedList Build Flag Paged List
 //
 // A paginated list of build flag
-//
 // swagger:model v1BuildFlagPagedList
 type V1BuildFlagPagedList struct {
 
 	// A page of build flags
 	// Required: true
-	BuildFlags []*V1BuildFlag `json:"build_flags"`
+	BuildFlags []*V1BuildFlagPagedListBuildFlagsItems `json:"build_flags"`
 
 	// links
 	// Required: true
-	Links *V1SubSchemaPagingLinks `json:"links"`
+	Links *V1BuildFlagPagedListLinks `json:"links"`
 
 	// paging
 	// Required: true
-	Paging *V1SubSchemaPaging `json:"paging"`
+	Paging *V1BuildFlagPagedListPaging `json:"paging"`
 }
 
 // Validate validates this v1 build flag paged list
