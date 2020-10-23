@@ -66,7 +66,7 @@ func (r *Activate) run(params *ActivateParams) error {
 			return locale.NewInputError("err_already_activated", "You cannot activate a new project when you are already in an activated state.")
 		}
 		if params.Namespace == nil || params.Namespace.IsValid() {
-			return locale.NewInputError("err_conflicting_default_while_activated", "Cannot set {{.V0}} as the global default project while in an activated state.", params.Namespace.String())
+			return locale.NewInputError("err_conflicting_default_while_activated", "Cannot set [NOTICE]{{.V0}}[/RESET] as the global default project while in an activated state.", params.Namespace.String())
 		}
 	}
 
@@ -119,7 +119,7 @@ func (r *Activate) run(params *ActivateParams) error {
 			return locale.WrapError(err, "err_activate_default", "Could not configure your project as the default.")
 		}
 
-		r.out.Notice(locale.Tl("global_default_set", "Successfully configured {{.V0}} as the global default project.", proj.Namespace().String()))
+		r.out.Notice(locale.Tl("global_default_set", "Successfully configured [NOTICE]{{.V0}}[/RESET] as the global default project.", proj.Namespace().String()))
 
 		if alreadyActivated {
 			return nil
