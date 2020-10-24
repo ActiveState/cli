@@ -46,7 +46,7 @@ scripts:
   - name: test
     value: make test
   - name: recursive
-    value: $scripts.recursive
+    value: echo $scripts.recursive
   - name: pythonScript
     language: python3
     value: scriptValue
@@ -166,9 +166,8 @@ func TestExpandProjectUnknownName(t *testing.T) {
 func TestExpandProjectInfiniteRecursion(t *testing.T) {
 	prj := loadProject(t)
 
-	expanded, err := project.ExpandFromProject("$scripts.recursive", prj)
+	_, err := project.ExpandFromProject("$scripts.recursive", prj)
 	require.Error(t, err, "Ran with failure")
-	assert.Equal(t, "", expanded, "Failed to expand")
 	assert.Contains(t, err.Error(), "Infinite recursion trying to expand variable", "Handled unknown category")
 }
 
