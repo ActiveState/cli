@@ -16,16 +16,20 @@ Aliases:
 Examples:
     {{.Cobra.Example}}
 {{- end}}
-{{- if .Cobra.HasAvailableSubCommands}}
+{{- if gt (len .Cmd.AvailableChildren) 0}}
 
 Available Commands:
-    {{- range .Cobra.Commands}}
-        {{- if (or .IsAvailableCommand (eq .Name "help"))}}
-    {{rpad .Name .NamePadding }} {{.Short}}
+    {{- $group := "" }}
+    {{- range .Cmd.AvailableChildren }}
+        {{- if ne $group .Group.String }}
+            {{- $group = .Group.String }}
+
+  {{ .Group.String }}:
         {{- end}}
+    {{rpad .Name .NamePadding }} {{.ShortDescription}}
     {{- end}}
 {{- end}}
-{{- if .HasAvailableLocalFlags}}
+{{- if .Cobra.HasAvailableFlags}}
 
 Flags:
 {{.Cobra.LocalFlags.FlagUsages | trimTrailingWhitespaces}}

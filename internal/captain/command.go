@@ -3,6 +3,7 @@ package captain
 import (
 	"bytes"
 	"fmt"
+	"sort"
 	"strings"
 	"text/template"
 	"unicode"
@@ -28,7 +29,25 @@ type cobraCommander interface {
 
 type Executor func(cmd *Command, args []string) error
 
-type CommandGroup string
+type CommandGroup struct {
+	name     string
+	priority int
+}
+
+func (c CommandGroup) String() string {
+	return c.name
+}
+
+func (c CommandGroup) SortBefore(c2 CommandGroup) bool {
+	if c.priority != 0 {
+		return c.priority > c2.priority
+	}
+	return c.name < c2.name
+}
+
+func NewCommandGroup(name string, priority int) CommandGroup {
+	return CommandGroup{name, priority}
+}
 
 type Command struct {
 	cobra    *cobra.Command
@@ -222,7 +241,11 @@ func (c *Command) SetDisableFlagParsing(b bool) {
 }
 
 func (c *Command) Name() string {
-	return c.cobra.Use
+	return c.cobra.Name()
+}
+
+func (c *Command) NamePadding() int {
+	return c.cobra.NamePadding()
 }
 
 func (c *Command) Title() string {
@@ -260,8 +283,11 @@ func (c *Command) SkipChecks() bool {
 	return c.skipChecks
 }
 
-func (c *Command) NamePadding() int {
-	return c.cobra.NamePadding()
+func (c *Command) SortBefore(c2 *Command) bool {
+	if c.group != c2.group {
+		return c.group.SortBefore(c2.group)
+	}
+	return c.Name() < c2.Name()
 }
 
 func (c *Command) AddChildren(children ...*Command) {
@@ -275,6 +301,25 @@ func (c *Command) AddLegacyChildren(children ...cobraCommander) {
 	for _, child := range children {
 		c.cobra.AddCommand(child.GetCobraCmd())
 	}
+}
+
+func (c *Command) Children() []*Command {
+	commands := c.commands
+	sort.Slice(commands, func(i, j int) bool {
+		return commands[i].SortBefore(commands[j])
+	})
+	return commands
+}
+
+func (c *Command) AvailableChildren() []*Command {
+	commands := []*Command{}
+	for _, child := range c.Children() {
+		if !child.cobra.IsAvailableCommand() {
+			continue
+		}
+		commands = append(commands, child)
+	}
+	return commands
 }
 
 func (c *Command) FindSafe(args []string) *Command {
@@ -457,10 +502,6 @@ func setupSensibleErrors(err error) error {
 func (cmd *Command) Usage() error {
 	tpl := template.New("usage")
 	tpl.Funcs(template.FuncMap{
-		"Group": func() string { return string(cmd.group) },
-		"Find":  func(name string) *Command { return cmd.FindSafe([]string{name}) },
-
-		// template functions inherited from cobra
 		"rpad": func(s string, padding int) string {
 			template := fmt.Sprintf("%%-%ds", padding)
 			return fmt.Sprintf(template, s)

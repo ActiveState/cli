@@ -136,12 +136,12 @@ type globalOptions struct {
 }
 
 var (
-	PackagesGroup    = captain.CommandGroup(locale.Tl("group_packages", "Package Management"))
-	EnvironmentGroup = captain.CommandGroup(locale.Tl("group_environment", "Environment Management"))
-	PlatformGroup    = captain.CommandGroup(locale.Tl("group_tools", "Platform"))
-	AutomationGroup  = captain.CommandGroup(locale.Tl("group_automation", "Automation"))
-	VCSGroup         = captain.CommandGroup(locale.Tl("group_vcs", "Version Control"))
-	UtilsGroup       = captain.CommandGroup(locale.Tl("group_utils", "Utilities"))
+	EnvironmentGroup = captain.NewCommandGroup(locale.Tl("group_environment", "Environment Management"), 10)
+	PackagesGroup    = captain.NewCommandGroup(locale.Tl("group_packages", "Package Management"), 9)
+	PlatformGroup    = captain.NewCommandGroup(locale.Tl("group_tools", "Platform"), 8)
+	VCSGroup         = captain.NewCommandGroup(locale.Tl("group_vcs", "Version Control"), 7)
+	AutomationGroup  = captain.NewCommandGroup(locale.Tl("group_automation", "Automation"), 6)
+	UtilsGroup       = captain.NewCommandGroup(locale.Tl("group_utils", "Utilities"), 5)
 )
 
 func newGlobalOptions() *globalOptions {
