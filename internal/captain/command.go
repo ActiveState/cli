@@ -322,15 +322,6 @@ func (c *Command) AvailableChildren() []*Command {
 	return commands
 }
 
-func (c *Command) FindSafe(args []string) *Command {
-	cmd, err := c.Find(args)
-	if err != nil {
-		logging.Debug("Could not find command with args: %s. Error: %v", args, err)
-		return nil
-	}
-	return cmd
-}
-
 func (c *Command) Find(args []string) (*Command, error) {
 	foundCobra, _, err := c.cobra.Find(args)
 	if err != nil {
