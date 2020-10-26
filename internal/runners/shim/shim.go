@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -46,30 +47,36 @@ func (s *Shim) Run(args ...string) error {
 		logging.Debug("Project not found, error: %v", fail)
 	}
 
-	if project != nil && !subshell.IsActivated() {
-		runtime, err := runtime.NewRuntime(s.proj.Source().Path(), s.proj.CommitUUID(), s.proj.Owner(), s.proj.Name(), runbits.NewRuntimeMessageHandler(s.out))
-		if err != nil {
-			return locale.WrapError(err, "err_shim_runtime_init", "Could not initialize runtime for shim command.")
-		}
-		venv := virtualenvironment.New(runtime)
-		if fail := venv.Activate(); fail != nil {
-			logging.Errorf("Unable to activate state: %s", fail.Error())
-			return locale.WrapError(fail.ToError(), "err_shim_activate", "Could not activate environment for shim command")
-		}
-
-		env, err := venv.GetEnv(true, filepath.Dir(projectfile.Get().Path()))
-		if err != nil {
-			return err
-		}
-		s.subshell.SetEnv(env)
+	if project == nil {
+		return errs.New("Could not find project.")
 	}
 
 	if len(args) == 0 {
 		return nil
 	}
 
+	runtime, err := runtime.NewRuntime(s.proj.Source().Path(), s.proj.CommitUUID(), s.proj.Owner(), s.proj.Name(), runbits.NewRuntimeMessageHandler(s.out))
+	if err != nil {
+		return locale.WrapError(err, "err_shim_runtime_init", "Could not initialize runtime for shim command.")
+	}
+	venv := virtualenvironment.New(runtime)
+	if fail := venv.Activate(); fail != nil {
+		logging.Errorf("Unable to activate state: %s", fail.Error())
+		return locale.WrapError(fail.ToError(), "err_shim_activate", "Could not activate environment for shim command")
+	}
+
+	env, err := venv.GetEnv(true, filepath.Dir(projectfile.Get().Path()))
+	if err != nil {
+		return err
+	}
+	s.subshell.SetEnv(env)
+
 	lang := language.Bash
-	scriptArgs := fmt.Sprintf(`%s "$@"`, args[0])
+	progPath := virtualenvironment.GetProgramPath(args[0], env)
+	if err != nil {
+		return err
+	}
+	scriptArgs := fmt.Sprintf(`%s "$@"`, progPath)
 	if strings.Contains(s.subshell.Binary(), "cmd") {
 		lang = language.Batch
 		scriptArgs = fmt.Sprintf("@ECHO OFF\n%s %%*", args[0])

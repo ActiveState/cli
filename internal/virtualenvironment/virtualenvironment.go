@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
@@ -76,6 +77,23 @@ func (v *VirtualEnvironment) Setup(installIfNecessary bool) *failures.Failure {
 	}
 
 	return nil
+}
+
+// GetProgramPath tries to find the cmd on the PATH
+func GetProgramPath(cmd string, envMap map[string]string) string {
+	var bins []string
+	if p, ok := envMap["PATH"]; ok {
+		bins = strings.Split(p, string(os.PathListSeparator))
+	}
+
+	for _, b := range bins {
+		cmdPath := filepath.Join(b, cmd)
+		if fileutils.IsExecutable(cmdPath) {
+			return cmdPath
+		}
+	}
+
+	return cmd
 }
 
 // GetEnv returns a map of the cumulative environment variables for all active virtual environments
