@@ -242,7 +242,12 @@ func SetupProjectRcFile(templateName, ext string, env map[string]string, out out
 		rcData["ExecAlias"] = currExecAbsPath // alias {ExecName}={ExecAlias}
 	}
 
-	t, err := template.New("rcfile").Parse(tpl)
+	t := template.New("rcfile")
+	t.Funcs(map[string]interface{} {
+		"splitLines": func(v string) []string { return strings.Split(v, "\n") },
+	})
+
+	t, err =t.Parse(tpl)
 	if err != nil {
 		return nil, failures.FailTemplating.Wrap(err)
 	}
@@ -261,7 +266,7 @@ func SetupProjectRcFile(templateName, ext string, env map[string]string, out out
 
 	tmpFile.WriteString(o.String())
 
-	logging.Debug("Using project RC: %s", o.String())
+	logging.Debug("Using project RC: (%s) %s", tmpFile.Name(), o.String())
 
 	return tmpFile, nil
 }

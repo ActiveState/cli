@@ -115,7 +115,7 @@ func (v *SubShell) Activate(out output.Outputer) *failures.Failure {
 		return fail
 	}
 
-	shellArgs := []string{"/K", v.rcFile.Name()}
+	shellArgs := []string{"/U", "/K", v.rcFile.Name()}
 	if v.activateCommand != nil {
 		if fail := fileutils.AppendToFile(v.rcFile.Name(), []byte("\r\n"+*v.activateCommand+"\r\nexit")); fail != nil {
 			return fail
