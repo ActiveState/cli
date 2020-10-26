@@ -370,12 +370,12 @@ func TestParseVersionInfo(t *testing.T) {
 }
 
 func TestRemoveTemporaryLanguage(t *testing.T) {
-	languageBlock := (`language: # some comment
+	languageBlock := (`languages: # some comment
    name: abc
    version:
 `)
 
-	oneLineLanguageBlock := `language: { "name": "abc", "version": "" }
+	oneLineLanguageBlock := `languages: { "name": "abc", "version": "" }
 `
 
 	exampleYaml := (`junk: xgarbage
