@@ -509,19 +509,6 @@ func (cmd *Command) Usage() error {
 		return errs.Wrap(err, "Could not parse template")
 	}
 
-	localizedArgs := []map[string]string{}
-	for _, arg := range cmd.Arguments() {
-		req := ""
-		if arg.Required {
-			req = "1"
-		}
-		localizedArgs = append(localizedArgs, map[string]string{
-			"Name":        arg.Name,
-			"Description": arg.Description,
-			"Required":    req,
-		})
-	}
-
 	var out bytes.Buffer
 	if err := tpl.Execute(&out, map[string]interface{}{
 		"Cmd":   cmd,
