@@ -8,18 +8,17 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
-func newActivateCommand(prime *primer.Values) *captain.Command {
+func newActivateCommand(registry *captain.Registry, prime *primer.Values) *captain.Command {
 	runner := activate.NewActivate(prime)
 
 	params := activate.ActivateParams{
 		Namespace: &project.Namespaced{},
 	}
 
-	cmd := captain.NewCommand(
+	cmd := registry.NewCommand(
 		"activate",
 		locale.Tl("activate_title", "Activating Your Runtime"),
 		locale.T("activate_project"),
-		prime.Output(),
 		[]*captain.Flag{
 			{
 				Name:        "path",

@@ -8,14 +8,13 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
-func newLanguagesCommand(prime *primer.Values) *captain.Command {
+func newLanguagesCommand(registry *captain.Registry, prime *primer.Values) *captain.Command {
 	runner := languages.NewLanguages(prime)
 
-	return captain.NewCommand(
+	return registry.NewCommand(
 		"languages",
 		locale.Tl("languages_title", "Listing Languages"),
 		locale.T("languages_cmd_description"),
-		prime.Output(),
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, _ []string) error {
@@ -30,16 +29,15 @@ func newLanguagesCommand(prime *primer.Values) *captain.Command {
 	)
 }
 
-func newLanguageUpdateCommand(prime *primer.Values) *captain.Command {
+func newLanguageUpdateCommand(registry *captain.Registry, prime *primer.Values) *captain.Command {
 	runner := languages.NewUpdate(prime)
 
 	params := languages.UpdateParams{}
 
-	return captain.NewCommand(
+	return registry.NewCommand(
 		"update",
 		locale.Tl("languages_update_title", "Updating Languages"),
 		locale.T("languages_update_cmd_description"),
-		prime.Output(),
 		[]*captain.Flag{},
 		[]*captain.Argument{
 			{

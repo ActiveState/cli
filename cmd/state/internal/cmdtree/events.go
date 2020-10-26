@@ -7,14 +7,13 @@ import (
 	"github.com/ActiveState/cli/internal/runners/events"
 )
 
-func newEventsCommand(prime *primer.Values) *captain.Command {
+func newEventsCommand(registry *captain.Registry, prime *primer.Values) *captain.Command {
 	runner := events.New(prime)
 
-	return captain.NewCommand(
+	return registry.NewCommand(
 		"events",
 		locale.Tl("events_title", "Listing Events"),
 		locale.Tl("events_description", "Manage project events"),
-		prime.Output(),
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(cmd *captain.Command, args []string) error {
@@ -22,15 +21,14 @@ func newEventsCommand(prime *primer.Values) *captain.Command {
 		})
 }
 
-func newEventsLogCommand(prime *primer.Values) *captain.Command {
+func newEventsLogCommand(registry *captain.Registry, prime *primer.Values) *captain.Command {
 	runner := events.NewLog(prime)
 	params := events.EventLogParams{}
 
-	return captain.NewCommand(
+	return registry.NewCommand(
 		"log",
 		locale.Tl("events_log_title", "Showing Events Log"),
 		locale.Tl("events_log_description", "View a log of events"),
-		prime.Output(),
 		[]*captain.Flag{
 			{
 				Name:        "follow",

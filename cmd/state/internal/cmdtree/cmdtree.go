@@ -20,95 +20,97 @@ type CmdTree struct {
 func New(prime *primer.Values, args ...string) *CmdTree {
 	globals := newGlobalOptions()
 
-	authCmd := newAuthCommand(prime)
+	registry := captain.NewRegistry(prime.Output())
+
+	authCmd := newAuthCommand(registry, prime)
 	authCmd.AddChildren(
-		newSignupCommand(prime),
-		newLogoutCommand(prime),
+		newSignupCommand(registry, prime),
+		newLogoutCommand(registry, prime),
 	)
 
-	exportCmd := newExportCommand(prime)
+	exportCmd := newExportCommand(registry, prime)
 	exportCmd.AddChildren(
-		newRecipeCommand(prime),
-		newJWTCommand(prime),
-		newPrivateKeyCommand(prime),
-		newAPIKeyCommand(prime),
-		newExportConfigCommand(prime),
-		newExportGithubActionCommand(prime),
+		newRecipeCommand(registry, prime),
+		newJWTCommand(registry, prime),
+		newPrivateKeyCommand(registry, prime),
+		newAPIKeyCommand(registry, prime),
+		newExportConfigCommand(registry, prime),
+		newExportGithubActionCommand(registry, prime),
 	)
 
-	packagesCmd := newPackagesCommand(prime)
+	packagesCmd := newPackagesCommand(registry, prime)
 	packagesCmd.AddChildren(
-		newPackagesAddCommand(prime),
-		newPackagesUpdateCommand(prime),
-		newPackagesRemoveCommand(prime),
-		newPackagesImportCommand(prime),
-		newPackagesSearchCommand(prime),
+		newPackagesAddCommand(registry, prime),
+		newPackagesUpdateCommand(registry, prime),
+		newPackagesRemoveCommand(registry, prime),
+		newPackagesImportCommand(registry, prime),
+		newPackagesSearchCommand(registry, prime),
 	)
 
-	platformsCmd := newPlatformsCommand(prime)
+	platformsCmd := newPlatformsCommand(registry, prime)
 	platformsCmd.AddChildren(
-		newPlatformsSearchCommand(prime),
-		newPlatformsAddCommand(prime),
-		newPlatformsRemoveCommand(prime),
+		newPlatformsSearchCommand(registry, prime),
+		newPlatformsAddCommand(registry, prime),
+		newPlatformsRemoveCommand(registry, prime),
 	)
 
-	scriptsCmd := newScriptsCommand(prime)
+	scriptsCmd := newScriptsCommand(registry, prime)
 	scriptsCmd.AddChildren(
-		newScriptsEditCommand(prime),
+		newScriptsEditCommand(registry, prime),
 	)
 
-	languagesCmd := newLanguagesCommand(prime)
-	languagesCmd.AddChildren(newLanguageUpdateCommand(prime))
+	languagesCmd := newLanguagesCommand(registry, prime)
+	languagesCmd.AddChildren(newLanguageUpdateCommand(registry, prime))
 
-	cleanCmd := newCleanCommand(prime)
+	cleanCmd := newCleanCommand(registry, prime)
 	cleanCmd.AddChildren(
-		newUninstallCommand(prime),
-		newCacheCommand(prime),
-		newConfigCommand(prime),
+		newUninstallCommand(registry, prime),
+		newCacheCommand(registry, prime),
+		newConfigCommand(registry, prime),
 	)
 
-	deployCmd := newDeployCommand(prime)
+	deployCmd := newDeployCommand(registry, prime)
 	deployCmd.AddChildren(
-		newDeployInstallCommand(prime),
-		newDeployConfigureCommand(prime),
-		newDeploySymlinkCommand(prime),
-		newDeployReportCommand(prime),
+		newDeployInstallCommand(registry, prime),
+		newDeployConfigureCommand(registry, prime),
+		newDeploySymlinkCommand(registry, prime),
+		newDeployReportCommand(registry, prime),
 	)
 
-	tutorialCmd := newTutorialCommand(prime)
-	tutorialCmd.AddChildren(newTutorialProjectCommand(prime))
+	tutorialCmd := newTutorialCommand(registry, prime)
+	tutorialCmd.AddChildren(newTutorialProjectCommand(registry, prime))
 
-	eventsCmd := newEventsCommand(prime)
-	eventsCmd.AddChildren(newEventsLogCommand(prime))
+	eventsCmd := newEventsCommand(registry, prime)
+	eventsCmd.AddChildren(newEventsLogCommand(registry, prime))
 
-	stateCmd := newStateCommand(globals, prime)
+	stateCmd := newStateCommand(registry, globals, prime)
 	stateCmd.AddChildren(
-		newActivateCommand(prime),
-		newInitCommand(prime),
-		newPushCommand(prime),
-		newProjectsCommand(prime),
+		newActivateCommand(registry, prime),
+		newInitCommand(registry, prime),
+		newPushCommand(registry, prime),
+		newProjectsCommand(registry, prime),
 		authCmd,
 		exportCmd,
-		newOrganizationsCommand(prime),
-		newRunCommand(prime),
-		newShowCommand(prime),
+		newOrganizationsCommand(registry, prime),
+		newRunCommand(registry, prime),
+		newShowCommand(registry, prime),
 		packagesCmd,
 		platformsCmd,
-		newHistoryCommand(prime),
+		newHistoryCommand(registry, prime),
 		cleanCmd,
 		languagesCmd,
 		deployCmd,
 		scriptsCmd,
 		eventsCmd,
-		newPullCommand(prime),
-		newUpdateCommand(prime),
-		newForkCommand(prime),
-		newPpmCommand(prime),
-		newInviteCommand(prime),
+		newPullCommand(registry, prime),
+		newUpdateCommand(registry, prime),
+		newForkCommand(registry, prime),
+		newPpmCommand(registry, prime),
+		newInviteCommand(registry, prime),
 		tutorialCmd,
-		newPrepareCommand(prime),
-		newProtocolCommand(prime),
-		newShimCommand(prime, args...),
+		newPrepareCommand(registry, prime),
+		newProtocolCommand(registry, prime),
+		newShimCommand(registry, prime, args...),
 	)
 
 	applyLegacyChildren(stateCmd, globals)
@@ -128,15 +130,14 @@ func newGlobalOptions() *globalOptions {
 	return &globalOptions{}
 }
 
-func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Command {
+func newStateCommand(registry *captain.Registry, globals *globalOptions, prime *primer.Values) *captain.Command {
 	opts := state.NewOptions()
 
 	runner := state.New(opts, prime)
-	cmd := captain.NewCommand(
+	cmd := registry.NewCommand(
 		"state",
 		"",
 		locale.T("state_description"),
-		prime.Output(),
 		[]*captain.Flag{
 			{
 				Name:        "locale",

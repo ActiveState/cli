@@ -8,18 +8,17 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
-func newInitCommand(prime *primer.Values) *captain.Command {
+func newInitCommand(registry *captain.Registry, prime *primer.Values) *captain.Command {
 	initRunner := initialize.New(prime)
 
 	params := initialize.RunParams{
 		Namespace: &project.Namespaced{},
 	}
 
-	return captain.NewCommand(
+	return registry.NewCommand(
 		"init",
 		locale.Tl("init_title", "Initializing Project"),
 		locale.T("init_description"),
-		prime.Output(),
 		[]*captain.Flag{
 			{
 				Name:        "path",

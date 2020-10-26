@@ -7,7 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/runners/ppm"
 )
 
-func newPpmCommand(prime *primer.Values) *captain.Command {
+func newPpmCommand(registry *captain.Registry, prime *primer.Values) *captain.Command {
 	shim := ppm.NewShim(prime)
 	conversion := ppm.NewConversionFlow(prime)
 	rootCmd := captain.NewHiddenShimCommand(
@@ -28,18 +28,18 @@ func newPpmCommand(prime *primer.Values) *captain.Command {
 	)
 
 	var children []*captain.Command
-	children = addPackagesCommands(prime, children)
-	children = addRepositoryCommands(prime, children)
-	children = addProjectCommands(prime, children)
-	children = addVersionCommand(prime, children)
-	children = addInfoCommand(prime, children)
-	children = addOtherCommands(prime, children)
+	children = addPackagesCommands(registry, prime, children)
+	children = addRepositoryCommands(registry, prime, children)
+	children = addProjectCommands(registry, prime, children)
+	children = addVersionCommand(registry, prime, children)
+	children = addInfoCommand(registry, prime, children)
+	children = addOtherCommands(registry, prime, children)
 
 	rootCmd.AddChildren(children...)
 	return rootCmd
 }
 
-func addPackagesCommands(prime *primer.Values, cmds []*captain.Command) []*captain.Command {
+func addPackagesCommands(registry *captain.Registry, prime *primer.Values, cmds []*captain.Command) []*captain.Command {
 	shim := ppm.NewShim(prime)
 	conversion := ppm.NewConversionFlow(prime)
 	return append(cmds,
@@ -82,7 +82,7 @@ func addPackagesCommands(prime *primer.Values, cmds []*captain.Command) []*capta
 	)
 }
 
-func addVersionCommand(prime *primer.Values, cmds []*captain.Command) []*captain.Command {
+func addVersionCommand(registry *captain.Registry, prime *primer.Values, cmds []*captain.Command) []*captain.Command {
 	shim := ppm.NewShim(prime)
 	return append(cmds,
 		captain.NewShimCommand(
@@ -95,7 +95,7 @@ func addVersionCommand(prime *primer.Values, cmds []*captain.Command) []*captain
 	)
 }
 
-func addProjectCommands(prime *primer.Values, cmds []*captain.Command) []*captain.Command {
+func addProjectCommands(registry *captain.Registry, prime *primer.Values, cmds []*captain.Command) []*captain.Command {
 	shim := ppm.NewShim(prime)
 	conversion := ppm.NewConversionFlow(prime)
 	return append(cmds,
@@ -143,7 +143,7 @@ func addProjectCommands(prime *primer.Values, cmds []*captain.Command) []*captai
 	)
 }
 
-func addRepositoryCommands(prime *primer.Values, cmds []*captain.Command) []*captain.Command {
+func addRepositoryCommands(registry *captain.Registry, prime *primer.Values, cmds []*captain.Command) []*captain.Command {
 	shim := ppm.NewShim(prime)
 	return append(cmds,
 		// The repo sub-commands in ppm configure alternative package
@@ -182,7 +182,7 @@ func addRepositoryCommands(prime *primer.Values, cmds []*captain.Command) []*cap
 	)
 }
 
-func addOtherCommands(prime *primer.Values, cmds []*captain.Command) []*captain.Command {
+func addOtherCommands(registry *captain.Registry, prime *primer.Values, cmds []*captain.Command) []*captain.Command {
 	shim := ppm.NewShim(prime)
 	return append(cmds,
 		// The repo sub-commands in ppm configure alternative package
@@ -206,7 +206,7 @@ func addOtherCommands(prime *primer.Values, cmds []*captain.Command) []*captain.
 	)
 }
 
-func addInfoCommand(prime *primer.Values, cmds []*captain.Command) []*captain.Command {
+func addInfoCommand(registry *captain.Registry, prime *primer.Values, cmds []*captain.Command) []*captain.Command {
 	shim := ppm.NewShim(prime)
 	return append(cmds, captain.NewShimCommand(
 		"info",

@@ -42,7 +42,15 @@ type Command struct {
 	out output.Outputer
 }
 
-func NewCommand(name, title, description string, out output.Outputer, flags []*Flag, args []*Argument, executor Executor) *Command {
+type Registry struct {
+	out output.Outputer
+}
+
+func NewRegistry(out output.Outputer) *Registry {
+	return &Registry{out}
+}
+
+func (r *Registry) NewCommand(name, title, description string, flags []*Flag, args []*Argument, executor Executor) *Command {
 	// Validate args
 	for idx, arg := range args {
 		if idx > 0 && arg.Required && !args[idx-1].Required {
@@ -60,7 +68,7 @@ func NewCommand(name, title, description string, out output.Outputer, flags []*F
 		arguments: args,
 		flags:     flags,
 		commands:  make([]*Command, 0),
-		out:       out,
+		out:       r.out,
 	}
 
 	short := description

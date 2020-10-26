@@ -8,15 +8,14 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 )
 
-func newUpdateCommand(prime *primer.Values) *captain.Command {
+func newUpdateCommand(registry *captain.Registry, prime *primer.Values) *captain.Command {
 	runner := update.New(prime)
 	params := update.Params{}
 
-	cmd := captain.NewCommand(
+	cmd := registry.NewCommand(
 		"update",
 		locale.Tl("update_title", "Updating The State Tool"),
 		locale.Tl("update_description", "Updates the State Tool to the latest available version"),
-		prime.Output(),
 		[]*captain.Flag{
 			{
 				Name: "lock",

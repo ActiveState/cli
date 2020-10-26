@@ -7,12 +7,11 @@ import (
 	"github.com/ActiveState/cli/internal/runners/clean"
 )
 
-func newCleanCommand(prime *primer.Values) *captain.Command {
-	return captain.NewCommand(
+func newCleanCommand(registry *captain.Registry, prime *primer.Values) *captain.Command {
+	return registry.NewCommand(
 		"clean",
 		locale.Tl("clean_title", "Cleaning Resources"),
 		locale.T("clean_description"),
-		prime.Output(),
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, _ []string) error {
@@ -22,13 +21,12 @@ func newCleanCommand(prime *primer.Values) *captain.Command {
 	)
 }
 
-func newUninstallCommand(prime *primer.Values) *captain.Command {
+func newUninstallCommand(registry *captain.Registry, prime *primer.Values) *captain.Command {
 	params := clean.UninstallParams{}
-	return captain.NewCommand(
+	return registry.NewCommand(
 		"uninstall",
 		locale.Tl("clean_uninstall_title", "Uninstalling"),
 		locale.T("uninstall_description"),
-		prime.Output(),
 		[]*captain.Flag{
 			{
 				Name:        "force",
@@ -49,14 +47,13 @@ func newUninstallCommand(prime *primer.Values) *captain.Command {
 	)
 }
 
-func newCacheCommand(prime *primer.Values) *captain.Command {
+func newCacheCommand(registry *captain.Registry, prime *primer.Values) *captain.Command {
 	runner := clean.NewCache(prime)
 	params := clean.CacheParams{}
-	return captain.NewCommand(
+	return registry.NewCommand(
 		"cache",
 		locale.Tl("clean_cache_title", "Cleaning Cached Runtimes"),
 		locale.T("cache_description"),
-		prime.Output(),
 		[]*captain.Flag{
 			{
 				Name:        "force",
@@ -79,14 +76,13 @@ func newCacheCommand(prime *primer.Values) *captain.Command {
 	)
 }
 
-func newConfigCommand(prime *primer.Values) *captain.Command {
+func newConfigCommand(registry *captain.Registry, prime *primer.Values) *captain.Command {
 	runner := clean.NewConfig(prime)
 	params := clean.ConfigParams{}
-	return captain.NewCommand(
+	return registry.NewCommand(
 		"config",
 		locale.Tl("clean_config_title", "Cleaning Configuration"),
 		locale.T("config_description"),
-		prime.Output(),
 		[]*captain.Flag{
 			{
 				Name:        "force",

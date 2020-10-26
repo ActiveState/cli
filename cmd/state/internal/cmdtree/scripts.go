@@ -7,14 +7,13 @@ import (
 	"github.com/ActiveState/cli/internal/runners/scripts"
 )
 
-func newScriptsCommand(prime *primer.Values) *captain.Command {
+func newScriptsCommand(registry *captain.Registry, prime *primer.Values) *captain.Command {
 	runner := scripts.NewScripts(prime)
 
-	return captain.NewCommand(
+	return registry.NewCommand(
 		"scripts",
 		locale.Tl("scripts_title", "Listing Scripts"),
 		locale.T("scripts_description"),
-		prime.Output(),
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
@@ -22,15 +21,14 @@ func newScriptsCommand(prime *primer.Values) *captain.Command {
 		})
 }
 
-func newScriptsEditCommand(prime *primer.Values) *captain.Command {
+func newScriptsEditCommand(registry *captain.Registry, prime *primer.Values) *captain.Command {
 	editRunner := scripts.NewEdit(prime)
 	params := scripts.EditParams{}
 
-	return captain.NewCommand(
+	return registry.NewCommand(
 		"edit",
 		locale.Tl("scripts_edit_title", "Editing Script"),
 		locale.T("edit_description"),
-		prime.Output(),
 		[]*captain.Flag{
 			{
 				Name:        "expand",

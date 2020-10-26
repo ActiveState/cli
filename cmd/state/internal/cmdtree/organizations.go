@@ -7,16 +7,15 @@ import (
 	"github.com/ActiveState/cli/internal/runners/organizations"
 )
 
-func newOrganizationsCommand(prime *primer.Values) *captain.Command {
+func newOrganizationsCommand(registry *captain.Registry, prime *primer.Values) *captain.Command {
 	runner := organizations.NewOrganizations(prime)
 
 	params := organizations.OrgParams{}
 
-	cmd := captain.NewCommand(
+	cmd := registry.NewCommand(
 		"organizations",
 		locale.Tl("organizations_title", "Listing Organizations"),
 		locale.T("organizations_description"),
-		prime.Output(),
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, _ []string) error {

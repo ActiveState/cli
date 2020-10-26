@@ -8,16 +8,15 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
-func newPlatformsCommand(prime *primer.Values) *captain.Command {
+func newPlatformsCommand(registry *captain.Registry, prime *primer.Values) *captain.Command {
 	runner := platforms.NewList(prime)
 
 	params := platforms.ListRunParams{}
 
-	return captain.NewCommand(
+	return registry.NewCommand(
 		"platforms",
 		locale.Tl("platforms_title", "Listing Platforms"),
 		locale.T("platforms_cmd_description"),
-		prime.Output(),
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(_ *captain.Command, _ []string) error {
@@ -32,14 +31,13 @@ func newPlatformsCommand(prime *primer.Values) *captain.Command {
 	)
 }
 
-func newPlatformsSearchCommand(prime *primer.Values) *captain.Command {
+func newPlatformsSearchCommand(registry *captain.Registry, prime *primer.Values) *captain.Command {
 	runner := platforms.NewSearch(prime)
 
-	return captain.NewCommand(
+	return registry.NewCommand(
 		"search",
 		locale.Tl("platforms_search_title", "Searching Platforms"),
 		locale.T("platforms_search_cmd_description"),
-		prime.Output(),
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(_ *captain.Command, _ []string) error {
@@ -48,16 +46,15 @@ func newPlatformsSearchCommand(prime *primer.Values) *captain.Command {
 	)
 }
 
-func newPlatformsAddCommand(prime *primer.Values) *captain.Command {
+func newPlatformsAddCommand(registry *captain.Registry, prime *primer.Values) *captain.Command {
 	runner := platforms.NewAdd(prime)
 
 	params := platforms.AddRunParams{}
 
-	return captain.NewCommand(
+	return registry.NewCommand(
 		"add",
 		locale.Tl("platforms_add_title", "Adding Platform"),
 		locale.T("platforms_add_cmd_description"),
-		prime.Output(),
 		[]*captain.Flag{
 			{
 				Name:        locale.T("flag_platforms_shared_bitwidth"),
@@ -91,16 +88,15 @@ func newPlatformsAddCommand(prime *primer.Values) *captain.Command {
 	)
 }
 
-func newPlatformsRemoveCommand(prime *primer.Values) *captain.Command {
+func newPlatformsRemoveCommand(registry *captain.Registry, prime *primer.Values) *captain.Command {
 	runner := platforms.NewRemove()
 
 	params := platforms.RemoveRunParams{}
 
-	return captain.NewCommand(
+	return registry.NewCommand(
 		"remove",
 		locale.Tl("platforms_remove_title", "Removing Platform"),
 		locale.T("platforms_remove_cmd_description"),
-		prime.Output(),
 		[]*captain.Flag{
 			{
 				Name:        locale.T("flag_platforms_shared_bitwidth"),

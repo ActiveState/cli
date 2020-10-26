@@ -9,14 +9,13 @@ import (
 	"github.com/ActiveState/cli/internal/runners/shim"
 )
 
-func newShimCommand(prime *primer.Values, args ...string) *captain.Command {
+func newShimCommand(registry *captain.Registry, prime *primer.Values, args ...string) *captain.Command {
 	runner := shim.New(prime)
 
-	cmd := captain.NewCommand(
+	cmd := registry.NewCommand(
 		"shim",
 		"",
 		locale.T("shim_description"),
-		prime.Output(),
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {

@@ -7,15 +7,14 @@ import (
 	"github.com/ActiveState/cli/internal/runners/fork"
 )
 
-func newForkCommand(prime *primer.Values) *captain.Command {
+func newForkCommand(registry *captain.Registry, prime *primer.Values) *captain.Command {
 	runner := fork.New(prime)
 	params := &fork.Params{}
 
-	return captain.NewCommand(
+	return registry.NewCommand(
 		"fork",
 		locale.Tl("fork_title", "Forking Project"),
 		locale.Tl("fork_description", "Fork an existing ActiveState Platform project"),
-		prime.Output(),
 		[]*captain.Flag{
 			{
 				Name:        "org",

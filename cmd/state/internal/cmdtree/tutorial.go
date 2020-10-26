@@ -9,12 +9,11 @@ import (
 	"github.com/ActiveState/cli/internal/runners/tutorial"
 )
 
-func newTutorialCommand(prime *primer.Values) *captain.Command {
-	cmd := captain.NewCommand(
+func newTutorialCommand(registry *captain.Registry, prime *primer.Values) *captain.Command {
+	cmd := registry.NewCommand(
 		"tutorial",
 		locale.Tl("tutorial_title", "Running Tutorial"),
 		locale.Tl("tutorial_description", "Learn how to use the State Tool"),
-		prime.Output(),
 		nil,
 		nil,
 		func(ccmd *captain.Command, args []string) error {
@@ -26,15 +25,14 @@ func newTutorialCommand(prime *primer.Values) *captain.Command {
 	return cmd
 }
 
-func newTutorialProjectCommand(prime *primer.Values) *captain.Command {
+func newTutorialProjectCommand(registry *captain.Registry, prime *primer.Values) *captain.Command {
 	runner := tutorial.New(prime)
 	params := tutorial.NewProjectParams{}
 
-	cmd := captain.NewCommand(
+	cmd := registry.NewCommand(
 		"new-project",
 		locale.Tl("tutorial_new_project", `Running "New Project" Tutorial`),
 		locale.Tl("tutorial_description", "Learn how to create new projects. (ie. virtual environments)"),
-		prime.Output(),
 		[]*captain.Flag{
 			{
 				Name:        "skip-intro",

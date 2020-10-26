@@ -9,7 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/runners/deploy"
 )
 
-func newDeployCommand(prime *primer.Values) *captain.Command {
+func newDeployCommand(registry *captain.Registry, prime *primer.Values) *captain.Command {
 	runner := deploy.NewDeploy(deploy.UnsetStep, prime)
 
 	params := &deploy.Params{}
@@ -34,11 +34,10 @@ func newDeployCommand(prime *primer.Values) *captain.Command {
 		})
 	}
 
-	return captain.NewCommand(
+	return registry.NewCommand(
 		"deploy",
 		locale.Tl("deploy_title", "Deploying Runtime"),
 		locale.T("deploy_cmd_description"),
-		prime.Output(),
 		flags,
 		[]*captain.Argument{
 			{
@@ -53,16 +52,15 @@ func newDeployCommand(prime *primer.Values) *captain.Command {
 		})
 }
 
-func newDeployInstallCommand(prime *primer.Values) *captain.Command {
+func newDeployInstallCommand(registry *captain.Registry, prime *primer.Values) *captain.Command {
 	runner := deploy.NewDeploy(deploy.InstallStep, prime)
 
 	params := &deploy.Params{}
 
-	return captain.NewCommand(
+	return registry.NewCommand(
 		"install",
 		locale.Tl("deploy_install_title", "Installing Runtime (Unconfigured)"),
 		locale.T("deploy_install_cmd_description"),
-		prime.Output(),
 		[]*captain.Flag{
 			{
 				Name:        "path",
@@ -83,7 +81,7 @@ func newDeployInstallCommand(prime *primer.Values) *captain.Command {
 		})
 }
 
-func newDeployConfigureCommand(prime *primer.Values) *captain.Command {
+func newDeployConfigureCommand(registry *captain.Registry, prime *primer.Values) *captain.Command {
 	runner := deploy.NewDeploy(deploy.ConfigureStep, prime)
 
 	params := &deploy.Params{}
@@ -103,11 +101,10 @@ func newDeployConfigureCommand(prime *primer.Values) *captain.Command {
 		})
 	}
 
-	return captain.NewCommand(
+	return registry.NewCommand(
 		"configure",
 		locale.Tl("deploy_configure_title", "Configuring Runtime For Your Shell"),
 		locale.T("deploy_configure_cmd_description"),
-		prime.Output(),
 		flags,
 		[]*captain.Argument{
 			{
@@ -122,16 +119,15 @@ func newDeployConfigureCommand(prime *primer.Values) *captain.Command {
 		})
 }
 
-func newDeploySymlinkCommand(prime *primer.Values) *captain.Command {
+func newDeploySymlinkCommand(registry *captain.Registry, prime *primer.Values) *captain.Command {
 	runner := deploy.NewDeploy(deploy.SymlinkStep, prime)
 
 	params := &deploy.Params{}
 
-	return captain.NewCommand(
+	return registry.NewCommand(
 		"symlink",
 		locale.Tl("deploy_symlink_title", "Symlinking Executables"),
 		locale.T("deploy_symlink_cmd_description"),
-		prime.Output(),
 		[]*captain.Flag{
 			{
 				Name:        "path",
@@ -157,16 +153,15 @@ func newDeploySymlinkCommand(prime *primer.Values) *captain.Command {
 		})
 }
 
-func newDeployReportCommand(prime *primer.Values) *captain.Command {
+func newDeployReportCommand(registry *captain.Registry, prime *primer.Values) *captain.Command {
 	runner := deploy.NewDeploy(deploy.ReportStep, prime)
 
 	params := &deploy.Params{}
 
-	return captain.NewCommand(
+	return registry.NewCommand(
 		"report",
 		locale.Tl("deploy_report_title", "Reporting Deployment Information"),
 		locale.T("deploy_report_cmd_description"),
-		prime.Output(),
 		[]*captain.Flag{
 			{
 				Name:        "path",

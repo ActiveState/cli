@@ -7,16 +7,15 @@ import (
 	"github.com/ActiveState/cli/internal/runners/run"
 )
 
-func newRunCommand(prime *primer.Values) *captain.Command {
+func newRunCommand(registry *captain.Registry, prime *primer.Values) *captain.Command {
 	runner := run.New(prime)
 
 	var name string
 
-	cmd := captain.NewCommand(
+	cmd := registry.NewCommand(
 		"run",
 		locale.Tl("run_title", "Running Script"),
 		locale.T("run_description"),
-		prime.Output(),
 		nil,
 		[]*captain.Argument{
 			{

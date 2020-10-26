@@ -7,16 +7,15 @@ import (
 	"github.com/ActiveState/cli/internal/runners/packages"
 )
 
-func newPackagesCommand(prime *primer.Values) *captain.Command {
+func newPackagesCommand(registry *captain.Registry, prime *primer.Values) *captain.Command {
 	runner := packages.NewList(prime)
 
 	params := packages.ListRunParams{}
 
-	cmd := captain.NewCommand(
+	cmd := registry.NewCommand(
 		"packages",
 		locale.Tl("package_title", "Listing Packages"),
 		locale.T("package_cmd_description"),
-		prime.Output(),
 		[]*captain.Flag{
 			{
 				Name:        "commit",
@@ -44,16 +43,15 @@ func newPackagesCommand(prime *primer.Values) *captain.Command {
 	return cmd
 }
 
-func newPackagesAddCommand(prime *primer.Values) *captain.Command {
+func newPackagesAddCommand(registry *captain.Registry, prime *primer.Values) *captain.Command {
 	runner := packages.NewAdd(prime)
 
 	params := packages.AddRunParams{}
 
-	return captain.NewCommand(
+	return registry.NewCommand(
 		"add",
 		locale.Tl("package_add_title", "Adding Package"),
 		locale.T("package_add_cmd_description"),
-		prime.Output(),
 		[]*captain.Flag{},
 		[]*captain.Argument{
 			{
@@ -69,16 +67,15 @@ func newPackagesAddCommand(prime *primer.Values) *captain.Command {
 	)
 }
 
-func newPackagesUpdateCommand(prime *primer.Values) *captain.Command {
+func newPackagesUpdateCommand(registry *captain.Registry, prime *primer.Values) *captain.Command {
 	runner := packages.NewUpdate(prime)
 
 	params := packages.UpdateRunParams{}
 
-	return captain.NewCommand(
+	return registry.NewCommand(
 		"update",
 		locale.Tl("package_update_title", "Updating Packages"),
 		locale.T("package_update_cmd_description"),
-		prime.Output(),
 		[]*captain.Flag{},
 		[]*captain.Argument{
 			{
@@ -94,16 +91,15 @@ func newPackagesUpdateCommand(prime *primer.Values) *captain.Command {
 	)
 }
 
-func newPackagesRemoveCommand(prime *primer.Values) *captain.Command {
+func newPackagesRemoveCommand(registry *captain.Registry, prime *primer.Values) *captain.Command {
 	runner := packages.NewRemove(prime)
 
 	params := packages.RemoveRunParams{}
 
-	return captain.NewCommand(
+	return registry.NewCommand(
 		"remove",
 		locale.Tl("package_remove_title", "Removing Package"),
 		locale.T("package_remove_cmd_description"),
-		prime.Output(),
 		[]*captain.Flag{},
 		[]*captain.Argument{
 			{
@@ -119,16 +115,15 @@ func newPackagesRemoveCommand(prime *primer.Values) *captain.Command {
 	)
 }
 
-func newPackagesImportCommand(prime *primer.Values) *captain.Command {
+func newPackagesImportCommand(registry *captain.Registry, prime *primer.Values) *captain.Command {
 	runner := packages.NewImport(prime)
 
 	params := packages.NewImportRunParams()
 
-	return captain.NewCommand(
+	return registry.NewCommand(
 		"import",
 		locale.Tl("package_import_title", "Importing Packages"),
 		locale.T("package_import_cmd_description"),
-		prime.Output(),
 		[]*captain.Flag{
 			{
 				Name:        "force",
@@ -150,16 +145,15 @@ func newPackagesImportCommand(prime *primer.Values) *captain.Command {
 	)
 }
 
-func newPackagesSearchCommand(prime *primer.Values) *captain.Command {
+func newPackagesSearchCommand(registry *captain.Registry, prime *primer.Values) *captain.Command {
 	runner := packages.NewSearch(prime)
 
 	params := packages.SearchRunParams{}
 
-	return captain.NewCommand(
+	return registry.NewCommand(
 		"search",
 		locale.Tl("package_search_title", "Searching Packages"),
 		locale.T("package_search_cmd_description"),
-		prime.Output(),
 		[]*captain.Flag{
 			{
 				Name:        "language",

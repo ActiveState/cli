@@ -7,16 +7,15 @@ import (
 	"github.com/ActiveState/cli/internal/runners/auth"
 )
 
-func newAuthCommand(prime *primer.Values) *captain.Command {
+func newAuthCommand(registry *captain.Registry, prime *primer.Values) *captain.Command {
 	authRunner := auth.NewAuth(prime)
 
 	params := auth.AuthParams{}
 
-	return captain.NewCommand(
+	return registry.NewCommand(
 		"auth",
 		locale.Tl("auth_title", "Signing In To The ActiveState Platform"),
 		locale.T("auth_description"),
-		prime.Output(),
 		[]*captain.Flag{
 			{
 				Name:        "token",
@@ -50,13 +49,12 @@ func newAuthCommand(prime *primer.Values) *captain.Command {
 	)
 }
 
-func newSignupCommand(prime *primer.Values) *captain.Command {
+func newSignupCommand(registry *captain.Registry, prime *primer.Values) *captain.Command {
 	signupRunner := auth.NewSignup(prime)
-	return captain.NewCommand(
+	return registry.NewCommand(
 		"signup",
 		locale.Tl("signup_title", "Signing Up With The ActiveState Platform"),
 		locale.T("signup_description"),
-		prime.Output(),
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
@@ -65,13 +63,12 @@ func newSignupCommand(prime *primer.Values) *captain.Command {
 	)
 }
 
-func newLogoutCommand(prime *primer.Values) *captain.Command {
+func newLogoutCommand(registry *captain.Registry, prime *primer.Values) *captain.Command {
 	logoutRunner := auth.NewLogout(prime)
-	return captain.NewCommand(
+	return registry.NewCommand(
 		"logout",
 		locale.Tl("logout_title", "Logging Out Of The ActiveState Platform"),
 		locale.T("logout_description"),
-		prime.Output(),
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {

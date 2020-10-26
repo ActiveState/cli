@@ -7,16 +7,15 @@ import (
 	"github.com/ActiveState/cli/internal/runners/invite"
 )
 
-func newInviteCommand(prime *primer.Values) *captain.Command {
+func newInviteCommand(registry *captain.Registry, prime *primer.Values) *captain.Command {
 	inviteRunner := invite.New(prime)
 
 	params := invite.Params{}
 
-	return captain.NewCommand(
+	return registry.NewCommand(
 		"invite",
 		locale.Tl("invite_title", "Inviting New Members"),
 		locale.Tl("invite_description", "Invite new members to an organization"),
-		prime.Output(),
 		[]*captain.Flag{
 			{
 				Name:        "organization",

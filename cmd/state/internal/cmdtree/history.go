@@ -14,15 +14,14 @@ type historyOpts struct {
 	Namespace string
 }
 
-func newHistoryCommand(prime *primer.Values) *captain.Command {
+func newHistoryCommand(registry *captain.Registry, prime *primer.Values) *captain.Command {
 	initRunner := history.NewHistory()
 
 	opts := historyOpts{}
-	return captain.NewCommand(
+	return registry.NewCommand(
 		"history",
 		locale.Tl("history_title", "Viewing Project History"),
 		locale.T("history_cmd_description"),
-		prime.Output(),
 		[]*captain.Flag{
 			{
 				Name:        "namespace",

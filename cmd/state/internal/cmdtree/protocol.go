@@ -7,15 +7,14 @@ import (
 	"github.com/ActiveState/cli/internal/runners/protocol"
 )
 
-func newProtocolCommand(prime *primer.Values) *captain.Command {
+func newProtocolCommand(registry *captain.Registry, prime *primer.Values) *captain.Command {
 	runner := protocol.New(prime)
 	params := protocol.Params{}
 
-	cmd := captain.NewCommand(
+	cmd := registry.NewCommand(
 		"_protocol",
 		"",
 		locale.Tl("protocol_description", "Process URLs that use the state protocol"),
-		prime.Output(),
 		[]*captain.Flag{},
 		[]*captain.Argument{
 			{
