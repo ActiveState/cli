@@ -57,10 +57,10 @@ func IngredientByNameAndVersion(language, name, version string) (*IngredientAndV
 		}
 
 		for _, ver := range ingredient.Versions {
-			v := ver.Version
-			if v == version {
+			if ver.Version == version {
 				return &IngredientAndVersion{
-					ingredient.V1SearchIngredientsResponseIngredientsItems, v,
+					ingredient.V1SearchIngredientsResponseIngredientsItems,
+					ver.Version,
 					ingredient.Namespace,
 				}, nil
 			}
@@ -160,8 +160,8 @@ func searchIngredientsNamespace(limit int, namespace, language, name string) ([]
 
 	results, err := client.SearchIngredients(params, authentication.ClientAuth())
 	if err != nil {
-		if gniErr, ok := err.(*inventory_operations.SearchIngredientsDefault); ok {
-			return nil, FailIngredients.New(*gniErr.Payload.Message)
+		if sidErr, ok := err.(*inventory_operations.SearchIngredientsDefault); ok {
+			return nil, FailIngredients.New(*sidErr.Payload.Message)
 		}
 		return nil, FailIngredients.Wrap(err)
 	}
