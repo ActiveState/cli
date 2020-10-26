@@ -69,17 +69,17 @@ func FetchRecipeIDForCommitAndPlatform(commitID strfmt.UUID, owner, project, org
 	return fetchRecipeID(commitID, owner, project, orgID, private, &hostPlatform)
 }
 
-func FetchRecipeByID(recipeID strfmt.UUID) (*inventory_models.V1Recipe, error) {
+func FetchRecipeByID(recipeID strfmt.UUID) (*inventory_models.V1SolutionRecipeRecipe, error) {
 	params := iop.NewGetSolutionRecipeParams()
 	params.RecipeID = recipeID
 
 	client, _ := inventory.Init()
 	recipe, err := client.GetSolutionRecipe(params, authentication.ClientAuth())
 	if err != nil {
-			return nil, errs.Wrap(err,"Unknown error while retrieving full order, error: %v, recipe: %s", err, string(recipeID))
+		return nil, errs.Wrap(err, "Unknown error while retrieving full order, error: %v, recipe: %s", err, string(recipeID))
 	}
 
-	return recipe.GetPayload().Recipe, nil
+	return recipe.Payload.Recipe, nil
 }
 
 func fetchRawRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *string) (string, *failures.Failure) {

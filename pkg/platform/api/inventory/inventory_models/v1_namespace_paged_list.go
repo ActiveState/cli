@@ -8,8 +8,9 @@ package inventory_models
 import (
 	"strconv"
 
+	strfmt "github.com/go-openapi/strfmt"
+
 	"github.com/go-openapi/errors"
-	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
@@ -17,21 +18,20 @@ import (
 // V1NamespacePagedList Namespace Paged List
 //
 // A paginated list of namespaces
-//
 // swagger:model v1NamespacePagedList
 type V1NamespacePagedList struct {
 
 	// links
 	// Required: true
-	Links *V1SubSchemaPagingLinks `json:"links"`
+	Links *V1NamespacePagedListLinks `json:"links"`
 
 	// A page of namespaces
 	// Required: true
-	Namespaces []*V1Namespace `json:"namespaces"`
+	Namespaces []*V1NamespacePagedListNamespacesItems `json:"namespaces"`
 
 	// paging
 	// Required: true
-	Paging *V1SubSchemaPaging `json:"paging"`
+	Paging *V1NamespacePagedListPaging `json:"paging"`
 }
 
 // Validate validates this v1 namespace paged list

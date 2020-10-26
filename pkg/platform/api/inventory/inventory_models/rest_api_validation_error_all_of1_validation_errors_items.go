@@ -6,14 +6,14 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	strfmt "github.com/go-openapi/strfmt"
+
 	"github.com/go-openapi/errors"
-	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // RestAPIValidationErrorAllOf1ValidationErrorsItems A single validation error
-//
 // swagger:model restApiValidationErrorAllOf1ValidationErrorsItems
 type RestAPIValidationErrorAllOf1ValidationErrorsItems struct {
 

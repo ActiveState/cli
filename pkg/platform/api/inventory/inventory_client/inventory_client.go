@@ -6,10 +6,12 @@ package inventory_client
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
 	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
-	"github.com/go-openapi/strfmt"
+
+	strfmt "github.com/go-openapi/strfmt"
+
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
 )
 
 // Default inventory HTTP client.
@@ -54,7 +56,9 @@ func New(transport runtime.ClientTransport, formats strfmt.Registry) *Inventory 
 
 	cli := new(Inventory)
 	cli.Transport = transport
+
 	cli.InventoryOperations = inventory_operations.New(transport, formats)
+
 	return cli
 }
 
@@ -99,7 +103,7 @@ func (cfg *TransportConfig) WithSchemes(schemes []string) *TransportConfig {
 
 // Inventory is a client for inventory
 type Inventory struct {
-	InventoryOperations inventory_operations.ClientService
+	InventoryOperations *inventory_operations.Client
 
 	Transport runtime.ClientTransport
 }
@@ -107,5 +111,7 @@ type Inventory struct {
 // SetTransport changes the transport on the client and all its subresources
 func (c *Inventory) SetTransport(transport runtime.ClientTransport) {
 	c.Transport = transport
+
 	c.InventoryOperations.SetTransport(transport)
+
 }

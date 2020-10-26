@@ -8,8 +8,9 @@ package inventory_models
 import (
 	"strconv"
 
+	strfmt "github.com/go-openapi/strfmt"
+
 	"github.com/go-openapi/errors"
-	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
@@ -17,7 +18,6 @@ import (
 // V1NormalizedNames Unnormalized Names
 //
 // A list of mappings from unnormalized to normalized names.
-//
 // swagger:model v1NormalizedNames
 type V1NormalizedNames struct {
 

@@ -10,9 +10,10 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
-	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	strfmt "github.com/go-openapi/strfmt"
+
+	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // GetSolutionRecipeReader is a Reader for the GetSolutionRecipe structure.
@@ -23,12 +24,14 @@ type GetSolutionRecipeReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetSolutionRecipeReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
+
 	case 200:
 		result := NewGetSolutionRecipeOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
+
 	default:
 		result := NewGetSolutionRecipeDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -60,10 +63,6 @@ type GetSolutionRecipeOK struct {
 
 func (o *GetSolutionRecipeOK) Error() string {
 	return fmt.Sprintf("[GET /v1/solutions/recipes/{recipe_id}][%d] getSolutionRecipeOK  %+v", 200, o.Payload)
-}
-
-func (o *GetSolutionRecipeOK) GetPayload() *inventory_models.V1SolutionRecipe {
-	return o.Payload
 }
 
 func (o *GetSolutionRecipeOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -105,10 +104,6 @@ func (o *GetSolutionRecipeDefault) Code() int {
 
 func (o *GetSolutionRecipeDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/solutions/recipes/{recipe_id}][%d] getSolutionRecipe default  %+v", o._statusCode, o.Payload)
-}
-
-func (o *GetSolutionRecipeDefault) GetPayload() *inventory_models.RestAPIError {
-	return o.Payload
 }
 
 func (o *GetSolutionRecipeDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

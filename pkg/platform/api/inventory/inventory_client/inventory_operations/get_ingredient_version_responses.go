@@ -10,9 +10,10 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
-	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	strfmt "github.com/go-openapi/strfmt"
+
+	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // GetIngredientVersionReader is a Reader for the GetIngredientVersion structure.
@@ -23,12 +24,14 @@ type GetIngredientVersionReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetIngredientVersionReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
+
 	case 200:
 		result := NewGetIngredientVersionOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
+
 	default:
 		result := NewGetIngredientVersionDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -56,10 +59,6 @@ type GetIngredientVersionOK struct {
 
 func (o *GetIngredientVersionOK) Error() string {
 	return fmt.Sprintf("[GET /v1/ingredients/{ingredient_id}/versions/{ingredient_version_id}][%d] getIngredientVersionOK  %+v", 200, o.Payload)
-}
-
-func (o *GetIngredientVersionOK) GetPayload() *inventory_models.V1IngredientVersion {
-	return o.Payload
 }
 
 func (o *GetIngredientVersionOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -98,10 +97,6 @@ func (o *GetIngredientVersionDefault) Code() int {
 
 func (o *GetIngredientVersionDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/ingredients/{ingredient_id}/versions/{ingredient_version_id}][%d] getIngredientVersion default  %+v", o._statusCode, o.Payload)
-}
-
-func (o *GetIngredientVersionDefault) GetPayload() *inventory_models.RestAPIError {
-	return o.Payload
 }
 
 func (o *GetIngredientVersionDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

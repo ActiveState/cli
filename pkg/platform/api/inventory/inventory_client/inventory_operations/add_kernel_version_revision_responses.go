@@ -10,9 +10,10 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
-	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	strfmt "github.com/go-openapi/strfmt"
+
+	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // AddKernelVersionRevisionReader is a Reader for the AddKernelVersionRevision structure.
@@ -23,18 +24,21 @@ type AddKernelVersionRevisionReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *AddKernelVersionRevisionReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
+
 	case 200:
 		result := NewAddKernelVersionRevisionOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
+
 	case 400:
 		result := NewAddKernelVersionRevisionBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
+
 	default:
 		result := NewAddKernelVersionRevisionDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -64,10 +68,6 @@ func (o *AddKernelVersionRevisionOK) Error() string {
 	return fmt.Sprintf("[POST /v1/kernels/{kernel_id}/versions/{kernel_version_id}/revisions][%d] addKernelVersionRevisionOK  %+v", 200, o.Payload)
 }
 
-func (o *AddKernelVersionRevisionOK) GetPayload() *inventory_models.V1KernelVersion {
-	return o.Payload
-}
-
 func (o *AddKernelVersionRevisionOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(inventory_models.V1KernelVersion)
@@ -95,10 +95,6 @@ type AddKernelVersionRevisionBadRequest struct {
 
 func (o *AddKernelVersionRevisionBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/kernels/{kernel_id}/versions/{kernel_version_id}/revisions][%d] addKernelVersionRevisionBadRequest  %+v", 400, o.Payload)
-}
-
-func (o *AddKernelVersionRevisionBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
-	return o.Payload
 }
 
 func (o *AddKernelVersionRevisionBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -137,10 +133,6 @@ func (o *AddKernelVersionRevisionDefault) Code() int {
 
 func (o *AddKernelVersionRevisionDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/kernels/{kernel_id}/versions/{kernel_version_id}/revisions][%d] addKernelVersionRevision default  %+v", o._statusCode, o.Payload)
-}
-
-func (o *AddKernelVersionRevisionDefault) GetPayload() *inventory_models.RestAPIError {
-	return o.Payload
 }
 
 func (o *AddKernelVersionRevisionDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

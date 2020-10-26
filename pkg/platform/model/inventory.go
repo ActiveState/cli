@@ -2,10 +2,8 @@ package model
 
 import (
 	"fmt"
-	"sort"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/go-openapi/strfmt"
 
@@ -31,19 +29,20 @@ var (
 
 // IngredientAndVersion is a sane version of whatever the hell it is go-swagger thinks it's doing
 type IngredientAndVersion struct {
-	*inventory_models.V1IngredientAndVersion
+	*inventory_models.V1SearchIngredientsResponseIngredientsItems
+	Version   string
 	Namespace string
 }
 
 // Platform is a sane version of whatever the hell it is go-swagger thinks it's doing
-type Platform = inventory_models.V1Platform
+type Platform = inventory_models.V1PlatformPagedListPlatformsItems
 
 var platformCache []*Platform
 
 // IngredientByNameAndVersion fetches an ingredient that matches the given name and version. If version is empty the first
 // matching ingredient will be returned.
 func IngredientByNameAndVersion(language, name, version string) (*IngredientAndVersion, error) {
-	results, fail := searchIngredients(9001, language, name)
+	results, fail := searchIngredients(50, language, name)
 	if fail != nil {
 		return nil, fail.ToError()
 	}
@@ -56,12 +55,15 @@ func IngredientByNameAndVersion(language, name, version string) (*IngredientAndV
 		if ingredient.Ingredient.Name == nil || *ingredient.Ingredient.Name != name {
 			continue
 		}
-		v := ingredient.Version.Version
-		if v != nil && *v == version {
-			return &IngredientAndVersion{
-				ingredient.V1IngredientAndVersion,
-				ingredient.Namespace,
-			}, nil
+
+		for _, ver := range ingredient.Versions {
+			if ver.Version == version {
+				return &IngredientAndVersion{
+					ingredient.V1SearchIngredientsResponseIngredientsItems,
+					ver.Version,
+					ingredient.Namespace,
+				}, nil
+			}
 		}
 	}
 
@@ -70,7 +72,7 @@ func IngredientByNameAndVersion(language, name, version string) (*IngredientAndV
 
 // IngredientWithLatestVersion will grab the latest available ingredient and ingredientVersion that matches the ingredient name
 func IngredientWithLatestVersion(language, name string) (*IngredientAndVersion, error) {
-	results, fail := searchIngredients(9001, language, name)
+	results, fail := searchIngredients(50, language, name)
 	if fail != nil {
 		return nil, fail.ToError()
 	}
@@ -79,44 +81,32 @@ func IngredientWithLatestVersion(language, name string) (*IngredientAndVersion, 
 		return nil, locale.NewInputError("inventory_ingredient_not_available", "The ingredient {{.V0}} is not available on the ActiveState Platform", name)
 	}
 
-	var latest *IngredientAndVersion
 	for _, res := range results {
 		if res.Ingredient.Name == nil || *res.Ingredient.Name != name {
 			continue
 		}
 
-		if latest == nil {
-			latest = &IngredientAndVersion{
-				res.V1IngredientAndVersion,
-				res.Namespace,
-			}
-			continue
+		latest := &IngredientAndVersion{
+			res.V1SearchIngredientsResponseIngredientsItems,
+			*res.LatestVersion.Version,
+			res.Namespace,
 		}
-
-		if res.Version.ReleaseTimestamp != nil && time.Time(*res.Version.ReleaseTimestamp).After(time.Time(*latest.Version.ReleaseTimestamp)) {
-			latest = &IngredientAndVersion{
-				res.V1IngredientAndVersion,
-				res.Namespace,
-			}
-		}
+		return latest, nil
 	}
 
-	if latest == nil {
-		return nil, locale.NewInputError("inventory_ingredient_no_version_available", "No versions are available for package {{.V0}} on the ActiveState Platform", name)
-	}
-	return latest, nil
+	return nil, locale.NewInputError("inventory_ingredient_no_version_available", "No versions are available for package {{.V0}} on the ActiveState Platform", name)
 }
 
 // SearchIngredients will return all ingredients+ingredientVersions that fuzzily
 // match the ingredient name.
 func SearchIngredients(language, name string) ([]*IngredientAndVersion, *failures.Failure) {
-	return searchIngredients(99, language, name)
+	return searchIngredients(50, language, name)
 }
 
 // SearchIngredientsStrict will return all ingredients+ingredientVersions that
 // strictly match the ingredient name.
 func SearchIngredientsStrict(language, name string) ([]*IngredientAndVersion, *failures.Failure) {
-	results, fail := searchIngredients(99, language, name)
+	results, fail := searchIngredients(50, language, name)
 	if fail != nil {
 		return nil, fail
 	}
@@ -144,26 +134,14 @@ func searchIngredients(limit int, language, name string) ([]*IngredientAndVersio
 
 	var results []*IngredientAndVersion
 	for _, res := range langResults {
-		ingredient := IngredientAndVersion{
-			res.V1IngredientAndVersion,
-			PackageNamespacePrefix,
-		}
-		results = append(results, &ingredient)
+		results = append(results, res)
 	}
 
 	if bundlesResults != nil {
 		for _, res := range bundlesResults {
-			ingredient := IngredientAndVersion{
-				res.V1IngredientAndVersion,
-				BundlesNamespacePrefix,
-			}
-			results = append(results, &ingredient)
+			results = append(results, res)
 		}
 	}
-
-	sort.SliceStable(results, func(i, j int) bool {
-		return *results[i].V1IngredientAndVersion.Ingredient.Name < *results[j].V1IngredientAndVersion.Ingredient.Name
-	})
 
 	return results, nil
 }
@@ -174,23 +152,25 @@ func searchIngredientsNamespace(limit int, namespace, language, name string) ([]
 	client := inventory.Get()
 
 	namespaceAndLanguage := fmt.Sprintf("%s/%s", namespace, language)
-	params := inventory_operations.NewGetNamespaceIngredientsParams()
-	params.SetQ(&name)
-	params.SetNamespace(namespaceAndLanguage)
+	params := inventory_operations.NewSearchIngredientsParams()
+	params.SetQ(name)
+	params.SetNamespaces(namespaceAndLanguage)
 	params.SetLimit(&lim)
 	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
 
-	results, err := client.GetNamespaceIngredients(params, authentication.ClientAuth())
+	results, err := client.SearchIngredients(params, authentication.ClientAuth())
 	if err != nil {
-		if gniErr, ok := err.(*inventory_operations.GetNamespaceIngredientsDefault); ok {
-			return nil, FailIngredients.New(*gniErr.Payload.Message)
+		if sidErr, ok := err.(*inventory_operations.SearchIngredientsDefault); ok {
+			return nil, FailIngredients.New(*sidErr.Payload.Message)
 		}
 		return nil, FailIngredients.Wrap(err)
 	}
 
 	ingredients := []*IngredientAndVersion{}
-	for _, res := range results.Payload.IngredientsAndVersions {
-		ingredients = append(ingredients, &IngredientAndVersion{res, namespaceAndLanguage})
+	for _, res := range results.Payload.Ingredients {
+		for _, v := range res.Versions {
+			ingredients = append(ingredients, &IngredientAndVersion{res, v.Version, namespaceAndLanguage})
+		}
 	}
 	return ingredients, nil
 }
@@ -275,7 +255,7 @@ func filterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID)
 
 			platformArch := platformArchToHostArch(
 				*rtPf.CPUArchitecture.Name,
-				rtPf.CPUArchitecture.BitWidth,
+				*rtPf.CPUArchitecture.BitWidth,
 			)
 			if hostArch != platformArch {
 				continue
@@ -336,7 +316,7 @@ func FetchPlatformByDetails(name, version string, word int) (*Platform, *failure
 		if rtPf.CPUArchitecture == nil {
 			continue
 		}
-		if rtPf.CPUArchitecture.BitWidth != strconv.Itoa(word) {
+		if rtPf.CPUArchitecture.BitWidth == nil || *rtPf.CPUArchitecture.BitWidth != strconv.Itoa(word) {
 			continue
 		}
 

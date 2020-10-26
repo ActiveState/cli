@@ -10,9 +10,10 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
-	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	strfmt "github.com/go-openapi/strfmt"
+
+	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // GetImagesReader is a Reader for the GetImages structure.
@@ -23,12 +24,14 @@ type GetImagesReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetImagesReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
+
 	case 200:
 		result := NewGetImagesOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
+
 	default:
 		result := NewGetImagesDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -56,10 +59,6 @@ type GetImagesOK struct {
 
 func (o *GetImagesOK) Error() string {
 	return fmt.Sprintf("[GET /v1/images][%d] getImagesOK  %+v", 200, o.Payload)
-}
-
-func (o *GetImagesOK) GetPayload() *inventory_models.V1ImagePagedList {
-	return o.Payload
 }
 
 func (o *GetImagesOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -98,10 +97,6 @@ func (o *GetImagesDefault) Code() int {
 
 func (o *GetImagesDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/images][%d] getImages default  %+v", o._statusCode, o.Payload)
-}
-
-func (o *GetImagesDefault) GetPayload() *inventory_models.RestAPIError {
-	return o.Payload
 }
 
 func (o *GetImagesDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

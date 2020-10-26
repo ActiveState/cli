@@ -10,9 +10,10 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
-	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	strfmt "github.com/go-openapi/strfmt"
+
+	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // GetCPUArchitectureCPUExtensionsReader is a Reader for the GetCPUArchitectureCPUExtensions structure.
@@ -23,12 +24,14 @@ type GetCPUArchitectureCPUExtensionsReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetCPUArchitectureCPUExtensionsReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
+
 	case 200:
 		result := NewGetCPUArchitectureCPUExtensionsOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
+
 	default:
 		result := NewGetCPUArchitectureCPUExtensionsDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -56,10 +59,6 @@ type GetCPUArchitectureCPUExtensionsOK struct {
 
 func (o *GetCPUArchitectureCPUExtensionsOK) Error() string {
 	return fmt.Sprintf("[GET /v1/cpu-architectures/{cpu_architecture_id}/extensions][%d] getCpuArchitectureCpuExtensionsOK  %+v", 200, o.Payload)
-}
-
-func (o *GetCPUArchitectureCPUExtensionsOK) GetPayload() *inventory_models.V1CPUExtensionPagedList {
-	return o.Payload
 }
 
 func (o *GetCPUArchitectureCPUExtensionsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -98,10 +97,6 @@ func (o *GetCPUArchitectureCPUExtensionsDefault) Code() int {
 
 func (o *GetCPUArchitectureCPUExtensionsDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/cpu-architectures/{cpu_architecture_id}/extensions][%d] getCpuArchitectureCpuExtensions default  %+v", o._statusCode, o.Payload)
-}
-
-func (o *GetCPUArchitectureCPUExtensionsDefault) GetPayload() *inventory_models.RestAPIError {
-	return o.Payload
 }
 
 func (o *GetCPUArchitectureCPUExtensionsDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

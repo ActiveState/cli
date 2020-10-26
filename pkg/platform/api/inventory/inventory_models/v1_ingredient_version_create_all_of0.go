@@ -8,14 +8,14 @@ package inventory_models
 import (
 	"strconv"
 
+	strfmt "github.com/go-openapi/strfmt"
+
 	"github.com/go-openapi/errors"
-	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // V1IngredientVersionCreateAllOf0 v1 ingredient version create all of0
-//
 // swagger:model v1IngredientVersionCreateAllOf0
 type V1IngredientVersionCreateAllOf0 struct {
 

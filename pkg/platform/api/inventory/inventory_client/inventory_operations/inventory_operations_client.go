@@ -7,11 +7,12 @@ package inventory_operations
 
 import (
 	"github.com/go-openapi/runtime"
-	"github.com/go-openapi/strfmt"
+
+	strfmt "github.com/go-openapi/strfmt"
 )
 
 // New creates a new inventory operations API client.
-func New(transport runtime.ClientTransport, formats strfmt.Registry) ClientService {
+func New(transport runtime.ClientTransport, formats strfmt.Registry) *Client {
 	return &Client{transport: transport, formats: formats}
 }
 
@@ -23,197 +24,8 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
-// ClientService is the interface for Client methods
-type ClientService interface {
-	AddAuthor(params *AddAuthorParams, authInfo runtime.ClientAuthInfoWriter) (*AddAuthorCreated, error)
-
-	AddBuildFlag(params *AddBuildFlagParams, authInfo runtime.ClientAuthInfoWriter) (*AddBuildFlagCreated, error)
-
-	AddBuildFlagRevision(params *AddBuildFlagRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*AddBuildFlagRevisionOK, error)
-
-	AddBuildScript(params *AddBuildScriptParams, authInfo runtime.ClientAuthInfoWriter) (*AddBuildScriptCreated, error)
-
-	AddCPUArchitecture(params *AddCPUArchitectureParams, authInfo runtime.ClientAuthInfoWriter) (*AddCPUArchitectureCreated, error)
-
-	AddCPUArchitectureCPUExtension(params *AddCPUArchitectureCPUExtensionParams, authInfo runtime.ClientAuthInfoWriter) (*AddCPUArchitectureCPUExtensionOK, error)
-
-	AddCPUArchitectureRevision(params *AddCPUArchitectureRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*AddCPUArchitectureRevisionOK, error)
-
-	AddCPUExtension(params *AddCPUExtensionParams, authInfo runtime.ClientAuthInfoWriter) (*AddCPUExtensionCreated, error)
-
-	AddCPUExtensionRevision(params *AddCPUExtensionRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*AddCPUExtensionRevisionOK, error)
-
-	AddGpuArchitecture(params *AddGpuArchitectureParams, authInfo runtime.ClientAuthInfoWriter) (*AddGpuArchitectureCreated, error)
-
-	AddGpuArchitectureRevision(params *AddGpuArchitectureRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*AddGpuArchitectureRevisionOK, error)
-
-	AddImage(params *AddImageParams, authInfo runtime.ClientAuthInfoWriter) (*AddImageCreated, error)
-
-	AddImageRevision(params *AddImageRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*AddImageRevisionOK, error)
-
-	AddIngredient(params *AddIngredientParams, authInfo runtime.ClientAuthInfoWriter) (*AddIngredientCreated, error)
-
-	AddIngredientVersion(params *AddIngredientVersionParams, authInfo runtime.ClientAuthInfoWriter) (*AddIngredientVersionCreated, error)
-
-	AddIngredientVersionAuthor(params *AddIngredientVersionAuthorParams, authInfo runtime.ClientAuthInfoWriter) (*AddIngredientVersionAuthorOK, error)
-
-	AddIngredientVersionRevision(params *AddIngredientVersionRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*AddIngredientVersionRevisionOK, error)
-
-	AddKernel(params *AddKernelParams, authInfo runtime.ClientAuthInfoWriter) (*AddKernelCreated, error)
-
-	AddKernelCPUArchitecture(params *AddKernelCPUArchitectureParams, authInfo runtime.ClientAuthInfoWriter) (*AddKernelCPUArchitectureOK, error)
-
-	AddKernelGpuArchitecture(params *AddKernelGpuArchitectureParams, authInfo runtime.ClientAuthInfoWriter) (*AddKernelGpuArchitectureOK, error)
-
-	AddKernelVersion(params *AddKernelVersionParams, authInfo runtime.ClientAuthInfoWriter) (*AddKernelVersionCreated, error)
-
-	AddKernelVersionRevision(params *AddKernelVersionRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*AddKernelVersionRevisionOK, error)
-
-	AddLibc(params *AddLibcParams, authInfo runtime.ClientAuthInfoWriter) (*AddLibcCreated, error)
-
-	AddLibcVersion(params *AddLibcVersionParams, authInfo runtime.ClientAuthInfoWriter) (*AddLibcVersionCreated, error)
-
-	AddLibcVersionRevision(params *AddLibcVersionRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*AddLibcVersionRevisionOK, error)
-
-	AddNamespace(params *AddNamespaceParams, authInfo runtime.ClientAuthInfoWriter) (*AddNamespaceCreated, error)
-
-	AddOperatingSystem(params *AddOperatingSystemParams, authInfo runtime.ClientAuthInfoWriter) (*AddOperatingSystemCreated, error)
-
-	AddOperatingSystemKernel(params *AddOperatingSystemKernelParams, authInfo runtime.ClientAuthInfoWriter) (*AddOperatingSystemKernelOK, error)
-
-	AddOperatingSystemLibc(params *AddOperatingSystemLibcParams, authInfo runtime.ClientAuthInfoWriter) (*AddOperatingSystemLibcOK, error)
-
-	AddOperatingSystemVersion(params *AddOperatingSystemVersionParams, authInfo runtime.ClientAuthInfoWriter) (*AddOperatingSystemVersionCreated, error)
-
-	AddOperatingSystemVersionRevision(params *AddOperatingSystemVersionRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*AddOperatingSystemVersionRevisionOK, error)
-
-	AddPatch(params *AddPatchParams, authInfo runtime.ClientAuthInfoWriter) (*AddPatchCreated, error)
-
-	AddPlatform(params *AddPlatformParams, authInfo runtime.ClientAuthInfoWriter) (*AddPlatformCreated, error)
-
-	GetAuthor(params *GetAuthorParams) (*GetAuthorOK, error)
-
-	GetAuthors(params *GetAuthorsParams) (*GetAuthorsOK, error)
-
-	GetBuildFlag(params *GetBuildFlagParams) (*GetBuildFlagOK, error)
-
-	GetBuildFlags(params *GetBuildFlagsParams) (*GetBuildFlagsOK, error)
-
-	GetBuildScript(params *GetBuildScriptParams) (*GetBuildScriptOK, error)
-
-	GetBuildScripts(params *GetBuildScriptsParams) (*GetBuildScriptsOK, error)
-
-	GetCPUArchitecture(params *GetCPUArchitectureParams) (*GetCPUArchitectureOK, error)
-
-	GetCPUArchitectureCPUExtensions(params *GetCPUArchitectureCPUExtensionsParams) (*GetCPUArchitectureCPUExtensionsOK, error)
-
-	GetCPUArchitectures(params *GetCPUArchitecturesParams) (*GetCPUArchitecturesOK, error)
-
-	GetCPUExtension(params *GetCPUExtensionParams) (*GetCPUExtensionOK, error)
-
-	GetCPUExtensions(params *GetCPUExtensionsParams) (*GetCPUExtensionsOK, error)
-
-	GetGpuArchitecture(params *GetGpuArchitectureParams) (*GetGpuArchitectureOK, error)
-
-	GetGpuArchitectures(params *GetGpuArchitecturesParams) (*GetGpuArchitecturesOK, error)
-
-	GetImage(params *GetImageParams) (*GetImageOK, error)
-
-	GetImages(params *GetImagesParams) (*GetImagesOK, error)
-
-	GetIngredient(params *GetIngredientParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientOK, error)
-
-	GetIngredientVersion(params *GetIngredientVersionParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientVersionOK, error)
-
-	GetIngredientVersionAuthors(params *GetIngredientVersionAuthorsParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientVersionAuthorsOK, error)
-
-	GetIngredientVersionBuildScripts(params *GetIngredientVersionBuildScriptsParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientVersionBuildScriptsOK, error)
-
-	GetIngredientVersionPatches(params *GetIngredientVersionPatchesParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientVersionPatchesOK, error)
-
-	GetIngredientVersions(params *GetIngredientVersionsParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientVersionsOK, error)
-
-	GetIngredients(params *GetIngredientsParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientsOK, error)
-
-	GetKernel(params *GetKernelParams) (*GetKernelOK, error)
-
-	GetKernelCPUArchitectures(params *GetKernelCPUArchitecturesParams) (*GetKernelCPUArchitecturesOK, error)
-
-	GetKernelGpuArchitectures(params *GetKernelGpuArchitecturesParams) (*GetKernelGpuArchitecturesOK, error)
-
-	GetKernelVersion(params *GetKernelVersionParams) (*GetKernelVersionOK, error)
-
-	GetKernelVersions(params *GetKernelVersionsParams) (*GetKernelVersionsOK, error)
-
-	GetKernels(params *GetKernelsParams) (*GetKernelsOK, error)
-
-	GetLibc(params *GetLibcParams) (*GetLibcOK, error)
-
-	GetLibcVersion(params *GetLibcVersionParams) (*GetLibcVersionOK, error)
-
-	GetLibcVersions(params *GetLibcVersionsParams) (*GetLibcVersionsOK, error)
-
-	GetLibcs(params *GetLibcsParams) (*GetLibcsOK, error)
-
-	GetNamespaceIngredient(params *GetNamespaceIngredientParams, authInfo runtime.ClientAuthInfoWriter) (*GetNamespaceIngredientOK, error)
-
-	GetNamespaceIngredientVersions(params *GetNamespaceIngredientVersionsParams, authInfo runtime.ClientAuthInfoWriter) (*GetNamespaceIngredientVersionsOK, error)
-
-	GetNamespaceIngredients(params *GetNamespaceIngredientsParams, authInfo runtime.ClientAuthInfoWriter) (*GetNamespaceIngredientsOK, error)
-
-	GetNamespaces(params *GetNamespacesParams, authInfo runtime.ClientAuthInfoWriter) (*GetNamespacesOK, error)
-
-	GetOperatingSystem(params *GetOperatingSystemParams) (*GetOperatingSystemOK, error)
-
-	GetOperatingSystemKernels(params *GetOperatingSystemKernelsParams) (*GetOperatingSystemKernelsOK, error)
-
-	GetOperatingSystemLibcs(params *GetOperatingSystemLibcsParams) (*GetOperatingSystemLibcsOK, error)
-
-	GetOperatingSystemVersion(params *GetOperatingSystemVersionParams) (*GetOperatingSystemVersionOK, error)
-
-	GetOperatingSystemVersions(params *GetOperatingSystemVersionsParams) (*GetOperatingSystemVersionsOK, error)
-
-	GetOperatingSystems(params *GetOperatingSystemsParams) (*GetOperatingSystemsOK, error)
-
-	GetPatch(params *GetPatchParams) (*GetPatchOK, error)
-
-	GetPatches(params *GetPatchesParams) (*GetPatchesOK, error)
-
-	GetPlatform(params *GetPlatformParams) (*GetPlatformOK, error)
-
-	GetPlatforms(params *GetPlatformsParams) (*GetPlatformsOK, error)
-
-	GetSolutionRecipe(params *GetSolutionRecipeParams, authInfo runtime.ClientAuthInfoWriter) (*GetSolutionRecipeOK, error)
-
-	HealthCheck(params *HealthCheckParams) (*HealthCheckOK, error)
-
-	NormalizeNames(params *NormalizeNamesParams, authInfo runtime.ClientAuthInfoWriter) (*NormalizeNamesOK, error)
-
-	ReadinessCheck(params *ReadinessCheckParams) (*ReadinessCheckOK, error)
-
-	ResolveRecipes(params *ResolveRecipesParams, authInfo runtime.ClientAuthInfoWriter) (*ResolveRecipesOK, error)
-
-	SolveOrder(params *SolveOrderParams, authInfo runtime.ClientAuthInfoWriter) (*SolveOrderCreated, error)
-
-	UpdateAuthor(params *UpdateAuthorParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateAuthorOK, error)
-
-	UpdateBuildScript(params *UpdateBuildScriptParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateBuildScriptOK, error)
-
-	UpdateIngredient(params *UpdateIngredientParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateIngredientOK, error)
-
-	UpdateIngredientVersion(params *UpdateIngredientVersionParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateIngredientVersionOK, error)
-
-	UpdatePatch(params *UpdatePatchParams, authInfo runtime.ClientAuthInfoWriter) (*UpdatePatchOK, error)
-
-	UpdatePlatform(params *UpdatePlatformParams, authInfo runtime.ClientAuthInfoWriter) (*UpdatePlatformOK, error)
-
-	ValidateRecipe(params *ValidateRecipeParams) (*ValidateRecipeOK, error)
-
-	SetTransport(transport runtime.ClientTransport)
-}
-
 /*
-  AddAuthor Add a new author
+AddAuthor Add a new author
 */
 func (a *Client) AddAuthor(params *AddAuthorParams, authInfo runtime.ClientAuthInfoWriter) (*AddAuthorCreated, error) {
 	// TODO: Validate the params before sending
@@ -237,17 +49,12 @@ func (a *Client) AddAuthor(params *AddAuthorParams, authInfo runtime.ClientAuthI
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*AddAuthorCreated)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*AddAuthorDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*AddAuthorCreated), nil
+
 }
 
 /*
-  AddBuildFlag Add a new build flag
+AddBuildFlag Add a new build flag
 */
 func (a *Client) AddBuildFlag(params *AddBuildFlagParams, authInfo runtime.ClientAuthInfoWriter) (*AddBuildFlagCreated, error) {
 	// TODO: Validate the params before sending
@@ -271,17 +78,12 @@ func (a *Client) AddBuildFlag(params *AddBuildFlagParams, authInfo runtime.Clien
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*AddBuildFlagCreated)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*AddBuildFlagDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*AddBuildFlagCreated), nil
+
 }
 
 /*
-  AddBuildFlagRevision Add a new revision of this build flag
+AddBuildFlagRevision Add a new revision of this build flag
 */
 func (a *Client) AddBuildFlagRevision(params *AddBuildFlagRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*AddBuildFlagRevisionOK, error) {
 	// TODO: Validate the params before sending
@@ -305,17 +107,12 @@ func (a *Client) AddBuildFlagRevision(params *AddBuildFlagRevisionParams, authIn
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*AddBuildFlagRevisionOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*AddBuildFlagRevisionDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*AddBuildFlagRevisionOK), nil
+
 }
 
 /*
-  AddBuildScript Add a new build script
+AddBuildScript Add a new build script
 */
 func (a *Client) AddBuildScript(params *AddBuildScriptParams, authInfo runtime.ClientAuthInfoWriter) (*AddBuildScriptCreated, error) {
 	// TODO: Validate the params before sending
@@ -339,17 +136,12 @@ func (a *Client) AddBuildScript(params *AddBuildScriptParams, authInfo runtime.C
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*AddBuildScriptCreated)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*AddBuildScriptDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*AddBuildScriptCreated), nil
+
 }
 
 /*
-  AddCPUArchitecture Add a new CPU architecture
+AddCPUArchitecture Add a new CPU architecture
 */
 func (a *Client) AddCPUArchitecture(params *AddCPUArchitectureParams, authInfo runtime.ClientAuthInfoWriter) (*AddCPUArchitectureCreated, error) {
 	// TODO: Validate the params before sending
@@ -373,17 +165,12 @@ func (a *Client) AddCPUArchitecture(params *AddCPUArchitectureParams, authInfo r
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*AddCPUArchitectureCreated)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*AddCPUArchitectureDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*AddCPUArchitectureCreated), nil
+
 }
 
 /*
-  AddCPUArchitectureCPUExtension Add a CPU extension that can be used with this architecture
+AddCPUArchitectureCPUExtension Add a CPU extension that can be used with this architecture
 */
 func (a *Client) AddCPUArchitectureCPUExtension(params *AddCPUArchitectureCPUExtensionParams, authInfo runtime.ClientAuthInfoWriter) (*AddCPUArchitectureCPUExtensionOK, error) {
 	// TODO: Validate the params before sending
@@ -407,17 +194,12 @@ func (a *Client) AddCPUArchitectureCPUExtension(params *AddCPUArchitectureCPUExt
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*AddCPUArchitectureCPUExtensionOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*AddCPUArchitectureCPUExtensionDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*AddCPUArchitectureCPUExtensionOK), nil
+
 }
 
 /*
-  AddCPUArchitectureRevision Add a new revision of this CPU architecture
+AddCPUArchitectureRevision Add a new revision of this CPU architecture
 */
 func (a *Client) AddCPUArchitectureRevision(params *AddCPUArchitectureRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*AddCPUArchitectureRevisionOK, error) {
 	// TODO: Validate the params before sending
@@ -441,17 +223,12 @@ func (a *Client) AddCPUArchitectureRevision(params *AddCPUArchitectureRevisionPa
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*AddCPUArchitectureRevisionOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*AddCPUArchitectureRevisionDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*AddCPUArchitectureRevisionOK), nil
+
 }
 
 /*
-  AddCPUExtension Add a new CPU extension
+AddCPUExtension Add a new CPU extension
 */
 func (a *Client) AddCPUExtension(params *AddCPUExtensionParams, authInfo runtime.ClientAuthInfoWriter) (*AddCPUExtensionCreated, error) {
 	// TODO: Validate the params before sending
@@ -475,17 +252,12 @@ func (a *Client) AddCPUExtension(params *AddCPUExtensionParams, authInfo runtime
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*AddCPUExtensionCreated)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*AddCPUExtensionDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*AddCPUExtensionCreated), nil
+
 }
 
 /*
-  AddCPUExtensionRevision Add a new revision of this CPU extension
+AddCPUExtensionRevision Add a new revision of this CPU extension
 */
 func (a *Client) AddCPUExtensionRevision(params *AddCPUExtensionRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*AddCPUExtensionRevisionOK, error) {
 	// TODO: Validate the params before sending
@@ -509,17 +281,12 @@ func (a *Client) AddCPUExtensionRevision(params *AddCPUExtensionRevisionParams, 
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*AddCPUExtensionRevisionOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*AddCPUExtensionRevisionDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*AddCPUExtensionRevisionOK), nil
+
 }
 
 /*
-  AddGpuArchitecture Add a new GPU architecture
+AddGpuArchitecture Add a new GPU architecture
 */
 func (a *Client) AddGpuArchitecture(params *AddGpuArchitectureParams, authInfo runtime.ClientAuthInfoWriter) (*AddGpuArchitectureCreated, error) {
 	// TODO: Validate the params before sending
@@ -543,17 +310,12 @@ func (a *Client) AddGpuArchitecture(params *AddGpuArchitectureParams, authInfo r
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*AddGpuArchitectureCreated)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*AddGpuArchitectureDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*AddGpuArchitectureCreated), nil
+
 }
 
 /*
-  AddGpuArchitectureRevision Add a new revision of this GPU architecture
+AddGpuArchitectureRevision Add a new revision of this GPU architecture
 */
 func (a *Client) AddGpuArchitectureRevision(params *AddGpuArchitectureRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*AddGpuArchitectureRevisionOK, error) {
 	// TODO: Validate the params before sending
@@ -577,17 +339,12 @@ func (a *Client) AddGpuArchitectureRevision(params *AddGpuArchitectureRevisionPa
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*AddGpuArchitectureRevisionOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*AddGpuArchitectureRevisionDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*AddGpuArchitectureRevisionOK), nil
+
 }
 
 /*
-  AddImage Add a new image
+AddImage Add a new image
 */
 func (a *Client) AddImage(params *AddImageParams, authInfo runtime.ClientAuthInfoWriter) (*AddImageCreated, error) {
 	// TODO: Validate the params before sending
@@ -611,17 +368,12 @@ func (a *Client) AddImage(params *AddImageParams, authInfo runtime.ClientAuthInf
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*AddImageCreated)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*AddImageDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*AddImageCreated), nil
+
 }
 
 /*
-  AddImageRevision Add a new revision of this image
+AddImageRevision Add a new revision of this image
 */
 func (a *Client) AddImageRevision(params *AddImageRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*AddImageRevisionOK, error) {
 	// TODO: Validate the params before sending
@@ -645,17 +397,12 @@ func (a *Client) AddImageRevision(params *AddImageRevisionParams, authInfo runti
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*AddImageRevisionOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*AddImageRevisionDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*AddImageRevisionOK), nil
+
 }
 
 /*
-  AddIngredient Add a new ingredient
+AddIngredient Add a new ingredient
 */
 func (a *Client) AddIngredient(params *AddIngredientParams, authInfo runtime.ClientAuthInfoWriter) (*AddIngredientCreated, error) {
 	// TODO: Validate the params before sending
@@ -679,17 +426,12 @@ func (a *Client) AddIngredient(params *AddIngredientParams, authInfo runtime.Cli
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*AddIngredientCreated)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*AddIngredientDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*AddIngredientCreated), nil
+
 }
 
 /*
-  AddIngredientVersion Add a new version of this ingredient
+AddIngredientVersion Add a new version of this ingredient
 */
 func (a *Client) AddIngredientVersion(params *AddIngredientVersionParams, authInfo runtime.ClientAuthInfoWriter) (*AddIngredientVersionCreated, error) {
 	// TODO: Validate the params before sending
@@ -713,17 +455,12 @@ func (a *Client) AddIngredientVersion(params *AddIngredientVersionParams, authIn
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*AddIngredientVersionCreated)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*AddIngredientVersionDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*AddIngredientVersionCreated), nil
+
 }
 
 /*
-  AddIngredientVersionAuthor Add an author of this ingredient version
+AddIngredientVersionAuthor Add an author of this ingredient version
 */
 func (a *Client) AddIngredientVersionAuthor(params *AddIngredientVersionAuthorParams, authInfo runtime.ClientAuthInfoWriter) (*AddIngredientVersionAuthorOK, error) {
 	// TODO: Validate the params before sending
@@ -747,17 +484,12 @@ func (a *Client) AddIngredientVersionAuthor(params *AddIngredientVersionAuthorPa
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*AddIngredientVersionAuthorOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*AddIngredientVersionAuthorDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*AddIngredientVersionAuthorOK), nil
+
 }
 
 /*
-  AddIngredientVersionRevision Add a new revision of this ingredient version
+AddIngredientVersionRevision Add a new revision of this ingredient version
 */
 func (a *Client) AddIngredientVersionRevision(params *AddIngredientVersionRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*AddIngredientVersionRevisionOK, error) {
 	// TODO: Validate the params before sending
@@ -781,17 +513,12 @@ func (a *Client) AddIngredientVersionRevision(params *AddIngredientVersionRevisi
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*AddIngredientVersionRevisionOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*AddIngredientVersionRevisionDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*AddIngredientVersionRevisionOK), nil
+
 }
 
 /*
-  AddKernel Add a new kernel
+AddKernel Add a new kernel
 */
 func (a *Client) AddKernel(params *AddKernelParams, authInfo runtime.ClientAuthInfoWriter) (*AddKernelCreated, error) {
 	// TODO: Validate the params before sending
@@ -815,17 +542,12 @@ func (a *Client) AddKernel(params *AddKernelParams, authInfo runtime.ClientAuthI
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*AddKernelCreated)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*AddKernelDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*AddKernelCreated), nil
+
 }
 
 /*
-  AddKernelCPUArchitecture Add a CPU architecture that can be used with this kernel
+AddKernelCPUArchitecture Add a CPU architecture that can be used with this kernel
 */
 func (a *Client) AddKernelCPUArchitecture(params *AddKernelCPUArchitectureParams, authInfo runtime.ClientAuthInfoWriter) (*AddKernelCPUArchitectureOK, error) {
 	// TODO: Validate the params before sending
@@ -849,17 +571,12 @@ func (a *Client) AddKernelCPUArchitecture(params *AddKernelCPUArchitectureParams
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*AddKernelCPUArchitectureOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*AddKernelCPUArchitectureDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*AddKernelCPUArchitectureOK), nil
+
 }
 
 /*
-  AddKernelGpuArchitecture Add a GPU architecture that can be used with this kernel
+AddKernelGpuArchitecture Add a GPU architecture that can be used with this kernel
 */
 func (a *Client) AddKernelGpuArchitecture(params *AddKernelGpuArchitectureParams, authInfo runtime.ClientAuthInfoWriter) (*AddKernelGpuArchitectureOK, error) {
 	// TODO: Validate the params before sending
@@ -883,17 +600,12 @@ func (a *Client) AddKernelGpuArchitecture(params *AddKernelGpuArchitectureParams
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*AddKernelGpuArchitectureOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*AddKernelGpuArchitectureDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*AddKernelGpuArchitectureOK), nil
+
 }
 
 /*
-  AddKernelVersion Add a new version for this kernel
+AddKernelVersion Add a new version for this kernel
 */
 func (a *Client) AddKernelVersion(params *AddKernelVersionParams, authInfo runtime.ClientAuthInfoWriter) (*AddKernelVersionCreated, error) {
 	// TODO: Validate the params before sending
@@ -917,17 +629,12 @@ func (a *Client) AddKernelVersion(params *AddKernelVersionParams, authInfo runti
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*AddKernelVersionCreated)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*AddKernelVersionDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*AddKernelVersionCreated), nil
+
 }
 
 /*
-  AddKernelVersionRevision Add a new revision of this kernel version
+AddKernelVersionRevision Add a new revision of this kernel version
 */
 func (a *Client) AddKernelVersionRevision(params *AddKernelVersionRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*AddKernelVersionRevisionOK, error) {
 	// TODO: Validate the params before sending
@@ -951,17 +658,12 @@ func (a *Client) AddKernelVersionRevision(params *AddKernelVersionRevisionParams
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*AddKernelVersionRevisionOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*AddKernelVersionRevisionDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*AddKernelVersionRevisionOK), nil
+
 }
 
 /*
-  AddLibc Add a new libc
+AddLibc Add a new libc
 */
 func (a *Client) AddLibc(params *AddLibcParams, authInfo runtime.ClientAuthInfoWriter) (*AddLibcCreated, error) {
 	// TODO: Validate the params before sending
@@ -985,17 +687,12 @@ func (a *Client) AddLibc(params *AddLibcParams, authInfo runtime.ClientAuthInfoW
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*AddLibcCreated)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*AddLibcDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*AddLibcCreated), nil
+
 }
 
 /*
-  AddLibcVersion Add a new version for this libc
+AddLibcVersion Add a new version for this libc
 */
 func (a *Client) AddLibcVersion(params *AddLibcVersionParams, authInfo runtime.ClientAuthInfoWriter) (*AddLibcVersionCreated, error) {
 	// TODO: Validate the params before sending
@@ -1019,17 +716,12 @@ func (a *Client) AddLibcVersion(params *AddLibcVersionParams, authInfo runtime.C
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*AddLibcVersionCreated)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*AddLibcVersionDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*AddLibcVersionCreated), nil
+
 }
 
 /*
-  AddLibcVersionRevision Add a new revision of this libc version
+AddLibcVersionRevision Add a new revision of this libc version
 */
 func (a *Client) AddLibcVersionRevision(params *AddLibcVersionRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*AddLibcVersionRevisionOK, error) {
 	// TODO: Validate the params before sending
@@ -1053,17 +745,12 @@ func (a *Client) AddLibcVersionRevision(params *AddLibcVersionRevisionParams, au
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*AddLibcVersionRevisionOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*AddLibcVersionRevisionDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*AddLibcVersionRevisionOK), nil
+
 }
 
 /*
-  AddNamespace Add a new namespace
+AddNamespace Add a new namespace
 */
 func (a *Client) AddNamespace(params *AddNamespaceParams, authInfo runtime.ClientAuthInfoWriter) (*AddNamespaceCreated, error) {
 	// TODO: Validate the params before sending
@@ -1087,17 +774,12 @@ func (a *Client) AddNamespace(params *AddNamespaceParams, authInfo runtime.Clien
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*AddNamespaceCreated)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*AddNamespaceDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*AddNamespaceCreated), nil
+
 }
 
 /*
-  AddOperatingSystem Add a new operating system
+AddOperatingSystem Add a new operating system
 */
 func (a *Client) AddOperatingSystem(params *AddOperatingSystemParams, authInfo runtime.ClientAuthInfoWriter) (*AddOperatingSystemCreated, error) {
 	// TODO: Validate the params before sending
@@ -1121,17 +803,12 @@ func (a *Client) AddOperatingSystem(params *AddOperatingSystemParams, authInfo r
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*AddOperatingSystemCreated)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*AddOperatingSystemDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*AddOperatingSystemCreated), nil
+
 }
 
 /*
-  AddOperatingSystemKernel Add a kernel that can be used with this operating system
+AddOperatingSystemKernel Add a kernel that can be used with this operating system
 */
 func (a *Client) AddOperatingSystemKernel(params *AddOperatingSystemKernelParams, authInfo runtime.ClientAuthInfoWriter) (*AddOperatingSystemKernelOK, error) {
 	// TODO: Validate the params before sending
@@ -1155,17 +832,12 @@ func (a *Client) AddOperatingSystemKernel(params *AddOperatingSystemKernelParams
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*AddOperatingSystemKernelOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*AddOperatingSystemKernelDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*AddOperatingSystemKernelOK), nil
+
 }
 
 /*
-  AddOperatingSystemLibc Add a libc that can be used with this operating system
+AddOperatingSystemLibc Add a libc that can be used with this operating system
 */
 func (a *Client) AddOperatingSystemLibc(params *AddOperatingSystemLibcParams, authInfo runtime.ClientAuthInfoWriter) (*AddOperatingSystemLibcOK, error) {
 	// TODO: Validate the params before sending
@@ -1189,17 +861,12 @@ func (a *Client) AddOperatingSystemLibc(params *AddOperatingSystemLibcParams, au
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*AddOperatingSystemLibcOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*AddOperatingSystemLibcDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*AddOperatingSystemLibcOK), nil
+
 }
 
 /*
-  AddOperatingSystemVersion Add a new version for this operating system
+AddOperatingSystemVersion Add a new version for this operating system
 */
 func (a *Client) AddOperatingSystemVersion(params *AddOperatingSystemVersionParams, authInfo runtime.ClientAuthInfoWriter) (*AddOperatingSystemVersionCreated, error) {
 	// TODO: Validate the params before sending
@@ -1223,17 +890,12 @@ func (a *Client) AddOperatingSystemVersion(params *AddOperatingSystemVersionPara
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*AddOperatingSystemVersionCreated)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*AddOperatingSystemVersionDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*AddOperatingSystemVersionCreated), nil
+
 }
 
 /*
-  AddOperatingSystemVersionRevision Add a new revision of this operating system version
+AddOperatingSystemVersionRevision Add a new revision of this operating system version
 */
 func (a *Client) AddOperatingSystemVersionRevision(params *AddOperatingSystemVersionRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*AddOperatingSystemVersionRevisionOK, error) {
 	// TODO: Validate the params before sending
@@ -1257,17 +919,12 @@ func (a *Client) AddOperatingSystemVersionRevision(params *AddOperatingSystemVer
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*AddOperatingSystemVersionRevisionOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*AddOperatingSystemVersionRevisionDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*AddOperatingSystemVersionRevisionOK), nil
+
 }
 
 /*
-  AddPatch Add a new patch
+AddPatch Add a new patch
 */
 func (a *Client) AddPatch(params *AddPatchParams, authInfo runtime.ClientAuthInfoWriter) (*AddPatchCreated, error) {
 	// TODO: Validate the params before sending
@@ -1291,17 +948,12 @@ func (a *Client) AddPatch(params *AddPatchParams, authInfo runtime.ClientAuthInf
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*AddPatchCreated)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*AddPatchDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*AddPatchCreated), nil
+
 }
 
 /*
-  AddPlatform Add a new platform
+AddPlatform Add a new platform
 */
 func (a *Client) AddPlatform(params *AddPlatformParams, authInfo runtime.ClientAuthInfoWriter) (*AddPlatformCreated, error) {
 	// TODO: Validate the params before sending
@@ -1325,17 +977,12 @@ func (a *Client) AddPlatform(params *AddPlatformParams, authInfo runtime.ClientA
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*AddPlatformCreated)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*AddPlatformDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*AddPlatformCreated), nil
+
 }
 
 /*
-  GetAuthor Retrieve an author
+GetAuthor Retrieve an author
 */
 func (a *Client) GetAuthor(params *GetAuthorParams) (*GetAuthorOK, error) {
 	// TODO: Validate the params before sending
@@ -1358,17 +1005,12 @@ func (a *Client) GetAuthor(params *GetAuthorParams) (*GetAuthorOK, error) {
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetAuthorOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetAuthorDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*GetAuthorOK), nil
+
 }
 
 /*
-  GetAuthors Retrieve a paged set of authors
+GetAuthors Retrieve a paged set of authors
 */
 func (a *Client) GetAuthors(params *GetAuthorsParams) (*GetAuthorsOK, error) {
 	// TODO: Validate the params before sending
@@ -1391,17 +1033,12 @@ func (a *Client) GetAuthors(params *GetAuthorsParams) (*GetAuthorsOK, error) {
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetAuthorsOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetAuthorsDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*GetAuthorsOK), nil
+
 }
 
 /*
-  GetBuildFlag Retrieve a build flag
+GetBuildFlag Retrieve a build flag
 */
 func (a *Client) GetBuildFlag(params *GetBuildFlagParams) (*GetBuildFlagOK, error) {
 	// TODO: Validate the params before sending
@@ -1424,17 +1061,12 @@ func (a *Client) GetBuildFlag(params *GetBuildFlagParams) (*GetBuildFlagOK, erro
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetBuildFlagOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetBuildFlagDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*GetBuildFlagOK), nil
+
 }
 
 /*
-  GetBuildFlags Retrieve a paged set of build flags
+GetBuildFlags Retrieve a paged set of build flags
 */
 func (a *Client) GetBuildFlags(params *GetBuildFlagsParams) (*GetBuildFlagsOK, error) {
 	// TODO: Validate the params before sending
@@ -1457,17 +1089,12 @@ func (a *Client) GetBuildFlags(params *GetBuildFlagsParams) (*GetBuildFlagsOK, e
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetBuildFlagsOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetBuildFlagsDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*GetBuildFlagsOK), nil
+
 }
 
 /*
-  GetBuildScript Retrieve a single build script
+GetBuildScript Retrieve a single build script
 */
 func (a *Client) GetBuildScript(params *GetBuildScriptParams) (*GetBuildScriptOK, error) {
 	// TODO: Validate the params before sending
@@ -1490,17 +1117,12 @@ func (a *Client) GetBuildScript(params *GetBuildScriptParams) (*GetBuildScriptOK
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetBuildScriptOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetBuildScriptDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*GetBuildScriptOK), nil
+
 }
 
 /*
-  GetBuildScripts Retrieve all build scripts
+GetBuildScripts Retrieve all build scripts
 */
 func (a *Client) GetBuildScripts(params *GetBuildScriptsParams) (*GetBuildScriptsOK, error) {
 	// TODO: Validate the params before sending
@@ -1523,17 +1145,12 @@ func (a *Client) GetBuildScripts(params *GetBuildScriptsParams) (*GetBuildScript
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetBuildScriptsOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetBuildScriptsDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*GetBuildScriptsOK), nil
+
 }
 
 /*
-  GetCPUArchitecture Retrieve a single CPU architecture
+GetCPUArchitecture Retrieve a single CPU architecture
 */
 func (a *Client) GetCPUArchitecture(params *GetCPUArchitectureParams) (*GetCPUArchitectureOK, error) {
 	// TODO: Validate the params before sending
@@ -1556,17 +1173,12 @@ func (a *Client) GetCPUArchitecture(params *GetCPUArchitectureParams) (*GetCPUAr
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetCPUArchitectureOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetCPUArchitectureDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*GetCPUArchitectureOK), nil
+
 }
 
 /*
-  GetCPUArchitectureCPUExtensions Retrieve all CPU extensions that can be used with this architecture
+GetCPUArchitectureCPUExtensions Retrieve all CPU extensions that can be used with this architecture
 */
 func (a *Client) GetCPUArchitectureCPUExtensions(params *GetCPUArchitectureCPUExtensionsParams) (*GetCPUArchitectureCPUExtensionsOK, error) {
 	// TODO: Validate the params before sending
@@ -1589,17 +1201,12 @@ func (a *Client) GetCPUArchitectureCPUExtensions(params *GetCPUArchitectureCPUEx
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetCPUArchitectureCPUExtensionsOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetCPUArchitectureCPUExtensionsDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*GetCPUArchitectureCPUExtensionsOK), nil
+
 }
 
 /*
-  GetCPUArchitectures Retrieve all CPU architectures
+GetCPUArchitectures Retrieve all CPU architectures
 */
 func (a *Client) GetCPUArchitectures(params *GetCPUArchitecturesParams) (*GetCPUArchitecturesOK, error) {
 	// TODO: Validate the params before sending
@@ -1622,17 +1229,12 @@ func (a *Client) GetCPUArchitectures(params *GetCPUArchitecturesParams) (*GetCPU
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetCPUArchitecturesOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetCPUArchitecturesDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*GetCPUArchitecturesOK), nil
+
 }
 
 /*
-  GetCPUExtension Retrieve a single CPU extension
+GetCPUExtension Retrieve a single CPU extension
 */
 func (a *Client) GetCPUExtension(params *GetCPUExtensionParams) (*GetCPUExtensionOK, error) {
 	// TODO: Validate the params before sending
@@ -1655,17 +1257,12 @@ func (a *Client) GetCPUExtension(params *GetCPUExtensionParams) (*GetCPUExtensio
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetCPUExtensionOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetCPUExtensionDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*GetCPUExtensionOK), nil
+
 }
 
 /*
-  GetCPUExtensions Retrieve all CPU extensions
+GetCPUExtensions Retrieve all CPU extensions
 */
 func (a *Client) GetCPUExtensions(params *GetCPUExtensionsParams) (*GetCPUExtensionsOK, error) {
 	// TODO: Validate the params before sending
@@ -1688,17 +1285,12 @@ func (a *Client) GetCPUExtensions(params *GetCPUExtensionsParams) (*GetCPUExtens
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetCPUExtensionsOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetCPUExtensionsDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*GetCPUExtensionsOK), nil
+
 }
 
 /*
-  GetGpuArchitecture Retrieve a single GPU architecture
+GetGpuArchitecture Retrieve a single GPU architecture
 */
 func (a *Client) GetGpuArchitecture(params *GetGpuArchitectureParams) (*GetGpuArchitectureOK, error) {
 	// TODO: Validate the params before sending
@@ -1721,17 +1313,12 @@ func (a *Client) GetGpuArchitecture(params *GetGpuArchitectureParams) (*GetGpuAr
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetGpuArchitectureOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetGpuArchitectureDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*GetGpuArchitectureOK), nil
+
 }
 
 /*
-  GetGpuArchitectures Retrieve all GPU architectures
+GetGpuArchitectures Retrieve all GPU architectures
 */
 func (a *Client) GetGpuArchitectures(params *GetGpuArchitecturesParams) (*GetGpuArchitecturesOK, error) {
 	// TODO: Validate the params before sending
@@ -1754,17 +1341,12 @@ func (a *Client) GetGpuArchitectures(params *GetGpuArchitecturesParams) (*GetGpu
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetGpuArchitecturesOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetGpuArchitecturesDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*GetGpuArchitecturesOK), nil
+
 }
 
 /*
-  GetImage Retrieve an image
+GetImage Retrieve an image
 */
 func (a *Client) GetImage(params *GetImageParams) (*GetImageOK, error) {
 	// TODO: Validate the params before sending
@@ -1787,17 +1369,12 @@ func (a *Client) GetImage(params *GetImageParams) (*GetImageOK, error) {
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetImageOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetImageDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*GetImageOK), nil
+
 }
 
 /*
-  GetImages Retrieve a paged set of images
+GetImages Retrieve a paged set of images
 */
 func (a *Client) GetImages(params *GetImagesParams) (*GetImagesOK, error) {
 	// TODO: Validate the params before sending
@@ -1820,17 +1397,12 @@ func (a *Client) GetImages(params *GetImagesParams) (*GetImagesOK, error) {
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetImagesOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetImagesDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*GetImagesOK), nil
+
 }
 
 /*
-  GetIngredient Retrieve a single ingredient
+GetIngredient Retrieve a single ingredient
 */
 func (a *Client) GetIngredient(params *GetIngredientParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientOK, error) {
 	// TODO: Validate the params before sending
@@ -1854,17 +1426,12 @@ func (a *Client) GetIngredient(params *GetIngredientParams, authInfo runtime.Cli
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetIngredientOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetIngredientDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*GetIngredientOK), nil
+
 }
 
 /*
-  GetIngredientVersion Retrieve a single ingredient version
+GetIngredientVersion Retrieve a single ingredient version
 */
 func (a *Client) GetIngredientVersion(params *GetIngredientVersionParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientVersionOK, error) {
 	// TODO: Validate the params before sending
@@ -1888,17 +1455,12 @@ func (a *Client) GetIngredientVersion(params *GetIngredientVersionParams, authIn
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetIngredientVersionOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetIngredientVersionDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*GetIngredientVersionOK), nil
+
 }
 
 /*
-  GetIngredientVersionAuthors Retrieve all authors of this ingredient version
+GetIngredientVersionAuthors Retrieve all authors of this ingredient version
 */
 func (a *Client) GetIngredientVersionAuthors(params *GetIngredientVersionAuthorsParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientVersionAuthorsOK, error) {
 	// TODO: Validate the params before sending
@@ -1922,17 +1484,12 @@ func (a *Client) GetIngredientVersionAuthors(params *GetIngredientVersionAuthors
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetIngredientVersionAuthorsOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetIngredientVersionAuthorsDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*GetIngredientVersionAuthorsOK), nil
+
 }
 
 /*
-  GetIngredientVersionBuildScripts Retrieve all build scripts used by the ingredient version revision
+GetIngredientVersionBuildScripts Retrieve all build scripts used by the ingredient version revision
 */
 func (a *Client) GetIngredientVersionBuildScripts(params *GetIngredientVersionBuildScriptsParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientVersionBuildScriptsOK, error) {
 	// TODO: Validate the params before sending
@@ -1956,17 +1513,12 @@ func (a *Client) GetIngredientVersionBuildScripts(params *GetIngredientVersionBu
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetIngredientVersionBuildScriptsOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetIngredientVersionBuildScriptsDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*GetIngredientVersionBuildScriptsOK), nil
+
 }
 
 /*
-  GetIngredientVersionPatches Retrieve all patches used by the ingredient version revision
+GetIngredientVersionPatches Retrieve all patches used by the ingredient version revision
 */
 func (a *Client) GetIngredientVersionPatches(params *GetIngredientVersionPatchesParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientVersionPatchesOK, error) {
 	// TODO: Validate the params before sending
@@ -1990,17 +1542,12 @@ func (a *Client) GetIngredientVersionPatches(params *GetIngredientVersionPatches
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetIngredientVersionPatchesOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetIngredientVersionPatchesDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*GetIngredientVersionPatchesOK), nil
+
 }
 
 /*
-  GetIngredientVersions Retrieve all versions of this ingredient
+GetIngredientVersions Retrieve all versions of this ingredient
 */
 func (a *Client) GetIngredientVersions(params *GetIngredientVersionsParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientVersionsOK, error) {
 	// TODO: Validate the params before sending
@@ -2024,17 +1571,12 @@ func (a *Client) GetIngredientVersions(params *GetIngredientVersionsParams, auth
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetIngredientVersionsOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetIngredientVersionsDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*GetIngredientVersionsOK), nil
+
 }
 
 /*
-  GetIngredients Retrieve all ingredients
+GetIngredients Retrieve all ingredients
 */
 func (a *Client) GetIngredients(params *GetIngredientsParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientsOK, error) {
 	// TODO: Validate the params before sending
@@ -2058,17 +1600,12 @@ func (a *Client) GetIngredients(params *GetIngredientsParams, authInfo runtime.C
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetIngredientsOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetIngredientsDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*GetIngredientsOK), nil
+
 }
 
 /*
-  GetKernel Retrieve a single kernel
+GetKernel Retrieve a single kernel
 */
 func (a *Client) GetKernel(params *GetKernelParams) (*GetKernelOK, error) {
 	// TODO: Validate the params before sending
@@ -2091,17 +1628,12 @@ func (a *Client) GetKernel(params *GetKernelParams) (*GetKernelOK, error) {
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetKernelOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetKernelDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*GetKernelOK), nil
+
 }
 
 /*
-  GetKernelCPUArchitectures Retrieve all CPU architectures that can be used with this kernel
+GetKernelCPUArchitectures Retrieve all CPU architectures that can be used with this kernel
 */
 func (a *Client) GetKernelCPUArchitectures(params *GetKernelCPUArchitecturesParams) (*GetKernelCPUArchitecturesOK, error) {
 	// TODO: Validate the params before sending
@@ -2124,17 +1656,12 @@ func (a *Client) GetKernelCPUArchitectures(params *GetKernelCPUArchitecturesPara
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetKernelCPUArchitecturesOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetKernelCPUArchitecturesDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*GetKernelCPUArchitecturesOK), nil
+
 }
 
 /*
-  GetKernelGpuArchitectures Retrieve all GPU architectures that can be used with this kernel
+GetKernelGpuArchitectures Retrieve all GPU architectures that can be used with this kernel
 */
 func (a *Client) GetKernelGpuArchitectures(params *GetKernelGpuArchitecturesParams) (*GetKernelGpuArchitecturesOK, error) {
 	// TODO: Validate the params before sending
@@ -2157,17 +1684,12 @@ func (a *Client) GetKernelGpuArchitectures(params *GetKernelGpuArchitecturesPara
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetKernelGpuArchitecturesOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetKernelGpuArchitecturesDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*GetKernelGpuArchitecturesOK), nil
+
 }
 
 /*
-  GetKernelVersion Retrieve a single kernel version
+GetKernelVersion Retrieve a single kernel version
 */
 func (a *Client) GetKernelVersion(params *GetKernelVersionParams) (*GetKernelVersionOK, error) {
 	// TODO: Validate the params before sending
@@ -2190,17 +1712,12 @@ func (a *Client) GetKernelVersion(params *GetKernelVersionParams) (*GetKernelVer
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetKernelVersionOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetKernelVersionDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*GetKernelVersionOK), nil
+
 }
 
 /*
-  GetKernelVersions Retrieve all versions of this kernel
+GetKernelVersions Retrieve all versions of this kernel
 */
 func (a *Client) GetKernelVersions(params *GetKernelVersionsParams) (*GetKernelVersionsOK, error) {
 	// TODO: Validate the params before sending
@@ -2223,17 +1740,12 @@ func (a *Client) GetKernelVersions(params *GetKernelVersionsParams) (*GetKernelV
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetKernelVersionsOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetKernelVersionsDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*GetKernelVersionsOK), nil
+
 }
 
 /*
-  GetKernels Retrieve all kernels
+GetKernels Retrieve all kernels
 */
 func (a *Client) GetKernels(params *GetKernelsParams) (*GetKernelsOK, error) {
 	// TODO: Validate the params before sending
@@ -2256,17 +1768,12 @@ func (a *Client) GetKernels(params *GetKernelsParams) (*GetKernelsOK, error) {
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetKernelsOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetKernelsDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*GetKernelsOK), nil
+
 }
 
 /*
-  GetLibc Retrieve a single libc
+GetLibc Retrieve a single libc
 */
 func (a *Client) GetLibc(params *GetLibcParams) (*GetLibcOK, error) {
 	// TODO: Validate the params before sending
@@ -2289,17 +1796,12 @@ func (a *Client) GetLibc(params *GetLibcParams) (*GetLibcOK, error) {
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetLibcOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetLibcDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*GetLibcOK), nil
+
 }
 
 /*
-  GetLibcVersion Retrieve a single libc version
+GetLibcVersion Retrieve a single libc version
 */
 func (a *Client) GetLibcVersion(params *GetLibcVersionParams) (*GetLibcVersionOK, error) {
 	// TODO: Validate the params before sending
@@ -2322,17 +1824,12 @@ func (a *Client) GetLibcVersion(params *GetLibcVersionParams) (*GetLibcVersionOK
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetLibcVersionOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetLibcVersionDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*GetLibcVersionOK), nil
+
 }
 
 /*
-  GetLibcVersions Retrieve all versions of this libc
+GetLibcVersions Retrieve all versions of this libc
 */
 func (a *Client) GetLibcVersions(params *GetLibcVersionsParams) (*GetLibcVersionsOK, error) {
 	// TODO: Validate the params before sending
@@ -2355,17 +1852,12 @@ func (a *Client) GetLibcVersions(params *GetLibcVersionsParams) (*GetLibcVersion
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetLibcVersionsOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetLibcVersionsDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*GetLibcVersionsOK), nil
+
 }
 
 /*
-  GetLibcs Retrieve all libcs
+GetLibcs Retrieve all libcs
 */
 func (a *Client) GetLibcs(params *GetLibcsParams) (*GetLibcsOK, error) {
 	// TODO: Validate the params before sending
@@ -2388,17 +1880,12 @@ func (a *Client) GetLibcs(params *GetLibcsParams) (*GetLibcsOK, error) {
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetLibcsOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetLibcsDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*GetLibcsOK), nil
+
 }
 
 /*
-  GetNamespaceIngredient Retrieve a single ingredient by namespace and name
+GetNamespaceIngredient Retrieve a single ingredient by namespace and name
 */
 func (a *Client) GetNamespaceIngredient(params *GetNamespaceIngredientParams, authInfo runtime.ClientAuthInfoWriter) (*GetNamespaceIngredientOK, error) {
 	// TODO: Validate the params before sending
@@ -2422,17 +1909,12 @@ func (a *Client) GetNamespaceIngredient(params *GetNamespaceIngredientParams, au
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetNamespaceIngredientOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetNamespaceIngredientDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*GetNamespaceIngredientOK), nil
+
 }
 
 /*
-  GetNamespaceIngredientVersions Retrieve ingredient versions by namespace and ingredient name
+GetNamespaceIngredientVersions Retrieve ingredient versions by namespace and ingredient name
 */
 func (a *Client) GetNamespaceIngredientVersions(params *GetNamespaceIngredientVersionsParams, authInfo runtime.ClientAuthInfoWriter) (*GetNamespaceIngredientVersionsOK, error) {
 	// TODO: Validate the params before sending
@@ -2456,17 +1938,12 @@ func (a *Client) GetNamespaceIngredientVersions(params *GetNamespaceIngredientVe
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetNamespaceIngredientVersionsOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetNamespaceIngredientVersionsDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*GetNamespaceIngredientVersionsOK), nil
+
 }
 
 /*
-  GetNamespaceIngredients Retrieve (or, if query string provided, search across) all ingredients and versions which provide at least one feature in this namespace
+GetNamespaceIngredients Retrieve (or, if query string provided, search across) all ingredients and versions which provide at least one feature in this namespace
 */
 func (a *Client) GetNamespaceIngredients(params *GetNamespaceIngredientsParams, authInfo runtime.ClientAuthInfoWriter) (*GetNamespaceIngredientsOK, error) {
 	// TODO: Validate the params before sending
@@ -2490,17 +1967,12 @@ func (a *Client) GetNamespaceIngredients(params *GetNamespaceIngredientsParams, 
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetNamespaceIngredientsOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetNamespaceIngredientsDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*GetNamespaceIngredientsOK), nil
+
 }
 
 /*
-  GetNamespaces Retrieve all namespaces
+GetNamespaces Retrieve all namespaces
 */
 func (a *Client) GetNamespaces(params *GetNamespacesParams, authInfo runtime.ClientAuthInfoWriter) (*GetNamespacesOK, error) {
 	// TODO: Validate the params before sending
@@ -2524,17 +1996,12 @@ func (a *Client) GetNamespaces(params *GetNamespacesParams, authInfo runtime.Cli
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetNamespacesOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetNamespacesDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*GetNamespacesOK), nil
+
 }
 
 /*
-  GetOperatingSystem Retrieve a single operating system
+GetOperatingSystem Retrieve a single operating system
 */
 func (a *Client) GetOperatingSystem(params *GetOperatingSystemParams) (*GetOperatingSystemOK, error) {
 	// TODO: Validate the params before sending
@@ -2557,17 +2024,12 @@ func (a *Client) GetOperatingSystem(params *GetOperatingSystemParams) (*GetOpera
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetOperatingSystemOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetOperatingSystemDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*GetOperatingSystemOK), nil
+
 }
 
 /*
-  GetOperatingSystemKernels Retrieve all kernels that can be used with this operating system
+GetOperatingSystemKernels Retrieve all kernels that can be used with this operating system
 */
 func (a *Client) GetOperatingSystemKernels(params *GetOperatingSystemKernelsParams) (*GetOperatingSystemKernelsOK, error) {
 	// TODO: Validate the params before sending
@@ -2590,17 +2052,12 @@ func (a *Client) GetOperatingSystemKernels(params *GetOperatingSystemKernelsPara
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetOperatingSystemKernelsOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetOperatingSystemKernelsDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*GetOperatingSystemKernelsOK), nil
+
 }
 
 /*
-  GetOperatingSystemLibcs Retrieve all libcs that can be used with this operating system
+GetOperatingSystemLibcs Retrieve all libcs that can be used with this operating system
 */
 func (a *Client) GetOperatingSystemLibcs(params *GetOperatingSystemLibcsParams) (*GetOperatingSystemLibcsOK, error) {
 	// TODO: Validate the params before sending
@@ -2623,17 +2080,12 @@ func (a *Client) GetOperatingSystemLibcs(params *GetOperatingSystemLibcsParams) 
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetOperatingSystemLibcsOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetOperatingSystemLibcsDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*GetOperatingSystemLibcsOK), nil
+
 }
 
 /*
-  GetOperatingSystemVersion Retrieve a single operating system version
+GetOperatingSystemVersion Retrieve a single operating system version
 */
 func (a *Client) GetOperatingSystemVersion(params *GetOperatingSystemVersionParams) (*GetOperatingSystemVersionOK, error) {
 	// TODO: Validate the params before sending
@@ -2656,17 +2108,12 @@ func (a *Client) GetOperatingSystemVersion(params *GetOperatingSystemVersionPara
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetOperatingSystemVersionOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetOperatingSystemVersionDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*GetOperatingSystemVersionOK), nil
+
 }
 
 /*
-  GetOperatingSystemVersions Retrieve all versions of this operating system
+GetOperatingSystemVersions Retrieve all versions of this operating system
 */
 func (a *Client) GetOperatingSystemVersions(params *GetOperatingSystemVersionsParams) (*GetOperatingSystemVersionsOK, error) {
 	// TODO: Validate the params before sending
@@ -2689,17 +2136,12 @@ func (a *Client) GetOperatingSystemVersions(params *GetOperatingSystemVersionsPa
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetOperatingSystemVersionsOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetOperatingSystemVersionsDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*GetOperatingSystemVersionsOK), nil
+
 }
 
 /*
-  GetOperatingSystems Retrieve all operating systems
+GetOperatingSystems Retrieve all operating systems
 */
 func (a *Client) GetOperatingSystems(params *GetOperatingSystemsParams) (*GetOperatingSystemsOK, error) {
 	// TODO: Validate the params before sending
@@ -2722,17 +2164,12 @@ func (a *Client) GetOperatingSystems(params *GetOperatingSystemsParams) (*GetOpe
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetOperatingSystemsOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetOperatingSystemsDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*GetOperatingSystemsOK), nil
+
 }
 
 /*
-  GetPatch Retrieve a single patch
+GetPatch Retrieve a single patch
 */
 func (a *Client) GetPatch(params *GetPatchParams) (*GetPatchOK, error) {
 	// TODO: Validate the params before sending
@@ -2755,17 +2192,12 @@ func (a *Client) GetPatch(params *GetPatchParams) (*GetPatchOK, error) {
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetPatchOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetPatchDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*GetPatchOK), nil
+
 }
 
 /*
-  GetPatches Retrieve all patches
+GetPatches Retrieve all patches
 */
 func (a *Client) GetPatches(params *GetPatchesParams) (*GetPatchesOK, error) {
 	// TODO: Validate the params before sending
@@ -2788,17 +2220,12 @@ func (a *Client) GetPatches(params *GetPatchesParams) (*GetPatchesOK, error) {
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetPatchesOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetPatchesDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*GetPatchesOK), nil
+
 }
 
 /*
-  GetPlatform Retrieve a single platform
+GetPlatform Retrieve a single platform
 */
 func (a *Client) GetPlatform(params *GetPlatformParams) (*GetPlatformOK, error) {
 	// TODO: Validate the params before sending
@@ -2821,17 +2248,12 @@ func (a *Client) GetPlatform(params *GetPlatformParams) (*GetPlatformOK, error) 
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetPlatformOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetPlatformDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*GetPlatformOK), nil
+
 }
 
 /*
-  GetPlatforms Retrieve all platforms
+GetPlatforms Retrieve all platforms
 */
 func (a *Client) GetPlatforms(params *GetPlatformsParams) (*GetPlatformsOK, error) {
 	// TODO: Validate the params before sending
@@ -2854,17 +2276,12 @@ func (a *Client) GetPlatforms(params *GetPlatformsParams) (*GetPlatformsOK, erro
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetPlatformsOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetPlatformsDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*GetPlatformsOK), nil
+
 }
 
 /*
-  GetSolutionRecipe Retrieve a recipe produced as part of a solution
+GetSolutionRecipe Retrieve a recipe produced as part of a solution
 */
 func (a *Client) GetSolutionRecipe(params *GetSolutionRecipeParams, authInfo runtime.ClientAuthInfoWriter) (*GetSolutionRecipeOK, error) {
 	// TODO: Validate the params before sending
@@ -2888,17 +2305,12 @@ func (a *Client) GetSolutionRecipe(params *GetSolutionRecipeParams, authInfo run
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetSolutionRecipeOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetSolutionRecipeDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*GetSolutionRecipeOK), nil
+
 }
 
 /*
-  HealthCheck health check API
+HealthCheck health check API
 */
 func (a *Client) HealthCheck(params *HealthCheckParams) (*HealthCheckOK, error) {
 	// TODO: Validate the params before sending
@@ -2921,17 +2333,12 @@ func (a *Client) HealthCheck(params *HealthCheckParams) (*HealthCheckOK, error) 
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*HealthCheckOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*HealthCheckDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*HealthCheckOK), nil
+
 }
 
 /*
-  NormalizeNames Normalize a list of names according to the namespace's name normalization rules.
+NormalizeNames Normalize a list of names according to the namespace's name normalization rules.
 */
 func (a *Client) NormalizeNames(params *NormalizeNamesParams, authInfo runtime.ClientAuthInfoWriter) (*NormalizeNamesOK, error) {
 	// TODO: Validate the params before sending
@@ -2955,17 +2362,12 @@ func (a *Client) NormalizeNames(params *NormalizeNamesParams, authInfo runtime.C
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*NormalizeNamesOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*NormalizeNamesDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*NormalizeNamesOK), nil
+
 }
 
 /*
-  ReadinessCheck readiness check API
+ReadinessCheck readiness check API
 */
 func (a *Client) ReadinessCheck(params *ReadinessCheckParams) (*ReadinessCheckOK, error) {
 	// TODO: Validate the params before sending
@@ -2988,19 +2390,14 @@ func (a *Client) ReadinessCheck(params *ReadinessCheckParams) (*ReadinessCheckOK
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*ReadinessCheckOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*ReadinessCheckDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*ReadinessCheckOK), nil
+
 }
 
 /*
-  ResolveRecipes recipes for an order
+ResolveRecipes recipes for an order
 
-  Solve the order's requirements into concrete ingredient versions and return one or more recipes fulfilling the order
+Solve the order's requirements into concrete ingredient versions and return one or more recipes fulfilling the order
 */
 func (a *Client) ResolveRecipes(params *ResolveRecipesParams, authInfo runtime.ClientAuthInfoWriter) (*ResolveRecipesOK, error) {
 	// TODO: Validate the params before sending
@@ -3024,17 +2421,41 @@ func (a *Client) ResolveRecipes(params *ResolveRecipesParams, authInfo runtime.C
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*ResolveRecipesOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*ResolveRecipesDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*ResolveRecipesOK), nil
+
 }
 
 /*
-  SolveOrder Solve an order's requirements into a solution consisting of one or more recipes that can be built
+SearchIngredients Search ingredients
+*/
+func (a *Client) SearchIngredients(params *SearchIngredientsParams, authInfo runtime.ClientAuthInfoWriter) (*SearchIngredientsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewSearchIngredientsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "searchIngredients",
+		Method:             "GET",
+		PathPattern:        "/v1/ingredients/search",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &SearchIngredientsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*SearchIngredientsOK), nil
+
+}
+
+/*
+SolveOrder Solve an order's requirements into a solution consisting of one or more recipes that can be built
 */
 func (a *Client) SolveOrder(params *SolveOrderParams, authInfo runtime.ClientAuthInfoWriter) (*SolveOrderCreated, error) {
 	// TODO: Validate the params before sending
@@ -3058,17 +2479,12 @@ func (a *Client) SolveOrder(params *SolveOrderParams, authInfo runtime.ClientAut
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*SolveOrderCreated)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*SolveOrderDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*SolveOrderCreated), nil
+
 }
 
 /*
-  UpdateAuthor Update an author
+UpdateAuthor Update an author
 */
 func (a *Client) UpdateAuthor(params *UpdateAuthorParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateAuthorOK, error) {
 	// TODO: Validate the params before sending
@@ -3092,17 +2508,12 @@ func (a *Client) UpdateAuthor(params *UpdateAuthorParams, authInfo runtime.Clien
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*UpdateAuthorOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*UpdateAuthorDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*UpdateAuthorOK), nil
+
 }
 
 /*
-  UpdateBuildScript Update an existing build script (if it's not in use by any stable ingredient version revisions)
+UpdateBuildScript Update an existing build script (if it's not in use by any stable ingredient version revisions)
 */
 func (a *Client) UpdateBuildScript(params *UpdateBuildScriptParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateBuildScriptOK, error) {
 	// TODO: Validate the params before sending
@@ -3126,17 +2537,12 @@ func (a *Client) UpdateBuildScript(params *UpdateBuildScriptParams, authInfo run
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*UpdateBuildScriptOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*UpdateBuildScriptDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*UpdateBuildScriptOK), nil
+
 }
 
 /*
-  UpdateIngredient Update this ingredient
+UpdateIngredient Update this ingredient
 */
 func (a *Client) UpdateIngredient(params *UpdateIngredientParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateIngredientOK, error) {
 	// TODO: Validate the params before sending
@@ -3160,17 +2566,12 @@ func (a *Client) UpdateIngredient(params *UpdateIngredientParams, authInfo runti
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*UpdateIngredientOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*UpdateIngredientDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*UpdateIngredientOK), nil
+
 }
 
 /*
-  UpdateIngredientVersion Update this ingredient version
+UpdateIngredientVersion Update this ingredient version
 */
 func (a *Client) UpdateIngredientVersion(params *UpdateIngredientVersionParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateIngredientVersionOK, error) {
 	// TODO: Validate the params before sending
@@ -3194,17 +2595,12 @@ func (a *Client) UpdateIngredientVersion(params *UpdateIngredientVersionParams, 
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*UpdateIngredientVersionOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*UpdateIngredientVersionDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*UpdateIngredientVersionOK), nil
+
 }
 
 /*
-  UpdatePatch Update an existing patch (if it's not in use by any stable ingredient version revisions)
+UpdatePatch Update an existing patch (if it's not in use by any stable ingredient version revisions)
 */
 func (a *Client) UpdatePatch(params *UpdatePatchParams, authInfo runtime.ClientAuthInfoWriter) (*UpdatePatchOK, error) {
 	// TODO: Validate the params before sending
@@ -3228,17 +2624,12 @@ func (a *Client) UpdatePatch(params *UpdatePatchParams, authInfo runtime.ClientA
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*UpdatePatchOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*UpdatePatchDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*UpdatePatchOK), nil
+
 }
 
 /*
-  UpdatePlatform Update the platform end of support date
+UpdatePlatform Update the platform end of support date
 */
 func (a *Client) UpdatePlatform(params *UpdatePlatformParams, authInfo runtime.ClientAuthInfoWriter) (*UpdatePlatformOK, error) {
 	// TODO: Validate the params before sending
@@ -3262,17 +2653,12 @@ func (a *Client) UpdatePlatform(params *UpdatePlatformParams, authInfo runtime.C
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*UpdatePlatformOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*UpdatePlatformDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*UpdatePlatformOK), nil
+
 }
 
 /*
-  ValidateRecipe Given a single recipe, this endpoint tells you if the recipe is valid. If not, it returns one more errors explaining the problem(s).
+ValidateRecipe Given a single recipe, this endpoint tells you if the recipe is valid. If not, it returns one more errors explaining the problem(s).
 */
 func (a *Client) ValidateRecipe(params *ValidateRecipeParams) (*ValidateRecipeOK, error) {
 	// TODO: Validate the params before sending
@@ -3295,13 +2681,8 @@ func (a *Client) ValidateRecipe(params *ValidateRecipeParams) (*ValidateRecipeOK
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*ValidateRecipeOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*ValidateRecipeDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*ValidateRecipeOK), nil
+
 }
 
 // SetTransport changes the transport on the client

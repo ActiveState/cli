@@ -39,8 +39,8 @@ func makePlatformsFromModelPlatforms(platforms []*model.Platform) []*Platform {
 		if platform.KernelVersion != nil && platform.KernelVersion.Version != nil {
 			p.Version = *platform.KernelVersion.Version
 		}
-		if platform.CPUArchitecture != nil {
-			p.BitWidth = platform.CPUArchitecture.BitWidth
+		if platform.CPUArchitecture != nil && platform.CPUArchitecture.BitWidth != nil {
+			p.BitWidth = *platform.CPUArchitecture.BitWidth
 		}
 
 		ps = append(ps, &p)

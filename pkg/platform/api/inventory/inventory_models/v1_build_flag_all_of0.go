@@ -6,14 +6,14 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	strfmt "github.com/go-openapi/strfmt"
+
 	"github.com/go-openapi/errors"
-	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // V1BuildFlagAllOf0 v1 build flag all of0
-//
 // swagger:model v1BuildFlagAllOf0
 type V1BuildFlagAllOf0 struct {
 
@@ -24,7 +24,7 @@ type V1BuildFlagAllOf0 struct {
 
 	// links
 	// Required: true
-	Links *V1SubSchemaSelfLink `json:"links"`
+	Links *V1BuildFlagAllOf0Links `json:"links"`
 }
 
 // Validate validates this v1 build flag all of0
