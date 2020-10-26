@@ -67,7 +67,7 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 		}
 	}
 
-	err = updateRuntime(commitID, pj.Owner(), pj.Name(), runbits.NewRuntimeMessageHandler(out))
+	err = updateRuntime(pj.Source().Path(), commitID, pj.Owner(), pj.Name(), runbits.NewRuntimeMessageHandler(out))
 	if err != nil {
 		if !failures.Matches(err, runtime.FailBuildInProgress) {
 			return locale.WrapError(err, "Could not update runtime environment. To manually update your environment run `state pull`.")
@@ -96,17 +96,22 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 	return nil
 }
 
-func updateRuntime(commitID strfmt.UUID, owner, projectName string, msgHandler runtime.MessageHandler) error {
-	installable := runtime.NewInstaller(runtime.NewRuntime(
+func updateRuntime(projectDir string, commitID strfmt.UUID, owner, projectName string, msgHandler runtime.MessageHandler) error {
+	rt, err := runtime.NewRuntime(
+		projectDir,
 		commitID,
 		owner,
 		projectName,
 		msgHandler,
-	))
+	)
+	if err != nil {
+		return locale.WrapError(err, "err_packages_update_runtime_init", "Could not initialize runtime.")
+	}
+	installable := runtime.NewInstaller(rt)
 
 	_, _, fail := installable.Install()
 	if fail != nil {
-		return locale.WrapError(fail, "Could not install dependencies.")
+		return locale.WrapError(fail, "err_packages_update_runtime_install", "Could not install dependencies.")
 	}
 
 	return nil

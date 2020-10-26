@@ -105,7 +105,10 @@ func (d *Deploy) createRuntimeInstaller(namespace project.Namespaced, targetPath
 		commitID = branch.CommitID
 	}
 
-	runtime := runtime.NewRuntime(*commitID, namespace.Owner, namespace.Project, runbits.NewRuntimeMessageHandler(d.output))
+	runtime, err := runtime.NewRuntime("", *commitID, namespace.Owner, namespace.Project, runbits.NewRuntimeMessageHandler(d.output))
+	if err != nil {
+		return nil, nil, locale.WrapError(err, "err_deploy_init_runtime", "Could not initialize runtime for deployment.")
+	}
 	runtime.SetInstallPath(targetPath)
 	return runtime, d.NewRuntimeInstaller(runtime), nil
 }

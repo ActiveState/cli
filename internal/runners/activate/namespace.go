@@ -11,8 +11,6 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/pkg/project"
 
-	"github.com/thoas/go-funk"
-
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -53,7 +51,7 @@ func (r *NamespaceSelect) Run(namespace string, preferredPath string) (string, e
 
 	// Save path for future use
 	key := fmt.Sprintf("project_%s", namespace)
-	paths := r.availablePaths(namespace)
+	paths := project.AvailableProjectPaths(r.config, namespace)
 	paths = append(paths, targetPath)
 	r.config.Set(key, paths)
 
@@ -67,7 +65,7 @@ func (r *NamespaceSelect) Run(namespace string, preferredPath string) (string, e
 
 func (r *NamespaceSelect) promptForPath(namespace string) (string, error) {
 	// If no targetPath was given try to get it from our config (ie. previous activations)
-	paths := r.availablePaths(namespace)
+	paths := project.AvailableProjectPaths(r.config, namespace)
 	if len(paths) > 0 {
 		targetPath, err := r.promptAvailablePaths(paths)
 		if err != nil {
@@ -85,19 +83,6 @@ func (r *NamespaceSelect) promptForPath(namespace string) (string, error) {
 	}
 
 	return userPath, nil
-}
-
-// availablePaths returns any locations that this namespace is used, it strips out
-// duplicates and paths that are no longer valid
-func (r *NamespaceSelect) availablePaths(namespace string) []string {
-	key := fmt.Sprintf("project_%s", namespace)
-	paths := r.config.GetStringSlice(key)
-	paths = funk.FilterString(paths, func(path string) bool {
-		return fileutils.FileExists(filepath.Join(path, constants.ConfigFileName))
-	})
-	paths = funk.UniqString(paths)
-	r.config.Set(key, paths)
-	return paths
 }
 
 func (r *NamespaceSelect) promptAvailablePaths(paths []string) (*string, *failures.Failure) {

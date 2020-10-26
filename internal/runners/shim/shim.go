@@ -47,7 +47,10 @@ func (s *Shim) Run(args ...string) error {
 	}
 
 	if project != nil && !subshell.IsActivated() {
-		runtime := runtime.NewRuntime(s.proj.CommitUUID(), s.proj.Owner(), s.proj.Name(), runbits.NewRuntimeMessageHandler(s.out))
+		runtime, err := runtime.NewRuntime(s.proj.Source().Path(), s.proj.CommitUUID(), s.proj.Owner(), s.proj.Name(), runbits.NewRuntimeMessageHandler(s.out))
+		if err != nil {
+			return locale.WrapError(err, "err_shim_runtime_init", "Could not initialize runtime for shim command.")
+		}
 		venv := virtualenvironment.New(runtime)
 		if fail := venv.Activate(); fail != nil {
 			logging.Errorf("Unable to activate state: %s", fail.Error())

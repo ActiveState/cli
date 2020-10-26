@@ -109,7 +109,6 @@ type ProjectSimple struct {
 // Project covers the top level project structure of our yaml
 type Project struct {
 	Project      string        `yaml:"project"`
-	Namespace    string        `yaml:"namespace,omitempty"`
 	Branch       string        `yaml:"branch,omitempty"`
 	Version      string        `yaml:"version,omitempty"`
 	Lock         string        `yaml:"lock,omitempty"`
@@ -124,11 +123,6 @@ type Project struct {
 	Private      bool          `yaml:"private,omitempty"`
 	path         string        // "private"
 	parsedURL    projectURL    // parsed url data
-
-	// Deprecated
-	Variables       interface{} `yaml:"variables,omitempty"`
-	deprecatedOwner string      `yaml:"owner,omitempty"`
-	deprecatedName  string      `yaml:"name,omitempty"`
 }
 
 // Platform covers the platform structure of our yaml
@@ -517,23 +511,12 @@ func Parse(configFilepath string) (*Project, *failures.Failure) {
 		}
 	}
 
-	if project.Variables != nil {
-		return nil, FailValidate.New("variable_field_deprecation_warning")
-	}
-
-	// If as.yaml has deprecated flags `owner` and `name`, construct a project file URL from these fields
-	if project.Project == "" && project.deprecatedOwner != "" && project.deprecatedName != "" {
-		project.Project = fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, project.Owner(), project.Name())
-		if err := project.Save(); err != nil { // anyone still not respecting the deprecation warning by now is going to have to deal with their file being updated for them
-			logging.Error("Could not save projectfile after removing owner/name deprecation: %v", err)
-		}
-	}
-	fail = project.Init()
-	if fail != nil {
+	if fail = project.Init(); fail != nil {
 		return nil, fail
 	}
 
-	storeProjectMapping(fmt.Sprintf("%s/%s", project.Owner(), project.Name()), filepath.Dir(project.path))
+	namespace := fmt.Sprintf("%s/%s", project.parsedURL.Owner, project.parsedURL.Name)
+	storeProjectMapping(namespace, filepath.Dir(project.Path()))
 
 	return project, nil
 }
@@ -690,6 +673,7 @@ func (p *Project) save(path string) *failures.Failure {
 	if err != nil {
 		return failures.FailIO.Wrap(err)
 	}
+
 	storeProjectMapping(fmt.Sprintf("%s/%s", p.parsedURL.Owner, p.parsedURL.Name), filepath.Dir(p.Path()))
 
 	return nil

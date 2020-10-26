@@ -24,6 +24,7 @@ func loadProject(t *testing.T) *project.Project {
 	pjFile := &projectfile.Project{}
 	contents := strings.TrimSpace(`
 project: "https://platform.activestate.com/Expander/general?commitID=00010001-0001-0001-0001-000100010001"
+lock: branchname@0.0.0-SHA123abcd
 platforms:
   - name: Linux
     os: linux
@@ -45,7 +46,7 @@ scripts:
   - name: test
     value: make test
   - name: recursive
-    value: $scripts.recursive
+    value: echo $scripts.recursive
   - name: pythonScript
     language: python3
     value: scriptValue
@@ -61,6 +62,23 @@ scripts:
 	pjFile.Persist()
 
 	return project.Get()
+}
+
+func TestExpandTopLevel(t *testing.T) {
+	prj := loadProject(t)
+
+	expanded, err := project.ExpandFromProject("$project", prj)
+	assert.NoError(t, err, "Ran without failure")
+
+	assert.Equal(t, "https://platform.activestate.com/Expander/general?commitID=00010001-0001-0001-0001-000100010001", expanded)
+
+	expanded, err = project.ExpandFromProject("$lock", prj)
+	assert.NoError(t, err, "Ran without failure")
+	assert.Equal(t, "branchname@0.0.0-SHA123abcd", expanded)
+
+	expanded, err = project.ExpandFromProject("$notcovered", prj)
+	assert.NoError(t, err, "Ran without failure")
+	assert.Equal(t, "$notcovered", expanded)
 }
 
 func TestExpandProjectPlatformOs(t *testing.T) {
@@ -99,7 +117,7 @@ func TestExpandProjectConstant(t *testing.T) {
 func TestExpandProjectSecret(t *testing.T) {
 	pj := loadProject(t)
 
-	project.RegisterExpander("secrets", func(category string, meta string, isFunction bool, pj *project.Project) (string, error) {
+	project.RegisterExpander("secrets", func(_ string, category string, meta string, isFunction bool, pj *project.Project) (string, error) {
 		if category == project.ProjectCategory {
 			return "proj-value", nil
 		}
@@ -148,9 +166,8 @@ func TestExpandProjectUnknownName(t *testing.T) {
 func TestExpandProjectInfiniteRecursion(t *testing.T) {
 	prj := loadProject(t)
 
-	expanded, err := project.ExpandFromProject("$scripts.recursive", prj)
+	_, err := project.ExpandFromProject("$scripts.recursive", prj)
 	require.Error(t, err, "Ran with failure")
-	assert.Equal(t, "", expanded, "Failed to expand")
 	assert.Contains(t, err.Error(), "Infinite recursion trying to expand variable", "Handled unknown category")
 }
 

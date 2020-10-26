@@ -93,7 +93,7 @@ func (suite *SecretsExpanderTestSuite) prepareWorkingExpander() project.Expander
 }
 
 func (suite *SecretsExpanderTestSuite) assertExpansionFailure(secretName string) {
-	value, err := suite.prepareWorkingExpander()(project.ProjectCategory, secretName, false, suite.project)
+	value, err := suite.prepareWorkingExpander()("", project.ProjectCategory, secretName, false, suite.project)
 	suite.Require().Error(err)
 	suite.Zero(value)
 }
@@ -103,14 +103,14 @@ func (suite *SecretsExpanderTestSuite) assertExpansionSuccess(secretName string,
 	if isUser {
 		category = project.UserCategory
 	}
-	value, failure := suite.prepareWorkingExpander()(category, secretName, false, suite.project)
+	value, failure := suite.prepareWorkingExpander()("", category, secretName, false, suite.project)
 	suite.Equal(expectedExpansionValue, value)
 	suite.Nil(failure)
 }
 
 func (suite *SecretsExpanderTestSuite) TestKeypairNotFound() {
 	expanderFn := project.NewSecretQuietExpander(suite.secretsClient)
-	value, err := expanderFn(project.ProjectCategory, "undefined-secret", false, suite.project)
+	value, err := expanderFn("", project.ProjectCategory, "undefined-secret", false, suite.project)
 	suite.Error(err)
 	suite.Zero(value)
 }
@@ -118,7 +118,7 @@ func (suite *SecretsExpanderTestSuite) TestKeypairNotFound() {
 func (suite *SecretsExpanderTestSuite) TestNoAuth() {
 	authentication.Get().Logout()
 	expanderFn := project.NewSecretQuietExpander(suite.secretsClient)
-	value, err := expanderFn(project.ProjectCategory, "undefined-secret", false, suite.project)
+	value, err := expanderFn("", project.ProjectCategory, "undefined-secret", false, suite.project)
 	suite.Error(err)
 	suite.Zero(value)
 }

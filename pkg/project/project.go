@@ -514,7 +514,7 @@ func (s *Secret) ValueOrNil() (*string, *failures.Failure) {
 		category = UserCategory
 	}
 
-	value, err := secretsExpander.Expand(category, s.secret.Name, false, s.project)
+	value, err := secretsExpander.Expand("", category, s.secret.Name, false, s.project)
 	if err != nil {
 		if errs.Matches(err, ErrSecretNotFound) {
 			return nil, nil

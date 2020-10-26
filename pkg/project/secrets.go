@@ -256,7 +256,7 @@ type SecretFunc func(name string, project *Project) (string, *failures.Failure)
 var ErrSecretNotFound = errors.New("secret not found")
 
 // Expand will expand a variable to a secret value, if no secret exists it will return an empty string
-func (e *SecretExpander) Expand(category string, name string, isFunction bool, project *Project) (string, error) {
+func (e *SecretExpander) Expand(_ string, category string, name string, isFunction bool, project *Project) (string, error) {
 	isUser := category == UserCategory
 
 	if e.project == nil {
@@ -295,7 +295,7 @@ func (e *SecretExpander) Expand(category string, name string, isFunction bool, p
 }
 
 // ExpandWithPrompt will expand a variable to a secret value, if no secret exists the user will be prompted
-func (e *SecretExpander) ExpandWithPrompt(category string, name string, isFunction bool, project *Project) (string, error) {
+func (e *SecretExpander) ExpandWithPrompt(_ string, category string, name string, isFunction bool, project *Project) (string, error) {
 	isUser := category == UserCategory
 
 	if knownValue, exists := e.cachedSecrets[category+name]; exists {

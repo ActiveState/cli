@@ -37,7 +37,6 @@ func TestProjectStruct(t *testing.T) {
 	project := Project{}
 	dat := strings.TrimSpace(`
 project: valueForProject
-namespace: valueForNamespace
 version: valueForVersion
 environments: valueForEnvironments`)
 
@@ -45,7 +44,6 @@ environments: valueForEnvironments`)
 	assert.Nil(t, err, "Should not throw an error")
 
 	assert.Equal(t, "valueForProject", project.Project, "Project should be set")
-	assert.Equal(t, "valueForNamespace", project.Namespace, "Namespace should be set")
 	assert.Equal(t, "valueForVersion", project.Version, "Version should be set")
 	assert.Equal(t, "valueForEnvironments", project.Environments, "Environments should be set")
 	assert.Equal(t, "", project.Path(), "Path should be empty")

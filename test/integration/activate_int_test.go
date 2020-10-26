@@ -110,8 +110,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePythonByHostOnly() {
 	cp := ts.Spawn("activate", "cli-integration-tests/"+projectName, "--path="+ts.Dirs.Work)
 
 	cp.Expect("Activating state")
-	cp.Expect("activated state", 120*time.Second)
-	cp.WaitForInput()
+	cp.WaitForInput(20 * time.Second)
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 }
@@ -133,14 +132,17 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
+	namespace := "ActiveState-CLI/Python" + version
+
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("activate", "ActiveState-CLI/Python"+version),
+		e2e.WithArgs("activate", namespace),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 		e2e.AppendEnv(extraEnv...),
 	)
 	cp.Expect("Where would you like to checkout")
 	cp.SendLine(cp.WorkDirectory())
 
+	cp.Expect("activated state")
 	// ensure that shell is functional
 	cp.WaitForInput()
 
@@ -152,11 +154,14 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	cp.SendLine(pythonExe + " -c \"import pytest; print(pytest.__doc__)\"")
 	cp.Expect("unit and functional testing")
 
-	cp.SendLine("state activate ActiveState-CLI/small-python --default")
-	cp.Expect("Please de-activate the current runtime")
+	cp.SendLine("state activate")
+	cp.ExpectLongString("You cannot activate a new project when you are already in an activated state.")
+
+	cp.SendLine("state activate --default something/else")
+	cp.ExpectLongString("Cannot set something/else as the global default project while in an activated state.")
 
 	cp.SendLine("state activate --default")
-	cp.Expect("Writing default installation to")
+	cp.ExpectLongString(fmt.Sprintf("Successfully configured %s as the global default project.", namespace))
 
 	// test that other executables that use python work as well
 	pipExe := "pip" + version
@@ -211,7 +216,7 @@ version: %s
 	c2.Expect(fmt.Sprintf("Activating state: ActiveState-CLI/%s", project))
 
 	// not waiting for activation, as we test that part in a different test
-	c2.WaitForInput()
+	c2.WaitForInput(20 * time.Second)
 	c2.SendLine("exit")
 	c2.ExpectExitCode(0)
 }
@@ -235,6 +240,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
 	cp.SendLine(cp.WorkDirectory())
 	cp.Expect("Downloading", 20*time.Second)
 	cp.Expect("Installing", 120*time.Second)
+	cp.Expect("activated state")
 
 	suite.assertCompletedStatusBarReport(cp.Snapshot())
 
@@ -314,7 +320,7 @@ version: %s
 	)
 	c2.Expect("Activating state: ActiveState-CLI/Python3")
 
-	c2.WaitForInput()
+	c2.WaitForInput(20 * time.Second)
 	c2.SendLine("exit")
 	c2.ExpectExitCode(0)
 

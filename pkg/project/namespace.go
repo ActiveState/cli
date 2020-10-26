@@ -2,10 +2,13 @@ package project
 
 import (
 	"fmt"
+	"path/filepath"
 	"regexp"
 
 	"github.com/go-openapi/strfmt"
+	"github.com/thoas/go-funk"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
@@ -23,6 +26,12 @@ type Namespaced struct {
 	Owner    string
 	Project  string
 	CommitID *strfmt.UUID
+}
+
+type ConfigAble interface {
+	Set(key string, value interface{})
+	GetString(key string) string
+	GetStringSlice(key string) []string
 }
 
 func NewNamespace(owner, project, commitID string) *Namespaced {
@@ -129,4 +138,16 @@ func NameSpaceForConfig(configFile string) *Namespaced {
 	}
 
 	return &names
+}
+
+// AvailableProjectPaths returns the paths of all projects associated with the namespace
+func AvailableProjectPaths(c ConfigAble, namespace string) []string {
+	key := fmt.Sprintf("project_%s", namespace)
+	paths := c.GetStringSlice(key)
+	paths = funk.FilterString(paths, func(path string) bool {
+		return fileutils.FileExists(filepath.Join(path, constants.ConfigFileName))
+	})
+	paths = funk.UniqString(paths)
+	c.Set(key, paths)
+	return paths
 }
