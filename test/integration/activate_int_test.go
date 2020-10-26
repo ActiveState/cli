@@ -100,9 +100,6 @@ func (suite *ActivateIntegrationTestSuite) TestActivateNotOnPath() {
 // TestActivatePythonByHostOnly Tests whether we are only pulling in the build for the target host
 func (suite *ActivateIntegrationTestSuite) TestActivatePythonByHostOnly() {
 	suite.OnlyRunForTags(tagsuite.Critical, tagsuite.Activate)
-	if runtime.GOOS != "linux" {
-		suite.T().Skip("not currently testing this OS")
-	}
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
