@@ -27,7 +27,7 @@ type cobraCommander interface {
 	GetCobraCmd() *cobra.Command
 }
 
-type Executor func(cmd *Command, args []string) error
+type ExecuteFunc func(cmd *Command, args []string) error
 
 type CommandGroup struct {
 	name     string
@@ -60,7 +60,7 @@ type Command struct {
 	flags     []*Flag
 	arguments []*Argument
 
-	execute func(cmd *Command, args []string) error
+	execute ExecuteFunc
 
 	// deferAnalytics should be set if the command handles the GA reporting in its execute function
 	deferAnalytics bool
@@ -70,7 +70,7 @@ type Command struct {
 	out output.Outputer
 }
 
-func NewCommand(name, title, description string, out output.Outputer, flags []*Flag, args []*Argument, executor Executor) *Command {
+func NewCommand(name, title, description string, out output.Outputer, flags []*Flag, args []*Argument, execute ExecuteFunc) *Command {
 	// Validate args
 	for idx, arg := range args {
 		if idx > 0 && arg.Required && !args[idx-1].Required {
@@ -84,7 +84,7 @@ func NewCommand(name, title, description string, out output.Outputer, flags []*F
 
 	cmd := &Command{
 		title:     title,
-		execute:   executor,
+		execute:   execute,
 		arguments: args,
 		flags:     flags,
 		commands:  make([]*Command, 0),
@@ -129,7 +129,7 @@ func NewCommand(name, title, description string, out output.Outputer, flags []*F
 // PPM Shim.  Differences to NewCommand() are:
 // - the entrypoint is hidden in the help text
 // - calling the help for a subcommand will execute this subcommand
-func NewHiddenShimCommand(name string, flags []*Flag, args []*Argument, executor Executor) *Command {
+func NewHiddenShimCommand(name string, flags []*Flag, args []*Argument, execute ExecuteFunc) *Command {
 	// Validate args
 	for idx, arg := range args {
 		if idx > 0 && arg.Required && !args[idx-1].Required {
@@ -142,7 +142,7 @@ func NewHiddenShimCommand(name string, flags []*Flag, args []*Argument, executor
 	}
 
 	cmd := &Command{
-		execute:   executor,
+		execute:   execute,
 		arguments: args,
 		flags:     flags,
 	}
@@ -172,9 +172,9 @@ func NewHiddenShimCommand(name string, flags []*Flag, args []*Argument, executor
 
 // NewShimCommand is a very specialized function that is used to support sub-commands for a hidden shim command.
 // It has only a name a description and function to execute.  All flags and arguments are ignored.
-func NewShimCommand(name, description string, executor Executor) *Command {
+func NewShimCommand(name, description string, execute ExecuteFunc) *Command {
 	cmd := &Command{
-		execute: executor,
+		execute: execute,
 	}
 
 	short := description
@@ -260,7 +260,7 @@ func (c *Command) Flags() []*Flag {
 	return c.flags
 }
 
-func (c *Command) Executor() Executor {
+func (c *Command) ExecuteFunc() ExecuteFunc {
 	return c.execute
 }
 

@@ -260,7 +260,7 @@ func (a *addCmdAs) deprecatedAlias(aliased *captain.Command, name string) {
 
 			a.prime.Output().Notice(msg)
 
-			return aliased.Executor()(c, args)
+			return aliased.ExecuteFunc()(c, args)
 		},
 	)
 
