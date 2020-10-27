@@ -14,7 +14,9 @@ func newScriptsCommand(prime *primer.Values) *captain.Command {
 		return runner.Run()
 	}
 
-	exec = befaft.Wrap(exec)
+	befAft := befaft.New(prime.Project())
+
+	exec = befAft.Wrap(exec)
 
 	cmd := captain.NewCommand(
 		"scripts",
