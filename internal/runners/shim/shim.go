@@ -73,7 +73,6 @@ func (s *Shim) Run(args ...string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("shimming to progPath: %s\n", progPath)
 
 	env, err = venv.GetEnv(true, filepath.Dir(projectfile.Get().Path()))
 	if err != nil {
@@ -93,6 +92,5 @@ func (s *Shim) Run(args ...string) error {
 		return locale.WrapError(fail.ToError(), "err_shim_create_scriptfile", "Could not generate script")
 	}
 
-	fmt.Printf("running %s\n%s\n", sf.Filename(), strings.Join(args, "| "))
 	return s.subshell.Run(sf.Filename(), args[1:]...)
 }
