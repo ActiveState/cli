@@ -1,6 +1,7 @@
 package cmdtree
 
 import (
+	"github.com/ActiveState/cli/cmd/state/internal/cmdtree/internal/middleware/befaft"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
@@ -9,17 +10,24 @@ import (
 
 func newScriptsCommand(prime *primer.Values) *captain.Command {
 	runner := scripts.NewScripts(prime)
+	exec := func(cmd *captain.Command, args []string) error {
+		return runner.Run()
+	}
 
-	return captain.NewCommand(
+	exec = befaft.Wrap(exec)
+
+	cmd := captain.NewCommand(
 		"scripts",
 		locale.Tl("scripts_title", "Listing Scripts"),
 		locale.T("scripts_description"),
 		prime.Output(),
 		[]*captain.Flag{},
 		[]*captain.Argument{},
-		func(ccmd *captain.Command, args []string) error {
-			return runner.Run()
-		}).SetGroup(AutomationGroup)
+		exec,
+	)
+	cmd.SetGroup(AutomationGroup)
+
+	return cmd
 }
 
 func newScriptsEditCommand(prime *primer.Values) *captain.Command {
