@@ -93,6 +93,6 @@ func (s *Shim) Run(args ...string) error {
 		return locale.WrapError(fail.ToError(), "err_shim_create_scriptfile", "Could not generate script")
 	}
 
-	fmt.Printf("running %s\n%v\n", sf.Filename(), args)
+	fmt.Printf("running %s\n%s\n", sf.Filename(), strings.Join(args, "| "))
 	return s.subshell.Run(sf.Filename(), args[1:]...)
 }
