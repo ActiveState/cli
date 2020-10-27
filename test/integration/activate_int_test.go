@@ -112,7 +112,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePythonByHostOnly() {
 	cp.Expect("Activating state")
 
 	if runtime.GOOS == "linux" {
-		cp.Expect("state activated")
+		cp.Expect("activated state")
 		cp.WaitForInput(20 * time.Second)
 		cp.SendLine("exit")
 		cp.ExpectExitCode(0)
