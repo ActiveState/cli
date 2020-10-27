@@ -7,15 +7,27 @@ import (
 	"strings"
 
 	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/ActiveState/cli/internal/osutils/termsize"
+	"github.com/ActiveState/cli/internal/output"
 
 	"gopkg.in/AlecAivazis/survey.v1/core"
 
 	"github.com/ActiveState/cli/internal/locale"
 )
 
+type stdoutWrapper struct {
+}
+
+func (s stdoutWrapper) Write(p []byte) (n int, err error) {
+	output.Get().Print(p)
+	return 0, nil
+}
+
 func init() {
+	terminal.Stdout = &stdoutWrapper{}
+
 	core.ErrorIcon = ""
 	core.HelpIcon = ""
 	core.QuestionIcon = ""
@@ -38,9 +50,7 @@ func init() {
 {{- if ne .Message ""}}{{- .Message }}{{- "\n"}}{{end}}
 {{- " > "}}{{- color "cyan"}}{{end}}`
 
-	survey.ConfirmQuestionTemplate = `
-{{- if .ShowHelp }}{{- color "cyan"}}{{ HelpIcon }} {{ .Help }}{{color "reset"}}{{"\n"}}{{end}}
-{{- color "default+hb"}}{{ .Message }} {{color "reset"}}
+	survey.ConfirmQuestionTemplate = `{{ .Message }} 
 {{- if .Answer}}
   {{- color "cyan"}}{{.Answer}}{{color "reset"}}{{"\n"}}
 {{- else }}
