@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/ActiveState/cli/internal/access"
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -47,7 +46,7 @@ func NewList(client *secretsapi.Client, p listPrimeable) *List {
 // Run executes the list behavior.
 func (l *List) Run(params ListRunParams) error {
 	if err := checkSecretsAccess(l.proj); err != nil {
-		return errs.Wrap(err, "Check secrets access")
+		return locale.WrapError(err, "secrets_err_check_access")
 	}
 
 	defs, fail := definedSecrets(l.proj, l.secretsClient, params.Filter)

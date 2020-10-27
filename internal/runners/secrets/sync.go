@@ -3,7 +3,6 @@ package secrets
 import (
 	"strconv"
 
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -43,7 +42,7 @@ func NewSync(client *secretsapi.Client, p syncPrimeable) *Sync {
 // Run executes the sync behavior.
 func (s *Sync) Run() error {
 	if err := checkSecretsAccess(s.proj); err != nil {
-		return errs.Wrap(err, "Check secrets access")
+		return locale.WrapError(err, "secrets_err_check_access")
 	}
 
 	org, fail := model.FetchOrgByURLName(s.proj.Owner())

@@ -1,7 +1,6 @@
 package secrets
 
 import (
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
@@ -35,7 +34,7 @@ func NewGet(p getPrimeable) *Get {
 // Run executes the get behavior.
 func (g *Get) Run(params GetRunParams) error {
 	if err := checkSecretsAccess(g.proj); err != nil {
-		return errs.Wrap(err, "Check secrets access")
+		return locale.WrapError(err, "secrets_err_check_access")
 	}
 
 	secret, valuePtr, fail := getSecretWithValue(g.proj, params.Name)
@@ -45,7 +44,7 @@ func (g *Get) Run(params GetRunParams) error {
 
 	data := newGetOutput(params.Name, secret, valuePtr)
 	if err := data.Validate(g.out.Type()); err != nil {
-		return errs.Wrap(err, "Validate 'get secret' output data")
+		return locale.WrapError(err, "secrets_err_getout_invalid", "'get secret' output data invalid")
 	}
 
 	g.out.Print(data)
