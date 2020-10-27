@@ -105,12 +105,21 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePythonByHostOnly() {
 	defer ts.Close()
 
 	projectName := "Python-LinuxWorks"
-	cp := ts.Spawn("activate", "cli-integration-tests/"+projectName, "--path="+ts.Dirs.Work)
-
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("activate", "cli-integration-tests/"+projectName, "--path="+ts.Dirs.Work),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
 	cp.Expect("Activating state")
-	cp.WaitForInput(20 * time.Second)
-	cp.SendLine("exit")
-	cp.ExpectExitCode(0)
+
+	if runtime.GOOS == "linux" {
+		cp.Expect("state activated")
+		cp.WaitForInput(20 * time.Second)
+		cp.SendLine("exit")
+		cp.ExpectExitCode(0)
+	} else {
+		cp.Expect("Could not activate runtime environment.")
+		cp.ExpectNotExitCode(0)
+	}
 }
 
 func (suite *ActivateIntegrationTestSuite) assertCompletedStatusBarReport(snapshot string) {
@@ -378,7 +387,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_Command() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("activate", "ActiveState-CLI/Python3", "-c", "echo CUSTOM_COMMAND")
+	cp := ts.Spawn("activate", "ActiveState-CLI/Python2", "-c", "echo CUSTOM_COMMAND")
 	cp.Expect("Where would you like to checkout")
 	cp.SendLine(cp.WorkDirectory())
 	cp.Expect("CUSTOM_COMMAND")
