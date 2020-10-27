@@ -1,4 +1,4 @@
-package befaft
+package beforeafter
 
 import (
 	"github.com/ActiveState/cli/internal/captain"
@@ -6,17 +6,17 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
-type BefAft struct {
+type BeforeAfter struct {
 	Project *project.Project
 }
 
-func New(p *project.Project) *BefAft {
-	return &BefAft{
+func New(p *project.Project) *BeforeAfter {
+	return &BeforeAfter{
 		Project: p,
 	}
 }
 
-func (ba *BefAft) Wrap(next captain.ExecuteFunc) captain.ExecuteFunc {
+func (ba *BeforeAfter) Wrap(next captain.ExecuteFunc) captain.ExecuteFunc {
 	return func(cmd *captain.Command, args []string) error {
 		runEvent := run.NewEvent(ba.Project.Events())
 

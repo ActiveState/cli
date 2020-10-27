@@ -1,7 +1,7 @@
 package cmdtree
 
 import (
-	"github.com/ActiveState/cli/cmd/state/internal/cmdtree/internal/middleware/befaft"
+	"github.com/ActiveState/cli/cmd/state/internal/cmdtree/internal/middleware/beforeafter"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
@@ -14,7 +14,7 @@ func newScriptsCommand(prime *primer.Values) *captain.Command {
 		return runner.Run()
 	}
 
-	befAft := befaft.New(prime.Project())
+	befAft := beforeafter.New(prime.Project())
 
 	exec = befAft.Wrap(exec)
 
