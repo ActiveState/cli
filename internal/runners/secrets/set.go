@@ -1,6 +1,7 @@
 package secrets
 
 import (
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/pkg/project"
@@ -31,7 +32,7 @@ func NewSet(p setPrimeable) *Set {
 // Run executes the set behavior.
 func (s *Set) Run(params SetRunParams) error {
 	if err := checkSecretsAccess(s.proj); err != nil {
-		return err
+		return errs.Wrap(err, "Check secrets access")
 	}
 
 	secret, fail := getSecret(s.proj, params.Name)
