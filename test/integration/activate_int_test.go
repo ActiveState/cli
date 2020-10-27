@@ -144,7 +144,7 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	// ensure that shell is functional
 	cp.WaitForInput()
 
-	pythonExe := tagsuite.Python + version
+	pythonExe := "python" + version
 
 	cp.SendLine(pythonExe + " -c \"import sys; print(sys.copyright)\"")
 	cp.Expect("ActiveState Software Inc.")
@@ -175,7 +175,7 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	cp.ExpectExitCode(0)
 
 	// check that default activation works
-	cp = ts.SpawnCmd(filepath.Join(ts.Dirs.DefaultBin, "python"), "-c", "import sys; print(sys.copyright)")
+	cp = ts.SpawnCmd(filepath.Join(ts.Dirs.DefaultBin, pythonExe), "-c", "import sys; print(sys.copyright)")
 	cp.Expect("ActiveState Software Inc.")
 	cp.ExpectExitCode(0)
 

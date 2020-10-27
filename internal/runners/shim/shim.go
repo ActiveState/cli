@@ -43,8 +43,7 @@ func New(prime primeable) *Shim {
 func (s *Shim) Run(args ...string) error {
 	project, fail := project.GetSafe()
 	if fail != nil {
-		// Do not fail if we can't find the projectfile
-		logging.Debug("Project not found, error: %v", fail)
+		return locale.NewError("shim_no_project_found", "Could not find a project.  You need to be in a project directory or specify a global default project via `state activate --default`")
 	}
 
 	if project == nil {
@@ -65,17 +64,24 @@ func (s *Shim) Run(args ...string) error {
 		return locale.WrapError(fail.ToError(), "err_shim_activate", "Could not activate environment for shim command")
 	}
 
-	env, err := venv.GetEnv(true, filepath.Dir(projectfile.Get().Path()))
+	// attempt to get absolute program path from virtual-env only
+	env, err := venv.GetEnv(false, filepath.Dir(projectfile.Get().Path()))
+	if err != nil {
+		return err
+	}
+	progPath := virtualenvironment.GetProgramPath(args[0], env)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("shimming to progPath: %s\n", progPath)
+
+	env, err = venv.GetEnv(true, filepath.Dir(projectfile.Get().Path()))
 	if err != nil {
 		return err
 	}
 	s.subshell.SetEnv(env)
 
 	lang := language.Bash
-	progPath := virtualenvironment.GetProgramPath(args[0], env)
-	if err != nil {
-		return err
-	}
 	scriptArgs := fmt.Sprintf(`%s "$@"`, progPath)
 	if strings.Contains(s.subshell.Binary(), "cmd") {
 		lang = language.Batch
@@ -87,5 +93,6 @@ func (s *Shim) Run(args ...string) error {
 		return locale.WrapError(fail.ToError(), "err_shim_create_scriptfile", "Could not generate script")
 	}
 
+	fmt.Printf("running %s\n%v\n", sf.Filename(), args)
 	return s.subshell.Run(sf.Filename(), args[1:]...)
 }
