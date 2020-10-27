@@ -109,6 +109,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		newPrepareCommand(prime),
 		newProtocolCommand(prime),
 		newShimCommand(prime, args...),
+		newRevertCommand(prime),
 	)
 
 	applyLegacyChildren(stateCmd, globals)

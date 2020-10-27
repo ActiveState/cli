@@ -1252,7 +1252,7 @@ err_packages_removed:
   other: Failed to remove packages
 package_removed:
   other: "Package removed: {{.V0}}"
-package_update_config_file:
+update_config:
   other: To ensure your local project is synchronized with the ActiveState platform please use `state pull`
 inventory_ingredient_not_available:
   other: The package {{.V0}} is not available on the ActiveState Platform, or does not have a matching version
