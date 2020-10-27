@@ -69,7 +69,7 @@ func (s *Shim) Run(args ...string) error {
 	if err != nil {
 		return err
 	}
-	progPath := virtualenvironment.GetProgramPath(args[0], env)
+	progPath := virtualenvironment.FindProgramOnPath(args[0], env)
 	if err != nil {
 		return err
 	}

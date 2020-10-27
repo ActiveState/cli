@@ -79,8 +79,8 @@ func (v *VirtualEnvironment) Setup(installIfNecessary bool) *failures.Failure {
 	return nil
 }
 
-// GetProgramPath tries to find the cmd on the PATH
-func GetProgramPath(cmd string, envMap map[string]string) string {
+// FindProgramOnPath tries to find the cmd on the PATH environment variable
+func FindProgramOnPath(cmd string, envMap map[string]string) string {
 	var bins []string
 	if p, ok := envMap["PATH"]; ok {
 		bins = strings.Split(p, string(os.PathListSeparator))
