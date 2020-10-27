@@ -18,12 +18,9 @@ func New(p *project.Project) *BefAft {
 
 func (ba *BefAft) Wrap(next captain.ExecuteFunc) captain.ExecuteFunc {
 	return func(cmd *captain.Command, args []string) error {
-		befEvent, err := run.NewEvent(ba.Project.Events(), project.BeforeCmd)
-		if err != nil {
-			return err // TODO: ctx
-		}
+		runEvent := run.NewEvent(ba.Project.Events())
 
-		if err := befEvent.Run(); err != nil {
+		if err := runEvent.Run(args, project.BeforeCmd); err != nil {
 			return err // TODO: ctx
 		}
 
@@ -31,12 +28,7 @@ func (ba *BefAft) Wrap(next captain.ExecuteFunc) captain.ExecuteFunc {
 			return err // TODO: ctx
 		}
 
-		aftEvent, err := run.NewEvent(ba.Project.Events(), project.AfterCmd)
-		if err != nil {
-			return err // TODO: ctx
-		}
-
-		if err := aftEvent.Run(); err != nil {
+		if err := runEvent.Run(args, project.AfterCmd); err != nil {
 			return err // TODO: ctx
 		}
 

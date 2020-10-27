@@ -7,15 +7,16 @@ import (
 )
 
 type Event struct {
-	Events []*project.Event
-	Type   project.EventType
+	DefinedEvents []*project.Event
 }
 
-func NewEvent(events []*project.Event, t project.EventType) (*Event, error) {
-	return &Event{nil, t}, nil
+func NewEvent(events []*project.Event) *Event {
+	return &Event{
+		DefinedEvents: events,
+	}
 }
 
-func (es *Event) Run() error {
-	fmt.Println(es.Type)
+func (es *Event) Run(args []string, t project.EventType) error {
+	fmt.Println(t)
 	return nil
 }
