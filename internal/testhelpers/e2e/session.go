@@ -164,6 +164,18 @@ func (s *Session) SpawnCmd(cmdName string, args ...string) *termtest.ConsoleProc
 	return s.SpawnCmdWithOpts(cmdName, WithArgs(args...))
 }
 
+// SpawnInShell runs the given command in a bash or cmd shell
+func (s *Session) SpawnInShell(cmd string, opts ...SpawnOptions) *termtest.ConsoleProcess {
+	exe := "/bin/bash"
+	shellArgs := []string{"-c"}
+	if runtime.GOOS == "windows" {
+		exe = "cmd.exe"
+		shellArgs = []string{"/k"}
+	}
+
+	return s.SpawnCmdWithOpts(exe, append(opts, WithArgs(append(shellArgs, cmd)...))...)
+}
+
 // SpawnCmdWithOpts executes an executable in a pseudo-terminal for integration tests
 // Arguments and other parameters can be specified by specifying SpawnOptions
 func (s *Session) SpawnCmdWithOpts(exe string, opts ...SpawnOptions) *termtest.ConsoleProcess {

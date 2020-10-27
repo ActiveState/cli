@@ -175,10 +175,9 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	cp.ExpectExitCode(0)
 
 	// check that default activation works
-	cp = ts.SpawnCmd(filepath.Join(ts.Dirs.DefaultBin, pythonExe), "-c", "import sys; print(sys.copyright)")
+	cp = ts.SpawnInShell(fmt.Sprintf(`%s -c 'import sys; print(sys.copyright);'`, filepath.Join(ts.Dirs.DefaultBin, pythonExe)))
 	cp.Expect("ActiveState Software Inc.")
 	cp.ExpectExitCode(0)
-
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivatePython3_Forward() {
