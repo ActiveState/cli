@@ -408,7 +408,7 @@ error_state_run_undefined_name:
 error_state_run_unknown_name:
   other: The script '[NOTICE]{{.Name}}[/RESET]' is not defined in activestate.yaml.
 info_state_run_activating_state:
-  other: "Activating runtime environment. To bypass this enter an activated state via `[ACTIONABLE]state activate[/RESET]` or if you do not require a runtime environment add `[ACTIONABLE]standalone: true[/RESET]` to the script in your [NOTICE]activestate.yaml[/RESET]."
+  other: "Setting up virtual environment. To run this script outside of a virtual environment add `[ACTIONABLE]standalone: true[/RESET]` to the script in your [NOTICE]activestate.yaml[/RESET]."
 error_state_run_activate:
   other: Unable to activate a state for running the script in. Try manually running "state activate" first.
 error_state_run_standalone_conflict:
