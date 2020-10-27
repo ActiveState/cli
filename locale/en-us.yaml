@@ -336,7 +336,7 @@ err_api_forbidden:
 err_api_org_not_found:
   other: Unable to find requested Organization
 err_api_project_not_found:
-  other: The requested project [NOTICE]{{.V0}[/RESET]} does not exist under [NOTICE]{{.V1}}[/RESET]. Please ensure the owner is correct and that the project has been created.
+  other: The requested project [NOTICE]{{.V0}}[/RESET] does not exist under [NOTICE]{{.V1}}[/RESET]. Please ensure the owner is correct and that the project has been created.
 err_api_project_not_found_unauthenticated:
   other: The requested project [NOTICE]{{.V0}}/{{.V1}}[/RESET] could not be found. If this is a private project you may need to authenticate with 'state auth'.
 err_api_member_not_found:
@@ -577,15 +577,15 @@ secrets_err_access:
 secrets_warning_no_access:
   other: You are not authorized to view secrets for this project
 secrets_err_missing_field:
-  other: "Secret is missing required field: [NOTICE]{{.V0}[/RESET]}"
+  other: "Secret is missing required field: [NOTICE]{{.V0}}[/RESET]"
 secrets_err_output:
   other: Failed to display secrets output
 secrets_err_no_secrets_found:
   other: Unable to find any Secrets for User
 secrets_err_encrypting:
-  other: "Error encrypting a user's Secret: [NOTICE]{{.V0}[/RESET]}"
+  other: "Error encrypting a user's Secret: [NOTICE]{{.V0}}[/RESET]"
 secrets_err_decrypting:
-  other: "Error decrypting a user's Secret: [NOTICE]{{.V0}[/RESET]}"
+  other: "Error decrypting a user's Secret: [NOTICE]{{.V0}}[/RESET]"
 secrets_err_save:
   other: Error updating user's Secrets
 secrets_err_base64_decoding:
@@ -982,7 +982,7 @@ err_deprection_404:
 err_deprection_code:
   other: Could not check for deprecation as the service returned a code [NOTICE]{{.V0}}[/RESET]
 err_set_commit_id:
-  other: "Could not update your activestate.yaml with the latest commit ID. Please ensure you have your project defined in the format of `[ACTIONABLE]project: https://platform.activestate.com/Owner/ProjectName[/RESET]`".
+  other: "Could not update your activestate.yaml with the latest commit ID. Please ensure you have your project defined in the format of `[ACTIONABLE]project: https://platform.activestate.com/Owner/ProjectName[/RESET]`"
 err_unauthorized:
   other: You are not authorized, did you provide valid login credentials?
 err_projectfile_exists:
