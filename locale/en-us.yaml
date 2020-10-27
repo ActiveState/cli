@@ -999,8 +999,10 @@ error_git_project_url_mismatch:
   other: The project URL in the cloned activestate.yaml does not match the platfom project
 error_git_target_dir_not_empty:
   other: Target directory for cloning already exists and is not empty
+git_cloning_project_heading:
+  other: Cloning Repository
 git_cloning_project:
-  other: Cloning the git repository associated with [NOTICE]{{.V0}}/{{.V1}}[/RESET]
+  other: Cloning git repository at [ACTIONABLE]{{.V0}}[/RESET]
 language_name_unknown:
   other: Unknown
 language_unknown_options:
