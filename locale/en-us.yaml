@@ -1371,13 +1371,13 @@ namespace_label_platform:
   other: "Platform"
 namespace_label_preplatform:
   other: "Bits"
-history_commit:
+print_commit:
   other: "[NOTICE]commit {{.V0}}[/RESET]"
-history_author:
+print_commit_author:
   other: "Author: {{.V0}}"
-history_date:
+print_commit_date:
   other: "Date: {{.V0}}"
-history_description:
+print_commit_description:
   other: "Description: {{.V0}}"
 history_cmd_description:
   other: View history of the active or given project

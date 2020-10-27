@@ -644,7 +644,7 @@ func GetCommit(commitID strfmt.UUID) (*mono_models.Commit, error) {
 
 	res, err := authentication.Client().VersionControl.GetCommit(params, authentication.ClientAuth())
 	if err != nil {
-		locale.WrapError(err, "err_get_commit", "Could not get commit from ID: {{.V0}}", commitID.String())
+		return nil, locale.WrapError(err, "err_get_commit", "Could not get commit from ID: {{.V0}}", commitID.String())
 	}
 	return res.Payload, nil
 }
