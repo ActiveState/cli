@@ -38,6 +38,18 @@ func New(prime primeable) *Revert {
 	}
 }
 
+type commitDetails struct {
+	Date        string
+	Author      string
+	Description string
+	Changeset   []changeset `locale:"changeset,Changes"`
+}
+
+type changeset struct {
+	Operation   string `locale:"operation,Operation"`
+	Requirement string `locale:"requirement,Requirement"`
+}
+
 func (r *Revert) Run(params *Params) error {
 	commitID := strfmt.UUID(params.CommitID)
 	commit, err := model.GetCommit(strfmt.UUID(params.CommitID))
@@ -49,7 +61,6 @@ func (r *Revert) Run(params *Params) error {
 	if fail != nil {
 		return locale.WrapError(fail.ToError(), "err_revert_get_history", "Could not get project commit history")
 	}
-
 	if !containsCommitID(history, commitID) {
 		return locale.NewError("err_revert_invalid_commit_id", "Commit ID: {{.V0}} does not belong to the project: {{.V1}}", params.CommitID, r.project.Namespace().String())
 	}
@@ -59,19 +70,27 @@ func (r *Revert) Run(params *Params) error {
 		return locale.WrapError(fail.ToError(), "err_revert_commits_behind", "Could not determine if local project is synchronized with platform")
 	}
 	if count > 0 {
-		return locale.NewInputError("err_revert_behind_latest", "Your project is {{.V0}} commits behind. Please run `state pull` to syncronize your project and run `state revert` again", strconv.Itoa(count))
+		return locale.NewInputError("err_revert_behind_latest", "Your project is {{.V0}} commit(s) behind. Please run `state pull` to syncronize your project and run `state revert` again", strconv.Itoa(count))
 	}
 
-	// TODO: Create a method/type/map for handling output
-	r.out.Print(fmt.Sprintf("%s by %s", commit.AtTime.String(), commit.Username))
-	r.out.Print(fmt.Sprintf("Description: %s", commit.Message))
-	r.out.Print("Changes made:")
-	for _, c := range commit.Changeset {
+	commitDetails := commitDetails{
+		Date:        commit.AtTime.String(),
+		Author:      commit.Username,
+		Description: commit.Message,
+		Changeset:   make([]changeset, len(commit.Changeset)),
+	}
+	if commitDetails.Description == "" {
+		commitDetails.Description = locale.Tl("commit_no_description", "Commit description not provided")
+	}
+
+	for i, c := range commit.Changeset {
 		// The requirement does not print well when it is a platform (prints uuid)
-		r.out.Print(fmt.Sprintf("  %s %s", c.Operation, c.Requirement))
+		commitDetails.Changeset[i] = changeset{c.Operation, c.Requirement}
 	}
+	r.out.Print(locale.Tl("commit_details", "[NOTICE]Commit details:[/RESET]"))
+	r.out.Print(commitDetails)
 
-	revert, fail := r.prompt.Confirm(locale.Tl("revert_confirm", fmt.Sprintf("Revert to commit: %s", params.CommitID)), false)
+	revert, fail := r.prompt.Confirm(locale.Tl("revert_confirm", fmt.Sprintf("Revert to commit: %s?", params.CommitID)), false)
 	if fail != nil {
 		return locale.WrapError(fail.ToError(), "err_revert_confirm", "Could not confirm revert choice")
 	}
@@ -84,7 +103,7 @@ func (r *Revert) Run(params *Params) error {
 		return locale.WrapError(err, "err_revert_commit", "Could not revert to commit: {{.V0}}", params.CommitID)
 	}
 
-	r.out.Print(locale.Tl("revert_success", "Sucessfully reverted to commit: {{.V0}}"))
+	r.out.Print(locale.Tl("revert_success", "Sucessfully reverted to commit: {{.V0}}", params.CommitID))
 	r.out.Print(locale.T("update_config"))
 	return nil
 }
