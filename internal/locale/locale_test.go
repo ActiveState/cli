@@ -4,17 +4,15 @@ import (
 	"regexp"
 	"testing"
 
-	_ "github.com/ActiveState/cli/internal/config"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
+
+	_ "github.com/ActiveState/cli/internal/config"
 )
 
 func TestInitAndT(t *testing.T) {
 	translation := T("state_description")
 	assert.NotZero(t, len(translation))
-
-	translation = Tt("usage_tpl")
-	assert.Contains(t, translation, "{{", "Translation should contain template tags")
 }
 
 func TestGetLocalePath(t *testing.T) {

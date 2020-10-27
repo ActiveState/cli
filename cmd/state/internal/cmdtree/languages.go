@@ -21,7 +21,7 @@ func newLanguagesCommand(prime *primer.Values) *captain.Command {
 		func(ccmd *captain.Command, _ []string) error {
 			return runner.Run()
 		},
-	)
+	).SetGroup(PlatformGroup)
 }
 
 func newLanguageUpdateCommand(prime *primer.Values) *captain.Command {

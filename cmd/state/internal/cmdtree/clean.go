@@ -19,7 +19,7 @@ func newCleanCommand(prime *primer.Values) *captain.Command {
 			prime.Output().Print(ccmd.Help())
 			return nil
 		},
-	)
+	).SetGroup(UtilsGroup)
 }
 
 func newCleanUninstallCommand(prime *primer.Values) *captain.Command {

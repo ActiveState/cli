@@ -23,7 +23,7 @@ func newExportCommand(prime *primer.Values) *captain.Command {
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
 			return runner.Run(ccmd)
-		})
+		}).SetGroup(UtilsGroup)
 }
 
 func newRecipeCommand(prime *primer.Values) *captain.Command {

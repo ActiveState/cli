@@ -33,5 +33,7 @@ func newShimCommand(prime *primer.Values, args ...string) *captain.Command {
 		cmd.SetDisableFlagParsing(true)
 	}
 
+	cmd.SetGroup(EnvironmentGroup)
+
 	return cmd
 }

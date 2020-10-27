@@ -38,6 +38,8 @@ func newRunCommand(prime *primer.Values) *captain.Command {
 			return runner.Run(name, args)
 		},
 	)
+
+	cmd.SetGroup(EnvironmentGroup)
 	cmd.SetDisableFlagParsing(true)
 
 	return cmd

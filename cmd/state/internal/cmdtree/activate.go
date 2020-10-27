@@ -71,6 +71,7 @@ func newActivateCommand(prime *primer.Values) *captain.Command {
 			return runner.Run(&params)
 		},
 	)
+	cmd.SetGroup(EnvironmentGroup)
 	cmd.SetDeferAnalytics(true)
 	return cmd
 }

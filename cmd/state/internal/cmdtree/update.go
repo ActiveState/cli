@@ -38,6 +38,7 @@ func newUpdateCommand(prime *primer.Values) *captain.Command {
 			return runner.Run(&params)
 		},
 	)
+	cmd.SetGroup(UtilsGroup)
 	cmd.SetSkipChecks(true)
 	return cmd
 }

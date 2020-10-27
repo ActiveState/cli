@@ -39,6 +39,8 @@ func newPackagesCommand(prime *primer.Values) *captain.Command {
 			return runner.Run(params)
 		},
 	)
+
+	cmd.SetGroup(PackagesGroup)
 	cmd.SetAliases("pkg", "package")
 
 	return cmd
@@ -66,7 +68,7 @@ func newInstallCommand(prime *primer.Values) *captain.Command {
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run(params)
 		},
-	)
+	).SetGroup(PackagesGroup)
 }
 
 func newUninstallCommand(prime *primer.Values) *captain.Command {
@@ -91,7 +93,7 @@ func newUninstallCommand(prime *primer.Values) *captain.Command {
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run(params)
 		},
-	)
+	).SetGroup(PackagesGroup)
 }
 
 func newImportCommand(prime *primer.Values) *captain.Command {
@@ -122,7 +124,7 @@ func newImportCommand(prime *primer.Values) *captain.Command {
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run(*params)
 		},
-	)
+	).SetGroup(PackagesGroup)
 }
 
 func newSearchCommand(prime *primer.Values) *captain.Command {
@@ -158,5 +160,5 @@ func newSearchCommand(prime *primer.Values) *captain.Command {
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run(params)
 		},
-	)
+	).SetGroup(PackagesGroup)
 }

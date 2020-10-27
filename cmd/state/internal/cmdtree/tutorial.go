@@ -23,6 +23,8 @@ func newTutorialCommand(prime *primer.Values) *captain.Command {
 		},
 	)
 
+	cmd.SetHidden(true)
+
 	return cmd
 }
 

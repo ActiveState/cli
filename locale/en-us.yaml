@@ -5,7 +5,10 @@ confirmation:
 contradiction:
   other: "No"
 state_description:
-  other: The ActiveState CLI allows you to easily switch between your ActiveState environments
+  other: |
+    The ActiveState CLI allows you to easily switch between your ActiveState environments
+  
+    Find more information at: https://docs.activestate.com/platform/state/
 activate_project:
   other: Activate a project
 events_header_id:
@@ -14,62 +17,6 @@ events_header_event:
   other: Event
 events_header_value:
   other: Value
-usage_tpl:
-  other: "
-Usage:
-  [[if .Runnable]][[BR]]
-  [[.UseLine]] 
-{{ range $key, $argument := .Arguments }}<{{$argument.Name}}> {{ end }}
-  [[end]]
-  [[if .HasAvailableSubCommands]][[BR]]
-    [[.CommandPath]] [command]
-  [[end]]
-
-[[if gt (len .Aliases) 0]]
-[[BR]][[BR]]Aliases:[[BR]]
-  [[.NameAndAliases]][[end]]
-
-[[if .HasExample]]
-[[BR]][[BR]]
-Examples:[[BR]]
-  [[.Example]]
-[[end]]
-
-[[if .HasAvailableSubCommands]][[BR]][[BR]]Available Commands:
-[[range .Commands]][[if (or .IsAvailableCommand (eq .Name \"help\"))]][[BR]]
-  [[rpad .Name .NamePadding ]] [[.Short]]
-[[end]][[end]][[end]]
-
-[[if .HasAvailableLocalFlags]]
-[[BR]][[BR]]
-Flags:
-[[BR]][[.LocalFlags.FlagUsages | trimTrailingWhitespaces]]
-[[end]]
-
-[[if .HasAvailableInheritedFlags]]
-[[BR]][[BR]]
-Global Flags: 
-[[BR]][[.InheritedFlags.FlagUsages | trimTrailingWhitespaces]]
-[[end]]
-
-{{if gt (len .Arguments) 0}}
-[[BR]][[BR]]
-Arguments:[[BR]]
-  {{ range $key, $argument := .Arguments }}
-  <{{$argument.Name}}> {{if gt (len $argument.Required) 0}}          {{else}}(optional){{end}} {{$argument.Description}}[[BR]]
-  {{ end }}
-{{end}}
-
-[[if .HasHelpSubCommands]]
-[[BR]][[BR]]
-Additional help topics: [[range .Commands]]
-[[if .IsAdditionalHelpTopicCommand]][[BR]]
-  [[rpad .CommandPath .CommandPathPadding]] [[.Short]]
-[[end]][[end]][[end]]
-
-[[if .HasAvailableSubCommands]]
-[[BR]][[BR]]
-Use \"[[.CommandPath]] [command] --help\" for more information about a command.[[end]][[BR]]"
 arg_state_activate_namespace:
   other: ORG/PROJECT
 arg_state_activate_namespace_description:

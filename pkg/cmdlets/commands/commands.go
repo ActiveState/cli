@@ -260,10 +260,6 @@ func (c *Command) Register() {
 		}
 	}
 
-	if c.UsageTemplate == "" {
-		c.UsageTemplate = "usage_tpl"
-	}
-
 	args := []map[string]string{}
 	for _, arg := range c.Arguments {
 		req := ""
