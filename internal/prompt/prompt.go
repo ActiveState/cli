@@ -69,7 +69,7 @@ func (p *Prompt) InputAndValidate(title, message, defaultResponse string, valida
 
 	// We handle defaults more clearly than the survey package can
 	if defaultResponse != "" {
-		v, fail := p.Select("", formatMessage(message), []string{defaultResponse, locale.Tl("prompt_custom", "Custom Value")}, defaultResponse)
+		v, fail := p.Select("", formatMessage(message), []string{defaultResponse, locale.Tl("prompt_custom", "Other ..")}, defaultResponse)
 		if fail != nil {
 			return "", fail
 		}
