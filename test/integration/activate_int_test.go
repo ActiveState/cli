@@ -155,6 +155,7 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	cp.SendLine("state activate")
 	cp.ExpectLongString("You cannot activate a new project when you are already in an activated state.")
 
+	// state activate --default tests are de-activated for now cf., https://www.pivotaltracker.com/story/show/175468062
 	/*
 		cp.SendLine("state activate --default something/else")
 		cp.ExpectLongString("Cannot set something/else as the global default project while in an activated state.")
@@ -177,6 +178,7 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 
+	// state activate --default tests are de-activated for now cf., https://www.pivotaltracker.com/story/show/175468062.
 	/*
 		// check that default activation works
 		cp = ts.SpawnInShell(fmt.Sprintf(`%s -c 'import sys; print(sys.copyright);'`, filepath.Join(ts.Dirs.DefaultBin, pythonExe)))
