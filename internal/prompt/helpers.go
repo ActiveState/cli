@@ -7,27 +7,15 @@ import (
 	"strings"
 
 	"gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
-
-	"github.com/ActiveState/cli/internal/osutils/termsize"
-	"github.com/ActiveState/cli/internal/output"
-
 	"gopkg.in/AlecAivazis/survey.v1/core"
+
+	"github.com/ActiveState/cli/internal/colorize"
+	"github.com/ActiveState/cli/internal/osutils/termsize"
 
 	"github.com/ActiveState/cli/internal/locale"
 )
 
-type stdoutWrapper struct {
-}
-
-func (s stdoutWrapper) Write(p []byte) (n int, err error) {
-	output.Get().Print(p)
-	return 0, nil
-}
-
 func init() {
-	terminal.Stdout = &stdoutWrapper{}
-
 	core.ErrorIcon = ""
 	core.HelpIcon = ""
 	core.QuestionIcon = ""
@@ -38,30 +26,24 @@ func init() {
 
 	// Drop questionicon from templates as it causes indented text
 	survey.SelectQuestionTemplate = `{{ .Message }}
-{{- "\n\n"}}
+{{- "\n"}}
 {{- range $ix, $choice := .PageEntries}}
+	{{- "\n"}}
 	{{- if eq $ix $.SelectedIndex}}{{color "cyan"}}{{ SelectFocusIcon }} {{else}}  {{end}}
 	{{- $choice}}
-	{{- color "reset"}}{{"\n"}}
+	{{- color "reset"}}
 {{- end}}
-{{- "\n"}}`
+`
 
-	survey.InputQuestionTemplate = `{{- if .Answer}}{{color "reset"}}{{- "\n"}}{{else}}
-{{- if ne .Message ""}}{{- .Message }}{{- "\n"}}{{end}}
-{{- " > "}}{{- color "cyan"}}{{end}}`
+	survey.InputQuestionTemplate = `{{- if ne .Message ""}}{{- .Message }}{{- "\n"}}{{- end}}
+{{- color "cyan"}}{{- "> "}}{{- color "reset"}}`
 
-	survey.ConfirmQuestionTemplate = `{{ .Message }} 
-{{- if .Answer}}
-  {{- color "cyan"}}{{.Answer}}{{color "reset"}}{{"\n"}}
-{{- else }}
-  {{- if and .Help (not .ShowHelp)}}{{color "cyan"}}[{{ HelpInputRune }} for help]{{color "reset"}} {{end}}
-  {{- color "white"}}{{if .Default}}(Y/n) {{else}}(y/N) {{end}}{{color "reset"}}
-{{- end}}`
+	survey.ConfirmQuestionTemplate = `{{ .Message }}{{" "}}
+{{- color "cyan"}}{{- if .Default}}(Y/n) {{- else}}(y/N) {{- end}}{{- color "reset"}}
+{{color "cyan"}}{{- "> "}}{{- color "reset"}}`
 
-	survey.PasswordQuestionTemplate = `
-{{- if .ShowHelp }}{{- color "cyan"}}{{ HelpIcon }} {{ .Help }}{{color "reset"}}{{"\n"}}{{end}}
-{{- color "default+hb"}}{{ .Message }} {{color "reset"}}
-{{- if and .Help (not .ShowHelp)}}{{color "cyan"}}[{{ HelpInputRune }} for help]{{color "reset"}} {{end}}`
+	survey.PasswordQuestionTemplate = `{{- if ne .Message ""}}{{- .Message }}{{end}}
+{{color "cyan"}}{{- "> "}}{{- color "reset"}}`
 }
 
 // inputRequired does not allow an empty value
@@ -87,7 +69,8 @@ func isZero(v reflect.Value) bool {
 	return reflect.DeepEqual(v.Interface(), reflect.Zero(v.Type()).Interface())
 }
 
-func formatMessage(message string) string {
+func formatMessage(message string, colors bool) string {
+	message = colorize.ColorizedOrStrip(message, colors)
 	cols := termsize.GetTerminalColumns()
 	return formatMessageByCols(message, cols)
 }

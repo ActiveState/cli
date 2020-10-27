@@ -69,7 +69,7 @@ func (p *Prompt) InputAndValidate(title, message, defaultResponse string, valida
 
 	// We handle defaults more clearly than the survey package can
 	if defaultResponse != "" {
-		v, fail := p.Select("", formatMessage(message), []string{defaultResponse, locale.Tl("prompt_custom", "Other ..")}, defaultResponse)
+		v, fail := p.Select("", formatMessage(message, !p.out.Config().Colored), []string{defaultResponse, locale.Tl("prompt_custom", "Other ..")}, defaultResponse)
 		if fail != nil {
 			return "", fail
 		}
@@ -80,7 +80,7 @@ func (p *Prompt) InputAndValidate(title, message, defaultResponse string, valida
 	}
 
 	err := survey.AskOne(&Input{&survey.Input{
-		Message: formatMessage(message),
+		Message: formatMessage(message, !p.out.Config().Colored),
 	}}, &response, validator)
 	if err != nil {
 		return "", failures.FailUserInput.Wrap(err)
@@ -94,9 +94,10 @@ func (p *Prompt) Select(title, message string, choices []string, defaultChoice s
 	if title != "" {
 		p.out.Notice(output.SubHeading(title))
 	}
+
 	var response string
 	err := survey.AskOne(&Select{&survey.Select{
-		Message: formatMessage(message),
+		Message: formatMessage(message, !p.out.Config().Colored),
 		Options: choices,
 		Default: defaultChoice,
 	}}, &response, nil)
@@ -114,7 +115,7 @@ func (p *Prompt) Confirm(title, message string, defaultChoice bool) (bool, *fail
 
 	var resp bool
 	err := survey.AskOne(&Confirm{&survey.Confirm{
-		Message: message,
+		Message: formatMessage(message, !p.out.Config().Colored),
 		Default: defaultChoice,
 	}}, &resp, nil)
 	if err != nil {
@@ -136,9 +137,9 @@ func (p *Prompt) InputSecret(title, message string, flags ...ValidatorFlag) (str
 		p.out.Notice(output.SubHeading(title))
 	}
 
-	err := survey.AskOne(&survey.Password{
-		Message: formatMessage(message),
-	}, &response, wrapValidators(validators))
+	err := survey.AskOne(&Password{&survey.Password{
+		Message: formatMessage(message, !p.out.Config().Colored),
+	}}, &response, wrapValidators(validators))
 	if err != nil {
 		return "", failures.FailUserInput.Wrap(err)
 	}
