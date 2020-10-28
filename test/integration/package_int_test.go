@@ -3,6 +3,7 @@ package integration
 import (
 	"fmt"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"testing"
 	"time"
@@ -319,6 +320,12 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 	cp = ts.Spawn("activate", namespace, "--path="+ts.Dirs.Work, "--output=json")
 	cp.ExpectExitCode(0)
 
+	cp = ts.Spawn("history")
+	cp.ExpectExitCode(0)
+
+	commitRe := regexp.MustCompile(`[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}`)
+	firstCommit := commitRe.FindString(cp.TrimmedSnapshot())
+
 	suite.Run("packages add", func() {
 		cp := ts.Spawn("packages", "add", "dateparser@0.7.2")
 		cp.ExpectRe("(?:Package added|The project is currently building)")
@@ -336,6 +343,14 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 		cp.ExpectRe("(?:Package removed|The project is currently building)")
 		cp.Wait()
 	})
+
+	cp = ts.Spawn("revert", firstCommit)
+	cp.SendLine("y")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("history")
+	cp.ExpectExitCode(0)
+	cp.Expect("Reverting to commit")
 }
 
 func (suite *PackageIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session) {
