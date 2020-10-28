@@ -8,7 +8,6 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/state"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
-	"github.com/ActiveState/cli/state/secrets"
 )
 
 // CmdTree manages a tree of captain.Command instances.
@@ -88,6 +87,14 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 	addAs.deprecatedAlias(importCmd, "import")
 	addAs.deprecatedAlias(searchCmd, "search")
 
+	secretsClient := secretsapi.InitializeClient()
+	secretsCmd := newSecretsCommand(secretsClient, prime)
+	secretsCmd.AddChildren(
+		newSecretsGetCommand(prime),
+		newSecretsSetCommand(prime),
+		newSecretsSyncCommand(secretsClient, prime),
+	)
+
 	stateCmd := newStateCommand(globals, prime)
 	stateCmd.AddChildren(
 		newActivateCommand(prime),
@@ -120,9 +127,8 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		newPrepareCommand(prime),
 		newProtocolCommand(prime),
 		newShimCommand(prime, args...),
+		secretsCmd,
 	)
-
-	applyLegacyChildren(stateCmd, globals)
 
 	return &CmdTree{
 		cmd: stateCmd,
@@ -225,17 +231,6 @@ func (ct *CmdTree) Execute(args []string) error {
 // Command returns the root command of the CmdTree
 func (ct *CmdTree) Command() *captain.Command {
 	return ct.cmd
-}
-
-// applyLegacyChildren will register any commands and expanders
-func applyLegacyChildren(cmd *captain.Command, globals *globalOptions) {
-	logging.Debug("register")
-
-	secretsapi.InitializeClient()
-
-	cmd.AddLegacyChildren(
-		secrets.NewCommand(secretsapi.Get(), &globals.Output).Config(),
-	)
 }
 
 type addCmdAs struct {

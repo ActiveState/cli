@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/runners/secrets"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/ActiveState/cli/state/secrets"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -38,10 +38,22 @@ func (suite *SecretsIntegrationTestSuite) TestSecrets_JSON() {
 	ts.LoginAsPersistentUser()
 	cp := ts.Spawn("secrets", "set", "project.test-secret", "test-value")
 	cp.ExpectExitCode(0)
-	suite.Empty(cp.TrimmedSnapshot())
+
 	cp = ts.Spawn("secrets", "get", "project.test-secret", "--output", "json")
 	cp.ExpectExitCode(0)
 	suite.Equal(string(expected), cp.TrimmedSnapshot())
+
+	cp = ts.Spawn("secrets", "sync")
+	cp.Expect("Successfully synchronized")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("secrets")
+	cp.Expect("Name")
+	cp.Expect("Description")
+	cp.Expect("test-secret")
+	cp.Expect("project")
+	cp.Expect("Defined")
+	cp.ExpectExitCode(0)
 }
 
 func TestSecretsIntegrationTestSuite(t *testing.T) {

@@ -19,6 +19,11 @@ import (
 // swagger:model v1KernelVersionPagedListPaging
 type V1KernelVersionPagedListPaging struct {
 
+	// The total number of items available
+	// Required: true
+	// Minimum: 0
+	AvailableCount *int64 `json:"available_count"`
+
 	// The number of items on this page
 	// Required: true
 	// Minimum: 0
@@ -44,6 +49,10 @@ type V1KernelVersionPagedListPaging struct {
 func (m *V1KernelVersionPagedListPaging) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateAvailableCount(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateItemCount(formats); err != nil {
 		res = append(res, err)
 	}
@@ -63,6 +72,19 @@ func (m *V1KernelVersionPagedListPaging) Validate(formats strfmt.Registry) error
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *V1KernelVersionPagedListPaging) validateAvailableCount(formats strfmt.Registry) error {
+
+	if err := validate.Required("available_count", "body", m.AvailableCount); err != nil {
+		return err
+	}
+
+	if err := validate.MinimumInt("available_count", "body", int64(*m.AvailableCount), 0, false); err != nil {
+		return err
+	}
+
 	return nil
 }
 

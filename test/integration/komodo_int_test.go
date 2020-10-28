@@ -8,9 +8,9 @@ import (
 	"path/filepath"
 	"regexp"
 
+	"github.com/ActiveState/cli/internal/runners/secrets"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/ActiveState/cli/state/secrets"
 )
 
 func (suite *ActivateIntegrationTestSuite) TestActivate_EditorV0() {
@@ -252,8 +252,8 @@ func (suite *SecretsIntegrationTestSuite) TestSecretsGet_EditorV0() {
 
 	ts.LoginAsPersistentUser()
 	cp := ts.Spawn("secrets", "set", "project.test-secret", "test-value", "--output", "editor.v0")
-	cp.ExpectExitCode(0)
 	suite.Empty(cp.TrimmedSnapshot())
+	cp.ExpectExitCode(0)
 	cp = ts.Spawn("secrets", "get", "project.test-secret", "--output", "editor.v0")
 	cp.ExpectExitCode(0)
 	suite.Equal(string(expected), cp.TrimmedSnapshot())

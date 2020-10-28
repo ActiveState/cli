@@ -8,19 +8,19 @@ package inventory_models
 import (
 	"strconv"
 
+	strfmt "github.com/go-openapi/strfmt"
+
 	"github.com/go-openapi/errors"
-	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // V1BuildFlagRevisionCoreAllOf0ValuesItems A description of this set.
-//
 // swagger:model v1BuildFlagRevisionCoreAllOf0ValuesItems
 type V1BuildFlagRevisionCoreAllOf0ValuesItems struct {
 
 	// At least one condition set from this list must be satisfied for this build flag value to be applied in a recipe (i.e condition sets are ORed together)
-	ConditionSets []*V1SubSchemaConditionSet `json:"condition_sets"`
+	ConditionSets []*V1BuildFlagRevisionCoreAllOf0ValuesItemsConditionSetsItems `json:"condition_sets"`
 
 	// The name for this build flag value
 	// Required: true

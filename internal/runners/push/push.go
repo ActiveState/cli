@@ -78,8 +78,10 @@ func (r *Push) Run() *failures.Failure {
 
 	// Remove temporary language entry
 	pjf := r.project.Source()
-	pjf.Languages = nil
-	pjf.Save()
+	err := pjf.RemoveTemporaryLanguage()
+	if err != nil {
+		return failures.FailUser.Wrap(err, locale.Tl("push_remove_lang_err", "Failed to remove temporary language field from activestate.yaml."))
+	}
 
 	r.Outputer.Notice(locale.Tr("push_project_created", r.project.URL(), lang.String(), langVersion))
 	r.project.Source().SetCommit(commitID.String(), false)

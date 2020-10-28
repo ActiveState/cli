@@ -6,22 +6,22 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	strfmt "github.com/go-openapi/strfmt"
+
 	"github.com/go-openapi/errors"
-	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // V1BuildFlag Build Flag
 //
 // The full build flag data model
-//
 // swagger:model v1BuildFlag
 type V1BuildFlag struct {
 	V1BuildFlagAllOf0
 
-	V1BuildFlagCore
+	V1BuildFlagAllOf1
 
-	V1SubSchemaRevisionedResource
+	V1BuildFlagAllOf2
 }
 
 // UnmarshalJSON unmarshals this object from a JSON structure
@@ -34,18 +34,18 @@ func (m *V1BuildFlag) UnmarshalJSON(raw []byte) error {
 	m.V1BuildFlagAllOf0 = aO0
 
 	// AO1
-	var aO1 V1BuildFlagCore
+	var aO1 V1BuildFlagAllOf1
 	if err := swag.ReadJSON(raw, &aO1); err != nil {
 		return err
 	}
-	m.V1BuildFlagCore = aO1
+	m.V1BuildFlagAllOf1 = aO1
 
 	// AO2
-	var aO2 V1SubSchemaRevisionedResource
+	var aO2 V1BuildFlagAllOf2
 	if err := swag.ReadJSON(raw, &aO2); err != nil {
 		return err
 	}
-	m.V1SubSchemaRevisionedResource = aO2
+	m.V1BuildFlagAllOf2 = aO2
 
 	return nil
 }
@@ -60,17 +60,18 @@ func (m V1BuildFlag) MarshalJSON() ([]byte, error) {
 	}
 	_parts = append(_parts, aO0)
 
-	aO1, err := swag.WriteJSON(m.V1BuildFlagCore)
+	aO1, err := swag.WriteJSON(m.V1BuildFlagAllOf1)
 	if err != nil {
 		return nil, err
 	}
 	_parts = append(_parts, aO1)
 
-	aO2, err := swag.WriteJSON(m.V1SubSchemaRevisionedResource)
+	aO2, err := swag.WriteJSON(m.V1BuildFlagAllOf2)
 	if err != nil {
 		return nil, err
 	}
 	_parts = append(_parts, aO2)
+
 	return swag.ConcatJSON(_parts...), nil
 }
 
@@ -82,12 +83,12 @@ func (m *V1BuildFlag) Validate(formats strfmt.Registry) error {
 	if err := m.V1BuildFlagAllOf0.Validate(formats); err != nil {
 		res = append(res, err)
 	}
-	// validation for a type composition with V1BuildFlagCore
-	if err := m.V1BuildFlagCore.Validate(formats); err != nil {
+	// validation for a type composition with V1BuildFlagAllOf1
+	if err := m.V1BuildFlagAllOf1.Validate(formats); err != nil {
 		res = append(res, err)
 	}
-	// validation for a type composition with V1SubSchemaRevisionedResource
-	if err := m.V1SubSchemaRevisionedResource.Validate(formats); err != nil {
+	// validation for a type composition with V1BuildFlagAllOf2
+	if err := m.V1BuildFlagAllOf2.Validate(formats); err != nil {
 		res = append(res, err)
 	}
 

@@ -10,9 +10,10 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
-	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	strfmt "github.com/go-openapi/strfmt"
+
+	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // AddNamespaceReader is a Reader for the AddNamespace structure.
@@ -23,18 +24,21 @@ type AddNamespaceReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *AddNamespaceReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
+
 	case 201:
 		result := NewAddNamespaceCreated()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
+
 	case 400:
 		result := NewAddNamespaceBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
+
 	default:
 		result := NewAddNamespaceDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -64,10 +68,6 @@ func (o *AddNamespaceCreated) Error() string {
 	return fmt.Sprintf("[POST /v1/namespaces][%d] addNamespaceCreated  %+v", 201, o.Payload)
 }
 
-func (o *AddNamespaceCreated) GetPayload() *inventory_models.V1Namespace {
-	return o.Payload
-}
-
 func (o *AddNamespaceCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(inventory_models.V1Namespace)
@@ -95,10 +95,6 @@ type AddNamespaceBadRequest struct {
 
 func (o *AddNamespaceBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/namespaces][%d] addNamespaceBadRequest  %+v", 400, o.Payload)
-}
-
-func (o *AddNamespaceBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
-	return o.Payload
 }
 
 func (o *AddNamespaceBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -137,10 +133,6 @@ func (o *AddNamespaceDefault) Code() int {
 
 func (o *AddNamespaceDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/namespaces][%d] addNamespace default  %+v", o._statusCode, o.Payload)
-}
-
-func (o *AddNamespaceDefault) GetPayload() *inventory_models.RestAPIError {
-	return o.Payload
 }
 
 func (o *AddNamespaceDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

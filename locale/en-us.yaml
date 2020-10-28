@@ -518,13 +518,13 @@ secrets_flag_filter:
   other: Show only secrets that match the given filter. The filter value is the config path that you want to see secrets for, eg. constants.foo, scripts.foo, secrets.project.foo, etc.
 secrets_get_cmd_description:
   other: Get the value of a secret
-secrets_get_arg_name:
+secrets_get_arg_name_name:
   other: namespace
 secrets_get_arg_name_description:
   other: Namespace of secret is 'SCOPE.NAME'. eg. 'user.mySecret' or 'project.ourSecret'
 secrets_set_cmd_description:
   other: Set the value of a secret
-secrets_set_arg_name:
+secrets_set_arg_name_name:
   other: namespace
 secrets_set_arg_name_description:
   other: Namespace of secret is 'SCOPE.NAME. eg. 'user.mySecret' or 'project.ourSecret'
@@ -566,12 +566,10 @@ secrets_value_unset:
   other: Unset
 secrets_value_secret:
   other: <encrypted>
-secrets_err:
-  other: Error managing user's Secrets
 secrets_err_defined:
   other: Failed to obtain defined secrets
 secrets_err_values:
-  other: Failed to obtain secret values
+  other: Failed to obtain secret value(s)
 secrets_err_access:
   other: Unable to check access to project secrets. You will not be able to access any secrets for this project
 secrets_warning_no_access:
@@ -592,6 +590,8 @@ secrets_err_base64_decoding:
   other: Error base64 decoding variable value
 secrets_err_no_publickey_found:
   other: Unable to find any public-key for User
+secrets_err_check_access:
+  other: Access check failed
 secrets_expand_err_undefined:
   other: "Secret `{{.V0}}` not defined in project"
 secrets_expand_err_not_found:

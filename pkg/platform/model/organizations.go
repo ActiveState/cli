@@ -52,7 +52,11 @@ func FetchOrgByURLName(urlName string) (*mono_models.Organization, *failures.Fai
 func FetchOrgMembers(urlName string) ([]*mono_models.Member, *failures.Failure) {
 	params := clientOrgs.NewGetOrganizationMembersParams()
 	params.OrganizationName = urlName
-	resOk, err := authentication.Client().Organizations.GetOrganizationMembers(params, authentication.ClientAuth())
+	authClient, fail := authentication.Get().ClientSafe()
+	if fail != nil {
+		return nil, fail
+	}
+	resOk, err := authClient.Organizations.GetOrganizationMembers(params, authentication.ClientAuth())
 	if err != nil {
 		return nil, processOrgErrorResponse(err)
 	}

@@ -6,25 +6,30 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	strfmt "github.com/go-openapi/strfmt"
+
 	"github.com/go-openapi/errors"
-	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // V1NamespaceAllOf0 v1 namespace all of0
-//
 // swagger:model v1NamespaceAllOf0
 type V1NamespaceAllOf0 struct {
 
 	// links
 	// Required: true
-	Links *V1SubSchemaSelfLink `json:"links"`
+	Links *V1NamespaceAllOf0Links `json:"links"`
 
 	// namespace id
 	// Required: true
 	// Format: uuid
 	NamespaceID *strfmt.UUID `json:"namespace_id"`
+
+	// Describes the meaning of the type field
+	// Required: true
+	// Read Only: true
+	TypeDescription string `json:"type_description"`
 }
 
 // Validate validates this v1 namespace all of0
@@ -36,6 +41,10 @@ func (m *V1NamespaceAllOf0) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateNamespaceID(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateTypeDescription(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -70,6 +79,15 @@ func (m *V1NamespaceAllOf0) validateNamespaceID(formats strfmt.Registry) error {
 	}
 
 	if err := validate.FormatOf("namespace_id", "body", "uuid", m.NamespaceID.String(), formats); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *V1NamespaceAllOf0) validateTypeDescription(formats strfmt.Registry) error {
+
+	if err := validate.RequiredString("type_description", "body", string(m.TypeDescription)); err != nil {
 		return err
 	}
 

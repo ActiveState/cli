@@ -10,9 +10,10 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
-	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	strfmt "github.com/go-openapi/strfmt"
+
+	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // GetOperatingSystemVersionReader is a Reader for the GetOperatingSystemVersion structure.
@@ -23,12 +24,14 @@ type GetOperatingSystemVersionReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetOperatingSystemVersionReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
+
 	case 200:
 		result := NewGetOperatingSystemVersionOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
+
 	default:
 		result := NewGetOperatingSystemVersionDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -56,10 +59,6 @@ type GetOperatingSystemVersionOK struct {
 
 func (o *GetOperatingSystemVersionOK) Error() string {
 	return fmt.Sprintf("[GET /v1/operating-systems/{operating_system_id}/versions/{operating_system_version_id}][%d] getOperatingSystemVersionOK  %+v", 200, o.Payload)
-}
-
-func (o *GetOperatingSystemVersionOK) GetPayload() *inventory_models.V1OperatingSystemVersion {
-	return o.Payload
 }
 
 func (o *GetOperatingSystemVersionOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -98,10 +97,6 @@ func (o *GetOperatingSystemVersionDefault) Code() int {
 
 func (o *GetOperatingSystemVersionDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/operating-systems/{operating_system_id}/versions/{operating_system_version_id}][%d] getOperatingSystemVersion default  %+v", o._statusCode, o.Payload)
-}
-
-func (o *GetOperatingSystemVersionDefault) GetPayload() *inventory_models.RestAPIError {
-	return o.Payload
 }
 
 func (o *GetOperatingSystemVersionDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

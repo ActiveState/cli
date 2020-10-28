@@ -8,8 +8,9 @@ package inventory_models
 import (
 	"strconv"
 
+	strfmt "github.com/go-openapi/strfmt"
+
 	"github.com/go-openapi/errors"
-	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
@@ -17,21 +18,20 @@ import (
 // V1ImagePagedList Image Paged List
 //
 // A paginated list of images
-//
 // swagger:model v1ImagePagedList
 type V1ImagePagedList struct {
 
 	// A page of images
 	// Required: true
-	Images []*V1Image `json:"images"`
+	Images []*V1ImagePagedListImagesItems `json:"images"`
 
 	// links
 	// Required: true
-	Links *V1SubSchemaPagingLinks `json:"links"`
+	Links *V1ImagePagedListLinks `json:"links"`
 
 	// paging
 	// Required: true
-	Paging *V1SubSchemaPaging `json:"paging"`
+	Paging *V1ImagePagedListPaging `json:"paging"`
 }
 
 // Validate validates this v1 image paged list

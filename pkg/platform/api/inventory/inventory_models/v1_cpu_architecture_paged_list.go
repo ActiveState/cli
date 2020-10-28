@@ -8,8 +8,9 @@ package inventory_models
 import (
 	"strconv"
 
+	strfmt "github.com/go-openapi/strfmt"
+
 	"github.com/go-openapi/errors"
-	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
@@ -17,21 +18,20 @@ import (
 // V1CPUArchitecturePagedList CPU Architecture Paged List
 //
 // A paginated list of CPU architectures
-//
 // swagger:model v1CpuArchitecturePagedList
 type V1CPUArchitecturePagedList struct {
 
 	// A page of CPU architectures
 	// Required: true
-	CPUArchitectures []*V1CPUArchitecture `json:"cpu_architectures"`
+	CPUArchitectures []*V1CPUArchitecturePagedListCPUArchitecturesItems `json:"cpu_architectures"`
 
 	// links
 	// Required: true
-	Links *V1SubSchemaPagingLinks `json:"links"`
+	Links *V1CPUArchitecturePagedListLinks `json:"links"`
 
 	// paging
 	// Required: true
-	Paging *V1SubSchemaPaging `json:"paging"`
+	Paging *V1CPUArchitecturePagedListPaging `json:"paging"`
 }
 
 // Validate validates this v1 Cpu architecture paged list

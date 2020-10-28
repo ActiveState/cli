@@ -6,8 +6,9 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	strfmt "github.com/go-openapi/strfmt"
+
 	"github.com/go-openapi/errors"
-	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
@@ -15,17 +16,16 @@ import (
 // V1SolutionRecipe SolverRecipe
 //
 // A recipe with a URL, created by a solver, containing all required information to build for a single platform
-//
 // swagger:model v1SolutionRecipe
 type V1SolutionRecipe struct {
 
 	// links
 	// Required: true
-	Links *V1SubSchemaSelfLink `json:"links"`
+	Links *V1SolutionRecipeLinks `json:"links"`
 
 	// recipe
 	// Required: true
-	Recipe *V1Recipe `json:"recipe"`
+	Recipe *V1SolutionRecipeRecipe `json:"recipe"`
 }
 
 // Validate validates this v1 solution recipe

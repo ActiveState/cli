@@ -24,6 +24,10 @@ type V1SolutionRecipeRecipe struct {
 	// Camel-specific flags for controlling the build.
 	CamelFlags []string `json:"camel_flags"`
 
+	// Indicates whether this recipe came from the recipe store or not
+	// Required: true
+	FromRecipeStore *bool `json:"from_recipe_store"`
+
 	// image
 	// Required: true
 	Image *V1SolutionRecipeRecipeImage `json:"image"`
@@ -40,6 +44,10 @@ type V1SolutionRecipeRecipe struct {
 	// Format: uuid
 	RecipeID *strfmt.UUID `json:"recipe_id"`
 
+	// If the recipe came from the recipe store, this will contain the recipe's timestamp. Otherwise this field will be omitted
+	// Format: date-time
+	RecipeStoreTimestamp *strfmt.DateTime `json:"recipe_store_timestamp,omitempty"`
+
 	// The resolved ingredients that comprise this recipe.
 	// Required: true
 	// Min Items: 1
@@ -55,6 +63,10 @@ type V1SolutionRecipeRecipe struct {
 func (m *V1SolutionRecipeRecipe) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateFromRecipeStore(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateImage(formats); err != nil {
 		res = append(res, err)
 	}
@@ -64,6 +76,10 @@ func (m *V1SolutionRecipeRecipe) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateRecipeID(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateRecipeStoreTimestamp(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -78,6 +94,15 @@ func (m *V1SolutionRecipeRecipe) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *V1SolutionRecipeRecipe) validateFromRecipeStore(formats strfmt.Registry) error {
+
+	if err := validate.Required("from_recipe_store", "body", m.FromRecipeStore); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -124,6 +149,19 @@ func (m *V1SolutionRecipeRecipe) validateRecipeID(formats strfmt.Registry) error
 	}
 
 	if err := validate.FormatOf("recipe_id", "body", "uuid", m.RecipeID.String(), formats); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *V1SolutionRecipeRecipe) validateRecipeStoreTimestamp(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.RecipeStoreTimestamp) { // not required
+		return nil
+	}
+
+	if err := validate.FormatOf("recipe_store_timestamp", "body", "date-time", m.RecipeStoreTimestamp.String(), formats); err != nil {
 		return err
 	}
 

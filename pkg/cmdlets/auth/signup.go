@@ -45,6 +45,10 @@ type signupInput struct {
 func Signup(out output.Outputer, prompt prompt.Prompter) error {
 	input := &signupInput{}
 
+	if authentication.Get().Authenticated() {
+		return locale.NewInputError("err_auth_authenticated", "You are already authenticated as: {{.V0}}. You can log out by running `state auth logout`.", authentication.Get().WhoAmI())
+	}
+
 	accepted, err := promptTOS(out, prompt)
 	if err != nil {
 		return err

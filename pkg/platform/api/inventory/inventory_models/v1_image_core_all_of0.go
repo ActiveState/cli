@@ -8,14 +8,14 @@ package inventory_models
 import (
 	"encoding/json"
 
+	strfmt "github.com/go-openapi/strfmt"
+
 	"github.com/go-openapi/errors"
-	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // V1ImageCoreAllOf0 v1 image core all of0
-//
 // swagger:model v1ImageCoreAllOf0
 type V1ImageCoreAllOf0 struct {
 

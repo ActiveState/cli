@@ -8,8 +8,9 @@ package inventory_models
 import (
 	"strconv"
 
+	strfmt "github.com/go-openapi/strfmt"
+
 	"github.com/go-openapi/errors"
-	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
@@ -17,21 +18,20 @@ import (
 // V1IngredientVersionPatchPagedList Ingredient Version Patch Paged List
 //
 // A paginated list of patches for an ingredient version
-//
 // swagger:model v1IngredientVersionPatchPagedList
 type V1IngredientVersionPatchPagedList struct {
 
 	// links
 	// Required: true
-	Links *V1SubSchemaPagingLinks `json:"links"`
+	Links *V1IngredientVersionPatchPagedListLinks `json:"links"`
 
 	// paging
 	// Required: true
-	Paging *V1SubSchemaPaging `json:"paging"`
+	Paging *V1IngredientVersionPatchPagedListPaging `json:"paging"`
 
 	// A page of patches as they apply to a single ingredient version
 	// Required: true
-	Patches []*V1IngredientVersionRevisionPatch `json:"patches"`
+	Patches []*V1IngredientVersionPatchPagedListPatchesItems `json:"patches"`
 }
 
 // Validate validates this v1 ingredient version patch paged list

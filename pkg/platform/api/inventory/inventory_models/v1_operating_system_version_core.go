@@ -6,37 +6,37 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	strfmt "github.com/go-openapi/strfmt"
+
 	"github.com/go-openapi/errors"
-	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // V1OperatingSystemVersionCore Operating System Version Core
 //
 // The properties of an operating system version needed to create a new one
-//
 // swagger:model v1OperatingSystemVersionCore
 type V1OperatingSystemVersionCore struct {
-	V1SubSchemaVersionInfo
+	V1OperatingSystemVersionCoreAllOf0
 
-	V1Revision
+	V1OperatingSystemVersionCoreAllOf1
 }
 
 // UnmarshalJSON unmarshals this object from a JSON structure
 func (m *V1OperatingSystemVersionCore) UnmarshalJSON(raw []byte) error {
 	// AO0
-	var aO0 V1SubSchemaVersionInfo
+	var aO0 V1OperatingSystemVersionCoreAllOf0
 	if err := swag.ReadJSON(raw, &aO0); err != nil {
 		return err
 	}
-	m.V1SubSchemaVersionInfo = aO0
+	m.V1OperatingSystemVersionCoreAllOf0 = aO0
 
 	// AO1
-	var aO1 V1Revision
+	var aO1 V1OperatingSystemVersionCoreAllOf1
 	if err := swag.ReadJSON(raw, &aO1); err != nil {
 		return err
 	}
-	m.V1Revision = aO1
+	m.V1OperatingSystemVersionCoreAllOf1 = aO1
 
 	return nil
 }
@@ -45,17 +45,18 @@ func (m *V1OperatingSystemVersionCore) UnmarshalJSON(raw []byte) error {
 func (m V1OperatingSystemVersionCore) MarshalJSON() ([]byte, error) {
 	_parts := make([][]byte, 0, 2)
 
-	aO0, err := swag.WriteJSON(m.V1SubSchemaVersionInfo)
+	aO0, err := swag.WriteJSON(m.V1OperatingSystemVersionCoreAllOf0)
 	if err != nil {
 		return nil, err
 	}
 	_parts = append(_parts, aO0)
 
-	aO1, err := swag.WriteJSON(m.V1Revision)
+	aO1, err := swag.WriteJSON(m.V1OperatingSystemVersionCoreAllOf1)
 	if err != nil {
 		return nil, err
 	}
 	_parts = append(_parts, aO1)
+
 	return swag.ConcatJSON(_parts...), nil
 }
 
@@ -63,12 +64,12 @@ func (m V1OperatingSystemVersionCore) MarshalJSON() ([]byte, error) {
 func (m *V1OperatingSystemVersionCore) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	// validation for a type composition with V1SubSchemaVersionInfo
-	if err := m.V1SubSchemaVersionInfo.Validate(formats); err != nil {
+	// validation for a type composition with V1OperatingSystemVersionCoreAllOf0
+	if err := m.V1OperatingSystemVersionCoreAllOf0.Validate(formats); err != nil {
 		res = append(res, err)
 	}
-	// validation for a type composition with V1Revision
-	if err := m.V1Revision.Validate(formats); err != nil {
+	// validation for a type composition with V1OperatingSystemVersionCoreAllOf1
+	if err := m.V1OperatingSystemVersionCoreAllOf1.Validate(formats); err != nil {
 		res = append(res, err)
 	}
 
