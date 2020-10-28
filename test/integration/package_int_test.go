@@ -303,7 +303,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_import() {
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
-	suite.OnlyRunForTags(tagsuite.Package)
+	suite.OnlyRunForTags(tagsuite.Package, tagsuite.Revert)
 	if runtime.GOOS == "darwin" {
 		suite.T().Skip("Skipping mac for now as the builds are still too unreliable")
 		return
