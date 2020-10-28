@@ -18,9 +18,9 @@ func New(p *project.Project) *BeforeAfter {
 
 func (ba *BeforeAfter) Wrap(next captain.ExecuteFunc) captain.ExecuteFunc {
 	return func(cmd *captain.Command, args []string) error {
-		runEvent := run.NewEvent(ba.Project.Events())
+		runEvent := run.NewEvent(ba.Project.Events(), cmd.UseFull())
 
-		if err := runEvent.Run(args, project.BeforeCmd); err != nil {
+		if err := runEvent.Run(project.BeforeCmd); err != nil {
 			return err // TODO: ctx
 		}
 
@@ -28,7 +28,7 @@ func (ba *BeforeAfter) Wrap(next captain.ExecuteFunc) captain.ExecuteFunc {
 			return err // TODO: ctx
 		}
 
-		if err := runEvent.Run(args, project.AfterCmd); err != nil {
+		if err := runEvent.Run(project.AfterCmd); err != nil {
 			return err // TODO: ctx
 		}
 

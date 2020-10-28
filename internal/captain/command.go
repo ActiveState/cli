@@ -197,6 +197,10 @@ func (c *Command) Use() string {
 	return c.cobra.Use
 }
 
+func (c *Command) UseFull() string {
+	return strings.Join(c.subcommandNames(), " ")
+}
+
 func (c *Command) UsageText() string {
 	return c.cobra.UsageString()
 }
@@ -379,7 +383,7 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	}
 	// Send  GA events unless they are handled in the runners...
 	if !c.deferAnalytics {
-		subCommandString := strings.Join(c.subcommandNames(), " ")
+		subCommandString := c.UseFull()
 		analytics.Event(analytics.CatRunCmd, subCommandString)
 	}
 	// Run OnUse functions for non-persistent flags

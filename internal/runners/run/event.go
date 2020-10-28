@@ -8,18 +8,41 @@ import (
 
 type Event struct {
 	DefinedEvents []*project.Event
+	CmdList       string
 }
 
-func NewEvent(events []*project.Event) *Event {
+func NewEvent(events []*project.Event, cmdList string) *Event {
 	return &Event{
 		DefinedEvents: events,
+		CmdList:       cmdList,
 	}
 }
 
-func (es *Event) Run(args []string, t project.EventType) error {
-	// filter events by type (without mutating DefinedEvents)
-	// filter events by args
-	// run scripts that remain
+func (e *Event) Run(t project.EventType) error {
+	var events []*project.Event
+	for _, event := range e.DefinedEvents {
+		if event.Name() != string(t) {
+			continue
+		}
+
+		scopes, err := event.Scope()
+		if err != nil {
+			return err // TODO: this
+		}
+
+		for _, scope := range scopes {
+			if scope == e.CmdList {
+				events = append(events, event)
+			}
+		}
+
+	}
+
+	for _, event := range events {
+		// run logic
+		fmt.Println(event)
+	}
+
 	fmt.Println(t)
 	return nil
 }

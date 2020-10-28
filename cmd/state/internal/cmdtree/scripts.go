@@ -36,6 +36,14 @@ func newScriptsEditCommand(prime *primer.Values) *captain.Command {
 	editRunner := scripts.NewEdit(prime)
 	params := scripts.EditParams{}
 
+	exec := func(ccmd *captain.Command, args []string) error {
+		return editRunner.Run(&params)
+	}
+
+	befAft := beforeafter.New(prime.Project())
+
+	exec = befAft.Wrap(exec)
+
 	return captain.NewCommand(
 		"edit",
 		locale.Tl("scripts_edit_title", "Editing Script"),
@@ -57,9 +65,7 @@ func newScriptsEditCommand(prime *primer.Values) *captain.Command {
 				Required:    true,
 			},
 		},
-		func(ccmd *captain.Command, args []string) error {
-			return editRunner.Run(&params)
-		},
+		exec,
 	)
 
 }
