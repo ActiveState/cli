@@ -13,10 +13,10 @@ func TestLanguage(t *testing.T) {
 	assert.Equal(t, Unset, l)
 
 	assert.Empty(t, Bash.Executable().Name())
-	assert.True(t, Bash.Executable().Builtin())
+	assert.True(t, Bash.Executable().CanUseThirdParty())
 
 	assert.NotEmpty(t, Python3.Executable().Name())
-	assert.False(t, Python3.Executable().Builtin())
+	assert.False(t, Python3.Executable().CanUseThirdParty())
 
 	assert.Equal(t, "#!/usr/bin/env perl\n", Perl.Header())
 }
@@ -112,7 +112,7 @@ func TestRecognizedSupporteds(t *testing.T) {
 	for _, l := range langs {
 		assert.NotEqual(t, l.Language, Unset, "not unset")
 		assert.NotEqual(t, l.Language, Unknown, "not unknown")
-		assert.False(t, l.Executable().Builtin())
+		assert.False(t, l.Executable().CanUseThirdParty())
 		assert.NotEmpty(t, l.Executable().Name())
 	}
 }

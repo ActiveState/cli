@@ -37,6 +37,7 @@ const (
 	Pull          = "pull"
 	Push          = "push"
 	Python        = "python"
+	Revert        = "revert"
 	Run           = "run"
 	Scripts       = "scripts"
 	Secrets       = "secrets"
