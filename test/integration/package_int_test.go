@@ -344,7 +344,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 
 	cp = ts.Spawn("history")
 	cp.ExpectExitCode(0)
-	cp.Expect("Reverting to commit")
+	cp.Expect("Description: Reverting to commit")
 }
 
 func (suite *PackageIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session) {
