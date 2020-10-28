@@ -37,6 +37,10 @@ func (o *OutputError) MarshalOutput(f output.Format) interface{} {
 	outLines = append(outLines, output.Heading(locale.Tl("err_what_happened", "[ERROR]Something Went Wrong[/RESET]")).String())
 
 	errs := locale.UnwrapError(o.error)
+	if len(errs) == 0 {
+		// It's possible the error came from cobra or something else low level that doesn't use localization
+		errs = []error{o.error}
+	}
 	for _, errv := range errs {
 		outLines = append(outLines, fmt.Sprintf(" [NOTICE][ERROR]x[/RESET] %s", trimError(locale.ErrorMessage(errv))))
 	}
