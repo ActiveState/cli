@@ -330,13 +330,13 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 	cp.ExpectRe("(?:Package added|The project is currently building)")
 	cp.Wait()
 
-	cp = ts.Spawn("packages", "update", "dateparser@0.7.6")
-	cp.ExpectRe("(?:Package updated|The project is currently building)")
-	cp.Wait()
+	// cp = ts.Spawn("packages", "update", "dateparser@0.7.6")
+	// cp.ExpectRe("(?:Package updated|The project is currently building)")
+	// cp.Wait()
 
-	cp = ts.Spawn("packages", "remove", "dateparser")
-	cp.ExpectRe("(?:Package removed|The project is currently building)")
-	cp.Wait()
+	// cp = ts.Spawn("packages", "remove", "dateparser")
+	// cp.ExpectRe("(?:Package removed|The project is currently building)")
+	// cp.Wait()
 
 	cp = ts.Spawn("revert", firstCommit)
 	cp.SendLine("y")
