@@ -14,25 +14,16 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
-	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
-func (r *Activate) activateAndWait(proj *project.Project, runtime *runtime.Runtime) error {
+func (r *Activate) activateAndWait(proj *project.Project, venv *virtualenvironment.VirtualEnvironment) error {
 	logging.Debug("Activating and waiting")
 
 	err := os.Chdir(filepath.Dir(proj.Source().Path()))
 	if err != nil {
 		return err
-	}
-
-	venv := virtualenvironment.New(runtime)
-	venv.OnUseCache(func() { r.out.Notice(locale.T("using_cached_env")) })
-
-	fail := venv.Setup(true)
-	if fail != nil {
-		return locale.WrapError(fail, "error_could_not_activate_venv", "Could not activate project. If this is a private project ensure that you are authenticated.")
 	}
 
 	ve, err := venv.GetEnv(false, filepath.Dir(projectfile.Get().Path()))
@@ -52,7 +43,7 @@ func (r *Activate) activateAndWait(proj *project.Project, runtime *runtime.Runti
 	ignoreWindowsInterrupts()
 
 	r.subshell.SetEnv(ve)
-	if fail = r.subshell.Activate(r.out); fail != nil {
+	if fail := r.subshell.Activate(r.out); fail != nil {
 		return locale.WrapError(fail, "error_could_not_activate_subshell", "Could not activate a new subshell.")
 	}
 
@@ -64,7 +55,7 @@ func (r *Activate) activateAndWait(proj *project.Project, runtime *runtime.Runti
 
 	headless.Notify(r.out, proj, nil, "activate")
 
-	fail = <-r.subshell.Failures()
+	fail := <-r.subshell.Failures()
 	if fail != nil {
 		return locale.WrapError(fail, "error_in_active_subshell", "Failure encountered in active subshell")
 	}
