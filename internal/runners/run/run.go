@@ -126,28 +126,22 @@ func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, nam
 
 	var attempted []string
 	for _, l := range script.Languages() {
-		var execPath string
-		var searchPath string
-		if l.Executable().Available() {
-			execPath = l.Executable().Name()
-			searchPath = venvExePath
-		} else {
-			execPath = l.String()
-			searchPath = os.Getenv("PATH")
+		execPath := l.Executable().Name()
+		searchPath := venvExePath
+		if l.Executable().CanUseThirdParty() {
+			searchPath = searchPath + string(os.PathListSeparator) + os.Getenv("PATH")
 		}
 
-		if l.Executable().Builtin() && rt.GOOS == "windows" {
-			execPath = execPath + ".exe"
-		}
-
+		logging.Debug("Checking for %s on %s", execPath, searchPath)
 		if pathProvidesExec(searchPath, execPath) {
 			lang = l
+			logging.Debug("Found %s", execPath)
 			break
 		}
 		attempted = append(attempted, l.String())
 	}
 
-	if script.Standalone() && !lang.Executable().Builtin() {
+	if script.Standalone() && !lang.Executable().CanUseThirdParty() {
 		return FailStandaloneConflict.New("error_state_run_standalone_conflict")
 	}
 
