@@ -1362,9 +1362,9 @@ field_id:
 field_changes:
   other: Changes
 change_added:
-  other: "{{.V0}} {{.V1}} added"
+  other: "added {{.V0}} {{.V1}}"
 change_removed:
-  other: "{{.V0}} removed"
+  other: "removed {{.V0}}"
 change_updated:
   other: "{{.V0}} updated from {{.V1}} to {{.V2}}"
 namespace_label_platform:
