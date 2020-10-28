@@ -314,7 +314,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 	username := ts.CreateNewUser()
 	namespace := fmt.Sprintf("%s/%s", username, "python3-pkgtest")
 
-	cp := ts.Spawn("fork", "ActiveState-CLI/Python3", "--org", username, "--name", "python3-pkgtest")
+	cp := ts.Spawn("fork", "ActiveState-CLI/Revert", "--org", username, "--name", "python3-pkgtest")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("activate", namespace, "--path="+ts.Dirs.Work, "--output=json")
