@@ -1273,7 +1273,7 @@ err_clean_config_activated:
 uninstall_confirm:
   other: You are about to remove the State Tool, installed language runtimes, and all configuration information. Continue?
 clean_cache_confirm:
-  other: You are about to remove the State Tool cache directory. Continue?
+  other: You are about to reset the State Tool cache. Continue?
 clean_cache_artifact_confirm:
   other: You are about the remove the cached runtime for [NOTICE]{{.V0}}[/RESET]. Continue?
 clean_config_confirm:
