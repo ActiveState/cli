@@ -326,23 +326,17 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 	commitRe := regexp.MustCompile(`[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}`)
 	firstCommit := commitRe.FindString(cp.TrimmedSnapshot())
 
-	suite.Run("packages add", func() {
-		cp := ts.Spawn("packages", "add", "dateparser@0.7.2")
-		cp.ExpectRe("(?:Package added|The project is currently building)")
-		cp.Wait()
-	})
+	cp = ts.Spawn("packages", "add", "dateparser@0.7.2")
+	cp.ExpectRe("(?:Package added|The project is currently building)")
+	cp.Wait()
 
-	suite.Run("packages update", func() {
-		cp := ts.Spawn("packages", "update", "dateparser@0.7.6")
-		cp.ExpectRe("(?:Package updated|The project is currently building)")
-		cp.Wait()
-	})
+	cp = ts.Spawn("packages", "update", "dateparser@0.7.6")
+	cp.ExpectRe("(?:Package updated|The project is currently building)")
+	cp.Wait()
 
-	suite.Run("packages remove", func() {
-		cp := ts.Spawn("packages", "remove", "dateparser")
-		cp.ExpectRe("(?:Package removed|The project is currently building)")
-		cp.Wait()
-	})
+	cp = ts.Spawn("packages", "remove", "dateparser")
+	cp.ExpectRe("(?:Package removed|The project is currently building)")
+	cp.Wait()
 
 	cp = ts.Spawn("revert", firstCommit)
 	cp.SendLine("y")
