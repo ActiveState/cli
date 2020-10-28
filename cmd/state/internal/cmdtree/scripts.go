@@ -14,7 +14,7 @@ func newScriptsCommand(prime *primer.Values) *captain.Command {
 		return runner.Run()
 	}
 
-	befAft := beforeafter.New(prime.Project())
+	befAft := beforeafter.New(prime)
 
 	exec = befAft.Wrap(exec)
 
@@ -40,7 +40,7 @@ func newScriptsEditCommand(prime *primer.Values) *captain.Command {
 		return editRunner.Run(&params)
 	}
 
-	befAft := beforeafter.New(prime.Project())
+	befAft := beforeafter.New(prime)
 
 	exec = befAft.Wrap(exec)
 

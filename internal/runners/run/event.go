@@ -1,26 +1,33 @@
 package run
 
 import (
-	"fmt"
+	"errors"
+	"strings"
 
+	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
 type Event struct {
-	DefinedEvents []*project.Event
-	CmdList       string
+	out      output.Outputer
+	proj     *project.Project
+	subshell subshell.SubShell
+	cmdList  string
 }
 
-func NewEvent(events []*project.Event, cmdList string) *Event {
+func NewEvent(p primeable, cmdList string) *Event {
 	return &Event{
-		DefinedEvents: events,
-		CmdList:       cmdList,
+		out:      p.Output(),
+		proj:     p.Project(),
+		subshell: p.Subshell(),
+		cmdList:  cmdList,
 	}
 }
 
 func (e *Event) Run(t project.EventType) error {
 	var events []*project.Event
-	for _, event := range e.DefinedEvents {
+	for _, event := range e.proj.Events() {
 		if event.Name() != string(t) {
 			continue
 		}
@@ -31,18 +38,38 @@ func (e *Event) Run(t project.EventType) error {
 		}
 
 		for _, scope := range scopes {
-			if scope == e.CmdList {
+			if scope == e.cmdList {
 				events = append(events, event)
 			}
 		}
 
 	}
 
-	for _, event := range events {
-		// run logic
-		fmt.Println(event)
+	if len(events) == 0 {
+		return nil
 	}
 
-	fmt.Println(t)
+	r := &Run{
+		out:      e.out,
+		proj:     e.proj,
+		subshell: e.subshell,
+	}
+
+	for _, event := range events {
+		val, err := event.Value()
+		if err != nil {
+			return err // TODO: this
+		}
+
+		ss := strings.Split(val, " ")
+		if len(ss) == 0 {
+			return errors.New("no script defined") // TODO: this
+		}
+
+		if err := r.Run(ss[0], ss[1:]); err != nil {
+			return err // TODO: this
+		}
+	}
+
 	return nil
 }
