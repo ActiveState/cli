@@ -323,6 +323,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 	cp = ts.Spawn("history")
 	cp.ExpectExitCode(0)
 
+	// Get the first commitID we find, which should be the first commit for the project
 	commitRe := regexp.MustCompile(`[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}`)
 	firstCommit := commitRe.FindString(cp.TrimmedSnapshot())
 
@@ -343,7 +344,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("history")
-	cp.Expect("Description: Reverting to commit")
+	cp.Expect(fmt.Sprintf("Description: Reverting to commit %s", firstCommit))
 	cp.ExpectExitCode(0)
 }
 
