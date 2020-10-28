@@ -57,7 +57,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 	)
 
 	languagesCmd := newLanguagesCommand(prime)
-	languagesCmd.AddChildren(newLanguageUpdateCommand(prime))
+	languagesCmd.AddChildren(newLanguageInstallCommand(prime))
 
 	cleanCmd := newCleanCommand(prime)
 	cleanCmd.AddChildren(

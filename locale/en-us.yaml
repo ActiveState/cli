@@ -1421,10 +1421,10 @@ push_already_exists:
   other: The project {{.V0}}/{{.V1}} already exists on the platform. To start using the latest version please run 'state pull'.
 languages_cmd_description:
   other: View the languages of a project
-languages_update_cmd_description:
+languages_install_cmd_description:
   other: Update the language of a project
-arg_languages_update_description:
-  other: The language to update in the form of <language>@<version> or <language>
+arg_languages_install_description:
+  other: The language to update in the form of <language>@<version>
 err_language_format:
   other: The language and version provided is not formatting correctly, must be in the form of <language>@<version>
 err_update_not_found:
