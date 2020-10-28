@@ -12,7 +12,6 @@ func TestLanguage(t *testing.T) {
 	var l Language
 	assert.Equal(t, Unset, l)
 
-	assert.Empty(t, Bash.Executable().Name())
 	assert.True(t, Bash.Executable().CanUseThirdParty())
 
 	assert.NotEmpty(t, Python3.Executable().Name())
