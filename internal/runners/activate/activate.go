@@ -17,6 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/updater"
+	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/cmdlets/git"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
@@ -127,12 +128,22 @@ func (r *Activate) run(params *ActivateParams) error {
 	if err != nil {
 		return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
 	}
+
+	venv := virtualenvironment.New(runtime)
+	venv.OnUseCache(func() { r.out.Notice(locale.T("using_cached_env")) })
+
+	fail := venv.Setup(true)
+	if fail != nil {
+		return locale.WrapError(fail, "error_could_not_activate_venv", "Could not activate project. If this is a private project ensure that you are authenticated.")
+	}
+
 	if params.Default {
 		err := globaldefault.SetupDefaultActivation(r.subshell, r.config, runtime, filepath.Dir(proj.Source().Path()))
 		if err != nil {
 			return locale.WrapError(err, "err_activate_default", "Could not configure your project as the default.")
 		}
 
+		r.out.Notice(output.Heading(locale.Tl("global_default_heading", "Global Default")))
 		r.out.Notice(locale.Tl("global_default_set", "Successfully configured [NOTICE]{{.V0}}[/RESET] as the global default project.", proj.Namespace().String()))
 
 		if alreadyActivated {
@@ -147,7 +158,7 @@ func (r *Activate) run(params *ActivateParams) error {
 		return errs.AddTips(err, "Run → [ACTIONABLE]state push[/RESET] to create your project")
 	}
 
-	if err := r.activateAndWait(proj, runtime); err != nil {
+	if err := r.activateAndWait(proj, venv); err != nil {
 		return locale.WrapError(err, "err_activate_wait", "Could not activate runtime environment.")
 	}
 
