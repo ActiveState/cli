@@ -1,7 +1,6 @@
 package revert
 
 import (
-	"fmt"
 	"strconv"
 
 	"github.com/ActiveState/cli/internal/locale"
@@ -80,7 +79,7 @@ func (r *Revert) Run(params *Params) error {
 	}
 	commit.PrintCommit(r.out, revertCommit, orgs)
 
-	revert, fail := r.prompt.Confirm(locale.Tl("revert_confirm", fmt.Sprintf("Revert to commit: %s?", params.CommitID)), false)
+	revert, fail := r.prompt.Confirm(locale.Tl("revert_confirm", "Revert to commit: {{.V0}}?", params.CommitID), false)
 	if fail != nil {
 		return locale.WrapError(fail.ToError(), "err_revert_confirm", "Could not confirm revert choice")
 	}

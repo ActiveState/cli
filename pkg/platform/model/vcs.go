@@ -253,8 +253,6 @@ func UpdateBranchCommit(branchID strfmt.UUID, commitID strfmt.UUID) *failures.Fa
 
 	_, err := authentication.Client().VersionControl.UpdateBranch(params, authentication.ClientAuth())
 	if err != nil {
-		msg := api.ErrorMessageFromPayload(err)
-		fmt.Println("err: ", msg)
 		return FailUpdateBranch.New(locale.Tr("err_update_branch", err.Error()))
 	}
 	return nil
@@ -611,17 +609,17 @@ func TrackBranch(source, target *mono_models.Project) *failures.Failure {
 func RevertCommit(owner, project string, from, to strfmt.UUID) error {
 	revertCommit, err := GetRevertCommit(from, to)
 	if err != nil {
-		return locale.WrapError(err, "err_get_revert_commit", "Could not get revert to commit")
+		return locale.WrapError(err, "err_get_revert_commit", "Could not get revert commit")
 	}
 
 	addCommit, err := AddRevertCommit(revertCommit)
 	if err != nil {
-		return locale.WrapError(err, "err_revert_commit", "Could not revert to commit ID: {{.V0}}", to.String())
+		return locale.WrapError(err, "err_revert_commit", "Could not add revert commit")
 	}
 
 	proj, fail := FetchProjectByName(owner, project)
 	if fail != nil {
-		return locale.WrapError(fail.ToError(), "err_revert_get_project", "Could not retrieve platform project")
+		return locale.WrapError(fail.ToError(), "err_revert_get_project", "Could not retrieve platform project with namespace: {{.V0}}/{{.V1}}", owner, project)
 	}
 
 	branch, fail := DefaultBranchForProject(proj)
