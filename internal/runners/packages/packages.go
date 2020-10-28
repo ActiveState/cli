@@ -75,11 +75,11 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 		out.Notice(locale.Tl("package_build_in_progress",
 			"A new build with your changes has been started remotely, please run `state pull` when the build has finished. You can track the build at https://{{.V0}}/{{.V1}}/{{.V2}}.",
 			constants.PlatformURL, pj.Owner(), pj.Name()))
-	} else {
-		// Only update commit ID if the runtime update worked
-		if fail := pj.Source().SetCommit(commitID.String(), isHeadless); fail != nil {
-			return fail.WithDescription("err_package_update_pjfile")
-		}
+	}
+
+	// Only update commit ID if the runtime update worked or failed with a build in progress error
+	if fail := pj.Source().SetCommit(commitID.String(), isHeadless); fail != nil {
+		return fail.WithDescription("err_package_update_pjfile")
 	}
 
 	// Print the result
