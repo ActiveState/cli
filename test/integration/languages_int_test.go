@@ -66,7 +66,7 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_install() {
 	cp.Expect("3.6.6")
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("langauges", "install", "python")
+	cp = ts.Spawn("languages", "install", "python")
 	cp.Expect("Language: python is already installed")
 	cp.ExpectExitCode(1)
 
