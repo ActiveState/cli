@@ -66,10 +66,9 @@ func (suite *PlatformsIntegrationTestSuite) TestPlatforms_addRemove() {
 	suite.PrepareActiveStateYAML(ts)
 
 	username := ts.CreateNewUser()
-	projectName := "ExercisePlatforms"
 	namespace := fmt.Sprintf("%s/%s", username, "platform-test")
 
-	cp := ts.Spawn("fork", fmt.Sprintf("%s/%s", e2e.PersistentUsername, projectName), "--org", username, "--name", "platform-test")
+	cp := ts.Spawn("fork", "ActiveState-CLI/Platforms", "--org", username, "--name", "platform-test")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("activate", namespace, "--path="+ts.Dirs.Work, "--output=json")
@@ -110,10 +109,9 @@ func (suite *PlatformsIntegrationTestSuite) TestPlatforms_addRemoveLatest() {
 	suite.PrepareActiveStateYAML(ts)
 
 	username := ts.CreateNewUser()
-	projectName := "ExercisePlatforms"
 	namespace := fmt.Sprintf("%s/%s", username, "platform-test")
 
-	cp := ts.Spawn("fork", fmt.Sprintf("%s/%s", e2e.PersistentUsername, projectName), "--org", username, "--name", "platform-test")
+	cp := ts.Spawn("fork", "ActiveState-CLI/Platforms", "--org", username, "--name", "platform-test")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("activate", namespace, "--path="+ts.Dirs.Work, "--output=json")
