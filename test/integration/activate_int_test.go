@@ -164,15 +164,12 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	cp.SendLine("state activate")
 	cp.ExpectLongString("You cannot activate a new project when you are already in an activated state.")
 
-	// state activate --default tests are de-activated for now cf., https://www.pivotaltracker.com/story/show/175468062
-	/*
-		cp.SendLine("state activate --default something/else")
-		cp.ExpectLongString("Cannot set something/else as the global default project while in an activated state.")
+	cp.SendLine("state activate --default something/else")
+	cp.ExpectLongString("Cannot set something/else as the global default project while in an activated state.")
 
-		cp.SendLine("state activate --default")
-		cp.ExpectLongString(fmt.Sprintf("Successfully configured %s as the global default project.", namespace))
-		suite.Assert().FileExistsf(filepath.Join(ts.Dirs.DefaultBin, pythonExe), "Expected shim to be created:\n%s", cp.TrimmedSnapshot())
-	*/
+	cp.SendLine("VERBOSE=true state activate --default")
+	cp.ExpectLongString(fmt.Sprintf("Successfully configured %s as the global default project.", namespace))
+	suite.Assert().FileExistsf(filepath.Join(ts.Dirs.DefaultBin, pythonExe), "Expected shim to be created:\n%s", cp.TrimmedSnapshot())
 
 	// test that other executables that use python work as well
 	pipExe := "pip" + version
@@ -187,13 +184,10 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 
-	// state activate --default tests are de-activated for now cf., https://www.pivotaltracker.com/story/show/175468062.
-	/*
-		// check that default activation works
-		cp = ts.SpawnInShell(fmt.Sprintf(`%s -c 'import sys; print(sys.copyright);'`, filepath.Join(ts.Dirs.DefaultBin, pythonExe)))
-		cp.Expect("ActiveState Software Inc.")
-		cp.ExpectExitCode(0)
-	*/
+	// check that default activation works
+	cp = ts.SpawnInShell(fmt.Sprintf(`%s -c 'import sys; print(sys.copyright);'`, filepath.Join(ts.Dirs.DefaultBin, pythonExe)))
+	cp.Expect("ActiveState Software Inc.")
+	cp.ExpectExitCode(0)
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivatePython3_Forward() {
