@@ -10,9 +10,10 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
-	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	strfmt "github.com/go-openapi/strfmt"
+
+	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // GetCPUExtensionsReader is a Reader for the GetCPUExtensions structure.
@@ -23,12 +24,14 @@ type GetCPUExtensionsReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetCPUExtensionsReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
+
 	case 200:
 		result := NewGetCPUExtensionsOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
+
 	default:
 		result := NewGetCPUExtensionsDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -56,10 +59,6 @@ type GetCPUExtensionsOK struct {
 
 func (o *GetCPUExtensionsOK) Error() string {
 	return fmt.Sprintf("[GET /v1/cpu-extensions][%d] getCpuExtensionsOK  %+v", 200, o.Payload)
-}
-
-func (o *GetCPUExtensionsOK) GetPayload() *inventory_models.V1CPUExtensionPagedList {
-	return o.Payload
 }
 
 func (o *GetCPUExtensionsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -98,10 +97,6 @@ func (o *GetCPUExtensionsDefault) Code() int {
 
 func (o *GetCPUExtensionsDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/cpu-extensions][%d] getCpuExtensions default  %+v", o._statusCode, o.Payload)
-}
-
-func (o *GetCPUExtensionsDefault) GetPayload() *inventory_models.RestAPIError {
-	return o.Payload
 }
 
 func (o *GetCPUExtensionsDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

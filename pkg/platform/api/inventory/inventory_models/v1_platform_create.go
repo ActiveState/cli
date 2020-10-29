@@ -8,8 +8,9 @@ package inventory_models
 import (
 	"strconv"
 
+	strfmt "github.com/go-openapi/strfmt"
+
 	"github.com/go-openapi/errors"
-	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
@@ -17,7 +18,6 @@ import (
 // V1PlatformCreate Platform (create)
 //
 // A platform upon which a build can be built. This model is only used when a platform is created to allow for both referencing existing platform components or defining new ones.
-//
 // swagger:model v1PlatformCreate
 type V1PlatformCreate struct {
 

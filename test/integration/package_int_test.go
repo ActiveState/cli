@@ -201,8 +201,9 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithLang() {
 
 	cp := ts.Spawn("search", "Moose", "--language=perl")
 	cp.Expect("Name")
-	cp.Expect("Any-Moose")
 	cp.Expect("Moose")
+	cp.Expect("MooseFS")
+	cp.Expect("MooseX-ABC")
 	cp.ExpectExitCode(0)
 }
 

@@ -71,10 +71,8 @@ var (
 )
 
 var (
-	regexPlatformURL = strings.Replace(constants.PlatformURL, ".", "\\.", -1)
-
-	urlProjectRegexStr = fmt.Sprintf(`https:\/\/%s\/([\w_.-]*)\/([\w_.-]*)(?:\?commitID=)*(.*)`, regexPlatformURL)
-	urlCommitRegexStr  = fmt.Sprintf(`https:\/\/%s\/commit\/(.*)`, regexPlatformURL)
+	urlProjectRegexStr = fmt.Sprintf(`https:\/\/[\w\.]+\/([\w_.-]*)\/([\w_.-]*)(?:\?commitID=)*(.*)`)
+	urlCommitRegexStr  = fmt.Sprintf(`https:\/\/[\w\.]+\/commit\/(.*)`)
 
 	// ProjectURLRe Regex used to validate project fields /orgname/projectname[?commitID=someUUID]
 	ProjectURLRe = regexp.MustCompile(urlProjectRegexStr)
@@ -647,6 +645,51 @@ func parseURL(url string) (projectURL, error) {
 	}
 
 	return parts, nil
+}
+
+func removeTemporaryLanguage(data []byte) ([]byte, error) {
+	languageLine := regexp.MustCompile("(?m)^languages:")
+	firstNonIndentedLine := regexp.MustCompile("(?m)^[^ \t]")
+
+	startLoc := languageLine.FindIndex(data)
+	if startLoc == nil {
+		return data, locale.NewInputError("remove_language_not_found", "Expected language field in activestate.yaml.")
+	}
+	endLoc := firstNonIndentedLine.FindIndex(data[startLoc[1]:])
+	if endLoc == nil {
+		return data[:startLoc[0]], nil
+	}
+
+	end := startLoc[1] + endLoc[0]
+	return append(data[:startLoc[0]], data[end:]...), nil
+}
+
+// RemoveTemporaryLanguage removes the temporary language field from the as.yaml file during state push
+func (p *Project) RemoveTemporaryLanguage() error {
+	fp, fail := GetProjectFilePath()
+	if fail != nil {
+		return errs.Wrap(fail.ToError(), "Could not find the project file location.")
+	}
+
+	data, err := ioutil.ReadFile(fp)
+	if err != nil {
+		return errs.Wrap(err, "Failed to read project file.")
+	}
+
+	out, err := removeTemporaryLanguage(data)
+	if err != nil {
+		return errs.Wrap(err, "Failed to remove language field from project file.")
+	}
+
+	if err := ioutil.WriteFile(fp, out, 0664); err != nil {
+		return errs.Wrap(err, "Failed to write update project file.")
+	}
+
+	fail = p.Reload()
+	if fail != nil {
+		return errs.Wrap(fail.ToError(), "Failed to reload project file.")
+	}
+	return nil
 }
 
 // Save the project to its activestate.yaml file

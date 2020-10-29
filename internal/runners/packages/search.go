@@ -82,7 +82,7 @@ func newPackagesTable(packages []*model.IngredientAndVersion) *packageTable {
 	for _, pack := range packages {
 		row := packageRow{
 			filterNilStr(pack.Ingredient.Name),
-			filterNilStr(pack.Version.Version),
+			pack.Version,
 		}
 		rows = append(rows, row)
 	}

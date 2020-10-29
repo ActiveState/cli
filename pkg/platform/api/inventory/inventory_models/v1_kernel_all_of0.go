@@ -6,14 +6,14 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	strfmt "github.com/go-openapi/strfmt"
+
 	"github.com/go-openapi/errors"
-	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // V1KernelAllOf0 v1 kernel all of0
-//
 // swagger:model v1KernelAllOf0
 type V1KernelAllOf0 struct {
 
@@ -24,7 +24,7 @@ type V1KernelAllOf0 struct {
 
 	// links
 	// Required: true
-	Links *V1SubSchemaSelfLink `json:"links"`
+	Links *V1KernelAllOf0Links `json:"links"`
 }
 
 // Validate validates this v1 kernel all of0

@@ -2,6 +2,7 @@ package projectfile
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -368,6 +369,41 @@ func TestParseVersionInfo(t *testing.T) {
 	assert.Nil(t, versionInfo, "No version exists, because no project file exists")
 }
 
+func TestRemoveTemporaryLanguage(t *testing.T) {
+	languageBlock := (`languages: # some comment
+   name: abc
+   version:
+`)
+
+	oneLineLanguageBlock := `languages: { "name": "abc", "version": "" }
+`
+
+	exampleYaml := (`junk: xgarbage
+%smorejunk: moregarbage`)
+
+	atEndOfFile := `junk: xgarbage
+%s`
+
+	cases := []struct {
+		name     string
+		data     string
+		expected string
+	}{
+		{"block", fmt.Sprintf(exampleYaml, languageBlock), fmt.Sprintf(exampleYaml, "")},
+		{"one-liner", fmt.Sprintf(exampleYaml, oneLineLanguageBlock), fmt.Sprintf(exampleYaml, "")},
+		{"atEOF", fmt.Sprintf(atEndOfFile, oneLineLanguageBlock), fmt.Sprintf(atEndOfFile, "")},
+		{"atEOF/one-liner", fmt.Sprintf(atEndOfFile, oneLineLanguageBlock), fmt.Sprintf(atEndOfFile, "")},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(tt *testing.T) {
+			res, err := removeTemporaryLanguage([]byte(c.data))
+			require.NoError(tt, err)
+			assert.Equal(tt, c.expected, string(res))
+		})
+	}
+}
+
 func TestSetCommitInYAML(t *testing.T) {
 	exampleYAML := []byte(`
 junk: xgarbage
@@ -452,12 +488,15 @@ func TestNewProjectfile(t *testing.T) {
 }
 
 func TestValidateProjectURL(t *testing.T) {
-	fail := ValidateProjectURL("https://example.com/xowner/xproject")
+	fail := ValidateProjectURL("https://example.com/")
 	assert.Error(t, fail.ToError(), "This should be an invalid project URL")
 
 	fail = ValidateProjectURL("https://platform.activestate.com/xowner/xproject")
 	assert.Nil(t, fail, "This should not be an invalid project URL")
 
 	fail = ValidateProjectURL("https://platform.activestate.com/commit/commitid")
+	assert.Nil(t, fail, "This should not be an invalid project URL using the commit path")
+
+	fail = ValidateProjectURL("https://pr1234.activestate.build/commit/commitid")
 	assert.Nil(t, fail, "This should not be an invalid project URL using the commit path")
 }

@@ -6,22 +6,22 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	strfmt "github.com/go-openapi/strfmt"
+
 	"github.com/go-openapi/errors"
-	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // V1CPUArchitecture CPU Architecture
 //
 // The full CPU architecture data model
-//
 // swagger:model v1CpuArchitecture
 type V1CPUArchitecture struct {
 	V1CPUArchitectureAllOf0
 
-	V1CPUArchitectureCore
+	V1CPUArchitectureAllOf1
 
-	V1SubSchemaRevisionedResource
+	V1CPUArchitectureAllOf2
 }
 
 // UnmarshalJSON unmarshals this object from a JSON structure
@@ -34,18 +34,18 @@ func (m *V1CPUArchitecture) UnmarshalJSON(raw []byte) error {
 	m.V1CPUArchitectureAllOf0 = aO0
 
 	// AO1
-	var aO1 V1CPUArchitectureCore
+	var aO1 V1CPUArchitectureAllOf1
 	if err := swag.ReadJSON(raw, &aO1); err != nil {
 		return err
 	}
-	m.V1CPUArchitectureCore = aO1
+	m.V1CPUArchitectureAllOf1 = aO1
 
 	// AO2
-	var aO2 V1SubSchemaRevisionedResource
+	var aO2 V1CPUArchitectureAllOf2
 	if err := swag.ReadJSON(raw, &aO2); err != nil {
 		return err
 	}
-	m.V1SubSchemaRevisionedResource = aO2
+	m.V1CPUArchitectureAllOf2 = aO2
 
 	return nil
 }
@@ -60,17 +60,18 @@ func (m V1CPUArchitecture) MarshalJSON() ([]byte, error) {
 	}
 	_parts = append(_parts, aO0)
 
-	aO1, err := swag.WriteJSON(m.V1CPUArchitectureCore)
+	aO1, err := swag.WriteJSON(m.V1CPUArchitectureAllOf1)
 	if err != nil {
 		return nil, err
 	}
 	_parts = append(_parts, aO1)
 
-	aO2, err := swag.WriteJSON(m.V1SubSchemaRevisionedResource)
+	aO2, err := swag.WriteJSON(m.V1CPUArchitectureAllOf2)
 	if err != nil {
 		return nil, err
 	}
 	_parts = append(_parts, aO2)
+
 	return swag.ConcatJSON(_parts...), nil
 }
 
@@ -82,12 +83,12 @@ func (m *V1CPUArchitecture) Validate(formats strfmt.Registry) error {
 	if err := m.V1CPUArchitectureAllOf0.Validate(formats); err != nil {
 		res = append(res, err)
 	}
-	// validation for a type composition with V1CPUArchitectureCore
-	if err := m.V1CPUArchitectureCore.Validate(formats); err != nil {
+	// validation for a type composition with V1CPUArchitectureAllOf1
+	if err := m.V1CPUArchitectureAllOf1.Validate(formats); err != nil {
 		res = append(res, err)
 	}
-	// validation for a type composition with V1SubSchemaRevisionedResource
-	if err := m.V1SubSchemaRevisionedResource.Validate(formats); err != nil {
+	// validation for a type composition with V1CPUArchitectureAllOf2
+	if err := m.V1CPUArchitectureAllOf2.Validate(formats); err != nil {
 		res = append(res, err)
 	}
 

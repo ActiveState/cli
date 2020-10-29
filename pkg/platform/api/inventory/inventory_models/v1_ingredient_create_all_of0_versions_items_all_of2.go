@@ -14,7 +14,7 @@ import (
 
 // V1IngredientCreateAllOf0VersionsItemsAllOf2 Ingredient Version Revision Create
 //
-// All updatable fields of an ingredient version revision plus resources that can be linked to the revison when it is created, but that are not part of the ingredient version revision model itself.
+// All updatable fields of an ingredient version revision plus resources that can be linked to the revision when it is created, but that are not part of the ingredient version revision model itself.
 // swagger:model v1IngredientCreateAllOf0VersionsItemsAllOf2
 type V1IngredientCreateAllOf0VersionsItemsAllOf2 struct {
 	V1IngredientCreateAllOf0VersionsItemsAllOf2AllOf0

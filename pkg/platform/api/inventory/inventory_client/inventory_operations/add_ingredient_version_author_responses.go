@@ -10,9 +10,10 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
-	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	strfmt "github.com/go-openapi/strfmt"
+
+	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // AddIngredientVersionAuthorReader is a Reader for the AddIngredientVersionAuthor structure.
@@ -23,18 +24,21 @@ type AddIngredientVersionAuthorReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *AddIngredientVersionAuthorReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
+
 	case 200:
 		result := NewAddIngredientVersionAuthorOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
+
 	case 400:
 		result := NewAddIngredientVersionAuthorBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
+
 	default:
 		result := NewAddIngredientVersionAuthorDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -64,10 +68,6 @@ func (o *AddIngredientVersionAuthorOK) Error() string {
 	return fmt.Sprintf("[POST /v1/ingredients/{ingredient_id}/versions/{ingredient_version_id}/authors][%d] addIngredientVersionAuthorOK  %+v", 200, o.Payload)
 }
 
-func (o *AddIngredientVersionAuthorOK) GetPayload() *inventory_models.V1Author {
-	return o.Payload
-}
-
 func (o *AddIngredientVersionAuthorOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(inventory_models.V1Author)
@@ -95,10 +95,6 @@ type AddIngredientVersionAuthorBadRequest struct {
 
 func (o *AddIngredientVersionAuthorBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/ingredients/{ingredient_id}/versions/{ingredient_version_id}/authors][%d] addIngredientVersionAuthorBadRequest  %+v", 400, o.Payload)
-}
-
-func (o *AddIngredientVersionAuthorBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
-	return o.Payload
 }
 
 func (o *AddIngredientVersionAuthorBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -137,10 +133,6 @@ func (o *AddIngredientVersionAuthorDefault) Code() int {
 
 func (o *AddIngredientVersionAuthorDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/ingredients/{ingredient_id}/versions/{ingredient_version_id}/authors][%d] addIngredientVersionAuthor default  %+v", o._statusCode, o.Payload)
-}
-
-func (o *AddIngredientVersionAuthorDefault) GetPayload() *inventory_models.RestAPIError {
-	return o.Payload
 }
 
 func (o *AddIngredientVersionAuthorDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

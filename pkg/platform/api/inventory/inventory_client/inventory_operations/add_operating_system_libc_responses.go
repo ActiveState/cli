@@ -10,9 +10,10 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
-	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	strfmt "github.com/go-openapi/strfmt"
+
+	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // AddOperatingSystemLibcReader is a Reader for the AddOperatingSystemLibc structure.
@@ -23,18 +24,21 @@ type AddOperatingSystemLibcReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *AddOperatingSystemLibcReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
+
 	case 200:
 		result := NewAddOperatingSystemLibcOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
+
 	case 400:
 		result := NewAddOperatingSystemLibcBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
+
 	default:
 		result := NewAddOperatingSystemLibcDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -64,10 +68,6 @@ func (o *AddOperatingSystemLibcOK) Error() string {
 	return fmt.Sprintf("[POST /v1/operating-systems/{operating_system_id}/libcs][%d] addOperatingSystemLibcOK  %+v", 200, o.Payload)
 }
 
-func (o *AddOperatingSystemLibcOK) GetPayload() *inventory_models.V1Libc {
-	return o.Payload
-}
-
 func (o *AddOperatingSystemLibcOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(inventory_models.V1Libc)
@@ -95,10 +95,6 @@ type AddOperatingSystemLibcBadRequest struct {
 
 func (o *AddOperatingSystemLibcBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/operating-systems/{operating_system_id}/libcs][%d] addOperatingSystemLibcBadRequest  %+v", 400, o.Payload)
-}
-
-func (o *AddOperatingSystemLibcBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
-	return o.Payload
 }
 
 func (o *AddOperatingSystemLibcBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -137,10 +133,6 @@ func (o *AddOperatingSystemLibcDefault) Code() int {
 
 func (o *AddOperatingSystemLibcDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/operating-systems/{operating_system_id}/libcs][%d] addOperatingSystemLibc default  %+v", o._statusCode, o.Payload)
-}
-
-func (o *AddOperatingSystemLibcDefault) GetPayload() *inventory_models.RestAPIError {
-	return o.Payload
 }
 
 func (o *AddOperatingSystemLibcDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

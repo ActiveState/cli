@@ -6,20 +6,20 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	strfmt "github.com/go-openapi/strfmt"
+
 	"github.com/go-openapi/errors"
-	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // V1Kernel Kernel
 //
 // The full kernel data model
-//
 // swagger:model v1Kernel
 type V1Kernel struct {
 	V1KernelAllOf0
 
-	V1KernelCore
+	V1KernelAllOf1
 }
 
 // UnmarshalJSON unmarshals this object from a JSON structure
@@ -32,11 +32,11 @@ func (m *V1Kernel) UnmarshalJSON(raw []byte) error {
 	m.V1KernelAllOf0 = aO0
 
 	// AO1
-	var aO1 V1KernelCore
+	var aO1 V1KernelAllOf1
 	if err := swag.ReadJSON(raw, &aO1); err != nil {
 		return err
 	}
-	m.V1KernelCore = aO1
+	m.V1KernelAllOf1 = aO1
 
 	return nil
 }
@@ -51,11 +51,12 @@ func (m V1Kernel) MarshalJSON() ([]byte, error) {
 	}
 	_parts = append(_parts, aO0)
 
-	aO1, err := swag.WriteJSON(m.V1KernelCore)
+	aO1, err := swag.WriteJSON(m.V1KernelAllOf1)
 	if err != nil {
 		return nil, err
 	}
 	_parts = append(_parts, aO1)
+
 	return swag.ConcatJSON(_parts...), nil
 }
 
@@ -67,8 +68,8 @@ func (m *V1Kernel) Validate(formats strfmt.Registry) error {
 	if err := m.V1KernelAllOf0.Validate(formats); err != nil {
 		res = append(res, err)
 	}
-	// validation for a type composition with V1KernelCore
-	if err := m.V1KernelCore.Validate(formats); err != nil {
+	// validation for a type composition with V1KernelAllOf1
+	if err := m.V1KernelAllOf1.Validate(formats); err != nil {
 		res = append(res, err)
 	}
 

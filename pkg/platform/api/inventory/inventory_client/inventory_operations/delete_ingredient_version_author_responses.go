@@ -10,9 +10,10 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
-	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	strfmt "github.com/go-openapi/strfmt"
+
+	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // DeleteIngredientVersionAuthorReader is a Reader for the DeleteIngredientVersionAuthor structure.
@@ -23,12 +24,14 @@ type DeleteIngredientVersionAuthorReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *DeleteIngredientVersionAuthorReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
+
 	case 204:
 		result := NewDeleteIngredientVersionAuthorNoContent()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
+
 	default:
 		result := NewDeleteIngredientVersionAuthorDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -86,10 +89,6 @@ func (o *DeleteIngredientVersionAuthorDefault) Code() int {
 
 func (o *DeleteIngredientVersionAuthorDefault) Error() string {
 	return fmt.Sprintf("[DELETE /v1/ingredients/{ingredient_id}/versions/{ingredient_version_id}/authors/{author_id}][%d] deleteIngredientVersionAuthor default  %+v", o._statusCode, o.Payload)
-}
-
-func (o *DeleteIngredientVersionAuthorDefault) GetPayload() *inventory_models.RestAPIError {
-	return o.Payload
 }
 
 func (o *DeleteIngredientVersionAuthorDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

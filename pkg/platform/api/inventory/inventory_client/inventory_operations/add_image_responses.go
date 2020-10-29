@@ -10,9 +10,10 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
-	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	strfmt "github.com/go-openapi/strfmt"
+
+	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // AddImageReader is a Reader for the AddImage structure.
@@ -23,18 +24,21 @@ type AddImageReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *AddImageReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
+
 	case 201:
 		result := NewAddImageCreated()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
+
 	case 400:
 		result := NewAddImageBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
+
 	default:
 		result := NewAddImageDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -64,10 +68,6 @@ func (o *AddImageCreated) Error() string {
 	return fmt.Sprintf("[POST /v1/images][%d] addImageCreated  %+v", 201, o.Payload)
 }
 
-func (o *AddImageCreated) GetPayload() *inventory_models.V1Image {
-	return o.Payload
-}
-
 func (o *AddImageCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(inventory_models.V1Image)
@@ -95,10 +95,6 @@ type AddImageBadRequest struct {
 
 func (o *AddImageBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/images][%d] addImageBadRequest  %+v", 400, o.Payload)
-}
-
-func (o *AddImageBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
-	return o.Payload
 }
 
 func (o *AddImageBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -137,10 +133,6 @@ func (o *AddImageDefault) Code() int {
 
 func (o *AddImageDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/images][%d] addImage default  %+v", o._statusCode, o.Payload)
-}
-
-func (o *AddImageDefault) GetPayload() *inventory_models.RestAPIError {
-	return o.Payload
 }
 
 func (o *AddImageDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

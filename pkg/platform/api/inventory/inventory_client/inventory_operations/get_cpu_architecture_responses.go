@@ -10,9 +10,10 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
-	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	strfmt "github.com/go-openapi/strfmt"
+
+	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // GetCPUArchitectureReader is a Reader for the GetCPUArchitecture structure.
@@ -23,12 +24,14 @@ type GetCPUArchitectureReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetCPUArchitectureReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
+
 	case 200:
 		result := NewGetCPUArchitectureOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
+
 	default:
 		result := NewGetCPUArchitectureDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -56,10 +59,6 @@ type GetCPUArchitectureOK struct {
 
 func (o *GetCPUArchitectureOK) Error() string {
 	return fmt.Sprintf("[GET /v1/cpu-architectures/{cpu_architecture_id}][%d] getCpuArchitectureOK  %+v", 200, o.Payload)
-}
-
-func (o *GetCPUArchitectureOK) GetPayload() *inventory_models.V1CPUArchitecture {
-	return o.Payload
 }
 
 func (o *GetCPUArchitectureOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -98,10 +97,6 @@ func (o *GetCPUArchitectureDefault) Code() int {
 
 func (o *GetCPUArchitectureDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/cpu-architectures/{cpu_architecture_id}][%d] getCpuArchitecture default  %+v", o._statusCode, o.Payload)
-}
-
-func (o *GetCPUArchitectureDefault) GetPayload() *inventory_models.RestAPIError {
-	return o.Payload
 }
 
 func (o *GetCPUArchitectureDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

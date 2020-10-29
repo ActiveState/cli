@@ -8,8 +8,9 @@ package inventory_models
 import (
 	"strconv"
 
+	strfmt "github.com/go-openapi/strfmt"
+
 	"github.com/go-openapi/errors"
-	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
@@ -17,21 +18,20 @@ import (
 // V1GpuArchitecturePagedList GPU Architecture Paged List
 //
 // A paginated list of GPU architectures
-//
 // swagger:model v1GpuArchitecturePagedList
 type V1GpuArchitecturePagedList struct {
 
 	// A page of GPU architectures
 	// Required: true
-	GpuArchitectures []*V1GpuArchitecture `json:"gpu_architectures"`
+	GpuArchitectures []*V1GpuArchitecturePagedListGpuArchitecturesItems `json:"gpu_architectures"`
 
 	// links
 	// Required: true
-	Links *V1SubSchemaPagingLinks `json:"links"`
+	Links *V1GpuArchitecturePagedListLinks `json:"links"`
 
 	// paging
 	// Required: true
-	Paging *V1SubSchemaPaging `json:"paging"`
+	Paging *V1GpuArchitecturePagedListPaging `json:"paging"`
 }
 
 // Validate validates this v1 gpu architecture paged list
