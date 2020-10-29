@@ -2,6 +2,7 @@ package languages
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/failures"
@@ -100,7 +101,9 @@ func ensureLanguagePlatform(language *model.Language) error {
 
 func ensureLanguageProject(language *model.Language, project *project.Project) error {
 	// This should ensure that the project language and the requested language match
+	fmt.Println("Language name: ", language.Name)
 	for _, lang := range project.Languages() {
+		fmt.Println("Project langauge: ", lang.Name())
 		if strings.Contains(lang.Name(), language.Name) {
 			return nil
 		}
