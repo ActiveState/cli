@@ -71,10 +71,20 @@ func (suite *PlatformsIntegrationTestSuite) TestPlatforms_addRemove() {
 		cp.ExpectExitCode(0)
 	}()
 
+	username := ts.CreateNewUser()
+	projectName := "ExercisePlatforms"
+	namespace := fmt.Sprintf("%s/%s", username, "platform-test")
+
+	cp := ts.Spawn("fork", fmt.Sprintf("%s/%s", e2e.PersistentUsername, projectName), "--org", username, "--name", "platform-test")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("activate", namespace, "--path="+ts.Dirs.Work, "--output=json")
+	cp.ExpectExitCode(0)
+
 	platform := "Windows"
 	version := "10.0.17134.1"
 
-	cp := ts.Spawn("platforms", "add", fmt.Sprintf("%s@%s", platform, version))
+	cp = ts.Spawn("platforms", "add", fmt.Sprintf("%s@%s", platform, version))
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("platforms")
@@ -111,10 +121,20 @@ func (suite *PlatformsIntegrationTestSuite) TestPlatforms_addRemoveLatest() {
 		cp.ExpectExitCode(0)
 	}()
 
+	username := ts.CreateNewUser()
+	projectName := "ExercisePlatforms"
+	namespace := fmt.Sprintf("%s/%s", username, "platform-test")
+
+	cp := ts.Spawn("fork", fmt.Sprintf("%s/%s", e2e.PersistentUsername, projectName), "--org", username, "--name", "platform-test")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("activate", namespace, "--path="+ts.Dirs.Work, "--output=json")
+	cp.ExpectExitCode(0)
+
 	platform := "Windows"
 	version := "10.0.17134.1"
 
-	cp := ts.Spawn("platforms", "add", "windows")
+	cp = ts.Spawn("platforms", "add", "windows")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("platforms")
