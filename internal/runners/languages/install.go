@@ -2,7 +2,6 @@ package languages
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/failures"
@@ -50,7 +49,7 @@ func (u *Update) Run(params *UpdateParams) error {
 	err = ensureVersion(lang)
 	if err != nil {
 		if lang.Version == "" {
-			return locale.WrapError(err, "err_language_project", "Language: {{.V0}} is already installed, you can update it by running {{.V0}}@<version>", lang.Name)
+			return locale.WrapInputError(err, "err_language_project", "Language: {{.V0}} is already installed, you can update it by running {{.V0}}@<version>", lang.Name)
 		}
 		return err
 	}
@@ -100,15 +99,20 @@ func ensureLanguagePlatform(language *model.Language) error {
 }
 
 func ensureLanguageProject(language *model.Language, project *project.Project) error {
-	// This should ensure that the project language and the requested language match
-	fmt.Println("Language name: ", language.Name)
-	for _, lang := range project.Languages() {
-		fmt.Println("Project langauge: ", lang.Name())
-		if strings.Contains(lang.Name(), language.Name) {
-			return nil
-		}
+	targetCommitID, fail := model.LatestCommitID(project.Owner(), project.Name())
+	if fail != nil {
+		return fail.ToError()
 	}
-	return locale.NewInputError("err_language_mismatch")
+
+	platformLanguage, fail := model.FetchLanguageForCommit(*targetCommitID)
+	if fail != nil {
+		return fail.ToError()
+	}
+
+	if platformLanguage.Name != language.Name {
+		return locale.NewInputError("err_language_mismatch")
+	}
+	return nil
 }
 
 type fetchVersionsFunc func(name string) ([]string, *failures.Failure)
@@ -119,7 +123,7 @@ func ensureVersion(language *model.Language) error {
 
 func ensureVersionTestable(language *model.Language, fetchVersions fetchVersionsFunc) error {
 	if language.Version == "" {
-		return locale.NewError("err_language_no_version", "No language version provided")
+		return locale.NewInputError("err_language_no_version", "No language version provided")
 	}
 
 	versions, fail := fetchVersions(language.Name)
