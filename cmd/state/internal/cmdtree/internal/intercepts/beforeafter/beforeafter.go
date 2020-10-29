@@ -17,7 +17,7 @@ func New(p *primer.Values) *BeforeAfter {
 	}
 }
 
-func (ba *BeforeAfter) Wrap(next captain.ExecuteFunc) captain.ExecuteFunc {
+func (ba *BeforeAfter) InterceptExec(next captain.ExecuteFunc) captain.ExecuteFunc {
 	return func(cmd *captain.Command, args []string) error {
 		runEvent := run.NewEvent(ba.primer, cmd.UseFull())
 
