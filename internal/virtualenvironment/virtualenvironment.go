@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/globaldefault"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
@@ -79,21 +80,21 @@ func (v *VirtualEnvironment) Setup(installIfNecessary bool) *failures.Failure {
 	return nil
 }
 
-// FindProgramOnPath tries to find the cmd on the PATH environment variable
-func FindProgramOnPath(cmd string, envMap map[string]string) string {
-	var bins []string
-	if p, ok := envMap["PATH"]; ok {
-		bins = strings.Split(p, string(os.PathListSeparator))
+func removePath(envMap map[string]string, path string) map[string]string {
+	oldPath, ok := envMap["PATH"]
+	if !ok {
+		return envMap
 	}
 
-	for _, b := range bins {
-		cmdPath := filepath.Join(b, cmd)
-		if fileutils.IsExecutable(cmdPath) {
-			return cmdPath
+	var newPath []string
+	for _, p := range strings.Split(oldPath, string(os.PathListSeparator)) {
+		eq, err := fileutils.PathsEqual(p, path)
+		if err != nil || !eq {
+			newPath = append(newPath, p)
 		}
 	}
-
-	return cmd
+	envMap["PATH"] = strings.Join(newPath, string(os.PathListSeparator))
+	return envMap
 }
 
 // GetEnv returns a map of the cumulative environment variables for all active virtual environments
@@ -130,6 +131,8 @@ func (v *VirtualEnvironment) GetEnv(inherit bool, projectDir string) (map[string
 			}
 		}
 	}
+
+	envMap = removePath(envMap, globaldefault.BinDir())
 
 	if inherit {
 		return inheritEnv(envMap), nil

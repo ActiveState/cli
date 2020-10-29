@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
@@ -64,24 +65,22 @@ func (s *Shim) Run(args ...string) error {
 		return locale.WrapError(fail.ToError(), "err_shim_activate", "Could not activate environment for shim command")
 	}
 
-	// attempt to get absolute program path from virtual-env only
-	env, err := venv.GetEnv(false, filepath.Dir(projectfile.Get().Path()))
-	if err != nil {
-		return err
-	}
-	progPath := virtualenvironment.FindProgramOnPath(args[0], env)
+	env, err := venv.GetEnv(true, filepath.Dir(projectfile.Get().Path()))
 	if err != nil {
 		return err
 	}
 
-	env, err = venv.GetEnv(true, filepath.Dir(projectfile.Get().Path()))
-	if err != nil {
-		return err
+	// Ensure that we are not calling the shim recursively
+	oldval, ok := env[constants.ShimEnvVarName]
+	if ok && oldval == args[0] {
+		return locale.NewError("err_shim_recursive_loop", "Could not resolve shimmed executable {{.V0}}", args[0])
 	}
+	env[constants.ShimEnvVarName] = args[0]
+
 	s.subshell.SetEnv(env)
 
 	lang := language.Bash
-	scriptArgs := fmt.Sprintf(`%s "$@"`, progPath)
+	scriptArgs := fmt.Sprintf(`%s "$@"`, args[0])
 	if strings.Contains(s.subshell.Binary(), "cmd") {
 		lang = language.Batch
 		scriptArgs = fmt.Sprintf("@ECHO OFF\n%s %%*", args[0])
