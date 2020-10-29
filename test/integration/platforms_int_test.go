@@ -65,12 +65,6 @@ func (suite *PlatformsIntegrationTestSuite) TestPlatforms_addRemove() {
 
 	suite.PrepareActiveStateYAML(ts)
 
-	ts.LoginAsPersistentUser()
-	defer func() {
-		cp := ts.Spawn("auth", "logout")
-		cp.ExpectExitCode(0)
-	}()
-
 	username := ts.CreateNewUser()
 	projectName := "ExercisePlatforms"
 	namespace := fmt.Sprintf("%s/%s", username, "platform-test")
@@ -114,12 +108,6 @@ func (suite *PlatformsIntegrationTestSuite) TestPlatforms_addRemoveLatest() {
 	defer ts.Close()
 
 	suite.PrepareActiveStateYAML(ts)
-
-	ts.LoginAsPersistentUser()
-	defer func() {
-		cp := ts.Spawn("auth", "logout")
-		cp.ExpectExitCode(0)
-	}()
 
 	username := ts.CreateNewUser()
 	projectName := "ExercisePlatforms"
