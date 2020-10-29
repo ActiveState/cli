@@ -9,6 +9,8 @@ import (
 	"io"
 	"syscall"
 	"unsafe"
+
+	"github.com/ActiveState/cli/internal/logging"
 )
 
 var consoleStyleMap = map[Style]uint16{
@@ -75,6 +77,14 @@ func New(writer io.Writer) *Styler {
 }
 
 func (n *Styler) SetStyle(s Style, bright bool) {
+	defer func() {
+		if r := recover(); r != nil {
+			if os.Getenv("CI") == "" {
+				logging.Errorf("colorstyle.SetStyle failed with: %v", r)
+			}
+		}
+	}()
+
 	if s == Bold || s == Underline {
 		return // underline/bold is not supported on windows
 	}
