@@ -1,13 +1,16 @@
 package platforms
 
 import (
-	"errors"
+	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/blang/semver"
 )
 
 // Platform represents the output data of a platform.
@@ -63,6 +66,7 @@ type Params struct {
 }
 
 func prepareParams(ps Params) (Params, error) {
+	ps.Name, ps.Version = splitNameAndVersion(ps.Name)
 	if ps.Name == "" {
 		ps.Name = model.HostPlatform
 	}
@@ -71,9 +75,75 @@ func prepareParams(ps Params) (Params, error) {
 		ps.BitWidth = 32 << (^uint(0) >> 63) // gets host word size
 	}
 
+	var err error
 	if ps.Version == "" {
-		return ps, errors.New(locale.T("err_bad_platform_version"))
+		ps.Version, err = latestPlatformVersion(ps.Name)
+		if err != nil {
+			return ps, locale.WrapError(err, "err_prepare_params_latest", "Could not determine latest version for the platform: {{.V0}}", ps.Name)
+		}
 	}
 
 	return ps, nil
+}
+
+func splitNameAndVersion(input string) (string, string) {
+	nameArg := strings.Split(input, "@")
+	name := nameArg[0]
+	version := ""
+	if len(nameArg) == 2 {
+		version = nameArg[1]
+	}
+
+	return name, version
+}
+
+type platformSemver struct {
+	semver semver.Version
+	patch  int
+}
+
+func latestPlatformVersion(name string) (string, error) {
+	result, err := newSearchResult()
+	if err != nil {
+		return "", locale.WrapError(err, "err_latest_search_platforms", "Could not get platforms search result")
+	}
+
+	var latest platformSemver
+	for _, platform := range result.Platforms {
+		if strings.ToLower(platform.Name) == strings.ToLower(name) {
+			version := platform.Version
+			parts := strings.Split(version, ".")
+			var patch string
+			if len(parts) > 3 {
+				version = strings.Join(parts[:len(parts)-1], ".")
+				patch = parts[3]
+			}
+
+			parsed, err := semver.Parse(version)
+			if err != nil {
+				logging.Debug("Could not parse semver: %s for platform: %s", version, platform.Name)
+				continue
+			}
+
+			parsedPatch, err := strconv.Atoi(patch)
+			if err != nil {
+				logging.Debug("Invalid patch value: %s for platform: %s", patch, platform.Name)
+				parsedPatch = 0
+			}
+
+			if parsed.GE(latest.semver) && parsedPatch >= latest.patch {
+				latest.semver = parsed
+				latest.patch = parsedPatch
+			}
+		}
+	}
+
+	if latest.semver.Equals(semver.Version{}) {
+		return "", locale.NewError("err_platform_not_found", "Could not find latest version for platform: {{.V0}}", name)
+	}
+
+	if latest.patch != 0 {
+		return fmt.Sprintf("%s.%s", latest.semver.String(), strconv.Itoa(latest.patch)), nil
+	}
+	return latest.semver.String(), nil
 }
