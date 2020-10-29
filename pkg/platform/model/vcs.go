@@ -298,14 +298,8 @@ func CommitPackage(parentCommitID strfmt.UUID, operation Operation, packageName,
 	return commit.CommitID, nil
 }
 
-// UpdateProjectBranchCommit updates the vcs branch for a given project with a new commitID
-func UpdateProjectBranchCommit(projectOwner, projectName string, commitID strfmt.UUID) error {
-
-	proj, fail := FetchProjectByName(projectOwner, projectName)
-	if fail != nil {
-		return errs.Wrap(fail.ToError(), "Failed to fetch project.")
-	}
-
+// UpdateProjectBranchCommit updates the vcs brach for a given project with a new commitID
+func UpdateProjectBranchCommit(proj *mono_models.Project, commitID strfmt.UUID) error {
 	branch, fail := DefaultBranchForProject(proj)
 	if fail != nil {
 		return errs.Wrap(fail.ToError(), "Failed to get default branch for project %s.", proj.Name)
@@ -317,6 +311,17 @@ func UpdateProjectBranchCommit(projectOwner, projectName string, commitID strfmt
 	}
 
 	return nil
+}
+
+// UpdateProjectBranchCommitByName updates the vcs branch for a project given by its namespace with a new commitID
+func UpdateProjectBranchCommitByName(projectOwner, projectName string, commitID strfmt.UUID) error {
+
+	proj, fail := FetchProjectByName(projectOwner, projectName)
+	if fail != nil {
+		return errs.Wrap(fail.ToError(), "Failed to fetch project.")
+	}
+
+	return UpdateProjectBranchCommit(proj, commitID)
 }
 
 // CommitChangeset commits multiple changes in one commit

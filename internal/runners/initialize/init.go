@@ -7,6 +7,7 @@ import (
 	"github.com/gobuffalo/packr"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/language"
@@ -32,22 +33,24 @@ type RunParams struct {
 
 // Initialize stores scope-related dependencies.
 type Initialize struct {
-	output.Outputer
+	out  output.Outputer
+	proj *project.Project
 }
 
 type primeable interface {
 	primer.Outputer
+	primer.Projecter
 }
 
 // New returns a prepared ptr to Initialize instance.
 func New(prime primeable) *Initialize {
-	return &Initialize{prime.Output()}
+	return &Initialize{prime.Output(), prime.Project()}
 }
 
 func prepare(params *RunParams) error {
 	if params.Language == "" {
 		// Manually check for language requirement, because we need to fallback on the --language flag to support editor.V0
-		return failures.FailUserInput.New(locale.T("err_init_no_language"))
+		return locale.NewInputError("err_init_no_language", "You need to supply the [NOTICE]language[/RESET] argument, run '[ACTIONABLE]state init --help[/RESET]' for more information.")
 	}
 	langParts := strings.Split(params.Language, "@")
 	if len(langParts) > 1 {
@@ -76,7 +79,7 @@ func prepare(params *RunParams) error {
 	}
 
 	if fail := params.Namespace.Validate(); fail != nil {
-		return fail
+		return locale.WrapInputError(fail.ToError(), "init_invalid_namespace_err", "The provided namespace argument is invalid.")
 	}
 
 	if params.Path == "" {
@@ -103,11 +106,55 @@ func prepare(params *RunParams) error {
 
 // Run kicks-off the runner.
 func (r *Initialize) Run(params *RunParams) error {
-	_, err := run(params, r.Outputer)
+	_, err := run(params, r.out, r.proj)
 	return err
 }
 
-func run(params *RunParams, out output.Outputer) (string, error) {
+func runHeadless(params *RunParams, out output.Outputer, proj *project.Project) (string, error) {
+	if params.Language != "" {
+		return "", locale.NewInputError("init_headless_lang_provided_err", "You should not provide a language, dude!")
+	}
+
+	headlessCommitID := proj.CommitID()
+
+	err := proj.Source().SetNamespace(params.Namespace.Owner, params.Namespace.Project)
+	if err != nil {
+		return "", errs.Wrap(err, "Could not set namespace in project file.")
+	}
+
+	fail := proj.Source().SetCommit(headlessCommitID, false)
+	if fail != nil {
+		return "", errs.Wrap(fail.ToError(), "Could not set commit id in project file.")
+	}
+
+	path := params.Path
+	if path == "" {
+		path, err = osutils.Getwd()
+		if err != nil {
+			return "", errs.Wrap(err, "Could not determine current working directory.")
+		}
+	}
+
+	out.Notice(locale.Tr(
+		"init_success",
+		params.Namespace.Project, params.Namespace.Owner, path))
+	return path, nil
+}
+
+func run(params *RunParams, out output.Outputer, proj *project.Project) (string, error) {
+	// try to initialize project at --path if provided
+	if params.Path != "" {
+		var fail *failures.Failure
+		proj, fail = project.Parse(filepath.Join(params.Path, constants.ConfigFileName))
+		if fail != nil {
+			logging.Debug("No project file parsed at path: %v", fail.ToError())
+			proj = nil
+		}
+	}
+	if proj != nil && proj.IsHeadless() {
+		return runHeadless(params, out, proj)
+	}
+
 	if err := prepare(params); err != nil {
 		return "", err
 	}

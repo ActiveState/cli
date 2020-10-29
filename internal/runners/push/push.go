@@ -1,12 +1,11 @@
 package push
 
 import (
-	"github.com/go-openapi/strfmt"
-
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/go-openapi/strfmt"
 
 	"github.com/spf13/viper"
 
@@ -35,20 +34,23 @@ func NewPush(config *viper.Viper, prime primeable) *Push {
 	return &Push{config, prime.Output(), prime.Project()}
 }
 
-func (r *Push) Run() *failures.Failure {
+func (r *Push) Run() error {
 	if !authentication.Get().Authenticated() {
 		return failures.FailUserInput.New("err_api_not_authenticated")
 	}
 
 	if r.project != nil && r.project.IsHeadless() {
-		return failures.FailUserInput.Wrap(locale.NewInputError("err_push_headless", "You must first create a project. Please visit {{.V0}} to create your project.", r.project.URL()))
+		return failures.FailUserInput.Wrap(locale.NewInputError(
+			"err_push_headless",
+			"You must first create a project. Please visit {{.V0}} or run [ACTIONABLE]state init[/RESET] to create your project.", r.project.URL()),
+		)
 	}
 
 	// Create the project remotely if it doesn't already exist
 	pjm, fail := model.FetchProjectByName(r.project.Owner(), r.project.Name())
 	if fail != nil {
 		if !fail.Type.Matches(model.FailProjectNotFound) {
-			return fail
+			return locale.WrapError(fail.ToError(), "err_push_try_project", "Failed to check for existence of project.")
 		}
 		// We have to reset handled failures since our legacy command handling still relies on this
 		// ie. failure occurred equals unsuccesful command
@@ -64,27 +66,35 @@ func (r *Push) Run() *failures.Failure {
 		return nil
 	}
 
-	lang, langVersion, fail := r.languageForProject(r.project)
-	if fail != nil {
-		return fail
-	}
+	// try to create the project at the given commit id.
+	if r.project.CommitID() != "" {
+		err := model.CreateProjectAtCommit(r.project.Owner(), r.project.Name(), r.project.Private(), r.project.CommitUUID())
+		if err != nil {
+			return locale.WrapError(err, "push_project_branch_commit_err", "Failed to update new project {{.V0}} to current commitID.", r.project.Namespace().String())
+		}
+		r.Outputer.Notice(locale.Tl("push_headless_project_created", "Project created at [ACTIONABLE]{{.V0}}[/RESET]", r.project.URL()))
+	} else {
+		var commitID strfmt.UUID
+		lang, langVersion, fail := r.languageForProject(r.project)
+		if fail != nil {
+			return fail
+		}
 
-	r.Outputer.Notice(locale.Tr("push_creating_project", r.project.Owner(), r.project.Name()))
-	var commitID strfmt.UUID
-	pjm, commitID, fail = model.CreateProject(r.project.Owner(), r.project.Name(), model.HostPlatform, lang, langVersion, r.project.Private())
-	if fail != nil {
-		return fail
-	}
+		r.Outputer.Notice(locale.Tr("push_creating_project", r.project.Owner(), r.project.Name()))
+		pjm, commitID, fail = model.CreateProject(r.project.Owner(), r.project.Name(), model.HostPlatform, lang, langVersion, r.project.Private())
+		if fail != nil {
+			return fail
+		}
+		// Remove temporary language entry
+		pjf := r.project.Source()
+		err := pjf.RemoveTemporaryLanguage()
+		if err != nil {
+			return failures.FailUser.Wrap(err, locale.Tl("push_remove_lang_err", "Failed to remove temporary language field from activestate.yaml."))
+		}
 
-	// Remove temporary language entry
-	pjf := r.project.Source()
-	err := pjf.RemoveTemporaryLanguage()
-	if err != nil {
-		return failures.FailUser.Wrap(err, locale.Tl("push_remove_lang_err", "Failed to remove temporary language field from activestate.yaml."))
+		r.Outputer.Notice(locale.Tr("push_project_created", r.project.URL(), lang.String(), langVersion))
+		r.project.Source().SetCommit(commitID.String(), false)
 	}
-
-	r.Outputer.Notice(locale.Tr("push_project_created", r.project.URL(), lang.String(), langVersion))
-	r.project.Source().SetCommit(commitID.String(), false)
 
 	return nil
 }
