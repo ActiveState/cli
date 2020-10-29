@@ -97,9 +97,11 @@ func splitNameAndVersion(input string) (string, string) {
 	return name, version
 }
 
+// platformSemver covers the semvers used by the platform that do not conform
+// to the semver standard. (ie. they have an extra numerical value after patch)
 type platformSemver struct {
-	semver semver.Version
-	patch  int
+	semver     semver.Version
+	additional int
 }
 
 func latestPlatformVersion(name string) (string, error) {
@@ -113,10 +115,10 @@ func latestPlatformVersion(name string) (string, error) {
 		if strings.ToLower(platform.Name) == strings.ToLower(name) {
 			version := platform.Version
 			parts := strings.Split(version, ".")
-			var patch string
+			var additional string
 			if len(parts) > 3 {
 				version = strings.Join(parts[:len(parts)-1], ".")
-				patch = parts[3]
+				additional = parts[3]
 			}
 
 			parsed, err := semver.Parse(version)
@@ -125,15 +127,15 @@ func latestPlatformVersion(name string) (string, error) {
 				continue
 			}
 
-			parsedPatch, err := strconv.Atoi(patch)
+			parsedAdditional, err := strconv.Atoi(additional)
 			if err != nil {
-				logging.Debug("Invalid patch value: %s for platform: %s", patch, platform.Name)
-				parsedPatch = 0
+				logging.Debug("Invalid patch value: %s for platform: %s", additional, platform.Name)
+				parsedAdditional = 0
 			}
 
-			if parsed.GE(latest.semver) && parsedPatch >= latest.patch {
+			if parsed.GE(latest.semver) && parsedAdditional >= latest.additional {
 				latest.semver = parsed
-				latest.patch = parsedPatch
+				latest.additional = parsedAdditional
 			}
 		}
 	}
@@ -142,8 +144,8 @@ func latestPlatformVersion(name string) (string, error) {
 		return "", locale.NewError("err_platform_not_found", "Could not find latest version for platform: {{.V0}}", name)
 	}
 
-	if latest.patch != 0 {
-		return fmt.Sprintf("%s.%s", latest.semver.String(), strconv.Itoa(latest.patch)), nil
+	if latest.additional != 0 {
+		return fmt.Sprintf("%s.%s", latest.semver.String(), strconv.Itoa(latest.additional)), nil
 	}
 	return latest.semver.String(), nil
 }
