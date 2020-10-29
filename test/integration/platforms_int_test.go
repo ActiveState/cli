@@ -63,8 +63,6 @@ func (suite *PlatformsIntegrationTestSuite) TestPlatforms_addRemove() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.PrepareActiveStateYAML(ts)
-
 	username := ts.CreateNewUser()
 	namespace := fmt.Sprintf("%s/%s", username, "platform-test")
 
@@ -105,8 +103,6 @@ func (suite *PlatformsIntegrationTestSuite) TestPlatforms_addRemoveLatest() {
 	suite.OnlyRunForTags(tagsuite.Platforms)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
-
-	suite.PrepareActiveStateYAML(ts)
 
 	username := ts.CreateNewUser()
 	namespace := fmt.Sprintf("%s/%s", username, "platform-test")
