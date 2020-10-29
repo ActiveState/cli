@@ -178,7 +178,11 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 
 	cp.SendLine("state activate --default")
 	cp.ExpectLongString(fmt.Sprintf("Successfully configured %s as the global default project.", namespace))
-	suite.Assert().FileExistsf(filepath.Join(ts.Dirs.DefaultBin, pythonExe), "Expected shim to be created:\n%s", cp.TrimmedSnapshot())
+	pythonShim := pythonExe
+	if runtime.GOOS == "windows" {
+		pythonShim = pythonExe + ".bat"
+	}
+	suite.Assert().FileExistsf(filepath.Join(ts.Dirs.DefaultBin, pythonShim), "Expected shim to be created:\n%s", cp.TrimmedSnapshot())
 
 	cp.SendLine("set VERBOSE=false")
 
@@ -196,7 +200,11 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	cp.ExpectExitCode(0)
 
 	// check that default activation works
-	cp = ts.SpawnInShell(fmt.Sprintf(`%s -c "import sys; print(sys.copyright);"`, filepath.Join(ts.Dirs.DefaultBin, pythonExe)), e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"))
+	cp = ts.SpawnCmdWithOpts(
+		filepath.Join(ts.Dirs.DefaultBin, pythonShim),
+		e2e.WithArgs("-c", "import sys; print(sys.copyright);"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
 	cp.Expect("ActiveState Software Inc.")
 	cp.ExpectExitCode(0)
 }
