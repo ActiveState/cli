@@ -149,9 +149,8 @@ func TestExpandProjectUnknownCategory(t *testing.T) {
 	prj := loadProject(t)
 
 	expanded, err := project.ExpandFromProject("$unknown.unknown", prj)
-	assert.Error(t, err, "Ran with failure")
-	assert.Equal(t, "", expanded, "Failed to expand")
-	assert.Contains(t, err.Error(), "unknown category", "Handled unknown category")
+	assert.NoError(t, err, "Ran without failure")
+	assert.Equal(t, "$unknown.unknown", expanded, "Didn't expand variable it doesnt own")
 }
 
 func TestExpandProjectUnknownName(t *testing.T) {
