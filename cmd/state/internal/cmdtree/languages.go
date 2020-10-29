@@ -37,7 +37,7 @@ func newLanguageInstallCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"install",
-		locale.Tl("languages_install_title", "Updating Languages"),
+		locale.Tl("languages_install_title", "Installing Language"),
 		locale.T("languages_install_cmd_description"),
 		prime.Output(),
 		[]*captain.Flag{},
@@ -50,13 +50,6 @@ func newLanguageInstallCommand(prime *primer.Values) *captain.Command {
 			},
 		},
 		func(ccmd *captain.Command, _ []string) error {
-			proj, fail := project.GetSafe()
-			if fail != nil {
-				return fail
-			}
-
-			params.Owner = proj.Owner()
-			params.ProjectName = proj.Name()
 			return runner.Run(&params)
 		},
 	)
