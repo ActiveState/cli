@@ -10,8 +10,6 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
-	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/globaldefault"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
@@ -80,23 +78,6 @@ func (v *VirtualEnvironment) Setup(installIfNecessary bool) *failures.Failure {
 	return nil
 }
 
-func removePath(envMap map[string]string, path string) map[string]string {
-	oldPath, ok := envMap["PATH"]
-	if !ok {
-		return envMap
-	}
-
-	var newPath []string
-	for _, p := range strings.Split(oldPath, string(os.PathListSeparator)) {
-		eq, err := fileutils.PathsEqual(p, path)
-		if err != nil || !eq {
-			newPath = append(newPath, p)
-		}
-	}
-	envMap["PATH"] = strings.Join(newPath, string(os.PathListSeparator))
-	return envMap
-}
-
 // GetEnv returns a map of the cumulative environment variables for all active virtual environments
 func (v *VirtualEnvironment) GetEnv(inherit bool, projectDir string) (map[string]string, error) {
 	envMap := make(map[string]string)
@@ -131,9 +112,6 @@ func (v *VirtualEnvironment) GetEnv(inherit bool, projectDir string) (map[string
 			}
 		}
 	}
-
-	// remove the global bin path from the environment PATH variable to avoid recursions
-	envMap = removePath(envMap, globaldefault.BinDir())
 
 	if inherit {
 		return inheritEnv(envMap), nil
