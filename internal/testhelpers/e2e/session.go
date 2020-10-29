@@ -118,11 +118,11 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 	var env []string
 	env = append(env, os.Environ()...)
 	env = append(env, []string{
-		"ACTIVESTATE_CLI_CONFIGDIR=" + dirs.Config,
-		"ACTIVESTATE_CLI_CACHEDIR=" + dirs.Cache,
-		"ACTIVESTATE_CLI_DISABLE_UPDATES=true",
-		"ACTIVESTATE_CLI_DISABLE_RUNTIME=true",
-		"ACTIVESTATE_PROJECT=",
+		constants.ConfigEnvVarName + "=" + dirs.Config,
+		constants.CacheEnvVarName + "=" + dirs.Cache,
+		constants.DisableUpdates + "=true",
+		constants.DisableRuntime + "=true",
+		constants.ProjectEnvVarName + "=",
 	}...)
 
 	if updatePath {
@@ -162,6 +162,18 @@ func (s *Session) SpawnWithOpts(opts ...SpawnOptions) *termtest.ConsoleProcess {
 // SpawnCmd executes an executable in a pseudo-terminal for integration tests
 func (s *Session) SpawnCmd(cmdName string, args ...string) *termtest.ConsoleProcess {
 	return s.SpawnCmdWithOpts(cmdName, WithArgs(args...))
+}
+
+// SpawnInShell runs the given command in a bash or cmd shell
+func (s *Session) SpawnInShell(cmd string, opts ...SpawnOptions) *termtest.ConsoleProcess {
+	exe := "/bin/bash"
+	shellArgs := []string{"-c"}
+	if runtime.GOOS == "windows" {
+		exe = "cmd.exe"
+		shellArgs = []string{"/k"}
+	}
+
+	return s.SpawnCmdWithOpts(exe, append(opts, WithArgs(append(shellArgs, cmd)...))...)
 }
 
 // SpawnCmdWithOpts executes an executable in a pseudo-terminal for integration tests
