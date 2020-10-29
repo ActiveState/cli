@@ -738,6 +738,7 @@ func getProjectFilePathFromDefault() (string, *failures.Failure) {
 	if defaultProjectPath == "" {
 		return "", nil
 	}
+	fmt.Printf("default project path is: %s, retrieved from: %s\n", defaultProjectPath, viper.ConfigFileUsed())
 
 	path, fail := fileutils.FindFileInPath(defaultProjectPath, constants.ConfigFileName)
 	if fail != nil && !fail.Type.Matches(fileutils.FailFindInPathNotFound) {

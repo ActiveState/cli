@@ -1,7 +1,6 @@
 package globaldefault
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -31,7 +30,6 @@ type DefaultConfigurer interface {
 
 // BinDir returns the global binary directory
 func BinDir() string {
-	fmt.Printf("cache path used for bin dir: %s\n", config.CachePath())
 	return filepath.Join(config.CachePath(), "bin")
 }
 

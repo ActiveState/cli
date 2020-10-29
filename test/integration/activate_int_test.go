@@ -46,7 +46,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("activate", "ActiveState-CLI/Python3")
+	cp := ts.Spawn("activate", "ActiveState-CLI/Python2")
 	cp.Expect("Where would you like to checkout")
 	cp.SendLine(cp.WorkDirectory())
 	cp.Expect("activated state", 20*time.Second)
@@ -194,7 +194,7 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	cp.ExpectExitCode(0)
 
 	// check that default activation works
-	cp = ts.SpawnInShell(fmt.Sprintf(`%s -c 'import sys; print(sys.copyright);'`, filepath.Join(ts.Dirs.DefaultBin, pythonExe)))
+	cp = ts.SpawnInShell(fmt.Sprintf(`%s -c 'import sys; print(sys.copyright);'`, filepath.Join(ts.Dirs.DefaultBin, pythonExe)), e2e.AppendEnv("VERBOSE=true", "ACTIVESTATE_CLI_DISABLE_RUNTIME=false"))
 	cp.Expect("ActiveState Software Inc.")
 	cp.ExpectExitCode(0)
 }

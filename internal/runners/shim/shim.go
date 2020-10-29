@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -42,13 +41,8 @@ func New(prime primeable) *Shim {
 }
 
 func (s *Shim) Run(args ...string) error {
-	project, fail := project.GetSafe()
-	if fail != nil {
+	if s.proj == nil {
 		return locale.NewError("shim_no_project_found", "Could not find a project.  You need to be in a project directory or specify a global default project via `state activate --default`")
-	}
-
-	if project == nil {
-		return errs.New("Could not find project.")
 	}
 
 	if len(args) == 0 {
@@ -69,7 +63,7 @@ func (s *Shim) Run(args ...string) error {
 	if err != nil {
 		return err
 	}
-
+	logging.Debug("Trying to shim %s on PATH=%s", args[0], env["PATH"])
 	// Ensure that we are not calling the shim recursively
 	oldval, ok := env[constants.ShimEnvVarName]
 	if ok && oldval == args[0] {
