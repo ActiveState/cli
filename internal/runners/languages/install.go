@@ -36,11 +36,9 @@ func (u *Update) Run(params *UpdateParams) error {
 		return err
 	}
 
-	if lang.Version == "" {
-		err = ensureLanguageProject(lang, u.project)
-		if err != nil {
-			return err
-		}
+	err = ensureLanguageProject(lang, u.project)
+	if err != nil {
+		return err
 	}
 
 	err = ensureLanguagePlatform(lang)
@@ -50,6 +48,9 @@ func (u *Update) Run(params *UpdateParams) error {
 
 	err = ensureVersion(lang)
 	if err != nil {
+		if lang.Version == "" {
+			return locale.WrapError(err, "err_language_project", "Language: {{.V0}} is already installed, you can update it by running {{.V0}}@<version>", lang.Name)
+		}
 		return err
 	}
 
@@ -98,12 +99,13 @@ func ensureLanguagePlatform(language *model.Language) error {
 }
 
 func ensureLanguageProject(language *model.Language, project *project.Project) error {
+	// This should ensure that the project language and the requested language match
 	for _, lang := range project.Languages() {
 		if strings.Contains(lang.Name(), language.Name) {
-			return locale.NewError("err_language_project", "Language: {{.V0}} is already installed, you can update it by running {{.V0}}@<version>", language.Name)
+			return nil
 		}
 	}
-	return nil
+	return locale.NewInputError("err_language_mismatch")
 }
 
 type fetchVersionsFunc func(name string) ([]string, *failures.Failure)
@@ -113,6 +115,10 @@ func ensureVersion(language *model.Language) error {
 }
 
 func ensureVersionTestable(language *model.Language, fetchVersions fetchVersionsFunc) error {
+	if language.Version == "" {
+		return locale.NewError("err_language_no_version", "No language version provided")
+	}
+
 	versions, fail := fetchVersions(language.Name)
 	if fail != nil {
 		return fail.ToError()
@@ -136,10 +142,6 @@ func removeLanguage(project *project.Project, current string) error {
 	platformLanguage, fail := model.FetchLanguageForCommit(*targetCommitID)
 	if fail != nil {
 		return fail.ToError()
-	}
-
-	if strings.ToLower(platformLanguage.Name) != strings.ToLower(current) {
-		return errors.New("err_language_mismatch")
 	}
 
 	fail = model.CommitLanguage(project.Owner(), project.Name(), model.OperationRemoved, platformLanguage.Name, platformLanguage.Version)
