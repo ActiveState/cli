@@ -118,11 +118,11 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 	var env []string
 	env = append(env, os.Environ()...)
 	env = append(env, []string{
-		"ACTIVESTATE_CLI_CONFIGDIR=" + dirs.Config,
-		"ACTIVESTATE_CLI_CACHEDIR=" + dirs.Cache,
-		"ACTIVESTATE_CLI_DISABLE_UPDATES=true",
-		"ACTIVESTATE_CLI_DISABLE_RUNTIME=true",
-		"ACTIVESTATE_PROJECT=",
+		constants.ConfigEnvVarName + "=" + dirs.Config,
+		constants.CacheEnvVarName + "=" + dirs.Cache,
+		constants.DisableUpdates + "=true",
+		constants.DisableRuntime + "=true",
+		constants.ProjectEnvVarName + "=",
 	}...)
 
 	if updatePath {
