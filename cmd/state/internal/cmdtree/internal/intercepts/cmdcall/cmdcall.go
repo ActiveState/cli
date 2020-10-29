@@ -1,32 +1,32 @@
-package beforeafter
+package cmdcall
 
 import (
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/events/cmdcall"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/runners/run"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
-// BeforeAfter manages the before/after command event intercept scope.
-type BeforeAfter struct {
+// CmdCall manages the event handling flow triggered by command calls.
+type CmdCall struct {
 	primer *primer.Values
 }
 
-// New returns a pointer to a prepared BeforeAfter instance.
-func New(p *primer.Values) *BeforeAfter {
-	return &BeforeAfter{
+// New returns a pointer to a prepared CmdCall instance.
+func New(p *primer.Values) *CmdCall {
+	return &CmdCall{
 		primer: p,
 	}
 }
 
 // InterceptExec handles the before command logic, calls the next ExecuteFunc,
 // and then handles the after command logic.
-func (ba *BeforeAfter) InterceptExec(next captain.ExecuteFunc) captain.ExecuteFunc {
+func (c *CmdCall) InterceptExec(next captain.ExecuteFunc) captain.ExecuteFunc {
 	return func(cmd *captain.Command, args []string) error {
-		runEvent := run.NewEvent(ba.primer, cmd.UseFull())
+		cc := cmdcall.New(c.primer, cmd.UseFull())
 
-		if err := runEvent.Run(project.BeforeCmd); err != nil {
+		if err := cc.Run(project.BeforeCmd); err != nil {
 			return errs.Wrap(err, "before-command event run failure")
 		}
 
@@ -34,7 +34,7 @@ func (ba *BeforeAfter) InterceptExec(next captain.ExecuteFunc) captain.ExecuteFu
 			return errs.Wrap(err, "before/after-command next func failure")
 		}
 
-		if err := runEvent.Run(project.AfterCmd); err != nil {
+		if err := cc.Run(project.AfterCmd); err != nil {
 			return errs.Wrap(err, "after-command event run failure")
 		}
 

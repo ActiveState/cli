@@ -1,7 +1,7 @@
 package cmdtree
 
 import (
-	"github.com/ActiveState/cli/cmd/state/internal/cmdtree/internal/intercepts/beforeafter"
+	"github.com/ActiveState/cli/cmd/state/internal/cmdtree/internal/intercepts/cmdcall"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/locale"
@@ -222,9 +222,9 @@ func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Comm
 		},
 	)
 
-	befAft := beforeafter.New(prime)
+	cmdCall := cmdcall.New(prime)
 
-	cmd.SetInterceptChain(befAft.InterceptExec)
+	cmd.SetInterceptChain(cmdCall.InterceptExec)
 
 	return cmd
 }

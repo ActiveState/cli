@@ -1,33 +1,43 @@
-package run
+package cmdcall
 
 import (
 	"errors"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/runners/run"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
-type Event struct {
+type primeable interface {
+	primer.Outputer
+	primer.Projecter
+	primer.Subsheller
+}
+
+type CmdCall struct {
 	out      output.Outputer
 	proj     *project.Project
 	subshell subshell.SubShell
 	cmdList  string
+	p        primeable
 }
 
-func NewEvent(p primeable, cmdList string) *Event {
-	return &Event{
+func New(p primeable, cmdList string) *CmdCall {
+	return &CmdCall{
 		out:      p.Output(),
 		proj:     p.Project(),
 		subshell: p.Subshell(),
 		cmdList:  cmdList,
+		p:        p,
 	}
 }
 
-func (e *Event) Run(t project.EventType) error {
+func (cc *CmdCall) Run(t project.EventType) error {
 	var events []*project.Event
-	for _, event := range e.proj.Events() {
+	for _, event := range cc.proj.Events() {
 		if event.Name() != string(t) {
 			continue
 		}
@@ -38,7 +48,7 @@ func (e *Event) Run(t project.EventType) error {
 		}
 
 		for _, scope := range scopes {
-			if scope == e.cmdList {
+			if scope == cc.cmdList {
 				events = append(events, event)
 			}
 		}
@@ -49,11 +59,7 @@ func (e *Event) Run(t project.EventType) error {
 		return nil
 	}
 
-	r := &Run{
-		out:      e.out,
-		proj:     e.proj,
-		subshell: e.subshell,
-	}
+	r := run.New(cc.p)
 
 	for _, event := range events {
 		val, err := event.Value()
