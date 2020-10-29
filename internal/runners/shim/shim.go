@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -50,10 +51,10 @@ func NewParams() *Params {
 
 func (s *Shim) Run(params *Params, args ...string) error {
 	if params.Path != "" {
-		var err error
-		s.proj, err = project.FromPath(params.Path)
-		if err != nil {
-			return locale.WrapInputError(err, "shim_no_project_at_path", "Could not find project file at {{.V0}}", params.Path)
+		var fail *failures.Failure
+		s.proj, fail = project.FromPath(params.Path)
+		if fail != nil {
+			return locale.WrapInputError(fail.ToError(), "shim_no_project_at_path", "Could not find project file at {{.V0}}", params.Path)
 		}
 	}
 	if s.proj == nil {

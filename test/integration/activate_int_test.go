@@ -196,7 +196,7 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	cp.ExpectExitCode(0)
 
 	// check that default activation works
-	cp = ts.SpawnInShell(fmt.Sprintf(`%s -c 'import sys; print(sys.copyright);'`, filepath.Join(ts.Dirs.DefaultBin, pythonExe)), e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"))
+	cp = ts.SpawnInShell(fmt.Sprintf(`%s -c "import sys; print(sys.copyright);"`, filepath.Join(ts.Dirs.DefaultBin, pythonExe)), e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"))
 	cp.Expect("ActiveState Software Inc.")
 	cp.ExpectExitCode(0)
 }
