@@ -7,6 +7,7 @@ See license.txt in same directory for license information
 
 import (
 	"io"
+	"os"
 	"syscall"
 	"unsafe"
 
