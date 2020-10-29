@@ -32,6 +32,10 @@ type primeable interface {
 	primer.Projecter
 }
 
+type Params struct {
+	Path string
+}
+
 func New(prime primeable) *Shim {
 	return &Shim{
 		prime.Subshell(),
@@ -40,7 +44,18 @@ func New(prime primeable) *Shim {
 	}
 }
 
-func (s *Shim) Run(args ...string) error {
+func NewParams() *Params {
+	return &Params{}
+}
+
+func (s *Shim) Run(params *Params, args ...string) error {
+	if params.Path != "" {
+		var err error
+		s.proj, err = project.FromPath(params.Path)
+		if err != nil {
+			return locale.WrapInputError(err, "shim_no_project_at_path", "Could not find project file at {{.V0}}", params.Path)
+		}
+	}
 	if s.proj == nil {
 		return locale.NewError("shim_no_project_found", "Could not find a project.  You need to be in a project directory or specify a global default project via `state activate --default`")
 	}
