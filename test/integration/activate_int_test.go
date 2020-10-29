@@ -176,7 +176,7 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 
 	cp.SendLine("echo $ACTIVESTATE_CLI_CONFIGDIR")
 
-	cp.SendLine("VERBOSE=true state activate --default")
+	cp.SendLine("state activate --default")
 	cp.ExpectLongString(fmt.Sprintf("Successfully configured %s as the global default project.", namespace))
 	suite.Assert().FileExistsf(filepath.Join(ts.Dirs.DefaultBin, pythonExe), "Expected shim to be created:\n%s", cp.TrimmedSnapshot())
 
