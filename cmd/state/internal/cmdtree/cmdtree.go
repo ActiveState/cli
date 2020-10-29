@@ -1,8 +1,6 @@
 package cmdtree
 
 import (
-	"fmt"
-
 	"github.com/ActiveState/cli/cmd/state/internal/cmdtree/internal/intercepts/beforeafter"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/condition"
@@ -144,6 +142,7 @@ type globalOptions struct {
 	Monochrome bool
 }
 
+// Group instances are used to group command help output.
 var (
 	EnvironmentGroup = captain.NewCommandGroup(locale.Tl("group_environment", "Environment Management"), 10)
 	PackagesGroup    = captain.NewCommandGroup(locale.Tl("group_packages", "Package Management"), 9)
@@ -223,33 +222,9 @@ func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Comm
 		},
 	)
 
-	outer := func(next captain.ExecuteFunc) captain.ExecuteFunc {
-		return func(cmd *captain.Command, args []string) error {
-			fmt.Println("common-outer before")
-			if err := next(cmd, args); err != nil {
-				fmt.Println("err with common-outer next")
-				return err
-			}
-			fmt.Println("common-outer after")
-			return nil
-		}
-	}
-
 	befAft := beforeafter.New(prime)
 
-	inner := func(next captain.ExecuteFunc) captain.ExecuteFunc {
-		return func(cmd *captain.Command, args []string) error {
-			fmt.Println("common-inner before")
-			if err := next(cmd, args); err != nil {
-				fmt.Println("err with inner next")
-				return err
-			}
-			fmt.Println("common-inner after")
-			return nil
-		}
-	}
-
-	cmd.SetInterceptChain(outer, befAft.InterceptExec, inner)
+	cmd.SetInterceptChain(befAft.InterceptExec)
 
 	return cmd
 }

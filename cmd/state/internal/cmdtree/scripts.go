@@ -1,8 +1,6 @@
 package cmdtree
 
 import (
-	"fmt"
-
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
@@ -12,34 +10,17 @@ import (
 func newScriptsCommand(prime *primer.Values) *captain.Command {
 	runner := scripts.NewScripts(prime)
 
-	inner := func(next captain.ExecuteFunc) captain.ExecuteFunc {
-		return func(cmd *captain.Command, args []string) error {
-			fmt.Println("scripts-only before")
-			if err := next(cmd, args); err != nil {
-				fmt.Println("err with scripts-only next")
-				return err
-			}
-			fmt.Println("scripts-only after")
-			return nil
-		}
-	}
-
-	cmd := captain.NewCommand(
+	return captain.NewCommand(
 		"scripts",
 		locale.Tl("scripts_title", "Listing Scripts"),
 		locale.T("scripts_description"),
 		prime.Output(),
 		[]*captain.Flag{},
 		[]*captain.Argument{},
-		func(cmd *captain.Command, args []string) error {
+		func(ccmd *captain.Command, args []string) error {
 			return runner.Run()
 		},
-	)
-
-	cmd.SetGroup(AutomationGroup)
-	cmd.SetInterceptChain(inner)
-
-	return cmd
+	).SetGroup(AutomationGroup)
 }
 
 func newScriptsEditCommand(prime *primer.Values) *captain.Command {
@@ -71,5 +52,4 @@ func newScriptsEditCommand(prime *primer.Values) *captain.Command {
 			return editRunner.Run(&params)
 		},
 	)
-
 }
