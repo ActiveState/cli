@@ -46,7 +46,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("activate", "ActiveState-CLI/Python2")
+	cp := ts.Spawn("activate", "ActiveState-CLI/Python3")
 	cp.Expect("Where would you like to checkout")
 	cp.SendLine(cp.WorkDirectory())
 	cp.Expect("activated state", 20*time.Second)
@@ -61,7 +61,11 @@ func (suite *ActivateIntegrationTestSuite) TestActivateUsingCommitID() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("activate", "ActiveState-CLI/Python2#7b3a1b24-1a65-4f71-a2b8-18d3d5116b47")
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("activate", "ActiveState-CLI/Python3#6d9280e7-75eb-401a-9e71-0d99759fbad3"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+
 	cp.Expect("Where would you like to checkout")
 	cp.SendLine(cp.WorkDirectory())
 	cp.Expect("activated state", 10*time.Second)
@@ -76,7 +80,10 @@ func (suite *ActivateIntegrationTestSuite) TestActivateNotOnPath() {
 	ts := e2e.NewNoPathUpdate(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("activate", "ActiveState-CLI/Python2")
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("activate", "ActiveState-CLI/Python2"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
 	cp.Expect("Where would you like to checkout")
 	cp.SendLine(cp.WorkDirectory())
 
@@ -343,7 +350,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_FromCache() {
 	defer ts.Close()
 
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("activate", "ActiveState-CLI/Python2", "--path", ts.Dirs.Work),
+		e2e.WithArgs("activate", "ActiveState-CLI/small-python", "--path", ts.Dirs.Work),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Downloading")
@@ -356,7 +363,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_FromCache() {
 
 	// next activation is cached
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("activate", "ActiveState-CLI/Python2", "--path", ts.Dirs.Work),
+		e2e.WithArgs("activate", "ActiveState-CLI/small-python", "--path", ts.Dirs.Work),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Reusing cached runtime environment")
@@ -371,7 +378,10 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_JSON() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("activate", "ActiveState-CLI/Python3", "--output", "json")
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("activate", "ActiveState-CLI/small-python", "--output", "json"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
 	cp.Expect("Where would you like to checkout")
 	cp.SendLine(cp.WorkDirectory())
 	cp.Expect(`"ACTIVESTATE_ACTIVATED":"`)
@@ -383,7 +393,10 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_Command() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("activate", "ActiveState-CLI/Python2", "-c", "echo CUSTOM_COMMAND")
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("activate", "ActiveState-CLI/small-python", "-c", "echo CUSTOM_COMMAND"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
 	cp.Expect("Where would you like to checkout")
 	cp.SendLine(cp.WorkDirectory())
 	cp.Expect("CUSTOM_COMMAND")
