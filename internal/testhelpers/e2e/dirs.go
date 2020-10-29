@@ -58,7 +58,7 @@ func NewDirs(base string) (*Dirs, error) {
 
 // Close removes the temporary directories
 func (d *Dirs) Close() error {
-	subdirs := []string{d.Bin, d.Config, d.Work}
+	subdirs := []string{d.Bin, d.Config, d.Work, d.Cache}
 	for _, subdir := range subdirs {
 		if err := os.RemoveAll(subdir); err != nil {
 			return err
