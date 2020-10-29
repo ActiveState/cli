@@ -136,6 +136,9 @@ scripts:
     description: "Runs a remote debugger, that can be hooked into from your IDE, example usage: `state run debug activate` (will debug `state activate`)"
     standalone: true
     value: dlv debug --headless --listen=:2346 --api-version=2 github.com/ActiveState/cli/cmd/state -- $@
+  - name: display
+    language: bash
+    value: echo ">>>>>> EXAMPLE <<<<<<"
 events:
   - name: activate
     if: ne .Shell "cmd"
@@ -159,3 +162,6 @@ events:
   - name: file-changed
     scope: [ "locale" ]
     value: packr
+  - name: after-command
+    scope: ["scripts"]
+    value: display

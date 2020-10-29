@@ -1,6 +1,9 @@
 package cmdtree
 
 import (
+	"fmt"
+
+	"github.com/ActiveState/cli/cmd/state/internal/cmdtree/internal/middleware/beforeafter"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/locale"
@@ -213,6 +216,35 @@ func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Comm
 			return runner.Run(ccmd.Usage)
 		},
 	)
+
+	outer := func(next captain.ExecuteFunc) captain.ExecuteFunc {
+		return func(cmd *captain.Command, args []string) error {
+			fmt.Println("common-outer before")
+			if err := next(cmd, args); err != nil {
+				fmt.Println("err with common-outer next")
+				return err
+			}
+			fmt.Println("common-outer after")
+			return nil
+		}
+	}
+
+	befAft := beforeafter.New(prime)
+
+	inner := func(next captain.ExecuteFunc) captain.ExecuteFunc {
+		return func(cmd *captain.Command, args []string) error {
+			fmt.Println("common-inner before")
+			if err := next(cmd, args); err != nil {
+				fmt.Println("err with inner next")
+				return err
+			}
+			fmt.Println("common-inner after")
+			return nil
+		}
+	}
+
+	cmd.SetInterceptChain(outer, befAft.Wrap, inner)
+	cmd.SetInterceptChain(nil)
 
 	return cmd
 }

@@ -29,6 +29,8 @@ type cobraCommander interface {
 
 type ExecuteFunc func(cmd *Command, args []string) error
 
+type InterceptFunc func(ExecuteFunc) ExecuteFunc
+
 type CommandGroup struct {
 	name     string
 	priority int
@@ -60,7 +62,8 @@ type Command struct {
 	flags     []*Flag
 	arguments []*Argument
 
-	execute ExecuteFunc
+	execute        ExecuteFunc
+	interceptChain []InterceptFunc
 
 	// deferAnalytics should be set if the command handles the GA reporting in its execute function
 	deferAnalytics bool
@@ -272,6 +275,22 @@ func (c *Command) Arguments() []*Argument {
 	return c.arguments
 }
 
+func (c *Command) SetInterceptChain(fns ...InterceptFunc) {
+	c.interceptChain = fns
+}
+
+func (c *Command) interceptFunc() InterceptFunc {
+	return func(fn ExecuteFunc) ExecuteFunc {
+		for i := len(c.interceptChain) - 1; i >= 0; i-- {
+			if c.interceptChain[i] == nil {
+				continue
+			}
+			fn = c.interceptChain[i](fn)
+		}
+		return fn
+	}
+}
+
 // SetGroup sets the group this command belongs to. This defaults to empty, meaning the command is ungrouped.
 // Realistically only top level commands really need a group.
 func (c *Command) SetGroup(group CommandGroup) *Command {
@@ -298,6 +317,9 @@ func (c *Command) AddChildren(children ...*Command) {
 	for _, child := range children {
 		c.commands = append(c.commands, child)
 		c.cobra.AddCommand(child.cobra)
+
+		interceptChain := append(c.interceptChain, child.interceptChain...)
+		child.SetInterceptChain(interceptChain...)
 	}
 }
 
@@ -417,7 +439,10 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 		c.out.Notice(txtstyle.NewTitle(c.title))
 	}
 
-	return c.execute(c, args)
+	intercept := c.interceptFunc()
+	execute := intercept(c.execute)
+
+	return execute(c, args)
 }
 
 func (c *Command) runFlags(persistOnly bool) {
