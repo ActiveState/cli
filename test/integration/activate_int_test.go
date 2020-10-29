@@ -174,11 +174,13 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	cp.SendLine("state activate --default something/else")
 	cp.ExpectLongString("Cannot set something/else as the global default project while in an activated state.")
 
-	cp.SendLine("echo $ACTIVESTATE_CLI_CONFIGDIR")
+	cp.SendLine("set VERBOSE=true")
 
 	cp.SendLine("state activate --default")
 	cp.ExpectLongString(fmt.Sprintf("Successfully configured %s as the global default project.", namespace))
 	suite.Assert().FileExistsf(filepath.Join(ts.Dirs.DefaultBin, pythonExe), "Expected shim to be created:\n%s", cp.TrimmedSnapshot())
+
+	cp.SendLine("set VERBOSE=false")
 
 	// test that other executables that use python work as well
 	pipExe := "pip" + version
