@@ -609,3 +609,16 @@ func TrackBranch(source, target *mono_models.Project) *failures.Failure {
 	}
 	return nil
 }
+
+func GetRevertCommit(from, to strfmt.UUID) (*mono_models.Commit, error) {
+	params := vcsClient.NewGetRevertCommitParams()
+	params.SetCommitFromID(from)
+	params.SetCommitToID(to)
+
+	res, err := authentication.Client().VersionControl.GetRevertCommit(params, authentication.ClientAuth())
+	if err != nil {
+		return nil, locale.WrapError(err, "err_get_revert_commit", "Could not revert from commit ID {{.V0}} to {{.V1}}", from.String(), to.String())
+	}
+
+	return res.Payload, nil
+}

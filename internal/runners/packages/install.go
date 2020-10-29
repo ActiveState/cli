@@ -50,18 +50,5 @@ func (a *Install) run(params InstallRunParams) error {
 	}
 
 	name, version := splitNameAndVersion(params.Name)
-
-	operation := model.OperationAdded
-	hasPkg, err := model.HasPackage(a.proj.CommitUUID(), name)
-	if err != nil {
-		return locale.WrapError(
-			err, "err_checking_package_exists",
-			"Cannot verify if package is already in use.",
-		)
-	}
-	if hasPkg {
-		operation = model.OperationUpdated
-	}
-
-	return executePackageOperation(a.proj, a.out, a.auth, a.Prompter, language, name, version, operation)
+	return executePackageOperation(a.proj, a.out, a.auth, a.Prompter, language, name, version, model.OperationAdded)
 }

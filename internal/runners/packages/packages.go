@@ -6,6 +6,7 @@ import (
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
@@ -54,16 +55,40 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 		return locale.WrapError(err, "package_ingredient_err", "Failed to resolve an ingredient named {{.V0}}.", name)
 	}
 
+	// Check if this is an addition or an update
+	if operation == model.OperationAdded {
+		req, err := model.GetRequirement(pj.CommitUUID(), ingredient.Namespace, name)
+		if err != nil {
+			return errs.Wrap(err, "Could not get requirement")
+		}
+		if req != nil {
+			operation = model.OperationUpdated
+		}
+	}
+
 	parentCommitID := pj.CommitUUID()
 	commitID, fail := model.CommitPackage(parentCommitID, operation, name, ingredient.Namespace, version)
 	if fail != nil {
 		return locale.WrapError(fail.ToError(), "err_package_"+string(operation))
 	}
 
-	if !isHeadless {
-		err := model.UpdateProjectBranchCommit(pj.Owner(), pj.Name(), commitID)
-		if err != nil {
-			return locale.WrapError(err, "err_package_"+string(operation))
+	revertCommit, err := model.GetRevertCommit(pj.CommitUUID(), commitID)
+	if err != nil {
+		return errs.Wrap(err, "Could not get revert commit to check if changes we indeed made")
+	}
+
+	hadEffect := len(revertCommit.Changeset) == 0
+
+	// Update project references to the new commit, if changes were indeed made (otherwise we effectively drop the new commit)
+	if hadEffect {
+		if !isHeadless {
+			err := model.UpdateProjectBranchCommit(pj.Owner(), pj.Name(), commitID)
+			if err != nil {
+				return locale.WrapError(err, "err_package_"+string(operation))
+			}
+		}
+		if fail := pj.Source().SetCommit(commitID.String(), isHeadless); fail != nil {
+			return fail.WithDescription("err_package_update_pjfile")
 		}
 	}
 
@@ -75,11 +100,6 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 		out.Notice(locale.Tl("package_build_in_progress",
 			"A new build with your changes has been started remotely, please run `state pull` when the build has finished. You can track the build at https://{{.V0}}/{{.V1}}/{{.V2}}.",
 			constants.PlatformURL, pj.Owner(), pj.Name()))
-	} else {
-		// Only update commit ID if the runtime update worked
-		if fail := pj.Source().SetCommit(commitID.String(), isHeadless); fail != nil {
-			return fail.WithDescription("err_package_update_pjfile")
-		}
 	}
 
 	// Print the result
