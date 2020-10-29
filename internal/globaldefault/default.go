@@ -28,6 +28,7 @@ type DefaultConfigurer interface {
 	Set(key string, value interface{})
 }
 
+// BinDir returns the global binary directory
 func BinDir() string {
 	return filepath.Join(config.CachePath(), "bin")
 }
@@ -98,7 +99,7 @@ func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, r
 		return locale.WrapError(err, "err_unique_exes", "Could not detect unique executables, make sure your PATH and PATHEXT environment variables are properly configured.")
 	}
 
-	if err := createShims(exes); err != nil {
+	if err := createShims(exes, projectPath); err != nil {
 		return locale.WrapError(err, "err_createshims", "Could not create shim files to set up the default runtime environment.")
 	}
 
@@ -134,9 +135,9 @@ func cleanup() error {
 	return nil
 }
 
-func createShims(exePaths []string) error {
+func createShims(exePaths []string, projectPath string) error {
 	for _, exePath := range exePaths {
-		if err := createShim(exePath); err != nil {
+		if err := createShim(exePath, projectPath); err != nil {
 			return locale.WrapError(err, "err_createshim", "Could not create shim for {{.V0}}.", exePath)
 		}
 	}
@@ -144,13 +145,12 @@ func createShims(exePaths []string) error {
 	return nil
 }
 
-func createShim(exePath string) error {
+func createShim(exePath, projectPath string) error {
 	target := filepath.Clean(filepath.Join(BinDir(), filepath.Base(exePath)))
 	if rt.GOOS == "windows" {
 		oldExt := filepath.Ext(target)
 		target = target[0:len(target)-len(oldExt)] + ".bat"
 	}
-
 	logging.Debug("Shimming %s at %s", exePath, target)
 
 	// The link should not exist as we are always rolling back old shims before we run this code.
@@ -164,9 +164,10 @@ func createShim(exePath string) error {
 	}
 
 	tplParams := map[string]interface{}{
-		"exe":     exe,
-		"command": filepath.Base(exePath),
-		"denote":  shimDenoter,
+		"exe":         exe,
+		"command":     filepath.Base(exePath),
+		"projectPath": projectPath,
+		"denote":      shimDenoter,
 	}
 	box := packr.NewBox("../../assets/shim")
 	boxFile := "shim.sh"
