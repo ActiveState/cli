@@ -465,12 +465,15 @@ func TestNewProjectfile(t *testing.T) {
 }
 
 func TestValidateProjectURL(t *testing.T) {
-	fail := ValidateProjectURL("https://example.com/xowner/xproject")
+	fail := ValidateProjectURL("https://example.com/")
 	assert.Error(t, fail.ToError(), "This should be an invalid project URL")
 
 	fail = ValidateProjectURL("https://platform.activestate.com/xowner/xproject")
 	assert.Nil(t, fail, "This should not be an invalid project URL")
 
 	fail = ValidateProjectURL("https://platform.activestate.com/commit/commitid")
+	assert.Nil(t, fail, "This should not be an invalid project URL using the commit path")
+
+	fail = ValidateProjectURL("https://pr1234.activestate.build/commit/commitid")
 	assert.Nil(t, fail, "This should not be an invalid project URL using the commit path")
 }

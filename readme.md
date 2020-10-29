@@ -22,18 +22,15 @@ IEX(New-Object Net.WebClient).downloadString('https://platform.activestate.com/d
 ```
 
 ## Usage
-
 For usage information please refer to the [State Tool Documentation](http://docs.activestate.com/platform/state/).
 
 ## Development
 
 ### Requirements
-
 * Go 1.13 or above
 * [packr](https://github.com/gobuffalo/packr): `go get -u github.com/gobuffalo/packr/...`
 
 ### Building & Testing
-
 * **Building:** `state run build`
    * The built executable will be stored in the `build` directory
 * **Testing:**
@@ -47,7 +44,6 @@ For usage information please refer to the [State Tool Documentation](http://docs
 </sup>
 
 ### Refactoring
-
 Our codebase has various refactorings underway that are too large to land
 in a single PR, as such please keep the following guidelines in mind when
 contributing.

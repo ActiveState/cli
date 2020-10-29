@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/blang/semver"
 )
@@ -72,19 +73,19 @@ var lookup = [...]languageData{
 	},
 	{
 		"bash", "Bash", ".sh", true, "", "",
-		Executable{"", true},
+		Executable{"bash" + exeutils.Extension, true},
 	},
 	{
 		"sh", "Shell", ".sh", true, "", "",
-		Executable{"", true},
+		Executable{"sh" + exeutils.Extension, true},
 	},
 	{
 		"batch", "Batch", ".bat", false, "", "",
-		Executable{"", true},
+		Executable{"cmd.exe", true},
 	},
 	{
 		"powershell", "PowerShell", ".ps1", false, "", "",
-		Executable{"", true},
+		Executable{"powershell.exe", true},
 	},
 	{
 		"perl", "Perl", ".pl", true, "perl", "5.28.1",
@@ -245,8 +246,8 @@ func (l *Language) Type() string {
 // Executable contains details about an executable program used to interpret a
 // Language.
 type Executable struct {
-	name string
-	base bool
+	name            string
+	allowThirdParty bool
 }
 
 // Name returns the executables file's name.
@@ -254,16 +255,16 @@ func (e Executable) Name() string {
 	return e.name
 }
 
-// Builtin expresses whether the executable is expected to be provided by the
+// CanUseThirdParty expresses whether the executable is expected to be provided by the
 // shell environment.
-func (e Executable) Builtin() bool {
-	return e.base
+func (e Executable) CanUseThirdParty() bool {
+	return e.allowThirdParty
 }
 
 // Available returns whether the executable is not "builtin" and also has a
 // defined name.
 func (e Executable) Available() bool {
-	return !e.base && e.name != ""
+	return !e.allowThirdParty && e.name != ""
 }
 
 // Recognized returns all languages that are supported.
