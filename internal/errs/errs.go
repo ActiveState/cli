@@ -94,11 +94,11 @@ func (e *ErrorWithTips) ErrorTips() []string {
 }
 
 func AddTips(err error, tips ...string) error {
-	if v, ok := err.(ErrorTips); ok {
-		v.AddTips(tips...)
-		return err
+	if _, ok := err.(ErrorTips); !ok {
+		err = newError(err, nil)
 	}
-	return &ErrorWithTips{err, tips}
+	err.(ErrorTips).AddTips(tips...)
+	return err
 }
 
 // errIsNil is a dirty little helper function that helps surface fail=nil type issues, to be removed once we get rid of failures

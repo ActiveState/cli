@@ -254,7 +254,8 @@ func UpdateBranchCommit(branchID strfmt.UUID, commitID strfmt.UUID) *failures.Fa
 
 	_, err := authentication.Client().VersionControl.UpdateBranch(params, authentication.ClientAuth())
 	if err != nil {
-		return FailUpdateBranch.New(locale.Tr("err_update_branch", err.Error()))
+		msg := api.ErrorMessageFromPayload(err)
+		return FailUpdateBranch.New(locale.Tr("err_update_branch", msg))
 	}
 	return nil
 }

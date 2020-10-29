@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
@@ -181,7 +182,7 @@ func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, nam
 	err = subs.Run(sf.Filename(), args...)
 	if err != nil {
 		if len(attempted) > 0 {
-			return locale.WrapInputError(
+			err = locale.WrapInputError(
 				err,
 				"err_run_script",
 				"Script execution fell back to {{.V0}} after {{.V1}} was not detected in your project or system. Please ensure your script is compatible with one, or more, of: {{.V0}}, {{.V1}}",
@@ -189,7 +190,9 @@ func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, nam
 				strings.Join(attempted, ", "),
 			)
 		}
-		return err
+		return errs.AddTips(
+			locale.WrapError(err, "err_script_run", "Your script failed to execute: {{.V0}}.", err.Error()),
+			locale.Tl("script_run_tip", "Edit the script '[ACTIONABLE]{{.V0}}[/RESET]' in your [ACTIONABLE]activestate.yaml[/RESET].", script.Name()))
 	}
 	return nil
 }

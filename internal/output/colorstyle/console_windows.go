@@ -7,8 +7,11 @@ See license.txt in same directory for license information
 
 import (
 	"io"
+	"os"
 	"syscall"
 	"unsafe"
+
+	"github.com/ActiveState/cli/internal/logging"
 )
 
 var consoleStyleMap = map[Style]uint16{
@@ -75,6 +78,14 @@ func New(writer io.Writer) *Styler {
 }
 
 func (n *Styler) SetStyle(s Style, bright bool) {
+	defer func() {
+		if r := recover(); r != nil {
+			if os.Getenv("CI") == "" {
+				logging.Errorf("colorstyle.SetStyle failed with: %v", r)
+			}
+		}
+	}()
+
 	if s == Bold || s == Underline {
 		return // underline/bold is not supported on windows
 	}
@@ -83,7 +94,7 @@ func (n *Styler) SetStyle(s Style, bright bool) {
 	if s == Default || s == Reset {
 		attr = bufferInfo.WAttributes
 	} else if s == Dim {
-		attr = bufferInfo.WAttributes
+		attr = attr & ^consoleColorMask | consoleStyleMap[Black]
 		bright = true
 	} else {
 		if style, ok := consoleStyleMap[s]; ok {

@@ -1,4 +1,5 @@
 @echo off
+
 {{if ne .Owner ""}}
 SET PROMPT=[{{.Owner}}/{{.Name}}]$S$P$G
 {{end}}
@@ -24,8 +25,14 @@ DOSKEY {{$K}}="{{$execCmd}}" run "{{$CMD}}" $*
 
 cd {{.WD}}
 
-echo {{.ActivateEventMessage}}
+{{if ne .ActivateEventMessage ""}}
+    {{range $line := splitLines .ActivateEventMessage}}
+        {{if eq $line ""}}echo.{{else}}echo {{$line}}{{end}}
+    {{end}}
+{{end}}
 
 {{.UserScripts}}
 
-echo {{.ActivatedMessage}}
+{{range $line := splitLines .ActivatedMessage}}
+    {{if eq $line ""}}echo.{{else}}echo {{$line}}{{end}}
+{{end}}
