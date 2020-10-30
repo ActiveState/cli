@@ -2,8 +2,8 @@ package cmdcall
 
 import (
 	"github.com/ActiveState/cli/internal/captain"
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/events/cmdcall"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -27,15 +27,24 @@ func (c *CmdCall) InterceptExec(next captain.ExecuteFunc) captain.ExecuteFunc {
 		cc := cmdcall.New(c.primer, cmd.UseFull())
 
 		if err := cc.Run(project.BeforeCmd); err != nil {
-			return errs.Wrap(err, "before-command event run failure")
+			return locale.WrapError(
+				err, "err_intercept_cmdcall_before",
+				"before-command event run failure",
+			)
 		}
 
 		if err := next(cmd, args); err != nil {
-			return errs.Wrap(err, "before/after-command next func failure")
+			return locale.WrapError(
+				err, "err_intercept_cmdcall_next",
+				"before/after-command next func failure",
+			)
 		}
 
 		if err := cc.Run(project.AfterCmd); err != nil {
-			return errs.Wrap(err, "after-command event run failure")
+			return locale.WrapError(
+				err, "err_intercept_cmdcall_after",
+				"after-command event run failure",
+			)
 		}
 
 		return nil
