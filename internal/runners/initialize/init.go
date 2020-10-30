@@ -110,37 +110,6 @@ func (r *Initialize) Run(params *RunParams) error {
 	return err
 }
 
-func runHeadless(params *RunParams, out output.Outputer, proj *project.Project) (string, error) {
-	if params.Language != "" {
-		return "", locale.NewInputError("init_headless_lang_provided_err", "You should not provide a language, dude!")
-	}
-
-	headlessCommitID := proj.CommitID()
-
-	err := proj.Source().SetNamespace(params.Namespace.Owner, params.Namespace.Project)
-	if err != nil {
-		return "", errs.Wrap(err, "Could not set namespace in project file.")
-	}
-
-	fail := proj.Source().SetCommit(headlessCommitID, false)
-	if fail != nil {
-		return "", errs.Wrap(fail.ToError(), "Could not set commit id in project file.")
-	}
-
-	path := params.Path
-	if path == "" {
-		path, err = osutils.Getwd()
-		if err != nil {
-			return "", errs.Wrap(err, "Could not determine current working directory.")
-		}
-	}
-
-	out.Notice(locale.Tr(
-		"init_success",
-		params.Namespace.Project, params.Namespace.Owner, path))
-	return path, nil
-}
-
 func run(params *RunParams, out output.Outputer, proj *project.Project) (string, error) {
 	// try to initialize project at --path if provided
 	if params.Path != "" {
@@ -151,41 +120,68 @@ func run(params *RunParams, out output.Outputer, proj *project.Project) (string,
 			proj = nil
 		}
 	}
-	if proj != nil && proj.IsHeadless() {
-		return runHeadless(params, out, proj)
+
+	path := params.Path
+	// check if we are converting a headless commit
+	convertHeadless := proj != nil && proj.IsHeadless()
+	if convertHeadless {
+		if params.Language != "" {
+			return "", locale.NewInputError("init_headless_lang_provided_err", "Language argument cannot be provided when converting a headless commit.")
+		}
+	} else {
+		if err := prepare(params); err != nil {
+			return "", err
+		}
+
+		logging.Debug("Init: %s/%s %v", params.Namespace.Owner, params.Namespace.Project, params.Private)
+
+		createParams := &projectfile.CreateParams{
+			Owner:           params.Namespace.Owner,
+			Project:         params.Namespace.Project,
+			Language:        params.language.String(),
+			LanguageVersion: params.version,
+			Directory:       path,
+			Private:         params.Private,
+		}
+
+		if params.Style == SkeletonEditor {
+			box := packr.NewBox("../../../assets/")
+			createParams.Content = box.String("activestate.yaml.editor.tpl")
+		}
+
+		fail := projectfile.Create(createParams)
+		if fail != nil {
+			return "", fail
+		}
 	}
 
-	if err := prepare(params); err != nil {
-		return "", err
-	}
+	if convertHeadless {
+		headlessCommitID := proj.CommitID()
 
-	logging.Debug("Init: %s/%s %v", params.Namespace.Owner, params.Namespace.Project, params.Private)
+		err := proj.Source().SetNamespace(params.Namespace.Owner, params.Namespace.Project)
+		if err != nil {
+			return "", errs.Wrap(err, "Could not set namespace in project file.")
+		}
 
-	createParams := &projectfile.CreateParams{
-		Owner:           params.Namespace.Owner,
-		Project:         params.Namespace.Project,
-		Language:        params.language.String(),
-		LanguageVersion: params.version,
-		Directory:       params.Path,
-		Private:         params.Private,
-	}
+		fail := proj.Source().SetCommit(headlessCommitID, false)
+		if fail != nil {
+			return "", errs.Wrap(fail.ToError(), "Could not set commit id in project file.")
+		}
 
-	if params.Style == SkeletonEditor {
-		box := packr.NewBox("../../../assets/")
-		createParams.Content = box.String("activestate.yaml.editor.tpl")
-	}
-
-	fail := projectfile.Create(createParams)
-	if fail != nil {
-		return "", fail
+		if path == "" {
+			path, err = osutils.Getwd()
+			if err != nil {
+				return "", errs.Wrap(err, "Could not determine current working directory.")
+			}
+		}
 	}
 
 	out.Notice(locale.Tr(
 		"init_success",
 		params.Namespace.Owner,
 		params.Namespace.Project,
-		params.Path,
+		path,
 	))
 
-	return params.Path, nil
+	return path, nil
 }

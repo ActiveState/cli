@@ -70,7 +70,7 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 
 	// anonymous commit
 	wd := filepath.Join(cp.WorkDirectory(), namespace)
-	cp = ts.SpawnWithOpts(e2e.WithArgs("install", "datetime"), e2e.WithWorkDirectory(wd))
+	cp = ts.SpawnWithOpts(e2e.WithArgs("install", "DateTime"), e2e.WithWorkDirectory(wd))
 	cp.Expect("You're about to add packages as an anonymous user")
 	cp.SendLine("y")
 	cp.Expect("added")
