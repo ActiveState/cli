@@ -1,9 +1,9 @@
 package cmdcall
 
 import (
-	"errors"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
@@ -55,7 +55,10 @@ func (cc *CmdCall) Run(t project.EventType) error {
 
 		scopes, err := event.Scope()
 		if err != nil {
-			return err // TODO: this
+			return locale.WrapError(
+				err, "cmdcall_event_err_get_scope",
+				"Cannot obtain scopes from event",
+			)
 		}
 
 		for _, scope := range scopes {
@@ -73,16 +76,25 @@ func (cc *CmdCall) Run(t project.EventType) error {
 	for _, event := range events {
 		val, err := event.Value()
 		if err != nil {
-			return err // TODO: this
+			return locale.WrapError(
+				err, "cmdcall_event_err_get_value",
+				"Cannot get triggered event value",
+			)
 		}
 
 		ss := strings.Split(val, " ")
 		if len(ss) == 0 {
-			return errors.New("no script defined") // TODO: this
+			return locale.NewError(
+				"cmdcall_event_err_get_value",
+				"Triggered event value is empty",
+			)
 		}
 
 		if err := scriptrun.RunScript(cc.out, cc.subshell, cc.proj, ss[0], ss[1:]); err != nil {
-			return err // TODO: this
+			return locale.WrapError(
+				err, "cmdcall_event_err_script_run",
+				"Failure running defined script",
+			)
 		}
 	}
 
