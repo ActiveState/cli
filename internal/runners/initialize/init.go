@@ -121,7 +121,7 @@ func run(params *RunParams, out output.Outputer, proj *project.Project) (string,
 		}
 	}
 
-	path := params.Path
+	var path string
 	// check if we are converting a headless commit
 	convertHeadless := proj != nil && proj.IsHeadless()
 	if convertHeadless {
@@ -132,6 +132,7 @@ func run(params *RunParams, out output.Outputer, proj *project.Project) (string,
 		if err := prepare(params); err != nil {
 			return "", err
 		}
+		path = params.Path
 
 		logging.Debug("Init: %s/%s %v", params.Namespace.Owner, params.Namespace.Project, params.Private)
 
@@ -168,6 +169,7 @@ func run(params *RunParams, out output.Outputer, proj *project.Project) (string,
 			return "", errs.Wrap(fail.ToError(), "Could not set commit id in project file.")
 		}
 
+		path = params.Path
 		if path == "" {
 			path, err = osutils.Getwd()
 			if err != nil {
