@@ -1,6 +1,7 @@
 package platforms
 
 import (
+	"fmt"
 	"sort"
 	"strconv"
 	"strings"
@@ -74,10 +75,7 @@ func prepareParams(ps Params) (Params, error) {
 	}
 
 	if ps.Version == "" {
-		err := prepareLatestVersion(ps)
-		if err != nil {
-			return ps, err
-		}
+		return prepareLatestVersion(ps)
 	}
 
 	return ps, nil
@@ -94,24 +92,25 @@ func splitNameAndVersion(input string) (string, string) {
 	return name, version
 }
 
-func prepareLatestVersion(params Params) error {
+func prepareLatestVersion(params Params) (Params, error) {
 	platformUUID, fail := model.HostPlatformToPlatformID(params.Name)
 	if fail != nil {
-		return locale.WrapInputError(fail.ToError(), "err_resolve_platform_id", "Could not resolve platform ID from name: {{.V0}}", params.Name)
+		return params, locale.WrapInputError(fail.ToError(), "err_resolve_platform_id", "Could not resolve platform ID from name: {{.V0}}", params.Name)
 	}
 
 	platform, fail := model.FetchPlatformByUID(strfmt.UUID(platformUUID))
 	if fail != nil {
-		return locale.WrapError(fail.ToError(), "err_fetch_platform", "Could not get platform details")
+		return params, locale.WrapError(fail.ToError(), "err_fetch_platform", "Could not get platform details")
 	}
 	params.Name = *platform.Kernel.Name
 	params.Version = *platform.KernelVersion.Version
 
 	bitWidth, err := strconv.Atoi(*platform.CPUArchitecture.BitWidth)
 	if err != nil {
-		return locale.WrapError(err, "err_platform_bitwidth", "Unable to determine platform bit width")
+		return params, locale.WrapError(err, "err_platform_bitwidth", "Unable to determine platform bit width")
 	}
 	params.BitWidth = bitWidth
 
-	return nil
+	fmt.Println("Returning params: ", params)
+	return params, nil
 }
