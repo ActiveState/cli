@@ -50,7 +50,7 @@ func New(prime primeable) *Initialize {
 func prepare(params *RunParams) error {
 	if params.Language == "" {
 		// Manually check for language requirement, because we need to fallback on the --language flag to support editor.V0
-		return locale.NewInputError("err_init_no_language", "You need to supply the [NOTICE]language[/RESET] argument, run '[ACTIONABLE]state init --help[/RESET]' for more information.")
+		return locale.NewInputError("err_init_no_language", "You need to supply the [NOTICE]language[/RESET] argument, run `[ACTIONABLE]state init --help[/RESET]` for more information.")
 	}
 	langParts := strings.Split(params.Language, "@")
 	if len(langParts) > 1 {
