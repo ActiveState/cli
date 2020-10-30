@@ -36,14 +36,13 @@ func NewPush(config *viper.Viper, prime primeable) *Push {
 
 func (r *Push) Run() error {
 	if !authentication.Get().Authenticated() {
-		return failures.FailUserInput.New("err_api_not_authenticated")
+		return locale.NewInputError("err_api_not_authenticated")
 	}
 
 	if r.project != nil && r.project.IsHeadless() {
-		return failures.FailUserInput.Wrap(locale.NewInputError(
+		return locale.NewInputError(
 			"err_push_headless",
-			"You must first create a project. Please visit {{.V0}} or run [ACTIONABLE]state init[/RESET] to create your project.", r.project.URL()),
-		)
+			"You must first create a project. Please visit {{.V0}} or run [ACTIONABLE]state init[/RESET] to create your project.", r.project.URL())
 	}
 
 	// Create the project remotely if it doesn't already exist
@@ -53,16 +52,15 @@ func (r *Push) Run() error {
 			return locale.WrapError(fail.ToError(), "err_push_try_project", "Failed to check for existence of project.")
 		}
 		// We have to reset handled failures since our legacy command handling still relies on this
-		// ie. failure occurred equals unsuccesful command
+		// ie. failure occurred equals unsuccessful command
 		failures.ResetHandled()
 	}
 
 	if pjm != nil {
 		if r.project.CommitID() == "" {
 			return failures.FailUserInput.New("push_already_exists", r.project.Owner(), r.project.Name())
-		} else {
-			r.Outputer.Notice(locale.T("push_up_to_date"))
 		}
+		r.Outputer.Notice(locale.T("push_up_to_date"))
 		return nil
 	}
 
