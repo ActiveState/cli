@@ -4,9 +4,10 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/runners/run"
+	"github.com/ActiveState/cli/internal/scriptrun"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -17,6 +18,8 @@ type primeable interface {
 	primer.Subsheller
 }
 
+// CmdCall manages dependencies for the handling of events triggered by command
+// calls.
 type CmdCall struct {
 	out      output.Outputer
 	proj     *project.Project
@@ -25,6 +28,7 @@ type CmdCall struct {
 	p        primeable
 }
 
+// New returns a prepared pointer to an instance of CmdCall.
 func New(p primeable, cmdList string) *CmdCall {
 	return &CmdCall{
 		out:      p.Output(),
@@ -35,7 +39,10 @@ func New(p primeable, cmdList string) *CmdCall {
 	}
 }
 
+// Run executes the event handling logic by running any relevant scripts.
 func (cc *CmdCall) Run(t project.EventType) error {
+	logging.Debug("cmdcall")
+
 	if cc.proj == nil {
 		return nil
 	}
@@ -63,8 +70,6 @@ func (cc *CmdCall) Run(t project.EventType) error {
 		return nil
 	}
 
-	r := run.New(cc.p)
-
 	for _, event := range events {
 		val, err := event.Value()
 		if err != nil {
@@ -76,7 +81,11 @@ func (cc *CmdCall) Run(t project.EventType) error {
 			return errors.New("no script defined") // TODO: this
 		}
 
-		if err := r.Run(ss[0], ss[1:]); err != nil {
+		if !scriptrun.ProjectHasScript(cc.proj, ss[0]) {
+			continue
+		}
+
+		if err := scriptrun.RunScript(cc.out, cc.subshell, cc.proj, ss[0], ss[1:]); err != nil {
 			return err // TODO: this
 		}
 	}
