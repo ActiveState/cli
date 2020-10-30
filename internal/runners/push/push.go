@@ -106,7 +106,11 @@ func (r *Push) languageForProject(pj *project.Project) (*language.Supported, str
 			return nil, "", errs.Wrap(fail.ToError(), "Failed to retrieve language information for headless commit.")
 		}
 
-		ls := language.Supported{Language: language.MakeByText(lang.Name)}
+		l, err := language.MakeByNameAndVersion(lang.Name, lang.Version)
+		if err != nil {
+			return nil, "", errs.Wrap(err, "Failed to convert commit language to supported language.")
+		}
+		ls := language.Supported{Language: l}
 		if !ls.Recognized() {
 			return nil, "", locale.NewError("err_push_invalid_language", lang.Name)
 		}
