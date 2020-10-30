@@ -36,6 +36,10 @@ func New(p primeable, cmdList string) *CmdCall {
 }
 
 func (cc *CmdCall) Run(t project.EventType) error {
+	if cc.proj == nil {
+		return nil
+	}
+
 	var events []*project.Event
 	for _, event := range cc.proj.Events() {
 		if event.Name() != string(t) {
