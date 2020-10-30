@@ -61,7 +61,7 @@ func (r *Push) Run() error {
 
 	if pjm != nil {
 		if r.project.CommitID() == "" {
-			return locale.NewError("push_already_exists", r.project.Owner(), r.project.Name())
+			return locale.NewError("push_already_exists", "The project [NOTICE]{{.V0}}/{{.V1}}[/RESET] already exists on the platform. To start using the latest version please run `[ACTIONABLE]state pull[/RESET]`.", r.project.Owner(), r.project.Name())
 		}
 		r.Outputer.Notice(locale.T("push_up_to_date"))
 		return nil
