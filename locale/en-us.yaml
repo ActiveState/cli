@@ -1003,7 +1003,7 @@ flag_platforms_shared_bitwidth_description:
 arg_platforms_shared_name:
   other: name
 arg_platforms_shared_name_description:
-  other: Platform name (Windows, Darwin, etc.)
+  other: Name[@<version>]
 arg_platforms_shared_version:
   other: version
 arg_platforms_shared_version_description:
