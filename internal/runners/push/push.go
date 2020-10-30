@@ -83,7 +83,7 @@ func (r *Push) Run() error {
 	} else {
 		_, commitID, fail := model.InitializeProject(r.project.Owner(), r.project.Name(), model.HostPlatform, lang, langVersion)
 		if fail != nil {
-			return errs.Wrap(fail.ToError(), "push_project_init_err", "Failed to initialize project {{.V0}}", r.project.Namespace().String())
+			return locale.WrapError(fail.ToError(), "push_project_init_err", "Failed to initialize project {{.V0}}", r.project.Namespace().String())
 		}
 		// Remove temporary language entry
 		pjf := r.project.Source()

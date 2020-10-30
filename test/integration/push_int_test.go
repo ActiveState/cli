@@ -38,7 +38,8 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 
 	wd := filepath.Join(cp.WorkDirectory(), namespace)
 	cp = ts.SpawnWithOpts(e2e.WithArgs("push"), e2e.WithWorkDirectory(wd))
-	cp.ExpectLongString(fmt.Sprintf("Project created at https://%s/%s/%s with language %s", constants.PlatformURL, username, pname, "python3"))
+	cp.ExpectLongString(fmt.Sprintf("Project created at https://%s/%s/%s", constants.PlatformURL, username, pname))
+	cp.ExpectLongString("with language python3")
 	cp.ExpectExitCode(0)
 
 	// Check that languages were reset
@@ -71,7 +72,7 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 	wd := filepath.Join(cp.WorkDirectory(), namespace)
 	cp = ts.SpawnWithOpts(e2e.WithArgs("install", "datetime"), e2e.WithWorkDirectory(wd))
 	cp.Expect("You're about to add packages as an anonymous user")
-	cp.Send("y")
+	cp.SendLine("y")
 	cp.Expect("added")
 	cp.ExpectExitCode(0)
 
