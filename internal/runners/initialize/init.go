@@ -147,7 +147,7 @@ func run(params *RunParams, out output.Outputer, proj *project.Project) (string,
 		var fail *failures.Failure
 		proj, fail = project.Parse(filepath.Join(params.Path, constants.ConfigFileName))
 		if fail != nil {
-			logging.Debug("No project file parsed at path: %v", fail.ToError())
+			logging.Debug("Could not parse project file at path: %v", fail.ToError())
 			proj = nil
 		}
 	}
