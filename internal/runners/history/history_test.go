@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 	gmodel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
@@ -22,7 +21,7 @@ func Test_printCommits(t *testing.T) {
 		name        string
 		args        args
 		wantStrings []string
-		wantFailure *failures.Failure
+		wantFailure error
 	}{
 		{
 			"Commits",

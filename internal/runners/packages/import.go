@@ -118,7 +118,7 @@ func (i *Import) Run(params ImportRunParams) error {
 		return fail.WithDescription("err_cannot_commit_changeset")
 	}
 
-	i.out.Notice(locale.T("package_update_config_file"))
+	i.out.Notice(locale.T("update_config"))
 
 	return nil
 }
