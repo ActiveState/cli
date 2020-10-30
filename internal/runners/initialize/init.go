@@ -106,6 +106,8 @@ func sanitizePath(params *RunParams) error {
 
 		params.Path = wd
 	}
+
+	return nil
 }
 
 // Run kicks-off the runner.
