@@ -40,7 +40,7 @@ func New(p primeable, cmdList string) *CmdCall {
 }
 
 // Run executes the event handling logic by running any relevant scripts.
-func (cc *CmdCall) Run(t project.EventType) error {
+func (cc *CmdCall) Run(eventType project.EventType) error {
 	logging.Debug("cmdcall")
 
 	if cc.proj == nil {
@@ -49,7 +49,7 @@ func (cc *CmdCall) Run(t project.EventType) error {
 
 	var events []*project.Event
 	for _, event := range cc.proj.Events() {
-		if event.Name() != string(t) {
+		if event.Name() != string(eventType) {
 			continue
 		}
 
