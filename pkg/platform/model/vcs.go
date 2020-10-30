@@ -344,7 +344,7 @@ func CommitChangeset(projOwner, projName, commitMsg string, changeset Changeset)
 
 // CommitInitial ...
 func CommitInitial(projectOwner, projectName, hostPlatform, language, langVersion string) (*mono_models.Project, strfmt.UUID, *failures.Failure) {
-	platformID, fail := hostPlatformToPlatformID(hostPlatform)
+	platformID, fail := HostPlatformToPlatformID(hostPlatform)
 	if fail != nil {
 		return nil, "", fail
 	}

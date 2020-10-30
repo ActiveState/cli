@@ -1,16 +1,14 @@
 package platforms
 
 import (
-	"fmt"
 	"sort"
 	"strconv"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/blang/semver"
+	"github.com/go-openapi/strfmt"
 )
 
 // Platform represents the output data of a platform.
@@ -75,11 +73,10 @@ func prepareParams(ps Params) (Params, error) {
 		ps.BitWidth = 32 << (^uint(0) >> 63) // gets host word size
 	}
 
-	var err error
 	if ps.Version == "" {
-		ps.Version, err = latestPlatformVersion(ps.Name)
+		err := prepareLatestVersion(ps)
 		if err != nil {
-			return ps, locale.WrapError(err, "err_prepare_params_latest", "Could not determine latest version for the platform: {{.V0}}", ps.Name)
+			return ps, err
 		}
 	}
 
@@ -97,55 +94,24 @@ func splitNameAndVersion(input string) (string, string) {
 	return name, version
 }
 
-// platformSemver covers the semvers used by the platform that do not conform
-// to the semver standard. (ie. they have an extra numerical value after patch)
-type platformSemver struct {
-	semver     semver.Version
-	additional int
-}
+func prepareLatestVersion(params Params) error {
+	platformUUID, fail := model.HostPlatformToPlatformID(params.Name)
+	if fail != nil {
+		return locale.WrapInputError(fail.ToError(), "err_resolve_platform_id", "Could not resolve platform ID from name: {{.V0}}", params.Name)
+	}
 
-func latestPlatformVersion(name string) (string, error) {
-	result, err := newSearchResult()
+	platform, fail := model.FetchPlatformByUID(strfmt.UUID(platformUUID))
+	if fail != nil {
+		return locale.WrapError(fail.ToError(), "err_fetch_platform", "Could not get platform details")
+	}
+	params.Name = *platform.Kernel.Name
+	params.Version = *platform.KernelVersion.Version
+
+	bitWidth, err := strconv.Atoi(*platform.CPUArchitecture.BitWidth)
 	if err != nil {
-		return "", locale.WrapError(err, "err_latest_search_platforms", "Could not get platforms search result")
+		return locale.WrapError(err, "err_platform_bitwidth", "Unable to determine platform bit width")
 	}
+	params.BitWidth = bitWidth
 
-	var latest platformSemver
-	for _, platform := range result.Platforms {
-		if strings.ToLower(platform.Name) == strings.ToLower(name) {
-			version := platform.Version
-			parts := strings.Split(version, ".")
-			var additional string
-			if len(parts) > 3 {
-				version = strings.Join(parts[:len(parts)-1], ".")
-				additional = parts[3]
-			}
-
-			parsed, err := semver.Parse(version)
-			if err != nil {
-				logging.Debug("Could not parse semver: %s for platform: %s", version, platform.Name)
-				continue
-			}
-
-			parsedAdditional, err := strconv.Atoi(additional)
-			if err != nil {
-				logging.Debug("Invalid patch value: %s for platform: %s", additional, platform.Name)
-				parsedAdditional = 0
-			}
-
-			if parsed.GE(latest.semver) && parsedAdditional >= latest.additional {
-				latest.semver = parsed
-				latest.additional = parsedAdditional
-			}
-		}
-	}
-
-	if latest.semver.Equals(semver.Version{}) {
-		return "", locale.NewError("err_platform_not_found", "Could not find latest version for platform: {{.V0}}", name)
-	}
-
-	if latest.additional != 0 {
-		return fmt.Sprintf("%s.%s", latest.semver.String(), strconv.Itoa(latest.additional)), nil
-	}
-	return latest.semver.String(), nil
+	return nil
 }
