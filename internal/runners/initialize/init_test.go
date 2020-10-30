@@ -194,7 +194,7 @@ func TestInitialize_Run(t *testing.T) {
 				Namespace: tt.args.namespace,
 				Path:      tt.args.path,
 				Language:  tt.args.language,
-			}, outputhelper.NewCatcher())
+			}, outputhelper.NewCatcher(), nil)
 			path = osutil.PrepareDir(path)
 
 			if tt.wantErr != nil {
