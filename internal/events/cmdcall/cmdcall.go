@@ -81,10 +81,6 @@ func (cc *CmdCall) Run(t project.EventType) error {
 			return errors.New("no script defined") // TODO: this
 		}
 
-		if !scriptrun.ProjectHasScript(cc.proj, ss[0]) {
-			continue
-		}
-
 		if err := scriptrun.RunScript(cc.out, cc.subshell, cc.proj, ss[0], ss[1:]); err != nil {
 			return err // TODO: this
 		}
