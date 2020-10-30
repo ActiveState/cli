@@ -32,18 +32,16 @@ type RunParams struct {
 
 // Initialize stores scope-related dependencies.
 type Initialize struct {
-	out  output.Outputer
-	proj *project.Project
+	out output.Outputer
 }
 
 type primeable interface {
 	primer.Outputer
-	primer.Projecter
 }
 
 // New returns a prepared ptr to Initialize instance.
 func New(prime primeable) *Initialize {
-	return &Initialize{prime.Output(), prime.Project()}
+	return &Initialize{prime.Output()}
 }
 
 func sanitize(params *RunParams) error {
@@ -96,11 +94,11 @@ func sanitizePath(params *RunParams) error {
 
 // Run kicks-off the runner.
 func (r *Initialize) Run(params *RunParams) error {
-	_, err := run(params, r.out, r.proj)
+	_, err := run(params, r.out)
 	return err
 }
 
-func run(params *RunParams, out output.Outputer, proj *project.Project) (string, error) {
+func run(params *RunParams, out output.Outputer) (string, error) {
 	if fail := params.Namespace.Validate(); fail != nil {
 		return "", locale.WrapInputError(fail.ToError(), "init_invalid_namespace_err", "The provided namespace argument is invalid.")
 	}

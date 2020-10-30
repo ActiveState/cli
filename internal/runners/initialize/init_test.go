@@ -41,7 +41,8 @@ func TestInitialize_Run(t *testing.T) {
 	if fail != nil {
 		panic(fmt.Sprintf("Cannot create dir: %v", fail.ToError()))
 	}
-	fileutils.WriteFile(fileutils.Join(tempDirWithConfig, constants.ConfigFileName), []byte(""))
+	fileutils.WriteFile(fileutils.Join(tempDirWithConfig, constants.ConfigFileName),
+		[]byte("project: https://platform.activestate.com/owner/name"))
 
 	tempDirWithFile := fileutils.Join(fileutils.TempDirUnsafe(), "withFile")
 	fail = fileutils.Mkdir(tempDirWithConfig)
@@ -194,7 +195,7 @@ func TestInitialize_Run(t *testing.T) {
 				Namespace: tt.args.namespace,
 				Path:      tt.args.path,
 				Language:  tt.args.language,
-			}, outputhelper.NewCatcher(), nil)
+			}, outputhelper.NewCatcher())
 			path = osutil.PrepareDir(path)
 
 			if tt.wantErr != nil {
