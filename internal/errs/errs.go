@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 	"github.com/ActiveState/cli/internal/rtutils"
+	"github.com/ActiveState/cli/internal/subshell/sscommon"
 )
 
 // Error enforces errors that include a stacktrace

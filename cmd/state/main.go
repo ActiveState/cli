@@ -11,7 +11,6 @@ import (
 	"github.com/rollbar/rollbar-go"
 
 	"github.com/ActiveState/cli/cmd/state/internal/cmdtree"
-	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config" // MUST be first!
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/constraints"
@@ -176,5 +175,5 @@ func run(args []string, out output.Outputer) (int, error) {
 	}
 
 	err = cmds.Execute(args[1:])
-	return captain.UnwrapError(err)
+	return unwrapError(err)
 }
