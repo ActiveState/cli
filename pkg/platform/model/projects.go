@@ -10,7 +10,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
@@ -121,32 +120,8 @@ func DefaultBranchForProject(pj *mono_models.Project) (*mono_models.Branch, *fai
 	return nil, FailNoDefaultBranch.New(locale.T("err_no_default_branch"))
 }
 
-// CreateProjectAtCommit creates a new project at an already existing commit
-func CreateProjectAtCommit(owner, name string, private bool, commitID strfmt.UUID) error {
-	_, fail := FetchLanguageForCommit(commitID)
-	if fail != nil {
-		return errs.Wrap(fail.ToError(), "Failed to retrieve language information for headless commit.")
-	}
-
-	pj, fail := CreateEmptyProject(owner, name, private)
-	if fail != nil {
-		return errs.Wrap(fail.ToError(), "Failed to create the project.")
-	}
-
-	err := UpdateProjectBranchCommit(pj, commitID)
-	if err != nil {
-		return errs.Wrap(err, "Failed to update new project %s/%s to commitID %s.", owner, name, commitID.String())
-	}
-	return nil
-}
-
-// CreateProject will create the project on the platform
-func CreateProject(owner, name, hostPlatform string, lang *language.Supported, langVersion string, private bool) (*mono_models.Project, strfmt.UUID, *failures.Failure) {
-	_, fail := CreateEmptyProject(owner, name, private)
-	if fail != nil {
-		return nil, "", fail
-	}
-
+// InitializeProject will create the project on the platform
+func InitializeProject(owner, name, hostPlatform string, lang *language.Supported, langVersion string) (*mono_models.Project, strfmt.UUID, *failures.Failure) {
 	var requirement string
 	if lang != nil {
 		requirement = lang.Requirement()

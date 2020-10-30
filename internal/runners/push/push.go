@@ -1,11 +1,11 @@
 package push
 
 import (
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/go-openapi/strfmt"
 
 	"github.com/spf13/viper"
 
@@ -66,55 +66,69 @@ func (r *Push) Run() error {
 		return nil
 	}
 
-	// try to create the project at the given commit id.
+	lang, langVersion, err := r.languageForProject(r.project)
+	if err != nil {
+		return errs.Wrap(err, "Failed to retrieve project language.")
+	}
+	r.Outputer.Notice(locale.Tr("push_creating_project", r.project.Owner(), r.project.Name()))
+
+	pjm, fail = model.CreateEmptyProject(r.project.Owner(), r.project.Name(), r.project.Private())
+	if fail != nil {
+		return locale.WrapError(fail.ToError(), "push_project_create_empty_err", "Failed to create an project {{.V0}}.", r.project.Namespace().String())
+	}
 	if r.project.CommitID() != "" {
-		err := model.CreateProjectAtCommit(r.project.Owner(), r.project.Name(), r.project.Private(), r.project.CommitUUID())
+		// try to create the project at the given commit id.
+		err := model.UpdateProjectBranchCommit(pjm, r.project.CommitUUID())
 		if err != nil {
 			return locale.WrapError(err, "push_project_branch_commit_err", "Failed to update new project {{.V0}} to current commitID.", r.project.Namespace().String())
 		}
-		r.Outputer.Notice(locale.Tl("push_headless_project_created", "Project created at [ACTIONABLE]{{.V0}}[/RESET]", r.project.URL()))
 	} else {
-		var commitID strfmt.UUID
-		lang, langVersion, fail := r.languageForProject(r.project)
+		_, commitID, fail := model.InitializeProject(r.project.Owner(), r.project.Name(), model.HostPlatform, lang, langVersion)
 		if fail != nil {
-			return fail
-		}
-
-		r.Outputer.Notice(locale.Tr("push_creating_project", r.project.Owner(), r.project.Name()))
-		pjm, commitID, fail = model.CreateProject(r.project.Owner(), r.project.Name(), model.HostPlatform, lang, langVersion, r.project.Private())
-		if fail != nil {
-			return fail
+			return errs.Wrap(fail.ToError(), "push_project_init_err", "Failed to initialize project {{.V0}}", r.project.Namespace().String())
 		}
 		// Remove temporary language entry
 		pjf := r.project.Source()
 		err := pjf.RemoveTemporaryLanguage()
 		if err != nil {
-			return failures.FailUser.Wrap(err, locale.Tl("push_remove_lang_err", "Failed to remove temporary language field from activestate.yaml."))
+			return locale.WrapInputError(err, "push_remove_lang_err", "Failed to remove temporary language field from activestate.yaml.")
 		}
 
-		r.Outputer.Notice(locale.Tr("push_project_created", r.project.URL(), lang.String(), langVersion))
 		r.project.Source().SetCommit(commitID.String(), false)
 	}
+	r.Outputer.Notice(locale.Tr("push_project_created", r.project.URL(), lang.String(), langVersion))
 
 	return nil
 }
 
-func (r *Push) languageForProject(pj *project.Project) (*language.Supported, string, *failures.Failure) {
+func (r *Push) languageForProject(pj *project.Project) (*language.Supported, string, error) {
+	if pj.CommitID() != "" {
+		lang, fail := model.FetchLanguageForCommit(pj.CommitUUID())
+		if fail != nil {
+			return nil, "", errs.Wrap(fail.ToError(), "Failed to retrieve language information for headless commit.")
+		}
+
+		ls := language.Supported{Language: language.MakeByText(lang.Name)}
+		if !ls.Recognized() {
+			return nil, "", locale.NewError("err_push_invalid_language", lang.Name)
+		}
+		return &ls, lang.Version, nil
+	}
 	langs := pj.Languages()
 	if len(langs) == 0 {
-		return nil, "", failures.FailUserInput.New(locale.Tl("err_push_nolang",
+		return nil, "", locale.NewError("err_push_nolang",
 			"Your project has not specified any languages, did you remove it from the activestate.yaml? Try deleting activestate.yaml and running 'state init' again.",
-		))
+		)
 	}
 	if len(langs) > 1 {
-		return nil, "", failures.FailUserInput.New(locale.Tl("err_push_toomanylang",
+		return nil, "", locale.NewError("err_push_toomanylang",
 			"Your project has specified multiple languages, however the platform currently only supports one language per project. Please edit your activestate.yaml to only have one language specified.",
-		))
+		)
 	}
 
-	lang := language.Supported{language.MakeByName(langs[0].Name())}
+	lang := language.Supported{Language: language.MakeByName(langs[0].Name())}
 	if !lang.Recognized() {
-		return nil, langs[0].Version(), failures.FailUserInput.New("err_push_invalid_language", langs[0].Name())
+		return nil, langs[0].Version(), locale.NewInputError("err_push_invalid_language", langs[0].Name())
 	}
 
 	return &lang, langs[0].Version(), nil
