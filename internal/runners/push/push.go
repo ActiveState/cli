@@ -58,7 +58,7 @@ func (r *Push) Run() error {
 
 	if pjm != nil {
 		if r.project.CommitID() == "" {
-			return failures.FailUserInput.New("push_already_exists", r.project.Owner(), r.project.Name())
+			return locale.NewError("push_already_exists", r.project.Owner(), r.project.Name())
 		}
 		r.Outputer.Notice(locale.T("push_up_to_date"))
 		return nil
