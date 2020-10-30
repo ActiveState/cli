@@ -40,9 +40,12 @@ func (r *Push) Run() error {
 	}
 
 	if r.project != nil && r.project.IsHeadless() {
-		return locale.NewInputError(
+		return errs.AddTips(locale.NewInputError(
 			"err_push_headless",
-			"You must first create a project. Please visit {{.V0}} or run [ACTIONABLE]state init[/RESET] to create your project.", r.project.URL())
+			"You must first create a project."),
+			locale.Tl("push_headless_push_tip_conversion_url", "Visit [ACTIONABLE]{{.V0}}[/RESET] to create a project in the browser.", r.project.URL()),
+			locale.Tl("push_headless_push_tip_state_init", "Run [ACTIONABLE]state init[/RESET] to create a project with the State Tool.."),
+		)
 	}
 
 	// Create the project remotely if it doesn't already exist
