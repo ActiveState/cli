@@ -90,6 +90,8 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 		if fail := pj.Source().SetCommit(commitID.String(), isHeadless); fail != nil {
 			return fail.WithDescription("err_package_update_pjfile")
 		}
+	} else {
+		out.Notice(locale.Tl("pkg_already_in_order", "Requirement already exists, ensuring runtime is up to date .."))
 	}
 
 	err = updateRuntime(pj.Source().Path(), commitID, pj.Owner(), pj.Name(), runbits.NewRuntimeMessageHandler(out))
@@ -98,7 +100,7 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 			return locale.WrapError(err, "Could not update runtime environment. To manually update your environment run `state pull`.")
 		}
 		out.Notice(locale.Tl("package_build_in_progress",
-			"A new build with your changes has been started remotely, please run `state pull` when the build has finished. You can track the build at https://{{.V0}}/{{.V1}}/{{.V2}}.",
+			"A new build with your changes has been started remotely, please run `[ACTIONABLE]state pull[/RESET]` when the build has finished. You can track the build at [ACTIONABLE]https://{{.V0}}/{{.V1}}/{{.V2}}[/RESET].",
 			constants.PlatformURL, pj.Owner(), pj.Name()))
 	}
 
