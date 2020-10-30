@@ -92,9 +92,9 @@ func splitNameAndVersion(input string) (string, string) {
 }
 
 func prepareLatestVersion(params Params) (Params, error) {
-	platformUUID, fail := model.HostPlatformToPlatformID(params.Name)
-	if fail != nil {
-		return params, locale.WrapInputError(fail.ToError(), "err_resolve_platform_id", "Could not resolve platform ID from name: {{.V0}}", params.Name)
+	platformUUID, err := model.PlatformNameToPlatformID(params.Name)
+	if err != nil {
+		return params, locale.WrapInputError(err, "err_resolve_platform_id", "Could not resolve platform ID from name: {{.V0}}", params.Name)
 	}
 
 	platform, fail := model.FetchPlatformByUID(strfmt.UUID(platformUUID))

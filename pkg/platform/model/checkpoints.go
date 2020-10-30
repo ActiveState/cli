@@ -203,7 +203,16 @@ func CheckpointToLanguage(checkpoint Checkpoint) (*Language, *failures.Failure) 
 	return nil, failures.FailNotFound.New(locale.T("err_fetch_languages"))
 }
 
-func HostPlatformToPlatformID(os string) (string, *failures.Failure) {
+func PlatformNameToPlatformID(name string) (string, error) {
+	name = strings.ToLower(name)
+	if name == "darwin" {
+		name = "macos"
+	}
+	id, fail := hostPlatformToPlatformID(name)
+	return id, fail.ToError()
+}
+
+func hostPlatformToPlatformID(os string) (string, *failures.Failure) {
 	switch strings.ToLower(os) {
 	case strings.ToLower(sysinfo.Linux.String()):
 		return constants.LinuxBit64UUID, nil
