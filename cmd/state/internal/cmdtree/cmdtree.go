@@ -1,7 +1,7 @@
 package cmdtree
 
 import (
-	"github.com/ActiveState/cli/cmd/state/internal/cmdtree/internal/intercepts/cmdcall"
+	"github.com/ActiveState/cli/cmd/state/internal/cmdtree/intercepts/cmdcall"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/locale"
