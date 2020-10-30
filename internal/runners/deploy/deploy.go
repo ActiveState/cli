@@ -361,6 +361,8 @@ func report(path string, runtime *runtime.Runtime, out output.Outputer) error {
 		Environment:       env,
 	})
 
+	out.Notice(output.Heading(locale.T("deploy_restart")))
+	
 	if rt.GOOS == "windows" {
 		out.Notice(locale.Tr("deploy_restart_cmd", filepath.Join(path, "setenv.bat")))
 	} else {

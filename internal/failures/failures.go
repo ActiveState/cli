@@ -134,9 +134,11 @@ func (f *FailureType) New(message string, params ...string) *Failure {
 	if !f.Matches(FailUser) && !f.Matches(FailNonFatal) {
 		logger = logging.Error
 	}
-	logger(message)
 
-	return &Failure{message, f, file, line, stacktrace.Get(), nil, []string{}}
+	stack := stacktrace.Get()
+	logger(message + " -- stack: " + stack.String())
+
+	return &Failure{message, f, file, line, stack, nil, []string{}}
 }
 
 // Wrap wraps another error
@@ -146,7 +148,11 @@ func (f *FailureType) Wrap(err error, message ...string) *Failure {
 	}
 
 	if len(message) > 0 {
-		err = fmt.Errorf("%s: %w", strings.Join(message, ": "), err)
+		args := []string{}
+		if len(message) > 1 {
+			args = message[1:]
+		}
+		err = fmt.Errorf("%s: %w", locale.Tr(message[0], args...), err)
 	}
 	logging.Debug("Failure '%s' wrapped: %v", f.Name, err)
 	fail := f.New(err.Error())

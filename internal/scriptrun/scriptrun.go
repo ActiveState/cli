@@ -6,6 +6,7 @@ import (
 	rt "runtime"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
@@ -37,11 +38,13 @@ func ProjectHasScript(proj *project.Project, name string) bool {
 
 // RunScript runs a script.
 func RunScript(out output.Outputer, subs subshell.SubShell, proj *project.Project, name string, args []string) error {
+	// Determine which project script to run based on the given script name.
 	script := proj.ScriptByName(name)
 	if script == nil {
-		return FailScriptNotDefined.New(
+		fail := FailScriptNotDefined.New(
 			locale.T("error_state_run_unknown_name", map[string]string{"Name": name}),
 		)
+		return fail
 	}
 
 	// venvExePath stores a virtual environment's PATH value. If the script
@@ -143,7 +146,7 @@ func RunScript(out output.Outputer, subs subshell.SubShell, proj *project.Projec
 	err = subs.Run(sf.Filename(), args...)
 	if err != nil {
 		if len(attempted) > 0 {
-			return locale.WrapInputError(
+			err = locale.WrapInputError(
 				err,
 				"err_run_script",
 				"Script execution fell back to {{.V0}} after {{.V1}} was not detected in your project or system. Please ensure your script is compatible with one, or more, of: {{.V0}}, {{.V1}}",
@@ -151,7 +154,9 @@ func RunScript(out output.Outputer, subs subshell.SubShell, proj *project.Projec
 				strings.Join(attempted, ", "),
 			)
 		}
-		return err
+		return errs.AddTips(
+			locale.WrapError(err, "err_script_run", "Your script failed to execute: {{.V0}}.", err.Error()),
+			locale.Tl("script_run_tip", "Edit the script '[ACTIONABLE]{{.V0}}[/RESET]' in your [ACTIONABLE]activestate.yaml[/RESET].", script.Name()))
 	}
 	return nil
 }
