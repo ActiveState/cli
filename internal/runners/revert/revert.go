@@ -1,8 +1,6 @@
 package revert
 
 import (
-	"strconv"
-
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
@@ -57,22 +55,6 @@ func (r *Revert) Run(params *Params) error {
 		return locale.WrapError(err, "err_revert_get_commit", "Could not fetch commit details for commit with ID: {{.V0}}", params.CommitID)
 	}
 
-	history, fail := model.CommitHistory(r.project.Owner(), r.project.Name())
-	if fail != nil {
-		return locale.WrapError(fail.ToError(), "err_revert_get_history", "Could not get project commit history")
-	}
-	if !containsCommitID(history, commitID) {
-		return locale.NewError("err_revert_invalid_commit_id", "Commit ID: {{.V0}} does not belong to the project: {{.V1}}", params.CommitID, r.project.Namespace().String())
-	}
-
-	count, fail := model.CommitsBehindLatest(r.project.Owner(), r.project.Name(), r.project.CommitID())
-	if fail != nil {
-		return locale.WrapError(fail.ToError(), "err_revert_commits_behind", "Could not determine if local project is synchronized with platform")
-	}
-	if count > 0 {
-		return locale.NewInputError("err_revert_behind_latest", "Your project is {{.V0}} commit(s) behind. Please run `state pull` to synchronize your project and run `state revert` again", strconv.Itoa(count))
-	}
-
 	orgs, fail := model.FetchOrganizationsByIDs([]strfmt.UUID{revertCommit.Author})
 	if fail != nil {
 		return locale.WrapError(fail.ToError(), "err_revert_get_organizations", "Could not get organizations for current user")
@@ -89,7 +71,12 @@ func (r *Revert) Run(params *Params) error {
 
 	err = model.RevertCommit(r.project.Owner(), r.project.Name(), r.project.CommitUUID(), commitID)
 	if err != nil {
-		return locale.WrapError(err, "err_revert_commit", "Could not revert to commit: {{.V0}}", params.CommitID)
+		return locale.WrapError(
+			err,
+			"err_revert_commit",
+			"Could not revert to commit: {{.V0}} please ensure that the local project is synchronized with the platform and that the given commit ID belongs to the current project",
+			params.CommitID,
+		)
 	}
 
 	r.out.Print(locale.Tl("revert_success", "Sucessfully reverted to commit: {{.V0}}", params.CommitID))

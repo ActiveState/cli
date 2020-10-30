@@ -253,7 +253,7 @@ func UpdateBranchCommit(branchID strfmt.UUID, commitID strfmt.UUID) *failures.Fa
 
 	_, err := authentication.Client().VersionControl.UpdateBranch(params, authentication.ClientAuth())
 	if err != nil {
-		return FailUpdateBranch.New(locale.Tr("err_update_branch", err.Error()))
+		return FailUpdateBranch.New(locale.Tr("err_update_branch", api.ErrorMessageFromPayload(err)))
 	}
 	return nil
 }
@@ -609,27 +609,27 @@ func TrackBranch(source, target *mono_models.Project) *failures.Failure {
 func RevertCommit(owner, project string, from, to strfmt.UUID) error {
 	revertCommit, err := GetRevertCommit(from, to)
 	if err != nil {
-		return locale.WrapError(err, "err_get_revert_commit", "Could not get revert commit")
+		return err
 	}
 
 	addCommit, err := AddRevertCommit(revertCommit)
 	if err != nil {
-		return locale.WrapError(err, "err_revert_commit", "Could not add revert commit")
+		return err
 	}
 
 	proj, fail := FetchProjectByName(owner, project)
 	if fail != nil {
-		return locale.WrapError(fail.ToError(), "err_revert_get_project", "Could not retrieve platform project with namespace: {{.V0}}/{{.V1}}", owner, project)
+		return err
 	}
 
 	branch, fail := DefaultBranchForProject(proj)
 	if fail != nil {
-		return locale.WrapError(fail.ToError(), "err_revert_get_branch", "Could not get default branch for current project")
+		return err
 	}
 
 	fail = UpdateBranchCommit(branch.BranchID, addCommit.CommitID)
 	if fail != nil {
-		return locale.WrapError(fail.ToError(), "err_revert_update_branch", "Could not update branch with revert commit")
+		return err
 	}
 
 	return nil
@@ -654,7 +654,7 @@ func GetRevertCommit(from, to strfmt.UUID) (*mono_models.Commit, error) {
 
 	res, err := authentication.Client().VersionControl.GetRevertCommit(params, authentication.ClientAuth())
 	if err != nil {
-		return nil, locale.WrapError(err, "err_get_revert_commit", "Could not revert from commit ID {{.V0}} to {{.V1}}", from.String(), to.String())
+		return nil, locale.WrapError(err, "err_get_revert_commit", "Could not generate revert commit")
 	}
 
 	return res.Payload, nil
