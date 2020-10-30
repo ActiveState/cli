@@ -6,11 +6,13 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"strings"
 
 	"github.com/ActiveState/sysinfo"
 	"github.com/rollbar/rollbar-go"
 
 	"github.com/ActiveState/cli/cmd/state/internal/cmdtree"
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config" // MUST be first!
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/constraints"
@@ -64,7 +66,7 @@ func main() {
 	setPrinterColors(outFlags)
 
 	// Run our main command logic, which is logic that defers to the error handling logic below
-	code, err := run(os.Args, out)
+	code, commandString, err := run(os.Args, out)
 	if err != nil {
 		out.Error(err)
 
@@ -80,15 +82,18 @@ func main() {
 		}
 	}
 
+	if commandString != "" {
+		analytics.EventWithValue(analytics.CatCommandExit, commandString, int64(code))
+	}
 	os.Exit(code)
 }
 
-func run(args []string, out output.Outputer) (int, error) {
+func run(args []string, out output.Outputer) (int, string, error) {
 	// Set up profiling
 	if os.Getenv(constants.CPUProfileEnvVarName) != "" {
 		cleanup, err := profile.CPU()
 		if err != nil {
-			return 1, err
+			return 1, "", err
 		}
 		defer cleanup()
 	}
@@ -103,7 +108,7 @@ func run(args []string, out output.Outputer) (int, error) {
 	pjPath, fail := projectfile.GetProjectFilePath()
 	if fail != nil && fail.Type.Matches(projectfile.FailNoProjectFromEnv) {
 		// Fail if we are meant to inherit the projectfile from the environment, but the file doesn't exist
-		return 1, fail
+		return 1, "", fail
 	}
 
 	// Set up prompter
@@ -114,21 +119,22 @@ func run(args []string, out output.Outputer) (int, error) {
 	if pjPath != "" {
 		pjf, fail := projectfile.FromPath(pjPath)
 		if fail != nil {
-			return 1, fail
+			return 1, "", fail
 		}
 		pj, fail = project.New(pjf, out, prompter)
 		if fail != nil {
-			return 1, fail
+			return 1, "", fail
 		}
 	}
 
 	// Forward call to specific state tool version, if warranted
 	forward, err := forwardFn(args, out, pj)
 	if err != nil {
-		return 1, err
+		return 1, "", err
 	}
 	if forward != nil {
-		return forward()
+		code, err := forward()
+		return code, "", err
 	}
 
 	pjOwner := ""
@@ -152,27 +158,32 @@ func run(args []string, out output.Outputer) (int, error) {
 		logging.Debug("Could not find child command, error: %v", err)
 	}
 
-	if child != nil && !child.SkipChecks() {
-		// Auto update to latest state tool version, only runs once per day
-		if updated, code, err := autoUpdate(args, out, pjPath); err != nil || updated {
-			return code, err
-		}
+	var commandString string
+	if child != nil {
+		commandString = strings.Join(child.SubCommandNames(), " ")
+		if !child.SkipChecks() {
+			// Auto update to latest state tool version, only runs once per day
+			if updated, code, err := autoUpdate(args, out, pjPath); err != nil || updated {
+				return code, commandString, err
+			}
 
-		// Check for deprecation
-		deprecated, fail := deprecation.Check()
-		if fail != nil {
-			logging.Error("Could not check for deprecation: %s", fail.Error())
-		}
-		if deprecated != nil {
-			date := deprecated.Date.Format(constants.DateFormatUser)
-			if !deprecated.DateReached {
-				out.Notice(locale.Tr("warn_deprecation", date, deprecated.Reason))
-			} else {
-				return 1, locale.NewInputError("err_deprecation", "You are running a version of the State Tool that is no longer supported! Reason: {{.V1}}", date, deprecated.Reason)
+			// Check for deprecation
+			deprecated, fail := deprecation.Check()
+			if fail != nil {
+				logging.Error("Could not check for deprecation: %s", fail.Error())
+			}
+			if deprecated != nil {
+				date := deprecated.Date.Format(constants.DateFormatUser)
+				if !deprecated.DateReached {
+					out.Notice(locale.Tr("warn_deprecation", date, deprecated.Reason))
+				} else {
+					return 1, commandString, locale.NewInputError("err_deprecation", "You are running a version of the State Tool that is no longer supported! Reason: {{.V1}}", date, deprecated.Reason)
+				}
 			}
 		}
 	}
 
 	err = cmds.Execute(args[1:])
-	return unwrapError(err)
+	code, err := unwrapError(err)
+	return code, commandString, err
 }

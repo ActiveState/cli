@@ -283,8 +283,8 @@ func (c *Command) persistRunner(cobraCmd *cobra.Command, args []string) {
 	c.runFlags(true)
 }
 
-// returns a slice of the names of the sub-commands called
-func (c *Command) subcommandNames() []string {
+// SubCommandNames returns a slice of the names of the sub-commands called
+func (c *Command) SubCommandNames() []string {
 	var commands []string
 	cmd := c.cobra
 	root := cmd.Root()
@@ -311,7 +311,7 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	}
 	// Send  GA events unless they are handled in the runners...
 	if !c.deferAnalytics {
-		subCommandString := strings.Join(c.subcommandNames(), " ")
+		subCommandString := strings.Join(c.SubCommandNames(), " ")
 		analytics.Event(analytics.CatRunCmd, subCommandString)
 	}
 	// Run OnUse functions for non-persistent flags
