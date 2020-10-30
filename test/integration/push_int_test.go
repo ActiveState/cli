@@ -50,6 +50,43 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 	}
 }
 
+func (suite *PushIntegrationTestSuite) TestCarlisle() {
+	suite.OnlyRunForTags(tagsuite.Push, tagsuite.Carlisle, tagsuite.Headless)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+	username := "cli-integration-tests"
+	pname := strutils.UUID()
+	namespace := fmt.Sprintf("%s/%s", username, pname)
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs(
+			"activate", "ActiveState-CLI/small-python",
+			"--path", filepath.Join(ts.Dirs.Work, namespace)),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("activated state")
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
+
+	// anonymous commit
+	wd := filepath.Join(cp.WorkDirectory(), namespace)
+	cp = ts.SpawnWithOpts(e2e.WithArgs("install", "datetime"), e2e.WithWorkDirectory(wd))
+	cp.Expect("You're about to add packages as an anonymous user")
+	cp.Send("y")
+	cp.Expect("added")
+	cp.ExpectExitCode(0)
+
+	ts.LoginAsPersistentUser()
+
+	// convert to real project
+	cp = ts.SpawnWithOpts(e2e.WithArgs("init", namespace), e2e.WithWorkDirectory(wd))
+	cp.ExpectLongString("has been successfully initialized")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(e2e.WithArgs("push"), e2e.WithWorkDirectory(wd))
+	cp.Expect("Project created")
+	cp.ExpectExitCode(0)
+}
+
 func (suite *PushIntegrationTestSuite) TestPush_AlreadyExists() {
 	suite.OnlyRunForTags(tagsuite.Push)
 	ts := e2e.New(suite.T(), false)
