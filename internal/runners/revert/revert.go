@@ -70,7 +70,7 @@ func (r *Revert) Run(params *Params) error {
 		return locale.WrapError(fail.ToError(), "err_revert_commits_behind", "Could not determine if local project is synchronized with platform")
 	}
 	if count > 0 {
-		return locale.NewInputError("err_revert_behind_latest", "Your project is {{.V0}} commit(s) behind. Please run `state pull` to syncronize your project and run `state revert` again", strconv.Itoa(count))
+		return locale.NewInputError("err_revert_behind_latest", "Your project is {{.V0}} commit(s) behind. Please run `state pull` to synchronize your project and run `state revert` again", strconv.Itoa(count))
 	}
 
 	orgs, fail := model.FetchOrganizationsByIDs([]strfmt.UUID{revertCommit.Author})
