@@ -77,26 +77,31 @@ func (r *Push) Run() error {
 	if fail != nil {
 		return locale.WrapError(fail.ToError(), "push_project_create_empty_err", "Failed to create an project {{.V0}}.", r.project.Namespace().String())
 	}
-	if r.project.CommitID() != "" {
-		// try to create the project at the given commit id.
-		err := model.UpdateProjectBranchCommit(pjm, r.project.CommitUUID())
-		if err != nil {
-			return locale.WrapError(err, "push_project_branch_commit_err", "Failed to update new project {{.V0}} to current commitID.", r.project.Namespace().String())
-		}
-	} else {
-		_, commitID, fail := model.InitializeProject(r.project.Owner(), r.project.Name(), model.HostPlatform, lang, langVersion)
+
+	var commitID = r.project.CommitUUID()
+	if r.project.CommitID() == "" {
+		var fail *failures.Failure
+		commitID, fail = model.InitializeProject(model.HostPlatform, lang, langVersion)
 		if fail != nil {
 			return locale.WrapError(fail.ToError(), "push_project_init_err", "Failed to initialize project {{.V0}}", r.project.Namespace().String())
 		}
-		// Remove temporary language entry
-		pjf := r.project.Source()
-		err := pjf.RemoveTemporaryLanguage()
-		if err != nil {
-			return locale.WrapInputError(err, "push_remove_lang_err", "Failed to remove temporary language field from activestate.yaml.")
-		}
-
-		r.project.Source().SetCommit(commitID.String(), false)
 	}
+
+	// try to create the project at the given commit id.
+	err = model.UpdateProjectBranchCommit(pjm, r.project.CommitUUID())
+	if err != nil {
+		return locale.WrapError(err, "push_project_branch_commit_err", "Failed to update new project {{.V0}} to current commitID.", r.project.Namespace().String())
+	}
+
+	// Remove temporary language entry
+	pjf := r.project.Source()
+	err = pjf.RemoveTemporaryLanguage()
+	if err != nil {
+		return locale.WrapInputError(err, "push_remove_lang_err", "Failed to remove temporary language field from activestate.yaml.")
+	}
+
+	r.project.Source().SetCommit(commitID.String(), false)
+
 	r.Outputer.Notice(locale.Tr("push_project_created", r.project.URL(), lang.String(), langVersion))
 
 	return nil

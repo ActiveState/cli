@@ -121,7 +121,7 @@ func DefaultBranchForProject(pj *mono_models.Project) (*mono_models.Branch, *fai
 }
 
 // InitializeProject will create the project on the platform
-func InitializeProject(owner, name, hostPlatform string, lang *language.Supported, langVersion string) (*mono_models.Project, strfmt.UUID, *failures.Failure) {
+func InitializeProject(hostPlatform string, lang *language.Supported, langVersion string) (strfmt.UUID, *failures.Failure) {
 	var requirement string
 	if lang != nil {
 		requirement = lang.Requirement()
@@ -130,7 +130,7 @@ func InitializeProject(owner, name, hostPlatform string, lang *language.Supporte
 		}
 	}
 
-	return CommitInitial(owner, name, hostPlatform, requirement, langVersion)
+	return CommitInitial(hostPlatform, requirement, langVersion)
 }
 
 // CreateEmptyProject will create the project on the platform
