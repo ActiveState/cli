@@ -1,7 +1,6 @@
 package platforms
 
 import (
-	"fmt"
 	"sort"
 	"strconv"
 	"strings"
@@ -111,6 +110,5 @@ func prepareLatestVersion(params Params) (Params, error) {
 	}
 	params.BitWidth = bitWidth
 
-	fmt.Println("Returning params: ", params)
 	return params, nil
 }
