@@ -72,6 +72,7 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 	wd := filepath.Join(cp.WorkDirectory(), namespace)
 	cp = ts.SpawnWithOpts(e2e.WithArgs("install", "DateTime"), e2e.WithWorkDirectory(wd))
 	cp.Expect("You're about to add packages as an anonymous user")
+	cp.Expect("(Y/n)")
 	cp.SendLine("y")
 	cp.Expect("added")
 	cp.ExpectExitCode(0)
