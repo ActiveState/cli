@@ -13,7 +13,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils"
-	"github.com/ActiveState/cli/internal/subshell/sscommon"
 )
 
 func unwrapError(err error) (int, error) {
@@ -39,7 +38,7 @@ func unwrapError(err error) (int, error) {
 	}
 
 	// unwrap exit code before we remove un-localized wrapped errors from err variable
-	code := unwrapExitCode(err)
+	code := errs.UnwrapExitCode(err)
 
 	if locale.IsError(err) {
 		err = locale.JoinErrors(err, "\n")
@@ -58,35 +57,6 @@ func unwrapError(err error) (int, error) {
 	}
 
 	return code, err
-}
-
-// unwrapExitCode checks if the given error is a failure of type FailExecCmdExit and
-// returns the ExitCode of the process that failed with this error
-func unwrapExitCode(errFail error) int {
-	var eerr interface{ ExitCode() int }
-	isExitError := errors.As(errFail, &eerr)
-	if isExitError {
-		return eerr.ExitCode()
-	}
-
-	// failure might be in the error stack
-	var fail *failures.Failure
-	isFailure := errors.As(errFail, &fail)
-	if !isFailure {
-		return 1
-	}
-
-	if !fail.Type.Matches(sscommon.FailExecCmdExit) {
-		return 1
-	}
-	err := fail.ToError()
-
-	isExitError = errors.As(err, &eerr)
-	if isExitError {
-		return eerr.ExitCode()
-	}
-
-	return 1
 }
 
 func handlePanics(exiter func(int)) {
