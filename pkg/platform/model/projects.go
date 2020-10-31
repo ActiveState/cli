@@ -11,7 +11,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
-	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api"
@@ -118,19 +117,6 @@ func DefaultBranchForProject(pj *mono_models.Project) (*mono_models.Branch, *fai
 		}
 	}
 	return nil, FailNoDefaultBranch.New(locale.T("err_no_default_branch"))
-}
-
-// InitializeProject will create the project on the platform
-func InitializeProject(hostPlatform string, lang *language.Supported, langVersion string) (strfmt.UUID, *failures.Failure) {
-	var requirement string
-	if lang != nil {
-		requirement = lang.Requirement()
-		if langVersion == "" {
-			langVersion = lang.RecommendedVersion()
-		}
-	}
-
-	return CommitInitial(hostPlatform, requirement, langVersion)
 }
 
 // CreateEmptyProject will create the project on the platform

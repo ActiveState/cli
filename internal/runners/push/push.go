@@ -81,7 +81,7 @@ func (r *Push) Run() error {
 	var commitID = r.project.CommitUUID()
 	if r.project.CommitID() == "" {
 		var fail *failures.Failure
-		commitID, fail = model.InitializeProject(model.HostPlatform, lang, langVersion)
+		commitID, fail = model.CommitInitial(model.HostPlatform, lang, langVersion)
 		if fail != nil {
 			return locale.WrapError(fail.ToError(), "push_project_init_err", "Failed to initialize project {{.V0}}", r.project.Namespace().String())
 		}

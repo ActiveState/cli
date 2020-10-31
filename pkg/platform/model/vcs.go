@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/retryhttp"
@@ -352,8 +353,16 @@ func CommitChangeset(projOwner, projName, commitMsg string, changeset Changeset)
 	return UpdateBranchCommit(branch.BranchID, commit.CommitID)
 }
 
-// CommitInitial ...
-func CommitInitial(hostPlatform, language, langVersion string) (strfmt.UUID, *failures.Failure) {
+// CommitInitial creates a root commit for a new branch
+func CommitInitial(hostPlatform string, lang *language.Supported, langVersion string) (strfmt.UUID, *failures.Failure) {
+	var language string
+	if lang != nil {
+		language = lang.Requirement()
+		if langVersion == "" {
+			langVersion = lang.RecommendedVersion()
+		}
+	}
+
 	platformID, fail := hostPlatformToPlatformID(hostPlatform)
 	if fail != nil {
 		return "", fail
