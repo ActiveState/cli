@@ -128,8 +128,7 @@ func run(args []string, out output.Outputer) (int, error) {
 		return 1, err
 	}
 	if forward != nil {
-		code, err := forward()
-		return code, err
+		return forward()
 	}
 
 	pjOwner := ""
