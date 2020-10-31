@@ -1,7 +1,6 @@
 package packages
 
 import (
-	"github.com/ActiveState/cli/internal/headless"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -37,12 +36,6 @@ func NewUninstall(prime primeable) *Uninstall {
 // Run executes the uninstall behavior.
 func (r *Uninstall) Run(params UninstallRunParams) error {
 	logging.Debug("ExecuteUninstall")
-	err := r.run(params)
-	headless.Notify(r.out, r.proj, err, "packages")
-	return err
-}
-
-func (r *Uninstall) run(params UninstallRunParams) error {
 	// Commit the package
 	language, fail := model.LanguageForCommit(r.proj.CommitUUID())
 	if fail != nil {
