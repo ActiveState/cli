@@ -346,8 +346,10 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	}
 
 	err := c.execute(c, args)
-	exitCode := errs.UnwrapExitCode(failures.ToError(err))
-	analytics.EventWithValue(analytics.CatCommandExit, subCommandString, int64(exitCode))
+	if !c.deferAnalytics {
+		exitCode := errs.UnwrapExitCode(failures.ToError(err))
+		analytics.EventWithValue(analytics.CatCommandExit, subCommandString, int64(exitCode))
+	}
 	return err
 }
 
