@@ -125,7 +125,9 @@ func run(params *RunParams, out output.Outputer) (string, error) {
 	logging.Debug("Init: %s/%s %v", params.Namespace.Owner, params.Namespace.Project, params.Private)
 
 	if isHeadless {
+		commitID := proj.CommitID()
 		proj.Source().SetNamespace(params.Namespace.Owner, params.Namespace.Project)
+		proj.Source().SetCommit(commitID, false)
 	} else {
 		// Sanitize rest of params
 		if err := sanitize(params); err != nil {
