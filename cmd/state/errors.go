@@ -7,7 +7,6 @@ import (
 	"runtime/debug"
 	"time"
 
-	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
@@ -39,7 +38,7 @@ func unwrapError(err error) (int, error) {
 	}
 
 	// unwrap exit code before we remove un-localized wrapped errors from err variable
-	code := captain.UnwrapExitCode(err)
+	code := errs.UnwrapExitCode(err)
 
 	if locale.IsError(err) {
 		err = locale.JoinErrors(err, "\n")

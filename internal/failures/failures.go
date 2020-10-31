@@ -79,6 +79,8 @@ var (
 
 	// FailSilent identifies failures that should not produce visible output.
 	FailSilent = Type("failures.fail.silent")
+
+	FailExecCmdExit = Type("sscommon.fail.execcmdexit", FailSilent)
 )
 
 var handled error
