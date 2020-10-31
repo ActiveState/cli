@@ -1,7 +1,10 @@
 package run
 
 import (
+	"strings"
+
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -12,15 +15,6 @@ import (
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/project"
-)
-
-var (
-	// FailScriptNotDefined indicates the user provided a script name that is not defined
-	FailScriptNotDefined = failures.Type("run.fail.scriptnotfound", failures.FailUser)
-	// FailStandaloneConflict indicates when a script is run standalone, but unable to be so
-	FailStandaloneConflict = failures.Type("run.fail.standaloneconflict", failures.FailUser)
-	// FailExecNotFound indicates when the builtin language exec is not available
-	FailExecNotFound = failures.Type("run.fail.execnotfound", failures.FailUser)
 )
 
 // Run contains the run execution context.
@@ -54,15 +48,7 @@ func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, nam
 	logging.Debug("Execute")
 
 	if name == "" {
-		return failures.FailUserInput.New("error_state_run_undefined_name")
-	}
-
-	// Determine which project script to run based on the given script name.
-	if !scriptrun.ProjectHasScript(proj, name) {
-		fail := FailScriptNotDefined.New(
-			locale.T("error_state_run_unknown_name", map[string]string{"Name": name}),
-		)
-		return fail
+		return failures.FailUserInput.New("error_state_run_undefined_name").ToError()
 	}
 
 	out.Notice(txtstyle.NewTitle(locale.Tl("run_script_title", "Running Script: [ACTIONABLE]{{.V0}}[/RESET]", name)))
@@ -71,5 +57,28 @@ func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, nam
 		checker.RunCommitsBehindNotifier(out)
 	}
 
-	return scriptrun.RunScript(out, subs, proj, name, args)
+	script := proj.ScriptByName(name)
+	if script == nil {
+		return locale.NewInputError("error_state_run_unknown_name", "Script does not exist: {{.V0}}", name)
+	}
+
+	scriptrunner := scriptrun.New(out, subs, proj)
+	if !script.Standalone() && scriptrunner.NeedsActivation() {
+		out.Notice(output.Heading(locale.Tl("notice", "Notice")))
+		out.Notice(locale.T("info_state_run_activating_state"))
+		if err := scriptrunner.PrepareVirtualEnv(); err != nil {
+			return locale.WrapError(err, "err_script_run_preparevenv", "Could not prepare virtual environment.")
+		}
+	}
+
+	if len(script.Languages()) == 0 {
+		out.Notice(output.Heading(locale.Tl("deprecation_warning", "Deprecation Warning!")))
+		out.Notice(locale.Tl(
+			"run_warn_deprecated_script_without_language",
+			"Scripts without a defined language currently fall back to using the default shell for your platform. This fallback mechanic will soon stop working and a language will need to be explicitly defined for each script. Please configure the '[ACTIONABLE]language[/RESET]' field with a valid option (one of [ACTIONABLE]{{.V0}}[/RESET])",
+			strings.Join(language.RecognizedNames(), ", ")))
+	}
+
+	out.Notice(output.Heading(locale.Tl("script_output", "Script Output")))
+	return scriptrunner.Run(script, args)
 }

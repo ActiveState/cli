@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -20,15 +19,6 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
-var (
-	// FailScriptNotDefined indicates the user provided a script name that is not defined
-	FailScriptNotDefined = failures.Type("run.fail.scriptnotfound", failures.FailUser)
-	// FailStandaloneConflict indicates when a script is run standalone, but unable to be so
-	FailStandaloneConflict = failures.Type("run.fail.standaloneconflict", failures.FailUser)
-	// FailExecNotFound indicates when the builtin language exec is not available
-	FailExecNotFound = failures.Type("run.fail.execnotfound", failures.FailUser)
-)
-
 // ProjectHasScript is a helper function to determine if a project contains a
 // script by name.
 func ProjectHasScript(proj *project.Project, name string) bool {
@@ -36,68 +26,88 @@ func ProjectHasScript(proj *project.Project, name string) bool {
 	return script != nil
 }
 
-// RunScript runs a script.
-func RunScript(out output.Outputer, subs subshell.SubShell, proj *project.Project, name string, args []string) error {
-	// Determine which project script to run based on the given script name.
-	script := proj.ScriptByName(name)
-	if script == nil {
-		fail := FailScriptNotDefined.New(
-			locale.T("error_state_run_unknown_name", map[string]string{"Name": name}),
-		)
-		return fail
+type ScriptRunner struct {
+	out     output.Outputer
+	sub     subshell.SubShell
+	project *project.Project
+
+	venvPrepared bool
+	venvExePath  string
+}
+
+func New(out output.Outputer, subs subshell.SubShell, proj *project.Project) *ScriptRunner {
+	return &ScriptRunner{
+		out,
+		subs,
+		proj,
+
+		false,
+
+		// venvExePath stores a virtual environment's PATH value. If the script
+		// requires activation this is the PATH we should be searching for
+		// executables in.
+		os.Getenv("PATH")}
+}
+
+func (s *ScriptRunner) NeedsActivation() bool {
+	return !subshell.IsActivated() && !s.venvPrepared
+}
+
+func (s *ScriptRunner) PrepareVirtualEnv() error {
+	runtime, err := runtime.NewRuntime(s.project.Source().Path(), s.project.CommitUUID(), s.project.Owner(), s.project.Name(), runbits.NewRuntimeMessageHandler(s.out))
+	if err != nil {
+		return locale.WrapError(err, "err_run_runtime_init", "Failed to initialize runtime.")
+	}
+	venv := virtualenvironment.New(runtime)
+
+	if fail := venv.Activate(); fail != nil {
+		logging.Errorf("Unable to activate state: %s", fail.Error())
+		return fail.WithDescription("error_state_run_activate")
 	}
 
-	// venvExePath stores a virtual environment's PATH value. If the script
-	// requires activation this is the PATH we should be searching for
-	// executables in.
-	venvExePath := os.Getenv("PATH")
+	env, err := venv.GetEnv(true, filepath.Dir(s.project.Source().Path()))
+	if err != nil {
+		return err
+	}
+	s.sub.SetEnv(env)
+
+	// search the "clean" path first (PATHS that are set by venv)
+	env, err = venv.GetEnv(false, "")
+	if err != nil {
+		return err
+	}
+	s.venvExePath = env["PATH"]
+	s.venvPrepared = true
+
+	return nil
+}
+
+func (s *ScriptRunner) Run(script *project.Script, args []string) error {
+	if s.project == nil {
+		return locale.NewInputError("err_no_projectfile")
+	}
+
+	// Determine which project script to run based on the given script name.
+	if script == nil {
+		return locale.NewInputError("error_state_run_unknown_name", "Script does not exist: {{.V0}}.", script.Name())
+	}
 
 	// Activate the state if needed.
-	if !script.Standalone() && !subshell.IsActivated() {
-		out.Notice(output.Heading(locale.Tl("notice", "Notice")))
-		out.Notice(locale.T("info_state_run_activating_state"))
-		runtime, err := runtime.NewRuntime(proj.Source().Path(), proj.CommitUUID(), proj.Owner(), proj.Name(), runbits.NewRuntimeMessageHandler(out))
-		if err != nil {
-			return locale.WrapError(err, "err_run_runtime_init", "Failed to initialize runtime.")
+	if !script.Standalone() && s.NeedsActivation() {
+		if err := s.PrepareVirtualEnv(); err != nil {
+			return errs.Wrap(err, "Could not prepare virtual environment.")
 		}
-		venv := virtualenvironment.New(runtime)
-
-		if fail := venv.Activate(); fail != nil {
-			logging.Errorf("Unable to activate state: %s", fail.Error())
-			return fail.WithDescription("error_state_run_activate")
-		}
-
-		env, err := venv.GetEnv(true, filepath.Dir(proj.Source().Path()))
-		if err != nil {
-			return err
-		}
-		subs.SetEnv(env)
-
-		// search the "clean" path first (PATHS that are set by venv)
-		env, err = venv.GetEnv(false, "")
-		if err != nil {
-			return err
-		}
-		venvExePath = env["PATH"]
 	}
 
 	lang := language.Unknown
 	if len(script.Languages()) == 0 {
-		warning := locale.Tl(
-			"run_warn_deprecated_script_without_language",
-			"Scripts without a defined language currently fall back to using the default shell for your platform. This fallback mechanic will soon stop working and a language will need to be explicitly defined for each script. Please configure the '[ACTIONABLE]language[/RESET]' field with a valid option (one of [ACTIONABLE]{{.V0}}[/RESET])",
-			strings.Join(language.RecognizedNames(), ", "),
-		)
-		out.Notice(output.Heading(locale.Tl("deprecation_warning", "Deprecation Warning!")))
-		out.Notice(warning)
-
-		lang = language.MakeByShell(subs.Shell())
+		lang = language.MakeByShell(s.sub.Shell())
 	}
 
 	var attempted []string
 	for _, l := range script.Languages() {
 		execPath := l.Executable().Name()
-		searchPath := venvExePath
+		searchPath := s.venvExePath
 		if l.Executable().CanUseThirdParty() {
 			searchPath = searchPath + string(os.PathListSeparator) + os.Getenv("PATH")
 		}
@@ -112,7 +122,7 @@ func RunScript(out output.Outputer, subs subshell.SubShell, proj *project.Projec
 	}
 
 	if script.Standalone() && !lang.Executable().CanUseThirdParty() {
-		return FailStandaloneConflict.New("error_state_run_standalone_conflict")
+		return locale.NewInputError("error_state_run_standalone_conflict")
 	}
 
 	if lang == language.Unknown {
@@ -137,13 +147,12 @@ func RunScript(out output.Outputer, subs subshell.SubShell, proj *project.Projec
 
 	sf, fail := scriptfile.New(lang, script.Name(), scriptBlock)
 	if fail != nil {
-		return fail.WithDescription("error_state_run_setup_scriptfile")
+		return locale.WrapError(fail, "error_state_run_setup_scriptfile")
 	}
 	defer sf.Clean()
 
-	out.Notice(output.Heading(locale.Tl("script_output", "Script Output")))
 	// ignore code for now, passing via failure
-	err = subs.Run(sf.Filename(), args...)
+	err = s.sub.Run(sf.Filename(), args...)
 	if err != nil {
 		if len(attempted) > 0 {
 			err = locale.WrapInputError(

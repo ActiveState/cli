@@ -21,21 +21,23 @@ type primeable interface {
 // CmdCall manages dependencies for the handling of events triggered by command
 // calls.
 type CmdCall struct {
-	out      output.Outputer
-	proj     *project.Project
-	subshell subshell.SubShell
-	cmdList  string
-	p        primeable
+	out       output.Outputer
+	proj      *project.Project
+	subshell  subshell.SubShell
+	cmdList   string
+	p         primeable
+	scriptrun *scriptrun.ScriptRunner
 }
 
 // New returns a prepared pointer to an instance of CmdCall.
 func New(p primeable, cmdList string) *CmdCall {
 	return &CmdCall{
-		out:      p.Output(),
-		proj:     p.Project(),
-		subshell: p.Subshell(),
-		cmdList:  cmdList,
-		p:        p,
+		out:       p.Output(),
+		proj:      p.Project(),
+		subshell:  p.Subshell(),
+		cmdList:   cmdList,
+		p:         p,
+		scriptrun: scriptrun.New(p.Output(), p.Subshell(), p.Project()),
 	}
 }
 
@@ -90,7 +92,7 @@ func (cc *CmdCall) Run(eventType project.EventType) error {
 			)
 		}
 
-		if err := scriptrun.RunScript(cc.out, cc.subshell, cc.proj, ss[0], ss[1:]); err != nil {
+		if err := cc.scriptrun.Run(cc.proj.ScriptByName(ss[0]), ss[1:]); err != nil {
 			return locale.WrapError(
 				err, "cmdcall_event_err_script_run",
 				"Failure running defined script",
