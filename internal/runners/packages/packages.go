@@ -89,10 +89,6 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 		out.Print(locale.Tr("package_"+string(operation), name))
 	}
 
-	// print message on how to create a project from a headless state
-	if isHeadless {
-		out.Notice(locale.Tr("package_headless_project_creation", commitID.String()))
-	}
 	return nil
 }
 
