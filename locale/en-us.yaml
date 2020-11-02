@@ -1046,11 +1046,11 @@ package_import_flag_filename_description:
 package_import_flag_force_description:
   other: Run import operation without prompts
 commit_message_add_package:
-  other: "Added package: [NOTICE]{{.V0}}@{{.V1}}[/RESET]"
+  other: "Added package: {{.V0}}@{{.V1}}"
 commit_message_removed_package:
-  other: "Removed package: [NOTICE]{{.V0}}[/RESET]"
+  other: "Removed package: {{.V0}}"
 commit_message_updated_package:
-  other: "Updated package: [NOTICE]{{.V0}} to {{.V1}}[/RESET]"
+  other: "Updated package: {{.V0}} to {{.V1}}"
 commit_message_add_initial:
   other: Initialize project via the State Tool
 confirm_remove_existing_prompt:
