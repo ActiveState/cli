@@ -5,7 +5,6 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/languages"
-	"github.com/ActiveState/cli/pkg/project"
 )
 
 func newLanguagesCommand(prime *primer.Values) *captain.Command {
