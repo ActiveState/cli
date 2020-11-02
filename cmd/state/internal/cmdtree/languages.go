@@ -24,33 +24,26 @@ func newLanguagesCommand(prime *primer.Values) *captain.Command {
 	).SetGroup(PlatformGroup)
 }
 
-func newLanguageUpdateCommand(prime *primer.Values) *captain.Command {
+func newLanguageInstallCommand(prime *primer.Values) *captain.Command {
 	runner := languages.NewUpdate(prime)
 
 	params := languages.UpdateParams{}
 
 	return captain.NewCommand(
-		"update",
-		locale.Tl("languages_update_title", "Updating Languages"),
-		locale.T("languages_update_cmd_description"),
+		"install",
+		locale.Tl("languages_install_title", "Installing Language"),
+		locale.T("languages_install_cmd_description"),
 		prime.Output(),
 		[]*captain.Flag{},
 		[]*captain.Argument{
 			{
 				Name:        "language",
-				Description: locale.T("arg_languages_update_description"),
+				Description: locale.T("arg_languages_install_description"),
 				Required:    true,
 				Value:       &params.Language,
 			},
 		},
 		func(ccmd *captain.Command, _ []string) error {
-			proj, fail := project.GetSafe()
-			if fail != nil {
-				return fail
-			}
-
-			params.Owner = proj.Owner()
-			params.ProjectName = proj.Name()
 			return runner.Run(&params)
 		},
 	)

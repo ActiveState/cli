@@ -254,8 +254,7 @@ func UpdateBranchCommit(branchID strfmt.UUID, commitID strfmt.UUID) *failures.Fa
 
 	_, err := authentication.Client().VersionControl.UpdateBranch(params, authentication.ClientAuth())
 	if err != nil {
-		msg := api.ErrorMessageFromPayload(err)
-		return FailUpdateBranch.New(locale.Tr("err_update_branch", msg))
+		return FailUpdateBranch.New(locale.Tr("err_update_branch", api.ErrorMessageFromPayload(err)))
 	}
 	return nil
 }
@@ -609,4 +608,88 @@ func TrackBranch(source, target *mono_models.Project) *failures.Failure {
 		return api.FailUnknown.Wrap(err, msg)
 	}
 	return nil
+}
+
+func RevertCommit(owner, project string, from, to strfmt.UUID) error {
+	revertCommit, err := GetRevertCommit(from, to)
+	if err != nil {
+		return err
+	}
+
+	addCommit, err := AddRevertCommit(revertCommit)
+	if err != nil {
+		return err
+	}
+
+	proj, fail := FetchProjectByName(owner, project)
+	if fail != nil {
+		return err
+	}
+
+	branch, fail := DefaultBranchForProject(proj)
+	if fail != nil {
+		return err
+	}
+
+	fail = UpdateBranchCommit(branch.BranchID, addCommit.CommitID)
+	if fail != nil {
+		return err
+	}
+
+	return nil
+}
+
+func GetCommit(commitID strfmt.UUID) (*mono_models.Commit, error) {
+	params := vcsClient.NewGetCommitParams()
+	params.SetCommitID(commitID)
+	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
+
+	res, err := authentication.Client().VersionControl.GetCommit(params, authentication.ClientAuth())
+	if err != nil {
+		return nil, locale.WrapError(err, "err_get_commit", "Could not get commit from ID: {{.V0}}", commitID.String())
+	}
+	return res.Payload, nil
+}
+
+func GetRevertCommit(from, to strfmt.UUID) (*mono_models.Commit, error) {
+	params := vcsClient.NewGetRevertCommitParams()
+	params.SetCommitFromID(from)
+	params.SetCommitToID(to)
+
+	res, err := authentication.Client().VersionControl.GetRevertCommit(params, authentication.ClientAuth())
+	if err != nil {
+		return nil, locale.WrapError(err, "err_get_revert_commit", "Could not generate revert commit")
+	}
+
+	return res.Payload, nil
+}
+
+func AddRevertCommit(commit *mono_models.Commit) (*mono_models.Commit, error) {
+	params := vcsClient.NewAddCommitParams()
+
+	editableCommit, err := commitToCommitEditable(commit)
+	if err != nil {
+		return nil, locale.WrapError(err, "err_convert_commit", "Could not convert commit data")
+	}
+	params.SetCommit(editableCommit)
+
+	res, err := authentication.Client().VersionControl.AddCommit(params, authentication.ClientAuth())
+	if err != nil {
+		return nil, locale.WrapError(err, "err_add_revert_commit", "Could not add revert commit")
+	}
+	return res.Payload, nil
+}
+
+func commitToCommitEditable(from *mono_models.Commit) (*mono_models.CommitEditable, error) {
+	editableData, err := from.MarshalBinary()
+	if err != nil {
+		return nil, locale.WrapError(err, "err_commit_marshal", "Could not marshall commit data")
+	}
+
+	commit := &mono_models.CommitEditable{}
+	err = commit.UnmarshalBinary(editableData)
+	if err != nil {
+		return nil, locale.WrapError(err, "err_commit_unmarshal", "Could not unmarshal commit data")
+	}
+	return commit, nil
 }

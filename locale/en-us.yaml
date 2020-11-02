@@ -7,7 +7,7 @@ contradiction:
 state_description:
   other: |
     The ActiveState CLI allows you to easily switch between your ActiveState environments
-  
+
     Find more information at: https://docs.activestate.com/platform/state/
 activate_project:
   other: Activate a project
@@ -940,7 +940,7 @@ flag_platforms_shared_bitwidth_description:
 arg_platforms_shared_name:
   other: name
 arg_platforms_shared_name_description:
-  other: Platform name (Windows, Darwin, etc.)
+  other: Name[@<version>]
 arg_platforms_shared_version:
   other: version
 arg_platforms_shared_version_description:
@@ -1115,6 +1115,8 @@ err_packages_removed:
   other: Failed to remove packages
 package_removed:
   other: "Package removed: [NOTICE]{{.V0}}[/RESET]"
+update_config:
+  other: To ensure your local project is synchronized with the ActiveState platform please use `[ACTIONABLE]state pull[/RESET]`
 package_update_config_file:
   other: To ensure your local project is synchronized with the ActiveState platform please use `[ACTIONABLE]state pull[/RESET]`
 inventory_ingredient_not_available:
@@ -1225,22 +1227,22 @@ field_id:
 field_changes:
   other: Changes
 change_added:
-  other: "[NOTICE]{{.V0}} {{.V1}}[/RESET] added"
+  other: "added {{.V0}} {{.V1}}"
 change_removed:
-  other: "[NOTICE]{{.V0}}[/RESET] removed"
+  other: "removed {{.V0}}"
 change_updated:
-  other: "[NOTICE]{{.V0}}[/RESET] updated from [NOTICE]{{.V1}}[/RESET] to [NOTICE]{{.V2}}[/RESET]"
+  other: "{{.V0}} updated from {{.V1}} to {{.V2}}"
 namespace_label_platform:
   other: "Platform"
 namespace_label_preplatform:
   other: "Bits"
-history_commit:
+print_commit:
   other: "[NOTICE]commit {{.V0}}[/RESET]"
-history_author:
+print_commit_author:
   other: "Author: {{.V0}}"
-history_date:
+print_commit_date:
   other: "Date: {{.V0}}"
-history_description:
+print_commit_description:
   other: "Description: {{.V0}}"
 history_cmd_description:
   other: View history of the active or given project
@@ -1284,10 +1286,10 @@ push_already_exists:
   other: The project [NOTICE]{{.V0}}/{{.V1}}[/RESET] already exists on the platform. To start using the latest version please run `[ACTIONABLE]state pull[/RESET]`.
 languages_cmd_description:
   other: View the languages of a project
-languages_update_cmd_description:
+languages_install_cmd_description:
   other: Update the language of a project
-arg_languages_update_description:
-  other: The language to update in the form of <language>@<version> or <language>
+arg_languages_install_description:
+  other: The language to update in the form of <language>@<version>
 err_language_format:
   other: The language and version provided is not formatting correctly, must be in the form of <language>@<version>
 err_update_not_found:

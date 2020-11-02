@@ -72,12 +72,6 @@ func newPlatformsAddCommand(prime *primer.Values) *captain.Command {
 				Value:       &params.Name,
 				Required:    true,
 			},
-			{
-				Name:        locale.T("arg_platforms_shared_version"),
-				Description: locale.T("arg_platforms_shared_version_description"),
-				Value:       &params.Version,
-				Required:    true,
-			},
 		},
 		func(_ *captain.Command, _ []string) error {
 			proj, fail := project.GetSafe()

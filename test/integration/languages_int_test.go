@@ -33,7 +33,7 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_list() {
 	cp.ExpectExitCode(0)
 }
 
-func (suite *LanguagesIntegrationTestSuite) TestLanguages_update() {
+func (suite *LanguagesIntegrationTestSuite) TestLanguages_install() {
 	suite.OnlyRunForTags(tagsuite.Languages)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -66,7 +66,11 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_update() {
 	cp.Expect("3.6.6")
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("languages", "update", "python")
+	cp = ts.Spawn("languages", "install", "python")
+	cp.Expect("Language: python is already installed")
+	cp.ExpectExitCode(1)
+
+	cp = ts.Spawn("languages", "install", "python@3.8.2")
 	// This can take a little while
 	cp.ExpectExitCode(0, 60*time.Second)
 
@@ -77,7 +81,7 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_update() {
 	cp.ExpectRe(versionRe.String())
 	cp.ExpectExitCode(0)
 
-	// assert that version number increased at least 3.8.1
+	// assert that version number changed
 	output := cp.MatchState().TermState.StringBeforeCursor()
 	vs := versionRe.FindString(output)
 	v, err := goversion.NewVersion(vs)

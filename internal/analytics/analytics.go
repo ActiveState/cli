@@ -36,6 +36,9 @@ const CatPPMShimCmd = "ppm-shim"
 // CatTutorial is the event category used for tutorial level events
 const CatTutorial = "tutorial"
 
+// CatCommandExit is the event category used to track the success of state commands
+const CatCommandExit = "command-exit"
+
 type customDimensions struct {
 	version       string
 	branchName    string
@@ -44,6 +47,7 @@ type customDimensions struct {
 	osName        string
 	osVersion     string
 	installSource string
+	machineID     string
 }
 
 func (d *customDimensions) SetOutput(output string) {
@@ -61,6 +65,7 @@ func (d *customDimensions) toMap() map[string]string {
 		"6": d.osName,
 		"7": d.osVersion,
 		"8": d.installSource,
+		"9": d.machineID,
 	}
 }
 
@@ -103,6 +108,7 @@ func setup() {
 		osName:        osName,
 		osVersion:     osVersion,
 		installSource: config.InstallSource(),
+		machineID:     logging.UniqID(),
 	}
 
 	client.ClientID(id)
