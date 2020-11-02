@@ -12,6 +12,7 @@ import (
 // to user input or not
 type LocalizedError struct {
 	wrapped   error
+	tips      []string
 	localized string
 	stack     *stacktrace.Stacktrace
 	inputErr  bool
@@ -42,6 +43,14 @@ func (e *LocalizedError) InputError() bool {
 	return e.inputErr
 }
 
+func (e *LocalizedError) ErrorTips() []string {
+	return e.tips
+}
+
+func (e *LocalizedError) AddTips(tips ...string) {
+	e.tips = append(e.tips, tips...)
+}
+
 // ErrorLocalizer represents a localized error
 type ErrorLocalizer interface {
 	UserError() string
@@ -69,6 +78,7 @@ func WrapError(err error, id string, args ...string) error {
 	l := &LocalizedError{}
 	translation := Tl(id, locale, args...)
 	l.wrapped = err
+	l.tips = []string{}
 	l.localized = translation
 	l.stack = stacktrace.GetWithSkip([]string{rtutils.CurrentFile()})
 	return l
@@ -133,4 +143,24 @@ func JoinErrors(err error, sep string) error {
 		err = errors.Unwrap(err)
 	}
 	return WrapError(err, "", strings.Join(message, sep))
+}
+
+func ErrorMessage(err error) string {
+	if errr, ok := err.(ErrorLocalizer); ok {
+		return errr.UserError()
+	}
+	return err.Error()
+}
+
+func UnwrapError(err error) []error {
+	var errs []error
+	for err != nil {
+		_, isLocaleError := err.(ErrorLocalizer)
+		_, isFailure := err.(failure)
+		if isLocaleError || isFailure {
+			errs = append(errs, err)
+		}
+		err = errors.Unwrap(err)
+	}
+	return errs
 }

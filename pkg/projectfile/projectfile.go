@@ -11,6 +11,7 @@ import (
 	"sync"
 
 	"github.com/ActiveState/sysinfo"
+	"github.com/gobuffalo/packr"
 	"github.com/google/uuid"
 	"github.com/imdario/mergo"
 	"gopkg.in/yaml.v2"
@@ -28,6 +29,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/strutils"
 )
 
 var (
@@ -78,6 +80,13 @@ var (
 	CommitURLRe = regexp.MustCompile(urlCommitRegexStr)
 )
 
+// projectURL comprises all fields of a parsed project URL
+type projectURL struct {
+	Owner    string
+	Name     string
+	CommitID string
+}
+
 var projectMapMutex = &sync.Mutex{}
 
 const LocalProjectsConfigKey = "projects"
@@ -111,7 +120,7 @@ type Project struct {
 	Jobs         Jobs          `yaml:"jobs,omitempty"`
 	Private      bool          `yaml:"private,omitempty"`
 	path         string        // "private"
-	namespace    string        // for project "mapping"
+	parsedURL    projectURL    // parsed url data
 }
 
 // Platform covers the platform structure of our yaml
@@ -500,18 +509,29 @@ func Parse(configFilepath string) (*Project, *failures.Failure) {
 		}
 	}
 
-	if fail = ValidateProjectURL(project.Project); fail != nil {
+	if fail = project.Init(); fail != nil {
 		return nil, fail
 	}
 
-	match := ProjectURLRe.FindStringSubmatch(project.Project)
-	projOwner := match[1]
-	projName := match[2]
-	project.namespace = fmt.Sprintf("%s/%s", projOwner, projName)
-
-	storeProjectMapping(project.namespace, filepath.Dir(project.Path()))
+	namespace := fmt.Sprintf("%s/%s", project.parsedURL.Owner, project.parsedURL.Name)
+	storeProjectMapping(namespace, filepath.Dir(project.Path()))
 
 	return project, nil
+}
+
+// Init initializes the parsedURL field from the project url string
+func (p *Project) Init() *failures.Failure {
+	fail := ValidateProjectURL(p.Project)
+	if fail != nil {
+		return fail
+	}
+
+	parsedURL, err := p.parseURL()
+	if err != nil {
+		return failures.FailUserInput.New("parse_project_file_url_err")
+	}
+	p.parsedURL = parsedURL
+	return nil
 }
 
 func parse(configFilepath string) (*Project, *failures.Failure) {
@@ -532,6 +552,21 @@ func parse(configFilepath string) (*Project, *failures.Failure) {
 	return &project, nil
 }
 
+// Owner returns the project namespace's organization
+func (p *Project) Owner() string {
+	return p.parsedURL.Owner
+}
+
+// Name returns the project namespace's name
+func (p *Project) Name() string {
+	return p.parsedURL.Name
+}
+
+// CommitID returns the commit ID specified in the project
+func (p *Project) CommitID() string {
+	return p.parsedURL.CommitID
+}
+
 // Path returns the project's activestate.yaml file path.
 func (p *Project) Path() string {
 	return p.path
@@ -544,6 +579,7 @@ func (p *Project) SetPath(path string) {
 
 // ValidateProjectURL validates the configured project URL
 func ValidateProjectURL(url string) *failures.Failure {
+	// Note: This line also matches headless commit URLs: match == {'commit', '<commit_id>'}
 	match := ProjectURLRe.FindStringSubmatch(url)
 	if len(match) < 3 {
 		return FailParseProject.New(locale.T("err_bad_project_url"))
@@ -564,6 +600,51 @@ func (p *Project) Reload() *failures.Failure {
 // Save the project to its activestate.yaml file
 func (p *Project) Save() *failures.Failure {
 	return p.save(p.Path())
+}
+
+// parseURL returns the parsed fields of a Project URL
+func (p *Project) parseURL() (projectURL, error) {
+	return parseURL(p.Project)
+}
+
+func validateUUID(uuidStr string) error {
+	if ok := strfmt.Default.Validates("uuid", uuidStr); !ok {
+		return locale.NewError("invalid_uuid_val", "Invalid commit ID {{.V0}} in activestate.yaml.  You could replace it with 'latest'", uuidStr)
+	}
+
+	var uuid strfmt.UUID
+	if err := uuid.UnmarshalText([]byte(uuidStr)); err != nil {
+		return locale.WrapError(err, "err_commit_id_unmarshal", "Failed to unmarshal the commit id {{.V0}} read from activestate.yaml.", uuidStr)
+	}
+
+	return nil
+}
+
+func parseURL(url string) (projectURL, error) {
+	fail := ValidateProjectURL(url)
+	if fail != nil {
+		return projectURL{}, fail.ToError()
+	}
+
+	match := CommitURLRe.FindStringSubmatch(url)
+	if len(match) > 1 {
+		parts := projectURL{"", "", match[1]}
+		return parts, nil
+	}
+
+	match = ProjectURLRe.FindStringSubmatch(url)
+	parts := projectURL{match[1], match[2], ""}
+	if len(match) == 4 {
+		parts.CommitID = match[3]
+	}
+
+	if parts.CommitID != "" {
+		if err := validateUUID(parts.CommitID); err != nil {
+			return projectURL{}, err
+		}
+	}
+
+	return parts, nil
 }
 
 func removeTemporaryLanguage(data []byte) ([]byte, error) {
@@ -635,50 +716,91 @@ func (p *Project) save(path string) *failures.Failure {
 	if err != nil {
 		return failures.FailIO.Wrap(err)
 	}
-	storeProjectMapping(p.namespace, filepath.Dir(p.Path()))
 
+	storeProjectMapping(fmt.Sprintf("%s/%s", p.parsedURL.Owner, p.parsedURL.Name), filepath.Dir(p.Path()))
+
+	return nil
+}
+
+// SetNamespace updates the namespace in the project file
+func (p *Project) SetNamespace(owner, project string) error {
+	data, err := ioutil.ReadFile(p.path)
+	if err != nil {
+		return errs.Wrap(err, "Failed to read project file %s.", p.path)
+	}
+
+	namespace := fmt.Sprintf("%s/%s", owner, project)
+	out, err := setNamespaceInYAML(data, namespace)
+	if err != nil {
+		return errs.Wrap(err, "Failed to update namespace in project file.")
+	}
+
+	// keep parsed url components in sync
+	p.parsedURL.Owner = owner
+	p.parsedURL.Name = project
+
+	if err := ioutil.WriteFile(p.path, out, 0664); err != nil {
+		return errs.Wrap(err, "Failed to write project file %s", p.path)
+	}
+
+	fail := p.Reload()
+	if fail != nil {
+		return errs.Wrap(fail.ToError(), "Failed to reload updated projectfile.")
+	}
 	return nil
 }
 
 // SetCommit sets the commit id within the current project file. This is done
 // in-place so that line order is preserved.
-func (p *Project) SetCommit(commitID string) *failures.Failure {
-	fp, fail := GetProjectFilePath()
-	if fail != nil {
-		return fail
-	}
-
-	data, err := ioutil.ReadFile(fp)
+// If headless is true, the project is defined by a commit-id only
+func (p *Project) SetCommit(commitID string, headless bool) *failures.Failure {
+	data, err := ioutil.ReadFile(p.path)
 	if err != nil {
 		return failures.FailOS.Wrap(err)
 	}
 
-	out, fail := setCommitInYAML(data, commitID)
+	out, fail := setCommitInYAML(data, commitID, headless)
 	if fail != nil {
 		return fail
 	}
+	p.parsedURL.CommitID = commitID
 
-	if err := ioutil.WriteFile(fp, out, 0664); err != nil {
+	if err := ioutil.WriteFile(p.path, out, 0664); err != nil {
 		return failures.FailOS.Wrap(err)
 	}
 
-	Reset()
-	return nil
+	return p.Reload()
 }
 
 var (
-	// regex captures from "project:" (at start of line) to last "/" and
-	// everything after until a "?" or newline is reached. Everything after
-	// that is targeted, but not captured so that only the first capture
-	// group can be used in the replace value.
-	setCommitRE = regexp.MustCompile(`(?m:^(project:.*\/[^?\r\n]*).*)`)
+	// regex captures three groups:
+	// 1. from "project:" (at start of line) to protocol ("https://")
+	// 2. the domain name
+	// 3. the url part until a "?" or newline is reached.
+	// Everything after that is targeted, but not captured so that only the first three capture
+	// groups can be used in the replace value.
+	setCommitRE = regexp.MustCompile(`(?m:^(project: *https?:\/\/)([^\/]*\/)(.*\/[^?\r\n]*).*)`)
 )
 
-func setCommitInYAML(data []byte, commitID string) ([]byte, *failures.Failure) {
+func setNamespaceInYAML(data []byte, namespace string) ([]byte, error) {
+	commitQryParam := []byte(fmt.Sprintf("${1}${2}%s", namespace))
+
+	out := setCommitRE.ReplaceAll(data, commitQryParam)
+	if !strings.Contains(string(out), namespace) {
+		return nil, locale.NewError(
+			"err_set_namespace", "Failed to set namespace {{.V0}} in activestate.yaml.", namespace)
+	}
+	return out, nil
+}
+
+func setCommitInYAML(data []byte, commitID string, anonymous bool) ([]byte, *failures.Failure) {
 	if commitID == "" {
 		return nil, failures.FailDeveloper.New("commitID must not be empty")
 	}
-	commitQryParam := []byte("$1?commitID=" + commitID)
+	commitQryParam := []byte("$1$2$3?commitID=" + commitID)
+	if anonymous {
+		commitQryParam = []byte(fmt.Sprintf("${1}${2}commit/%s", commitID))
+	}
 
 	out := setCommitRE.ReplaceAll(data, commitQryParam)
 	if !strings.Contains(string(out), commitID) {
@@ -831,22 +953,23 @@ type CreateParams struct {
 	projectURL      string
 }
 
-// CreateWithProjectURL a new activestate.yaml with default content
-func CreateWithProjectURL(projectURL, path string) (*Project, *failures.Failure) {
+// TestOnlyCreateWithProjectURL a new activestate.yaml with default content
+func TestOnlyCreateWithProjectURL(projectURL, path string) (*Project, *failures.Failure) {
 	return createCustom(&CreateParams{
 		projectURL: projectURL,
 		Directory:  path,
-	})
+	}, language.Python3)
 }
 
 // Create will create a new activestate.yaml with a projectURL for the given details
 func Create(params *CreateParams) *failures.Failure {
-	fail := validateCreateParams(params)
+	lang := language.MakeByName(params.Language)
+	fail := validateCreateParams(params, lang)
 	if fail != nil {
 		return fail
 	}
 
-	_, fail = createCustom(params)
+	_, fail = createCustom(params, lang)
 	if fail != nil {
 		return fail
 	}
@@ -854,7 +977,7 @@ func Create(params *CreateParams) *failures.Failure {
 	return nil
 }
 
-func createCustom(params *CreateParams) (*Project, *failures.Failure) {
+func createCustom(params *CreateParams, lang language.Language) (*Project, *failures.Failure) {
 	fail := fileutils.MkdirUnlessExists(params.Directory)
 	if fail != nil {
 		return nil, fail
@@ -887,29 +1010,33 @@ func createCustom(params *CreateParams) (*Project, *failures.Failure) {
 		shell = "batch"
 	}
 
-	yaml := "sample_yaml_python"
-	if strings.ToLower(params.Language) == language.Perl.String() {
-		yaml = "sample_yaml_perl"
-	}
-	if params.Content == "" {
-		params.Content = locale.T(yaml,
-			map[string]interface{}{"Owner": owner, "Project": project, "Shell": shell, "Language": params.Language})
+	box := packr.NewBox("../../assets/")
+
+	content := params.Content
+	if content == "" {
+		var err error
+		content, err = strutils.ParseTemplate(
+			box.String("activestate.yaml."+strings.TrimRight(lang.String(), "23")+".tpl"),
+			map[string]interface{}{"Owner": owner, "Project": project, "Shell": shell, "Language": lang.String(), "LangExe": lang.Executable().Filename()})
+		if err != nil {
+			return nil, failures.FailMisc.Wrap(err)
+		}
 	}
 
 	data := map[string]interface{}{
 		"Project":         params.projectURL,
 		"LanguageName":    params.Language,
 		"LanguageVersion": params.LanguageVersion,
-		"Content":         params.Content,
+		"Content":         content,
 		"Private":         params.Private,
 	}
 
-	template, fail := loadTemplate(params.path, data)
-	if fail != nil {
-		return nil, fail
+	fileContents, err := strutils.ParseTemplate(box.String("activestate.yaml.tpl"), data)
+	if err != nil {
+		return nil, failures.FailMisc.Wrap(err)
 	}
 
-	fail = fileutils.WriteFile(params.path, []byte(template.String()))
+	fail = fileutils.WriteFile(params.path, []byte(fileContents))
 	if fail != nil {
 		return nil, fail
 	}
@@ -917,14 +1044,19 @@ func createCustom(params *CreateParams) (*Project, *failures.Failure) {
 	return Parse(params.path)
 }
 
-func validateCreateParams(params *CreateParams) *failures.Failure {
+func validateCreateParams(params *CreateParams, lang language.Language) *failures.Failure {
+	langValidErr := lang.Validate()
 	switch {
+	case langValidErr != nil:
+		return failures.FailUserInput.Wrap(langValidErr)
+	case params.Directory == "":
+		return FailNewBlankPath.New(locale.T("err_project_require_path"))
+	case params.projectURL != "":
+		return nil // Owner and Project not required when projectURL is set
 	case params.Owner == "":
 		return FailNewBlankOwner.New("err_project_require_owner")
 	case params.Project == "":
 		return FailNewBlankProject.New("err_project_require_name")
-	case params.Directory == "":
-		return FailNewBlankPath.New(locale.T("err_project_require_path"))
 	default:
 		return nil
 	}

@@ -150,7 +150,7 @@ func winPathToLinPath(name string) (string, error) {
 }
 
 func binaryPathCmd(env []string, name string) (string, error) {
-	cmd := exec.Command("where", "python")
+	cmd := exec.Command("where", name)
 	cmd.Env = env
 
 	out, err := cmd.Output()

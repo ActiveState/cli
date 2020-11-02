@@ -36,6 +36,24 @@ type Language struct {
 	Version string `json:"version"`
 }
 
+// HasPackage searches a commit for a package by name.
+func HasPackage(commitID strfmt.UUID, namespace string) (bool, error) {
+	chkPt, _, fail := FetchCheckpointForCommit(commitID)
+	if fail != nil {
+		return false, fail.ToError()
+	}
+
+	chkPt = FilterCheckpointPackages(chkPt)
+
+	for _, req := range chkPt {
+		if req.Requirement == namespace {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
 // FetchLanguagesForProject fetches a list of language names for the given project
 func FetchLanguagesForProject(orgName string, projectName string) ([]Language, *failures.Failure) {
 	platProject, fail := FetchProjectByName(orgName, projectName)
@@ -188,6 +206,7 @@ func CheckpointToPlatforms(checkpoint Checkpoint) []strfmt.UUID {
 	return result
 }
 
+// CheckpointToLanguage returns the language from a checkpoint
 func CheckpointToLanguage(checkpoint Checkpoint) (*Language, *failures.Failure) {
 	for _, req := range checkpoint {
 		if !NamespaceMatch(req.Namespace, NamespaceLanguageMatch) {

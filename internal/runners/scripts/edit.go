@@ -312,7 +312,7 @@ func startInteractive(sw *scriptWatcher, scriptName string, output output.Output
 
 	prompter := prompt.New()
 	for {
-		doneEditing, fail := prompter.Confirm(locale.T("prompt_done_editing"), true)
+		doneEditing, fail := prompter.Confirm("", locale.T("prompt_done_editing"), true)
 		if fail != nil {
 			return errs.Wrap(fail, "Prompter returned with failure.")
 		}

@@ -4,6 +4,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/gobuffalo/packr"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -122,7 +124,8 @@ func run(params *RunParams, out output.Outputer) (string, error) {
 	}
 
 	if params.Style == SkeletonEditor {
-		createParams.Content = locale.T("editor_yaml")
+		box := packr.NewBox("../../../assets/")
+		createParams.Content = box.String("activestate.yaml.editor.tpl")
 	}
 
 	fail := projectfile.Create(createParams)

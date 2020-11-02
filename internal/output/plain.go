@@ -14,6 +14,7 @@ import (
 	"github.com/thoas/go-funk"
 	"golang.org/x/crypto/ssh/terminal"
 
+	"github.com/ActiveState/cli/internal/colorize"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
@@ -30,8 +31,10 @@ const (
 	HidePlain     PlainOpts = "hidePlain"
 )
 
+const dash = "\u2500"
+
 // Plain is our plain outputer, it uses reflect to marshal the data.
-// Semantic highlighting tags are supported as [INFO]foo[/RESET]
+// Semantic highlighting tags are supported as [NOTICE]foo[/RESET]
 // Table output is supported if you pass a slice of structs
 // Struct keys are localized by sending them to the locale library as field_key (lowercase)
 type Plain struct {
@@ -63,8 +66,9 @@ func (f *Plain) Error(value interface{}) {
 // Notice will marshal and print the given value to the error writer, it wraps it in the notice format but otherwise the
 // only thing that identifies it as an error is the channel it writes it to
 func (f *Plain) Notice(value interface{}) {
-	f.write(f.cfg.ErrWriter, fmt.Sprintf("[NOTICE]%s[/RESET]\n", value))
+	f.write(f.cfg.ErrWriter, fmt.Sprintf("%s\n", value))
 }
+
 
 // Config returns the Config struct for the active instance
 func (f *Plain) Config() *Config {
@@ -84,7 +88,7 @@ func (f *Plain) write(writer io.Writer, value interface{}) {
 
 // writeNow is a little helper that just writes the given value to the requested writer (no marshalling)
 func (f *Plain) writeNow(writer io.Writer, value string) {
-	_, err := writeColorized(wordWrap(value), writer, !f.cfg.Colored)
+	_, err := colorize.Colorize(wordWrap(value), writer, !f.cfg.Colored)
 	if err != nil {
 		logging.Errorf("Writing colored output failed: %v", err)
 	}
@@ -322,9 +326,7 @@ func sprintTable(slice []interface{}) (string, error) {
 
 	// Set our own custom table format
 	tabulate.TableFormats["standard"] = tabulate.TableFormat{
-		LineTop:         tabulate.Line{"", "-", "", ""},
-		LineBelowHeader: tabulate.Line{"", "\u2500", "", ""},
-		LineBottom:      tabulate.Line{"", "-", "", ""},
+		LineBelowHeader: tabulate.Line{"[DISABLED]", dash, "", "[/RESET]"},
 		HeaderRow:       tabulate.Row{"[HEADING]", "", "[/RESET]"},
 		DataRow:         tabulate.Row{"", "", ""},
 		TitleRow:        tabulate.Row{"", "", ""},

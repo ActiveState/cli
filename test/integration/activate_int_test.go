@@ -49,8 +49,8 @@ func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
 	cp := ts.Spawn("activate", "ActiveState-CLI/Python2")
 	cp.Expect("Where would you like to checkout")
 	cp.SendLine(cp.WorkDirectory())
-	cp.Expect("activated state", 20*time.Second)
-	cp.WaitForInput(20 * time.Second)
+	cp.Expect("You're Activated", 20*time.Second)
+	cp.WaitForInput(10 * time.Second)
 
 	cp.SendLine("exit 123")
 	cp.ExpectExitCode(123, 10*time.Second)
@@ -68,8 +68,8 @@ func (suite *ActivateIntegrationTestSuite) TestActivateUsingCommitID() {
 
 	cp.Expect("Where would you like to checkout")
 	cp.SendLine(cp.WorkDirectory())
-	cp.Expect("activated state", 10*time.Second)
-	cp.WaitForInput(20 * time.Second)
+	cp.Expect("You're Activated", 20*time.Second)
+	cp.WaitForInput(10 * time.Second)
 
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
@@ -86,9 +86,8 @@ func (suite *ActivateIntegrationTestSuite) TestActivateNotOnPath() {
 	)
 	cp.Expect("Where would you like to checkout")
 	cp.SendLine(cp.WorkDirectory())
-
-	cp.Expect("activated state")
-	cp.WaitForInput()
+	cp.Expect("You're Activated", 20*time.Second)
+	cp.WaitForInput(10 * time.Second)
 
 	if runtime.GOOS == "windows" {
 		cp.SendLine("doskey /macros | findstr state=")
@@ -283,6 +282,36 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
 	cp.ExpectExitCode(0)
 }
 
+func (suite *ActivateIntegrationTestSuite) TestActivate_Replace() {
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("activate", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work),
+	)
+	cp.Expect("Activating state: ActiveState-CLI/Python3")
+
+	cp.WaitForInput()
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("activate", "ActiveState/ActivePerl-5.26", "--replace"),
+		e2e.WithWorkDirectory(ts.Dirs.Bin),
+	)
+	cp.ExpectLongString("No activestate.yaml file exists in the current working directory or its parent directories.")
+	cp.ExpectExitCode(1)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("activate", "ActiveState/ActivePerl-5.26", "--replace"),
+	)
+	cp.Expect("Activating state: ActiveState/ActivePerl-5.26")
+
+	cp.WaitForInput()
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
+}
+
 func (suite *ActivateIntegrationTestSuite) TestActivate_Subdir() {
 	suite.OnlyRunForTags(tagsuite.Activate)
 	ts := e2e.New(suite.T(), false)
@@ -324,7 +353,7 @@ func (suite *ActivateIntegrationTestSuite) TestInit_Activation_NoCommitID() {
 	defer ts.Close()
 
 	cp := ts.Spawn("init", namespace, "python3")
-	cp.Expect(fmt.Sprintf("Project '%s' has been successfully initialized", namespace))
+	cp.ExpectLongString(fmt.Sprintf("Project '%s' has been successfully initialized", namespace))
 	cp.ExpectExitCode(0)
 	cp = ts.SpawnWithOpts(
 		e2e.WithArgs("activate"),

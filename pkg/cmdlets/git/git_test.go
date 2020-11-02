@@ -47,7 +47,7 @@ func (suite *GitTestSuite) BeforeTest(suiteName, testName string) {
 
 	projectURL := fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, "test-owner", "test-project")
 
-	_, fail := projectfile.CreateWithProjectURL(projectURL, suite.dir)
+	_, fail := projectfile.TestOnlyCreateWithProjectURL(projectURL, suite.dir)
 	suite.NoError(fail.ToError(), "could not create a projectfile")
 
 	fail = fileutils.Touch(filepath.Join(suite.dir, "test-file"))

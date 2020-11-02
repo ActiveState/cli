@@ -7,11 +7,13 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/output/txtstyle"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/scriptfile"
@@ -35,35 +37,31 @@ var (
 // Run contains the run execution context.
 type Run struct {
 	out      output.Outputer
+	proj     *project.Project
 	subshell subshell.SubShell
-	project  *project.Project
 }
 
 type primeable interface {
 	primer.Outputer
-	primer.Subsheller
 	primer.Projecter
+	primer.Subsheller
 }
 
 // New constructs a new instance of Run.
 func New(prime primeable) *Run {
 	return &Run{
 		prime.Output(),
-		prime.Subshell(),
 		prime.Project(),
+		prime.Subshell(),
 	}
 }
 
 // Run runs the Run run runner.
 func (r *Run) Run(name string, args []string) error {
-	return run(r.out, r.subshell, r.project, name, args)
+	return run(r.out, r.subshell, r.proj, name, args)
 }
 
 func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, name string, args []string) error {
-	if authentication.Get().Authenticated() {
-		checker.RunCommitsBehindNotifier(out)
-	}
-
 	logging.Debug("Execute")
 
 	if name == "" {
@@ -79,6 +77,12 @@ func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, nam
 		return fail
 	}
 
+	out.Notice(txtstyle.NewTitle(locale.Tl("run_script_title", "Running Script: [ACTIONABLE]{{.V0}}[/RESET]", script.Name())))
+
+	if authentication.Get().Authenticated() {
+		checker.RunCommitsBehindNotifier(out)
+	}
+
 	// venvExePath stores a virtual environment's PATH value. If the script
 	// requires activation this is the PATH we should be searching for
 	// executables in.
@@ -86,6 +90,7 @@ func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, nam
 
 	// Activate the state if needed.
 	if !script.Standalone() && !subshell.IsActivated() {
+		out.Notice(output.Heading(locale.Tl("notice", "Notice")))
 		out.Notice(locale.T("info_state_run_activating_state"))
 		runtime, err := runtime.NewRuntime(proj.Source().Path(), proj.CommitUUID(), proj.Owner(), proj.Name(), runbits.NewRuntimeMessageHandler(out))
 		if err != nil {
@@ -116,9 +121,10 @@ func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, nam
 	if len(script.Languages()) == 0 {
 		warning := locale.Tl(
 			"run_warn_deprecated_script_without_language",
-			"[YELLOW]DEPRECATION WARNING: Scripts without a defined language currently fall back to using the default shell for your platform. This fallback mechanic will soon stop working and a language will need to be explicitly defined for each script. Please configure the 'language' field with a valid option (one of {{.V0}})[/RESET]",
+			"Scripts without a defined language currently fall back to using the default shell for your platform. This fallback mechanic will soon stop working and a language will need to be explicitly defined for each script. Please configure the '[ACTIONABLE]language[/RESET]' field with a valid option (one of [ACTIONABLE]{{.V0}}[/RESET])",
 			strings.Join(language.RecognizedNames(), ", "),
 		)
+		out.Notice(output.Heading(locale.Tl("deprecation_warning", "Deprecation Warning!")))
 		out.Notice(warning)
 
 		lang = language.MakeByShell(subs.Shell())
@@ -171,12 +177,12 @@ func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, nam
 	}
 	defer sf.Clean()
 
-	out.Notice(locale.Tr("info_state_run_running", script.Name(), script.Source().Path()))
+	out.Notice(output.Heading(locale.Tl("script_output", "Script Output")))
 	// ignore code for now, passing via failure
 	err = subs.Run(sf.Filename(), args...)
 	if err != nil {
 		if len(attempted) > 0 {
-			return locale.WrapInputError(
+			err = locale.WrapInputError(
 				err,
 				"err_run_script",
 				"Script execution fell back to {{.V0}} after {{.V1}} was not detected in your project or system. Please ensure your script is compatible with one, or more, of: {{.V0}}, {{.V1}}",
@@ -184,7 +190,9 @@ func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, nam
 				strings.Join(attempted, ", "),
 			)
 		}
-		return err
+		return errs.AddTips(
+			locale.WrapError(err, "err_script_run", "Your script failed to execute: {{.V0}}.", err.Error()),
+			locale.Tl("script_run_tip", "Edit the script '[ACTIONABLE]{{.V0}}[/RESET]' in your [ACTIONABLE]activestate.yaml[/RESET].", script.Name()))
 	}
 	return nil
 }

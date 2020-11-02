@@ -6,15 +6,18 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/globaldefault"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/output/txtstyle"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/updater"
+	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/cmdlets/git"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
@@ -27,6 +30,7 @@ type Activate struct {
 	activateCheckout *Checkout
 	out              output.Outputer
 	config           configAble
+	proj             *project.Project
 	subshell         subshell.SubShell
 }
 
@@ -34,11 +38,13 @@ type ActivateParams struct {
 	Namespace     *project.Namespaced
 	PreferredPath string
 	Command       string
+	ReplaceWith   *project.Namespaced
 	Default       bool
 }
 
 type primeable interface {
 	primer.Outputer
+	primer.Projecter
 	primer.Subsheller
 	primer.Prompter
 }
@@ -49,6 +55,7 @@ func NewActivate(prime primeable) *Activate {
 		NewCheckout(git.NewRepo(), prime),
 		prime.Output(),
 		viper.GetViper(),
+		prime.Project(),
 		prime.Subshell(),
 	}
 }
@@ -59,6 +66,8 @@ func (r *Activate) Run(params *ActivateParams) error {
 
 func (r *Activate) run(params *ActivateParams) error {
 	logging.Debug("Activate %v, %v", params.Namespace, params.PreferredPath)
+
+	r.out.Notice(txtstyle.NewTitle(locale.T("info_activating_state")))
 
 	alreadyActivated := subshell.IsActivated()
 	if alreadyActivated {
@@ -100,6 +109,12 @@ func (r *Activate) run(params *ActivateParams) error {
 		}
 	}
 
+	// on --replace, replace namespace and commit id in as.yaml
+	if params.ReplaceWith.IsValid() {
+		if err := updateProjectFile(proj, params.ReplaceWith); err != nil {
+			return locale.WrapError(err, "err_activate_replace_write", "Could not update the project file with a new namespace.")
+		}
+	}
 	proj.Source().Persist()
 
 	// Send google analytics event with label set to project namespace
@@ -113,12 +128,22 @@ func (r *Activate) run(params *ActivateParams) error {
 	if err != nil {
 		return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
 	}
+
+	venv := virtualenvironment.New(runtime)
+	venv.OnUseCache(func() { r.out.Notice(locale.T("using_cached_env")) })
+
+	fail := venv.Setup(true)
+	if fail != nil {
+		return locale.WrapError(fail, "error_could_not_activate_venv", "Could not activate project. If this is a private project ensure that you are authenticated.")
+	}
+
 	if params.Default {
 		err := globaldefault.SetupDefaultActivation(r.subshell, r.config, runtime, filepath.Dir(proj.Source().Path()))
 		if err != nil {
 			return locale.WrapError(err, "err_activate_default", "Could not configure your project as the default.")
 		}
 
+		r.out.Notice(output.Heading(locale.Tl("global_default_heading", "Global Default")))
 		r.out.Notice(locale.Tl("global_default_set", "Successfully configured [NOTICE]{{.V0}}[/RESET] as the global default project.", proj.Namespace().String()))
 
 		if alreadyActivated {
@@ -128,17 +153,12 @@ func (r *Activate) run(params *ActivateParams) error {
 
 	updater.PrintUpdateMessage(proj.Source().Path(), r.out)
 
-	if proj.IsHeadless() {
-		r.out.Notice(locale.T("info_activating_state_by_commit"))
-	} else {
-		r.out.Notice(locale.T("info_activating_state", proj))
-	}
-
 	if proj.CommitID() == "" {
-		return locale.NewInputError("err_project_no_commit", "", model.ProjectURL(proj.Owner(), proj.Name(), ""))
+		err := locale.NewInputError("err_project_no_commit", "Your project does not have a commit ID, please run `state push` first.", model.ProjectURL(proj.Owner(), proj.Name(), ""))
+		return errs.AddTips(err, "Run → [ACTIONABLE]state push[/RESET] to create your project")
 	}
 
-	if err := r.activateAndWait(proj, runtime); err != nil {
+	if err := r.activateAndWait(proj, venv); err != nil {
 		return locale.WrapError(err, "err_activate_wait", "Could not activate runtime environment.")
 	}
 
@@ -146,6 +166,30 @@ func (r *Activate) run(params *ActivateParams) error {
 		r.out.Notice(locale.T("info_deactivated_by_commit"))
 	} else {
 		r.out.Notice(locale.T("info_deactivated", proj))
+	}
+
+	return nil
+}
+
+func updateProjectFile(prj *project.Project, names *project.Namespaced) error {
+	var commitID string
+	if names.CommitID == nil || *names.CommitID == "" {
+		latestID, fail := model.LatestCommitID(names.Owner, names.Project)
+		if fail != nil {
+			return locale.WrapInputError(fail.ToError(), "err_set_namespace_retrieve_commit", "Could not retrieve the latest commit for the specified project {{.V0}}.", names.String())
+		}
+		commitID = latestID.String()
+	} else {
+		commitID = names.CommitID.String()
+	}
+
+	err := prj.Source().SetNamespace(names.Owner, names.Project)
+	if err != nil {
+		return locale.WrapError(err, "err_activate_replace_write_namespace", "Failed to update project namespace.")
+	}
+	fail := prj.Source().SetCommit(commitID, prj.IsHeadless())
+	if fail != nil {
+		return locale.WrapError(fail.ToError(), "err_activate_replace_write_commit", "Failed to update commitID.")
 	}
 
 	return nil

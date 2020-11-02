@@ -5,7 +5,6 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/languages"
-	"github.com/ActiveState/cli/pkg/project"
 )
 
 func newLanguagesCommand(prime *primer.Values) *captain.Command {
@@ -19,15 +18,9 @@ func newLanguagesCommand(prime *primer.Values) *captain.Command {
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, _ []string) error {
-			proj, fail := project.GetSafe()
-			if fail != nil {
-				return fail
-			}
-
-			params := languages.NewLanguagesParams(proj.Owner(), proj.Name())
-			return runner.Run(&params)
+			return runner.Run()
 		},
-	)
+	).SetGroup(PlatformGroup)
 }
 
 func newLanguageInstallCommand(prime *primer.Values) *captain.Command {

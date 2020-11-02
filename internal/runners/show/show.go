@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/go-openapi/strfmt"
+
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -17,7 +19,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/go-openapi/strfmt"
 )
 
 // Params describes the data required for the show run func.
@@ -97,6 +98,10 @@ func (s *Show) Run(params Params) error {
 	} else {
 		if s.project == nil {
 			return locale.NewError("err_no_projectfile")
+		}
+
+		if s.project.IsHeadless() {
+			return locale.NewInputError("err_show_not_supported_headless", "This is not supported while in a headless state. Please visit {{.V0}} to create your project.", s.project.URL())
 		}
 
 		owner = s.project.Owner()

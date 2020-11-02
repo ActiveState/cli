@@ -184,11 +184,11 @@ func TestParse(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	project, err := Parse(filepath.Join(rootpath, "activestate.yml.nope"))
-	assert.NotNil(t, err, "Should throw an error")
+	project, fail := Parse(filepath.Join(rootpath, "activestate.yml.nope"))
+	assert.Error(t, fail.ToError(), "Should throw an error")
 
-	project, err = Parse(filepath.Join(rootpath, "pkg", "projectfile", "testdata", "activestate.yaml"))
-	assert.Nil(t, err, "Should not throw an error")
+	project, fail = Parse(filepath.Join(rootpath, "pkg", "projectfile", "testdata", "activestate.yaml"))
+	require.NoError(t, fail.ToError(), "Should not throw an error")
 
 	assert.NotEmpty(t, project.Project, "Project should be set")
 	assert.NotEmpty(t, project.Platforms, "Platforms should be set")
@@ -407,25 +407,48 @@ func TestRemoveTemporaryLanguage(t *testing.T) {
 func TestSetCommitInYAML(t *testing.T) {
 	exampleYAML := []byte(`
 junk: xgarbage
-project: https://example.com/xowner/xproject?commitID=123
+project: https://example.com/xowner/xproject?commitID=00000000-0000-0000-0000-000000000123
 123: xvalue
 `)
 	expectedYAML := bytes.Replace(exampleYAML, []byte("123"), []byte("987"), 1) // must be 1
 
-	_, fail := setCommitInYAML(exampleYAML, "")
+	_, fail := setCommitInYAML(exampleYAML, "", false)
 	assert.Equal(t, failures.FailDeveloper.Name, fail.Type.Name)
 
-	_, fail = setCommitInYAML([]byte(""), "123")
+	_, fail = setCommitInYAML([]byte(""), "123", false)
 	assert.Equal(t, FailSetCommitID.Name, fail.Type.Name)
 
-	out0, fail := setCommitInYAML(exampleYAML, "987")
+	out0, fail := setCommitInYAML(exampleYAML, "00000000-0000-0000-0000-000000000987", false)
 	assert.NoError(t, fail.ToError())
 	assert.Equal(t, string(expectedYAML), string(out0))
 
-	exampleYAMLNoID := bytes.Replace(exampleYAML, []byte("?commitID=123"), nil, 1)
-	out1, fail := setCommitInYAML(exampleYAMLNoID, "987")
+	exampleYAMLNoID := bytes.Replace(exampleYAML, []byte("?commitID=00000000-0000-0000-0000-000000000123"), nil, 1)
+	out1, fail := setCommitInYAML(exampleYAMLNoID, "00000000-0000-0000-0000-000000000987", false)
 	assert.NoError(t, fail.ToError())
 	assert.Equal(t, string(expectedYAML), string(out1))
+
+	// anonymous commits
+	expectedYAML = bytes.Replace(exampleYAML, []byte("xowner/xproject?commitID=00000000-0000-0000-0000-000000000123"), []byte("commit/00000000-0000-0000-0000-000000000987"), 1)
+	out2, fail := setCommitInYAML(exampleYAML, "00000000-0000-0000-0000-000000000987", true)
+	assert.NoError(t, fail.ToError())
+	assert.Equal(t, string(expectedYAML), string(out2))
+}
+
+func TestSetNamespaceInYAML(t *testing.T) {
+	exampleYAML := []byte(`
+junk: xgarbage
+project: https://example.com/xowner/xproject?commitID=00000000-0000-0000-0000-000000000123
+123: xvalue
+`)
+	expectedYAML := []byte(`
+junk: xgarbage
+project: https://example.com/yowner/yproject
+123: xvalue
+`)
+
+	out, err := setNamespaceInYAML(exampleYAML, "yowner/yproject")
+	assert.NoError(t, err)
+	assert.Equal(t, string(expectedYAML), string(out))
 }
 
 func TestSetCommitInYAML_NoCommitID(t *testing.T) {
@@ -436,11 +459,11 @@ project: https://example.com/xowner/xproject
 `)
 	expectedYAML := []byte(`
 junk: xgarbage
-project: https://example.com/xowner/xproject?commitID=123
+project: https://example.com/xowner/xproject?commitID=00000000-0000-0000-0000-000000000123
 123: xvalue
 `)
 
-	out, fail := setCommitInYAML(exampleYAML, "123")
+	out, fail := setCommitInYAML(exampleYAML, "00000000-0000-0000-0000-000000000123", false)
 	assert.NoError(t, fail.ToError())
 	assert.Equal(t, string(expectedYAML), string(out))
 }
@@ -450,17 +473,17 @@ func TestNewProjectfile(t *testing.T) {
 	assert.NoError(t, err, "Should be no error when getting a temp directory")
 	os.Chdir(dir)
 
-	pjFile, fail := CreateWithProjectURL("https://platform.activestate.com/xowner/xproject", dir)
+	pjFile, fail := TestOnlyCreateWithProjectURL("https://platform.activestate.com/xowner/xproject", dir)
 	assert.NoError(t, fail.ToError(), "There should be no error when loading from a path")
-	assert.Equal(t, "helloWorld", pjFile.Scripts[0].Name)
+	assert.Equal(t, "activationMessage", pjFile.Scripts[0].Name)
 
-	_, fail = CreateWithProjectURL("https://platform.activestate.com/xowner/xproject", "")
+	_, fail = TestOnlyCreateWithProjectURL("https://platform.activestate.com/xowner/xproject", "")
 	assert.Error(t, fail.ToError(), "We don't accept blank paths")
 
 	setCwd(t, "")
 	dir, err = os.Getwd()
 	assert.NoError(t, err, "Should be no error when getting the CWD")
-	_, fail = CreateWithProjectURL("https://platform.activestate.com/xowner/xproject", dir)
+	_, fail = TestOnlyCreateWithProjectURL("https://platform.activestate.com/xowner/xproject", dir)
 	assert.Error(t, fail.ToError(), "Cannot create new project if existing as.yaml ...exists")
 }
 

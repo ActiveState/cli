@@ -121,7 +121,7 @@ func promptTOS(out output.Outputer, prompt prompt.Prompter) (bool, error) {
 	}
 
 	out.Notice(locale.Tr("tos_disclaimer", constants.TermsOfServiceURLLatest))
-	choice, fail := prompt.Select(locale.T("tos_acceptance"), choices, locale.T("tos_accept"))
+	choice, fail := prompt.Select(locale.Tl("tos", "Terms of Service"), locale.T("tos_acceptance"), choices, locale.T("tos_accept"))
 	if fail != nil {
 		return false, fail
 	}
@@ -142,7 +142,7 @@ func promptTOS(out output.Outputer, prompt prompt.Prompter) (bool, error) {
 			return false, failures.FailIO.Wrap(err)
 		}
 		out.Print(tos)
-		return prompt.Confirm(locale.T("tos_acceptance"), true)
+		return prompt.Confirm("", locale.T("tos_acceptance"), true)
 	}
 
 	return false, nil
@@ -154,11 +154,11 @@ func promptForSignup(input *signupInput, out output.Outputer, prompter prompt.Pr
 	if input.Username != "" {
 		out.Notice(locale.T("confirm_password_account_creation"))
 	} else {
-		input.Username, fail = prompter.Input(locale.T("username_prompt_signup"), "", prompt.InputRequired)
+		input.Username, fail = prompter.Input("", locale.T("username_prompt_signup"), "", prompt.InputRequired)
 		if fail != nil {
 			return fail
 		}
-		input.Password, fail = prompter.InputSecret(locale.T("password_prompt_signup"), prompt.InputRequired)
+		input.Password, fail = prompter.InputSecret("", locale.T("password_prompt_signup"), prompt.InputRequired)
 		if fail != nil {
 			return fail
 		}
@@ -173,7 +173,7 @@ func promptForSignup(input *signupInput, out output.Outputer, prompter prompt.Pr
 		return nil
 	}
 
-	input.Password2, fail = prompter.InputSecret(locale.T("password_prompt_confirm"), prompt.InputRequired)
+	input.Password2, fail = prompter.InputSecret("", locale.T("password_prompt_confirm"), prompt.InputRequired)
 	if fail != nil {
 		return fail
 	}
@@ -182,12 +182,12 @@ func promptForSignup(input *signupInput, out output.Outputer, prompter prompt.Pr
 		return FailInvalidPassword.Wrap(err)
 	}
 
-	input.Name, fail = prompter.Input(locale.T("name_prompt"), "", prompt.InputRequired)
+	input.Name, fail = prompter.Input("", locale.T("name_prompt"), "", prompt.InputRequired)
 	if fail != nil {
 		return fail
 	}
 
-	input.Email, fail = prompter.Input(locale.T("email_prompt"), "", prompt.InputRequired)
+	input.Email, fail = prompter.Input("", locale.T("email_prompt"), "", prompt.InputRequired)
 	if fail != nil {
 		return fail
 	}

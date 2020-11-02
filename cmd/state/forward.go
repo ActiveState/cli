@@ -54,6 +54,7 @@ func forwardFn(args []string, out output.Outputer, pj *project.Project) (forward
 
 	fn := func() (int, error) {
 		// Perform the forward
+		out.Notice(output.Heading(locale.Tl("forward_title", "Version Locked")))
 		out.Notice(locale.Tr("forward_version", versionInfo.Version))
 		code, fail := forward(args, versionInfo, out)
 		if fail != nil {

@@ -143,6 +143,6 @@ func determineOwner(username string, prompter prompt.Prompter) (string, error) {
 	}
 	options = append([]string{username}, options...)
 
-	r, fail := prompter.Select(locale.Tl("fork_select_org", "Who should the new project belong to?"), options, "")
+	r, fail := prompter.Select(locale.Tl("fork_owner_title", "Owner"), locale.Tl("fork_select_org", "Who should the new project belong to?"), options, "")
 	return r, fail.ToError()
 }

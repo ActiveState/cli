@@ -1,6 +1,8 @@
+{{if ne .Owner ""}}
 function fish_prompt
     echo "[{{.Owner}}/{{.Name}}] % "
 end
+{{end}}
 
 {{- range $K, $V := .Env}}
 {{- if eq $K "PATH"}}
@@ -20,4 +22,8 @@ alias {{$K}}='{{$.ExecName}} run {{$CMD}}'
 
 cd "{{.WD}}"
 
+echo "{{.ActivateEventMessage}}"
+
 {{.UserScripts}}
+
+echo "{{.ActivatedMessage}}"

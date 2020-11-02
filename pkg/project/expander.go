@@ -92,8 +92,7 @@ func limitExpandFromProject(depth int, s string, p *Project) (string, error) {
 				return ""
 			}
 		} else {
-			err = locale.NewInputError("err_expand_category", "Error expanding variable '{{.V0}}': unknown category '{{.V1}}'", variable, category)
-			return ""
+			return variable // we don't control this variable, so leave it as is
 		}
 
 		if value != "" && value != variable {

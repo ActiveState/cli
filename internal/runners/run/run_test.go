@@ -136,7 +136,7 @@ scripts:
 	rerr := run(out, subshell.New(), proj, "run", nil)
 	assert.NoError(t, rerr, "No error occurred")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
-	assert.Contains(t, out.CombinedOutput(), "Running user-defined script: run")
+	assert.Contains(t, out.CombinedOutput(), "Running Script: run")
 }
 
 func TestRunMissingCommandName(t *testing.T) {
