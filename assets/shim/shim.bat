@@ -2,4 +2,4 @@
 
 REM {{.denote}}
 
-{{.exe}} shim -- {{.command}} %*
+{{.exe}} shim --path {{.projectPath}} -- {{.command}} %*

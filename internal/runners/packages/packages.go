@@ -22,7 +22,7 @@ const latestVersion = "latest"
 
 func executePackageOperation(pj *project.Project, out output.Outputer, authentication *authentication.Auth, prompt prompt.Prompter, language, name, version string, operation model.Operation) error {
 	isHeadless := pj.IsHeadless()
-	if !isHeadless && !authentication.Authenticated() {
+	if false && !isHeadless && !authentication.Authenticated() { // Headless prompt disabled for the moment
 		anonymousOk, fail := prompt.Confirm(locale.Tl("continue_anon", "Continue Anonymously?"), locale.T("prompt_headless_anonymous"), true)
 		if fail != nil {
 			return locale.WrapInputError(fail.ToError(), "Authentication cancelled.")
@@ -89,10 +89,6 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 		out.Print(locale.Tr("package_"+string(operation), name))
 	}
 
-	// print message on how to create a project from a headless state
-	if isHeadless {
-		out.Notice(locale.Tr("package_headless_project_creation", commitID.String()))
-	}
 	return nil
 }
 

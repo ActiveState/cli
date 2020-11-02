@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -12,11 +11,6 @@ import (
 type Languages struct {
 	out     output.Outputer
 	project *project.Project
-}
-
-type primeable interface {
-	primer.Outputer
-	primer.Projecter
 }
 
 func NewLanguages(prime primeable) *Languages {

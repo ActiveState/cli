@@ -3,6 +3,7 @@ package integration
 import (
 	"fmt"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"testing"
 	"time"
@@ -325,7 +326,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_headless_operation() {
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
-	suite.OnlyRunForTags(tagsuite.Package)
+	suite.OnlyRunForTags(tagsuite.Package, tagsuite.Revert)
 	if runtime.GOOS == "darwin" {
 		suite.T().Skip("Skipping mac for now as the builds are still too unreliable")
 		return
@@ -336,11 +337,18 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 	username := ts.CreateNewUser()
 	namespace := fmt.Sprintf("%s/%s", username, "python3-pkgtest")
 
-	cp := ts.Spawn("fork", "ActiveState-CLI/Python3", "--org", username, "--name", "python3-pkgtest")
+	cp := ts.Spawn("fork", "ActiveState-CLI/Revert", "--org", username, "--name", "python3-pkgtest")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("activate", namespace, "--path="+ts.Dirs.Work, "--output=json")
 	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("history")
+	cp.ExpectExitCode(0)
+
+	// Get the first commitID we find, which should be the first commit for the project
+	commitRe := regexp.MustCompile(`[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}`)
+	firstCommit := commitRe.FindString(cp.TrimmedSnapshot())
 
 	suite.Run("install", func() {
 		cp := ts.Spawn("install", "dateparser@0.7.2")
@@ -359,6 +367,14 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 		cp.ExpectRe("(?:package removed|project is currently building)")
 		cp.ExpectExitCode(1)
 	})
+
+	cp = ts.Spawn("revert", firstCommit)
+	cp.SendLine("y")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("history")
+	cp.Expect(fmt.Sprintf("Description: Reverting to commit %s", firstCommit))
+	cp.ExpectExitCode(0)
 }
 
 func (suite *PackageIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session) {
