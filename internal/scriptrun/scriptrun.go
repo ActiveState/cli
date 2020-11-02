@@ -19,6 +19,7 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
+// ScriptRun manages the context required to run a script.
 type ScriptRun struct {
 	out     output.Outputer
 	sub     subshell.SubShell
@@ -28,6 +29,7 @@ type ScriptRun struct {
 	venvExePath  string
 }
 
+// New returns a pointer to a prepared instance of ScriptRun.
 func New(out output.Outputer, subs subshell.SubShell, proj *project.Project) *ScriptRun {
 	return &ScriptRun{
 		out,
@@ -42,10 +44,13 @@ func New(out output.Outputer, subs subshell.SubShell, proj *project.Project) *Sc
 		os.Getenv("PATH")}
 }
 
+// NeedsActivation indicates whether the underlying environment has been
+// prepared and activated.
 func (s *ScriptRun) NeedsActivation() bool {
 	return !subshell.IsActivated() && !s.venvPrepared
 }
 
+// PrepareVirtualEnv sets up the relevant runtime and prepares the environment.
 func (s *ScriptRun) PrepareVirtualEnv() error {
 	runtime, err := runtime.NewRuntime(s.project.Source().Path(), s.project.CommitUUID(), s.project.Owner(), s.project.Name(), runbits.NewRuntimeMessageHandler(s.out))
 	if err != nil {
@@ -75,6 +80,7 @@ func (s *ScriptRun) PrepareVirtualEnv() error {
 	return nil
 }
 
+// Run executes the script after ensuring the environment is prepared.
 func (s *ScriptRun) Run(script *project.Script, args []string) error {
 	if s.project == nil {
 		return locale.NewInputError("err_no_projectfile")
