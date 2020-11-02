@@ -283,6 +283,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivate_Replace() {
+	suite.OnlyRunForTags(tagsuite.Activate)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -443,6 +444,7 @@ func TestActivateIntegrationTestSuite(t *testing.T) {
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivateCommitURL() {
+	suite.OnlyRunForTags(tagsuite.Activate)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
