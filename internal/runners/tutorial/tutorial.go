@@ -59,6 +59,7 @@ func (t *Tutorial) RunNewProject(params NewProjectParams) error {
 	lang := params.Language
 	if lang == language.Unset {
 		choice, fail := t.prompt.Select(
+			"",
 			locale.Tl("tutorial_language", "What language would you like to use for your new virtual environment?"),
 			[]string{language.Perl.Text(), language.Python3.Text(), language.Python2.Text()},
 			"",
@@ -74,14 +75,14 @@ func (t *Tutorial) RunNewProject(params NewProjectParams) error {
 	}
 
 	// Prompt for project name
-	name, fail := t.prompt.Input(locale.Tl("tutorial_prompt_projectname", "What do you want to name your project?"), lang.Text())
+	name, fail := t.prompt.Input("", locale.Tl("tutorial_prompt_projectname", "What do you want to name your project?"), lang.Text())
 	if fail != nil {
 		return locale.WrapInputError(fail, "err_tutorial_prompt_projectname", "Invalid response received.")
 	}
 
 	// Prompt for project dir
 	homeDir, _ := fileutils.HomeDir()
-	dir, fail := t.prompt.Input(locale.Tl(
+	dir, fail := t.prompt.Input("", locale.Tl(
 		"tutorial_prompt_projectdir",
 		"Where would you like your project directory to be mapped? This is usually the root of your repository, or the place where you have your project dotfiles."), homeDir)
 	if fail != nil {
@@ -129,6 +130,7 @@ func (t *Tutorial) authFlow() error {
 
 	// Prompt for auth
 	choice, fail := t.prompt.Select(
+		"",
 		locale.Tl("tutorial_need_account", "In order to create a virtual environment you must have an ActiveState Platform account"),
 		choices,
 		signIn,

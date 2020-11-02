@@ -123,7 +123,7 @@ func confirmUpdateLock() error {
 	msg := locale.T("confirm_update_locked_version_prompt")
 
 	prom := prompt.New()
-	confirmed, fail := prom.Confirm(msg, false)
+	confirmed, fail := prom.Confirm(locale.T("confirm"), msg, false)
 	if fail != nil {
 		return fail.ToError()
 	}

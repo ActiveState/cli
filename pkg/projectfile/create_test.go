@@ -10,8 +10,9 @@ import (
 
 	"github.com/ActiveState/cli/internal/fileutils"
 
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/go-openapi/strfmt"
+
+	"github.com/ActiveState/cli/internal/failures"
 )
 
 func Test_Create(t *testing.T) {
@@ -21,6 +22,7 @@ func Test_Create(t *testing.T) {
 		org       string
 		project   string
 		directory string
+		language  string
 		commitID  *strfmt.UUID
 	}
 	tests := []struct {
@@ -32,7 +34,7 @@ func Test_Create(t *testing.T) {
 	}{
 		{
 			"orgName/projName",
-			args{"orgName", "projName", tempDir, &uuid},
+			args{"orgName", "projName", tempDir, "python3", &uuid},
 			nil,
 			true,
 			"orgName/projName?commitID=" + uuid.String(),
@@ -45,12 +47,14 @@ func Test_Create(t *testing.T) {
 				Project:   tt.args.project,
 				CommitID:  tt.args.commitID,
 				Directory: tt.args.directory,
+				Language:  tt.args.language,
 			}); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("createProjectFile() = %v, want %v", got, tt.want)
 			}
 			configFile := filepath.Join(tempDir, constants.ConfigFileName)
 			if created := fileutils.FileExists(configFile); created != tt.wantCreated {
 				t.Errorf("%s created: %v, but wanted: %v", constants.ConfigFileName, created, tt.wantCreated)
+				t.FailNow()
 			}
 			fileContents := fileutils.ReadFileUnsafe(configFile)
 			if !strings.Contains(string(fileContents), tt.wantContents) {

@@ -29,7 +29,7 @@ func newPlatformsCommand(prime *primer.Values) *captain.Command {
 
 			return runner.Run(params)
 		},
-	)
+	).SetGroup(PlatformGroup)
 }
 
 func newPlatformsSearchCommand(prime *primer.Values) *captain.Command {

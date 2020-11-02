@@ -136,9 +136,11 @@ func (f *FailureType) New(message string, params ...string) *Failure {
 	if !f.Matches(FailUser) && !f.Matches(FailNonFatal) {
 		logger = logging.Error
 	}
-	logger(message)
 
-	return &Failure{message, f, file, line, stacktrace.Get(), nil}
+	stack := stacktrace.Get()
+	logger(message + " -- stack: " + stack.String())
+
+	return &Failure{message, f, file, line, stack, nil, []string{}}
 }
 
 // Wrap wraps another error
@@ -148,7 +150,11 @@ func (f *FailureType) Wrap(err error, message ...string) *Failure {
 	}
 
 	if len(message) > 0 {
-		err = fmt.Errorf("%s: %w", strings.Join(message, ": "), err)
+		args := []string{}
+		if len(message) > 1 {
+			args = message[1:]
+		}
+		err = fmt.Errorf("%s: %w", locale.Tr(message[0], args...), err)
 	}
 	logging.Debug("Failure '%s' wrapped: %v", f.Name, err)
 	fail := f.New(err.Error())
@@ -164,6 +170,7 @@ type Failure struct {
 	Line    int
 	Trace   *stacktrace.Stacktrace
 	err     error
+	tips    []string
 }
 
 // Error returns the failure message, cannot be a pointer as it breaks the error interface
@@ -192,7 +199,7 @@ func (e *Failure) Unwrap() error {
 // failure to Handle() and then returning, please add the description with this method
 // and use the modified failure as the return value.
 func (e *Failure) WithDescription(message string) *Failure {
-	e.Message = locale.T(message) + "\n" + e.Message
+	e.Message = locale.T(message) + ": " + e.Message
 	return e
 }
 
@@ -227,6 +234,14 @@ func (e *Failure) InputError() bool {
 		return false
 	}
 	return e.Type.User
+}
+
+func (f *Failure) ErrorTips() []string {
+	return f.tips
+}
+
+func (f *Failure) AddTips(tips ...string) {
+	f.tips = append(f.tips, tips...)
 }
 
 // Type returns a FailureType that can be used to create your own failure types

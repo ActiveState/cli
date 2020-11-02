@@ -35,15 +35,6 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		newExportGithubActionCommand(prime),
 	)
 
-	packagesCmd := newPackagesCommand(prime)
-	packagesCmd.AddChildren(
-		newPackagesAddCommand(prime),
-		newPackagesUpdateCommand(prime),
-		newPackagesRemoveCommand(prime),
-		newPackagesImportCommand(prime),
-		newPackagesSearchCommand(prime),
-	)
-
 	platformsCmd := newPlatformsCommand(prime)
 	platformsCmd.AddChildren(
 		newPlatformsSearchCommand(prime),
@@ -61,9 +52,9 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 
 	cleanCmd := newCleanCommand(prime)
 	cleanCmd.AddChildren(
-		newUninstallCommand(prime),
-		newCacheCommand(prime),
-		newConfigCommand(prime),
+		newCleanUninstallCommand(prime),
+		newCleanCacheCommand(prime),
+		newCleanConfigCommand(prime),
 	)
 
 	deployCmd := newDeployCommand(prime)
@@ -79,6 +70,22 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 
 	eventsCmd := newEventsCommand(prime)
 	eventsCmd.AddChildren(newEventsLogCommand(prime))
+
+	installCmd := newInstallCommand(prime)
+	uninstallCmd := newUninstallCommand(prime)
+	importCmd := newImportCommand(prime)
+	searchCmd := newSearchCommand(prime)
+
+	pkgsCmd := newPackagesCommand(prime)
+	addAs := addCmdAs{
+		pkgsCmd,
+		prime,
+	}
+	addAs.deprecatedAlias(installCmd, "add")
+	addAs.deprecatedAlias(installCmd, "update")
+	addAs.deprecatedAlias(uninstallCmd, "remove")
+	addAs.deprecatedAlias(importCmd, "import")
+	addAs.deprecatedAlias(searchCmd, "search")
 
 	secretsClient := secretsapi.InitializeClient()
 	secretsCmd := newSecretsCommand(secretsClient, prime)
@@ -99,7 +106,11 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		newOrganizationsCommand(prime),
 		newRunCommand(prime),
 		newShowCommand(prime),
-		packagesCmd,
+		installCmd,
+		uninstallCmd,
+		importCmd,
+		searchCmd,
+		pkgsCmd,
 		platformsCmd,
 		newHistoryCommand(prime),
 		cleanCmd,
@@ -130,6 +141,15 @@ type globalOptions struct {
 	Output     string
 	Monochrome bool
 }
+
+var (
+	EnvironmentGroup = captain.NewCommandGroup(locale.Tl("group_environment", "Environment Management"), 10)
+	PackagesGroup    = captain.NewCommandGroup(locale.Tl("group_packages", "Package Management"), 9)
+	PlatformGroup    = captain.NewCommandGroup(locale.Tl("group_tools", "Platform"), 8)
+	VCSGroup         = captain.NewCommandGroup(locale.Tl("group_vcs", "Version Control"), 7)
+	AutomationGroup  = captain.NewCommandGroup(locale.Tl("group_automation", "Automation"), 6)
+	UtilsGroup       = captain.NewCommandGroup(locale.Tl("group_utils", "Utilities"), 5)
+)
 
 func newGlobalOptions() *globalOptions {
 	return &globalOptions{}
@@ -201,8 +221,6 @@ func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Comm
 		},
 	)
 
-	cmd.SetUsageTemplate("usage_tpl")
-
 	return cmd
 }
 
@@ -214,4 +232,35 @@ func (ct *CmdTree) Execute(args []string) error {
 // Command returns the root command of the CmdTree
 func (ct *CmdTree) Command() *captain.Command {
 	return ct.cmd
+}
+
+type addCmdAs struct {
+	parent *captain.Command
+	prime  *primer.Values
+}
+
+func (a *addCmdAs) deprecatedAlias(aliased *captain.Command, name string) {
+	cmd := captain.NewCommand(
+		name,
+		aliased.Title(),
+		aliased.Description(),
+		a.prime.Output(),
+		aliased.Flags(),
+		aliased.Arguments(),
+		func(c *captain.Command, args []string) error {
+			msg := locale.Tl(
+				"cmd_deprecated_notice",
+				"This command is deprecated. Please use `state {{.V0}}` instead.",
+				aliased.Name(),
+			)
+
+			a.prime.Output().Notice(msg)
+
+			return aliased.Executor()(c, args)
+		},
+	)
+
+	cmd.SetHidden(true)
+
+	a.parent.AddChildren(cmd)
 }

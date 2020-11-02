@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"os"
 	"runtime/debug"
+	"strings"
 	"time"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
@@ -14,6 +16,59 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils"
 )
+
+type ErrorTips interface {
+	ErrorTips() []string
+}
+
+type OutputError struct {
+	error
+}
+
+func (o *OutputError) MarshalOutput(f output.Format) interface{} {
+	if f != output.PlainFormatName {
+		return o.error
+	}
+
+	var outLines []string
+
+	// Print what happened
+	outLines = append(outLines, output.Heading(locale.Tl("err_what_happened", "[ERROR]Something Went Wrong[/RESET]")).String())
+
+	errs := locale.UnwrapError(o.error)
+	if len(errs) == 0 {
+		// It's possible the error came from cobra or something else low level that doesn't use localization
+		errs = []error{o.error}
+	}
+	for _, errv := range errs {
+		outLines = append(outLines, fmt.Sprintf(" [NOTICE][ERROR]x[/RESET] %s", trimError(locale.ErrorMessage(errv))))
+	}
+
+	// Concatenate error tips
+	errorTips := []string{}
+	err := o.error
+	for err != nil {
+		if v, ok := err.(ErrorTips); ok {
+			errorTips = append(errorTips, v.ErrorTips()...)
+		}
+		err = errors.Unwrap(err)
+	}
+	errorTips = append(errorTips, locale.Tl("err_help_forum", "Community → [ACTIONABLE]{{.V0}}[/RESET]", constants.ForumsURL))
+
+	// Print tips
+	outLines = append(outLines, output.Heading(locale.Tl("err_more_help", "Need More Help?")).String())
+	for _, tip := range errorTips {
+		outLines = append(outLines, fmt.Sprintf(" [DISABLED]-[/RESET] %s", trimError(tip)))
+	}
+	return strings.Join(outLines, "\n")
+}
+
+func trimError(msg string) string {
+	if strings.Count(msg, ".") > 1 || strings.Count(msg, ",") > 0 {
+		return msg // Don't trim dots if we have multiple sentences.
+	}
+	return strings.TrimRight(msg, " .")
+}
 
 func unwrapError(err error) (int, error) {
 	// Ensure we are dealing with an error rather than a failure in disguise
@@ -40,9 +95,7 @@ func unwrapError(err error) (int, error) {
 	// unwrap exit code before we remove un-localized wrapped errors from err variable
 	code := errs.UnwrapExitCode(err)
 
-	if locale.IsError(err) {
-		err = locale.JoinErrors(err, "\n")
-	} else if isErrs && !hasMarshaller {
+	if !locale.IsError(err) && isErrs && !hasMarshaller {
 		logging.Error("MUST ADDRESS: Error does not have localization: %s", errs.Join(err, "\n").Error())
 
 		// If this wasn't built via CI then this is a dev workstation, and we should be more aggressive
@@ -56,7 +109,7 @@ func unwrapError(err error) (int, error) {
 		err = nil
 	}
 
-	return code, err
+	return code, &OutputError{err}
 }
 
 func handlePanics(exiter func(int)) {

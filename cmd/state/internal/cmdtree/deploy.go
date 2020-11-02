@@ -50,7 +50,7 @@ func newDeployCommand(prime *primer.Values) *captain.Command {
 		},
 		func(cmd *captain.Command, args []string) error {
 			return runner.Run(params)
-		})
+		}).SetGroup(EnvironmentGroup)
 }
 
 func newDeployInstallCommand(prime *primer.Values) *captain.Command {

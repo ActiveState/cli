@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"regexp"
 
-	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/runners/secrets"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -101,7 +100,7 @@ func (suite *InitIntegrationTestSuite) TestInit_EditorV0() {
 	suite.OnlyRunForTags(tagsuite.Init, tagsuite.VSCode, tagsuite.Komodo)
 	suite.runInitTest(
 		true,
-		locale.T("editor_yaml"),
+		sampleYAMLEditor,
 		"python3",
 		"--skeleton", "editor",
 	)

@@ -24,33 +24,33 @@ func (m *Mock) Close() {
 }
 
 // Input prompts the user for input
-func (m *Mock) Input(message, defaultResponse string, flags ...prompt.ValidatorFlag) (string, *failures.Failure) {
-	args := m.Called(message, defaultResponse, flags)
+func (m *Mock) Input(title, message, defaultResponse string, flags ...prompt.ValidatorFlag) (string, *failures.Failure) {
+	args := m.Called(title, message, defaultResponse, flags)
 	return args.String(0), failure(args.Get(1))
 }
 
 // InputAndValidate prompts the user for input witha  customer validator and validation flags
-func (m *Mock) InputAndValidate(message, defaultResponse string, validator prompt.ValidatorFunc, flags ...prompt.ValidatorFlag) (response string, fail *failures.Failure) {
-	args := m.Called(message, defaultResponse, validator)
+func (m *Mock) InputAndValidate(title, message, defaultResponse string, validator prompt.ValidatorFunc, flags ...prompt.ValidatorFlag) (response string, fail *failures.Failure) {
+	args := m.Called(message, message, defaultResponse, validator)
 	return args.String(0), failure(args.Get(1))
 }
 
 // Select prompts the user to select one entry from multiple choices
-func (m *Mock) Select(message string, choices []string, defaultChoice string) (string, *failures.Failure) {
-	args := m.Called(message, choices, defaultChoice)
+func (m *Mock) Select(title, message string, choices []string, defaultChoice string) (string, *failures.Failure) {
+	args := m.Called(title, message, choices, defaultChoice)
 	return args.String(0), failure(args.Get(1))
 }
 
 // Confirm prompts user for yes or no response.
-func (m *Mock) Confirm(message string, defaultChoice bool) (bool, *failures.Failure) {
-	args := m.Called(message, defaultChoice)
+func (m *Mock) Confirm(title, message string, defaultChoice bool) (bool, *failures.Failure) {
+	args := m.Called(title, message, defaultChoice)
 	return args.Bool(0), failure(args.Get(1))
 }
 
 // InputSecret prompts the user for input and obfuscates the text in stdout.
 // Will fail if empty.
-func (m *Mock) InputSecret(message string, flags ...prompt.ValidatorFlag) (response string, fail *failures.Failure) {
-	args := m.Called(message)
+func (m *Mock) InputSecret(title, message string, flags ...prompt.ValidatorFlag) (response string, fail *failures.Failure) {
+	args := m.Called(title, message)
 	return args.String(0), failure(args.Get(1))
 }
 

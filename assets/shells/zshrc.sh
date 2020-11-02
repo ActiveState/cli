@@ -1,5 +1,8 @@
 if [ -f $ZDOTDIR/.zshrc ]; then source $ZDOTDIR/.zshrc; fi
+
+{{if ne .Owner ""}}
 export PS1="[{{.Owner}}/{{.Name}}] $PS1"
+{{end}}
 
 precmd() { eval "$PROMPT_COMMAND" }
 
@@ -21,4 +24,8 @@ alias {{$K}}='{{$.ExecName}} run {{$CMD}}'
 
 cd "{{.WD}}"
 
+echo "{{.ActivateEventMessage}}"
+
 {{.UserScripts}}
+
+echo "{{.ActivatedMessage}}"

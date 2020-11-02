@@ -5,7 +5,6 @@ go 1.12
 require (
 	cloud.google.com/go v0.64.0
 	github.com/ActiveState/archiver v3.1.1+incompatible
-	github.com/ActiveState/go-colortext v0.0.0-20190402165444-9cd201a66eb0
 	github.com/ActiveState/go-ogle-analytics v0.0.0-20170510030904-9b3f14901527
 	github.com/ActiveState/sysinfo v0.0.0-20200619170619-0582d42daf27
 	github.com/ActiveState/termtest v0.6.1

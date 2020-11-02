@@ -1,8 +1,10 @@
 if [ -f ~/.bashrc ]; then source ~/.bashrc; fi
 
+{{if ne .Owner ""}}
 if [ -z "$PROMPT_COMMAND" ]; then
   export PS1="[{{.Owner}}/{{.Name}}] $PS1"
 fi
+{{end}}
 
 {{- range $K, $V := .Env}}
 {{- if eq $K "PATH"}}
@@ -22,4 +24,8 @@ alias {{$K}}='{{$.ExecName}} run {{$CMD}}'
 
 cd "{{.WD}}"
 
+echo "{{.ActivateEventMessage}}"
+
 {{.UserScripts}}
+
+echo "{{.ActivatedMessage}}"

@@ -53,5 +53,5 @@ func newHistoryCommand(prime *primer.Values) *captain.Command {
 			params := history.NewHistoryParams(nsMeta.Owner, nsMeta.Project, prime)
 			return initRunner.Run(&params)
 		},
-	)
+	).SetGroup(VCSGroup)
 }

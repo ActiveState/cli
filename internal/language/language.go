@@ -2,13 +2,15 @@ package language
 
 import (
 	"fmt"
+	"runtime"
 	"strconv"
 	"strings"
+
+	"github.com/blang/semver"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/blang/semver"
 )
 
 // Language tracks the languages potentially used.
@@ -176,6 +178,14 @@ func (l *Language) Recognized() bool {
 	return l != nil && *l != Unset && *l != Unknown
 }
 
+// Validate ensures that the current language is recognized
+func (l *Language) Validate() error {
+	if !l.Recognized() {
+		return NewUnrecognizedLanguageError(l.String(), RecognizedNames())
+	}
+	return nil
+}
+
 // Ext return the file extension for the language.
 func (l Language) Ext() string {
 	return l.data().ext
@@ -252,6 +262,14 @@ type Executable struct {
 
 // Name returns the executables file's name.
 func (e Executable) Name() string {
+	return e.name
+}
+
+// Filename returns the executables file's full name.
+func (e Executable) Filename() string {
+	if runtime.GOOS == "windows" {
+		return e.name + ".exe"
+	}
 	return e.name
 }
 

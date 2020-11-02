@@ -92,7 +92,7 @@ func (r *NamespaceSelect) promptAvailablePaths(paths []string) (*string, *failur
 
 	noneStr := locale.T("activate_select_optout")
 	choices := append(paths, noneStr)
-	path, fail := r.prompter.Select(locale.T("activate_namespace_existing"), choices, "")
+	path, fail := r.prompter.Select(locale.Tl("activate_existing_title", "Existing Checkout"), locale.T("activate_namespace_existing"), choices, "")
 	if fail != nil {
 		return nil, fail
 	}
@@ -110,7 +110,9 @@ func (r *NamespaceSelect) promptForPathInput(namespace string) (string, *failure
 		return "", failures.FailRuntime.Wrap(err)
 	}
 
-	directory, fail := r.prompter.Input(locale.Tr("activate_namespace_location", namespace), filepath.Join(wd, namespace), prompt.InputRequired)
+	directory, fail := r.prompter.Input(
+		locale.Tl("choose_dest", "Choose Destination"),
+		locale.Tr("activate_namespace_location", namespace), filepath.Join(wd, namespace), prompt.InputRequired)
 	if fail != nil {
 		return "", fail
 	}

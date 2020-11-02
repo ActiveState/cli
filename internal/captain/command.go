@@ -1,9 +1,14 @@
 package captain
 
 import (
+	"bytes"
 	"fmt"
+	"sort"
 	"strings"
+	"text/template"
+	"unicode"
 
+	"github.com/gobuffalo/packr"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
@@ -11,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/output/txtstyle"
 )
@@ -23,11 +29,33 @@ type cobraCommander interface {
 
 type Executor func(cmd *Command, args []string) error
 
+type CommandGroup struct {
+	name     string
+	priority int
+}
+
+func (c CommandGroup) String() string {
+	return c.name
+}
+
+func (c CommandGroup) SortBefore(c2 CommandGroup) bool {
+	if c.priority != 0 {
+		return c.priority > c2.priority
+	}
+	return c.name < c2.name
+}
+
+func NewCommandGroup(name string, priority int) CommandGroup {
+	return CommandGroup{name, priority}
+}
+
 type Command struct {
 	cobra    *cobra.Command
 	commands []*Command
 
 	title string
+
+	group CommandGroup
 
 	flags     []*Flag
 	arguments []*Argument
@@ -83,7 +111,15 @@ func NewCommand(name, title, description string, out output.Outputer, flags []*F
 	if err := cmd.setFlags(flags); err != nil {
 		panic(err)
 	}
-	cmd.SetUsageTemplate("usage_tpl")
+
+	cmd.cobra.SetUsageFunc(func(c *cobra.Command) error {
+		err := cmd.Usage()
+		if err != nil {
+			// Cobra doesn't return this error for us, so we have to ensure it's logged
+			logging.Error("Error while running usage: %v", err)
+		}
+		return err
+	})
 
 	cobraMapping[cmd.cobra] = cmd
 	return cmd
@@ -154,17 +190,11 @@ func NewShimCommand(name, description string, executor Executor) *Command {
 		RunE:               cmd.runner,
 	}
 
-	cmd.SetUsageTemplate("usage_tpl")
-
 	return cmd
 }
 
 func (c *Command) Use() string {
 	return c.cobra.Use
-}
-
-func (c *Command) Usage() error {
-	return c.cobra.Usage()
 }
 
 func (c *Command) UsageText() string {
@@ -173,6 +203,10 @@ func (c *Command) UsageText() string {
 
 func (c *Command) Help() string {
 	return fmt.Sprintf("%s\n\n%s", c.cobra.Short, c.UsageText())
+}
+
+func (c *Command) ShortDescription() string {
+	return c.cobra.Short
 }
 
 func (c *Command) Execute(args []string) error {
@@ -202,34 +236,58 @@ func (c *Command) SetDescription(description string) {
 	c.cobra.Short = description
 }
 
-func (c *Command) SetUsageTemplate(usageTemplate string) {
-	localizedArgs := []map[string]string{}
-	for _, arg := range c.Arguments() {
-		req := ""
-		if arg.Required {
-			req = "1"
-		}
-		localizedArgs = append(localizedArgs, map[string]string{
-			"Name":        locale.T(arg.Name),
-			"Description": locale.T(arg.Description),
-			"Required":    req,
-		})
-	}
-	c.cobra.SetUsageTemplate(locale.Tt(usageTemplate, map[string]interface{}{
-		"Arguments": localizedArgs,
-	}))
-}
-
 func (c *Command) SetDisableFlagParsing(b bool) {
 	c.cobra.DisableFlagParsing = b
+}
+
+func (c *Command) Name() string {
+	return c.cobra.Name()
+}
+
+func (c *Command) NamePadding() int {
+	return c.cobra.NamePadding()
+}
+
+func (c *Command) Title() string {
+	return c.title
+}
+
+func (c *Command) Description() string {
+	return c.cobra.Long
+}
+
+func (c *Command) Flags() []*Flag {
+	return c.flags
+}
+
+func (c *Command) Executor() Executor {
+	return c.execute
 }
 
 func (c *Command) Arguments() []*Argument {
 	return c.arguments
 }
 
+// SetGroup sets the group this command belongs to. This defaults to empty, meaning the command is ungrouped.
+// Realistically only top level commands really need a group.
+func (c *Command) SetGroup(group CommandGroup) *Command {
+	c.group = group
+	return c
+}
+
+func (c *Command) Group() CommandGroup {
+	return c.group
+}
+
 func (c *Command) SkipChecks() bool {
 	return c.skipChecks
+}
+
+func (c *Command) SortBefore(c2 *Command) bool {
+	if c.group != c2.group {
+		return c.group.SortBefore(c2.group)
+	}
+	return c.Name() < c2.Name()
 }
 
 func (c *Command) AddChildren(children ...*Command) {
@@ -245,6 +303,25 @@ func (c *Command) AddLegacyChildren(children ...cobraCommander) {
 	}
 }
 
+func (c *Command) Children() []*Command {
+	commands := c.commands
+	sort.Slice(commands, func(i, j int) bool {
+		return commands[i].SortBefore(commands[j])
+	})
+	return commands
+}
+
+func (c *Command) AvailableChildren() []*Command {
+	commands := []*Command{}
+	for _, child := range c.Children() {
+		if !child.cobra.IsAvailableCommand() {
+			continue
+		}
+		commands = append(commands, child)
+	}
+	return commands
+}
+
 func (c *Command) Find(args []string) (*Command, error) {
 	foundCobra, _, err := c.cobra.Find(args)
 	if err != nil {
@@ -254,15 +331,6 @@ func (c *Command) Find(args []string) (*Command, error) {
 		return cmd, nil
 	}
 	return nil, locale.NewError("err_captain_cmd_find", "Could not find child Command with args: {{.V0}}", strings.Join(args, " "))
-}
-
-func (c *Command) findNext(next string) *Command {
-	for _, cmd := range c.commands {
-		if cmd.cobra.Use == next {
-			return cmd
-		}
-	}
-	return nil
 }
 
 func (c *Command) flagByName(name string, persistOnly bool) *Flag {
@@ -425,4 +493,36 @@ func setupSensibleErrors(err error) error {
 	}
 
 	return err
+}
+
+func (cmd *Command) Usage() error {
+	tpl := template.New("usage")
+	tpl.Funcs(template.FuncMap{
+		"rpad": func(s string, padding int) string {
+			template := fmt.Sprintf("%%-%ds", padding)
+			return fmt.Sprintf(template, s)
+		},
+		"trimTrailingWhitespaces": func(s string) string {
+			return strings.TrimRightFunc(s, unicode.IsSpace)
+		},
+	})
+
+	box := packr.NewBox("../../assets")
+
+	var err error
+	if tpl, err = tpl.Parse(box.String("usage.tpl")); err != nil {
+		return errs.Wrap(err, "Could not parse template")
+	}
+
+	var out bytes.Buffer
+	if err := tpl.Execute(&out, map[string]interface{}{
+		"Cmd":   cmd,
+		"Cobra": cmd.cobra,
+	}); err != nil {
+		return errs.Wrap(err, "Could not execute template")
+	}
+
+	cmd.out.Print(out.String())
+
+	return nil
 }

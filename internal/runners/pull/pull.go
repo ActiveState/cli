@@ -53,6 +53,10 @@ func (p *Pull) Run() error {
 		return locale.NewInputError("err_pull_noproject", "You have to be inside a project folder to be able to pull in updates. Project folders contain an activestate.yaml.")
 	}
 
+	if p.project.IsHeadless() {
+		return locale.NewInputError("err_pull_headless", "You must first create a project. Please visit {{.V0}} to create your project.", p.project.URL())
+	}
+
 	// Retrieve latest commit ID on platform
 	latestID, fail := model.LatestCommitID(p.project.Owner(), p.project.Name())
 	if fail != nil {
@@ -61,7 +65,7 @@ func (p *Pull) Run() error {
 
 	// Update the commit ID in the activestate.yaml
 	if p.project.CommitID() != latestID.String() {
-		fail := p.project.Source().SetCommit(latestID.String())
+		fail := p.project.Source().SetCommit(latestID.String(), false)
 		if fail != nil {
 			return locale.WrapError(fail, "err_pull_update", "Cannot update the commit in your project file.")
 		}

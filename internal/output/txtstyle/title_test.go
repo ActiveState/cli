@@ -3,6 +3,8 @@ package txtstyle
 import (
 	"strings"
 	"testing"
+
+	"github.com/ActiveState/cli/internal/colorize"
 )
 
 func TestTitleString(t *testing.T) {
@@ -21,7 +23,7 @@ func TestTitleString(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		got := NewTitle(tt.title).String()
+		got := colorize.StripColorCodes(NewTitle(tt.title).String())
 		if got != tt.want {
 			t.Errorf("%s:\ngot\n%v\nwant\n%v", tt.test, got, tt.want)
 		}
@@ -29,19 +31,15 @@ func TestTitleString(t *testing.T) {
 }
 
 var nonemptyBasic = strings.TrimSpace(`
-╔═══════════════╗
-║               ║
-║   Platforms   ║
-║               ║
-╚═══════════════╝
+╔═══════════╗
+║ Platforms ║
+╚═══════════╝
 `)
 
 var emptyBasic = ``
 
 var nonemptyLong = strings.TrimSpace(`
-╔══════════════════════════════════════════════╗
-║                                              ║
-║   Activating the "ActiveState/cli" runtime   ║
-║                                              ║
-╚══════════════════════════════════════════════╝
+╔══════════════════════════════════════════╗
+║ Activating the "ActiveState/cli" runtime ║
+╚══════════════════════════════════════════╝
 `)

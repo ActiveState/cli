@@ -18,12 +18,26 @@ type Error interface {
 	Stack() *stacktrace.Stacktrace
 }
 
+type ErrorTips interface {
+	AddTips(...string)
+	ErrorTips() []string
+}
+
 // WrappedErr is what we use for errors created from this package, this does not mean every error returned from this
 // package is wrapping something, it simply has the plumbing to.
 type WrappedErr struct {
 	error
+	tips    []string
 	wrapped error
 	stack   *stacktrace.Stacktrace
+}
+
+func (e *WrappedErr) ErrorTips() []string {
+	return e.tips
+}
+
+func (e *WrappedErr) AddTips(tips ...string) {
+	e.tips = append(e.tips, tips...)
 }
 
 // Unwrap returns the parent error, if one exists
@@ -39,6 +53,7 @@ func (e *WrappedErr) Stack() *stacktrace.Stacktrace {
 func newError(err error, wrapTarget error) error {
 	return &WrappedErr{
 		err,
+		[]string{},
 		wrapTarget,
 		stacktrace.GetWithSkip([]string{rtutils.CurrentFile()}),
 	}
@@ -67,6 +82,23 @@ func Join(err error, sep string) error {
 		err = errors.Unwrap(err)
 	}
 	return Wrap(err, strings.Join(message, sep))
+}
+
+type ErrorWithTips struct {
+	error
+	tips []string
+}
+
+func (e *ErrorWithTips) ErrorTips() []string {
+	return e.tips
+}
+
+func AddTips(err error, tips ...string) error {
+	if _, ok := err.(ErrorTips); !ok {
+		err = newError(err, nil)
+	}
+	err.(ErrorTips).AddTips(tips...)
+	return err
 }
 
 // errIsNil is a dirty little helper function that helps surface fail=nil type issues, to be removed once we get rid of failures

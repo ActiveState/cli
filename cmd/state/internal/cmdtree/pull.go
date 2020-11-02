@@ -19,5 +19,5 @@ func newPullCommand(prime *primer.Values) *captain.Command {
 		[]*captain.Argument{},
 		func(cmd *captain.Command, args []string) error {
 			return runner.Run()
-		})
+		}).SetGroup(VCSGroup)
 }

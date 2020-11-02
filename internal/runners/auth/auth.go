@@ -72,6 +72,7 @@ func (a *Auth) authenticate(params *AuthParams) error {
 	if !a.Auth.Authenticated() {
 		return failures.FailUser.New(locale.T("login_err_auth")).ToError()
 	}
+	a.Outputer.Notice(output.Heading(locale.Tl("authentication_title", "Authentication")))
 	a.Outputer.Notice(locale.T("login_success_welcome_back", map[string]string{
 		"Name": a.Auth.WhoAmI(),
 	}))

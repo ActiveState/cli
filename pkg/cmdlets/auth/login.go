@@ -83,7 +83,7 @@ func AuthenticateWithInput(username, password, totp string, out output.Outputer,
 }
 
 // RequireAuthentication will prompt the user for authentication if they are not already authenticated. If the authentication
-// is not succesful it will return a failure
+// is not successful it will return a failure
 func RequireAuthentication(message string, out output.Outputer, prompt prompt.Prompter) *failures.Failure {
 	if authentication.Get().Authenticated() {
 		return nil
@@ -92,7 +92,7 @@ func RequireAuthentication(message string, out output.Outputer, prompt prompt.Pr
 	out.Print(message)
 
 	choices := []string{locale.T("prompt_login_action"), locale.T("prompt_signup_action"), locale.T("prompt_signup_browser_action")}
-	choice, fail := prompt.Select(locale.T("prompt_login_or_signup"), choices, "")
+	choice, fail := prompt.Select(locale.Tl("login_signup", "Login or Signup"), locale.T("prompt_login_or_signup"), choices, "")
 	if fail != nil {
 		return fail
 	}
@@ -122,14 +122,14 @@ func RequireAuthentication(message string, out output.Outputer, prompt prompt.Pr
 func promptForLogin(credentials *mono_models.Credentials, prompter prompt.Prompter) *failures.Failure {
 	var fail *failures.Failure
 	if credentials.Username == "" {
-		credentials.Username, fail = prompter.Input(locale.T("username_prompt"), "", prompt.InputRequired)
+		credentials.Username, fail = prompter.Input("", locale.T("username_prompt"), "", prompt.InputRequired)
 		if fail != nil {
 			return FailLoginPrompt.Wrap(fail.ToError())
 		}
 	}
 
 	if credentials.Password == "" {
-		credentials.Password, fail = prompter.InputSecret(locale.T("password_prompt"), prompt.InputRequired)
+		credentials.Password, fail = prompter.InputSecret("", locale.T("password_prompt"), prompt.InputRequired)
 		if fail != nil {
 			return FailLoginPrompt.Wrap(fail.ToError())
 		}
@@ -162,7 +162,7 @@ func uniqueUsername(credentials *mono_models.Credentials) bool {
 }
 
 func promptSignup(credentials *mono_models.Credentials, out output.Outputer, prompt prompt.Prompter) *failures.Failure {
-	yesSignup, fail := prompt.Confirm(locale.T("prompt_login_to_signup"), true)
+	yesSignup, fail := prompt.Confirm("", locale.T("prompt_login_to_signup"), true)
 	if fail != nil {
 		return fail
 	}
@@ -175,7 +175,7 @@ func promptSignup(credentials *mono_models.Credentials, out output.Outputer, pro
 
 func promptToken(credentials *mono_models.Credentials, out output.Outputer, prompt prompt.Prompter) *failures.Failure {
 	var fail *failures.Failure
-	credentials.Totp, fail = prompt.Input(locale.T("totp_prompt"), "")
+	credentials.Totp, fail = prompt.Input("", locale.T("totp_prompt"), "")
 	if fail != nil {
 		return fail
 	}

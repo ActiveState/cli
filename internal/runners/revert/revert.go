@@ -1,6 +1,8 @@
 package revert
 
 import (
+	"github.com/go-openapi/strfmt"
+
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
@@ -9,7 +11,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/go-openapi/strfmt"
 )
 
 type Revert struct {
@@ -61,7 +62,7 @@ func (r *Revert) Run(params *Params) error {
 	}
 	commit.PrintCommit(r.out, revertCommit, orgs)
 
-	revert, fail := r.prompt.Confirm(locale.Tl("revert_confirm", "Revert to commit: {{.V0}}?", params.CommitID), false)
+	revert, fail := r.prompt.Confirm("", locale.Tl("revert_confirm", "Revert to commit: {{.V0}}?", params.CommitID), false)
 	if fail != nil {
 		return locale.WrapError(fail.ToError(), "err_revert_confirm", "Could not confirm revert choice")
 	}

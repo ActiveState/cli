@@ -22,7 +22,7 @@ func RunCommitsBehindNotifier(out output.Outputer) {
 	count, fail := model.CommitsBehindLatest(p.Owner(), p.Name(), p.CommitID())
 	if fail != nil {
 		if fail.Type.Matches(model.FailCommitCountUnknowable) {
-			out.Notice(locale.Tr("runtime_update_notice_unknown_count"))
+			out.Notice(output.Heading(locale.Tr("runtime_update_notice_unknown_count")))
 			out.Notice(locale.Tr("runtime_update_help", p.Owner(), p.Name()))
 			return
 		}
@@ -32,7 +32,7 @@ func RunCommitsBehindNotifier(out output.Outputer) {
 	}
 	if count > 0 {
 		ct := strconv.Itoa(count)
-		out.Notice(locale.Tr("runtime_update_notice_known_count", ct))
+		out.Notice(output.Heading(locale.Tr("runtime_update_notice_known_count", ct)))
 		out.Notice(locale.Tr("runtime_update_help", p.Owner(), p.Name()))
 	}
 }
