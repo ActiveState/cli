@@ -63,7 +63,8 @@ scripts:
 	proj, fail := project.New(pjfile, nil, nil)
 	require.NoError(t, fail.ToError())
 
-	err = RunScript(outputhelper.NewCatcher(), subshell.New(), proj, "run", []string{})
+	scriptRun := New(outputhelper.NewCatcher(), subshell.New(), proj)
+	err = scriptRun.Run(proj.ScriptByName("run"), []string{})
 	assert.NoError(t, err, "No error occurred")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
@@ -96,7 +97,8 @@ func TestEnvIsSet(t *testing.T) {
 	}()
 
 	out := capturer.CaptureOutput(func() {
-		err = RunScript(outputhelper.NewCatcher(), subshell.New(), proj, "run", nil)
+		scriptRun := New(outputhelper.NewCatcher(), subshell.New(), proj)
+		err = scriptRun.Run(proj.ScriptByName("run"), nil)
 		assert.NoError(t, err, "Error: "+errs.Join(err, ": ").Error())
 		assert.NoError(t, failures.Handled(), "No failure occurred")
 	})
@@ -135,13 +137,14 @@ scripts:
 	require.NoError(t, fail.ToError())
 
 	out := outputhelper.NewCatcher()
-	rerr := RunScript(out, subshell.New(), proj, "run", nil)
-	assert.NoError(t, rerr, "No error occurred")
+	scriptRun := New(out, subshell.New(), proj)
+	fmt.Println(proj.ScriptByName("run"))
+	err = scriptRun.Run(proj.ScriptByName("run"), nil)
+	assert.NoError(t, err, "No error occurred")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
-	assert.Contains(t, out.CombinedOutput(), "Running Script: run")
 }
 
-func TestRunMissingCommandName(t *testing.T) {
+func TestRunMissingScript(t *testing.T) {
 	failures.ResetHandled()
 
 	pjfile := &projectfile.Project{}
@@ -158,29 +161,8 @@ scripts:
 	proj, fail := project.New(pjfile, nil, nil)
 	require.NoError(t, fail.ToError())
 
-	err = RunScript(outputhelper.NewCatcher(), subshell.New(), proj, "", nil)
-	assert.Error(t, err, "Error occurred")
-	assert.NoError(t, failures.Handled(), "No failure occurred")
-}
-
-func TestRunUnknownCommandName(t *testing.T) {
-	failures.ResetHandled()
-
-	pjfile := &projectfile.Project{}
-	contents := strings.TrimSpace(`
-project: "https://platform.activestate.com/ActiveState/pjfile?commitID=00010001-0001-0001-0001-000100010001"
-scripts:
-  - name: run
-    value: whatever
-  `)
-	err := yaml.Unmarshal([]byte(contents), pjfile)
-	assert.Nil(t, err, "Unmarshalled YAML")
-	pjfile.Persist()
-
-	proj, fail := project.New(pjfile, nil, nil)
-	require.NoError(t, fail.ToError())
-
-	err = RunScript(outputhelper.NewCatcher(), subshell.New(), proj, "unknown", nil)
+	scriptRun := New(outputhelper.NewCatcher(), subshell.New(), proj)
+	err = scriptRun.Run(nil, nil)
 	assert.Error(t, err, "Error occurred")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
@@ -203,7 +185,8 @@ scripts:
 	proj, fail := project.New(pjfile, nil, nil)
 	require.NoError(t, fail.ToError())
 
-	err = RunScript(outputhelper.NewCatcher(), subshell.New(), proj, "run", nil)
+	scriptRun := New(outputhelper.NewCatcher(), subshell.New(), proj)
+	err = scriptRun.Run(proj.ScriptByName("run"), nil)
 	assert.Error(t, err, "Error occurred")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
@@ -247,7 +230,8 @@ scripts:
 	require.NoError(t, fail.ToError())
 
 	// Run the command.
-	err = RunScript(outputhelper.NewCatcher(), subshell.New(), proj, "run", nil)
+	scriptRun := New(outputhelper.NewCatcher(), subshell.New(), proj)
+	err = scriptRun.Run(proj.ScriptByName("run"), nil)
 	assert.NoError(t, err, "No error occurred")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 
@@ -335,7 +319,8 @@ func captureExecCommand(t *testing.T, tmplCmdName, cmdName string, cmdArgs []str
 
 	var err error
 	outStr, outErr := osutil.CaptureStdout(func() {
-		err = RunScript(outputhelper.NewCatcher(), subshell.New(), proj, cmdName, cmdArgs)
+		scriptRun := New(outputhelper.NewCatcher(), subshell.New(), proj)
+		err = scriptRun.Run(proj.ScriptByName(cmdName), cmdArgs)
 	})
 	require.NoError(t, outErr, "error capturing stdout")
 	require.NoError(t, failures.Handled(), "No failures handled")
@@ -351,21 +336,17 @@ func assertExecCommandProcessesArgs(t *testing.T, tmplCmdName, cmdName string, c
 	assert.Contains(t, outStr, expectedStdout)
 }
 
-func assertExecCommandFails(t *testing.T, tmplCmdName, cmdName string, cmdArgs []string, failureType *failures.FailureType) {
+func assertExecCommandFails(t *testing.T, tmplCmdName, cmdName string, cmdArgs []string) {
 	_, err := captureExecCommand(t, tmplCmdName, cmdName, cmdArgs)
 	require.Error(t, err, "run with error")
-
-	fail, ok := err.(*failures.Failure)
-	require.True(t, ok, "error must be failure (for now)")
-	assert.Equal(t, failureType, fail.Type, "run error: No failure occurred")
 }
 
 func TestArgs_NoArgsProvided(t *testing.T) {
-	assertExecCommandFails(t, "junk", "", []string{}, failures.FailUserInput)
+	assertExecCommandFails(t, "junk", "", []string{})
 }
 
 func TestArgs_NoCmd_OnlyDash(t *testing.T) {
-	assertExecCommandFails(t, "junk", "--", []string{}, FailScriptNotDefined)
+	assertExecCommandFails(t, "junk", "--", []string{})
 }
 
 func TestArgs_NameAndDashOnly(t *testing.T) {
@@ -377,11 +358,11 @@ func TestArgs_MultipleArgs_NoDash(t *testing.T) {
 }
 
 func TestArgs_NoCmd_DashAsScriptName(t *testing.T) {
-	assertExecCommandFails(t, "junk", "--", []string{"foo", "geez"}, FailScriptNotDefined)
+	assertExecCommandFails(t, "junk", "--", []string{"foo", "geez"})
 }
 
 func TestArgs_NoCmd_FlagAsScriptName(t *testing.T) {
-	assertExecCommandFails(t, "junk", "-f", []string{"--foo", "geez"}, FailScriptNotDefined)
+	assertExecCommandFails(t, "junk", "-f", []string{"--foo", "geez"})
 }
 
 func TestArgs_WithCmd_AllArgsAfterDash(t *testing.T) {
