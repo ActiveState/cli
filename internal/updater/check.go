@@ -98,7 +98,7 @@ func AutoUpdate(pjPath string, out output.Outputer) (updated bool, resultVersion
 		if os.IsPermission(errs.InnerError(err)) {
 			out.Error(locale.T("auto_update_permission_err"))
 		}
-		logging.Error("Unable to self update: %s", err)
+		logging.Debug("Unable to self update: %s", err)
 		return false, ""
 	}
 
