@@ -1,5 +1,7 @@
 @echo off
 
+chcp 65001 >NUL
+
 {{if ne .Owner ""}}
 SET PROMPT=[{{.Owner}}/{{.Name}}]$S$P$G
 {{end}}
