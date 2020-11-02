@@ -26,7 +26,7 @@ type CmdCall struct {
 	subshell  subshell.SubShell
 	cmdList   string
 	p         primeable
-	scriptrun *scriptrun.ScriptRunner
+	scriptrun *scriptrun.ScriptRun
 }
 
 // New returns a prepared pointer to an instance of CmdCall.

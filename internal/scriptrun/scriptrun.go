@@ -26,7 +26,7 @@ func ProjectHasScript(proj *project.Project, name string) bool {
 	return script != nil
 }
 
-type ScriptRunner struct {
+type ScriptRun struct {
 	out     output.Outputer
 	sub     subshell.SubShell
 	project *project.Project
@@ -35,8 +35,8 @@ type ScriptRunner struct {
 	venvExePath  string
 }
 
-func New(out output.Outputer, subs subshell.SubShell, proj *project.Project) *ScriptRunner {
-	return &ScriptRunner{
+func New(out output.Outputer, subs subshell.SubShell, proj *project.Project) *ScriptRun {
+	return &ScriptRun{
 		out,
 		subs,
 		proj,
@@ -49,11 +49,11 @@ func New(out output.Outputer, subs subshell.SubShell, proj *project.Project) *Sc
 		os.Getenv("PATH")}
 }
 
-func (s *ScriptRunner) NeedsActivation() bool {
+func (s *ScriptRun) NeedsActivation() bool {
 	return !subshell.IsActivated() && !s.venvPrepared
 }
 
-func (s *ScriptRunner) PrepareVirtualEnv() error {
+func (s *ScriptRun) PrepareVirtualEnv() error {
 	runtime, err := runtime.NewRuntime(s.project.Source().Path(), s.project.CommitUUID(), s.project.Owner(), s.project.Name(), runbits.NewRuntimeMessageHandler(s.out))
 	if err != nil {
 		return locale.WrapError(err, "err_run_runtime_init", "Failed to initialize runtime.")
@@ -82,7 +82,7 @@ func (s *ScriptRunner) PrepareVirtualEnv() error {
 	return nil
 }
 
-func (s *ScriptRunner) Run(script *project.Script, args []string) error {
+func (s *ScriptRun) Run(script *project.Script, args []string) error {
 	if s.project == nil {
 		return locale.NewInputError("err_no_projectfile")
 	}
