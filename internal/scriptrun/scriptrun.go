@@ -19,13 +19,6 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
-// ProjectHasScript is a helper function to determine if a project contains a
-// script by name.
-func ProjectHasScript(proj *project.Project, name string) bool {
-	script := proj.ScriptByName(name)
-	return script != nil
-}
-
 type ScriptRun struct {
 	out     output.Outputer
 	sub     subshell.SubShell
