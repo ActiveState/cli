@@ -99,7 +99,6 @@ func AutoUpdate(pjPath string, out output.Outputer) (updated bool, resultVersion
 		log := logging.Error
 		if os.IsPermission(errs.InnerError(err)) {
 			out.Error(locale.T("auto_update_permission_err"))
-			log = logging.Debug
 		}
 		if errors.As(err, new(*osutils.AlreadyLockedError)) {
 			log = logging.Debug
