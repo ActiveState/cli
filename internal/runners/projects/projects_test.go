@@ -33,14 +33,14 @@ func TestProjects(t *testing.T) {
 	catcher := outputhelper.NewCatcher()
 	pjs := newProjects(authentication.Get(), catcher.Outputer, &configMock{})
 
-	projects, fail := pjs.fetchProjects()
+	projects, fail := pjs.fetchProjects(false)
 	assert.NoError(t, fail.ToError(), "Fetched projects")
 	assert.Equal(t, 1, len(projects), "One project fetched")
 	assert.Equal(t, "test project (test description)", projects[0].Name)
 	assert.Equal(t, "organizationName", projects[0].Organization)
 	assert.Equal(t, []string{"/some/local/path/"}, projects[0].LocalCheckouts)
 
-	fail = pjs.Run()
+	fail = pjs.Run(NewParams())
 	assert.NoError(t, fail.ToError(), "Executed without error")
 }
 
@@ -58,11 +58,11 @@ func TestProjectsEmpty(t *testing.T) {
 	catcher := outputhelper.NewCatcher()
 	pjs := newProjects(authentication.Get(), catcher.Outputer, &configMock{})
 
-	projects, fail := pjs.fetchProjects()
+	projects, fail := pjs.fetchProjects(false)
 	assert.NoError(t, fail.ToError(), "Fetched projects")
 	assert.Equal(t, 0, len(projects), "No projects returned")
 
-	fail = pjs.Run()
+	fail = pjs.Run(NewParams())
 	assert.NoError(t, fail.ToError(), "Executed without error")
 }
 
@@ -76,11 +76,11 @@ func TestClientError(t *testing.T) {
 	catcher := outputhelper.NewCatcher()
 	pjs := newProjects(authentication.Get(), catcher.Outputer, &configMock{})
 
-	_, fail := pjs.fetchProjects()
+	_, fail := pjs.fetchProjects(false)
 	assert.Error(t, fail.ToError(), "Should not be able to fetch organizations without mock")
 
 	httpmock.Register("GET", "/organizations")
-	_, fail = pjs.fetchProjects()
+	_, fail = pjs.fetchProjects(false)
 	assert.Error(t, fail.ToError(), "Should not be able to fetch projects without mock")
 }
 
@@ -96,10 +96,10 @@ func TestAuthError(t *testing.T) {
 	catcher := outputhelper.NewCatcher()
 	pjs := newProjects(authentication.Get(), catcher.Outputer, &configMock{})
 
-	_, fail := pjs.fetchProjects()
+	_, fail := pjs.fetchProjects(false)
 	assert.Error(t, fail.ToError(), "Should not be able to fetch projects without being authenticated")
 	assert.True(t, fail.Type.Matches(api.FailAuth), "Failure should be due to auth")
 
-	fail = pjs.Run()
+	fail = pjs.Run(NewParams())
 	assert.Error(t, fail.ToError(), "Executed with error")
 }
