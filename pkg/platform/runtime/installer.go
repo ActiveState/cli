@@ -189,10 +189,14 @@ func (installer *Installer) Assembler() (Assembler, *failures.Failure) {
 func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGetter EnvGetter, freshInstallation bool, fail *failures.Failure) {
 	err := installer.runtime.StoreBuildEngine(runtimeAssembler.BuildEngine())
 	if err != nil {
-		return nil, false, failures.FailRuntime.Wrap(err, "TODO")
+		return nil, false, failures.FailRuntime.Wrap(err, locale.Tr("installer_store_build_engine_err", "Failed to store build engine value."))
 	}
 
 	if runtimeAssembler.IsInstalled() {
+		err := installer.runtime.MarkInstallationComplete()
+		if err != nil {
+			return nil, false, failures.FailRuntime.Wrap(err, locale.Tr("installer_mark_complete_err", "Failed to mark the installation as complete."))
+		}
 		logging.Debug("runtime already successfully installed")
 		return runtimeAssembler, false, nil
 	}
