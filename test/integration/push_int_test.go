@@ -69,6 +69,10 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 
+	// ensure that we are logged out
+	cp = ts.Spawn("auth", "logout")
+	cp.ExpectExitCode(0)
+
 	// anonymous commit
 	wd := filepath.Join(cp.WorkDirectory(), namespace)
 	cp = ts.SpawnWithOpts(e2e.WithArgs("install", "DateTime"), e2e.WithWorkDirectory(wd))
