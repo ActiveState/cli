@@ -88,7 +88,7 @@ func (s *ScriptRun) Run(script *project.Script, args []string) error {
 
 	// Determine which project script to run based on the given script name.
 	if script == nil {
-		return locale.NewInputError("error_state_run_unknown_name", "Script was not provided.")
+		return locale.NewInputError("error_state_run_unknown_name", "Requested script does not exist.")
 	}
 
 	// Activate the state if needed.
