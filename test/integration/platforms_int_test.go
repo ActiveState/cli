@@ -150,6 +150,10 @@ func (suite *PlatformsIntegrationTestSuite) TestPlatforms_NotModifiable() {
 	cp := ts.Spawn("activate", "ActiveState-CLI/Permission", "--path="+ts.Dirs.Work, "--output=json")
 	cp.ExpectExitCode(0)
 
+	cp = ts.Spawn("platforms", "add", "Windows")
+	cp.Expect("You do not have permission to modify the project")
+	cp.ExpectExitCode(1)
+
 	cp = ts.Spawn("platforms", "remove", "Windows", "10.0.17134.1")
 	cp.Expect("You do not have permission to modify the project")
 	cp.ExpectExitCode(1)

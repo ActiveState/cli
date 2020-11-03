@@ -388,7 +388,11 @@ func (suite *PackageIntegrationTestSuite) TestPackages_NotModifiable() {
 	cp := ts.Spawn("activate", "ActiveState-CLI/Permission", "--path="+ts.Dirs.Work, "--output=json")
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("install", "requests")
+	cp = ts.Spawn("install", "url")
+	cp.Expect("You do not have permission to modify the project")
+	cp.ExpectExitCode(1)
+
+	cp = ts.Spawn("uninstall", "requests")
 	cp.Expect("You do not have permission to modify the project")
 	cp.ExpectExitCode(1)
 }
