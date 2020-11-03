@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/retryhttp"
@@ -297,14 +298,8 @@ func CommitPackage(parentCommitID strfmt.UUID, operation Operation, packageName,
 	return commit.CommitID, nil
 }
 
-// UpdateProjectBranchCommit updates the vcs branch for a given project with a new commitID
-func UpdateProjectBranchCommit(projectOwner, projectName string, commitID strfmt.UUID) error {
-
-	proj, fail := FetchProjectByName(projectOwner, projectName)
-	if fail != nil {
-		return errs.Wrap(fail.ToError(), "Failed to fetch project.")
-	}
-
+// UpdateProjectBranchCommit updates the vcs brach for a given project with a new commitID
+func UpdateProjectBranchCommit(proj *mono_models.Project, commitID strfmt.UUID) error {
 	branch, fail := DefaultBranchForProject(proj)
 	if fail != nil {
 		return errs.Wrap(fail.ToError(), "Failed to get default branch for project %s.", proj.Name)
@@ -316,6 +311,17 @@ func UpdateProjectBranchCommit(projectOwner, projectName string, commitID strfmt
 	}
 
 	return nil
+}
+
+// UpdateProjectBranchCommitByName updates the vcs branch for a project given by its namespace with a new commitID
+func UpdateProjectBranchCommitByName(projectOwner, projectName string, commitID strfmt.UUID) error {
+
+	proj, fail := FetchProjectByName(projectOwner, projectName)
+	if fail != nil {
+		return errs.Wrap(fail.ToError(), "Failed to fetch project.")
+	}
+
+	return UpdateProjectBranchCommit(proj, commitID)
 }
 
 // CommitChangeset commits multiple changes in one commit
@@ -346,25 +352,19 @@ func CommitChangeset(projOwner, projName, commitMsg string, changeset Changeset)
 	return UpdateBranchCommit(branch.BranchID, commit.CommitID)
 }
 
-// CommitInitial ...
-func CommitInitial(projectOwner, projectName, hostPlatform, language, langVersion string) (*mono_models.Project, strfmt.UUID, *failures.Failure) {
+// CommitInitial creates a root commit for a new branch
+func CommitInitial(hostPlatform string, lang *language.Supported, langVersion string) (strfmt.UUID, *failures.Failure) {
+	var language string
+	if lang != nil {
+		language = lang.Requirement()
+		if langVersion == "" {
+			langVersion = lang.RecommendedVersion()
+		}
+	}
+
 	platformID, fail := hostPlatformToPlatformID(hostPlatform)
 	if fail != nil {
-		return nil, "", fail
-	}
-
-	proj, fail := FetchProjectByName(projectOwner, projectName)
-	if fail != nil {
-		return nil, "", fail
-	}
-
-	branch, fail := DefaultBranchForProject(proj)
-	if fail != nil {
-		return nil, "", fail
-	}
-
-	if branch.CommitID != nil {
-		return nil, "", FailUpdateBranch.New(locale.T("err_branch_not_bare"))
+		return "", fail
 	}
 
 	var changes []*mono_models.CommitChangeEditable
@@ -397,15 +397,10 @@ func CommitInitial(projectOwner, projectName, hostPlatform, language, langVersio
 	res, err := authentication.Client().VersionControl.AddCommit(params, authentication.ClientAuth())
 	if err != nil {
 		logging.Error("AddCommit Error: %s", err.Error())
-		return nil, "", FailAddCommit.New(locale.Tr("err_add_commit", api.ErrorMessageFromPayload(err)))
+		return "", FailAddCommit.New(locale.Tr("err_add_commit", api.ErrorMessageFromPayload(err)))
 	}
 
-	fail = UpdateBranchCommit(branch.BranchID, res.Payload.CommitID)
-	if fail != nil {
-		return nil, "", fail
-	}
-
-	return proj, res.Payload.CommitID, nil
+	return res.Payload.CommitID, nil
 }
 
 type indexedCommits map[string]string // key == commit id / val == parent id

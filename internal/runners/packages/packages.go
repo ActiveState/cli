@@ -61,7 +61,7 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 	}
 
 	if !isHeadless {
-		err := model.UpdateProjectBranchCommit(pj.Owner(), pj.Name(), commitID)
+		err := model.UpdateProjectBranchCommitByName(pj.Owner(), pj.Name(), commitID)
 		if err != nil {
 			return locale.WrapError(err, "err_package_"+string(operation))
 		}

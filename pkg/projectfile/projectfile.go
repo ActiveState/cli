@@ -730,7 +730,7 @@ func (p *Project) SetNamespace(owner, project string) error {
 	}
 
 	namespace := fmt.Sprintf("%s/%s", owner, project)
-	out, err := setNamespaceInYAML(data, namespace)
+	out, err := setNamespaceInYAML(data, namespace, p.CommitID())
 	if err != nil {
 		return errs.Wrap(err, "Failed to update namespace in project file.")
 	}
@@ -782,8 +782,12 @@ var (
 	setCommitRE = regexp.MustCompile(`(?m:^(project: *https?:\/\/)([^\/]*\/)(.*\/[^?\r\n]*).*)`)
 )
 
-func setNamespaceInYAML(data []byte, namespace string) ([]byte, error) {
-	commitQryParam := []byte(fmt.Sprintf("${1}${2}%s", namespace))
+func setNamespaceInYAML(data []byte, namespace string, commitID string) ([]byte, error) {
+	queryParams := ""
+	if commitID != "" {
+		queryParams = fmt.Sprintf("?commitID=%s", commitID)
+	}
+	commitQryParam := []byte(fmt.Sprintf("${1}${2}%s%s", namespace, queryParams))
 
 	out := setCommitRE.ReplaceAll(data, commitQryParam)
 	if !strings.Contains(string(out), namespace) {
