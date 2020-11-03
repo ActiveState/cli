@@ -36,18 +36,18 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 		if fail != nil {
 			return fail.WithDescription("err_activate_auth_required")
 		}
-	}
 
-	modifiable, err := model.IsProjectModifiable(pj.Owner(), pj.Name())
-	if err != nil {
-		return locale.WrapError(err, "err_modifiable", "Could not determine if project is modifiable")
-	}
-	if !modifiable {
-		return locale.NewError(
-			"err_not_modifiable",
-			"You do not have permission to modify the project at [NOTICE]{{.V0}}/{{.V1}}[/RESET]. You will either need to be invited to this project or you can fork it by running `[ACTIONABLE]state fork {{.V0}}/{{.V1}}[/RESET].`",
-			pj.Owner(), pj.Name(),
-		)
+		modifiable, err := model.IsProjectModifiable(pj.Owner(), pj.Name())
+		if err != nil {
+			return locale.WrapError(err, "err_modifiable", "Could not determine if project is modifiable")
+		}
+		if !modifiable {
+			return locale.NewError(
+				"err_not_modifiable",
+				"You do not have permission to modify the project at [NOTICE]{{.V0}}/{{.V1}}[/RESET]. You will either need to be invited to this project or you can fork it by running `[ACTIONABLE]state fork {{.V0}}/{{.V1}}[/RESET].`",
+				pj.Owner(), pj.Name(),
+			)
+		}
 	}
 
 	if strings.ToLower(version) == latestVersion {
@@ -56,6 +56,7 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 
 	// Verify that the provided package actually exists (the vcs API doesn't care)
 	var ingredient *model.IngredientAndVersion
+	var err error
 	if version == "" {
 		ingredient, err = model.IngredientWithLatestVersion(language, name)
 	} else {
