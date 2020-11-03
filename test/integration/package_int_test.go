@@ -83,7 +83,7 @@ func (suite *PackageIntegrationTestSuite) TestPackages_project_invalid() {
 	defer ts.Close()
 
 	cp := ts.Spawn("packages", "--namespace", "junk/junk")
-	cp.Expect("The requested project junk/junk could not be found.")
+	cp.Expect("Cannot obtain commit for package listing")
 	cp.ExpectExitCode(1)
 }
 
@@ -303,7 +303,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_headless_operation() {
 
 	suite.Run("install", func() {
 		cp := ts.Spawn("install", "dateparser@0.7.2")
-		cp.ExpectLongString("Do you wan to continue as an anonymous user?")
+		cp.ExpectLongString("Continue Anonymously?")
 		cp.Send("Y")
 		cp.Expect("(?:package added|project is currently building)")
 		cp.ExpectExitCode(1)
@@ -311,7 +311,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_headless_operation() {
 
 	suite.Run("install (update)", func() {
 		cp := ts.Spawn("install", "dateparser@0.7.6")
-		cp.ExpectLongString("Do you wan to continue as an anonymous user?")
+		cp.ExpectLongString("Continue Anonymously?")
 		cp.Send("Y")
 		cp.Expect("(?:package updated|project is currently building)")
 		cp.ExpectExitCode(1)
@@ -319,7 +319,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_headless_operation() {
 
 	suite.Run("uninstall", func() {
 		cp := ts.Spawn("uninstall", "dateparser")
-		cp.ExpectLongString("Do you wan to continue as an anonymous user?")
+		cp.ExpectLongString("Continue Anonymously?")
 		cp.Send("Y")
 		cp.ExpectRe("(?:package removed|project is currently building)")
 		cp.ExpectExitCode(1)
@@ -353,19 +353,19 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 
 	suite.Run("install", func() {
 		cp := ts.Spawn("install", "dateparser@0.7.2")
-		cp.Expect("(?:package added|project is currently building)")
+		cp.Expect("(?:Package added|project is currently building)")
 		cp.ExpectExitCode(1)
 	})
 
 	suite.Run("install (update)", func() {
 		cp := ts.Spawn("install", "dateparser@0.7.6")
-		cp.Expect("(?:package updated|project is currently building)")
+		cp.Expect("(?:Package updated|project is currently building)")
 		cp.ExpectExitCode(1)
 	})
 
 	suite.Run("uninstall", func() {
 		cp := ts.Spawn("uninstall", "dateparser")
-		cp.ExpectRe("(?:package removed|project is currently building)")
+		cp.ExpectRe("(?:Package removed|project is currently building)")
 		cp.ExpectExitCode(1)
 	})
 

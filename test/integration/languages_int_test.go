@@ -53,7 +53,7 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_install() {
 	}
 
 	cp = ts.Spawn("init", fmt.Sprintf("%s/%s", username, "Languages"), "python3", "--path", path)
-	cp.Expect("successfully initialized")
+	cp.Expect("initialized at")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("push")
