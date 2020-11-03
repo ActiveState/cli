@@ -440,15 +440,37 @@ junk: xgarbage
 project: https://example.com/xowner/xproject?commitID=00000000-0000-0000-0000-000000000123
 123: xvalue
 `)
-	expectedYAML := []byte(`
+	cases := []struct {
+		name     string
+		commitID string
+		expected string
+	}{
+		{
+			"without commitID", "",
+			(`
 junk: xgarbage
 project: https://example.com/yowner/yproject
 123: xvalue
-`)
+`),
+		},
+		{
+			"with commitID",
+			"00000000-0000-0000-0000-000000000123",
+			(`
+junk: xgarbage
+project: https://example.com/yowner/yproject?commitID=00000000-0000-0000-0000-000000000123
+123: xvalue
+`),
+		},
+	}
 
-	out, err := setNamespaceInYAML(exampleYAML, "yowner/yproject")
-	assert.NoError(t, err)
-	assert.Equal(t, string(expectedYAML), string(out))
+	for _, c := range cases {
+		t.Run(c.name, func(tt *testing.T) {
+			out, err := setNamespaceInYAML(exampleYAML, "yowner/yproject", c.commitID)
+			assert.NoError(t, err)
+			assert.Equal(t, c.expected, string(out))
+		})
+	}
 }
 
 func TestSetCommitInYAML_NoCommitID(t *testing.T) {
