@@ -72,7 +72,13 @@ func Get() *Auth {
 
 // Client is a shortcut for calling Client() on the persisted auth
 func Client() *mono_client.Mono {
-	return Get().Client()
+	c, err := Get().Client()
+	if err != nil {
+		logging.Error("Trying to get the Client while not authenticated")
+		fmt.Fprint(os.Stderr, locale.T("err_api_not_authenticated"))
+		exit(1)
+	}
+	return c
 }
 
 // ClientAuth is a shortcut for calling ClientAuth() on the persisted auth
@@ -233,26 +239,25 @@ func (s *Auth) Logout() {
 	s.user = nil
 }
 
-// Client will return an API client that has authentication set up
-func (s *Auth) Client() *mono_client.Mono {
-	client, err := s.ClientSafe()
-	if err != nil {
-		logging.Error("Trying to get the Client while not authenticated")
-		fmt.Fprint(os.Stderr, locale.T("err_api_not_authenticated"))
-		exit(1)
+// Client will return an API client that has authentication set up.
+func (s *Auth) Client() (*mono_client.Mono, error) {
+	client, fail := s.ClientF()
+	if fail != nil {
+		return nil, fail
 	}
 
-	return client
+	return client, nil
 }
 
-// ClientSafe will return an API client that has authentication set up
-func (s *Auth) ClientSafe() (*mono_client.Mono, *failures.Failure) {
+// ClientF will return an API client that has authentication set up. The error
+// type is a failure and provided for compatibility.
+func (s *Auth) ClientF() (*mono_client.Mono, *failures.Failure) {
 	if s.client == nil {
 		s.client = mono.NewWithAuth(s.clientAuth)
 	}
 	if !s.Authenticated() {
 		if fail := s.Authenticate(); fail != nil {
-			return nil, fail.WithDescription(locale.T("err_api_not_authenticated"))
+			return nil, failures.FailUser.New(locale.T("err_api_not_authenticated"))
 		}
 	}
 	return s.client, nil
@@ -260,7 +265,7 @@ func (s *Auth) ClientSafe() (*mono_client.Mono, *failures.Failure) {
 
 // CreateToken will create an API token for the current authenticated user
 func (s *Auth) CreateToken() *failures.Failure {
-	client, fail := s.ClientSafe()
+	client, fail := s.ClientF()
 	if fail != nil {
 		return fail
 	}
@@ -298,7 +303,7 @@ func (s *Auth) NewAPIKey(name string) (string, *failures.Failure) {
 	params := authentication.NewAddTokenParams()
 	params.SetTokenOptions(&mono_models.TokenEditable{Name: name})
 
-	client, fail := s.ClientSafe()
+	client, fail := s.ClientF()
 	if fail != nil {
 		return "", fail
 	}

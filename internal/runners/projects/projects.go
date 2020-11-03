@@ -71,7 +71,11 @@ func (r *Projects) fetchProjects() ([]projectWithOrg, *failures.Failure) {
 	orgParams := organizations.NewListOrganizationsParams()
 	memberOnly := true
 	orgParams.SetMemberOnly(&memberOnly)
-	orgs, err := r.auth.Client().Organizations.ListOrganizations(orgParams, authentication.ClientAuth())
+	authClient, fail := r.auth.ClientF()
+	if fail != nil {
+		return nil, fail
+	}
+	orgs, err := authClient.Organizations.ListOrganizations(orgParams, authentication.ClientAuth())
 	if err != nil {
 		if api.ErrorCode(err) == 401 {
 			return nil, api.FailAuth.New("err_api_not_authenticated")

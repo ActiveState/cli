@@ -4,7 +4,6 @@ import (
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/events/cmdcall"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -32,15 +31,6 @@ func (c *CmdCall) InterceptExec(next captain.ExecuteFunc) captain.ExecuteFunc {
 		}
 
 		if err := next(cmd, args); err != nil {
-			// check can be removed when no runners return failures and,
-			// possibly, when main pkg error handling digs through the error
-			// chain to get to nested failures
-			if fail, ok := err.(*failures.Failure); ok {
-				if fail == nil {
-					return nil
-				}
-				return fail // wrapping would break error handling higher in stack
-			}
 			return errs.Wrap(err, "before/after-command next func failure")
 		}
 

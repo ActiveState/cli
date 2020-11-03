@@ -47,7 +47,13 @@ func cleanUser(t *testing.T, username string) error {
 func getProjects(org string) ([]*mono_models.Project, error) {
 	params := projects.NewListProjectsParams()
 	params.SetOrganizationName(org)
-	listProjectsOK, err := authentication.Get().Client().Projects.ListProjects(params, authentication.ClientAuth())
+
+	client, err := authentication.Get().Client()
+	if err != nil {
+		return nil, err
+	}
+
+	listProjectsOK, err := client.Projects.ListProjects(params, authentication.ClientAuth())
 	if err != nil {
 		return nil, err
 	}
@@ -60,8 +66,12 @@ func deleteProject(org, name string) error {
 	params.SetOrganizationName(org)
 	params.SetProjectName(name)
 
-	_, err := authentication.Client().Projects.DeleteProject(params, authentication.ClientAuth())
+	client, err := authentication.Get().Client()
 	if err != nil {
+		return err
+	}
+
+	if _, err = client.Projects.DeleteProject(params, authentication.ClientAuth()); err != nil {
 		return err
 	}
 
@@ -72,11 +82,14 @@ func deleteUser(name string) error {
 	params := users.NewDeleteUserParams()
 	params.SetUsername(name)
 
-	_, err := authentication.Client().Users.DeleteUser(params, authentication.ClientAuth())
+	client, err := authentication.Get().Client()
 	if err != nil {
+		return err
+	}
+
+	if _, err = client.Users.DeleteUser(params, authentication.ClientAuth()); err != nil {
 		return err
 	}
 
 	return nil
 }
-
