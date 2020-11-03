@@ -118,7 +118,7 @@ func (suite *CamelLinuxRuntimeTestSuite) Test_PostUnpackWithFailures() {
 			artifact, _ := headchefArtifact(archivePath)
 			counter := pMock.NewMockIncrementer()
 
-			cr, fail := runtime.NewCamelRuntime(strfmt.UUID(""), []*runtime.HeadChefArtifact{artifact}, cacheDir)
+			cr, fail := runtime.NewCamelInstall(strfmt.UUID(""), cacheDir, []*runtime.HeadChefArtifact{artifact})
 			suite.Require().NoError(fail.ToError(), "camel runtime assembler initialized")
 			fail = fileutils.MkdirUnlessExists(cacheDir)
 			suite.Require().NoError(fail.ToError(), "creating installation directory")
