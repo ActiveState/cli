@@ -25,7 +25,7 @@ func SetupRollbar() {
 		UpdateRollbarPerson("unknown", "unknown", "unknown")
 	}
 	rollbar.SetToken(constants.RollbarToken)
-	rollbar.SetEnvironment(fmt.Sprintf("%s-%s", constants.BranchName, config.InstallSource()))
+	rollbar.SetEnvironment(constants.BranchName)
 
 	dateTime := constants.Date
 	t, err := time.Parse(constants.DateTimeFormatRecord, constants.Date)
@@ -44,6 +44,10 @@ func SetupRollbar() {
 		// We're not a server, so don't send server info (could contain sensitive info, like hostname)
 		data["server"] = map[string]interface{}{}
 		data["platform_os"] = runtime.GOOS
+	})
+
+	rollbar.SetCustom(map[string]interface{}{
+		"install_source": config.InstallSource(),
 	})
 
 	log.SetOutput(CurrentHandler().Output())
@@ -65,7 +69,7 @@ func UpdateRollbarPerson(userID, username, email string) {
 	// MachineID is the only thing we have that is consistent between authed and unauthed users, so
 	// we set that as the "person ID" in rollbar so the segmenting of data is consistent
 	rollbar.SetPerson(machID, username, email)
-	rollbar.SetCustom(map[string]interface{}{
-		"UserID": userID,
-	})
+	custom := rollbar.Custom()
+	custom["UserID"] = userID
+	rollbar.SetCustom(custom)
 }
