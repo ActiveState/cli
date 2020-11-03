@@ -1,6 +1,7 @@
 package platforms
 
 import (
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -27,6 +28,14 @@ func (r *Remove) Run(ps RemoveRunParams) error {
 	params, err := prepareParams(ps.Params)
 	if err != nil {
 		return nil
+	}
+
+	modifiable, err := model.IsProjectModifiable(ps.Project.Owner(), ps.Project.Name())
+	if err != nil {
+		return locale.WrapError(err, "err_modifiable", "Could not determine if project is modifiable")
+	}
+	if !modifiable {
+		return locale.NewError("err_not_modifiable", ps.Project.Owner(), ps.Project.Name())
 	}
 
 	return model.CommitPlatform(

@@ -1576,3 +1576,5 @@ prepare_protocol_warning:
   other: Could not add state protocol
 confirm:
   other: Please Confirm
+err_not_modifiable:
+  other: "You do not have permission to modify the project at [NOTICE]{{.V0}}/{{.V1}}[/RESET]. You will either need to be invited to this project or you can fork it by running `[ACTIONABLE]state fork {{.V0}}/{{.V1}}[/RESET].`"

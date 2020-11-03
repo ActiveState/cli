@@ -38,6 +38,14 @@ func (a *Add) Run(ps AddRunParams) error {
 		return err
 	}
 
+	modifiable, err := model.IsProjectModifiable(ps.Project.Owner(), ps.Project.Name())
+	if err != nil {
+		return locale.WrapError(err, "err_modifiable", "Could not determine if project is modifiable")
+	}
+	if !modifiable {
+		return locale.NewError("err_not_modifiable", ps.Project.Owner(), ps.Project.Name())
+	}
+
 	fail := model.CommitPlatform(
 		ps.Project.Owner(), ps.Project.Name(),
 		model.OperationAdded,

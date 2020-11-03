@@ -193,3 +193,30 @@ func processProjectErrorResponse(err error, params ...string) *failures.Failure 
 		return api.FailUnknown.Wrap(err)
 	}
 }
+
+func IsProjectModifiable(owner, projectName string) (bool, error) {
+	auth := authentication.Get()
+	if !auth.Authenticated() {
+		return false, nil
+	}
+
+	project, fail := FetchProjectByName(owner, projectName)
+	if fail != nil {
+		return false, fail.ToError()
+	}
+
+	org, err := FetchOrganizationByID(project.OrganizationID)
+	if err != nil {
+		return false, err
+	}
+
+	_, fail = FetchOrgMember(org.URLname, auth.WhoAmI())
+	if fail != nil {
+		if api.FailNotFound.Matches(fail.Type) {
+			return false, nil
+		}
+		return false, fail.ToError()
+	}
+
+	return true, nil
+}

@@ -38,13 +38,20 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 		}
 	}
 
+	modifiable, err := model.IsProjectModifiable(pj.Owner(), pj.Name())
+	if err != nil {
+		return locale.WrapError(err, "err_modifiable", "Could not determine if project is modifiable")
+	}
+	if !modifiable {
+		return locale.NewError("err_not_modifiable", pj.Owner(), pj.Name())
+	}
+
 	if strings.ToLower(version) == latestVersion {
 		version = ""
 	}
 
 	// Verify that the provided package actually exists (the vcs API doesn't care)
 	var ingredient *model.IngredientAndVersion
-	var err error
 	if version == "" {
 		ingredient, err = model.IngredientWithLatestVersion(language, name)
 	} else {

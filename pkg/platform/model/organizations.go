@@ -124,6 +124,20 @@ func FetchOrganizationsByIDs(ids []strfmt.UUID) ([]model.Organization, *failures
 	return response.Organizations, nil
 }
 
+// FetchOrganizationByID fetches an organization by its ID
+func FetchOrganizationByID(id strfmt.UUID) (*mono_models.Organization, error) {
+	params := clientOrgs.NewGetOrganizationParams()
+	params.SetOrganizationIdentifier(id.String())
+	idType := "organizationID"
+	params.SetIdentifierType(&idType)
+
+	res, err := authentication.Client().Organizations.GetOrganization(params, authentication.ClientAuth())
+	if err != nil {
+		return nil, locale.WrapError(err, "err_fetch_org_by_id", "Could not find organization with ID: {{.V0}}", id.String())
+	}
+	return res.Payload, nil
+}
+
 func processOrgErrorResponse(err error) *failures.Failure {
 	switch statusCode := api.ErrorCode(err); statusCode {
 	case 401:

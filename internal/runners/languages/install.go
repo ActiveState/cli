@@ -31,6 +31,11 @@ type UpdateParams struct {
 }
 
 func (u *Update) Run(params *UpdateParams) error {
+	err := ensureModifiable(u.project)
+	if err != nil {
+		return err
+	}
+
 	lang, err := parseLanguage(params.Language)
 	if err != nil {
 		return err
@@ -138,6 +143,17 @@ func ensureVersionTestable(language *model.Language, fetchVersions fetchVersions
 	}
 
 	return failures.FailUser.New(locale.Tr("err_language_version_not_found", language.Version, language.Name))
+}
+
+func ensureModifiable(project *project.Project) error {
+	modifiable, err := model.IsProjectModifiable(project.Owner(), project.Name())
+	if err != nil {
+		return locale.WrapError(err, "err_modifiable", "Could not determine if project is modifiable")
+	}
+	if !modifiable {
+		return locale.NewError("err_not_modifiable", project.Owner(), project.Name())
+	}
+	return nil
 }
 
 func removeLanguage(project *project.Project, current string) error {
