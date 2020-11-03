@@ -109,6 +109,9 @@ func (r *Activate) run(params *ActivateParams) error {
 		}
 	}
 
+	// Have to call this once the project has been set
+	analytics.Event(analytics.CatActivationFlow, "start")
+
 	// on --replace, replace namespace and commit id in as.yaml
 	if params.ReplaceWith.IsValid() {
 		if err := updateProjectFile(proj, params.ReplaceWith); err != nil {
@@ -116,9 +119,6 @@ func (r *Activate) run(params *ActivateParams) error {
 		}
 	}
 	proj.Source().Persist()
-
-	// Send google analytics event with label set to project namespace
-	analytics.EventWithLabel(analytics.CatRunCmd, "activate", proj.Namespace().String())
 
 	if params.Command != "" {
 		r.subshell.SetActivateCommand(params.Command)
