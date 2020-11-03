@@ -307,9 +307,6 @@ func (suite *PackageIntegrationTestSuite) TestPackage_headless_operation() {
 		cp.SendLine("y")
 		cp.ExpectRe("(?:Package added:|project is currently building)", 60*time.Second)
 		cp.ExpectExitCode(0)
-
-		cp = ts.Spawn("pull")
-		cp.ExpectExitCode(0)
 	})
 
 	suite.Run("install (update)", func() {
@@ -317,9 +314,6 @@ func (suite *PackageIntegrationTestSuite) TestPackage_headless_operation() {
 		cp.ExpectLongString("Continue Anonymously?")
 		cp.SendLine("y")
 		cp.ExpectRe("(?:Package added:|project is currently building)", 60*time.Second)
-		cp.ExpectExitCode(0)
-
-		cp = ts.Spawn("pull")
 		cp.ExpectExitCode(0)
 	})
 
