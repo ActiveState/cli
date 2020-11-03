@@ -21,7 +21,7 @@ func newPushCommand(prime *primer.Values) *captain.Command {
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
 			if fail := pushRunner.Run(); fail != nil {
-				return fail
+				return locale.NewError("tmp_err_runner_push", fail.Error())
 			}
 			return nil
 		},

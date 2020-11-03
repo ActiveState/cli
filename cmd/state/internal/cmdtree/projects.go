@@ -20,7 +20,10 @@ func newProjectsCommand(prime *primer.Values) *captain.Command {
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
-			return runner.Run()
+			if fail := runner.Run(); fail != nil {
+				return locale.NewError("tmp_err_runner_projects", fail.Error())
+			}
+			return nil
 		},
 	).SetGroup(EnvironmentGroup)
 }
