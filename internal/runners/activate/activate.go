@@ -120,9 +120,6 @@ func (r *Activate) run(params *ActivateParams) error {
 	}
 	proj.Source().Persist()
 
-	// Send google analytics event with label set to project namespace
-	analytics.EventWithLabel(analytics.CatRunCmd, "activate", proj.Namespace().String())
-
 	if params.Command != "" {
 		r.subshell.SetActivateCommand(params.Command)
 	}
