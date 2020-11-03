@@ -95,7 +95,14 @@ func NewInstaller(runtime *Runtime) *Installer {
 
 // Install will download the installer archive and invoke InstallFromArchive
 func (installer *Installer) Install() (envGetter EnvGetter, freshInstallation bool, fail *failures.Failure) {
-	assembler, fail := installer.Assembler()
+	if installer.runtime.IsCachedRuntime() {
+		ar, fail := installer.AssemblerRuntime()
+		if fail == nil {
+			return ar, true, nil
+		}
+		logging.Error("Failed to retrieve cached assembler: %v", fail.ToError())
+	}
+	assembler, fail := installer.AssemblerInstaller()
 	if fail != nil {
 		return nil, false, fail
 	}
@@ -104,12 +111,22 @@ func (installer *Installer) Install() (envGetter EnvGetter, freshInstallation bo
 
 // Env will grab the environment information for the given runtime. This will request build info.
 func (installer *Installer) Env() (envGetter EnvGetter, fail *failures.Failure) {
-	return installer.Assembler()
+	if installer.runtime.IsCachedRuntime() {
+		ar, fail := installer.AssemblerRuntime()
+		if fail == nil {
+			return ar, nil
+		}
+		logging.Error("Failed to retrieve cached assembler: %v", fail.ToError())
+	}
+	return installer.AssemblerInstaller()
 }
 
 // IsInstalled will check if the installer has already ran (ie. the artifacts already exist at the target dir)
 func (installer *Installer) IsInstalled() (bool, *failures.Failure) {
-	assembler, fail := installer.Assembler()
+	if installer.runtime.IsCachedRuntime() {
+		return true, nil
+	}
+	assembler, fail := installer.AssemblerInstaller()
 	if fail != nil {
 		return false, fail
 	}
@@ -117,8 +134,30 @@ func (installer *Installer) IsInstalled() (bool, *failures.Failure) {
 	return assembler.IsInstalled(), nil
 }
 
-// Assembler returns a new runtime assembler for the given checkpoint and artifacts
-func (installer *Installer) Assembler() (Assembler, *failures.Failure) {
+func (installer *Installer) AssemblerRuntime() (Assembler, *failures.Failure) {
+	buildEngine, err := installer.runtime.BuildEngine()
+	if err != nil {
+		return nil, FailRuntimeUnknownEngine.Wrap(err, "installer_err_engine_unknown")
+	}
+	switch buildEngine {
+	case Alternative:
+		return NewAlternativeRuntime(installer.runtime.runtimeDir)
+	case Camel:
+		return NewCamelRuntime(installer.runtime.commitID, installer.runtime.runtimeDir)
+	case Hybrid:
+		cr, fail := NewCamelRuntime(installer.runtime.commitID, installer.runtime.runtimeDir)
+		if fail != nil {
+			return nil, fail
+		}
+
+		return &HybridRuntime{cr}, nil
+	default:
+		return nil, FailRuntimeUnknownEngine.New("installer_err_engine_unknown")
+	}
+}
+
+// AssemblerInstaller returns a new runtime assembler for the given checkpoint and artifacts
+func (installer *Installer) AssemblerInstaller() (AssemblerInstaller, *failures.Failure) {
 	if fail := installer.validateCheckpoint(); fail != nil {
 		return nil, fail
 	}
@@ -130,23 +169,28 @@ func (installer *Installer) Assembler() (Assembler, *failures.Failure) {
 
 	switch artifacts.BuildEngine {
 	case Alternative:
-		return NewAlternativeRuntime(artifacts.Artifacts, installer.runtime.runtimeDir, artifacts.RecipeID)
+		return NewAlternativeInstall(installer.runtime.runtimeDir, artifacts.Artifacts, artifacts.RecipeID)
 	case Camel:
-		return NewCamelRuntime(installer.runtime.commitID, artifacts.Artifacts, installer.runtime.runtimeDir)
+		return NewCamelInstall(installer.runtime.commitID, installer.runtime.runtimeDir, artifacts.Artifacts)
 	case Hybrid:
-		cr, fail := NewCamelRuntime(installer.runtime.commitID, artifacts.Artifacts, installer.runtime.runtimeDir)
+		ci, fail := NewCamelInstall(installer.runtime.commitID, installer.runtime.runtimeDir, artifacts.Artifacts)
 		if fail != nil {
 			return nil, fail
 		}
 
-		return &HybridRuntime{cr}, nil
+		return &HybridInstall{ci}, nil
 	default:
 		return nil, FailRuntimeUnknownEngine.New("installer_err_engine_unknown")
 	}
 }
 
 // InstallArtifacts installs all artifacts provided by a runtime assembler
-func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGetter EnvGetter, freshInstallation bool, fail *failures.Failure) {
+func (installer *Installer) InstallArtifacts(runtimeAssembler AssemblerInstaller) (envGetter EnvGetter, freshInstallation bool, fail *failures.Failure) {
+	err := installer.runtime.StoreBuildEngine(runtimeAssembler.BuildEngine())
+	if err != nil {
+		return nil, false, failures.FailRuntime.Wrap(err, "TODO")
+	}
+
 	if runtimeAssembler.IsInstalled() {
 		logging.Debug("runtime already successfully installed")
 		return runtimeAssembler, false, nil
@@ -196,9 +240,14 @@ func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGet
 
 	// We still want to run PostInstall because even though no new artifact might be downloaded we still might be
 	// deleting some already cached ones
-	err := runtimeAssembler.PostInstall()
+	err = runtimeAssembler.PostInstall()
 	if err != nil {
 		return nil, false, failures.FailRuntime.Wrap(err, "error during post installation step")
+	}
+
+	err = installer.runtime.MarkInstallationComplete()
+	if err != nil {
+		return nil, false, failures.FailRuntime.Wrap(err, "error marking installation as complete")
 	}
 
 	return runtimeAssembler, true, nil
@@ -227,7 +276,7 @@ func (installer *Installer) validateCheckpoint() *failures.Failure {
 // InstallFromArchives will unpack the installer archive, locate the install script, and then use the installer
 // script to install a runtime to the configured runtime dir. Any failures during this process will result in a
 // failed installation and the install-dir being removed.
-func (installer *Installer) InstallFromArchives(archives map[string]*HeadChefArtifact, a Assembler, pg *progress.Progress) *failures.Failure {
+func (installer *Installer) InstallFromArchives(archives map[string]*HeadChefArtifact, a AssemblerInstaller, pg *progress.Progress) *failures.Failure {
 	var bar *progress.TotalBar
 	if len(archives) > 0 {
 		bar = pg.AddTotalBar(locale.T("installing"), len(archives))
@@ -251,7 +300,7 @@ func (installer *Installer) InstallFromArchives(archives map[string]*HeadChefArt
 }
 
 // InstallFromArchive will unpack artifact and install it
-func (installer *Installer) InstallFromArchive(archivePath string, artf *HeadChefArtifact, a Assembler, progress *progress.Progress) *failures.Failure {
+func (installer *Installer) InstallFromArchive(archivePath string, artf *HeadChefArtifact, a AssemblerInstaller, progress *progress.Progress) *failures.Failure {
 
 	fail := a.PreUnpackArtifact(artf)
 	if fail != nil {

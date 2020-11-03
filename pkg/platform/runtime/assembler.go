@@ -12,21 +12,24 @@ type EnvGetter interface {
 	GetEnv(inherit bool, projectDir string) (map[string]string, error)
 }
 
-// Assembler provides functionality to assemble a runtime environment for an
-// installation It is usually created by an installer.Installer and defines
-// which artifact tarballs to unpack where.
-// Once assembled, the Assembler can be used as an EnvGetter interface to get
-// the environment variables that need to be set to use the installed runtime.
+// Assembler provides functionality to set up a runtime environment
+// An assembler should function with cached data only.
 type Assembler interface {
 	EnvGetter
-	DownloadDirectoryProvider
-
-	// ArtifactsToDownload returns the artifacts that need to be downloaded
-	ArtifactsToDownload() []*HeadChefArtifact
 
 	// BuildEngine returns the build engine that this runtime has been created
 	// with
 	BuildEngine() BuildEngine
+}
+
+// AssemblerInstaller extends the Assembler by functions that allow the
+// assembler to be installed through downloads from the internet.
+type AssemblerInstaller interface {
+	Assembler
+	DownloadDirectoryProvider
+
+	// ArtifactsToDownload returns the artifacts that need to be downloaded
+	ArtifactsToDownload() []*HeadChefArtifact
 
 	// InstallerExtension is used to identify whether an artifact is one that we
 	// should care about
@@ -105,5 +108,18 @@ func (be BuildEngine) String() string {
 		return headchef_models.BuildStatusResponseBuildEngineHybrid
 	default:
 		return "unknown"
+	}
+}
+
+func parseBuildEngine(be string) BuildEngine {
+	switch be {
+	case headchef_models.BuildStatusResponseBuildEngineAlternative:
+		return Alternative
+	case headchef_models.BuildStatusResponseBuildEngineCamel:
+		return Camel
+	case headchef_models.BuildStatusResponseBuildEngineHybrid:
+		return Hybrid
+	default:
+		return UnknownEngine
 	}
 }

@@ -26,15 +26,20 @@ import (
 )
 
 var _ Assembler = &AlternativeRuntime{}
+var _ AssemblerInstaller = &AlternativeInstall{}
 
 // AlternativeRuntime holds all the meta-data necessary to activate a runtime
 // environment for an Alternative build
 type AlternativeRuntime struct {
-	runtimeDir         string
-	recipeID           strfmt.UUID
-	artifactsRequested []*HeadChefArtifact
+	runtimeDir string
+	cache      []artifactCacheMeta
+}
+
+type AlternativeInstall struct {
+	*AlternativeRuntime
 	tempInstallDir     string
-	cache              []artifactCacheMeta
+	artifactsRequested []*HeadChefArtifact
+	recipeID           strfmt.UUID
 }
 
 type artifactCacheMeta struct {
@@ -42,17 +47,19 @@ type artifactCacheMeta struct {
 	Files      []string
 }
 
-// NewAlternativeRuntime returns a new alternative runtime assembler
-// It filters the provided artifact list for useable artifacts
-// The recipeID is needed to define the installation directory
-func NewAlternativeRuntime(artifacts []*HeadChefArtifact, cacheDir string, recipeID strfmt.UUID) (*AlternativeRuntime, *failures.Failure) {
+func NewAlternativeInstall(cacheDir string, artifacts []*HeadChefArtifact, recipeID strfmt.UUID) (*AlternativeInstall, *failures.Failure) {
 	if rtutils.BuiltViaCI {
 		return nil, failures.FailRuntime.New("Alternative builds are not yet supported. Please contact support if you are seeing this error.")
 	}
 
-	ar := &AlternativeRuntime{
-		runtimeDir: cacheDir,
-		recipeID:   recipeID,
+	ar, fail := NewAlternativeRuntime(cacheDir)
+	if fail != nil {
+		return nil, fail
+	}
+
+	ai := &AlternativeInstall{
+		AlternativeRuntime: ar,
+		recipeID:           recipeID,
 	}
 	for _, artf := range artifacts {
 
@@ -60,7 +67,7 @@ func NewAlternativeRuntime(artifacts []*HeadChefArtifact, cacheDir string, recip
 			continue
 		}
 		filename := filepath.Base(artf.URI.String())
-		if !strings.HasSuffix(filename, ar.InstallerExtension()) {
+		if !strings.HasSuffix(filename, ai.InstallerExtension()) {
 			continue
 		}
 
@@ -70,11 +77,26 @@ func NewAlternativeRuntime(artifacts []*HeadChefArtifact, cacheDir string, recip
 			continue
 		}
 
-		ar.artifactsRequested = append(ar.artifactsRequested, artf)
+		ai.artifactsRequested = append(ai.artifactsRequested, artf)
 	}
 
-	if len(ar.artifactsRequested) == 0 {
-		return ar, FailNoValidArtifact.New(locale.T("err_no_valid_artifact"))
+	if len(ai.artifactsRequested) == 0 {
+		return ai, FailNoValidArtifact.New(locale.T("err_no_valid_artifact"))
+	}
+
+	return ai, nil
+}
+
+// NewAlternativeRuntime returns a new alternative runtime assembler
+// It filters the provided artifact list for useable artifacts
+// The recipeID is needed to define the installation directory
+func NewAlternativeRuntime(cacheDir string) (*AlternativeRuntime, *failures.Failure) {
+	if rtutils.BuiltViaCI {
+		return nil, failures.FailRuntime.New("Alternative builds are not yet supported. Please contact support if you are seeing this error.")
+	}
+
+	ar := &AlternativeRuntime{
+		runtimeDir: cacheDir,
 	}
 
 	var err error
@@ -84,15 +106,16 @@ func NewAlternativeRuntime(artifacts []*HeadChefArtifact, cacheDir string, recip
 	}
 
 	return ar, nil
+
 }
 
 // InstallerExtension is always .tar.gz
-func (ar *AlternativeRuntime) InstallerExtension() string {
+func (ar *AlternativeInstall) InstallerExtension() string {
 	return ".tar.gz"
 }
 
 // Unarchiver always returns an unarchiver for gzipped tarballs
-func (ar *AlternativeRuntime) Unarchiver() unarchiver.Unarchiver {
+func (ar *AlternativeInstall) Unarchiver() unarchiver.Unarchiver {
 	return unarchiver.NewTarGz()
 }
 
@@ -119,7 +142,7 @@ func (ar *AlternativeRuntime) artifactCache() ([]artifactCacheMeta, error) {
 	return cache, nil
 }
 
-func (ar *AlternativeRuntime) storeArtifactCache() error {
+func (ar *AlternativeInstall) storeArtifactCache() error {
 	// Save artifact cache information
 	jsonBlob, err := json.Marshal(ar.cache)
 	if err != nil {
@@ -134,7 +157,7 @@ func (ar *AlternativeRuntime) storeArtifactCache() error {
 
 // ArtifactsToDownload returns the artifacts that we need to download
 // for this project.
-func (ar *AlternativeRuntime) ArtifactsToDownload() []*HeadChefArtifact {
+func (ar *AlternativeInstall) ArtifactsToDownload() []*HeadChefArtifact {
 	return artifactsToDownload(artifactCacheToUuids(ar.cache), ar.artifactsRequested)
 }
 
@@ -152,7 +175,7 @@ func artifactsToDownload(artifactCacheUuids []strfmt.UUID, artifactsRequested []
 
 // IsInstalled checks if the merged runtime environment definition file exists and whether any artifacts need to be
 // downloaded or deleted
-func (ar *AlternativeRuntime) IsInstalled() bool {
+func (ar *AlternativeInstall) IsInstalled() bool {
 	download := artifactsToDownload(artifactCacheToUuids(ar.cache), ar.artifactsRequested)
 	_, delete := artifactsToKeepAndDelete(ar.cache, artifactsToUuids(ar.artifactsRequested))
 
@@ -161,20 +184,20 @@ func (ar *AlternativeRuntime) IsInstalled() bool {
 	return fileutils.FileExists(red) && len(download) == 0 && len(delete) == 0
 }
 
-func (ar *AlternativeRuntime) downloadDirectory(artf *HeadChefArtifact) string {
+func (ar *AlternativeInstall) downloadDirectory(artf *HeadChefArtifact) string {
 	return filepath.Join(ar.runtimeDir, constants.LocalRuntimeEnvironmentDirectory, "artifacts", hash.ShortHash(artf.ArtifactID.String()))
 }
 
 // DownloadDirectory returns the local directory where the artifact files should
 // be downloaded to
-func (ar *AlternativeRuntime) DownloadDirectory(artf *HeadChefArtifact) (string, *failures.Failure) {
+func (ar *AlternativeInstall) DownloadDirectory(artf *HeadChefArtifact) (string, *failures.Failure) {
 	p := ar.downloadDirectory(artf)
 	fail := fileutils.MkdirUnlessExists(p)
 	return p, fail
 }
 
 // PreInstall ensures that the final installation directory exists, and is useable
-func (ar *AlternativeRuntime) PreInstall() *failures.Failure {
+func (ar *AlternativeInstall) PreInstall() *failures.Failure {
 	if fileutils.FileExists(ar.runtimeDir) {
 		// install-dir exists, but is a regular file
 		return FailInstallDirInvalid.New("installer_err_installdir_isfile", ar.runtimeDir)
@@ -224,14 +247,14 @@ func artifactsToKeepAndDelete(artifactCache []artifactCacheMeta, artifactRequest
 }
 
 // PreUnpackArtifact does nothing
-func (ar *AlternativeRuntime) PreUnpackArtifact(artf *HeadChefArtifact) *failures.Failure {
+func (ar *AlternativeInstall) PreUnpackArtifact(artf *HeadChefArtifact) *failures.Failure {
 	return nil
 }
 
 // PostUnpackArtifact is called after the artifacts are unpacked
 // In this steps, the artifact contents are moved to its final destination.
 // This step also sets up the runtime environment variables.
-func (ar *AlternativeRuntime) PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir string, archivePath string, cb func()) *failures.Failure {
+func (ar *AlternativeInstall) PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir string, archivePath string, cb func()) *failures.Failure {
 	envDef, fail := envdef.NewEnvironmentDefinition(filepath.Join(tmpRuntimeDir, constants.RuntimeDefinitionFilename))
 	if fail != nil {
 		return fail
@@ -304,7 +327,7 @@ func (ar *AlternativeRuntime) runtimeEnvBaseDir() string {
 // This file also serves as a marker that the installation was successfully completed.
 //
 // It also checks if a PPM shim needs to be installed
-func (ar *AlternativeRuntime) PostInstall() error {
+func (ar *AlternativeInstall) PostInstall() error {
 	mergedRuntimeDefinitionFile := filepath.Join(ar.runtimeEnvBaseDir(), constants.RuntimeDefinitionFilename)
 	var rtGlobal *envdef.EnvironmentDefinition
 
