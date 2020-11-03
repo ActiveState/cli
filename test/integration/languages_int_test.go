@@ -74,15 +74,15 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_install() {
 	// This can take a little while
 	cp.ExpectExitCode(0, 60*time.Second)
 
+	cp = ts.Spawn("pull")
+	cp.Expect("Your activestate.yaml has been updated")
+	cp.ExpectExitCode(0)
+
 	cp = ts.Spawn("languages")
 	cp.Expect("Name")
 	cp.Expect("Python")
 	versionRe := regexp.MustCompile(`(\d+)\.(\d+).(\d+)`)
 	cp.ExpectRe(versionRe.String())
-	cp.ExpectExitCode(0)
-
-	cp = ts.Spawn("pull")
-	cp.Expect("Your activestate.yaml has been updated")
 	cp.ExpectExitCode(0)
 
 	// assert that version number changed

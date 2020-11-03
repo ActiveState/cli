@@ -307,11 +307,10 @@ func (suite *PackageIntegrationTestSuite) TestPackage_headless_operation() {
 		cp.Send("Y")
 		cp.ExpectRe("(?:Package added:|project is currently building)", 60*time.Second)
 		cp.ExpectExitCode(0)
-	})
 
-	cp = ts.Spawn("pull")
-	cp.Expect("Your activestate.yaml has been updated")
-	cp.ExpectExitCode(0)
+		cp = ts.Spawn("pull")
+		cp.ExpectExitCode(0)
+	})
 
 	suite.Run("install (update)", func() {
 		cp := ts.Spawn("install", "dateparser@0.7.6")
@@ -319,11 +318,10 @@ func (suite *PackageIntegrationTestSuite) TestPackage_headless_operation() {
 		cp.Send("Y")
 		cp.ExpectRe("(?:Package updated:|project is currently building)", 60*time.Second)
 		cp.ExpectExitCode(0)
-	})
 
-	cp = ts.Spawn("pull")
-	cp.Expect("Your activestate.yaml has been updated")
-	cp.ExpectExitCode(0)
+		cp = ts.Spawn("pull")
+		cp.ExpectExitCode(0)
+	})
 
 	suite.Run("uninstall", func() {
 		cp := ts.Spawn("uninstall", "dateparser")
@@ -363,31 +361,28 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 		cp := ts.Spawn("install", "dateparser@0.7.2")
 		cp.ExpectRe("(?:Package added:|project is currently building)", 60*time.Second)
 		cp.ExpectExitCode(0)
-	})
 
-	cp = ts.Spawn("pull")
-	cp.Expect("Your activestate.yaml has been updated")
-	cp.ExpectExitCode(0)
+		cp = ts.Spawn("pull")
+		cp.ExpectExitCode(0)
+	})
 
 	suite.Run("install (update)", func() {
 		cp := ts.Spawn("install", "dateparser@0.7.6")
 		cp.ExpectRe("(?:Package updated:|project is currently building)", 60*time.Second)
 		cp.ExpectExitCode(0)
-	})
 
-	cp = ts.Spawn("pull")
-	cp.Expect("Your activestate.yaml has been updated")
-	cp.ExpectExitCode(0)
+		cp = ts.Spawn("pull")
+		cp.ExpectExitCode(0)
+	})
 
 	suite.Run("uninstall", func() {
 		cp := ts.Spawn("uninstall", "dateparser")
 		cp.ExpectRe("(?:Package removed:|project is currently building)", 60*time.Second)
 		cp.ExpectExitCode(0)
-	})
 
-	cp = ts.Spawn("pull")
-	cp.Expect("Your activestate.yaml has been updated")
-	cp.ExpectExitCode(0)
+		cp = ts.Spawn("pull")
+		cp.ExpectExitCode(0)
+	})
 
 	cp = ts.Spawn("revert", firstCommit)
 	cp.SendLine("y")
