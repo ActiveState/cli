@@ -311,16 +311,12 @@ func (suite *PackageIntegrationTestSuite) TestPackage_headless_operation() {
 
 	suite.Run("install (update)", func() {
 		cp := ts.Spawn("install", "dateparser@0.7.6")
-		cp.ExpectLongString("Continue Anonymously?")
-		cp.SendLine("y")
-		cp.ExpectRe("(?:Package added:|project is currently building)", 60*time.Second)
+		cp.ExpectRe("(?:Package updated:|project is currently building)", 60*time.Second)
 		cp.ExpectExitCode(0)
 	})
 
 	suite.Run("uninstall", func() {
 		cp := ts.Spawn("uninstall", "dateparser")
-		cp.ExpectLongString("Continue Anonymously?")
-		cp.SendLine("y")
 		cp.ExpectRe("(?:Package removed:|project is currently building)", 60*time.Second)
 		cp.ExpectExitCode(0)
 	})
