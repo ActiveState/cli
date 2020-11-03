@@ -109,6 +109,9 @@ func (r *Activate) run(params *ActivateParams) error {
 		}
 	}
 
+	// Have to call this once the project has been set
+	analytics.Event(analytics.CatActivationFlow, "start")
+
 	// on --replace, replace namespace and commit id in as.yaml
 	if params.ReplaceWith.IsValid() {
 		if err := updateProjectFile(proj, params.ReplaceWith); err != nil {

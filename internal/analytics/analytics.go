@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 var client *ga.Client
@@ -39,6 +40,9 @@ const CatTutorial = "tutorial"
 // CatCommandExit is the event category used to track the success of state commands
 const CatCommandExit = "command-exit"
 
+// CatActivationFlow is for events that outline the activation flow
+const CatActivationFlow = "activation"
+
 type customDimensions struct {
 	version       string
 	branchName    string
@@ -48,6 +52,7 @@ type customDimensions struct {
 	osVersion     string
 	installSource string
 	machineID     string
+	projectName   string
 }
 
 func (d *customDimensions) SetOutput(output string) {
@@ -55,17 +60,23 @@ func (d *customDimensions) SetOutput(output string) {
 }
 
 func (d *customDimensions) toMap() map[string]string {
+	pj := projectfile.GetPersisted()
+	d.projectName = ""
+	if pj != nil {
+		d.projectName = pj.Owner() + "/" + pj.Name()
+	}
 	return map[string]string{
 		// Commented out idx 1 so it's clear why we start with 2. We used to log the hostname while dogfooding internally.
 		// "1": "hostname (deprected)"
-		"2": d.version,
-		"3": d.branchName,
-		"4": d.userID,
-		"5": d.output,
-		"6": d.osName,
-		"7": d.osVersion,
-		"8": d.installSource,
-		"9": d.machineID,
+		"2":  d.version,
+		"3":  d.branchName,
+		"4":  d.userID,
+		"5":  d.output,
+		"6":  d.osName,
+		"7":  d.osVersion,
+		"8":  d.installSource,
+		"9":  d.machineID,
+		"10": d.projectName,
 	}
 }
 
@@ -162,6 +173,6 @@ func eventWithValue(category string, action string, value int64) error {
 	}
 	client.CustomDimensionMap(CustomDimensions.toMap())
 
-	logging.Debug("Event+value: %s, %s, %s", category, action, value)
+	logging.Debug("Event+value: %s, %s, %d", category, action, value)
 	return client.Send(ga.NewEvent(category, action).Value(value))
 }
