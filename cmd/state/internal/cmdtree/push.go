@@ -20,10 +20,7 @@ func newPushCommand(prime *primer.Values) *captain.Command {
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
-			if fail := pushRunner.Run(); fail != nil {
-				return locale.NewError("tmp_err_runner_push", fail.Error())
-			}
-			return nil
+			return pushRunner.Run()
 		},
 	).SetGroup(VCSGroup)
 }
