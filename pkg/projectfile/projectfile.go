@@ -879,6 +879,11 @@ func Get() *Project {
 	return project
 }
 
+// GetPersisted gets the persisted project, if any
+func GetPersisted() *Project {
+	return persistentProject
+}
+
 // GetSafe returns the project configuration in a safe manner (returns error)
 func GetSafe() (*Project, *failures.Failure) {
 	if persistentProject != nil {
