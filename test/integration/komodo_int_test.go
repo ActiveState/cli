@@ -18,9 +18,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_EditorV0() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("activate", "ActiveState-CLI/Python3", "--output", "editor.v0")
-	cp.Expect("Where would you like to checkout")
-	cp.SendLine(cp.WorkDirectory())
+	cp := ts.Spawn("activate", "ActiveState-CLI/Python3", "--output", "editor.v0", "--path", ts.Dirs.Work)
 	cp.Expect("[activated-JSON]")
 	cp.ExpectExitCode(0)
 }

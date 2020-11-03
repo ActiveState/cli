@@ -49,6 +49,8 @@ func (r *Runtime) InstallPath() string {
 	return r.runtimeDir
 }
 
+// IsCachedRuntime checks if the requested runtime is already available ie.,
+// the runtime installation completed successful (marker file found) AND the requested commitID did not change
 func (r *Runtime) IsCachedRuntime() bool {
 	marker := filepath.Join(r.runtimeDir, constants.RuntimeInstallationCompleteMarker)
 	if !fileutils.FileExists(marker) {
@@ -64,9 +66,10 @@ func (r *Runtime) IsCachedRuntime() bool {
 	return string(contents) == r.commitID.String()
 }
 
+// MarkInstallationComplete writes the installation complete marker to the runtime directory
 func (r *Runtime) MarkInstallationComplete() error {
 	markerFile := filepath.Join(r.runtimeDir, constants.RuntimeInstallationCompleteMarker)
-	markerDir := filepath.Base(markerFile)
+	markerDir := filepath.Dir(markerFile)
 	fail := fileutils.MkdirUnlessExists(markerDir)
 	if fail != nil {
 		return errs.Wrap(fail, "could not create completion marker directory")
@@ -78,9 +81,10 @@ func (r *Runtime) MarkInstallationComplete() error {
 	return nil
 }
 
+// StoreBuildEngine stores the build engine value in the runtime directory
 func (r *Runtime) StoreBuildEngine(buildEngine BuildEngine) error {
 	storeFile := filepath.Join(r.runtimeDir, constants.RuntimeBuildEngineStore)
-	storeDir := filepath.Base(storeFile)
+	storeDir := filepath.Dir(storeFile)
 	fail := fileutils.MkdirUnlessExists(storeDir)
 	if fail != nil {
 		return errs.Wrap(fail, "Could not create completion marker directory.")
@@ -92,6 +96,7 @@ func (r *Runtime) StoreBuildEngine(buildEngine BuildEngine) error {
 	return nil
 }
 
+// BuildEngine returns the runtime build engine value stored in the runtime directory
 func (r *Runtime) BuildEngine() (BuildEngine, error) {
 	storeFile := filepath.Join(r.runtimeDir, constants.RuntimeBuildEngineStore)
 
@@ -107,8 +112,4 @@ func (r *Runtime) BuildEngine() (BuildEngine, error) {
 // This currently just aliases to installer, pending further refactoring
 func (r *Runtime) Env() (EnvGetter, *failures.Failure) {
 	return NewInstaller(r).Env()
-}
-
-func (r *Runtime) ArtifactsFromCache() ([]*HeadChefArtifact, BuildEngine, error) {
-	return []*HeadChefArtifact{}, UnknownEngine, nil
 }

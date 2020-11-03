@@ -7,29 +7,24 @@ import (
 )
 
 // EnvGetter provides a function to return variables for a runtime environment
+// The provided function should construct the environment from cached values only.
 type EnvGetter interface {
 	// GetEnv returns a map between environment variable names and their values
 	GetEnv(inherit bool, projectDir string) (map[string]string, error)
 }
 
-// Assembler provides functionality to set up a runtime environment
-// An assembler should function with cached data only.
+// Assembler extends the EnvGetter by functions that allow the
+// runtime environment to be installed through downloads from the internet.
 type Assembler interface {
 	EnvGetter
-
-	// BuildEngine returns the build engine that this runtime has been created
-	// with
-	BuildEngine() BuildEngine
-}
-
-// AssemblerInstaller extends the Assembler by functions that allow the
-// assembler to be installed through downloads from the internet.
-type AssemblerInstaller interface {
-	Assembler
 	DownloadDirectoryProvider
 
 	// ArtifactsToDownload returns the artifacts that need to be downloaded
 	ArtifactsToDownload() []*HeadChefArtifact
+
+	// BuildEngine returns the build engine that this runtime has been created
+	// with
+	BuildEngine() BuildEngine
 
 	// InstallerExtension is used to identify whether an artifact is one that we
 	// should care about

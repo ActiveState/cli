@@ -21,31 +21,40 @@ import (
 	"github.com/ActiveState/cli/internal/unarchiver"
 )
 
-var _ Assembler = &CamelRuntime{}
-var _ AssemblerInstaller = &CamelInstall{}
+var _ EnvGetter = &CamelEnv{}
+var _ Assembler = &CamelInstall{}
 
 const envFile = "activestate.env.json"
 const deleteMarker = "!#DELETE#!"
 
-// CamelRuntime holds all the meta-data necessary to activate a runtime
+// CamelEnv holds all the meta-data necessary to activate a runtime
 // environment for a Camel build
-type CamelRuntime struct {
+type CamelEnv struct {
 	commitID   strfmt.UUID
 	runtimeDir string
 	env        map[string]string
 }
 
+// CamelInstall provides methods to download and install camel artifacts
 type CamelInstall struct {
-	*CamelRuntime
+	CamelEnv
 	artifacts []*HeadChefArtifact
 }
 
+// NewCamelEnv returns a new camel runtime assembler
+// It filters the provided artifact list for use-able artifacts
+func NewCamelEnv(commitID strfmt.UUID, cacheDir string) (*CamelEnv, *failures.Failure) {
+	ce := &CamelEnv{commitID, cacheDir, map[string]string{}}
+	return ce, nil
+}
+
+// NewCamelInstall creates a new camel installation
 func NewCamelInstall(commitID strfmt.UUID, cacheDir string, artifacts []*HeadChefArtifact) (*CamelInstall, *failures.Failure) {
-	cr, fail := NewCamelRuntime(commitID, cacheDir)
+	ce, fail := NewCamelEnv(commitID, cacheDir)
 	if fail != nil {
 		return nil, fail
 	}
-	ci := &CamelInstall{cr, []*HeadChefArtifact{}}
+	ci := &CamelInstall{*ce, []*HeadChefArtifact{}}
 
 	for _, artf := range artifacts {
 		// filter artifacts
@@ -68,16 +77,9 @@ func NewCamelInstall(commitID strfmt.UUID, cacheDir string, artifacts []*HeadChe
 	return ci, nil
 }
 
-// NewCamelRuntime returns a new camel runtime assembler
-// It filters the provided artifact list for use-able artifacts
-func NewCamelRuntime(commitID strfmt.UUID, cacheDir string) (*CamelRuntime, *failures.Failure) {
-	cr := &CamelRuntime{commitID, cacheDir, map[string]string{}}
-	return cr, nil
-}
-
 // InstallerExtension returns the expected file extension for archive file names
 // We expect .zip for Windows and .tar.gz otherwise
-func (cr *CamelInstall) InstallerExtension() string {
+func (ci *CamelInstall) InstallerExtension() string {
 	if rt.GOOS == "windows" {
 		return ".zip"
 	}
@@ -86,7 +88,7 @@ func (cr *CamelInstall) InstallerExtension() string {
 
 // Unarchiver initializes and returns an Unarchiver instance that is able to
 // unpack the downloaded artifact archives.
-func (cr *CamelInstall) Unarchiver() unarchiver.Unarchiver {
+func (ci *CamelInstall) Unarchiver() unarchiver.Unarchiver {
 	if rt.GOOS == "windows" {
 		return unarchiver.NewZip()
 	}
@@ -94,13 +96,13 @@ func (cr *CamelInstall) Unarchiver() unarchiver.Unarchiver {
 }
 
 // BuildEngine always returns Camel
-func (cr *CamelRuntime) BuildEngine() BuildEngine {
+func (ci *CamelInstall) BuildEngine() BuildEngine {
 	return Camel
 }
 
 // DownloadDirectory returns the download directory for a given artifact
 // Each artifact is downloaded into its own temporary directory
-func (cr *CamelInstall) DownloadDirectory(artf *HeadChefArtifact) (string, *failures.Failure) {
+func (ci *CamelInstall) DownloadDirectory(artf *HeadChefArtifact) (string, *failures.Failure) {
 	downloadDir, err := ioutil.TempDir("", "state-runtime-downloader")
 	if err != nil {
 		return downloadDir, failures.FailIO.Wrap(err)
@@ -110,19 +112,19 @@ func (cr *CamelInstall) DownloadDirectory(artf *HeadChefArtifact) (string, *fail
 
 // ArtifactsToDownload returns the artifacts that we need to download for this project
 // It filters out all artifacts for which the final installation directory does not include a completion marker yet
-func (cr *CamelInstall) ArtifactsToDownload() []*HeadChefArtifact {
-	return cr.artifacts
+func (ci *CamelInstall) ArtifactsToDownload() []*HeadChefArtifact {
+	return ci.artifacts
 }
 
 // PreInstall attempts to clean the runtime-directory.  Failures are only logged to rollbar and do not cause the installation to fail.
-func (cr *CamelInstall) PreInstall() *failures.Failure {
-	if fileutils.DirExists(cr.runtimeDir) {
-		empty, fail := fileutils.IsEmptyDir(cr.runtimeDir)
+func (ci *CamelInstall) PreInstall() *failures.Failure {
+	if fileutils.DirExists(ci.runtimeDir) {
+		empty, fail := fileutils.IsEmptyDir(ci.runtimeDir)
 		if fail != nil {
 			logging.Error("Could not check if target runtime dir is empty, this could cause issues.. %v", fail)
 		} else if !empty {
 			logging.Debug("Removing existing runtime")
-			if err := os.RemoveAll(cr.runtimeDir); err != nil {
+			if err := os.RemoveAll(ci.runtimeDir); err != nil {
 				logging.Error("Could not empty out target runtime dir prior to install, this could cause issues.. %v", err)
 			}
 		}
@@ -133,20 +135,20 @@ func (cr *CamelInstall) PreInstall() *failures.Failure {
 // PreUnpackArtifact ensures that the final installation directory exists and is
 // useable.
 // Note:  It will remove a previous installation
-func (cr *CamelInstall) PreUnpackArtifact(artf *HeadChefArtifact) *failures.Failure {
-	if fileutils.FileExists(cr.runtimeDir) {
+func (ci *CamelInstall) PreUnpackArtifact(artf *HeadChefArtifact) *failures.Failure {
+	if fileutils.FileExists(ci.runtimeDir) {
 		// install-dir exists, but is a regular file
-		return FailInstallDirInvalid.New("installer_err_installdir_isfile", cr.runtimeDir)
+		return FailInstallDirInvalid.New("installer_err_installdir_isfile", ci.runtimeDir)
 	}
 
-	if fileutils.DirExists(cr.runtimeDir) {
+	if fileutils.DirExists(ci.runtimeDir) {
 		// remove previous installation
-		if err := os.RemoveAll(cr.runtimeDir); err != nil {
+		if err := os.RemoveAll(ci.runtimeDir); err != nil {
 			return failures.FailOS.Wrap(err, "failed to remove spurious previous installation")
 		}
 	}
 
-	if fail := fileutils.MkdirUnlessExists(cr.runtimeDir); fail != nil {
+	if fail := fileutils.MkdirUnlessExists(ci.runtimeDir); fail != nil {
 		return fail
 	}
 
@@ -155,7 +157,7 @@ func (cr *CamelInstall) PreUnpackArtifact(artf *HeadChefArtifact) *failures.Fail
 
 // PostUnpackArtifact parses the metadata file, runs the Relocation function (if
 // necessary) and moves the artifact to its final destination
-func (cr *CamelInstall) PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir string, archivePath string, cb func()) *failures.Failure {
+func (ci *CamelInstall) PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir string, archivePath string, cb func()) *failures.Failure {
 	archiveName := strings.TrimSuffix(filepath.Base(archivePath), filepath.Ext(archivePath))
 
 	// the above only strips .gz, so account for .tar.gz use-case
@@ -178,7 +180,7 @@ func (cr *CamelInstall) PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir
 		tmpInstallDir = filepath.Join(tmpRuntimeDir, archiveName)
 	}
 
-	if fail := fileutils.MoveAllFilesCrossDisk(tmpInstallDir, cr.runtimeDir); fail != nil {
+	if fail := fileutils.MoveAllFilesCrossDisk(tmpInstallDir, ci.runtimeDir); fail != nil {
 		underlyingError := fail.ToError()
 		logging.Error("moving files from %s after unpacking runtime: %v", tmpInstallDir, underlyingError)
 
@@ -187,14 +189,14 @@ func (cr *CamelInstall) PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir
 		// This might happen due to virus software or other access control software running on the user's machine,
 		// and therefore we forward this information to the user.
 		if os.IsPermission(underlyingError) {
-			return FailRuntimeInstallation.New("installer_err_runtime_move_files_access_denied", cr.runtimeDir, constants.ForumsURL)
+			return FailRuntimeInstallation.New("installer_err_runtime_move_files_access_denied", ci.runtimeDir, constants.ForumsURL)
 		}
-		return FailRuntimeInstallation.Wrap(underlyingError, "installer_err_runtime_move_files_failed", tmpInstallDir, cr.runtimeDir)
+		return FailRuntimeInstallation.Wrap(underlyingError, "installer_err_runtime_move_files_failed", tmpInstallDir, ci.runtimeDir)
 	}
 
 	tmpMetaFile := filepath.Join(tmpRuntimeDir, archiveName, constants.RuntimeMetaFile)
 	if fileutils.FileExists(tmpMetaFile) {
-		target := filepath.Join(cr.runtimeDir, constants.RuntimeMetaFile)
+		target := filepath.Join(ci.runtimeDir, constants.RuntimeMetaFile)
 		if fail := fileutils.MkdirUnlessExists(filepath.Dir(target)); fail != nil {
 			return fail
 		}
@@ -205,7 +207,7 @@ func (cr *CamelInstall) PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir
 
 	tmpRelocFile := filepath.Join(tmpRuntimeDir, archiveName, "support/reloc.txt")
 	if fileutils.FileExists(tmpRelocFile) {
-		target := filepath.Join(cr.runtimeDir, "support/reloc.txt")
+		target := filepath.Join(ci.runtimeDir, "support/reloc.txt")
 		if fail := fileutils.MkdirUnlessExists(filepath.Dir(target)); fail != nil {
 			return fail
 		}
@@ -219,7 +221,7 @@ func (cr *CamelInstall) PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir
 		return FailRuntimeInstallation.New("installer_err_runtime_rm_installdir", tmpRuntimeDir)
 	}
 
-	metaData, fail := InitMetaData(cr.runtimeDir)
+	metaData, fail := InitMetaData(ci.runtimeDir)
 	if fail != nil {
 		return fail
 	}
@@ -235,12 +237,12 @@ func (cr *CamelInstall) PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir
 		}
 	}
 
-	cr.env = cr.appendEnv(cr.env, metaData)
+	ci.env = ci.appendEnv(ci.env, metaData)
 
 	return nil
 }
 
-func (cr *CamelInstall) appendEnv(env map[string]string, meta *MetaData) map[string]string {
+func (ci *CamelInstall) appendEnv(env map[string]string, meta *MetaData) map[string]string {
 	// Unset AffectedEnv
 	if meta.AffectedEnv != "" {
 		env[meta.AffectedEnv] = deleteMarker
@@ -254,14 +256,14 @@ func (cr *CamelInstall) appendEnv(env map[string]string, meta *MetaData) map[str
 	for _, v := range meta.BinaryLocations {
 		path := v.Path
 		if v.Relative {
-			path = filepath.Join(cr.runtimeDir, path)
+			path = filepath.Join(ci.runtimeDir, path)
 		}
 		env["PATH"] = prependPath(env["PATH"], path)
 	}
 
 	// Add DLL dir to PATH on Windows
 	if meta.RelocationTargetBinaries != "" && rt.GOOS == "windows" {
-		env["PATH"] = prependPath(env["PATH"], filepath.Join(cr.runtimeDir, meta.RelocationTargetBinaries))
+		env["PATH"] = prependPath(env["PATH"], filepath.Join(ci.runtimeDir, meta.RelocationTargetBinaries))
 	}
 
 	return env
@@ -335,10 +337,10 @@ func Relocate(metaData *MetaData, cb func()) *failures.Failure {
 }
 
 // GetEnv returns the environment that is needed to use the installed runtime
-func (cr *CamelRuntime) GetEnv(inherit bool, projectDir string) (map[string]string, error) {
+func (ce *CamelEnv) GetEnv(inherit bool, projectDir string) (map[string]string, error) {
 	var env map[string]string
 
-	envData, err := fileutils.ReadFile(filepath.Join(cr.runtimeDir, envFile))
+	envData, err := fileutils.ReadFile(filepath.Join(ce.runtimeDir, envFile))
 	if err != nil {
 		return env, errs.Wrap(err, "Could not read "+envFile)
 	}
@@ -384,13 +386,13 @@ func (cr *CamelRuntime) GetEnv(inherit bool, projectDir string) (map[string]stri
 }
 
 // PostInstall creates completion markers for all artifact directories
-func (cr *CamelInstall) PostInstall() error {
-	env, err := json.Marshal(cr.env)
+func (ci *CamelInstall) PostInstall() error {
+	env, err := json.Marshal(ci.env)
 	if err != nil {
 		return errs.Wrap(err, "Could not marshal camel environment")
 	}
 
-	if fail := fileutils.WriteFile(filepath.Join(cr.runtimeDir, envFile), env); fail != nil {
+	if fail := fileutils.WriteFile(filepath.Join(ci.runtimeDir, envFile), env); fail != nil {
 		return errs.Wrap(fail, "Could not write "+envFile)
 	}
 
@@ -398,8 +400,8 @@ func (cr *CamelInstall) PostInstall() error {
 }
 
 // IsInstalled checks if completion marker files exist for all artifacts
-func (cr *CamelInstall) IsInstalled() bool {
-	marker := filepath.Join(cr.runtimeDir, constants.RuntimeInstallationCompleteMarker)
+func (ci *CamelInstall) IsInstalled() bool {
+	marker := filepath.Join(ci.runtimeDir, constants.RuntimeInstallationCompleteMarker)
 	if !fileutils.FileExists(marker) {
 		return false
 	}
@@ -410,7 +412,7 @@ func (cr *CamelInstall) IsInstalled() bool {
 		return false
 	}
 
-	return string(contents) == cr.commitID.String()
+	return string(contents) == ci.commitID.String()
 }
 
 func prependPath(PATH, prefix string) string {
