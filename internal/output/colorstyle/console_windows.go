@@ -77,7 +77,11 @@ func New(writer io.Writer) *Styler {
 	return &Styler{}
 }
 
-func (n *Styler) SetStyle(s Style, bright bool) {
+func (s *Styler) SetStyle(s Style, bright bool) {
+	if bufferInfo == nil {
+		return
+	}
+
 	defer func() {
 		if r := recover(); r != nil {
 			if os.Getenv("CI") == "" {
