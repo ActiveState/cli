@@ -140,6 +140,21 @@ func (suite *PlatformsIntegrationTestSuite) TestPlatforms_addRemoveLatest() {
 	}
 }
 
+func (suite *PlatformsIntegrationTestSuite) TestPlatforms_NotModifiable() {
+	suite.OnlyRunForTags(tagsuite.Platforms)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.LoginAsPersistentUser()
+
+	cp := ts.Spawn("activate", "ActiveState-CLI/Permission", "--path="+ts.Dirs.Work, "--output=json")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("platforms", "remove", "Windows", "10.0.17134.1")
+	cp.Expect("You do not have permission to modify the project")
+	cp.ExpectExitCode(1)
+}
+
 func (suite *PlatformsIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session) {
 	asyData := `project: "https://platform.activestate.com/cli-integration-tests/ExercisePlatforms"`
 	ts.PrepareActiveStateYAML(asyData)

@@ -90,6 +90,21 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_install() {
 	suite.True(!v.LessThan(minVersion), "%v >= 3.8.1", v)
 }
 
+func (suite *LanguagesIntegrationTestSuite) TestLanguages_NotModifiable() {
+	suite.OnlyRunForTags(tagsuite.Languages)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.LoginAsPersistentUser()
+
+	cp := ts.Spawn("activate", "ActiveState-CLI/Permission", "--path="+ts.Dirs.Work, "--output=json")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("languages", "install", "python@2.7.18")
+	cp.Expect("You do not have permission to modify the project")
+	cp.ExpectExitCode(1)
+}
+
 func (suite *LanguagesIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session) {
 	asyData := `project: "https://platform.activestate.com/cli-integration-tests/Languages"`
 	ts.PrepareActiveStateYAML(asyData)

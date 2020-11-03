@@ -378,6 +378,21 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 	cp.ExpectExitCode(0)
 }
 
+func (suite *PackageIntegrationTestSuite) TestPackages_NotModifiable() {
+	suite.OnlyRunForTags(tagsuite.Package)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.LoginAsPersistentUser()
+
+	cp := ts.Spawn("activate", "ActiveState-CLI/Permission", "--path="+ts.Dirs.Work, "--output=json")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("install", "requests")
+	cp.Expect("You do not have permission to modify the project")
+	cp.ExpectExitCode(1)
+}
+
 func (suite *PackageIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session) {
 	asyData := `project: "https://platform.activestate.com/ActiveState-CLI/List"`
 	ts.PrepareActiveStateYAML(asyData)
