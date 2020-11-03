@@ -77,7 +77,7 @@ func New(writer io.Writer) *Styler {
 	return &Styler{}
 }
 
-func (s *Styler) SetStyle(s Style, bright bool) {
+func (st *Styler) SetStyle(s Style, bright bool) {
 	if bufferInfo == nil {
 		return
 	}
