@@ -309,6 +309,10 @@ func (suite *PackageIntegrationTestSuite) TestPackage_headless_operation() {
 		cp.ExpectExitCode(0)
 	})
 
+	cp = ts.Spawn("pull")
+	cp.Expect("Your activestate.yaml has been updated")
+	cp.ExpectExitCode(0)
+
 	suite.Run("install (update)", func() {
 		cp := ts.Spawn("install", "dateparser@0.7.6")
 		cp.ExpectLongString("Continue Anonymously?")
@@ -316,6 +320,10 @@ func (suite *PackageIntegrationTestSuite) TestPackage_headless_operation() {
 		cp.ExpectRe("(?:Package updated:|project is currently building)", 60*time.Second)
 		cp.ExpectExitCode(0)
 	})
+
+	cp = ts.Spawn("pull")
+	cp.Expect("Your activestate.yaml has been updated")
+	cp.ExpectExitCode(0)
 
 	suite.Run("uninstall", func() {
 		cp := ts.Spawn("uninstall", "dateparser")
@@ -357,17 +365,29 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 		cp.ExpectExitCode(0)
 	})
 
+	cp = ts.Spawn("pull")
+	cp.Expect("Your activestate.yaml has been updated")
+	cp.ExpectExitCode(0)
+
 	suite.Run("install (update)", func() {
 		cp := ts.Spawn("install", "dateparser@0.7.6")
 		cp.ExpectRe("(?:Package updated:|project is currently building)", 60*time.Second)
 		cp.ExpectExitCode(0)
 	})
 
+	cp = ts.Spawn("pull")
+	cp.Expect("Your activestate.yaml has been updated")
+	cp.ExpectExitCode(0)
+
 	suite.Run("uninstall", func() {
 		cp := ts.Spawn("uninstall", "dateparser")
 		cp.ExpectRe("(?:Package removed:|project is currently building)", 60*time.Second)
 		cp.ExpectExitCode(0)
 	})
+
+	cp = ts.Spawn("pull")
+	cp.Expect("Your activestate.yaml has been updated")
+	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("revert", firstCommit)
 	cp.SendLine("y")

@@ -81,6 +81,10 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_install() {
 	cp.ExpectRe(versionRe.String())
 	cp.ExpectExitCode(0)
 
+	cp = ts.Spawn("pull")
+	cp.Expect("Your activestate.yaml has been updated")
+	cp.ExpectExitCode(0)
+
 	// assert that version number changed
 	output := cp.MatchState().TermState.StringBeforeCursor()
 	vs := versionRe.FindString(output)
