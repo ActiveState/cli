@@ -304,14 +304,14 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_Replace() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("activate", "--replace", "ActiveState/ActivePerl-5.26"),
+		e2e.WithArgs("activate", "--replace", "ActiveState-CLI/small-python"),
 		e2e.WithWorkDirectory(ts.Dirs.Bin),
 	)
 	cp.ExpectLongString("No activestate.yaml file exists in the current working directory or its parent directories.")
 	cp.ExpectExitCode(1)
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("activate", "--replace", "ActiveState/ActivePerl-5.26"),
+		e2e.WithArgs("activate", "--replace", "ActiveState/small-python"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Activating Virtual Environment")
