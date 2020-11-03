@@ -43,7 +43,11 @@ func (a *Add) Run(ps AddRunParams) error {
 		return locale.WrapError(err, "err_modifiable", "Could not determine if project is modifiable")
 	}
 	if !modifiable {
-		return locale.NewError("err_not_modifiable", ps.Project.Owner(), ps.Project.Name())
+		return locale.NewError(
+			"err_not_modifiable",
+			"You do not have permission to modify the project at [NOTICE]{{.V0}}/{{.V1}}[/RESET]. You will either need to be invited to this project or you can fork it by running `[ACTIONABLE]state fork {{.V0}}/{{.V1}}[/RESET].`",
+			ps.Project.Owner(), ps.Project.Name(),
+		)
 	}
 
 	fail := model.CommitPlatform(

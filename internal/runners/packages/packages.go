@@ -43,7 +43,11 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 		return locale.WrapError(err, "err_modifiable", "Could not determine if project is modifiable")
 	}
 	if !modifiable {
-		return locale.NewError("err_not_modifiable", pj.Owner(), pj.Name())
+		return locale.NewError(
+			"err_not_modifiable",
+			"You do not have permission to modify the project at [NOTICE]{{.V0}}/{{.V1}}[/RESET]. You will either need to be invited to this project or you can fork it by running `[ACTIONABLE]state fork {{.V0}}/{{.V1}}[/RESET].`",
+			pj.Owner(), pj.Name(),
+		)
 	}
 
 	if strings.ToLower(version) == latestVersion {
