@@ -99,7 +99,7 @@ func (cc *CmdCall) Run(eventType project.EventType) error {
 		if err := cc.scriptrun.Run(cc.proj.ScriptByName(scriptName), scriptArgs); err != nil {
 			return locale.WrapError(
 				err, "cmdcall_event_err_script_run",
-				"Failure running defined script '{{.V0}}' for event {{.V1}}",
+				"Failure running defined script '{{.V0}}' for event '{{.V1}}'",
 				scriptName, event.Name(),
 			)
 		}
