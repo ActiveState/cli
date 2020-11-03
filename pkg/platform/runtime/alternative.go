@@ -20,7 +20,6 @@ import (
 	"github.com/ActiveState/cli/internal/hash"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/unarchiver"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 )
@@ -50,10 +49,6 @@ type artifactCacheMeta struct {
 
 // NewAlternativeEnv returns a new alternative runtime environment
 func NewAlternativeEnv(cacheDir string) (*AlternativeEnv, *failures.Failure) {
-	if rtutils.BuiltViaCI {
-		return nil, failures.FailRuntime.New("Alternative builds are not yet supported. Please contact support if you are seeing this error.")
-	}
-
 	ae := &AlternativeEnv{
 		runtimeDir: cacheDir,
 	}
@@ -72,10 +67,6 @@ func NewAlternativeEnv(cacheDir string) (*AlternativeEnv, *failures.Failure) {
 // It filters the provided artifact list for useable artifacts
 // The recipeID is needed to define the installation directory
 func NewAlternativeInstall(cacheDir string, artifacts []*HeadChefArtifact, recipeID strfmt.UUID) (*AlternativeInstall, *failures.Failure) {
-	if rtutils.BuiltViaCI {
-		return nil, failures.FailRuntime.New("Alternative builds are not yet supported. Please contact support if you are seeing this error.")
-	}
-
 	ae, fail := NewAlternativeEnv(cacheDir)
 	if fail != nil {
 		return nil, fail
