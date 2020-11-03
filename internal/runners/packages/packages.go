@@ -22,7 +22,7 @@ const latestVersion = "latest"
 
 func executePackageOperation(pj *project.Project, out output.Outputer, authentication *authentication.Auth, prompt prompt.Prompter, language, name, version string, operation model.Operation) error {
 	isHeadless := pj.IsHeadless()
-	if false && !isHeadless && !authentication.Authenticated() { // Headless prompt disabled for the moment
+	if !isHeadless && !authentication.Authenticated() {
 		anonymousOk, fail := prompt.Confirm(locale.Tl("continue_anon", "Continue Anonymously?"), locale.T("prompt_headless_anonymous"), true)
 		if fail != nil {
 			return locale.WrapInputError(fail.ToError(), "Authentication cancelled.")
