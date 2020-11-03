@@ -59,7 +59,8 @@ func (cc *CmdCall) Run(eventType project.EventType) error {
 		if err != nil {
 			return locale.WrapError(
 				err, "cmdcall_event_err_get_scope",
-				"Cannot obtain scopes from event",
+				"Cannot obtain scopes for event '{{.V0}}'",
+				event.Name(),
 			)
 		}
 
@@ -80,7 +81,8 @@ func (cc *CmdCall) Run(eventType project.EventType) error {
 		if err != nil {
 			return locale.WrapError(
 				err, "cmdcall_event_err_get_value",
-				"Cannot get triggered event value",
+				"Cannot get triggered event value for event '{{.V0}}'",
+				event.Name(),
 			)
 		}
 
@@ -88,14 +90,17 @@ func (cc *CmdCall) Run(eventType project.EventType) error {
 		if len(ss) == 0 {
 			return locale.NewError(
 				"cmdcall_event_err_get_value",
-				"Triggered event value is empty",
+				"Triggered event value is empty for event '{{.V0}}'",
+				event.Name(),
 			)
 		}
 
-		if err := cc.scriptrun.Run(cc.proj.ScriptByName(ss[0]), ss[1:]); err != nil {
+		scriptName, scriptArgs := ss[0], ss[1:]
+		if err := cc.scriptrun.Run(cc.proj.ScriptByName(scriptName), scriptArgs); err != nil {
 			return locale.WrapError(
 				err, "cmdcall_event_err_script_run",
-				"Failure running defined script",
+				"Failure running defined script '{{.V0}}' for event {{.V1}}",
+				scriptName, event.Name(),
 			)
 		}
 	}
