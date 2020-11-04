@@ -27,6 +27,9 @@ const ConfigEnvVarName = "ACTIVESTATE_CLI_CONFIGDIR"
 // CacheEnvVarName is the env var used to override the cache dir that the State Tool uses
 const CacheEnvVarName = "ACTIVESTATE_CLI_CACHEDIR"
 
+// ShimEnvVarName is the env var used to find out if we are shimming recursively
+const ShimEnvVarName = "ACTIVESTATE_CLI_SHIMMED_COMMAND"
+
 // DisableUpdates is the env var used to disable auto update
 const DisableUpdates = "ACTIVESTATE_CLI_DISABLE_UPDATES"
 
@@ -206,6 +209,10 @@ const LocalRuntimeEnvironmentDirectory = "_runtime_env"
 // RuntimeInstallationCompleteMarker is created after all artifacts have been installed
 // Check for existence of this file to ensure that the installation has not been interrupted prematurely.
 const RuntimeInstallationCompleteMarker = "support/completed"
+
+// RuntimeBuildEngineStore is created after all artifacts have been installed
+// Check for existence of this file to ensure that the installation has not been interrupted prematurely.
+const RuntimeBuildEngineStore = "support/build_engine"
 
 // StateToolMarketingPage links to the marketing page for the state tool
 const StateToolMarketingPage = "https://www.activestate.com/products/platform/state-tool/"

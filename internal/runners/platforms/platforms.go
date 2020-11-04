@@ -1,13 +1,14 @@
 package platforms
 
 import (
-	"errors"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/go-openapi/strfmt"
 )
 
 // Platform represents the output data of a platform.
@@ -63,6 +64,7 @@ type Params struct {
 }
 
 func prepareParams(ps Params) (Params, error) {
+	ps.Name, ps.Version = splitNameAndVersion(ps.Name)
 	if ps.Name == "" {
 		ps.Name = model.HostPlatform
 	}
@@ -72,8 +74,41 @@ func prepareParams(ps Params) (Params, error) {
 	}
 
 	if ps.Version == "" {
-		return ps, errors.New(locale.T("err_bad_platform_version"))
+		return prepareLatestVersion(ps)
 	}
 
 	return ps, nil
+}
+
+func splitNameAndVersion(input string) (string, string) {
+	nameArg := strings.Split(input, "@")
+	name := nameArg[0]
+	version := ""
+	if len(nameArg) == 2 {
+		version = nameArg[1]
+	}
+
+	return name, version
+}
+
+func prepareLatestVersion(params Params) (Params, error) {
+	platformUUID, err := model.PlatformNameToPlatformID(params.Name)
+	if err != nil {
+		return params, locale.WrapInputError(err, "err_resolve_platform_id", "Could not resolve platform ID from name: {{.V0}}", params.Name)
+	}
+
+	platform, fail := model.FetchPlatformByUID(strfmt.UUID(platformUUID))
+	if fail != nil {
+		return params, locale.WrapError(fail.ToError(), "err_fetch_platform", "Could not get platform details")
+	}
+	params.Name = *platform.Kernel.Name
+	params.Version = *platform.KernelVersion.Version
+
+	bitWidth, err := strconv.Atoi(*platform.CPUArchitecture.BitWidth)
+	if err != nil {
+		return params, locale.WrapError(err, "err_platform_bitwidth", "Unable to determine platform bit width")
+	}
+	params.BitWidth = bitWidth
+
+	return params, nil
 }

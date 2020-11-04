@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 	"text/template"
 	"unicode"
@@ -27,7 +28,9 @@ type cobraCommander interface {
 	GetCobraCmd() *cobra.Command
 }
 
-type Executor func(cmd *Command, args []string) error
+type ExecuteFunc func(cmd *Command, args []string) error
+
+type InterceptFunc func(ExecuteFunc) ExecuteFunc
 
 type CommandGroup struct {
 	name     string
@@ -60,7 +63,8 @@ type Command struct {
 	flags     []*Flag
 	arguments []*Argument
 
-	execute func(cmd *Command, args []string) error
+	execute        ExecuteFunc
+	interceptChain []InterceptFunc
 
 	// deferAnalytics should be set if the command handles the GA reporting in its execute function
 	deferAnalytics bool
@@ -70,7 +74,7 @@ type Command struct {
 	out output.Outputer
 }
 
-func NewCommand(name, title, description string, out output.Outputer, flags []*Flag, args []*Argument, executor Executor) *Command {
+func NewCommand(name, title, description string, out output.Outputer, flags []*Flag, args []*Argument, execute ExecuteFunc) *Command {
 	// Validate args
 	for idx, arg := range args {
 		if idx > 0 && arg.Required && !args[idx-1].Required {
@@ -84,7 +88,7 @@ func NewCommand(name, title, description string, out output.Outputer, flags []*F
 
 	cmd := &Command{
 		title:     title,
-		execute:   executor,
+		execute:   execute,
 		arguments: args,
 		flags:     flags,
 		commands:  make([]*Command, 0),
@@ -129,7 +133,7 @@ func NewCommand(name, title, description string, out output.Outputer, flags []*F
 // PPM Shim.  Differences to NewCommand() are:
 // - the entrypoint is hidden in the help text
 // - calling the help for a subcommand will execute this subcommand
-func NewHiddenShimCommand(name string, flags []*Flag, args []*Argument, executor Executor) *Command {
+func NewHiddenShimCommand(name string, flags []*Flag, args []*Argument, execute ExecuteFunc) *Command {
 	// Validate args
 	for idx, arg := range args {
 		if idx > 0 && arg.Required && !args[idx-1].Required {
@@ -142,7 +146,7 @@ func NewHiddenShimCommand(name string, flags []*Flag, args []*Argument, executor
 	}
 
 	cmd := &Command{
-		execute:   executor,
+		execute:   execute,
 		arguments: args,
 		flags:     flags,
 	}
@@ -172,9 +176,9 @@ func NewHiddenShimCommand(name string, flags []*Flag, args []*Argument, executor
 
 // NewShimCommand is a very specialized function that is used to support sub-commands for a hidden shim command.
 // It has only a name a description and function to execute.  All flags and arguments are ignored.
-func NewShimCommand(name, description string, executor Executor) *Command {
+func NewShimCommand(name, description string, execute ExecuteFunc) *Command {
 	cmd := &Command{
-		execute: executor,
+		execute: execute,
 	}
 
 	short := description
@@ -195,6 +199,10 @@ func NewShimCommand(name, description string, executor Executor) *Command {
 
 func (c *Command) Use() string {
 	return c.cobra.Use
+}
+
+func (c *Command) UseFull() string {
+	return strings.Join(c.subCommandNames(), " ")
 }
 
 func (c *Command) UsageText() string {
@@ -260,12 +268,28 @@ func (c *Command) Flags() []*Flag {
 	return c.flags
 }
 
-func (c *Command) Executor() Executor {
+func (c *Command) ExecuteFunc() ExecuteFunc {
 	return c.execute
 }
 
 func (c *Command) Arguments() []*Argument {
 	return c.arguments
+}
+
+func (c *Command) SetInterceptChain(fns ...InterceptFunc) {
+	c.interceptChain = fns
+}
+
+func (c *Command) interceptFunc() InterceptFunc {
+	return func(fn ExecuteFunc) ExecuteFunc {
+		for i := len(c.interceptChain) - 1; i >= 0; i-- {
+			if c.interceptChain[i] == nil {
+				continue
+			}
+			fn = c.interceptChain[i](fn)
+		}
+		return fn
+	}
 }
 
 // SetGroup sets the group this command belongs to. This defaults to empty, meaning the command is ungrouped.
@@ -294,6 +318,9 @@ func (c *Command) AddChildren(children ...*Command) {
 	for _, child := range children {
 		c.commands = append(c.commands, child)
 		c.cobra.AddCommand(child.cobra)
+
+		interceptChain := append(c.interceptChain, child.interceptChain...)
+		child.SetInterceptChain(interceptChain...)
 	}
 }
 
@@ -351,8 +378,8 @@ func (c *Command) persistRunner(cobraCmd *cobra.Command, args []string) {
 	c.runFlags(true)
 }
 
-// returns a slice of the names of the sub-commands called
-func (c *Command) subcommandNames() []string {
+// subCommandNames returns a slice of the names of the sub-commands called
+func (c *Command) subCommandNames() []string {
 	var commands []string
 	cmd := c.cobra
 	root := cmd.Root()
@@ -377,9 +404,9 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	if outputFlag != nil && outputFlag.Changed {
 		analytics.CustomDimensions.SetOutput(outputFlag.Value.String())
 	}
+	subCommandString := c.UseFull()
 	// Send  GA events unless they are handled in the runners...
 	if !c.deferAnalytics {
-		subCommandString := strings.Join(c.subcommandNames(), " ")
 		analytics.Event(analytics.CatRunCmd, subCommandString)
 	}
 	// Run OnUse functions for non-persistent flags
@@ -413,7 +440,15 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 		c.out.Notice(txtstyle.NewTitle(c.title))
 	}
 
-	return c.execute(c, args)
+	intercept := c.interceptFunc()
+	execute := intercept(c.execute)
+
+	err := execute(c, args)
+	if !c.deferAnalytics {
+		exitCode := errs.UnwrapExitCode(failures.ToError(err))
+		analytics.EventWithLabel(analytics.CatCommandExit, subCommandString, strconv.Itoa(exitCode))
+	}
+	return err
 }
 
 func (c *Command) runFlags(persistOnly bool) {

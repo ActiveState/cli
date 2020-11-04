@@ -1,7 +1,6 @@
 package packages
 
 import (
-	"github.com/ActiveState/cli/internal/headless"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -36,12 +35,6 @@ func NewInstall(prime primeable) *Install {
 
 // Run executes the install behavior.
 func (a *Install) Run(params InstallRunParams) error {
-	err := a.run(params)
-	headless.Notify(a.out, a.proj, err, "packages")
-	return err
-}
-
-func (a *Install) run(params InstallRunParams) error {
 	logging.Debug("ExecuteInstall")
 
 	language, fail := model.LanguageForCommit(a.proj.CommitUUID())

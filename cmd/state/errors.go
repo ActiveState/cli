@@ -15,7 +15,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils"
-	"github.com/ActiveState/cli/internal/subshell/sscommon"
 )
 
 type ErrorTips interface {
@@ -37,6 +36,10 @@ func (o *OutputError) MarshalOutput(f output.Format) interface{} {
 	outLines = append(outLines, output.Heading(locale.Tl("err_what_happened", "[ERROR]Something Went Wrong[/RESET]")).String())
 
 	errs := locale.UnwrapError(o.error)
+	if len(errs) == 0 {
+		// It's possible the error came from cobra or something else low level that doesn't use localization
+		errs = []error{o.error}
+	}
 	for _, errv := range errs {
 		outLines = append(outLines, fmt.Sprintf(" [NOTICE][ERROR]x[/RESET] %s", trimError(locale.ErrorMessage(errv))))
 	}
@@ -90,9 +93,9 @@ func unwrapError(err error) (int, error) {
 	}
 
 	// unwrap exit code before we remove un-localized wrapped errors from err variable
-	code := unwrapExitCode(err)
+	code := errs.UnwrapExitCode(err)
 
-	if !locale.IsError(err) && isErrs && !hasMarshaller {
+	if !locale.HasError(err) && isErrs && !hasMarshaller {
 		logging.Error("MUST ADDRESS: Error does not have localization: %s", errs.Join(err, "\n").Error())
 
 		// If this wasn't built via CI then this is a dev workstation, and we should be more aggressive
@@ -107,35 +110,6 @@ func unwrapError(err error) (int, error) {
 	}
 
 	return code, &OutputError{err}
-}
-
-// unwrapExitCode checks if the given error is a failure of type FailExecCmdExit and
-// returns the ExitCode of the process that failed with this error
-func unwrapExitCode(errFail error) int {
-	var eerr interface{ ExitCode() int }
-	isExitError := errors.As(errFail, &eerr)
-	if isExitError {
-		return eerr.ExitCode()
-	}
-
-	// failure might be in the error stack
-	var fail *failures.Failure
-	isFailure := errors.As(errFail, &fail)
-	if !isFailure {
-		return 1
-	}
-
-	if !fail.Type.Matches(sscommon.FailExecCmdExit) {
-		return 1
-	}
-	err := fail.ToError()
-
-	isExitError = errors.As(err, &eerr)
-	if isExitError {
-		return eerr.ExitCode()
-	}
-
-	return 1
 }
 
 func handlePanics(exiter func(int)) {

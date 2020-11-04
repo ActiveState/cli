@@ -1,6 +1,7 @@
 package cmdtree
 
 import (
+	"github.com/ActiveState/cli/cmd/state/internal/cmdtree/intercepts/cmdcall"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/locale"
@@ -48,7 +49,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 	)
 
 	languagesCmd := newLanguagesCommand(prime)
-	languagesCmd.AddChildren(newLanguageUpdateCommand(prime))
+	languagesCmd.AddChildren(newLanguageInstallCommand(prime))
 
 	cleanCmd := newCleanCommand(prime)
 	cleanCmd.AddChildren(
@@ -127,6 +128,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		newPrepareCommand(prime),
 		newProtocolCommand(prime),
 		newShimCommand(prime, args...),
+		newRevertCommand(prime),
 		secretsCmd,
 	)
 
@@ -141,6 +143,7 @@ type globalOptions struct {
 	Monochrome bool
 }
 
+// Group instances are used to group command help output.
 var (
 	EnvironmentGroup = captain.NewCommandGroup(locale.Tl("group_environment", "Environment Management"), 10)
 	PackagesGroup    = captain.NewCommandGroup(locale.Tl("group_packages", "Package Management"), 9)
@@ -220,6 +223,10 @@ func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Comm
 		},
 	)
 
+	cmdCall := cmdcall.New(prime)
+
+	cmd.SetInterceptChain(cmdCall.InterceptExec)
+
 	return cmd
 }
 
@@ -255,7 +262,7 @@ func (a *addCmdAs) deprecatedAlias(aliased *captain.Command, name string) {
 
 			a.prime.Output().Notice(msg)
 
-			return aliased.Executor()(c, args)
+			return aliased.ExecuteFunc()(c, args)
 		},
 	)
 

@@ -4,12 +4,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"sync"
-)
-
-var (
-	once  sync.Once
-	cache string
 )
 
 // Dirs represents directories that are temporarily created for this end-to-end testing session
@@ -37,12 +31,7 @@ func NewDirs(base string) (*Dirs, error) {
 		base = tmpDir
 	}
 
-	once.Do(func() {
-		if cache == "" {
-			cache = filepath.Join(base, "cache")
-		}
-	})
-
+	cache := filepath.Join(base, "cache")
 	config := filepath.Join(base, "config")
 	bin := filepath.Join(base, "bin")
 	work := filepath.Join(base, "work")
@@ -69,7 +58,7 @@ func NewDirs(base string) (*Dirs, error) {
 
 // Close removes the temporary directories
 func (d *Dirs) Close() error {
-	subdirs := []string{d.Bin, d.Config, d.Work}
+	subdirs := []string{d.Bin, d.Config, d.Work, d.Cache}
 	for _, subdir := range subdirs {
 		if err := os.RemoveAll(subdir); err != nil {
 			return err

@@ -1,6 +1,10 @@
 package cmdtree
 
 import (
+	"errors"
+	"os/exec"
+
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
@@ -68,10 +72,28 @@ func newActivateCommand(prime *primer.Values) *captain.Command {
 					)
 				}
 			}
-			return runner.Run(&params)
+			err := runner.Run(&params)
+
+			// Try to report why the activation failed
+			if err != nil {
+				if locale.IsInputError(err) {
+					// Failed due to user input
+					analytics.Event(analytics.CatActivationFlow, "user-input-error")
+				} else {
+					var exitErr = &exec.ExitError{}
+					if !errors.As(err, &exitErr) {
+						// Failed due to an error we might need to address
+						analytics.Event(analytics.CatActivationFlow, "error")
+					} else {
+						// Failed due to user subshell actions / events  
+						analytics.Event(analytics.CatActivationFlow, "user-exit-error")
+					}
+				}
+			}
+
+			return err
 		},
 	)
 	cmd.SetGroup(EnvironmentGroup)
-	cmd.SetDeferAnalytics(true)
 	return cmd
 }

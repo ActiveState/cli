@@ -115,6 +115,7 @@ func StripColorCodes(value string) string {
 }
 
 func colorize(ct ColorTheme, writer io.Writer, arg string) {
+	// writer.Write([]byte("[" + arg + "]")) // Uncomment to debug color tags
 	switch arg {
 	case `HEADING`:
 		ct.Heading(writer)

@@ -2,7 +2,6 @@ package prompt
 
 import (
 	"gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/core"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
@@ -11,7 +10,7 @@ type Select struct {
 }
 
 func (s *Select) Cleanup(interface{}) error {
-	// Keep the answer
+	terminal.CursorNextLine(1)
 	return nil
 }
 
@@ -20,16 +19,16 @@ type Input struct {
 }
 
 func (i *Input) Cleanup(val interface{}) error {
-	// render the template summarizing the current state
-	out, err := core.RunTemplate(survey.InputQuestionTemplate, survey.InputTemplateData{Input: *i.Input, Answer: val.(string), ShowAnswer: true})
-	if err != nil {
-		return err
-	}
+	terminal.CursorNextLine(1)
+	return nil
+}
 
-	// print the summary
-	terminal.Print(out)
+type Password struct {
+	*survey.Password
+}
 
-	// nothing went wrong
+func (i *Password) Cleanup(val interface{}) error {
+	terminal.CursorNextLine(1)
 	return nil
 }
 
@@ -38,6 +37,7 @@ type Confirm struct {
 }
 
 func (s *Confirm) Cleanup(interface{}) error {
+	terminal.CursorNextLine(1)
 	// Keep the answer
 	return nil
 }

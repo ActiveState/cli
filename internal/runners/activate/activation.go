@@ -8,8 +8,8 @@ import (
 	rt "runtime"
 	"syscall"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/fileevents"
-	"github.com/ActiveState/cli/internal/headless"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -53,7 +53,7 @@ func (r *Activate) activateAndWait(proj *project.Project, venv *virtualenvironme
 	}
 	defer fe.Close()
 
-	headless.Notify(r.out, proj, nil, "activate")
+	analytics.Event(analytics.CatActivationFlow, "before-subshell")
 
 	fail := <-r.subshell.Failures()
 	if fail != nil {

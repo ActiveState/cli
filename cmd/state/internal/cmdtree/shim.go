@@ -12,17 +12,26 @@ import (
 func newShimCommand(prime *primer.Values, args ...string) *captain.Command {
 	runner := shim.New(prime)
 
+	params := shim.NewParams()
+
 	cmd := captain.NewCommand(
 		"shim",
 		"",
 		locale.T("shim_description"),
 		prime.Output(),
-		[]*captain.Flag{},
+		[]*captain.Flag{
+			{
+				Name:        "path",
+				Description: locale.Tl("flag_state_shim_path_description", "Path to project that is providing the default environment."),
+				Value:       &params.Path,
+			},
+		},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
-			return runner.Run(args...)
+			return runner.Run(params, args...)
 		},
 	)
+	cmd.SetHidden(true)
 	cmd.SetSkipChecks(true)
 
 	// Cobra will handle the `--` delimiter if flag parsing is enabled.

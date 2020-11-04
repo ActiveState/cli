@@ -192,8 +192,7 @@ func (u *Updater) update(out output.Outputer) error {
 	if err != nil {
 		if inProgErr := new(*osutils.AlreadyLockedError); errors.As(err, inProgErr) {
 			logging.Debug("Already updating: %s", errs.Join(*inProgErr, ": "))
-			return nil
-
+			return *inProgErr
 		}
 		return errs.Wrap(err, "failed to acquire lock for update process")
 	}
