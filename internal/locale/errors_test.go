@@ -66,7 +66,7 @@ func TestIsError(t *testing.T) {
 			failures.FailUser.New("Input error"),
 			"Input error",
 			"Input error",
-			true,
+			false,
 			true,
 		},
 		{
@@ -95,7 +95,7 @@ func TestIsError(t *testing.T) {
 					t.Errorf("JoinMessage did not match, want: %s, got: %s", tt.wantJoinMessage, joinmessage.Error())
 				}
 				ee, ok := tt.err.(errs.Error)
-				if !ok {
+				if ! ok {
 					t.Error("Error should be of type errs.Error")
 					t.FailNow()
 				}
