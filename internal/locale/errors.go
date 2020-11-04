@@ -111,6 +111,12 @@ func IsError(err error) bool {
 	return ok
 }
 
+// HasError checks the error chain for an ErrorLocalizer
+func HasError(err error) bool {
+	var el ErrorLocalizer
+	return errors.As(err, &el)
+}
+
 // IsInputError checks if the given error contains a InputError anywhere in the unwrap stack
 func IsInputError(err error) bool {
 	if err == nil {
