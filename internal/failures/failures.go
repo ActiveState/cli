@@ -194,15 +194,6 @@ func (e *Failure) Unwrap() error {
 	return e.err
 }
 
-// UserError implements the locale.ErrorLocalizer interface.
-func (e *Failure) UserError() string {
-	err := e.ToError()
-	if err != nil {
-		return err.Error()
-	}
-	return "Malformed error type, please contact support."
-}
-
 // WithDescription is a convenience method that emulates the behavior of using Handle()
 // while allowing the normal propagation of errors up the stack. Instead of sending a
 // failure to Handle() and then returning, please add the description with this method
