@@ -187,16 +187,17 @@ func (installer *Installer) Assembler() (Assembler, *failures.Failure) {
 
 // InstallArtifacts installs all artifacts provided by a runtime assembler
 func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGetter EnvGetter, freshInstallation bool, fail *failures.Failure) {
-	err := installer.runtime.StoreBuildEngine(runtimeAssembler.BuildEngine())
-	if err != nil {
-		return nil, false, failures.FailRuntime.Wrap(err, locale.Tr("installer_store_build_engine_err", "Failed to store build engine value."))
-	}
-
 	if runtimeAssembler.IsInstalled() {
+		// write complete marker and build engine files in case they don't exist yet
 		err := installer.runtime.MarkInstallationComplete()
 		if err != nil {
 			return nil, false, failures.FailRuntime.Wrap(err, locale.Tr("installer_mark_complete_err", "Failed to mark the installation as complete."))
 		}
+		err = installer.runtime.StoreBuildEngine(runtimeAssembler.BuildEngine())
+		if err != nil {
+			return nil, false, failures.FailRuntime.Wrap(err, locale.Tr("installer_store_build_engine_err", "Failed to store build engine value."))
+		}
+
 		logging.Debug("runtime already successfully installed")
 		return runtimeAssembler, false, nil
 	}
@@ -245,12 +246,11 @@ func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGet
 
 	// We still want to run PostInstall because even though no new artifact might be downloaded we still might be
 	// deleting some already cached ones
-	err = runtimeAssembler.PostInstall()
+	err := runtimeAssembler.PostInstall()
 	if err != nil {
 		return nil, false, failures.FailRuntime.Wrap(err, "error during post installation step")
 	}
 
-	// ensure that the build engine file is stored in case installer removed it during installation
 	err = installer.runtime.StoreBuildEngine(runtimeAssembler.BuildEngine())
 	if err != nil {
 		return nil, false, failures.FailRuntime.Wrap(err, locale.Tr("installer_store_build_engine_err", "Failed to store build engine value."))
