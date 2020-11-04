@@ -85,6 +85,7 @@ func (r *Runtime) MarkInstallationComplete() error {
 func (r *Runtime) StoreBuildEngine(buildEngine BuildEngine) error {
 	storeFile := filepath.Join(r.runtimeDir, constants.RuntimeBuildEngineStore)
 	storeDir := filepath.Dir(storeFile)
+	logging.Debug("Storing build engine %s at %s", buildEngine.String(), storeFile)
 	fail := fileutils.MkdirUnlessExists(storeDir)
 	if fail != nil {
 		return errs.Wrap(fail, "Could not create completion marker directory.")

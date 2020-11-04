@@ -250,6 +250,12 @@ func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGet
 		return nil, false, failures.FailRuntime.Wrap(err, "error during post installation step")
 	}
 
+	// ensure that the build engine file is stored in case installer removed it during installation
+	err = installer.runtime.StoreBuildEngine(runtimeAssembler.BuildEngine())
+	if err != nil {
+		return nil, false, failures.FailRuntime.Wrap(err, locale.Tr("installer_store_build_engine_err", "Failed to store build engine value."))
+	}
+
 	err = installer.runtime.MarkInstallationComplete()
 	if err != nil {
 		return nil, false, failures.FailRuntime.Wrap(err, "error marking installation as complete")
