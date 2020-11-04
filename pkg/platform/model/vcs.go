@@ -664,19 +664,6 @@ func GetCommit(commitID strfmt.UUID) (*mono_models.Commit, error) {
 	return res.Payload, nil
 }
 
-func GetRevertCommit(from, to strfmt.UUID) (*mono_models.Commit, error) {
-	params := vcsClient.NewGetRevertCommitParams()
-	params.SetCommitFromID(from)
-	params.SetCommitToID(to)
-
-	res, err := authentication.Client().VersionControl.GetRevertCommit(params, authentication.ClientAuth())
-	if err != nil {
-		return nil, locale.WrapError(err, "err_get_revert_commit", "Could not generate revert commit")
-	}
-
-	return res.Payload, nil
-}
-
 func AddRevertCommit(commit *mono_models.Commit) (*mono_models.Commit, error) {
 	params := vcsClient.NewAddCommitParams()
 

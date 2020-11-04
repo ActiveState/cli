@@ -3,11 +3,7 @@ package packages
 import (
 	"strings"
 
-	"github.com/go-openapi/strfmt"
-
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
@@ -77,10 +73,10 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 		return errs.Wrap(err, "Could not get revert commit to check if changes we indeed made")
 	}
 
-	hadEffect := len(revertCommit.Changeset) == 0
+	orderChanged := len(revertCommit.Changeset) > 0
 
 	// Update project references to the new commit, if changes were indeed made (otherwise we effectively drop the new commit)
-	if hadEffect {
+	if orderChanged {
 		if !isHeadless {
 			err := model.UpdateProjectBranchCommitByName(pj.Owner(), pj.Name(), commitID)
 			if err != nil {
@@ -90,18 +86,24 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 		if fail := pj.Source().SetCommit(commitID.String(), isHeadless); fail != nil {
 			return fail.WithDescription("err_package_update_pjfile")
 		}
-	} else {
-		out.Notice(locale.Tl("pkg_already_in_order", "Requirement already exists, ensuring runtime is up to date .."))
 	}
 
-	err = updateRuntime(pj.Source().Path(), commitID, pj.Owner(), pj.Name(), runbits.NewRuntimeMessageHandler(out))
+	// Create runtime
+	rt, err := runtime.NewRuntime(pj.Source().Path(), commitID, pj.Owner(), pj.Name(), runbits.NewRuntimeMessageHandler(out))
 	if err != nil {
-		if !failures.Matches(err, runtime.FailBuildInProgress) {
-			return locale.WrapError(err, "Could not update runtime environment. To manually update your environment run `state pull`.")
+		return locale.WrapError(err, "err_packages_update_runtime_init", "Could not initialize runtime.")
+	}
+
+	if rt.IsCachedRuntime() && !orderChanged {
+		out.Notice(locale.Tl("pkg_already_uptodate", "Requested dependencies are already configured and installed."))
+	}
+
+	// Update runtime
+	if !rt.IsCachedRuntime() {
+		_, _, fail := runtime.NewInstaller(rt).Install()
+		if fail != nil {
+			return locale.WrapError(fail, "err_packages_update_runtime_install", "Could not install dependencies.")
 		}
-		out.Notice(locale.Tl("package_build_in_progress",
-			"A new build with your changes has been started remotely, please run `[ACTIONABLE]state pull[/RESET]` when the build has finished. You can track the build at [ACTIONABLE]https://{{.V0}}/{{.V1}}/{{.V2}}[/RESET].",
-			constants.PlatformURL, pj.Owner(), pj.Name()))
 	}
 
 	// Print the result
@@ -114,26 +116,6 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 	return nil
 }
 
-func updateRuntime(projectDir string, commitID strfmt.UUID, owner, projectName string, msgHandler runtime.MessageHandler) error {
-	rt, err := runtime.NewRuntime(
-		projectDir,
-		commitID,
-		owner,
-		projectName,
-		msgHandler,
-	)
-	if err != nil {
-		return locale.WrapError(err, "err_packages_update_runtime_init", "Could not initialize runtime.")
-	}
-	installable := runtime.NewInstaller(rt)
-
-	_, _, fail := installable.Install()
-	if fail != nil {
-		return locale.WrapError(fail, "err_packages_update_runtime_install", "Could not install dependencies.")
-	}
-
-	return nil
-}
 
 func splitNameAndVersion(input string) (string, string) {
 	nameArg := strings.Split(input, "@")
