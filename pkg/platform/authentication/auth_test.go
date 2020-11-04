@@ -116,10 +116,6 @@ func TestAuthInvalidToken(t *testing.T) {
 
 func TestClientFailure(t *testing.T) {
 	auth := New()
-	var exitCode int
-	exit = func(code int) {
-		exitCode = code
-	}
-	auth.Client()
-	assert.Equal(t, 1, exitCode, "Should exit")
+	_, err := auth.Client()
+	assert.Error(t, err, "Should fail")
 }

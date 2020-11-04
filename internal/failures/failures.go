@@ -200,6 +200,11 @@ func (e *Failure) UserError() string {
 	return e.Error()
 }
 
+// Stack returns the stack trace.
+func (e *Failure) Stack() *stacktrace.Stacktrace {
+	return e.Trace
+}
+
 // WithDescription is a convenience method that emulates the behavior of using Handle()
 // while allowing the normal propagation of errors up the stack. Instead of sending a
 // failure to Handle() and then returning, please add the description with this method
