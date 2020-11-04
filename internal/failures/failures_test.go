@@ -26,12 +26,9 @@ func TestUserFailureAndMatches(t *testing.T) {
 }
 
 func TestWrap(t *testing.T) {
-	err := FailInput.Wrap(errors.New("inner"), "outer")
-	assert.Equal(t, "outer", err.Error())
+	err := FailInput.Wrap(errors.New("hello"))
+	assert.Equal(t, "hello", err.Error())
 	assert.True(t, err.Type.Matches(FailInput))
-	e := errors.Unwrap(err)
-	assert.NotNil(t, e, "Must be error")
-	assert.Equal(t, "inner", e.Error())
 }
 
 func TestTypeIsSet(t *testing.T) {
