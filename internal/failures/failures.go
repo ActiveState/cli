@@ -149,15 +149,16 @@ func (f *FailureType) Wrap(err error, message ...string) *Failure {
 		return nil
 	}
 
+	var msg string
 	if len(message) > 0 {
 		args := []string{}
 		if len(message) > 1 {
 			args = message[1:]
 		}
-		err = fmt.Errorf("%s: %w", locale.Tr(message[0], args...), err)
+		msg = locale.Tr(message[0], args...)
 	}
 	logging.Debug("Failure '%s' wrapped: %v", f.Name, err)
-	fail := f.New(err.Error())
+	fail := f.New(msg)
 	fail.err = err
 	return fail
 }
@@ -196,11 +197,7 @@ func (e *Failure) Unwrap() error {
 
 // UserError implements the locale.ErrorLocalizer interface.
 func (e *Failure) UserError() string {
-	err := e.ToError()
-	if err != nil {
-		return err.Error()
-	}
-	return "Malformed error type, please contact support."
+	return e.Error()
 }
 
 // WithDescription is a convenience method that emulates the behavior of using Handle()
@@ -208,7 +205,11 @@ func (e *Failure) UserError() string {
 // failure to Handle() and then returning, please add the description with this method
 // and use the modified failure as the return value.
 func (e *Failure) WithDescription(message string) *Failure {
-	e.Message = locale.T(message) + ": " + e.Message
+	msg := locale.T(message)
+	if e.Message != "" {
+		msg += ": " + e.Message
+	}
+	e.Message = msg
 	return e
 }
 
