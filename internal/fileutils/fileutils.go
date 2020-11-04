@@ -675,7 +675,7 @@ func TempDirUnsafe() string {
 func MoveAllFilesCrossDisk(src, dst string) *failures.Failure {
 	fail := MoveAllFiles(src, dst)
 	if fail != nil {
-		logging.Error("Move all files failed with error: {{.V0}}. Falling back to copy files", fail)
+		logging.Error("Move all files failed with error: %s. Falling back to copy files", fail)
 	}
 
 	return copyFiles(src, dst, true)

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 	"text/template"
 	"unicode"
@@ -445,7 +446,7 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	err := execute(c, args)
 	if !c.deferAnalytics {
 		exitCode := errs.UnwrapExitCode(failures.ToError(err))
-		analytics.EventWithValue(analytics.CatCommandExit, subCommandString, int64(exitCode))
+		analytics.EventWithLabel(analytics.CatCommandExit, subCommandString, strconv.Itoa(exitCode))
 	}
 	return err
 }

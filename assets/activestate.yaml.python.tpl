@@ -2,6 +2,7 @@ scripts:
   - name: activationMessage
     language: {{.Language}}
     value: |
+      # -*- coding: utf-8 -*-
       import textwrap
       print(textwrap.dedent("""
         You are now in an activated state, which is like a virtual environment to work

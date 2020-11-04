@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 )
 
+var _ runtime.EnvGetter = &Assembler{}
 var _ runtime.Assembler = &Assembler{}
 
 type Assembler struct {

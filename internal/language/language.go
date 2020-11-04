@@ -2,7 +2,6 @@ package language
 
 import (
 	"fmt"
-	"runtime"
 	"strconv"
 	"strings"
 
@@ -267,9 +266,6 @@ func (e Executable) Name() string {
 
 // Filename returns the executables file's full name.
 func (e Executable) Filename() string {
-	if runtime.GOOS == "windows" {
-		return e.name + ".exe"
-	}
 	return e.name
 }
 
