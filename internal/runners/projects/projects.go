@@ -112,10 +112,8 @@ func (r *Projects) fetchProjects(onlyLocal bool) ([]projectWithOrg, *failures.Fa
 			localPaths, ok := localConfigProjects[fmt.Sprintf("%s/%s", strings.ToLower(org.URLname), strings.ToLower(project.Name))]
 			if ok {
 				p.LocalCheckouts = localPaths
-			} else {
-				if onlyLocal {
-					continue
-				}
+			} else if onlyLocal {
+				continue
 			}
 			orgProjects = append(orgProjects, p)
 		}
