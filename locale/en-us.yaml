@@ -315,6 +315,8 @@ error_state_activate_language_flag_invalid:
   other: The provided language does not match any of the known languages
 project_empty:
   other: You have not created any projects yet
+project_checkout_empty:
+  other: You have not activated any projects yet
 downloading:
   other: Downloading
 installing:

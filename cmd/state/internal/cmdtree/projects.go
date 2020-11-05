@@ -18,16 +18,27 @@ func newProjectsCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("projects_title", "Listing Projects"),
 		locale.T("projects_description"),
 		prime.Output(),
-		[]*captain.Flag{
-			{
-				Name:        "local",
-				Description: locale.Tr("flat_state_projects_local_description", "Show only projects that are checked out locally."),
-				Value:       &params.Local,
-			},
-		},
+		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
 			return runner.Run(params)
+		},
+	).SetGroup(EnvironmentGroup)
+}
+
+func newRemoteProjectsCommand(prime *primer.Values) *captain.Command {
+	runner := projects.NewProjects(prime, viper.GetViper())
+	params := projects.NewParams()
+
+	return captain.NewCommand(
+		"remote",
+		locale.Tl("projects_remote_title", "Listing Remote Projects"),
+		locale.Tl("projects_remote_description", "Manage all projects, including ones you have not checked out locally"),
+		prime.Output(),
+		[]*captain.Flag{},
+		[]*captain.Argument{},
+		func(ccmd *captain.Command, args []string) error {
+			return runner.RunRemote(params)
 		},
 	).SetGroup(EnvironmentGroup)
 }
