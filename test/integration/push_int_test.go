@@ -73,15 +73,6 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 	cp = ts.Spawn("auth", "logout")
 	cp.ExpectExitCode(0)
 
-	// anonymous commit
-	wd := filepath.Join(cp.WorkDirectory(), namespace)
-	cp = ts.SpawnWithOpts(e2e.WithArgs("install", "DateTime"), e2e.WithWorkDirectory(wd))
-	cp.Expect("You're about to add packages as an anonymous user")
-	cp.Expect("(Y/n)")
-	cp.SendLine("y")
-	cp.Expect("added")
-	cp.ExpectExitCode(0)
-
 	prj, fail := project.FromPath(filepath.Join(wd, constants.ConfigFileName))
 	suite.Require().NoError(fail.ToError(), "Could not parse project file")
 	suite.Assert().True(prj.IsHeadless(), "project should be headless: URL is %s", prj.URL())
