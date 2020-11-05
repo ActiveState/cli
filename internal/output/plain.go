@@ -69,7 +69,6 @@ func (f *Plain) Notice(value interface{}) {
 	f.write(f.cfg.ErrWriter, fmt.Sprintf("%s\n", value))
 }
 
-
 // Config returns the Config struct for the active instance
 func (f *Plain) Config() *Config {
 	return f.cfg
