@@ -52,6 +52,8 @@ type CustomDimensions struct {
 }
 
 func (d *CustomDimensions) SetOutput(output string) {
+	logging.Debug("setting output field to: %s", output)
+
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
@@ -186,7 +188,7 @@ func (a *Analytics) EventWithValue(category, action string, value int64) {
 func (a *Analytics) eventWithValue(category, action string, value int64) error {
 	a.gaClient.CustomDimensionMap(a.Dimensions.toMap())
 
-	logging.Debug("Event+value: %s, %s, %s", category, action, value)
+	logging.Debug("Event+value: %s, %s, %d", category, action, value)
 
 	return a.gaClient.Send(ga.NewEvent(category, action).Value(value))
 }
@@ -200,9 +202,7 @@ var analytics *Analytics
 func init() {
 	var err error
 	analytics, err = NewAnalytics(
-		func(vs ...interface{}) {
-			logging.Debug(fmt.Sprint(vs...))
-		},
+		func(vs ...interface{}) { logging.Debug(fmt.Sprint(vs...)) },
 		logging.UniqID(),
 		authentication.Get().UserID(),
 	)
@@ -215,7 +215,7 @@ func init() {
 }
 
 // Event logs an event to google analytics
-func Event(category string, action string) {
+func Event(category, action string) {
 	if analytics == nil || condition.InTest() {
 		return
 	}
@@ -223,7 +223,7 @@ func Event(category string, action string) {
 }
 
 // EventWithLabel logs an event with a label to google analytics
-func EventWithLabel(category string, action string, label string) {
+func EventWithLabel(category, action string, label string) {
 	if analytics == nil || condition.InTest() {
 		return
 	}
@@ -231,7 +231,7 @@ func EventWithLabel(category string, action string, label string) {
 }
 
 // EventWithValue logs an event with an integer value to google analytics
-func EventWithValue(category string, action string, value int64) {
+func EventWithValue(category, action string, value int64) {
 	if analytics == nil || condition.InTest() {
 		return
 	}
