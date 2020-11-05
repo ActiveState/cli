@@ -522,7 +522,7 @@ func setupSensibleErrors(err error) error {
 		)
 	}
 
-	return err
+	return locale.WrapError(err, "err_cobra", "Error executing command: {{.V0}}", errMsg)
 }
 
 func (cmd *Command) Usage() error {
