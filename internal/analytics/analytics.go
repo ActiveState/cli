@@ -78,6 +78,7 @@ type Analytics struct {
 	UniqClientID string
 	Dimensions   *CustomDimensions
 	VersInfoErr  error
+	wg           sync.WaitGroup
 }
 
 func NewAnalytics(uniqID string, userID *strfmt.UUID) (*Analytics, error) {
@@ -124,7 +125,9 @@ func NewAnalytics(uniqID string, userID *strfmt.UUID) (*Analytics, error) {
 }
 
 func (a *Analytics) Event(category, action string) {
+	a.wg.Add(1)
 	go func() {
+		defer a.wg.Done()
 		if err := a.event(category, action); err != nil {
 			logging.Debug(err.Error())
 		}
@@ -145,7 +148,9 @@ func (a *Analytics) event(category, action string) error {
 
 // EventWithLabel logs an event with a label to google analytics
 func (a *Analytics) EventWithLabel(category, action, label string) {
+	a.wg.Add(1)
 	go func() {
+		defer a.wg.Done()
 		if err := a.eventWithLabel(category, action, label); err != nil {
 			logging.Debug(err.Error())
 		}
@@ -162,7 +167,9 @@ func (a *Analytics) eventWithLabel(category, action, label string) error {
 
 // EventWithValue logs an event with an integer value to google analytics
 func (a *Analytics) EventWithValue(category, action string, value int64) {
+	a.wg.Add(1)
 	go func() {
+		defer a.wg.Done()
 		if err := a.eventWithValue(category, action, value); err != nil {
 			logging.Debug(err.Error())
 		}
@@ -175,6 +182,10 @@ func (a *Analytics) eventWithValue(category, action string, value int64) error {
 	logging.Debug("Event+value: %s, %s, %s", category, action, value)
 
 	return a.gaClient.Send(ga.NewEvent(category, action).Value(value))
+}
+
+func (a *Analytics) Wait() {
+	a.wg.Wait()
 }
 
 var analytics *Analytics
@@ -235,4 +246,8 @@ func ReportMisconfig(a *Analytics) {
 	if a.UniqClientID == ValUnknown {
 		a.Event("error", "unknown machine id")
 	}
+}
+
+func Wait() {
+	analytics.Wait()
 }
