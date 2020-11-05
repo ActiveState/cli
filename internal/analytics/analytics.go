@@ -2,44 +2,41 @@ package analytics
 
 import (
 	"fmt"
+	"sync"
 
 	ga "github.com/ActiveState/go-ogle-analytics"
 	"github.com/ActiveState/sysinfo"
+	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
-var client *ga.Client
+const (
+	// CatRunCmd is the event category used for running commands
+	CatRunCmd = "run-command"
+	// CatBuild is the event category used for headchef builds
+	CatBuild = "build"
+	// CatPpmConversion is the event category used for ppm-conversion events
+	CatPpmConversion = "ppm-conversion"
+	// ActBuildProject is the event action for requesting a build for a specific project
+	ActBuildProject = "project"
+	// CatPPMShimCmd is the event category used for PPM shim events
+	CatPPMShimCmd = "ppm-shim"
+	// CatTutorial is the event category used for tutorial level events
+	CatTutorial = "tutorial"
+	// CatCommandExit is the event category used to track the success of state commands
+	CatCommandExit = "command-exit"
 
-// CustomDimensions represents the custom dimensions sent with each event
-var CustomDimensions *customDimensions
+	// ValUnknown is a token used to indicate an unknown value
+	ValUnknown = "unknown"
+)
 
-// CatRunCmd is the event category used for running commands
-const CatRunCmd = "run-command"
-
-// CatBuild is the event category used for headchef builds
-const CatBuild = "build"
-
-// CatPpmConversion is the event category used for ppm-conversion events
-const CatPpmConversion = "ppm-conversion"
-
-// ActBuildProject is the event action for requesting a build for a specific project
-const ActBuildProject = "project"
-
-// CatPPMShimCmd is the event category used for PPM shim events
-const CatPPMShimCmd = "ppm-shim"
-
-// CatTutorial is the event category used for tutorial level events
-const CatTutorial = "tutorial"
-
-// CatCommandExit is the event category used to track the success of state commands
-const CatCommandExit = "command-exit"
-
-type customDimensions struct {
+type CustomDimensions struct {
 	version       string
 	branchName    string
 	userID        string
@@ -48,13 +45,20 @@ type customDimensions struct {
 	osVersion     string
 	installSource string
 	machineID     string
+	mu            sync.Mutex
 }
 
-func (d *customDimensions) SetOutput(output string) {
+func (d *CustomDimensions) SetOutput(output string) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
 	d.output = output
 }
 
-func (d *customDimensions) toMap() map[string]string {
+func (d *CustomDimensions) toMap() map[string]string {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
 	return map[string]string{
 		// Commented out idx 1 so it's clear why we start with 2. We used to log the hostname while dogfooding internally.
 		// "1": "hostname (deprected)"
@@ -69,99 +73,166 @@ func (d *customDimensions) toMap() map[string]string {
 	}
 }
 
-func init() {
-	setup()
+type Analytics struct {
+	gaClient     *ga.Client
+	UniqClientID string
+	Dimensions   *CustomDimensions
+	VersInfoErr  error
 }
 
-func setup() {
-	id := logging.UniqID()
-	var err error
-	client, err = ga.NewClient(constants.AnalyticsTrackingID)
+func NewAnalytics(uniqID string, userID *strfmt.UUID) (*Analytics, error) {
+	client, err := ga.NewClient(constants.AnalyticsTrackingID)
 	if err != nil {
-		logging.Error("Cannot initialize analytics: %s", err.Error())
-		return
+		return nil, errs.Wrap(err, "Cannot initialize analytics")
 	}
+	client.ClientID(uniqID)
 
 	var userIDString string
-	userID := authentication.Get().UserID()
 	if userID != nil {
 		userIDString = userID.String()
 	}
 
 	osName := sysinfo.OS().String()
-	osVersion := "unknown"
+	osVersion := ValUnknown
+	var versInfoErr error
 	osvInfo, err := sysinfo.OSVersion()
 	if err != nil {
-		logging.Errorf("Could not detect osVersion: %v", err)
+		versInfoErr = fmt.Errorf("Could not detect osVersion: %w", err)
 	}
 	if osvInfo != nil {
 		osVersion = osvInfo.Version
 	}
-	if osVersion == "unknown" {
-		logging.SendToRollbarWhenReady("warning", fmt.Sprintf("Cannot detect the OS version: %v", err))
-	}
 
-	CustomDimensions = &customDimensions{
+	cds := CustomDimensions{
 		version:       constants.Version,
 		branchName:    constants.BranchName,
 		userID:        userIDString,
 		osName:        osName,
 		osVersion:     osVersion,
 		installSource: config.InstallSource(),
-		machineID:     logging.UniqID(),
+		machineID:     uniqID,
 	}
 
-	client.ClientID(id)
-
-	if id == "unknown" {
-		Event("error", "unknown machine id")
+	a := Analytics{
+		gaClient:     client,
+		UniqClientID: uniqID,
+		Dimensions:   &cds,
+		VersInfoErr:  versInfoErr,
 	}
+
+	return &a, nil
+}
+
+func (a *Analytics) Event(category, action string) {
+	go func() {
+		if err := a.event(category, action); err != nil {
+			logging.Debug(err.Error())
+		}
+	}()
+}
+
+func (a *Analytics) event(category, action string) error {
+	a.gaClient.CustomDimensionMap(a.Dimensions.toMap())
+
+	logging.Debug("Event: %s, %s", category, action)
+
+	if category == CatRunCmd {
+		_ = a.gaClient.Send(ga.NewPageview())
+	}
+
+	return a.gaClient.Send(ga.NewEvent(category, action))
+}
+
+// EventWithLabel logs an event with a label to google analytics
+func (a *Analytics) EventWithLabel(category, action, label string) {
+	go func() {
+		if err := a.eventWithLabel(category, action, label); err != nil {
+			logging.Debug(err.Error())
+		}
+	}()
+}
+
+func (a *Analytics) eventWithLabel(category, action, label string) error {
+	a.gaClient.CustomDimensionMap(a.Dimensions.toMap())
+
+	logging.Debug("Event+label: %s, %s, %s", category, action, label)
+
+	return a.gaClient.Send(ga.NewEvent(category, action).Label(label))
+}
+
+// EventWithValue logs an event with an integer value to google analytics
+func (a *Analytics) EventWithValue(category, action string, value int64) {
+	go func() {
+		if err := a.eventWithValue(category, action, value); err != nil {
+			logging.Debug(err.Error())
+		}
+	}()
+}
+
+func (a *Analytics) eventWithValue(category, action string, value int64) error {
+	a.gaClient.CustomDimensionMap(a.Dimensions.toMap())
+
+	logging.Debug("Event+value: %s, %s, %s", category, action, value)
+
+	return a.gaClient.Send(ga.NewEvent(category, action).Value(value))
+}
+
+var analytics *Analytics
+
+func init() {
+	var err error
+	analytics, err = NewAnalytics(
+		logging.UniqID(),
+		authentication.Get().UserID(),
+	)
+	if err != nil {
+		logging.Error(err.Error())
+		return
+	}
+
+	ReportMisconfig(analytics)
 }
 
 // Event logs an event to google analytics
 func Event(category string, action string) {
-	go event(category, action)
-}
-
-func event(category string, action string) error {
-	if client == nil || condition.InTest() {
-		return nil
+	if analytics == nil || condition.InTest() {
+		return
 	}
-	client.CustomDimensionMap(CustomDimensions.toMap())
-
-	logging.Debug("Event: %s, %s", category, action)
-	if category == CatRunCmd {
-		client.Send(ga.NewPageview())
-	}
-	return client.Send(ga.NewEvent(category, action))
+	analytics.Event(category, action)
 }
 
 // EventWithLabel logs an event with a label to google analytics
 func EventWithLabel(category string, action string, label string) {
-	go eventWithLabel(category, action, label)
-}
-
-func eventWithLabel(category, action, label string) error {
-	if client == nil || condition.InTest() {
-		return nil
+	if analytics == nil || condition.InTest() {
+		return
 	}
-	client.CustomDimensionMap(CustomDimensions.toMap())
-
-	logging.Debug("Event+label: %s, %s, %s", category, action, label)
-	return client.Send(ga.NewEvent(category, action).Label(label))
+	analytics.EventWithLabel(category, action, label)
 }
 
 // EventWithValue logs an event with an integer value to google analytics
 func EventWithValue(category string, action string, value int64) {
-	go eventWithValue(category, action, value)
+	if analytics == nil || condition.InTest() {
+		return
+	}
+	analytics.EventWithValue(category, action, value)
 }
 
-func eventWithValue(category string, action string, value int64) error {
-	if client == nil || condition.InTest() {
-		return nil
+func SetDimensionsOutput(output string) {
+	if analytics == nil || condition.InTest() {
+		return
 	}
-	client.CustomDimensionMap(CustomDimensions.toMap())
+	analytics.Dimensions.SetOutput(output)
+}
 
-	logging.Debug("Event+value: %s, %s, %s", category, action, value)
-	return client.Send(ga.NewEvent(category, action).Value(value))
+func ReportMisconfig(a *Analytics) {
+	if a.Dimensions.osVersion == ValUnknown {
+		logging.SendToRollbarWhenReady(
+			"warning",
+			fmt.Sprintf("Cannot detect the OS version: %v", a.VersInfoErr),
+		)
+	}
+
+	if a.UniqClientID == ValUnknown {
+		a.Event("error", "unknown machine id")
+	}
 }
