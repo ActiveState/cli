@@ -603,6 +603,24 @@ func TrackBranch(source, target *mono_models.Project) *failures.Failure {
 		return api.FailUnknown.Wrap(err, msg)
 	}
 	return nil
+	
+}
+
+func GetRevertCommit(from, to strfmt.UUID) (*mono_models.Commit, error) {
+	params := vcsClient.NewGetRevertCommitParams()
+	params.SetCommitFromID(from)
+	params.SetCommitToID(to)
+
+	client := mono.New()
+	if authentication.Get().Authenticated() {
+		client = authentication.Client()
+	}
+	res, err := client.VersionControl.GetRevertCommit(params, authentication.ClientAuth())
+	if err != nil {
+		return nil, locale.WrapError(err, "err_get_revert_commit", "Could not revert from commit ID {{.V0}} to {{.V1}}", from.String(), to.String())
+	}
+
+	return res.Payload, nil
 }
 
 func RevertCommit(owner, project string, from, to strfmt.UUID) error {
@@ -643,19 +661,6 @@ func GetCommit(commitID strfmt.UUID) (*mono_models.Commit, error) {
 	if err != nil {
 		return nil, locale.WrapError(err, "err_get_commit", "Could not get commit from ID: {{.V0}}", commitID.String())
 	}
-	return res.Payload, nil
-}
-
-func GetRevertCommit(from, to strfmt.UUID) (*mono_models.Commit, error) {
-	params := vcsClient.NewGetRevertCommitParams()
-	params.SetCommitFromID(from)
-	params.SetCommitToID(to)
-
-	res, err := authentication.Client().VersionControl.GetRevertCommit(params, authentication.ClientAuth())
-	if err != nil {
-		return nil, locale.WrapError(err, "err_get_revert_commit", "Could not generate revert commit")
-	}
-
 	return res.Payload, nil
 }
 
