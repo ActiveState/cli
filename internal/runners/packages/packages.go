@@ -71,7 +71,7 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 
 	revertCommit, err := model.GetRevertCommit(pj.CommitUUID(), commitID)
 	if err != nil {
-		return errs.Wrap(err, "Could not get revert commit to check if changes we indeed made")
+		return errs.Wrap(err, "Could not get revert commit to check if changes were indeed made")
 	}
 
 	orderChanged := len(revertCommit.Changeset) > 0
