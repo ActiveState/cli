@@ -168,6 +168,11 @@ if $NOPROMPT && [ -n "$ACTIVATE" ]; then
   exit 1
 fi
 
+if [-n "$ACTIVATE" ] && [-n "$ACTIVATE_DEFAULT"]; then
+  error "Flags --activate and --activate-default cannotbe set at the same time."
+  exit 1
+fi
+
 # force overwrite requires no prompt flag
 if $FORCEOVERWRITE && ( ! $NOPROMPT ); then
   error "Flag -f also requires -n"
