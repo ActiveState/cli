@@ -37,6 +37,9 @@ func New(prime primeable) *Update {
 }
 
 func (u *Update) Run(params *Params) error {
+	if u.project == nil {
+		return locale.NewInputError("err_no_project")
+	}
 	return run(params.Lock, isLocked(), params.Force, u.runLock, u.runUpdateLock, u.runUpdateGlobal, confirmUpdateLock)
 }
 
