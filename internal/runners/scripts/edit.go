@@ -51,6 +51,10 @@ func NewEdit(prime primeable) *Edit {
 }
 
 func (e *Edit) Run(params *EditParams) error {
+	if e.project == nil {
+		return locale.NewInputError("err_no_project")
+	}
+
 	script := e.project.ScriptByName(params.Name)
 	if script == nil {
 		return locale.NewInputError("edit_scripts_no_name", "Could not find script with the given name {{.V0}}", params.Name)

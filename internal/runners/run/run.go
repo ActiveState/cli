@@ -47,6 +47,10 @@ func (r *Run) Run(name string, args []string) error {
 func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, name string, args []string) error {
 	logging.Debug("Execute")
 
+	if proj == nil {
+		return locale.NewInputError("err_no_project")
+	}
+
 	if name == "" {
 		return failures.FailUserInput.New("error_state_run_undefined_name").ToError()
 	}

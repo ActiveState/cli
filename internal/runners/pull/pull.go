@@ -50,7 +50,7 @@ func (f *outputFormat) MarshalOutput(format output.Format) interface{} {
 
 func (p *Pull) Run() error {
 	if p.project == nil {
-		return locale.NewInputError("err_pull_noproject", "You have to be inside a project folder to be able to pull in updates. Project folders contain an activestate.yaml.")
+		return locale.NewInputError("err_no_project")
 	}
 
 	if p.project.IsHeadless() {
