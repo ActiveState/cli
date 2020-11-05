@@ -95,9 +95,7 @@ func unwrapError(err error) (int, error) {
 	// unwrap exit code before we remove un-localized wrapped errors from err variable
 	code := errs.UnwrapExitCode(err)
 
-	// Account for low level erros returned from 3rd party libraries that are not localized
-	unwrappedErrs := locale.UnwrapError(err)
-	if !locale.HasError(err) && isErrs && !hasMarshaller && len(unwrappedErrs) != 0 {
+	if !locale.HasError(err) && isErrs && !hasMarshaller {
 		logging.Error("MUST ADDRESS: Error does not have localization: %s", errs.Join(err, "\n").Error())
 
 		// If this wasn't built via CI then this is a dev workstation, and we should be more aggressive
