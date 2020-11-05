@@ -36,6 +36,10 @@ func NewUninstall(prime primeable) *Uninstall {
 // Run executes the uninstall behavior.
 func (r *Uninstall) Run(params UninstallRunParams) error {
 	logging.Debug("ExecuteUninstall")
+	if r.proj == nil {
+		return locale.NewError("package_operation_no_project")
+	}
+
 	// Commit the package
 	language, fail := model.LanguageForCommit(r.proj.CommitUUID())
 	if fail != nil {

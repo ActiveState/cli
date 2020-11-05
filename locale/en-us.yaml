@@ -1574,3 +1574,5 @@ prepare_protocol_warning:
   other: Could not add state protocol
 confirm:
   other: Please Confirm
+package_operation_no_project:
+  other: Could not find a project. You can create a new project with [ACTIONABLE]state init[/RESET] or run this command from a directory that is in an existing project.
