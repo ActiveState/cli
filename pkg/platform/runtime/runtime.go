@@ -54,6 +54,7 @@ func (r *Runtime) InstallPath() string {
 func (r *Runtime) IsCachedRuntime() bool {
 	marker := filepath.Join(r.runtimeDir, constants.RuntimeInstallationCompleteMarker)
 	if !fileutils.FileExists(marker) {
+		logging.Debug("Marker does not exist: %s", marker)
 		return false
 	}
 
@@ -63,6 +64,7 @@ func (r *Runtime) IsCachedRuntime() bool {
 		return false
 	}
 
+	logging.Debug("IsCachedRuntime for %s, %s==%s", marker, string(contents), r.commitID.String())
 	return string(contents) == r.commitID.String()
 }
 

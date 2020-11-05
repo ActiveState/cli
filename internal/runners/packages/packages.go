@@ -5,6 +5,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
@@ -75,6 +76,8 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 
 	orderChanged := len(revertCommit.Changeset) > 0
 
+	logging.Debug("Order changed: %v", orderChanged)
+
 	// Update project references to the new commit, if changes were indeed made (otherwise we effectively drop the new commit)
 	if orderChanged {
 		if !isHeadless {
@@ -86,6 +89,8 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 		if fail := pj.Source().SetCommit(commitID.String(), isHeadless); fail != nil {
 			return fail.WithDescription("err_package_update_pjfile")
 		}
+	} else {
+		commitID = parentCommitID
 	}
 
 	// Create runtime
@@ -94,8 +99,8 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 		return locale.WrapError(err, "err_packages_update_runtime_init", "Could not initialize runtime.")
 	}
 
-	if rt.IsCachedRuntime() && !orderChanged {
-		out.Notice(locale.Tl("pkg_already_uptodate", "Requested dependencies are already configured and installed."))
+	if !orderChanged && rt.IsCachedRuntime() {
+		return locale.NewInputError("pkg_already_uptodate", "Requested dependencies are already configured and installed.")
 	}
 
 	// Update runtime
