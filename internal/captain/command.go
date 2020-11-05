@@ -375,7 +375,7 @@ func (c *Command) subCommandNames() []string {
 func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	outputFlag := cobraCmd.Flag("output")
 	if outputFlag != nil && outputFlag.Changed {
-		analytics.CustomDimensions.SetOutput(outputFlag.Value.String())
+		analytics.SetDimensionsOutput(outputFlag.Value.String())
 	}
 	subCommandString := strings.Join(c.subCommandNames(), " ")
 	// Send  GA events unless they are handled in the runners...
