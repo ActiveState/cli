@@ -40,7 +40,7 @@ func TestProjects(t *testing.T) {
 	assert.Equal(t, "organizationName", projects[0].Organization)
 	assert.Equal(t, []string{"/some/local/path/"}, projects[0].LocalCheckouts)
 
-	fail = pjs.Run(NewParams())
+	fail = pjs.RunRemote(NewParams())
 	assert.NoError(t, fail.ToError(), "Executed without error")
 }
 
@@ -62,7 +62,7 @@ func TestProjectsEmpty(t *testing.T) {
 	assert.NoError(t, fail.ToError(), "Fetched projects")
 	assert.Equal(t, 0, len(projects), "No projects returned")
 
-	fail = pjs.Run(NewParams())
+	fail = pjs.RunRemote(NewParams())
 	assert.NoError(t, fail.ToError(), "Executed without error")
 }
 
@@ -100,6 +100,6 @@ func TestAuthError(t *testing.T) {
 	assert.Error(t, fail.ToError(), "Should not be able to fetch projects without being authenticated")
 	assert.True(t, fail.Type.Matches(api.FailAuth), "Failure should be due to auth")
 
-	fail = pjs.Run(NewParams())
+	fail = pjs.RunRemote(NewParams())
 	assert.Error(t, fail.ToError(), "Executed with error")
 }
