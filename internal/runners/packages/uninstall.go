@@ -34,7 +34,7 @@ func NewUninstall(prime primeable) *Uninstall {
 }
 
 // Run executes the uninstall behavior.
-func (r *Uninstall) Run(params UninstallRunParams) error {
+func (r *Uninstall) Run(params UninstallRunParams, pt PackageType) error {
 	logging.Debug("ExecuteUninstall")
 	// Commit the package
 	language, fail := model.LanguageForCommit(r.proj.CommitUUID())
@@ -42,5 +42,5 @@ func (r *Uninstall) Run(params UninstallRunParams) error {
 		return locale.WrapError(fail, "err_fetch_languages")
 	}
 
-	return executePackageOperation(r.proj, r.out, r.auth, r.Prompter, language, params.Name, "", model.OperationRemoved)
+	return executePackageOperation(r.proj, r.out, r.auth, r.Prompter, language, params.Name, "", model.OperationRemoved, pt)
 }

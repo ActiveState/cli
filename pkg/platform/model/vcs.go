@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/go-openapi/strfmt"
 
@@ -79,9 +80,12 @@ const (
 	NamespaceCamelFlagsMatch = `^camel-flags$`
 )
 
+// NamespacePrefix is set to a prefix for ingredient namespaces in the inventory
+type NamespacePrefix string
+
 const (
 	// PackageNamespacePrefix is the namespace prefix for packages
-	PackageNamespacePrefix = "language"
+	PackageNamespacePrefix NamespacePrefix = "language"
 
 	// BundlesNamespacePrefix is the namespace prefix for bundles
 	BundlesNamespacePrefix = "bundles"
@@ -283,7 +287,7 @@ func CommitPackage(parentCommitID strfmt.UUID, operation Operation, packageName,
 	}
 
 	namespace := NamespacePackage(languages[0].Name)
-	if packageNamespace == BundlesNamespacePrefix {
+	if strings.HasPrefix(packageNamespace, string(BundlesNamespacePrefix)) {
 		namespace = NamespaceBundles(languages[0].Name)
 	}
 

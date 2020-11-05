@@ -1027,10 +1027,18 @@ package_arg_name:
   other: name
 package_arg_name_description:
   other: Package name
+bundle_arg_name:
+  other: name
+bundle_arg_name_description:
+  other: Bundle name
 package_arg_nameversion:
   other: name[@version]
 package_arg_nameversion_description:
   other: Package name and optionally the desired version
+bundle_arg_nameversion:
+  other: name[@version]
+bundle_arg_nameversion_description:
+  other: Bundle name and optionally the desired version
 package_list_flag_commit_description:
   other: The commit that the listing should be based on
 package_list_flag_name_description:
@@ -1066,11 +1074,11 @@ err_branch_not_bare:
 err_package_added:
   other: Failed to add package
 package_err_cannot_fetch_checkpoint:
-  other: Cannot fetch checkpoint for package listing
+  other: Cannot fetch checkpoint for {{.V0}} listing
 package_err_cannot_obtain_commit:
-  other: Cannot obtain commit for package listing
+  other: Cannot obtain commit for {{.V0}} listing
 package_err_cannot_obtain_language:
-  other: Cannot obtain language for package search
+  other: Cannot obtain language for {{.V0}} search
 package_err_cannot_obtain_search_results:
   other: Cannot obtain search results
 err_cannot_commit_changeset:
@@ -1080,9 +1088,9 @@ err_obtaining_change_request:
 package_no_data:
   other: No data found - Please verify the provided commit id
 package_search_no_packages:
-  other: Currently no package of the provided name is available on the ActiveState Platform.
+  other: Currently no {{.V0}} of the provided name is available on the ActiveState Platform.
 package_list_no_packages:
-  other: The project has no packages to list.
+  other: The project has no {{.V0}} to list.
 package_name:
   other: Name
 package_version:

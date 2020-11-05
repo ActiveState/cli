@@ -18,9 +18,36 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
+type PackageType int
+
+const (
+	Package PackageType = iota
+	Bundle
+)
+
+func (pt PackageType) String() string {
+	switch pt {
+	case Package:
+		return "package"
+	case Bundle:
+		return "bundle"
+	}
+	return ""
+}
+
+func (pt PackageType) Namespace() model.NamespacePrefix {
+	switch pt {
+	case Package:
+		return model.PackageNamespacePrefix
+	case Bundle:
+		return model.BundlesNamespacePrefix
+	}
+	return ""
+}
+
 const latestVersion = "latest"
 
-func executePackageOperation(pj *project.Project, out output.Outputer, authentication *authentication.Auth, prompt prompt.Prompter, language, name, version string, operation model.Operation) error {
+func executePackageOperation(pj *project.Project, out output.Outputer, authentication *authentication.Auth, prompt prompt.Prompter, language, name, version string, operation model.Operation, pt PackageType) error {
 	isHeadless := pj.IsHeadless()
 	if !isHeadless && !authentication.Authenticated() {
 		anonymousOk, fail := prompt.Confirm(locale.Tl("continue_anon", "Continue Anonymously?"), locale.T("prompt_headless_anonymous"), true)
@@ -46,9 +73,9 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 	var ingredient *model.IngredientAndVersion
 	var err error
 	if version == "" {
-		ingredient, err = model.IngredientWithLatestVersion(language, name)
+		ingredient, err = model.IngredientWithLatestVersion(language, name, pt.Namespace())
 	} else {
-		ingredient, err = model.IngredientByNameAndVersion(language, name, version)
+		ingredient, err = model.IngredientByNameAndVersion(language, name, version, pt.Namespace())
 	}
 	if err != nil {
 		return locale.WrapError(err, "package_ingredient_err", "Failed to resolve an ingredient named {{.V0}}.", name)

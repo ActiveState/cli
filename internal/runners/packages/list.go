@@ -34,7 +34,7 @@ func NewList(prime primer.Outputer) *List {
 }
 
 // Run executes the list behavior.
-func (l *List) Run(params ListRunParams) error {
+func (l *List) Run(params ListRunParams, pt PackageType) error {
 	logging.Debug("ExecuteList")
 
 	var commit *strfmt.UUID
@@ -43,26 +43,26 @@ func (l *List) Run(params ListRunParams) error {
 	case params.Commit != "":
 		commit, fail = targetFromCommit(params.Commit)
 		if fail != nil {
-			return fail.WithDescription("package_err_cannot_obtain_commit")
+			return locale.WrapError(fail.ToError(), "package_err_cannot_obtain_commit", pt.String())
 		}
 	case params.Project != "":
 		commit, fail = targetFromProject(params.Project)
 		if fail != nil {
-			return fail.WithDescription("package_err_cannot_obtain_commit")
+			return locale.WrapError(fail.ToError(), "package_err_cannot_obtain_commit", pt.String())
 		}
 	default:
 		commit, fail = targetFromProjectFile()
 		if fail != nil {
-			return fail.WithDescription("package_err_cannot_obtain_commit")
+			return locale.WrapError(fail.ToError(), "package_err_cannot_obtain_commit", pt.String())
 		}
 	}
 
 	checkpoint, fail := fetchCheckpoint(commit)
 	if fail != nil {
-		return fail.WithDescription("package_err_cannot_fetch_checkpoint")
+		return locale.WrapError(fail.ToError(), "package_err_cannot_fetch_checkpoint", pt.String())
 	}
 
-	table := newFilteredRequirementsTable(model.FilterCheckpointPackages(checkpoint), params.Name)
+	table := newFilteredRequirementsTable(model.FilterCheckpointPackages(checkpoint), params.Name, pt)
 	table.sortByPkg()
 
 	l.out.Print(table)
@@ -142,7 +142,7 @@ func fetchCheckpoint(commit *strfmt.UUID) (model.Checkpoint, *failures.Failure) 
 	return checkpoint, fail
 }
 
-func newFilteredRequirementsTable(requirements model.Checkpoint, filter string) *packageTable {
+func newFilteredRequirementsTable(requirements model.Checkpoint, filter string, pt PackageType) *packageTable {
 	if requirements == nil {
 		logging.Debug("requirements is nil")
 		return nil
@@ -151,6 +151,10 @@ func newFilteredRequirementsTable(requirements model.Checkpoint, filter string) 
 	rows := make([]packageRow, 0, len(requirements))
 	for _, req := range requirements {
 		if !strings.Contains(req.Requirement, filter) {
+			continue
+		}
+
+		if !strings.HasPrefix(req.Namespace, string(pt.Namespace())) {
 			continue
 		}
 
@@ -166,5 +170,5 @@ func newFilteredRequirementsTable(requirements model.Checkpoint, filter string) 
 		rows = append(rows, row)
 	}
 
-	return newTable(rows, locale.T("package_list_no_packages"))
+	return newTable(rows, locale.Tr("package_list_no_packages", pt.String()))
 }

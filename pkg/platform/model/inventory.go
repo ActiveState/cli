@@ -9,7 +9,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/retryhttp"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory"
@@ -41,8 +40,8 @@ var platformCache []*Platform
 
 // IngredientByNameAndVersion fetches an ingredient that matches the given name and version. If version is empty the first
 // matching ingredient will be returned.
-func IngredientByNameAndVersion(language, name, version string) (*IngredientAndVersion, error) {
-	results, fail := searchIngredients(50, language, name)
+func IngredientByNameAndVersion(language, name, version string, prefix NamespacePrefix) (*IngredientAndVersion, error) {
+	results, fail := searchIngredientsNamespace(50, prefix, language, name)
 	if fail != nil {
 		return nil, fail.ToError()
 	}
@@ -71,8 +70,8 @@ func IngredientByNameAndVersion(language, name, version string) (*IngredientAndV
 }
 
 // IngredientWithLatestVersion will grab the latest available ingredient and ingredientVersion that matches the ingredient name
-func IngredientWithLatestVersion(language, name string) (*IngredientAndVersion, error) {
-	results, fail := searchIngredients(50, language, name)
+func IngredientWithLatestVersion(language, name string, prefix NamespacePrefix) (*IngredientAndVersion, error) {
+	results, fail := searchIngredientsNamespace(50, prefix, language, name)
 	if fail != nil {
 		return nil, fail.ToError()
 	}
@@ -99,14 +98,14 @@ func IngredientWithLatestVersion(language, name string) (*IngredientAndVersion, 
 
 // SearchIngredients will return all ingredients+ingredientVersions that fuzzily
 // match the ingredient name.
-func SearchIngredients(language, name string) ([]*IngredientAndVersion, *failures.Failure) {
-	return searchIngredients(50, language, name)
+func SearchIngredients(namespace NamespacePrefix, language, name string) ([]*IngredientAndVersion, *failures.Failure) {
+	return searchIngredientsNamespace(50, namespace, language, name)
 }
 
 // SearchIngredientsStrict will return all ingredients+ingredientVersions that
 // strictly match the ingredient name.
-func SearchIngredientsStrict(language, name string) ([]*IngredientAndVersion, *failures.Failure) {
-	results, fail := searchIngredients(50, language, name)
+func SearchIngredientsStrict(namespace NamespacePrefix, language, name string) ([]*IngredientAndVersion, *failures.Failure) {
+	results, fail := searchIngredientsNamespace(50, namespace, language, name)
 	if fail != nil {
 		return nil, fail
 	}
@@ -121,32 +120,7 @@ func SearchIngredientsStrict(language, name string) ([]*IngredientAndVersion, *f
 	return ingredients, nil
 }
 
-func searchIngredients(limit int, language, name string) ([]*IngredientAndVersion, *failures.Failure) {
-	langResults, fail := searchIngredientsNamespace(limit, PackageNamespacePrefix, language, name)
-	if fail != nil {
-		return nil, fail
-	}
-
-	bundlesResults, fail := searchIngredientsNamespace(limit, BundlesNamespacePrefix, language, name)
-	if fail != nil {
-		logging.Error("Searching in bundles namespace failed with error: %s", fail.ToError())
-	}
-
-	var results []*IngredientAndVersion
-	for _, res := range langResults {
-		results = append(results, res)
-	}
-
-	if bundlesResults != nil {
-		for _, res := range bundlesResults {
-			results = append(results, res)
-		}
-	}
-
-	return results, nil
-}
-
-func searchIngredientsNamespace(limit int, namespace, language, name string) ([]*IngredientAndVersion, *failures.Failure) {
+func searchIngredientsNamespace(limit int, namespace NamespacePrefix, language, name string) ([]*IngredientAndVersion, *failures.Failure) {
 	lim := int64(limit)
 
 	client := inventory.Get()
