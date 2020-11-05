@@ -8,6 +8,7 @@ import (
 	rt "runtime"
 	"syscall"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/fileevents"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -51,6 +52,8 @@ func (r *Activate) activateAndWait(proj *project.Project, venv *virtualenvironme
 		return locale.WrapError(err, "err_activate_fileevents", "Could not start file event watcher.")
 	}
 	defer fe.Close()
+
+	analytics.Event(analytics.CatActivationFlow, "before-subshell")
 
 	fail := <-r.subshell.Failures()
 	if fail != nil {

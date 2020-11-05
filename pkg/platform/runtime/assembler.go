@@ -7,16 +7,14 @@ import (
 )
 
 // EnvGetter provides a function to return variables for a runtime environment
+// The provided function should construct the environment from cached values only.
 type EnvGetter interface {
 	// GetEnv returns a map between environment variable names and their values
 	GetEnv(inherit bool, projectDir string) (map[string]string, error)
 }
 
-// Assembler provides functionality to assemble a runtime environment for an
-// installation It is usually created by an installer.Installer and defines
-// which artifact tarballs to unpack where.
-// Once assembled, the Assembler can be used as an EnvGetter interface to get
-// the environment variables that need to be set to use the installed runtime.
+// Assembler extends the EnvGetter by functions that allow the
+// runtime environment to be installed through downloads from the internet.
 type Assembler interface {
 	EnvGetter
 	DownloadDirectoryProvider
@@ -105,5 +103,18 @@ func (be BuildEngine) String() string {
 		return headchef_models.BuildStatusResponseBuildEngineHybrid
 	default:
 		return "unknown"
+	}
+}
+
+func parseBuildEngine(be string) BuildEngine {
+	switch be {
+	case headchef_models.BuildStatusResponseBuildEngineAlternative:
+		return Alternative
+	case headchef_models.BuildStatusResponseBuildEngineCamel:
+		return Camel
+	case headchef_models.BuildStatusResponseBuildEngineHybrid:
+		return Hybrid
+	default:
+		return UnknownEngine
 	}
 }

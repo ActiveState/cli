@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/ActiveState/cli/internal/ci/gcloud"
+	"github.com/ActiveState/cli/internal/colorize"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
@@ -238,7 +239,7 @@ func (s *Auth) Client() *mono_client.Mono {
 	client, err := s.ClientSafe()
 	if err != nil {
 		logging.Error("Trying to get the Client while not authenticated")
-		fmt.Fprint(os.Stderr, locale.T("err_api_not_authenticated"))
+		fmt.Fprint(os.Stderr, colorize.StripColorCodes(locale.T("err_api_not_authenticated")))
 		exit(1)
 	}
 

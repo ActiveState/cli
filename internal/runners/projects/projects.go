@@ -27,6 +27,11 @@ type configGetter interface {
 	GetStringMapStringSlice(key string) map[string][]string
 }
 
+// Params are command line parameters
+type Params struct {
+	Local bool // Whether to show locally checked out projects only
+}
+
 type Projects struct {
 	auth   *authentication.Auth
 	out    output.Outputer
@@ -36,6 +41,10 @@ type Projects struct {
 type primeable interface {
 	primer.Auther
 	primer.Outputer
+}
+
+func NewParams() *Params {
+	return &Params{Local: false}
 }
 
 func NewProjects(prime primeable, config configGetter) *Projects {
@@ -50,10 +59,10 @@ func newProjects(auth *authentication.Auth, out output.Outputer, config configGe
 	}
 }
 
-func (r *Projects) Run() *failures.Failure {
+func (r *Projects) Run(params *Params) *failures.Failure {
 	projectfile.CleanProjectMapping()
 
-	projectsList, fail := r.fetchProjects()
+	projectsList, fail := r.fetchProjects(params.Local)
 	if fail != nil {
 		return fail.WithDescription(locale.T("project_err"))
 	}
@@ -67,7 +76,7 @@ func (r *Projects) Run() *failures.Failure {
 	return nil
 }
 
-func (r *Projects) fetchProjects() ([]projectWithOrg, *failures.Failure) {
+func (r *Projects) fetchProjects(onlyLocal bool) ([]projectWithOrg, *failures.Failure) {
 	orgParams := organizations.NewListOrganizationsParams()
 	memberOnly := true
 	orgParams.SetMemberOnly(&memberOnly)
@@ -86,8 +95,8 @@ func (r *Projects) fetchProjects() ([]projectWithOrg, *failures.Failure) {
 			return nil, err
 		}
 
-		orgProjects := make([]projectWithOrg, len(platformOrgProjects))
-		for i, project := range platformOrgProjects {
+		orgProjects := make([]projectWithOrg, 0, len(platformOrgProjects))
+		for _, project := range platformOrgProjects {
 			p := projectWithOrg{
 				Name:         project.Name,
 				Organization: org.Name,
@@ -100,10 +109,13 @@ func (r *Projects) fetchProjects() ([]projectWithOrg, *failures.Failure) {
 
 			// Viper lowers all map keys so we must do the same here
 			// in order to retrieve the locally cached projects
-			if localPaths, ok := localConfigProjects[fmt.Sprintf("%s/%s", strings.ToLower(org.URLname), strings.ToLower(project.Name))]; ok {
+			localPaths, ok := localConfigProjects[fmt.Sprintf("%s/%s", strings.ToLower(org.URLname), strings.ToLower(project.Name))]
+			if ok {
 				p.LocalCheckouts = localPaths
+			} else if onlyLocal {
+				continue
 			}
-			orgProjects[i] = p
+			orgProjects = append(orgProjects, p)
 		}
 
 		projects = append(projects, orgProjects...)

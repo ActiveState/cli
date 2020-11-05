@@ -19,17 +19,20 @@ func UnwrapExitCode(errFail error) int {
 	var fail *failures.Failure
 	isFailure := errors.As(errFail, &fail)
 	if !isFailure {
+		if errFail == nil {
+			return 0
+		}
 		return 1
 	}
 
-	if !fail.Type.Matches(failures.FailExecCmdExit) {
-		return 1
-	}
 	err := fail.ToError()
-
 	isExitError = errors.As(err, &eerr)
 	if isExitError {
 		return eerr.ExitCode()
+	}
+
+	if fail.Type.Matches(failures.FailExecCmdExit) {
+		return 1
 	}
 
 	return 1

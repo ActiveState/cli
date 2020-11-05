@@ -94,7 +94,7 @@ func (suite *AlternativeRuntimeTestSuite) mockTemporaryRuntimeDirs(defs []*envde
 func (suite *AlternativeRuntimeTestSuite) Test_GetEnv() {
 	numArtifacts := 2
 	artifacts := mockFetchArtifactsResult(withRegularArtifacts(numArtifacts))
-	ar, fail := runtime.NewAlternativeRuntime(artifacts.Artifacts, suite.cacheDir, artifacts.RecipeID)
+	ar, fail := runtime.NewAlternativeInstall(suite.cacheDir, artifacts.Artifacts, artifacts.RecipeID)
 	suite.Require().NoError(fail.ToError())
 
 	suite.Require().NoError(fail.ToError())
@@ -149,7 +149,7 @@ func (suite *AlternativeRuntimeTestSuite) Test_InitializationFailure() {
 	for _, tc := range cases {
 		suite.Run(tc.name, func() {
 			artifactsResult := mockFetchArtifactsResult(tc.option)
-			_, fail := runtime.NewAlternativeRuntime(artifactsResult.Artifacts, suite.cacheDir, artifactsResult.RecipeID)
+			_, fail := runtime.NewAlternativeInstall(suite.cacheDir, artifactsResult.Artifacts, artifactsResult.RecipeID)
 			suite.Require().Error(fail.ToError())
 			suite.Assert().Equal(runtime.FailNoValidArtifact, fail.Type)
 		})
@@ -182,7 +182,7 @@ func (suite *AlternativeRuntimeTestSuite) Test_PreInstall() {
 	for _, tc := range cases {
 		suite.Run(tc.name, func() {
 			artifactsRes := mockFetchArtifactsResult(withRegularArtifacts(2))
-			ar, fail := runtime.NewAlternativeRuntime(artifactsRes.Artifacts, suite.cacheDir, artifactsRes.RecipeID)
+			ar, fail := runtime.NewAlternativeInstall(suite.cacheDir, artifactsRes.Artifacts, artifactsRes.RecipeID)
 			suite.Require().NoError(fail.ToError())
 
 			os.RemoveAll(suite.cacheDir)

@@ -108,7 +108,7 @@ func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
 	defer ts.LogoutUser()
 
 	cp := ts.Spawn("activate")
-	cp.Expect("Activating state: ActiveState-CLI/Python3")
+	cp.Expect("You're Activated")
 	cp.WaitForInput(10 * time.Second)
 
 	cp.SendLine(fmt.Sprintf("%s run testMultipleLanguages", cp.Executable()))
@@ -206,7 +206,7 @@ func (suite *RunIntegrationTestSuite) TestRun_Unauthenticated() {
 		e2e.WithArgs("activate"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Activating state: ActiveState-CLI/Python2")
+	cp.Expect("You're Activated")
 	cp.WaitForInput(120 * time.Second)
 
 	cp.SendLine(fmt.Sprintf("%s run testMultipleLanguages", cp.Executable()))
@@ -225,7 +225,7 @@ func (suite *RunIntegrationTestSuite) TestRun_DeprecatedLackingLanguage() {
 	suite.createProjectFile(ts, 3)
 
 	cp := ts.Spawn("run", "helloWorld")
-	cp.Expect("DEPRECATION", 5*time.Second)
+	cp.Expect("Deprecation Warning", 5*time.Second)
 	cp.Expect("Hello", 5*time.Second)
 }
 

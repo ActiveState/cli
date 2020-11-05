@@ -36,22 +36,22 @@ type Language struct {
 	Version string `json:"version"`
 }
 
-// HasPackage searches a commit for a package by name.
-func HasPackage(commitID strfmt.UUID, namespace string) (bool, error) {
+// GetRequirement searches a commit for a requirement by name.
+func GetRequirement(commitID strfmt.UUID, namespace, requirement string) (*model.Requirement, error) {
 	chkPt, _, fail := FetchCheckpointForCommit(commitID)
 	if fail != nil {
-		return false, fail.ToError()
+		return nil, fail.ToError()
 	}
 
 	chkPt = FilterCheckpointPackages(chkPt)
 
 	for _, req := range chkPt {
-		if req.Requirement == namespace {
-			return true, nil
+		if req.Namespace == namespace && req.Requirement == requirement {
+			return req, nil
 		}
 	}
 
-	return false, nil
+	return nil, nil
 }
 
 // FetchLanguagesForProject fetches a list of language names for the given project

@@ -95,6 +95,13 @@ func NewInstaller(runtime *Runtime) *Installer {
 
 // Install will download the installer archive and invoke InstallFromArchive
 func (installer *Installer) Install() (envGetter EnvGetter, freshInstallation bool, fail *failures.Failure) {
+	if installer.runtime.IsCachedRuntime() {
+		ar, fail := installer.RuntimeEnv()
+		if fail == nil {
+			return ar, true, nil
+		}
+		logging.Error("Failed to retrieve cached assembler: %v", fail.ToError())
+	}
 	assembler, fail := installer.Assembler()
 	if fail != nil {
 		return nil, false, fail
@@ -104,17 +111,50 @@ func (installer *Installer) Install() (envGetter EnvGetter, freshInstallation bo
 
 // Env will grab the environment information for the given runtime. This will request build info.
 func (installer *Installer) Env() (envGetter EnvGetter, fail *failures.Failure) {
+	if installer.runtime.IsCachedRuntime() {
+		ar, fail := installer.RuntimeEnv()
+		if fail == nil {
+			return ar, nil
+		}
+		logging.Error("Failed to retrieve cached assembler: %v", fail.ToError())
+	}
 	return installer.Assembler()
 }
 
 // IsInstalled will check if the installer has already ran (ie. the artifacts already exist at the target dir)
 func (installer *Installer) IsInstalled() (bool, *failures.Failure) {
+	if installer.runtime.IsCachedRuntime() {
+		return true, nil
+	}
 	assembler, fail := installer.Assembler()
 	if fail != nil {
 		return false, fail
 	}
 
 	return assembler.IsInstalled(), nil
+}
+
+// RuntimeEnv returns the runtime environment specialization all constructed from cached values
+func (installer *Installer) RuntimeEnv() (EnvGetter, *failures.Failure) {
+	buildEngine, err := installer.runtime.BuildEngine()
+	if err != nil {
+		return nil, FailRuntimeUnknownEngine.Wrap(err, "installer_err_engine_unknown")
+	}
+	switch buildEngine {
+	case Alternative:
+		return NewAlternativeEnv(installer.runtime.runtimeDir)
+	case Camel:
+		return NewCamelEnv(installer.runtime.commitID, installer.runtime.runtimeDir)
+	case Hybrid:
+		cr, fail := NewCamelEnv(installer.runtime.commitID, installer.runtime.runtimeDir)
+		if fail != nil {
+			return nil, fail
+		}
+
+		return &HybridRuntime{cr}, nil
+	default:
+		return nil, FailRuntimeUnknownEngine.New("installer_err_engine_unknown")
+	}
 }
 
 // Assembler returns a new runtime assembler for the given checkpoint and artifacts
@@ -130,16 +170,16 @@ func (installer *Installer) Assembler() (Assembler, *failures.Failure) {
 
 	switch artifacts.BuildEngine {
 	case Alternative:
-		return NewAlternativeRuntime(artifacts.Artifacts, installer.runtime.runtimeDir, artifacts.RecipeID)
+		return NewAlternativeInstall(installer.runtime.runtimeDir, artifacts.Artifacts, artifacts.RecipeID)
 	case Camel:
-		return NewCamelRuntime(installer.runtime.commitID, artifacts.Artifacts, installer.runtime.runtimeDir)
+		return NewCamelInstall(installer.runtime.commitID, installer.runtime.runtimeDir, artifacts.Artifacts)
 	case Hybrid:
-		cr, fail := NewCamelRuntime(installer.runtime.commitID, artifacts.Artifacts, installer.runtime.runtimeDir)
+		ci, fail := NewCamelInstall(installer.runtime.commitID, installer.runtime.runtimeDir, artifacts.Artifacts)
 		if fail != nil {
 			return nil, fail
 		}
 
-		return &HybridRuntime{cr}, nil
+		return &HybridInstall{ci}, nil
 	default:
 		return nil, FailRuntimeUnknownEngine.New("installer_err_engine_unknown")
 	}
@@ -148,6 +188,16 @@ func (installer *Installer) Assembler() (Assembler, *failures.Failure) {
 // InstallArtifacts installs all artifacts provided by a runtime assembler
 func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGetter EnvGetter, freshInstallation bool, fail *failures.Failure) {
 	if runtimeAssembler.IsInstalled() {
+		// write complete marker and build engine files in case they don't exist yet
+		err := installer.runtime.MarkInstallationComplete()
+		if err != nil {
+			return nil, false, failures.FailRuntime.Wrap(err, locale.Tr("installer_mark_complete_err", "Failed to mark the installation as complete."))
+		}
+		err = installer.runtime.StoreBuildEngine(runtimeAssembler.BuildEngine())
+		if err != nil {
+			return nil, false, failures.FailRuntime.Wrap(err, locale.Tr("installer_store_build_engine_err", "Failed to store build engine value."))
+		}
+
 		logging.Debug("runtime already successfully installed")
 		return runtimeAssembler, false, nil
 	}
@@ -199,6 +249,16 @@ func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGet
 	err := runtimeAssembler.PostInstall()
 	if err != nil {
 		return nil, false, failures.FailRuntime.Wrap(err, "error during post installation step")
+	}
+
+	err = installer.runtime.StoreBuildEngine(runtimeAssembler.BuildEngine())
+	if err != nil {
+		return nil, false, failures.FailRuntime.Wrap(err, locale.Tr("installer_store_build_engine_err", "Failed to store build engine value."))
+	}
+
+	err = installer.runtime.MarkInstallationComplete()
+	if err != nil {
+		return nil, false, failures.FailRuntime.Wrap(err, "error marking installation as complete")
 	}
 
 	return runtimeAssembler, true, nil

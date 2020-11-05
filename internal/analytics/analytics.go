@@ -17,6 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/loghttp"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 const (
@@ -34,6 +35,8 @@ const (
 	CatTutorial = "tutorial"
 	// CatCommandExit is the event category used to track the success of state commands
 	CatCommandExit = "command-exit"
+	// CatActivationFlow is for events that outline the activation flow
+	CatActivationFlow = "activation"
 
 	// ValUnknown is a token used to indicate an unknown value
 	ValUnknown = "unknown"
@@ -48,6 +51,7 @@ type CustomDimensions struct {
 	osVersion     string
 	installSource string
 	machineID     string
+	projectName   string
 	mu            sync.Mutex
 }
 
@@ -64,17 +68,24 @@ func (d *CustomDimensions) toMap() map[string]string {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
+	pj := projectfile.GetPersisted()
+	d.projectName = ""
+	if pj != nil {
+		d.projectName = pj.Owner() + "/" + pj.Name()
+	}
+
 	return map[string]string{
 		// Commented out idx 1 so it's clear why we start with 2. We used to log the hostname while dogfooding internally.
 		// "1": "hostname (deprected)"
-		"2": d.version,
-		"3": d.branchName,
-		"4": d.userID,
-		"5": d.output,
-		"6": d.osName,
-		"7": d.osVersion,
-		"8": d.installSource,
-		"9": d.machineID,
+		"2":  d.version,
+		"3":  d.branchName,
+		"4":  d.userID,
+		"5":  d.output,
+		"6":  d.osName,
+		"7":  d.osVersion,
+		"8":  d.installSource,
+		"9":  d.machineID,
+		"10": d.projectName,
 	}
 }
 

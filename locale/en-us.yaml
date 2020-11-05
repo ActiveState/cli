@@ -406,7 +406,7 @@ flag_state_run_list_description:
 error_state_run_undefined_name:
   other: The script name must be provided
 error_state_run_unknown_name:
-  other: The script '[NOTICE]{{.Name}}[/RESET]' is not defined in activestate.yaml.
+  other: The script '[NOTICE]{{.V0}}[/RESET]' is not defined in activestate.yaml.
 info_state_run_activating_state:
   other: "Setting up virtual environment. To run this script outside of a virtual environment add `[ACTIONABLE]standalone: true[/RESET]` to the script in your [NOTICE]activestate.yaml[/RESET]."
 error_state_run_activate:
@@ -960,7 +960,7 @@ commit_message_removed_language:
 downloading_artifacts:
   other: "Downloading required artifacts"
 installing_artifacts:
-  other: "Installing required artifacts"
+  other: "Updating required artifacts"
 fileutils_err_ammend_file:
   other: "Could not edit file: [NOTICE]{{.V0}}[/RESET]"
 err_auth_empty_token:
@@ -1280,8 +1280,6 @@ clean_config_confirm:
   other: You are about the remove the State Tool config directory. Continue?
 clean_success_message:
   other: "Successfully removed State Tool and related files\n"
-push_already_exists:
-  other: The project [NOTICE]{{.V0}}/{{.V1}}[/RESET] already exists on the platform. To start using the latest version please run `[ACTIONABLE]state pull[/RESET]`.
 languages_cmd_description:
   other: View the languages of a project
 languages_install_cmd_description:

@@ -8,6 +8,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/hash"
@@ -46,6 +47,68 @@ func (r *Runtime) SetInstallPath(installPath string) {
 
 func (r *Runtime) InstallPath() string {
 	return r.runtimeDir
+}
+
+// IsCachedRuntime checks if the requested runtime is already available ie.,
+// the runtime installation completed successful (marker file found) AND the requested commitID did not change
+func (r *Runtime) IsCachedRuntime() bool {
+	marker := filepath.Join(r.runtimeDir, constants.RuntimeInstallationCompleteMarker)
+	if !fileutils.FileExists(marker) {
+		logging.Debug("Marker does not exist: %s", marker)
+		return false
+	}
+
+	contents, fail := fileutils.ReadFile(marker)
+	if fail != nil {
+		logging.Error("Could not read marker: %v", fail)
+		return false
+	}
+
+	logging.Debug("IsCachedRuntime for %s, %s==%s", marker, string(contents), r.commitID.String())
+	return string(contents) == r.commitID.String()
+}
+
+// MarkInstallationComplete writes the installation complete marker to the runtime directory
+func (r *Runtime) MarkInstallationComplete() error {
+	markerFile := filepath.Join(r.runtimeDir, constants.RuntimeInstallationCompleteMarker)
+	markerDir := filepath.Dir(markerFile)
+	fail := fileutils.MkdirUnlessExists(markerDir)
+	if fail != nil {
+		return errs.Wrap(fail, "could not create completion marker directory")
+	}
+	fail = fileutils.WriteFile(markerFile, []byte(r.commitID.String()))
+	if fail != nil {
+		return errs.Wrap(fail, "could not set completion marker")
+	}
+	return nil
+}
+
+// StoreBuildEngine stores the build engine value in the runtime directory
+func (r *Runtime) StoreBuildEngine(buildEngine BuildEngine) error {
+	storeFile := filepath.Join(r.runtimeDir, constants.RuntimeBuildEngineStore)
+	storeDir := filepath.Dir(storeFile)
+	logging.Debug("Storing build engine %s at %s", buildEngine.String(), storeFile)
+	fail := fileutils.MkdirUnlessExists(storeDir)
+	if fail != nil {
+		return errs.Wrap(fail, "Could not create completion marker directory.")
+	}
+	fail = fileutils.WriteFile(storeFile, []byte(buildEngine.String()))
+	if fail != nil {
+		return errs.Wrap(fail, "Could not store build engine string.")
+	}
+	return nil
+}
+
+// BuildEngine returns the runtime build engine value stored in the runtime directory
+func (r *Runtime) BuildEngine() (BuildEngine, error) {
+	storeFile := filepath.Join(r.runtimeDir, constants.RuntimeBuildEngineStore)
+
+	data, fail := fileutils.ReadFile(storeFile)
+	if fail != nil {
+		return UnknownEngine, errs.Wrap(fail, "Could not read build engine cache store.")
+	}
+
+	return parseBuildEngine(string(data)), nil
 }
 
 // Env will grab the environment information for the given runtime.

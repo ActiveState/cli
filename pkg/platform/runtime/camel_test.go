@@ -34,11 +34,11 @@ func (suite *CamelRuntimeTestSuite) Test_InitializeWithInvalidArtifacts() {
 	cacheDir, cacheCleanup := suite.genCacheDir()
 	defer cacheCleanup()
 
-	_, fail := runtime.NewCamelRuntime(strfmt.UUID(""), []*runtime.HeadChefArtifact{
+	_, fail := runtime.NewCamelInstall(strfmt.UUID(""), cacheDir, []*runtime.HeadChefArtifact{
 		invalidExtension,
 		testArtifact,
 		noURIArtifact,
-	}, cacheDir)
+	})
 	suite.Require().Error(fail.ToError(), "error in initialization of camel runtime assembler")
 	suite.Assert().IsType(runtime.FailNoValidArtifact, fail.Type)
 }
@@ -72,7 +72,7 @@ func (suite *CamelRuntimeTestSuite) Test_PreUnpackArtifact() {
 	artifact, _ := headchefArtifact(archivePath)
 	for _, tc := range cases {
 		suite.Run(tc.name, func() {
-			cr, fail := runtime.NewCamelRuntime(strfmt.UUID(""), []*runtime.HeadChefArtifact{artifact}, cacheDir)
+			cr, fail := runtime.NewCamelInstall(strfmt.UUID(""), cacheDir, []*runtime.HeadChefArtifact{artifact})
 			suite.Require().NoError(fail.ToError())
 
 			os.RemoveAll(cacheDir)
