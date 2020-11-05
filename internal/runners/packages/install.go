@@ -37,7 +37,7 @@ func NewInstall(prime primeable) *Install {
 func (a *Install) Run(params InstallRunParams) error {
 	logging.Debug("ExecuteInstall")
 	if a.proj == nil {
-		return locale.NewError("package_operation_no_project")
+		return locale.NewInputError("err_no_project")
 	}
 
 	language, fail := model.LanguageForCommit(a.proj.CommitUUID())

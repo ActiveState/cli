@@ -37,7 +37,7 @@ func NewUninstall(prime primeable) *Uninstall {
 func (r *Uninstall) Run(params UninstallRunParams) error {
 	logging.Debug("ExecuteUninstall")
 	if r.proj == nil {
-		return locale.NewError("package_operation_no_project")
+		return locale.NewInputError("err_no_project")
 	}
 
 	// Commit the package
