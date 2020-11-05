@@ -3,6 +3,7 @@ package languages
 import (
 	"strings"
 
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -32,6 +33,9 @@ func (l Listing) MarshalOutput(f output.Format) interface{} {
 }
 
 func (l *Languages) Run() error {
+	if l.project == nil {
+		return locale.NewInputError("err_no_project")
+	}
 	langs, err := model.FetchLanguagesForCommit(l.project.CommitUUID())
 	if err != nil {
 		return err
