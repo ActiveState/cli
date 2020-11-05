@@ -97,7 +97,7 @@ func (s *Show) Run(params Params) error {
 		projectName = namespaced.Project
 	} else {
 		if s.project == nil {
-			return locale.NewInputError("err_no_projectfile")
+			return locale.NewInputError("err_no_project")
 		}
 
 		if s.project.IsHeadless() {
