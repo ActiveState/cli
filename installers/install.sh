@@ -168,7 +168,7 @@ if $NOPROMPT && [ -n "$ACTIVATE" ]; then
   exit 1
 fi
 
-if [-n "$ACTIVATE" ] && [-n "$ACTIVATE_DEFAULT"]; then
+if [ -n "$ACTIVATE" ] && [ -n "$ACTIVATE_DEFAULT" ]; then
   error "Flags --activate and --activate-default cannotbe set at the same time."
   exit 1
 fi
