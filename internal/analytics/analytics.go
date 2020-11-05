@@ -2,7 +2,9 @@ package analytics
 
 import (
 	"fmt"
+	"net/http"
 	"sync"
+	"time"
 
 	ga "github.com/ActiveState/go-ogle-analytics"
 	"github.com/ActiveState/sysinfo"
@@ -13,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/loghttp"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
@@ -81,12 +84,16 @@ type Analytics struct {
 	wg           sync.WaitGroup
 }
 
-func NewAnalytics(uniqID string, userID *strfmt.UUID) (*Analytics, error) {
+func NewAnalytics(logFn loghttp.LogFunc, uniqID string, userID *strfmt.UUID) (*Analytics, error) {
 	client, err := ga.NewClient(constants.AnalyticsTrackingID)
 	if err != nil {
 		return nil, errs.Wrap(err, "Cannot initialize analytics")
 	}
 	client.ClientID(uniqID)
+	client.HttpClient = &http.Client{
+		Transport: loghttp.NewTransport(logFn),
+		Timeout:   time.Second * 30,
+	}
 
 	var userIDString string
 	if userID != nil {
@@ -193,6 +200,9 @@ var analytics *Analytics
 func init() {
 	var err error
 	analytics, err = NewAnalytics(
+		func(vs ...interface{}) {
+			logging.Debug(fmt.Sprint(vs...))
+		},
 		logging.UniqID(),
 		authentication.Get().UserID(),
 	)
