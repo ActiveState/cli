@@ -9,13 +9,14 @@ USAGE=`cat <<EOF
 install.sh [flags]
 
 Flags:
- -b <branch>           Default 'unstable'.  Specify an alternative branch to install from (eg. master)
- -n                    Don't prompt for anything when installing into a new location
- -f                    Forces overwrite.  Overwrite existing State Tool
- -t <dir>              Install into target directory <dir>
- -e <file>             Default 'state'. Filename to use for the executable
- --activate <project>  Activate a project when State Tool is correctly installed
- -h                    Show usage information (what you're currently reading)
+ -b <branch>                     Default 'unstable'.  Specify an alternative branch to install from (eg. master)
+ -n                              Don't prompt for anything when installing into a new location
+ -f                              Forces overwrite.  Overwrite existing State Tool
+ -t <dir>                        Install into target directory <dir>
+ -e <file>                        Default 'state'. Filename to use for the executable
+ --activate <project>            Activate a project when State Tool is correctly installed
+ --activate-default <project>    Activate a project and make it the system default
+ -h                              Show usage information (what you're currently reading)
 EOF
 `
 
@@ -27,6 +28,7 @@ STATEEXE="state"
 TARGET=""
 # Optionally download and activate a project after install in the current directory
 ACTIVATE=""
+ACTIVATE_DEFAULT=""
 
 OS="linux"
 SHA256SUM="sha256sum"
@@ -131,6 +133,10 @@ while getopts "nb:t:e:f?h-:" opt; do
         eval "ACTIVATE=\"\${${OPTIND}}\""
         OPTIND=$(( OPTIND + 1 ))
         ;;
+      activate-default)
+        eval "ACTIVATE_DEFAULT=\"\${${OPTIND}}\""
+        OPTIND=$(( OPTIND + 1 ))
+        ;;
     esac
     ;;
   b)
@@ -159,6 +165,11 @@ done
 # so we are bailing if that's being requested...
 if $NOPROMPT && [ -n "$ACTIVATE" ]; then
   error "Flags -n and --activate cannot be set at the same time."
+  exit 1
+fi
+
+if [ -n "$ACTIVATE" ] && [ -n "$ACTIVATE_DEFAULT" ]; then
+  error "Flags --activate and --activate-default cannot be set at the same time."
   exit 1
 fi
 
@@ -406,6 +417,8 @@ fi
 if [ -n "${ACTIVATE}" ]; then
   # control flow of this script ends with this line: replace the shell with the activated project's shell
   exec $STATEPATH activate ${ACTIVATE}
+elif [ -n "${ACTIVATE_DEFAULT}" ]; then
+  exec $STATEPATH activate ${ACTIVATE_DEFAULT} --default
 else
   echo "\n\
 \033[32m╔══════════════════════╗
