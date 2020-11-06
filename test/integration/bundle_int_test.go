@@ -180,7 +180,7 @@ func (suite *BundleIntegrationTestSuite) TestBundle_headless_operation() {
 		cp := ts.Spawn("bundles", "install", "Utilities")
 		cp.ExpectLongString("Do you want to continue as an anonymous user?")
 		cp.SendLine("Y")
-		cp.ExpectRe("(?:Bundle added|project is currently building)", 30*time.Second)
+		cp.ExpectRe("(?:Bundle added|project is currently building)", 45*time.Second)
 		cp.Wait()
 	})
 
@@ -194,7 +194,7 @@ func (suite *BundleIntegrationTestSuite) TestBundle_headless_operation() {
 
 	suite.Run("uninstall", func() {
 		cp := ts.Spawn("bundles", "uninstall", "Utilities")
-		cp.ExpectRe("(?:Bundle removed|project is currently building)")
+		cp.ExpectRe("(?:Bundle removed|project is currently building)", 30*time.Second)
 		cp.Wait()
 	})
 }
