@@ -171,5 +171,5 @@ func newFilteredRequirementsTable(requirements model.Checkpoint, filter string, 
 		rows = append(rows, row)
 	}
 
-	return newTable(rows, locale.Tr("package_list_no_packages", pt.String()))
+	return newTable(rows, fmt.Sprintf("%s_list_no_packages", pt.String()))
 }

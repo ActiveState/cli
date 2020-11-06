@@ -187,8 +187,6 @@ func (suite *BundleIntegrationTestSuite) TestBundle_headless_operation() {
 	/* Our bundles have only one version currently.
 	suite.Run("install (update)", func() {
 		cp := ts.Spawn("bundles", "install", "Utilities@0.7.6")
-		cp.ExpectLongString("Do you want to continue as an anonymous user?")
-		cp.SendLine("Y")
 		cp.ExpectRe("(?:bundle updated|project is currently building)")
 		cp.ExpectExitCode(1)
 	})
@@ -196,8 +194,6 @@ func (suite *BundleIntegrationTestSuite) TestBundle_headless_operation() {
 
 	suite.Run("uninstall", func() {
 		cp := ts.Spawn("bundles", "uninstall", "Utilities")
-		cp.ExpectLongString("Do you want to continue as an anonymous user?")
-		cp.SendLine("Y")
 		cp.ExpectRe("(?:Bundle removed|project is currently building)")
 		cp.Wait()
 	})

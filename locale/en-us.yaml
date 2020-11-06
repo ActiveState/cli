@@ -1100,7 +1100,9 @@ package_search_no_packages:
 bundle_search_no_packages:
   other: Currently no bundle of the provided name is available on the ActiveState Platform.
 package_list_no_packages:
-  other: The project has no {{.V0}} to list.
+  other: The project has no packages to list.
+bundle_list_no_packages:
+  other: The project has no bundles to list.
 package_name:
   other: Name
 package_version:
