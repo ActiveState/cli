@@ -73,12 +73,12 @@ func (r *Activate) run(params *ActivateParams) error {
 	if alreadyActivated {
 		if !params.Default {
 			err := locale.NewInputError("err_already_activated",
-				"You cannot activate a new project when you "+
-					"are already in an activated state.",
+				"You cannot activate a new project when you are already in an activated state. "+
+					"To exit your activated state simply close your current shell by running [ACTIONABLE]exit[/RESET].",
 			)
-			tipMsg := locale.Tl("err_tip_exit_activated",
-				"To exit your activated state simply close your "+
-					"current shell by running [ACTIONABLE]exit[/RESET].",
+			tipMsg := locale.Tl(
+				"err_tip_exit_activated",
+				"Close Activated State → [ACTIONABLE]exit[/RESET]",
 			)
 			return errs.AddTips(err, tipMsg)
 		}
