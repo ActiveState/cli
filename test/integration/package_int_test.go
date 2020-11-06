@@ -83,7 +83,7 @@ func (suite *PackageIntegrationTestSuite) TestPackages_project_invalid() {
 	defer ts.Close()
 
 	cp := ts.Spawn("packages", "--namespace", "junk/junk")
-	cp.Expect("The requested project junk/junk could not be found.")
+	cp.ExpectLongString("The requested project junk/junk could not be found.")
 	cp.ExpectExitCode(1)
 }
 
@@ -306,19 +306,19 @@ func (suite *PackageIntegrationTestSuite) TestPackage_headless_operation() {
 		cp.ExpectLongString("Do you want to continue as an anonymous user?")
 		cp.SendLine("Y")
 		cp.ExpectRe("(?:Package added|project is currently building)")
-		cp.ExpectExitCode(1)
+		cp.Wait()
 	})
 
 	suite.Run("install (update)", func() {
 		cp := ts.Spawn("install", "dateparser@0.7.6")
 		cp.ExpectRe("(?:Package updated|project is currently building)")
-		cp.ExpectExitCode(1)
+		cp.Wait()
 	})
 
 	suite.Run("uninstall", func() {
 		cp := ts.Spawn("uninstall", "dateparser")
 		cp.ExpectRe("(?:Package removed|project is currently building)")
-		cp.ExpectExitCode(1)
+		cp.Wait()
 	})
 }
 
@@ -362,7 +362,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 	suite.Run("uninstall", func() {
 		cp := ts.Spawn("uninstall", "dateparser")
 		cp.ExpectRe("(?:Package removed|project is currently building)")
-		cp.Wait(1)
+		cp.Wait()
 	})
 
 	cp = ts.Spawn("revert", firstCommit)
