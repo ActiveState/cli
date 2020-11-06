@@ -3,38 +3,8 @@ package analytics
 import (
 	"reflect"
 	"testing"
-
-	"github.com/stretchr/testify/suite"
-
-	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
 )
 
-const CatTest = "tests"
-
-type AnalyticsTestSuite struct {
-	suite.Suite
-
-	authMock *authMock.Mock
-}
-
-func (suite *AnalyticsTestSuite) BeforeTest(suiteName, testName string) {
-	suite.authMock = authMock.Init()
-	suite.authMock.MockLoggedin()
-}
-
-func (suite *AnalyticsTestSuite) TestSetup() {
-	setup()
-	suite.Require().NotNil(client, "Client is set")
-}
-
-func (suite *AnalyticsTestSuite) TestEvent() {
-	err := event(CatTest, "TestEvent")
-	suite.Require().NoError(err, "Should send event without causing an error")
-}
-
-func TestAnalyticsTestSuite(t *testing.T) {
-	suite.Run(t, new(AnalyticsTestSuite))
-}
 
 func Test_sendEvent(t *testing.T) {
 	deferValue := Defer
