@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/suite"
 
@@ -78,6 +79,8 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 	cp = ts.SpawnWithOpts(e2e.WithArgs("install", "DateTime"), e2e.WithWorkDirectory(wd))
 	cp.Expect("You're about to add packages as an anonymous user")
 	cp.Expect("(Y/n)")
+	cp.SendLine("y")
+	time.Sleep(500 * time.Millisecond)
 	cp.SendCtrlC()
 	cp.ExpectExitCode(1)
 
