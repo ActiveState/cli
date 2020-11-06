@@ -2,6 +2,7 @@ package analytics
 
 import (
 	"fmt"
+	"sync"
 
 	ga "github.com/ActiveState/go-ogle-analytics"
 	"github.com/ActiveState/sysinfo"
@@ -80,8 +81,16 @@ func (d *customDimensions) toMap() map[string]string {
 	}
 }
 
+var (
+	eventWaitGroup sync.WaitGroup
+)
+
 func init() {
 	setup()
+}
+
+func WaitForAllEvents() {
+	eventWaitGroup.Wait()
 }
 
 func setup() {
@@ -131,7 +140,11 @@ func setup() {
 
 // Event logs an event to google analytics
 func Event(category string, action string) {
-	go event(category, action)
+	eventWaitGroup.Add(1)
+	go func() {
+		event(category, action)
+		eventWaitGroup.Done()
+	}()
 }
 
 func event(category string, action string) error {
@@ -149,7 +162,10 @@ func event(category string, action string) error {
 
 // EventWithLabel logs an event with a label to google analytics
 func EventWithLabel(category string, action string, label string) {
-	go eventWithLabel(category, action, label)
+	go func() {
+		eventWithLabel(category, action, label)
+		eventWaitGroup.Done()
+	}()
 }
 
 func eventWithLabel(category, action, label string) error {
@@ -164,7 +180,10 @@ func eventWithLabel(category, action, label string) error {
 
 // EventWithValue logs an event with an integer value to google analytics
 func EventWithValue(category string, action string, value int64) {
-	go eventWithValue(category, action, value)
+	go func() {
+		eventWithValue(category, action, value)
+		eventWaitGroup.Done()
+	}()
 }
 
 func eventWithValue(category string, action string, value int64) error {
