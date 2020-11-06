@@ -2,11 +2,8 @@ package analytics
 
 import (
 	"fmt"
-	"net/http"
 	"sync"
-	"time"
 
-	ga "github.com/ActiveState/go-ogle-analytics"
 	"github.com/ActiveState/sysinfo"
 	"github.com/go-openapi/strfmt"
 
@@ -17,7 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/loghttp"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/ActiveState/cli/pkg/projectfile"
+	ga "github.com/ActiveState/go-ogle-analytics"
 )
 
 const (
@@ -42,55 +39,8 @@ const (
 	ValUnknown = "unknown"
 )
 
-type CustomDimensions struct {
-	version       string
-	branchName    string
-	userID        string
-	output        string
-	osName        string
-	osVersion     string
-	installSource string
-	machineID     string
-	projectName   string
-	mu            sync.Mutex
-}
-
-func (d *CustomDimensions) SetOutput(output string) {
-	logging.Debug("setting output field to: %s", output)
-
-	d.mu.Lock()
-	defer d.mu.Unlock()
-
-	d.output = output
-}
-
-func (d *CustomDimensions) toMap() map[string]string {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-
-	pj := projectfile.GetPersisted()
-	d.projectName = ""
-	if pj != nil {
-		d.projectName = pj.Owner() + "/" + pj.Name()
-	}
-
-	return map[string]string{
-		// Commented out idx 1 so it's clear why we start with 2. We used to log the hostname while dogfooding internally.
-		// "1": "hostname (deprected)"
-		"2":  d.version,
-		"3":  d.branchName,
-		"4":  d.userID,
-		"5":  d.output,
-		"6":  d.osName,
-		"7":  d.osVersion,
-		"8":  d.installSource,
-		"9":  d.machineID,
-		"10": d.projectName,
-	}
-}
-
 type Analytics struct {
-	gaClient     *ga.Client
+	client       *client
 	UniqClientID string
 	Dimensions   *CustomDimensions
 	VersInfoErr  error
@@ -98,14 +48,9 @@ type Analytics struct {
 }
 
 func NewAnalytics(logFn loghttp.LogFunc, uniqID string, userID *strfmt.UUID) (*Analytics, error) {
-	client, err := ga.NewClient(constants.AnalyticsTrackingID)
+	client, err := newClient(logFn, uniqID)
 	if err != nil {
-		return nil, errs.Wrap(err, "Cannot initialize analytics")
-	}
-	client.ClientID(uniqID)
-	client.HttpClient = &http.Client{
-		Transport: loghttp.NewTransport(logFn),
-		Timeout:   time.Second * 30,
+		return nil, errs.Wrap(err, "Cannot create new analytics client")
 	}
 
 	var userIDString string
@@ -135,7 +80,7 @@ func NewAnalytics(logFn loghttp.LogFunc, uniqID string, userID *strfmt.UUID) (*A
 	}
 
 	a := Analytics{
-		gaClient:     client,
+		client:       client,
 		UniqClientID: uniqID,
 		Dimensions:   &cds,
 		VersInfoErr:  versInfoErr,
@@ -155,15 +100,15 @@ func (a *Analytics) Event(category, action string) {
 }
 
 func (a *Analytics) event(category, action string) error {
-	a.gaClient.CustomDimensionMap(a.Dimensions.toMap())
+	a.client.CustomDimensionMap(a.Dimensions.toMap())
 
 	logging.Debug("Event: %s, %s", category, action)
 
 	if category == CatRunCmd {
-		_ = a.gaClient.Send(ga.NewPageview())
+		_ = a.client.sendPageview(ga.NewPageview())
 	}
 
-	return a.gaClient.Send(ga.NewEvent(category, action))
+	return a.client.sendEvent(ga.NewEvent(category, action))
 }
 
 // EventWithLabel logs an event with a label to google analytics
@@ -178,11 +123,11 @@ func (a *Analytics) EventWithLabel(category, action, label string) {
 }
 
 func (a *Analytics) eventWithLabel(category, action, label string) error {
-	a.gaClient.CustomDimensionMap(a.Dimensions.toMap())
+	a.client.CustomDimensionMap(a.Dimensions.toMap())
 
 	logging.Debug("Event+label: %s, %s, %s", category, action, label)
 
-	return a.gaClient.Send(ga.NewEvent(category, action).Label(label))
+	return a.client.sendEvent(ga.NewEvent(category, action).Label(label))
 }
 
 // EventWithValue logs an event with an integer value to google analytics
@@ -197,11 +142,15 @@ func (a *Analytics) EventWithValue(category, action string, value int64) {
 }
 
 func (a *Analytics) eventWithValue(category, action string, value int64) error {
-	a.gaClient.CustomDimensionMap(a.Dimensions.toMap())
+	a.client.CustomDimensionMap(a.Dimensions.toMap())
 
 	logging.Debug("Event+value: %s, %s, %d", category, action, value)
 
-	return a.gaClient.Send(ga.NewEvent(category, action).Value(value))
+	return a.client.sendEvent(ga.NewEvent(category, action).Value(value))
+}
+
+func (a *Analytics) SetDefer(b bool) {
+	a.client.deferSend.set(b)
 }
 
 func (a *Analytics) Wait() {
@@ -267,6 +216,10 @@ func ReportMisconfig(a *Analytics) {
 	if a.UniqClientID == ValUnknown {
 		a.Event("error", "unknown machine id")
 	}
+}
+
+func SetDefer(b bool) {
+	analytics.SetDefer(b)
 }
 
 func Wait() {
