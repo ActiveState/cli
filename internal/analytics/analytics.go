@@ -87,7 +87,11 @@ func init() {
 func setup() {
 	id := logging.UniqID()
 	var err error
-	client, err = ga.NewClient(constants.AnalyticsTrackingID)
+	var trackingID string
+	if !condition.InTest() {
+		trackingID = constants.AnalyticsTrackingID
+	}
+	client, err = ga.NewClient(trackingID)
 	if err != nil {
 		logging.Error("Cannot initialize analytics: %s", err.Error())
 		return
@@ -125,7 +129,11 @@ func setup() {
 	client.ClientID(id)
 
 	if id == "unknown" {
-		Event("error", "unknown machine id")
+		logging.Error("unknown machine id")
+	}
+
+	if err := sendDeferred(sendEvent); err != nil {
+		logging.Errorf("Could not send deferred events: %v", err)
 	}
 }
 
@@ -135,16 +143,7 @@ func Event(category string, action string) {
 }
 
 func event(category string, action string) error {
-	if client == nil || condition.InTest() {
-		return nil
-	}
-	client.CustomDimensionMap(CustomDimensions.toMap())
-
-	logging.Debug("Event: %s, %s", category, action)
-	if category == CatRunCmd {
-		client.Send(ga.NewPageview())
-	}
-	return client.Send(ga.NewEvent(category, action))
+	return sendEvent(category, action, "", CustomDimensions.toMap())
 }
 
 // EventWithLabel logs an event with a label to google analytics
@@ -153,26 +152,28 @@ func EventWithLabel(category string, action string, label string) {
 }
 
 func eventWithLabel(category, action, label string) error {
-	if client == nil || condition.InTest() {
-		return nil
-	}
-	client.CustomDimensionMap(CustomDimensions.toMap())
-
-	logging.Debug("Event+label: %s, %s, %s", category, action, label)
-	return client.Send(ga.NewEvent(category, action).Label(label))
+	return sendEvent(category, action, label, CustomDimensions.toMap())
 }
 
-// EventWithValue logs an event with an integer value to google analytics
-func EventWithValue(category string, action string, value int64) {
-	go eventWithValue(category, action, value)
-}
+func sendEvent(category, action, label string, dimensions map[string]string) error {
+	if Defer {
+		return deferEvent(category, action, label, dimensions)
+	}
 
-func eventWithValue(category string, action string, value int64) error {
-	if client == nil || condition.InTest() {
+	logging.Debug("Sending: %s, %s, %s", category, action, label)
+
+	if client == nil {
+		logging.Error("Client is not set")
 		return nil
 	}
-	client.CustomDimensionMap(CustomDimensions.toMap())
+	client.CustomDimensionMap(dimensions)
 
-	logging.Debug("Event+value: %s, %s, %d", category, action, value)
-	return client.Send(ga.NewEvent(category, action).Value(value))
+	if category == CatRunCmd {
+		client.Send(ga.NewPageview())
+	}
+	event := ga.NewEvent(category, action)
+	if label != "" {
+		event.Label(label)
+	}
+	return client.Send(event)
 }

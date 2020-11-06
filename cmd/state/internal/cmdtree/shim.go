@@ -33,6 +33,7 @@ func newShimCommand(prime *primer.Values, args ...string) *captain.Command {
 	)
 	cmd.SetHidden(true)
 	cmd.SetSkipChecks(true)
+	cmd.SetDeferAnalytics(true)
 
 	// Cobra will handle the `--` delimiter if flag parsing is enabled.
 	// If the delimeter is not present we have to disable flag parsing
