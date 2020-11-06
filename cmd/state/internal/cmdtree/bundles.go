@@ -41,7 +41,6 @@ func newBundlesCommand(prime *primer.Values) *captain.Command {
 	)
 
 	cmd.SetGroup(PackagesGroup)
-	cmd.SetAliases("pkg", "package")
 
 	return cmd
 }
