@@ -82,7 +82,7 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 	cp.SendLine("y")
 	time.Sleep(500 * time.Millisecond)
 	cp.SendCtrlC()
-	cp.ExpectExitCode(1)
+	cp.ExpectNotExitCode(0)
 
 	prj, fail := project.FromPath(filepath.Join(wd, constants.ConfigFileName))
 	suite.Require().NoError(fail.ToError(), "Could not parse project file")
