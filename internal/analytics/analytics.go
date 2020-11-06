@@ -14,7 +14,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/loghttp"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	ga "github.com/ActiveState/go-ogle-analytics"
 )
 
 const (
@@ -105,10 +104,10 @@ func (a *Analytics) event(category, action string) error {
 	logging.Debug("Event: %s, %s", category, action)
 
 	if category == CatRunCmd {
-		_ = a.client.sendPageview(ga.NewPageview())
+		_ = a.client.send(newPageview())
 	}
 
-	return a.client.sendEvent(ga.NewEvent(category, action))
+	return a.client.send(newEvent(category, action))
 }
 
 // EventWithLabel logs an event with a label to google analytics
@@ -127,7 +126,7 @@ func (a *Analytics) eventWithLabel(category, action, label string) error {
 
 	logging.Debug("Event+label: %s, %s, %s", category, action, label)
 
-	return a.client.sendEvent(ga.NewEvent(category, action).Label(label))
+	return a.client.send(newEvent(category, action).setLabel(label))
 }
 
 // EventWithValue logs an event with an integer value to google analytics
@@ -146,7 +145,7 @@ func (a *Analytics) eventWithValue(category, action string, value int64) error {
 
 	logging.Debug("Event+value: %s, %s, %d", category, action, value)
 
-	return a.client.sendEvent(ga.NewEvent(category, action).Value(value))
+	return a.client.send(newEvent(category, action).setValue(value))
 }
 
 func (a *Analytics) SetDefer(b bool) {

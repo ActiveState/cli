@@ -11,11 +11,9 @@ import (
 	ga "github.com/ActiveState/go-ogle-analytics"
 )
 
-func (d *deferSend) get() bool {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-
-	return d.b
+type sender interface {
+	send(c *ga.Client) error
+	// json marshal/unmarshal
 }
 
 type client struct {
@@ -40,12 +38,20 @@ func newClient(logFn loghttp.LogFunc, uniqID string) (*client, error) {
 	return &c, nil
 }
 
-func (c *client) sendPageview(p *ga.Pageview) error {
-	return c.Client.Send(p)
-}
+func (c *client) send(s sender) error {
+	if c.deferSend.get() {
+		// append event data to file
+		// return err/nil
+	}
 
-func (c *client) sendEvent(e *ga.Event) error {
-	return c.Client.Send(e)
+	// otherwise, get slice of senders from file
+	// range slice of senders
+	//  // s.send(c.Client, c.deferSend.get())
+	//  // halt loop on first error and store
+
+	// s.send current
+	// if err, return this err, if nil, return loop err
+	return s.send(c.Client)
 }
 
 type deferSend struct {
@@ -58,4 +64,11 @@ func (d *deferSend) set(b bool) {
 	defer d.mu.Unlock()
 
 	d.b = b
+}
+
+func (d *deferSend) get() bool {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	return d.b
 }
