@@ -20,7 +20,7 @@ Flags:
 EOF
 
 # ignore project file if we are already in an activated environment
-export ACTIVESTATE_PROJECT=""
+unset ACTIVESTATE_PROJECT
 
 # URL to fetch updates from.
 STATEURL="https://s3.ca-central-1.amazonaws.com/cli-update/update/state/unstable/"
