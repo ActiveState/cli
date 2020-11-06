@@ -37,7 +37,7 @@ func New(prime primeable) *Update {
 }
 
 func (u *Update) Run(params *Params) error {
-	return run(params.Lock, isLocked(), params.Force, u.runLock, u.runUpdateLock, u.runUpdateGlobal, confirmUpdateLock)
+	return run(params.Lock, u.isLocked(), params.Force, u.runLock, u.runUpdateLock, u.runUpdateGlobal, confirmUpdateLock)
 }
 
 func run(lock, isLocked, force bool, runLock, runUpdateLock, runUpdateGlobal, confirmLock func() error) error {
@@ -135,13 +135,17 @@ func confirmUpdateLock() error {
 	return nil
 }
 
-func isLocked() bool {
-	pj, fail := projectfile.GetSafe()
+func (u *Update) isLocked() bool {
+	pj := u.project
+
+	if pj == nil {
+		return false
+	}
 
 	// Support deprecated way of representing a locked version
-	if pj != nil && pj.Branch != "" && pj.Version != "" {
+	if pj.Branch() != "" && pj.Version() != "" {
 		return true
 	}
 
-	return fail == nil && pj.Lock != ""
+	return pj.Lock() != ""
 }

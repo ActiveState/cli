@@ -17,6 +17,10 @@ constants:
       GOPATH="${GOPATH:=`go env GOPATH`}"
       GOROOT="${GOROOT:=`go env GOROOT`}"
       PATH="${GOROOT}/bin:${GOPATH}/bin:${PATH}"
+      if [ "$CI" == "true" ]
+      then
+        GO_BUILD_TAGS="CI"
+      fi
 scripts:
   - name: preprocess
     language: bash

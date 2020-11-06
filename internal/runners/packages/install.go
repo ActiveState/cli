@@ -1,8 +1,6 @@
 package packages
 
 import (
-	"fmt"
-
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -38,6 +36,9 @@ func NewInstall(prime primeable) *Install {
 // Run executes the install behavior.
 func (a *Install) Run(params InstallRunParams, pt PackageType) error {
 	logging.Debug("ExecuteInstall")
+	if a.proj == nil {
+		return locale.NewInputError("err_no_project")
+	}
 
 	language, fail := model.LanguageForCommit(a.proj.CommitUUID())
 	if fail != nil {
@@ -45,17 +46,5 @@ func (a *Install) Run(params InstallRunParams, pt PackageType) error {
 	}
 
 	name, version := splitNameAndVersion(params.Name)
-
-	operation := model.OperationAdded
-	hasPkg, err := model.HasPackage(a.proj.CommitUUID(), name)
-	if err != nil {
-		return locale.WrapError(
-			err, fmt.Sprintf("err_checking_%s_exists", pt.String()),
-		)
-	}
-	if hasPkg {
-		operation = model.OperationUpdated
-	}
-
-	return executePackageOperation(a.proj, a.out, a.auth, a.Prompter, language, name, version, operation, pt)
+	return executePackageOperation(a.proj, a.out, a.auth, a.Prompter, language, name, version, model.OperationAdded, pt)
 }

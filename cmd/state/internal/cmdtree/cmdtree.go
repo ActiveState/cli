@@ -103,12 +103,15 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		newSecretsSyncCommand(secretsClient, prime),
 	)
 
+	projectsCmd := newProjectsCommand(prime)
+	projectsCmd.AddChildren(newRemoteProjectsCommand(prime))
+
 	stateCmd := newStateCommand(globals, prime)
 	stateCmd.AddChildren(
 		newActivateCommand(prime),
 		newInitCommand(prime),
 		newPushCommand(prime),
-		newProjectsCommand(prime),
+		projectsCmd,
 		authCmd,
 		exportCmd,
 		newOrganizationsCommand(prime),

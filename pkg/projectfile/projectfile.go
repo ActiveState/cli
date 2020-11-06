@@ -29,6 +29,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/cli/internal/strutils"
 )
 
@@ -1214,13 +1215,19 @@ func storeProjectMapping(namespace, projectPath string) {
 // on a user's filesystem from the projects config entry
 func CleanProjectMapping() {
 	projects := viper.GetStringMapStringSlice(LocalProjectsConfigKey)
+	seen := map[string]bool{}
 
 	for namespace, paths := range projects {
-		for _, path := range paths {
+		for i, path := range paths {
 			if !fileutils.DirExists(path) {
-				delete(projects, namespace)
+				projects[namespace] = sliceutils.RemoveFromStrings(projects[namespace], i)
 			}
 		}
+		if ok, _ := seen[strings.ToLower(namespace)]; ok || len(projects[namespace]) == 0 {
+			delete(projects, namespace)
+			continue
+		}
+		seen[strings.ToLower(namespace)] = true
 	}
 
 	viper.Set("projects", projects)

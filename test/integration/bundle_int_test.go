@@ -181,7 +181,7 @@ func (suite *BundleIntegrationTestSuite) TestBundle_headless_operation() {
 		cp.ExpectLongString("Do you want to continue as an anonymous user?")
 		cp.SendLine("Y")
 		cp.ExpectRe("(?:Bundle added|project is currently building)", 30*time.Second)
-		cp.ExpectExitCode(1)
+		cp.Wait()
 	})
 
 	/* Our bundles have only one version currently.
@@ -199,7 +199,7 @@ func (suite *BundleIntegrationTestSuite) TestBundle_headless_operation() {
 		cp.ExpectLongString("Do you want to continue as an anonymous user?")
 		cp.SendLine("Y")
 		cp.ExpectRe("(?:Bundle removed|project is currently building)")
-		cp.ExpectExitCode(1)
+		cp.Wait()
 	})
 }
 

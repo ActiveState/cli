@@ -61,8 +61,6 @@ err_language_not_yet_supported:
   other: "The Platform responded with an artifact that is not supported by this version of the State Tool, artifact name: {{.V0}}. Is your State Tool up to date?"
 error_missing_arg:
   other: "Argument missing: [NOTICE]{{.V0}}[/RESET]"
-err_no_projectfile:
-  other: No activestate.yaml file exists in the current working directory or its parent directories.
 err_invalid_input:
   other: Invalid input received
 err_no_update_info:
@@ -315,6 +313,8 @@ error_state_activate_language_flag_invalid:
   other: The provided language does not match any of the known languages
 project_empty:
   other: You have not created any projects yet
+project_checkout_empty:
+  other: You have not activated any projects yet
 downloading:
   other: Downloading
 installing:
@@ -960,7 +960,7 @@ commit_message_removed_language:
 downloading_artifacts:
   other: "Downloading required artifacts"
 installing_artifacts:
-  other: "Installing required artifacts"
+  other: "Updating required artifacts"
 fileutils_err_ammend_file:
   other: "Could not edit file: [NOTICE]{{.V0}}[/RESET]"
 err_auth_empty_token:
@@ -1606,7 +1606,5 @@ prepare_protocol_warning:
   other: Could not add state protocol
 confirm:
   other: Please Confirm
-err_checking_package_exists:
-  other: Cannot verify if package is already in use.
-err_checking_bundle_exists:
-  other: Cannot verify if bundle is already in use.
+err_no_project:
+  other: To run this command you need to be in an existing project. You can create a new project with [ACTIONABLE]state init[/RESET] or run this command from a directory that is in an existing project. You can also mark a project as the default to use by running `[ACTIONABLE]state activate --default[/RESET]` inside your project directory.
