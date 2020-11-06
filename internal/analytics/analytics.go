@@ -81,6 +81,7 @@ func (d *customDimensions) toMap() map[string]string {
 }
 
 func init() {
+	CustomDimensions = &customDimensions{}
 	setup()
 }
 
@@ -91,10 +92,15 @@ func setup() {
 	if !condition.InTest() {
 		trackingID = constants.AnalyticsTrackingID
 	}
+
 	client, err = ga.NewClient(trackingID)
 	if err != nil {
 		logging.Error("Cannot initialize analytics: %s", err.Error())
-		return
+		client = nil
+	}
+
+	if client != nil {
+		client.ClientID(id)
 	}
 
 	var userIDString string
@@ -125,8 +131,6 @@ func setup() {
 		installSource: config.InstallSource(),
 		machineID:     logging.UniqID(),
 	}
-
-	client.ClientID(id)
 
 	if id == "unknown" {
 		logging.Error("unknown machine id")
