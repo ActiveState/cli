@@ -20,14 +20,12 @@ type Params struct {
 }
 
 type Fork struct {
-	project *project.Project
-	out     output.Outputer
-	auth    *authentication.Auth
-	prompt  prompt.Prompter
+	out    output.Outputer
+	auth   *authentication.Auth
+	prompt prompt.Prompter
 }
 
 type primeable interface {
-	primer.Projecter
 	primer.Outputer
 	primer.Auther
 	primer.Prompter
@@ -35,7 +33,6 @@ type primeable interface {
 
 func New(prime primeable) *Fork {
 	return &Fork{
-		prime.Project(),
 		prime.Output(),
 		prime.Auth(),
 		prime.Prompt(),

@@ -38,7 +38,7 @@ func (s *Scripts) Run() error {
 	logging.Debug("Execute scripts command")
 
 	if s.project == nil {
-		return locale.NewInputError("err_scripts_noproject", "You must have an active project to use scripts. Either navigate to a folder with an activestate.yaml or create a new project with `state init`.")
+		return locale.NewInputError("err_no_project")
 	}
 
 	scripts := s.project.Scripts()
