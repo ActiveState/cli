@@ -69,7 +69,7 @@ func (suite *BundleIntegrationTestSuite) TestBundle_project_name_noData() {
 	defer ts.Close()
 
 	cp := ts.Spawn("bundles", "--namespace", "ActiveState/Perl-5.32", "--bundle", "Temp")
-	cp.Expect("The project has no bundle to list.")
+	cp.Expect("The project has no bundles to list.")
 	cp.ExpectExitCode(0)
 }
 
