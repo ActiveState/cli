@@ -162,6 +162,7 @@ func event(category string, action string) error {
 
 // EventWithLabel logs an event with a label to google analytics
 func EventWithLabel(category string, action string, label string) {
+	eventWaitGroup.Add(1)
 	go func() {
 		eventWithLabel(category, action, label)
 		eventWaitGroup.Done()
@@ -180,6 +181,7 @@ func eventWithLabel(category, action, label string) error {
 
 // EventWithValue logs an event with an integer value to google analytics
 func EventWithValue(category string, action string, value int64) {
+	eventWaitGroup.Add(1)
 	go func() {
 		eventWithValue(category, action, value)
 		eventWaitGroup.Done()
