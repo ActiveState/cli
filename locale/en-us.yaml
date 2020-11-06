@@ -1576,3 +1576,9 @@ confirm:
   other: Please Confirm
 err_no_project:
   other: To run this command you need to be in an existing project. You can create a new project with [ACTIONABLE]state init[/RESET] or run this command from a directory that is in an existing project. You can also mark a project as the default to use by running `[ACTIONABLE]state activate --default[/RESET]` inside your project directory.
+activate_default_prompt:
+  other: |
+    Would you like to make [NOTICE]{{.V0}}[/RESET] your default project?
+    This will allow you to operate on your project and run executables provided by its runtime without first "activating" it.
+err_no_projectfile:
+  other: No activestate.yaml file exists in the current working directory or its parent directories.
