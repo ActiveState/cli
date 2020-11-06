@@ -1073,12 +1073,20 @@ err_branch_not_bare:
   other: Branch is not bare and is unable to be initialized as such
 err_package_added:
   other: Failed to add package
+err_bundle_added:
+  other: Failed to add bundle
 package_err_cannot_fetch_checkpoint:
-  other: Cannot fetch checkpoint for {{.V0}} listing
+  other: Cannot fetch checkpoint for package listing
+bundle_err_cannot_fetch_checkpoint:
+  other: Cannot fetch checkpoint for bundle listing
 package_err_cannot_obtain_commit:
-  other: Cannot obtain commit for {{.V0}} listing
+  other: Cannot obtain commit for package listing
+bundle_err_cannot_obtain_commit:
+  other: Cannot obtain commit for bundle listing
 package_err_cannot_obtain_language:
-  other: Cannot obtain language for {{.V0}} search
+  other: Cannot obtain language for package search
+bundle_err_cannot_obtain_language:
+  other: Cannot obtain language for bundle search
 package_err_cannot_obtain_search_results:
   other: Cannot obtain search results
 err_cannot_commit_changeset:
@@ -1088,7 +1096,9 @@ err_obtaining_change_request:
 package_no_data:
   other: No data found - Please verify the provided commit id
 package_search_no_packages:
-  other: Currently no {{.V0}} of the provided name is available on the ActiveState Platform.
+  other: Currently no package of the provided name is available on the ActiveState Platform.
+bundle_search_no_packages:
+  other: Currently no bundle of the provided name is available on the ActiveState Platform.
 package_list_no_packages:
   other: The project has no {{.V0}} to list.
 package_name:
@@ -1099,14 +1109,24 @@ package_added:
   other: "Package added: [NOTICE]{{.V0}}[/RESET]"
 package_version_added:
   other: "Package added: [NOTICE]{{.V0}}@{{.V1}}[/RESET]"
+bundle_added:
+  other: "Bundle added: [NOTICE]{{.V0}}[/RESET]"
+bundle_version_added:
+  other: "Bundle added: [NOTICE]{{.V0}}@{{.V1}}[/RESET]"
 err_package_updated:
   other: Failed to update package
+err_bundle_updated:
+  other: Failed to update bundle
 err_package_project_no_commit:
   other: Could not find commit for project [NOTICE]{{.V0}}[/RESET]
 package_updated:
   other: "Package updated: [NOTICE]{{.V0}}[/RESET]"
 package_version_updated:
   other: "Package updated: [NOTICE]{{.V0}}@{{.V1}}[/RESET]"
+bundle_updated:
+  other: "Bundle updated: [NOTICE]{{.V0}}[/RESET]"
+bundle_version_updated:
+  other: "Bundle updated: [NOTICE]{{.V0}}@{{.V1}}[/RESET]"
 package_ingredient_err:
   other: Failed to resolve an ingredient named {{.V0}}.
 package_headless_added:
@@ -1117,10 +1137,14 @@ package_headless_removed:
   other: "Package removed: [NOTICE]{{.V0}}[/RESET]"
 err_package_removed:
   other: Failed to remove package
+err_bundle_removed:
+  other: Failed to remove bundle
 err_packages_removed:
   other: Failed to remove packages
 package_removed:
   other: "Package removed: [NOTICE]{{.V0}}[/RESET]"
+bundle_removed:
+  other: "Bundle removed: [NOTICE]{{.V0}}[/RESET]"
 update_config:
   other: To ensure your local project is synchronized with the ActiveState platform please use `[ACTIONABLE]state pull[/RESET]`
 package_update_config_file:
@@ -1582,3 +1606,7 @@ prepare_protocol_warning:
   other: Could not add state protocol
 confirm:
   other: Please Confirm
+err_checking_package_exists:
+  other: Cannot verify if package is already in use.
+err_checking_bundle_exists:
+  other: Cannot verify if bundle is already in use.

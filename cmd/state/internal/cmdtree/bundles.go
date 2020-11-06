@@ -24,7 +24,7 @@ func newBundlesCommand(prime *primer.Values) *captain.Command {
 				Value:       &params.Commit,
 			},
 			{
-				Name:        "package",
+				Name:        "bundle",
 				Description: locale.Tl("bundle_list_flag_name_description", "The filter for the bundles names to include in the listing"),
 				Value:       &params.Name,
 			},

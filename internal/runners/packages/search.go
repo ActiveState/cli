@@ -1,6 +1,8 @@
 package packages
 
 import (
+	"fmt"
+
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -35,7 +37,7 @@ func (s *Search) Run(params SearchRunParams, pt PackageType) error {
 
 	language, fail := targetedLanguage(params.Language)
 	if fail != nil {
-		return fail.WithDescription("package_err_cannot_obtain_language")
+		return fail.WithDescription(fmt.Sprintf("%s_err_cannot_obtain_language", pt.String()))
 	}
 
 	searchIngredients := model.SearchIngredients
@@ -69,7 +71,7 @@ func targetedLanguage(languageOpt string) (string, *failures.Failure) {
 func newPackagesTable(packages []*model.IngredientAndVersion, pt PackageType) *packageTable {
 	var rows []packageRow
 	if packages == nil {
-		return newTable(rows, locale.Tr("package_search_no_packages", pt.String()))
+		return newTable(rows, locale.T(fmt.Sprintf("%s_search_no_packages", pt.String())))
 	}
 
 	filterNilStr := func(s *string) string {
@@ -87,5 +89,5 @@ func newPackagesTable(packages []*model.IngredientAndVersion, pt PackageType) *p
 		rows = append(rows, row)
 	}
 
-	return newTable(rows, locale.Tr("package_search_no_packages", pt.String()))
+	return newTable(rows, locale.T(fmt.Sprintf("%s_search_no_packages", pt.String())))
 }

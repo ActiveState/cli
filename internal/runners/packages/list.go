@@ -1,6 +1,7 @@
 package packages
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/go-openapi/strfmt"
@@ -43,23 +44,23 @@ func (l *List) Run(params ListRunParams, pt PackageType) error {
 	case params.Commit != "":
 		commit, fail = targetFromCommit(params.Commit)
 		if fail != nil {
-			return locale.WrapError(fail.ToError(), "package_err_cannot_obtain_commit", pt.String())
+			return locale.WrapError(fail.ToError(), fmt.Sprintf("%s_err_cannot_obtain_commit", pt.String()))
 		}
 	case params.Project != "":
 		commit, fail = targetFromProject(params.Project)
 		if fail != nil {
-			return locale.WrapError(fail.ToError(), "package_err_cannot_obtain_commit", pt.String())
+			return locale.WrapError(fail.ToError(), fmt.Sprintf("%s_err_cannot_obtain_commit", pt.String()))
 		}
 	default:
 		commit, fail = targetFromProjectFile()
 		if fail != nil {
-			return locale.WrapError(fail.ToError(), "package_err_cannot_obtain_commit", pt.String())
+			return locale.WrapError(fail.ToError(), fmt.Sprintf("%s_err_cannot_obtain_commit", pt.String()))
 		}
 	}
 
 	checkpoint, fail := fetchCheckpoint(commit)
 	if fail != nil {
-		return locale.WrapError(fail.ToError(), "package_err_cannot_fetch_checkpoint", pt.String())
+		return locale.WrapError(fail.ToError(), fmt.Sprintf("%s_err_cannot_fetch_checkpoint", pt.String()))
 	}
 
 	table := newFilteredRequirementsTable(model.FilterCheckpointPackages(checkpoint), params.Name, pt)

@@ -303,7 +303,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_headless_operation() {
 
 	suite.Run("install", func() {
 		cp := ts.Spawn("install", "dateparser@0.7.2")
-		cp.ExpectLongString("Do you wan to continue as an anonymous user?")
+		cp.ExpectLongString("Do you want to continue as an anonymous user?")
 		cp.Send("Y")
 		cp.Expect("(?:package added|project is currently building)")
 		cp.ExpectExitCode(1)
@@ -311,7 +311,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_headless_operation() {
 
 	suite.Run("install (update)", func() {
 		cp := ts.Spawn("install", "dateparser@0.7.6")
-		cp.ExpectLongString("Do you wan to continue as an anonymous user?")
+		cp.ExpectLongString("Do you want to continue as an anonymous user?")
 		cp.Send("Y")
 		cp.Expect("(?:package updated|project is currently building)")
 		cp.ExpectExitCode(1)
@@ -319,7 +319,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_headless_operation() {
 
 	suite.Run("uninstall", func() {
 		cp := ts.Spawn("uninstall", "dateparser")
-		cp.ExpectLongString("Do you wan to continue as an anonymous user?")
+		cp.ExpectLongString("Do you want to continue as an anonymous user?")
 		cp.Send("Y")
 		cp.ExpectRe("(?:package removed|project is currently building)")
 		cp.ExpectExitCode(1)

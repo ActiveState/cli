@@ -1,6 +1,8 @@
 package packages
 
 import (
+	"fmt"
+
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -48,9 +50,7 @@ func (a *Install) Run(params InstallRunParams, pt PackageType) error {
 	hasPkg, err := model.HasPackage(a.proj.CommitUUID(), name)
 	if err != nil {
 		return locale.WrapError(
-			err, "err_checking_package_exists",
-			"Cannot verify if {{.V0}} is already in use.",
-			pt.String(),
+			err, fmt.Sprintf("err_checking_%s_exists", pt.String()),
 		)
 	}
 	if hasPkg {

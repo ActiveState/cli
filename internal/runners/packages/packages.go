@@ -1,6 +1,7 @@
 package packages
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/go-openapi/strfmt"
@@ -61,7 +62,7 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 	if !isHeadless {
 		fail := auth.RequireAuthentication(locale.T("auth_required_activate"), out, prompt)
 		if fail != nil {
-			return fail.WithDescription("err_activate_auth_required")
+			return fail.WithDescription("err_auth_required")
 		}
 	}
 
@@ -84,13 +85,13 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 	parentCommitID := pj.CommitUUID()
 	commitID, fail := model.CommitPackage(parentCommitID, operation, name, ingredient.Namespace, version)
 	if fail != nil {
-		return locale.WrapError(fail.ToError(), "err_package_"+string(operation))
+		return locale.WrapError(fail.ToError(), fmt.Sprintf("err_%s_%s", pt.String(), operation))
 	}
 
 	if !isHeadless {
 		err := model.UpdateProjectBranchCommitByName(pj.Owner(), pj.Name(), commitID)
 		if err != nil {
-			return locale.WrapError(err, "err_package_"+string(operation))
+			return locale.WrapError(err, fmt.Sprintf("err_%s_%s", pt.String(), operation))
 		}
 	}
 
@@ -111,9 +112,9 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 
 	// Print the result
 	if version != "" {
-		out.Print(locale.Tr("package_version_"+string(operation), name, version))
+		out.Print(locale.Tr(fmt.Sprintf("%s_version_%s", pt.String(), operation), name, version))
 	} else {
-		out.Print(locale.Tr("package_"+string(operation), name))
+		out.Print(locale.Tr(fmt.Sprintf("%s_%s", pt.String(), operation), name))
 	}
 
 	return nil
