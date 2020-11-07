@@ -65,6 +65,8 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 			"--path", filepath.Join(ts.Dirs.Work, namespace)),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
+	cp.ExpectLongString("default project?")
+	cp.SendLine("n")
 	cp.Expect("activated state")
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
