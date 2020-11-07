@@ -26,6 +26,7 @@ const shimDenoter = "!DO NOT EDIT! State Tool Shim !DO NOT EDIT!"
 
 type DefaultConfigurer interface {
 	Set(key string, value interface{})
+	WriteConfig() error
 }
 
 // BinDir returns the global binary directory
@@ -105,7 +106,7 @@ func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, r
 
 	cfg.Set(constants.GlobalDefaultPrefname, projectPath)
 
-	return nil
+	return cfg.WriteConfig()
 }
 
 func cleanup() error {
