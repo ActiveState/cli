@@ -72,8 +72,17 @@ func (r *Activate) run(params *ActivateParams) error {
 	alreadyActivated := subshell.IsActivated()
 	if alreadyActivated {
 		if !params.Default {
-			return locale.NewInputError("err_already_activated", "You cannot activate a new project when you are already in an activated state.")
+			err := locale.NewInputError("err_already_activated",
+				"You cannot activate a new project when you are already in an activated state. "+
+					"To exit your activated state simply close your current shell by running [ACTIONABLE]exit[/RESET].",
+			)
+			tipMsg := locale.Tl(
+				"err_tip_exit_activated",
+				"Close Activated State → [ACTIONABLE]exit[/RESET]",
+			)
+			return errs.AddTips(err, tipMsg)
 		}
+
 		if params.Namespace == nil || params.Namespace.IsValid() {
 			return locale.NewInputError("err_conflicting_default_while_activated", "Cannot set [NOTICE]{{.V0}}[/RESET] as the global default project while in an activated state.", params.Namespace.String())
 		}
