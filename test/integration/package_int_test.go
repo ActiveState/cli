@@ -317,10 +317,8 @@ func (suite *PackageIntegrationTestSuite) TestPackage_headless_operation() {
 
 	suite.Run("uninstall", func() {
 		cp := ts.Spawn("uninstall", "dateparser")
-		cp.ExpectLongString("Do you want to continue as an anonymous user?")
-		cp.Send("Y")
 		cp.ExpectRe("(?:package uninstalled|project is currently building)")
-		cp.ExpectExitCode(1)
+		cp.Wait()
 	})
 }
 
