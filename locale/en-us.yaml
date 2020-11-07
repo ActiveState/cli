@@ -1136,7 +1136,7 @@ package_headless_added:
 package_headless_updated:
   other: "Package updated: [NOTICE]{{.V0}}[/RESET]"
 package_headless_removed:
-  other: "Package removed: [NOTICE]{{.V0}}[/RESET]"
+  other: "Package uninstalled: [NOTICE]{{.V0}}[/RESET]"
 err_package_removed:
   other: Failed to remove package
 err_bundle_removed:
@@ -1144,9 +1144,9 @@ err_bundle_removed:
 err_packages_removed:
   other: Failed to remove packages
 package_removed:
-  other: "Package removed: [NOTICE]{{.V0}}[/RESET]"
+  other: "Package uninstalled: [NOTICE]{{.V0}}[/RESET]"
 bundle_removed:
-  other: "Bundle removed: [NOTICE]{{.V0}}[/RESET]"
+  other: "Bundle uninstalled: [NOTICE]{{.V0}}[/RESET]"
 update_config:
   other: To ensure your local project is synchronized with the ActiveState platform please use `[ACTIONABLE]state pull[/RESET]`
 package_update_config_file:
