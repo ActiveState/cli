@@ -1,11 +1,13 @@
 package activate
 
 import (
+	"fmt"
 	"path/filepath"
 
 	"github.com/spf13/viper"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/globaldefault"
@@ -14,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/output/txtstyle"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/updater"
@@ -32,6 +35,7 @@ type Activate struct {
 	config           configAble
 	proj             *project.Project
 	subshell         subshell.SubShell
+	prompt           prompt.Prompter
 }
 
 type ActivateParams struct {
@@ -57,6 +61,7 @@ func NewActivate(prime primeable) *Activate {
 		viper.GetViper(),
 		prime.Project(),
 		prime.Subshell(),
+		prime.Prompt(),
 	}
 }
 
@@ -129,6 +134,23 @@ func (r *Activate) run(params *ActivateParams) error {
 	}
 	proj.Source().Persist()
 
+	// Yes this is awkward, issue here - https://www.pivotaltracker.com/story/show/175619373
+	activatedKey := fmt.Sprintf("activated_%s", proj.Namespace().String())
+	setDefault := params.Default
+	firstActivate := r.config.GetString(constants.GlobalDefaultPrefname) == "" && !r.config.GetBool(activatedKey)
+	promptable := r.out.Type() == output.PlainFormatName
+	if !setDefault && firstActivate && promptable {
+		var fail *failures.Failure
+		setDefault, fail = r.prompt.Confirm(
+			locale.Tl("activate_default_prompt_title", "Default Project"),
+			locale.Tr("activate_default_prompt", proj.Namespace().String()),
+			true,
+		)
+		if fail != nil {
+			return locale.WrapInputError(fail, "err_activate_cancel", "Activation cancelled")
+		}
+	}
+
 	if params.Command != "" {
 		r.subshell.SetActivateCommand(params.Command)
 	}
@@ -146,7 +168,7 @@ func (r *Activate) run(params *ActivateParams) error {
 		return locale.WrapError(fail, "error_could_not_activate_venv", "Could not activate project. If this is a private project ensure that you are authenticated.")
 	}
 
-	if params.Default {
+	if setDefault {
 		err := globaldefault.SetupDefaultActivation(r.subshell, r.config, runtime, filepath.Dir(proj.Source().Path()))
 		if err != nil {
 			return locale.WrapError(err, "err_activate_default", "Could not configure your project as the default.")
