@@ -92,7 +92,7 @@ require (
 	github.com/vbauerster/mpb/v4 v4.10.0
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
-	golang.org/x/net v0.0.0-20200813134508-3edf25e44fcc
+	golang.org/x/net v0.0.0-20201021035429-f5854403a974
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 	golang.org/x/sys v0.0.0-20201026163216-e075d9370641
 	google.golang.org/genproto v0.0.0-20200815001618-f69a88009b70
@@ -105,3 +105,5 @@ require (
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v2 v2.3.0
 )
+
+replace github.com/ActiveState/go-ogle-analytics => ../go-ogle-analytics

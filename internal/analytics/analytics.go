@@ -1,8 +1,10 @@
 package analytics
 
 import (
+	"context"
 	"fmt"
 	"sync"
+	"time"
 
 	ga "github.com/ActiveState/go-ogle-analytics"
 	"github.com/ActiveState/sysinfo"
@@ -83,17 +85,32 @@ func (d *customDimensions) toMap() map[string]string {
 
 var (
 	eventWaitGroup sync.WaitGroup
+	ctx            context.Context
+	cancelFunc     context.CancelFunc
 )
 
 func init() {
 	setup()
 }
 
-func WaitForAllEvents() {
+// WaitForAllEvents waits for all events to return and cancels their http contexts after at most `t`
+func WaitForAllEvents(t time.Duration) {
+	done := make(chan struct{})
+	defer close(done)
+
+	go func() {
+		select {
+		case <-time.After(t):
+			cancelFunc()
+		case <-done:
+		}
+	}()
+
 	eventWaitGroup.Wait()
 }
 
 func setup() {
+	ctx, cancelFunc = context.WithCancel(context.Background())
 	id := logging.UniqID()
 	var err error
 	client, err = ga.NewClient(constants.AnalyticsTrackingID)
@@ -142,12 +159,12 @@ func setup() {
 func Event(category string, action string) {
 	eventWaitGroup.Add(1)
 	go func() {
-		event(category, action)
-		eventWaitGroup.Done()
+		defer eventWaitGroup.Done()
+		event(ctx, category, action)
 	}()
 }
 
-func event(category string, action string) error {
+func event(c context.Context, category string, action string) error {
 	if client == nil || condition.InTest() {
 		return nil
 	}
@@ -155,45 +172,45 @@ func event(category string, action string) error {
 
 	logging.Debug("Event: %s, %s", category, action)
 	if category == CatRunCmd {
-		client.Send(ga.NewPageview())
+		client.SendWithContext(c, ga.NewPageview())
 	}
-	return client.Send(ga.NewEvent(category, action))
+	return client.SendWithContext(c, ga.NewEvent(category, action))
 }
 
 // EventWithLabel logs an event with a label to google analytics
 func EventWithLabel(category string, action string, label string) {
 	eventWaitGroup.Add(1)
 	go func() {
-		eventWithLabel(category, action, label)
-		eventWaitGroup.Done()
+		defer eventWaitGroup.Done()
+		eventWithLabel(ctx, category, action, label)
 	}()
 }
 
-func eventWithLabel(category, action, label string) error {
+func eventWithLabel(c context.Context, category, action, label string) error {
 	if client == nil || condition.InTest() {
 		return nil
 	}
 	client.CustomDimensionMap(CustomDimensions.toMap())
 
 	logging.Debug("Event+label: %s, %s, %s", category, action, label)
-	return client.Send(ga.NewEvent(category, action).Label(label))
+	return client.SendWithContext(c, ga.NewEvent(category, action).Label(label))
 }
 
 // EventWithValue logs an event with an integer value to google analytics
 func EventWithValue(category string, action string, value int64) {
 	eventWaitGroup.Add(1)
 	go func() {
-		eventWithValue(category, action, value)
-		eventWaitGroup.Done()
+		defer eventWaitGroup.Done()
+		eventWithValue(ctx, category, action, value)
 	}()
 }
 
-func eventWithValue(category string, action string, value int64) error {
+func eventWithValue(c context.Context, category string, action string, value int64) error {
 	if client == nil || condition.InTest() {
 		return nil
 	}
 	client.CustomDimensionMap(CustomDimensions.toMap())
 
 	logging.Debug("Event+value: %s, %s, %d", category, action, value)
-	return client.Send(ga.NewEvent(category, action).Value(value))
+	return client.SendWithContext(ctx, ga.NewEvent(category, action).Value(value))
 }

@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"time"
 
 	"github.com/ActiveState/sysinfo"
 	"github.com/rollbar/rollbar-go"
@@ -83,7 +84,7 @@ func main() {
 		}
 	}
 
-	analytics.WaitForAllEvents()
+	analytics.WaitForAllEvents(time.Second * 1)
 	os.Exit(code)
 }
 
