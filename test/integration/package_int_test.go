@@ -363,13 +363,8 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 
 	suite.Run("uninstall", func() {
 		cp := ts.Spawn("uninstall", "dateparser")
-<<<<<<< HEAD
 		cp.ExpectRe("(?:package uninstalled|project is currently building)")
 		cp.ExpectExitCode(1)
-=======
-		cp.ExpectRe("(?:Package removed|project is currently building)")
-		cp.Wait()
->>>>>>> master
 	})
 
 	cp = ts.Spawn("revert", firstCommit)
