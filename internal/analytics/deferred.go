@@ -55,7 +55,7 @@ func loadDeferred() []deferredData {
 	if v != "" {
 		err := json.Unmarshal([]byte(v), &d)
 		if err != nil {
-			logging.Errorf("Could not serialize deferred analytics: %v, error: %v", v, err)
+			logging.Errorf("Could not deserialize deferred analytics: %v, error: %v", v, err)
 		}
 	}
 	return d
