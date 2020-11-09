@@ -10,7 +10,6 @@ import (
 	"github.com/gobuffalo/packr"
 
 	"github.com/ActiveState/cli/internal/config"
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -102,12 +101,6 @@ func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, r
 
 	if err := createShims(exes, projectPath); err != nil {
 		return locale.WrapError(err, "err_createshims", "Could not create shim files to set up the default runtime environment.")
-	}
-
-	cfg.Set(constants.GlobalDefaultPrefname, projectPath)
-	err = cfg.WriteConfig()
-	if err != nil {
-		return locale.WrapError(err, "err_write_config", "Could not write to configuration file")
 	}
 
 	return nil
