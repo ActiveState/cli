@@ -71,7 +71,7 @@ func (dct defaultColorTheme) Reset(writer io.Writer) {
 
 var activeColorTheme ColorTheme = defaultColorTheme{}
 
-// Colorize will replace `[COLORNAME]foo[/RESET]` with shell colors, or strip color tags if stripColors=true
+// Colorize will replace `[COLORNAME]foo`[/RESET] with shell colors, or strip color tags if stripColors=true
 func Colorize(value string, writer io.Writer, stripColors bool) (int, error) {
 	pos := 0
 	matches := colorRx.FindAllStringSubmatchIndex(value, -1)
