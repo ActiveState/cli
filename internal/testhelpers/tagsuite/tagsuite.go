@@ -25,6 +25,7 @@ const (
 	Fork          = "fork"
 	Headless      = "headless"
 	History       = "history"
+	Import        = "import"
 	Init          = "init"
 	Interrupt     = "interrupt"
 	JSON          = "json"
