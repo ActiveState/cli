@@ -2,6 +2,8 @@ package analytics
 
 import (
 	"fmt"
+	"sync"
+	"time"
 
 	ga "github.com/ActiveState/go-ogle-analytics"
 	"github.com/ActiveState/sysinfo"
@@ -82,9 +84,29 @@ func (d *customDimensions) toMap() map[string]string {
 	}
 }
 
+var (
+	eventWaitGroup sync.WaitGroup
+)
+
 func init() {
 	CustomDimensions = &customDimensions{}
 	setup()
+}
+
+// WaitForAllEvents waits for all events to return
+func WaitForAllEvents(t time.Duration) {
+	wg := make(chan struct{})
+	go func() {
+		eventWaitGroup.Wait()
+		close(wg)
+	}()
+
+	select {
+	case <-time.After(t):
+		return
+	case <-wg:
+		return
+	}
 }
 
 func setup() {
@@ -137,15 +159,15 @@ func setup() {
 	if id == "unknown" {
 		logging.Error("unknown machine id")
 	}
-
-	if err := sendDeferred(sendEvent); err != nil {
-		logging.Errorf("Could not send deferred events: %v", err)
-	}
 }
 
 // Event logs an event to google analytics
 func Event(category string, action string) {
-	go event(category, action)
+	eventWaitGroup.Add(1)
+	go func() {
+		defer eventWaitGroup.Done()
+		event(category, action)
+	}()
 }
 
 func event(category string, action string) {
@@ -154,7 +176,11 @@ func event(category string, action string) {
 
 // EventWithLabel logs an event with a label to google analytics
 func EventWithLabel(category string, action string, label string) {
-	go eventWithLabel(category, action, label)
+	eventWaitGroup.Add(1)
+	go func() {
+		defer eventWaitGroup.Done()
+		eventWithLabel(category, action, label)
+	}()
 }
 
 func eventWithLabel(category, action, label string) {
@@ -170,7 +196,7 @@ func sendEventAndLog(category, action, label string, dimensions map[string]strin
 }
 
 func sendEvent(category, action, label string, dimensions map[string]string) error {
-	if Defer {
+	if deferAnalytics {
 		if err := deferEvent(category, action, label, dimensions); err != nil {
 			return locale.WrapError(err, "err_analytics_defer", "Could not defer event")
 		}
