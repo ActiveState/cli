@@ -182,7 +182,7 @@ func run(args []string, out output.Outputer) (int, error) {
 		if childCmd != nil {
 			cmdName = childCmd.Use() + " "
 		}
-		err = errs.AddTips(err, locale.Tl("err_tip_run_help", "Run → [ACTIONABLE]state {{.V0}}--help[/RESET]", cmdName))
+		err = errs.AddTips(err, locale.Tl("err_tip_run_help", "Run → [ACTIONABLE]`state {{.V0}}--help`[/RESET] for general help", cmdName))
 	}
 
 	return unwrapError(err)
