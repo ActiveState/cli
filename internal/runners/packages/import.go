@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/pkg/cmdlets/auth"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/reqsimport"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -50,6 +51,7 @@ func NewImportRunParams() *ImportRunParams {
 type Import struct {
 	out output.Outputer
 	prompt.Prompter
+	proj *project.Project
 }
 
 type primeable interface {
@@ -64,6 +66,7 @@ func NewImport(prime primeable) *Import {
 	return &Import{
 		prime.Output(),
 		prime.Prompt(),
+		prime.Project(),
 	}
 }
 
@@ -75,17 +78,23 @@ func (i *Import) Run(params ImportRunParams) error {
 		params.FileName = defaultImportFile
 	}
 
-	fail := auth.RequireAuthentication(locale.T("auth_required_activate"), i.out, i.Prompter)
-	if fail != nil {
-		return fail.WithDescription("err_activate_auth_required")
+	isHeadless := i.proj.IsHeadless()
+	if !isHeadless && !authentication.Get().Authenticated() {
+		anonymousOk, fail := i.Confirm(locale.Tl("continue_anon", "Continue Anonymously?"), locale.T("prompt_headless_anonymous"), true)
+		if fail != nil {
+			return locale.WrapInputError(fail.ToError(), "Authentication cancelled.")
+		}
+		isHeadless = anonymousOk
 	}
 
-	proj, fail := project.GetSafe()
-	if fail != nil {
-		return fail.WithDescription("err_project_unavailable")
+	if !isHeadless {
+		fail := auth.RequireAuthentication(locale.T("auth_required_activate"), i.out, i.Prompter)
+		if fail != nil {
+			return fail.WithDescription("err_activate_auth_required")
+		}
 	}
 
-	latestCommit, fail := model.LatestCommitID(proj.Owner(), proj.Name())
+	latestCommit, fail := model.LatestCommitID(i.proj.Owner(), i.proj.Name())
 	if fail != nil {
 		return fail.WithDescription("package_err_cannot_obtain_commit")
 	}
@@ -108,16 +117,26 @@ func (i *Import) Run(params ImportRunParams) error {
 	packageReqs := model.FilterCheckpointPackages(reqs)
 	if len(packageReqs) > 0 {
 		force := params.Force
-		fail = removeRequirements(prompt.New(), proj.Owner(), proj.Name(), force, packageReqs)
-		if fail != nil {
-			return fail.WithDescription("err_cannot_remove_existing")
+		err = removeRequirements(prompt.New(), i.proj, force, isHeadless, packageReqs)
+		if err != nil {
+			return locale.WrapError(err, "err_cannot_remove_existing")
 		}
 	}
 
 	msg := locale.T("commit_reqstext_message")
-	fail = model.CommitChangeset(proj.Owner(), proj.Name(), msg, changeset)
-	if fail != nil {
-		return fail.WithDescription("err_cannot_commit_changeset")
+	commitID, err := model.CommitChangeset(i.proj.CommitUUID(), msg, changeset)
+	if err != nil {
+		return locale.WrapError(err, "err_cannot_commit_changeset")
+	}
+
+	if !isHeadless {
+		err := model.UpdateProjectBranchCommitByName(i.proj.Owner(), i.proj.Name(), commitID)
+		if err != nil {
+			return locale.WrapError(err, "err_import_update_branch", "Failed to update branch with new commit ID")
+		}
+	}
+	if fail := i.proj.Source().SetCommit(commitID.String(), isHeadless); fail != nil {
+		return fail.WithDescription("err_package_update_pjfile")
 	}
 
 	i.out.Notice(locale.T("update_config"))
@@ -125,25 +144,35 @@ func (i *Import) Run(params ImportRunParams) error {
 	return nil
 }
 
-func removeRequirements(conf Confirmer, pjOwner, pjName string, force bool, reqs model.Checkpoint) *failures.Failure {
+func removeRequirements(conf Confirmer, project *project.Project, force, isHeadless bool, reqs model.Checkpoint) error {
 	if !force {
 		msg := locale.T("confirm_remove_existing_prompt")
 
 		confirmed, fail := conf.Confirm(locale.T("confirm"), msg, false)
 		if fail != nil {
-			return fail
+			return fail.ToError()
 		}
 		if !confirmed {
-			return failures.FailUserInput.New(locale.Tl("err_action_was_not_confirmed", "Cancelled Import."))
+			return failures.FailUserInput.New(locale.Tl("err_action_was_not_confirmed", "Cancelled Import.")).ToError()
 		}
 	}
 
 	removal := model.ChangesetFromRequirements(model.OperationRemoved, reqs)
 	msg := locale.T("commit_reqstext_remove_existing_message")
 
-	fail := model.CommitChangeset(pjOwner, pjName, msg, removal)
-	if fail != nil {
-		return fail.WithDescription("err_packages_removed")
+	commitID, err := model.CommitChangeset(project.CommitUUID(), msg, removal)
+	if err != nil {
+		return locale.WrapError(err, "err_packages_removed")
+	}
+
+	if !isHeadless {
+		err := model.UpdateProjectBranchCommitByName(project.Owner(), project.Name(), commitID)
+		if err != nil {
+			return locale.WrapError(err, "err_import_update_branch", "Failed to update branch with new commit ID")
+		}
+	}
+	if fail := project.Source().SetCommit(commitID.String(), isHeadless); fail != nil {
+		return fail.WithDescription("err_package_update_pjfile").ToError()
 	}
 
 	return nil
