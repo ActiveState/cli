@@ -95,10 +95,10 @@ func init() {
 
 // WaitForAllEvents waits for all events to return
 func WaitForAllEvents(t time.Duration) {
-	wg := make(chan bool)
+	wg := make(chan struct{})
 	go func() {
 		eventWaitGroup.Wait()
-		wg <- true
+		close(wg)
 	}()
 
 	select {
