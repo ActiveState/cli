@@ -1,7 +1,6 @@
 package analytics
 
 import (
-	"context"
 	"fmt"
 	"sync"
 	"time"
@@ -87,8 +86,6 @@ func (d *customDimensions) toMap() map[string]string {
 
 var (
 	eventWaitGroup sync.WaitGroup
-	ctx            context.Context
-	cancelFunc     context.CancelFunc
 )
 
 func init() {
@@ -96,7 +93,7 @@ func init() {
 	setup()
 }
 
-// WaitForAllEvents waits for all events to return and cancels their http contexts after at most `t`
+// WaitForAllEvents waits for all events to return
 func WaitForAllEvents(t time.Duration) {
 	wg := make(chan bool)
 	go func() {
@@ -113,7 +110,6 @@ func WaitForAllEvents(t time.Duration) {
 }
 
 func setup() {
-	ctx, cancelFunc = context.WithCancel(context.Background())
 	id := logging.UniqID()
 	var err error
 	var trackingID string
