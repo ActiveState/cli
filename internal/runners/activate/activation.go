@@ -42,6 +42,11 @@ func (r *Activate) activateAndWait(proj *project.Project, venv *virtualenvironme
 
 	ignoreWindowsInterrupts()
 
+	err = r.config.WriteConfig()
+	if err != nil {
+		return locale.WrapError(err, "err_write_config", "Could not write to configuration file")
+	}
+
 	r.subshell.SetEnv(ve)
 	if fail := r.subshell.Activate(r.out); fail != nil {
 		return locale.WrapError(fail, "error_could_not_activate_subshell", "Could not activate a new subshell.")
