@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"text/template"
+	"time"
 	"unicode"
 
 	"github.com/gobuffalo/packr"
@@ -446,7 +447,10 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 
 	err := execute(c, args)
 	exitCode := errs.UnwrapExitCode(failures.ToError(err))
+	
 	analytics.EventWithLabel(analytics.CatCommandExit, subCommandString, strconv.Itoa(exitCode))
+	analytics.WaitForAllEvents(time.Second * 1)
+
 	return err
 }
 

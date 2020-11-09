@@ -6,13 +6,11 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
-	"time"
 
 	"github.com/ActiveState/sysinfo"
 	"github.com/rollbar/rollbar-go"
 
 	"github.com/ActiveState/cli/cmd/state/internal/cmdtree"
-	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config" // MUST be first!
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/constraints"
@@ -84,7 +82,6 @@ func main() {
 		}
 	}
 
-	analytics.WaitForAllEvents(time.Second * 1)
 	os.Exit(code)
 }
 
