@@ -5,6 +5,7 @@ import (
 
 	"github.com/spf13/viper"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 )
@@ -22,44 +23,54 @@ const deferredCfgKey = "deferrer_analytics"
 
 func deferEvent(category, action, label string, dimensions map[string]string) error {
 	logging.Debug("Deferring: %s, %s, %s", category, action, label)
-	deferred := loadDeferred()
+	deferred, err := loadDeferred()
+	if err != nil {
+		return errs.Wrap(err, "Could not load events on defer")
+	}
+
 	deferred = append(deferred, deferredData{category, action, label, dimensions})
-	saveDeferred(deferred)
-	viper.WriteConfig() // the global viper instance is bugged, need to work around it for now -- https://www.pivotaltracker.com/story/show/175624789
+	if err := saveDeferred(deferred); err != nil {
+		return errs.Wrap(err, "Could not save event on defer")
+	}
 	return nil
 }
 
 func sendDeferred(sender func(string, string, string, map[string]string) error) error {
-	deferred := loadDeferred()
+	deferred, err := loadDeferred()
+	if err != nil {
+		return errs.Wrap(err, "Could not load events on send")
+	}
 	for n, event := range deferred {
 		if err := sender(event.Category, event.Action, event.Label, event.Dimensions); err != nil {
-			return err
+			return errs.Wrap(err, "Could not send deferred event")
 		}
-		saveDeferred(deferred[n+1:])
+		if err := saveDeferred(deferred[n+1:]); err != nil {
+			return errs.Wrap(err, "Could not save deferred event on send")
+		}
 	}
 	if err := viper.WriteConfig(); err != nil { // the global viper instance is bugged, need to work around it for now -- https://www.pivotaltracker.com/story/show/175624789
-		return locale.WrapError(err, "err_viper_write", "Could not save configuration")
+		return locale.WrapError(err, "err_viper_write_send_defer", "Could not save configuration on send deferred")
 	}
 	return nil
 }
 
-func saveDeferred(v []deferredData) {
+func saveDeferred(v []deferredData) error {
 	s, err := json.Marshal(v)
 	if err != nil {
-		logging.Errorf("Could not serialize deferred analyitics: %v, error: %v", v, err)
-		return
+		return errs.New("Could not serialize deferred analytics: %v, error: %v", v, err)
 	}
 	viper.Set(deferredCfgKey, string(s))
+	return nil
 }
 
-func loadDeferred() []deferredData {
+func loadDeferred() ([]deferredData, error) {
 	v := viper.GetString(deferredCfgKey)
 	d := []deferredData{}
 	if v != "" {
 		err := json.Unmarshal([]byte(v), &d)
 		if err != nil {
-			logging.Errorf("Could not deserialize deferred analytics: %v, error: %v", v, err)
+			return d, errs.Wrap(err, "Could not deserialize deferred analytics: %v", v)
 		}
 	}
-	return d
+	return d, nil
 }

@@ -5,10 +5,12 @@ import (
 
 	ga "github.com/ActiveState/go-ogle-analytics"
 	"github.com/ActiveState/sysinfo"
+	"github.com/spf13/viper"
 
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -146,8 +148,8 @@ func Event(category string, action string) {
 	go event(category, action)
 }
 
-func event(category string, action string) error {
-	return sendEvent(category, action, "", CustomDimensions.toMap())
+func event(category string, action string) {
+	sendEventAndLog(category, action, "", CustomDimensions.toMap())
 }
 
 // EventWithLabel logs an event with a label to google analytics
@@ -155,13 +157,26 @@ func EventWithLabel(category string, action string, label string) {
 	go eventWithLabel(category, action, label)
 }
 
-func eventWithLabel(category, action, label string) error {
-	return sendEvent(category, action, label, CustomDimensions.toMap())
+func eventWithLabel(category, action, label string) {
+	sendEventAndLog(category, action, label, CustomDimensions.toMap())
+}
+
+func sendEventAndLog(category, action, label string, dimensions map[string]string) {
+	err := sendEvent(category, action, label, dimensions)
+	if err == nil {
+		return
+	}
+	logging.Error("Error during analytics.sendEvent: %v", err)
 }
 
 func sendEvent(category, action, label string, dimensions map[string]string) error {
 	if Defer {
-		return deferEvent(category, action, label, dimensions)
+		if err := deferEvent(category, action, label, dimensions); err != nil {
+			return locale.WrapError(err, "err_analytics_defer", "Could not defer event")
+		}
+		if err := viper.WriteConfig(); err != nil { // the global viper instance is bugged, need to work around it for now -- https://www.pivotaltracker.com/story/show/175624789
+			return locale.WrapError(err, "err_viper_write_defer", "Could not save configuration on defer")
+		}
 	}
 
 	logging.Debug("Sending: %s, %s, %s", category, action, label)

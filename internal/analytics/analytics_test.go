@@ -37,7 +37,7 @@ func Test_sendEvent(t *testing.T) {
 			if err := sendEvent(tt.values[0], tt.values[1], tt.values[2], map[string]string{}); err != nil {
 				t.Errorf("sendEvent() error = %v", err)
 			}
-			got := loadDeferred()
+			got, _ := loadDeferred()
 			gotSlice := []string{}
 			if len(got) > 0 {
 				gotSlice = []string{got[0].Category, got[0].Action, got[0].Label}
@@ -58,7 +58,7 @@ func Test_sendEvent(t *testing.T) {
 				if !called {
 					t.Errorf("sendDeferred not called")
 				}
-				got = loadDeferred()
+				got, _ = loadDeferred()
 				if len(got) > 0 {
 					t.Errorf("Deferred events not cleared after sending, got: %v", got)
 				}
