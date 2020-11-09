@@ -83,7 +83,7 @@ func (suite *PackageIntegrationTestSuite) TestPackages_project_invalid() {
 	defer ts.Close()
 
 	cp := ts.Spawn("packages", "--namespace", "junk/junk")
-	cp.Expect("The requested project junk/junk could not be found.")
+	cp.ExpectLongString("The requested project junk/junk could not be found.")
 	cp.ExpectExitCode(1)
 }
 
@@ -303,26 +303,22 @@ func (suite *PackageIntegrationTestSuite) TestPackage_headless_operation() {
 
 	suite.Run("install", func() {
 		cp := ts.Spawn("install", "dateparser@0.7.2")
-		cp.ExpectLongString("Do you wan to continue as an anonymous user?")
-		cp.Send("Y")
-		cp.Expect("(?:package added|project is currently building)")
-		cp.ExpectExitCode(1)
+		cp.ExpectLongString("Do you want to continue as an anonymous user?")
+		cp.SendLine("Y")
+		cp.ExpectRe("(?:Package added|project is currently building)")
+		cp.Wait()
 	})
 
 	suite.Run("install (update)", func() {
 		cp := ts.Spawn("install", "dateparser@0.7.6")
-		cp.ExpectLongString("Do you wan to continue as an anonymous user?")
-		cp.Send("Y")
-		cp.Expect("(?:package updated|project is currently building)")
-		cp.ExpectExitCode(1)
+		cp.ExpectRe("(?:Package updated|project is currently building)")
+		cp.Wait()
 	})
 
 	suite.Run("uninstall", func() {
 		cp := ts.Spawn("uninstall", "dateparser")
-		cp.ExpectLongString("Do you wan to continue as an anonymous user?")
-		cp.Send("Y")
-		cp.ExpectRe("(?:package removed|project is currently building)")
-		cp.ExpectExitCode(1)
+		cp.ExpectRe("(?:package uninstalled|project is currently building)")
+		cp.Wait()
 	})
 }
 
@@ -353,20 +349,20 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 
 	suite.Run("install", func() {
 		cp := ts.Spawn("install", "dateparser@0.7.2")
-		cp.Expect("(?:package added|project is currently building)")
-		cp.ExpectExitCode(1)
+		cp.ExpectRe("(?:Package added|project is currently building)")
+		cp.Wait()
 	})
 
 	suite.Run("install (update)", func() {
 		cp := ts.Spawn("install", "dateparser@0.7.6")
-		cp.Expect("(?:package updated|project is currently building)")
-		cp.ExpectExitCode(1)
+		cp.ExpectRe("(?:Package updated|project is currently building)")
+		cp.Wait()
 	})
 
 	suite.Run("uninstall", func() {
 		cp := ts.Spawn("uninstall", "dateparser")
-		cp.ExpectRe("(?:package removed|project is currently building)")
-		cp.ExpectExitCode(1)
+		cp.ExpectRe("(?:package uninstalled|project is currently building)")
+		cp.Wait()
 	})
 
 	cp = ts.Spawn("revert", firstCommit)
@@ -379,7 +375,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 }
 
 func (suite *PackageIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session) {
-	asyData := `project: "https://platform.activestate.com/ActiveState-CLI/List"`
+	asyData := `project: "https://platform.activestate.com/ActiveState-CLI/List?commitID=a9d0bc88-585a-49cf-89c1-6c07af781cff"`
 	ts.PrepareActiveStateYAML(asyData)
 }
 

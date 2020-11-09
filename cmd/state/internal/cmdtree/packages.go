@@ -36,7 +36,7 @@ func newPackagesCommand(prime *primer.Values) *captain.Command {
 		},
 		[]*captain.Argument{},
 		func(_ *captain.Command, _ []string) error {
-			return runner.Run(params)
+			return runner.Run(params, packages.Package)
 		},
 	)
 
@@ -66,7 +66,7 @@ func newInstallCommand(prime *primer.Values) *captain.Command {
 			},
 		},
 		func(_ *captain.Command, _ []string) error {
-			return runner.Run(params)
+			return runner.Run(params, packages.Package)
 		},
 	).SetGroup(PackagesGroup)
 }
@@ -91,7 +91,7 @@ func newUninstallCommand(prime *primer.Values) *captain.Command {
 			},
 		},
 		func(_ *captain.Command, _ []string) error {
-			return runner.Run(params)
+			return runner.Run(params, packages.Package)
 		},
 	).SetGroup(PackagesGroup)
 }
@@ -158,7 +158,7 @@ func newSearchCommand(prime *primer.Values) *captain.Command {
 			},
 		},
 		func(_ *captain.Command, _ []string) error {
-			return runner.Run(params)
+			return runner.Run(params, packages.Package)
 		},
 	).SetGroup(PackagesGroup)
 }

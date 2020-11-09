@@ -1,6 +1,8 @@
 package packages
 
 import (
+	"fmt"
+
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -30,12 +32,12 @@ func NewSearch(prime primer.Outputer) *Search {
 }
 
 // Run is executed when `state packages search` is ran
-func (s *Search) Run(params SearchRunParams) error {
+func (s *Search) Run(params SearchRunParams, pt PackageType) error {
 	logging.Debug("ExecuteSearch")
 
 	language, fail := targetedLanguage(params.Language)
 	if fail != nil {
-		return fail.WithDescription("package_err_cannot_obtain_language")
+		return fail.WithDescription(fmt.Sprintf("%s_err_cannot_obtain_language", pt.String()))
 	}
 
 	searchIngredients := model.SearchIngredients
@@ -43,11 +45,11 @@ func (s *Search) Run(params SearchRunParams) error {
 		searchIngredients = model.SearchIngredientsStrict
 	}
 
-	packages, fail := searchIngredients(language, params.Name)
+	packages, fail := searchIngredients(pt.Namespace(), language, params.Name)
 	if fail != nil {
 		return fail.WithDescription("package_err_cannot_obtain_search_results")
 	}
-	table := newPackagesTable(packages)
+	table := newPackagesTable(packages, pt)
 	s.out.Print(table)
 
 	return nil
@@ -66,10 +68,10 @@ func targetedLanguage(languageOpt string) (string, *failures.Failure) {
 	return model.LanguageForCommit(proj.CommitUUID())
 }
 
-func newPackagesTable(packages []*model.IngredientAndVersion) *packageTable {
+func newPackagesTable(packages []*model.IngredientAndVersion, pt PackageType) *packageTable {
 	var rows []packageRow
 	if packages == nil {
-		return newTable(rows, locale.T("package_search_no_packages"))
+		return newTable(rows, locale.T(fmt.Sprintf("%s_search_no_packages", pt.String())))
 	}
 
 	filterNilStr := func(s *string) string {
@@ -87,5 +89,5 @@ func newPackagesTable(packages []*model.IngredientAndVersion) *packageTable {
 		rows = append(rows, row)
 	}
 
-	return newTable(rows, locale.T("package_search_no_packages"))
+	return newTable(rows, locale.T(fmt.Sprintf("%s_search_no_packages", pt.String())))
 }

@@ -8,10 +8,12 @@ import (
 
 	ga "github.com/ActiveState/go-ogle-analytics"
 	"github.com/ActiveState/sysinfo"
+	"github.com/spf13/viper"
 
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -90,6 +92,7 @@ var (
 )
 
 func init() {
+	CustomDimensions = &customDimensions{}
 	setup()
 }
 
@@ -113,10 +116,19 @@ func setup() {
 	ctx, cancelFunc = context.WithCancel(context.Background())
 	id := logging.UniqID()
 	var err error
-	client, err = ga.NewClient(constants.AnalyticsTrackingID)
+	var trackingID string
+	if !condition.InTest() {
+		trackingID = constants.AnalyticsTrackingID
+	}
+
+	client, err = ga.NewClient(trackingID)
 	if err != nil {
 		logging.Error("Cannot initialize analytics: %s", err.Error())
-		return
+		client = nil
+	}
+
+	if client != nil {
+		client.ClientID(id)
 	}
 
 	var userIDString string
@@ -148,10 +160,12 @@ func setup() {
 		machineID:     logging.UniqID(),
 	}
 
-	client.ClientID(id)
-
 	if id == "unknown" {
-		Event("error", "unknown machine id")
+		logging.Error("unknown machine id")
+	}
+
+	if err := sendDeferred(sendEvent); err != nil {
+		logging.Errorf("Could not send deferred events: %v", err)
 	}
 }
 
@@ -164,17 +178,8 @@ func Event(category string, action string) {
 	}()
 }
 
-func event(c context.Context, category string, action string) error {
-	if client == nil || condition.InTest() {
-		return nil
-	}
-	client.CustomDimensionMap(CustomDimensions.toMap())
-
-	logging.Debug("Event: %s, %s", category, action)
-	if category == CatRunCmd {
-		client.SendWithContext(c, ga.NewPageview())
-	}
-	return client.SendWithContext(c, ga.NewEvent(category, action))
+func event(category string, action string) {
+	sendEventAndLog(category, action, "", CustomDimensions.toMap())
 }
 
 // EventWithLabel logs an event with a label to google analytics
@@ -186,31 +191,42 @@ func EventWithLabel(category string, action string, label string) {
 	}()
 }
 
-func eventWithLabel(c context.Context, category, action, label string) error {
-	if client == nil || condition.InTest() {
-		return nil
-	}
-	client.CustomDimensionMap(CustomDimensions.toMap())
-
-	logging.Debug("Event+label: %s, %s, %s", category, action, label)
-	return client.SendWithContext(c, ga.NewEvent(category, action).Label(label))
+func eventWithLabel(category, action, label string) {
+	sendEventAndLog(category, action, label, CustomDimensions.toMap())
 }
 
-// EventWithValue logs an event with an integer value to google analytics
-func EventWithValue(category string, action string, value int64) {
-	eventWaitGroup.Add(1)
-	go func() {
-		defer eventWaitGroup.Done()
-		eventWithValue(ctx, category, action, value)
-	}()
+func sendEventAndLog(category, action, label string, dimensions map[string]string) {
+	err := sendEvent(category, action, label, dimensions)
+	if err == nil {
+		return
+	}
+	logging.Error("Error during analytics.sendEvent: %v", err)
 }
 
-func eventWithValue(c context.Context, category string, action string, value int64) error {
-	if client == nil || condition.InTest() {
+func sendEvent(category, action, label string, dimensions map[string]string) error {
+	if Defer {
+		if err := deferEvent(category, action, label, dimensions); err != nil {
+			return locale.WrapError(err, "err_analytics_defer", "Could not defer event")
+		}
+		if err := viper.WriteConfig(); err != nil { // the global viper instance is bugged, need to work around it for now -- https://www.pivotaltracker.com/story/show/175624789
+			return locale.WrapError(err, "err_viper_write_defer", "Could not save configuration on defer")
+		}
+	}
+
+	logging.Debug("Sending: %s, %s, %s", category, action, label)
+
+	if client == nil {
+		logging.Error("Client is not set")
 		return nil
 	}
-	client.CustomDimensionMap(CustomDimensions.toMap())
+	client.CustomDimensionMap(dimensions)
 
-	logging.Debug("Event+value: %s, %s, %d", category, action, value)
-	return client.SendWithContext(ctx, ga.NewEvent(category, action).Value(value))
+	if category == CatRunCmd {
+		client.Send(ga.NewPageview())
+	}
+	event := ga.NewEvent(category, action)
+	if label != "" {
+		event.Label(label)
+	}
+	return client.Send(event)
 }

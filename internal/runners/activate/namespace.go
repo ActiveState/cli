@@ -19,6 +19,7 @@ import (
 
 type configAble interface {
 	Set(key string, value interface{})
+	GetBool(key string) bool
 	GetString(key string) string
 	GetStringSlice(key string) []string
 }
