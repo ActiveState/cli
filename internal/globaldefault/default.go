@@ -105,8 +105,12 @@ func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, r
 	}
 
 	cfg.Set(constants.GlobalDefaultPrefname, projectPath)
+	err = cfg.WriteConfig()
+	if err != nil {
+		return locale.WrapError(err, "err_write_config", "Could not write to configuration file")
+	}
 
-	return cfg.WriteConfig()
+	return nil
 }
 
 func cleanup() error {
