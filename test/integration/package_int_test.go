@@ -317,7 +317,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_headless_operation() {
 
 	suite.Run("uninstall", func() {
 		cp := ts.Spawn("uninstall", "dateparser")
-		cp.ExpectRe("(?:Package removed|project is currently building)")
+		cp.ExpectRe("(?:package uninstalled|project is currently building)")
 		cp.Wait()
 	})
 }
@@ -361,7 +361,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 
 	suite.Run("uninstall", func() {
 		cp := ts.Spawn("uninstall", "dateparser")
-		cp.ExpectRe("(?:Package removed|project is currently building)")
+		cp.ExpectRe("(?:package uninstalled|project is currently building)")
 		cp.Wait()
 	})
 
