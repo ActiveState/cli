@@ -124,21 +124,10 @@ func (i *Import) Run(params ImportRunParams) error {
 	}
 
 	msg := locale.T("commit_reqstext_message")
-	commitID, err := model.CommitChangeset(i.proj.CommitUUID(), msg, changeset)
+	err = commitChangeset(i.proj, msg, isHeadless, changeset)
 	if err != nil {
-		return locale.WrapError(err, "err_cannot_commit_changeset")
+		return locale.WrapError(err, "err_commit_changeset", "Could not commit import changes")
 	}
-
-	if !isHeadless {
-		err := model.UpdateProjectBranchCommitByName(i.proj.Owner(), i.proj.Name(), commitID)
-		if err != nil {
-			return locale.WrapError(err, "err_import_update_branch", "Failed to update branch with new commit ID")
-		}
-	}
-	if fail := i.proj.Source().SetCommit(commitID.String(), isHeadless); fail != nil {
-		return fail.WithDescription("err_package_update_pjfile")
-	}
-
 	i.out.Notice(locale.T("update_config"))
 
 	return nil
@@ -159,23 +148,7 @@ func removeRequirements(conf Confirmer, project *project.Project, force, isHeadl
 
 	removal := model.ChangesetFromRequirements(model.OperationRemoved, reqs)
 	msg := locale.T("commit_reqstext_remove_existing_message")
-
-	commitID, err := model.CommitChangeset(project.CommitUUID(), msg, removal)
-	if err != nil {
-		return locale.WrapError(err, "err_packages_removed")
-	}
-
-	if !isHeadless {
-		err := model.UpdateProjectBranchCommitByName(project.Owner(), project.Name(), commitID)
-		if err != nil {
-			return locale.WrapError(err, "err_import_update_branch", "Failed to update branch with new commit ID")
-		}
-	}
-	if fail := project.Source().SetCommit(commitID.String(), isHeadless); fail != nil {
-		return fail.WithDescription("err_package_update_pjfile").ToError()
-	}
-
-	return nil
+	return commitChangeset(project, msg, isHeadless, removal)
 }
 
 func fetchImportChangeset(cp ChangesetProvider, file string, lang string) (model.Changeset, error) {
@@ -190,4 +163,22 @@ func fetchImportChangeset(cp ChangesetProvider, file string, lang string) (model
 	}
 
 	return changeset, err
+}
+
+func commitChangeset(project *project.Project, msg string, isHeadless bool, changeset model.Changeset) error {
+	commitID, err := model.CommitChangeset(project.CommitUUID(), msg, changeset)
+	if err != nil {
+		return locale.WrapError(err, "err_packages_removed")
+	}
+
+	if !isHeadless {
+		err := model.UpdateProjectBranchCommitByName(project.Owner(), project.Name(), commitID)
+		if err != nil {
+			return locale.WrapError(err, "err_import_update_branch", "Failed to update branch with new commit ID")
+		}
+	}
+	if fail := project.Source().SetCommit(commitID.String(), isHeadless); fail != nil {
+		return fail.WithDescription("err_package_update_pjfile").ToError()
+	}
+	return nil
 }
