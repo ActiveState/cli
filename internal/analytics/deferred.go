@@ -26,7 +26,9 @@ func SetDeferred(da bool) {
 	if deferAnalytics {
 		return
 	}
+	eventWaitGroup.Add(1)
 	go func() {
+		defer eventWaitGroup.Done()
 		if err := sendDeferred(sendEvent); err != nil {
 			logging.Errorf("Could not send deferred events: %v", err)
 		}
