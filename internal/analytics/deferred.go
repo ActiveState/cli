@@ -10,7 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 )
 
-var Defer bool
+var deferAnalytics bool
 
 type deferredData struct {
 	Category   string
@@ -20,6 +20,18 @@ type deferredData struct {
 }
 
 const deferredCfgKey = "deferrer_analytics"
+
+func SetDeferred(da bool) {
+	deferAnalytics = da
+	if deferAnalytics {
+		return
+	}
+	go func() {
+		if err := sendDeferred(sendEvent); err != nil {
+			logging.Errorf("Could not send deferred events: %v", err)
+		}
+	}()
+}
 
 func deferEvent(category, action, label string, dimensions map[string]string) error {
 	logging.Debug("Deferring: %s, %s, %s", category, action, label)

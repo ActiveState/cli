@@ -7,9 +7,9 @@ import (
 
 
 func Test_sendEvent(t *testing.T) {
-	deferValue := Defer
+	deferValue := deferAnalytics
 	defer func() {
-		Defer = deferValue
+		deferAnalytics = deferValue
 	}()
 
 	tests := []struct {
@@ -33,7 +33,7 @@ func Test_sendEvent(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			Defer = tt.deferValue
+			deferAnalytics = tt.deferValue
 			if err := sendEvent(tt.values[0], tt.values[1], tt.values[2], map[string]string{}); err != nil {
 				t.Errorf("sendEvent() error = %v", err)
 			}

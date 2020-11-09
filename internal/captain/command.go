@@ -400,13 +400,13 @@ func (c *Command) subCommandNames() []string {
 }
 
 func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
-	analytics.Defer = c.deferAnalytics
+	analytics.SetDeferred(c.deferAnalytics)
 	outputFlag := cobraCmd.Flag("output")
 	if outputFlag != nil && outputFlag.Changed {
 		analytics.CustomDimensions.SetOutput(outputFlag.Value.String())
 	}
 	subCommandString := c.UseFull()
-	
+
 	// Send  GA events unless they are handled in the runners...
 	analytics.Event(analytics.CatRunCmd, subCommandString)
 

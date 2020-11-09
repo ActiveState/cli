@@ -163,10 +163,6 @@ func setup() {
 	if id == "unknown" {
 		logging.Error("unknown machine id")
 	}
-
-	if err := sendDeferred(sendEvent); err != nil {
-		logging.Errorf("Could not send deferred events: %v", err)
-	}
 }
 
 // Event logs an event to google analytics
@@ -204,7 +200,7 @@ func sendEventAndLog(category, action, label string, dimensions map[string]strin
 }
 
 func sendEvent(category, action, label string, dimensions map[string]string) error {
-	if Defer {
+	if deferAnalytics {
 		if err := deferEvent(category, action, label, dimensions); err != nil {
 			return locale.WrapError(err, "err_analytics_defer", "Could not defer event")
 		}
