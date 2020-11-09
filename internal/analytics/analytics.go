@@ -98,18 +98,18 @@ func init() {
 
 // WaitForAllEvents waits for all events to return and cancels their http contexts after at most `t`
 func WaitForAllEvents(t time.Duration) {
-	done := make(chan struct{})
-	defer close(done)
-
+	wg := make(chan bool)
 	go func() {
-		select {
-		case <-time.After(t):
-			cancelFunc()
-		case <-done:
-		}
+		eventWaitGroup.Wait()
+		wg <- true
 	}()
 
-	eventWaitGroup.Wait()
+	select {
+	case <-time.After(t):
+		return
+	case <-wg:
+		return
+	}
 }
 
 func setup() {
@@ -174,7 +174,7 @@ func Event(category string, action string) {
 	eventWaitGroup.Add(1)
 	go func() {
 		defer eventWaitGroup.Done()
-		event(ctx, category, action)
+		event(category, action)
 	}()
 }
 
@@ -187,7 +187,7 @@ func EventWithLabel(category string, action string, label string) {
 	eventWaitGroup.Add(1)
 	go func() {
 		defer eventWaitGroup.Done()
-		eventWithLabel(ctx, category, action, label)
+		eventWithLabel(category, action, label)
 	}()
 }
 

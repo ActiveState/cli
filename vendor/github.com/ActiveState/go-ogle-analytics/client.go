@@ -4,7 +4,6 @@ package ga
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -32,7 +31,7 @@ type hitType interface {
 	addFields(url.Values) error
 }
 
-func (c *Client) SendWithContext(ctx context.Context, h hitType) error {
+func (c *Client) Send(h hitType) error {
 
 	cpy := c.Copy()
 
@@ -60,13 +59,7 @@ func (c *Client) SendWithContext(ctx context.Context, h hitType) error {
 	str := v.Encode()
 	buf := bytes.NewBufferString(str)
 
-	req, err := http.NewRequestWithContext(ctx, "POST", url, buf)
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-	resp, err := c.HttpClient.Do(req)
+	resp, err := c.HttpClient.Post(url, "application/x-www-form-urlencoded", buf)
 	if err != nil {
 		return err
 	}
