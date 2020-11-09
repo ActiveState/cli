@@ -5,6 +5,7 @@ import (
 
 	"github.com/spf13/viper"
 
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 )
 
@@ -36,7 +37,9 @@ func sendDeferred(sender func(string, string, string, map[string]string) error) 
 		}
 		saveDeferred(deferred[n+1:])
 	}
-	viper.WriteConfig() // the global viper instance is bugged, need to work around it for now -- https://www.pivotaltracker.com/story/show/175624789
+	if err := viper.WriteConfig(); err != nil { // the global viper instance is bugged, need to work around it for now -- https://www.pivotaltracker.com/story/show/175624789
+		return locale.WrapError(err, "err_viper_write", "Could not save configuration")
+	}
 	return nil
 }
 
