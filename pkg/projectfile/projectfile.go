@@ -822,12 +822,10 @@ func GetProjectFilePath() (string, *failures.Failure) {
 		getProjectFilePathFromWd,
 		getProjectFilePathFromDefault,
 	}
-	var path string
-	var fail *failures.Failure
 	for _, getProjectFilePath := range lookup {
-		path, fail = getProjectFilePath()
+		path, fail := getProjectFilePath()
 		if fail != nil {
-			logging.Debug("Failed to find project file path: %v", fail)
+			return "", fail
 		}
 
 		if path != "" {
@@ -835,7 +833,7 @@ func GetProjectFilePath() (string, *failures.Failure) {
 		}
 	}
 
-	return "", FailNoProject.Wrap(fail, locale.T("err_no_projectfile"))
+	return "", FailNoProject.New(locale.T("err_no_projectfile"))
 }
 
 func getProjectFilePathFromEnv() (string, *failures.Failure) {
