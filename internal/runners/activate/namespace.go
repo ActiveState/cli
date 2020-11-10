@@ -19,8 +19,10 @@ import (
 
 type configAble interface {
 	Set(key string, value interface{})
+	GetBool(key string) bool
 	GetString(key string) string
 	GetStringSlice(key string) []string
+	WriteConfig() error
 }
 
 // NamespaceSelect will select the right directory associated with a namespace, and chdir into it

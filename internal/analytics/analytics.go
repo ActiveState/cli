@@ -2,13 +2,17 @@ package analytics
 
 import (
 	"fmt"
+	"sync"
+	"time"
 
 	ga "github.com/ActiveState/go-ogle-analytics"
 	"github.com/ActiveState/sysinfo"
+	"github.com/spf13/viper"
 
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -80,17 +84,47 @@ func (d *customDimensions) toMap() map[string]string {
 	}
 }
 
+var (
+	eventWaitGroup sync.WaitGroup
+)
+
 func init() {
+	CustomDimensions = &customDimensions{}
 	setup()
+}
+
+// WaitForAllEvents waits for all events to return
+func WaitForAllEvents(t time.Duration) {
+	wg := make(chan struct{})
+	go func() {
+		eventWaitGroup.Wait()
+		close(wg)
+	}()
+
+	select {
+	case <-time.After(t):
+		return
+	case <-wg:
+		return
+	}
 }
 
 func setup() {
 	id := logging.UniqID()
 	var err error
-	client, err = ga.NewClient(constants.AnalyticsTrackingID)
+	var trackingID string
+	if !condition.InTest() {
+		trackingID = constants.AnalyticsTrackingID
+	}
+
+	client, err = ga.NewClient(trackingID)
 	if err != nil {
 		logging.Error("Cannot initialize analytics: %s", err.Error())
-		return
+		client = nil
+	}
+
+	if client != nil {
+		client.ClientID(id)
 	}
 
 	var userIDString string
@@ -122,57 +156,69 @@ func setup() {
 		machineID:     logging.UniqID(),
 	}
 
-	client.ClientID(id)
-
 	if id == "unknown" {
-		Event("error", "unknown machine id")
+		logging.Error("unknown machine id")
 	}
 }
 
 // Event logs an event to google analytics
 func Event(category string, action string) {
-	go event(category, action)
+	eventWaitGroup.Add(1)
+	go func() {
+		defer eventWaitGroup.Done()
+		event(category, action)
+	}()
 }
 
-func event(category string, action string) error {
-	if client == nil || condition.InTest() {
-		return nil
-	}
-	client.CustomDimensionMap(CustomDimensions.toMap())
-
-	logging.Debug("Event: %s, %s", category, action)
-	if category == CatRunCmd {
-		client.Send(ga.NewPageview())
-	}
-	return client.Send(ga.NewEvent(category, action))
+func event(category string, action string) {
+	sendEventAndLog(category, action, "", CustomDimensions.toMap())
 }
 
 // EventWithLabel logs an event with a label to google analytics
 func EventWithLabel(category string, action string, label string) {
-	go eventWithLabel(category, action, label)
+	eventWaitGroup.Add(1)
+	go func() {
+		defer eventWaitGroup.Done()
+		eventWithLabel(category, action, label)
+	}()
 }
 
-func eventWithLabel(category, action, label string) error {
-	if client == nil || condition.InTest() {
+func eventWithLabel(category, action, label string) {
+	sendEventAndLog(category, action, label, CustomDimensions.toMap())
+}
+
+func sendEventAndLog(category, action, label string, dimensions map[string]string) {
+	err := sendEvent(category, action, label, dimensions)
+	if err == nil {
+		return
+	}
+	logging.Error("Error during analytics.sendEvent: %v", err)
+}
+
+func sendEvent(category, action, label string, dimensions map[string]string) error {
+	if deferAnalytics {
+		if err := deferEvent(category, action, label, dimensions); err != nil {
+			return locale.WrapError(err, "err_analytics_defer", "Could not defer event")
+		}
+		if err := viper.WriteConfig(); err != nil { // the global viper instance is bugged, need to work around it for now -- https://www.pivotaltracker.com/story/show/175624789
+			return locale.WrapError(err, "err_viper_write_defer", "Could not save configuration on defer")
+		}
+	}
+
+	logging.Debug("Sending: %s, %s, %s", category, action, label)
+
+	if client == nil {
+		logging.Error("Client is not set")
 		return nil
 	}
-	client.CustomDimensionMap(CustomDimensions.toMap())
+	client.CustomDimensionMap(dimensions)
 
-	logging.Debug("Event+label: %s, %s, %s", category, action, label)
-	return client.Send(ga.NewEvent(category, action).Label(label))
-}
-
-// EventWithValue logs an event with an integer value to google analytics
-func EventWithValue(category string, action string, value int64) {
-	go eventWithValue(category, action, value)
-}
-
-func eventWithValue(category string, action string, value int64) error {
-	if client == nil || condition.InTest() {
-		return nil
+	if category == CatRunCmd {
+		client.Send(ga.NewPageview())
 	}
-	client.CustomDimensionMap(CustomDimensions.toMap())
-
-	logging.Debug("Event+value: %s, %s, %d", category, action, value)
-	return client.Send(ga.NewEvent(category, action).Value(value))
+	event := ga.NewEvent(category, action)
+	if label != "" {
+		event.Label(label)
+	}
+	return client.Send(event)
 }

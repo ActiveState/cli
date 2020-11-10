@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"text/template"
+	"time"
 	"unicode"
 
 	"github.com/gobuffalo/packr"
@@ -400,15 +401,16 @@ func (c *Command) subCommandNames() []string {
 }
 
 func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
+	analytics.SetDeferred(c.deferAnalytics)
 	outputFlag := cobraCmd.Flag("output")
 	if outputFlag != nil && outputFlag.Changed {
 		analytics.CustomDimensions.SetOutput(outputFlag.Value.String())
 	}
 	subCommandString := c.UseFull()
+
 	// Send  GA events unless they are handled in the runners...
-	if !c.deferAnalytics {
-		analytics.Event(analytics.CatRunCmd, subCommandString)
-	}
+	analytics.Event(analytics.CatRunCmd, subCommandString)
+
 	// Run OnUse functions for non-persistent flags
 	c.runFlags(false)
 
@@ -444,10 +446,11 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	execute := intercept(c.execute)
 
 	err := execute(c, args)
-	if !c.deferAnalytics {
-		exitCode := errs.UnwrapExitCode(failures.ToError(err))
-		analytics.EventWithLabel(analytics.CatCommandExit, subCommandString, strconv.Itoa(exitCode))
-	}
+	exitCode := errs.UnwrapExitCode(failures.ToError(err))
+	
+	analytics.EventWithLabel(analytics.CatCommandExit, subCommandString, strconv.Itoa(exitCode))
+	analytics.WaitForAllEvents(time.Second * 1)
+
 	return err
 }
 

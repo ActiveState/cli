@@ -20,6 +20,9 @@ Flags:
 EOF
 `
 
+# ignore project file if we are already in an activated environment
+unset ACTIVESTATE_PROJECT
+
 # URL to fetch updates from.
 STATEURL="https://s3.ca-central-1.amazonaws.com/cli-update/update/state/unstable/"
 # Name of the executable to ultimately use.
@@ -173,10 +176,24 @@ if [ -n "$ACTIVATE" ] && [ -n "$ACTIVATE_DEFAULT" ]; then
   exit 1
 fi
 
-# force overwrite requires no prompt flag
-if $FORCEOVERWRITE && ( ! $NOPROMPT ); then
-  error "Flag -f also requires -n"
-  exit 1
+INSTALLDIR="`dirname \`which $STATEEXE\` 2>/dev/null`"
+
+# stop if previous installation is detected unless
+# - FORCEOVERWRITE is specified OR
+# - a TARGET directory is specified that differs from INSTALLDIR
+if [ ! -z "$INSTALLDIR" ] && ( ! $FORCEOVERWRITE ) && ( \
+      [ -z $TARGET ] || [ "$TARGET" = "$INSTALLDIR" ] \
+   ); then
+  warn "State Tool is already installed at $INSTALLDIR, to reinstall run this command again with -f"
+  echo "To update the State Tool to the latest version, please run 'state update'."
+  echo "To install in a different location, please specify the installation directory with '-t TARGET_DIR'."
+  exit 0
+fi
+
+# If '-f' is passed and a previous installation exists we set NOPROMPT
+# as we will overwrite the existing State Tool installation
+if $FORCEOVERWRITE && [ ! -z "$INSTALLDIR" ]; then
+  NOPROMPT=true
 fi
 
 echo "\
@@ -255,20 +272,6 @@ fetchArtifact () {
   fi
   chmod +x $TMPDIR/$TMPEXE
 }
-
-INSTALLDIR="`dirname \`which $STATEEXE\` 2>/dev/null`"
-
-# stop if previous installation is detected unless
-# - FORCEOVERWRITE is specified OR
-# - a TARGET directory is specified that differs from INSTALLDIR
-if [ ! -z "$INSTALLDIR" ] && ( ! $FORCEOVERWRITE ) && ( \
-      [ -z $TARGET ] || [ "$TARGET" = "$INSTALLDIR" ] \
-   ); then
-  warn "Previous installation detected at $INSTALLDIR"
-  echo "To update the State Tool to the latest version, please run 'state update'."
-  echo "To install in a different location, please specify the installation directory with '-t TARGET_DIR'."
-  exit 0
-fi
 
 # Use target directory provided by user with no verification or default to
 # one of two commonly used directories. 

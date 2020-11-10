@@ -18,7 +18,6 @@ import (
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 type Shim struct {
@@ -75,7 +74,7 @@ func (s *Shim) Run(params *Params, args ...string) error {
 		return locale.WrapError(fail.ToError(), "err_shim_activate", "Could not activate environment for shim command")
 	}
 
-	env, err := venv.GetEnv(true, filepath.Dir(projectfile.Get().Path()))
+	env, err := venv.GetEnv(true, filepath.Dir(s.proj.Source().Path()))
 	if err != nil {
 		return err
 	}
