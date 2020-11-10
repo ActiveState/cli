@@ -29,9 +29,10 @@ type FileSizeTask func(FileSizeCallback) error
 // So all code that generates and manipulates progress bars is organized under this struct
 // This simplifies testing and demo-ing of new progress bar functionality.
 type Progress struct {
-	progress    *mpb.Progress
-	cancel      context.CancelFunc // triggered on Close to ensure that the progress bar unblocks
-	isCancelled bool
+	progress     *mpb.Progress
+	cancel       context.CancelFunc // triggered on Close to ensure that the progress bar unblocks
+	isCancelled  bool
+	maxNameWidth int
 }
 
 // WithOutput changes the output of the progress bar
@@ -56,20 +57,22 @@ func New(options ...mpb.ContainerOption) *Progress {
 		tw = 120
 	}
 
-	// ensure that we have enough space by modifying the progress bar width
-	// we subtract 26 from the terminal width
-	// * 20 for name and counter to the left of bar
-	// * 5 for percentage
-	// * 1 extra character necessary
+	// calculate the maximum width for a name displayed to the left of the progress bar
+	maxWidth := tw - 80 - 19 // 80 is the default size for the progressbar, 19 is taken by counters (up to 999) and percentage display
+	if maxWidth < 0 {
+		maxWidth = 4
+	}
 	if tw <= 105 && tw >= 40 {
-		options = append(options, mpb.WithWidth(tw-26))
+		maxWidth = 11 // enough space to spell "downloading"
+		options = append(options, mpb.WithWidth(tw-30))
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	return &Progress{
-		progress:    mpb.NewWithContext(ctx, options...),
-		cancel:      cancel,
-		isCancelled: false,
+		progress:     mpb.NewWithContext(ctx, options...),
+		cancel:       cancel,
+		isCancelled:  false,
+		maxNameWidth: maxWidth,
 	}
 }
 
@@ -103,6 +106,10 @@ type ByteProgressBar = mpb.Bar
 // The `name` is prepended, and for the last total bar, the `remove` flag should be set to `false` otherwise
 // always `true`.
 func (p *Progress) AddTotalBar(name string, numElements int) *TotalBar {
+	// crop name if necessary
+	if len(name) > p.maxNameWidth {
+		name = name[0:p.maxNameWidth]
+	}
 	options := []mpb.BarOption{
 		mpb.BarClearOnComplete(),
 		mpb.PrependDecorators(
