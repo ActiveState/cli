@@ -1,3 +1,11 @@
+// fupdstor provides a fake update file server based on the curent expectations
+// of the state tool.
+//
+// Example usage (set bin dir and log requests):
+//   fupdstor -d ../../../build -v
+//
+// This requires updating the const APIUpdateURL value to something like
+// "http://localhost:8686/cli-update/update/"
 package main
 
 import (
@@ -37,9 +45,9 @@ func run() error {
 		verbose bool
 	)
 
-	flag.StringVar(&dir, "d", dir, "directory to find exec")
+	flag.StringVar(&dir, "d", dir, "directory to find bin")
 	flag.StringVar(&port, "p", port, "port to serve from")
-	flag.BoolVar(&verbose, "v", verbose, "should log requests")
+	flag.BoolVar(&verbose, "v", verbose, "log requests")
 	flag.Parse()
 
 	if _, err := os.Stat(dir); err != nil {
