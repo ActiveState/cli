@@ -59,7 +59,7 @@ func New(options ...mpb.ContainerOption) *Progress {
 	// ensure that we have enough space by modifying the progress bar width
 	// we subtract 26 from the terminal width
 	// * 20 for name and counter to the left of bar
-	// * 5 for percentag
+	// * 5 for percentage
 	// * 1 extra character necessary
 	if tw <= 105 && tw >= 40 {
 		options = append(options, mpb.WithWidth(tw-26))
