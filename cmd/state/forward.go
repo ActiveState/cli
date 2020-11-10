@@ -39,7 +39,6 @@ func forwardFn(args []string, out output.Outputer, pj *project.Project) (forward
 	if fail != nil {
 		// if we are running `state update`, we just print the error message, but don't fail, as we can still update the state tool executable
 		logging.Error("Could not parse version info from projectifle: %s", fail.Error())
-		fmt.Println("Could not parse version info from projectifle: %s", fail.Error())
 		if funk.Contains(args, "update") { // Handle use case of update being called as anything but the first argument (unlikely, but possible)
 			out.Error(locale.T("err_version_parse"))
 			return nil, nil
