@@ -58,7 +58,3 @@ func TestRunCommand(t *testing.T) {
 
 	projectfile.Reset()
 }
-
-func TestIsActivated(t *testing.T) {
-	assert.False(t, IsActivated())
-}
