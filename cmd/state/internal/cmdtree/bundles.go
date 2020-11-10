@@ -67,7 +67,7 @@ func newBundleInstallCommand(prime *primer.Values) *captain.Command {
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run(params, packages.Bundle)
 		},
-	).SetGroup(PackagesGroup)
+	)
 }
 
 func newBundleUninstallCommand(prime *primer.Values) *captain.Command {
@@ -92,7 +92,7 @@ func newBundleUninstallCommand(prime *primer.Values) *captain.Command {
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run(params, packages.Bundle)
 		},
-	).SetGroup(PackagesGroup)
+	)
 }
 
 func newBundlesSearchCommand(prime *primer.Values) *captain.Command {
@@ -128,5 +128,5 @@ func newBundlesSearchCommand(prime *primer.Values) *captain.Command {
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run(params, packages.Bundle)
 		},
-	).SetGroup(PackagesGroup)
+	)
 }
