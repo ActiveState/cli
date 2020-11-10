@@ -128,7 +128,8 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 	}
 
 	if !orderChanged && rt.IsCachedRuntime() {
-		return locale.NewInputError("pkg_already_uptodate", "Requested dependencies are already configured and installed.")
+		out.Print(locale.Tl("pkg_already_uptodate", "Requested dependencies are already configured and installed."))
+		return nil
 	}
 
 	// Update runtime
