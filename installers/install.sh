@@ -18,6 +18,7 @@ Flags:
  --activate-default <project>    Activate a project and make it the system default
  -h                              Show usage information (what you're currently reading)
 EOF
+`
 
 # ignore project file if we are already in an activated environment
 unset ACTIVESTATE_PROJECT
