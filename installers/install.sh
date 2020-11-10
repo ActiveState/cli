@@ -390,6 +390,7 @@ install() {
       mv $TMPDIR/$TMPEXE "$INSTALLDIR/$STATEEXE"
       ;;
     [Nn]|*)
+      STATEPATH="$INSTALLDIR/$STATEEXE"
       error "Aborting installation"
       return 0
       ;;
