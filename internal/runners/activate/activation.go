@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/process"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -46,6 +47,12 @@ func (r *Activate) activateAndWait(proj *project.Project, venv *virtualenvironme
 	if fail := r.subshell.Activate(r.out); fail != nil {
 		return locale.WrapError(fail, "error_could_not_activate_subshell", "Could not activate a new subshell.")
 	}
+
+	a, err := process.NewActivation(os.Getpid())
+	if err != nil {
+		return locale.WrapError(err, "error_could_not_mark_process", "Could not mark process as activated.")
+	}
+	defer a.Close()
 
 	fe, err := fileevents.New(proj)
 	if err != nil {

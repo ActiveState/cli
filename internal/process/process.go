@@ -98,3 +98,9 @@ func NewActivation(pid int) (*Activation, error) {
 func (a *Activation) Close() error {
 	return a.PIDLock.Close(false)
 }
+
+// IsActivated returns whether or not this process is being run in an activated
+// state.
+func IsActivated() bool {
+	return ActivationPID() != -1
+}

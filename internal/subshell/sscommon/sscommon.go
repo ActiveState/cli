@@ -13,7 +13,6 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/internal/process"
 )
 
 var (
@@ -28,19 +27,13 @@ var (
 // returns a channel to monitor errors on.
 func Start(cmd *exec.Cmd) chan *failures.Failure {
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
+
 	cmd.Start()
 
 	fs := make(chan *failures.Failure, 1)
 
-	a, err := process.NewActivation(os.Getpid())
-	if err != nil {
-		// TODO: pass as error return? OR pass as failure via channel in goroutine? OR should log and continue?
-		// NOTE: cmd.Start() call also ignores error return
-	}
-
 	go func() {
 		defer close(fs)
-		defer a.Close() // TODO: consider what to do with this error - likely ignore
 
 		if err := cmd.Wait(); err != nil {
 			if eerr, ok := err.(*exec.ExitError); ok {

@@ -13,7 +13,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/process"
 	"github.com/ActiveState/cli/internal/subshell/bash"
 	"github.com/ActiveState/cli/internal/subshell/cmd"
 	"github.com/ActiveState/cli/internal/subshell/fish"
@@ -124,10 +123,4 @@ func New() SubShell {
 	subs.SetEnv(osutils.EnvSliceToMap(env))
 
 	return subs
-}
-
-// IsActivated returns whether or not this process is being run in an activated
-// state.
-func IsActivated() bool {
-	return process.ActivationPID() != -1
 }

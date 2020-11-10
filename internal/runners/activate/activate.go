@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/output/txtstyle"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/process"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/updater"
@@ -69,7 +70,7 @@ func (r *Activate) run(params *ActivateParams) error {
 
 	r.out.Notice(txtstyle.NewTitle(locale.T("info_activating_state")))
 
-	alreadyActivated := subshell.IsActivated()
+	alreadyActivated := process.IsActivated()
 	if alreadyActivated {
 		if !params.Default {
 			return locale.NewInputError("err_already_activated", "You cannot activate a new project when you are already in an activated state.")
