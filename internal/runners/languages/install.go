@@ -155,18 +155,18 @@ func removeLanguage(project *project.Project, current string) error {
 		return fail.ToError()
 	}
 
-	fail = model.CommitLanguage(project.Owner(), project.Name(), model.OperationRemoved, platformLanguage.Name, platformLanguage.Version)
-	if fail != nil {
-		return fail.ToError()
+	err := model.CommitLanguage(project.Owner(), project.Name(), model.OperationRemoved, platformLanguage.Name, platformLanguage.Version)
+	if err != nil {
+		return err
 	}
 
 	return nil
 }
 
 func addLanguage(project *project.Project, lang *model.Language) error {
-	fail := model.CommitLanguage(project.Owner(), project.Name(), model.OperationAdded, lang.Name, lang.Version)
-	if fail != nil {
-		return fail.ToError()
+	err := model.CommitLanguage(project.Owner(), project.Name(), model.OperationAdded, lang.Name, lang.Version)
+	if err != nil {
+		return err
 	}
 
 	return nil
