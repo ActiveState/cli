@@ -250,7 +250,7 @@ type writeClose struct {
 func (wc *writeClose) Close() error {
 	for _, c := range wc.closers {
 		if err := c.Close(); err != nil {
-			return err
+			return fmt.Errorf("writeclose close: %w", err)
 		}
 	}
 	return nil
@@ -264,17 +264,3 @@ type updateInfo struct {
 	Version  string
 	Sha256v2 string
 }
-
-/*
-	h := sha256.New()
-	b, err := ioutil.ReadAll(r)
-	if err != nil {
-		return "", fmt.Errorf("generate sha256: %w", err)
-	}
-
-	if _, err = h.Write(b); err != nil {
-		return "", fmt.Errorf("generate sha256: %w", err)
-	}
-
-	return hex.EncodeToString(h.Sum(nil)), nil
-*/

@@ -1,7 +1,6 @@
 package subshell
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -135,6 +134,5 @@ func IsActivated() bool {
 	actPID := process.ActivationPID()
 	upidFile := updater.PIDFileName(int(actPID))
 
-	fmt.Println(actPID != -1, !fileutils.FileExists(upidFile))
 	return actPID != -1 && !fileutils.FileExists(upidFile)
 }
