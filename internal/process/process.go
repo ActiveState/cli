@@ -1,6 +1,7 @@
 package process
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -8,7 +9,10 @@ import (
 	"github.com/shirou/gopsutil/process"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils"
 )
 
 // ActivationPID returns the process ID of the activated state; if any
@@ -18,23 +22,18 @@ func ActivationPID() int32 {
 
 	procInfoErrMsgFmt := "Could not detect process information: %v"
 
-	for ppid != 0 && pid != ppid {
+	for pid != 0 && pid != ppid {
+		pidFileName := ActivationPIDFileName(int(pid))
+		if fileutils.FileExists(pidFileName) {
+			return pid
+		}
+
 		pproc, err := process.NewProcess(ppid)
 		if err != nil {
 			if err != process.ErrorProcessNotRunning {
 				logging.Errorf(procInfoErrMsgFmt, err)
 			}
 			return -1
-		}
-
-		cmdArgs, err := pproc.CmdlineSlice()
-		if err != nil {
-			logging.Errorf(procInfoErrMsgFmt, err)
-			return -1
-		}
-
-		if isActivateCmdlineArgs(cmdArgs) {
-			return ppid
 		}
 
 		pid = ppid
@@ -63,4 +62,39 @@ func isActivateCmdlineArgs(args []string) bool {
 	}
 
 	return false
+}
+
+func ActivationPIDFileName(n int) string {
+	return fmt.Sprintf("activation.%d", n) // TODO: use config dir
+}
+
+type Activation struct {
+	PIDLock *osutils.PidLock
+}
+
+func NewActivation(pid int) (*Activation, error) {
+	pidFileName := ActivationPIDFileName(pid)
+	pidLock, err := osutils.NewPidLock(pidFileName)
+	if err != nil {
+		return nil, errs.Wrap(err, "cannot create new pid lock file")
+	}
+
+	locked, err := pidLock.TryLock()
+	if err != nil {
+		return nil, errs.Wrap(err, "cannot obtain activation pid lock")
+	}
+
+	if !locked {
+		return nil, errs.New("activation pid lock is unlocked")
+	}
+
+	a := Activation{
+		PIDLock: pidLock,
+	}
+
+	return &a, nil
+}
+
+func (a *Activation) Close() error {
+	return a.PIDLock.Close(false)
 }
