@@ -381,10 +381,16 @@ update_rc_file() {
     manual_installation_instructions
   fi
 
-  info "Updating environment..."
-  pathenv="export PATH=\"\$PATH:$INSTALLDIR\" # ActiveState State Tool"
-  echo "" >> "$RC_FILE"
-  echo "$pathenv" >> "$RC_FILE"
+  RC_KEY="# ActiveState State Tool"
+
+  echo "Updating environment..."
+  pathenv="export PATH=\"\$PATH:$INSTALLDIR\" $RC_KEY"
+  if grep -q "$RC_KEY" $RC_FILE; then
+    sed -i -E "s@^export.+$RC_KEY@$pathenv@" $RC_FILE
+  else
+    echo "" >> "$RC_FILE"
+    echo "$pathenv" >> "$RC_FILE"
+  fi
 }
 
 # Write install file
