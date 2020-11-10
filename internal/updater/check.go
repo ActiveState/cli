@@ -56,23 +56,23 @@ type UpdateResult struct {
 	ToVersion   string
 }
 
-// AutoUpdate checks for updates once per day and, if one was found within the
-// timeout period, applies the update and returns `true`. Otherwise, returns
-// `false`. AutoUpdate is skipped altogether if the current project has a locked
-// version.
+// AutoUpdate checks for updates once per day and, if one was found within a
+// timeout period of one second, applies the update and returns `true`.
+// Otherwise, returns `false`.
+// AutoUpdate is skipped altogether if the current project has a locked version.
 func AutoUpdate(pjPath string, out output.Outputer) (updated bool, resultVersion string) {
 	if versionInfo, _ := projectfile.ParseVersionInfo(pjPath); versionInfo != nil {
 		return false, ""
 	}
 
-	// Check for an update, but timeout
+	// Check for an update, but timeout after one second.
 	logging.Debug("Checking for updates.")
 	update := Updater{
 		CurrentVersion: constants.Version,
 		APIURL:         constants.APIUpdateURL,
 		CmdName:        constants.CommandName,
 	}
-	seconds := 2
+	seconds := 1
 	if secondsOverride := os.Getenv(constants.AutoUpdateTimeoutEnvVarName); secondsOverride != "" {
 		override, err := strconv.Atoi(secondsOverride)
 		if err == nil {
