@@ -82,7 +82,7 @@ const CPUProfileEnvVarName = "ACTIVESTATE_PROFILE_CPU"
 const NonInteractive = "ACTIVESTATE_NONINTERACTIVE"
 
 // APIUpdateURL is the URL for our update server
-const APIUpdateURL = "http://localhost:8686/cli-update/update/"
+const APIUpdateURL = "https://s3.ca-central-1.amazonaws.com/cli-update/update/"
 
 // APIArtifactURL is the URL for downloading artifacts
 const APIArtifactURL = "https://s3.ca-central-1.amazonaws.com/cli-artifacts/"
