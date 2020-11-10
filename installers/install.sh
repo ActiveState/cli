@@ -386,7 +386,6 @@ update_rc_file() {
   echo "Updating environment..."
   pathenv="export PATH=\"\$PATH:$INSTALLDIR\" $RC_KEY"
   if grep -q "$RC_KEY" $RC_FILE; then
-    echo "Calling sed with RC File: $RC_FILE"
     sed -i -E "s@^export.+$RC_KEY@$pathenv@" $RC_FILE
   else
     echo "" >> "$RC_FILE"
