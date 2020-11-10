@@ -8,6 +8,7 @@ import (
 
 	"github.com/shirou/gopsutil/process"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -65,7 +66,8 @@ func isActivateCmdlineArgs(args []string) bool {
 }
 
 func ActivationPIDFileName(n int) string {
-	return fmt.Sprintf("activation.%d", n) // TODO: use config dir
+	fileName := fmt.Sprintf("activation.%d", n)
+	return filepath.Join(config.ConfigPath(), fileName)
 }
 
 type Activation struct {
