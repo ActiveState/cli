@@ -1,6 +1,7 @@
 package subshell
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
@@ -20,6 +22,7 @@ import (
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/internal/subshell/tcsh"
 	"github.com/ActiveState/cli/internal/subshell/zsh"
+	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -129,5 +132,9 @@ func New() SubShell {
 // IsActivated returns whether or not this process is being run in an activated
 // state.
 func IsActivated() bool {
-	return process.ActivationPID() != -1
+	actPID := process.ActivationPID()
+	upidFile := updater.PIDFileName(int(actPID))
+
+	fmt.Println(actPID != -1, !fileutils.FileExists(upidFile))
+	return actPID != -1 && !fileutils.FileExists(upidFile)
 }

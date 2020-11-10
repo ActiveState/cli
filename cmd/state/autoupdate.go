@@ -35,6 +35,13 @@ func autoUpdate(args []string, out output.Outputer, pjPath string) (bool, int, e
 
 	defer updater.Cleanup()
 
+	pidFileName := updater.PIDFileName(os.Getpid())
+	pid, err := osutils.NewPidLock(pidFileName)
+	if err != nil {
+		return false, 0, err // TODO: error
+	}
+	defer pid.Close(false)
+
 	out.Notice(output.Heading(locale.Tl("auto_update_title", "Auto Update")))
 	out.Notice(locale.Tr("auto_update_to_version", constants.Version, resultVersion))
 	code, err := relaunch()

@@ -72,7 +72,7 @@ func AutoUpdate(pjPath string, out output.Outputer) (updated bool, resultVersion
 		APIURL:         constants.APIUpdateURL,
 		CmdName:        constants.CommandName,
 	}
-	seconds := 1
+	seconds := 3
 	if secondsOverride := os.Getenv(constants.AutoUpdateTimeoutEnvVarName); secondsOverride != "" {
 		override, err := strconv.Atoi(secondsOverride)
 		if err == nil {
