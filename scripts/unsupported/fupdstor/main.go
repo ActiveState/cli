@@ -5,7 +5,8 @@
 //   fupdstor -d ../../../build -v
 //
 // This requires updating the const APIUpdateURL value to something like
-// "http://localhost:8686/cli-update/update/"
+// "http://localhost:8686/cli-update/update/". It is also necessary to "age" the
+// instance of the tool initially called so that the update logic is triggered.
 package main
 
 import (
