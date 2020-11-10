@@ -10,9 +10,12 @@ package progress
 import (
 	"context"
 	"io"
+	"os"
 
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/vbauerster/mpb/v4"
 	"github.com/vbauerster/mpb/v4/decor"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 // FileSizeCallback can be called by a task to report that a sub-task of length `fileSize` (in bytes) has been finished
@@ -47,6 +50,21 @@ func WithDebugOutput(w io.Writer) mpb.ContainerOption {
 // New creates a new Progress struct
 // mpb.ContainerOptions are forwarded
 func New(options ...mpb.ContainerOption) *Progress {
+	tw, _, err := terminal.GetSize(int(os.Stdout.Fd()))
+	if err != nil {
+		logging.Error("Could net get terminal size: %v", err)
+		tw = 120
+	}
+
+	// ensure that we have enough space by modifying the progress bar width
+	// we subtract 26 from the terminal width
+	// * 20 for name and counter to the left of bar
+	// * 5 for percentag
+	// * 1 extra character necessary
+	if tw <= 105 && tw >= 40 {
+		options = append(options, mpb.WithWidth(tw-26))
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 	return &Progress{
 		progress:    mpb.NewWithContext(ctx, options...),
