@@ -65,15 +65,20 @@ func isActivateCmdlineArgs(args []string) bool {
 	return false
 }
 
+// ActivationPIDFileName returns a consistent file path based on the given
+// process id.
 func ActivationPIDFileName(n int) string {
 	fileName := fmt.Sprintf("activation.%d", n)
 	return filepath.Join(config.ConfigPath(), fileName)
 }
 
+// Activation eases the use of a PidLock for the purpose of "marking" a process
+// as being a valid "activation".
 type Activation struct {
 	PIDLock *osutils.PidLock
 }
 
+// NewActivation creates an instance of Activation.
 func NewActivation(pid int) (*Activation, error) {
 	pidFileName := ActivationPIDFileName(pid)
 	pidLock, err := osutils.NewPidLock(pidFileName)
@@ -97,12 +102,13 @@ func NewActivation(pid int) (*Activation, error) {
 	return &a, nil
 }
 
+// Close cleans up the used resources.
 func (a *Activation) Close() error {
 	return a.PIDLock.Close(false)
 }
 
 // IsActivated returns whether or not this process is being run in an activated
-// state.
+// state. This can be this specific process, or one of it's parents.
 func IsActivated() bool {
 	return ActivationPID() != -1
 }
