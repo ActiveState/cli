@@ -1,6 +1,7 @@
 package activate
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/signal"
@@ -18,6 +19,20 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
+
+type activationError struct {
+	error
+}
+
+func (ae activationError) IsFromActivatedShell() {}
+
+// Is Silent returns true if the wrapped error is an exit code error
+func (ae activationError) IsSilent() bool {
+	var eerr interface{ ExitCode() int }
+	return errors.As(ae, &eerr)
+}
+
+func (ae activationError) Unwrap() error { return ae.error }
 
 func (r *Activate) activateAndWait(proj *project.Project, venv *virtualenvironment.VirtualEnvironment) error {
 	logging.Debug("Activating and waiting")
@@ -69,7 +84,7 @@ func (r *Activate) activateAndWait(proj *project.Project, venv *virtualenvironme
 
 	err = <-r.subshell.Errors()
 	if err != nil {
-		return locale.WrapError(err, "error_in_active_subshell", "Failure encountered in active subshell")
+		return activationError{locale.WrapError(err, "error_in_active_subshell", "Failure encountered in active subshell")}
 	}
 
 	return nil
