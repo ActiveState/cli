@@ -41,7 +41,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePython2() {
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
-	suite.OnlyRunForTags(tagsuite.Critical, tagsuite.Activate)
+	suite.OnlyRunForTags(tagsuite.Critical, tagsuite.Activate, tagsuite.ExitCode)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -58,7 +58,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
 	cp.WaitForInput(10 * time.Second)
 
 	cp.SendLine("exit 123")
-	cp.ExpectExitCode(123, 10*time.Second)
+	cp.ExpectExitCode(0, 10*time.Second)
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivateUsingCommitID() {

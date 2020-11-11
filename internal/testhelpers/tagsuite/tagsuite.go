@@ -22,6 +22,7 @@ const (
 	Error         = "error"
 	Events        = "events"
 	Export        = "export"
+	ExitCode      = "exit-code"
 	Fork          = "fork"
 	Headless      = "headless"
 	History       = "history"
