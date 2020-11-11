@@ -53,7 +53,7 @@ func WithDebugOutput(w io.Writer) mpb.ContainerOption {
 func New(options ...mpb.ContainerOption) *Progress {
 	tw, _, err := terminal.GetSize(int(os.Stdout.Fd()))
 	if err != nil {
-		logging.Debug("Could net get terminal size, assuming width=120: %v", err)
+		logging.Debug("Could not get terminal size, assuming width=120: %v", err)
 		tw = 120
 	}
 
