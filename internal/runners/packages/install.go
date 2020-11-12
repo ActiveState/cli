@@ -34,8 +34,11 @@ func NewInstall(prime primeable) *Install {
 }
 
 // Run executes the install behavior.
-func (a *Install) Run(params InstallRunParams) error {
+func (a *Install) Run(params InstallRunParams, pt PackageType) error {
 	logging.Debug("ExecuteInstall")
+	if a.proj == nil {
+		return locale.NewInputError("err_no_project")
+	}
 
 	language, fail := model.LanguageForCommit(a.proj.CommitUUID())
 	if fail != nil {
@@ -43,18 +46,5 @@ func (a *Install) Run(params InstallRunParams) error {
 	}
 
 	name, version := splitNameAndVersion(params.Name)
-
-	operation := model.OperationAdded
-	hasPkg, err := model.HasPackage(a.proj.CommitUUID(), name)
-	if err != nil {
-		return locale.WrapError(
-			err, "err_checking_package_exists",
-			"Cannot verify if package is already in use.",
-		)
-	}
-	if hasPkg {
-		operation = model.OperationUpdated
-	}
-
-	return executePackageOperation(a.proj, a.out, a.auth, a.Prompter, language, name, version, operation)
+	return executePackageOperation(a.proj, a.out, a.auth, a.Prompter, language, name, version, model.OperationAdded, pt)
 }

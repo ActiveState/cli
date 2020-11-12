@@ -9,15 +9,19 @@ USAGE=`cat <<EOF
 install.sh [flags]
 
 Flags:
- -b <branch>           Default 'unstable'.  Specify an alternative branch to install from (eg. master)
- -n                    Don't prompt for anything when installing into a new location
- -f                    Forces overwrite.  Overwrite existing State Tool
- -t <dir>              Install into target directory <dir>
- -e <file>             Default 'state'. Filename to use for the executable
- --activate <project>  Activate a project when State Tool is correctly installed
- -h                    Show usage information (what you're currently reading)
+ -b <branch>                     Default 'unstable'.  Specify an alternative branch to install from (eg. master)
+ -n                              Don't prompt for anything when installing into a new location
+ -f                              Forces overwrite.  Overwrite existing State Tool
+ -t <dir>                        Install into target directory <dir>
+ -e <file>                        Default 'state'. Filename to use for the executable
+ --activate <project>            Activate a project when State Tool is correctly installed
+ --activate-default <project>    Activate a project and make it the system default
+ -h                              Show usage information (what you're currently reading)
 EOF
 `
+
+# ignore project file if we are already in an activated environment
+unset ACTIVESTATE_PROJECT
 
 # URL to fetch updates from.
 STATEURL="https://s3.ca-central-1.amazonaws.com/cli-update/update/state/unstable/"
@@ -27,6 +31,7 @@ STATEEXE="state"
 TARGET=""
 # Optionally download and activate a project after install in the current directory
 ACTIVATE=""
+ACTIVATE_DEFAULT=""
 
 OS="linux"
 SHA256SUM="sha256sum"
@@ -131,6 +136,10 @@ while getopts "nb:t:e:f?h-:" opt; do
         eval "ACTIVATE=\"\${${OPTIND}}\""
         OPTIND=$(( OPTIND + 1 ))
         ;;
+      activate-default)
+        eval "ACTIVATE_DEFAULT=\"\${${OPTIND}}\""
+        OPTIND=$(( OPTIND + 1 ))
+        ;;
     esac
     ;;
   b)
@@ -162,10 +171,36 @@ if $NOPROMPT && [ -n "$ACTIVATE" ]; then
   exit 1
 fi
 
-# force overwrite requires no prompt flag
-if $FORCEOVERWRITE && ( ! $NOPROMPT ); then
-  error "Flag -f also requires -n"
+if [ -n "$ACTIVATE" ] && [ -n "$ACTIVATE_DEFAULT" ]; then
+  error "Flags --activate and --activate-default cannot be set at the same time."
   exit 1
+fi
+
+INSTALLDIR="`dirname \`which $STATEEXE\` 2>/dev/null`"
+
+# stop if previous installation is detected unless
+# - FORCEOVERWRITE is specified OR
+# - a TARGET directory is specified that differs from INSTALLDIR
+if [ ! -z "$INSTALLDIR" ] && ( ! $FORCEOVERWRITE ) && ( \
+      [ -z $TARGET ] || [ "$TARGET" = "$INSTALLDIR" ] \
+   ); then
+
+  if [ -n "${ACTIVATE}" ]; then
+    exec $INSTALLDIR/$STATEXE activate ${ACTIVATE}
+  elif [ -n "${ACTIVATE_DEFAULT}" ]; then
+    exec $INSTALLDIR/$STATEXE activate ${ACTIVATE_DEFAULT} --default
+  fi
+
+  warn "State Tool is already installed at $INSTALLDIR, to reinstall run this command again with -f"
+  echo "To update the State Tool to the latest version, please run 'state update'."
+  echo "To install in a different location, please specify the installation directory with '-t TARGET_DIR'."
+  exit 0
+fi
+
+# If '-f' is passed and a previous installation exists we set NOPROMPT
+# as we will overwrite the existing State Tool installation
+if $FORCEOVERWRITE && [ ! -z "$INSTALLDIR" ]; then
+  NOPROMPT=true
 fi
 
 echo "\
@@ -244,20 +279,6 @@ fetchArtifact () {
   fi
   chmod +x $TMPDIR/$TMPEXE
 }
-
-INSTALLDIR="`dirname \`which $STATEEXE\` 2>/dev/null`"
-
-# stop if previous installation is detected unless
-# - FORCEOVERWRITE is specified OR
-# - a TARGET directory is specified that differs from INSTALLDIR
-if [ ! -z "$INSTALLDIR" ] && ( ! $FORCEOVERWRITE ) && ( \
-      [ -z $TARGET ] || [ "$TARGET" = "$INSTALLDIR" ] \
-   ); then
-  warn "Previous installation detected at $INSTALLDIR"
-  echo "To update the State Tool to the latest version, please run 'state update'."
-  echo "To install in a different location, please specify the installation directory with '-t TARGET_DIR'."
-  exit 0
-fi
 
 # Use target directory provided by user with no verification or default to
 # one of two commonly used directories. 
@@ -367,10 +388,16 @@ update_rc_file() {
     manual_installation_instructions
   fi
 
-  info "Updating environment..."
-  pathenv="export PATH=\"\$PATH:$INSTALLDIR\" # ActiveState State Tool"
-  echo "" >> "$RC_FILE"
-  echo "$pathenv" >> "$RC_FILE"
+  RC_KEY="# ActiveState State Tool"
+
+  echo "Updating environment..."
+  pathenv="export PATH=\"\$PATH:$INSTALLDIR\" $RC_KEY"
+  if grep -q "$RC_KEY" $RC_FILE; then
+    sed -i -E "s@^export.+$RC_KEY@$pathenv@" $RC_FILE
+  else
+    echo "" >> "$RC_FILE"
+    echo "$pathenv" >> "$RC_FILE"
+  fi
 }
 
 # Write install file
@@ -406,6 +433,8 @@ fi
 if [ -n "${ACTIVATE}" ]; then
   # control flow of this script ends with this line: replace the shell with the activated project's shell
   exec $STATEPATH activate ${ACTIVATE}
+elif [ -n "${ACTIVATE_DEFAULT}" ]; then
+  exec $STATEPATH activate ${ACTIVATE_DEFAULT} --default
 else
   echo "\n\
 \033[32m╔══════════════════════╗

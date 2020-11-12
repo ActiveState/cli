@@ -29,6 +29,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/cli/internal/strutils"
 )
 
@@ -1102,7 +1103,7 @@ func ParseVersionInfo(projectFilePath string) (*VersionInfo, *failures.Failure) 
 	}
 
 	lock := strings.TrimSpace(versionStruct.Lock)
-	match, fail := regexp.MatchString(`^([\w\/\-]+@)\d+\.\d+\.\d+-(SHA)?[a-f0-9]+`, lock)
+	match, fail := regexp.MatchString(`^([\w\/\-\.]+@)\d+\.\d+\.\d+-(SHA)?[a-f0-9]+`, lock)
 	if fail != nil || !match {
 		return nil, FailInvalidVersion.New(locale.T("err_invalid_version"))
 	}
@@ -1214,13 +1215,19 @@ func storeProjectMapping(namespace, projectPath string) {
 // on a user's filesystem from the projects config entry
 func CleanProjectMapping() {
 	projects := viper.GetStringMapStringSlice(LocalProjectsConfigKey)
+	seen := map[string]bool{}
 
 	for namespace, paths := range projects {
-		for _, path := range paths {
+		for i, path := range paths {
 			if !fileutils.DirExists(path) {
-				delete(projects, namespace)
+				projects[namespace] = sliceutils.RemoveFromStrings(projects[namespace], i)
 			}
 		}
+		if ok, _ := seen[strings.ToLower(namespace)]; ok || len(projects[namespace]) == 0 {
+			delete(projects, namespace)
+			continue
+		}
+		seen[strings.ToLower(namespace)] = true
 	}
 
 	viper.Set("projects", projects)

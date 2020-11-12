@@ -59,13 +59,13 @@ func (v *VirtualEnvironment) Setup(installIfNecessary bool) *failures.Failure {
 		return nil
 	}
 	if installIfNecessary {
-		installer := runtime.NewInstaller(v.runtime)
-		_, installed, fail := installer.Install()
-		if fail != nil {
-			return fail
-		}
-
-		if !installed && v.onUseCache != nil {
+		if !v.runtime.IsCachedRuntime() {
+			installer := runtime.NewInstaller(v.runtime)
+			_, _, fail := installer.Install()
+			if fail != nil {
+				return fail
+			}
+		} else if v.onUseCache != nil {
 			v.onUseCache()
 		}
 	} else {

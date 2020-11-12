@@ -50,6 +50,9 @@ type changeset struct {
 }
 
 func (r *Revert) Run(params *Params) error {
+	if r.project == nil {
+		return locale.NewInputError("err_no_project")
+	}
 	commitID := strfmt.UUID(params.CommitID)
 	revertCommit, err := model.GetCommit(strfmt.UUID(params.CommitID))
 	if err != nil {

@@ -162,20 +162,23 @@ func SetupProjectRcFile(templateName, ext string, env map[string]string, out out
 	prj := project.Get()
 
 	userScripts := ""
+
+	// Yes this is awkward, issue here - https://www.pivotaltracker.com/story/show/175619373
 	activatedKey := fmt.Sprintf("activated_%s", prj.Namespace().String())
 	for _, event := range prj.Events() {
 		v, err := event.Value()
 		if err != nil {
 			return nil, failures.FailMisc.Wrap(err)
 		}
+
 		if strings.ToLower(event.Name()) == "first-activate" && !viper.GetBool(activatedKey) {
 			userScripts = v + "\n" + userScripts
-			viper.Set(activatedKey, true)
 		}
 		if strings.ToLower(event.Name()) == "activate" {
 			userScripts = userScripts + "\n" + v
 		}
 	}
+	viper.Set(activatedKey, true)
 
 	inuse := []string{}
 	scripts := map[string]string{}

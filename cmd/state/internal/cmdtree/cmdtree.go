@@ -88,6 +88,13 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 	addAs.deprecatedAlias(importCmd, "import")
 	addAs.deprecatedAlias(searchCmd, "search")
 
+	bundlesCmd := newBundlesCommand(prime)
+	bundlesCmd.AddChildren(
+		newBundleInstallCommand(prime),
+		newBundleUninstallCommand(prime),
+		newBundlesSearchCommand(prime),
+	)
+
 	secretsClient := secretsapi.InitializeClient()
 	secretsCmd := newSecretsCommand(secretsClient, prime)
 	secretsCmd.AddChildren(
@@ -96,12 +103,15 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		newSecretsSyncCommand(secretsClient, prime),
 	)
 
+	projectsCmd := newProjectsCommand(prime)
+	projectsCmd.AddChildren(newRemoteProjectsCommand(prime))
+
 	stateCmd := newStateCommand(globals, prime)
 	stateCmd.AddChildren(
 		newActivateCommand(prime),
 		newInitCommand(prime),
 		newPushCommand(prime),
-		newProjectsCommand(prime),
+		projectsCmd,
 		authCmd,
 		exportCmd,
 		newOrganizationsCommand(prime),
@@ -112,6 +122,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		importCmd,
 		searchCmd,
 		pkgsCmd,
+		bundlesCmd,
 		platformsCmd,
 		newHistoryCommand(prime),
 		cleanCmd,

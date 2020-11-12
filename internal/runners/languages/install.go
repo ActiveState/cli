@@ -36,6 +36,10 @@ func (u *Update) Run(params *UpdateParams) error {
 		return err
 	}
 
+	if u.project == nil {
+		return locale.NewInputError("err_no_project")
+	}
+
 	err = ensureLanguageProject(lang, u.project)
 	if err != nil {
 		return err

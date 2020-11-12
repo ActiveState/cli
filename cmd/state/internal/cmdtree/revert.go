@@ -28,5 +28,5 @@ func newRevertCommand(prime *primer.Values) *captain.Command {
 		func(ccmd *captain.Command, args []string) error {
 			return runner.Run(params)
 		},
-	)
+	).SetGroup(VCSGroup)
 }

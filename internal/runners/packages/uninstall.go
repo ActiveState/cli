@@ -34,13 +34,17 @@ func NewUninstall(prime primeable) *Uninstall {
 }
 
 // Run executes the uninstall behavior.
-func (r *Uninstall) Run(params UninstallRunParams) error {
+func (r *Uninstall) Run(params UninstallRunParams, pt PackageType) error {
 	logging.Debug("ExecuteUninstall")
+	if r.proj == nil {
+		return locale.NewInputError("err_no_project")
+	}
+
 	// Commit the package
 	language, fail := model.LanguageForCommit(r.proj.CommitUUID())
 	if fail != nil {
 		return locale.WrapError(fail, "err_fetch_languages")
 	}
 
-	return executePackageOperation(r.proj, r.out, r.auth, r.Prompter, language, params.Name, "", model.OperationRemoved)
+	return executePackageOperation(r.proj, r.out, r.auth, r.Prompter, language, params.Name, "", model.OperationRemoved, pt)
 }

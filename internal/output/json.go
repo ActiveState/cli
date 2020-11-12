@@ -3,6 +3,7 @@ package output
 import (
 	"encoding/json"
 
+	"github.com/ActiveState/cli/internal/colorize"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -39,6 +40,7 @@ func (f *JSON) Print(value interface{}) {
 			f.Error(locale.T("err_could_not_marshal_print"))
 			return
 		}
+		b = []byte(colorize.StripColorCodes(string(b)))
 	}
 
 	f.cfg.OutWriter.Write(b)
@@ -66,6 +68,7 @@ func (f *JSON) Error(value interface{}) {
 			logging.Error("Could not marshal value, error: %v", err)
 			b = []byte(locale.T("err_could_not_marshal_print"))
 		}
+		b = []byte(colorize.StripColorCodes(string(b)))
 	}
 
 	f.cfg.OutWriter.Write(b)
