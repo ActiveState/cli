@@ -268,7 +268,7 @@ func UpdateBranchCommit(branchID strfmt.UUID, commitID strfmt.UUID) error {
 			)
 			return errs.AddTips(err, "Run [ACTIONABLE]state fork <project namespace>[/RESET] to make changes to this project")
 		}
-		return FailUpdateBranch.New(locale.Tr("err_update_branch", api.ErrorMessageFromPayload(err))).ToError()
+		return locale.NewError("err_update_branch", api.ErrorMessageFromPayload(err))
 	}
 	return nil
 }
@@ -476,7 +476,7 @@ func CommitPlatform(owner, prjName string, op Operation, name, version string, w
 	case OperationAdded:
 		msgL10nKey = "commit_message_add_platform"
 	case OperationUpdated:
-		return failures.FailDeveloper.New("this is not supported yet")
+		return failures.FailDeveloper.New("this is not supported yet").ToError()
 	case OperationRemoved:
 		msgL10nKey = "commit_message_removed_platform"
 	}
@@ -520,7 +520,7 @@ func CommitLanguage(owner, project string, op Operation, name, version string) e
 	case OperationAdded:
 		msgL10nKey = "commit_message_add_language"
 	case OperationUpdated:
-		return failures.FailDeveloper.New("this is not supported yet")
+		return failures.FailDeveloper.New("this is not supported yet").ToError()
 	case OperationRemoved:
 		msgL10nKey = "commit_message_removed_language"
 	}
