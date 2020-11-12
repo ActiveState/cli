@@ -67,9 +67,9 @@ func (r *Activate) activateAndWait(proj *project.Project, venv *virtualenvironme
 
 	analytics.Event(analytics.CatActivationFlow, "before-subshell")
 
-	fail := <-r.subshell.Failures()
-	if fail != nil {
-		return locale.WrapError(fail, "error_in_active_subshell", "Failure encountered in active subshell")
+	err = <-r.subshell.Errors()
+	if err != nil {
+		return locale.WrapError(err, "error_in_active_subshell", "Failure encountered in active subshell")
 	}
 
 	return nil

@@ -65,6 +65,10 @@ scripts:
       import sys
       print(sys.version)
     language: python2,python3
+  - name: nonZeroExit
+    value: |
+      exit 123
+    standalone: true
 `, pythonVersion))
 
 	ts.PrepareActiveStateYAML(configFileContent)
@@ -108,6 +112,9 @@ func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
 	defer ts.LogoutUser()
 
 	cp := ts.Spawn("activate")
+	cp.Expect("Default Project")
+	cp.Expect("Y/n")
+	cp.SendLine("n")
 	cp.Expect("You're Activated")
 	cp.WaitForInput(10 * time.Second)
 
@@ -195,6 +202,17 @@ func (suite *RunIntegrationTestSuite) TestRun_Help() {
 	cp.ExpectExitCode(0)
 }
 
+func (suite *RunIntegrationTestSuite) TestRun_ExitCode() {
+	suite.OnlyRunForTags(tagsuite.Run, tagsuite.ExitCode)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+	suite.createProjectFile(ts, 3)
+
+	cp := ts.Spawn("run", "nonZeroExit")
+	cp.ExpectLongString("Your script failed to execute")
+	cp.ExpectExitCode(123)
+}
+
 func (suite *RunIntegrationTestSuite) TestRun_Unauthenticated() {
 	suite.OnlyRunForTags(tagsuite.Run)
 	ts := e2e.New(suite.T(), false)
@@ -206,6 +224,10 @@ func (suite *RunIntegrationTestSuite) TestRun_Unauthenticated() {
 		e2e.WithArgs("activate"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
+	cp.Expect("Default Project")
+	cp.Expect("Y/n")
+	cp.SendLine("n")
+
 	cp.Expect("You're Activated")
 	cp.WaitForInput(120 * time.Second)
 

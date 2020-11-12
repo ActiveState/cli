@@ -104,9 +104,9 @@ func unwrapError(err error) (int, error) {
 		}
 	}
 
-	if isSilentFail(err) {
+	if isSilent(err) {
 		logging.Debug("Suppressing silent failure: %v", err.Error())
-		err = nil
+		return code, nil
 	}
 
 	return code, &OutputError{err}
@@ -130,9 +130,11 @@ Your error log is located at: %s`, logging.FilePath()))
 	}
 }
 
-func isSilentFail(errFail error) bool {
-	fail, ok := errFail.(*failures.Failure)
-	return ok && fail.Type.Matches(failures.FailSilent)
+func isSilent(err error) bool {
+	var silentErr interface {
+		IsSilent() bool
+	}
+	return errors.As(err, &silentErr) && silentErr.IsSilent()
 }
 
 // Can't pass failures as errors and still assert them as nil, so we have to typecase.

@@ -26,7 +26,7 @@ type SubShell struct {
 	rcFile          *os.File
 	cmd             *exec.Cmd
 	env             map[string]string
-	fs              chan *failures.Failure
+	errs            chan error
 	activateCommand *string
 }
 
@@ -91,14 +91,14 @@ func (v *SubShell) Activate(out output.Outputer) *failures.Failure {
 	}
 	cmd := exec.Command(v.Binary(), shellArgs...)
 
-	v.fs = sscommon.Start(cmd)
+	v.errs = sscommon.Start(cmd)
 	v.cmd = cmd
 	return nil
 }
 
-// Failures returns a channel for receiving errors related to active behavior
-func (v *SubShell) Failures() <-chan *failures.Failure {
-	return v.fs
+// Errors returns a channel for receiving errors related to active behavior
+func (v *SubShell) Errors() <-chan error {
+	return v.errs
 }
 
 // Deactivate - see subshell.SubShell

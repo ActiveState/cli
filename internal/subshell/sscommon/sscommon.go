@@ -9,6 +9,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -16,24 +17,34 @@ import (
 )
 
 var (
-	// FailExecCmd represents a failure running a cmd
-	FailExecCmd = failures.Type("sscommon.fail.execcmd")
-
 	// FailSignalCmd represents a failure sending a system signal to a cmd
 	FailSignalCmd = failures.Type("sscommon.fail.signalcmd")
 )
 
+type silentExitCodeError struct {
+	error
+}
+
+func (se silentExitCodeError) Unwrap() error {
+	return se.error
+}
+
+// IsSilent returns true, as no State Tool error message should be written for errors caused inside the sub-shell
+func (se silentExitCodeError) IsSilent() bool {
+	return true
+}
+
 // Start wires stdin/stdout/stderr into the provided command, starts it, and
 // returns a channel to monitor errors on.
-func Start(cmd *exec.Cmd) chan *failures.Failure {
+func Start(cmd *exec.Cmd) chan error {
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 
 	cmd.Start()
 
-	fs := make(chan *failures.Failure, 1)
+	errs := make(chan error, 1)
 
 	go func() {
-		defer close(fs)
+		defer close(errs)
 
 		if err := cmd.Wait(); err != nil {
 			if eerr, ok := err.(*exec.ExitError); ok {
@@ -48,16 +59,16 @@ func Start(cmd *exec.Cmd) chan *failures.Failure {
 					return
 				}
 
-				fs <- failures.FailExecCmdExit.Wrap(eerr)
+				errs <- silentExitCodeError{eerr}
 				return
 			}
 
-			fs <- FailExecCmd.Wrap(err)
+			errs <- err
 			return
 		}
 	}()
 
-	return fs
+	return errs
 }
 
 // Stop signals the provided command to terminate.
@@ -155,12 +166,12 @@ func binaryPathCmd(env []string, name string) (string, error) {
 
 	out, err := cmd.Output()
 	if err != nil {
-		return "", FailExecCmd.Wrap(err)
+		return "", errs.Wrap(err, "Failed to get output of %s", strings.Join(cmd.Args, " "))
 	}
 
 	split := strings.Split(string(out), "\r\n")
 	if len(split) == 0 {
-		return "", failures.FailCmd.New("err_sscommon_binary_path", name)
+		return "", locale.NewInputError("err_sscommon_binary_path", name)
 	}
 
 	return split[0], nil

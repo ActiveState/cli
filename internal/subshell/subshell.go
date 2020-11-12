@@ -28,8 +28,8 @@ type SubShell interface {
 	// Activate the given subshell
 	Activate(out output.Outputer) *failures.Failure
 
-	// Failures returns a channel to receive failures
-	Failures() <-chan *failures.Failure
+	// Errors returns a channel to receive errors
+	Errors() <-chan error
 
 	// Deactivate the given subshell
 	Deactivate() *failures.Failure

@@ -41,7 +41,11 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePython2() {
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
-	suite.OnlyRunForTags(tagsuite.Critical, tagsuite.Activate)
+	if runtime.GOOS == "windows" {
+		// blocked by story https://www.pivotaltracker.com/story/show/175706773
+		suite.T().Skip("Windows console does not recognize automatically send 'n' character to 'Default project'-prompt. Skipping")
+	}
+	suite.OnlyRunForTags(tagsuite.Critical, tagsuite.Activate, tagsuite.ExitCode)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -54,11 +58,11 @@ func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
 	cp.SendLine(cp.WorkDirectory())
 	cp.ExpectLongString("default project?")
 	cp.SendLine("n")
-	cp.Expect("You're Activated", 20*time.Second)
-	cp.WaitForInput(10 * time.Second)
+	cp.Expect("You're Activated")
+	cp.WaitForInput()
 
 	cp.SendLine("exit 123")
-	cp.ExpectExitCode(123, 10*time.Second)
+	cp.ExpectExitCode(123)
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivateUsingCommitID() {
