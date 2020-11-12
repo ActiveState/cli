@@ -138,8 +138,12 @@ func (r *NamespaceSelect) validatePath(namespace string, path string) *failures.
 		return fail
 	}
 
-	pjns := fmt.Sprintf("%s/%s", pj.Owner(), pj.Name())
+	// Do not validate the path with the namespace if the project is headless
+	if pj.IsHeadless() {
+		return nil
+	}
 
+	pjns := fmt.Sprintf("%s/%s", pj.Owner(), pj.Name())
 	if pjns != namespace {
 		return failures.FailUserInput.New("err_target_path_namespace_match", namespace, pjns)
 	}
