@@ -184,6 +184,13 @@ INSTALLDIR="`dirname \`which $STATEEXE\` 2>/dev/null`"
 if [ ! -z "$INSTALLDIR" ] && ( ! $FORCEOVERWRITE ) && ( \
       [ -z $TARGET ] || [ "$TARGET" = "$INSTALLDIR" ] \
    ); then
+
+  if [ -n "${ACTIVATE}" ]; then
+    exec $INSTALLDIR/$STATEXE activate ${ACTIVATE}
+  elif [ -n "${ACTIVATE_DEFAULT}" ]; then
+    exec $INSTALLDIR/$STATEXE activate ${ACTIVATE_DEFAULT} --default
+  fi
+
   warn "State Tool is already installed at $INSTALLDIR, to reinstall run this command again with -f"
   echo "To update the State Tool to the latest version, please run 'state update'."
   echo "To install in a different location, please specify the installation directory with '-t TARGET_DIR'."
