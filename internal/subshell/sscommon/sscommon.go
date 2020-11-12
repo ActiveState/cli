@@ -21,6 +21,19 @@ var (
 	FailSignalCmd = failures.Type("sscommon.fail.signalcmd")
 )
 
+type silentExitCodeError struct {
+	error
+}
+
+func (se silentExitCodeError) Unwrap() error {
+	return se.error
+}
+
+// IsSilent returns true, as no State Tool error message should be written for errors caused inside the sub-shell
+func (se silentExitCodeError) IsSilent() bool {
+	return true
+}
+
 // Start wires stdin/stdout/stderr into the provided command, starts it, and
 // returns a channel to monitor errors on.
 func Start(cmd *exec.Cmd) chan error {
@@ -46,7 +59,7 @@ func Start(cmd *exec.Cmd) chan error {
 					return
 				}
 
-				errs <- eerr
+				errs <- silentExitCodeError{eerr}
 				return
 			}
 

@@ -26,9 +26,10 @@ func unwrapExitError(err error) (bool, int) {
 // UnwrapExitCode checks if the given error is a failure of type FailExecCmdExit and
 // returns the ExitCode of the process that failed with this error
 func UnwrapExitCode(errFail error) int {
-	isExitError, code := unwrapExitError(errFail)
+	var eerr interface{ ExitCode() int }
+	isExitError := errors.As(errFail, &eerr)
 	if isExitError {
-		return code
+		return eerr.ExitCode()
 	}
 
 	// failure might be in the error stack
@@ -42,9 +43,9 @@ func UnwrapExitCode(errFail error) int {
 	}
 
 	err := fail.ToError()
-	isExitError, code = unwrapExitError(err)
+	isExitError = errors.As(err, &eerr)
 	if isExitError {
-		return code
+		return eerr.ExitCode()
 	}
 
 	return 1
