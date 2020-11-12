@@ -29,6 +29,10 @@ func ActivationPID() int32 {
 			return pid
 		}
 
+		if ppid == 0 {
+			return -1
+		}
+
 		pproc, err := process.NewProcess(ppid)
 		if err != nil {
 			if err != process.ErrorProcessNotRunning {
