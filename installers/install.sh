@@ -186,9 +186,9 @@ if [ ! -z "$INSTALLDIR" ] && ( ! $FORCEOVERWRITE ) && ( \
    ); then
 
   if [ -n "${ACTIVATE}" ]; then
-    exec $INSTALLDIR/$STATEXE activate ${ACTIVATE}
+    exec $INSTALLDIR/$STATEEXE activate ${ACTIVATE}
   elif [ -n "${ACTIVATE_DEFAULT}" ]; then
-    exec $INSTALLDIR/$STATEXE activate ${ACTIVATE_DEFAULT} --default
+    exec $INSTALLDIR/$STATEEXE activate ${ACTIVATE_DEFAULT} --default
   fi
 
   warn "State Tool is already installed at $INSTALLDIR, to reinstall run this command again with -f"
@@ -376,6 +376,10 @@ manual_installation_instructions() {
 
 manual_update_instructions() {
   info "State Tool installation complete."
+  # skip instruction to source rc file when we are activating
+  if [ ( -n "${ACTIVATE}" ) -or ( -n "${ACTIVATE_DEFAULT}" ) ]; then
+    return
+  fi
   echo "Please either run 'source $RC_FILE' or start a new login shell in "
   echo "order to start using the '$STATEEXE' program."
 }
@@ -405,7 +409,11 @@ STATEPATH=$INSTALLDIR/$STATEEXE
 CONFIGDIR=$($STATEPATH "export" "config" "--filter=dir")
 echo "install.sh" > $CONFIGDIR/"installsource.txt"
 
-$STATEPATH _prepare || exit $?
+if [ ( -n "${ACTIVATE}" ) -or ( -n "${ACTIVATE_DEFAULT}") ]; then
+  $STATEPATH _prepare 1>/dev/null || exit $?
+else
+  $STATEPATH _prepare || exit $?
+fi
 
 # Check if the installation is in $PATH, if so we also check if the activate
 # flag was passed and attempt to activate the project
