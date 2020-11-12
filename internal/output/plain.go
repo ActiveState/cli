@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
 	"reflect"
 	"sort"
 	"strings"
@@ -12,7 +11,6 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/mitchellh/go-wordwrap"
 	"github.com/thoas/go-funk"
-	"golang.org/x/crypto/ssh/terminal"
 
 	"github.com/ActiveState/cli/internal/colorize"
 	"github.com/ActiveState/cli/internal/failures"
@@ -20,7 +18,8 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
-	"github.com/ActiveState/cli/internal/tabulate"
+	"github.com/ActiveState/cli/internal/table"
+	"github.com/ActiveState/cli/internal/termutils"
 )
 
 type PlainOpts string
@@ -95,11 +94,7 @@ func (f *Plain) writeNow(writer io.Writer, value string) {
 
 func wordWrap(text string) string {
 	maxTermWidth := 160
-	termWidth, _, err := terminal.GetSize(int(os.Stdout.Fd()))
-	if err != nil {
-		logging.Debug("Cannot get terminal size: %v", err)
-		return wordwrap.WrapString(text, uint(maxTermWidth))
-	}
+	termWidth := termutils.GetWidth()
 
 	if termWidth > maxTermWidth {
 		termWidth = maxTermWidth
@@ -260,14 +255,10 @@ func sprintTable(slice []interface{}) (string, error) {
 		return "", nil
 	}
 
-	termWidth, _, err := terminal.GetSize(int(os.Stdout.Fd()))
-	if err != nil || termWidth == 0 {
-		logging.Debug("Cannot get terminal size: %v", err)
-		termWidth = 100
-	}
+	termWidth := termutils.GetWidth()
 
 	headers := []string{}
-	rows := [][]interface{}{}
+	rows := [][]string{}
 	for _, v := range slice {
 		if !isStruct(v) {
 			return "", errors.New("Tried to sprintTable with slice that doesn't contain all structs")
@@ -279,7 +270,7 @@ func sprintTable(slice []interface{}) (string, error) {
 		}
 
 		firstIteration := len(headers) == 0
-		row := []interface{}{}
+		row := []string{}
 		for _, field := range meta {
 			if funk.Contains(field.opts, string(HidePlain)) {
 				continue
@@ -287,7 +278,6 @@ func sprintTable(slice []interface{}) (string, error) {
 
 			if firstIteration {
 				headers = append(headers, localizedField(field.l10n))
-				termWidth = termWidth - (len(headers) * 10) // Account for cell padding, cause tabulate doesn't..
 			}
 
 			stringValue, err := sprint(field.value)
@@ -309,34 +299,7 @@ func sprintTable(slice []interface{}) (string, error) {
 		rows = append(rows, row)
 	}
 
-	if termWidth == 0 {
-		termWidth = 100
-	}
-
-	t := tabulate.Create(rows)
-	t.SetWrapDelimiter(' ')
-	t.SetWrapStrings(true)
-	t.SetMaxCellSize(termWidth)
-	t.SetHeaders(headers)
-
-	// Don't print whitespace lines
-	t.SetHideLines([]string{"betweenLine", "top", "aboveTitle", "LineTop", "LineBottom", "bottomLine"})
-	t.SetAlign("left")
-
-	// Set our own custom table format
-	tabulate.TableFormats["standard"] = tabulate.TableFormat{
-		LineBelowHeader: tabulate.Line{"[DISABLED]", dash, "", "[/RESET]"},
-		HeaderRow:       tabulate.Row{"[HEADING]", "", "[/RESET]"},
-		DataRow:         tabulate.Row{"", "", ""},
-		TitleRow:        tabulate.Row{"", "", ""},
-		Padding:         1,
-	}
-
-	// Adjust padding value for the above table format
-	tabulate.MIN_PADDING = 4
-
-	render := t.Render("standard")
-	return strings.TrimSuffix(render, "\n"), nil
+	return table.New(headers).AddRow(rows...).Render(), nil
 }
 
 // localizedField is a little helper that will return the localized version of the given string

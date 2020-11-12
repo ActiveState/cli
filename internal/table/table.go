@@ -1,167 +1,136 @@
 package table
 
 import (
-	"bytes"
-	"fmt"
-	"os"
 	"strings"
-	"unicode/utf8"
 
-	"github.com/ActiveState/cli/internal/logging"
-	"golang.org/x/crypto/ssh/terminal"
+	"github.com/ActiveState/cli/internal/sliceutils"
+	"github.com/ActiveState/cli/internal/termutils"
 )
 
 const dash = "\u2500"
+const linebreak = "\n"
+const padding = 2
 
 type FormatFunc func(string, ...interface{}) string
 
+type row struct {
+	columns []string
+}
+
 type Table struct {
-	rows   [][]string
-	header []string
-	// TODO: Make column width part of a row struct?
-	columnWidths []int
-	padding      int
-	// TODO: Add logic to deal with max column size
-	maxSize int
-
-	headerFormatter FormatFunc
-	headerFormat    string
+	headers []string
+	rows    []row
 }
 
-type writeBuffer struct {
-	bytes.Buffer
+func New(headers []string) *Table {
+	return &Table{headers, []row{}}
 }
 
-func createBuffer() *writeBuffer {
-	return &writeBuffer{}
-}
-
-func (b *writeBuffer) Write(str string, count int) *writeBuffer {
-	for i := 0; i < count; i++ {
-		b.WriteString(str)
+func (t *Table) AddRow(vs ...[]string) *Table {
+	for _, v := range vs {
+		t.rows = append(t.rows, row{v})
 	}
-	return b
+	return t
 }
 
-func (b *writeBuffer) String() string {
-	return b.String()
-}
-
-func Create(data interface{}) *Table {
-	t := Table{
-		// Default padding value
-		padding:      4,
-		headerFormat: "%s",
-	}
-
-	switch v := data.(type) {
-	case [][]string:
-		data := data.([][]string)
-		rows := make([][]string, len(data))
-		for i, element := range data {
-			rows[i] = element
-		}
-		t.rows = rows
-	default:
-		// TODO: Do something else
-		fmt.Println(v)
-	}
-
-	return &t
-}
-
-func (t *Table) AddHeader(header []string) {
-	t.header = header
-}
-
-func (t *Table) SetPadding(padding int) {
-	t.padding = padding
-}
-
-func (t *Table) WithHeaderFormatter(format FormatFunc) {
-	t.headerFormatter = format
-}
-
-func (t *Table) WithHeaderFormat(format string) {
-	t.headerFormat = format
-}
-
-func (t *Table) Render() (string, error) {
+func (t *Table) Render() string {
 	if len(t.rows) == 0 {
-		return "", nil
+		return ""
 	}
 
-	// TODO: Deal with max terminal width
-	// termWidth := t.getWidth()
+	termWidth := termutils.GetWidth()
+	colWidths, total := t.calculateWidth(termWidth)
 
-	t.calculateWidths()
-	out := t.renderHeader()
-	out += t.renderRows()
-	return out, nil
+	out := ""
+	out += renderRow(t.headers, colWidths)
+	out += "[DISABLED]" + strings.Repeat(dash, total) + "[/RESET]"
+	for _, row := range t.rows {
+		out += renderRow(row.columns, colWidths)
+	}
+
+	return out
 }
 
-func (t *Table) calculateWidths() {
-	t.columnWidths = make([]int, len(t.header))
-	for i, v := range t.header {
-		if w := utf8.RuneCountInString(v) + t.padding; w > t.columnWidths[i] {
-			t.columnWidths[i] = w
+func (t *Table) calculateWidth(maxTotalWidth int) ([]int, int) {
+	// Calculate required width of each column
+	colWidths := make([]int, len(t.headers))
+	for n, header := range t.headers {
+		if currentSize, ok := sliceutils.GetInt(colWidths, n); !ok || currentSize < len(header) {
+			colWidths[n] = len(header)
 		}
-	}
-
-	for _, row := range t.rows {
-		for i, v := range row {
-			if w := utf8.RuneCountInString(v) + t.padding; w > t.columnWidths[i] {
-				t.columnWidths[i] = w
+		for _, row := range t.rows {
+			if rowValue, ok := sliceutils.GetString(row.columns, n); ok && colWidths[n] < len(rowValue) {
+				colWidths[n] = len(row.columns[n])
 			}
 		}
 	}
-}
 
-func (t *Table) renderHeader() string {
-	var out string
-	for i, header := range t.header {
-		formatted := fmt.Sprintf(t.headerFormat, header)
-		out += formatted + strings.Repeat(" ", t.columnWidths[i]-utf8.RuneCountInString(header))
-		out += t.padRow(out)
+	// Add padding and calculate total
+	total := 0
+	for n, w := range colWidths {
+		colWidths[n] = w + (padding * 2)
+		total += colWidths[n]
 	}
 
-	out += "\n"
-	for i := range t.columnWidths {
-		out += strings.Repeat(dash, t.columnWidths[i])
-	}
-	out += "\n"
-
-	return out
-}
-
-func (t *Table) renderRows() string {
-	var out string
-	for _, row := range t.rows {
-		for i, data := range row {
-			out += data + strings.Repeat(" ", t.columnWidths[i]-utf8.RuneCountInString(data))
-			out += t.padRow(out)
+	// If over max total; reduce size according to percentage of total
+	if total > maxTotalWidth {
+		for n, w := range colWidths {
+			colWidths[n] = int(float64(w) / float64(total) * float64(maxTotalWidth))
 		}
-		out += "\n"
 	}
-	return out
+
+	return colWidths, total
 }
 
-func (t *Table) padRow(row string) string {
-	// TODO: Use different value for padding and spacing b/w rows
-	b := createBuffer()
-	b.Write(" ", t.padding)
-	b.Write(row, 1)
-	b.Write(" ", t.padding)
-	return b.String()
+func renderRow(providedColumns []string, colWidths []int) string {
+	// don't want to modify the provided slice
+	columns := make([]string, len(providedColumns))
+	copy(columns, providedColumns)
+
+	lastIterLen := -1
+	result := ""
+
+	// Keep rendering lines until there's no column data left to render
+	for len(result) != lastIterLen {
+		lastIterLen = len(result) + len(linebreak)
+
+		// Iterate over the columns by their line sizes
+		for n, maxlen := range colWidths {
+			if len(columns) < n+1 {
+				continue
+			}
+
+			colValue := columns[n]
+			if colValue == "" {
+				break
+			}
+
+			// Detect multi column span
+			if len(colWidths) > n+1 && len(columns) == n+1 {
+				for _, v := range colWidths[n+1:] {
+					maxlen += v
+				}
+			}
+
+			maxlen = maxlen - (padding * 2)
+
+			// How much of the colValue are we using this line?
+			end := len(colValue)
+			if end > maxlen {
+				end = maxlen
+			}
+
+			suffix := strings.Repeat(" ", maxlen-end)
+			result += pad(colValue[0:end] + suffix)
+			columns[n] = colValue[end:]
+		}
+		result += linebreak
+	}
+
+	return strings.TrimRight(result, linebreak)
 }
 
-func (t *Table) getWidth() int {
-	termWidth, _, err := terminal.GetSize(int(os.Stdout.Fd()))
-	if err != nil || termWidth == 0 {
-		// TODO: return err?
-		logging.Debug("Cannot get terminal size: %v", err)
-		termWidth = 100
-	}
-	termWidth = termWidth - (len(t.header) * 10) // Account for cell padding, cause tabulate doesn't..
-	return termWidth
+func pad(v string) string {
+	padded := strings.Repeat(" ", padding)
+	return padded + v + padded
 }
