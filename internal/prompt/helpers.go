@@ -2,10 +2,8 @@ package prompt
 
 import (
 	"errors"
-	"fmt"
 	"math"
 	"reflect"
-	"runtime"
 	"strings"
 
 	"gopkg.in/AlecAivazis/survey.v1"
@@ -26,31 +24,26 @@ func init() {
 	core.UnmarkedOptionIcon = "[ ]"
 	core.ErrorTemplate = locale.Tt("survey_error_template")
 
-	color := "cyan"
-	if runtime.GOOS == "windows" {
-		color = "cyan+h"
-	}
-
 	// Drop questionicon from templates as it causes indented text
-	survey.SelectQuestionTemplate = fmt.Sprintf(`{{ .Message }}
+	survey.SelectQuestionTemplate = `{{ .Message }}
 {{- "\n"}}
 {{- range $ix, $choice := .PageEntries}}
 	{{- "\n"}}
-	{{- if eq $ix $.SelectedIndex}}{{color "%s"}}{{ SelectFocusIcon }} {{else}}  {{end}}
+	{{- if eq $ix $.SelectedIndex}}{{color "cyan+h"}}{{ SelectFocusIcon }} {{else}}  {{end}}
 	{{- $choice}}
 	{{- color "reset"}}
 {{- end}}
-`, color)
+`
 
-	survey.InputQuestionTemplate = fmt.Sprintf(`{{- if ne .Message ""}}{{- .Message }}{{- "\n"}}{{- end}}
-{{- color "%s"}}{{- "> "}}{{- color "reset"}}`, color)
+	survey.InputQuestionTemplate = `{{- if ne .Message ""}}{{- .Message }}{{- "\n"}}{{- end}}
+{{- color "cyan+h"}}{{- "> "}}{{- color "reset"}}`
 
-	survey.ConfirmQuestionTemplate = fmt.Sprintf(`{{ .Message }}{{" "}}
-{{- color "%s"}}{{- if .Default}}(Y/n) {{- else}}(y/N) {{- end}}{{- color "reset"}}
-{{color "%s"}}{{- "> "}}{{- color "reset"}}`, color, color)
+	survey.ConfirmQuestionTemplate = `{{ .Message }}{{" "}}
+{{- color "cyan+h"}}{{- if .Default}}(Y/n) {{- else}}(y/N) {{- end}}{{- color "reset"}}
+{{color "cyan+h"}}{{- "> "}}{{- color "reset"}}`
 
-	survey.PasswordQuestionTemplate = fmt.Sprintf(`{{- if ne .Message ""}}{{- .Message }}{{end}}
-{{color "%s"}}{{- "> "}}{{- color "reset"}}`, color)
+	survey.PasswordQuestionTemplate = `{{- if ne .Message ""}}{{- .Message }}{{end}}
+{{color "cyan+h"}}{{- "> "}}{{- color "reset"}}`
 }
 
 // inputRequired does not allow an empty value
