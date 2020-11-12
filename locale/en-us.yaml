@@ -1242,8 +1242,8 @@ field_organization:
   other: Organization
 request_timed_out:
   other: A request for data took too long - Trying again may help
-err_recipe_platforms:
-  other: Filter returned multiple platform IDs where only one was expected
+err_recipe_no_platform:
+  other: Filter returned no valid platform IDs.
 no_commits:
   other: No commits exist yet for [NOTICE]{{.V0}}[/RESET]
 err_orgs_length:
