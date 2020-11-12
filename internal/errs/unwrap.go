@@ -6,23 +6,6 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 )
 
-func unwrapExitError(err error) (bool, int) {
-	var eerr interface{ ExitCode() int }
-	isExitError := errors.As(err, &eerr)
-	if isExitError {
-		// If exit error happened in activated shell, do not forward exit code, but return 0
-		var activatedErr interface{ IsFromActivatedShell() }
-		isFromActivatedShell := errors.As(err, &activatedErr)
-		if isFromActivatedShell {
-			return true, 0
-		}
-
-		return true, eerr.ExitCode()
-	}
-
-	return false, 0
-}
-
 // UnwrapExitCode checks if the given error is a failure of type FailExecCmdExit and
 // returns the ExitCode of the process that failed with this error
 func UnwrapExitCode(errFail error) int {
