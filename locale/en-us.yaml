@@ -1095,10 +1095,6 @@ err_obtaining_change_request:
   other: Cannot obtain change request
 package_no_data:
   other: No data found - Please verify the provided commit id
-package_search_no_packages:
-  other: Currently no package of the provided name is available on the ActiveState Platform.
-bundle_search_no_packages:
-  other: Currently no bundle of the provided name is available on the ActiveState Platform.
 package_list_no_packages:
   other: The project has no packages to list.
 bundle_list_no_packages:
