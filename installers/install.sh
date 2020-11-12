@@ -409,11 +409,7 @@ STATEPATH=$INSTALLDIR/$STATEEXE
 CONFIGDIR=$($STATEPATH "export" "config" "--filter=dir")
 echo "install.sh" > $CONFIGDIR/"installsource.txt"
 
-if [ ( -n "${ACTIVATE}" ) -or ( -n "${ACTIVATE_DEFAULT}") ]; then
-  $STATEPATH _prepare 1>/dev/null || exit $?
-else
-  $STATEPATH _prepare || exit $?
-fi
+$STATEPATH _prepare || exit $?
 
 # Check if the installation is in $PATH, if so we also check if the activate
 # flag was passed and attempt to activate the project
