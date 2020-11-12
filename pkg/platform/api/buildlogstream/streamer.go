@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
@@ -85,6 +86,8 @@ func (r *Request) responseReader(conn *websocket.Conn, readErr chan error) {
 
 	r.msgHandler.BuildStarting(total)
 
+	var artifactErr error
+
 	defer func() {
 		readErr <- nil
 	}()
@@ -102,7 +105,7 @@ func (r *Request) responseReader(conn *websocket.Conn, readErr chan error) {
 
 		switch msg.Type {
 		case "build_failed":
-			readErr <- locale.NewError("err_logstream_build_failed", "Build failed with error message: {{.V0}}.", msg.ErrorMessage)
+			readErr <- locale.WrapError(artifactErr, "err_logstream_build_failed", "Build failed with error message: {{.V0}}.", msg.ErrorMessage)
 		case "build_succeeded":
 			readErr <- nil
 		case "artifact_started":
@@ -116,6 +119,7 @@ func (r *Request) responseReader(conn *websocket.Conn, readErr chan error) {
 			r.msgHandler.ArtifactBuildCompleted(artifactName, end, total)
 		case "artifact_failed":
 			r.msgHandler.ArtifactBuildFailed(artifactName, msg.ErrorMessage)
+			artifactErr = locale.WrapError(artifactErr, "err_artifact_failed", "Failed to build \"{{.V0}}\", error reported: {{.V1}}.", artifactName, msg.ErrorMessage)
 		}
 	}
 }
@@ -153,4 +157,49 @@ func artifactDescription(artifactID strfmt.UUID, artifactMap map[strfmt.UUID]art
 	}
 
 	return *v.Name + version
+}
+
+func fetchDepTree(ingredients []*inventory_models.V1SolutionRecipeRecipeResolvedIngredientsItems) (direct map[strfmt.UUID][]strfmt.UUID, recursive map[strfmt.UUID][]strfmt.UUID) {
+	directdeptree := map[strfmt.UUID][]strfmt.UUID{}
+	for _, ingredient := range ingredients {
+		if ingredient.IngredientVersion == nil || ingredient.IngredientVersion.IngredientVersionID == nil {
+			continue
+		}
+
+		// Construct directdeptree entry
+		id := ingredient.IngredientVersion.IngredientVersionID
+		if _, ok := directdeptree[*id]; !ok {
+			directdeptree[*id] = []strfmt.UUID{}
+		}
+
+		// Add direct dependencies
+		for _, dep := range ingredient.Dependencies {
+			if dep.IngredientVersionID == nil {
+				continue
+			}
+			directdeptree[*id] = append(directdeptree[*id], *dep.IngredientVersionID)
+		}
+	}
+
+	// Now resolve ALL dependencies, not just the direct ones
+	deptree := map[strfmt.UUID][]strfmt.UUID{}
+	for ingredientID, _ := range directdeptree {
+		deptree[ingredientID] = recursiveDeps(directdeptree, ingredientID)
+	}
+
+	return directdeptree, deptree
+}
+
+func recursiveDeps(directdeptree map[strfmt.UUID][]strfmt.UUID, id strfmt.UUID) []strfmt.UUID {
+	deps := []strfmt.UUID{}
+	if _, ok := directdeptree[id]; !ok {
+		return deps
+	}
+
+	for _, dep := range directdeptree[id] {
+		deps = append(deps, dep)
+		deps = append(deps, recursiveDeps(directdeptree, dep)...)
+	}
+
+	return deps
 }

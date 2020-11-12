@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/download"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -220,7 +221,7 @@ func (r *Download) fetchArtifacts(commitID, recipeID, orgID, projectID strfmt.UU
 func (r *Download) waitForArtifacts(recipeID strfmt.UUID) error {
 	logstream := buildlogstream.NewRequest(recipeID, r.runtime.msgHandler)
 	if err := logstream.Wait(); err != nil {
-		return locale.WrapError(err, "err_wait_artifacts_logstream", "Error happened while waiting for builds to complete")
+		return errs.Wrap(err, "Error happened while waiting for builds to complete")
 	}
 
 	return nil

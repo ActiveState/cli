@@ -1,18 +1,26 @@
 package runbits
 
 import (
-	"strconv"
+	"os"
+	"strings"
 
+	"github.com/vbauerster/mpb/v4"
+
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/progress"
 )
 
 type RuntimeMessageHandler struct {
-	out output.Outputer
+	out  output.Outputer
+	bpg  *progress.Progress
+	bbar *progress.TotalBar
 }
 
 func NewRuntimeMessageHandler(out output.Outputer) *RuntimeMessageHandler {
-	return &RuntimeMessageHandler{out}
+	return &RuntimeMessageHandler{out, nil, nil}
 }
 
 func (r *RuntimeMessageHandler) DownloadStarting() {
@@ -24,24 +32,52 @@ func (r *RuntimeMessageHandler) InstallStarting() {
 }
 
 func (r *RuntimeMessageHandler) BuildStarting(totalArtifacts int) {
-	r.out.Notice(locale.Tl("logstream_running", "Building {{.V0}} Dependencies Remotely..", strconv.Itoa(totalArtifacts)))
+	logging.Debug("BuildStarting")
+	if r.bpg != nil || r.bbar != nil {
+		logging.Error("BuildStarting: progress has already initialized")
+		return
+	}
+
+	progressOut := os.Stderr
+	if strings.ToLower(os.Getenv(constants.NonInteractive)) == "true" {
+		progressOut = nil
+	}
+
+	r.bpg = progress.New(mpb.WithOutput(progressOut))
+	r.bbar = r.bpg.AddTotalBar(locale.Tl("building_remotely", "Building Remotely"), totalArtifacts)
 }
 
 func (r *RuntimeMessageHandler) BuildFinished() {
+	if r.bpg == nil || r.bbar == nil {
+		logging.Error("BuildFinished: progressbar is nil")
+		return
+	}
+
+	logging.Debug("BuildFinished")
+	if !r.bbar.Completed() {
+		r.bpg.Cancel()
+	}
+	r.bpg.Close()
 }
 
 func (r *RuntimeMessageHandler) ArtifactBuildStarting(artifactName string) {
-	r.out.Notice(locale.Tr("artifact_started", artifactName))
+	logging.Debug("ArtifactBuildStarting: %s", artifactName)
 }
 
 func (r *RuntimeMessageHandler) ArtifactBuildCached(artifactName string) {
-	r.out.Notice(locale.Tr("artifact_started_cached", artifactName))
+	logging.Debug("ArtifactBuildCached: %s", artifactName)
 }
 
 func (r *RuntimeMessageHandler) ArtifactBuildCompleted(artifactName string, number, total int) {
-	r.out.Notice(locale.Tr("artifact_succeeded", artifactName, strconv.Itoa(number), strconv.Itoa(total)))
+	if r.bpg == nil || r.bbar == nil {
+		logging.Error("ArtifactBuildCompleted: progressbar is nil")
+		return
+	}
+
+	logging.Debug("ArtifactBuildCompleted: %s", artifactName)
+	r.bbar.Increment()
 }
 
 func (r *RuntimeMessageHandler) ArtifactBuildFailed(artifactName string, errorMsg string) {
-	r.out.Notice(locale.Tr("artifact_failed", artifactName, errorMsg))
+	logging.Debug("ArtifactBuildFailed: %s: %s", artifactName, errorMsg)
 }

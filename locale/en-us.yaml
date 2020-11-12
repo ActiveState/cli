@@ -794,7 +794,9 @@ build_status_in_progress:
 build_status_unknown_error:
   other: "Build reported an unknown error: {{.V0}}; Please view the project at: [ACTIONABLE]{{.V1}}[/RESET] for more information"
 build_status_failed:
-  other: "The build for your project defined at: [NOTICE]{{.V0}}[/RESET] is not building correctly. Error message recieved was: {{.V1}}. Please correct by visiting the above link or use 'state packages'"
+  other: |
+    The build for your project defined at: [NOTICE]{{.V0}}[/RESET] is not building correctly.
+    Error message recieved was: {{.V1}}. Please correct by visiting the above link.
 err_no_default_branch:
   other: This project has no default branch. This indicates malformed data, please contact support!
 err_no_commit:
@@ -1335,7 +1337,7 @@ err_no_recipes:
 err_solve_order:
   other: "Could not solve order: {{.V0}}"
 err_order_bad_request:
-  other: "Bad request while resolving order: Please visit [ACTIONABLE]https://platform.activestate.com/{{.V0}}/{{.V1}}/customize[/RESET] to see details about the error: {{.V2}}"
+  other: "Bad request while resolving order: Please visit [ACTIONABLE]https://platform.activestate.com/commit/{{.V0}}[/RESET] to see details about the error: {{.V1}}"
 err_order_unknown:
   other: Unknown error resolving order"
 using_cached_env:

@@ -9,6 +9,8 @@ import (
 
 	"github.com/go-openapi/strfmt"
 
+	"github.com/ActiveState/sysinfo"
+
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
@@ -19,7 +21,6 @@ import (
 	iop "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/ActiveState/sysinfo"
 )
 
 // Fail types for this package
@@ -120,7 +121,7 @@ func fetchRawRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *s
 		case *iop.ResolveRecipesBadRequest:
 			msg := *rrErr.Payload.Message
 			logging.Error("Bad request while resolving order, error: %s, order: %s", msg, string(orderBody))
-			return "", FailOrderRecipes.New("err_order_bad_request", msg)
+			return "", FailOrderRecipes.New("err_order_bad_request", commitID.String(), msg)
 		default:
 			logging.Error("Unknown error while resolving order, error: %v, order: %s", err, string(orderBody))
 			return "", FailOrderRecipes.Wrap(err, "err_order_unknown")
@@ -183,7 +184,7 @@ func fetchRecipeID(commitID strfmt.UUID, owner, project, orgID string, private b
 		case *iop.SolveOrderBadRequest:
 			msg := *rrErr.Payload.Message
 			logging.Error("Bad request while resolving order, error: %s, order: %s", msg, string(orderBody))
-			return nil, FailOrderRecipes.New("err_order_bad_request", owner, project, msg)
+			return nil, FailOrderRecipes.New("err_order_bad_request", commitID.String(), msg)
 		default:
 			logging.Error("Unknown error while resolving order, error: %v, order: %s", err, string(orderBody))
 			return nil, FailOrderRecipes.Wrap(err, "err_order_unknown")
