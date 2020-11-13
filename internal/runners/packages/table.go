@@ -54,33 +54,3 @@ func (t *packageTable) sortByPkg() {
 
 	sort.Slice(t.rows, less)
 }
-
-func sortByFirstTwoCols(rows [][]string) {
-	less := func(i, j int) bool {
-		if len(rows[i]) < 2 {
-			return true
-		}
-		if len(rows[j]) < 2 {
-			return false
-		}
-
-		aa, ab := rows[i][0], rows[i][1]
-		ba, bb := rows[j][0], rows[j][1]
-
-		if strings.ToLower(aa) < strings.ToLower(ba) {
-			return true
-		}
-
-		if aa > ba {
-			return false
-		}
-
-		if strings.ToLower(ab) < strings.ToLower(bb) {
-			return true
-		}
-
-		return ab < bb
-	}
-
-	sort.Slice(rows, less)
-}

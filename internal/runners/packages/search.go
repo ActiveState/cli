@@ -2,7 +2,9 @@ package packages
 
 import (
 	"fmt"
+	"strconv"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -22,6 +24,13 @@ type SearchRunParams struct {
 // Search manages the searching execution context.
 type Search struct {
 	out output.Outputer
+}
+
+type searchPackageRow struct {
+	Pkg           string `json:"package" locale:"package_name,Name"`
+	Version       string `json:"version" locale:"package_version,Latest Version"`
+	OlderVersions string `json:"versions" locale:","`
+	versions      int
 }
 
 // NewSearch prepares a searching execution context for use.
@@ -49,8 +58,16 @@ func (s *Search) Run(params SearchRunParams, pt PackageType) error {
 	if fail != nil {
 		return fail.WithDescription("package_err_cannot_obtain_search_results")
 	}
-	table := newPackagesTable(packages, pt)
-	s.out.Print(table)
+	if len(packages) == 0 {
+		return errs.AddTips(
+			locale.NewInputError("err_package_search_no_packages", `No packages in our catalogue match [NOTICE]"{{.V0}}"[/RESET].`, params.Name),
+			locale.Tl("search_try_term", "Try a different search term"),
+			locale.Tl("search_request", "Request a package at [ACTIONABLE]https://community.activestate.com/[/RESET]"),
+		)
+
+	}
+	results := formatSearchResults(packages, pt)
+	s.out.Print(results)
 
 	return nil
 }
@@ -68,11 +85,8 @@ func targetedLanguage(languageOpt string) (string, *failures.Failure) {
 	return model.LanguageForCommit(proj.CommitUUID())
 }
 
-func newPackagesTable(packages []*model.IngredientAndVersion, pt PackageType) *packageTable {
-	var rows []packageRow
-	if packages == nil {
-		return newTable(rows, locale.T(fmt.Sprintf("%s_search_no_packages", pt.String())))
-	}
+func formatSearchResults(packages []*model.IngredientAndVersion, pt PackageType) []searchPackageRow {
+	var rows []searchPackageRow
 
 	filterNilStr := func(s *string) string {
 		if s == nil {
@@ -82,12 +96,40 @@ func newPackagesTable(packages []*model.IngredientAndVersion, pt PackageType) *p
 	}
 
 	for _, pack := range packages {
-		row := packageRow{
-			filterNilStr(pack.Ingredient.Name),
-			pack.Version,
+		row := searchPackageRow{
+			Pkg:      filterNilStr(pack.Ingredient.Name),
+			Version:  pack.Version,
+			versions: len(pack.Versions),
 		}
 		rows = append(rows, row)
 	}
 
-	return newTable(rows, locale.T(fmt.Sprintf("%s_search_no_packages", pt.String())))
+	return mergeSearchRows(rows)
+}
+
+func mergeSearchRows(rows []searchPackageRow) []searchPackageRow {
+	var mergedRows []searchPackageRow
+	var name string
+	for _, row := range rows {
+		// The search API returns results sorted by name and then descending version
+		// so we can use the first unique value as our latest version
+		if name == row.Pkg {
+			continue
+		}
+		name = row.Pkg
+
+		newRow := searchPackageRow{
+			Pkg:      row.Pkg,
+			Version:  row.Version,
+			versions: row.versions,
+		}
+
+		if row.versions > 1 {
+			olderVersions := row.versions - 1
+			newRow.OlderVersions = locale.Tl("search_older_versions", "+ {{.V0}} older versions", strconv.Itoa(olderVersions))
+		}
+		mergedRows = append(mergedRows, newRow)
+	}
+
+	return mergedRows
 }
