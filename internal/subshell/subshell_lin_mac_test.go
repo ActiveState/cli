@@ -14,11 +14,13 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/sighandler"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 func TestRunCommandNoProjectEnv(t *testing.T) {
+	sighandler.Init("run")
 	projectURL := fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
 	pjfile := projectfile.Project{
 		Project: projectURL,
@@ -46,6 +48,7 @@ func TestRunCommandNoProjectEnv(t *testing.T) {
 }
 
 func TestRunCommandError(t *testing.T) {
+	sighandler.Init("run")
 	projectURL := fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
 	pjfile := projectfile.Project{
 		Project: projectURL,
