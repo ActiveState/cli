@@ -2,6 +2,7 @@ package packages
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
@@ -124,7 +125,8 @@ func mergeSearchRows(rows []searchPackageRow) []searchPackageRow {
 		}
 
 		if row.versions > 1 {
-			newRow.OlderVersions = fmt.Sprintf("+ %d older versions", row.versions-1)
+			olderVersions := row.versions - 1
+			newRow.OlderVersions = locale.Tl("search_older_versions", "+ {{.V0}} older versions", strconv.Itoa(olderVersions))
 		}
 		mergedRows = append(mergedRows, newRow)
 	}
