@@ -1594,12 +1594,18 @@ artifact_succeeded:
   other: "Completed: [NOTICE]{{.V0}} ({{.V1}}/{{.V2}})[/RESET]"
 artifact_failed:
   other: "Failed: [NOTICE]{{.V0}}[/RESET]. Error returned: [ERROR]{{.V1}}[/RESET]"
-prepare_instructions_lin_mac:
-  other: "To add the global installations directory to your environment please add the line [ACTIONABLE]`export PATH={{.V0}}:$PATH`[/RESET] to your RC file"
+prepare_instructions_linux:
+  other: |
+    Could not update user environment.
+    To add the global installations directory to your environment please add the line [ACTIONABLE]`export PATH={{.V0}}:$PATH`[/RESET] to your RC file.
+prepare_instructions_darwin:
+  other: |
+    Could not update user environment.
+    To add the global installations directory to your environment please add the line [ACTIONABLE]`export PATH={{.V0}}:$PATH`[/RESET] to your RC file.
 prepare_instructions_windows:
-  other: "To add the global installations directory to your environment please add the path [ACTIONABLE]`{{.V0}}`[/RESET] to your user PATH in the System Properties dialog"
-prepare_env_warning:
-  other: Could not update user environment
+  other: |
+    Could not update user environment.
+    To add the global installations directory to your environment please add the path [ACTIONABLE]`{{.V0}}`[/RESET] to your user PATH in the System Properties dialog.
 prompt_headless_anonymous:
   other: You're about to add packages as an anonymous user, you might want to authenticate first using [ACTIONABLE]`state auth`[/RESET] if you already have an account. Do you want to continue as an anonymous user?
 err_package_update_pjfile:
