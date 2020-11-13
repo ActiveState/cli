@@ -16,30 +16,49 @@ import (
 // FailUserNotFound is a failure due to the user not being found
 var FailUserNotFound = failures.Type("history.fail.usernotfound")
 
-type History struct{}
+type primeable interface {
+	primer.Projecter
+	primer.Outputer
+}
 
-func NewHistory() *History {
-	return &History{}
+type History struct {
+	project *project.Project
+	out     output.Outputer
+}
+
+func NewHistory(prime primeable) *History {
+	return &History{
+		prime.Project(),
+		prime.Output(),
+	}
 }
 
 type HistoryParams struct {
-	owner       string
-	projectName string
-	out         output.Outputer
-}
-
-func NewHistoryParams(owner, projectName string, prime primer.Outputer) HistoryParams {
-	return HistoryParams{owner, projectName, prime.Output()}
+	Namespace string
 }
 
 func (h *History) Run(params *HistoryParams) error {
-	commits, fail := model.CommitHistory(params.owner, params.projectName)
-	if fail != nil {
-		return fail
+	var commits []*mono_models.Commit
+	var err error
+	if params.Namespace != "" {
+		nsMeta, fail := project.ParseNamespace(params.Namespace)
+		if fail != nil {
+			return fail.ToError()
+		}
+
+		commits, err = model.CommitHistory(nsMeta.Owner, nsMeta.Project)
+		if err != nil {
+			return locale.WrapError(err, "err_commit_history_namespace", "Could not get commit history from provide namespace: {{.V0}}", params.Namespace)
+		}
+	} else {
+		commits, err = model.CommitHistoryFromID(h.project.CommitUUID())
+		if err != nil {
+			return locale.WrapError(err, "err_commit_hisotry_commit_id", "Could not get commit history from commit ID.")
+		}
 	}
 
 	if len(commits) == 0 {
-		params.out.Print(locale.Tr("no_commits", project.NewNamespace(params.owner, params.projectName, "").String()))
+		h.out.Print(locale.Tr("no_commits", h.project.Namespace().String()))
 		return nil
 	}
 
@@ -49,7 +68,7 @@ func (h *History) Run(params *HistoryParams) error {
 		return fail
 	}
 
-	err := printCommits(params.out, commits, orgs)
+	err = printCommits(h.out, commits, orgs)
 	if err != nil {
 		return locale.WrapError(err, "err_history_print_commits", "Could not print commit history")
 	}
