@@ -8,11 +8,17 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 )
 
+const fallbackWidth = 100
+const maxWidth = 160
+
 func GetWidth() int {
 	termWidth, _, err := terminal.GetSize(int(os.Stdout.Fd()))
 	if err != nil {
 		logging.Debug("Cannot get terminal size: %v", err)
-		termWidth = 100
+		termWidth = fallbackWidth
+	}
+	if termWidth > maxWidth {
+		termWidth = maxWidth
 	}
 	return termWidth
 }

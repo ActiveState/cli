@@ -25,9 +25,9 @@ import (
 type PlainOpts string
 
 const (
-	SingleLineOpt PlainOpts = "singleLine"
-	EmptyNil      PlainOpts = "emptyNil"
-	HidePlain     PlainOpts = "hidePlain"
+	SeparateLineOpt PlainOpts = "separateLine"
+	EmptyNil        PlainOpts = "emptyNil"
+	HidePlain       PlainOpts = "hidePlain"
 )
 
 const dash = "\u2500"
@@ -93,13 +93,7 @@ func (f *Plain) writeNow(writer io.Writer, value string) {
 }
 
 func wordWrap(text string) string {
-	maxTermWidth := 160
 	termWidth := termutils.GetWidth()
-
-	if termWidth > maxTermWidth {
-		termWidth = maxTermWidth
-	}
-
 	return wordwrap.WrapString(text, uint(termWidth))
 }
 
@@ -255,8 +249,6 @@ func sprintTable(slice []interface{}) (string, error) {
 		return "", nil
 	}
 
-	termWidth := termutils.GetWidth()
-
 	headers := []string{}
 	rows := [][]string{}
 	for _, v := range slice {
@@ -276,7 +268,7 @@ func sprintTable(slice []interface{}) (string, error) {
 				continue
 			}
 
-			if firstIteration {
+			if firstIteration && !funk.Contains(field.opts, string(SeparateLineOpt)) {
 				headers = append(headers, localizedField(field.l10n))
 			}
 
@@ -285,18 +277,25 @@ func sprintTable(slice []interface{}) (string, error) {
 				return "", err
 			}
 
-			if funk.Contains(field.opts, string(SingleLineOpt)) {
-				stringValue = trimValue(stringValue, termWidth)
-			}
-
 			if funk.Contains(field.opts, string(EmptyNil)) && stringValue == nilText {
 				stringValue = ""
+			}
+
+			if funk.Contains(field.opts, string(SeparateLineOpt)) {
+				rows = append(rows, row)
+				if !funk.Contains(field.opts, string(EmptyNil)) || stringValue != "" {
+					rows = append(rows, []string{stringValue})
+				}
+				row = []string{}
+				break
 			}
 
 			row = append(row, stringValue)
 		}
 
-		rows = append(rows, row)
+		if len(row) > 0 {
+			rows = append(rows, row)
+		}
 	}
 
 	return table.New(headers).AddRow(rows...).Render(), nil

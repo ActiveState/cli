@@ -2,6 +2,7 @@ package projects
 
 import (
 	"sort"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -16,7 +17,31 @@ import (
 type projectWithOrg struct {
 	Name           string   `json:"name"`
 	Organization   string   `json:"organization"`
-	LocalCheckouts []string `json:"local_checkouts,omitempty" locale:"local_checkouts,Local Checkouts" opts:"emptyNil,singleLine"`
+	LocalCheckouts []string `json:"local_checkouts,omitempty"`
+}
+
+type projectWithOrgs []projectWithOrg
+
+func (o projectWithOrgs) MarshalOutput(f output.Format) interface{} {
+	if f != output.PlainFormatName {
+		return o
+	}
+
+	r := []projectOutputPlain{}
+	for _, v := range o {
+		checkouts := []string{}
+		for _, checkout := range v.LocalCheckouts {
+			checkouts = append(checkouts, locale.Tl("projects_local_chekcout", " └─ ✔ Local Checkout → {{.V0}}", checkout))
+		}
+		r = append(r, projectOutputPlain{v.Name, v.Organization, strings.Join(checkouts, "\n")})
+	}
+	return r
+}
+
+type projectOutputPlain struct {
+	Name           string
+	Organization   string
+	LocalCheckouts string `locale:"local_checkouts,Local Checkouts" opts:"emptyNil,separateLine"`
 }
 
 type configGetter interface {
@@ -59,13 +84,14 @@ func (r *Projects) Run(params *Params) error {
 	projectfile.CleanProjectMapping()
 	localProjects := r.config.GetStringMapStringSlice(projectfile.LocalProjectsConfigKey)
 
-	projects := []projectWithOrg{}
+	var projects projectWithOrgs = []projectWithOrg{}
 	for namespace, checkouts := range localProjects {
 		ns, fail := project.ParseNamespace(namespace)
 		if fail != nil {
 			logging.Error("Invalid project namespace stored to config mapping: %s", namespace)
 			continue
 		}
+
 		projects = append(projects, projectWithOrg{
 			Name:           ns.Project,
 			Organization:   ns.Owner,

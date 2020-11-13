@@ -31,7 +31,7 @@ func (r *Projects) RunRemote(params *Params) *failures.Failure {
 	return nil
 }
 
-func (r *Projects) fetchProjects(onlyLocal bool) ([]projectWithOrg, *failures.Failure) {
+func (r *Projects) fetchProjects(onlyLocal bool) (projectWithOrgs, *failures.Failure) {
 	orgParams := organizations.NewListOrganizationsParams()
 	memberOnly := true
 	orgParams.SetMemberOnly(&memberOnly)
@@ -42,7 +42,7 @@ func (r *Projects) fetchProjects(onlyLocal bool) ([]projectWithOrg, *failures.Fa
 		}
 		return nil, api.FailUnknown.Wrap(err)
 	}
-	projects := []projectWithOrg{}
+	var projects projectWithOrgs = []projectWithOrg{}
 	localConfigProjects := r.config.GetStringMapStringSlice(projectfile.LocalProjectsConfigKey)
 	for _, org := range orgs.Payload {
 		platformOrgProjects, err := model.FetchOrganizationProjects(org.URLname)

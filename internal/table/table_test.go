@@ -27,7 +27,7 @@ func TestTable_colWidths(t1 *testing.T) {
 				},
 				100,
 			},
-			[]int{padsize(3), padsize(4), padsize(5)},
+			[]int{13, 14, 15},
 		},
 		{
 			"Rowsize wins cause it's longer",
@@ -40,7 +40,7 @@ func TestTable_colWidths(t1 *testing.T) {
 				},
 				100,
 			},
-			[]int{padsize(3), padsize(4), padsize(5)},
+			[]int{13, 14, 15},
 		},
 		{
 			"Over max total",
@@ -53,7 +53,21 @@ func TestTable_colWidths(t1 *testing.T) {
 				},
 				100,
 			},
-			[]int{padsize(23), padsize(29), padsize(35)},
+			[]int{27, 33, 40},
+		},
+		{
+			"Long multi column",
+			args{
+				&Table{
+					[]string{"a", "b", "c", "d"},
+					[]row{
+						row{[]string{"1", "1", "12", "12"}},
+						row{[]string{strings.Repeat(" ", 100)}},
+					},
+				},
+				100,
+			},
+			[]int{23, 23, 26, 28},
 		},
 	}
 	for _, tt := range tests {
@@ -97,13 +111,51 @@ func Test_renderRow(t *testing.T) {
 				"  l1    l2    l3  ",
 		},
 		{
-			"Mutli column span",
+			"Empty column",
 			args{
-				providedColumns: []string{"col1", "col2"},
+				providedColumns: []string{"col1", "", "col3"},
 				colWidths:       []int{6, 6, 6},
 			},
-			"  co    col2      \n" +
-				"  l1  ",
+			"  co          co  \n" +
+				"  l1          l3  ",
+		},
+		{
+			"Mutli column span",
+			args{
+				providedColumns: []string{"abcdefgh", "jklmnopqrstu"},
+				colWidths:       []int{6, 6, 6},
+			},
+			"  ab    jklmnopq  \n" +
+				"  cd    rstu      \n" +
+				"  ef              \n" +
+				"  gh              ",
+		},
+		{
+			"Single row mutli column span",
+			args{
+				providedColumns: []string{"123456789"},
+				colWidths:       []int{1, 2, 3, 4, 5},
+			},
+			"  123456789    ",
+		},
+		{
+			"Multi line second column",
+			args{
+				providedColumns: []string{"abcd", "abcdefgh"},
+				colWidths:       []int{8, 8},
+			},
+			"  abcd    abcd  \n" +
+				"          efgh  ",
+		},
+		{
+			"Multi line second column with line breaks",
+			args{
+				providedColumns: []string{"abcd", "abcde\nfgh"},
+				colWidths:       []int{8, 8},
+			},
+			"  abcd    abcd  \n" +
+				"          e\n    \n" +
+				"          fgh   ",
 		},
 	}
 	for _, tt := range tests {
