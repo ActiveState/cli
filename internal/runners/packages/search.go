@@ -59,7 +59,7 @@ func (s *Search) Run(params SearchRunParams, pt PackageType) error {
 	}
 	if len(packages) == 0 {
 		return errs.AddTips(
-			locale.NewInputError("err_package_search_no_packages", `No packages in our catalogue match [HEADING]"{{.V0}}"[/RESET].`, params.Name),
+			locale.NewInputError("err_package_search_no_packages", `No packages in our catalogue match [NOTICE]"{{.V0}}"[/RESET].`, params.Name),
 			locale.Tl("search_try_term", "Try a different search term"),
 			locale.Tl("search_request", "Request a package at [ACTIONABLE]https://community.activestate.com/[/RESET]"),
 		)
