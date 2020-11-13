@@ -21,6 +21,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/output/txtstyle"
+	"github.com/ActiveState/cli/internal/sighandler"
 )
 
 var cobraMapping map[*cobra.Command]*Command = make(map[*cobra.Command]*Command)
@@ -402,6 +403,7 @@ func (c *Command) subCommandNames() []string {
 
 func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	analytics.SetDeferred(c.deferAnalytics)
+
 	outputFlag := cobraCmd.Flag("output")
 	if outputFlag != nil && outputFlag.Changed {
 		analytics.CustomDimensions.SetOutput(outputFlag.Value.String())
@@ -410,6 +412,9 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 
 	// Send  GA events unless they are handled in the runners...
 	analytics.Event(analytics.CatRunCmd, subCommandString)
+
+	// initialize signal handler for analytics events
+	sighandler.Init(subCommandString)
 
 	// Run OnUse functions for non-persistent flags
 	c.runFlags(false)
