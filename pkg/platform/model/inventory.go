@@ -6,7 +6,9 @@ import (
 	"strings"
 
 	"github.com/go-openapi/strfmt"
+	"github.com/thoas/go-funk"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/retryhttp"
@@ -50,23 +52,54 @@ func IngredientByNameAndVersion(language, name, version string, prefix Namespace
 		return nil, locale.NewInputError("inventory_ingredient_not_available", "The ingredient {{.V0}} is not available on the ActiveState Platform", name)
 	}
 
+	var candidates []*IngredientAndVersion
 	for _, ingredient := range results {
-		if ingredient.Ingredient.Name == nil || *ingredient.Ingredient.Name != name {
+		if ingredient.Ingredient.Name == nil || strings.ToLower(*ingredient.Ingredient.Name) != strings.ToLower(name) {
 			continue
 		}
 
 		for _, ver := range ingredient.Versions {
 			if ver.Version == version {
-				return &IngredientAndVersion{
-					ingredient.V1SearchIngredientsResponseIngredientsItems,
-					ver.Version,
-					ingredient.Namespace,
-				}, nil
+				candidates = append(
+					candidates,
+					&IngredientAndVersion{
+						ingredient.V1SearchIngredientsResponseIngredientsItems,
+						ver.Version,
+						ingredient.Namespace,
+					})
 			}
 		}
 	}
 
-	return nil, locale.NewInputError("inventory_ingredient_version_not_available", "Version {{.V0}} is not available for package {{.V1}} on the ActiveState Platform", version, name)
+	bestMatch, err := FilterForBestIngredientMatch(candidates, name)
+	if err != nil {
+		return nil, locale.NewInputError("inventory_ingredient_version_not_available", "Version {{.V0}} is not available for package {{.V1}} on the ActiveState Platform", version, name)
+	}
+
+	return bestMatch, nil
+}
+
+// FilterForBestIngredientMatch filters a list of ingredients for an ingredient with an exact name match first
+func FilterForBestIngredientMatch(candidates []*IngredientAndVersion, name string) (*IngredientAndVersion, error) {
+	for _, c := range candidates {
+		if *c.Ingredient.Name == name {
+			return c, nil
+		}
+	}
+
+	if len(candidates) == 0 {
+		return nil, locale.NewInputError("inventory_ingredient_no_version_available", "No versions are available for package {{.V0}} on the ActiveState Platform", name)
+	}
+	if len(candidates) > 1 {
+		candidateNames := funk.Map(candidates, func(iav *IngredientAndVersion) string {
+			return *iav.Ingredient.Name
+		}).([]string)
+		return nil, locale.NewInputError(
+			"inventory_ingredient_multiple_names", "Could not uniquely identify the package to install.  Candidates are {{.V0}}", strings.Join(candidateNames, ", "),
+		)
+	}
+
+	return candidates[0], nil
 }
 
 // IngredientWithLatestVersion will grab the latest available ingredient and ingredientVersion that matches the ingredient name
@@ -80,20 +113,21 @@ func IngredientWithLatestVersion(language, name string, prefix NamespacePrefix) 
 		return nil, locale.NewInputError("inventory_ingredient_not_available", "The ingredient {{.V0}} is not available on the ActiveState Platform", name)
 	}
 
-	for _, res := range results {
-		if res.Ingredient.Name == nil || *res.Ingredient.Name != name {
-			continue
-		}
+	candidates := funk.Filter(results, func(iav *IngredientAndVersion) bool {
+		return iav.Ingredient.Name != nil && strings.ToLower(*iav.Ingredient.Name) == strings.ToLower(name)
+	}).([]*IngredientAndVersion)
 
-		latest := &IngredientAndVersion{
-			res.V1SearchIngredientsResponseIngredientsItems,
-			*res.LatestVersion.Version,
-			res.Namespace,
-		}
-		return latest, nil
+	bestMatch, err := FilterForBestIngredientMatch(candidates, name)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not retrieve a match for ingredient %s.", name)
 	}
 
-	return nil, locale.NewInputError("inventory_ingredient_no_version_available", "No versions are available for package {{.V0}} on the ActiveState Platform", name)
+	latest := &IngredientAndVersion{
+		bestMatch.V1SearchIngredientsResponseIngredientsItems,
+		*bestMatch.LatestVersion.Version,
+		bestMatch.Namespace,
+	}
+	return latest, nil
 }
 
 // SearchIngredients will return all ingredients+ingredientVersions that fuzzily
