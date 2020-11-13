@@ -186,9 +186,9 @@ if [ ! -z "$INSTALLDIR" ] && ( ! $FORCEOVERWRITE ) && ( \
    ); then
 
   if [ -n "${ACTIVATE}" ]; then
-    exec $INSTALLDIR/$STATEXE activate ${ACTIVATE}
+    exec $INSTALLDIR/$STATEEXE activate ${ACTIVATE}
   elif [ -n "${ACTIVATE_DEFAULT}" ]; then
-    exec $INSTALLDIR/$STATEXE activate ${ACTIVATE_DEFAULT} --default
+    exec $INSTALLDIR/$STATEEXE activate ${ACTIVATE_DEFAULT} --default
   fi
 
   warn "State Tool is already installed at $INSTALLDIR, to reinstall run this command again with -f"
