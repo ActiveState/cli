@@ -1,6 +1,9 @@
 package sliceutils
 
-import "testing"
+import (
+	"reflect"
+	"testing"
+)
 
 func TestRemoveFromStrings(t *testing.T) {
 	type args struct {
@@ -105,17 +108,12 @@ func TestGetString(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-<<<<<<< HEAD
 			got, got1 := GetString(tt.args.slice, tt.args.index)
 			if got != tt.want {
 				t.Errorf("GetString() got = %v, want %v", got, tt.want)
 			}
 			if got1 != tt.want1 {
 				t.Errorf("GetString() got1 = %v, want %v", got1, tt.want1)
-=======
-			if got := RemoveFromStrings(tt.args.slice, tt.args.n); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("RemoveFromStrings() = %v, want %v", got, tt.want)
->>>>>>> master
 			}
 		})
 	}
