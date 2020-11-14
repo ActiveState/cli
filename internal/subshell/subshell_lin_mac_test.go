@@ -3,9 +3,9 @@
 package subshell
 
 import (
+	"errors"
 	"fmt"
 	"os"
-	"os/exec"
 	"strings"
 	"testing"
 
@@ -14,13 +14,11 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/sighandler"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 func TestRunCommandNoProjectEnv(t *testing.T) {
-	sighandler.Init("run")
 	projectURL := fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
 	pjfile := projectfile.Project{
 		Project: projectURL,
@@ -48,7 +46,6 @@ func TestRunCommandNoProjectEnv(t *testing.T) {
 }
 
 func TestRunCommandError(t *testing.T) {
-	sighandler.Init("run")
 	projectURL := fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
 	pjfile := projectfile.Project{
 		Project: projectURL,
@@ -69,8 +66,9 @@ func TestRunCommandError(t *testing.T) {
 
 	err = subs.Run(filename)
 	require.Error(t, err, "Returns an error")
-	require.IsType(t, err, &exec.ExitError{}, "Error is exec exit error")
-	assert.Equal(t, err.(*exec.ExitError).ExitCode(), 2, "Returns exit code 2")
+	var eerr interface{ ExitCode() int }
+	require.True(t, errors.As(err, &eerr), "Error is exec exit error")
+	assert.Equal(t, eerr.ExitCode(), 2, "Returns exit code 2")
 
 	projectfile.Reset()
 }
