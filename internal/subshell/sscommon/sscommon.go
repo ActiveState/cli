@@ -195,5 +195,10 @@ func runDirect(env []string, name string, args ...string) error {
 	sighandler.Push(bs)
 	defer sighandler.Pop()
 
-	return runCmd.Run()
+	err := runCmd.Run()
+	// silence exit code errors
+	if eerr, ok := err.(*exec.ExitError); ok {
+		return silentExitCodeError{eerr}
+	}
+	return err
 }
