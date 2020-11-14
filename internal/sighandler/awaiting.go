@@ -1,7 +1,6 @@
 package sighandler
 
 import (
-	"context"
 	"fmt"
 	"os"
 )
@@ -28,6 +27,7 @@ func NewAwaitingSigHandler(signals ...os.Signal) *AwaitingSigHandler {
 	return new(signals...)
 }
 
+// AwaitingSigHandler is a signal handler that is active while waiting for a specific function to finish
 type AwaitingSigHandler = sigHandler
 
 // Close stops the signal handler
@@ -39,17 +39,11 @@ func (as *AwaitingSigHandler) Close() error {
 // WaitForFunc waits for `f` to return, unless a signal on the sigCh is received.  In that case, we return a SignalError.
 func (as *AwaitingSigHandler) WaitForFunc(f func() error) error {
 	errCh := make(chan error, 0)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
 	as.Resume()
 
 	go func() {
 		defer close(errCh)
-		select {
-		case errCh <- f():
-		case <-ctx.Done():
-		}
+		errCh <- f()
 	}()
 
 	select {
