@@ -40,7 +40,16 @@ func (r *Activate) activateAndWait(proj *project.Project, venv *virtualenvironme
 		return nil
 	}
 
-	ignoreWindowsInterrupts()
+	// ignore interrupts in State Tool on Windows
+	if rt.GOOS == "windows" {
+		bs := sighandler.NewBackgroundSignalHandler(func(_ os.Signal) {}, os.Interrupt)
+		sighandler.Push(bs)
+	}
+	defer func() {
+		if rt.GOOS == "windows" {
+			sighandler.Pop()
+		}
+	}()
 
 	err = r.config.WriteConfig()
 	if err != nil {
@@ -72,10 +81,4 @@ func (r *Activate) activateAndWait(proj *project.Project, venv *virtualenvironme
 	}
 
 	return nil
-}
-
-func ignoreWindowsInterrupts() {
-	if rt.GOOS == "windows" {
-		sighandler.IgnoreInterrupts(true)
-	}
 }

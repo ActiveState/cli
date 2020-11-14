@@ -3,44 +3,73 @@ package sighandler
 import (
 	"os"
 	"os/signal"
-	"time"
 
-	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/errs"
 )
 
-var sigCh chan os.Signal
-var ignoreCh chan bool
+// signalStack maintains a stack of signal handlers only the most recent one is active
+var signalStack []signalStacker
 
-// Init initializes the global signal interrupt handler
-func Init(subCommand string) {
-	sigCh = make(chan os.Signal, 1)
-	signal.Notify(sigCh, os.Interrupt)
-	ignoreCh = make(chan bool, 0)
+// Push adds a signal handler to the stack of signal handler
+// It stops all signal handlers that are lower in the stack and makes the current one the only active one.
+func Push(s signalStacker) {
+	// stop currently active signal-handler
+	if len(signalStack) > 0 {
+		signalStack[len(signalStack)-1].Stop()
+	}
+	// add new signal-handler
+	signalStack = append(signalStack, s)
 
-	go func(subCommand string) {
-		defer close(sigCh)
-		defer close(ignoreCh)
-		ignore := false
-		for {
-			select {
-			case <-sigCh:
-				if !ignore {
-					logging.Debug("captured ctrl-c event")
-					analytics.EventWithLabel(analytics.CatCommandExit, subCommand, "interrupt")
-					analytics.WaitForAllEvents(time.Second)
-					os.Exit(1)
-				}
-			case val := <-ignoreCh:
-				ignore = val
-			}
-		}
-	}(subCommand)
+	s.Resume()
 }
 
-// IgnoreInterrupts triggers whether the State Tool process should exit on an interrupt event
-// It should be set to true if interrupt events are handled with error values as
-// it is done eg., when launching subprocesses.
-func IgnoreInterrupts(ignore bool) {
-	ignoreCh <- ignore
+// Pop stops and closes the currently active signal handler and removes it from the stack
+// The next signal handler in the stack is resumed
+func Pop() error {
+	if len(signalStack) == 0 {
+		return errs.New("signal stack has size zero.")
+	}
+	err := signalStack[len(signalStack)-1].Close()
+	if err != nil {
+		return err
+	}
+	signalStack = signalStack[:len(signalStack)-1]
+	if len(signalStack) > 0 {
+		signalStack[len(signalStack)-1].Resume()
+	}
+	return nil
+}
+
+type signalStacker interface {
+	Stop()
+	Resume()
+	Close() error
+}
+
+type resumeableSignaler interface {
+	Stop()
+	Resume()
+	Signal() <-chan os.Signal
+}
+
+var _ signalStacker = &BackgroundSigHandler{}
+
+type sigHandler struct {
+	signals []os.Signal
+	sigCh   chan (os.Signal)
+}
+
+func (sh *sigHandler) Stop() {
+	signal.Stop(sh.sigCh)
+}
+
+func (sh *sigHandler) Resume() {
+	signal.Notify(sh.sigCh, sh.signals...)
+}
+
+func new(signals ...os.Signal) *sigHandler {
+	sigCh := make(chan os.Signal)
+	return &sigHandler{
+		signals, sigCh,
+	}
 }

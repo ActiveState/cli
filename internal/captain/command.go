@@ -2,7 +2,9 @@ package captain
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
+	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -413,9 +415,6 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	// Send  GA events unless they are handled in the runners...
 	analytics.Event(analytics.CatRunCmd, subCommandString)
 
-	// initialize signal handler for analytics events
-	sighandler.Init(subCommandString)
-
 	// Run OnUse functions for non-persistent flags
 	c.runFlags(false)
 
@@ -450,10 +449,24 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	intercept := c.interceptFunc()
 	execute := intercept(c.execute)
 
-	err := execute(c, args)
+	// initialize signal handler for analytics events
+	as := sighandler.NewAwaitingSigHandler(os.Interrupt)
+	sighandler.Push(as)
+	defer sighandler.Pop()
+
+	err := as.WaitForFunc(func() error {
+		return execute(c, args)
+	})
+
 	exitCode := errs.UnwrapExitCode(failures.ToError(err))
-	
-	analytics.EventWithLabel(analytics.CatCommandExit, subCommandString, strconv.Itoa(exitCode))
+
+	var serr interface{ Signal() os.Signal }
+	if errors.As(err, &serr) {
+		analytics.EventWithLabel(analytics.CatCommandExit, subCommandString, "interrupt")
+		err = locale.WrapInputError(err, "user_interrupt", "User interrupted the State Tool process.")
+	} else {
+		analytics.EventWithLabel(analytics.CatCommandExit, subCommandString, strconv.Itoa(exitCode))
+	}
 	analytics.WaitForAllEvents(time.Second * 1)
 
 	return err

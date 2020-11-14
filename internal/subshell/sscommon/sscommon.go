@@ -191,8 +191,9 @@ func runDirect(env []string, name string, args ...string) error {
 	// This behavior has been reported in
 	// - https://www.pivotaltracker.com/story/show/169509213 and
 	// - https://www.pivotaltracker.com/story/show/167523128
-	sighandler.IgnoreInterrupts(true)
-	defer sighandler.IgnoreInterrupts(false)
+	bs := sighandler.NewBackgroundSignalHandler(func(_ os.Signal) {}, os.Interrupt)
+	sighandler.Push(bs)
+	defer sighandler.Pop()
 
 	return runCmd.Run()
 }
