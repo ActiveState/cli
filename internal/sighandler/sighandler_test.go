@@ -17,12 +17,12 @@ func TestBackgroundSigHandler(t *testing.T) {
 		called <- true
 	}, os.Interrupt)
 	Push(bs)
-	assert.Lenf(t, signalStack, 1, "signal stack should have one entry")
+	assert.Lenf(t, stack.stack, 1, "signal stack should have one entry")
 	defer func() {
 		err := Pop()
 		require.NoError(t, err)
 
-		assert.Len(t, signalStack, 0, "signal stack should be empty")
+		assert.Len(t, stack.stack, 0, "signal stack should be empty")
 	}()
 
 	// fake an interrupt signal
@@ -48,7 +48,7 @@ func TestAwaitingSigHandler(t *testing.T) {
 		err := Pop()
 		require.NoError(t, err)
 
-		assert.Len(t, signalStack, 0, "signal stack should be empty")
+		assert.Len(t, stack.stack, 0, "signal stack should be empty")
 	}()
 
 	t.Run("without signal", func(t *testing.T) {
