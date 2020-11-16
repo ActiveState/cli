@@ -377,7 +377,7 @@ manual_installation_instructions() {
 manual_update_instructions() {
   info "State Tool installation complete."
   # skip instruction to source rc file when we are activating
-  if [ ( -n "${ACTIVATE}" ) -or ( -n "${ACTIVATE_DEFAULT}" ) ]; then
+  if [ -n "${ACTIVATE}" -or -n "${ACTIVATE_DEFAULT}" ]; then
     return
   fi
   echo "Please either run 'source $RC_FILE' or start a new login shell in "
