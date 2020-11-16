@@ -32,7 +32,7 @@ type AwaitingSigHandler = sigHandler
 
 // Close stops the signal handler
 func (as *AwaitingSigHandler) Close() error {
-	as.Stop()
+	as.Pause()
 	return nil
 }
 

@@ -3,12 +3,16 @@ package sighandler
 import (
 	"context"
 	"os"
+	"sync"
 )
+
+var _ signalStacker = &BackgroundSigHandler{}
 
 // BackgroundSigHandler listens for signals in the background
 type BackgroundSigHandler struct {
 	*sigHandler
 	cancel func()
+	wg     sync.WaitGroup
 }
 
 // NewBackgroundSignalHandler constructs a signal handler that processes signals in the background until stopped or closed
@@ -17,9 +21,12 @@ func NewBackgroundSignalHandler(callback func(os.Signal), signals ...os.Signal) 
 	bs := &BackgroundSigHandler{
 		new(signals...),
 		cancel,
+		sync.WaitGroup{},
 	}
 
+	bs.wg.Add(1)
 	go func() {
+		defer bs.wg.Done()
 		for {
 			select {
 			case <-ctx.Done():
@@ -35,7 +42,8 @@ func NewBackgroundSignalHandler(callback func(os.Signal), signals ...os.Signal) 
 
 // Close cancels the background process
 func (bs *BackgroundSigHandler) Close() error {
-	bs.Stop()
+	bs.Pause()
 	bs.cancel()
+	bs.wg.Wait()
 	return nil
 }
