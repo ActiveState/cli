@@ -3,9 +3,9 @@
 package subshell
 
 import (
+	"errors"
 	"fmt"
 	"os"
-	"os/exec"
 	"strings"
 	"testing"
 
@@ -66,8 +66,9 @@ func TestRunCommandError(t *testing.T) {
 
 	err = subs.Run(filename)
 	require.Error(t, err, "Returns an error")
-	require.IsType(t, err, &exec.ExitError{}, "Error is exec exit error")
-	assert.Equal(t, err.(*exec.ExitError).ExitCode(), 2, "Returns exit code 2")
+	var eerr interface{ ExitCode() int }
+	require.True(t, errors.As(err, &eerr), "Error is exec exit error")
+	assert.Equal(t, eerr.ExitCode(), 2, "Returns exit code 2")
 
 	projectfile.Reset()
 }
