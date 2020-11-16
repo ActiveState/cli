@@ -6,19 +6,19 @@ import (
 	"sync"
 )
 
-var _ signalStacker = &BackgroundSigHandler{}
+var _ signalStacker = &Background{}
 
-// BackgroundSigHandler listens for signals in the background
-type BackgroundSigHandler struct {
+// Background listens for signals in the background
+type Background struct {
 	*sigHandler
 	cancel func()
 	wg     sync.WaitGroup
 }
 
 // NewBackgroundSignalHandler constructs a signal handler that processes signals in the background until stopped or closed
-func NewBackgroundSignalHandler(callback func(os.Signal), signals ...os.Signal) *BackgroundSigHandler {
+func NewBackgroundSignalHandler(callback func(os.Signal), signals ...os.Signal) *Background {
 	ctx, cancel := context.WithCancel(context.Background())
-	bs := &BackgroundSigHandler{
+	bs := &Background{
 		new(signals...),
 		cancel,
 		sync.WaitGroup{},
@@ -41,7 +41,7 @@ func NewBackgroundSignalHandler(callback func(os.Signal), signals ...os.Signal) 
 }
 
 // Close cancels the background process
-func (bs *BackgroundSigHandler) Close() error {
+func (bs *Background) Close() error {
 	bs.Pause()
 	bs.cancel()
 	bs.wg.Wait()

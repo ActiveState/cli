@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-var _ signalStacker = &AwaitingSigHandler{}
+var _ signalStacker = &Awaiting{}
 
 // SignalError is returned by the AwaitingSigHandler if an interrupt signal was received
 type SignalError struct {
@@ -23,21 +23,21 @@ func (se SignalError) Signal() os.Signal {
 }
 
 // NewAwaitingSigHandler constructs a signal handler awaiting a function to return
-func NewAwaitingSigHandler(signals ...os.Signal) *AwaitingSigHandler {
+func NewAwaitingSigHandler(signals ...os.Signal) *Awaiting {
 	return new(signals...)
 }
 
-// AwaitingSigHandler is a signal handler that is active while waiting for a specific function to finish
-type AwaitingSigHandler = sigHandler
+// Awaiting is a signal handler that is active while waiting for a specific function to finish
+type Awaiting = sigHandler
 
 // Close stops the signal handler
-func (as *AwaitingSigHandler) Close() error {
+func (as *Awaiting) Close() error {
 	as.Pause()
 	return nil
 }
 
 // WaitForFunc waits for `f` to return, unless a signal on the sigCh is received.  In that case, we return a SignalError.
-func (as *AwaitingSigHandler) WaitForFunc(f func() error) error {
+func (as *Awaiting) WaitForFunc(f func() error) error {
 	errCh := make(chan error, 0)
 	as.Resume()
 
