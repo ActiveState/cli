@@ -9,6 +9,7 @@ fail-fast: #@ fail_fast
 
 runs-on: &runs-on ${{ matrix.platform }}
 env: &env
+  ACTIONS_ALLOW_UNSECURE_COMMANDS: true # disable when removing add-path
   ACTIVESTATE_CLI_DISABLE_RUNTIME: true # We don't need Perl or Python
   GOFLAGS: -mod=vendor
   SHELL: bash

@@ -7,6 +7,7 @@ jobs:
     name: Prepare
     runs-on: ubuntu-latest
     env:
+      ACTIONS_ALLOW_UNSECURE_COMMANDS: true
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true
       GOFLAGS: -mod=vendor
       SHELL: bash
@@ -56,6 +57,7 @@ jobs:
     needs:
     - prepare
     env:
+      ACTIONS_ALLOW_UNSECURE_COMMANDS: true
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true
       GOFLAGS: -mod=vendor
       SHELL: bash
