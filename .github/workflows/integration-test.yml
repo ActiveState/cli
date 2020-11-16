@@ -7,7 +7,6 @@ jobs:
     name: Prepare
     runs-on: ubuntu-latest
     env:
-      ACTIONS_ALLOW_UNSECURE_COMMANDS: true
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true
       GOFLAGS: -mod=vendor
       SHELL: bash
@@ -32,7 +31,7 @@ jobs:
       run: |
         bin=$(pwd)/.github/deps/${{ runner.os }}/bin
         echo "Adding $bin to PATH"
-        echo "::add-path::$bin"
+        echo "$bin" >> $GITHUB_PATH
         printenv
     - name: Generate Version
       shell: bash
@@ -57,7 +56,6 @@ jobs:
     needs:
     - prepare
     env:
-      ACTIONS_ALLOW_UNSECURE_COMMANDS: true
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true
       GOFLAGS: -mod=vendor
       SHELL: bash
@@ -80,7 +78,7 @@ jobs:
       run: |
         bin=$(pwd)/.github/deps/${{ runner.os }}/bin
         echo "Adding $bin to PATH"
-        echo "::add-path::$bin"
+        echo "$bin" >> $GITHUB_PATH
         printenv
     - name: Preprocess
       shell: bash

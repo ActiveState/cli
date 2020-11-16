@@ -76,7 +76,7 @@ shell: bash
 run: |
   bin=$(pwd)/.github/deps/${{ runner.os }}/bin
   echo "Adding $bin to PATH"
-  echo "::add-path::$bin"
+  echo "$bin" >> $GITHUB_PATH
   printenv
 #@ end
 ---
