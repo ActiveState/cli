@@ -64,7 +64,6 @@ func (s *Search) Run(params SearchRunParams, pt PackageType) error {
 			locale.Tl("search_try_term", "Try a different search term"),
 			locale.Tl("search_request", "Request a package at [ACTIONABLE]https://community.activestate.com/[/RESET]"),
 		)
-
 	}
 	results := formatSearchResults(packages, pt)
 	s.out.Print(results)

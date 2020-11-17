@@ -54,19 +54,21 @@ func IngredientByNameAndVersion(language, name, version string, prefix Namespace
 
 	var candidates []*IngredientAndVersion
 	for _, ingredient := range results {
-		if ingredient.Ingredient.Name == nil || strings.ToLower(*ingredient.Ingredient.Name) != strings.ToLower(name) {
-			continue
-		}
+		for _, feature := range ingredient.LatestVersion.ProvidedFeatures {
+			if feature.Feature == nil || strings.ToLower(*feature.Feature) != strings.ToLower(name) {
+				continue
+			}
 
-		for _, ver := range ingredient.Versions {
-			if ver.Version == version {
-				candidates = append(
-					candidates,
-					&IngredientAndVersion{
-						ingredient.V1SearchIngredientsResponseIngredientsItems,
-						ver.Version,
-						ingredient.Namespace,
-					})
+			for _, ver := range ingredient.Versions {
+				if ver.Version == version {
+					candidates = append(
+						candidates,
+						&IngredientAndVersion{
+							ingredient.V1SearchIngredientsResponseIngredientsItems,
+							ver.Version,
+							ingredient.Namespace,
+						})
+				}
 			}
 		}
 	}
@@ -81,9 +83,12 @@ func IngredientByNameAndVersion(language, name, version string, prefix Namespace
 
 // FilterForBestIngredientMatch filters a list of ingredients for an ingredient with an exact name match first
 func FilterForBestIngredientMatch(candidates []*IngredientAndVersion, name string) (*IngredientAndVersion, error) {
+	// check for exact match
 	for _, c := range candidates {
-		if *c.Ingredient.Name == name {
-			return c, nil
+		for _, feature := range c.LatestVersion.ProvidedFeatures {
+			if *feature.Feature == name {
+				return c, nil
+			}
 		}
 	}
 
@@ -113,10 +118,22 @@ func IngredientWithLatestVersion(language, name string, prefix NamespacePrefix) 
 		return nil, locale.NewInputError("inventory_ingredient_not_available", "The ingredient {{.V0}} is not available on the ActiveState Platform", name)
 	}
 
-	candidates := funk.Filter(results, func(iav *IngredientAndVersion) bool {
-		return iav.Ingredient.Name != nil && strings.ToLower(*iav.Ingredient.Name) == strings.ToLower(name)
-	}).([]*IngredientAndVersion)
+	var candidates []*IngredientAndVersion
+	for _, res := range results {
+		for _, feature := range res.LatestVersion.ProvidedFeatures {
+			if feature.Feature == nil || *feature.Feature != name {
+				continue
+			}
 
+			candidates = append(
+				candidates,
+				&IngredientAndVersion{
+					res.V1SearchIngredientsResponseIngredientsItems,
+					*res.LatestVersion.Version,
+					res.Namespace,
+				})
+		}
+	}
 	bestMatch, err := FilterForBestIngredientMatch(candidates, name)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not retrieve a match for ingredient %s.", name)

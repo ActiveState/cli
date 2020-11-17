@@ -44,6 +44,21 @@ func ingredientFromName(name string) *model.IngredientAndVersion {
 					},
 				},
 			},
+			LatestVersion: &inventory_models.V1SearchIngredientsResponseIngredientsItemsLatestVersion{
+				V1SearchIngredientsResponseIngredientsItemsLatestVersionAllOf3: inventory_models.V1SearchIngredientsResponseIngredientsItemsLatestVersionAllOf3{
+					V1SearchIngredientsResponseIngredientsItemsLatestVersionAllOf3AllOf1: inventory_models.V1SearchIngredientsResponseIngredientsItemsLatestVersionAllOf3AllOf1{
+						V1SearchIngredientsResponseIngredientsItemsLatestVersionAllOf3AllOf1AllOf0: inventory_models.V1SearchIngredientsResponseIngredientsItemsLatestVersionAllOf3AllOf1AllOf0{
+							ProvidedFeatures: []*inventory_models.V1SearchIngredientsResponseIngredientsItemsLatestVersionAllOf3AllOf1AllOf0ProvidedFeaturesItems{
+								{
+									V1SearchIngredientsResponseIngredientsItemsLatestVersionAllOf3AllOf1AllOf0ProvidedFeaturesItemsAllOf0: inventory_models.V1SearchIngredientsResponseIngredientsItemsLatestVersionAllOf3AllOf1AllOf0ProvidedFeaturesItemsAllOf0{
+										Feature: &n,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
 		},
 		Version: "1.0",
 	}
