@@ -81,7 +81,6 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 	cp.Expect("You're about to add packages as an anonymous user")
 	cp.Expect("(Y/n)")
 	cp.SendLine("y")
-	cp.Wait()
 	cp.ExpectExitCode(0)
 
 	prj, fail := project.FromPath(filepath.Join(wd, constants.ConfigFileName))
