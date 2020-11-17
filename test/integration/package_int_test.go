@@ -348,19 +348,19 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 
 	suite.Run("install", func() {
 		cp := ts.Spawn("install", "urllib3@1.25.6")
-		cp.ExpectRe("(?:Package added|project is currently building)", 60*time.Second)
+		cp.ExpectRe("(?:Package added|project is currently building)")
 		cp.Wait()
 	})
 
 	suite.Run("install (update)", func() {
 		cp := ts.Spawn("install", "urllib3@1.25.8")
-		cp.ExpectRe("(?:Package updated|project is currently building)", 60*time.Second)
+		cp.ExpectRe("(?:Package updated|project is currently building)")
 		cp.Wait()
 	})
 
 	suite.Run("uninstall", func() {
 		cp := ts.Spawn("uninstall", "urllib3")
-		cp.ExpectRe("(?:Package uninstalled|project is currently building)", 60*time.Second)
+		cp.ExpectRe("(?:Package uninstalled|project is currently building)")
 		cp.Wait()
 	})
 
