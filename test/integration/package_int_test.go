@@ -368,6 +368,9 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 	cp.SendLine("y")
 	cp.ExpectExitCode(0)
 
+	cp = ts.Spawn("pull")
+	cp.ExpectExitCode(0)
+
 	cp = ts.Spawn("history")
 	cp.Expect(fmt.Sprintf("Description: Reverting to commit %s", firstCommit))
 	cp.ExpectExitCode(0)
