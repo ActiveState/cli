@@ -147,16 +147,29 @@ func LatestCommitID(ownerName, projectName string) (*strfmt.UUID, *failures.Fail
 }
 
 // CommitHistory will return the commit history for the given owner / project
-func CommitHistory(ownerName, projectName string) ([]*mono_models.Commit, *failures.Failure) {
+func CommitHistory(ownerName, projectName string) ([]*mono_models.Commit, error) {
+	latestCID, fail := LatestCommitID(ownerName, projectName)
+	if fail != nil {
+		return nil, fail.ToError()
+	}
+	return commitHistory(*latestCID)
+}
+
+// CommitHistoryFromID will return the commit history from the given commitID
+func CommitHistoryFromID(commitID strfmt.UUID) ([]*mono_models.Commit, error) {
+	return commitHistory(commitID)
+}
+
+func commitHistory(commitID strfmt.UUID) ([]*mono_models.Commit, error) {
 	offset := int64(0)
 	limit := int64(100)
 	var commits []*mono_models.Commit
 
 	cont := true
 	for cont {
-		payload, fail := CommitHistoryPaged(ownerName, projectName, offset, limit)
+		payload, fail := CommitHistoryPaged(commitID, offset, limit)
 		if fail != nil {
-			return commits, fail
+			return commits, fail.ToError()
 		}
 		commits = append(commits, payload.Commits...)
 		cont = payload.TotalCommits > (offset + limit)
@@ -166,14 +179,9 @@ func CommitHistory(ownerName, projectName string) ([]*mono_models.Commit, *failu
 }
 
 // CommitHistoryPaged will return the commit history for the given owner / project
-func CommitHistoryPaged(ownerName, projectName string, offset, limit int64) (*mono_models.CommitHistoryInfo, *failures.Failure) {
-	latestCID, fail := LatestCommitID(ownerName, projectName)
-	if fail != nil {
-		return nil, fail
-	}
-
+func CommitHistoryPaged(commitID strfmt.UUID, offset, limit int64) (*mono_models.CommitHistoryInfo, *failures.Failure) {
 	params := vcsClient.NewGetCommitHistoryParams()
-	params.SetCommitID(*latestCID)
+	params.SetCommitID(commitID)
 	params.Limit = &limit
 	params.Offset = &offset
 	res, err := authentication.Client().VersionControl.GetCommitHistory(params, authentication.ClientAuth())

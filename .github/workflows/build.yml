@@ -13,6 +13,7 @@ jobs:
     name: Prepare
     runs-on: ubuntu-latest
     env:
+      ACTIONS_ALLOW_UNSECURE_COMMANDS: true
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true
       GOFLAGS: -mod=vendor
       SHELL: bash
@@ -62,6 +63,7 @@ jobs:
       fail-fast: true
     runs-on: ${{ matrix.platform }}
     env:
+      ACTIONS_ALLOW_UNSECURE_COMMANDS: true
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true
       GOFLAGS: -mod=vendor
       SHELL: bash
@@ -173,6 +175,7 @@ jobs:
     needs:
     - prepare
     env:
+      ACTIONS_ALLOW_UNSECURE_COMMANDS: true
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true
       GOFLAGS: -mod=vendor
       SHELL: bash
@@ -222,6 +225,7 @@ jobs:
       fail-fast: false
     runs-on: ${{ matrix.platform }}
     env:
+      ACTIONS_ALLOW_UNSECURE_COMMANDS: true
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true
       GOFLAGS: -mod=vendor
       SHELL: bash
@@ -298,6 +302,7 @@ jobs:
     needs:
     - prepare
     env:
+      ACTIONS_ALLOW_UNSECURE_COMMANDS: true
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true
       GOFLAGS: -mod=vendor
       SHELL: bash
@@ -381,6 +386,7 @@ jobs:
     - unittest
     runs-on: ubuntu-latest
     env:
+      ACTIONS_ALLOW_UNSECURE_COMMANDS: true
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true
       GOFLAGS: -mod=vendor
       SHELL: bash

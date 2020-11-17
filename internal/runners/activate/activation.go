@@ -3,10 +3,8 @@ package activate
 import (
 	"fmt"
 	"os"
-	"os/signal"
 	"path/filepath"
 	rt "runtime"
-	"syscall"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/fileevents"
@@ -14,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/process"
+	"github.com/ActiveState/cli/internal/sighandler"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -41,7 +40,16 @@ func (r *Activate) activateAndWait(proj *project.Project, venv *virtualenvironme
 		return nil
 	}
 
-	ignoreWindowsInterrupts()
+	// ignore interrupts in State Tool on Windows
+	if rt.GOOS == "windows" {
+		bs := sighandler.NewBackgroundSignalHandler(func(_ os.Signal) {}, os.Interrupt)
+		sighandler.Push(bs)
+	}
+	defer func() {
+		if rt.GOOS == "windows" {
+			sighandler.Pop()
+		}
+	}()
 
 	err = r.config.WriteConfig()
 	if err != nil {
@@ -73,15 +81,4 @@ func (r *Activate) activateAndWait(proj *project.Project, venv *virtualenvironme
 	}
 
 	return nil
-}
-
-func ignoreWindowsInterrupts() {
-	if rt.GOOS == "windows" {
-		c := make(chan os.Signal, 1)
-		signal.Notify(c, syscall.SIGINT)
-		go func() {
-			for range c {
-			}
-		}()
-	}
 }
