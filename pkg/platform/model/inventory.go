@@ -52,7 +52,7 @@ func IngredientByNameAndVersion(language, name, version string, prefix Namespace
 
 	for _, ingredient := range results {
 		for _, feature := range ingredient.LatestVersion.ProvidedFeatures {
-			if feature.Feature == nil || strings.ToLower(*feature.Feature) != strings.ToLower(name) {
+			if feature.Feature == nil || *feature.Feature != name {
 				continue
 			}
 
@@ -84,7 +84,7 @@ func IngredientWithLatestVersion(language, name string, prefix NamespacePrefix) 
 
 	for _, res := range results {
 		for _, feature := range res.LatestVersion.ProvidedFeatures {
-			if feature.Feature == nil || strings.ToLower(*feature.Feature) != strings.ToLower(name) {
+			if feature.Feature == nil || *feature.Feature != name {
 				continue
 			}
 
