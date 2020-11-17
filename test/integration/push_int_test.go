@@ -65,7 +65,7 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 	extraPackage := "JSON"
 	if runtime.GOOS == "darwin" {
 		baseProject = "ActiveState-CLI/small-python"
-		extraPackage = "DateTime"
+		extraPackage = "datetime"
 	}
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs(
