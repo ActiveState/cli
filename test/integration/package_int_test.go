@@ -348,19 +348,19 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 
 	suite.Run("install", func() {
 		cp := ts.Spawn("install", "dateparser@0.7.2")
-		cp.ExpectRe("(?:Package added|project is currently building)")
+		cp.ExpectRe("(?:Package added|project is currently building)", 60*time.Second)
 		cp.Wait()
 	})
 
 	suite.Run("install (update)", func() {
 		cp := ts.Spawn("install", "dateparser@0.7.6")
-		cp.ExpectRe("(?:Package updated|project is currently building)")
+		cp.ExpectRe("(?:Package updated|project is currently building)", 60*time.Second)
 		cp.Wait()
 	})
 
 	suite.Run("uninstall", func() {
 		cp := ts.Spawn("uninstall", "dateparser")
-		cp.ExpectRe("(?:Package uninstalled|project is currently building)")
+		cp.ExpectRe("(?:Package uninstalled|project is currently building)", 60*time.Second)
 		cp.Wait()
 	})
 
