@@ -51,17 +51,19 @@ func IngredientByNameAndVersion(language, name, version string, prefix Namespace
 	}
 
 	for _, ingredient := range results {
-		if ingredient.Ingredient.Name == nil || *ingredient.Ingredient.Name != name {
-			continue
-		}
+		for _, feature := range ingredient.LatestVersion.ProvidedFeatures {
+			if feature.Feature == nil || *feature.Feature != name {
+				continue
+			}
 
-		for _, ver := range ingredient.Versions {
-			if ver.Version == version {
-				return &IngredientAndVersion{
-					ingredient.V1SearchIngredientsResponseIngredientsItems,
-					ver.Version,
-					ingredient.Namespace,
-				}, nil
+			for _, ver := range ingredient.Versions {
+				if ver.Version == version {
+					return &IngredientAndVersion{
+						ingredient.V1SearchIngredientsResponseIngredientsItems,
+						ver.Version,
+						ingredient.Namespace,
+					}, nil
+				}
 			}
 		}
 	}
@@ -81,16 +83,17 @@ func IngredientWithLatestVersion(language, name string, prefix NamespacePrefix) 
 	}
 
 	for _, res := range results {
-		if res.Ingredient.Name == nil || *res.Ingredient.Name != name {
-			continue
-		}
+		for _, feature := range res.LatestVersion.ProvidedFeatures {
+			if feature.Feature == nil || *feature.Feature != name {
+				continue
+			}
 
-		latest := &IngredientAndVersion{
-			res.V1SearchIngredientsResponseIngredientsItems,
-			*res.LatestVersion.Version,
-			res.Namespace,
+			return &IngredientAndVersion{
+				res.V1SearchIngredientsResponseIngredientsItems,
+				*res.LatestVersion.Version,
+				res.Namespace,
+			}, nil
 		}
-		return latest, nil
 	}
 
 	return nil, locale.NewInputError("inventory_ingredient_no_version_available", "No versions are available for package {{.V0}} on the ActiveState Platform", name)
