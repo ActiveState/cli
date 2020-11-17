@@ -193,6 +193,7 @@ func (s *Session) SpawnCmdWithOpts(exe string, opts ...SpawnOptions) *termtest.C
 			RetainWorkDir:  true,
 			ObserveExpect:  observeExpectFn(s),
 			ObserveSend:    observeSendFn(s),
+			ExtraOpts:      []expect.ConsoleOpt{expect.WithStdout(os.Stdout)},
 		},
 		NonWriteableBinDir: false,
 	}
