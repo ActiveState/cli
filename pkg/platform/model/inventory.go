@@ -83,6 +83,10 @@ func IngredientByNameAndVersion(language, name, version string, prefix Namespace
 
 // FilterForBestIngredientMatch filters a list of ingredients for an ingredient with an exact name match first
 func FilterForBestIngredientMatch(candidates []*IngredientAndVersion, name string) (*IngredientAndVersion, error) {
+	if len(candidates) == 0 {
+		return nil, locale.NewInputError("inventory_ingredient_no_version_available", "No versions are available for package {{.V0}} on the ActiveState Platform", name)
+	}
+
 	// check for exact match
 	for _, c := range candidates {
 		for _, feature := range c.LatestVersion.ProvidedFeatures {
@@ -92,9 +96,6 @@ func FilterForBestIngredientMatch(candidates []*IngredientAndVersion, name strin
 		}
 	}
 
-	if len(candidates) == 0 {
-		return nil, locale.NewInputError("inventory_ingredient_no_version_available", "No versions are available for package {{.V0}} on the ActiveState Platform", name)
-	}
 	if len(candidates) > 1 {
 		candidateNames := funk.Map(candidates, func(iav *IngredientAndVersion) string {
 			return *iav.Ingredient.Name
