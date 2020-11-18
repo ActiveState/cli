@@ -1,5 +1,7 @@
 package sliceutils
 
+import "golang.org/x/text/unicode/norm"
+
 func RemoveFromStrings(slice []string, n int) []string {
 	return append(slice[:n], slice[n+1:]...)
 }
@@ -15,5 +17,6 @@ func GetString(slice []string, index int) (string, bool) {
 	if index > len(slice)-1 {
 		return "", false
 	}
-	return slice[index], true
+	// return normalized string
+	return norm.NFC.String(slice[index]), true
 }
