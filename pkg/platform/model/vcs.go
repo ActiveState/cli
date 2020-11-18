@@ -184,7 +184,14 @@ func CommitHistoryPaged(commitID strfmt.UUID, offset, limit int64) (*mono_models
 	params.SetCommitID(commitID)
 	params.Limit = &limit
 	params.Offset = &offset
-	res, err := authentication.Client().VersionControl.GetCommitHistory(params, authentication.ClientAuth())
+
+	var res *vcsClient.GetCommitHistoryOK
+	var err error
+	if authentication.Get().Authenticated() {
+		res, err = authentication.Client().VersionControl.GetCommitHistory(params, authentication.ClientAuth())
+	} else {
+		res, err = mono.New().VersionControl.GetCommitHistory(params, nil)
+	}
 	if err != nil {
 		return nil, FailGetCommitHistory.New(locale.Tr("err_get_commit_history", api.ErrorMessageFromPayload(err)))
 	}
