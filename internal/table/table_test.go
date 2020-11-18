@@ -32,6 +32,19 @@ func TestTable_colWidths(t1 *testing.T) {
 			[]int{8, 9, 10},
 		},
 		{
+			"multi-byte characters",
+			args{
+				&Table{
+					[]string{"12✔", "1234", "12345"},
+					[]row{
+						{[]string{"1", "2", "3"}},
+					},
+				},
+				100,
+			},
+			[]int{8, 9, 10},
+		},
+		{
 			"span row dominates",
 			args{
 				&Table{
@@ -144,6 +157,15 @@ func Test_renderRow(t *testing.T) {
 				"  l1    l2    l3  ",
 		},
 		{
+			"Breaks for multi-byte characters",
+			args{
+				providedColumns: []string{"✔ol1", "✔ol2", "✔ol3"},
+				colWidths:       []int{6, 6, 6},
+			},
+			"  ✔o    ✔o    ✔o  \n" +
+				"  l1    l2    l3  ",
+		},
+		{
 			"Empty column",
 			args{
 				providedColumns: []string{"col1", "", "col3"},
@@ -184,7 +206,7 @@ func Test_renderRow(t *testing.T) {
 			"Multi line second column with line breaks",
 			args{
 				providedColumns: []string{"abcd", "abcde\nfgh"},
-				colWidths:       []int{8, 4, 4},
+				colWidths:       []int{8, 8},
 			},
 			"  abcd    abcd  \n" +
 				"          e\n    \n" +

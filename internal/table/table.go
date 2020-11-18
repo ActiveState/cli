@@ -3,6 +3,7 @@ package table
 import (
 	"math"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/sliceutils"
@@ -11,6 +12,7 @@ import (
 
 const dash = "\u2500"
 const linebreak = "\n"
+const linebreakRune = '\n'
 const padding = 2
 
 type FormatFunc func(string, ...interface{}) string
@@ -60,17 +62,22 @@ func (t *Table) calculateWidth(maxTotalWidth int) ([]int, int) {
 	columnTotal := 0
 	for n, header := range t.headers {
 		// Check header sizes
-		if currentSize, ok := sliceutils.GetInt(colWidths, n); !ok || currentSize < len(header) {
-			colWidths[n] = len(header) // Set width according to header size
+		headerSize := utf8.RuneCountInString(header)
+		if currentSize, ok := sliceutils.GetInt(colWidths, n); !ok || currentSize < headerSize {
+			colWidths[n] = headerSize // Set width according to header size
 		}
 		// Check row column sizes
 		for _, row := range t.rows {
 			spanWidth := columnTotal
-			if rowValue, ok := sliceutils.GetString(row.columns, n); ok && colWidths[n] < len(rowValue) {
+			rowValueSize := 0
+			if rowValue, ok := sliceutils.GetString(row.columns, n); ok {
+				rowValueSize = utf8.RuneCountInString(rowValue)
+			}
+			if colWidths[n] < rowValueSize {
 				if len(row.columns) < len(t.headers) {
-					spanWidth += len(rowValue) + (padding * 2) // This is a spanned column, so its width does not apply to the individual column
+					spanWidth += rowValueSize + (padding * 2) // This is a spanned column, so its width does not apply to the individual column
 				} else {
-					colWidths[n] = len(rowValue) // Set width according to column size
+					colWidths[n] = rowValueSize // Set width according to column size
 				}
 			}
 			if spanWidth > minWidth {
@@ -137,7 +144,7 @@ func renderRow(providedColumns []string, colWidths []int) string {
 				continue
 			}
 
-			colValue := columns[n]
+			colValue := []rune(columns[n])
 
 			// Detect multi column span
 			if len(colWidths) > n+1 && len(columns) == n+1 {
@@ -154,14 +161,13 @@ func renderRow(providedColumns []string, colWidths []int) string {
 				end = maxlen
 			}
 
-			breakpos := strings.Index(colValue, linebreak)
-			if breakpos != -1 && breakpos < end {
+			if breakpos := runeSliceIndexOf(colValue, linebreakRune); breakpos != -1 && breakpos < end {
 				end = breakpos + 1
 			}
 
 			suffix := strings.Repeat(" ", maxlen-end)
-			result += pad(colValue[0:end] + suffix)
-			columns[n] = colValue[end:]
+			result += pad(string(colValue[0:end]) + suffix)
+			columns[n] = string(colValue[end:])
 		}
 		result = strings.TrimRight(result, linebreak) + linebreak
 	}
@@ -172,4 +178,13 @@ func renderRow(providedColumns []string, colWidths []int) string {
 func pad(v string) string {
 	padded := strings.Repeat(" ", padding)
 	return padded + v + padded
+}
+
+func runeSliceIndexOf(slice []rune, r rune) int {
+	for i, c := range slice {
+		if c == r {
+			return i
+		}
+	}
+	return -1
 }
