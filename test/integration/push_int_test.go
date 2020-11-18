@@ -3,6 +3,7 @@ package integration
 import (
 	"fmt"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -59,9 +60,16 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 	username := "cli-integration-tests"
 	pname := strutils.UUID()
 	namespace := fmt.Sprintf("%s/%s", username, pname)
+
+	baseProject := "ActiveState/Perl-5.32"
+	extraPackage := "JSON"
+	if runtime.GOOS == "darwin" {
+		baseProject = "ActiveState-CLI/small-python"
+		extraPackage = "datetime"
+	}
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs(
-			"activate", "ActiveState-CLI/small-python",
+			"activate", baseProject,
 			"--path", filepath.Join(ts.Dirs.Work, namespace)),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
@@ -77,7 +85,7 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 
 	// anonymous commit
 	wd := filepath.Join(cp.WorkDirectory(), namespace)
-	cp = ts.SpawnWithOpts(e2e.WithArgs("install", "datetime"), e2e.WithWorkDirectory(wd))
+	cp = ts.SpawnWithOpts(e2e.WithArgs("install", extraPackage), e2e.WithWorkDirectory(wd))
 	cp.Expect("You're about to add packages as an anonymous user")
 	cp.Expect("(Y/n)")
 	cp.SendLine("y")
