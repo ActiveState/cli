@@ -25,9 +25,12 @@ import (
 type PlainOpts string
 
 const (
+	// SeparateLineOpt requests table output to be printed on a separate line (without columns)
 	SeparateLineOpt PlainOpts = "separateLine"
-	EmptyNil        PlainOpts = "emptyNil"
-	HidePlain       PlainOpts = "hidePlain"
+	// EmptyNil replaces nil values with the empty string
+	EmptyNil PlainOpts = "emptyNil"
+	// HidePlain hides the field value in table output
+	HidePlain PlainOpts = "hidePlain"
 )
 
 const dash = "\u2500"

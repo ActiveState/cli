@@ -4,6 +4,8 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestTable_colWidths(t1 *testing.T) {
@@ -22,12 +24,26 @@ func TestTable_colWidths(t1 *testing.T) {
 				&Table{
 					[]string{"123", "1234", "12345"},
 					[]row{
-						row{[]string{"1", "2", "3"}},
+						{[]string{"1", "2", "3"}},
 					},
 				},
 				100,
 			},
-			[]int{13, 14, 15},
+			[]int{8, 9, 10},
+		},
+		{
+			"span row dominates",
+			args{
+				&Table{
+					[]string{"123", "1234", "12345"},
+					[]row{
+						{[]string{"1", "2", "3"}},
+						{[]string{"1", "0123456789012345678901234567890123456789"}},
+					},
+				},
+				100,
+			},
+			[]int{15, 17, 19},
 		},
 		{
 			"Rowsize wins cause it's longer",
@@ -35,12 +51,12 @@ func TestTable_colWidths(t1 *testing.T) {
 				&Table{
 					[]string{"1", "2", "3"},
 					[]row{
-						row{[]string{"123", "1234", "12345"}},
+						{[]string{"123", "1234", "12345"}},
 					},
 				},
 				100,
 			},
-			[]int{13, 14, 15},
+			[]int{8, 9, 10},
 		},
 		{
 			"Over max total",
@@ -48,12 +64,12 @@ func TestTable_colWidths(t1 *testing.T) {
 				&Table{
 					[]string{strings.Repeat("-", 40), strings.Repeat("-", 50), strings.Repeat("-", 60)},
 					[]row{
-						row{[]string{"1", "2", "3"}},
+						{[]string{"1", "2", "3"}},
 					},
 				},
 				100,
 			},
-			[]int{27, 33, 40},
+			[]int{28, 33, 39},
 		},
 		{
 			"Long multi column",
@@ -61,20 +77,37 @@ func TestTable_colWidths(t1 *testing.T) {
 				&Table{
 					[]string{"a", "b", "c", "d"},
 					[]row{
-						row{[]string{"1", "1", "12", "12"}},
-						row{[]string{strings.Repeat(" ", 100)}},
+						{[]string{"1", "1", "12", "12"}},
+						{[]string{strings.Repeat(" ", 100)}},
 					},
 				},
 				100,
 			},
-			[]int{23, 23, 26, 28},
+			[]int{23, 23, 27, 27},
+		},
+		{
+			"Long multi column (over maxWidth)",
+			args{
+				&Table{
+					[]string{"a", "b", "c", "d"},
+					[]row{
+						{[]string{"1", "1", "12", "12"}},
+						{[]string{"1", strings.Repeat(" ", 200)}},
+					},
+				},
+				100,
+			},
+			[]int{23, 23, 27, 27},
 		},
 	}
 	for _, tt := range tests {
 		t1.Run(tt.name, func(t1 *testing.T) {
-			if got, _ := tt.args.table.calculateWidth(tt.args.maxTotalWidth); !reflect.DeepEqual(got, tt.want) {
+			got, total := tt.args.table.calculateWidth(tt.args.maxTotalWidth)
+			if !reflect.DeepEqual(got, tt.want) {
 				t1.Errorf("calculateWidth() = %v, want %v", got, tt.want)
 			}
+
+			assert.LessOrEqual(t1, total, tt.args.maxTotalWidth)
 		})
 	}
 }
@@ -151,7 +184,7 @@ func Test_renderRow(t *testing.T) {
 			"Multi line second column with line breaks",
 			args{
 				providedColumns: []string{"abcd", "abcde\nfgh"},
-				colWidths:       []int{8, 8},
+				colWidths:       []int{8, 4, 4},
 			},
 			"  abcd    abcd  \n" +
 				"          e\n    \n" +
