@@ -2,6 +2,7 @@ package packages
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -121,6 +122,10 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 		commitID = parentCommitID
 	}
 
+	if pt == Bundle {
+		printBundleInfo(out, ingredient, version)
+	}
+
 	// Create runtime
 	rt, err := runtime.NewRuntime(pj.Source().Path(), commitID, pj.Owner(), pj.Name(), runbits.NewRuntimeMessageHandler(out))
 	if err != nil {
@@ -133,6 +138,8 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 
 	// Update runtime
 	if !rt.IsCachedRuntime() {
+		out.Print(locale.Tl("update_runtime", "[NOTICE]Updating Runtime[/RESET]"))
+		out.Print(locale.Tl("update_runtime_info", "Changes to your runtime may require some dependencies to be rebuilt."))
 		_, _, fail := runtime.NewInstaller(rt).Install()
 		if fail != nil {
 			return locale.WrapError(fail, "err_packages_update_runtime_install", "Could not install dependencies.")
@@ -158,4 +165,35 @@ func splitNameAndVersion(input string) (string, string) {
 	}
 
 	return name, version
+}
+
+func printBundleInfo(out output.Outputer, ingredient *model.IngredientAndVersion, version string) {
+	out.Print("")
+	if version == "" {
+		out.Print(locale.Tl("bundle_no_version", "No bundle version specified, choosing version {{.V0}}", ingredient.Version))
+		out.Print("")
+	}
+
+	var count int
+	var dependencies []string
+	for _, dep := range ingredient.LatestVersion.DependencySets {
+		if dep.OriginalRequirement == "" {
+			continue
+		}
+		count++
+		dependencies = append(dependencies, strings.TrimSuffix(dep.OriginalRequirement, " 0"))
+	}
+
+	out.Print(locale.Tl("bundle_title", "[NOTICE]{{.V0}} Bundle[/RESET] includes {{.V1}} packages", *ingredient.Ingredient.Name, strconv.Itoa(count)))
+	last := len(dependencies) - 1
+	for i, dep := range dependencies {
+		if i == last {
+			out.Print(locale.Tl("bundle_package_name", "  └─ {{.V0}}", dep))
+			continue
+		}
+		out.Print(locale.Tl("bundle_package_name", "  ├─ {{.V0}}", dep))
+	}
+
+	out.Print("")
+	out.Print(locale.Tl("packages_auto_msg", "Packages are automatically added to your runtime."))
 }

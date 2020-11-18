@@ -1114,9 +1114,9 @@ package_added:
 package_version_added:
   other: "Package added: [NOTICE]{{.V0}}@{{.V1}}[/RESET]"
 bundle_added:
-  other: "Bundle added: [NOTICE]{{.V0}}[/RESET]"
+  other: "[SUCCESS]✔ {{.V0}} Bundle successfully installed![/RESET]"
 bundle_version_added:
-  other: "Bundle added: [NOTICE]{{.V0}}@{{.V1}}[/RESET]"
+  other: "[SUCCESS]✔ {{.V0}} Bundle @ version {{.V1}} successfully installed![/RESET]"
 err_package_updated:
   other: Failed to update package
 err_bundle_updated:
