@@ -193,6 +193,7 @@ func (s *Session) SpawnCmdWithOpts(exe string, opts ...SpawnOptions) *termtest.C
 			RetainWorkDir:  true,
 			ObserveExpect:  observeExpectFn(s),
 			ObserveSend:    observeSendFn(s),
+			// uncomment the next line to print all output to stdout eg., if tests fail with a hard timeout causing a panic
 			// ExtraOpts:      []expect.ConsoleOpt{expect.WithStdout(os.Stdout)},
 		},
 		NonWriteableBinDir: false,
