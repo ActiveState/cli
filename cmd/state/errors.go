@@ -95,6 +95,11 @@ func unwrapError(err error) (int, error) {
 	// unwrap exit code before we remove un-localized wrapped errors from err variable
 	code := errs.UnwrapExitCode(err)
 
+	if isSilent(err) {
+		logging.Debug("Suppressing silent failure: %v", err.Error())
+		return code, nil
+	}
+
 	if !locale.HasError(err) && isErrs && !hasMarshaller {
 		logging.Error("MUST ADDRESS: Error does not have localization: %s", errs.Join(err, "\n").Error())
 
@@ -102,11 +107,6 @@ func unwrapError(err error) (int, error) {
 		if !rtutils.BuiltViaCI {
 			panic(fmt.Sprintf("Errors must be localized! Please localize: %s, called at: %s\n", err.Error(), stack))
 		}
-	}
-
-	if isSilent(err) {
-		logging.Debug("Suppressing silent failure: %v", err.Error())
-		return code, nil
 	}
 
 	return code, &OutputError{err}
