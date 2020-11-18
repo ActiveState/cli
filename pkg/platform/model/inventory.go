@@ -140,12 +140,7 @@ func IngredientWithLatestVersion(language, name string, prefix NamespacePrefix) 
 		return nil, errs.Wrap(err, "Could not retrieve a match for ingredient %s.", name)
 	}
 
-	latest := &IngredientAndVersion{
-		bestMatch.V1SearchIngredientsResponseIngredientsItems,
-		*bestMatch.LatestVersion.Version,
-		bestMatch.Namespace,
-	}
-	return latest, nil
+	return bestMatch, nil
 }
 
 // SearchIngredients will return all ingredients+ingredientVersions that fuzzily
