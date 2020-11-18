@@ -75,7 +75,7 @@ func IngredientByNameAndVersion(language, name, version string, prefix Namespace
 
 	bestMatch, err := FilterForBestIngredientMatch(candidates, name)
 	if err != nil {
-		return nil, locale.NewInputError("inventory_ingredient_version_not_available", "Version {{.V0}} is not available for package {{.V1}} on the ActiveState Platform", version, name)
+		return nil, errs.Wrap(err, "Could not retrieve a match for ingredient %s.", name)
 	}
 
 	return bestMatch, nil
