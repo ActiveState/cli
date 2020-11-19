@@ -47,6 +47,9 @@ const CatCommandExit = "command-exit"
 // CatActivationFlow is for events that outline the activation flow
 const CatActivationFlow = "activation"
 
+// CatPrompt is for prompt events
+const CatPrompt = "prompt"
+
 type customDimensions struct {
 	version       string
 	branchName    string

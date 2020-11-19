@@ -2,7 +2,9 @@ package prompt
 
 import (
 	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
@@ -113,15 +115,29 @@ func (p *Prompt) Confirm(title, message string, defaultChoice bool) (bool, *fail
 		p.out.Notice(output.SubHeading(title))
 	}
 
+	analytics.EventWithLabel(analytics.CatPrompt, title, "present")
+
 	var resp bool
 	err := survey.AskOne(&Confirm{&survey.Confirm{
 		Message: formatMessage(message, !p.out.Config().Colored),
 		Default: defaultChoice,
 	}}, &resp, nil)
 	if err != nil {
+		if err == terminal.InterruptErr {
+			analytics.EventWithLabel(analytics.CatPrompt, title, "interrupt")
+		}
 		return false, failures.FailUserInput.Wrap(err)
 	}
+	analytics.EventWithLabel(analytics.CatPrompt, title, translateConfirm(resp))
+
 	return resp, nil
+}
+
+func translateConfirm(confirm bool) string {
+	if confirm {
+		return "positive"
+	}
+	return "negative"
 }
 
 // InputSecret prompts the user for input and obfuscates the text in stdout.
