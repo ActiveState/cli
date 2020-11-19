@@ -122,7 +122,7 @@ func IngredientWithLatestVersion(language, name string, prefix NamespacePrefix) 
 	var candidates []*IngredientAndVersion
 	for _, res := range results {
 		for _, feature := range res.LatestVersion.ProvidedFeatures {
-			if feature.Feature == nil || *feature.Feature != name {
+			if feature.Feature == nil || strings.ToLower(*feature.Feature) != strings.ToLower(name) {
 				continue
 			}
 
