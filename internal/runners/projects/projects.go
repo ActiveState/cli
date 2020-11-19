@@ -23,6 +23,12 @@ type projectWithOrg struct {
 type projectWithOrgs []projectWithOrg
 
 func (o projectWithOrgs) MarshalOutput(f output.Format) interface{} {
+	type projectOutputPlain struct {
+		Name           string
+		Organization   string
+		LocalCheckouts string `locale:"local_checkouts,Local Checkouts" opts:"emptyNil,separateLine"`
+	}
+
 	if f != output.PlainFormatName {
 		return o
 	}
@@ -36,12 +42,6 @@ func (o projectWithOrgs) MarshalOutput(f output.Format) interface{} {
 		r = append(r, projectOutputPlain{v.Name, v.Organization, strings.Join(checkouts, "\n")})
 	}
 	return r
-}
-
-type projectOutputPlain struct {
-	Name           string
-	Organization   string
-	LocalCheckouts string `locale:"local_checkouts,Local Checkouts" opts:"emptyNil,separateLine"`
 }
 
 type configGetter interface {
