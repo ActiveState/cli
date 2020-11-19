@@ -64,7 +64,7 @@ func (r *Push) Run(params PushParams) error {
 			if names == "" {
 				return errs.AddTips(
 					locale.NewInputError("push_needs_namespace", "Could not find out what project to push to."),
-					locale.Tl("push_add_namespace_tip", "You can specify a project name as an argument for [NOTICE]state push[/RESET]."),
+					locale.Tl("push_add_namespace_tip", "You can specify a project by running [ACTIONABLE]state push <project>[/RESET]."),
 				)
 			}
 			var fail *failures.Failure
