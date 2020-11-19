@@ -112,14 +112,12 @@ func (t *Table) calculateWidth(maxTotalWidth int) ([]int, int) {
 	}
 
 	// Calculate column widths according to the total width
-	calculatedTotal := 0
 	remaining := total
 	for n, w := range colWidths {
 		cw := int(math.Floor(float64(w) / float64(columnTotal) * float64(remaining)))
 		columnTotal -= w
 		remaining -= cw
 		colWidths[n] = cw
-		calculatedTotal += cw
 	}
 	colWidths[len(colWidths)-1] += remaining // Ensure we use up all remaining space
 
