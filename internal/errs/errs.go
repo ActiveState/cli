@@ -32,6 +32,16 @@ type WrappedErr struct {
 	stack   *stacktrace.Stacktrace
 }
 
+func (e *WrappedErr) Error() string {
+	if e.error != nil {
+		return e.error.Error()
+	}
+	if e.wrapped != nil {
+		return e.wrapped.Error()
+	}
+	return "incorrectly wrapped error"
+}
+
 func (e *WrappedErr) ErrorTips() []string {
 	return e.tips
 }
@@ -95,7 +105,7 @@ func (e *ErrorWithTips) ErrorTips() []string {
 
 func AddTips(err error, tips ...string) error {
 	if _, ok := err.(ErrorTips); !ok {
-		err = newError(err, nil)
+		err = newError(nil, err)
 	}
 	err.(ErrorTips).AddTips(tips...)
 	return err
