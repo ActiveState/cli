@@ -136,7 +136,7 @@ func renderRow(providedColumns []string, colWidths []int) string {
 	// Keep rendering lines until there's no column data left to render
 	for len(strings.Join(columns, "")) != 0 {
 		// Iterate over the columns by their line sizes
-		for n, maxlen := range colWidths {
+		for n, maxLen := range colWidths {
 			// ignore columns that we do not have data for (they have been filled up with the last colValue already)
 			if len(columns) < n+1 {
 				continue
@@ -147,23 +147,23 @@ func renderRow(providedColumns []string, colWidths []int) string {
 			// Detect multi column span
 			if len(colWidths) > n+1 && len(columns) == n+1 {
 				for _, v := range colWidths[n+1:] {
-					maxlen += v
+					maxLen += v
 				}
 			}
 
-			maxlen = maxlen - (padding * 2)
+			maxLen = maxLen - (padding * 2)
 
 			// How much of the colValue are we using this line?
 			end := len(colValue)
-			if end > maxlen {
-				end = maxlen
+			if end > maxLen {
+				end = maxLen
 			}
 
 			if breakpos := runeSliceIndexOf(colValue, linebreakRune); breakpos != -1 && breakpos < end {
 				end = breakpos + 1
 			}
 
-			suffix := strings.Repeat(" ", maxlen-end)
+			suffix := strings.Repeat(" ", maxLen-end)
 			result += pad(string(colValue[0:end]) + suffix)
 			columns[n] = string(colValue[end:])
 		}
