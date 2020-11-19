@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -27,7 +28,7 @@ type PushIntegrationTestSuite struct {
 }
 
 func (suite *PushIntegrationTestSuite) SetupSuite() {
-	suite.language = "perl"
+	suite.language = "perl@5.32.0"
 	suite.baseProject = "ActiveState/Perl-5.32"
 	suite.extraPackage = "JSON"
 	if runtime.GOOS == "darwin" {
@@ -57,7 +58,7 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 	wd := filepath.Join(cp.WorkDirectory(), namespace)
 	cp = ts.SpawnWithOpts(e2e.WithArgs("push"), e2e.WithWorkDirectory(wd))
 	cp.ExpectLongString(fmt.Sprintf("Project created at https://%s/%s/%s", constants.PlatformURL, username, pname))
-	cp.ExpectLongString(fmt.Sprintf("with language %s", suite.language))
+	cp.ExpectLongString(fmt.Sprintf("with language %s", strings.Split(suite.language, "@")[0]))
 	cp.ExpectExitCode(0)
 
 	// Check that languages were reset
