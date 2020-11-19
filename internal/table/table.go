@@ -55,6 +55,31 @@ func (t *Table) Render() string {
 	return strings.TrimRight(out, linebreak)
 }
 
+// equalizeWidths equalizes the width of given columns by a given percentage of the average columns width
+func equalizeWidths(colWidths []int, total int, percentage int) ([]int, int) {
+	averageWidth := total / len(colWidths)
+	equalizer := percentage * averageWidth / 100
+	total += equalizer * len(colWidths)
+	for n := range colWidths {
+		colWidths[n] += equalizer
+	}
+	return colWidths, total
+}
+
+func rescaleColumns(colWidths []int, total, targetTotal int) []int {
+	// Calculate column widths according to the total width
+	remaining := targetTotal
+	for n, w := range colWidths {
+		cw := int(math.Floor(float64(w) / float64(total) * float64(remaining)))
+		total -= w
+		remaining -= cw
+		colWidths[n] = cw
+	}
+
+	colWidths[len(colWidths)-1] += remaining // Ensure we use up all remaining space
+	return colWidths
+}
+
 func (t *Table) calculateWidth(maxTotalWidth int) ([]int, int) {
 	// Calculate required width of each column
 	minWidth := padding * 2
@@ -92,38 +117,24 @@ func (t *Table) calculateWidth(maxTotalWidth int) ([]int, int) {
 
 	// Equalize widths by 20% of average width
 	// This is to prevent columns that are much larger than others from taking up most of the table width
-	averageWidth := columnTotal / len(colWidths)
-	equalizer := 20 * averageWidth / 100
-	columnTotal += equalizer * len(colWidths)
-	for n := range colWidths {
-		colWidths[n] += equalizer
-	}
+	colWidths, columnTotal = equalizeWidths(colWidths, columnTotal, 20)
 
-	total := columnTotal
-
+	// compute the total number of columns that we want the table to use
+	targetTotal := columnTotal
 	// Factor in spanned columns
-	if total < minWidth {
-		total = minWidth
+	if targetTotal < minWidth {
+		targetTotal = minWidth
 	}
 
 	// Limit to max width
-	if total > maxTotalWidth {
-		total = maxTotalWidth
+	if targetTotal > maxTotalWidth {
+		targetTotal = maxTotalWidth
 	}
 
-	// Calculate column widths according to the total width
-	remaining := total
-	for n, w := range colWidths {
-		cw := int(math.Floor(float64(w) / float64(columnTotal) * float64(remaining)))
-		columnTotal -= w
-		remaining -= cw
-		colWidths[n] = cw
-	}
-	colWidths[len(colWidths)-1] += remaining // Ensure we use up all remaining space
+	colWidths = rescaleColumns(colWidths, columnTotal, targetTotal)
+	logging.Debug("Table column widths: %v, total: %d", colWidths, targetTotal)
 
-	logging.Debug("Table column widths: %v, total: %d", colWidths, total)
-
-	return colWidths, total
+	return colWidths, targetTotal
 }
 
 func renderRow(providedColumns []string, colWidths []int) string {
@@ -153,7 +164,7 @@ func renderRow(providedColumns []string, colWidths []int) string {
 
 			maxLen = maxLen - (padding * 2)
 
-			// How much of the colValue are we using this line?
+			// How much of the colValue are we using for this line?
 			end := len(colValue)
 			if end > maxLen {
 				end = maxLen
