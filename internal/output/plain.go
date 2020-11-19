@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
 	"reflect"
 	"sort"
 	"strings"
@@ -12,7 +11,6 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/mitchellh/go-wordwrap"
 	"github.com/thoas/go-funk"
-	"golang.org/x/crypto/ssh/terminal"
 
 	"github.com/ActiveState/cli/internal/colorize"
 	"github.com/ActiveState/cli/internal/failures"
@@ -20,15 +18,19 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
-	"github.com/ActiveState/cli/internal/tabulate"
+	"github.com/ActiveState/cli/internal/table"
+	"github.com/ActiveState/cli/internal/termutils"
 )
 
 type PlainOpts string
 
 const (
-	SingleLineOpt PlainOpts = "singleLine"
-	EmptyNil      PlainOpts = "emptyNil"
-	HidePlain     PlainOpts = "hidePlain"
+	// SeparateLineOpt requests table output to be printed on a separate line (without columns)
+	SeparateLineOpt PlainOpts = "separateLine"
+	// EmptyNil replaces nil values with the empty string
+	EmptyNil PlainOpts = "emptyNil"
+	// HidePlain hides the field value in table output
+	HidePlain PlainOpts = "hidePlain"
 )
 
 const dash = "\u2500"
@@ -69,7 +71,6 @@ func (f *Plain) Notice(value interface{}) {
 	f.write(f.cfg.ErrWriter, fmt.Sprintf("%s\n", value))
 }
 
-
 // Config returns the Config struct for the active instance
 func (f *Plain) Config() *Config {
 	return f.cfg
@@ -95,17 +96,7 @@ func (f *Plain) writeNow(writer io.Writer, value string) {
 }
 
 func wordWrap(text string) string {
-	maxTermWidth := 160
-	termWidth, _, err := terminal.GetSize(int(os.Stdout.Fd()))
-	if err != nil {
-		logging.Debug("Cannot get terminal size: %v", err)
-		return wordwrap.WrapString(text, uint(maxTermWidth))
-	}
-
-	if termWidth > maxTermWidth {
-		termWidth = maxTermWidth
-	}
-
+	termWidth := termutils.GetWidth()
 	return wordwrap.WrapString(text, uint(termWidth))
 }
 
@@ -261,14 +252,8 @@ func sprintTable(slice []interface{}) (string, error) {
 		return "", nil
 	}
 
-	termWidth, _, err := terminal.GetSize(int(os.Stdout.Fd()))
-	if err != nil || termWidth == 0 {
-		logging.Debug("Cannot get terminal size: %v", err)
-		termWidth = 100
-	}
-
 	headers := []string{}
-	rows := [][]interface{}{}
+	rows := [][]string{}
 	for _, v := range slice {
 		if !isStruct(v) {
 			return "", errors.New("Tried to sprintTable with slice that doesn't contain all structs")
@@ -280,15 +265,14 @@ func sprintTable(slice []interface{}) (string, error) {
 		}
 
 		firstIteration := len(headers) == 0
-		row := []interface{}{}
+		row := []string{}
 		for _, field := range meta {
 			if funk.Contains(field.opts, string(HidePlain)) {
 				continue
 			}
 
-			if firstIteration {
+			if firstIteration && !funk.Contains(field.opts, string(SeparateLineOpt)) {
 				headers = append(headers, localizedField(field.l10n))
-				termWidth = termWidth - (len(headers) * 10) // Account for cell padding, cause tabulate doesn't..
 			}
 
 			stringValue, err := sprint(field.value)
@@ -296,48 +280,28 @@ func sprintTable(slice []interface{}) (string, error) {
 				return "", err
 			}
 
-			if funk.Contains(field.opts, string(SingleLineOpt)) {
-				stringValue = trimValue(stringValue, termWidth)
-			}
-
 			if funk.Contains(field.opts, string(EmptyNil)) && stringValue == nilText {
 				stringValue = ""
+			}
+
+			if funk.Contains(field.opts, string(SeparateLineOpt)) {
+				rows = append(rows, row)
+				if !funk.Contains(field.opts, string(EmptyNil)) || stringValue != "" {
+					rows = append(rows, []string{stringValue})
+				}
+				row = []string{}
+				break
 			}
 
 			row = append(row, stringValue)
 		}
 
-		rows = append(rows, row)
+		if len(row) > 0 {
+			rows = append(rows, row)
+		}
 	}
 
-	if termWidth == 0 {
-		termWidth = 100
-	}
-
-	t := tabulate.Create(rows)
-	t.SetWrapDelimiter(' ')
-	t.SetWrapStrings(true)
-	t.SetMaxCellSize(termWidth)
-	t.SetHeaders(headers)
-
-	// Don't print whitespace lines
-	t.SetHideLines([]string{"betweenLine", "top", "aboveTitle", "LineTop", "LineBottom", "bottomLine"})
-	t.SetAlign("left")
-
-	// Set our own custom table format
-	tabulate.TableFormats["standard"] = tabulate.TableFormat{
-		LineBelowHeader: tabulate.Line{"[DISABLED]", dash, "", "[/RESET]"},
-		HeaderRow:       tabulate.Row{"[HEADING]", "", "[/RESET]"},
-		DataRow:         tabulate.Row{"", "", ""},
-		TitleRow:        tabulate.Row{"", "", ""},
-		Padding:         1,
-	}
-
-	// Adjust padding value for the above table format
-	tabulate.MIN_PADDING = 4
-
-	render := t.Render("standard")
-	return strings.TrimSuffix(render, "\n"), nil
+	return table.New(headers).AddRow(rows...).Render(), nil
 }
 
 // localizedField is a little helper that will return the localized version of the given string
