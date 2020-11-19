@@ -48,9 +48,12 @@ func (h *History) Run(params *HistoryParams) error {
 
 		commits, err = model.CommitHistory(nsMeta.Owner, nsMeta.Project)
 		if err != nil {
-			return locale.WrapError(err, "err_commit_history_namespace", "Could not get commit history from provide namespace: {{.V0}}", params.Namespace)
+			return locale.WrapError(err, "err_commit_history_namespace", "Could not get commit history from provided namespace: {{.V0}}", params.Namespace)
 		}
 	} else {
+		if h.project == nil {
+			return locale.NewInputError("err_history_no_project", "A namespace was not provided and a project could not be found. Please use a project namespace or run this command in a project directory")
+		}
 		commits, err = model.CommitHistoryFromID(h.project.CommitUUID())
 		if err != nil {
 			return locale.WrapError(err, "err_commit_hisotry_commit_id", "Could not get commit history from commit ID.")
