@@ -19,6 +19,22 @@ import (
 type PushIntegrationTestSuite struct {
 	tagsuite.Suite
 	username string
+
+	// some variables re-used between tests
+	baseProject  string
+	language     string
+	extraPackage string
+}
+
+func (suite *PushIntegrationTestSuite) SetupSuite() {
+	suite.language = "perl"
+	suite.baseProject = "ActiveState/Perl-5.32"
+	suite.extraPackage = "JSON"
+	if runtime.GOOS == "darwin" {
+		suite.language = "python3"
+		suite.baseProject = "ActiveState-CLI/small-python"
+		suite.extraPackage = "datetime"
+	}
 }
 
 func (suite *PushIntegrationTestSuite) TestInitAndPush() {
@@ -32,7 +48,7 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 	cp := ts.Spawn(
 		"init",
 		namespace,
-		"python3",
+		suite.language,
 		"--path", filepath.Join(ts.Dirs.Work, namespace),
 		"--skeleton", "editor",
 	)
@@ -41,7 +57,7 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 	wd := filepath.Join(cp.WorkDirectory(), namespace)
 	cp = ts.SpawnWithOpts(e2e.WithArgs("push"), e2e.WithWorkDirectory(wd))
 	cp.ExpectLongString(fmt.Sprintf("Project created at https://%s/%s/%s", constants.PlatformURL, username, pname))
-	cp.ExpectLongString("with language python3")
+	cp.ExpectLongString(fmt.Sprintf("with language %s", suite.language))
 	cp.ExpectExitCode(0)
 
 	// Check that languages were reset
@@ -51,6 +67,23 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 	if pjfile.Languages != nil {
 		suite.FailNow("Expected languages to be nil, but got: %v", pjfile.Languages)
 	}
+
+	// ensure that we are logged out
+	cp = ts.Spawn("auth", "logout")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(e2e.WithArgs("install", suite.extraPackage), e2e.WithWorkDirectory(wd))
+	cp.Expect("You're about to add packages as an anonymous user")
+	cp.Expect("(Y/n)")
+	cp.SendLine("y")
+	cp.Expect("added")
+	cp.ExpectExitCode(0)
+
+	ts.LoginAsPersistentUser()
+
+	cp = ts.SpawnWithOpts(e2e.WithArgs("push"), e2e.WithWorkDirectory(wd))
+	cp.Expect("Pushing to project")
+	cp.ExpectExitCode(0)
 }
 
 func (suite *PushIntegrationTestSuite) TestCarlisle() {
@@ -61,15 +94,9 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 	pname := strutils.UUID()
 	namespace := fmt.Sprintf("%s/%s", username, pname)
 
-	baseProject := "ActiveState/Perl-5.32"
-	extraPackage := "JSON"
-	if runtime.GOOS == "darwin" {
-		baseProject = "ActiveState-CLI/small-python"
-		extraPackage = "datetime"
-	}
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs(
-			"activate", baseProject,
+			"activate", suite.baseProject,
 			"--path", filepath.Join(ts.Dirs.Work, namespace)),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
@@ -85,7 +112,7 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 
 	// anonymous commit
 	wd := filepath.Join(cp.WorkDirectory(), namespace)
-	cp = ts.SpawnWithOpts(e2e.WithArgs("install", extraPackage), e2e.WithWorkDirectory(wd))
+	cp = ts.SpawnWithOpts(e2e.WithArgs("install", suite.extraPackage), e2e.WithWorkDirectory(wd))
 	cp.Expect("You're about to add packages as an anonymous user")
 	cp.Expect("(Y/n)")
 	cp.SendLine("y")
