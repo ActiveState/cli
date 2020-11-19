@@ -84,11 +84,10 @@ func (r *Push) Run(params PushParams) error {
 	// Get the project remotely if it already exists
 	pjm, fail := model.FetchProjectByName(owner, name)
 	if fail != nil {
-		if fail.Type.Matches(model.FailProjectNotFound) {
-			if r.project.IsHeadless() {
-				return locale.WrapInputError(fail.ToError(), "err_push_existing_project_needed", "Cannot push to [NOTICE]{{.V0}}/{{.V1}}[/RESET], as project does not exist.")
-			}
-		} else {
+		if fail.Type.Matches(model.FailProjectNotFound) && r.project.IsHeadless() {
+			return locale.WrapInputError(fail.ToError(), "err_push_existing_project_needed", "Cannot push to [NOTICE]{{.V0}}/{{.V1}}[/RESET], as project does not exist.")
+		}
+		if !fail.Type.Matches(model.FailProjectNotFound) {
 			return locale.WrapError(fail.ToError(), "err_push_try_project", "Failed to check for existence of project.")
 		}
 		// We have to reset handled failures since our legacy command handling still relies on this
