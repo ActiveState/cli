@@ -86,7 +86,7 @@ func (t *Table) calculateWidth(maxTotalWidth int) ([]int, int) {
 		}
 
 		// Add padding and update the total width so far
-		colWidths[n] += (padding * 2)
+		colWidths[n] += padding * 2
 		columnTotal += colWidths[n]
 	}
 
