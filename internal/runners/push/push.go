@@ -77,7 +77,7 @@ func (r *Push) Run(params PushParams) error {
 		name = namespace.Project
 	} else {
 		if params.Namespace.IsValid() {
-			return locale.NewInputError("push_invalid_arg_namespace", "")
+			return locale.NewInputError("push_invalid_arg_namespace", "The project name argument is only allowed when pushing an anonymous commit.")
 		}
 	}
 
