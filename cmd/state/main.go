@@ -95,6 +95,9 @@ func run(args []string, out output.Outputer) (int, error) {
 		defer cleanup()
 	}
 
+	verbose := os.Getenv("VERBOSE") != "" || argsHaveVerbose(os.Args)
+	logging.CurrentHandler().SetVerbose(verbose)
+
 	logging.Debug("ConfigPath: %s", config.ConfigPath())
 	logging.Debug("CachePath: %s", config.CachePath())
 
@@ -186,4 +189,13 @@ func run(args []string, out output.Outputer) (int, error) {
 	}
 
 	return unwrapError(err)
+}
+
+func argsHaveVerbose(args []string) bool {
+	for _, arg := range args {
+		if arg == "--verbose" || arg == "-v" {
+			return true
+		}
+	}
+	return false
 }

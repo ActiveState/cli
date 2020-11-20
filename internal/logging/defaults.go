@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/rollbar/rollbar-go"
 
@@ -20,10 +21,27 @@ import (
 // Logger describes a logging function, like Debug, Error, Warning, etc.
 type Logger func(msg string, args ...interface{})
 
+type safeBool struct {
+	mu sync.Mutex
+	v  bool
+}
+
+func (s *safeBool) value() bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.v
+}
+
+func (s *safeBool) setValue(v bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.v = v
+}
+
 type fileHandler struct {
 	formatter Formatter
 	file      *os.File
-	verbose   bool
+	verbose   safeBool
 }
 
 func (l *fileHandler) SetFormatter(f Formatter) {
@@ -31,7 +49,7 @@ func (l *fileHandler) SetFormatter(f Formatter) {
 }
 
 func (l *fileHandler) SetVerbose(v bool) {
-	l.verbose = v
+	l.verbose.setValue(v)
 }
 
 func (l *fileHandler) Output() io.Writer {
@@ -81,7 +99,7 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 	}
 
 	message = l.formatter.Format(ctx, message, args...)
-	if l.verbose {
+	if l.verbose.value() {
 		fmt.Fprintln(os.Stderr, message)
 	}
 
@@ -109,7 +127,7 @@ func (l *fileHandler) Printf(msg string, args ...interface{}) {
 }
 
 func init() {
-	handler := &fileHandler{DefaultFormatter, nil, os.Getenv("VERBOSE") != ""}
+	handler := &fileHandler{DefaultFormatter, nil, safeBool{}}
 	SetHandler(handler)
 
 	// Clean up old log files
