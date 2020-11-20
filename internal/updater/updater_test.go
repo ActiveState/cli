@@ -32,7 +32,7 @@ func TestUpdaterWithEmptyPayloadErrorNoUpdate(t *testing.T) {
 	updater := createUpdater()
 
 	out := outputhelper.NewCatcher()
-	err := updater.Run(out.Outputer)
+	err := updater.Run(out.Outputer, false)
 	assert.Error(t, err, "Should fail because there is no update")
 	assert.Equal(t, "", strings.TrimSpace(out.CombinedOutput()))
 }

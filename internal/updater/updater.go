@@ -129,12 +129,12 @@ func (u *Updater) Download(path string) error {
 }
 
 // Run starts the update check and apply cycle.
-func (u *Updater) Run(out output.Outputer) error {
+func (u *Updater) Run(out output.Outputer, autoUpdate bool) error {
 	if !u.CanUpdate() {
 		return failures.FailNotFound.New("No update available")
 	}
 
-	return u.update(out)
+	return u.update(out, autoUpdate)
 }
 
 // getExecRelativeDir relativizes the directory to store selfupdate state
@@ -170,7 +170,7 @@ func (u *Updater) download(path string) error {
 }
 
 // update performs the actual update of the executable
-func (u *Updater) update(out output.Outputer) error {
+func (u *Updater) update(out output.Outputer, autoUpdate bool) error {
 	path, err := osext.Executable()
 	if err != nil {
 		return err
@@ -186,7 +186,7 @@ func (u *Updater) update(out output.Outputer) error {
 	defer pl.Close()
 
 	// This will succeed for only one of several concurrently state tool
-	// instances. By returning otherwise, we preventing that we download the
+	// instances. By returning otherwise, we are preventing that we download the
 	// same new state tool version several times.
 	_, err = pl.TryLock()
 	if err != nil {
@@ -214,6 +214,12 @@ func (u *Updater) update(out output.Outputer) error {
 	}
 
 	out.Notice(locale.T("update_attempt"))
+	if autoUpdate {
+		out.Notice(locale.Tl(
+			"auto_update_disable_notice",
+			fmt.Sprintf("To avoid auto updating run [ACTIONABLE]state update --lock[/RESET] (only recommended for production environments) or set environment variable [ACTIONABLE]%s=true[/RESET]", constants.DisableUpdates),
+		))
+	}
 	bin, err := u.fetchAndVerifyFullBin()
 	if err != nil {
 		return err
