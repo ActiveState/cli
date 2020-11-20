@@ -108,7 +108,7 @@ func (u *Update) runUpdateGlobal() error {
 		return nil
 	}
 
-	if err = up.Run(u.out); err != nil {
+	if err = up.Run(u.out, false); err != nil {
 		if os.IsPermission(errs.InnerError(err)) {
 			return locale.WrapError(err, "err_update_failed_due_to_permissions", "Update failed due to permission error.  You may have to re-run the command as a privileged user.")
 		}
