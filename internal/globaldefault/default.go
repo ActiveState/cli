@@ -3,6 +3,7 @@ package globaldefault
 import (
 	"io/ioutil"
 	"os"
+	"os/user"
 	"path/filepath"
 	rt "runtime"
 	"strings"
@@ -16,8 +17,11 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/internal/subshell/cmd"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 )
@@ -34,6 +38,34 @@ func BinDir() string {
 	return filepath.Join(config.CachePath(), "bin")
 }
 
+func isBinDirOnWindowsUserPath(binDir string) bool {
+	if rt.GOOS != "windows" {
+		return false
+	}
+
+	isWindowsAdmin, err := osutils.IsWindowsAdmin()
+	if err != nil {
+		logging.Error("Failed to determine if we are running as administrator: %v", err)
+	}
+	if !isWindowsAdmin {
+		return false
+	}
+	cmdEnv := cmd.NewCmdEnv(true)
+	path, fail := cmdEnv.Get("PATH")
+	if fail != nil {
+		logging.Error("Failed to get user PATH")
+		return false
+	}
+
+	for _, p := range strings.Split(path, string(os.PathListSeparator)) {
+		if p == binDir {
+			return true
+		}
+	}
+
+	return false
+}
+
 func Prepare(subshell subshell.SubShell) error {
 	logging.Debug("Preparing globaldefault")
 	binDir := BinDir()
@@ -44,6 +76,11 @@ func Prepare(subshell subshell.SubShell) error {
 		if p == binDir {
 			return nil
 		}
+	}
+
+	if isBinDirOnWindowsUserPath(binDir) {
+		logging.Debug("Skip preparation step as it has been done previously for the current user.")
+		return nil
 	}
 
 	if fail := fileutils.MkdirUnlessExists(binDir); fail != nil {
@@ -59,6 +96,31 @@ func Prepare(subshell subshell.SubShell) error {
 	}
 
 	return nil
+}
+
+// WarningForAdministrator prints a warning message if default activation is invoked by a Windows Administrator
+// The default activation will only be accessible by the underlying unprivileged user.
+func WarningForAdministrator(out output.Outputer) {
+	if rt.GOOS != "windows" {
+		return
+	}
+
+	isAdmin, err := osutils.IsWindowsAdmin()
+	if err != nil {
+		logging.Error("Failed to determine if run as administrator.")
+	}
+	if isAdmin {
+		u, err := user.Current()
+		if err != nil {
+			logging.Error("Failed to determine current user.")
+			return
+		}
+		out.Notice(locale.Tl(
+			"default_admin_activation_warning",
+			"[NOTICE]The default activation is added to the environment of user {{.V0}}.  The project may be inaccessible when run with Administrator privileges or authenticated as a different user.[/RESET]",
+			u.Username,
+		))
+	}
 }
 
 // SetupDefaultActivation sets symlinks in the global bin directory to the currently activated runtime

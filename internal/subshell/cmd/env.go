@@ -97,8 +97,8 @@ func (c *CmdEnv) set(name, newValue string) *failures.Failure {
 	return failures.FailOS.Wrap(osutils.SetStringValue(key, name, valType, newValue))
 }
 
-// getUserEnv retrieves a variable from the user environment, this prioritizes a backup if it exists
-func (c *CmdEnv) get(name string) (string, *failures.Failure) {
+// Get retrieves a variable from the user environment, this prioritizes a backup if it exists
+func (c *CmdEnv) Get(name string) (string, *failures.Failure) {
 	key, err := c.openKeyFn(getEnvironmentPath(c.userScope))
 	if err != nil {
 		return "", failures.FailOS.Wrap(err, locale.T("err_windows_registry"))
@@ -122,7 +122,7 @@ func (c *CmdEnv) get(name string) (string, *failures.Failure) {
 
 // GetUnsafe is an alias for `get` intended for use by tests/integration tests, don't use for anything else!
 func (c *CmdEnv) GetUnsafe(name string) string {
-	r, f := c.get(name)
+	r, f := c.Get(name)
 	if f != nil {
 		log.Fatalf("GetUnsafe failed with: %s", f.Error())
 	}
