@@ -118,7 +118,7 @@ func (r *Push) Run(params PushParams) error {
 		r.Outputer.Notice(locale.Tl("push_creating_project", "Creating project [NOTICE]{{.V1}}[/RESET] under [NOTICE]{{.V0}}[/RESET] on the ActiveState Platform", owner, name))
 		pjm, fail = model.CreateEmptyProject(owner, name, r.project.Private())
 		if fail != nil {
-			return locale.WrapError(fail.ToError(), "push_project_create_empty_err", "Failed to create an project {{.V0}}.", r.project.Namespace().String())
+			return locale.WrapError(fail.ToError(), "push_project_create_empty_err", "Failed to create a project {{.V0}}.", r.project.Namespace().String())
 		}
 	}
 
