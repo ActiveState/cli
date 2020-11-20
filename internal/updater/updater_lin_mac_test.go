@@ -28,7 +28,7 @@ func TestUpdaterNoError(t *testing.T) {
 	updater := createUpdater()
 
 	out := outputhelper.NewCatcher()
-	err := updater.Run(out.Outputer)
+	err := updater.Run(out.Outputer, false)
 	require.NoError(t, err, "Should run update")
 	// should notify about update_attempt
 	assert.NotEqual(t, "", strings.TrimSpace(out.CombinedOutput()))

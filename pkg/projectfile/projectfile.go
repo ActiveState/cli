@@ -1185,6 +1185,32 @@ func (p *Project) Persist() {
 	os.Setenv(constants.ProjectEnvVarName, p.Path())
 }
 
+type configGetter interface {
+	GetStringMapStringSlice(key string) map[string][]string
+}
+
+func GetProjectNameForPath(config configGetter, projectPath string) string {
+	projects := config.GetStringMapStringSlice(LocalProjectsConfigKey)
+	if projects == nil {
+		projects = make(map[string][]string)
+	}
+
+	for name, paths := range projects {
+		if name == "/" {
+			continue
+		}
+		for _, path := range paths {
+			if isEqual, fail := fileutils.PathsEqual(projectPath, path); isEqual {
+				if fail != nil {
+					logging.Debug("Failed to compare paths %s and %s", projectPath, path)
+				}
+				return name
+			}
+		}
+	}
+	return ""
+}
+
 // storeProjectMapping associates the namespace with the project
 // path in the config
 func storeProjectMapping(namespace, projectPath string) {
