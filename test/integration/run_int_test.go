@@ -101,6 +101,9 @@ func (suite *RunIntegrationTestSuite) expectTerminateBatchJob(cp *termtest.Conso
 // - https://www.pivotaltracker.com/story/show/169509213
 func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
 	suite.OnlyRunForTags(tagsuite.Run, tagsuite.Activate, tagsuite.Interrupt)
+	if runtime.GOOS == "windows" && e2e.RunningOnCI() {
+		suite.T().Skip("Windows CI does not support ctrl-c events")
+	}
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
