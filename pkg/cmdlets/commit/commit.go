@@ -21,8 +21,6 @@ type commitData struct {
 	Changes []string `locale:"changes,Changes"`
 }
 
-type commitsData []commitData
-
 func PrintCommit(out output.Outputer, commit *mono_models.Commit, orgs []gmodel.Organization) error {
 	data, err := commitDataFromCommit(commit, orgs)
 	if err != nil {
@@ -34,7 +32,7 @@ func PrintCommit(out output.Outputer, commit *mono_models.Commit, orgs []gmodel.
 }
 
 func PrintCommits(out output.Outputer, commits []*mono_models.Commit, orgs []gmodel.Organization) error {
-	var data commitsData
+	var data []commitData
 	for _, c := range commits {
 		d, err := commitDataFromCommit(c, orgs)
 		if err != nil {
