@@ -108,8 +108,6 @@ func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
 	defer ts.Close()
 
 	suite.createProjectFile(ts, 3)
-	ts.LoginAsPersistentUser()
-	defer ts.LogoutUser()
 
 	cp := ts.Spawn("activate")
 	cp.Expect("Default Project")
