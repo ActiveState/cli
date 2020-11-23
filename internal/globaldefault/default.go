@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/gobuffalo/packr"
+	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -55,10 +56,11 @@ func isBinDirOnWindowsUserPath(binDir string) bool {
 		return false
 	}
 
-	for _, p := range strings.Split(path, string(os.PathListSeparator)) {
-		if p == binDir {
-			return true
-		}
+	if funk.ContainsString(
+		strings.Split(path, string(os.PathListSeparator)),
+		binDir,
+	) {
+		return true
 	}
 
 	return false
