@@ -3,7 +3,6 @@ package globaldefault
 import (
 	"io/ioutil"
 	"os"
-	"os/user"
 	"path/filepath"
 	rt "runtime"
 	"strings"
@@ -18,7 +17,6 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/cmd"
@@ -96,31 +94,6 @@ func Prepare(subshell subshell.SubShell) error {
 	}
 
 	return nil
-}
-
-// WarningForAdministrator prints a warning message if default activation is invoked by a Windows Administrator
-// The default activation will only be accessible by the underlying unprivileged user.
-func WarningForAdministrator(out output.Outputer) {
-	if rt.GOOS != "windows" {
-		return
-	}
-
-	isAdmin, err := osutils.IsWindowsAdmin()
-	if err != nil {
-		logging.Error("Failed to determine if run as administrator.")
-	}
-	if isAdmin {
-		u, err := user.Current()
-		if err != nil {
-			logging.Error("Failed to determine current user.")
-			return
-		}
-		out.Notice(locale.Tl(
-			"default_admin_activation_warning",
-			"[NOTICE]The default activation is added to the environment of user {{.V0}}.  The project may be inaccessible when run with Administrator privileges or authenticated as a different user.[/RESET]",
-			u.Username,
-		))
-	}
 }
 
 // SetupDefaultActivation sets symlinks in the global bin directory to the currently activated runtime
