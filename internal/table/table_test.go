@@ -209,7 +209,7 @@ func Test_renderRow(t *testing.T) {
 				colWidths:       []int{8, 8},
 			},
 			"  abcd    abcd  \n" +
-				"          e\n    \n" +
+				"          e    \n" +
 				"          fgh   ",
 		},
 	}

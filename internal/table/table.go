@@ -175,7 +175,12 @@ func renderRow(providedColumns []string, colWidths []int) string {
 			}
 
 			suffix := strings.Repeat(" ", maxLen-end)
-			result += pad(string(colValue[0:end]) + suffix)
+			if len(colValue) > end && colValue[end-1] == linebreakRune {
+				result += pad(string(colValue[0:end-1]) + suffix)
+			} else {
+				result += pad(string(colValue[0:end]) + suffix)
+			}
+
 			columns[n] = string(colValue[end:])
 		}
 		result = strings.TrimRight(result, linebreak) + linebreak

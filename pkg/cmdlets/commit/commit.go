@@ -13,26 +13,64 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-func PrintCommit(out output.Outputer, commit *mono_models.Commit, orgs []gmodel.Organization) error {
-	username, err := usernameForID(commit.Author, orgs)
-	if err != nil {
-		return locale.WrapError(err, "err_commit_print_username", "Could not determine username for commit author")
-	}
+type commitData struct {
+	Hash    string   `locale:"hash,Commit"`
+	Author  string   `locale:"author,Author"`
+	Date    string   `locale:"date,Date"`
+	Message string   `locale:"message,Commit Message"`
+	Changes []string `locale:"changes,Changes"`
+}
 
-	out.Print("")
-	out.Print(locale.Tr("print_commit", commit.CommitID.String()))
-	out.Print(locale.Tr("print_commit_author", username))
-	out.Print(locale.Tr("print_commit_date", time.Time(commit.Added).Format(constants.DateTimeFormatUser)))
-	if commit.Message != "" {
-		out.Print(locale.Tr("print_commit_description", commit.Message))
+type commitsData []commitData
+
+func PrintCommit(out output.Outputer, commit *mono_models.Commit, orgs []gmodel.Organization) error {
+	data, err := commitDataFromCommit(commit, orgs)
+	if err != nil {
+		return err
 	}
-	out.Print("")
-	out.Print(formatChanges(commit))
+	out.Print(data)
 
 	return nil
 }
 
-func formatChanges(commit *mono_models.Commit) string {
+func PrintCommits(out output.Outputer, commits []*mono_models.Commit, orgs []gmodel.Organization) error {
+	var data commitsData
+	for _, c := range commits {
+		d, err := commitDataFromCommit(c, orgs)
+		if err != nil {
+			return err
+		}
+		data = append(data, d)
+	}
+	out.Print(data)
+
+	return nil
+}
+
+func commitDataFromCommit(commit *mono_models.Commit, orgs []gmodel.Organization) (commitData, error) {
+	username, err := usernameForID(commit.Author, orgs)
+	if err != nil {
+		return commitData{}, locale.WrapError(err, "err_commit_print_username", "Could not determine username for commit author")
+	}
+
+	return commitData{
+		Hash:    shortHash(commit.CommitID.String()),
+		Author:  username,
+		Date:    time.Time(commit.Added).Format(constants.DateTimeFormatUser),
+		Message: commit.Message,
+		Changes: formatChanges(commit),
+	}, nil
+}
+
+func shortHash(commitID string) string {
+	split := strings.Split(commitID, "-")
+	if len(split) == 0 {
+		return ""
+	}
+	return split[0]
+}
+
+func formatChanges(commit *mono_models.Commit) []string {
 	results := []string{}
 
 	for _, change := range commit.Changeset {
@@ -43,14 +81,13 @@ func formatChanges(commit *mono_models.Commit) string {
 		if model.NamespaceMatch(change.Namespace, model.NamespacePrePlatformMatch) {
 			requirement = locale.T("namespace_label_preplatform")
 		}
-
 		results = append(results,
 			locale.Tr("change_"+change.Operation,
 				requirement, change.VersionConstraint, change.VersionConstraintOld,
 			))
 	}
 
-	return strings.Join(results, "\n")
+	return results
 }
 
 func usernameForID(id strfmt.UUID, orgs []gmodel.Organization) (string, error) {
