@@ -201,7 +201,6 @@ func (suite *RunIntegrationTestSuite) TestRun_ExitCode() {
 	suite.createProjectFile(ts, 3)
 
 	cp := ts.Spawn("run", "nonZeroExit")
-	cp.ExpectLongString("Your script failed to execute")
 	cp.ExpectExitCode(123)
 }
 
