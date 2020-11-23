@@ -492,7 +492,7 @@ func MoveAllFilesRecursively(fromPath, toPath string, cb MoveAllFilesCallback) *
 				return FailMoveDestinationExists.New("err_incompatible_move_file_dir", subFromPath, subToPath)
 			}
 			if fileInfo.Mode() != toInfo.Mode() {
-				logging.Warning(locale.T("warn_move_incompatible_modes", subFromPath, subToPath))
+				logging.Warning(locale.Tr("warn_move_incompatible_modes", subFromPath, subToPath))
 			}
 		}
 		if toPathExists && toInfo.IsDir() {
