@@ -301,7 +301,7 @@ func TestCmdEnv_get(t *testing.T) {
 					return tt.fields.registryMock, tt.fields.openKeyErr
 				},
 			}
-			got, gotFail := c.get(tt.args.name)
+			got, gotFail := c.Get(tt.args.name)
 			if !reflect.DeepEqual(got, tt.want.returnValue) {
 				t.Errorf("get() = %v, want %v", got, tt.want)
 			}

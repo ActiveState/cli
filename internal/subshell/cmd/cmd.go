@@ -64,7 +64,7 @@ func (v *SubShell) WriteUserEnv(env map[string]string, envType sscommon.EnvData,
 	for k, v := range env {
 		value := v
 		if k == "PATH" {
-			path, fail := cmdEnv.get("PATH")
+			path, fail := cmdEnv.Get("PATH")
 			if fail != nil {
 				return fail
 			}
