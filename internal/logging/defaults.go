@@ -16,6 +16,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/rtutils"
 )
 
 // Logger describes a logging function, like Debug, Error, Warning, etc.
@@ -78,7 +79,8 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 	datadir := config.ConfigPath()
 	filename := filepath.Join(datadir, FileName())
 
-	if ctx.Level == "ERROR" && (constants.BranchName == constants.StableBranch || constants.BranchName == constants.UnstableBranch) {
+	// only log to rollbar when on stable or unstable branch and when built via CI (ie., non-local build)
+	if ctx.Level == "ERROR" && (constants.BranchName == constants.StableBranch || constants.BranchName == constants.UnstableBranch) && rtutils.BuiltViaCI {
 		data := map[string]interface{}{}
 
 		if l.file != nil {
