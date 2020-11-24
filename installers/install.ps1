@@ -269,6 +269,18 @@ function test-64bitPtr() {
     return [IntPtr]::size -eq 8
 }
 
+function checkExecutionPolicy() {
+    $executionPolicy = Get-ExecutionPolicy -Scope Process
+    Write-Host "Execution Policy: $executionPolicy"
+    if ($executionPolicy -eq "Restricted" -Or $executionPolicy -eq "Undefined") {
+        Write-Warning "Execution Policy is set to $executionPolicy."
+        Write-Warning "In order to run scripts please update the Execution Policy."
+        Write-Warning "To update your Execution Policy run 'Set-ExecutionPolicy RemoteSigned' in an administrator Powershell instance"
+        return 1
+    }
+    return 0
+}
+
 function install() {
     $USAGE="install.ps1 [flags]
     
@@ -282,6 +294,11 @@ function install() {
 
     # Ensure errors from previously run commands are not reported during install
     $Error.Clear()
+
+    $code = checkExecutionPolicy
+    if (-not $code -eq 0){
+        return $code
+    }
 
     displayConsent
 
