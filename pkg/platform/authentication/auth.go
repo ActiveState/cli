@@ -239,7 +239,7 @@ func (s *Auth) Client() *mono_client.Mono {
 	client, err := s.ClientSafe()
 	if err != nil {
 		logging.Error("Trying to get the Client while not authenticated")
-		fmt.Fprint(os.Stderr, colorize.StripColorCodes(locale.T("err_api_not_authenticated")))
+		fmt.Fprintln(os.Stderr, colorize.StripColorCodes(locale.T("err_api_not_authenticated")))
 		exit(1)
 	}
 
