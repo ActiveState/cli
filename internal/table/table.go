@@ -170,12 +170,15 @@ func renderRow(providedColumns []string, colWidths []int) string {
 				end = maxLen
 			}
 
+			skipLineBreak := 0
 			if breakpos := runeSliceIndexOf(colValue, linebreakRune); breakpos != -1 && breakpos < end {
 				end = breakpos + 1
+				skipLineBreak = 1
 			}
 
 			suffix := strings.Repeat(" ", maxLen-end)
-			result += pad(string(colValue[0:end]) + suffix)
+			result += pad(string(colValue[0:end-skipLineBreak]) + suffix)
+
 			columns[n] = string(colValue[end:])
 		}
 		result = strings.TrimRight(result, linebreak) + linebreak

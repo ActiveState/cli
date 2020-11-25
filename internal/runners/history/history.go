@@ -71,7 +71,7 @@ func (h *History) Run(params *HistoryParams) error {
 		return fail
 	}
 
-	err = printCommits(h.out, commits, orgs)
+	err = commit.PrintCommits(h.out, commits, orgs)
 	if err != nil {
 		return locale.WrapError(err, "err_history_print_commits", "Could not print commit history")
 	}

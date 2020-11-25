@@ -950,13 +950,13 @@ field_version:
 field_bitwidth:
   other: Bit Width
 commit_message_add_platform:
-  other: "Added platform: [NOTICE]{{.V0}} {{.V1}}bit {{.V2}}[/RESET]"
+  other: "Added platform: {{.V0}} {{.V1}}bit {{.V2}}"
 commit_message_removed_platform:
-  other: "Removed platform: [NOTICE]{{.V0}} {{.V1}}bit {{.V2}}[/RESET]"
+  other: "Removed platform: {{.V0}} {{.V1}}bit {{.V2}}"
 commit_message_add_language:
-  other: "Added language: [NOTICE]{{.V0}} {{.V1}}[/RESET]"
+  other: "Added language: {{.V0}} {{.V1}}"
 commit_message_removed_language:
-  other: "Removed language: [NOTICE]{{.V0}} {{.V1}}[/RESET]"
+  other: "Removed language: {{.V0}} {{.V1}}"
 downloading_artifacts:
   other: "Downloading required artifacts"
 installing_artifacts:
