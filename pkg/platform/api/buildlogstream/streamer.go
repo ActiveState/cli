@@ -189,14 +189,14 @@ func fetchDepTree(ingredients []*inventory_models.V1SolutionRecipeRecipeResolved
 	// Now resolve ALL dependencies, not just the direct ones
 	deptree := map[strfmt.UUID][]strfmt.UUID{}
 	for ingredientID := range directdeptree {
-		deptree[ingredientID] = recursiveDeps(directdeptree, ingredientID)
+		deps := []strfmt.UUID{}
+		deptree[ingredientID] = recursiveDeps(deps, directdeptree, ingredientID)
 	}
 
 	return directdeptree, deptree
 }
 
-func recursiveDeps(directdeptree map[strfmt.UUID][]strfmt.UUID, id strfmt.UUID) []strfmt.UUID {
-	deps := []strfmt.UUID{}
+func recursiveDeps(deps []strfmt.UUID, directdeptree map[strfmt.UUID][]strfmt.UUID, id strfmt.UUID) []strfmt.UUID {
 	if _, ok := directdeptree[id]; !ok {
 		return deps
 	}
@@ -206,7 +206,7 @@ func recursiveDeps(directdeptree map[strfmt.UUID][]strfmt.UUID, id strfmt.UUID) 
 			continue
 		}
 		deps = append(deps, dep)
-		deps = append(deps, recursiveDeps(directdeptree, dep)...)
+		deps = recursiveDeps(deps, directdeptree, dep)
 	}
 
 	return deps
