@@ -147,7 +147,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchSimple() {
 	expectations := []string{
 		"Name",
 		"requests",
-		"2.8.1",
+		"2.23.0",
 		"requests3",
 		"3.0.0a1",
 		"requestsauth",
@@ -173,9 +173,8 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTerm() {
 	expectations := []string{
 		"Name",
 		"requests",
-		"2.8.1",
-		"2.7.0",
-		"2.3",
+		"2.23.0",
+		"+ 7 older versions",
 	}
 	for _, expectation := range expectations {
 		cp.Expect(expectation)
@@ -190,8 +189,8 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTermWrongTe
 	suite.PrepareActiveStateYAML(ts)
 
 	cp := ts.Spawn("search", "xxxrequestsxxx", "--exact-term")
-	cp.ExpectLongString("Currently no package of the provided name is available on the ActiveState Platform")
-	cp.ExpectExitCode(0)
+	cp.ExpectLongString("No packages in our catalogue match")
+	cp.ExpectExitCode(1)
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_searchWithLang() {
@@ -215,8 +214,8 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithWrongLang() {
 	suite.PrepareActiveStateYAML(ts)
 
 	cp := ts.Spawn("search", "numpy", "--language=perl")
-	cp.ExpectLongString("Currently no package of the provided name is available on the ActiveState Platform")
-	cp.ExpectExitCode(0)
+	cp.ExpectLongString("No packages in our catalogue match")
+	cp.ExpectExitCode(1)
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_searchWithBadLang() {
@@ -317,7 +316,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_headless_operation() {
 
 	suite.Run("uninstall", func() {
 		cp := ts.Spawn("uninstall", "dateparser")
-		cp.ExpectRe("(?:package uninstalled|project is currently building)")
+		cp.ExpectRe("(?:Package uninstalled|project is currently building)")
 		cp.Wait()
 	})
 }
@@ -348,25 +347,28 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 	firstCommit := commitRe.FindString(cp.TrimmedSnapshot())
 
 	suite.Run("install", func() {
-		cp := ts.Spawn("install", "dateparser@0.7.2")
+		cp := ts.Spawn("install", "urllib3@1.25.6")
 		cp.ExpectRe("(?:Package added|project is currently building)")
 		cp.Wait()
 	})
 
 	suite.Run("install (update)", func() {
-		cp := ts.Spawn("install", "dateparser@0.7.6")
+		cp := ts.Spawn("install", "urllib3@1.25.8")
 		cp.ExpectRe("(?:Package updated|project is currently building)")
 		cp.Wait()
 	})
 
 	suite.Run("uninstall", func() {
-		cp := ts.Spawn("uninstall", "dateparser")
-		cp.ExpectRe("(?:package uninstalled|project is currently building)")
+		cp := ts.Spawn("uninstall", "urllib3")
+		cp.ExpectRe("(?:Package uninstalled|project is currently building)")
 		cp.Wait()
 	})
 
 	cp = ts.Spawn("revert", firstCommit)
 	cp.SendLine("y")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("pull")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("history")

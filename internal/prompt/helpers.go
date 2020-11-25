@@ -29,21 +29,21 @@ func init() {
 {{- "\n"}}
 {{- range $ix, $choice := .PageEntries}}
 	{{- "\n"}}
-	{{- if eq $ix $.SelectedIndex}}{{color "cyan"}}{{ SelectFocusIcon }} {{else}}  {{end}}
+	{{- if eq $ix $.SelectedIndex}}{{color "cyan+h"}}{{ SelectFocusIcon }} {{else}}  {{end}}
 	{{- $choice}}
 	{{- color "reset"}}
 {{- end}}
 `
 
 	survey.InputQuestionTemplate = `{{- if ne .Message ""}}{{- .Message }}{{- "\n"}}{{- end}}
-{{- color "cyan"}}{{- "> "}}{{- color "reset"}}`
+{{- color "cyan+h"}}{{- "> "}}{{- color "reset"}}`
 
 	survey.ConfirmQuestionTemplate = `{{ .Message }}{{" "}}
-{{- color "cyan"}}{{- if .Default}}(Y/n) {{- else}}(y/N) {{- end}}{{- color "reset"}}
-{{color "cyan"}}{{- "> "}}{{- color "reset"}}`
+{{- color "cyan+h"}}{{- if .Default}}(Y/n) {{- else}}(y/N) {{- end}}{{- color "reset"}}
+{{color "cyan+h"}}{{- "> "}}{{- color "reset"}}`
 
 	survey.PasswordQuestionTemplate = `{{- if ne .Message ""}}{{- .Message }}{{end}}
-{{color "cyan"}}{{- "> "}}{{- color "reset"}}`
+{{color "cyan+h"}}{{- "> "}}{{- color "reset"}}`
 }
 
 // inputRequired does not allow an empty value

@@ -47,18 +47,13 @@ func (r *Prepare) Run() error {
 	}
 
 	if err := globaldefault.Prepare(r.subshell); err != nil {
+		msgLocale := fmt.Sprintf("prepare_instructions_%s", runtime.GOOS)
 		if runtime.GOOS != "linux" {
-			return locale.WrapError(err, "err_prepare_update_env", "Could not prepare environment.")
+			return locale.WrapError(err, msgLocale, globaldefault.BinDir())
 		}
 		logging.Debug("Encountered failure attempting to update user environment: %s", err)
 		r.out.Notice(output.Heading(locale.Tl("warning", "Warning")))
-		r.out.Notice(locale.T("prepare_env_warning"))
-	}
-
-	if runtime.GOOS == "windows" {
-		r.out.Print(locale.Tr("prepare_instructions_windows", globaldefault.BinDir()))
-	} else {
-		r.out.Print(locale.Tr("prepare_instructions_lin_mac", globaldefault.BinDir()))
+		r.out.Notice(locale.Tr(msgLocale, globaldefault.BinDir()))
 	}
 
 	return nil

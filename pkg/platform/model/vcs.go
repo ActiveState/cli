@@ -18,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/retryhttp"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/mono"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/version_control"
 	vcsClient "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/version_control"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -146,16 +147,29 @@ func LatestCommitID(ownerName, projectName string) (*strfmt.UUID, *failures.Fail
 }
 
 // CommitHistory will return the commit history for the given owner / project
-func CommitHistory(ownerName, projectName string) ([]*mono_models.Commit, *failures.Failure) {
+func CommitHistory(ownerName, projectName string) ([]*mono_models.Commit, error) {
+	latestCID, fail := LatestCommitID(ownerName, projectName)
+	if fail != nil {
+		return nil, fail.ToError()
+	}
+	return commitHistory(*latestCID)
+}
+
+// CommitHistoryFromID will return the commit history from the given commitID
+func CommitHistoryFromID(commitID strfmt.UUID) ([]*mono_models.Commit, error) {
+	return commitHistory(commitID)
+}
+
+func commitHistory(commitID strfmt.UUID) ([]*mono_models.Commit, error) {
 	offset := int64(0)
 	limit := int64(100)
 	var commits []*mono_models.Commit
 
 	cont := true
 	for cont {
-		payload, fail := CommitHistoryPaged(ownerName, projectName, offset, limit)
+		payload, fail := CommitHistoryPaged(commitID, offset, limit)
 		if fail != nil {
-			return commits, fail
+			return commits, fail.ToError()
 		}
 		commits = append(commits, payload.Commits...)
 		cont = payload.TotalCommits > (offset + limit)
@@ -165,17 +179,19 @@ func CommitHistory(ownerName, projectName string) ([]*mono_models.Commit, *failu
 }
 
 // CommitHistoryPaged will return the commit history for the given owner / project
-func CommitHistoryPaged(ownerName, projectName string, offset, limit int64) (*mono_models.CommitHistoryInfo, *failures.Failure) {
-	latestCID, fail := LatestCommitID(ownerName, projectName)
-	if fail != nil {
-		return nil, fail
-	}
-
+func CommitHistoryPaged(commitID strfmt.UUID, offset, limit int64) (*mono_models.CommitHistoryInfo, *failures.Failure) {
 	params := vcsClient.NewGetCommitHistoryParams()
-	params.SetCommitID(*latestCID)
+	params.SetCommitID(commitID)
 	params.Limit = &limit
 	params.Offset = &offset
-	res, err := authentication.Client().VersionControl.GetCommitHistory(params, authentication.ClientAuth())
+
+	var res *vcsClient.GetCommitHistoryOK
+	var err error
+	if authentication.Get().Authenticated() {
+		res, err = authentication.Client().VersionControl.GetCommitHistory(params, authentication.ClientAuth())
+	} else {
+		res, err = mono.New().VersionControl.GetCommitHistory(params, nil)
+	}
 	if err != nil {
 		return nil, FailGetCommitHistory.New(locale.Tr("err_get_commit_history", api.ErrorMessageFromPayload(err)))
 	}
@@ -250,7 +266,7 @@ func AddCommit(parentCommitID strfmt.UUID, commitMessage string, operation Opera
 }
 
 // UpdateBranchCommit updates the commit that a branch is pointed at
-func UpdateBranchCommit(branchID strfmt.UUID, commitID strfmt.UUID) *failures.Failure {
+func UpdateBranchCommit(branchID strfmt.UUID, commitID strfmt.UUID) error {
 	params := vcsClient.NewUpdateBranchParams()
 	params.SetBranchID(branchID)
 	params.SetBranch(&mono_models.BranchEditable{
@@ -259,7 +275,15 @@ func UpdateBranchCommit(branchID strfmt.UUID, commitID strfmt.UUID) *failures.Fa
 
 	_, err := authentication.Client().VersionControl.UpdateBranch(params, authentication.ClientAuth())
 	if err != nil {
-		return FailUpdateBranch.New(locale.Tr("err_update_branch", api.ErrorMessageFromPayload(err)))
+		if _, ok := err.(*version_control.UpdateBranchForbidden); ok {
+			err = locale.WrapError(
+				err,
+				"err_update_branch_permissions",
+				"You do not have permission to modify the requirements for this project. You will either need to be invited to the project or you can fork it by running [ACTIONABLE]state fork <project namespace>[/RESET].",
+			)
+			return errs.AddTips(err, "Run [ACTIONABLE]state fork <project namespace>[/RESET] to make changes to this project")
+		}
+		return locale.NewError("err_update_branch", api.ErrorMessageFromPayload(err))
 	}
 	return nil
 }
@@ -309,17 +333,11 @@ func UpdateProjectBranchCommit(proj *mono_models.Project, commitID strfmt.UUID) 
 		return errs.Wrap(fail.ToError(), "Failed to get default branch for project %s.", proj.Name)
 	}
 
-	fail = UpdateBranchCommit(branch.BranchID, commitID)
-	if fail != nil {
-		return errs.Wrap(fail.ToError(), "Failed to update commitID in project branch.")
-	}
-
-	return nil
+	return UpdateBranchCommit(branch.BranchID, commitID)
 }
 
 // UpdateProjectBranchCommitByName updates the vcs branch for a project given by its namespace with a new commitID
 func UpdateProjectBranchCommitByName(projectOwner, projectName string, commitID strfmt.UUID) error {
-
 	proj, fail := FetchProjectByName(projectOwner, projectName)
 	if fail != nil {
 		return errs.Wrap(fail.ToError(), "Failed to fetch project.")
@@ -448,24 +466,24 @@ func (cs indexedCommits) countBetween(first, last string) (int, *failures.Failur
 }
 
 // CommitPlatform commits a single platform commit
-func CommitPlatform(owner, prjName string, op Operation, name, version string, word int) *failures.Failure {
+func CommitPlatform(owner, prjName string, op Operation, name, version string, word int) error {
 	platform, fail := FetchPlatformByDetails(name, version, word)
 	if fail != nil {
-		return fail
+		return fail.ToError()
 	}
 
 	proj, fail := FetchProjectByName(owner, prjName)
 	if fail != nil {
-		return fail
+		return fail.ToError()
 	}
 
 	branch, fail := DefaultBranchForProject(proj)
 	if fail != nil {
-		return fail
+		return fail.ToError()
 	}
 
 	if branch.CommitID == nil {
-		return FailNoCommit.New(locale.T("err_project_no_languages"))
+		return FailNoCommit.New(locale.T("err_project_no_languages")).ToError()
 	}
 
 	var msgL10nKey string
@@ -473,7 +491,7 @@ func CommitPlatform(owner, prjName string, op Operation, name, version string, w
 	case OperationAdded:
 		msgL10nKey = "commit_message_add_platform"
 	case OperationUpdated:
-		return failures.FailDeveloper.New("this is not supported yet")
+		return failures.FailDeveloper.New("this is not supported yet").ToError()
 	case OperationRemoved:
 		msgL10nKey = "commit_message_removed_platform"
 	}
@@ -485,31 +503,31 @@ func CommitPlatform(owner, prjName string, op Operation, name, version string, w
 	// version is not the value that AddCommit needs - platforms do not post a version
 	commit, fail := AddCommit(bCommitID, msg, op, NamespacePlatform(), platformID, "")
 	if fail != nil {
-		return fail
+		return fail.ToError()
 	}
 
 	return UpdateBranchCommit(branch.BranchID, commit.CommitID)
 }
 
 // CommitLanguage commits a single language to the platform
-func CommitLanguage(owner, project string, op Operation, name, version string) *failures.Failure {
+func CommitLanguage(owner, project string, op Operation, name, version string) error {
 	lang, fail := FetchLanguageByDetails(name, version)
 	if fail != nil {
-		return fail
+		return fail.ToError()
 	}
 
 	proj, fail := FetchProjectByName(owner, project)
 	if fail != nil {
-		return fail
+		return fail.ToError()
 	}
 
 	branch, fail := DefaultBranchForProject(proj)
 	if fail != nil {
-		return fail
+		return fail.ToError()
 	}
 
 	if branch.CommitID == nil {
-		return FailNoCommit.New(locale.T("err_project_no_languages"))
+		return FailNoCommit.New(locale.T("err_project_no_languages")).ToError()
 	}
 
 	var msgL10nKey string
@@ -517,7 +535,7 @@ func CommitLanguage(owner, project string, op Operation, name, version string) *
 	case OperationAdded:
 		msgL10nKey = "commit_message_add_language"
 	case OperationUpdated:
-		return failures.FailDeveloper.New("this is not supported yet")
+		return failures.FailDeveloper.New("this is not supported yet").ToError()
 	case OperationRemoved:
 		msgL10nKey = "commit_message_removed_language"
 	}
@@ -527,7 +545,7 @@ func CommitLanguage(owner, project string, op Operation, name, version string) *
 
 	commit, fail := AddCommit(branchCommitID, msg, op, NamespaceLanguage(), lang.Name, lang.Version)
 	if fail != nil {
-		return fail
+		return fail.ToError()
 	}
 
 	return UpdateBranchCommit(branch.BranchID, commit.CommitID)
@@ -638,8 +656,8 @@ func RevertCommit(owner, project string, from, to strfmt.UUID) error {
 		return err
 	}
 
-	fail = UpdateBranchCommit(branch.BranchID, addCommit.CommitID)
-	if fail != nil {
+	err = UpdateBranchCommit(branch.BranchID, addCommit.CommitID)
+	if err != nil {
 		return err
 	}
 

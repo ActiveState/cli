@@ -952,13 +952,13 @@ field_version:
 field_bitwidth:
   other: Bit Width
 commit_message_add_platform:
-  other: "Added platform: [NOTICE]{{.V0}} {{.V1}}bit {{.V2}}[/RESET]"
+  other: "Added platform: {{.V0}} {{.V1}}bit {{.V2}}"
 commit_message_removed_platform:
-  other: "Removed platform: [NOTICE]{{.V0}} {{.V1}}bit {{.V2}}[/RESET]"
+  other: "Removed platform: {{.V0}} {{.V1}}bit {{.V2}}"
 commit_message_add_language:
-  other: "Added language: [NOTICE]{{.V0}} {{.V1}}[/RESET]"
+  other: "Added language: {{.V0}} {{.V1}}"
 commit_message_removed_language:
-  other: "Removed language: [NOTICE]{{.V0}} {{.V1}}[/RESET]"
+  other: "Removed language: {{.V0}} {{.V1}}"
 downloading_artifacts:
   other: "Downloading required artifacts"
 installing_artifacts:
@@ -1097,10 +1097,6 @@ err_obtaining_change_request:
   other: Cannot obtain change request
 package_no_data:
   other: No data found - Please verify the provided commit id
-package_search_no_packages:
-  other: Currently no package of the provided name is available on the ActiveState Platform.
-bundle_search_no_packages:
-  other: Currently no bundle of the provided name is available on the ActiveState Platform.
 package_list_no_packages:
   other: The project has no packages to list.
 bundle_list_no_packages:
@@ -1244,8 +1240,8 @@ field_organization:
   other: Organization
 request_timed_out:
   other: A request for data took too long - Trying again may help
-err_recipe_platforms:
-  other: Filter returned multiple platform IDs where only one was expected
+err_recipe_no_platform:
+  other: Filter returned no valid platform IDs.
 no_commits:
   other: No commits exist yet for [NOTICE]{{.V0}}[/RESET]
 err_orgs_length:
@@ -1348,7 +1344,6 @@ update_attempt:
 auto_update_to_version:
   other: |
     Updated from [NOTICE]{{.V0}}[/RESET] to [NOTICE]{{.V1}}[/RESET].
-    To avoid auto updating run 'state update --lock' (only recommended for production environments).
 auto_update_permission_err:
   other: |
     Could not update to the latest available version of the state tool due to insufficient permissions.
@@ -1596,12 +1591,18 @@ artifact_succeeded:
   other: "Completed: [NOTICE]{{.V0}} ({{.V1}}/{{.V2}})[/RESET]"
 artifact_failed:
   other: "Failed: [NOTICE]{{.V0}}[/RESET]. Error returned: [ERROR]{{.V1}}[/RESET]"
-prepare_instructions_lin_mac:
-  other: "To add the global installations directory to your environment please add the line [ACTIONABLE]`export PATH={{.V0}}:$PATH`[/RESET] to your RC file"
+prepare_instructions_linux:
+  other: |
+    Could not update user environment.
+    To add the global installations directory to your environment please add the line [ACTIONABLE]`export PATH={{.V0}}:$PATH`[/RESET] to your RC file.
+prepare_instructions_darwin:
+  other: |
+    Could not update user environment.
+    To add the global installations directory to your environment please add the line [ACTIONABLE]`export PATH={{.V0}}:$PATH`[/RESET] to your RC file.
 prepare_instructions_windows:
-  other: "To add the global installations directory to your environment please add the path [ACTIONABLE]`{{.V0}}`[/RESET] to your user PATH in the System Properties dialog"
-prepare_env_warning:
-  other: Could not update user environment
+  other: |
+    Could not update user environment.
+    To add the global installations directory to your environment please add the path [ACTIONABLE]`{{.V0}}`[/RESET] to your user PATH in the System Properties dialog.
 prompt_headless_anonymous:
   other: You're about to add packages as an anonymous user, you might want to authenticate first using [ACTIONABLE]`state auth`[/RESET] if you already have an account. Do you want to continue as an anonymous user?
 err_package_update_pjfile:

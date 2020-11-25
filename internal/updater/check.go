@@ -94,7 +94,7 @@ func AutoUpdate(pjPath string, out output.Outputer) (updated bool, resultVersion
 
 	// Self-update.
 	logging.Debug("Self-updating.")
-	err = update.Run(out)
+	err = update.Run(out, true)
 	if err != nil {
 		log := logging.Error
 		if os.IsPermission(errs.InnerError(err)) {

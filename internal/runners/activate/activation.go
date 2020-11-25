@@ -3,16 +3,16 @@ package activate
 import (
 	"fmt"
 	"os"
-	"os/signal"
 	"path/filepath"
 	rt "runtime"
-	"syscall"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/fileevents"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/process"
+	"github.com/ActiveState/cli/internal/sighandler"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -40,7 +40,16 @@ func (r *Activate) activateAndWait(proj *project.Project, venv *virtualenvironme
 		return nil
 	}
 
-	ignoreWindowsInterrupts()
+	// ignore interrupts in State Tool on Windows
+	if rt.GOOS == "windows" {
+		bs := sighandler.NewBackgroundSignalHandler(func(_ os.Signal) {}, os.Interrupt)
+		sighandler.Push(bs)
+	}
+	defer func() {
+		if rt.GOOS == "windows" {
+			sighandler.Pop()
+		}
+	}()
 
 	err = r.config.WriteConfig()
 	if err != nil {
@@ -52,6 +61,12 @@ func (r *Activate) activateAndWait(proj *project.Project, venv *virtualenvironme
 		return locale.WrapError(fail, "error_could_not_activate_subshell", "Could not activate a new subshell.")
 	}
 
+	a, err := process.NewActivation(os.Getpid())
+	if err != nil {
+		return locale.WrapError(err, "error_could_not_mark_process", "Could not mark process as activated.")
+	}
+	defer a.Close()
+
 	fe, err := fileevents.New(proj)
 	if err != nil {
 		return locale.WrapError(err, "err_activate_fileevents", "Could not start file event watcher.")
@@ -60,21 +75,10 @@ func (r *Activate) activateAndWait(proj *project.Project, venv *virtualenvironme
 
 	analytics.Event(analytics.CatActivationFlow, "before-subshell")
 
-	fail := <-r.subshell.Failures()
-	if fail != nil {
-		return locale.WrapError(fail, "error_in_active_subshell", "Failure encountered in active subshell")
+	err = <-r.subshell.Errors()
+	if err != nil {
+		return locale.WrapError(err, "error_in_active_subshell", "Failure encountered in active subshell")
 	}
 
 	return nil
-}
-
-func ignoreWindowsInterrupts() {
-	if rt.GOOS == "windows" {
-		c := make(chan os.Signal, 1)
-		signal.Notify(c, syscall.SIGINT)
-		go func() {
-			for range c {
-			}
-		}()
-	}
 }

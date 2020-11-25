@@ -31,9 +31,5 @@ func UnwrapExitCode(errFail error) int {
 		return eerr.ExitCode()
 	}
 
-	if fail.Type.Matches(failures.FailExecCmdExit) {
-		return 1
-	}
-
 	return 1
 }

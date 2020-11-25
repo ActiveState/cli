@@ -116,6 +116,10 @@ func (r *Request) responseReader(conn *websocket.Conn, readErr chan error) {
 				r.msgHandler.ArtifactBuildStarting(artifactName)
 			}
 		case "artifact_succeeded":
+			// NOTE: fix to ignore current noop "final pkg artifact"
+			if msg.ArtifactID == r.recipeID {
+				break
+			}
 			end++
 			r.msgHandler.ArtifactBuildCompleted(artifactName, end, total)
 		case "artifact_failed":

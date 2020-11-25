@@ -195,8 +195,10 @@ func fetchRecipeID(commitID strfmt.UUID, owner, project, orgID string, private b
 	if fail != nil {
 		return nil, FailOrderRecipes.Wrap(fail)
 	}
-	if len(platformIDs) != 1 {
-		return nil, FailOrderRecipes.New("err_recipe_platforms")
+	if len(platformIDs) == 0 {
+		return nil, FailOrderRecipes.New("err_recipe_no_platform")
+	} else if len(platformIDs) > 1 {
+		logging.Debug("Received multiple platform IDs.  Picking the first one.")
 	}
 	platformID := platformIDs[0].String()
 

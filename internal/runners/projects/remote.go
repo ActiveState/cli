@@ -14,7 +14,8 @@ import (
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
-func (r *Projects) RunRemote(params *Params) *failures.Failure {
+// RunRemote runs the remote projects logic.
+func (r *Projects) RunRemote(params *Params) error {
 	projectfile.CleanProjectMapping()
 
 	projectsList, fail := r.fetchProjects(params.Local)
@@ -31,7 +32,7 @@ func (r *Projects) RunRemote(params *Params) *failures.Failure {
 	return nil
 }
 
-func (r *Projects) fetchProjects(onlyLocal bool) ([]projectWithOrg, *failures.Failure) {
+func (r *Projects) fetchProjects(onlyLocal bool) (projectWithOrgs, *failures.Failure) {
 	orgParams := organizations.NewListOrganizationsParams()
 	memberOnly := true
 	orgParams.SetMemberOnly(&memberOnly)
@@ -42,12 +43,12 @@ func (r *Projects) fetchProjects(onlyLocal bool) ([]projectWithOrg, *failures.Fa
 		}
 		return nil, api.FailUnknown.Wrap(err)
 	}
-	projects := []projectWithOrg{}
+	var projects projectWithOrgs = []projectWithOrg{}
 	localConfigProjects := r.config.GetStringMapStringSlice(projectfile.LocalProjectsConfigKey)
 	for _, org := range orgs.Payload {
-		platformOrgProjects, err := model.FetchOrganizationProjects(org.URLname)
-		if err != nil {
-			return nil, err
+		platformOrgProjects, fail := model.FetchOrganizationProjects(org.URLname)
+		if fail != nil {
+			return nil, fail
 		}
 
 		orgProjects := make([]projectWithOrg, 0, len(platformOrgProjects))

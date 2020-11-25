@@ -184,6 +184,13 @@ INSTALLDIR="`dirname \`which $STATEEXE\` 2>/dev/null`"
 if [ ! -z "$INSTALLDIR" ] && ( ! $FORCEOVERWRITE ) && ( \
       [ -z $TARGET ] || [ "$TARGET" = "$INSTALLDIR" ] \
    ); then
+
+  if [ -n "${ACTIVATE}" ]; then
+    exec $INSTALLDIR/$STATEEXE activate ${ACTIVATE}
+  elif [ -n "${ACTIVATE_DEFAULT}" ]; then
+    exec $INSTALLDIR/$STATEEXE activate ${ACTIVATE_DEFAULT} --default
+  fi
+
   warn "State Tool is already installed at $INSTALLDIR, to reinstall run this command again with -f"
   echo "To update the State Tool to the latest version, please run 'state update'."
   echo "To install in a different location, please specify the installation directory with '-t TARGET_DIR'."
@@ -369,6 +376,10 @@ manual_installation_instructions() {
 
 manual_update_instructions() {
   info "State Tool installation complete."
+  # skip instruction to source rc file when we are activating
+  if [ -n "${ACTIVATE}" ] || [ -n "${ACTIVATE_DEFAULT}" ]; then
+    return
+  fi
   echo "Please either run 'source $RC_FILE' or start a new login shell in "
   echo "order to start using the '$STATEEXE' program."
 }
@@ -381,10 +392,16 @@ update_rc_file() {
     manual_installation_instructions
   fi
 
-  info "Updating environment..."
-  pathenv="export PATH=\"\$PATH:$INSTALLDIR\" # ActiveState State Tool"
-  echo "" >> "$RC_FILE"
-  echo "$pathenv" >> "$RC_FILE"
+  RC_KEY="# ActiveState State Tool"
+
+  echo "Updating environment..."
+  pathenv="export PATH=\"\$PATH:$INSTALLDIR\" $RC_KEY"
+  if grep -q "$RC_KEY" $RC_FILE; then
+    sed -i -E "s@^export.+$RC_KEY@$pathenv@" $RC_FILE
+  else
+    echo "" >> "$RC_FILE"
+    echo "$pathenv" >> "$RC_FILE"
+  fi
 }
 
 # Write install file

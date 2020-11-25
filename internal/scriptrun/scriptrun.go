@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/process"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/internal/subshell"
@@ -47,7 +48,7 @@ func New(out output.Outputer, subs subshell.SubShell, proj *project.Project) *Sc
 // NeedsActivation indicates whether the underlying environment has been
 // prepared and activated.
 func (s *ScriptRun) NeedsActivation() bool {
-	return !subshell.IsActivated() && !s.venvPrepared
+	return !process.IsActivated() && !s.venvPrepared
 }
 
 // PrepareVirtualEnv sets up the relevant runtime and prepares the environment.

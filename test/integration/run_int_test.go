@@ -65,6 +65,10 @@ scripts:
       import sys
       print(sys.version)
     language: python2,python3
+  - name: nonZeroExit
+    value: |
+      exit 123
+    standalone: true
 `, pythonVersion))
 
 	ts.PrepareActiveStateYAML(configFileContent)
@@ -104,28 +108,24 @@ func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
 	defer ts.Close()
 
 	suite.createProjectFile(ts, 3)
-	ts.LoginAsPersistentUser()
-	defer ts.LogoutUser()
 
 	cp := ts.Spawn("activate")
+	cp.Expect("Default Project")
+	cp.Expect("Y/n")
+	cp.SendLine("n")
 	cp.Expect("You're Activated")
 	cp.WaitForInput(10 * time.Second)
 
 	cp.SendLine(fmt.Sprintf("%s run testMultipleLanguages", cp.Executable()))
 	cp.Expect("3")
 
-	// TODO: This test appears to have some compatibility issues with Go 1.15 on CI.
-	// Re-enable the interrupt portion of this test once we have updated the Go version
-	// See related stories:
-	// https://www.pivotaltracker.com/story/show/175365457
-	// https://www.pivotaltracker.com/story/show/175365586
-	// cp.SendLine(fmt.Sprintf("%s run test-interrupt", cp.Executable()))
-	// cp.Expect("Start of script", 5*time.Second)
-	// cp.SendCtrlC()
-	// cp.Expect("received interrupt", 3*time.Second)
-	// cp.Expect("After first sleep or interrupt", 2*time.Second)
-	// cp.SendCtrlC()
-	// suite.expectTerminateBatchJob(cp)
+	cp.SendLine(fmt.Sprintf("%s run test-interrupt", cp.Executable()))
+	cp.Expect("Start of script", 5*time.Second)
+	cp.SendCtrlC()
+	cp.Expect("received interrupt", 3*time.Second)
+	cp.Expect("After first sleep or interrupt", 2*time.Second)
+	cp.SendCtrlC()
+	suite.expectTerminateBatchJob(cp)
 
 	cp.SendLine("exit 0")
 	cp.ExpectExitCode(0)
@@ -195,6 +195,16 @@ func (suite *RunIntegrationTestSuite) TestRun_Help() {
 	cp.ExpectExitCode(0)
 }
 
+func (suite *RunIntegrationTestSuite) TestRun_ExitCode() {
+	suite.OnlyRunForTags(tagsuite.Run, tagsuite.ExitCode)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+	suite.createProjectFile(ts, 3)
+
+	cp := ts.Spawn("run", "nonZeroExit")
+	cp.ExpectExitCode(123)
+}
+
 func (suite *RunIntegrationTestSuite) TestRun_Unauthenticated() {
 	suite.OnlyRunForTags(tagsuite.Run)
 	ts := e2e.New(suite.T(), false)
@@ -206,6 +216,10 @@ func (suite *RunIntegrationTestSuite) TestRun_Unauthenticated() {
 		e2e.WithArgs("activate"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
+	cp.Expect("Default Project")
+	cp.Expect("Y/n")
+	cp.SendLine("n")
+
 	cp.Expect("You're Activated")
 	cp.WaitForInput(120 * time.Second)
 

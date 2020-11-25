@@ -26,7 +26,7 @@ func New(prime primeable) *Events {
 
 type Event struct {
 	Event string `locale:"event,Event"`
-	Value string `locale:"value,Value" opts:"singleLine"`
+	Value string `locale:"value,Value"`
 }
 
 func (e *Events) Run() error {

@@ -31,7 +31,7 @@ jobs:
       run: |
         bin=$(pwd)/.github/deps/${{ runner.os }}/bin
         echo "Adding $bin to PATH"
-        echo "::add-path::$bin"
+        echo "$bin" >> $GITHUB_PATH
         printenv
     - name: Generate Version
       shell: bash
@@ -46,7 +46,7 @@ jobs:
     strategy:
       matrix:
         go-version:
-        - 1.13.x
+        - 1.15.x
         platform:
         - ubuntu-latest
         - macos-latest
@@ -78,7 +78,7 @@ jobs:
       run: |
         bin=$(pwd)/.github/deps/${{ runner.os }}/bin
         echo "Adding $bin to PATH"
-        echo "::add-path::$bin"
+        echo "$bin" >> $GITHUB_PATH
         printenv
     - name: Preprocess
       shell: bash

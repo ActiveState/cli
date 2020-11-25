@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/gobuffalo/packr"
+	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -16,8 +17,10 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/internal/subshell/cmd"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 )
@@ -34,6 +37,35 @@ func BinDir() string {
 	return filepath.Join(config.CachePath(), "bin")
 }
 
+func isBinDirOnWindowsUserPath(binDir string) bool {
+	if rt.GOOS != "windows" {
+		return false
+	}
+
+	isWindowsAdmin, err := osutils.IsWindowsAdmin()
+	if err != nil {
+		logging.Error("Failed to determine if we are running as administrator: %v", err)
+	}
+	if !isWindowsAdmin {
+		return false
+	}
+	cmdEnv := cmd.NewCmdEnv(true)
+	path, fail := cmdEnv.Get("PATH")
+	if fail != nil {
+		logging.Error("Failed to get user PATH")
+		return false
+	}
+
+	if funk.ContainsString(
+		strings.Split(path, string(os.PathListSeparator)),
+		binDir,
+	) {
+		return true
+	}
+
+	return false
+}
+
 func Prepare(subshell subshell.SubShell) error {
 	logging.Debug("Preparing globaldefault")
 	binDir := BinDir()
@@ -44,6 +76,11 @@ func Prepare(subshell subshell.SubShell) error {
 		if p == binDir {
 			return nil
 		}
+	}
+
+	if isBinDirOnWindowsUserPath(binDir) {
+		logging.Debug("Skip preparation step as it has been done previously for the current user.")
+		return nil
 	}
 
 	if fail := fileutils.MkdirUnlessExists(binDir); fail != nil {

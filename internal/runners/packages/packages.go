@@ -83,7 +83,7 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 
 	// Check if this is an addition or an update
 	if operation == model.OperationAdded {
-		req, err := model.GetRequirement(pj.CommitUUID(), ingredient.Namespace, name)
+		req, err := model.GetRequirement(pj.CommitUUID(), ingredient.Namespace, *ingredient.Ingredient.Name)
 		if err != nil {
 			return errs.Wrap(err, "Could not get requirement")
 		}
@@ -93,7 +93,7 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 	}
 
 	parentCommitID := pj.CommitUUID()
-	commitID, fail := model.CommitPackage(parentCommitID, operation, name, ingredient.Namespace, version)
+	commitID, fail := model.CommitPackage(parentCommitID, operation, *ingredient.Ingredient.Name, ingredient.Namespace, version)
 	if fail != nil {
 		return locale.WrapError(fail.ToError(), fmt.Sprintf("err_%s_%s", pt.String(), operation))
 	}
@@ -133,7 +133,8 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 	}
 
 	if !orderChanged && rt.IsCachedRuntime() {
-		return locale.NewInputError("pkg_already_uptodate", "Requested dependencies are already configured and installed.")
+		out.Print(locale.Tl("pkg_already_uptodate", "Requested dependencies are already configured and installed."))
+		return nil
 	}
 
 	// Update runtime
@@ -148,9 +149,9 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 
 	// Print the result
 	if version != "" {
-		out.Print(locale.Tr(fmt.Sprintf("%s_version_%s", pt.String(), operation), name, version))
+		out.Print(locale.Tr(fmt.Sprintf("%s_version_%s", pt.String(), operation), *ingredient.Ingredient.Name, version))
 	} else {
-		out.Print(locale.Tr(fmt.Sprintf("%s_%s", pt.String(), operation), name))
+		out.Print(locale.Tr(fmt.Sprintf("%s_%s", pt.String(), operation), *ingredient.Ingredient.Name))
 	}
 
 	return nil

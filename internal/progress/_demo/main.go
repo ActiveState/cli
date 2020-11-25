@@ -66,7 +66,7 @@ func tarGzDownloadBarHeuristic(p *progress.Progress) (err error) {
 	}
 
 	ub := p.AddUnpackBar(aSize, 70)
-	aStream := progress.NewReaderProxy(ub, aFile)
+	aStream := progress.NewReaderProxy(ub.Bar(), ub, aFile)
 	err = tgz.Unarchive(aStream, aSize, dir)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error unarchiving %v\n", err)

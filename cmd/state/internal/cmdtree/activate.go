@@ -2,6 +2,7 @@ package cmdtree
 
 import (
 	"errors"
+	"os"
 	"os/exec"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -9,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/activate"
+	"github.com/ActiveState/cli/internal/sighandler"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -72,10 +74,20 @@ func newActivateCommand(prime *primer.Values) *captain.Command {
 					)
 				}
 			}
-			err := runner.Run(&params)
+
+			as := sighandler.NewAwaitingSigHandler(os.Interrupt)
+			sighandler.Push(as)
+			defer sighandler.Pop()
+			err := as.WaitForFunc(func() error {
+				return runner.Run(&params)
+			})
 
 			// Try to report why the activation failed
 			if err != nil {
+				var serr interface{ Signal() os.Signal }
+				if errors.As(err, &serr) {
+					analytics.Event(analytics.CatActivationFlow, "user-interrupt-error")
+				}
 				if locale.IsInputError(err) {
 					// Failed due to user input
 					analytics.Event(analytics.CatActivationFlow, "user-input-error")
@@ -85,7 +97,7 @@ func newActivateCommand(prime *primer.Values) *captain.Command {
 						// Failed due to an error we might need to address
 						analytics.Event(analytics.CatActivationFlow, "error")
 					} else {
-						// Failed due to user subshell actions / events  
+						// Failed due to user subshell actions / events
 						analytics.Event(analytics.CatActivationFlow, "user-exit-error")
 					}
 				}

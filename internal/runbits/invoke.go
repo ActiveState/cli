@@ -6,11 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/crypto/ssh/terminal"
-
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/termutils"
 )
 
 // Invoke will invoke a state tool command with the given args and prints a friendly message indicating what we're doing
@@ -20,16 +18,12 @@ func Invoke(out output.Outputer, args ...string) error {
 	time.Sleep(time.Second)
 
 	// Get terminal width so we can print dashed line to call out state command output
-	termWidth, _, err := terminal.GetSize(int(os.Stdout.Fd()))
-	if err != nil {
-		logging.Debug("Cannot get terminal size: %v", err)
-		termWidth = 100
-	}
+	termWidth := termutils.GetWidth()
 
 	// print dashed line
 	out.Notice("[NOTICE]" + strings.Repeat("-", termWidth) + "[/RESET]")
 
-	err = InvokeSilent(args...)
+	err := InvokeSilent(args...)
 
 	// print dashed line
 	out.Notice("[NOTICE]" + strings.Repeat("-", termWidth) + "[/RESET]\n")
