@@ -513,12 +513,18 @@ func TestValidateProjectURL(t *testing.T) {
 	fail := ValidateProjectURL("https://example.com/")
 	assert.Error(t, fail.ToError(), "This should be an invalid project URL")
 
+	fail = ValidateProjectURL("https://platform.activestate.com//")
+	assert.Error(t, fail.ToError(), "This should be an invalid project URL with no namespace")
+
 	fail = ValidateProjectURL("https://platform.activestate.com/xowner/xproject")
-	assert.Nil(t, fail, "This should not be an invalid project URL")
+	assert.Nil(t, fail, "This should be a valid project URL")
 
 	fail = ValidateProjectURL("https://platform.activestate.com/commit/commitid")
-	assert.Nil(t, fail, "This should not be an invalid project URL using the commit path")
+	assert.Nil(t, fail, "This should be a valid project URL")
 
 	fail = ValidateProjectURL("https://pr1234.activestate.build/commit/commitid")
-	assert.Nil(t, fail, "This should not be an invalid project URL using the commit path")
+	assert.Nil(t, fail, "This should be a valid project URL for a PR build")
+
+	fail = ValidateProjectURL("https://pr1234.activestate.build/commit/00010001-0001-0001-0001-000100010001")
+	assert.Nil(t, fail, "This should be a valid headless project URL")
 }

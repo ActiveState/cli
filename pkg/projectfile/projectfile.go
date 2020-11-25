@@ -72,7 +72,7 @@ var (
 )
 
 var (
-	urlProjectRegexStr = fmt.Sprintf(`https:\/\/[\w\.]+\/([\w_.-]*)\/([\w_.-]*)(?:\?commitID=)*(.*)`)
+	urlProjectRegexStr = fmt.Sprintf(`https:\/\/[\w\.]+\/([\w_.-]+)\/([\w_.-]*)(?:\?commitID=)*(.*)`)
 	urlCommitRegexStr  = fmt.Sprintf(`https:\/\/[\w\.]+\/commit\/(.*)`)
 
 	// ProjectURLRe Regex used to validate project fields /orgname/projectname[?commitID=someUUID]
@@ -515,7 +515,7 @@ func Parse(configFilepath string) (*Project, *failures.Failure) {
 	}
 
 	namespace := fmt.Sprintf("%s/%s", project.parsedURL.Owner, project.parsedURL.Name)
-	storeProjectMapping(namespace, filepath.Dir(project.Path()))
+	StoreProjectMapping(namespace, filepath.Dir(project.Path()))
 
 	return project, nil
 }
@@ -718,7 +718,7 @@ func (p *Project) save(path string) *failures.Failure {
 		return failures.FailIO.Wrap(err)
 	}
 
-	storeProjectMapping(fmt.Sprintf("%s/%s", p.parsedURL.Owner, p.parsedURL.Name), filepath.Dir(p.Path()))
+	StoreProjectMapping(fmt.Sprintf("%s/%s", p.parsedURL.Owner, p.parsedURL.Name), filepath.Dir(p.Path()))
 
 	return nil
 }
@@ -1211,9 +1211,9 @@ func GetProjectNameForPath(config configGetter, projectPath string) string {
 	return ""
 }
 
-// storeProjectMapping associates the namespace with the project
+// StoreProjectMapping associates the namespace with the project
 // path in the config
-func storeProjectMapping(namespace, projectPath string) {
+func StoreProjectMapping(namespace, projectPath string) {
 	projectMapMutex.Lock()
 	defer projectMapMutex.Unlock()
 
@@ -1235,6 +1235,10 @@ func storeProjectMapping(namespace, projectPath string) {
 
 	projects[namespace] = paths
 	viper.Set(LocalProjectsConfigKey, projects)
+	err := viper.WriteConfig()
+	if err != nil {
+		logging.Error("Error writing config when storing project mapping: %v", err)
+	}
 }
 
 // CleanProjectMapping removes projects that no longer exist

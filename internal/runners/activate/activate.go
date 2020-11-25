@@ -175,6 +175,8 @@ func (r *Activate) run(params *ActivateParams) error {
 			return locale.WrapError(err, "err_activate_default", "Could not configure your project as the default.")
 		}
 
+		projectfile.StoreProjectMapping(params.Namespace.String(), filepath.Dir(proj.Source().Path()))
+
 		r.out.Notice(output.Heading(locale.Tl("global_default_heading", "Global Default")))
 		r.out.Notice(locale.Tl("global_default_set", "Successfully configured [NOTICE]{{.V0}}[/RESET] as the global default project.", proj.Namespace().String()))
 
