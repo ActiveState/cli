@@ -25,6 +25,7 @@ func NewRequest(recipeID strfmt.UUID, msgHandler MessageHandler) *Request {
 }
 
 type MessageHandler interface {
+	BuildSummary(map[strfmt.UUID][]strfmt.UUID, map[strfmt.UUID][]strfmt.UUID, map[strfmt.UUID]ArtifactMapping)
 	BuildStarting(totalArtifacts int)
 	BuildFinished()
 	ArtifactBuildStarting(artifactName string)
@@ -37,7 +38,7 @@ type logRequest struct {
 	RecipeID string `json:"recipeID"`
 }
 
-type artifactMapping struct {
+type ArtifactMapping struct {
 	Name    *string
 	Version *string
 }
@@ -76,12 +77,28 @@ func (r *Request) Wait() error {
 	}
 }
 
-func (r *Request) responseReader(conn *websocket.Conn, readErr chan error) {
-	artifactMap, err := artifactMap(r.recipeID)
+func PrintSummary(msgHandler MessageHandler, recipeID strfmt.UUID) (map[strfmt.UUID]ArtifactMapping, error) {
+	recipe, err := model.FetchRecipeByID(recipeID)
 	if err != nil {
-		readErr <- errs.Wrap(err, "Could not generate artifact map")
+		return nil, errs.Wrap(err, "Could not fetch recipe")
 	}
 
+	artifactMap, ingredientMap, err := artifactMap(recipe)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not generate artifact map")
+	}
+
+	direct, recursiveDeps := fetchDepTree(recipe.ResolvedIngredients, ingredientMap)
+
+	msgHandler.BuildSummary(direct, recursiveDeps, ingredientMap)
+	return artifactMap, nil
+}
+
+func (r *Request) responseReader(conn *websocket.Conn, readErr chan error) {
+	artifactMap, err := PrintSummary(r.msgHandler, r.recipeID)
+	if err != nil {
+		readErr <- err
+	}
 	total := len(artifactMap)
 	end := 0
 
@@ -129,28 +146,29 @@ func (r *Request) responseReader(conn *websocket.Conn, readErr chan error) {
 	}
 }
 
-func artifactMap(recipeID strfmt.UUID) (map[strfmt.UUID]artifactMapping, error) {
-	artifactMap := map[strfmt.UUID]artifactMapping{}
-
-	recipe, err := model.FetchRecipeByID(recipeID)
-	if err != nil {
-		return artifactMap, errs.Wrap(err, "Could not fetch recipe")
-	}
+func artifactMap(recipe *inventory_models.V1SolutionRecipeRecipe) (map[strfmt.UUID]ArtifactMapping, map[strfmt.UUID]ArtifactMapping, error) {
+	artifactMap := map[strfmt.UUID]ArtifactMapping{}
+	ingredientVersionMap := map[strfmt.UUID]ArtifactMapping{}
 
 	for _, re := range recipe.ResolvedIngredients {
 		if re.Ingredient.PrimaryNamespace != nil && (*re.Ingredient.PrimaryNamespace == "builder" || *re.Ingredient.PrimaryNamespace == "builder-lib") {
 			continue
 		}
-		artifactMap[re.ArtifactID] = artifactMapping{
+		mapping := ArtifactMapping{
 			re.Ingredient.Name,
 			re.IngredientVersion.Version,
 		}
-	}
 
-	return artifactMap, nil
+		artifactMap[re.ArtifactID] = mapping
+		if re.IngredientVersion == nil || re.IngredientVersion.IngredientVersionID == nil {
+			continue
+		}
+		ingredientVersionMap[*re.IngredientVersion.IngredientVersionID] = mapping
+	}
+	return artifactMap, ingredientVersionMap, nil
 }
 
-func artifactDescription(artifactID strfmt.UUID, artifactMap map[strfmt.UUID]artifactMapping) string {
+func artifactDescription(artifactID strfmt.UUID, artifactMap map[strfmt.UUID]ArtifactMapping) string {
 	v, ok := artifactMap[artifactID]
 	if !ok || v.Name == nil {
 		return locale.Tl("unknown_artifact_description", "Artifact {{.V0}}", artifactID.String())
@@ -164,19 +182,19 @@ func artifactDescription(artifactID strfmt.UUID, artifactMap map[strfmt.UUID]art
 	return *v.Name + version
 }
 
-func fetchDepTree(ingredients []*inventory_models.V1SolutionRecipeRecipeResolvedIngredientsItems) (directdeptree map[strfmt.UUID][]strfmt.UUID, recursive map[strfmt.UUID][]strfmt.UUID) {
+func fetchDepTree(ingredients []*inventory_models.V1SolutionRecipeRecipeResolvedIngredientsItems, ingredientMap map[strfmt.UUID]ArtifactMapping) (directdeptree map[strfmt.UUID][]strfmt.UUID, recursive map[strfmt.UUID][]strfmt.UUID) {
 	directdeptree = map[strfmt.UUID][]strfmt.UUID{}
 	for _, ingredient := range ingredients {
 		if ingredient.IngredientVersion == nil || ingredient.IngredientVersion.IngredientVersionID == nil {
 			continue
 		}
 
-		if *ingredient.Ingredient.PrimaryNamespace == "builder" || *ingredient.Ingredient.PrimaryNamespace == "builder-lib" {
+		id := ingredient.IngredientVersion.IngredientVersionID
+		// skip ingredients that are not mapped to artifacts
+		if _, ok := ingredientMap[*id]; !ok {
 			continue
 		}
-
 		// Construct directdeptree entry
-		id := ingredient.IngredientVersion.IngredientVersionID
 		if _, ok := directdeptree[*id]; !ok {
 			directdeptree[*id] = []strfmt.UUID{}
 		}
@@ -184,6 +202,10 @@ func fetchDepTree(ingredients []*inventory_models.V1SolutionRecipeRecipeResolved
 		// Add direct dependencies
 		for _, dep := range ingredient.Dependencies {
 			if dep.IngredientVersionID == nil {
+				continue
+			}
+			// skip ingredients that are not mapped to artifacts
+			if _, ok := ingredientMap[*dep.IngredientVersionID]; !ok {
 				continue
 			}
 			directdeptree[*id] = append(directdeptree[*id], *dep.IngredientVersionID)

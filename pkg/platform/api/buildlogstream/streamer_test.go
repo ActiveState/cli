@@ -53,13 +53,23 @@ func depGraphsToResolvedIngredients(dgs depGraph) []*inventory_models.V1Solution
 
 func TestFetchDepTree(t *testing.T) {
 	dg := depGraph{
-		1: {11, 12, 2, 900},
-		2: {21, 900},
-		3: {31, 1, 900},
+		1: {11, 12, 19, 2, 900},
+		2: {21, 29, 900},
+		3: {31, 1, 39, 900},
 	}
 	ingredients := depGraphsToResolvedIngredients(dg)
+	ingredientMap := map[strfmt.UUID]ArtifactMapping{
+		readableUUID(1):   {},
+		readableUUID(2):   {},
+		readableUUID(3):   {},
+		readableUUID(11):  {},
+		readableUUID(12):  {},
+		readableUUID(900): {},
+		readableUUID(21):  {},
+		readableUUID(31):  {},
+	}
 
-	depTree, recursive := fetchDepTree(ingredients)
+	depTree, recursive := fetchDepTree(ingredients, ingredientMap)
 
 	expectedDirect := map[strfmt.UUID][]strfmt.UUID{
 		readableUUID(1): {readableUUID(11), readableUUID(12), readableUUID(2), readableUUID(900)},
@@ -83,8 +93,12 @@ func TestFetchRecursiveDepTree(t *testing.T) {
 		2: {1},
 	}
 	ingredients := depGraphsToResolvedIngredients(dg)
+	ingredientMap := map[strfmt.UUID]ArtifactMapping{
+		readableUUID(1): {},
+		readableUUID(2): {},
+	}
 
-	depTree, recursive := fetchDepTree(ingredients)
+	depTree, recursive := fetchDepTree(ingredients, ingredientMap)
 
 	expectedDirect := map[strfmt.UUID][]strfmt.UUID{
 		readableUUID(1): {readableUUID(2)},

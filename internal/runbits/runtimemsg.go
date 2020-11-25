@@ -4,6 +4,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/go-openapi/strfmt"
 	"github.com/vbauerster/mpb/v4"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -11,16 +12,25 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/progress"
+	"github.com/ActiveState/cli/pkg/platform/api/buildlogstream"
 )
+
+type SummaryFunc func(output.Outputer, map[strfmt.UUID][]strfmt.UUID, map[strfmt.UUID][]strfmt.UUID, map[strfmt.UUID]buildlogstream.ArtifactMapping)
 
 type RuntimeMessageHandler struct {
 	out  output.Outputer
 	bpg  *progress.Progress
 	bbar *progress.TotalBar
+
+	summaryMessageFunc SummaryFunc
 }
 
 func NewRuntimeMessageHandler(out output.Outputer) *RuntimeMessageHandler {
-	return &RuntimeMessageHandler{out, nil, nil}
+	return &RuntimeMessageHandler{out, nil, nil, nil}
+}
+
+func (r *RuntimeMessageHandler) SetSummaryMessageFunc(f SummaryFunc) {
+	r.summaryMessageFunc = f
 }
 
 func (r *RuntimeMessageHandler) DownloadStarting() {
@@ -29,6 +39,13 @@ func (r *RuntimeMessageHandler) DownloadStarting() {
 
 func (r *RuntimeMessageHandler) InstallStarting() {
 	r.out.Notice(output.Heading(locale.T("installing_artifacts")))
+}
+
+func (r *RuntimeMessageHandler) BuildSummary(directDeps map[strfmt.UUID][]strfmt.UUID, recursiveDeps map[strfmt.UUID][]strfmt.UUID, ingredientMap map[strfmt.UUID]buildlogstream.ArtifactMapping) {
+	if r.summaryMessageFunc == nil {
+		return
+	}
+	r.summaryMessageFunc(r.out, directDeps, recursiveDeps, ingredientMap)
 }
 
 func (r *RuntimeMessageHandler) BuildStarting(totalArtifacts int) {

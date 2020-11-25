@@ -12,10 +12,12 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/pkg/cmdlets/auth"
+	"github.com/ActiveState/cli/pkg/platform/api/buildlogstream"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/go-openapi/strfmt"
 )
 
 type PackageType int
@@ -122,12 +124,9 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 		commitID = parentCommitID
 	}
 
-	if pt == Bundle {
-		printBundleInfo(out, ingredient, version)
-	}
-
 	// Create runtime
-	rt, err := runtime.NewRuntime(pj.Source().Path(), commitID, pj.Owner(), pj.Name(), runbits.NewRuntimeMessageHandler(out))
+	rtMessages := runbits.NewRuntimeMessageHandler(out)
+	rt, err := runtime.NewRuntime(pj.Source().Path(), commitID, pj.Owner(), pj.Name(), rtMessages)
 	if err != nil {
 		return locale.WrapError(err, "err_packages_update_runtime_init", "Could not initialize runtime.")
 	}
@@ -136,6 +135,8 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 		out.Print(locale.Tl("pkg_already_uptodate", "Requested dependencies are already configured and installed."))
 		return nil
 	}
+
+	rtMessages.SetSummaryMessageFunc(getSummaryMessageFunc(pt, operation, ingredient, version))
 
 	// Update runtime
 	if !rt.IsCachedRuntime() {
@@ -168,33 +169,58 @@ func splitNameAndVersion(input string) (string, string) {
 	return name, version
 }
 
-func printBundleInfo(out output.Outputer, ingredient *model.IngredientAndVersion, version string) {
-	out.Print("")
-	if version == "" {
-		out.Print(locale.Tl("bundle_no_version", "No bundle version specified, choosing version {{.V0}}", ingredient.Version))
+func getSummaryMessageFunc(pt PackageType, operation model.Operation, ingredient *model.IngredientAndVersion, version string) runbits.SummaryFunc {
+	// Currently, we are only supporting `state install`
+	if operation != model.OperationAdded {
+		return nil
+	}
+
+	if pt == Package {
+		return nil
+	}
+
+	return getBundleSummaryMessageFunc(ingredient, version)
+}
+
+func getBundleSummaryMessageFunc(ingredient *model.IngredientAndVersion, version string) runbits.SummaryFunc {
+	return func(out output.Outputer, directDeps map[strfmt.UUID][]strfmt.UUID, recursiveDeps map[strfmt.UUID][]strfmt.UUID, ingredientMap map[strfmt.UUID]buildlogstream.ArtifactMapping) {
 		out.Print("")
-	}
-
-	var count int
-	var dependencies []string
-	for _, dep := range ingredient.LatestVersion.DependencySets {
-		if dep.OriginalRequirement == "" {
-			continue
+		if version == "" {
+			out.Print(locale.Tl("bundle_no_version", "No bundle version specified, choosing version {{.V0}}", ingredient.Version))
+			out.Print("")
 		}
-		count++
-		dependencies = append(dependencies, strings.TrimSuffix(dep.OriginalRequirement, " 0"))
-	}
 
-	out.Print(locale.Tl("bundle_title", "[NOTICE]{{.V0}} Bundle[/RESET] includes {{.V1}} packages", *ingredient.Ingredient.Name, strconv.Itoa(count)))
-	last := len(dependencies) - 1
-	for i, dep := range dependencies {
-		if i == last {
-			out.Print(locale.Tl("bundle_package_name", "  └─ {{.V0}}", dep))
-			continue
+		versionID := ingredient.LatestVersion.IngredientVersionID
+		if versionID == nil {
+			logging.Error("versionID is nil in bundle summary message")
 		}
-		out.Print(locale.Tl("bundle_package_name", "  ├─ {{.V0}}", dep))
-	}
+		dependencies := directDeps[*versionID]
+		count := len(dependencies)
 
-	out.Print("")
-	out.Print(locale.Tl("packages_auto_msg", "Packages are automatically added to your runtime."))
+		out.Print(locale.Tl("bundle_title", "[NOTICE]{{.V0}} Bundle[/RESET] includes {{.V1}} dependencies", *ingredient.Ingredient.Name, strconv.Itoa(count)))
+		last := count - 1
+		for i, dep := range dependencies {
+			depMapping, ok := ingredientMap[dep]
+			if !ok {
+				logging.Error("Could not find dependency %s in ingredientMap", dep)
+				continue
+			}
+			var depCount string
+			recDeps, ok := recursiveDeps[dep]
+			if !ok {
+				logging.Error("Could not find recursive dependency of ingredient %s", dep)
+			}
+			if len(recDeps) > 0 {
+				depCount = locale.Tl("bundle_package_dependency_count", "({{.V0}} dependencies)", strconv.Itoa(len(recDeps)))
+			}
+			if i == last {
+				out.Print(locale.Tl("bundle_package_name_last", "  └─ {{.V0}} {{.V1}}", *depMapping.Name, depCount))
+				continue
+			}
+			out.Print(locale.Tl("bundle_package_name", "  ├─ {{.V0}} {{.V1}}", *depMapping.Name, depCount))
+		}
+
+		out.Print("")
+		out.Print(locale.Tl("packages_auto_msg", "Packages are automatically added to your runtime."))
+	}
 }

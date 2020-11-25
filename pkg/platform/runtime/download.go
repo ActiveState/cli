@@ -138,10 +138,10 @@ func (r *Download) FetchArtifacts() (*FetchArtifactsResult, *failures.Failure) {
 		return nil, fail
 	}
 
-	return r.fetchArtifacts(r.runtime.commitID, recipeID, orgID, projectID)
+	return r.fetchArtifacts(r.runtime.commitID, recipeID, orgID, projectID, true)
 }
 
-func (r *Download) fetchArtifacts(commitID, recipeID, orgID, projectID strfmt.UUID) (*FetchArtifactsResult, *failures.Failure) {
+func (r *Download) fetchArtifacts(commitID, recipeID, orgID, projectID strfmt.UUID, summaryOnComplete bool) (*FetchArtifactsResult, *failures.Failure) {
 	result := &FetchArtifactsResult{}
 
 	buildAnnotations := headchef.BuildAnnotations{
@@ -176,6 +176,12 @@ func (r *Download) fetchArtifacts(commitID, recipeID, orgID, projectID strfmt.UU
 			result.Artifacts = resp.Artifacts
 			logging.Debug("request engine=%v, recipeID=%s", result.BuildEngine, result.RecipeID.String())
 
+			if summaryOnComplete {
+				_, err := buildlogstream.PrintSummary(r.runtime.msgHandler, result.RecipeID)
+				if err != nil {
+					logging.Error("Failed to write build summary: %v", err)
+				}
+			}
 			return result, nil
 
 		case msg := <-buildStatus.Failed:
@@ -201,7 +207,7 @@ func (r *Download) fetchArtifacts(commitID, recipeID, orgID, projectID strfmt.UU
 			if err := r.waitForArtifacts(recipeID); err != nil {
 				return nil, failures.FailMisc.Wrap(err, locale.Tl("err_wait_artifacts", "Error happened while waiting for packages"))
 			}
-			return r.fetchArtifacts(commitID, recipeID, orgID, projectID)
+			return r.fetchArtifacts(commitID, recipeID, orgID, projectID, false)
 
 		case fail := <-buildStatus.RunFail:
 			logging.Debug("Failure: %v", fail)
