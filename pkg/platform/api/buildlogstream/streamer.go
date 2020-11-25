@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-openapi/strfmt"
 	"github.com/gorilla/websocket"
+	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -159,10 +160,14 @@ func artifactDescription(artifactID strfmt.UUID, artifactMap map[strfmt.UUID]art
 	return *v.Name + version
 }
 
-func fetchDepTree(ingredients []*inventory_models.V1SolutionRecipeRecipeResolvedIngredientsItems) (direct map[strfmt.UUID][]strfmt.UUID, recursive map[strfmt.UUID][]strfmt.UUID) {
-	directdeptree := map[strfmt.UUID][]strfmt.UUID{}
+func fetchDepTree(ingredients []*inventory_models.V1SolutionRecipeRecipeResolvedIngredientsItems) (directdeptree map[strfmt.UUID][]strfmt.UUID, recursive map[strfmt.UUID][]strfmt.UUID) {
+	directdeptree = map[strfmt.UUID][]strfmt.UUID{}
 	for _, ingredient := range ingredients {
 		if ingredient.IngredientVersion == nil || ingredient.IngredientVersion.IngredientVersionID == nil {
+			continue
+		}
+
+		if *ingredient.Ingredient.PrimaryNamespace == "builder" || *ingredient.Ingredient.PrimaryNamespace == "builder-lib" {
 			continue
 		}
 
@@ -183,7 +188,7 @@ func fetchDepTree(ingredients []*inventory_models.V1SolutionRecipeRecipeResolved
 
 	// Now resolve ALL dependencies, not just the direct ones
 	deptree := map[strfmt.UUID][]strfmt.UUID{}
-	for ingredientID, _ := range directdeptree {
+	for ingredientID := range directdeptree {
 		deptree[ingredientID] = recursiveDeps(directdeptree, ingredientID)
 	}
 
@@ -197,6 +202,9 @@ func recursiveDeps(directdeptree map[strfmt.UUID][]strfmt.UUID, id strfmt.UUID) 
 	}
 
 	for _, dep := range directdeptree[id] {
+		if funk.Contains(deps, dep) {
+			continue
+		}
 		deps = append(deps, dep)
 		deps = append(deps, recursiveDeps(directdeptree, dep)...)
 	}
