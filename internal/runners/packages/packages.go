@@ -136,7 +136,7 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 		return nil
 	}
 
-	rtMessages.SetSummaryMessageFunc(getSummaryMessageFunc(pt, operation, ingredient, version))
+	rtMessages.SetChangeSummaryFunc(getSummaryMessageFunc(pt, operation, ingredient, version))
 
 	// Update runtime
 	if !rt.IsCachedRuntime() {

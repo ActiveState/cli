@@ -22,15 +22,16 @@ type RuntimeMessageHandler struct {
 	bpg  *progress.Progress
 	bbar *progress.TotalBar
 
-	summaryMessageFunc SummaryFunc
+	changeSummaryFunc SummaryFunc
 }
 
 func NewRuntimeMessageHandler(out output.Outputer) *RuntimeMessageHandler {
 	return &RuntimeMessageHandler{out, nil, nil, nil}
 }
 
-func (r *RuntimeMessageHandler) SetSummaryMessageFunc(f SummaryFunc) {
-	r.summaryMessageFunc = f
+// SetChangeSummaryFunc sets a function that is called after the build recipe is known and can display a summary of changes that happened to the build
+func (r *RuntimeMessageHandler) SetChangeSummaryFunc(f SummaryFunc) {
+	r.changeSummaryFunc = f
 }
 
 func (r *RuntimeMessageHandler) DownloadStarting() {
@@ -41,11 +42,11 @@ func (r *RuntimeMessageHandler) InstallStarting() {
 	r.out.Notice(output.Heading(locale.T("installing_artifacts")))
 }
 
-func (r *RuntimeMessageHandler) BuildSummary(directDeps map[strfmt.UUID][]strfmt.UUID, recursiveDeps map[strfmt.UUID][]strfmt.UUID, ingredientMap map[strfmt.UUID]buildlogstream.ArtifactMapping) {
-	if r.summaryMessageFunc == nil {
+func (r *RuntimeMessageHandler) ChangeSummary(directDeps map[strfmt.UUID][]strfmt.UUID, recursiveDeps map[strfmt.UUID][]strfmt.UUID, ingredientMap map[strfmt.UUID]buildlogstream.ArtifactMapping) {
+	if r.changeSummaryFunc == nil {
 		return
 	}
-	r.summaryMessageFunc(r.out, directDeps, recursiveDeps, ingredientMap)
+	r.changeSummaryFunc(r.out, directDeps, recursiveDeps, ingredientMap)
 }
 
 func (r *RuntimeMessageHandler) BuildStarting(totalArtifacts int) {

@@ -25,7 +25,7 @@ func NewRequest(recipeID strfmt.UUID, msgHandler MessageHandler) *Request {
 }
 
 type MessageHandler interface {
-	BuildSummary(map[strfmt.UUID][]strfmt.UUID, map[strfmt.UUID][]strfmt.UUID, map[strfmt.UUID]ArtifactMapping)
+	ChangeSummary(map[strfmt.UUID][]strfmt.UUID, map[strfmt.UUID][]strfmt.UUID, map[strfmt.UUID]ArtifactMapping)
 	BuildStarting(totalArtifacts int)
 	BuildFinished()
 	ArtifactBuildStarting(artifactName string)
@@ -90,7 +90,7 @@ func PrintSummary(msgHandler MessageHandler, recipeID strfmt.UUID) (map[strfmt.U
 
 	direct, recursiveDeps := fetchDepTree(recipe.ResolvedIngredients, ingredientMap)
 
-	msgHandler.BuildSummary(direct, recursiveDeps, ingredientMap)
+	msgHandler.ChangeSummary(direct, recursiveDeps, ingredientMap)
 	return artifactMap, nil
 }
 
