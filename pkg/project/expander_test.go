@@ -107,7 +107,7 @@ func TestExpandAuthAuthenticated(t *testing.T) {
 
 	expanded, err := project.ExpandFromProject("$ $auth.authenticated", prj)
 	assert.NoError(t, err, "Ran without failure")
-	assert.Equal(t, "$ false", expanded, "Expanded auth")
+	assert.NotContains(t, expanded, "$auth.authenticated", "Expanded auth")
 }
 
 func TestExpandAuthAnonymous(t *testing.T) {
@@ -115,7 +115,7 @@ func TestExpandAuthAnonymous(t *testing.T) {
 
 	expanded, err := project.ExpandFromProject("$ $auth.anonymous", prj)
 	assert.NoError(t, err, "Ran without failure")
-	assert.Equal(t, "$ false", expanded, "Expanded auth")
+	assert.NotContains(t, expanded, "$auth.anonymous", "Expanded auth")
 }
 
 func TestExpandProjectConstant(t *testing.T) {
