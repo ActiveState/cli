@@ -7,6 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/scriptfile"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
 
 	"github.com/ActiveState/cli/internal/rxutils"
@@ -191,6 +192,30 @@ func expandPath(name string, script *Script) (string, error) {
 	}
 
 	return sf.Filename(), nil
+}
+
+func AuthExpander(_ string, name string, meta string, isFunction bool, project *Project) (string, error) {
+	if name == "authenticated" {
+		return expandAuth(), nil
+	}
+	if name == "anonymous" {
+		return expandAnonymous(), nil
+	}
+	return "", nil
+}
+
+func expandAuth() string {
+	if authentication.Get().Authenticated() {
+		return "true"
+	}
+	return "false"
+}
+
+func expandAnonymous() string {
+	if authentication.Get().IsAnonymous() {
+		return "true"
+	}
+	return "false"
 }
 
 // ConstantExpander expands constants defined in the project-file.

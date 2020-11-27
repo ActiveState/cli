@@ -102,6 +102,22 @@ func TestExpandProjectScript(t *testing.T) {
 	assert.Equal(t, "$ make test", expanded, "Expanded simple script")
 }
 
+func TestExpandAuthAuthenticated(t *testing.T) {
+	prj := loadProject(t)
+
+	expanded, err := project.ExpandFromProject("$ $auth.authenticated", prj)
+	assert.NoError(t, err, "Ran without failure")
+	assert.Equal(t, "$ false", expanded, "Expanded auth")
+}
+
+func TestExpandAuthAnonymous(t *testing.T) {
+	prj := loadProject(t)
+
+	expanded, err := project.ExpandFromProject("$ $auth.anonymous", prj)
+	assert.NoError(t, err, "Ran without failure")
+	assert.Equal(t, "$ false", expanded, "Expanded auth")
+}
+
 func TestExpandProjectConstant(t *testing.T) {
 	prj := loadProject(t)
 

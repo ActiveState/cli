@@ -17,6 +17,7 @@ func init() {
 		"events":             EventExpander,
 		"scripts":            ScriptExpander,
 		"constants":          ConstantExpander,
+		"auth":               AuthExpander,
 		TopLevelExpanderName: TopLevelExpander,
 	}
 }
