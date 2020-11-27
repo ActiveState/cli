@@ -235,13 +235,21 @@ func CommitsBehindLatest(ownerName, projectName, commitID string) (int, *failure
 type Changeset = []*mono_models.CommitChangeEditable
 
 // AddChangeset creates a new commit with multiple changes as provided. This is lower level than CommitChangeset.
-func AddChangeset(parentCommitID strfmt.UUID, commitMessage string, changeset Changeset) (*mono_models.Commit, *failures.Failure) {
+func AddChangeset(parentCommitID strfmt.UUID, commitMessage string, isHeadless bool, changeset Changeset) (*mono_models.Commit, *failures.Failure) {
 	params := vcsClient.NewAddCommitParams()
-	params.SetCommit(&mono_models.CommitEditable{
+
+	commit := &mono_models.CommitEditable{
 		Changeset:      changeset,
 		Message:        commitMessage,
 		ParentCommitID: parentCommitID,
-	})
+	}
+
+	if isHeadless {
+		id := logging.UniqID()
+		commit.AnonID = &id
+	}
+
+	params.SetCommit(commit)
 
 	res, err := mono.New().VersionControl.AddCommit(params, authentication.ClientAuth())
 	if err != nil {
@@ -252,7 +260,7 @@ func AddChangeset(parentCommitID strfmt.UUID, commitMessage string, changeset Ch
 }
 
 // AddCommit creates a new commit with a single change. This is lower level than Commit{X} functions.
-func AddCommit(parentCommitID strfmt.UUID, commitMessage string, operation Operation, namespace Namespace, requirement string, version string) (*mono_models.Commit, *failures.Failure) {
+func AddCommit(parentCommitID strfmt.UUID, commitMessage string, operation Operation, namespace Namespace, requirement string, version string, isHeadless bool) (*mono_models.Commit, *failures.Failure) {
 	changeset := []*mono_models.CommitChangeEditable{
 		{
 			Operation:         string(operation),
@@ -262,7 +270,7 @@ func AddCommit(parentCommitID strfmt.UUID, commitMessage string, operation Opera
 		},
 	}
 
-	return AddChangeset(parentCommitID, commitMessage, changeset)
+	return AddChangeset(parentCommitID, commitMessage, isHeadless, changeset)
 }
 
 // UpdateBranchCommit updates the commit that a branch is pointed at
@@ -289,7 +297,7 @@ func UpdateBranchCommit(branchID strfmt.UUID, commitID strfmt.UUID) error {
 }
 
 // CommitPackage commits a package to an existing parent commit
-func CommitPackage(parentCommitID strfmt.UUID, operation Operation, packageName, packageNamespace, packageVersion string) (strfmt.UUID, *failures.Failure) {
+func CommitPackage(parentCommitID strfmt.UUID, operation Operation, packageName, packageNamespace, packageVersion string, isHeadless bool) (strfmt.UUID, *failures.Failure) {
 	var commitID strfmt.UUID
 	languages, fail := FetchLanguagesForCommit(parentCommitID)
 	if fail != nil {
@@ -318,7 +326,7 @@ func CommitPackage(parentCommitID strfmt.UUID, operation Operation, packageName,
 	commit, fail := AddCommit(
 		parentCommitID, locale.Tr(message, packageName, packageVersion),
 		operation, namespace,
-		packageName, packageVersion,
+		packageName, packageVersion, isHeadless,
 	)
 	if fail != nil {
 		return commitID, fail
@@ -347,7 +355,7 @@ func UpdateProjectBranchCommitByName(projectOwner, projectName string, commitID 
 }
 
 // CommitChangeset commits multiple changes in one commit
-func CommitChangeset(parentCommitID strfmt.UUID, commitMsg string, changeset Changeset) (strfmt.UUID, error) {
+func CommitChangeset(parentCommitID strfmt.UUID, commitMsg string, isHeadless bool, changeset Changeset) (strfmt.UUID, error) {
 	var commitID strfmt.UUID
 	languages, fail := FetchLanguagesForCommit(parentCommitID)
 	if fail != nil {
@@ -358,7 +366,7 @@ func CommitChangeset(parentCommitID strfmt.UUID, commitMsg string, changeset Cha
 		return commitID, FailNoLanguages.New(locale.T("err_project_no_languages")).ToError()
 	}
 
-	commit, fail := AddChangeset(parentCommitID, commitMsg, changeset)
+	commit, fail := AddChangeset(parentCommitID, commitMsg, isHeadless, changeset)
 	if fail != nil {
 		return commitID, fail.ToError()
 	}
@@ -501,7 +509,8 @@ func CommitPlatform(owner, prjName string, op Operation, name, version string, w
 	platformID := platform.PlatformID.String()
 
 	// version is not the value that AddCommit needs - platforms do not post a version
-	commit, fail := AddCommit(bCommitID, msg, op, NamespacePlatform(), platformID, "")
+	// TODO: Headless check for caller of this func?
+	commit, fail := AddCommit(bCommitID, msg, op, NamespacePlatform(), platformID, "", false)
 	if fail != nil {
 		return fail.ToError()
 	}
@@ -543,7 +552,8 @@ func CommitLanguage(owner, project string, op Operation, name, version string) e
 	branchCommitID := *branch.CommitID
 	msg := locale.Tr(msgL10nKey, name, version)
 
-	commit, fail := AddCommit(branchCommitID, msg, op, NamespaceLanguage(), lang.Name, lang.Version)
+	// TODO: Headless check for caller of this func?
+	commit, fail := AddCommit(branchCommitID, msg, op, NamespaceLanguage(), lang.Name, lang.Version, false)
 	if fail != nil {
 		return fail.ToError()
 	}

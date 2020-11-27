@@ -92,7 +92,7 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 	}
 
 	parentCommitID := pj.CommitUUID()
-	commitID, fail := model.CommitPackage(parentCommitID, operation, *ingredient.Ingredient.Name, ingredient.Namespace, version)
+	commitID, fail := model.CommitPackage(parentCommitID, operation, *ingredient.Ingredient.Name, ingredient.Namespace, version, isHeadless)
 	if fail != nil {
 		return locale.WrapError(fail.ToError(), fmt.Sprintf("err_%s_%s", pt.String(), operation))
 	}

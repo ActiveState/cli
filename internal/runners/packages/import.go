@@ -166,7 +166,7 @@ func fetchImportChangeset(cp ChangesetProvider, file string, lang string) (model
 }
 
 func commitChangeset(project *project.Project, msg string, isHeadless bool, changeset model.Changeset) error {
-	commitID, err := model.CommitChangeset(project.CommitUUID(), msg, changeset)
+	commitID, err := model.CommitChangeset(project.CommitUUID(), msg, isHeadless, changeset)
 	if err != nil {
 		return locale.WrapError(err, "err_packages_removed")
 	}
