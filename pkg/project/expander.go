@@ -194,7 +194,8 @@ func expandPath(name string, script *Script) (string, error) {
 	return sf.Filename(), nil
 }
 
-func AuthExpander(_ string, name string, meta string, isFunction bool, project *Project) (string, error) {
+// AuthExpander expands authentication information in the project file.
+func AuthExpander(_ string, name string, _ string, _ bool, _ *Project) (string, error) {
 	if name == "authenticated" {
 		return expandAuth(), nil
 	}

@@ -51,6 +51,8 @@ var (
 	FailNotAuthenticated = failures.Type("authentication.fail.notauthed")
 )
 
+const authenticatedConfigKey = "authenticated"
+
 var exit = os.Exit
 
 var persist *Auth
@@ -136,7 +138,7 @@ func (s *Auth) updateRollbarPerson() {
 }
 
 func (s *Auth) setAuthenticated() {
-	viper.Set("authenticated", true)
+	viper.Set(authenticatedConfigKey, true)
 }
 
 // Authenticate will try to authenticate using stored credentials
@@ -232,7 +234,7 @@ func (s *Auth) UserID() *strfmt.UUID {
 }
 
 func (s *Auth) IsAnonymous() bool {
-	return !viper.GetBool("authenticated")
+	return !viper.GetBool(authenticatedConfigKey)
 }
 
 // Logout will destroy any session tokens and reset the current Auth instance
