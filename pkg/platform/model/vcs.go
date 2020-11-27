@@ -509,7 +509,6 @@ func CommitPlatform(owner, prjName string, op Operation, name, version string, w
 	platformID := platform.PlatformID.String()
 
 	// version is not the value that AddCommit needs - platforms do not post a version
-	// TODO: Headless check for caller of this func?
 	commit, fail := AddCommit(bCommitID, msg, op, NamespacePlatform(), platformID, "", false)
 	if fail != nil {
 		return fail.ToError()
@@ -552,7 +551,6 @@ func CommitLanguage(owner, project string, op Operation, name, version string) e
 	branchCommitID := *branch.CommitID
 	msg := locale.Tr(msgL10nKey, name, version)
 
-	// TODO: Headless check for caller of this func?
 	commit, fail := AddCommit(branchCommitID, msg, op, NamespaceLanguage(), lang.Name, lang.Version, false)
 	if fail != nil {
 		return fail.ToError()
