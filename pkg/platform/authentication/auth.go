@@ -9,7 +9,6 @@ import (
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
 	"github.com/spf13/viper"
-	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/ci/gcloud"
 	"github.com/ActiveState/cli/internal/colorize"
@@ -136,24 +135,15 @@ func (s *Auth) updateRollbarPerson() {
 	logging.UpdateRollbarPerson(uid.String(), s.WhoAmI(), s.Email())
 }
 
-func (s *Auth) updateUsersListing() {
-	uid := s.UserID()
-	if uid == nil {
-		return
-	}
-
-	listing := viper.GetStringSlice("users")
-	if !funk.Contains(listing, uid.String()) {
-		listing = append(listing, uid.String())
-	}
-	viper.Set("users", listing)
+func (s *Auth) setAuthenticated() {
+	viper.Set("authenticated", true)
 }
 
 // Authenticate will try to authenticate using stored credentials
 func (s *Auth) Authenticate() *failures.Failure {
 	if s.Authenticated() {
 		s.updateRollbarPerson()
-		s.updateUsersListing()
+		s.setAuthenticated()
 		return nil
 	}
 
@@ -184,7 +174,7 @@ func (s *Auth) AuthenticateWithModel(credentials *mono_models.Credentials) *fail
 		}
 	}
 	defer s.updateRollbarPerson()
-	defer s.updateUsersListing()
+	defer s.setAuthenticated()
 
 	payload := loginOK.Payload
 	s.user = payload.User
@@ -242,11 +232,7 @@ func (s *Auth) UserID() *strfmt.UUID {
 }
 
 func (s *Auth) IsAnonymous() bool {
-	listing := viper.GetStringSlice("users")
-	if listing == nil {
-		return true
-	}
-	return false
+	return !viper.GetBool("authenticated")
 }
 
 // Logout will destroy any session tokens and reset the current Auth instance
