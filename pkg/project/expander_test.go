@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/language"
 
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -107,7 +108,7 @@ func TestExpandAuthAuthenticated(t *testing.T) {
 
 	expanded, err := project.ExpandFromProject("$ $auth.authenticated", prj)
 	assert.NoError(t, err, "Ran without failure")
-	assert.NotContains(t, expanded, "$auth.authenticated", "Expanded auth")
+	assert.Equal(t, fmt.Sprintf("$ %t", authentication.Get().Authenticated()), expanded, "Expanded auth")
 }
 
 func TestExpandAuthAnonymous(t *testing.T) {
@@ -115,7 +116,7 @@ func TestExpandAuthAnonymous(t *testing.T) {
 
 	expanded, err := project.ExpandFromProject("$ $auth.anonymous", prj)
 	assert.NoError(t, err, "Ran without failure")
-	assert.NotContains(t, expanded, "$auth.anonymous", "Expanded auth")
+	assert.Equal(t, fmt.Sprintf("$ %t", authentication.Get().IsAnonymous()), expanded, "Expanded auth")
 }
 
 func TestExpandProjectConstant(t *testing.T) {
