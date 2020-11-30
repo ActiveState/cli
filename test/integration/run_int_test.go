@@ -112,7 +112,7 @@ func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
 	cp := ts.Spawn("activate")
 	cp.Expect("Default Project")
 	cp.Expect("Y/n")
-	cp.SendLine("n")
+	cp.Send("n\n")
 	cp.Expect("You're Activated")
 	cp.WaitForInput(10 * time.Second)
 
@@ -218,7 +218,7 @@ func (suite *RunIntegrationTestSuite) TestRun_Unauthenticated() {
 	)
 	cp.Expect("Default Project")
 	cp.Expect("Y/n")
-	cp.SendLine("n")
+	cp.Send("n\n")
 
 	cp.Expect("You're Activated")
 	cp.WaitForInput(120 * time.Second)
