@@ -59,7 +59,7 @@ func (r *Revert) Run(params *Params) error {
 		return locale.WrapError(err, "err_revert_get_commit", "Could not fetch commit details for commit with ID: {{.V0}}", params.CommitID)
 	}
 
-	orgs, fail := model.FetchOrganizationsByIDs([]strfmt.UUID{revertCommit.Author})
+	orgs, fail := model.FetchOrganizationsByIDs([]strfmt.UUID{*revertCommit.Author})
 	if fail != nil {
 		return locale.WrapError(fail.ToError(), "err_revert_get_organizations", "Could not get organizations for current user")
 	}

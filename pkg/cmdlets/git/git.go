@@ -57,9 +57,9 @@ func (r *Repo) CloneProject(owner, name, path string, out output.Outputer) *fail
 	defer os.RemoveAll(tempDir)
 
 	out.Print(output.Heading(locale.Tr("git_cloning_project_heading")))
-	out.Print(locale.Tr("git_cloning_project", project.RepoURL.String()))
+	out.Print(locale.Tr("git_cloning_project", *project.RepoURL))
 	_, err = git.PlainClone(tempDir, false, &git.CloneOptions{
-		URL:      project.RepoURL.String(),
+		URL:      *project.RepoURL,
 		Progress: os.Stdout,
 	})
 	if err != nil {

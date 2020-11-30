@@ -93,7 +93,7 @@ func printCommits(out output.Outputer, commits []*mono_models.Commit, orgs []gmo
 func authorIDsForCommits(commits []*mono_models.Commit) []strfmt.UUID {
 	authorIDs := []strfmt.UUID{}
 	for _, commit := range commits {
-		authorIDs = append(authorIDs, commit.Author)
+		authorIDs = append(authorIDs, *commit.Author)
 	}
 	return authorIDs
 }

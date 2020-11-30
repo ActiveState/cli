@@ -46,7 +46,7 @@ func PrintCommits(out output.Outputer, commits []*mono_models.Commit, orgs []gmo
 }
 
 func commitDataFromCommit(commit *mono_models.Commit, orgs []gmodel.Organization) (commitData, error) {
-	username, err := usernameForID(commit.Author, orgs)
+	username, err := usernameForID(*commit.Author, orgs)
 	if err != nil {
 		return commitData{}, locale.WrapError(err, "err_commit_print_username", "Could not determine username for commit author")
 	}

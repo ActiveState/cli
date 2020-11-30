@@ -245,8 +245,7 @@ func AddChangeset(parentCommitID strfmt.UUID, commitMessage string, isHeadless b
 	}
 
 	if isHeadless {
-		id := logging.UniqID()
-		commit.AnonID = &id
+		commit.AnonID = logging.UniqID()
 	}
 
 	params.SetCommit(commit)
