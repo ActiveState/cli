@@ -101,27 +101,54 @@ func NamespaceMatch(query string, namespace NamespaceMatchable) bool {
 	return match
 }
 
+type NamespaceType string
+
+const (
+	NamespacePackage  NamespaceType = "package" // these values should match the namespace prefix
+	NamespaceBundle   NamespaceType = "bundle"
+	NamespaceLanguage NamespaceType = "language"
+	NamespacePlatform NamespaceType = "platform"
+)
+
 // Namespace is the type used for communicating namespaces, mainly just allows for self documenting code
-type Namespace string
-
-// NamespacePackage creates a new package namespace
-func NamespacePackage(language string) Namespace {
-	return Namespace(fmt.Sprintf("language/%s", language))
+type Namespace struct {
+	nsType NamespaceType
+	value  string
 }
 
-// NamespaceBundles creates a new bundles namespace
-func NamespaceBundles(language string) Namespace {
-	return Namespace(fmt.Sprintf("bundles/%s", language))
+func (n Namespace) Type() NamespaceType {
+	return n.nsType
 }
 
-// NamespaceLanguage provides the base language namespace.
-func NamespaceLanguage() Namespace {
-	return Namespace("language")
+func (n Namespace) String() string {
+	return n.value
 }
 
-// NamespacePlatform provides the base platform namespace.
-func NamespacePlatform() Namespace {
-	return Namespace("platform")
+func NewNamespacePkgOrBundle(language string, nstype NamespaceType) Namespace {
+	if nstype == NamespaceBundle {
+		return NewNamespaceBundle(language)
+	}
+	return NewNamespacePackage(language)
+}
+
+// NewNamespacePackage creates a new package namespace
+func NewNamespacePackage(language string) Namespace {
+	return Namespace{NamespacePackage, fmt.Sprintf("language/%s", language)}
+}
+
+// NewNamespaceBundle creates a new bundles namespace
+func NewNamespaceBundle(language string) Namespace {
+	return Namespace{NamespaceBundle, fmt.Sprintf("bundles/%s", language)}
+}
+
+// NewNamespaceLanguage provides the base language namespace.
+func NewNamespaceLanguage() Namespace {
+	return Namespace{NamespaceLanguage, "language"}
+}
+
+// NewNamespacePlatform provides the base platform namespace.
+func NewNamespacePlatform() Namespace {
+	return Namespace{NamespacePlatform, "platform"}
 }
 
 // LatestCommitID returns the latest commit id by owner and project names. It
@@ -256,7 +283,7 @@ func AddCommit(parentCommitID strfmt.UUID, commitMessage string, operation Opera
 	changeset := []*mono_models.CommitChangeEditable{
 		{
 			Operation:         string(operation),
-			Namespace:         string(namespace),
+			Namespace:         namespace.String(),
 			Requirement:       requirement,
 			VersionConstraint: version,
 		},
@@ -310,9 +337,9 @@ func CommitPackage(parentCommitID strfmt.UUID, operation Operation, packageName,
 		message = "commit_message_removed_package"
 	}
 
-	namespace := NamespacePackage(languages[0].Name)
+	namespace := NewNamespacePackage(languages[0].Name)
 	if strings.HasPrefix(packageNamespace, string(BundlesNamespacePrefix)) {
-		namespace = NamespaceBundles(languages[0].Name)
+		namespace = NewNamespaceBundle(languages[0].Name)
 	}
 
 	commit, fail := AddCommit(
@@ -385,7 +412,7 @@ func CommitInitial(hostPlatform string, lang *language.Supported, langVersion st
 	if language != "" {
 		c := &mono_models.CommitChangeEditable{
 			Operation:         string(OperationAdded),
-			Namespace:         string(NamespaceLanguage()),
+			Namespace:         NewNamespaceLanguage().String(),
 			Requirement:       language,
 			VersionConstraint: langVersion,
 		}
@@ -394,7 +421,7 @@ func CommitInitial(hostPlatform string, lang *language.Supported, langVersion st
 
 	c := &mono_models.CommitChangeEditable{
 		Operation:         string(OperationAdded),
-		Namespace:         string(NamespacePlatform()),
+		Namespace:         NewNamespacePlatform().String(),
 		Requirement:       platformID,
 		VersionConstraint: "",
 	}
@@ -501,7 +528,7 @@ func CommitPlatform(owner, prjName string, op Operation, name, version string, w
 	platformID := platform.PlatformID.String()
 
 	// version is not the value that AddCommit needs - platforms do not post a version
-	commit, fail := AddCommit(bCommitID, msg, op, NamespacePlatform(), platformID, "")
+	commit, fail := AddCommit(bCommitID, msg, op, NewNamespacePlatform(), platformID, "")
 	if fail != nil {
 		return fail.ToError()
 	}
@@ -543,7 +570,7 @@ func CommitLanguage(owner, project string, op Operation, name, version string) e
 	branchCommitID := *branch.CommitID
 	msg := locale.Tr(msgL10nKey, name, version)
 
-	commit, fail := AddCommit(branchCommitID, msg, op, NamespaceLanguage(), lang.Name, lang.Version)
+	commit, fail := AddCommit(branchCommitID, msg, op, NewNamespaceLanguage(), lang.Name, lang.Version)
 	if fail != nil {
 		return fail.ToError()
 	}

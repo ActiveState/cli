@@ -5,6 +5,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/packages"
+	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
 func newPackagesCommand(prime *primer.Values) *captain.Command {
@@ -36,7 +37,7 @@ func newPackagesCommand(prime *primer.Values) *captain.Command {
 		},
 		[]*captain.Argument{},
 		func(_ *captain.Command, _ []string) error {
-			return runner.Run(params, packages.Package)
+			return runner.Run(params, model.NamespacePackage)
 		},
 	)
 
@@ -66,7 +67,7 @@ func newInstallCommand(prime *primer.Values) *captain.Command {
 			},
 		},
 		func(_ *captain.Command, _ []string) error {
-			return runner.Run(params, packages.Package)
+			return runner.Run(params, model.NamespacePackage)
 		},
 	).SetGroup(PackagesGroup)
 }
@@ -91,7 +92,7 @@ func newUninstallCommand(prime *primer.Values) *captain.Command {
 			},
 		},
 		func(_ *captain.Command, _ []string) error {
-			return runner.Run(params, packages.Package)
+			return runner.Run(params, model.NamespacePackage)
 		},
 	).SetGroup(PackagesGroup)
 }
@@ -158,7 +159,7 @@ func newSearchCommand(prime *primer.Values) *captain.Command {
 			},
 		},
 		func(_ *captain.Command, _ []string) error {
-			return runner.Run(params, packages.Package)
+			return runner.Run(params, model.NamespacePackage)
 		},
 	).SetGroup(PackagesGroup)
 }

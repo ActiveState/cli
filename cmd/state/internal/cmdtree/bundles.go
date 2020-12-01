@@ -5,6 +5,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/packages"
+	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
 func newBundlesCommand(prime *primer.Values) *captain.Command {
@@ -36,7 +37,7 @@ func newBundlesCommand(prime *primer.Values) *captain.Command {
 		},
 		[]*captain.Argument{},
 		func(_ *captain.Command, _ []string) error {
-			return runner.Run(params, packages.Bundle)
+			return runner.Run(params, model.NamespaceBundle)
 		},
 	)
 
@@ -65,7 +66,7 @@ func newBundleInstallCommand(prime *primer.Values) *captain.Command {
 			},
 		},
 		func(_ *captain.Command, _ []string) error {
-			return runner.Run(params, packages.Bundle)
+			return runner.Run(params, model.NamespaceBundle)
 		},
 	)
 }
@@ -90,7 +91,7 @@ func newBundleUninstallCommand(prime *primer.Values) *captain.Command {
 			},
 		},
 		func(_ *captain.Command, _ []string) error {
-			return runner.Run(params, packages.Bundle)
+			return runner.Run(params, model.NamespaceBundle)
 		},
 	)
 }
@@ -126,7 +127,7 @@ func newBundlesSearchCommand(prime *primer.Values) *captain.Command {
 			},
 		},
 		func(_ *captain.Command, _ []string) error {
-			return runner.Run(params, packages.Bundle)
+			return runner.Run(params, model.NamespaceBundle)
 		},
 	)
 }

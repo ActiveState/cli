@@ -22,36 +22,9 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
-type PackageType int
-
-const (
-	Package PackageType = iota
-	Bundle
-)
-
-func (pt PackageType) String() string {
-	switch pt {
-	case Package:
-		return "package"
-	case Bundle:
-		return "bundle"
-	}
-	return ""
-}
-
-func (pt PackageType) Namespace() model.NamespacePrefix {
-	switch pt {
-	case Package:
-		return model.PackageNamespacePrefix
-	case Bundle:
-		return model.BundlesNamespacePrefix
-	}
-	return ""
-}
-
 const latestVersion = "latest"
 
-func executePackageOperation(pj *project.Project, out output.Outputer, authentication *authentication.Auth, prompt prompt.Prompter, language, name, version string, operation model.Operation, pt PackageType) error {
+func executePackageOperation(pj *project.Project, out output.Outputer, authentication *authentication.Auth, prompt prompt.Prompter, name, version string, operation model.Operation, ns model.Namespace) error {
 	isHeadless := pj.IsHeadless()
 	if !isHeadless && !authentication.Authenticated() {
 		anonymousOk, fail := prompt.Confirm(locale.Tl("continue_anon", "Continue Anonymously?"), locale.T("prompt_headless_anonymous"), true)
@@ -74,12 +47,11 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 	}
 
 	// Verify that the provided package actually exists (the vcs API doesn't care)
-	var ingredient *model.IngredientAndVersion
 	var err error
 	if version == "" {
-		ingredient, err = model.IngredientWithLatestVersion(language, name, pt.Namespace())
+		_, err = model.IngredientWithLatestVersion(name, ns)
 	} else {
-		ingredient, err = model.IngredientByNameAndVersion(language, name, version, pt.Namespace())
+		_, err = model.IngredientByNameAndVersion(name, version, ns)
 	}
 	if err != nil {
 		return locale.WrapError(err, "package_ingredient_err", "Failed to resolve an ingredient named {{.V0}}.", name)
@@ -87,7 +59,7 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 
 	// Check if this is an addition or an update
 	if operation == model.OperationAdded {
-		req, err := model.GetRequirement(pj.CommitUUID(), ingredient.Namespace, *ingredient.Ingredient.Name)
+		req, err := model.GetRequirement(pj.CommitUUID(), ns.String(), name)
 		if err != nil {
 			return errs.Wrap(err, "Could not get requirement")
 		}
@@ -97,9 +69,9 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 	}
 
 	parentCommitID := pj.CommitUUID()
-	commitID, fail := model.CommitPackage(parentCommitID, operation, *ingredient.Ingredient.Name, ingredient.Namespace, version)
+	commitID, fail := model.CommitPackage(parentCommitID, operation, name, ns.String(), version)
 	if fail != nil {
-		return locale.WrapError(fail.ToError(), fmt.Sprintf("err_%s_%s", pt.String(), operation))
+		return locale.WrapError(fail.ToError(), fmt.Sprintf("err_%s_%s", ns.Type(), operation))
 	}
 
 	revertCommit, err := model.GetRevertCommit(pj.CommitUUID(), commitID)
@@ -138,8 +110,6 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 		return nil
 	}
 
-	rtMessages.SetChangeSummaryFunc(getSummaryMessageFunc(pt, operation, ingredient, version))
-
 	// Update runtime
 	if !rt.IsCachedRuntime() {
 		out.Notice(txtstyle.NewTitle(locale.Tl("update_runtime", "Updating Runtime")))
@@ -152,9 +122,9 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 
 	// Print the result
 	if version != "" {
-		out.Print(locale.Tr(fmt.Sprintf("%s_version_%s", pt.String(), operation), *ingredient.Ingredient.Name, version))
+		out.Print(locale.Tr(fmt.Sprintf("%s_version_%s", ns.Type(), operation), name, version))
 	} else {
-		out.Print(locale.Tr(fmt.Sprintf("%s_%s", pt.String(), operation), *ingredient.Ingredient.Name))
+		out.Print(locale.Tr(fmt.Sprintf("%s_%s", ns.Type(), operation), name))
 	}
 
 	return nil
@@ -171,13 +141,9 @@ func splitNameAndVersion(input string) (string, string) {
 	return name, version
 }
 
-func getSummaryMessageFunc(pt PackageType, operation model.Operation, ingredient *model.IngredientAndVersion, version string) runbits.SummaryFunc {
+func getSummaryMessageFunc(operation model.Operation, ingredient *model.IngredientAndVersion, version string) runbits.SummaryFunc {
 	// Currently, we are only supporting `state install`
 	if operation != model.OperationAdded {
-		return nil
-	}
-
-	if pt == Package {
 		return nil
 	}
 

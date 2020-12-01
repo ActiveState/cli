@@ -4,6 +4,8 @@ import (
 	"errors"
 	"os"
 
+	"github.com/spf13/viper"
+
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
@@ -11,7 +13,6 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/spf13/viper"
 )
 
 type Cache struct {
@@ -86,7 +87,7 @@ func (c *Cache) removeProjectCache(projectDir, namespace string, force bool) err
 
 	parsed, fail := project.ParseNamespace(namespace)
 	if fail != nil {
-		return locale.WrapError(fail.ToError(), "err_clean_cache_invalid_namespace", "Namespace argument is not of the correct format")
+		return locale.WrapError(fail.ToError(), "err_clean_cache_invalid_namespace", "NamespacePrefix argument is not of the correct format")
 	}
 
 	runtime, err := runtime.NewRuntime(projectDir, "", parsed.Owner, parsed.Project, nil)

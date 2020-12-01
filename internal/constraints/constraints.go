@@ -48,9 +48,9 @@ func NewConditional() *Conditional {
 func NewPrimeConditional(pjOwner, pjName, pjNamespace, subshellName string) *Conditional {
 	c := NewConditional()
 	c.RegisterParam("Project", map[string]string{
-		"Namespace": pjNamespace,
-		"Name":      pjName,
-		"Owner":     pjOwner,
+		"NamespacePrefix": pjNamespace,
+		"Name":            pjName,
+		"Owner":           pjOwner,
 	})
 	osVersion, err := sysinfo.OSVersion()
 	if err != nil {
