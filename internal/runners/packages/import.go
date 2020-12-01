@@ -6,6 +6,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
@@ -166,7 +167,7 @@ func fetchImportChangeset(cp ChangesetProvider, file string, lang string) (model
 }
 
 func commitChangeset(project *project.Project, msg string, isHeadless bool, changeset model.Changeset) error {
-	commitID, err := model.CommitChangeset(project.CommitUUID(), msg, isHeadless, changeset)
+	commitID, err := model.CommitChangeset(project.CommitUUID(), msg, machineid.UniqID(), changeset)
 	if err != nil {
 		return locale.WrapError(err, "err_packages_removed")
 	}

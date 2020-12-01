@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/machineid"
 )
 
 var (
@@ -41,7 +42,7 @@ type RoundTripper struct{}
 // RoundTrip executes a single HTTP transaction, returning a Response for the provided Request.
 func (r *RoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	req.Header.Set("User-Agent", r.UserAgent())
-	req.Header.Set("X-Requestor", logging.UniqID())
+	req.Header.Set("X-Requestor", machineid.UniqID())
 	return http.DefaultTransport.RoundTrip(req)
 }
 

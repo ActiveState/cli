@@ -58,6 +58,9 @@ func (r *Revert) Run(params *Params) error {
 	if err != nil {
 		return locale.WrapError(err, "err_revert_get_commit", "Could not fetch commit details for commit with ID: {{.V0}}", params.CommitID)
 	}
+	if revertCommit.Author == nil {
+		return locale.NewError("err_nil_author", "Revert commit has no author")
+	}
 
 	orgs, fail := model.FetchOrganizationsByIDs([]strfmt.UUID{*revertCommit.Author})
 	if fail != nil {

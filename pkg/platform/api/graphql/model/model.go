@@ -11,6 +11,7 @@ const (
 
 var (
 	ErrMissingBranchProjectID = errors.New("missing branch proj id")
+	ErrMissingRepoURL         = errors.New("missing repo URL")
 )
 
 type Time struct {
