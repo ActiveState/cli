@@ -340,6 +340,8 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_Replace() {
 	cp.ExpectLongString("default project?")
 	cp.SendLine("n")
 
+	cp.Expect("activated state")
+
 	cp.WaitForInput()
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
