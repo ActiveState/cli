@@ -41,10 +41,6 @@ func (p *Project) ToMonoProject() (*mono_models.Project, *failures.Failure) {
 		}
 	}
 
-	if p.RepoURL == nil {
-		return nil, failures.FailMarshal.Wrap(ErrMissingRepoURL)
-	}
-
 	mp := mono_models.Project{
 		Added:          makeStrfmtDateTime(p.Added),
 		Branches:       p.Branches.ToMonoBranches(),
