@@ -10,11 +10,13 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
+// Languages manages the listing execution context.
 type Languages struct {
 	out     output.Outputer
 	project *project.Project
 }
 
+// NewLanguages prepares a list execution context for use.
 func NewLanguages(prime primeable) *Languages {
 	return &Languages{
 		prime.Output(),
@@ -22,10 +24,12 @@ func NewLanguages(prime primeable) *Languages {
 	}
 }
 
+// Listing represents the output data of a list of languages.
 type Listing struct {
 	Languages []model.Language `json:"languages"`
 }
 
+// MarshalOutput implements the output.Marshaller interface.
 func (l Listing) MarshalOutput(f output.Format) interface{} {
 	if f == output.PlainFormatName {
 		return l.Languages
@@ -33,6 +37,7 @@ func (l Listing) MarshalOutput(f output.Format) interface{} {
 	return l
 }
 
+// Run executes the list behavior.
 func (l *Languages) Run() error {
 	if l.project == nil {
 		return locale.NewInputError("err_no_project")
