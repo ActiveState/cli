@@ -6,18 +6,16 @@ package inventory_operations
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"net/http"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // NewAddIngredientVersionRevisionParams creates a new AddIngredientVersionRevisionParams object
@@ -69,7 +67,7 @@ type AddIngredientVersionRevisionParams struct {
 	/*IngredientVersionID*/
 	IngredientVersionID strfmt.UUID
 	/*IngredientVersionRevision*/
-	IngredientVersionRevision *inventory_models.V1IngredientVersionRevisionCreate
+	IngredientVersionRevision *inventory_models.IngredientVersionRevisionCreate
 	/*IsDefaultProviderBehavior
 	  How setting of is_default_provider should be handled for the features provided by the thing being created. The options are: 'override' - if is_default_provider is set to true for a provided feature then replace the existing default provider of that feature (if one exists); 'if-new' - set is_default_provider to true if this is an entirely new feature, otherwise false
 
@@ -137,13 +135,13 @@ func (o *AddIngredientVersionRevisionParams) SetIngredientVersionID(ingredientVe
 }
 
 // WithIngredientVersionRevision adds the ingredientVersionRevision to the add ingredient version revision params
-func (o *AddIngredientVersionRevisionParams) WithIngredientVersionRevision(ingredientVersionRevision *inventory_models.V1IngredientVersionRevisionCreate) *AddIngredientVersionRevisionParams {
+func (o *AddIngredientVersionRevisionParams) WithIngredientVersionRevision(ingredientVersionRevision *inventory_models.IngredientVersionRevisionCreate) *AddIngredientVersionRevisionParams {
 	o.SetIngredientVersionRevision(ingredientVersionRevision)
 	return o
 }
 
 // SetIngredientVersionRevision adds the ingredientVersionRevision to the add ingredient version revision params
-func (o *AddIngredientVersionRevisionParams) SetIngredientVersionRevision(ingredientVersionRevision *inventory_models.V1IngredientVersionRevisionCreate) {
+func (o *AddIngredientVersionRevisionParams) SetIngredientVersionRevision(ingredientVersionRevision *inventory_models.IngredientVersionRevisionCreate) {
 	o.IngredientVersionRevision = ingredientVersionRevision
 }
 

@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // GetKernelGpuArchitecturesReader is a Reader for the GetKernelGpuArchitectures structure.
@@ -24,14 +23,12 @@ type GetKernelGpuArchitecturesReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetKernelGpuArchitecturesReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewGetKernelGpuArchitecturesOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	default:
 		result := NewGetKernelGpuArchitecturesDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -54,16 +51,20 @@ func NewGetKernelGpuArchitecturesOK() *GetKernelGpuArchitecturesOK {
 A paginated list of GPU architectures
 */
 type GetKernelGpuArchitecturesOK struct {
-	Payload *inventory_models.V1GpuArchitecturePagedList
+	Payload *inventory_models.GpuArchitecturePagedList
 }
 
 func (o *GetKernelGpuArchitecturesOK) Error() string {
 	return fmt.Sprintf("[GET /v1/kernels/{kernel_id}/gpu-architectures][%d] getKernelGpuArchitecturesOK  %+v", 200, o.Payload)
 }
 
+func (o *GetKernelGpuArchitecturesOK) GetPayload() *inventory_models.GpuArchitecturePagedList {
+	return o.Payload
+}
+
 func (o *GetKernelGpuArchitecturesOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(inventory_models.V1GpuArchitecturePagedList)
+	o.Payload = new(inventory_models.GpuArchitecturePagedList)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -97,6 +98,10 @@ func (o *GetKernelGpuArchitecturesDefault) Code() int {
 
 func (o *GetKernelGpuArchitecturesDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/kernels/{kernel_id}/gpu-architectures][%d] getKernelGpuArchitectures default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *GetKernelGpuArchitecturesDefault) GetPayload() *inventory_models.RestAPIError {
+	return o.Payload
 }
 
 func (o *GetKernelGpuArchitecturesDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

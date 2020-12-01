@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // GetBuildFlagsReader is a Reader for the GetBuildFlags structure.
@@ -24,14 +23,12 @@ type GetBuildFlagsReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetBuildFlagsReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewGetBuildFlagsOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	default:
 		result := NewGetBuildFlagsDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -54,16 +51,20 @@ func NewGetBuildFlagsOK() *GetBuildFlagsOK {
 A paginated list of build flags
 */
 type GetBuildFlagsOK struct {
-	Payload *inventory_models.V1BuildFlagPagedList
+	Payload *inventory_models.BuildFlagPagedList
 }
 
 func (o *GetBuildFlagsOK) Error() string {
 	return fmt.Sprintf("[GET /v1/build-flags][%d] getBuildFlagsOK  %+v", 200, o.Payload)
 }
 
+func (o *GetBuildFlagsOK) GetPayload() *inventory_models.BuildFlagPagedList {
+	return o.Payload
+}
+
 func (o *GetBuildFlagsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(inventory_models.V1BuildFlagPagedList)
+	o.Payload = new(inventory_models.BuildFlagPagedList)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -97,6 +98,10 @@ func (o *GetBuildFlagsDefault) Code() int {
 
 func (o *GetBuildFlagsDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/build-flags][%d] getBuildFlags default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *GetBuildFlagsDefault) GetPayload() *inventory_models.RestAPIError {
+	return o.Payload
 }
 
 func (o *GetBuildFlagsDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

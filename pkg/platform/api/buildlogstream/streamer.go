@@ -145,7 +145,7 @@ func (r *Request) responseReader(conn *websocket.Conn, readErr chan error) {
 	}
 }
 
-func artifactMap(recipe *inventory_models.V1SolutionRecipeRecipe) (map[strfmt.UUID]ArtifactMapping, map[strfmt.UUID]ArtifactMapping, error) {
+func artifactMap(recipe *inventory_models.Recipe) (map[strfmt.UUID]ArtifactMapping, map[strfmt.UUID]ArtifactMapping, error) {
 	artifactMap := map[strfmt.UUID]ArtifactMapping{}
 	ingredientVersionMap := map[strfmt.UUID]ArtifactMapping{}
 
@@ -181,7 +181,7 @@ func artifactDescription(artifactID strfmt.UUID, artifactMap map[strfmt.UUID]Art
 	return *v.Name + version
 }
 
-func fetchDepTree(ingredients []*inventory_models.V1SolutionRecipeRecipeResolvedIngredientsItems, ingredientMap map[strfmt.UUID]ArtifactMapping) (directdeptree map[strfmt.UUID][]strfmt.UUID, recursive map[strfmt.UUID][]strfmt.UUID) {
+func fetchDepTree(ingredients []*inventory_models.ResolvedIngredient, ingredientMap map[strfmt.UUID]ArtifactMapping) (directdeptree map[strfmt.UUID][]strfmt.UUID, recursive map[strfmt.UUID][]strfmt.UUID) {
 	directdeptree = map[strfmt.UUID][]strfmt.UUID{}
 	for _, ingredient := range ingredients {
 		if ingredient.IngredientVersion == nil || ingredient.IngredientVersion.IngredientVersionID == nil {

@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // AddCPUExtensionRevisionReader is a Reader for the AddCPUExtensionRevision structure.
@@ -24,21 +23,18 @@ type AddCPUExtensionRevisionReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *AddCPUExtensionRevisionReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewAddCPUExtensionRevisionOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewAddCPUExtensionRevisionBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewAddCPUExtensionRevisionDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -61,16 +57,20 @@ func NewAddCPUExtensionRevisionOK() *AddCPUExtensionRevisionOK {
 The updated state of the CPU extension
 */
 type AddCPUExtensionRevisionOK struct {
-	Payload *inventory_models.V1CPUExtension
+	Payload *inventory_models.CPUExtension
 }
 
 func (o *AddCPUExtensionRevisionOK) Error() string {
 	return fmt.Sprintf("[POST /v1/cpu-extensions/{cpu_extension_id}/revisions][%d] addCpuExtensionRevisionOK  %+v", 200, o.Payload)
 }
 
+func (o *AddCPUExtensionRevisionOK) GetPayload() *inventory_models.CPUExtension {
+	return o.Payload
+}
+
 func (o *AddCPUExtensionRevisionOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(inventory_models.V1CPUExtension)
+	o.Payload = new(inventory_models.CPUExtension)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -95,6 +95,10 @@ type AddCPUExtensionRevisionBadRequest struct {
 
 func (o *AddCPUExtensionRevisionBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/cpu-extensions/{cpu_extension_id}/revisions][%d] addCpuExtensionRevisionBadRequest  %+v", 400, o.Payload)
+}
+
+func (o *AddCPUExtensionRevisionBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
+	return o.Payload
 }
 
 func (o *AddCPUExtensionRevisionBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -133,6 +137,10 @@ func (o *AddCPUExtensionRevisionDefault) Code() int {
 
 func (o *AddCPUExtensionRevisionDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/cpu-extensions/{cpu_extension_id}/revisions][%d] addCpuExtensionRevision default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *AddCPUExtensionRevisionDefault) GetPayload() *inventory_models.RestAPIError {
+	return o.Payload
 }
 
 func (o *AddCPUExtensionRevisionDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // AddKernelCPUArchitectureReader is a Reader for the AddKernelCPUArchitecture structure.
@@ -24,21 +23,18 @@ type AddKernelCPUArchitectureReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *AddKernelCPUArchitectureReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewAddKernelCPUArchitectureOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewAddKernelCPUArchitectureBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewAddKernelCPUArchitectureDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -61,16 +57,20 @@ func NewAddKernelCPUArchitectureOK() *AddKernelCPUArchitectureOK {
 The CPU architecture added to the kernel
 */
 type AddKernelCPUArchitectureOK struct {
-	Payload *inventory_models.V1CPUArchitecture
+	Payload *inventory_models.CPUArchitecture
 }
 
 func (o *AddKernelCPUArchitectureOK) Error() string {
 	return fmt.Sprintf("[POST /v1/kernels/{kernel_id}/cpu-architectures][%d] addKernelCpuArchitectureOK  %+v", 200, o.Payload)
 }
 
+func (o *AddKernelCPUArchitectureOK) GetPayload() *inventory_models.CPUArchitecture {
+	return o.Payload
+}
+
 func (o *AddKernelCPUArchitectureOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(inventory_models.V1CPUArchitecture)
+	o.Payload = new(inventory_models.CPUArchitecture)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -95,6 +95,10 @@ type AddKernelCPUArchitectureBadRequest struct {
 
 func (o *AddKernelCPUArchitectureBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/kernels/{kernel_id}/cpu-architectures][%d] addKernelCpuArchitectureBadRequest  %+v", 400, o.Payload)
+}
+
+func (o *AddKernelCPUArchitectureBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
+	return o.Payload
 }
 
 func (o *AddKernelCPUArchitectureBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -133,6 +137,10 @@ func (o *AddKernelCPUArchitectureDefault) Code() int {
 
 func (o *AddKernelCPUArchitectureDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/kernels/{kernel_id}/cpu-architectures][%d] addKernelCpuArchitecture default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *AddKernelCPUArchitectureDefault) GetPayload() *inventory_models.RestAPIError {
+	return o.Payload
 }
 
 func (o *AddKernelCPUArchitectureDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

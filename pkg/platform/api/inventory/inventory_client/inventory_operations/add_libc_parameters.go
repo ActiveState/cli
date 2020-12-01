@@ -6,18 +6,16 @@ package inventory_operations
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"net/http"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // NewAddLibcParams creates a new AddLibcParams object
@@ -65,7 +63,7 @@ for the add libc operation typically these are written to a http.Request
 type AddLibcParams struct {
 
 	/*Libc*/
-	Libc *inventory_models.V1LibcCore
+	Libc *inventory_models.LibcCore
 
 	timeout    time.Duration
 	Context    context.Context
@@ -106,13 +104,13 @@ func (o *AddLibcParams) SetHTTPClient(client *http.Client) {
 }
 
 // WithLibc adds the libc to the add libc params
-func (o *AddLibcParams) WithLibc(libc *inventory_models.V1LibcCore) *AddLibcParams {
+func (o *AddLibcParams) WithLibc(libc *inventory_models.LibcCore) *AddLibcParams {
 	o.SetLibc(libc)
 	return o
 }
 
 // SetLibc adds the libc to the add libc params
-func (o *AddLibcParams) SetLibc(libc *inventory_models.V1LibcCore) {
+func (o *AddLibcParams) SetLibc(libc *inventory_models.LibcCore) {
 	o.Libc = libc
 }
 

@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // GetOperatingSystemVersionReader is a Reader for the GetOperatingSystemVersion structure.
@@ -24,14 +23,12 @@ type GetOperatingSystemVersionReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetOperatingSystemVersionReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewGetOperatingSystemVersionOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	default:
 		result := NewGetOperatingSystemVersionDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -54,16 +51,20 @@ func NewGetOperatingSystemVersionOK() *GetOperatingSystemVersionOK {
 The retrieved operating system version
 */
 type GetOperatingSystemVersionOK struct {
-	Payload *inventory_models.V1OperatingSystemVersion
+	Payload *inventory_models.OperatingSystemVersion
 }
 
 func (o *GetOperatingSystemVersionOK) Error() string {
 	return fmt.Sprintf("[GET /v1/operating-systems/{operating_system_id}/versions/{operating_system_version_id}][%d] getOperatingSystemVersionOK  %+v", 200, o.Payload)
 }
 
+func (o *GetOperatingSystemVersionOK) GetPayload() *inventory_models.OperatingSystemVersion {
+	return o.Payload
+}
+
 func (o *GetOperatingSystemVersionOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(inventory_models.V1OperatingSystemVersion)
+	o.Payload = new(inventory_models.OperatingSystemVersion)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -97,6 +98,10 @@ func (o *GetOperatingSystemVersionDefault) Code() int {
 
 func (o *GetOperatingSystemVersionDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/operating-systems/{operating_system_id}/versions/{operating_system_version_id}][%d] getOperatingSystemVersion default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *GetOperatingSystemVersionDefault) GetPayload() *inventory_models.RestAPIError {
+	return o.Payload
 }
 
 func (o *GetOperatingSystemVersionDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

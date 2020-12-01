@@ -30,13 +30,13 @@ var (
 
 // IngredientAndVersion is a sane version of whatever the hell it is go-swagger thinks it's doing
 type IngredientAndVersion struct {
-	*inventory_models.V1SearchIngredientsResponseIngredientsItems
+	*inventory_models.SearchIngredientsResponseItem
 	Version   string
 	Namespace string
 }
 
 // Platform is a sane version of whatever the hell it is go-swagger thinks it's doing
-type Platform = inventory_models.V1PlatformPagedListPlatformsItems
+type Platform = inventory_models.Platform
 
 var platformCache []*Platform
 
@@ -64,7 +64,7 @@ func IngredientByNameAndVersion(language, name, version string, prefix Namespace
 					candidates = append(
 						candidates,
 						&IngredientAndVersion{
-							ingredient.V1SearchIngredientsResponseIngredientsItems,
+							ingredient.SearchIngredientsResponseItem,
 							ver.Version,
 							ingredient.Namespace,
 						})
@@ -129,7 +129,7 @@ func IngredientWithLatestVersion(language, name string, prefix NamespacePrefix) 
 			candidates = append(
 				candidates,
 				&IngredientAndVersion{
-					res.V1SearchIngredientsResponseIngredientsItems,
+					res.SearchIngredientsResponseItem,
 					*res.LatestVersion.Version,
 					res.Namespace,
 				})

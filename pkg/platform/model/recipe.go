@@ -70,7 +70,7 @@ func FetchRecipeIDForCommitAndPlatform(commitID strfmt.UUID, owner, project, org
 	return fetchRecipeID(commitID, owner, project, orgID, private, &hostPlatform)
 }
 
-func FetchRecipeByID(recipeID strfmt.UUID) (*inventory_models.V1SolutionRecipeRecipe, error) {
+func FetchRecipeByID(recipeID strfmt.UUID) (*inventory_models.Recipe, error) {
 	params := iop.NewGetSolutionRecipeParams()
 	params.RecipeID = recipeID
 
@@ -131,7 +131,7 @@ func fetchRawRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *s
 	return recipe, nil
 }
 
-func commitToOrder(commitID strfmt.UUID, owner, project string) (*inventory_models.V1Order, error) {
+func commitToOrder(commitID strfmt.UUID, owner, project string) (*inventory_models.Order, error) {
 	monoOrder, err := FetchOrderFromCommit(commitID)
 	if err != nil {
 		return nil, FailOrderRecipes.Wrap(err, locale.T("err_order_recipe")).ToError()
@@ -142,7 +142,7 @@ func commitToOrder(commitID strfmt.UUID, owner, project string) (*inventory_mode
 		return nil, failures.FailMarshal.New(locale.T("err_order_marshal")).ToError()
 	}
 
-	order := &inventory_models.V1Order{}
+	order := &inventory_models.Order{}
 	err = order.UnmarshalBinary(orderData)
 	if err != nil {
 		return nil, failures.FailMarshal.New(locale.T("err_order_marshal")).ToError()
