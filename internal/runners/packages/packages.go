@@ -5,10 +5,13 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/go-openapi/strfmt"
+
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/output/txtstyle"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/pkg/cmdlets/auth"
@@ -17,7 +20,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/go-openapi/strfmt"
 )
 
 type PackageType int
@@ -140,8 +142,8 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 
 	// Update runtime
 	if !rt.IsCachedRuntime() {
-		out.Print(locale.Tl("update_runtime", "[NOTICE]Updating Runtime[/RESET]"))
-		out.Print(locale.Tl("update_runtime_info", "Changes to your runtime may require some dependencies to be rebuilt."))
+		out.Notice(txtstyle.NewTitle(locale.Tl("update_runtime", "Updating Runtime")))
+		out.Notice(locale.Tl("update_runtime_info", "Changes to your runtime may require some dependencies to be rebuilt."))
 		_, _, fail := runtime.NewInstaller(rt).Install()
 		if fail != nil {
 			return locale.WrapError(fail, "err_packages_update_runtime_install", "Could not install dependencies.")
