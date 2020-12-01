@@ -5,7 +5,6 @@ import (
 
 	"github.com/go-openapi/strfmt"
 	"github.com/gorilla/websocket"
-	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -216,23 +215,25 @@ func fetchDepTree(ingredients []*inventory_models.V1SolutionRecipeRecipeResolved
 	deptree := map[strfmt.UUID][]strfmt.UUID{}
 	for ingredientID := range directdeptree {
 		deps := []strfmt.UUID{}
-		deptree[ingredientID] = recursiveDeps(deps, directdeptree, ingredientID)
+		deptree[ingredientID] = recursiveDeps(deps, directdeptree, ingredientID, map[strfmt.UUID]struct{}{})
 	}
 
 	return directdeptree, deptree
 }
 
-func recursiveDeps(deps []strfmt.UUID, directdeptree map[strfmt.UUID][]strfmt.UUID, id strfmt.UUID) []strfmt.UUID {
+func recursiveDeps(deps []strfmt.UUID, directdeptree map[strfmt.UUID][]strfmt.UUID, id strfmt.UUID, skip map[strfmt.UUID]struct{}) []strfmt.UUID {
 	if _, ok := directdeptree[id]; !ok {
 		return deps
 	}
 
 	for _, dep := range directdeptree[id] {
-		if funk.Contains(deps, dep) {
+		if _, ok := skip[dep]; ok {
 			continue
 		}
+		skip[dep] = struct{}{}
+
 		deps = append(deps, dep)
-		deps = recursiveDeps(deps, directdeptree, dep)
+		deps = recursiveDeps(deps, directdeptree, dep, skip)
 	}
 
 	return deps
