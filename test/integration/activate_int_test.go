@@ -41,10 +41,6 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePython2() {
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
-	if runtime.GOOS == "windows" {
-		// blocked by story https://www.pivotaltracker.com/story/show/175706773
-		suite.T().Skip("Windows console does not recognize automatically send 'n' character to 'Default project'-prompt. Skipping")
-	}
 	suite.OnlyRunForTags(tagsuite.Critical, tagsuite.Activate, tagsuite.ExitCode)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
