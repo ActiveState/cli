@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"gopkg.in/src-d/go-git.v4"
 
@@ -93,7 +94,7 @@ func ensureCorrectRepo(owner, name, projectFilePath string) *failures.Failure {
 		return fail
 	}
 
-	if !(proj.Owner() == owner) || !(proj.Name() == name) {
+	if !(strings.ToLower(proj.Owner()) == strings.ToLower(owner)) || !(strings.ToLower(proj.Name()) == strings.ToLower(name)) {
 		return FailProjectURLMismatch.New(locale.T("error_git_project_url_mismatch"))
 	}
 

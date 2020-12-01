@@ -91,7 +91,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateNotOnPath() {
 	defer ts.Close()
 
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("activate", "ActiveState-CLI/small-python", "--path", ts.Dirs.Work),
+		e2e.WithArgs("activate", "activestate-cli/small-python", "--path", ts.Dirs.Work),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.ExpectLongString("default project?")
