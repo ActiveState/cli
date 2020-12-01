@@ -225,3 +225,48 @@ func Test_renderRow(t *testing.T) {
 func renderBreaks(v string) string {
 	return strings.ReplaceAll(v, "\n", `\n`)
 }
+
+func Test_getCroppedText(t *testing.T) {
+	type args struct {
+		text   string
+		maxLen int
+	}
+	tests := []struct {
+		name string
+		args args
+		want []entry
+	}{
+		{
+			"No split",
+			args{"[HEADING]Hello[/RESET]", 5},
+			[]entry{{"[HEADING]Hello[/RESET]", 5}},
+		},
+		{
+			"Split",
+			args{"[HEADING]Hello[/RESET]", 3},
+			[]entry{{"[HEADING]Hel", 3}, {"lo[/RESET]", 2}},
+		},
+		{
+			"Split multiple",
+			args{"[HEADING]Hello World[/RESET]", 3},
+			[]entry{{"[HEADING]Hel", 3}, {"lo ", 3}, {"Wor", 3}, {"ld[/RESET]", 2}},
+		},
+		{
+			"Split multiple no match",
+			args{"Hello World", 3},
+			[]entry{{"Hel", 3}, {"lo ", 3}, {"Wor", 3}, {"ld", 2}},
+		},
+		{
+			"No split no match",
+			args{"Hello", 5},
+			[]entry{{"Hello", 5}},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := getCroppedText(tt.args.text, tt.args.maxLen); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("getCroppedText() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

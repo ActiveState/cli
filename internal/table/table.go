@@ -1,10 +1,12 @@
 package table
 
 import (
+	"fmt"
 	"math"
 	"strings"
 	"unicode/utf8"
 
+	"github.com/ActiveState/cli/internal/colorize"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/cli/internal/termutils"
@@ -17,13 +19,20 @@ const padding = 2
 
 type FormatFunc func(string, ...interface{}) string
 
+type entry struct {
+	line   string
+	length int
+}
+
 type row struct {
+	// TODO: Change this to a slice of entry that is returned from the new func
 	columns []string
 }
 
 type Table struct {
 	headers []string
 	rows    []row
+	// entries []entry
 }
 
 func New(headers []string) *Table {
@@ -135,6 +144,33 @@ func (t *Table) calculateWidth(maxTotalWidth int) ([]int, int) {
 	logging.Debug("Table column widths: %v, total: %d", colWidths, targetTotal)
 
 	return colWidths, targetTotal
+}
+
+func getCroppedText(text string, maxLen int) []entry {
+	entries := make([]entry, 0)
+	stripped := colorize.StripColorCodes(text)
+	matches := colorize.ColorRx.FindAllStringSubmatch(text, -1)
+
+	for len(stripped) != 0 {
+		end := len(stripped)
+		if end > maxLen {
+			end = maxLen
+		}
+
+		entryText := stripped[0:end]
+		entries = append(entries, entry{entryText, len(entryText)})
+		stripped = stripped[end:]
+	}
+
+	if len(matches) == 2 {
+		firstText := entries[0].line
+		entries[0].line = fmt.Sprintf("%s%s", matches[0][0], firstText)
+
+		lastText := entries[len(entries)-1].line
+		entries[len(entries)-1].line = fmt.Sprintf("%s%s", lastText, matches[1][0])
+	}
+
+	return entries
 }
 
 func renderRow(providedColumns []string, colWidths []int) string {
