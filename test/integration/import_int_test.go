@@ -38,7 +38,7 @@ func (suite *ImportIntegrationTestSuite) TestImport_headless() {
 
 	cp = ts.Spawn("import", importPath)
 	cp.ExpectLongString("Do you want to continue as an anonymous user?")
-	cp.Send("Y\n")
+	cp.SendLine("Y")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("packages")

@@ -165,7 +165,7 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	cp.Expect("> Other")
 	cp.Send("\n")
 	cp.Expect(">")
-	cp.Send(cp.WorkDirectory() + "\n")
+	cp.SendLine(cp.WorkDirectory())
 
 	cp.ExpectLongString("default project?")
 	cp.Send("n\n")

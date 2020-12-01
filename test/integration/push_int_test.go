@@ -76,7 +76,7 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 	cp = ts.SpawnWithOpts(e2e.WithArgs("install", suite.extraPackage), e2e.WithWorkDirectory(wd))
 	cp.Expect("You're about to add packages as an anonymous user")
 	cp.Expect("(Y/n)")
-	cp.Send("y\n")
+	cp.SendLine("y")
 	cp.Expect("added")
 	cp.ExpectExitCode(0)
 

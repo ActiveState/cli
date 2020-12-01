@@ -167,7 +167,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmationNegative() 
 		e2e.AppendEnv(suite.env(true)...),
 	)
 	cp.Expect("sure you want")
-	cp.Send("n\n")
+	cp.SendLine("n")
 	cp.Expect("not confirm")
 	cp.ExpectNotExitCode(0)
 }
@@ -195,7 +195,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmationPositive() 
 		e2e.AppendEnv(suite.env(true)...),
 	)
 	cp.Expect("sure you want")
-	cp.Send("y\n")
+	cp.SendLine("y")
 	cp.Expect("Locked version updated")
 	cp.ExpectExitCode(0)
 }
