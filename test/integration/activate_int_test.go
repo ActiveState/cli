@@ -47,13 +47,13 @@ func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
 
 	cp := ts.Spawn("activate", "ActiveState-CLI/Python2")
 	cp.Expect("Where would you like to place")
-	cp.Send(string([]byte{0033, '[', 'B'})) // move cursor down, and then press enter
+	cp.SendUnterminated(string([]byte{0033, '[', 'B'})) // move cursor down, and then press enter
 	cp.Expect("> Other")
-	cp.SendLine("")
+	cp.Send("")
 	cp.Expect(">")
-	cp.SendLine(cp.WorkDirectory())
+	cp.Send(cp.WorkDirectory())
 	cp.ExpectLongString("default project?")
-	cp.SendLine("n")
+	cp.Send("n")
 	cp.Expect("You're Activated")
 	cp.WaitForInput()
 
@@ -72,7 +72,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateUsingCommitID() {
 	)
 
 	cp.ExpectLongString("default project?")
-	cp.SendLine("n")
+	cp.Send("n")
 
 	cp.Expect("You're Activated", 20*time.Second)
 	cp.WaitForInput(10 * time.Second)
@@ -91,7 +91,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateNotOnPath() {
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.ExpectLongString("default project?")
-	cp.SendLine("n")
+	cp.Send("n")
 	cp.Expect("You're Activated", 20*time.Second)
 	cp.WaitForInput(10 * time.Second)
 
@@ -123,7 +123,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePythonByHostOnly() {
 	)
 	cp.Expect("Activating Virtual Environment")
 	cp.ExpectLongString("default project?")
-	cp.SendLine("n")
+	cp.Send("n")
 
 	if runtime.GOOS == "linux" {
 		cp.Expect("activated state")
@@ -161,14 +161,14 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 		e2e.AppendEnv(extraEnv...),
 	)
 	cp.Expect("Where would you like to place")
-	cp.Send(string([]byte{0033, '[', 'B'})) // move cursor down, and then press enter
+	cp.SendUnterminated(string([]byte{0033, '[', 'B'})) // move cursor down, and then press enter
 	cp.Expect("> Other")
-	cp.SendLine("")
+	cp.Send("")
 	cp.Expect(">")
-	cp.SendLine(cp.WorkDirectory())
+	cp.Send(cp.WorkDirectory())
 
 	cp.ExpectLongString("default project?")
-	cp.SendLine("n")
+	cp.Send("n")
 
 	cp.Expect("activated state")
 	// ensure that shell is functional
@@ -249,7 +249,7 @@ version: %s
 
 	c2 := ts.Spawn("activate")
 	c2.ExpectLongString("default project?")
-	c2.SendLine("n")
+	c2.Send("n")
 	c2.Expect("You're Activated")
 
 	// not waiting for activation, as we test that part in a different test
@@ -274,13 +274,13 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
 		),
 	)
 	cp.Expect("Where would you like to place")
-	cp.Send(string([]byte{0033, '[', 'B'})) // move cursor down, and then press enter
+	cp.SendUnterminated(string([]byte{0033, '[', 'B'})) // move cursor down, and then press enter
 	cp.Expect(">")
-	cp.SendLine("")
+	cp.Send("")
 	cp.Expect(">")
-	cp.SendLine(cp.WorkDirectory())
+	cp.Send(cp.WorkDirectory())
 	cp.ExpectLongString("default project?")
-	cp.SendLine("n")
+	cp.Send("n")
 	cp.Expect("Downloading", 20*time.Second)
 	cp.Expect("Installing", 120*time.Second)
 	cp.Expect("activated state")
@@ -314,7 +314,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_Replace() {
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.ExpectLongString("default project?")
-	cp.SendLine("n")
+	cp.Send("n")
 	cp.Expect("You're Activated")
 
 	cp.WaitForInput()
@@ -334,7 +334,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_Replace() {
 	)
 	cp.Expect("Activating Virtual Environment")
 	cp.ExpectLongString("default project?")
-	cp.SendLine("n")
+	cp.Send("n")
 
 	cp.Expect("activated state")
 
@@ -370,7 +370,7 @@ version: %s
 		e2e.WithWorkDirectory(filepath.Join(ts.Dirs.Work, "foo", "bar", "baz")),
 	)
 	c2.ExpectLongString("default project?")
-	c2.SendLine("n")
+	c2.Send("n")
 	c2.Expect("You're Activated")
 
 	c2.WaitForInput(20 * time.Second)
@@ -392,7 +392,7 @@ func (suite *ActivateIntegrationTestSuite) TestInit_Activation_NoCommitID() {
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.ExpectLongString("default project?")
-	cp.SendLine("n")
+	cp.Send("n")
 	cp.ExpectLongString("A CommitID is required to install this runtime environment")
 	cp.ExpectExitCode(1)
 }
@@ -423,7 +423,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_FromCache() {
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.ExpectLongString("default project?")
-	cp.SendLine("n")
+	cp.Send("n")
 	cp.Expect("Downloading")
 	cp.Expect("Installing")
 	cp.Expect("activated state")
@@ -467,13 +467,13 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_Command() {
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Where would you like to place")
-	cp.Send(string([]byte{0033, '[', 'B'})) // move cursor down, and then press enter
+	cp.SendUnterminated(string([]byte{0033, '[', 'B'})) // move cursor down, and then press enter
 	cp.Expect(">")
-	cp.SendLine("\n")
+	cp.Send("")
 	cp.Expect(">")
-	cp.SendLine(cp.WorkDirectory())
+	cp.Send(cp.WorkDirectory())
 	cp.ExpectLongString("default project?")
-	cp.SendLine("n")
+	cp.Send("n")
 	cp.Expect("CUSTOM_COMMAND")
 	cp.ExpectExitCode(0)
 }
@@ -495,7 +495,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateCommitURL() {
 	// Ensure we have the most up to date version of the project before activating
 	cp := ts.Spawn("activate")
 	cp.ExpectLongString("default project?")
-	cp.SendLine("n")
+	cp.Send("n")
 	cp.Expect("You're Activated")
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)

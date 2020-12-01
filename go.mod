@@ -7,7 +7,7 @@ require (
 	github.com/ActiveState/archiver v3.1.1+incompatible
 	github.com/ActiveState/go-ogle-analytics v0.0.0-20170510030904-9b3f14901527
 	github.com/ActiveState/sysinfo v0.0.0-20200619170619-0582d42daf27
-	github.com/ActiveState/termtest v0.7.0
+	github.com/ActiveState/termtest v0.7.1
 	github.com/ActiveState/termtest/expect v0.7.0
 	github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78
 	github.com/PuerkitoBio/purell v1.1.0 // indirect
