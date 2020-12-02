@@ -1,11 +1,11 @@
 package table
 
 import (
-	"math"
 	"strings"
 	"unicode/utf8"
 
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/mathutils"
 	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/cli/internal/termutils"
 )
@@ -55,86 +55,81 @@ func (t *Table) Render() string {
 	return strings.TrimRight(out, linebreak)
 }
 
-// equalizeWidths equalizes the width of given columns by a given percentage of the average columns width
-func equalizeWidths(colWidths []int, total int, percentage int) ([]int, int) {
-	averageWidth := total / len(colWidths)
-	equalizer := percentage * averageWidth / 100
-	total += equalizer * len(colWidths)
-	for n := range colWidths {
-		colWidths[n] += equalizer
-	}
-	return colWidths, total
-}
-
-func rescaleColumns(colWidths []int, total, targetTotal int) []int {
-	// Calculate column widths according to the total width
-	remaining := targetTotal
-	for n, w := range colWidths {
-		cw := int(math.Floor(float64(w) / float64(total) * float64(remaining)))
-		total -= w
-		remaining -= cw
-		colWidths[n] = cw
-	}
-
-	colWidths[len(colWidths)-1] += remaining // Ensure we use up all remaining space
-	return colWidths
-}
-
-func (t *Table) calculateWidth(maxTotalWidth int) ([]int, int) {
-	// Calculate required width of each column
-	minWidth := padding * 2
+func (t *Table) calculateWidth(maxTableWidth int) ([]int, int) {
+	// Calculate total width of each column, not worrying about max width just yet
+	minTableWidth := padding * 2
 	colWidths := make([]int, len(t.headers))
-	columnTotal := 0
+	colWidthsCombined := 0
 	for n, header := range t.headers {
-		// Check header sizes
-		headerSize := utf8.RuneCountInString(header)
-		if currentSize, ok := sliceutils.GetInt(colWidths, n); !ok || currentSize < headerSize {
-			colWidths[n] = headerSize // Set width according to header size
-		}
-		// Check row column sizes
+		// Start with the header size
+		colWidths[n] = utf8.RuneCountInString(header)
+
+		// Check column sizes for each row
 		for _, row := range t.rows {
-			spanWidth := columnTotal
-			rowValueSize := 0
-			if rowValue, ok := sliceutils.GetString(row.columns, n); ok {
-				rowValueSize = utf8.RuneCountInString(rowValue)
+			columnValue, ok := sliceutils.GetString(row.columns, n)
+			if !ok {
+				continue // column doesn't exit because the previous column spans
 			}
-			if colWidths[n] < rowValueSize {
-				if len(row.columns) < len(t.headers) {
-					spanWidth += rowValueSize + (padding * 2) // This is a spanned column, so its width does not apply to the individual column
-				} else {
-					colWidths[n] = rowValueSize // Set width according to column size
-				}
-			}
-			if spanWidth > minWidth {
-				minWidth = spanWidth
+			columnSize := utf8.RuneCountInString(columnValue)
+
+			// Detect spanned column info
+			rowHasSpannedColumn := len(row.columns) < len(t.headers)
+			spannedColumnIndex := len(row.columns) - 1
+
+			if rowHasSpannedColumn && n == spannedColumnIndex {
+				// Record total row size as minTableWidth
+				minTableWidth = mathutils.MaxInt(minTableWidth, colWidths[n]+columnSize+(padding*2))
+			} else {
+				// This is a regular non-spanned column
+				colWidths[n] = mathutils.MaxInt(colWidths[n], columnSize)
 			}
 		}
 
 		// Add padding and update the total width so far
 		colWidths[n] += padding * 2
-		columnTotal += colWidths[n]
+		colWidthsCombined += colWidths[n]
 	}
 
 	// Equalize widths by 20% of average width
 	// This is to prevent columns that are much larger than others from taking up most of the table width
-	colWidths, columnTotal = equalizeWidths(colWidths, columnTotal, 20)
+	equalizeWidths(colWidths, 20)
 
-	// compute the total number of columns that we want the table to use
-	targetTotal := columnTotal
-	// Factor in spanned columns
-	if targetTotal < minWidth {
-		targetTotal = minWidth
+	// Constrain table to max and min dimensions
+	tableWidth := mathutils.MaxInt(colWidthsCombined, minTableWidth)
+	tableWidth = mathutils.MinInt(tableWidth, maxTableWidth)
+
+	// Now scale back the row sizes according to the max width
+	rescaleColumns(colWidths, tableWidth)
+	logging.Debug("Table column widths: %v, total: %d", colWidths, tableWidth)
+
+	return colWidths, tableWidth
+}
+
+// equalizeWidths equalizes the width of given columns by a given percentage of the average columns width
+func equalizeWidths(colWidths []int, percentage int) {
+	total := float64(mathutils.Total(colWidths...))
+	multiplier := float64(percentage) / 100
+	averageWidth := total / float64(len(colWidths))
+
+	for n := range colWidths {
+		colWidth := float64(colWidths[n])
+		colWidths[n] += int((averageWidth - colWidth) * multiplier)
 	}
 
-	// Limit to max width
-	if targetTotal > maxTotalWidth {
-		targetTotal = maxTotalWidth
+	// Account for floats that got rounded
+	colWidths[len(colWidths)-1] += int(total) - mathutils.Total(colWidths...)
+}
+
+func rescaleColumns(colWidths []int, targetTotal int) {
+	total := float64(mathutils.Total(colWidths...))
+	multiplier := float64(targetTotal) / total
+
+	for n := range colWidths {
+		colWidths[n] = int(float64(colWidths[n]) * multiplier)
 	}
 
-	colWidths = rescaleColumns(colWidths, columnTotal, targetTotal)
-	logging.Debug("Table column widths: %v, total: %d", colWidths, targetTotal)
-
-	return colWidths, targetTotal
+	// Account for floats that got rounded
+	colWidths[len(colWidths)-1] += targetTotal - mathutils.Total(colWidths...)
 }
 
 func renderRow(providedColumns []string, colWidths []int) string {
