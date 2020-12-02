@@ -165,7 +165,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTerm() {
 		"Name",
 		"requests",
 		"2.25.0",
-		"+ 7 older versions",
+		"+ 8 older versions",
 	}
 	for _, expectation := range expectations {
 		cp.Expect(expectation)
