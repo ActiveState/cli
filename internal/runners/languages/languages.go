@@ -52,7 +52,7 @@ func (l *Languages) Run() error {
 			),
 			locale.Tl(
 				"languages_no_commitid_help",
-				"Run → [ACTIONABLE]state pull[/RESET] to update your project",
+				"Run → [ACTIONABLE]`state pull`[/RESET] to update your project",
 			),
 		)
 	}
