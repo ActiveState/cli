@@ -3,17 +3,20 @@ package languages
 import (
 	"strings"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
+// Languages manages the listing execution context.
 type Languages struct {
 	out     output.Outputer
 	project *project.Project
 }
 
+// NewLanguages prepares a list execution context for use.
 func NewLanguages(prime primeable) *Languages {
 	return &Languages{
 		prime.Output(),
@@ -21,10 +24,12 @@ func NewLanguages(prime primeable) *Languages {
 	}
 }
 
+// Listing represents the output data of a list of languages.
 type Listing struct {
 	Languages []model.Language `json:"languages"`
 }
 
+// MarshalOutput implements the output.Marshaller interface.
 func (l Listing) MarshalOutput(f output.Format) interface{} {
 	if f == output.PlainFormatName {
 		return l.Languages
@@ -32,13 +37,29 @@ func (l Listing) MarshalOutput(f output.Format) interface{} {
 	return l
 }
 
+// Run executes the list behavior.
 func (l *Languages) Run() error {
 	if l.project == nil {
 		return locale.NewInputError("err_no_project")
 	}
-	langs, err := model.FetchLanguagesForCommit(l.project.CommitUUID())
-	if err != nil {
-		return err
+
+	commitUUID := l.project.CommitUUID()
+	if commitUUID == "" {
+		return errs.AddTips(
+			locale.NewError(
+				"err_languages_no_commitid",
+				"Your activestate.yaml does not have a commit defined, you may need to run [ACTIONABLE]`state pull`[/RESET] first.",
+			),
+			locale.Tl(
+				"languages_no_commitid_help",
+				"Run → [ACTIONABLE]`state pull`[/RESET] to update your project",
+			),
+		)
+	}
+
+	langs, fail := model.FetchLanguagesForCommit(commitUUID)
+	if fail != nil {
+		return locale.WrapError(fail, "err_fetching_languages", "Cannot obtain languages")
 	}
 
 	formatLangs(langs)
