@@ -7,7 +7,6 @@ import (
 	tmock "github.com/stretchr/testify/mock"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/cmdlets/git"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -27,17 +26,17 @@ func Init() *Mock {
 
 // CloneProject will attempt to clone the associalted public git repository
 // for the project identified by <owner>/<name> to the given directory
-func (m *Mock) CloneProject(owner, name, path string, out output.Outputer) *failures.Failure {
+func (m *Mock) CloneProject(owner, name, path string, out output.Outputer) error {
 	args := m.Called(path)
 
 	dummyID := "00010001-0001-0001-0001-000100010001"
 	projectURL := fmt.Sprintf("https://%s/%s/%s?commitID=%s", constants.PlatformURL, owner, name, dummyID)
 	_, fail := projectfile.TestOnlyCreateWithProjectURL(projectURL, path)
 	if fail != nil {
-		return fail
+		return fail.ToError()
 	}
 
-	return failure(args.Get(0))
+	return error(args.Get(0))
 }
 
 // Close the mock
@@ -54,9 +53,9 @@ func (m *Mock) OnMethod(methodName string) *tmock.Call {
 	return m.On(methodName, anyArgs...)
 }
 
-func failure(arg interface{}) *failures.Failure {
+func error(arg interface{}) error {
 	if arg == nil {
 		return nil
 	}
-	return arg.(*failures.Failure)
+	return arg.(error)
 }

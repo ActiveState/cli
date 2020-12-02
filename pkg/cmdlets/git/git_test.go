@@ -112,8 +112,8 @@ func (suite *GitTestSuite) TestCloneProjectRepo() {
 	targetDir := filepath.Join(suite.dir, "target-clone-dir")
 
 	repo := NewRepo()
-	fail := repo.CloneProject("test-owner", "test-project", targetDir, outputhelper.NewCatcher())
-	suite.Require().NoError(fail.ToError(), "should clone without issue")
+	err = repo.CloneProject("test-owner", "test-project", targetDir, outputhelper.NewCatcher())
+	suite.Require().NoError(err, "should clone without issue")
 	suite.FileExists(filepath.Join(targetDir, "activestate.yaml"), "activestate.yaml file should have been cloned")
 	suite.FileExists(filepath.Join(targetDir, "test-file"), "tempororary file should have been cloned")
 }
