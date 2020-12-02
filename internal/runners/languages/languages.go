@@ -3,6 +3,7 @@ package languages
 import (
 	"strings"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -44,8 +45,12 @@ func (l *Languages) Run() error {
 
 	commitUUID := l.project.CommitUUID()
 	if commitUUID == "" {
-		return locale.NewError(
-			"err_languages_no_commitid", "Your activestate.yaml does not have a commit defined, you may need to run [ACTIONABLE]`state pull`[/RESET] first.",
+		return errs.AddTips(
+			locale.NewError(
+				"err_languages_no_commitid",
+				"Your activestate.yaml does not have a commit defined, you may need to run [ACTIONABLE]`state pull`[/RESET] first.",
+			),
+			locale.Tr("runtime_update_help", l.project.Owner(), l.project.Name()),
 		)
 	}
 
