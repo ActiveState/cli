@@ -36,7 +36,7 @@ func (m *Mock) CloneProject(owner, name, path string, out output.Outputer) error
 		return fail.ToError()
 	}
 
-	return error(args.Get(0))
+	return err(args.Get(0))
 }
 
 // Close the mock
@@ -53,7 +53,7 @@ func (m *Mock) OnMethod(methodName string) *tmock.Call {
 	return m.On(methodName, anyArgs...)
 }
 
-func error(arg interface{}) error {
+func err(arg interface{}) error {
 	if arg == nil {
 		return nil
 	}
