@@ -26,7 +26,7 @@ func newPushCommand(prime *primer.Values) *captain.Command {
 		[]*captain.Argument{
 			{
 				Name:        locale.Tl("arg_state_push_namespace", "name"),
-				Description: locale.Tl("arg_state_push_namespace_description", "The project name to push the a headless commit to."),
+				Description: locale.Tl("arg_state_push_namespace_description", "The project name to push a headless commit to."),
 				Value:       params.Namespace,
 				Required:    false,
 			},
