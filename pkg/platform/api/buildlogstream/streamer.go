@@ -15,16 +15,15 @@ import (
 )
 
 type Request struct {
-	recipeID   strfmt.UUID
+	recipe     *inventory_models.Recipe
 	msgHandler MessageHandler
 }
 
-func NewRequest(recipeID strfmt.UUID, msgHandler MessageHandler) *Request {
-	return &Request{recipeID: recipeID, msgHandler: msgHandler}
+func NewRequest(recipe *inventory_models.Recipe, msgHandler MessageHandler) *Request {
+	return &Request{recipe, msgHandler}
 }
 
 type MessageHandler interface {
-	ChangeSummary(map[strfmt.UUID][]strfmt.UUID, map[strfmt.UUID][]strfmt.UUID, map[strfmt.UUID]ArtifactMapping)
 	BuildStarting(totalArtifacts int)
 	BuildFinished()
 	ArtifactBuildStarting(artifactName string)
@@ -37,11 +36,6 @@ type logRequest struct {
 	RecipeID string `json:"recipeID"`
 }
 
-type ArtifactMapping struct {
-	Name    *string
-	Version *string
-}
-
 type message struct {
 	Type         string      `json:"type"`
 	CacheHit     bool        `json:"cache_hit"`
@@ -50,6 +44,10 @@ type message struct {
 }
 
 func (r *Request) Wait() error {
+	if r.recipe.RecipeID == nil {
+		return errs.New("recipe ID is nil")
+	}
+
 	url := api.GetServiceURL(api.BuildLogStreamer)
 	header := make(http.Header)
 	header.Add("Origin", "https://"+url.Host)
@@ -65,7 +63,7 @@ func (r *Request) Wait() error {
 	go r.responseReader(conn, readErr)
 
 	logging.Debug("sending websocket request")
-	request := logRequest{RecipeID: r.recipeID.String()}
+	request := logRequest{RecipeID: r.recipe.RecipeID.String()}
 	if err := conn.WriteJSON(request); err != nil {
 		return errs.Wrap(err, "Could not write websocket request")
 	}
@@ -76,28 +74,8 @@ func (r *Request) Wait() error {
 	}
 }
 
-func PrintSummary(msgHandler MessageHandler, recipeID strfmt.UUID) (map[strfmt.UUID]ArtifactMapping, error) {
-	recipe, err := model.FetchRecipeByID(recipeID)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not fetch recipe")
-	}
-
-	artifactMap, ingredientMap, err := artifactMap(recipe)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not generate artifact map")
-	}
-
-	direct, recursiveDeps := fetchDepTree(recipe.ResolvedIngredients, ingredientMap)
-
-	msgHandler.ChangeSummary(direct, recursiveDeps, ingredientMap)
-	return artifactMap, nil
-}
-
 func (r *Request) responseReader(conn *websocket.Conn, readErr chan error) {
-	artifactMap, err := PrintSummary(r.msgHandler, r.recipeID)
-	if err != nil {
-		readErr <- err
-	}
+	artifactMap := model.ArtifactMap(r.recipe)
 	total := len(artifactMap)
 	end := 0
 
@@ -118,7 +96,8 @@ func (r *Request) responseReader(conn *websocket.Conn, readErr chan error) {
 
 		logging.Debug("Received response: " + msg.Type)
 
-		artifactName := artifactDescription(msg.ArtifactID, artifactMap)
+		_, artifactMapped := artifactMap[msg.ArtifactID]
+		artifactName := model.ArtifactDescription(msg.ArtifactID, artifactMap)
 
 		switch msg.Type {
 		case "build_failed":
@@ -126,14 +105,21 @@ func (r *Request) responseReader(conn *websocket.Conn, readErr chan error) {
 		case "build_succeeded":
 			readErr <- nil
 		case "artifact_started":
+			if !artifactMapped {
+				continue // ignore
+			}
 			if msg.CacheHit {
 				r.msgHandler.ArtifactBuildCached(artifactName)
 			} else {
 				r.msgHandler.ArtifactBuildStarting(artifactName)
 			}
 		case "artifact_succeeded":
+			if !artifactMapped {
+				continue // ignore
+			}
+			
 			// NOTE: fix to ignore current noop "final pkg artifact"
-			if msg.ArtifactID == r.recipeID {
+			if msg.ArtifactID == *r.recipe.RecipeID {
 				break
 			}
 			end++
@@ -145,96 +131,3 @@ func (r *Request) responseReader(conn *websocket.Conn, readErr chan error) {
 	}
 }
 
-func artifactMap(recipe *inventory_models.Recipe) (map[strfmt.UUID]ArtifactMapping, map[strfmt.UUID]ArtifactMapping, error) {
-	artifactMap := map[strfmt.UUID]ArtifactMapping{}
-	ingredientVersionMap := map[strfmt.UUID]ArtifactMapping{}
-
-	for _, re := range recipe.ResolvedIngredients {
-		if re.Ingredient.PrimaryNamespace != nil && (*re.Ingredient.PrimaryNamespace == "builder" || *re.Ingredient.PrimaryNamespace == "builder-lib") {
-			continue
-		}
-		mapping := ArtifactMapping{
-			re.Ingredient.Name,
-			re.IngredientVersion.Version,
-		}
-
-		artifactMap[re.ArtifactID] = mapping
-		if re.IngredientVersion == nil || re.IngredientVersion.IngredientVersionID == nil {
-			continue
-		}
-		ingredientVersionMap[*re.IngredientVersion.IngredientVersionID] = mapping
-	}
-	return artifactMap, ingredientVersionMap, nil
-}
-
-func artifactDescription(artifactID strfmt.UUID, artifactMap map[strfmt.UUID]ArtifactMapping) string {
-	v, ok := artifactMap[artifactID]
-	if !ok || v.Name == nil {
-		return locale.Tl("unknown_artifact_description", "Artifact {{.V0}}", artifactID.String())
-	}
-
-	version := ""
-	if v.Version != nil {
-		version = "@" + *v.Version
-	}
-
-	return *v.Name + version
-}
-
-func fetchDepTree(ingredients []*inventory_models.ResolvedIngredient, ingredientMap map[strfmt.UUID]ArtifactMapping) (directdeptree map[strfmt.UUID][]strfmt.UUID, recursive map[strfmt.UUID][]strfmt.UUID) {
-	directdeptree = map[strfmt.UUID][]strfmt.UUID{}
-	for _, ingredient := range ingredients {
-		if ingredient.IngredientVersion == nil || ingredient.IngredientVersion.IngredientVersionID == nil {
-			continue
-		}
-
-		id := ingredient.IngredientVersion.IngredientVersionID
-		// skip ingredients that are not mapped to artifacts
-		if _, ok := ingredientMap[*id]; !ok {
-			continue
-		}
-		// Construct directdeptree entry
-		if _, ok := directdeptree[*id]; !ok {
-			directdeptree[*id] = []strfmt.UUID{}
-		}
-
-		// Add direct dependencies
-		for _, dep := range ingredient.Dependencies {
-			if dep.IngredientVersionID == nil {
-				continue
-			}
-			// skip ingredients that are not mapped to artifacts
-			if _, ok := ingredientMap[*dep.IngredientVersionID]; !ok {
-				continue
-			}
-			directdeptree[*id] = append(directdeptree[*id], *dep.IngredientVersionID)
-		}
-	}
-
-	// Now resolve ALL dependencies, not just the direct ones
-	deptree := map[strfmt.UUID][]strfmt.UUID{}
-	for ingredientID := range directdeptree {
-		deps := []strfmt.UUID{}
-		deptree[ingredientID] = recursiveDeps(deps, directdeptree, ingredientID, map[strfmt.UUID]struct{}{})
-	}
-
-	return directdeptree, deptree
-}
-
-func recursiveDeps(deps []strfmt.UUID, directdeptree map[strfmt.UUID][]strfmt.UUID, id strfmt.UUID, skip map[strfmt.UUID]struct{}) []strfmt.UUID {
-	if _, ok := directdeptree[id]; !ok {
-		return deps
-	}
-
-	for _, dep := range directdeptree[id] {
-		if _, ok := skip[dep]; ok {
-			continue
-		}
-		skip[dep] = struct{}{}
-
-		deps = append(deps, dep)
-		deps = recursiveDeps(deps, directdeptree, dep, skip)
-	}
-
-	return deps
-}

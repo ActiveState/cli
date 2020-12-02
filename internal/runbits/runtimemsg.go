@@ -1,7 +1,9 @@
 package runbits
 
 import (
+	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/go-openapi/strfmt"
@@ -12,17 +14,21 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/progress"
-	"github.com/ActiveState/cli/pkg/platform/api/buildlogstream"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
-type SummaryFunc func(output.Outputer, map[strfmt.UUID][]strfmt.UUID, map[strfmt.UUID][]strfmt.UUID, map[strfmt.UUID]buildlogstream.ArtifactMapping)
+type requestedRequirement struct {
+	name      string
+	namespace model.Namespace
+}
 
 type RuntimeMessageHandler struct {
 	out  output.Outputer
 	bpg  *progress.Progress
 	bbar *progress.TotalBar
 
-	changeSummaryFunc SummaryFunc
+	requirement *requestedRequirement
 }
 
 func NewRuntimeMessageHandler(out output.Outputer) *RuntimeMessageHandler {
@@ -30,8 +36,8 @@ func NewRuntimeMessageHandler(out output.Outputer) *RuntimeMessageHandler {
 }
 
 // SetChangeSummaryFunc sets a function that is called after the build recipe is known and can display a summary of changes that happened to the build
-func (r *RuntimeMessageHandler) SetChangeSummaryFunc(f SummaryFunc) {
-	r.changeSummaryFunc = f
+func (r *RuntimeMessageHandler) SetRequirement(name string, namespace model.Namespace) {
+	r.requirement = &requestedRequirement{name, namespace}
 }
 
 func (r *RuntimeMessageHandler) DownloadStarting() {
@@ -42,11 +48,65 @@ func (r *RuntimeMessageHandler) InstallStarting() {
 	r.out.Notice(output.Heading(locale.T("installing_artifacts")))
 }
 
-func (r *RuntimeMessageHandler) ChangeSummary(directDeps map[strfmt.UUID][]strfmt.UUID, recursiveDeps map[strfmt.UUID][]strfmt.UUID, ingredientMap map[strfmt.UUID]buildlogstream.ArtifactMapping) {
-	if r.changeSummaryFunc == nil {
+func (r *RuntimeMessageHandler) ChangeSummary(directDeps map[strfmt.UUID][]strfmt.UUID, recursiveDeps map[strfmt.UUID][]strfmt.UUID, ingredientMap map[strfmt.UUID]*inventory_models.ResolvedIngredient) {
+	if r.requirement == nil {
 		return
 	}
-	r.changeSummaryFunc(r.out, directDeps, recursiveDeps, ingredientMap)
+
+	var matchedIngredient *inventory_models.ResolvedIngredient
+	for _, ingredient := range ingredientMap {
+		if matchedIngredient != nil {
+			break
+		}
+		for _, req := range ingredient.ResolvedRequirements {
+			if req.Feature != nil && *req.Feature == r.requirement.name &&
+				req.Namespace != nil && *req.Namespace == r.requirement.namespace.String() {
+				matchedIngredient = ingredient
+				break
+			}
+		}
+	}
+
+	if matchedIngredient == nil {
+		logging.Error("Could not find requirement in resulting recipe: %s (%s)", r.requirement.name, r.requirement.namespace)
+		return
+	}
+
+	depsForReq, ok := directDeps[*matchedIngredient.IngredientVersion.IngredientVersionID]
+	if !ok {
+		logging.Error("Could not find deps for supplied requirement: %s (%s)", r.requirement.name, r.requirement.namespace)
+		return
+	}
+
+	countDirect := len(depsForReq)
+	countTotal := len(ingredientMap)
+
+	r.out.Notice("")
+	r.out.Notice(locale.Tl(
+		"changesummary_title",
+		"[NOTICE]{{.V0}}[/RESET] includes {{.V1}} dependencies, for a combined total of {{.V2}} dependencies.",
+		*matchedIngredient.Ingredient.Name, strconv.Itoa(countDirect), strconv.Itoa(countTotal),
+	))
+	for i, dep := range depsForReq {
+		depMapping, ok := ingredientMap[dep]
+		if !ok {
+			logging.Error("Could not find dependency %s in ingredientMap", dep)
+			continue
+		}
+		var depCount string
+		recDeps, ok := recursiveDeps[dep]
+		if !ok {
+			logging.Error("Could not find recursive dependency of ingredient %s", dep)
+		}
+		if len(recDeps) > 0 {
+			depCount = locale.Tl("ingredient_dependency_count", " ({{.V0}} dependencies)", strconv.Itoa(len(recDeps)))
+		}
+		prefix := "├─"
+		if i == len(depsForReq)-1 {
+			prefix = "└─"
+		}
+		r.out.Notice(fmt.Sprintf("  [DISABLED]%s[/RESET] %s%s", prefix, *depMapping.Ingredient.Name, depCount))
+	}
 }
 
 func (r *RuntimeMessageHandler) BuildStarting(totalArtifacts int) {

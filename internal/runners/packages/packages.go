@@ -2,20 +2,15 @@ package packages
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
-
-	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/output/txtstyle"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/pkg/cmdlets/auth"
-	"github.com/ActiveState/cli/pkg/platform/api/buildlogstream"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
@@ -100,6 +95,7 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 
 	// Create runtime
 	rtMessages := runbits.NewRuntimeMessageHandler(out)
+	rtMessages.SetRequirement(name, ns)
 	rt, err := runtime.NewRuntime(pj.Source().Path(), commitID, pj.Owner(), pj.Name(), rtMessages)
 	if err != nil {
 		return locale.WrapError(err, "err_packages_update_runtime_init", "Could not initialize runtime.")
@@ -112,7 +108,7 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 
 	// Update runtime
 	if !rt.IsCachedRuntime() {
-		out.Notice(txtstyle.NewTitle(locale.Tl("update_runtime", "Updating Runtime")))
+		out.Notice(output.Heading(locale.Tl("update_runtime", "Updating Runtime")))
 		out.Notice(locale.Tl("update_runtime_info", "Changes to your runtime may require some dependencies to be rebuilt."))
 		_, _, fail := runtime.NewInstaller(rt).Install()
 		if fail != nil {
@@ -141,54 +137,3 @@ func splitNameAndVersion(input string) (string, string) {
 	return name, version
 }
 
-func getSummaryMessageFunc(operation model.Operation, ingredient *model.IngredientAndVersion, version string) runbits.SummaryFunc {
-	// Currently, we are only supporting `state install`
-	if operation != model.OperationAdded {
-		return nil
-	}
-
-	return getBundleSummaryMessageFunc(ingredient, version)
-}
-
-func getBundleSummaryMessageFunc(ingredient *model.IngredientAndVersion, version string) runbits.SummaryFunc {
-	return func(out output.Outputer, directDeps map[strfmt.UUID][]strfmt.UUID, recursiveDeps map[strfmt.UUID][]strfmt.UUID, ingredientMap map[strfmt.UUID]buildlogstream.ArtifactMapping) {
-		out.Print("")
-		if version == "" {
-			out.Print(locale.Tl("bundle_no_version", "No bundle version specified, choosing version {{.V0}}", ingredient.Version))
-			out.Print("")
-		}
-
-		versionID := ingredient.LatestVersion.IngredientVersionID
-		if versionID == nil {
-			logging.Error("versionID is nil in bundle summary message")
-		}
-		dependencies := directDeps[*versionID]
-		count := len(dependencies)
-
-		out.Print(locale.Tl("bundle_title", "[NOTICE]{{.V0}} Bundle[/RESET] includes {{.V1}} dependencies", *ingredient.Ingredient.Name, strconv.Itoa(count)))
-		last := count - 1
-		for i, dep := range dependencies {
-			depMapping, ok := ingredientMap[dep]
-			if !ok {
-				logging.Error("Could not find dependency %s in ingredientMap", dep)
-				continue
-			}
-			var depCount string
-			recDeps, ok := recursiveDeps[dep]
-			if !ok {
-				logging.Error("Could not find recursive dependency of ingredient %s", dep)
-			}
-			if len(recDeps) > 0 {
-				depCount = locale.Tl("bundle_package_dependency_count", "({{.V0}} dependencies)", strconv.Itoa(len(recDeps)))
-			}
-			if i == last {
-				out.Print(locale.Tl("bundle_package_name_last", "  └─ {{.V0}} {{.V1}}", *depMapping.Name, depCount))
-				continue
-			}
-			out.Print(locale.Tl("bundle_package_name", "  ├─ {{.V0}} {{.V1}}", *depMapping.Name, depCount))
-		}
-
-		out.Print("")
-		out.Print(locale.Tl("packages_auto_msg", "Packages are automatically added to your runtime."))
-	}
-}

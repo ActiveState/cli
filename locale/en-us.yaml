@@ -960,9 +960,9 @@ commit_message_add_language:
 commit_message_removed_language:
   other: "Removed language: {{.V0}} {{.V1}}"
 downloading_artifacts:
-  other: "Downloading required artifacts"
+  other: "Downloading missing artifacts"
 installing_artifacts:
-  other: "Updating required artifacts"
+  other: "Updating missing artifacts"
 fileutils_err_ammend_file:
   other: "Could not edit file: [NOTICE]{{.V0}}[/RESET]"
 err_auth_empty_token:

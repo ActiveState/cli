@@ -11,6 +11,7 @@ import (
 
 	"github.com/ActiveState/sysinfo"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
@@ -20,6 +21,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory"
 	iop "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
@@ -81,6 +83,40 @@ func FetchRecipeByID(recipeID strfmt.UUID) (*inventory_models.Recipe, error) {
 	}
 
 	return recipe.Payload.Recipe, nil
+}
+
+func ResolveRecipe(commitID strfmt.UUID, owner, projectName string, project *mono_models.Project) (*inventory_models.Recipe, error) {
+	if commitID == "" {
+		return nil, locale.NewError("err_no_commit", "Missing Commit ID")
+	}
+
+	private := false
+	orgID := strfmt.UUID(constants.ValidZeroUUID)
+
+	if project != nil {
+		orgID = project.OrganizationID
+		private = project.Private
+	}
+
+	recipeID, fail := FetchRecipeIDForCommitAndPlatform(commitID, owner, projectName, orgID.String(), private, HostPlatform)
+	if fail != nil {
+		return nil, fail.ToError()
+	}
+
+	if recipeID == nil {
+		return nil, errs.New("recipeID is nil")
+	}
+
+	recipe, err := FetchRecipeByID(*recipeID)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not fetch recipe")
+	}
+
+	if recipe.RecipeID == nil {
+		return nil, errs.New("Resulting recipe does not have a recipeID")
+	}
+
+	return recipe, nil
 }
 
 func fetchRawRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *string) (string, *failures.Failure) {
@@ -206,4 +242,105 @@ func fetchRecipeID(commitID strfmt.UUID, owner, project, orgID string, private b
 		return nil, FailOrderRecipes.New("err_recipe_not_found")
 	}
 	return response.Payload[platformID].RecipeID, nil
+}
+
+func IngredientVersionMap(recipe *inventory_models.Recipe) map[strfmt.UUID]*inventory_models.ResolvedIngredient {
+	ingredientVersionMap := map[strfmt.UUID]*inventory_models.ResolvedIngredient{}
+
+	for _, re := range recipe.ResolvedIngredients {
+		if re.Ingredient.PrimaryNamespace != nil && (*re.Ingredient.PrimaryNamespace == "builder" || *re.Ingredient.PrimaryNamespace == "builder-lib" || *re.Ingredient.PrimaryNamespace == string(NamespaceLanguage)) {
+			continue
+		}
+
+		if re.IngredientVersion == nil || re.IngredientVersion.IngredientVersionID == nil {
+			continue
+		}
+		ingredientVersionMap[*re.IngredientVersion.IngredientVersionID] = re
+	}
+	return ingredientVersionMap
+}
+
+func ArtifactMap(recipe *inventory_models.Recipe) map[strfmt.UUID]*inventory_models.ResolvedIngredient {
+	artifactMap := map[strfmt.UUID]*inventory_models.ResolvedIngredient{}
+
+	for _, re := range recipe.ResolvedIngredients {
+		if re.Ingredient.PrimaryNamespace != nil && (*re.Ingredient.PrimaryNamespace == "builder" || *re.Ingredient.PrimaryNamespace == "builder-lib" || *re.Ingredient.PrimaryNamespace == string(NamespaceLanguage)) {
+			continue
+		}
+
+		artifactMap[re.ArtifactID] = re
+	}
+	return artifactMap
+}
+
+func ArtifactDescription(artifactID strfmt.UUID, artifactMap map[strfmt.UUID]*inventory_models.ResolvedIngredient) string {
+	v, ok := artifactMap[artifactID]
+	if !ok || v.Ingredient.Name == nil {
+		return locale.Tl("unknown_artifact_description", "Artifact {{.V0}}", artifactID.String())
+	}
+
+	version := ""
+	if v.IngredientVersion != nil {
+		version = "@" + *v.IngredientVersion.Version
+	}
+
+	return *v.Ingredient.Name + version
+}
+
+func ParseDepTree(ingredients []*inventory_models.ResolvedIngredient, ingredientVersionMap map[strfmt.UUID]*inventory_models.ResolvedIngredient) (directdeptree map[strfmt.UUID][]strfmt.UUID, recursive map[strfmt.UUID][]strfmt.UUID) {
+	directdeptree = map[strfmt.UUID][]strfmt.UUID{}
+	for _, ingredient := range ingredients {
+		if ingredient.IngredientVersion == nil || ingredient.IngredientVersion.IngredientVersionID == nil {
+			continue
+		}
+
+		id := ingredient.IngredientVersion.IngredientVersionID
+		// skip ingredients that are not mapped to artifacts
+		if _, ok := ingredientVersionMap[*id]; !ok {
+			continue
+		}
+		// Construct directdeptree entry
+		if _, ok := directdeptree[*id]; !ok {
+			directdeptree[*id] = []strfmt.UUID{}
+		}
+
+		// Add direct dependencies
+		for _, dep := range ingredient.Dependencies {
+			if dep.IngredientVersionID == nil {
+				continue
+			}
+			// skip ingredients that are not mapped to artifacts
+			if _, ok := ingredientVersionMap[*dep.IngredientVersionID]; !ok {
+				continue
+			}
+			directdeptree[*id] = append(directdeptree[*id], *dep.IngredientVersionID)
+		}
+	}
+
+	// Now resolve ALL dependencies, not just the direct ones
+	deptree := map[strfmt.UUID][]strfmt.UUID{}
+	for ingredientID := range directdeptree {
+		deps := []strfmt.UUID{}
+		deptree[ingredientID] = recursiveDeps(deps, directdeptree, ingredientID, map[strfmt.UUID]struct{}{})
+	}
+
+	return directdeptree, deptree
+}
+
+func recursiveDeps(deps []strfmt.UUID, directdeptree map[strfmt.UUID][]strfmt.UUID, id strfmt.UUID, skip map[strfmt.UUID]struct{}) []strfmt.UUID {
+	if _, ok := directdeptree[id]; !ok {
+		return deps
+	}
+
+	for _, dep := range directdeptree[id] {
+		if _, ok := skip[dep]; ok {
+			continue
+		}
+		skip[dep] = struct{}{}
+
+		deps = append(deps, dep)
+		deps = recursiveDeps(deps, directdeptree, dep, skip)
+	}
+
+	return deps
 }

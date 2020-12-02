@@ -1,4 +1,4 @@
-package buildlogstream
+package model
 
 import (
 	"fmt"
@@ -26,42 +26,42 @@ func intMapToUUIDMap(in map[int][]int) map[strfmt.UUID][]strfmt.UUID {
 	return out
 }
 
-func intsToArtifactMap(in []int) map[strfmt.UUID]ArtifactMapping {
-	out := map[strfmt.UUID]ArtifactMapping{}
+func intsToArtifactMap(in []int) map[strfmt.UUID]*inventory_models.ResolvedIngredient {
+	out := map[strfmt.UUID]*inventory_models.ResolvedIngredient{}
 	for _, v := range in {
-		out[intToUUID(v)] = ArtifactMapping{}
+		out[intToUUID(v)] = &inventory_models.ResolvedIngredient{}
 	}
 	return out
 }
 
 type depGraph map[int][]int
 
-func depGraphsToResolvedIngredients(dgs depGraph) []*inventory_models.V1SolutionRecipeRecipeResolvedIngredientsItems {
+func depGraphsToResolvedIngredients(dgs depGraph) []*inventory_models.ResolvedIngredient {
 	pn := "language"
 
-	res := make([]*inventory_models.V1SolutionRecipeRecipeResolvedIngredientsItems, 0, len(dgs))
+	res := make([]*inventory_models.ResolvedIngredient, 0, len(dgs))
 	for d, dchildren := range dgs {
 		uuid := intToUUID(d)
-		deps := make([]*inventory_models.V1SolutionRecipeRecipeResolvedIngredientsItemsDependenciesItems, 0, len(dchildren))
+		deps := make([]*inventory_models.ResolvedIngredientDependenciesItems, 0, len(dchildren))
 		for _, dc := range dchildren {
 			duuid := intToUUID(dc)
 
-			deps = append(deps, &inventory_models.V1SolutionRecipeRecipeResolvedIngredientsItemsDependenciesItems{
+			deps = append(deps, &inventory_models.ResolvedIngredientDependenciesItems{
 				IngredientVersionID: &duuid,
 			})
 		}
 		name := fmt.Sprintf("pkg%02d", d)
-		resolved := &inventory_models.V1SolutionRecipeRecipeResolvedIngredientsItems{
-			Ingredient: &inventory_models.V1SolutionRecipeRecipeResolvedIngredientsItemsIngredient{
-				V1SolutionRecipeRecipeResolvedIngredientsItemsIngredientAllOf1: inventory_models.V1SolutionRecipeRecipeResolvedIngredientsItemsIngredientAllOf1{
-					V1SolutionRecipeRecipeResolvedIngredientsItemsIngredientAllOf1AllOf0: inventory_models.V1SolutionRecipeRecipeResolvedIngredientsItemsIngredientAllOf1AllOf0{
+		resolved := &inventory_models.ResolvedIngredient{
+			Ingredient: &inventory_models.Ingredient{
+				IngredientCore: inventory_models.IngredientCore{
+					IngredientCoreAllOf0: inventory_models.IngredientCoreAllOf0{
 						Name:             &name,
 						PrimaryNamespace: &pn,
 					},
 				},
 			},
-			IngredientVersion: &inventory_models.V1SolutionRecipeRecipeResolvedIngredientsItemsIngredientVersion{
-				V1SolutionRecipeRecipeResolvedIngredientsItemsIngredientVersionAllOf0: inventory_models.V1SolutionRecipeRecipeResolvedIngredientsItemsIngredientVersionAllOf0{
+			IngredientVersion: &inventory_models.IngredientVersion{
+				IngredientVersionAllOf0: inventory_models.IngredientVersionAllOf0{
 					IngredientVersionID: &uuid,
 				},
 			},
@@ -81,7 +81,7 @@ func TestFetchDepTree(t *testing.T) {
 	ingredients := depGraphsToResolvedIngredients(dg)
 	ingredientMap := intsToArtifactMap([]int{1, 2, 3, 11, 12, 900, 21, 31})
 
-	depTree, recursive := fetchDepTree(ingredients, ingredientMap)
+	depTree, recursive := ParseDepTree(ingredients, ingredientMap)
 
 	expectedDirect := intMapToUUIDMap(map[int][]int{
 		1: {11, 12, 2, 900},
@@ -107,7 +107,7 @@ func TestFetchRecursiveDepTree(t *testing.T) {
 	ingredients := depGraphsToResolvedIngredients(dg)
 	ingredientMap := intsToArtifactMap([]int{1, 2})
 
-	depTree, recursive := fetchDepTree(ingredients, ingredientMap)
+	depTree, recursive := ParseDepTree(ingredients, ingredientMap)
 
 	expectedDirect := intMapToUUIDMap(map[int][]int{
 		1: {2},
