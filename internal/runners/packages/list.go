@@ -155,7 +155,7 @@ func newFilteredRequirementsTable(requirements model.Checkpoint, filter string, 
 			continue
 		}
 
-		if !strings.HasPrefix(req.Namespace, string(nstype)) {
+		if !strings.HasPrefix(req.Namespace, nstype.Prefix()) {
 			continue
 		}
 
@@ -171,5 +171,5 @@ func newFilteredRequirementsTable(requirements model.Checkpoint, filter string, 
 		rows = append(rows, row)
 	}
 
-	return newTable(rows, locale.T(fmt.Sprintf("%s_list_no_packages", nstype)))
+	return newTable(rows, locale.T(fmt.Sprintf("%s_list_no_packages", nstype.String())))
 }

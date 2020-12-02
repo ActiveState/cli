@@ -81,17 +81,6 @@ const (
 	NamespaceCamelFlagsMatch = `^camel-flags$`
 )
 
-// NamespacePrefix is set to a prefix for ingredient namespaces in the inventory
-type NamespacePrefix string
-
-const (
-	// PackageNamespacePrefix is the namespace prefix for packages
-	PackageNamespacePrefix NamespacePrefix = "language"
-
-	// BundlesNamespacePrefix is the namespace prefix for bundles
-	BundlesNamespacePrefix = "bundles"
-)
-
 // NamespaceMatch Checks if the given namespace query matches the given namespace
 func NamespaceMatch(query string, namespace NamespaceMatchable) bool {
 	match, err := regexp.Match(string(namespace), []byte(query))
@@ -101,14 +90,25 @@ func NamespaceMatch(query string, namespace NamespaceMatchable) bool {
 	return match
 }
 
-type NamespaceType string
+type NamespaceType struct {
+	name   string
+	prefix string
+}
 
-const (
-	NamespacePackage  NamespaceType = "package" // these values should match the namespace prefix
-	NamespaceBundle   NamespaceType = "bundle"
-	NamespaceLanguage NamespaceType = "language"
-	NamespacePlatform NamespaceType = "platform"
+var (
+	NamespacePackage  = NamespaceType{"package", "language"} // these values should match the namespace prefix
+	NamespaceBundle   = NamespaceType{"bundle", "bundles"}
+	NamespaceLanguage = NamespaceType{"language", ""}
+	NamespacePlatform = NamespaceType{"platform", ""}
 )
+
+func (t NamespaceType) String() string {
+	return t.name
+}
+
+func (t NamespaceType) Prefix() string {
+	return t.prefix
+}
 
 // Namespace is the type used for communicating namespaces, mainly just allows for self documenting code
 type Namespace struct {
@@ -338,7 +338,7 @@ func CommitPackage(parentCommitID strfmt.UUID, operation Operation, packageName,
 	}
 
 	namespace := NewNamespacePackage(languages[0].Name)
-	if strings.HasPrefix(packageNamespace, string(BundlesNamespacePrefix)) {
+	if strings.HasPrefix(packageNamespace, NamespaceBundle.Prefix()) {
 		namespace = NewNamespaceBundle(languages[0].Name)
 	}
 

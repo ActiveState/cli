@@ -248,7 +248,8 @@ func IngredientVersionMap(recipe *inventory_models.Recipe) map[strfmt.UUID]*inve
 	ingredientVersionMap := map[strfmt.UUID]*inventory_models.ResolvedIngredient{}
 
 	for _, re := range recipe.ResolvedIngredients {
-		if re.Ingredient.PrimaryNamespace != nil && (*re.Ingredient.PrimaryNamespace == "builder" || *re.Ingredient.PrimaryNamespace == "builder-lib" || *re.Ingredient.PrimaryNamespace == string(NamespaceLanguage)) {
+		if re.Ingredient.PrimaryNamespace != nil &&
+			(*re.Ingredient.PrimaryNamespace == "builder" || *re.Ingredient.PrimaryNamespace == "builder-lib" || *re.Ingredient.PrimaryNamespace == NamespaceLanguage.String()) {
 			continue
 		}
 
@@ -264,7 +265,8 @@ func ArtifactMap(recipe *inventory_models.Recipe) map[strfmt.UUID]*inventory_mod
 	artifactMap := map[strfmt.UUID]*inventory_models.ResolvedIngredient{}
 
 	for _, re := range recipe.ResolvedIngredients {
-		if re.Ingredient.PrimaryNamespace != nil && (*re.Ingredient.PrimaryNamespace == "builder" || *re.Ingredient.PrimaryNamespace == "builder-lib" || *re.Ingredient.PrimaryNamespace == string(NamespaceLanguage)) {
+		if re.Ingredient.PrimaryNamespace != nil &&
+			(*re.Ingredient.PrimaryNamespace == "builder" || *re.Ingredient.PrimaryNamespace == "builder-lib" || *re.Ingredient.PrimaryNamespace == NamespaceLanguage.String()) {
 			continue
 		}
 
