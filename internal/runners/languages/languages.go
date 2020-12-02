@@ -45,7 +45,7 @@ func (l *Languages) Run() error {
 	commitUUID := l.project.CommitUUID()
 	if commitUUID == "" {
 		return locale.NewError(
-			"err_languages_no_commitid", "A CommitID is required to list languages",
+			"err_languages_no_commitid", "Your activestate.yaml does not have a commit defined, you may need to run [ACTIONABLE]`state pull`[/RESET] first.",
 		)
 	}
 
