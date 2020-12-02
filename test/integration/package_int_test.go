@@ -335,14 +335,12 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 
 	// Get the first commitID we find, which should be the first commit for the project
 	snapshot := cp.TrimmedSnapshot()
-	commitRe := regexp.MustCompile(`Hash":"(\w+)"`)
-	match := commitRe.FindStringSubmatch(snapshot)
+	commitRe := regexp.MustCompile(`[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}`)
+	firstCommit := commitRe.FindString(snapshot)
 
-	if len(match) != 2 {
+	if firstCommit == "" {
 		suite.FailNow("Could not match commitID against output:\n" + snapshot)
 	}
-
-	firstCommit := match[1]
 
 	suite.Run("install", func() {
 		cp := ts.Spawn("install", "urllib3@1.25.6")
