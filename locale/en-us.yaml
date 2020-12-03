@@ -889,8 +889,6 @@ err_browser_open:
   other: "Could not open your browser, please manually open the following URL in your browser: {{.V0}}"
 err_activate_auth_required:
   other: Activating a project requires you to be authenticated against the ActiveState Platform
-err_pull_get_latest_commit_id:
-  other: Cannot get latest commit id from project
 err_os_not_a_directory:
   other: Expected '{{.V0}}' to be a valid directory
 export_cmd_description:

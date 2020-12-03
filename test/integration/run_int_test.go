@@ -91,7 +91,7 @@ func (suite *RunIntegrationTestSuite) expectTerminateBatchJob(cp *termtest.Conso
 		// send N to "Terminate batch job (Y/N)" question
 		cp.Expect("Terminate batch job")
 		time.Sleep(200 * time.Millisecond)
-		cp.SendLine("N")
+		cp.Send("N")
 		cp.Expect("N", 500*time.Millisecond)
 	}
 }
@@ -112,7 +112,7 @@ func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
 	cp := ts.Spawn("activate")
 	cp.Expect("Default Project")
 	cp.Expect("Y/n")
-	cp.SendLine("n")
+	cp.Send("n")
 	cp.Expect("You're Activated")
 	cp.WaitForInput(10 * time.Second)
 
@@ -218,7 +218,7 @@ func (suite *RunIntegrationTestSuite) TestRun_Unauthenticated() {
 	)
 	cp.Expect("Default Project")
 	cp.Expect("Y/n")
-	cp.SendLine("n")
+	cp.Send("n")
 
 	cp.Expect("You're Activated")
 	cp.WaitForInput(120 * time.Second)

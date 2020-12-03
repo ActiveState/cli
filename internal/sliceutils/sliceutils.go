@@ -20,3 +20,10 @@ func GetString(slice []string, index int) (string, bool) {
 	// return normalized string
 	return norm.NFC.String(slice[index]), true
 }
+
+func IntRangeUncapped(in []int, start, end int) []int {
+	if end > len(in) {
+		end = len(in)
+	}
+	return in[start:end]
+}
