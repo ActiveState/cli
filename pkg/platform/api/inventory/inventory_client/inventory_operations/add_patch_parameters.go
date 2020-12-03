@@ -6,18 +6,16 @@ package inventory_operations
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"net/http"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // NewAddPatchParams creates a new AddPatchParams object
@@ -65,7 +63,7 @@ for the add patch operation typically these are written to a http.Request
 type AddPatchParams struct {
 
 	/*Patch*/
-	Patch *inventory_models.V1PatchCore
+	Patch *inventory_models.PatchCore
 
 	timeout    time.Duration
 	Context    context.Context
@@ -106,13 +104,13 @@ func (o *AddPatchParams) SetHTTPClient(client *http.Client) {
 }
 
 // WithPatch adds the patch to the add patch params
-func (o *AddPatchParams) WithPatch(patch *inventory_models.V1PatchCore) *AddPatchParams {
+func (o *AddPatchParams) WithPatch(patch *inventory_models.PatchCore) *AddPatchParams {
 	o.SetPatch(patch)
 	return o
 }
 
 // SetPatch adds the patch to the add patch params
-func (o *AddPatchParams) SetPatch(patch *inventory_models.V1PatchCore) {
+func (o *AddPatchParams) SetPatch(patch *inventory_models.PatchCore) {
 	o.Patch = patch
 }
 

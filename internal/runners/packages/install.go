@@ -34,7 +34,7 @@ func NewInstall(prime primeable) *Install {
 }
 
 // Run executes the install behavior.
-func (a *Install) Run(params InstallRunParams, pt PackageType) error {
+func (a *Install) Run(params InstallRunParams, nstype model.NamespaceType) error {
 	logging.Debug("ExecuteInstall")
 	if a.proj == nil {
 		return locale.NewInputError("err_no_project")
@@ -45,6 +45,7 @@ func (a *Install) Run(params InstallRunParams, pt PackageType) error {
 		return locale.WrapError(fail.ToError(), "err_fetch_languages")
 	}
 
+	ns := model.NewNamespacePkgOrBundle(language, nstype)
 	name, version := splitNameAndVersion(params.Name)
-	return executePackageOperation(a.proj, a.out, a.auth, a.Prompter, language, name, version, model.OperationAdded, pt)
+	return executePackageOperation(a.proj, a.out, a.auth, a.Prompter, name, version, model.OperationAdded, ns)
 }

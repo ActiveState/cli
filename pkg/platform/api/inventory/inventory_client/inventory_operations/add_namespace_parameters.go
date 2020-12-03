@@ -6,18 +6,16 @@ package inventory_operations
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"net/http"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // NewAddNamespaceParams creates a new AddNamespaceParams object
@@ -65,7 +63,7 @@ for the add namespace operation typically these are written to a http.Request
 type AddNamespaceParams struct {
 
 	/*Namespace*/
-	Namespace *inventory_models.V1NamespaceCore
+	Namespace *inventory_models.NamespaceCore
 
 	timeout    time.Duration
 	Context    context.Context
@@ -106,13 +104,13 @@ func (o *AddNamespaceParams) SetHTTPClient(client *http.Client) {
 }
 
 // WithNamespace adds the namespace to the add namespace params
-func (o *AddNamespaceParams) WithNamespace(namespace *inventory_models.V1NamespaceCore) *AddNamespaceParams {
+func (o *AddNamespaceParams) WithNamespace(namespace *inventory_models.NamespaceCore) *AddNamespaceParams {
 	o.SetNamespace(namespace)
 	return o
 }
 
 // SetNamespace adds the namespace to the add namespace params
-func (o *AddNamespaceParams) SetNamespace(namespace *inventory_models.V1NamespaceCore) {
+func (o *AddNamespaceParams) SetNamespace(namespace *inventory_models.NamespaceCore) {
 	o.Namespace = namespace
 }
 

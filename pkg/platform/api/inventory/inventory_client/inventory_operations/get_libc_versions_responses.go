@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // GetLibcVersionsReader is a Reader for the GetLibcVersions structure.
@@ -24,14 +23,12 @@ type GetLibcVersionsReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetLibcVersionsReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewGetLibcVersionsOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	default:
 		result := NewGetLibcVersionsDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -54,16 +51,20 @@ func NewGetLibcVersionsOK() *GetLibcVersionsOK {
 A paginated list of libc versions
 */
 type GetLibcVersionsOK struct {
-	Payload *inventory_models.V1LibcVersionPagedList
+	Payload *inventory_models.LibcVersionPagedList
 }
 
 func (o *GetLibcVersionsOK) Error() string {
 	return fmt.Sprintf("[GET /v1/libcs/{libc_id}/versions][%d] getLibcVersionsOK  %+v", 200, o.Payload)
 }
 
+func (o *GetLibcVersionsOK) GetPayload() *inventory_models.LibcVersionPagedList {
+	return o.Payload
+}
+
 func (o *GetLibcVersionsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(inventory_models.V1LibcVersionPagedList)
+	o.Payload = new(inventory_models.LibcVersionPagedList)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -97,6 +98,10 @@ func (o *GetLibcVersionsDefault) Code() int {
 
 func (o *GetLibcVersionsDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/libcs/{libc_id}/versions][%d] getLibcVersions default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *GetLibcVersionsDefault) GetPayload() *inventory_models.RestAPIError {
+	return o.Payload
 }
 
 func (o *GetLibcVersionsDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

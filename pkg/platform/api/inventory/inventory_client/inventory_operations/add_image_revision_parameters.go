@@ -6,18 +6,16 @@ package inventory_operations
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"net/http"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // NewAddImageRevisionParams creates a new AddImageRevisionParams object
@@ -67,7 +65,7 @@ type AddImageRevisionParams struct {
 	/*ImageID*/
 	ImageID strfmt.UUID
 	/*ImageRevision*/
-	ImageRevision *inventory_models.V1ImageRevisionCore
+	ImageRevision *inventory_models.ImageRevisionCore
 
 	timeout    time.Duration
 	Context    context.Context
@@ -119,13 +117,13 @@ func (o *AddImageRevisionParams) SetImageID(imageID strfmt.UUID) {
 }
 
 // WithImageRevision adds the imageRevision to the add image revision params
-func (o *AddImageRevisionParams) WithImageRevision(imageRevision *inventory_models.V1ImageRevisionCore) *AddImageRevisionParams {
+func (o *AddImageRevisionParams) WithImageRevision(imageRevision *inventory_models.ImageRevisionCore) *AddImageRevisionParams {
 	o.SetImageRevision(imageRevision)
 	return o
 }
 
 // SetImageRevision adds the imageRevision to the add image revision params
-func (o *AddImageRevisionParams) SetImageRevision(imageRevision *inventory_models.V1ImageRevisionCore) {
+func (o *AddImageRevisionParams) SetImageRevision(imageRevision *inventory_models.ImageRevisionCore) {
 	o.ImageRevision = imageRevision
 }
 

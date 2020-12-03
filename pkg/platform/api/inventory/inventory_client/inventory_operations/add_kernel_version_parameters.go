@@ -6,18 +6,16 @@ package inventory_operations
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"net/http"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // NewAddKernelVersionParams creates a new AddKernelVersionParams object
@@ -67,7 +65,7 @@ type AddKernelVersionParams struct {
 	/*KernelID*/
 	KernelID strfmt.UUID
 	/*KernelVersion*/
-	KernelVersion *inventory_models.V1KernelVersionCore
+	KernelVersion *inventory_models.KernelVersionCore
 
 	timeout    time.Duration
 	Context    context.Context
@@ -119,13 +117,13 @@ func (o *AddKernelVersionParams) SetKernelID(kernelID strfmt.UUID) {
 }
 
 // WithKernelVersion adds the kernelVersion to the add kernel version params
-func (o *AddKernelVersionParams) WithKernelVersion(kernelVersion *inventory_models.V1KernelVersionCore) *AddKernelVersionParams {
+func (o *AddKernelVersionParams) WithKernelVersion(kernelVersion *inventory_models.KernelVersionCore) *AddKernelVersionParams {
 	o.SetKernelVersion(kernelVersion)
 	return o
 }
 
 // SetKernelVersion adds the kernelVersion to the add kernel version params
-func (o *AddKernelVersionParams) SetKernelVersion(kernelVersion *inventory_models.V1KernelVersionCore) {
+func (o *AddKernelVersionParams) SetKernelVersion(kernelVersion *inventory_models.KernelVersionCore) {
 	o.KernelVersion = kernelVersion
 }
 

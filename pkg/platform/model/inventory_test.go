@@ -6,7 +6,6 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	invMock "github.com/ActiveState/cli/pkg/platform/api/inventory/mock"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
@@ -33,63 +32,6 @@ func (suite *InventoryTestSuite) TestGetInventory() {
 	suite.NotEmpty(platforms, "Returns platforms")
 }
 
-func ingredientFromName(name string) *model.IngredientAndVersion {
-	n := name
-	return &model.IngredientAndVersion{
-		V1SearchIngredientsResponseIngredientsItems: &inventory_models.V1SearchIngredientsResponseIngredientsItems{
-			Ingredient: &inventory_models.V1SearchIngredientsResponseIngredientsItemsIngredient{
-				V1SearchIngredientsResponseIngredientsItemsIngredientAllOf1: inventory_models.V1SearchIngredientsResponseIngredientsItemsIngredientAllOf1{
-					V1SearchIngredientsResponseIngredientsItemsIngredientAllOf1AllOf0: inventory_models.V1SearchIngredientsResponseIngredientsItemsIngredientAllOf1AllOf0{
-						Name: &n,
-					},
-				},
-			},
-			LatestVersion: &inventory_models.V1SearchIngredientsResponseIngredientsItemsLatestVersion{
-				V1SearchIngredientsResponseIngredientsItemsLatestVersionAllOf3: inventory_models.V1SearchIngredientsResponseIngredientsItemsLatestVersionAllOf3{
-					V1SearchIngredientsResponseIngredientsItemsLatestVersionAllOf3AllOf1: inventory_models.V1SearchIngredientsResponseIngredientsItemsLatestVersionAllOf3AllOf1{
-						V1SearchIngredientsResponseIngredientsItemsLatestVersionAllOf3AllOf1AllOf0: inventory_models.V1SearchIngredientsResponseIngredientsItemsLatestVersionAllOf3AllOf1AllOf0{
-							ProvidedFeatures: []*inventory_models.V1SearchIngredientsResponseIngredientsItemsLatestVersionAllOf3AllOf1AllOf0ProvidedFeaturesItems{
-								{
-									V1SearchIngredientsResponseIngredientsItemsLatestVersionAllOf3AllOf1AllOf0ProvidedFeaturesItemsAllOf0: inventory_models.V1SearchIngredientsResponseIngredientsItemsLatestVersionAllOf3AllOf1AllOf0ProvidedFeaturesItemsAllOf0{
-										Feature: &n,
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		Version: "1.0",
-	}
-}
-
-func (suite *InventoryTestSuite) TestfilterCandidates() {
-	datetime := ingredientFromName("datetime")
-	DateTime := ingredientFromName("DateTime")
-	sample := []*model.IngredientAndVersion{datetime, DateTime}
-
-	cases := []struct {
-		name      string
-		arg       string
-		expected  *model.IngredientAndVersion
-		wantError bool
-	}{
-		{"lower-case", "datetime", datetime, false},
-		{"upper-case", "DateTime", DateTime, false},
-		{"error", "DateTIME", nil, true},
-	}
-
-	for _, c := range cases {
-		suite.Run(c.name, func() {
-			res, err := model.FilterForBestIngredientMatch(sample, c.arg)
-			suite.Assert().Equal(res, c.expected)
-			if (err != nil) != c.wantError {
-				suite.T().Fatalf("filterForBestIngredientMatch returned unexpected error value: %v", err)
-			}
-		})
-	}
-}
 
 func (suite *InventoryTestSuite) TestFetchPlatformByUID() {
 	suite.invMock.MockPlatforms()

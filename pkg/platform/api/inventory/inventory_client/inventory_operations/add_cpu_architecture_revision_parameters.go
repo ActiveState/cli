@@ -6,18 +6,16 @@ package inventory_operations
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"net/http"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // NewAddCPUArchitectureRevisionParams creates a new AddCPUArchitectureRevisionParams object
@@ -67,7 +65,7 @@ type AddCPUArchitectureRevisionParams struct {
 	/*CPUArchitectureID*/
 	CPUArchitectureID strfmt.UUID
 	/*CPUArchitectureRevision*/
-	CPUArchitectureRevision *inventory_models.V1Revision
+	CPUArchitectureRevision *inventory_models.Revision
 
 	timeout    time.Duration
 	Context    context.Context
@@ -119,13 +117,13 @@ func (o *AddCPUArchitectureRevisionParams) SetCPUArchitectureID(cPUArchitectureI
 }
 
 // WithCPUArchitectureRevision adds the cPUArchitectureRevision to the add Cpu architecture revision params
-func (o *AddCPUArchitectureRevisionParams) WithCPUArchitectureRevision(cPUArchitectureRevision *inventory_models.V1Revision) *AddCPUArchitectureRevisionParams {
+func (o *AddCPUArchitectureRevisionParams) WithCPUArchitectureRevision(cPUArchitectureRevision *inventory_models.Revision) *AddCPUArchitectureRevisionParams {
 	o.SetCPUArchitectureRevision(cPUArchitectureRevision)
 	return o
 }
 
 // SetCPUArchitectureRevision adds the cpuArchitectureRevision to the add Cpu architecture revision params
-func (o *AddCPUArchitectureRevisionParams) SetCPUArchitectureRevision(cPUArchitectureRevision *inventory_models.V1Revision) {
+func (o *AddCPUArchitectureRevisionParams) SetCPUArchitectureRevision(cPUArchitectureRevision *inventory_models.Revision) {
 	o.CPUArchitectureRevision = cPUArchitectureRevision
 }
 

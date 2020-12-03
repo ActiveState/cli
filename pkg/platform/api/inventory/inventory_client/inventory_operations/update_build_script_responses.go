@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // UpdateBuildScriptReader is a Reader for the UpdateBuildScript structure.
@@ -24,21 +23,18 @@ type UpdateBuildScriptReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *UpdateBuildScriptReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewUpdateBuildScriptOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewUpdateBuildScriptBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewUpdateBuildScriptDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -61,16 +57,20 @@ func NewUpdateBuildScriptOK() *UpdateBuildScriptOK {
 The updated build script
 */
 type UpdateBuildScriptOK struct {
-	Payload *inventory_models.V1BuildScript
+	Payload *inventory_models.BuildScript
 }
 
 func (o *UpdateBuildScriptOK) Error() string {
 	return fmt.Sprintf("[PUT /v1/build-scripts/{build_script_id}][%d] updateBuildScriptOK  %+v", 200, o.Payload)
 }
 
+func (o *UpdateBuildScriptOK) GetPayload() *inventory_models.BuildScript {
+	return o.Payload
+}
+
 func (o *UpdateBuildScriptOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(inventory_models.V1BuildScript)
+	o.Payload = new(inventory_models.BuildScript)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -95,6 +95,10 @@ type UpdateBuildScriptBadRequest struct {
 
 func (o *UpdateBuildScriptBadRequest) Error() string {
 	return fmt.Sprintf("[PUT /v1/build-scripts/{build_script_id}][%d] updateBuildScriptBadRequest  %+v", 400, o.Payload)
+}
+
+func (o *UpdateBuildScriptBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
+	return o.Payload
 }
 
 func (o *UpdateBuildScriptBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -133,6 +137,10 @@ func (o *UpdateBuildScriptDefault) Code() int {
 
 func (o *UpdateBuildScriptDefault) Error() string {
 	return fmt.Sprintf("[PUT /v1/build-scripts/{build_script_id}][%d] updateBuildScript default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *UpdateBuildScriptDefault) GetPayload() *inventory_models.RestAPIError {
+	return o.Payload
 }
 
 func (o *UpdateBuildScriptDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

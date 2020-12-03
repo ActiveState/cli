@@ -794,7 +794,9 @@ build_status_in_progress:
 build_status_unknown_error:
   other: "Build reported an unknown error: {{.V0}}; Please view the project at: [ACTIONABLE]{{.V1}}[/RESET] for more information"
 build_status_failed:
-  other: "The build for your project defined at: [NOTICE]{{.V0}}[/RESET] is not building correctly. Error message recieved was: {{.V1}}. Please correct by visiting the above link or use 'state packages'"
+  other: |
+    The build for your project defined at: [NOTICE]{{.V0}}[/RESET] is not building correctly.
+    Error message recieved was: {{.V1}}. Please correct by visiting the above link.
 err_no_default_branch:
   other: This project has no default branch. This indicates malformed data, please contact support!
 err_no_commit:
@@ -956,9 +958,9 @@ commit_message_add_language:
 commit_message_removed_language:
   other: "Removed language: {{.V0}} {{.V1}}"
 downloading_artifacts:
-  other: "Downloading required artifacts"
+  other: "Downloading missing artifacts"
 installing_artifacts:
-  other: "Updating required artifacts"
+  other: "Updating missing artifacts"
 fileutils_err_ammend_file:
   other: "Could not edit file: [NOTICE]{{.V0}}[/RESET]"
 err_auth_empty_token:
@@ -1106,9 +1108,9 @@ package_added:
 package_version_added:
   other: "Package added: [NOTICE]{{.V0}}@{{.V1}}[/RESET]"
 bundle_added:
-  other: "Bundle added: [NOTICE]{{.V0}}[/RESET]"
+  other: "[SUCCESS]✔ {{.V0}} Bundle successfully installed![/RESET]"
 bundle_version_added:
-  other: "Bundle added: [NOTICE]{{.V0}}@{{.V1}}[/RESET]"
+  other: "[SUCCESS]✔ {{.V0}} Bundle @ version {{.V1}} successfully installed![/RESET]"
 err_package_updated:
   other: Failed to update package
 err_bundle_updated:
@@ -1329,7 +1331,7 @@ err_no_recipes:
 err_solve_order:
   other: "Could not solve order: {{.V0}}"
 err_order_bad_request:
-  other: "Bad request while resolving order: Please visit [ACTIONABLE]https://platform.activestate.com/{{.V0}}/{{.V1}}/customize[/RESET] to see details about the error: {{.V2}}"
+  other: "Bad request while resolving order: Please visit [ACTIONABLE]https://platform.activestate.com/commit/{{.V0}}[/RESET] to see details about the error: {{.V1}}"
 err_order_unknown:
   other: Unknown error resolving order"
 using_cached_env:
