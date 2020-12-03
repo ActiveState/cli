@@ -214,6 +214,8 @@ func renderRow(providedColumns []string, colWidths []int) string {
 
 	entries := make([][]entry, len(columns))
 
+	widths := make([]int, len(colWidths))
+	copy(widths, colWidths)
 	for n, maxLen := range colWidths {
 		// ignore columns that we do not have data for (they have been filled up with the last colValue already)
 		if len(columns) < n+1 {
@@ -228,6 +230,7 @@ func renderRow(providedColumns []string, colWidths []int) string {
 		}
 
 		maxLen = maxLen - (padding * 2)
+		widths[n] = maxLen
 
 		entries[n] = getCroppedText(columns[n], maxLen)
 	}
@@ -242,7 +245,7 @@ func renderRow(providedColumns []string, colWidths []int) string {
 	// Render each row
 	for i := 0; i < totalRows; i++ {
 		for n, columnEntry := range entries {
-			maxLen := colWidths[n]
+			maxLen := widths[n]
 			text := ""
 			suffix := strings.Repeat(" ", maxLen)
 
@@ -255,12 +258,7 @@ func renderRow(providedColumns []string, colWidths []int) string {
 				text = columnEntry[i].line
 			}
 
-			// Pad only the first column
-			if n == 0 {
-				result += pad(text + suffix)
-			} else {
-				result += text + suffix
-			}
+			result += pad(text + suffix)
 		}
 		result += linebreak
 	}
@@ -270,7 +268,7 @@ func renderRow(providedColumns []string, colWidths []int) string {
 
 func pad(v string) string {
 	padded := strings.Repeat(" ", padding)
-	return padded + v
+	return padded + v + padded
 }
 
 func runeSliceIndexOf(slice []rune, r rune) int {

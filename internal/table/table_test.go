@@ -145,15 +145,7 @@ func Test_renderRow(t *testing.T) {
 				providedColumns: []string{"col1", "col2", "col3"},
 				colWidths:       []int{10, 10, 10},
 			},
-			"  col1      col2      col3      ",
-		},
-		{
-			"No breaks with color codes",
-			args{
-				providedColumns: []string{"[HEADING]col1[/RESET]", "[HEADING]col2[/RESET]", "[HEADING]col3[/RESET]"},
-				colWidths:       []int{10, 10, 10},
-			},
-			"  [HEADING]col1[/RESET]      [HEADING]col2[/RESET]      [HEADING]col3[/RESET]      ",
+			"  col1      col2      col3    ",
 		},
 		{
 			"Breaks",
@@ -161,17 +153,8 @@ func Test_renderRow(t *testing.T) {
 				providedColumns: []string{"col1", "col2", "col3"},
 				colWidths:       []int{6, 6, 6},
 			},
-			"  co    co    co    \n" +
-				"  l1    l2    l3    ",
-		},
-		{
-			"Breaks with color codes",
-			args{
-				providedColumns: []string{"[HEADING]col1[/RESET]", "[HEADING]col2[/RESET]", "[HEADING]col3[/RESET]"},
-				colWidths:       []int{6, 6, 6},
-			},
-			"  [HEADING]co    [HEADING]co    [HEADING]co    \n" +
-				"  l1[/RESET]    l2[/RESET]    l3[/RESET]    ",
+			"  co    co    co  \n" +
+				"  l1    l2    l3  ",
 		},
 		{
 			"Breaks for multi-byte characters",
@@ -179,8 +162,8 @@ func Test_renderRow(t *testing.T) {
 				providedColumns: []string{"✔ol1", "✔ol2", "✔ol3"},
 				colWidths:       []int{6, 6, 6},
 			},
-			"  ✔o    ✔o    ✔o    \n" +
-				"  l1    l2    l3    ",
+			"  ✔o    ✔o    ✔o  \n" +
+				"  l1    l2    l3  ",
 		},
 		{
 			"Empty column",
@@ -188,8 +171,8 @@ func Test_renderRow(t *testing.T) {
 				providedColumns: []string{"col1", "", "col3"},
 				colWidths:       []int{6, 6, 6},
 			},
-			"  co          co    \n" +
-				"  l1          l3    ",
+			"  co          co  \n" +
+				"  l1          l3  ",
 		},
 		{
 			"Mutli column span",
@@ -198,9 +181,9 @@ func Test_renderRow(t *testing.T) {
 				colWidths:       []int{6, 6, 6},
 			},
 			"  ab    jklmnopq  \n" +
-				"  cd    rstu  \n" +
-				"  ef          \n" +
-				"  gh          ",
+				"  cd    rstu      \n" +
+				"  ef              \n" +
+				"  gh              ",
 		},
 		{
 			"Single row mutli column span",
@@ -208,7 +191,7 @@ func Test_renderRow(t *testing.T) {
 				providedColumns: []string{"123456789"},
 				colWidths:       []int{1, 2, 3, 4, 5},
 			},
-			"  123456789  ",
+			"  123456789    ",
 		},
 		{
 			"Multi line second column",
@@ -216,8 +199,8 @@ func Test_renderRow(t *testing.T) {
 				providedColumns: []string{"abcd", "abcdefgh"},
 				colWidths:       []int{8, 8},
 			},
-			"  abcd    abcd    \n" +
-				"          efgh    ",
+			"  abcd    abcd  \n" +
+				"          efgh  ",
 		},
 		{
 			"Multi line second column with line breaks",
@@ -225,9 +208,9 @@ func Test_renderRow(t *testing.T) {
 				providedColumns: []string{"abcd", "abcde\nfgh"},
 				colWidths:       []int{8, 8},
 			},
-			"  abcd    abcd    \n" +
-				"          e       \n" +
-				"          fgh     ",
+			"  abcd    abcd  \n" +
+				"          e     \n" +
+				"          fgh   ",
 		},
 	}
 	for _, tt := range tests {
