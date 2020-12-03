@@ -3,6 +3,7 @@ package packages
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
@@ -26,11 +27,37 @@ type Search struct {
 	out output.Outputer
 }
 
+type modules []string
+
+func (ms modules) String() string {
+	var b strings.Builder
+
+	b.WriteString(locale.Tl("title_matching_modules", "Matching modules"))
+	b.WriteRune('\n')
+
+	prefix := '├'
+	for i, module := range ms {
+		if i == len(ms)-1 {
+			prefix = '└'
+		}
+
+		b.WriteRune(prefix)
+		b.WriteString("─ ")
+		b.WriteString(module)
+		b.WriteRune('\n')
+	}
+
+	b.WriteRune('\n')
+
+	return b.String()
+}
+
 type searchPackageRow struct {
 	Pkg           string `json:"package" locale:"package_name,Name"`
 	Version       string `json:"version" locale:"package_version,Latest Version"`
 	OlderVersions string `json:"versions" locale:","`
 	versions      int
+	Modules       modules `json:"matching_modules,omitempty" opts:"emptyNil,separateLine"`
 }
 
 // NewSearch prepares a searching execution context for use.
@@ -121,6 +148,7 @@ func mergeSearchRows(rows []searchPackageRow) []searchPackageRow {
 			Pkg:      row.Pkg,
 			Version:  row.Version,
 			versions: row.versions,
+			Modules:  modules{"test", "this"},
 		}
 
 		if row.versions > 1 {
