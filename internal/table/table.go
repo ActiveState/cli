@@ -154,6 +154,8 @@ func getCroppedText(text string, maxLen int) []entry {
 		buffer := bytes.Buffer{}
 		count := 0
 		for count < maxLen {
+			// If we reach an index that we recognize (ie. the start of a tag)
+			// then we write the whole tag, otherwise write by rune
 			if end, match := matchTag(pos, matches); match {
 				buffer.WriteString(string(runeText[pos:end]))
 				pos = end
@@ -175,12 +177,14 @@ func getCroppedText(text string, maxLen int) []entry {
 		entries = append(entries, entry{buffer.String(), count})
 	}
 
-	// TODO: Bug in here causing 'Multi line second column with line breaks' test
-	// to fail
+	// Clean up any entries that are just color tags
+	// This can happen when the end of a string or line
+	// break occurs right before a tag
 	for i, entry := range entries {
 		if entry.length != 0 {
 			continue
 		}
+
 		tag := entries[i].line
 		if i >= 1 {
 			entries[i-1].line = entries[i-1].line + tag
@@ -208,46 +212,57 @@ func renderRow(providedColumns []string, colWidths []int) string {
 
 	result := ""
 
-	// Keep rendering lines until there's no column data left to render
-	for len(strings.Join(columns, "")) != 0 {
-		// Iterate over the columns by their line sizes
-		for n, maxLen := range colWidths {
-			// ignore columns that we do not have data for (they have been filled up with the last colValue already)
-			if len(columns) < n+1 {
-				continue
-			}
+	entries := make([][]entry, len(columns))
 
-			colValue := []rune(columns[n])
-
-			// Detect multi column span
-			if len(colWidths) > n+1 && len(columns) == n+1 {
-				for _, v := range colWidths[n+1:] {
-					maxLen += v
-				}
-			}
-
-			maxLen = maxLen - (padding * 2)
-
-			// How much of the colValue are we using for this line?
-			end := len(colValue)
-			if end > maxLen {
-				end = maxLen
-			}
-
-			entries := getCroppedText(columns[n], maxLen)
-
-			text := ""
-			if len(entries) > 0 {
-				text = string(entries[0].line)
-				end = entries[0].length
-			}
-
-			suffix := strings.Repeat(" ", maxLen-end)
-			result += pad(text) + suffix
-
-			columns[n] = string(colValue[end:])
+	for n, maxLen := range colWidths {
+		// ignore columns that we do not have data for (they have been filled up with the last colValue already)
+		if len(columns) < n+1 {
+			continue
 		}
-		result = strings.TrimRight(result, linebreak) + linebreak
+
+		// Detect multi column span
+		if len(colWidths) > n+1 && len(columns) == n+1 {
+			for _, v := range colWidths[n+1:] {
+				maxLen += v
+			}
+		}
+
+		maxLen = maxLen - (padding * 2)
+
+		entries[n] = getCroppedText(columns[n], maxLen)
+	}
+
+	totalRows := 0
+	for _, columnEntries := range entries {
+		if len(columnEntries) > totalRows {
+			totalRows = len(columnEntries)
+		}
+	}
+
+	// Render each row
+	for i := 0; i < totalRows; i++ {
+		for n, columnEntry := range entries {
+			maxLen := colWidths[n]
+			text := ""
+			suffix := strings.Repeat(" ", maxLen)
+
+			if len(columnEntry) > i {
+				repeat := maxLen - columnEntry[i].length
+				if repeat < 0 {
+					repeat = padding
+				}
+				suffix = strings.Repeat(" ", repeat)
+				text = columnEntry[i].line
+			}
+
+			// Pad only the first column
+			if n == 0 {
+				result += pad(text + suffix)
+			} else {
+				result += text + suffix
+			}
+		}
+		result += linebreak
 	}
 
 	return strings.TrimRight(result, linebreak)
@@ -255,7 +270,7 @@ func renderRow(providedColumns []string, colWidths []int) string {
 
 func pad(v string) string {
 	padded := strings.Repeat(" ", padding)
-	return padded + v + padded
+	return padded + v
 }
 
 func runeSliceIndexOf(slice []rune, r rune) int {
