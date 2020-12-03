@@ -149,7 +149,7 @@ constants:
     if: ne .Shell ""
   - name: mixinUser
     value: yes
-    if: ne Mixin.User.name ""
+    if: ne Mixin.User.Name ""
 scripts:
   - name: complex-true
     language: bash
