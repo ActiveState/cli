@@ -78,7 +78,8 @@ func (t *Table) calculateWidth(maxTableWidth int) ([]int, int) {
 
 			if rowHasSpannedColumn && n == spannedColumnIndex {
 				// Record total row size as minTableWidth
-				minTableWidth = mathutils.MaxInt(minTableWidth, colWidths[n]+columnSize+(padding*2))
+				colWidthBefore := mathutils.Total(sliceutils.IntRangeUncapped(colWidths, 0, n)...)
+				minTableWidth = mathutils.MaxInt(minTableWidth, colWidthBefore+columnSize+(padding*2))
 			} else {
 				// This is a regular non-spanned column
 				colWidths[n] = mathutils.MaxInt(colWidths[n], columnSize)

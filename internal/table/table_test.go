@@ -58,7 +58,7 @@ func TestTable_colWidths(t1 *testing.T) {
 				},
 				100,
 			},
-			[]int{14, 16, 18},
+			[]int{14, 17, 20},
 		},
 		{
 			"Rowsize wins cause it's longer",
