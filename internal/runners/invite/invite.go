@@ -161,7 +161,7 @@ func (f *outputFormat) MarshalOutput(format output.Format) interface{} {
 	return f
 }
 
-func (i *invite) sendSingle(orgName string, asOwner bool, email string) *failures.Failure {
+func (i *invite) sendSingle(orgName string, asOwner bool, email string) error {
 	// ignore the invitation for now
 	_, err := model.InviteUserToOrg(orgName, asOwner, email)
 	if err != nil {

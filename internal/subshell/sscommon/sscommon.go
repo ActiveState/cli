@@ -70,7 +70,7 @@ func Start(cmd *exec.Cmd) chan error {
 }
 
 // Stop signals the provided command to terminate.
-func Stop(cmd *exec.Cmd) *failures.Failure {
+func Stop(cmd *exec.Cmd) error {
 	return stop(cmd)
 }
 

@@ -37,7 +37,7 @@ func testIndexedCommitsCountBetween(t *testing.T) {
 		first    string
 		last     string
 		want     int
-		failType *failures.FailureType
+		failType errorType
 	}{
 		"basic: none to last":     {basic, "", "e", 5, nil},
 		"basic: first to none":    {basic, "a", "", 0, FailCommitCountImpossible},

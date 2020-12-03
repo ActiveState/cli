@@ -473,7 +473,7 @@ type Jobs []Job
 var persistentProject *Project
 
 // Parse the given filepath, which should be the full path to an activestate.yaml file
-func Parse(configFilepath string) (*Project, *failures.Failure) {
+func Parse(configFilepath string) (*Project, error) {
 	projectDir := filepath.Dir(configFilepath)
 	files, err := ioutil.ReadDir(projectDir)
 	if err != nil {
@@ -521,7 +521,7 @@ func Parse(configFilepath string) (*Project, *failures.Failure) {
 }
 
 // Init initializes the parsedURL field from the project url string
-func (p *Project) Init() *failures.Failure {
+func (p *Project) Init() error {
 	fail := ValidateProjectURL(p.Project)
 	if fail != nil {
 		return fail
@@ -535,7 +535,7 @@ func (p *Project) Init() *failures.Failure {
 	return nil
 }
 
-func parse(configFilepath string) (*Project, *failures.Failure) {
+func parse(configFilepath string) (*Project, error) {
 	dat, err := ioutil.ReadFile(configFilepath)
 	if err != nil {
 		return nil, failures.FailIO.Wrap(err)
@@ -579,7 +579,7 @@ func (p *Project) SetPath(path string) {
 }
 
 // ValidateProjectURL validates the configured project URL
-func ValidateProjectURL(url string) *failures.Failure {
+func ValidateProjectURL(url string) error {
 	// Note: This line also matches headless commit URLs: match == {'commit', '<commit_id>'}
 	match := ProjectURLRe.FindStringSubmatch(url)
 	if len(match) < 3 {
@@ -589,7 +589,7 @@ func ValidateProjectURL(url string) *failures.Failure {
 }
 
 // Reload the project file from disk
-func (p *Project) Reload() *failures.Failure {
+func (p *Project) Reload() error {
 	pj, fail := Parse(p.path)
 	if fail != nil {
 		return fail
@@ -599,7 +599,7 @@ func (p *Project) Reload() *failures.Failure {
 }
 
 // Save the project to its activestate.yaml file
-func (p *Project) Save() *failures.Failure {
+func (p *Project) Save() error {
 	return p.save(p.Path())
 }
 
@@ -694,7 +694,7 @@ func (p *Project) RemoveTemporaryLanguage() error {
 }
 
 // Save the project to its activestate.yaml file
-func (p *Project) save(path string) *failures.Failure {
+func (p *Project) save(path string) error {
 	dat, err := yaml.Marshal(p)
 	if err != nil {
 		return failures.FailMarshal.Wrap(err)
@@ -754,7 +754,7 @@ func (p *Project) SetNamespace(owner, project string) error {
 // SetCommit sets the commit id within the current project file. This is done
 // in-place so that line order is preserved.
 // If headless is true, the project is defined by a commit-id only
-func (p *Project) SetCommit(commitID string, headless bool) *failures.Failure {
+func (p *Project) SetCommit(commitID string, headless bool) error {
 	data, err := ioutil.ReadFile(p.path)
 	if err != nil {
 		return failures.FailOS.Wrap(err)
@@ -798,7 +798,7 @@ func setNamespaceInYAML(data []byte, namespace string, commitID string) ([]byte,
 	return out, nil
 }
 
-func setCommitInYAML(data []byte, commitID string, anonymous bool) ([]byte, *failures.Failure) {
+func setCommitInYAML(data []byte, commitID string, anonymous bool) ([]byte, error) {
 	if commitID == "" {
 		return nil, failures.FailDeveloper.New("commitID must not be empty")
 	}
@@ -816,8 +816,8 @@ func setCommitInYAML(data []byte, commitID string, anonymous bool) ([]byte, *fai
 }
 
 // GetProjectFilePath returns the path to the project activestate.yaml
-func GetProjectFilePath() (string, *failures.Failure) {
-	lookup := []func() (string, *failures.Failure){
+func GetProjectFilePath() (string, error) {
+	lookup := []func() (string, error){
 		getProjectFilePathFromEnv,
 		getProjectFilePathFromWd,
 		getProjectFilePathFromDefault,
@@ -835,7 +835,7 @@ func GetProjectFilePath() (string, *failures.Failure) {
 	return "", FailNoProject.New(locale.T("err_no_projectfile"))
 }
 
-func getProjectFilePathFromEnv() (string, *failures.Failure) {
+func getProjectFilePathFromEnv() (string, error) {
 	projectFilePath := os.Getenv(constants.ProjectEnvVarName)
 	if projectFilePath != "" {
 		if fileutils.FileExists(projectFilePath) {
@@ -846,7 +846,7 @@ func getProjectFilePathFromEnv() (string, *failures.Failure) {
 	return "", nil
 }
 
-func getProjectFilePathFromWd() (string, *failures.Failure) {
+func getProjectFilePathFromWd() (string, error) {
 	root, err := osutils.Getwd()
 	if err != nil {
 		return "", failures.FailIO.Wrap(err, locale.Tl("err_wd", "Could not get working directory"))
@@ -860,7 +860,7 @@ func getProjectFilePathFromWd() (string, *failures.Failure) {
 	return path, nil
 }
 
-func getProjectFilePathFromDefault() (string, *failures.Failure) {
+func getProjectFilePathFromDefault() (string, error) {
 	defaultProjectPath := viper.GetString(constants.GlobalDefaultPrefname)
 	if defaultProjectPath == "" {
 		return "", nil
@@ -890,7 +890,7 @@ func GetPersisted() *Project {
 }
 
 // GetSafe returns the project configuration in a safe manner (returns error)
-func GetSafe() (*Project, *failures.Failure) {
+func GetSafe() (*Project, error) {
 	if persistentProject != nil {
 		return persistentProject, nil
 	}
@@ -905,7 +905,7 @@ func GetSafe() (*Project, *failures.Failure) {
 }
 
 // GetOnce returns the project configuration in a safe manner (returns error), the same as GetSafe, but it avoids persisting the project
-func GetOnce() (*Project, *failures.Failure) {
+func GetOnce() (*Project, error) {
 	// we do not want to use a path provided by state if we're running tests
 	projectFilePath, fail := GetProjectFilePath()
 	if fail != nil {
@@ -929,7 +929,7 @@ func GetOnce() (*Project, *failures.Failure) {
 }
 
 // FromPath will return the projectfile that's located at the given path (this will walk up the directory tree until it finds the project)
-func FromPath(path string) (*Project, *failures.Failure) {
+func FromPath(path string) (*Project, error) {
 	// we do not want to use a path provided by state if we're running tests
 	projectFilePath, fail := fileutils.FindFileInPath(path, constants.ConfigFileName)
 	if fail != nil {
@@ -964,7 +964,7 @@ type CreateParams struct {
 }
 
 // TestOnlyCreateWithProjectURL a new activestate.yaml with default content
-func TestOnlyCreateWithProjectURL(projectURL, path string) (*Project, *failures.Failure) {
+func TestOnlyCreateWithProjectURL(projectURL, path string) (*Project, error) {
 	return createCustom(&CreateParams{
 		projectURL: projectURL,
 		Directory:  path,
@@ -972,7 +972,7 @@ func TestOnlyCreateWithProjectURL(projectURL, path string) (*Project, *failures.
 }
 
 // Create will create a new activestate.yaml with a projectURL for the given details
-func Create(params *CreateParams) *failures.Failure {
+func Create(params *CreateParams) error {
 	lang := language.MakeByName(params.Language)
 	fail := validateCreateParams(params, lang)
 	if fail != nil {
@@ -987,7 +987,7 @@ func Create(params *CreateParams) *failures.Failure {
 	return nil
 }
 
-func createCustom(params *CreateParams, lang language.Language) (*Project, *failures.Failure) {
+func createCustom(params *CreateParams, lang language.Language) (*Project, error) {
 	fail := fileutils.MkdirUnlessExists(params.Directory)
 	if fail != nil {
 		return nil, fail
@@ -1054,7 +1054,7 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, *fail
 	return Parse(params.path)
 }
 
-func validateCreateParams(params *CreateParams, lang language.Language) *failures.Failure {
+func validateCreateParams(params *CreateParams, lang language.Language) error {
 	langValidErr := lang.Validate()
 	switch {
 	case langValidErr != nil:
@@ -1074,7 +1074,7 @@ func validateCreateParams(params *CreateParams, lang language.Language) *failure
 
 // ParseVersionInfo parses the lock field from the projectfile and updates
 // the activestate.yaml if an older version representation is present
-func ParseVersionInfo(projectFilePath string) (*VersionInfo, *failures.Failure) {
+func ParseVersionInfo(projectFilePath string) (*VersionInfo, error) {
 	if !fileutils.FileExists(projectFilePath) {
 		return nil, nil
 	}

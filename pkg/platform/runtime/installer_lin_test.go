@@ -14,7 +14,7 @@ import (
 	"path"
 	"testing"
 
-	"github.com/autarch/testify/mock"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/constants"

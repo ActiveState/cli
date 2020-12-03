@@ -43,13 +43,13 @@ type CamelInstall struct {
 
 // NewCamelEnv returns a new camel runtime assembler
 // It filters the provided artifact list for use-able artifacts
-func NewCamelEnv(commitID strfmt.UUID, cacheDir string) (*CamelEnv, *failures.Failure) {
+func NewCamelEnv(commitID strfmt.UUID, cacheDir string) (*CamelEnv, error) {
 	ce := &CamelEnv{commitID, cacheDir, map[string]string{}}
 	return ce, nil
 }
 
 // NewCamelInstall creates a new camel installation
-func NewCamelInstall(commitID strfmt.UUID, cacheDir string, artifacts []*HeadChefArtifact) (*CamelInstall, *failures.Failure) {
+func NewCamelInstall(commitID strfmt.UUID, cacheDir string, artifacts []*HeadChefArtifact) (*CamelInstall, error) {
 	ce, fail := NewCamelEnv(commitID, cacheDir)
 	if fail != nil {
 		return nil, fail
@@ -102,7 +102,7 @@ func (ci *CamelInstall) BuildEngine() BuildEngine {
 
 // DownloadDirectory returns the download directory for a given artifact
 // Each artifact is downloaded into its own temporary directory
-func (ci *CamelInstall) DownloadDirectory(artf *HeadChefArtifact) (string, *failures.Failure) {
+func (ci *CamelInstall) DownloadDirectory(artf *HeadChefArtifact) (string, error) {
 	downloadDir, err := ioutil.TempDir("", "state-runtime-downloader")
 	if err != nil {
 		return downloadDir, failures.FailIO.Wrap(err)
@@ -117,7 +117,7 @@ func (ci *CamelInstall) ArtifactsToDownload() []*HeadChefArtifact {
 }
 
 // PreInstall attempts to clean the runtime-directory.  Failures are only logged to rollbar and do not cause the installation to fail.
-func (ci *CamelInstall) PreInstall() *failures.Failure {
+func (ci *CamelInstall) PreInstall() error {
 	if fileutils.DirExists(ci.runtimeDir) {
 		empty, fail := fileutils.IsEmptyDir(ci.runtimeDir)
 		if fail != nil {
@@ -135,7 +135,7 @@ func (ci *CamelInstall) PreInstall() *failures.Failure {
 // PreUnpackArtifact ensures that the final installation directory exists and is
 // useable.
 // Note:  It will remove a previous installation
-func (ci *CamelInstall) PreUnpackArtifact(artf *HeadChefArtifact) *failures.Failure {
+func (ci *CamelInstall) PreUnpackArtifact(artf *HeadChefArtifact) error {
 	if fileutils.FileExists(ci.runtimeDir) {
 		// install-dir exists, but is a regular file
 		return FailInstallDirInvalid.New("installer_err_installdir_isfile", ci.runtimeDir)
@@ -157,7 +157,7 @@ func (ci *CamelInstall) PreUnpackArtifact(artf *HeadChefArtifact) *failures.Fail
 
 // PostUnpackArtifact parses the metadata file, runs the Relocation function (if
 // necessary) and moves the artifact to its final destination
-func (ci *CamelInstall) PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir string, archivePath string, cb func()) *failures.Failure {
+func (ci *CamelInstall) PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir string, archivePath string, cb func()) error {
 	archiveName := strings.TrimSuffix(filepath.Base(archivePath), filepath.Ext(archivePath))
 
 	// the above only strips .gz, so account for .tar.gz use-case
@@ -271,7 +271,7 @@ func (ci *CamelInstall) appendEnv(env map[string]string, meta *MetaData) map[str
 
 // Relocate will look through all of the files in this installation and replace any
 // character sequence in those files containing the given prefix.
-func Relocate(metaData *MetaData, cb func()) *failures.Failure {
+func Relocate(metaData *MetaData, cb func()) error {
 	prefix := metaData.RelocationDir
 
 	for _, tr := range metaData.TargetedRelocations {

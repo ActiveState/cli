@@ -13,7 +13,7 @@ import (
 
 // ensureUserKeypair checks to see if the currently authenticated user has a Keypair. If not, one is generated
 // and saved.
-func ensureUserKeypair(passphrase string, out output.Outputer, prompt prompt.Prompter) *failures.Failure {
+func ensureUserKeypair(passphrase string, out output.Outputer, prompt prompt.Prompter) error {
 	keypairRes, failure := keypairs.FetchRaw(secretsapi.Get())
 	if failure == nil {
 		failure = processExistingKeypairForUser(keypairRes, passphrase, out, prompt)
@@ -31,7 +31,7 @@ func ensureUserKeypair(passphrase string, out output.Outputer, prompt prompt.Pro
 }
 
 // generateKeypairForUser attempts to generate and save a Keypair for the currently authenticated user.
-func generateKeypairForUser(passphrase string) *failures.Failure {
+func generateKeypairForUser(passphrase string) error {
 	_, failure := keypairs.GenerateAndSaveEncodedKeypair(secretsapi.Get(), passphrase, constants.DefaultRSABitLength)
 	if failure != nil {
 		return failure
@@ -56,7 +56,7 @@ func validateLocalPrivateKey(publicKey string) bool {
 //
 // If all paths fail, user is prompted to regenerate their keypair which will be encrypted with the
 // provided passphrase and then uploaded; unless the user declines, which results in failure.
-func processExistingKeypairForUser(keypairRes *secretsModels.Keypair, passphrase string, out output.Outputer, prompt prompt.Prompter) *failures.Failure {
+func processExistingKeypairForUser(keypairRes *secretsModels.Keypair, passphrase string, out output.Outputer, prompt prompt.Prompter) error {
 	keypair, failure := keypairs.ParseEncryptedRSA(*keypairRes.EncryptedPrivateKey, passphrase)
 	if failure == nil {
 		// yay, store keypair locally just in case it isn't
@@ -87,7 +87,7 @@ func processExistingKeypairForUser(keypairRes *secretsModels.Keypair, passphrase
 	return failure
 }
 
-func recoverKeypairFromPreviousPassphrase(keypairRes *secretsModels.Keypair, passphrase string, out output.Outputer, prompt prompt.Prompter) *failures.Failure {
+func recoverKeypairFromPreviousPassphrase(keypairRes *secretsModels.Keypair, passphrase string, out output.Outputer, prompt prompt.Prompter) error {
 	out.Notice(locale.T("previous_password_message"))
 	prevPassphrase, failure := promptForPreviousPassphrase(prompt)
 	if failure == nil {
@@ -104,7 +104,7 @@ func recoverKeypairFromPreviousPassphrase(keypairRes *secretsModels.Keypair, pas
 	return failure
 }
 
-func promptForPreviousPassphrase(prompt prompt.Prompter) (string, *failures.Failure) {
+func promptForPreviousPassphrase(prompt prompt.Prompter) (string, error) {
 	passphrase, fail := prompt.InputSecret("", locale.T("previous_password_prompt"))
 	if fail != nil {
 		return "", failures.FailUserInput.New("auth_err_password_prompt")
@@ -112,8 +112,8 @@ func promptForPreviousPassphrase(prompt prompt.Prompter) (string, *failures.Fail
 	return passphrase, nil
 }
 
-func promptUserToRegenerateKeypair(passphrase string, out output.Outputer, prompt prompt.Prompter) *failures.Failure {
-	var failure *failures.Failure
+func promptUserToRegenerateKeypair(passphrase string, out output.Outputer, prompt prompt.Prompter) error {
+	var failure error
 	// previous passphrase is invalid, inform user and ask if they want to generate a new keypair
 	out.Notice(locale.T("auth_generate_new_keypair_message"))
 	yes, fail := prompt.Confirm("", locale.T("auth_confirm_generate_new_keypair_prompt"), false)

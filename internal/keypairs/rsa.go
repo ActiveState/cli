@@ -26,7 +26,7 @@ func (keypair *RSAKeypair) EncodePrivateKey() string {
 
 // EncryptAndEncodePrivateKey will encrypt RSA private-key using the provided passphrase
 // and then encode it to a PEM string.
-func (keypair *RSAKeypair) EncryptAndEncodePrivateKey(passphrase string) (string, *failures.Failure) {
+func (keypair *RSAKeypair) EncryptAndEncodePrivateKey(passphrase string) (string, error) {
 	block := keypair.pemPrivateKeyBlock()
 
 	var err error
@@ -46,7 +46,7 @@ func (keypair *RSAKeypair) pemPrivateKeyBlock() *pem.Block {
 }
 
 // EncodePublicKey will encode this RSA public-key to a PEM string.
-func (keypair *RSAKeypair) EncodePublicKey() (string, *failures.Failure) {
+func (keypair *RSAKeypair) EncodePublicKey() (string, error) {
 	keyBytes, err := x509.MarshalPKIXPublicKey(&keypair.PublicKey)
 	if err != nil {
 		return "", FailPublicKey.Wrap(err)
@@ -63,7 +63,7 @@ func (keypair *RSAKeypair) EncodePublicKey() (string, *failures.Failure) {
 
 // Encrypt will encrypt the provided message using the Keypair's public-key. This particular
 // function will use SHA256 for the random oracle.
-func (keypair *RSAKeypair) Encrypt(msg []byte) ([]byte, *failures.Failure) {
+func (keypair *RSAKeypair) Encrypt(msg []byte) ([]byte, error) {
 	b, failure := rsaEncrypt(&keypair.PublicKey, msg)
 	if failure != nil {
 		return nil, failure
@@ -73,7 +73,7 @@ func (keypair *RSAKeypair) Encrypt(msg []byte) ([]byte, *failures.Failure) {
 
 // EncryptAndEncode will encrypt the provided message using the Keypair's public-key
 // and then base-64 encode it.
-func (keypair *RSAKeypair) EncryptAndEncode(msg []byte) (string, *failures.Failure) {
+func (keypair *RSAKeypair) EncryptAndEncode(msg []byte) (string, error) {
 	encrBytes, failure := keypair.Encrypt(msg)
 	if failure != nil {
 		return "", failure
@@ -83,7 +83,7 @@ func (keypair *RSAKeypair) EncryptAndEncode(msg []byte) (string, *failures.Failu
 
 // Decrypt will decrypt the provided ciphertext using the Keypair's private-key. This particular
 // function will use SHA256 for the random oracle.
-func (keypair *RSAKeypair) Decrypt(ciphertext []byte) ([]byte, *failures.Failure) {
+func (keypair *RSAKeypair) Decrypt(ciphertext []byte) ([]byte, error) {
 	b, err := rsa.DecryptOAEP(sha256.New(), rand.Reader, keypair.PrivateKey, ciphertext, nil)
 	if err != nil {
 		return nil, FailDecrypt.Wrap(err)
@@ -93,7 +93,7 @@ func (keypair *RSAKeypair) Decrypt(ciphertext []byte) ([]byte, *failures.Failure
 
 // DecodeAndDecrypt will base-64 decode the provided msg then decrypt the resulting ciphertext
 // using the Keypair's private-key.
-func (keypair *RSAKeypair) DecodeAndDecrypt(msg string) ([]byte, *failures.Failure) {
+func (keypair *RSAKeypair) DecodeAndDecrypt(msg string) ([]byte, error) {
 	encrBytes, err := base64.StdEncoding.DecodeString(msg)
 	if err != nil {
 		return nil, FailKeyDecode.New("keypairs_err_base64_decoding")
@@ -114,7 +114,7 @@ func (keypair *RSAKeypair) MatchPublicKey(publicKeyPEM string) bool {
 
 // GenerateRSA will generate an RSAKeypair instance given a bit-length.
 // The value for bits can be anything `>= MinimumRSABitLength`.
-func GenerateRSA(bits int) (*RSAKeypair, *failures.Failure) {
+func GenerateRSA(bits int) (*RSAKeypair, error) {
 	if bits < MinimumRSABitLength {
 		return nil, FailKeypairGenerate.New("keypairs_err_bitlength_too_short")
 	}
@@ -128,13 +128,13 @@ func GenerateRSA(bits int) (*RSAKeypair, *failures.Failure) {
 
 // ParseRSA will parse a PEM encoded RSAKeypair. If the keypair is encrypted, it is expected that the
 // passphrase is empty.
-func ParseRSA(privateKeyPEM string) (*RSAKeypair, *failures.Failure) {
+func ParseRSA(privateKeyPEM string) (*RSAKeypair, error) {
 	return ParseEncryptedRSA(privateKeyPEM, "")
 }
 
 // ParseEncryptedRSA will parse a PEM encoded RSAKeypair that is possibly encrypted with a passphrase.
 // If the keypair is not encrypted, the parsing will proceed uninterrupted.
-func ParseEncryptedRSA(privateKeyPEM, passphrase string) (*RSAKeypair, *failures.Failure) {
+func ParseEncryptedRSA(privateKeyPEM, passphrase string) (*RSAKeypair, error) {
 	block, _ := pem.Decode([]byte(privateKeyPEM))
 	if block == nil {
 		return nil, FailKeypairParse.New("keypairs_err_pem_encoding")
@@ -167,7 +167,7 @@ type RSAPublicKey struct {
 
 // Encrypt will encrypt the provided message using this PublicKey. This particular
 // function will use SHA256 for the random oracle.
-func (key *RSAPublicKey) Encrypt(msg []byte) ([]byte, *failures.Failure) {
+func (key *RSAPublicKey) Encrypt(msg []byte) ([]byte, error) {
 	b, err := rsaEncrypt(key.PublicKey, msg)
 	if err != nil {
 		return nil, FailPublicKey.Wrap(err)
@@ -176,7 +176,7 @@ func (key *RSAPublicKey) Encrypt(msg []byte) ([]byte, *failures.Failure) {
 }
 
 // EncryptAndEncode will encrypt the provided message using this PublicKey and then base-64 encode it.
-func (key *RSAPublicKey) EncryptAndEncode(msg []byte) (string, *failures.Failure) {
+func (key *RSAPublicKey) EncryptAndEncode(msg []byte) (string, error) {
 	encrBytes, failure := key.Encrypt(msg)
 	if failure != nil {
 		return "", failure
@@ -185,7 +185,7 @@ func (key *RSAPublicKey) EncryptAndEncode(msg []byte) (string, *failures.Failure
 }
 
 // ParseRSAPublicKey will parse a PEM encoded RSAPublicKey
-func ParseRSAPublicKey(publicKeyPEM string) (*RSAPublicKey, *failures.Failure) {
+func ParseRSAPublicKey(publicKeyPEM string) (*RSAPublicKey, error) {
 	block, _ := pem.Decode([]byte(publicKeyPEM))
 	if block == nil {
 		return nil, FailPublicKeyParse.New("keypairs_err_pem_encoding")
@@ -203,7 +203,7 @@ func ParseRSAPublicKey(publicKeyPEM string) (*RSAPublicKey, *failures.Failure) {
 	return &RSAPublicKey{pubKey}, nil
 }
 
-func rsaEncrypt(pubKey *rsa.PublicKey, msg []byte) ([]byte, *failures.Failure) {
+func rsaEncrypt(pubKey *rsa.PublicKey, msg []byte) ([]byte, error) {
 	encrBytes, err := rsa.EncryptOAEP(sha256.New(), rand.Reader, pubKey, msg, nil)
 	if err != nil {
 		return nil, FailEncrypt.Wrap(err)

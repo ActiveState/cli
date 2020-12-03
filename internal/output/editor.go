@@ -13,7 +13,7 @@ func (f *Editor) Type() Format {
 	return EditorFormatName
 }
 
-func NewEditor(config *Config) (Editor, *failures.Failure) {
+func NewEditor(config *Config) (Editor, error) {
 	json, fail := NewJSON(config)
 	if fail != nil {
 		return Editor{}, fail

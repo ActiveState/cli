@@ -32,7 +32,7 @@ func (r *Projects) RunRemote(params *Params) error {
 	return nil
 }
 
-func (r *Projects) fetchProjects(onlyLocal bool) (projectWithOrgs, *failures.Failure) {
+func (r *Projects) fetchProjects(onlyLocal bool) (projectWithOrgs, error) {
 	orgParams := organizations.NewListOrganizationsParams()
 	memberOnly := true
 	orgParams.SetMemberOnly(&memberOnly)

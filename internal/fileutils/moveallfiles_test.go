@@ -38,20 +38,18 @@ func (suite *MoveAllFilesTestSuite) TestFromDir_IsNotDirectory() {
 	tmpFile, err := ioutil.TempFile("", "mvallfiles-tmpfile")
 	suite.Require().NoError(err, "creating fake from-dir as a file")
 
-	failure := fileutils.MoveAllFiles(tmpFile.Name(), suite.toDir)
-	suite.Require().NotNil(failure, "moving files")
-	suite.Equal(fileutils.FailMoveSourceNotDirectory, failure.Type)
-	suite.Equal(locale.Tr("err_os_not_a_directory", tmpFile.Name()), failure.Error())
+	err = fileutils.MoveAllFiles(tmpFile.Name(), suite.toDir)
+	suite.Require().NotNil(err, "moving files")
+	suite.Equal(locale.Tr("err_os_not_a_directory", tmpFile.Name()), err.Error())
 }
 
 func (suite *MoveAllFilesTestSuite) TestToDir_IsNotDirectory() {
 	tmpFile, err := ioutil.TempFile("", "mvallfiles-tmpfile")
 	suite.Require().NoError(err, "creating fake from-dir as a file")
 
-	failure := fileutils.MoveAllFiles(suite.fromDir, tmpFile.Name())
-	suite.Require().NotNil(failure, "moving files")
-	suite.Equal(fileutils.FailMoveDestinationNotDirectory, failure.Type)
-	suite.Equal(locale.Tr("err_os_not_a_directory", tmpFile.Name()), failure.Error())
+	err = fileutils.MoveAllFiles(suite.fromDir, tmpFile.Name())
+	suite.Require().NotNil(err, "moving files")
+	suite.Equal(locale.Tr("err_os_not_a_directory", tmpFile.Name()), err.Error())
 }
 
 func (suite *MoveAllFilesTestSuite) addFileToFrom(relPath string) {
@@ -60,8 +58,8 @@ func (suite *MoveAllFilesTestSuite) addFileToFrom(relPath string) {
 }
 
 func (suite *MoveAllFilesTestSuite) addDirToFrom(relPath string) {
-	failure := fileutils.Mkdir(path.Join(suite.fromDir, relPath))
-	suite.Require().Nil(failure, "creating test dir: %s", relPath)
+	err := fileutils.Mkdir(path.Join(suite.fromDir, relPath))
+	suite.Require().Nil(err, "creating test dir: %s", relPath)
 }
 
 func (suite *MoveAllFilesTestSuite) TestSuccess() {

@@ -3,11 +3,8 @@ package errs
 import (
 	"errors"
 	"fmt"
-	"os"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/failures"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 	"github.com/ActiveState/cli/internal/rtutils"
 )
@@ -87,7 +84,7 @@ func WrapErrors(wrapTarget error, wrapper error) error {
 // Join all error messages in the Unwrap stack
 func Join(err error, sep string) error {
 	var message []string
-	for !errIsNil(err) {
+	for err != nil {
 		message = append(message, err.Error())
 		err = errors.Unwrap(err)
 	}
@@ -109,19 +106,6 @@ func AddTips(err error, tips ...string) error {
 	}
 	err.(ErrorTips).AddTips(tips...)
 	return err
-}
-
-// errIsNil is a dirty little helper function that helps surface fail=nil type issues, to be removed once we get rid of failures
-func errIsNil(err error) bool {
-	if fail, ok := err.(*failures.Failure); ok && fail == nil && err != nil {
-		logging.Error("MUST FIX: nil failure is being passed as non-nil error, os.Args: %v", os.Args)
-		if !rtutils.BuiltViaCI {
-			// Ensure we don't miss this while testing locally
-			fmt.Fprint(os.Stderr, "MUST FIX: nil failure is being passed as non-nil error")
-		}
-		return true
-	}
-	return err == nil
 }
 
 // InnerError unwraps wrapped error messages

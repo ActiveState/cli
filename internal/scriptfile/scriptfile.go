@@ -17,24 +17,24 @@ type ScriptFile struct {
 
 // New receives a language and script body that are used to construct a runable
 // on-disk file that is tracked by the returned value.
-func New(l language.Language, name, script string) (*ScriptFile, *failures.Failure) {
+func New(l language.Language, name, script string) (*ScriptFile, error) {
 	return new(l, name, []byte(l.Header()+script))
 }
 
 // NewEmpty receives a language that is used to construct a runnable, but empty,
 // on-disk file that is tracked by the return value.
-func NewEmpty(l language.Language, name string) (*ScriptFile, *failures.Failure) {
+func NewEmpty(l language.Language, name string) (*ScriptFile, error) {
 	return new(l, name, []byte(""))
 }
 
 // NewAsSource recieves a language and script body that are used to construct an
 // on-disk file that is tracked by the return value. This file is not guaranteed
 // to be runnable
-func NewAsSource(l language.Language, name, script string) (*ScriptFile, *failures.Failure) {
+func NewAsSource(l language.Language, name, script string) (*ScriptFile, error) {
 	return new(l, name, []byte(script))
 }
 
-func new(l language.Language, name string, script []byte) (*ScriptFile, *failures.Failure) {
+func new(l language.Language, name string, script []byte) (*ScriptFile, error) {
 	file, fail := fileutils.WriteTempFile(
 		"", fmt.Sprintf("%s*%s", name, l.Ext()), []byte(script), 0700,
 	)
@@ -59,6 +59,6 @@ func (sf *ScriptFile) Filename() string {
 }
 
 // Write updates the on-disk scriptfile with the script value
-func (sf *ScriptFile) Write(value string) *failures.Failure {
+func (sf *ScriptFile) Write(value string) error {
 	return fileutils.WriteFile(sf.file, []byte(sf.lang.Header()+value))
 }

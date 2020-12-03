@@ -45,7 +45,7 @@ var (
 // Load will attempt to load a Keypair using private and public-key files from
 // the user's file system; specifically from the config dir. It is assumed that
 // this keypair file has no passphrase, even if it is encrypted.
-func Load(keyName string) (Keypair, *failures.Failure) {
+func Load(keyName string) (Keypair, error) {
 	keyFilename := LocalKeyFilename(keyName)
 	if fail := validateKeyFile(keyFilename); fail != nil {
 		return nil, fail
@@ -55,7 +55,7 @@ func Load(keyName string) (Keypair, *failures.Failure) {
 
 // Save will save the unencrypted and encoded private key to a local config
 // file. The filename will be the value of `keyName` and suffixed with `.key`.
-func Save(kp Keypair, keyName string) *failures.Failure {
+func Save(kp Keypair, keyName string) error {
 	err := ioutil.WriteFile(LocalKeyFilename(keyName), []byte(kp.EncodePrivateKey()), 0600)
 	if err != nil {
 		return FailSaveFile.Wrap(err)
@@ -65,7 +65,7 @@ func Save(kp Keypair, keyName string) *failures.Failure {
 
 // Delete will delete an unencrypted and encoded private key from the local
 // config directory. The base filename (sans suffix) must be provided.
-func Delete(keyName string) *failures.Failure {
+func Delete(keyName string) error {
 	filename := LocalKeyFilename(keyName)
 	if fileutils.FileExists(filename) {
 		if err := os.Remove(filename); err != nil {
@@ -78,7 +78,7 @@ func Delete(keyName string) *failures.Failure {
 // LoadWithDefaults will call Load with the default key name (i.e.
 // constants.KeypairLocalFileName). If the key override is set
 // (constants.PrivateKeyEnvVarName), that value will be parsed directly.
-func LoadWithDefaults() (Keypair, *failures.Failure) {
+func LoadWithDefaults() (Keypair, error) {
 	key, err := gcloud.GetSecret(constants.PrivateKeyEnvVarName)
 	if err != nil && ! errors.Is(err, gcloud.ErrNotAvailable{}) {
 		return nil, failures.FailNetwork.Wrap(err)
@@ -99,7 +99,7 @@ func LoadWithDefaults() (Keypair, *failures.Failure) {
 // SaveWithDefaults will call Save with the provided keypair and the default
 // key name (i.e. constants.KeypairLocalFileName). The operation will fail when
 // the key override is set (constants.PrivateKeyEnvVarName).
-func SaveWithDefaults(kp Keypair) *failures.Failure {
+func SaveWithDefaults(kp Keypair) error {
 	if hasKeyOverride() {
 		return FailHasOverride.New("keypairs_err_override_with_save")
 	}
@@ -110,7 +110,7 @@ func SaveWithDefaults(kp Keypair) *failures.Failure {
 // DeleteWithDefaults will call Delete with the default key name (i.e.
 // constants.KeypairLocalFileName). The operation will fail when the key
 // override is set (constants.PrivateKeyEnvVarName).
-func DeleteWithDefaults() *failures.Failure {
+func DeleteWithDefaults() error {
 	if hasKeyOverride() {
 		return FailHasOverride.New("keypairs_err_override_with_delete")
 	}
@@ -123,7 +123,7 @@ func LocalKeyFilename(keyName string) string {
 	return filepath.Join(config.ConfigPath(), keyName+".key")
 }
 
-func loadAndParseKeypair(keyFilename string) (Keypair, *failures.Failure) {
+func loadAndParseKeypair(keyFilename string) (Keypair, error) {
 	keyFileBytes, err := ioutil.ReadFile(keyFilename)
 	if err != nil {
 		return nil, FailLoadUnknown.Wrap(err)

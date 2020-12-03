@@ -96,7 +96,7 @@ func (suite *CamelLinuxRuntimeTestSuite) Test_PostUnpackWithFailures() {
 	cases := []struct {
 		name            string
 		archiveName     string
-		expectedFailure *failures.FailureType
+		expectedFailure errorType
 	}{
 		{"RuntimeMissingPythonExecutable", "python-missing-python-binary.tar.gz", runtime.FailMetaDataNotDetected},
 		{"PythonFoundButNotExecutable", "python-noexec-python.tar.gz", runtime.FailRuntimeNotExecutable},

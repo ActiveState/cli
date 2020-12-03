@@ -10,7 +10,7 @@ import (
 var lineBreak = "\n"
 var lineBreakChar = `\n`
 
-func stop(cmd *exec.Cmd) *failures.Failure {
+func stop(cmd *exec.Cmd) error {
 	// may panic if process no longer exists
 	defer failures.Recover()
 

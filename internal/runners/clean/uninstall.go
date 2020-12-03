@@ -13,7 +13,7 @@ import (
 )
 
 type confirmAble interface {
-	Confirm(title, message string, defaultChoice bool) (bool, *failures.Failure)
+	Confirm(title, message string, defaultChoice bool) (bool, error)
 }
 
 type Uninstall struct {

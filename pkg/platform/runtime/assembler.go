@@ -38,16 +38,16 @@ type Assembler interface {
 
 	// PreInstall is invoked by the installer after all artifact archives are
 	// downloaded, but before they are unpacked.
-	PreInstall() *failures.Failure
+	PreInstall() error
 
 	// PreUnpackArtifact is invoked by the installer for every artifact archive
 	// before it is being unpacked.
-	PreUnpackArtifact(artf *HeadChefArtifact) *failures.Failure
+	PreUnpackArtifact(artf *HeadChefArtifact) error
 
 	// PostUnpackArtifact is invoked by the installer for every artifact archive
 	// after it has been unpacked into its temporary installation directory tmpRuntimeDir
 	// Here, the final relocation to InstallationDirectory() needs to take place.
-	PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir string, archivePath string, cb func()) *failures.Failure
+	PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir string, archivePath string, cb func()) error
 
 	// PostInstall is called after all artifacts have been successfully installed
 	PostInstall() error

@@ -49,7 +49,7 @@ func (e *editorV0Error) MarshalOutput(output.Format) interface{} {
 	var code int32 = 1
 	errInspect := e.parent
 	for errInspect != nil {
-		fail, ok := errInspect.(*failures.Failure)
+		fail, ok := errInspect.(error)
 		if ok && fail.Type.Matches(model.FailProjectNameConflict) {
 			code = -16
 		}

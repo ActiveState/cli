@@ -18,7 +18,7 @@ type confirmMock struct {
 	confirm bool
 }
 
-func (c *confirmMock) Confirm(title, message string, defaultChoice bool) (bool, *failures.Failure) {
+func (c *confirmMock) Confirm(title, message string, defaultChoice bool) (bool, error) {
 	return c.confirm, nil
 }
 

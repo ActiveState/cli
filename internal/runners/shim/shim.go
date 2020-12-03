@@ -50,7 +50,7 @@ func NewParams() *Params {
 
 func (s *Shim) Run(params *Params, args ...string) error {
 	if params.Path != "" {
-		var fail *failures.Failure
+		var fail error
 		s.proj, fail = project.FromPath(params.Path)
 		if fail != nil {
 			return locale.WrapInputError(fail.ToError(), "shim_no_project_at_path", "Could not find project file at {{.V0}}", params.Path)

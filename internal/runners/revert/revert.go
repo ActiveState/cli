@@ -63,7 +63,7 @@ func (r *Revert) Run(params *Params) error {
 	}
 
 	var orgs []gqlmodel.Organization
-	var fail *failures.Failure
+	var fail error
 	if revertCommit.Author != nil {
 		orgs, fail = model.FetchOrganizationsByIDs([]strfmt.UUID{*revertCommit.Author})
 		if fail != nil {

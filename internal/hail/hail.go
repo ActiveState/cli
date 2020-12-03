@@ -23,10 +23,10 @@ type Received struct {
 	Open time.Time
 	Time time.Time
 	Data []byte
-	Fail *failures.Failure
+	Fail error
 }
 
-func newReceived(openedAt time.Time, data []byte, fail *failures.Failure) *Received {
+func newReceived(openedAt time.Time, data []byte, fail error) *Received {
 	return &Received{
 		Open: openedAt,
 		Time: time.Now(),
@@ -37,7 +37,7 @@ func newReceived(openedAt time.Time, data []byte, fail *failures.Failure) *Recei
 
 // Send sends a hail by saving data to the file located by the file name
 // provided.
-func Send(file string, data []byte) *failures.Failure {
+func Send(file string, data []byte) error {
 	f, err := os.OpenFile(file, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0660)
 	if err != nil {
 		return failures.FailOS.Wrap(err)
@@ -54,7 +54,7 @@ func Send(file string, data []byte) *failures.Failure {
 // Open opens a channel for hailing. A *Received is sent in the returned
 // channel whenever the file located by the file name provided is created,
 // updated, or deleted.
-func Open(ctx context.Context, file string) (<-chan *Received, *failures.Failure) {
+func Open(ctx context.Context, file string) (<-chan *Received, error) {
 	openedAt := time.Now()
 
 	f, err := os.OpenFile(file, os.O_CREATE|os.O_APPEND, 0660)

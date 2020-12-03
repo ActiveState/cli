@@ -17,7 +17,7 @@ func TestWriteRcFile(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want *failures.Failure
+		want error
 	}{
 		{
 			"Write RC",

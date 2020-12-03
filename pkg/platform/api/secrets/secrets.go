@@ -115,7 +115,7 @@ func Get() *Client {
 // AuthenticatedUserID will check with the Secrets Service to ensure the current Bearer token
 // is a valid one and return the user's UID in the response. Otherwise, this function will return
 // a Failure.
-func (client *Client) AuthenticatedUserID() (strfmt.UUID, *failures.Failure) {
+func (client *Client) AuthenticatedUserID() (strfmt.UUID, error) {
 	resOk, err := client.Authentication.GetWhoami(nil, authentication.Get().ClientAuth())
 	if err != nil {
 		if api.ErrorCode(err) == 401 {
@@ -132,7 +132,7 @@ func (client *Client) Persist() {
 }
 
 // FetchAll fetchs the current user's secrets for an organization.
-func FetchAll(client *Client, org *mono_models.Organization) ([]*secretsModels.UserSecret, *failures.Failure) {
+func FetchAll(client *Client, org *mono_models.Organization) ([]*secretsModels.UserSecret, error) {
 	params := secretsapiClient.NewGetAllUserSecretsParams()
 	params.OrganizationID = org.OrganizationID
 	getOk, err := client.Secrets.Secrets.GetAllUserSecrets(params, authentication.Get().ClientAuth())
@@ -148,7 +148,7 @@ func FetchAll(client *Client, org *mono_models.Organization) ([]*secretsModels.U
 }
 
 // FetchDefinitions fetchs the secret definitions for a given project.
-func FetchDefinitions(client *Client, projectID strfmt.UUID) ([]*secretsModels.SecretDefinition, *failures.Failure) {
+func FetchDefinitions(client *Client, projectID strfmt.UUID) ([]*secretsModels.SecretDefinition, error) {
 	params := secretsapiClient.NewGetDefinitionsParams()
 	params.ProjectID = projectID
 	getOk, err := client.Secrets.Secrets.GetDefinitions(params, authentication.Get().ClientAuth())
@@ -163,7 +163,7 @@ func FetchDefinitions(client *Client, projectID strfmt.UUID) ([]*secretsModels.S
 	return getOk.Payload, nil
 }
 
-func SaveSecretShares(client *Client, org *mono_models.Organization, user *mono_models.User, shares []*secretsModels.UserSecretShare) *failures.Failure {
+func SaveSecretShares(client *Client, org *mono_models.Organization, user *mono_models.User, shares []*secretsModels.UserSecretShare) error {
 	params := secretsapiClient.NewShareUserSecretsParams()
 	params.OrganizationID = org.OrganizationID
 	params.UserID = user.UserID

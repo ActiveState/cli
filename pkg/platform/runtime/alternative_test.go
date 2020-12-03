@@ -161,7 +161,7 @@ func (suite *AlternativeRuntimeTestSuite) Test_PreInstall() {
 	cases := []struct {
 		name            string
 		prepFunc        func(installDir string)
-		expectedFailure *failures.FailureType
+		expectedFailure errorType
 	}{
 		{"InstallationDirectoryIsFile", func(installDir string) {
 			baseDir := filepath.Dir(installDir)

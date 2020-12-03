@@ -119,7 +119,7 @@ func ensureLanguageProject(language *model.Language, project *project.Project) e
 	return nil
 }
 
-type fetchVersionsFunc func(name string) ([]string, *failures.Failure)
+type fetchVersionsFunc func(name string) ([]string, error)
 
 func ensureVersion(language *model.Language) error {
 	return ensureVersionTestable(language, model.FetchLanguageVersions)

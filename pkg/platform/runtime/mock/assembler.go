@@ -15,9 +15,9 @@ type Assembler struct {
 	testifyMock.Mock
 }
 
-func (a *Assembler) DownloadDirectory(artf *runtime.HeadChefArtifact) (string, *failures.Failure) {
+func (a *Assembler) DownloadDirectory(artf *runtime.HeadChefArtifact) (string, error) {
 	args := a.Called(artf)
-	return args.String(0), args.Get(1).(*failures.Failure)
+	return args.String(0), args.Get(1).(error)
 }
 func (a *Assembler) GetEnv(inherit bool, projectDir string) (map[string]string, error) {
 	args := a.Called()
@@ -29,28 +29,28 @@ func (a *Assembler) ArtifactsToDownload() []*runtime.HeadChefArtifact {
 	return args.Get(0).([]*runtime.HeadChefArtifact)
 }
 
-func (a *Assembler) PreInstall() *failures.Failure {
+func (a *Assembler) PreInstall() error {
 	args := a.Called()
 	if args.Get(0) == nil {
 		return nil
 	}
-	return args.Get(0).(*failures.Failure)
+	return args.Get(0).(error)
 }
 
-func (a *Assembler) PreUnpackArtifact(artf *runtime.HeadChefArtifact) *failures.Failure {
+func (a *Assembler) PreUnpackArtifact(artf *runtime.HeadChefArtifact) error {
 	args := a.Called(artf)
 	if args.Get(0) == nil {
 		return nil
 	}
-	return args.Get(0).(*failures.Failure)
+	return args.Get(0).(error)
 }
 
-func (a *Assembler) PostUnpackArtifact(artf *runtime.HeadChefArtifact, tmpRuntimeDir string, archivePath string, cb func()) *failures.Failure {
+func (a *Assembler) PostUnpackArtifact(artf *runtime.HeadChefArtifact, tmpRuntimeDir string, archivePath string, cb func()) error {
 	args := a.Called(artf, tmpRuntimeDir, archivePath, cb)
 	if args.Get(0) == nil {
 		return nil
 	}
-	return args.Get(0).(*failures.Failure)
+	return args.Get(0).(error)
 }
 
 func (a *Assembler) PostInstall() error {

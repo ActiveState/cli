@@ -98,7 +98,7 @@ func TestRequireAuthenticationLoginFail(t *testing.T) {
 	httpmock.Register("GET", "/users/uniqueUsername/test")
 	httpmock.RegisterWithCode("POST", "/login", 401)
 
-	var fail *failures.Failure
+	var fail error
 	pmock.OnMethod("Select").Once().Return(locale.T("prompt_login_action"), nil)
 	pmock.OnMethod("Input").Once().Return("Iammeanttofail", nil)
 	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)

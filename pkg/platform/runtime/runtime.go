@@ -113,6 +113,6 @@ func (r *Runtime) BuildEngine() (BuildEngine, error) {
 
 // Env will grab the environment information for the given runtime.
 // This currently just aliases to installer, pending further refactoring
-func (r *Runtime) Env() (EnvGetter, *failures.Failure) {
+func (r *Runtime) Env() (EnvGetter, error) {
 	return NewInstaller(r).Env()
 }

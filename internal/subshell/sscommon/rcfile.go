@@ -46,7 +46,7 @@ type EnvData struct {
 	Key   string
 }
 
-func WriteRcFile(rcTemplateName string, path string, data EnvData, env map[string]string) *failures.Failure {
+func WriteRcFile(rcTemplateName string, path string, data EnvData, env map[string]string) error {
 	if fail := fileutils.Touch(path); fail != nil {
 		return fail
 	}
@@ -80,7 +80,7 @@ func WriteRcFile(rcTemplateName string, path string, data EnvData, env map[strin
 	return fileutils.AppendToFile(path, []byte(fileutils.LineEnd+out.String()))
 }
 
-func cleanRcFile(path string, data EnvData) *failures.Failure {
+func cleanRcFile(path string, data EnvData) error {
 	readFile, err := os.Open(path)
 
 	if err != nil {
@@ -156,7 +156,7 @@ func SetupShellRcFile(rcFileName, templateName string, env map[string]string, na
 
 // SetupProjectRcFile creates a temporary RC file that our shell is initiated from, this allows us to template the logic
 // used for initialising the subshell
-func SetupProjectRcFile(templateName, ext string, env map[string]string, out output.Outputer) (*os.File, *failures.Failure) {
+func SetupProjectRcFile(templateName, ext string, env map[string]string, out output.Outputer) (*os.File, error) {
 	box := packr.NewBox("../../../assets/shells")
 	tpl := box.String(templateName)
 	prj := project.Get()

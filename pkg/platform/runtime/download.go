@@ -72,17 +72,17 @@ type FetchArtifactsResult struct {
 type DownloadDirectoryProvider interface {
 
 	// DownloadDirectory returns the download path for a given artifact
-	DownloadDirectory(artf *HeadChefArtifact) (string, *failures.Failure)
+	DownloadDirectory(artf *HeadChefArtifact) (string, error)
 }
 
 // Downloader defines the behavior required to be a runtime downloader.
 type Downloader interface {
 	// Download will attempt to download some runtime locally and return back the filename of
 	// the downloaded archive or a Failure.
-	Download(artifacts []*HeadChefArtifact, d DownloadDirectoryProvider, progress *progress.Progress) (files map[string]*HeadChefArtifact, fail *failures.Failure)
+	Download(artifacts []*HeadChefArtifact, d DownloadDirectoryProvider, progress *progress.Progress) (files map[string]*HeadChefArtifact, fail error)
 
 	// FetchArtifacts will fetch artifact
-	FetchArtifacts() (*FetchArtifactsResult, *failures.Failure)
+	FetchArtifacts() (*FetchArtifactsResult, error)
 }
 
 // Download is the main struct for orchestrating the download of all the artifacts belonging to a runtime
@@ -100,7 +100,7 @@ func NewDownload(runtime *Runtime) Downloader {
 }
 
 // fetchRecipe juggles API's to get the build request that can be sent to the head-chef
-func (r *Download) fetchRecipeID() (strfmt.UUID, *failures.Failure) {
+func (r *Download) fetchRecipeID() (strfmt.UUID, error) {
 	commitID := r.runtime.commitID
 	if commitID == "" {
 		return "", FailNoCommit.New(locale.T("err_no_commit"))
@@ -116,7 +116,7 @@ func (r *Download) fetchRecipeID() (strfmt.UUID, *failures.Failure) {
 
 // FetchArtifacts will retrieve artifact information from the head-chef (eg language installers)
 // The first return argument specifies whether we are dealing with an alternative build
-func (r *Download) FetchArtifacts() (*FetchArtifactsResult, *failures.Failure) {
+func (r *Download) FetchArtifacts() (*FetchArtifactsResult, error) {
 	orgID := strfmt.UUID(constants.ValidZeroUUID)
 	projectID := strfmt.UUID(constants.ValidZeroUUID)
 
@@ -140,7 +140,7 @@ func (r *Download) FetchArtifacts() (*FetchArtifactsResult, *failures.Failure) {
 	return r.fetchArtifacts(r.runtime.commitID, recipeID, orgID, projectID)
 }
 
-func (r *Download) fetchArtifacts(commitID, recipeID, orgID, projectID strfmt.UUID) (*FetchArtifactsResult, *failures.Failure) {
+func (r *Download) fetchArtifacts(commitID, recipeID, orgID, projectID strfmt.UUID) (*FetchArtifactsResult, error) {
 	result := &FetchArtifactsResult{}
 
 	buildAnnotations := headchef.BuildAnnotations{
@@ -233,7 +233,7 @@ func (r *Download) projectURL() string {
 }
 
 // Download is the main function used to kick off the runtime download
-func (r *Download) Download(artifacts []*HeadChefArtifact, dp DownloadDirectoryProvider, progress *progress.Progress) (files map[string]*HeadChefArtifact, fail *failures.Failure) {
+func (r *Download) Download(artifacts []*HeadChefArtifact, dp DownloadDirectoryProvider, progress *progress.Progress) (files map[string]*HeadChefArtifact, fail error) {
 	files = map[string]*HeadChefArtifact{}
 	entries := []*download.Entry{}
 

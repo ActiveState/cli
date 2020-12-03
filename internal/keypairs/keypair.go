@@ -47,19 +47,19 @@ var (
 // Encrypter expects to encrypt a message.
 type Encrypter interface {
 	// Encrypt will encrypt the provided message using the Keypair's public-key.
-	Encrypt(msg []byte) ([]byte, *failures.Failure)
+	Encrypt(msg []byte) ([]byte, error)
 
 	// EncryptAndEncode will encrypt the provided message then it will base64 encode that ciphertext.
-	EncryptAndEncode(msg []byte) (string, *failures.Failure)
+	EncryptAndEncode(msg []byte) (string, error)
 }
 
 // Decrypter expects to Decrypt some ciphertext.
 type Decrypter interface {
 	// Decrypt will decrypt the provided ciphertext using the Keypair's private-key.
-	Decrypt(ciphertext []byte) ([]byte, *failures.Failure)
+	Decrypt(ciphertext []byte) ([]byte, error)
 
 	// DecodeAndDecrypt will first base64 decode the provided msg then it will decrypt the resulting ciphertext.
-	DecodeAndDecrypt(value string) ([]byte, *failures.Failure)
+	DecodeAndDecrypt(value string) ([]byte, error)
 }
 
 // Keypair provides behavior for working with public crypto key-pairs.
@@ -74,11 +74,11 @@ type Keypair interface {
 	// EncryptAndEncodePrivateKey encodes the private-key for this key-pair to a human readable string.
 	// Generally this will be encoded in some PEM format. First though, the private-key will be
 	// encrypted using the provided passphrase.
-	EncryptAndEncodePrivateKey(passphrase string) (string, *failures.Failure)
+	EncryptAndEncodePrivateKey(passphrase string) (string, error)
 
 	// EncodePublicKey encodes the public-key for this keypair to a human readable string.
 	// Generally this will be encoded in some PEM format.
-	EncodePublicKey() (string, *failures.Failure)
+	EncodePublicKey() (string, error)
 
 	// MatchPublicKey determines if a provided public-key in PEM encoded format matches this Keypair's
 	// public-key.
@@ -96,9 +96,9 @@ type EncodedKeypair struct {
 
 // EncodeKeypair returns an EncodedKeypair using the provided Keypair and secures the private-key with a
 // passphrase.
-func EncodeKeypair(keypair Keypair, passphrase string) (*EncodedKeypair, *failures.Failure) {
+func EncodeKeypair(keypair Keypair, passphrase string) (*EncodedKeypair, error) {
 	var encodedPrivateKey string
-	var failure *failures.Failure
+	var failure error
 
 	if passphrase == "" {
 		encodedPrivateKey = keypair.EncodePrivateKey()
@@ -123,7 +123,7 @@ func EncodeKeypair(keypair Keypair, passphrase string) (*EncodedKeypair, *failur
 
 // GenerateEncodedKeypair generates a new RSAKeypair, encrypts the private-key if a passphrase is provided,
 // encodes the private and public keys, and returns they Keypair and encoded keys as an EncodedKeypair.
-func GenerateEncodedKeypair(passphrase string, bits int) (*EncodedKeypair, *failures.Failure) {
+func GenerateEncodedKeypair(passphrase string, bits int) (*EncodedKeypair, error) {
 	keypair, failure := GenerateRSA(bits)
 	if failure != nil {
 		return nil, failure
@@ -132,7 +132,7 @@ func GenerateEncodedKeypair(passphrase string, bits int) (*EncodedKeypair, *fail
 }
 
 // SaveEncodedKeypair stores an encoded Keypair back to the Secrets Service.
-func SaveEncodedKeypair(secretsClient *secretsapi.Client, encKeypair *EncodedKeypair) *failures.Failure {
+func SaveEncodedKeypair(secretsClient *secretsapi.Client, encKeypair *EncodedKeypair) error {
 	params := keys.NewSaveKeypairParams().WithKeypair(&secretsModels.KeypairChange{
 		EncryptedPrivateKey: &encKeypair.EncodedPrivateKey,
 		PublicKey:           &encKeypair.EncodedPublicKey,
@@ -150,7 +150,7 @@ func SaveEncodedKeypair(secretsClient *secretsapi.Client, encKeypair *EncodedKey
 // GenerateAndSaveEncodedKeypair first Generates and then tries to Save an EncodedKeypair. This is equivalent to calling
 // GenerateEncodedKeypair and then SaveEncodedKeypair. Upon success of both actions, the EncodedKeypair will be returned,
 // otherwise a Failure is returned.
-func GenerateAndSaveEncodedKeypair(secretsClient *secretsapi.Client, passphrase string, bits int) (*EncodedKeypair, *failures.Failure) {
+func GenerateAndSaveEncodedKeypair(secretsClient *secretsapi.Client, passphrase string, bits int) (*EncodedKeypair, error) {
 	encodedKeypair, failure := GenerateEncodedKeypair(passphrase, bits)
 	if failure == nil {
 		failure = SaveEncodedKeypair(secretsClient, encodedKeypair)

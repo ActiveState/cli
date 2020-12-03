@@ -11,7 +11,7 @@ import (
 
 var failTemplateLoad = failures.Type("projectfile.fail.templateload", failures.FailRuntime)
 
-func loadTemplate(path string, data map[string]interface{}) (*bytes.Buffer, *failures.Failure) {
+func loadTemplate(path string, data map[string]interface{}) (*bytes.Buffer, error) {
 	box := packr.NewBox("../../assets/")
 	tpl := box.String("activestate.yaml.tpl")
 

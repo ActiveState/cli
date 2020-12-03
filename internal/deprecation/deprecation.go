@@ -81,23 +81,23 @@ func NewChecker(timeout time.Duration, configuration configable) *Checker {
 }
 
 // Check will run a Checker.Check with defaults
-func Check() (*Info, *failures.Failure) {
+func Check() (*Info, error) {
 	return CheckVersionNumber(constants.VersionNumber)
 }
 
 // CheckVersionNumber will run a Checker.Check with defaults
-func CheckVersionNumber(versionNumber string) (*Info, *failures.Failure) {
+func CheckVersionNumber(versionNumber string) (*Info, error) {
 	checker := NewChecker(DefaultTimeout, viper.GetViper())
 	return checker.check(versionNumber)
 }
 
 // Check will check if the current version of the tool is deprecated and returns deprecation info if it is.
 // This uses a fairly short timeout to check against our deprecation url, so this should not be considered conclusive.
-func (checker *Checker) Check() (*Info, *failures.Failure) {
+func (checker *Checker) Check() (*Info, error) {
 	return checker.check(constants.VersionNumber)
 }
 
-func (checker *Checker) check(versionNumber string) (*Info, *failures.Failure) {
+func (checker *Checker) check(versionNumber string) (*Info, error) {
 	if !constvers.NumberIsProduction(versionNumber) {
 		return nil, nil
 	}
@@ -108,7 +108,7 @@ func (checker *Checker) check(versionNumber string) (*Info, *failures.Failure) {
 	}
 
 	var infos []Info
-	var fail *failures.Failure
+	var fail error
 	if checker.shouldFetch() {
 		infos, fail = checker.fetchDeprecationInfo()
 		if fail != nil {
@@ -143,7 +143,7 @@ func (checker *Checker) shouldFetch() bool {
 
 }
 
-func (checker *Checker) fetchDeprecationInfoBody() (int, []byte, *failures.Failure) {
+func (checker *Checker) fetchDeprecationInfoBody() (int, []byte, error) {
 	client := http.Client{
 		Timeout: time.Duration(checker.timeout),
 	}
@@ -166,7 +166,7 @@ func (checker *Checker) fetchDeprecationInfoBody() (int, []byte, *failures.Failu
 	return resp.StatusCode, body, nil
 }
 
-func (checker *Checker) fetchDeprecationInfo() ([]Info, *failures.Failure) {
+func (checker *Checker) fetchDeprecationInfo() ([]Info, error) {
 	logging.Debug("Fetching deprecation information from S3")
 
 	code, body, fail := checker.fetchDeprecationInfoBody()

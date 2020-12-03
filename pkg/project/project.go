@@ -247,18 +247,18 @@ func (p *Project) Namespace() *Namespaced {
 func (p *Project) Environments() string { return p.projectfile.Environments }
 
 // New creates a new Project struct
-func New(p *projectfile.Project, out output.Outputer, prompt prompt.Prompter) (*Project, *failures.Failure) {
+func New(p *projectfile.Project, out output.Outputer, prompt prompt.Prompter) (*Project, error) {
 	project := &Project{projectfile: p, Outputer: out, Prompter: prompt}
 	return project, nil
 }
 
 // NewLegacy is for legacy use-cases only, DO NOT USE
-func NewLegacy(p *projectfile.Project) (*Project, *failures.Failure) {
+func NewLegacy(p *projectfile.Project) (*Project, error) {
 	return New(p, output.Get(), prompt.New())
 }
 
 // Parse will parse the given projectfile and instantiate a Project struct with it
-func Parse(fpath string) (*Project, *failures.Failure) {
+func Parse(fpath string) (*Project, error) {
 	pjfile, fail := projectfile.Parse(fpath)
 	if fail != nil {
 		return nil, fail
@@ -278,7 +278,7 @@ func Get() *Project {
 }
 
 // GetSafe returns project struct.  Produces failure if error occurs, allows recovery
-func GetSafe() (*Project, *failures.Failure) {
+func GetSafe() (*Project, error) {
 	pjFile, fail := projectfile.GetSafe()
 	if fail != nil {
 		return nil, fail
@@ -292,7 +292,7 @@ func GetSafe() (*Project, *failures.Failure) {
 }
 
 // GetOnce returns project struct the same as Get and GetSafe, but it avoids persisting the project
-func GetOnce() (*Project, *failures.Failure) {
+func GetOnce() (*Project, error) {
 	wd, err := osutils.Getwd()
 	if err != nil {
 		return nil, failures.FailIO.Wrap(err)
@@ -301,7 +301,7 @@ func GetOnce() (*Project, *failures.Failure) {
 }
 
 // FromPath will return the project that's located at the given path (this will walk up the directory tree until it finds the project)
-func FromPath(path string) (*Project, *failures.Failure) {
+func FromPath(path string) (*Project, error) {
 	pjFile, fail := projectfile.FromPath(path)
 	if fail != nil {
 		return nil, fail
@@ -456,7 +456,7 @@ const (
 
 // NewSecretScope creates a new SecretScope from the given string name and will fail if the given string name does not
 // match one of the available scopes
-func NewSecretScope(name string) (SecretScope, *failures.Failure) {
+func NewSecretScope(name string) (SecretScope, error) {
 	var scope SecretScope
 	switch name {
 	case string(SecretScopeUser):
@@ -506,7 +506,7 @@ func (s *Secret) Scope() string { return s.scope.toString() }
 func (s *Secret) IsProject() bool { return s.scope == SecretScopeProject }
 
 // ValueOrNil acts as Value() except it can return a nil
-func (s *Secret) ValueOrNil() (*string, *failures.Failure) {
+func (s *Secret) ValueOrNil() (*string, error) {
 	secretsExpander := NewSecretExpander(secretsapi.GetClient(), nil)
 
 	category := ProjectCategory
@@ -526,7 +526,7 @@ func (s *Secret) ValueOrNil() (*string, *failures.Failure) {
 }
 
 // Value returned with all secrets evaluated
-func (s *Secret) Value() (string, *failures.Failure) {
+func (s *Secret) Value() (string, error) {
 	value, fail := s.ValueOrNil()
 	if fail != nil || value == nil {
 		return "", fail
@@ -536,7 +536,7 @@ func (s *Secret) Value() (string, *failures.Failure) {
 
 // Save will save the provided value for this secret to the project file if not a secret, else
 // will store back to the secrets store.
-func (s *Secret) Save(value string) *failures.Failure {
+func (s *Secret) Save(value string) error {
 	org, fail := model.FetchOrgByURLName(s.project.Owner())
 	if fail != nil {
 		return fail

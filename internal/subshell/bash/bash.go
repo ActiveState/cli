@@ -45,7 +45,7 @@ func (v *SubShell) SetBinary(binary string) {
 }
 
 // WriteUserEnv - see subshell.SubShell
-func (v *SubShell) WriteUserEnv(env map[string]string, envType sscommon.EnvData, _ bool) *failures.Failure {
+func (v *SubShell) WriteUserEnv(env map[string]string, envType sscommon.EnvData, _ bool) error {
 	homeDir, err := fileutils.HomeDir()
 	if err != nil {
 		return failures.FailIO.Wrap(err)
@@ -77,9 +77,9 @@ func (v *SubShell) Quote(value string) string {
 }
 
 // Activate - see subshell.SubShell
-func (v *SubShell) Activate(out output.Outputer) *failures.Failure {
+func (v *SubShell) Activate(out output.Outputer) error {
 	env := sscommon.EscapeEnv(v.env)
-	var fail *failures.Failure
+	var fail error
 	if v.rcFile, fail = sscommon.SetupProjectRcFile("bashrc.sh", "", env, out); fail != nil {
 		return fail
 	}
@@ -101,7 +101,7 @@ func (v *SubShell) Errors() <-chan error {
 }
 
 // Deactivate - see subshell.SubShell
-func (v *SubShell) Deactivate() *failures.Failure {
+func (v *SubShell) Deactivate() error {
 	if !v.IsActive() {
 		return nil
 	}

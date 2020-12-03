@@ -48,7 +48,7 @@ type artifactCacheMeta struct {
 }
 
 // NewAlternativeEnv returns a new alternative runtime environment
-func NewAlternativeEnv(cacheDir string) (*AlternativeEnv, *failures.Failure) {
+func NewAlternativeEnv(cacheDir string) (*AlternativeEnv, error) {
 	ae := &AlternativeEnv{
 		runtimeDir: cacheDir,
 	}
@@ -66,7 +66,7 @@ func NewAlternativeEnv(cacheDir string) (*AlternativeEnv, *failures.Failure) {
 // NewAlternativeInstall creates a new installation for alternative artifacts
 // It filters the provided artifact list for useable artifacts
 // The recipeID is needed to define the installation directory
-func NewAlternativeInstall(cacheDir string, artifacts []*HeadChefArtifact, recipeID strfmt.UUID) (*AlternativeInstall, *failures.Failure) {
+func NewAlternativeInstall(cacheDir string, artifacts []*HeadChefArtifact, recipeID strfmt.UUID) (*AlternativeInstall, error) {
 	ae, fail := NewAlternativeEnv(cacheDir)
 	if fail != nil {
 		return nil, fail
@@ -183,14 +183,14 @@ func (ai *AlternativeInstall) downloadDirectory(artf *HeadChefArtifact) string {
 
 // DownloadDirectory returns the local directory where the artifact files should
 // be downloaded to
-func (ai *AlternativeInstall) DownloadDirectory(artf *HeadChefArtifact) (string, *failures.Failure) {
+func (ai *AlternativeInstall) DownloadDirectory(artf *HeadChefArtifact) (string, error) {
 	p := ai.downloadDirectory(artf)
 	fail := fileutils.MkdirUnlessExists(p)
 	return p, fail
 }
 
 // PreInstall ensures that the final installation directory exists, and is useable
-func (ai *AlternativeInstall) PreInstall() *failures.Failure {
+func (ai *AlternativeInstall) PreInstall() error {
 	if fileutils.FileExists(ai.runtimeDir) {
 		// install-dir exists, but is a regular file
 		return FailInstallDirInvalid.New("installer_err_installdir_isfile", ai.runtimeDir)
@@ -240,14 +240,14 @@ func artifactsToKeepAndDelete(artifactCache []artifactCacheMeta, artifactRequest
 }
 
 // PreUnpackArtifact does nothing
-func (ai *AlternativeInstall) PreUnpackArtifact(artf *HeadChefArtifact) *failures.Failure {
+func (ai *AlternativeInstall) PreUnpackArtifact(artf *HeadChefArtifact) error {
 	return nil
 }
 
 // PostUnpackArtifact is called after the artifacts are unpacked
 // In this steps, the artifact contents are moved to its final destination.
 // This step also sets up the runtime environment variables.
-func (ai *AlternativeInstall) PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir string, archivePath string, cb func()) *failures.Failure {
+func (ai *AlternativeInstall) PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir string, archivePath string, cb func()) error {
 	envDef, fail := envdef.NewEnvironmentDefinition(filepath.Join(tmpRuntimeDir, constants.RuntimeDefinitionFilename))
 	if fail != nil {
 		return fail

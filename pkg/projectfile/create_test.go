@@ -28,7 +28,7 @@ func Test_Create(t *testing.T) {
 	tests := []struct {
 		name         string
 		args         args
-		want         *failures.Failure
+		want         error
 		wantCreated  bool
 		wantContents string
 	}{

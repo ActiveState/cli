@@ -62,7 +62,7 @@ type MetaDataBinary struct {
 }
 
 // InitMetaData will create an instance of MetaData based on the metadata.json file found under the given artifact install dir
-func InitMetaData(installDir string) (*MetaData, *failures.Failure) {
+func InitMetaData(installDir string) (*MetaData, error) {
 	var metaData *MetaData
 	metaFile := filepath.Join(installDir, constants.RuntimeMetaFile)
 	if fileutils.FileExists(metaFile) {
@@ -93,7 +93,7 @@ func InitMetaData(installDir string) (*MetaData, *failures.Failure) {
 }
 
 // ParseMetaData will parse the given bytes into the MetaData struct
-func ParseMetaData(contents []byte) (*MetaData, *failures.Failure) {
+func ParseMetaData(contents []byte) (*MetaData, error) {
 	metaData := &MetaData{
 		Env: make(map[string]string),
 	}

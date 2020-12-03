@@ -126,7 +126,7 @@ func NamespacePlatform() Namespace {
 
 // LatestCommitID returns the latest commit id by owner and project names. It
 // possible for a nil commit id to be returned without failure.
-func LatestCommitID(ownerName, projectName string) (*strfmt.UUID, *failures.Failure) {
+func LatestCommitID(ownerName, projectName string) (*strfmt.UUID, error) {
 	proj, fail := FetchProjectByName(ownerName, projectName)
 	if fail != nil {
 		return nil, fail
@@ -179,7 +179,7 @@ func commitHistory(commitID strfmt.UUID) ([]*mono_models.Commit, error) {
 }
 
 // CommitHistoryPaged will return the commit history for the given owner / project
-func CommitHistoryPaged(commitID strfmt.UUID, offset, limit int64) (*mono_models.CommitHistoryInfo, *failures.Failure) {
+func CommitHistoryPaged(commitID strfmt.UUID, offset, limit int64) (*mono_models.CommitHistoryInfo, error) {
 	params := vcsClient.NewGetCommitHistoryParams()
 	params.SetCommitID(commitID)
 	params.Limit = &limit
@@ -203,7 +203,7 @@ func CommitHistoryPaged(commitID strfmt.UUID, offset, limit int64) (*mono_models
 // id and returns the count of commits it is behind. If an error is returned
 // along with a value of -1, then the provided commit is more than likely
 // behind, but it is not possible to clarify the count exactly.
-func CommitsBehindLatest(ownerName, projectName, commitID string) (int, *failures.Failure) {
+func CommitsBehindLatest(ownerName, projectName, commitID string) (int, error) {
 	latestCID, fail := LatestCommitID(ownerName, projectName)
 	if fail != nil {
 		return 0, fail
@@ -235,7 +235,7 @@ func CommitsBehindLatest(ownerName, projectName, commitID string) (int, *failure
 type Changeset = []*mono_models.CommitChangeEditable
 
 // AddChangeset creates a new commit with multiple changes as provided. This is lower level than CommitChangeset.
-func AddChangeset(parentCommitID strfmt.UUID, commitMessage string, anonymousID string, changeset Changeset) (*mono_models.Commit, *failures.Failure) {
+func AddChangeset(parentCommitID strfmt.UUID, commitMessage string, anonymousID string, changeset Changeset) (*mono_models.Commit, error) {
 	params := vcsClient.NewAddCommitParams()
 
 	commit := &mono_models.CommitEditable{
@@ -256,7 +256,7 @@ func AddChangeset(parentCommitID strfmt.UUID, commitMessage string, anonymousID 
 }
 
 // AddCommit creates a new commit with a single change. This is lower level than Commit{X} functions.
-func AddCommit(parentCommitID strfmt.UUID, commitMessage string, operation Operation, namespace Namespace, requirement string, version string, anonymousID string) (*mono_models.Commit, *failures.Failure) {
+func AddCommit(parentCommitID strfmt.UUID, commitMessage string, operation Operation, namespace Namespace, requirement string, version string, anonymousID string) (*mono_models.Commit, error) {
 	changeset := []*mono_models.CommitChangeEditable{
 		{
 			Operation:         string(operation),
@@ -293,7 +293,7 @@ func UpdateBranchCommit(branchID strfmt.UUID, commitID strfmt.UUID) error {
 }
 
 // CommitPackage commits a package to an existing parent commit
-func CommitPackage(parentCommitID strfmt.UUID, operation Operation, packageName, packageNamespace, packageVersion string, anonymousID string) (strfmt.UUID, *failures.Failure) {
+func CommitPackage(parentCommitID strfmt.UUID, operation Operation, packageName, packageNamespace, packageVersion string, anonymousID string) (strfmt.UUID, error) {
 	var commitID strfmt.UUID
 	languages, fail := FetchLanguagesForCommit(parentCommitID)
 	if fail != nil {
@@ -370,7 +370,7 @@ func CommitChangeset(parentCommitID strfmt.UUID, commitMsg string, anonymousID s
 }
 
 // CommitInitial creates a root commit for a new branch
-func CommitInitial(hostPlatform string, lang *language.Supported, langVersion string) (strfmt.UUID, *failures.Failure) {
+func CommitInitial(hostPlatform string, lang *language.Supported, langVersion string) (strfmt.UUID, error) {
 	var language string
 	if lang != nil {
 		language = lang.Requirement()
@@ -435,7 +435,7 @@ func makeIndexedCommits(cs []*mono_models.Commit) indexedCommits {
 // countBetween returns 0 if same or if unable to determine the count. If the
 // last commit is empty, -1 is returned. Caution: Currently, the logic does not
 // verify that the first commit is "before" the last commit.
-func (cs indexedCommits) countBetween(first, last string) (int, *failures.Failure) {
+func (cs indexedCommits) countBetween(first, last string) (int, error) {
 	if first == last {
 		return 0, nil
 	}
@@ -593,7 +593,7 @@ func FetchOrderFromCommit(commitID strfmt.UUID) (*mono_models.Order, error) {
 	return res.Payload, err
 }
 
-func TrackBranch(source, target *mono_models.Project) *failures.Failure {
+func TrackBranch(source, target *mono_models.Project) error {
 	sourceBranch, fail := DefaultBranchForProject(source)
 	if fail != nil {
 		return fail

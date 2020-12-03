@@ -24,7 +24,7 @@ const (
 
 // Confirmer describes the behavior required to prompt a user for confirmation.
 type Confirmer interface {
-	Confirm(title, msg string, defaultOpt bool) (bool, *failures.Failure)
+	Confirm(title, msg string, defaultOpt bool) (bool, error)
 }
 
 // ChangesetProvider describes the behavior required to convert some file data

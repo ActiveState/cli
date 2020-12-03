@@ -9,7 +9,7 @@ import (
 )
 
 // FetchOrganizationLimits returns the limits for an organization
-func FetchOrganizationLimits(orgName string) (*mono_models.Limits, *failures.Failure) {
+func FetchOrganizationLimits(orgName string) (*mono_models.Limits, error) {
 	params := clientLimits.NewGetOrganizationLimitsParams()
 	params.SetOrganizationIdentifier(orgName)
 	res, err := authentication.Client().Limits.GetOrganizationLimits(params, authentication.ClientAuth())
@@ -21,7 +21,7 @@ func FetchOrganizationLimits(orgName string) (*mono_models.Limits, *failures.Fai
 	return res.Payload, nil
 }
 
-func processLimitsErrorResponse(err error) *failures.Failure {
+func processLimitsErrorResponse(err error) error {
 	switch statusCode := api.ErrorCode(err); statusCode {
 	case 401:
 		return api.FailAuth.New("err_api_not_authenticated")

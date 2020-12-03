@@ -44,7 +44,7 @@ type Plain struct {
 }
 
 // NewPlain constructs a new Plain struct
-func NewPlain(config *Config) (Plain, *failures.Failure) {
+func NewPlain(config *Config) (Plain, error) {
 	return Plain{config}, nil
 }
 

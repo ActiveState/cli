@@ -22,7 +22,7 @@ import (
 var FailOrgResponseLen = failures.Type("model.fail.getcommithistory")
 
 // FetchOrganizations fetches all organizations for the current user.
-func FetchOrganizations() ([]*mono_models.Organization, *failures.Failure) {
+func FetchOrganizations() ([]*mono_models.Organization, error) {
 	params := clientOrgs.NewListOrganizationsParams()
 	memberOnly := true
 	personal := false
@@ -38,7 +38,7 @@ func FetchOrganizations() ([]*mono_models.Organization, *failures.Failure) {
 }
 
 // FetchOrgByURLName fetches an organization accessible to the current user by it's URL Name.
-func FetchOrgByURLName(urlName string) (*mono_models.Organization, *failures.Failure) {
+func FetchOrgByURLName(urlName string) (*mono_models.Organization, error) {
 	params := clientOrgs.NewGetOrganizationParams()
 	params.OrganizationIdentifier = urlName
 	resOk, err := authentication.Client().Organizations.GetOrganization(params, authentication.ClientAuth())
@@ -49,7 +49,7 @@ func FetchOrgByURLName(urlName string) (*mono_models.Organization, *failures.Fai
 }
 
 // FetchOrgMembers fetches the members of an organization accessible to the current user by it's URL Name.
-func FetchOrgMembers(urlName string) ([]*mono_models.Member, *failures.Failure) {
+func FetchOrgMembers(urlName string) ([]*mono_models.Member, error) {
 	params := clientOrgs.NewGetOrganizationMembersParams()
 	params.OrganizationName = urlName
 	authClient, fail := authentication.Get().ClientSafe()
@@ -64,7 +64,7 @@ func FetchOrgMembers(urlName string) ([]*mono_models.Member, *failures.Failure) 
 }
 
 // FetchOrgMember fetches the member of an organization accessible to the current user by it's URL Name.
-func FetchOrgMember(orgName, name string) (*mono_models.Member, *failures.Failure) {
+func FetchOrgMember(orgName, name string) (*mono_models.Member, error) {
 	members, failure := FetchOrgMembers(orgName)
 	if failure != nil {
 		return nil, failure
@@ -85,7 +85,7 @@ func FetchOrgMember(orgName, name string) (*mono_models.Member, *failures.Failur
 //
 // Note: This method only returns the invitation for the new user, not existing
 // users.
-func InviteUserToOrg(orgName string, asOwner bool, email string) (*mono_models.Invitation, *failures.Failure) {
+func InviteUserToOrg(orgName string, asOwner bool, email string) (*mono_models.Invitation, error) {
 	params := clientOrgs.NewInviteOrganizationParams()
 	body := clientOrgs.InviteOrganizationBody{
 		AddedOnly: true,
@@ -106,7 +106,7 @@ func InviteUserToOrg(orgName string, asOwner bool, email string) (*mono_models.I
 }
 
 // FetchOrganizationsByIDs fetches organizations by their IDs
-func FetchOrganizationsByIDs(ids []strfmt.UUID) ([]model.Organization, *failures.Failure) {
+func FetchOrganizationsByIDs(ids []strfmt.UUID) ([]model.Organization, error) {
 	ids = funk.Uniq(ids).([]strfmt.UUID)
 	request := request.OrganizationsByIDs(ids)
 
@@ -124,7 +124,7 @@ func FetchOrganizationsByIDs(ids []strfmt.UUID) ([]model.Organization, *failures
 	return response.Organizations, nil
 }
 
-func processOrgErrorResponse(err error) *failures.Failure {
+func processOrgErrorResponse(err error) error {
 	switch statusCode := api.ErrorCode(err); statusCode {
 	case 401:
 		return api.FailAuth.New("err_api_not_authenticated")
@@ -135,7 +135,7 @@ func processOrgErrorResponse(err error) *failures.Failure {
 	}
 }
 
-func processInviteErrorResponse(err error) *failures.Failure {
+func processInviteErrorResponse(err error) error {
 	switch statusCode := api.ErrorCode(err); statusCode {
 	case 400:
 		return api.FailUnknown.Wrap(locale.WrapInputError(err, "err_api_invite_400", "Invalid request, did you enter a valid email address?"))

@@ -14,7 +14,7 @@ import (
 
 // Save will add a new secret for this user or update an existing one.
 func Save(secretsClient *secretsapi.Client, encrypter keypairs.Encrypter, org *mono_models.Organization, project *mono_models.Project,
-	isUser bool, secretName, secretValue string) *failures.Failure {
+	isUser bool, secretName, secretValue string) error {
 
 	logging.Debug("attempting to upsert user-secret for org=%s", org.OrganizationID.String())
 	encrStr, failure := encrypter.EncryptAndEncode([]byte(secretValue))
@@ -46,7 +46,7 @@ func Save(secretsClient *secretsapi.Client, encrypter keypairs.Encrypter, org *m
 
 // ShareWithOrgUsers will share the provided secret with all other users in the organization
 // who have a valid public-key available.
-func ShareWithOrgUsers(secretsClient *secretsapi.Client, org *mono_models.Organization, project *mono_models.Project, secretName, secretValue string) *failures.Failure {
+func ShareWithOrgUsers(secretsClient *secretsapi.Client, org *mono_models.Organization, project *mono_models.Project, secretName, secretValue string) error {
 	currentUserID, failure := secretsClient.AuthenticatedUserID()
 	if failure != nil {
 		return failure
@@ -96,7 +96,7 @@ func ShareWithOrgUsers(secretsClient *secretsapi.Client, org *mono_models.Organi
 	return nil
 }
 
-func LoadKeypairFromConfigDir() (keypairs.Keypair, *failures.Failure) {
+func LoadKeypairFromConfigDir() (keypairs.Keypair, error) {
 	kp, failure := keypairs.LoadWithDefaults()
 	if failure != nil {
 		if failure.Type.Matches(keypairs.FailLoadNotFound) || failure.Type.Matches(keypairs.FailKeypairParse) {
@@ -109,7 +109,7 @@ func LoadKeypairFromConfigDir() (keypairs.Keypair, *failures.Failure) {
 }
 
 // DefsByProject fetches the secret definitions for the current user relevant to the given project
-func DefsByProject(secretsClient *secretsapi.Client, owner string, projectName string) ([]*secretsModels.SecretDefinition, *failures.Failure) {
+func DefsByProject(secretsClient *secretsapi.Client, owner string, projectName string) ([]*secretsModels.SecretDefinition, error) {
 	pjm, fail := model.FetchProjectByName(owner, projectName)
 	if fail != nil {
 		return nil, fail
@@ -119,7 +119,7 @@ func DefsByProject(secretsClient *secretsapi.Client, owner string, projectName s
 }
 
 // ByProject fetches the secrets for the current user relevant to the given project
-func ByProject(secretsClient *secretsapi.Client, owner string, projectName string) ([]*secretsModels.UserSecret, *failures.Failure) {
+func ByProject(secretsClient *secretsapi.Client, owner string, projectName string) ([]*secretsModels.UserSecret, error) {
 	result := []*secretsModels.UserSecret{}
 
 	pjm, fail := model.FetchProjectByName(owner, projectName)

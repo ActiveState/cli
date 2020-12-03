@@ -60,7 +60,7 @@ func (s *Sync) Run() error {
 	return nil
 }
 
-func synchronizeEachOrgMember(secretsClient *secretsapi.Client, org *mono_models.Organization) (count int, f *failures.Failure) {
+func synchronizeEachOrgMember(secretsClient *secretsapi.Client, org *mono_models.Organization) (count int, f error) {
 	sourceKeypair, fail := secrets.LoadKeypairFromConfigDir()
 	if fail != nil {
 		return 0, fail

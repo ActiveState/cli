@@ -30,7 +30,7 @@ type BuildStatus struct {
 	Started   chan *headchef_models.BuildStatusResponse
 	Failed    chan string
 	Completed chan *headchef_models.BuildStatusResponse
-	RunFail   chan *failures.Failure
+	RunFail   chan error
 }
 
 type BuildAnnotations struct {
@@ -44,7 +44,7 @@ func NewBuildStatus() *BuildStatus {
 		Started:   make(chan *headchef_models.BuildStatusResponse),
 		Failed:    make(chan string),
 		Completed: make(chan *headchef_models.BuildStatusResponse),
-		RunFail:   make(chan *failures.Failure),
+		RunFail:   make(chan error),
 	}
 }
 
@@ -88,7 +88,7 @@ func (r *Client) RequestBuild(buildRequest *headchef_models.V1BuildRequest) *Bui
 	return buildStatus
 }
 
-func NewBuildRequest(recipeID, orgID, projID strfmt.UUID, annotations BuildAnnotations) (*headchef_models.V1BuildRequest, *failures.Failure) {
+func NewBuildRequest(recipeID, orgID, projID strfmt.UUID, annotations BuildAnnotations) (*headchef_models.V1BuildRequest, error) {
 	uid := strfmt.UUID("00010001-0001-0001-0001-000100010001")
 
 	br := &headchef_models.V1BuildRequest{

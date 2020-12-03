@@ -53,7 +53,7 @@ func (r *Recipe) Run(params *RecipeParams) error {
 	return nil
 }
 
-func recipeData(proj *project.Project, commitID, platform string) ([]byte, *failures.Failure) {
+func recipeData(proj *project.Project, commitID, platform string) ([]byte, error) {
 	cid := strfmt.UUID(commitID)
 
 	r, fail := fetchRecipe(proj, cid, platform)
@@ -74,7 +74,7 @@ func beautifyJSON(d []byte) ([]byte, error) {
 	return out.Bytes(), nil
 }
 
-func fetchRecipe(proj *project.Project, commitID strfmt.UUID, platform string) (string, *failures.Failure) {
+func fetchRecipe(proj *project.Project, commitID strfmt.UUID, platform string) (string, error) {
 	if platform == "" {
 		platform = sysinfo.OS().String()
 	}

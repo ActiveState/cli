@@ -95,6 +95,9 @@ func WrapInputError(err error, id string, args ...string) error {
 	if len(args) > 0 {
 		locale, args = args[0], args[1:]
 	}
+	if locale == "" {
+		locale = id
+	}
 
 	l := &LocalizedError{}
 	translation := Tl(id, locale, args...)

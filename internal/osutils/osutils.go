@@ -64,7 +64,7 @@ func ExecuteAndPipeStd(command string, arg []string, env []string) (int, *exec.C
 
 // BashifyPath takes a windows style path and turns it into a bash style path
 // eg. C:\temp becomes /c/temp
-func BashifyPath(absolutePath string) (string, *failures.Failure) {
+func BashifyPath(absolutePath string) (string, error) {
 	if absolutePath[0:1] == "/" {
 		// Already the format we want
 		return absolutePath, nil

@@ -9,7 +9,7 @@ import (
 
 // Secrets determines whether the authorized user has access
 // to the current project's secrets
-func Secrets(orgName string) (bool, *failures.Failure) {
+func Secrets(orgName string) (bool, error) {
 	if isProjectOwner(orgName) {
 		return true, nil
 	}
@@ -25,7 +25,7 @@ func isProjectOwner(orgName string) bool {
 	return true
 }
 
-func isOrgMember(orgName string) (bool, *failures.Failure) {
+func isOrgMember(orgName string) (bool, error) {
 	auth := authentication.Get()
 	_, fail := model.FetchOrgMember(orgName, auth.WhoAmI())
 	if fail != nil {

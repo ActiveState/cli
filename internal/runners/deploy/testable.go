@@ -10,9 +10,9 @@ type envGetter = runtime.EnvGetter
 
 // installable is an interface for runtime.Installer
 type installable interface {
-	Install() (envGetter envGetter, freshInstallation bool, fail *failures.Failure)
-	Env() (envGetter envGetter, fail *failures.Failure)
-	IsInstalled() (bool, *failures.Failure)
+	Install() (envGetter envGetter, freshInstallation bool, fail error)
+	Env() (envGetter envGetter, fail error)
+	IsInstalled() (bool, error)
 }
 
 // newInstallerFunc defines a testable type for runtime.InitInstaller
@@ -24,4 +24,4 @@ func newInstaller(rt *runtime.Runtime) installable {
 }
 
 // defaultBranchForProjectNameFunc defines a testable type for model.DefaultBranchForProjectName
-type defaultBranchForProjectNameFunc func(owner, name string) (*mono_models.Branch, *failures.Failure)
+type defaultBranchForProjectNameFunc func(owner, name string) (*mono_models.Branch, error)

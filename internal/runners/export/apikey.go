@@ -12,7 +12,7 @@ import (
 
 // APIKeyProvider describes the behavior required to obtain a new api key.
 type APIKeyProvider interface {
-	NewAPIKey(string) (string, *failures.Failure)
+	NewAPIKey(string) (string, error)
 }
 
 // APIKeyRunParams manages the request-specific parameters used to run the

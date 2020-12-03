@@ -117,7 +117,7 @@ func (r *Activate) run(params *ActivateParams) error {
 			return err
 		}
 
-		var fail *failures.Failure
+		var fail error
 		proj, fail = project.FromPath(pathToUse)
 		if fail != nil {
 			return locale.WrapError(fail, "err_activate_projectfrompath", "Something went wrong while creating project files.")
@@ -141,7 +141,7 @@ func (r *Activate) run(params *ActivateParams) error {
 	firstActivate := r.config.GetString(constants.GlobalDefaultPrefname) == "" && !r.config.GetBool(activatedKey)
 	promptable := r.out.Type() == output.PlainFormatName
 	if !setDefault && firstActivate && promptable {
-		var fail *failures.Failure
+		var fail error
 		setDefault, fail = r.prompt.Confirm(
 			locale.Tl("activate_default_prompt_title", "Default Project"),
 			locale.Tr("activate_default_prompt", proj.Namespace().String()),

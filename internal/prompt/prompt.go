@@ -12,11 +12,11 @@ import (
 
 // Prompter is the interface used to run our prompt from, useful for mocking in tests
 type Prompter interface {
-	Input(title, message, defaultResponse string, flags ...ValidatorFlag) (string, *failures.Failure)
-	InputAndValidate(title, message, defaultResponse string, validator ValidatorFunc, flags ...ValidatorFlag) (string, *failures.Failure)
-	Select(title, message string, choices []string, defaultResponse string) (string, *failures.Failure)
-	Confirm(title, message string, defaultChoice bool) (bool, *failures.Failure)
-	InputSecret(title, message string, flags ...ValidatorFlag) (string, *failures.Failure)
+	Input(title, message, defaultResponse string, flags ...ValidatorFlag) (string, error)
+	InputAndValidate(title, message, defaultResponse string, validator ValidatorFunc, flags ...ValidatorFlag) (string, error)
+	Select(title, message string, choices []string, defaultResponse string) (string, error)
+	Confirm(title, message string, defaultChoice bool) (bool, error)
+	InputSecret(title, message string, flags ...ValidatorFlag) (string, error)
 }
 
 // FailPromptUnknownValidator handles unknown validator erros
@@ -48,14 +48,14 @@ const (
 )
 
 // Input prompts the user for input.  The user can specify available validation flags to trigger validation of responses
-func (p *Prompt) Input(title, message, defaultResponse string, flags ...ValidatorFlag) (string, *failures.Failure) {
+func (p *Prompt) Input(title, message, defaultResponse string, flags ...ValidatorFlag) (string, error) {
 	return p.InputAndValidate(title, message, defaultResponse, func(val interface{}) error {
 		return nil
 	}, flags...)
 }
 
 // InputAndValidate prompts an input field and allows you to specfiy a custom validation function as well as the built in flags
-func (p *Prompt) InputAndValidate(title, message, defaultResponse string, validator ValidatorFunc, flags ...ValidatorFlag) (string, *failures.Failure) {
+func (p *Prompt) InputAndValidate(title, message, defaultResponse string, validator ValidatorFunc, flags ...ValidatorFlag) (string, error) {
 	var response string
 	flagValidators, fail := processValidators(flags)
 	if fail != nil {
@@ -92,7 +92,7 @@ func (p *Prompt) InputAndValidate(title, message, defaultResponse string, valida
 }
 
 // Select prompts the user to select one entry from multiple choices
-func (p *Prompt) Select(title, message string, choices []string, defaultChoice string) (string, *failures.Failure) {
+func (p *Prompt) Select(title, message string, choices []string, defaultChoice string) (string, error) {
 	if title != "" {
 		p.out.Notice(output.SubHeading(title))
 	}
@@ -110,7 +110,7 @@ func (p *Prompt) Select(title, message string, choices []string, defaultChoice s
 }
 
 // Confirm prompts user for yes or no response.
-func (p *Prompt) Confirm(title, message string, defaultChoice bool) (bool, *failures.Failure) {
+func (p *Prompt) Confirm(title, message string, defaultChoice bool) (bool, error) {
 	if title != "" {
 		p.out.Notice(output.SubHeading(title))
 	}
@@ -142,7 +142,7 @@ func translateConfirm(confirm bool) string {
 
 // InputSecret prompts the user for input and obfuscates the text in stdout.
 // Will fail if empty.
-func (p *Prompt) InputSecret(title, message string, flags ...ValidatorFlag) (string, *failures.Failure) {
+func (p *Prompt) InputSecret(title, message string, flags ...ValidatorFlag) (string, error) {
 	var response string
 	validators, fail := processValidators(flags)
 	if fail != nil {
@@ -176,9 +176,9 @@ func wrapValidators(validators []ValidatorFunc) ValidatorFunc {
 }
 
 // This function seems like overkill right now but the assumption is we'll have more than one built in validator
-func processValidators(flags []ValidatorFlag) ([]ValidatorFunc, *failures.Failure) {
+func processValidators(flags []ValidatorFlag) ([]ValidatorFunc, error) {
 	var validators []ValidatorFunc
-	var fail *failures.Failure
+	var fail error
 	for flag := range flags {
 		switch ValidatorFlag(flag) {
 		case InputRequired:

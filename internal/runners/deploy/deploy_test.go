@@ -13,15 +13,15 @@ import (
 
 type InstallableMock struct{}
 
-func (i *InstallableMock) Install() (envGetter envGetter, freshInstallation bool, fail *failures.Failure) {
+func (i *InstallableMock) Install() (envGetter envGetter, freshInstallation bool, fail error) {
 	return nil, false, nil
 }
 
-func (i *InstallableMock) Env() (envGetter envGetter, fail *failures.Failure) {
+func (i *InstallableMock) Env() (envGetter envGetter, fail error) {
 	return nil, nil
 }
 
-func (i *InstallableMock) IsInstalled() (bool, *failures.Failure) {
+func (i *InstallableMock) IsInstalled() (bool, error) {
 	return true, nil
 }
 

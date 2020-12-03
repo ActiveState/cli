@@ -19,7 +19,7 @@ func (f *EditorV0) Type() Format {
 	return EditorV0FormatName
 }
 
-func NewEditorV0(config *Config) (EditorV0, *failures.Failure) {
+func NewEditorV0(config *Config) (EditorV0, error) {
 	json, fail := NewJSON(config)
 	json.printNUL = false
 	if fail != nil {

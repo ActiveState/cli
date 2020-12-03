@@ -83,7 +83,7 @@ func (r *Repo) CloneProject(owner, name, path string, out output.Outputer) error
 	return nil
 }
 
-func ensureCorrectRepo(owner, name, projectFilePath string) *failures.Failure {
+func ensureCorrectRepo(owner, name, projectFilePath string) error {
 	_, err := os.Stat(projectFilePath)
 	if os.IsNotExist(err) {
 		return nil
@@ -109,7 +109,7 @@ func ensureCorrectRepo(owner, name, projectFilePath string) *failures.Failure {
 	return nil
 }
 
-func moveFiles(src, dest string) *failures.Failure {
+func moveFiles(src, dest string) error {
 	fail := verifyDestinationDirectory(dest)
 	if fail != nil {
 		return fail
@@ -118,7 +118,7 @@ func moveFiles(src, dest string) *failures.Failure {
 	return fileutils.MoveAllFilesCrossDisk(src, dest)
 }
 
-func verifyDestinationDirectory(dest string) *failures.Failure {
+func verifyDestinationDirectory(dest string) error {
 	if !fileutils.DirExists(dest) {
 		return fileutils.Mkdir(dest)
 	}

@@ -70,7 +70,7 @@ func (suite *InternalTestSuite) AfterTest(suiteName, testName string) {
 
 func (suite *InternalTestSuite) TestValidateCheckpointNoCommit() {
 	msgHandler := runbits.NewRuntimeMessageHandler(&outputhelper.TestOutputer{})
-	var fail *failures.Failure
+	var fail error
 	r, err := NewRuntime("", "", "string", "string", msgHandler)
 	suite.Require().NoError(err)
 	r.SetInstallPath(suite.cacheDir)

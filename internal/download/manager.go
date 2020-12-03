@@ -15,7 +15,7 @@ import (
 // Manager is our main download manager, it takes care of processing the downloads and communicating progress
 type Manager struct {
 	WorkerCount int
-	failure     *failures.Failure
+	failure     error
 	entries     []*Entry
 	progress    *progress.Progress
 }
@@ -28,7 +28,7 @@ type Entry struct {
 }
 
 // Download will start the download progress and blocks until the progress completes
-func (m *Manager) Download() *failures.Failure {
+func (m *Manager) Download() error {
 	jobs := make(chan *Entry, len(m.entries))
 	done := make(chan bool, m.WorkerCount)
 

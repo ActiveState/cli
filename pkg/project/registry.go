@@ -24,7 +24,7 @@ func init() {
 // RegisterExpander registers an Expander Func for some given handler value. The handler value
 // must not effectively be a blank string and the Func must be defined. It is definitely possible
 // to replace an existing handler using this function.
-func RegisterExpander(handle string, expanderFn ExpanderFunc) *failures.Failure {
+func RegisterExpander(handle string, expanderFn ExpanderFunc) error {
 	cleanHandle := strings.TrimSpace(handle)
 	if cleanHandle == "" {
 		return FailExpanderBadName.New("secrets_expander_err_empty_name")

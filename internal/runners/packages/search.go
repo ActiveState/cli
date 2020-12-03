@@ -71,7 +71,7 @@ func (s *Search) Run(params SearchRunParams, pt PackageType) error {
 	return nil
 }
 
-func targetedLanguage(languageOpt string) (string, *failures.Failure) {
+func targetedLanguage(languageOpt string) (string, error) {
 	if languageOpt != "" {
 		return languageOpt, nil
 	}

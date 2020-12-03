@@ -48,7 +48,7 @@ func (suite *VarPromptingExpanderTestSuite) BeforeTest(suiteName, testName strin
 	suite.Require().Nil(err, "Unmarshalled project YAML")
 	pjFile.Persist()
 	suite.projectFile = pjFile
-	var fail *failures.Failure
+	var fail error
 	suite.project, fail = project.New(pjFile, outputhelper.NewCatcher(), suite.promptMock)
 	suite.NoError(fail.ToError(), "no failure should occur when loading project")
 

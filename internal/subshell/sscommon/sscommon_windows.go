@@ -18,7 +18,7 @@ func init() {
 var lineBreak = "\r\n"
 var lineBreakChar = `\r\n`
 
-func stop(cmd *exec.Cmd) *failures.Failure {
+func stop(cmd *exec.Cmd) error {
 	// windows should use "CTRL_CLOSE_EVENT"; SIGKILL works
 	sig := syscall.SIGKILL
 

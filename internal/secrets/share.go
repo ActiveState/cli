@@ -9,7 +9,7 @@ import (
 // ShareFromDiff decrypts a source user's secrets that they are sharing and re-encrypts those secrets using
 // the public key of a target user provided in the UserSecretDiff struct. This is effectively "copying" a set
 // of secrets for use by another user.
-func ShareFromDiff(sourceKeypair keypairs.Keypair, diff *secretsModels.UserSecretDiff) ([]*secretsModels.UserSecretShare, *failures.Failure) {
+func ShareFromDiff(sourceKeypair keypairs.Keypair, diff *secretsModels.UserSecretDiff) ([]*secretsModels.UserSecretShare, error) {
 	targetPubKey, failure := keypairs.ParseRSAPublicKey(*diff.PublicKey)
 	if failure != nil {
 		return nil, failure

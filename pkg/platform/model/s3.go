@@ -19,7 +19,7 @@ var (
 	FailInvalidURL = failures.Type("model.fail.invalidurl")
 )
 
-func SignS3URL(u *url.URL) (*url.URL, *failures.Failure) {
+func SignS3URL(u *url.URL) (*url.URL, error) {
 	unescaped, err := url.QueryUnescape(u.String())
 	if err != nil {
 		return nil, FailInvalidURL.Wrap(err)

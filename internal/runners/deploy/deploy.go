@@ -122,7 +122,7 @@ func runSteps(targetPath string, force bool, userScope bool, namespace project.N
 func runStepsWithFuncs(targetPath string, force, userScope bool, namespace project.Namespaced, step Step, rt *runtime.Runtime, installer installable, out output.Outputer, subshell subshell.SubShell, installf installFunc, configuref configureFunc, symlinkf symlinkFunc, reportf reportFunc) error {
 	logging.Debug("runSteps: %s", step.String())
 
-	var fail *failures.Failure
+	var fail error
 
 	installed, fail := installer.IsInstalled()
 	if fail != nil {

@@ -38,12 +38,12 @@ var (
 )
 
 // Authenticate will prompt the user for authentication
-func Authenticate(out output.Outputer, prompt prompt.Prompter) *failures.Failure {
+func Authenticate(out output.Outputer, prompt prompt.Prompter) error {
 	return AuthenticateWithInput("", "", "", out, prompt)
 }
 
 // AuthenticateWithInput will prompt the user for authentication if the input doesn't already provide it
-func AuthenticateWithInput(username, password, totp string, out output.Outputer, prompt prompt.Prompter) *failures.Failure {
+func AuthenticateWithInput(username, password, totp string, out output.Outputer, prompt prompt.Prompter) error {
 	logging.Debug("AuthenticateWithInput")
 	credentials := &mono_models.Credentials{Username: username, Password: password, Totp: totp}
 	if err := promptForLogin(credentials, prompt); err != nil {
@@ -84,7 +84,7 @@ func AuthenticateWithInput(username, password, totp string, out output.Outputer,
 
 // RequireAuthentication will prompt the user for authentication if they are not already authenticated. If the authentication
 // is not successful it will return a failure
-func RequireAuthentication(message string, out output.Outputer, prompt prompt.Prompter) *failures.Failure {
+func RequireAuthentication(message string, out output.Outputer, prompt prompt.Prompter) error {
 	if authentication.Get().Authenticated() {
 		return nil
 	}
@@ -119,8 +119,8 @@ func RequireAuthentication(message string, out output.Outputer, prompt prompt.Pr
 	return nil
 }
 
-func promptForLogin(credentials *mono_models.Credentials, prompter prompt.Prompter) *failures.Failure {
-	var fail *failures.Failure
+func promptForLogin(credentials *mono_models.Credentials, prompter prompt.Prompter) error {
+	var fail error
 	if credentials.Username == "" {
 		credentials.Username, fail = prompter.Input("", locale.T("username_prompt"), "", prompt.InputRequired)
 		if fail != nil {
@@ -138,7 +138,7 @@ func promptForLogin(credentials *mono_models.Credentials, prompter prompt.Prompt
 }
 
 // AuthenticateWithCredentials will attempt authenticate using the given credentials
-func AuthenticateWithCredentials(credentials *mono_models.Credentials) *failures.Failure {
+func AuthenticateWithCredentials(credentials *mono_models.Credentials) error {
 	auth := authentication.Get()
 	fail := auth.AuthenticateWithModel(credentials)
 	if fail != nil {
@@ -161,7 +161,7 @@ func uniqueUsername(credentials *mono_models.Credentials) bool {
 	return true
 }
 
-func promptSignup(credentials *mono_models.Credentials, out output.Outputer, prompt prompt.Prompter) *failures.Failure {
+func promptSignup(credentials *mono_models.Credentials, out output.Outputer, prompt prompt.Prompter) error {
 	yesSignup, fail := prompt.Confirm("", locale.T("prompt_login_to_signup"), true)
 	if fail != nil {
 		return fail
@@ -173,8 +173,8 @@ func promptSignup(credentials *mono_models.Credentials, out output.Outputer, pro
 	return nil
 }
 
-func promptToken(credentials *mono_models.Credentials, out output.Outputer, prompt prompt.Prompter) *failures.Failure {
-	var fail *failures.Failure
+func promptToken(credentials *mono_models.Credentials, out output.Outputer, prompt prompt.Prompter) error {
+	var fail error
 	credentials.Totp, fail = prompt.Input("", locale.T("totp_prompt"), "")
 	if fail != nil {
 		return fail

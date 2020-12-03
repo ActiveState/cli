@@ -67,7 +67,7 @@ func (r *Push) Run(params PushParams) error {
 					locale.Tl("push_add_namespace_tip", "You can specify a project by running [ACTIONABLE]state push <project>[/RESET]."),
 				)
 			}
-			var fail *failures.Failure
+			var fail error
 			namespace, fail = project.ParseNamespace(names)
 			if fail != nil {
 				return errs.Wrap(fail.ToError(), "Could not parse namespace %s to push headless commit to", name)
@@ -124,7 +124,7 @@ func (r *Push) Run(params PushParams) error {
 
 	var commitID = r.project.CommitUUID()
 	if commitID.String() == "" {
-		var fail *failures.Failure
+		var fail error
 		commitID, fail = model.CommitInitial(model.HostPlatform, lang, langVersion)
 		if fail != nil {
 			return locale.WrapError(fail.ToError(), "push_project_init_err", "Failed to initialize project {{.V0}}", r.project.Namespace().String())

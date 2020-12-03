@@ -39,7 +39,7 @@ func (l *List) Run(params ListRunParams, pt PackageType) error {
 	logging.Debug("ExecuteList")
 
 	var commit *strfmt.UUID
-	var fail *failures.Failure
+	var fail error
 	switch {
 	case params.Commit != "":
 		commit, fail = targetFromCommit(params.Commit)
@@ -70,7 +70,7 @@ func (l *List) Run(params ListRunParams, pt PackageType) error {
 	return nil
 }
 
-func targetFromCommit(commitOpt string) (*strfmt.UUID, *failures.Failure) {
+func targetFromCommit(commitOpt string) (*strfmt.UUID, error) {
 	if commitOpt == "latest" {
 		logging.Debug("latest commit selected")
 		proj := project.Get()
@@ -80,7 +80,7 @@ func targetFromCommit(commitOpt string) (*strfmt.UUID, *failures.Failure) {
 	return prepareCommit(commitOpt)
 }
 
-func targetFromProject(projectString string) (*strfmt.UUID, *failures.Failure) {
+func targetFromProject(projectString string) (*strfmt.UUID, error) {
 	ns, fail := project.ParseNamespace(projectString)
 	if fail != nil {
 		return nil, fail
@@ -100,7 +100,7 @@ func targetFromProject(projectString string) (*strfmt.UUID, *failures.Failure) {
 	return nil, failures.FailNotFound.New(locale.T("err_package_project_no_commit"))
 }
 
-func targetFromProjectFile() (*strfmt.UUID, *failures.Failure) {
+func targetFromProjectFile() (*strfmt.UUID, error) {
 	logging.Debug("commit from project file")
 	proj, fail := project.GetSafe()
 	if fail != nil {
@@ -115,7 +115,7 @@ func targetFromProjectFile() (*strfmt.UUID, *failures.Failure) {
 	return prepareCommit(commit)
 }
 
-func prepareCommit(commit string) (*strfmt.UUID, *failures.Failure) {
+func prepareCommit(commit string) (*strfmt.UUID, error) {
 	logging.Debug("commit %s selected", commit)
 	if ok := strfmt.Default.Validates("uuid", commit); !ok {
 		return nil, failures.FailMarshal.New(locale.T("invalid_uuid_val"))
@@ -129,7 +129,7 @@ func prepareCommit(commit string) (*strfmt.UUID, *failures.Failure) {
 	return &uuid, nil
 }
 
-func fetchCheckpoint(commit *strfmt.UUID) (model.Checkpoint, *failures.Failure) {
+func fetchCheckpoint(commit *strfmt.UUID) (model.Checkpoint, error) {
 	if commit == nil {
 		logging.Debug("commit id is nil")
 		return nil, nil

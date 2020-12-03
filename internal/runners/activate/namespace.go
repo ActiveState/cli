@@ -87,7 +87,7 @@ func (r *NamespaceSelect) promptForPath(namespace string) (string, error) {
 	return userPath, nil
 }
 
-func (r *NamespaceSelect) promptAvailablePaths(paths []string) (*string, *failures.Failure) {
+func (r *NamespaceSelect) promptAvailablePaths(paths []string) (*string, error) {
 	if len(paths) == 0 {
 		return nil, nil
 	}
@@ -106,7 +106,7 @@ func (r *NamespaceSelect) promptAvailablePaths(paths []string) (*string, *failur
 }
 
 // promptForPathInput will prompt the user for a location to save the project at
-func (r *NamespaceSelect) promptForPathInput(namespace string) (string, *failures.Failure) {
+func (r *NamespaceSelect) promptForPathInput(namespace string) (string, error) {
 	wd, err := getSafeWorkDir()
 	if err != nil {
 		return "", failures.FailRuntime.Wrap(err)
@@ -127,7 +127,7 @@ func (r *NamespaceSelect) promptForPathInput(namespace string) (string, *failure
 	return directory, nil
 }
 
-func (r *NamespaceSelect) validatePath(namespace string, path string) *failures.Failure {
+func (r *NamespaceSelect) validatePath(namespace string, path string) error {
 	configFile := filepath.Join(path, constants.ConfigFileName)
 	if !fileutils.FileExists(configFile) {
 		return nil

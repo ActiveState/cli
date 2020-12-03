@@ -16,8 +16,8 @@ func TestSymlink(t *testing.T) {
 	td, err := ioutil.TempDir("", "")
 	require.NoError(t, err)
 	target := filepath.Join(td, "target")
-	fail := Touch(target)
-	require.NoError(t, fail.ToError())
+	err = Touch(target)
+	require.NoError(t, err)
 	symlink := filepath.Join(td, "symlink")
 	err = os.Symlink(target, symlink)
 	require.NoError(t, err)
@@ -27,18 +27,18 @@ func TestSymlink(t *testing.T) {
 }
 
 func TestIsWritable(t *testing.T) {
-	file, fail := WriteTempFile(
+	file, err := WriteTempFile(
 		"", t.Name(), []byte("Some data"), 0777,
 	)
-	if fail != nil {
-		t.Error(fail.ToError())
+	if err != nil {
+		t.Error(err)
 	}
 
 	if IsWritable(file) != true {
 		t.Fatal("File should be writable")
 	}
 
-	err := os.Chmod(file, 0444)
+	err = os.Chmod(file, 0444)
 	if err != nil {
 		t.Error(err)
 	}

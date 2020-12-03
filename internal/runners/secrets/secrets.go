@@ -76,7 +76,7 @@ func checkSecretsAccess(proj *project.Project) error {
 	return nil
 }
 
-func definedSecrets(proj *project.Project, secCli *secretsapi.Client, filter string) ([]*secretsModels.SecretDefinition, *failures.Failure) {
+func definedSecrets(proj *project.Project, secCli *secretsapi.Client, filter string) ([]*secretsModels.SecretDefinition, error) {
 	logging.Debug("listing variables for org=%s, project=%s", proj.Owner(), proj.Name())
 
 	secretDefs, fail := secrets.DefsByProject(secCli, proj.Owner(), proj.Name())
@@ -140,7 +140,7 @@ func (es secretExports) MarshalOutput(format output.Format) interface{} {
 	}
 }
 
-func defsToSecrets(defs []*secretsModels.SecretDefinition) ([]*SecretExport, *failures.Failure) {
+func defsToSecrets(defs []*secretsModels.SecretDefinition) ([]*SecretExport, error) {
 	secretsExport := make([]*SecretExport, len(defs))
 	expander := project.NewSecretExpander(secretsapi.Get(), project.Get())
 
@@ -166,7 +166,7 @@ func defsToSecrets(defs []*secretsModels.SecretDefinition) ([]*SecretExport, *fa
 	return secretsExport, nil
 }
 
-func secretsAsJSON(secretExports []*SecretExport) ([]byte, *failures.Failure) {
+func secretsAsJSON(secretExports []*SecretExport) ([]byte, error) {
 	bs, err := json.Marshal(secretExports)
 	if err != nil {
 		return nil, failures.FailMarshal.Wrap(err)
@@ -176,7 +176,7 @@ func secretsAsJSON(secretExports []*SecretExport) ([]byte, *failures.Failure) {
 }
 
 // secretsToRows returns the rows used in our output table
-func secretsToRows(secretExports []*SecretExport) ([][]interface{}, *failures.Failure) {
+func secretsToRows(secretExports []*SecretExport) ([][]interface{}, error) {
 	rows := [][]interface{}{}
 	for _, secret := range secretExports {
 		description := "-"
@@ -192,7 +192,7 @@ func secretsToRows(secretExports []*SecretExport) ([][]interface{}, *failures.Fa
 	return rows, nil
 }
 
-func ptrToString(s *string, fieldName string) (string, *failures.Failure) {
+func ptrToString(s *string, fieldName string) (string, error) {
 	if s == nil {
 		return "", failures.FailVerify.New("secrets_err_missing_field", fieldName)
 	}

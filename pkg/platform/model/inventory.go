@@ -145,13 +145,13 @@ func IngredientWithLatestVersion(language, name string, prefix NamespacePrefix) 
 
 // SearchIngredients will return all ingredients+ingredientVersions that fuzzily
 // match the ingredient name.
-func SearchIngredients(namespace NamespacePrefix, language, name string) ([]*IngredientAndVersion, *failures.Failure) {
+func SearchIngredients(namespace NamespacePrefix, language, name string) ([]*IngredientAndVersion, error) {
 	return searchIngredientsNamespace(50, namespace, language, name)
 }
 
 // SearchIngredientsStrict will return all ingredients+ingredientVersions that
 // strictly match the ingredient name.
-func SearchIngredientsStrict(namespace NamespacePrefix, language, name string) ([]*IngredientAndVersion, *failures.Failure) {
+func SearchIngredientsStrict(namespace NamespacePrefix, language, name string) ([]*IngredientAndVersion, error) {
 	results, fail := searchIngredientsNamespace(50, namespace, language, name)
 	if fail != nil {
 		return nil, fail
@@ -167,7 +167,7 @@ func SearchIngredientsStrict(namespace NamespacePrefix, language, name string) (
 	return ingredients, nil
 }
 
-func searchIngredientsNamespace(limit int, namespace NamespacePrefix, language, name string) ([]*IngredientAndVersion, *failures.Failure) {
+func searchIngredientsNamespace(limit int, namespace NamespacePrefix, language, name string) ([]*IngredientAndVersion, error) {
 	lim := int64(limit)
 
 	client := inventory.Get()
@@ -196,7 +196,7 @@ func searchIngredientsNamespace(limit int, namespace NamespacePrefix, language, 
 	return ingredients, nil
 }
 
-func FetchPlatforms() ([]*Platform, *failures.Failure) {
+func FetchPlatforms() ([]*Platform, error) {
 	if platformCache == nil {
 		client := inventory.Get()
 
@@ -229,7 +229,7 @@ func FetchPlatforms() ([]*Platform, *failures.Failure) {
 	return platformCache, nil
 }
 
-func FetchPlatformsForCommit(commitID strfmt.UUID) ([]*Platform, *failures.Failure) {
+func FetchPlatformsForCommit(commitID strfmt.UUID) ([]*Platform, error) {
 	checkpt, _, fail := FetchCheckpointForCommit(commitID)
 	if fail != nil {
 		return nil, fail
@@ -250,7 +250,7 @@ func FetchPlatformsForCommit(commitID strfmt.UUID) ([]*Platform, *failures.Failu
 	return platforms, nil
 }
 
-func filterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID) ([]strfmt.UUID, *failures.Failure) {
+func filterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID) ([]strfmt.UUID, error) {
 	runtimePlatforms, fail := FetchPlatforms()
 	if fail != nil {
 		return nil, fail
@@ -296,7 +296,7 @@ func filterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID)
 	return pids, nil
 }
 
-func FetchPlatformByUID(uid strfmt.UUID) (*Platform, *failures.Failure) {
+func FetchPlatformByUID(uid strfmt.UUID) (*Platform, error) {
 	platforms, fail := FetchPlatforms()
 	if fail != nil {
 		return nil, fail
@@ -311,7 +311,7 @@ func FetchPlatformByUID(uid strfmt.UUID) (*Platform, *failures.Failure) {
 	return nil, nil
 }
 
-func FetchPlatformByDetails(name, version string, word int) (*Platform, *failures.Failure) {
+func FetchPlatformByDetails(name, version string, word int) (*Platform, error) {
 	runtimePlatforms, fail := FetchPlatforms()
 	if fail != nil {
 		return nil, fail
@@ -349,7 +349,7 @@ func FetchPlatformByDetails(name, version string, word int) (*Platform, *failure
 	return nil, FailUnsupportedPlatform.New("err_unsupported_platform", details)
 }
 
-func FetchLanguageForCommit(commitID strfmt.UUID) (*Language, *failures.Failure) {
+func FetchLanguageForCommit(commitID strfmt.UUID) (*Language, error) {
 	checkpt, _, fail := FetchCheckpointForCommit(commitID)
 	if fail != nil {
 		return nil, fail
@@ -358,7 +358,7 @@ func FetchLanguageForCommit(commitID strfmt.UUID) (*Language, *failures.Failure)
 	return CheckpointToLanguage(checkpt)
 }
 
-func FetchLanguageByDetails(name, version string) (*Language, *failures.Failure) {
+func FetchLanguageByDetails(name, version string) (*Language, error) {
 	languages, fail := FetchLanguages()
 	if fail != nil {
 		return nil, fail
@@ -373,7 +373,7 @@ func FetchLanguageByDetails(name, version string) (*Language, *failures.Failure)
 	return nil, failures.FailUser.New(locale.Tr("err_language_not_found", name, version))
 }
 
-func FetchLanguageVersions(name string) ([]string, *failures.Failure) {
+func FetchLanguageVersions(name string) ([]string, error) {
 	languages, fail := FetchLanguages()
 	if fail != nil {
 		return nil, fail
@@ -389,7 +389,7 @@ func FetchLanguageVersions(name string) ([]string, *failures.Failure) {
 	return versions, nil
 }
 
-func FetchLanguages() ([]Language, *failures.Failure) {
+func FetchLanguages() ([]Language, error) {
 	client := inventory.Get()
 
 	params := inventory_operations.NewGetNamespaceIngredientsParams()

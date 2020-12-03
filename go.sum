@@ -77,8 +77,6 @@ github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 h1:0CwZNZbxp69SHPd
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5/go.mod h1:wHh0iHkYZB8zMSxRWpUBQtwG5a7fFgvEO+odwuTv2gs=
 github.com/asaskevich/govalidator v0.0.0-20180315120708-ccb8e960c48f h1:y2hSFdXeA1y5z5f0vfNO0Dg5qVY036qzlz3Pds0B92o=
 github.com/asaskevich/govalidator v0.0.0-20180315120708-ccb8e960c48f/go.mod h1:lB+ZfQJz7igIIfQNfa7Ml4HSf2uFQQRzpGGRXenZAgY=
-github.com/autarch/testify v1.2.2 h1:9Q9V6zqhP7R6dv+zRUddv6kXKLo6ecQhnFRFWM71i1c=
-github.com/autarch/testify v1.2.2/go.mod h1:oDbHKfFv2/D5UtVrxkk90OKcb6P4/AqF1Pcf6ZbvDQo=
 github.com/aws/aws-sdk-go v1.13.8 h1:2GXJr7VVErT37gjlGzkRI7Pb0alhJ2Y3XoCRcXRhavQ=
 github.com/aws/aws-sdk-go v1.13.8/go.mod h1:ZRmQr0FajVIyZ4ZzBYKG5P3ZqPz9IHG41ZoMu1ADI3k=
 github.com/blang/semver v3.5.1+incompatible h1:cQNTCjp13qL8KC3Nbxr/y2Bqb63oX6wdnnjpJbkM4JQ=
@@ -349,14 +347,8 @@ github.com/src-d/gcfg v1.4.0/go.mod h1:p/UMsR43ujA89BJY9duynAwIpvqEujIH/jFlfL7jW
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.2.0 h1:Hbg2NidpLE8veEBkEZTL3CvlkUIVzuU9jDplZO54c48=
 github.com/stretchr/objx v0.2.0/go.mod h1:qt09Ya8vawLte6SNmTgCsAVtYtaKzEcn8ATUoHMkEqE=
-github.com/stretchr/testify v1.2.1/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=
-github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=
-github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UVUgZn+9EI=
-github.com/stretchr/testify v1.4.0/go.mod h1:j7eGeouHqKxXV5pUuKE4zz7dFj8WfuZ+81PSLYec5m4=
-github.com/stretchr/testify v1.5.1 h1:nOGnQDM7FYENwehXlg/kFVnos3rEvtKTjRvOWSzb6H4=
-github.com/stretchr/testify v1.5.1/go.mod h1:5W2xD1RspED5o8YsWQXVCued0rvSQ+mT+I5cxcmMvtA=
-github.com/stretchr/testify v1.6.1 h1:hDPOHmpOpP40lSULcqw7IrRb/u7w6RpDC9399XyoNd0=
-github.com/stretchr/testify v1.6.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
+github.com/stretchr/testify v1.6.2-0.20201103103935-92707c0b2d50 h1:aQdElrdadJZjGar4PipPBSpVh3yyDIuDSaM5PbMn6o8=
+github.com/stretchr/testify v1.6.2-0.20201103103935-92707c0b2d50/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/thoas/go-funk v0.0.0-20170604141201-14304e8530de h1:e96987R6uGe5Rr9oAjSwm27e6tRObx8wON4uJUhK6Uk=
 github.com/thoas/go-funk v0.0.0-20170604141201-14304e8530de/go.mod h1:mlR+dHGb+4YgXkf13rkQTuzrneeHANxOm6+ZnEV9HsA=
 github.com/ulikunitz/xz v0.5.4 h1:zATC2OoZ8H1TZll3FpbX+ikwmadbO699PE06cIkm9oU=

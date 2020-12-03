@@ -77,7 +77,7 @@ func TestCmdEnv_unset(t *testing.T) {
 		ifValueEquals string
 	}
 	type want struct {
-		returnValue      *failures.Failure
+		returnValue      error
 		registryGetCalls *[]string // nil means it should have no calls
 		registrySetCalls *[]string
 		registryDelCalls *[]string
@@ -170,7 +170,7 @@ func TestCmdEnv_set(t *testing.T) {
 		value string
 	}
 	type want struct {
-		returnValue      *failures.Failure
+		returnValue      error
 		registryGetCalls *[]string // nil means it should have no calls
 		registrySetCalls *[]string
 	}
@@ -239,7 +239,7 @@ func TestCmdEnv_get(t *testing.T) {
 	}
 	type want struct {
 		returnValue      string
-		returnFailure    *failures.Failure
+		returnFailure    error
 		registryGetCalls *[]string // nil means it should have no calls
 	}
 	tests := []struct {

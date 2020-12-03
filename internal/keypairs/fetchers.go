@@ -12,7 +12,7 @@ import (
 )
 
 // FetchRaw fetchs the current user's encoded and unparsed keypair or returns a failure.
-func FetchRaw(secretsClient *secretsapi.Client) (*secretModels.Keypair, *failures.Failure) {
+func FetchRaw(secretsClient *secretsapi.Client) (*secretModels.Keypair, error) {
 	kpOk, err := secretsClient.Keys.GetKeypair(nil, authentication.Get().ClientAuth())
 	if err != nil {
 		if api.ErrorCode(err) == 404 {
@@ -26,7 +26,7 @@ func FetchRaw(secretsClient *secretsapi.Client) (*secretModels.Keypair, *failure
 }
 
 // Fetch fetchs and parses the current user's keypair using the provided passphrase or returns a failure.
-func Fetch(secretsClient *secretsapi.Client, passphrase string) (Keypair, *failures.Failure) {
+func Fetch(secretsClient *secretsapi.Client, passphrase string) (Keypair, error) {
 	rawKP, failure := FetchRaw(secretsClient)
 	if failure != nil {
 		return nil, failure
@@ -41,7 +41,7 @@ func Fetch(secretsClient *secretsapi.Client, passphrase string) (Keypair, *failu
 }
 
 // FetchPublicKey fetchs the PublicKey for a sepcific user.
-func FetchPublicKey(secretsClient *secretsapi.Client, user *mono_models.User) (Encrypter, *failures.Failure) {
+func FetchPublicKey(secretsClient *secretsapi.Client, user *mono_models.User) (Encrypter, error) {
 	params := keys.NewGetPublicKeyParams()
 	params.UserID = user.UserID
 	pubKeyOk, err := secretsClient.Keys.GetPublicKey(params, authentication.Get().ClientAuth())

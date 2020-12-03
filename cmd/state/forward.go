@@ -72,7 +72,7 @@ func forwardFn(args []string, out output.Outputer, pj *project.Project) (forward
 }
 
 // forward will forward the call to the appropriate State Tool version if necessary
-func forward(args []string, versionInfo *projectfile.VersionInfo, out output.Outputer) (int, *failures.Failure) {
+func forward(args []string, versionInfo *projectfile.VersionInfo, out output.Outputer) (int, error) {
 	logging.Debug("Forwarding to version %s/%s, arguments: %v", versionInfo.Branch, versionInfo.Version, args[1:])
 	binary := forwardBin(versionInfo)
 	fail := ensureForwardExists(binary, versionInfo, out)
@@ -83,7 +83,7 @@ func forward(args []string, versionInfo *projectfile.VersionInfo, out output.Out
 	return execForward(binary, args)
 }
 
-func execForward(binary string, args []string) (int, *failures.Failure) {
+func execForward(binary string, args []string) (int, error) {
 	logging.Debug("Forwarding to binary at %s", binary)
 
 	code, _, err := osutils.ExecuteAndPipeStd(binary, args[1:], []string{fmt.Sprintf("%s=true", constants.ForwardedStateEnvVarName)})
@@ -105,7 +105,7 @@ func forwardBin(versionInfo *projectfile.VersionInfo) string {
 	return filepath.Join(datadir, "version-cache", filename)
 }
 
-func ensureForwardExists(binary string, versionInfo *projectfile.VersionInfo, out output.Outputer) *failures.Failure {
+func ensureForwardExists(binary string, versionInfo *projectfile.VersionInfo, out output.Outputer) error {
 	if fileutils.FileExists(binary) {
 		return nil
 	}

@@ -26,13 +26,13 @@ import (
 // under the same directory as this file
 type SubShell interface {
 	// Activate the given subshell
-	Activate(out output.Outputer) *failures.Failure
+	Activate(out output.Outputer) error
 
 	// Errors returns a channel to receive errors
 	Errors() <-chan error
 
 	// Deactivate the given subshell
-	Deactivate() *failures.Failure
+	Deactivate() error
 
 	// Run a script string, passing the provided command-line arguments, that assumes this shell and returns the exit code
 	Run(filename string, args ...string) error
@@ -47,7 +47,7 @@ type SubShell interface {
 	SetBinary(string)
 
 	// WriteUserEnv writes the given env map to the users environment
-	WriteUserEnv(map[string]string, sscommon.EnvData, bool) *failures.Failure
+	WriteUserEnv(map[string]string, sscommon.EnvData, bool) error
 
 	// SetupShellRcFile writes a script or source-able file that updates the environment variables and sets the prompt
 	SetupShellRcFile(string, map[string]string, project.Namespaced) error

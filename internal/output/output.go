@@ -42,13 +42,13 @@ type Outputer interface {
 var lastCreated Outputer
 
 // New constructs a new Outputer according to the given format name
-func New(formatName string, config *Config) (Outputer, *failures.Failure) {
-	var fail *failures.Failure
+func New(formatName string, config *Config) (Outputer, error) {
+	var fail error
 	lastCreated, fail = new(formatName, config)
 	return lastCreated, fail
 }
 
-func new(formatName string, config *Config) (Outputer, *failures.Failure) {
+func new(formatName string, config *Config) (Outputer, error) {
 	logging.Debug("Requested outputer for %s", formatName)
 
 	format := Format(formatName)

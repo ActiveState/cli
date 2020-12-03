@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/autarch/testify/assert"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"

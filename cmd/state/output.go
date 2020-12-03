@@ -43,7 +43,7 @@ func parseOutputFlags(args []string) outputFlags {
 	return flagSet
 }
 
-func initOutput(flags outputFlags, formatName string) (output.Outputer, *failures.Failure) {
+func initOutput(flags outputFlags, formatName string) (output.Outputer, error) {
 	if formatName == "" {
 		formatName = flags.Output
 	}

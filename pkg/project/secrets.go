@@ -84,7 +84,7 @@ func NewSecretPromptingExpander(secretsClient *secretsapi.Client) ExpanderFunc {
 }
 
 // KeyPair acts as a caching layer for secrets.LoadKeypairFromConfigDir, and ensures that we have a projectfile
-func (e *SecretExpander) KeyPair() (keypairs.Keypair, *failures.Failure) {
+func (e *SecretExpander) KeyPair() (keypairs.Keypair, error) {
 	if e.projectFile == nil {
 		return nil, FailExpandNoProjectDefined.New(locale.T("secrets_err_expand_noproject"))
 	}
@@ -93,7 +93,7 @@ func (e *SecretExpander) KeyPair() (keypairs.Keypair, *failures.Failure) {
 		return nil, FailNotAuthenticated.New(locale.T("secrets_err_not_authenticated"))
 	}
 
-	var fail *failures.Failure
+	var fail error
 	if e.keypair == nil {
 		e.keypair, fail = secrets.LoadKeypairFromConfigDir()
 		if fail != nil {
@@ -105,11 +105,11 @@ func (e *SecretExpander) KeyPair() (keypairs.Keypair, *failures.Failure) {
 }
 
 // Organization acts as a caching layer, and ensures that we have a projectfile
-func (e *SecretExpander) Organization() (*mono_models.Organization, *failures.Failure) {
+func (e *SecretExpander) Organization() (*mono_models.Organization, error) {
 	if e.project == nil {
 		return nil, FailExpandNoProjectDefined.New(locale.T("secrets_err_expand_noproject"))
 	}
-	var fail *failures.Failure
+	var fail error
 	if e.organization == nil {
 		e.organization, fail = model.FetchOrgByURLName(e.project.Owner())
 		if fail != nil {
@@ -121,11 +121,11 @@ func (e *SecretExpander) Organization() (*mono_models.Organization, *failures.Fa
 }
 
 // Project acts as a caching layer, and ensures that we have a projectfile
-func (e *SecretExpander) Project() (*mono_models.Project, *failures.Failure) {
+func (e *SecretExpander) Project() (*mono_models.Project, error) {
 	if e.project == nil {
 		return nil, FailExpandNoProjectDefined.New(locale.T("secrets_err_expand_noproject"))
 	}
-	var fail *failures.Failure
+	var fail error
 	if e.remoteProject == nil {
 		e.remoteProject, fail = model.FetchProjectByName(e.project.Owner(), e.project.Name())
 		if fail != nil {
@@ -137,7 +137,7 @@ func (e *SecretExpander) Project() (*mono_models.Project, *failures.Failure) {
 }
 
 // Secrets acts as a caching layer, and ensures that we have a projectfile
-func (e *SecretExpander) Secrets() ([]*secretsModels.UserSecret, *failures.Failure) {
+func (e *SecretExpander) Secrets() ([]*secretsModels.UserSecret, error) {
 	if e.secrets == nil {
 		org, fail := e.Organization()
 		if fail != nil {
@@ -154,7 +154,7 @@ func (e *SecretExpander) Secrets() ([]*secretsModels.UserSecret, *failures.Failu
 }
 
 // FetchSecret retrieves the given secret
-func (e *SecretExpander) FetchSecret(name string, isUser bool) (string, *failures.Failure) {
+func (e *SecretExpander) FetchSecret(name string, isUser bool) (string, error) {
 	keypair, fail := e.KeyPair()
 	if fail != nil {
 		return "", nil
@@ -177,7 +177,7 @@ func (e *SecretExpander) FetchSecret(name string, isUser bool) (string, *failure
 }
 
 // FetchDefinition retrieves the definition associated with a secret
-func (e *SecretExpander) FetchDefinition(name string, isUser bool) (*secretsModels.SecretDefinition, *failures.Failure) {
+func (e *SecretExpander) FetchDefinition(name string, isUser bool) (*secretsModels.SecretDefinition, error) {
 	defs, fail := secretsapi.FetchDefinitions(e.secretsClient, e.remoteProject.ProjectID)
 	if fail != nil {
 		return nil, fail
@@ -198,7 +198,7 @@ func (e *SecretExpander) FetchDefinition(name string, isUser bool) (*secretsMode
 }
 
 // FindSecret will find the secret appropriate for the current project
-func (e *SecretExpander) FindSecret(name string, isUser bool) (*secretsModels.UserSecret, *failures.Failure) {
+func (e *SecretExpander) FindSecret(name string, isUser bool) (*secretsModels.UserSecret, error) {
 	owner := e.project.Owner()
 	allowed, fail := access.Secrets(owner)
 	if fail != nil {
@@ -251,7 +251,7 @@ func (e *SecretExpander) SecretsAccessed() []*SecretAccess {
 }
 
 // SecretFunc defines what our expander functions will be returning
-type SecretFunc func(name string, project *Project) (string, *failures.Failure)
+type SecretFunc func(name string, project *Project) (string, error)
 
 var ErrSecretNotFound = errors.New("secret not found")
 

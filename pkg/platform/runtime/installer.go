@@ -94,7 +94,7 @@ func NewInstaller(runtime *Runtime) *Installer {
 }
 
 // Install will download the installer archive and invoke InstallFromArchive
-func (installer *Installer) Install() (envGetter EnvGetter, freshInstallation bool, fail *failures.Failure) {
+func (installer *Installer) Install() (envGetter EnvGetter, freshInstallation bool, fail error) {
 	if installer.runtime.IsCachedRuntime() {
 		ar, fail := installer.RuntimeEnv()
 		if fail == nil {
@@ -110,7 +110,7 @@ func (installer *Installer) Install() (envGetter EnvGetter, freshInstallation bo
 }
 
 // Env will grab the environment information for the given runtime. This will request build info.
-func (installer *Installer) Env() (envGetter EnvGetter, fail *failures.Failure) {
+func (installer *Installer) Env() (envGetter EnvGetter, fail error) {
 	if installer.runtime.IsCachedRuntime() {
 		ar, fail := installer.RuntimeEnv()
 		if fail == nil {
@@ -122,7 +122,7 @@ func (installer *Installer) Env() (envGetter EnvGetter, fail *failures.Failure) 
 }
 
 // IsInstalled will check if the installer has already ran (ie. the artifacts already exist at the target dir)
-func (installer *Installer) IsInstalled() (bool, *failures.Failure) {
+func (installer *Installer) IsInstalled() (bool, error) {
 	if installer.runtime.IsCachedRuntime() {
 		return true, nil
 	}
@@ -135,7 +135,7 @@ func (installer *Installer) IsInstalled() (bool, *failures.Failure) {
 }
 
 // RuntimeEnv returns the runtime environment specialization all constructed from cached values
-func (installer *Installer) RuntimeEnv() (EnvGetter, *failures.Failure) {
+func (installer *Installer) RuntimeEnv() (EnvGetter, error) {
 	buildEngine, err := installer.runtime.BuildEngine()
 	if err != nil {
 		return nil, FailRuntimeUnknownEngine.Wrap(err, "installer_err_engine_unknown")
@@ -158,7 +158,7 @@ func (installer *Installer) RuntimeEnv() (EnvGetter, *failures.Failure) {
 }
 
 // Assembler returns a new runtime assembler for the given checkpoint and artifacts
-func (installer *Installer) Assembler() (Assembler, *failures.Failure) {
+func (installer *Installer) Assembler() (Assembler, error) {
 	if fail := installer.validateCheckpoint(); fail != nil {
 		return nil, fail
 	}
@@ -186,7 +186,7 @@ func (installer *Installer) Assembler() (Assembler, *failures.Failure) {
 }
 
 // InstallArtifacts installs all artifacts provided by a runtime assembler
-func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGetter EnvGetter, freshInstallation bool, fail *failures.Failure) {
+func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGetter EnvGetter, freshInstallation bool, fail error) {
 	if runtimeAssembler.IsInstalled() {
 		// write complete marker and build engine files in case they don't exist yet
 		err := installer.runtime.MarkInstallationComplete()
@@ -265,7 +265,7 @@ func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGet
 }
 
 // validateCheckpoint tries to see if the checkpoint has any chance of succeeding
-func (installer *Installer) validateCheckpoint() *failures.Failure {
+func (installer *Installer) validateCheckpoint() error {
 	if installer.runtime.commitID == "" {
 		return FailNoCommitID.New("installer_err_runtime_no_commitid")
 	}
@@ -287,7 +287,7 @@ func (installer *Installer) validateCheckpoint() *failures.Failure {
 // InstallFromArchives will unpack the installer archive, locate the install script, and then use the installer
 // script to install a runtime to the configured runtime dir. Any failures during this process will result in a
 // failed installation and the install-dir being removed.
-func (installer *Installer) InstallFromArchives(archives map[string]*HeadChefArtifact, a Assembler, pg *progress.Progress) *failures.Failure {
+func (installer *Installer) InstallFromArchives(archives map[string]*HeadChefArtifact, a Assembler, pg *progress.Progress) error {
 	var bar *progress.TotalBar
 	if len(archives) > 0 {
 		bar = pg.AddTotalBar(locale.T("installing"), len(archives))
@@ -311,7 +311,7 @@ func (installer *Installer) InstallFromArchives(archives map[string]*HeadChefArt
 }
 
 // InstallFromArchive will unpack artifact and install it
-func (installer *Installer) InstallFromArchive(archivePath string, artf *HeadChefArtifact, a Assembler, progress *progress.Progress) *failures.Failure {
+func (installer *Installer) InstallFromArchive(archivePath string, artf *HeadChefArtifact, a Assembler, progress *progress.Progress) error {
 
 	fail := a.PreUnpackArtifact(artf)
 	if fail != nil {
@@ -335,7 +335,7 @@ func (installer *Installer) InstallFromArchive(archivePath string, artf *HeadChe
 	return nil
 }
 
-func (installer *Installer) unpackArchive(ua unarchiver.Unarchiver, archivePath string, installDir string, p *progress.Progress) (string, *progress.UnpackBar, *failures.Failure) {
+func (installer *Installer) unpackArchive(ua unarchiver.Unarchiver, archivePath string, installDir string, p *progress.Progress) (string, *progress.UnpackBar, error) {
 	if fail := installer.validateArchive(ua, archivePath); fail != nil {
 		return "", nil, fail
 	}
@@ -387,7 +387,7 @@ func (installer *Installer) unpackArchive(ua unarchiver.Unarchiver, archivePath 
 
 // validateArchive ensures the given path to archive is an actual file and that its suffix is a well-known
 // suffix for tar+gz files.
-func (installer *Installer) validateArchive(ua unarchiver.Unarchiver, archivePath string) *failures.Failure {
+func (installer *Installer) validateArchive(ua unarchiver.Unarchiver, archivePath string) error {
 	if !fileutils.FileExists(archivePath) {
 		return FailArchiveInvalid.New("installer_err_archive_notfound", archivePath)
 	} else if err := ua.CheckExt(archivePath); err != nil {

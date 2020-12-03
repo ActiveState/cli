@@ -959,7 +959,7 @@ downloading_artifacts:
   other: "Downloading required artifacts"
 installing_artifacts:
   other: "Updating required artifacts"
-fileutils_err_ammend_file:
+fileutils_err_amend_file:
   other: "Could not edit file: [NOTICE]{{.V0}}[/RESET]"
 err_auth_empty_token:
   other: The provided token is empty

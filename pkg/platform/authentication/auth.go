@@ -13,43 +13,15 @@ import (
 	"github.com/ActiveState/cli/internal/ci/gcloud"
 	"github.com/ActiveState/cli/internal/colorize"
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
-	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/mono"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/authentication"
 	apiAuth "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/authentication"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
-)
-
-var (
-	// FailNoCredentials is the failure type used when trying to authenticate without credentials
-	FailNoCredentials = failures.Type("authentication.fail.nocredentials", failures.FailUserInput)
-
-	// FailAuthAPI identifies a failure due to the auth api call
-	FailAuthAPI = failures.Type("authentication.fail.api", api.FailUnknown)
-
-	// FailAuthUnauthorized identifies a failure due to the user not being authorized (invalid credentials?)
-	FailAuthUnauthorized = failures.Type("authentication.fail.unauthorized", failures.FailUserInput)
-
-	// FailAuthNeedToken identifies a failure due to the authentication requiring a token
-	FailAuthNeedToken = failures.Type("authentication.fail.token", failures.FailUserInput)
-
-	// FailTokenList identifies a failure in listing tokens from the api
-	FailTokenList = failures.Type("authentication.fail.tokenlist", api.FailUnknown)
-
-	// FailTokenDelete identifies a failure in deleting tokens from the api
-	FailTokenDelete = failures.Type("authentication.fail.tokendelete", api.FailUnknown)
-
-	// FailTokenCreate identifies a failure in creating tokens through the api
-	FailTokenCreate = failures.Type("authentication.fail.tokencreate", api.FailUnknown)
-
-	// FailNotAuthenticated is a helper failure that can be used by other libraries when they require authentication but
-	// we aren't authenticated
-	FailNotAuthenticated = failures.Type("authentication.fail.notauthed")
 )
 
 var exit = os.Exit
@@ -93,11 +65,6 @@ func Logout() {
 	Reset()
 }
 
-// Init creates a new version of Auth with default settings
-func Init() *Auth {
-	return New()
-}
-
 // New creates a new version of Auth
 func New() *Auth {
 	auth := &Auth{}
@@ -137,7 +104,7 @@ func (s *Auth) updateRollbarPerson() {
 }
 
 // Authenticate will try to authenticate using stored credentials
-func (s *Auth) Authenticate() *failures.Failure {
+func (s *Auth) Authenticate() error {
 	if s.Authenticated() {
 		s.updateRollbarPerson()
 		return nil
@@ -145,14 +112,14 @@ func (s *Auth) Authenticate() *failures.Failure {
 
 	apiToken := availableAPIToken()
 	if apiToken == "" {
-		return FailNoCredentials.New("err_no_credentials")
+		return locale.NewInputError("err_no_credentials")
 	}
 
 	return s.AuthenticateWithToken(apiToken)
 }
 
 // AuthenticateWithModel will try to authenticate using the given swagger model
-func (s *Auth) AuthenticateWithModel(credentials *mono_models.Credentials) *failures.Failure {
+func (s *Auth) AuthenticateWithModel(credentials *mono_models.Credentials) error {
 	params := authentication.NewPostLoginParams()
 	params.SetCredentials(credentials)
 	loginOK, err := mono.Get().Authentication.PostLogin(params)
@@ -161,12 +128,12 @@ func (s *Auth) AuthenticateWithModel(credentials *mono_models.Credentials) *fail
 		s.Logout()
 		switch err.(type) {
 		case *apiAuth.PostLoginUnauthorized:
-			return FailAuthUnauthorized.New("err_unauthorized")
+			return locale.NewInputError("err_unauthorized")
 		case *apiAuth.PostLoginRetryWith:
-			return FailAuthNeedToken.New("err_auth_fail_totp")
+			return locale.NewInputError("err_auth_fail_totp")
 		default:
 			logging.Error("Authentication API returned %v", err)
-			return FailAuthAPI.Wrap(err)
+			return locale.WrapError(err, "err_api_auth", "Authentication failed: {{.V0}}", err.Error())
 		}
 	}
 	defer s.updateRollbarPerson()
@@ -180,14 +147,16 @@ func (s *Auth) AuthenticateWithModel(credentials *mono_models.Credentials) *fail
 	if credentials.Token != "" {
 		viper.Set("apiToken", credentials.Token)
 	} else {
-		s.CreateToken()
+		if err := s.CreateToken(); err != nil {
+			return errs.Wrap(err, "CreateToken failed")
+		}
 	}
 
 	return nil
 }
 
 // AuthenticateWithUser will try to authenticate using the given credentials
-func (s *Auth) AuthenticateWithUser(username, password, totp string) *failures.Failure {
+func (s *Auth) AuthenticateWithUser(username, password, totp string) error {
 	return s.AuthenticateWithModel(&mono_models.Credentials{
 		Username: username,
 		Password: password,
@@ -196,7 +165,7 @@ func (s *Auth) AuthenticateWithUser(username, password, totp string) *failures.F
 }
 
 // AuthenticateWithToken will try to authenticate using the given token
-func (s *Auth) AuthenticateWithToken(token string) *failures.Failure {
+func (s *Auth) AuthenticateWithToken(token string) error {
 	return s.AuthenticateWithModel(&mono_models.Credentials{
 		Token: token,
 	})
@@ -248,20 +217,20 @@ func (s *Auth) Client() *mono_client.Mono {
 }
 
 // ClientSafe will return an API client that has authentication set up
-func (s *Auth) ClientSafe() (*mono_client.Mono, *failures.Failure) {
+func (s *Auth) ClientSafe() (*mono_client.Mono, error) {
 	if s.client == nil {
 		s.client = mono.NewWithAuth(s.clientAuth)
 	}
 	if !s.Authenticated() {
-		if fail := s.Authenticate(); fail != nil {
-			return nil, fail.WithDescription(locale.T("err_api_not_authenticated"))
+		if err := s.Authenticate(); err != nil {
+			return nil, errs.Wrap(err, "Authentication failed")
 		}
 	}
 	return s.client, nil
 }
 
 // CreateToken will create an API token for the current authenticated user
-func (s *Auth) CreateToken() *failures.Failure {
+func (s *Auth) CreateToken() error {
 	client, fail := s.ClientSafe()
 	if fail != nil {
 		return fail
@@ -269,7 +238,7 @@ func (s *Auth) CreateToken() *failures.Failure {
 
 	tokensOK, err := client.Authentication.ListTokens(nil, s.ClientAuth())
 	if err != nil {
-		return FailTokenList.New(locale.Tr("err_token_list", err.Error()))
+		return locale.WrapError(err, "err_token_list", "", err.Error())
 	}
 
 	for _, token := range tokensOK.Payload {
@@ -278,7 +247,7 @@ func (s *Auth) CreateToken() *failures.Failure {
 			params.SetTokenID(token.TokenID)
 			_, err := client.Authentication.DeleteToken(params, s.ClientAuth())
 			if err != nil {
-				return FailTokenDelete.New(locale.Tr("err_token_delete", err.Error()))
+				return locale.WrapError(err, "err_token_delete", "", err.Error())
 			}
 			break
 		}
@@ -296,7 +265,7 @@ func (s *Auth) CreateToken() *failures.Failure {
 }
 
 // NewAPIKey returns a new api key from the backend or the relevant failure.
-func (s *Auth) NewAPIKey(name string) (string, *failures.Failure) {
+func (s *Auth) NewAPIKey(name string) (string, error) {
 	params := authentication.NewAddTokenParams()
 	params.SetTokenOptions(&mono_models.TokenEditable{Name: name})
 
@@ -307,7 +276,7 @@ func (s *Auth) NewAPIKey(name string) (string, *failures.Failure) {
 
 	tokenOK, err := client.Authentication.AddToken(params, s.ClientAuth())
 	if err != nil {
-		return "", FailTokenCreate.New(locale.Tr("err_token_create", err.Error()))
+		return "", locale.WrapError(err, "err_token_create", "", err.Error())
 	}
 
 	return tokenOK.Payload.Token, nil

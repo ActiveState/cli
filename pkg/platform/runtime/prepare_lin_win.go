@@ -12,7 +12,7 @@ import (
 
 // Prepare will assume the LibLocation in cases where the metadata
 // doesn't contain it and we know what it should be
-func (m *MetaData) Prepare() *failures.Failure {
+func (m *MetaData) Prepare() error {
 	// BinaryLocations
 	if m.BinaryLocations == nil || len(m.BinaryLocations) == 0 {
 		m.BinaryLocations = []MetaDataBinary{
@@ -37,7 +37,7 @@ func (m *MetaData) Prepare() *failures.Failure {
 		}
 		// RelocationDir
 		if m.RelocationDir == "" {
-			var fail *failures.Failure
+			var fail error
 			if m.RelocationDir, fail = m.pythonRelocationDir(); fail != nil {
 				return fail
 			}
@@ -51,7 +51,7 @@ func (m *MetaData) Prepare() *failures.Failure {
 
 		// RelocationDir
 		if m.RelocationDir == "" {
-			var fail *failures.Failure
+			var fail error
 			if m.RelocationDir, fail = m.perlRelocationDir(); fail != nil {
 				return fail
 			}

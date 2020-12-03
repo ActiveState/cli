@@ -25,7 +25,7 @@ func (o *Org) String() string {
 }
 
 func (o *Org) Set(v string) error {
-	var fail *failures.Failure
+	var fail error
 	o.Organization, fail = model.FetchOrgByURLName(v)
 	return fail.ToError()
 }

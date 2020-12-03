@@ -12,9 +12,9 @@ import (
 
 	"github.com/ActiveState/termtest"
 	"github.com/ActiveState/termtest/expect"
-	"github.com/autarch/testify/require"
 	"github.com/google/uuid"
 	"github.com/phayes/permbits"
+	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
 
 	"github.com/ActiveState/cli/internal/constants"

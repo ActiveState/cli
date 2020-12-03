@@ -17,7 +17,7 @@ import (
 // Prepare ensures Metadata can handle Python runtimes on MacOS.
 // These runtimes do not include metadata files as they should
 // be runnable from where they are unarchived
-func (m *MetaData) Prepare() *failures.Failure {
+func (m *MetaData) Prepare() error {
 	frameWorkDir := "Library/Frameworks/Python.framework/Versions/"
 	m.BinaryLocations = []MetaDataBinary{
 		MetaDataBinary{

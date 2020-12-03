@@ -7,7 +7,7 @@ import (
 )
 
 // FetchTiers fetachs the tier for the given organization
-func FetchTiers() ([]*mono_models.Tier, *failures.Failure) {
+func FetchTiers() ([]*mono_models.Tier, error) {
 	res, err := authentication.Client().Tiers.GetTiers(nil, authentication.ClientAuth())
 
 	if err != nil {

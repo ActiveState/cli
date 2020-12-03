@@ -75,7 +75,7 @@ func Signup(out output.Outputer, prompt prompt.Prompter) error {
 	return nil
 }
 
-func signupFromLogin(username string, password string, out output.Outputer, prompt prompt.Prompter) *failures.Failure {
+func signupFromLogin(username string, password string, out output.Outputer, prompt prompt.Prompter) error {
 	input := &signupInput{}
 
 	input.Username = username
@@ -148,8 +148,8 @@ func promptTOS(out output.Outputer, prompt prompt.Prompter) (bool, error) {
 	return false, nil
 }
 
-func promptForSignup(input *signupInput, out output.Outputer, prompter prompt.Prompter) *failures.Failure {
-	var fail *failures.Failure
+func promptForSignup(input *signupInput, out output.Outputer, prompter prompt.Prompter) error {
+	var fail error
 
 	if input.Username != "" {
 		out.Notice(locale.T("confirm_password_account_creation"))
@@ -194,7 +194,7 @@ func promptForSignup(input *signupInput, out output.Outputer, prompter prompt.Pr
 	return nil
 }
 
-func doSignup(input *signupInput, out output.Outputer) *failures.Failure {
+func doSignup(input *signupInput, out output.Outputer) error {
 	params := users.NewAddUserParams()
 	eulaHelper := true
 	params.SetUser(&mono_models.UserEditable{

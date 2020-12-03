@@ -55,7 +55,7 @@ func GetRequirement(commitID strfmt.UUID, namespace, requirement string) (*model
 }
 
 // FetchLanguagesForProject fetches a list of language names for the given project
-func FetchLanguagesForProject(orgName string, projectName string) ([]Language, *failures.Failure) {
+func FetchLanguagesForProject(orgName string, projectName string) ([]Language, error) {
 	platProject, fail := FetchProjectByName(orgName, projectName)
 	if fail != nil {
 		return nil, fail
@@ -70,7 +70,7 @@ func FetchLanguagesForProject(orgName string, projectName string) ([]Language, *
 }
 
 // FetchLanguagesForBranch fetches a list of language names for the given branch
-func FetchLanguagesForBranch(branch *mono_models.Branch) ([]Language, *failures.Failure) {
+func FetchLanguagesForBranch(branch *mono_models.Branch) ([]Language, error) {
 	if branch.CommitID == nil {
 		return nil, FailNoCommit.New(locale.T("err_no_commit"))
 	}
@@ -79,7 +79,7 @@ func FetchLanguagesForBranch(branch *mono_models.Branch) ([]Language, *failures.
 }
 
 // FetchLanguagesForCommit fetches a list of language names for the given commit
-func FetchLanguagesForCommit(commitID strfmt.UUID) ([]Language, *failures.Failure) {
+func FetchLanguagesForCommit(commitID strfmt.UUID) ([]Language, error) {
 	checkpoint, _, fail := FetchCheckpointForCommit(commitID)
 	if fail != nil {
 		return nil, fail
@@ -99,7 +99,7 @@ func FetchLanguagesForCommit(commitID strfmt.UUID) ([]Language, *failures.Failur
 }
 
 // FetchCheckpointForCommit fetches the checkpoint for the given commit
-func FetchCheckpointForCommit(commitID strfmt.UUID) (Checkpoint, strfmt.DateTime, *failures.Failure) {
+func FetchCheckpointForCommit(commitID strfmt.UUID) (Checkpoint, strfmt.DateTime, error) {
 	logging.Debug("fetching checkpoint (%s)", commitID.String())
 
 	request := request.CheckpointByCommit(commitID)
@@ -207,7 +207,7 @@ func CheckpointToPlatforms(checkpoint Checkpoint) []strfmt.UUID {
 }
 
 // CheckpointToLanguage returns the language from a checkpoint
-func CheckpointToLanguage(checkpoint Checkpoint) (*Language, *failures.Failure) {
+func CheckpointToLanguage(checkpoint Checkpoint) (*Language, error) {
 	for _, req := range checkpoint {
 		if !NamespaceMatch(req.Namespace, NamespaceLanguageMatch) {
 			continue
@@ -231,7 +231,7 @@ func PlatformNameToPlatformID(name string) (string, error) {
 	return id, fail.ToError()
 }
 
-func hostPlatformToPlatformID(os string) (string, *failures.Failure) {
+func hostPlatformToPlatformID(os string) (string, error) {
 	switch strings.ToLower(os) {
 	case strings.ToLower(sysinfo.Linux.String()):
 		return constants.LinuxBit64UUID, nil

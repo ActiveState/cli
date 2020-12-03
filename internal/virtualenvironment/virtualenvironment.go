@@ -37,7 +37,7 @@ func New(runtime *runtime.Runtime) *VirtualEnvironment {
 }
 
 // Activate the virtual environment
-func (v *VirtualEnvironment) Activate() *failures.Failure {
+func (v *VirtualEnvironment) Activate() error {
 	logging.Debug("Activating Virtual Environment")
 
 	if strings.ToLower(os.Getenv(constants.DisableRuntime)) != "true" {
@@ -53,7 +53,7 @@ func (v *VirtualEnvironment) Activate() *failures.Failure {
 func (v *VirtualEnvironment) OnUseCache(f func()) { v.onUseCache = f }
 
 // Setup sets up a runtime environment that is fully functional.
-func (v *VirtualEnvironment) Setup(installIfNecessary bool) *failures.Failure {
+func (v *VirtualEnvironment) Setup(installIfNecessary bool) error {
 	logging.Debug("Setting up virtual Environment")
 	if strings.ToLower(os.Getenv(constants.DisableRuntime)) == "true" {
 		return nil

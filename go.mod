@@ -15,7 +15,6 @@ require (
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 	github.com/asaskevich/govalidator v0.0.0-20180315120708-ccb8e960c48f // indirect
-	github.com/autarch/testify v1.2.2
 	github.com/aws/aws-sdk-go v1.13.8
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/bndr/gotabulate v0.0.0-20170315142410-bc555436bfd5
@@ -86,7 +85,7 @@ require (
 	github.com/spf13/jwalterweatherman v0.0.0-20180109140146-7c0cea34c8ec // indirect
 	github.com/spf13/pflag v1.0.0
 	github.com/spf13/viper v0.0.0-20171227194143-aafc9e6bc7b7
-	github.com/stretchr/testify v1.6.1
+	github.com/stretchr/testify v1.6.2-0.20201103103935-92707c0b2d50
 	github.com/thoas/go-funk v0.0.0-20170604141201-14304e8530de
 	github.com/ulikunitz/xz v0.5.4 // indirect
 	github.com/vbauerster/mpb/v4 v4.10.0

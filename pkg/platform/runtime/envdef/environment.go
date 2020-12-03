@@ -106,7 +106,7 @@ var (
 
 // NewEnvironmentDefinition returns an environment definition unmarshaled from a
 // file
-func NewEnvironmentDefinition(fp string) (*EnvironmentDefinition, *failures.Failure) {
+func NewEnvironmentDefinition(fp string) (*EnvironmentDefinition, error) {
 	blob, err := ioutil.ReadFile(fp)
 	if err != nil {
 		return nil, FailEnvironmentDefinitionFileNotFound.Wrap(err, "envdef_file_not_found", fp)

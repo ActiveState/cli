@@ -21,7 +21,7 @@ type SecretsSharingTestSuite struct {
 }
 
 func (suite *SecretsSharingTestSuite) SetupSuite() {
-	var failure *failures.Failure
+	var failure error
 
 	suite.sourceKeypair, failure = keypairs.GenerateRSA(1024)
 	suite.Require().Nil(failure)
