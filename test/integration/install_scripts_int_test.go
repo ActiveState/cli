@@ -15,26 +15,26 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type OpenKeyFn func(path string) (osutils.RegistryKey, error)
+type openKeyFn func(path string) (osutils.RegistryKey, error)
 
-type CmdEnv struct {
-	openKeyFn OpenKeyFn
+type cmdEnv struct {
+	openKeyFn openKeyFn
 	// whether this updates the system environment
 	userScope bool
 }
 
-func NewCmdEnv(userScope bool) *CmdEnv {
+func newCmdEnv(userScope bool) *cmdEnv {
 	openKeyFn := osutils.OpenSystemKey
 	if userScope {
 		openKeyFn = osutils.OpenUserKey
 	}
-	return &CmdEnv{
+	return &cmdEnv{
 		openKeyFn: openKeyFn,
 		userScope: userScope,
 	}
 }
 
-func (c *CmdEnv) set(name, newValue string) error {
+func (c *cmdEnv) set(name, newValue string) error {
 	key, err := c.openKeyFn(getEnvironmentPath(c.userScope))
 	if err != nil {
 		return err
@@ -48,7 +48,7 @@ func (c *CmdEnv) set(name, newValue string) error {
 	return osutils.SetStringValue(key, name, valType, newValue)
 }
 
-func (c *CmdEnv) get(name string) (string, error) {
+func (c *cmdEnv) get(name string) (string, error) {
 	key, err := c.openKeyFn(getEnvironmentPath(c.userScope))
 	if err != nil {
 		return "", err
@@ -97,7 +97,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallPs1() {
 	isAdmin, err := osutils.IsWindowsAdmin()
 	suite.Require().NoError(err, "Could not determine if running as administrator")
 
-	cmdEnv := NewCmdEnv(!isAdmin)
+	cmdEnv := newCmdEnv(!isAdmin)
 	oldPathEnv, err := cmdEnv.get("PATH")
 	suite.Require().NoError(err, "could not get PATH")
 
@@ -135,7 +135,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallPerl5_32() {
 	isAdmin, err := osutils.IsWindowsAdmin()
 	suite.Require().NoError(err, "Could not determine if running as administrator")
 
-	cmdEnv := NewCmdEnv(!isAdmin)
+	cmdEnv := newCmdEnv(!isAdmin)
 	oldPathEnv, err := cmdEnv.get("PATH")
 	suite.Require().NoError(err, "could not get PATH")
 
@@ -169,7 +169,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallPerl5_32() {
 	userPaths := paths
 	if isAdmin {
 		// `state prepare` writes the global bin directory to the USER path
-		userCmdEnv := NewCmdEnv(true)
+		userCmdEnv := newCmdEnv(true)
 		userPathEnv, err := userCmdEnv.get("PATH")
 		suite.Require().NoError(err, "could not get PATH")
 		userPaths = strings.Split(userPathEnv, string(os.PathListSeparator))
