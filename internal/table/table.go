@@ -1,7 +1,7 @@
 package table
 
 import (
-	"fmt"
+	"bytes"
 	"math"
 	"strings"
 	"unicode/utf8"
@@ -25,14 +25,12 @@ type entry struct {
 }
 
 type row struct {
-	// TODO: Change this to a slice of entry that is returned from the new func
 	columns []string
 }
 
 type Table struct {
 	headers []string
 	rows    []row
-	// entries []entry
 }
 
 func New(headers []string) *Table {
@@ -148,29 +146,59 @@ func (t *Table) calculateWidth(maxTotalWidth int) ([]int, int) {
 
 func getCroppedText(text string, maxLen int) []entry {
 	entries := make([]entry, 0)
-	stripped := colorize.StripColorCodes(text)
-	matches := colorize.ColorRx.FindAllStringSubmatch(text, -1)
+	pos := 0
+	matches := colorize.ColorRx.FindAllSubmatchIndex([]byte(text), -1)
+	runeText := []rune(text)
 
-	for len(stripped) != 0 {
-		end := len(stripped)
-		if end > maxLen {
-			end = maxLen
+	for pos < len(runeText) {
+		buffer := bytes.Buffer{}
+		count := 0
+		for count < maxLen {
+			if end, match := matchTag(pos, matches); match {
+				buffer.WriteString(string(runeText[pos:end]))
+				pos = end
+			} else {
+				if pos > len(runeText)-1 {
+					break
+				}
+
+				if runeText[pos] == linebreakRune {
+					pos++
+					break
+				}
+
+				buffer.WriteString(string(runeText[pos]))
+				pos++
+				count++
+			}
 		}
-
-		entryText := stripped[0:end]
-		entries = append(entries, entry{entryText, len(entryText)})
-		stripped = stripped[end:]
+		entries = append(entries, entry{buffer.String(), count})
 	}
 
-	if len(matches) == 2 {
-		firstText := entries[0].line
-		entries[0].line = fmt.Sprintf("%s%s", matches[0][0], firstText)
-
-		lastText := entries[len(entries)-1].line
-		entries[len(entries)-1].line = fmt.Sprintf("%s%s", lastText, matches[1][0])
+	// TODO: Bug in here causing 'Multi line second column with line breaks' test
+	// to fail
+	for i, entry := range entries {
+		if entry.length != 0 {
+			continue
+		}
+		tag := entries[i].line
+		if i >= 1 {
+			entries[i-1].line = entries[i-1].line + tag
+		}
+		entries = entries[0:i]
 	}
 
 	return entries
+}
+
+func matchTag(pos int, matches [][]int) (int, bool) {
+	for _, match := range matches {
+		start, stop := match[0], match[1]
+		if pos == start {
+			return stop, true
+		}
+	}
+	return -1, false
 }
 
 func renderRow(providedColumns []string, colWidths []int) string {
@@ -206,14 +234,16 @@ func renderRow(providedColumns []string, colWidths []int) string {
 				end = maxLen
 			}
 
-			skipLineBreak := 0
-			if breakpos := runeSliceIndexOf(colValue, linebreakRune); breakpos != -1 && breakpos < end {
-				end = breakpos + 1
-				skipLineBreak = 1
+			entries := getCroppedText(columns[n], maxLen)
+
+			text := ""
+			if len(entries) > 0 {
+				text = string(entries[0].line)
+				end = entries[0].length
 			}
 
 			suffix := strings.Repeat(" ", maxLen-end)
-			result += pad(string(colValue[0:end-skipLineBreak]) + suffix)
+			result += pad(text) + suffix
 
 			columns[n] = string(colValue[end:])
 		}

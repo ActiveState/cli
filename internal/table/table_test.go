@@ -261,6 +261,21 @@ func Test_getCroppedText(t *testing.T) {
 			args{"Hello", 5},
 			[]entry{{"Hello", 5}},
 		},
+		{
+			"Split multi-byte characters",
+			args{"✔ol1✔ol2✔ol3", 4},
+			[]entry{{"✔ol1", 4}, {"✔ol2", 4}, {"✔ol3", 4}},
+		},
+		{
+			"Split line break",
+			args{"[HEADING]Hel\nlo[/RESET]", 5},
+			[]entry{{"[HEADING]Hel", 3}, {"lo[/RESET]", 2}},
+		},
+		{
+			"Split nested",
+			args{"[HEADING][NOTICE]Hello[/RESET][/RESET]", 3},
+			[]entry{{"[HEADING][NOTICE]Hel", 3}, {"lo[/RESET][/RESET]", 2}},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
