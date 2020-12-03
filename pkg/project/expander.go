@@ -194,29 +194,33 @@ func expandPath(name string, script *Script) (string, error) {
 	return sf.Filename(), nil
 }
 
-// AuthExpander expands authentication information in the project file.
-func AuthExpander(_ string, name string, _ string, _ bool, _ *Project) (string, error) {
-	if name == "authenticated" {
-		return expandAuth(), nil
+// userExpander
+func userExpander(auth *authentication.Auth, element string) string {
+	if element == "name" {
+		return auth.WhoAmI()
 	}
-	if name == "anonymous" {
-		return expandAnonymous(), nil
+	if element == "email" {
+		return auth.Email()
+	}
+	return ""
+}
+
+// Mixin provides expansions that are not sourced from a project file
+type Mixin struct {
+	auth *authentication.Auth
+}
+
+// NewMixin creates a Mixin object providing extra expansions
+func NewMixin(auth *authentication.Auth) *Mixin {
+	return &Mixin{auth}
+}
+
+// Expander expands mixin variables
+func (m *Mixin) Expander(_ string, name string, meta string, _ bool, _ *Project) (string, error) {
+	if name == "user" {
+		return userExpander(m.auth, meta), nil
 	}
 	return "", nil
-}
-
-func expandAuth() string {
-	if authentication.Get().Authenticated() {
-		return "true"
-	}
-	return "false"
-}
-
-func expandAnonymous() string {
-	if authentication.Get().IsAnonymous() {
-		return "true"
-	}
-	return "false"
 }
 
 // ConstantExpander expands constants defined in the project-file.

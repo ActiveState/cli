@@ -55,6 +55,31 @@ func (suite *ConditionIntegrationTestSuite) TestCondition() {
 	cp.ExpectExitCode(1)
 }
 
+func (suite *ConditionIntegrationTestSuite) TestMixin() {
+	suite.OnlyRunForTags(tagsuite.Condition)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	suite.PrepareActiveStateYAML(ts)
+
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("run", "MixinUser"),
+	)
+	cp.ExpectExitCode(0)
+	suite.Assert().NotContains(cp.TrimmedSnapshot(), "authenticated: yes", "expected not to be authenticated, output was:\n%s.", cp.Snapshot())
+	suite.Assert().NotContains(cp.TrimmedSnapshot(), e2e.PersistentUsername, "expected not to be authenticated, output was:\n%s", cp.Snapshot())
+
+	ts.LoginAsPersistentUser()
+	defer ts.LogoutUser()
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("run", "MixinUser"),
+	)
+	cp.Expect("authenticated: yes")
+	cp.Expect(e2e.PersistentUsername)
+	cp.ExpectExitCode(0)
+}
+
 func (suite *ConditionIntegrationTestSuite) TestConditionOSName() {
 	suite.OnlyRunForTags(tagsuite.Condition)
 	ts := e2e.New(suite.T(), false)
@@ -120,6 +145,9 @@ constants:
   - name: shell
     value: shellValue
     if: ne .Shell ""
+  - name: mixinUser
+    value: yes
+    if: ne Mixin.User.name ""
 scripts:
   - name: complex-true
     language: bash
@@ -168,6 +196,12 @@ scripts:
     standalone: true
     value: echo using-linux
     if: eq .OS.Name "Linux"
+  - name: MixinUser
+    language: bash
+    standalone: true
+    value: |
+      echo "authenticated: ${constants.mixinUser}"
+      echo "userName: ${mixin.user.name}"
 events:
   - name: ACTIVATE
     value: echo "Wrong event"
