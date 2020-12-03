@@ -27,50 +27,6 @@ type Search struct {
 	out output.Outputer
 }
 
-type modules []string
-
-func makeModules(pack *model.IngredientAndVersion) modules {
-	var ms modules
-	for _, x := range pack.LatestVersion.ProvidedFeatures {
-		if x.Feature != nil {
-			ms = append(ms, *x.Feature)
-		}
-
-	}
-	return ms
-}
-
-func (ms modules) String() string {
-	var b strings.Builder
-
-	b.WriteString(locale.Tl("title_matching_modules", "Matching modules"))
-	b.WriteRune('\n')
-
-	prefix := '├'
-	for i, module := range ms {
-		if i == len(ms)-1 {
-			prefix = '└'
-		}
-
-		b.WriteRune(prefix)
-		b.WriteString("─ ")
-		b.WriteString(module)
-		b.WriteRune('\n')
-	}
-
-	b.WriteRune('\n')
-
-	return b.String()
-}
-
-type searchPackageRow struct {
-	Pkg           string `json:"package" locale:"package_name,Name"`
-	Version       string `json:"version" locale:"package_version,Latest Version"`
-	OlderVersions string `json:"versions" locale:","`
-	versions      int
-	Modules       modules `json:"matching_modules,omitempty" opts:"emptyNil,separateLine"`
-}
-
 // NewSearch prepares a searching execution context for use.
 func NewSearch(prime primer.Outputer) *Search {
 	return &Search{
@@ -120,6 +76,50 @@ func targetedLanguage(languageOpt string) (string, *failures.Failure) {
 	}
 
 	return model.LanguageForCommit(proj.CommitUUID())
+}
+
+type modules []string
+
+func makeModules(pack *model.IngredientAndVersion) modules {
+	var ms modules
+	for _, x := range pack.LatestVersion.ProvidedFeatures {
+		if x.Feature != nil {
+			ms = append(ms, *x.Feature)
+		}
+
+	}
+	return ms
+}
+
+func (ms modules) String() string {
+	var b strings.Builder
+
+	b.WriteString(locale.Tl("title_matching_modules", "Matching modules"))
+	b.WriteRune('\n')
+
+	prefix := '├'
+	for i, module := range ms {
+		if i == len(ms)-1 {
+			prefix = '└'
+		}
+
+		b.WriteRune(prefix)
+		b.WriteString("─ ")
+		b.WriteString(module)
+		b.WriteRune('\n')
+	}
+
+	b.WriteRune('\n')
+
+	return b.String()
+}
+
+type searchPackageRow struct {
+	Pkg           string `json:"package" locale:"package_name,Name"`
+	Version       string `json:"version" locale:"package_version,Latest Version"`
+	OlderVersions string `json:"versions" locale:","`
+	versions      int
+	Modules       modules `json:"matching_modules,omitempty" opts:"emptyNil,separateLine"`
 }
 
 func formatSearchResults(packages []*model.IngredientAndVersion, pt PackageType) []searchPackageRow {
