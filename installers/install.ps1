@@ -162,7 +162,7 @@ function activateIfRequested() {
         & $script:STATEEXE activate $script:ACTIVATE
     } elseif ( $script:ACTIVATE_DEFAULT -ne "" ) {
         # This creates an interactive sub-shell.
-        Write-Host "`nActivating project $script:ACTIVATE as default`n" -ForegroundColor Yellow
+        Write-Host "`nActivating project $script:ACTIVATE_DEFAULT as default`n" -ForegroundColor Yellow
         & $script:STATEEXE activate $script:ACTIVATE_DEFAULT --default
     }
 }
@@ -425,7 +425,7 @@ function install() {
         [Environment]::SetEnvironmentVariable(
             'Path',
             $installDir + ";" + [Environment]::GetEnvironmentVariable(
-                'Path', [EnvironmentVariableTarget]::Machine),
+                'Path', $envTarget),
             $envTarget)
 
         notifySettingChange
