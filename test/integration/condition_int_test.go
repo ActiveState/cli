@@ -38,6 +38,8 @@ func (suite *ConditionIntegrationTestSuite) TestCondition() {
 	cp = ts.SpawnWithOpts(
 		e2e.WithArgs("activate"),
 	)
+	cp.Expect("default project?")
+	cp.SendLine("n")
 	cp.Expect(`Activation Event Ran`)
 	cp.WaitForInput()
 	cp.SendLine("exit")
