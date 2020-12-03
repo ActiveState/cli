@@ -23,13 +23,16 @@ type Commit struct {
 	// Format: date-time
 	Added strfmt.DateTime `json:"added,omitempty"`
 
+	// an anonymous id used to help track the creator of headless commits
+	AnonID string `json:"anonID,omitempty"`
+
 	// When resolving depdencies, updates made after this time will be ignored.
 	// Format: date-time
 	AtTime strfmt.DateTime `json:"atTime,omitempty"`
 
 	// the id of the user that authored this commit
 	// Format: uuid
-	Author strfmt.UUID `json:"author,omitempty"`
+	Author *strfmt.UUID `json:"author,omitempty"`
 
 	// what changed in this commit
 	Changeset []*CommitChange `json:"changeset"`
@@ -48,7 +51,7 @@ type Commit struct {
 	ParentCommitID strfmt.UUID `json:"parentCommitID,omitempty"`
 
 	// the name of the user that authored this commit
-	Username string `json:"username,omitempty"`
+	Username *string `json:"username,omitempty"`
 }
 
 // Validate validates this commit
