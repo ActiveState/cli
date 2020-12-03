@@ -33,12 +33,12 @@ func NewConditional(a *authentication.Auth) *Conditional {
 
 	c.RegisterFunc("Mixin", func() map[string]interface{} {
 		res := map[string]string{
-			"name":  "",
-			"email": "",
+			"Name":  "",
+			"Email": "",
 		}
 		if a.Authenticated() {
-			res["name"] = a.WhoAmI()
-			res["email"] = a.Email()
+			res["Name"] = a.WhoAmI()
+			res["Email"] = a.Email()
 		}
 		return map[string]interface{}{
 			"User": res,
