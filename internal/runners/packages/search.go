@@ -29,6 +29,17 @@ type Search struct {
 
 type modules []string
 
+func makeModules(pack *model.IngredientAndVersion) modules {
+	var ms modules
+	for _, x := range pack.LatestVersion.ProvidedFeatures {
+		if x.Feature != nil {
+			ms = append(ms, *x.Feature)
+		}
+
+	}
+	return ms
+}
+
 func (ms modules) String() string {
 	var b strings.Builder
 
@@ -126,6 +137,7 @@ func formatSearchResults(packages []*model.IngredientAndVersion, pt PackageType)
 			Pkg:      filterNilStr(pack.Ingredient.Name),
 			Version:  pack.Version,
 			versions: len(pack.Versions),
+			Modules:  makeModules(pack),
 		}
 		rows = append(rows, row)
 	}
@@ -148,7 +160,7 @@ func mergeSearchRows(rows []searchPackageRow) []searchPackageRow {
 			Pkg:      row.Pkg,
 			Version:  row.Version,
 			versions: row.versions,
-			Modules:  modules{"test", "this"},
+			Modules:  row.Modules,
 		}
 
 		if row.versions > 1 {
