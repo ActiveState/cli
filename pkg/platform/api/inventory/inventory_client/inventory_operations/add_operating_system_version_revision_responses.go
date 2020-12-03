@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // AddOperatingSystemVersionRevisionReader is a Reader for the AddOperatingSystemVersionRevision structure.
@@ -24,21 +23,18 @@ type AddOperatingSystemVersionRevisionReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *AddOperatingSystemVersionRevisionReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewAddOperatingSystemVersionRevisionOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewAddOperatingSystemVersionRevisionBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewAddOperatingSystemVersionRevisionDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -61,16 +57,20 @@ func NewAddOperatingSystemVersionRevisionOK() *AddOperatingSystemVersionRevision
 The updated state of the operating system version
 */
 type AddOperatingSystemVersionRevisionOK struct {
-	Payload *inventory_models.V1OperatingSystemVersion
+	Payload *inventory_models.OperatingSystemVersion
 }
 
 func (o *AddOperatingSystemVersionRevisionOK) Error() string {
 	return fmt.Sprintf("[POST /v1/operating-systems/{operating_system_id}/versions/{operating_system_version_id}/revisions][%d] addOperatingSystemVersionRevisionOK  %+v", 200, o.Payload)
 }
 
+func (o *AddOperatingSystemVersionRevisionOK) GetPayload() *inventory_models.OperatingSystemVersion {
+	return o.Payload
+}
+
 func (o *AddOperatingSystemVersionRevisionOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(inventory_models.V1OperatingSystemVersion)
+	o.Payload = new(inventory_models.OperatingSystemVersion)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -95,6 +95,10 @@ type AddOperatingSystemVersionRevisionBadRequest struct {
 
 func (o *AddOperatingSystemVersionRevisionBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/operating-systems/{operating_system_id}/versions/{operating_system_version_id}/revisions][%d] addOperatingSystemVersionRevisionBadRequest  %+v", 400, o.Payload)
+}
+
+func (o *AddOperatingSystemVersionRevisionBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
+	return o.Payload
 }
 
 func (o *AddOperatingSystemVersionRevisionBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -133,6 +137,10 @@ func (o *AddOperatingSystemVersionRevisionDefault) Code() int {
 
 func (o *AddOperatingSystemVersionRevisionDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/operating-systems/{operating_system_id}/versions/{operating_system_version_id}/revisions][%d] addOperatingSystemVersionRevision default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *AddOperatingSystemVersionRevisionDefault) GetPayload() *inventory_models.RestAPIError {
+	return o.Payload
 }
 
 func (o *AddOperatingSystemVersionRevisionDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

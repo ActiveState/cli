@@ -6,18 +6,16 @@ package inventory_operations
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"net/http"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // NewAddBuildFlagParams creates a new AddBuildFlagParams object
@@ -65,7 +63,7 @@ for the add build flag operation typically these are written to a http.Request
 type AddBuildFlagParams struct {
 
 	/*BuildFlag*/
-	BuildFlag *inventory_models.V1BuildFlagCore
+	BuildFlag *inventory_models.BuildFlagCore
 
 	timeout    time.Duration
 	Context    context.Context
@@ -106,13 +104,13 @@ func (o *AddBuildFlagParams) SetHTTPClient(client *http.Client) {
 }
 
 // WithBuildFlag adds the buildFlag to the add build flag params
-func (o *AddBuildFlagParams) WithBuildFlag(buildFlag *inventory_models.V1BuildFlagCore) *AddBuildFlagParams {
+func (o *AddBuildFlagParams) WithBuildFlag(buildFlag *inventory_models.BuildFlagCore) *AddBuildFlagParams {
 	o.SetBuildFlag(buildFlag)
 	return o
 }
 
 // SetBuildFlag adds the buildFlag to the add build flag params
-func (o *AddBuildFlagParams) SetBuildFlag(buildFlag *inventory_models.V1BuildFlagCore) {
+func (o *AddBuildFlagParams) SetBuildFlag(buildFlag *inventory_models.BuildFlagCore) {
 	o.BuildFlag = buildFlag
 }
 

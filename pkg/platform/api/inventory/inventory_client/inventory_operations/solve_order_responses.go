@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // SolveOrderReader is a Reader for the SolveOrder structure.
@@ -24,21 +23,18 @@ type SolveOrderReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *SolveOrderReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 201:
 		result := NewSolveOrderCreated()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewSolveOrderBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewSolveOrderDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -61,11 +57,15 @@ func NewSolveOrderCreated() *SolveOrderCreated {
 Returns the ids of and links to the created recipes
 */
 type SolveOrderCreated struct {
-	Payload inventory_models.V1SolutionResponse
+	Payload inventory_models.SolutionResponse
 }
 
 func (o *SolveOrderCreated) Error() string {
 	return fmt.Sprintf("[POST /v1/solutions][%d] solveOrderCreated  %+v", 201, o.Payload)
+}
+
+func (o *SolveOrderCreated) GetPayload() inventory_models.SolutionResponse {
+	return o.Payload
 }
 
 func (o *SolveOrderCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -88,16 +88,20 @@ func NewSolveOrderBadRequest() *SolveOrderBadRequest {
 If the order is invalid
 */
 type SolveOrderBadRequest struct {
-	Payload *inventory_models.V1SolverValidationError
+	Payload *inventory_models.SolverValidationError
 }
 
 func (o *SolveOrderBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/solutions][%d] solveOrderBadRequest  %+v", 400, o.Payload)
 }
 
+func (o *SolveOrderBadRequest) GetPayload() *inventory_models.SolverValidationError {
+	return o.Payload
+}
+
 func (o *SolveOrderBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(inventory_models.V1SolverValidationError)
+	o.Payload = new(inventory_models.SolverValidationError)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -121,7 +125,7 @@ If there is an error processing the order
 type SolveOrderDefault struct {
 	_statusCode int
 
-	Payload *inventory_models.V1SolverError
+	Payload *inventory_models.SolverError
 }
 
 // Code gets the status code for the solve order default response
@@ -133,9 +137,13 @@ func (o *SolveOrderDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/solutions][%d] solveOrder default  %+v", o._statusCode, o.Payload)
 }
 
+func (o *SolveOrderDefault) GetPayload() *inventory_models.SolverError {
+	return o.Payload
+}
+
 func (o *SolveOrderDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(inventory_models.V1SolverError)
+	o.Payload = new(inventory_models.SolverError)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

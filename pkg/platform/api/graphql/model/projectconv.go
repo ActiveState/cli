@@ -53,7 +53,7 @@ func (p *Project) ToMonoProject() (*mono_models.Project, *failures.Failure) {
 		OrganizationID: p.OrganizationID,
 		Private:        p.Private,
 		ProjectID:      p.ProjectID,
-		RepoURL:        newStrfmtURI(p.RepoURL),
+		RepoURL:        p.RepoURL,
 	}
 
 	return &mp, nil

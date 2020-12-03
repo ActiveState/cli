@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"gopkg.in/src-d/go-git.v4"
 
@@ -30,7 +31,7 @@ var (
 
 // Repository is the interface used to represent a version control system repository
 type Repository interface {
-	CloneProject(owner, name, path string, out output.Outputer) *failures.Failure
+	CloneProject(owner, name, path string, out output.Outputer) error
 }
 
 // NewRepo returns a new repository
@@ -44,10 +45,10 @@ type Repo struct {
 
 // CloneProject will attempt to clone the associalted public git repository
 // for the project identified by <owner>/<name> to the given directory
-func (r *Repo) CloneProject(owner, name, path string, out output.Outputer) *failures.Failure {
+func (r *Repo) CloneProject(owner, name, path string, out output.Outputer) error {
 	project, fail := model.FetchProjectByName(owner, name)
 	if fail != nil {
-		return fail
+		return fail.ToError()
 	}
 
 	tempDir, err := ioutil.TempDir("", fmt.Sprintf("state-activate-repo-%s-%s", owner, name))
@@ -56,22 +57,30 @@ func (r *Repo) CloneProject(owner, name, path string, out output.Outputer) *fail
 	}
 	defer os.RemoveAll(tempDir)
 
+	if project.RepoURL == nil {
+		return locale.NewError("err_nil_repo_url", "Project returned empty repository URL")
+	}
+
 	out.Print(output.Heading(locale.Tr("git_cloning_project_heading")))
-	out.Print(locale.Tr("git_cloning_project", project.RepoURL.String()))
+	out.Print(locale.Tr("git_cloning_project", *project.RepoURL))
 	_, err = git.PlainClone(tempDir, false, &git.CloneOptions{
-		URL:      project.RepoURL.String(),
+		URL:      *project.RepoURL,
 		Progress: os.Stdout,
 	})
 	if err != nil {
-		return failures.FailCmd.Wrap(err)
+		return failures.FailCmd.Wrap(err).ToError()
 	}
 
 	fail = ensureCorrectRepo(owner, name, filepath.Join(tempDir, constants.ConfigFileName))
 	if fail != nil {
-		return fail
+		return fail.ToError()
 	}
 
-	return moveFiles(tempDir, path)
+	fail = moveFiles(tempDir, path)
+	if fail != nil {
+		return fail.ToError()
+	}
+	return nil
 }
 
 func ensureCorrectRepo(owner, name, projectFilePath string) *failures.Failure {
@@ -93,7 +102,7 @@ func ensureCorrectRepo(owner, name, projectFilePath string) *failures.Failure {
 		return fail
 	}
 
-	if !(proj.Owner() == owner) || !(proj.Name() == name) {
+	if !(strings.ToLower(proj.Owner()) == strings.ToLower(owner)) || !(strings.ToLower(proj.Name()) == strings.ToLower(name)) {
 		return FailProjectURLMismatch.New(locale.T("error_git_project_url_mismatch"))
 	}
 

@@ -6,28 +6,28 @@ package inventory_operations
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"net/http"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
-
-	strfmt "github.com/go-openapi/strfmt"
 )
 
 // NewGetNamespaceIngredientsParams creates a new GetNamespaceIngredientsParams object
 // with the default values initialized.
 func NewGetNamespaceIngredientsParams() *GetNamespaceIngredientsParams {
 	var (
+		allowDeletedDefault  = bool(false)
 		allowUnstableDefault = bool(false)
 		limitDefault         = int64(50)
 		pageDefault          = int64(1)
 	)
 	return &GetNamespaceIngredientsParams{
+		AllowDeleted:  &allowDeletedDefault,
 		AllowUnstable: &allowUnstableDefault,
 		Limit:         &limitDefault,
 		Page:          &pageDefault,
@@ -40,11 +40,13 @@ func NewGetNamespaceIngredientsParams() *GetNamespaceIngredientsParams {
 // with the default values initialized, and the ability to set a timeout on a request
 func NewGetNamespaceIngredientsParamsWithTimeout(timeout time.Duration) *GetNamespaceIngredientsParams {
 	var (
+		allowDeletedDefault  = bool(false)
 		allowUnstableDefault = bool(false)
 		limitDefault         = int64(50)
 		pageDefault          = int64(1)
 	)
 	return &GetNamespaceIngredientsParams{
+		AllowDeleted:  &allowDeletedDefault,
 		AllowUnstable: &allowUnstableDefault,
 		Limit:         &limitDefault,
 		Page:          &pageDefault,
@@ -57,11 +59,13 @@ func NewGetNamespaceIngredientsParamsWithTimeout(timeout time.Duration) *GetName
 // with the default values initialized, and the ability to set a context for a request
 func NewGetNamespaceIngredientsParamsWithContext(ctx context.Context) *GetNamespaceIngredientsParams {
 	var (
+		allowDeletedDefault  = bool(false)
 		allowUnstableDefault = bool(false)
 		limitDefault         = int64(50)
 		pageDefault          = int64(1)
 	)
 	return &GetNamespaceIngredientsParams{
+		AllowDeleted:  &allowDeletedDefault,
 		AllowUnstable: &allowUnstableDefault,
 		Limit:         &limitDefault,
 		Page:          &pageDefault,
@@ -74,11 +78,13 @@ func NewGetNamespaceIngredientsParamsWithContext(ctx context.Context) *GetNamesp
 // with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewGetNamespaceIngredientsParamsWithHTTPClient(client *http.Client) *GetNamespaceIngredientsParams {
 	var (
+		allowDeletedDefault  = bool(false)
 		allowUnstableDefault = bool(false)
 		limitDefault         = int64(50)
 		pageDefault          = int64(1)
 	)
 	return &GetNamespaceIngredientsParams{
+		AllowDeleted:  &allowDeletedDefault,
 		AllowUnstable: &allowUnstableDefault,
 		Limit:         &limitDefault,
 		Page:          &pageDefault,
@@ -91,6 +97,11 @@ for the get namespace ingredients operation typically these are written to a htt
 */
 type GetNamespaceIngredientsParams struct {
 
+	/*AllowDeleted
+	  Whether to show or hide a deleted revision of a resource if the newest revision of the resource is deleted
+
+	*/
+	AllowDeleted *bool
 	/*AllowUnstable
 	  Whether to show an unstable revision of a resource if there is an available unstable version newer than the newest available stable version
 
@@ -165,6 +176,17 @@ func (o *GetNamespaceIngredientsParams) WithHTTPClient(client *http.Client) *Get
 // SetHTTPClient adds the HTTPClient to the get namespace ingredients params
 func (o *GetNamespaceIngredientsParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
+}
+
+// WithAllowDeleted adds the allowDeleted to the get namespace ingredients params
+func (o *GetNamespaceIngredientsParams) WithAllowDeleted(allowDeleted *bool) *GetNamespaceIngredientsParams {
+	o.SetAllowDeleted(allowDeleted)
+	return o
+}
+
+// SetAllowDeleted adds the allowDeleted to the get namespace ingredients params
+func (o *GetNamespaceIngredientsParams) SetAllowDeleted(allowDeleted *bool) {
+	o.AllowDeleted = allowDeleted
 }
 
 // WithAllowUnstable adds the allowUnstable to the get namespace ingredients params
@@ -262,6 +284,22 @@ func (o *GetNamespaceIngredientsParams) WriteToRequest(r runtime.ClientRequest, 
 		return err
 	}
 	var res []error
+
+	if o.AllowDeleted != nil {
+
+		// query param allow_deleted
+		var qrAllowDeleted bool
+		if o.AllowDeleted != nil {
+			qrAllowDeleted = *o.AllowDeleted
+		}
+		qAllowDeleted := swag.FormatBool(qrAllowDeleted)
+		if qAllowDeleted != "" {
+			if err := r.SetQueryParam("allow_deleted", qAllowDeleted); err != nil {
+				return err
+			}
+		}
+
+	}
 
 	if o.AllowUnstable != nil {
 

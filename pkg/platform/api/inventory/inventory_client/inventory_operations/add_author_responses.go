@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // AddAuthorReader is a Reader for the AddAuthor structure.
@@ -24,21 +23,18 @@ type AddAuthorReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *AddAuthorReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 201:
 		result := NewAddAuthorCreated()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewAddAuthorBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewAddAuthorDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -61,16 +57,20 @@ func NewAddAuthorCreated() *AddAuthorCreated {
 The added author
 */
 type AddAuthorCreated struct {
-	Payload *inventory_models.V1Author
+	Payload *inventory_models.Author
 }
 
 func (o *AddAuthorCreated) Error() string {
 	return fmt.Sprintf("[POST /v1/authors][%d] addAuthorCreated  %+v", 201, o.Payload)
 }
 
+func (o *AddAuthorCreated) GetPayload() *inventory_models.Author {
+	return o.Payload
+}
+
 func (o *AddAuthorCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(inventory_models.V1Author)
+	o.Payload = new(inventory_models.Author)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -95,6 +95,10 @@ type AddAuthorBadRequest struct {
 
 func (o *AddAuthorBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/authors][%d] addAuthorBadRequest  %+v", 400, o.Payload)
+}
+
+func (o *AddAuthorBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
+	return o.Payload
 }
 
 func (o *AddAuthorBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -133,6 +137,10 @@ func (o *AddAuthorDefault) Code() int {
 
 func (o *AddAuthorDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/authors][%d] addAuthor default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *AddAuthorDefault) GetPayload() *inventory_models.RestAPIError {
+	return o.Payload
 }
 
 func (o *AddAuthorDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

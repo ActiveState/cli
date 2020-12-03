@@ -168,5 +168,16 @@ func UnwrapError(err error) []error {
 		}
 		err = errors.Unwrap(err)
 	}
-	return errs
+
+	// Filter out failures that are not at the start or end, because failures were ALWAYS localized there's a ton of
+	// redundancy in their reporting
+	var resultErrs []error
+	for n, err := range errs {
+		_, isFailure := err.(failure)
+		if n == 0 || n == len(errs)-1 || !isFailure {
+			resultErrs = append(resultErrs, err)
+		}
+	}
+
+	return resultErrs
 }

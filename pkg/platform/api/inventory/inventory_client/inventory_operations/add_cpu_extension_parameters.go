@@ -6,18 +6,16 @@ package inventory_operations
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"net/http"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // NewAddCPUExtensionParams creates a new AddCPUExtensionParams object
@@ -65,7 +63,7 @@ for the add Cpu extension operation typically these are written to a http.Reques
 type AddCPUExtensionParams struct {
 
 	/*CPUExtension*/
-	CPUExtension *inventory_models.V1CPUExtensionCore
+	CPUExtension *inventory_models.CPUExtensionCore
 
 	timeout    time.Duration
 	Context    context.Context
@@ -106,13 +104,13 @@ func (o *AddCPUExtensionParams) SetHTTPClient(client *http.Client) {
 }
 
 // WithCPUExtension adds the cPUExtension to the add Cpu extension params
-func (o *AddCPUExtensionParams) WithCPUExtension(cPUExtension *inventory_models.V1CPUExtensionCore) *AddCPUExtensionParams {
+func (o *AddCPUExtensionParams) WithCPUExtension(cPUExtension *inventory_models.CPUExtensionCore) *AddCPUExtensionParams {
 	o.SetCPUExtension(cPUExtension)
 	return o
 }
 
 // SetCPUExtension adds the cpuExtension to the add Cpu extension params
-func (o *AddCPUExtensionParams) SetCPUExtension(cPUExtension *inventory_models.V1CPUExtensionCore) {
+func (o *AddCPUExtensionParams) SetCPUExtension(cPUExtension *inventory_models.CPUExtensionCore) {
 	o.CPUExtension = cPUExtension
 }
 

@@ -6,18 +6,16 @@ package inventory_operations
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"net/http"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // NewAddIngredientVersionParams creates a new AddIngredientVersionParams object
@@ -67,7 +65,7 @@ type AddIngredientVersionParams struct {
 	/*IngredientID*/
 	IngredientID strfmt.UUID
 	/*IngredientVersion*/
-	IngredientVersion *inventory_models.V1IngredientVersionCreate
+	IngredientVersion *inventory_models.IngredientVersionCreate
 	/*IsDefaultProviderBehavior
 	  How setting of is_default_provider should be handled for the features provided by the thing being created. The options are: 'override' - if is_default_provider is set to true for a provided feature then replace the existing default provider of that feature (if one exists); 'if-new' - set is_default_provider to true if this is an entirely new feature, otherwise false
 
@@ -124,13 +122,13 @@ func (o *AddIngredientVersionParams) SetIngredientID(ingredientID strfmt.UUID) {
 }
 
 // WithIngredientVersion adds the ingredientVersion to the add ingredient version params
-func (o *AddIngredientVersionParams) WithIngredientVersion(ingredientVersion *inventory_models.V1IngredientVersionCreate) *AddIngredientVersionParams {
+func (o *AddIngredientVersionParams) WithIngredientVersion(ingredientVersion *inventory_models.IngredientVersionCreate) *AddIngredientVersionParams {
 	o.SetIngredientVersion(ingredientVersion)
 	return o
 }
 
 // SetIngredientVersion adds the ingredientVersion to the add ingredient version params
-func (o *AddIngredientVersionParams) SetIngredientVersion(ingredientVersion *inventory_models.V1IngredientVersionCreate) {
+func (o *AddIngredientVersionParams) SetIngredientVersion(ingredientVersion *inventory_models.IngredientVersionCreate) {
 	o.IngredientVersion = ingredientVersion
 }
 

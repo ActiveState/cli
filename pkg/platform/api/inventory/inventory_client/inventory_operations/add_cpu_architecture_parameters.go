@@ -6,18 +6,16 @@ package inventory_operations
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"net/http"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // NewAddCPUArchitectureParams creates a new AddCPUArchitectureParams object
@@ -65,7 +63,7 @@ for the add Cpu architecture operation typically these are written to a http.Req
 type AddCPUArchitectureParams struct {
 
 	/*CPUArchitecture*/
-	CPUArchitecture *inventory_models.V1CPUArchitectureCore
+	CPUArchitecture *inventory_models.CPUArchitectureCore
 
 	timeout    time.Duration
 	Context    context.Context
@@ -106,13 +104,13 @@ func (o *AddCPUArchitectureParams) SetHTTPClient(client *http.Client) {
 }
 
 // WithCPUArchitecture adds the cPUArchitecture to the add Cpu architecture params
-func (o *AddCPUArchitectureParams) WithCPUArchitecture(cPUArchitecture *inventory_models.V1CPUArchitectureCore) *AddCPUArchitectureParams {
+func (o *AddCPUArchitectureParams) WithCPUArchitecture(cPUArchitecture *inventory_models.CPUArchitectureCore) *AddCPUArchitectureParams {
 	o.SetCPUArchitecture(cPUArchitecture)
 	return o
 }
 
 // SetCPUArchitecture adds the cpuArchitecture to the add Cpu architecture params
-func (o *AddCPUArchitectureParams) SetCPUArchitecture(cPUArchitecture *inventory_models.V1CPUArchitectureCore) {
+func (o *AddCPUArchitectureParams) SetCPUArchitecture(cPUArchitecture *inventory_models.CPUArchitectureCore) {
 	o.CPUArchitecture = cPUArchitecture
 }
 

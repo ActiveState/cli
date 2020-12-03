@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // GetIngredientVersionBuildScriptsReader is a Reader for the GetIngredientVersionBuildScripts structure.
@@ -24,14 +23,12 @@ type GetIngredientVersionBuildScriptsReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetIngredientVersionBuildScriptsReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewGetIngredientVersionBuildScriptsOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	default:
 		result := NewGetIngredientVersionBuildScriptsDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -54,16 +51,20 @@ func NewGetIngredientVersionBuildScriptsOK() *GetIngredientVersionBuildScriptsOK
 A paginated list of build scripts
 */
 type GetIngredientVersionBuildScriptsOK struct {
-	Payload *inventory_models.V1BuildScriptPagedList
+	Payload *inventory_models.BuildScriptPagedList
 }
 
 func (o *GetIngredientVersionBuildScriptsOK) Error() string {
 	return fmt.Sprintf("[GET /v1/ingredients/{ingredient_id}/versions/{ingredient_version_id}/build-scripts][%d] getIngredientVersionBuildScriptsOK  %+v", 200, o.Payload)
 }
 
+func (o *GetIngredientVersionBuildScriptsOK) GetPayload() *inventory_models.BuildScriptPagedList {
+	return o.Payload
+}
+
 func (o *GetIngredientVersionBuildScriptsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(inventory_models.V1BuildScriptPagedList)
+	o.Payload = new(inventory_models.BuildScriptPagedList)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -97,6 +98,10 @@ func (o *GetIngredientVersionBuildScriptsDefault) Code() int {
 
 func (o *GetIngredientVersionBuildScriptsDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/ingredients/{ingredient_id}/versions/{ingredient_version_id}/build-scripts][%d] getIngredientVersionBuildScripts default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *GetIngredientVersionBuildScriptsDefault) GetPayload() *inventory_models.RestAPIError {
+	return o.Payload
 }
 
 func (o *GetIngredientVersionBuildScriptsDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

@@ -18,29 +18,29 @@ import (
 )
 
 // persist contains the active API Client connection
-var persist *inventory_operations.Client
+var persist inventory_operations.ClientService
 
 var transport http.RoundTripper
 
 var FailNoRecipes = failures.Type("fail.inventory.norecipes", api.FailNotFound)
 
 // Init will create a new API client using default settings
-func Init() (*inventory_operations.Client, runtime.ClientTransport) {
+func Init() (inventory_operations.ClientService, runtime.ClientTransport) {
 	return New(api.GetServiceURL(api.ServiceInventory))
 }
 
 // New initializes a new api client
-func New(serviceURL *url.URL) (*inventory_operations.Client, runtime.ClientTransport) {
+func New(serviceURL *url.URL) (inventory_operations.ClientService, runtime.ClientTransport) {
 	transportRuntime := httptransport.New(serviceURL.Host, serviceURL.Path, []string{serviceURL.Scheme})
 	transportRuntime.Transport = api.NewRoundTripper()
 
-	//transportRuntime.SetDebug(true)
+	// transportRuntime.SetDebug(true)
 
 	return inventory_operations.New(transportRuntime, strfmt.Default), transportRuntime
 }
 
 // Get returns a cached version of the default api client
-func Get() *inventory_operations.Client {
+func Get() inventory_operations.ClientService {
 	if persist == nil {
 		persist, _ = Init()
 	}

@@ -6,28 +6,28 @@ package inventory_operations
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"net/http"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
-
-	strfmt "github.com/go-openapi/strfmt"
 )
 
 // NewSearchIngredientsParams creates a new SearchIngredientsParams object
 // with the default values initialized.
 func NewSearchIngredientsParams() *SearchIngredientsParams {
 	var (
+		allowDeletedDefault  = bool(false)
 		allowUnstableDefault = bool(false)
 		limitDefault         = int64(50)
 		offsetDefault        = int64(0)
 	)
 	return &SearchIngredientsParams{
+		AllowDeleted:  &allowDeletedDefault,
 		AllowUnstable: &allowUnstableDefault,
 		Limit:         &limitDefault,
 		Offset:        &offsetDefault,
@@ -40,11 +40,13 @@ func NewSearchIngredientsParams() *SearchIngredientsParams {
 // with the default values initialized, and the ability to set a timeout on a request
 func NewSearchIngredientsParamsWithTimeout(timeout time.Duration) *SearchIngredientsParams {
 	var (
+		allowDeletedDefault  = bool(false)
 		allowUnstableDefault = bool(false)
 		limitDefault         = int64(50)
 		offsetDefault        = int64(0)
 	)
 	return &SearchIngredientsParams{
+		AllowDeleted:  &allowDeletedDefault,
 		AllowUnstable: &allowUnstableDefault,
 		Limit:         &limitDefault,
 		Offset:        &offsetDefault,
@@ -57,11 +59,13 @@ func NewSearchIngredientsParamsWithTimeout(timeout time.Duration) *SearchIngredi
 // with the default values initialized, and the ability to set a context for a request
 func NewSearchIngredientsParamsWithContext(ctx context.Context) *SearchIngredientsParams {
 	var (
+		allowDeletedDefault  = bool(false)
 		allowUnstableDefault = bool(false)
 		limitDefault         = int64(50)
 		offsetDefault        = int64(0)
 	)
 	return &SearchIngredientsParams{
+		AllowDeleted:  &allowDeletedDefault,
 		AllowUnstable: &allowUnstableDefault,
 		Limit:         &limitDefault,
 		Offset:        &offsetDefault,
@@ -74,11 +78,13 @@ func NewSearchIngredientsParamsWithContext(ctx context.Context) *SearchIngredien
 // with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewSearchIngredientsParamsWithHTTPClient(client *http.Client) *SearchIngredientsParams {
 	var (
+		allowDeletedDefault  = bool(false)
 		allowUnstableDefault = bool(false)
 		limitDefault         = int64(50)
 		offsetDefault        = int64(0)
 	)
 	return &SearchIngredientsParams{
+		AllowDeleted:  &allowDeletedDefault,
 		AllowUnstable: &allowUnstableDefault,
 		Limit:         &limitDefault,
 		Offset:        &offsetDefault,
@@ -91,6 +97,11 @@ for the search ingredients operation typically these are written to a http.Reque
 */
 type SearchIngredientsParams struct {
 
+	/*AllowDeleted
+	  Whether to show or hide a deleted revision of a resource if the newest revision of the resource is deleted
+
+	*/
+	AllowDeleted *bool
 	/*AllowUnstable
 	  Whether to show an unstable revision of a resource if there is an available unstable version newer than the newest available stable version
 
@@ -150,6 +161,17 @@ func (o *SearchIngredientsParams) WithHTTPClient(client *http.Client) *SearchIng
 // SetHTTPClient adds the HTTPClient to the search ingredients params
 func (o *SearchIngredientsParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
+}
+
+// WithAllowDeleted adds the allowDeleted to the search ingredients params
+func (o *SearchIngredientsParams) WithAllowDeleted(allowDeleted *bool) *SearchIngredientsParams {
+	o.SetAllowDeleted(allowDeleted)
+	return o
+}
+
+// SetAllowDeleted adds the allowDeleted to the search ingredients params
+func (o *SearchIngredientsParams) SetAllowDeleted(allowDeleted *bool) {
+	o.AllowDeleted = allowDeleted
 }
 
 // WithAllowUnstable adds the allowUnstable to the search ingredients params
@@ -214,6 +236,22 @@ func (o *SearchIngredientsParams) WriteToRequest(r runtime.ClientRequest, reg st
 		return err
 	}
 	var res []error
+
+	if o.AllowDeleted != nil {
+
+		// query param allow_deleted
+		var qrAllowDeleted bool
+		if o.AllowDeleted != nil {
+			qrAllowDeleted = *o.AllowDeleted
+		}
+		qAllowDeleted := swag.FormatBool(qrAllowDeleted)
+		if qAllowDeleted != "" {
+			if err := r.SetQueryParam("allow_deleted", qAllowDeleted); err != nil {
+				return err
+			}
+		}
+
+	}
 
 	if o.AllowUnstable != nil {
 

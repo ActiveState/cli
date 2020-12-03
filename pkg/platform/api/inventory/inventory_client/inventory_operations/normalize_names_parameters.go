@@ -6,18 +6,16 @@ package inventory_operations
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"net/http"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // NewNormalizeNamesParams creates a new NormalizeNamesParams object
@@ -65,7 +63,7 @@ for the normalize names operation typically these are written to a http.Request
 type NormalizeNamesParams struct {
 
 	/*Names*/
-	Names *inventory_models.V1UnnormalizedNames
+	Names *inventory_models.UnnormalizedNames
 	/*Namespace*/
 	Namespace string
 
@@ -108,13 +106,13 @@ func (o *NormalizeNamesParams) SetHTTPClient(client *http.Client) {
 }
 
 // WithNames adds the names to the normalize names params
-func (o *NormalizeNamesParams) WithNames(names *inventory_models.V1UnnormalizedNames) *NormalizeNamesParams {
+func (o *NormalizeNamesParams) WithNames(names *inventory_models.UnnormalizedNames) *NormalizeNamesParams {
 	o.SetNames(names)
 	return o
 }
 
 // SetNames adds the names to the normalize names params
-func (o *NormalizeNamesParams) SetNames(names *inventory_models.V1UnnormalizedNames) {
+func (o *NormalizeNamesParams) SetNames(names *inventory_models.UnnormalizedNames) {
 	o.Names = names
 }
 

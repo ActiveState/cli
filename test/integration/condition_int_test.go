@@ -107,7 +107,7 @@ constants:
     if: ne .Project.Owner ""
   - name: projectNamespace
     value: projectNamespaceValue
-    if: ne .Project.Namespace ""
+    if: ne .Project.NamespacePrefix ""
   - name: osName
     value: osNameValue
     if: ne .OS.Name ""

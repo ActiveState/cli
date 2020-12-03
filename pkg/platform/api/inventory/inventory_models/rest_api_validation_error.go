@@ -6,18 +6,18 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // RestAPIValidationError REST API validation error body
 //
 // A error for when invalid input is supplied to an endpoint.
+//
 // swagger:model restApiValidationError
 type RestAPIValidationError struct {
-	RestAPIValidationErrorAllOf0
+	RestAPIError
 
 	RestAPIValidationErrorAllOf1
 }
@@ -25,11 +25,11 @@ type RestAPIValidationError struct {
 // UnmarshalJSON unmarshals this object from a JSON structure
 func (m *RestAPIValidationError) UnmarshalJSON(raw []byte) error {
 	// AO0
-	var aO0 RestAPIValidationErrorAllOf0
+	var aO0 RestAPIError
 	if err := swag.ReadJSON(raw, &aO0); err != nil {
 		return err
 	}
-	m.RestAPIValidationErrorAllOf0 = aO0
+	m.RestAPIError = aO0
 
 	// AO1
 	var aO1 RestAPIValidationErrorAllOf1
@@ -45,7 +45,7 @@ func (m *RestAPIValidationError) UnmarshalJSON(raw []byte) error {
 func (m RestAPIValidationError) MarshalJSON() ([]byte, error) {
 	_parts := make([][]byte, 0, 2)
 
-	aO0, err := swag.WriteJSON(m.RestAPIValidationErrorAllOf0)
+	aO0, err := swag.WriteJSON(m.RestAPIError)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +56,6 @@ func (m RestAPIValidationError) MarshalJSON() ([]byte, error) {
 		return nil, err
 	}
 	_parts = append(_parts, aO1)
-
 	return swag.ConcatJSON(_parts...), nil
 }
 
@@ -64,8 +63,8 @@ func (m RestAPIValidationError) MarshalJSON() ([]byte, error) {
 func (m *RestAPIValidationError) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	// validation for a type composition with RestAPIValidationErrorAllOf0
-	if err := m.RestAPIValidationErrorAllOf0.Validate(formats); err != nil {
+	// validation for a type composition with RestAPIError
+	if err := m.RestAPIError.Validate(formats); err != nil {
 		res = append(res, err)
 	}
 	// validation for a type composition with RestAPIValidationErrorAllOf1

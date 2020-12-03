@@ -4,13 +4,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-openapi/strfmt"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	gmodel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/go-openapi/strfmt"
 )
 
 type commitData struct {
@@ -46,13 +47,17 @@ func PrintCommits(out output.Outputer, commits []*mono_models.Commit, orgs []gmo
 }
 
 func commitDataFromCommit(commit *mono_models.Commit, orgs []gmodel.Organization) (commitData, error) {
-	username, err := usernameForID(commit.Author, orgs)
-	if err != nil {
-		return commitData{}, locale.WrapError(err, "err_commit_print_username", "Could not determine username for commit author")
+	var username string
+	var err error
+	if commit.Author != nil && orgs != nil {
+		username, err = usernameForID(*commit.Author, orgs)
+		if err != nil {
+			return commitData{}, locale.WrapError(err, "err_commit_print_username", "Could not determine username for commit author")
+		}
 	}
 
 	return commitData{
-		Hash:    shortHash(commit.CommitID.String()),
+		Hash:    commit.CommitID.String(),
 		Author:  username,
 		Date:    time.Time(commit.Added).Format(constants.DateTimeFormatUser),
 		Message: commit.Message,

@@ -118,3 +118,34 @@ func TestGetString(t *testing.T) {
 		})
 	}
 }
+
+func TestRange(t *testing.T) {
+	type args struct {
+		in    []int
+		start int
+		end   int
+	}
+	tests := []struct {
+		name string
+		args args
+		want []int
+	}{
+		{
+			"Slice is smaller than range",
+			args{
+				[]int{1, 2, 3},
+				1,
+				5,
+			},
+			[]int{2, 3},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := IntRangeUncapped(tt.args.in, tt.args.start, tt.args.end)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Range() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

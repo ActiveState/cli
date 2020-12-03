@@ -8,13 +8,13 @@ github.com/ActiveState/archiver
 github.com/ActiveState/go-ogle-analytics
 # github.com/ActiveState/sysinfo v0.0.0-20200619170619-0582d42daf27
 github.com/ActiveState/sysinfo
-# github.com/ActiveState/termtest v0.6.1
+# github.com/ActiveState/termtest v0.7.1
 github.com/ActiveState/termtest
 github.com/ActiveState/termtest/internal/osutils
 github.com/ActiveState/termtest/internal/osutils/stacktrace
 # github.com/ActiveState/termtest/conpty v0.5.0
 github.com/ActiveState/termtest/conpty
-# github.com/ActiveState/termtest/expect v0.6.0
+# github.com/ActiveState/termtest/expect v0.7.0
 github.com/ActiveState/termtest/expect
 github.com/ActiveState/termtest/expect/internal/osutils
 # github.com/ActiveState/termtest/xpty v0.6.0
@@ -24,7 +24,7 @@ github.com/ActiveState/vt10x
 # github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78
 github.com/Azure/go-ansiterm
 github.com/Azure/go-ansiterm/winterm
-# github.com/Netflix/go-expect v0.0.0-20200312175327-da48e75238e2
+# github.com/Netflix/go-expect v0.0.0-20201125194554-85d881c3777e
 github.com/Netflix/go-expect
 # github.com/PuerkitoBio/purell v1.1.0
 github.com/PuerkitoBio/purell
@@ -292,7 +292,7 @@ github.com/src-d/gcfg/token
 github.com/src-d/gcfg/types
 # github.com/stretchr/objx v0.2.0
 github.com/stretchr/objx
-# github.com/stretchr/testify v1.5.1
+# github.com/stretchr/testify v1.6.1
 github.com/stretchr/testify/assert
 github.com/stretchr/testify/mock
 github.com/stretchr/testify/require
@@ -366,7 +366,7 @@ golang.org/x/oauth2/google
 golang.org/x/oauth2/internal
 golang.org/x/oauth2/jws
 golang.org/x/oauth2/jwt
-# golang.org/x/sys v0.0.0-20201026163216-e075d9370641
+# golang.org/x/sys v0.0.0-20201201145000-ef89a241ccb3
 golang.org/x/sys/cpu
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
@@ -552,3 +552,5 @@ gopkg.in/tomb.v1
 gopkg.in/warnings.v0
 # gopkg.in/yaml.v2 v2.3.0
 gopkg.in/yaml.v2
+# gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c
+gopkg.in/yaml.v3

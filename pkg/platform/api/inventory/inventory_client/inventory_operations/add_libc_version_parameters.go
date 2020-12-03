@@ -6,18 +6,16 @@ package inventory_operations
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"net/http"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // NewAddLibcVersionParams creates a new AddLibcVersionParams object
@@ -67,7 +65,7 @@ type AddLibcVersionParams struct {
 	/*LibcID*/
 	LibcID strfmt.UUID
 	/*LibcVersion*/
-	LibcVersion *inventory_models.V1LibcVersionCore
+	LibcVersion *inventory_models.LibcVersionCore
 
 	timeout    time.Duration
 	Context    context.Context
@@ -119,13 +117,13 @@ func (o *AddLibcVersionParams) SetLibcID(libcID strfmt.UUID) {
 }
 
 // WithLibcVersion adds the libcVersion to the add libc version params
-func (o *AddLibcVersionParams) WithLibcVersion(libcVersion *inventory_models.V1LibcVersionCore) *AddLibcVersionParams {
+func (o *AddLibcVersionParams) WithLibcVersion(libcVersion *inventory_models.LibcVersionCore) *AddLibcVersionParams {
 	o.SetLibcVersion(libcVersion)
 	return o
 }
 
 // SetLibcVersion adds the libcVersion to the add libc version params
-func (o *AddLibcVersionParams) SetLibcVersion(libcVersion *inventory_models.V1LibcVersionCore) {
+func (o *AddLibcVersionParams) SetLibcVersion(libcVersion *inventory_models.LibcVersionCore) {
 	o.LibcVersion = libcVersion
 }
 

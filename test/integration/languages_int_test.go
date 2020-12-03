@@ -33,6 +33,17 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_list() {
 	cp.ExpectExitCode(0)
 }
 
+func (suite *LanguagesIntegrationTestSuite) TestLanguages_listNoCommitID() {
+	suite.OnlyRunForTags(tagsuite.Languages)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	suite.PrepareActiveStateYAMLNoCommitID(ts)
+
+	cp := ts.Spawn("languages")
+	cp.ExpectNotExitCode(0)
+}
+
 func (suite *LanguagesIntegrationTestSuite) TestLanguages_install() {
 	suite.OnlyRunForTags(tagsuite.Languages)
 	ts := e2e.New(suite.T(), false)
@@ -91,6 +102,11 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_install() {
 }
 
 func (suite *LanguagesIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session) {
+	asyData := `project: "https://platform.activestate.com/cli-integration-tests/Languages?commitID=e7df00bc-df4d-4e4a-97f7-efa741159bd2"`
+	ts.PrepareActiveStateYAML(asyData)
+}
+
+func (suite *LanguagesIntegrationTestSuite) PrepareActiveStateYAMLNoCommitID(ts *e2e.Session) {
 	asyData := `project: "https://platform.activestate.com/cli-integration-tests/Languages"`
 	ts.PrepareActiveStateYAML(asyData)
 }

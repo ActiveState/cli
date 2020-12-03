@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // AddBuildScriptReader is a Reader for the AddBuildScript structure.
@@ -24,21 +23,18 @@ type AddBuildScriptReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *AddBuildScriptReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 201:
 		result := NewAddBuildScriptCreated()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewAddBuildScriptBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewAddBuildScriptDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -61,16 +57,20 @@ func NewAddBuildScriptCreated() *AddBuildScriptCreated {
 The added build script
 */
 type AddBuildScriptCreated struct {
-	Payload *inventory_models.V1BuildScript
+	Payload *inventory_models.BuildScript
 }
 
 func (o *AddBuildScriptCreated) Error() string {
 	return fmt.Sprintf("[POST /v1/build-scripts][%d] addBuildScriptCreated  %+v", 201, o.Payload)
 }
 
+func (o *AddBuildScriptCreated) GetPayload() *inventory_models.BuildScript {
+	return o.Payload
+}
+
 func (o *AddBuildScriptCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(inventory_models.V1BuildScript)
+	o.Payload = new(inventory_models.BuildScript)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -95,6 +95,10 @@ type AddBuildScriptBadRequest struct {
 
 func (o *AddBuildScriptBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/build-scripts][%d] addBuildScriptBadRequest  %+v", 400, o.Payload)
+}
+
+func (o *AddBuildScriptBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
+	return o.Payload
 }
 
 func (o *AddBuildScriptBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -133,6 +137,10 @@ func (o *AddBuildScriptDefault) Code() int {
 
 func (o *AddBuildScriptDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/build-scripts][%d] addBuildScript default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *AddBuildScriptDefault) GetPayload() *inventory_models.RestAPIError {
+	return o.Payload
 }
 
 func (o *AddBuildScriptDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

@@ -6,18 +6,16 @@ package inventory_operations
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"net/http"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // NewUpdateBuildScriptParams creates a new UpdateBuildScriptParams object
@@ -65,7 +63,7 @@ for the update build script operation typically these are written to a http.Requ
 type UpdateBuildScriptParams struct {
 
 	/*BuildScript*/
-	BuildScript *inventory_models.V1BuildScriptCore
+	BuildScript *inventory_models.BuildScriptCore
 	/*BuildScriptID*/
 	BuildScriptID strfmt.UUID
 
@@ -108,13 +106,13 @@ func (o *UpdateBuildScriptParams) SetHTTPClient(client *http.Client) {
 }
 
 // WithBuildScript adds the buildScript to the update build script params
-func (o *UpdateBuildScriptParams) WithBuildScript(buildScript *inventory_models.V1BuildScriptCore) *UpdateBuildScriptParams {
+func (o *UpdateBuildScriptParams) WithBuildScript(buildScript *inventory_models.BuildScriptCore) *UpdateBuildScriptParams {
 	o.SetBuildScript(buildScript)
 	return o
 }
 
 // SetBuildScript adds the buildScript to the update build script params
-func (o *UpdateBuildScriptParams) SetBuildScript(buildScript *inventory_models.V1BuildScriptCore) {
+func (o *UpdateBuildScriptParams) SetBuildScript(buildScript *inventory_models.BuildScriptCore) {
 	o.BuildScript = buildScript
 }
 

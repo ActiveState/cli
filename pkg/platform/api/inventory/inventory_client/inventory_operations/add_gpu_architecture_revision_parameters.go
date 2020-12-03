@@ -6,18 +6,16 @@ package inventory_operations
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"net/http"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // NewAddGpuArchitectureRevisionParams creates a new AddGpuArchitectureRevisionParams object
@@ -67,7 +65,7 @@ type AddGpuArchitectureRevisionParams struct {
 	/*GpuArchitectureID*/
 	GpuArchitectureID strfmt.UUID
 	/*GpuArchitectureRevision*/
-	GpuArchitectureRevision *inventory_models.V1Revision
+	GpuArchitectureRevision *inventory_models.Revision
 
 	timeout    time.Duration
 	Context    context.Context
@@ -119,13 +117,13 @@ func (o *AddGpuArchitectureRevisionParams) SetGpuArchitectureID(gpuArchitectureI
 }
 
 // WithGpuArchitectureRevision adds the gpuArchitectureRevision to the add gpu architecture revision params
-func (o *AddGpuArchitectureRevisionParams) WithGpuArchitectureRevision(gpuArchitectureRevision *inventory_models.V1Revision) *AddGpuArchitectureRevisionParams {
+func (o *AddGpuArchitectureRevisionParams) WithGpuArchitectureRevision(gpuArchitectureRevision *inventory_models.Revision) *AddGpuArchitectureRevisionParams {
 	o.SetGpuArchitectureRevision(gpuArchitectureRevision)
 	return o
 }
 
 // SetGpuArchitectureRevision adds the gpuArchitectureRevision to the add gpu architecture revision params
-func (o *AddGpuArchitectureRevisionParams) SetGpuArchitectureRevision(gpuArchitectureRevision *inventory_models.V1Revision) {
+func (o *AddGpuArchitectureRevisionParams) SetGpuArchitectureRevision(gpuArchitectureRevision *inventory_models.Revision) {
 	o.GpuArchitectureRevision = gpuArchitectureRevision
 }
 

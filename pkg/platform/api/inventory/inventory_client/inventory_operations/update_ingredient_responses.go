@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // UpdateIngredientReader is a Reader for the UpdateIngredient structure.
@@ -24,14 +23,12 @@ type UpdateIngredientReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *UpdateIngredientReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewUpdateIngredientOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	default:
 		result := NewUpdateIngredientDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -54,16 +51,20 @@ func NewUpdateIngredientOK() *UpdateIngredientOK {
 The updated ingredient
 */
 type UpdateIngredientOK struct {
-	Payload *inventory_models.V1Ingredient
+	Payload *inventory_models.Ingredient
 }
 
 func (o *UpdateIngredientOK) Error() string {
 	return fmt.Sprintf("[PUT /v1/ingredients/{ingredient_id}][%d] updateIngredientOK  %+v", 200, o.Payload)
 }
 
+func (o *UpdateIngredientOK) GetPayload() *inventory_models.Ingredient {
+	return o.Payload
+}
+
 func (o *UpdateIngredientOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(inventory_models.V1Ingredient)
+	o.Payload = new(inventory_models.Ingredient)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -97,6 +98,10 @@ func (o *UpdateIngredientDefault) Code() int {
 
 func (o *UpdateIngredientDefault) Error() string {
 	return fmt.Sprintf("[PUT /v1/ingredients/{ingredient_id}][%d] updateIngredient default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *UpdateIngredientDefault) GetPayload() *inventory_models.RestAPIError {
+	return o.Payload
 }
 
 func (o *UpdateIngredientDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
