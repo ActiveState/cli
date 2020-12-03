@@ -6,6 +6,7 @@ import (
 	"io"
 	"reflect"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/go-openapi/strfmt"
@@ -22,6 +23,7 @@ import (
 	"github.com/ActiveState/cli/internal/termutils"
 )
 
+// PlainOpts define available tokens for setting plain output options.
 type PlainOpts string
 
 const (
@@ -31,6 +33,8 @@ const (
 	EmptyNil PlainOpts = "emptyNil"
 	// HidePlain hides the field value in table output
 	HidePlain PlainOpts = "hidePlain"
+	// ShiftColsPrefix starts the column after the set qty
+	ShiftColsPrefix PlainOpts = "shiftCols="
 )
 
 const dash = "\u2500"
@@ -284,16 +288,18 @@ func sprintTable(slice []interface{}) (string, error) {
 				stringValue = ""
 			}
 
+			offset := shiftColsVal(field.opts)
+
 			if funk.Contains(field.opts, string(SeparateLineOpt)) {
 				rows = append(rows, row)
 				if !funk.Contains(field.opts, string(EmptyNil)) || stringValue != "" {
-					rows = append(rows, []string{stringValue})
+					rows = append(rows, columns(offset, stringValue))
 				}
 				row = []string{}
 				break
 			}
 
-			row = append(row, stringValue)
+			row = append(row, columns(offset, stringValue)...)
 		}
 
 		if len(row) > 0 {
@@ -323,4 +329,31 @@ func trimValue(value string, size int) string {
 		value = value[0:size-5] + " [..]"
 	}
 	return value
+}
+
+func shiftColsVal(opts []string) int {
+	for _, opt := range opts {
+		a := strings.TrimPrefix(opt, string(ShiftColsPrefix))
+		if len(a) < len(opt) {
+			n, err := strconv.Atoi(a)
+			if err != nil {
+				logging.Errorf("Cannot get shiftCols value: %v", err)
+				break
+			}
+
+			return n
+		}
+	}
+
+	return 0
+}
+
+func columns(offset int, value string) []string {
+	if offset < 0 {
+		offset *= -1
+		logging.Errorf("Negative shiftCols values are not handled, using postive value %d", offset)
+	}
+	cols := make([]string, offset+1)
+	cols[offset] = value
+	return cols
 }

@@ -121,7 +121,7 @@ type searchPackageRow struct {
 	Version       string `json:"version" locale:"package_version,Latest Version"`
 	OlderVersions string `json:"versions" locale:","`
 	versions      int
-	Modules       modules `json:"matching_modules,omitempty" opts:"emptyNil,separateLine"`
+	Modules       modules `json:"matching_modules,omitempty" opts:"emptyNil,separateLine,shiftCols=1"`
 }
 
 func formatSearchResults(packages []*model.IngredientAndVersion) []searchPackageRow {
