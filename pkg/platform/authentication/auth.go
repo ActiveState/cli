@@ -52,8 +52,6 @@ var (
 	FailNotAuthenticated = failures.Type("authentication.fail.notauthed")
 )
 
-const authenticatedConfigKey = "authenticated"
-
 var exit = os.Exit
 
 var persist *Auth
@@ -138,15 +136,10 @@ func (s *Auth) updateRollbarPerson() {
 	logging.UpdateRollbarPerson(uid.String(), s.WhoAmI(), s.Email())
 }
 
-func (s *Auth) setAuthenticated() {
-	viper.Set(authenticatedConfigKey, true)
-}
-
 // Authenticate will try to authenticate using stored credentials
 func (s *Auth) Authenticate() *failures.Failure {
 	if s.Authenticated() {
 		s.updateRollbarPerson()
-		s.setAuthenticated()
 		return nil
 	}
 
@@ -177,7 +170,6 @@ func (s *Auth) AuthenticateWithModel(credentials *mono_models.Credentials) *fail
 		}
 	}
 	defer s.updateRollbarPerson()
-	defer s.setAuthenticated()
 
 	payload := loginOK.Payload
 	s.user = payload.User
@@ -232,10 +224,6 @@ func (s *Auth) UserID() *strfmt.UUID {
 		return &s.user.UserID
 	}
 	return nil
-}
-
-func (s *Auth) IsAnonymous() bool {
-	return !viper.GetBool(authenticatedConfigKey)
 }
 
 // Logout will destroy any session tokens and reset the current Auth instance
