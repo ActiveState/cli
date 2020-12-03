@@ -7,6 +7,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/go-openapi/strfmt"
 	"github.com/gobuffalo/packr"
 	"github.com/google/uuid"
 	"github.com/vbauerster/mpb/v4"
@@ -21,6 +22,8 @@ import (
 	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/ActiveState/cli/internal/unarchiver"
 	"github.com/ActiveState/cli/pkg/platform/api/buildlogstream"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
@@ -71,6 +74,7 @@ var (
 
 type MessageHandler interface {
 	buildlogstream.MessageHandler
+	ChangeSummary(map[strfmt.UUID][]strfmt.UUID, map[strfmt.UUID][]strfmt.UUID, map[strfmt.UUID]*inventory_models.ResolvedIngredient)
 	DownloadStarting()
 	InstallStarting()
 }
@@ -163,7 +167,26 @@ func (installer *Installer) Assembler() (Assembler, error) {
 		return nil, fail
 	}
 
-	artifacts, fail := installer.runtimeDownloader.FetchArtifacts()
+	var project *mono_models.Project
+	if installer.runtime.Owner() != "" && installer.runtime.ProjectName() != "" {
+		var fail *failures.Failure
+		project, fail = model.FetchProjectByName(installer.runtime.Owner(), installer.runtime.ProjectName())
+		if fail != nil {
+			return nil, fail
+		}
+	}
+
+	recipe, err := model.ResolveRecipe(installer.runtime.commitID, installer.runtime.owner, installer.runtime.projectName, project)
+	if err != nil {
+		return nil, failures.FailMisc.Wrap(err)
+	}
+
+	// Run Change Summary
+	ingredientMap := model.IngredientVersionMap(recipe)
+	directDeps, recursiveDeps := model.ParseDepTree(recipe.ResolvedIngredients, ingredientMap)
+	installer.runtime.msgHandler.ChangeSummary(directDeps, recursiveDeps, ingredientMap)
+
+	artifacts, fail := installer.runtimeDownloader.FetchArtifacts(recipe, project)
 	if fail != nil {
 		return nil, fail
 	}

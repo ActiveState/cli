@@ -6,18 +6,16 @@ package inventory_operations
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"net/http"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // NewAddOperatingSystemVersionRevisionParams creates a new AddOperatingSystemVersionRevisionParams object
@@ -69,7 +67,7 @@ type AddOperatingSystemVersionRevisionParams struct {
 	/*OperatingSystemVersionID*/
 	OperatingSystemVersionID strfmt.UUID
 	/*OperatingSystemVersionRevision*/
-	OperatingSystemVersionRevision *inventory_models.V1Revision
+	OperatingSystemVersionRevision *inventory_models.Revision
 
 	timeout    time.Duration
 	Context    context.Context
@@ -132,13 +130,13 @@ func (o *AddOperatingSystemVersionRevisionParams) SetOperatingSystemVersionID(op
 }
 
 // WithOperatingSystemVersionRevision adds the operatingSystemVersionRevision to the add operating system version revision params
-func (o *AddOperatingSystemVersionRevisionParams) WithOperatingSystemVersionRevision(operatingSystemVersionRevision *inventory_models.V1Revision) *AddOperatingSystemVersionRevisionParams {
+func (o *AddOperatingSystemVersionRevisionParams) WithOperatingSystemVersionRevision(operatingSystemVersionRevision *inventory_models.Revision) *AddOperatingSystemVersionRevisionParams {
 	o.SetOperatingSystemVersionRevision(operatingSystemVersionRevision)
 	return o
 }
 
 // SetOperatingSystemVersionRevision adds the operatingSystemVersionRevision to the add operating system version revision params
-func (o *AddOperatingSystemVersionRevisionParams) SetOperatingSystemVersionRevision(operatingSystemVersionRevision *inventory_models.V1Revision) {
+func (o *AddOperatingSystemVersionRevisionParams) SetOperatingSystemVersionRevision(operatingSystemVersionRevision *inventory_models.Revision) {
 	o.OperatingSystemVersionRevision = operatingSystemVersionRevision
 }
 

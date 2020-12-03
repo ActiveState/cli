@@ -6,19 +6,17 @@ package inventory_operations
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"net/http"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // NewSolveOrderParams creates a new SolveOrderParams object
@@ -78,7 +76,7 @@ for the solve order operation typically these are written to a http.Request
 type SolveOrderParams struct {
 
 	/*Order*/
-	Order *inventory_models.V1Order
+	Order *inventory_models.Order
 	/*UseRecipeStore
 	  Whether to check if this order has already been solved and retrieve the result from the recipe store or, if false, to force the order to be solved anew
 
@@ -124,13 +122,13 @@ func (o *SolveOrderParams) SetHTTPClient(client *http.Client) {
 }
 
 // WithOrder adds the order to the solve order params
-func (o *SolveOrderParams) WithOrder(order *inventory_models.V1Order) *SolveOrderParams {
+func (o *SolveOrderParams) WithOrder(order *inventory_models.Order) *SolveOrderParams {
 	o.SetOrder(order)
 	return o
 }
 
 // SetOrder adds the order to the solve order params
-func (o *SolveOrderParams) SetOrder(order *inventory_models.V1Order) {
+func (o *SolveOrderParams) SetOrder(order *inventory_models.Order) {
 	o.Order = order
 }
 

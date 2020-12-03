@@ -10,16 +10,17 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
 type Request struct {
-	recipeID   strfmt.UUID
+	recipe     *inventory_models.Recipe
 	msgHandler MessageHandler
 }
 
-func NewRequest(recipeID strfmt.UUID, msgHandler MessageHandler) *Request {
-	return &Request{recipeID: recipeID, msgHandler: msgHandler}
+func NewRequest(recipe *inventory_models.Recipe, msgHandler MessageHandler) *Request {
+	return &Request{recipe, msgHandler}
 }
 
 type MessageHandler interface {
@@ -35,11 +36,6 @@ type logRequest struct {
 	RecipeID string `json:"recipeID"`
 }
 
-type artifactMapping struct {
-	Name    *string
-	Version *string
-}
-
 type message struct {
 	Type         string      `json:"type"`
 	CacheHit     bool        `json:"cache_hit"`
@@ -48,6 +44,10 @@ type message struct {
 }
 
 func (r *Request) Wait() error {
+	if r.recipe.RecipeID == nil {
+		return errs.New("recipe ID is nil")
+	}
+
 	url := api.GetServiceURL(api.BuildLogStreamer)
 	header := make(http.Header)
 	header.Add("Origin", "https://"+url.Host)
@@ -63,7 +63,7 @@ func (r *Request) Wait() error {
 	go r.responseReader(conn, readErr)
 
 	logging.Debug("sending websocket request")
-	request := logRequest{RecipeID: r.recipeID.String()}
+	request := logRequest{RecipeID: r.recipe.RecipeID.String()}
 	if err := conn.WriteJSON(request); err != nil {
 		return errs.Wrap(err, "Could not write websocket request")
 	}
@@ -75,15 +75,13 @@ func (r *Request) Wait() error {
 }
 
 func (r *Request) responseReader(conn *websocket.Conn, readErr chan error) {
-	artifactMap, err := artifactMap(r.recipeID)
-	if err != nil {
-		readErr <- errs.Wrap(err, "Could not generate artifact map")
-	}
-
+	artifactMap := model.ArtifactMap(r.recipe)
 	total := len(artifactMap)
 	end := 0
 
 	r.msgHandler.BuildStarting(total)
+
+	var artifactErr error
 
 	defer func() {
 		readErr <- nil
@@ -98,63 +96,38 @@ func (r *Request) responseReader(conn *websocket.Conn, readErr chan error) {
 
 		logging.Debug("Received response: " + msg.Type)
 
-		artifactName := artifactDescription(msg.ArtifactID, artifactMap)
+		_, artifactMapped := artifactMap[msg.ArtifactID]
+		artifactName := model.ArtifactDescription(msg.ArtifactID, artifactMap)
 
 		switch msg.Type {
 		case "build_failed":
-			readErr <- locale.NewError("err_logstream_build_failed", "Build failed with error message: {{.V0}}.", msg.ErrorMessage)
+			readErr <- locale.WrapError(artifactErr, "err_logstream_build_failed", "Build failed with error message: {{.V0}}.", msg.ErrorMessage)
 		case "build_succeeded":
 			readErr <- nil
 		case "artifact_started":
+			if !artifactMapped {
+				continue // ignore
+			}
 			if msg.CacheHit {
 				r.msgHandler.ArtifactBuildCached(artifactName)
 			} else {
 				r.msgHandler.ArtifactBuildStarting(artifactName)
 			}
 		case "artifact_succeeded":
+			if !artifactMapped {
+				continue // ignore
+			}
+			
 			// NOTE: fix to ignore current noop "final pkg artifact"
-			if msg.ArtifactID == r.recipeID {
+			if msg.ArtifactID == *r.recipe.RecipeID {
 				break
 			}
 			end++
 			r.msgHandler.ArtifactBuildCompleted(artifactName, end, total)
 		case "artifact_failed":
 			r.msgHandler.ArtifactBuildFailed(artifactName, msg.ErrorMessage)
+			artifactErr = locale.WrapError(artifactErr, "err_artifact_failed", "Failed to build \"{{.V0}}\", error reported: {{.V1}}.", artifactName, msg.ErrorMessage)
 		}
 	}
 }
 
-func artifactMap(recipeID strfmt.UUID) (map[strfmt.UUID]artifactMapping, error) {
-	artifactMap := map[strfmt.UUID]artifactMapping{}
-
-	recipe, err := model.FetchRecipeByID(recipeID)
-	if err != nil {
-		return artifactMap, errs.Wrap(err, "Could not fetch recipe")
-	}
-
-	for _, re := range recipe.ResolvedIngredients {
-		if re.Ingredient.PrimaryNamespace != nil && (*re.Ingredient.PrimaryNamespace == "builder" || *re.Ingredient.PrimaryNamespace == "builder-lib") {
-			continue
-		}
-		artifactMap[re.ArtifactID] = artifactMapping{
-			re.Ingredient.Name,
-			re.IngredientVersion.Version,
-		}
-	}
-
-	return artifactMap, nil
-}
-
-func artifactDescription(artifactID strfmt.UUID, artifactMap map[strfmt.UUID]artifactMapping) string {
-	v, ok := artifactMap[artifactID]
-	if !ok || v.Name == nil {
-		return locale.Tl("unknown_artifact_description", "Artifact {{.V0}}", artifactID.String())
-	}
-
-	version := ""
-	if v.Version != nil {
-		version = "@" + *v.Version
-	}
-
-	return *v.Name + version
-}

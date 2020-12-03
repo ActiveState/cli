@@ -145,17 +145,8 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchSimple() {
 	// Note that the expected strings might change due to inventory changes
 	cp := ts.Spawn("search", "requests")
 	expectations := []string{
-		"Name",
-		"requests",
-		"2.23.0",
 		"requests3",
 		"3.0.0a1",
-		"requestsauth",
-		"0.1.1",
-		"requestsaws",
-		"0.1.1",
-		"requestsawssign",
-		"0.1.1",
 	}
 	for _, expectation := range expectations {
 		cp.Expect(expectation)
@@ -173,8 +164,8 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTerm() {
 	expectations := []string{
 		"Name",
 		"requests",
-		"2.23.0",
-		"+ 7 older versions",
+		"2.25.0",
+		"+ 8 older versions",
 	}
 	for _, expectation := range expectations {
 		cp.Expect(expectation)
@@ -339,12 +330,17 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 	cp = ts.Spawn("activate", namespace, "--path="+ts.Dirs.Work, "--output=json")
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("history")
+	cp = ts.Spawn("history", "--output=json")
 	cp.ExpectExitCode(0)
 
 	// Get the first commitID we find, which should be the first commit for the project
+	snapshot := cp.TrimmedSnapshot()
 	commitRe := regexp.MustCompile(`[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}`)
-	firstCommit := commitRe.FindString(cp.TrimmedSnapshot())
+	firstCommit := commitRe.FindString(snapshot)
+
+	if firstCommit == "" {
+		suite.FailNow("Could not match commitID against output:\n" + snapshot)
+	}
 
 	suite.Run("install", func() {
 		cp := ts.Spawn("install", "urllib3@1.25.6")

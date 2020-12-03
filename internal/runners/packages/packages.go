@@ -18,36 +18,9 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
-type PackageType int
-
-const (
-	Package PackageType = iota
-	Bundle
-)
-
-func (pt PackageType) String() string {
-	switch pt {
-	case Package:
-		return "package"
-	case Bundle:
-		return "bundle"
-	}
-	return ""
-}
-
-func (pt PackageType) Namespace() model.NamespacePrefix {
-	switch pt {
-	case Package:
-		return model.PackageNamespacePrefix
-	case Bundle:
-		return model.BundlesNamespacePrefix
-	}
-	return ""
-}
-
 const latestVersion = "latest"
 
-func executePackageOperation(pj *project.Project, out output.Outputer, authentication *authentication.Auth, prompt prompt.Prompter, language, name, version string, operation model.Operation, pt PackageType) error {
+func executePackageOperation(pj *project.Project, out output.Outputer, authentication *authentication.Auth, prompt prompt.Prompter, name, version string, operation model.Operation, ns model.Namespace) error {
 	isHeadless := pj.IsHeadless()
 	if !isHeadless && !authentication.Authenticated() {
 		anonymousOk, fail := prompt.Confirm(locale.Tl("continue_anon", "Continue Anonymously?"), locale.T("prompt_headless_anonymous"), true)
@@ -70,12 +43,11 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 	}
 
 	// Verify that the provided package actually exists (the vcs API doesn't care)
-	var ingredient *model.IngredientAndVersion
 	var err error
 	if version == "" {
-		ingredient, err = model.IngredientWithLatestVersion(language, name, pt.Namespace())
+		_, err = model.IngredientWithLatestVersion(name, ns)
 	} else {
-		ingredient, err = model.IngredientByNameAndVersion(language, name, version, pt.Namespace())
+		_, err = model.IngredientByNameAndVersion(name, version, ns)
 	}
 	if err != nil {
 		return locale.WrapError(err, "package_ingredient_err", "Failed to resolve an ingredient named {{.V0}}.", name)
@@ -83,7 +55,7 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 
 	// Check if this is an addition or an update
 	if operation == model.OperationAdded {
-		req, err := model.GetRequirement(pj.CommitUUID(), ingredient.Namespace, *ingredient.Ingredient.Name)
+		req, err := model.GetRequirement(pj.CommitUUID(), ns.String(), name)
 		if err != nil {
 			return errs.Wrap(err, "Could not get requirement")
 		}
@@ -93,9 +65,9 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 	}
 
 	parentCommitID := pj.CommitUUID()
-	commitID, fail := model.CommitPackage(parentCommitID, operation, *ingredient.Ingredient.Name, ingredient.Namespace, version, machineid.UniqID())
+	commitID, fail := model.CommitPackage(parentCommitID, operation, name, ns.String(), version, machineid.UniqID())
 	if fail != nil {
-		return locale.WrapError(fail.ToError(), fmt.Sprintf("err_%s_%s", pt.String(), operation))
+		return locale.WrapError(fail.ToError(), fmt.Sprintf("err_%s_%s", ns.Type(), operation))
 	}
 
 	revertCommit, err := model.GetRevertCommit(pj.CommitUUID(), commitID)
@@ -123,7 +95,9 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 	}
 
 	// Create runtime
-	rt, err := runtime.NewRuntime(pj.Source().Path(), commitID, pj.Owner(), pj.Name(), runbits.NewRuntimeMessageHandler(out))
+	rtMessages := runbits.NewRuntimeMessageHandler(out)
+	rtMessages.SetRequirement(name, ns)
+	rt, err := runtime.NewRuntime(pj.Source().Path(), commitID, pj.Owner(), pj.Name(), rtMessages)
 	if err != nil {
 		return locale.WrapError(err, "err_packages_update_runtime_init", "Could not initialize runtime.")
 	}
@@ -135,6 +109,8 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 
 	// Update runtime
 	if !rt.IsCachedRuntime() {
+		out.Notice(output.Heading(locale.Tl("update_runtime", "Updating Runtime")))
+		out.Notice(locale.Tl("update_runtime_info", "Changes to your runtime may require some dependencies to be rebuilt."))
 		_, _, fail := runtime.NewInstaller(rt).Install()
 		if fail != nil {
 			return locale.WrapError(fail, "err_packages_update_runtime_install", "Could not install dependencies.")
@@ -143,9 +119,9 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 
 	// Print the result
 	if version != "" {
-		out.Print(locale.Tr(fmt.Sprintf("%s_version_%s", pt.String(), operation), *ingredient.Ingredient.Name, version))
+		out.Print(locale.Tr(fmt.Sprintf("%s_version_%s", ns.Type(), operation), name, version))
 	} else {
-		out.Print(locale.Tr(fmt.Sprintf("%s_%s", pt.String(), operation), *ingredient.Ingredient.Name))
+		out.Print(locale.Tr(fmt.Sprintf("%s_%s", ns.Type(), operation), name))
 	}
 
 	return nil
@@ -161,3 +137,4 @@ func splitNameAndVersion(input string) (string, string) {
 
 	return name, version
 }
+

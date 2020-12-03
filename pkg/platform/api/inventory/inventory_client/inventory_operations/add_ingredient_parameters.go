@@ -6,18 +6,16 @@ package inventory_operations
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"net/http"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // NewAddIngredientParams creates a new AddIngredientParams object
@@ -65,7 +63,7 @@ for the add ingredient operation typically these are written to a http.Request
 type AddIngredientParams struct {
 
 	/*Ingredient*/
-	Ingredient *inventory_models.V1IngredientCreate
+	Ingredient *inventory_models.IngredientCreate
 	/*IsDefaultProviderBehavior
 	  How setting of is_default_provider should be handled for the features provided by the thing being created. The options are: 'override' - if is_default_provider is set to true for a provided feature then replace the existing default provider of that feature (if one exists); 'if-new' - set is_default_provider to true if this is an entirely new feature, otherwise false
 
@@ -111,13 +109,13 @@ func (o *AddIngredientParams) SetHTTPClient(client *http.Client) {
 }
 
 // WithIngredient adds the ingredient to the add ingredient params
-func (o *AddIngredientParams) WithIngredient(ingredient *inventory_models.V1IngredientCreate) *AddIngredientParams {
+func (o *AddIngredientParams) WithIngredient(ingredient *inventory_models.IngredientCreate) *AddIngredientParams {
 	o.SetIngredient(ingredient)
 	return o
 }
 
 // SetIngredient adds the ingredient to the add ingredient params
-func (o *AddIngredientParams) SetIngredient(ingredient *inventory_models.V1IngredientCreate) {
+func (o *AddIngredientParams) SetIngredient(ingredient *inventory_models.IngredientCreate) {
 	o.Ingredient = ingredient
 }
 

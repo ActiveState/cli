@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // GetPlatformReader is a Reader for the GetPlatform structure.
@@ -24,14 +23,12 @@ type GetPlatformReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetPlatformReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewGetPlatformOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	default:
 		result := NewGetPlatformDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -54,16 +51,20 @@ func NewGetPlatformOK() *GetPlatformOK {
 The retrieved platform
 */
 type GetPlatformOK struct {
-	Payload *inventory_models.V1Platform
+	Payload *inventory_models.Platform
 }
 
 func (o *GetPlatformOK) Error() string {
 	return fmt.Sprintf("[GET /v1/platforms/{platform_id}][%d] getPlatformOK  %+v", 200, o.Payload)
 }
 
+func (o *GetPlatformOK) GetPayload() *inventory_models.Platform {
+	return o.Payload
+}
+
 func (o *GetPlatformOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(inventory_models.V1Platform)
+	o.Payload = new(inventory_models.Platform)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -97,6 +98,10 @@ func (o *GetPlatformDefault) Code() int {
 
 func (o *GetPlatformDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/platforms/{platform_id}][%d] getPlatform default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *GetPlatformDefault) GetPayload() *inventory_models.RestAPIError {
+	return o.Payload
 }
 
 func (o *GetPlatformDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

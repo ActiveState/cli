@@ -6,18 +6,16 @@ package inventory_operations
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"net/http"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // NewAddBuildFlagRevisionParams creates a new AddBuildFlagRevisionParams object
@@ -67,7 +65,7 @@ type AddBuildFlagRevisionParams struct {
 	/*BuildFlagID*/
 	BuildFlagID strfmt.UUID
 	/*BuildFlagRevision*/
-	BuildFlagRevision *inventory_models.V1BuildFlagRevisionCore
+	BuildFlagRevision *inventory_models.BuildFlagRevisionCore
 
 	timeout    time.Duration
 	Context    context.Context
@@ -119,13 +117,13 @@ func (o *AddBuildFlagRevisionParams) SetBuildFlagID(buildFlagID strfmt.UUID) {
 }
 
 // WithBuildFlagRevision adds the buildFlagRevision to the add build flag revision params
-func (o *AddBuildFlagRevisionParams) WithBuildFlagRevision(buildFlagRevision *inventory_models.V1BuildFlagRevisionCore) *AddBuildFlagRevisionParams {
+func (o *AddBuildFlagRevisionParams) WithBuildFlagRevision(buildFlagRevision *inventory_models.BuildFlagRevisionCore) *AddBuildFlagRevisionParams {
 	o.SetBuildFlagRevision(buildFlagRevision)
 	return o
 }
 
 // SetBuildFlagRevision adds the buildFlagRevision to the add build flag revision params
-func (o *AddBuildFlagRevisionParams) SetBuildFlagRevision(buildFlagRevision *inventory_models.V1BuildFlagRevisionCore) {
+func (o *AddBuildFlagRevisionParams) SetBuildFlagRevision(buildFlagRevision *inventory_models.BuildFlagRevisionCore) {
 	o.BuildFlagRevision = buildFlagRevision
 }
 

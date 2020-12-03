@@ -6,18 +6,16 @@ package inventory_operations
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"net/http"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // NewUpdateIngredientVersionParams creates a new UpdateIngredientVersionParams object
@@ -67,7 +65,7 @@ type UpdateIngredientVersionParams struct {
 	/*IngredientID*/
 	IngredientID strfmt.UUID
 	/*IngredientVersion*/
-	IngredientVersion *inventory_models.V1IngredientVersionUpdate
+	IngredientVersion *inventory_models.IngredientVersionUpdate
 	/*IngredientVersionID*/
 	IngredientVersionID strfmt.UUID
 
@@ -121,13 +119,13 @@ func (o *UpdateIngredientVersionParams) SetIngredientID(ingredientID strfmt.UUID
 }
 
 // WithIngredientVersion adds the ingredientVersion to the update ingredient version params
-func (o *UpdateIngredientVersionParams) WithIngredientVersion(ingredientVersion *inventory_models.V1IngredientVersionUpdate) *UpdateIngredientVersionParams {
+func (o *UpdateIngredientVersionParams) WithIngredientVersion(ingredientVersion *inventory_models.IngredientVersionUpdate) *UpdateIngredientVersionParams {
 	o.SetIngredientVersion(ingredientVersion)
 	return o
 }
 
 // SetIngredientVersion adds the ingredientVersion to the update ingredient version params
-func (o *UpdateIngredientVersionParams) SetIngredientVersion(ingredientVersion *inventory_models.V1IngredientVersionUpdate) {
+func (o *UpdateIngredientVersionParams) SetIngredientVersion(ingredientVersion *inventory_models.IngredientVersionUpdate) {
 	o.IngredientVersion = ingredientVersion
 }
 

@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // GetKernelReader is a Reader for the GetKernel structure.
@@ -24,14 +23,12 @@ type GetKernelReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetKernelReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewGetKernelOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	default:
 		result := NewGetKernelDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -54,16 +51,20 @@ func NewGetKernelOK() *GetKernelOK {
 The retrieved kernel
 */
 type GetKernelOK struct {
-	Payload *inventory_models.V1Kernel
+	Payload *inventory_models.Kernel
 }
 
 func (o *GetKernelOK) Error() string {
 	return fmt.Sprintf("[GET /v1/kernels/{kernel_id}][%d] getKernelOK  %+v", 200, o.Payload)
 }
 
+func (o *GetKernelOK) GetPayload() *inventory_models.Kernel {
+	return o.Payload
+}
+
 func (o *GetKernelOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(inventory_models.V1Kernel)
+	o.Payload = new(inventory_models.Kernel)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -97,6 +98,10 @@ func (o *GetKernelDefault) Code() int {
 
 func (o *GetKernelDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/kernels/{kernel_id}][%d] getKernel default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *GetKernelDefault) GetPayload() *inventory_models.RestAPIError {
+	return o.Payload
 }
 
 func (o *GetKernelDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

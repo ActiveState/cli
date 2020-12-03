@@ -6,18 +6,16 @@ package inventory_operations
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"net/http"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // NewAddCPUExtensionRevisionParams creates a new AddCPUExtensionRevisionParams object
@@ -67,7 +65,7 @@ type AddCPUExtensionRevisionParams struct {
 	/*CPUExtensionID*/
 	CPUExtensionID strfmt.UUID
 	/*CPUExtensionRevision*/
-	CPUExtensionRevision *inventory_models.V1Revision
+	CPUExtensionRevision *inventory_models.Revision
 
 	timeout    time.Duration
 	Context    context.Context
@@ -119,13 +117,13 @@ func (o *AddCPUExtensionRevisionParams) SetCPUExtensionID(cPUExtensionID strfmt.
 }
 
 // WithCPUExtensionRevision adds the cPUExtensionRevision to the add Cpu extension revision params
-func (o *AddCPUExtensionRevisionParams) WithCPUExtensionRevision(cPUExtensionRevision *inventory_models.V1Revision) *AddCPUExtensionRevisionParams {
+func (o *AddCPUExtensionRevisionParams) WithCPUExtensionRevision(cPUExtensionRevision *inventory_models.Revision) *AddCPUExtensionRevisionParams {
 	o.SetCPUExtensionRevision(cPUExtensionRevision)
 	return o
 }
 
 // SetCPUExtensionRevision adds the cpuExtensionRevision to the add Cpu extension revision params
-func (o *AddCPUExtensionRevisionParams) SetCPUExtensionRevision(cPUExtensionRevision *inventory_models.V1Revision) {
+func (o *AddCPUExtensionRevisionParams) SetCPUExtensionRevision(cPUExtensionRevision *inventory_models.Revision) {
 	o.CPUExtensionRevision = cPUExtensionRevision
 }
 

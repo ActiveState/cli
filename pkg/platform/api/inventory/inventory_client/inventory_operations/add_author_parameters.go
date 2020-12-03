@@ -6,18 +6,16 @@ package inventory_operations
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"net/http"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // NewAddAuthorParams creates a new AddAuthorParams object
@@ -65,7 +63,7 @@ for the add author operation typically these are written to a http.Request
 type AddAuthorParams struct {
 
 	/*Author*/
-	Author *inventory_models.V1AuthorCore
+	Author *inventory_models.AuthorCore
 
 	timeout    time.Duration
 	Context    context.Context
@@ -106,13 +104,13 @@ func (o *AddAuthorParams) SetHTTPClient(client *http.Client) {
 }
 
 // WithAuthor adds the author to the add author params
-func (o *AddAuthorParams) WithAuthor(author *inventory_models.V1AuthorCore) *AddAuthorParams {
+func (o *AddAuthorParams) WithAuthor(author *inventory_models.AuthorCore) *AddAuthorParams {
 	o.SetAuthor(author)
 	return o
 }
 
 // SetAuthor adds the author to the add author params
-func (o *AddAuthorParams) SetAuthor(author *inventory_models.V1AuthorCore) {
+func (o *AddAuthorParams) SetAuthor(author *inventory_models.AuthorCore) {
 	o.Author = author
 }
 

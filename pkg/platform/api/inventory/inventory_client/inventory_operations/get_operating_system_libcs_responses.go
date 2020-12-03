@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // GetOperatingSystemLibcsReader is a Reader for the GetOperatingSystemLibcs structure.
@@ -24,14 +23,12 @@ type GetOperatingSystemLibcsReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetOperatingSystemLibcsReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewGetOperatingSystemLibcsOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	default:
 		result := NewGetOperatingSystemLibcsDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -54,16 +51,20 @@ func NewGetOperatingSystemLibcsOK() *GetOperatingSystemLibcsOK {
 A paginated list of libcs
 */
 type GetOperatingSystemLibcsOK struct {
-	Payload *inventory_models.V1LibcPagedList
+	Payload *inventory_models.LibcPagedList
 }
 
 func (o *GetOperatingSystemLibcsOK) Error() string {
 	return fmt.Sprintf("[GET /v1/operating-systems/{operating_system_id}/libcs][%d] getOperatingSystemLibcsOK  %+v", 200, o.Payload)
 }
 
+func (o *GetOperatingSystemLibcsOK) GetPayload() *inventory_models.LibcPagedList {
+	return o.Payload
+}
+
 func (o *GetOperatingSystemLibcsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(inventory_models.V1LibcPagedList)
+	o.Payload = new(inventory_models.LibcPagedList)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -97,6 +98,10 @@ func (o *GetOperatingSystemLibcsDefault) Code() int {
 
 func (o *GetOperatingSystemLibcsDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/operating-systems/{operating_system_id}/libcs][%d] getOperatingSystemLibcs default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *GetOperatingSystemLibcsDefault) GetPayload() *inventory_models.RestAPIError {
+	return o.Payload
 }
 
 func (o *GetOperatingSystemLibcsDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

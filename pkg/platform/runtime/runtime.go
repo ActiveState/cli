@@ -37,7 +37,13 @@ func NewRuntime(projectDir string, commitID strfmt.UUID, owner string, projectNa
 	}
 
 	installPath := filepath.Join(config.CachePath(), hash.ShortHash(resolvedProjectDir))
-	return &Runtime{installPath, commitID, owner, projectName, msgHandler}, nil
+	return &Runtime{
+		runtimeDir:  installPath,
+		commitID:    commitID,
+		owner:       owner,
+		projectName: projectName,
+		msgHandler:  msgHandler,
+	}, nil
 }
 
 func (r *Runtime) SetInstallPath(installPath string) {
@@ -116,3 +122,16 @@ func (r *Runtime) BuildEngine() (BuildEngine, error) {
 func (r *Runtime) Env() (EnvGetter, error) {
 	return NewInstaller(r).Env()
 }
+
+func (r *Runtime) CommitID() strfmt.UUID {
+	return r.commitID
+}
+
+func (r *Runtime) Owner() string {
+	return r.owner
+}
+
+func (r *Runtime) ProjectName() string {
+	return r.projectName
+}
+

@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // GetOperatingSystemsReader is a Reader for the GetOperatingSystems structure.
@@ -24,14 +23,12 @@ type GetOperatingSystemsReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetOperatingSystemsReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewGetOperatingSystemsOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	default:
 		result := NewGetOperatingSystemsDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -54,16 +51,20 @@ func NewGetOperatingSystemsOK() *GetOperatingSystemsOK {
 A paginated list of operating systems
 */
 type GetOperatingSystemsOK struct {
-	Payload *inventory_models.V1OperatingSystemPagedList
+	Payload *inventory_models.OperatingSystemPagedList
 }
 
 func (o *GetOperatingSystemsOK) Error() string {
 	return fmt.Sprintf("[GET /v1/operating-systems][%d] getOperatingSystemsOK  %+v", 200, o.Payload)
 }
 
+func (o *GetOperatingSystemsOK) GetPayload() *inventory_models.OperatingSystemPagedList {
+	return o.Payload
+}
+
 func (o *GetOperatingSystemsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(inventory_models.V1OperatingSystemPagedList)
+	o.Payload = new(inventory_models.OperatingSystemPagedList)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -97,6 +98,10 @@ func (o *GetOperatingSystemsDefault) Code() int {
 
 func (o *GetOperatingSystemsDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/operating-systems][%d] getOperatingSystems default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *GetOperatingSystemsDefault) GetPayload() *inventory_models.RestAPIError {
+	return o.Payload
 }
 
 func (o *GetOperatingSystemsDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

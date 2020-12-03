@@ -6,18 +6,16 @@ package inventory_operations
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"net/http"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // NewValidateRecipeParams creates a new ValidateRecipeParams object
@@ -65,7 +63,7 @@ for the validate recipe operation typically these are written to a http.Request
 type ValidateRecipeParams struct {
 
 	/*Recipe*/
-	Recipe *inventory_models.V1Recipe
+	Recipe *inventory_models.Recipe
 
 	timeout    time.Duration
 	Context    context.Context
@@ -106,13 +104,13 @@ func (o *ValidateRecipeParams) SetHTTPClient(client *http.Client) {
 }
 
 // WithRecipe adds the recipe to the validate recipe params
-func (o *ValidateRecipeParams) WithRecipe(recipe *inventory_models.V1Recipe) *ValidateRecipeParams {
+func (o *ValidateRecipeParams) WithRecipe(recipe *inventory_models.Recipe) *ValidateRecipeParams {
 	o.SetRecipe(recipe)
 	return o
 }
 
 // SetRecipe adds the recipe to the validate recipe params
-func (o *ValidateRecipeParams) SetRecipe(recipe *inventory_models.V1Recipe) {
+func (o *ValidateRecipeParams) SetRecipe(recipe *inventory_models.Recipe) {
 	o.Recipe = recipe
 }
 

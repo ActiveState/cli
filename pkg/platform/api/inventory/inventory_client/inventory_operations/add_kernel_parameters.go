@@ -6,18 +6,16 @@ package inventory_operations
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"net/http"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // NewAddKernelParams creates a new AddKernelParams object
@@ -65,7 +63,7 @@ for the add kernel operation typically these are written to a http.Request
 type AddKernelParams struct {
 
 	/*Kernel*/
-	Kernel *inventory_models.V1KernelCore
+	Kernel *inventory_models.KernelCore
 
 	timeout    time.Duration
 	Context    context.Context
@@ -106,13 +104,13 @@ func (o *AddKernelParams) SetHTTPClient(client *http.Client) {
 }
 
 // WithKernel adds the kernel to the add kernel params
-func (o *AddKernelParams) WithKernel(kernel *inventory_models.V1KernelCore) *AddKernelParams {
+func (o *AddKernelParams) WithKernel(kernel *inventory_models.KernelCore) *AddKernelParams {
 	o.SetKernel(kernel)
 	return o
 }
 
 // SetKernel adds the kernel to the add kernel params
-func (o *AddKernelParams) SetKernel(kernel *inventory_models.V1KernelCore) {
+func (o *AddKernelParams) SetKernel(kernel *inventory_models.KernelCore) {
 	o.Kernel = kernel
 }
 
