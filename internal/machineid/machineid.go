@@ -1,4 +1,4 @@
-package logging
+package machineid
 
 import (
 	"github.com/denisbrodbeck/machineid"
@@ -16,8 +16,6 @@ func uniqID(machineIDGetter func() (string, error), uuidGetter func() string) st
 	if err == nil {
 		return machID
 	}
-
-	Debug("Cannot retrieve machine ID, error: %v, falling back to config based ID", err)
 
 	machineID := viper.GetString("machineID")
 	if machineID != "" {

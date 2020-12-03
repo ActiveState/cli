@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -113,7 +114,7 @@ func WaitForAllEvents(t time.Duration) {
 }
 
 func setup() {
-	id := logging.UniqID()
+	id := machineid.UniqID()
 	var err error
 	var trackingID string
 	if !condition.InTest() {
@@ -156,7 +157,7 @@ func setup() {
 		osName:        osName,
 		osVersion:     osVersion,
 		installSource: config.InstallSource(),
-		machineID:     logging.UniqID(),
+		machineID:     machineid.UniqID(),
 	}
 
 	if id == "unknown" {

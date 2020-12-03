@@ -273,7 +273,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_import() {
 		suite.Run("already added", func() {
 			cp := ts.Spawn("import", "requirements.txt")
 			cp.Expect("Are you sure you want to do this")
-			cp.SendLine("n")
+			cp.Send("n")
 			cp.ExpectNotExitCode(0, time.Second*60)
 		})
 	})
@@ -294,7 +294,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_headless_operation() {
 	suite.Run("install", func() {
 		cp := ts.Spawn("install", "dateparser@0.7.2")
 		cp.ExpectLongString("Do you want to continue as an anonymous user?")
-		cp.SendLine("Y")
+		cp.Send("Y")
 		cp.ExpectRe("(?:Package added|project is currently building)")
 		cp.Wait()
 	})
@@ -361,7 +361,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 	})
 
 	cp = ts.Spawn("revert", firstCommit)
-	cp.SendLine("y")
+	cp.Send("y")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("pull")

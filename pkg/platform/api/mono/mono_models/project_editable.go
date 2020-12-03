@@ -26,6 +26,9 @@ type ProjectEditable struct {
 
 	// private
 	Private *bool `json:"private,omitempty"`
+
+	// repo Url
+	RepoURL *string `json:"repoUrl,omitempty"`
 }
 
 // Validate validates this project editable

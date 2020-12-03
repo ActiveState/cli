@@ -178,6 +178,8 @@ func (r *Activate) run(params *ActivateParams) error {
 		r.out.Notice(output.Heading(locale.Tl("global_default_heading", "Global Default")))
 		r.out.Notice(locale.Tl("global_default_set", "Successfully configured [NOTICE]{{.V0}}[/RESET] as the global default project.", proj.Namespace().String()))
 
+		globaldefault.WarningForAdministrator(r.out)
+
 		if alreadyActivated {
 			return nil
 		}

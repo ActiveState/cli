@@ -13,6 +13,7 @@ import (
 )
 
 func Test_printCommits(t *testing.T) {
+	uuid := strfmt.UUID("11111111-1111-1111-1111-111111111111")
 	type args struct {
 		commits []*mono_models.Commit
 		orgs    []gmodel.Organization
@@ -29,7 +30,7 @@ func Test_printCommits(t *testing.T) {
 				[]*mono_models.Commit{
 					&mono_models.Commit{
 						Added:    strfmt.DateTime(time.Now()),
-						Author:   strfmt.UUID("11111111-1111-1111-1111-111111111111"),
+						Author:   &uuid,
 						CommitID: strfmt.UUID("11111111-1111-1111-1111-111111111111"),
 						Message:  "Message",
 						Changeset: []*mono_models.CommitChange{

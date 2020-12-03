@@ -16,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/mono"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client"
@@ -283,7 +284,7 @@ func (s *Auth) CreateToken() *failures.Failure {
 		}
 	}
 
-	key := constants.APITokenName + ":" + logging.UniqID()
+	key := constants.APITokenName + ":" + machineid.UniqID()
 	token, fail := s.NewAPIKey(key)
 	if fail != nil {
 		return fail
