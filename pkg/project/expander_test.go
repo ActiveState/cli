@@ -14,7 +14,6 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/language"
 
-	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -101,22 +100,6 @@ func TestExpandProjectScript(t *testing.T) {
 	expanded, err := project.ExpandFromProject("$ $scripts.test", prj)
 	assert.NoError(t, err, "Ran without failure")
 	assert.Equal(t, "$ make test", expanded, "Expanded simple script")
-}
-
-func TestExpandAuthAuthenticated(t *testing.T) {
-	prj := loadProject(t)
-
-	expanded, err := project.ExpandFromProject("$ $auth.authenticated", prj)
-	assert.NoError(t, err, "Ran without failure")
-	assert.Equal(t, fmt.Sprintf("$ %t", authentication.Get().Authenticated()), expanded, "Expanded auth")
-}
-
-func TestExpandAuthAnonymous(t *testing.T) {
-	prj := loadProject(t)
-
-	expanded, err := project.ExpandFromProject("$ $auth.anonymous", prj)
-	assert.NoError(t, err, "Ran without failure")
-	assert.Equal(t, fmt.Sprintf("$ %t", authentication.Get().IsAnonymous()), expanded, "Expanded auth")
 }
 
 func TestExpandProjectConstant(t *testing.T) {
