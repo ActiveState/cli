@@ -8,50 +8,50 @@ type Entry struct {
 func GetCroppedText(text string, maxLen int) []Entry {
 	entries := make([]Entry, 0)
 	entryText := ""
-	pos := 0
-	count := 0
+	currentPosition := 0
+	runesWritten := 0
 	matches := colorRx.FindAllSubmatchIndex([]byte(text), -1)
 	runeText := []rune(text)
 
-	for pos < len(runeText) {
+	for currentPosition < len(runeText) {
 		// If we reach an index that we recognize (ie. the start of a tag)
 		// then we write the whole tag, otherwise write by rune
 		for _, match := range matches {
 			start, stop := match[0], match[1]
-			if pos == start {
-				entryText += string(runeText[pos:stop])
-				pos = stop
+			if currentPosition == start {
+				entryText += string(runeText[currentPosition:stop])
+				currentPosition = stop
 			}
 		}
 
-		if pos > len(runeText)-1 {
-			entries = append(entries, Entry{entryText, count})
+		if currentPosition > len(runeText)-1 {
+			entries = append(entries, Entry{entryText, runesWritten})
 			break
 		}
 
-		if count == maxLen {
-			entries = append(entries, Entry{entryText, count})
-			count = 0
+		if runesWritten == maxLen {
+			entries = append(entries, Entry{entryText, runesWritten})
+			runesWritten = 0
 			entryText = ""
 			continue
 		}
 
-		if runeText[pos] == '\n' {
-			pos++
-			entries = append(entries, Entry{entryText, count})
-			count = 0
+		if runeText[currentPosition] == '\n' {
+			currentPosition++
+			entries = append(entries, Entry{entryText, runesWritten})
+			runesWritten = 0
 			entryText = ""
 			continue
 		}
 
-		if pos == len(runeText)-1 {
-			entryText += string(runeText[pos])
-			entries = append(entries, Entry{entryText, count + 1})
+		if currentPosition == len(runeText)-1 {
+			entryText += string(runeText[currentPosition])
+			entries = append(entries, Entry{entryText, runesWritten + 1})
 		}
 
-		entryText += string(runeText[pos])
-		pos++
-		count++
+		entryText += string(runeText[currentPosition])
+		currentPosition++
+		runesWritten++
 	}
 
 	return entries
