@@ -1,7 +1,6 @@
 package table
 
 import (
-	"fmt"
 	"strings"
 	"unicode/utf8"
 
@@ -171,10 +170,11 @@ func renderRow(providedColumns []string, colWidths []int) string {
 	}
 
 	totalRows := 0
-	for _, columnEntries := range entries {
-		fmt.Println("ColumnEntries:", columnEntries)
-		if len(columnEntries) > totalRows {
-			totalRows = len(columnEntries)
+	for _, entry := range entries {
+		// Each entry represents a column. The longest column determines
+		// the number of rows the table will have.
+		if len(entry) > totalRows {
+			totalRows = len(entry)
 		}
 	}
 
