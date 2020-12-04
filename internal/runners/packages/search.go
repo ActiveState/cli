@@ -82,10 +82,10 @@ func targetedLanguage(languageOpt string) (string, *failures.Failure) {
 
 type modules []string
 
-func makeModules(pack *model.IngredientAndVersion) modules {
+func makeModules(normalizedName string, pack *model.IngredientAndVersion) modules {
 	var ms modules
 	for _, x := range pack.LatestVersion.ProvidedFeatures {
-		if x.Feature != nil {
+		if x.Feature != nil && *x.Feature != normalizedName {
 			ms = append(ms, *x.Feature)
 		}
 
@@ -94,6 +94,10 @@ func makeModules(pack *model.IngredientAndVersion) modules {
 }
 
 func (ms modules) String() string {
+	if len(ms) == 0 {
+		return ""
+	}
+
 	var b strings.Builder
 
 	b.WriteString("[DISABLED]")
@@ -141,7 +145,7 @@ func formatSearchResults(packages []*model.IngredientAndVersion) []searchPackage
 			Pkg:      filterNilStr(pack.Ingredient.Name),
 			Version:  pack.Version,
 			versions: len(pack.Versions),
-			Modules:  makeModules(pack),
+			Modules:  makeModules(pack.Ingredient.NormalizedName, pack),
 		}
 		rows = append(rows, row)
 	}
