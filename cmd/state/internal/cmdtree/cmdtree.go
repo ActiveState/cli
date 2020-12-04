@@ -76,6 +76,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 	uninstallCmd := newUninstallCommand(prime)
 	importCmd := newImportCommand(prime)
 	searchCmd := newSearchCommand(prime)
+	infoCmd := newInfoCommand(prime)
 
 	pkgsCmd := newPackagesCommand(prime)
 	addAs := addCmdAs{
@@ -121,6 +122,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		uninstallCmd,
 		importCmd,
 		searchCmd,
+		infoCmd,
 		pkgsCmd,
 		bundlesCmd,
 		platformsCmd,

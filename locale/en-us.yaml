@@ -1023,10 +1023,14 @@ package_import_cmd_description:
   other: Import packages from a list of dependencies
 package_search_cmd_description:
   other: Search for available packages that can be added to your project
+package_info_cmd_description:
+  other: Display information for the specified package
 package_arg_name:
   other: name
 package_arg_name_description:
   other: Package name
+package_info_flag_language_description:
+  other: The language used to constrain package information selection
 bundle_arg_name:
   other: name
 bundle_arg_name_description:
