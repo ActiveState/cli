@@ -152,7 +152,7 @@ func getCroppedText(text string, maxLen int) []entry {
 		for count < maxLen {
 			// If we reach an index that we recognize (ie. the start of a tag)
 			// then we write the whole tag, otherwise write by rune
-			if end, match := matchTag(pos, matches); match {
+			if end, match := matchIndex(pos, matches); match {
 				buffer.WriteString(string(runeText[pos:end]))
 				pos = end
 			} else {
@@ -181,9 +181,9 @@ func getCroppedText(text string, maxLen int) []entry {
 			continue
 		}
 
-		tag := entries[i].line
+		text := entries[i].line
 		if i >= 1 {
-			entries[i-1].line = entries[i-1].line + tag
+			entries[i-1].line = entries[i-1].line + text
 		}
 		entries = entries[0:i]
 	}
@@ -191,7 +191,7 @@ func getCroppedText(text string, maxLen int) []entry {
 	return entries
 }
 
-func matchTag(pos int, matches [][]int) (int, bool) {
+func matchIndex(pos int, matches [][]int) (int, bool) {
 	for _, match := range matches {
 		start, stop := match[0], match[1]
 		if pos == start {
@@ -247,9 +247,6 @@ func renderRow(providedColumns []string, colWidths []int) string {
 
 			if len(columnEntry) > i {
 				repeat := maxLen - columnEntry[i].length
-				if repeat < 0 {
-					repeat = padding
-				}
 				suffix = strings.Repeat(" ", repeat)
 				text = columnEntry[i].line
 			}
