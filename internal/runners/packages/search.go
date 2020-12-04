@@ -3,6 +3,7 @@ package packages
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
@@ -24,13 +25,6 @@ type SearchRunParams struct {
 // Search manages the searching execution context.
 type Search struct {
 	out output.Outputer
-}
-
-type searchPackageRow struct {
-	Pkg           string `json:"package" locale:"package_name,Name"`
-	Version       string `json:"version" locale:"package_version,Latest Version"`
-	OlderVersions string `json:"versions" locale:","`
-	versions      int
 }
 
 // NewSearch prepares a searching execution context for use.
@@ -86,6 +80,56 @@ func targetedLanguage(languageOpt string) (string, *failures.Failure) {
 	return model.LanguageForCommit(proj.CommitUUID())
 }
 
+type modules []string
+
+func makeModules(normalizedName string, pack *model.IngredientAndVersion) modules {
+	var ms modules
+	for _, module := range pack.LatestVersion.ProvidedFeatures {
+		if module.Feature != nil && *module.Feature != normalizedName {
+			ms = append(ms, *module.Feature)
+		}
+
+	}
+	return ms
+}
+
+func (ms modules) String() string {
+	if len(ms) == 0 {
+		return ""
+	}
+
+	var b strings.Builder
+
+	b.WriteString("[DISABLED]")
+	b.WriteString(locale.Tl("title_matching_modules", "Matching modules"))
+	b.WriteRune('\n')
+
+	prefix := '├'
+	for i, module := range ms {
+		if i == len(ms)-1 {
+			prefix = '└'
+		}
+
+		b.WriteRune(prefix)
+		b.WriteString("─ ")
+		b.WriteString(module)
+		b.WriteRune('\n')
+	}
+
+	b.WriteRune('\n')
+	b.WriteString("[/RESET]")
+
+	return b.String()
+}
+
+type searchPackageRow struct {
+	Pkg           string `json:"package" locale:"package_name,Name"`
+	Version       string `json:"version" locale:"package_version,Latest Version"`
+	OlderVersions string `json:"versions" locale:","`
+	versions      int
+	Modules       modules `json:"matching_modules,omitempty" opts:"emptyNil,separateLine,shiftCols=1"`
+}
+
 func formatSearchResults(packages []*model.IngredientAndVersion) []searchPackageRow {
 	var rows []searchPackageRow
 
@@ -101,6 +145,7 @@ func formatSearchResults(packages []*model.IngredientAndVersion) []searchPackage
 			Pkg:      filterNilStr(pack.Ingredient.Name),
 			Version:  pack.Version,
 			versions: len(pack.Versions),
+			Modules:  makeModules(pack.Ingredient.NormalizedName, pack),
 		}
 		rows = append(rows, row)
 	}
@@ -123,6 +168,7 @@ func mergeSearchRows(rows []searchPackageRow) []searchPackageRow {
 			Pkg:      row.Pkg,
 			Version:  row.Version,
 			versions: row.versions,
+			Modules:  row.Modules,
 		}
 
 		if row.versions > 1 {
