@@ -169,17 +169,17 @@ func renderRow(providedColumns []string, colWidths []int) string {
 		entries[n] = colorize.GetCroppedText(columns[n], maxLen)
 	}
 
-	totalRows := 0
+	lines := 0
 	for _, entry := range entries {
 		// Each entry represents a column. The longest column determines
 		// the number of rows the table will have.
-		if len(entry) > totalRows {
-			totalRows = len(entry)
+		if len(entry) > lines {
+			lines = len(entry)
 		}
 	}
 
 	// Render each row
-	for i := 0; i < totalRows; i++ {
+	for i := 0; i < lines; i++ {
 		for n, columnEntry := range entries {
 			maxLen := widths[n]
 			text := ""
