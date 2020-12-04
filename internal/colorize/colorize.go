@@ -10,11 +10,11 @@ import (
 	"github.com/ActiveState/cli/internal/output/colorstyle"
 )
 
-var ColorRx *regexp.Regexp
+var colorRx *regexp.Regexp
 
 func init() {
 	var err error
-	ColorRx, err = regexp.Compile(`\[(HEADING|NOTICE|SUCCESS|ERROR|DISABLED|ACTIONABLE|/RESET)!?\]`)
+	colorRx, err = regexp.Compile(`\[(HEADING|NOTICE|SUCCESS|ERROR|DISABLED|ACTIONABLE|/RESET)!?\]`)
 	if err != nil {
 		panic(fmt.Sprintf("Could not compile regex: %v", err))
 	}
@@ -74,7 +74,7 @@ var activeColorTheme ColorTheme = defaultColorTheme{}
 // Colorize will replace `[COLORNAME]foo`[/RESET] with shell colors, or strip color tags if stripColors=true
 func Colorize(value string, writer io.Writer, stripColors bool) (int, error) {
 	pos := 0
-	matches := ColorRx.FindAllStringSubmatchIndex(value, -1)
+	matches := colorRx.FindAllStringSubmatchIndex(value, -1)
 	for _, match := range matches {
 		start, end, groupStart, groupEnd := match[0], match[1], match[2], match[3]
 		n, err := writer.Write([]byte(value[pos:start]))
@@ -111,7 +111,7 @@ func ColorizedOrStrip(value string, stripColors bool) string {
 
 // StripColorCodes strips color codes from a string
 func StripColorCodes(value string) string {
-	return ColorRx.ReplaceAllString(value, "")
+	return colorRx.ReplaceAllString(value, "")
 }
 
 func colorize(ct ColorTheme, writer io.Writer, arg string) {

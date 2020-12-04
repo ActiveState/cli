@@ -1,7 +1,7 @@
 package table
 
 import (
-	"bytes"
+	"fmt"
 	"strings"
 	"unicode/utf8"
 
@@ -140,67 +140,6 @@ func rescaleColumns(colWidths []int, targetTotal int) {
 	colWidths[len(colWidths)-1] += targetTotal - mathutils.Total(colWidths...)
 }
 
-func getCroppedText(text string, maxLen int) []entry {
-	entries := make([]entry, 0)
-	pos := 0
-	matches := colorize.ColorRx.FindAllSubmatchIndex([]byte(text), -1)
-	runeText := []rune(text)
-
-	for pos < len(runeText) {
-		buffer := bytes.Buffer{}
-		count := 0
-		for count < maxLen {
-			// If we reach an index that we recognize (ie. the start of a tag)
-			// then we write the whole tag, otherwise write by rune
-			if end, match := matchIndex(pos, matches); match {
-				buffer.WriteString(string(runeText[pos:end]))
-				pos = end
-			} else {
-				if pos > len(runeText)-1 {
-					break
-				}
-
-				if runeText[pos] == linebreakRune {
-					pos++
-					break
-				}
-
-				buffer.WriteString(string(runeText[pos]))
-				pos++
-				count++
-			}
-		}
-		entries = append(entries, entry{buffer.String(), count})
-	}
-
-	// Clean up any entries that are just color tags
-	// This can happen when the end of a string or line
-	// break occurs right before a tag
-	for i, entry := range entries {
-		if entry.length != 0 {
-			continue
-		}
-
-		text := entries[i].line
-		if i >= 1 {
-			entries[i-1].line = entries[i-1].line + text
-		}
-		entries = entries[0:i]
-	}
-
-	return entries
-}
-
-func matchIndex(pos int, matches [][]int) (int, bool) {
-	for _, match := range matches {
-		start, stop := match[0], match[1]
-		if pos == start {
-			return stop, true
-		}
-	}
-	return -1, false
-}
-
 func renderRow(providedColumns []string, colWidths []int) string {
 	// don't want to modify the provided slice
 	columns := make([]string, len(providedColumns))
@@ -208,7 +147,7 @@ func renderRow(providedColumns []string, colWidths []int) string {
 
 	result := ""
 
-	entries := make([][]entry, len(columns))
+	entries := make([][]colorize.Entry, len(columns))
 
 	widths := make([]int, len(colWidths))
 	copy(widths, colWidths)
@@ -228,11 +167,12 @@ func renderRow(providedColumns []string, colWidths []int) string {
 		maxLen = maxLen - (padding * 2)
 		widths[n] = maxLen
 
-		entries[n] = getCroppedText(columns[n], maxLen)
+		entries[n] = colorize.GetCroppedText(columns[n], maxLen)
 	}
 
 	totalRows := 0
 	for _, columnEntries := range entries {
+		fmt.Println("ColumnEntries:", columnEntries)
 		if len(columnEntries) > totalRows {
 			totalRows = len(columnEntries)
 		}
@@ -246,9 +186,12 @@ func renderRow(providedColumns []string, colWidths []int) string {
 			suffix := strings.Repeat(" ", maxLen)
 
 			if len(columnEntry) > i {
-				repeat := maxLen - columnEntry[i].length
+				repeat := maxLen - columnEntry[i].Length
+				if repeat < 0 {
+					repeat = padding
+				}
 				suffix = strings.Repeat(" ", repeat)
-				text = columnEntry[i].line
+				text = columnEntry[i].Line
 			}
 
 			result += pad(text + suffix)
