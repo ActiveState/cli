@@ -7,6 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/scriptfile"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
 
 	"github.com/ActiveState/cli/internal/rxutils"
@@ -191,6 +192,35 @@ func expandPath(name string, script *Script) (string, error) {
 	}
 
 	return sf.Filename(), nil
+}
+
+// userExpander
+func userExpander(auth *authentication.Auth, element string) string {
+	if element == "name" {
+		return auth.WhoAmI()
+	}
+	if element == "email" {
+		return auth.Email()
+	}
+	return ""
+}
+
+// Mixin provides expansions that are not sourced from a project file
+type Mixin struct {
+	auth *authentication.Auth
+}
+
+// NewMixin creates a Mixin object providing extra expansions
+func NewMixin(auth *authentication.Auth) *Mixin {
+	return &Mixin{auth}
+}
+
+// Expander expands mixin variables
+func (m *Mixin) Expander(_ string, name string, meta string, _ bool, _ *Project) (string, error) {
+	if name == "user" {
+		return userExpander(m.auth, meta), nil
+	}
+	return "", nil
 }
 
 // ConstantExpander expands constants defined in the project-file.
