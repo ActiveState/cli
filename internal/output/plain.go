@@ -350,8 +350,8 @@ func shiftColsVal(opts []string) int {
 
 func columns(offset int, value string) []string {
 	if offset < 0 {
-		offset *= -1
-		logging.Errorf("Negative shiftCols values are not handled, using postive value %d", offset)
+		offset = 0
+		logging.Errorf("Negative shiftCols values are not handled; Using zero offset")
 	}
 	cols := make([]string, offset+1)
 	cols[offset] = value
