@@ -84,9 +84,9 @@ type modules []string
 
 func makeModules(normalizedName string, pack *model.IngredientAndVersion) modules {
 	var ms modules
-	for _, x := range pack.LatestVersion.ProvidedFeatures {
-		if x.Feature != nil && *x.Feature != normalizedName {
-			ms = append(ms, *x.Feature)
+	for _, module := range pack.LatestVersion.ProvidedFeatures {
+		if module.Feature != nil && *module.Feature != normalizedName {
+			ms = append(ms, *module.Feature)
 		}
 
 	}
