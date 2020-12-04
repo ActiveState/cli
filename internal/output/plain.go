@@ -333,9 +333,9 @@ func trimValue(value string, size int) string {
 
 func shiftColsVal(opts []string) int {
 	for _, opt := range opts {
-		a := strings.TrimPrefix(opt, string(ShiftColsPrefix))
-		if len(a) < len(opt) {
-			n, err := strconv.Atoi(a)
+		numChar := strings.TrimPrefix(opt, string(ShiftColsPrefix))
+		if len(numChar) < len(opt) { // prefix exists and was trimmed
+			n, err := strconv.Atoi(numChar)
 			if err != nil {
 				logging.Errorf("Cannot get shiftCols value: %v", err)
 				break
