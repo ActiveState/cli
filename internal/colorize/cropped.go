@@ -29,6 +29,7 @@ func GetCroppedText(text string, maxLen int) []Entry {
 			break
 		}
 
+		// Reached end of line
 		if runesWritten == maxLen {
 			entries = append(entries, Entry{entryText, runesWritten})
 			runesWritten = 0
@@ -36,6 +37,7 @@ func GetCroppedText(text string, maxLen int) []Entry {
 			continue
 		}
 
+		// Text already has line ending, so terminate the line here
 		if runeText[currentPosition] == '\n' {
 			currentPosition++
 			entries = append(entries, Entry{entryText, runesWritten})
