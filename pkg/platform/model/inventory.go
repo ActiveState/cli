@@ -30,20 +30,20 @@ var (
 
 // IngredientAndVersion is a sane version of whatever the hell it is go-swagger thinks it's doing
 type IngredientAndVersion struct {
-	*inventory_models.V1SearchIngredientsResponseIngredientsItems
+	*inventory_models.SearchIngredientsResponseItem
 	Version   string
 	Namespace string
 }
 
 // Platform is a sane version of whatever the hell it is go-swagger thinks it's doing
-type Platform = inventory_models.V1PlatformPagedListPlatformsItems
+type Platform = inventory_models.Platform
 
 var platformCache []*Platform
 
 // IngredientByNameAndVersion fetches an ingredient that matches the given name and version. If version is empty the first
 // matching ingredient will be returned.
-func IngredientByNameAndVersion(language, name, version string, prefix NamespacePrefix) (*IngredientAndVersion, error) {
-	results, fail := searchIngredientsNamespace(50, prefix, language, name)
+func IngredientByNameAndVersion(name, version string, ns Namespace) (*IngredientAndVersion, error) {
+	results, fail := searchIngredientsNamespace(50, ns, name)
 	if fail != nil {
 		return nil, fail.ToError()
 	}
@@ -64,7 +64,7 @@ func IngredientByNameAndVersion(language, name, version string, prefix Namespace
 					candidates = append(
 						candidates,
 						&IngredientAndVersion{
-							ingredient.V1SearchIngredientsResponseIngredientsItems,
+							ingredient.SearchIngredientsResponseItem,
 							ver.Version,
 							ingredient.Namespace,
 						})
@@ -109,8 +109,8 @@ func FilterForBestIngredientMatch(candidates []*IngredientAndVersion, name strin
 }
 
 // IngredientWithLatestVersion will grab the latest available ingredient and ingredientVersion that matches the ingredient name
-func IngredientWithLatestVersion(language, name string, prefix NamespacePrefix) (*IngredientAndVersion, error) {
-	results, fail := searchIngredientsNamespace(50, prefix, language, name)
+func IngredientWithLatestVersion(name string, ns Namespace) (*IngredientAndVersion, error) {
+	results, fail := searchIngredientsNamespace(50, ns, name)
 	if fail != nil {
 		return nil, fail.ToError()
 	}
@@ -129,7 +129,7 @@ func IngredientWithLatestVersion(language, name string, prefix NamespacePrefix) 
 			candidates = append(
 				candidates,
 				&IngredientAndVersion{
-					res.V1SearchIngredientsResponseIngredientsItems,
+					res.SearchIngredientsResponseItem,
 					*res.LatestVersion.Version,
 					res.Namespace,
 				})
@@ -145,14 +145,14 @@ func IngredientWithLatestVersion(language, name string, prefix NamespacePrefix) 
 
 // SearchIngredients will return all ingredients+ingredientVersions that fuzzily
 // match the ingredient name.
-func SearchIngredients(namespace NamespacePrefix, language, name string) ([]*IngredientAndVersion, *failures.Failure) {
-	return searchIngredientsNamespace(50, namespace, language, name)
+func SearchIngredients(namespace Namespace, name string) ([]*IngredientAndVersion, *failures.Failure) {
+	return searchIngredientsNamespace(50, namespace, name)
 }
 
 // SearchIngredientsStrict will return all ingredients+ingredientVersions that
 // strictly match the ingredient name.
-func SearchIngredientsStrict(namespace NamespacePrefix, language, name string) ([]*IngredientAndVersion, *failures.Failure) {
-	results, fail := searchIngredientsNamespace(50, namespace, language, name)
+func SearchIngredientsStrict(namespace Namespace, name string) ([]*IngredientAndVersion, *failures.Failure) {
+	results, fail := searchIngredientsNamespace(50, namespace, name)
 	if fail != nil {
 		return nil, fail
 	}
@@ -167,15 +167,14 @@ func SearchIngredientsStrict(namespace NamespacePrefix, language, name string) (
 	return ingredients, nil
 }
 
-func searchIngredientsNamespace(limit int, namespace NamespacePrefix, language, name string) ([]*IngredientAndVersion, *failures.Failure) {
+func searchIngredientsNamespace(limit int, ns Namespace, name string) ([]*IngredientAndVersion, *failures.Failure) {
 	lim := int64(limit)
 
 	client := inventory.Get()
 
-	namespaceAndLanguage := fmt.Sprintf("%s/%s", namespace, language)
 	params := inventory_operations.NewSearchIngredientsParams()
 	params.SetQ(name)
-	params.SetNamespaces(namespaceAndLanguage)
+	params.SetNamespaces(ns.String())
 	params.SetLimit(&lim)
 	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
 
@@ -190,7 +189,7 @@ func searchIngredientsNamespace(limit int, namespace NamespacePrefix, language, 
 	ingredients := []*IngredientAndVersion{}
 	for _, res := range results.Payload.Ingredients {
 		for _, v := range res.Versions {
-			ingredients = append(ingredients, &IngredientAndVersion{res, v.Version, namespaceAndLanguage})
+			ingredients = append(ingredients, &IngredientAndVersion{res, v.Version, ns.String()})
 		}
 	}
 	return ingredients, nil

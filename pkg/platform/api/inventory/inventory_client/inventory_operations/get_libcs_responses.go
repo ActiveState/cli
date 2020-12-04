@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // GetLibcsReader is a Reader for the GetLibcs structure.
@@ -24,14 +23,12 @@ type GetLibcsReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetLibcsReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewGetLibcsOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	default:
 		result := NewGetLibcsDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -54,16 +51,20 @@ func NewGetLibcsOK() *GetLibcsOK {
 A paginated list of libcs
 */
 type GetLibcsOK struct {
-	Payload *inventory_models.V1LibcPagedList
+	Payload *inventory_models.LibcPagedList
 }
 
 func (o *GetLibcsOK) Error() string {
 	return fmt.Sprintf("[GET /v1/libcs][%d] getLibcsOK  %+v", 200, o.Payload)
 }
 
+func (o *GetLibcsOK) GetPayload() *inventory_models.LibcPagedList {
+	return o.Payload
+}
+
 func (o *GetLibcsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(inventory_models.V1LibcPagedList)
+	o.Payload = new(inventory_models.LibcPagedList)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -97,6 +98,10 @@ func (o *GetLibcsDefault) Code() int {
 
 func (o *GetLibcsDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/libcs][%d] getLibcs default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *GetLibcsDefault) GetPayload() *inventory_models.RestAPIError {
+	return o.Payload
 }
 
 func (o *GetLibcsDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

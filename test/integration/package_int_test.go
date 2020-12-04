@@ -145,17 +145,8 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchSimple() {
 	// Note that the expected strings might change due to inventory changes
 	cp := ts.Spawn("search", "requests")
 	expectations := []string{
-		"Name",
-		"requests",
-		"2.23.0",
 		"requests3",
 		"3.0.0a1",
-		"requestsauth",
-		"0.1.1",
-		"requestsaws",
-		"0.1.1",
-		"requestsawssign",
-		"0.1.1",
 	}
 	for _, expectation := range expectations {
 		cp.Expect(expectation)
@@ -173,8 +164,8 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTerm() {
 	expectations := []string{
 		"Name",
 		"requests",
-		"2.23.0",
-		"+ 7 older versions",
+		"2.25.0",
+		"+ 8 older versions",
 	}
 	for _, expectation := range expectations {
 		cp.Expect(expectation)
@@ -282,7 +273,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_import() {
 		suite.Run("already added", func() {
 			cp := ts.Spawn("import", "requirements.txt")
 			cp.Expect("Are you sure you want to do this")
-			cp.SendLine("n")
+			cp.Send("n")
 			cp.ExpectNotExitCode(0, time.Second*60)
 		})
 	})
@@ -303,7 +294,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_headless_operation() {
 	suite.Run("install", func() {
 		cp := ts.Spawn("install", "dateparser@0.7.2")
 		cp.ExpectLongString("Do you want to continue as an anonymous user?")
-		cp.SendLine("Y")
+		cp.Send("Y")
 		cp.ExpectRe("(?:Package added|project is currently building)")
 		cp.Wait()
 	})
@@ -339,12 +330,17 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 	cp = ts.Spawn("activate", namespace, "--path="+ts.Dirs.Work, "--output=json")
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("history")
+	cp = ts.Spawn("history", "--output=json")
 	cp.ExpectExitCode(0)
 
 	// Get the first commitID we find, which should be the first commit for the project
+	snapshot := cp.TrimmedSnapshot()
 	commitRe := regexp.MustCompile(`[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}`)
-	firstCommit := commitRe.FindString(cp.TrimmedSnapshot())
+	firstCommit := commitRe.FindString(snapshot)
+
+	if firstCommit == "" {
+		suite.FailNow("Could not match commitID against output:\n" + snapshot)
+	}
 
 	suite.Run("install", func() {
 		cp := ts.Spawn("install", "urllib3@1.25.6")
@@ -365,7 +361,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 	})
 
 	cp = ts.Spawn("revert", firstCommit)
-	cp.SendLine("y")
+	cp.Send("y")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("pull")

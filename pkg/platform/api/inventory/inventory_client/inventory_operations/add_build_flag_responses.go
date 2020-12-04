@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // AddBuildFlagReader is a Reader for the AddBuildFlag structure.
@@ -24,21 +23,18 @@ type AddBuildFlagReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *AddBuildFlagReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 201:
 		result := NewAddBuildFlagCreated()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewAddBuildFlagBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewAddBuildFlagDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -61,16 +57,20 @@ func NewAddBuildFlagCreated() *AddBuildFlagCreated {
 The added build flag
 */
 type AddBuildFlagCreated struct {
-	Payload *inventory_models.V1BuildFlag
+	Payload *inventory_models.BuildFlag
 }
 
 func (o *AddBuildFlagCreated) Error() string {
 	return fmt.Sprintf("[POST /v1/build-flags][%d] addBuildFlagCreated  %+v", 201, o.Payload)
 }
 
+func (o *AddBuildFlagCreated) GetPayload() *inventory_models.BuildFlag {
+	return o.Payload
+}
+
 func (o *AddBuildFlagCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(inventory_models.V1BuildFlag)
+	o.Payload = new(inventory_models.BuildFlag)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -95,6 +95,10 @@ type AddBuildFlagBadRequest struct {
 
 func (o *AddBuildFlagBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/build-flags][%d] addBuildFlagBadRequest  %+v", 400, o.Payload)
+}
+
+func (o *AddBuildFlagBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
+	return o.Payload
 }
 
 func (o *AddBuildFlagBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -133,6 +137,10 @@ func (o *AddBuildFlagDefault) Code() int {
 
 func (o *AddBuildFlagDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/build-flags][%d] addBuildFlag default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *AddBuildFlagDefault) GetPayload() *inventory_models.RestAPIError {
+	return o.Payload
 }
 
 func (o *AddBuildFlagDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

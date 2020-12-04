@@ -14,7 +14,6 @@ import (
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
-
 // Checkout will checkout the given platform project at the given path
 // This includes cloning an associated repository and creating the activestate.yaml
 // It does not activate any environment
@@ -34,23 +33,23 @@ func (r *Checkout) Run(ns *project.Namespaced, targetPath string) error {
 
 	pj, fail := model.FetchProjectByName(ns.Owner, ns.Project)
 	if fail != nil {
-		return fail
+		return fail.ToError()
 	}
 
 	commitID := ns.CommitID
 	if commitID == nil {
 		branch, fail := model.DefaultBranchForProject(pj)
 		if fail != nil {
-			return fail
+			return fail.ToError()
 		}
 		commitID = branch.CommitID
 	}
 
 	// Clone the related repo, if it is defined
 	if pj.RepoURL != nil {
-		fail = r.repo.CloneProject(ns.Owner, ns.Project, targetPath, r.Outputer)
-		if fail != nil {
-			return fail
+		err := r.repo.CloneProject(ns.Owner, ns.Project, targetPath, r.Outputer)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -70,7 +69,7 @@ func (r *Checkout) Run(ns *project.Namespaced, targetPath string) error {
 			Language:  language,
 		})
 		if fail != nil {
-			return fail
+			return fail.ToError()
 		}
 	}
 

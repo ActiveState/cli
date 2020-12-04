@@ -6,18 +6,16 @@ package inventory_operations
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"net/http"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // NewUpdateIngredientParams creates a new UpdateIngredientParams object
@@ -65,7 +63,7 @@ for the update ingredient operation typically these are written to a http.Reques
 type UpdateIngredientParams struct {
 
 	/*Ingredient*/
-	Ingredient *inventory_models.V1IngredientUpdate
+	Ingredient *inventory_models.IngredientUpdate
 	/*IngredientID*/
 	IngredientID strfmt.UUID
 
@@ -108,13 +106,13 @@ func (o *UpdateIngredientParams) SetHTTPClient(client *http.Client) {
 }
 
 // WithIngredient adds the ingredient to the update ingredient params
-func (o *UpdateIngredientParams) WithIngredient(ingredient *inventory_models.V1IngredientUpdate) *UpdateIngredientParams {
+func (o *UpdateIngredientParams) WithIngredient(ingredient *inventory_models.IngredientUpdate) *UpdateIngredientParams {
 	o.SetIngredient(ingredient)
 	return o
 }
 
 // SetIngredient adds the ingredient to the update ingredient params
-func (o *UpdateIngredientParams) SetIngredient(ingredient *inventory_models.V1IngredientUpdate) {
+func (o *UpdateIngredientParams) SetIngredient(ingredient *inventory_models.IngredientUpdate) {
 	o.Ingredient = ingredient
 }
 

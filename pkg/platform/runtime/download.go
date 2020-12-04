@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/download"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -18,6 +19,8 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/buildlogstream"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -82,7 +85,7 @@ type Downloader interface {
 	Download(artifacts []*HeadChefArtifact, d DownloadDirectoryProvider, progress *progress.Progress) (files map[string]*HeadChefArtifact, fail *failures.Failure)
 
 	// FetchArtifacts will fetch artifact
-	FetchArtifacts() (*FetchArtifactsResult, *failures.Failure)
+	FetchArtifacts(recipe *inventory_models.Recipe, project *mono_models.Project) (*FetchArtifactsResult, *failures.Failure)
 }
 
 // Download is the main struct for orchestrating the download of all the artifacts belonging to a runtime
@@ -99,58 +102,26 @@ func NewDownload(runtime *Runtime) Downloader {
 	}
 }
 
-// fetchRecipe juggles API's to get the build request that can be sent to the head-chef
-func (r *Download) fetchRecipeID() (strfmt.UUID, *failures.Failure) {
-	commitID := r.runtime.commitID
-	if commitID == "" {
-		return "", FailNoCommit.New(locale.T("err_no_commit"))
-	}
-
-	recipeID, fail := model.FetchRecipeIDForCommitAndPlatform(commitID, r.runtime.owner, r.runtime.projectName, r.orgID, r.private, model.HostPlatform)
-	if fail != nil {
-		return "", fail
-	}
-
-	return *recipeID, nil
-}
-
 // FetchArtifacts will retrieve artifact information from the head-chef (eg language installers)
 // The first return argument specifies whether we are dealing with an alternative build
-func (r *Download) FetchArtifacts() (*FetchArtifactsResult, *failures.Failure) {
-	orgID := strfmt.UUID(constants.ValidZeroUUID)
-	projectID := strfmt.UUID(constants.ValidZeroUUID)
-
-	if r.runtime.owner != "" && r.runtime.projectName != "" {
-		platProject, fail := model.FetchProjectByName(r.runtime.owner, r.runtime.projectName)
-		if fail != nil {
-			return nil, fail
-		}
-
-		projectID = platProject.ProjectID
-		orgID = platProject.OrganizationID
-		r.orgID = platProject.OrganizationID.String()
-		r.private = platProject.Private
-	}
-
-	recipeID, fail := r.fetchRecipeID()
-	if fail != nil {
-		return nil, fail
-	}
-
-	return r.fetchArtifacts(r.runtime.commitID, recipeID, orgID, projectID)
-}
-
-func (r *Download) fetchArtifacts(commitID, recipeID, orgID, projectID strfmt.UUID) (*FetchArtifactsResult, *failures.Failure) {
+func (r *Download) FetchArtifacts(recipe *inventory_models.Recipe, platProj *mono_models.Project) (*FetchArtifactsResult, *failures.Failure) {
 	result := &FetchArtifactsResult{}
 
 	buildAnnotations := headchef.BuildAnnotations{
-		CommitID:     commitID.String(),
-		Project:      r.runtime.projectName,
-		Organization: r.runtime.owner,
+		CommitID:     r.runtime.CommitID().String(),
+		Project:      r.runtime.ProjectName(),
+		Organization: r.runtime.Owner(),
+	}
+
+	orgID := strfmt.UUID(constants.ValidZeroUUID)
+	projectID := strfmt.UUID(constants.ValidZeroUUID)
+	if platProj != nil {
+		orgID = platProj.OrganizationID
+		projectID = platProj.ProjectID
 	}
 
 	logging.Debug("sending request to head-chef")
-	buildRequest, fail := headchef.NewBuildRequest(recipeID, orgID, projectID, buildAnnotations)
+	buildRequest, fail := headchef.NewBuildRequest(*recipe.RecipeID, orgID, projectID, buildAnnotations)
 	if fail != nil {
 		return result, fail
 	}
@@ -174,7 +145,6 @@ func (r *Download) fetchArtifacts(commitID, recipeID, orgID, projectID strfmt.UU
 			result.RecipeID = *resp.RecipeID
 			result.Artifacts = resp.Artifacts
 			logging.Debug("request engine=%v, recipeID=%s", result.BuildEngine, result.RecipeID.String())
-
 			return result, nil
 
 		case msg := <-buildStatus.Failed:
@@ -197,10 +167,10 @@ func (r *Download) fetchArtifacts(commitID, recipeID, orgID, projectID strfmt.UU
 				return result, FailBuildInProgress.New(locale.Tr("build_status_in_progress", r.projectURL()))
 			}
 
-			if err := r.waitForArtifacts(recipeID); err != nil {
+			if err := r.waitForArtifacts(recipe); err != nil {
 				return nil, failures.FailMisc.Wrap(err, locale.Tl("err_wait_artifacts", "Error happened while waiting for packages"))
 			}
-			return r.fetchArtifacts(commitID, recipeID, orgID, projectID)
+			return r.FetchArtifacts(recipe, platProj)
 
 		case fail := <-buildStatus.RunFail:
 			logging.Debug("Failure: %v", fail)
@@ -217,10 +187,10 @@ func (r *Download) fetchArtifacts(commitID, recipeID, orgID, projectID strfmt.UU
 	}
 }
 
-func (r *Download) waitForArtifacts(recipeID strfmt.UUID) error {
-	logstream := buildlogstream.NewRequest(recipeID, r.runtime.msgHandler)
+func (r *Download) waitForArtifacts(recipe *inventory_models.Recipe) error {
+	logstream := buildlogstream.NewRequest(recipe, r.runtime.msgHandler)
 	if err := logstream.Wait(); err != nil {
-		return locale.WrapError(err, "err_wait_artifacts_logstream", "Error happened while waiting for builds to complete")
+		return errs.Wrap(err, "Error happened while waiting for builds to complete")
 	}
 
 	return nil

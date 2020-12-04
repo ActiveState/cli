@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // GetCPUArchitecturesReader is a Reader for the GetCPUArchitectures structure.
@@ -24,14 +23,12 @@ type GetCPUArchitecturesReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetCPUArchitecturesReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewGetCPUArchitecturesOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	default:
 		result := NewGetCPUArchitecturesDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -54,16 +51,20 @@ func NewGetCPUArchitecturesOK() *GetCPUArchitecturesOK {
 A paginated list of CPU architectures
 */
 type GetCPUArchitecturesOK struct {
-	Payload *inventory_models.V1CPUArchitecturePagedList
+	Payload *inventory_models.CPUArchitecturePagedList
 }
 
 func (o *GetCPUArchitecturesOK) Error() string {
 	return fmt.Sprintf("[GET /v1/cpu-architectures][%d] getCpuArchitecturesOK  %+v", 200, o.Payload)
 }
 
+func (o *GetCPUArchitecturesOK) GetPayload() *inventory_models.CPUArchitecturePagedList {
+	return o.Payload
+}
+
 func (o *GetCPUArchitecturesOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(inventory_models.V1CPUArchitecturePagedList)
+	o.Payload = new(inventory_models.CPUArchitecturePagedList)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -97,6 +98,10 @@ func (o *GetCPUArchitecturesDefault) Code() int {
 
 func (o *GetCPUArchitecturesDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/cpu-architectures][%d] getCpuArchitectures default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *GetCPUArchitecturesDefault) GetPayload() *inventory_models.RestAPIError {
+	return o.Payload
 }
 
 func (o *GetCPUArchitecturesDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

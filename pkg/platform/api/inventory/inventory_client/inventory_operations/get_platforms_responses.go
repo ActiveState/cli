@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // GetPlatformsReader is a Reader for the GetPlatforms structure.
@@ -24,14 +23,12 @@ type GetPlatformsReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetPlatformsReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewGetPlatformsOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	default:
 		result := NewGetPlatformsDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -54,16 +51,20 @@ func NewGetPlatformsOK() *GetPlatformsOK {
 A paginated list of platforms
 */
 type GetPlatformsOK struct {
-	Payload *inventory_models.V1PlatformPagedList
+	Payload *inventory_models.PlatformPagedList
 }
 
 func (o *GetPlatformsOK) Error() string {
 	return fmt.Sprintf("[GET /v1/platforms][%d] getPlatformsOK  %+v", 200, o.Payload)
 }
 
+func (o *GetPlatformsOK) GetPayload() *inventory_models.PlatformPagedList {
+	return o.Payload
+}
+
 func (o *GetPlatformsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(inventory_models.V1PlatformPagedList)
+	o.Payload = new(inventory_models.PlatformPagedList)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -97,6 +98,10 @@ func (o *GetPlatformsDefault) Code() int {
 
 func (o *GetPlatformsDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/platforms][%d] getPlatforms default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *GetPlatformsDefault) GetPayload() *inventory_models.RestAPIError {
+	return o.Payload
 }
 
 func (o *GetPlatformsDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

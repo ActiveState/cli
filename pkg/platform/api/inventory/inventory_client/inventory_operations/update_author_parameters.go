@@ -6,18 +6,16 @@ package inventory_operations
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"net/http"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // NewUpdateAuthorParams creates a new UpdateAuthorParams object
@@ -65,7 +63,7 @@ for the update author operation typically these are written to a http.Request
 type UpdateAuthorParams struct {
 
 	/*Author*/
-	Author *inventory_models.V1Author
+	Author *inventory_models.Author
 	/*AuthorIDOrEmail*/
 	AuthorIDOrEmail string
 
@@ -108,13 +106,13 @@ func (o *UpdateAuthorParams) SetHTTPClient(client *http.Client) {
 }
 
 // WithAuthor adds the author to the update author params
-func (o *UpdateAuthorParams) WithAuthor(author *inventory_models.V1Author) *UpdateAuthorParams {
+func (o *UpdateAuthorParams) WithAuthor(author *inventory_models.Author) *UpdateAuthorParams {
 	o.SetAuthor(author)
 	return o
 }
 
 // SetAuthor adds the author to the update author params
-func (o *UpdateAuthorParams) SetAuthor(author *inventory_models.V1Author) {
+func (o *UpdateAuthorParams) SetAuthor(author *inventory_models.Author) {
 	o.Author = author
 }
 

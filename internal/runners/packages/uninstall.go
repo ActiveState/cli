@@ -34,7 +34,7 @@ func NewUninstall(prime primeable) *Uninstall {
 }
 
 // Run executes the uninstall behavior.
-func (r *Uninstall) Run(params UninstallRunParams, pt PackageType) error {
+func (r *Uninstall) Run(params UninstallRunParams, nstype model.NamespaceType) error {
 	logging.Debug("ExecuteUninstall")
 	if r.proj == nil {
 		return locale.NewInputError("err_no_project")
@@ -46,5 +46,6 @@ func (r *Uninstall) Run(params UninstallRunParams, pt PackageType) error {
 		return locale.WrapError(fail, "err_fetch_languages")
 	}
 
-	return executePackageOperation(r.proj, r.out, r.auth, r.Prompter, language, params.Name, "", model.OperationRemoved, pt)
+	ns := model.NewNamespacePkgOrBundle(language, nstype)
+	return executePackageOperation(r.proj, r.out, r.auth, r.Prompter, params.Name, "", model.OperationRemoved, ns)
 }

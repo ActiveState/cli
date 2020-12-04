@@ -9,6 +9,8 @@ import (
 
 	"github.com/go-openapi/strfmt"
 
+	"github.com/ActiveState/sysinfo"
+
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
@@ -18,8 +20,8 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory"
 	iop "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/ActiveState/sysinfo"
 )
 
 // Fail types for this package
@@ -59,27 +61,21 @@ func FetchRawRecipeForCommitAndPlatform(commitID strfmt.UUID, owner, project str
 	return fetchRawRecipe(commitID, owner, project, &platform)
 }
 
-// FetchRecipeIDForCommit returns a recipe ID for a project based on the given commitID and the current platform
-func FetchRecipeIDForCommit(commitID strfmt.UUID, owner, project, orgID string, private bool) (*strfmt.UUID, *failures.Failure) {
-	return fetchRecipeID(commitID, owner, project, orgID, private, &HostPlatform)
-}
-
-// FetchRecipeIDForCommitAndPlatform returns a recipe ID for a project based on the given commitID and platform string
-func FetchRecipeIDForCommitAndPlatform(commitID strfmt.UUID, owner, project, orgID string, private bool, hostPlatform string) (*strfmt.UUID, *failures.Failure) {
-	return fetchRecipeID(commitID, owner, project, orgID, private, &hostPlatform)
-}
-
-func FetchRecipeByID(recipeID strfmt.UUID) (*inventory_models.V1SolutionRecipeRecipe, error) {
-	params := iop.NewGetSolutionRecipeParams()
-	params.RecipeID = recipeID
-
-	client, _ := inventory.Init()
-	recipe, err := client.GetSolutionRecipe(params, authentication.ClientAuth())
-	if err != nil {
-		return nil, errs.Wrap(err, "Unknown error while retrieving full order, error: %v, recipe: %s", err, string(recipeID))
+func ResolveRecipe(commitID strfmt.UUID, owner, projectName string, project *mono_models.Project) (*inventory_models.Recipe, error) {
+	if commitID == "" {
+		return nil, locale.NewError("err_no_commit", "Missing Commit ID")
 	}
 
-	return recipe.Payload.Recipe, nil
+	recipe, fail := FetchRecipe(commitID, owner, projectName, &HostPlatform)
+	if fail != nil {
+		return nil, fail.ToError()
+	}
+
+	if recipe.RecipeID == nil {
+		return nil, errs.New("Resulting recipe does not have a recipeID")
+	}
+
+	return recipe, nil
 }
 
 func fetchRawRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *string) (string, *failures.Failure) {
@@ -120,7 +116,7 @@ func fetchRawRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *s
 		case *iop.ResolveRecipesBadRequest:
 			msg := *rrErr.Payload.Message
 			logging.Error("Bad request while resolving order, error: %s, order: %s", msg, string(orderBody))
-			return "", FailOrderRecipes.New("err_order_bad_request", msg)
+			return "", FailOrderRecipes.New("err_order_bad_request", commitID.String(), msg)
 		default:
 			logging.Error("Unknown error while resolving order, error: %v, order: %s", err, string(orderBody))
 			return "", FailOrderRecipes.Wrap(err, "err_order_unknown")
@@ -130,7 +126,7 @@ func fetchRawRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *s
 	return recipe, nil
 }
 
-func commitToOrder(commitID strfmt.UUID, owner, project string) (*inventory_models.V1Order, error) {
+func commitToOrder(commitID strfmt.UUID, owner, project string) (*inventory_models.Order, error) {
 	monoOrder, err := FetchOrderFromCommit(commitID)
 	if err != nil {
 		return nil, FailOrderRecipes.Wrap(err, locale.T("err_order_recipe")).ToError()
@@ -141,7 +137,7 @@ func commitToOrder(commitID strfmt.UUID, owner, project string) (*inventory_mode
 		return nil, failures.FailMarshal.New(locale.T("err_order_marshal")).ToError()
 	}
 
-	order := &inventory_models.V1Order{}
+	order := &inventory_models.Order{}
 	err = order.UnmarshalBinary(orderData)
 	if err != nil {
 		return nil, failures.FailMarshal.New(locale.T("err_order_marshal")).ToError()
@@ -156,9 +152,9 @@ func commitToOrder(commitID strfmt.UUID, owner, project string) (*inventory_mode
 	return order, nil
 }
 
-func fetchRecipeID(commitID strfmt.UUID, owner, project, orgID string, private bool, hostPlatform *string) (*strfmt.UUID, *failures.Failure) {
+func FetchRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *string) (*inventory_models.Recipe, *failures.Failure) {
 	var err error
-	params := iop.NewSolveOrderParams()
+	params := iop.NewResolveRecipesParams()
 	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
 	params.SetTimeout(time.Second * 60)
 	params.Order, err = commitToOrder(commitID, owner, project)
@@ -168,7 +164,7 @@ func fetchRecipeID(commitID strfmt.UUID, owner, project, orgID string, private b
 
 	client, _ := inventory.Init()
 
-	response, err := client.SolveOrder(params, authentication.ClientAuth())
+	response, err := client.ResolveRecipes(params, authentication.ClientAuth())
 	if err != nil {
 		if err == context.DeadlineExceeded {
 			return nil, FailOrderRecipes.New("request_timed_out")
@@ -183,7 +179,7 @@ func fetchRecipeID(commitID strfmt.UUID, owner, project, orgID string, private b
 		case *iop.SolveOrderBadRequest:
 			msg := *rrErr.Payload.Message
 			logging.Error("Bad request while resolving order, error: %s, order: %s", msg, string(orderBody))
-			return nil, FailOrderRecipes.New("err_order_bad_request", owner, project, msg)
+			return nil, FailOrderRecipes.New("err_order_bad_request", commitID.String(), msg)
 		default:
 			logging.Error("Unknown error while resolving order, error: %v, order: %s", err, string(orderBody))
 			return nil, FailOrderRecipes.Wrap(err, "err_order_unknown")
@@ -199,10 +195,116 @@ func fetchRecipeID(commitID strfmt.UUID, owner, project, orgID string, private b
 	} else if len(platformIDs) > 1 {
 		logging.Debug("Received multiple platform IDs.  Picking the first one.")
 	}
-	platformID := platformIDs[0].String()
+	platformID := platformIDs[0]
 
-	if _, ok := response.Payload[platformID]; !ok {
-		return nil, FailOrderRecipes.New("err_recipe_not_found")
+	for _, recipe := range response.Payload.Recipes {
+		if recipe.Platform != nil && recipe.Platform.PlatformID != nil && *recipe.Platform.PlatformID == platformID {
+			return recipe, nil
+		}
 	}
-	return response.Payload[platformID].RecipeID, nil
+
+	return nil, FailOrderRecipes.New("err_recipe_not_found")
+}
+
+func IngredientVersionMap(recipe *inventory_models.Recipe) map[strfmt.UUID]*inventory_models.ResolvedIngredient {
+	ingredientVersionMap := map[strfmt.UUID]*inventory_models.ResolvedIngredient{}
+
+	for _, re := range recipe.ResolvedIngredients {
+		if re.Ingredient.PrimaryNamespace != nil &&
+			(*re.Ingredient.PrimaryNamespace == "builder" || *re.Ingredient.PrimaryNamespace == "builder-lib" || *re.Ingredient.PrimaryNamespace == NamespaceLanguage.String()) {
+			continue
+		}
+
+		if re.IngredientVersion == nil || re.IngredientVersion.IngredientVersionID == nil {
+			continue
+		}
+		ingredientVersionMap[*re.IngredientVersion.IngredientVersionID] = re
+	}
+	return ingredientVersionMap
+}
+
+func ArtifactMap(recipe *inventory_models.Recipe) map[strfmt.UUID]*inventory_models.ResolvedIngredient {
+	artifactMap := map[strfmt.UUID]*inventory_models.ResolvedIngredient{}
+
+	for _, re := range recipe.ResolvedIngredients {
+		if re.Ingredient.PrimaryNamespace != nil &&
+			(*re.Ingredient.PrimaryNamespace == "builder" || *re.Ingredient.PrimaryNamespace == "builder-lib" || *re.Ingredient.PrimaryNamespace == NamespaceLanguage.String()) {
+			continue
+		}
+
+		artifactMap[re.ArtifactID] = re
+	}
+	return artifactMap
+}
+
+func ArtifactDescription(artifactID strfmt.UUID, artifactMap map[strfmt.UUID]*inventory_models.ResolvedIngredient) string {
+	v, ok := artifactMap[artifactID]
+	if !ok || v.Ingredient.Name == nil {
+		return locale.Tl("unknown_artifact_description", "Artifact {{.V0}}", artifactID.String())
+	}
+
+	version := ""
+	if v.IngredientVersion != nil {
+		version = "@" + *v.IngredientVersion.Version
+	}
+
+	return *v.Ingredient.Name + version
+}
+
+func ParseDepTree(ingredients []*inventory_models.ResolvedIngredient, ingredientVersionMap map[strfmt.UUID]*inventory_models.ResolvedIngredient) (directdeptree map[strfmt.UUID][]strfmt.UUID, recursive map[strfmt.UUID][]strfmt.UUID) {
+	directdeptree = map[strfmt.UUID][]strfmt.UUID{}
+	for _, ingredient := range ingredients {
+		if ingredient.IngredientVersion == nil || ingredient.IngredientVersion.IngredientVersionID == nil {
+			continue
+		}
+
+		id := ingredient.IngredientVersion.IngredientVersionID
+		// skip ingredients that are not mapped to artifacts
+		if _, ok := ingredientVersionMap[*id]; !ok {
+			continue
+		}
+		// Construct directdeptree entry
+		if _, ok := directdeptree[*id]; !ok {
+			directdeptree[*id] = []strfmt.UUID{}
+		}
+
+		// Add direct dependencies
+		for _, dep := range ingredient.Dependencies {
+			if dep.IngredientVersionID == nil {
+				continue
+			}
+			// skip ingredients that are not mapped to artifacts
+			if _, ok := ingredientVersionMap[*dep.IngredientVersionID]; !ok {
+				continue
+			}
+			directdeptree[*id] = append(directdeptree[*id], *dep.IngredientVersionID)
+		}
+	}
+
+	// Now resolve ALL dependencies, not just the direct ones
+	deptree := map[strfmt.UUID][]strfmt.UUID{}
+	for ingredientID := range directdeptree {
+		deps := []strfmt.UUID{}
+		deptree[ingredientID] = recursiveDeps(deps, directdeptree, ingredientID, map[strfmt.UUID]struct{}{})
+	}
+
+	return directdeptree, deptree
+}
+
+func recursiveDeps(deps []strfmt.UUID, directdeptree map[strfmt.UUID][]strfmt.UUID, id strfmt.UUID, skip map[strfmt.UUID]struct{}) []strfmt.UUID {
+	if _, ok := directdeptree[id]; !ok {
+		return deps
+	}
+
+	for _, dep := range directdeptree[id] {
+		if _, ok := skip[dep]; ok {
+			continue
+		}
+		skip[dep] = struct{}{}
+
+		deps = append(deps, dep)
+		deps = recursiveDeps(deps, directdeptree, dep, skip)
+	}
+
+	return deps
 }

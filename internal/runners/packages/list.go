@@ -35,7 +35,7 @@ func NewList(prime primer.Outputer) *List {
 }
 
 // Run executes the list behavior.
-func (l *List) Run(params ListRunParams, pt PackageType) error {
+func (l *List) Run(params ListRunParams, nstype model.NamespaceType) error {
 	logging.Debug("ExecuteList")
 
 	var commit *strfmt.UUID
@@ -44,26 +44,26 @@ func (l *List) Run(params ListRunParams, pt PackageType) error {
 	case params.Commit != "":
 		commit, fail = targetFromCommit(params.Commit)
 		if fail != nil {
-			return locale.WrapError(fail.ToError(), fmt.Sprintf("%s_err_cannot_obtain_commit", pt.String()))
+			return locale.WrapError(fail.ToError(), fmt.Sprintf("%s_err_cannot_obtain_commit", nstype))
 		}
 	case params.Project != "":
 		commit, fail = targetFromProject(params.Project)
 		if fail != nil {
-			return locale.WrapError(fail.ToError(), fmt.Sprintf("%s_err_cannot_obtain_commit", pt.String()))
+			return locale.WrapError(fail.ToError(), fmt.Sprintf("%s_err_cannot_obtain_commit", nstype))
 		}
 	default:
 		commit, fail = targetFromProjectFile()
 		if fail != nil {
-			return locale.WrapError(fail.ToError(), fmt.Sprintf("%s_err_cannot_obtain_commit", pt.String()))
+			return locale.WrapError(fail.ToError(), fmt.Sprintf("%s_err_cannot_obtain_commit", nstype))
 		}
 	}
 
 	checkpoint, fail := fetchCheckpoint(commit)
 	if fail != nil {
-		return locale.WrapError(fail.ToError(), fmt.Sprintf("%s_err_cannot_fetch_checkpoint", pt.String()))
+		return locale.WrapError(fail.ToError(), fmt.Sprintf("%s_err_cannot_fetch_checkpoint", nstype))
 	}
 
-	table := newFilteredRequirementsTable(model.FilterCheckpointPackages(checkpoint), params.Name, pt)
+	table := newFilteredRequirementsTable(model.FilterCheckpointPackages(checkpoint), params.Name, nstype)
 	table.sortByPkg()
 
 	l.out.Print(table)
@@ -143,7 +143,7 @@ func fetchCheckpoint(commit *strfmt.UUID) (model.Checkpoint, *failures.Failure) 
 	return checkpoint, fail
 }
 
-func newFilteredRequirementsTable(requirements model.Checkpoint, filter string, pt PackageType) *packageTable {
+func newFilteredRequirementsTable(requirements model.Checkpoint, filter string, nstype model.NamespaceType) *packageTable {
 	if requirements == nil {
 		logging.Debug("requirements is nil")
 		return nil
@@ -155,7 +155,7 @@ func newFilteredRequirementsTable(requirements model.Checkpoint, filter string, 
 			continue
 		}
 
-		if !strings.HasPrefix(req.Namespace, string(pt.Namespace())) {
+		if !strings.HasPrefix(req.Namespace, nstype.Prefix()) {
 			continue
 		}
 
@@ -171,5 +171,5 @@ func newFilteredRequirementsTable(requirements model.Checkpoint, filter string, 
 		rows = append(rows, row)
 	}
 
-	return newTable(rows, locale.T(fmt.Sprintf("%s_list_no_packages", pt.String())))
+	return newTable(rows, locale.T(fmt.Sprintf("%s_list_no_packages", nstype.String())))
 }

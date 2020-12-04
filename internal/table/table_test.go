@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/mathutils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -29,7 +30,7 @@ func TestTable_colWidths(t1 *testing.T) {
 				},
 				100,
 			},
-			[]int{8, 9, 10},
+			[]int{7, 8, 9},
 		},
 		{
 			"multi-byte characters",
@@ -42,7 +43,7 @@ func TestTable_colWidths(t1 *testing.T) {
 				},
 				100,
 			},
-			[]int{8, 9, 10},
+			[]int{7, 8, 9},
 		},
 		{
 			"span row dominates",
@@ -56,7 +57,7 @@ func TestTable_colWidths(t1 *testing.T) {
 				},
 				100,
 			},
-			[]int{15, 17, 19},
+			[]int{14, 17, 20},
 		},
 		{
 			"Rowsize wins cause it's longer",
@@ -69,7 +70,7 @@ func TestTable_colWidths(t1 *testing.T) {
 				},
 				100,
 			},
-			[]int{8, 9, 10},
+			[]int{7, 8, 9},
 		},
 		{
 			"Over max total",
@@ -96,7 +97,7 @@ func TestTable_colWidths(t1 *testing.T) {
 				},
 				100,
 			},
-			[]int{23, 23, 27, 27},
+			[]int{22, 22, 27, 29},
 		},
 		{
 			"Long multi column (over maxWidth)",
@@ -110,7 +111,7 @@ func TestTable_colWidths(t1 *testing.T) {
 				},
 				100,
 			},
-			[]int{23, 23, 27, 27},
+			[]int{22, 22, 27, 29},
 		},
 	}
 	for _, tt := range tests {
@@ -123,10 +124,6 @@ func TestTable_colWidths(t1 *testing.T) {
 			assert.LessOrEqual(t1, total, tt.args.maxTotalWidth)
 		})
 	}
-}
-
-func padsize(v int) int {
-	return v + (2 * padding)
 }
 
 func Test_renderRow(t *testing.T) {
@@ -281,6 +278,104 @@ func Test_getCroppedText(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := getCroppedText(tt.args.text, tt.args.maxLen); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("getCroppedText() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_equalizeWidths(t *testing.T) {
+	type args struct {
+		colWidths  []int
+		percentage int
+	}
+	tests := []struct {
+		name string
+		args args
+		want []int
+	}{
+		{
+			"Equalize widths",
+			args{
+				[]int{10, 20, 30},
+				20,
+			},
+			[]int{12, 20, 28},
+		},
+		{
+			"Equalize widths, account for floats",
+			args{
+				[]int{1, 1, 5},
+				40,
+			},
+			[]int{1, 1, 5},
+		},
+		{
+			"Zero percentage doesn't panic or break",
+			args{
+				[]int{11, 21, 31},
+				0,
+			},
+			[]int{11, 21, 31},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			originalTotal := mathutils.Total(tt.args.colWidths...)
+			equalizeWidths(tt.args.colWidths, tt.args.percentage)
+			if !reflect.DeepEqual(tt.args.colWidths, tt.want) {
+				t.Errorf("equalizeWidths() got = %v, want %v", tt.args.colWidths, tt.want)
+			}
+			if originalTotal != mathutils.Total(tt.args.colWidths...) {
+				t.Errorf("Output total should be equal to input total, got: %v", tt.args.colWidths)
+			}
+		})
+	}
+}
+
+func Test_rescaleColumns(t *testing.T) {
+	type args struct {
+		colWidths   []int
+		targetTotal int
+	}
+	tests := []struct {
+		name string
+		args args
+		want []int
+	}{
+		{
+			"Rescale widths, bigger",
+			args{
+				[]int{5, 5, 5},
+				20,
+			},
+			[]int{6, 6, 8},
+		},
+		{
+			"Rescale widths, same",
+			args{
+				[]int{5, 5, 5},
+				15,
+			},
+			[]int{5, 5, 5},
+		},
+		{
+			"Rescale widths, smaller",
+			args{
+				[]int{5, 5, 5},
+				10,
+			},
+			[]int{3, 3, 4},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rescaleColumns(tt.args.colWidths, tt.args.targetTotal)
+			if !reflect.DeepEqual(tt.args.colWidths, tt.want) {
+				t.Errorf("rescaleColumns() got = %v, want %v", tt.args.colWidths, tt.want)
+			}
+			total := mathutils.Total(tt.args.colWidths...)
+			if tt.args.targetTotal != total {
+				t.Errorf("rescaleColumns() got total = %v, want total %v", total, tt.args.targetTotal)
 			}
 		})
 	}

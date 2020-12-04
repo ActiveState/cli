@@ -6,18 +6,16 @@ package inventory_operations
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"net/http"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // NewAddOperatingSystemParams creates a new AddOperatingSystemParams object
@@ -65,7 +63,7 @@ for the add operating system operation typically these are written to a http.Req
 type AddOperatingSystemParams struct {
 
 	/*OperatingSystem*/
-	OperatingSystem *inventory_models.V1OperatingSystemCore
+	OperatingSystem *inventory_models.OperatingSystemCore
 
 	timeout    time.Duration
 	Context    context.Context
@@ -106,13 +104,13 @@ func (o *AddOperatingSystemParams) SetHTTPClient(client *http.Client) {
 }
 
 // WithOperatingSystem adds the operatingSystem to the add operating system params
-func (o *AddOperatingSystemParams) WithOperatingSystem(operatingSystem *inventory_models.V1OperatingSystemCore) *AddOperatingSystemParams {
+func (o *AddOperatingSystemParams) WithOperatingSystem(operatingSystem *inventory_models.OperatingSystemCore) *AddOperatingSystemParams {
 	o.SetOperatingSystem(operatingSystem)
 	return o
 }
 
 // SetOperatingSystem adds the operatingSystem to the add operating system params
-func (o *AddOperatingSystemParams) SetOperatingSystem(operatingSystem *inventory_models.V1OperatingSystemCore) {
+func (o *AddOperatingSystemParams) SetOperatingSystem(operatingSystem *inventory_models.OperatingSystemCore) {
 	o.OperatingSystem = operatingSystem
 }
 

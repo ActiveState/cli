@@ -10,6 +10,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/machineid"
 )
 
 type delayedLog struct {
@@ -64,7 +65,7 @@ func SendToRollbarWhenReady(level string, msg interface{}) {
 }
 
 func UpdateRollbarPerson(userID, username, email string) {
-	machID := UniqID()
+	machID := machineid.UniqID()
 
 	// MachineID is the only thing we have that is consistent between authed and unauthed users, so
 	// we set that as the "person ID" in rollbar so the segmenting of data is consistent

@@ -3,6 +3,7 @@ package revert
 import (
 	"github.com/go-openapi/strfmt"
 
+	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
@@ -11,6 +12,8 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
+
+	gqlmodel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 )
 
 type Revert struct {
@@ -59,9 +62,13 @@ func (r *Revert) Run(params *Params) error {
 		return locale.WrapError(err, "err_revert_get_commit", "Could not fetch commit details for commit with ID: {{.V0}}", params.CommitID)
 	}
 
-	orgs, fail := model.FetchOrganizationsByIDs([]strfmt.UUID{revertCommit.Author})
-	if fail != nil {
-		return locale.WrapError(fail.ToError(), "err_revert_get_organizations", "Could not get organizations for current user")
+	var orgs []gqlmodel.Organization
+	var fail *failures.Failure
+	if revertCommit.Author != nil {
+		orgs, fail = model.FetchOrganizationsByIDs([]strfmt.UUID{*revertCommit.Author})
+		if fail != nil {
+			return locale.WrapError(fail.ToError(), "err_revert_get_organizations", "Could not get organizations for current user")
+		}
 	}
 	commit.PrintCommit(r.out, revertCommit, orgs)
 

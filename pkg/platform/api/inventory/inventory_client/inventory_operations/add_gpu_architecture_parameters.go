@@ -6,18 +6,16 @@ package inventory_operations
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"net/http"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // NewAddGpuArchitectureParams creates a new AddGpuArchitectureParams object
@@ -65,7 +63,7 @@ for the add gpu architecture operation typically these are written to a http.Req
 type AddGpuArchitectureParams struct {
 
 	/*GpuArchitecture*/
-	GpuArchitecture *inventory_models.V1GpuArchitectureCore
+	GpuArchitecture *inventory_models.GpuArchitectureCore
 
 	timeout    time.Duration
 	Context    context.Context
@@ -106,13 +104,13 @@ func (o *AddGpuArchitectureParams) SetHTTPClient(client *http.Client) {
 }
 
 // WithGpuArchitecture adds the gpuArchitecture to the add gpu architecture params
-func (o *AddGpuArchitectureParams) WithGpuArchitecture(gpuArchitecture *inventory_models.V1GpuArchitectureCore) *AddGpuArchitectureParams {
+func (o *AddGpuArchitectureParams) WithGpuArchitecture(gpuArchitecture *inventory_models.GpuArchitectureCore) *AddGpuArchitectureParams {
 	o.SetGpuArchitecture(gpuArchitecture)
 	return o
 }
 
 // SetGpuArchitecture adds the gpuArchitecture to the add gpu architecture params
-func (o *AddGpuArchitectureParams) SetGpuArchitecture(gpuArchitecture *inventory_models.V1GpuArchitectureCore) {
+func (o *AddGpuArchitectureParams) SetGpuArchitecture(gpuArchitecture *inventory_models.GpuArchitectureCore) {
 	o.GpuArchitecture = gpuArchitecture
 }
 

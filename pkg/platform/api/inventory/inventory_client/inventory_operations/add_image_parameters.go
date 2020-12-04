@@ -6,18 +6,16 @@ package inventory_operations
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"net/http"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // NewAddImageParams creates a new AddImageParams object
@@ -65,7 +63,7 @@ for the add image operation typically these are written to a http.Request
 type AddImageParams struct {
 
 	/*Image*/
-	Image *inventory_models.V1ImageCore
+	Image *inventory_models.ImageCore
 
 	timeout    time.Duration
 	Context    context.Context
@@ -106,13 +104,13 @@ func (o *AddImageParams) SetHTTPClient(client *http.Client) {
 }
 
 // WithImage adds the image to the add image params
-func (o *AddImageParams) WithImage(image *inventory_models.V1ImageCore) *AddImageParams {
+func (o *AddImageParams) WithImage(image *inventory_models.ImageCore) *AddImageParams {
 	o.SetImage(image)
 	return o
 }
 
 // SetImage adds the image to the add image params
-func (o *AddImageParams) SetImage(image *inventory_models.V1ImageCore) {
+func (o *AddImageParams) SetImage(image *inventory_models.ImageCore) {
 	o.Image = image
 }
 

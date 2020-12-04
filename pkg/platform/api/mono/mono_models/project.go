@@ -63,8 +63,7 @@ type Project struct {
 	ProjectID strfmt.UUID `json:"projectID,omitempty"`
 
 	// repo Url
-	// Format: uri
-	RepoURL *strfmt.URI `json:"repoUrl,omitempty"`
+	RepoURL *string `json:"repoUrl,omitempty"`
 }
 
 // Validate validates this project
@@ -100,10 +99,6 @@ func (m *Project) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateProjectID(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateRepoURL(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -243,19 +238,6 @@ func (m *Project) validateProjectID(formats strfmt.Registry) error {
 	}
 
 	if err := validate.FormatOf("projectID", "body", "uuid", m.ProjectID.String(), formats); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *Project) validateRepoURL(formats strfmt.Registry) error {
-
-	if swag.IsZero(m.RepoURL) { // not required
-		return nil
-	}
-
-	if err := validate.FormatOf("repoUrl", "body", "uri", m.RepoURL.String(), formats); err != nil {
 		return err
 	}
 
