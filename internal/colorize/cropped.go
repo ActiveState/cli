@@ -25,6 +25,7 @@ func GetCroppedText(text string, maxLen int) []Entry {
 		}
 
 		if pos > len(runeText)-1 {
+			entries = append(entries, Entry{entryText, count})
 			break
 		}
 
@@ -43,13 +44,14 @@ func GetCroppedText(text string, maxLen int) []Entry {
 			continue
 		}
 
+		if pos == len(runeText)-1 {
+			entryText += string(runeText[pos])
+			entries = append(entries, Entry{entryText, count + 1})
+		}
+
 		entryText += string(runeText[pos])
 		pos++
 		count++
-	}
-
-	if len(entryText) != 0 {
-		entries = append(entries, Entry{entryText, count})
 	}
 
 	return entries
