@@ -96,6 +96,7 @@ func makeModules(pack *model.IngredientAndVersion) modules {
 func (ms modules) String() string {
 	var b strings.Builder
 
+	b.WriteString("[DISABLED]")
 	b.WriteString(locale.Tl("title_matching_modules", "Matching modules"))
 	b.WriteRune('\n')
 
@@ -112,6 +113,7 @@ func (ms modules) String() string {
 	}
 
 	b.WriteRune('\n')
+	b.WriteString("[/RESET]")
 
 	return b.String()
 }
