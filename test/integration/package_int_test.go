@@ -198,6 +198,23 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithLang() {
 	cp.ExpectExitCode(0)
 }
 
+func (suite *PackageIntegrationTestSuite) TestPackage_searchModules() {
+	suite.OnlyRunForTags(tagsuite.Package)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+	suite.PrepareActiveStateYAML(ts)
+
+	cp := ts.Spawn("search", "leapsecond", "--language=perl")
+	cp.Expect("Matching modules")
+	cp.Expect("Date::Leapsecond")
+	cp.Expect("Matching modules")
+	cp.Expect("DateTime::LeapSecond")
+	cp.Expect("Matching modules")
+	cp.Expect("DateTime::LeapSecond")
+	cp.Expect("Matching modules")
+	cp.Expect("DateTime::Lite::LeapSecond")
+	cp.ExpectExitCode(0)
+}
 func (suite *PackageIntegrationTestSuite) TestPackage_searchWithWrongLang() {
 	suite.OnlyRunForTags(tagsuite.Package)
 	ts := e2e.New(suite.T(), false)

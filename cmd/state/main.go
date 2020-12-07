@@ -146,11 +146,13 @@ func run(args []string, out output.Outputer) (int, error) {
 	}
 	// Set up conditional, which accesses a lot of primer data
 	sshell := subshell.New()
-	conditional := constraints.NewPrimeConditional(pjOwner, pjName, pjNamespace, sshell.Shell())
+	auth := authentication.Get()
+	conditional := constraints.NewPrimeConditional(auth, pjOwner, pjName, pjNamespace, sshell.Shell())
 	project.RegisterConditional(conditional)
+	project.RegisterExpander("mixin", project.NewMixin(auth).Expander)
 
 	// Run the actual command
-	cmds := cmdtree.New(primer.New(pj, out, authentication.Get(), prompter, sshell, conditional), args...)
+	cmds := cmdtree.New(primer.New(pj, out, auth, prompter, sshell, conditional), args...)
 
 	childCmd, err := cmds.Command().Find(args[1:])
 	if err != nil {

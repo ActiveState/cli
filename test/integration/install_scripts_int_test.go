@@ -1,17 +1,20 @@
 package integration
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -68,6 +71,9 @@ func getEnvironmentPath(userScope bool) string {
 
 func scriptPath(t *testing.T) string {
 	name := "install.ps1"
+	if runtime.GOOS != "windows" {
+		name = "install.sh"
+	}
 	root := environment.GetRootPathUnsafe()
 	subdir := "installers"
 
@@ -81,6 +87,99 @@ func scriptPath(t *testing.T) string {
 
 type InstallScriptsIntegrationTestSuite struct {
 	tagsuite.Suite
+}
+
+func expectStateToolInstallation(cp *termtest.ConsoleProcess, addToPathAnswer string) {
+	cp.Expect("Installing to")
+	cp.Expect("Continue?")
+	cp.SendLine("y")
+	cp.Expect("Fetching the latest version")
+	cp.Expect("Allow $PATH to be appended in your")
+	cp.SendLine(addToPathAnswer)
+	cp.Expect("State Tool installation complete")
+}
+
+func expectStateToolInstallationWindows(cp *termtest.ConsoleProcess) {
+	cp.Expect("Installing to")
+	cp.Expect("Continue?")
+	cp.SendLine("y")
+	cp.Expect("Fetching the latest version")
+	cp.Expect("State Tool successfully installed to")
+}
+
+func expectDefaultActivation(cp *termtest.ConsoleProcess) {
+	cp.Expect("Activating Virtual Environment")
+	cp.Expect("Choose Destination")
+	cp.Send("")
+	cp.Expect("Cloning Repository")
+	cp.Expect("Downloading missing artifacts")
+	cp.Expect("Updating missing artifacts", 20*time.Second)
+	cp.ExpectLongString("Successfully configured ActiveState/Perl-5.32 as the global default project")
+	cp.Expect("activated state")
+	cp.SendLine("exit")
+}
+
+func (suite *InstallScriptsIntegrationTestSuite) TestInstallSh() {
+	if runtime.GOOS == "windows" {
+		suite.T().SkipNow()
+	}
+	suite.OnlyRunForTags(tagsuite.Critical)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	script := scriptPath(suite.T())
+
+	cp := ts.SpawnCmdWithOpts("bash", e2e.WithArgs(script, "-t", ts.Dirs.Work))
+	expectStateToolInstallation(cp, "n")
+	cp.Expect("State Tool Installed")
+	cp.ExpectExitCode(0)
+}
+
+func (suite *InstallScriptsIntegrationTestSuite) TestInstallPerl5_32() {
+	if runtime.GOOS != "linux" {
+		suite.T().SkipNow()
+	}
+	suite.OnlyRunForTags(tagsuite.Critical)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	script := scriptPath(suite.T())
+
+	cp := ts.SpawnCmdWithOpts(
+		"bash",
+		e2e.WithArgs("-c", fmt.Sprintf("cp $HOME/.bashrc %s/bashrc.bak", ts.Dirs.Work)),
+	)
+	cp.ExpectExitCode(0)
+
+	defer func() {
+		cp = ts.SpawnCmdWithOpts(
+			"bash",
+			e2e.WithArgs("-c", fmt.Sprintf("cp %s/.bashrc.bak $HOME/.bashrc", ts.Dirs.Work)),
+		)
+	}()
+
+	cp.ExpectExitCode(0)
+	cp = ts.SpawnCmdWithOpts(
+		"bash",
+		e2e.WithArgs(script, "-t", ts.Dirs.Work, "--activate-default", "ActiveState/Perl-5.32"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false", "SHELL=bash"),
+	)
+	expectStateToolInstallation(cp, "y")
+
+	expectDefaultActivation(cp)
+	cp.ExpectExitCode(0)
+
+	// we need to run an interactive bash session to ensure that the modified ~/.bashrc is being parsed
+	cp = ts.SpawnCmd("bash")
+	cp.SendLine("echo $PATH; exit")
+	// Expect Global Binary directory on PATH
+	globalBinDir := filepath.Join(ts.Dirs.Cache, "bin")
+	cp.ExpectLongString(globalBinDir, 1*time.Second)
+	// expect State Tool Installation directory
+	cp.ExpectLongString(ts.Dirs.Work, 1*time.Second)
+	cp.ExpectExitCode(0)
 }
 
 func (suite *InstallScriptsIntegrationTestSuite) TestInstallPs1() {
@@ -107,12 +206,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallPs1() {
 	}()
 
 	cp := ts.SpawnCmdWithOpts("powershell.exe", e2e.WithArgs(script, "-t", ts.Dirs.Work))
-	cp.Expect("Installing to")
-	cp.Expect("Continue?")
-
-	cp.SendLine("y")
-	cp.Expect("Fetching the latest version")
-	cp.Expect("State Tool successfully installed to")
+	expectStateToolInstallationWindows(cp)
 	cp.ExpectExitCode(0)
 
 	pathEnv, err := cmdEnv.get("PATH")
@@ -121,7 +215,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallPs1() {
 	suite.Assert().Contains(paths, ts.Dirs.Work, "Could not find installation path in PATH")
 }
 
-func (suite *InstallScriptsIntegrationTestSuite) TestInstallPerl5_32() {
+func (suite *InstallScriptsIntegrationTestSuite) TestInstallPerl5_32_Windows() {
 	if runtime.GOOS != "windows" {
 		suite.T().SkipNow()
 	}
@@ -148,19 +242,8 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallPerl5_32() {
 		"powershell.exe",
 		e2e.WithArgs(script, "-t", ts.Dirs.Work, "-activate-default", "ActiveState/Perl-5.32"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"))
-	cp.Expect("Installing to")
-	cp.Expect("Continue?")
-
-	cp.SendLine("y")
-	cp.Expect("Fetching the latest version")
-	cp.Expect("State Tool successfully installed to")
-	cp.Expect("Activating project ActiveState/Perl-5.32 as default")
-	cp.Expect("Cloning Repository")
-	cp.Expect("Downloading missing artifacts")
-	cp.Expect("Updating missing artifacts")
-	cp.ExpectLongString("Successfully configured ActiveState/Perl-5.32 as the global default project")
-	cp.Expect("activated state")
-	cp.SendLine("exit")
+	expectStateToolInstallationWindows(cp)
+	expectDefaultActivation(cp)
 	cp.ExpectExitCode(0)
 
 	pathEnv, err := cmdEnv.get("PATH")
