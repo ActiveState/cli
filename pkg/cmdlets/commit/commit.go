@@ -2,11 +2,9 @@ package commit
 
 import (
 	"strings"
-	"time"
 
 	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	gmodel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
@@ -15,11 +13,8 @@ import (
 )
 
 type commitData struct {
-	Hash    string   `locale:"hash,Commit"`
-	Author  string   `locale:"author,Author"`
-	Date    string   `locale:"date,Date"`
-	Message string   `locale:"message,Commit Message"`
-	Changes []string `locale:"changes,Changes"`
+	Heading string `locale:"heading,"`
+	Data    string `locale:"data,"`
 }
 
 func PrintCommit(out output.Outputer, commit *mono_models.Commit, orgs []gmodel.Organization) error {
@@ -33,7 +28,7 @@ func PrintCommit(out output.Outputer, commit *mono_models.Commit, orgs []gmodel.
 }
 
 func PrintCommits(out output.Outputer, commits []*mono_models.Commit, orgs []gmodel.Organization) error {
-	var data []commitData
+	var data [][]commitData
 	for _, c := range commits {
 		d, err := commitDataFromCommit(c, orgs)
 		if err != nil {
@@ -46,31 +41,59 @@ func PrintCommits(out output.Outputer, commits []*mono_models.Commit, orgs []gmo
 	return nil
 }
 
-func commitDataFromCommit(commit *mono_models.Commit, orgs []gmodel.Organization) (commitData, error) {
+func commitDataFromCommit(commit *mono_models.Commit, orgs []gmodel.Organization) ([]commitData, error) {
 	var username string
 	var err error
 	if commit.Author != nil && orgs != nil {
 		username, err = usernameForID(*commit.Author, orgs)
 		if err != nil {
-			return commitData{}, locale.WrapError(err, "err_commit_print_username", "Could not determine username for commit author")
+			return nil, locale.WrapError(err, "err_commit_print_username", "Could not determine username for commit author")
 		}
 	}
 
-	return commitData{
-		Hash:    commit.CommitID.String(),
-		Author:  username,
-		Date:    time.Time(commit.Added).Format(constants.DateTimeFormatUser),
-		Message: commit.Message,
-		Changes: formatChanges(commit),
-	}, nil
-}
+	data := make([]commitData, 0)
+	data = append(data, commitData{
+		locale.Tl("print_commit_hash_heading", "[HEADING]Commit[/RESET]"),
+		locale.Tl("print_commit_hash", "[ACTIONABLE]{{.V0}}[/RESET]", commit.CommitID.String()),
+	})
 
-func shortHash(commitID string) string {
-	split := strings.Split(commitID, "-")
-	if len(split) == 0 {
-		return ""
+	data = append(data, commitData{
+		locale.Tl("print_commit_author_heading", "[HEADING]Author[/RESET]"),
+		username,
+	})
+
+	data = append(data, commitData{
+		locale.Tl("print_commit_time_heading", "[HEADING]Date[/RESET]"),
+		commit.AtTime.String(),
+	})
+
+	message := locale.Tl("print_commit_no_message", "[DISABLED]Not provided.[/RESET]")
+	if commit.Message != "" {
+		message = commit.Message
 	}
-	return split[0]
+	data = append(data, commitData{
+		locale.Tl("print_commit_description_heading", "[HEADING]Description[/RESET]"),
+		message,
+	})
+
+	changes := formatChanges(commit)
+	for i, change := range changes {
+		switch {
+		case strings.Contains(change, "added"):
+			change = locale.Tl("print_commit_added_change", "[SUCCESS]+[/RESET] {{.V0}}", change)
+		case strings.Contains(change, "removed"):
+			change = locale.Tl("print_commit_removed_change", "[SUCCESS]+[/RESET] {{.V0}}", change)
+		case strings.Contains(change, "updated"):
+			change = locale.Tl("print_commit_updated_change", "[ACTIONABLE]•[/RESET] {{.V0}}", change)
+		}
+		changes[i] = change
+	}
+	data = append(data, commitData{
+		locale.Tl("print_commit_changes_heading", "[HEADING]Changes[/RESET]"),
+		strings.Join(changes, "\n"),
+	})
+
+	return data, nil
 }
 
 func formatChanges(commit *mono_models.Commit) []string {
