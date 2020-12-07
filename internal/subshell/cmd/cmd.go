@@ -50,6 +50,14 @@ func (v *SubShell) SetBinary(binary string) {
 func (v *SubShell) WriteUserEnv(env map[string]string, envType sscommon.EnvData, userScope bool) *failures.Failure {
 	cmdEnv := NewCmdEnv(userScope)
 
+	// Clean up old entries
+	oldEnv := viper.GetStringMap(envType.Key)
+	for k, v := range oldEnv {
+		if fail := cmdEnv.unset(k, v.(string)); fail != nil {
+			return fail
+		}
+	}
+
 	// Store new entries
 	viper.Set(envType.Key, env)
 

@@ -34,6 +34,33 @@ func getEnvironmentPath(userScope bool) string {
 	return `SYSTEM\ControlSet001\Control\Session Manager\Environment`
 }
 
+// unsetUserEnv clears a state cool configured environment variable
+// It only does this if the value equals the expected value (meaning if we can verify that state tool was in fact
+// responsible for setting it)
+func (c *CmdEnv) unset(name, ifValueEquals string) *failures.Failure {
+	key, err := c.openKeyFn(getEnvironmentPath(c.userScope))
+	if err != nil {
+		return failures.FailOS.Wrap(err, locale.T("err_windows_registry"))
+	}
+	defer key.Close()
+
+	v, _, err := key.GetStringValue(name)
+	if err != nil {
+		if osutils.IsNotExistError(err) {
+			return nil
+		}
+		return failures.FailOS.Wrap(err, locale.T("err_windows_registry"))
+	}
+
+	// Check if we are responsible for the value
+	if v != ifValueEquals {
+		return nil
+	}
+
+	// Delete value
+	return failures.FailOS.Wrap(key.DeleteValue(name))
+}
+
 // setUserEnv sets a variable in the user environment and saves the original as a backup
 func (c *CmdEnv) set(name, newValue string) *failures.Failure {
 	key, err := c.openKeyFn(getEnvironmentPath(c.userScope))
