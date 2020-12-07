@@ -12,6 +12,7 @@ func GetCroppedText(text string, maxLen int) []Entry {
 	runesWritten := 0
 	matches := colorRx.FindAllSubmatchIndex([]byte(text), -1)
 	runeText := []rune(text)
+	last := len(runeText) - 1
 
 	for currentPosition < len(runeText) {
 		// If we reach an index that we recognize (ie. the start of a tag)
@@ -24,7 +25,7 @@ func GetCroppedText(text string, maxLen int) []Entry {
 			}
 		}
 
-		if currentPosition > len(runeText)-1 {
+		if currentPosition > last {
 			entries = append(entries, Entry{entryText, runesWritten})
 			break
 		}
@@ -46,7 +47,7 @@ func GetCroppedText(text string, maxLen int) []Entry {
 			continue
 		}
 
-		if currentPosition == len(runeText)-1 {
+		if currentPosition == last {
 			entryText += string(runeText[currentPosition])
 			entries = append(entries, Entry{entryText, runesWritten + 1})
 		}
