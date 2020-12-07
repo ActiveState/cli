@@ -186,10 +186,7 @@ func renderRow(providedColumns []string, colWidths []int) string {
 			suffix := strings.Repeat(" ", maxLen)
 
 			if len(columnEntry) > i {
-				repeat := maxLen - columnEntry[i].Length
-				if repeat < 0 {
-					repeat = padding
-				}
+				repeat := mathutils.MaxInt(0, maxLen-columnEntry[i].Length)
 				suffix = strings.Repeat(" ", repeat)
 				text = columnEntry[i].Line
 			}
