@@ -9,6 +9,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/stretchr/testify/suite"
@@ -32,6 +33,13 @@ func (suite *PrepareIntegrationTestSuite) TestPrepare() {
 		// e2e.AppendEnv(fmt.Sprintf("ACTIVESTATE_CLI_CONFIGDIR=%s", ts.Dirs.Work)),
 	)
 	cp.ExpectExitCode(0)
+
+	isAdmin, err := osutils.IsWindowsAdmin()
+	suite.Require().NoError(err, "Could not determine if we are a Windows Administrator")
+	// For Windows Administrator users `state _prepare` is doing nothing now (because it doesn't make sense...)
+	if isAdmin {
+		return
+	}
 	suite.AssertConfig(filepath.Join(ts.Dirs.Cache, "bin"))
 }
 
