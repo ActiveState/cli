@@ -84,21 +84,9 @@ func commitDataFromCommit(commit *mono_models.Commit, orgs []gmodel.Organization
 		message,
 	})
 
-	changes := formatChanges(commit)
-	for i, change := range changes {
-		switch {
-		case strings.Contains(change, "added"):
-			change = locale.Tl("print_commit_added_change", "[SUCCESS]+[/RESET] {{.V0}}", change)
-		case strings.Contains(change, "removed"):
-			change = locale.Tl("print_commit_removed_change", "[SUCCESS]+[/RESET] {{.V0}}", change)
-		case strings.Contains(change, "updated"):
-			change = locale.Tl("print_commit_updated_change", "[ACTIONABLE]•[/RESET] {{.V0}}", change)
-		}
-		changes[i] = change
-	}
 	data = append(data, commitData{
 		locale.Tl("print_commit_changes_heading", "[HEADING]Changes[/RESET]"),
-		strings.Join(changes, "\n"),
+		strings.Join(formatChanges(commit), "\n"),
 	})
 
 	return data, nil
@@ -118,7 +106,8 @@ func formatChanges(commit *mono_models.Commit) []string {
 		results = append(results,
 			locale.Tr("change_"+change.Operation,
 				requirement, change.VersionConstraint, change.VersionConstraintOld,
-			))
+			),
+		)
 	}
 
 	return results
