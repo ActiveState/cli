@@ -150,7 +150,7 @@ func Test_renderRow(t *testing.T) {
 				providedColumns: []string{"[HEADING]col1[/RESET]", "[HEADING]col2[/RESET]", "[HEADING]col3[/RESET]"},
 				colWidths:       []int{10, 10, 10},
 			},
-			"  [HEADING]col1[/RESET]      [HEADING]col2[/RESET]      [HEADING]col3[/RESET]    ",
+			"  [HEADING]col1[/RESET]    [HEADING]col2[/RESET]    [HEADING]col3[/RESET]  ",
 		},
 		{
 			"Breaks",

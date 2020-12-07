@@ -10,7 +10,7 @@ func GetCroppedText(text string, maxLen int) []Entry {
 	entryText := ""
 	currentPosition := 0
 	runesWritten := 0
-	matches := colorRx.FindAllSubmatchIndex([]byte(text), -1)
+	matches := colorRx.FindAllStringSubmatchIndex(text, -1)
 	runeText := []rune(text)
 	last := len(runeText) - 1
 
