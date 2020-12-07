@@ -57,21 +57,7 @@ func (c *CmdEnv) unset(name, ifValueEquals string) *failures.Failure {
 		return nil
 	}
 
-	// Check for backup value
-	backupValue, valType, err := key.GetStringValue(envBackupName(name))
-	realError := err != nil && !osutils.IsNotExistError(err)
-	backupExists := err == nil
-
-	if realError {
-		return failures.FailOS.Wrap(err, locale.T("err_windows_registry"))
-	}
-	if backupExists {
-		// If a backup exists (ie. the value before we modified it) then restore that rather than deleting it altogether
-		if err := key.DeleteValue(envBackupName(name)); err != nil {
-			return failures.FailOS.Wrap(err, locale.T("err_windows_registry"))
-		}
-		return failures.FailOS.Wrap(osutils.SetStringValue(key, name, valType, backupValue))
-	}
+	// Delete value
 	return failures.FailOS.Wrap(key.DeleteValue(name))
 }
 
@@ -84,14 +70,9 @@ func (c *CmdEnv) set(name, newValue string) *failures.Failure {
 	defer key.Close()
 
 	// Check if we're going to be overriding
-	oldValue, valType, err := key.GetStringValue(name)
+	_, valType, err := key.GetStringValue(name)
 	if err != nil && !osutils.IsNotExistError(err) {
 		return failures.FailOS.Wrap(err, locale.T("err_windows_registry"))
-	} else if err == nil {
-		// Save backup
-		if err2 := osutils.SetStringValue(key, envBackupName(name), valType, oldValue); err2 != nil {
-			return failures.FailOS.Wrap(err2, locale.T("err_windows_registry"))
-		}
 	}
 
 	return failures.FailOS.Wrap(osutils.SetStringValue(key, name, valType, newValue))
@@ -104,14 +85,6 @@ func (c *CmdEnv) Get(name string) (string, *failures.Failure) {
 		return "", failures.FailOS.Wrap(err, locale.T("err_windows_registry"))
 	}
 	defer key.Close()
-
-	// Return the backup version if it exists
-	originalValue, _, err := key.GetStringValue(envBackupName(name))
-	if err != nil && !osutils.IsNotExistError(err) {
-		return "", failures.FailOS.Wrap(err, locale.T("err_windows_registry"))
-	} else if err == nil {
-		return originalValue, nil
-	}
 
 	v, _, err := key.GetStringValue(name)
 	if err != nil && !osutils.IsNotExistError(err) {
@@ -127,8 +100,4 @@ func (c *CmdEnv) GetUnsafe(name string) string {
 		log.Fatalf("GetUnsafe failed with: %s", f.Error())
 	}
 	return r
-}
-
-func envBackupName(name string) string {
-	return name + "_ORIGINAL"
 }
