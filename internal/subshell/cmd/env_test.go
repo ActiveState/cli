@@ -67,6 +67,80 @@ func openKeyMock(path string) (osutils.RegistryKey, error) {
 	return &RegistryKeyMock{}, nil
 }
 
+func TestCmdEnv_unset(t *testing.T) {
+	type fields struct {
+		registryMock *RegistryKeyMock
+		openKeyErr   error
+	}
+	type args struct {
+		name          string
+		ifValueEquals string
+	}
+	type want struct {
+		returnValue      *failures.Failure
+		registryGetCalls *[]string // nil means it should have no calls
+		registrySetCalls *[]string
+		registryDelCalls *[]string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   want
+	}{
+		{
+			"unset, value not equals",
+			fields{&RegistryKeyMock{}, nil},
+			args{
+				"key",
+				"value_not_equal",
+			},
+			want{
+				nil,
+				&[]string{},
+				nil,
+				nil,
+			},
+		},
+		{
+			"unset, value equals",
+			fields{&RegistryKeyMock{
+				getResults: map[string]RegistryValue{
+					"key": RegistryValue{"value_equals", nil},
+				},
+			}, nil},
+			args{
+				"key",
+				"value_equals",
+			},
+			want{
+				nil,
+				&[]string{},
+				nil,
+				&[]string{"key"},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := &CmdEnv{
+				openKeyFn: func(path string) (osutils.RegistryKey, error) {
+					return tt.fields.registryMock, tt.fields.openKeyErr
+				},
+			}
+			if got := c.unset(tt.args.name, tt.args.ifValueEquals); !reflect.DeepEqual(got, tt.want.returnValue) {
+				t.Errorf("unset() = %v, want %v", got, tt.want)
+			}
+			rm := tt.fields.registryMock
+
+			registryValidator(t, rm.getCalls, tt.want.registryGetCalls, "GET")
+			registryValidator(t, rm.setCalls, tt.want.registrySetCalls, "SET")
+			registryValidator(t, rm.setExpandCalls, &[]string{}, "EXPAND")
+			registryValidator(t, rm.delCalls, tt.want.registryDelCalls, "DEL")
+		})
+	}
+}
+
 func TestCmdEnv_set(t *testing.T) {
 	type fields struct {
 		registryMock *RegistryKeyMock
@@ -88,7 +162,7 @@ func TestCmdEnv_set(t *testing.T) {
 		want   want
 	}{
 		{
-			"set, no backup",
+			"set",
 			fields{&RegistryKeyMock{}, nil},
 			args{
 				"key",
@@ -139,7 +213,7 @@ func TestCmdEnv_get(t *testing.T) {
 		want   want
 	}{
 		{
-			"get nonexist, no backup",
+			"get nonexist",
 			fields{&RegistryKeyMock{}, nil},
 			args{
 				"key",
@@ -151,7 +225,7 @@ func TestCmdEnv_get(t *testing.T) {
 			},
 		},
 		{
-			"get existing, no backup",
+			"get existing",
 			fields{&RegistryKeyMock{
 				getResults: map[string]RegistryValue{
 					"key": RegistryValue{"value", nil},
