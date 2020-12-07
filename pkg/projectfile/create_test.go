@@ -11,8 +11,6 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 
 	"github.com/go-openapi/strfmt"
-
-	"github.com/ActiveState/cli/internal/failures"
 )
 
 func Test_Create(t *testing.T) {

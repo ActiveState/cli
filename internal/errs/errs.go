@@ -10,7 +10,7 @@ import (
 )
 
 // Error enforces errors that include a stacktrace
-type Error interface {
+type Errorable interface {
 	Unwrap() error
 	Stack() *stacktrace.Stacktrace
 }
@@ -20,16 +20,16 @@ type ErrorTips interface {
 	ErrorTips() []string
 }
 
-// WrappedErr is what we use for errors created from this package, this does not mean every error returned from this
+// Error is what we use for errors created from this package, this does not mean every error returned from this
 // package is wrapping something, it simply has the plumbing to.
-type WrappedErr struct {
+type Error struct {
 	error
 	tips    []string
 	wrapped error
 	stack   *stacktrace.Stacktrace
 }
 
-func (e *WrappedErr) Error() string {
+func (e *Error) Error() string {
 	if e.error != nil {
 		return e.error.Error()
 	}
@@ -39,26 +39,26 @@ func (e *WrappedErr) Error() string {
 	return "incorrectly wrapped error"
 }
 
-func (e *WrappedErr) ErrorTips() []string {
+func (e *Error) ErrorTips() []string {
 	return e.tips
 }
 
-func (e *WrappedErr) AddTips(tips ...string) {
+func (e *Error) AddTips(tips ...string) {
 	e.tips = append(e.tips, tips...)
 }
 
 // Unwrap returns the parent error, if one exists
-func (e *WrappedErr) Unwrap() error {
+func (e *Error) Unwrap() error {
 	return e.wrapped
 }
 
 // Stack returns the stacktrace for where this error was created
-func (e *WrappedErr) Stack() *stacktrace.Stacktrace {
+func (e *Error) Stack() *stacktrace.Stacktrace {
 	return e.stack
 }
 
 func newError(err error, wrapTarget error) error {
-	return &WrappedErr{
+	return &Error{
 		err,
 		[]string{},
 		wrapTarget,

@@ -49,7 +49,7 @@ func TestFindFileInPath(t *testing.T) {
 	nonExistentPath := filepath.FromSlash("/dir1/dir2")
 	_, err = FindFileInPath(nonExistentPath, "FILE_THAT_SHOULD_NOT_EXIST")
 
-	assert.ErrorAs(t, err, &ErrorFileNotFound)
+	assert.ErrorIs(t, err, ErrorFileNotFound)
 }
 
 func TestReplaceAllTextFile(t *testing.T) {

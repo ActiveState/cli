@@ -8,9 +8,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ActiveState/cli/internal/failures"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -78,7 +79,7 @@ func unwrapError(err error) (int, error) {
 		return 0, nil
 	}
 
-	var ee errs.Error
+	var ee errs.Errorable
 	stack := "not provided"
 	isErrs := errors.As(err, &ee)
 	if isErrs {

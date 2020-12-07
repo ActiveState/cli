@@ -11,29 +11,8 @@ import (
 	"github.com/ActiveState/sysinfo"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
-)
-
-var (
-	// FailUnknown is the failure type used for API requests with an unexpected error
-	FailUnknown = failures.Type("api.fail.unknown")
-
-	// FailAuth is the failure type used for failed authentication API requests
-	FailAuth = failures.Type("api.fail.auth", failures.FailUser)
-
-	// FailForbidden is the failure type used when access to a requested resource is forbidden
-	FailForbidden = failures.Type("api.fail.forbidden", failures.FailUser)
-
-	// FailNotFound indicates a failure to find a user's resource.
-	FailNotFound = failures.Type("api.fail.not_found", failures.FailUser)
-
-	// FailOrganizationNotFound is used when an organization could not be found
-	FailOrganizationNotFound = failures.Type("api.fail.organization.not_found", FailNotFound)
-
-	// FailProjectNotFound is used when a project could not be found
-	FailProjectNotFound = failures.Type("api.fail.project.not_found", FailNotFound)
 )
 
 // RoundTripper is an implementation of http.RoundTripper that adds additional request information

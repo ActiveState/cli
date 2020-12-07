@@ -6,8 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
+
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/rtutils"
 )
@@ -94,8 +95,8 @@ func TestIsError(t *testing.T) {
 				if joinmessage := locale.JoinErrors(tt.err, ","); joinmessage.Error() != tt.wantJoinMessage {
 					t.Errorf("JoinMessage did not match, want: %s, got: %s", tt.wantJoinMessage, joinmessage.Error())
 				}
-				ee, ok := tt.err.(errs.Error)
-				if ! ok {
+				ee, ok := tt.err.(errs.Errorable)
+				if !ok {
 					t.Error("Error should be of type errs.Error")
 					t.FailNow()
 				}
