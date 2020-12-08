@@ -6,55 +6,55 @@ type Entry struct {
 }
 
 func GetCroppedText(text string, maxLen int) []Entry {
-	entries := make([]Entry, 0)
-	entryText := ""
-	currentPosition := 0
-	runesWritten := 0
-	matches := colorRx.FindAllStringSubmatchIndex(text, -1)
-	runeText := []rune(text)
-	last := len(runeText) - 1
+	var line string // the line we're building, including the color codes
+	var plainTextPosition int
+	var plainTextWritten int
 
-	for currentPosition < len(runeText) {
+	entries := make([]Entry, 0)
+	colorCodes := colorRx.FindAllStringSubmatchIndex(text, -1)
+	runeText := []rune(text)
+
+	for plainTextPosition < len(runeText) {
 		// If we reach an index that we recognize (ie. the start of a tag)
 		// then we write the whole tag, otherwise write by rune
-		for _, match := range matches {
+		for _, match := range colorCodes {
 			start, stop := match[0], match[1]
-			if currentPosition == start {
-				entryText += string(runeText[currentPosition:stop])
-				currentPosition = stop
+			if plainTextPosition == start {
+				line += string(runeText[plainTextPosition:stop])
+				plainTextPosition = stop
 			}
 		}
 
-		if currentPosition > last {
-			entries = append(entries, Entry{entryText, runesWritten})
+		if plainTextPosition > len(runeText)-1 {
+			entries = append(entries, Entry{line, plainTextWritten})
 			break
 		}
 
 		// Reached end of line
-		if runesWritten == maxLen {
-			entries = append(entries, Entry{entryText, runesWritten})
-			runesWritten = 0
-			entryText = ""
+		if plainTextWritten == maxLen {
+			entries = append(entries, Entry{line, plainTextWritten})
+			plainTextWritten = 0
+			line = ""
 			continue
 		}
 
 		// Text already has line ending, so terminate the line here
-		if runeText[currentPosition] == '\n' {
-			currentPosition++
-			entries = append(entries, Entry{entryText, runesWritten})
-			runesWritten = 0
-			entryText = ""
+		if runeText[plainTextPosition] == '\n' {
+			plainTextPosition++
+			entries = append(entries, Entry{line, plainTextWritten})
+			plainTextWritten = 0
+			line = ""
 			continue
 		}
 
-		if currentPosition == last {
-			entryText += string(runeText[currentPosition])
-			entries = append(entries, Entry{entryText, runesWritten + 1})
+		if plainTextPosition == len(runeText)-1 {
+			line += string(runeText[plainTextPosition])
+			entries = append(entries, Entry{line, plainTextWritten + 1})
 		}
 
-		entryText += string(runeText[currentPosition])
-		currentPosition++
-		runesWritten++
+		line += string(runeText[plainTextPosition])
+		plainTextPosition++
+		plainTextWritten++
 	}
 
 	return entries
