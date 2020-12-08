@@ -185,8 +185,7 @@ func renderRow(providedColumns []string, colWidths []int) string {
 			currentRowText += pad(currentColumnText + suffix)
 		}
 
-		// If the entry for this row is empty then no columns had data for it
-		// and we are done rendering
+		// If this row is empty then no columns had data for it and we are done rendering
 		if strings.TrimSpace(currentRowText) == "" {
 			emptyRow = true
 		} else {
