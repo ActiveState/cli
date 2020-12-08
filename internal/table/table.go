@@ -144,9 +144,12 @@ func rescaleColumns(colWidths []int, targetTotal int) {
 func renderRow(providedColumns []string, colWidths []int) string {
 	result := ""
 
-	columns := make([][]colorize.Entry, len(providedColumns))
+	// Do not modify the original column widths
 	widths := make([]int, len(colWidths))
 	copy(widths, colWidths)
+
+	// Get the column data based on the column widths
+	columns := make([][]colorize.Entry, len(providedColumns))
 	for n, columnMaxWidth := range colWidths {
 		// ignore providedColumns that we do not have data for (they have been filled up with the last colValue already)
 		if len(providedColumns) < n+1 {
