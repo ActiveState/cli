@@ -249,15 +249,10 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallPerl5_32_Windows() {
 	pathEnv, err := cmdEnv.get("PATH")
 	suite.Require().NoError(err, "could not get PATH")
 	paths := strings.Split(pathEnv, string(os.PathListSeparator))
-	userPaths := paths
-	if isAdmin {
-		// `state prepare` writes the global bin directory to the USER path
-		userCmdEnv := newCmdEnv(true)
-		userPathEnv, err := userCmdEnv.get("PATH")
-		suite.Require().NoError(err, "could not get PATH")
-		userPaths = strings.Split(userPathEnv, string(os.PathListSeparator))
+	// The global binary directory is only added to the PATH for non-Administrator users
+	if !isAdmin {
+		suite.Assert().Contains(paths, filepath.Join(ts.Dirs.Cache, "bin"), "Could not find global binary directory on PATH")
 	}
-	suite.Assert().Contains(userPaths, filepath.Join(ts.Dirs.Cache, "bin"), "Could not find global binary directory on PATH")
 	suite.Assert().Contains(paths, ts.Dirs.Work, "Could not find installation path in PATH")
 }
 func TestInstallScriptsIntegrationTestSuite(t *testing.T) {
