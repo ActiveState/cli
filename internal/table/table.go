@@ -76,6 +76,8 @@ func (t *Table) calculateWidth(maxTableWidth int) ([]int, int) {
 			if !ok {
 				continue // column doesn't exit because the previous column spans
 			}
+			// Strip any colour tags so they are not included in the width calculation
+			columnValue = colorize.StripColorCodes(columnValue)
 			columnSize := utf8.RuneCountInString(columnValue)
 
 			// Detect spanned column info
@@ -140,65 +142,57 @@ func rescaleColumns(colWidths []int, targetTotal int) {
 }
 
 func renderRow(providedColumns []string, colWidths []int) string {
-	// don't want to modify the provided slice
-	columns := make([]string, len(providedColumns))
-	copy(columns, providedColumns)
-
 	result := ""
 
-	entries := make([][]colorize.Entry, len(columns))
-
+	columns := make([][]colorize.Entry, len(providedColumns))
 	widths := make([]int, len(colWidths))
 	copy(widths, colWidths)
-	for n, maxLen := range colWidths {
-		// ignore columns that we do not have data for (they have been filled up with the last colValue already)
-		if len(columns) < n+1 {
+	for n, columnMaxWidth := range colWidths {
+		// ignore providedColumns that we do not have data for (they have been filled up with the last colValue already)
+		if len(providedColumns) < n+1 {
 			continue
 		}
 
 		// Detect multi column span
-		if len(colWidths) > n+1 && len(columns) == n+1 {
+		if len(colWidths) > n+1 && len(providedColumns) == n+1 {
 			for _, v := range colWidths[n+1:] {
-				maxLen += v
+				columnMaxWidth += v
 			}
 		}
 
-		maxLen = maxLen - (padding * 2)
-		widths[n] = maxLen
+		columnMaxWidth = columnMaxWidth - (padding * 2)
+		widths[n] = columnMaxWidth
 
-		entries[n] = colorize.GetCroppedText(columns[n], maxLen)
+		columns[n] = colorize.GetCroppedText(providedColumns[n], columnMaxWidth)
 	}
 
-	lines := 0
-	for _, entry := range entries {
-		// Each entry represents a column. The longest column determines
-		// the number of rows the table will have.
-		if len(entry) > lines {
-			lines = len(entry)
-		}
-	}
+	// Iterate over rows until we reach a row where no column has data
+	var currentRow int
+	var emptyRow bool
+	for !emptyRow {
+		var currentRowText string
+		for n, column := range columns {
+			columnMaxWidth := widths[n]
+			suffixRepeat := columnMaxWidth
 
-	// Render each row
-	for i := 0; i < lines; i++ {
-		for n, columnEntry := range entries {
-			maxLen := widths[n]
-			text := ""
-			suffix := strings.Repeat(" ", maxLen)
-
-			if len(columnEntry) > i {
-				end := len(columnEntry[i].Line)
-				if end > maxLen {
-					end = maxLen
-				}
-
-				repeat := mathutils.MaxInt(0, maxLen-end)
-				suffix = strings.Repeat(" ", repeat)
-				text = columnEntry[i].Line
+			// If this column has an entry for the current row we use it
+			var currentColumnText string
+			if len(column) > currentRow {
+				suffixRepeat = mathutils.MaxInt(0, columnMaxWidth-column[currentRow].Length)
+				currentColumnText = column[currentRow].Line
 			}
-
-			result += pad(text + suffix)
+			suffix := strings.Repeat(" ", suffixRepeat)
+			currentRowText += pad(currentColumnText + suffix)
 		}
-		result += linebreak
+
+		// If the entry for this row is empty then no columns had data for it
+		// and we are done rendering
+		if strings.TrimSpace(currentRowText) == "" {
+			emptyRow = true
+		} else {
+			result += currentRowText + linebreak
+			currentRow++
+		}
 	}
 
 	return strings.TrimRight(result, linebreak)
@@ -207,13 +201,4 @@ func renderRow(providedColumns []string, colWidths []int) string {
 func pad(v string) string {
 	padded := strings.Repeat(" ", padding)
 	return padded + v + padded
-}
-
-func runeSliceIndexOf(slice []rune, r rune) int {
-	for i, c := range slice {
-		if c == r {
-			return i
-		}
-	}
-	return -1
 }
