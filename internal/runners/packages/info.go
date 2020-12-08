@@ -46,13 +46,14 @@ func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 	}
 	if len(packages) == 0 {
 		return errs.AddTips(
-			locale.NewInputError("err_package_search_no_packages", `No packages in our catalogue match [NOTICE]"{{.V0}}"[/RESET].`, params.Package),
-			locale.Tl("search_try_term", "Try a different search term"),
-			locale.Tl("search_request", "Request a package at [ACTIONABLE]https://community.activestate.com/[/RESET]"),
+			locale.NewInputError("err_package_info_no_packages", `No packages in our catalogue are an exact match for [NOTICE]"{{.V0}}"[/RESET].`, params.Package),
+			locale.Tl("info_try_search", "Valid package names can be searched using [ACTIONABLE]`state search {package_name}`[/RESET]"),
+			locale.Tl("info_request", "Request a package at [ACTIONABLE]https://community.activestate.com/[/RESET]"),
 		)
 	}
-	results := formatSearchResults(packages)
-	i.out.Print(results)
+	// NOTE: Should more than one result be handled?
+
+	i.out.Print(*packages[0].Ingredient.Name)
 
 	return nil
 }
