@@ -41,7 +41,7 @@ func Test_IsWritable_File(t *testing.T) {
 		"", t.Name(), []byte("Some data"), 0777,
 	)
 	if fail != nil {
-		t.Error(fail.ToError())
+		t.Error(fail)
 	}
 
 	if IsWritable(file) != true {

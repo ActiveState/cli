@@ -1,7 +1,8 @@
 package history
 
 import (
-	"github.com/ActiveState/cli/internal/failures"
+	"github.com/go-openapi/strfmt"
+
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
@@ -10,11 +11,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/go-openapi/strfmt"
 )
-
-// FailUserNotFound is a failure due to the user not being found
-var FailUserNotFound = failures.Type("history.fail.usernotfound")
 
 type primeable interface {
 	primer.Projecter
@@ -43,7 +40,7 @@ func (h *History) Run(params *HistoryParams) error {
 	if params.Namespace != "" {
 		nsMeta, fail := project.ParseNamespace(params.Namespace)
 		if fail != nil {
-			return fail.ToError()
+			return fail
 		}
 
 		commits, err = model.CommitHistory(nsMeta.Owner, nsMeta.Project)

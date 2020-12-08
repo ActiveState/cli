@@ -54,7 +54,7 @@ scripts:
 	suite.Require().NoError(err, "should be able to save in temp dir")
 
 	suite.project, fail = project.New(suite.projectFile, nil, nil)
-	suite.Require().NoError(fail.ToError(), "unexpected error creating project")
+	suite.Require().NoError(fail, "unexpected error creating project")
 
 	suite.originalEditor = os.Getenv("EDITOR")
 }
@@ -86,7 +86,7 @@ func (suite *EditTestSuite) TestCreateScriptFile_Expand() {
 	suite.Require().NoError(err, "should create file")
 
 	content, fail := fileutils.ReadFile(suite.scriptFile.Filename())
-	suite.Require().NoError(fail.ToError(), "unexpected error reading file contents")
+	suite.Require().NoError(fail, "unexpected error reading file contents")
 	v, err := script.Value()
 	suite.Require().NoError(err)
 	suite.Equal(v, string(content))

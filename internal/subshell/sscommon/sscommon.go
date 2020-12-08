@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
@@ -92,7 +91,7 @@ func RunFuncByBinary(binary string) RunFunc {
 func runWithBash(env []string, name string, args ...string) error {
 	filePath, fail := osutils.BashifyPath(name)
 	if fail != nil {
-		return fail.ToError()
+		return fail
 	}
 
 	esc := osutils.NewBashEscaper()

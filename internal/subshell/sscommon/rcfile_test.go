@@ -3,8 +3,6 @@ package sscommon
 import (
 	"reflect"
 	"testing"
-
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 )
 

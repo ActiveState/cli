@@ -33,7 +33,7 @@ func (suite *OrganizationsTestSuite) TestOrganizations_FetchAll() {
 	suite.apiMock.MockGetOrganizations()
 
 	orgs, fail := model.FetchOrganizations()
-	suite.NoError(fail.ToError(), "Fetched organizations")
+	suite.NoError(fail, "Fetched organizations")
 	suite.Equal(1, len(orgs), "One organization fetched")
 	suite.Equal("string", orgs[0].Name)
 }
@@ -42,7 +42,7 @@ func (suite *OrganizationsTestSuite) TestOrganizations_FetchByURLName() {
 	suite.apiMock.MockGetOrganization()
 
 	org, fail := model.FetchOrgByURLName("string")
-	suite.NoError(fail.ToError(), "Fetched organizations")
+	suite.NoError(fail, "Fetched organizations")
 	suite.Equal("string", org.URLname)
 	suite.Equal("string", org.Name)
 }
@@ -59,7 +59,7 @@ func (suite *OrganizationsTestSuite) TestOrganization_FetchOrgMember() {
 	suite.apiMock.MockGetOrganizationMembers()
 
 	member, fail := model.FetchOrgMember("string", "test")
-	suite.NoError(fail.ToError(), "should be able to fetch member with no issue")
+	suite.NoError(fail, "should be able to fetch member with no issue")
 	suite.NotNil(member)
 }
 
@@ -84,7 +84,7 @@ func (suite *OrganizationsTestSuite) TestOrganizations_InviteUserToOrg() {
 	suite.apiMock.MockInviteUserToOrg()
 
 	invitation, fail := model.InviteUserToOrg("string", true, "foo@bar.com")
-	suite.NoError(fail.ToError(), "should have received invitation receipt")
+	suite.NoError(fail, "should have received invitation receipt")
 	suite.Equal("foo@bar.com", invitation.Email)
 
 }

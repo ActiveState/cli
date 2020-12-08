@@ -4,7 +4,6 @@ import (
 	"github.com/skratchdot/open-golang/open"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -124,14 +123,14 @@ func promptForLogin(credentials *mono_models.Credentials, prompter prompt.Prompt
 	if credentials.Username == "" {
 		credentials.Username, fail = prompter.Input("", locale.T("username_prompt"), "", prompt.InputRequired)
 		if fail != nil {
-			return FailLoginPrompt.Wrap(fail.ToError())
+			return FailLoginPrompt.Wrap(fail)
 		}
 	}
 
 	if credentials.Password == "" {
 		credentials.Password, fail = prompter.InputSecret("", locale.T("password_prompt"), prompt.InputRequired)
 		if fail != nil {
-			return FailLoginPrompt.Wrap(fail.ToError())
+			return FailLoginPrompt.Wrap(fail)
 		}
 	}
 	return nil

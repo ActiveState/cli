@@ -11,7 +11,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -26,23 +25,7 @@ import (
 )
 
 var (
-	// FailGetCommitHistory is a failure in the call to api.GetCommitHistory
-	FailGetCommitHistory = failures.Type("model.fail.getcommithistory", failures.FailNonFatal)
-	// FailCommitCountImpossible is a failure counting between commits
-	FailCommitCountImpossible = failures.Type("model.fail.commitcountimpossible", failures.FailNonFatal)
-	// FailCommitCountUnknowable is a failure counting between commits
-	FailCommitCountUnknowable = failures.Type("model.fail.commitcountunknowable", failures.FailNonFatal)
-	// FailAddCommit is a failure in adding a new commit
-	FailAddCommit = failures.Type("model.fail.addcommit")
-	// FailUpdateBranch is a failure in updating a branch
-	FailUpdateBranch = failures.Type("model.fail.updatebranch")
-	// FailNoCommit is a failure due to a non-existent commit
-	FailNoCommit = failures.Type("model.fail.nocommit")
-	// FailNoLanguages is a failure due to the checkpoint not having any languages
-	FailNoLanguages = failures.Type("model.fail.nolanguages")
-	// FailNoCommitID indicates that no commit id is provided and not
-	// obtainable from the current project.
-	FailNoCommitID = failures.Type("languages.fail.nocommitid", failures.FailNonFatal)
+	ErrCommitCountUnknowable = errs.New("Commit count is unknowable")
 )
 
 // Operation is the action to be taken in a commit
@@ -177,7 +160,7 @@ func LatestCommitID(ownerName, projectName string) (*strfmt.UUID, error) {
 func CommitHistory(ownerName, projectName string) ([]*mono_models.Commit, error) {
 	latestCID, fail := LatestCommitID(ownerName, projectName)
 	if fail != nil {
-		return nil, fail.ToError()
+		return nil, fail
 	}
 	return commitHistory(*latestCID)
 }
@@ -196,7 +179,7 @@ func commitHistory(commitID strfmt.UUID) ([]*mono_models.Commit, error) {
 	for cont {
 		payload, fail := CommitHistoryPaged(commitID, offset, limit)
 		if fail != nil {
-			return commits, fail.ToError()
+			return commits, fail
 		}
 		commits = append(commits, payload.Commits...)
 		cont = payload.TotalCommits > (offset + limit)
@@ -361,7 +344,7 @@ func CommitPackage(parentCommitID strfmt.UUID, operation Operation, packageName,
 func UpdateProjectBranchCommit(proj *mono_models.Project, commitID strfmt.UUID) error {
 	branch, fail := DefaultBranchForProject(proj)
 	if fail != nil {
-		return errs.Wrap(fail.ToError(), "Failed to get default branch for project %s.", proj.Name)
+		return errs.Wrap(fail, "Failed to get default branch for project %s.", proj.Name)
 	}
 
 	return UpdateBranchCommit(branch.BranchID, commitID)
@@ -371,7 +354,7 @@ func UpdateProjectBranchCommit(proj *mono_models.Project, commitID strfmt.UUID) 
 func UpdateProjectBranchCommitByName(projectOwner, projectName string, commitID strfmt.UUID) error {
 	proj, fail := FetchProjectByName(projectOwner, projectName)
 	if fail != nil {
-		return errs.Wrap(fail.ToError(), "Failed to fetch project.")
+		return errs.Wrap(fail, "Failed to fetch project.")
 	}
 
 	return UpdateProjectBranchCommit(proj, commitID)
@@ -382,16 +365,16 @@ func CommitChangeset(parentCommitID strfmt.UUID, commitMsg string, anonymousID s
 	var commitID strfmt.UUID
 	languages, fail := FetchLanguagesForCommit(parentCommitID)
 	if fail != nil {
-		return commitID, fail.ToError()
+		return commitID, fail
 	}
 
 	if len(languages) == 0 {
-		return commitID, FailNoLanguages.New(locale.T("err_project_no_languages")).ToError()
+		return commitID, FailNoLanguages.New(locale.T("err_project_no_languages"))
 	}
 
 	commit, fail := AddChangeset(parentCommitID, commitMsg, anonymousID, changeset)
 	if fail != nil {
-		return commitID, fail.ToError()
+		return commitID, fail
 	}
 	return commit.CommitID, nil
 }
@@ -473,7 +456,7 @@ func (cs indexedCommits) countBetween(first, last string) (int, error) {
 
 	if first != "" {
 		if _, ok := cs[first]; !ok {
-			return 0, FailCommitCountUnknowable.New(locale.Tr("err_commit_count_cannot_find_first", first))
+			return 0, locale.WrapError(ErrCommitCountUnknowable, "err_commit_count_cannot_find_first", "", first)
 		}
 	}
 
@@ -489,7 +472,7 @@ func (cs indexedCommits) countBetween(first, last string) (int, error) {
 		var ok bool
 		next, ok = cs[next]
 		if !ok {
-			return 0, FailCommitCountUnknowable.New(locale.Tr("err_commit_count_cannot_find", next))
+			return 0, locale.WrapError(ErrCommitCountUnknowable, "err_commit_count_cannot_find", next)
 		}
 	}
 
@@ -500,21 +483,21 @@ func (cs indexedCommits) countBetween(first, last string) (int, error) {
 func CommitPlatform(owner, prjName string, op Operation, name, version string, word int) error {
 	platform, fail := FetchPlatformByDetails(name, version, word)
 	if fail != nil {
-		return fail.ToError()
+		return fail
 	}
 
 	proj, fail := FetchProjectByName(owner, prjName)
 	if fail != nil {
-		return fail.ToError()
+		return fail
 	}
 
 	branch, fail := DefaultBranchForProject(proj)
 	if fail != nil {
-		return fail.ToError()
+		return fail
 	}
 
 	if branch.CommitID == nil {
-		return FailNoCommit.New(locale.T("err_project_no_languages")).ToError()
+		return FailNoCommit.New(locale.T("err_project_no_languages"))
 	}
 
 	var msgL10nKey string
@@ -522,7 +505,7 @@ func CommitPlatform(owner, prjName string, op Operation, name, version string, w
 	case OperationAdded:
 		msgL10nKey = "commit_message_add_platform"
 	case OperationUpdated:
-		return failures.FailDeveloper.New("this is not supported yet").ToError()
+		return failures.FailDeveloper.New("this is not supported yet")
 	case OperationRemoved:
 		msgL10nKey = "commit_message_removed_platform"
 	}
@@ -534,7 +517,7 @@ func CommitPlatform(owner, prjName string, op Operation, name, version string, w
 	// version is not the value that AddCommit needs - platforms do not post a version
 	commit, fail := AddCommit(bCommitID, msg, op, NewNamespacePlatform(), platformID, "", "")
 	if fail != nil {
-		return fail.ToError()
+		return fail
 	}
 
 	return UpdateBranchCommit(branch.BranchID, commit.CommitID)
@@ -544,21 +527,21 @@ func CommitPlatform(owner, prjName string, op Operation, name, version string, w
 func CommitLanguage(owner, project string, op Operation, name, version string) error {
 	lang, fail := FetchLanguageByDetails(name, version)
 	if fail != nil {
-		return fail.ToError()
+		return fail
 	}
 
 	proj, fail := FetchProjectByName(owner, project)
 	if fail != nil {
-		return fail.ToError()
+		return fail
 	}
 
 	branch, fail := DefaultBranchForProject(proj)
 	if fail != nil {
-		return fail.ToError()
+		return fail
 	}
 
 	if branch.CommitID == nil {
-		return FailNoCommit.New(locale.T("err_project_no_languages")).ToError()
+		return FailNoCommit.New(locale.T("err_project_no_languages"))
 	}
 
 	var msgL10nKey string
@@ -566,7 +549,7 @@ func CommitLanguage(owner, project string, op Operation, name, version string) e
 	case OperationAdded:
 		msgL10nKey = "commit_message_add_language"
 	case OperationUpdated:
-		return failures.FailDeveloper.New("this is not supported yet").ToError()
+		return failures.FailDeveloper.New("this is not supported yet")
 	case OperationRemoved:
 		msgL10nKey = "commit_message_removed_language"
 	}
@@ -576,7 +559,7 @@ func CommitLanguage(owner, project string, op Operation, name, version string) e
 
 	commit, fail := AddCommit(branchCommitID, msg, op, NewNamespaceLanguage(), lang.Name, lang.Version, "")
 	if fail != nil {
-		return fail.ToError()
+		return fail
 	}
 
 	return UpdateBranchCommit(branch.BranchID, commit.CommitID)

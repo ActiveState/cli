@@ -170,7 +170,7 @@ func (suite *EnvironmentTestSuite) TestFindBinPathFor() {
 	suite.Assert().Equal("", ed1.FindBinPathFor("executable"), "executable should not exist")
 
 	fail := fileutils.Touch(filepath.Join(tmpDir, "bin2", "executable"))
-	require.NoError(suite.T(), fail.ToError(), "creating dummy file")
+	require.NoError(suite.T(), fail, "creating dummy file")
 	suite.Assert().Equal(filepath.Join(tmpDir, "bin2"), ed1.FindBinPathFor("executable"), "executable should be found")
 }
 

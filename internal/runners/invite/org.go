@@ -3,7 +3,6 @@ package invite
 import (
 	"strconv"
 
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -27,7 +26,7 @@ func (o *Org) String() string {
 func (o *Org) Set(v string) error {
 	var fail error
 	o.Organization, fail = model.FetchOrgByURLName(v)
-	return fail.ToError()
+	return fail
 }
 
 func (o *Org) CanInvite(numInvites int) error {

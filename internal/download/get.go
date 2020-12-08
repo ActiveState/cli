@@ -11,7 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
-	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/progress"
@@ -57,12 +57,12 @@ func httpGetWithProgressRetry(url string, progress *progress.Progress, attempt i
 		if resp != nil {
 			code = resp.StatusCode
 		}
-		return nil, failures.FailNetwork.Wrap(err, locale.Tl("err_network_get", "Status code: {{.V0}}", strconv.Itoa(code)))
+		return nil, locale.WrapError(err, "err_network_get", "", "Status code: {{.V0}}", strconv.Itoa(code))
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return nil, failures.FailNetwork.New("err_invalid_status_code", strconv.Itoa(resp.StatusCode))
+		return nil, locale.NewError("err_invalid_status_code", "", strconv.Itoa(resp.StatusCode))
 	}
 
 	var total int
@@ -73,7 +73,7 @@ func httpGetWithProgressRetry(url string, progress *progress.Progress, attempt i
 		total, err = strconv.Atoi(length)
 		if err != nil {
 			logging.Debug("Content-length: %v", length)
-			return nil, failures.FailInput.Wrap(err)
+			return nil, errs.Wrap(err, "Could not convert header length to int, value: %s", length)
 		}
 	}
 
@@ -95,9 +95,9 @@ func httpGetWithProgressRetry(url string, progress *progress.Progress, attempt i
 	if err != nil {
 		logging.Debug("Reading body failed: %s", err)
 		if attempt <= retries {
-			return httpGetWithProgressRetry(url, progress, attempt + 1, retries)
+			return httpGetWithProgressRetry(url, progress, attempt+1, retries)
 		}
-		return nil, failures.FailNetwork.Wrap(err)
+		return nil, errs.Wrap(err, "Could not copy network stream")
 	}
 
 	if !bar.Completed() {
@@ -119,7 +119,7 @@ func _testHTTPGet(url string) ([]byte, error) {
 
 	body, err := ioutil.ReadFile(path)
 	if err != nil {
-		return nil, failures.FailIO.Wrap(err)
+		return nil, errs.Wrap(err, "Could not read file contents: %s", path)
 	}
 
 	return body, nil

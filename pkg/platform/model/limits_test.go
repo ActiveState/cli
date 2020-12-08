@@ -3,11 +3,12 @@ package model_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/suite"
+
 	"github.com/ActiveState/cli/internal/locale"
 	apiMock "github.com/ActiveState/cli/pkg/platform/api/mono/mock"
 	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/stretchr/testify/suite"
 )
 
 type LimitsTestSuite struct {
@@ -32,7 +33,7 @@ func (suite *LimitsTestSuite) TestLimits_FetchLimits() {
 	suite.apiMock.MockGetOrganizationLimits()
 
 	limits, fail := model.FetchOrganizationLimits("string")
-	suite.NoError(fail.ToError(), "Fetched organization limits")
+	suite.NoError(fail, "Fetched organization limits")
 	suite.NotNil(limits, "expected to retrieve limits")
 	suite.Equal(50, limits.NodesLimit)
 	suite.Equal(100, limits.UsersLimit)

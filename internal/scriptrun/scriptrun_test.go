@@ -18,7 +18,6 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/subshell"
@@ -61,7 +60,7 @@ scripts:
 	pjfile.Persist()
 
 	proj, fail := project.New(pjfile, nil, nil)
-	require.NoError(t, fail.ToError())
+	require.NoError(t, fail)
 
 	scriptRun := New(outputhelper.NewCatcher(), subshell.New(), proj)
 	err = scriptRun.Run(proj.ScriptByName("run"), []string{})
@@ -83,11 +82,11 @@ func TestEnvIsSet(t *testing.T) {
 	prjPath := filepath.Join(root, "internal", "scriptrun", "testdata", "printEnv", "activestate.yaml")
 
 	pjfile, fail := projectfile.Parse(prjPath)
-	require.NoError(t, fail.ToError(), "parsing pjfile file")
+	require.NoError(t, fail, "parsing pjfile file")
 	pjfile.Persist()
 
 	proj, fail := project.New(pjfile, nil, nil)
-	require.NoError(t, fail.ToError())
+	require.NoError(t, fail)
 
 	os.Setenv("TEST_KEY_EXISTS", "true")
 	os.Setenv(constants.DisableRuntime, "true")
@@ -134,7 +133,7 @@ scripts:
 	pjfile.Persist()
 
 	proj, fail := project.New(pjfile, nil, nil)
-	require.NoError(t, fail.ToError())
+	require.NoError(t, fail)
 
 	out := outputhelper.NewCatcher()
 	scriptRun := New(out, subshell.New(), proj)
@@ -159,7 +158,7 @@ scripts:
 	pjfile.Persist()
 
 	proj, fail := project.New(pjfile, nil, nil)
-	require.NoError(t, fail.ToError())
+	require.NoError(t, fail)
 
 	scriptRun := New(outputhelper.NewCatcher(), subshell.New(), proj)
 	err = scriptRun.Run(nil, nil)
@@ -183,7 +182,7 @@ scripts:
 	pjfile.Persist()
 
 	proj, fail := project.New(pjfile, nil, nil)
-	require.NoError(t, fail.ToError())
+	require.NoError(t, fail)
 
 	scriptRun := New(outputhelper.NewCatcher(), subshell.New(), proj)
 	err = scriptRun.Run(proj.ScriptByName("run"), nil)
@@ -227,7 +226,7 @@ scripts:
 	pjfile.Persist()
 
 	proj, fail := project.New(pjfile, nil, nil)
-	require.NoError(t, fail.ToError())
+	require.NoError(t, fail)
 
 	// Run the command.
 	scriptRun := New(outputhelper.NewCatcher(), subshell.New(), proj)
@@ -249,7 +248,7 @@ func TestPathProvidesLang(t *testing.T) {
 	}
 
 	fail := fileutils.Touch(tf)
-	require.NoError(t, fail.ToError())
+	require.NoError(t, fail)
 	defer os.Remove(temp)
 
 	require.NoError(t, os.Chmod(tf, 0770))
@@ -315,7 +314,7 @@ func captureExecCommand(t *testing.T, tmplCmdName, cmdName string, cmdArgs []str
 	defer projectfile.Reset()
 
 	proj, fail := project.New(pjfile, nil, nil)
-	require.NoError(t, fail.ToError())
+	require.NoError(t, fail)
 
 	var err error
 	outStr, outErr := osutil.CaptureStdout(func() {

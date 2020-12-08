@@ -1,7 +1,6 @@
 package access
 
 import (
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"

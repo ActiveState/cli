@@ -6,8 +6,9 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 )
 
@@ -44,11 +45,11 @@ func locatePythonExecutable(installDir string) (string, error) {
 		executable = constants.ActivePython2Executable
 		executablePath = python2
 	} else {
-		return "", FailRuntimeNoExecutable.New("installer_err_runtime_no_executable", binPath, constants.ActivePython2Executable, constants.ActivePython3Executable)
+		return "", locale.NewError("installer_err_runtime_no_executable", "", binPath, constants.ActivePython2Executable, constants.ActivePython3Executable)
 	}
 
 	if !fileutils.IsExecutable(executablePath) {
-		return "", FailRuntimeNotExecutable.New("installer_err_runtime_executable_not_exec", binPath, executable)
+		return "", locale.WrapError(ErrNotExecutable, "installer_err_runtime_executable_not_exec", "", binPath, executable)
 	}
 	return executablePath, nil
 }
@@ -61,12 +62,12 @@ func extractPythonRelocationPrefix(installDir string, python string) (string, er
 	if err != nil {
 		if _, isExitError := err.(*exec.ExitError); isExitError {
 			logging.Errorf("obtaining relocation prefixes: %v : %s", err, string(prefixBytes))
-			return "", FailRuntimeNoPrefixes.New("installer_err_fail_obtain_prefixes", installDir)
+			return "", locale.WrapError(ErrNoPrefixes, "installer_err_fail_obtain_prefixes", "", installDir)
 		}
-		return "", FailRuntimeInvalid.Wrap(err)
+		return "", errs.Wrap(err, "python import prefixes failed")
 	}
 	if strings.TrimSpace(string(prefixBytes)) == "" {
-		return "", FailRuntimeNoPrefixes.New("installer_err_fail_obtain_prefixes", installDir)
+		return "", locale.WrapError(ErrNoPrefixes, "installer_err_fail_obtain_prefixes", "", installDir)
 	}
 	return strings.Split(string(prefixBytes), "\n")[0], nil
 }

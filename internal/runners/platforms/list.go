@@ -3,7 +3,6 @@ package platforms
 import (
 	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
@@ -80,7 +79,7 @@ func targetedCommitID(commitID, projName, projOrg string) (*strfmt.UUID, error) 
 
 	latest, fail := model.LatestCommitID(projOrg, projName)
 	if fail != nil {
-		return nil, fail.ToError()
+		return nil, fail
 	}
 
 	return latest, nil

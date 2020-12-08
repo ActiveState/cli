@@ -4,8 +4,6 @@ import (
 	"os/exec"
 	"strings"
 	"syscall"
-
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/osutils"
 )
 

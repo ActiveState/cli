@@ -3,11 +3,12 @@ package model_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/suite"
+
 	graphMock "github.com/ActiveState/cli/pkg/platform/api/graphql/request/mock"
 	apiMock "github.com/ActiveState/cli/pkg/platform/api/mono/mock"
 	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/stretchr/testify/suite"
 )
 
 type ProjectsTestSuite struct {
@@ -34,7 +35,7 @@ func (suite *ProjectsTestSuite) AfterTest(suiteName, testName string) {
 
 func (suite *ProjectsTestSuite) TestProjects_FetchByName() {
 	project, fail := model.FetchProjectByName("string", "string")
-	suite.Require().NoError(fail.ToError(), "Fetched project")
+	suite.Require().NoError(fail, "Fetched project")
 	suite.Equal("string", project.Name)
 }
 
@@ -42,7 +43,7 @@ func (suite *ProjectsTestSuite) TestProjects_FetchByName_NotFound() {
 	suite.graphMock.Reset()
 	suite.graphMock.NoProjects(graphMock.NoOptions)
 	project, fail := model.FetchProjectByName("bad-org", "bad-proj")
-	suite.Require().Error(fail.ToError())
+	suite.Require().Error(fail)
 	suite.Equal(fail.Type.Name, model.FailProjectNotFound.Name)
 	suite.Nil(project)
 }

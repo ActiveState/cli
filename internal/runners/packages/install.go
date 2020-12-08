@@ -42,7 +42,7 @@ func (a *Install) Run(params InstallRunParams, nstype model.NamespaceType) error
 
 	language, fail := model.LanguageForCommit(a.proj.CommitUUID())
 	if fail != nil {
-		return locale.WrapError(fail.ToError(), "err_fetch_languages")
+		return locale.WrapError(fail, "err_fetch_languages")
 	}
 
 	ns := model.NewNamespacePkgOrBundle(language, nstype)

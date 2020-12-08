@@ -10,7 +10,8 @@ import (
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/retryhttp"
 	"github.com/ActiveState/cli/pkg/platform/api"
@@ -20,17 +21,15 @@ import (
 )
 
 var (
-	FailBuildReqErrorResp       = failures.Type("headchef.fail.buildreq.errorresp")
-	FailBuildReqNoResp          = failures.Type("headchef.fail.buildreq.noresp")
-	FailBuildCreatedUnknownType = failures.Type("headchef.fail.buildcreated.unknowntype")
-	FailBuildCreatedNilType     = failures.Type("headchef.fail.buildcreated.niltype")
+	ErrBuildResp        = errs.New("Build responded with error")
+	ErrBuildUnknownType = errs.New("Unknown build type")
 )
 
 type BuildStatus struct {
 	Started   chan *headchef_models.BuildStatusResponse
 	Failed    chan string
 	Completed chan *headchef_models.BuildStatusResponse
-	RunFail   chan error
+	RunError  chan error
 }
 
 type BuildAnnotations struct {
@@ -44,7 +43,7 @@ func NewBuildStatus() *BuildStatus {
 		Started:   make(chan *headchef_models.BuildStatusResponse),
 		Failed:    make(chan string),
 		Completed: make(chan *headchef_models.BuildStatusResponse),
-		RunFail:   make(chan error),
+		RunError:  make(chan error),
 	}
 }
 
@@ -52,7 +51,7 @@ func (s *BuildStatus) Close() {
 	close(s.Started)
 	close(s.Failed)
 	close(s.Completed)
-	close(s.RunFail)
+	close(s.RunError)
 }
 
 type Client struct {
@@ -148,7 +147,7 @@ func (r *Client) reqBuild(buildReq *headchef_models.V1BuildRequest, buildStatus 
 		if startErr, ok := err.(*headchef_operations.StartBuildV1Default); ok {
 			msg = *startErr.Payload.Message
 		}
-		buildStatus.RunFail <- FailBuildReqErrorResp.New(msg)
+		buildStatus.RunError <- locale.WrapError(ErrBuildResp, msg)
 	case accepted != nil:
 		buildStatus.Started <- accepted.Payload
 	case created != nil:
@@ -163,7 +162,7 @@ func (r *Client) reqBuild(buildReq *headchef_models.V1BuildRequest, buildStatus 
 				"created response cannot be handled: nil type from request %q",
 				string(requestBytes),
 			)
-			buildStatus.RunFail <- FailBuildCreatedNilType.New(msg)
+			buildStatus.RunError <- errs.New("Payload type was nil, message: %s", msg)
 			break
 		}
 		payloadType := *created.Payload.Type
@@ -180,9 +179,9 @@ func (r *Client) reqBuild(buildReq *headchef_models.V1BuildRequest, buildStatus 
 				"created response cannot be handled: unknown type %q",
 				payloadType,
 			)
-			buildStatus.RunFail <- FailBuildCreatedUnknownType.New(msg)
+			buildStatus.RunError <- locale.WrapError(ErrBuildUnknownType, msg)
 		}
 	default:
-		buildStatus.RunFail <- FailBuildReqNoResp.New("no response")
+		buildStatus.RunError <- errs.New("no response")
 	}
 }

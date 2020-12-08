@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	promptMock "github.com/ActiveState/cli/internal/prompt/mock"
@@ -41,7 +40,6 @@ type VarPromptingExpanderTestSuite struct {
 
 func (suite *VarPromptingExpanderTestSuite) BeforeTest(suiteName, testName string) {
 	locale.Set("en-US")
-	failures.ResetHandled()
 
 	suite.promptMock = promptMock.Init()
 	pjFile, err := loadSecretsProject()
@@ -50,7 +48,7 @@ func (suite *VarPromptingExpanderTestSuite) BeforeTest(suiteName, testName strin
 	suite.projectFile = pjFile
 	var fail error
 	suite.project, fail = project.New(pjFile, outputhelper.NewCatcher(), suite.promptMock)
-	suite.NoError(fail.ToError(), "no failure should occur when loading project")
+	suite.NoError(fail, "no failure should occur when loading project")
 
 	secretsClient := secretsapi_test.NewDefaultTestClient("bearing123")
 	suite.Require().NotNil(secretsClient)

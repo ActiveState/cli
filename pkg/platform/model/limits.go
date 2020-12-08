@@ -1,7 +1,6 @@
 package model
 
 import (
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	clientLimits "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/limits"
 	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"

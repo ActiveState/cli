@@ -10,7 +10,6 @@ import (
 	"gopkg.in/src-d/go-git.v4"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
@@ -48,7 +47,7 @@ type Repo struct {
 func (r *Repo) CloneProject(owner, name, path string, out output.Outputer) error {
 	project, fail := model.FetchProjectByName(owner, name)
 	if fail != nil {
-		return fail.ToError()
+		return fail
 	}
 
 	tempDir, err := ioutil.TempDir("", fmt.Sprintf("state-activate-repo-%s-%s", owner, name))
@@ -68,17 +67,17 @@ func (r *Repo) CloneProject(owner, name, path string, out output.Outputer) error
 		Progress: os.Stdout,
 	})
 	if err != nil {
-		return failures.FailCmd.Wrap(err).ToError()
+		return failures.FailCmd.Wrap(err)
 	}
 
 	fail = ensureCorrectRepo(owner, name, filepath.Join(tempDir, constants.ConfigFileName))
 	if fail != nil {
-		return fail.ToError()
+		return fail
 	}
 
 	fail = moveFiles(tempDir, path)
 	if fail != nil {
-		return fail.ToError()
+		return fail
 	}
 	return nil
 }

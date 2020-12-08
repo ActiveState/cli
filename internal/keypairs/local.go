@@ -9,37 +9,10 @@ import (
 	"github.com/ActiveState/cli/internal/ci/gcloud"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-)
-
-var (
-	// FailLoad indicates a failure when loading something.
-	FailLoad = failures.Type("keypairs.fail.load", failures.FailUser)
-
-	// FailLoadUnknown represents a failure to successfully load Keypair for for some unknown reason.
-	FailLoadUnknown = failures.Type("keypairs.fail.load.unknown", FailLoad)
-
-	// FailLoadNotFound represents a failure to successfully find a Keypair file for loading.
-	FailLoadNotFound = failures.Type("keypairs.fail.load.not_found", FailLoad)
-
-	// FailLoadFileTooPermissive represents a failure wherein a Keypair file's permissions
-	// (it's octet) are too permissive.
-	FailLoadFileTooPermissive = failures.Type("keypairs.fail.load.too_permissive", FailLoad)
-
-	// FailSave indicates a failure when saving something.
-	FailSave = failures.Type("keypairs.fail.save")
-
-	// FailSaveFile indicates a failure when saving a keypair file.
-	FailSaveFile = failures.Type("keypairs.fail.save.file")
-
-	// FailDeleteFile indicates a failure when deleting a keypair file.
-	FailDeleteFile = failures.Type("keypairs.fail.delete.file")
-
-	// FailHasOverride indicates a failure when key override prevents
-	// standard behavior.
-	FailHasOverride = failures.Type("keypairs.fail.has_override")
 )
 
 // Load will attempt to load a Keypair using private and public-key files from
@@ -58,7 +31,7 @@ func Load(keyName string) (Keypair, error) {
 func Save(kp Keypair, keyName string) error {
 	err := ioutil.WriteFile(LocalKeyFilename(keyName), []byte(kp.EncodePrivateKey()), 0600)
 	if err != nil {
-		return FailSaveFile.Wrap(err)
+		return errs.Wrap(err, "WriteFile failed")
 	}
 	return nil
 }
@@ -69,7 +42,7 @@ func Delete(keyName string) error {
 	filename := LocalKeyFilename(keyName)
 	if fileutils.FileExists(filename) {
 		if err := os.Remove(filename); err != nil {
-			return FailDeleteFile.Wrap(err)
+			return errs.Wrap(err, "os.Remove %s failed", filename)
 		}
 	}
 	return nil
@@ -81,7 +54,7 @@ func Delete(keyName string) error {
 func LoadWithDefaults() (Keypair, error) {
 	key, err := gcloud.GetSecret(constants.PrivateKeyEnvVarName)
 	if err != nil && ! errors.Is(err, gcloud.ErrNotAvailable{}) {
-		return nil, failures.FailNetwork.Wrap(err)
+		return nil, errs.Wrap(err, "gcloud.GetSecret failed")
 	}
 	if err == nil && key != "" {
 		logging.Debug("Using private key sourced from gcloud")
@@ -101,7 +74,7 @@ func LoadWithDefaults() (Keypair, error) {
 // the key override is set (constants.PrivateKeyEnvVarName).
 func SaveWithDefaults(kp Keypair) error {
 	if hasKeyOverride() {
-		return FailHasOverride.New("keypairs_err_override_with_save")
+		return locale.NewInputError("keypairs_err_override_with_save")
 	}
 
 	return Save(kp, constants.KeypairLocalFileName)
@@ -112,7 +85,7 @@ func SaveWithDefaults(kp Keypair) error {
 // override is set (constants.PrivateKeyEnvVarName).
 func DeleteWithDefaults() error {
 	if hasKeyOverride() {
-		return FailHasOverride.New("keypairs_err_override_with_delete")
+		return locale.NewInputError("keypairs_err_override_with_delete")
 	}
 
 	return Delete(constants.KeypairLocalFileName)
@@ -126,7 +99,7 @@ func LocalKeyFilename(keyName string) string {
 func loadAndParseKeypair(keyFilename string) (Keypair, error) {
 	keyFileBytes, err := ioutil.ReadFile(keyFilename)
 	if err != nil {
-		return nil, FailLoadUnknown.Wrap(err)
+		return nil, errs.Wrap(err, "ReadFile %s failed", keyFilename)
 	}
 	return ParseRSA(string(keyFileBytes))
 }

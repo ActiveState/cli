@@ -14,7 +14,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -71,7 +70,7 @@ func NewCamelInstall(commitID strfmt.UUID, cacheDir string, artifacts []*HeadChe
 	}
 
 	if len(ci.artifacts) == 0 {
-		return ci, FailNoValidArtifact.New(locale.T("err_no_valid_artifact"))
+		return ci, locale.WrapError(ErrInvalidArtifact, "err_no_valid_artifact")
 	}
 
 	return ci, nil
@@ -105,7 +104,7 @@ func (ci *CamelInstall) BuildEngine() BuildEngine {
 func (ci *CamelInstall) DownloadDirectory(artf *HeadChefArtifact) (string, error) {
 	downloadDir, err := ioutil.TempDir("", "state-runtime-downloader")
 	if err != nil {
-		return downloadDir, failures.FailIO.Wrap(err)
+		return downloadDir, errs.Wrap(err, "TempDir failed")
 	}
 	return downloadDir, nil
 }
@@ -138,13 +137,13 @@ func (ci *CamelInstall) PreInstall() error {
 func (ci *CamelInstall) PreUnpackArtifact(artf *HeadChefArtifact) error {
 	if fileutils.FileExists(ci.runtimeDir) {
 		// install-dir exists, but is a regular file
-		return FailInstallDirInvalid.New("installer_err_installdir_isfile", ci.runtimeDir)
+		return locale.WrapInputError(ErrInstallDirInvalid, "installer_err_installdir_isfile", "", ci.runtimeDir)
 	}
 
 	if fileutils.DirExists(ci.runtimeDir) {
 		// remove previous installation
 		if err := os.RemoveAll(ci.runtimeDir); err != nil {
-			return failures.FailOS.Wrap(err, "failed to remove spurious previous installation")
+			return errs.Wrap(err, "failed to remove spurious previous installation")
 		}
 	}
 
@@ -180,18 +179,17 @@ func (ci *CamelInstall) PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir
 		tmpInstallDir = filepath.Join(tmpRuntimeDir, archiveName)
 	}
 
-	if fail := fileutils.MoveAllFilesCrossDisk(tmpInstallDir, ci.runtimeDir); fail != nil {
-		underlyingError := fail.ToError()
-		logging.Error("moving files from %s after unpacking runtime: %v", tmpInstallDir, underlyingError)
+	if err := fileutils.MoveAllFilesCrossDisk(tmpInstallDir, ci.runtimeDir); err != nil {
+		logging.Error("moving files from %s after unpacking runtime: %v", tmpInstallDir, err)
 
 		// It is possible that we get an Access Denied error (on Windows) while moving files to the installation directory.
 		// Eg., https://rollbar.com/activestate/state-tool/items/297/occurrences/118875103987/
 		// This might happen due to virus software or other access control software running on the user's machine,
 		// and therefore we forward this information to the user.
-		if os.IsPermission(underlyingError) {
-			return FailRuntimeInstallation.New("installer_err_runtime_move_files_access_denied", ci.runtimeDir, constants.ForumsURL)
+		if os.IsPermission(err) {
+			return locale.NewInputError("installer_err_runtime_move_files_access_denied", "", ci.runtimeDir, constants.ForumsURL)
 		}
-		return FailRuntimeInstallation.Wrap(underlyingError, "installer_err_runtime_move_files_failed", tmpInstallDir, ci.runtimeDir)
+		return locale.WrapError(err, "installer_err_runtime_move_files_failed", "", tmpInstallDir, ci.runtimeDir)
 	}
 
 	tmpMetaFile := filepath.Join(tmpRuntimeDir, archiveName, constants.RuntimeMetaFile)
@@ -201,39 +199,39 @@ func (ci *CamelInstall) PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir
 			return fail
 		}
 		if err := os.Rename(tmpMetaFile, target); err != nil {
-			return FailRuntimeInstallation.Wrap(err)
+			return errs.Wrap(err, "os.Rename failed")
 		}
 	}
 
 	tmpRelocFile := filepath.Join(tmpRuntimeDir, archiveName, "support/reloc.txt")
 	if fileutils.FileExists(tmpRelocFile) {
 		target := filepath.Join(ci.runtimeDir, "support/reloc.txt")
-		if fail := fileutils.MkdirUnlessExists(filepath.Dir(target)); fail != nil {
-			return fail
+		if err := fileutils.MkdirUnlessExists(filepath.Dir(target)); err != nil {
+			return err
 		}
 		if err := os.Rename(tmpRelocFile, target); err != nil {
-			return FailRuntimeInstallation.Wrap(err)
+			return errs.Wrap(err, "rename %s:%s failed", tmpRelocFile, target)
 		}
 	}
 
 	if err := os.RemoveAll(tmpRuntimeDir); err != nil {
 		logging.Error("removing %s after unpacking runtime: %v", tmpRuntimeDir, err)
-		return FailRuntimeInstallation.New("installer_err_runtime_rm_installdir", tmpRuntimeDir)
+		return locale.WrapError(err, "installer_err_runtime_rm_installdir", "", tmpRuntimeDir)
 	}
 
-	metaData, fail := InitMetaData(ci.runtimeDir)
-	if fail != nil {
-		return fail
+	metaData, err := InitMetaData(ci.runtimeDir)
+	if err != nil {
+		return err
 	}
 
-	if fail = Relocate(metaData, cb); fail != nil {
-		return fail
+	if err = Relocate(metaData, cb); err != nil {
+		return err
 	}
 
 	if metaData.hasBinaryFile(constants.ActivePerlExecutable) {
 		err := installPPMShim(filepath.Join(metaData.Path, metaData.BinaryLocations[0].Path))
 		if err != nil {
-			return FailRuntimeInstallation.New("ppm_install_err")
+			return locale.WrapError(err, "ppm_install_err")
 		}
 	}
 
@@ -275,13 +273,14 @@ func Relocate(metaData *MetaData, cb func()) error {
 	prefix := metaData.RelocationDir
 
 	for _, tr := range metaData.TargetedRelocations {
-		err := fileutils.ReplaceAllInDirectory(filepath.Join(metaData.Path, tr.InDir), tr.SearchString, tr.Replacement,
+		path := filepath.Join(metaData.Path, tr.InDir)
+		err := fileutils.ReplaceAllInDirectory(path, tr.SearchString, tr.Replacement,
 			// only replace text files for now
 			func(_ string, fileBytes []byte) bool {
 				return !fileutils.IsBinary(fileBytes)
 			})
 		if err != nil {
-			return FailRuntimeInstallation.Wrap(err)
+			return errs.Wrap(err, "ReplaceAllInDirectory (Relocate) %s - %s:%s failed", path, tr.SearchString, tr.Replacement)
 		}
 	}
 
@@ -312,7 +311,7 @@ func Relocate(metaData *MetaData, cb func()) error {
 			return false
 		})
 	if err != nil {
-		return FailRuntimeInstallation.Wrap(err)
+		return errs.Wrap(err, "ReplaceAllInDirectory (plain text) %s - %s:%s failed", metaData.Path, prefix, metaData.Path)
 	}
 
 	if binariesSeparate {
@@ -329,7 +328,7 @@ func Relocate(metaData *MetaData, cb func()) error {
 			})
 
 		if err != nil {
-			return FailRuntimeInstallation.Wrap(err)
+			return errs.Wrap(err, "ReplaceAllInDirectory (binaries) %s - %s:%s failed", metaData.Path, prefix, replacement)
 		}
 	}
 

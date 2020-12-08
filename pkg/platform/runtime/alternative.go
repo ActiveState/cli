@@ -15,7 +15,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/hash"
 	"github.com/ActiveState/cli/internal/locale"
@@ -56,7 +55,7 @@ func NewAlternativeEnv(cacheDir string) (*AlternativeEnv, error) {
 	var err error
 	ae.cache, err = ae.artifactCache()
 	if err != nil {
-		return ae, FailNoValidArtifact.Wrap(err, "Could not grab artifact cache")
+		return ae, errs.Wrap(errs.WrapErrors(err, ErrInvalidArtifact), "Could not grab artifact cache")
 	}
 
 	return ae, nil
@@ -96,7 +95,7 @@ func NewAlternativeInstall(cacheDir string, artifacts []*HeadChefArtifact, recip
 	}
 
 	if len(ai.artifactsRequested) == 0 {
-		return ai, FailNoValidArtifact.New(locale.T("err_no_valid_artifact"))
+		return ai, locale.WrapError(ErrInvalidArtifact, "err_no_valid_artifact")
 	}
 
 	return ai, nil
@@ -193,7 +192,7 @@ func (ai *AlternativeInstall) DownloadDirectory(artf *HeadChefArtifact) (string,
 func (ai *AlternativeInstall) PreInstall() error {
 	if fileutils.FileExists(ai.runtimeDir) {
 		// install-dir exists, but is a regular file
-		return FailInstallDirInvalid.New("installer_err_installdir_isfile", ai.runtimeDir)
+		return locale.WrapInputError(ErrInstallDirInvalid, "installer_err_installdir_isfile", "", ai.runtimeDir)
 	}
 
 	if !fileutils.DirExists(ai.runtimeDir) {
@@ -214,13 +213,13 @@ func (ai *AlternativeInstall) PreInstall() error {
 				continue // don't care it's already deleted (might have been deleted by another artifact that supplied the same file)
 			}
 			if err := os.Remove(file); err != nil {
-				return failures.FailIO.Wrap(err, locale.Tl("err_rm_artf", "Could not remove old package file at {{.V0}}.", file))
+				return locale.WrapError(err, "err_rm_artf", "", "Could not remove old package file at {{.V0}}.", file)
 			}
 		}
 	}
 
 	if err := ai.storeArtifactCache(); err != nil {
-		return failures.FailIO.Wrap(err, locale.Tl("err_store_artf", "Could not store artifact cache."))
+		return locale.WrapError(err, "err_store_artf", "", "Could not store artifact cache.")
 	}
 
 	return nil
@@ -256,7 +255,7 @@ func (ai *AlternativeInstall) PostUnpackArtifact(artf *HeadChefArtifact, tmpRunt
 	envDef = envDef.ExpandVariables(constants)
 	err := envDef.ApplyFileTransforms(tmpRuntimeDir, constants)
 	if err != nil {
-		return failures.FailRuntime.Wrap(err, locale.Tl("runtime_alternative_file_transforms_err", "Could not apply necessary file transformations after unpacking"))
+		return locale.WrapError(err, "runtime_alternative_file_transforms_err", "", "Could not apply necessary file transformations after unpacking")
 	}
 
 	artMeta := artifactCacheMeta{*artf.ArtifactID, []string{}}
@@ -283,7 +282,7 @@ func (ai *AlternativeInstall) PostUnpackArtifact(artf *HeadChefArtifact, tmpRunt
 	artifactIndex := funk.IndexOf(ai.artifactsRequested, artf)
 	if artifactIndex == -1 {
 		logging.Error("Could not write runtime.json: artifact order for %s unknown", artf.ArtifactID.String())
-		return failures.FailRuntime.New(locale.Tl("runtime_alternative_failed_artifact_order", "Could not write runtime.json file: internal error"))
+		return locale.NewError("runtime_alternative_failed_artifact_order", "", "Could not write runtime.json file: internal error")
 	}
 
 	fail = fileutils.MkdirUnlessExists(ai.runtimeEnvBaseDir())
@@ -296,7 +295,7 @@ func (ai *AlternativeInstall) PostUnpackArtifact(artf *HeadChefArtifact, tmpRunt
 	// ensure the environment definition files can be read in the correct order.
 	err = envDef.WriteFile(filepath.Join(ai.runtimeEnvBaseDir(), fmt.Sprintf("%06d.json", artifactIndex)))
 	if err != nil {
-		return failures.FailRuntime.Wrap(err, locale.Tl("runtime_alternative_failed_destination", "Installation failed due to to failed write to directory {{.V0}}", ai.runtimeEnvBaseDir()))
+		return locale.WrapError(err, "runtime_alternative_failed_destination", "Installation failed due to failure to write to directory {{.V0}}", ai.runtimeEnvBaseDir())
 	}
 
 	if err := os.RemoveAll(tmpRuntimeDir); err != nil {

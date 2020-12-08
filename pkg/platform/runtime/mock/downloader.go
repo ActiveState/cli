@@ -1,7 +1,6 @@
 package mock
 
 import (
-	"github.com/ActiveState/cli/internal/failures"
 	testifyMock "github.com/stretchr/testify/mock"
 )
 

@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"os/exec"
 
+	"github.com/gobuffalo/packr"
+
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/scriptfile"
-	"github.com/gobuffalo/packr"
 )
 
 func removeConfig(configPath string) error {
@@ -24,7 +25,7 @@ func runScript(scriptName, path string) error {
 	scriptBlock := box.String(fmt.Sprintf("%s.bat", scriptName))
 	sf, fail := scriptfile.New(language.Batch, scriptName, scriptBlock)
 	if fail != nil {
-		return fail.ToError()
+		return fail
 	}
 
 	cmd := exec.Command("cmd.exe", "/C", sf.Filename(), path)

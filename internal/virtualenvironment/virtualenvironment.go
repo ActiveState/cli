@@ -9,7 +9,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
@@ -102,7 +101,7 @@ func (v *VirtualEnvironment) GetEnv(inherit bool, projectDir string) (map[string
 		// Get project from explicitly defined configuration file
 		pj, fail := project.Parse(filepath.Join(projectDir, constants.ConfigFileName))
 		if fail != nil {
-			return envMap, fail.ToError()
+			return envMap, fail
 		}
 		for _, constant := range pj.Constants() {
 			var err error

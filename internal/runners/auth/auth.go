@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
@@ -61,16 +60,16 @@ func (a *Auth) authenticate(params *AuthParams) error {
 	if params.Token == "" {
 		fail := authlet.AuthenticateWithInput(params.Username, params.Password, params.Totp, a.Outputer, a.Prompter)
 		if fail != nil {
-			return fail.WithDescription("login_err_auth").ToError()
+			return fail.WithDescription("login_err_auth")
 		}
 	} else {
 		fail := tokenAuth(params.Token)
 		if fail != nil {
-			return fail.WithDescription("login_err_auth_token").ToError()
+			return fail.WithDescription("login_err_auth_token")
 		}
 	}
 	if !a.Auth.Authenticated() {
-		return failures.FailUser.New(locale.T("login_err_auth")).ToError()
+		return failures.FailUser.New(locale.T("login_err_auth"))
 	}
 	a.Outputer.Notice(output.Heading(locale.Tl("authentication_title", "Authentication")))
 	a.Outputer.Notice(locale.T("login_success_welcome_back", map[string]string{
@@ -91,12 +90,12 @@ func (a *Auth) userData() (*userData, error) {
 	username := a.Auth.WhoAmI()
 	organization, fail := model.FetchOrgByURLName(username)
 	if fail != nil {
-		return nil, fail.ToError()
+		return nil, fail
 	}
 
 	tiers, fail := model.FetchTiers()
 	if fail != nil {
-		return nil, fail.ToError()
+		return nil, fail
 	}
 
 	tier := organization.Tier

@@ -8,7 +8,6 @@ import (
 	"github.com/ActiveState/sysinfo"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api"
@@ -40,7 +39,7 @@ type Language struct {
 func GetRequirement(commitID strfmt.UUID, namespace, requirement string) (*model.Requirement, error) {
 	chkPt, _, fail := FetchCheckpointForCommit(commitID)
 	if fail != nil {
-		return nil, fail.ToError()
+		return nil, fail
 	}
 
 	chkPt = FilterCheckpointPackages(chkPt)
@@ -228,7 +227,7 @@ func PlatformNameToPlatformID(name string) (string, error) {
 		name = "macos"
 	}
 	id, fail := hostPlatformToPlatformID(name)
-	return id, fail.ToError()
+	return id, fail
 }
 
 func hostPlatformToPlatformID(os string) (string, error) {

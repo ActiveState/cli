@@ -3,11 +3,16 @@ package project
 import (
 	"strings"
 
-	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/errs"
 )
 
 // expanderRegistry maps category names to their Expander Func implementations.
 var expanderRegistry = map[string]ExpanderFunc{}
+
+var (
+	ErrExpandBadName = errs.New("Bad expander name")
+	ErrExpandNoFunc  = errs.New("Expander has no handler")
+)
 
 const TopLevelExpanderName = "toplevel"
 
@@ -27,9 +32,9 @@ func init() {
 func RegisterExpander(handle string, expanderFn ExpanderFunc) error {
 	cleanHandle := strings.TrimSpace(handle)
 	if cleanHandle == "" {
-		return FailExpanderBadName.New("secrets_expander_err_empty_name")
+		return errs.Wrap(ErrExpandBadName, "secrets_expander_err_empty_name")
 	} else if expanderFn == nil {
-		return FailExpanderNoFunc.New("secrets_expander_err_undefined")
+		return errs.Wrap(ErrExpandNoFunc, "secrets_expander_err_undefined")
 	}
 	expanderRegistry[cleanHandle] = expanderFn
 	return nil

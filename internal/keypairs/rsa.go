@@ -8,11 +8,14 @@ import (
 	"encoding/base64"
 	"encoding/pem"
 
-	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/locale"
 )
 
 // MinimumRSABitLength is the minimum allowed bit-length when generating RSA keys.
 const MinimumRSABitLength int = 12
+
+var ErrKeypairPassphrase = errs.New("keypair passphrase failed")
 
 // RSAKeypair implements a Keypair around an RSA private-key.
 type RSAKeypair struct {
@@ -32,7 +35,7 @@ func (keypair *RSAKeypair) EncryptAndEncodePrivateKey(passphrase string) (string
 	var err error
 	block, err = x509.EncryptPEMBlock(rand.Reader, block.Type, block.Bytes, []byte(passphrase), x509.PEMCipherAES256)
 	if err != nil {
-		return "", FailKeypair.Wrap(err)
+		return "", errs.Wrap(err, "EncryptPEMBlock failed")
 	}
 
 	return string(pem.EncodeToMemory(block)), nil
@@ -49,7 +52,7 @@ func (keypair *RSAKeypair) pemPrivateKeyBlock() *pem.Block {
 func (keypair *RSAKeypair) EncodePublicKey() (string, error) {
 	keyBytes, err := x509.MarshalPKIXPublicKey(&keypair.PublicKey)
 	if err != nil {
-		return "", FailPublicKey.Wrap(err)
+		return "", errs.Wrap(err, "MarshalPKIXPublicKey failed")
 	}
 
 	keyPEM := pem.EncodeToMemory(
@@ -86,7 +89,7 @@ func (keypair *RSAKeypair) EncryptAndEncode(msg []byte) (string, error) {
 func (keypair *RSAKeypair) Decrypt(ciphertext []byte) ([]byte, error) {
 	b, err := rsa.DecryptOAEP(sha256.New(), rand.Reader, keypair.PrivateKey, ciphertext, nil)
 	if err != nil {
-		return nil, FailDecrypt.Wrap(err)
+		return nil, errs.Wrap(err, "DecryptOAEP failed")
 	}
 	return b, nil
 }
@@ -96,7 +99,7 @@ func (keypair *RSAKeypair) Decrypt(ciphertext []byte) ([]byte, error) {
 func (keypair *RSAKeypair) DecodeAndDecrypt(msg string) ([]byte, error) {
 	encrBytes, err := base64.StdEncoding.DecodeString(msg)
 	if err != nil {
-		return nil, FailKeyDecode.New("keypairs_err_base64_decoding")
+		return nil, locale.WrapError(err, "keypairs_err_base64_decoding")
 	}
 	return keypair.Decrypt(encrBytes)
 }
@@ -116,12 +119,12 @@ func (keypair *RSAKeypair) MatchPublicKey(publicKeyPEM string) bool {
 // The value for bits can be anything `>= MinimumRSABitLength`.
 func GenerateRSA(bits int) (*RSAKeypair, error) {
 	if bits < MinimumRSABitLength {
-		return nil, FailKeypairGenerate.New("keypairs_err_bitlength_too_short")
+		return nil, locale.NewError("keypairs_err_bitlength_too_short")
 	}
 
 	privateKey, err := rsa.GenerateKey(rand.Reader, bits)
 	if err != nil {
-		return nil, FailKeypairGenerate.Wrap(err)
+		return nil, errs.Wrap(err, "GenerateKey failed")
 	}
 	return &RSAKeypair{privateKey}, nil
 }
@@ -137,7 +140,7 @@ func ParseRSA(privateKeyPEM string) (*RSAKeypair, error) {
 func ParseEncryptedRSA(privateKeyPEM, passphrase string) (*RSAKeypair, error) {
 	block, _ := pem.Decode([]byte(privateKeyPEM))
 	if block == nil {
-		return nil, FailKeypairParse.New("keypairs_err_pem_encoding")
+		return nil, locale.NewError("keypairs_err_pem_encoding")
 	}
 
 	var err error
@@ -147,15 +150,15 @@ func ParseEncryptedRSA(privateKeyPEM, passphrase string) (*RSAKeypair, error) {
 		keyBytes, err = x509.DecryptPEMBlock(block, []byte(passphrase))
 		if err != nil {
 			if err == x509.IncorrectPasswordError {
-				return nil, FailKeypairPassphrase.New("keypairs_err_passphrase_incorrect")
+				return nil, locale.WrapError(errs.WrapErrors(err, ErrKeypairPassphrase), "keypairs_err_passphrase_incorrect")
 			}
-			return nil, FailKeypairParse.Wrap(err)
+			return nil, errs.Wrap(err, "DecryptPEMBlock failed")
 		}
 	}
 
 	privKey, err := x509.ParsePKCS1PrivateKey(keyBytes)
 	if err != nil {
-		return nil, FailKeypairParse.Wrap(err)
+		return nil, errs.Wrap(err, "ParsePKCS1PrivateKey failed")
 	}
 	return &RSAKeypair{privKey}, nil
 }
@@ -170,7 +173,7 @@ type RSAPublicKey struct {
 func (key *RSAPublicKey) Encrypt(msg []byte) ([]byte, error) {
 	b, err := rsaEncrypt(key.PublicKey, msg)
 	if err != nil {
-		return nil, FailPublicKey.Wrap(err)
+		return nil, errs.Wrap(err, "rsaEncrypt failed")
 	}
 	return b, nil
 }
@@ -188,17 +191,17 @@ func (key *RSAPublicKey) EncryptAndEncode(msg []byte) (string, error) {
 func ParseRSAPublicKey(publicKeyPEM string) (*RSAPublicKey, error) {
 	block, _ := pem.Decode([]byte(publicKeyPEM))
 	if block == nil {
-		return nil, FailPublicKeyParse.New("keypairs_err_pem_encoding")
+		return nil, locale.NewError("keypairs_err_pem_encoding")
 	}
 
 	ifc, err := x509.ParsePKIXPublicKey(block.Bytes)
 	if err != nil {
-		return nil, FailPublicKeyParse.Wrap(err)
+		return nil, errs.Wrap(err, "ParsePKIXPublicKey failed")
 	}
 
 	pubKey, ok := ifc.(*rsa.PublicKey)
 	if !ok {
-		return nil, FailPublicKey.New("keypairs_err_invalid_rsa_publickey")
+		return nil, locale.NewError("keypairs_err_invalid_rsa_publickey")
 	}
 	return &RSAPublicKey{pubKey}, nil
 }
@@ -206,7 +209,7 @@ func ParseRSAPublicKey(publicKeyPEM string) (*RSAPublicKey, error) {
 func rsaEncrypt(pubKey *rsa.PublicKey, msg []byte) ([]byte, error) {
 	encrBytes, err := rsa.EncryptOAEP(sha256.New(), rand.Reader, pubKey, msg, nil)
 	if err != nil {
-		return nil, FailEncrypt.Wrap(err)
+		return nil, errs.Wrap(err, "EncryptOAEP failed")
 	}
 	return encrBytes, nil
 }

@@ -7,7 +7,6 @@ import (
 	"github.com/gobuffalo/packr"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
@@ -100,7 +99,7 @@ func (r *Initialize) Run(params *RunParams) error {
 
 func run(params *RunParams, out output.Outputer) (string, error) {
 	if fail := params.Namespace.Validate(); fail != nil {
-		return "", locale.WrapInputError(fail.ToError(), "init_invalid_namespace_err", "The provided namespace argument is invalid.")
+		return "", locale.WrapInputError(fail, "init_invalid_namespace_err", "The provided namespace argument is invalid.")
 	}
 
 	if err := sanitizePath(params); err != nil {

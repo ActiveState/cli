@@ -2,8 +2,6 @@ package cmd
 
 import (
 	"log"
-
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/osutils"
 )

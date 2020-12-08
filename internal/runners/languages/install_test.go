@@ -3,8 +3,6 @@ package languages
 import (
 	"reflect"
 	"testing"
-
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 

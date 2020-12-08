@@ -6,14 +6,13 @@ import (
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
 )
 
 var (
-	// FailMetaDataNotDetected indicates a failure due to the metafile not being detected.
-	FailMetaDataNotDetected = failures.Type("runtime.metadata.notdetected", failures.FailIO, failures.FailNotFound)
+	ErrMetaData = errs.New("Invalid metadata")
 )
 
 // TargetedRelocation is a relocation instruction for files in a specific directory
@@ -99,7 +98,7 @@ func ParseMetaData(contents []byte) (*MetaData, error) {
 	}
 	err := json.Unmarshal(contents, metaData)
 	if err != nil {
-		return nil, failures.FailMarshal.Wrap(err)
+		return nil, errs.WrapErrors(err, ErrMetaData)
 	}
 
 	// The JSON decoder does not recognize 0 and 1 as bools, so we have to get crafty

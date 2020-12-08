@@ -1,25 +1,30 @@
 package keypairs
 
 import (
-	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api"
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_client/keys"
 	secretModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
-// FetchRaw fetchs the current user's encoded and unparsed keypair or returns a failure.
+var (
+	ErrKeypairNotFound = errs.New("Keypair not found")
+)
+
+// FetchRaw fetchs the current user keypair or returns a failure.
 func FetchRaw(secretsClient *secretsapi.Client) (*secretModels.Keypair, error) {
 	kpOk, err := secretsClient.Keys.GetKeypair(nil, authentication.Get().ClientAuth())
 	if err != nil {
 		if api.ErrorCode(err) == 404 {
-			return nil, secretsapi.FailKeypairNotFound.New("keypair_err_not_found")
+			return nil, locale.WrapInputError(errs.WrapErrors(err, ErrKeypairNotFound), "keypair_err_not_found")
 		}
 		logging.Error("Error when fetching keypair: %v", api.ErrorMessageFromPayload(err))
-		return nil, api.FailUnknown.Wrap(err)
+		return nil, errs.Wrap(err, "GetKeypair failed")
 	}
 
 	return kpOk.Payload, nil
@@ -47,9 +52,9 @@ func FetchPublicKey(secretsClient *secretsapi.Client, user *mono_models.User) (E
 	pubKeyOk, err := secretsClient.Keys.GetPublicKey(params, authentication.Get().ClientAuth())
 	if err != nil {
 		if api.ErrorCode(err) == 404 {
-			return nil, secretsapi.FailPublicKeyNotFound.New("keypair_err_publickey_not_found", user.Username, user.UserID.String())
+			return nil, locale.WrapInputError(errs.WrapErrors(err, ErrKeypairNotFound), "keypair_err_publickey_not_found", "", user.Username, user.UserID.String())
 		}
-		return nil, api.FailUnknown.Wrap(err)
+		return nil, errs.Wrap(err, "GetPublicKey failed")
 	}
 
 	pubKey, failure := ParseRSAPublicKey(*pubKeyOk.Payload.Value)

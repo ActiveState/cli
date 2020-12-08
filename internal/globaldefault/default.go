@@ -86,7 +86,7 @@ func Prepare(subshell subshell.SubShell) error {
 	}
 
 	if fail := fileutils.MkdirUnlessExists(binDir); fail != nil {
-		return locale.WrapError(fail.ToError(), "err_globaldefault_bin_dir", "Could not create bin directory.")
+		return locale.WrapError(fail, "err_globaldefault_bin_dir", "Could not create bin directory.")
 	}
 
 	envUpdates := map[string]string{
@@ -94,7 +94,7 @@ func Prepare(subshell subshell.SubShell) error {
 	}
 
 	if fail := subshell.WriteUserEnv(envUpdates, sscommon.Default, true); fail != nil {
-		return locale.WrapError(fail.ToError(), "err_globaldefault_update_env", "Could not write to user environment.")
+		return locale.WrapError(fail, "err_globaldefault_update_env", "Could not write to user environment.")
 	}
 
 	return nil

@@ -2,6 +2,7 @@ package project
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"regexp"
 	"runtime"
@@ -11,7 +12,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -24,13 +24,19 @@ import (
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
-// FailProjectNotLoaded identifies a failure as being due to a missing project file
-var FailProjectNotLoaded = failures.Type("project.fail.notparsed", failures.FailUser)
-
 // Build covers the build structure
 type Build map[string]string
 
 var pConditional *constraints.Conditional
+var normalizeRx *regexp.Regexp
+
+func init() {
+	var err error
+	normalizeRx, err = regexp.Compile("[^a-zA-Z0-9]+")
+	if err != nil {
+		log.Panicf("normalizeRx: invalid regex: %v", err)
+	}
+}
 
 // RegisterConditional is a a temporary method for registering our conditional as a global
 // yes this is bad, but at the time of implementation refactoring the project package to not be global is out of scope
@@ -217,15 +223,7 @@ func (p *Project) IsHeadless() bool {
 
 // NormalizedName returns the project name in a normalized format (alphanumeric, lowercase)
 func (p *Project) NormalizedName() string {
-	rx, err := regexp.Compile("[^a-zA-Z0-9]+")
-	if err != nil {
-		failures.Handle(err, fmt.Sprintf("Regex failed to compile, error: %v", err))
-
-		// This should only happen while in development, hence the os.Exit
-		os.Exit(1)
-	}
-
-	return strings.ToLower(rx.ReplaceAllString(p.Name(), ""))
+	return strings.ToLower(normalizeRx.ReplaceAllString(p.Name(), ""))
 }
 
 // Version returns project version
@@ -269,9 +267,9 @@ func Parse(fpath string) (*Project, error) {
 // Get returns project struct. Quits execution if error occurs
 func Get() *Project {
 	pj := projectfile.Get()
-	project, fail := New(pj, output.Get(), prompt.New())
-	if fail != nil {
-		failures.Handle(fail, locale.T("err_project_unavailable"))
+	project, err := New(pj, output.Get(), prompt.New())
+	if err != nil {
+		fmt.Fprint(os.Stderr, locale.Tr("err_project_unavailable", err.Error()))
 		os.Exit(1)
 	}
 	return project
@@ -295,7 +293,7 @@ func GetSafe() (*Project, error) {
 func GetOnce() (*Project, error) {
 	wd, err := osutils.Getwd()
 	if err != nil {
-		return nil, failures.FailIO.Wrap(err)
+		return nil, errs.Wrap(err, "Getwd failure")
 	}
 	return FromPath(wd)
 }
@@ -464,7 +462,7 @@ func NewSecretScope(name string) (SecretScope, error) {
 	case string(SecretScopeProject):
 		return SecretScopeProject, nil
 	default:
-		return scope, failures.FailInput.New("secrets_err_invalid_namespace")
+		return scope, locale.NewInputError("secrets_err_invalid_namespace")
 	}
 }
 
@@ -520,7 +518,7 @@ func (s *Secret) ValueOrNil() (*string, error) {
 			return nil, nil
 		}
 		logging.Error("Could not expand secret %s, error: %v", s.Name(), err)
-		return nil, failures.FailMisc.Wrap(err)
+		return nil, errs.Wrap(err, "secret for %s expansion failed", s.secret.Name)
 	}
 	return &value, nil
 }

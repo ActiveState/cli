@@ -3,8 +3,6 @@ package sscommon
 import (
 	"os/exec"
 	"syscall"
-
-	"github.com/ActiveState/cli/internal/failures"
 )
 
 var lineBreak = "\n"

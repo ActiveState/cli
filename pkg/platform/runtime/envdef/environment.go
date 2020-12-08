@@ -10,8 +10,8 @@ import (
 
 	"github.com/thoas/go-funk"
 
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/locale"
 )
 
 // EnvironmentDefinition provides all the information needed to set up an
@@ -96,25 +96,17 @@ func (ev *EnvironmentVariable) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-var (
-	// FailEnvironmentDefinitionFileNotFound indicates that the specified runtime environment definition file could not be found
-	FailEnvironmentDefinitionFileNotFound = failures.Type("runtime.envdef.filenotfound", failures.FailIO)
-
-	// FailEnvironmentDefinitionUnmarshalError indicates an error during unmarshaling a runtime definition blob
-	FailEnvironmentDefinitionUnmarshalError = failures.Type("runtime.envdef.unmarshalerror", failures.FailMarshal)
-)
-
 // NewEnvironmentDefinition returns an environment definition unmarshaled from a
 // file
 func NewEnvironmentDefinition(fp string) (*EnvironmentDefinition, error) {
 	blob, err := ioutil.ReadFile(fp)
 	if err != nil {
-		return nil, FailEnvironmentDefinitionFileNotFound.Wrap(err, "envdef_file_not_found", fp)
+		return nil, locale.WrapError(err, "envdef_file_not_found", "", fp)
 	}
 	ed := &EnvironmentDefinition{}
 	err = json.Unmarshal(blob, ed)
 	if err != nil {
-		return nil, FailEnvironmentDefinitionUnmarshalError.Wrap(err, "envdef_unmarshal_error", fp)
+		return nil, locale.WrapError(err, "envdef_unmarshal_error", "", fp)
 	}
 	return ed, nil
 }

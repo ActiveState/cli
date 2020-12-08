@@ -1,7 +1,6 @@
 package model
 
 import (
-	"github.com/ActiveState/cli/internal/failures"
 	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )

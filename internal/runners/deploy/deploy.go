@@ -11,7 +11,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -178,7 +177,7 @@ func install(path string, installer installable, out output.Outputer) error {
 		contents := box.Bytes("setenv.bat")
 		fail = fileutils.WriteFile(filepath.Join(path, "setenv.bat"), contents)
 		if fail != nil {
-			return locale.WrapError(fail.ToError(), "err_deploy_write_setenv", "Could not create setenv batch scriptfile at path: %s", path)
+			return locale.WrapError(fail, "err_deploy_write_setenv", "Could not create setenv batch scriptfile at path: %s", path)
 		}
 	}
 
@@ -204,7 +203,7 @@ func configure(installpath string, runtime *runtime.Runtime, out output.Outputer
 
 	binPath := filepath.Join(installpath, "bin")
 	if fail := fileutils.MkdirUnlessExists(binPath); fail != nil {
-		return locale.WrapError(fail.ToError(), "err_deploy_binpath", "Could not create bin directory.")
+		return locale.WrapError(fail, "err_deploy_binpath", "Could not create bin directory.")
 	}
 
 	// Write global env file

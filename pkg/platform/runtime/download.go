@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"errors"
 	"net/url"
 	"path"
 	"path/filepath"
@@ -11,7 +12,6 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/download"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/progress"
@@ -33,29 +33,8 @@ var _ Downloader = &Download{}
 const InstallerTestsSubstr = "-tests."
 
 var (
-	// FailNoCommit indicates a failure due to there not being a commit
-	FailNoCommit = failures.Type("runtime.fail.nocommit")
-
-	// FailNoArtifacts indicates a failure due to the project not containing any artifacts
-	FailNoArtifacts = failures.Type("runtime.fail.noartifacts")
-
-	// FailNoValidArtifact indicates a failure due to the project not containing any valid artifacts
-	FailNoValidArtifact = failures.Type("runtime.fail.novalidartifact")
-
-	// FailBuildFailed indicates a failure due to the build failing
-	FailBuildFailed = failures.Type("runtime.fail.buildfailed", failures.FailUser)
-
-	// FailBuildInProgress indicates a failure due to the build being in progress
-	FailBuildInProgress = failures.Type("runtime.fail.buildinprogress", failures.FailUser)
-
-	// FailBuildBadResponse indicates a failure due to the build req/resp malfunctioning
-	FailBuildBadResponse = failures.Type("runtime.fail.buildbadresponse")
-
-	// FailBuildErrResponse indicates a failure due to the build req/resp returning an error
-	FailBuildErrResponse = failures.Type("runtime.fail.builderrresponse")
-
-	// FailArtifactInvalidURL indicates a failure due to an artifact having an invalid URL
-	FailArtifactInvalidURL = failures.Type("runtime.fail.invalidurl")
+	ErrNoCommit        = errs.New("Commit is missing")
+	ErrInvalidArtifact = errs.New("No valid artifacts")
 )
 
 // HeadChefArtifact is a convenient type alias cause swagger generates some really shitty code
@@ -106,7 +85,7 @@ func NewDownload(runtime *Runtime) Downloader {
 func (r *Download) fetchRecipeID() (strfmt.UUID, error) {
 	commitID := r.runtime.commitID
 	if commitID == "" {
-		return "", FailNoCommit.New(locale.T("err_no_commit"))
+		return "", locale.WrapError(ErrNoCommit, locale.T("err_no_commit"))
 	}
 
 	recipeID, fail := model.FetchRecipeIDForCommitAndPlatform(commitID, r.runtime.owner, r.runtime.projectName, r.orgID, r.private, model.HostPlatform)
@@ -146,16 +125,16 @@ func (r *Download) FetchArtifacts(recipe *inventory_models.Recipe, platProj *mon
 		select {
 		case resp := <-buildStatus.Completed:
 			if len(resp.Artifacts) == 0 {
-				return result, FailNoArtifacts.New(locale.T("err_no_artifacts"))
+				return result, locale.NewInputError("err_no_artifacts")
 			}
 
 			result.BuildEngine = BuildEngineFromResponse(resp)
 			if result.BuildEngine == UnknownEngine {
-				return result, FailRuntimeUnknownEngine.New("installer_err_engine_unknown")
+				return result, locale.NewError("installer_err_engine_unknown")
 			}
 
 			if resp.RecipeID == nil {
-				return result, FailBuildBadResponse.New(locale.T("err_corrupted_build_request_response"))
+				return result, locale.NewError("err_corrupted_build_request_response")
 			}
 			result.RecipeID = *resp.RecipeID
 			result.Artifacts = resp.Artifacts
@@ -164,7 +143,7 @@ func (r *Download) FetchArtifacts(recipe *inventory_models.Recipe, platProj *mon
 
 		case msg := <-buildStatus.Failed:
 			logging.Debug("BuildFailed: %s", msg)
-			return result, FailBuildFailed.New(locale.Tr("build_status_failed", r.projectURL(), msg))
+			return result, locale.NewInputError("build_status_failed", "", r.projectURL(), msg)
 
 		case resp := <-buildStatus.Started:
 			logging.Debug("BuildStarted")
@@ -179,24 +158,22 @@ func (r *Download) FetchArtifacts(recipe *inventory_models.Recipe, platProj *mon
 			// For non-alternate builds we do not support in-progress builds
 			engine := BuildEngineFromResponse(resp)
 			if engine != Alternative && engine != Hybrid {
-				return result, FailBuildInProgress.New(locale.Tr("build_status_in_progress", r.projectURL()))
+				return result, locale.NewInputError("build_status_in_progress", "", r.projectURL())
 			}
 
 			if err := r.waitForArtifacts(recipe); err != nil {
-				return nil, failures.FailMisc.Wrap(err, locale.Tl("err_wait_artifacts", "Error happened while waiting for packages"))
+				return nil, locale.WrapError(err, "err_wait_artifacts", "Error happened while waiting for packages")
 			}
 			return r.FetchArtifacts(recipe, platProj)
 
-		case fail := <-buildStatus.RunFail:
-			logging.Debug("Failure: %v", fail)
+		case err := <-buildStatus.RunError:
+			logging.Debug("Failure: %v", err)
 
 			switch {
-			case fail.Type.Matches(headchef.FailBuildReqErrorResp):
-				l10n := locale.Tr("build_status_unknown_error", fail.Error(), r.projectURL())
-				return result, FailBuildErrResponse.New(l10n)
+			case errors.Is(err, headchef.ErrBuildResp):
+				return result, locale.WrapError(err, "build_status_unknown_error", "", err.Error(), r.projectURL())
 			default:
-				l10n := locale.Tr("build_status_unknown", r.projectURL())
-				return result, FailBuildBadResponse.New(l10n)
+				return result, locale.WrapError(err, "build_status_unknown", "", r.projectURL())
 			}
 		}
 	}
@@ -225,7 +202,7 @@ func (r *Download) Download(artifacts []*HeadChefArtifact, dp DownloadDirectoryP
 	for _, artf := range artifacts {
 		artifactURL, err := url.Parse(artf.URI.String())
 		if err != nil {
-			return files, FailArtifactInvalidURL.New(locale.T("err_artifact_invalid_url"))
+			return files, locale.NewError("err_artifact_invalid_url")
 		}
 		u, fail := model.SignS3URL(artifactURL)
 		if fail != nil {

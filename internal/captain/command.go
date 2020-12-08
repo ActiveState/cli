@@ -18,7 +18,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -420,7 +419,7 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 
 	for idx, arg := range c.arguments {
 		if arg.Required && idx > len(args)-1 {
-			return failures.FailUserInput.New(locale.Tr("err_arg_required", arg.Name, arg.Description))
+			return locale.NewInputError("err_arg_required", "", arg.Name, arg.Description)
 		}
 
 		if idx >= len(args) {
@@ -435,9 +434,7 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 				return err
 			}
 		default:
-			return failures.FailDeveloper.New(
-				fmt.Sprintf("arg: %s must be *string, or ArgMarshaler", arg.Name),
-			)
+			return locale.NewError("err_arg_invalid_type", "arg: {{.V0}} must be *string, or ArgMarshaler", arg.Name)
 		}
 
 	}
@@ -458,7 +455,7 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 		return execute(c, args)
 	})
 
-	exitCode := errs.UnwrapExitCode(failures.ToError(err))
+	exitCode := errs.UnwrapExitCode(err)
 
 	var serr interface{ Signal() os.Signal }
 	if errors.As(err, &serr) {
@@ -528,9 +525,7 @@ func setupSensibleErrors(err error) error {
 			msg = segments[1]
 		}
 
-		return failures.FailUserInput.New(
-			"command_flag_invalid_value", flagText, msg,
-		)
+		return locale.NewInputError("command_flag_invalid_value", "", flagText, msg)
 	}
 
 	// pflag: flag.go: output being parsed:
@@ -538,9 +533,7 @@ func setupSensibleErrors(err error) error {
 	noSuch := "no such flag "
 	if strings.Contains(errMsg, noSuch) {
 		flagText := strings.TrimPrefix(errMsg, noSuch)
-		return failures.FailUserInput.New(
-			"command_flag_no_such_flag", flagText,
-		)
+		return locale.NewInputError("command_flag_no_such_flag", "", flagText)
 	}
 
 	if strings.Contains(errMsg, "unknown command") {

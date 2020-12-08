@@ -14,15 +14,13 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/api"
 
-	"github.com/ActiveState/cli/pkg/platform/authentication"
-
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/pkg/platform/api/mono"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/users"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
 var (
@@ -59,16 +57,16 @@ func Signup(out output.Outputer, prompt prompt.Prompter) error {
 
 	fail := promptForSignup(input, out, prompt)
 	if fail != nil {
-		return fail.WithDescription("err_prompt_unknown").ToError()
+		return fail.WithDescription("err_prompt_unknown")
 	}
 
 	if fail = doSignup(input, out); fail != nil {
-		return fail.ToError()
+		return fail
 	}
 
 	if authentication.Get().Authenticated() {
 		if fail := generateKeypairForUser(input.Password); fail != nil {
-			return fail.WithDescription("keypair_err_save").ToError()
+			return fail.WithDescription("keypair_err_save")
 		}
 	}
 

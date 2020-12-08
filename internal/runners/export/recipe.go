@@ -8,7 +8,6 @@ import (
 
 	"github.com/ActiveState/sysinfo"
 
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -38,7 +37,7 @@ func (r *Recipe) Run(params *RecipeParams) error {
 
 	data, fail := recipeData(proj, params.CommitID, params.Platform)
 	if fail != nil {
-		return fail.ToError()
+		return fail
 	}
 
 	if params.Pretty {

@@ -30,7 +30,7 @@ func (suite *EditIntegrationTestSuite) setup() (*e2e.Session, e2e.SpawnOptions) 
 
 	target := filepath.Join(ts.Dirs.Work, "editor", "main.go")
 	fail := fileutils.CopyFile(editorScript, target)
-	suite.Require().NoError(fail.ToError())
+	suite.Require().NoError(fail)
 
 	configFileContent := strings.TrimSpace(`
 project: "https://platform.activestate.com/EditOrg/EditProject?commitID=00010001-0001-0001-0001-000100010001"
@@ -115,7 +115,7 @@ func (suite *EditIntegrationTestSuite) TestEdit_UpdateCorrectPlatform() {
 	time.Sleep(time.Second * 2) // let CI env catch up
 
 	pj, fail := project.FromPath(ts.Dirs.Work)
-	suite.Require().NoError(fail.ToError())
+	suite.Require().NoError(fail)
 
 	s := pj.ScriptByName("test-script")
 	suite.Require().NotNil(s, "test-script should not be empty")

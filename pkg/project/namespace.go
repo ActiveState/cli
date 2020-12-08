@@ -9,14 +9,9 @@ import (
 	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 )
-
-// FailInvalidNamespace indicates the provided string is not a valid
-// representation of a project namespace
-var FailInvalidNamespace = failures.Type("project.fail.invalidnamespace", failures.FailUserInput)
 
 // NamespaceRegex matches the org and project name in a namespace, eg. ORG/PROJECT
 const NamespaceRegex = `^([\w-_]+)\/([\w-_\.]+)(?:#([-a-fA-F0-9]*))?$`
@@ -88,7 +83,7 @@ func (ns *Namespaced) IsValid() bool {
 // Validate returns a failure if the namespace is not valid.
 func (ns *Namespaced) Validate() error {
 	if ns == nil || !ns.IsValid() {
-		return FailInvalidNamespace.New(locale.Tr("err_invalid_namespace", ns.String()))
+		return locale.NewInputError("err_invalid_namespace", "", ns.String())
 	}
 	return nil
 }
@@ -98,7 +93,7 @@ func ParseNamespace(raw string) (*Namespaced, error) {
 	rx := regexp.MustCompile(NamespaceRegex)
 	groups := rx.FindStringSubmatch(raw)
 	if len(groups) < 3 {
-		return nil, FailInvalidNamespace.New(locale.Tr("err_invalid_namespace", raw))
+		return nil, locale.NewInputError("err_invalid_namespace", "", raw)
 	}
 
 	names := Namespaced{

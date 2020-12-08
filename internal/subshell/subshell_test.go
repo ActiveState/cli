@@ -44,7 +44,7 @@ func TestRunCommand(t *testing.T) {
 	subs := New()
 
 	filename, fail := fileutils.WriteTempFile("", "testRunCommand*.bat", data, 0700)
-	require.NoError(t, fail.ToError())
+	require.NoError(t, fail)
 	defer os.Remove(filename)
 
 	out, err := osutil.CaptureStdout(func() {

@@ -16,7 +16,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/prompt"
 	promptMock "github.com/ActiveState/cli/internal/prompt/mock"
@@ -88,7 +87,7 @@ func TestExecuteNoArgsAuthenticated(t *testing.T) {
 		Password: user.Password,
 	})
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
-	require.NoError(t, fail.ToError())
+	require.NoError(t, fail)
 
 	assert.NoError(t, runAuth(&AuthParams{}, nil), "Executed without error")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
@@ -130,7 +129,7 @@ func TestExecuteNoArgsAuthenticated_WithExistingKeypair(t *testing.T) {
 		Password: user.Password,
 	})
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
-	require.NoError(t, fail.ToError())
+	require.NoError(t, fail)
 
 	assert.NoError(t, runAuth(&AuthParams{}, nil), "Executed without error")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
@@ -382,7 +381,7 @@ func TestExecuteToken(t *testing.T) {
 	})
 	token := viper.GetString("apiToken")
 	authentication.Logout()
-	assert.NoError(t, fail.ToError(), "Executed without error")
+	assert.NoError(t, fail, "Executed without error")
 	assert.Nil(t, authentication.ClientAuth(), "Not Authenticated")
 
 	err := runAuth(&AuthParams{Token: token}, nil)
@@ -409,7 +408,7 @@ func TestExecuteLogout(t *testing.T) {
 		Username: user.Username,
 		Password: user.Password,
 	})
-	require.NoError(t, fail.ToError())
+	require.NoError(t, fail)
 	assert.True(t, auth.Authenticated(), "Authenticated")
 
 	err := runLogout()

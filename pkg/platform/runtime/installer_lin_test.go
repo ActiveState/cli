@@ -90,15 +90,15 @@ func (suite *InstallerLinuxTestSuite) TestInstall_ArchiveDoesNotExist() {
 	mockAssembler := new(rmock.Assembler)
 	suite.setMocks(mockAssembler, false)
 	_, archives := headchefArtifact("/no/such/archive.tar.gz")
-	fail := suite.installer.InstallFromArchives(archives, mockAssembler, prg.Progress)
+	err := suite.installer.InstallFromArchives(archives, mockAssembler, prg.Progress)
 
 	prg.AssertCloseAfterCancellation(suite.T())
 
 	mockAssembler.AssertExpectations(suite.T())
 
-	suite.Require().Error(fail.ToError())
-	suite.Equal(runtime.FailArchiveInvalid, fail.Type)
-	suite.Equal(locale.Tr("installer_err_archive_notfound", "/no/such/archive.tar.gz"), fail.Error())
+	suite.Require().Error(err)
+	suite.ErrorIs(err, runtime.ErrArchiveInvalid)
+	suite.Equal(locale.Tr("installer_err_archive_notfound", "/no/such/archive.tar.gz"), err.Error())
 }
 
 func (suite *InstallerLinuxTestSuite) TestInstall_ArchiveNotTarGz() {
@@ -107,22 +107,22 @@ func (suite *InstallerLinuxTestSuite) TestInstall_ArchiveNotTarGz() {
 
 	invalidArchive := path.Join(suite.dataDir, "empty.archive")
 
-	fail := fileutils.Touch(invalidArchive)
-	suite.Require().NoError(fail.ToError())
+	err := fileutils.Touch(invalidArchive)
+	suite.Require().NoError(err)
 
 	mockAssembler := new(rmock.Assembler)
 	suite.setMocks(mockAssembler, false)
 
 	_, archives := headchefArtifact(invalidArchive)
 
-	fail = suite.installer.InstallFromArchives(archives, mockAssembler, prg.Progress)
+	err = suite.installer.InstallFromArchives(archives, mockAssembler, prg.Progress)
 
 	mockAssembler.AssertExpectations(suite.T())
 
 	prg.AssertCloseAfterCancellation(suite.T())
-	suite.Require().Error(fail.ToError())
-	suite.Equal(runtime.FailArchiveInvalid, fail.Type)
-	suite.Equal(locale.Tr("installer_err_archive_badext", invalidArchive), fail.Error())
+	suite.Require().Error(err)
+	suite.ErrorIs(err, runtime.ErrArchiveInvalid)
+	suite.Equal(locale.Tr("installer_err_archive_badext", invalidArchive), err.Error())
 }
 
 func (suite *InstallerLinuxTestSuite) TestInstall_BadArchive() {
@@ -134,14 +134,14 @@ func (suite *InstallerLinuxTestSuite) TestInstall_BadArchive() {
 	suite.setMocks(mockAssembler, false)
 
 	_, archives := headchefArtifact(badArchive)
-	fail := suite.installer.InstallFromArchives(archives, mockAssembler, prg.Progress)
+	err := suite.installer.InstallFromArchives(archives, mockAssembler, prg.Progress)
 
 	prg.AssertCloseAfterCancellation(suite.T())
 
 	mockAssembler.AssertExpectations(suite.T())
-	suite.Require().Error(fail.ToError())
-	suite.Equal(runtime.FailArchiveInvalid, fail.Type)
-	suite.Contains(fail.Error(), "EOF")
+	suite.Require().Error(err)
+	suite.ErrorIs(err, runtime.ErrArchiveInvalid)
+	suite.Contains(err.Error(), "EOF")
 }
 
 func Test_InstallerLinuxTestSuite(t *testing.T) {

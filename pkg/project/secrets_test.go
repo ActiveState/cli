@@ -8,7 +8,6 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
@@ -45,7 +44,7 @@ project: "https://platform.activestate.com/SecretOrg/SecretProject?commitID=0001
 	}
 	fail := pjfile.Init()
 	if err != nil {
-		return nil, fail.ToError()
+		return nil, fail
 	}
 
 	return pjfile, nil

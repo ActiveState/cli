@@ -10,8 +10,9 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 )
 
@@ -25,12 +26,12 @@ func (m *MetaData) perlRelocationDir() (string, error) {
 	}
 	relocFilePath := filepath.Join(m.Path, relocFile)
 	if !fileutils.FileExists(relocFilePath) {
-		return "", FailRuntimeNoExecutable.New("installer_err_runtime_no_file", m.Path, relocFile)
+		return "", locale.NewError("installer_err_runtime_no_file", "", m.Path, relocFile)
 	}
 
 	f, err := os.Open(relocFilePath)
 	if err != nil {
-		return "", failures.FailIO.Wrap(err)
+		return "", errs.Wrap(err, "Open %s failed", relocFilePath)
 	}
 	defer f.Close()
 
@@ -47,7 +48,7 @@ func (m *MetaData) perlRelocationDir() (string, error) {
 	rx := regexp.MustCompile(fmt.Sprintf(`#!(.*)%sbin`, separator))
 	match := rx.FindStringSubmatch(line)
 	if len(match) != 2 {
-		return "", FailRuntimeNoPrefixes.New("installer_err_fail_obtain_prefixes", m.Path)
+		return "", locale.WrapError(ErrNoPrefixes, "installer_err_fail_obtain_prefixes", "", m.Path)
 	}
 
 	return match[1], nil

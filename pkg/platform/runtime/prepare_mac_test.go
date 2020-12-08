@@ -35,27 +35,27 @@ func (suite *MetaDataTestSuite) TestMetaData_Prepare() {
 	// Directory that contains binary file on MacOS
 	tempDir := filepath.Join(suite.dir, relBinDir)
 	fail := fileutils.Mkdir(tempDir)
-	suite.Require().NoError(fail.ToError())
+	suite.Require().NoError(fail)
 
 	versionedDir := filepath.Join(suite.dir, relVersionedDir)
 	fail = fileutils.Mkdir(versionedDir)
-	suite.Require().NoError(fail.ToError())
+	suite.Require().NoError(fail)
 
 	// Directory that contains site-packages on MacOS
 	fail = fileutils.Mkdir(suite.dir, "Library/Frameworks/Python.framework/Versions/Current/lib")
-	suite.Require().NoError(fail.ToError())
+	suite.Require().NoError(fail)
 
 	pythonBinaryFilename := "python3"
 	fail = fileutils.Touch(filepath.Join(tempDir, pythonBinaryFilename))
-	suite.Require().NoError(fail.ToError())
+	suite.Require().NoError(fail)
 
 	contents := fmt.Sprintf(template, tempDir)
 	metaData, fail := runtime.ParseMetaData([]byte(contents))
 	metaData.Path = suite.dir
-	suite.Require().NoError(fail.ToError())
+	suite.Require().NoError(fail)
 
 	fail = metaData.Prepare()
-	suite.Require().NoError(fail.ToError())
+	suite.Require().NoError(fail)
 	suite.Require().NotEmpty(metaData.Env["PYTHONIOENCODING"])
 
 	suite.Len(metaData.TargetedRelocations, 1, "expected one targeted relocation")

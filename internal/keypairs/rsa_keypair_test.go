@@ -6,8 +6,9 @@ import (
 	"encoding/pem"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/ActiveState/cli/internal/keypairs"
 )
 
 type RSAKeypairTestSuite struct {
@@ -15,34 +16,34 @@ type RSAKeypairTestSuite struct {
 }
 
 func (suite *RSAKeypairTestSuite) TestGenerateRSA_ErrorBitLengthLessThanMin() {
-	kp, failure := keypairs.GenerateRSA(keypairs.MinimumRSABitLength - 1)
+	kp, err := keypairs.GenerateRSA(keypairs.MinimumRSABitLength - 1)
 	suite.Nil(kp)
-	suite.Truef(failure.Type.Matches(keypairs.FailKeypairGenerate), "Did not expect failure type: %s", failure.Type.Name)
+	suite.Error(err)
 }
 
 func (suite *RSAKeypairTestSuite) TestGenerateRSA_UsesMinimumBitLength() {
-	kp, failure := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
-	suite.Require().Nil(failure)
+	kp, err := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
+	suite.Require().Nil(err)
 	suite.NotNil(kp)
 	suite.Implements((*keypairs.Keypair)(nil), kp)
 }
 
 func (suite *RSAKeypairTestSuite) TestGenerateRSA_GeneratesRSAKeypair() {
-	kp, failure := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
-	suite.Require().Nil(failure)
+	kp, err := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
+	suite.Require().Nil(err)
 	suite.Regexp(`^-{5}BEGIN RSA PRIVATE KEY-{5}\s[[:alnum:]/+=]{44}\s-{5}END RSA PRIVATE KEY-{5}\s`, kp.EncodePrivateKey())
 
-	encPubKey, failure := kp.EncodePublicKey()
-	suite.Require().Nil(failure)
+	encPubKey, err := kp.EncodePublicKey()
+	suite.Require().Nil(err)
 	suite.Regexp(`^-{5}BEGIN RSA PUBLIC KEY-{5}\s[[:alnum:]/+=]{44}\s-{5}END RSA PUBLIC KEY-{5}\s`, encPubKey)
 }
 
 func (suite *RSAKeypairTestSuite) TestRSAKeypair_EncryptAndEncodePrivateKey() {
-	kp, failure := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
-	suite.Require().Nil(failure)
+	kp, err := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
+	suite.Require().Nil(err)
 
-	keyPEM, failure := kp.EncryptAndEncodePrivateKey("abc123")
-	suite.Require().Nil(failure)
+	keyPEM, err := kp.EncryptAndEncodePrivateKey("abc123")
+	suite.Require().Nil(err)
 	suite.Regexp(`^-{5}BEGIN RSA PRIVATE KEY-{5}`, keyPEM)
 	suite.Regexp(`Proc-Type:\s+[\d+],ENCRYPTED`, keyPEM)
 	suite.Regexp(`DEK-Info:\s+AES-256-CBC`, keyPEM)
@@ -51,68 +52,68 @@ func (suite *RSAKeypairTestSuite) TestRSAKeypair_EncryptAndEncodePrivateKey() {
 }
 
 func (suite *RSAKeypairTestSuite) TestRSAKeypair_MessageTooLongForKeySize() {
-	kp, failure := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
-	suite.Require().Nil(failure)
+	kp, err := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
+	suite.Require().Nil(err)
 
-	encMsg, failure := kp.Encrypt([]byte("howdy doody"))
+	encMsg, err := kp.Encrypt([]byte("howdy doody"))
 	suite.Nil(encMsg)
-	suite.Truef(failure.Type.Matches(keypairs.FailEncrypt), "Did not expect failure type: %s", failure.Type.Name)
-	suite.Contains(failure.Error(), "message too long")
+	suite.Require().Error(err)
+	suite.Contains(err.Error(), "message too long")
 }
 
 func (suite *RSAKeypairTestSuite) TestRSAKeypair_EncryptsAndDecrypts() {
-	kp, failure := keypairs.GenerateRSA(1024)
-	suite.Require().Nil(failure)
+	kp, err := keypairs.GenerateRSA(1024)
+	suite.Require().Nil(err)
 
-	encryptedMsg, failure := kp.Encrypt([]byte("howdy doody"))
-	suite.Require().Nil(failure)
+	encryptedMsg, err := kp.Encrypt([]byte("howdy doody"))
+	suite.Require().Nil(err)
 	suite.NotEqual("howdy doody", string(encryptedMsg))
 
-	decryptedMsg, failure := kp.Decrypt(encryptedMsg)
-	suite.Require().Nil(failure)
+	decryptedMsg, err := kp.Decrypt(encryptedMsg)
+	suite.Require().Nil(err)
 	suite.Equal("howdy doody", string(decryptedMsg))
 }
 
 func (suite *RSAKeypairTestSuite) TestRSAKeypair_EncodesAndDeccodesEncryptedValues() {
-	kp, failure := keypairs.GenerateRSA(1024)
-	suite.Require().Nil(failure)
+	kp, err := keypairs.GenerateRSA(1024)
+	suite.Require().Nil(err)
 
-	encryptedMsg, failure := kp.EncryptAndEncode([]byte("howdy doody"))
-	suite.Require().Nil(failure)
+	encryptedMsg, err := kp.EncryptAndEncode([]byte("howdy doody"))
+	suite.Require().Nil(err)
 	suite.NotEqual("howdy doody", encryptedMsg)
 
-	decryptedMsg, failure := kp.DecodeAndDecrypt(encryptedMsg)
-	suite.Require().Nil(failure)
+	decryptedMsg, err := kp.DecodeAndDecrypt(encryptedMsg)
+	suite.Require().Nil(err)
 	suite.Equal("howdy doody", string(decryptedMsg))
 }
 
 func (suite *RSAKeypairTestSuite) TestParseRSA_ParsesKeypair() {
-	kp, failure := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
-	suite.Require().Nil(failure)
+	kp, err := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
+	suite.Require().Nil(err)
 
 	encPrivKey := kp.EncodePrivateKey()
-	kp2, failure := keypairs.ParseRSA(encPrivKey)
-	suite.Require().Nil(failure)
+	kp2, err := keypairs.ParseRSA(encPrivKey)
+	suite.Require().Nil(err)
 	suite.Implements((*keypairs.Keypair)(nil), kp2)
 	suite.Equal(kp, kp2)
 }
 
 func (suite *RSAKeypairTestSuite) TestParseRSA_EncodingNotOfPrivateKey() {
-	kp, failure := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
-	suite.Require().Nil(failure)
+	kp, err := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
+	suite.Require().Nil(err)
 
-	encPubKey, failure := kp.EncodePublicKey()
-	suite.Require().Nil(failure)
+	encPubKey, err := kp.EncodePublicKey()
+	suite.Require().Nil(err)
 
-	kp2, failure := keypairs.ParseRSA(encPubKey)
+	kp2, err := keypairs.ParseRSA(encPubKey)
 	suite.Nil(kp2)
-	suite.True(failure.Type.Matches(keypairs.FailKeypairParse))
-	suite.Contains(failure.Error(), "structure error")
+	suite.Error(err)
+	suite.Contains(err.Error(), "structure error")
 }
 
 func (suite *RSAKeypairTestSuite) TestParseRSA_RequiresPassphrase() {
-	kp, failure := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
-	suite.Require().Nil(failure)
+	kp, err := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
+	suite.Require().Nil(err)
 
 	keyBytes := x509.MarshalPKCS1PrivateKey(kp.PrivateKey)
 	keyBlock := &pem.Block{
@@ -124,14 +125,14 @@ func (suite *RSAKeypairTestSuite) TestParseRSA_RequiresPassphrase() {
 	suite.Require().NoError(err)
 	encrPrivKey := string(pem.EncodeToMemory(newKeyBlock))
 
-	kp2, failure := keypairs.ParseRSA(encrPrivKey)
+	kp2, err := keypairs.ParseRSA(encrPrivKey)
 	suite.Nil(kp2)
-	suite.True(failure.Type.Matches(keypairs.FailKeypairPassphrase), "failure was: %v", failure)
+	suite.Error(err)
 }
 
 func (suite *RSAKeypairTestSuite) TestParseRSA_EmptyPassphraseButStillEncrypted() {
-	kp, failure := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
-	suite.Require().Nil(failure)
+	kp, err := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
+	suite.Require().Nil(err)
 
 	keyBytes := x509.MarshalPKCS1PrivateKey(kp.PrivateKey)
 	keyBlock := &pem.Block{
@@ -143,67 +144,67 @@ func (suite *RSAKeypairTestSuite) TestParseRSA_EmptyPassphraseButStillEncrypted(
 	suite.Require().NoError(err)
 	encrPrivKey := string(pem.EncodeToMemory(newKeyBlock))
 
-	kp2, failure := keypairs.ParseRSA(encrPrivKey)
-	suite.Require().Nil(failure)
+	kp2, err := keypairs.ParseRSA(encrPrivKey)
+	suite.Require().Nil(err)
 	suite.Implements((*keypairs.Keypair)(nil), kp2)
 	suite.Equal(kp, kp2)
 }
 
 func (suite *RSAKeypairTestSuite) TestParseRSA_KeypairNotPEMEncoded() {
-	kp, failure := keypairs.ParseRSA("this is not an encoded key")
+	kp, err := keypairs.ParseRSA("this is not an encoded key")
 	suite.Nil(kp)
-	suite.Truef(failure.Type.Matches(keypairs.FailKeypairParse), "Did not expect failure type: %s", failure.Type.Name)
+	suite.Error(err)
 }
 
 func (suite *RSAKeypairTestSuite) TestParseEncryptedRSA_ParsesKeypair() {
-	kp, failure := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
-	suite.Require().Nil(failure)
+	kp, err := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
+	suite.Require().Nil(err)
 
-	keyPEM, failure := kp.EncryptAndEncodePrivateKey("abc123")
-	suite.Require().Nil(failure)
+	keyPEM, err := kp.EncryptAndEncodePrivateKey("abc123")
+	suite.Require().Nil(err)
 
-	kp2, failure := keypairs.ParseEncryptedRSA(keyPEM, "abc123")
-	suite.Require().Nil(failure)
+	kp2, err := keypairs.ParseEncryptedRSA(keyPEM, "abc123")
+	suite.Require().Nil(err)
 	suite.Implements((*keypairs.Keypair)(nil), kp2)
 	suite.Equal(kp, kp2)
 }
 
 func (suite *RSAKeypairTestSuite) TestParseEncryptedRSA_KeypairNotPEMEncoded() {
-	kp, failure := keypairs.ParseEncryptedRSA("this is not an encoded key", "")
+	kp, err := keypairs.ParseEncryptedRSA("this is not an encoded key", "")
 	suite.Nil(kp)
-	suite.Truef(failure.Type.Matches(keypairs.FailKeypairParse), "Did not expect failure type: %s", failure.Type.Name)
+	suite.Error(err)
 }
 
 func (suite *RSAKeypairTestSuite) TestParseEncryptedRSA_IncorrectPassphrase() {
-	kp, failure := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
-	suite.Require().Nil(failure)
+	kp, err := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
+	suite.Require().Nil(err)
 
-	keyPEM, failure := kp.EncryptAndEncodePrivateKey("abc123")
-	suite.Require().Nil(failure)
+	keyPEM, err := kp.EncryptAndEncodePrivateKey("abc123")
+	suite.Require().Nil(err)
 
-	kp2, failure := keypairs.ParseEncryptedRSA(keyPEM, "notTheRightPassphrase")
+	kp2, err := keypairs.ParseEncryptedRSA(keyPEM, "notTheRightPassphrase")
 	suite.Require().Nil(kp2)
-	suite.Truef(failure.Type.Matches(keypairs.FailKeypairPassphrase), "Did not expect failure type: %s", failure.Type.Name)
+	suite.Error(err)
 }
 
 func (suite *RSAKeypairTestSuite) TestMatchPublicKey_DifferentPublicKeys() {
-	kp1, failure := keypairs.GenerateRSA(1024)
-	suite.Require().Nil(failure)
-	kp2, failure := keypairs.GenerateRSA(1024)
-	suite.Require().Nil(failure)
+	kp1, err := keypairs.GenerateRSA(1024)
+	suite.Require().Nil(err)
+	kp2, err := keypairs.GenerateRSA(1024)
+	suite.Require().Nil(err)
 
-	pubkey2PEM, failure := kp2.EncodePublicKey()
-	suite.Require().Nil(failure)
+	pubkey2PEM, err := kp2.EncodePublicKey()
+	suite.Require().Nil(err)
 
 	suite.False(kp1.MatchPublicKey(pubkey2PEM))
 }
 
 func (suite *RSAKeypairTestSuite) TestMatchPublicKey_SamePublicKey() {
-	kp, failure := keypairs.GenerateRSA(1024)
-	suite.Require().Nil(failure)
+	kp, err := keypairs.GenerateRSA(1024)
+	suite.Require().Nil(err)
 
-	pubkeyPEM, failure := kp.EncodePublicKey()
-	suite.Require().Nil(failure)
+	pubkeyPEM, err := kp.EncodePublicKey()
+	suite.Require().Nil(err)
 
 	suite.True(kp.MatchPublicKey(pubkeyPEM))
 }

@@ -6,8 +6,6 @@ import (
 	"testing"
 
 	"github.com/thoas/go-funk"
-
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/osutils"
 )
 

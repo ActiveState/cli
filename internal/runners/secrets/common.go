@@ -2,8 +2,6 @@ package secrets
 
 import (
 	"strings"
-
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/pkg/project"
 )
 

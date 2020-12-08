@@ -2,8 +2,6 @@ package mock
 
 import (
 	testifyMock "github.com/stretchr/testify/mock"
-
-	"github.com/ActiveState/cli/internal/failures"
 )
 
 // Installer is a testify Mock object.

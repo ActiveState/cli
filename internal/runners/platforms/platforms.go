@@ -5,10 +5,11 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/go-openapi/strfmt"
+
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/go-openapi/strfmt"
 )
 
 // Platform represents the output data of a platform.
@@ -99,7 +100,7 @@ func prepareLatestVersion(params Params) (Params, error) {
 
 	platform, fail := model.FetchPlatformByUID(strfmt.UUID(platformUUID))
 	if fail != nil {
-		return params, locale.WrapError(fail.ToError(), "err_fetch_platform", "Could not get platform details")
+		return params, locale.WrapError(fail, "err_fetch_platform", "Could not get platform details")
 	}
 	params.Name = *platform.Kernel.Name
 	params.Version = *platform.KernelVersion.Version

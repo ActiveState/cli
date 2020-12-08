@@ -75,7 +75,7 @@ func (s *Session) UseDistinctStateExe() {
 	}
 
 	fail := fileutils.CopyFile(s.exe, execu)
-	require.NoError(s.t, fail.ToError())
+	require.NoError(s.t, fail)
 
 	// Ensure modTime is the same as source exe
 	stat, err := os.Stat(s.exe)
@@ -233,7 +233,7 @@ func (s *Session) PrepareActiveStateYAML(contents string) {
 
 	projectFile.SetPath(filepath.Join(s.Dirs.Work, "activestate.yaml"))
 	fail := projectFile.Save()
-	require.NoError(s.t, fail.ToError(), msg)
+	require.NoError(s.t, fail, msg)
 }
 
 // PrepareFile writes a file to path with contents, expecting no error

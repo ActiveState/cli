@@ -9,7 +9,6 @@ import (
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/globaldefault"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -210,7 +209,7 @@ func updateProjectFile(prj *project.Project, names *project.Namespaced) error {
 	if names.CommitID == nil || *names.CommitID == "" {
 		latestID, fail := model.LatestCommitID(names.Owner, names.Project)
 		if fail != nil {
-			return locale.WrapInputError(fail.ToError(), "err_set_namespace_retrieve_commit", "Could not retrieve the latest commit for the specified project {{.V0}}.", names.String())
+			return locale.WrapInputError(fail, "err_set_namespace_retrieve_commit", "Could not retrieve the latest commit for the specified project {{.V0}}.", names.String())
 		}
 		commitID = latestID.String()
 	} else {
@@ -223,7 +222,7 @@ func updateProjectFile(prj *project.Project, names *project.Namespaced) error {
 	}
 	fail := prj.Source().SetCommit(commitID, prj.IsHeadless())
 	if fail != nil {
-		return locale.WrapError(fail.ToError(), "err_activate_replace_write_commit", "Failed to update commitID.")
+		return locale.WrapError(fail, "err_activate_replace_write_commit", "Failed to update commitID.")
 	}
 
 	return nil
@@ -240,7 +239,7 @@ func (r *Activate) pathToUse(namespace string, preferredPath string) (string, er
 	default:
 		// Get path from working directory
 		targetPath, fail := projectfile.GetProjectFilePath()
-		return filepath.Dir(targetPath), fail.ToError()
+		return filepath.Dir(targetPath), fail
 	}
 }
 

@@ -2,8 +2,6 @@ package mock
 
 import (
 	testifyMock "github.com/stretchr/testify/mock"
-
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/unarchiver"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 )

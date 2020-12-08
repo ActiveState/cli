@@ -27,7 +27,7 @@ func cleanUser(t *testing.T, username string) error {
 		Token: os.Getenv("PLATFORM_API_TOKEN"),
 	})
 	if fail != nil {
-		return fail.ToError()
+		return fail
 	}
 
 	projects, err := getProjects(username)

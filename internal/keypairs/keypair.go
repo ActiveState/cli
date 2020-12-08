@@ -1,47 +1,12 @@
 package keypairs
 
 import (
-	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_client/keys"
 	secretsModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-)
-
-var (
-	// FailCrypto indicates a failure with something crypto related.
-	FailCrypto = failures.Type("keypairs.fail.crypto")
-
-	// FailKeypair represents a failure to successfully work with a Keypair.
-	FailKeypair = failures.Type("keypairs.fail.keypair", FailCrypto)
-
-	// FailKeypairParse indicates a failure to parse a keypair.
-	FailKeypairParse = failures.Type("keypairs.fail.keypair.parse", FailKeypair)
-
-	// FailKeypairPassphrase indicates a failure with passphrase.
-	FailKeypairPassphrase = failures.Type("keypairs.fail.keypair.passphrase", FailKeypairParse, failures.FailUser)
-
-	// FailKeypairGenerate indicates a failure to generate a keypair.
-	FailKeypairGenerate = failures.Type("keypairs.fail.keypair.generate", FailKeypair)
-
-	// FailPublicKey represents a failure to successfully work with a PublicKey.
-	FailPublicKey = failures.Type("keypairs.fail.publickey")
-
-	// FailPublicKeyParse indicates a failure to parse a public-key.
-	FailPublicKeyParse = failures.Type("keypairs.fail.publickey.parse", FailPublicKey)
-
-	// FailKeyDecode indicates a failure to decode a key.
-	FailKeyDecode = failures.Type("keypairs.fail.key.decode", FailCrypto)
-
-	// FailKeyEncode indicates a failure to encode a key.
-	FailKeyEncode = failures.Type("keypairs.fail.key.encode", FailCrypto)
-
-	// FailDecrypt indicates a failure to decrypt a value.
-	FailDecrypt = failures.Type("keypairs.fail.decrypt", FailCrypto)
-
-	// FailEncrypt indicates a failure to decrypt a value.
-	FailEncrypt = failures.Type("keypairs.fail.encrypt", FailCrypto)
 )
 
 // Encrypter expects to encrypt a message.
@@ -140,7 +105,7 @@ func SaveEncodedKeypair(secretsClient *secretsapi.Client, encKeypair *EncodedKey
 
 	if _, err := secretsClient.Keys.SaveKeypair(params, authentication.Get().ClientAuth()); err != nil {
 		logging.Error("Saving keypair failed with error: %v", err)
-		return secretsapi.FailKeypairSave.New("keypair_err_save")
+		return locale.WrapError(err, "keypair_err_save")
 	}
 
 	// save the keypair locally to avoid authenticating the keypair every time it's used

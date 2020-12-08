@@ -5,7 +5,6 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 )
@@ -18,9 +17,6 @@ type Prompter interface {
 	Confirm(title, message string, defaultChoice bool) (bool, error)
 	InputSecret(title, message string, flags ...ValidatorFlag) (string, error)
 }
-
-// FailPromptUnknownValidator handles unknown validator erros
-var FailPromptUnknownValidator = failures.Type("prompt.unknownvalidator")
 
 // ValidatorFunc is a function pass to the Prompter to perform validation
 // on the users input
@@ -85,7 +81,7 @@ func (p *Prompt) InputAndValidate(title, message, defaultResponse string, valida
 		Message: formatMessage(message, !p.out.Config().Colored),
 	}}, &response, validator)
 	if err != nil {
-		return "", failures.FailUserInput.Wrap(err)
+		return "", locale.NewInputError(err.Error())
 	}
 
 	return response, nil
@@ -104,7 +100,7 @@ func (p *Prompt) Select(title, message string, choices []string, defaultChoice s
 		Default: defaultChoice,
 	}}, &response, nil)
 	if err != nil {
-		return "", failures.FailUserInput.Wrap(err)
+		return "", locale.NewInputError(err.Error())
 	}
 	return response, nil
 }
@@ -126,7 +122,7 @@ func (p *Prompt) Confirm(title, message string, defaultChoice bool) (bool, error
 		if err == terminal.InterruptErr {
 			analytics.EventWithLabel(analytics.CatPrompt, title, "interrupt")
 		}
-		return false, failures.FailUserInput.Wrap(err)
+		return false, locale.NewInputError(err.Error())
 	}
 	analytics.EventWithLabel(analytics.CatPrompt, title, translateConfirm(resp))
 
@@ -157,7 +153,7 @@ func (p *Prompt) InputSecret(title, message string, flags ...ValidatorFlag) (str
 		Message: formatMessage(message, !p.out.Config().Colored),
 	}}, &response, wrapValidators(validators))
 	if err != nil {
-		return "", failures.FailUserInput.Wrap(err)
+		return "", locale.NewInputError(err.Error())
 	}
 	return response, nil
 }
@@ -178,14 +174,14 @@ func wrapValidators(validators []ValidatorFunc) ValidatorFunc {
 // This function seems like overkill right now but the assumption is we'll have more than one built in validator
 func processValidators(flags []ValidatorFlag) ([]ValidatorFunc, error) {
 	var validators []ValidatorFunc
-	var fail error
+	var err error
 	for flag := range flags {
 		switch ValidatorFlag(flag) {
 		case InputRequired:
 			validators = append(validators, inputRequired)
 		default:
-			fail = FailPromptUnknownValidator.New(locale.T("fail_prompt_bad_flag"))
+			err = locale.NewError("err_prompt_bad_flag")
 		}
 	}
-	return validators, fail
+	return validators, err
 }

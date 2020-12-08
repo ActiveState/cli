@@ -3,7 +3,7 @@ package captain
 import (
 	"reflect"
 
-	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/errs"
 )
 
 type FlagMarshaler interface {
@@ -34,7 +34,7 @@ func (c *Command) setFlags(flags []*Flag) error {
 
 		switch v := flag.Value.(type) {
 		case nil:
-			return failures.FailDeveloper.New("flag value must not be nil")
+			return errs.New("flag value must not be nil")
 		case *string:
 			flagSetter().StringVarP(
 				v, flag.Name, flag.Shorthand, *v, flag.Description,
@@ -52,13 +52,15 @@ func (c *Command) setFlags(flags []*Flag) error {
 				v, flag.Name, flag.Shorthand, flag.Description,
 			)
 		default:
-			return failures.FailDeveloper.New(
+			return errs.New(
 				"Unknown type:" + reflect.TypeOf(v).Name(),
 			)
 		}
 
 		if flag.Hidden {
-			c.markFlagHidden(flag.Name)
+			if err := c.markFlagHidden(flag.Name); err != nil {
+				return errs.Wrap(err, "markFlagHidden %s failed", flag.Name)
+			}
 		}
 	}
 

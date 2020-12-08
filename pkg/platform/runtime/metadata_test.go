@@ -40,7 +40,7 @@ func (suite *MetaDataTestSuite) TestMetaData() {
 	}`
 
 	metaData, fail := runtime.ParseMetaData([]byte(contents))
-	suite.Require().NoError(fail.ToError())
+	suite.Require().NoError(fail)
 	suite.Equal("PYTHONPATH", metaData.AffectedEnv)
 	suite.Equal("/relocate", metaData.RelocationDir)
 	suite.Equal("bin", metaData.BinaryLocations[0].Path)

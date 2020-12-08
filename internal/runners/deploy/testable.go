@@ -1,7 +1,6 @@
 package deploy
 
 import (
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 )

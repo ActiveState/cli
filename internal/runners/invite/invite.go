@@ -6,7 +6,6 @@ import (
 	"sync"
 
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
@@ -94,7 +93,7 @@ func (i *invite) promptForRole() (Role, error) {
 	choices := roleNames()
 	selection, fail := i.prompt.Select(locale.Tl("invite_role", "Role"), locale.Tl("invite_select_org_role", "What role should the user(s) be given?"), choices, "")
 	if fail != nil {
-		return -1, fail.ToError()
+		return -1, fail
 	}
 	var role Role
 	if err := (&role).Set(selection); err != nil {

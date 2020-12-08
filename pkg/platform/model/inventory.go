@@ -9,7 +9,6 @@ import (
 	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/retryhttp"
 	"github.com/ActiveState/cli/pkg/platform/api"
@@ -45,7 +44,7 @@ var platformCache []*Platform
 func IngredientByNameAndVersion(name, version string, ns Namespace) (*IngredientAndVersion, error) {
 	results, fail := searchIngredientsNamespace(50, ns, name)
 	if fail != nil {
-		return nil, fail.ToError()
+		return nil, fail
 	}
 
 	if len(results) == 0 {
@@ -112,7 +111,7 @@ func FilterForBestIngredientMatch(candidates []*IngredientAndVersion, name strin
 func IngredientWithLatestVersion(name string, ns Namespace) (*IngredientAndVersion, error) {
 	results, fail := searchIngredientsNamespace(50, ns, name)
 	if fail != nil {
-		return nil, fail.ToError()
+		return nil, fail
 	}
 
 	if len(results) == 0 {

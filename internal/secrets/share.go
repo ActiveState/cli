@@ -1,7 +1,6 @@
 package secrets
 
 import (
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/keypairs"
 	secretsModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 )

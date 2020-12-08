@@ -3,7 +3,7 @@ package output
 import (
 	"io"
 
-	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 )
@@ -26,8 +26,7 @@ const (
 	Suppress Behavior = iota
 )
 
-// FailNotRecognized is a failure due to the format not being recognized
-var FailNotRecognized = failures.Type("output.fail.not.recognized", failures.FailInput)
+var ErrNotRecognized = errs.New("Not Recognized")
 
 // Outputer is the initialized formatter
 type Outputer interface {
@@ -71,7 +70,7 @@ func new(formatName string, config *Config) (Outputer, error) {
 		return &Mediator{&editor0, EditorV0FormatName}, fail
 	}
 
-	return nil, FailNotRecognized.New(locale.Tr("err_unknown_format", string(formatName)))
+	return nil, locale.WrapInputError(ErrNotRecognized, "err_unknown_format", string(formatName))
 }
 
 // Get is here for legacy use-cases, DO NOT USE IT FOR NEW CODE

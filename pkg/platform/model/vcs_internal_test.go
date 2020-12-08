@@ -2,8 +2,6 @@ package model
 
 import (
 	"testing"
-
-	"github.com/ActiveState/cli/internal/failures"
 )
 
 func TestIndexedCommits(t *testing.T) {

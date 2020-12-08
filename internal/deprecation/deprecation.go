@@ -2,6 +2,7 @@ package deprecation
 
 import (
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
@@ -16,7 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	constvers "github.com/ActiveState/cli/internal/constants/version"
-	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -30,25 +31,7 @@ const (
 	fetchKey = "deprecation_fetch_time"
 )
 
-var (
-	// FailFetchDeprecationInfo communicates a failure in retrieving the deprecation info via http
-	FailFetchDeprecationInfo = failures.Type("deprecation.fail.fetchinfo", failures.FailNetwork)
-
-	// FailGetCatchedDeprectionInfo communications a failure in retrieving the deprection info on disk
-	FailGetCatchedDeprectionInfo = failures.Type("deprecation.fail.getinfo", failures.FailIO)
-
-	// FailParseVersion communicates a failure in parsing a semantic version (the version is not formatted properly)
-	FailParseVersion = failures.Type("deprecation.fail.versionparse", failures.FailInput)
-
-	// FailTimeout communicates a failure due to a timeout
-	FailTimeout = failures.Type("deprecation.fail.timeout", failures.FailNetwork, failures.FailNonFatal)
-
-	// FailNotFound communicates a failure due to a 404
-	FailNotFound = failures.Type("deprecation.fail.notfound", failures.FailNotFound, failures.FailNetwork, failures.FailNonFatal)
-
-	// FailInvalidResponseCode communicates a failure due to a non-200 response code
-	FailInvalidResponseCode = failures.Type("deprecation.fail.code", failures.FailNetwork)
-)
+var ErrTimeout = errs.New("deprecation check timed out")
 
 // Info details deprecation information for a given version
 type Info struct {
@@ -104,7 +87,7 @@ func (checker *Checker) check(versionNumber string) (*Info, error) {
 
 	versionInfo, err := version.NewVersion(versionNumber)
 	if err != nil {
-		return nil, FailParseVersion.Wrap(err)
+		return nil, errs.Wrap(err, "Invalid version number: %s", versionNumber)
 	}
 
 	var infos []Info
@@ -117,7 +100,7 @@ func (checker *Checker) check(versionNumber string) (*Info, error) {
 	} else {
 		infos, err = checker.cachedDeprecationInfo()
 		if err != nil {
-			return nil, FailGetCatchedDeprectionInfo.Wrap(err)
+			return nil, errs.Wrap(err, "cachedDeprecationInfo failed")
 		}
 	}
 
@@ -152,15 +135,15 @@ func (checker *Checker) fetchDeprecationInfoBody() (int, []byte, error) {
 	if err != nil {
 		// Check for timeout by evaluating the error string. Yeah this is dumb, thank the http package for that.
 		if strings.Contains(err.Error(), "Client.Timeout") || strings.Contains(err.Error(), "context deadline exceeded") {
-			return -1, nil, FailTimeout.Wrap(err)
+			return -1, nil, errs.WrapErrors(err, ErrTimeout)
 		}
-		return -1, nil, FailFetchDeprecationInfo.Wrap(err)
+		return -1, nil, errs.Wrap(err, "Could not fetch deprecation info")
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return -1, nil, failures.FailIO.Wrap(err)
+		return -1, nil, errs.Wrap(err, "Read body failed")
 	}
 
 	return resp.StatusCode, body, nil
@@ -169,31 +152,31 @@ func (checker *Checker) fetchDeprecationInfoBody() (int, []byte, error) {
 func (checker *Checker) fetchDeprecationInfo() ([]Info, error) {
 	logging.Debug("Fetching deprecation information from S3")
 
-	code, body, fail := checker.fetchDeprecationInfoBody()
-	if fail != nil {
-		if fail.Type.Matches(FailTimeout) {
-			logging.Debug("Timed out while fetching deprecation info: %v", fail.Error())
+	code, body, err := checker.fetchDeprecationInfoBody()
+	if err != nil {
+		if errors.Is(err, ErrTimeout) {
+			logging.Debug("Timed out while fetching deprecation info: %v", err)
 			return nil, nil
 		}
-		return nil, fail
+		return nil, err
 	}
 
 	// Handle non-200 response gracefully
 	if code != 200 {
 		if code == 404 || code == 403 { // On S3 a 403 means a 404, at least for our use-case
-			return nil, FailNotFound.New(locale.T("err_deprection_404"))
+			return nil, locale.NewError("err_deprection_404")
 		}
-		return nil, FailInvalidResponseCode.New(locale.Tr("err_deprection_code", strconv.Itoa(code)))
+		return nil, locale.NewError("err_deprection_code", "", strconv.Itoa(code))
 	}
 
 	infos, err := initializeInfo(body)
 	if err != nil {
-		return nil, failures.FailIO.Wrap(err)
+		return nil, errs.Wrap(err, "initializeInfo failed")
 	}
 
 	err = checker.saveDeprecationInfo(infos)
 	if err != nil {
-		return nil, failures.FailIO.Wrap(err)
+		return nil, errs.Wrap(err, "saveDeprecatinInfo failed")
 	}
 
 	return infos, nil

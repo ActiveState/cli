@@ -6,7 +6,6 @@ import (
 
 	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -44,23 +43,23 @@ func (l *List) Run(params ListRunParams, nstype model.NamespaceType) error {
 	case params.Commit != "":
 		commit, fail = targetFromCommit(params.Commit)
 		if fail != nil {
-			return locale.WrapError(fail.ToError(), fmt.Sprintf("%s_err_cannot_obtain_commit", nstype))
+			return locale.WrapError(fail, fmt.Sprintf("%s_err_cannot_obtain_commit", nstype))
 		}
 	case params.Project != "":
 		commit, fail = targetFromProject(params.Project)
 		if fail != nil {
-			return locale.WrapError(fail.ToError(), fmt.Sprintf("%s_err_cannot_obtain_commit", nstype))
+			return locale.WrapError(fail, fmt.Sprintf("%s_err_cannot_obtain_commit", nstype))
 		}
 	default:
 		commit, fail = targetFromProjectFile()
 		if fail != nil {
-			return locale.WrapError(fail.ToError(), fmt.Sprintf("%s_err_cannot_obtain_commit", nstype))
+			return locale.WrapError(fail, fmt.Sprintf("%s_err_cannot_obtain_commit", nstype))
 		}
 	}
 
 	checkpoint, fail := fetchCheckpoint(commit)
 	if fail != nil {
-		return locale.WrapError(fail.ToError(), fmt.Sprintf("%s_err_cannot_fetch_checkpoint", nstype))
+		return locale.WrapError(fail, fmt.Sprintf("%s_err_cannot_fetch_checkpoint", nstype))
 	}
 
 	table := newFilteredRequirementsTable(model.FilterCheckpointPackages(checkpoint), params.Name, nstype)

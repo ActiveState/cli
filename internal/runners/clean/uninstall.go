@@ -6,7 +6,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
@@ -60,7 +59,7 @@ func (u *Uninstall) Run(params *UninstallParams) error {
 	if !params.Force {
 		ok, fail := u.confirm.Confirm(locale.T("confirm"), locale.T("uninstall_confirm"), false)
 		if fail != nil {
-			return fail.ToError()
+			return fail
 		}
 		if !ok {
 			return nil

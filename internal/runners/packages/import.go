@@ -3,7 +3,6 @@ package packages
 import (
 	"io/ioutil"
 
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
@@ -81,33 +80,33 @@ func (i *Import) Run(params ImportRunParams) error {
 
 	isHeadless := i.proj.IsHeadless()
 	if !isHeadless && !authentication.Get().Authenticated() {
-		anonymousOk, fail := i.Confirm(locale.Tl("continue_anon", "Continue Anonymously?"), locale.T("prompt_headless_anonymous"), true)
-		if fail != nil {
-			return locale.WrapInputError(fail.ToError(), "Authentication cancelled.")
+		anonymousOk, err := i.Confirm(locale.Tl("continue_anon", "Continue Anonymously?"), locale.T("prompt_headless_anonymous"), true)
+		if err != nil {
+			return locale.WrapInputError(err, "Authentication cancelled.")
 		}
 		isHeadless = anonymousOk
 	}
 
 	if !isHeadless {
-		fail := auth.RequireAuthentication(locale.T("auth_required_activate"), i.out, i.Prompter)
-		if fail != nil {
-			return fail.WithDescription("err_activate_auth_required")
+		err := auth.RequireAuthentication(locale.T("auth_required_activate"), i.out, i.Prompter)
+		if err != nil {
+			return locale.WrapError(err, "err_activate_auth_required")
 		}
 	}
 
-	latestCommit, fail := model.LatestCommitID(i.proj.Owner(), i.proj.Name())
-	if fail != nil {
-		return fail.WithDescription("package_err_cannot_obtain_commit")
+	latestCommit, err := model.LatestCommitID(i.proj.Owner(), i.proj.Name())
+	if err != nil {
+		return locale.WrapError(err, "package_err_cannot_obtain_commit")
 	}
 
-	reqs, fail := fetchCheckpoint(latestCommit)
-	if fail != nil {
-		return fail.WithDescription("package_err_cannot_fetch_checkpoint")
+	reqs, err := fetchCheckpoint(latestCommit)
+	if err != nil {
+		return locale.WrapError(err, "package_err_cannot_fetch_checkpoint")
 	}
 
-	lang, fail := model.CheckpointToLanguage(reqs)
-	if fail != nil {
-		return locale.WrapInputError(fail, "err_import_language", "Your project does not have a language associated with it, please add a language first.")
+	lang, err := model.CheckpointToLanguage(reqs)
+	if err != nil {
+		return locale.WrapInputError(err, "err_import_language", "Your project does not have a language associated with it, please add a language first.")
 	}
 
 	changeset, err := fetchImportChangeset(reqsimport.Init(), params.FileName, lang.Name)
@@ -138,12 +137,12 @@ func removeRequirements(conf Confirmer, project *project.Project, force, isHeadl
 	if !force {
 		msg := locale.T("confirm_remove_existing_prompt")
 
-		confirmed, fail := conf.Confirm(locale.T("confirm"), msg, false)
-		if fail != nil {
-			return fail.ToError()
+		confirmed, err := conf.Confirm(locale.T("confirm"), msg, false)
+		if err != nil {
+			return err
 		}
 		if !confirmed {
-			return failures.FailUserInput.New(locale.Tl("err_action_was_not_confirmed", "Cancelled Import.")).ToError()
+			return locale.NewInputError("err_action_was_not_confirmed", "Cancelled Import.")
 		}
 	}
 
@@ -178,8 +177,8 @@ func commitChangeset(project *project.Project, msg string, isHeadless bool, chan
 			return locale.WrapError(err, "err_import_update_branch", "Failed to update branch with new commit ID")
 		}
 	}
-	if fail := project.Source().SetCommit(commitID.String(), isHeadless); fail != nil {
-		return fail.WithDescription("err_package_update_pjfile").ToError()
+	if err := project.Source().SetCommit(commitID.String(), isHeadless); err != nil {
+		return locale.WrapError(err, "err_package_update_pjfile")
 	}
 	return nil
 }

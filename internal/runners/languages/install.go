@@ -4,7 +4,6 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
@@ -90,7 +89,7 @@ func parseLanguage(langName string) (*model.Language, error) {
 func ensureLanguagePlatform(language *model.Language) error {
 	platformLanguages, fail := model.FetchLanguages()
 	if fail != nil {
-		return fail.ToError()
+		return fail
 	}
 
 	for _, pl := range platformLanguages {
@@ -105,12 +104,12 @@ func ensureLanguagePlatform(language *model.Language) error {
 func ensureLanguageProject(language *model.Language, project *project.Project) error {
 	targetCommitID, fail := model.LatestCommitID(project.Owner(), project.Name())
 	if fail != nil {
-		return fail.ToError()
+		return fail
 	}
 
 	platformLanguage, fail := model.FetchLanguageForCommit(*targetCommitID)
 	if fail != nil {
-		return fail.ToError()
+		return fail
 	}
 
 	if platformLanguage.Name != language.Name {
@@ -132,7 +131,7 @@ func ensureVersionTestable(language *model.Language, fetchVersions fetchVersions
 
 	versions, fail := fetchVersions(language.Name)
 	if fail != nil {
-		return fail.ToError()
+		return fail
 	}
 
 	for _, ver := range versions {
@@ -147,12 +146,12 @@ func ensureVersionTestable(language *model.Language, fetchVersions fetchVersions
 func removeLanguage(project *project.Project, current string) error {
 	targetCommitID, fail := model.LatestCommitID(project.Owner(), project.Name())
 	if fail != nil {
-		return fail.ToError()
+		return fail
 	}
 
 	platformLanguage, fail := model.FetchLanguageForCommit(*targetCommitID)
 	if fail != nil {
-		return fail.ToError()
+		return fail
 	}
 
 	err := model.CommitLanguage(project.Owner(), project.Name(), model.OperationRemoved, platformLanguage.Name, platformLanguage.Version)

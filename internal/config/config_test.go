@@ -66,7 +66,7 @@ func (suite *ConfigTestSuite) TestFilesExist() {
 func (suite *ConfigTestSuite) TestCorruption() {
 	path := filepath.Join(suite.config.ConfigPath(), suite.config.Filename())
 	fail := fileutils.WriteFile(path, []byte("&"))
-	suite.Require().NoError(fail.ToError())
+	suite.Require().NoError(fail)
 
 	exiter := exiter.New()
 	suite.config.Exit = exiter.Exit
@@ -145,7 +145,7 @@ func (suite *ConfigTestSuite) TestSaveMerge() {
 	path := filepath.Join(suite.config.ConfigPath(), suite.config.Filename())
 
 	fail := fileutils.WriteFile(path, []byte("ishould: exist"))
-	suite.Require().NoError(fail.ToError())
+	suite.Require().NoError(fail)
 
 	viper.Set("Foo", "bar")
 	config.Save()

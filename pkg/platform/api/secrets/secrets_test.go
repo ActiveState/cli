@@ -66,9 +66,9 @@ func TestSecretsAPI_Authenticated_Failure(t *testing.T) {
 
 	httpmock.RegisterWithCode("GET", "/whoami", 401)
 
-	uid, failure := client.AuthenticatedUserID()
+	uid, err := client.AuthenticatedUserID()
 	assert.Zero(uid)
-	assert.True(failure.Type.Matches(api.FailAuth), "should be an FailAuth failure")
+	require.Error(err)
 }
 
 func TestSecretsAPI_Authenticated_Success(t *testing.T) {

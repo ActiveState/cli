@@ -38,13 +38,13 @@ func (suite *MetaDataTestSuite) TestMetaData_Prepare() {
 		tempDir = strings.ReplaceAll(tempDir, "\\", "\\\\")
 	}
 	fail := fileutils.Touch(filepath.Join(suite.dir, pythonBinaryFilename))
-	suite.Require().NoError(fail.ToError())
+	suite.Require().NoError(fail)
 
 	contents := fmt.Sprintf(template, tempDir)
 	metaData, fail := runtime.ParseMetaData([]byte(contents))
-	suite.Require().NoError(fail.ToError())
+	suite.Require().NoError(fail)
 
 	fail = metaData.Prepare()
-	suite.Require().NoError(fail.ToError())
+	suite.Require().NoError(fail)
 	suite.Require().NotEmpty(metaData.Env["PYTHONIOENCODING"])
 }

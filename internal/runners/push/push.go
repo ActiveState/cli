@@ -12,7 +12,6 @@ import (
 
 	"github.com/spf13/viper"
 
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/pkg/project"
@@ -70,7 +69,7 @@ func (r *Push) Run(params PushParams) error {
 			var fail error
 			namespace, fail = project.ParseNamespace(names)
 			if fail != nil {
-				return errs.Wrap(fail.ToError(), "Could not parse namespace %s to push headless commit to", name)
+				return errs.Wrap(fail, "Could not parse namespace %s to push headless commit to", name)
 			}
 		}
 		owner = namespace.Owner
@@ -85,10 +84,10 @@ func (r *Push) Run(params PushParams) error {
 	pjm, fail := model.FetchProjectByName(owner, name)
 	if fail != nil {
 		if fail.Type.Matches(model.FailProjectNotFound) && r.project.IsHeadless() {
-			return locale.WrapInputError(fail.ToError(), "err_push_existing_project_needed", "Cannot push to [NOTICE]{{.V0}}/{{.V1}}[/RESET], as project does not exist.")
+			return locale.WrapInputError(fail, "err_push_existing_project_needed", "Cannot push to [NOTICE]{{.V0}}/{{.V1}}[/RESET], as project does not exist.")
 		}
 		if !fail.Type.Matches(model.FailProjectNotFound) {
-			return locale.WrapError(fail.ToError(), "err_push_try_project", "Failed to check for existence of project.")
+			return locale.WrapError(fail, "err_push_try_project", "Failed to check for existence of project.")
 		}
 		// We have to reset handled failures since our legacy command handling still relies on this
 		// ie. failure occurred equals unsuccessful command
@@ -108,7 +107,7 @@ func (r *Push) Run(params PushParams) error {
 
 		branch, fail := model.DefaultBranchForProject(pjm)
 		if fail != nil {
-			return errs.Wrap(fail.ToError(), "Failed to get default branch of project.")
+			return errs.Wrap(fail, "Failed to get default branch of project.")
 		}
 		if branch.CommitID != nil && branch.CommitID.String() == r.project.CommitID() {
 			r.Outputer.Notice(locale.T("push_up_to_date"))
@@ -118,7 +117,7 @@ func (r *Push) Run(params PushParams) error {
 		r.Outputer.Notice(locale.Tl("push_creating_project", "Creating project [NOTICE]{{.V1}}[/RESET] under [NOTICE]{{.V0}}[/RESET] on the ActiveState Platform", owner, name))
 		pjm, fail = model.CreateEmptyProject(owner, name, r.project.Private())
 		if fail != nil {
-			return locale.WrapError(fail.ToError(), "push_project_create_empty_err", "Failed to create a project {{.V0}}.", r.project.Namespace().String())
+			return locale.WrapError(fail, "push_project_create_empty_err", "Failed to create a project {{.V0}}.", r.project.Namespace().String())
 		}
 	}
 
@@ -127,7 +126,7 @@ func (r *Push) Run(params PushParams) error {
 		var fail error
 		commitID, fail = model.CommitInitial(model.HostPlatform, lang, langVersion)
 		if fail != nil {
-			return locale.WrapError(fail.ToError(), "push_project_init_err", "Failed to initialize project {{.V0}}", r.project.Namespace().String())
+			return locale.WrapError(fail, "push_project_init_err", "Failed to initialize project {{.V0}}", r.project.Namespace().String())
 		}
 	}
 
@@ -155,7 +154,7 @@ func (r *Push) languageForProject(pj *project.Project) (*language.Supported, str
 	if pj.CommitID() != "" {
 		lang, fail := model.FetchLanguageForCommit(pj.CommitUUID())
 		if fail != nil {
-			return nil, "", errs.Wrap(fail.ToError(), "Failed to retrieve language information for headless commit.")
+			return nil, "", errs.Wrap(fail, "Failed to retrieve language information for headless commit.")
 		}
 
 		l, err := language.MakeByNameAndVersion(lang.Name, lang.Version)

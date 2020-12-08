@@ -8,8 +8,6 @@ import (
 	"os/exec"
 	"os/user"
 	"path/filepath"
-
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/osutils"

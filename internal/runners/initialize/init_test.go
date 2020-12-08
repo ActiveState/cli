@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
@@ -39,7 +38,7 @@ func TestInitialize_Run(t *testing.T) {
 	tempDirWithConfig := fileutils.Join(fileutils.TempDirUnsafe(), "withConfig")
 	fail := fileutils.Mkdir(tempDirWithConfig)
 	if fail != nil {
-		panic(fmt.Sprintf("Cannot create dir: %v", fail.ToError()))
+		panic(fmt.Sprintf("Cannot create dir: %v", fail))
 	}
 	fileutils.WriteFile(fileutils.Join(tempDirWithConfig, constants.ConfigFileName),
 		[]byte("project: https://platform.activestate.com/owner/name"))
@@ -47,7 +46,7 @@ func TestInitialize_Run(t *testing.T) {
 	tempDirWithFile := fileutils.Join(fileutils.TempDirUnsafe(), "withFile")
 	fail = fileutils.Mkdir(tempDirWithConfig)
 	if fail != nil {
-		panic(fmt.Sprintf("Cannot create dir: %v", fail.ToError()))
+		panic(fmt.Sprintf("Cannot create dir: %v", fail))
 	}
 	fileutils.WriteFile(fileutils.Join(tempDirWithFile, "bogus"), []byte(""))
 

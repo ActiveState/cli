@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/environment"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -24,7 +23,6 @@ type ProjectTestSuite struct {
 }
 
 func (suite *ProjectTestSuite) BeforeTest(suiteName, testName string) {
-	failures.ResetHandled()
 	projectfile.Reset()
 
 	// support test projectfile access
@@ -49,7 +47,7 @@ func (suite *ProjectTestSuite) TestGet() {
 
 func (suite *ProjectTestSuite) TestGetSafe() {
 	val, fail := project.GetSafe()
-	suite.NoError(fail.ToError(), "Run without failure")
+	suite.NoError(fail, "Run without failure")
 	suite.NotNil(val, "Config should be set")
 }
 
@@ -276,7 +274,7 @@ func (suite *ProjectTestSuite) TestConstants() {
 
 func (suite *ProjectTestSuite) TestSecrets() {
 	prj, fail := project.GetSafe()
-	suite.NoError(fail.ToError(), "Run without failure")
+	suite.NoError(fail, "Run without failure")
 	secrets := prj.Secrets()
 	suite.Len(secrets, 2)
 

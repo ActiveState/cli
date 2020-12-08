@@ -9,10 +9,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/suite"
+
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/stretchr/testify/suite"
 )
 
 type ShimIntegrationTestSuite struct {
@@ -41,7 +42,7 @@ func (suite *ShimIntegrationTestSuite) TestShim_Environment() {
 
 	testScript := filepath.Join(filename)
 	fail := fileutils.WriteFile(testScript, []byte(scriptBlock))
-	suite.Require().NoError(fail.ToError())
+	suite.Require().NoError(fail)
 
 	err := os.Chmod(testScript, 0777)
 	suite.Require().NoError(err)
@@ -72,7 +73,7 @@ func (suite *ShimIntegrationTestSuite) TestShim_ExitCode() {
 
 	testScript := filepath.Join(filename)
 	fail := fileutils.WriteFile(testScript, []byte(scriptBlock))
-	suite.Require().NoError(fail.ToError())
+	suite.Require().NoError(fail)
 
 	err := os.Chmod(testScript, 0777)
 	suite.Require().NoError(err)
@@ -111,7 +112,7 @@ echo "Number of arguments: $#"
 
 	testScript := filepath.Join(filename)
 	fail := fileutils.WriteFile(testScript, []byte(scriptBlock))
-	suite.Require().NoError(fail.ToError())
+	suite.Require().NoError(fail)
 
 	err := os.Chmod(testScript, 0777)
 	suite.Require().NoError(err)
@@ -154,7 +155,7 @@ echo "Hello $name!"
 
 	testScript := filepath.Join(filename)
 	fail := fileutils.WriteFile(testScript, []byte(scriptBlock))
-	suite.Require().NoError(fail.ToError())
+	suite.Require().NoError(fail)
 
 	err := os.Chmod(testScript, 0777)
 	suite.Require().NoError(err)
@@ -181,7 +182,7 @@ func (suite *ShimIntegrationTestSuite) TestShim_SystemPython() {
 
 	testScript := filepath.Join(fmt.Sprintf("%s/%s.py", ts.Dirs.Work, suite.T().Name()))
 	fail := fileutils.WriteFile(testScript, []byte(scriptBlock))
-	suite.Require().NoError(fail.ToError())
+	suite.Require().NoError(fail)
 
 	cp := ts.Spawn("shim", "--", "python3", testScript)
 	cp.Expect("Hello World!")
@@ -202,7 +203,7 @@ func (suite *ShimIntegrationTestSuite) TestShim_NoDoubleDash() {
 
 	testScript := filepath.Join(fmt.Sprintf("%s/%s.py", ts.Dirs.Work, suite.T().Name()))
 	fail := fileutils.WriteFile(testScript, []byte(scriptBlock))
-	suite.Require().NoError(fail.ToError())
+	suite.Require().NoError(fail)
 
 	cp := ts.Spawn("shim", "python3", testScript)
 	cp.Expect("Hello World!")

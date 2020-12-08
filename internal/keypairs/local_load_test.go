@@ -18,9 +18,9 @@ type KeypairLocalLoadTestSuite struct {
 }
 
 func (suite *KeypairLocalLoadTestSuite) TestNoKeyFileFound() {
-	kp, failure := keypairs.Load("test-no-such")
+	kp, err := keypairs.Load("test-no-such")
 	suite.Nil(kp)
-	suite.Truef(failure.Type.Matches(keypairs.FailLoadNotFound), "unexpected failure type: %v", failure)
+	suite.Error(err)
 }
 
 func (suite *KeypairLocalLoadTestSuite) assertTooPermissive(fileMode os.FileMode) {
@@ -29,10 +29,10 @@ func (suite *KeypairLocalLoadTestSuite) assertTooPermissive(fileMode os.FileMode
 	defer osutil.RemoveConfigFile(tmpKeyName + ".key")
 	suite.Require().NoError(keyFile.Close())
 
-	kp, failure := keypairs.Load(tmpKeyName)
+	kp, err := keypairs.Load(tmpKeyName)
 	suite.Nil(kp)
-	suite.Require().NotNil(failure)
-	suite.Truef(failure.Type.Matches(keypairs.FailLoadFileTooPermissive), "unexpected failure type: %v", failure)
+	suite.Require().NotNil(err)
+	suite.Error(err)
 }
 
 func (suite *KeypairLocalLoadTestSuite) TestFileFound_PermsTooPermissive() {
@@ -53,10 +53,9 @@ func (suite *KeypairLocalLoadTestSuite) TestFileFound_KeypairParseError() {
 	keyFile.WriteString("this will never parse")
 	suite.Require().NoError(keyFile.Close())
 
-	kp, failure := keypairs.Load(keyName)
+	kp, err := keypairs.Load(keyName)
 	suite.Nil(kp)
-	suite.Require().NotNil(failure)
-	suite.Truef(failure.Type.Matches(keypairs.FailKeypairParse), "unexpected failure type: %v", failure)
+	suite.Error(err)
 }
 
 func (suite *KeypairLocalLoadTestSuite) TestFileFound_EncryptedKeypairParseFailure() {
@@ -67,10 +66,9 @@ func (suite *KeypairLocalLoadTestSuite) TestFileFound_EncryptedKeypairParseFailu
 	keyFile.WriteString(suite.readTestFile("test-keypair-encrypted.key"))
 	suite.Require().NoError(keyFile.Close())
 
-	kp, failure := keypairs.Load(keyName)
+	kp, err := keypairs.Load(keyName)
 	suite.Nil(kp)
-	suite.Require().NotNil(failure)
-	suite.Truef(failure.Type.Matches(keypairs.FailKeypairPassphrase), "unexpected failure type: %v", failure)
+	suite.Error(err)
 }
 
 func (suite *KeypairLocalLoadTestSuite) TestFileFound_UnencryptedKeypairParseSuccess() {
@@ -81,8 +79,8 @@ func (suite *KeypairLocalLoadTestSuite) TestFileFound_UnencryptedKeypairParseSuc
 	keyFile.WriteString(suite.readTestFile("test-keypair.key"))
 	suite.Require().NoError(keyFile.Close())
 
-	kp, failure := keypairs.Load(keyName)
-	suite.Require().Nil(failure)
+	kp, err := keypairs.Load(keyName)
+	suite.Error(err)
 	suite.NotNil(kp)
 }
 
@@ -94,8 +92,8 @@ func (suite *KeypairLocalLoadTestSuite) TestFileFound_WithDefaults() {
 	keyFile.WriteString(suite.readTestFile("test-keypair.key"))
 	suite.Require().NoError(keyFile.Close())
 
-	kp, failure := keypairs.LoadWithDefaults()
-	suite.Require().Nil(failure)
+	kp, err := keypairs.LoadWithDefaults()
+	suite.Require().Nil(err)
 	suite.NotNil(kp)
 }
 
@@ -103,17 +101,17 @@ func (suite *KeypairLocalLoadTestSuite) TestLoadWithDefaults_Override() {
 	os.Setenv(constants.PrivateKeyEnvVarName, "nonce")
 	defer os.Unsetenv(constants.PrivateKeyEnvVarName)
 
-	kp, fail := keypairs.LoadWithDefaults()
-	suite.Truef(fail.Type.Matches(keypairs.FailKeypairParse), "unexpected failure type: %v", fail)
+	kp, err := keypairs.LoadWithDefaults()
+	suite.Error(err)
 	suite.Nil(kp)
 
-	kprsa, fail := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
-	suite.Require().NoError(fail.ToError())
+	kprsa, err := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
+	suite.Require().NoError(err)
 
 	os.Setenv(constants.PrivateKeyEnvVarName, kprsa.EncodePrivateKey())
 
-	kp, fail = keypairs.LoadWithDefaults()
-	suite.Require().NoError(fail.ToError())
+	kp, err = keypairs.LoadWithDefaults()
+	suite.Require().NoError(err)
 	suite.NotNil(kp)
 }
 

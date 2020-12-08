@@ -212,14 +212,14 @@ func (suite *DeployIntegrationTestSuite) TestDeployInstall() {
 	targetDir := filepath.Join(ts.Dirs.Work, "target")
 	if fileutils.TargetExists(targetDir) {
 		isEmpty, fail := fileutils.IsEmptyDir(targetDir)
-		suite.Require().NoError(fail.ToError())
+		suite.Require().NoError(fail)
 		suite.True(isEmpty, "Target dir should be empty before we start")
 	}
 
 	suite.InstallAndAssert(ts)
 
 	isEmpty, fail := fileutils.IsEmptyDir(targetDir)
-	suite.Require().NoError(fail.ToError())
+	suite.Require().NoError(fail)
 	suite.False(isEmpty, "Target dir should have artifacts written to it")
 }
 

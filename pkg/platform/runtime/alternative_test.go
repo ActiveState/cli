@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/progress/mock"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
@@ -72,16 +71,16 @@ func (suite *AlternativeRuntimeTestSuite) mockTemporaryRuntimeDirs(defs []*envde
 
 	for i, def := range defs {
 		tmpRuntimeDir := filepath.Join(tmpRuntimeBase, fmt.Sprintf("%02d", i))
-		fail := fileutils.MkdirUnlessExists(tmpRuntimeDir)
-		suite.Require().NoError(fail.ToError())
+		err := fileutils.MkdirUnlessExists(tmpRuntimeDir)
+		suite.Require().NoError(err)
 
 		// create runtime.json
-		err := def.WriteFile(filepath.Join(tmpRuntimeDir, constants.RuntimeDefinitionFilename))
+		err = def.WriteFile(filepath.Join(tmpRuntimeDir, constants.RuntimeDefinitionFilename))
 		suite.Require().NoError(err)
 
 		// create one installation file
-		fail = fileutils.MkdirUnlessExists(filepath.Join(tmpRuntimeDir, "installdir", "bin"))
-		suite.Require().NoError(fail.ToError())
+		err = fileutils.MkdirUnlessExists(filepath.Join(tmpRuntimeDir, "installdir", "bin"))
+		suite.Require().NoError(err)
 
 		err = ioutil.WriteFile(filepath.Join(tmpRuntimeDir, "installdir", "bin", fmt.Sprintf("executable%02d", i)), []byte{}, 0555)
 		suite.Require().NoError(err)
@@ -94,10 +93,10 @@ func (suite *AlternativeRuntimeTestSuite) mockTemporaryRuntimeDirs(defs []*envde
 func (suite *AlternativeRuntimeTestSuite) Test_GetEnv() {
 	numArtifacts := 2
 	artifacts := mockFetchArtifactsResult(withRegularArtifacts(numArtifacts))
-	ar, fail := runtime.NewAlternativeInstall(suite.cacheDir, artifacts.Artifacts, artifacts.RecipeID)
-	suite.Require().NoError(fail.ToError())
+	ar, err := runtime.NewAlternativeInstall(suite.cacheDir, artifacts.Artifacts, artifacts.RecipeID)
+	suite.Require().NoError(err)
 
-	suite.Require().NoError(fail.ToError())
+	suite.Require().NoError(err)
 	envDefs, merged := suite.mockEnvDefs(numArtifacts)
 
 	runtimeDirs := suite.mockTemporaryRuntimeDirs(envDefs)
@@ -105,7 +104,7 @@ func (suite *AlternativeRuntimeTestSuite) Test_GetEnv() {
 	for i := numArtifacts - 1; i >= 0; i-- {
 		counter := mock.NewMockIncrementer()
 		fail := ar.PostUnpackArtifact(artifacts.Artifacts[i], runtimeDirs[i], "", func() { counter.Increment() })
-		suite.Assert().NoError(fail.ToError())
+		suite.Assert().NoError(fail)
 		suite.Assert().Equal(1, counter.Count, "one executable moved to final installation directory")
 	}
 
@@ -149,9 +148,8 @@ func (suite *AlternativeRuntimeTestSuite) Test_InitializationFailure() {
 	for _, tc := range cases {
 		suite.Run(tc.name, func() {
 			artifactsResult := mockFetchArtifactsResult(tc.option)
-			_, fail := runtime.NewAlternativeInstall(suite.cacheDir, artifactsResult.Artifacts, artifactsResult.RecipeID)
-			suite.Require().Error(fail.ToError())
-			suite.Assert().Equal(runtime.FailNoValidArtifact, fail.Type)
+			_, err := runtime.NewAlternativeInstall(suite.cacheDir, artifactsResult.Artifacts, artifactsResult.RecipeID)
+			suite.Error(err, runtime.ErrInvalidArtifact)
 		})
 
 	}
@@ -159,21 +157,21 @@ func (suite *AlternativeRuntimeTestSuite) Test_InitializationFailure() {
 
 func (suite *AlternativeRuntimeTestSuite) Test_PreInstall() {
 	cases := []struct {
-		name            string
-		prepFunc        func(installDir string)
-		expectedFailure errorType
+		name          string
+		prepFunc      func(installDir string)
+		expectedError error
 	}{
 		{"InstallationDirectoryIsFile", func(installDir string) {
 			baseDir := filepath.Dir(installDir)
-			fail := fileutils.MkdirUnlessExists(baseDir)
-			suite.Require().NoError(fail.ToError())
-			err := ioutil.WriteFile(installDir, []byte{}, 0666)
+			err := fileutils.MkdirUnlessExists(baseDir)
 			suite.Require().NoError(err)
-		}, runtime.FailInstallDirInvalid},
+			err = ioutil.WriteFile(installDir, []byte{}, 0666)
+			suite.Require().NoError(err)
+		}, runtime.ErrInstallDirInvalid},
 		{"InstallationDirectoryIsNotEmpty", func(installDir string) {
-			fail := fileutils.MkdirUnlessExists(installDir)
-			suite.Require().NoError(fail.ToError())
-			err := ioutil.WriteFile(filepath.Join(installDir, "dummy"), []byte{}, 0666)
+			err := fileutils.MkdirUnlessExists(installDir)
+			suite.Require().NoError(err)
+			err = ioutil.WriteFile(filepath.Join(installDir, "dummy"), []byte{}, 0666)
 			suite.Require().NoError(err)
 		}, nil},
 		{"InstallationDirectoryIsOkay", func(installDir string) {}, nil},
@@ -182,20 +180,19 @@ func (suite *AlternativeRuntimeTestSuite) Test_PreInstall() {
 	for _, tc := range cases {
 		suite.Run(tc.name, func() {
 			artifactsRes := mockFetchArtifactsResult(withRegularArtifacts(2))
-			ar, fail := runtime.NewAlternativeInstall(suite.cacheDir, artifactsRes.Artifacts, artifactsRes.RecipeID)
-			suite.Require().NoError(fail.ToError())
+			ar, err := runtime.NewAlternativeInstall(suite.cacheDir, artifactsRes.Artifacts, artifactsRes.RecipeID)
+			suite.Require().NoError(err)
 
 			os.RemoveAll(suite.cacheDir)
 			defer os.RemoveAll(suite.cacheDir)
 
 			tc.prepFunc(suite.cacheDir)
-			fail = ar.PreInstall()
-			if tc.expectedFailure == nil {
-				suite.Require().NoError(fail.ToError())
-				return
+			err = ar.PreInstall()
+			if tc.expectedError == nil {
+				suite.Require().NoError(err)
+			} else {
+				suite.ErrorIs(err, tc.expectedError)
 			}
-			suite.Require().Error(fail.ToError())
-			suite.Equal(tc.expectedFailure, fail.Type)
 		})
 	}
 }

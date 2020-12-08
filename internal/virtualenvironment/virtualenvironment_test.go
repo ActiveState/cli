@@ -86,5 +86,5 @@ languages:
 
 	venv := New(nil)
 	fail := venv.Activate()
-	require.NoError(t, fail.ToError(), "Should activate")
+	require.NoError(t, fail, "Should activate")
 }

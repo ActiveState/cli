@@ -2,8 +2,6 @@ package secrets_test
 
 import (
 	"testing"
-
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/secrets"
 	secrets_models "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"

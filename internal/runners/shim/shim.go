@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -53,7 +52,7 @@ func (s *Shim) Run(params *Params, args ...string) error {
 		var fail error
 		s.proj, fail = project.FromPath(params.Path)
 		if fail != nil {
-			return locale.WrapInputError(fail.ToError(), "shim_no_project_at_path", "Could not find project file at {{.V0}}", params.Path)
+			return locale.WrapInputError(fail, "shim_no_project_at_path", "Could not find project file at {{.V0}}", params.Path)
 		}
 	}
 	if s.proj == nil {
@@ -71,7 +70,7 @@ func (s *Shim) Run(params *Params, args ...string) error {
 	venv := virtualenvironment.New(runtime)
 	if fail := venv.Activate(); fail != nil {
 		logging.Errorf("Unable to activate state: %s", fail.Error())
-		return locale.WrapError(fail.ToError(), "err_shim_activate", "Could not activate environment for shim command")
+		return locale.WrapError(fail, "err_shim_activate", "Could not activate environment for shim command")
 	}
 
 	env, err := venv.GetEnv(true, filepath.Dir(s.proj.Source().Path()))
@@ -97,7 +96,7 @@ func (s *Shim) Run(params *Params, args ...string) error {
 
 	sf, fail := scriptfile.New(lang, "state-shim", scriptArgs)
 	if fail != nil {
-		return locale.WrapError(fail.ToError(), "err_shim_create_scriptfile", "Could not generate script")
+		return locale.WrapError(fail, "err_shim_create_scriptfile", "Could not generate script")
 	}
 
 	return s.subshell.Run(sf.Filename(), args[1:]...)

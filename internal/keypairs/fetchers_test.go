@@ -4,15 +4,15 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/failures"
+	"github.com/go-openapi/strfmt"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
 	apiModels "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
-	secrets_models "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
-	"github.com/go-openapi/strfmt"
-	"github.com/stretchr/testify/suite"
+	"github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 )
 
 type KeypairFetcherTestSuite struct {
@@ -22,7 +22,6 @@ type KeypairFetcherTestSuite struct {
 }
 
 func (suite *KeypairFetcherTestSuite) BeforeTest(suiteName, testName string) {
-	failures.ResetHandled()
 	secretsClient := secretsapi_test.NewDefaultTestClient("bearing123")
 	suite.Require().NotNil(secretsClient)
 	suite.secretsClient = secretsClient
@@ -36,9 +35,9 @@ func (suite *KeypairFetcherTestSuite) AfterTest(suiteName, testName string) {
 
 func (suite *KeypairFetcherTestSuite) TestFetch_NotFound() {
 	httpmock.RegisterWithCode("GET", "/keypair", 404)
-	kp, failure := keypairs.Fetch(suite.secretsClient, "")
+	kp, err := keypairs.Fetch(suite.secretsClient, "")
 	suite.Nil(kp)
-	suite.True(failure.Type.Matches(secretsapi.FailNotFound), "Did not expect: %s", failure.Type.Name)
+	suite.Error(err)
 }
 
 func (suite *KeypairFetcherTestSuite) TestFetch_ErrorParsing() {
@@ -46,39 +45,39 @@ func (suite *KeypairFetcherTestSuite) TestFetch_ErrorParsing() {
 		return 200, "keypair-unparseable"
 	})
 
-	kp, failure := keypairs.Fetch(suite.secretsClient, "")
+	kp, err := keypairs.Fetch(suite.secretsClient, "")
 	suite.Nil(kp)
-	suite.Truef(failure.Type.Matches(keypairs.FailKeypairParse), "Did not expect: %s", failure.Type.Name)
+	suite.Error(err)
 }
 
 func (suite *KeypairFetcherTestSuite) TestFetch_Success() {
 	httpmock.RegisterWithCode("GET", "/keypair", 200)
-	kp, failure := keypairs.Fetch(suite.secretsClient, "")
-	suite.Require().Nil(failure)
+	kp, err := keypairs.Fetch(suite.secretsClient, "")
+	suite.Require().Nil(err)
 	suite.IsType(&keypairs.RSAKeypair{}, kp)
 }
 
 func (suite *KeypairFetcherTestSuite) TestFetchRaw_NotFound() {
 	httpmock.RegisterWithCode("GET", "/keypair", 404)
-	kp, failure := keypairs.FetchRaw(suite.secretsClient)
+	kp, err := keypairs.FetchRaw(suite.secretsClient)
 	suite.Nil(kp)
-	suite.True(failure.Type.Matches(secretsapi.FailNotFound), "Did not expect: %s", failure.Type.Name)
+	suite.Error(err)
 }
 
 func (suite *KeypairFetcherTestSuite) TestFetchRaw_Success() {
 	httpmock.RegisterWithCode("GET", "/keypair", 200)
-	kp, failure := keypairs.FetchRaw(suite.secretsClient)
-	suite.Require().Nil(failure)
+	kp, err := keypairs.FetchRaw(suite.secretsClient)
+	suite.Require().Nil(err)
 	suite.IsType(&secrets_models.Keypair{}, kp)
 }
 
 func (suite *KeypairFetcherTestSuite) TestFetchPublicKey_NotFound() {
 	httpmock.RegisterWithCode("GET", "/publickeys/00020002-0002-0002-0002-000200020002", 404)
-	kp, failure := keypairs.FetchPublicKey(suite.secretsClient, &apiModels.User{
+	kp, err := keypairs.FetchPublicKey(suite.secretsClient, &apiModels.User{
 		UserID: strfmt.UUID("00020002-0002-0002-0002-000200020002"),
 	})
 	suite.Nil(kp)
-	suite.True(failure.Type.Matches(secretsapi.FailNotFound), "Did not expect: %s", failure.Type.Name)
+	suite.Error(err)
 }
 
 func (suite *KeypairFetcherTestSuite) TestFetchPublicKey_ErrorParsing() {
@@ -86,19 +85,19 @@ func (suite *KeypairFetcherTestSuite) TestFetchPublicKey_ErrorParsing() {
 		return 200, "publickeys/unparseable"
 	})
 
-	key, failure := keypairs.FetchPublicKey(suite.secretsClient, &apiModels.User{
+	key, err := keypairs.FetchPublicKey(suite.secretsClient, &apiModels.User{
 		UserID: strfmt.UUID("00020002-0002-0002-0002-000200020002"),
 	})
 	suite.Nil(key)
-	suite.True(failure.Type.Matches(keypairs.FailPublicKeyParse), "Did not expect: %s", failure.Type.Name)
+	suite.Error(err)
 }
 
 func (suite *KeypairFetcherTestSuite) TestFetchPublicKey_Success() {
 	httpmock.RegisterWithCode("GET", "/publickeys/00020002-0002-0002-0002-000200020002", 200)
-	kp, failure := keypairs.FetchPublicKey(suite.secretsClient, &apiModels.User{
+	kp, err := keypairs.FetchPublicKey(suite.secretsClient, &apiModels.User{
 		UserID: strfmt.UUID("00020002-0002-0002-0002-000200020002"),
 	})
-	suite.Require().Nil(failure)
+	suite.Require().Nil(err)
 	suite.IsType(&keypairs.RSAPublicKey{}, kp)
 }
 

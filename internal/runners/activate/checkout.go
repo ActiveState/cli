@@ -33,14 +33,14 @@ func (r *Checkout) Run(ns *project.Namespaced, targetPath string) error {
 
 	pj, fail := model.FetchProjectByName(ns.Owner, ns.Project)
 	if fail != nil {
-		return fail.ToError()
+		return fail
 	}
 
 	commitID := ns.CommitID
 	if commitID == nil {
 		branch, fail := model.DefaultBranchForProject(pj)
 		if fail != nil {
-			return fail.ToError()
+			return fail
 		}
 		commitID = branch.CommitID
 	}
@@ -69,7 +69,7 @@ func (r *Checkout) Run(ns *project.Namespaced, targetPath string) error {
 			Language:  language,
 		})
 		if fail != nil {
-			return fail.ToError()
+			return fail
 		}
 	}
 
@@ -79,7 +79,7 @@ func (r *Checkout) Run(ns *project.Namespaced, targetPath string) error {
 func getLanguage(owner, project string) (string, error) {
 	modelLanguage, fail := model.DefaultLanguageForProject(owner, project)
 	if fail != nil {
-		return "", fail.ToError()
+		return "", fail
 	}
 
 	lang, err := language.MakeByNameAndVersion(modelLanguage.Name, modelLanguage.Version)

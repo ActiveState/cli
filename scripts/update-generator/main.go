@@ -59,7 +59,7 @@ func createUpdate(path string, platform string) {
 	tempPath := filepath.Join(tempDir, platform+binExt)
 	fail := fileutils.CopyFile(path, tempPath)
 	if fail != nil {
-		panic(errors.Wrap(fail.ToError(), "Copy failed"))
+		panic(errors.Wrap(fail, "Copy failed"))
 	}
 
 	// Permissions may be lost due to the file copy, so ensure it's still executable
@@ -67,7 +67,7 @@ func createUpdate(path string, platform string) {
 	permissions.SetUserExecute(true)
 	err = permbits.Chmod(tempPath, permissions)
 	if err != nil {
-		panic(errors.Wrap(fail.ToError(), "Could not make file executable"))
+		panic(errors.Wrap(fail, "Could not make file executable"))
 	}
 
 	targetDir := filepath.Join(genDir, branch, version)
@@ -142,7 +142,7 @@ func copy(path, target string) {
 	fmt.Printf("Copying %s to %s\n", path, target)
 	fail := fileutils.CopyFile(path, target)
 	if fail != nil {
-		panic(errors.Wrap(fail.ToError(), "Copy failed"))
+		panic(errors.Wrap(fail, "Copy failed"))
 	}
 }
 

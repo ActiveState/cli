@@ -6,8 +6,6 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/viper"
-
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"

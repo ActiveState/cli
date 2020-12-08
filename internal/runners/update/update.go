@@ -125,7 +125,7 @@ func confirmUpdateLock() error {
 	prom := prompt.New()
 	confirmed, fail := prom.Confirm(locale.T("confirm"), msg, false)
 	if fail != nil {
-		return fail.ToError()
+		return fail
 	}
 
 	if !confirmed {

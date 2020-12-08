@@ -12,7 +12,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	promptMock "github.com/ActiveState/cli/internal/prompt/mock"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
@@ -105,7 +104,7 @@ func TestRequireAuthenticationLoginFail(t *testing.T) {
 	fail = authlet.RequireAuthentication("", outputhelper.NewCatcher(), pmock)
 
 	assert.Nil(t, authentication.ClientAuth(), "Not Authenticated")
-	require.Error(t, fail.ToError(), "Failure occurred")
+	require.Error(t, fail, "Failure occurred")
 	assert.Equal(t, authlet.FailNotAuthenticated.Name, fail.Type.Name)
 }
 

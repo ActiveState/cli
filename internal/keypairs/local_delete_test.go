@@ -55,9 +55,9 @@ func (suite *KeypairLocalLoadTestSuite) TestDeleteWithDefaults_Override() {
 	os.Setenv(constants.PrivateKeyEnvVarName, "some val")
 	defer os.Unsetenv(constants.PrivateKeyEnvVarName)
 
-	fail := keypairs.DeleteWithDefaults()
-	suite.Require().NotNil(fail)
-	suite.Truef(fail.Type.Matches(keypairs.FailHasOverride), "unexpected failure type: %v", fail)
+	err := keypairs.DeleteWithDefaults()
+	suite.Require().NotNil(err)
+	suite.Error(err)
 }
 
 func Test_KeypairLocalDelete_TestSuite(t *testing.T) {

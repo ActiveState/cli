@@ -86,7 +86,7 @@ update_hash_mismatch:
 err_project_file_unavailable:
   other: Could not load the project file
 err_project_unavailable:
-  other: Could not load the project
+  other: "Could not load the project: {{.V0}}"
 err_failure_test:
   other: one {{.V0}} three {{.V1}}
 distro_obtaining:
@@ -585,7 +585,7 @@ secrets_err_encrypting:
 secrets_err_decrypting:
   other: "Error decrypting a user's Secret: [NOTICE]{{.V0}}[/RESET]"
 secrets_err_save:
-  other: Error updating user's Secrets
+  other: "Error updating user's Secrets: {{.V0}}"
 secrets_err_base64_decoding:
   other: Error base64 decoding variable value
 secrets_err_no_publickey_found:
@@ -965,7 +965,7 @@ fileutils_err_amend_file:
   other: "Could not edit file: [NOTICE]{{.V0}}[/RESET]"
 err_auth_empty_token:
   other: The provided token is empty
-fail_prompt_bad_flag:
+err_prompt_bad_flag:
   other: Could not validate input due to an unexpected flag, please contact support if this problem persists
 err_invalid_project:
   other: Your activestate.yaml is missing the 'project' field.

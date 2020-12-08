@@ -4,8 +4,6 @@ import (
 	"net/url"
 
 	"github.com/go-openapi/strfmt"
-
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api"

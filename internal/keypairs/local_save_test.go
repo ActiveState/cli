@@ -54,12 +54,12 @@ func (suite *KeypairLocalLoadTestSuite) TestSaveWithDefaults_Override() {
 	os.Setenv(constants.PrivateKeyEnvVarName, "some val")
 	defer os.Unsetenv(constants.PrivateKeyEnvVarName)
 
-	kp, fail := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
-	suite.Require().Nil(fail)
+	kp, err := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
+	suite.Require().Nil(err)
 
-	fail = keypairs.SaveWithDefaults(kp)
-	suite.Require().NotNil(fail)
-	suite.Truef(fail.Type.Matches(keypairs.FailHasOverride), "unexpected failure type: %v", fail)
+	err = keypairs.SaveWithDefaults(kp)
+	suite.Require().NotNil(err)
+	suite.Error(err)
 }
 
 func (suite *KeypairLocalSaveTestSuite) statConfigDirFile(keyFile string) os.FileInfo {

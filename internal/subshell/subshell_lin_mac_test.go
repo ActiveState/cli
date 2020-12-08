@@ -32,7 +32,7 @@ func TestRunCommandNoProjectEnv(t *testing.T) {
 
 	data := []byte("#!/usr/bin/env bash\necho $ACTIVESTATE_PROJECT")
 	filename, fail := fileutils.WriteTempFile("", "testRunCommand", data, 0700)
-	require.NoError(t, fail.ToError())
+	require.NoError(t, fail)
 	defer os.Remove(filename)
 
 	out, err := osutil.CaptureStdout(func() {
@@ -61,7 +61,7 @@ func TestRunCommandError(t *testing.T) {
 
 	data := []byte("#!/usr/bin/env bash\nexit 2")
 	filename, fail := fileutils.WriteTempFile("", "testRunCommand", data, 0700)
-	require.NoError(t, fail.ToError())
+	require.NoError(t, fail)
 	defer os.Remove(filename)
 
 	err = subs.Run(filename)

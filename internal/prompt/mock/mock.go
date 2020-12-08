@@ -2,8 +2,6 @@ package mock
 
 import (
 	"reflect"
-
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/prompt"
 
 	tmock "github.com/stretchr/testify/mock"
