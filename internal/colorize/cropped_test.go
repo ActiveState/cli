@@ -13,7 +13,7 @@ func Test_GetCroppedText(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want []CroppedLine
+		want CroppedLines
 	}{
 		{
 			"No split",
