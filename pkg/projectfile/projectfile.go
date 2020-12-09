@@ -654,7 +654,7 @@ func removeTemporaryLanguage(data []byte) ([]byte, error) {
 
 	startLoc := languageLine.FindIndex(data)
 	if startLoc == nil {
-		return data, nil
+		return data, locale.NewInputError("remove_language_not_found", "Expected language field in activestate.yaml.")
 	}
 	endLoc := firstNonIndentedLine.FindIndex(data[startLoc[1]:])
 	if endLoc == nil {
