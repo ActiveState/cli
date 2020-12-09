@@ -180,7 +180,7 @@ func (s *Show) Run(params Params) error {
 		LastCommit   string `locale:"state_show_details_latest_commit,Latest Commit"`
 	}
 
-	data := output.NewFormatter(outputData).WithFormat(output.PlainFormatName, output.NewOutputStacks([]interface{}{
+	data := output.NewFormatter(outputData).WithFormat(output.PlainFormatName, output.NewStackedOutput([]interface{}{
 		"Here are the details of your runtime environment.",
 		runtimeDetails{
 			Name:         projectName,
@@ -213,7 +213,7 @@ func formatScripts(scripts map[string]string) []interface{} {
 	for k, v := range scripts {
 		res = append(res, k)
 		if v != "" {
-			res = append(res, output.NewPrependedOutput(v, "  └─ "))
+			res = append(res, output.NewPrependedSliceItem(v, "  └─ "))
 		}
 	}
 	return res

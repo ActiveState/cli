@@ -23,6 +23,42 @@ import (
 	"github.com/ActiveState/cli/internal/termutils"
 )
 
+// PrependedSliceItem wraps an output in a slice and prepends it with a custom string
+type PrependedSliceItem struct {
+	v       interface{}
+	prepend string
+}
+
+// NewPrependedSliceItem wraps an output item in a slice and prepend its output with a custom string instead of a bullet point
+func NewPrependedSliceItem(v interface{}, prepend string) PrependedSliceItem {
+	return PrependedSliceItem{v, prepend}
+}
+
+// PrependString returns the prepended string
+func (po PrependedSliceItem) PrependString() string {
+	return po.prepend
+}
+
+// Value returns the wrapped value
+func (po PrependedSliceItem) Value() interface{} {
+	return po.v
+}
+
+// StackedOutput wraps a slice and ensures that all elements are interpreted individually
+type StackedOutput struct {
+	v []interface{}
+}
+
+// NewStackedOutput wraps a slice and ensures that all elements are interpreted individually but not prepended with bullet points
+func NewStackedOutput(v []interface{}) *StackedOutput {
+	return &StackedOutput{v}
+}
+
+// Stacks returns the wrapped slice
+func (s *StackedOutput) Stacks() []interface{} {
+	return s.v
+}
+
 // PlainOpts define available tokens for setting plain output options.
 type PlainOpts string
 
@@ -107,18 +143,6 @@ func wordWrap(text string) string {
 const nilText = "<nil>"
 
 var byteType = reflect.TypeOf([]byte(nil))
-
-type stacks struct {
-	v []interface{}
-}
-
-func NewOutputStacks(v []interface{}) *stacks {
-	return &stacks{v}
-}
-
-func (s *stacks) Stacks() []interface{} {
-	return s.v
-}
 
 // sprint will marshal and return the given value as a string
 func sprint(value interface{}) (string, error) {
@@ -207,23 +231,6 @@ func sprintStruct(value interface{}) (string, error) {
 	}
 
 	return strings.Join(result, "\n"), nil
-}
-
-type PrependedOutput struct {
-	v       interface{}
-	prepend string
-}
-
-func NewPrependedOutput(v interface{}, prepend string) PrependedOutput {
-	return PrependedOutput{v, prepend}
-}
-
-func (po PrependedOutput) PrependString() string {
-	return po.prepend
-}
-
-func (po PrependedOutput) Value() interface{} {
-	return po.v
 }
 
 // sprintSlice will marshal and return the given slice as a string

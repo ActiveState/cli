@@ -69,8 +69,8 @@ func TestPlain_Print(t *testing.T) {
 		},
 		{
 			"stacked strings",
-			args{NewOutputStacks([]interface{}{
-				"block 1", "block 2", NewPrependedOutput("block 3", "- "),
+			args{NewStackedOutput([]interface{}{
+				"block 1", "block 2", NewPrependedSliceItem("block 3", "- "),
 			})},
 			"block 1\nblock 2\n- block 3\n",
 			"",
