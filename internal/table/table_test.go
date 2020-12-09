@@ -5,9 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/ActiveState/cli/internal/mathutils"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestTable_colWidths(t1 *testing.T) {
@@ -146,6 +145,14 @@ func Test_renderRow(t *testing.T) {
 			"  col1      col2      col3    ",
 		},
 		{
+			"No breaks with color codes",
+			args{
+				providedColumns: []string{"[HEADING]col1[/RESET]", "[HEADING]col2[/RESET]", "[HEADING]col3[/RESET]"},
+				colWidths:       []int{10, 10, 10},
+			},
+			"  [HEADING]col1[/RESET]      [HEADING]col2[/RESET]      [HEADING]col3[/RESET]    ",
+		},
+		{
 			"Breaks",
 			args{
 				providedColumns: []string{"col1", "col2", "col3"},
@@ -153,6 +160,15 @@ func Test_renderRow(t *testing.T) {
 			},
 			"  co    co    co  \n" +
 				"  l1    l2    l3  ",
+		},
+		{
+			"Breaks with color codes",
+			args{
+				providedColumns: []string{"[HEADING]col1[/RESET]", "[HEADING]col2[/RESET]", "[HEADING]col3[/RESET]"},
+				colWidths:       []int{6, 6, 6},
+			},
+			"  [HEADING]co    [HEADING]co    [HEADING]co  \n" +
+				"  l1[/RESET]    l2[/RESET]    l3[/RESET]  ",
 		},
 		{
 			"Breaks for multi-byte characters",
@@ -207,7 +223,7 @@ func Test_renderRow(t *testing.T) {
 				colWidths:       []int{8, 8},
 			},
 			"  abcd    abcd  \n" +
-				"          e    \n" +
+				"          e     \n" +
 				"          fgh   ",
 		},
 	}
