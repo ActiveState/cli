@@ -79,6 +79,7 @@ func (f *Plain) Config() *Config {
 	return f.cfg
 }
 
+// write is a little helper that just takes care of marshalling the value and sending it to the requested writer
 func (f *Plain) write(writer io.Writer, value interface{}) {
 	v, err := sprint(value)
 	if err != nil {
