@@ -29,6 +29,10 @@ type PlainOpts string
 const (
 	// SeparateLineOpt requests table output to be printed on a separate line (without columns)
 	SeparateLineOpt PlainOpts = "separateLine"
+	// VerticalTable requests a table be output vertically
+	VerticalTable PlainOpts = "tableVert"
+	// HorizontalTable requests a table be output horizontally (default for slices of structs)
+	HorizontalTable PlainOpts = "tableHoriz"
 	// EmptyNil replaces nil values with the empty string
 	EmptyNil PlainOpts = "emptyNil"
 	// HidePlain hides the field value in table output
@@ -176,6 +180,16 @@ func sprintStruct(value interface{}) (string, error) {
 
 	result := []string{}
 	for _, field := range meta {
+		isHorizTable := funk.Contains(field.opts, string(HorizontalTable))
+		isVertiTable := funk.Contains(field.opts, string(VerticalTable))
+		if isHorizTable || isVertiTable {
+			slice, err := asSlice(field.value)
+			if err != nil {
+				return "", err
+			}
+			return sprintTable(isVertiTable, slice)
+		}
+
 		stringValue, err := sprint(field.value)
 		if err != nil {
 			return "", err
@@ -203,7 +217,7 @@ func sprintSlice(value interface{}) (string, error) {
 	}
 
 	if len(slice) > 0 && isStruct(slice[0]) {
-		return sprintTable(slice)
+		return sprintTable(false, slice)
 	}
 
 	result := []string{}
@@ -251,7 +265,7 @@ func sprintMap(value interface{}) (string, error) {
 }
 
 // sprintTable will marshal and return the given slice of structs as a string, formatted as a table
-func sprintTable(slice []interface{}) (string, error) {
+func sprintTable(vertical bool, slice []interface{}) (string, error) {
 	if len(slice) == 0 {
 		return "", nil
 	}
@@ -307,7 +321,21 @@ func sprintTable(slice []interface{}) (string, error) {
 		}
 	}
 
-	return table.New(headers).AddRow(rows...).Render(), nil
+	t := table.New(vertical, headers)
+	t.AddRow(rows...)
+
+	return t.Render(), nil
+}
+
+func asSlice(val interface{}) ([]interface{}, error) {
+	if !isSlice(val) {
+		typeOf := reflect.TypeOf(val)
+		collection := reflect.MakeSlice(reflect.SliceOf(typeOf), 0, 1)
+		collection = reflect.Append(collection, valueOf(val))
+		val = collection.Interface()
+	}
+
+	return parseSlice(val)
 }
 
 // localizedField is a little helper that will return the localized version of the given string

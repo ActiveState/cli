@@ -22,12 +22,16 @@ type row struct {
 }
 
 type Table struct {
-	headers []string
-	rows    []row
+	vertical bool
+	headers  []string
+	rows     []row
 }
 
-func New(headers []string) *Table {
-	return &Table{headers, []row{}}
+func New(vertical bool, headers []string) *Table {
+	return &Table{
+		vertical: vertical,
+		headers:  headers,
+	}
 }
 
 func (t *Table) AddRow(vs ...[]string) *Table {
