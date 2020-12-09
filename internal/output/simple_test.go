@@ -29,12 +29,12 @@ func TestSimple_Notice(t *testing.T) {
 			outWriter := &bytes.Buffer{}
 			errWriter := &bytes.Buffer{}
 
-			f := Simple{&Config{
+			f := Simple{Plain{&Config{
 				OutWriter:   outWriter,
 				ErrWriter:   errWriter,
 				Colored:     false,
 				Interactive: false,
-			}}
+			}}}
 
 			f.Notice(tt.args.value)
 			assert.Equal(t, tt.expectedOut, outWriter.String(), "Output did not match")
