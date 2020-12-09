@@ -1,61 +1,44 @@
 package colorize
 
-type Entry struct {
+type CroppedLines []CroppedLine
+
+type CroppedLine struct {
 	Line   string
 	Length int
 }
 
-func GetCroppedText(text string, maxLen int) []Entry {
-	var line string // the line we're building, including the color codes
-	var plainTextPosition int
-	var plainTextWritten int
+func GetCroppedText(text []rune, maxLen int) CroppedLines {
+	entries := make([]CroppedLine, 0)
+	colorCodes := colorRx.FindAllStringSubmatchIndex(string(text), -1)
 
-	entries := make([]Entry, 0)
-	colorCodes := colorRx.FindAllStringSubmatchIndex(text, -1)
-	runeText := []rune(text)
+	entry := CroppedLine{}
+	for pos := 0; pos < len(text); pos++ {
+		inColorTag := inRange(pos, colorCodes)
+		amend := text[pos]
+		lineEnd := amend == '\n'
 
-	for plainTextPosition < len(runeText) {
-		// If we reach an index that we recognize (ie. the start of a tag)
-		// then we write the whole tag, otherwise write by rune
-		for _, match := range colorCodes {
-			start, stop := match[0], match[1]
-			if plainTextPosition == start {
-				line += string(runeText[plainTextPosition:stop])
-				plainTextPosition = stop
+		if !lineEnd {
+			entry.Line += string(amend)
+			if !inColorTag {
+				entry.Length++
 			}
 		}
 
-		if plainTextPosition > len(runeText)-1 {
-			entries = append(entries, Entry{line, plainTextWritten})
-			break
+		if !inRange(pos+1, colorCodes) && (entry.Length == maxLen || lineEnd || pos == len(text)-1) {
+			entries = append(entries, entry)
+			entry = CroppedLine{}
 		}
-
-		// Reached end of line
-		if plainTextWritten == maxLen {
-			entries = append(entries, Entry{line, plainTextWritten})
-			plainTextWritten = 0
-			line = ""
-			continue
-		}
-
-		// Text already has line ending, so terminate the line here
-		if runeText[plainTextPosition] == '\n' {
-			plainTextPosition++
-			entries = append(entries, Entry{line, plainTextWritten})
-			plainTextWritten = 0
-			line = ""
-			continue
-		}
-
-		if plainTextPosition == len(runeText)-1 {
-			line += string(runeText[plainTextPosition])
-			entries = append(entries, Entry{line, plainTextWritten + 1})
-		}
-
-		line += string(runeText[plainTextPosition])
-		plainTextPosition++
-		plainTextWritten++
 	}
 
 	return entries
+}
+
+func inRange(pos int, ranges [][]int) bool {
+	for _, intRange := range ranges {
+		start, stop := intRange[0], intRange[1]
+		if pos >= start && pos <= stop-1 {
+			return true
+		}
+	}
+	return false
 }
