@@ -22,15 +22,13 @@ type row struct {
 }
 
 type Table struct {
-	vertical bool
-	headers  []string
-	rows     []row
+	headers []string
+	rows    []row
 }
 
-func New(vertical bool, headers []string) *Table {
+func New(headers []string) *Table {
 	return &Table{
-		vertical: vertical,
-		headers:  headers,
+		headers: headers,
 	}
 }
 
@@ -41,7 +39,18 @@ func (t *Table) AddRow(vs ...[]string) *Table {
 	return t
 }
 
-func (t *Table) Render() string {
+func (t *Table) Render(vertical bool) string {
+	if vertical {
+		return t.renderHorizontal()
+	}
+	return t.renderHorizontal()
+}
+
+func (t *Table) renderVertical() string {
+	return t.renderHorizontal()
+}
+
+func (t *Table) renderHorizontal() string {
 	if len(t.rows) == 0 {
 		return ""
 	}

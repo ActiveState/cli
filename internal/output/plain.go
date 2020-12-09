@@ -321,10 +321,7 @@ func sprintTable(vertical bool, slice []interface{}) (string, error) {
 		}
 	}
 
-	t := table.New(vertical, headers)
-	t.AddRow(rows...)
-
-	return t.Render(), nil
+	return table.New(headers).AddRow(rows...).Render(vertical), nil
 }
 
 func asSlice(val interface{}) ([]interface{}, error) {
