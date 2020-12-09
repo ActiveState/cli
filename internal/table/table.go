@@ -142,62 +142,46 @@ func rescaleColumns(colWidths []int, targetTotal int) {
 }
 
 func renderRow(providedColumns []string, colWidths []int) string {
-	result := ""
-
 	// Do not modify the original column widths
-	widths := make([]int, len(colWidths))
+	widths := make([]int, len(providedColumns))
 	copy(widths, colWidths)
 
-	// Get the column data based on the column widths
-	columns := make([][]colorize.Entry, len(providedColumns))
-	for n, columnMaxWidth := range colWidths {
-		// ignore providedColumns that we do not have data for (they have been filled up with the last colValue already)
-		if len(providedColumns) < n+1 {
-			continue
-		}
-
-		// Detect multi column span
-		if len(colWidths) > n+1 && len(providedColumns) == n+1 {
-			for _, v := range colWidths[n+1:] {
-				columnMaxWidth += v
-			}
-		}
-
-		columnMaxWidth = columnMaxWidth - (padding * 2)
-		widths[n] = columnMaxWidth
-
-		columns[n] = colorize.GetCroppedText(providedColumns[n], columnMaxWidth)
+	// Combine column widths if we have a spanned column
+	if len(widths) < len(colWidths) {
+		widths[len(widths)-1] = mathutils.Total(colWidths[len(widths)-1 : len(colWidths)]...)
 	}
 
+	croppedColumns := []colorize.CroppedLines{}
+	for n, column := range providedColumns {
+		croppedColumns = append(croppedColumns, colorize.GetCroppedText([]rune(column), widths[n]-(padding*2)))
+	}
+
+	var rendered = true
+	var lines []string
 	// Iterate over rows until we reach a row where no column has data
-	var currentRow int
-	var emptyRow bool
-	for !emptyRow {
-		var currentRowText string
-		for n, column := range columns {
-			columnMaxWidth := widths[n]
-			suffixRepeat := columnMaxWidth
-
-			// If this column has an entry for the current row we use it
-			var currentColumnText string
-			if len(column) > currentRow {
-				suffixRepeat = mathutils.MaxInt(0, columnMaxWidth-column[currentRow].Length)
-				currentColumnText = column[currentRow].Line
+	for lineNo := 0; rendered; lineNo++ {
+		rendered = false
+		var line string
+		for columnNo, column := range croppedColumns {
+			if lineNo > len(column)-1 {
+				line += strings.Repeat(" ", widths[columnNo]) // empty column
+				continue
 			}
-			suffix := strings.Repeat(" ", suffixRepeat)
-			currentRowText += pad(currentColumnText + suffix)
-		}
+			columnLine := column[lineNo]
 
-		// If this row is empty then no columns had data for it and we are done rendering
-		if strings.TrimSpace(currentRowText) == "" {
-			emptyRow = true
-		} else {
-			result += currentRowText + linebreak
-			currentRow++
+			// Add padding and fill up missing whitespace
+			prefix := strings.Repeat(" ", padding)
+			suffix := strings.Repeat(" ", padding+(widths[columnNo]-columnLine.Length-(padding*2)))
+
+			line += prefix + columnLine.Line + suffix
+			rendered = true
+		}
+		if rendered {
+			lines = append(lines, line)
 		}
 	}
 
-	return strings.TrimRight(result, linebreak)
+	return strings.TrimRight(strings.Join(lines, linebreak), linebreak)
 }
 
 func pad(v string) string {
