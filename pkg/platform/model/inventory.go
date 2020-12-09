@@ -11,20 +11,10 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/retryhttp"
-	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-)
-
-var (
-	// FailIngredients is a failure in calling the ingredients endpoint
-	FailIngredients = failures.Type("model.fail.ingredients", api.FailUnknown)
-	// FailPlatforms is a failure in calling the platforms endpoint
-	FailPlatforms = failures.Type("model.fail.platforms", api.FailUnknown)
-	// FailNoPlatformData indicates when no platform data is available after filtering.
-	FailNoPlatformData = failures.Type("model.fail.noplatformdata", failures.FailUser)
 )
 
 // IngredientAndVersion is a sane version of whatever the hell it is go-swagger thinks it's doing
@@ -180,9 +170,9 @@ func searchIngredientsNamespace(limit int, ns Namespace, name string) ([]*Ingred
 	results, err := client.SearchIngredients(params, authentication.ClientAuth())
 	if err != nil {
 		if sidErr, ok := err.(*inventory_operations.SearchIngredientsDefault); ok {
-			return nil, FailIngredients.New(*sidErr.Payload.Message)
+			return nil, locale.NewError(*sidErr.Payload.Message)
 		}
-		return nil, FailIngredients.Wrap(err)
+		return nil, errs.Wrap(err, "SearchIngredients failed")
 	}
 
 	ingredients := []*IngredientAndVersion{}
@@ -205,7 +195,7 @@ func FetchPlatforms() ([]*Platform, error) {
 
 		response, err := client.GetPlatforms(params)
 		if err != nil {
-			return nil, FailPlatforms.Wrap(err)
+			return nil, errs.Wrap(err, "GetPlatforms failed")
 		}
 
 		// remove unwanted platforms
@@ -286,8 +276,8 @@ func filterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID)
 	}
 
 	if len(pids) == 0 {
-		return nil, FailNoPlatformData.New(
-			"err_no_platform_data_remains", hostPlatform, hostArch,
+		return nil, locale.NewInputError(
+			"err_no_platform_data_remains", "", hostPlatform, hostArch,
 		)
 	}
 
@@ -344,7 +334,7 @@ func FetchPlatformByDetails(name, version string, word int) (*Platform, error) {
 
 	details := fmt.Sprintf("%s %d %s", name, word, version)
 
-	return nil, FailUnsupportedPlatform.New("err_unsupported_platform", details)
+	return nil, locale.NewInputError("err_unsupported_platform", "", details)
 }
 
 func FetchLanguageForCommit(commitID strfmt.UUID) (*Language, error) {
@@ -368,7 +358,7 @@ func FetchLanguageByDetails(name, version string) (*Language, error) {
 		}
 	}
 
-	return nil, failures.FailUser.New(locale.Tr("err_language_not_found", name, version))
+	return nil, locale.NewInputError("err_language_not_found", "", name, version)
 }
 
 func FetchLanguageVersions(name string) ([]string, error) {
@@ -398,7 +388,7 @@ func FetchLanguages() ([]Language, error) {
 
 	res, err := client.GetNamespaceIngredients(params, authentication.ClientAuth())
 	if err != nil {
-		return nil, FailNoLanguages.Wrap(err)
+		return nil, errs.Wrap(err, "GetNamespaceIngredients failed")
 	}
 
 	var languages []Language

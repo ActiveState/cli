@@ -14,7 +14,7 @@ import (
 // Manager is our main download manager, it takes care of processing the downloads and communicating progress
 type Manager struct {
 	WorkerCount int
-	failure     error
+	error       error
 	entries     []*Entry
 	progress    *progress.Progress
 }
@@ -54,32 +54,32 @@ func (m *Manager) Download() error {
 		<-done
 	}
 
-	return m.failure
+	return m.error
 }
 
 // Job runs an individual download job
 func (m *Manager) Job(entry *Entry) {
-	if m.failure != nil {
+	if m.error != nil {
 		return
 	}
 
 	bytes, fail := GetWithProgress(entry.Download, m.progress)
 
 	if fail != nil {
-		m.failure = fail
+		m.error = fail
 		logging.Debug("Failure occured: %v", fail)
 		return
 	}
 
 	dirname := filepath.Dir(entry.Path)
-	m.failure = fileutils.MkdirUnlessExists(dirname)
-	if m.failure != nil {
+	m.error = fileutils.MkdirUnlessExists(dirname)
+	if m.error != nil {
 		return
 	}
 
 	err := ioutil.WriteFile(entry.Path, bytes, 0666)
 	if err != nil {
-		m.failure = errs.Wrap(err, "WriteFile %s failed", entry.Path)
+		m.error = errs.Wrap(err, "WriteFile %s failed", entry.Path)
 	}
 }
 

@@ -13,11 +13,6 @@ import (
 	"github.com/ActiveState/cli/internal/sighandler"
 )
 
-var (
-	// FailSignalCmd represents a failure sending a system signal to a cmd
-	FailSignalCmd = failures.Type("sscommon.fail.signalcmd")
-)
-
 type silentExitCodeError struct {
 	error
 }
@@ -137,7 +132,7 @@ func runWithCmd(env []string, name string, args ...string) error {
 		args = append([]string{linPath}, args...)
 		name = "bash"
 	default:
-		return failures.FailUser.New("err_sscommon_unsupported_language", ext)
+		return locale.NewInputError("err_sscommon_unsupported_language", "", ext)
 	}
 
 	return runDirect(env, name, args...)

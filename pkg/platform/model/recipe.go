@@ -159,18 +159,18 @@ func fetchRawRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *s
 func commitToOrder(commitID strfmt.UUID, owner, project string) (*inventory_models.Order, error) {
 	monoOrder, err := FetchOrderFromCommit(commitID)
 	if err != nil {
-		return nil, locale.WrapError(err, locale.T("err_order_recipe"))
+		return nil, locale.WrapError(err, "err_order_recipe")
 	}
 
 	orderData, err := monoOrder.MarshalBinary()
 	if err != nil {
-		return nil, locale.WrapError(err, locale.T("err_order_marshal"))
+		return nil, locale.WrapError(err, "err_order_marshal")
 	}
 
 	order := &inventory_models.Order{}
 	err = order.UnmarshalBinary(orderData)
 	if err != nil {
-		return nil, locale.WrapError(err, locale.T("err_order_marshal"))
+		return nil, locale.WrapError(err, "err_order_marshal")
 	}
 
 	order.Annotations = OrderAnnotations{

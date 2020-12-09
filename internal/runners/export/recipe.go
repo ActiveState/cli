@@ -89,7 +89,7 @@ func fetchRecipe(proj *project.Project, commitID strfmt.UUID, platform string) (
 			return "", fail
 		}
 		if branch.CommitID == nil {
-			return "", model.FailNoCommit.New(locale.T("err_no_commit"))
+			return "", locale.NewError("NoCommit")
 		}
 		commitID = *branch.CommitID
 	}

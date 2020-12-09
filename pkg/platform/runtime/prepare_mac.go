@@ -9,6 +9,7 @@ import (
 	"regexp"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
 )
@@ -37,7 +38,7 @@ func (m *MetaData) Prepare() error {
 
 	files, err := ioutil.ReadDir(libDir)
 	if err != nil {
-		return failures.FailOS.Wrap(err)
+		return errs.Wrap(err, "OS failure")
 	}
 
 	var sitePackages string
@@ -61,7 +62,7 @@ func (m *MetaData) Prepare() error {
 		dirRe = regexp.MustCompile(`\d+(?:\.\d+)+`)
 		files, err = ioutil.ReadDir(filepath.Join(m.Path, frameWorkDir))
 		if err != nil {
-			return failures.FailOS.Wrap(err)
+			return errs.Wrap(err, "OS failure")
 		}
 
 		var relVersionedFrameWorkDir string
@@ -76,7 +77,7 @@ func (m *MetaData) Prepare() error {
 		}
 
 		if relVersionedFrameWorkDir == "" {
-			return failures.FailNotFound.New("could not find path %s/x.x in build artifact", frameWorkDir)
+			return errs.New("could not find path %s/x.x in build artifact", frameWorkDir)
 		}
 
 		m.TargetedRelocations = []TargetedRelocation{TargetedRelocation{

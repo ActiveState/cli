@@ -43,9 +43,9 @@ func NewSearch(prime primer.Outputer) *Search {
 func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 	logging.Debug("ExecuteSearch")
 
-	language, fail := targetedLanguage(params.Language)
-	if fail != nil {
-		return fail.WithDescription(fmt.Sprintf("%s_err_cannot_obtain_language", nstype))
+	language, err := targetedLanguage(params.Language)
+	if err != nil {
+		return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_obtain_language", nstype))
 	}
 
 	ns := model.NewNamespacePkgOrBundle(language, nstype)
@@ -55,9 +55,9 @@ func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 		searchIngredients = model.SearchIngredientsStrict
 	}
 
-	packages, fail := searchIngredients(ns, params.Name)
-	if fail != nil {
-		return fail.WithDescription("package_err_cannot_obtain_search_results")
+	packages, err := searchIngredients(ns, params.Name)
+	if err != nil {
+		return locale.WrapError(err, "package_err_cannot_obtain_search_results")
 	}
 	if len(packages) == 0 {
 		return errs.AddTips(

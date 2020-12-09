@@ -177,7 +177,7 @@ func TestInitialize_Run(t *testing.T) {
 				path:     tempDirWithConfig,
 				language: language.Python2.String(),
 			},
-			failures.FailUserInput.New("err_init_file_exists", tempDirWithConfig),
+			locale.NewInputError("err_init_file_exists", "", tempDirWithConfig),
 			"",
 			tempDir,
 			language.Python2.String(),

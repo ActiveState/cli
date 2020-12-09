@@ -6,6 +6,7 @@ import (
 	"runtime"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 )
 
@@ -64,7 +65,7 @@ func (m *MetaData) Prepare() error {
 	}
 
 	if m.RelocationDir == "" {
-		return FailMetaDataNotDetected.New("installer_err_runtime_missing_meta", m.Path)
+		return locale.NewError("installer_err_runtime_missing_meta", "", m.Path)
 	}
 
 	return nil

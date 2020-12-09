@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/prompt"
@@ -108,7 +109,7 @@ func (r *NamespaceSelect) promptAvailablePaths(paths []string) (*string, error) 
 func (r *NamespaceSelect) promptForPathInput(namespace string) (string, error) {
 	wd, err := getSafeWorkDir()
 	if err != nil {
-		return "", failures.FailRuntime.Wrap(err)
+		return "", errs.Wrap(err, "Runtime failure")
 	}
 
 	directory, fail := r.prompter.Input(
@@ -118,7 +119,7 @@ func (r *NamespaceSelect) promptForPathInput(namespace string) (string, error) {
 		return "", fail
 	}
 	if directory == "" {
-		return "", failures.FailUserInput.New("err_must_provide_directory")
+		return "", locale.NewError("err_must_provide_directory")
 	}
 
 	logging.Debug("Using: %s", directory)
@@ -139,7 +140,7 @@ func (r *NamespaceSelect) validatePath(namespace string, path string) error {
 
 	pjns := fmt.Sprintf("%s/%s", pj.Owner(), pj.Name())
 	if !pj.IsHeadless() && pjns != namespace {
-		return failures.FailUserInput.New("err_target_path_namespace_match", namespace, pjns)
+		return locale.NewInputError("err_target_path_namespace_match", "", namespace, pjns)
 	}
 
 	return nil

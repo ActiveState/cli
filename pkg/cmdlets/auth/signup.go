@@ -23,14 +23,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
-var (
-	// FailInvalidPassword indicates the users desired password is invalid
-	FailInvalidPassword = failures.Type("auth.failure.invalidpassword")
-
-	// FailAddUserConflict indicates a failure due to an existing user
-	FailAddUserConflict = failures.Type("auth.failure.adduserconflict")
-)
-
 type signupInput struct {
 	Name      string
 	Email     string
@@ -57,7 +49,7 @@ func Signup(out output.Outputer, prompt prompt.Prompter) error {
 
 	fail := promptForSignup(input, out, prompt)
 	if fail != nil {
-		return fail.WithDescription("err_prompt_unknown")
+		return locale.WrapError(err, "err_prompt_unknown")
 	}
 
 	if fail = doSignup(input, out); fail != nil {
@@ -66,7 +58,7 @@ func Signup(out output.Outputer, prompt prompt.Prompter) error {
 
 	if authentication.Get().Authenticated() {
 		if fail := generateKeypairForUser(input.Password); fail != nil {
-			return fail.WithDescription("keypair_err_save")
+			return locale.WrapError(err, "keypair_err_save")
 		}
 	}
 
@@ -80,7 +72,7 @@ func signupFromLogin(username string, password string, out output.Outputer, prom
 	input.Password = password
 	err := promptForSignup(input, out, prompt)
 	if err != nil {
-		return failures.FailUserInput.Wrap(err)
+		return errs.Wrap(err, "UserInput failure")
 	}
 
 	return doSignup(input, out)
@@ -137,7 +129,7 @@ func promptTOS(out output.Outputer, prompt prompt.Prompter) (bool, error) {
 
 		tos, err := ioutil.ReadFile(tosFilePath)
 		if err != nil {
-			return false, failures.FailIO.Wrap(err)
+			return false, errs.Wrap(err, "IO failure")
 		}
 		out.Print(tos)
 		return prompt.Confirm("", locale.T("tos_acceptance"), true)
@@ -166,7 +158,7 @@ func promptForSignup(input *signupInput, out output.Outputer, prompter prompt.Pr
 	var passwordValidator = func(val interface{}) error {
 		value := val.(string)
 		if value != input.Password {
-			return FailInvalidPassword.New(locale.T("err_password_confirmation_failed"))
+			return locale.NewError("InvalidPassword")
 		}
 		return nil
 	}
@@ -177,7 +169,7 @@ func promptForSignup(input *signupInput, out output.Outputer, prompter prompt.Pr
 	}
 	err := passwordValidator(input.Password2)
 	if err != nil {
-		return FailInvalidPassword.Wrap(err)
+		return errs.Wrap(err, "InvalidPassword failure")
 	}
 
 	input.Name, fail = prompter.Input("", locale.T("name_prompt"), "", prompt.InputRequired)
@@ -210,10 +202,10 @@ func doSignup(input *signupInput, out output.Outputer) error {
 		// Authentication failed due to email already existing (username check already happened at this point)
 		case *users.AddUserConflict:
 			logging.Error("Encountered add user conflict: %v", err)
-			return FailAddUserConflict.New(locale.Tr("err_auth_signup_user_exists", api.ErrorMessageFromPayload(err)))
+			return locale.WrapInputError(err, "err_auth_signup_user_exists", "", api.ErrorMessageFromPayload(err))
 		default:
 			logging.Error("Encountered unknown error adding user: %v", err)
-			return FailAuthUnknown.New(locale.Tr("err_auth_failed_unknown_cause", api.ErrorMessageFromPayload(err)))
+			return locale.WrapError(err, "err_auth_failed_unknown_cause", "", api.ErrorMessageFromPayload(err))
 		}
 	}
 

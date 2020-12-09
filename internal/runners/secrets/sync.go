@@ -2,6 +2,8 @@ package secrets
 
 import (
 	"strconv"
+
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -87,10 +89,10 @@ func synchronizeEachOrgMember(secretsClient *secretsapi.Client, org *mono_models
 				case 404:
 					continue // nothing to do when no diff for a user, move on to next one
 				case 401:
-					return updatedCtr, api.FailAuth.New("err_api_not_authenticated")
+					return updatedCtr, locale.NewError("err_api_not_authenticated")
 				default:
 					logging.Debug("unknown error diffing user secrets with %s: %v", member.User.UserID.String(), err)
-					return updatedCtr, api.FailUnknown.Wrap(err)
+					return updatedCtr, errs.Wrap(err, "Unknown failure")
 				}
 			}
 

@@ -148,9 +148,9 @@ func LatestCommitID(ownerName, projectName string) (*strfmt.UUID, error) {
 	}
 
 	if branch.CommitID == nil {
-		return nil, failures.FailUserInput.New(locale.Tl(
+		return nil, locale.NewInputError(
 			"err_project_no_commit",
-			"Your project does not have any commits yet, head over to https://{{.V0}}/{{.V1}}/{{.V2}} to set up your project.", constants.PlatformURL, ownerName, projectName))
+			"Your project does not have any commits yet, head over to https://{{.V0}}/{{.V1}}/{{.V2}} to set up your project.", constants.PlatformURL, ownerName, projectName)
 	}
 
 	return branch.CommitID, nil
@@ -203,7 +203,7 @@ func CommitHistoryPaged(commitID strfmt.UUID, offset, limit int64) (*mono_models
 		res, err = mono.New().VersionControl.GetCommitHistory(params, nil)
 	}
 	if err != nil {
-		return nil, FailGetCommitHistory.New(locale.Tr("err_get_commit_history", api.ErrorMessageFromPayload(err)))
+		return nil, locale.WrapError(err, "err_get_commit_history", "", api.ErrorMessageFromPayload(err))
 	}
 
 	return res.Payload, nil
@@ -223,7 +223,7 @@ func CommitsBehindLatest(ownerName, projectName, commitID string) (int, error) {
 		if commitID == "" {
 			return 0, nil // ok, nothing to do
 		}
-		return 0, FailCommitCountImpossible.New(locale.T("err_commit_count_no_latest_with_commit"))
+		return 0, locale.NewError("err_commit_count_no_latest_with_commit")
 	}
 
 	if latestCID.String() == commitID {
@@ -234,7 +234,7 @@ func CommitsBehindLatest(ownerName, projectName, commitID string) (int, error) {
 	params.SetCommitID(*latestCID)
 	res, err := authentication.Client().VersionControl.GetCommitHistory(params, authentication.ClientAuth())
 	if err != nil {
-		return 0, FailGetCommitHistory.New(locale.Tr("err_get_commit_history", err.Error()))
+		return 0, locale.WrapError(err, "err_get_commit_history", "", err.Error())
 	}
 
 	indexed := makeIndexedCommits(res.Payload.Commits)
@@ -260,7 +260,7 @@ func AddChangeset(parentCommitID strfmt.UUID, commitMessage string, anonymousID 
 	res, err := mono.New().VersionControl.AddCommit(params, authentication.ClientAuth())
 	if err != nil {
 		logging.Error("AddCommit Error: %s", err.Error())
-		return nil, FailAddCommit.New(locale.Tr("err_add_commit", api.ErrorMessageFromPayload(err)))
+		return nil, locale.WrapError(err, "err_add_commit", "", api.ErrorMessageFromPayload(err))
 	}
 	return res.Payload, nil
 }
@@ -311,7 +311,7 @@ func CommitPackage(parentCommitID strfmt.UUID, operation Operation, packageName,
 	}
 
 	if len(languages) == 0 {
-		return commitID, FailNoLanguages.New(locale.T("err_project_no_languages"))
+		return commitID, locale.NewError("err_project_no_languages")
 	}
 
 	var message string
@@ -369,7 +369,7 @@ func CommitChangeset(parentCommitID strfmt.UUID, commitMsg string, anonymousID s
 	}
 
 	if len(languages) == 0 {
-		return commitID, FailNoLanguages.New(locale.T("err_project_no_languages"))
+		return commitID, locale.NewError("err_project_no_languages")
 	}
 
 	commit, fail := AddChangeset(parentCommitID, commitMsg, anonymousID, changeset)
@@ -424,7 +424,7 @@ func CommitInitial(hostPlatform string, lang *language.Supported, langVersion st
 	res, err := authentication.Client().VersionControl.AddCommit(params, authentication.ClientAuth())
 	if err != nil {
 		logging.Error("AddCommit Error: %s", err.Error())
-		return "", FailAddCommit.New(locale.Tr("err_add_commit", api.ErrorMessageFromPayload(err)))
+		return "", locale.WrapError(err, "err_add_commit", "", api.ErrorMessageFromPayload(err))
 	}
 
 	return res.Payload.CommitID, nil
@@ -451,7 +451,7 @@ func (cs indexedCommits) countBetween(first, last string) (int, error) {
 	}
 
 	if last == "" {
-		return 0, FailCommitCountImpossible.New(locale.T("err_commit_count_missing_last"))
+		return 0, locale.NewError("err_commit_count_missing_last")
 	}
 
 	if first != "" {
@@ -497,7 +497,7 @@ func CommitPlatform(owner, prjName string, op Operation, name, version string, w
 	}
 
 	if branch.CommitID == nil {
-		return FailNoCommit.New(locale.T("err_project_no_languages"))
+		return locale.NewError("err_project_no_languages")
 	}
 
 	var msgL10nKey string
@@ -505,7 +505,7 @@ func CommitPlatform(owner, prjName string, op Operation, name, version string, w
 	case OperationAdded:
 		msgL10nKey = "commit_message_add_platform"
 	case OperationUpdated:
-		return failures.FailDeveloper.New("this is not supported yet")
+		return errs.New("this is not supported yet")
 	case OperationRemoved:
 		msgL10nKey = "commit_message_removed_platform"
 	}
@@ -541,7 +541,7 @@ func CommitLanguage(owner, project string, op Operation, name, version string) e
 	}
 
 	if branch.CommitID == nil {
-		return FailNoCommit.New(locale.T("err_project_no_languages"))
+		return locale.NewError("err_project_no_languages")
 	}
 
 	var msgL10nKey string
@@ -549,7 +549,7 @@ func CommitLanguage(owner, project string, op Operation, name, version string) e
 	case OperationAdded:
 		msgL10nKey = "commit_message_add_language"
 	case OperationUpdated:
-		return failures.FailDeveloper.New("this is not supported yet")
+		return errs.New("this is not supported yet")
 	case OperationRemoved:
 		msgL10nKey = "commit_message_removed_language"
 	}
@@ -627,7 +627,7 @@ func TrackBranch(source, target *mono_models.Project) error {
 	_, err := authentication.Client().VersionControl.UpdateBranch(updateParams, authentication.ClientAuth())
 	if err != nil {
 		msg := api.ErrorMessageFromPayload(err)
-		return api.FailUnknown.Wrap(err, msg)
+		return locale.WrapError(err, msg)
 	}
 	return nil
 }

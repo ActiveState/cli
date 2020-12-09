@@ -15,6 +15,7 @@ require (
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 	github.com/asaskevich/govalidator v0.0.0-20180315120708-ccb8e960c48f // indirect
+	github.com/autarch/testify v1.2.2
 	github.com/aws/aws-sdk-go v1.13.8
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/bndr/gotabulate v0.0.0-20170315142410-bc555436bfd5

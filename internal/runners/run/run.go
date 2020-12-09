@@ -51,7 +51,7 @@ func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, nam
 	}
 
 	if name == "" {
-		return failures.FailUserInput.New("error_state_run_undefined_name")
+		return locale.NewError("error_state_run_undefined_name")
 	}
 
 	out.Notice(txtstyle.NewTitle(locale.Tl("run_script_title", "Running Script: [ACTIONABLE]{{.V0}}[/RESET]", name)))

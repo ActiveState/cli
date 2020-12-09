@@ -70,9 +70,6 @@ func trimError(msg string) string {
 }
 
 func unwrapError(err error) (int, error) {
-	// Ensure we are dealing with an error rather than a failure in disguise
-	err = failureAsError(err)
-
 	if err == nil {
 		return 0, nil
 	}
@@ -136,14 +133,3 @@ func isSilent(err error) bool {
 	return errors.As(err, &silentErr) && silentErr.IsSilent()
 }
 
-// Can't pass failures as errors and still assert them as nil, so we have to typecase.
-// Blame Go for being weird.
-func failureAsError(err error) error {
-	err = failures.ToError(err)
-
-	if err == nil {
-		err = failures.ToError(failures.Handled())
-	}
-
-	return err
-}

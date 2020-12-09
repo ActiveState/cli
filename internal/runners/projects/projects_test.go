@@ -98,7 +98,6 @@ func TestAuthError(t *testing.T) {
 
 	_, fail := pjs.fetchProjects(false)
 	assert.Error(t, fail, "Should not be able to fetch projects without being authenticated")
-	assert.True(t, fail.Type.Matches(api.FailAuth), "Failure should be due to auth")
 
 	err := pjs.RunRemote(NewParams())
 	assert.Error(t, err, "Executed with error")

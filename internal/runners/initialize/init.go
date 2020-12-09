@@ -1,12 +1,14 @@
 package initialize
 
 import (
+	"errors"
 	"path/filepath"
 	"strings"
 
 	"github.com/gobuffalo/packr"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
@@ -65,9 +67,9 @@ func sanitize(params *RunParams) error {
 	if fileutils.FileExists(filepath.Join(params.Path, constants.ConfigFileName)) {
 		absPath, err := filepath.Abs(params.Path)
 		if err != nil {
-			return failures.FailIO.Wrap(err)
+			return errs.Wrap(err, "IO failure")
 		}
-		return failures.FailUserInput.New("err_init_file_exists", absPath)
+		return locale.NewInputError("err_init_file_exists", "", absPath)
 	}
 
 	if !styleRecognized(params.Style) {
@@ -106,18 +108,17 @@ func run(params *RunParams, out output.Outputer) (string, error) {
 		return "", locale.WrapInputError(err, "err_init_sanitize_path", "Could not prepare path: {{.V0}}", err.Error())
 	}
 
-	proj, fail := project.FromPath(params.Path)
-	if fail != nil {
-		if !projectfile.FailNoProject.Matches(fail.Type) {
-			return "", locale.WrapError(fail, "err_init_project", "Could not parse project information.")
+	proj, err := project.FromPath(params.Path)
+	if err != nil {
+		if !errors.Is(err, projectfile.ErrorNoProject) {
+			return "", locale.WrapError(err, "err_init_project", "Could not parse project information.")
 		}
 		proj = nil
 	}
 
 	isHeadless := proj != nil && proj.IsHeadless()
 
-	_, err := fileutils.PrepareDir(params.Path)
-	if err != nil {
+	if _, err := fileutils.PrepareDir(params.Path); err != nil {
 		return "", locale.WrapError(err, "err_init_preparedir", "Could not create directory at [NOTICE]{{.V0}}[/RESET]. Error: {{.V1}}", params.Path, err.Error())
 	}
 
@@ -145,9 +146,9 @@ func run(params *RunParams, out output.Outputer) (string, error) {
 			createParams.Content = box.String("activestate.yaml.editor.tpl")
 		}
 
-		fail = projectfile.Create(createParams)
-		if fail != nil {
-			return "", fail
+		err = projectfile.Create(createParams)
+		if err != nil {
+			return "", err
 		}
 	}
 

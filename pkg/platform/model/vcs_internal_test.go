@@ -31,34 +31,32 @@ func testIndexedCommitsCountBetween(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		indexed  indexedCommits
-		first    string
-		last     string
-		want     int
-		failType errorType
+		indexed indexedCommits
+		first   string
+		last    string
+		want    int
+		wantErr bool
 	}{
-		"basic: none to last":     {basic, "", "e", 5, nil},
-		"basic: first to none":    {basic, "a", "", 0, FailCommitCountImpossible},
-		"basic: first to last":    {basic, "a", "e", 4, nil},
-		"basic: first to second":  {basic, "a", "b", 1, nil},
-		"basic: second to fourth": {basic, "b", "d", 2, nil},
-		"basic: first to badval":  {basic, "a", "x", 0, FailCommitCountUnknowable},
-		"basic: badval to last":   {basic, "x", "e", 0, FailCommitCountUnknowable},
-		"split: none to last":     {split, "", "e", 3, nil},
-		"split: first to none":    {split, "a", "", 0, FailCommitCountImpossible},
-		"split: first to last":    {split, "a", "e", 2, nil},
-		"split: first to second":  {split, "a", "b", 1, nil},
-		"split: second to broken": {split, "b", "d", 0, FailCommitCountUnknowable},
+		"basic: none to last":     {basic, "", "e", 5, false},
+		"basic: first to none":    {basic, "a", "", 0, true},
+		"basic: first to last":    {basic, "a", "e", 4, false},
+		"basic: first to second":  {basic, "a", "b", 1, false},
+		"basic: second to fourth": {basic, "b", "d", 2, false},
+		"basic: first to badval":  {basic, "a", "x", 0, true},
+		"basic: badval to last":   {basic, "x", "e", 0, true},
+		"split: none to last":     {split, "", "e", 3, false},
+		"split: first to none":    {split, "a", "", 0, true},
+		"split: first to last":    {split, "a", "e", 2, false},
+		"split: first to second":  {split, "a", "b", 1, false},
+		"split: second to broken": {split, "b", "d", 0, true},
 	}
 
 	for label, test := range tests {
-		got, gotFail := test.indexed.countBetween(test.first, test.last)
+		got, err := test.indexed.countBetween(test.first, test.last)
+		gotErr := err != nil
 
-		if test.failType != nil && !test.failType.Matches(gotFail.Type) {
-			t.Errorf("%s: got %v, want %v", label, gotFail, test.failType)
-		}
-		if test.failType == nil && gotFail != nil {
-			t.Errorf("%s: got %v, want %v", label, gotFail, test.failType)
+		if test.wantErr != gotErr {
+			t.Errorf("%s: got %v, want %v", label, gotErr, test.wantErr)
 		}
 
 		if got != test.want {

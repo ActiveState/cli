@@ -125,7 +125,7 @@ func (suite *GitTestSuite) TestEnsureCorrectRepo() {
 
 func (suite *GitTestSuite) TestEnsureCorrectRepo_Mistmatch() {
 	fail := ensureCorrectRepo("not-owner", "bad-project", filepath.Join(suite.dir, constants.ConfigFileName))
-	expected := FailProjectURLMismatch.New(locale.T("error_git_project_url_mismatch"))
+	expected := locale.NewError("ProjectURLMismatch")
 	suite.EqualError(fail, expected.Error(), "expected errors to match")
 }
 
@@ -150,7 +150,7 @@ func (suite *GitTestSuite) TestMoveFilesDirNoEmpty() {
 	suite.Require().NoError(fail)
 
 	fail = moveFiles(suite.dir, anotherDir)
-	expected := FailTargetDirInUse.New(locale.T("error_git_target_dir_not_empty"))
+	expected := locale.NewError("TargetDirInUse")
 	suite.EqualError(fail, expected.Error())
 }
 

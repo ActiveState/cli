@@ -140,7 +140,7 @@ func ensureVersionTestable(language *model.Language, fetchVersions fetchVersions
 		}
 	}
 
-	return failures.FailUser.New(locale.Tr("err_language_version_not_found", language.Version, language.Name))
+	return locale.NewInputError("err_language_version_not_found", "", language.Version, language.Name)
 }
 
 func removeLanguage(project *project.Project, current string) error {

@@ -1,7 +1,8 @@
 package access
 
 import (
-	"github.com/ActiveState/cli/pkg/platform/api"
+	"errors"
+
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
@@ -26,12 +27,12 @@ func isProjectOwner(orgName string) bool {
 
 func isOrgMember(orgName string) (bool, error) {
 	auth := authentication.Get()
-	_, fail := model.FetchOrgMember(orgName, auth.WhoAmI())
-	if fail != nil {
-		if api.FailNotFound.Matches(fail.Type) {
+	_, err := model.FetchOrgMember(orgName, auth.WhoAmI())
+	if err != nil {
+		if errors.Is(err, model.ErrMemberNotFound) {
 			return false, nil
 		}
-		return false, fail
+		return false, err
 	}
 
 	return true, nil

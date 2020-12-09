@@ -65,13 +65,13 @@ func WriteRcFile(rcTemplateName string, path string, data EnvData, env map[strin
 
 	t, err := template.New("rcfile_append").Parse(tpl)
 	if err != nil {
-		return failures.FailTemplating.Wrap(err)
+		return errs.Wrap(err, "Templating failure")
 	}
 
 	var out bytes.Buffer
 	err = t.Execute(&out, rcData)
 	if err != nil {
-		return failures.FailTemplating.Wrap(err)
+		return errs.Wrap(err, "Templating failure")
 	}
 
 	logging.Debug("Writing to %s:\n%s", path, out.String())
@@ -83,7 +83,7 @@ func cleanRcFile(path string, data EnvData) error {
 	readFile, err := os.Open(path)
 
 	if err != nil {
-		return failures.FailIO.Wrap(err)
+		return errs.Wrap(err, "IO failure")
 	}
 
 	scanner := bufio.NewScanner(readFile)
@@ -167,7 +167,7 @@ func SetupProjectRcFile(templateName, ext string, env map[string]string, out out
 	for _, event := range prj.Events() {
 		v, err := event.Value()
 		if err != nil {
-			return nil, failures.FailMisc.Wrap(err)
+			return nil, errs.Wrap(err, "Misc failure")
 		}
 
 		if strings.ToLower(event.Name()) == "first-activate" && !viper.GetBool(activatedKey) {
@@ -206,7 +206,7 @@ func SetupProjectRcFile(templateName, ext string, env map[string]string, out out
 
 	wd, err := osutils.Getwd()
 	if err != nil {
-		return nil, failures.FailMisc.Wrap(err, locale.Tr("err_subshell_wd", "Could not get working directory."))
+		return nil, locale.WrapError(err, "err_subshell_wd", "", "Could not get working directory.")
 	}
 
 	isConsole := ext == ".bat" // yeah this is a dirty cheat, should find something more deterministic
@@ -233,7 +233,7 @@ func SetupProjectRcFile(templateName, ext string, env map[string]string, out out
 
 	currExecAbsPath, err := osutils.Executable()
 	if err != nil {
-		return nil, failures.FailOS.Wrap(err)
+		return nil, errs.Wrap(err, "OS failure")
 	}
 	currExecAbsDir := filepath.Dir(currExecAbsPath)
 
@@ -251,18 +251,18 @@ func SetupProjectRcFile(templateName, ext string, env map[string]string, out out
 
 	t, err =t.Parse(tpl)
 	if err != nil {
-		return nil, failures.FailTemplating.Wrap(err)
+		return nil, errs.Wrap(err, "Templating failure")
 	}
 
 	var o bytes.Buffer
 	err = t.Execute(&o, rcData)
 	if err != nil {
-		return nil, failures.FailTemplating.Wrap(err)
+		return nil, errs.Wrap(err, "Templating failure")
 	}
 
 	tmpFile, err := tempfile.TempFileWithSuffix(os.TempDir(), "state-subshell-rc", ext)
 	if err != nil {
-		return nil, failures.FailOS.Wrap(err)
+		return nil, errs.Wrap(err, "OS failure")
 	}
 	defer tmpFile.Close()
 

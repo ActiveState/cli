@@ -10,12 +10,6 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
-var (
-	// FailNoCommitID indicates that no commit id is provided and not
-	// obtainable from the current project.
-	FailNoCommitID = failures.Type("platforms.fail.nocommitid", failures.FailNonFatal)
-)
-
 // ListRunParams tracks the info required for running List.
 type ListRunParams struct {
 	Project *project.Project

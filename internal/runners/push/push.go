@@ -1,6 +1,7 @@
 package push
 
 import (
+	"errors"
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -81,17 +82,14 @@ func (r *Push) Run(params PushParams) error {
 	}
 
 	// Get the project remotely if it already exists
-	pjm, fail := model.FetchProjectByName(owner, name)
-	if fail != nil {
-		if fail.Type.Matches(model.FailProjectNotFound) && r.project.IsHeadless() {
-			return locale.WrapInputError(fail, "err_push_existing_project_needed", "Cannot push to [NOTICE]{{.V0}}/{{.V1}}[/RESET], as project does not exist.")
+	pjm, err := model.FetchProjectByName(owner, name)
+	if err != nil {
+		if errors.Is(err, model.ErrProjectNotFound) && r.project.IsHeadless() {
+			return locale.WrapInputError(err, "err_push_existing_project_needed", "Cannot push to [NOTICE]{{.V0}}/{{.V1}}[/RESET], as project does not exist.")
 		}
-		if !fail.Type.Matches(model.FailProjectNotFound) {
-			return locale.WrapError(fail, "err_push_try_project", "Failed to check for existence of project.")
+		if !errors.Is(err, model.ErrProjectNotFound) {
+			return locale.WrapError(err, "err_push_try_project", "Failed to check for existence of project.")
 		}
-		// We have to reset handled failures since our legacy command handling still relies on this
-		// ie. failure occurred equals unsuccessful command
-		failures.ResetHandled()
 	}
 
 	lang, langVersion, err := r.languageForProject(r.project)
@@ -115,9 +113,9 @@ func (r *Push) Run(params PushParams) error {
 		}
 	} else {
 		r.Outputer.Notice(locale.Tl("push_creating_project", "Creating project [NOTICE]{{.V1}}[/RESET] under [NOTICE]{{.V0}}[/RESET] on the ActiveState Platform", owner, name))
-		pjm, fail = model.CreateEmptyProject(owner, name, r.project.Private())
-		if fail != nil {
-			return locale.WrapError(fail, "push_project_create_empty_err", "Failed to create a project {{.V0}}.", r.project.Namespace().String())
+		pjm, err = model.CreateEmptyProject(owner, name, r.project.Private())
+		if err != nil {
+			return locale.WrapError(err, "push_project_create_empty_err", "Failed to create a project {{.V0}}.", r.project.Namespace().String())
 		}
 	}
 

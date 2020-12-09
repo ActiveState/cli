@@ -4,6 +4,7 @@ import (
 	"os/exec"
 	"strings"
 	"syscall"
+
 	"github.com/ActiveState/cli/internal/osutils"
 )
 
@@ -23,7 +24,7 @@ func stop(cmd *exec.Cmd) error {
 	// may panic if process no longer exists
 	defer failures.Recover()
 	if err := cmd.Process.Signal(sig); err != nil {
-		return FailSignalCmd.Wrap(err)
+		return errs.Wrap(err, "SignalCmd failure")
 	}
 
 	return nil

@@ -1,9 +1,12 @@
 package auth
 
 import (
+	"errors"
+
 	"github.com/skratchdot/open-golang/open"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -19,23 +22,6 @@ import (
 // overwritten in tests
 var OpenURI = open.Run
 
-var (
-	// FailLoginPrompt indicates a failure during the login prompt
-	FailLoginPrompt = failures.Type("auth.fail.loginprompt", failures.FailUserInput)
-
-	// FailNotAuthenticated conveys a failure to authenticate by the user
-	FailNotAuthenticated = failures.Type("auth.fail.notauthenticated", failures.FailUserInput)
-
-	// FailBrowserOpen indicates a failure to open the users browser
-	FailBrowserOpen = failures.Type("auth.failure.browseropen")
-
-	// FailAuthUnknown conveys a failure to authenticated with unknown cause
-	FailAuthUnknown = failures.Type("auth.failure.unknown")
-
-	// FailEmptyToken indicates the token provided by the user was empty
-	FailEmptyToken = failures.Type("auth.failure.emptytoken")
-)
-
 // Authenticate will prompt the user for authentication
 func Authenticate(out output.Outputer, prompt prompt.Prompter) error {
 	return AuthenticateWithInput("", "", "", out, prompt)
@@ -46,35 +32,32 @@ func AuthenticateWithInput(username, password, totp string, out output.Outputer,
 	logging.Debug("AuthenticateWithInput")
 	credentials := &mono_models.Credentials{Username: username, Password: password, Totp: totp}
 	if err := promptForLogin(credentials, prompt); err != nil {
-		return failures.FailUserInput.Wrap(err)
+		return locale.WrapInputError(err, "login_cancelled")
 	}
 
-	fail := AuthenticateWithCredentials(credentials)
-	if fail != nil {
-		switch fail.Type {
-		case authentication.FailAuthUnauthorized:
+	err := AuthenticateWithCredentials(credentials)
+	if err != nil {
+		switch {
+		case errors.Is(err, authentication.ErrUnauthorized):
 			if !uniqueUsername(credentials) {
-				return fail
+				return errs.Wrap(err, "uniqueUsername failed")
 			}
-			fail = promptSignup(credentials, out, prompt)
-			if fail != nil {
-				return fail
+			if err := promptSignup(credentials, out, prompt); err != nil {
+				return errs.Wrap(err, "promptSignup failed")
 			}
-		case authentication.FailAuthNeedToken:
-			fail = promptToken(credentials, out, prompt)
-			if fail != nil {
-				return fail
+		case errors.Is(err, authentication.ErrTokenRequired):
+			if err := promptToken(credentials, out, prompt); err != nil {
+				return errs.Wrap(err, "promptToken failed")
 			}
 		default:
-			return FailAuthUnknown.New(locale.T("err_auth_failed_unknown_cause"))
+			return locale.NewError("err_auth_failed_unknown_cause")
 		}
 	}
 
 	if authentication.Get().Authenticated() {
 		secretsapi.InitializeClient()
-		fail = ensureUserKeypair(credentials.Password, out, prompt)
-		if fail != nil {
-			return fail
+		if err := ensureUserKeypair(credentials.Password, out, prompt); err != nil {
+			return errs.Wrap(err, "ensureUserKeypair failed")
 		}
 	}
 
@@ -91,46 +74,51 @@ func RequireAuthentication(message string, out output.Outputer, prompt prompt.Pr
 	out.Print(message)
 
 	choices := []string{locale.T("prompt_login_action"), locale.T("prompt_signup_action"), locale.T("prompt_signup_browser_action")}
-	choice, fail := prompt.Select(locale.Tl("login_signup", "Login or Signup"), locale.T("prompt_login_or_signup"), choices, "")
-	if fail != nil {
-		return fail
+	choice, err := prompt.Select(locale.Tl("login_signup", "Login or Signup"), locale.T("prompt_login_or_signup"), choices, "")
+	if err != nil {
+		return errs.Wrap(err, "Prompt cancelled")
 	}
 
 	switch choice {
 	case locale.T("prompt_login_action"):
-		fail = Authenticate(out, prompt)
+		if err := Authenticate(out, prompt); err != nil {
+			return errs.Wrap(err, "Authenticate failed")
+		}
 	case locale.T("prompt_signup_action"):
-		fail = failures.FailMisc.Wrap(Signup(out, prompt))
+		if err := Signup(out, prompt); err != nil {
+			return errs.Wrap(err, "Signup failed")
+		}
 	case locale.T("prompt_signup_browser_action"):
-		err := OpenURI(constants.PlatformSignupURL)
-		if err != nil {
+		if err := OpenURI(constants.PlatformSignupURL); err != nil {
 			logging.Error("Could not open browser: %v", err)
-			return FailBrowserOpen.New(locale.Tr("err_browser_open", constants.PlatformSignupURL))
+			return locale.WrapInputError(err, "err_browser_open", "", constants.PlatformSignupURL)
 		}
 		out.Notice(locale.T("prompt_login_after_browser_signup"))
-		Authenticate(out, prompt)
+		if err := Authenticate(out, prompt); err != nil {
+			return errs.Wrap(err, "Authenticate failed")
+		}
 	}
 
 	if !authentication.Get().Authenticated() {
-		return FailNotAuthenticated.New(locale.T("err_auth_required"))
+		return locale.NewInputError("err_auth_required")
 	}
 
 	return nil
 }
 
 func promptForLogin(credentials *mono_models.Credentials, prompter prompt.Prompter) error {
-	var fail error
+	var err error
 	if credentials.Username == "" {
-		credentials.Username, fail = prompter.Input("", locale.T("username_prompt"), "", prompt.InputRequired)
-		if fail != nil {
-			return FailLoginPrompt.Wrap(fail)
+		credentials.Username, err = prompter.Input("", locale.T("username_prompt"), "", prompt.InputRequired)
+		if err != nil {
+			return errs.Wrap(err, "Input cancelled")
 		}
 	}
 
 	if credentials.Password == "" {
-		credentials.Password, fail = prompter.InputSecret("", locale.T("password_prompt"), prompt.InputRequired)
-		if fail != nil {
-			return FailLoginPrompt.Wrap(fail)
+		credentials.Password, err = prompter.InputSecret("", locale.T("password_prompt"), prompt.InputRequired)
+		if err != nil {
+			return errs.Wrap(err, "Secret input cancelled")
 		}
 	}
 	return nil
@@ -139,9 +127,9 @@ func promptForLogin(credentials *mono_models.Credentials, prompter prompt.Prompt
 // AuthenticateWithCredentials will attempt authenticate using the given credentials
 func AuthenticateWithCredentials(credentials *mono_models.Credentials) error {
 	auth := authentication.Get()
-	fail := auth.AuthenticateWithModel(credentials)
-	if fail != nil {
-		return fail
+	err := auth.AuthenticateWithModel(credentials)
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -180,7 +168,7 @@ func promptToken(credentials *mono_models.Credentials, out output.Outputer, prom
 	}
 	if credentials.Totp == "" {
 		out.Notice(locale.T("login_cancelled"))
-		return FailEmptyToken.New(locale.T("err_auth_empty_token"))
+		return locale.NewInputError("err_auth_empty_token")
 	}
 
 	fail = AuthenticateWithCredentials(credentials)

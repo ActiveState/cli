@@ -21,20 +21,8 @@ import (
 )
 
 var (
-	// FailNoValidProject is a failure for the call api.GetProject
-	FailNoValidProject = failures.Type("model.fail.novalidproject", failures.FailUser)
-
-	// FailNoDefaultBranch is a failure in getting a project's default branch
-	FailNoDefaultBranch = failures.Type("model.fail.nodefaultbranch")
-
-	// FailCannotConvertModel is a failure to convert a new model to an existing model
-	FailCannotConvertModel = failures.Type("model.fail.cannotconvertmodel")
-
-	// FailProjectNameConflict is a failure due to a project name conflict
-	FailProjectNameConflict = failures.Type("model.fail.projectconflict")
-
-	// FailProjectNotFound is a fialure due to a project not being found
-	FailProjectNotFound = failures.Type("model.fail.projectnotfound", failures.FailNonFatal)
+	ErrProjectNameConflict = errs.New("project name already in use")
+	ErrProjectNotFound     = errs.New("project not found")
 )
 
 // FetchProjectByName fetches a project for an organization.
@@ -54,7 +42,7 @@ func FetchProjectByName(orgName string, projectName string) (*mono_models.Projec
 		if !authentication.Get().Authenticated() {
 			return nil, locale.NewInputError("err_api_project_not_found_unauthenticated", "", orgName, projectName)
 		}
-		return nil, locale.NewInputError("err_api_project_not_found", "", projectName, orgName)
+		return nil, locale.WrapInputError(ErrProjectNotFound, "err_api_project_not_found", "", projectName, orgName)
 	}
 
 	return response.Projects[0].ToMonoProject()
@@ -128,9 +116,9 @@ func CreateEmptyProject(owner, name string, private bool) (*mono_models.Project,
 	if err != nil {
 		msg := api.ErrorMessageFromPayload(err)
 		if _, ok := err.(*projects.AddProjectConflict); ok {
-			return nil, locale.NewInputError(msg)
+			return nil, locale.WrapInputError(errs.WrapErrors(err, ErrProjectNameConflict), msg)
 		}
-		return nil, locale.NewError(msg)
+		return nil, locale.WrapError(err, msg)
 	}
 
 	return pj.Payload, nil
@@ -167,10 +155,10 @@ func ProjectURL(owner, name, commitID string) string {
 func processProjectErrorResponse(err error, params ...string) error {
 	switch statusCode := api.ErrorCode(err); statusCode {
 	case 401:
-		return locale.NewInputError("err_api_not_authenticated")
+		return locale.WrapInputError(err, "err_api_not_authenticated")
 	case 404:
 		p := append([]string{""}, params...)
-		return locale.NewInputError("err_api_project_not_found", p...)
+		return locale.WrapInputError(errs.WrapErrors(err, ErrProjectNotFound), "err_api_project_not_found", p...)
 	default:
 		return locale.WrapError(err, "err_api_unknown", "Unexpected API error")
 	}

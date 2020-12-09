@@ -4,7 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/bndr/gotabulate"
+
 	"github.com/ActiveState/cli/internal/access"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -13,7 +16,6 @@ import (
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	secretsModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/bndr/gotabulate"
 )
 
 type listPrimeable interface {
@@ -125,9 +127,9 @@ func (es secretExports) MarshalOutput(format output.Format) interface{} {
 		return es
 
 	default:
-		rows, fail := secretsToRows(es)
-		if fail != nil {
-			return fail.WithDescription(locale.T("secrets_err_output"))
+		rows, err := secretsToRows(es)
+		if err != nil {
+			return locale.WrapError(err, "secrets_err_output")
 		}
 
 		t := gotabulate.Create(rows)
@@ -168,7 +170,7 @@ func defsToSecrets(defs []*secretsModels.SecretDefinition) ([]*SecretExport, err
 func secretsAsJSON(secretExports []*SecretExport) ([]byte, error) {
 	bs, err := json.Marshal(secretExports)
 	if err != nil {
-		return nil, failures.FailMarshal.Wrap(err)
+		return nil, errs.Wrap(err, "Marshal failure")
 	}
 
 	return bs, nil
@@ -189,13 +191,6 @@ func secretsToRows(secretExports []*SecretExport) ([][]interface{}, error) {
 		rows = append(rows, []interface{}{secret.Name, secret.Scope, hasValue, description, fmt.Sprintf("%s.%s", secret.Scope, secret.Name)})
 	}
 	return rows, nil
-}
-
-func ptrToString(s *string, fieldName string) (string, error) {
-	if s == nil {
-		return "", failures.FailVerify.New("secrets_err_missing_field", fieldName)
-	}
-	return *s, nil
 }
 
 // SecretExport defines important information about a secret that should be

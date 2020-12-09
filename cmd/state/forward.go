@@ -10,6 +10,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -88,7 +89,7 @@ func execForward(binary string, args []string) (int, error) {
 	code, _, err := osutils.ExecuteAndPipeStd(binary, args[1:], []string{fmt.Sprintf("%s=true", constants.ForwardedStateEnvVarName)})
 	if err != nil {
 		logging.Error("Forwarding command resulted in error: %v", err)
-		return 1, failures.FailOS.New(locale.Tr("forward_fail_with_error", err.Error()))
+		return 1, locale.NewError("forward_fail_with_error", "", err.Error())
 	}
 	return code, nil
 }
@@ -119,24 +120,24 @@ func ensureForwardExists(binary string, versionInfo *projectfile.VersionInfo, ou
 
 	info, err := up.Info()
 	if err != nil {
-		return failures.FailNetwork.Wrap(err)
+		return errs.Wrap(err, "Info failed")
 	}
 
 	if info == nil {
-		return failures.FailNetwork.New(locale.T("forward_fail_info"))
+		return locale.NewError("forward_fail_info")
 	}
 
 	out.Notice(locale.Tr("downloading_state_version", info.Version))
 	err = up.Download(binary)
 	if err != nil {
-		return failures.FailNetwork.Wrap(err)
+		return errs.Wrap(err, "Download failed")
 	}
 
 	permissions, _ := permbits.Stat(binary)
 	permissions.SetUserExecute(true)
 	err = permbits.Chmod(binary, permissions)
 	if err != nil {
-		return failures.FailIO.Wrap(err)
+		return errs.Wrap(err, "Chmod failed")
 	}
 
 	return nil

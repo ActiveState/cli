@@ -29,9 +29,9 @@ func (o *Organizations) Run(params *OrgParams) error {
 }
 
 func run(params *OrgParams, out output.Outputer) error {
-	orgs, fail := model.FetchOrganizations()
-	if fail != nil {
-		return fail.WithDescription("organizations_err")
+	orgs, err := model.FetchOrganizations()
+	if err != nil {
+		return locale.WrapError(err, "organizations_err")
 	}
 
 	if len(orgs) == 0 {

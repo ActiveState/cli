@@ -1,6 +1,7 @@
 package project
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -514,7 +515,7 @@ func (s *Secret) ValueOrNil() (*string, error) {
 
 	value, err := secretsExpander.Expand("", category, s.secret.Name, false, s.project)
 	if err != nil {
-		if errs.Matches(err, ErrSecretNotFound) {
+		if errors.Is(err, ErrSecretNotFound) {
 			return nil, nil
 		}
 		logging.Error("Could not expand secret %s, error: %v", s.Name(), err)

@@ -18,9 +18,6 @@ import (
 
 var persisted *VirtualEnvironment
 
-// FailAlreadyActive is a failure given when a project is already active
-var FailAlreadyActive = failures.Type("virtualenvironment.fail.alreadyactive", failures.FailUser)
-
 // VirtualEnvironment represents our virtual environment, it pulls together and virtualizes the runtime environment
 type VirtualEnvironment struct {
 	activationID string

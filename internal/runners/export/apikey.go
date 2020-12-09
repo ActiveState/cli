@@ -1,7 +1,6 @@
 package export
 
 import (
-	"errors"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -22,11 +21,11 @@ type APIKeyRunParams struct {
 
 func prepareAPIKeyRunParams(params APIKeyRunParams) (APIKeyRunParams, error) {
 	if params.Name == "" {
-		return params, errors.New(locale.T("err_apikey_name_required"))
+		return params, locale.NewInputError("err_apikey_name_required")
 	}
 
 	if !params.IsAuthed() {
-		return params, errors.New(locale.T("err_command_requires_auth"))
+		return params, locale.NewInputError("err_command_requires_auth")
 	}
 
 	return params, nil
@@ -57,12 +56,12 @@ func (k *APIKey) Run(params APIKeyRunParams) error {
 
 	ps, err := prepareAPIKeyRunParams(params)
 	if err != nil {
-		return failures.FailUser.New(err.Error())
+		return err
 	}
 
-	key, fail := k.keyPro.NewAPIKey(ps.Name)
+	key, err := k.keyPro.NewAPIKey(ps.Name)
 	if err != nil {
-		return fail.WithDescription("err_cannot_obtain_apikey")
+		return locale.WrapError(err, "err_cannot_obtain_apikey")
 	}
 
 	k.out.Notice(locale.T("export_apikey_user_notice"))

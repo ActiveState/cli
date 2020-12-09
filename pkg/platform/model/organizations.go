@@ -17,8 +17,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
-// FailOrgResponseLen is a failure due to the response length not matching the request length
-var FailOrgResponseLen = failures.Type("model.fail.getcommithistory")
+var ErrMemberNotFound = errs.New("member not found")
 
 // FetchOrganizations fetches all organizations for the current user.
 func FetchOrganizations() ([]*mono_models.Organization, error) {
@@ -74,7 +73,7 @@ func FetchOrgMember(orgName, name string) (*mono_models.Member, error) {
 			return member, nil
 		}
 	}
-	return nil, api.FailNotFound.New("err_api_member_not_found")
+	return nil, locale.WrapError(ErrMemberNotFound, "err_api_member_not_found")
 }
 
 // InviteUserToOrg invites a single user (via email address) to a given
@@ -98,7 +97,7 @@ func InviteUserToOrg(orgName string, asOwner bool, email string) (*mono_models.I
 		return nil, processInviteErrorResponse(err)
 	}
 	if len(resOk.Payload) != 1 {
-		return nil, api.FailUnknown.New("err_api_org_invite_expected_one_invite")
+		return nil, locale.NewError("err_api_org_invite_expected_one_invite")
 	}
 	return resOk.Payload[0], nil
 
@@ -113,11 +112,11 @@ func FetchOrganizationsByIDs(ids []strfmt.UUID) ([]model.Organization, error) {
 	response := model.Organizations{}
 	err := gql.Run(request, &response)
 	if err != nil {
-		return nil, api.FailUnknown.Wrap(err)
+		return nil, errs.Wrap(err, "gql.Run failed")
 	}
 
 	if len(response.Organizations) != len(ids) {
-		return nil, FailOrgResponseLen.New(locale.Tr("err_orgs_length"))
+		return nil, locale.NewError("err_orgs_length")
 	}
 
 	return response.Organizations, nil
@@ -126,23 +125,23 @@ func FetchOrganizationsByIDs(ids []strfmt.UUID) ([]model.Organization, error) {
 func processOrgErrorResponse(err error) error {
 	switch statusCode := api.ErrorCode(err); statusCode {
 	case 401:
-		return api.FailAuth.New("err_api_not_authenticated")
+		return locale.NewInputError("err_api_not_authenticated")
 	case 404:
-		return api.FailOrganizationNotFound.New("err_api_org_not_found")
+		return locale.NewInputError("err_api_org_not_found")
 	default:
-		return api.FailUnknown.Wrap(err)
+		return err
 	}
 }
 
 func processInviteErrorResponse(err error) error {
 	switch statusCode := api.ErrorCode(err); statusCode {
 	case 400:
-		return api.FailUnknown.Wrap(locale.WrapInputError(err, "err_api_invite_400", "Invalid request, did you enter a valid email address?"))
+		return locale.WrapInputError(err, "err_api_invite_400", "Invalid request, did you enter a valid email address?")
 	case 401:
-		return api.FailAuth.New("err_api_not_authenticated")
+		return locale.NewInputError("err_api_not_authenticated")
 	case 404:
-		return api.FailOrganizationNotFound.New("err_api_org_not_found")
+		return locale.NewInputError("err_api_org_not_found")
 	default:
-		return api.FailUnknown.Wrap(errs.New(api.ErrorMessageFromPayload(err)))
+		return locale.WrapError(err, api.ErrorMessageFromPayload(err))
 	}
 }

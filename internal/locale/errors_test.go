@@ -60,22 +60,6 @@ func TestIsError(t *testing.T) {
 			true,
 			true,
 		},
-		{
-			"User Failures for Backwards compatibility",
-			failures.FailUser.New("Input error"),
-			"Input error",
-			"Input error",
-			false,
-			true,
-		},
-		{
-			"Wrapped User Failures",
-			locale.WrapError(failures.FailUser.New("Input error"), "", "Wrapper"),
-			"Wrapper",
-			"Wrapper,Input error",
-			true,
-			true,
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

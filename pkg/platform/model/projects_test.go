@@ -44,7 +44,6 @@ func (suite *ProjectsTestSuite) TestProjects_FetchByName_NotFound() {
 	suite.graphMock.NoProjects(graphMock.NoOptions)
 	project, fail := model.FetchProjectByName("bad-org", "bad-proj")
 	suite.Require().Error(fail)
-	suite.Equal(fail.Type.Name, model.FailProjectNotFound.Name)
 	suite.Nil(project)
 }
 

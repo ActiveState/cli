@@ -10,22 +10,13 @@ import (
 	"gopkg.in/src-d/go-git.v4"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
-)
-
-var (
-	// FailTargetDirInUse indicates that the target directory for cloning
-	// this git repository is not empty
-	FailTargetDirInUse = failures.Type("git.fail.dirinuse")
-
-	// FailProjectURLMismatch indicates that the project url does not match
-	// that of the URL in the cloned repository's activestate.yaml
-	FailProjectURLMismatch = failures.Type("git.fail.projecturlmismatch")
 )
 
 // Repository is the interface used to represent a version control system repository
@@ -52,7 +43,7 @@ func (r *Repo) CloneProject(owner, name, path string, out output.Outputer) error
 
 	tempDir, err := ioutil.TempDir("", fmt.Sprintf("state-activate-repo-%s-%s", owner, name))
 	if err != nil {
-		return failures.FailOS.Wrap(err)
+		return errs.Wrap(err, "OS failure")
 	}
 	defer os.RemoveAll(tempDir)
 
@@ -67,7 +58,7 @@ func (r *Repo) CloneProject(owner, name, path string, out output.Outputer) error
 		Progress: os.Stdout,
 	})
 	if err != nil {
-		return failures.FailCmd.Wrap(err)
+		return errs.Wrap(err, "Cmd failure")
 	}
 
 	fail = ensureCorrectRepo(owner, name, filepath.Join(tempDir, constants.ConfigFileName))
@@ -88,7 +79,7 @@ func ensureCorrectRepo(owner, name, projectFilePath string) error {
 		return nil
 	}
 	if err != nil {
-		return failures.FailOS.Wrap(err)
+		return errs.Wrap(err, "OS failure")
 	}
 
 	projectFile, fail := projectfile.Parse(projectFilePath)
@@ -102,7 +93,7 @@ func ensureCorrectRepo(owner, name, projectFilePath string) error {
 	}
 
 	if !(strings.ToLower(proj.Owner()) == strings.ToLower(owner)) || !(strings.ToLower(proj.Name()) == strings.ToLower(name)) {
-		return FailProjectURLMismatch.New(locale.T("error_git_project_url_mismatch"))
+		return locale.NewError("ProjectURLMismatch")
 	}
 
 	return nil
@@ -127,7 +118,7 @@ func verifyDestinationDirectory(dest string) error {
 		return fail
 	}
 	if !empty {
-		return FailTargetDirInUse.New(locale.T("error_git_target_dir_not_empty"))
+		return locale.NewError("TargetDirInUse")
 	}
 
 	return nil

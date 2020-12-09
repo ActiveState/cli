@@ -1,11 +1,13 @@
 package packages
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/go-openapi/strfmt"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -96,7 +98,7 @@ func targetFromProject(projectString string) (*strfmt.UUID, error) {
 		}
 	}
 
-	return nil, failures.FailNotFound.New(locale.T("err_package_project_no_commit"))
+	return nil, locale.NewError("err_package_project_no_commit")
 }
 
 func targetFromProjectFile() (*strfmt.UUID, error) {
@@ -117,12 +119,12 @@ func targetFromProjectFile() (*strfmt.UUID, error) {
 func prepareCommit(commit string) (*strfmt.UUID, error) {
 	logging.Debug("commit %s selected", commit)
 	if ok := strfmt.Default.Validates("uuid", commit); !ok {
-		return nil, failures.FailMarshal.New(locale.T("invalid_uuid_val"))
+		return nil, errs.New("Invalid commit: %s", commit)
 	}
 
 	var uuid strfmt.UUID
 	if err := uuid.UnmarshalText([]byte(commit)); err != nil {
-		return nil, failures.FailMarshal.Wrap(err)
+		return nil, errs.Wrap(err, "UnmarshalText %s failed", commit)
 	}
 
 	return &uuid, nil
@@ -134,12 +136,12 @@ func fetchCheckpoint(commit *strfmt.UUID) (model.Checkpoint, error) {
 		return nil, nil
 	}
 
-	checkpoint, _, fail := model.FetchCheckpointForCommit(*commit)
-	if fail != nil && fail.Type.Matches(model.FailNoData) {
-		return nil, model.FailNoData.New(locale.T("package_no_data"))
+	checkpoint, _, err := model.FetchCheckpointForCommit(*commit)
+	if err != nil && errors.Is(err, model.ErrNoData) {
+		return nil, locale.WrapInputError(err, "package_no_data")
 	}
 
-	return checkpoint, fail
+	return checkpoint, err
 }
 
 func newFilteredRequirementsTable(requirements model.Checkpoint, filter string, nstype model.NamespaceType) *packageTable {

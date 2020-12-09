@@ -14,12 +14,12 @@ func stop(cmd *exec.Cmd) error {
 
 	sig := syscall.SIGHUP
 	if err := cmd.Process.Signal(sig); err != nil {
-		return FailSignalCmd.Wrap(err)
+		return errs.Wrap(err, "SignalCmd failure")
 	}
 
 	sig = syscall.SIGTERM
 	if err := cmd.Process.Signal(sig); err != nil {
-		return FailSignalCmd.Wrap(err)
+		return errs.Wrap(err, "SignalCmd failure")
 	}
 
 	return nil

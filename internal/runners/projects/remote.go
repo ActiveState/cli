@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/organizations"
@@ -16,9 +18,9 @@ import (
 func (r *Projects) RunRemote(params *Params) error {
 	projectfile.CleanProjectMapping()
 
-	projectsList, fail := r.fetchProjects(params.Local)
-	if fail != nil {
-		return fail.WithDescription(locale.T("project_err"))
+	projectsList, err := r.fetchProjects(params.Local)
+	if err != nil {
+		return locale.WrapError(err, "project_err")
 	}
 
 	if len(projectsList) == 0 {
@@ -37,9 +39,9 @@ func (r *Projects) fetchProjects(onlyLocal bool) (projectWithOrgs, error) {
 	orgs, err := r.auth.Client().Organizations.ListOrganizations(orgParams, authentication.ClientAuth())
 	if err != nil {
 		if api.ErrorCode(err) == 401 {
-			return nil, api.FailAuth.New("err_api_not_authenticated")
+			return nil, locale.NewError("err_api_not_authenticated")
 		}
-		return nil, api.FailUnknown.Wrap(err)
+		return nil, errs.Wrap(err, "Unknown failure")
 	}
 	var projects projectWithOrgs = []projectWithOrg{}
 	localConfigProjects := r.config.GetStringMapStringSlice(projectfile.LocalProjectsConfigKey)

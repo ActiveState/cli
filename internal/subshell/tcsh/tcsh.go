@@ -4,6 +4,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
@@ -46,7 +48,7 @@ func (v *SubShell) SetBinary(binary string) {
 func (v *SubShell) WriteUserEnv(env map[string]string, envType sscommon.EnvData, _ bool) error {
 	homeDir, err := fileutils.HomeDir()
 	if err != nil {
-		return failures.FailIO.Wrap(err)
+		return errs.Wrap(err, "IO failure")
 	}
 
 	env = sscommon.EscapeEnv(env)

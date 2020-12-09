@@ -117,13 +117,3 @@ func InnerError(err error) error {
 	return err
 }
 
-// Matches checks if err matches the given target errors type
-func Matches(err error, target error) bool {
-	for err != nil {
-		if errors.Is(err, target) {
-			return true
-		}
-		err = errors.Unwrap(err)
-	}
-	return false
-}
