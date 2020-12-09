@@ -2,10 +2,7 @@ package language
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
-
-	"github.com/blang/semver"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/exeutils"
@@ -131,14 +128,10 @@ func MakeByName(name string) Language {
 func MakeByNameAndVersion(name, version string) (Language, error) {
 	if strings.ToLower(name) == Python2.Requirement() {
 		parts := strings.Split(version, ".")
-		if len(parts) > 3 {
-			version = strings.Join(parts[:len(parts)-1], ".")
+		if len(parts) == 0 || parts[0] == "" {
+			return Unknown, locale.NewError("err_invalid_version", "Invalid langauage version number: {{.V0}}", version)
 		}
-		version, err := semver.Parse(version)
-		if err != nil {
-			return Unknown, err
-		}
-		name = name + strconv.FormatUint(version.Major, 10)
+		name = name + parts[0]
 	}
 	return MakeByName(name), nil
 }
