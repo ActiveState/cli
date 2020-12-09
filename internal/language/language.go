@@ -128,7 +128,7 @@ func MakeByName(name string) Language {
 func MakeByNameAndVersion(name, version string) (Language, error) {
 	if strings.ToLower(name) == Python2.Requirement() {
 		parts := strings.Split(version, ".")
-		if len(parts) == 0 {
+		if len(parts) == 0 || parts[0] == "" {
 			return Unknown, locale.NewError("err_invalid_version", "Invalid langauage version number: {{.V0}}", version)
 		}
 		name = name + parts[0]
