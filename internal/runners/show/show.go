@@ -52,8 +52,8 @@ type outputData struct {
 	Organization string
 	Visibility   string `locale:"visibility,Visibility"`
 	Commit       string `locale:"commit,Latest Commit"`
-	Platforms    []string
-	Languages    []string
+	Platforms    []platformRow
+	Languages    []languageRow
 	Secrets      *secretOutput     `locale:"secrets,Secrets"`
 	Events       []string          `json:",omitempty"`
 	Scripts      map[string]string `json:",omitempty"`
@@ -158,7 +158,7 @@ func (s *Show) Run(params Params) error {
 		return locale.WrapError(err, "err_show_secrets", "Could not get secret information")
 	}
 
-	data := outputData{
+	outputData := outputData{
 		ProjectURL:   projectURL,
 		Namespace:    fmt.Sprintf("%s/%s", owner, projectName),
 		Name:         projectName,
@@ -172,8 +172,62 @@ func (s *Show) Run(params Params) error {
 		Scripts:      scripts,
 	}
 
+	type runtimeDetails struct {
+		Name         string `locale:"state_show_details_name,Name"`
+		Organization string `locale:"state_show_details_organization,Organization"`
+		NameSpace    string `locale:"state_show_details_namespace,Namespace"`
+		Visibility   string `locale:"state_show_details_visibility,Visibility"`
+		LastCommit   string `locale:"state_show_details_latest_commit,Latest Commit"`
+	}
+
+	data := output.NewFormatter(outputData).WithFormat(output.PlainFormatName, output.NewOutputStacks([]interface{}{
+		"Here are the details of your runtime environment.",
+		runtimeDetails{
+			Name:         projectName,
+			Organization: owner,
+			NameSpace:    outputData.Namespace,
+			Visibility:   outputData.Visibility,
+			LastCommit:   commit,
+		},
+		"",
+		output.Heading(locale.Tl("state_show_events_header", "Events")),
+		events,
+		"",
+		output.Heading(locale.Tl("state_show_scripts_header", "Scripts")),
+		formatScripts(scripts),
+		"",
+		output.Heading(locale.Tl("state_show_platforms_header", "Platforms")),
+		platforms,
+		"",
+		output.Heading(locale.Tl("state_show_languages_header", "Languages")),
+		languages,
+	}))
+
 	s.out.Print(data)
 	return nil
+}
+
+func formatScripts(scripts map[string]string) []interface{} {
+	var res []interface{}
+
+	for k, v := range scripts {
+		res = append(res, k)
+		if v != "" {
+			res = append(res, output.NewPrependedOutput(v, "  └─ "))
+		}
+	}
+	return res
+}
+
+type platformRow struct {
+	Name     string `json:"name" locale:"state_show_platform_name,Name"`
+	Version  string `json:"version" locale:"state_show_platform_version,Version"`
+	BitWidth string `json:"bit_width" locale:"state_show_platform_bitwidth,Bit Width"`
+}
+
+type languageRow struct {
+	Name    string `json:"name" locale:"state_show_language_name,Name"`
+	Version string `json:"version" locale:"state_show_language_version,Version"`
 }
 
 func eventsData(project *projectfile.Project, conditional *constraints.Conditional) ([]string, error) {
@@ -216,31 +270,33 @@ func scriptsData(project *projectfile.Project, conditional *constraints.Conditio
 	return data, nil
 }
 
-func platformsData(owner, project string, branchID strfmt.UUID) ([]string, error) {
+func platformsData(owner, project string, branchID strfmt.UUID) ([]platformRow, error) {
 	remotePlatforms, fail := model.FetchPlatformsForCommit(branchID)
 	if fail != nil {
 		return nil, locale.WrapError(fail, "err_show_get_platforms", "Could not get platform details for commit: {{.V0}}", branchID.String())
 	}
 
-	var platforms []string
+	platforms := make([]platformRow, 0, len(remotePlatforms))
 	for _, plat := range remotePlatforms {
 		if plat.DisplayName != nil {
-			platforms = append(platforms, *plat.DisplayName)
+			p := platformRow{Name: *plat.OperatingSystem.Name, Version: *plat.OperatingSystemVersion.Version, BitWidth: *plat.CPUArchitecture.BitWidth}
+			platforms = append(platforms, p)
 		}
 	}
 
 	return platforms, nil
 }
 
-func languagesData(owner, project string) ([]string, error) {
+func languagesData(owner, project string) ([]languageRow, error) {
 	platformLanguages, fail := model.FetchLanguagesForProject(owner, project)
 	if fail != nil {
 		return nil, locale.WrapError(fail, "err_show_get_languages", "Could not get languages for project")
 	}
 
-	languages := make([]string, len(platformLanguages))
-	for i, pl := range platformLanguages {
-		languages[i] = fmt.Sprintf("%s-%s", pl.Name, pl.Version)
+	languages := make([]languageRow, 0, len(platformLanguages))
+	for _, pl := range platformLanguages {
+		l := languageRow{Name: pl.Name, Version: pl.Version}
+		languages = append(languages, l)
 	}
 
 	return languages, nil

@@ -108,6 +108,18 @@ const nilText = "<nil>"
 
 var byteType = reflect.TypeOf([]byte(nil))
 
+type stacks struct {
+	v []interface{}
+}
+
+func NewOutputStacks(v []interface{}) *stacks {
+	return &stacks{v}
+}
+
+func (s *stacks) Stacks() []interface{} {
+	return s.v
+}
+
 // sprint will marshal and return the given value as a string
 func sprint(value interface{}) (string, error) {
 	if value == nil {
@@ -117,6 +129,8 @@ func sprint(value interface{}) (string, error) {
 	switch t := value.(type) {
 	case fmt.Stringer:
 		return t.String(), nil
+	case interface{ Stacks() []interface{} }:
+		return sprintSlice(t.Stacks(), false)
 	case error:
 		return t.Error(), nil
 	case []byte: // Reflect doesn't handle []byte (easily)
@@ -138,7 +152,7 @@ func sprint(value interface{}) (string, error) {
 		if valueRfl.IsNil() {
 			return nilText, nil
 		}
-		return sprintSlice(value)
+		return sprintSlice(value, true)
 
 	case reflect.Map:
 		if valueRfl.IsNil() {
@@ -195,8 +209,25 @@ func sprintStruct(value interface{}) (string, error) {
 	return strings.Join(result, "\n"), nil
 }
 
+type PrependedOutput struct {
+	v       interface{}
+	prepend string
+}
+
+func NewPrependedOutput(v interface{}, prepend string) PrependedOutput {
+	return PrependedOutput{v, prepend}
+}
+
+func (po PrependedOutput) PrependString() string {
+	return po.prepend
+}
+
+func (po PrependedOutput) Value() interface{} {
+	return po.v
+}
+
 // sprintSlice will marshal and return the given slice as a string
-func sprintSlice(value interface{}) (string, error) {
+func sprintSlice(value interface{}, prepend bool) (string, error) {
 	slice, err := parseSlice(value)
 	if err != nil {
 		return "", err
@@ -208,14 +239,21 @@ func sprintSlice(value interface{}) (string, error) {
 
 	result := []string{}
 	for _, v := range slice {
-		stringValue, err := sprint(v)
+		vv := v
+		if vp, ok := v.(interface{ Value() interface{} }); ok {
+			vv = vp.Value()
+		}
+
+		stringValue, err := sprint(vv)
 		if err != nil {
 			return "", err
 		}
 
 		// prepend if stringValue does not represent a slice
-		if !isSlice(v) {
-			stringValue = " - " + stringValue
+		if vp, ok := v.(interface{ PrependString() string }); ok {
+			stringValue = vp.PrependString() + stringValue
+		} else if prepend && !isSlice(v) {
+			stringValue = "• " + stringValue
 		}
 
 		result = append(result, stringValue)
