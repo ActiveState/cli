@@ -116,19 +116,13 @@ func TestPlain_Print(t *testing.T) {
 					Value5 *TableStruct
 					Value6 []TableStruct
 					Value7 []*TableStruct
-					Value8 struct {
-						*TableStruct `opts:"tableHoriz"`
-					}
-					Value9 struct {
-						TableStructs `opts:"tableHoriz"`
-					}
-					Nil1 *int               // nil ptr to builtin
-					Nil2 []interface{}      // nil slice
-					Nil3 []interface{}      // slice of nils
-					Nil4 *TableStruct       // nil ptr to struct
-					Nil5 struct{ N *int }   // struct w/ ptr to builtin field
-					Nil6 []struct{ N *int } // slice of structs w/ ptr to builtin field
-					Nil7 interface{}        // typed nil
+					Nil1   *int               // nil ptr to builtin
+					Nil2   []interface{}      // nil slice
+					Nil3   []interface{}      // slice of nils
+					Nil4   *TableStruct       // nil ptr to struct
+					Nil5   struct{ N *int }   // struct w/ ptr to builtin field
+					Nil6   []struct{ N *int } // slice of structs w/ ptr to builtin field
+					Nil7   interface{}        // typed nil
 				}{
 					1, 1.1, false,
 					[]interface{}{
@@ -140,19 +134,6 @@ func TestPlain_Print(t *testing.T) {
 					},
 					[]*TableStruct{
 						{"711", nilStr("722"), nil},
-					},
-					struct {
-						*TableStruct `opts:"tableHoriz"`
-					}{
-						&TableStruct{"vA", nilStr("vB"), nilStr("vC")},
-					},
-					struct {
-						TableStructs `opts:"tableHoriz"`
-					}{
-						TableStructs{
-							&TableStruct{"v1A", nilStr("v1B"), nilStr("v1C")},
-							&TableStruct{"v2A", nilStr("v2B"), nilStr("v2C")},
-						},
 					},
 					nil,
 					nil,
@@ -178,15 +159,6 @@ func TestPlain_Print(t *testing.T) {
 				"  field_header1    field_header2    field_header3  \n" +
 				"───────────────────────────────────────────────────\n" +
 				"  711              722              <nil>          \n" +
-				"field_value8: \n" +
-				"  field_header1    field_header2    field_header3  \n" +
-				"───────────────────────────────────────────────────\n" +
-				"  vA               vB               vC             \n" +
-				"field_value9: \n" +
-				"  field_header1    field_header2    field_header3  \n" +
-				"───────────────────────────────────────────────────\n" +
-				"  v1A              v1B              v1C            \n" +
-				"  v2A              v2B              v2C            \n" +
 				"field_nil3: \n - <nil>\n - <nil>\n - <nil>\n" +
 				"field_nil5: \n\n" +
 				"field_nil6: \n" +
@@ -223,6 +195,73 @@ func TestPlain_Print(t *testing.T) {
 				"  valueA.1         <nil>            valueA.3       \n" +
 				"  valueB.1         valueB.2         <nil>          \n" +
 				"  valueC.1         valueC.2         valueC.3       \n",
+			"",
+		},
+		{
+			"table embed ptr non-slice with horiz tag",
+			args{
+				struct {
+					*TableStruct `opts:"tableHoriz"`
+				}{
+					&TableStruct{"A", nilStr("B"), nilStr("C")},
+				},
+			},
+			"  field_header1    field_header2    field_header3  \n" +
+				"───────────────────────────────────────────────────\n" +
+				"  A                B                C              \n",
+			"",
+		},
+		{
+			"table embed slice with horiz tag",
+			args{
+				struct {
+					TableStructs `opts:"tableHoriz"`
+				}{
+					TableStructs{
+						&TableStruct{"1A", nilStr("1B"), nilStr("1C")},
+						&TableStruct{"2A", nilStr("2B"), nilStr("2C")},
+					},
+				},
+			},
+			"  field_header1    field_header2    field_header3  \n" +
+				"───────────────────────────────────────────────────\n" +
+				"  1A               1B               1C             \n" +
+				"  2A               2B               2C             \n",
+			"",
+		},
+		{
+			"table embed ptr non-slice with vert tag",
+			args{
+				struct {
+					*TableStruct `opts:"tableVert"`
+				}{
+					&TableStruct{"A", nilStr("B"), nilStr("C")},
+				},
+			},
+			"  field_header1    A  \n" +
+				"  field_header2    B  \n" +
+				"  field_header3    C  \n",
+			"",
+		},
+		{
+			"table embed slice with vert tag",
+			args{
+				struct {
+					TableStructs `opts:"tableVert"`
+				}{
+					TableStructs{
+						&TableStruct{"1A", nilStr("1B"), nilStr("1C")},
+						&TableStruct{"2A", nilStr("2B"), nilStr("2C")},
+					},
+				},
+			},
+			"  field_header1    1A  \n" +
+				"  field_header2    1B  \n" +
+				"  field_header3    1C  \n" +
+				"                    \n" +
+				"  field_header1    2A  \n" +
+				"  field_header2    2B  \n" +
+				"  field_header3    2C  \n",
 			"",
 		},
 	}
