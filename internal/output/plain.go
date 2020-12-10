@@ -317,7 +317,7 @@ func sprintTable(vertical bool, slice []interface{}) (string, error) {
 	}
 
 	if vertical {
-		t := table.New([]string{"->", "<-"})
+		t := table.New([]string{"", ""})
 		t.AddRow(verticalRows(headers, rows)...)
 		t.HideHeaders = true
 		return t.Render(), nil
