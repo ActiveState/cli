@@ -9,10 +9,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/go-openapi/strfmt"
-	"github.com/mitchellh/go-wordwrap"
-	"github.com/thoas/go-funk"
-
 	"github.com/ActiveState/cli/internal/colorize"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -21,6 +17,9 @@ import (
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 	"github.com/ActiveState/cli/internal/table"
 	"github.com/ActiveState/cli/internal/termutils"
+	"github.com/go-openapi/strfmt"
+	"github.com/mitchellh/go-wordwrap"
+	"github.com/thoas/go-funk"
 )
 
 // PlainOpts define available tokens for setting plain output options.

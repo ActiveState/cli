@@ -4,6 +4,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/ActiveState/cli/internal/colorize"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/mathutils"
 	"github.com/ActiveState/cli/internal/sliceutils"
@@ -16,6 +17,11 @@ const linebreakRune = '\n'
 const padding = 2
 
 type FormatFunc func(string, ...interface{}) string
+
+type entry struct {
+	line   string
+	length int
+}
 
 type row struct {
 	columns []string
@@ -97,6 +103,8 @@ func calculateWidth(hdrs []string, rows []row, maxTableWidth int) ([]int, int) {
 			if !ok {
 				continue // column doesn't exit because the previous column spans
 			}
+			// Strip any colour tags so they are not included in the width calculation
+			columnValue = colorize.StripColorCodes(columnValue)
 			columnSize := utf8.RuneCountInString(columnValue)
 
 			// Detect spanned column info
@@ -165,67 +173,51 @@ func rescaleColumns(colWidths []int, targetTotal int) {
 }
 
 func renderRow(providedColumns []string, colWidths []int) string {
-	// don't want to modify the provided slice
-	columns := make([]string, len(providedColumns))
-	copy(columns, providedColumns)
+	// Do not modify the original column widths
+	widths := make([]int, len(providedColumns))
+	copy(widths, colWidths)
 
-	result := ""
-
-	// Keep rendering lines until there's no column data left to render
-	for len(strings.Join(columns, "")) != 0 {
-		// Iterate over the columns by their line sizes
-		for n, maxLen := range colWidths {
-			// ignore columns that we do not have data for (they have been filled up with the last colValue already)
-			if len(columns) < n+1 {
-				continue
-			}
-
-			colValue := []rune(columns[n])
-
-			// Detect multi column span
-			if len(colWidths) > n+1 && len(columns) == n+1 {
-				for _, v := range colWidths[n+1:] {
-					maxLen += v
-				}
-			}
-
-			maxLen = maxLen - (padding * 2)
-
-			// How much of the colValue are we using for this line?
-			end := len(colValue)
-			if end > maxLen {
-				end = maxLen
-			}
-
-			skipLineBreak := 0
-			if breakpos := runeSliceIndexOf(colValue, linebreakRune); breakpos != -1 && breakpos < end {
-				end = breakpos + 1
-				skipLineBreak = 1
-			}
-
-			suffix := strings.Repeat(" ", maxLen-end)
-			result += pad(string(colValue[0:end-skipLineBreak]) + suffix)
-
-			columns[n] = string(colValue[end:])
-		}
-		result = strings.TrimRight(result, linebreak) + linebreak
+	// Combine column widths if we have a spanned column
+	if len(widths) < len(colWidths) {
+		widths[len(widths)-1] = mathutils.Total(colWidths[len(widths)-1 : len(colWidths)]...)
 	}
 
-	return strings.TrimRight(result, linebreak)
+	croppedColumns := []colorize.CroppedLines{}
+	for n, column := range providedColumns {
+		croppedColumns = append(croppedColumns, colorize.GetCroppedText([]rune(column), widths[n]-(padding*2)))
+	}
+
+	var rendered = true
+	var lines []string
+	// Iterate over rows until we reach a row where no column has data
+	for lineNo := 0; rendered; lineNo++ {
+		rendered = false
+		var line string
+		for columnNo, column := range croppedColumns {
+			if lineNo > len(column)-1 {
+				line += strings.Repeat(" ", widths[columnNo]) // empty column
+				continue
+			}
+			columnLine := column[lineNo]
+
+			// Add padding and fill up missing whitespace
+			prefix := strings.Repeat(" ", padding)
+			suffix := strings.Repeat(" ", padding+(widths[columnNo]-columnLine.Length-(padding*2)))
+
+			line += prefix + columnLine.Line + suffix
+			rendered = true
+		}
+		if rendered {
+			lines = append(lines, line)
+		}
+	}
+
+	return strings.TrimRight(strings.Join(lines, linebreak), linebreak)
 }
 
 func pad(v string) string {
 	padded := strings.Repeat(" ", padding)
 	return padded + v + padded
-}
-
-func runeSliceIndexOf(slice []rune, r rune) int {
-	for i, c := range slice {
-		if c == r {
-			return i
-		}
-	}
-	return -1
 }
 
 func verticalRows(hdrs []string, rows []row) []row {
