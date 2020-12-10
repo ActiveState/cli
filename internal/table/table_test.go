@@ -117,7 +117,8 @@ func TestTable_colWidths(t1 *testing.T) {
 	}
 	for _, tt := range tests {
 		t1.Run(tt.name, func(t1 *testing.T) {
-			got, total := tt.args.table.calculateWidth(tt.args.maxTotalWidth)
+			tbl := tt.args.table
+			got, total := calculateWidth(tbl.headers, tbl.rows, tt.args.maxTotalWidth)
 			if !reflect.DeepEqual(got, tt.want) {
 				t1.Errorf("calculateWidth() = %v, want %v", got, tt.want)
 			}

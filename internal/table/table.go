@@ -41,13 +41,27 @@ func (t *Table) AddRow(vs ...[]string) *Table {
 
 func (t *Table) Render(vertical bool) string {
 	if vertical {
-		return t.renderHorizontal()
+		return t.renderVertical()
 	}
 	return t.renderHorizontal()
 }
 
 func (t *Table) renderVertical() string {
-	return t.renderHorizontal()
+	if len(t.rows) == 0 {
+		return ""
+	}
+
+	vrows := verticalRows(t.headers, t.rows)
+
+	termWidth := termutils.GetWidth()
+	colWidths, _ := calculateWidth([]string{"", ""}, vrows, termWidth)
+
+	var out string
+	for _, row := range vrows {
+		out += renderRow(row.columns, colWidths) + linebreak
+	}
+
+	return strings.TrimRight(out, linebreak)
 }
 
 func (t *Table) renderHorizontal() string {
@@ -56,7 +70,7 @@ func (t *Table) renderHorizontal() string {
 	}
 
 	termWidth := termutils.GetWidth()
-	colWidths, total := t.calculateWidth(termWidth)
+	colWidths, total := calculateWidth(t.headers, t.rows, termWidth)
 
 	out := ""
 	out += "[NOTICE]" + renderRow(t.headers, colWidths) + "[/RESET]" + linebreak
@@ -68,17 +82,17 @@ func (t *Table) renderHorizontal() string {
 	return strings.TrimRight(out, linebreak)
 }
 
-func (t *Table) calculateWidth(maxTableWidth int) ([]int, int) {
+func calculateWidth(hdrs []string, rows []row, maxTableWidth int) ([]int, int) {
 	// Calculate total width of each column, not worrying about max width just yet
 	minTableWidth := padding * 2
-	colWidths := make([]int, len(t.headers))
+	colWidths := make([]int, len(hdrs))
 	colWidthsCombined := 0
-	for n, header := range t.headers {
+	for n, header := range hdrs {
 		// Start with the header size
 		colWidths[n] = utf8.RuneCountInString(header)
 
 		// Check column sizes for each row
-		for _, row := range t.rows {
+		for _, row := range rows {
 			columnValue, ok := sliceutils.GetString(row.columns, n)
 			if !ok {
 				continue // column doesn't exit because the previous column spans
@@ -86,7 +100,7 @@ func (t *Table) calculateWidth(maxTableWidth int) ([]int, int) {
 			columnSize := utf8.RuneCountInString(columnValue)
 
 			// Detect spanned column info
-			rowHasSpannedColumn := len(row.columns) < len(t.headers)
+			rowHasSpannedColumn := len(row.columns) < len(hdrs)
 			spannedColumnIndex := len(row.columns) - 1
 
 			if rowHasSpannedColumn && n == spannedColumnIndex {
@@ -131,7 +145,9 @@ func equalizeWidths(colWidths []int, percentage int) {
 	}
 
 	// Account for floats that got rounded
-	colWidths[len(colWidths)-1] += int(total) - mathutils.Total(colWidths...)
+	if len(colWidths) > 0 {
+		colWidths[len(colWidths)-1] += int(total) - mathutils.Total(colWidths...)
+	}
 }
 
 func rescaleColumns(colWidths []int, targetTotal int) {
@@ -143,7 +159,9 @@ func rescaleColumns(colWidths []int, targetTotal int) {
 	}
 
 	// Account for floats that got rounded
-	colWidths[len(colWidths)-1] += targetTotal - mathutils.Total(colWidths...)
+	if len(colWidths) > 0 {
+		colWidths[len(colWidths)-1] += targetTotal - mathutils.Total(colWidths...)
+	}
 }
 
 func renderRow(providedColumns []string, colWidths []int) string {
@@ -208,4 +226,26 @@ func runeSliceIndexOf(slice []rune, r rune) int {
 		}
 	}
 	return -1
+}
+
+func verticalRows(hdrs []string, rows []row) []row {
+	var vrows []row
+
+	for i, hrow := range rows {
+		for j, hcol := range hrow.columns {
+			var header string
+			if j < len(hdrs) {
+				header = hdrs[j]
+			}
+
+			vrow := row{[]string{header, hcol}}
+			vrows = append(vrows, vrow)
+		}
+
+		if i < len(rows)-1 {
+			vrows = append(vrows, row{[]string{"", ""}})
+		}
+	}
+
+	return vrows
 }
