@@ -149,9 +149,10 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 }
 
 type globalOptions struct {
-	Verbose    bool
-	Output     string
-	Monochrome bool
+	Verbose        bool
+	Output         string
+	Monochrome     bool
+	NonInteractive bool
 }
 
 // Group instances are used to group command help output.
@@ -222,6 +223,12 @@ func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Comm
 				Name:        "version",
 				Description: locale.T("flag_state_version_description"),
 				Value:       &opts.Version,
+			},
+			{
+				Name:      "no-interactive",
+				Shorthand: "n",
+				Persist:   true,
+				Value:     &globals.NonInteractive,
 			},
 		},
 		[]*captain.Argument{},

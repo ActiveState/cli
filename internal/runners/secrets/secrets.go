@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/secrets"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	secretsModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
@@ -20,6 +21,7 @@ import (
 type listPrimeable interface {
 	primer.Outputer
 	primer.Projecter
+	primer.Prompter
 }
 
 // ListRunParams tracks the info required for running List.
@@ -31,6 +33,7 @@ type ListRunParams struct {
 type List struct {
 	secretsClient *secretsapi.Client
 	out           output.Outputer
+	prompt        prompt.Prompter
 	proj          *project.Project
 }
 
@@ -39,6 +42,7 @@ func NewList(client *secretsapi.Client, p listPrimeable) *List {
 	return &List{
 		secretsClient: client,
 		out:           p.Output(),
+		prompt:        p.Prompt(),
 		proj:          p.Project(),
 	}
 }
@@ -53,7 +57,7 @@ func (l *List) Run(params ListRunParams) error {
 	if fail != nil {
 		return locale.WrapError(fail, "secrets_err_defined")
 	}
-	exports, fail := defsToSecrets(defs)
+	exports, fail := defsToSecrets(l.prompt, defs)
 	if fail != nil {
 		return locale.WrapError(fail, "secrets_err_values")
 	}
@@ -98,7 +102,7 @@ func filterSecrets(proj *project.Project, secrectDefs []*secretsModels.SecretDef
 	if oldExpander != nil {
 		defer project.RegisterExpander("secrets", oldExpander)
 	}
-	expander := project.NewSecretExpander(secretsapi.Get(), proj)
+	expander := project.NewSecretExpander(secretsapi.Get(), proj, nil)
 	project.RegisterExpander("secrets", expander.Expand)
 	project.ExpandFromProject(fmt.Sprintf("$%s", filter), proj)
 	accessedSecrets := expander.SecretsAccessed()
@@ -140,9 +144,9 @@ func (es secretExports) MarshalOutput(format output.Format) interface{} {
 	}
 }
 
-func defsToSecrets(defs []*secretsModels.SecretDefinition) ([]*SecretExport, *failures.Failure) {
+func defsToSecrets(prompt prompt.Prompter, defs []*secretsModels.SecretDefinition) ([]*SecretExport, *failures.Failure) {
 	secretsExport := make([]*SecretExport, len(defs))
-	expander := project.NewSecretExpander(secretsapi.Get(), project.Get())
+	expander := project.NewSecretExpander(secretsapi.Get(), project.Get(), prompt)
 
 	for i, def := range defs {
 		if def.Name == nil || def.Scope == nil {
