@@ -29,7 +29,7 @@ func TestPrompts(t *testing.T) {
 		Colored:     true,
 		Interactive: true,
 	})
-	p := New()
+	p := New(true)
 
 	fmt.Println("# SELECT")
 	p.Select("Title", "This is the message", []string{"choice 1", "choice 2", "choice 3"}, "choice 1")
