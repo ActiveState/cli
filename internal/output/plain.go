@@ -29,9 +29,7 @@ const (
 	// SeparateLineOpt requests table output to be printed on a separate line (without columns)
 	SeparateLineOpt PlainOpts = "separateLine"
 	// VerticalTable requests a table be output vertically
-	VerticalTable PlainOpts = "tableVert"
-	// HorizontalTable requests a table be output horizontally (default for slices of structs)
-	HorizontalTable PlainOpts = "tableHoriz"
+	VerticalTable PlainOpts = "verticalTable"
 	// EmptyNil replaces nil values with the empty string
 	EmptyNil PlainOpts = "emptyNil"
 	// HidePlain hides the field value in table output
@@ -179,14 +177,12 @@ func sprintStruct(value interface{}) (string, error) {
 
 	result := []string{}
 	for _, field := range meta {
-		isHorizTable := funk.Contains(field.opts, string(HorizontalTable))
-		isVertiTable := funk.Contains(field.opts, string(VerticalTable))
-		if isHorizTable || isVertiTable {
+		if funk.Contains(field.opts, string(VerticalTable)) {
 			slice, err := asSlice(field.value)
 			if err != nil {
 				return "", err
 			}
-			return sprintTable(isVertiTable, slice)
+			return sprintTable(true, slice)
 		}
 
 		stringValue, err := sprint(field.value)

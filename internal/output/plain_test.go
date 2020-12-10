@@ -198,42 +198,10 @@ func TestPlain_Print(t *testing.T) {
 			"",
 		},
 		{
-			"table embed ptr non-slice with horiz tag",
-			args{
-				struct {
-					*TableStruct `opts:"tableHoriz"`
-				}{
-					&TableStruct{"A", nilStr("B"), nilStr("C")},
-				},
-			},
-			"  field_header1    field_header2    field_header3  \n" +
-				"───────────────────────────────────────────────────\n" +
-				"  A                B                C              \n",
-			"",
-		},
-		{
-			"table embed slice with horiz tag",
-			args{
-				struct {
-					TableStructs `opts:"tableHoriz"`
-				}{
-					TableStructs{
-						&TableStruct{"1A", nilStr("1B"), nilStr("1C")},
-						&TableStruct{"2A", nilStr("2B"), nilStr("2C")},
-					},
-				},
-			},
-			"  field_header1    field_header2    field_header3  \n" +
-				"───────────────────────────────────────────────────\n" +
-				"  1A               1B               1C             \n" +
-				"  2A               2B               2C             \n",
-			"",
-		},
-		{
 			"table embed ptr non-slice with vert tag",
 			args{
 				struct {
-					*TableStruct `opts:"tableVert"`
+					*TableStruct `opts:"verticalTable"`
 				}{
 					&TableStruct{"A", nilStr("B"), nilStr("C")},
 				},
@@ -247,7 +215,7 @@ func TestPlain_Print(t *testing.T) {
 			"table embed slice with vert tag",
 			args{
 				struct {
-					TableStructs `opts:"tableVert"`
+					TableStructs `opts:"verticalTable"`
 				}{
 					TableStructs{
 						&TableStruct{"1A", nilStr("1B"), nilStr("1C")},
