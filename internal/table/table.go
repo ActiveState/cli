@@ -30,12 +30,12 @@ type row struct {
 type Table struct {
 	headers []string
 	rows    []row
+
+	HideHeaders bool
 }
 
 func New(headers []string) *Table {
-	return &Table{
-		headers: headers,
-	}
+	return &Table{headers: headers}
 }
 
 func (t *Table) AddRow(vs ...[]string) *Table {
@@ -45,42 +45,19 @@ func (t *Table) AddRow(vs ...[]string) *Table {
 	return t
 }
 
-func (t *Table) Render(vertical bool) string {
-	if vertical {
-		return t.renderVertical()
-	}
-	return t.renderHorizontal()
-}
-
-func (t *Table) renderVertical() string {
+func (t *Table) Render() string {
 	if len(t.rows) == 0 {
 		return ""
 	}
 
-	vrows := verticalRows(t.headers, t.rows)
-
 	termWidth := termutils.GetWidth()
-	colWidths, _ := calculateWidth([]string{"", ""}, vrows, termWidth)
+	colWidths, total := t.calculateWidth(termWidth)
 
 	var out string
-	for _, row := range vrows {
-		out += renderRow(row.columns, colWidths) + linebreak
+	if !t.HideHeaders {
+		out += "[NOTICE]" + renderRow(t.headers, colWidths) + "[/RESET]" + linebreak
+		out += "[DISABLED]" + strings.Repeat(dash, total) + "[/RESET]" + linebreak
 	}
-
-	return strings.TrimRight(out, linebreak)
-}
-
-func (t *Table) renderHorizontal() string {
-	if len(t.rows) == 0 {
-		return ""
-	}
-
-	termWidth := termutils.GetWidth()
-	colWidths, total := calculateWidth(t.headers, t.rows, termWidth)
-
-	out := ""
-	out += "[NOTICE]" + renderRow(t.headers, colWidths) + "[/RESET]" + linebreak
-	out += "[DISABLED]" + strings.Repeat(dash, total) + "[/RESET]" + linebreak
 	for _, row := range t.rows {
 		out += renderRow(row.columns, colWidths) + linebreak
 	}
@@ -88,17 +65,17 @@ func (t *Table) renderHorizontal() string {
 	return strings.TrimRight(out, linebreak)
 }
 
-func calculateWidth(hdrs []string, rows []row, maxTableWidth int) ([]int, int) {
+func (t *Table) calculateWidth(maxTableWidth int) ([]int, int) {
 	// Calculate total width of each column, not worrying about max width just yet
 	minTableWidth := padding * 2
-	colWidths := make([]int, len(hdrs))
+	colWidths := make([]int, len(t.headers))
 	colWidthsCombined := 0
-	for n, header := range hdrs {
+	for n, header := range t.headers {
 		// Start with the header size
 		colWidths[n] = utf8.RuneCountInString(header)
 
 		// Check column sizes for each row
-		for _, row := range rows {
+		for _, row := range t.rows {
 			columnValue, ok := sliceutils.GetString(row.columns, n)
 			if !ok {
 				continue // column doesn't exit because the previous column spans
@@ -108,7 +85,7 @@ func calculateWidth(hdrs []string, rows []row, maxTableWidth int) ([]int, int) {
 			columnSize := utf8.RuneCountInString(columnValue)
 
 			// Detect spanned column info
-			rowHasSpannedColumn := len(row.columns) < len(hdrs)
+			rowHasSpannedColumn := len(row.columns) < len(t.headers)
 			spannedColumnIndex := len(row.columns) - 1
 
 			if rowHasSpannedColumn && n == spannedColumnIndex {
@@ -218,26 +195,4 @@ func renderRow(providedColumns []string, colWidths []int) string {
 func pad(v string) string {
 	padded := strings.Repeat(" ", padding)
 	return padded + v + padded
-}
-
-func verticalRows(hdrs []string, rows []row) []row {
-	var vrows []row
-
-	for i, hrow := range rows {
-		for j, hcol := range hrow.columns {
-			var header string
-			if j < len(hdrs) {
-				header = hdrs[j]
-			}
-
-			vrow := row{[]string{header, hcol}}
-			vrows = append(vrows, vrow)
-		}
-
-		if i < len(rows)-1 {
-			vrows = append(vrows, row{[]string{"", ""}})
-		}
-	}
-
-	return vrows
 }

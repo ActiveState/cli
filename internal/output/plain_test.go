@@ -226,7 +226,7 @@ func TestPlain_Print(t *testing.T) {
 			"  field_header1    1A  \n" +
 				"  field_header2    1B  \n" +
 				"  field_header3    1C  \n" +
-				"                    \n" +
+				"\n" +
 				"  field_header1    2A  \n" +
 				"  field_header2    2B  \n" +
 				"  field_header3    2C  \n",

@@ -316,7 +316,14 @@ func sprintTable(vertical bool, slice []interface{}) (string, error) {
 		}
 	}
 
-	return table.New(headers).AddRow(rows...).Render(vertical), nil
+	if vertical {
+		t := table.New([]string{"->", "<-"})
+		t.AddRow(verticalRows(headers, rows)...)
+		t.HideHeaders = true
+		return t.Render(), nil
+	}
+
+	return table.New(headers).AddRow(rows...).Render(), nil
 }
 
 func asSlice(val interface{}) ([]interface{}, error) {
@@ -376,4 +383,26 @@ func columns(offset int, value string) []string {
 	cols := make([]string, offset+1)
 	cols[offset] = value
 	return cols
+}
+
+func verticalRows(hdrs []string, rows [][]string) [][]string {
+	var vrows [][]string
+
+	for i, hrow := range rows {
+		for j, hcol := range hrow {
+			var header string
+			if j < len(hdrs) {
+				header = hdrs[j]
+			}
+
+			vrow := []string{header, hcol}
+			vrows = append(vrows, vrow)
+		}
+
+		if i < len(rows)-1 {
+			vrows = append(vrows, []string{"", ""})
+		}
+	}
+
+	return vrows
 }
