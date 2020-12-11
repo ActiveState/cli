@@ -171,12 +171,13 @@ func (s *Show) Run(params Params) error {
 	}
 
 	outputData := outputData{
-		ProjectURL: projectURL,
-		Languages:  languages,
-		Platforms:  platforms,
-		Secrets:    secrets,
-		Events:     events,
-		Scripts:    scripts,
+		ProjectURL:     projectURL,
+		RuntimeDetails: rd,
+		Languages:      languages,
+		Platforms:      platforms,
+		Secrets:        secrets,
+		Events:         events,
+		Scripts:        scripts,
 	}
 
 	data := output.NewFormatter(outputData).WithFormat(output.PlainFormatName, output.NewStackedOutput([]interface{}{
