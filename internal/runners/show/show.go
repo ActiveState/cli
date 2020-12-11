@@ -45,18 +45,22 @@ type primeable interface {
 	primer.Auther
 }
 
+type RuntimeDetails struct {
+	Name         string `locale:"state_show_details_name,Name"`
+	Organization string `locale:"state_show_details_organization,Organization"`
+	NameSpace    string `locale:"state_show_details_namespace,Namespace"`
+	Visibility   string `locale:"state_show_details_visibility,Visibility"`
+	LastCommit   string `locale:"state_show_details_latest_commit,Latest Commit"`
+}
+
 type outputData struct {
-	ProjectURL   string `locale:"project_url,Project URL"`
-	Namespace    string
-	Name         string
-	Organization string
-	Visibility   string `locale:"visibility,Visibility"`
-	Commit       string `locale:"commit,Latest Commit"`
-	Platforms    []platformRow
-	Languages    []languageRow
-	Secrets      *secretOutput     `locale:"secrets,Secrets"`
-	Events       []string          `json:",omitempty"`
-	Scripts      map[string]string `json:",omitempty"`
+	ProjectURL string `locale:"project_url,Project URL"`
+	RuntimeDetails
+	Platforms []platformRow
+	Languages []languageRow
+	Secrets   *secretOutput     `locale:"secrets,Secrets"`
+	Events    []string          `json:",omitempty"`
+	Scripts   map[string]string `json:",omitempty"`
 }
 
 type secretOutput struct {
@@ -158,37 +162,29 @@ func (s *Show) Run(params Params) error {
 		return locale.WrapError(err, "err_show_secrets", "Could not get secret information")
 	}
 
-	outputData := outputData{
-		ProjectURL:   projectURL,
-		Namespace:    fmt.Sprintf("%s/%s", owner, projectName),
+	rd := RuntimeDetails{
+		NameSpace:    fmt.Sprintf("%s/%s", owner, projectName),
 		Name:         projectName,
 		Organization: owner,
 		Visibility:   visibilityData(owner, projectName, remoteProject),
-		Commit:       commit,
-		Languages:    languages,
-		Platforms:    platforms,
-		Secrets:      secrets,
-		Events:       events,
-		Scripts:      scripts,
+		LastCommit:   commit,
 	}
 
-	type runtimeDetails struct {
-		Name         string `locale:"state_show_details_name,Name"`
-		Organization string `locale:"state_show_details_organization,Organization"`
-		NameSpace    string `locale:"state_show_details_namespace,Namespace"`
-		Visibility   string `locale:"state_show_details_visibility,Visibility"`
-		LastCommit   string `locale:"state_show_details_latest_commit,Latest Commit"`
+	outputData := outputData{
+		ProjectURL: projectURL,
+		Languages:  languages,
+		Platforms:  platforms,
+		Secrets:    secrets,
+		Events:     events,
+		Scripts:    scripts,
 	}
 
 	data := output.NewFormatter(outputData).WithFormat(output.PlainFormatName, output.NewStackedOutput([]interface{}{
 		"Here are the details of your runtime environment.",
-		runtimeDetails{
-			Name:         projectName,
-			Organization: owner,
-			NameSpace:    outputData.Namespace,
-			Visibility:   outputData.Visibility,
-			LastCommit:   commit,
-		},
+		"",
+		struct {
+			*RuntimeDetails `opts:"verticalTable"`
+		}{&rd},
 		"",
 		output.Heading(locale.Tl("state_show_events_header", "Events")),
 		events,
