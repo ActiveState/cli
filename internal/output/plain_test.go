@@ -197,41 +197,6 @@ func TestPlain_Print(t *testing.T) {
 				"  valueC.1         valueC.2         valueC.3       \n",
 			"",
 		},
-		{
-			"table embed ptr non-slice with vert tag",
-			args{
-				struct {
-					*TableStruct `opts:"verticalTable"`
-				}{
-					&TableStruct{"A", nilStr("B"), nilStr("C")},
-				},
-			},
-			"  field_header1    A  \n" +
-				"  field_header2    B  \n" +
-				"  field_header3    C  \n",
-			"",
-		},
-		{
-			"table embed slice with vert tag",
-			args{
-				struct {
-					TableStructs `opts:"verticalTable"`
-				}{
-					TableStructs{
-						&TableStruct{"1A", nilStr("1B"), nilStr("1C")},
-						&TableStruct{"2A", nilStr("2B"), nilStr("2C")},
-					},
-				},
-			},
-			"  field_header1    1A  \n" +
-				"  field_header2    1B  \n" +
-				"  field_header3    1C  \n" +
-				"\n" +
-				"  field_header1    2A  \n" +
-				"  field_header2    2B  \n" +
-				"  field_header3    2C  \n",
-			"",
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
