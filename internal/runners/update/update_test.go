@@ -3,6 +3,8 @@ package update
 import (
 	"errors"
 	"testing"
+
+	"github.com/ActiveState/cli/internal/prompt"
 )
 
 func Test_run(t *testing.T) {
@@ -101,11 +103,11 @@ func Test_run(t *testing.T) {
 				runUpdateGlobalCalled bool
 			)
 			err := run(
-				tt.args.lock, tt.args.isLocked, tt.args.force,
+				nil, tt.args.lock, tt.args.isLocked, tt.args.force,
 				func() error { runLockCalled = true; return nil },
 				func() error { runUpdateLockCalled = true; return nil },
 				func() error { runUpdateGlobalCalled = true; return nil },
-				func() error { confirmLockCalled = true; return tt.confirmation },
+				func(_ prompt.Prompter) error { confirmLockCalled = true; return tt.confirmation },
 			)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("run() error = %v, wantErr %v", err, tt.wantErr)

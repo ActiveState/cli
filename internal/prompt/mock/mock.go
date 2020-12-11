@@ -9,6 +9,8 @@ import (
 	tmock "github.com/stretchr/testify/mock"
 )
 
+var _ prompt.Prompter = &Mock{}
+
 // Mock the struct to mock the Prompt struct
 type Mock struct {
 	tmock.Mock
@@ -62,6 +64,10 @@ func (m *Mock) OnMethod(methodName string) *tmock.Call {
 		anyArgs = append(anyArgs, tmock.Anything)
 	}
 	return m.On(methodName, anyArgs...)
+}
+
+func (m *Mock) IsInteractive() bool {
+	return true
 }
 
 func failure(arg interface{}) *failures.Failure {

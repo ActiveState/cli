@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/secrets"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
@@ -36,11 +37,6 @@ const UserCategory = "user"
 // ProjectCategory is the string used when referencing project secrets (eg. $secrets.project.foo)
 const ProjectCategory = "project"
 
-func init() {
-	expander := NewSecretPromptingExpander(secretsapi.Get())
-	RegisterExpander("secrets", expander)
-}
-
 // SecretAccess is used to track secrets that were requested
 type SecretAccess struct {
 	IsUser bool
@@ -55,31 +51,33 @@ type SecretExpander struct {
 	remoteProject   *mono_models.Project
 	projectFile     *projectfile.Project
 	project         *Project
+	prompt          prompt.Prompter
 	secrets         []*secretsModels.UserSecret
 	secretsAccessed []*SecretAccess
 	cachedSecrets   map[string]string
 }
 
 // NewSecretExpander returns a new instance of SecretExpander
-func NewSecretExpander(secretsClient *secretsapi.Client, prj *Project) *SecretExpander {
+func NewSecretExpander(secretsClient *secretsapi.Client, prj *Project, prompt prompt.Prompter) *SecretExpander {
 	return &SecretExpander{
 		secretsClient: secretsClient,
 		cachedSecrets: map[string]string{},
 		project:       prj,
+		prompt:        prompt,
 	}
 }
 
 // NewSecretQuietExpander creates an Expander which can retrieve and decrypt stored user secrets.
 func NewSecretQuietExpander(secretsClient *secretsapi.Client) ExpanderFunc {
-	secretsExpander := NewSecretExpander(secretsClient, nil)
+	secretsExpander := NewSecretExpander(secretsClient, nil, nil)
 	return secretsExpander.Expand
 }
 
 // NewSecretPromptingExpander creates an Expander which can retrieve and decrypt stored user secrets. Additionally,
 // it will prompt the user to provide a value for a secret -- in the event none is found -- and save the new
 // value with the secrets service.
-func NewSecretPromptingExpander(secretsClient *secretsapi.Client) ExpanderFunc {
-	secretsExpander := NewSecretExpander(secretsClient, nil)
+func NewSecretPromptingExpander(secretsClient *secretsapi.Client, prompt prompt.Prompter) ExpanderFunc {
+	secretsExpander := NewSecretExpander(secretsClient, nil, prompt)
 	return secretsExpander.ExpandWithPrompt
 }
 
@@ -338,7 +336,7 @@ func (e *SecretExpander) ExpandWithPrompt(_ string, category string, name string
 	}
 
 	project.Outputer.Notice(locale.Tr("secret_value_prompt_summary", name, description, scope, locale.T("secret_prompt_"+scope)))
-	if value, fail = project.Prompter.InputSecret(locale.Tl("secret_expand", "Secret Expansion"), locale.Tr("secret_value_prompt", name)); fail != nil {
+	if value, fail = e.prompt.InputSecret(locale.Tl("secret_expand", "Secret Expansion"), locale.Tr("secret_value_prompt", name)); fail != nil {
 		return "", locale.NewInputError("secrets_err_value_prompt", "The provided secret value is invalid.")
 	}
 

@@ -118,7 +118,7 @@ func (i *Import) Run(params ImportRunParams) error {
 	packageReqs := model.FilterCheckpointPackages(reqs)
 	if len(packageReqs) > 0 {
 		force := params.Force
-		err = removeRequirements(prompt.New(), i.proj, force, isHeadless, packageReqs)
+		err = removeRequirements(i.Prompter, i.proj, force, isHeadless, packageReqs)
 		if err != nil {
 			return locale.WrapError(err, "err_cannot_remove_existing")
 		}
