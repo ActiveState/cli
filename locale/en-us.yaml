@@ -1125,8 +1125,6 @@ bundle_updated:
   other: "Bundle updated: [NOTICE]{{.V0}}[/RESET]"
 bundle_version_updated:
   other: "Bundle updated: [NOTICE]{{.V0}}@{{.V1}}[/RESET]"
-package_ingredient_err:
-  other: Failed to resolve an ingredient named {{.V0}}.
 package_headless_added:
   other: "Package added: [NOTICE]{{.V0}}[/RESET]"
 package_headless_updated:

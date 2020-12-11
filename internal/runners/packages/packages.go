@@ -50,7 +50,7 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 		_, err = model.IngredientByNameAndVersion(name, version, ns)
 	}
 	if err != nil {
-		return locale.WrapError(err, "package_ingredient_err", "Failed to resolve an ingredient named {{.V0}}.", name)
+		return addSuggestions(err, ns, name)
 	}
 
 	// Check if this is an addition or an update
@@ -127,6 +127,28 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 	return nil
 }
 
+func addSuggestions(err error, ns model.Namespace, name string) error {
+	results, searchFail := model.SearchIngredients(ns, name)
+	if searchFail != nil {
+		// Log and return generic error if search failed
+		logging.Error("Failed to search for ingredients with namespace: %s and name: %s, got error: %v", ns.String(), name, searchFail)
+		return locale.WrapError(err, "package_ingredient_err_search", "Failed to resolve ingredient named: {{.V0}}", name)
+	}
+
+	maxResults := 5
+	if len(results) > maxResults {
+		results = results[:maxResults]
+	}
+
+	suggestions := make([]string, maxResults)
+	for i := range results {
+		suggestions[i] = fmt.Sprintf(" - %s", *results[i].Ingredient.Name)
+	}
+	suggestions = append(suggestions, fmt.Sprintf(" - .. (to see more results run `state search %s`)", name))
+
+	return locale.WrapError(err, "package_ingredient_err", "Could not match {{.V0}}. Did you mean:\n\n{{.V1}}", name, strings.Join(suggestions, "\n"))
+}
+
 func splitNameAndVersion(input string) (string, string) {
 	nameArg := strings.Split(input, "@")
 	name := nameArg[0]
@@ -137,4 +159,3 @@ func splitNameAndVersion(input string) (string, string) {
 
 	return name, version
 }
-
