@@ -35,17 +35,18 @@ var _ Prompter = &Prompt{}
 
 // Prompt is our main prompting struct
 type Prompt struct {
-	out            output.Outputer
-	nonInteractive bool
+	out           output.Outputer
+	isInteractive bool
 }
 
 // New creates a new prompter
-func New(nonInteractive bool) Prompter {
-	return &Prompt{output.Get(), nonInteractive}
+func New(isInteractive bool) Prompter {
+	return &Prompt{output.Get(), isInteractive}
 }
 
+// IsInteractive checks if the prompts can be interactive or should just return default values
 func (p *Prompt) IsInteractive() bool {
-	return !p.nonInteractive
+	return p.isInteractive
 }
 
 // ValidatorFlag represents flags for prompt functions to change their behavior on.
@@ -68,7 +69,7 @@ func (p *Prompt) Input(title, message, defaultResponse string, flags ...Validato
 
 // InputAndValidate prompts an input field and allows you to specfiy a custom validation function as well as the built in flags
 func (p *Prompt) InputAndValidate(title, message, defaultResponse string, validator ValidatorFunc, flags ...ValidatorFlag) (string, *failures.Failure) {
-	if p.nonInteractive {
+	if !p.isInteractive {
 		if defaultResponse != "" {
 			logging.Debug("Selecting default choice %s for Input prompt %s in non-interactive mode", defaultResponse, title)
 			return defaultResponse, nil
@@ -113,7 +114,7 @@ func (p *Prompt) InputAndValidate(title, message, defaultResponse string, valida
 
 // Select prompts the user to select one entry from multiple choices
 func (p *Prompt) Select(title, message string, choices []string, defaultChoice string) (string, *failures.Failure) {
-	if p.nonInteractive {
+	if !p.isInteractive {
 		if defaultChoice != "" {
 			logging.Debug("Selecting default choice %s for Select prompt %s in non-interactive mode", defaultChoice, title)
 			return defaultChoice, nil
@@ -139,7 +140,7 @@ func (p *Prompt) Select(title, message string, choices []string, defaultChoice s
 
 // Confirm prompts user for yes or no response.
 func (p *Prompt) Confirm(title, message string, defaultChoice bool) (bool, *failures.Failure) {
-	if p.nonInteractive {
+	if !p.isInteractive {
 		logging.Debug("Prompt %s confirmed with default choice %v in non-interactive mode", title, defaultChoice)
 		return defaultChoice, nil
 	}
@@ -175,7 +176,7 @@ func translateConfirm(confirm bool) string {
 // InputSecret prompts the user for input and obfuscates the text in stdout.
 // Will fail if empty.
 func (p *Prompt) InputSecret(title, message string, flags ...ValidatorFlag) (string, *failures.Failure) {
-	if p.nonInteractive {
+	if !p.isInteractive {
 		return "", FailPromptNonInteractive.New(locale.Tr("err_non_interactive_prompt", message))
 	}
 	var response string

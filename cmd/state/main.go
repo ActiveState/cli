@@ -68,8 +68,11 @@ func main() {
 	// Set up our legacy outputer
 	setPrinterColors(outFlags)
 
+	isInteractive := strings.ToLower(os.Getenv(constants.NonInteractive)) != "true" &&
+		!outFlags.NonInteractive &&
+		terminal.IsTerminal(int(os.Stdin.Fd()))
 	// Run our main command logic, which is logic that defers to the error handling logic below
-	code, err := run(os.Args, out)
+	code, err := run(os.Args, isInteractive, out)
 	if err != nil {
 		out.Error(err)
 
@@ -88,7 +91,7 @@ func main() {
 	os.Exit(code)
 }
 
-func run(args []string, out output.Outputer) (int, error) {
+func run(args []string, isInteractive bool, out output.Outputer) (int, error) {
 	// Set up profiling
 	if os.Getenv(constants.CPUProfileEnvVarName) != "" {
 		cleanup, err := profile.CPU()
@@ -114,11 +117,8 @@ func run(args []string, out output.Outputer) (int, error) {
 		return 1, fail
 	}
 
-	nonInteractive := strings.ToLower(os.Getenv(constants.NonInteractive)) == "true" ||
-		argsHaveNonInteractive(args) ||
-		!terminal.IsTerminal(int(os.Stdin.Fd()))
 	// Set up prompter
-	prompter := prompt.New(nonInteractive)
+	prompter := prompt.New(isInteractive)
 
 	// Set up project (if we have a valid path)
 	var pj *project.Project
@@ -203,15 +203,6 @@ func run(args []string, out output.Outputer) (int, error) {
 func argsHaveVerbose(args []string) bool {
 	for _, arg := range args {
 		if arg == "--verbose" || arg == "-v" {
-			return true
-		}
-	}
-	return false
-}
-
-func argsHaveNonInteractive(args []string) bool {
-	for _, arg := range args {
-		if arg == "--no-interactive" || arg == "-n" {
 			return true
 		}
 	}

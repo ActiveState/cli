@@ -199,13 +199,13 @@ func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Comm
 				Value: &globals.Verbose,
 			},
 			{
-				Name:        "mono", // Name and Shorthand should be kept in sync with cmd/state/main.go
+				Name:        "mono", // Name and Shorthand should be kept in sync with cmd/state/output.go
 				Persist:     true,
 				Description: locale.T("flag_state_monochrome_output_description"),
 				Value:       &globals.Monochrome,
 			},
 			{
-				Name:        "output", // Name and Shorthand should be kept in sync with cmd/state/main.go
+				Name:        "output", // Name and Shorthand should be kept in sync with cmd/state/output.go
 				Shorthand:   "o",
 				Description: locale.T("flag_state_output_description"),
 				Persist:     true,
@@ -213,22 +213,22 @@ func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Comm
 			},
 			{
 				/* This option is only used for the vscode extension: It prevents the integrated terminal to close immediately after an error occurs, such that the user can read the message */
-				Name:        "confirm-exit-on-error", // Name and Shorthand should be kept in sync with cmd/state/main.go
+				Name:        "confirm-exit-on-error", // Name and Shorthand should be kept in sync with cmd/state/output.go
 				Description: "prompts the user to press enter before exiting, when an error occurs",
 				Persist:     true,
 				Hidden:      true, // No need to add this to help messages
 				Value:       &opts.ConfirmExit,
 			},
 			{
-				Name:        "version",
-				Description: locale.T("flag_state_version_description"),
-				Value:       &opts.Version,
-			},
-			{
-				Name:      "no-interactive",
+				Name:      "non-interactive", // Name and Shorthand should be kept in sync with cmd/state/output.go
 				Shorthand: "n",
 				Persist:   true,
 				Value:     &globals.NonInteractive,
+			},
+			{
+				Name:        "version",
+				Description: locale.T("flag_state_version_description"),
+				Value:       &opts.Version,
 			},
 		},
 		[]*captain.Argument{},
