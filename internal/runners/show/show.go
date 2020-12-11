@@ -180,27 +180,27 @@ func (s *Show) Run(params Params) error {
 		Scripts:        scripts,
 	}
 
-	data := output.NewFormatter(outputData).WithFormat(output.PlainFormatName, output.NewStackedOutput([]interface{}{
-		"Here are the details of your runtime environment.",
-		"",
+	s.out.Print(output.NewFormatter(outputData).WithFormat(output.PlainFormatName, output.Suppress))
+
+	plainPrint := func(v interface{}) {
+		s.out.Print(output.NewFormatter(output.Suppress).WithFormat(output.PlainFormatName, v))
+	}
+
+	plainPrint(locale.Tl("show_details_intro", "Here are the details of your runtime environment.\n"))
+	plainPrint(
 		struct {
 			*RuntimeDetails `opts:"verticalTable"`
 		}{&rd},
-		"",
-		output.Heading(locale.Tl("state_show_events_header", "Events")),
-		events,
-		"",
-		output.Heading(locale.Tl("state_show_scripts_header", "Scripts")),
-		formatScripts(scripts),
-		"",
-		output.Heading(locale.Tl("state_show_platforms_header", "Platforms")),
-		platforms,
-		"",
-		output.Heading(locale.Tl("state_show_languages_header", "Languages")),
-		languages,
-	}))
+	)
+	plainPrint(output.Heading(locale.Tl("state_show_events_header", "Events")))
+	plainPrint(events)
+	plainPrint(output.Heading(locale.Tl("state_show_scripts_header", "Scripts")))
+	plainPrint(formatScripts(scripts))
+	plainPrint(output.Heading(locale.Tl("state_show_platforms_header", "Platforms")))
+	plainPrint(platforms)
+	plainPrint(output.Heading(locale.Tl("state_show_languages_header", "Languages")))
+	plainPrint(languages)
 
-	s.out.Print(data)
 	return nil
 }
 

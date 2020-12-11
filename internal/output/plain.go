@@ -43,21 +43,6 @@ func (po PrependedSliceItem) Value() interface{} {
 	return po.v
 }
 
-// StackedOutput wraps a slice and ensures that all elements are interpreted individually
-type StackedOutput struct {
-	v []interface{}
-}
-
-// NewStackedOutput wraps a slice and ensures that all elements are interpreted individually but not prepended with bullet points
-func NewStackedOutput(v []interface{}) *StackedOutput {
-	return &StackedOutput{v}
-}
-
-// Stacks returns the wrapped slice
-func (s *StackedOutput) Stacks() []interface{} {
-	return s.v
-}
-
 // PlainOpts define available tokens for setting plain output options.
 type PlainOpts string
 
