@@ -146,6 +146,12 @@ func TestMakeByNameAndVersion(t *testing.T) {
 			false,
 		},
 		{
+			"Valid Python3 invalid patch",
+			args{"python", "3.9"},
+			Python3,
+			false,
+		},
+		{
 			"Invalid version",
 			args{"python", ""},
 			Unknown,
