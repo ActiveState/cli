@@ -97,9 +97,9 @@ func (suite *CamelLinuxRuntimeTestSuite) Test_PostUnpackWithFailures() {
 		archiveName   string
 		expectedError error
 	}{
-		{"RuntimeMissingPythonExecutable", "python-missing-python-binary.tar.gz", runtime.ErrMetaData},
-		{"PythonFoundButNotExecutable", "python-noexec-python.tar.gz", runtime.ErrNotExecutable},
-		{"InstallerFailsToGetPrefixes", "python-fail-prefixes.tar.gz", runtime.ErrNoPrefixes},
+		{"RuntimeMissingPythonExecutable", "python-missing-python-binary.tar.gz", &runtime.ErrMetaData{}},
+		{"PythonFoundButNotExecutable", "python-noexec-python.tar.gz", &runtime.ErrNotExecutable{}},
+		{"InstallerFailsToGetPrefixes", "python-fail-prefixes.tar.gz", &runtime.ErrNoPrefixes{}},
 	}
 
 	for _, tc := range cases {
@@ -124,7 +124,7 @@ func (suite *CamelLinuxRuntimeTestSuite) Test_PostUnpackWithFailures() {
 			err = cr.PostUnpackArtifact(artifact, runtimeDir, archivePath, func() { counter.Increment() })
 
 			suite.Require().Error(err)
-			suite.ErrorIs(err, tc.expectedError)
+			suite.ErrorAs(err, &tc.expectedError)
 			suite.Assert().Equal(0, counter.Count)
 		})
 	}

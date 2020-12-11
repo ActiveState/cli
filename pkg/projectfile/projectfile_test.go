@@ -289,7 +289,8 @@ func TestGetProjectFilePath(t *testing.T) {
 
 	os.Setenv(constants.ProjectEnvVarName, "/some/path")
 	configPath, err = GetProjectFilePath()
-	require.ErrorIs(t, err, ErrorNoProjectFromEnv)
+	errt := &ErrorNoProjectFromEnv{}
+	require.ErrorAs(t, err, &errt)
 
 	expectedPath = filepath.Join(root, "pkg", "projectfile", "testdata", constants.ConfigFileName)
 	os.Setenv(constants.ProjectEnvVarName, expectedPath)

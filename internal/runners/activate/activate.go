@@ -1,7 +1,6 @@
 package activate
 
 import (
-	"errors"
 	"fmt"
 	"path/filepath"
 
@@ -246,7 +245,7 @@ func (r *Activate) pathToUse(namespace string, preferredPath string) (string, er
 
 func (r *Activate) projectToUse(path string) (*project.Project, error) {
 	projectToUse, err := project.FromPath(path)
-	if err != nil && !errors.Is(err, projectfile.ErrorNoProject) {
+	if err != nil && !errs.Matches(err, &projectfile.ErrorNoProject{}) {
 		return nil, locale.WrapError(err, "err_activate_projectpath", "Could not find a valid project path.")
 	}
 	return projectToUse, nil

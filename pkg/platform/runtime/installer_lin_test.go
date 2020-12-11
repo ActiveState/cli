@@ -97,7 +97,8 @@ func (suite *InstallerLinuxTestSuite) TestInstall_ArchiveDoesNotExist() {
 	mockAssembler.AssertExpectations(suite.T())
 
 	suite.Require().Error(err)
-	suite.ErrorIs(err, runtime.ErrArchiveInvalid)
+	errt := &runtime.ErrArchiveInvalid{}
+	suite.ErrorAs(err, &errt)
 	suite.Equal(locale.Tr("installer_err_archive_notfound", "/no/such/archive.tar.gz"), err.Error())
 }
 
@@ -121,7 +122,8 @@ func (suite *InstallerLinuxTestSuite) TestInstall_ArchiveNotTarGz() {
 
 	prg.AssertCloseAfterCancellation(suite.T())
 	suite.Require().Error(err)
-	suite.ErrorIs(err, runtime.ErrArchiveInvalid)
+	errt := &runtime.ErrArchiveInvalid{}
+	suite.ErrorAs(err, &errt)
 	suite.Equal(locale.Tr("installer_err_archive_badext", invalidArchive), err.Error())
 }
 
@@ -140,7 +142,8 @@ func (suite *InstallerLinuxTestSuite) TestInstall_BadArchive() {
 
 	mockAssembler.AssertExpectations(suite.T())
 	suite.Require().Error(err)
-	suite.ErrorIs(err, runtime.ErrArchiveInvalid)
+	errt := &runtime.ErrArchiveInvalid{}
+	suite.ErrorAs(err, &errt)
 	suite.Contains(err.Error(), "EOF")
 }
 

@@ -58,7 +58,7 @@ func (c *Command) setFlags(flags []*Flag) error {
 		}
 
 		if flag.Hidden {
-			if err := c.markFlagHidden(flag.Name); err != nil {
+			if err := flagSetter().MarkHidden(flag.Name); err != nil {
 				return errs.Wrap(err, "markFlagHidden %s failed", flag.Name)
 			}
 		}

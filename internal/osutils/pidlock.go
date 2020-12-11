@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-
 	"strconv"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -119,7 +118,7 @@ func (e *AlreadyLockedError) Unwrap() error {
 	return e.err
 }
 
-// Stack implements the errs.Error interface.
+// Stack implements the errs.WrapperError interface.
 func (e *AlreadyLockedError) Stack() *stacktrace.Stacktrace {
 	return e.stack
 }

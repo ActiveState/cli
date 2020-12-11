@@ -76,13 +76,15 @@ func (suite *InternalTestSuite) TestValidateCheckpointNoCommit() {
 	suite.Require().NotNil(suite.installer)
 
 	err = suite.installer.validateCheckpoint()
-	suite.ErrorIs(err, ErrNoCommit)
+	errt := &ErrNoCommit{}
+	suite.ErrorAs(err, &errt)
 }
 
 func (suite *InternalTestSuite) TestValidateCheckpointPrePlatform() {
 	suite.graphMock.CheckpointWithPrePlatform(graphMock.NoOptions)
 	err := suite.installer.validateCheckpoint()
-	suite.ErrorIs(err, ErrPrePlatform)
+	errt := &ErrPrePlatform{}
+	suite.ErrorAs(err, &errt)
 }
 
 func (suite *InternalTestSuite) TestPPMShim() {

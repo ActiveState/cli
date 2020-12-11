@@ -70,7 +70,7 @@ func NewCamelInstall(commitID strfmt.UUID, cacheDir string, artifacts []*HeadChe
 	}
 
 	if len(ci.artifacts) == 0 {
-		return ci, locale.WrapError(ErrInvalidArtifact, "err_no_valid_artifact")
+		return ci, &ErrInvalidArtifact{locale.NewError("err_no_valid_artifact")}
 	}
 
 	return ci, nil
@@ -137,7 +137,7 @@ func (ci *CamelInstall) PreInstall() error {
 func (ci *CamelInstall) PreUnpackArtifact(artf *HeadChefArtifact) error {
 	if fileutils.FileExists(ci.runtimeDir) {
 		// install-dir exists, but is a regular file
-		return locale.WrapInputError(ErrInstallDirInvalid, "installer_err_installdir_isfile", "", ci.runtimeDir)
+		return &ErrInstallDirInvalid{locale.NewInputError("installer_err_installdir_isfile", "", ci.runtimeDir)}
 	}
 
 	if fileutils.DirExists(ci.runtimeDir) {

@@ -32,10 +32,9 @@ var _ Downloader = &Download{}
 // InstallerTestsSubstr is used to exclude test artifacts, we don't care about them
 const InstallerTestsSubstr = "-tests."
 
-var (
-	ErrNoCommit        = errs.New("Commit is missing")
-	ErrInvalidArtifact = errs.New("No valid artifacts")
-)
+type ErrNoCommit struct{ *locale.LocalizedError }
+
+type ErrInvalidArtifact struct{ *locale.LocalizedError }
 
 // HeadChefArtifact is a convenient type alias cause swagger generates some really shitty code
 type HeadChefArtifact = headchef_models.Artifact
@@ -85,7 +84,7 @@ func NewDownload(runtime *Runtime) Downloader {
 func (r *Download) fetchRecipeID() (strfmt.UUID, error) {
 	commitID := r.runtime.commitID
 	if commitID == "" {
-		return "", locale.WrapError(ErrNoCommit, locale.T("err_no_commit"))
+		return "", &ErrNoCommit{locale.NewError(locale.T("err_no_commit"))}
 	}
 
 	recipeID, fail := model.FetchRecipeIDForCommitAndPlatform(commitID, r.runtime.owner, r.runtime.projectName, r.orgID, r.private, model.HostPlatform)

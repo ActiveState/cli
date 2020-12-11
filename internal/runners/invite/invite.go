@@ -1,11 +1,11 @@
 package invite
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"sync"
 
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
@@ -136,7 +136,7 @@ func (i *invite) send(orgName string, asOwner bool, emails []string) (int, error
 		if rerr == nil {
 			rerr = err
 		} else {
-			rerr = errs.WrapErrors(rerr, err)
+			rerr = fmt.Errorf("%s\n%w", err.Error(), rerr)
 		}
 	}
 	return len(emails) - errLen, rerr

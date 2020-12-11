@@ -48,7 +48,7 @@ func (m *MetaData) perlRelocationDir() (string, error) {
 	rx := regexp.MustCompile(fmt.Sprintf(`#!(.*)%sbin`, separator))
 	match := rx.FindStringSubmatch(line)
 	if len(match) != 2 {
-		return "", locale.WrapError(ErrNoPrefixes, "installer_err_fail_obtain_prefixes", "", m.Path)
+		return "", &ErrNoPrefixes{locale.NewError("installer_err_fail_obtain_prefixes", "", m.Path)}
 	}
 
 	return match[1], nil

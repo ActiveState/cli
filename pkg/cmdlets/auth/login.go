@@ -1,8 +1,6 @@
 package auth
 
 import (
-	"errors"
-
 	"github.com/skratchdot/open-golang/open"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -38,19 +36,19 @@ func AuthenticateWithInput(username, password, totp string, out output.Outputer,
 	err := AuthenticateWithCredentials(credentials)
 	if err != nil {
 		switch {
-		case errors.Is(err, authentication.ErrUnauthorized):
+		case errs.Matches(err, &authentication.ErrTokenRequired{}):
+			if err := promptToken(credentials, out, prompt); err != nil {
+				return errs.Wrap(err, "promptToken failed")
+			}
+		case errs.Matches(err, &authentication.ErrUnauthorized{}):
 			if !uniqueUsername(credentials) {
 				return errs.Wrap(err, "uniqueUsername failed")
 			}
 			if err := promptSignup(credentials, out, prompt); err != nil {
 				return errs.Wrap(err, "promptSignup failed")
 			}
-		case errors.Is(err, authentication.ErrTokenRequired):
-			if err := promptToken(credentials, out, prompt); err != nil {
-				return errs.Wrap(err, "promptToken failed")
-			}
 		default:
-			return locale.NewError("err_auth_failed_unknown_cause")
+			return locale.WrapError(err, "err_auth_failed_unknown_cause", "", err.Error())
 		}
 	}
 
@@ -161,19 +159,19 @@ func promptSignup(credentials *mono_models.Credentials, out output.Outputer, pro
 }
 
 func promptToken(credentials *mono_models.Credentials, out output.Outputer, prompt prompt.Prompter) error {
-	var fail error
-	credentials.Totp, fail = prompt.Input("", locale.T("totp_prompt"), "")
-	if fail != nil {
-		return fail
+	var err error
+	credentials.Totp, err = prompt.Input("", locale.T("totp_prompt"), "")
+	if err != nil {
+		return err
 	}
 	if credentials.Totp == "" {
 		out.Notice(locale.T("login_cancelled"))
 		return locale.NewInputError("err_auth_empty_token")
 	}
 
-	fail = AuthenticateWithCredentials(credentials)
-	if fail != nil {
-		return fail
+	err = AuthenticateWithCredentials(credentials)
+	if err != nil {
+		return err
 	}
 
 	return nil

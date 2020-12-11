@@ -38,7 +38,8 @@ func (suite *CamelRuntimeTestSuite) Test_InitializeWithInvalidArtifacts() {
 		testArtifact,
 		noURIArtifact,
 	})
-	suite.Error(err, runtime.ErrInvalidArtifact)
+	errt := &runtime.ErrInvalidArtifact{}
+	suite.Error(err, &errt)
 }
 
 func (suite *CamelRuntimeTestSuite) Test_PreUnpackArtifact() {
@@ -56,7 +57,7 @@ func (suite *CamelRuntimeTestSuite) Test_PreUnpackArtifact() {
 			suite.Require().NoError(err)
 			err = ioutil.WriteFile(installDir, []byte{}, 0666)
 			suite.Require().NoError(err)
-		}, runtime.ErrInstallDirInvalid},
+		}, &runtime.ErrInstallDirInvalid{}},
 		{"InstallationDirectoryIsNotEmpty", func(installDir string) {
 			err := fileutils.MkdirUnlessExists(installDir)
 			suite.Require().NoError(err)
@@ -81,7 +82,7 @@ func (suite *CamelRuntimeTestSuite) Test_PreUnpackArtifact() {
 			if tc.expectedError == nil {
 				suite.Require().NoError(err)
 			} else {
-				suite.ErrorIs(err, tc.expectedError)
+				suite.ErrorAs(err, &tc.expectedError)
 			}
 		})
 	}

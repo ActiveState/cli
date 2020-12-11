@@ -12,9 +12,17 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 )
 
+// Create our own error, but ALL errors should be funneled through errs to add stack traces (FOR NOW, due to legacy code)
+type MyError struct{ *errs.WrapperError }
+
 func TestExample(t *testing.T) {
+	errt := &MyError{}
+	var errx error = &MyError{errs.New("test1")}
+	errors.As(errx, &errt)
+	errs.Matches(errx, &MyError{})
+
 	// Regular error
-	err := errs.New("Regular error message on %s", runtime.GOOS)
+	var err error = errs.New("Regular error message on %s", runtime.GOOS)
 	assert.Error(t, err)
 	assert.Equal(t, fmt.Sprintf("Regular error message on %s", runtime.GOOS), err.Error())
 
@@ -25,13 +33,13 @@ func TestExample(t *testing.T) {
 	assert.True(t, locale.IsError(err))
 	assert.False(t, locale.IsInputError(err))
 
-	// Create our own error, but ALL errors should be funneled through errs to add stack traces (FOR NOW, due to legacy code)
-	type MyError struct{ error }
-	myError := &MyError{errors.New("")}
-	myErrorCopy := &MyError{errors.New("")}
+	var myError error = &MyError{errs.New("")}
+	myErrorCopy := &MyError{errs.New("")}
 	err = errs.Wrap(myError, "My WrappedErr!")
 	assert.Error(t, err)
 	assert.True(t, errors.As(err, &myErrorCopy), "Error can be accessed as myErrorCopy")
+	assert.True(t, errs.Matches(err, &MyError{}), "Error Matches")
+	assert.False(t, errs.Matches(errs.New("foo"), &MyError{}), "Error doesn't match")
 	assert.True(t, errors.Is(err, myError), "err is equivalent to myError") // ptrs same addr, non-ptrs struct equality
 
 	// Create user input error

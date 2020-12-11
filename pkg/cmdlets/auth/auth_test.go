@@ -25,7 +25,6 @@ import (
 )
 
 func setup(t *testing.T) {
-	failures.ResetHandled()
 	authentication.Logout()
 	secretsapi_test.InitializeTestClient("bearer123")
 
@@ -83,7 +82,6 @@ func TestRequireAuthenticationLogin(t *testing.T) {
 	authlet.RequireAuthentication("", outputhelper.NewCatcher(), pmock)
 
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
-	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
 
 func TestRequireAuthenticationLoginFail(t *testing.T) {
@@ -97,15 +95,14 @@ func TestRequireAuthenticationLoginFail(t *testing.T) {
 	httpmock.Register("GET", "/users/uniqueUsername/test")
 	httpmock.RegisterWithCode("POST", "/login", 401)
 
-	var fail error
+	var err error
 	pmock.OnMethod("Select").Once().Return(locale.T("prompt_login_action"), nil)
-	pmock.OnMethod("Input").Once().Return("Iammeanttofail", nil)
+	pmock.OnMethod("Input").Once().Return("Iammeanttoerr", nil)
 	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
-	fail = authlet.RequireAuthentication("", outputhelper.NewCatcher(), pmock)
+	err = authlet.RequireAuthentication("", outputhelper.NewCatcher(), pmock)
 
 	assert.Nil(t, authentication.ClientAuth(), "Not Authenticated")
-	require.Error(t, fail, "Failure occurred")
-	assert.Equal(t, authlet.FailNotAuthenticated.Name, fail.Type.Name)
+	require.Error(t, err, "Failure occurred")
 }
 
 func TestRequireAuthenticationSignup(t *testing.T) {
@@ -139,7 +136,6 @@ func TestRequireAuthenticationSignup(t *testing.T) {
 	authlet.RequireAuthentication("", outputhelper.NewCatcher(), pmock)
 
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
-	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
 
 func TestRequireAuthenticationSignupBrowser(t *testing.T) {
@@ -165,11 +161,10 @@ func TestRequireAuthenticationSignupBrowser(t *testing.T) {
 	}
 
 	pmock.OnMethod("Select").Once().Return(locale.T("prompt_signup_browser_action"), nil)
-	pmock.OnMethod("Input").Once().Return("Iammeanttofail", nil)
+	pmock.OnMethod("Input").Once().Return("Iammeanttoerr", nil)
 	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
 	authlet.RequireAuthentication("", outputhelper.NewCatcher(), pmock)
 
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
-	assert.NoError(t, failures.Handled(), "No failure occurred")
 	assert.True(t, openURICalled, "OpenURI was called")
 }

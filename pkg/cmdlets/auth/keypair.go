@@ -1,9 +1,8 @@
 package auth
 
 import (
-	"errors"
-
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
@@ -18,7 +17,7 @@ func ensureUserKeypair(passphrase string, out output.Outputer, prompt prompt.Pro
 	keypairRes, err := keypairs.FetchRaw(secretsapi.Get())
 	if err == nil {
 		err = processExistingKeypairForUser(keypairRes, passphrase, out, prompt)
-	} else if errors.Is(err, keypairs.ErrKeypairNotFound) {
+	} else if errs.Matches(err, &keypairs.ErrKeypairNotFound{}) {
 		err = generateKeypairForUser(passphrase)
 	}
 
@@ -62,7 +61,7 @@ func processExistingKeypairForUser(keypairRes *secretsModels.Keypair, passphrase
 	if err == nil {
 		// yay, store keypair locally just in case it isn't
 		return keypairs.SaveWithDefaults(keypair)
-	} else if !errors.Is(err, keypairs.ErrKeypairPassphrase) {
+	} else if !errs.Matches(err, &keypairs.ErrKeypairPassphrase{}) {
 		// err did not involve an unmatched passphrase
 		return err
 	}
@@ -81,7 +80,7 @@ func processExistingKeypairForUser(keypairRes *secretsModels.Keypair, passphrase
 
 	// failed to validate with local private-key, try using previous passphrase
 	err = recoverKeypairFromPreviousPassphrase(keypairRes, passphrase, out, prompt)
-	if err != nil && errors.Is(err, keypairs.ErrKeypairPassphrase) {
+	if err != nil && errs.Matches(err, &keypairs.ErrKeypairPassphrase{}) {
 		// that failed, see if they want to regenerate their passphrase
 		err = promptUserToRegenerateKeypair(passphrase, out, prompt)
 	}

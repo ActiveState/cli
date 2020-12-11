@@ -80,7 +80,7 @@ func (suite *KeypairLocalLoadTestSuite) TestFileFound_UnencryptedKeypairParseSuc
 	suite.Require().NoError(keyFile.Close())
 
 	kp, err := keypairs.Load(keyName)
-	suite.Error(err)
+	suite.NoError(err)
 	suite.NotNil(kp)
 }
 

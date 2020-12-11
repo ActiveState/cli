@@ -34,7 +34,6 @@ func init() {
 }
 
 func TestRunStandaloneCommand(t *testing.T) {
-	failures.ResetHandled()
 
 	pjfile := &projectfile.Project{}
 	var contents string
@@ -65,7 +64,6 @@ scripts:
 	scriptRun := New(outputhelper.NewCatcher(), subshell.New(), proj)
 	err = scriptRun.Run(proj.ScriptByName("run"), []string{})
 	assert.NoError(t, err, "No error occurred")
-	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
 
 func TestEnvIsSet(t *testing.T) {
@@ -75,7 +73,6 @@ func TestEnvIsSet(t *testing.T) {
 		// as it's not worth the time and effort to debug.
 		return
 	}
-	failures.ResetHandled()
 
 	root, err := environment.GetRootPath()
 	require.NoError(t, err, "should detect root path")
@@ -99,7 +96,6 @@ func TestEnvIsSet(t *testing.T) {
 		scriptRun := New(outputhelper.NewCatcher(), subshell.New(), proj)
 		err = scriptRun.Run(proj.ScriptByName("run"), nil)
 		assert.NoError(t, err, "Error: "+errs.Join(err, ": ").Error())
-		assert.NoError(t, failures.Handled(), "No failure occurred")
 	})
 
 	assert.Contains(t, out, constants.ActivatedStateEnvVarName)
@@ -107,7 +103,6 @@ func TestEnvIsSet(t *testing.T) {
 }
 
 func TestRunNoProjectInheritance(t *testing.T) {
-	failures.ResetHandled()
 
 	pjfile := &projectfile.Project{}
 	var contents string
@@ -140,11 +135,9 @@ scripts:
 	fmt.Println(proj.ScriptByName("run"))
 	err = scriptRun.Run(proj.ScriptByName("run"), nil)
 	assert.NoError(t, err, "No error occurred")
-	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
 
 func TestRunMissingScript(t *testing.T) {
-	failures.ResetHandled()
 
 	pjfile := &projectfile.Project{}
 	contents := strings.TrimSpace(`
@@ -163,11 +156,9 @@ scripts:
 	scriptRun := New(outputhelper.NewCatcher(), subshell.New(), proj)
 	err = scriptRun.Run(nil, nil)
 	assert.Error(t, err, "Error occurred")
-	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
 
 func TestRunUnknownCommand(t *testing.T) {
-	failures.ResetHandled()
 
 	pjfile := &projectfile.Project{}
 	contents := strings.TrimSpace(`
@@ -187,11 +178,9 @@ scripts:
 	scriptRun := New(outputhelper.NewCatcher(), subshell.New(), proj)
 	err = scriptRun.Run(proj.ScriptByName("run"), nil)
 	assert.Error(t, err, "Error occurred")
-	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
 
 func TestRunActivatedCommand(t *testing.T) {
-	failures.ResetHandled()
 
 	// Prepare an empty activated environment.
 	root, err := environment.GetRootPath()
@@ -232,7 +221,6 @@ scripts:
 	scriptRun := New(outputhelper.NewCatcher(), subshell.New(), proj)
 	err = scriptRun.Run(proj.ScriptByName("run"), nil)
 	assert.NoError(t, err, "No error occurred")
-	assert.NoError(t, failures.Handled(), "No failure occurred")
 
 	// Reset.
 	projectfile.Reset()
@@ -307,7 +295,6 @@ scripts:
 }
 
 func captureExecCommand(t *testing.T, tmplCmdName, cmdName string, cmdArgs []string) (string, error) {
-	failures.ResetHandled()
 
 	pjfile := setupProjectWithScriptsExpectingArgs(t, tmplCmdName)
 	pjfile.Persist()
@@ -322,7 +309,6 @@ func captureExecCommand(t *testing.T, tmplCmdName, cmdName string, cmdArgs []str
 		err = scriptRun.Run(proj.ScriptByName(cmdName), cmdArgs)
 	})
 	require.NoError(t, outErr, "error capturing stdout")
-	require.NoError(t, failures.Handled(), "No failures handled")
 
 	return outStr, err
 }

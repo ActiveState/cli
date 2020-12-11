@@ -49,7 +49,7 @@ func locatePythonExecutable(installDir string) (string, error) {
 	}
 
 	if !fileutils.IsExecutable(executablePath) {
-		return "", locale.WrapError(ErrNotExecutable, "installer_err_runtime_executable_not_exec", "", binPath, executable)
+		return "", &ErrNotExecutable{locale.NewError("installer_err_runtime_executable_not_exec", "", binPath, executable)}
 	}
 	return executablePath, nil
 }
@@ -62,12 +62,12 @@ func extractPythonRelocationPrefix(installDir string, python string) (string, er
 	if err != nil {
 		if _, isExitError := err.(*exec.ExitError); isExitError {
 			logging.Errorf("obtaining relocation prefixes: %v : %s", err, string(prefixBytes))
-			return "", locale.WrapError(ErrNoPrefixes, "installer_err_fail_obtain_prefixes", "", installDir)
+			return "", &ErrNoPrefixes{locale.NewError("installer_err_fail_obtain_prefixes", "", installDir)}
 		}
 		return "", errs.Wrap(err, "python import prefixes failed")
 	}
 	if strings.TrimSpace(string(prefixBytes)) == "" {
-		return "", locale.WrapError(ErrNoPrefixes, "installer_err_fail_obtain_prefixes", "", installDir)
+		return "", &ErrNoPrefixes{locale.NewError("installer_err_fail_obtain_prefixes", "", installDir)}
 	}
 	return strings.Split(string(prefixBytes), "\n")[0], nil
 }

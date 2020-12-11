@@ -1,7 +1,6 @@
 package initialize
 
 import (
-	"errors"
 	"path/filepath"
 	"strings"
 
@@ -110,7 +109,7 @@ func run(params *RunParams, out output.Outputer) (string, error) {
 
 	proj, err := project.FromPath(params.Path)
 	if err != nil {
-		if !errors.Is(err, projectfile.ErrorNoProject) {
+		if !errs.Matches(err, &projectfile.ErrorNoProject{}) {
 			return "", locale.WrapError(err, "err_init_project", "Could not parse project information.")
 		}
 		proj = nil

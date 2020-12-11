@@ -30,13 +30,15 @@ import (
 // This leaves room to advance the progress bar further while renaming strings in the unpacked files.
 const percentReportedAfterUnpack = 85
 
-var (
-	ErrInstallDirInvalid = errs.New("Invalid installation directory")
-	ErrArchiveInvalid    = errs.New("Invalid archive")
-	ErrPrePlatform       = errs.New("pre-platform not supported")
-	ErrNotExecutable     = errs.New("file was expected to be executable")
-	ErrNoPrefixes        = errs.New("No prefixes for relocation")
-)
+type ErrInstallDirInvalid struct{ *locale.LocalizedError }
+
+type ErrArchiveInvalid struct{ *locale.LocalizedError }
+
+type ErrPrePlatform struct{ *locale.LocalizedError }
+
+type ErrNotExecutable struct{ *locale.LocalizedError }
+
+type ErrNoPrefixes struct{ *locale.LocalizedError }
 
 type MessageHandler interface {
 	buildlogstream.MessageHandler
@@ -256,7 +258,7 @@ func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGet
 // validateCheckpoint tries to see if the checkpoint has any chance of succeeding
 func (installer *Installer) validateCheckpoint() error {
 	if installer.runtime.commitID == "" {
-		return locale.WrapInputError(ErrNoCommit, "installer_err_runtime_no_commitid")
+		return &ErrNoCommit{locale.NewInputError("installer_err_runtime_no_commitid")}
 	}
 
 	checkpoint, _, fail := model.FetchCheckpointForCommit(installer.runtime.commitID)
@@ -266,7 +268,7 @@ func (installer *Installer) validateCheckpoint() error {
 
 	for _, change := range checkpoint {
 		if model.NamespaceMatch(change.Namespace, model.NamespacePrePlatformMatch) {
-			return locale.WrapInputError(ErrPrePlatform, "installer_err_runtime_preplatform")
+			return &ErrPrePlatform{locale.NewInputError("installer_err_runtime_preplatform")}
 		}
 	}
 
@@ -345,7 +347,7 @@ func (installer *Installer) unpackArchive(ua unarchiver.Unarchiver, archivePath 
 	archiveFile, archiveSize, err := ua.PrepareUnpacking(archivePath, tmpRuntimeDir)
 	logging.Debug("Unarchiving %s -> %s %d\n\n\n", archivePath, tmpRuntimeDir, archiveSize)
 	if err != nil {
-		return tmpRuntimeDir, nil, errs.WrapErrors(err, ErrArchiveInvalid)
+		return tmpRuntimeDir, nil, &ErrArchiveInvalid{locale.WrapError(err, "err_unpack_prepare", "Could not prepare archive directory")}
 
 	}
 	defer archiveFile.Close()
@@ -359,7 +361,7 @@ func (installer *Installer) unpackArchive(ua unarchiver.Unarchiver, archivePath 
 	logging.Debug("Unarchiving to: %s", tmpRuntimeDir)
 	err = ua.Unarchive(wrappedStream, archiveSize, tmpRuntimeDir)
 	if err != nil {
-		return tmpRuntimeDir, nil, errs.WrapErrors(err, ErrArchiveInvalid)
+		return tmpRuntimeDir, nil, &ErrArchiveInvalid{locale.WrapError(err, "err_unpack", "Unarchiving failed")}
 	}
 
 	// report that we are unpacked.
@@ -378,9 +380,9 @@ func (installer *Installer) unpackArchive(ua unarchiver.Unarchiver, archivePath 
 // suffix for tar+gz files.
 func (installer *Installer) validateArchive(ua unarchiver.Unarchiver, archivePath string) error {
 	if !fileutils.FileExists(archivePath) {
-		return locale.WrapError(ErrArchiveInvalid, "installer_err_archive_notfound")
+		return &ErrArchiveInvalid{locale.NewError("installer_err_archive_notfound")}
 	} else if err := ua.CheckExt(archivePath); err != nil {
-		return locale.WrapError(ErrArchiveInvalid, "installer_err_archive_badext", "", archivePath)
+		return &ErrArchiveInvalid{locale.WrapError(err, "installer_err_archive_badext", "", archivePath)}
 	}
 	return nil
 }

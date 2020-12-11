@@ -11,9 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 )
 
-var (
-	ErrMetaData = errs.New("Invalid metadata")
-)
+type ErrMetaData struct{ *errs.WrapperError }
 
 // TargetedRelocation is a relocation instruction for files in a specific directory
 type TargetedRelocation struct {
@@ -98,7 +96,7 @@ func ParseMetaData(contents []byte) (*MetaData, error) {
 	}
 	err := json.Unmarshal(contents, metaData)
 	if err != nil {
-		return nil, errs.WrapErrors(err, ErrMetaData)
+		return nil, &ErrMetaData{errs.Wrap(err, "Unmarshal failed")}
 	}
 
 	// The JSON decoder does not recognize 0 and 1 as bools, so we have to get crafty

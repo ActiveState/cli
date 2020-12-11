@@ -12,16 +12,14 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
-var (
-	ErrKeypairNotFound = errs.New("Keypair not found")
-)
+type ErrKeypairNotFound struct{ *locale.LocalizedError }
 
 // FetchRaw fetchs the current user keypair or returns a failure.
 func FetchRaw(secretsClient *secretsapi.Client) (*secretModels.Keypair, error) {
 	kpOk, err := secretsClient.Keys.GetKeypair(nil, authentication.Get().ClientAuth())
 	if err != nil {
 		if api.ErrorCode(err) == 404 {
-			return nil, locale.WrapInputError(errs.WrapErrors(err, ErrKeypairNotFound), "keypair_err_not_found")
+			return nil, &ErrKeypairNotFound{locale.WrapInputError(err, "keypair_err_not_found")}
 		}
 		logging.Error("Error when fetching keypair: %v", api.ErrorMessageFromPayload(err))
 		return nil, errs.Wrap(err, "GetKeypair failed")
@@ -52,7 +50,7 @@ func FetchPublicKey(secretsClient *secretsapi.Client, user *mono_models.User) (E
 	pubKeyOk, err := secretsClient.Keys.GetPublicKey(params, authentication.Get().ClientAuth())
 	if err != nil {
 		if api.ErrorCode(err) == 404 {
-			return nil, locale.WrapInputError(errs.WrapErrors(err, ErrKeypairNotFound), "keypair_err_publickey_not_found", "", user.Username, user.UserID.String())
+			return nil, &ErrKeypairNotFound{locale.WrapInputError(err, "keypair_err_publickey_not_found", "", user.Username, user.UserID.String())}
 		}
 		return nil, errs.Wrap(err, "GetPublicKey failed")
 	}

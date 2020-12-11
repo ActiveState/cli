@@ -149,7 +149,8 @@ func (suite *AlternativeRuntimeTestSuite) Test_InitializationFailure() {
 		suite.Run(tc.name, func() {
 			artifactsResult := mockFetchArtifactsResult(tc.option)
 			_, err := runtime.NewAlternativeInstall(suite.cacheDir, artifactsResult.Artifacts, artifactsResult.RecipeID)
-			suite.Error(err, runtime.ErrInvalidArtifact)
+			errt := &runtime.ErrInvalidArtifact{}
+			suite.Error(err, &errt)
 		})
 
 	}
@@ -167,7 +168,7 @@ func (suite *AlternativeRuntimeTestSuite) Test_PreInstall() {
 			suite.Require().NoError(err)
 			err = ioutil.WriteFile(installDir, []byte{}, 0666)
 			suite.Require().NoError(err)
-		}, runtime.ErrInstallDirInvalid},
+		}, &runtime.ErrInstallDirInvalid{}},
 		{"InstallationDirectoryIsNotEmpty", func(installDir string) {
 			err := fileutils.MkdirUnlessExists(installDir)
 			suite.Require().NoError(err)
@@ -191,7 +192,7 @@ func (suite *AlternativeRuntimeTestSuite) Test_PreInstall() {
 			if tc.expectedError == nil {
 				suite.Require().NoError(err)
 			} else {
-				suite.ErrorIs(err, tc.expectedError)
+				suite.ErrorAs(err, &tc.expectedError)
 			}
 		})
 	}

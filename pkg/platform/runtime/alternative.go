@@ -55,7 +55,7 @@ func NewAlternativeEnv(cacheDir string) (*AlternativeEnv, error) {
 	var err error
 	ae.cache, err = ae.artifactCache()
 	if err != nil {
-		return ae, errs.Wrap(errs.WrapErrors(err, ErrInvalidArtifact), "Could not grab artifact cache")
+		return ae, &ErrInvalidArtifact{locale.WrapError(err, "err_artifact_cache", "Could not grab artifact cache")}
 	}
 
 	return ae, nil
@@ -95,7 +95,7 @@ func NewAlternativeInstall(cacheDir string, artifacts []*HeadChefArtifact, recip
 	}
 
 	if len(ai.artifactsRequested) == 0 {
-		return ai, locale.WrapError(ErrInvalidArtifact, "err_no_valid_artifact")
+		return ai, &ErrInvalidArtifact{locale.NewError("err_no_valid_artifact")}
 	}
 
 	return ai, nil
@@ -192,7 +192,7 @@ func (ai *AlternativeInstall) DownloadDirectory(artf *HeadChefArtifact) (string,
 func (ai *AlternativeInstall) PreInstall() error {
 	if fileutils.FileExists(ai.runtimeDir) {
 		// install-dir exists, but is a regular file
-		return locale.WrapInputError(ErrInstallDirInvalid, "installer_err_installdir_isfile", "", ai.runtimeDir)
+		return &ErrInstallDirInvalid{locale.NewInputError("installer_err_installdir_isfile", "", ai.runtimeDir)}
 	}
 
 	if !fileutils.DirExists(ai.runtimeDir) {

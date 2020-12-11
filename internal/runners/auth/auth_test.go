@@ -16,6 +16,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/prompt"
 	promptMock "github.com/ActiveState/cli/internal/prompt/mock"
@@ -31,7 +32,6 @@ import (
 )
 
 func setup(t *testing.T) {
-	failures.ResetHandled()
 	authentication.Logout()
 	secretsapi_test.InitializeTestClient("bearer123")
 
@@ -82,15 +82,14 @@ func TestExecuteNoArgsAuthenticated(t *testing.T) {
 	secretMock := httpmock.Activate(api.GetServiceURL(api.ServiceSecrets).String())
 	secretMock.Register("GET", "/keypair")
 
-	fail := authentication.Get().AuthenticateWithModel(&mono_models.Credentials{
+	err := authentication.Get().AuthenticateWithModel(&mono_models.Credentials{
 		Username: user.Username,
 		Password: user.Password,
 	})
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
-	require.NoError(t, fail)
+	require.NoError(t, err)
 
 	assert.NoError(t, runAuth(&AuthParams{}, nil), "Executed without error")
-	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
 
 func TestExecuteNoArgsNotAuthenticated(t *testing.T) {
@@ -103,6 +102,7 @@ func TestExecuteNoArgsNotAuthenticated(t *testing.T) {
 
 	pmock.OnMethod("Input").Once().Return("baduser", nil)
 	pmock.OnMethod("InputSecret").Once().Return("badpass", nil)
+	pmock.OnMethod("Input").Once().Return("foo", nil)
 
 	err := runAuth(&AuthParams{}, pmock)
 	assert.Error(t, err)
@@ -124,15 +124,14 @@ func TestExecuteNoArgsAuthenticated_WithExistingKeypair(t *testing.T) {
 	httpmock.Register("GET", "/tiers")
 	httpmock.Register("GET", "/organizations/test")
 
-	fail := authentication.Get().AuthenticateWithModel(&mono_models.Credentials{
+	err := authentication.Get().AuthenticateWithModel(&mono_models.Credentials{
 		Username: user.Username,
 		Password: user.Password,
 	})
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
-	require.NoError(t, fail)
+	require.NoError(t, err)
 
 	assert.NoError(t, runAuth(&AuthParams{}, nil), "Executed without error")
-	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
 
 func TestExecuteNoArgsLoginByPrompt_WithExistingKeypair(t *testing.T) {
@@ -158,7 +157,6 @@ func TestExecuteNoArgsLoginByPrompt_WithExistingKeypair(t *testing.T) {
 
 	assert.NoError(t, err, "Executed without error")
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
-	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
 
 func TestExecuteNoArgsLoginByPrompt_NoExistingKeypair(t *testing.T) {
@@ -192,7 +190,6 @@ func TestExecuteNoArgsLoginByPrompt_NoExistingKeypair(t *testing.T) {
 
 	assert.NoError(t, err, "Executed without error")
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
-	assert.NoError(t, failures.Handled(), "No failure occurred")
 
 	require.NoError(t, bodyErr, "unmarshalling keypair save response")
 	assert.NotZero(t, bodyKeypair.EncryptedPrivateKey, "published private key")
@@ -243,7 +240,6 @@ func TestExecuteNoArgsLoginThenSignupByPrompt(t *testing.T) {
 
 	assert.NoError(t, err, "Executed without error")
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
-	assert.NoError(t, failures.Handled(), "No failure occurred")
 
 	require.NoError(t, bodyErr, "unmarshalling keypair save response")
 	assert.NotZero(t, bodyKeypair.EncryptedPrivateKey, "published private key")
@@ -275,7 +271,6 @@ func TestExecuteAuthenticatedByPrompts(t *testing.T) {
 
 	assert.NoError(t, err, "Executed without error")
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
-	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
 
 func TestExecuteAuthenticatedByFlags(t *testing.T) {
@@ -303,7 +298,6 @@ func TestExecuteAuthenticatedByFlags(t *testing.T) {
 
 	assert.NoError(t, err, "Executed without error")
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
-	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
 
 func TestExecuteSignup(t *testing.T) {
@@ -344,7 +338,6 @@ func TestExecuteSignup(t *testing.T) {
 
 	assert.NoError(t, err, "Executed without error")
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
-	assert.NoError(t, failures.Handled(), "No failure occurred")
 
 	require.NoError(t, bodyErr, "unmarshalling keypair save response")
 	assert.NotZero(t, bodyKeypair.EncryptedPrivateKey, "published private key")
@@ -375,20 +368,19 @@ func TestExecuteToken(t *testing.T) {
 	httpmock.Register("GET", "/tiers")
 	httpmock.Register("GET", "/organizations/test")
 
-	fail := authentication.Get().AuthenticateWithModel(&mono_models.Credentials{
+	err := authentication.Get().AuthenticateWithModel(&mono_models.Credentials{
 		Username: user.Username,
 		Password: user.Password,
 	})
 	token := viper.GetString("apiToken")
 	authentication.Logout()
-	assert.NoError(t, fail, "Executed without error")
+	assert.NoError(t, err, "Executed without error")
 	assert.Nil(t, authentication.ClientAuth(), "Not Authenticated")
 
-	err := runAuth(&AuthParams{Token: token}, nil)
+	err = runAuth(&AuthParams{Token: token}, nil)
 
 	assert.NoError(t, err, "Executed without error")
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
-	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
 
 func TestExecuteLogout(t *testing.T) {
@@ -402,19 +394,20 @@ func TestExecuteLogout(t *testing.T) {
 	defer httpmock.DeActivate()
 
 	httpmock.Register("POST", "/login")
+	httpmock.Register("GET", "/apikeys")
+	httpmock.Register("POST", "/apikeys")
 
 	auth := authentication.Get()
-	fail := auth.AuthenticateWithModel(&mono_models.Credentials{
+	err := auth.AuthenticateWithModel(&mono_models.Credentials{
 		Username: user.Username,
 		Password: user.Password,
 	})
-	require.NoError(t, fail)
+	require.NoError(t, err, errs.Join(err, "\n").Error())
 	assert.True(t, auth.Authenticated(), "Authenticated")
 
-	err := runLogout()
+	err = runLogout()
 	assert.NoError(t, err, "Executed without error")
 	assert.False(t, auth.Authenticated(), "Not Authenticated")
-	assert.NoError(t, failures.Handled(), "No failure occurred")
 
 	pkstat, err := osutil.StatConfigFile(constants.KeypairLocalFileName + ".key")
 	require.Nil(t, pkstat)
@@ -463,9 +456,8 @@ func TestExecuteAuthWithTOTP_WithExistingKeypair(t *testing.T) {
 	pmock.OnMethod("Input").Once().Return("foo", nil)
 	err = runAuth(&AuthParams{}, pmock)
 
-	require.NoError(t, err, "Executed without error")
+	require.NoError(t, err, errs.Join(err, "\n").Error())
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
-	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
 
 func TestExecuteAuthWithTOTP_NoExistingKeypair(t *testing.T) {
@@ -515,7 +507,6 @@ func TestExecuteAuthWithTOTP_NoExistingKeypair(t *testing.T) {
 
 	require.NoError(t, err, "Executed without error")
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
-	assert.NoError(t, failures.Handled(), "No failure occurred")
 
 	require.NoError(t, bodyErr, "unmarshalling keypair save response")
 	assert.NotZero(t, bodyKeypair.EncryptedPrivateKey, "published private key")
@@ -534,12 +525,14 @@ func TestExecuteWithTOTPFlag(t *testing.T) {
 	httpmock.Register("GET", "/organizations/test")
 	secretMock := httpmock.Activate(api.GetServiceURL(api.ServiceSecrets).String())
 	secretMock.Register("GET", "/keypair")
+	httpmock.Register("GET", "/apikeys")
+	httpmock.Register("POST", "/apikeys")
 
 	err := runAuth(&AuthParams{
 		Username: user.Username,
 		Password: user.Password,
 		Totp:     "123456",
 	}, nil)
-	require.NoError(t, err)
+	require.NoError(t, err, errs.Join(err, "\n").Error())
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
 }

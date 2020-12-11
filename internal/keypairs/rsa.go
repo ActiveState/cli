@@ -15,7 +15,7 @@ import (
 // MinimumRSABitLength is the minimum allowed bit-length when generating RSA keys.
 const MinimumRSABitLength int = 12
 
-var ErrKeypairPassphrase = errs.New("keypair passphrase failed")
+type ErrKeypairPassphrase struct{ *locale.LocalizedError }
 
 // RSAKeypair implements a Keypair around an RSA private-key.
 type RSAKeypair struct {
@@ -150,7 +150,7 @@ func ParseEncryptedRSA(privateKeyPEM, passphrase string) (*RSAKeypair, error) {
 		keyBytes, err = x509.DecryptPEMBlock(block, []byte(passphrase))
 		if err != nil {
 			if err == x509.IncorrectPasswordError {
-				return nil, locale.WrapError(errs.WrapErrors(err, ErrKeypairPassphrase), "keypairs_err_passphrase_incorrect")
+				return nil, &ErrKeypairPassphrase{locale.WrapError(err, "keypairs_err_passphrase_incorrect")}
 			}
 			return nil, errs.Wrap(err, "DecryptPEMBlock failed")
 		}

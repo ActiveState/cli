@@ -28,10 +28,9 @@ var exit = os.Exit
 
 var persist *Auth
 
-var (
-	ErrUnauthorized  = errs.New("unauthorized")
-	ErrTokenRequired = errs.New("token required")
-)
+type ErrUnauthorized struct{ *locale.LocalizedError }
+
+type ErrTokenRequired struct{ *locale.LocalizedError }
 
 // Auth is the base structure used to record the authenticated state
 type Auth struct {
@@ -133,9 +132,9 @@ func (s *Auth) AuthenticateWithModel(credentials *mono_models.Credentials) error
 		s.Logout()
 		switch err.(type) {
 		case *apiAuth.PostLoginUnauthorized:
-			return locale.WrapInputError(errs.WrapErrors(err, ErrUnauthorized), "err_unauthorized")
+			return &ErrUnauthorized{locale.WrapInputError(err, "err_unauthorized")}
 		case *apiAuth.PostLoginRetryWith:
-			return locale.WrapInputError(errs.WrapErrors(err, ErrTokenRequired), "err_auth_fail_totp")
+			return &ErrTokenRequired{locale.WrapInputError(err, "err_auth_fail_totp")}
 		default:
 			logging.Error("Authentication API returned %v", err)
 			return locale.WrapError(err, "err_api_auth", "Authentication failed: {{.V0}}", err.Error())

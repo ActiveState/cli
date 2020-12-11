@@ -102,7 +102,7 @@ func run(args []string, out output.Outputer) (int, error) {
 
 	// Retrieve project file
 	pjPath, err := projectfile.GetProjectFilePath()
-	if err != nil && errors.Is(err, projectfile.ErrorNoProjectFromEnv) {
+	if err != nil && errs.Matches(err, &projectfile.ErrorNoProjectFromEnv{}) {
 		// Fail if we are meant to inherit the projectfile from the environment, but the file doesn't exist
 		return 1, err
 	}

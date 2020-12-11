@@ -43,11 +43,11 @@ var (
 	CommitURLRe = regexp.MustCompile(urlCommitRegexStr)
 )
 
-var (
-	ErrorParseProject     = errs.New("Could not parse activestate.yaml")
-	ErrorNoProject        = errs.New("Could not find activestate.yaml")
-	ErrorNoProjectFromEnv = errs.New("Could not find activestate.yaml supplied via environment variable")
-)
+type ErrorParseProject struct{ *locale.LocalizedError }
+
+type ErrorNoProject struct{ *locale.LocalizedError }
+
+type ErrorNoProjectFromEnv struct{ *locale.LocalizedError }
 
 // projectURL comprises all fields of a parsed project URL
 type projectURL struct {
@@ -514,10 +514,10 @@ func parse(configFilepath string) (*Project, error) {
 	project.path = configFilepath
 
 	if err != nil {
-		return nil, locale.WrapError(
-			ErrorParseProject,
+		return nil, &ErrorParseProject{locale.NewError(
 			"err_project_parsed",
-			"Project file `{{.V1}}` could not be parsed, the parser produced the following error: {{.V0}}", err.Error(), configFilepath)
+			"Project file `{{.V1}}` could not be parsed, the parser produced the following error: {{.V0}}", err.Error(), configFilepath),
+		}
 	}
 
 	return &project, nil
@@ -553,7 +553,7 @@ func ValidateProjectURL(url string) error {
 	// Note: This line also matches headless commit URLs: match == {'commit', '<commit_id>'}
 	match := ProjectURLRe.FindStringSubmatch(url)
 	if len(match) < 3 {
-		return locale.WrapError(ErrorParseProject, "err_bad_project_url")
+		return &ErrorParseProject{locale.NewError("err_bad_project_url")}
 	}
 	return nil
 }
@@ -802,7 +802,7 @@ func GetProjectFilePath() (string, error) {
 		}
 	}
 
-	return "", locale.WrapInputError(ErrorNoProject, "err_no_projectfile")
+	return "", &ErrorNoProject{locale.NewInputError("err_no_projectfile")}
 }
 
 func getProjectFilePathFromEnv() (string, error) {
@@ -811,7 +811,7 @@ func getProjectFilePathFromEnv() (string, error) {
 		if fileutils.FileExists(projectFilePath) {
 			return projectFilePath, nil
 		}
-		return "", locale.WrapInputError(ErrorNoProjectFromEnv, "err_project_env_file_not_exist", "", projectFilePath)
+		return "", &ErrorNoProjectFromEnv{locale.NewInputError("err_project_env_file_not_exist", "", projectFilePath)}
 	}
 	return "", nil
 }
@@ -881,7 +881,7 @@ func GetOnce() (*Project, error) {
 	projectFilePath, err := GetProjectFilePath()
 	if err != nil {
 		if errors.Is(err, fileutils.ErrorFileNotFound) {
-			return nil, errs.WrapErrors(err, ErrorNoProject)
+			return nil, &ErrorNoProject{locale.WrapError(err, "err_project_file_notfound", "Could not detect project file path.")}
 		}
 		return nil, err
 	}
@@ -899,13 +899,13 @@ func FromPath(path string) (*Project, error) {
 	// we do not want to use a path provided by state if we're running tests
 	projectFilePath, err := fileutils.FindFileInPath(path, constants.ConfigFileName)
 	if err != nil {
-		return nil, errs.WrapErrors(err, locale.WrapInputError(ErrorNoProject, "err_no_projectfile"))
+		return nil, &ErrorNoProject{locale.WrapInputError(err, "err_no_projectfile")}
 	}
 
 	_, err = ioutil.ReadFile(projectFilePath)
 	if err != nil {
 		logging.Warning("Cannot load config file: %v", err)
-		return nil, errs.WrapErrors(err, locale.WrapInputError(ErrorNoProject, "err_no_projectfile"))
+		return nil, &ErrorNoProject{locale.WrapInputError(err, "err_no_projectfile")}
 	}
 	project, err := Parse(projectFilePath)
 	if err != nil {
@@ -1055,7 +1055,7 @@ func ParseVersionInfo(projectFilePath string) (*VersionInfo, error) {
 	versionStruct := VersionInfo{}
 	err = yaml.Unmarshal(dat, &versionStruct)
 	if err != nil {
-		return nil, errs.Wrap(ErrorParseProject, "Could not unmarshal projectFile")
+		return nil, &ErrorParseProject{locale.WrapError(err, "Could not unmarshal activestate.yaml")}
 	}
 
 	if versionStruct.Branch != "" && versionStruct.Version != "" {

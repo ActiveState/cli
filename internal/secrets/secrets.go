@@ -1,8 +1,7 @@
 package secrets
 
 import (
-	"errors"
-
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -63,7 +62,7 @@ func ShareWithOrgUsers(secretsClient *secretsapi.Client, org *mono_models.Organi
 		if currentUserID != member.User.UserID {
 			pubKey, err := keypairs.FetchPublicKey(secretsClient, member.User)
 			if err != nil {
-				if errors.Is(err, keypairs.ErrKeypairNotFound) {
+				if errs.Matches(err, &keypairs.ErrKeypairNotFound{}) {
 					logging.Info("User `%s` has no public-key", member.User.Username)
 					// this is okay, just do what we can
 					continue

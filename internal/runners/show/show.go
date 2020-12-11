@@ -1,13 +1,13 @@
 package show
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/constraints"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -120,7 +120,7 @@ func (s *Show) Run(params Params) error {
 	}
 
 	remoteProject, err := model.FetchProjectByName(owner, projectName)
-	if err != nil && errors.Is(err, model.ErrProjectNotFound) {
+	if err != nil && errs.Matches(err, &model.ErrProjectNotFound{}) {
 		return locale.WrapError(err, "err_show_project_not_found", "Please run `state push` to synchronize this project with the ActiveState Platform.")
 	} else if err != nil {
 		return locale.WrapError(err, "err_show_get_project", "Could not get remote project details")

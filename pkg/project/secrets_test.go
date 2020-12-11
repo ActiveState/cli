@@ -52,7 +52,6 @@ project: "https://platform.activestate.com/SecretOrg/SecretProject?commitID=0001
 
 func (suite *SecretsExpanderTestSuite) BeforeTest(suiteName, testName string) {
 	locale.Set("en-US")
-	failures.ResetHandled()
 
 	projectFile, err := loadSecretsProject()
 	suite.Require().Nil(err, "Unmarshalled project YAML")

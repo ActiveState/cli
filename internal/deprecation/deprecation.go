@@ -2,7 +2,6 @@ package deprecation
 
 import (
 	"encoding/json"
-	"errors"
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
@@ -31,7 +30,9 @@ const (
 	fetchKey = "deprecation_fetch_time"
 )
 
-var ErrTimeout = errs.New("deprecation check timed out")
+type ErrTimeout struct {
+	error
+}
 
 // Info details deprecation information for a given version
 type Info struct {
@@ -135,7 +136,7 @@ func (checker *Checker) fetchDeprecationInfoBody() (int, []byte, error) {
 	if err != nil {
 		// Check for timeout by evaluating the error string. Yeah this is dumb, thank the http package for that.
 		if strings.Contains(err.Error(), "Client.Timeout") || strings.Contains(err.Error(), "context deadline exceeded") {
-			return -1, nil, errs.WrapErrors(err, ErrTimeout)
+			return -1, nil, &ErrTimeout{errs.Wrap(err, "timed out")}
 		}
 		return -1, nil, errs.Wrap(err, "Could not fetch deprecation info")
 	}
@@ -154,7 +155,7 @@ func (checker *Checker) fetchDeprecationInfo() ([]Info, error) {
 
 	code, body, err := checker.fetchDeprecationInfoBody()
 	if err != nil {
-		if errors.Is(err, ErrTimeout) {
+		if errs.Matches(err, &ErrTimeout{}) {
 			logging.Debug("Timed out while fetching deprecation info: %v", err)
 			return nil, nil
 		}

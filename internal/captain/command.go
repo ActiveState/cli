@@ -116,7 +116,7 @@ func NewCommand(name, title, description string, out output.Outputer, flags []*F
 	}
 
 	if err := cmd.setFlags(flags); err != nil {
-		panic(err)
+		panic(errs.Join(err, "\n").Error())
 	}
 
 	cmd.cobra.SetUsageFunc(func(c *cobra.Command) error {
@@ -370,10 +370,6 @@ func (c *Command) flagByName(name string, persistOnly bool) *Flag {
 		}
 	}
 	return nil
-}
-
-func (c *Command) markFlagHidden(name string) error {
-	return c.cobra.Flags().MarkHidden(name)
 }
 
 func (c *Command) persistRunner(cobraCmd *cobra.Command, args []string) {

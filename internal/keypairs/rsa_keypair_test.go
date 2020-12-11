@@ -58,7 +58,7 @@ func (suite *RSAKeypairTestSuite) TestRSAKeypair_MessageTooLongForKeySize() {
 	encMsg, err := kp.Encrypt([]byte("howdy doody"))
 	suite.Nil(encMsg)
 	suite.Require().Error(err)
-	suite.Contains(err.Error(), "message too long")
+	suite.Contains(err.Error(), "EncryptOAEP failed")
 }
 
 func (suite *RSAKeypairTestSuite) TestRSAKeypair_EncryptsAndDecrypts() {
@@ -108,7 +108,7 @@ func (suite *RSAKeypairTestSuite) TestParseRSA_EncodingNotOfPrivateKey() {
 	kp2, err := keypairs.ParseRSA(encPubKey)
 	suite.Nil(kp2)
 	suite.Error(err)
-	suite.Contains(err.Error(), "structure error")
+	suite.Contains(err.Error(), "ParsePKCS1PrivateKey failed")
 }
 
 func (suite *RSAKeypairTestSuite) TestParseRSA_RequiresPassphrase() {
