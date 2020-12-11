@@ -118,25 +118,6 @@ func TestCmdEnv_unset(t *testing.T) {
 				&[]string{"key"},
 			},
 		},
-		{
-			"unset, value equals, restore backup",
-			fields{&RegistryKeyMock{
-				getResults: map[string]RegistryValue{
-					"key":          RegistryValue{"value_equals", nil},
-					"key_ORIGINAL": RegistryValue{"value_original", nil},
-				},
-			}, nil},
-			args{
-				"key",
-				"value_equals",
-			},
-			want{
-				nil,
-				&[]string{"key_ORIGINAL"},
-				&[]string{"key=value_original"},
-				&[]string{"key"},
-			},
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -179,7 +160,7 @@ func TestCmdEnv_set(t *testing.T) {
 		want   want
 	}{
 		{
-			"set, no backup",
+			"set",
 			fields{&RegistryKeyMock{}, nil},
 			args{
 				"key",
@@ -189,23 +170,6 @@ func TestCmdEnv_set(t *testing.T) {
 				nil,
 				&[]string{},
 				&[]string{"key=value", "!key_original"},
-			},
-		},
-		{
-			"set, with backup",
-			fields{&RegistryKeyMock{
-				getResults: map[string]RegistryValue{
-					"key": RegistryValue{"original_value", nil},
-				},
-			}, nil},
-			args{
-				"key",
-				"value",
-			},
-			want{
-				nil,
-				&[]string{},
-				&[]string{"key=value", "key_ORIGINAL=original_value"},
 			},
 		},
 	}
@@ -247,7 +211,7 @@ func TestCmdEnv_get(t *testing.T) {
 		want   want
 	}{
 		{
-			"get nonexist, no backup",
+			"get nonexist",
 			fields{&RegistryKeyMock{}, nil},
 			args{
 				"key",
@@ -259,7 +223,7 @@ func TestCmdEnv_get(t *testing.T) {
 			},
 		},
 		{
-			"get existing, no backup",
+			"get existing",
 			fields{&RegistryKeyMock{
 				getResults: map[string]RegistryValue{
 					"key": RegistryValue{"value", nil},
@@ -271,24 +235,7 @@ func TestCmdEnv_get(t *testing.T) {
 			want{
 				"value",
 				nil,
-				&[]string{"key", "key_ORIGINAL"},
-			},
-		},
-		{
-			"get existing, has backup",
-			fields{&RegistryKeyMock{
-				getResults: map[string]RegistryValue{
-					"key":          RegistryValue{"value", nil},
-					"key_ORIGINAL": RegistryValue{"value_original", nil},
-				},
-			}, nil},
-			args{
-				"key",
-			},
-			want{
-				"value_original",
-				nil,
-				&[]string{"key_ORIGINAL"},
+				&[]string{"key"},
 			},
 		},
 	}

@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/go-openapi/strfmt"
-	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -41,60 +40,25 @@ func IngredientByNameAndVersion(name, version string, ns Namespace) (*Ingredient
 		return nil, locale.NewInputError("inventory_ingredient_not_available", "The ingredient {{.V0}} is not available on the ActiveState Platform", name)
 	}
 
-	var candidates []*IngredientAndVersion
 	for _, ingredient := range results {
 		for _, feature := range ingredient.LatestVersion.ProvidedFeatures {
-			if feature.Feature == nil || strings.ToLower(*feature.Feature) != strings.ToLower(name) {
+			if feature.Feature == nil || *feature.Feature != name {
 				continue
 			}
 
 			for _, ver := range ingredient.Versions {
 				if ver.Version == version {
-					candidates = append(
-						candidates,
-						&IngredientAndVersion{
-							ingredient.SearchIngredientsResponseItem,
-							ver.Version,
-							ingredient.Namespace,
-						})
+					return &IngredientAndVersion{
+						ingredient.SearchIngredientsResponseItem,
+						ver.Version,
+						ingredient.Namespace,
+					}, nil
 				}
 			}
 		}
 	}
 
-	bestMatch, err := FilterForBestIngredientMatch(candidates, name)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not retrieve a match for ingredient %s.", name)
-	}
-
-	return bestMatch, nil
-}
-
-// FilterForBestIngredientMatch filters a list of ingredients for an ingredient with an exact name match first
-func FilterForBestIngredientMatch(candidates []*IngredientAndVersion, name string) (*IngredientAndVersion, error) {
-	if len(candidates) == 0 {
-		return nil, locale.NewInputError("inventory_ingredient_no_version_available", "No versions are available for package {{.V0}} on the ActiveState Platform", name)
-	}
-
-	// check for exact match
-	for _, c := range candidates {
-		for _, feature := range c.LatestVersion.ProvidedFeatures {
-			if *feature.Feature == name {
-				return c, nil
-			}
-		}
-	}
-
-	if len(candidates) > 1 {
-		candidateNames := funk.Map(candidates, func(iav *IngredientAndVersion) string {
-			return *iav.Ingredient.Name
-		}).([]string)
-		return nil, locale.NewInputError(
-			"inventory_ingredient_multiple_names", "Could not uniquely identify the package to install.  Candidates are {{.V0}}", strings.Join(candidateNames, ", "),
-		)
-	}
-
-	return candidates[0], nil
+	return nil, locale.NewInputError("inventory_ingredient_version_not_available", "Version {{.V0}} is not available for package {{.V1}} on the ActiveState Platform", version, name)
 }
 
 // IngredientWithLatestVersion will grab the latest available ingredient and ingredientVersion that matches the ingredient name
@@ -108,28 +72,21 @@ func IngredientWithLatestVersion(name string, ns Namespace) (*IngredientAndVersi
 		return nil, locale.NewInputError("inventory_ingredient_not_available", "The ingredient {{.V0}} is not available on the ActiveState Platform", name)
 	}
 
-	var candidates []*IngredientAndVersion
 	for _, res := range results {
 		for _, feature := range res.LatestVersion.ProvidedFeatures {
 			if feature.Feature == nil || strings.ToLower(*feature.Feature) != strings.ToLower(name) {
 				continue
 			}
 
-			candidates = append(
-				candidates,
-				&IngredientAndVersion{
-					res.SearchIngredientsResponseItem,
-					*res.LatestVersion.Version,
-					res.Namespace,
-				})
+			return &IngredientAndVersion{
+				res.SearchIngredientsResponseItem,
+				*res.LatestVersion.Version,
+				res.Namespace,
+			}, nil
 		}
 	}
-	bestMatch, err := FilterForBestIngredientMatch(candidates, name)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not retrieve a match for ingredient %s.", name)
-	}
 
-	return bestMatch, nil
+	return nil, locale.NewInputError("inventory_ingredient_no_version_available", "No versions are available for package {{.V0}} on the ActiveState Platform", name)
 }
 
 // SearchIngredients will return all ingredients+ingredientVersions that fuzzily

@@ -80,21 +80,6 @@ func NewDownload(runtime *Runtime) Downloader {
 	}
 }
 
-// fetchRecipe juggles API's to get the build request that can be sent to the head-chef
-func (r *Download) fetchRecipeID() (strfmt.UUID, error) {
-	commitID := r.runtime.commitID
-	if commitID == "" {
-		return "", &ErrNoCommit{locale.NewError(locale.T("err_no_commit"))}
-	}
-
-	recipeID, err := model.FetchRecipeIDForCommitAndPlatform(commitID, r.runtime.owner, r.runtime.projectName, r.orgID, r.private, model.HostPlatform)
-	if err != nil {
-		return "", err
-	}
-
-	return *recipeID, nil
-}
-
 // FetchArtifacts will retrieve artifact information from the head-chef (eg language installers)
 // The first return argument specifies whether we are dealing with an alternative build
 func (r *Download) FetchArtifacts(recipe *inventory_models.Recipe, platProj *mono_models.Project) (*FetchArtifactsResult, error) {

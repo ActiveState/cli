@@ -11,7 +11,6 @@ import (
 
 	"github.com/ActiveState/sysinfo"
 
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -51,54 +50,14 @@ func FetchRawRecipeForCommitAndPlatform(commitID strfmt.UUID, owner, project str
 	return fetchRawRecipe(commitID, owner, project, &platform)
 }
 
-// FetchRecipeIDForCommit returns a recipe ID for a project based on the given commitID and the current platform
-func FetchRecipeIDForCommit(commitID strfmt.UUID, owner, project, orgID string, private bool) (*strfmt.UUID, error) {
-	return fetchRecipeID(commitID, owner, project, orgID, private, &HostPlatform)
-}
-
-// FetchRecipeIDForCommitAndPlatform returns a recipe ID for a project based on the given commitID and platform string
-func FetchRecipeIDForCommitAndPlatform(commitID strfmt.UUID, owner, project, orgID string, private bool, hostPlatform string) (*strfmt.UUID, error) {
-	return fetchRecipeID(commitID, owner, project, orgID, private, &hostPlatform)
-}
-
-func FetchRecipeByID(recipeID strfmt.UUID) (*inventory_models.Recipe, error) {
-	params := iop.NewGetSolutionRecipeParams()
-	params.RecipeID = recipeID
-
-	client, _ := inventory.Init()
-	recipe, err := client.GetSolutionRecipe(params, authentication.ClientAuth())
-	if err != nil {
-		return nil, errs.Wrap(err, "Unknown error while retrieving full order, error: %v, recipe: %s", err, string(recipeID))
-	}
-
-	return recipe.Payload.Recipe, nil
-}
-
 func ResolveRecipe(commitID strfmt.UUID, owner, projectName string, project *mono_models.Project) (*inventory_models.Recipe, error) {
 	if commitID == "" {
 		return nil, locale.NewError("err_no_commit", "Missing Commit ID")
 	}
 
-	private := false
-	orgID := strfmt.UUID(constants.ValidZeroUUID)
-
-	if project != nil {
-		orgID = project.OrganizationID
-		private = project.Private
-	}
-
-	recipeID, err := FetchRecipeIDForCommitAndPlatform(commitID, owner, projectName, orgID.String(), private, HostPlatform)
+	recipe, err := FetchRecipe(commitID, owner, projectName, &HostPlatform)
 	if err != nil {
 		return nil, err
-	}
-
-	if recipeID == nil {
-		return nil, errs.New("recipeID is nil")
-	}
-
-	recipe, err := FetchRecipeByID(*recipeID)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not fetch recipe")
 	}
 
 	if recipe.RecipeID == nil {
@@ -181,9 +140,9 @@ func commitToOrder(commitID strfmt.UUID, owner, project string) (*inventory_mode
 	return order, nil
 }
 
-func fetchRecipeID(commitID strfmt.UUID, owner, project, orgID string, private bool, hostPlatform *string) (*strfmt.UUID, error) {
+func FetchRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *string) (*inventory_models.Recipe, error) {
 	var err error
-	params := iop.NewSolveOrderParams()
+	params := iop.NewResolveRecipesParams()
 	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
 	params.SetTimeout(time.Second * 60)
 	params.Order, err = commitToOrder(commitID, owner, project)
@@ -193,7 +152,7 @@ func fetchRecipeID(commitID strfmt.UUID, owner, project, orgID string, private b
 
 	client, _ := inventory.Init()
 
-	response, err := client.SolveOrder(params, authentication.ClientAuth())
+	response, err := client.ResolveRecipes(params, authentication.ClientAuth())
 	if err != nil {
 		if err == context.DeadlineExceeded {
 			return nil, locale.WrapError(err, "request_timed_out")
@@ -224,12 +183,15 @@ func fetchRecipeID(commitID strfmt.UUID, owner, project, orgID string, private b
 	} else if len(platformIDs) > 1 {
 		logging.Debug("Received multiple platform IDs.  Picking the first one.")
 	}
-	platformID := platformIDs[0].String()
+	platformID := platformIDs[0]
 
-	if _, ok := response.Payload[platformID]; !ok {
-		return nil, locale.NewInputError("err_recipe_not_found")
+	for _, recipe := range response.Payload.Recipes {
+		if recipe.Platform != nil && recipe.Platform.PlatformID != nil && *recipe.Platform.PlatformID == platformID {
+			return recipe, nil
+		}
 	}
-	return response.Payload[platformID].RecipeID, nil
+
+	return nil, locale.NewInputError("err_recipe_not_found")
 }
 
 func IngredientVersionMap(recipe *inventory_models.Recipe) map[strfmt.UUID]*inventory_models.ResolvedIngredient {

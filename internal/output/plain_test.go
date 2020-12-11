@@ -13,14 +13,18 @@ func nilStr(s string) *string {
 }
 
 func TestPlain_Print(t *testing.T) {
-	type tableStruct struct {
+	type TableStruct struct {
 		Header1 string
 		Header2 *string
 		Header3 *string
 	}
+
+	type TableStructs []*TableStruct
+
 	type args struct {
 		value interface{}
 	}
+
 	tests := []struct {
 		name        string
 		args        args
@@ -109,16 +113,13 @@ func TestPlain_Print(t *testing.T) {
 					Value2 float32
 					Value3 bool
 					Value4 []interface{}
-					Value5 struct {
-						V string
-						X string
-					}
-					Value6 []tableStruct
-					Value7 []*tableStruct
+					Value5 *TableStruct
+					Value6 []TableStruct
+					Value7 []*TableStruct
 					Nil1   *int               // nil ptr to builtin
 					Nil2   []interface{}      // nil slice
 					Nil3   []interface{}      // slice of nils
-					Nil4   *tableStruct       // nil ptr to struct
+					Nil4   *TableStruct       // nil ptr to struct
 					Nil5   struct{ N *int }   // struct w/ ptr to builtin field
 					Nil6   []struct{ N *int } // slice of structs w/ ptr to builtin field
 					Nil7   interface{}        // typed nil
@@ -127,15 +128,12 @@ func TestPlain_Print(t *testing.T) {
 					[]interface{}{
 						1, true, 1.1, struct{ V string }{"value"}, []interface{}{1, 2},
 					},
-					struct {
-						V string
-						X string
-					}{"value", "xalue"},
-					[]tableStruct{
-						{"111", nilStr("222"), nil},
+					&TableStruct{"AAA", nil, nilStr("CCC")},
+					[]TableStruct{
+						{"611", nilStr("622"), nil},
 					},
-					[]*tableStruct{
-						{"111", nilStr("222"), nil},
+					[]*TableStruct{
+						{"711", nilStr("722"), nil},
 					},
 					nil,
 					nil,
@@ -152,15 +150,15 @@ func TestPlain_Print(t *testing.T) {
 				"field_value2: 1.10\n" +
 				"field_value3: false\n" +
 				"field_value4: \n - 1\n - true\n - 1.10\n - field_v: value\n - 1\n - 2\n" +
-				"field_value5: \nfield_v: value\nfield_x: xalue\n" +
+				"field_value5: \nfield_header1: AAA\nfield_header3: CCC\n" +
 				"field_value6: \n" +
 				"  field_header1    field_header2    field_header3  \n" +
 				"───────────────────────────────────────────────────\n" +
-				"  111              222              <nil>          \n" +
+				"  611              622              <nil>          \n" +
 				"field_value7: \n" +
 				"  field_header1    field_header2    field_header3  \n" +
 				"───────────────────────────────────────────────────\n" +
-				"  111              222              <nil>          \n" +
+				"  711              722              <nil>          \n" +
 				"field_nil3: \n - <nil>\n - <nil>\n - <nil>\n" +
 				"field_nil5: \n\n" +
 				"field_nil6: \n" +
@@ -173,7 +171,7 @@ func TestPlain_Print(t *testing.T) {
 		},
 		{
 			"table",
-			args{[]tableStruct{
+			args{[]TableStruct{
 				{"valueA.1", nil, nilStr("valueA.3")},
 				{"valueB.1", nilStr("valueB.2"), nil},
 				{"valueC.1", nilStr("valueC.2"), nilStr("valueC.3")},
@@ -187,7 +185,7 @@ func TestPlain_Print(t *testing.T) {
 		},
 		{
 			"table with pointers",
-			args{[]*tableStruct{
+			args{[]*TableStruct{
 				{"valueA.1", nil, nilStr("valueA.3")},
 				{"valueB.1", nilStr("valueB.2"), nil},
 				{"valueC.1", nilStr("valueC.2"), nilStr("valueC.3")},

@@ -100,6 +100,12 @@ func cleanRcFile(path string, data EnvData) error {
 			strip = true
 		}
 
+		// Detect stop line
+		if strings.Contains(text, data.Stop) {
+			strip = false
+			continue
+		}
+
 		// Strip line
 		if strip {
 			continue
@@ -107,11 +113,6 @@ func cleanRcFile(path string, data EnvData) error {
 
 		// Rebuild file contents
 		fileContents = append(fileContents, scanner.Text())
-
-		// Detect stop line
-		if strings.Contains(text, data.Stop) {
-			strip = false
-		}
 	}
 	readFile.Close()
 
@@ -245,11 +246,11 @@ func SetupProjectRcFile(templateName, ext string, env map[string]string, out out
 	}
 
 	t := template.New("rcfile")
-	t.Funcs(map[string]interface{} {
+	t.Funcs(map[string]interface{}{
 		"splitLines": func(v string) []string { return strings.Split(v, "\n") },
 	})
 
-	t, err =t.Parse(tpl)
+	t, err = t.Parse(tpl)
 	if err != nil {
 		return nil, errs.Wrap(err, "Templating failure")
 	}

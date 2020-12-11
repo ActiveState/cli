@@ -524,19 +524,57 @@ func setupSensibleErrors(err error) error {
 		return locale.NewInputError("command_flag_invalid_value", "", flagText, msg)
 	}
 
-	// pflag: flag.go: output being parsed:
-	// fmt.Errorf("no such flag -%v", name)
-	noSuch := "no such flag "
-	if strings.Contains(errMsg, noSuch) {
-		flagText := strings.TrimPrefix(errMsg, noSuch)
-		return locale.NewInputError("command_flag_no_such_flag", "", flagText)
+	if pflagErrFlag := pflagFlagErrMsgFlag(errMsg); pflagErrFlag != "" {
+		return locale.NewInputError(
+			"command_flag_no_such_flag",
+			"No such flag: [NOTICE]{{.V0}}[/RESET]", pflagErrFlag,
+		)
 	}
 
-	if strings.Contains(errMsg, "unknown command") {
-		return locale.NewInputError("err_cobra_unknown_cmd", "{{.V0}}", errMsg)
+	if pflagErrCmd := pflagCmdErrMsgCmd(errMsg); pflagErrCmd != "" {
+		return locale.NewInputError(
+			"command_cmd_no_such_cmd",
+			"No such command: [NOTICE]{{.V0}}[/RESET]", pflagErrCmd,
+		)
 	}
 
 	return err
+}
+
+// pflag: flag.go: errors are not detectable
+func pflagFlagErrMsgFlag(errMsg string) string {
+	flagText := strings.TrimPrefix(errMsg, "no such flag ")
+	flagText = strings.TrimPrefix(flagText, "unknown flag: ")
+	flagText = strings.TrimPrefix(flagText, "bad flag syntax: ")
+	//unknown shorthand flag: 'x' in -x
+	flagText = strings.TrimPrefix(flagText, "unknown shorthand flag: ")
+
+	if flagText == errMsg {
+		return ""
+	}
+
+	shorthandSplit := strings.Split(flagText, "' in ")
+	if len(shorthandSplit) > 1 {
+		flagText = shorthandSplit[1]
+	}
+
+	return flagText
+}
+
+func pflagCmdErrMsgCmd(errMsg string) string {
+	// unknown command "badcmd" for "state"
+	flagText := strings.TrimPrefix(errMsg, `unknown command "`)
+
+	if flagText == errMsg {
+		return ""
+	}
+
+	commandSplit := strings.Split(flagText, `" for "`)
+	if len(commandSplit) > 1 && commandSplit[0] != "" {
+		flagText = commandSplit[0]
+	}
+
+	return flagText
 }
 
 func (cmd *Command) Usage() error {

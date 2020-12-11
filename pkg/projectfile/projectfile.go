@@ -624,7 +624,7 @@ func removeTemporaryLanguage(data []byte) ([]byte, error) {
 
 	startLoc := languageLine.FindIndex(data)
 	if startLoc == nil {
-		return data, nil
+		return data, nil // language is already gone
 	}
 	endLoc := firstNonIndentedLine.FindIndex(data[startLoc[1]:])
 	if endLoc == nil {

@@ -13,6 +13,7 @@ type Format string
 // FormatName constants are tokens representing supported output formats.
 const (
 	PlainFormatName    Format = "plain"     // human readable
+	SimpleFormatName   Format = "simple"    // human readable without notice level
 	JSONFormatName     Format = "json"      // plain json
 	EditorFormatName   Format = "editor"    // alias of "json"
 	EditorV0FormatName Format = "editor.v0" // for Komodo: alias of "json"
@@ -56,6 +57,10 @@ func new(formatName string, config *Config) (Outputer, error) {
 		logging.Debug("Using Plain outputer")
 		plain, err := NewPlain(config)
 		return &Mediator{&plain, PlainFormatName}, err
+	case SimpleFormatName:
+		logging.Debug("Using Simple outputter")
+		simple, err := NewSimple(config)
+		return &Mediator{&simple, SimpleFormatName}, err
 	case JSONFormatName:
 		logging.Debug("Using JSON outputer")
 		json, err := NewJSON(config)

@@ -16,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
@@ -27,9 +28,22 @@ type Conditional struct {
 	funcs  template.FuncMap
 }
 
-func NewConditional() *Conditional {
+func NewConditional(a *authentication.Auth) *Conditional {
 	c := &Conditional{map[string]interface{}{}, map[string]interface{}{}}
 
+	c.RegisterFunc("Mixin", func() map[string]interface{} {
+		res := map[string]string{
+			"Name":  "",
+			"Email": "",
+		}
+		if a.Authenticated() {
+			res["Name"] = a.WhoAmI()
+			res["Email"] = a.Email()
+		}
+		return map[string]interface{}{
+			"User": res,
+		}
+	})
 	c.RegisterFunc("Contains", funk.Contains)
 	c.RegisterFunc("HasPrefix", strings.HasPrefix)
 	c.RegisterFunc("HasSuffix", strings.HasSuffix)
@@ -45,8 +59,8 @@ func NewConditional() *Conditional {
 	return c
 }
 
-func NewPrimeConditional(pjOwner, pjName, pjNamespace, subshellName string) *Conditional {
-	c := NewConditional()
+func NewPrimeConditional(auth *authentication.Auth, pjOwner, pjName, pjNamespace, subshellName string) *Conditional {
+	c := NewConditional(auth)
 	c.RegisterParam("Project", map[string]string{
 		"NamespacePrefix": pjNamespace,
 		"Name":            pjName,
