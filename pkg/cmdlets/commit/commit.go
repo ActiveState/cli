@@ -36,19 +36,19 @@ func PrintCommit(out output.Outputer, commit *mono_models.Commit, orgs []gmodel.
 }
 
 func PrintCommits(out output.Outputer, commits []*mono_models.Commit, orgs []gmodel.Organization) error {
-	result := make([]commitData, 0)
+	var data []commitData
 	for _, c := range commits {
 		d, err := commitDataFromCommit(c, orgs)
 		if err != nil {
 			return err
 		}
-		result = append(result, d)
+		data = append(data, d)
 	}
 
 	out.Print(struct {
 		Data []commitData `opts:"verticalTable" locale:","`
 	}{
-		Data: result,
+		Data: data,
 	})
 
 	return nil
