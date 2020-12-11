@@ -28,6 +28,8 @@ type PlainOpts string
 const (
 	// SeparateLineOpt requests table output to be printed on a separate line (without columns)
 	SeparateLineOpt PlainOpts = "separateLine"
+	// VerticalTable requests a table be output vertically
+	VerticalTable PlainOpts = "verticalTable"
 	// EmptyNil replaces nil values with the empty string
 	EmptyNil PlainOpts = "emptyNil"
 	// HidePlain hides the field value in table output
@@ -175,6 +177,14 @@ func sprintStruct(value interface{}) (string, error) {
 
 	result := []string{}
 	for _, field := range meta {
+		if funk.Contains(field.opts, string(VerticalTable)) {
+			slice, err := asSlice(field.value)
+			if err != nil {
+				return "", err
+			}
+			return sprintTable(true, slice)
+		}
+
 		stringValue, err := sprint(field.value)
 		if err != nil {
 			return "", err
@@ -202,7 +212,7 @@ func sprintSlice(value interface{}) (string, error) {
 	}
 
 	if len(slice) > 0 && isStruct(slice[0]) {
-		return sprintTable(slice)
+		return sprintTable(false, slice)
 	}
 
 	result := []string{}
@@ -250,7 +260,7 @@ func sprintMap(value interface{}) (string, error) {
 }
 
 // sprintTable will marshal and return the given slice of structs as a string, formatted as a table
-func sprintTable(slice []interface{}) (string, error) {
+func sprintTable(vertical bool, slice []interface{}) (string, error) {
 	if len(slice) == 0 {
 		return "", nil
 	}
@@ -306,7 +316,25 @@ func sprintTable(slice []interface{}) (string, error) {
 		}
 	}
 
+	if vertical {
+		t := table.New([]string{"", ""})
+		t.AddRow(verticalRows(headers, rows)...)
+		t.HideHeaders = true
+		return t.Render(), nil
+	}
+
 	return table.New(headers).AddRow(rows...).Render(), nil
+}
+
+func asSlice(val interface{}) ([]interface{}, error) {
+	if !isSlice(val) {
+		typeOf := reflect.TypeOf(val)
+		collection := reflect.MakeSlice(reflect.SliceOf(typeOf), 0, 1)
+		collection = reflect.Append(collection, valueOf(val))
+		val = collection.Interface()
+	}
+
+	return parseSlice(val)
 }
 
 // localizedField is a little helper that will return the localized version of the given string
@@ -355,4 +383,26 @@ func columns(offset int, value string) []string {
 	cols := make([]string, offset+1)
 	cols[offset] = value
 	return cols
+}
+
+func verticalRows(hdrs []string, rows [][]string) [][]string {
+	var vrows [][]string
+
+	for i, hrow := range rows {
+		for j, hcol := range hrow {
+			var header string
+			if j < len(hdrs) {
+				header = hdrs[j]
+			}
+
+			vrow := []string{header, hcol}
+			vrows = append(vrows, vrow)
+		}
+
+		if i < len(rows)-1 {
+			vrows = append(vrows, []string{"", ""})
+		}
+	}
+
+	return vrows
 }

@@ -30,10 +30,12 @@ type row struct {
 type Table struct {
 	headers []string
 	rows    []row
+
+	HideHeaders bool
 }
 
 func New(headers []string) *Table {
-	return &Table{headers, []row{}}
+	return &Table{headers: headers}
 }
 
 func (t *Table) AddRow(vs ...[]string) *Table {
@@ -51,9 +53,11 @@ func (t *Table) Render() string {
 	termWidth := termutils.GetWidth()
 	colWidths, total := t.calculateWidth(termWidth)
 
-	out := ""
-	out += "[NOTICE]" + renderRow(t.headers, colWidths) + "[/RESET]" + linebreak
-	out += "[DISABLED]" + strings.Repeat(dash, total) + "[/RESET]" + linebreak
+	var out string
+	if !t.HideHeaders {
+		out += "[NOTICE]" + renderRow(t.headers, colWidths) + "[/RESET]" + linebreak
+		out += "[DISABLED]" + strings.Repeat(dash, total) + "[/RESET]" + linebreak
+	}
 	for _, row := range t.rows {
 		out += renderRow(row.columns, colWidths) + linebreak
 	}
@@ -126,7 +130,9 @@ func equalizeWidths(colWidths []int, percentage int) {
 	}
 
 	// Account for floats that got rounded
-	colWidths[len(colWidths)-1] += int(total) - mathutils.Total(colWidths...)
+	if len(colWidths) > 0 {
+		colWidths[len(colWidths)-1] += int(total) - mathutils.Total(colWidths...)
+	}
 }
 
 func rescaleColumns(colWidths []int, targetTotal int) {
@@ -138,7 +144,9 @@ func rescaleColumns(colWidths []int, targetTotal int) {
 	}
 
 	// Account for floats that got rounded
-	colWidths[len(colWidths)-1] += targetTotal - mathutils.Total(colWidths...)
+	if len(colWidths) > 0 {
+		colWidths[len(colWidths)-1] += targetTotal - mathutils.Total(colWidths...)
+	}
 }
 
 func renderRow(providedColumns []string, colWidths []int) string {

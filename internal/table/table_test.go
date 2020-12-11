@@ -27,6 +27,7 @@ func TestTable_colWidths(t1 *testing.T) {
 					[]row{
 						{[]string{"1", "2", "3"}},
 					},
+					false,
 				},
 				100,
 			},
@@ -40,6 +41,7 @@ func TestTable_colWidths(t1 *testing.T) {
 					[]row{
 						{[]string{"1", "2", "3"}},
 					},
+					false,
 				},
 				100,
 			},
@@ -54,6 +56,7 @@ func TestTable_colWidths(t1 *testing.T) {
 						{[]string{"1", "2", "3"}},
 						{[]string{"1", "0123456789012345678901234567890123456789"}},
 					},
+					false,
 				},
 				100,
 			},
@@ -67,6 +70,7 @@ func TestTable_colWidths(t1 *testing.T) {
 					[]row{
 						{[]string{"123", "1234", "12345"}},
 					},
+					false,
 				},
 				100,
 			},
@@ -80,6 +84,7 @@ func TestTable_colWidths(t1 *testing.T) {
 					[]row{
 						{[]string{"1", "2", "3"}},
 					},
+					false,
 				},
 				100,
 			},
@@ -94,6 +99,7 @@ func TestTable_colWidths(t1 *testing.T) {
 						{[]string{"1", "1", "12", "12"}},
 						{[]string{strings.Repeat(" ", 100)}},
 					},
+					false,
 				},
 				100,
 			},
@@ -108,6 +114,7 @@ func TestTable_colWidths(t1 *testing.T) {
 						{[]string{"1", "1", "12", "12"}},
 						{[]string{"1", strings.Repeat(" ", 200)}},
 					},
+					false,
 				},
 				100,
 			},
