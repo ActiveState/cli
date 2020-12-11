@@ -139,8 +139,6 @@ func sprint(value interface{}) (string, error) {
 	switch t := value.(type) {
 	case fmt.Stringer:
 		return t.String(), nil
-	case interface{ Stacks() []interface{} }:
-		return sprintSlice(t.Stacks(), false)
 	case error:
 		return t.Error(), nil
 	case []byte: // Reflect doesn't handle []byte (easily)
@@ -162,7 +160,7 @@ func sprint(value interface{}) (string, error) {
 		if valueRfl.IsNil() {
 			return nilText, nil
 		}
-		return sprintSlice(value, true)
+		return sprintSlice(value)
 
 	case reflect.Map:
 		if valueRfl.IsNil() {
@@ -228,7 +226,7 @@ func sprintStruct(value interface{}) (string, error) {
 }
 
 // sprintSlice will marshal and return the given slice as a string
-func sprintSlice(value interface{}, prepend bool) (string, error) {
+func sprintSlice(value interface{}) (string, error) {
 	slice, err := parseSlice(value)
 	if err != nil {
 		return "", err
@@ -253,7 +251,7 @@ func sprintSlice(value interface{}, prepend bool) (string, error) {
 		// prepend if stringValue does not represent a slice
 		if vp, ok := v.(interface{ PrependString() string }); ok {
 			stringValue = vp.PrependString() + stringValue
-		} else if prepend && !isSlice(v) {
+		} else if !isSlice(v) {
 			stringValue = "• " + stringValue
 		}
 
