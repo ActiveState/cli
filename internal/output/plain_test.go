@@ -72,14 +72,6 @@ func TestPlain_Print(t *testing.T) {
 			"",
 		},
 		{
-			"stacked strings",
-			args{NewStackedOutput([]interface{}{
-				"block 1", "block 2", NewPrependedSliceItem("block 3", "- "),
-			})},
-			"block 1\nblock 2\n- block 3\n",
-			"",
-		},
-		{
 			"map with string, int and float",
 			args{map[string]interface{}{
 				"string": "hello",
