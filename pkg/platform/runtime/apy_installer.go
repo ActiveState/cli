@@ -16,14 +16,14 @@ import (
 // script to install an ActivePython runtime to the configured runtime dir. Any failures
 // during this process will result in a failed installation and the install-dir being removed.
 func (m *MetaData) pythonRelocationDir() (string, error) {
-	python, fail := locatePythonExecutable(m.Path)
-	if fail != nil {
-		return "", fail
+	python, err := locatePythonExecutable(m.Path)
+	if err != nil {
+		return "", err
 	}
 
-	prefix, fail := extractPythonRelocationPrefix(m.Path, python)
-	if fail != nil {
-		return "", fail
+	prefix, err := extractPythonRelocationPrefix(m.Path, python)
+	if err != nil {
+		return "", err
 	}
 
 	// relocate python

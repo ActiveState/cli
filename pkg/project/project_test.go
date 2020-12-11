@@ -32,12 +32,12 @@ func (suite *ProjectTestSuite) BeforeTest(suiteName, testName string) {
 	suite.testdataDir = filepath.Join(root, "pkg", "project", "testdata")
 	err = os.Chdir(suite.testdataDir)
 	suite.Require().NoError(err, "Should change dir without issue.")
-	projectFile, fail := projectfile.GetSafe()
+	projectFile, err := projectfile.GetSafe()
 	projectFile.Persist()
 	suite.projectFile = projectFile
-	suite.Require().Nil(fail, "Should retrieve projectfile without issue.")
-	suite.project, fail = project.GetSafe()
-	suite.Require().Nil(fail, "Should retrieve project without issue.")
+	suite.Require().Nil(err, "Should retrieve projectfile without issue.")
+	suite.project, err = project.GetSafe()
+	suite.Require().Nil(err, "Should retrieve project without issue.")
 }
 
 func (suite *ProjectTestSuite) TestGet() {
@@ -46,8 +46,8 @@ func (suite *ProjectTestSuite) TestGet() {
 }
 
 func (suite *ProjectTestSuite) TestGetSafe() {
-	val, fail := project.GetSafe()
-	suite.NoError(fail, "Run without failure")
+	val, err := project.GetSafe()
+	suite.NoError(err, "Run without failure")
 	suite.NotNil(val, "Config should be set")
 }
 
@@ -273,8 +273,8 @@ func (suite *ProjectTestSuite) TestConstants() {
 }
 
 func (suite *ProjectTestSuite) TestSecrets() {
-	prj, fail := project.GetSafe()
-	suite.NoError(fail, "Run without failure")
+	prj, err := project.GetSafe()
+	suite.NoError(err, "Run without failure")
 	secrets := prj.Secrets()
 	suite.Len(secrets, 2)
 

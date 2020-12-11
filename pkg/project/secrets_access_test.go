@@ -51,17 +51,17 @@ func (suite *SecretsAccessTestSuite) TestFindSecretNoAccess() {
 	suite.platformMock.RegisterWithCode("GET", "/organizations/AccessOrg", 200)
 	suite.platformMock.RegisterWithCode("GET", "/organizations/AccessOrg/members", 200)
 
-	_, fail := suite.expander.FindSecret("does.not.matter", false)
-	suite.Require().Error(fail, "should get an error when we do not have access")
-	suite.Equal(fail.Error(), locale.Tr("secrets_expand_err_no_access", "AccessOrg"))
+	_, err := suite.expander.FindSecret("does.not.matter", false)
+	suite.Require().Error(err, "should get an error when we do not have access")
+	suite.Equal(err.Error(), locale.Tr("secrets_expand_err_no_access", "AccessOrg"))
 }
 
 func (suite *SecretsAccessTestSuite) TestFindSecretAccessError() {
 	suite.platformMock.RegisterWithCode("GET", "/organizations/AccessOrg", 200)
 	suite.platformMock.RegisterWithCode("GET", "/organizations/AccessOrg/members", 401)
 
-	_, fail := suite.expander.FindSecret("does.not.matter", false)
-	suite.Require().Error(fail, "should get an error when not authorized")
+	_, err := suite.expander.FindSecret("does.not.matter", false)
+	suite.Require().Error(err, "should get an error when not authorized")
 }
 
 func TestSecretsAccessTestSuite(t *testing.T) {

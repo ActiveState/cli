@@ -23,11 +23,11 @@ func cleanUser(t *testing.T, username string) error {
 		}()
 	}
 
-	fail := auth.AuthenticateWithCredentials(&mono_models.Credentials{
+	err := auth.AuthenticateWithCredentials(&mono_models.Credentials{
 		Token: os.Getenv("PLATFORM_API_TOKEN"),
 	})
-	if fail != nil {
-		return fail
+	if err != nil {
+		return err
 	}
 
 	projects, err := getProjects(username)

@@ -87,9 +87,9 @@ func (v *SubShell) Activate(out output.Outputer) error {
 	// tcsh does not export prompt.  This may be intractable.  I couldn't figure out a
 	// hack to make it work.
 	env := sscommon.EscapeEnv(v.env)
-	var fail error
-	if v.rcFile, fail = sscommon.SetupProjectRcFile("tcsh.sh", "", env, out); fail != nil {
-		return fail
+	var err error
+	if v.rcFile, err = sscommon.SetupProjectRcFile("tcsh.sh", "", env, out); err != nil {
+		return err
 	}
 
 	shellArgs := []string{"-c", "source " + v.rcFile.Name() + " ; exec " + v.Binary()}
@@ -114,8 +114,8 @@ func (v *SubShell) Deactivate() error {
 		return nil
 	}
 
-	if fail := sscommon.Stop(v.cmd); fail != nil {
-		return fail
+	if err := sscommon.Stop(v.cmd); err != nil {
+		return err
 	}
 
 	v.cmd = nil

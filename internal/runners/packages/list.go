@@ -40,28 +40,28 @@ func (l *List) Run(params ListRunParams, nstype model.NamespaceType) error {
 	logging.Debug("ExecuteList")
 
 	var commit *strfmt.UUID
-	var fail error
+	var err error
 	switch {
 	case params.Commit != "":
-		commit, fail = targetFromCommit(params.Commit)
-		if fail != nil {
-			return locale.WrapError(fail, fmt.Sprintf("%s_err_cannot_obtain_commit", nstype))
+		commit, err = targetFromCommit(params.Commit)
+		if err != nil {
+			return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_obtain_commit", nstype))
 		}
 	case params.Project != "":
-		commit, fail = targetFromProject(params.Project)
-		if fail != nil {
-			return locale.WrapError(fail, fmt.Sprintf("%s_err_cannot_obtain_commit", nstype))
+		commit, err = targetFromProject(params.Project)
+		if err != nil {
+			return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_obtain_commit", nstype))
 		}
 	default:
-		commit, fail = targetFromProjectFile()
-		if fail != nil {
-			return locale.WrapError(fail, fmt.Sprintf("%s_err_cannot_obtain_commit", nstype))
+		commit, err = targetFromProjectFile()
+		if err != nil {
+			return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_obtain_commit", nstype))
 		}
 	}
 
-	checkpoint, fail := fetchCheckpoint(commit)
-	if fail != nil {
-		return locale.WrapError(fail, fmt.Sprintf("%s_err_cannot_fetch_checkpoint", nstype))
+	checkpoint, err := fetchCheckpoint(commit)
+	if err != nil {
+		return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_fetch_checkpoint", nstype))
 	}
 
 	table := newFilteredRequirementsTable(model.FilterCheckpointPackages(checkpoint), params.Name, nstype)
@@ -82,14 +82,14 @@ func targetFromCommit(commitOpt string) (*strfmt.UUID, error) {
 }
 
 func targetFromProject(projectString string) (*strfmt.UUID, error) {
-	ns, fail := project.ParseNamespace(projectString)
-	if fail != nil {
-		return nil, fail
+	ns, err := project.ParseNamespace(projectString)
+	if err != nil {
+		return nil, err
 	}
 
-	proj, fail := model.FetchProjectByName(ns.Owner, ns.Project)
-	if fail != nil {
-		return nil, fail
+	proj, err := model.FetchProjectByName(ns.Owner, ns.Project)
+	if err != nil {
+		return nil, err
 	}
 
 	for _, branch := range proj.Branches {
@@ -103,9 +103,9 @@ func targetFromProject(projectString string) (*strfmt.UUID, error) {
 
 func targetFromProjectFile() (*strfmt.UUID, error) {
 	logging.Debug("commit from project file")
-	proj, fail := project.GetSafe()
-	if fail != nil {
-		return nil, fail
+	proj, err := project.GetSafe()
+	if err != nil {
+		return nil, err
 	}
 	commit := proj.CommitID()
 	if commit == "" {

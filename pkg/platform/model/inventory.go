@@ -32,9 +32,9 @@ var platformCache []*Platform
 // IngredientByNameAndVersion fetches an ingredient that matches the given name and version. If version is empty the first
 // matching ingredient will be returned.
 func IngredientByNameAndVersion(name, version string, ns Namespace) (*IngredientAndVersion, error) {
-	results, fail := searchIngredientsNamespace(50, ns, name)
-	if fail != nil {
-		return nil, fail
+	results, err := searchIngredientsNamespace(50, ns, name)
+	if err != nil {
+		return nil, err
 	}
 
 	if len(results) == 0 {
@@ -99,9 +99,9 @@ func FilterForBestIngredientMatch(candidates []*IngredientAndVersion, name strin
 
 // IngredientWithLatestVersion will grab the latest available ingredient and ingredientVersion that matches the ingredient name
 func IngredientWithLatestVersion(name string, ns Namespace) (*IngredientAndVersion, error) {
-	results, fail := searchIngredientsNamespace(50, ns, name)
-	if fail != nil {
-		return nil, fail
+	results, err := searchIngredientsNamespace(50, ns, name)
+	if err != nil {
+		return nil, err
 	}
 
 	if len(results) == 0 {
@@ -141,9 +141,9 @@ func SearchIngredients(namespace Namespace, name string) ([]*IngredientAndVersio
 // SearchIngredientsStrict will return all ingredients+ingredientVersions that
 // strictly match the ingredient name.
 func SearchIngredientsStrict(namespace Namespace, name string) ([]*IngredientAndVersion, error) {
-	results, fail := searchIngredientsNamespace(50, namespace, name)
-	if fail != nil {
-		return nil, fail
+	results, err := searchIngredientsNamespace(50, namespace, name)
+	if err != nil {
+		return nil, err
 	}
 
 	ingredients := results[:0]
@@ -218,18 +218,18 @@ func FetchPlatforms() ([]*Platform, error) {
 }
 
 func FetchPlatformsForCommit(commitID strfmt.UUID) ([]*Platform, error) {
-	checkpt, _, fail := FetchCheckpointForCommit(commitID)
-	if fail != nil {
-		return nil, fail
+	checkpt, _, err := FetchCheckpointForCommit(commitID)
+	if err != nil {
+		return nil, err
 	}
 
 	platformIDs := CheckpointToPlatforms(checkpt)
 
 	var platforms []*Platform
 	for _, pID := range platformIDs {
-		platform, fail := FetchPlatformByUID(pID)
-		if fail != nil {
-			return nil, fail
+		platform, err := FetchPlatformByUID(pID)
+		if err != nil {
+			return nil, err
 		}
 
 		platforms = append(platforms, platform)
@@ -239,9 +239,9 @@ func FetchPlatformsForCommit(commitID strfmt.UUID) ([]*Platform, error) {
 }
 
 func filterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID) ([]strfmt.UUID, error) {
-	runtimePlatforms, fail := FetchPlatforms()
-	if fail != nil {
-		return nil, fail
+	runtimePlatforms, err := FetchPlatforms()
+	if err != nil {
+		return nil, err
 	}
 
 	var pids []strfmt.UUID
@@ -285,9 +285,9 @@ func filterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID)
 }
 
 func FetchPlatformByUID(uid strfmt.UUID) (*Platform, error) {
-	platforms, fail := FetchPlatforms()
-	if fail != nil {
-		return nil, fail
+	platforms, err := FetchPlatforms()
+	if err != nil {
+		return nil, err
 	}
 
 	for _, platform := range platforms {
@@ -300,9 +300,9 @@ func FetchPlatformByUID(uid strfmt.UUID) (*Platform, error) {
 }
 
 func FetchPlatformByDetails(name, version string, word int) (*Platform, error) {
-	runtimePlatforms, fail := FetchPlatforms()
-	if fail != nil {
-		return nil, fail
+	runtimePlatforms, err := FetchPlatforms()
+	if err != nil {
+		return nil, err
 	}
 
 	lower := strings.ToLower
@@ -338,18 +338,18 @@ func FetchPlatformByDetails(name, version string, word int) (*Platform, error) {
 }
 
 func FetchLanguageForCommit(commitID strfmt.UUID) (*Language, error) {
-	checkpt, _, fail := FetchCheckpointForCommit(commitID)
-	if fail != nil {
-		return nil, fail
+	checkpt, _, err := FetchCheckpointForCommit(commitID)
+	if err != nil {
+		return nil, err
 	}
 
 	return CheckpointToLanguage(checkpt)
 }
 
 func FetchLanguageByDetails(name, version string) (*Language, error) {
-	languages, fail := FetchLanguages()
-	if fail != nil {
-		return nil, fail
+	languages, err := FetchLanguages()
+	if err != nil {
+		return nil, err
 	}
 
 	for _, language := range languages {
@@ -362,9 +362,9 @@ func FetchLanguageByDetails(name, version string) (*Language, error) {
 }
 
 func FetchLanguageVersions(name string) ([]string, error) {
-	languages, fail := FetchLanguages()
-	if fail != nil {
-		return nil, fail
+	languages, err := FetchLanguages()
+	if err != nil {
+		return nil, err
 	}
 
 	var versions []string

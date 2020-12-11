@@ -63,11 +63,11 @@ func (m *Manager) Job(entry *Entry) {
 		return
 	}
 
-	bytes, fail := GetWithProgress(entry.Download, m.progress)
+	bytes, err := GetWithProgress(entry.Download, m.progress)
 
-	if fail != nil {
-		m.error = fail
-		logging.Debug("Failure occured: %v", fail)
+	if err != nil {
+		m.error = err
+		logging.Debug("Failure occured: %v", err)
 		return
 	}
 
@@ -77,7 +77,7 @@ func (m *Manager) Job(entry *Entry) {
 		return
 	}
 
-	err := ioutil.WriteFile(entry.Path, bytes, 0666)
+	err = ioutil.WriteFile(entry.Path, bytes, 0666)
 	if err != nil {
 		m.error = errs.Wrap(err, "WriteFile %s failed", entry.Path)
 	}

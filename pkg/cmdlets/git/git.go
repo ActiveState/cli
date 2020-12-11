@@ -36,9 +36,9 @@ type Repo struct {
 // CloneProject will attempt to clone the associalted public git repository
 // for the project identified by <owner>/<name> to the given directory
 func (r *Repo) CloneProject(owner, name, path string, out output.Outputer) error {
-	project, fail := model.FetchProjectByName(owner, name)
-	if fail != nil {
-		return fail
+	project, err := model.FetchProjectByName(owner, name)
+	if err != nil {
+		return err
 	}
 
 	tempDir, err := ioutil.TempDir("", fmt.Sprintf("state-activate-repo-%s-%s", owner, name))
@@ -61,14 +61,14 @@ func (r *Repo) CloneProject(owner, name, path string, out output.Outputer) error
 		return errs.Wrap(err, "Cmd failure")
 	}
 
-	fail = ensureCorrectRepo(owner, name, filepath.Join(tempDir, constants.ConfigFileName))
-	if fail != nil {
-		return fail
+	err = ensureCorrectRepo(owner, name, filepath.Join(tempDir, constants.ConfigFileName))
+	if err != nil {
+		return err
 	}
 
-	fail = moveFiles(tempDir, path)
-	if fail != nil {
-		return fail
+	err = moveFiles(tempDir, path)
+	if err != nil {
+		return err
 	}
 	return nil
 }
@@ -82,14 +82,14 @@ func ensureCorrectRepo(owner, name, projectFilePath string) error {
 		return errs.Wrap(err, "OS failure")
 	}
 
-	projectFile, fail := projectfile.Parse(projectFilePath)
-	if fail != nil {
-		return fail
+	projectFile, err := projectfile.Parse(projectFilePath)
+	if err != nil {
+		return err
 	}
 
-	proj, fail := project.NewLegacy(projectFile)
-	if fail != nil {
-		return fail
+	proj, err := project.NewLegacy(projectFile)
+	if err != nil {
+		return err
 	}
 
 	if !(strings.ToLower(proj.Owner()) == strings.ToLower(owner)) || !(strings.ToLower(proj.Name()) == strings.ToLower(name)) {
@@ -100,9 +100,9 @@ func ensureCorrectRepo(owner, name, projectFilePath string) error {
 }
 
 func moveFiles(src, dest string) error {
-	fail := verifyDestinationDirectory(dest)
-	if fail != nil {
-		return fail
+	err := verifyDestinationDirectory(dest)
+	if err != nil {
+		return err
 	}
 
 	return fileutils.MoveAllFilesCrossDisk(src, dest)
@@ -113,9 +113,9 @@ func verifyDestinationDirectory(dest string) error {
 		return fileutils.Mkdir(dest)
 	}
 
-	empty, fail := fileutils.IsEmptyDir(dest)
-	if fail != nil {
-		return fail
+	empty, err := fileutils.IsEmptyDir(dest)
+	if err != nil {
+		return err
 	}
 	if !empty {
 		return locale.NewError("TargetDirInUse")

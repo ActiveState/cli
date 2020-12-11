@@ -37,9 +37,9 @@ func (m *MetaData) Prepare() error {
 		}
 		// RelocationDir
 		if m.RelocationDir == "" {
-			var fail error
-			if m.RelocationDir, fail = m.pythonRelocationDir(); fail != nil {
-				return fail
+			var err error
+			if m.RelocationDir, err = m.pythonRelocationDir(); err != nil {
+				return err
 			}
 		}
 		// Env
@@ -51,9 +51,9 @@ func (m *MetaData) Prepare() error {
 
 		// RelocationDir
 		if m.RelocationDir == "" {
-			var fail error
-			if m.RelocationDir, fail = m.perlRelocationDir(); fail != nil {
-				return fail
+			var err error
+			if m.RelocationDir, err = m.perlRelocationDir(); err != nil {
+				return err
 			}
 		}
 		// AffectedEnv

@@ -30,14 +30,14 @@ func FetchRaw(secretsClient *secretsapi.Client) (*secretModels.Keypair, error) {
 
 // Fetch fetchs and parses the current user's keypair using the provided passphrase or returns a failure.
 func Fetch(secretsClient *secretsapi.Client, passphrase string) (Keypair, error) {
-	rawKP, failure := FetchRaw(secretsClient)
-	if failure != nil {
-		return nil, failure
+	rawKP, err := FetchRaw(secretsClient)
+	if err != nil {
+		return nil, err
 	}
 
-	kp, failure := ParseEncryptedRSA(*rawKP.EncryptedPrivateKey, passphrase)
-	if failure != nil {
-		return nil, failure
+	kp, err := ParseEncryptedRSA(*rawKP.EncryptedPrivateKey, passphrase)
+	if err != nil {
+		return nil, err
 	}
 
 	return kp, nil
@@ -55,9 +55,9 @@ func FetchPublicKey(secretsClient *secretsapi.Client, user *mono_models.User) (E
 		return nil, errs.Wrap(err, "GetPublicKey failed")
 	}
 
-	pubKey, failure := ParseRSAPublicKey(*pubKeyOk.Payload.Value)
-	if failure != nil {
-		return nil, failure
+	pubKey, err := ParseRSAPublicKey(*pubKeyOk.Payload.Value)
+	if err != nil {
+		return nil, err
 	}
 
 	return pubKey, nil

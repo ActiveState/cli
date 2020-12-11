@@ -23,15 +23,15 @@ func NewCatcherByFormat(format output.Format) *Catcher {
 	catch.outWriter = &bytes.Buffer{}
 	catch.errWriter = &bytes.Buffer{}
 
-	outputer, fail := output.New(string(format), &output.Config{
+	outputer, err := output.New(string(format), &output.Config{
 		OutWriter:   catch.outWriter,
 		ErrWriter:   catch.errWriter,
 		Colored:     false,
 		Interactive: false,
 	})
 
-	if fail != nil {
-		panic(fmt.Sprintf("Could not create plain outputer: %s", fail.Error()))
+	if err != nil {
+		panic(fmt.Sprintf("Could not create plain outputer: %s", err.Error()))
 	}
 
 	catch.Outputer = outputer

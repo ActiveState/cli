@@ -51,9 +51,9 @@ func newListing(commitID, projName, projOrg string) (*Listing, error) {
 		return nil, err
 	}
 
-	platforms, fail := model.FetchPlatformsForCommit(*targetCommitID)
-	if fail != nil {
-		return nil, fail
+	platforms, err := model.FetchPlatformsForCommit(*targetCommitID)
+	if err != nil {
+		return nil, err
 	}
 
 	listing := Listing{
@@ -71,9 +71,9 @@ func targetedCommitID(commitID, projName, projOrg string) (*strfmt.UUID, error) 
 		return &cid, err
 	}
 
-	latest, fail := model.LatestCommitID(projOrg, projName)
-	if fail != nil {
-		return nil, fail
+	latest, err := model.LatestCommitID(projOrg, projName)
+	if err != nil {
+		return nil, err
 	}
 
 	return latest, nil

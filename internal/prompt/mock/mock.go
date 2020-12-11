@@ -2,6 +2,7 @@ package mock
 
 import (
 	"reflect"
+
 	"github.com/ActiveState/cli/internal/prompt"
 
 	tmock "github.com/stretchr/testify/mock"
@@ -28,7 +29,7 @@ func (m *Mock) Input(title, message, defaultResponse string, flags ...prompt.Val
 }
 
 // InputAndValidate prompts the user for input witha  customer validator and validation flags
-func (m *Mock) InputAndValidate(title, message, defaultResponse string, validator prompt.ValidatorFunc, flags ...prompt.ValidatorFlag) (response string, fail error) {
+func (m *Mock) InputAndValidate(title, message, defaultResponse string, validator prompt.ValidatorFunc, flags ...prompt.ValidatorFlag) (response string, err error) {
 	args := m.Called(message, message, defaultResponse, validator)
 	return args.String(0), failure(args.Get(1))
 }
@@ -47,7 +48,7 @@ func (m *Mock) Confirm(title, message string, defaultChoice bool) (bool, error) 
 
 // InputSecret prompts the user for input and obfuscates the text in stdout.
 // Will fail if empty.
-func (m *Mock) InputSecret(title, message string, flags ...prompt.ValidatorFlag) (response string, fail error) {
+func (m *Mock) InputSecret(title, message string, flags ...prompt.ValidatorFlag) (response string, err error) {
 	args := m.Called(title, message)
 	return args.String(0), failure(args.Get(1))
 }

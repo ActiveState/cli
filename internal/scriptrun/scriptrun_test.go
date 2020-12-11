@@ -58,8 +58,8 @@ scripts:
 	assert.Nil(t, err, "Unmarshalled YAML")
 	pjfile.Persist()
 
-	proj, fail := project.New(pjfile, nil, nil)
-	require.NoError(t, fail)
+	proj, err := project.New(pjfile, nil, nil)
+	require.NoError(t, err)
 
 	scriptRun := New(outputhelper.NewCatcher(), subshell.New(), proj)
 	err = scriptRun.Run(proj.ScriptByName("run"), []string{})
@@ -78,12 +78,12 @@ func TestEnvIsSet(t *testing.T) {
 	require.NoError(t, err, "should detect root path")
 	prjPath := filepath.Join(root, "internal", "scriptrun", "testdata", "printEnv", "activestate.yaml")
 
-	pjfile, fail := projectfile.Parse(prjPath)
-	require.NoError(t, fail, "parsing pjfile file")
+	pjfile, err := projectfile.Parse(prjPath)
+	require.NoError(t, err, "parsing pjfile file")
 	pjfile.Persist()
 
-	proj, fail := project.New(pjfile, nil, nil)
-	require.NoError(t, fail)
+	proj, err := project.New(pjfile, nil, nil)
+	require.NoError(t, err)
 
 	os.Setenv("TEST_KEY_EXISTS", "true")
 	os.Setenv(constants.DisableRuntime, "true")
@@ -127,8 +127,8 @@ scripts:
 	assert.Nil(t, err, "Unmarshalled YAML")
 	pjfile.Persist()
 
-	proj, fail := project.New(pjfile, nil, nil)
-	require.NoError(t, fail)
+	proj, err := project.New(pjfile, nil, nil)
+	require.NoError(t, err)
 
 	out := outputhelper.NewCatcher()
 	scriptRun := New(out, subshell.New(), proj)
@@ -150,8 +150,8 @@ scripts:
 	assert.Nil(t, err, "Unmarshalled YAML")
 	pjfile.Persist()
 
-	proj, fail := project.New(pjfile, nil, nil)
-	require.NoError(t, fail)
+	proj, err := project.New(pjfile, nil, nil)
+	require.NoError(t, err)
 
 	scriptRun := New(outputhelper.NewCatcher(), subshell.New(), proj)
 	err = scriptRun.Run(nil, nil)
@@ -172,8 +172,8 @@ scripts:
 	assert.Nil(t, err, "Unmarshalled YAML")
 	pjfile.Persist()
 
-	proj, fail := project.New(pjfile, nil, nil)
-	require.NoError(t, fail)
+	proj, err := project.New(pjfile, nil, nil)
+	require.NoError(t, err)
 
 	scriptRun := New(outputhelper.NewCatcher(), subshell.New(), proj)
 	err = scriptRun.Run(proj.ScriptByName("run"), nil)
@@ -214,8 +214,8 @@ scripts:
 	assert.Nil(t, err, "Unmarshalled YAML")
 	pjfile.Persist()
 
-	proj, fail := project.New(pjfile, nil, nil)
-	require.NoError(t, fail)
+	proj, err := project.New(pjfile, nil, nil)
+	require.NoError(t, err)
 
 	// Run the command.
 	scriptRun := New(outputhelper.NewCatcher(), subshell.New(), proj)
@@ -235,8 +235,8 @@ func TestPathProvidesLang(t *testing.T) {
 		tf = filepath.Join(temp, "python3.exe")
 	}
 
-	fail := fileutils.Touch(tf)
-	require.NoError(t, fail)
+	err = fileutils.Touch(tf)
+	require.NoError(t, err)
 	defer os.Remove(temp)
 
 	require.NoError(t, os.Chmod(tf, 0770))
@@ -300,10 +300,9 @@ func captureExecCommand(t *testing.T, tmplCmdName, cmdName string, cmdArgs []str
 	pjfile.Persist()
 	defer projectfile.Reset()
 
-	proj, fail := project.New(pjfile, nil, nil)
-	require.NoError(t, fail)
+	proj, err := project.New(pjfile, nil, nil)
+	require.NoError(t, err)
 
-	var err error
 	outStr, outErr := osutil.CaptureStdout(func() {
 		scriptRun := New(outputhelper.NewCatcher(), subshell.New(), proj)
 		err = scriptRun.Run(proj.ScriptByName(cmdName), cmdArgs)

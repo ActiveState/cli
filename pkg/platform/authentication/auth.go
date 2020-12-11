@@ -235,9 +235,9 @@ func (s *Auth) ClientSafe() (*mono_client.Mono, error) {
 
 // CreateToken will create an API token for the current authenticated user
 func (s *Auth) CreateToken() error {
-	client, fail := s.ClientSafe()
-	if fail != nil {
-		return fail
+	client, err := s.ClientSafe()
+	if err != nil {
+		return err
 	}
 
 	tokensOK, err := client.Authentication.ListTokens(nil, s.ClientAuth())
@@ -258,9 +258,9 @@ func (s *Auth) CreateToken() error {
 	}
 
 	key := constants.APITokenName + ":" + machineid.UniqID()
-	token, fail := s.NewAPIKey(key)
-	if fail != nil {
-		return fail
+	token, err := s.NewAPIKey(key)
+	if err != nil {
+		return err
 	}
 
 	viper.Set("apiToken", token)
@@ -273,9 +273,9 @@ func (s *Auth) NewAPIKey(name string) (string, error) {
 	params := authentication.NewAddTokenParams()
 	params.SetTokenOptions(&mono_models.TokenEditable{Name: name})
 
-	client, fail := s.ClientSafe()
-	if fail != nil {
-		return "", fail
+	client, err := s.ClientSafe()
+	if err != nil {
+		return "", err
 	}
 
 	tokenOK, err := client.Authentication.AddToken(params, s.ClientAuth())

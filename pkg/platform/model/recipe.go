@@ -120,11 +120,10 @@ func fetchRawRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *s
 		return "", errs.Wrap(err, "commitToOrder failed")
 	}
 
-	var fail error
 	if hostPlatform != nil {
-		params.Order.Platforms, fail = filterPlatformIDs(*hostPlatform, runtime.GOARCH, params.Order.Platforms)
-		if fail != nil {
-			return "", fail
+		params.Order.Platforms, err = filterPlatformIDs(*hostPlatform, runtime.GOARCH, params.Order.Platforms)
+		if err != nil {
+			return "", err
 		}
 	}
 

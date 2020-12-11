@@ -63,20 +63,20 @@ type EncodedKeypair struct {
 // passphrase.
 func EncodeKeypair(keypair Keypair, passphrase string) (*EncodedKeypair, error) {
 	var encodedPrivateKey string
-	var failure error
+	var err error
 
 	if passphrase == "" {
 		encodedPrivateKey = keypair.EncodePrivateKey()
 	} else {
-		encodedPrivateKey, failure = keypair.EncryptAndEncodePrivateKey(passphrase)
-		if failure != nil {
-			return nil, failure
+		encodedPrivateKey, err = keypair.EncryptAndEncodePrivateKey(passphrase)
+		if err != nil {
+			return nil, err
 		}
 	}
 
-	encodedPublicKey, failure := keypair.EncodePublicKey()
-	if failure != nil {
-		return nil, failure
+	encodedPublicKey, err := keypair.EncodePublicKey()
+	if err != nil {
+		return nil, err
 	}
 
 	return &EncodedKeypair{
@@ -89,9 +89,9 @@ func EncodeKeypair(keypair Keypair, passphrase string) (*EncodedKeypair, error) 
 // GenerateEncodedKeypair generates a new RSAKeypair, encrypts the private-key if a passphrase is provided,
 // encodes the private and public keys, and returns they Keypair and encoded keys as an EncodedKeypair.
 func GenerateEncodedKeypair(passphrase string, bits int) (*EncodedKeypair, error) {
-	keypair, failure := GenerateRSA(bits)
-	if failure != nil {
-		return nil, failure
+	keypair, err := GenerateRSA(bits)
+	if err != nil {
+		return nil, err
 	}
 	return EncodeKeypair(keypair, passphrase)
 }
@@ -116,13 +116,13 @@ func SaveEncodedKeypair(secretsClient *secretsapi.Client, encKeypair *EncodedKey
 // GenerateEncodedKeypair and then SaveEncodedKeypair. Upon success of both actions, the EncodedKeypair will be returned,
 // otherwise a Failure is returned.
 func GenerateAndSaveEncodedKeypair(secretsClient *secretsapi.Client, passphrase string, bits int) (*EncodedKeypair, error) {
-	encodedKeypair, failure := GenerateEncodedKeypair(passphrase, bits)
-	if failure == nil {
-		failure = SaveEncodedKeypair(secretsClient, encodedKeypair)
+	encodedKeypair, err := GenerateEncodedKeypair(passphrase, bits)
+	if err == nil {
+		err = SaveEncodedKeypair(secretsClient, encodedKeypair)
 	}
 
-	if failure != nil {
-		return nil, failure
+	if err != nil {
+		return nil, err
 	}
 	return encodedKeypair, nil
 }

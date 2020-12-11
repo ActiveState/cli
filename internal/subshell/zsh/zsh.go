@@ -84,9 +84,9 @@ func (v *SubShell) Quote(value string) string {
 // Activate - see subshell.SubShell
 func (v *SubShell) Activate(out output.Outputer) error {
 	env := sscommon.EscapeEnv(v.env)
-	var fail error
-	if v.rcFile, fail = sscommon.SetupProjectRcFile("zshrc.sh", "", env, out); fail != nil {
-		return fail
+	var err error
+	if v.rcFile, err = sscommon.SetupProjectRcFile("zshrc.sh", "", env, out); err != nil {
+		return err
 	}
 
 	path, err := ioutil.TempDir("", "state-zsh")
@@ -95,9 +95,9 @@ func (v *SubShell) Activate(out output.Outputer) error {
 	}
 
 	activeZsrcPath := filepath.Join(path, ".zshrc")
-	fail = fileutils.CopyFile(v.rcFile.Name(), activeZsrcPath)
-	if fail != nil {
-		return fail
+	err = fileutils.CopyFile(v.rcFile.Name(), activeZsrcPath)
+	if err != nil {
+		return err
 	}
 
 	// If users have set $ZDOTDIR then we need to make sure their zshrc file uses it
@@ -113,9 +113,9 @@ func (v *SubShell) Activate(out output.Outputer) error {
 		}
 	}
 
-	fail = fileutils.PrependToFile(activeZsrcPath, []byte(fmt.Sprintf("export ZDOTDIR=%s\n", userzdotdir)))
-	if fail != nil {
-		return fail
+	err = fileutils.PrependToFile(activeZsrcPath, []byte(fmt.Sprintf("export ZDOTDIR=%s\n", userzdotdir)))
+	if err != nil {
+		return err
 	}
 	os.Setenv("ZDOTDIR", path)
 
@@ -141,8 +141,8 @@ func (v *SubShell) Deactivate() error {
 		return nil
 	}
 
-	if fail := sscommon.Stop(v.cmd); fail != nil {
-		return fail
+	if err := sscommon.Stop(v.cmd); err != nil {
+		return err
 	}
 
 	v.cmd = nil

@@ -33,9 +33,9 @@ type Language struct {
 
 // GetRequirement searches a commit for a requirement by name.
 func GetRequirement(commitID strfmt.UUID, namespace, requirement string) (*model.Requirement, error) {
-	chkPt, _, fail := FetchCheckpointForCommit(commitID)
-	if fail != nil {
-		return nil, fail
+	chkPt, _, err := FetchCheckpointForCommit(commitID)
+	if err != nil {
+		return nil, err
 	}
 
 	chkPt = FilterCheckpointPackages(chkPt)
@@ -51,14 +51,14 @@ func GetRequirement(commitID strfmt.UUID, namespace, requirement string) (*model
 
 // FetchLanguagesForProject fetches a list of language names for the given project
 func FetchLanguagesForProject(orgName string, projectName string) ([]Language, error) {
-	platProject, fail := FetchProjectByName(orgName, projectName)
-	if fail != nil {
-		return nil, fail
+	platProject, err := FetchProjectByName(orgName, projectName)
+	if err != nil {
+		return nil, err
 	}
 
-	branch, fail := DefaultBranchForProject(platProject)
-	if fail != nil {
-		return nil, fail
+	branch, err := DefaultBranchForProject(platProject)
+	if err != nil {
+		return nil, err
 	}
 
 	return FetchLanguagesForBranch(branch)
@@ -75,9 +75,9 @@ func FetchLanguagesForBranch(branch *mono_models.Branch) ([]Language, error) {
 
 // FetchLanguagesForCommit fetches a list of language names for the given commit
 func FetchLanguagesForCommit(commitID strfmt.UUID) ([]Language, error) {
-	checkpoint, _, fail := FetchCheckpointForCommit(commitID)
-	if fail != nil {
-		return nil, fail
+	checkpoint, _, err := FetchCheckpointForCommit(commitID)
+	if err != nil {
+		return nil, err
 	}
 
 	languages := []Language{}
@@ -207,9 +207,9 @@ func CheckpointToLanguage(checkpoint Checkpoint) (*Language, error) {
 		if !NamespaceMatch(req.Namespace, NamespaceLanguageMatch) {
 			continue
 		}
-		lang, fail := FetchLanguageByDetails(req.Requirement, req.VersionConstraint)
-		if fail != nil {
-			return nil, fail
+		lang, err := FetchLanguageByDetails(req.Requirement, req.VersionConstraint)
+		if err != nil {
+			return nil, err
 		}
 		return lang, nil
 	}
@@ -222,8 +222,8 @@ func PlatformNameToPlatformID(name string) (string, error) {
 	if name == "darwin" {
 		name = "macos"
 	}
-	id, fail := hostPlatformToPlatformID(name)
-	return id, fail
+	id, err := hostPlatformToPlatformID(name)
+	return id, err
 }
 
 func hostPlatformToPlatformID(os string) (string, error) {

@@ -90,27 +90,27 @@ func (f *Fork) run(params *Params) error {
 	f.out.Notice(locale.Tl("fork_forking", "Creating fork of {{.V0}} at https://{{.V1}}/{{.V2}}..", params.Namespace.String(), constants.PlatformURL, target.String()))
 
 	// Retrieve the source project that we'll be forking
-	sourceProject, fail := model.FetchProjectByName(params.Namespace.Owner, params.Namespace.Project)
-	if fail != nil {
-		return locale.WrapInputError(fail, "err_fork_fetchProject", "Could not find the source project: {{.V0}}", params.Namespace.String())
+	sourceProject, err := model.FetchProjectByName(params.Namespace.Owner, params.Namespace.Project)
+	if err != nil {
+		return locale.WrapInputError(err, "err_fork_fetchProject", "Could not find the source project: {{.V0}}", params.Namespace.String())
 	}
 
 	// Create the target project
-	targetProject, fail := model.CreateEmptyProject(target.Owner, target.Project, false)
-	if fail != nil {
-		return locale.WrapError(fail, "err_fork_createProject", "Could not create project: {{.V0}}", target.String())
+	targetProject, err := model.CreateEmptyProject(target.Owner, target.Project, false)
+	if err != nil {
+		return locale.WrapError(err, "err_fork_createProject", "Could not create project: {{.V0}}", target.String())
 	}
 
 	// Set up the forked branch on the target project
-	if fail := model.TrackBranch(sourceProject, targetProject); fail != nil {
-		return locale.WrapError(fail, "err_fork_track", "Could not set up the forked branch for your new project.")
+	if err := model.TrackBranch(sourceProject, targetProject); err != nil {
+		return locale.WrapError(err, "err_fork_track", "Could not set up the forked branch for your new project.")
 	}
 
 	// Turn the target project private if this was requested (unfortunately this can't be done int the Creation step)
 	if params.Private {
-		if fail := model.MakeProjectPrivate(target.Owner, target.Project); fail != nil {
+		if err := model.MakeProjectPrivate(target.Owner, target.Project); err != nil {
 			return locale.WrapError(
-				fail, "err_fork_private",
+				err, "err_fork_private",
 				"Your project was created but could not be made private, please head over to https://{{.V0}}/{{.V1}} to manually update your privacy settings.",
 				constants.PlatformURL, target.String())
 		}
@@ -126,9 +126,9 @@ func (f *Fork) run(params *Params) error {
 }
 
 func determineOwner(username string, prompter prompt.Prompter) (string, error) {
-	orgs, fail := model.FetchOrganizations()
-	if fail != nil {
-		return "", locale.WrapError(fail, "err_fork_orgs", "Could not retrieve list of organizations that you belong to.")
+	orgs, err := model.FetchOrganizations()
+	if err != nil {
+		return "", locale.WrapError(err, "err_fork_orgs", "Could not retrieve list of organizations that you belong to.")
 	}
 	if len(orgs) == 0 {
 		return username, nil
@@ -140,6 +140,6 @@ func determineOwner(username string, prompter prompt.Prompter) (string, error) {
 	}
 	options = append([]string{username}, options...)
 
-	r, fail := prompter.Select(locale.Tl("fork_owner_title", "Owner"), locale.Tl("fork_select_org", "Who should the new project belong to?"), options, "")
-	return r, fail
+	r, err := prompter.Select(locale.Tl("fork_owner_title", "Owner"), locale.Tl("fork_select_org", "Who should the new project belong to?"), options, "")
+	return r, err
 }

@@ -34,16 +34,16 @@ func (suite *ProjectsTestSuite) AfterTest(suiteName, testName string) {
 }
 
 func (suite *ProjectsTestSuite) TestProjects_FetchByName() {
-	project, fail := model.FetchProjectByName("string", "string")
-	suite.Require().NoError(fail, "Fetched project")
+	project, err := model.FetchProjectByName("string", "string")
+	suite.Require().NoError(err, "Fetched project")
 	suite.Equal("string", project.Name)
 }
 
 func (suite *ProjectsTestSuite) TestProjects_FetchByName_NotFound() {
 	suite.graphMock.Reset()
 	suite.graphMock.NoProjects(graphMock.NoOptions)
-	project, fail := model.FetchProjectByName("bad-org", "bad-proj")
-	suite.Require().Error(fail)
+	project, err := model.FetchProjectByName("bad-org", "bad-proj")
+	suite.Require().Error(err)
 	suite.Nil(project)
 }
 

@@ -31,16 +31,16 @@ func (r *Checkout) Run(ns *project.Namespaced, targetPath string) error {
 		return locale.NewError("err_namespace_invalid", "Invalid namespace: {{.V0}}.", ns.String())
 	}
 
-	pj, fail := model.FetchProjectByName(ns.Owner, ns.Project)
-	if fail != nil {
-		return fail
+	pj, err := model.FetchProjectByName(ns.Owner, ns.Project)
+	if err != nil {
+		return err
 	}
 
 	commitID := ns.CommitID
 	if commitID == nil {
-		branch, fail := model.DefaultBranchForProject(pj)
-		if fail != nil {
-			return fail
+		branch, err := model.DefaultBranchForProject(pj)
+		if err != nil {
+			return err
 		}
 		commitID = branch.CommitID
 	}
@@ -61,15 +61,15 @@ func (r *Checkout) Run(ns *project.Namespaced, targetPath string) error {
 	// Create the config file, if the repo clone didn't already create it
 	configFile := filepath.Join(targetPath, constants.ConfigFileName)
 	if !fileutils.FileExists(configFile) {
-		fail = projectfile.Create(&projectfile.CreateParams{
+		err = projectfile.Create(&projectfile.CreateParams{
 			Owner:     ns.Owner,
 			Project:   ns.Project,
 			CommitID:  commitID,
 			Directory: targetPath,
 			Language:  language,
 		})
-		if fail != nil {
-			return fail
+		if err != nil {
+			return err
 		}
 	}
 
@@ -77,9 +77,9 @@ func (r *Checkout) Run(ns *project.Namespaced, targetPath string) error {
 }
 
 func getLanguage(owner, project string) (string, error) {
-	modelLanguage, fail := model.DefaultLanguageForProject(owner, project)
-	if fail != nil {
-		return "", fail
+	modelLanguage, err := model.DefaultLanguageForProject(owner, project)
+	if err != nil {
+		return "", err
 	}
 
 	lang, err := language.MakeByNameAndVersion(modelLanguage.Name, modelLanguage.Version)

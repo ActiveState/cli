@@ -60,7 +60,7 @@ type DownloadDirectoryProvider interface {
 type Downloader interface {
 	// Download will attempt to download some runtime locally and return back the filename of
 	// the downloaded archive or a Failure.
-	Download(artifacts []*HeadChefArtifact, d DownloadDirectoryProvider, progress *progress.Progress) (files map[string]*HeadChefArtifact, fail error)
+	Download(artifacts []*HeadChefArtifact, d DownloadDirectoryProvider, progress *progress.Progress) (files map[string]*HeadChefArtifact, err error)
 
 	// FetchArtifacts will fetch artifact
 	FetchArtifacts(recipe *inventory_models.Recipe, project *mono_models.Project) (*FetchArtifactsResult, error)
@@ -87,9 +87,9 @@ func (r *Download) fetchRecipeID() (strfmt.UUID, error) {
 		return "", &ErrNoCommit{locale.NewError(locale.T("err_no_commit"))}
 	}
 
-	recipeID, fail := model.FetchRecipeIDForCommitAndPlatform(commitID, r.runtime.owner, r.runtime.projectName, r.orgID, r.private, model.HostPlatform)
-	if fail != nil {
-		return "", fail
+	recipeID, err := model.FetchRecipeIDForCommitAndPlatform(commitID, r.runtime.owner, r.runtime.projectName, r.orgID, r.private, model.HostPlatform)
+	if err != nil {
+		return "", err
 	}
 
 	return *recipeID, nil
@@ -114,9 +114,9 @@ func (r *Download) FetchArtifacts(recipe *inventory_models.Recipe, platProj *mon
 	}
 
 	logging.Debug("sending request to head-chef")
-	buildRequest, fail := headchef.NewBuildRequest(*recipe.RecipeID, orgID, projectID, buildAnnotations)
-	if fail != nil {
-		return result, fail
+	buildRequest, err := headchef.NewBuildRequest(*recipe.RecipeID, orgID, projectID, buildAnnotations)
+	if err != nil {
+		return result, err
 	}
 	buildStatus := headchef.InitClient().RequestBuild(buildRequest)
 
@@ -194,7 +194,7 @@ func (r *Download) projectURL() string {
 }
 
 // Download is the main function used to kick off the runtime download
-func (r *Download) Download(artifacts []*HeadChefArtifact, dp DownloadDirectoryProvider, progress *progress.Progress) (files map[string]*HeadChefArtifact, fail error) {
+func (r *Download) Download(artifacts []*HeadChefArtifact, dp DownloadDirectoryProvider, progress *progress.Progress) (files map[string]*HeadChefArtifact, err error) {
 	files = map[string]*HeadChefArtifact{}
 	entries := []*download.Entry{}
 
@@ -203,9 +203,9 @@ func (r *Download) Download(artifacts []*HeadChefArtifact, dp DownloadDirectoryP
 		if err != nil {
 			return files, locale.NewError("err_artifact_invalid_url")
 		}
-		u, fail := model.SignS3URL(artifactURL)
-		if fail != nil {
-			return files, fail
+		u, err := model.SignS3URL(artifactURL)
+		if err != nil {
+			return files, err
 		}
 
 		// Ideally we'd be passing authentication down the chain somehow, but for now this would require way too much
@@ -223,9 +223,9 @@ func (r *Download) Download(artifacts []*HeadChefArtifact, dp DownloadDirectoryP
 		// And adding it to the URL to be signed just drops it from the resulting URL
 		// u.RawQuery = q.Encode()
 
-		targetDir, fail := dp.DownloadDirectory(artf)
-		if fail != nil {
-			return files, fail
+		targetDir, err := dp.DownloadDirectory(artf)
+		if err != nil {
+			return files, err
 		}
 
 		targetPath := filepath.Join(targetDir, filepath.Base(u.Path))

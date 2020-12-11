@@ -135,19 +135,12 @@ func IsInputError(err error) bool {
 	return false
 }
 
-type failure interface {
-	IsFailure()
-}
-
 // JoinErrors joins all error messages in the Unwrap stack that are localized
 func JoinErrors(err error, sep string) *LocalizedError {
 	var message []string
 	for err != nil {
 		if errr, ok := err.(ErrorLocalizer); ok {
 			message = append(message, errr.UserError())
-		}
-		if _, ok := err.(failure); ok { // For now we include failures, but this is a deprecated mechanic
-			message = append(message, err.Error())
 		}
 		err = errors.Unwrap(err)
 	}
@@ -165,22 +158,11 @@ func UnwrapError(err error) []error {
 	var errs []error
 	for err != nil {
 		_, isLocaleError := err.(ErrorLocalizer)
-		_, isFailure := err.(failure)
-		if isLocaleError || isFailure {
+		if isLocaleError {
 			errs = append(errs, err)
 		}
 		err = errors.Unwrap(err)
 	}
 
-	// Filter out failures that are not at the start or end, because failures were ALWAYS localized there's a ton of
-	// redundancy in their reporting
-	var resultErrs []error
-	for n, err := range errs {
-		_, isFailure := err.(failure)
-		if n == 0 || n == len(errs)-1 || !isFailure {
-			resultErrs = append(resultErrs, err)
-		}
-	}
-
-	return resultErrs
+	return errs
 }

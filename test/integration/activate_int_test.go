@@ -349,8 +349,8 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_Subdir() {
 	suite.OnlyRunForTags(tagsuite.Activate)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
-	fail := fileutils.Mkdir(ts.Dirs.Work, "foo", "bar", "baz")
-	suite.Require().NoError(fail)
+	err := fileutils.Mkdir(ts.Dirs.Work, "foo", "bar", "baz")
+	suite.Require().NoError(err)
 
 	// Create the project file at the root of the temp dir
 	content := strings.TrimSpace(fmt.Sprintf(`

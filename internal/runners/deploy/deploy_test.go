@@ -11,11 +11,11 @@ import (
 
 type InstallableMock struct{}
 
-func (i *InstallableMock) Install() (envGetter envGetter, freshInstallation bool, fail error) {
+func (i *InstallableMock) Install() (envGetter envGetter, freshInstallation bool, err error) {
 	return nil, false, nil
 }
 
-func (i *InstallableMock) Env() (envGetter envGetter, fail error) {
+func (i *InstallableMock) Env() (envGetter envGetter, err error) {
 	return nil, nil
 }
 

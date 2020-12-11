@@ -17,15 +17,15 @@ type KeypairLocalDeleteTestSuite struct {
 }
 
 func (suite *KeypairLocalDeleteTestSuite) TestNoKeyFileFound() {
-	failure := keypairs.Delete("test-no-such")
-	suite.Nil(failure)
+	err := keypairs.Delete("test-no-such")
+	suite.Nil(err)
 }
 
 func (suite *KeypairLocalDeleteTestSuite) Test_Success() {
 	osutil.CopyTestFileToConfigDir("test-keypair.key", "custom-name.key", 0600)
 
-	failure := keypairs.Delete("custom-name")
-	suite.Require().Nil(failure)
+	err := keypairs.Delete("custom-name")
+	suite.Require().Nil(err)
 
 	fileInfo, err := osutil.StatConfigFile("custom-name.key")
 	suite.Require().Nil(fileInfo)
@@ -39,8 +39,8 @@ func (suite *KeypairLocalDeleteTestSuite) Test_Success() {
 func (suite *KeypairLocalDeleteTestSuite) TestWithDefaults_Success() {
 	osutil.CopyTestFileToConfigDir("test-keypair.key", constants.KeypairLocalFileName+".key", 0600)
 
-	failure := keypairs.DeleteWithDefaults()
-	suite.Require().Nil(failure)
+	err := keypairs.DeleteWithDefaults()
+	suite.Require().Nil(err)
 
 	fileInfo, err := osutil.StatConfigFile(constants.KeypairLocalFileName + ".key")
 	suite.Require().Nil(fileInfo)

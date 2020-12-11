@@ -21,9 +21,9 @@ func NewHeadChefRequester(pj *mono_models.Project) (*headchef_models.V1Requester
 }
 
 func NewBuildRequest(pj *mono_models.Project) (*headchef_models.V1BuildRequest, error) {
-	requester, fail := NewHeadChefRequester(pj)
-	if fail != nil {
-		return nil, fail
+	requester, err := NewHeadChefRequester(pj)
+	if err != nil {
+		return nil, err
 	}
 
 	format := "raw"

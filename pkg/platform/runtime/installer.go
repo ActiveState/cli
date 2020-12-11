@@ -66,7 +66,7 @@ func NewInstaller(runtime *Runtime) *Installer {
 }
 
 // Install will download the installer archive and invoke InstallFromArchive
-func (installer *Installer) Install() (envGetter EnvGetter, freshInstallation bool, fail error) {
+func (installer *Installer) Install() (envGetter EnvGetter, freshInstallation bool, err error) {
 	if installer.runtime.IsCachedRuntime() {
 		ar, err := installer.RuntimeEnv()
 		if err == nil {
@@ -98,9 +98,9 @@ func (installer *Installer) IsInstalled() (bool, error) {
 	if installer.runtime.IsCachedRuntime() {
 		return true, nil
 	}
-	assembler, fail := installer.Assembler()
-	if fail != nil {
-		return false, fail
+	assembler, err := installer.Assembler()
+	if err != nil {
+		return false, err
 	}
 
 	return assembler.IsInstalled(), nil
@@ -118,9 +118,9 @@ func (installer *Installer) RuntimeEnv() (EnvGetter, error) {
 	case Camel:
 		return NewCamelEnv(installer.runtime.commitID, installer.runtime.runtimeDir)
 	case Hybrid:
-		cr, fail := NewCamelEnv(installer.runtime.commitID, installer.runtime.runtimeDir)
-		if fail != nil {
-			return nil, fail
+		cr, err := NewCamelEnv(installer.runtime.commitID, installer.runtime.runtimeDir)
+		if err != nil {
+			return nil, err
 		}
 
 		return &HybridRuntime{cr}, nil
@@ -131,8 +131,8 @@ func (installer *Installer) RuntimeEnv() (EnvGetter, error) {
 
 // Assembler returns a new runtime assembler for the given checkpoint and artifacts
 func (installer *Installer) Assembler() (Assembler, error) {
-	if fail := installer.validateCheckpoint(); fail != nil {
-		return nil, fail
+	if err := installer.validateCheckpoint(); err != nil {
+		return nil, err
 	}
 
 	var project *mono_models.Project
@@ -154,9 +154,9 @@ func (installer *Installer) Assembler() (Assembler, error) {
 	directDeps, recursiveDeps := model.ParseDepTree(recipe.ResolvedIngredients, ingredientMap)
 	installer.runtime.msgHandler.ChangeSummary(directDeps, recursiveDeps, ingredientMap)
 
-	artifacts, fail := installer.runtimeDownloader.FetchArtifacts(recipe, project)
-	if fail != nil {
-		return nil, fail
+	artifacts, err := installer.runtimeDownloader.FetchArtifacts(recipe, project)
+	if err != nil {
+		return nil, err
 	}
 
 	switch artifacts.BuildEngine {
@@ -165,9 +165,9 @@ func (installer *Installer) Assembler() (Assembler, error) {
 	case Camel:
 		return NewCamelInstall(installer.runtime.commitID, installer.runtime.runtimeDir, artifacts.Artifacts)
 	case Hybrid:
-		ci, fail := NewCamelInstall(installer.runtime.commitID, installer.runtime.runtimeDir, artifacts.Artifacts)
-		if fail != nil {
-			return nil, fail
+		ci, err := NewCamelInstall(installer.runtime.commitID, installer.runtime.runtimeDir, artifacts.Artifacts)
+		if err != nil {
+			return nil, err
 		}
 
 		return &HybridInstall{ci}, nil
@@ -177,7 +177,7 @@ func (installer *Installer) Assembler() (Assembler, error) {
 }
 
 // InstallArtifacts installs all artifacts provided by a runtime assembler
-func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGetter EnvGetter, freshInstallation bool, fail error) {
+func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGetter EnvGetter, freshInstallation bool, err error) {
 	if runtimeAssembler.IsInstalled() {
 		// write complete marker and build engine files in case they don't exist yet
 		err := installer.runtime.MarkInstallationComplete()
@@ -208,11 +208,11 @@ func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGet
 		}
 
 		if len(downloadArtfs) > 0 {
-			archives, fail := installer.runtimeDownloader.Download(downloadArtfs, runtimeAssembler, downloadProgress)
-			if fail != nil {
+			archives, err := installer.runtimeDownloader.Download(downloadArtfs, runtimeAssembler, downloadProgress)
+			if err != nil {
 				downloadProgress.Cancel()
 				downloadProgress.Close()
-				return nil, false, fail
+				return nil, false, err
 			}
 
 			for k, v := range archives {
@@ -227,17 +227,17 @@ func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGet
 	}
 
 	installProgress := progress.New(mpb.WithOutput(progressOut))
-	fail = installer.InstallFromArchives(unpackArchives, runtimeAssembler, installProgress)
-	if fail != nil {
+	err = installer.InstallFromArchives(unpackArchives, runtimeAssembler, installProgress)
+	if err != nil {
 		installProgress.Cancel()
 		installProgress.Close()
-		return nil, false, fail
+		return nil, false, err
 	}
 	installProgress.Close()
 
 	// We still want to run PostInstall because even though no new artifact might be downloaded we still might be
 	// deleting some already cached ones
-	err := runtimeAssembler.PostInstall()
+	err = runtimeAssembler.PostInstall()
 	if err != nil {
 		return nil, false, errs.Wrap(err, "error during post installation step")
 	}
@@ -261,9 +261,9 @@ func (installer *Installer) validateCheckpoint() error {
 		return &ErrNoCommit{locale.NewInputError("installer_err_runtime_no_commitid")}
 	}
 
-	checkpoint, _, fail := model.FetchCheckpointForCommit(installer.runtime.commitID)
-	if fail != nil {
-		return fail
+	checkpoint, _, err := model.FetchCheckpointForCommit(installer.runtime.commitID)
+	if err != nil {
+		return err
 	}
 
 	for _, change := range checkpoint {
@@ -284,16 +284,16 @@ func (installer *Installer) InstallFromArchives(archives map[string]*HeadChefArt
 		bar = pg.AddTotalBar(locale.T("installing"), len(archives))
 	}
 
-	fail := a.PreInstall()
-	if fail != nil {
+	err := a.PreInstall()
+	if err != nil {
 		pg.Cancel()
-		return fail
+		return err
 	}
 
 	for archivePath, artf := range archives {
-		if fail := installer.InstallFromArchive(archivePath, artf, a, pg); fail != nil {
+		if err := installer.InstallFromArchive(archivePath, artf, a, pg); err != nil {
 			pg.Cancel()
-			return fail
+			return err
 		}
 		bar.Increment()
 	}
@@ -304,22 +304,22 @@ func (installer *Installer) InstallFromArchives(archives map[string]*HeadChefArt
 // InstallFromArchive will unpack artifact and install it
 func (installer *Installer) InstallFromArchive(archivePath string, artf *HeadChefArtifact, a Assembler, progress *progress.Progress) error {
 
-	fail := a.PreUnpackArtifact(artf)
-	if fail != nil {
-		return fail
+	err := a.PreUnpackArtifact(artf)
+	if err != nil {
+		return err
 	}
 
 	installDir := installer.runtime.runtimeDir
-	tmpRuntimeDir, upb, fail := installer.unpackArchive(a.Unarchiver(), archivePath, installDir, progress)
-	if fail != nil {
+	tmpRuntimeDir, upb, err := installer.unpackArchive(a.Unarchiver(), archivePath, installDir, progress)
+	if err != nil {
 		removeInstallDir(installDir)
-		return fail
+		return err
 	}
 
-	fail = a.PostUnpackArtifact(artf, tmpRuntimeDir, archivePath, func() { upb.Increment() })
-	if fail != nil {
+	err = a.PostUnpackArtifact(artf, tmpRuntimeDir, archivePath, func() { upb.Increment() })
+	if err != nil {
 		removeInstallDir(installDir)
-		return fail
+		return err
 	}
 	upb.Complete()
 
@@ -327,8 +327,8 @@ func (installer *Installer) InstallFromArchive(archivePath string, artf *HeadChe
 }
 
 func (installer *Installer) unpackArchive(ua unarchiver.Unarchiver, archivePath string, installDir string, p *progress.Progress) (string, *progress.UnpackBar, error) {
-	if fail := installer.validateArchive(ua, archivePath); fail != nil {
-		return "", nil, fail
+	if err := installer.validateArchive(ua, archivePath); err != nil {
+		return "", nil, err
 	}
 
 	tmpRuntimeDir := filepath.Join(installDir, uuid.New().String())

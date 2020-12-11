@@ -49,10 +49,10 @@ func NewParams() *Params {
 
 func (s *Shim) Run(params *Params, args ...string) error {
 	if params.Path != "" {
-		var fail error
-		s.proj, fail = project.FromPath(params.Path)
-		if fail != nil {
-			return locale.WrapInputError(fail, "shim_no_project_at_path", "Could not find project file at {{.V0}}", params.Path)
+		var err error
+		s.proj, err = project.FromPath(params.Path)
+		if err != nil {
+			return locale.WrapInputError(err, "shim_no_project_at_path", "Could not find project file at {{.V0}}", params.Path)
 		}
 	}
 	if s.proj == nil {
@@ -68,9 +68,9 @@ func (s *Shim) Run(params *Params, args ...string) error {
 		return locale.WrapError(err, "err_shim_runtime_init", "Could not initialize runtime for shim command.")
 	}
 	venv := virtualenvironment.New(runtime)
-	if fail := venv.Activate(); fail != nil {
-		logging.Errorf("Unable to activate state: %s", fail.Error())
-		return locale.WrapError(fail, "err_shim_activate", "Could not activate environment for shim command")
+	if err := venv.Activate(); err != nil {
+		logging.Errorf("Unable to activate state: %s", err.Error())
+		return locale.WrapError(err, "err_shim_activate", "Could not activate environment for shim command")
 	}
 
 	env, err := venv.GetEnv(true, filepath.Dir(s.proj.Source().Path()))
@@ -94,9 +94,9 @@ func (s *Shim) Run(params *Params, args ...string) error {
 		scriptArgs = fmt.Sprintf("@ECHO OFF\n%s %%*", args[0])
 	}
 
-	sf, fail := scriptfile.New(lang, "state-shim", scriptArgs)
-	if fail != nil {
-		return locale.WrapError(fail, "err_shim_create_scriptfile", "Could not generate script")
+	sf, err := scriptfile.New(lang, "state-shim", scriptArgs)
+	if err != nil {
+		return locale.WrapError(err, "err_shim_create_scriptfile", "Could not generate script")
 	}
 
 	return s.subshell.Run(sf.Filename(), args[1:]...)

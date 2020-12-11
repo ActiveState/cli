@@ -42,9 +42,9 @@ var lastCreated Outputer
 
 // New constructs a new Outputer according to the given format name
 func New(formatName string, config *Config) (Outputer, error) {
-	var fail error
-	lastCreated, fail = new(formatName, config)
-	return lastCreated, fail
+	var err error
+	lastCreated, err = new(formatName, config)
+	return lastCreated, err
 }
 
 func new(formatName string, config *Config) (Outputer, error) {
@@ -54,20 +54,20 @@ func new(formatName string, config *Config) (Outputer, error) {
 	switch format {
 	case "", PlainFormatName:
 		logging.Debug("Using Plain outputer")
-		plain, fail := NewPlain(config)
-		return &Mediator{&plain, PlainFormatName}, fail
+		plain, err := NewPlain(config)
+		return &Mediator{&plain, PlainFormatName}, err
 	case JSONFormatName:
 		logging.Debug("Using JSON outputer")
-		json, fail := NewJSON(config)
-		return &Mediator{&json, JSONFormatName}, fail
+		json, err := NewJSON(config)
+		return &Mediator{&json, JSONFormatName}, err
 	case EditorFormatName:
 		logging.Debug("Using Editor outputer")
-		editor, fail := NewEditor(config)
-		return &Mediator{&editor, EditorFormatName}, fail
+		editor, err := NewEditor(config)
+		return &Mediator{&editor, EditorFormatName}, err
 	case EditorV0FormatName:
 		logging.Debug("Using EditorV0 outputer")
-		editor0, fail := NewEditorV0(config)
-		return &Mediator{&editor0, EditorV0FormatName}, fail
+		editor0, err := NewEditorV0(config)
+		return &Mediator{&editor0, EditorV0FormatName}, err
 	}
 
 	return nil, locale.WrapInputError(ErrNotRecognized, "err_unknown_format", string(formatName))

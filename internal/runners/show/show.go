@@ -88,9 +88,9 @@ func (s *Show) Run(params Params) error {
 	)
 
 	if params.Remote != "" {
-		namespaced, fail := project.ParseNamespace(params.Remote)
-		if fail != nil {
-			return locale.WrapError(fail, "err_show_parse_namespace", "Invalid remote argument, must be of the form <Owner>/<Project>")
+		namespaced, err := project.ParseNamespace(params.Remote)
+		if err != nil {
+			return locale.WrapError(err, "err_show_parse_namespace", "Invalid remote argument, must be of the form <Owner>/<Project>")
 		}
 
 		owner = namespaced.Owner
@@ -217,9 +217,9 @@ func scriptsData(project *projectfile.Project, conditional *constraints.Conditio
 }
 
 func platformsData(owner, project string, branchID strfmt.UUID) ([]string, error) {
-	remotePlatforms, fail := model.FetchPlatformsForCommit(branchID)
-	if fail != nil {
-		return nil, locale.WrapError(fail, "err_show_get_platforms", "Could not get platform details for commit: {{.V0}}", branchID.String())
+	remotePlatforms, err := model.FetchPlatformsForCommit(branchID)
+	if err != nil {
+		return nil, locale.WrapError(err, "err_show_get_platforms", "Could not get platform details for commit: {{.V0}}", branchID.String())
 	}
 
 	var platforms []string
@@ -233,9 +233,9 @@ func platformsData(owner, project string, branchID strfmt.UUID) ([]string, error
 }
 
 func languagesData(owner, project string) ([]string, error) {
-	platformLanguages, fail := model.FetchLanguagesForProject(owner, project)
-	if fail != nil {
-		return nil, locale.WrapError(fail, "err_show_get_languages", "Could not get languages for project")
+	platformLanguages, err := model.FetchLanguagesForProject(owner, project)
+	if err != nil {
+		return nil, locale.WrapError(err, "err_show_get_languages", "Could not get languages for project")
 	}
 
 	languages := make([]string, len(platformLanguages))
@@ -254,9 +254,9 @@ func visibilityData(owner, project string, remoteProject *mono_models.Project) s
 }
 
 func commitsData(owner, project string, commitID strfmt.UUID, localProject *project.Project, auth auther) (string, error) {
-	latestCommit, fail := model.LatestCommitID(owner, project)
-	if fail != nil {
-		return "", locale.WrapError(fail, "err_show_get_latest_commit", "Could not get latest commit ID")
+	latestCommit, err := model.LatestCommitID(owner, project)
+	if err != nil {
+		return "", locale.WrapError(err, "err_show_get_latest_commit", "Could not get latest commit ID")
 	}
 
 	if !auth.Authenticated() {
@@ -264,9 +264,9 @@ func commitsData(owner, project string, commitID strfmt.UUID, localProject *proj
 	}
 
 	if localProject != nil && localProject.Owner() == owner && localProject.Name() == project {
-		behind, fail := model.CommitsBehindLatest(owner, project, localProject.CommitID())
-		if fail != nil {
-			return "", locale.WrapError(fail, "err_show_commits_behind", "Could not determine number of commits behind latest")
+		behind, err := model.CommitsBehindLatest(owner, project, localProject.CommitID())
+		if err != nil {
+			return "", locale.WrapError(err, "err_show_commits_behind", "Could not determine number of commits behind latest")
 		}
 		if behind != 0 {
 			return fmt.Sprintf("%s (%d behind latest)", localProject.CommitID(), behind), nil

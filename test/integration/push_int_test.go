@@ -63,8 +63,8 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 
 	// Check that languages were reset
 	pjfilepath := filepath.Join(ts.Dirs.Work, namespace, constants.ConfigFileName)
-	pjfile, fail := projectfile.Parse(pjfilepath)
-	suite.Require().NoError(fail)
+	pjfile, err := projectfile.Parse(pjfilepath)
+	suite.Require().NoError(err)
 	if pjfile.Languages != nil {
 		suite.FailNow("Expected languages to be nil, but got: %v", pjfile.Languages)
 	}
@@ -120,8 +120,8 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 	cp.Expect("added")
 	cp.Wait()
 
-	prj, fail := project.FromPath(filepath.Join(wd, constants.ConfigFileName))
-	suite.Require().NoError(fail, "Could not parse project file")
+	prj, err := project.FromPath(filepath.Join(wd, constants.ConfigFileName))
+	suite.Require().NoError(err, "Could not parse project file")
 	suite.Assert().True(prj.IsHeadless(), "project should be headless: URL is %s", prj.URL())
 
 	ts.LoginAsPersistentUser()

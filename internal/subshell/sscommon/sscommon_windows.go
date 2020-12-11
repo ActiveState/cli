@@ -21,8 +21,6 @@ func stop(cmd *exec.Cmd) error {
 	// windows should use "CTRL_CLOSE_EVENT"; SIGKILL works
 	sig := syscall.SIGKILL
 
-	// may panic if process no longer exists
-	defer failures.Recover()
 	if err := cmd.Process.Signal(sig); err != nil {
 		return errs.Wrap(err, "SignalCmd failure")
 	}

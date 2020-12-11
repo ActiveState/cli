@@ -90,9 +90,9 @@ func (d *Deploy) Run(params *Params) error {
 func (d *Deploy) createRuntimeInstaller(namespace project.Namespaced, targetPath string) (*runtime.Runtime, installable, error) {
 	commitID := namespace.CommitID
 	if commitID == nil {
-		branch, fail := d.DefaultBranchForProjectName(namespace.Owner, namespace.Project)
-		if fail != nil {
-			return nil, nil, errs.Wrap(fail, "Could not create installer")
+		branch, err := d.DefaultBranchForProjectName(namespace.Owner, namespace.Project)
+		if err != nil {
+			return nil, nil, errs.Wrap(err, "Could not create installer")
 		}
 
 		if branch.CommitID == nil {
@@ -121,11 +121,11 @@ func runSteps(targetPath string, force bool, userScope bool, namespace project.N
 func runStepsWithFuncs(targetPath string, force, userScope bool, namespace project.Namespaced, step Step, rt *runtime.Runtime, installer installable, out output.Outputer, subshell subshell.SubShell, installf installFunc, configuref configureFunc, symlinkf symlinkFunc, reportf reportFunc) error {
 	logging.Debug("runSteps: %s", step.String())
 
-	var fail error
+	var err error
 
-	installed, fail := installer.IsInstalled()
-	if fail != nil {
-		return fail
+	installed, err := installer.IsInstalled()
+	if err != nil {
+		return err
 	}
 
 	if !installed && step != UnsetStep && step != InstallStep {
@@ -164,9 +164,9 @@ type installFunc func(path string, installer installable, out output.Outputer) e
 
 func install(path string, installer installable, out output.Outputer) error {
 	out.Notice(output.Heading(locale.T("deploy_install")))
-	_, installed, fail := installer.Install()
-	if fail != nil {
-		return locale.WrapError(fail, "deploy_install_failed", "Installation failed.")
+	_, installed, err := installer.Install()
+	if err != nil {
+		return locale.WrapError(err, "deploy_install_failed", "Installation failed.")
 	}
 	if !installed {
 		out.Notice(locale.T("using_cached_env"))
@@ -175,9 +175,9 @@ func install(path string, installer installable, out output.Outputer) error {
 	if rt.GOOS == "windows" {
 		box := packr.NewBox("../../../assets/scripts")
 		contents := box.Bytes("setenv.bat")
-		fail = fileutils.WriteFile(filepath.Join(path, "setenv.bat"), contents)
-		if fail != nil {
-			return locale.WrapError(fail, "err_deploy_write_setenv", "Could not create setenv batch scriptfile at path: %s", path)
+		err = fileutils.WriteFile(filepath.Join(path, "setenv.bat"), contents)
+		if err != nil {
+			return locale.WrapError(err, "err_deploy_write_setenv", "Could not create setenv batch scriptfile at path: %s", path)
 		}
 	}
 
@@ -196,14 +196,14 @@ func configure(installpath string, runtime *runtime.Runtime, out output.Outputer
 
 	out.Notice(output.Heading(locale.Tr("deploy_configure_shell", sshell.Shell())))
 
-	fail := sshell.WriteUserEnv(env, sscommon.Deploy, userScope)
-	if fail != nil {
-		return locale.WrapError(fail, "err_deploy_subshell_write", "Could not write environment information to your shell configuration.")
+	err = sshell.WriteUserEnv(env, sscommon.Deploy, userScope)
+	if err != nil {
+		return locale.WrapError(err, "err_deploy_subshell_write", "Could not write environment information to your shell configuration.")
 	}
 
 	binPath := filepath.Join(installpath, "bin")
-	if fail := fileutils.MkdirUnlessExists(binPath); fail != nil {
-		return locale.WrapError(fail, "err_deploy_binpath", "Could not create bin directory.")
+	if err := fileutils.MkdirUnlessExists(binPath); err != nil {
+		return locale.WrapError(err, "err_deploy_binpath", "Could not create bin directory.")
 	}
 
 	// Write global env file
@@ -281,9 +281,9 @@ func symlinkTargetPath(targetDir string, path string) string {
 func symlinkWithTarget(overwrite bool, symlinkPath string, exePaths []string, out output.Outputer) error {
 	out.Notice(output.Heading(locale.Tr("deploy_symlink", symlinkPath)))
 
-	if fail := fileutils.MkdirUnlessExists(symlinkPath); fail != nil {
+	if err := fileutils.MkdirUnlessExists(symlinkPath); err != nil {
 		return locale.WrapInputError(
-			fail, "err_deploy_mkdir",
+			err, "err_deploy_mkdir",
 			"Could not create directory at {{.V0}}, make sure you have permissions to write to {{.V1}}.", symlinkPath, filepath.Dir(symlinkPath))
 	}
 

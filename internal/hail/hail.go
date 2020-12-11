@@ -19,12 +19,12 @@ type Received struct {
 	Error error
 }
 
-func newReceived(openedAt time.Time, data []byte, fail error) *Received {
+func newReceived(openedAt time.Time, data []byte, err error) *Received {
 	return &Received{
 		Open:  openedAt,
 		Time:  time.Now(),
 		Data:  data,
-		Error: fail,
+		Error: err,
 	}
 }
 

@@ -37,11 +37,11 @@ func TestIsExecutable(t *testing.T) {
 }
 
 func Test_IsWritable_File(t *testing.T) {
-	file, fail := WriteTempFile(
+	file, err := WriteTempFile(
 		"", t.Name(), []byte("Some data"), 0777,
 	)
-	if fail != nil {
-		t.Error(fail)
+	if err != nil {
+		t.Error(err)
 	}
 
 	if IsWritable(file) != true {

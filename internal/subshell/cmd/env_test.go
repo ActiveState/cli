@@ -304,7 +304,7 @@ func TestCmdEnv_get(t *testing.T) {
 				t.Errorf("get() = %v, want %v", got, tt.want)
 			}
 			if !reflect.DeepEqual(gotFail, tt.want.returnFailure) {
-				t.Errorf("get() fail = %v, want %v", gotFail, tt.want)
+				t.Errorf("get() err = %v, want %v", gotFail, tt.want)
 			}
 
 			rm := tt.fields.registryMock

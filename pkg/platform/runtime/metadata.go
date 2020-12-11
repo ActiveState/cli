@@ -63,14 +63,14 @@ func InitMetaData(installDir string) (*MetaData, error) {
 	var metaData *MetaData
 	metaFile := filepath.Join(installDir, constants.RuntimeMetaFile)
 	if fileutils.FileExists(metaFile) {
-		contents, fail := fileutils.ReadFile(metaFile)
-		if fail != nil {
-			return nil, fail
+		contents, err := fileutils.ReadFile(metaFile)
+		if err != nil {
+			return nil, err
 		}
 
-		metaData, fail = ParseMetaData(contents)
-		if fail != nil {
-			return nil, fail
+		metaData, err = ParseMetaData(contents)
+		if err != nil {
+			return nil, err
 		}
 	} else {
 		metaData = &MetaData{}
@@ -81,9 +81,9 @@ func InitMetaData(installDir string) (*MetaData, error) {
 	}
 
 	metaData.Path = installDir
-	fail := metaData.Prepare()
-	if fail != nil {
-		return nil, fail
+	err := metaData.Prepare()
+	if err != nil {
+		return nil, err
 	}
 
 	return metaData, nil

@@ -258,9 +258,9 @@ func CopyFile(src, target string) error {
 
 	// Create target directory if it doesn't exist
 	dir := filepath.Dir(target)
-	fail := MkdirUnlessExists(dir)
-	if fail != nil {
-		return fail
+	err = MkdirUnlessExists(dir)
+	if err != nil {
+		return err
 	}
 
 	// Create target file
@@ -302,9 +302,9 @@ func ReadFile(filePath string) ([]byte, error) {
 
 // WriteFile writes data to a file, if it exists it is overwritten, if it doesn't exist it is created and data is written
 func WriteFile(filePath string, data []byte) error {
-	fail := MkdirUnlessExists(filepath.Dir(filePath))
-	if fail != nil {
-		return fail
+	err := MkdirUnlessExists(filepath.Dir(filePath))
+	if err != nil {
+		return err
 	}
 
 	// make the target file temporarily writable
@@ -664,9 +664,9 @@ func TempDirUnsafe() string {
 // MoveAllFilesCrossDisk will move all of the files/dirs within one directory
 // to another directory even across disks. Both directories must already exist.
 func MoveAllFilesCrossDisk(src, dst string) error {
-	fail := MoveAllFiles(src, dst)
-	if fail != nil {
-		logging.Error("Move all files failed with error: %s. Falling back to copy files", fail)
+	err := MoveAllFiles(src, dst)
+	if err != nil {
+		logging.Error("Move all files failed with error: %s. Falling back to copy files", err)
 	}
 
 	return copyFiles(src, dst, true)
@@ -685,12 +685,11 @@ func Join(elem ...string) string {
 
 // PrepareDir prepares a path by ensuring it exists and the path is consistent
 func PrepareDir(path string) (string, error) {
-	fail := MkdirUnlessExists(path)
-	if fail != nil {
-		return "", fail
+	err := MkdirUnlessExists(path)
+	if err != nil {
+		return "", err
 	}
 
-	var err error
 	path, err = filepath.Abs(path)
 	if err != nil {
 		return "", err

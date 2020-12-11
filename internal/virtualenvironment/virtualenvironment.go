@@ -37,8 +37,8 @@ func (v *VirtualEnvironment) Activate() error {
 	logging.Debug("Activating Virtual Environment")
 
 	if strings.ToLower(os.Getenv(constants.DisableRuntime)) != "true" {
-		if failure := v.Setup(true); failure != nil {
-			return failure
+		if err := v.Setup(true); err != nil {
+			return err
 		}
 	}
 
@@ -57,17 +57,17 @@ func (v *VirtualEnvironment) Setup(installIfNecessary bool) error {
 	if installIfNecessary {
 		if !v.runtime.IsCachedRuntime() {
 			installer := runtime.NewInstaller(v.runtime)
-			_, _, fail := installer.Install()
-			if fail != nil {
-				return fail
+			_, _, err := installer.Install()
+			if err != nil {
+				return err
 			}
 		} else if v.onUseCache != nil {
 			v.onUseCache()
 		}
 	} else {
-		_, fail := v.runtime.Env()
-		if fail != nil {
-			return fail
+		_, err := v.runtime.Env()
+		if err != nil {
+			return err
 		}
 	}
 
@@ -80,11 +80,10 @@ func (v *VirtualEnvironment) GetEnv(inherit bool, projectDir string) (map[string
 
 	// Source runtime environment information
 	if strings.ToLower(os.Getenv(constants.DisableRuntime)) != "true" {
-		env, fail := v.runtime.Env()
-		if fail != nil {
-			return envMap, errs.Wrap(fail, "Could not initialize runtime env")
+		env, err := v.runtime.Env()
+		if err != nil {
+			return envMap, errs.Wrap(err, "Could not initialize runtime env")
 		}
-		var err error
 		envMap, err = env.GetEnv(inherit, projectDir)
 		if err != nil {
 			return envMap, err
@@ -96,9 +95,9 @@ func (v *VirtualEnvironment) GetEnv(inherit bool, projectDir string) (map[string
 		envMap[constants.ActivatedStateIDEnvVarName] = v.activationID
 
 		// Get project from explicitly defined configuration file
-		pj, fail := project.Parse(filepath.Join(projectDir, constants.ConfigFileName))
-		if fail != nil {
-			return envMap, fail
+		pj, err := project.Parse(filepath.Join(projectDir, constants.ConfigFileName))
+		if err != nil {
+			return envMap, err
 		}
 		for _, constant := range pj.Constants() {
 			var err error

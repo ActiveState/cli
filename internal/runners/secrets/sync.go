@@ -45,14 +45,14 @@ func (s *Sync) Run() error {
 		return locale.WrapError(err, "secrets_err_check_access")
 	}
 
-	org, fail := model.FetchOrgByURLName(s.proj.Owner())
-	if fail != nil {
-		return locale.WrapError(fail, "secrets_err_fetch_org", "Cannot fetch org")
+	org, err := model.FetchOrgByURLName(s.proj.Owner())
+	if err != nil {
+		return locale.WrapError(err, "secrets_err_fetch_org", "Cannot fetch org")
 	}
 
-	updatedCount, fail := synchronizeEachOrgMember(s.secretsClient, org)
-	if fail != nil {
-		return locale.WrapError(fail, "secrets_err_sync", "Cannot synchronize secrets")
+	updatedCount, err := synchronizeEachOrgMember(s.secretsClient, org)
+	if err != nil {
+		return locale.WrapError(err, "secrets_err_sync", "Cannot synchronize secrets")
 	}
 
 	s.out.Print(locale.Tr("secrets_sync_results_message", strconv.Itoa(updatedCount), org.Name))
@@ -61,19 +61,19 @@ func (s *Sync) Run() error {
 }
 
 func synchronizeEachOrgMember(secretsClient *secretsapi.Client, org *mono_models.Organization) (count int, f error) {
-	sourceKeypair, fail := secrets.LoadKeypairFromConfigDir()
-	if fail != nil {
-		return 0, fail
+	sourceKeypair, err := secrets.LoadKeypairFromConfigDir()
+	if err != nil {
+		return 0, err
 	}
 
-	members, fail := model.FetchOrgMembers(org.URLname)
-	if fail != nil {
-		return 0, fail
+	members, err := model.FetchOrgMembers(org.URLname)
+	if err != nil {
+		return 0, err
 	}
 
-	currentUserID, fail := secretsClient.AuthenticatedUserID()
-	if fail != nil {
-		return 0, fail
+	currentUserID, err := secretsClient.AuthenticatedUserID()
+	if err != nil {
+		return 0, err
 	}
 
 	var updatedCtr int
@@ -96,14 +96,14 @@ func synchronizeEachOrgMember(secretsClient *secretsapi.Client, org *mono_models
 				}
 			}
 
-			targetShares, fail := secrets.ShareFromDiff(sourceKeypair, diffPayloadOk.Payload)
-			if fail != nil {
-				return updatedCtr, fail
+			targetShares, err := secrets.ShareFromDiff(sourceKeypair, diffPayloadOk.Payload)
+			if err != nil {
+				return updatedCtr, err
 			}
 
-			fail = secretsapi.SaveSecretShares(secretsClient, org, member.User, targetShares)
-			if fail != nil {
-				return updatedCtr, fail
+			err = secretsapi.SaveSecretShares(secretsClient, org, member.User, targetShares)
+			if err != nil {
+				return updatedCtr, err
 			}
 			updatedCtr++
 		}

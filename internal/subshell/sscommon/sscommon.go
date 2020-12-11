@@ -84,9 +84,9 @@ func RunFuncByBinary(binary string) RunFunc {
 }
 
 func runWithBash(env []string, name string, args ...string) error {
-	filePath, fail := osutils.BashifyPath(name)
-	if fail != nil {
-		return fail
+	filePath, err := osutils.BashifyPath(name)
+	if err != nil {
+		return err
 	}
 
 	esc := osutils.NewBashEscaper()
@@ -104,16 +104,16 @@ func runWithCmd(env []string, name string, args ...string) error {
 	switch ext {
 	case ".py":
 		args = append([]string{name}, args...)
-		pythonPath, fail := binaryPathCmd(env, "python")
-		if fail != nil {
-			return fail
+		pythonPath, err := binaryPathCmd(env, "python")
+		if err != nil {
+			return err
 		}
 		name = pythonPath
 	case ".pl":
 		args = append([]string{name}, args...)
-		perlPath, fail := binaryPathCmd(env, "perl")
-		if fail != nil {
-			return fail
+		perlPath, err := binaryPathCmd(env, "perl")
+		if err != nil {
+			return err
 		}
 		name = perlPath
 	case ".bat":

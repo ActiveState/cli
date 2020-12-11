@@ -20,8 +20,8 @@ import (
 // this keypair file has no passphrase, even if it is encrypted.
 func Load(keyName string) (Keypair, error) {
 	keyFilename := LocalKeyFilename(keyName)
-	if fail := validateKeyFile(keyFilename); fail != nil {
-		return nil, fail
+	if err := validateKeyFile(keyFilename); err != nil {
+		return nil, err
 	}
 	return loadAndParseKeypair(keyFilename)
 }

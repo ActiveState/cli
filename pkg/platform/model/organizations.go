@@ -50,9 +50,9 @@ func FetchOrgByURLName(urlName string) (*mono_models.Organization, error) {
 func FetchOrgMembers(urlName string) ([]*mono_models.Member, error) {
 	params := clientOrgs.NewGetOrganizationMembersParams()
 	params.OrganizationName = urlName
-	authClient, fail := authentication.Get().ClientSafe()
-	if fail != nil {
-		return nil, fail
+	authClient, err := authentication.Get().ClientSafe()
+	if err != nil {
+		return nil, err
 	}
 	resOk, err := authClient.Organizations.GetOrganizationMembers(params, authentication.ClientAuth())
 	if err != nil {
@@ -63,9 +63,9 @@ func FetchOrgMembers(urlName string) ([]*mono_models.Member, error) {
 
 // FetchOrgMember fetches the member of an organization accessible to the current user by it's URL Name.
 func FetchOrgMember(orgName, name string) (*mono_models.Member, error) {
-	members, failure := FetchOrgMembers(orgName)
-	if failure != nil {
-		return nil, failure
+	members, err := FetchOrgMembers(orgName)
+	if err != nil {
+		return nil, err
 	}
 
 	for _, member := range members {

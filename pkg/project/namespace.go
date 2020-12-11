@@ -48,9 +48,9 @@ func (ns *Namespaced) Set(v string) error {
 		return fmt.Errorf("cannot set nil value")
 	}
 
-	parsedNs, fail := ParseNamespace(v)
-	if fail != nil {
-		return fail
+	parsedNs, err := ParseNamespace(v)
+	if err != nil {
+		return err
 	}
 
 	*ns = *parsedNs
@@ -116,8 +116,8 @@ func NameSpaceForConfig(configFile string) *Namespaced {
 		return nil
 	}
 
-	prj, fail := FromPath(configFile)
-	if fail != nil {
+	prj, err := FromPath(configFile)
+	if err != nil {
 		return nil
 	}
 

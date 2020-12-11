@@ -77,9 +77,9 @@ func targetedLanguage(languageOpt string) (string, error) {
 		return languageOpt, nil
 	}
 
-	proj, fail := project.GetSafe()
-	if fail != nil {
-		return "", fail
+	proj, err := project.GetSafe()
+	if err != nil {
+		return "", err
 	}
 
 	return model.LanguageForCommit(proj.CommitUUID())

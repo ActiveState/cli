@@ -61,9 +61,9 @@ func (c *Cache) Run(params *CacheParams) error {
 
 func (c *Cache) removeCache(path string, force bool) error {
 	if !force {
-		ok, fail := c.confirm.Confirm(locale.T("confirm"), locale.T("clean_cache_confirm"), false)
-		if fail != nil {
-			return fail
+		ok, err := c.confirm.Confirm(locale.T("confirm"), locale.T("clean_cache_confirm"), false)
+		if err != nil {
+			return err
 		}
 		if !ok {
 			return nil
@@ -76,18 +76,18 @@ func (c *Cache) removeCache(path string, force bool) error {
 
 func (c *Cache) removeProjectCache(projectDir, namespace string, force bool) error {
 	if !force {
-		ok, fail := c.confirm.Confirm(locale.T("confirm"), locale.Tr("clean_cache_artifact_confirm", namespace), false)
-		if fail != nil {
-			return fail
+		ok, err := c.confirm.Confirm(locale.T("confirm"), locale.Tr("clean_cache_artifact_confirm", namespace), false)
+		if err != nil {
+			return err
 		}
 		if !ok {
 			return nil
 		}
 	}
 
-	parsed, fail := project.ParseNamespace(namespace)
-	if fail != nil {
-		return locale.WrapError(fail, "err_clean_cache_invalid_namespace", "NamespacePrefix argument is not of the correct format")
+	parsed, err := project.ParseNamespace(namespace)
+	if err != nil {
+		return locale.WrapError(err, "err_clean_cache_invalid_namespace", "NamespacePrefix argument is not of the correct format")
 	}
 
 	runtime, err := runtime.NewRuntime(projectDir, "", parsed.Owner, parsed.Project, nil)

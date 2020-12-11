@@ -13,18 +13,18 @@ import (
 )
 
 func TestScriptFile(t *testing.T) {
-	sf, fail := New(language.Bash, t.Name(), "echo hello")
-	require.NoError(t, fail)
+	sf, err := New(language.Bash, t.Name(), "echo hello")
+	require.NoError(t, err)
 	require.FileExists(t, sf.Filename())
 	sf.Clean()
 
-	_, err := os.Stat(sf.Filename())
+	_, err = os.Stat(sf.Filename())
 	if err == nil || !os.IsNotExist(err) {
 		require.FailNow(t, "file should not exist")
 	}
 
-	sf, fail = New(language.Bash, t.Name(), "echo hello")
-	require.NoError(t, fail)
+	sf, err = New(language.Bash, t.Name(), "echo hello")
+	require.NoError(t, err)
 	defer sf.Clean()
 	assert.NotEmpty(t, path.Ext(sf.Filename()))
 
@@ -37,8 +37,8 @@ func TestScriptFile(t *testing.T) {
 	}
 	assert.NotZero(t, res, "file should be readable/executable")
 
-	sf, fail = New(language.Batch, t.Name(), "echo hello")
-	require.NoError(t, fail)
+	sf, err = New(language.Batch, t.Name(), "echo hello")
+	require.NoError(t, err)
 	defer sf.Clean()
 
 	info, err = os.Stat(sf.Filename())

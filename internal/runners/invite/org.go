@@ -24,9 +24,9 @@ func (o *Org) String() string {
 }
 
 func (o *Org) Set(v string) error {
-	var fail error
-	o.Organization, fail = model.FetchOrgByURLName(v)
-	return fail
+	var err error
+	o.Organization, err = model.FetchOrgByURLName(v)
+	return err
 }
 
 func (o *Org) CanInvite(numInvites int) error {
@@ -35,9 +35,9 @@ func (o *Org) CanInvite(numInvites int) error {
 		return locale.NewInputError("err_invite_personal", "This project does not belong to any organization and so cannot have any users invited to it. To invite users create an organization.")
 	}
 
-	limits, fail := model.FetchOrganizationLimits(o.URLname)
-	if fail != nil {
-		return locale.WrapError(fail, "err_invite_fetchlimits", "Could not detect member limits for organization.")
+	limits, err := model.FetchOrganizationLimits(o.URLname)
+	if err != nil {
+		return locale.WrapError(err, "err_invite_fetchlimits", "Could not detect member limits for organization.")
 	}
 
 	requestedMemberCount := o.MemberCount + int64(numInvites)

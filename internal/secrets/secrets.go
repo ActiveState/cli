@@ -107,9 +107,9 @@ func LoadKeypairFromConfigDir() (keypairs.Keypair, error) {
 
 // DefsByProject fetches the secret definitions for the current user relevant to the given project
 func DefsByProject(secretsClient *secretsapi.Client, owner string, projectName string) ([]*secretsModels.SecretDefinition, error) {
-	pjm, fail := model.FetchProjectByName(owner, projectName)
-	if fail != nil {
-		return nil, fail
+	pjm, err := model.FetchProjectByName(owner, projectName)
+	if err != nil {
+		return nil, err
 	}
 
 	return secretsapi.FetchDefinitions(secretsClient, pjm.ProjectID)
@@ -119,19 +119,19 @@ func DefsByProject(secretsClient *secretsapi.Client, owner string, projectName s
 func ByProject(secretsClient *secretsapi.Client, owner string, projectName string) ([]*secretsModels.UserSecret, error) {
 	result := []*secretsModels.UserSecret{}
 
-	pjm, fail := model.FetchProjectByName(owner, projectName)
-	if fail != nil {
-		return result, fail
+	pjm, err := model.FetchProjectByName(owner, projectName)
+	if err != nil {
+		return result, err
 	}
 
-	org, fail := model.FetchOrgByURLName(owner)
-	if fail != nil {
-		return result, fail
+	org, err := model.FetchOrgByURLName(owner)
+	if err != nil {
+		return result, err
 	}
 
-	secrets, fail := secretsapi.FetchAll(secretsClient, org)
-	if fail != nil {
-		return result, fail
+	secrets, err := secretsapi.FetchAll(secretsClient, org)
+	if err != nil {
+		return result, err
 	}
 
 	for _, secret := range secrets {

@@ -258,9 +258,9 @@ func NewLegacy(p *projectfile.Project) (*Project, error) {
 
 // Parse will parse the given projectfile and instantiate a Project struct with it
 func Parse(fpath string) (*Project, error) {
-	pjfile, fail := projectfile.Parse(fpath)
-	if fail != nil {
-		return nil, fail
+	pjfile, err := projectfile.Parse(fpath)
+	if err != nil {
+		return nil, err
 	}
 	return New(pjfile, output.Get(), prompt.New())
 }
@@ -278,13 +278,13 @@ func Get() *Project {
 
 // GetSafe returns project struct.  Produces failure if error occurs, allows recovery
 func GetSafe() (*Project, error) {
-	pjFile, fail := projectfile.GetSafe()
-	if fail != nil {
-		return nil, fail
+	pjFile, err := projectfile.GetSafe()
+	if err != nil {
+		return nil, err
 	}
-	project, fail := New(pjFile, output.Get(), prompt.New())
-	if fail != nil {
-		return nil, fail
+	project, err := New(pjFile, output.Get(), prompt.New())
+	if err != nil {
+		return nil, err
 	}
 
 	return project, nil
@@ -301,13 +301,13 @@ func GetOnce() (*Project, error) {
 
 // FromPath will return the project that's located at the given path (this will walk up the directory tree until it finds the project)
 func FromPath(path string) (*Project, error) {
-	pjFile, fail := projectfile.FromPath(path)
-	if fail != nil {
-		return nil, fail
+	pjFile, err := projectfile.FromPath(path)
+	if err != nil {
+		return nil, err
 	}
-	project, fail := New(pjFile, output.Get(), prompt.New())
-	if fail != nil {
-		return nil, fail
+	project, err := New(pjFile, output.Get(), prompt.New())
+	if err != nil {
+		return nil, err
 	}
 
 	return project, nil
@@ -526,9 +526,9 @@ func (s *Secret) ValueOrNil() (*string, error) {
 
 // Value returned with all secrets evaluated
 func (s *Secret) Value() (string, error) {
-	value, fail := s.ValueOrNil()
-	if fail != nil || value == nil {
-		return "", fail
+	value, err := s.ValueOrNil()
+	if err != nil || value == nil {
+		return "", err
 	}
 	return *value, nil
 }
@@ -536,24 +536,24 @@ func (s *Secret) Value() (string, error) {
 // Save will save the provided value for this secret to the project file if not a secret, else
 // will store back to the secrets store.
 func (s *Secret) Save(value string) error {
-	org, fail := model.FetchOrgByURLName(s.project.Owner())
-	if fail != nil {
-		return fail
+	org, err := model.FetchOrgByURLName(s.project.Owner())
+	if err != nil {
+		return err
 	}
 
-	remoteProject, fail := model.FetchProjectByName(org.URLname, s.project.Name())
-	if fail != nil {
-		return fail
+	remoteProject, err := model.FetchProjectByName(org.URLname, s.project.Name())
+	if err != nil {
+		return err
 	}
 
-	kp, fail := secrets.LoadKeypairFromConfigDir()
-	if fail != nil {
-		return fail
+	kp, err := secrets.LoadKeypairFromConfigDir()
+	if err != nil {
+		return err
 	}
 
-	fail = secrets.Save(secretsapi.GetClient(), kp, org, remoteProject, s.IsUser(), s.Name(), value)
-	if fail != nil {
-		return fail
+	err = secrets.Save(secretsapi.GetClient(), kp, org, remoteProject, s.IsUser(), s.Name(), value)
+	if err != nil {
+		return err
 	}
 
 	if s.IsProject() {

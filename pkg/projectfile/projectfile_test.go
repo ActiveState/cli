@@ -240,8 +240,8 @@ func TestSave(t *testing.T) {
 	}
 
 	path := filepath.Join(rootpath, "pkg", "projectfile", "testdata", "activestate.yaml")
-	project, failure := Parse(path)
-	assert.Nil(t, failure, "unexpected failure parsing our yaml file")
+	project, err := Parse(path)
+	assert.Nil(t, err, "unexpected failure parsing our yaml file")
 
 	tmpfile, err := ioutil.TempFile("", "test")
 	assert.NoError(t, err, "Should create a temp file")

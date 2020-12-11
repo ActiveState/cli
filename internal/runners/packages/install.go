@@ -40,9 +40,9 @@ func (a *Install) Run(params InstallRunParams, nstype model.NamespaceType) error
 		return locale.NewInputError("err_no_project")
 	}
 
-	language, fail := model.LanguageForCommit(a.proj.CommitUUID())
-	if fail != nil {
-		return locale.WrapError(fail, "err_fetch_languages")
+	language, err := model.LanguageForCommit(a.proj.CommitUUID())
+	if err != nil {
+		return locale.WrapError(err, "err_fetch_languages")
 	}
 
 	ns := model.NewNamespacePkgOrBundle(language, nstype)

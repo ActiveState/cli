@@ -59,8 +59,8 @@ func (s *ScriptRun) PrepareVirtualEnv() error {
 	}
 	venv := virtualenvironment.New(runtime)
 
-	if fail := venv.Activate(); fail != nil {
-		logging.Errorf("Unable to activate state: %s", fail.Error())
+	if err := venv.Activate(); err != nil {
+		logging.Errorf("Unable to activate state: %s", err.Error())
 		return locale.WrapError(err, "error_state_run_activate")
 	}
 
@@ -145,9 +145,9 @@ func (s *ScriptRun) Run(script *project.Script, args []string) error {
 		return locale.WrapError(err, "err_run_scriptval", "Could not get script value.")
 	}
 
-	sf, fail := scriptfile.New(lang, script.Name(), scriptBlock)
-	if fail != nil {
-		return locale.WrapError(fail, "error_state_run_setup_scriptfile")
+	sf, err := scriptfile.New(lang, script.Name(), scriptBlock)
+	if err != nil {
+		return locale.WrapError(err, "error_state_run_setup_scriptfile")
 	}
 	defer sf.Clean()
 

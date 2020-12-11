@@ -54,7 +54,7 @@ func validateLocalPrivateKey(publicKey string) bool {
 // determine if the password has changed. If successful, private-key is encrypted with passphrase provided
 // to this function and uploaded.
 //
-// If all paths fail, user is prompted to regenerate their keypair which will be encrypted with the
+// If all paths err, user is prompted to regenerate their keypair which will be encrypted with the
 // provided passphrase and then uploaded; unless the user declines, which results in err.
 func processExistingKeypairForUser(keypairRes *secretsModels.Keypair, passphrase string, out output.Outputer, prompt prompt.Prompter) error {
 	keypair, err := keypairs.ParseEncryptedRSA(*keypairRes.EncryptedPrivateKey, passphrase)
@@ -116,9 +116,9 @@ func promptUserToRegenerateKeypair(passphrase string, out output.Outputer, promp
 	var err error
 	// previous passphrase is invalid, inform user and ask if they want to generate a new keypair
 	out.Notice(locale.T("auth_generate_new_keypair_message"))
-	yes, fail := prompt.Confirm("", locale.T("auth_confirm_generate_new_keypair_prompt"), false)
-	if fail != nil {
-		return fail
+	yes, err := prompt.Confirm("", locale.T("auth_confirm_generate_new_keypair_prompt"), false)
+	if err != nil {
+		return err
 	}
 	if yes {
 		_, err = keypairs.GenerateAndSaveEncodedKeypair(secretsapi.Get(), passphrase, constants.DefaultRSABitLength)

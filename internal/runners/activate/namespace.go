@@ -47,8 +47,8 @@ func (r *NamespaceSelect) Run(namespace string, preferredPath string) (string, e
 	}
 
 	// Validate that target path doesn't contain a config for a different namespace
-	if fail := r.validatePath(namespace, targetPath); fail != nil {
-		return "", fail
+	if err := r.validatePath(namespace, targetPath); err != nil {
+		return "", err
 	}
 
 	// Save path for future use
@@ -57,9 +57,9 @@ func (r *NamespaceSelect) Run(namespace string, preferredPath string) (string, e
 	paths = append(paths, targetPath)
 	r.config.Set(key, paths)
 
-	fail := fileutils.MkdirUnlessExists(targetPath)
-	if fail != nil {
-		return "", fail
+	err := fileutils.MkdirUnlessExists(targetPath)
+	if err != nil {
+		return "", err
 	}
 
 	return targetPath, nil
@@ -94,9 +94,9 @@ func (r *NamespaceSelect) promptAvailablePaths(paths []string) (*string, error) 
 
 	noneStr := locale.T("activate_select_optout")
 	choices := append(paths, noneStr)
-	path, fail := r.prompter.Select(locale.Tl("activate_existing_title", "Existing Checkout"), locale.T("activate_namespace_existing"), choices, "")
-	if fail != nil {
-		return nil, fail
+	path, err := r.prompter.Select(locale.Tl("activate_existing_title", "Existing Checkout"), locale.T("activate_namespace_existing"), choices, "")
+	if err != nil {
+		return nil, err
 	}
 	if path != "" && path != noneStr {
 		return &path, nil
@@ -112,11 +112,11 @@ func (r *NamespaceSelect) promptForPathInput(namespace string) (string, error) {
 		return "", errs.Wrap(err, "Runtime failure")
 	}
 
-	directory, fail := r.prompter.Input(
+	directory, err := r.prompter.Input(
 		locale.Tl("choose_dest", "Choose Destination"),
 		locale.Tr("activate_namespace_location", namespace), filepath.Join(wd, namespace), prompt.InputRequired)
-	if fail != nil {
-		return "", fail
+	if err != nil {
+		return "", err
 	}
 	if directory == "" {
 		return "", locale.NewError("err_must_provide_directory")
@@ -133,9 +133,9 @@ func (r *NamespaceSelect) validatePath(namespace string, path string) error {
 		return nil
 	}
 
-	pj, fail := project.Parse(configFile)
-	if fail != nil {
-		return fail
+	pj, err := project.Parse(configFile)
+	if err != nil {
+		return err
 	}
 
 	pjns := fmt.Sprintf("%s/%s", pj.Owner(), pj.Name())

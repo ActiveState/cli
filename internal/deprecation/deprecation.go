@@ -92,11 +92,10 @@ func (checker *Checker) check(versionNumber string) (*Info, error) {
 	}
 
 	var infos []Info
-	var fail error
 	if checker.shouldFetch() {
-		infos, fail = checker.fetchDeprecationInfo()
-		if fail != nil {
-			return nil, fail
+		infos, err = checker.fetchDeprecationInfo()
+		if err != nil {
+			return nil, err
 		}
 	} else {
 		infos, err = checker.cachedDeprecationInfo()

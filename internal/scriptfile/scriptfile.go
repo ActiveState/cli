@@ -33,11 +33,11 @@ func NewAsSource(l language.Language, name, script string) (*ScriptFile, error) 
 }
 
 func new(l language.Language, name string, script []byte) (*ScriptFile, error) {
-	file, fail := fileutils.WriteTempFile(
+	file, err := fileutils.WriteTempFile(
 		"", fmt.Sprintf("%s*%s", name, l.Ext()), []byte(script), 0700,
 	)
-	if fail != nil {
-		return nil, fail
+	if err != nil {
+		return nil, err
 	}
 
 	return &ScriptFile{

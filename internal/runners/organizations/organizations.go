@@ -57,9 +57,9 @@ type orgData struct {
 
 func newOrgData(orgs []*mono_models.Organization) ([]orgData, error) {
 
-	tiers, fail := model.FetchTiers()
-	if fail != nil {
-		return nil, fail
+	tiers, err := model.FetchTiers()
+	if err != nil {
+		return nil, err
 	}
 	tiersToPrivMap := make(map[string]bool)
 	for _, t := range tiers {

@@ -83,7 +83,7 @@ func TestSecretsAPI_Authenticated_Success(t *testing.T) {
 
 	httpmock.RegisterWithCode("GET", "/whoami", 200)
 
-	uid, failure := client.AuthenticatedUserID()
-	assert.Nil(failure)
+	uid, err := client.AuthenticatedUserID()
+	assert.Nil(err)
 	assert.Equal("11110000-1111-0000-1111-000011110000", uid.String())
 }

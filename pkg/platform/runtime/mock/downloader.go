@@ -17,8 +17,8 @@ func NewMockDownloader() *Downloader {
 // Download for Downloader.
 func (downloader *Downloader) Download() (string, error) {
 	args := downloader.Called()
-	if failure := args.Get(1); failure != nil {
-		return args.String(0), failure.(error)
+	if err := args.Get(1); err != nil {
+		return args.String(0), err.(error)
 	}
 	return args.String(0), nil
 }

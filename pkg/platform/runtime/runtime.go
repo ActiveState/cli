@@ -63,9 +63,9 @@ func (r *Runtime) IsCachedRuntime() bool {
 		return false
 	}
 
-	contents, fail := fileutils.ReadFile(marker)
-	if fail != nil {
-		logging.Error("Could not read marker: %v", fail)
+	contents, err := fileutils.ReadFile(marker)
+	if err != nil {
+		logging.Error("Could not read marker: %v", err)
 		return false
 	}
 
@@ -77,13 +77,13 @@ func (r *Runtime) IsCachedRuntime() bool {
 func (r *Runtime) MarkInstallationComplete() error {
 	markerFile := filepath.Join(r.runtimeDir, constants.RuntimeInstallationCompleteMarker)
 	markerDir := filepath.Dir(markerFile)
-	fail := fileutils.MkdirUnlessExists(markerDir)
-	if fail != nil {
-		return errs.Wrap(fail, "could not create completion marker directory")
+	err := fileutils.MkdirUnlessExists(markerDir)
+	if err != nil {
+		return errs.Wrap(err, "could not create completion marker directory")
 	}
-	fail = fileutils.WriteFile(markerFile, []byte(r.commitID.String()))
-	if fail != nil {
-		return errs.Wrap(fail, "could not set completion marker")
+	err = fileutils.WriteFile(markerFile, []byte(r.commitID.String()))
+	if err != nil {
+		return errs.Wrap(err, "could not set completion marker")
 	}
 	return nil
 }
@@ -93,13 +93,13 @@ func (r *Runtime) StoreBuildEngine(buildEngine BuildEngine) error {
 	storeFile := filepath.Join(r.runtimeDir, constants.RuntimeBuildEngineStore)
 	storeDir := filepath.Dir(storeFile)
 	logging.Debug("Storing build engine %s at %s", buildEngine.String(), storeFile)
-	fail := fileutils.MkdirUnlessExists(storeDir)
-	if fail != nil {
-		return errs.Wrap(fail, "Could not create completion marker directory.")
+	err := fileutils.MkdirUnlessExists(storeDir)
+	if err != nil {
+		return errs.Wrap(err, "Could not create completion marker directory.")
 	}
-	fail = fileutils.WriteFile(storeFile, []byte(buildEngine.String()))
-	if fail != nil {
-		return errs.Wrap(fail, "Could not store build engine string.")
+	err = fileutils.WriteFile(storeFile, []byte(buildEngine.String()))
+	if err != nil {
+		return errs.Wrap(err, "Could not store build engine string.")
 	}
 	return nil
 }
@@ -108,9 +108,9 @@ func (r *Runtime) StoreBuildEngine(buildEngine BuildEngine) error {
 func (r *Runtime) BuildEngine() (BuildEngine, error) {
 	storeFile := filepath.Join(r.runtimeDir, constants.RuntimeBuildEngineStore)
 
-	data, fail := fileutils.ReadFile(storeFile)
-	if fail != nil {
-		return UnknownEngine, errs.Wrap(fail, "Could not read build engine cache store.")
+	data, err := fileutils.ReadFile(storeFile)
+	if err != nil {
+		return UnknownEngine, errs.Wrap(err, "Could not read build engine cache store.")
 	}
 
 	return parseBuildEngine(string(data)), nil

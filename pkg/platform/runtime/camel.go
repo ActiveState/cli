@@ -49,9 +49,9 @@ func NewCamelEnv(commitID strfmt.UUID, cacheDir string) (*CamelEnv, error) {
 
 // NewCamelInstall creates a new camel installation
 func NewCamelInstall(commitID strfmt.UUID, cacheDir string, artifacts []*HeadChefArtifact) (*CamelInstall, error) {
-	ce, fail := NewCamelEnv(commitID, cacheDir)
-	if fail != nil {
-		return nil, fail
+	ce, err := NewCamelEnv(commitID, cacheDir)
+	if err != nil {
+		return nil, err
 	}
 	ci := &CamelInstall{*ce, []*HeadChefArtifact{}}
 
@@ -118,9 +118,9 @@ func (ci *CamelInstall) ArtifactsToDownload() []*HeadChefArtifact {
 // PreInstall attempts to clean the runtime-directory.  Failures are only logged to rollbar and do not cause the installation to fail.
 func (ci *CamelInstall) PreInstall() error {
 	if fileutils.DirExists(ci.runtimeDir) {
-		empty, fail := fileutils.IsEmptyDir(ci.runtimeDir)
-		if fail != nil {
-			logging.Error("Could not check if target runtime dir is empty, this could cause issues.. %v", fail)
+		empty, err := fileutils.IsEmptyDir(ci.runtimeDir)
+		if err != nil {
+			logging.Error("Could not check if target runtime dir is empty, this could cause issues.. %v", err)
 		} else if !empty {
 			logging.Debug("Removing existing runtime")
 			if err := os.RemoveAll(ci.runtimeDir); err != nil {
@@ -147,8 +147,8 @@ func (ci *CamelInstall) PreUnpackArtifact(artf *HeadChefArtifact) error {
 		}
 	}
 
-	if fail := fileutils.MkdirUnlessExists(ci.runtimeDir); fail != nil {
-		return fail
+	if err := fileutils.MkdirUnlessExists(ci.runtimeDir); err != nil {
+		return err
 	}
 
 	return nil
@@ -195,8 +195,8 @@ func (ci *CamelInstall) PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir
 	tmpMetaFile := filepath.Join(tmpRuntimeDir, archiveName, constants.RuntimeMetaFile)
 	if fileutils.FileExists(tmpMetaFile) {
 		target := filepath.Join(ci.runtimeDir, constants.RuntimeMetaFile)
-		if fail := fileutils.MkdirUnlessExists(filepath.Dir(target)); fail != nil {
-			return fail
+		if err := fileutils.MkdirUnlessExists(filepath.Dir(target)); err != nil {
+			return err
 		}
 		if err := os.Rename(tmpMetaFile, target); err != nil {
 			return errs.Wrap(err, "os.Rename failed")
@@ -391,8 +391,8 @@ func (ci *CamelInstall) PostInstall() error {
 		return errs.Wrap(err, "Could not marshal camel environment")
 	}
 
-	if fail := fileutils.WriteFile(filepath.Join(ci.runtimeDir, envFile), env); fail != nil {
-		return errs.Wrap(fail, "Could not write "+envFile)
+	if err := fileutils.WriteFile(filepath.Join(ci.runtimeDir, envFile), env); err != nil {
+		return errs.Wrap(err, "Could not write "+envFile)
 	}
 
 	return nil
@@ -405,9 +405,9 @@ func (ci *CamelInstall) IsInstalled() bool {
 		return false
 	}
 
-	contents, fail := fileutils.ReadFile(marker)
-	if fail != nil {
-		logging.Error("Could not read marker: %v", fail)
+	contents, err := fileutils.ReadFile(marker)
+	if err != nil {
+		logging.Error("Could not read marker: %v", err)
 		return false
 	}
 

@@ -9,8 +9,8 @@ type envGetter = runtime.EnvGetter
 
 // installable is an interface for runtime.Installer
 type installable interface {
-	Install() (envGetter envGetter, freshInstallation bool, fail error)
-	Env() (envGetter envGetter, fail error)
+	Install() (envGetter envGetter, freshInstallation bool, err error)
+	Env() (envGetter envGetter, err error)
 	IsInstalled() (bool, error)
 }
 

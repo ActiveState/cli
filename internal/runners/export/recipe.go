@@ -35,9 +35,9 @@ func (r *Recipe) Run(params *RecipeParams) error {
 
 	proj := project.Get()
 
-	data, fail := recipeData(proj, params.CommitID, params.Platform)
-	if fail != nil {
-		return fail
+	data, err := recipeData(proj, params.CommitID, params.Platform)
+	if err != nil {
+		return err
 	}
 
 	if params.Pretty {
@@ -55,9 +55,9 @@ func (r *Recipe) Run(params *RecipeParams) error {
 func recipeData(proj *project.Project, commitID, platform string) ([]byte, error) {
 	cid := strfmt.UUID(commitID)
 
-	r, fail := fetchRecipe(proj, cid, platform)
-	if fail != nil {
-		return nil, fail
+	r, err := fetchRecipe(proj, cid, platform)
+	if err != nil {
+		return nil, err
 	}
 
 	return []byte(r), nil
@@ -79,14 +79,14 @@ func fetchRecipe(proj *project.Project, commitID strfmt.UUID, platform string) (
 	}
 
 	if commitID == "" {
-		pj, fail := model.FetchProjectByName(proj.Owner(), proj.Name())
-		if fail != nil {
-			return "", fail
+		pj, err := model.FetchProjectByName(proj.Owner(), proj.Name())
+		if err != nil {
+			return "", err
 		}
 
-		branch, fail := model.DefaultBranchForProject(pj)
-		if fail != nil {
-			return "", fail
+		branch, err := model.DefaultBranchForProject(pj)
+		if err != nil {
+			return "", err
 		}
 		if branch.CommitID == nil {
 			return "", locale.NewError("NoCommit")

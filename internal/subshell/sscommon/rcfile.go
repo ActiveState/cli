@@ -46,8 +46,8 @@ type EnvData struct {
 }
 
 func WriteRcFile(rcTemplateName string, path string, data EnvData, env map[string]string) error {
-	if fail := fileutils.Touch(path); fail != nil {
-		return fail
+	if err := fileutils.Touch(path); err != nil {
+		return err
 	}
 
 	rcData := map[string]interface{}{
@@ -56,8 +56,8 @@ func WriteRcFile(rcTemplateName string, path string, data EnvData, env map[strin
 		"Env":   env,
 	}
 
-	if fail := cleanRcFile(path, data); fail != nil {
-		return fail
+	if err := cleanRcFile(path, data); err != nil {
+		return err
 	}
 
 	box := packr.NewBox("../../../assets/shells")

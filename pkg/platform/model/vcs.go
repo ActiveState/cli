@@ -137,14 +137,14 @@ func NewNamespacePlatform() Namespace {
 // LatestCommitID returns the latest commit id by owner and project names. It
 // possible for a nil commit id to be returned without failure.
 func LatestCommitID(ownerName, projectName string) (*strfmt.UUID, error) {
-	proj, fail := FetchProjectByName(ownerName, projectName)
-	if fail != nil {
-		return nil, fail
+	proj, err := FetchProjectByName(ownerName, projectName)
+	if err != nil {
+		return nil, err
 	}
 
-	branch, fail := DefaultBranchForProject(proj)
-	if fail != nil {
-		return nil, fail
+	branch, err := DefaultBranchForProject(proj)
+	if err != nil {
+		return nil, err
 	}
 
 	if branch.CommitID == nil {
@@ -158,9 +158,9 @@ func LatestCommitID(ownerName, projectName string) (*strfmt.UUID, error) {
 
 // CommitHistory will return the commit history for the given owner / project
 func CommitHistory(ownerName, projectName string) ([]*mono_models.Commit, error) {
-	latestCID, fail := LatestCommitID(ownerName, projectName)
-	if fail != nil {
-		return nil, fail
+	latestCID, err := LatestCommitID(ownerName, projectName)
+	if err != nil {
+		return nil, err
 	}
 	return commitHistory(*latestCID)
 }
@@ -177,9 +177,9 @@ func commitHistory(commitID strfmt.UUID) ([]*mono_models.Commit, error) {
 
 	cont := true
 	for cont {
-		payload, fail := CommitHistoryPaged(commitID, offset, limit)
-		if fail != nil {
-			return commits, fail
+		payload, err := CommitHistoryPaged(commitID, offset, limit)
+		if err != nil {
+			return commits, err
 		}
 		commits = append(commits, payload.Commits...)
 		cont = payload.TotalCommits > (offset + limit)
@@ -214,9 +214,9 @@ func CommitHistoryPaged(commitID strfmt.UUID, offset, limit int64) (*mono_models
 // along with a value of -1, then the provided commit is more than likely
 // behind, but it is not possible to clarify the count exactly.
 func CommitsBehindLatest(ownerName, projectName, commitID string) (int, error) {
-	latestCID, fail := LatestCommitID(ownerName, projectName)
-	if fail != nil {
-		return 0, fail
+	latestCID, err := LatestCommitID(ownerName, projectName)
+	if err != nil {
+		return 0, err
 	}
 
 	if latestCID == nil {
@@ -305,9 +305,9 @@ func UpdateBranchCommit(branchID strfmt.UUID, commitID strfmt.UUID) error {
 // CommitPackage commits a package to an existing parent commit
 func CommitPackage(parentCommitID strfmt.UUID, operation Operation, packageName, packageNamespace, packageVersion string, anonymousID string) (strfmt.UUID, error) {
 	var commitID strfmt.UUID
-	languages, fail := FetchLanguagesForCommit(parentCommitID)
-	if fail != nil {
-		return commitID, fail
+	languages, err := FetchLanguagesForCommit(parentCommitID)
+	if err != nil {
+		return commitID, err
 	}
 
 	if len(languages) == 0 {
@@ -329,22 +329,22 @@ func CommitPackage(parentCommitID strfmt.UUID, operation Operation, packageName,
 		namespace = NewNamespaceBundle(languages[0].Name)
 	}
 
-	commit, fail := AddCommit(
+	commit, err := AddCommit(
 		parentCommitID, locale.Tr(message, packageName, packageVersion),
 		operation, namespace,
 		packageName, packageVersion, anonymousID,
 	)
-	if fail != nil {
-		return commitID, fail
+	if err != nil {
+		return commitID, err
 	}
 	return commit.CommitID, nil
 }
 
 // UpdateProjectBranchCommit updates the vcs brach for a given project with a new commitID
 func UpdateProjectBranchCommit(proj *mono_models.Project, commitID strfmt.UUID) error {
-	branch, fail := DefaultBranchForProject(proj)
-	if fail != nil {
-		return errs.Wrap(fail, "Failed to get default branch for project %s.", proj.Name)
+	branch, err := DefaultBranchForProject(proj)
+	if err != nil {
+		return errs.Wrap(err, "Failed to get default branch for project %s.", proj.Name)
 	}
 
 	return UpdateBranchCommit(branch.BranchID, commitID)
@@ -352,9 +352,9 @@ func UpdateProjectBranchCommit(proj *mono_models.Project, commitID strfmt.UUID) 
 
 // UpdateProjectBranchCommitByName updates the vcs branch for a project given by its namespace with a new commitID
 func UpdateProjectBranchCommitByName(projectOwner, projectName string, commitID strfmt.UUID) error {
-	proj, fail := FetchProjectByName(projectOwner, projectName)
-	if fail != nil {
-		return errs.Wrap(fail, "Failed to fetch project.")
+	proj, err := FetchProjectByName(projectOwner, projectName)
+	if err != nil {
+		return errs.Wrap(err, "Failed to fetch project.")
 	}
 
 	return UpdateProjectBranchCommit(proj, commitID)
@@ -363,18 +363,18 @@ func UpdateProjectBranchCommitByName(projectOwner, projectName string, commitID 
 // CommitChangeset commits multiple changes in one commit
 func CommitChangeset(parentCommitID strfmt.UUID, commitMsg string, anonymousID string, changeset Changeset) (strfmt.UUID, error) {
 	var commitID strfmt.UUID
-	languages, fail := FetchLanguagesForCommit(parentCommitID)
-	if fail != nil {
-		return commitID, fail
+	languages, err := FetchLanguagesForCommit(parentCommitID)
+	if err != nil {
+		return commitID, err
 	}
 
 	if len(languages) == 0 {
 		return commitID, locale.NewError("err_project_no_languages")
 	}
 
-	commit, fail := AddChangeset(parentCommitID, commitMsg, anonymousID, changeset)
-	if fail != nil {
-		return commitID, fail
+	commit, err := AddChangeset(parentCommitID, commitMsg, anonymousID, changeset)
+	if err != nil {
+		return commitID, err
 	}
 	return commit.CommitID, nil
 }
@@ -389,9 +389,9 @@ func CommitInitial(hostPlatform string, lang *language.Supported, langVersion st
 		}
 	}
 
-	platformID, fail := hostPlatformToPlatformID(hostPlatform)
-	if fail != nil {
-		return "", fail
+	platformID, err := hostPlatformToPlatformID(hostPlatform)
+	if err != nil {
+		return "", err
 	}
 
 	var changes []*mono_models.CommitChangeEditable
@@ -481,19 +481,19 @@ func (cs indexedCommits) countBetween(first, last string) (int, error) {
 
 // CommitPlatform commits a single platform commit
 func CommitPlatform(owner, prjName string, op Operation, name, version string, word int) error {
-	platform, fail := FetchPlatformByDetails(name, version, word)
-	if fail != nil {
-		return fail
+	platform, err := FetchPlatformByDetails(name, version, word)
+	if err != nil {
+		return err
 	}
 
-	proj, fail := FetchProjectByName(owner, prjName)
-	if fail != nil {
-		return fail
+	proj, err := FetchProjectByName(owner, prjName)
+	if err != nil {
+		return err
 	}
 
-	branch, fail := DefaultBranchForProject(proj)
-	if fail != nil {
-		return fail
+	branch, err := DefaultBranchForProject(proj)
+	if err != nil {
+		return err
 	}
 
 	if branch.CommitID == nil {
@@ -515,9 +515,9 @@ func CommitPlatform(owner, prjName string, op Operation, name, version string, w
 	platformID := platform.PlatformID.String()
 
 	// version is not the value that AddCommit needs - platforms do not post a version
-	commit, fail := AddCommit(bCommitID, msg, op, NewNamespacePlatform(), platformID, "", "")
-	if fail != nil {
-		return fail
+	commit, err := AddCommit(bCommitID, msg, op, NewNamespacePlatform(), platformID, "", "")
+	if err != nil {
+		return err
 	}
 
 	return UpdateBranchCommit(branch.BranchID, commit.CommitID)
@@ -525,19 +525,19 @@ func CommitPlatform(owner, prjName string, op Operation, name, version string, w
 
 // CommitLanguage commits a single language to the platform
 func CommitLanguage(owner, project string, op Operation, name, version string) error {
-	lang, fail := FetchLanguageByDetails(name, version)
-	if fail != nil {
-		return fail
+	lang, err := FetchLanguageByDetails(name, version)
+	if err != nil {
+		return err
 	}
 
-	proj, fail := FetchProjectByName(owner, project)
-	if fail != nil {
-		return fail
+	proj, err := FetchProjectByName(owner, project)
+	if err != nil {
+		return err
 	}
 
-	branch, fail := DefaultBranchForProject(proj)
-	if fail != nil {
-		return fail
+	branch, err := DefaultBranchForProject(proj)
+	if err != nil {
+		return err
 	}
 
 	if branch.CommitID == nil {
@@ -557,9 +557,9 @@ func CommitLanguage(owner, project string, op Operation, name, version string) e
 	branchCommitID := *branch.CommitID
 	msg := locale.Tr(msgL10nKey, name, version)
 
-	commit, fail := AddCommit(branchCommitID, msg, op, NewNamespaceLanguage(), lang.Name, lang.Version, "")
-	if fail != nil {
-		return fail
+	commit, err := AddCommit(branchCommitID, msg, op, NewNamespaceLanguage(), lang.Name, lang.Version, "")
+	if err != nil {
+		return err
 	}
 
 	return UpdateBranchCommit(branch.BranchID, commit.CommitID)
@@ -604,14 +604,14 @@ func FetchOrderFromCommit(commitID strfmt.UUID) (*mono_models.Order, error) {
 }
 
 func TrackBranch(source, target *mono_models.Project) error {
-	sourceBranch, fail := DefaultBranchForProject(source)
-	if fail != nil {
-		return fail
+	sourceBranch, err := DefaultBranchForProject(source)
+	if err != nil {
+		return err
 	}
 
-	targetBranch, fail := DefaultBranchForProject(target)
-	if fail != nil {
-		return fail
+	targetBranch, err := DefaultBranchForProject(target)
+	if err != nil {
+		return err
 	}
 
 	trackingType := mono_models.BranchEditableTrackingTypeNotify
@@ -624,7 +624,7 @@ func TrackBranch(source, target *mono_models.Project) error {
 	updateParams.SetBranch(branch)
 	updateParams.SetBranchID(targetBranch.BranchID)
 
-	_, err := authentication.Client().VersionControl.UpdateBranch(updateParams, authentication.ClientAuth())
+	_, err = authentication.Client().VersionControl.UpdateBranch(updateParams, authentication.ClientAuth())
 	if err != nil {
 		msg := api.ErrorMessageFromPayload(err)
 		return locale.WrapError(err, msg)
@@ -660,13 +660,13 @@ func RevertCommit(owner, project string, from, to strfmt.UUID) error {
 		return err
 	}
 
-	proj, fail := FetchProjectByName(owner, project)
-	if fail != nil {
+	proj, err := FetchProjectByName(owner, project)
+	if err != nil {
 		return err
 	}
 
-	branch, fail := DefaultBranchForProject(proj)
-	if fail != nil {
+	branch, err := DefaultBranchForProject(proj)
+	if err != nil {
 		return err
 	}
 

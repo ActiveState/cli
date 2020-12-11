@@ -116,10 +116,9 @@ func (r *Activate) run(params *ActivateParams) error {
 			return err
 		}
 
-		var fail error
-		proj, fail = project.FromPath(pathToUse)
-		if fail != nil {
-			return locale.WrapError(fail, "err_activate_projectfrompath", "Something went wrong while creating project files.")
+		proj, err = project.FromPath(pathToUse)
+		if err != nil {
+			return locale.WrapError(err, "err_activate_projectfrompath", "Something went wrong while creating project files.")
 		}
 	}
 
@@ -140,14 +139,14 @@ func (r *Activate) run(params *ActivateParams) error {
 	firstActivate := r.config.GetString(constants.GlobalDefaultPrefname) == "" && !r.config.GetBool(activatedKey)
 	promptable := r.out.Type() == output.PlainFormatName
 	if !setDefault && firstActivate && promptable {
-		var fail error
-		setDefault, fail = r.prompt.Confirm(
+		var err error
+		setDefault, err = r.prompt.Confirm(
 			locale.Tl("activate_default_prompt_title", "Default Project"),
 			locale.Tr("activate_default_prompt", proj.Namespace().String()),
 			true,
 		)
-		if fail != nil {
-			return locale.WrapInputError(fail, "err_activate_cancel", "Activation cancelled")
+		if err != nil {
+			return locale.WrapInputError(err, "err_activate_cancel", "Activation cancelled")
 		}
 	}
 
@@ -163,9 +162,9 @@ func (r *Activate) run(params *ActivateParams) error {
 	venv := virtualenvironment.New(runtime)
 	venv.OnUseCache(func() { r.out.Notice(locale.T("using_cached_env")) })
 
-	fail := venv.Setup(true)
-	if fail != nil {
-		return locale.WrapError(fail, "error_could_not_activate_venv", "Could not activate project. If this is a private project ensure that you are authenticated.")
+	err = venv.Setup(true)
+	if err != nil {
+		return locale.WrapError(err, "error_could_not_activate_venv", "Could not activate project. If this is a private project ensure that you are authenticated.")
 	}
 
 	if setDefault {
@@ -207,9 +206,9 @@ func (r *Activate) run(params *ActivateParams) error {
 func updateProjectFile(prj *project.Project, names *project.Namespaced) error {
 	var commitID string
 	if names.CommitID == nil || *names.CommitID == "" {
-		latestID, fail := model.LatestCommitID(names.Owner, names.Project)
-		if fail != nil {
-			return locale.WrapInputError(fail, "err_set_namespace_retrieve_commit", "Could not retrieve the latest commit for the specified project {{.V0}}.", names.String())
+		latestID, err := model.LatestCommitID(names.Owner, names.Project)
+		if err != nil {
+			return locale.WrapInputError(err, "err_set_namespace_retrieve_commit", "Could not retrieve the latest commit for the specified project {{.V0}}.", names.String())
 		}
 		commitID = latestID.String()
 	} else {
@@ -220,9 +219,9 @@ func updateProjectFile(prj *project.Project, names *project.Namespaced) error {
 	if err != nil {
 		return locale.WrapError(err, "err_activate_replace_write_namespace", "Failed to update project namespace.")
 	}
-	fail := prj.Source().SetCommit(commitID, prj.IsHeadless())
-	if fail != nil {
-		return locale.WrapError(fail, "err_activate_replace_write_commit", "Failed to update commitID.")
+	err = prj.Source().SetCommit(commitID, prj.IsHeadless())
+	if err != nil {
+		return locale.WrapError(err, "err_activate_replace_write_commit", "Failed to update commitID.")
 	}
 
 	return nil
@@ -238,8 +237,8 @@ func (r *Activate) pathToUse(namespace string, preferredPath string) (string, er
 		return preferredPath, nil
 	default:
 		// Get path from working directory
-		targetPath, fail := projectfile.GetProjectFilePath()
-		return filepath.Dir(targetPath), fail
+		targetPath, err := projectfile.GetProjectFilePath()
+		return filepath.Dir(targetPath), err
 	}
 }
 

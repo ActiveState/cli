@@ -35,8 +35,8 @@ func (suite *CheckpointTestSuite) TestGetCheckpoint() {
 	suite.authMock.MockLoggedin()
 	suite.graphMock.Checkpoint(graphMock.NoOptions)
 
-	response, _, fail := model.FetchCheckpointForCommit(strfmt.UUID("00010001-0001-0001-0001-000100010001"))
-	suite.Require().NoError(fail)
+	response, _, err := model.FetchCheckpointForCommit(strfmt.UUID("00010001-0001-0001-0001-000100010001"))
+	suite.Require().NoError(err)
 	suite.NotEmpty(response, "Returns checkpoints")
 }
 
@@ -44,8 +44,8 @@ func (suite *CheckpointTestSuite) TestGetLanguages() {
 	suite.authMock.MockLoggedin()
 	suite.graphMock.Checkpoint(graphMock.NoOptions)
 
-	response, fail := model.FetchLanguagesForCommit(strfmt.UUID("00010001-0001-0001-0001-000100010001"))
-	suite.Require().NoError(fail)
+	response, err := model.FetchLanguagesForCommit(strfmt.UUID("00010001-0001-0001-0001-000100010001"))
+	suite.Require().NoError(err)
 	suite.NotEmpty(response, "Returns checkpoints")
 	suite.Equal("Python", response[0].Name, "Returns Python")
 }

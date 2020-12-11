@@ -67,9 +67,9 @@ func (keypair *RSAKeypair) EncodePublicKey() (string, error) {
 // Encrypt will encrypt the provided message using the Keypair's public-key. This particular
 // function will use SHA256 for the random oracle.
 func (keypair *RSAKeypair) Encrypt(msg []byte) ([]byte, error) {
-	b, failure := rsaEncrypt(&keypair.PublicKey, msg)
-	if failure != nil {
-		return nil, failure
+	b, err := rsaEncrypt(&keypair.PublicKey, msg)
+	if err != nil {
+		return nil, err
 	}
 	return b, nil
 }
@@ -77,9 +77,9 @@ func (keypair *RSAKeypair) Encrypt(msg []byte) ([]byte, error) {
 // EncryptAndEncode will encrypt the provided message using the Keypair's public-key
 // and then base-64 encode it.
 func (keypair *RSAKeypair) EncryptAndEncode(msg []byte) (string, error) {
-	encrBytes, failure := keypair.Encrypt(msg)
-	if failure != nil {
-		return "", failure
+	encrBytes, err := keypair.Encrypt(msg)
+	if err != nil {
+		return "", err
 	}
 	return base64.StdEncoding.EncodeToString(encrBytes), nil
 }
@@ -107,8 +107,8 @@ func (keypair *RSAKeypair) DecodeAndDecrypt(msg string) ([]byte, error) {
 // MatchPublicKey determines if a provided public-key in PEM encoded format matches this Keypair's
 // public-key.
 func (keypair *RSAKeypair) MatchPublicKey(publicKeyPEM string) bool {
-	otherPublicKey, failure := ParseRSAPublicKey(publicKeyPEM)
-	if failure != nil {
+	otherPublicKey, err := ParseRSAPublicKey(publicKeyPEM)
+	if err != nil {
 		return false
 	}
 
@@ -180,9 +180,9 @@ func (key *RSAPublicKey) Encrypt(msg []byte) ([]byte, error) {
 
 // EncryptAndEncode will encrypt the provided message using this PublicKey and then base-64 encode it.
 func (key *RSAPublicKey) EncryptAndEncode(msg []byte) (string, error) {
-	encrBytes, failure := key.Encrypt(msg)
-	if failure != nil {
-		return "", failure
+	encrBytes, err := key.Encrypt(msg)
+	if err != nil {
+		return "", err
 	}
 	return base64.StdEncoding.EncodeToString(encrBytes), nil
 }

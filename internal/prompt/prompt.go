@@ -53,9 +53,9 @@ func (p *Prompt) Input(title, message, defaultResponse string, flags ...Validato
 // InputAndValidate prompts an input field and allows you to specfiy a custom validation function as well as the built in flags
 func (p *Prompt) InputAndValidate(title, message, defaultResponse string, validator ValidatorFunc, flags ...ValidatorFlag) (string, error) {
 	var response string
-	flagValidators, fail := processValidators(flags)
-	if fail != nil {
-		return "", fail
+	flagValidators, err := processValidators(flags)
+	if err != nil {
+		return "", err
 	}
 	if len(flagValidators) != 0 {
 		validator = wrapValidators(append(flagValidators, validator))
@@ -67,9 +67,9 @@ func (p *Prompt) InputAndValidate(title, message, defaultResponse string, valida
 
 	// We handle defaults more clearly than the survey package can
 	if defaultResponse != "" {
-		v, fail := p.Select("", formatMessage(message, !p.out.Config().Colored), []string{defaultResponse, locale.Tl("prompt_custom", "Other ..")}, defaultResponse)
-		if fail != nil {
-			return "", fail
+		v, err := p.Select("", formatMessage(message, !p.out.Config().Colored), []string{defaultResponse, locale.Tl("prompt_custom", "Other ..")}, defaultResponse)
+		if err != nil {
+			return "", err
 		}
 		if v == defaultResponse {
 			return v, nil
@@ -77,7 +77,7 @@ func (p *Prompt) InputAndValidate(title, message, defaultResponse string, valida
 		message = ""
 	}
 
-	err := survey.AskOne(&Input{&survey.Input{
+	err = survey.AskOne(&Input{&survey.Input{
 		Message: formatMessage(message, !p.out.Config().Colored),
 	}}, &response, validator)
 	if err != nil {
@@ -140,16 +140,16 @@ func translateConfirm(confirm bool) string {
 // Will fail if empty.
 func (p *Prompt) InputSecret(title, message string, flags ...ValidatorFlag) (string, error) {
 	var response string
-	validators, fail := processValidators(flags)
-	if fail != nil {
-		return "", fail
+	validators, err := processValidators(flags)
+	if err != nil {
+		return "", err
 	}
 
 	if title != "" {
 		p.out.Notice(output.SubHeading(title))
 	}
 
-	err := survey.AskOne(&Password{&survey.Password{
+	err = survey.AskOne(&Password{&survey.Password{
 		Message: formatMessage(message, !p.out.Config().Colored),
 	}}, &response, wrapValidators(validators))
 	if err != nil {

@@ -53,8 +53,8 @@ func (suite *MoveAllFilesTestSuite) TestToDir_IsNotDirectory() {
 }
 
 func (suite *MoveAllFilesTestSuite) addFileToFrom(relPath string) {
-	fail := fileutils.Touch(path.Join(suite.fromDir, relPath))
-	suite.Require().Nil(fail, "touching test file: %s", relPath)
+	err := fileutils.Touch(path.Join(suite.fromDir, relPath))
+	suite.Require().Nil(err, "touching test file: %s", relPath)
 }
 
 func (suite *MoveAllFilesTestSuite) addDirToFrom(relPath string) {

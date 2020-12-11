@@ -57,9 +57,9 @@ func (u *Uninstall) Run(params *UninstallParams) error {
 	}
 
 	if !params.Force {
-		ok, fail := u.confirm.Confirm(locale.T("confirm"), locale.T("uninstall_confirm"), false)
-		if fail != nil {
-			return fail
+		ok, err := u.confirm.Confirm(locale.T("confirm"), locale.T("uninstall_confirm"), false)
+		if err != nil {
+			return err
 		}
 		if !ok {
 			return nil

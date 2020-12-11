@@ -51,8 +51,8 @@ func (suite *SecretsTestSuite) TestSecretsNoAccess() {
 	suite.platformMock.RegisterWithCode("GET", "/organizations/AccessOrg", 200)
 	suite.platformMock.RegisterWithCode("GET", "/organizations/AccessOrg/members", 200)
 
-	hasAccess, fail := Secrets("AccessOrg")
-	suite.Require().NoError(fail, "unexepected error checking for secret access")
+	hasAccess, err := Secrets("AccessOrg")
+	suite.Require().NoError(err, "unexepected error checking for secret access")
 	suite.Equal(false, hasAccess, "should not have access to secrets")
 }
 

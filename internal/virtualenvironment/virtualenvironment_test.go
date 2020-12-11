@@ -85,6 +85,6 @@ languages:
 	project.Persist()
 
 	venv := New(nil)
-	fail := venv.Activate()
-	require.NoError(t, fail, "Should activate")
+	err := venv.Activate()
+	require.NoError(t, err, "Should activate")
 }

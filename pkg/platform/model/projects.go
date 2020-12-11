@@ -60,9 +60,9 @@ func FetchOrganizationProjects(orgName string) ([]*mono_models.Project, error) {
 
 // DefaultLanguageForProject fetches the default language belonging to the given project
 func DefaultLanguageForProject(orgName, projectName string) (Language, error) {
-	languages, fail := FetchLanguagesForProject(orgName, projectName)
-	if fail != nil {
-		return Language{}, fail
+	languages, err := FetchLanguagesForProject(orgName, projectName)
+	if err != nil {
+		return Language{}, err
 	}
 
 	if len(languages) == 0 {
@@ -74,9 +74,9 @@ func DefaultLanguageForProject(orgName, projectName string) (Language, error) {
 
 // LanguageForCommit fetches the name of the language belonging to the given commit
 func LanguageForCommit(commitID strfmt.UUID) (string, error) {
-	languages, fail := FetchLanguagesForCommit(commitID)
-	if fail != nil {
-		return "", fail
+	languages, err := FetchLanguagesForCommit(commitID)
+	if err != nil {
+		return "", err
 	}
 
 	if len(languages) == 0 {
@@ -88,9 +88,9 @@ func LanguageForCommit(commitID strfmt.UUID) (string, error) {
 
 // DefaultBranchForProjectName retrieves the default branch for the given project owner/name.
 func DefaultBranchForProjectName(owner, name string) (*mono_models.Branch, error) {
-	proj, fail := FetchProjectByName(owner, name)
-	if fail != nil {
-		return nil, fail
+	proj, err := FetchProjectByName(owner, name)
+	if err != nil {
+		return nil, err
 	}
 
 	return DefaultBranchForProject(proj)

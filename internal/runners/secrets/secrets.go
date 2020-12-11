@@ -50,13 +50,13 @@ func (l *List) Run(params ListRunParams) error {
 		return locale.WrapError(err, "secrets_err_check_access")
 	}
 
-	defs, fail := definedSecrets(l.proj, l.secretsClient, params.Filter)
-	if fail != nil {
-		return locale.WrapError(fail, "secrets_err_defined")
+	defs, err := definedSecrets(l.proj, l.secretsClient, params.Filter)
+	if err != nil {
+		return locale.WrapError(err, "secrets_err_defined")
 	}
-	exports, fail := defsToSecrets(defs)
-	if fail != nil {
-		return locale.WrapError(fail, "secrets_err_values")
+	exports, err := defsToSecrets(defs)
+	if err != nil {
+		return locale.WrapError(err, "secrets_err_values")
 	}
 
 	l.out.Print(secretExports(exports))
@@ -67,9 +67,9 @@ func (l *List) Run(params ListRunParams) error {
 // checkSecretsAccess is reusable "runner-level" logic and provides a directly
 // usable localized error.
 func checkSecretsAccess(proj *project.Project) error {
-	allowed, fail := access.Secrets(proj.Owner())
-	if fail != nil {
-		return locale.WrapError(fail, "secrets_err_access")
+	allowed, err := access.Secrets(proj.Owner())
+	if err != nil {
+		return locale.WrapError(err, "secrets_err_access")
 	}
 	if !allowed {
 		return locale.NewError("secrets_warning_no_access")
@@ -80,9 +80,9 @@ func checkSecretsAccess(proj *project.Project) error {
 func definedSecrets(proj *project.Project, secCli *secretsapi.Client, filter string) ([]*secretsModels.SecretDefinition, error) {
 	logging.Debug("listing variables for org=%s, project=%s", proj.Owner(), proj.Name())
 
-	secretDefs, fail := secrets.DefsByProject(secCli, proj.Owner(), proj.Name())
-	if fail != nil {
-		return nil, fail
+	secretDefs, err := secrets.DefsByProject(secCli, proj.Owner(), proj.Name())
+	if err != nil {
+		return nil, err
 	}
 
 	if filter != "" {
@@ -151,9 +151,9 @@ func defsToSecrets(defs []*secretsModels.SecretDefinition) ([]*SecretExport, err
 			continue
 		}
 
-		secretValue, fail := expander.FindSecret(*def.Name, *def.Scope == secretsModels.SecretDefinitionScopeUser)
-		if fail != nil {
-			return secretsExport, fail
+		secretValue, err := expander.FindSecret(*def.Name, *def.Scope == secretsModels.SecretDefinitionScopeUser)
+		if err != nil {
+			return secretsExport, err
 		}
 
 		secretsExport[i] = &SecretExport{

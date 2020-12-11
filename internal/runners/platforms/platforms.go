@@ -98,9 +98,9 @@ func prepareLatestVersion(params Params) (Params, error) {
 		return params, locale.WrapInputError(err, "err_resolve_platform_id", "Could not resolve platform ID from name: {{.V0}}", params.Name)
 	}
 
-	platform, fail := model.FetchPlatformByUID(strfmt.UUID(platformUUID))
-	if fail != nil {
-		return params, locale.WrapError(fail, "err_fetch_platform", "Could not get platform details")
+	platform, err := model.FetchPlatformByUID(strfmt.UUID(platformUUID))
+	if err != nil {
+		return params, locale.WrapError(err, "err_fetch_platform", "Could not get platform details")
 	}
 	params.Name = *platform.Kernel.Name
 	params.Version = *platform.KernelVersion.Version

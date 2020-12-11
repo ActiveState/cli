@@ -41,10 +41,10 @@ func (suite *ShimIntegrationTestSuite) TestShim_Environment() {
 	}
 
 	testScript := filepath.Join(filename)
-	fail := fileutils.WriteFile(testScript, []byte(scriptBlock))
-	suite.Require().NoError(fail)
+	err := fileutils.WriteFile(testScript, []byte(scriptBlock))
+	suite.Require().NoError(err)
 
-	err := os.Chmod(testScript, 0777)
+	err = os.Chmod(testScript, 0777)
 	suite.Require().NoError(err)
 
 	cp := ts.SpawnWithOpts(
@@ -72,10 +72,10 @@ func (suite *ShimIntegrationTestSuite) TestShim_ExitCode() {
 	}
 
 	testScript := filepath.Join(filename)
-	fail := fileutils.WriteFile(testScript, []byte(scriptBlock))
-	suite.Require().NoError(fail)
+	err := fileutils.WriteFile(testScript, []byte(scriptBlock))
+	suite.Require().NoError(err)
 
-	err := os.Chmod(testScript, 0777)
+	err = os.Chmod(testScript, 0777)
 	suite.Require().NoError(err)
 
 	cp := ts.SpawnWithOpts(
@@ -111,10 +111,10 @@ echo "Number of arguments: $#"
 	}
 
 	testScript := filepath.Join(filename)
-	fail := fileutils.WriteFile(testScript, []byte(scriptBlock))
-	suite.Require().NoError(fail)
+	err := fileutils.WriteFile(testScript, []byte(scriptBlock))
+	suite.Require().NoError(err)
 
-	err := os.Chmod(testScript, 0777)
+	err = os.Chmod(testScript, 0777)
 	suite.Require().NoError(err)
 
 	args := []string{
@@ -154,10 +154,10 @@ echo "Hello $name!"
 	}
 
 	testScript := filepath.Join(filename)
-	fail := fileutils.WriteFile(testScript, []byte(scriptBlock))
-	suite.Require().NoError(fail)
+	err := fileutils.WriteFile(testScript, []byte(scriptBlock))
+	suite.Require().NoError(err)
 
-	err := os.Chmod(testScript, 0777)
+	err = os.Chmod(testScript, 0777)
 	suite.Require().NoError(err)
 
 	cp := ts.SpawnWithOpts(
@@ -181,8 +181,8 @@ func (suite *ShimIntegrationTestSuite) TestShim_SystemPython() {
 	scriptBlock := `print("Hello World!")`
 
 	testScript := filepath.Join(fmt.Sprintf("%s/%s.py", ts.Dirs.Work, suite.T().Name()))
-	fail := fileutils.WriteFile(testScript, []byte(scriptBlock))
-	suite.Require().NoError(fail)
+	err = fileutils.WriteFile(testScript, []byte(scriptBlock))
+	suite.Require().NoError(err)
 
 	cp := ts.Spawn("shim", "--", "python3", testScript)
 	cp.Expect("Hello World!")
@@ -202,8 +202,8 @@ func (suite *ShimIntegrationTestSuite) TestShim_NoDoubleDash() {
 	scriptBlock := `print("Hello World!")`
 
 	testScript := filepath.Join(fmt.Sprintf("%s/%s.py", ts.Dirs.Work, suite.T().Name()))
-	fail := fileutils.WriteFile(testScript, []byte(scriptBlock))
-	suite.Require().NoError(fail)
+	err = fileutils.WriteFile(testScript, []byte(scriptBlock))
+	suite.Require().NoError(err)
 
 	cp := ts.Spawn("shim", "python3", testScript)
 	cp.Expect("Hello World!")

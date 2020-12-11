@@ -99,8 +99,8 @@ func (r *Initialize) Run(params *RunParams) error {
 }
 
 func run(params *RunParams, out output.Outputer) (string, error) {
-	if fail := params.Namespace.Validate(); fail != nil {
-		return "", locale.WrapInputError(fail, "init_invalid_namespace_err", "The provided namespace argument is invalid.")
+	if err := params.Namespace.Validate(); err != nil {
+		return "", locale.WrapInputError(err, "init_invalid_namespace_err", "The provided namespace argument is invalid.")
 	}
 
 	if err := sanitizePath(params); err != nil {

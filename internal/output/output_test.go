@@ -57,8 +57,8 @@ func TestNew(t *testing.T) {
 				Interactive: false,
 			}
 
-			outputer, fail := New(tt.formatName, cfg)
-			require.NoError(t, fail)
+			outputer, err := New(tt.formatName, cfg)
+			require.NoError(t, err)
 
 			outputer.Print(tt.print)
 

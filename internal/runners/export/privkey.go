@@ -31,9 +31,9 @@ func (p *PrivateKey) Run(params *PrivateKeyParams) error {
 	}
 
 	filepath := keypairs.LocalKeyFilename(constants.KeypairLocalFileName)
-	contents, fail := fileutils.ReadFile(filepath)
-	if fail != nil {
-		return fail
+	contents, err := fileutils.ReadFile(filepath)
+	if err != nil {
+		return err
 	}
 
 	p.Outputer.Print(string(contents))

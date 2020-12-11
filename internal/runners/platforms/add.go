@@ -38,13 +38,13 @@ func (a *Add) Run(ps AddRunParams) error {
 		return err
 	}
 
-	fail := model.CommitPlatform(
+	err = model.CommitPlatform(
 		ps.Project.Owner(), ps.Project.Name(),
 		model.OperationAdded,
 		params.Name, params.Version, params.BitWidth,
 	)
-	if fail != nil {
-		return fail
+	if err != nil {
+		return err
 	}
 
 	a.Outputer.Notice(locale.Tr("platform_added", params.Name, params.Version))

@@ -36,17 +36,17 @@ func TestInitialize_Run(t *testing.T) {
 	}
 
 	tempDirWithConfig := fileutils.Join(fileutils.TempDirUnsafe(), "withConfig")
-	fail := fileutils.Mkdir(tempDirWithConfig)
-	if fail != nil {
-		panic(fmt.Sprintf("Cannot create dir: %v", fail))
+	err = fileutils.Mkdir(tempDirWithConfig)
+	if err != nil {
+		panic(fmt.Sprintf("Cannot create dir: %v", err))
 	}
 	fileutils.WriteFile(fileutils.Join(tempDirWithConfig, constants.ConfigFileName),
 		[]byte("project: https://platform.activestate.com/owner/name"))
 
 	tempDirWithFile := fileutils.Join(fileutils.TempDirUnsafe(), "withFile")
-	fail = fileutils.Mkdir(tempDirWithConfig)
-	if fail != nil {
-		panic(fmt.Sprintf("Cannot create dir: %v", fail))
+	err = fileutils.Mkdir(tempDirWithConfig)
+	if err != nil {
+		panic(fmt.Sprintf("Cannot create dir: %v", err))
 	}
 	fileutils.WriteFile(fileutils.Join(tempDirWithFile, "bogus"), []byte(""))
 
@@ -215,9 +215,9 @@ func TestInitialize_Run(t *testing.T) {
 				t.Fatalf("Expected file to exist: %s", configFile)
 			}
 
-			pj, fail := projectfile.Parse(configFile)
-			if fail != nil {
-				t.Fatalf("Projectfile failed to parse: %s", fail.Error())
+			pj, err := projectfile.Parse(configFile)
+			if err != nil {
+				t.Fatalf("Projectfile failed to parse: %s", err.Error())
 			}
 			if !strings.Contains(pj.Project, fmt.Sprintf("%s/%s", tt.args.namespace.Owner, tt.args.namespace.Project)) {
 				t.Errorf("Expected %s to contain %s/%s", pj.Project, tt.args.namespace.Owner, tt.args.namespace.Project)

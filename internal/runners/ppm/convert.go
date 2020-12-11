@@ -88,9 +88,9 @@ func (cf *ConversionFlow) runSurvey() (conversionResult, error) {
 		convertAnswerCreate,
 		locale.Tl("ppm_convert_answer_why", "Why is this necessary? I Just want to manage dependencies"),
 	}
-	choice, fail := cf.prompt.Select("", locale.Tt("ppm_convert_create_question"), choices, "")
-	if fail != nil {
-		return canceled, locale.WrapInputError(fail, "err_ppm_convert_interrupt", "Invalid response received.")
+	choice, err := cf.prompt.Select("", locale.Tt("ppm_convert_create_question"), choices, "")
+	if err != nil {
+		return canceled, locale.WrapInputError(err, "err_ppm_convert_interrupt", "Invalid response received.")
 	}
 
 	cf.out.Print("") // Add some space before next prompt
@@ -127,9 +127,9 @@ func (cf *ConversionFlow) explainVirtualEnv() (conversionResult, error) {
 	choices = append(choices, convertAnswerCreate, no)
 	explanation := locale.Tt("ppm_convert_explanation")
 
-	choice, fail := cf.prompt.Select("", explanation, choices, "")
-	if fail != nil {
-		return canceled, locale.WrapInputError(fail, "err_ppm_convert_info_interrupt", "Invalid response received.")
+	choice, err := cf.prompt.Select("", explanation, choices, "")
+	if err != nil {
+		return canceled, locale.WrapInputError(err, "err_ppm_convert_info_interrupt", "Invalid response received.")
 	}
 	cf.out.Print("") // Add some space before next prompt
 
@@ -165,12 +165,12 @@ func (cf *ConversionFlow) explainAskFeedback() (conversionResult, error) {
 	ok := locale.Tl("ppm_convert_create_at_last", "Ok, let's set up a virtual runtime environment")
 	exit := locale.Tl("ppm_convert_reject", "Exit")
 	choices := []string{ok, exit}
-	choice, fail := cf.prompt.Select("", locale.Tt("ppm_convert_ask_feedback", map[string]interface{}{
+	choice, err := cf.prompt.Select("", locale.Tt("ppm_convert_ask_feedback", map[string]interface{}{
 		"ForumURL": constants.ForumsURL,
 	}), choices, "")
 
-	if fail != nil {
-		return canceled, locale.WrapInputError(fail, "err_ppm_convert_final_chance_interrupt", "Invalid response received.")
+	if err != nil {
+		return canceled, locale.WrapInputError(err, "err_ppm_convert_final_chance_interrupt", "Invalid response received.")
 	}
 
 	cf.out.Print("") // Add some space before next prompt

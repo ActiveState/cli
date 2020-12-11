@@ -215,7 +215,7 @@ func TestReadFile(t *testing.T) {
 	path := path.Join(getTempDir(t, "read-file"), "file.txt")
 
 	_, err := ReadFile(path)
-	assert.Error(t, err, "File doesn't exist, fail.")
+	assert.Error(t, err, "File doesn't exist, err.")
 
 	content := []byte("pizza time")
 	err = WriteFile(path, content)
@@ -223,7 +223,7 @@ func TestReadFile(t *testing.T) {
 
 	var b []byte
 	b, err = ReadFile(path)
-	assert.NoError(t, err, "File doesn't exist, fail.")
+	assert.NoError(t, err, "File doesn't exist, err.")
 	assert.Equal(t, content, b, "Content should be the same")
 }
 

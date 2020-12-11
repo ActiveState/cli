@@ -57,9 +57,9 @@ func (l *Languages) Run() error {
 		)
 	}
 
-	langs, fail := model.FetchLanguagesForCommit(commitUUID)
-	if fail != nil {
-		return locale.WrapError(fail, "err_fetching_languages", "Cannot obtain languages")
+	langs, err := model.FetchLanguagesForCommit(commitUUID)
+	if err != nil {
+		return locale.WrapError(err, "err_fetching_languages", "Cannot obtain languages")
 	}
 
 	formatLangs(langs)

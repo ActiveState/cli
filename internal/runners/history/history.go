@@ -38,9 +38,9 @@ func (h *History) Run(params *HistoryParams) error {
 	var commits []*mono_models.Commit
 	var err error
 	if params.Namespace != "" {
-		nsMeta, fail := project.ParseNamespace(params.Namespace)
-		if fail != nil {
-			return fail
+		nsMeta, err := project.ParseNamespace(params.Namespace)
+		if err != nil {
+			return err
 		}
 
 		commits, err = model.CommitHistory(nsMeta.Owner, nsMeta.Project)
@@ -63,9 +63,9 @@ func (h *History) Run(params *HistoryParams) error {
 	}
 
 	authorIDs := authorIDsForCommits(commits)
-	orgs, fail := model.FetchOrganizationsByIDs(authorIDs)
-	if fail != nil {
-		return fail
+	orgs, err := model.FetchOrganizationsByIDs(authorIDs)
+	if err != nil {
+		return err
 	}
 
 	err = commit.PrintCommits(h.out, commits, orgs)

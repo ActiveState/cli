@@ -79,11 +79,11 @@ func (suite *HeadchefTestSuite) TestBuildRunFail() {
 	status := suite.SendRequest(mock.RunFail)
 
 	select {
-	case fail, ok := <-status.RunError:
+	case err, ok := <-status.RunError:
 		suite.True(ok, "runfail channel must not be closed")
-		suite.NotNil(fail, "runfail failure must not be nil")
+		suite.NotNil(err, "runfail failure must not be nil")
 
-		suite.ErrorIs(fail, headchef.ErrBuildResp, "runfail failure must be correct type")
+		suite.ErrorIs(err, headchef.ErrBuildResp, "runfail failure must be correct type")
 
 	case <-time.After(maxWait):
 		suite.FailNow("runfail not received")
@@ -94,11 +94,11 @@ func (suite *HeadchefTestSuite) TestBuildRunFailMalformed() {
 	status := suite.SendRequest(mock.RunFailMalformed)
 
 	select {
-	case fail, ok := <-status.RunError:
+	case err, ok := <-status.RunError:
 		suite.True(ok, "runfail channel must not be closed")
-		suite.NotNil(fail, "runfail failure must not be nil")
+		suite.NotNil(err, "runfail failure must not be nil")
 
-		suite.ErrorIs(fail, headchef.ErrBuildUnknownType, "runfail failure must be correct type")
+		suite.ErrorIs(err, headchef.ErrBuildUnknownType, "runfail failure must be correct type")
 
 	case <-time.After(maxWait):
 		suite.FailNow("runfail not received")

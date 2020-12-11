@@ -87,9 +87,9 @@ func parseLanguage(langName string) (*model.Language, error) {
 }
 
 func ensureLanguagePlatform(language *model.Language) error {
-	platformLanguages, fail := model.FetchLanguages()
-	if fail != nil {
-		return fail
+	platformLanguages, err := model.FetchLanguages()
+	if err != nil {
+		return err
 	}
 
 	for _, pl := range platformLanguages {
@@ -102,14 +102,14 @@ func ensureLanguagePlatform(language *model.Language) error {
 }
 
 func ensureLanguageProject(language *model.Language, project *project.Project) error {
-	targetCommitID, fail := model.LatestCommitID(project.Owner(), project.Name())
-	if fail != nil {
-		return fail
+	targetCommitID, err := model.LatestCommitID(project.Owner(), project.Name())
+	if err != nil {
+		return err
 	}
 
-	platformLanguage, fail := model.FetchLanguageForCommit(*targetCommitID)
-	if fail != nil {
-		return fail
+	platformLanguage, err := model.FetchLanguageForCommit(*targetCommitID)
+	if err != nil {
+		return err
 	}
 
 	if platformLanguage.Name != language.Name {
@@ -129,9 +129,9 @@ func ensureVersionTestable(language *model.Language, fetchVersions fetchVersions
 		return locale.NewInputError("err_language_no_version", "No language version provided")
 	}
 
-	versions, fail := fetchVersions(language.Name)
-	if fail != nil {
-		return fail
+	versions, err := fetchVersions(language.Name)
+	if err != nil {
+		return err
 	}
 
 	for _, ver := range versions {
@@ -144,17 +144,17 @@ func ensureVersionTestable(language *model.Language, fetchVersions fetchVersions
 }
 
 func removeLanguage(project *project.Project, current string) error {
-	targetCommitID, fail := model.LatestCommitID(project.Owner(), project.Name())
-	if fail != nil {
-		return fail
+	targetCommitID, err := model.LatestCommitID(project.Owner(), project.Name())
+	if err != nil {
+		return err
 	}
 
-	platformLanguage, fail := model.FetchLanguageForCommit(*targetCommitID)
-	if fail != nil {
-		return fail
+	platformLanguage, err := model.FetchLanguageForCommit(*targetCommitID)
+	if err != nil {
+		return err
 	}
 
-	err := model.CommitLanguage(project.Owner(), project.Name(), model.OperationRemoved, platformLanguage.Name, platformLanguage.Version)
+	err = model.CommitLanguage(project.Owner(), project.Name(), model.OperationRemoved, platformLanguage.Name, platformLanguage.Version)
 	if err != nil {
 		return err
 	}
