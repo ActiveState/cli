@@ -5,9 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/ActiveState/cli/internal/mathutils"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestTable_colWidths(t1 *testing.T) {
@@ -28,6 +27,7 @@ func TestTable_colWidths(t1 *testing.T) {
 					[]row{
 						{[]string{"1", "2", "3"}},
 					},
+					false,
 				},
 				100,
 			},
@@ -41,6 +41,7 @@ func TestTable_colWidths(t1 *testing.T) {
 					[]row{
 						{[]string{"1", "2", "3"}},
 					},
+					false,
 				},
 				100,
 			},
@@ -55,6 +56,7 @@ func TestTable_colWidths(t1 *testing.T) {
 						{[]string{"1", "2", "3"}},
 						{[]string{"1", "0123456789012345678901234567890123456789"}},
 					},
+					false,
 				},
 				100,
 			},
@@ -68,6 +70,7 @@ func TestTable_colWidths(t1 *testing.T) {
 					[]row{
 						{[]string{"123", "1234", "12345"}},
 					},
+					false,
 				},
 				100,
 			},
@@ -81,6 +84,7 @@ func TestTable_colWidths(t1 *testing.T) {
 					[]row{
 						{[]string{"1", "2", "3"}},
 					},
+					false,
 				},
 				100,
 			},
@@ -95,6 +99,7 @@ func TestTable_colWidths(t1 *testing.T) {
 						{[]string{"1", "1", "12", "12"}},
 						{[]string{strings.Repeat(" ", 100)}},
 					},
+					false,
 				},
 				100,
 			},
@@ -109,6 +114,7 @@ func TestTable_colWidths(t1 *testing.T) {
 						{[]string{"1", "1", "12", "12"}},
 						{[]string{"1", strings.Repeat(" ", 200)}},
 					},
+					false,
 				},
 				100,
 			},
@@ -146,6 +152,14 @@ func Test_renderRow(t *testing.T) {
 			"  col1      col2      col3    ",
 		},
 		{
+			"No breaks with color codes",
+			args{
+				providedColumns: []string{"[HEADING]col1[/RESET]", "[HEADING]col2[/RESET]", "[HEADING]col3[/RESET]"},
+				colWidths:       []int{10, 10, 10},
+			},
+			"  [HEADING]col1[/RESET]      [HEADING]col2[/RESET]      [HEADING]col3[/RESET]    ",
+		},
+		{
 			"Breaks",
 			args{
 				providedColumns: []string{"col1", "col2", "col3"},
@@ -153,6 +167,15 @@ func Test_renderRow(t *testing.T) {
 			},
 			"  co    co    co  \n" +
 				"  l1    l2    l3  ",
+		},
+		{
+			"Breaks with color codes",
+			args{
+				providedColumns: []string{"[HEADING]col1[/RESET]", "[HEADING]col2[/RESET]", "[HEADING]col3[/RESET]"},
+				colWidths:       []int{6, 6, 6},
+			},
+			"  [HEADING]co    [HEADING]co    [HEADING]co  \n" +
+				"  l1[/RESET]    l2[/RESET]    l3[/RESET]  ",
 		},
 		{
 			"Breaks for multi-byte characters",
@@ -207,7 +230,7 @@ func Test_renderRow(t *testing.T) {
 				colWidths:       []int{8, 8},
 			},
 			"  abcd    abcd  \n" +
-				"          e    \n" +
+				"          e     \n" +
 				"          fgh   ",
 		},
 	}
