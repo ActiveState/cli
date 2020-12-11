@@ -1,7 +1,6 @@
 package commit
 
 import (
-	"strings"
 	"time"
 
 	"github.com/go-openapi/strfmt"
@@ -14,9 +13,16 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
-type commitData struct {
-	Heading string `locale:"heading,"`
-	Data    string `locale:"data,"`
+type results struct {
+	Data []CommitData `opts:"verticalTable" locale:","`
+}
+
+type CommitData struct {
+	Hash    string   `locale:"hash,[HEADING]Commit[/RESET]"`
+	Author  string   `locale:"author,[HEADING]Author[/RESET]"`
+	Date    string   `locale:"date,[HEADING]Date[/RESET]"`
+	Message string   `locale:"message,[HEADING]Commit Message[/RESET]"`
+	Changes []string `locale:"changes,[HEADING]Changes[/RESET]"`
 }
 
 func PrintCommit(out output.Outputer, commit *mono_models.Commit, orgs []gmodel.Organization) error {
@@ -24,72 +30,58 @@ func PrintCommit(out output.Outputer, commit *mono_models.Commit, orgs []gmodel.
 	if err != nil {
 		return err
 	}
-	out.Print(data)
+	out.Print(struct {
+		CommitData `opts:"verticalTable" locale:","`
+	}{
+		data,
+	})
 
 	return nil
 }
 
 func PrintCommits(out output.Outputer, commits []*mono_models.Commit, orgs []gmodel.Organization) error {
-	var data [][]commitData
+	result := results{Data: make([]CommitData, 0)}
 	for _, c := range commits {
 		d, err := commitDataFromCommit(c, orgs)
 		if err != nil {
 			return err
 		}
-		data = append(data, d)
+		result.Data = append(result.Data, d)
 	}
-	out.Print(data)
+	out.Print(result)
 
 	return nil
 }
 
-func commitDataFromCommit(commit *mono_models.Commit, orgs []gmodel.Organization) ([]commitData, error) {
+func commitDataFromCommit(commit *mono_models.Commit, orgs []gmodel.Organization) (CommitData, error) {
 	var username string
 	var err error
 	if commit.Author != nil && orgs != nil {
 		username, err = usernameForID(*commit.Author, orgs)
 		if err != nil {
-			return nil, locale.WrapError(err, "err_commit_print_username", "Could not determine username for commit author")
+			return CommitData{}, locale.WrapError(err, "err_commit_print_username", "Could not determine username for commit author")
 		}
 	}
 
-	data := make([]commitData, 0)
-	data = append(data, commitData{
-		locale.Tl("print_commit_hash_heading", "[HEADING]Commit[/RESET]"),
-		locale.Tl("print_commit_hash", "[ACTIONABLE]{{.V0}}[/RESET]", commit.CommitID.String()),
-	})
+	commitData := CommitData{
+		Hash:    commit.CommitID.String(),
+		Author:  username,
+		Changes: formatChanges(commit),
+	}
 
-	data = append(data, commitData{
-		locale.Tl("print_commit_author_heading", "[HEADING]Author[/RESET]"),
-		username,
-	})
-
-	commitTime := commit.AtTime.String()
+	commitData.Date = commit.AtTime.String()
 	dt, err := time.Parse(time.RFC3339, commit.AtTime.String())
 	if err != nil {
 		logging.Error("Could not parse commit time: %v", err)
 	}
-	commitTime = dt.Format(time.RFC822)
-	data = append(data, commitData{
-		locale.Tl("print_commit_time_heading", "[HEADING]Date[/RESET]"),
-		commitTime,
-	})
+	commitData.Date = dt.Format(time.RFC822)
 
-	message := locale.Tl("print_commit_no_message", "[DISABLED]Not provided.[/RESET]")
+	commitData.Message = locale.Tl("print_commit_no_message", "[DISABLED]Not provided.[/RESET]")
 	if commit.Message != "" {
-		message = commit.Message
+		commitData.Message = commit.Message
 	}
-	data = append(data, commitData{
-		locale.Tl("print_commit_description_heading", "[HEADING]Description[/RESET]"),
-		message,
-	})
 
-	data = append(data, commitData{
-		locale.Tl("print_commit_changes_heading", "[HEADING]Changes[/RESET]"),
-		strings.Join(formatChanges(commit), "\n"),
-	})
-
-	return data, nil
+	return commitData, nil
 }
 
 func formatChanges(commit *mono_models.Commit) []string {
