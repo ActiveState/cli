@@ -64,7 +64,7 @@ func commitDataFromCommit(commit *mono_models.Commit, orgs []gmodel.Organization
 	}
 
 	commitData := CommitData{
-		Hash:    commit.CommitID.String(),
+		Hash:    locale.Tl("print_commit_hash", "[ACTIONABLE]{{.V0}}[/RESET]", commit.CommitID.String()),
 		Author:  username,
 		Changes: formatChanges(commit),
 	}
