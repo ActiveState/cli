@@ -13,11 +13,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
-type results struct {
-	Data []CommitData `opts:"verticalTable" locale:","`
-}
-
-type CommitData struct {
+type commitData struct {
 	Hash    string   `locale:"hash,[HEADING]Commit[/RESET]"`
 	Author  string   `locale:"author,[HEADING]Author[/RESET]"`
 	Date    string   `locale:"date,[HEADING]Date[/RESET]"`
@@ -31,7 +27,7 @@ func PrintCommit(out output.Outputer, commit *mono_models.Commit, orgs []gmodel.
 		return err
 	}
 	out.Print(struct {
-		CommitData `opts:"verticalTable" locale:","`
+		commitData `opts:"verticalTable" locale:","`
 	}{
 		data,
 	})
@@ -40,30 +36,35 @@ func PrintCommit(out output.Outputer, commit *mono_models.Commit, orgs []gmodel.
 }
 
 func PrintCommits(out output.Outputer, commits []*mono_models.Commit, orgs []gmodel.Organization) error {
-	result := results{Data: make([]CommitData, 0)}
+	result := make([]commitData, 0)
 	for _, c := range commits {
 		d, err := commitDataFromCommit(c, orgs)
 		if err != nil {
 			return err
 		}
-		result.Data = append(result.Data, d)
+		result = append(result, d)
 	}
-	out.Print(result)
+
+	out.Print(struct {
+		Data []commitData `opts:"verticalTable" locale:","`
+	}{
+		Data: result,
+	})
 
 	return nil
 }
 
-func commitDataFromCommit(commit *mono_models.Commit, orgs []gmodel.Organization) (CommitData, error) {
+func commitDataFromCommit(commit *mono_models.Commit, orgs []gmodel.Organization) (commitData, error) {
 	var username string
 	var err error
 	if commit.Author != nil && orgs != nil {
 		username, err = usernameForID(*commit.Author, orgs)
 		if err != nil {
-			return CommitData{}, locale.WrapError(err, "err_commit_print_username", "Could not determine username for commit author")
+			return commitData{}, locale.WrapError(err, "err_commit_print_username", "Could not determine username for commit author")
 		}
 	}
 
-	commitData := CommitData{
+	commitData := commitData{
 		Hash:    locale.Tl("print_commit_hash", "[ACTIONABLE]{{.V0}}[/RESET]", commit.CommitID.String()),
 		Author:  username,
 		Changes: formatChanges(commit),
