@@ -258,15 +258,15 @@ func sprintMap(value interface{}) (string, error) {
 			stringValue = "\n" + stringValue
 		}
 
-		// special formatting for map[string]string
-		if _, ok := v.(string); ok {
-			if stringValue != "" {
-				result = append(result, fmt.Sprintf("• %s\n  └─ %s", k, stringValue))
-			} else {
-				result = append(result, fmt.Sprintf("• %s", k))
-			}
-		} else {
+		// special formatting for simple maps
+		if isSlice(v) {
 			result = append(result, fmt.Sprintf(" %s: %s ", k, stringValue))
+			continue
+		}
+		if stringValue != "" {
+			result = append(result, fmt.Sprintf("• %s\n  └─ %s", k, stringValue))
+		} else {
+			result = append(result, fmt.Sprintf("• %s", k))
 		}
 	}
 
