@@ -44,13 +44,6 @@ func isBinDirOnWindowsUserPath(binDir string) bool {
 		return false
 	}
 
-	isWindowsAdmin, err := osutils.IsWindowsAdmin()
-	if err != nil {
-		logging.Error("Failed to determine if we are running as administrator: %v", err)
-	}
-	if !isWindowsAdmin {
-		return false
-	}
 	cmdEnv := cmd.NewCmdEnv(true)
 	path, fail := cmdEnv.Get("PATH")
 	if fail != nil {
@@ -58,14 +51,10 @@ func isBinDirOnWindowsUserPath(binDir string) bool {
 		return false
 	}
 
-	if funk.ContainsString(
+	return funk.ContainsString(
 		strings.Split(path, string(os.PathListSeparator)),
 		binDir,
-	) {
-		return true
-	}
-
-	return false
+	)
 }
 
 func Prepare(subshell subshell.SubShell) error {
@@ -80,6 +69,14 @@ func Prepare(subshell subshell.SubShell) error {
 		}
 	}
 
+	isWindowsAdmin, err := osutils.IsWindowsAdmin()
+	if err != nil {
+		logging.Error("Failed to determine if we are running as administrator: %v", err)
+	}
+	if isWindowsAdmin {
+		logging.Debug("Skip preparation step as it is not supported for Windows Administrators.")
+		return nil
+	}
 	if isBinDirOnWindowsUserPath(binDir) {
 		logging.Debug("Skip preparation step as it has been done previously for the current user.")
 		return nil

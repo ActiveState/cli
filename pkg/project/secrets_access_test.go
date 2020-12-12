@@ -42,7 +42,7 @@ func (suite *SecretsAccessTestSuite) BeforeTest(suiteName, testName string) {
 	suite.authMock = authMock.Init()
 	suite.authMock.MockLoggedin()
 
-	suite.expander = NewSecretExpander(suite.secretsClient, nil)
+	suite.expander = NewSecretExpander(suite.secretsClient, nil, nil)
 	suite.expander.project = Get()
 }
 

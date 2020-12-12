@@ -15,9 +15,10 @@ import (
 
 type outputFlags struct {
 	// These should be kept in sync with cmd/state/internal/cmdtree (output flag)
-	Output      string `short:"o" long:"output"`
-	Mono        bool   `long:"mono"`
-	ConfirmExit bool   `long:"confirm-exit-on-error"`
+	Output         string `short:"o" long:"output"`
+	Mono           bool   `long:"mono"`
+	ConfirmExit    bool   `long:"confirm-exit-on-error"`
+	NonInteractive bool   `short:"n" long:"non-interactive"`
 }
 
 // DisableColor returns whether color output should be disabled

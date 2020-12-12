@@ -49,7 +49,7 @@ func (suite *VarPromptingExpanderTestSuite) BeforeTest(suiteName, testName strin
 	pjFile.Persist()
 	suite.projectFile = pjFile
 	var fail *failures.Failure
-	suite.project, fail = project.New(pjFile, outputhelper.NewCatcher(), suite.promptMock)
+	suite.project, fail = project.New(pjFile, outputhelper.NewCatcher())
 	suite.NoError(fail.ToError(), "no failure should occur when loading project")
 
 	secretsClient := secretsapi_test.NewDefaultTestClient("bearing123")
@@ -82,7 +82,7 @@ func (suite *VarPromptingExpanderTestSuite) prepareWorkingExpander() project.Exp
 	suite.secretsMock.RegisterWithResponder("GET", "/organizations/00010001-0001-0001-0001-000100010002/user_secrets", func(req *http.Request) (int, string) {
 		return 200, "user_secrets-empty"
 	})
-	return project.NewSecretPromptingExpander(suite.secretsClient)
+	return project.NewSecretPromptingExpander(suite.secretsClient, suite.promptMock)
 }
 
 func (suite *VarPromptingExpanderTestSuite) assertExpansionSaveFailure(secretName, expectedValue string) {

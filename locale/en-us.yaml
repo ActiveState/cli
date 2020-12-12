@@ -1153,8 +1153,6 @@ package_update_config_file:
   other: To ensure your local project is synchronized with the ActiveState platform please use [ACTIONABLE]`state pull`[/RESET]
 inventory_ingredient_not_available:
   other: The package '[NOTICE]{{.V0}}[/RESET]' is not available on the ActiveState Platform, or does not have a matching version
-command_flag_no_such_flag:
-  other: "No such flag: [NOTICE]{{.V0}}[/RESET]"
 command_flag_invalid_value:
   other: "Invalid value for {{.V0}} flag: [NOTICE]{{.V1}}[/RESET]"
 err_cmdtree:
@@ -1621,3 +1619,5 @@ activate_default_prompt:
     This will allow you to operate on your project and run executables provided by its runtime without first "activating" it.
 err_no_projectfile:
   other: No activestate.yaml file exists in the current working directory or its parent directories.
+err_non_interactive_prompt:
+  other: Prompt "{{.V0}}" cannot be resolved in non-interactive mode.

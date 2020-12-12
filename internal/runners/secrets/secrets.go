@@ -98,7 +98,7 @@ func filterSecrets(proj *project.Project, secrectDefs []*secretsModels.SecretDef
 	if oldExpander != nil {
 		defer project.RegisterExpander("secrets", oldExpander)
 	}
-	expander := project.NewSecretExpander(secretsapi.Get(), proj)
+	expander := project.NewSecretExpander(secretsapi.Get(), proj, nil)
 	project.RegisterExpander("secrets", expander.Expand)
 	project.ExpandFromProject(fmt.Sprintf("$%s", filter), proj)
 	accessedSecrets := expander.SecretsAccessed()
@@ -142,7 +142,7 @@ func (es secretExports) MarshalOutput(format output.Format) interface{} {
 
 func defsToSecrets(defs []*secretsModels.SecretDefinition) ([]*SecretExport, *failures.Failure) {
 	secretsExport := make([]*SecretExport, len(defs))
-	expander := project.NewSecretExpander(secretsapi.Get(), project.Get())
+	expander := project.NewSecretExpander(secretsapi.Get(), project.Get(), nil)
 
 	for i, def := range defs {
 		if def.Name == nil || def.Scope == nil {
