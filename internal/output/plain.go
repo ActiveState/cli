@@ -217,21 +217,14 @@ func sprintSlice(value interface{}) (string, error) {
 
 	result := []string{}
 	for _, v := range slice {
-		vv := v
-		if vp, ok := v.(interface{ Value() interface{} }); ok {
-			vv = vp.Value()
-		}
-
-		stringValue, err := sprint(vv)
+		stringValue, err := sprint(v)
 		if err != nil {
 			return "", err
 		}
 
 		// prepend if stringValue does not represent a slice
-		if vp, ok := v.(interface{ PrependString() string }); ok {
-			stringValue = vp.PrependString() + stringValue
-		} else if !isSlice(v) {
-			stringValue = "• " + stringValue
+		if !isSlice(v) {
+			stringValue = " - " + stringValue
 		}
 
 		result = append(result, stringValue)
@@ -258,16 +251,7 @@ func sprintMap(value interface{}) (string, error) {
 			stringValue = "\n" + stringValue
 		}
 
-		// special formatting for simple maps
-		if isSlice(v) {
-			result = append(result, fmt.Sprintf(" %s: %s ", k, stringValue))
-			continue
-		}
-		if stringValue != "" {
-			result = append(result, fmt.Sprintf("• %s\n  └─ %s", k, stringValue))
-		} else {
-			result = append(result, fmt.Sprintf("• %s", k))
-		}
+		result = append(result, fmt.Sprintf(" %s: %s ", k, stringValue))
 	}
 
 	sort.Slice(result, func(i, j int) bool { return result[i] < result[j] })

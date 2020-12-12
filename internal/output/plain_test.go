@@ -68,7 +68,7 @@ func TestPlain_Print(t *testing.T) {
 				uint(5), uint16(6), uint32(7), uint64(8),
 				float32(9.1), float64(10.1),
 			}},
-			"• 1\n• 2\n• 3\n• 4\n• 5\n• 6\n• 7\n• 8\n• 9.10\n• 10.10\n",
+			" - 1\n - 2\n - 3\n - 4\n - 5\n - 6\n - 7\n - 8\n - 9.10\n - 10.10\n",
 			"",
 		},
 		{
@@ -78,7 +78,7 @@ func TestPlain_Print(t *testing.T) {
 				"int":    int(1),
 				"float":  float32(9.1),
 			}},
-			"\n• float\n  └─ 9.10\n• int\n  └─ 1\n• string\n  └─ hello\n",
+			"\n float: 9.10 \n int: 1 \n string: hello \n",
 			"",
 		},
 		{
@@ -149,7 +149,7 @@ func TestPlain_Print(t *testing.T) {
 			"field_value1: 1\n" +
 				"field_value2: 1.10\n" +
 				"field_value3: false\n" +
-				"field_value4: \n• 1\n• true\n• 1.10\n• field_v: value\n• 1\n• 2\n" +
+				"field_value4: \n - 1\n - true\n - 1.10\n - field_v: value\n - 1\n - 2\n" +
 				"field_value5: \nfield_header1: AAA\nfield_header3: CCC\n" +
 				"field_value6: \n" +
 				"  field_header1    field_header2    field_header3  \n" +
@@ -159,7 +159,7 @@ func TestPlain_Print(t *testing.T) {
 				"  field_header1    field_header2    field_header3  \n" +
 				"───────────────────────────────────────────────────\n" +
 				"  711              722              <nil>          \n" +
-				"field_nil3: \n• <nil>\n• <nil>\n• <nil>\n" +
+				"field_nil3: \n - <nil>\n - <nil>\n - <nil>\n" +
 				"field_nil5: \n\n" +
 				"field_nil6: \n" +
 				"  field_n  \n" +
