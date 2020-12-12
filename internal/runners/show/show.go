@@ -53,6 +53,10 @@ type RuntimeDetails struct {
 	LastCommit   string `locale:"state_show_details_latest_commit,Latest Commit"`
 }
 
+type outputDataPrinter struct {
+	output output.Outputer
+	data   outputData
+}
 type outputData struct {
 	ProjectURL string `locale:"project_url,Project URL"`
 	RuntimeDetails
@@ -61,6 +65,41 @@ type outputData struct {
 	Secrets   *secretOutput     `locale:"secrets,Secrets"`
 	Events    []string          `json:",omitempty"`
 	Scripts   map[string]string `json:",omitempty"`
+}
+
+func formatScripts(scripts map[string]string) string {
+	var res []string
+
+	for k, v := range scripts {
+		res = append(res, fmt.Sprintf("• %s", k))
+		if v != "" {
+			res = append(res, fmt.Sprintf("  └─  %s", v))
+		}
+	}
+	return strings.Join(res, "\n")
+}
+
+func (od *outputDataPrinter) MarshalOutput(format output.Format) interface{} {
+	if format != output.PlainFormatName {
+		return od.data
+	}
+
+	od.output.Print(locale.Tl("show_details_intro", "Here are the details of your runtime environment.\n"))
+	od.output.Print(
+		struct {
+			*RuntimeDetails `opts:"verticalTable"`
+		}{&od.data.RuntimeDetails},
+	)
+	od.output.Print(output.Heading(locale.Tl("state_show_events_header", "Events")))
+	od.output.Print(od.data.Events)
+	od.output.Print(output.Heading(locale.Tl("state_show_scripts_header", "Scripts")))
+	od.output.Print(formatScripts(od.data.Scripts))
+	od.output.Print(output.Heading(locale.Tl("state_show_platforms_header", "Platforms")))
+	od.output.Print(od.data.Platforms)
+	od.output.Print(output.Heading(locale.Tl("state_show_languages_header", "Languages")))
+	od.output.Print(od.data.Languages)
+
+	return output.Suppress
 }
 
 type secretOutput struct {
@@ -180,26 +219,8 @@ func (s *Show) Run(params Params) error {
 		Scripts:        scripts,
 	}
 
-	s.out.Print(output.NewFormatter(outputData).WithFormat(output.PlainFormatName, output.Suppress))
-
-	plainPrint := func(v interface{}) {
-		s.out.Print(output.NewFormatter(output.Suppress).WithFormat(output.PlainFormatName, v))
-	}
-
-	plainPrint(locale.Tl("show_details_intro", "Here are the details of your runtime environment.\n"))
-	plainPrint(
-		struct {
-			*RuntimeDetails `opts:"verticalTable"`
-		}{&rd},
-	)
-	plainPrint(output.Heading(locale.Tl("state_show_events_header", "Events")))
-	plainPrint(events)
-	plainPrint(output.Heading(locale.Tl("state_show_scripts_header", "Scripts")))
-	plainPrint(scripts)
-	plainPrint(output.Heading(locale.Tl("state_show_platforms_header", "Platforms")))
-	plainPrint(platforms)
-	plainPrint(output.Heading(locale.Tl("state_show_languages_header", "Languages")))
-	plainPrint(languages)
+	odp := &outputDataPrinter{s.out, outputData}
+	s.out.Print(odp)
 
 	return nil
 }
