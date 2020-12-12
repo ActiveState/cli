@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
@@ -53,7 +54,28 @@ func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 	}
 	// NOTE: Should more than one result be handled?
 
-	i.out.Print(*packages[0].Ingredient.Name)
+	i.out.Print(makeInfoResult(packages[0].Ingredient))
 
 	return nil
+}
+
+type PkgDetailsTable struct {
+	Latest  string `locale:"package_version" json:"version"`
+	Author  string `locale:"package_author" json:"author"`
+	Link    string `locale:"package_link" json:"link"`
+	License string `locale:"package_license" json:"license"`
+}
+
+type infoResult struct {
+	Description     string `locale:"Details" json:"description"`
+	PkgDetailsTable `locale:"," opts:"verticalTable"`
+	Versions        []string `locale:"package_versions" json:"versions"`
+}
+
+func makeInfoResult(ingred *inventory_models.Ingredient) infoResult {
+	return infoResult{Description: "tester"}
+}
+
+type infoResultNotice struct {
+	Next []string `locale:"whats_next,What's Next?" json:"-"`
 }
