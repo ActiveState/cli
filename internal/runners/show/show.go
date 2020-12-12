@@ -195,25 +195,13 @@ func (s *Show) Run(params Params) error {
 	plainPrint(output.Heading(locale.Tl("state_show_events_header", "Events")))
 	plainPrint(events)
 	plainPrint(output.Heading(locale.Tl("state_show_scripts_header", "Scripts")))
-	plainPrint(formatScripts(scripts))
+	plainPrint(scripts)
 	plainPrint(output.Heading(locale.Tl("state_show_platforms_header", "Platforms")))
 	plainPrint(platforms)
 	plainPrint(output.Heading(locale.Tl("state_show_languages_header", "Languages")))
 	plainPrint(languages)
 
 	return nil
-}
-
-func formatScripts(scripts map[string]string) []interface{} {
-	var res []interface{}
-
-	for k, v := range scripts {
-		res = append(res, k)
-		if v != "" {
-			res = append(res, output.NewPrependedSliceItem(v, "  └─ "))
-		}
-	}
-	return res
 }
 
 type platformRow struct {

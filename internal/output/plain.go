@@ -22,27 +22,6 @@ import (
 	"github.com/thoas/go-funk"
 )
 
-// PrependedSliceItem wraps an output in a slice and prepends it with a custom string
-type PrependedSliceItem struct {
-	v       interface{}
-	prepend string
-}
-
-// NewPrependedSliceItem wraps an output item in a slice and prepend its output with a custom string instead of a bullet point
-func NewPrependedSliceItem(v interface{}, prepend string) PrependedSliceItem {
-	return PrependedSliceItem{v, prepend}
-}
-
-// PrependString returns the prepended string
-func (po PrependedSliceItem) PrependString() string {
-	return po.prepend
-}
-
-// Value returns the wrapped value
-func (po PrependedSliceItem) Value() interface{} {
-	return po.v
-}
-
 // PlainOpts define available tokens for setting plain output options.
 type PlainOpts string
 
@@ -279,7 +258,16 @@ func sprintMap(value interface{}) (string, error) {
 			stringValue = "\n" + stringValue
 		}
 
-		result = append(result, fmt.Sprintf(" %s: %s ", k, stringValue))
+		// special formatting for map[string]string
+		if _, ok := v.(string); ok {
+			if stringValue != "" {
+				result = append(result, fmt.Sprintf("• %s\n  └─ %s", k, stringValue))
+			} else {
+				result = append(result, fmt.Sprintf("• %s", k))
+			}
+		} else {
+			result = append(result, fmt.Sprintf(" %s: %s ", k, stringValue))
+		}
 	}
 
 	sort.Slice(result, func(i, j int) bool { return result[i] < result[j] })
