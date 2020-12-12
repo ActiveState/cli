@@ -79,6 +79,15 @@ func formatScripts(scripts map[string]string) string {
 	return strings.Join(res, "\n")
 }
 
+func formatSlice(slice []string) string {
+	var res []string
+
+	for _, v := range slice {
+		res = append(res, fmt.Sprintf("• %s", v))
+	}
+	return strings.Join(res, "\n")
+}
+
 func (od *outputDataPrinter) MarshalOutput(format output.Format) interface{} {
 	if format != output.PlainFormatName {
 		return od.data
@@ -91,7 +100,7 @@ func (od *outputDataPrinter) MarshalOutput(format output.Format) interface{} {
 		}{&od.data.RuntimeDetails},
 	)
 	od.output.Print(output.Heading(locale.Tl("state_show_events_header", "Events")))
-	od.output.Print(od.data.Events)
+	od.output.Print(formatSlice(od.data.Events))
 	od.output.Print(output.Heading(locale.Tl("state_show_scripts_header", "Scripts")))
 	od.output.Print(formatScripts(od.data.Scripts))
 	od.output.Print(output.Heading(locale.Tl("state_show_platforms_header", "Platforms")))
