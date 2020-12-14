@@ -37,9 +37,9 @@ func (g *Get) Run(params GetRunParams) error {
 		return locale.WrapError(err, "secrets_err_check_access")
 	}
 
-	secret, valuePtr, fail := getSecretWithValue(g.proj, params.Name)
-	if fail != nil {
-		return locale.WrapError(fail, "secrets_err_values")
+	secret, valuePtr, err := getSecretWithValue(g.proj, params.Name)
+	if err != nil {
+		return locale.WrapError(err, "secrets_err_values")
 	}
 
 	data := newGetOutput(params.Name, secret, valuePtr)

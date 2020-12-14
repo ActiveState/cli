@@ -49,8 +49,8 @@ func TestRunCommandNoProjectEnv(t *testing.T) {
 	subs := New()
 
 	data := []byte("echo --EMPTY-- %ACTIVESTATE_PROJECT% --EMPTY--")
-	filename, fail := fileutils.WriteTempFile("", "test*.bat", data, 0700)
-	require.NoError(t, fail.ToError())
+	filename, err := fileutils.WriteTempFile("", "test*.bat", data, 0700)
+	require.NoError(t, err)
 	defer os.Remove(filename)
 
 	out, err := osutil.CaptureStdout(func() {
@@ -79,8 +79,8 @@ func TestRunCommandError(t *testing.T) {
 	assert.Error(t, err, "Returns an error")
 
 	data := []byte("exit 2")
-	filename, fail := fileutils.WriteTempFile("", "test*.bat", data, 0700)
-	require.NoError(t, fail.ToError())
+	filename, err := fileutils.WriteTempFile("", "test*.bat", data, 0700)
+	require.NoError(t, err)
 	defer os.Remove(filename)
 
 	err = subs.Run(filename)

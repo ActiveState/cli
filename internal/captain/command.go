@@ -18,7 +18,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -117,7 +116,7 @@ func NewCommand(name, title, description string, out output.Outputer, flags []*F
 	}
 
 	if err := cmd.setFlags(flags); err != nil {
-		panic(err)
+		panic(errs.Join(err, "\n").Error())
 	}
 
 	cmd.cobra.SetUsageFunc(func(c *cobra.Command) error {
@@ -373,10 +372,6 @@ func (c *Command) flagByName(name string, persistOnly bool) *Flag {
 	return nil
 }
 
-func (c *Command) markFlagHidden(name string) error {
-	return c.cobra.Flags().MarkHidden(name)
-}
-
 func (c *Command) persistRunner(cobraCmd *cobra.Command, args []string) {
 	// Run OnUse functions for persistent flags
 	c.runFlags(true)
@@ -420,7 +415,7 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 
 	for idx, arg := range c.arguments {
 		if arg.Required && idx > len(args)-1 {
-			return failures.FailUserInput.New(locale.Tr("err_arg_required", arg.Name, arg.Description))
+			return locale.NewInputError("err_arg_required", "", arg.Name, arg.Description)
 		}
 
 		if idx >= len(args) {
@@ -435,9 +430,7 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 				return err
 			}
 		default:
-			return failures.FailDeveloper.New(
-				fmt.Sprintf("arg: %s must be *string, or ArgMarshaler", arg.Name),
-			)
+			return locale.NewError("err_arg_invalid_type", "arg: {{.V0}} must be *string, or ArgMarshaler", arg.Name)
 		}
 
 	}
@@ -458,7 +451,7 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 		return execute(c, args)
 	})
 
-	exitCode := errs.UnwrapExitCode(failures.ToError(err))
+	exitCode := errs.UnwrapExitCode(err)
 
 	var serr interface{ Signal() os.Signal }
 	if errors.As(err, &serr) {
@@ -499,7 +492,7 @@ func (c *Command) argValidator(cobraCmd *cobra.Command, args []string) error {
 // setupSensibleErrors inspects an error value for certain errors and returns a
 // wrapped error that can be checked and that is localized.
 func setupSensibleErrors(err error) error {
-	if fail, ok := err.(*failures.Failure); ok && fail == nil {
+	if err, ok := err.(error); ok && err == nil {
 		return nil
 	}
 	if err == nil {
@@ -528,9 +521,7 @@ func setupSensibleErrors(err error) error {
 			msg = segments[1]
 		}
 
-		return failures.FailUserInput.New(
-			"command_flag_invalid_value", flagText, msg,
-		)
+		return locale.NewInputError("command_flag_invalid_value", "", flagText, msg)
 	}
 
 	if pflagErrFlag := pflagFlagErrMsgFlag(errMsg); pflagErrFlag != "" {

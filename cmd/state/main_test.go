@@ -4,12 +4,11 @@ import (
 	"os"
 	"testing"
 
-	"github.com/spf13/viper"
-
 	"github.com/ActiveState/cli/internal/colorize"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/constants/version"
 	depMock "github.com/ActiveState/cli/internal/deprecation/mock"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
@@ -21,18 +20,13 @@ type MainTestSuite struct {
 	suite.Suite
 }
 
-func (suite *MainTestSuite) AfterTest(suiteName, testName string) {
-	// Reset viper config so deprecation mock is always used
-	viper.Reset()
-}
-
 func (suite *MainTestSuite) TestDeprecated() {
 	mock := depMock.Init()
 	defer mock.Close()
 	mock.MockDeprecated()
 
 	catcher := outputhelper.NewCatcher()
-	exitCode, err := run([]string{""}, catcher.Outputer)
+	exitCode, err := run([]string{""}, true, catcher.Outputer)
 	suite.Require().NoError(err)
 	suite.Require().Equal(0, exitCode, "Should exit with code 0, output: %s", catcher.CombinedOutput())
 
@@ -47,7 +41,7 @@ func (suite *MainTestSuite) TestExpired() {
 	mock.MockExpired()
 
 	catcher := outputhelper.NewCatcher()
-	exitCode, err := run([]string{""}, catcher.Outputer)
+	exitCode, err := run([]string{""}, true, catcher.Outputer)
 
 	if version.NumberIsProduction(constants.VersionNumber) {
 		suite.Require().Error(err)
@@ -61,50 +55,52 @@ func (suite *MainTestSuite) TestExpired() {
 
 func (suite *MainTestSuite) TestOutputer() {
 	{
-		outputer, fail := initOutput(outputFlags{"", false, false}, "")
-		suite.Require().NoError(fail.ToError())
+		outputer, err := initOutput(outputFlags{"", false, false, false}, "")
+		suite.Require().NoError(err, errs.Join(err, "\n").Error())
 		suite.Equal(output.PlainFormatName, outputer.Type(), "Returns Plain outputer")
 	}
 
 	{
-		outputer, fail := initOutput(outputFlags{string(output.PlainFormatName), false, false}, "")
-		suite.Require().NoError(fail.ToError())
+		outputer, err := initOutput(outputFlags{string(output.PlainFormatName), false, false, false}, "")
+		suite.Require().NoError(err)
 		suite.Equal(output.PlainFormatName, outputer.Type(), "Returns Plain outputer")
 	}
 
 	{
-		outputer, fail := initOutput(outputFlags{string(output.JSONFormatName), false, false}, "")
-		suite.Require().NoError(fail.ToError())
+		outputer, err := initOutput(outputFlags{string(output.JSONFormatName), false, false, false}, "")
+		suite.Require().NoError(err)
 		suite.Equal(output.JSONFormatName, outputer.Type(), "Returns JSON outputer")
 	}
 
 	{
-		outputer, fail := initOutput(outputFlags{"", false, false}, string(output.JSONFormatName))
-		suite.Require().NoError(fail.ToError())
+		outputer, err := initOutput(outputFlags{"", false, false, false}, string(output.JSONFormatName))
+		suite.Require().NoError(err)
 		suite.Equal(output.JSONFormatName, outputer.Type(), "Returns JSON outputer")
 	}
 
 	{
-		outputer, fail := initOutput(outputFlags{"", false, false}, string(output.EditorFormatName))
-		suite.Require().NoError(fail.ToError())
+		outputer, err := initOutput(outputFlags{"", false, false, false}, string(output.EditorFormatName))
+		suite.Require().NoError(err)
 		suite.Equal(output.EditorFormatName, outputer.Type(), "Returns JSON outputer")
 	}
 
 	{
-		outputer, fail := initOutput(outputFlags{"", false, false}, string(output.EditorV0FormatName))
-		suite.Require().NoError(fail.ToError())
+		outputer, err := initOutput(outputFlags{"", false, false, false}, string(output.EditorV0FormatName))
+		suite.Require().NoError(err)
 		suite.Equal(output.EditorV0FormatName, outputer.Type(), "Returns JSON outputer")
 	}
 }
 
 func (suite *MainTestSuite) TestParseOutputFlags() {
-	suite.Equal(outputFlags{"plain", false, false}, parseOutputFlags([]string{"state", "foo", "-o", "plain"}))
-	suite.Equal(outputFlags{"json", false, false}, parseOutputFlags([]string{"state", "foo", "--output", "json"}))
-	suite.Equal(outputFlags{"json", false, false}, parseOutputFlags([]string{"state", "foo", "-o", "json"}))
-	suite.Equal(outputFlags{"editor", false, false}, parseOutputFlags([]string{"state", "foo", "--output", "editor"}))
-	suite.Equal(outputFlags{"editor.v0", false, false}, parseOutputFlags([]string{"state", "foo", "-o", "editor.v0"}))
-	suite.Equal(outputFlags{"", true, false}, parseOutputFlags([]string{"state", "foo", "--mono"}))
-	suite.Equal(outputFlags{"", false, true}, parseOutputFlags([]string{"state", "foo", "--confirm-exit-on-error"}))
+	suite.Equal(outputFlags{"plain", false, false, false}, parseOutputFlags([]string{"state", "foo", "-o", "plain"}))
+	suite.Equal(outputFlags{"json", false, false, false}, parseOutputFlags([]string{"state", "foo", "--output", "json"}))
+	suite.Equal(outputFlags{"json", false, false, false}, parseOutputFlags([]string{"state", "foo", "-o", "json"}))
+	suite.Equal(outputFlags{"editor", false, false, false}, parseOutputFlags([]string{"state", "foo", "--output", "editor"}))
+	suite.Equal(outputFlags{"editor.v0", false, false, false}, parseOutputFlags([]string{"state", "foo", "-o", "editor.v0"}))
+	suite.Equal(outputFlags{"", true, false, false}, parseOutputFlags([]string{"state", "foo", "--mono"}))
+	suite.Equal(outputFlags{"", false, true, false}, parseOutputFlags([]string{"state", "foo", "--confirm-exit-on-error"}))
+	suite.Equal(outputFlags{"", false, false, true}, parseOutputFlags([]string{"state", "foo", "--non-interactive"}))
+	suite.Equal(outputFlags{"", false, false, true}, parseOutputFlags([]string{"state", "foo", "-n"}))
 }
 
 func (suite *MainTestSuite) TestDisableColors() {

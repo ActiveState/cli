@@ -3,18 +3,11 @@ package platforms
 import (
 	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
-)
-
-var (
-	// FailNoCommitID indicates that no commit id is provided and not
-	// obtainable from the current project.
-	FailNoCommitID = failures.Type("platforms.fail.nocommitid", failures.FailNonFatal)
 )
 
 // ListRunParams tracks the info required for running List.
@@ -58,9 +51,9 @@ func newListing(commitID, projName, projOrg string) (*Listing, error) {
 		return nil, err
 	}
 
-	platforms, fail := model.FetchPlatformsForCommit(*targetCommitID)
-	if fail != nil {
-		return nil, fail
+	platforms, err := model.FetchPlatformsForCommit(*targetCommitID)
+	if err != nil {
+		return nil, err
 	}
 
 	listing := Listing{
@@ -78,9 +71,9 @@ func targetedCommitID(commitID, projName, projOrg string) (*strfmt.UUID, error) 
 		return &cid, err
 	}
 
-	latest, fail := model.LatestCommitID(projOrg, projName)
-	if fail != nil {
-		return nil, fail.ToError()
+	latest, err := model.LatestCommitID(projOrg, projName)
+	if err != nil {
+		return nil, err
 	}
 
 	return latest, nil

@@ -42,15 +42,14 @@ func TestFindFileInPath(t *testing.T) {
 	expectpath := filepath.Join(root, "internal", "fileutils", "testdata")
 	expectfile := filepath.Join(expectpath, "test.go")
 	testpath := filepath.Join(expectpath, "extra-dir", "another-dir")
-	resultpath, fail := FindFileInPath(testpath, "test.go")
-	assert.Nilf(t, fail, "No failure expected")
+	resultpath, err := FindFileInPath(testpath, "test.go")
+	assert.Nilf(t, err, "No failure expected")
 	assert.Equal(t, resultpath, expectfile)
 
 	nonExistentPath := filepath.FromSlash("/dir1/dir2")
-	_, fail = FindFileInPath(nonExistentPath, "FILE_THAT_SHOULD_NOT_EXIST")
+	_, err = FindFileInPath(nonExistentPath, "FILE_THAT_SHOULD_NOT_EXIST")
 
-	assert.Error(t, fail.ToError())
-	assert.Equal(t, fail.Type.Name, FailFindInPathNotFound.Name)
+	assert.ErrorIs(t, err, ErrorFileNotFound)
 }
 
 func TestReplaceAllTextFile(t *testing.T) {
@@ -86,8 +85,8 @@ func TestEmptyDir_IsEmpty(t *testing.T) {
 	tmpdir, err := ioutil.TempDir("", "test-dir-is-empty")
 	require.NoError(t, err)
 
-	isEmpty, failure := IsEmptyDir(tmpdir)
-	require.NoError(t, failure.ToError())
+	isEmpty, err := IsEmptyDir(tmpdir)
+	require.NoError(t, err)
 	assert.True(t, isEmpty)
 }
 
@@ -95,11 +94,11 @@ func TestEmptyDir_HasRegularFile(t *testing.T) {
 	tmpdir, err := ioutil.TempDir("", "test-dir-has-file")
 	require.NoError(t, err)
 
-	failure := Touch(path.Join(tmpdir, "regular-file"))
-	require.NoError(t, failure.ToError())
+	err = Touch(path.Join(tmpdir, "regular-file"))
+	require.NoError(t, err)
 
-	isEmpty, failure := IsEmptyDir(tmpdir)
-	require.NoError(t, failure.ToError())
+	isEmpty, err := IsEmptyDir(tmpdir)
+	require.NoError(t, err)
 	assert.False(t, isEmpty)
 }
 
@@ -109,8 +108,8 @@ func TestEmptyDir_HasSubDir(t *testing.T) {
 
 	require.Nil(t, Mkdir(path.Join(tmpdir, "some-dir")))
 
-	isEmpty, failure := IsEmptyDir(tmpdir)
-	require.NoError(t, failure.ToError())
+	isEmpty, err := IsEmptyDir(tmpdir)
+	require.NoError(t, err)
 	assert.False(t, isEmpty)
 }
 
@@ -129,23 +128,23 @@ func TestAmendFile_BadArg(t *testing.T) {
 
 	// Due to the type def we don't need to test - ints
 	// fails as an overflow before you can even run your code.
-	fail := AmendFile(path, []byte(""), 99)
-	assert.Error(t, fail.ToError(), "Reject bad flag")
+	err := AmendFile(path, []byte(""), 99)
+	assert.Error(t, err, "Reject bad flag")
 	assert.False(t, FileExists(path), "No file should be created.")
 }
 
 func TestAppend(t *testing.T) {
 	path := path.Join(getTempDir(t, "append-file"), "file.txt")
 
-	fail := WriteFile(path, []byte("a"))
-	require.NoError(t, fail.ToError())
+	err := WriteFile(path, []byte("a"))
+	require.NoError(t, err)
 
 	// Append
-	fail = AmendFile(path, []byte("a"), AmendByAppend)
-	assert.NoError(t, fail.ToError(), "Should be able to write to empty file.")
+	err = AmendFile(path, []byte("a"), AmendByAppend)
+	assert.NoError(t, err, "Should be able to write to empty file.")
 
-	fail = AppendToFile(path, []byte("b"))
-	assert.NoError(t, fail.ToError(), "Should be able to append to file.")
+	err = AppendToFile(path, []byte("b"))
+	assert.NoError(t, err, "Should be able to append to file.")
 
 	assert.Equal(t, []byte("aab"), ReadFileUnsafe(path))
 }
@@ -158,11 +157,11 @@ func TestWriteFile(t *testing.T) {
 	// Set file read-only to test if chmodding from WriteFile works
 	os.Chmod(file.Name(), 0444)
 
-	fail := WriteFile(file.Name(), []byte("abc"))
-	require.NoError(t, fail.ToError())
+	err = WriteFile(file.Name(), []byte("abc"))
+	require.NoError(t, err)
 
-	fail = WriteFile(file.Name(), []byte("def"))
-	require.NoError(t, fail.ToError())
+	err = WriteFile(file.Name(), []byte("def"))
+	require.NoError(t, err)
 
 	assert.Equal(t, "def", string(ReadFileUnsafe(file.Name())))
 }
@@ -170,15 +169,15 @@ func TestWriteFile(t *testing.T) {
 func TestWriteFile_Prepend(t *testing.T) {
 	path := path.Join(getTempDir(t, "prepend-file"), "file.txt")
 
-	fail := WriteFile(path, []byte("a"))
-	require.NoError(t, fail.ToError())
+	err := WriteFile(path, []byte("a"))
+	require.NoError(t, err)
 
 	// Prepend
-	fail = AmendFile(path, []byte("b"), AmendByPrepend)
-	assert.NoError(t, fail.ToError(), "Should be able to write to empty file.")
+	err = AmendFile(path, []byte("b"), AmendByPrepend)
+	assert.NoError(t, err, "Should be able to write to empty file.")
 
-	fail = PrependToFile(path, []byte("a"))
-	assert.NoError(t, fail.ToError(), "Should be able to prepend to file.")
+	err = PrependToFile(path, []byte("a"))
+	assert.NoError(t, err, "Should be able to prepend to file.")
 
 	assert.Equal(t, []byte("aba"), ReadFileUnsafe(path))
 }
@@ -187,11 +186,11 @@ func TestWriteFile_OverWrite(t *testing.T) {
 	path := path.Join(getTempDir(t, "overwrite-file"), "file.txt")
 
 	// Overwrite
-	fail := WriteFile(path, []byte("cba"))
-	assert.NoError(t, fail.ToError(), "Should be able to write to empty file.")
+	err := WriteFile(path, []byte("cba"))
+	assert.NoError(t, err, "Should be able to write to empty file.")
 
-	fail = WriteFile(path, []byte("abc"))
-	assert.NoError(t, fail.ToError(), "Should be able to overwrite file.")
+	err = WriteFile(path, []byte("abc"))
+	assert.NoError(t, err, "Should be able to overwrite file.")
 
 	assert.Equal(t, []byte("abc"), ReadFileUnsafe(path), "Should have overwritten file")
 }
@@ -202,29 +201,29 @@ func TestTouch(t *testing.T) {
 	path := path.Join(dir, "file.txt")
 
 	{
-		fail := Touch(path)
-		require.NoError(t, fail.ToError(), "File created without fail")
+		err := Touch(path)
+		require.NoError(t, err, "File created without fail")
 	}
 
 	{
-		fail := Touch(noParentPath)
-		require.NoError(t, fail.ToError(), "File with missing parent created without fail")
+		err := Touch(noParentPath)
+		require.NoError(t, err, "File with missing parent created without fail")
 	}
 }
 
 func TestReadFile(t *testing.T) {
 	path := path.Join(getTempDir(t, "read-file"), "file.txt")
 
-	_, fail := ReadFile(path)
-	assert.Error(t, fail.ToError(), "File doesn't exist, fail.")
+	_, err := ReadFile(path)
+	assert.Error(t, err, "File doesn't exist, err.")
 
 	content := []byte("pizza time")
-	fail = WriteFile(path, content)
-	assert.NoError(t, fail.ToError(), "File write without fail")
+	err = WriteFile(path, content)
+	assert.NoError(t, err, "File write without fail")
 
 	var b []byte
-	b, fail = ReadFile(path)
-	assert.NoError(t, fail.ToError(), "File doesn't exist, fail.")
+	b, err = ReadFile(path)
+	assert.NoError(t, err, "File doesn't exist, err.")
 	assert.Equal(t, content, b, "Content should be the same")
 }
 
@@ -238,8 +237,8 @@ func TestCreateTempExecutable(t *testing.T) {
 	pattern := patPrefix + "*" + patSuffix
 	data := []byte("this is a test")
 
-	name, fail := WriteTempFile("", pattern, data, 0700)
-	require.NoError(t, fail.ToError())
+	name, err := WriteTempFile("", pattern, data, 0700)
+	require.NoError(t, err)
 	require.FileExists(t, name)
 	defer os.Remove(name)
 
@@ -274,11 +273,11 @@ func TestCopyFiles(t *testing.T) {
 		os.RemoveAll(dest)
 	}()
 
-	fail := Mkdir(sourceDir)
-	require.NoError(t, fail.ToError())
+	err := Mkdir(sourceDir)
+	require.NoError(t, err)
 
-	fail = Touch(sourceFile)
-	require.NoError(t, fail.ToError())
+	err = Touch(sourceFile)
+	require.NoError(t, err)
 
 	if runtime.GOOS != "windows" {
 		// Symlink creation on Windows requires privledged create
@@ -286,8 +285,8 @@ func TestCopyFiles(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	fail = CopyFiles(src, dest)
-	require.NoError(t, fail.ToError())
+	err = CopyFiles(src, dest)
+	require.NoError(t, err)
 	require.DirExists(t, dest)
 	require.DirExists(t, destDir)
 	require.FileExists(t, destFile)
@@ -358,10 +357,10 @@ func runSymlinkTest(t *testing.T, info symlinkTestInfo) {
 	err := os.Chdir(info.src)
 	require.NoError(t, err)
 
-	fail := Mkdir(info.srcDir)
-	require.NoError(t, fail.ToError())
-	fail = Touch(info.srcFile)
-	require.NoError(t, fail.ToError())
+	err = Mkdir(info.srcDir)
+	require.NoError(t, err)
+	err = Touch(info.srcFile)
+	require.NoError(t, err)
 
 	content := "stuff"
 	err = ioutil.WriteFile(info.srcFile, []byte(content), 0644)
@@ -374,10 +373,10 @@ func runSymlinkTest(t *testing.T, info symlinkTestInfo) {
 	require.NoError(t, err)
 	require.Equal(t, content, string(linkContent))
 
-	fail = CopyFile(info.srcFile, info.destFile)
+	err = CopyFile(info.srcFile, info.destFile)
 	require.NoError(t, err)
-	fail = CopySymlink(info.srcLink, info.destLink)
-	require.NoError(t, fail.ToError())
+	err = CopySymlink(info.srcLink, info.destLink)
+	require.NoError(t, err)
 
 	copiedLinkContent, err := ioutil.ReadFile(info.destLink)
 	require.NoError(t, err)
@@ -396,8 +395,8 @@ func touchFile(t *testing.T, contents string, paths ...string) {
 	pd := filepath.Join(paths[:len(paths)-1]...)
 	fp := filepath.Join(pd, paths[len(paths)-1])
 	if pd != "" {
-		fail := MkdirUnlessExists(pd)
-		require.NoError(t, fail.ToError(), "creating parent directory %s", pd)
+		err := MkdirUnlessExists(pd)
+		require.NoError(t, err, "creating parent directory %s", pd)
 	}
 	err := ioutil.WriteFile(fp, []byte(contents), 0666)
 	require.NoError(t, err, "Touching %s", fp)
@@ -473,8 +472,8 @@ func TestResolveUniquePath(t *testing.T) {
 
 	targetPath := filepath.Join(tempDir, "target_long")
 
-	fail := Touch(targetPath)
-	require.NoError(t, fail.ToError())
+	err = Touch(targetPath)
+	require.NoError(t, err)
 
 	expectedPath := targetPath
 	// On MacOS the ioutil.TempDir returns a symlink to the temporary directory

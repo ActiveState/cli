@@ -8,6 +8,6 @@ import (
 )
 
 func TestGet(t *testing.T) {
-	_, fail := Get(filepath.Join("download", "file1"))
-	assert.NoError(t, fail.ToError(), "Should download file")
+	_, err := Get(filepath.Join("download", "file1"))
+	assert.NoError(t, err, "Should download file")
 }

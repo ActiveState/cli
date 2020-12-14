@@ -38,9 +38,9 @@ type SearchResult struct {
 }
 
 func newSearchResult() (*SearchResult, error) {
-	platforms, fail := model.FetchPlatforms()
-	if fail != nil {
-		return nil, fail
+	platforms, err := model.FetchPlatforms()
+	if err != nil {
+		return nil, err
 	}
 
 	result := SearchResult{

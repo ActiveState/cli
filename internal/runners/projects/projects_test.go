@@ -33,14 +33,14 @@ func TestProjects(t *testing.T) {
 	catcher := outputhelper.NewCatcher()
 	pjs := newProjects(authentication.Get(), catcher.Outputer, &configMock{})
 
-	projects, fail := pjs.fetchProjects(false)
-	assert.NoError(t, fail.ToError(), "Fetched projects")
+	projects, err := pjs.fetchProjects(false)
+	assert.NoError(t, err, "Fetched projects")
 	assert.Equal(t, 1, len(projects), "One project fetched")
 	assert.Equal(t, "test project (test description)", projects[0].Name)
 	assert.Equal(t, "organizationName", projects[0].Organization)
 	assert.Equal(t, []string{"/some/local/path/"}, projects[0].LocalCheckouts)
 
-	err := pjs.RunRemote(NewParams())
+	err = pjs.RunRemote(NewParams())
 	assert.NoError(t, err, "Executed without error")
 }
 
@@ -58,11 +58,11 @@ func TestProjectsEmpty(t *testing.T) {
 	catcher := outputhelper.NewCatcher()
 	pjs := newProjects(authentication.Get(), catcher.Outputer, &configMock{})
 
-	projects, fail := pjs.fetchProjects(false)
-	assert.NoError(t, fail.ToError(), "Fetched projects")
+	projects, err := pjs.fetchProjects(false)
+	assert.NoError(t, err, "Fetched projects")
 	assert.Equal(t, 0, len(projects), "No projects returned")
 
-	err := pjs.RunRemote(NewParams())
+	err = pjs.RunRemote(NewParams())
 	assert.NoError(t, err, "Executed without error")
 }
 
@@ -76,12 +76,12 @@ func TestClientError(t *testing.T) {
 	catcher := outputhelper.NewCatcher()
 	pjs := newProjects(authentication.Get(), catcher.Outputer, &configMock{})
 
-	_, fail := pjs.fetchProjects(false)
-	assert.Error(t, fail.ToError(), "Should not be able to fetch organizations without mock")
+	_, err := pjs.fetchProjects(false)
+	assert.Error(t, err, "Should not be able to fetch organizations without mock")
 
 	httpmock.Register("GET", "/organizations")
-	_, fail = pjs.fetchProjects(false)
-	assert.Error(t, fail.ToError(), "Should not be able to fetch projects without mock")
+	_, err = pjs.fetchProjects(false)
+	assert.Error(t, err, "Should not be able to fetch projects without mock")
 }
 
 func TestAuthError(t *testing.T) {
@@ -96,10 +96,9 @@ func TestAuthError(t *testing.T) {
 	catcher := outputhelper.NewCatcher()
 	pjs := newProjects(authentication.Get(), catcher.Outputer, &configMock{})
 
-	_, fail := pjs.fetchProjects(false)
-	assert.Error(t, fail.ToError(), "Should not be able to fetch projects without being authenticated")
-	assert.True(t, fail.Type.Matches(api.FailAuth), "Failure should be due to auth")
+	_, err := pjs.fetchProjects(false)
+	assert.Error(t, err, "Should not be able to fetch projects without being authenticated")
 
-	err := pjs.RunRemote(NewParams())
+	err = pjs.RunRemote(NewParams())
 	assert.Error(t, err, "Executed with error")
 }

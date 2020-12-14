@@ -31,12 +31,12 @@ func (m *Mock) CloneProject(owner, name, path string, out output.Outputer) error
 
 	dummyID := "00010001-0001-0001-0001-000100010001"
 	projectURL := fmt.Sprintf("https://%s/%s/%s?commitID=%s", constants.PlatformURL, owner, name, dummyID)
-	_, fail := projectfile.TestOnlyCreateWithProjectURL(projectURL, path)
-	if fail != nil {
-		return fail.ToError()
+	_, err := projectfile.TestOnlyCreateWithProjectURL(projectURL, path)
+	if err != nil {
+		return err
 	}
 
-	return err(args.Get(0))
+	return failure(args.Get(0))
 }
 
 // Close the mock
@@ -53,7 +53,7 @@ func (m *Mock) OnMethod(methodName string) *tmock.Call {
 	return m.On(methodName, anyArgs...)
 }
 
-func err(arg interface{}) error {
+func failure(arg interface{}) error {
 	if arg == nil {
 		return nil
 	}

@@ -2,8 +2,6 @@ package mock
 
 import (
 	testifyMock "github.com/stretchr/testify/mock"
-
-	"github.com/ActiveState/cli/internal/failures"
 )
 
 // Installer is a testify Mock object.
@@ -23,13 +21,13 @@ func (installer *Installer) InstallDir() string {
 }
 
 // Install for Installer.
-func (installer *Installer) Install() *failures.Failure {
+func (installer *Installer) Install() error {
 	installer.Called()
 	return nil
 }
 
 // InstallFromArchive for Installer.
-func (installer *Installer) InstallFromArchive(archive string) *failures.Failure {
+func (installer *Installer) InstallFromArchive(archive string) error {
 	installer.Called()
 	return nil
 }

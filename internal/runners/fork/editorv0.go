@@ -3,7 +3,7 @@ package fork
 import (
 	"errors"
 
-	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -49,8 +49,8 @@ func (e *editorV0Error) MarshalOutput(output.Format) interface{} {
 	var code int32 = 1
 	errInspect := e.parent
 	for errInspect != nil {
-		fail, ok := errInspect.(*failures.Failure)
-		if ok && fail.Type.Matches(model.FailProjectNameConflict) {
+		err, ok := errInspect.(error)
+		if ok && errs.Matches(err, &model.ErrProjectNameConflict{}) {
 			code = -16
 		}
 		errInspect = errors.Unwrap(errInspect)

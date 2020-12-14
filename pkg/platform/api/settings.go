@@ -105,8 +105,8 @@ func getProjectHost(service Service) *string {
 		return &testingPlatform
 	}
 
-	pj, fail := projectfile.GetOnce()
-	if fail != nil {
+	pj, err := projectfile.GetOnce()
+	if err != nil {
 		return nil
 	}
 	url, err := url.Parse(pj.Project)

@@ -8,7 +8,6 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
@@ -43,9 +42,9 @@ project: "https://platform.activestate.com/SecretOrg/SecretProject?commitID=0001
 	if err != nil {
 		return nil, err
 	}
-	fail := pjfile.Init()
+	err = pjfile.Init()
 	if err != nil {
-		return nil, fail.ToError()
+		return nil, err
 	}
 
 	return pjfile, nil
@@ -53,7 +52,6 @@ project: "https://platform.activestate.com/SecretOrg/SecretProject?commitID=0001
 
 func (suite *SecretsExpanderTestSuite) BeforeTest(suiteName, testName string) {
 	locale.Set("en-US")
-	failures.ResetHandled()
 
 	projectFile, err := loadSecretsProject()
 	suite.Require().Nil(err, "Unmarshalled project YAML")
@@ -103,9 +101,9 @@ func (suite *SecretsExpanderTestSuite) assertExpansionSuccess(secretName string,
 	if isUser {
 		category = project.UserCategory
 	}
-	value, failure := suite.prepareWorkingExpander()("", category, secretName, false, suite.project)
+	value, err := suite.prepareWorkingExpander()("", category, secretName, false, suite.project)
 	suite.Equal(expectedExpansionValue, value)
-	suite.Nil(failure)
+	suite.Nil(err)
 }
 
 func (suite *SecretsExpanderTestSuite) TestKeypairNotFound() {

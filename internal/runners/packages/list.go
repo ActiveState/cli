@@ -1,12 +1,13 @@
 package packages
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -39,28 +40,28 @@ func (l *List) Run(params ListRunParams, nstype model.NamespaceType) error {
 	logging.Debug("ExecuteList")
 
 	var commit *strfmt.UUID
-	var fail *failures.Failure
+	var err error
 	switch {
 	case params.Commit != "":
-		commit, fail = targetFromCommit(params.Commit)
-		if fail != nil {
-			return locale.WrapError(fail.ToError(), fmt.Sprintf("%s_err_cannot_obtain_commit", nstype))
+		commit, err = targetFromCommit(params.Commit)
+		if err != nil {
+			return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_obtain_commit", nstype))
 		}
 	case params.Project != "":
-		commit, fail = targetFromProject(params.Project)
-		if fail != nil {
-			return locale.WrapError(fail.ToError(), fmt.Sprintf("%s_err_cannot_obtain_commit", nstype))
+		commit, err = targetFromProject(params.Project)
+		if err != nil {
+			return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_obtain_commit", nstype))
 		}
 	default:
-		commit, fail = targetFromProjectFile()
-		if fail != nil {
-			return locale.WrapError(fail.ToError(), fmt.Sprintf("%s_err_cannot_obtain_commit", nstype))
+		commit, err = targetFromProjectFile()
+		if err != nil {
+			return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_obtain_commit", nstype))
 		}
 	}
 
-	checkpoint, fail := fetchCheckpoint(commit)
-	if fail != nil {
-		return locale.WrapError(fail.ToError(), fmt.Sprintf("%s_err_cannot_fetch_checkpoint", nstype))
+	checkpoint, err := fetchCheckpoint(commit)
+	if err != nil {
+		return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_fetch_checkpoint", nstype))
 	}
 
 	table := newFilteredRequirementsTable(model.FilterCheckpointPackages(checkpoint), params.Name, nstype)
@@ -70,7 +71,7 @@ func (l *List) Run(params ListRunParams, nstype model.NamespaceType) error {
 	return nil
 }
 
-func targetFromCommit(commitOpt string) (*strfmt.UUID, *failures.Failure) {
+func targetFromCommit(commitOpt string) (*strfmt.UUID, error) {
 	if commitOpt == "latest" {
 		logging.Debug("latest commit selected")
 		proj := project.Get()
@@ -80,15 +81,15 @@ func targetFromCommit(commitOpt string) (*strfmt.UUID, *failures.Failure) {
 	return prepareCommit(commitOpt)
 }
 
-func targetFromProject(projectString string) (*strfmt.UUID, *failures.Failure) {
-	ns, fail := project.ParseNamespace(projectString)
-	if fail != nil {
-		return nil, fail
+func targetFromProject(projectString string) (*strfmt.UUID, error) {
+	ns, err := project.ParseNamespace(projectString)
+	if err != nil {
+		return nil, err
 	}
 
-	proj, fail := model.FetchProjectByName(ns.Owner, ns.Project)
-	if fail != nil {
-		return nil, fail
+	proj, err := model.FetchProjectByName(ns.Owner, ns.Project)
+	if err != nil {
+		return nil, err
 	}
 
 	for _, branch := range proj.Branches {
@@ -97,14 +98,14 @@ func targetFromProject(projectString string) (*strfmt.UUID, *failures.Failure) {
 		}
 	}
 
-	return nil, failures.FailNotFound.New(locale.T("err_package_project_no_commit"))
+	return nil, locale.NewError("err_package_project_no_commit")
 }
 
-func targetFromProjectFile() (*strfmt.UUID, *failures.Failure) {
+func targetFromProjectFile() (*strfmt.UUID, error) {
 	logging.Debug("commit from project file")
-	proj, fail := project.GetSafe()
-	if fail != nil {
-		return nil, fail
+	proj, err := project.GetSafe()
+	if err != nil {
+		return nil, err
 	}
 	commit := proj.CommitID()
 	if commit == "" {
@@ -115,32 +116,32 @@ func targetFromProjectFile() (*strfmt.UUID, *failures.Failure) {
 	return prepareCommit(commit)
 }
 
-func prepareCommit(commit string) (*strfmt.UUID, *failures.Failure) {
+func prepareCommit(commit string) (*strfmt.UUID, error) {
 	logging.Debug("commit %s selected", commit)
 	if ok := strfmt.Default.Validates("uuid", commit); !ok {
-		return nil, failures.FailMarshal.New(locale.T("invalid_uuid_val"))
+		return nil, errs.New("Invalid commit: %s", commit)
 	}
 
 	var uuid strfmt.UUID
 	if err := uuid.UnmarshalText([]byte(commit)); err != nil {
-		return nil, failures.FailMarshal.Wrap(err)
+		return nil, errs.Wrap(err, "UnmarshalText %s failed", commit)
 	}
 
 	return &uuid, nil
 }
 
-func fetchCheckpoint(commit *strfmt.UUID) (model.Checkpoint, *failures.Failure) {
+func fetchCheckpoint(commit *strfmt.UUID) (model.Checkpoint, error) {
 	if commit == nil {
 		logging.Debug("commit id is nil")
 		return nil, nil
 	}
 
-	checkpoint, _, fail := model.FetchCheckpointForCommit(*commit)
-	if fail != nil && fail.Type.Matches(model.FailNoData) {
-		return nil, model.FailNoData.New(locale.T("package_no_data"))
+	checkpoint, _, err := model.FetchCheckpointForCommit(*commit)
+	if err != nil && errors.Is(err, model.ErrNoData) {
+		return nil, locale.WrapInputError(err, "package_no_data")
 	}
 
-	return checkpoint, fail
+	return checkpoint, err
 }
 
 func newFilteredRequirementsTable(requirements model.Checkpoint, filter string, nstype model.NamespaceType) *packageTable {

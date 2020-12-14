@@ -2,7 +2,6 @@ package export
 
 import (
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -28,13 +27,13 @@ func (p *PrivateKey) Run(params *PrivateKeyParams) error {
 	logging.Debug("Execute")
 
 	if !p.Auth.Authenticated() {
-		return failures.FailUser.New(locale.T("err_command_requires_auth"))
+		return locale.NewError("User")
 	}
 
 	filepath := keypairs.LocalKeyFilename(constants.KeypairLocalFileName)
-	contents, fail := fileutils.ReadFile(filepath)
-	if fail != nil {
-		return fail
+	contents, err := fileutils.ReadFile(filepath)
+	if err != nil {
+		return err
 	}
 
 	p.Outputer.Print(string(contents))

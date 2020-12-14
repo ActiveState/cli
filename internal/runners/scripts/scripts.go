@@ -16,6 +16,7 @@ type Scripts struct {
 type primeable interface {
 	primer.Projecter
 	primer.Outputer
+	primer.Prompter
 }
 
 func NewScripts(prime primeable) *Scripts {

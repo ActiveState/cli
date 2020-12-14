@@ -17,7 +17,6 @@ import (
 	"github.com/ActiveState/cli/internal/colorize"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -46,9 +45,9 @@ type EnvData struct {
 	Key   string
 }
 
-func WriteRcFile(rcTemplateName string, path string, data EnvData, env map[string]string) *failures.Failure {
-	if fail := fileutils.Touch(path); fail != nil {
-		return fail
+func WriteRcFile(rcTemplateName string, path string, data EnvData, env map[string]string) error {
+	if err := fileutils.Touch(path); err != nil {
+		return err
 	}
 
 	rcData := map[string]interface{}{
@@ -57,8 +56,8 @@ func WriteRcFile(rcTemplateName string, path string, data EnvData, env map[strin
 		"Env":   env,
 	}
 
-	if fail := cleanRcFile(path, data); fail != nil {
-		return fail
+	if err := cleanRcFile(path, data); err != nil {
+		return err
 	}
 
 	box := packr.NewBox("../../../assets/shells")
@@ -66,13 +65,13 @@ func WriteRcFile(rcTemplateName string, path string, data EnvData, env map[strin
 
 	t, err := template.New("rcfile_append").Parse(tpl)
 	if err != nil {
-		return failures.FailTemplating.Wrap(err)
+		return errs.Wrap(err, "Templating failure")
 	}
 
 	var out bytes.Buffer
 	err = t.Execute(&out, rcData)
 	if err != nil {
-		return failures.FailTemplating.Wrap(err)
+		return errs.Wrap(err, "Templating failure")
 	}
 
 	logging.Debug("Writing to %s:\n%s", path, out.String())
@@ -80,11 +79,11 @@ func WriteRcFile(rcTemplateName string, path string, data EnvData, env map[strin
 	return fileutils.AppendToFile(path, []byte(fileutils.LineEnd+out.String()))
 }
 
-func cleanRcFile(path string, data EnvData) *failures.Failure {
+func cleanRcFile(path string, data EnvData) error {
 	readFile, err := os.Open(path)
 
 	if err != nil {
-		return failures.FailIO.Wrap(err)
+		return errs.Wrap(err, "IO failure")
 	}
 
 	scanner := bufio.NewScanner(readFile)
@@ -157,7 +156,7 @@ func SetupShellRcFile(rcFileName, templateName string, env map[string]string, na
 
 // SetupProjectRcFile creates a temporary RC file that our shell is initiated from, this allows us to template the logic
 // used for initialising the subshell
-func SetupProjectRcFile(templateName, ext string, env map[string]string, out output.Outputer) (*os.File, *failures.Failure) {
+func SetupProjectRcFile(templateName, ext string, env map[string]string, out output.Outputer) (*os.File, error) {
 	box := packr.NewBox("../../../assets/shells")
 	tpl := box.String(templateName)
 	prj := project.Get()
@@ -169,7 +168,7 @@ func SetupProjectRcFile(templateName, ext string, env map[string]string, out out
 	for _, event := range prj.Events() {
 		v, err := event.Value()
 		if err != nil {
-			return nil, failures.FailMisc.Wrap(err)
+			return nil, errs.Wrap(err, "Misc failure")
 		}
 
 		if strings.ToLower(event.Name()) == "first-activate" && !viper.GetBool(activatedKey) {
@@ -208,7 +207,7 @@ func SetupProjectRcFile(templateName, ext string, env map[string]string, out out
 
 	wd, err := osutils.Getwd()
 	if err != nil {
-		return nil, failures.FailMisc.Wrap(err, locale.Tr("err_subshell_wd", "Could not get working directory."))
+		return nil, locale.WrapError(err, "err_subshell_wd", "", "Could not get working directory.")
 	}
 
 	isConsole := ext == ".bat" // yeah this is a dirty cheat, should find something more deterministic
@@ -235,7 +234,7 @@ func SetupProjectRcFile(templateName, ext string, env map[string]string, out out
 
 	currExecAbsPath, err := osutils.Executable()
 	if err != nil {
-		return nil, failures.FailOS.Wrap(err)
+		return nil, errs.Wrap(err, "OS failure")
 	}
 	currExecAbsDir := filepath.Dir(currExecAbsPath)
 
@@ -253,18 +252,18 @@ func SetupProjectRcFile(templateName, ext string, env map[string]string, out out
 
 	t, err = t.Parse(tpl)
 	if err != nil {
-		return nil, failures.FailTemplating.Wrap(err)
+		return nil, errs.Wrap(err, "Templating failure")
 	}
 
 	var o bytes.Buffer
 	err = t.Execute(&o, rcData)
 	if err != nil {
-		return nil, failures.FailTemplating.Wrap(err)
+		return nil, errs.Wrap(err, "Templating failure")
 	}
 
 	tmpFile, err := tempfile.TempFileWithSuffix(os.TempDir(), "state-subshell-rc", ext)
 	if err != nil {
-		return nil, failures.FailOS.Wrap(err)
+		return nil, errs.Wrap(err, "OS failure")
 	}
 	defer tmpFile.Close()
 

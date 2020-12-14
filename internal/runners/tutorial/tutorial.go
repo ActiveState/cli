@@ -58,14 +58,14 @@ func (t *Tutorial) RunNewProject(params NewProjectParams) error {
 	// Prompt for language
 	lang := params.Language
 	if lang == language.Unset {
-		choice, fail := t.prompt.Select(
+		choice, err := t.prompt.Select(
 			"",
 			locale.Tl("tutorial_language", "What language would you like to use for your new virtual environment?"),
 			[]string{language.Perl.Text(), language.Python3.Text(), language.Python2.Text()},
 			"",
 		)
-		if fail != nil {
-			return locale.WrapInputError(fail, "err_tutorial_prompt_language", "Invalid response received.")
+		if err != nil {
+			return locale.WrapInputError(err, "err_tutorial_prompt_language", "Invalid response received.")
 		}
 		lang = language.MakeByText(choice)
 		if lang == language.Unknown || lang == language.Unset {
@@ -75,23 +75,23 @@ func (t *Tutorial) RunNewProject(params NewProjectParams) error {
 	}
 
 	// Prompt for project name
-	name, fail := t.prompt.Input("", locale.Tl("tutorial_prompt_projectname", "What do you want to name your project?"), lang.Text())
-	if fail != nil {
-		return locale.WrapInputError(fail, "err_tutorial_prompt_projectname", "Invalid response received.")
+	name, err := t.prompt.Input("", locale.Tl("tutorial_prompt_projectname", "What do you want to name your project?"), lang.Text())
+	if err != nil {
+		return locale.WrapInputError(err, "err_tutorial_prompt_projectname", "Invalid response received.")
 	}
 
 	// Prompt for project dir
 	homeDir, _ := fileutils.HomeDir()
-	dir, fail := t.prompt.Input("", locale.Tl(
+	dir, err := t.prompt.Input("", locale.Tl(
 		"tutorial_prompt_projectdir",
 		"Where would you like your project directory to be mapped? This is usually the root of your repository, or the place where you have your project dotfiles."), homeDir)
-	if fail != nil {
-		return locale.WrapInputError(fail, "err_tutorial_prompt_projectdir", "Invalid response received.")
+	if err != nil {
+		return locale.WrapInputError(err, "err_tutorial_prompt_projectdir", "Invalid response received.")
 	}
 
 	// Create dir and switch to it
-	if fail := fileutils.MkdirUnlessExists(dir); fail != nil {
-		return locale.WrapInputError(fail, "err_tutorial_mkdir", "Could not create directory: {{.V0}}.", dir)
+	if err := fileutils.MkdirUnlessExists(dir); err != nil {
+		return locale.WrapInputError(err, "err_tutorial_mkdir", "Could not create directory: {{.V0}}.", dir)
 	}
 	if err := os.Chdir(dir); err != nil {
 		return locale.WrapInputError(err, "err_tutorial_chdir", "Could not change directory to: {{.V0}}", dir)
@@ -129,14 +129,14 @@ func (t *Tutorial) authFlow() error {
 	choices := []string{signIn, signUpCLI, signUpBrowser}
 
 	// Prompt for auth
-	choice, fail := t.prompt.Select(
+	choice, err := t.prompt.Select(
 		"",
 		locale.Tl("tutorial_need_account", "In order to create a virtual environment you must have an ActiveState Platform account"),
 		choices,
 		signIn,
 	)
-	if fail != nil {
-		return locale.WrapInputError(fail, "err_tutorial_prompt_account", "Invalid response received.")
+	if err != nil {
+		return locale.WrapInputError(err, "err_tutorial_prompt_account", "Invalid response received.")
 	}
 
 	// Evaluate user selection
@@ -165,10 +165,10 @@ func (t *Tutorial) authFlow() error {
 
 	// Reload authentication info
 	if err := config.Reload(); err != nil {
-		return locale.WrapError(fail, "err_tutorial_config", "Could not reload config after invoking `state auth ..`.")
+		return locale.WrapError(err, "err_tutorial_config", "Could not reload config after invoking `state auth ..`.")
 	}
-	if fail := t.auth.Authenticate(); fail != nil {
-		return locale.WrapError(fail, "err_tutorial_auth", "Could not authenticate after invoking `state auth ..`.")
+	if err := t.auth.Authenticate(); err != nil {
+		return locale.WrapError(err, "err_tutorial_auth", "Could not authenticate after invoking `state auth ..`.")
 	}
 
 	analytics.Event(analytics.CatTutorial, "authentication-flow-complete")

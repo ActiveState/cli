@@ -117,7 +117,7 @@ func (ft *FileTransform) ApplyTransform(baseDir string, constants Constants) err
 
 		replaced, err := ft.relocateFile(fileBytes, replacement)
 		if err != nil {
-			return err
+			return errs.Wrap(err, "relocateFile failed")
 		}
 
 		// skip writing back to file if contents remain the same after transformation
@@ -125,9 +125,9 @@ func (ft *FileTransform) ApplyTransform(baseDir string, constants Constants) err
 			continue
 		}
 
-		fail := fileutils.WriteFile(fp, replaced)
-		if fail != nil {
-			return errs.Wrap(fail.ToError(), "Could not write file contents.")
+		err = fileutils.WriteFile(fp, replaced)
+		if err != nil {
+			return errs.Wrap(err, "Could not write file contents.")
 		}
 	}
 

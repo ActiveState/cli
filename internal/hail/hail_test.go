@@ -13,8 +13,8 @@ import (
 )
 
 func TestSend(t *testing.T) {
-	fail := Send("/", []byte{})
-	assert.Error(t, fail.ToError())
+	err := Send("/", []byte{})
+	assert.Error(t, err)
 
 	tempFile, err := ioutil.TempFile("", t.Name())
 	require.NoError(t, err)
@@ -26,8 +26,8 @@ func TestSend(t *testing.T) {
 	}()
 
 	want := []byte("some data")
-	fail = Send(file, want)
-	require.NoError(t, fail.ToError())
+	err = Send(file, want)
+	require.NoError(t, err)
 
 	got, err := ioutil.ReadAll(tempFile)
 	require.NoError(t, err)
@@ -44,19 +44,19 @@ func TestOpen(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	_, fail := Open(ctx, file)
-	assert.Error(t, fail.ToError())
+	_, err := Open(ctx, file)
+	assert.Error(t, err)
 
 	tempFile, err := ioutil.TempFile("", t.Name())
 	require.NoError(t, err)
 
 	file = tempFile.Name()
-	rcvs, fail := Open(ctx, file)
+	rcvs, err := Open(ctx, file)
 	defer func() {
 		_ = tempFile.Close()
 		assert.NoError(t, os.Remove(file))
 	}()
-	require.NoError(t, fail.ToError())
+	require.NoError(t, err)
 
 	postOpen := time.Now()
 	data := []byte("some data")
@@ -85,7 +85,7 @@ func TestOpen(t *testing.T) {
 		assert.True(t, postOpen.After(r.Open))
 		assert.True(t, r.Time.After(postOpen))
 	}
-	require.NoError(t, r.Fail.ToError())
+	require.NoError(t, r.Error)
 }
 
 func TestOpen_ReceivesClosed(t *testing.T) {
@@ -96,8 +96,8 @@ func TestOpen_ReceivesClosed(t *testing.T) {
 	require.NoError(t, err)
 
 	file := tempFile.Name()
-	rcvs, fail := Open(ctx, file)
-	require.NoError(t, fail.ToError())
+	rcvs, err := Open(ctx, file)
+	require.NoError(t, err)
 	defer func() {
 		_ = tempFile.Close()
 		assert.NoError(t, os.Remove(file))

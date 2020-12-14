@@ -9,13 +9,8 @@ import (
 	"github.com/felixge/fgprof"
 
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/failures"
 )
 
-var (
-	// FailSetupCPUProfiling indicates a failure setting up cpu profiling.
-	FailSetupCPUProfiling = failures.Type("profile.fail.setup.cpu", failures.FailNonFatal)
-)
 
 // CPU runs the CPU profiler. Be sure to run the cleanup func.
 func CPU() (cleanUp func() error, err error) {

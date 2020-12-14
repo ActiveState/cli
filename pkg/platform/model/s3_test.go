@@ -37,8 +37,8 @@ func (suite *S3TestSuite) TestGetS3() {
 	}
 
 	u, _ := url.Parse("http://test.tld/python" + ext)
-	response, fail := model.SignS3URL(u)
-	suite.Require().NoError(fail.ToError())
+	response, err := model.SignS3URL(u)
+	suite.Require().NoError(err)
 	suite.Equal(u.String(), response.String())
 }
 

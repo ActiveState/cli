@@ -9,7 +9,6 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 )
@@ -34,13 +33,13 @@ func (suite *CamelRuntimeTestSuite) Test_InitializeWithInvalidArtifacts() {
 	cacheDir, cacheCleanup := suite.genCacheDir()
 	defer cacheCleanup()
 
-	_, fail := runtime.NewCamelInstall(strfmt.UUID(""), cacheDir, []*runtime.HeadChefArtifact{
+	_, err := runtime.NewCamelInstall(strfmt.UUID(""), cacheDir, []*runtime.HeadChefArtifact{
 		invalidExtension,
 		testArtifact,
 		noURIArtifact,
 	})
-	suite.Require().Error(fail.ToError(), "error in initialization of camel runtime assembler")
-	suite.Assert().IsType(runtime.FailNoValidArtifact, fail.Type)
+	errt := &runtime.ErrInvalidArtifact{}
+	suite.Error(err, &errt)
 }
 
 func (suite *CamelRuntimeTestSuite) Test_PreUnpackArtifact() {
@@ -48,21 +47,21 @@ func (suite *CamelRuntimeTestSuite) Test_PreUnpackArtifact() {
 	defer cacheCleanup()
 
 	cases := []struct {
-		name            string
-		prepFunc        func(installDir string)
-		expectedFailure *failures.FailureType
+		name          string
+		prepFunc      func(installDir string)
+		expectedError error
 	}{
 		{"InstallationDirectoryIsFile", func(installDir string) {
 			baseDir := filepath.Dir(installDir)
-			fail := fileutils.MkdirUnlessExists(baseDir)
-			suite.Require().NoError(fail.ToError())
-			err := ioutil.WriteFile(installDir, []byte{}, 0666)
+			err := fileutils.MkdirUnlessExists(baseDir)
 			suite.Require().NoError(err)
-		}, runtime.FailInstallDirInvalid},
+			err = ioutil.WriteFile(installDir, []byte{}, 0666)
+			suite.Require().NoError(err)
+		}, &runtime.ErrInstallDirInvalid{}},
 		{"InstallationDirectoryIsNotEmpty", func(installDir string) {
-			fail := fileutils.MkdirUnlessExists(installDir)
-			suite.Require().NoError(fail.ToError())
-			err := ioutil.WriteFile(filepath.Join(installDir, "dummy"), []byte{}, 0666)
+			err := fileutils.MkdirUnlessExists(installDir)
+			suite.Require().NoError(err)
+			err = ioutil.WriteFile(filepath.Join(installDir, "dummy"), []byte{}, 0666)
 			suite.Require().NoError(err)
 		}, nil},
 		{"InstallationDirectoryIsOkay", func(installDir string) {}, nil},
@@ -72,20 +71,19 @@ func (suite *CamelRuntimeTestSuite) Test_PreUnpackArtifact() {
 	artifact, _ := headchefArtifact(archivePath)
 	for _, tc := range cases {
 		suite.Run(tc.name, func() {
-			cr, fail := runtime.NewCamelInstall(strfmt.UUID(""), cacheDir, []*runtime.HeadChefArtifact{artifact})
-			suite.Require().NoError(fail.ToError())
+			cr, err := runtime.NewCamelInstall(strfmt.UUID(""), cacheDir, []*runtime.HeadChefArtifact{artifact})
+			suite.Require().NoError(err)
 
 			os.RemoveAll(cacheDir)
 			defer os.RemoveAll(cacheDir)
 
 			tc.prepFunc(cacheDir)
-			fail = cr.PreUnpackArtifact(artifact)
-			if tc.expectedFailure == nil {
-				suite.Require().NoError(fail.ToError())
-				return
+			err = cr.PreUnpackArtifact(artifact)
+			if tc.expectedError == nil {
+				suite.Require().NoError(err)
+			} else {
+				suite.ErrorAs(err, &tc.expectedError)
 			}
-			suite.Require().Error(fail.ToError())
-			suite.Equal(tc.expectedFailure, fail.Type)
 		})
 	}
 }

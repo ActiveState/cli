@@ -8,15 +8,16 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/internal/unarchiver"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/stretchr/testify/suite"
 )
 
 type AlternativeArtifactIntegrationTestSuite struct {
@@ -74,8 +75,8 @@ func (suite *AlternativeArtifactIntegrationTestSuite) TestRelocation() {
 	err = tgz.Unarchive(artTgzFile, artTgzSize, ts.Dirs.Cache)
 	suite.Require().NoError(err, "failed to unarchive the artifact")
 	edFile := filepath.Join(ts.Dirs.Cache, "runtime.json")
-	ed, fail := envdef.NewEnvironmentDefinition(edFile)
-	suite.Require().NoError(fail.ToError(), "failed to create environment definition file")
+	ed, err := envdef.NewEnvironmentDefinition(edFile)
+	suite.Require().NoError(err, "failed to create environment definition file")
 
 	constants := envdef.NewConstants(installDir)
 	ed = ed.ExpandVariables(constants)

@@ -24,18 +24,18 @@ const latestVersion = "latest"
 func executePackageOperation(pj *project.Project, out output.Outputer, authentication *authentication.Auth, prompt prompt.Prompter, name, version string, operation model.Operation, ns model.Namespace) error {
 	isHeadless := pj.IsHeadless()
 	if !isHeadless && !authentication.Authenticated() {
-		anonymousOk, fail := prompt.Confirm(locale.Tl("continue_anon", "Continue Anonymously?"), locale.T("prompt_headless_anonymous"), true)
-		if fail != nil {
-			return locale.WrapInputError(fail.ToError(), "Authentication cancelled.")
+		anonymousOk, err := prompt.Confirm(locale.Tl("continue_anon", "Continue Anonymously?"), locale.T("prompt_headless_anonymous"), true)
+		if err != nil {
+			return locale.WrapInputError(err, "Authentication cancelled.")
 		}
 		isHeadless = anonymousOk
 	}
 
 	// Note: User also lands here if answering No to the question about anonymous commit.
 	if !isHeadless {
-		fail := auth.RequireAuthentication(locale.T("auth_required_activate"), out, prompt)
-		if fail != nil {
-			return fail.WithDescription("err_auth_required")
+		err := auth.RequireAuthentication(locale.T("auth_required_activate"), out, prompt)
+		if err != nil {
+			return locale.WrapInputError(err, "err_auth_required")
 		}
 	}
 
@@ -70,9 +70,9 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 	}
 
 	parentCommitID := pj.CommitUUID()
-	commitID, fail := model.CommitPackage(parentCommitID, operation, name, ns.String(), version, machineid.UniqID())
-	if fail != nil {
-		return locale.WrapError(fail.ToError(), fmt.Sprintf("err_%s_%s", ns.Type(), operation))
+	commitID, err := model.CommitPackage(parentCommitID, operation, name, ns.String(), version, machineid.UniqID())
+	if err != nil {
+		return locale.WrapError(err, fmt.Sprintf("err_%s_%s", ns.Type(), operation))
 	}
 
 	revertCommit, err := model.GetRevertCommit(pj.CommitUUID(), commitID)
@@ -92,8 +92,8 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 				return locale.WrapError(err, "err_package_"+string(operation))
 			}
 		}
-		if fail := pj.Source().SetCommit(commitID.String(), isHeadless); fail != nil {
-			return fail.WithDescription("err_package_update_pjfile")
+		if err := pj.Source().SetCommit(commitID.String(), isHeadless); err != nil {
+			return locale.WrapError(err, "err_package_update_pjfile")
 		}
 	} else {
 		commitID = parentCommitID
@@ -116,9 +116,9 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 	if !rt.IsCachedRuntime() {
 		out.Notice(output.Heading(locale.Tl("update_runtime", "Updating Runtime")))
 		out.Notice(locale.Tl("update_runtime_info", "Changes to your runtime may require some dependencies to be rebuilt."))
-		_, _, fail := runtime.NewInstaller(rt).Install()
-		if fail != nil {
-			return locale.WrapError(fail, "err_packages_update_runtime_install", "Could not install dependencies.")
+		_, _, err := runtime.NewInstaller(rt).Install()
+		if err != nil {
+			return locale.WrapError(err, "err_packages_update_runtime_install", "Could not install dependencies.")
 		}
 	}
 

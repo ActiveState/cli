@@ -3,11 +3,16 @@ package project
 import (
 	"strings"
 
-	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/errs"
 )
 
 // expanderRegistry maps category names to their Expander Func implementations.
 var expanderRegistry = map[string]ExpanderFunc{}
+
+var (
+	ErrExpandBadName = errs.New("Bad expander name")
+	ErrExpandNoFunc  = errs.New("Expander has no handler")
+)
 
 const TopLevelExpanderName = "toplevel"
 
@@ -24,12 +29,12 @@ func init() {
 // RegisterExpander registers an Expander Func for some given handler value. The handler value
 // must not effectively be a blank string and the Func must be defined. It is definitely possible
 // to replace an existing handler using this function.
-func RegisterExpander(handle string, expanderFn ExpanderFunc) *failures.Failure {
+func RegisterExpander(handle string, expanderFn ExpanderFunc) error {
 	cleanHandle := strings.TrimSpace(handle)
 	if cleanHandle == "" {
-		return FailExpanderBadName.New("secrets_expander_err_empty_name")
+		return errs.Wrap(ErrExpandBadName, "secrets_expander_err_empty_name")
 	} else if expanderFn == nil {
-		return FailExpanderNoFunc.New("secrets_expander_err_undefined")
+		return errs.Wrap(ErrExpandNoFunc, "secrets_expander_err_undefined")
 	}
 	expanderRegistry[cleanHandle] = expanderFn
 	return nil

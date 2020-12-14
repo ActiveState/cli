@@ -6,8 +6,9 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/progress"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/ActiveState/cli/internal/progress"
 )
 
 func TestDownload(t *testing.T) {
@@ -27,8 +28,8 @@ func TestDownload(t *testing.T) {
 	}
 
 	manager := New(entries, 5, p)
-	fail := manager.Download()
-	assert.NoError(t, fail.ToError(), "Should download files")
+	err := manager.Download()
+	assert.NoError(t, err, "Should download files")
 
 	for i := 1; i <= 3; i++ {
 		assert.FileExists(t, filepath.Join(os.TempDir(), "state-test-download", "file"+strconv.Itoa(i)), "Should have created the target file")

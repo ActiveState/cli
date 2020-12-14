@@ -47,11 +47,11 @@ func (suite *GitTestSuite) BeforeTest(suiteName, testName string) {
 
 	projectURL := fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, "test-owner", "test-project")
 
-	_, fail := projectfile.TestOnlyCreateWithProjectURL(projectURL, suite.dir)
-	suite.NoError(fail.ToError(), "could not create a projectfile")
+	_, err = projectfile.TestOnlyCreateWithProjectURL(projectURL, suite.dir)
+	suite.NoError(err, "could not create a projectfile")
 
-	fail = fileutils.Touch(filepath.Join(suite.dir, "test-file"))
-	suite.NoError(fail.ToError(), "could not create a temp file")
+	err = fileutils.Touch(filepath.Join(suite.dir, "test-file"))
+	suite.NoError(err, "could not create a temp file")
 
 	_, err = worktree.Add("test-file")
 	suite.NoError(err, "could not add tempfile to staging")
@@ -119,22 +119,22 @@ func (suite *GitTestSuite) TestCloneProjectRepo() {
 }
 
 func (suite *GitTestSuite) TestEnsureCorrectRepo() {
-	fail := ensureCorrectRepo("test-owner", "test-project", filepath.Join(suite.dir, constants.ConfigFileName))
-	suite.NoError(fail.ToError(), "projectfile URL should contain owner and name")
+	err := ensureCorrectRepo("test-owner", "test-project", filepath.Join(suite.dir, constants.ConfigFileName))
+	suite.NoError(err, "projectfile URL should contain owner and name")
 }
 
 func (suite *GitTestSuite) TestEnsureCorrectRepo_Mistmatch() {
-	fail := ensureCorrectRepo("not-owner", "bad-project", filepath.Join(suite.dir, constants.ConfigFileName))
-	expected := FailProjectURLMismatch.New(locale.T("error_git_project_url_mismatch"))
-	suite.EqualError(fail, expected.Error(), "expected errors to match")
+	err := ensureCorrectRepo("not-owner", "bad-project", filepath.Join(suite.dir, constants.ConfigFileName))
+	expected := locale.NewError("ProjectURLMismatch")
+	suite.EqualError(err, expected.Error(), "expected errors to match")
 }
 
 func (suite *GitTestSuite) TestMoveFiles() {
 	anotherDir := filepath.Join(suite.anotherDir, "anotherDir")
-	fail := moveFiles(suite.dir, anotherDir)
-	suite.NoError(fail.ToError(), "should be able to move files wihout error")
+	err := moveFiles(suite.dir, anotherDir)
+	suite.NoError(err, "should be able to move files wihout error")
 
-	_, err := os.Stat(filepath.Join(anotherDir, constants.ConfigFileName))
+	_, err = os.Stat(filepath.Join(anotherDir, constants.ConfigFileName))
 	suite.NoError(err, "file should be moved")
 
 	_, err = os.Stat(filepath.Join(anotherDir, "test-file"))
@@ -146,12 +146,12 @@ func (suite *GitTestSuite) TestMoveFilesDirNoEmpty() {
 	err := os.MkdirAll(anotherDir, 0755)
 	suite.NoError(err, "should be able to create another temp directory")
 
-	fail := fileutils.Touch(filepath.Join(anotherDir, "file.txt"))
-	suite.Require().NoError(fail.ToError())
+	err = fileutils.Touch(filepath.Join(anotherDir, "file.txt"))
+	suite.Require().NoError(err)
 
-	fail = moveFiles(suite.dir, anotherDir)
-	expected := FailTargetDirInUse.New(locale.T("error_git_target_dir_not_empty"))
-	suite.EqualError(fail, expected.Error())
+	err = moveFiles(suite.dir, anotherDir)
+	expected := locale.NewError("TargetDirInUse")
+	suite.EqualError(err, expected.Error())
 }
 
 func TestGitTestSuite(t *testing.T) {

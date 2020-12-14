@@ -14,7 +14,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -31,46 +30,15 @@ import (
 // This leaves room to advance the progress bar further while renaming strings in the unpacked files.
 const percentReportedAfterUnpack = 85
 
-var (
-	// FailInstallDirInvalid represents a Failure due to the working-dir for an installation being invalid in some way.
-	FailInstallDirInvalid = failures.Type("runtime.installdir.invalid", failures.FailIO)
+type ErrInstallDirInvalid struct{ *locale.LocalizedError }
 
-	// FailArchiveInvalid represents a Failure due to the installer archive file being invalid in some way.
-	FailArchiveInvalid = failures.Type("runtime.archive.invalid", failures.FailIO)
+type ErrArchiveInvalid struct{ *locale.LocalizedError }
 
-	// FailArchiveNoInstallDir represents a Failure due to an archive not having an install dir
-	FailArchiveNoInstallDir = failures.Type("runtime.archive.noinstalldir", FailArchiveInvalid)
+type ErrPrePlatform struct{ *locale.LocalizedError }
 
-	// FailRuntimeInvalid represents a Failure due to a runtime being invalid in some way prior to installation.
-	FailRuntimeInvalid = failures.Type("runtime.runtime.invalid", failures.FailIO)
+type ErrNotExecutable struct{ *locale.LocalizedError }
 
-	// FailNoCommitID represents a Failure due to a missing commit ID
-	FailNoCommitID = failures.Type("runtime.runtime.notcommitid", failures.FailUser)
-
-	// FailPrePlatformNotSupported represents a Failure due to the runtime containing pre-platform bits.
-	FailPrePlatformNotSupported = failures.Type("runtime.runtime.preplatform", failures.FailUser)
-
-	// FailRuntimeInstallation represents a Failure to install a runtime.
-	FailRuntimeInstallation = failures.Type("runtime.runtime.installation", failures.FailOS)
-
-	// FailRuntimeNotExecutable represents a Failure due to a required file not being executable
-	FailRuntimeNotExecutable = failures.Type("runtime.runtime.notexecutable", FailRuntimeInvalid)
-
-	// FailRuntimeNoExecutable represents a Failure due to there not being an executable
-	FailRuntimeNoExecutable = failures.Type("runtime.runtime.noexecutable", FailRuntimeInvalid)
-
-	// FailRuntimeNoPrefixes represents a Failure due to there not being any prefixes for relocation
-	FailRuntimeNoPrefixes = failures.Type("runtime.runtime.noprefixes", FailRuntimeInvalid)
-
-	// FailRequiresDownload is a failure due to not all artifacts having been downloaded
-	FailRequiresDownload = failures.Type("runtime.requires.download", failures.FailUserInput)
-
-	// FailRuntimeInvalidEnvironment represents a Failure during set up of the runtime environment
-	FailRuntimeInvalidEnvironment = failures.Type("runtime.runtime.invalidenv", failures.FailIO)
-
-	// FailRuntimeUnknownEngine is a failure due to the engine not being known.
-	FailRuntimeUnknownEngine = failures.Type("runtime.runtime.unknownengine", FailRuntimeInvalid)
-)
+type ErrNoPrefixes struct{ *locale.LocalizedError }
 
 type MessageHandler interface {
 	buildlogstream.MessageHandler
@@ -98,51 +66,51 @@ func NewInstaller(runtime *Runtime) *Installer {
 }
 
 // Install will download the installer archive and invoke InstallFromArchive
-func (installer *Installer) Install() (envGetter EnvGetter, freshInstallation bool, fail *failures.Failure) {
+func (installer *Installer) Install() (envGetter EnvGetter, freshInstallation bool, err error) {
 	if installer.runtime.IsCachedRuntime() {
-		ar, fail := installer.RuntimeEnv()
-		if fail == nil {
+		ar, err := installer.RuntimeEnv()
+		if err == nil {
 			return ar, true, nil
 		}
-		logging.Error("Failed to retrieve cached assembler: %v", fail.ToError())
+		logging.Error("Failed to retrieve cached assembler: %v", err)
 	}
-	assembler, fail := installer.Assembler()
-	if fail != nil {
-		return nil, false, fail
+	assembler, err := installer.Assembler()
+	if err != nil {
+		return nil, false, err
 	}
 	return installer.InstallArtifacts(assembler)
 }
 
 // Env will grab the environment information for the given runtime. This will request build info.
-func (installer *Installer) Env() (envGetter EnvGetter, fail *failures.Failure) {
+func (installer *Installer) Env() (envGetter EnvGetter, err error) {
 	if installer.runtime.IsCachedRuntime() {
-		ar, fail := installer.RuntimeEnv()
-		if fail == nil {
+		ar, err := installer.RuntimeEnv()
+		if err == nil {
 			return ar, nil
 		}
-		logging.Error("Failed to retrieve cached assembler: %v", fail.ToError())
+		logging.Error("Failed to retrieve cached assembler: %v", err)
 	}
 	return installer.Assembler()
 }
 
 // IsInstalled will check if the installer has already ran (ie. the artifacts already exist at the target dir)
-func (installer *Installer) IsInstalled() (bool, *failures.Failure) {
+func (installer *Installer) IsInstalled() (bool, error) {
 	if installer.runtime.IsCachedRuntime() {
 		return true, nil
 	}
-	assembler, fail := installer.Assembler()
-	if fail != nil {
-		return false, fail
+	assembler, err := installer.Assembler()
+	if err != nil {
+		return false, err
 	}
 
 	return assembler.IsInstalled(), nil
 }
 
 // RuntimeEnv returns the runtime environment specialization all constructed from cached values
-func (installer *Installer) RuntimeEnv() (EnvGetter, *failures.Failure) {
+func (installer *Installer) RuntimeEnv() (EnvGetter, error) {
 	buildEngine, err := installer.runtime.BuildEngine()
 	if err != nil {
-		return nil, FailRuntimeUnknownEngine.Wrap(err, "installer_err_engine_unknown")
+		return nil, locale.WrapError(err, "installer_err_engine_unknown")
 	}
 	switch buildEngine {
 	case Alternative:
@@ -150,35 +118,35 @@ func (installer *Installer) RuntimeEnv() (EnvGetter, *failures.Failure) {
 	case Camel:
 		return NewCamelEnv(installer.runtime.commitID, installer.runtime.runtimeDir)
 	case Hybrid:
-		cr, fail := NewCamelEnv(installer.runtime.commitID, installer.runtime.runtimeDir)
-		if fail != nil {
-			return nil, fail
+		cr, err := NewCamelEnv(installer.runtime.commitID, installer.runtime.runtimeDir)
+		if err != nil {
+			return nil, err
 		}
 
 		return &HybridRuntime{cr}, nil
 	default:
-		return nil, FailRuntimeUnknownEngine.New("installer_err_engine_unknown")
+		return nil, locale.NewError("installer_err_engine_unknown")
 	}
 }
 
 // Assembler returns a new runtime assembler for the given checkpoint and artifacts
-func (installer *Installer) Assembler() (Assembler, *failures.Failure) {
-	if fail := installer.validateCheckpoint(); fail != nil {
-		return nil, fail
+func (installer *Installer) Assembler() (Assembler, error) {
+	if err := installer.validateCheckpoint(); err != nil {
+		return nil, err
 	}
 
 	var project *mono_models.Project
 	if installer.runtime.Owner() != "" && installer.runtime.ProjectName() != "" {
-		var fail *failures.Failure
-		project, fail = model.FetchProjectByName(installer.runtime.Owner(), installer.runtime.ProjectName())
-		if fail != nil {
-			return nil, fail
+		var err error
+		project, err = model.FetchProjectByName(installer.runtime.Owner(), installer.runtime.ProjectName())
+		if err != nil {
+			return nil, errs.Wrap(err, "Fetch project failed")
 		}
 	}
 
 	recipe, err := model.ResolveRecipe(installer.runtime.commitID, installer.runtime.owner, installer.runtime.projectName, project)
 	if err != nil {
-		return nil, failures.FailMisc.Wrap(err)
+		return nil, errs.Wrap(err, "ResolveRecipe failed")
 	}
 
 	// Run Change Summary
@@ -186,9 +154,9 @@ func (installer *Installer) Assembler() (Assembler, *failures.Failure) {
 	directDeps, recursiveDeps := model.ParseDepTree(recipe.ResolvedIngredients, ingredientMap)
 	installer.runtime.msgHandler.ChangeSummary(directDeps, recursiveDeps, ingredientMap)
 
-	artifacts, fail := installer.runtimeDownloader.FetchArtifacts(recipe, project)
-	if fail != nil {
-		return nil, fail
+	artifacts, err := installer.runtimeDownloader.FetchArtifacts(recipe, project)
+	if err != nil {
+		return nil, err
 	}
 
 	switch artifacts.BuildEngine {
@@ -197,28 +165,28 @@ func (installer *Installer) Assembler() (Assembler, *failures.Failure) {
 	case Camel:
 		return NewCamelInstall(installer.runtime.commitID, installer.runtime.runtimeDir, artifacts.Artifacts)
 	case Hybrid:
-		ci, fail := NewCamelInstall(installer.runtime.commitID, installer.runtime.runtimeDir, artifacts.Artifacts)
-		if fail != nil {
-			return nil, fail
+		ci, err := NewCamelInstall(installer.runtime.commitID, installer.runtime.runtimeDir, artifacts.Artifacts)
+		if err != nil {
+			return nil, err
 		}
 
 		return &HybridInstall{ci}, nil
 	default:
-		return nil, FailRuntimeUnknownEngine.New("installer_err_engine_unknown")
+		return nil, locale.NewError("installer_err_engine_unknown")
 	}
 }
 
 // InstallArtifacts installs all artifacts provided by a runtime assembler
-func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGetter EnvGetter, freshInstallation bool, fail *failures.Failure) {
+func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGetter EnvGetter, freshInstallation bool, err error) {
 	if runtimeAssembler.IsInstalled() {
 		// write complete marker and build engine files in case they don't exist yet
 		err := installer.runtime.MarkInstallationComplete()
 		if err != nil {
-			return nil, false, failures.FailRuntime.Wrap(err, locale.Tr("installer_mark_complete_err", "Failed to mark the installation as complete."))
+			return nil, false, locale.WrapError(err, "installer_mark_complete_err", "Failed to mark the installation as complete.")
 		}
 		err = installer.runtime.StoreBuildEngine(runtimeAssembler.BuildEngine())
 		if err != nil {
-			return nil, false, failures.FailRuntime.Wrap(err, locale.Tr("installer_store_build_engine_err", "Failed to store build engine value."))
+			return nil, false, locale.WrapError(err, "installer_store_build_engine_err", "Failed to store build engine value.")
 		}
 
 		logging.Debug("runtime already successfully installed")
@@ -240,11 +208,11 @@ func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGet
 		}
 
 		if len(downloadArtfs) > 0 {
-			archives, fail := installer.runtimeDownloader.Download(downloadArtfs, runtimeAssembler, downloadProgress)
-			if fail != nil {
+			archives, err := installer.runtimeDownloader.Download(downloadArtfs, runtimeAssembler, downloadProgress)
+			if err != nil {
 				downloadProgress.Cancel()
 				downloadProgress.Close()
-				return nil, false, fail
+				return nil, false, err
 			}
 
 			for k, v := range archives {
@@ -259,48 +227,48 @@ func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGet
 	}
 
 	installProgress := progress.New(mpb.WithOutput(progressOut))
-	fail = installer.InstallFromArchives(unpackArchives, runtimeAssembler, installProgress)
-	if fail != nil {
+	err = installer.InstallFromArchives(unpackArchives, runtimeAssembler, installProgress)
+	if err != nil {
 		installProgress.Cancel()
 		installProgress.Close()
-		return nil, false, fail
+		return nil, false, err
 	}
 	installProgress.Close()
 
 	// We still want to run PostInstall because even though no new artifact might be downloaded we still might be
 	// deleting some already cached ones
-	err := runtimeAssembler.PostInstall()
+	err = runtimeAssembler.PostInstall()
 	if err != nil {
-		return nil, false, failures.FailRuntime.Wrap(err, "error during post installation step")
+		return nil, false, errs.Wrap(err, "error during post installation step")
 	}
 
 	err = installer.runtime.StoreBuildEngine(runtimeAssembler.BuildEngine())
 	if err != nil {
-		return nil, false, failures.FailRuntime.Wrap(err, locale.Tr("installer_store_build_engine_err", "Failed to store build engine value."))
+		return nil, false, locale.WrapError(err, "installer_store_build_engine_err", "Failed to store build engine value.")
 	}
 
 	err = installer.runtime.MarkInstallationComplete()
 	if err != nil {
-		return nil, false, failures.FailRuntime.Wrap(err, "error marking installation as complete")
+		return nil, false, errs.Wrap(err, "error marking installation as complete")
 	}
 
 	return runtimeAssembler, true, nil
 }
 
 // validateCheckpoint tries to see if the checkpoint has any chance of succeeding
-func (installer *Installer) validateCheckpoint() *failures.Failure {
+func (installer *Installer) validateCheckpoint() error {
 	if installer.runtime.commitID == "" {
-		return FailNoCommitID.New("installer_err_runtime_no_commitid")
+		return &ErrNoCommit{locale.NewInputError("installer_err_runtime_no_commitid")}
 	}
 
-	checkpoint, _, fail := model.FetchCheckpointForCommit(installer.runtime.commitID)
-	if fail != nil {
-		return fail
+	checkpoint, _, err := model.FetchCheckpointForCommit(installer.runtime.commitID)
+	if err != nil {
+		return err
 	}
 
 	for _, change := range checkpoint {
 		if model.NamespaceMatch(change.Namespace, model.NamespacePrePlatformMatch) {
-			return FailPrePlatformNotSupported.New("installer_err_runtime_preplatform")
+			return &ErrPrePlatform{locale.NewInputError("installer_err_runtime_preplatform")}
 		}
 	}
 
@@ -310,22 +278,22 @@ func (installer *Installer) validateCheckpoint() *failures.Failure {
 // InstallFromArchives will unpack the installer archive, locate the install script, and then use the installer
 // script to install a runtime to the configured runtime dir. Any failures during this process will result in a
 // failed installation and the install-dir being removed.
-func (installer *Installer) InstallFromArchives(archives map[string]*HeadChefArtifact, a Assembler, pg *progress.Progress) *failures.Failure {
+func (installer *Installer) InstallFromArchives(archives map[string]*HeadChefArtifact, a Assembler, pg *progress.Progress) error {
 	var bar *progress.TotalBar
 	if len(archives) > 0 {
 		bar = pg.AddTotalBar(locale.T("installing"), len(archives))
 	}
 
-	fail := a.PreInstall()
-	if fail != nil {
+	err := a.PreInstall()
+	if err != nil {
 		pg.Cancel()
-		return fail
+		return err
 	}
 
 	for archivePath, artf := range archives {
-		if fail := installer.InstallFromArchive(archivePath, artf, a, pg); fail != nil {
+		if err := installer.InstallFromArchive(archivePath, artf, a, pg); err != nil {
 			pg.Cancel()
-			return fail
+			return err
 		}
 		bar.Increment()
 	}
@@ -334,33 +302,33 @@ func (installer *Installer) InstallFromArchives(archives map[string]*HeadChefArt
 }
 
 // InstallFromArchive will unpack artifact and install it
-func (installer *Installer) InstallFromArchive(archivePath string, artf *HeadChefArtifact, a Assembler, progress *progress.Progress) *failures.Failure {
+func (installer *Installer) InstallFromArchive(archivePath string, artf *HeadChefArtifact, a Assembler, progress *progress.Progress) error {
 
-	fail := a.PreUnpackArtifact(artf)
-	if fail != nil {
-		return fail
+	err := a.PreUnpackArtifact(artf)
+	if err != nil {
+		return err
 	}
 
 	installDir := installer.runtime.runtimeDir
-	tmpRuntimeDir, upb, fail := installer.unpackArchive(a.Unarchiver(), archivePath, installDir, progress)
-	if fail != nil {
+	tmpRuntimeDir, upb, err := installer.unpackArchive(a.Unarchiver(), archivePath, installDir, progress)
+	if err != nil {
 		removeInstallDir(installDir)
-		return fail
+		return err
 	}
 
-	fail = a.PostUnpackArtifact(artf, tmpRuntimeDir, archivePath, func() { upb.Increment() })
-	if fail != nil {
+	err = a.PostUnpackArtifact(artf, tmpRuntimeDir, archivePath, func() { upb.Increment() })
+	if err != nil {
 		removeInstallDir(installDir)
-		return fail
+		return err
 	}
 	upb.Complete()
 
 	return nil
 }
 
-func (installer *Installer) unpackArchive(ua unarchiver.Unarchiver, archivePath string, installDir string, p *progress.Progress) (string, *progress.UnpackBar, *failures.Failure) {
-	if fail := installer.validateArchive(ua, archivePath); fail != nil {
-		return "", nil, fail
+func (installer *Installer) unpackArchive(ua unarchiver.Unarchiver, archivePath string, installDir string, p *progress.Progress) (string, *progress.UnpackBar, error) {
+	if err := installer.validateArchive(ua, archivePath); err != nil {
+		return "", nil, err
 	}
 
 	tmpRuntimeDir := filepath.Join(installDir, uuid.New().String())
@@ -379,7 +347,7 @@ func (installer *Installer) unpackArchive(ua unarchiver.Unarchiver, archivePath 
 	archiveFile, archiveSize, err := ua.PrepareUnpacking(archivePath, tmpRuntimeDir)
 	logging.Debug("Unarchiving %s -> %s %d\n\n\n", archivePath, tmpRuntimeDir, archiveSize)
 	if err != nil {
-		return tmpRuntimeDir, nil, FailArchiveInvalid.Wrap(err)
+		return tmpRuntimeDir, nil, &ErrArchiveInvalid{locale.WrapError(err, "err_unpack_prepare", "Could not prepare archive directory")}
 
 	}
 	defer archiveFile.Close()
@@ -393,7 +361,7 @@ func (installer *Installer) unpackArchive(ua unarchiver.Unarchiver, archivePath 
 	logging.Debug("Unarchiving to: %s", tmpRuntimeDir)
 	err = ua.Unarchive(wrappedStream, archiveSize, tmpRuntimeDir)
 	if err != nil {
-		return tmpRuntimeDir, nil, FailArchiveInvalid.Wrap(err)
+		return tmpRuntimeDir, nil, &ErrArchiveInvalid{locale.WrapError(err, "err_unpack", "Unarchiving failed")}
 	}
 
 	// report that we are unpacked.
@@ -410,11 +378,11 @@ func (installer *Installer) unpackArchive(ua unarchiver.Unarchiver, archivePath 
 
 // validateArchive ensures the given path to archive is an actual file and that its suffix is a well-known
 // suffix for tar+gz files.
-func (installer *Installer) validateArchive(ua unarchiver.Unarchiver, archivePath string) *failures.Failure {
+func (installer *Installer) validateArchive(ua unarchiver.Unarchiver, archivePath string) error {
 	if !fileutils.FileExists(archivePath) {
-		return FailArchiveInvalid.New("installer_err_archive_notfound", archivePath)
+		return &ErrArchiveInvalid{locale.NewError("installer_err_archive_notfound", "", archivePath)}
 	} else if err := ua.CheckExt(archivePath); err != nil {
-		return FailArchiveInvalid.New("installer_err_archive_badext", archivePath)
+		return &ErrArchiveInvalid{locale.WrapError(err, "installer_err_archive_badext", "", archivePath)}
 	}
 	return nil
 }

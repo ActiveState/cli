@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -19,25 +18,9 @@ import (
 	"github.com/iafan/cwalk"
 
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 )
-
-// FailFindInPathNotFound indicates the specified file was not found in the given path or parent directories
-var FailFindInPathNotFound = failures.Type("fileutils.fail.notfoundinpath", failures.FailNotFound, failures.FailNonFatal)
-
-// FailMoveSourceNotDirectory indicates the specified source to be moved is not a directory
-var FailMoveSourceNotDirectory = failures.Type("fileutils.fail.move.sourcenotdirectory", failures.FailIO)
-
-// FailMoveDestinationNotDirectory indicates the specified source to be moved is not a directory
-var FailMoveDestinationNotDirectory = failures.Type("fileutils.fail.move.destinationnotdirectory", failures.FailIO)
-
-// FailMoveDestinationExists indicates the specified destination to move to already exists
-var FailMoveDestinationExists = failures.Type("fileutils.fail.movedestinationexists", failures.FailIO)
-
-// FailCreateFile indicates that file creation failed and does not report to rollbar
-var FailCreateFile = failures.Type("fileutils.fail.touch", failures.FailIO, failures.FailUser)
 
 // nullByte represents the null-terminator byte
 const nullByte byte = 0
@@ -58,6 +41,10 @@ const (
 	WriteOverwrite
 	// AmendByPrepend - add content start of file
 	AmendByPrepend
+)
+
+var (
+	ErrorFileNotFound = errs.New("File could not be found")
 )
 
 type includeFunc func(path string, contents []byte) (include bool)
@@ -86,7 +73,11 @@ func ReplaceAll(filename, find string, replace string, include includeFunc) erro
 		return nil
 	}
 
-	return WriteFile(filename, byts).ToError()
+	if err := WriteFile(filename, byts); err != nil {
+		return errs.Wrap(err, "WriteFile %s failed", filename)
+	}
+
+	return nil
 }
 
 // replaceInFile replaces all occurrences of oldpath with newpath
@@ -196,18 +187,18 @@ func DirExists(path string) bool {
 }
 
 // Hash will sha256 hash the given file
-func Hash(path string) (string, *failures.Failure) {
+func Hash(path string) (string, error) {
 	hasher := sha256.New()
 	b, err := ioutil.ReadFile(path)
 	if err != nil {
-		return "", failures.FailIO.New(fmt.Sprintf("Cannot read file: %s, %s", path, err))
+		return "", errs.Wrap(err, fmt.Sprintf("Cannot read file: %s", path))
 	}
 	hasher.Write(b)
 	return hex.EncodeToString(hasher.Sum(nil)), nil
 }
 
 // HashDirectory will sha256 hash the given directory
-func HashDirectory(path string) (string, *failures.Failure) {
+func HashDirectory(path string) (string, error) {
 	hasher := sha256.New()
 	err := filepath.Walk(path, func(path string, f os.FileInfo, err error) error {
 		if err != nil {
@@ -228,14 +219,14 @@ func HashDirectory(path string) (string, *failures.Failure) {
 	})
 
 	if err != nil {
-		return "", failures.FailIO.New(fmt.Sprintf("Cannot hash directory: %s, %s", path, err))
+		return "", errs.Wrap(err, fmt.Sprintf("Cannot hash directory: %s", path))
 	}
 
 	return hex.EncodeToString(hasher.Sum(nil)), nil
 }
 
 // Mkdir is a small helper function to create a directory if it doesnt already exist
-func Mkdir(path string, subpath ...string) *failures.Failure {
+func Mkdir(path string, subpath ...string) error {
 	if len(subpath) > 0 {
 		subpathStr := filepath.Join(subpath...)
 		path = filepath.Join(path, subpathStr)
@@ -243,14 +234,14 @@ func Mkdir(path string, subpath ...string) *failures.Failure {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		err = os.MkdirAll(path, DirMode)
 		if err != nil {
-			return failures.FailIO.Wrap(err, fmt.Sprintf("Path: %s", path))
+			return errs.Wrap(err, fmt.Sprintf("MkdirAll failed for path: %s", path))
 		}
 	}
 	return nil
 }
 
 // MkdirUnlessExists will make the directory structure if it doesn't already exists
-func MkdirUnlessExists(path string) *failures.Failure {
+func MkdirUnlessExists(path string) error {
 	if DirExists(path) {
 		return nil
 	}
@@ -258,35 +249,35 @@ func MkdirUnlessExists(path string) *failures.Failure {
 }
 
 // CopyFile copies a file from one location to another
-func CopyFile(src, target string) *failures.Failure {
+func CopyFile(src, target string) error {
 	in, err := os.Open(src)
 	if err != nil {
-		return failures.FailIO.Wrap(err)
+		return errs.Wrap(err, "os.Open %s failed", src)
 	}
 	defer in.Close()
 
 	// Create target directory if it doesn't exist
 	dir := filepath.Dir(target)
-	fail := MkdirUnlessExists(dir)
-	if fail != nil {
-		return fail
+	err = MkdirUnlessExists(dir)
+	if err != nil {
+		return err
 	}
 
 	// Create target file
 	out, err := os.Create(target)
 	if err != nil {
-		return failures.FailIO.Wrap(err)
+		return errs.Wrap(err, "os.Create %s failed", target)
 	}
 	defer out.Close()
 
 	// Copy bytes to target file
 	_, err = io.Copy(out, in)
 	if err != nil {
-		return failures.FailIO.Wrap(err)
+		return errs.Wrap(err, "io.Copy failed")
 	}
 	err = out.Close()
 	if err != nil {
-		return failures.FailIO.Wrap(err)
+		return errs.Wrap(err, "out.Close failed")
 	}
 	return nil
 }
@@ -295,25 +286,25 @@ func CopyFile(src, target string) *failures.Failure {
 func ReadFileUnsafe(src string) []byte {
 	b, err := ioutil.ReadFile(src)
 	if err != nil {
-		log.Fatalf("Cannot read file: %s, error: %s", src, err.Error())
+		panic(fmt.Sprintf("Cannot read file: %s, error: %s", src, err.Error()))
 	}
 	return b
 }
 
 // ReadFile reads the content of a file
-func ReadFile(filePath string) ([]byte, *failures.Failure) {
+func ReadFile(filePath string) ([]byte, error) {
 	b, err := ioutil.ReadFile(filePath)
 	if err != nil {
-		return nil, failures.FailIO.Wrap(err)
+		return nil, errs.Wrap(err, "ioutil.ReadFile %s failed", filePath)
 	}
 	return b, nil
 }
 
 // WriteFile writes data to a file, if it exists it is overwritten, if it doesn't exist it is created and data is written
-func WriteFile(filePath string, data []byte) *failures.Failure {
-	fail := MkdirUnlessExists(filepath.Dir(filePath))
-	if fail != nil {
-		return fail
+func WriteFile(filePath string, data []byte) error {
+	err := MkdirUnlessExists(filepath.Dir(filePath))
+	if err != nil {
+		return err
 	}
 
 	// make the target file temporarily writable
@@ -321,7 +312,7 @@ func WriteFile(filePath string, data []byte) *failures.Failure {
 	if fileExists {
 		stat, _ := os.Stat(filePath)
 		if err := os.Chmod(filePath, FileMode); err != nil {
-			return failures.FailIO.Wrap(err)
+			return errs.Wrap(err, "os.Chmod %s failed", filePath)
 		}
 		defer os.Chmod(filePath, stat.Mode().Perm())
 	}
@@ -332,47 +323,47 @@ func WriteFile(filePath string, data []byte) *failures.Failure {
 			target := filepath.Dir(filePath)
 			err = fmt.Errorf("access to target %q is denied", target)
 		}
-		return failures.FailIO.Wrap(err)
+		return errs.Wrap(err, "os.OpenFile %s failed", filePath)
 	}
 	defer f.Close()
 
 	_, err = f.Write(data)
 	if err != nil {
-		return failures.FailIO.Wrap(err)
+		return errs.Wrap(err, "file.Write %s failed", filePath)
 	}
 	return nil
 }
 
 // AppendToFile appends the data to the file (if it exists) with the given data, if the file doesn't exist
 // it is created and the data is written
-func AppendToFile(filepath string, data []byte) *failures.Failure {
+func AppendToFile(filepath string, data []byte) error {
 	return AmendFile(filepath, data, AmendByAppend)
 }
 
 // PrependToFile prepends the data to the file (if it exists) with the given data, if the file doesn't exist
 // it is created and the data is written
-func PrependToFile(filepath string, data []byte) *failures.Failure {
+func PrependToFile(filepath string, data []byte) error {
 	return AmendFile(filepath, data, AmendByPrepend)
 }
 
 // AmendFile amends data to a file, supports append, or prepend
-func AmendFile(filePath string, data []byte, flag AmendOptions) *failures.Failure {
+func AmendFile(filePath string, data []byte, flag AmendOptions) error {
 	switch flag {
 	case
 		AmendByAppend, AmendByPrepend:
 
 	default:
-		return failures.FailInput.New(locale.Tr("fileutils_err_ammend_file"), filePath)
+		return locale.NewInputError("fileutils_err_amend_file", "", filePath)
 	}
 
-	fail := Touch(filePath)
-	if fail != nil {
-		return fail
+	err := Touch(filePath)
+	if err != nil {
+		return errs.Wrap(err, "Touch %s failed", filePath)
 	}
 
-	b, fail := ReadFile(filePath)
-	if fail != nil {
-		return fail
+	b, err := ReadFile(filePath)
+	if err != nil {
+		return errs.Wrap(err, "ReadFile %s failed", filePath)
 	}
 
 	if flag == AmendByPrepend {
@@ -383,13 +374,13 @@ func AmendFile(filePath string, data []byte, flag AmendOptions) *failures.Failur
 
 	f, err := os.OpenFile(filePath, os.O_WRONLY, FileMode)
 	if err != nil {
-		return failures.FailIO.Wrap(err)
+		return errs.Wrap(err, "os.OpenFile %s failed", filePath)
 	}
 	defer f.Close()
 
 	_, err = f.Write(data)
 	if err != nil {
-		return failures.FailIO.Wrap(err)
+		return errs.Wrap(err, "file.Write %s failed", filePath)
 	}
 	return nil
 }
@@ -397,14 +388,14 @@ func AmendFile(filePath string, data []byte, flag AmendOptions) *failures.Failur
 // FindFileInPath will find a file by the given file-name in the directory provided or in
 // one of the parent directories of that path by walking up the tree. If the file is found,
 // the path to that file is returned, otherwise an failure is returned.
-func FindFileInPath(dir, filename string) (string, *failures.Failure) {
+func FindFileInPath(dir, filename string) (string, error) {
 	absDir, err := filepath.Abs(dir)
 	if err != nil {
-		return "", failures.FailOS.Wrap(err)
+		return "", errs.Wrap(err, "filepath.Abs %s failed", dir)
 	} else if filepath := walkPathAndFindFile(absDir, filename); filepath != "" {
 		return filepath, nil
 	}
-	return "", FailFindInPathNotFound.New("err_file_not_found_in_path", filename, absDir)
+	return "", locale.WrapError(ErrorFileNotFound, "err_file_not_found_in_path", "", filename, absDir)
 }
 
 // walkPathAndFindFile finds a file in the provided directory or one of its parent directories.
@@ -420,32 +411,32 @@ func walkPathAndFindFile(dir, filename string) string {
 
 // Touch will attempt to "touch" a given filename by trying to open it read-only or create
 // the file with 0644 perms if it does not exist.
-func Touch(path string) *failures.Failure {
-	fail := MkdirUnlessExists(filepath.Dir(path))
-	if fail != nil {
-		return fail
+func Touch(path string) error {
+	err := MkdirUnlessExists(filepath.Dir(path))
+	if err != nil {
+		return err
 	}
 	file, err := os.OpenFile(path, os.O_CREATE, FileMode)
 	if err != nil {
-		return FailCreateFile.Wrap(err)
+		return errs.Wrap(err, "os.OpenFile %s failed", path)
 	}
 	if err := file.Close(); err != nil {
-		return failures.FailIO.Wrap(err)
+		return errs.Wrap(err, "file.Close %s failed", path)
 	}
 	return nil
 }
 
 // IsEmptyDir returns true if the directory at the provided path has no files (including dirs) within it.
-func IsEmptyDir(path string) (bool, *failures.Failure) {
+func IsEmptyDir(path string) (bool, error) {
 	dir, err := os.Open(path)
 	if err != nil {
-		return false, failures.FailIO.Wrap(err)
+		return false, errs.Wrap(err, "os.Open %s failed", path)
 	}
 
 	files, err := dir.Readdir(1)
 	dir.Close()
 	if err != nil && err != io.EOF {
-		return false, failures.FailIO.Wrap(err)
+		return false, errs.Wrap(err, "dir.Readdir %s failed", path)
 	}
 
 	return (len(files) == 0), nil
@@ -461,22 +452,22 @@ type MoveAllFilesCallback func(fromPath, toPath string)
 // Warnings are printed if
 // - a source file overwrites an existing destination file
 // - a sub-directory exists in both the source and and the destination and their permissions do not match
-func MoveAllFilesRecursively(fromPath, toPath string, cb MoveAllFilesCallback) *failures.Failure {
+func MoveAllFilesRecursively(fromPath, toPath string, cb MoveAllFilesCallback) error {
 	if !DirExists(fromPath) {
-		return FailMoveSourceNotDirectory.New("err_os_not_a_directory", fromPath)
+		return locale.NewError("err_os_not_a_directory", "", fromPath)
 	} else if !DirExists(toPath) {
-		return FailMoveDestinationNotDirectory.New("err_os_not_a_directory", toPath)
+		return locale.NewError("err_os_not_a_directory", "", toPath)
 	}
 
 	// read all child files and dirs
 	dir, err := os.Open(fromPath)
 	if err != nil {
-		return failures.FailOS.Wrap(err)
+		return errs.Wrap(err, "os.Open %s failed", fromPath)
 	}
 	fileInfos, err := dir.Readdir(-1)
 	dir.Close()
 	if err != nil {
-		return failures.FailOS.Wrap(err)
+		return errs.Wrap(err, "dir.Readdir %s failed", fromPath)
 	}
 
 	// any found files and dirs
@@ -489,27 +480,27 @@ func MoveAllFilesRecursively(fromPath, toPath string, cb MoveAllFilesCallback) *
 		// handle case where destination exists
 		if toPathExists {
 			if fileInfo.IsDir() != toInfo.IsDir() {
-				return FailMoveDestinationExists.New("err_incompatible_move_file_dir", subFromPath, subToPath)
+				return locale.NewError("err_incompatible_move_file_dir", "", subFromPath, subToPath)
 			}
 			if fileInfo.Mode() != toInfo.Mode() {
-				logging.Warning(locale.Tr("warn_move_incompatible_modes", subFromPath, subToPath))
+				logging.Warning(locale.Tr("warn_move_incompatible_modes", "", subFromPath, subToPath))
 			}
 		}
 		if toPathExists && toInfo.IsDir() {
-			fail := MoveAllFilesRecursively(subFromPath, subToPath, cb)
-			if fail != nil {
-				return fail
+			err := MoveAllFilesRecursively(subFromPath, subToPath, cb)
+			if err != nil {
+				return err
 			}
 			// source path should be empty now
-			err := os.Remove(subFromPath)
+			err = os.Remove(subFromPath)
 			if err != nil {
-				return failures.FailOS.Wrap(err)
+				return errs.Wrap(err, "os.Remove %s failed", subFromPath)
 			}
 		} else {
-			logging.Warning(locale.Tr("warn_move_destination_overwritten", subFromPath))
+			logging.Warning(locale.Tr("warn_move_destination_overwritten", "", subFromPath))
 			err = os.Rename(subFromPath, subToPath)
 			if err != nil {
-				return failures.FailOS.Wrap(err)
+				return errs.Wrap(err, "os.Rename %s:%s failed", subFromPath, subToPath)
 			}
 			cb(subFromPath, subToPath)
 		}
@@ -519,22 +510,22 @@ func MoveAllFilesRecursively(fromPath, toPath string, cb MoveAllFilesCallback) *
 
 // MoveAllFiles will move all of the files/dirs within one directory to another directory. Both directories
 // must already exist.
-func MoveAllFiles(fromPath, toPath string) *failures.Failure {
+func MoveAllFiles(fromPath, toPath string) error {
 	if !DirExists(fromPath) {
-		return FailMoveSourceNotDirectory.New("err_os_not_a_directory", fromPath)
+		return locale.NewError("err_os_not_a_directory", "", fromPath)
 	} else if !DirExists(toPath) {
-		return FailMoveDestinationNotDirectory.New("err_os_not_a_directory", toPath)
+		return locale.NewError("err_os_not_a_directory", "", toPath)
 	}
 
 	// read all child files and dirs
 	dir, err := os.Open(fromPath)
 	if err != nil {
-		return failures.FailOS.Wrap(err)
+		return errs.Wrap(err, "os.Open %s failed", fromPath)
 	}
 	fileInfos, err := dir.Readdir(-1)
 	dir.Close()
 	if err != nil {
-		return failures.FailOS.Wrap(err)
+		return errs.Wrap(err, "dir.Readdir %s failed", fromPath)
 	}
 
 	// any found files and dirs
@@ -543,32 +534,32 @@ func MoveAllFiles(fromPath, toPath string) *failures.Failure {
 		toPath := filepath.Join(toPath, fileInfo.Name())
 		err := os.Rename(fromPath, toPath)
 		if err != nil {
-			return failures.FailOS.Wrap(err)
+			return errs.Wrap(err, "os.Rename %s:%s failed", fromPath, toPath)
 		}
 	}
 	return nil
 }
 
 // WriteTempFile writes data to a temp file.
-func WriteTempFile(dir, pattern string, data []byte, perm os.FileMode) (string, *failures.Failure) {
+func WriteTempFile(dir, pattern string, data []byte, perm os.FileMode) (string, error) {
 	f, err := ioutil.TempFile(dir, pattern)
 	if err != nil {
-		return "", failures.FailOS.Wrap(err)
+		return "", errs.Wrap(err, "ioutil.TempFile %s (%s) failed", dir, pattern)
 	}
 
 	if _, err = f.Write(data); err != nil {
 		os.Remove(f.Name())
-		return "", failures.FailOS.Wrap(err)
+		return "", errs.Wrap(err, "f.Write %s failed", f.Name())
 	}
 
 	if err = f.Close(); err != nil {
 		os.Remove(f.Name())
-		return "", failures.FailOS.Wrap(err)
+		return "", errs.Wrap(err, "f.Close %s failed", f.Name())
 	}
 
 	if err := os.Chmod(f.Name(), perm); err != nil {
 		os.Remove(f.Name())
-		return "", failures.FailOS.Wrap(err)
+		return "", errs.Wrap(err, "os.Chmod %s failed", f.Name())
 	}
 
 	return f.Name(), nil
@@ -576,21 +567,21 @@ func WriteTempFile(dir, pattern string, data []byte, perm os.FileMode) (string, 
 
 // CopyFiles will copy all of the files/dirs within one directory to another.
 // Both directories must already exist
-func CopyFiles(src, dst string) *failures.Failure {
+func CopyFiles(src, dst string) error {
 	return copyFiles(src, dst, false)
 }
 
-func copyFiles(src, dest string, remove bool) *failures.Failure {
+func copyFiles(src, dest string, remove bool) error {
 	if !DirExists(src) {
-		return failures.FailOS.New("err_os_not_a_directory", src)
+		return locale.NewError("err_os_not_a_directory", "", src)
 	}
 	if !DirExists(dest) {
-		return failures.FailOS.New("err_os_not_a_directory", dest)
+		return locale.NewError("err_os_not_a_directory", "", dest)
 	}
 
 	entries, err := ioutil.ReadDir(src)
 	if err != nil {
-		return failures.FailOS.Wrap(err)
+		return errs.Wrap(err, "ioutil.ReadDir %s failed", src)
 	}
 
 	for _, entry := range entries {
@@ -599,35 +590,35 @@ func copyFiles(src, dest string, remove bool) *failures.Failure {
 
 		fileInfo, err := os.Lstat(srcPath)
 		if err != nil {
-			return failures.FailOS.Wrap(err)
+			return errs.Wrap(err, "os.Lstat %s failed", srcPath)
 		}
 
 		switch fileInfo.Mode() & os.ModeType {
 		case os.ModeDir:
-			fail := MkdirUnlessExists(destPath)
-			if fail != nil {
-				return fail
+			err := MkdirUnlessExists(destPath)
+			if err != nil {
+				return errs.Wrap(err, "MkdirUnlessExists %s failed", destPath)
 			}
-			fail = CopyFiles(srcPath, destPath)
-			if fail != nil {
-				return fail
+			err = CopyFiles(srcPath, destPath)
+			if err != nil {
+				return errs.Wrap(err, "CopyFiles %s:%s failed", srcPath, destPath)
 			}
 		case os.ModeSymlink:
-			fail := CopySymlink(srcPath, destPath)
-			if fail != nil {
-				return fail
+			err := CopySymlink(srcPath, destPath)
+			if err != nil {
+				return errs.Wrap(err, "CopySymlink %s:%s failed", srcPath, destPath)
 			}
 		default:
-			fail := CopyFile(srcPath, destPath)
-			if fail != nil {
-				return fail
+			err := CopyFile(srcPath, destPath)
+			if err != nil {
+				return errs.Wrap(err, "CopyFile %s:%s failed", srcPath, destPath)
 			}
 		}
 	}
 
 	if remove {
 		if err := os.RemoveAll(src); err != nil {
-			return failures.FailOS.Wrap(err)
+			return errs.Wrap(err, "os.RemovaAll %s failed", src)
 		}
 	}
 
@@ -636,15 +627,15 @@ func copyFiles(src, dest string, remove bool) *failures.Failure {
 
 // CopySymlink reads the symlink at src and creates a new
 // link at dest
-func CopySymlink(src, dest string) *failures.Failure {
+func CopySymlink(src, dest string) error {
 	link, err := os.Readlink(src)
 	if err != nil {
-		return failures.FailOS.Wrap(err)
+		return errs.Wrap(err, "os.Readlink %s failed", src)
 	}
 
 	err = os.Symlink(link, dest)
 	if err != nil {
-		return failures.FailOS.Wrap(err)
+		return errs.Wrap(err, "os.Symlink %s:%s failed", link, dest)
 	}
 
 	return nil
@@ -672,10 +663,10 @@ func TempDirUnsafe() string {
 
 // MoveAllFilesCrossDisk will move all of the files/dirs within one directory
 // to another directory even across disks. Both directories must already exist.
-func MoveAllFilesCrossDisk(src, dst string) *failures.Failure {
-	fail := MoveAllFiles(src, dst)
-	if fail != nil {
-		logging.Error("Move all files failed with error: %s. Falling back to copy files", fail)
+func MoveAllFilesCrossDisk(src, dst string) error {
+	err := MoveAllFiles(src, dst)
+	if err != nil {
+		logging.Error("Move all files failed with error: %s. Falling back to copy files", err)
 	}
 
 	return copyFiles(src, dst, true)
@@ -694,12 +685,11 @@ func Join(elem ...string) string {
 
 // PrepareDir prepares a path by ensuring it exists and the path is consistent
 func PrepareDir(path string) (string, error) {
-	fail := MkdirUnlessExists(path)
-	if fail != nil {
-		return "", fail
+	err := MkdirUnlessExists(path)
+	if err != nil {
+		return "", err
 	}
 
-	var err error
 	path, err = filepath.Abs(path)
 	if err != nil {
 		return "", err

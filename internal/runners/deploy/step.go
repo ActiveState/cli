@@ -3,7 +3,6 @@ package deploy
 import (
 	"strings"
 
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 )
 
@@ -43,10 +42,10 @@ func (t *Step) Set(value string) error {
 		}
 	}
 
-	return failures.FailInput.New(locale.Tr("err_invalid_step",
+	return locale.NewInputError("err_invalid_step", "",
 		value,
 		strings.Join([]string{InstallStep.String(), ConfigureStep.String(), ReportStep.String()}, ", "), // allowed values
-	))
+	)
 }
 
 func (t *Step) Type() string {

@@ -6,23 +6,24 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 )
 
 // InstallFromArchive will unpack the installer archive, locate the install script, and then use the installer
 // script to install an ActivePython runtime to the configured runtime dir. Any failures
 // during this process will result in a failed installation and the install-dir being removed.
-func (m *MetaData) pythonRelocationDir() (string, *failures.Failure) {
-	python, fail := locatePythonExecutable(m.Path)
-	if fail != nil {
-		return "", fail
+func (m *MetaData) pythonRelocationDir() (string, error) {
+	python, err := locatePythonExecutable(m.Path)
+	if err != nil {
+		return "", err
 	}
 
-	prefix, fail := extractPythonRelocationPrefix(m.Path, python)
-	if fail != nil {
-		return "", fail
+	prefix, err := extractPythonRelocationPrefix(m.Path, python)
+	if err != nil {
+		return "", err
 	}
 
 	// relocate python
@@ -30,7 +31,7 @@ func (m *MetaData) pythonRelocationDir() (string, *failures.Failure) {
 }
 
 // locatePythonExecutable will locate the path to the python binary in the runtime dir.
-func locatePythonExecutable(installDir string) (string, *failures.Failure) {
+func locatePythonExecutable(installDir string) (string, error) {
 	binPath := filepath.Join(installDir, "bin")
 	python2 := filepath.Join(installDir, "bin", constants.ActivePython2Executable)
 	python3 := filepath.Join(installDir, "bin", constants.ActivePython3Executable)
@@ -44,29 +45,29 @@ func locatePythonExecutable(installDir string) (string, *failures.Failure) {
 		executable = constants.ActivePython2Executable
 		executablePath = python2
 	} else {
-		return "", FailRuntimeNoExecutable.New("installer_err_runtime_no_executable", binPath, constants.ActivePython2Executable, constants.ActivePython3Executable)
+		return "", locale.NewError("installer_err_runtime_no_executable", "", binPath, constants.ActivePython2Executable, constants.ActivePython3Executable)
 	}
 
 	if !fileutils.IsExecutable(executablePath) {
-		return "", FailRuntimeNotExecutable.New("installer_err_runtime_executable_not_exec", binPath, executable)
+		return "", &ErrNotExecutable{locale.NewError("installer_err_runtime_executable_not_exec", "", binPath, executable)}
 	}
 	return executablePath, nil
 }
 
 // extractRelocationPrefix will extract the prefix that needs to be replaced for this installation.
-func extractPythonRelocationPrefix(installDir string, python string) (string, *failures.Failure) {
+func extractPythonRelocationPrefix(installDir string, python string) (string, error) {
 	prefixBytes, err := exec.Command(python, "-c", "import activestate; print('\\n'.join(activestate.prefixes))").Output()
 	logging.Debug("bin: %s", python)
 	logging.Debug("OUTPUT: %s", string(prefixBytes))
 	if err != nil {
 		if _, isExitError := err.(*exec.ExitError); isExitError {
 			logging.Errorf("obtaining relocation prefixes: %v : %s", err, string(prefixBytes))
-			return "", FailRuntimeNoPrefixes.New("installer_err_fail_obtain_prefixes", installDir)
+			return "", &ErrNoPrefixes{locale.NewError("installer_err_fail_obtain_prefixes", "", installDir)}
 		}
-		return "", FailRuntimeInvalid.Wrap(err)
+		return "", errs.Wrap(err, "python import prefixes failed")
 	}
 	if strings.TrimSpace(string(prefixBytes)) == "" {
-		return "", FailRuntimeNoPrefixes.New("installer_err_fail_obtain_prefixes", installDir)
+		return "", &ErrNoPrefixes{locale.NewError("installer_err_fail_obtain_prefixes", "", installDir)}
 	}
 	return strings.Split(string(prefixBytes), "\n")[0], nil
 }

@@ -6,8 +6,6 @@ import (
 	"testing"
 
 	"github.com/thoas/go-funk"
-
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/osutils"
 )
 
@@ -77,7 +75,7 @@ func TestCmdEnv_unset(t *testing.T) {
 		ifValueEquals string
 	}
 	type want struct {
-		returnValue      *failures.Failure
+		returnValue      error
 		registryGetCalls *[]string // nil means it should have no calls
 		registrySetCalls *[]string
 		registryDelCalls *[]string
@@ -151,7 +149,7 @@ func TestCmdEnv_set(t *testing.T) {
 		value string
 	}
 	type want struct {
-		returnValue      *failures.Failure
+		returnValue      error
 		registryGetCalls *[]string // nil means it should have no calls
 		registrySetCalls *[]string
 	}
@@ -203,7 +201,7 @@ func TestCmdEnv_get(t *testing.T) {
 	}
 	type want struct {
 		returnValue      string
-		returnFailure    *failures.Failure
+		returnFailure    error
 		registryGetCalls *[]string // nil means it should have no calls
 	}
 	tests := []struct {
@@ -253,7 +251,7 @@ func TestCmdEnv_get(t *testing.T) {
 				t.Errorf("get() = %v, want %v", got, tt.want)
 			}
 			if !reflect.DeepEqual(gotFail, tt.want.returnFailure) {
-				t.Errorf("get() fail = %v, want %v", gotFail, tt.want)
+				t.Errorf("get() err = %v, want %v", gotFail, tt.want)
 			}
 
 			rm := tt.fields.registryMock
