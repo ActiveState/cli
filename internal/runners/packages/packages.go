@@ -1,7 +1,6 @@
 package packages
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
@@ -131,11 +130,9 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 	return nil
 }
 
-func addSuggestions(err error, ns model.Namespace, name string) error {
-	results, searchFail := model.SearchIngredients(ns, name)
-	if searchFail != nil {
-		// Log and return generic error if search failed
-		logging.Error("Failed to search for ingredients with namespace: %s and name: %s, got error: %v", ns.String(), name, searchFail)
+func addSuggestions(ns model.Namespace, name string) error {
+	results, err := model.SearchIngredients(ns, name)
+	if err != nil {
 		return locale.WrapError(err, "package_ingredient_err_search", "Failed to resolve ingredient named: {{.V0}}", name)
 	}
 
@@ -150,7 +147,7 @@ func addSuggestions(err error, ns model.Namespace, name string) error {
 	}
 	suggestions = append(suggestions, fmt.Sprintf(" - .. (to see more results run `state search %s`)", name))
 
-	return locale.WrapError(err, "package_ingredient_err", "Could not match {{.V0}}. Did you mean:\n\n{{.V1}}", name, strings.Join(suggestions, "\n"))
+	return locale.NewInputError("package_ingredient_alternatives", "Could not match {{.V0}}. Did you mean:\n\n{{.V1}}", name, strings.Join(suggestions, "\n"))
 }
 
 func splitNameAndVersion(input string) (string, string) {
