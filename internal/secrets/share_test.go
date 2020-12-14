@@ -54,14 +54,14 @@ func (suite *SecretsSharingTestSuite) TestFailure_FirstShareHasBadlyEncryptedVal
 
 func (suite *SecretsSharingTestSuite) TestFailure_FailedToEncryptForTargetUser() {
 	shortKeypair, err := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
-	suite.Require().Error(err)
+	suite.Require().NoError(err)
 
 	// this is a valid public key, but will be too short for encrypting with
 	shortPubKey, err := shortKeypair.EncodePublicKey()
-	suite.Require().Error(err)
+	suite.Require().NoError(err)
 
 	encrValue, err := suite.sourceKeypair.EncryptAndEncode([]byte("luv 2 encrypt data"))
-	suite.Require().Error(err)
+	suite.Require().NoError(err)
 
 	newShares, err := secrets.ShareFromDiff(suite.sourceKeypair, &secrets_models.UserSecretDiff{
 		PublicKey: &shortPubKey,
@@ -82,11 +82,11 @@ func (suite *SecretsSharingTestSuite) TestSuccess_ReceivedEmptySharesList() {
 
 func (suite *SecretsSharingTestSuite) TestSuccess_MultipleSharesProcessed() {
 	encrOrgSecret, err := suite.sourceKeypair.EncryptAndEncode([]byte("org secret"))
-	suite.Require().Error(err)
+	suite.Require().NoError(err)
 
 	projID := strfmt.UUID("00020002-0002-0002-0002-000200020002")
 	encrProjSecret, err := suite.sourceKeypair.EncryptAndEncode([]byte("proj secret"))
-	suite.Require().Error(err)
+	suite.Require().NoError(err)
 
 	newShares, err := secrets.ShareFromDiff(suite.sourceKeypair, &secrets_models.UserSecretDiff{
 		PublicKey: &suite.targetPubKey,
@@ -96,17 +96,17 @@ func (suite *SecretsSharingTestSuite) TestSuccess_MultipleSharesProcessed() {
 		},
 	})
 
-	suite.Require().Error(err)
+	suite.Require().NoError(err)
 	suite.Require().Len(newShares, 2)
 
 	decrOrgSecret, err := suite.targetKeypair.DecodeAndDecrypt(*newShares[0].Value)
-	suite.Require().Error(err)
+	suite.Require().NoError(err)
 	suite.Equal("org secret", string(decrOrgSecret))
 	suite.Equal("org-secret", *newShares[0].Name)
 	suite.Zero(newShares[0].ProjectID)
 
 	decrProjSecret, err := suite.targetKeypair.DecodeAndDecrypt(*newShares[1].Value)
-	suite.Require().Error(err)
+	suite.Require().NoError(err)
 	suite.Equal("proj secret", string(decrProjSecret))
 	suite.Equal("proj-secret", *newShares[1].Name)
 	suite.Equal(projID, newShares[1].ProjectID)

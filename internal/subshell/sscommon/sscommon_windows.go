@@ -5,6 +5,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/osutils"
 )
 
