@@ -51,9 +51,8 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 		_, err = model.IngredientByNameAndVersion(name, version, ns)
 	}
 	if err != nil {
-		var notFoundErr = &model.IngredientNotFoundError{}
-		if errors.As(err, &notFoundErr) {
-			return addSuggestions(err, ns, name)
+		if errs.Matches(err, &model.IngredientNotFoundError{}) {
+			return addSuggestions(ns, name)
 		}
 		return locale.WrapError(err, "package_ingredient_err_search", "Failed to resolve ingredient named: {{.V0}}", name)
 	}
