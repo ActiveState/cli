@@ -144,7 +144,6 @@ func (suite *InstallerLinuxTestSuite) TestInstall_BadArchive() {
 	suite.Require().Error(err)
 	errt := &runtime.ErrArchiveInvalid{}
 	suite.ErrorAs(err, &errt)
-	suite.Contains(err.Error(), "EOF")
 }
 
 func Test_InstallerLinuxTestSuite(t *testing.T) {

@@ -380,7 +380,7 @@ func (installer *Installer) unpackArchive(ua unarchiver.Unarchiver, archivePath 
 // suffix for tar+gz files.
 func (installer *Installer) validateArchive(ua unarchiver.Unarchiver, archivePath string) error {
 	if !fileutils.FileExists(archivePath) {
-		return &ErrArchiveInvalid{locale.NewError("installer_err_archive_notfound")}
+		return &ErrArchiveInvalid{locale.NewError("installer_err_archive_notfound", "", archivePath)}
 	} else if err := ua.CheckExt(archivePath); err != nil {
 		return &ErrArchiveInvalid{locale.WrapError(err, "installer_err_archive_badext", "", archivePath)}
 	}
