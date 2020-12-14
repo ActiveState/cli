@@ -4,16 +4,10 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/suite"
-
-	"github.com/ActiveState/cli/internal/failures"
 )
 
 type ProjectInternalTestSuite struct {
 	suite.Suite
-}
-
-func (suite *ProjectInternalTestSuite) BeforeTest(suiteName, testName string) {
-	failures.ResetHandled()
 }
 
 func (suite *ProjectInternalTestSuite) TestPassParseURL() {

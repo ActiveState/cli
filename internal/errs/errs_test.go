@@ -36,8 +36,8 @@ func TestErrs(t *testing.T) {
 			if err != nil && err.Error() != tt.wantMessage {
 				t.Errorf("New() error message = %s, wantMessage %s", err.Error(), tt.wantMessage)
 			}
-			ee, ok := err.(errs.Error)
-			if ! ok {
+			ee, ok := err.(errs.Errorable)
+			if !ok {
 				t.Fatalf("Error should be of type errs.Error")
 			}
 			if ee.Stack() == nil {

@@ -10,23 +10,13 @@ import (
 	"gopkg.in/src-d/go-git.v4"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
-)
-
-var (
-	// FailTargetDirInUse indicates that the target directory for cloning
-	// this git repository is not empty
-	FailTargetDirInUse = failures.Type("git.fail.dirinuse")
-
-	// FailProjectURLMismatch indicates that the project url does not match
-	// that of the URL in the cloned repository's activestate.yaml
-	FailProjectURLMismatch = failures.Type("git.fail.projecturlmismatch")
 )
 
 // Repository is the interface used to represent a version control system repository
@@ -46,14 +36,14 @@ type Repo struct {
 // CloneProject will attempt to clone the associalted public git repository
 // for the project identified by <owner>/<name> to the given directory
 func (r *Repo) CloneProject(owner, name, path string, out output.Outputer) error {
-	project, fail := model.FetchProjectByName(owner, name)
-	if fail != nil {
-		return fail.ToError()
+	project, err := model.FetchProjectByName(owner, name)
+	if err != nil {
+		return err
 	}
 
 	tempDir, err := ioutil.TempDir("", fmt.Sprintf("state-activate-repo-%s-%s", owner, name))
 	if err != nil {
-		return failures.FailOS.Wrap(err)
+		return errs.Wrap(err, "OS failure")
 	}
 	defer os.RemoveAll(tempDir)
 
@@ -68,67 +58,67 @@ func (r *Repo) CloneProject(owner, name, path string, out output.Outputer) error
 		Progress: os.Stdout,
 	})
 	if err != nil {
-		return failures.FailCmd.Wrap(err).ToError()
+		return errs.Wrap(err, "Cmd failure")
 	}
 
-	fail = ensureCorrectRepo(owner, name, filepath.Join(tempDir, constants.ConfigFileName))
-	if fail != nil {
-		return fail.ToError()
+	err = ensureCorrectRepo(owner, name, filepath.Join(tempDir, constants.ConfigFileName))
+	if err != nil {
+		return err
 	}
 
-	fail = moveFiles(tempDir, path)
-	if fail != nil {
-		return fail.ToError()
+	err = moveFiles(tempDir, path)
+	if err != nil {
+		return err
 	}
 	return nil
 }
 
-func ensureCorrectRepo(owner, name, projectFilePath string) *failures.Failure {
+func ensureCorrectRepo(owner, name, projectFilePath string) error {
 	_, err := os.Stat(projectFilePath)
 	if os.IsNotExist(err) {
 		return nil
 	}
 	if err != nil {
-		return failures.FailOS.Wrap(err)
+		return errs.Wrap(err, "OS failure")
 	}
 
-	projectFile, fail := projectfile.Parse(projectFilePath)
-	if fail != nil {
-		return fail
+	projectFile, err := projectfile.Parse(projectFilePath)
+	if err != nil {
+		return err
 	}
 
-	proj, fail := project.NewLegacy(projectFile)
-	if fail != nil {
-		return fail
+	proj, err := project.NewLegacy(projectFile)
+	if err != nil {
+		return err
 	}
 
 	if !(strings.ToLower(proj.Owner()) == strings.ToLower(owner)) || !(strings.ToLower(proj.Name()) == strings.ToLower(name)) {
-		return FailProjectURLMismatch.New(locale.T("error_git_project_url_mismatch"))
+		return locale.NewError("ProjectURLMismatch")
 	}
 
 	return nil
 }
 
-func moveFiles(src, dest string) *failures.Failure {
-	fail := verifyDestinationDirectory(dest)
-	if fail != nil {
-		return fail
+func moveFiles(src, dest string) error {
+	err := verifyDestinationDirectory(dest)
+	if err != nil {
+		return err
 	}
 
 	return fileutils.MoveAllFilesCrossDisk(src, dest)
 }
 
-func verifyDestinationDirectory(dest string) *failures.Failure {
+func verifyDestinationDirectory(dest string) error {
 	if !fileutils.DirExists(dest) {
 		return fileutils.Mkdir(dest)
 	}
 
-	empty, fail := fileutils.IsEmptyDir(dest)
-	if fail != nil {
-		return fail
+	empty, err := fileutils.IsEmptyDir(dest)
+	if err != nil {
+		return err
 	}
 	if !empty {
-		return FailTargetDirInUse.New(locale.T("error_git_target_dir_not_empty"))
+		return locale.NewError("TargetDirInUse")
 	}
 
 	return nil

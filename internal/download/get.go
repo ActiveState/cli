@@ -11,7 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
-	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/progress"
@@ -19,10 +19,10 @@ import (
 )
 
 // Get takes a URL and returns the contents as bytes
-var Get func(url string) ([]byte, *failures.Failure)
+var Get func(url string) ([]byte, error)
 
 // GetWithProgress takes a URL and returns the contents as bytes, it takes an optional second arg which will spawn a progressbar
-var GetWithProgress func(url string, progress *progress.Progress) ([]byte, *failures.Failure)
+var GetWithProgress func(url string, progress *progress.Progress) ([]byte, error)
 
 func init() {
 	SetMocking(condition.InTest())
@@ -39,16 +39,16 @@ func SetMocking(useMocking bool) {
 	}
 }
 
-func httpGet(url string) ([]byte, *failures.Failure) {
+func httpGet(url string) ([]byte, error) {
 	logging.Debug("Retrieving url: %s", url)
 	return httpGetWithProgress(url, nil)
 }
 
-func httpGetWithProgress(url string, progress *progress.Progress) ([]byte, *failures.Failure) {
+func httpGetWithProgress(url string, progress *progress.Progress) ([]byte, error) {
 	return httpGetWithProgressRetry(url, progress, 1, 3)
 }
 
-func httpGetWithProgressRetry(url string, progress *progress.Progress, attempt int, retries int) ([]byte, *failures.Failure) {
+func httpGetWithProgressRetry(url string, progress *progress.Progress, attempt int, retries int) ([]byte, error) {
 	logging.Debug("Retrieving url: %s, attempt: %d", url, attempt)
 	client := retryhttp.NewClient(0 /* 0 = no timeout */, retries)
 	resp, err := client.Get(url)
@@ -57,12 +57,12 @@ func httpGetWithProgressRetry(url string, progress *progress.Progress, attempt i
 		if resp != nil {
 			code = resp.StatusCode
 		}
-		return nil, failures.FailNetwork.Wrap(err, locale.Tl("err_network_get", "Status code: {{.V0}}", strconv.Itoa(code)))
+		return nil, locale.WrapError(err, "err_network_get", "", "Status code: {{.V0}}", strconv.Itoa(code))
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return nil, failures.FailNetwork.New("err_invalid_status_code", strconv.Itoa(resp.StatusCode))
+		return nil, locale.NewError("err_invalid_status_code", "", strconv.Itoa(resp.StatusCode))
 	}
 
 	var total int
@@ -73,7 +73,7 @@ func httpGetWithProgressRetry(url string, progress *progress.Progress, attempt i
 		total, err = strconv.Atoi(length)
 		if err != nil {
 			logging.Debug("Content-length: %v", length)
-			return nil, failures.FailInput.Wrap(err)
+			return nil, errs.Wrap(err, "Could not convert header length to int, value: %s", length)
 		}
 	}
 
@@ -95,9 +95,9 @@ func httpGetWithProgressRetry(url string, progress *progress.Progress, attempt i
 	if err != nil {
 		logging.Debug("Reading body failed: %s", err)
 		if attempt <= retries {
-			return httpGetWithProgressRetry(url, progress, attempt + 1, retries)
+			return httpGetWithProgressRetry(url, progress, attempt+1, retries)
 		}
-		return nil, failures.FailNetwork.Wrap(err)
+		return nil, errs.Wrap(err, "Could not copy network stream")
 	}
 
 	if !bar.Completed() {
@@ -108,18 +108,18 @@ func httpGetWithProgressRetry(url string, progress *progress.Progress, attempt i
 	return dst.Bytes(), nil
 }
 
-func _testHTTPGetWithProgress(url string, progress *progress.Progress) ([]byte, *failures.Failure) {
+func _testHTTPGetWithProgress(url string, progress *progress.Progress) ([]byte, error) {
 	return _testHTTPGet(url)
 }
 
 // _testHTTPGet is used when in tests, this cannot be in the test itself as that would limit it to only that one test
-func _testHTTPGet(url string) ([]byte, *failures.Failure) {
+func _testHTTPGet(url string) ([]byte, error) {
 	path := strings.Replace(url, constants.APIArtifactURL, "", 1)
 	path = filepath.Join(environment.GetRootPathUnsafe(), "test", path)
 
 	body, err := ioutil.ReadFile(path)
 	if err != nil {
-		return nil, failures.FailIO.Wrap(err)
+		return nil, errs.Wrap(err, "Could not read file contents: %s", path)
 	}
 
 	return body, nil

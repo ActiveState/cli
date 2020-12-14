@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 )
@@ -18,7 +17,7 @@ type confirmMock struct {
 	confirm bool
 }
 
-func (c *confirmMock) Confirm(title, message string, defaultChoice bool) (bool, *failures.Failure) {
+func (c *confirmMock) Confirm(title, message string, defaultChoice bool) (bool, error) {
 	return c.confirm, nil
 }
 

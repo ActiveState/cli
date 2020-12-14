@@ -45,8 +45,8 @@ func isBinDirOnWindowsUserPath(binDir string) bool {
 	}
 
 	cmdEnv := cmd.NewCmdEnv(true)
-	path, fail := cmdEnv.Get("PATH")
-	if fail != nil {
+	path, err := cmdEnv.Get("PATH")
+	if err != nil {
 		logging.Error("Failed to get user PATH")
 		return false
 	}
@@ -82,16 +82,16 @@ func Prepare(subshell subshell.SubShell) error {
 		return nil
 	}
 
-	if fail := fileutils.MkdirUnlessExists(binDir); fail != nil {
-		return locale.WrapError(fail.ToError(), "err_globaldefault_bin_dir", "Could not create bin directory.")
+	if err := fileutils.MkdirUnlessExists(binDir); err != nil {
+		return locale.WrapError(err, "err_globaldefault_bin_dir", "Could not create bin directory.")
 	}
 
 	envUpdates := map[string]string{
 		"PATH": binDir,
 	}
 
-	if fail := subshell.WriteUserEnv(envUpdates, sscommon.Default, true); fail != nil {
-		return locale.WrapError(fail.ToError(), "err_globaldefault_update_env", "Could not write to user environment.")
+	if err := subshell.WriteUserEnv(envUpdates, sscommon.Default, true); err != nil {
+		return locale.WrapError(err, "err_globaldefault_update_env", "Could not write to user environment.")
 	}
 
 	return nil
@@ -129,9 +129,9 @@ func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, r
 		return locale.WrapError(err, "err_globaldefault_prepare", "Could not prepare environment.")
 	}
 
-	env, fail := runtime.Env()
-	if fail != nil {
-		return errs.Wrap(fail, "Could not get runtime env")
+	env, err := runtime.Env()
+	if err != nil {
+		return errs.Wrap(err, "Could not get runtime env")
 	}
 
 	envMap, err := env.GetEnv(false, "")
@@ -172,8 +172,8 @@ func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, r
 
 func cleanup() error {
 	binDir := BinDir()
-	if fail := fileutils.MkdirUnlessExists(binDir); fail != nil {
-		return locale.WrapError(fail, "err_globaldefault_mkdir", "Could not create bin directory: {{.V0}}.", binDir)
+	if err := fileutils.MkdirUnlessExists(binDir); err != nil {
+		return locale.WrapError(err, "err_globaldefault_mkdir", "Could not create bin directory: {{.V0}}.", binDir)
 	}
 
 	// remove existing binaries in our bin dir

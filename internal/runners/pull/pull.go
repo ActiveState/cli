@@ -58,16 +58,16 @@ func (p *Pull) Run() error {
 	}
 
 	// Retrieve latest commit ID on platform
-	latestID, fail := model.LatestCommitID(p.project.Owner(), p.project.Name())
-	if fail != nil {
-		return locale.WrapInputError(fail, "err_pull_commit", "Could not retrieve the latest commit for your project.")
+	latestID, err := model.LatestCommitID(p.project.Owner(), p.project.Name())
+	if err != nil {
+		return locale.WrapInputError(err, "err_pull_commit", "Could not retrieve the latest commit for your project.")
 	}
 
 	// Update the commit ID in the activestate.yaml
 	if p.project.CommitID() != latestID.String() {
-		fail := p.project.Source().SetCommit(latestID.String(), false)
-		if fail != nil {
-			return locale.WrapError(fail, "err_pull_update", "Cannot update the commit in your project file.")
+		err := p.project.Source().SetCommit(latestID.String(), false)
+		if err != nil {
+			return locale.WrapError(err, "err_pull_update", "Cannot update the commit in your project file.")
 		}
 
 		p.out.Print(&outputFormat{
@@ -89,9 +89,9 @@ func (p *Pull) Run() error {
 
 	fname := path.Join(config.ConfigPath(), constants.UpdateHailFileName)
 	// must happen last in this function scope (defer if needed)
-	if fail := hail.Send(fname, []byte(actID)); fail != nil {
-		logging.Error("failed to send hail via %q: %s", fname, fail)
-		return locale.WrapError(fail, "err_pull_hail", "Could not re-activate your project, please exit and re-activate manually by running 'state activate' again.")
+	if err := hail.Send(fname, []byte(actID)); err != nil {
+		logging.Error("failed to send hail via %q: %s", fname, err)
+		return locale.WrapError(err, "err_pull_hail", "Could not re-activate your project, please exit and re-activate manually by running 'state activate' again.")
 	}
 
 	return nil

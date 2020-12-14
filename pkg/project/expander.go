@@ -5,7 +5,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -14,35 +13,10 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/constraints"
-	"github.com/ActiveState/cli/internal/failures"
-	"github.com/ActiveState/cli/internal/prompt"
-)
-
-var (
-	// FailExpandVariable identifies a failure during variable expansion.
-	FailExpandVariable = failures.Type("project.fail.expandvariable", failures.FailUser)
-
-	// FailExpandVariableBadCategory identifies a variable expansion failure due to a bad variable category.
-	FailExpandVariableBadCategory = failures.Type("project.fail.expandvariable.badcategory", FailExpandVariable)
-
-	// FailExpandVariableBadName identifies a variable expansion failure due to a bad variable name.
-	FailExpandVariableBadName = failures.Type("project.fail.expandvariable.badName", FailExpandVariable)
-
-	// FailExpandVariableRecursion identifies a variable expansion failure due to infinite recursion.
-	FailExpandVariableRecursion = failures.Type("project.fail.expandvariable.recursion", FailExpandVariable)
-
-	// FailExpanderBadName is used when an Expanders name is invalid.
-	FailExpanderBadName = failures.Type("project.fail.expander.badName", failures.FailVerify)
-
-	// FailExpanderNoFunc is used when no handler func is found for an Expander.
-	FailExpanderNoFunc = failures.Type("project.fail.expander.noFunc", failures.FailVerify)
-
-	// FailVarNotFound is used when no handler func is found for an Expander.
-	FailVarNotFound = failures.Type("project.fail.vars.notfound", FailExpandVariable)
 )
 
 // Expand will detect the active project and invoke ExpandFromProject with the given string
-func Expand(s string, out output.Outputer, prompt prompt.Prompter) (string, error) {
+func Expand(s string) (string, error) {
 	return ExpandFromProject(s, Get())
 }
 
@@ -176,9 +150,9 @@ func expandPath(name string, script *Script) (string, error) {
 		languages = DefaultScriptLanguage()
 	}
 
-	sf, fail := scriptfile.NewEmpty(languages[0], name)
-	if fail != nil {
-		return "", fail.ToError()
+	sf, err := scriptfile.NewEmpty(languages[0], name)
+	if err != nil {
+		return "", err
 	}
 	script.setCachedFile(sf.Filename())
 
@@ -186,9 +160,9 @@ func expandPath(name string, script *Script) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	fail = sf.Write(v)
-	if fail != nil {
-		return "", fail.ToError()
+	err = sf.Write(v)
+	if err != nil {
+		return "", err
 	}
 
 	return sf.Filename(), nil

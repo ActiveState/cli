@@ -7,9 +7,9 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 
 	"github.com/ActiveState/cli/internal/access"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/secrets"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
@@ -18,28 +18,11 @@ import (
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
-// FailExpandNoProjectDefined is used when error arises from an expander function being called without a project
-var FailExpandNoProjectDefined = failures.Type("project.fail.secrets.expand.noproject")
-
-// FailInputSecretValue is used when error arises from user providing a secret value.
-var FailInputSecretValue = failures.Type("project.fail.secrets.input.value", failures.FailUserInput)
-
-// FailExpandNoAccess is used when the currently authorized user does not have access to project secrets
-var FailExpandNoAccess = failures.Type("project.fail.secrets.expand.noaccess", failures.FailUser)
-
-// FailNotAuthenticated is used when trying to access secrets while not being authenticated
-var FailNotAuthenticated = failures.Type("project.fail.secrets.noauth", failures.FailUserInput)
-
 // UserCategory is the string used when referencing user secrets (eg. $secrets.user.foo)
 const UserCategory = "user"
 
 // ProjectCategory is the string used when referencing project secrets (eg. $secrets.project.foo)
 const ProjectCategory = "project"
-
-func init() {
-	expander := NewSecretPromptingExpander(secretsapi.Get())
-	RegisterExpander("secrets", expander)
-}
 
 // SecretAccess is used to track secrets that were requested
 type SecretAccess struct {
@@ -55,49 +38,51 @@ type SecretExpander struct {
 	remoteProject   *mono_models.Project
 	projectFile     *projectfile.Project
 	project         *Project
+	prompt          prompt.Prompter
 	secrets         []*secretsModels.UserSecret
 	secretsAccessed []*SecretAccess
 	cachedSecrets   map[string]string
 }
 
 // NewSecretExpander returns a new instance of SecretExpander
-func NewSecretExpander(secretsClient *secretsapi.Client, prj *Project) *SecretExpander {
+func NewSecretExpander(secretsClient *secretsapi.Client, prj *Project, prompt prompt.Prompter) *SecretExpander {
 	return &SecretExpander{
 		secretsClient: secretsClient,
 		cachedSecrets: map[string]string{},
 		project:       prj,
+		prompt:        prompt,
 	}
 }
 
 // NewSecretQuietExpander creates an Expander which can retrieve and decrypt stored user secrets.
 func NewSecretQuietExpander(secretsClient *secretsapi.Client) ExpanderFunc {
-	secretsExpander := NewSecretExpander(secretsClient, nil)
+	secretsExpander := NewSecretExpander(secretsClient, nil, nil)
 	return secretsExpander.Expand
 }
 
 // NewSecretPromptingExpander creates an Expander which can retrieve and decrypt stored user secrets. Additionally,
 // it will prompt the user to provide a value for a secret -- in the event none is found -- and save the new
 // value with the secrets service.
-func NewSecretPromptingExpander(secretsClient *secretsapi.Client) ExpanderFunc {
-	secretsExpander := NewSecretExpander(secretsClient, nil)
+func NewSecretPromptingExpander(secretsClient *secretsapi.Client, prompt prompt.Prompter) ExpanderFunc {
+	secretsExpander := NewSecretExpander(secretsClient, nil, prompt)
 	return secretsExpander.ExpandWithPrompt
 }
 
 // KeyPair acts as a caching layer for secrets.LoadKeypairFromConfigDir, and ensures that we have a projectfile
-func (e *SecretExpander) KeyPair() (keypairs.Keypair, *failures.Failure) {
+func (e *SecretExpander) KeyPair() (keypairs.Keypair, error) {
 	if e.projectFile == nil {
-		return nil, FailExpandNoProjectDefined.New(locale.T("secrets_err_expand_noproject"))
+		return nil, locale.NewError("secrets_err_expand_noproject")
 	}
 
 	if !authentication.Get().Authenticated() {
-		return nil, FailNotAuthenticated.New(locale.T("secrets_err_not_authenticated"))
+		return nil, locale.NewInputError("secrets_err_not_authenticated")
 	}
 
-	var fail *failures.Failure
+	var err error
 	if e.keypair == nil {
-		e.keypair, fail = secrets.LoadKeypairFromConfigDir()
-		if fail != nil {
-			return nil, fail
+		e.keypair, err = secrets.LoadKeypairFromConfigDir()
+		if err != nil {
+			return nil, err
 		}
 	}
 
@@ -105,15 +90,15 @@ func (e *SecretExpander) KeyPair() (keypairs.Keypair, *failures.Failure) {
 }
 
 // Organization acts as a caching layer, and ensures that we have a projectfile
-func (e *SecretExpander) Organization() (*mono_models.Organization, *failures.Failure) {
+func (e *SecretExpander) Organization() (*mono_models.Organization, error) {
 	if e.project == nil {
-		return nil, FailExpandNoProjectDefined.New(locale.T("secrets_err_expand_noproject"))
+		return nil, locale.NewError("secrets_err_expand_noproject")
 	}
-	var fail *failures.Failure
+	var err error
 	if e.organization == nil {
-		e.organization, fail = model.FetchOrgByURLName(e.project.Owner())
-		if fail != nil {
-			return nil, fail
+		e.organization, err = model.FetchOrgByURLName(e.project.Owner())
+		if err != nil {
+			return nil, err
 		}
 	}
 
@@ -121,15 +106,15 @@ func (e *SecretExpander) Organization() (*mono_models.Organization, *failures.Fa
 }
 
 // Project acts as a caching layer, and ensures that we have a projectfile
-func (e *SecretExpander) Project() (*mono_models.Project, *failures.Failure) {
+func (e *SecretExpander) Project() (*mono_models.Project, error) {
 	if e.project == nil {
-		return nil, FailExpandNoProjectDefined.New(locale.T("secrets_err_expand_noproject"))
+		return nil, locale.NewError("secrets_err_expand_noproject")
 	}
-	var fail *failures.Failure
+	var err error
 	if e.remoteProject == nil {
-		e.remoteProject, fail = model.FetchProjectByName(e.project.Owner(), e.project.Name())
-		if fail != nil {
-			return nil, fail
+		e.remoteProject, err = model.FetchProjectByName(e.project.Owner(), e.project.Name())
+		if err != nil {
+			return nil, err
 		}
 	}
 
@@ -137,16 +122,16 @@ func (e *SecretExpander) Project() (*mono_models.Project, *failures.Failure) {
 }
 
 // Secrets acts as a caching layer, and ensures that we have a projectfile
-func (e *SecretExpander) Secrets() ([]*secretsModels.UserSecret, *failures.Failure) {
+func (e *SecretExpander) Secrets() ([]*secretsModels.UserSecret, error) {
 	if e.secrets == nil {
-		org, fail := e.Organization()
-		if fail != nil {
-			return nil, fail
+		org, err := e.Organization()
+		if err != nil {
+			return nil, err
 		}
 
-		e.secrets, fail = secretsapi.FetchAll(e.secretsClient, org)
-		if fail != nil {
-			return nil, fail
+		e.secrets, err = secretsapi.FetchAll(e.secretsClient, org)
+		if err != nil {
+			return nil, err
 		}
 	}
 
@@ -154,33 +139,33 @@ func (e *SecretExpander) Secrets() ([]*secretsModels.UserSecret, *failures.Failu
 }
 
 // FetchSecret retrieves the given secret
-func (e *SecretExpander) FetchSecret(name string, isUser bool) (string, *failures.Failure) {
-	keypair, fail := e.KeyPair()
-	if fail != nil {
+func (e *SecretExpander) FetchSecret(name string, isUser bool) (string, error) {
+	keypair, err := e.KeyPair()
+	if err != nil {
 		return "", nil
 	}
 
-	userSecret, fail := e.FindSecret(name, isUser)
-	if fail != nil {
-		return "", fail
+	userSecret, err := e.FindSecret(name, isUser)
+	if err != nil {
+		return "", err
 	}
 	if userSecret == nil {
-		return "", secretsapi.FailUserSecretNotFound.New("secrets_expand_err_not_found", name)
+		return "", locale.WrapInputError(ErrSecretNotFound, "secrets_expand_err_not_found", "", name)
 	}
 
-	decrBytes, fail := keypair.DecodeAndDecrypt(*userSecret.Value)
-	if fail != nil {
-		return "", fail
+	decrBytes, err := keypair.DecodeAndDecrypt(*userSecret.Value)
+	if err != nil {
+		return "", err
 	}
 
 	return string(decrBytes), nil
 }
 
 // FetchDefinition retrieves the definition associated with a secret
-func (e *SecretExpander) FetchDefinition(name string, isUser bool) (*secretsModels.SecretDefinition, *failures.Failure) {
-	defs, fail := secretsapi.FetchDefinitions(e.secretsClient, e.remoteProject.ProjectID)
-	if fail != nil {
-		return nil, fail
+func (e *SecretExpander) FetchDefinition(name string, isUser bool) (*secretsModels.SecretDefinition, error) {
+	defs, err := secretsapi.FetchDefinitions(e.secretsClient, e.remoteProject.ProjectID)
+	if err != nil {
+		return nil, err
 	}
 
 	scope := secretsapi.ScopeUser
@@ -198,24 +183,24 @@ func (e *SecretExpander) FetchDefinition(name string, isUser bool) (*secretsMode
 }
 
 // FindSecret will find the secret appropriate for the current project
-func (e *SecretExpander) FindSecret(name string, isUser bool) (*secretsModels.UserSecret, *failures.Failure) {
+func (e *SecretExpander) FindSecret(name string, isUser bool) (*secretsModels.UserSecret, error) {
 	owner := e.project.Owner()
-	allowed, fail := access.Secrets(owner)
-	if fail != nil {
-		return nil, fail
+	allowed, err := access.Secrets(owner)
+	if err != nil {
+		return nil, err
 	}
 	if !allowed {
-		return nil, FailExpandNoAccess.New("secrets_expand_err_no_access", owner)
+		return nil, locale.NewInputError("secrets_expand_err_no_access", "", owner)
 	}
 
-	secrets, fail := e.Secrets()
-	if fail != nil {
-		return nil, fail
+	secrets, err := e.Secrets()
+	if err != nil {
+		return nil, err
 	}
 
-	project, fail := e.Project()
-	if fail != nil {
-		return nil, fail
+	project, err := e.Project()
+	if err != nil {
+		return nil, err
 	}
 
 	e.secretsAccessed = append(e.secretsAccessed, &SecretAccess{isUser, name})
@@ -251,7 +236,7 @@ func (e *SecretExpander) SecretsAccessed() []*SecretAccess {
 }
 
 // SecretFunc defines what our expander functions will be returning
-type SecretFunc func(name string, project *Project) (string, *failures.Failure)
+type SecretFunc func(name string, project *Project) (string, error)
 
 var ErrSecretNotFound = errors.New("secret not found")
 
@@ -266,27 +251,27 @@ func (e *SecretExpander) Expand(_ string, category string, name string, isFuncti
 		e.projectFile = project.Source()
 	}
 
-	keypair, fail := e.KeyPair()
-	if fail != nil {
-		return "", fail.ToError()
+	keypair, err := e.KeyPair()
+	if err != nil {
+		return "", err
 	}
 
 	if knownValue, exists := e.cachedSecrets[category+name]; exists {
 		return knownValue, nil
 	}
 
-	userSecret, fail := e.FindSecret(name, isUser)
-	if fail != nil {
-		return "", fail.ToError()
+	userSecret, err := e.FindSecret(name, isUser)
+	if err != nil {
+		return "", err
 	}
 
 	if userSecret == nil {
 		return "", locale.WrapInputError(ErrSecretNotFound, "secrets_expand_err_not_found", "Unable to obtain value for secret: `{{.V0}}.`", name)
 	}
 
-	decrBytes, fail := keypair.DecodeAndDecrypt(*userSecret.Value)
-	if fail != nil {
-		return "", fail
+	decrBytes, err := keypair.DecodeAndDecrypt(*userSecret.Value)
+	if err != nil {
+		return "", err
 	}
 
 	secretValue := string(decrBytes)
@@ -309,23 +294,23 @@ func (e *SecretExpander) ExpandWithPrompt(_ string, category string, name string
 		e.projectFile = project.Source()
 	}
 
-	keypair, fail := e.KeyPair()
-	if fail != nil {
-		return "", fail.ToError()
+	keypair, err := e.KeyPair()
+	if err != nil {
+		return "", err
 	}
 
-	value, fail := e.FetchSecret(name, isUser)
-	if fail != nil && !fail.Type.Matches(secretsapi.FailUserSecretNotFound) {
-		return "", fail.ToError()
+	value, err := e.FetchSecret(name, isUser)
+	if err != nil && !errors.Is(err, ErrSecretNotFound) {
+		return "", err
 	}
 
-	if fail == nil {
+	if err == nil {
 		return value, nil
 	}
 
-	def, fail := e.FetchDefinition(name, isUser)
-	if fail != nil {
-		return "", fail
+	def, err := e.FetchDefinition(name, isUser)
+	if err != nil {
+		return "", err
 	}
 
 	scope := string(secretsapi.ScopeUser)
@@ -338,23 +323,23 @@ func (e *SecretExpander) ExpandWithPrompt(_ string, category string, name string
 	}
 
 	project.Outputer.Notice(locale.Tr("secret_value_prompt_summary", name, description, scope, locale.T("secret_prompt_"+scope)))
-	if value, fail = project.Prompter.InputSecret(locale.Tl("secret_expand", "Secret Expansion"), locale.Tr("secret_value_prompt", name)); fail != nil {
+	if value, err = e.prompt.InputSecret(locale.Tl("secret_expand", "Secret Expansion"), locale.Tr("secret_value_prompt", name)); err != nil {
 		return "", locale.NewInputError("secrets_err_value_prompt", "The provided secret value is invalid.")
 	}
 
-	pj, fail := e.Project()
-	if fail != nil {
-		return "", fail
+	pj, err := e.Project()
+	if err != nil {
+		return "", err
 	}
-	org, fail := e.Organization()
-	if fail != nil {
-		return "", fail
+	org, err := e.Organization()
+	if err != nil {
+		return "", err
 	}
 
-	fail = secrets.Save(e.secretsClient, keypair, org, pj, isUser, name, value)
+	err = secrets.Save(e.secretsClient, keypair, org, pj, isUser, name, value)
 
-	if fail != nil {
-		return "", fail
+	if err != nil {
+		return "", err
 	}
 
 	// Cache it so we're not repeatedly prompting for the same secret

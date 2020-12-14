@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 
 	"github.com/ActiveState/cli/internal/colorize"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 )
@@ -17,7 +16,7 @@ type JSON struct {
 }
 
 // NewJSON constructs a new JSON struct
-func NewJSON(config *Config) (JSON, *failures.Failure) {
+func NewJSON(config *Config) (JSON, error) {
 	return JSON{config, true}, nil
 }
 

@@ -37,14 +37,14 @@ func (suite *MetaDataTestSuite) TestMetaData_Prepare() {
 		pythonBinaryFilename = pythonBinaryFilename + ".exe"
 		tempDir = strings.ReplaceAll(tempDir, "\\", "\\\\")
 	}
-	fail := fileutils.Touch(filepath.Join(suite.dir, pythonBinaryFilename))
-	suite.Require().NoError(fail.ToError())
+	err := fileutils.Touch(filepath.Join(suite.dir, pythonBinaryFilename))
+	suite.Require().NoError(err)
 
 	contents := fmt.Sprintf(template, tempDir)
-	metaData, fail := runtime.ParseMetaData([]byte(contents))
-	suite.Require().NoError(fail.ToError())
+	metaData, err := runtime.ParseMetaData([]byte(contents))
+	suite.Require().NoError(err)
 
-	fail = metaData.Prepare()
-	suite.Require().NoError(fail.ToError())
+	err = metaData.Prepare()
+	suite.Require().NoError(err)
 	suite.Require().NotEmpty(metaData.Env["PYTHONIOENCODING"])
 }

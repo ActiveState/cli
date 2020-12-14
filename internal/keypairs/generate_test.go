@@ -6,13 +6,13 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/failures"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
-	secrets_models "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
-	"github.com/stretchr/testify/suite"
+	"github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 )
 
 type KeypairGenerateTestSuite struct {
@@ -22,7 +22,6 @@ type KeypairGenerateTestSuite struct {
 }
 
 func (suite *KeypairGenerateTestSuite) BeforeTest(suiteName, testName string) {
-	failures.ResetHandled()
 	secretsClient := secretsapi_test.NewDefaultTestClient("bearing123")
 	suite.Require().NotNil(secretsClient)
 	suite.secretsClient = secretsClient
@@ -35,25 +34,25 @@ func (suite *KeypairGenerateTestSuite) AfterTest(suiteName, testName string) {
 }
 
 func (suite *KeypairGenerateTestSuite) TestGenerate_Fails_NotEnoughBits() {
-	encKeypair, failure := keypairs.GenerateEncodedKeypair("", keypairs.MinimumRSABitLength-1)
+	encKeypair, err := keypairs.GenerateEncodedKeypair("", keypairs.MinimumRSABitLength-1)
 	suite.Require().Nil(encKeypair)
-	suite.Equal(keypairs.FailKeypairGenerate, failure.Type)
+	suite.Require().Error(err)
 }
 
 func (suite *KeypairGenerateTestSuite) TestGenerate_NoPassphrase() {
-	encKeypair, failure := keypairs.GenerateEncodedKeypair("", keypairs.MinimumRSABitLength)
-	suite.Require().Nil(failure)
+	encKeypair, err := keypairs.GenerateEncodedKeypair("", keypairs.MinimumRSABitLength)
+	suite.Require().Nil(err)
 	suite.Require().NotNil(encKeypair)
 
 	// verify encoded keypair matches generated keypair
-	validationKeypair, failure := keypairs.ParseRSA(encKeypair.EncodedPrivateKey)
-	suite.Require().Nil(failure)
+	validationKeypair, err := keypairs.ParseRSA(encKeypair.EncodedPrivateKey)
+	suite.Require().Nil(err)
 	suite.Require().NotNil(validationKeypair)
 	suite.Equal(encKeypair.Keypair, validationKeypair)
 
 	// verify encoded public key matches generated keypair's public key
-	validationPublicKey, failure := keypairs.ParseRSAPublicKey(encKeypair.EncodedPublicKey)
-	suite.Require().Nil(failure)
+	validationPublicKey, err := keypairs.ParseRSAPublicKey(encKeypair.EncodedPublicKey)
+	suite.Require().Nil(err)
 	suite.Require().NotNil(validationPublicKey)
 
 	rsaKey, ok := encKeypair.Keypair.(*keypairs.RSAKeypair)
@@ -62,19 +61,19 @@ func (suite *KeypairGenerateTestSuite) TestGenerate_NoPassphrase() {
 }
 
 func (suite *KeypairGenerateTestSuite) TestGenerate_WithPassphrase() {
-	encKeypair, failure := keypairs.GenerateEncodedKeypair("tuxedomoon", keypairs.MinimumRSABitLength)
-	suite.Require().Nil(failure)
+	encKeypair, err := keypairs.GenerateEncodedKeypair("tuxedomoon", keypairs.MinimumRSABitLength)
+	suite.Require().Nil(err)
 	suite.Require().NotNil(encKeypair)
 
 	// verify encoded keypair matches generated keypair with a passphrase
-	validationKeypair, failure := keypairs.ParseEncryptedRSA(encKeypair.EncodedPrivateKey, "tuxedomoon")
-	suite.Require().Nil(failure)
+	validationKeypair, err := keypairs.ParseEncryptedRSA(encKeypair.EncodedPrivateKey, "tuxedomoon")
+	suite.Require().Nil(err)
 	suite.Require().NotNil(validationKeypair)
 	suite.Equal(encKeypair.Keypair, validationKeypair)
 
 	// verify encoded public key matches generated keypair's public key
-	validationPublicKey, failure := keypairs.ParseRSAPublicKey(encKeypair.EncodedPublicKey)
-	suite.Require().Nil(failure)
+	validationPublicKey, err := keypairs.ParseRSAPublicKey(encKeypair.EncodedPublicKey)
+	suite.Require().Nil(err)
 	suite.Require().NotNil(validationPublicKey)
 
 	rsaKey, ok := encKeypair.Keypair.(*keypairs.RSAKeypair)
@@ -83,17 +82,17 @@ func (suite *KeypairGenerateTestSuite) TestGenerate_WithPassphrase() {
 }
 
 func (suite *KeypairGenerateTestSuite) TestGenerateAndSave_Fails_NotEnoughBits() {
-	encKeypair, failure := keypairs.GenerateAndSaveEncodedKeypair(suite.secretsClient, "", keypairs.MinimumRSABitLength-1)
+	encKeypair, err := keypairs.GenerateAndSaveEncodedKeypair(suite.secretsClient, "", keypairs.MinimumRSABitLength-1)
 	suite.Require().Nil(encKeypair)
-	suite.Equal(keypairs.FailKeypairGenerate, failure.Type)
+	suite.Require().Error(err)
 }
 
 func (suite *KeypairGenerateTestSuite) TestGenerateAndSave_Fails_OnSave() {
 	httpmock.RegisterWithCode("PUT", "/keypair", 400)
 
-	encKeypair, failure := keypairs.GenerateAndSaveEncodedKeypair(suite.secretsClient, "", keypairs.MinimumRSABitLength)
+	encKeypair, err := keypairs.GenerateAndSaveEncodedKeypair(suite.secretsClient, "", keypairs.MinimumRSABitLength)
 	suite.Require().Nil(encKeypair)
-	suite.Equal(secretsapi.FailKeypairSave, failure.Type)
+	suite.Require().Error(err)
 }
 
 func (suite *KeypairGenerateTestSuite) TestGenerateAndSave_Success_NoPassphrase() {
@@ -105,20 +104,20 @@ func (suite *KeypairGenerateTestSuite) TestGenerateAndSave_Success_NoPassphrase(
 		return 204, "empty"
 	})
 
-	encKeypair, failure := keypairs.GenerateAndSaveEncodedKeypair(suite.secretsClient, "", keypairs.MinimumRSABitLength)
+	encKeypair, err := keypairs.GenerateAndSaveEncodedKeypair(suite.secretsClient, "", keypairs.MinimumRSABitLength)
 	suite.Require().NotNil(encKeypair)
-	suite.Require().Nil(failure)
+	suite.Require().Nil(err)
 	suite.Require().NoError(bodyErr)
 
 	// verify encoded keypair matches generated keypair
-	validationKeypair, failure := keypairs.ParseRSA(encKeypair.EncodedPrivateKey)
-	suite.Require().Nil(failure)
+	validationKeypair, err := keypairs.ParseRSA(encKeypair.EncodedPrivateKey)
+	suite.Require().Nil(err)
 	suite.Require().NotNil(validationKeypair)
 	suite.Equal(encKeypair.Keypair, validationKeypair)
 
 	// verify encoded public key matches generated keypair's public key
-	validationPublicKey, failure := keypairs.ParseRSAPublicKey(encKeypair.EncodedPublicKey)
-	suite.Require().Nil(failure)
+	validationPublicKey, err := keypairs.ParseRSAPublicKey(encKeypair.EncodedPublicKey)
+	suite.Require().Nil(err)
 	suite.Require().NotNil(validationPublicKey)
 }
 
@@ -131,20 +130,20 @@ func (suite *KeypairGenerateTestSuite) TestGenerateAndSave_Success_WithPassphras
 		return 204, "empty"
 	})
 
-	encKeypair, failure := keypairs.GenerateAndSaveEncodedKeypair(suite.secretsClient, "bauhaus", keypairs.MinimumRSABitLength)
+	encKeypair, err := keypairs.GenerateAndSaveEncodedKeypair(suite.secretsClient, "bauhaus", keypairs.MinimumRSABitLength)
 	suite.Require().NotNil(encKeypair)
-	suite.Require().Nil(failure)
+	suite.Require().Nil(err)
 	suite.Require().NoError(bodyErr)
 
 	// verify encoded keypair matches generated keypair with a passphrase
-	validationKeypair, failure := keypairs.ParseEncryptedRSA(encKeypair.EncodedPrivateKey, "bauhaus")
-	suite.Require().Nil(failure)
+	validationKeypair, err := keypairs.ParseEncryptedRSA(encKeypair.EncodedPrivateKey, "bauhaus")
+	suite.Require().Nil(err)
 	suite.Require().NotNil(validationKeypair)
 	suite.Equal(encKeypair.Keypair, validationKeypair)
 
 	// verify encoded public key matches generated keypair's public key
-	validationPublicKey, failure := keypairs.ParseRSAPublicKey(encKeypair.EncodedPublicKey)
-	suite.Require().Nil(failure)
+	validationPublicKey, err := keypairs.ParseRSAPublicKey(encKeypair.EncodedPublicKey)
+	suite.Require().Nil(err)
 	suite.Require().NotNil(validationPublicKey)
 }
 

@@ -6,14 +6,13 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/keypairs"
-	secrets_models "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
+	"github.com/stretchr/testify/suite"
 
-	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
-	"github.com/stretchr/testify/suite"
+	"github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 )
 
 type KeypairSaveTestSuite struct {
@@ -23,7 +22,6 @@ type KeypairSaveTestSuite struct {
 }
 
 func (suite *KeypairSaveTestSuite) BeforeTest(suiteName, testName string) {
-	failures.ResetHandled()
 	secretsClient := secretsapi_test.NewDefaultTestClient("bearing123")
 	suite.Require().NotNil(secretsClient)
 	suite.secretsClient = secretsClient
@@ -38,12 +36,12 @@ func (suite *KeypairSaveTestSuite) AfterTest(suiteName, testName string) {
 func (suite *KeypairSaveTestSuite) TestSave_Fails() {
 	httpmock.RegisterWithCode("PUT", "/keypair", 400)
 
-	encKeypair, failure := keypairs.GenerateEncodedKeypair("", keypairs.MinimumRSABitLength)
+	encKeypair, err := keypairs.GenerateEncodedKeypair("", keypairs.MinimumRSABitLength)
 	suite.Require().NotNil(encKeypair)
-	suite.Require().Nil(failure)
+	suite.Require().Nil(err)
 
-	failure = keypairs.SaveEncodedKeypair(suite.secretsClient, encKeypair)
-	suite.Equal(secretsapi.FailKeypairSave, failure.Type)
+	err = keypairs.SaveEncodedKeypair(suite.secretsClient, encKeypair)
+	suite.Error(err)
 }
 
 func (suite *KeypairSaveTestSuite) TestSave_Succeeds() {
@@ -55,12 +53,12 @@ func (suite *KeypairSaveTestSuite) TestSave_Succeeds() {
 		return 204, "empty"
 	})
 
-	encKeypair, failure := keypairs.GenerateEncodedKeypair("", keypairs.MinimumRSABitLength)
+	encKeypair, err := keypairs.GenerateEncodedKeypair("", keypairs.MinimumRSABitLength)
 	suite.Require().NotNil(encKeypair)
-	suite.Require().Nil(failure)
+	suite.Require().Nil(err)
 
-	failure = keypairs.SaveEncodedKeypair(suite.secretsClient, encKeypair)
-	suite.Require().Nil(failure)
+	err = keypairs.SaveEncodedKeypair(suite.secretsClient, encKeypair)
+	suite.Require().Nil(err)
 	suite.Require().NoError(bodyErr)
 
 	suite.Equal(encKeypair.EncodedPrivateKey, *bodyKeypair.EncryptedPrivateKey)

@@ -6,9 +6,11 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"strings"
 
 	"github.com/ActiveState/sysinfo"
 	"github.com/rollbar/rollbar-go"
+	"golang.org/x/crypto/ssh/terminal"
 
 	"github.com/ActiveState/cli/cmd/state/internal/cmdtree"
 	"github.com/ActiveState/cli/internal/config" // MUST be first!
@@ -16,7 +18,6 @@ import (
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/deprecation"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -25,13 +26,11 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	_ "github.com/ActiveState/cli/internal/prompt" // Sets up survey defaults
 	"github.com/ActiveState/cli/internal/subshell"
+	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
-
-// FailMainPanic is a failure due to a panic occuring while runnig the main function
-var FailMainPanic = failures.Type("main.fail.panic", failures.FailUser)
 
 func main() {
 	// Set up logging
@@ -43,9 +42,9 @@ func main() {
 
 	// Set up our output formatter/writer
 	outFlags := parseOutputFlags(os.Args)
-	out, fail := initOutput(outFlags, "")
-	if fail != nil {
-		os.Stderr.WriteString(locale.Tr("err_main_outputer", fail.Error()))
+	out, err := initOutput(outFlags, "")
+	if err != nil {
+		os.Stderr.WriteString(locale.Tr("err_main_outputer", err.Error()))
 		os.Exit(1)
 	}
 
@@ -65,8 +64,11 @@ func main() {
 	// Set up our legacy outputer
 	setPrinterColors(outFlags)
 
+	isInteractive := strings.ToLower(os.Getenv(constants.NonInteractive)) != "true" &&
+		!outFlags.NonInteractive &&
+		terminal.IsTerminal(int(os.Stdin.Fd()))
 	// Run our main command logic, which is logic that defers to the error handling logic below
-	code, err := run(os.Args, out)
+	code, err := run(os.Args, isInteractive, out)
 	if err != nil {
 		out.Error(err)
 
@@ -85,7 +87,7 @@ func main() {
 	os.Exit(code)
 }
 
-func run(args []string, out output.Outputer) (int, error) {
+func run(args []string, isInteractive bool, out output.Outputer) (int, error) {
 	// Set up profiling
 	if os.Getenv(constants.CPUProfileEnvVarName) != "" {
 		cleanup, err := profile.CPU()
@@ -95,7 +97,7 @@ func run(args []string, out output.Outputer) (int, error) {
 		defer cleanup()
 	}
 
-	verbose := os.Getenv("VERBOSE") != "" || argsHaveVerbose(os.Args)
+	verbose := os.Getenv("VERBOSE") != "" || argsHaveVerbose(args)
 	logging.CurrentHandler().SetVerbose(verbose)
 
 	logging.Debug("ConfigPath: %s", config.ConfigPath())
@@ -105,25 +107,25 @@ func run(args []string, out output.Outputer) (int, error) {
 	defer config.Save()
 
 	// Retrieve project file
-	pjPath, fail := projectfile.GetProjectFilePath()
-	if fail != nil && fail.Type.Matches(projectfile.FailNoProjectFromEnv) {
+	pjPath, err := projectfile.GetProjectFilePath()
+	if err != nil && errs.Matches(err, &projectfile.ErrorNoProjectFromEnv{}) {
 		// Fail if we are meant to inherit the projectfile from the environment, but the file doesn't exist
-		return 1, fail
+		return 1, err
 	}
 
 	// Set up prompter
-	prompter := prompt.New()
+	prompter := prompt.New(isInteractive)
 
 	// Set up project (if we have a valid path)
 	var pj *project.Project
 	if pjPath != "" {
-		pjf, fail := projectfile.FromPath(pjPath)
-		if fail != nil {
-			return 1, fail
+		pjf, err := projectfile.FromPath(pjPath)
+		if err != nil {
+			return 1, err
 		}
-		pj, fail = project.New(pjf, out, prompter)
-		if fail != nil {
-			return 1, fail
+		pj, err = project.New(pjf, out)
+		if err != nil {
+			return 1, err
 		}
 	}
 
@@ -150,6 +152,7 @@ func run(args []string, out output.Outputer) (int, error) {
 	conditional := constraints.NewPrimeConditional(auth, pjOwner, pjName, pjNamespace, sshell.Shell())
 	project.RegisterConditional(conditional)
 	project.RegisterExpander("mixin", project.NewMixin(auth).Expander)
+	project.RegisterExpander("secrets", project.NewSecretPromptingExpander(secretsapi.Get(), prompter))
 
 	// Run the actual command
 	cmds := cmdtree.New(primer.New(pj, out, auth, prompter, sshell, conditional), args...)
@@ -166,9 +169,9 @@ func run(args []string, out output.Outputer) (int, error) {
 		}
 
 		// Check for deprecation
-		deprecated, fail := deprecation.Check()
-		if fail != nil {
-			logging.Error("Could not check for deprecation: %s", fail.Error())
+		deprecated, err := deprecation.Check()
+		if err != nil {
+			logging.Error("Could not check for deprecation: %s", err.Error())
 		}
 		if deprecated != nil {
 			date := deprecated.Date.Format(constants.DateFormatUser)

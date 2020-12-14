@@ -1,8 +1,9 @@
 package secrets
 
 import (
-	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/keypairs"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
@@ -14,12 +15,12 @@ import (
 
 // Save will add a new secret for this user or update an existing one.
 func Save(secretsClient *secretsapi.Client, encrypter keypairs.Encrypter, org *mono_models.Organization, project *mono_models.Project,
-	isUser bool, secretName, secretValue string) *failures.Failure {
+	isUser bool, secretName, secretValue string) error {
 
 	logging.Debug("attempting to upsert user-secret for org=%s", org.OrganizationID.String())
-	encrStr, failure := encrypter.EncryptAndEncode([]byte(secretValue))
-	if failure != nil {
-		return failure
+	encrStr, err := encrypter.EncryptAndEncode([]byte(secretValue))
+	if err != nil {
+		return err
 	}
 
 	params := secretsapiClient.NewSaveAllUserSecretsParams()
@@ -35,10 +36,10 @@ func Save(secretsClient *secretsapi.Client, encrypter keypairs.Encrypter, org *m
 
 	params.UserSecrets = append(params.UserSecrets, secretChange)
 
-	_, err := secretsClient.Secrets.Secrets.SaveAllUserSecrets(params, authentication.Get().ClientAuth())
+	_, err = secretsClient.Secrets.Secrets.SaveAllUserSecrets(params, authentication.Get().ClientAuth())
 	if err != nil {
 		logging.Error("error saving user secret: %v", err)
-		return secretsapi.FailSave.New("secrets_err_save")
+		return locale.WrapError(err, "secrets_err_save", "", err.Error())
 	}
 
 	return nil
@@ -46,31 +47,31 @@ func Save(secretsClient *secretsapi.Client, encrypter keypairs.Encrypter, org *m
 
 // ShareWithOrgUsers will share the provided secret with all other users in the organization
 // who have a valid public-key available.
-func ShareWithOrgUsers(secretsClient *secretsapi.Client, org *mono_models.Organization, project *mono_models.Project, secretName, secretValue string) *failures.Failure {
-	currentUserID, failure := secretsClient.AuthenticatedUserID()
-	if failure != nil {
-		return failure
+func ShareWithOrgUsers(secretsClient *secretsapi.Client, org *mono_models.Organization, project *mono_models.Project, secretName, secretValue string) error {
+	currentUserID, err := secretsClient.AuthenticatedUserID()
+	if err != nil {
+		return err
 	}
 
-	members, failure := model.FetchOrgMembers(org.URLname)
-	if failure != nil {
-		return failure
+	members, err := model.FetchOrgMembers(org.URLname)
+	if err != nil {
+		return err
 	}
 
 	for _, member := range members {
 		if currentUserID != member.User.UserID {
-			pubKey, failure := keypairs.FetchPublicKey(secretsClient, member.User)
-			if failure != nil {
-				if failure.Type.Matches(secretsapi.FailNotFound) {
+			pubKey, err := keypairs.FetchPublicKey(secretsClient, member.User)
+			if err != nil {
+				if errs.Matches(err, &keypairs.ErrKeypairNotFound{}) {
 					logging.Info("User `%s` has no public-key", member.User.Username)
 					// this is okay, just do what we can
 					continue
 				}
-				return failure
+				return err
 			}
 
-			ciphertext, failure := pubKey.EncryptAndEncode([]byte(secretValue))
-			if failure != nil {
+			ciphertext, err := pubKey.EncryptAndEncode([]byte(secretValue))
+			if err != nil {
 				logging.Error("Encryptying secret `%s` for user `%s`: %s", secretName, member.User.Username)
 				// this is a local issue with the user's keys, so we try and move on
 				continue
@@ -84,10 +85,10 @@ func ShareWithOrgUsers(secretsClient *secretsapi.Client, org *mono_models.Organi
 				share.ProjectID = project.ProjectID
 			}
 
-			failure = secretsapi.SaveSecretShares(secretsClient, org, member.User, []*secretsModels.UserSecretShare{share})
-			if failure != nil {
-				// a potentially unrecoverable failure, so we stop here
-				return failure
+			err = secretsapi.SaveSecretShares(secretsClient, org, member.User, []*secretsModels.UserSecretShare{share})
+			if err != nil {
+				// a potentially unrecoverable err, so we stop here
+				return err
 			}
 			logging.Info("Update secret `%s` for user `%s`", secretName, member.User.Username)
 		}
@@ -96,45 +97,41 @@ func ShareWithOrgUsers(secretsClient *secretsapi.Client, org *mono_models.Organi
 	return nil
 }
 
-func LoadKeypairFromConfigDir() (keypairs.Keypair, *failures.Failure) {
-	kp, failure := keypairs.LoadWithDefaults()
-	if failure != nil {
-		if failure.Type.Matches(keypairs.FailLoadNotFound) || failure.Type.Matches(keypairs.FailKeypairParse) {
-			logging.Error("failure loading local keypair: %v", failure)
-			return nil, failure.Type.New("keypair_err_require_auth")
-		}
-		return nil, failure
+func LoadKeypairFromConfigDir() (keypairs.Keypair, error) {
+	kp, err := keypairs.LoadWithDefaults()
+	if err != nil {
+		return nil, err
 	}
 	return kp, nil
 }
 
 // DefsByProject fetches the secret definitions for the current user relevant to the given project
-func DefsByProject(secretsClient *secretsapi.Client, owner string, projectName string) ([]*secretsModels.SecretDefinition, *failures.Failure) {
-	pjm, fail := model.FetchProjectByName(owner, projectName)
-	if fail != nil {
-		return nil, fail
+func DefsByProject(secretsClient *secretsapi.Client, owner string, projectName string) ([]*secretsModels.SecretDefinition, error) {
+	pjm, err := model.FetchProjectByName(owner, projectName)
+	if err != nil {
+		return nil, err
 	}
 
 	return secretsapi.FetchDefinitions(secretsClient, pjm.ProjectID)
 }
 
 // ByProject fetches the secrets for the current user relevant to the given project
-func ByProject(secretsClient *secretsapi.Client, owner string, projectName string) ([]*secretsModels.UserSecret, *failures.Failure) {
+func ByProject(secretsClient *secretsapi.Client, owner string, projectName string) ([]*secretsModels.UserSecret, error) {
 	result := []*secretsModels.UserSecret{}
 
-	pjm, fail := model.FetchProjectByName(owner, projectName)
-	if fail != nil {
-		return result, fail
+	pjm, err := model.FetchProjectByName(owner, projectName)
+	if err != nil {
+		return result, err
 	}
 
-	org, fail := model.FetchOrgByURLName(owner)
-	if fail != nil {
-		return result, fail
+	org, err := model.FetchOrgByURLName(owner)
+	if err != nil {
+		return result, err
 	}
 
-	secrets, fail := secretsapi.FetchAll(secretsClient, org)
-	if fail != nil {
-		return result, fail
+	secrets, err := secretsapi.FetchAll(secretsClient, org)
+	if err != nil {
+		return result, err
 	}
 
 	for _, secret := range secrets {

@@ -9,7 +9,7 @@ import (
 	"os/user"
 	"path/filepath"
 
-	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/osutils"
@@ -50,10 +50,10 @@ func (v *SubShell) SetBinary(binary string) {
 }
 
 // WriteUserEnv - see subshell.SubShell
-func (v *SubShell) WriteUserEnv(env map[string]string, envType sscommon.EnvData, _ bool) *failures.Failure {
+func (v *SubShell) WriteUserEnv(env map[string]string, envType sscommon.EnvData, _ bool) error {
 	homeDir, err := fileutils.HomeDir()
 	if err != nil {
-		return failures.FailIO.Wrap(err)
+		return errs.Wrap(err, "IO failure")
 	}
 
 	env = sscommon.EscapeEnv(env)
@@ -82,22 +82,22 @@ func (v *SubShell) Quote(value string) string {
 }
 
 // Activate - see subshell.SubShell
-func (v *SubShell) Activate(out output.Outputer) *failures.Failure {
+func (v *SubShell) Activate(out output.Outputer) error {
 	env := sscommon.EscapeEnv(v.env)
-	var fail *failures.Failure
-	if v.rcFile, fail = sscommon.SetupProjectRcFile("zshrc.sh", "", env, out); fail != nil {
-		return fail
+	var err error
+	if v.rcFile, err = sscommon.SetupProjectRcFile("zshrc.sh", "", env, out); err != nil {
+		return err
 	}
 
 	path, err := ioutil.TempDir("", "state-zsh")
 	if err != nil {
-		return failures.FailOS.Wrap(err)
+		return errs.Wrap(err, "OS failure")
 	}
 
 	activeZsrcPath := filepath.Join(path, ".zshrc")
-	fail = fileutils.CopyFile(v.rcFile.Name(), activeZsrcPath)
-	if fail != nil {
-		return fail
+	err = fileutils.CopyFile(v.rcFile.Name(), activeZsrcPath)
+	if err != nil {
+		return err
 	}
 
 	// If users have set $ZDOTDIR then we need to make sure their zshrc file uses it
@@ -113,9 +113,9 @@ func (v *SubShell) Activate(out output.Outputer) *failures.Failure {
 		}
 	}
 
-	fail = fileutils.PrependToFile(activeZsrcPath, []byte(fmt.Sprintf("export ZDOTDIR=%s\n", userzdotdir)))
-	if fail != nil {
-		return fail
+	err = fileutils.PrependToFile(activeZsrcPath, []byte(fmt.Sprintf("export ZDOTDIR=%s\n", userzdotdir)))
+	if err != nil {
+		return err
 	}
 	os.Setenv("ZDOTDIR", path)
 
@@ -136,13 +136,13 @@ func (v *SubShell) Errors() <-chan error {
 }
 
 // Deactivate - see subshell.SubShell
-func (v *SubShell) Deactivate() *failures.Failure {
+func (v *SubShell) Deactivate() error {
 	if !v.IsActive() {
 		return nil
 	}
 
-	if fail := sscommon.Stop(v.cmd); fail != nil {
-		return fail
+	if err := sscommon.Stop(v.cmd); err != nil {
+		return err
 	}
 
 	v.cmd = nil

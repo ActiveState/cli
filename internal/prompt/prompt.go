@@ -5,35 +5,41 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 )
 
 // Prompter is the interface used to run our prompt from, useful for mocking in tests
 type Prompter interface {
-	Input(title, message, defaultResponse string, flags ...ValidatorFlag) (string, *failures.Failure)
-	InputAndValidate(title, message, defaultResponse string, validator ValidatorFunc, flags ...ValidatorFlag) (string, *failures.Failure)
-	Select(title, message string, choices []string, defaultResponse string) (string, *failures.Failure)
-	Confirm(title, message string, defaultChoice bool) (bool, *failures.Failure)
-	InputSecret(title, message string, flags ...ValidatorFlag) (string, *failures.Failure)
+	Input(title, message, defaultResponse string, flags ...ValidatorFlag) (string, error)
+	InputAndValidate(title, message, defaultResponse string, validator ValidatorFunc, flags ...ValidatorFlag) (string, error)
+	Select(title, message string, choices []string, defaultResponse string) (string, error)
+	Confirm(title, message string, defaultChoice bool) (bool, error)
+	InputSecret(title, message string, flags ...ValidatorFlag) (string, error)
+	IsInteractive() bool
 }
-
-// FailPromptUnknownValidator handles unknown validator erros
-var FailPromptUnknownValidator = failures.Type("prompt.unknownvalidator")
 
 // ValidatorFunc is a function pass to the Prompter to perform validation
 // on the users input
 type ValidatorFunc = survey.Validator
 
-// Prompt is our main promptig struct
+var _ Prompter = &Prompt{}
+
+// Prompt is our main prompting struct
 type Prompt struct {
-	out output.Outputer
+	out           output.Outputer
+	isInteractive bool
 }
 
 // New creates a new prompter
-func New() Prompter {
-	return &Prompt{output.Get()}
+func New(isInteractive bool) Prompter {
+	return &Prompt{output.Get(), isInteractive}
+}
+
+// IsInteractive checks if the prompts can be interactive or should just return default values
+func (p *Prompt) IsInteractive() bool {
+	return p.isInteractive
 }
 
 // ValidatorFlag represents flags for prompt functions to change their behavior on.
@@ -48,18 +54,26 @@ const (
 )
 
 // Input prompts the user for input.  The user can specify available validation flags to trigger validation of responses
-func (p *Prompt) Input(title, message, defaultResponse string, flags ...ValidatorFlag) (string, *failures.Failure) {
+func (p *Prompt) Input(title, message, defaultResponse string, flags ...ValidatorFlag) (string, error) {
 	return p.InputAndValidate(title, message, defaultResponse, func(val interface{}) error {
 		return nil
 	}, flags...)
 }
 
 // InputAndValidate prompts an input field and allows you to specfiy a custom validation function as well as the built in flags
-func (p *Prompt) InputAndValidate(title, message, defaultResponse string, validator ValidatorFunc, flags ...ValidatorFlag) (string, *failures.Failure) {
+func (p *Prompt) InputAndValidate(title, message, defaultResponse string, validator ValidatorFunc, flags ...ValidatorFlag) (string, error) {
+	if !p.isInteractive {
+		if defaultResponse != "" {
+			logging.Debug("Selecting default choice %s for Input prompt %s in non-interactive mode", defaultResponse, title)
+			return defaultResponse, nil
+		}
+		return "", locale.NewInputError("err_non_interactive_prompt", message)
+	}
+
 	var response string
-	flagValidators, fail := processValidators(flags)
-	if fail != nil {
-		return "", fail
+	flagValidators, err := processValidators(flags)
+	if err != nil {
+		return "", err
 	}
 	if len(flagValidators) != 0 {
 		validator = wrapValidators(append(flagValidators, validator))
@@ -71,9 +85,9 @@ func (p *Prompt) InputAndValidate(title, message, defaultResponse string, valida
 
 	// We handle defaults more clearly than the survey package can
 	if defaultResponse != "" {
-		v, fail := p.Select("", formatMessage(message, !p.out.Config().Colored), []string{defaultResponse, locale.Tl("prompt_custom", "Other ..")}, defaultResponse)
-		if fail != nil {
-			return "", fail
+		v, err := p.Select("", formatMessage(message, !p.out.Config().Colored), []string{defaultResponse, locale.Tl("prompt_custom", "Other ..")}, defaultResponse)
+		if err != nil {
+			return "", err
 		}
 		if v == defaultResponse {
 			return v, nil
@@ -81,18 +95,26 @@ func (p *Prompt) InputAndValidate(title, message, defaultResponse string, valida
 		message = ""
 	}
 
-	err := survey.AskOne(&Input{&survey.Input{
+	err = survey.AskOne(&Input{&survey.Input{
 		Message: formatMessage(message, !p.out.Config().Colored),
 	}}, &response, validator)
 	if err != nil {
-		return "", failures.FailUserInput.Wrap(err)
+		return "", locale.NewInputError(err.Error())
 	}
 
 	return response, nil
 }
 
 // Select prompts the user to select one entry from multiple choices
-func (p *Prompt) Select(title, message string, choices []string, defaultChoice string) (string, *failures.Failure) {
+func (p *Prompt) Select(title, message string, choices []string, defaultChoice string) (string, error) {
+	if !p.isInteractive {
+		if defaultChoice != "" {
+			logging.Debug("Selecting default choice %s for Select prompt %s in non-interactive mode", defaultChoice, title)
+			return defaultChoice, nil
+		}
+		return "", locale.NewInputError("err_non_interactive_prompt", message)
+	}
+
 	if title != "" {
 		p.out.Notice(output.SubHeading(title))
 	}
@@ -104,13 +126,17 @@ func (p *Prompt) Select(title, message string, choices []string, defaultChoice s
 		Default: defaultChoice,
 	}}, &response, nil)
 	if err != nil {
-		return "", failures.FailUserInput.Wrap(err)
+		return "", locale.NewInputError(err.Error())
 	}
 	return response, nil
 }
 
 // Confirm prompts user for yes or no response.
-func (p *Prompt) Confirm(title, message string, defaultChoice bool) (bool, *failures.Failure) {
+func (p *Prompt) Confirm(title, message string, defaultChoice bool) (bool, error) {
+	if !p.isInteractive {
+		logging.Debug("Prompt %s confirmed with default choice %v in non-interactive mode", title, defaultChoice)
+		return defaultChoice, nil
+	}
 	if title != "" {
 		p.out.Notice(output.SubHeading(title))
 	}
@@ -126,7 +152,7 @@ func (p *Prompt) Confirm(title, message string, defaultChoice bool) (bool, *fail
 		if err == terminal.InterruptErr {
 			analytics.EventWithLabel(analytics.CatPrompt, title, "interrupt")
 		}
-		return false, failures.FailUserInput.Wrap(err)
+		return false, locale.NewInputError(err.Error())
 	}
 	analytics.EventWithLabel(analytics.CatPrompt, title, translateConfirm(resp))
 
@@ -142,22 +168,25 @@ func translateConfirm(confirm bool) string {
 
 // InputSecret prompts the user for input and obfuscates the text in stdout.
 // Will fail if empty.
-func (p *Prompt) InputSecret(title, message string, flags ...ValidatorFlag) (string, *failures.Failure) {
+func (p *Prompt) InputSecret(title, message string, flags ...ValidatorFlag) (string, error) {
+	if !p.isInteractive {
+		return "", locale.NewInputError("err_non_interactive_prompt", message)
+	}
 	var response string
-	validators, fail := processValidators(flags)
-	if fail != nil {
-		return "", fail
+	validators, err := processValidators(flags)
+	if err != nil {
+		return "", err
 	}
 
 	if title != "" {
 		p.out.Notice(output.SubHeading(title))
 	}
 
-	err := survey.AskOne(&Password{&survey.Password{
+	err = survey.AskOne(&Password{&survey.Password{
 		Message: formatMessage(message, !p.out.Config().Colored),
 	}}, &response, wrapValidators(validators))
 	if err != nil {
-		return "", failures.FailUserInput.Wrap(err)
+		return "", locale.NewInputError(err.Error())
 	}
 	return response, nil
 }
@@ -176,16 +205,16 @@ func wrapValidators(validators []ValidatorFunc) ValidatorFunc {
 }
 
 // This function seems like overkill right now but the assumption is we'll have more than one built in validator
-func processValidators(flags []ValidatorFlag) ([]ValidatorFunc, *failures.Failure) {
+func processValidators(flags []ValidatorFlag) ([]ValidatorFunc, error) {
 	var validators []ValidatorFunc
-	var fail *failures.Failure
+	var err error
 	for flag := range flags {
 		switch ValidatorFlag(flag) {
 		case InputRequired:
 			validators = append(validators, inputRequired)
 		default:
-			fail = FailPromptUnknownValidator.New(locale.T("fail_prompt_bad_flag"))
+			err = locale.NewError("err_prompt_bad_flag")
 		}
 	}
-	return validators, fail
+	return validators, err
 }

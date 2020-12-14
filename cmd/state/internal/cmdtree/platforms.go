@@ -21,9 +21,9 @@ func newPlatformsCommand(prime *primer.Values) *captain.Command {
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(_ *captain.Command, _ []string) error {
-			proj, fail := project.GetSafe()
-			if fail != nil {
-				return fail
+			proj, err := project.GetSafe()
+			if err != nil {
+				return err
 			}
 			params.Project = proj
 
@@ -74,9 +74,9 @@ func newPlatformsAddCommand(prime *primer.Values) *captain.Command {
 			},
 		},
 		func(_ *captain.Command, _ []string) error {
-			proj, fail := project.GetSafe()
-			if fail != nil {
-				return fail
+			proj, err := project.GetSafe()
+			if err != nil {
+				return err
 			}
 			params.Project = proj
 
@@ -117,9 +117,9 @@ func newPlatformsRemoveCommand(prime *primer.Values) *captain.Command {
 			},
 		},
 		func(_ *captain.Command, _ []string) error {
-			proj, fail := project.GetSafe()
-			if fail != nil {
-				return fail
+			proj, err := project.GetSafe()
+			if err != nil {
+				return err
 			}
 			params.Project = proj
 

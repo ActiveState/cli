@@ -6,13 +6,13 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/pkg/project"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 )
@@ -47,8 +47,8 @@ func (r *NamespaceSelect) Run(namespace string, preferredPath string) (string, e
 	}
 
 	// Validate that target path doesn't contain a config for a different namespace
-	if fail := r.validatePath(namespace, targetPath); fail != nil {
-		return "", fail
+	if err := r.validatePath(namespace, targetPath); err != nil {
+		return "", err
 	}
 
 	// Save path for future use
@@ -57,9 +57,9 @@ func (r *NamespaceSelect) Run(namespace string, preferredPath string) (string, e
 	paths = append(paths, targetPath)
 	r.config.Set(key, paths)
 
-	fail := fileutils.MkdirUnlessExists(targetPath)
-	if fail != nil {
-		return "", fail
+	err := fileutils.MkdirUnlessExists(targetPath)
+	if err != nil {
+		return "", err
 	}
 
 	return targetPath, nil
@@ -87,16 +87,16 @@ func (r *NamespaceSelect) promptForPath(namespace string) (string, error) {
 	return userPath, nil
 }
 
-func (r *NamespaceSelect) promptAvailablePaths(paths []string) (*string, *failures.Failure) {
+func (r *NamespaceSelect) promptAvailablePaths(paths []string) (*string, error) {
 	if len(paths) == 0 {
 		return nil, nil
 	}
 
 	noneStr := locale.T("activate_select_optout")
 	choices := append(paths, noneStr)
-	path, fail := r.prompter.Select(locale.Tl("activate_existing_title", "Existing Checkout"), locale.T("activate_namespace_existing"), choices, "")
-	if fail != nil {
-		return nil, fail
+	path, err := r.prompter.Select(locale.Tl("activate_existing_title", "Existing Checkout"), locale.T("activate_namespace_existing"), choices, "")
+	if err != nil {
+		return nil, err
 	}
 	if path != "" && path != noneStr {
 		return &path, nil
@@ -106,20 +106,20 @@ func (r *NamespaceSelect) promptAvailablePaths(paths []string) (*string, *failur
 }
 
 // promptForPathInput will prompt the user for a location to save the project at
-func (r *NamespaceSelect) promptForPathInput(namespace string) (string, *failures.Failure) {
+func (r *NamespaceSelect) promptForPathInput(namespace string) (string, error) {
 	wd, err := getSafeWorkDir()
 	if err != nil {
-		return "", failures.FailRuntime.Wrap(err)
+		return "", errs.Wrap(err, "Runtime failure")
 	}
 
-	directory, fail := r.prompter.Input(
+	directory, err := r.prompter.Input(
 		locale.Tl("choose_dest", "Choose Destination"),
 		locale.Tr("activate_namespace_location", namespace), filepath.Join(wd, namespace), prompt.InputRequired)
-	if fail != nil {
-		return "", fail
+	if err != nil {
+		return "", err
 	}
 	if directory == "" {
-		return "", failures.FailUserInput.New("err_must_provide_directory")
+		return "", locale.NewError("err_must_provide_directory")
 	}
 
 	logging.Debug("Using: %s", directory)
@@ -127,20 +127,20 @@ func (r *NamespaceSelect) promptForPathInput(namespace string) (string, *failure
 	return directory, nil
 }
 
-func (r *NamespaceSelect) validatePath(namespace string, path string) *failures.Failure {
+func (r *NamespaceSelect) validatePath(namespace string, path string) error {
 	configFile := filepath.Join(path, constants.ConfigFileName)
 	if !fileutils.FileExists(configFile) {
 		return nil
 	}
 
-	pj, fail := project.Parse(configFile)
-	if fail != nil {
-		return fail
+	pj, err := project.Parse(configFile)
+	if err != nil {
+		return err
 	}
 
 	pjns := fmt.Sprintf("%s/%s", pj.Owner(), pj.Name())
 	if !pj.IsHeadless() && pjns != namespace {
-		return failures.FailUserInput.New("err_target_path_namespace_match", namespace, pjns)
+		return locale.NewInputError("err_target_path_namespace_match", "", namespace, pjns)
 	}
 
 	return nil

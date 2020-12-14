@@ -12,9 +12,9 @@ import (
 
 	"github.com/ActiveState/termtest"
 	"github.com/ActiveState/termtest/expect"
-	"github.com/autarch/testify/require"
 	"github.com/google/uuid"
 	"github.com/phayes/permbits"
+	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -74,8 +74,8 @@ func (s *Session) UseDistinctStateExe() {
 		return
 	}
 
-	fail := fileutils.CopyFile(s.exe, execu)
-	require.NoError(s.t, fail.ToError())
+	err := fileutils.CopyFile(s.exe, execu)
+	require.NoError(s.t, err)
 
 	// Ensure modTime is the same as source exe
 	stat, err := os.Stat(s.exe)
@@ -230,8 +230,8 @@ func (s *Session) PrepareActiveStateYAML(contents string) {
 	require.NoError(s.t, err, msg)
 
 	projectFile.SetPath(filepath.Join(s.Dirs.Work, "activestate.yaml"))
-	fail := projectFile.Save()
-	require.NoError(s.t, fail.ToError(), msg)
+	err = projectFile.Save()
+	require.NoError(s.t, err, msg)
 }
 
 // PrepareFile writes a file to path with contents, expecting no error

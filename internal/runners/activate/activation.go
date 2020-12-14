@@ -57,8 +57,8 @@ func (r *Activate) activateAndWait(proj *project.Project, venv *virtualenvironme
 	}
 
 	r.subshell.SetEnv(ve)
-	if fail := r.subshell.Activate(r.out); fail != nil {
-		return locale.WrapError(fail, "error_could_not_activate_subshell", "Could not activate a new subshell.")
+	if err := r.subshell.Activate(r.out); err != nil {
+		return locale.WrapError(err, "error_could_not_activate_subshell", "Could not activate a new subshell.")
 	}
 
 	a, err := process.NewActivation(os.Getpid())

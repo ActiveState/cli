@@ -17,14 +17,14 @@ type KeypairLocalSaveTestSuite struct {
 }
 
 func (suite *KeypairLocalSaveTestSuite) TestSave_Success() {
-	kp, failure := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
-	suite.Require().Nil(failure)
+	kp, err := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
+	suite.Require().Nil(err)
 
-	failure = keypairs.Save(kp, "save-testing")
-	suite.Require().Nil(failure)
+	err = keypairs.Save(kp, "save-testing")
+	suite.Require().Nil(err)
 
-	kp2, failure := keypairs.Load("save-testing")
-	suite.Require().Nil(failure)
+	kp2, err := keypairs.Load("save-testing")
+	suite.Require().Nil(err)
 	suite.Equal(kp, kp2)
 
 	fileInfo := suite.statConfigDirFile("save-testing.key")
@@ -34,14 +34,14 @@ func (suite *KeypairLocalSaveTestSuite) TestSave_Success() {
 }
 
 func (suite *KeypairLocalSaveTestSuite) TestSaveWithDefaults_Success() {
-	kp, failure := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
-	suite.Require().Nil(failure)
+	kp, err := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
+	suite.Require().Nil(err)
 
-	failure = keypairs.SaveWithDefaults(kp)
-	suite.Require().Nil(failure)
+	err = keypairs.SaveWithDefaults(kp)
+	suite.Require().Nil(err)
 
-	kp2, failure := keypairs.Load(constants.KeypairLocalFileName)
-	suite.Require().Nil(failure)
+	kp2, err := keypairs.Load(constants.KeypairLocalFileName)
+	suite.Require().Nil(err)
 	suite.Equal(kp, kp2)
 
 	fileInfo := suite.statConfigDirFile(constants.KeypairLocalFileName + ".key")
@@ -54,12 +54,12 @@ func (suite *KeypairLocalLoadTestSuite) TestSaveWithDefaults_Override() {
 	os.Setenv(constants.PrivateKeyEnvVarName, "some val")
 	defer os.Unsetenv(constants.PrivateKeyEnvVarName)
 
-	kp, fail := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
-	suite.Require().Nil(fail)
+	kp, err := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
+	suite.Require().Nil(err)
 
-	fail = keypairs.SaveWithDefaults(kp)
-	suite.Require().NotNil(fail)
-	suite.Truef(fail.Type.Matches(keypairs.FailHasOverride), "unexpected failure type: %v", fail)
+	err = keypairs.SaveWithDefaults(kp)
+	suite.Require().NotNil(err)
+	suite.Error(err)
 }
 
 func (suite *KeypairLocalSaveTestSuite) statConfigDirFile(keyFile string) os.FileInfo {
