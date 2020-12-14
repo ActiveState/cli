@@ -22,31 +22,34 @@ type Params struct {
 type Update struct {
 	project *project.Project
 	out     output.Outputer
+	prompt  prompt.Prompter
 }
 
 type primeable interface {
 	primer.Projecter
 	primer.Outputer
+	primer.Prompter
 }
 
 func New(prime primeable) *Update {
 	return &Update{
 		prime.Project(),
 		prime.Output(),
+		prime.Prompt(),
 	}
 }
 
 func (u *Update) Run(params *Params) error {
-	return run(params.Lock, u.isLocked(), params.Force, u.runLock, u.runUpdateLock, u.runUpdateGlobal, confirmUpdateLock)
+	return run(u.prompt, params.Lock, u.isLocked(), params.Force, u.runLock, u.runUpdateLock, u.runUpdateGlobal, confirmUpdateLock)
 }
 
-func run(lock, isLocked, force bool, runLock, runUpdateLock, runUpdateGlobal, confirmLock func() error) error {
+func run(prompt prompt.Prompter, lock, isLocked, force bool, runLock, runUpdateLock, runUpdateGlobal func() error, confirmLock func(prompt.Prompter) error) error {
 	if lock {
 		return runLock()
 	}
 	if !lock && isLocked {
 		if !force {
-			if err := confirmLock(); err != nil {
+			if err := confirmLock(prompt); err != nil {
 				return locale.WrapError(err, "err_update_lock_confirm", "Could not confirm whether to update.")
 			}
 		}
@@ -119,10 +122,9 @@ func (u *Update) runUpdateGlobal() error {
 	return nil
 }
 
-func confirmUpdateLock() error {
+func confirmUpdateLock(prom prompt.Prompter) error {
 	msg := locale.T("confirm_update_locked_version_prompt")
 
-	prom := prompt.New()
 	confirmed, err := prom.Confirm(locale.T("confirm"), msg, false)
 	if err != nil {
 		return err

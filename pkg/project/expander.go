@@ -5,7 +5,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -14,11 +13,10 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/constraints"
-	"github.com/ActiveState/cli/internal/prompt"
 )
 
 // Expand will detect the active project and invoke ExpandFromProject with the given string
-func Expand(s string, out output.Outputer, prompt prompt.Prompter) (string, error) {
+func Expand(s string) (string, error) {
 	return ExpandFromProject(s, Get())
 }
 

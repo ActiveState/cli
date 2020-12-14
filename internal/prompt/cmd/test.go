@@ -14,7 +14,7 @@ func main() {
 		Colored:     true,
 		Interactive: true,
 	})
-	p := prompt.New()
+	p := prompt.New(true)
 
 	p.Select("Select", "Please select one", []string{"choice 1", "choice 2", "choice 3"}, "choice 1")
 

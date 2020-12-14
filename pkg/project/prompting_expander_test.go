@@ -46,7 +46,7 @@ func (suite *VarPromptingExpanderTestSuite) BeforeTest(suiteName, testName strin
 	suite.Require().Nil(err, "Unmarshalled project YAML")
 	pjFile.Persist()
 	suite.projectFile = pjFile
-	suite.project, err = project.New(pjFile, outputhelper.NewCatcher(), suite.promptMock)
+	suite.project, err = project.New(pjFile, outputhelper.NewCatcher())
 	suite.NoError(err, "no failure should occur when loading project")
 
 	secretsClient := secretsapi_test.NewDefaultTestClient("bearing123")
@@ -79,7 +79,7 @@ func (suite *VarPromptingExpanderTestSuite) prepareWorkingExpander() project.Exp
 	suite.secretsMock.RegisterWithResponder("GET", "/organizations/00010001-0001-0001-0001-000100010002/user_secrets", func(req *http.Request) (int, string) {
 		return 200, "user_secrets-empty"
 	})
-	return project.NewSecretPromptingExpander(suite.secretsClient)
+	return project.NewSecretPromptingExpander(suite.secretsClient, suite.promptMock)
 }
 
 func (suite *VarPromptingExpanderTestSuite) assertExpansionSaveFailure(secretName, expectedValue string) {

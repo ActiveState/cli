@@ -53,7 +53,7 @@ scripts:
 	err = suite.projectFile.Save()
 	suite.Require().NoError(err, "should be able to save in temp dir")
 
-	suite.project, err = project.New(suite.projectFile, nil, nil)
+	suite.project, err = project.New(suite.projectFile, nil)
 	suite.Require().NoError(err, "unexpected error creating project")
 
 	suite.originalEditor = os.Getenv("EDITOR")

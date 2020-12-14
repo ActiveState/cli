@@ -18,7 +18,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/secrets"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -49,7 +48,6 @@ func RegisterConditional(conditional *constraints.Conditional) {
 type Project struct {
 	projectfile *projectfile.Project
 	output.Outputer
-	prompt.Prompter
 }
 
 // Source returns the source projectfile
@@ -150,7 +148,7 @@ func (p *Project) Events() []*Event {
 	es := projectfile.MakeEventsFromConstrainedEntities(constrained)
 	events := make([]*Event, 0, len(es))
 	for _, e := range es {
-		events = append(events, &Event{e, p, p.Outputer, p.Prompter})
+		events = append(events, &Event{e, p})
 	}
 	return events
 }
@@ -164,7 +162,7 @@ func (p *Project) Scripts() []*Script {
 	scs := projectfile.MakeScriptsFromConstrainedEntities(constrained)
 	scripts := make([]*Script, 0, len(scs))
 	for _, s := range scs {
-		scripts = append(scripts, &Script{s, p, p.Outputer, p.Prompter})
+		scripts = append(scripts, &Script{s, p})
 	}
 	return scripts
 }
@@ -246,14 +244,14 @@ func (p *Project) Namespace() *Namespaced {
 func (p *Project) Environments() string { return p.projectfile.Environments }
 
 // New creates a new Project struct
-func New(p *projectfile.Project, out output.Outputer, prompt prompt.Prompter) (*Project, error) {
-	project := &Project{projectfile: p, Outputer: out, Prompter: prompt}
+func New(p *projectfile.Project, out output.Outputer) (*Project, error) {
+	project := &Project{projectfile: p, Outputer: out}
 	return project, nil
 }
 
 // NewLegacy is for legacy use-cases only, DO NOT USE
 func NewLegacy(p *projectfile.Project) (*Project, error) {
-	return New(p, output.Get(), prompt.New())
+	return New(p, output.Get())
 }
 
 // Parse will parse the given projectfile and instantiate a Project struct with it
@@ -262,13 +260,13 @@ func Parse(fpath string) (*Project, error) {
 	if err != nil {
 		return nil, err
 	}
-	return New(pjfile, output.Get(), prompt.New())
+	return New(pjfile, output.Get())
 }
 
 // Get returns project struct. Quits execution if error occurs
 func Get() *Project {
 	pj := projectfile.Get()
-	project, err := New(pj, output.Get(), prompt.New())
+	project, err := New(pj, output.Get())
 	if err != nil {
 		fmt.Fprint(os.Stderr, locale.Tr("err_project_unavailable", err.Error()))
 		os.Exit(1)
@@ -282,7 +280,7 @@ func GetSafe() (*Project, error) {
 	if err != nil {
 		return nil, err
 	}
-	project, err := New(pjFile, output.Get(), prompt.New())
+	project, err := New(pjFile, output.Get())
 	if err != nil {
 		return nil, err
 	}
@@ -305,7 +303,7 @@ func FromPath(path string) (*Project, error) {
 	if err != nil {
 		return nil, err
 	}
-	project, err := New(pjFile, output.Get(), prompt.New())
+	project, err := New(pjFile, output.Get())
 	if err != nil {
 		return nil, err
 	}
@@ -327,27 +325,27 @@ func (p *Platform) Name() string { return p.platform.Name }
 
 // Os returned with all secrets evaluated
 func (p *Platform) Os() (string, error) {
-	return Expand(p.platform.Os, p.project.Outputer, p.project.Prompter)
+	return Expand(p.platform.Os)
 }
 
 // Version returned with all secrets evaluated
 func (p *Platform) Version() (string, error) {
-	return Expand(p.platform.Version, p.project.Outputer, p.project.Prompter)
+	return Expand(p.platform.Version)
 }
 
 // Architecture with all secrets evaluated
 func (p *Platform) Architecture() (string, error) {
-	return Expand(p.platform.Architecture, p.project.Outputer, p.project.Prompter)
+	return Expand(p.platform.Architecture)
 }
 
 // Libc returned are constrained and all secrets evaluated
 func (p *Platform) Libc() (string, error) {
-	return Expand(p.platform.Libc, p.project.Outputer, p.project.Prompter)
+	return Expand(p.platform.Libc)
 }
 
 // Compiler returned are constrained and all secrets evaluated
 func (p *Platform) Compiler() (string, error) {
-	return Expand(p.platform.Compiler, p.project.Outputer, p.project.Prompter)
+	return Expand(p.platform.Compiler)
 }
 
 // Language covers the language structure
@@ -374,7 +372,7 @@ func (l *Language) ID() string {
 func (l *Language) Build() (*Build, error) {
 	build := Build{}
 	for key, val := range l.language.Build {
-		newVal, err := Expand(val, l.project.Outputer, l.project.Prompter)
+		newVal, err := Expand(val)
 		if err != nil {
 			return nil, err
 		}
@@ -416,7 +414,7 @@ func (p *Package) Version() string { return p.pkg.Version }
 func (p *Package) Build() (*Build, error) {
 	build := Build{}
 	for key, val := range p.pkg.Build {
-		newVal, err := Expand(val, p.project.Outputer, p.project.Prompter)
+		newVal, err := Expand(val)
 		if err != nil {
 			return nil, err
 		}
@@ -436,7 +434,7 @@ func (c *Constant) Name() string { return c.constant.Name }
 
 // Value returns constant value
 func (c *Constant) Value() (string, error) {
-	return Expand(c.constant.Value, c.project.Outputer, c.project.Prompter)
+	return Expand(c.constant.Value)
 }
 
 // SecretScope defines the scope of a secret
@@ -506,7 +504,7 @@ func (s *Secret) IsProject() bool { return s.scope == SecretScopeProject }
 
 // ValueOrNil acts as Value() except it can return a nil
 func (s *Secret) ValueOrNil() (*string, error) {
-	secretsExpander := NewSecretExpander(secretsapi.GetClient(), nil)
+	secretsExpander := NewSecretExpander(secretsapi.GetClient(), nil, nil)
 
 	category := ProjectCategory
 	if s.IsUser() {
@@ -567,8 +565,6 @@ func (s *Secret) Save(value string) error {
 type Event struct {
 	event   *projectfile.Event
 	project *Project
-	output.Outputer
-	prompt.Prompter
 }
 
 // Source returns the source projectfile
@@ -579,14 +575,14 @@ func (e *Event) Name() string { return e.event.Name }
 
 // Value returned with all secrets evaluated
 func (e *Event) Value() (string, error) {
-	return Expand(e.event.Value, e.Outputer, e.Prompter)
+	return Expand(e.event.Value)
 }
 
 // Scope returns the scope property of the event
 func (e *Event) Scope() ([]string, error) {
 	result := []string{}
 	for _, s := range e.event.Scope {
-		v, err := Expand(s, e.project.Outputer, e.project.Prompter)
+		v, err := Expand(s)
 		if err != nil {
 			return result, err
 		}
@@ -599,8 +595,6 @@ func (e *Event) Scope() ([]string, error) {
 type Script struct {
 	script  *projectfile.Script
 	project *Project
-	output.Outputer
-	prompt.Prompter
 }
 
 // Source returns the source projectfile
@@ -656,7 +650,7 @@ func (script *Script) Description() string { return script.script.Description }
 
 // Value returned with all secrets evaluated
 func (script *Script) Value() (string, error) {
-	return Expand(script.script.Value, script.Outputer, script.Prompter)
+	return Expand(script.script.Value)
 }
 
 // Raw returns the script value with no secrets or constants expanded

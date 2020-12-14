@@ -6,6 +6,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 )
 
@@ -16,20 +17,29 @@ type Prompter interface {
 	Select(title, message string, choices []string, defaultResponse string) (string, error)
 	Confirm(title, message string, defaultChoice bool) (bool, error)
 	InputSecret(title, message string, flags ...ValidatorFlag) (string, error)
+	IsInteractive() bool
 }
 
 // ValidatorFunc is a function pass to the Prompter to perform validation
 // on the users input
 type ValidatorFunc = survey.Validator
 
-// Prompt is our main promptig struct
+var _ Prompter = &Prompt{}
+
+// Prompt is our main prompting struct
 type Prompt struct {
-	out output.Outputer
+	out           output.Outputer
+	isInteractive bool
 }
 
 // New creates a new prompter
-func New() Prompter {
-	return &Prompt{output.Get()}
+func New(isInteractive bool) Prompter {
+	return &Prompt{output.Get(), isInteractive}
+}
+
+// IsInteractive checks if the prompts can be interactive or should just return default values
+func (p *Prompt) IsInteractive() bool {
+	return p.isInteractive
 }
 
 // ValidatorFlag represents flags for prompt functions to change their behavior on.
@@ -52,6 +62,14 @@ func (p *Prompt) Input(title, message, defaultResponse string, flags ...Validato
 
 // InputAndValidate prompts an input field and allows you to specfiy a custom validation function as well as the built in flags
 func (p *Prompt) InputAndValidate(title, message, defaultResponse string, validator ValidatorFunc, flags ...ValidatorFlag) (string, error) {
+	if !p.isInteractive {
+		if defaultResponse != "" {
+			logging.Debug("Selecting default choice %s for Input prompt %s in non-interactive mode", defaultResponse, title)
+			return defaultResponse, nil
+		}
+		return "", locale.NewInputError("err_non_interactive_prompt", message)
+	}
+
 	var response string
 	flagValidators, err := processValidators(flags)
 	if err != nil {
@@ -89,6 +107,14 @@ func (p *Prompt) InputAndValidate(title, message, defaultResponse string, valida
 
 // Select prompts the user to select one entry from multiple choices
 func (p *Prompt) Select(title, message string, choices []string, defaultChoice string) (string, error) {
+	if !p.isInteractive {
+		if defaultChoice != "" {
+			logging.Debug("Selecting default choice %s for Select prompt %s in non-interactive mode", defaultChoice, title)
+			return defaultChoice, nil
+		}
+		return "", locale.NewInputError("err_non_interactive_prompt", message)
+	}
+
 	if title != "" {
 		p.out.Notice(output.SubHeading(title))
 	}
@@ -107,6 +133,10 @@ func (p *Prompt) Select(title, message string, choices []string, defaultChoice s
 
 // Confirm prompts user for yes or no response.
 func (p *Prompt) Confirm(title, message string, defaultChoice bool) (bool, error) {
+	if !p.isInteractive {
+		logging.Debug("Prompt %s confirmed with default choice %v in non-interactive mode", title, defaultChoice)
+		return defaultChoice, nil
+	}
 	if title != "" {
 		p.out.Notice(output.SubHeading(title))
 	}
@@ -139,6 +169,9 @@ func translateConfirm(confirm bool) string {
 // InputSecret prompts the user for input and obfuscates the text in stdout.
 // Will fail if empty.
 func (p *Prompt) InputSecret(title, message string, flags ...ValidatorFlag) (string, error) {
+	if !p.isInteractive {
+		return "", locale.NewInputError("err_non_interactive_prompt", message)
+	}
 	var response string
 	validators, err := processValidators(flags)
 	if err != nil {

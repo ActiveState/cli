@@ -6,9 +6,11 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"strings"
 
 	"github.com/ActiveState/sysinfo"
 	"github.com/rollbar/rollbar-go"
+	"golang.org/x/crypto/ssh/terminal"
 
 	"github.com/ActiveState/cli/cmd/state/internal/cmdtree"
 	"github.com/ActiveState/cli/internal/config" // MUST be first!
@@ -24,6 +26,7 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	_ "github.com/ActiveState/cli/internal/prompt" // Sets up survey defaults
 	"github.com/ActiveState/cli/internal/subshell"
+	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -61,8 +64,11 @@ func main() {
 	// Set up our legacy outputer
 	setPrinterColors(outFlags)
 
+	isInteractive := strings.ToLower(os.Getenv(constants.NonInteractive)) != "true" &&
+		!outFlags.NonInteractive &&
+		terminal.IsTerminal(int(os.Stdin.Fd()))
 	// Run our main command logic, which is logic that defers to the error handling logic below
-	code, err := run(os.Args, out)
+	code, err := run(os.Args, isInteractive, out)
 	if err != nil {
 		out.Error(err)
 
@@ -81,7 +87,7 @@ func main() {
 	os.Exit(code)
 }
 
-func run(args []string, out output.Outputer) (int, error) {
+func run(args []string, isInteractive bool, out output.Outputer) (int, error) {
 	// Set up profiling
 	if os.Getenv(constants.CPUProfileEnvVarName) != "" {
 		cleanup, err := profile.CPU()
@@ -91,7 +97,7 @@ func run(args []string, out output.Outputer) (int, error) {
 		defer cleanup()
 	}
 
-	verbose := os.Getenv("VERBOSE") != "" || argsHaveVerbose(os.Args)
+	verbose := os.Getenv("VERBOSE") != "" || argsHaveVerbose(args)
 	logging.CurrentHandler().SetVerbose(verbose)
 
 	logging.Debug("ConfigPath: %s", config.ConfigPath())
@@ -108,7 +114,7 @@ func run(args []string, out output.Outputer) (int, error) {
 	}
 
 	// Set up prompter
-	prompter := prompt.New()
+	prompter := prompt.New(isInteractive)
 
 	// Set up project (if we have a valid path)
 	var pj *project.Project
@@ -117,7 +123,7 @@ func run(args []string, out output.Outputer) (int, error) {
 		if err != nil {
 			return 1, err
 		}
-		pj, err = project.New(pjf, out, prompter)
+		pj, err = project.New(pjf, out)
 		if err != nil {
 			return 1, err
 		}
@@ -146,6 +152,7 @@ func run(args []string, out output.Outputer) (int, error) {
 	conditional := constraints.NewPrimeConditional(auth, pjOwner, pjName, pjNamespace, sshell.Shell())
 	project.RegisterConditional(conditional)
 	project.RegisterExpander("mixin", project.NewMixin(auth).Expander)
+	project.RegisterExpander("secrets", project.NewSecretPromptingExpander(secretsapi.Get(), prompter))
 
 	// Run the actual command
 	cmds := cmdtree.New(primer.New(pj, out, auth, prompter, sshell, conditional), args...)

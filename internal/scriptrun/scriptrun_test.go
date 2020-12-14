@@ -58,7 +58,7 @@ scripts:
 	assert.Nil(t, err, "Unmarshalled YAML")
 	pjfile.Persist()
 
-	proj, err := project.New(pjfile, nil, nil)
+	proj, err := project.New(pjfile, nil)
 	require.NoError(t, err)
 
 	scriptRun := New(outputhelper.NewCatcher(), subshell.New(), proj)
@@ -82,7 +82,7 @@ func TestEnvIsSet(t *testing.T) {
 	require.NoError(t, err, "parsing pjfile file")
 	pjfile.Persist()
 
-	proj, err := project.New(pjfile, nil, nil)
+	proj, err := project.New(pjfile, nil)
 	require.NoError(t, err)
 
 	os.Setenv("TEST_KEY_EXISTS", "true")
@@ -127,7 +127,7 @@ scripts:
 	assert.Nil(t, err, "Unmarshalled YAML")
 	pjfile.Persist()
 
-	proj, err := project.New(pjfile, nil, nil)
+	proj, err := project.New(pjfile, nil)
 	require.NoError(t, err)
 
 	out := outputhelper.NewCatcher()
@@ -150,7 +150,7 @@ scripts:
 	assert.Nil(t, err, "Unmarshalled YAML")
 	pjfile.Persist()
 
-	proj, err := project.New(pjfile, nil, nil)
+	proj, err := project.New(pjfile, nil)
 	require.NoError(t, err)
 
 	scriptRun := New(outputhelper.NewCatcher(), subshell.New(), proj)
@@ -172,7 +172,7 @@ scripts:
 	assert.Nil(t, err, "Unmarshalled YAML")
 	pjfile.Persist()
 
-	proj, err := project.New(pjfile, nil, nil)
+	proj, err := project.New(pjfile, nil)
 	require.NoError(t, err)
 
 	scriptRun := New(outputhelper.NewCatcher(), subshell.New(), proj)
@@ -214,7 +214,7 @@ scripts:
 	assert.Nil(t, err, "Unmarshalled YAML")
 	pjfile.Persist()
 
-	proj, err := project.New(pjfile, nil, nil)
+	proj, err := project.New(pjfile, nil)
 	require.NoError(t, err)
 
 	// Run the command.
@@ -300,7 +300,7 @@ func captureExecCommand(t *testing.T, tmplCmdName, cmdName string, cmdArgs []str
 	pjfile.Persist()
 	defer projectfile.Reset()
 
-	proj, err := project.New(pjfile, nil, nil)
+	proj, err := project.New(pjfile, nil)
 	require.NoError(t, err)
 
 	outStr, outErr := osutil.CaptureStdout(func() {
