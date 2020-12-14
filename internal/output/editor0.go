@@ -1,8 +1,6 @@
 package output
 
-import (
-	"github.com/ActiveState/cli/internal/failures"
-)
+import "github.com/ActiveState/cli/internal/errs"
 
 type EditorV0 struct {
 	JSON
@@ -19,12 +17,12 @@ func (f *EditorV0) Type() Format {
 	return EditorV0FormatName
 }
 
-func NewEditorV0(config *Config) (EditorV0, *failures.Failure) {
-	json, fail := NewJSON(config)
-	json.printNUL = false
-	if fail != nil {
-		return EditorV0{}, fail
+func NewEditorV0(config *Config) (EditorV0, error) {
+	json, err := NewJSON(config)
+	if err != nil {
+		return EditorV0{}, errs.Wrap(err, "NewJSON failed")
 	}
+	json.printNUL = false
 
 	return EditorV0{json}, nil
 }

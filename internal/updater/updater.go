@@ -16,21 +16,12 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/projectfile"
-)
-
-var (
-	// FailNoUpdate identifies the failure as a no update available failure
-	FailNoUpdate = failures.Type("updater.fail.noupdate")
-
-	// FailUpdate identifies the failure as a failure in the update process
-	FailUpdate = failures.Type("updater.fail.update")
 )
 
 const plat = runtime.GOOS + "-" + runtime.GOARCH
@@ -118,7 +109,7 @@ func PrintUpdateMessage(pjPath string, out output.Outputer) {
 // Download acts as Run except that it unpacks it to the specified path rather than replace the current binary
 func (u *Updater) Download(path string) error {
 	if !u.CanUpdate() {
-		return failures.FailNotFound.New("No update available")
+		return errs.New("No update available")
 	}
 
 	dir := filepath.Dir(path)
@@ -131,7 +122,7 @@ func (u *Updater) Download(path string) error {
 // Run starts the update check and apply cycle.
 func (u *Updater) Run(out output.Outputer, autoUpdate bool) error {
 	if !u.CanUpdate() {
-		return failures.FailNotFound.New("No update available")
+		return errs.New("No update available")
 	}
 
 	return u.update(out, autoUpdate)
@@ -234,7 +225,7 @@ func (u *Updater) update(out output.Outputer, autoUpdate bool) error {
 
 	err, errRecover := u.fromStream(path, bytes.NewBuffer(bin))
 	if errRecover != nil {
-		return failures.FailVerify.New(fmt.Sprintf("update and recovery errors: %q %q", err, errRecover))
+		return errs.New("update and recovery errors: %q %q", err, errRecover)
 	}
 	if err != nil {
 		return err
@@ -279,7 +270,7 @@ func (u *Updater) fetchInfo() error {
 		return err
 	}
 	if len(u.info.Sha256v2) != sha256.Size*2 {
-		return failures.FailVerify.New("Bad cmd hash in JSON info")
+		return errs.New("Bad cmd hash in JSON info")
 	}
 	return nil
 }
@@ -297,7 +288,7 @@ func (u *Updater) fetchAndVerifyFullBin() ([]byte, error) {
 
 	verified := verifySha(archive, u.info.Sha256v2)
 	if !verified {
-		return nil, failures.FailVerify.New(locale.T("update_hash_mismatch"))
+		return nil, locale.NewError("update_hash_mismatch")
 	}
 
 	bin, err := u.fetchBin(archive)
@@ -345,7 +336,7 @@ func (u *Updater) fetch(url string) ([]byte, error) {
 	}
 
 	if readCloser == nil {
-		return nil, failures.FailIO.New("fetch was expected to return non-nil ReadCloser")
+		return nil, errs.New("fetch was expected to return non-nil ReadCloser")
 	}
 
 	bytes, err := ioutil.ReadAll(readCloser)

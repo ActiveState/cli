@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/organizations"
@@ -18,9 +18,9 @@ import (
 func (r *Projects) RunRemote(params *Params) error {
 	projectfile.CleanProjectMapping()
 
-	projectsList, fail := r.fetchProjects(params.Local)
-	if fail != nil {
-		return fail.WithDescription(locale.T("project_err"))
+	projectsList, err := r.fetchProjects(params.Local)
+	if err != nil {
+		return locale.WrapError(err, "project_err")
 	}
 
 	if len(projectsList) == 0 {
@@ -32,23 +32,23 @@ func (r *Projects) RunRemote(params *Params) error {
 	return nil
 }
 
-func (r *Projects) fetchProjects(onlyLocal bool) (projectWithOrgs, *failures.Failure) {
+func (r *Projects) fetchProjects(onlyLocal bool) (projectWithOrgs, error) {
 	orgParams := organizations.NewListOrganizationsParams()
 	memberOnly := true
 	orgParams.SetMemberOnly(&memberOnly)
 	orgs, err := r.auth.Client().Organizations.ListOrganizations(orgParams, authentication.ClientAuth())
 	if err != nil {
 		if api.ErrorCode(err) == 401 {
-			return nil, api.FailAuth.New("err_api_not_authenticated")
+			return nil, locale.NewError("err_api_not_authenticated")
 		}
-		return nil, api.FailUnknown.Wrap(err)
+		return nil, errs.Wrap(err, "Unknown failure")
 	}
 	var projects projectWithOrgs = []projectWithOrg{}
 	localConfigProjects := r.config.GetStringMapStringSlice(projectfile.LocalProjectsConfigKey)
 	for _, org := range orgs.Payload {
-		platformOrgProjects, fail := model.FetchOrganizationProjects(org.URLname)
-		if fail != nil {
-			return nil, fail
+		platformOrgProjects, err := model.FetchOrganizationProjects(org.URLname)
+		if err != nil {
+			return nil, err
 		}
 
 		orgProjects := make([]projectWithOrg, 0, len(platformOrgProjects))

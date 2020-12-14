@@ -4,8 +4,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/ActiveState/cli/internal/progress"
-	"github.com/autarch/testify/assert"
 )
 
 var _ progress.Incrementer = &Incrementer{}

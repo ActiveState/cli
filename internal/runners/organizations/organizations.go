@@ -29,9 +29,9 @@ func (o *Organizations) Run(params *OrgParams) error {
 }
 
 func run(params *OrgParams, out output.Outputer) error {
-	orgs, fail := model.FetchOrganizations()
-	if fail != nil {
-		return fail.WithDescription("organizations_err").ToError()
+	orgs, err := model.FetchOrganizations()
+	if err != nil {
+		return locale.WrapError(err, "organizations_err")
 	}
 
 	if len(orgs) == 0 {
@@ -57,9 +57,9 @@ type orgData struct {
 
 func newOrgData(orgs []*mono_models.Organization) ([]orgData, error) {
 
-	tiers, fail := model.FetchTiers()
-	if fail != nil {
-		return nil, fail.ToError()
+	tiers, err := model.FetchTiers()
+	if err != nil {
+		return nil, err
 	}
 	tiersToPrivMap := make(map[string]bool)
 	for _, t := range tiers {

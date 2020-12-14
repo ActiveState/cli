@@ -108,9 +108,9 @@ func createScriptFile(script *project.Script, expand bool) (*scriptfile.ScriptFi
 		languages = project.DefaultScriptLanguage()
 	}
 
-	f, fail := scriptfile.NewAsSource(languages[0], script.Name(), scriptBlock)
-	if fail != nil {
-		return f, errs.Wrap(fail, "Failed to create script file")
+	f, err := scriptfile.NewAsSource(languages[0], script.Name(), scriptBlock)
+	if err != nil {
+		return f, errs.Wrap(err, "Failed to create script file")
 	}
 	return f, nil
 }
@@ -314,9 +314,9 @@ func startInteractive(sw *scriptWatcher, scriptName string, output output.Output
 	go sw.run(scriptName, output)
 
 	for {
-		doneEditing, fail := prompt.Confirm("", locale.T("prompt_done_editing"), true)
-		if fail != nil {
-			return errs.Wrap(fail, "Prompter returned with failure.")
+		doneEditing, err := prompt.Confirm("", locale.T("prompt_done_editing"), true)
+		if err != nil {
+			return errs.Wrap(err, "Prompter returned with failure.")
 		}
 		if doneEditing {
 			sw.done <- true
@@ -333,9 +333,9 @@ func startInteractive(sw *scriptWatcher, scriptName string, output output.Output
 }
 
 func updateProjectFile(scriptFile *scriptfile.ScriptFile, name string) error {
-	updatedScript, fail := fileutils.ReadFile(scriptFile.Filename())
-	if fail != nil {
-		return errs.Wrap(fail, "Failed to read script file %s.", scriptFile.Filename())
+	updatedScript, err := fileutils.ReadFile(scriptFile.Filename())
+	if err != nil {
+		return errs.Wrap(err, "Failed to read script file %s.", scriptFile.Filename())
 	}
 
 	pj := project.Get()
@@ -358,9 +358,9 @@ func updateProjectFile(scriptFile *scriptfile.ScriptFile, name string) error {
 
 	pjf.Scripts[idx].Value = string(updatedScript)
 
-	fail = pjf.Save()
-	if fail != nil {
-		return errs.Wrap(fail, "Failed to save project file.")
+	err = pjf.Save()
+	if err != nil {
+		return errs.Wrap(err, "Failed to save project file.")
 	}
 	return nil
 }

@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
@@ -38,13 +37,13 @@ type AuthParams struct {
 func (a *Auth) Run(params *AuthParams) error {
 	if !a.Authenticated() {
 		if err := a.authenticate(params); err != nil {
-			return locale.WrapError(err, locale.Tl("err_auth_authenticate", "Could not authenticate."))
+			return locale.WrapError(err, "err_auth_authenticate", "Could not authenticate.")
 		}
 	}
 
 	data, err := a.userData()
 	if err != nil {
-		return locale.WrapError(err, locale.Tl("err_auth_userdata", "Could not collect information about your account."))
+		return locale.WrapError(err, "err_auth_userdata", "Could not collect information about your account.")
 	}
 
 	a.Outputer.Print(
@@ -59,18 +58,18 @@ func (a *Auth) Run(params *AuthParams) error {
 
 func (a *Auth) authenticate(params *AuthParams) error {
 	if params.Token == "" {
-		fail := authlet.AuthenticateWithInput(params.Username, params.Password, params.Totp, a.Outputer, a.Prompter)
-		if fail != nil {
-			return fail.WithDescription("login_err_auth").ToError()
+		err := authlet.AuthenticateWithInput(params.Username, params.Password, params.Totp, a.Outputer, a.Prompter)
+		if err != nil {
+			return locale.WrapError(err, "login_err_auth")
 		}
 	} else {
-		fail := tokenAuth(params.Token)
-		if fail != nil {
-			return fail.WithDescription("login_err_auth_token").ToError()
+		err := tokenAuth(params.Token)
+		if err != nil {
+			return locale.WrapError(err, "login_err_auth_token")
 		}
 	}
 	if !a.Auth.Authenticated() {
-		return failures.FailUser.New(locale.T("login_err_auth")).ToError()
+		return locale.NewInputError("login_err_auth")
 	}
 	a.Outputer.Notice(output.Heading(locale.Tl("authentication_title", "Authentication")))
 	a.Outputer.Notice(locale.T("login_success_welcome_back", map[string]string{
@@ -89,14 +88,14 @@ type userData struct {
 
 func (a *Auth) userData() (*userData, error) {
 	username := a.Auth.WhoAmI()
-	organization, fail := model.FetchOrgByURLName(username)
-	if fail != nil {
-		return nil, fail.ToError()
+	organization, err := model.FetchOrgByURLName(username)
+	if err != nil {
+		return nil, err
 	}
 
-	tiers, fail := model.FetchTiers()
-	if fail != nil {
-		return nil, fail.ToError()
+	tiers, err := model.FetchTiers()
+	if err != nil {
+		return nil, err
 	}
 
 	tier := organization.Tier

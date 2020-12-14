@@ -11,8 +11,6 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 
 	"github.com/go-openapi/strfmt"
-
-	"github.com/ActiveState/cli/internal/failures"
 )
 
 func Test_Create(t *testing.T) {
@@ -28,7 +26,7 @@ func Test_Create(t *testing.T) {
 	tests := []struct {
 		name         string
 		args         args
-		want         *failures.Failure
+		want         error
 		wantCreated  bool
 		wantContents string
 	}{

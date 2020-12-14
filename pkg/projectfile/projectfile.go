@@ -1,6 +1,7 @@
 package projectfile
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -22,7 +23,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/hash"
 	"github.com/ActiveState/cli/internal/language"
@@ -34,44 +34,6 @@ import (
 )
 
 var (
-	// FailNoProject identifies a failure as being due to a missing project file
-	FailNoProject = failures.Type("projectfile.fail.noproject", failures.FailUser)
-
-	// FailNoProjectFromEnv identifies a failure as being due to the project file referenced by the env not existing
-	FailNoProjectFromEnv = failures.Type("projectfile.fail.noprojectfromenv", failures.FailUser)
-
-	// FailParseProject identifies a failure as being due inability to parse file contents
-	FailParseProject = failures.Type("projectfile.fail.parseproject", failures.FailUser)
-
-	// FailValidate identifies a failure during validation
-	FailValidate = failures.Type("projectfile.fail.validate")
-
-	// FailInvalidVersion identifies a failure as being due to an invalid version format
-	FailInvalidVersion = failures.Type("projectfile.fail.version")
-
-	// FailSetCommitID identifies a failure as being caused by the commit id not getting set
-	FailSetCommitID = failures.Type("projectfile.fail.setcommitid")
-
-	// FailNewBlankPath identifies a failure as being caused by the commit id not getting set
-	FailNewBlankPath = failures.Type("projectfile.fail.blanknewpath")
-
-	// FailNewBlankOwner identifies a failure as being caused by the owner parameter not being set
-	FailNewBlankOwner = failures.Type("projectfile.fail.blanknewonwer")
-
-	// FailNewBlankProject identifies a failure as being caused by the project parameter not being set
-	FailNewBlankProject = failures.Type("projectfile.fail.blanknewproject")
-
-	// FailProjectExists identifies a failure as being caused by the commit id not getting set
-	FailProjectExists = failures.Type("projectfile.fail.projectalreadyexists")
-
-	// FailInvalidURL identifies a failures as being caused by the project URL being invalid
-	FailInvalidURL = failures.Type("projectfile.fail.invalidurl")
-
-	// FailProjectFileRoot identifies a failure being caused by not being able to find a path to a project file
-	FailProjectFileRoot = failures.Type("projectfile.fail.projectfileroot", failures.FailNonFatal)
-)
-
-var (
 	urlProjectRegexStr = fmt.Sprintf(`https:\/\/[\w\.]+\/([\w_.-]*)\/([\w_.-]*)(?:\?commitID=)*(.*)`)
 	urlCommitRegexStr  = fmt.Sprintf(`https:\/\/[\w\.]+\/commit\/(.*)`)
 
@@ -80,6 +42,12 @@ var (
 	// CommitURLRe Regex used to validate commit info /commit/someUUID
 	CommitURLRe = regexp.MustCompile(urlCommitRegexStr)
 )
+
+type ErrorParseProject struct{ *locale.LocalizedError }
+
+type ErrorNoProject struct{ *locale.LocalizedError }
+
+type ErrorNoProjectFromEnv struct{ *locale.LocalizedError }
 
 // projectURL comprises all fields of a parsed project URL
 type projectURL struct {
@@ -473,16 +441,16 @@ type Jobs []Job
 var persistentProject *Project
 
 // Parse the given filepath, which should be the full path to an activestate.yaml file
-func Parse(configFilepath string) (*Project, *failures.Failure) {
+func Parse(configFilepath string) (*Project, error) {
 	projectDir := filepath.Dir(configFilepath)
 	files, err := ioutil.ReadDir(projectDir)
 	if err != nil {
-		return nil, failures.FailIO.Wrap(err, locale.Tl("err_project_readdir", "Could not check for project files in your project directory."))
+		return nil, locale.WrapError(err, "err_project_readdir", "Could not ready project directory: {{.V0}}.", projectDir)
 	}
 
-	project, fail := parse(configFilepath)
-	if fail != nil {
-		return nil, fail
+	project, err := parse(configFilepath)
+	if err != nil {
+		return nil, err
 	}
 
 	re, _ := regexp.Compile(`activestate.(\w+).yaml`)
@@ -501,17 +469,17 @@ func Parse(configFilepath string) (*Project, *failures.Failure) {
 			continue
 		}
 
-		secondaryProject, fail := parse(filepath.Join(projectDir, file.Name()))
-		if fail != nil {
-			return nil, fail
+		secondaryProject, err := parse(filepath.Join(projectDir, file.Name()))
+		if err != nil {
+			return nil, err
 		}
 		if err := mergo.Merge(project, *secondaryProject, mergo.WithAppendSlice); err != nil {
-			return nil, failures.FailMarshal.Wrap(err, locale.Tl("err_merge_project", "Could not merge {{.V0}} into your activestate.yaml", file.Name()))
+			return nil, errs.Wrap(err, "Could not merge %s into your activestate.yaml", file.Name())
 		}
 	}
 
-	if fail = project.Init(); fail != nil {
-		return nil, fail
+	if err = project.Init(); err != nil {
+		return nil, errs.Wrap(err, "project.Init failed")
 	}
 
 	namespace := fmt.Sprintf("%s/%s", project.parsedURL.Owner, project.parsedURL.Name)
@@ -521,24 +489,24 @@ func Parse(configFilepath string) (*Project, *failures.Failure) {
 }
 
 // Init initializes the parsedURL field from the project url string
-func (p *Project) Init() *failures.Failure {
-	fail := ValidateProjectURL(p.Project)
-	if fail != nil {
-		return fail
+func (p *Project) Init() error {
+	err := ValidateProjectURL(p.Project)
+	if err != nil {
+		return err
 	}
 
 	parsedURL, err := p.parseURL()
 	if err != nil {
-		return failures.FailUserInput.New("parse_project_file_url_err")
+		return locale.NewInputError("parse_project_file_url_err")
 	}
 	p.parsedURL = parsedURL
 	return nil
 }
 
-func parse(configFilepath string) (*Project, *failures.Failure) {
+func parse(configFilepath string) (*Project, error) {
 	dat, err := ioutil.ReadFile(configFilepath)
 	if err != nil {
-		return nil, failures.FailIO.Wrap(err)
+		return nil, errs.Wrap(err, "ioutil.ReadFile %s failure", configFilepath)
 	}
 
 	project := Project{}
@@ -546,8 +514,10 @@ func parse(configFilepath string) (*Project, *failures.Failure) {
 	project.path = configFilepath
 
 	if err != nil {
-		return nil, FailParseProject.New(
-			locale.Tl("err_project_parsed", "Project file `{{.V1}}` could not be parsed, the parser produced the following error: {{.V0}}", err.Error(), configFilepath))
+		return nil, &ErrorParseProject{locale.NewError(
+			"err_project_parsed",
+			"Project file `{{.V1}}` could not be parsed, the parser produced the following error: {{.V0}}", err.Error(), configFilepath),
+		}
 	}
 
 	return &project, nil
@@ -579,27 +549,27 @@ func (p *Project) SetPath(path string) {
 }
 
 // ValidateProjectURL validates the configured project URL
-func ValidateProjectURL(url string) *failures.Failure {
+func ValidateProjectURL(url string) error {
 	// Note: This line also matches headless commit URLs: match == {'commit', '<commit_id>'}
 	match := ProjectURLRe.FindStringSubmatch(url)
 	if len(match) < 3 {
-		return FailParseProject.New(locale.T("err_bad_project_url"))
+		return &ErrorParseProject{locale.NewError("err_bad_project_url")}
 	}
 	return nil
 }
 
 // Reload the project file from disk
-func (p *Project) Reload() *failures.Failure {
-	pj, fail := Parse(p.path)
-	if fail != nil {
-		return fail
+func (p *Project) Reload() error {
+	pj, err := Parse(p.path)
+	if err != nil {
+		return err
 	}
 	*p = *pj
 	return nil
 }
 
 // Save the project to its activestate.yaml file
-func (p *Project) Save() *failures.Failure {
+func (p *Project) Save() error {
 	return p.save(p.Path())
 }
 
@@ -622,9 +592,9 @@ func validateUUID(uuidStr string) error {
 }
 
 func parseURL(url string) (projectURL, error) {
-	fail := ValidateProjectURL(url)
-	if fail != nil {
-		return projectURL{}, fail.ToError()
+	err := ValidateProjectURL(url)
+	if err != nil {
+		return projectURL{}, err
 	}
 
 	match := CommitURLRe.FindStringSubmatch(url)
@@ -667,9 +637,9 @@ func removeTemporaryLanguage(data []byte) ([]byte, error) {
 
 // RemoveTemporaryLanguage removes the temporary language field from the as.yaml file during state push
 func (p *Project) RemoveTemporaryLanguage() error {
-	fp, fail := GetProjectFilePath()
-	if fail != nil {
-		return errs.Wrap(fail.ToError(), "Could not find the project file location.")
+	fp, err := GetProjectFilePath()
+	if err != nil {
+		return errs.Wrap(err, "Could not find the project file location.")
 	}
 
 	data, err := ioutil.ReadFile(fp)
@@ -686,36 +656,36 @@ func (p *Project) RemoveTemporaryLanguage() error {
 		return errs.Wrap(err, "Failed to write update project file.")
 	}
 
-	fail = p.Reload()
-	if fail != nil {
-		return errs.Wrap(fail.ToError(), "Failed to reload project file.")
+	err = p.Reload()
+	if err != nil {
+		return errs.Wrap(err, "Failed to reload project file.")
 	}
 	return nil
 }
 
 // Save the project to its activestate.yaml file
-func (p *Project) save(path string) *failures.Failure {
+func (p *Project) save(path string) error {
 	dat, err := yaml.Marshal(p)
 	if err != nil {
-		return failures.FailMarshal.Wrap(err)
+		return errs.Wrap(err, "yaml.Marshal failed")
 	}
 
-	fail := ValidateProjectURL(p.Project)
-	if fail != nil {
-		return fail
+	err = ValidateProjectURL(p.Project)
+	if err != nil {
+		return errs.Wrap(err, "ValidateProjectURL failed")
 	}
 
 	logging.Debug("Saving %s", path)
 
 	f, err := os.Create(path)
 	if err != nil {
-		return failures.FailIO.Wrap(err)
+		return errs.Wrap(err, "os.Create %s failed", path)
 	}
 	defer f.Close()
 
 	_, err = f.Write([]byte(dat))
 	if err != nil {
-		return failures.FailIO.Wrap(err)
+		return errs.Wrap(err, "f.Write %s failed", path)
 	}
 
 	storeProjectMapping(fmt.Sprintf("%s/%s", p.parsedURL.Owner, p.parsedURL.Name), filepath.Dir(p.Path()))
@@ -744,9 +714,9 @@ func (p *Project) SetNamespace(owner, project string) error {
 		return errs.Wrap(err, "Failed to write project file %s", p.path)
 	}
 
-	fail := p.Reload()
-	if fail != nil {
-		return errs.Wrap(fail.ToError(), "Failed to reload updated projectfile.")
+	err = p.Reload()
+	if err != nil {
+		return errs.Wrap(err, "Failed to reload updated projectfile.")
 	}
 	return nil
 }
@@ -754,20 +724,20 @@ func (p *Project) SetNamespace(owner, project string) error {
 // SetCommit sets the commit id within the current project file. This is done
 // in-place so that line order is preserved.
 // If headless is true, the project is defined by a commit-id only
-func (p *Project) SetCommit(commitID string, headless bool) *failures.Failure {
+func (p *Project) SetCommit(commitID string, headless bool) error {
 	data, err := ioutil.ReadFile(p.path)
 	if err != nil {
-		return failures.FailOS.Wrap(err)
+		return errs.Wrap(err, "ioutil.ReadFile %s failed", p.path)
 	}
 
-	out, fail := setCommitInYAML(data, commitID, headless)
-	if fail != nil {
-		return fail
+	out, err := setCommitInYAML(data, commitID, headless)
+	if err != nil {
+		return err
 	}
 	p.parsedURL.CommitID = commitID
 
 	if err := ioutil.WriteFile(p.path, out, 0664); err != nil {
-		return failures.FailOS.Wrap(err)
+		return errs.Wrap(err, "ioutil.WriteFile %s failed", p.path)
 	}
 
 	return p.Reload()
@@ -798,9 +768,9 @@ func setNamespaceInYAML(data []byte, namespace string, commitID string) ([]byte,
 	return out, nil
 }
 
-func setCommitInYAML(data []byte, commitID string, anonymous bool) ([]byte, *failures.Failure) {
+func setCommitInYAML(data []byte, commitID string, anonymous bool) ([]byte, error) {
 	if commitID == "" {
-		return nil, failures.FailDeveloper.New("commitID must not be empty")
+		return nil, errs.New("commitID must not be empty")
 	}
 	commitQryParam := []byte("$1$2$3?commitID=" + commitID)
 	if anonymous {
@@ -809,66 +779,66 @@ func setCommitInYAML(data []byte, commitID string, anonymous bool) ([]byte, *fai
 
 	out := setCommitRE.ReplaceAll(data, commitQryParam)
 	if !strings.Contains(string(out), commitID) {
-		return nil, FailSetCommitID.New("err_set_commit_id")
+		return nil, locale.NewInputError("err_set_commit_id")
 	}
 
 	return out, nil
 }
 
 // GetProjectFilePath returns the path to the project activestate.yaml
-func GetProjectFilePath() (string, *failures.Failure) {
-	lookup := []func() (string, *failures.Failure){
+func GetProjectFilePath() (string, error) {
+	lookup := []func() (string, error){
 		getProjectFilePathFromEnv,
 		getProjectFilePathFromWd,
 		getProjectFilePathFromDefault,
 	}
 	for _, getProjectFilePath := range lookup {
-		path, fail := getProjectFilePath()
-		if fail != nil {
-			return "", fail
+		path, err := getProjectFilePath()
+		if err != nil {
+			return "", errs.Wrap(err, "getProjectFilePath failed")
 		}
 		if path != "" {
 			return path, nil
 		}
 	}
 
-	return "", FailNoProject.New(locale.T("err_no_projectfile"))
+	return "", &ErrorNoProject{locale.NewInputError("err_no_projectfile")}
 }
 
-func getProjectFilePathFromEnv() (string, *failures.Failure) {
+func getProjectFilePathFromEnv() (string, error) {
 	projectFilePath := os.Getenv(constants.ProjectEnvVarName)
 	if projectFilePath != "" {
 		if fileutils.FileExists(projectFilePath) {
 			return projectFilePath, nil
 		}
-		return "", FailNoProjectFromEnv.New(locale.Tr("err_project_env_file_not_exist", projectFilePath))
+		return "", &ErrorNoProjectFromEnv{locale.NewInputError("err_project_env_file_not_exist", "", projectFilePath)}
 	}
 	return "", nil
 }
 
-func getProjectFilePathFromWd() (string, *failures.Failure) {
+func getProjectFilePathFromWd() (string, error) {
 	root, err := osutils.Getwd()
 	if err != nil {
-		return "", failures.FailIO.Wrap(err, locale.Tl("err_wd", "Could not get working directory"))
+		return "", errs.Wrap(err, "osutils.Getwd failed")
 	}
 
-	path, fail := fileutils.FindFileInPath(root, constants.ConfigFileName)
-	if fail != nil && !fail.Type.Matches(fileutils.FailFindInPathNotFound) {
-		return "", fail
+	path, err := fileutils.FindFileInPath(root, constants.ConfigFileName)
+	if err != nil && !errors.Is(err, fileutils.ErrorFileNotFound) {
+		return "", errs.Wrap(err, "fileutils.FindFileInPath %s failed", root)
 	}
 
 	return path, nil
 }
 
-func getProjectFilePathFromDefault() (string, *failures.Failure) {
+func getProjectFilePathFromDefault() (string, error) {
 	defaultProjectPath := viper.GetString(constants.GlobalDefaultPrefname)
 	if defaultProjectPath == "" {
 		return "", nil
 	}
 
-	path, fail := fileutils.FindFileInPath(defaultProjectPath, constants.ConfigFileName)
-	if fail != nil && !fail.Type.Matches(fileutils.FailFindInPathNotFound) {
-		return "", fail
+	path, err := fileutils.FindFileInPath(defaultProjectPath, constants.ConfigFileName)
+	if err != nil && !errors.Is(err, fileutils.ErrorFileNotFound) {
+		return "", errs.Wrap(err, "fileutils.FindFileInPath %s failed", defaultProjectPath)
 	}
 	return path, nil
 }
@@ -877,7 +847,8 @@ func getProjectFilePathFromDefault() (string, *failures.Failure) {
 func Get() *Project {
 	project, err := GetSafe()
 	if err != nil {
-		failures.Handle(err, locale.T("err_project_file_unavailable"))
+		logging.Error("projectfile.Get() failed with: %s", err.Error())
+		fmt.Fprint(os.Stderr, locale.T("err_project_file_unavailable"))
 		os.Exit(1)
 	}
 
@@ -890,14 +861,14 @@ func GetPersisted() *Project {
 }
 
 // GetSafe returns the project configuration in a safe manner (returns error)
-func GetSafe() (*Project, *failures.Failure) {
+func GetSafe() (*Project, error) {
 	if persistentProject != nil {
 		return persistentProject, nil
 	}
 
-	project, fail := GetOnce()
-	if fail != nil {
-		return nil, fail
+	project, err := GetOnce()
+	if err != nil {
+		return nil, err
 	}
 
 	project.Persist()
@@ -905,45 +876,40 @@ func GetSafe() (*Project, *failures.Failure) {
 }
 
 // GetOnce returns the project configuration in a safe manner (returns error), the same as GetSafe, but it avoids persisting the project
-func GetOnce() (*Project, *failures.Failure) {
+func GetOnce() (*Project, error) {
 	// we do not want to use a path provided by state if we're running tests
-	projectFilePath, fail := GetProjectFilePath()
-	if fail != nil {
-		if fail.Type.Matches(fileutils.FailFindInPathNotFound) {
-			return nil, FailNoProject.Wrap(fail, fail.Error())
+	projectFilePath, err := GetProjectFilePath()
+	if err != nil {
+		if errors.Is(err, fileutils.ErrorFileNotFound) {
+			return nil, &ErrorNoProject{locale.WrapError(err, "err_project_file_notfound", "Could not detect project file path.")}
 		}
-		return nil, fail
+		return nil, err
 	}
 
-	_, err := ioutil.ReadFile(projectFilePath)
+	project, err := Parse(projectFilePath)
 	if err != nil {
-		logging.Warning("Cannot load config file: %v", err)
-		return nil, FailNoProject.New(locale.T("err_no_projectfile"))
-	}
-	project, fail := Parse(projectFilePath)
-	if fail != nil {
-		return nil, fail
+		return nil, errs.Wrap(err, "Parse %s failed", projectFilePath)
 	}
 
 	return project, nil
 }
 
 // FromPath will return the projectfile that's located at the given path (this will walk up the directory tree until it finds the project)
-func FromPath(path string) (*Project, *failures.Failure) {
+func FromPath(path string) (*Project, error) {
 	// we do not want to use a path provided by state if we're running tests
-	projectFilePath, fail := fileutils.FindFileInPath(path, constants.ConfigFileName)
-	if fail != nil {
-		return nil, FailNoProject.Wrap(fail, locale.T("err_no_projectfile"))
+	projectFilePath, err := fileutils.FindFileInPath(path, constants.ConfigFileName)
+	if err != nil {
+		return nil, &ErrorNoProject{locale.WrapInputError(err, "err_no_projectfile")}
 	}
 
-	_, err := ioutil.ReadFile(projectFilePath)
+	_, err = ioutil.ReadFile(projectFilePath)
 	if err != nil {
 		logging.Warning("Cannot load config file: %v", err)
-		return nil, FailNoProject.New(locale.T("err_no_projectfile"))
+		return nil, &ErrorNoProject{locale.WrapInputError(err, "err_no_projectfile")}
 	}
-	project, fail := Parse(projectFilePath)
-	if fail != nil {
-		return nil, fail
+	project, err := Parse(projectFilePath)
+	if err != nil {
+		return nil, errs.Wrap(err, "Parse %s failed", projectFilePath)
 	}
 
 	return project, nil
@@ -964,7 +930,7 @@ type CreateParams struct {
 }
 
 // TestOnlyCreateWithProjectURL a new activestate.yaml with default content
-func TestOnlyCreateWithProjectURL(projectURL, path string) (*Project, *failures.Failure) {
+func TestOnlyCreateWithProjectURL(projectURL, path string) (*Project, error) {
 	return createCustom(&CreateParams{
 		projectURL: projectURL,
 		Directory:  path,
@@ -972,25 +938,25 @@ func TestOnlyCreateWithProjectURL(projectURL, path string) (*Project, *failures.
 }
 
 // Create will create a new activestate.yaml with a projectURL for the given details
-func Create(params *CreateParams) *failures.Failure {
+func Create(params *CreateParams) error {
 	lang := language.MakeByName(params.Language)
-	fail := validateCreateParams(params, lang)
-	if fail != nil {
-		return fail
+	err := validateCreateParams(params, lang)
+	if err != nil {
+		return err
 	}
 
-	_, fail = createCustom(params, lang)
-	if fail != nil {
-		return fail
+	_, err = createCustom(params, lang)
+	if err != nil {
+		return err
 	}
 
 	return nil
 }
 
-func createCustom(params *CreateParams, lang language.Language) (*Project, *failures.Failure) {
-	fail := fileutils.MkdirUnlessExists(params.Directory)
-	if fail != nil {
-		return nil, fail
+func createCustom(params *CreateParams, lang language.Language) (*Project, error) {
+	err := fileutils.MkdirUnlessExists(params.Directory)
+	if err != nil {
+		return nil, err
 	}
 
 	if params.projectURL == "" {
@@ -1002,16 +968,16 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, *fail
 
 	params.path = filepath.Join(params.Directory, constants.ConfigFileName)
 	if fileutils.FileExists(params.path) {
-		return nil, FailProjectExists.New(locale.T("err_projectfile_exists"))
+		return nil, locale.NewInputError("err_projectfile_exists")
 	}
 
-	fail = ValidateProjectURL(params.projectURL)
-	if fail != nil {
-		return nil, fail
+	err = ValidateProjectURL(params.projectURL)
+	if err != nil {
+		return nil, err
 	}
 	match := ProjectURLRe.FindStringSubmatch(params.projectURL)
 	if len(match) < 3 {
-		return nil, FailInvalidURL.New("err_projectfile_invalid_url")
+		return nil, locale.NewInputError("err_projectfile_invalid_url")
 	}
 	owner, project := match[1], match[2]
 
@@ -1025,11 +991,12 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, *fail
 	content := params.Content
 	if content == "" {
 		var err error
+		tplName := "activestate.yaml." + strings.TrimRight(lang.String(), "23") + ".tpl"
 		content, err = strutils.ParseTemplate(
-			box.String("activestate.yaml."+strings.TrimRight(lang.String(), "23")+".tpl"),
+			box.String(tplName),
 			map[string]interface{}{"Owner": owner, "Project": project, "Shell": shell, "Language": lang.String(), "LangExe": lang.Executable().Filename()})
 		if err != nil {
-			return nil, failures.FailMisc.Wrap(err)
+			return nil, errs.Wrap(err, "Could not parse %s", tplName)
 		}
 	}
 
@@ -1041,32 +1008,33 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, *fail
 		"Private":         params.Private,
 	}
 
-	fileContents, err := strutils.ParseTemplate(box.String("activestate.yaml.tpl"), data)
+	tplName := "activestate.yaml.tpl"
+	fileContents, err := strutils.ParseTemplate(box.String(tplName), data)
 	if err != nil {
-		return nil, failures.FailMisc.Wrap(err)
+		return nil, errs.Wrap(err, "Could not parse %s", tplName)
 	}
 
-	fail = fileutils.WriteFile(params.path, []byte(fileContents))
-	if fail != nil {
-		return nil, fail
+	err = fileutils.WriteFile(params.path, []byte(fileContents))
+	if err != nil {
+		return nil, err
 	}
 
 	return Parse(params.path)
 }
 
-func validateCreateParams(params *CreateParams, lang language.Language) *failures.Failure {
+func validateCreateParams(params *CreateParams, lang language.Language) error {
 	langValidErr := lang.Validate()
 	switch {
 	case langValidErr != nil:
-		return failures.FailUserInput.Wrap(langValidErr)
+		return errs.Wrap(langValidErr, "Language validation failed")
 	case params.Directory == "":
-		return FailNewBlankPath.New(locale.T("err_project_require_path"))
+		return locale.NewInputError("err_project_require_path")
 	case params.projectURL != "":
 		return nil // Owner and Project not required when projectURL is set
 	case params.Owner == "":
-		return FailNewBlankOwner.New("err_project_require_owner")
+		return locale.NewInputError("err_project_require_owner")
 	case params.Project == "":
-		return FailNewBlankProject.New("err_project_require_name")
+		return locale.NewInputError("err_project_require_name")
 	default:
 		return nil
 	}
@@ -1074,26 +1042,26 @@ func validateCreateParams(params *CreateParams, lang language.Language) *failure
 
 // ParseVersionInfo parses the lock field from the projectfile and updates
 // the activestate.yaml if an older version representation is present
-func ParseVersionInfo(projectFilePath string) (*VersionInfo, *failures.Failure) {
+func ParseVersionInfo(projectFilePath string) (*VersionInfo, error) {
 	if !fileutils.FileExists(projectFilePath) {
 		return nil, nil
 	}
 
 	dat, err := ioutil.ReadFile(projectFilePath)
 	if err != nil {
-		return nil, failures.FailIO.Wrap(err)
+		return nil, errs.Wrap(err, "ioutil.ReadFile %s failed", projectFilePath)
 	}
 
 	versionStruct := VersionInfo{}
 	err = yaml.Unmarshal(dat, &versionStruct)
 	if err != nil {
-		return nil, FailParseProject.Wrap(err)
+		return nil, &ErrorParseProject{locale.WrapError(err, "Could not unmarshal activestate.yaml")}
 	}
 
 	if versionStruct.Branch != "" && versionStruct.Version != "" {
 		err = AddLockInfo(projectFilePath, versionStruct.Branch, versionStruct.Version)
 		if err != nil {
-			return nil, FailParseProject.Wrap(err, locale.T("err_update_version"))
+			return nil, locale.WrapError(err, "err_update_version")
 		}
 		return ParseVersionInfo(projectFilePath)
 	}
@@ -1103,14 +1071,14 @@ func ParseVersionInfo(projectFilePath string) (*VersionInfo, *failures.Failure) 
 	}
 
 	lock := strings.TrimSpace(versionStruct.Lock)
-	match, fail := regexp.MatchString(`^([\w\/\-\.]+@)\d+\.\d+\.\d+-(SHA)?[a-f0-9]+`, lock)
-	if fail != nil || !match {
-		return nil, FailInvalidVersion.New(locale.T("err_invalid_version"))
+	match, err := regexp.MatchString(`^([\w\/\-\.]+@)\d+\.\d+\.\d+-(SHA)?[a-f0-9]+`, lock)
+	if err != nil || !match {
+		return nil, locale.NewInputError("err_invalid_version")
 	}
 
 	split := strings.Split(versionStruct.Lock, "@")
 	if len(split) != 2 {
-		return nil, FailInvalidVersion.New(locale.T("err_invalid_version"))
+		return nil, locale.NewInputError("err_invalid_version")
 	}
 
 	return &VersionInfo{
@@ -1178,7 +1146,8 @@ func Reset() {
 // Only one project can persist at a time.
 func (p *Project) Persist() {
 	if p.Project == "" {
-		failures.Handle(failures.FailDeveloper.New("err_persist_invalid_project"), locale.T("err_invalid_project"))
+		logging.Error("projectfile.Persist() failed because no project is defined")
+		fmt.Fprint(os.Stderr, locale.T("err_invalid_project"))
 		os.Exit(1)
 	}
 	persistentProject = p
@@ -1200,8 +1169,8 @@ func GetProjectNameForPath(config configGetter, projectPath string) string {
 			continue
 		}
 		for _, path := range paths {
-			if isEqual, fail := fileutils.PathsEqual(projectPath, path); isEqual {
-				if fail != nil {
+			if isEqual, err := fileutils.PathsEqual(projectPath, path); isEqual {
+				if err != nil {
 					logging.Debug("Failed to compare paths %s and %s", projectPath, path)
 				}
 				return name

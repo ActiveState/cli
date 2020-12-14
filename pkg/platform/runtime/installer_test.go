@@ -82,12 +82,12 @@ func (suite *InstallerTestSuite) testRelocation(archiveName string, executable s
 
 	artifact, archives := headchefArtifact(path.Join(suite.dataDir, archive))
 
-	envGetter, fail := runtime.NewCamelInstall(strfmt.UUID(""), suite.cacheDir, []*runtime.HeadChefArtifact{artifact})
-	suite.Require().NoError(fail.ToError(), "camel runtime assembler initialized")
+	envGetter, err := runtime.NewCamelInstall(strfmt.UUID(""), suite.cacheDir, []*runtime.HeadChefArtifact{artifact})
+	suite.Require().NoError(err, "camel runtime assembler initialized")
 	suite.Require().NotEmpty(suite.cacheDir, "Installs artifacts")
 
-	fail = suite.installer.InstallFromArchives(archives, envGetter, suite.prg.Progress)
-	suite.Require().NoError(fail.ToError())
+	err = suite.installer.InstallFromArchives(archives, envGetter, suite.prg.Progress)
+	suite.Require().NoError(err)
 
 	suite.prg.AssertProperClose(suite.T())
 

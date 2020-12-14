@@ -13,9 +13,9 @@ import (
 func usablePath() (string, error) {
 	binDir := "/usr/local/bin"
 	if !fileutils.DirExists(binDir) {
-		fail := fileutils.Mkdir(binDir)
-		if fail != nil {
-			return "", locale.WrapError(fail, "deploy_usable_path", "Please ensure '{{.V0}}' exists and is on your PATH.", binDir)
+		err := fileutils.Mkdir(binDir)
+		if err != nil {
+			return "", locale.WrapError(err, "deploy_usable_path", "Please ensure '{{.V0}}' exists and is on your PATH.", binDir)
 		}
 	}
 

@@ -8,7 +8,6 @@ import (
 
 	"github.com/ActiveState/sysinfo"
 
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -36,9 +35,9 @@ func (r *Recipe) Run(params *RecipeParams) error {
 
 	proj := project.Get()
 
-	data, fail := recipeData(proj, params.CommitID, params.Platform)
-	if fail != nil {
-		return fail.ToError()
+	data, err := recipeData(proj, params.CommitID, params.Platform)
+	if err != nil {
+		return err
 	}
 
 	if params.Pretty {
@@ -53,12 +52,12 @@ func (r *Recipe) Run(params *RecipeParams) error {
 	return nil
 }
 
-func recipeData(proj *project.Project, commitID, platform string) ([]byte, *failures.Failure) {
+func recipeData(proj *project.Project, commitID, platform string) ([]byte, error) {
 	cid := strfmt.UUID(commitID)
 
-	r, fail := fetchRecipe(proj, cid, platform)
-	if fail != nil {
-		return nil, fail
+	r, err := fetchRecipe(proj, cid, platform)
+	if err != nil {
+		return nil, err
 	}
 
 	return []byte(r), nil
@@ -74,23 +73,23 @@ func beautifyJSON(d []byte) ([]byte, error) {
 	return out.Bytes(), nil
 }
 
-func fetchRecipe(proj *project.Project, commitID strfmt.UUID, platform string) (string, *failures.Failure) {
+func fetchRecipe(proj *project.Project, commitID strfmt.UUID, platform string) (string, error) {
 	if platform == "" {
 		platform = sysinfo.OS().String()
 	}
 
 	if commitID == "" {
-		pj, fail := model.FetchProjectByName(proj.Owner(), proj.Name())
-		if fail != nil {
-			return "", fail
+		pj, err := model.FetchProjectByName(proj.Owner(), proj.Name())
+		if err != nil {
+			return "", err
 		}
 
-		branch, fail := model.DefaultBranchForProject(pj)
-		if fail != nil {
-			return "", fail
+		branch, err := model.DefaultBranchForProject(pj)
+		if err != nil {
+			return "", err
 		}
 		if branch.CommitID == nil {
-			return "", model.FailNoCommit.New(locale.T("err_no_commit"))
+			return "", locale.NewError("NoCommit")
 		}
 		commitID = *branch.CommitID
 	}

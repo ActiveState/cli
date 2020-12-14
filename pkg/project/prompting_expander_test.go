@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	promptMock "github.com/ActiveState/cli/internal/prompt/mock"
@@ -41,16 +40,14 @@ type VarPromptingExpanderTestSuite struct {
 
 func (suite *VarPromptingExpanderTestSuite) BeforeTest(suiteName, testName string) {
 	locale.Set("en-US")
-	failures.ResetHandled()
 
 	suite.promptMock = promptMock.Init()
 	pjFile, err := loadSecretsProject()
 	suite.Require().Nil(err, "Unmarshalled project YAML")
 	pjFile.Persist()
 	suite.projectFile = pjFile
-	var fail *failures.Failure
-	suite.project, fail = project.New(pjFile, outputhelper.NewCatcher())
-	suite.NoError(fail.ToError(), "no failure should occur when loading project")
+	suite.project, err = project.New(pjFile, outputhelper.NewCatcher())
+	suite.NoError(err, "no failure should occur when loading project")
 
 	secretsClient := secretsapi_test.NewDefaultTestClient("bearing123")
 	suite.Require().NotNil(secretsClient)
@@ -111,14 +108,14 @@ func (suite *VarPromptingExpanderTestSuite) assertExpansionSaveSuccess(secretNam
 
 	suite.promptMock.OnMethod("InputSecret").Once().Return(expectedValue, nil)
 	expanderFn := suite.prepareWorkingExpander()
-	expandedValue, failure := expanderFn("", category, secretName, false, suite.project)
+	expandedValue, err := expanderFn("", category, secretName, false, suite.project)
 
 	suite.Require().NoError(bodyErr)
-	suite.Require().Nil(failure)
+	suite.Require().Nil(err)
 	suite.Equal(expectedValue, expandedValue)
 
-	_, failure = expanderFn("", category, secretName, false, suite.project)
-	suite.Require().Nil(failure, "Should not prompt again because it should have stored/cached the secret")
+	_, err = expanderFn("", category, secretName, false, suite.project)
+	suite.Require().Nil(err, "Should not prompt again because it should have stored/cached the secret")
 
 	suite.Require().Len(userChanges, 1)
 
@@ -134,8 +131,8 @@ func (suite *VarPromptingExpanderTestSuite) assertExpansionSaveSuccess(secretNam
 	suite.Equal(strfmt.UUID("00010001-0001-0001-0001-000100010001"), change.ProjectID)
 
 	kp, _ := keypairs.LoadWithDefaults()
-	decryptedBytes, failure := kp.DecodeAndDecrypt(*change.Value)
-	suite.Require().Nil(failure)
+	decryptedBytes, err := kp.DecodeAndDecrypt(*change.Value)
+	suite.Require().Nil(err)
 	suite.Equal(expectedValue, string(decryptedBytes))
 }
 

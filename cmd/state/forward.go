@@ -10,7 +10,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -35,16 +35,16 @@ func forwardFn(args []string, out output.Outputer, pj *project.Project) (forward
 	}
 
 	// Retrieve the version info specified in the activestate.yaml
-	versionInfo, fail := projectfile.ParseVersionInfo(pj.Source().Path())
-	if fail != nil {
-		// if we are running `state update`, we just print the error message, but don't fail, as we can still update the state tool executable
-		logging.Error("Could not parse version info from projectifle: %s", fail.Error())
+	versionInfo, err := projectfile.ParseVersionInfo(pj.Source().Path())
+	if err != nil {
+		// if we are running `state update`, we just print the error message, but don't err, as we can still update the state tool executable
+		logging.Error("Could not parse version info from projectifle: %s", err.Error())
 		if funk.Contains(args, "update") { // Handle use case of update being called as anything but the first argument (unlikely, but possible)
 			out.Error(locale.T("err_version_parse"))
 			return nil, nil
 		}
 
-		return nil, locale.WrapError(fail, "err_version_parse", "Could not determine the State Tool version to use to run this command.")
+		return nil, locale.WrapError(err, "err_version_parse", "Could not determine the State Tool version to use to run this command.")
 	}
 
 	// Check if we need to forward
@@ -56,10 +56,10 @@ func forwardFn(args []string, out output.Outputer, pj *project.Project) (forward
 		// Perform the forward
 		out.Notice(output.Heading(locale.Tl("forward_title", "Version Locked")))
 		out.Notice(locale.Tr("forward_version", versionInfo.Version))
-		code, fail := forward(args, versionInfo, out)
-		if fail != nil {
+		code, err := forward(args, versionInfo, out)
+		if err != nil {
 			out.Error(locale.T("forward_fail"))
-			return 1, fail
+			return 1, err
 		}
 		if code > 0 {
 			return code, locale.NewError("err_forward", "Error occurred while running older version of the state tool, you may want to 'state update'.")
@@ -72,24 +72,24 @@ func forwardFn(args []string, out output.Outputer, pj *project.Project) (forward
 }
 
 // forward will forward the call to the appropriate State Tool version if necessary
-func forward(args []string, versionInfo *projectfile.VersionInfo, out output.Outputer) (int, *failures.Failure) {
+func forward(args []string, versionInfo *projectfile.VersionInfo, out output.Outputer) (int, error) {
 	logging.Debug("Forwarding to version %s/%s, arguments: %v", versionInfo.Branch, versionInfo.Version, args[1:])
 	binary := forwardBin(versionInfo)
-	fail := ensureForwardExists(binary, versionInfo, out)
-	if fail != nil {
-		return 1, fail
+	err := ensureForwardExists(binary, versionInfo, out)
+	if err != nil {
+		return 1, err
 	}
 
 	return execForward(binary, args)
 }
 
-func execForward(binary string, args []string) (int, *failures.Failure) {
+func execForward(binary string, args []string) (int, error) {
 	logging.Debug("Forwarding to binary at %s", binary)
 
 	code, _, err := osutils.ExecuteAndPipeStd(binary, args[1:], []string{fmt.Sprintf("%s=true", constants.ForwardedStateEnvVarName)})
 	if err != nil {
 		logging.Error("Forwarding command resulted in error: %v", err)
-		return 1, failures.FailOS.New(locale.Tr("forward_fail_with_error", err.Error()))
+		return 1, locale.NewError("forward_fail_with_error", "", err.Error())
 	}
 	return code, nil
 }
@@ -105,7 +105,7 @@ func forwardBin(versionInfo *projectfile.VersionInfo) string {
 	return filepath.Join(datadir, "version-cache", filename)
 }
 
-func ensureForwardExists(binary string, versionInfo *projectfile.VersionInfo, out output.Outputer) *failures.Failure {
+func ensureForwardExists(binary string, versionInfo *projectfile.VersionInfo, out output.Outputer) error {
 	if fileutils.FileExists(binary) {
 		return nil
 	}
@@ -120,24 +120,24 @@ func ensureForwardExists(binary string, versionInfo *projectfile.VersionInfo, ou
 
 	info, err := up.Info()
 	if err != nil {
-		return failures.FailNetwork.Wrap(err)
+		return errs.Wrap(err, "Info failed")
 	}
 
 	if info == nil {
-		return failures.FailNetwork.New(locale.T("forward_fail_info"))
+		return locale.NewError("forward_fail_info")
 	}
 
 	out.Notice(locale.Tr("downloading_state_version", info.Version))
 	err = up.Download(binary)
 	if err != nil {
-		return failures.FailNetwork.Wrap(err)
+		return errs.Wrap(err, "Download failed")
 	}
 
 	permissions, _ := permbits.Stat(binary)
 	permissions.SetUserExecute(true)
 	err = permbits.Chmod(binary, permissions)
 	if err != nil {
-		return failures.FailIO.Wrap(err)
+		return errs.Wrap(err, "Chmod failed")
 	}
 
 	return nil

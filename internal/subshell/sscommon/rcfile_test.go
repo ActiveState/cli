@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 )
 
@@ -47,7 +46,7 @@ func TestWriteRcFile(t *testing.T) {
 	tests := []struct {
 		name         string
 		args         args
-		want         *failures.Failure
+		want error
 		wantContents string
 	}{
 		{

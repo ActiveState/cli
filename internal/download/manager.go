@@ -4,10 +4,9 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
-
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/progress"
 )
@@ -15,7 +14,7 @@ import (
 // Manager is our main download manager, it takes care of processing the downloads and communicating progress
 type Manager struct {
 	WorkerCount int
-	failure     *failures.Failure
+	error       error
 	entries     []*Entry
 	progress    *progress.Progress
 }
@@ -28,7 +27,7 @@ type Entry struct {
 }
 
 // Download will start the download progress and blocks until the progress completes
-func (m *Manager) Download() *failures.Failure {
+func (m *Manager) Download() error {
 	jobs := make(chan *Entry, len(m.entries))
 	done := make(chan bool, m.WorkerCount)
 
@@ -55,32 +54,32 @@ func (m *Manager) Download() *failures.Failure {
 		<-done
 	}
 
-	return m.failure
+	return m.error
 }
 
 // Job runs an individual download job
 func (m *Manager) Job(entry *Entry) {
-	if m.failure != nil {
+	if m.error != nil {
 		return
 	}
 
-	bytes, fail := GetWithProgress(entry.Download, m.progress)
+	bytes, err := GetWithProgress(entry.Download, m.progress)
 
-	if fail != nil {
-		m.failure = fail
-		logging.Debug("Failure occured: %v", fail)
+	if err != nil {
+		m.error = err
+		logging.Debug("Failure occured: %v", err)
 		return
 	}
 
 	dirname := filepath.Dir(entry.Path)
-	m.failure = fileutils.MkdirUnlessExists(dirname)
-	if m.failure != nil {
+	m.error = fileutils.MkdirUnlessExists(dirname)
+	if m.error != nil {
 		return
 	}
 
-	err := ioutil.WriteFile(entry.Path, bytes, 0666)
+	err = ioutil.WriteFile(entry.Path, bytes, 0666)
 	if err != nil {
-		m.failure = failures.FailIO.Wrap(err)
+		m.error = errs.Wrap(err, "WriteFile %s failed", entry.Path)
 	}
 }
 

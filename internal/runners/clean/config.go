@@ -39,9 +39,9 @@ func (c *Config) Run(params *ConfigParams) error {
 	}
 
 	if !params.Force {
-		ok, fail := c.confirm.Confirm(locale.T("confirm"), locale.T("clean_config_confirm"), false)
-		if fail != nil {
-			return fail.ToError()
+		ok, err := c.confirm.Confirm(locale.T("confirm"), locale.T("clean_config_confirm"), false)
+		if err != nil {
+			return err
 		}
 		if !ok {
 			return nil

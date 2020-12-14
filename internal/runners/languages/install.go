@@ -4,7 +4,6 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
@@ -88,9 +87,9 @@ func parseLanguage(langName string) (*model.Language, error) {
 }
 
 func ensureLanguagePlatform(language *model.Language) error {
-	platformLanguages, fail := model.FetchLanguages()
-	if fail != nil {
-		return fail.ToError()
+	platformLanguages, err := model.FetchLanguages()
+	if err != nil {
+		return err
 	}
 
 	for _, pl := range platformLanguages {
@@ -103,14 +102,14 @@ func ensureLanguagePlatform(language *model.Language) error {
 }
 
 func ensureLanguageProject(language *model.Language, project *project.Project) error {
-	targetCommitID, fail := model.LatestCommitID(project.Owner(), project.Name())
-	if fail != nil {
-		return fail.ToError()
+	targetCommitID, err := model.LatestCommitID(project.Owner(), project.Name())
+	if err != nil {
+		return err
 	}
 
-	platformLanguage, fail := model.FetchLanguageForCommit(*targetCommitID)
-	if fail != nil {
-		return fail.ToError()
+	platformLanguage, err := model.FetchLanguageForCommit(*targetCommitID)
+	if err != nil {
+		return err
 	}
 
 	if platformLanguage.Name != language.Name {
@@ -119,7 +118,7 @@ func ensureLanguageProject(language *model.Language, project *project.Project) e
 	return nil
 }
 
-type fetchVersionsFunc func(name string) ([]string, *failures.Failure)
+type fetchVersionsFunc func(name string) ([]string, error)
 
 func ensureVersion(language *model.Language) error {
 	return ensureVersionTestable(language, model.FetchLanguageVersions)
@@ -130,9 +129,9 @@ func ensureVersionTestable(language *model.Language, fetchVersions fetchVersions
 		return locale.NewInputError("err_language_no_version", "No language version provided")
 	}
 
-	versions, fail := fetchVersions(language.Name)
-	if fail != nil {
-		return fail.ToError()
+	versions, err := fetchVersions(language.Name)
+	if err != nil {
+		return err
 	}
 
 	for _, ver := range versions {
@@ -141,21 +140,21 @@ func ensureVersionTestable(language *model.Language, fetchVersions fetchVersions
 		}
 	}
 
-	return failures.FailUser.New(locale.Tr("err_language_version_not_found", language.Version, language.Name))
+	return locale.NewInputError("err_language_version_not_found", "", language.Version, language.Name)
 }
 
 func removeLanguage(project *project.Project, current string) error {
-	targetCommitID, fail := model.LatestCommitID(project.Owner(), project.Name())
-	if fail != nil {
-		return fail.ToError()
+	targetCommitID, err := model.LatestCommitID(project.Owner(), project.Name())
+	if err != nil {
+		return err
 	}
 
-	platformLanguage, fail := model.FetchLanguageForCommit(*targetCommitID)
-	if fail != nil {
-		return fail.ToError()
+	platformLanguage, err := model.FetchLanguageForCommit(*targetCommitID)
+	if err != nil {
+		return err
 	}
 
-	err := model.CommitLanguage(project.Owner(), project.Name(), model.OperationRemoved, platformLanguage.Name, platformLanguage.Version)
+	err = model.CommitLanguage(project.Owner(), project.Name(), model.OperationRemoved, platformLanguage.Name, platformLanguage.Version)
 	if err != nil {
 		return err
 	}

@@ -3,7 +3,6 @@ package revert
 import (
 	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
@@ -63,18 +62,17 @@ func (r *Revert) Run(params *Params) error {
 	}
 
 	var orgs []gqlmodel.Organization
-	var fail *failures.Failure
 	if revertCommit.Author != nil {
-		orgs, fail = model.FetchOrganizationsByIDs([]strfmt.UUID{*revertCommit.Author})
-		if fail != nil {
-			return locale.WrapError(fail.ToError(), "err_revert_get_organizations", "Could not get organizations for current user")
+		orgs, err = model.FetchOrganizationsByIDs([]strfmt.UUID{*revertCommit.Author})
+		if err != nil {
+			return locale.WrapError(err, "err_revert_get_organizations", "Could not get organizations for current user")
 		}
 	}
 	commit.PrintCommit(r.out, revertCommit, orgs)
 
-	revert, fail := r.prompt.Confirm("", locale.Tl("revert_confirm", "Revert to commit: {{.V0}}?", params.CommitID), false)
-	if fail != nil {
-		return locale.WrapError(fail.ToError(), "err_revert_confirm", "Could not confirm revert choice")
+	revert, err := r.prompt.Confirm("", locale.Tl("revert_confirm", "Revert to commit: {{.V0}}?", params.CommitID), false)
+	if err != nil {
+		return locale.WrapError(err, "err_revert_confirm", "Could not confirm revert choice")
 	}
 	if !revert {
 		return nil

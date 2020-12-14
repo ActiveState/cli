@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/bndr/gotabulate"
+
 	"github.com/ActiveState/cli/internal/access"
-	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -14,7 +16,6 @@ import (
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	secretsModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/bndr/gotabulate"
 )
 
 type listPrimeable interface {
@@ -49,13 +50,13 @@ func (l *List) Run(params ListRunParams) error {
 		return locale.WrapError(err, "secrets_err_check_access")
 	}
 
-	defs, fail := definedSecrets(l.proj, l.secretsClient, params.Filter)
-	if fail != nil {
-		return locale.WrapError(fail, "secrets_err_defined")
+	defs, err := definedSecrets(l.proj, l.secretsClient, params.Filter)
+	if err != nil {
+		return locale.WrapError(err, "secrets_err_defined")
 	}
-	exports, fail := defsToSecrets(defs)
-	if fail != nil {
-		return locale.WrapError(fail, "secrets_err_values")
+	exports, err := defsToSecrets(defs)
+	if err != nil {
+		return locale.WrapError(err, "secrets_err_values")
 	}
 
 	l.out.Print(secretExports(exports))
@@ -66,9 +67,9 @@ func (l *List) Run(params ListRunParams) error {
 // checkSecretsAccess is reusable "runner-level" logic and provides a directly
 // usable localized error.
 func checkSecretsAccess(proj *project.Project) error {
-	allowed, fail := access.Secrets(proj.Owner())
-	if fail != nil {
-		return locale.WrapError(fail, "secrets_err_access")
+	allowed, err := access.Secrets(proj.Owner())
+	if err != nil {
+		return locale.WrapError(err, "secrets_err_access")
 	}
 	if !allowed {
 		return locale.NewError("secrets_warning_no_access")
@@ -76,12 +77,12 @@ func checkSecretsAccess(proj *project.Project) error {
 	return nil
 }
 
-func definedSecrets(proj *project.Project, secCli *secretsapi.Client, filter string) ([]*secretsModels.SecretDefinition, *failures.Failure) {
+func definedSecrets(proj *project.Project, secCli *secretsapi.Client, filter string) ([]*secretsModels.SecretDefinition, error) {
 	logging.Debug("listing variables for org=%s, project=%s", proj.Owner(), proj.Name())
 
-	secretDefs, fail := secrets.DefsByProject(secCli, proj.Owner(), proj.Name())
-	if fail != nil {
-		return nil, fail
+	secretDefs, err := secrets.DefsByProject(secCli, proj.Owner(), proj.Name())
+	if err != nil {
+		return nil, err
 	}
 
 	if filter != "" {
@@ -126,9 +127,9 @@ func (es secretExports) MarshalOutput(format output.Format) interface{} {
 		return es
 
 	default:
-		rows, fail := secretsToRows(es)
-		if fail != nil {
-			return fail.WithDescription(locale.T("secrets_err_output"))
+		rows, err := secretsToRows(es)
+		if err != nil {
+			return locale.WrapError(err, "secrets_err_output")
 		}
 
 		t := gotabulate.Create(rows)
@@ -140,7 +141,7 @@ func (es secretExports) MarshalOutput(format output.Format) interface{} {
 	}
 }
 
-func defsToSecrets(defs []*secretsModels.SecretDefinition) ([]*SecretExport, *failures.Failure) {
+func defsToSecrets(defs []*secretsModels.SecretDefinition) ([]*SecretExport, error) {
 	secretsExport := make([]*SecretExport, len(defs))
 	expander := project.NewSecretExpander(secretsapi.Get(), project.Get(), nil)
 
@@ -150,9 +151,9 @@ func defsToSecrets(defs []*secretsModels.SecretDefinition) ([]*SecretExport, *fa
 			continue
 		}
 
-		secretValue, fail := expander.FindSecret(*def.Name, *def.Scope == secretsModels.SecretDefinitionScopeUser)
-		if fail != nil {
-			return secretsExport, fail
+		secretValue, err := expander.FindSecret(*def.Name, *def.Scope == secretsModels.SecretDefinitionScopeUser)
+		if err != nil {
+			return secretsExport, err
 		}
 
 		secretsExport[i] = &SecretExport{
@@ -166,17 +167,17 @@ func defsToSecrets(defs []*secretsModels.SecretDefinition) ([]*SecretExport, *fa
 	return secretsExport, nil
 }
 
-func secretsAsJSON(secretExports []*SecretExport) ([]byte, *failures.Failure) {
+func secretsAsJSON(secretExports []*SecretExport) ([]byte, error) {
 	bs, err := json.Marshal(secretExports)
 	if err != nil {
-		return nil, failures.FailMarshal.Wrap(err)
+		return nil, errs.Wrap(err, "Marshal failure")
 	}
 
 	return bs, nil
 }
 
 // secretsToRows returns the rows used in our output table
-func secretsToRows(secretExports []*SecretExport) ([][]interface{}, *failures.Failure) {
+func secretsToRows(secretExports []*SecretExport) ([][]interface{}, error) {
 	rows := [][]interface{}{}
 	for _, secret := range secretExports {
 		description := "-"
@@ -190,13 +191,6 @@ func secretsToRows(secretExports []*SecretExport) ([][]interface{}, *failures.Fa
 		rows = append(rows, []interface{}{secret.Name, secret.Scope, hasValue, description, fmt.Sprintf("%s.%s", secret.Scope, secret.Name)})
 	}
 	return rows, nil
-}
-
-func ptrToString(s *string, fieldName string) (string, *failures.Failure) {
-	if s == nil {
-		return "", failures.FailVerify.New("secrets_err_missing_field", fieldName)
-	}
-	return *s, nil
 }
 
 // SecretExport defines important information about a secret that should be

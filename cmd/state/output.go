@@ -1,11 +1,12 @@
 package main
 
 import (
+	"errors"
 	"os"
 
 	"github.com/jessevdk/go-flags"
 
-	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/terminal"
@@ -44,26 +45,27 @@ func parseOutputFlags(args []string) outputFlags {
 	return flagSet
 }
 
-func initOutput(flags outputFlags, formatName string) (output.Outputer, *failures.Failure) {
+func initOutput(flags outputFlags, formatName string) (output.Outputer, error) {
 	if formatName == "" {
 		formatName = flags.Output
 	}
 
-	out, fail := output.New(formatName, &output.Config{
+	out, err := output.New(formatName, &output.Config{
 		OutWriter:   os.Stdout,
 		ErrWriter:   os.Stderr,
 		Colored:     !flags.DisableColor(),
 		Interactive: true,
 	})
-	if fail != nil {
-		if fail.Type.Matches(output.FailNotRecognized) {
+	if err != nil {
+		if errors.Is(err, output.ErrNotRecognized) {
 			// The formatter might still be registered, so default to plain for now
 			logging.Warningf("Output format not recognized: %s, defaulting to plain output instead", formatName)
 			return initOutput(flags, string(output.PlainFormatName))
 		}
-		logging.Errorf("Could not create outputer, name: %s, error: %s", formatName, fail.Error())
+		logging.Errorf("Could not create outputer, name: %s, error: %s", formatName, err.Error())
+		return nil, errs.Wrap(err, "output.New %s failed", formatName)
 	}
-	return out, fail
+	return out, nil
 }
 
 // setPrinterColors disables colored output in the printer packages in case the

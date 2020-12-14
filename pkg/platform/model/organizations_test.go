@@ -32,8 +32,8 @@ func (suite *OrganizationsTestSuite) AfterTest(suiteName, testName string) {
 func (suite *OrganizationsTestSuite) TestOrganizations_FetchAll() {
 	suite.apiMock.MockGetOrganizations()
 
-	orgs, fail := model.FetchOrganizations()
-	suite.NoError(fail.ToError(), "Fetched organizations")
+	orgs, err := model.FetchOrganizations()
+	suite.NoError(err, "Fetched organizations")
 	suite.Equal(1, len(orgs), "One organization fetched")
 	suite.Equal("string", orgs[0].Name)
 }
@@ -41,8 +41,8 @@ func (suite *OrganizationsTestSuite) TestOrganizations_FetchAll() {
 func (suite *OrganizationsTestSuite) TestOrganizations_FetchByURLName() {
 	suite.apiMock.MockGetOrganization()
 
-	org, fail := model.FetchOrgByURLName("string")
-	suite.NoError(fail.ToError(), "Fetched organizations")
+	org, err := model.FetchOrgByURLName("string")
+	suite.NoError(err, "Fetched organizations")
 	suite.Equal("string", org.URLname)
 	suite.Equal("string", org.Name)
 }
@@ -50,31 +50,31 @@ func (suite *OrganizationsTestSuite) TestOrganizations_FetchByURLName() {
 func (suite *OrganizationsTestSuite) TestOrganizations_FetchByURLName_404() {
 	suite.apiMock.MockGetOrganization404()
 
-	org, fail := model.FetchOrgByURLName("string")
-	suite.EqualError(fail, locale.T("err_api_org_not_found"))
+	org, err := model.FetchOrgByURLName("string")
+	suite.EqualError(err, locale.T("err_api_org_not_found"))
 	suite.Nil(org)
 }
 
 func (suite *OrganizationsTestSuite) TestOrganization_FetchOrgMember() {
 	suite.apiMock.MockGetOrganizationMembers()
 
-	member, fail := model.FetchOrgMember("string", "test")
-	suite.NoError(fail.ToError(), "should be able to fetch member with no issue")
+	member, err := model.FetchOrgMember("string", "test")
+	suite.NoError(err, "should be able to fetch member with no issue")
 	suite.NotNil(member)
 }
 
 func (suite *OrganizationsTestSuite) TestOrganization_FetchOrgMember_404() {
 	suite.apiMock.MockGetOrganizationMembers401()
 
-	_, fail := model.FetchOrgMember("string", "test")
-	suite.EqualError(fail, locale.T("err_api_not_authenticated"))
+	_, err := model.FetchOrgMember("string", "test")
+	suite.EqualError(err, locale.T("err_api_not_authenticated"))
 }
 
 func (suite *OrganizationsTestSuite) TestOrganization_FetchOrgMember_NotFound() {
 	suite.apiMock.MockGetOrganizationMembers()
 
-	member, fail := model.FetchOrgMember("string", "not_test")
-	suite.EqualError(fail, locale.T("err_api_member_not_found"))
+	member, err := model.FetchOrgMember("string", "not_test")
+	suite.EqualError(err, locale.T("err_api_member_not_found"))
 	suite.Nil(member)
 }
 
@@ -83,8 +83,8 @@ func (suite *OrganizationsTestSuite) TestOrganizations_InviteUserToOrg() {
 
 	suite.apiMock.MockInviteUserToOrg()
 
-	invitation, fail := model.InviteUserToOrg("string", true, "foo@bar.com")
-	suite.NoError(fail.ToError(), "should have received invitation receipt")
+	invitation, err := model.InviteUserToOrg("string", true, "foo@bar.com")
+	suite.NoError(err, "should have received invitation receipt")
 	suite.Equal("foo@bar.com", invitation.Email)
 
 }
@@ -94,8 +94,8 @@ func (suite *OrganizationsTestSuite) TestOrganizations_InviteUserToOrg404() {
 
 	suite.apiMock.MockInviteUserToOrg404()
 
-	invitation, fail := model.InviteUserToOrg("string", true, "string")
-	suite.EqualError(fail, locale.T("err_api_org_not_found"))
+	invitation, err := model.InviteUserToOrg("string", true, "string")
+	suite.EqualError(err, locale.T("err_api_org_not_found"))
 	suite.Nil(invitation)
 
 }

@@ -18,7 +18,6 @@ import (
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/deprecation"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -33,9 +32,6 @@ import (
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
-// FailMainPanic is a failure due to a panic occuring while runnig the main function
-var FailMainPanic = failures.Type("main.fail.panic", failures.FailUser)
-
 func main() {
 	// Set up logging
 	logging.SetupRollbar()
@@ -46,9 +42,9 @@ func main() {
 
 	// Set up our output formatter/writer
 	outFlags := parseOutputFlags(os.Args)
-	out, fail := initOutput(outFlags, "")
-	if fail != nil {
-		os.Stderr.WriteString(locale.Tr("err_main_outputer", fail.Error()))
+	out, err := initOutput(outFlags, "")
+	if err != nil {
+		os.Stderr.WriteString(locale.Tr("err_main_outputer", err.Error()))
 		os.Exit(1)
 	}
 
@@ -111,10 +107,10 @@ func run(args []string, isInteractive bool, out output.Outputer) (int, error) {
 	defer config.Save()
 
 	// Retrieve project file
-	pjPath, fail := projectfile.GetProjectFilePath()
-	if fail != nil && fail.Type.Matches(projectfile.FailNoProjectFromEnv) {
+	pjPath, err := projectfile.GetProjectFilePath()
+	if err != nil && errs.Matches(err, &projectfile.ErrorNoProjectFromEnv{}) {
 		// Fail if we are meant to inherit the projectfile from the environment, but the file doesn't exist
-		return 1, fail
+		return 1, err
 	}
 
 	// Set up prompter
@@ -123,13 +119,13 @@ func run(args []string, isInteractive bool, out output.Outputer) (int, error) {
 	// Set up project (if we have a valid path)
 	var pj *project.Project
 	if pjPath != "" {
-		pjf, fail := projectfile.FromPath(pjPath)
-		if fail != nil {
-			return 1, fail
+		pjf, err := projectfile.FromPath(pjPath)
+		if err != nil {
+			return 1, err
 		}
-		pj, fail = project.New(pjf, out)
-		if fail != nil {
-			return 1, fail
+		pj, err = project.New(pjf, out)
+		if err != nil {
+			return 1, err
 		}
 	}
 
@@ -173,9 +169,9 @@ func run(args []string, isInteractive bool, out output.Outputer) (int, error) {
 		}
 
 		// Check for deprecation
-		deprecated, fail := deprecation.Check()
-		if fail != nil {
-			logging.Error("Could not check for deprecation: %s", fail.Error())
+		deprecated, err := deprecation.Check()
+		if err != nil {
+			logging.Error("Could not check for deprecation: %s", err.Error())
 		}
 		if deprecated != nil {
 			date := deprecated.Date.Format(constants.DateFormatUser)

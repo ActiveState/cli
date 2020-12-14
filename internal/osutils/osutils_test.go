@@ -52,8 +52,8 @@ func TestExecuteAndPipeStd(t *testing.T) {
 
 func TestBashifyPath(t *testing.T) {
 	bashify := func(value string) string {
-		result, fail := BashifyPath(value)
-		require.NoError(t, fail.ToError())
+		result, err := BashifyPath(value)
+		require.NoError(t, err)
 		return result
 	}
 	assert.Equal(t, "/c/temp", bashify(`C:\temp`))

@@ -3,12 +3,12 @@ package secrets_test
 import (
 	"testing"
 
-	"github.com/ActiveState/cli/internal/failures"
-	"github.com/ActiveState/cli/internal/keypairs"
-	"github.com/ActiveState/cli/internal/secrets"
-	secrets_models "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/ActiveState/cli/internal/keypairs"
+	"github.com/ActiveState/cli/internal/secrets"
+	"github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 )
 
 type SecretsSharingTestSuite struct {
@@ -21,74 +21,74 @@ type SecretsSharingTestSuite struct {
 }
 
 func (suite *SecretsSharingTestSuite) SetupSuite() {
-	var failure *failures.Failure
+	var err error
 
-	suite.sourceKeypair, failure = keypairs.GenerateRSA(1024)
-	suite.Require().Nil(failure)
+	suite.sourceKeypair, err = keypairs.GenerateRSA(1024)
+	suite.Require().NoError(err)
 
-	suite.targetKeypair, failure = keypairs.GenerateRSA(1024)
-	suite.Require().Nil(failure)
+	suite.targetKeypair, err = keypairs.GenerateRSA(1024)
+	suite.Require().NoError(err)
 
-	suite.targetPubKey, failure = suite.targetKeypair.EncodePublicKey()
-	suite.Require().Nil(failure)
+	suite.targetPubKey, err = suite.targetKeypair.EncodePublicKey()
+	suite.Require().NoError(err)
 }
 
 func (suite *SecretsSharingTestSuite) TestFailure_ParsingPublicKey() {
 	badPubKey := "-- BEGIN BAD RSA PUB KEY --\nabc123\n-- END BAD RSA PUB KEY --"
-	newShares, failure := secrets.ShareFromDiff(suite.sourceKeypair, &secrets_models.UserSecretDiff{
+	newShares, err := secrets.ShareFromDiff(suite.sourceKeypair, &secrets_models.UserSecretDiff{
 		PublicKey: &badPubKey,
 	})
 	suite.Nil(newShares)
-	suite.Equal(keypairs.FailPublicKeyParse, failure.Type, "failure type mismatch")
+	suite.Require().Error(err)
 
 }
 
 func (suite *SecretsSharingTestSuite) TestFailure_FirstShareHasBadlyEncryptedValue() {
-	newShares, failure := secrets.ShareFromDiff(suite.sourceKeypair, &secrets_models.UserSecretDiff{
+	newShares, err := secrets.ShareFromDiff(suite.sourceKeypair, &secrets_models.UserSecretDiff{
 		PublicKey: &suite.targetPubKey,
 		Shares:    []*secrets_models.UserSecretShare{newUserSecretShare("", "FOO", "badly encrypted value")},
 	})
 	suite.Nil(newShares)
-	suite.Equal(keypairs.FailKeyDecode, failure.Type, "failure type mismatch")
+	suite.Require().Error(err)
 }
 
 func (suite *SecretsSharingTestSuite) TestFailure_FailedToEncryptForTargetUser() {
-	shortKeypair, failure := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
-	suite.Require().Nil(failure)
+	shortKeypair, err := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
+	suite.Require().NoError(err)
 
 	// this is a valid public key, but will be too short for encrypting with
-	shortPubKey, failure := shortKeypair.EncodePublicKey()
-	suite.Require().Nil(failure)
+	shortPubKey, err := shortKeypair.EncodePublicKey()
+	suite.Require().NoError(err)
 
-	encrValue, failure := suite.sourceKeypair.EncryptAndEncode([]byte("luv 2 encrypt data"))
-	suite.Require().Nil(failure)
+	encrValue, err := suite.sourceKeypair.EncryptAndEncode([]byte("luv 2 encrypt data"))
+	suite.Require().NoError(err)
 
-	newShares, failure := secrets.ShareFromDiff(suite.sourceKeypair, &secrets_models.UserSecretDiff{
+	newShares, err := secrets.ShareFromDiff(suite.sourceKeypair, &secrets_models.UserSecretDiff{
 		PublicKey: &shortPubKey,
 		Shares:    []*secrets_models.UserSecretShare{newUserSecretShare("", "FOO", encrValue)},
 	})
 	suite.Nil(newShares)
-	suite.Equal(keypairs.FailPublicKey, failure.Type, "failure type mismatch")
+	suite.Require().Error(err)
 }
 
 func (suite *SecretsSharingTestSuite) TestSuccess_ReceivedEmptySharesList() {
-	newShares, failure := secrets.ShareFromDiff(suite.sourceKeypair, &secrets_models.UserSecretDiff{
+	newShares, err := secrets.ShareFromDiff(suite.sourceKeypair, &secrets_models.UserSecretDiff{
 		PublicKey: &suite.targetPubKey,
 		Shares:    []*secrets_models.UserSecretShare{},
 	})
 	suite.Len(newShares, 0)
-	suite.Nil(failure)
+	suite.Nil(err)
 }
 
 func (suite *SecretsSharingTestSuite) TestSuccess_MultipleSharesProcessed() {
-	encrOrgSecret, failure := suite.sourceKeypair.EncryptAndEncode([]byte("org secret"))
-	suite.Require().Nil(failure)
+	encrOrgSecret, err := suite.sourceKeypair.EncryptAndEncode([]byte("org secret"))
+	suite.Require().NoError(err)
 
 	projID := strfmt.UUID("00020002-0002-0002-0002-000200020002")
-	encrProjSecret, failure := suite.sourceKeypair.EncryptAndEncode([]byte("proj secret"))
-	suite.Require().Nil(failure)
+	encrProjSecret, err := suite.sourceKeypair.EncryptAndEncode([]byte("proj secret"))
+	suite.Require().NoError(err)
 
-	newShares, failure := secrets.ShareFromDiff(suite.sourceKeypair, &secrets_models.UserSecretDiff{
+	newShares, err := secrets.ShareFromDiff(suite.sourceKeypair, &secrets_models.UserSecretDiff{
 		PublicKey: &suite.targetPubKey,
 		Shares: []*secrets_models.UserSecretShare{
 			newUserSecretShare("", "org-secret", encrOrgSecret),
@@ -96,17 +96,17 @@ func (suite *SecretsSharingTestSuite) TestSuccess_MultipleSharesProcessed() {
 		},
 	})
 
-	suite.Require().Nil(failure)
+	suite.Require().NoError(err)
 	suite.Require().Len(newShares, 2)
 
-	decrOrgSecret, failure := suite.targetKeypair.DecodeAndDecrypt(*newShares[0].Value)
-	suite.Require().Nil(failure)
+	decrOrgSecret, err := suite.targetKeypair.DecodeAndDecrypt(*newShares[0].Value)
+	suite.Require().NoError(err)
 	suite.Equal("org secret", string(decrOrgSecret))
 	suite.Equal("org-secret", *newShares[0].Name)
 	suite.Zero(newShares[0].ProjectID)
 
-	decrProjSecret, failure := suite.targetKeypair.DecodeAndDecrypt(*newShares[1].Value)
-	suite.Require().Nil(failure)
+	decrProjSecret, err := suite.targetKeypair.DecodeAndDecrypt(*newShares[1].Value)
+	suite.Require().NoError(err)
 	suite.Equal("proj secret", string(decrProjSecret))
 	suite.Equal("proj-secret", *newShares[1].Name)
 	suite.Equal(projID, newShares[1].ProjectID)

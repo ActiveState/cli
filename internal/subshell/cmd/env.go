@@ -3,7 +3,6 @@ package cmd
 import (
 	"log"
 
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/osutils"
 )
@@ -37,10 +36,10 @@ func getEnvironmentPath(userScope bool) string {
 // unsetUserEnv clears a state cool configured environment variable
 // It only does this if the value equals the expected value (meaning if we can verify that state tool was in fact
 // responsible for setting it)
-func (c *CmdEnv) unset(name, ifValueEquals string) *failures.Failure {
+func (c *CmdEnv) unset(name, ifValueEquals string) error {
 	key, err := c.openKeyFn(getEnvironmentPath(c.userScope))
 	if err != nil {
-		return failures.FailOS.Wrap(err, locale.T("err_windows_registry"))
+		return locale.WrapError(err, "err_windows_registry")
 	}
 	defer key.Close()
 
@@ -49,7 +48,7 @@ func (c *CmdEnv) unset(name, ifValueEquals string) *failures.Failure {
 		if osutils.IsNotExistError(err) {
 			return nil
 		}
-		return failures.FailOS.Wrap(err, locale.T("err_windows_registry"))
+		return locale.WrapError(err, "err_windows_registry")
 	}
 
 	// Check if we are responsible for the value
@@ -58,37 +57,37 @@ func (c *CmdEnv) unset(name, ifValueEquals string) *failures.Failure {
 	}
 
 	// Delete value
-	return failures.FailOS.Wrap(key.DeleteValue(name))
+	return key.DeleteValue(name)
 }
 
 // setUserEnv sets a variable in the user environment and saves the original as a backup
-func (c *CmdEnv) set(name, newValue string) *failures.Failure {
+func (c *CmdEnv) set(name, newValue string) error {
 	key, err := c.openKeyFn(getEnvironmentPath(c.userScope))
 	if err != nil {
-		return failures.FailOS.Wrap(err, locale.T("err_windows_registry"))
+		return locale.WrapError(err, "err_windows_registry")
 	}
 	defer key.Close()
 
 	// Check if we're going to be overriding
 	_, valType, err := key.GetStringValue(name)
 	if err != nil && !osutils.IsNotExistError(err) {
-		return failures.FailOS.Wrap(err, locale.T("err_windows_registry"))
+		return locale.WrapError(err, "err_windows_registry")
 	}
 
-	return failures.FailOS.Wrap(osutils.SetStringValue(key, name, valType, newValue))
+	return osutils.SetStringValue(key, name, valType, newValue)
 }
 
 // Get retrieves a variable from the user environment, this prioritizes a backup if it exists
-func (c *CmdEnv) Get(name string) (string, *failures.Failure) {
+func (c *CmdEnv) Get(name string) (string, error) {
 	key, err := c.openKeyFn(getEnvironmentPath(c.userScope))
 	if err != nil {
-		return "", failures.FailOS.Wrap(err, locale.T("err_windows_registry"))
+		return "", locale.WrapError(err, "err_windows_registry")
 	}
 	defer key.Close()
 
 	v, _, err := key.GetStringValue(name)
 	if err != nil && !osutils.IsNotExistError(err) {
-		return v, failures.FailOS.Wrap(err, locale.T("err_windows_registry"))
+		return v, locale.WrapError(err, "err_windows_registry")
 	}
 	return v, nil
 }
