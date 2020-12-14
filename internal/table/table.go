@@ -105,7 +105,7 @@ func (t *Table) calculateWidth(maxTableWidth int) ([]int, int) {
 
 	// Equalize widths by 20% of average width
 	// This is to prevent columns that are much larger than others from taking up most of the table width
-	equalizeWidths(colWidths, 20)
+	//equalizeWidths(colWidths, 20)
 
 	// Constrain table to max and min dimensions
 	tableWidth := mathutils.MaxInt(colWidthsCombined, minTableWidth)
