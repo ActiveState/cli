@@ -145,7 +145,7 @@ func addSuggestions(ns model.Namespace, name string) error {
 	for i := range results {
 		suggestions[i] = fmt.Sprintf(" - %s", *results[i].Ingredient.Name)
 	}
-	suggestions = append(suggestions, fmt.Sprintf(" - .. (to see more results run `state search %s`)", name))
+	suggestions = append(suggestions, locale.Tl("ingredient_alternatives_more", " - .. (to see more results run `state search {{.V0}}`)", name))
 
 	return locale.NewInputError("package_ingredient_alternatives", "Could not match {{.V0}}. Did you mean:\n\n{{.V1}}", name, strings.Join(suggestions, "\n"))
 }
