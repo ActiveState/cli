@@ -48,7 +48,7 @@ func Test_IsWritable_File(t *testing.T) {
 		t.Fatal("File should be writable")
 	}
 
-	err := acl.Chmod(file, 0444)
+	err = acl.Chmod(file, 0444)
 	if err != nil {
 		t.Error(err)
 	}
