@@ -29,7 +29,7 @@ func runScript(scriptName, path string) error {
 	}
 
 	cmd := exec.Command("cmd.exe", "/C", sf.Filename(), path)
-	err := cmd.Start()
+	err = cmd.Start()
 	if err != nil {
 		return err
 	}

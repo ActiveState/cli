@@ -70,7 +70,7 @@ func (suite *CamelLinuxRuntimeTestSuite) TestRelocate() {
 
 	counter := pMock.NewMockIncrementer()
 
-	err := runtime.Relocate(metaData, func() { counter.Increment() })
+	err = runtime.Relocate(metaData, func() { counter.Increment() })
 	suite.Require().NoError(err)
 
 	suite.Assert().Equal(3, counter.Count, "3 files relocated")
