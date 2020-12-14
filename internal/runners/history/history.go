@@ -68,6 +68,7 @@ func (h *History) Run(params *HistoryParams) error {
 		return err
 	}
 
+	h.out.Print(locale.Tl("history_recent_changes", "Here are the most recent changes made to this project.\n"))
 	err = commit.PrintCommits(h.out, commits, orgs)
 	if err != nil {
 		return locale.WrapError(err, "err_history_print_commits", "Could not print commit history")
