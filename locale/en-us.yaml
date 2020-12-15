@@ -320,7 +320,7 @@ downloading:
 installing:
   other: Installing
 unknown_value:
-  other: Unknown value
+  other: Unknown Value
 invalid_uuid_val:
   other: Invalid UUID value
 total:

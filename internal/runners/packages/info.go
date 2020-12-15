@@ -2,13 +2,13 @@ package packages
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
@@ -53,29 +53,167 @@ func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 		)
 	}
 	// NOTE: Should more than one result be handled?
+	res := newInfoResult(packages[0])
+	out := &infoResultOutput{
+		i.out,
+		res,
+		whatsNextMessages(res.name, res.Versions),
+	}
 
-	i.out.Print(makeInfoResult(packages[0].Ingredient))
+	i.out.Print(out)
 
 	return nil
 }
 
+// PkgDetailsTable describes package details.
 type PkgDetailsTable struct {
-	Latest  string `locale:"package_version" json:"version"`
-	Author  string `locale:"package_author" json:"author"`
-	Link    string `locale:"package_link" json:"link"`
-	License string `locale:"package_license" json:"license"`
+	Author    string `locale:"package_author,Author" json:"author"`
+	Link      string `locale:"package_link,Link" json:"link"`
+	License   string `locale:"package_license,License" json:"license"`
+	Copyright string `locale:"package_copyright,Copyright" json:"copyright"`
 }
 
 type infoResult struct {
-	Description     string `locale:"Details" json:"description"`
+	name            string
+	latestVersion   string
+	Description     string `locale:"," json:"description"`
 	PkgDetailsTable `locale:"," opts:"verticalTable"`
-	Versions        []string `locale:"package_versions" json:"versions"`
+	Versions        []string `locale:"," json:"versions"`
 }
 
-func makeInfoResult(ingred *inventory_models.Ingredient) infoResult {
-	return infoResult{Description: "tester"}
+func newInfoResult(iv *model.IngredientAndVersion) *infoResult {
+	res := infoResult{
+		name:          locale.T("unknown_value"),
+		latestVersion: locale.T("unknown_value"),
+		PkgDetailsTable: PkgDetailsTable{
+			Author:    locale.T("unknown_value"),
+			Link:      locale.T("unknown_value"),
+			License:   locale.T("unknown_value"),
+			Copyright: locale.T("unknown_value"),
+		},
+	}
+
+	if iv.Ingredient != nil {
+		if iv.Ingredient.Name != nil {
+			res.name = *iv.Ingredient.Name
+		}
+
+		if iv.Ingredient.Description != nil {
+			res.Description = *iv.Ingredient.Description
+		}
+
+		if iv.Ingredient.Links != nil && iv.Ingredient.Links.Self != nil {
+			res.PkgDetailsTable.Link = iv.Ingredient.Links.Self.String()
+		}
+	}
+
+	if iv.LatestVersion != nil {
+		if iv.LatestVersion.Version != nil {
+			res.latestVersion = *iv.LatestVersion.Version
+		}
+
+		if iv.LatestVersion.LicenseExpression != nil {
+			res.PkgDetailsTable.License = *iv.LatestVersion.LicenseExpression
+		}
+
+		if iv.LatestVersion.CopyrightText != nil {
+			res.PkgDetailsTable.Copyright = *iv.LatestVersion.CopyrightText
+		}
+	}
+
+	for _, version := range iv.Versions {
+		res.Versions = append(res.Versions, version.Version)
+	}
+
+	return &res
 }
 
-type infoResultNotice struct {
-	Next []string `locale:"whats_next,What's Next?" json:"-"`
+type infoResultOutput struct {
+	out  output.Outputer
+	res  *infoResult
+	next []string
+}
+
+func (ro *infoResultOutput) MarshalOutput(format output.Format) interface{} {
+	if format != output.PlainFormatName {
+		return ro.res
+	}
+
+	print, res := ro.out.Print, ro.res
+
+	{
+		print(output.Heading(
+			locale.Tl(
+				"package_info_description_header",
+				"Details for version {{.V0}}",
+				res.latestVersion,
+			),
+		))
+		print(res.Description)
+		print("")
+		print(
+			struct {
+				PkgDetailsTable `opts:"verticalTable"`
+			}{res.PkgDetailsTable},
+		)
+	}
+
+	{
+		print(output.Heading(
+			locale.Tl(
+				"packages_info_versions_available",
+				"{{.V0}} Version(s) Available",
+				strconv.Itoa(len(res.Versions)),
+			),
+		))
+		print(res.Versions)
+	}
+
+	{
+		print(output.Heading(locale.Tl("packages_info_next_header", "What's next?")))
+		print(ro.next)
+	}
+
+	return output.Suppress
+}
+
+func whatsNextMessages(name string, versions []string) []string {
+	nextMsgs := make([]string, 0, 3)
+
+	nextMsgs = append(nextMsgs,
+		locale.Tl(
+			"install_latest_version",
+			"To install the latest version, run "+
+				"[ACTIONABLE]`state install {{.V0}}`[/RESET]",
+			name,
+		),
+	)
+
+	if len(versions) == 0 {
+		return nextMsgs
+	}
+	version := versions[0]
+
+	nextMsgs = append(nextMsgs,
+		locale.Tl(
+			"install_specific_version",
+			"To install a specific version, run "+
+				"[ACTIONABLE]`state install {{.V0}}@{{.V1}}[/RESET]`",
+			name, version,
+		),
+	)
+
+	if len(versions) > 1 {
+		version = versions[1]
+	}
+	nextMsgs = append(nextMsgs,
+		locale.Tl(
+			"show_specific_version",
+			"To view details for a specific version, run "+
+				"[ACTIONABLE]`state show {{.V0}}@{{.V1}}`[/RESET]",
+			name, version,
+		),
+	)
+
+	return nextMsgs
 }
