@@ -168,7 +168,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTerm() {
 		"+ 8 older versions",
 	}
 	for _, expectation := range expectations {
-		cp.Expect(expectation)
+		cp.ExpectLongString(expectation)
 	}
 	cp.ExpectExitCode(0)
 }
@@ -312,19 +312,19 @@ func (suite *PackageIntegrationTestSuite) TestPackage_headless_operation() {
 		cp := ts.Spawn("install", "dateparser@0.7.2")
 		cp.ExpectLongString("Do you want to continue as an anonymous user?")
 		cp.Send("Y")
-		cp.ExpectRe("(?:Package added|project is currently building)")
+		cp.ExpectRe("(?:Package added|project is currently building)", 30*time.Second)
 		cp.Wait()
 	})
 
 	suite.Run("install (update)", func() {
 		cp := ts.Spawn("install", "dateparser@0.7.6")
-		cp.ExpectRe("(?:Package updated|project is currently building)")
+		cp.ExpectRe("(?:Package updated|project is currently building)", 30*time.Second)
 		cp.Wait()
 	})
 
 	suite.Run("uninstall", func() {
 		cp := ts.Spawn("uninstall", "dateparser")
-		cp.ExpectRe("(?:Package uninstalled|project is currently building)")
+		cp.ExpectRe("(?:Package uninstalled|project is currently building)", 30*time.Second)
 		cp.Wait()
 	})
 }
