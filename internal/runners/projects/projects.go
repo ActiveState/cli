@@ -86,8 +86,8 @@ func (r *Projects) Run(params *Params) error {
 
 	var projects projectWithOrgs = []projectWithOrg{}
 	for namespace, checkouts := range localProjects {
-		ns, fail := project.ParseNamespace(namespace)
-		if fail != nil {
+		ns, err := project.ParseNamespace(namespace)
+		if err != nil {
 			logging.Error("Invalid project namespace stored to config mapping: %s", namespace)
 			continue
 		}

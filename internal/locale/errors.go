@@ -63,13 +63,13 @@ type ErrorInput interface {
 
 // NewError creates a new error, it does a locale.Tl lookup of the given id, if the lookup fails it will use the
 // locale string instead
-func NewError(id string, args ...string) error {
+func NewError(id string, args ...string) *LocalizedError {
 	return WrapError(nil, id, args...)
 }
 
 // WrapError creates a new error that wraps the given error, it does a locale.Tt lookup of the given id, if the lookup
 // fails it will use the locale string instead
-func WrapError(err error, id string, args ...string) error {
+func WrapError(err error, id string, args ...string) *LocalizedError {
 	locale := id
 	if len(args) > 0 {
 		locale, args = args[0], args[1:]
@@ -85,15 +85,18 @@ func WrapError(err error, id string, args ...string) error {
 }
 
 // NewInputError is like NewError but marks it as an input error
-func NewInputError(id string, args ...string) error {
+func NewInputError(id string, args ...string) *LocalizedError {
 	return WrapInputError(nil, id, args...)
 }
 
 // WrapInputError is like WrapError but marks it as an input error
-func WrapInputError(err error, id string, args ...string) error {
+func WrapInputError(err error, id string, args ...string) *LocalizedError {
 	locale := id
 	if len(args) > 0 {
 		locale, args = args[0], args[1:]
+	}
+	if locale == "" {
+		locale = id
 	}
 
 	l := &LocalizedError{}
@@ -122,9 +125,9 @@ func IsInputError(err error) bool {
 	if err == nil {
 		return false
 	}
-	var errInput ErrorInput = &LocalizedError{}
-	for err != nil && errors.As(err, &errInput) {
-		if errors.As(err, &errInput) && errInput.InputError() {
+	for err != nil {
+		errInput, ok := err.(ErrorInput)
+		if ok && errInput.InputError() {
 			return true
 		}
 		err = errors.Unwrap(err)
@@ -132,19 +135,12 @@ func IsInputError(err error) bool {
 	return false
 }
 
-type failure interface {
-	IsFailure()
-}
-
 // JoinErrors joins all error messages in the Unwrap stack that are localized
-func JoinErrors(err error, sep string) error {
+func JoinErrors(err error, sep string) *LocalizedError {
 	var message []string
 	for err != nil {
 		if errr, ok := err.(ErrorLocalizer); ok {
 			message = append(message, errr.UserError())
-		}
-		if _, ok := err.(failure); ok { // For now we include failures, but this is a deprecated mechanic
-			message = append(message, err.Error())
 		}
 		err = errors.Unwrap(err)
 	}
@@ -162,22 +158,11 @@ func UnwrapError(err error) []error {
 	var errs []error
 	for err != nil {
 		_, isLocaleError := err.(ErrorLocalizer)
-		_, isFailure := err.(failure)
-		if isLocaleError || isFailure {
+		if isLocaleError {
 			errs = append(errs, err)
 		}
 		err = errors.Unwrap(err)
 	}
 
-	// Filter out failures that are not at the start or end, because failures were ALWAYS localized there's a ton of
-	// redundancy in their reporting
-	var resultErrs []error
-	for n, err := range errs {
-		_, isFailure := err.(failure)
-		if n == 0 || n == len(errs)-1 || !isFailure {
-			resultErrs = append(resultErrs, err)
-		}
-	}
-
-	return resultErrs
+	return errs
 }

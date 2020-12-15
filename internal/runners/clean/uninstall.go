@@ -6,14 +6,13 @@ import (
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 )
 
 type confirmAble interface {
-	Confirm(title, message string, defaultChoice bool) (bool, *failures.Failure)
+	Confirm(title, message string, defaultChoice bool) (bool, error)
 }
 
 type Uninstall struct {
@@ -58,9 +57,9 @@ func (u *Uninstall) Run(params *UninstallParams) error {
 	}
 
 	if !params.Force {
-		ok, fail := u.confirm.Confirm(locale.T("confirm"), locale.T("uninstall_confirm"), false)
-		if fail != nil {
-			return fail.ToError()
+		ok, err := u.confirm.Confirm(locale.T("confirm"), locale.T("uninstall_confirm"), false)
+		if err != nil {
+			return err
 		}
 		if !ok {
 			return nil

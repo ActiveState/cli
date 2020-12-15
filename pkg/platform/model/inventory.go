@@ -1,29 +1,20 @@
 package model
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 
 	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/retryhttp"
-	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-)
-
-var (
-	// FailIngredients is a failure in calling the ingredients endpoint
-	FailIngredients = failures.Type("model.fail.ingredients", api.FailUnknown)
-	// FailPlatforms is a failure in calling the platforms endpoint
-	FailPlatforms = failures.Type("model.fail.platforms", api.FailUnknown)
-	// FailNoPlatformData indicates when no platform data is available after filtering.
-	FailNoPlatformData = failures.Type("model.fail.noplatformdata", failures.FailUser)
 )
 
 // IngredientAndVersion is a sane version of whatever the hell it is go-swagger thinks it's doing
@@ -38,16 +29,18 @@ type Platform = inventory_models.Platform
 
 var platformCache []*Platform
 
+type IngredientNotFoundError struct{ error }
+
 // IngredientByNameAndVersion fetches an ingredient that matches the given name and version. If version is empty the first
 // matching ingredient will be returned.
 func IngredientByNameAndVersion(name, version string, ns Namespace) (*IngredientAndVersion, error) {
-	results, fail := searchIngredientsNamespace(50, ns, name)
-	if fail != nil {
-		return nil, fail.ToError()
+	results, err := searchIngredientsNamespace(50, ns, name)
+	if err != nil {
+		return nil, err
 	}
 
 	if len(results) == 0 {
-		return nil, locale.NewInputError("inventory_ingredient_not_available", "The ingredient {{.V0}} is not available on the ActiveState Platform", name)
+		return nil, &IngredientNotFoundError{errors.New(locale.Tl("inventory_ingredient_not_available", "The ingredient {{.V0}} is not available on the ActiveState Platform", name))}
 	}
 
 	for _, ingredient := range results {
@@ -68,18 +61,18 @@ func IngredientByNameAndVersion(name, version string, ns Namespace) (*Ingredient
 		}
 	}
 
-	return nil, locale.NewInputError("inventory_ingredient_version_not_available", "Version {{.V0}} is not available for package {{.V1}} on the ActiveState Platform", version, name)
+	return nil, &IngredientNotFoundError{errors.New(locale.Tl("inventory_ingredient_no_version_available", "No versions are available for package {{.V0}} on the ActiveState Platform", name))}
 }
 
 // IngredientWithLatestVersion will grab the latest available ingredient and ingredientVersion that matches the ingredient name
 func IngredientWithLatestVersion(name string, ns Namespace) (*IngredientAndVersion, error) {
-	results, fail := searchIngredientsNamespace(50, ns, name)
-	if fail != nil {
-		return nil, fail.ToError()
+	results, err := searchIngredientsNamespace(50, ns, name)
+	if err != nil {
+		return nil, err
 	}
 
 	if len(results) == 0 {
-		return nil, locale.NewInputError("inventory_ingredient_not_available", "The ingredient {{.V0}} is not available on the ActiveState Platform", name)
+		return nil, &IngredientNotFoundError{errors.New(locale.Tl("inventory_ingredient_not_available", "The ingredient {{.V0}} is not available on the ActiveState Platform", name))}
 	}
 
 	for _, res := range results {
@@ -96,21 +89,21 @@ func IngredientWithLatestVersion(name string, ns Namespace) (*IngredientAndVersi
 		}
 	}
 
-	return nil, locale.NewInputError("inventory_ingredient_no_version_available", "No versions are available for package {{.V0}} on the ActiveState Platform", name)
+	return nil, &IngredientNotFoundError{errors.New(locale.Tl("inventory_ingredient_no_version_available", "No versions are available for package {{.V0}} on the ActiveState Platform", name))}
 }
 
 // SearchIngredients will return all ingredients+ingredientVersions that fuzzily
 // match the ingredient name.
-func SearchIngredients(namespace Namespace, name string) ([]*IngredientAndVersion, *failures.Failure) {
+func SearchIngredients(namespace Namespace, name string) ([]*IngredientAndVersion, error) {
 	return searchIngredientsNamespace(50, namespace, name)
 }
 
 // SearchIngredientsStrict will return all ingredients+ingredientVersions that
 // strictly match the ingredient name.
-func SearchIngredientsStrict(namespace Namespace, name string) ([]*IngredientAndVersion, *failures.Failure) {
-	results, fail := searchIngredientsNamespace(50, namespace, name)
-	if fail != nil {
-		return nil, fail
+func SearchIngredientsStrict(namespace Namespace, name string) ([]*IngredientAndVersion, error) {
+	results, err := searchIngredientsNamespace(50, namespace, name)
+	if err != nil {
+		return nil, err
 	}
 
 	ingredients := results[:0]
@@ -123,7 +116,7 @@ func SearchIngredientsStrict(namespace Namespace, name string) ([]*IngredientAnd
 	return ingredients, nil
 }
 
-func searchIngredientsNamespace(limit int, ns Namespace, name string) ([]*IngredientAndVersion, *failures.Failure) {
+func searchIngredientsNamespace(limit int, ns Namespace, name string) ([]*IngredientAndVersion, error) {
 	lim := int64(limit)
 
 	client := inventory.Get()
@@ -137,9 +130,9 @@ func searchIngredientsNamespace(limit int, ns Namespace, name string) ([]*Ingred
 	results, err := client.SearchIngredients(params, authentication.ClientAuth())
 	if err != nil {
 		if sidErr, ok := err.(*inventory_operations.SearchIngredientsDefault); ok {
-			return nil, FailIngredients.New(*sidErr.Payload.Message)
+			return nil, locale.NewError(*sidErr.Payload.Message)
 		}
-		return nil, FailIngredients.Wrap(err)
+		return nil, errs.Wrap(err, "SearchIngredients failed")
 	}
 
 	ingredients := []*IngredientAndVersion{}
@@ -151,7 +144,7 @@ func searchIngredientsNamespace(limit int, ns Namespace, name string) ([]*Ingred
 	return ingredients, nil
 }
 
-func FetchPlatforms() ([]*Platform, *failures.Failure) {
+func FetchPlatforms() ([]*Platform, error) {
 	if platformCache == nil {
 		client := inventory.Get()
 
@@ -162,7 +155,7 @@ func FetchPlatforms() ([]*Platform, *failures.Failure) {
 
 		response, err := client.GetPlatforms(params)
 		if err != nil {
-			return nil, FailPlatforms.Wrap(err)
+			return nil, errs.Wrap(err, "GetPlatforms failed")
 		}
 
 		// remove unwanted platforms
@@ -184,19 +177,19 @@ func FetchPlatforms() ([]*Platform, *failures.Failure) {
 	return platformCache, nil
 }
 
-func FetchPlatformsForCommit(commitID strfmt.UUID) ([]*Platform, *failures.Failure) {
-	checkpt, _, fail := FetchCheckpointForCommit(commitID)
-	if fail != nil {
-		return nil, fail
+func FetchPlatformsForCommit(commitID strfmt.UUID) ([]*Platform, error) {
+	checkpt, _, err := FetchCheckpointForCommit(commitID)
+	if err != nil {
+		return nil, err
 	}
 
 	platformIDs := CheckpointToPlatforms(checkpt)
 
 	var platforms []*Platform
 	for _, pID := range platformIDs {
-		platform, fail := FetchPlatformByUID(pID)
-		if fail != nil {
-			return nil, fail
+		platform, err := FetchPlatformByUID(pID)
+		if err != nil {
+			return nil, err
 		}
 
 		platforms = append(platforms, platform)
@@ -205,10 +198,10 @@ func FetchPlatformsForCommit(commitID strfmt.UUID) ([]*Platform, *failures.Failu
 	return platforms, nil
 }
 
-func filterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID) ([]strfmt.UUID, *failures.Failure) {
-	runtimePlatforms, fail := FetchPlatforms()
-	if fail != nil {
-		return nil, fail
+func filterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID) ([]strfmt.UUID, error) {
+	runtimePlatforms, err := FetchPlatforms()
+	if err != nil {
+		return nil, err
 	}
 
 	var pids []strfmt.UUID
@@ -243,18 +236,18 @@ func filterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID)
 	}
 
 	if len(pids) == 0 {
-		return nil, FailNoPlatformData.New(
-			"err_no_platform_data_remains", hostPlatform, hostArch,
+		return nil, locale.NewInputError(
+			"err_no_platform_data_remains", "", hostPlatform, hostArch,
 		)
 	}
 
 	return pids, nil
 }
 
-func FetchPlatformByUID(uid strfmt.UUID) (*Platform, *failures.Failure) {
-	platforms, fail := FetchPlatforms()
-	if fail != nil {
-		return nil, fail
+func FetchPlatformByUID(uid strfmt.UUID) (*Platform, error) {
+	platforms, err := FetchPlatforms()
+	if err != nil {
+		return nil, err
 	}
 
 	for _, platform := range platforms {
@@ -266,10 +259,10 @@ func FetchPlatformByUID(uid strfmt.UUID) (*Platform, *failures.Failure) {
 	return nil, nil
 }
 
-func FetchPlatformByDetails(name, version string, word int) (*Platform, *failures.Failure) {
-	runtimePlatforms, fail := FetchPlatforms()
-	if fail != nil {
-		return nil, fail
+func FetchPlatformByDetails(name, version string, word int) (*Platform, error) {
+	runtimePlatforms, err := FetchPlatforms()
+	if err != nil {
+		return nil, err
 	}
 
 	lower := strings.ToLower
@@ -301,22 +294,22 @@ func FetchPlatformByDetails(name, version string, word int) (*Platform, *failure
 
 	details := fmt.Sprintf("%s %d %s", name, word, version)
 
-	return nil, FailUnsupportedPlatform.New("err_unsupported_platform", details)
+	return nil, locale.NewInputError("err_unsupported_platform", "", details)
 }
 
-func FetchLanguageForCommit(commitID strfmt.UUID) (*Language, *failures.Failure) {
-	checkpt, _, fail := FetchCheckpointForCommit(commitID)
-	if fail != nil {
-		return nil, fail
+func FetchLanguageForCommit(commitID strfmt.UUID) (*Language, error) {
+	checkpt, _, err := FetchCheckpointForCommit(commitID)
+	if err != nil {
+		return nil, err
 	}
 
 	return CheckpointToLanguage(checkpt)
 }
 
-func FetchLanguageByDetails(name, version string) (*Language, *failures.Failure) {
-	languages, fail := FetchLanguages()
-	if fail != nil {
-		return nil, fail
+func FetchLanguageByDetails(name, version string) (*Language, error) {
+	languages, err := FetchLanguages()
+	if err != nil {
+		return nil, err
 	}
 
 	for _, language := range languages {
@@ -325,13 +318,13 @@ func FetchLanguageByDetails(name, version string) (*Language, *failures.Failure)
 		}
 	}
 
-	return nil, failures.FailUser.New(locale.Tr("err_language_not_found", name, version))
+	return nil, locale.NewInputError("err_language_not_found", "", name, version)
 }
 
-func FetchLanguageVersions(name string) ([]string, *failures.Failure) {
-	languages, fail := FetchLanguages()
-	if fail != nil {
-		return nil, fail
+func FetchLanguageVersions(name string) ([]string, error) {
+	languages, err := FetchLanguages()
+	if err != nil {
+		return nil, err
 	}
 
 	var versions []string
@@ -344,7 +337,7 @@ func FetchLanguageVersions(name string) ([]string, *failures.Failure) {
 	return versions, nil
 }
 
-func FetchLanguages() ([]Language, *failures.Failure) {
+func FetchLanguages() ([]Language, error) {
 	client := inventory.Get()
 
 	params := inventory_operations.NewGetNamespaceIngredientsParams()
@@ -355,7 +348,7 @@ func FetchLanguages() ([]Language, *failures.Failure) {
 
 	res, err := client.GetNamespaceIngredients(params, authentication.ClientAuth())
 	if err != nil {
-		return nil, FailNoLanguages.Wrap(err)
+		return nil, errs.Wrap(err, "GetNamespaceIngredients failed")
 	}
 
 	var languages []Language

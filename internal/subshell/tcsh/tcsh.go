@@ -5,7 +5,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
@@ -45,10 +45,10 @@ func (v *SubShell) SetBinary(binary string) {
 }
 
 // WriteUserEnv - see subshell.SubShell
-func (v *SubShell) WriteUserEnv(env map[string]string, envType sscommon.EnvData, _ bool) *failures.Failure {
+func (v *SubShell) WriteUserEnv(env map[string]string, envType sscommon.EnvData, _ bool) error {
 	homeDir, err := fileutils.HomeDir()
 	if err != nil {
-		return failures.FailIO.Wrap(err)
+		return errs.Wrap(err, "IO failure")
 	}
 
 	env = sscommon.EscapeEnv(env)
@@ -77,7 +77,7 @@ func (v *SubShell) Quote(value string) string {
 }
 
 // Activate - see subshell.SubShell
-func (v *SubShell) Activate(out output.Outputer) *failures.Failure {
+func (v *SubShell) Activate(out output.Outputer) error {
 	// This is horrible but it works.  tcsh doesn't offer a way to override the rc file and
 	// doesn't let us run a script and then drop to interactive mode.  So we source the
 	// state rc file and then chain an exec which inherits the environment we just set up.
@@ -87,9 +87,9 @@ func (v *SubShell) Activate(out output.Outputer) *failures.Failure {
 	// tcsh does not export prompt.  This may be intractable.  I couldn't figure out a
 	// hack to make it work.
 	env := sscommon.EscapeEnv(v.env)
-	var fail *failures.Failure
-	if v.rcFile, fail = sscommon.SetupProjectRcFile("tcsh.sh", "", env, out); fail != nil {
-		return fail
+	var err error
+	if v.rcFile, err = sscommon.SetupProjectRcFile("tcsh.sh", "", env, out); err != nil {
+		return err
 	}
 
 	shellArgs := []string{"-c", "source " + v.rcFile.Name() + " ; exec " + v.Binary()}
@@ -109,13 +109,13 @@ func (v *SubShell) Errors() <-chan error {
 }
 
 // Deactivate - see subshell.SubShell
-func (v *SubShell) Deactivate() *failures.Failure {
+func (v *SubShell) Deactivate() error {
 	if !v.IsActive() {
 		return nil
 	}
 
-	if fail := sscommon.Stop(v.cmd); fail != nil {
-		return fail
+	if err := sscommon.Stop(v.cmd); err != nil {
+		return err
 	}
 
 	v.cmd = nil

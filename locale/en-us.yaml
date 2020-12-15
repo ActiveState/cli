@@ -86,7 +86,7 @@ update_hash_mismatch:
 err_project_file_unavailable:
   other: Could not load the project file
 err_project_unavailable:
-  other: Could not load the project
+  other: "Could not load the project: {{.V0}}"
 err_failure_test:
   other: one {{.V0}} three {{.V1}}
 distro_obtaining:
@@ -585,7 +585,7 @@ secrets_err_encrypting:
 secrets_err_decrypting:
   other: "Error decrypting a user's Secret: [NOTICE]{{.V0}}[/RESET]"
 secrets_err_save:
-  other: Error updating user's Secrets
+  other: "Error updating user's Secrets: {{.V0}}"
 secrets_err_base64_decoding:
   other: Error base64 decoding variable value
 secrets_err_no_publickey_found:
@@ -961,11 +961,11 @@ downloading_artifacts:
   other: "Downloading missing artifacts"
 installing_artifacts:
   other: "Updating missing artifacts"
-fileutils_err_ammend_file:
+fileutils_err_amend_file:
   other: "Could not edit file: [NOTICE]{{.V0}}[/RESET]"
 err_auth_empty_token:
   other: The provided token is empty
-fail_prompt_bad_flag:
+err_prompt_bad_flag:
   other: Could not validate input due to an unexpected flag, please contact support if this problem persists
 err_invalid_project:
   other: Your activestate.yaml is missing the 'project' field.
@@ -1129,8 +1129,6 @@ bundle_updated:
   other: "Bundle updated: [NOTICE]{{.V0}}[/RESET]"
 bundle_version_updated:
   other: "Bundle updated: [NOTICE]{{.V0}}@{{.V1}}[/RESET]"
-package_ingredient_err:
-  other: Failed to resolve an ingredient named {{.V0}}.
 package_headless_added:
   other: "Package added: [NOTICE]{{.V0}}[/RESET]"
 package_headless_updated:
@@ -1257,11 +1255,11 @@ field_id:
 field_changes:
   other: Changes
 change_added:
-  other: "added {{.V0}} {{.V1}}"
+  other: "[SUCCESS]+[/RESET] {{.V0}} {{.V1}}"
 change_removed:
-  other: "removed {{.V0}}"
+  other: "[ERROR]+[/RESET] {{.V0}}"
 change_updated:
-  other: "{{.V0}} updated from {{.V1}} to {{.V2}}"
+  other: "[ACTIONABLE]•[/RESET] {{.V0}} ({{.V1}} → {{.V2}})"
 namespace_label_platform:
   other: "Platform"
 namespace_label_preplatform:
@@ -1394,11 +1392,11 @@ deploy_cmd_description:
 deploy_install_cmd_description:
   other: Only install the runtime environment files, but do not configure it in any way (effectively caches the runtime environment)
 deploy_configure_cmd_description:
-  other: Configure the runtime environment for your current shell (must have ran install first or this will fail)
+  other: Configure the runtime environment for your current shell (must have ran install first or this will err)
 deploy_symlink_cmd_description:
-  other: Symlink the executables to your PATH and to the target directory (must have ran install first or this will fail)
+  other: Symlink the executables to your PATH and to the target directory (must have ran install first or this will err)
 deploy_report_cmd_description:
-  other: Reports information about the deployed runtime environment, useful for further manual setup (must have ran install first or this will fail)
+  other: Reports information about the deployed runtime environment, useful for further manual setup (must have ran install first or this will err)
 field_binarydirectories:
   other: Binary Directories
 field_environment:
@@ -1621,3 +1619,7 @@ err_no_projectfile:
   other: No activestate.yaml file exists in the current working directory or its parent directories.
 err_non_interactive_prompt:
   other: Prompt "{{.V0}}" cannot be resolved in non-interactive mode.
+err_read_projectfile:
+  other: The activestate.yaml at {{.V0}} could not be read.
+err_auth_fail_totp:
+  other: A two-factor authentication code is required.

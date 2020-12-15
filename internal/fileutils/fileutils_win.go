@@ -50,11 +50,11 @@ func IsWritable(path string) bool {
 
 	box := packr.NewBox("../../assets/scripts")
 	contents := box.String("IsWritable.ps1")
-	scriptFile, fail := WriteTempFile(
+	scriptFile, err := WriteTempFile(
 		"", "IsWritable*.ps1", []byte(contents), 0700,
 	)
-	if fail != nil {
-		logging.Error("Could not create temporary powershell file: %v", fail)
+	if err != nil {
+		logging.Error("Could not create temporary powershell file: %v", err)
 		return false
 	}
 
@@ -77,7 +77,7 @@ func IsWritable(path string) bool {
 
 func isWritableTempFile(path string) bool {
 	fpath := filepath.Join(path, uuid.New().String())
-	if fail := Touch(fpath); fail != nil {
+	if err := Touch(fpath); err != nil {
 		return false
 	}
 

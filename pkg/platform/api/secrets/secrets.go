@@ -6,10 +6,11 @@ import (
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api"
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_client"
 	secretsapiClient "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_client/secrets"
 	secretsModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
@@ -17,26 +18,8 @@ import (
 )
 
 var (
-	// FailNotFound indicates a failure to find a user's resource.
-	FailNotFound = failures.Type("secrets-api.fail.not_found", failures.FailUser)
-
-	// FailKeypairNotFound indicates a failure to find a keypair.
-	FailKeypairNotFound = failures.Type("secrets-api.fail.keypair.not_found", FailNotFound)
-
-	// FailPublicKeyNotFound indicates a failure to find a public-key.
-	FailPublicKeyNotFound = failures.Type("secrets-api.fail.publickey.not_found", FailNotFound)
-
-	// FailUserSecretNotFound indicates a failure to find a user secret.
-	FailUserSecretNotFound = failures.Type("secrets-api.fail.user_secret.not_found", FailNotFound)
-
-	// FailSave indicates a failure to save a user's resource.
-	FailSave = failures.Type("secrets-api.fail.save", failures.FailUser)
-
-	// FailKeypairSave indicates a failure to save a keypair.
-	FailKeypairSave = failures.Type("secrets-api.fail.keypair.save", FailSave)
-
-	// FailUserSecretSave indicates a failure to save a user secret.
-	FailUserSecretSave = failures.Type("secrets-api.fail.user_secret.save", FailSave)
+	ErrNotFound   = errs.New("Secret not found")
+	ErKeypairSave = errs.New("Could not save keypair")
 )
 
 // Scope covers what scope a secret belongs to
@@ -46,7 +29,7 @@ var (
 	// ScopeUser is the user scope
 	ScopeUser Scope = "user"
 
-	//ScopeProject is the project scope
+	// ScopeProject is the project scope
 	ScopeProject Scope = "project"
 )
 
@@ -115,13 +98,13 @@ func Get() *Client {
 // AuthenticatedUserID will check with the Secrets Service to ensure the current Bearer token
 // is a valid one and return the user's UID in the response. Otherwise, this function will return
 // a Failure.
-func (client *Client) AuthenticatedUserID() (strfmt.UUID, *failures.Failure) {
+func (client *Client) AuthenticatedUserID() (strfmt.UUID, error) {
 	resOk, err := client.Authentication.GetWhoami(nil, authentication.Get().ClientAuth())
 	if err != nil {
 		if api.ErrorCode(err) == 401 {
-			return "", api.FailAuth.New("err_api_not_authenticated")
+			return "", locale.NewInputError("err_api_not_authenticated")
 		}
-		return "", api.FailAuth.Wrap(err)
+		return "", errs.Wrap(err, "Whoami failed")
 	}
 	return *resOk.Payload.UID, nil
 }
@@ -132,38 +115,38 @@ func (client *Client) Persist() {
 }
 
 // FetchAll fetchs the current user's secrets for an organization.
-func FetchAll(client *Client, org *mono_models.Organization) ([]*secretsModels.UserSecret, *failures.Failure) {
+func FetchAll(client *Client, org *mono_models.Organization) ([]*secretsModels.UserSecret, error) {
 	params := secretsapiClient.NewGetAllUserSecretsParams()
 	params.OrganizationID = org.OrganizationID
 	getOk, err := client.Secrets.Secrets.GetAllUserSecrets(params, authentication.Get().ClientAuth())
 	if err != nil {
 		switch statusCode := api.ErrorCode(err); statusCode {
 		case 401:
-			return nil, api.FailAuth.New("err_api_not_authenticated")
+			return nil, locale.NewInputError("err_api_not_authenticated")
 		default:
-			return nil, api.FailUnknown.Wrap(err)
+			return nil, errs.Wrap(err, "GetAllUserSecrets failed")
 		}
 	}
 	return getOk.Payload, nil
 }
 
 // FetchDefinitions fetchs the secret definitions for a given project.
-func FetchDefinitions(client *Client, projectID strfmt.UUID) ([]*secretsModels.SecretDefinition, *failures.Failure) {
+func FetchDefinitions(client *Client, projectID strfmt.UUID) ([]*secretsModels.SecretDefinition, error) {
 	params := secretsapiClient.NewGetDefinitionsParams()
 	params.ProjectID = projectID
 	getOk, err := client.Secrets.Secrets.GetDefinitions(params, authentication.Get().ClientAuth())
 	if err != nil {
 		switch statusCode := api.ErrorCode(err); statusCode {
 		case 401:
-			return nil, api.FailAuth.New("err_api_not_authenticated")
+			return nil, locale.NewInputError("err_api_not_authenticated")
 		default:
-			return nil, api.FailUnknown.Wrap(err)
+			return nil, errs.Wrap(err, "GetDefinitions failed")
 		}
 	}
 	return getOk.Payload, nil
 }
 
-func SaveSecretShares(client *Client, org *mono_models.Organization, user *mono_models.User, shares []*secretsModels.UserSecretShare) *failures.Failure {
+func SaveSecretShares(client *Client, org *mono_models.Organization, user *mono_models.User, shares []*secretsModels.UserSecretShare) error {
 	params := secretsapiClient.NewShareUserSecretsParams()
 	params.OrganizationID = org.OrganizationID
 	params.UserID = user.UserID
@@ -171,7 +154,7 @@ func SaveSecretShares(client *Client, org *mono_models.Organization, user *mono_
 	_, err := client.Secrets.Secrets.ShareUserSecrets(params, authentication.Get().ClientAuth())
 	if err != nil {
 		logging.Debug("error sharing user secrets with %s: %v", user.Username, err)
-		return FailSave.New("secrets_err_save")
+		return locale.WrapError(err, "secrets_err_save", "", err.Error())
 	}
 	return nil
 }

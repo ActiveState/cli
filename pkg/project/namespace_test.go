@@ -16,24 +16,22 @@ func newUUID(uuid string) *strfmt.UUID {
 }
 
 func TestParseNamespace(t *testing.T) {
-	_, fail := ParseNamespace("valid/namespace")
-	assert.NoError(t, fail.ToError(), "should parse a valid namespace")
+	_, err := ParseNamespace("valid/namespace")
+	assert.NoError(t, err, "should parse a valid namespace")
 
-	_, fail = ParseNamespace("valid/namespace#a10-b11c12-d13e14-f15")
-	assert.NoError(t, fail.ToError(), "should parse a valid namespace with 'uuid'")
+	_, err = ParseNamespace("valid/namespace#a10-b11c12-d13e14-f15")
+	assert.NoError(t, err, "should parse a valid namespace with 'uuid'")
 
-	_, fail = ParseNamespace("valid/namespace#")
-	assert.NoError(t, fail.ToError(), "should parse a valid namespace with empty uuid")
+	_, err = ParseNamespace("valid/namespace#")
+	assert.NoError(t, err, "should parse a valid namespace with empty uuid")
 }
 
 func TestParseNamespace_Invalid(t *testing.T) {
-	_, fail := ParseNamespace("invalid-namespace")
-	assert.Error(t, fail.ToError(), "should get error with invalid namespace")
-	assert.Equal(t, FailInvalidNamespace.Name, fail.Type.Name)
+	_, err := ParseNamespace("invalid-namespace")
+	assert.Error(t, err, "should get error with invalid namespace")
 
-	_, fail = ParseNamespace("valid/namespace#invalidcommitid")
-	assert.Error(t, fail.ToError(), "should get error with valid namespace and invalid commit id (basic hex and dash filter)")
-	assert.Equal(t, FailInvalidNamespace.Name, fail.Type.Name)
+	_, err = ParseNamespace("valid/namespace#invalidcommitid")
+	assert.Error(t, err, "should get error with valid namespace and invalid commit id (basic hex and dash filter)")
 }
 
 func TestParseNamespaceOrConfigfile(t *testing.T) {

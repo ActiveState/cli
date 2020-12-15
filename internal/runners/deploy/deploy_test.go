@@ -2,8 +2,6 @@ package deploy
 
 import (
 	"testing"
-
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
@@ -13,15 +11,15 @@ import (
 
 type InstallableMock struct{}
 
-func (i *InstallableMock) Install() (envGetter envGetter, freshInstallation bool, fail *failures.Failure) {
+func (i *InstallableMock) Install() (envGetter envGetter, freshInstallation bool, err error) {
 	return nil, false, nil
 }
 
-func (i *InstallableMock) Env() (envGetter envGetter, fail *failures.Failure) {
+func (i *InstallableMock) Env() (envGetter envGetter, err error) {
 	return nil, nil
 }
 
-func (i *InstallableMock) IsInstalled() (bool, *failures.Failure) {
+func (i *InstallableMock) IsInstalled() (bool, error) {
 	return true, nil
 }
 

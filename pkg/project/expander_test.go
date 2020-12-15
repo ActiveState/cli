@@ -217,8 +217,8 @@ func TestExpandScriptPath(t *testing.T) {
 	assert.NoError(t, err, "Ran without failure")
 	assert.True(t, strings.HasSuffix(expanded, language.Python3.Ext()), fmt.Sprintf("%s should have suffix %s", expanded, language.Python3.Ext()))
 
-	contents, fail := fileutils.ReadFile(expanded)
-	require.NoError(t, fail.ToError())
+	contents, err := fileutils.ReadFile(expanded)
+	require.NoError(t, err)
 	assert.Contains(t, string(contents), language.Python3.Header(), "Has Python3 header")
 	assert.Contains(t, string(contents), "scriptValue", "Contains intended script value")
 }
@@ -229,7 +229,7 @@ func TestExpandScriptPathRecursive(t *testing.T) {
 	expanded, err := project.ExpandFromProject("$scripts.scriptRecursive", prj)
 	assert.NoError(t, err, "Ran without failure")
 
-	contents, fail := fileutils.ReadFile(expanded)
-	require.NoError(t, fail.ToError())
+	contents, err := fileutils.ReadFile(expanded)
+	require.NoError(t, err)
 	assert.NotContains(t, contents, "$scripts.scriptRecursive.path()")
 }

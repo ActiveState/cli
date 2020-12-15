@@ -1,16 +1,11 @@
 package model
 
 import (
-	"errors"
 	"time"
 )
 
 const (
 	ISO8601LocalTime = "2006-01-02T15:04:05"
-)
-
-var (
-	ErrMissingBranchProjectID = errors.New("missing branch proj id")
 )
 
 type Time struct {

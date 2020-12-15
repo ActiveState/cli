@@ -13,30 +13,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/constraints"
-	"github.com/ActiveState/cli/internal/failures"
-)
-
-var (
-	// FailExpandVariable identifies a failure during variable expansion.
-	FailExpandVariable = failures.Type("project.fail.expandvariable", failures.FailUser)
-
-	// FailExpandVariableBadCategory identifies a variable expansion failure due to a bad variable category.
-	FailExpandVariableBadCategory = failures.Type("project.fail.expandvariable.badcategory", FailExpandVariable)
-
-	// FailExpandVariableBadName identifies a variable expansion failure due to a bad variable name.
-	FailExpandVariableBadName = failures.Type("project.fail.expandvariable.badName", FailExpandVariable)
-
-	// FailExpandVariableRecursion identifies a variable expansion failure due to infinite recursion.
-	FailExpandVariableRecursion = failures.Type("project.fail.expandvariable.recursion", FailExpandVariable)
-
-	// FailExpanderBadName is used when an Expanders name is invalid.
-	FailExpanderBadName = failures.Type("project.fail.expander.badName", failures.FailVerify)
-
-	// FailExpanderNoFunc is used when no handler func is found for an Expander.
-	FailExpanderNoFunc = failures.Type("project.fail.expander.noFunc", failures.FailVerify)
-
-	// FailVarNotFound is used when no handler func is found for an Expander.
-	FailVarNotFound = failures.Type("project.fail.vars.notfound", FailExpandVariable)
 )
 
 // Expand will detect the active project and invoke ExpandFromProject with the given string
@@ -174,9 +150,9 @@ func expandPath(name string, script *Script) (string, error) {
 		languages = DefaultScriptLanguage()
 	}
 
-	sf, fail := scriptfile.NewEmpty(languages[0], name)
-	if fail != nil {
-		return "", fail.ToError()
+	sf, err := scriptfile.NewEmpty(languages[0], name)
+	if err != nil {
+		return "", err
 	}
 	script.setCachedFile(sf.Filename())
 
@@ -184,9 +160,9 @@ func expandPath(name string, script *Script) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	fail = sf.Write(v)
-	if fail != nil {
-		return "", fail.ToError()
+	err = sf.Write(v)
+	if err != nil {
+		return "", err
 	}
 
 	return sf.Filename(), nil

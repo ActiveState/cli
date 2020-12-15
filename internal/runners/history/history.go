@@ -1,7 +1,8 @@
 package history
 
 import (
-	"github.com/ActiveState/cli/internal/failures"
+	"github.com/go-openapi/strfmt"
+
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
@@ -10,11 +11,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/go-openapi/strfmt"
 )
-
-// FailUserNotFound is a failure due to the user not being found
-var FailUserNotFound = failures.Type("history.fail.usernotfound")
 
 type primeable interface {
 	primer.Projecter
@@ -41,9 +38,9 @@ func (h *History) Run(params *HistoryParams) error {
 	var commits []*mono_models.Commit
 	var err error
 	if params.Namespace != "" {
-		nsMeta, fail := project.ParseNamespace(params.Namespace)
-		if fail != nil {
-			return fail.ToError()
+		nsMeta, err := project.ParseNamespace(params.Namespace)
+		if err != nil {
+			return err
 		}
 
 		commits, err = model.CommitHistory(nsMeta.Owner, nsMeta.Project)
@@ -66,11 +63,12 @@ func (h *History) Run(params *HistoryParams) error {
 	}
 
 	authorIDs := authorIDsForCommits(commits)
-	orgs, fail := model.FetchOrganizationsByIDs(authorIDs)
-	if fail != nil {
-		return fail
+	orgs, err := model.FetchOrganizationsByIDs(authorIDs)
+	if err != nil {
+		return err
 	}
 
+	h.out.Print(locale.Tl("history_recent_changes", "Here are the most recent changes made to this project.\n"))
 	err = commit.PrintCommits(h.out, commits, orgs)
 	if err != nil {
 		return locale.WrapError(err, "err_history_print_commits", "Could not print commit history")

@@ -41,9 +41,9 @@ func (r *Uninstall) Run(params UninstallRunParams, nstype model.NamespaceType) e
 	}
 
 	// Commit the package
-	language, fail := model.LanguageForCommit(r.proj.CommitUUID())
-	if fail != nil {
-		return locale.WrapError(fail, "err_fetch_languages")
+	language, err := model.LanguageForCommit(r.proj.CommitUUID())
+	if err != nil {
+		return locale.WrapError(err, "err_fetch_languages")
 	}
 
 	ns := model.NewNamespacePkgOrBundle(language, nstype)

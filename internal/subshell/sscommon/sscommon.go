@@ -7,16 +7,10 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/sighandler"
-)
-
-var (
-	// FailSignalCmd represents a failure sending a system signal to a cmd
-	FailSignalCmd = failures.Type("sscommon.fail.signalcmd")
 )
 
 type silentExitCodeError struct {
@@ -70,7 +64,7 @@ func Start(cmd *exec.Cmd) chan error {
 }
 
 // Stop signals the provided command to terminate.
-func Stop(cmd *exec.Cmd) *failures.Failure {
+func Stop(cmd *exec.Cmd) error {
 	return stop(cmd)
 }
 
@@ -90,9 +84,9 @@ func RunFuncByBinary(binary string) RunFunc {
 }
 
 func runWithBash(env []string, name string, args ...string) error {
-	filePath, fail := osutils.BashifyPath(name)
-	if fail != nil {
-		return fail.ToError()
+	filePath, err := osutils.BashifyPath(name)
+	if err != nil {
+		return err
 	}
 
 	esc := osutils.NewBashEscaper()
@@ -110,16 +104,16 @@ func runWithCmd(env []string, name string, args ...string) error {
 	switch ext {
 	case ".py":
 		args = append([]string{name}, args...)
-		pythonPath, fail := binaryPathCmd(env, "python")
-		if fail != nil {
-			return fail
+		pythonPath, err := binaryPathCmd(env, "python")
+		if err != nil {
+			return err
 		}
 		name = pythonPath
 	case ".pl":
 		args = append([]string{name}, args...)
-		perlPath, fail := binaryPathCmd(env, "perl")
-		if fail != nil {
-			return fail
+		perlPath, err := binaryPathCmd(env, "perl")
+		if err != nil {
+			return err
 		}
 		name = perlPath
 	case ".bat":
@@ -138,7 +132,7 @@ func runWithCmd(env []string, name string, args ...string) error {
 		args = append([]string{linPath}, args...)
 		name = "bash"
 	default:
-		return failures.FailUser.New("err_sscommon_unsupported_language", ext)
+		return locale.NewInputError("err_sscommon_unsupported_language", "", ext)
 	}
 
 	return runDirect(env, name, args...)

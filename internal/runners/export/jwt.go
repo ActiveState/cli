@@ -1,7 +1,6 @@
 package export
 
 import (
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -25,7 +24,7 @@ func (j *JWT) Run(params *JWTParams) error {
 	logging.Debug("Execute")
 
 	if !j.Auth.Authenticated() {
-		return failures.FailUser.New(locale.T("err_command_requires_auth"))
+		return locale.NewError("User")
 	}
 
 	token := authentication.Get().BearerToken()

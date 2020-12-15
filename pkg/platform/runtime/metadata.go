@@ -6,15 +6,12 @@ import (
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
 )
 
-var (
-	// FailMetaDataNotDetected indicates a failure due to the metafile not being detected.
-	FailMetaDataNotDetected = failures.Type("runtime.metadata.notdetected", failures.FailIO, failures.FailNotFound)
-)
+type ErrMetaData struct{ *errs.WrapperError }
 
 // TargetedRelocation is a relocation instruction for files in a specific directory
 type TargetedRelocation struct {
@@ -62,18 +59,18 @@ type MetaDataBinary struct {
 }
 
 // InitMetaData will create an instance of MetaData based on the metadata.json file found under the given artifact install dir
-func InitMetaData(installDir string) (*MetaData, *failures.Failure) {
+func InitMetaData(installDir string) (*MetaData, error) {
 	var metaData *MetaData
 	metaFile := filepath.Join(installDir, constants.RuntimeMetaFile)
 	if fileutils.FileExists(metaFile) {
-		contents, fail := fileutils.ReadFile(metaFile)
-		if fail != nil {
-			return nil, fail
+		contents, err := fileutils.ReadFile(metaFile)
+		if err != nil {
+			return nil, err
 		}
 
-		metaData, fail = ParseMetaData(contents)
-		if fail != nil {
-			return nil, fail
+		metaData, err = ParseMetaData(contents)
+		if err != nil {
+			return nil, err
 		}
 	} else {
 		metaData = &MetaData{}
@@ -84,22 +81,22 @@ func InitMetaData(installDir string) (*MetaData, *failures.Failure) {
 	}
 
 	metaData.Path = installDir
-	fail := metaData.Prepare()
-	if fail != nil {
-		return nil, fail
+	err := metaData.Prepare()
+	if err != nil {
+		return nil, err
 	}
 
 	return metaData, nil
 }
 
 // ParseMetaData will parse the given bytes into the MetaData struct
-func ParseMetaData(contents []byte) (*MetaData, *failures.Failure) {
+func ParseMetaData(contents []byte) (*MetaData, error) {
 	metaData := &MetaData{
 		Env: make(map[string]string),
 	}
 	err := json.Unmarshal(contents, metaData)
 	if err != nil {
-		return nil, failures.FailMarshal.Wrap(err)
+		return nil, &ErrMetaData{errs.Wrap(err, "Unmarshal failed")}
 	}
 
 	// The JSON decoder does not recognize 0 and 1 as bools, so we have to get crafty

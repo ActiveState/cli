@@ -6,46 +6,39 @@ import (
 	"os"
 	"time"
 
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/fsnotify/fsnotify"
-)
 
-var (
-	// FailWatcherRead indicates a failure to read from a Watcher chan
-	FailWatcherRead = failures.Type("hail.fail.watcherread")
-
-	// FailWatcherInstance indicates a failure from an active Watcher
-	FailWatcherInstance = failures.Type("hail.fail.watcherinstance")
+	"github.com/ActiveState/cli/internal/errs"
 )
 
 // Received represents the data related to a message sent via watched file.
 type Received struct {
-	Open time.Time
-	Time time.Time
-	Data []byte
-	Fail *failures.Failure
+	Open  time.Time
+	Time  time.Time
+	Data  []byte
+	Error error
 }
 
-func newReceived(openedAt time.Time, data []byte, fail *failures.Failure) *Received {
+func newReceived(openedAt time.Time, data []byte, err error) *Received {
 	return &Received{
-		Open: openedAt,
-		Time: time.Now(),
-		Data: data,
-		Fail: fail,
+		Open:  openedAt,
+		Time:  time.Now(),
+		Data:  data,
+		Error: err,
 	}
 }
 
 // Send sends a hail by saving data to the file located by the file name
 // provided.
-func Send(file string, data []byte) *failures.Failure {
+func Send(file string, data []byte) error {
 	f, err := os.OpenFile(file, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0660)
 	if err != nil {
-		return failures.FailOS.Wrap(err)
+		return errs.Wrap(err, "OpenFile %s failed", file)
 	}
 	defer f.Close()
 
 	if _, err = f.Write(data); err != nil {
-		return failures.FailOS.Wrap(err)
+		return errs.Wrap(err, "Write %s failed", file)
 	}
 
 	return nil
@@ -54,18 +47,18 @@ func Send(file string, data []byte) *failures.Failure {
 // Open opens a channel for hailing. A *Received is sent in the returned
 // channel whenever the file located by the file name provided is created,
 // updated, or deleted.
-func Open(ctx context.Context, file string) (<-chan *Received, *failures.Failure) {
+func Open(ctx context.Context, file string) (<-chan *Received, error) {
 	openedAt := time.Now()
 
 	f, err := os.OpenFile(file, os.O_CREATE|os.O_APPEND, 0660)
 	if err != nil {
-		return nil, failures.FailOS.Wrap(err)
+		return nil, errs.Wrap(err, "OpenFile %s failed", file)
 	}
 	f.Close()
 
 	rcvs, err := monitor(ctx.Done(), openedAt, file)
 	if err != nil {
-		return nil, failures.FailOS.Wrap(err)
+		return nil, errs.Wrap(err, "monitor %s failed", file)
 	}
 
 	return rcvs, nil
@@ -103,14 +96,14 @@ func loop(done <-chan struct{}, w *watcher, rcvs chan<- *Received, t time.Time) 
 
 			r := newReceived(t, nil, nil)
 			if !ok {
-				r.Fail = FailWatcherRead.New(",events channel is closed")
+				r.Error = errs.New("events channel is closed")
 				rcvs <- r
 				return
 			}
 
 			data, err := w.data()
 			if err != nil {
-				r.Fail = failures.FailOS.Wrap(err)
+				r.Error = errs.Wrap(err, "watcher.data failed")
 				rcvs <- r
 				break
 			}
@@ -121,12 +114,12 @@ func loop(done <-chan struct{}, w *watcher, rcvs chan<- *Received, t time.Time) 
 		case err, ok := <-w.Errors:
 			r := newReceived(t, nil, nil)
 			if !ok {
-				r.Fail = FailWatcherRead.New("errors channel is closed")
+				r.Error = errs.New("errors channel is closed")
 				rcvs <- r
 				return
 			}
 			if err != nil {
-				r.Fail = FailWatcherInstance.Wrap(err)
+				r.Error = errs.Wrap(err, "watched failed")
 				rcvs <- r
 				break
 			}

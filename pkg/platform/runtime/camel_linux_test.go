@@ -15,7 +15,6 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/environment"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	pMock "github.com/ActiveState/cli/internal/progress/mock"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
@@ -71,8 +70,8 @@ func (suite *CamelLinuxRuntimeTestSuite) TestRelocate() {
 
 	counter := pMock.NewMockIncrementer()
 
-	fail := runtime.Relocate(metaData, func() { counter.Increment() })
-	suite.Require().NoError(fail.ToError())
+	err = runtime.Relocate(metaData, func() { counter.Increment() })
+	suite.Require().NoError(err)
 
 	suite.Assert().Equal(3, counter.Count, "3 files relocated")
 
@@ -94,13 +93,13 @@ func (suite *CamelLinuxRuntimeTestSuite) genCacheDir() (string, func()) {
 
 func (suite *CamelLinuxRuntimeTestSuite) Test_PostUnpackWithFailures() {
 	cases := []struct {
-		name            string
-		archiveName     string
-		expectedFailure *failures.FailureType
+		name          string
+		archiveName   string
+		expectedError error
 	}{
-		{"RuntimeMissingPythonExecutable", "python-missing-python-binary.tar.gz", runtime.FailMetaDataNotDetected},
-		{"PythonFoundButNotExecutable", "python-noexec-python.tar.gz", runtime.FailRuntimeNotExecutable},
-		{"InstallerFailsToGetPrefixes", "python-fail-prefixes.tar.gz", runtime.FailRuntimeNoPrefixes},
+		{"RuntimeMissingPythonExecutable", "python-missing-python-binary.tar.gz", &runtime.ErrMetaData{}},
+		{"PythonFoundButNotExecutable", "python-noexec-python.tar.gz", &runtime.ErrNotExecutable{}},
+		{"InstallerFailsToGetPrefixes", "python-fail-prefixes.tar.gz", &runtime.ErrNoPrefixes{}},
 	}
 
 	for _, tc := range cases {
@@ -118,14 +117,14 @@ func (suite *CamelLinuxRuntimeTestSuite) Test_PostUnpackWithFailures() {
 			artifact, _ := headchefArtifact(archivePath)
 			counter := pMock.NewMockIncrementer()
 
-			cr, fail := runtime.NewCamelInstall(strfmt.UUID(""), cacheDir, []*runtime.HeadChefArtifact{artifact})
-			suite.Require().NoError(fail.ToError(), "camel runtime assembler initialized")
-			fail = fileutils.MkdirUnlessExists(cacheDir)
-			suite.Require().NoError(fail.ToError(), "creating installation directory")
-			fail = cr.PostUnpackArtifact(artifact, runtimeDir, archivePath, func() { counter.Increment() })
+			cr, err := runtime.NewCamelInstall(strfmt.UUID(""), cacheDir, []*runtime.HeadChefArtifact{artifact})
+			suite.Require().NoError(err, "camel runtime assembler initialized")
+			err = fileutils.MkdirUnlessExists(cacheDir)
+			suite.Require().NoError(err, "creating installation directory")
+			err = cr.PostUnpackArtifact(artifact, runtimeDir, archivePath, func() { counter.Increment() })
 
-			suite.Require().Error(fail.ToError())
-			suite.Equal(tc.expectedFailure, fail.Type)
+			suite.Require().Error(err)
+			suite.ErrorAs(err, &tc.expectedError)
 			suite.Assert().Equal(0, counter.Count)
 		})
 	}

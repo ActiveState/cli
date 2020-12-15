@@ -50,11 +50,11 @@ scripts:
 	suite.Require().NoError(err, "unexpected error marshalling yaml")
 
 	suite.projectFile.SetPath(filepath.Join(tempDir, "activestate.yaml"))
-	fail := suite.projectFile.Save()
+	err = suite.projectFile.Save()
 	suite.Require().NoError(err, "should be able to save in temp dir")
 
-	suite.project, fail = project.New(suite.projectFile, nil)
-	suite.Require().NoError(fail.ToError(), "unexpected error creating project")
+	suite.project, err = project.New(suite.projectFile, nil)
+	suite.Require().NoError(err, "unexpected error creating project")
 
 	suite.originalEditor = os.Getenv("EDITOR")
 }
@@ -85,8 +85,8 @@ func (suite *EditTestSuite) TestCreateScriptFile_Expand() {
 	suite.scriptFile, err = createScriptFile(script, true)
 	suite.Require().NoError(err, "should create file")
 
-	content, fail := fileutils.ReadFile(suite.scriptFile.Filename())
-	suite.Require().NoError(fail.ToError(), "unexpected error reading file contents")
+	content, err := fileutils.ReadFile(suite.scriptFile.Filename())
+	suite.Require().NoError(err, "unexpected error reading file contents")
 	v, err := script.Value()
 	suite.Require().NoError(err)
 	suite.Equal(v, string(content))
@@ -124,8 +124,8 @@ func (suite *EditTestSuite) TestGetOpenCmd_EditorSet() {
 func (suite *EditTestSuite) TestGetOpenCmd_EditorSet_NotInPath() {
 	os.Setenv("EDITOR", "NotInPath")
 
-	_, fail := getOpenCmd()
-	suite.Require().Error(fail, "should get failure when editor is not in PATH")
+	_, err := getOpenCmd()
+	suite.Require().Error(err, "should get failure when editor is not in PATH")
 }
 
 func (suite *EditTestSuite) TestGetOpenCmd_EditorSet_InvalidFilepath() {
@@ -138,8 +138,8 @@ func (suite *EditTestSuite) TestGetOpenCmd_EditorSet_InvalidFilepath() {
 	}
 	os.Setenv("EDITOR", filepath.Join(wd, executeable))
 
-	_, fail := getOpenCmd()
-	suite.Require().Error(fail, "should get failure when editor in path does not exist")
+	_, err = getOpenCmd()
+	suite.Require().Error(err, "should get failure when editor in path does not exist")
 }
 
 func (suite *EditTestSuite) TestGetOpenCmd_EditorSet_NoExtensionWindows() {
@@ -152,8 +152,8 @@ func (suite *EditTestSuite) TestGetOpenCmd_EditorSet_NoExtensionWindows() {
 
 	os.Setenv("EDITOR", filepath.Join(wd, "executable"))
 
-	_, fail := getOpenCmd()
-	suite.Require().Error(fail, "should get failure when editor path does not have extension")
+	_, err = getOpenCmd()
+	suite.Require().Error(err, "should get failure when editor path does not have extension")
 }
 
 func (suite *EditTestSuite) TestGetOpenCmd_EditorNotSet() {

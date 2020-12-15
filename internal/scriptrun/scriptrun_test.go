@@ -18,7 +18,6 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/subshell"
@@ -35,7 +34,6 @@ func init() {
 }
 
 func TestRunStandaloneCommand(t *testing.T) {
-	failures.ResetHandled()
 
 	pjfile := &projectfile.Project{}
 	var contents string
@@ -60,13 +58,12 @@ scripts:
 	assert.Nil(t, err, "Unmarshalled YAML")
 	pjfile.Persist()
 
-	proj, fail := project.New(pjfile, nil)
-	require.NoError(t, fail.ToError())
+	proj, err := project.New(pjfile, nil)
+	require.NoError(t, err)
 
 	scriptRun := New(outputhelper.NewCatcher(), subshell.New(), proj)
 	err = scriptRun.Run(proj.ScriptByName("run"), []string{})
 	assert.NoError(t, err, "No error occurred")
-	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
 
 func TestEnvIsSet(t *testing.T) {
@@ -76,18 +73,17 @@ func TestEnvIsSet(t *testing.T) {
 		// as it's not worth the time and effort to debug.
 		return
 	}
-	failures.ResetHandled()
 
 	root, err := environment.GetRootPath()
 	require.NoError(t, err, "should detect root path")
 	prjPath := filepath.Join(root, "internal", "scriptrun", "testdata", "printEnv", "activestate.yaml")
 
-	pjfile, fail := projectfile.Parse(prjPath)
-	require.NoError(t, fail.ToError(), "parsing pjfile file")
+	pjfile, err := projectfile.Parse(prjPath)
+	require.NoError(t, err, "parsing pjfile file")
 	pjfile.Persist()
 
-	proj, fail := project.New(pjfile, nil)
-	require.NoError(t, fail.ToError())
+	proj, err := project.New(pjfile, nil)
+	require.NoError(t, err)
 
 	os.Setenv("TEST_KEY_EXISTS", "true")
 	os.Setenv(constants.DisableRuntime, "true")
@@ -100,7 +96,6 @@ func TestEnvIsSet(t *testing.T) {
 		scriptRun := New(outputhelper.NewCatcher(), subshell.New(), proj)
 		err = scriptRun.Run(proj.ScriptByName("run"), nil)
 		assert.NoError(t, err, "Error: "+errs.Join(err, ": ").Error())
-		assert.NoError(t, failures.Handled(), "No failure occurred")
 	})
 
 	assert.Contains(t, out, constants.ActivatedStateEnvVarName)
@@ -108,7 +103,6 @@ func TestEnvIsSet(t *testing.T) {
 }
 
 func TestRunNoProjectInheritance(t *testing.T) {
-	failures.ResetHandled()
 
 	pjfile := &projectfile.Project{}
 	var contents string
@@ -133,19 +127,17 @@ scripts:
 	assert.Nil(t, err, "Unmarshalled YAML")
 	pjfile.Persist()
 
-	proj, fail := project.New(pjfile, nil)
-	require.NoError(t, fail.ToError())
+	proj, err := project.New(pjfile, nil)
+	require.NoError(t, err)
 
 	out := outputhelper.NewCatcher()
 	scriptRun := New(out, subshell.New(), proj)
 	fmt.Println(proj.ScriptByName("run"))
 	err = scriptRun.Run(proj.ScriptByName("run"), nil)
 	assert.NoError(t, err, "No error occurred")
-	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
 
 func TestRunMissingScript(t *testing.T) {
-	failures.ResetHandled()
 
 	pjfile := &projectfile.Project{}
 	contents := strings.TrimSpace(`
@@ -158,17 +150,15 @@ scripts:
 	assert.Nil(t, err, "Unmarshalled YAML")
 	pjfile.Persist()
 
-	proj, fail := project.New(pjfile, nil)
-	require.NoError(t, fail.ToError())
+	proj, err := project.New(pjfile, nil)
+	require.NoError(t, err)
 
 	scriptRun := New(outputhelper.NewCatcher(), subshell.New(), proj)
 	err = scriptRun.Run(nil, nil)
 	assert.Error(t, err, "Error occurred")
-	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
 
 func TestRunUnknownCommand(t *testing.T) {
-	failures.ResetHandled()
 
 	pjfile := &projectfile.Project{}
 	contents := strings.TrimSpace(`
@@ -182,17 +172,15 @@ scripts:
 	assert.Nil(t, err, "Unmarshalled YAML")
 	pjfile.Persist()
 
-	proj, fail := project.New(pjfile, nil)
-	require.NoError(t, fail.ToError())
+	proj, err := project.New(pjfile, nil)
+	require.NoError(t, err)
 
 	scriptRun := New(outputhelper.NewCatcher(), subshell.New(), proj)
 	err = scriptRun.Run(proj.ScriptByName("run"), nil)
 	assert.Error(t, err, "Error occurred")
-	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
 
 func TestRunActivatedCommand(t *testing.T) {
-	failures.ResetHandled()
 
 	// Prepare an empty activated environment.
 	root, err := environment.GetRootPath()
@@ -226,14 +214,13 @@ scripts:
 	assert.Nil(t, err, "Unmarshalled YAML")
 	pjfile.Persist()
 
-	proj, fail := project.New(pjfile, nil)
-	require.NoError(t, fail.ToError())
+	proj, err := project.New(pjfile, nil)
+	require.NoError(t, err)
 
 	// Run the command.
 	scriptRun := New(outputhelper.NewCatcher(), subshell.New(), proj)
 	err = scriptRun.Run(proj.ScriptByName("run"), nil)
 	assert.NoError(t, err, "No error occurred")
-	assert.NoError(t, failures.Handled(), "No failure occurred")
 
 	// Reset.
 	projectfile.Reset()
@@ -248,8 +235,8 @@ func TestPathProvidesLang(t *testing.T) {
 		tf = filepath.Join(temp, "python3.exe")
 	}
 
-	fail := fileutils.Touch(tf)
-	require.NoError(t, fail.ToError())
+	err = fileutils.Touch(tf)
+	require.NoError(t, err)
 	defer os.Remove(temp)
 
 	require.NoError(t, os.Chmod(tf, 0770))
@@ -308,22 +295,19 @@ scripts:
 }
 
 func captureExecCommand(t *testing.T, tmplCmdName, cmdName string, cmdArgs []string) (string, error) {
-	failures.ResetHandled()
 
 	pjfile := setupProjectWithScriptsExpectingArgs(t, tmplCmdName)
 	pjfile.Persist()
 	defer projectfile.Reset()
 
-	proj, fail := project.New(pjfile, nil)
-	require.NoError(t, fail.ToError())
+	proj, err := project.New(pjfile, nil)
+	require.NoError(t, err)
 
-	var err error
 	outStr, outErr := osutil.CaptureStdout(func() {
 		scriptRun := New(outputhelper.NewCatcher(), subshell.New(), proj)
 		err = scriptRun.Run(proj.ScriptByName(cmdName), cmdArgs)
 	})
 	require.NoError(t, outErr, "error capturing stdout")
-	require.NoError(t, failures.Handled(), "No failures handled")
 
 	return outStr, err
 }

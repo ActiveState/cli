@@ -6,13 +6,13 @@ import (
 	"runtime"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 )
 
 // Prepare will assume the LibLocation in cases where the metadata
 // doesn't contain it and we know what it should be
-func (m *MetaData) Prepare() *failures.Failure {
+func (m *MetaData) Prepare() error {
 	// BinaryLocations
 	if m.BinaryLocations == nil || len(m.BinaryLocations) == 0 {
 		m.BinaryLocations = []MetaDataBinary{
@@ -37,9 +37,9 @@ func (m *MetaData) Prepare() *failures.Failure {
 		}
 		// RelocationDir
 		if m.RelocationDir == "" {
-			var fail *failures.Failure
-			if m.RelocationDir, fail = m.pythonRelocationDir(); fail != nil {
-				return fail
+			var err error
+			if m.RelocationDir, err = m.pythonRelocationDir(); err != nil {
+				return err
 			}
 		}
 		// Env
@@ -51,9 +51,9 @@ func (m *MetaData) Prepare() *failures.Failure {
 
 		// RelocationDir
 		if m.RelocationDir == "" {
-			var fail *failures.Failure
-			if m.RelocationDir, fail = m.perlRelocationDir(); fail != nil {
-				return fail
+			var err error
+			if m.RelocationDir, err = m.perlRelocationDir(); err != nil {
+				return err
 			}
 		}
 		// AffectedEnv
@@ -65,7 +65,7 @@ func (m *MetaData) Prepare() *failures.Failure {
 	}
 
 	if m.RelocationDir == "" {
-		return FailMetaDataNotDetected.New("installer_err_runtime_missing_meta", m.Path)
+		return locale.NewError("installer_err_runtime_missing_meta", "", m.Path)
 	}
 
 	return nil

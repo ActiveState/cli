@@ -1,6 +1,7 @@
 package checker
 
 import (
+	"errors"
 	"strconv"
 
 	"github.com/ActiveState/cli/internal/locale"
@@ -13,15 +14,15 @@ import (
 // RunCommitsBehindNotifier checks for the commits behind count based on the
 // provided project and displays the results to the user in a helpful manner.
 func RunCommitsBehindNotifier(out output.Outputer) {
-	p, fail := project.GetOnce()
-	if fail != nil {
-		logging.Warning("Could not retrieve project, error: %v", fail.Error())
+	p, err := project.GetOnce()
+	if err != nil {
+		logging.Warning("Could not retrieve project, error: %v", err.Error())
 		return
 	}
 
-	count, fail := model.CommitsBehindLatest(p.Owner(), p.Name(), p.CommitID())
-	if fail != nil {
-		if fail.Type.Matches(model.FailCommitCountUnknowable) {
+	count, err := model.CommitsBehindLatest(p.Owner(), p.Name(), p.CommitID())
+	if err != nil {
+		if errors.Is(err, model.ErrCommitCountUnknowable) {
 			out.Notice(output.Heading(locale.Tr("runtime_update_notice_unknown_count")))
 			out.Notice(locale.Tr("runtime_update_help", p.Owner(), p.Name()))
 			return

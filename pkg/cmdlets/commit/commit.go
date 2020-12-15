@@ -1,13 +1,12 @@
 package commit
 
 import (
-	"strings"
 	"time"
 
 	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	gmodel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
@@ -15,11 +14,11 @@ import (
 )
 
 type commitData struct {
-	Hash    string   `locale:"hash,Commit"`
-	Author  string   `locale:"author,Author"`
-	Date    string   `locale:"date,Date"`
-	Message string   `locale:"message,Commit Message"`
-	Changes []string `locale:"changes,Changes"`
+	Hash    string   `locale:"hash,[HEADING]Commit[/RESET]"`
+	Author  string   `locale:"author,[HEADING]Author[/RESET]"`
+	Date    string   `locale:"date,[HEADING]Date[/RESET]"`
+	Message string   `locale:"message,[HEADING]Commit Message[/RESET]"`
+	Changes []string `locale:"changes,[HEADING]Changes[/RESET]"`
 }
 
 func PrintCommit(out output.Outputer, commit *mono_models.Commit, orgs []gmodel.Organization) error {
@@ -27,7 +26,11 @@ func PrintCommit(out output.Outputer, commit *mono_models.Commit, orgs []gmodel.
 	if err != nil {
 		return err
 	}
-	out.Print(data)
+	out.Print(struct {
+		commitData `opts:"verticalTable" locale:","`
+	}{
+		data,
+	})
 
 	return nil
 }
@@ -41,7 +44,12 @@ func PrintCommits(out output.Outputer, commits []*mono_models.Commit, orgs []gmo
 		}
 		data = append(data, d)
 	}
-	out.Print(data)
+
+	out.Print(struct {
+		Data []commitData `opts:"verticalTable" locale:","`
+	}{
+		Data: data,
+	})
 
 	return nil
 }
@@ -56,21 +64,25 @@ func commitDataFromCommit(commit *mono_models.Commit, orgs []gmodel.Organization
 		}
 	}
 
-	return commitData{
-		Hash:    commit.CommitID.String(),
+	commitData := commitData{
+		Hash:    locale.Tl("print_commit_hash", "[ACTIONABLE]{{.V0}}[/RESET]", commit.CommitID.String()),
 		Author:  username,
-		Date:    time.Time(commit.Added).Format(constants.DateTimeFormatUser),
-		Message: commit.Message,
 		Changes: formatChanges(commit),
-	}, nil
-}
-
-func shortHash(commitID string) string {
-	split := strings.Split(commitID, "-")
-	if len(split) == 0 {
-		return ""
 	}
-	return split[0]
+
+	commitData.Date = commit.AtTime.String()
+	dt, err := time.Parse(time.RFC3339, commit.AtTime.String())
+	if err != nil {
+		logging.Error("Could not parse commit time: %v", err)
+	}
+	commitData.Date = dt.Format(time.RFC822)
+
+	commitData.Message = locale.Tl("print_commit_no_message", "[DISABLED]Not provided.[/RESET]")
+	if commit.Message != "" {
+		commitData.Message = commit.Message
+	}
+
+	return commitData, nil
 }
 
 func formatChanges(commit *mono_models.Commit) []string {
@@ -87,7 +99,8 @@ func formatChanges(commit *mono_models.Commit) []string {
 		results = append(results,
 			locale.Tr("change_"+change.Operation,
 				requirement, change.VersionConstraint, change.VersionConstraintOld,
-			))
+			),
+		)
 	}
 
 	return results

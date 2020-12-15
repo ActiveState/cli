@@ -6,13 +6,10 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
 )
-
-var FailGetWd = failures.Type("osutils.fail.getwd", failures.FailUser)
 
 // CmdExitCode returns the exit code of a command in a platform agnostic way
 // taken from https://www.reddit.com/r/golang/comments/1hvvnn/any_better_way_to_do_a_crossplatform_exec_and/caytqvr/
@@ -64,7 +61,7 @@ func ExecuteAndPipeStd(command string, arg []string, env []string) (int, *exec.C
 
 // BashifyPath takes a windows style path and turns it into a bash style path
 // eg. C:\temp becomes /c/temp
-func BashifyPath(absolutePath string) (string, *failures.Failure) {
+func BashifyPath(absolutePath string) (string, error) {
 	if absolutePath[0:1] == "/" {
 		// Already the format we want
 		return absolutePath, nil
@@ -72,7 +69,7 @@ func BashifyPath(absolutePath string) (string, *failures.Failure) {
 
 	if absolutePath[1:2] != ":" {
 		// Check for windows style paths
-		return "", failures.FailInput.New(fmt.Sprintf("Unrecognized absolute path format: %s", absolutePath))
+		return "", errs.New("Unrecognized absolute path format: %s", absolutePath)
 	}
 
 	absolutePath = strings.ToLower(absolutePath[0:1]) + absolutePath[2:]
@@ -85,7 +82,7 @@ func BashifyPath(absolutePath string) (string, *failures.Failure) {
 func Getwd() (string, error) {
 	r, err := os.Getwd()
 	if err != nil {
-		return "", FailGetWd.New("err_getwd", err.Error(), constants.ForumsURL)
+		return "", errs.Wrap(err, "GetWd failed")
 	}
 	return r, nil
 }

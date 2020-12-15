@@ -34,13 +34,13 @@ func (s *Set) Run(params SetRunParams) error {
 		return locale.WrapError(err, "secrets_err_check_access")
 	}
 
-	secret, fail := getSecret(s.proj, params.Name)
-	if fail != nil {
-		return locale.WrapError(fail, "secrets_err_values")
+	secret, err := getSecret(s.proj, params.Name)
+	if err != nil {
+		return locale.WrapError(err, "secrets_err_values")
 	}
 
-	if fail = secret.Save(params.Value); fail != nil {
-		return locale.WrapError(fail, "secrets_err_try_save", "Cannot save secret")
+	if err = secret.Save(params.Value); err != nil {
+		return locale.WrapError(err, "secrets_err_try_save", "Cannot save secret")
 	}
 
 	return nil

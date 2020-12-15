@@ -1,7 +1,7 @@
 package keypairs
 
 import (
-	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_client/keys"
@@ -9,57 +9,22 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
-var (
-	// FailCrypto indicates a failure with something crypto related.
-	FailCrypto = failures.Type("keypairs.fail.crypto")
-
-	// FailKeypair represents a failure to successfully work with a Keypair.
-	FailKeypair = failures.Type("keypairs.fail.keypair", FailCrypto)
-
-	// FailKeypairParse indicates a failure to parse a keypair.
-	FailKeypairParse = failures.Type("keypairs.fail.keypair.parse", FailKeypair)
-
-	// FailKeypairPassphrase indicates a failure with passphrase.
-	FailKeypairPassphrase = failures.Type("keypairs.fail.keypair.passphrase", FailKeypairParse, failures.FailUser)
-
-	// FailKeypairGenerate indicates a failure to generate a keypair.
-	FailKeypairGenerate = failures.Type("keypairs.fail.keypair.generate", FailKeypair)
-
-	// FailPublicKey represents a failure to successfully work with a PublicKey.
-	FailPublicKey = failures.Type("keypairs.fail.publickey")
-
-	// FailPublicKeyParse indicates a failure to parse a public-key.
-	FailPublicKeyParse = failures.Type("keypairs.fail.publickey.parse", FailPublicKey)
-
-	// FailKeyDecode indicates a failure to decode a key.
-	FailKeyDecode = failures.Type("keypairs.fail.key.decode", FailCrypto)
-
-	// FailKeyEncode indicates a failure to encode a key.
-	FailKeyEncode = failures.Type("keypairs.fail.key.encode", FailCrypto)
-
-	// FailDecrypt indicates a failure to decrypt a value.
-	FailDecrypt = failures.Type("keypairs.fail.decrypt", FailCrypto)
-
-	// FailEncrypt indicates a failure to decrypt a value.
-	FailEncrypt = failures.Type("keypairs.fail.encrypt", FailCrypto)
-)
-
 // Encrypter expects to encrypt a message.
 type Encrypter interface {
 	// Encrypt will encrypt the provided message using the Keypair's public-key.
-	Encrypt(msg []byte) ([]byte, *failures.Failure)
+	Encrypt(msg []byte) ([]byte, error)
 
 	// EncryptAndEncode will encrypt the provided message then it will base64 encode that ciphertext.
-	EncryptAndEncode(msg []byte) (string, *failures.Failure)
+	EncryptAndEncode(msg []byte) (string, error)
 }
 
 // Decrypter expects to Decrypt some ciphertext.
 type Decrypter interface {
 	// Decrypt will decrypt the provided ciphertext using the Keypair's private-key.
-	Decrypt(ciphertext []byte) ([]byte, *failures.Failure)
+	Decrypt(ciphertext []byte) ([]byte, error)
 
 	// DecodeAndDecrypt will first base64 decode the provided msg then it will decrypt the resulting ciphertext.
-	DecodeAndDecrypt(value string) ([]byte, *failures.Failure)
+	DecodeAndDecrypt(value string) ([]byte, error)
 }
 
 // Keypair provides behavior for working with public crypto key-pairs.
@@ -74,11 +39,11 @@ type Keypair interface {
 	// EncryptAndEncodePrivateKey encodes the private-key for this key-pair to a human readable string.
 	// Generally this will be encoded in some PEM format. First though, the private-key will be
 	// encrypted using the provided passphrase.
-	EncryptAndEncodePrivateKey(passphrase string) (string, *failures.Failure)
+	EncryptAndEncodePrivateKey(passphrase string) (string, error)
 
 	// EncodePublicKey encodes the public-key for this keypair to a human readable string.
 	// Generally this will be encoded in some PEM format.
-	EncodePublicKey() (string, *failures.Failure)
+	EncodePublicKey() (string, error)
 
 	// MatchPublicKey determines if a provided public-key in PEM encoded format matches this Keypair's
 	// public-key.
@@ -96,22 +61,22 @@ type EncodedKeypair struct {
 
 // EncodeKeypair returns an EncodedKeypair using the provided Keypair and secures the private-key with a
 // passphrase.
-func EncodeKeypair(keypair Keypair, passphrase string) (*EncodedKeypair, *failures.Failure) {
+func EncodeKeypair(keypair Keypair, passphrase string) (*EncodedKeypair, error) {
 	var encodedPrivateKey string
-	var failure *failures.Failure
+	var err error
 
 	if passphrase == "" {
 		encodedPrivateKey = keypair.EncodePrivateKey()
 	} else {
-		encodedPrivateKey, failure = keypair.EncryptAndEncodePrivateKey(passphrase)
-		if failure != nil {
-			return nil, failure
+		encodedPrivateKey, err = keypair.EncryptAndEncodePrivateKey(passphrase)
+		if err != nil {
+			return nil, err
 		}
 	}
 
-	encodedPublicKey, failure := keypair.EncodePublicKey()
-	if failure != nil {
-		return nil, failure
+	encodedPublicKey, err := keypair.EncodePublicKey()
+	if err != nil {
+		return nil, err
 	}
 
 	return &EncodedKeypair{
@@ -123,16 +88,16 @@ func EncodeKeypair(keypair Keypair, passphrase string) (*EncodedKeypair, *failur
 
 // GenerateEncodedKeypair generates a new RSAKeypair, encrypts the private-key if a passphrase is provided,
 // encodes the private and public keys, and returns they Keypair and encoded keys as an EncodedKeypair.
-func GenerateEncodedKeypair(passphrase string, bits int) (*EncodedKeypair, *failures.Failure) {
-	keypair, failure := GenerateRSA(bits)
-	if failure != nil {
-		return nil, failure
+func GenerateEncodedKeypair(passphrase string, bits int) (*EncodedKeypair, error) {
+	keypair, err := GenerateRSA(bits)
+	if err != nil {
+		return nil, err
 	}
 	return EncodeKeypair(keypair, passphrase)
 }
 
 // SaveEncodedKeypair stores an encoded Keypair back to the Secrets Service.
-func SaveEncodedKeypair(secretsClient *secretsapi.Client, encKeypair *EncodedKeypair) *failures.Failure {
+func SaveEncodedKeypair(secretsClient *secretsapi.Client, encKeypair *EncodedKeypair) error {
 	params := keys.NewSaveKeypairParams().WithKeypair(&secretsModels.KeypairChange{
 		EncryptedPrivateKey: &encKeypair.EncodedPrivateKey,
 		PublicKey:           &encKeypair.EncodedPublicKey,
@@ -140,7 +105,7 @@ func SaveEncodedKeypair(secretsClient *secretsapi.Client, encKeypair *EncodedKey
 
 	if _, err := secretsClient.Keys.SaveKeypair(params, authentication.Get().ClientAuth()); err != nil {
 		logging.Error("Saving keypair failed with error: %v", err)
-		return secretsapi.FailKeypairSave.New("keypair_err_save")
+		return locale.WrapError(err, "keypair_err_save")
 	}
 
 	// save the keypair locally to avoid authenticating the keypair every time it's used
@@ -150,14 +115,14 @@ func SaveEncodedKeypair(secretsClient *secretsapi.Client, encKeypair *EncodedKey
 // GenerateAndSaveEncodedKeypair first Generates and then tries to Save an EncodedKeypair. This is equivalent to calling
 // GenerateEncodedKeypair and then SaveEncodedKeypair. Upon success of both actions, the EncodedKeypair will be returned,
 // otherwise a Failure is returned.
-func GenerateAndSaveEncodedKeypair(secretsClient *secretsapi.Client, passphrase string, bits int) (*EncodedKeypair, *failures.Failure) {
-	encodedKeypair, failure := GenerateEncodedKeypair(passphrase, bits)
-	if failure == nil {
-		failure = SaveEncodedKeypair(secretsClient, encodedKeypair)
+func GenerateAndSaveEncodedKeypair(secretsClient *secretsapi.Client, passphrase string, bits int) (*EncodedKeypair, error) {
+	encodedKeypair, err := GenerateEncodedKeypair(passphrase, bits)
+	if err == nil {
+		err = SaveEncodedKeypair(secretsClient, encodedKeypair)
 	}
 
-	if failure != nil {
-		return nil, failure
+	if err != nil {
+		return nil, err
 	}
 	return encodedKeypair, nil
 }

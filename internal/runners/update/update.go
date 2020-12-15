@@ -125,9 +125,9 @@ func (u *Update) runUpdateGlobal() error {
 func confirmUpdateLock(prom prompt.Prompter) error {
 	msg := locale.T("confirm_update_locked_version_prompt")
 
-	confirmed, fail := prom.Confirm(locale.T("confirm"), msg, false)
-	if fail != nil {
-		return fail.ToError()
+	confirmed, err := prom.Confirm(locale.T("confirm"), msg, false)
+	if err != nil {
+		return err
 	}
 
 	if !confirmed {

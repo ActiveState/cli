@@ -9,14 +9,9 @@ import (
 	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 )
-
-// FailInvalidNamespace indicates the provided string is not a valid
-// representation of a project namespace
-var FailInvalidNamespace = failures.Type("project.fail.invalidnamespace", failures.FailUserInput)
 
 // NamespaceRegex matches the org and project name in a namespace, eg. ORG/PROJECT
 const NamespaceRegex = `^([\w-_]+)\/([\w-_\.]+)(?:#([-a-fA-F0-9]*))?$`
@@ -53,9 +48,9 @@ func (ns *Namespaced) Set(v string) error {
 		return fmt.Errorf("cannot set nil value")
 	}
 
-	parsedNs, fail := ParseNamespace(v)
-	if fail != nil {
-		return fail
+	parsedNs, err := ParseNamespace(v)
+	if err != nil {
+		return err
 	}
 
 	*ns = *parsedNs
@@ -86,19 +81,19 @@ func (ns *Namespaced) IsValid() bool {
 }
 
 // Validate returns a failure if the namespace is not valid.
-func (ns *Namespaced) Validate() *failures.Failure {
+func (ns *Namespaced) Validate() error {
 	if ns == nil || !ns.IsValid() {
-		return FailInvalidNamespace.New(locale.Tr("err_invalid_namespace", ns.String()))
+		return locale.NewInputError("err_invalid_namespace", "", ns.String())
 	}
 	return nil
 }
 
 // ParseNamespace returns a valid project namespace
-func ParseNamespace(raw string) (*Namespaced, *failures.Failure) {
+func ParseNamespace(raw string) (*Namespaced, error) {
 	rx := regexp.MustCompile(NamespaceRegex)
 	groups := rx.FindStringSubmatch(raw)
 	if len(groups) < 3 {
-		return nil, FailInvalidNamespace.New(locale.Tr("err_invalid_namespace", raw))
+		return nil, locale.NewInputError("err_invalid_namespace", "", raw)
 	}
 
 	names := Namespaced{
@@ -121,8 +116,8 @@ func NameSpaceForConfig(configFile string) *Namespaced {
 		return nil
 	}
 
-	prj, fail := FromPath(configFile)
-	if fail != nil {
+	prj, err := FromPath(configFile)
+	if err != nil {
 		return nil
 	}
 

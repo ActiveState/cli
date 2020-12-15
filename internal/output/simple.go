@@ -1,9 +1,5 @@
 package output
 
-import (
-	"github.com/ActiveState/cli/internal/failures"
-)
-
 // Simple is an outputer that works exactly as Plain without
 // any notice level output
 type Simple struct {
@@ -11,10 +7,10 @@ type Simple struct {
 }
 
 // NewSimple constructs a new Simple struct
-func NewSimple(config *Config) (Simple, *failures.Failure) {
-	plain, fail := NewPlain(config)
-	if fail != nil {
-		return Simple{}, fail
+func NewSimple(config *Config) (Simple, error) {
+	plain, err := NewPlain(config)
+	if err != nil {
+		return Simple{}, err
 	}
 
 	return Simple{plain}, nil

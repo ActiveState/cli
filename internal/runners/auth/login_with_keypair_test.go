@@ -12,7 +12,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/keypairs"
 	promptMock "github.com/ActiveState/cli/internal/prompt/mock"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
@@ -33,7 +32,6 @@ type LoginWithKeypairTestSuite struct {
 
 func (suite *LoginWithKeypairTestSuite) BeforeTest(suiteName, testName string) {
 	osutil.RemoveConfigFile(constants.KeypairLocalFileName + ".key")
-	failures.ResetHandled()
 
 	suite.platformMock = httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	suite.secretsapiMock = httpmock.Activate(secretsapi_test.NewDefaultTestClient("bearing123").BaseURI)
@@ -68,12 +66,11 @@ func (suite *LoginWithKeypairTestSuite) TestSuccessfulPassphraseMatch() {
 
 	err := runAuth(&AuthParams{}, suite.promptMock)
 	suite.Require().NoError(err, "Executed with error")
-	suite.Require().NoError(failures.Handled(), "Unexpected Failure")
 	suite.NotNil(authentication.ClientAuth(), "Should have been authenticated")
 
 	// very local keypair is saved
-	localKeypair, failure := keypairs.LoadWithDefaults()
-	suite.Require().Nil(failure)
+	localKeypair, err := keypairs.LoadWithDefaults()
+	suite.Require().Nil(err)
 	suite.NotNil(localKeypair)
 }
 
@@ -96,15 +93,14 @@ func (suite *LoginWithKeypairTestSuite) TestPassphraseMismatch_HasLocalPrivateKe
 
 	err := runAuth(&AuthParams{}, suite.promptMock)
 	suite.Require().NoError(err, "Executed with error")
-	suite.Require().NoError(failures.Handled(), "Unexpected Failure")
 	suite.NotNil(authentication.ClientAuth(), "Should have been authenticated")
 
 	// verify encoded keypair matches generated keypair
 	suite.Require().NoError(bodyErr)
 	suite.Require().NotNil(bodyKeypair)
 
-	validationKeypair, failure := keypairs.ParseEncryptedRSA(*bodyKeypair.EncryptedPrivateKey, "bar")
-	suite.Require().Nil(failure)
+	validationKeypair, err := keypairs.ParseEncryptedRSA(*bodyKeypair.EncryptedPrivateKey, "bar")
+	suite.Require().Nil(err)
 	suite.Require().NotNil(validationKeypair)
 }
 
@@ -128,15 +124,14 @@ func (suite *LoginWithKeypairTestSuite) TestPassphraseMismatch_NoLocalPrivateKey
 
 	err := runAuth(&AuthParams{}, suite.promptMock)
 	suite.Require().NoError(err, "Executed with error")
-	suite.Require().NoError(failures.Handled(), "Unexpected Failure")
 	suite.NotNil(authentication.ClientAuth(), "Should have been authenticated")
 
 	// verify encoded keypair matches generated keypair
 	suite.Require().NoError(bodyErr)
 	suite.Require().NotNil(bodyKeypair)
 
-	validationKeypair, failure := keypairs.ParseEncryptedRSA(*bodyKeypair.EncryptedPrivateKey, "bar")
-	suite.Require().Nil(failure)
+	validationKeypair, err := keypairs.ParseEncryptedRSA(*bodyKeypair.EncryptedPrivateKey, "bar")
+	suite.Require().Nil(err)
 	suite.Require().NotNil(validationKeypair)
 }
 
@@ -162,20 +157,19 @@ func (suite *LoginWithKeypairTestSuite) TestPassphraseMismatch_HasMismatchedLoca
 
 	err := runAuth(&AuthParams{}, suite.promptMock)
 	suite.Require().NoError(err, "Executed with error")
-	suite.Require().NoError(failures.Handled(), "Unexpected Failure")
 	suite.NotNil(authentication.ClientAuth(), "Should have been authenticated")
 
 	// verify encoded keypair matches generated keypair
 	suite.Require().NoError(bodyErr)
 	suite.Require().NotNil(bodyKeypair)
 
-	validationKeypair, failure := keypairs.ParseEncryptedRSA(*bodyKeypair.EncryptedPrivateKey, "bar")
-	suite.Require().Nil(failure)
+	validationKeypair, err := keypairs.ParseEncryptedRSA(*bodyKeypair.EncryptedPrivateKey, "bar")
+	suite.Require().Nil(err)
 	suite.Require().NotNil(validationKeypair)
 
 	// very local keypair is now the new keypair
-	localKeypair, failure := keypairs.LoadWithDefaults()
-	suite.Require().Nil(failure)
+	localKeypair, err := keypairs.LoadWithDefaults()
+	suite.Require().Nil(err)
 	suite.True(localKeypair.MatchPublicKey(*bodyKeypair.PublicKey))
 }
 
@@ -201,20 +195,19 @@ func (suite *LoginWithKeypairTestSuite) TestPassphraseMismatch_OldPasswordMismat
 
 	err := runAuth(&AuthParams{}, suite.promptMock)
 	suite.Require().NoError(err, "Executed with error")
-	suite.Require().NoError(failures.Handled(), "Unexpected Failure")
 	suite.NotNil(authentication.ClientAuth(), "Should have been authenticated")
 
 	// verify encoded keypair matches generated keypair
 	suite.Require().NoError(bodyErr)
 	suite.Require().NotNil(bodyKeypair)
 
-	validationKeypair, failure := keypairs.ParseEncryptedRSA(*bodyKeypair.EncryptedPrivateKey, "newpassword")
-	suite.Require().Nil(failure)
+	validationKeypair, err := keypairs.ParseEncryptedRSA(*bodyKeypair.EncryptedPrivateKey, "newpassword")
+	suite.Require().Nil(err)
 	suite.Require().NotNil(validationKeypair)
 
 	// very local keypair is now the new keypair
-	localKeypair, failure := keypairs.LoadWithDefaults()
-	suite.Require().Nil(failure)
+	localKeypair, err := keypairs.LoadWithDefaults()
+	suite.Require().Nil(err)
 	suite.True(localKeypair.MatchPublicKey(*bodyKeypair.PublicKey))
 }
 
@@ -235,8 +228,8 @@ func (suite *LoginWithKeypairTestSuite) TestPassphraseMismatch_OldPasswordMismat
 	suite.Nil(authentication.ClientAuth(), "Should not have been authenticated")
 
 	// very local keypair does not exist
-	localKeypair, failure := keypairs.LoadWithDefaults()
-	suite.Require().Equal(keypairs.FailLoadNotFound, failure.Type)
+	localKeypair, err := keypairs.LoadWithDefaults()
+	suite.Require().Error(err)
 	suite.Nil(localKeypair)
 }
 

@@ -9,7 +9,7 @@ import (
 	"regexp"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
 )
@@ -17,7 +17,7 @@ import (
 // Prepare ensures Metadata can handle Python runtimes on MacOS.
 // These runtimes do not include metadata files as they should
 // be runnable from where they are unarchived
-func (m *MetaData) Prepare() *failures.Failure {
+func (m *MetaData) Prepare() error {
 	frameWorkDir := "Library/Frameworks/Python.framework/Versions/"
 	m.BinaryLocations = []MetaDataBinary{
 		MetaDataBinary{
@@ -38,7 +38,7 @@ func (m *MetaData) Prepare() *failures.Failure {
 
 	files, err := ioutil.ReadDir(libDir)
 	if err != nil {
-		return failures.FailOS.Wrap(err)
+		return errs.Wrap(err, "OS failure")
 	}
 
 	var sitePackages string
@@ -62,7 +62,7 @@ func (m *MetaData) Prepare() *failures.Failure {
 		dirRe = regexp.MustCompile(`\d+(?:\.\d+)+`)
 		files, err = ioutil.ReadDir(filepath.Join(m.Path, frameWorkDir))
 		if err != nil {
-			return failures.FailOS.Wrap(err)
+			return errs.Wrap(err, "OS failure")
 		}
 
 		var relVersionedFrameWorkDir string
@@ -77,7 +77,7 @@ func (m *MetaData) Prepare() *failures.Failure {
 		}
 
 		if relVersionedFrameWorkDir == "" {
-			return failures.FailNotFound.New("could not find path %s/x.x in build artifact", frameWorkDir)
+			return errs.New("could not find path %s/x.x in build artifact", frameWorkDir)
 		}
 
 		m.TargetedRelocations = []TargetedRelocation{TargetedRelocation{

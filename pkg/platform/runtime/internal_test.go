@@ -11,7 +11,6 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
@@ -70,21 +69,22 @@ func (suite *InternalTestSuite) AfterTest(suiteName, testName string) {
 
 func (suite *InternalTestSuite) TestValidateCheckpointNoCommit() {
 	msgHandler := runbits.NewRuntimeMessageHandler(&outputhelper.TestOutputer{})
-	var fail *failures.Failure
 	r, err := NewRuntime("", "", "string", "string", msgHandler)
 	suite.Require().NoError(err)
 	r.SetInstallPath(suite.cacheDir)
 	suite.installer = NewInstaller(r)
 	suite.Require().NotNil(suite.installer)
 
-	fail = suite.installer.validateCheckpoint()
-	suite.Equal(FailNoCommitID.Name, fail.Type.Name)
+	err = suite.installer.validateCheckpoint()
+	errt := &ErrNoCommit{}
+	suite.ErrorAs(err, &errt)
 }
 
 func (suite *InternalTestSuite) TestValidateCheckpointPrePlatform() {
 	suite.graphMock.CheckpointWithPrePlatform(graphMock.NoOptions)
-	fail := suite.installer.validateCheckpoint()
-	suite.Equal(FailPrePlatformNotSupported.Name, fail.Type.Name)
+	err := suite.installer.validateCheckpoint()
+	errt := &ErrPrePlatform{}
+	suite.ErrorAs(err, &errt)
 }
 
 func (suite *InternalTestSuite) TestPPMShim() {

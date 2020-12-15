@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/colorize"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -49,7 +48,7 @@ type Plain struct {
 }
 
 // NewPlain constructs a new Plain struct
-func NewPlain(config *Config) (Plain, *failures.Failure) {
+func NewPlain(config *Config) (Plain, error) {
 	return Plain{config}, nil
 }
 

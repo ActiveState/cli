@@ -86,7 +86,8 @@ require (
 	github.com/spf13/jwalterweatherman v0.0.0-20180109140146-7c0cea34c8ec // indirect
 	github.com/spf13/pflag v1.0.0
 	github.com/spf13/viper v0.0.0-20171227194143-aafc9e6bc7b7
-	github.com/stretchr/testify v1.6.1
+	github.com/stretchr/objx v0.3.0 // indirect
+	github.com/stretchr/testify v1.6.2-0.20201103103935-92707c0b2d50
 	github.com/thoas/go-funk v0.0.0-20170604141201-14304e8530de
 	github.com/ulikunitz/xz v0.5.4 // indirect
 	github.com/vbauerster/mpb/v4 v4.10.0
@@ -105,4 +106,5 @@ require (
 	gopkg.in/src-d/go-git.v4 v4.13.1
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v2 v2.3.0
+	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776 // indirect
 )

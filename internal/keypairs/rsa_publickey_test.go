@@ -7,8 +7,9 @@ import (
 	"encoding/base64"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/ActiveState/cli/internal/keypairs"
 )
 
 type RSAPublicKeyTestSuite struct {
@@ -24,8 +25,8 @@ func (suite *RSAPublicKeyTestSuite) TestEncrypts() {
 	suite.Require().NoError(err)
 
 	pubKey := &keypairs.RSAPublicKey{PublicKey: &privKey.PublicKey}
-	ciphertext, failure := pubKey.Encrypt([]byte("this is the catch"))
-	suite.Require().Nil(failure)
+	ciphertext, err := pubKey.Encrypt([]byte("this is the catch"))
+	suite.Require().Nil(err)
 
 	decryptedBytes, err := rsa.DecryptOAEP(sha256.New(), rand.Reader, privKey, ciphertext, nil)
 	suite.Require().NoError(err)
@@ -37,8 +38,8 @@ func (suite *RSAPublicKeyTestSuite) TestEncryptsAndEncodes() {
 	suite.Require().NoError(err)
 
 	pubKey := &keypairs.RSAPublicKey{PublicKey: &privKey.PublicKey}
-	encrEncodedStr, failure := pubKey.EncryptAndEncode([]byte("this is the catch"))
-	suite.Require().Nil(failure)
+	encrEncodedStr, err := pubKey.EncryptAndEncode([]byte("this is the catch"))
+	suite.Require().Nil(err)
 
 	encrBytes, err := base64.StdEncoding.DecodeString(encrEncodedStr)
 	suite.Require().NoError(err)
@@ -49,13 +50,13 @@ func (suite *RSAPublicKeyTestSuite) TestEncryptsAndEncodes() {
 }
 
 func (suite *RSAPublicKeyTestSuite) TestParsePublicKey() {
-	kp, failure := keypairs.GenerateRSA(1024)
-	suite.Require().Nil(failure)
-	pubKeyPEM, failure := kp.EncodePublicKey()
-	suite.Require().Nil(failure)
+	kp, err := keypairs.GenerateRSA(1024)
+	suite.Require().Nil(err)
+	pubKeyPEM, err := kp.EncodePublicKey()
+	suite.Require().Nil(err)
 
-	pubKey, failure := keypairs.ParseRSAPublicKey(pubKeyPEM)
-	suite.Require().Nil(failure)
+	pubKey, err := keypairs.ParseRSAPublicKey(pubKeyPEM)
+	suite.Require().Nil(err)
 
 	suite.Equal(kp.PublicKey, *pubKey.PublicKey)
 }

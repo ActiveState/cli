@@ -4,12 +4,11 @@ import (
 	"os"
 	"testing"
 
-	"github.com/spf13/viper"
-
 	"github.com/ActiveState/cli/internal/colorize"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/constants/version"
 	depMock "github.com/ActiveState/cli/internal/deprecation/mock"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
@@ -19,11 +18,6 @@ import (
 
 type MainTestSuite struct {
 	suite.Suite
-}
-
-func (suite *MainTestSuite) AfterTest(suiteName, testName string) {
-	// Reset viper config so deprecation mock is always used
-	viper.Reset()
 }
 
 func (suite *MainTestSuite) TestDeprecated() {
@@ -61,38 +55,38 @@ func (suite *MainTestSuite) TestExpired() {
 
 func (suite *MainTestSuite) TestOutputer() {
 	{
-		outputer, fail := initOutput(outputFlags{"", false, false, false}, "")
-		suite.Require().NoError(fail.ToError())
+		outputer, err := initOutput(outputFlags{"", false, false, false}, "")
+		suite.Require().NoError(err, errs.Join(err, "\n").Error())
 		suite.Equal(output.PlainFormatName, outputer.Type(), "Returns Plain outputer")
 	}
 
 	{
-		outputer, fail := initOutput(outputFlags{string(output.PlainFormatName), false, false, false}, "")
-		suite.Require().NoError(fail.ToError())
+		outputer, err := initOutput(outputFlags{string(output.PlainFormatName), false, false, false}, "")
+		suite.Require().NoError(err)
 		suite.Equal(output.PlainFormatName, outputer.Type(), "Returns Plain outputer")
 	}
 
 	{
-		outputer, fail := initOutput(outputFlags{string(output.JSONFormatName), false, false, false}, "")
-		suite.Require().NoError(fail.ToError())
+		outputer, err := initOutput(outputFlags{string(output.JSONFormatName), false, false, false}, "")
+		suite.Require().NoError(err)
 		suite.Equal(output.JSONFormatName, outputer.Type(), "Returns JSON outputer")
 	}
 
 	{
-		outputer, fail := initOutput(outputFlags{"", false, false, false}, string(output.JSONFormatName))
-		suite.Require().NoError(fail.ToError())
+		outputer, err := initOutput(outputFlags{"", false, false, false}, string(output.JSONFormatName))
+		suite.Require().NoError(err)
 		suite.Equal(output.JSONFormatName, outputer.Type(), "Returns JSON outputer")
 	}
 
 	{
-		outputer, fail := initOutput(outputFlags{"", false, false, false}, string(output.EditorFormatName))
-		suite.Require().NoError(fail.ToError())
+		outputer, err := initOutput(outputFlags{"", false, false, false}, string(output.EditorFormatName))
+		suite.Require().NoError(err)
 		suite.Equal(output.EditorFormatName, outputer.Type(), "Returns JSON outputer")
 	}
 
 	{
-		outputer, fail := initOutput(outputFlags{"", false, false, false}, string(output.EditorV0FormatName))
-		suite.Require().NoError(fail.ToError())
+		outputer, err := initOutput(outputFlags{"", false, false, false}, string(output.EditorV0FormatName))
+		suite.Require().NoError(err)
 		suite.Equal(output.EditorV0FormatName, outputer.Type(), "Returns JSON outputer")
 	}
 }

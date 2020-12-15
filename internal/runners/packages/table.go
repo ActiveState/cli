@@ -25,11 +25,6 @@ func (t *packageTable) MarshalOutput(format output.Format) interface{} {
 		return t.rows
 	}
 
-	type packageRow struct {
-		Pkg     string `json:"package"`
-		Version string `json:"version"`
-	}
-
 	return t.rows
 }
 

@@ -27,8 +27,8 @@ func (suite *InventoryTestSuite) AfterTest(suiteName, testName string) {
 func (suite *InventoryTestSuite) TestGetInventory() {
 	suite.invMock.MockPlatforms()
 
-	platforms, fail := model.FetchPlatforms()
-	suite.Require().NoError(fail.ToError())
+	platforms, err := model.FetchPlatforms()
+	suite.Require().NoError(err)
 	suite.NotEmpty(platforms, "Returns platforms")
 }
 
@@ -37,8 +37,8 @@ func (suite *InventoryTestSuite) TestFetchPlatformByUID() {
 	suite.invMock.MockPlatforms()
 
 	uid := strfmt.UUID("00010001-0001-0001-0001-000100010001")
-	platform, fail := model.FetchPlatformByUID(uid)
-	suite.Require().NoError(fail.ToError())
+	platform, err := model.FetchPlatformByUID(uid)
+	suite.Require().NoError(err)
 	suite.Equal(uid, *platform.PlatformID, "Returns platform")
 }
 

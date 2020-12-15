@@ -10,7 +10,6 @@ import (
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
@@ -21,8 +20,6 @@ import (
 var persist inventory_operations.ClientService
 
 var transport http.RoundTripper
-
-var FailNoRecipes = failures.Type("fail.inventory.norecipes", api.FailNotFound)
 
 // Init will create a new API client using default settings
 func Init() (inventory_operations.ClientService, runtime.ClientTransport) {
@@ -92,7 +89,7 @@ func (r *RawResponder) ReadResponse(res runtime.ClientResponse, cons runtime.Con
 	}
 
 	if len(umRecipe.Recipes) == 0 {
-		return nil, FailNoRecipes.New(locale.T("err_no_recipes"))
+		return nil, locale.NewError(locale.T("err_no_recipes"))
 	}
 
 	return json.Marshal(umRecipe.Recipes[0])

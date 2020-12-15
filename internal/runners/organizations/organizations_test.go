@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/ActiveState/cli/internal/environment"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
@@ -52,7 +51,6 @@ func TestOrganizations(t *testing.T) {
 	out := outputhelper.NewCatcher()
 	execErr = run(&OrgParams{}, out)
 	require.NoError(t, execErr)
-	assert.NoError(t, failures.Handled(), "No failure occurred")
 
 	assert.Contains(t, out.CombinedOutput(), "string")
 
@@ -67,7 +65,6 @@ func TestOrganizationsJSONPaid(t *testing.T) {
 	execErr := run(&OrgParams{}, out)
 
 	require.NoError(t, execErr)
-	assert.NoError(t, failures.Handled(), "No failure occurred")
 
 	assert.Equal(t, "[{\"name\":\"string\",\"URLName\":\"string\",\"tier\":\"string\",\"privateProjects\":true}]\x00\n", out.Output(), "Expect privateProjects to be true")
 
@@ -82,7 +79,6 @@ func TestOrganizationsJSONFree(t *testing.T) {
 	execErr := run(&OrgParams{}, out)
 
 	require.NoError(t, execErr)
-	assert.NoError(t, failures.Handled(), "No failure occurred")
 
 	assert.Equal(t, "[{\"name\":\"string\",\"URLName\":\"string\",\"tier\":\"string\",\"privateProjects\":false}]\x00\n", out.Output(), "Expect privateProjects to be false")
 

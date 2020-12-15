@@ -1,7 +1,6 @@
 package mock
 
 import (
-	"github.com/ActiveState/cli/internal/failures"
 	testifyMock "github.com/stretchr/testify/mock"
 )
 
@@ -16,10 +15,10 @@ func NewMockDownloader() *Downloader {
 }
 
 // Download for Downloader.
-func (downloader *Downloader) Download() (string, *failures.Failure) {
+func (downloader *Downloader) Download() (string, error) {
 	args := downloader.Called()
-	if failure := args.Get(1); failure != nil {
-		return args.String(0), failure.(*failures.Failure)
+	if err := args.Get(1); err != nil {
+		return args.String(0), err.(error)
 	}
 	return args.String(0), nil
 }
