@@ -75,7 +75,11 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 	if err != nil {
 		rerr := &inventory_operations.ResolveRecipesBadRequest{}
 		if errors.As(err, &rerr) {
-			return addSuggestions(ns, name)
+			suggestions, serr := getSuggestions(ns, name)
+			if serr != nil {
+				logging.Error("Failed to retrieve suggestions: %v", err)
+			}
+			return locale.WrapInputError(err, "package_ingredient_alternatives", "Could not match {{.V0}}. Did you mean:\n\n{{.V1}}", name, strings.Join(suggestions, "\n"))
 		}
 		return locale.WrapError(err, "package_ingredient_err_search", "Failed to resolve ingredient named: {{.V0}}", name)
 	}
@@ -128,10 +132,10 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 	return nil
 }
 
-func addSuggestions(ns model.Namespace, name string) error {
+func getSuggestions(ns model.Namespace, name string) ([]string, error) {
 	results, err := model.SearchIngredients(ns, name)
 	if err != nil {
-		return locale.WrapError(err, "package_ingredient_err_search", "Failed to resolve ingredient named: {{.V0}}", name)
+		return []string{}, locale.WrapError(err, "package_ingredient_err_search", "Failed to resolve ingredient named: {{.V0}}", name)
 	}
 
 	maxResults := 5
@@ -139,13 +143,13 @@ func addSuggestions(ns model.Namespace, name string) error {
 		results = results[:maxResults]
 	}
 
-	suggestions := make([]string, maxResults)
-	for i := range results {
-		suggestions[i] = fmt.Sprintf(" - %s", *results[i].Ingredient.Name)
+	suggestions := make([]string, 0, maxResults+1)
+	for _, result := range results {
+		suggestions = append(suggestions, fmt.Sprintf(" - %s", *result.Ingredient.Name))
 	}
 	suggestions = append(suggestions, locale.Tr(fmt.Sprintf("%s_ingredient_alternatives_more", ns.Type()), name))
 
-	return locale.NewInputError("package_ingredient_alternatives", "Could not match {{.V0}}. Did you mean:\n\n{{.V1}}", name, strings.Join(suggestions, "\n"))
+	return suggestions, nil
 }
 
 func splitNameAndVersion(input string) (string, string) {
