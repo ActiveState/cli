@@ -314,7 +314,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_headless_operation() {
 		cp.Send("Y")
 		cp.Expect("Could not match json")
 		cp.Expect("json2")
-		cp.ExpectLongString("to see more results `state search json`")
+		cp.ExpectLongString("to see more results run `state search json`")
 		cp.ExpectRe("(?:Package added|project is currently building)", 30*time.Second)
 		cp.Wait()
 	})

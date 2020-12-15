@@ -181,7 +181,7 @@ func (suite *BundleIntegrationTestSuite) TestBundle_headless_operation() {
 		cp.ExpectLongString("Do you want to continue as an anonymous user?")
 		cp.Send("Y")
 		cp.Expect("Could not match non-existing")
-		cp.ExpectLongString("to see more results `state bundles search non-existing`")
+		cp.ExpectLongString("to see more results run `state bundles search non-existing`")
 		cp.ExpectRe("(?:Package added|project is currently building)", 30*time.Second)
 		cp.Wait()
 	})
