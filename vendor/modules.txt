@@ -39,10 +39,8 @@ github.com/alecthomas/template
 github.com/alecthomas/template/parse
 # github.com/asaskevich/govalidator v0.0.0-20180315120708-ccb8e960c48f
 github.com/asaskevich/govalidator
-# github.com/stretchr/testify v1.6.2-0.20201103103935-92707c0b2d50
-github.com/stretchr/testify/assert
-github.com/stretchr/testify/mock
-github.com/stretchr/testify/require
+# github.com/autarch/testify v1.2.2
+github.com/autarch/testify/assert
 # github.com/aws/aws-sdk-go v1.13.8
 github.com/aws/aws-sdk-go/aws
 github.com/aws/aws-sdk-go/aws/awserr
@@ -290,8 +288,13 @@ github.com/src-d/gcfg
 github.com/src-d/gcfg/scanner
 github.com/src-d/gcfg/token
 github.com/src-d/gcfg/types
-# github.com/stretchr/objx v0.2.0
+# github.com/stretchr/objx v0.3.0
 github.com/stretchr/objx
+# github.com/stretchr/testify v1.6.2-0.20201103103935-92707c0b2d50
+github.com/stretchr/testify/assert
+github.com/stretchr/testify/mock
+github.com/stretchr/testify/require
+github.com/stretchr/testify/suite
 # github.com/thoas/go-funk v0.0.0-20170604141201-14304e8530de
 github.com/thoas/go-funk
 # github.com/ulikunitz/xz v0.5.4
@@ -547,5 +550,5 @@ gopkg.in/tomb.v1
 gopkg.in/warnings.v0
 # gopkg.in/yaml.v2 v2.3.0
 gopkg.in/yaml.v2
-# gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c
+# gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
 gopkg.in/yaml.v3
