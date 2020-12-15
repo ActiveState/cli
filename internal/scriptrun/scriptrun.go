@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/process"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/internal/subshell"
@@ -25,6 +26,7 @@ type ScriptRun struct {
 	sub     subshell.SubShell
 	project *project.Project
 
+	venvPrepared bool
 	venvExePath  string
 }
 
@@ -35,10 +37,18 @@ func New(out output.Outputer, subs subshell.SubShell, proj *project.Project) *Sc
 		subs,
 		proj,
 
+		false,
+
 		// venvExePath stores a virtual environment's PATH value. If the script
 		// requires activation this is the PATH we should be searching for
 		// executables in.
 		os.Getenv("PATH")}
+}
+
+// NeedsActivation indicates whether the underlying environment has been
+// prepared and activated.
+func (s *ScriptRun) NeedsActivation() bool {
+	return !process.IsCurrentProcessActivated() && !s.venvPrepared
 }
 
 // PrepareVirtualEnv sets up the relevant runtime and prepares the environment.
@@ -66,6 +76,7 @@ func (s *ScriptRun) PrepareVirtualEnv() error {
 		return err
 	}
 	s.venvExePath = env["PATH"]
+	s.venvPrepared = true
 
 	return nil
 }
@@ -84,7 +95,7 @@ func (s *ScriptRun) Run(script *project.Script, args []string) error {
 	}
 
 	// Activate the state if needed.
-	if !script.Standalone() {
+	if !script.Standalone() && s.NeedsActivation() {
 		if err := s.PrepareVirtualEnv(); err != nil {
 			return errs.Wrap(err, "Could not prepare virtual environment.")
 		}

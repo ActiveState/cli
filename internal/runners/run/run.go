@@ -66,7 +66,7 @@ func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, nam
 	}
 
 	scriptrunner := scriptrun.New(out, subs, proj)
-	if !script.Standalone() {
+	if !script.Standalone() && scriptrunner.NeedsActivation() {
 		out.Notice(output.Heading(locale.Tl("notice", "Notice")))
 		out.Notice(locale.T("info_state_run_activating_state"))
 		if err := scriptrunner.PrepareVirtualEnv(); err != nil {
