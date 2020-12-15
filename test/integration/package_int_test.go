@@ -308,6 +308,17 @@ func (suite *PackageIntegrationTestSuite) TestPackage_headless_operation() {
 	cp := ts.Spawn("activate", "ActiveState-CLI/small-python", "--path", ts.Dirs.Work, "--output=json")
 	cp.ExpectExitCode(0)
 
+	suite.Run("install non-existing", func() {
+		cp := ts.Spawn("install", "json")
+		cp.ExpectLongString("Do you want to continue as an anonymous user?")
+		cp.Send("Y")
+		cp.Expect("Could not match json")
+		cp.Expect("json2")
+		cp.ExpectLongString("to see more results `state search json`")
+		cp.ExpectRe("(?:Package added|project is currently building)", 30*time.Second)
+		cp.Wait()
+	})
+
 	suite.Run("install", func() {
 		cp := ts.Spawn("install", "dateparser@0.7.2")
 		cp.ExpectLongString("Do you want to continue as an anonymous user?")
@@ -318,7 +329,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_headless_operation() {
 
 	suite.Run("install (update)", func() {
 		cp := ts.Spawn("install", "dateparser@0.7.6")
-		cp.ExpectRe("(?:Package updated|project is currently building)", 30*time.Second)
+		cp.ExpectRe("(?:Package updated|project is currently building)", 50*time.Second)
 		cp.Wait()
 	})
 
