@@ -111,14 +111,8 @@ func (a *Activation) Close() error {
 	return a.PIDLock.Close(false)
 }
 
-// IsParentProcessActivated returns whether or not this process is being run in an activated
+// IsActivated returns whether or not this process is being run in an activated
 // state. This can be this specific process, or one of it's parents.
-func IsParentProcessActivated() bool {
+func IsActivated() bool {
 	return ActivationPID() != -1
-}
-
-// IsParentProcessActivated returns whether or not this process is being run in an activated
-// state. This can be this specific process, or one of it's parents.
-func IsCurrentProcessActivated() bool {
-	return ActivationPID() == int32(os.Getpid())
 }

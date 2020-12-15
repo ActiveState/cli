@@ -74,7 +74,7 @@ func (r *Activate) run(params *ActivateParams) error {
 
 	r.out.Notice(txtstyle.NewTitle(locale.T("info_activating_state")))
 
-	alreadyActivated := process.IsParentProcessActivated()
+	alreadyActivated := process.IsActivated()
 	if alreadyActivated {
 		if !params.Default {
 			err := locale.NewInputError("err_already_activated",

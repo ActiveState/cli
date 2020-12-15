@@ -46,7 +46,6 @@ func (cc *CmdCall) Run(eventType project.EventType) error {
 	logging.Debug("cmdcall")
 
 	if cc.proj == nil {
-		logging.Debug("No project file")
 		return nil
 	}
 
@@ -74,7 +73,6 @@ func (cc *CmdCall) Run(eventType project.EventType) error {
 	}
 
 	if len(events) == 0 {
-		logging.Debug("No events")
 		return nil
 	}
 
