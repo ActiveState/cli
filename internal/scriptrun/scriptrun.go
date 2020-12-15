@@ -48,7 +48,7 @@ func New(out output.Outputer, subs subshell.SubShell, proj *project.Project) *Sc
 // NeedsActivation indicates whether the underlying environment has been
 // prepared and activated.
 func (s *ScriptRun) NeedsActivation() bool {
-	return !process.IsActivated() && !s.venvPrepared
+	return !process.IsCurrentProcessActivated() && !s.venvPrepared
 }
 
 // PrepareVirtualEnv sets up the relevant runtime and prepares the environment.
@@ -83,6 +83,8 @@ func (s *ScriptRun) PrepareVirtualEnv() error {
 
 // Run executes the script after ensuring the environment is prepared.
 func (s *ScriptRun) Run(script *project.Script, args []string) error {
+	logging.Debug("Run: " + script.Name())
+
 	if s.project == nil {
 		return locale.NewInputError("err_no_projectfile")
 	}
