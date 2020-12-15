@@ -6,6 +6,7 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/suite"
 
@@ -77,7 +78,7 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 	cp.Expect("You're about to add packages as an anonymous user")
 	cp.Expect("(Y/n)")
 	cp.Send("y")
-	cp.Expect("added")
+	cp.Expect("added", 30*time.Second)
 	cp.ExpectExitCode(0)
 
 	ts.LoginAsPersistentUser()
@@ -117,7 +118,7 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 	cp.Expect("You're about to add packages as an anonymous user")
 	cp.Expect("(Y/n)")
 	cp.Send("y")
-	cp.Expect("added")
+	cp.Expect("added", 30*time.Second)
 	cp.Wait()
 
 	prj, err := project.FromPath(filepath.Join(wd, constants.ConfigFileName))
