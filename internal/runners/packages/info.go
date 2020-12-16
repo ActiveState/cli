@@ -80,8 +80,8 @@ func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 type PkgDetailsTable struct {
 	Authors   []string `locale:"package_authors,Authors" json:"authors"`
 	Link      string   `locale:"package_link,Link" json:"link"`
-	Copyright string   `locale:"package_copyright,Copyright" json:"copyright"`
-	License   string   `locale:"package_license,License" json:"license"`
+	copyright string   //`locale:"package_copyright,Copyright" json:"copyright"`
+	license   string   //`locale:"package_license,License" json:"license"`
 }
 
 type infoResult struct {
@@ -98,8 +98,8 @@ func newInfoResult(iv *model.IngredientAndVersion, authors model.Authors) *infoR
 		latestVersion: locale.T("unknown_value"),
 		PkgDetailsTable: PkgDetailsTable{
 			Link:      locale.T("unknown_value"),
-			Copyright: locale.T("unknown_value"),
-			License:   locale.T("unknown_value"),
+			copyright: locale.T("unknown_value"),
+			license:   locale.T("unknown_value"),
 		},
 	}
 
@@ -123,11 +123,11 @@ func newInfoResult(iv *model.IngredientAndVersion, authors model.Authors) *infoR
 		}
 
 		if iv.LatestVersion.CopyrightText != nil {
-			res.PkgDetailsTable.Copyright = *iv.LatestVersion.CopyrightText
+			res.PkgDetailsTable.copyright = *iv.LatestVersion.CopyrightText
 		}
 
 		if iv.LatestVersion.LicenseExpression != nil {
-			res.PkgDetailsTable.License = *iv.LatestVersion.LicenseExpression
+			res.PkgDetailsTable.license = *iv.LatestVersion.LicenseExpression
 		}
 	}
 
