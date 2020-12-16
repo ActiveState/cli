@@ -42,10 +42,13 @@ func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 
 	ns := model.NewNamespacePkgOrBundle(language, nstype)
 
-	packages, err := model.SearchIngredientsStrict(ns, params.Package)
+	pkgName, _ := splitNameAndVersion(params.Package)
+
+	packages, err := model.SearchIngredientsStrict(ns, pkgName)
 	if err != nil {
 		return locale.WrapError(err, "package_err_cannot_obtain_search_results")
 	}
+
 	if len(packages) == 0 {
 		return errs.AddTips(
 			locale.NewInputError("err_package_info_no_packages", `No packages in our catalogue are an exact match for [NOTICE]"{{.V0}}"[/RESET].`, params.Package),
@@ -227,7 +230,7 @@ func whatsNextMessages(name string, versions []string) []string {
 		locale.Tl(
 			"show_specific_version",
 			"To view details for a specific version, run "+
-				"[ACTIONABLE]`state show {{.V0}}@{{.V1}}`[/RESET]",
+				"[ACTIONABLE]`state info {{.V0}}@{{.V1}}`[/RESET]",
 			name, version,
 		),
 	)
