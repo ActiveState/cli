@@ -53,8 +53,16 @@ func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 			locale.Tl("info_request", "Request a package at [ACTIONABLE]https://community.activestate.com/[/RESET]"),
 		)
 	}
+
 	// NOTE: Should more than one result be handled?
-	res := newInfoResult(packages[0])
+	pkg := packages[0]
+
+	authors, err := model.FetchAuthors(pkg.Ingredient.IngredientID, pkg.LatestVersion.IngredientVersionID)
+	if err != nil {
+		return locale.WrapError(err, "package_err_cannot_obtain_authors_info", "Cannot obtain authors info")
+	}
+
+	res := newInfoResult(pkg, authors)
 	out := &infoResultOutput{
 		i.out,
 		res,
@@ -68,10 +76,10 @@ func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 
 // PkgDetailsTable describes package details.
 type PkgDetailsTable struct {
-	Author    string `locale:"package_author,Author" json:"author"`
-	Link      string `locale:"package_link,Link" json:"link"`
-	License   string `locale:"package_license,License" json:"license"`
-	Copyright string `locale:"package_copyright,Copyright" json:"copyright"`
+	Authors   []string `locale:"package_authors,Authors" json:"authors"`
+	Link      string   `locale:"package_link,Link" json:"link"`
+	Copyright string   `locale:"package_copyright,Copyright" json:"copyright"`
+	License   string   `locale:"package_license,License" json:"license"`
 }
 
 type infoResult struct {
@@ -82,15 +90,14 @@ type infoResult struct {
 	Versions        []string `locale:"," json:"versions"`
 }
 
-func newInfoResult(iv *model.IngredientAndVersion) *infoResult {
+func newInfoResult(iv *model.IngredientAndVersion, authors model.Authors) *infoResult {
 	res := infoResult{
 		name:          locale.T("unknown_value"),
 		latestVersion: locale.T("unknown_value"),
 		PkgDetailsTable: PkgDetailsTable{
-			Author:    locale.T("unknown_value"),
 			Link:      locale.T("unknown_value"),
-			License:   locale.T("unknown_value"),
 			Copyright: locale.T("unknown_value"),
+			License:   locale.T("unknown_value"),
 		},
 	}
 
@@ -113,17 +120,26 @@ func newInfoResult(iv *model.IngredientAndVersion) *infoResult {
 			res.latestVersion = *iv.LatestVersion.Version
 		}
 
-		if iv.LatestVersion.LicenseExpression != nil {
-			res.PkgDetailsTable.License = *iv.LatestVersion.LicenseExpression
-		}
-
 		if iv.LatestVersion.CopyrightText != nil {
 			res.PkgDetailsTable.Copyright = *iv.LatestVersion.CopyrightText
+		}
+
+		if iv.LatestVersion.LicenseExpression != nil {
+			res.PkgDetailsTable.License = *iv.LatestVersion.LicenseExpression
 		}
 	}
 
 	for _, version := range iv.Versions {
 		res.Versions = append(res.Versions, version.Version)
+	}
+
+	for _, author := range authors {
+		if author.Name != nil {
+			res.Authors = append(res.Authors, *author.Name)
+		}
+	}
+	if len(res.Authors) == 0 {
+		res.Authors = []string{locale.T("unknown_value")}
 	}
 
 	return &res
