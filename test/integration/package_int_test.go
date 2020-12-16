@@ -168,7 +168,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTerm() {
 		"+ 8 older versions",
 	}
 	for _, expectation := range expectations {
-		cp.Expect(expectation)
+		cp.ExpectLongString(expectation)
 	}
 	cp.ExpectExitCode(0)
 }
@@ -332,23 +332,33 @@ func (suite *PackageIntegrationTestSuite) TestPackage_headless_operation() {
 	cp := ts.Spawn("activate", "ActiveState-CLI/small-python", "--path", ts.Dirs.Work, "--output=json")
 	cp.ExpectExitCode(0)
 
+	suite.Run("install non-existing", func() {
+		cp := ts.Spawn("install", "json")
+		cp.ExpectLongString("Do you want to continue as an anonymous user?")
+		cp.Send("Y")
+		cp.Expect("Could not match json")
+		cp.Expect("json2")
+		cp.ExpectLongString("to see more results run `state search json`")
+		cp.Wait()
+	})
+
 	suite.Run("install", func() {
 		cp := ts.Spawn("install", "dateparser@0.7.2")
 		cp.ExpectLongString("Do you want to continue as an anonymous user?")
 		cp.Send("Y")
-		cp.ExpectRe("(?:Package added|project is currently building)")
+		cp.ExpectRe("(?:Package added|project is currently building)", 30*time.Second)
 		cp.Wait()
 	})
 
 	suite.Run("install (update)", func() {
 		cp := ts.Spawn("install", "dateparser@0.7.6")
-		cp.ExpectRe("(?:Package updated|project is currently building)")
+		cp.ExpectRe("(?:Package updated|project is currently building)", 50*time.Second)
 		cp.Wait()
 	})
 
 	suite.Run("uninstall", func() {
 		cp := ts.Spawn("uninstall", "dateparser")
-		cp.ExpectRe("(?:Package uninstalled|project is currently building)")
+		cp.ExpectRe("(?:Package uninstalled|project is currently building)", 30*time.Second)
 		cp.Wait()
 	})
 }
@@ -385,19 +395,19 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 
 	suite.Run("install", func() {
 		cp := ts.Spawn("install", "urllib3@1.25.6")
-		cp.ExpectRe("(?:Package added|project is currently building)")
+		cp.ExpectRe("(?:Package added|project is currently building)", 30*time.Second)
 		cp.Wait()
 	})
 
 	suite.Run("install (update)", func() {
 		cp := ts.Spawn("install", "urllib3@1.25.8")
-		cp.ExpectRe("(?:Package updated|project is currently building)")
+		cp.ExpectRe("(?:Package updated|project is currently building)", 30*time.Second)
 		cp.Wait()
 	})
 
 	suite.Run("uninstall", func() {
 		cp := ts.Spawn("uninstall", "urllib3")
-		cp.ExpectRe("(?:Package uninstalled|project is currently building)")
+		cp.ExpectRe("(?:Package uninstalled|project is currently building)", 30*time.Second)
 		cp.Wait()
 	})
 
@@ -408,8 +418,9 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 	cp = ts.Spawn("pull")
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("history")
-	cp.Expect(fmt.Sprintf("Description: Reverting to commit %s", firstCommit))
+	// expecting json output, as table wraps message in column
+	cp = ts.Spawn("history", "--output=json")
+	cp.ExpectLongString(fmt.Sprintf("Reverting to commit %s", firstCommit))
 	cp.ExpectExitCode(0)
 }
 
