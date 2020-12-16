@@ -89,7 +89,7 @@ jobs:
         state run preprocess
     - name: Build
       shell: bash
-      if: contains(['refs/heads/master', 'refs/heads/beta', 'refs/heads/release'], github.ref)
+      if: contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release"]'), github.ref)
       run: state run build
     - name: Generate Update
       shell: bash
