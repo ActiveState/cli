@@ -394,8 +394,9 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 	cp = ts.Spawn("pull")
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("history")
-	cp.Expect(fmt.Sprintf("Description: Reverting to commit %s", firstCommit))
+	// expecting json output, as table wraps message in column
+	cp = ts.Spawn("history", "--output=json")
+	cp.ExpectLongString(fmt.Sprintf("Reverting to commit %s", firstCommit))
 	cp.ExpectExitCode(0)
 }
 
