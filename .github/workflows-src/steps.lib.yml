@@ -7,13 +7,14 @@ run: state run generate-version
 #@ def steps_build():
 name: Build
 shell: bash
+if: contains(['refs/heads/master', 'refs/heads/beta', 'refs/heads/release'], github.ref)
 run: state run build
 #@ end
 ---
 #@ def steps_build_32bit():
 name: Build (32bit)
 shell: bash
-if: runner.os == 'Windows'
+if: runner.os == 'Windows' && contains(['refs/heads/martind/ci-deploy-build-176150859'], github.ref)
 run: state run build-32bit
 #@ end
 ---
@@ -223,7 +224,7 @@ run: |
 #@ def steps_deploy():
 name: "Deploy"
 shell: bash
-if: github.ref == 'refs/heads/master'
+if: contains(['refs/heads/master', 'refs/heads/beta', 'refs/heads/release'], github.ref)
 run: |
   state run deploy-updates
   state run deploy-installers
