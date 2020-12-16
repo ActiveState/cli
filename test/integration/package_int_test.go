@@ -215,6 +215,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchModules() {
 	cp.Expect("DateTime::Lite::LeapSecond")
 	cp.ExpectExitCode(0)
 }
+
 func (suite *PackageIntegrationTestSuite) TestPackage_searchWithWrongLang() {
 	suite.OnlyRunForTags(tagsuite.Package)
 	ts := e2e.New(suite.T(), false)
@@ -235,6 +236,29 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithBadLang() {
 	cp := ts.Spawn("search", "numpy", "--language=bad")
 	cp.Expect("Cannot obtain search")
 	cp.ExpectExitCode(1)
+}
+
+func (suite *PackageIntegrationTestSuite) TestPackage_info() {
+	suite.OnlyRunForTags(tagsuite.Package)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+	suite.PrepareActiveStateYAML(ts)
+
+	cp := ts.Spawn("info", "pexpect")
+	cp.Expect("Details for version")
+	cp.Expect("Authors")
+	cp.Expect(" - ")
+	cp.Expect(" - ")
+	cp.Expect("License")
+	cp.Expect("GPL")
+	cp.Expect("Version")
+	cp.Expect("Available")
+	cp.Expect("4.8.0")
+	cp.Expect("4.7.0")
+	cp.Expect("4.6.0")
+	cp.Expect("What's next?")
+	cp.Expect("run `state install")
+	cp.ExpectExitCode(0)
 }
 
 const (
