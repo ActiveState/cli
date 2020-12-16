@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/blang/semver"
@@ -42,7 +43,7 @@ func ParseVersion(buildEnv Env) (*semver.Version, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Could not read from file %s: %w", versionFile, err)
 	}
-	v, err := semver.Parse(string(data))
+	v, err := semver.Parse(strings.TrimSpace(string(data)))
 	if err != nil {
 		return nil, fmt.Errorf("Failed to parse version from file %s: %w", versionFile, err)
 	}
