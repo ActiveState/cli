@@ -58,10 +58,10 @@ func SearchIngredientsStrict(namespace Namespace, name string) ([]*IngredientAnd
 // FetchAuthors obtains author info for an ingredient at a particular version.
 func FetchAuthors(ingredID, ingredVersionID *strfmt.UUID) (Authors, error) {
 	if ingredID == nil {
-		return nil, errors.New("nil ingredient id provided")
+		return nil, errs.New("nil ingredient id provided")
 	}
 	if ingredVersionID == nil {
-		return nil, errors.New("nil ingredient version id provided")
+		return nil, errs.New("nil ingredient version id provided")
 	}
 
 	lim := int64(32)
