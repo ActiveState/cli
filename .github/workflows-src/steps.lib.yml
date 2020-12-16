@@ -7,14 +7,13 @@ run: state run generate-version
 #@ def steps_build():
 name: Build
 shell: bash
-if: contains(fromJSON('["refs/pull/1174/merge"]'), github.ref)
 run: state run build
 #@ end
 ---
 #@ def steps_build_32bit():
 name: Build (32bit)
 shell: bash
-if: runner.os == 'Windows' && contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release"]'), github.ref)
+if: runner.os == 'Windows'
 run: state run build-32bit
 #@ end
 ---

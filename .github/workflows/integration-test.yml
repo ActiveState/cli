@@ -89,7 +89,6 @@ jobs:
         state run preprocess
     - name: Build
       shell: bash
-      if: contains(fromJSON('["refs/pull/1174/merge"]'), github.ref)
       run: state run build
     - name: Generate Update
       shell: bash

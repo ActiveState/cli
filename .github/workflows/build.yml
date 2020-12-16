@@ -95,11 +95,10 @@ jobs:
         state run preprocess
     - name: Build
       shell: bash
-      if: contains(fromJSON('["refs/pull/1174/merge"]'), github.ref)
       run: state run build
     - name: Build (32bit)
       shell: bash
-      if: runner.os == 'Windows' && contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release"]'), github.ref)
+      if: runner.os == 'Windows'
       run: state run build-32bit
     - name: Build Install Scripts
       shell: bash
@@ -251,7 +250,6 @@ jobs:
         state run preprocess
     - name: Build
       shell: bash
-      if: contains(fromJSON('["refs/pull/1174/merge"]'), github.ref)
       run: state run build
     - name: Generate Update
       shell: bash
@@ -333,7 +331,6 @@ jobs:
         state run preprocess
     - name: Build
       shell: bash
-      if: contains(fromJSON('["refs/pull/1174/merge"]'), github.ref)
       run: state run build
     - name: Generate Update
       shell: bash
