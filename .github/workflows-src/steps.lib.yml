@@ -7,7 +7,7 @@ run: state run generate-version
 #@ def steps_build():
 name: Build
 shell: bash
-if: contains(fromJSON('["refs/heads/martind/ci-deploy-build-176150859"]'), github.ref)
+if: contains(fromJSON('["refs/pull/1174/merge"]'), github.ref)
 run: state run build
 #@ end
 ---
