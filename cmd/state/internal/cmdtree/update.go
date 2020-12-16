@@ -10,21 +10,33 @@ import (
 
 func newUpdateCommand(prime *primer.Values) *captain.Command {
 	runner := update.New(prime)
-	params := update.Params{}
 
 	cmd := captain.NewCommand(
 		"update",
 		locale.Tl("update_title", "Updating The State Tool"),
 		locale.Tl("update_description", "Updates the State Tool to the latest available version"),
 		prime.Output(),
+		[]*captain.Flag{},
+		[]*captain.Argument{},
+		func(cmd *captain.Command, args []string) error {
+			return runner.Run()
+		},
+	)
+	cmd.SetGroup(UtilsGroup)
+	cmd.SetSkipChecks(true)
+	return cmd
+}
+
+func newUpdateLockCommand(prime *primer.Values) *captain.Command {
+	runner := update.NewLock(prime)
+	params := update.LockParams{}
+
+	cmd := captain.NewCommand(
+		"lock",
+		locale.Tl("lock_title", "Lock the State Tool version"),
+		locale.Tl("lock_description", "Lock the State Tool at the current version, this disables automatic updates."),
+		prime.Output(),
 		[]*captain.Flag{
-			{
-				Name: "lock",
-				Description: locale.Tl(
-					"flag_update_lock",
-					"Lock the State Tool at the current version, this disables automatic updates. You can still force an update by manually running the update command."),
-				Value: &params.Lock,
-			},
 			{
 				Name: "force",
 				Description: locale.Tl(
@@ -38,7 +50,6 @@ func newUpdateCommand(prime *primer.Values) *captain.Command {
 			return runner.Run(&params)
 		},
 	)
-	cmd.SetGroup(UtilsGroup)
 	cmd.SetSkipChecks(true)
 	return cmd
 }
