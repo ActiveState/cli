@@ -176,6 +176,9 @@ func userExpander(auth *authentication.Auth, element string) string {
 	if element == "email" {
 		return auth.Email()
 	}
+	if element == "jwt" {
+		return auth.BearerToken()
+	}
 	return ""
 }
 
