@@ -79,7 +79,7 @@ func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 // PkgDetailsTable describes package details.
 type PkgDetailsTable struct {
 	Authors   []string `locale:"package_authors,Authors" json:"authors"`
-	Link      string   `locale:"package_link,Link" json:"link"`
+	Website   string   `locale:"package_website,Website" json:"website"`
 	copyright string   //`locale:"package_copyright,Copyright" json:"copyright"`
 	license   string   //`locale:"package_license,License" json:"license"`
 }
@@ -97,7 +97,7 @@ func newInfoResult(iv *model.IngredientAndVersion, authors model.Authors) *infoR
 		name:          locale.T("unknown_value"),
 		latestVersion: locale.T("unknown_value"),
 		PkgDetailsTable: PkgDetailsTable{
-			Link:      locale.T("unknown_value"),
+			Website:   locale.T("unknown_value"),
 			copyright: locale.T("unknown_value"),
 			license:   locale.T("unknown_value"),
 		},
@@ -112,8 +112,9 @@ func newInfoResult(iv *model.IngredientAndVersion, authors model.Authors) *infoR
 			res.Description = *iv.Ingredient.Description
 		}
 
-		if iv.Ingredient.Links != nil && iv.Ingredient.Links.Self != nil {
-			res.PkgDetailsTable.Link = iv.Ingredient.Links.Self.String()
+		website := iv.Ingredient.Website.String()
+		if website != "" {
+			res.PkgDetailsTable.Website = website
 		}
 	}
 
