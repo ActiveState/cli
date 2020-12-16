@@ -57,7 +57,6 @@ func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 		)
 	}
 
-	// NOTE: Should more than one result be handled?
 	pkg := packages[0]
 
 	authors, err := model.FetchAuthors(pkg.Ingredient.IngredientID, pkg.LatestVersion.IngredientVersionID)
