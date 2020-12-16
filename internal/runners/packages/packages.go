@@ -1,6 +1,7 @@
 package packages
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/pkg/cmdlets/auth"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
@@ -42,20 +44,6 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 		version = ""
 	}
 
-	// Verify that the provided package actually exists (the vcs API doesn't care)
-	var err error
-	if version == "" {
-		_, err = model.IngredientWithLatestVersion(name, ns)
-	} else {
-		_, err = model.IngredientByNameAndVersion(name, version, ns)
-	}
-	if err != nil {
-		if errs.Matches(err, &model.IngredientNotFoundError{}) {
-			return addSuggestions(ns, name)
-		}
-		return locale.WrapError(err, "package_ingredient_err_search", "Failed to resolve ingredient named: {{.V0}}", name)
-	}
-
 	// Check if this is an addition or an update
 	if operation == model.OperationAdded {
 		req, err := model.GetRequirement(pj.CommitUUID(), ns.String(), name)
@@ -81,6 +69,20 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 	orderChanged := len(revertCommit.Changeset) > 0
 
 	logging.Debug("Order changed: %v", orderChanged)
+
+	// Verify that the provided package actually exists (the vcs API doesn't care)
+	_, err = model.FetchRecipe(commitID, pj.Owner(), pj.Name(), &model.HostPlatform)
+	if err != nil {
+		rerr := &inventory_operations.ResolveRecipesBadRequest{}
+		if errors.As(err, &rerr) {
+			suggestions, serr := getSuggestions(ns, name)
+			if serr != nil {
+				logging.Error("Failed to retrieve suggestions: %v", err)
+			}
+			return locale.WrapInputError(err, "package_ingredient_alternatives", "Could not match {{.V0}}. Did you mean:\n\n{{.V1}}", name, strings.Join(suggestions, "\n"))
+		}
+		return locale.WrapError(err, "package_ingredient_err_search", "Failed to resolve ingredient named: {{.V0}}", name)
+	}
 
 	// Update project references to the new commit, if changes were indeed made (otherwise we effectively drop the new commit)
 	if orderChanged {
@@ -130,10 +132,10 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 	return nil
 }
 
-func addSuggestions(ns model.Namespace, name string) error {
+func getSuggestions(ns model.Namespace, name string) ([]string, error) {
 	results, err := model.SearchIngredients(ns, name)
 	if err != nil {
-		return locale.WrapError(err, "package_ingredient_err_search", "Failed to resolve ingredient named: {{.V0}}", name)
+		return []string{}, locale.WrapError(err, "package_ingredient_err_search", "Failed to resolve ingredient named: {{.V0}}", name)
 	}
 
 	maxResults := 5
@@ -141,13 +143,13 @@ func addSuggestions(ns model.Namespace, name string) error {
 		results = results[:maxResults]
 	}
 
-	suggestions := make([]string, maxResults)
-	for i := range results {
-		suggestions[i] = fmt.Sprintf(" - %s", *results[i].Ingredient.Name)
+	suggestions := make([]string, 0, maxResults+1)
+	for _, result := range results {
+		suggestions = append(suggestions, fmt.Sprintf(" - %s", *result.Ingredient.Name))
 	}
-	suggestions = append(suggestions, locale.Tl("ingredient_alternatives_more", " - .. (to see more results run `state search {{.V0}}`)", name))
+	suggestions = append(suggestions, locale.Tr(fmt.Sprintf("%s_ingredient_alternatives_more", ns.Type()), name))
 
-	return locale.NewInputError("package_ingredient_alternatives", "Could not match {{.V0}}. Did you mean:\n\n{{.V1}}", name, strings.Join(suggestions, "\n"))
+	return suggestions, nil
 }
 
 func splitNameAndVersion(input string) (string, string) {
