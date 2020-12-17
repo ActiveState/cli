@@ -234,9 +234,6 @@ func (p *Project) Branch() string { return p.projectfile.Branch() }
 // IsLocked returns whether the current project is locked
 func (p *Project) IsLocked() bool { return p.Lock() != "" }
 
-// IsLocked returns whether the current project is locked
-func (p *Project) IsLocked() bool { return p.Lock() != "" }
-
 // Lock returns the lock information for this project
 func (p *Project) Lock() string { return p.projectfile.Lock }
 
