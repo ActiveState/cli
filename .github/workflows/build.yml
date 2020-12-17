@@ -3,6 +3,8 @@ name: Build-Test-Deploy
   push:
     branches:
     - master
+    - beta
+    - release
   pull_request:
     types:
     - labeled
@@ -21,13 +23,6 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
-    - name: Validate
-      shell: bash
-      run: |
-        if [ "${GITHUB_REF##*/}" != "master" ] && [ "${{ contains(toJson(github.event.pull_request.labels), 'version:') }}" != "true" ]; then
-          echo "Version label must be set"
-          exit 1
-        fi
     - name: Install Go
       uses: actions/setup-go@v2
       with:
@@ -423,7 +418,7 @@ jobs:
       run: rm build/state* || true
     - name: Deploy
       shell: bash
-      if: github.ref == 'refs/heads/master'
+      if: contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release"]'), github.ref)
       run: |
         state run deploy-updates
         state run deploy-installers

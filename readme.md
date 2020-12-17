@@ -27,30 +27,21 @@ For usage information please refer to the [State Tool Documentation](http://docs
 ## Development
 
 ### Requirements
-* Go 1.13 or above
+* Go 1.15 or above
 * [packr](https://github.com/gobuffalo/packr): `go get -u github.com/gobuffalo/packr/...`
 
 ### Building & Testing
+
 * **Building:** `state run build`
-   * The built executable will be stored in the `build` directory
+  * The built executable will be stored in the `build` directory
+  * If you modified assets, switched branches or are building for the first time you will need to first
+    run `state run preprocess`
 * **Testing:**
-   * **Unit tests\*:** `state run test`
-   * **Integration tests:** `state run integration-tests`
+  * **Unit tests\*:** `state run test`
+  * **Integration tests:** `state run integration-tests`
 
 <sup>
 * Our unit tests are in a state of slowly being converted to standalone
  integration tests, meaning that while we refer to them as unit tests
  they still contain a lot of tests that are better described as integration tests.
 </sup>
-
-### Refactoring
-Our codebase has various refactorings underway that are too large to land
-in a single PR, as such please keep the following guidelines in mind when
-contributing.
-
-* Error handling is slowly being refactored to retire our home brewed
- failures package in favour of conventional Go errors, please refer to
- [docs/errors.md](docs/errors.md) for more information.
-* Commands registered under the [state/](state/) folder are using our legacy
-  command architecture, all future commands should use the
-  [cmd/state/internal/cmdtree](cmd/state/internal/cmdtree) architecture.

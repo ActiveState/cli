@@ -11,6 +11,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/constants/version"
+	"github.com/blang/semver"
 )
 
 // Constants holds constants that will be preprocessed, meaning the key value parts here will be built into the constants
@@ -25,18 +26,17 @@ func init() {
 		commitRef = sha
 	}
 
-	inc, err := version.NewIncrementation(NewGithubIncrementStateStore(os.Getenv("GITHUB_REPO_TOKEN")), branchName, buildEnvironment())
+	newVersion, err := version.ParseVersion(buildEnvironment())
 	if err != nil {
-		log.Fatalf("Could not initialize version incrementer: %s", err)
+		log.Fatalf("Could not parse new version: %s", err)
 	}
 
 	Constants["BranchName"] = func() string { return branchName }
 	Constants["BuildNumber"] = func() string { return buildNumber }
 	Constants["RevisionHash"] = func() string { return getCmdOutput("git rev-parse --verify " + commitRef) }
 	Constants["RevisionHashShort"] = func() string { return getCmdOutput("git rev-parse --short " + commitRef) }
-	Constants["Version"] = func() string { return mustIncrementVersionRevision(inc, Constants["RevisionHashShort"]()) }
-	Constants["VersionNumber"] = func() string { return mustIncrementVersion(inc) }
-	Constants["IncrementString"] = func() string { return mustGetIncrementString(inc) }
+	Constants["Version"] = func() string { return mustVersionWithRevision(newVersion, Constants["RevisionHashShort"]()) }
+	Constants["VersionNumber"] = func() string { return newVersion.String() }
 	Constants["Date"] = func() string { return time.Now().Format(constants.DateTimeFormatRecord) }
 	Constants["UserAgent"] = func() string {
 		return fmt.Sprintf("%s/%s; %s", constants.CommandName, Constants["Version"](), branchName)
@@ -108,29 +108,11 @@ func onCI() bool {
 	return false
 }
 
-func mustIncrementVersion(inc *version.Incrementation) string {
-	vers, err := inc.Increment()
+func mustVersionWithRevision(ver *semver.Version, revision string) string {
+	v, err := version.VersionWithRevision(ver, revision)
 	if err != nil {
-		log.Fatalf("Failed to increment version: %s", err)
+		log.Fatalf("failed to add")
 	}
 
-	return vers.String()
-}
-
-func mustIncrementVersionRevision(inc *version.Incrementation, revision string) string {
-	vers, err := inc.IncrementWithRevision(revision)
-	if err != nil {
-		log.Fatalf("Failed to increment version: %s", err)
-	}
-
-	return vers.String()
-}
-
-func mustGetIncrementString(inc *version.Incrementation) string {
-	increment, err := inc.Type()
-	if err != nil {
-		log.Fatalf("Failed to get increment string: %s", err)
-	}
-
-	return increment
+	return v.String()
 }
