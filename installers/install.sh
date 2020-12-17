@@ -9,7 +9,7 @@ USAGE=`cat <<EOF
 install.sh [flags]
 
 Flags:
- -b <branch>                     Default 'unstable'.  Specify an alternative branch to install from (eg. master)
+ -b <branch>                     Default 'release'.  Specify an alternative branch to install from (eg. beta)
  -n                              Don't prompt for anything when installing into a new location
  -f                              Forces overwrite.  Overwrite existing State Tool
  -t <dir>                        Install into target directory <dir>
@@ -24,7 +24,7 @@ EOF
 unset ACTIVESTATE_PROJECT
 
 # URL to fetch updates from.
-STATEURL="https://s3.ca-central-1.amazonaws.com/cli-update/update/state/unstable/"
+STATEURL="https://s3.ca-central-1.amazonaws.com/cli-update/update/state/release/"
 # Name of the executable to ultimately use.
 STATEEXE="state"
 # Optional target directory
@@ -143,7 +143,7 @@ while getopts "nb:t:e:f?h-:" opt; do
     esac
     ;;
   b)
-    STATEURL=`echo $STATEURL | sed -e "s/unstable/$OPTARG/;"`
+    STATEURL=`echo $STATEURL | sed -e "s/release/$OPTARG/;"`
     ;;
   t)
     TARGET=$OPTARG
