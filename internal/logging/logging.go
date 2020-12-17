@@ -160,8 +160,6 @@ var currentHandler LoggingHandler = &strandardHandler{
 	DefaultFormatter,
 }
 
-var dataDir string // set in init
-
 // Set the current handler of the library. We currently support one handler, but it might be nice to have more
 func SetHandler(h LoggingHandler) {
 	currentHandler = h
@@ -197,18 +195,6 @@ func Debug(msg string, args ...interface{}) {
 	if level&DEBUG != 0 {
 		writeMessage("DEBUG", msg, args...)
 	}
-}
-
-func Close() error {
-	file, err := os.Open(FilePath())
-	if err != nil {
-		return err
-	}
-	err = file.Sync()
-	if err != nil {
-		return err
-	}
-	return file.Close()
 }
 
 //format the message

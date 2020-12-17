@@ -14,6 +14,7 @@ import (
 
 	"github.com/rollbar/rollbar-go"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/rtutils"
 )
@@ -65,17 +66,18 @@ func FileNameFor(pid int) string {
 }
 
 func FilePath() string {
-	return filepath.Join(dataDir, FileName())
+	return filepath.Join(config.ConfigPath(), FileName())
 }
 
 func FilePathFor(filename string) string {
-	return filepath.Join(dataDir, filename)
+	return filepath.Join(config.ConfigPath(), filename)
 }
 
 const FileNameSuffix = ".log"
 
 func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interface{}) error {
-	filename := filepath.Join(dataDir, FileName())
+	datadir := config.ConfigPath()
+	filename := filepath.Join(datadir, FileName())
 
 	// only log to rollbar when on stable or unstable branch and when built via CI (ie., non-local build)
 	if ctx.Level == "ERROR" && (constants.BranchName == constants.StableBranch || constants.BranchName == constants.UnstableBranch) && rtutils.BuiltViaCI {
@@ -126,13 +128,12 @@ func (l *fileHandler) Printf(msg string, args ...interface{}) {
 	l.Emit(getContext("DEBUG", 1), logMsg, args...)
 }
 
-func Init(datadir string) {
-	dataDir = datadir
-
+func init() {
 	handler := &fileHandler{DefaultFormatter, nil, safeBool{}}
 	SetHandler(handler)
 
 	// Clean up old log files
+	datadir := config.ConfigPath()
 	files, err := ioutil.ReadDir(datadir)
 	if err != nil {
 		Error("Could not scan config dir to clean up stale logs: %v", err)

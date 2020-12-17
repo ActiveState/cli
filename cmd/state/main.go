@@ -32,17 +32,9 @@ import (
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
-func init() {
-	// Set up logging
-	logging.Init(config.ConfigPath())
-}
-
 func main() {
-	// Ensure any config set is preserved and/or cleaned up
-	defer config.Close()
-
-	defer logging.Close()
-	logging.SetupRollbar(config.InstallSource())
+	// Set up logging
+	logging.SetupRollbar()
 	defer rollbar.Close()
 
 	// Handle panics gracefully
@@ -110,6 +102,9 @@ func run(args []string, isInteractive bool, out output.Outputer) (int, error) {
 
 	logging.Debug("ConfigPath: %s", config.ConfigPath())
 	logging.Debug("CachePath: %s", config.CachePath())
+
+	// Ensure any config set is preserved
+	defer config.Save()
 
 	// Retrieve project file
 	pjPath, err := projectfile.GetProjectFilePath()

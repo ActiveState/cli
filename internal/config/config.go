@@ -56,19 +56,3 @@ func InstallSource() string {
 func Save() error {
 	return defaultConfig.Save()
 }
-
-// ScheduleRemoval indicates whether config directory removal should occur
-// after the open config instance is closed.
-func ScheduleRemoval(b bool) {
-	defaultConfig.ScheduleRemoval(b)
-}
-
-// RemovalScheduled indicates whether the config directory will be cleaned up.
-func RemovalScheduled() bool {
-	return defaultConfig.RemovalScheduled()
-}
-
-// Close the currently open config instance.
-func Close() error {
-	return defaultConfig.Close()
-}

@@ -8,7 +8,6 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
@@ -25,6 +24,7 @@ func (c *confirmMock) Confirm(title, message string, defaultChoice bool) (bool, 
 type CleanTestSuite struct {
 	suite.Suite
 	confirm     *confirmMock
+	configPath  string
 	cachePath   string
 	installPath string
 }
@@ -40,6 +40,10 @@ func (suite *CleanTestSuite) SetupTest() {
 	err = installFile.Close()
 	suite.Require().NoError(err)
 
+	suite.configPath, err = ioutil.TempDir("", "")
+	suite.Require().NoError(err)
+	suite.Require().DirExists(suite.configPath)
+
 	suite.cachePath, err = ioutil.TempDir("", "")
 	suite.Require().NoError(err)
 	suite.Require().DirExists(suite.cachePath)
@@ -48,13 +52,16 @@ func (suite *CleanTestSuite) SetupTest() {
 func (suite *CleanTestSuite) TestUninstall() {
 	runner, err := newUninstall(&outputhelper.TestOutputer{}, &confirmMock{confirm: true})
 	suite.Require().NoError(err)
+	runner.configPath = suite.configPath
 	runner.cachePath = suite.cachePath
 	runner.installPath = suite.installPath
 	err = runner.Run(&UninstallParams{})
 	suite.Require().NoError(err)
 	time.Sleep(2 * time.Second)
 
-	suite.True(config.RemovalScheduled(), "removal is scheduled")
+	if fileutils.DirExists(suite.configPath) {
+		suite.Fail("config directory should not exist after uninstall")
+	}
 	if fileutils.DirExists(suite.cachePath) {
 		suite.Fail("cache directory should not exist after uninstall")
 	}
@@ -69,7 +76,7 @@ func (suite *CleanTestSuite) TestUninstall_PromptNo() {
 	err = runner.Run(&UninstallParams{})
 	suite.Require().NoError(err)
 
-	suite.False(config.RemovalScheduled(), "removal is not scheduled")
+	suite.Require().DirExists(suite.configPath)
 	suite.Require().DirExists(suite.cachePath)
 	suite.Require().FileExists(suite.installPath)
 }
@@ -87,7 +94,7 @@ func (suite *CleanTestSuite) TestUninstall_Activated() {
 }
 
 func (suite *CleanTestSuite) AfterTest(suiteName, testName string) {
-	config.ScheduleRemoval(false)
+	os.RemoveAll(suite.configPath)
 	os.RemoveAll(suite.cachePath)
 	os.Remove(suite.installPath)
 }

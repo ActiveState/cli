@@ -26,7 +26,6 @@ type Instance struct {
 	localPath     string
 	installSource string
 	Exit          func(code int)
-	scheduleRmv   bool
 }
 
 // New creates a new config instance
@@ -104,30 +103,6 @@ func (i *Instance) Save() error {
 		return err
 	}
 	return viper.WriteConfig()
-}
-
-// ScheduleRemoval sets the removal flag so that the config directory is
-// cleaned up when the instance is closed.
-func (i *Instance) ScheduleRemoval(b bool) {
-	i.scheduleRmv = b
-}
-
-// RemovalScheduled indicates whether the config directory will be cleaned up.
-func (i *Instance) RemovalScheduled() bool {
-	return i.scheduleRmv
-}
-
-// Close implements the io.Closer interface.
-func (i *Instance) Close() error {
-	if err := i.Save(); err != nil {
-		return err
-	}
-
-	if i.scheduleRmv {
-		return i.RemoveDirectory()
-	}
-
-	return nil
 }
 
 func (i *Instance) ensureConfigExists() {
@@ -220,9 +195,4 @@ func (i *Instance) readInstallSource() {
 	if err != nil {
 		i.installSource = "unknown"
 	}
-}
-
-// RemoveDirectory removes the config directory in a cross-platform manner.
-func (i *Instance) RemoveDirectory() error {
-	return removeConfig(i.configDir.Path)
 }
