@@ -9,7 +9,7 @@ name: Build-Test-Deploy
       - beta
       - release
   pull_request:
-    types: [labeled, synchronize, reopened]
+    types: [labeled, opened, synchronize, reopened]
 
 jobs:
   prepare: #@ jobs_prepare()
