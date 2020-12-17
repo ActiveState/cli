@@ -78,8 +78,10 @@ func fetchUpdater(version, channel string) (*updater.Updater, *updater.Info, err
 }
 
 func fetchChannel(defaultChannel string, preferDefault bool) string {
-	if overrideBranch := os.Getenv(constants.UpdateBranchEnvVarName); !preferDefault && overrideBranch != "" {
-		return overrideBranch
+	if defaultChannel == "" || !preferDefault {
+		if overrideBranch := os.Getenv(constants.UpdateBranchEnvVarName); overrideBranch != "" {
+			return overrideBranch
+		}
 	}
 	if defaultChannel != "" {
 		return defaultChannel
