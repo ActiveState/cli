@@ -79,8 +79,8 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 	datadir := config.ConfigPath()
 	filename := filepath.Join(datadir, FileName())
 
-	// only log to rollbar when on stable or unstable branch and when built via CI (ie., non-local build)
-	if ctx.Level == "ERROR" && (constants.BranchName == constants.StableBranch || constants.BranchName == constants.UnstableBranch) && rtutils.BuiltViaCI {
+	// only log to rollbar when on release, beta or unstable branch and when built via CI (ie., non-local build)
+	if ctx.Level == "ERROR" && (constants.BranchName == constants.ReleaseBranch || constants.BranchName == constants.BetaBranch || constants.BranchName == constants.ExperimentalBranch) && rtutils.BuiltViaCI {
 		data := map[string]interface{}{}
 
 		if l.file != nil {
