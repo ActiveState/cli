@@ -4,6 +4,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
@@ -28,9 +29,7 @@ func (suite *CleanTestSuite) TestCache() {
 	if fileutils.DirExists(suite.cachePath) {
 		suite.Fail("cache directory should not exist after clean cache")
 	}
-	if !fileutils.DirExists(suite.configPath) {
-		suite.Fail("config directory should exist after clean cache")
-	}
+	suite.False(config.RemovalScheduled(), "removal is not scheduled")
 	if !fileutils.FileExists(suite.installPath) {
 		suite.Fail("installed file should exist after clean cache")
 	}
@@ -42,7 +41,7 @@ func (suite *CleanTestSuite) TestCache_PromptNo() {
 	err := runner.Run(&CacheParams{})
 	suite.Require().NoError(err)
 
-	suite.Require().DirExists(suite.configPath)
+	suite.False(config.RemovalScheduled(), "removal is not scheduled")
 	suite.Require().DirExists(suite.cachePath)
 	suite.Require().FileExists(suite.installPath)
 }
@@ -54,7 +53,6 @@ func (suite *CleanTestSuite) TestCache_Activated() {
 	}()
 
 	runner := newCache(&outputhelper.TestOutputer{}, &configMock{}, &confirmMock{})
-	runner.path = suite.cachePath
 	err := runner.Run(&CacheParams{})
 	suite.Require().Error(err)
 }

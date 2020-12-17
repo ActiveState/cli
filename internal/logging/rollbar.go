@@ -8,7 +8,6 @@ import (
 
 	"github.com/rollbar/rollbar-go"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/machineid"
 )
@@ -20,7 +19,7 @@ type delayedLog struct {
 
 var delayedLogs []delayedLog
 
-func SetupRollbar() {
+func SetupRollbar(installSrc string) {
 	// set user to unknown (if it has not been set yet)
 	if _, ok := rollbar.Custom()["UserID"]; !ok {
 		UpdateRollbarPerson("unknown", "unknown", "unknown")
@@ -48,7 +47,7 @@ func SetupRollbar() {
 	})
 
 	rollbar.SetCustom(map[string]interface{}{
-		"install_source": config.InstallSource(),
+		"install_source": installSrc,
 	})
 
 	log.SetOutput(CurrentHandler().Output())

@@ -30,8 +30,6 @@ var args = os.Args[1:]
 var exit = os.Exit
 
 func init() {
-	logging.Debug("Init")
-
 	viper.SetDefault("Locale", "en-US")
 
 	path := getLocalePath()

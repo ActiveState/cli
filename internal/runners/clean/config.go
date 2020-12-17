@@ -4,17 +4,14 @@ import (
 	"errors"
 	"os"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 )
 
 type Config struct {
 	output  output.Outputer
 	confirm confirmAble
-	path    string
 }
 
 type ConfigParams struct {
@@ -29,7 +26,6 @@ func newConfig(out output.Outputer, confirm confirmAble) *Config {
 	return &Config{
 		output:  out,
 		confirm: confirm,
-		path:    config.ConfigPath(),
 	}
 }
 
@@ -48,6 +44,7 @@ func (c *Config) Run(params *ConfigParams) error {
 		}
 	}
 
-	logging.Debug("Removing config directory: %s", c.path)
-	return removeConfig(c.path)
+	removeConfig()
+
+	return nil
 }
