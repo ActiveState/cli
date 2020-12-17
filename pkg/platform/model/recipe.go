@@ -160,11 +160,11 @@ func FetchRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *stri
 
 		orderBody, _ := json.Marshal(params.Order)
 		switch rrErr := err.(type) {
-		case *iop.SolveOrderDefault:
+		case *iop.ResolveRecipesDefault:
 			msg := *rrErr.Payload.Message
 			logging.Error("Could not solve order, error: %s, order: %s", msg, string(orderBody))
 			return nil, locale.WrapInputError(err, "err_solve_order", "", msg)
-		case *iop.SolveOrderBadRequest:
+		case *iop.ResolveRecipesBadRequest:
 			msg := *rrErr.Payload.Message
 			logging.Error("Bad request while resolving order, error: %s, order: %s", msg, string(orderBody))
 			return nil, locale.WrapError(err, "err_order_bad_request", "", commitID.String(), msg)

@@ -176,6 +176,15 @@ func (suite *BundleIntegrationTestSuite) TestBundle_headless_operation() {
 	cp := ts.Spawn("activate", "ActiveState/Perl-5.32", "--path", ts.Dirs.Work, "--output=json")
 	cp.ExpectExitCode(0)
 
+	suite.Run("install non-existing", func() {
+		cp := ts.Spawn("bundles", "install", "non-existing")
+		cp.ExpectLongString("Do you want to continue as an anonymous user?")
+		cp.Send("Y")
+		cp.Expect("Could not match non-existing")
+		cp.ExpectLongString("to see more results run `state bundles search non-existing`")
+		cp.Wait()
+	})
+
 	suite.Run("install", func() {
 		cp := ts.Spawn("bundles", "install", "Utilities")
 		cp.ExpectLongString("Do you want to continue as an anonymous user?")

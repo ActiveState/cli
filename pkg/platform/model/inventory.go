@@ -1,7 +1,6 @@
 package model
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -28,69 +27,6 @@ type IngredientAndVersion struct {
 type Platform = inventory_models.Platform
 
 var platformCache []*Platform
-
-type IngredientNotFoundError struct{ error }
-
-// IngredientByNameAndVersion fetches an ingredient that matches the given name and version. If version is empty the first
-// matching ingredient will be returned.
-func IngredientByNameAndVersion(name, version string, ns Namespace) (*IngredientAndVersion, error) {
-	results, err := searchIngredientsNamespace(50, ns, name)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(results) == 0 {
-		return nil, &IngredientNotFoundError{errors.New(locale.Tl("inventory_ingredient_not_available", "The ingredient {{.V0}} is not available on the ActiveState Platform", name))}
-	}
-
-	for _, ingredient := range results {
-		for _, feature := range ingredient.LatestVersion.ProvidedFeatures {
-			if feature.Feature == nil || *feature.Feature != name {
-				continue
-			}
-
-			for _, ver := range ingredient.Versions {
-				if ver.Version == version {
-					return &IngredientAndVersion{
-						ingredient.SearchIngredientsResponseItem,
-						ver.Version,
-						ingredient.Namespace,
-					}, nil
-				}
-			}
-		}
-	}
-
-	return nil, &IngredientNotFoundError{errors.New(locale.Tl("inventory_ingredient_no_version_available", "No versions are available for package {{.V0}} on the ActiveState Platform", name))}
-}
-
-// IngredientWithLatestVersion will grab the latest available ingredient and ingredientVersion that matches the ingredient name
-func IngredientWithLatestVersion(name string, ns Namespace) (*IngredientAndVersion, error) {
-	results, err := searchIngredientsNamespace(50, ns, name)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(results) == 0 {
-		return nil, &IngredientNotFoundError{errors.New(locale.Tl("inventory_ingredient_not_available", "The ingredient {{.V0}} is not available on the ActiveState Platform", name))}
-	}
-
-	for _, res := range results {
-		for _, feature := range res.LatestVersion.ProvidedFeatures {
-			if feature.Feature == nil || strings.ToLower(*feature.Feature) != strings.ToLower(name) {
-				continue
-			}
-
-			return &IngredientAndVersion{
-				res.SearchIngredientsResponseItem,
-				*res.LatestVersion.Version,
-				res.Namespace,
-			}, nil
-		}
-	}
-
-	return nil, &IngredientNotFoundError{errors.New(locale.Tl("inventory_ingredient_no_version_available", "No versions are available for package {{.V0}} on the ActiveState Platform", name))}
-}
 
 // SearchIngredients will return all ingredients+ingredientVersions that fuzzily
 // match the ingredient name.
