@@ -85,9 +85,6 @@ jobs:
     - name: Preprocess
       shell: bash
       run: |
-        if [[ "${GITHUB_REF##*/}" == "master" ]]; then
-          export BRANCH_OVERRIDE=unstable
-        fi
         state run preprocess
     - name: Build
       shell: bash
@@ -196,9 +193,6 @@ jobs:
     - name: Preprocess
       shell: bash
       run: |
-        if [[ "${GITHUB_REF##*/}" == "master" ]]; then
-          export BRANCH_OVERRIDE=unstable
-        fi
         state run preprocess
     - name: Unit Tests
       shell: bash
@@ -240,9 +234,6 @@ jobs:
     - name: Preprocess
       shell: bash
       run: |
-        if [[ "${GITHUB_REF##*/}" == "master" ]]; then
-          export BRANCH_OVERRIDE=unstable
-        fi
         state run preprocess
     - name: Build
       shell: bash
@@ -321,9 +312,6 @@ jobs:
     - name: Preprocess
       shell: bash
       run: |
-        if [[ "${GITHUB_REF##*/}" == "master" ]]; then
-          export BRANCH_OVERRIDE=unstable
-        fi
         state run preprocess
     - name: Build
       shell: bash
@@ -410,9 +398,6 @@ jobs:
     - name: Preprocess
       shell: bash
       run: |
-        if [[ "${GITHUB_REF##*/}" == "master" ]]; then
-          export BRANCH_OVERRIDE=unstable
-        fi
         state run preprocess
     - name: Cleanup Build Dir
       shell: bash
