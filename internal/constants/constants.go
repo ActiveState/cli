@@ -122,9 +122,6 @@ const ReleaseBranch = "release"
 // BetaBranch is the branch used for beta builds
 const BetaBranch = "beta"
 
-// UnstableBranch is the branch used for unstable builds.  Note that this branch is not used anymore
-const UnstableBranch = "unstable"
-
 // ExperimentalBranch is the branch used for experimental builds
 const ExperimentalBranch = "master"
 
