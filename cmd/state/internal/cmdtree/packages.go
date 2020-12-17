@@ -163,3 +163,34 @@ func newSearchCommand(prime *primer.Values) *captain.Command {
 		},
 	).SetGroup(PackagesGroup)
 }
+
+func newInfoCommand(prime *primer.Values) *captain.Command {
+	runner := packages.NewInfo(prime)
+
+	params := packages.InfoRunParams{}
+
+	return captain.NewCommand(
+		"info",
+		locale.Tl("package_info_title", "Displaying Package Information"),
+		locale.T("package_info_cmd_description"),
+		prime.Output(),
+		[]*captain.Flag{
+			{
+				Name:        "language",
+				Description: locale.T("package_info_flag_language_description"),
+				Value:       &params.Language,
+			},
+		},
+		[]*captain.Argument{
+			{
+				Name:        locale.T("package_arg_name"),
+				Description: locale.T("package_arg_name_description"),
+				Value:       &params.Package,
+				Required:    true,
+			},
+		},
+		func(_ *captain.Command, _ []string) error {
+			return runner.Run(params, model.NamespacePackage)
+		},
+	).SetGroup(PackagesGroup)
+}
