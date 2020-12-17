@@ -116,10 +116,13 @@ const DefaultRSABitLength int = 4096
 // ExpanderMaxDepth defines the maximum depth to fully expand a given value.
 const ExpanderMaxDepth = int(10)
 
-// StableBranch is the branch mapped to stable builds
-const StableBranch = "stable"
+// ReleaseBranch is the branch used for release builds
+const ReleaseBranch = "release"
 
-// UnstableBranch is the branch used for unstable builds
+// BetaBranch is the branch used for beta builds
+const BetaBranch = "beta"
+
+// UnstableBranch is the branch used for unstable builds.  Note that this branch is not used anymore
 const UnstableBranch = "unstable"
 
 // ExperimentalBranch is the branch used for experimental builds
