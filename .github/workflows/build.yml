@@ -3,6 +3,8 @@ name: Build-Test-Deploy
   push:
     branches:
     - master
+    - beta
+    - release
   pull_request:
     types:
     - labeled
