@@ -210,20 +210,10 @@ with:
     session-build-windows-latest
 #@ end
 ---
-#@ def steps_validate():
-name: "Validate"
-shell: bash
-run: |
-  if [ "${GITHUB_REF##*/}" != "master" ] && [ "${{ contains(toJson(github.event.pull_request.labels), 'version:') }}" != "true" ]; then
-    echo "Version label must be set"
-    exit 1
-  fi
-#@ end
----
 #@ def steps_deploy():
 name: "Deploy"
 shell: bash
-if: github.ref == 'refs/heads/master'
+if: contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release"]'), github.ref)
 run: |
   state run deploy-updates
   state run deploy-installers

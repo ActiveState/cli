@@ -2,9 +2,11 @@ package main
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/colorize"
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/constants/version"
 	depMock "github.com/ActiveState/cli/internal/deprecation/mock"
@@ -20,7 +22,16 @@ type MainTestSuite struct {
 	suite.Suite
 }
 
+func (suite *MainTestSuite) cleanDeprecationFile() {
+	// force fetching of deprecation info
+	err := os.Remove(filepath.Join(config.ConfigPath(), "deprecation.json"))
+	if err != nil && !os.IsNotExist(err) {
+		suite.T().Logf("Could not remove deprecation file")
+	}
+}
+
 func (suite *MainTestSuite) TestDeprecated() {
+	suite.cleanDeprecationFile()
 	mock := depMock.Init()
 	defer mock.Close()
 	mock.MockDeprecated()
@@ -36,6 +47,8 @@ func (suite *MainTestSuite) TestDeprecated() {
 }
 
 func (suite *MainTestSuite) TestExpired() {
+	suite.cleanDeprecationFile()
+
 	mock := depMock.Init()
 	defer mock.Close()
 	mock.MockExpired()
