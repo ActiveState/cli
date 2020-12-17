@@ -16,7 +16,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
-	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/errs"
 )
 
 func setCwd(t *testing.T, subdir string) {
@@ -38,14 +38,12 @@ func TestProjectStruct(t *testing.T) {
 	project := Project{}
 	dat := strings.TrimSpace(`
 project: valueForProject
-version: valueForVersion
 environments: valueForEnvironments`)
 
 	err := yaml.Unmarshal([]byte(dat), &project)
 	assert.Nil(t, err, "Should not throw an error")
 
 	assert.Equal(t, "valueForProject", project.Project, "Project should be set")
-	assert.Equal(t, "valueForVersion", project.Version, "Version should be set")
 	assert.Equal(t, "valueForEnvironments", project.Environments, "Environments should be set")
 	assert.Equal(t, "", project.Path(), "Path should be empty")
 }
@@ -241,10 +239,10 @@ func TestSave(t *testing.T) {
 
 	path := filepath.Join(rootpath, "pkg", "projectfile", "testdata", "activestate.yaml")
 	project, err := Parse(path)
-	assert.Nil(t, err, "unexpected failure parsing our yaml file")
+	require.NoError(t, err, errs.Join(err, "\n").Error())
 
 	tmpfile, err := ioutil.TempFile("", "test")
-	assert.NoError(t, err, "Should create a temp file")
+	require.NoError(t, err, errs.Join(err, "\n").Error())
 
 	project.path = tmpfile.Name()
 	project.Save()
@@ -360,7 +358,6 @@ func TestParseVersionInfo(t *testing.T) {
 
 	versionInfo, err = ParseVersionInfo(filepath.Join(getWd(t, "withbadversion"), constants.ConfigFileName))
 	assert.Error(t, err)
-	assert.Equal(t, err.Error(), locale.T("err_invalid_version"))
 
 	path, err := ioutil.TempDir("", "ParseVersionInfoTest")
 	require.NoError(t, err)

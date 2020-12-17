@@ -10,16 +10,23 @@ import (
 
 func newUpdateCommand(prime *primer.Values) *captain.Command {
 	runner := update.New(prime)
+	params := update.Params{}
 
 	cmd := captain.NewCommand(
 		"update",
 		locale.Tl("update_title", "Updating The State Tool"),
 		locale.Tl("update_description", "Updates the State Tool to the latest available version"),
 		prime.Output(),
-		[]*captain.Flag{},
+		[]*captain.Flag{
+			{
+				Name:        "set-channel",
+				Description: locale.Tl("update_channel", "Switches to the given update channel, eg. 'release'."),
+				Value:       &params.Channel,
+			},
+		},
 		[]*captain.Argument{},
 		func(cmd *captain.Command, args []string) error {
-			return runner.Run()
+			return runner.Run(&params)
 		},
 	)
 	cmd.SetGroup(UtilsGroup)
@@ -37,6 +44,11 @@ func newUpdateLockCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("lock_description", "Lock the State Tool at the current version, this disables automatic updates."),
 		prime.Output(),
 		[]*captain.Flag{
+			{
+				Name:        "set-channel",
+				Description: locale.Tl("update_channel", "Switches to the given update channel, eg. 'release'."),
+				Value:       &params.Channel,
+			},
 			{
 				Name: "force",
 				Description: locale.Tl(

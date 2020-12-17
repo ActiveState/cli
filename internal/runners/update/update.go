@@ -13,6 +13,10 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
+type Params struct {
+	Channel string
+}
+
 type Update struct {
 	project *project.Project
 	out     output.Outputer
@@ -33,18 +37,15 @@ func New(prime primeable) *Update {
 	}
 }
 
-func (u *Update) Run() error {
+func (u *Update) Run(params *Params) error {
 	u.out.Notice(locale.Tl("updating_version", "Updating State Tool to latest version available."))
 
-	up := updater.New(constants.Version)
-	info, err := up.Info()
-	if err != nil {
-		return locale.WrapError(err, "err_update_updater", "Could not retrieve update information.")
-	}
+	channel := fetchChannel(params.Channel, true)
 
-	if info == nil {
-		u.out.Print(locale.Tl("update_uptodate", "You are already using the latest State Tool version available."))
-		return nil
+	up := updater.New(constants.Version)
+	up, info, err := fetchUpdater(constants.Version, channel)
+	if err != nil {
+		return errs.Wrap(err, "fetchUpdater failed")
 	}
 
 	if err = up.Run(u.out, false); err != nil {
@@ -54,6 +55,34 @@ func (u *Update) Run() error {
 		return locale.WrapError(err, "err_update_failed", "Update failed, please try again later or try reinstalling the State Tool.")
 	}
 
-	u.out.Print(locale.Tl("version_updated", "Version updated to {{.V0}}@{{.V1}}", constants.BranchName, info.Version))
+	u.out.Print(locale.Tl("version_updated", "Version updated to {{.V0}}@{{.V1}}", channel, info.Version))
 	return nil
+}
+
+func fetchUpdater(version, channel string) (*updater.Updater, *updater.Info, error) {
+	if channel != constants.BranchName {
+		version = "" // force update
+	}
+	up := updater.New(version)
+	up.DesiredBranch = channel
+	info, err := up.Info()
+	if err != nil {
+		return nil, nil, locale.WrapInputError(err, "err_update_fetch", "Could not retrieve update information, please verify that '{{.V0}}' is a valid channel.", channel)
+	}
+
+	if info == nil {
+		return nil, nil, locale.NewInputError("err_update_fetch", "Could not retrieve update information, please verify that '{{.V0}}' is a valid channel.", channel)
+	}
+
+	return up, info, nil
+}
+
+func fetchChannel(defaultChannel string, preferDefault bool) string {
+	if overrideBranch := os.Getenv(constants.UpdateBranchEnvVarName); !preferDefault && overrideBranch != "" {
+		return overrideBranch
+	}
+	if defaultChannel != "" {
+		return defaultChannel
+	}
+	return constants.BranchName
 }

@@ -2,6 +2,7 @@ package update
 
 import (
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
@@ -10,7 +11,8 @@ import (
 )
 
 type LockParams struct {
-	Force bool
+	Channel string
+	Force   bool
 }
 
 type Lock struct {
@@ -28,19 +30,33 @@ func NewLock(prime primeable) *Lock {
 }
 
 func (l *Lock) Run(params *LockParams) error {
+	l.out.Notice(locale.Tl("locking_version", "Locking State Tool version for current project."))
+
 	if l.project.IsLocked() && !params.Force {
 		if err := confirmLock(l.prompt); err != nil {
 			return locale.WrapError(err, "err_update_lock_confirm", "Could not confirm whether to update.")
 		}
 	}
-	l.out.Notice(locale.Tl("locking_version", "Locking State Tool to the current version."))
 
-	err := projectfile.AddLockInfo(l.project.Source().Path(), constants.BranchName, constants.Version)
+	defaultChannel := params.Channel
+	prefer := true
+	if defaultChannel == "" {
+		defaultChannel = l.project.Branch()
+		prefer = false // may be overwritten by env var
+	}
+	channel := fetchChannel(defaultChannel, prefer)
+
+	_, info, err := fetchUpdater(constants.Version, channel)
+	if err != nil {
+		return errs.Wrap(err, "fetchUpdater failed")
+	}
+
+	err = projectfile.AddLockInfo(l.project.Source().Path(), channel, info.Version)
 	if err != nil {
 		return locale.WrapError(err, "err_update_projectfile", "Could not update projectfile")
 	}
 
-	l.out.Print(locale.Tl("version_locked", "Version locked at {{.V0}}", constants.Version))
+	l.out.Print(locale.Tl("version_locked", "Version locked at {{.V0}}@{{.V1}}", channel, info.Version))
 	return nil
 }
 

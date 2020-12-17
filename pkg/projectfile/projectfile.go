@@ -63,8 +63,8 @@ const LocalProjectsConfigKey = "projects"
 // VersionInfo is used in cases where we only care about parsing the version field. In all other cases the version is parsed via
 // the Project struct
 type VersionInfo struct {
-	Branch  string `yaml:"branch"`
-	Version string `yaml:"version"`
+	Branch  string
+	Version string
 	Lock    string `yaml:"lock"`
 }
 
@@ -75,21 +75,21 @@ type ProjectSimple struct {
 
 // Project covers the top level project structure of our yaml
 type Project struct {
-	Project      string        `yaml:"project"`
-	Branch       string        `yaml:"branch,omitempty"`
-	Version      string        `yaml:"version,omitempty"`
-	Lock         string        `yaml:"lock,omitempty"`
-	Environments string        `yaml:"environments,omitempty"`
-	Platforms    []Platform    `yaml:"platforms,omitempty"`
-	Languages    Languages     `yaml:"languages,omitempty"`
-	Constants    Constants     `yaml:"constants,omitempty"`
-	Secrets      *SecretScopes `yaml:"secrets,omitempty"`
-	Events       Events        `yaml:"events,omitempty"`
-	Scripts      Scripts       `yaml:"scripts,omitempty"`
-	Jobs         Jobs          `yaml:"jobs,omitempty"`
-	Private      bool          `yaml:"private,omitempty"`
-	path         string        // "private"
-	parsedURL    projectURL    // parsed url data
+	Project       string        `yaml:"project"`
+	Lock          string        `yaml:"lock,omitempty"`
+	Environments  string        `yaml:"environments,omitempty"`
+	Platforms     []Platform    `yaml:"platforms,omitempty"`
+	Languages     Languages     `yaml:"languages,omitempty"`
+	Constants     Constants     `yaml:"constants,omitempty"`
+	Secrets       *SecretScopes `yaml:"secrets,omitempty"`
+	Events        Events        `yaml:"events,omitempty"`
+	Scripts       Scripts       `yaml:"scripts,omitempty"`
+	Jobs          Jobs          `yaml:"jobs,omitempty"`
+	Private       bool          `yaml:"private,omitempty"`
+	path          string        // "private"
+	parsedURL     projectURL    // parsed url data
+	parsedBranch  string
+	parsedVersion string
 }
 
 // Platform covers the platform structure of our yaml
@@ -500,6 +500,17 @@ func (p *Project) Init() error {
 		return locale.NewInputError("parse_project_file_url_err")
 	}
 	p.parsedURL = parsedURL
+
+	if p.Lock != "" {
+		parsedLock, err := ParseLock(p.Lock)
+		if err != nil {
+			return errs.Wrap(err, "ParseLock %s failed", p.Lock)
+		}
+
+		p.parsedBranch = parsedLock.Branch
+		p.parsedVersion = parsedLock.Version
+	}
+
 	return nil
 }
 
@@ -546,6 +557,16 @@ func (p *Project) Path() string {
 // SetPath sets the path of the project file and should generally only be used by tests
 func (p *Project) SetPath(path string) {
 	p.path = path
+}
+
+// Branch returns the branch as it was interpreted from the lock
+func (p *Project) Branch() string {
+	return p.parsedBranch
+}
+
+// Version returns the branch as it was interpreted from the lock
+func (p *Project) Version() string {
+	return p.parsedVersion
 }
 
 // ValidateProjectURL validates the configured project URL
@@ -1058,32 +1079,28 @@ func ParseVersionInfo(projectFilePath string) (*VersionInfo, error) {
 		return nil, &ErrorParseProject{locale.WrapError(err, "Could not unmarshal activestate.yaml")}
 	}
 
-	if versionStruct.Branch != "" && versionStruct.Version != "" {
-		err = AddLockInfo(projectFilePath, versionStruct.Branch, versionStruct.Version)
-		if err != nil {
-			return nil, locale.WrapError(err, "err_update_version")
-		}
-		return ParseVersionInfo(projectFilePath)
-	}
-
 	if versionStruct.Lock == "" {
 		return nil, nil
 	}
 
-	lock := strings.TrimSpace(versionStruct.Lock)
+	return ParseLock(versionStruct.Lock)
+}
+
+func ParseLock(lock string) (*VersionInfo, error) {
 	match, err := regexp.MatchString(`^([\w\/\-\.]+@)\d+\.\d+\.\d+-(SHA)?[a-f0-9]+`, lock)
 	if err != nil || !match {
-		return nil, locale.NewInputError("err_invalid_version")
+		return nil, locale.NewInputError("err_invalid_lock", lock)
 	}
 
-	split := strings.Split(versionStruct.Lock, "@")
+	split := strings.Split(lock, "@")
 	if len(split) != 2 {
-		return nil, locale.NewInputError("err_invalid_version")
+		return nil, locale.NewInputError("err_invalid_lock", lock)
 	}
 
 	return &VersionInfo{
 		Branch:  split[0],
 		Version: split[1],
+		Lock:    lock,
 	}, nil
 }
 
