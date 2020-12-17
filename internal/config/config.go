@@ -56,3 +56,8 @@ func InstallSource() string {
 func Save() error {
 	return defaultConfig.Save()
 }
+
+// SkipSave ensures the save behavior of the default config instance is skipped.
+func SkipSave(b bool) {
+	defaultConfig.SkipSave(b)
+}
