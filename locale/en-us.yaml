@@ -320,7 +320,7 @@ downloading:
 installing:
   other: Installing
 unknown_value:
-  other: Unknown value
+  other: Unknown Value
 total:
   other: Total
 projects_description:
@@ -708,6 +708,8 @@ err_version_parse:
   other:  Could not determine the State Tool version to use to run this command. Please ensure the project field in your activestate.yaml is formatted correctly.
 err_invalid_version:
   other: "Invalid version specified in your activestate.yaml, should be in the format of: [NOTICE]{number}.{number}.{number}-{hash}[/RESET]"
+err_invalid_lock:
+  other: "Invalid lock specified in your activestate.yaml: '{{.V0}}', should be in the format of: [NOTICE]channel@{number}.{number}.{number}-{hash}[/RESET]"
 err_update_version:
   other: "Failed to automatically update your locked version schema. Please manually remove your 'version' and 'branch' fields in your activestate.yaml and substitute them for 'lock: <branch>@<version>'."
 downloading_state_version:
@@ -1021,10 +1023,14 @@ package_import_cmd_description:
   other: Import packages from a list of dependencies
 package_search_cmd_description:
   other: Search for available packages that can be added to your project
+package_info_cmd_description:
+  other: Display information for the specified package
 package_arg_name:
   other: name
 package_arg_name_description:
   other: Package name
+package_info_flag_language_description:
+  other: The language used to constrain package information selection
 bundle_arg_name:
   other: name
 bundle_arg_name_description:

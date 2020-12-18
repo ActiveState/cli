@@ -13,7 +13,7 @@ platforms:
   - name: OSX
     os: macos
 environments: "something"
-version: "1.0"
+lock: "master@1.0.0-SHA123"
 namespace: "my/name/space"
 constants:
   - name: foo

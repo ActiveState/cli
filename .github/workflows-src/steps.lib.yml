@@ -84,9 +84,6 @@ run: |
 name: "Preprocess"
 shell: bash
 run: |
-  if [[ "${GITHUB_REF##*/}" == "master" ]]; then
-    export BRANCH_OVERRIDE=unstable
-  fi
   state run preprocess
 #@ end
 ---
