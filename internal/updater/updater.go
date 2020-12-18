@@ -234,14 +234,13 @@ func (u *Updater) update(out output.Outputer, autoUpdate bool) error {
 }
 
 func (u *Updater) fetchBranch() string {
-	branchName := u.DesiredBranch
-	if branchName == "" {
-		branchName = constants.BranchName
+	if u.DesiredBranch != "" {
+		return u.DesiredBranch
 	}
 	if overrideBranch := os.Getenv(constants.UpdateBranchEnvVarName); overrideBranch != "" {
-		branchName = overrideBranch
+		return overrideBranch
 	}
-	return branchName
+	return constants.BranchName
 }
 
 // fetchInfo gets the `json` file containing update information

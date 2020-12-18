@@ -6,6 +6,7 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/pkg/projectfile"
 
 	"github.com/stretchr/testify/suite"
@@ -33,6 +34,7 @@ func (suite *ProjectTestSuite) BeforeTest(suiteName, testName string) {
 	err = os.Chdir(suite.testdataDir)
 	suite.Require().NoError(err, "Should change dir without issue.")
 	projectFile, err := projectfile.GetSafe()
+	suite.Require().NoError(err, errs.Join(err, "\n").Error())
 	projectFile.Persist()
 	suite.projectFile = projectFile
 	suite.Require().Nil(err, "Should retrieve projectfile without issue.")
@@ -58,7 +60,7 @@ func (suite *ProjectTestSuite) TestProject() {
 	suite.Equal("ActiveState", suite.project.Owner(), "Values should match")
 	suite.Equal("ActiveState/project", suite.project.Namespace().String(), "Values should match")
 	suite.Equal("something", suite.project.Environments(), "Values should match")
-	suite.Equal("1.0", suite.project.Version(), "Values should match")
+	suite.Equal("1.0.0-SHA123", suite.project.Version(), "Values should match")
 }
 
 func (suite *ProjectTestSuite) TestWhenInSubDirectories() {
@@ -69,7 +71,7 @@ func (suite *ProjectTestSuite) TestWhenInSubDirectories() {
 	suite.Equal("ActiveState", suite.project.Owner(), "Values should match")
 	suite.Equal("ActiveState/project", suite.project.Namespace().String(), "Values should match")
 	suite.Equal("something", suite.project.Environments(), "Values should match")
-	suite.Equal("1.0", suite.project.Version(), "Values should match")
+	suite.Equal("1.0.0-SHA123", suite.project.Version(), "Values should match")
 }
 
 func (suite *ProjectTestSuite) TestPlatforms() {
