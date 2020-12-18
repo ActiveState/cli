@@ -25,6 +25,7 @@ type Instance struct {
 	cacheDir      *configdir.Config
 	localPath     string
 	installSource string
+	noSave        bool
 	Exit          func(code int)
 }
 
@@ -99,10 +100,20 @@ func (i *Instance) ReadInConfig() {
 
 // Save saves the config file
 func (i *Instance) Save() error {
+	if i.noSave {
+		return nil
+	}
+
 	if err := viper.MergeInConfig(); err != nil {
 		return err
 	}
+
 	return viper.WriteConfig()
+}
+
+// SkipSave forces the save behavior to have no effect.
+func (i *Instance) SkipSave(b bool) {
+	i.noSave = b
 }
 
 func (i *Instance) ensureConfigExists() {

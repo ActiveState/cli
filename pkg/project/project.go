@@ -226,10 +226,13 @@ func (p *Project) NormalizedName() string {
 }
 
 // Version returns project version
-func (p *Project) Version() string { return p.projectfile.Version }
+func (p *Project) Version() string { return p.projectfile.Version() }
 
 // Branch returns branch that we're pinned to (useless unless version is also set)
-func (p *Project) Branch() string { return p.projectfile.Branch }
+func (p *Project) Branch() string { return p.projectfile.Branch() }
+
+// IsLocked returns whether the current project is locked
+func (p *Project) IsLocked() bool { return p.Lock() != "" }
 
 // Lock returns the lock information for this project
 func (p *Project) Lock() string { return p.projectfile.Lock }

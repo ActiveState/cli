@@ -76,6 +76,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 	uninstallCmd := newUninstallCommand(prime)
 	importCmd := newImportCommand(prime)
 	searchCmd := newSearchCommand(prime)
+	infoCmd := newInfoCommand(prime)
 
 	pkgsCmd := newPackagesCommand(prime)
 	addAs := addCmdAs{
@@ -106,6 +107,9 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 	projectsCmd := newProjectsCommand(prime)
 	projectsCmd.AddChildren(newRemoteProjectsCommand(prime))
 
+	updateCmd := newUpdateCommand(prime)
+	updateCmd.AddChildren(newUpdateLockCommand(prime))
+
 	stateCmd := newStateCommand(globals, prime)
 	stateCmd.AddChildren(
 		newActivateCommand(prime),
@@ -121,6 +125,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		uninstallCmd,
 		importCmd,
 		searchCmd,
+		infoCmd,
 		pkgsCmd,
 		bundlesCmd,
 		platformsCmd,
@@ -131,7 +136,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		scriptsCmd,
 		eventsCmd,
 		newPullCommand(prime),
-		newUpdateCommand(prime),
+		updateCmd,
 		newForkCommand(prime),
 		newPpmCommand(prime),
 		newInviteCommand(prime),

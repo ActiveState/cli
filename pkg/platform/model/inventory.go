@@ -26,6 +26,9 @@ type IngredientAndVersion struct {
 // Platform is a sane version of whatever the hell it is go-swagger thinks it's doing
 type Platform = inventory_models.Platform
 
+// Authors is a collection of inventory Author data.
+type Authors []*inventory_models.Author
+
 var platformCache []*Platform
 
 // SearchIngredients will return all ingredients+ingredientVersions that fuzzily
@@ -50,6 +53,32 @@ func SearchIngredientsStrict(namespace Namespace, name string) ([]*IngredientAnd
 	}
 
 	return ingredients, nil
+}
+
+// FetchAuthors obtains author info for an ingredient at a particular version.
+func FetchAuthors(ingredID, ingredVersionID *strfmt.UUID) (Authors, error) {
+	if ingredID == nil {
+		return nil, errs.New("nil ingredient id provided")
+	}
+	if ingredVersionID == nil {
+		return nil, errs.New("nil ingredient version id provided")
+	}
+
+	lim := int64(32)
+	client := inventory.Get()
+
+	params := inventory_operations.NewGetIngredientVersionAuthorsParams()
+	params.SetIngredientID(*ingredID)
+	params.SetIngredientVersionID(*ingredVersionID)
+	params.SetLimit(&lim)
+	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
+
+	results, err := client.GetIngredientVersionAuthors(params, authentication.ClientAuth())
+	if err != nil {
+		return nil, errs.Wrap(err, "GetIngredientVersionAuthors failed")
+	}
+
+	return results.Payload.Authors, nil
 }
 
 func searchIngredientsNamespace(limit int, ns Namespace, name string) ([]*IngredientAndVersion, error) {
