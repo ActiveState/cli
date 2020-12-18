@@ -25,12 +25,15 @@ type UpdateIntegrationTestSuite struct {
 
 type matcherFunc func(expected interface{}, actual interface{}, msgAndArgs ...interface{}) bool
 
-func (suite *UpdateIntegrationTestSuite) env(disableUpdates bool) []string {
-	targetBranch := "release"
+var targetBranch = "release"
+
+func init() {
 	if constants.BranchName == targetBranch {
 		targetBranch = "master"
 	}
+}
 
+func (suite *UpdateIntegrationTestSuite) env(disableUpdates bool) []string {
 	env := []string{
 		"ACTIVESTATE_CLI_AUTO_UPDATE_TIMEOUT=10",
 		"ACTIVESTATE_CLI_UPDATE_BRANCH=" + targetBranch,
@@ -184,15 +187,15 @@ func (suite *UpdateIntegrationTestSuite) TestLockedChannel() {
 	pjfile.Save()
 
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("update", "lock", "--set-channel", "beta"),
+		e2e.WithArgs("update", "lock", "--set-channel", targetBranch),
 		e2e.AppendEnv(suite.env(false)...),
 	)
 
 	cp.Expect("Version locked at")
-	cp.Expect("beta@")
+	cp.Expect(targetBranch + "@")
 	cp.ExpectExitCode(0)
 
-	suite.branchCompare(ts, false, "beta", suite.Equal)
+	suite.branchCompare(ts, false, targetBranch, suite.Equal)
 }
 
 func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmationNegative() {
@@ -308,13 +311,13 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 	// Ensure we always use a unique exe for updates
 	ts.UseDistinctStateExe()
 
-	cp := ts.SpawnWithOpts(e2e.WithArgs("update", "--set-channel", "beta"), e2e.AppendEnv(suite.env(false)...))
+	cp := ts.SpawnWithOpts(e2e.WithArgs("update", "--set-channel", targetBranch), e2e.AppendEnv(suite.env(false)...))
 	cp.Expect("Updating state tool:  Downloading latest version")
 	cp.Expect("Version updated", 60*time.Second)
-	cp.Expect("beta@", 60*time.Second)
+	cp.Expect(targetBranch+"@", 60*time.Second)
 	cp.ExpectExitCode(0)
 
-	suite.branchCompare(ts, false, "beta", suite.Equal)
+	suite.branchCompare(ts, false, targetBranch, suite.Equal)
 }
 
 func (suite *UpdateIntegrationTestSuite) TestUpdateNoPermissions() {
