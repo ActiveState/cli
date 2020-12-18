@@ -70,7 +70,7 @@ func fetchUpdater(version, channel string) (*updater.Updater, *updater.Info, err
 		return nil, nil, locale.WrapInputError(err, "err_update_fetch", "Could not retrieve update information, please verify that '{{.V0}}' is a valid channel.", channel)
 	}
 
-	if info == nil {
+	if info == nil && version == "" { // if version is empty then we should always have some info
 		return nil, nil, locale.NewInputError("err_update_fetch", "Could not retrieve update information, please verify that '{{.V0}}' is a valid channel.", channel)
 	}
 
