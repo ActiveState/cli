@@ -48,6 +48,11 @@ func (u *Update) Run(params *Params) error {
 		return errs.Wrap(err, "fetchUpdater failed")
 	}
 
+	if info == nil {
+		u.out.Print(locale.Tl("update_uptodate", "You are already using the latest State Tool version available."))
+		return nil
+	}
+
 	if err = up.Run(u.out, false); err != nil {
 		if os.IsPermission(errs.InnerError(err)) {
 			return locale.WrapError(err, "err_update_failed_due_to_permissions", "Update failed due to permission error.  You may have to re-run the command as a privileged user.")
