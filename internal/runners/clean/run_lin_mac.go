@@ -5,10 +5,13 @@ package clean
 import (
 	"os"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/logging"
 )
 
 func removeConfig(configPath string) error {
+	config.SkipSave(true)
+
 	file, err := os.Open(logging.FilePath())
 	if err != nil {
 		return err
