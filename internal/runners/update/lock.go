@@ -1,7 +1,6 @@
 package update
 
 import (
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
@@ -46,9 +45,14 @@ func (l *Lock) Run(params *LockParams) error {
 	}
 	channel := fetchChannel(defaultChannel, prefer)
 
-	_, info, err := fetchUpdater(constants.Version, channel)
-	if err != nil {
-		return errs.Wrap(err, "fetchUpdater failed")
+	var version string
+	if l.project.IsLocked() && channel == l.project.Branch() {
+		version = l.project.Version()
+	}
+
+	_, info, err := fetchUpdater(version, channel)
+	if err != nil || info == nil {
+		return errs.Wrap(err, "fetchUpdater failed, info: %v", info)
 	}
 
 	err = projectfile.AddLockInfo(l.project.Source().Path(), channel, info.Version)
