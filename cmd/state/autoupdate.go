@@ -23,7 +23,7 @@ func autoUpdate(args []string, out output.Outputer, pjPath string) (bool, int, e
 	updateIsRunning := funk.Contains(args, "update")
 	testsAreRunning := condition.InTest()
 
-	if testsAreRunning || updateIsRunning || disableAutoUpdate || disableAutoUpdateCauseCI || !exeOverDayOld() {
+	if testsAreRunning || updateIsRunning || disableAutoUpdate || disableAutoUpdateCauseCI || !osExeOverDayOld() {
 		logging.Debug("Not running auto updates")
 		return false, 0, nil
 	}
@@ -61,12 +61,16 @@ func relaunch() (int, error) {
 	return osutils.CmdExitCode(cmd), nil
 }
 
-func exeOverDayOld() bool {
+func osExeOverDayOld() bool {
 	exe, err := os.Executable()
 	if err != nil {
 		logging.Error("Could not grab executable, error: %v", err)
 		return false
 	}
+	return exeOverDayOld(exe)
+}
+
+func exeOverDayOld(exe string) bool {
 	stat, err := os.Stat(exe)
 	if err != nil {
 		logging.Error("Could not stat file: %s, error: %v", exe)

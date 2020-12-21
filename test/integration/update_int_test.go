@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -196,6 +197,36 @@ func (suite *UpdateIntegrationTestSuite) TestLockedChannel() {
 	cp.ExpectExitCode(0)
 
 	suite.branchCompare(ts, false, targetBranch, suite.Equal)
+}
+
+func (suite *UpdateIntegrationTestSuite) TestLockedChannelVersion() {
+	suite.OnlyRunForTags(tagsuite.Update)
+	pjfile := projectfile.Project{
+		Project: lockedProjectURL(),
+	}
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	// Ensure we always use a unique exe for updates
+	ts.UseDistinctStateExe()
+
+	yamlPath := filepath.Join(ts.Dirs.Work, constants.ConfigFileName)
+	pjfile.SetPath(yamlPath)
+	pjfile.Save()
+
+	lock := targetBranch + "@latest"
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("update", "lock", "--set-channel", lock),
+		e2e.AppendEnv(suite.env(false)...),
+	)
+
+	cp.Expect("Version locked at")
+	cp.Expect(targetBranch + "@")
+	cp.ExpectExitCode(0)
+
+	yamlContents, err := fileutils.ReadFile(yamlPath)
+	suite.Require().NoError(err)
+	suite.Contains(string(yamlContents), lock)
 }
 
 func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmationNegative() {

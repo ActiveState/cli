@@ -54,7 +54,7 @@ func ExecuteAndPipeStd(command string, arg []string, env []string) (int, *exec.C
 
 	err := cmd.Run()
 	if err != nil {
-		logging.Error("Executing command returned error: %v", err)
+		logging.Debug("Executing command returned error: %v", err)
 	}
 	return CmdExitCode(cmd), cmd, err
 }

@@ -1,6 +1,8 @@
 package update
 
 import (
+	"strings"
+
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
@@ -37,7 +39,7 @@ func (l *Lock) Run(params *LockParams) error {
 		}
 	}
 
-	defaultChannel := params.Channel
+	defaultChannel, lockVersion := splitChannelAndVersion(params.Channel)
 	prefer := true
 	if defaultChannel == "" {
 		defaultChannel = l.project.Branch()
@@ -55,12 +57,16 @@ func (l *Lock) Run(params *LockParams) error {
 		return errs.Wrap(err, "fetchUpdater failed, info: %v", info)
 	}
 
-	err = projectfile.AddLockInfo(l.project.Source().Path(), channel, info.Version)
+	if lockVersion == "" {
+		lockVersion = info.Version
+	}
+
+	err = projectfile.AddLockInfo(l.project.Source().Path(), channel, lockVersion)
 	if err != nil {
 		return locale.WrapError(err, "err_update_projectfile", "Could not update projectfile")
 	}
 
-	l.out.Print(locale.Tl("version_locked", "Version locked at {{.V0}}@{{.V1}}", channel, info.Version))
+	l.out.Print(locale.Tl("version_locked", "Version locked at {{.V0}}@{{.V1}}", channel, lockVersion))
 	return nil
 }
 
@@ -77,4 +83,15 @@ func confirmLock(prom prompt.Prompter) error {
 	}
 
 	return nil
+}
+
+func splitChannelAndVersion(input string) (string, string) {
+	nameArg := strings.Split(input, "@")
+	name := nameArg[0]
+	version := ""
+	if len(nameArg) == 2 {
+		version = nameArg[1]
+	}
+
+	return name, version
 }
