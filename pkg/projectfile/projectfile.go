@@ -1087,11 +1087,6 @@ func ParseVersionInfo(projectFilePath string) (*VersionInfo, error) {
 }
 
 func ParseLock(lock string) (*VersionInfo, error) {
-	match, err := regexp.MatchString(`^([\w\/\-\.]+@)\d+\.\d+\.\d+-(SHA)?[a-f0-9]+`, lock)
-	if err != nil || !match {
-		return nil, locale.NewInputError("err_invalid_lock", "", lock)
-	}
-
 	split := strings.Split(lock, "@")
 	if len(split) != 2 {
 		return nil, locale.NewInputError("err_invalid_lock", "", lock)
