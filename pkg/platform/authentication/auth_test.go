@@ -4,10 +4,10 @@ import (
 	"os"
 	"testing"
 
-	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
@@ -47,7 +47,7 @@ func TestAuth(t *testing.T) {
 	auth := New()
 	err := auth.AuthenticateWithModel(credentials)
 	assert.NoError(t, err, "Can Authenticate")
-	assert.NotEmpty(t, viper.GetString("apiToken"), "Authentication is persisted through token")
+	assert.NotEmpty(t, config.Get().GetString("apiToken"), "Authentication is persisted through token")
 	assert.True(t, auth.Authenticated(), "Authentication is persisted for this session")
 	assert.Equal(t, "test", auth.WhoAmI(), "Should return username 'test'")
 
@@ -108,12 +108,14 @@ func TestAuthInvalidToken(t *testing.T) {
 
 	httpmock.RegisterWithCode("POST", "/login", 401)
 
-	viper.Set("apiToken", "testFailure")
+	cfg := config.Get()
+
+	cfg.Set("apiToken", "testFailure")
 	auth := New()
 	err := auth.Authenticate()
 	require.Error(t, err)
 	assert.Equal(t, err.Error(), locale.T("err_no_credentials"), "Should fail to authenticate")
-	assert.Empty(t, viper.GetString("apiToken"), "", "apiToken should have cleared")
+	assert.Empty(t, cfg.GetString("apiToken"), "", "apiToken should have cleared")
 }
 
 func TestClientFailure(t *testing.T) {

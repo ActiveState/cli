@@ -8,10 +8,10 @@ import (
 	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
-	"github.com/spf13/viper"
 
 	"github.com/ActiveState/cli/internal/ci/gcloud"
 	"github.com/ActiveState/cli/internal/colorize"
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -149,7 +149,7 @@ func (s *Auth) AuthenticateWithModel(credentials *mono_models.Credentials) error
 	s.clientAuth = &clientAuth
 
 	if credentials.Token != "" {
-		viper.Set("apiToken", credentials.Token)
+		config.Get().Set("apiToken", credentials.Token)
 	} else {
 		if err := s.CreateToken(); err != nil {
 			return errs.Wrap(err, "CreateToken failed")
@@ -201,7 +201,7 @@ func (s *Auth) UserID() *strfmt.UUID {
 
 // Logout will destroy any session tokens and reset the current Auth instance
 func (s *Auth) Logout() {
-	viper.Set("apiToken", "")
+	config.Get().Set("apiToken", "")
 	s.client = nil
 	s.clientAuth = nil
 	s.bearerToken = ""
@@ -263,7 +263,7 @@ func (s *Auth) CreateToken() error {
 		return err
 	}
 
-	viper.Set("apiToken", token)
+	config.Get().Set("apiToken", token)
 
 	return nil
 }
@@ -300,5 +300,5 @@ func availableAPIToken() string {
 		logging.Debug("Using API token passed via env var")
 		return tkn
 	}
-	return viper.GetString("apiToken")
+	return config.Get().GetString("apiToken")
 }

@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-version"
-	"github.com/spf13/viper"
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -71,7 +70,7 @@ func Check() (*Info, error) {
 
 // CheckVersionNumber will run a Checker.Check with defaults
 func CheckVersionNumber(versionNumber string) (*Info, error) {
-	checker := NewChecker(DefaultTimeout, viper.GetViper())
+	checker := NewChecker(DefaultTimeout, config.Get())
 	return checker.check(versionNumber)
 }
 

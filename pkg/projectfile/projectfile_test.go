@@ -9,11 +9,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/errs"
@@ -303,7 +303,7 @@ func TestGetProjectFilePath(t *testing.T) {
 	os.Chdir(tmpDir)
 	_, err = GetProjectFilePath()
 	assert.Error(t, err, "GetProjectFilePath should fail")
-	viper.SetDefault(constants.GlobalDefaultPrefname, expectedPath)
+	config.Get().SetDefault(constants.GlobalDefaultPrefname, expectedPath)
 	configPath, err = GetProjectFilePath()
 	assert.NoError(t, err, "GetProjectFilePath should succeed")
 	assert.Equal(t, expectedPath, configPath, "Project path is properly detected using default path from config")

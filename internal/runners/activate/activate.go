@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/spf13/viper"
-
 	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/globaldefault"
@@ -55,10 +54,10 @@ type primeable interface {
 
 func NewActivate(prime primeable) *Activate {
 	return &Activate{
-		NewNamespaceSelect(viper.GetViper(), prime),
+		NewNamespaceSelect(config.Get(), prime),
 		NewCheckout(git.NewRepo(), prime),
 		prime.Output(),
-		viper.GetViper(),
+		config.Get(),
 		prime.Project(),
 		prime.Subshell(),
 		prime.Prompt(),

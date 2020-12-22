@@ -4,8 +4,6 @@ import (
 	"errors"
 	"os"
 
-	"github.com/spf13/viper"
-
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
@@ -28,7 +26,7 @@ type CacheParams struct {
 }
 
 func NewCache(prime primeable) *Cache {
-	return newCache(prime.Output(), viper.GetViper(), prime.Prompt())
+	return newCache(prime.Output(), config.Get(), prime.Prompt())
 }
 
 func newCache(output output.Outputer, cfg project.ConfigAble, confirm confirmAble) *Cache {

@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/shibukawa/configdir"
@@ -19,8 +20,11 @@ import (
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 )
 
+var defaultConfig *Instance
+
 // Instance holds our main config logic
 type Instance struct {
+	viper         *viper.Viper
 	configDir     *configdir.Config
 	cacheDir      *configdir.Config
 	localPath     string
@@ -29,19 +33,110 @@ type Instance struct {
 	Exit          func(code int)
 }
 
-// New creates a new config instance
-func New(localPath string) *Instance {
+func new(localPath string) *Instance {
 	instance := &Instance{
+		viper:     viper.New(),
 		localPath: localPath,
 		Exit:      os.Exit,
 	}
 
-	instance.ensureConfigExists()
-	instance.ensureCacheExists()
-	instance.ReadInConfig()
-	instance.readInstallSource()
+	instance.Reload()
 
 	return instance
+}
+
+// Reload reloads the configuration data from the config file
+func (i *Instance) Reload() {
+	i.ensureConfigExists()
+	i.ensureCacheExists()
+	i.ReadInConfig()
+	i.readInstallSource()
+}
+
+func configPathInTest() (string, error) {
+	localPath, err := ioutil.TempDir("", "cli-config")
+	if err != nil {
+		return "", fmt.Errorf("Could not create temp dir: %w", err)
+	}
+	err = os.RemoveAll(localPath)
+	if err != nil {
+		return "", fmt.Errorf("Could not remove generated config dir for tests: %w", err)
+	}
+	return localPath, nil
+}
+
+// New creates a new config instance
+func New() *Instance {
+	localPath := os.Getenv(C.ConfigEnvVarName)
+
+	if condition.InTest() {
+		var err error
+		localPath, err = configPathInTest()
+		if err != nil {
+			// panic as this only happening in tests
+			panic(err)
+		}
+	}
+
+	return new(localPath)
+}
+
+// NewWithDir creates a new instance at the given directory
+func NewWithDir(dir string) *Instance {
+	return new(dir)
+}
+
+// Get returns the default configuration instance
+func Get() *Instance {
+	if defaultConfig == nil {
+		defaultConfig = New()
+	}
+	return defaultConfig
+}
+
+// WriteConfig writes the configuration
+func (i *Instance) WriteConfig() error {
+	return i.viper.WriteConfig()
+}
+
+// Set sets a value at the given key
+func (i *Instance) Set(key string, value interface{}) {
+	i.viper.Set(key, value)
+}
+
+// GetString retrieves a string for a given key
+func (i *Instance) GetString(key string) string {
+	return i.viper.GetString(key)
+}
+
+// GetStringMapStringSlice retrieves a map of string slices for a given key
+func (i *Instance) GetStringMapStringSlice(key string) map[string][]string {
+	return i.viper.GetStringMapStringSlice(key)
+}
+
+// SetDefault sets the default value for a given key
+func (i *Instance) SetDefault(key string, value interface{}) {
+	i.viper.SetDefault(key, value)
+}
+
+// GetBool retrieves a boolean value for a given key
+func (i *Instance) GetBool(key string) bool {
+	return i.viper.GetBool(key)
+}
+
+// GetStringSlice retrieves a slice of strings for a given key
+func (i *Instance) GetStringSlice(key string) []string {
+	return i.viper.GetStringSlice(key)
+}
+
+// GetTime retrieves a time instance for a given key
+func (i *Instance) GetTime(key string) time.Time {
+	return i.viper.GetTime(key)
+}
+
+// GetStringMap retrieves a map of strings to values for a given key
+func (i *Instance) GetStringMap(key string) map[string]interface{} {
+	return i.viper.GetStringMap(key)
 }
 
 // Type returns the config filetype
@@ -88,12 +183,12 @@ func (i *Instance) InstallSource() string {
 func (i *Instance) ReadInConfig() {
 	// Prepare viper, which is a library that automates configuration
 	// management between files, env vars and the CLI
-	viper.SetConfigName(i.Name())
-	viper.SetConfigType(i.Type())
-	viper.AddConfigPath(i.configDir.Path)
-	viper.AddConfigPath(".")
+	i.viper.SetConfigName(i.Name())
+	i.viper.SetConfigType(i.Type())
+	i.viper.AddConfigPath(i.configDir.Path)
+	i.viper.AddConfigPath(".")
 
-	if err := viper.ReadInConfig(); err != nil {
+	if err := i.viper.ReadInConfig(); err != nil {
 		i.exit("Can't read config: %s", err)
 	}
 }
@@ -104,11 +199,11 @@ func (i *Instance) Save() error {
 		return nil
 	}
 
-	if err := viper.MergeInConfig(); err != nil {
+	if err := i.viper.MergeInConfig(); err != nil {
 		return err
 	}
 
-	return viper.WriteConfig()
+	return i.viper.WriteConfig()
 }
 
 // SkipSave forces the save behavior to have no effect.

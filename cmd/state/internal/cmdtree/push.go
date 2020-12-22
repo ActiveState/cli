@@ -1,9 +1,8 @@
 package cmdtree
 
 import (
-	"github.com/spf13/viper"
-
 	"github.com/ActiveState/cli/internal/captain"
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/push"
@@ -11,7 +10,7 @@ import (
 )
 
 func newPushCommand(prime *primer.Values) *captain.Command {
-	pushRunner := push.NewPush(viper.GetViper(), prime)
+	pushRunner := push.NewPush(config.Get(), prime)
 
 	params := push.PushParams{
 		Namespace: &project.Namespaced{},

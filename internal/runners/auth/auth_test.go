@@ -10,10 +10,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/errs"
@@ -372,7 +372,7 @@ func TestExecuteToken(t *testing.T) {
 		Username: user.Username,
 		Password: user.Password,
 	})
-	token := viper.GetString("apiToken")
+	token := config.Get().GetString("apiToken")
 	authentication.Logout()
 	assert.NoError(t, err, "Executed without error")
 	assert.Nil(t, authentication.ClientAuth(), "Not Authenticated")

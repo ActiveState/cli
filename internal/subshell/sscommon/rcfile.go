@@ -12,9 +12,9 @@ import (
 
 	"github.com/gobuffalo/packr"
 	"github.com/mash/go-tempfile-suffix"
-	"github.com/spf13/viper"
 
 	"github.com/ActiveState/cli/internal/colorize"
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -171,14 +171,14 @@ func SetupProjectRcFile(templateName, ext string, env map[string]string, out out
 			return nil, errs.Wrap(err, "Misc failure")
 		}
 
-		if strings.ToLower(event.Name()) == "first-activate" && !viper.GetBool(activatedKey) {
+		if strings.ToLower(event.Name()) == "first-activate" && !config.Get().GetBool(activatedKey) {
 			userScripts = v + "\n" + userScripts
 		}
 		if strings.ToLower(event.Name()) == "activate" {
 			userScripts = userScripts + "\n" + v
 		}
 	}
-	viper.Set(activatedKey, true)
+	config.Get().Set(activatedKey, true)
 
 	inuse := []string{}
 	scripts := map[string]string{}
