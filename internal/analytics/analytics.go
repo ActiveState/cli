@@ -204,7 +204,7 @@ func sendEvent(category, action, label string, dimensions map[string]string) err
 			return locale.WrapError(err, "err_analytics_defer", "Could not defer event")
 		}
 		// TODO: figure out a way to pass configuration
-		if err := config.Get().WriteConfig(); err != nil { // the global viper instance is bugged, need to work around it for now -- https://www.pivotaltracker.com/story/show/175624789
+		if err := config.Get().Save(); err != nil { // the global viper instance is bugged, need to work around it for now -- https://www.pivotaltracker.com/story/show/175624789
 			return locale.WrapError(err, "err_viper_write_defer", "Could not save configuration on defer")
 		}
 	}

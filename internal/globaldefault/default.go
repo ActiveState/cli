@@ -31,7 +31,7 @@ const shimDenoter = "!DO NOT EDIT! State Tool Shim !DO NOT EDIT!"
 
 type DefaultConfigurer interface {
 	Set(key string, value interface{})
-	WriteConfig() error
+	Save() error
 }
 
 // BinDir returns the global binary directory

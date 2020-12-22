@@ -94,11 +94,6 @@ func Get() *Instance {
 	return defaultConfig
 }
 
-// WriteConfig writes the configuration
-func (i *Instance) WriteConfig() error {
-	return i.viper.WriteConfig()
-}
-
 // Set sets a value at the given key
 func (i *Instance) Set(key string, value interface{}) {
 	i.viper.Set(key, value)
