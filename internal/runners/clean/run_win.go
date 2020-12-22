@@ -14,7 +14,7 @@ import (
 )
 
 func removeConfig(configPath string) error {
-	config.SkipSave(true)
+	config.Get().SkipSave(true)
 	return runScript("removeConfig", configPath)
 }
 
