@@ -10,7 +10,7 @@ import (
 )
 
 func removeConfig(configPath string) error {
-	config.SkipSave(true)
+	config.Get().SkipSave(true)
 
 	file, err := os.Open(logging.FilePath())
 	if err != nil {

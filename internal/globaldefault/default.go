@@ -31,12 +31,12 @@ const shimDenoter = "!DO NOT EDIT! State Tool Shim !DO NOT EDIT!"
 
 type DefaultConfigurer interface {
 	Set(key string, value interface{})
-	WriteConfig() error
+	Save() error
 }
 
 // BinDir returns the global binary directory
 func BinDir() string {
-	return filepath.Join(config.CachePath(), "bin")
+	return filepath.Join(config.Get().CachePath(), "bin")
 }
 
 func isBinDirOnWindowsUserPath(binDir string) bool {

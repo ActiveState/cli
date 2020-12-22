@@ -1,9 +1,9 @@
 package machineid
 
 import (
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/denisbrodbeck/machineid"
 	"github.com/google/uuid"
-	"github.com/spf13/viper"
 )
 
 // UniqID returns a unique ID for the current platform
@@ -17,12 +17,12 @@ func uniqID(machineIDGetter func() (string, error), uuidGetter func() string) st
 		return machID
 	}
 
-	machineID := viper.GetString("machineID")
+	machineID := config.Get().GetString("machineID")
 	if machineID != "" {
 		return machineID
 	}
 
 	machineID = uuidGetter()
-	viper.Set("machineID", machineID)
+	config.Get().Set("machineID", machineID)
 	return machineID
 }

@@ -3,8 +3,7 @@ package analytics
 import (
 	"encoding/json"
 
-	"github.com/spf13/viper"
-
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -62,7 +61,7 @@ func sendDeferred(sender func(string, string, string, map[string]string) error) 
 			return errs.Wrap(err, "Could not save deferred event on send")
 		}
 	}
-	if err := viper.WriteConfig(); err != nil { // the global viper instance is bugged, need to work around it for now -- https://www.pivotaltracker.com/story/show/175624789
+	if err := config.Get().Save(); err != nil { // the global viper instance is bugged, need to work around it for now -- https://www.pivotaltracker.com/story/show/175624789
 		return locale.WrapError(err, "err_viper_write_send_defer", "Could not save configuration on send deferred")
 	}
 	return nil
@@ -73,12 +72,12 @@ func saveDeferred(v []deferredData) error {
 	if err != nil {
 		return errs.New("Could not serialize deferred analytics: %v, error: %v", v, err)
 	}
-	viper.Set(deferredCfgKey, string(s))
+	config.Get().Set(deferredCfgKey, string(s))
 	return nil
 }
 
 func loadDeferred() ([]deferredData, error) {
-	v := viper.GetString(deferredCfgKey)
+	v := config.Get().GetString(deferredCfgKey)
 	d := []deferredData{}
 	if v != "" {
 		err := json.Unmarshal([]byte(v), &d)

@@ -1,16 +1,15 @@
 package cmdtree
 
 import (
-	"github.com/spf13/viper"
-
 	"github.com/ActiveState/cli/internal/captain"
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/projects"
 )
 
 func newProjectsCommand(prime *primer.Values) *captain.Command {
-	runner := projects.NewProjects(prime, viper.GetViper())
+	runner := projects.NewProjects(prime, config.Get())
 	params := projects.NewParams()
 
 	return captain.NewCommand(
@@ -27,7 +26,7 @@ func newProjectsCommand(prime *primer.Values) *captain.Command {
 }
 
 func newRemoteProjectsCommand(prime *primer.Values) *captain.Command {
-	runner := projects.NewProjects(prime, viper.GetViper())
+	runner := projects.NewProjects(prime, config.Get())
 	params := projects.NewParams()
 
 	return captain.NewCommand(

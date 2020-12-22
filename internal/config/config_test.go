@@ -37,11 +37,9 @@ func (suite *ConfigTestSuite) SetupTest() {
 }
 
 func (suite *ConfigTestSuite) BeforeTest(suiteName, testName string) {
-	dir, err := ioutil.TempDir("", "cli-config-test")
-	suite.Require().NoError(err)
-
 	viper.Reset()
-	suite.config = config.New(dir)
+
+	suite.config = config.New()
 	suite.config.Exit = exiter.Exit
 }
 
@@ -49,12 +47,12 @@ func (suite *ConfigTestSuite) AfterTest(suiteName, testName string) {
 }
 
 func (suite *ConfigTestSuite) TestConfig() {
-	suite.NotEmpty(config.ConfigPath())
-	suite.NotEmpty(config.CachePath())
+	suite.NotEmpty(config.Get().ConfigPath())
+	suite.NotEmpty(config.Get().CachePath())
 }
 
 func (suite *ConfigTestSuite) TestIncludesBranch() {
-	cfg := config.New("")
+	cfg := config.NewWithDir("")
 	suite.Contains(cfg.ConfigPath(), filepath.Clean(constants.BranchName))
 }
 
@@ -121,7 +119,7 @@ func (suite *ConfigTestSuite) TestNoHome() {
 	}
 
 	viper.Reset()
-	suite.config = config.New("")
+	suite.config = config.New()
 
 	suite.Contains(suite.config.ConfigPath(), os.TempDir())
 
@@ -132,8 +130,8 @@ func (suite *ConfigTestSuite) TestNoHome() {
 func (suite *ConfigTestSuite) TestSave() {
 	path := filepath.Join(suite.config.ConfigPath(), suite.config.Filename())
 
-	viper.Set("Foo", "bar")
-	config.Save()
+	suite.config.Set("Foo", "bar")
+	suite.config.Save()
 
 	dat, err := ioutil.ReadFile(path)
 	suite.Require().NoError(err)
@@ -147,8 +145,8 @@ func (suite *ConfigTestSuite) TestSaveMerge() {
 	err := fileutils.WriteFile(path, []byte("ishould: exist"))
 	suite.Require().NoError(err)
 
-	viper.Set("Foo", "bar")
-	config.Save()
+	suite.config.Set("Foo", "bar")
+	suite.config.Save()
 
 	dat, err := ioutil.ReadFile(path)
 	suite.Require().NoError(err)

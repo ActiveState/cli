@@ -10,8 +10,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/projectfile"
 
-	"github.com/spf13/viper"
-
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/pkg/project"
@@ -37,7 +35,7 @@ type primeable interface {
 	primer.Projecter
 }
 
-func NewPush(config *viper.Viper, prime primeable) *Push {
+func NewPush(config configGetter, prime primeable) *Push {
 	return &Push{config, prime.Output(), prime.Project()}
 }
 

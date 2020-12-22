@@ -18,9 +18,9 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/go-openapi/strfmt"
-	"github.com/spf13/viper"
 	"github.com/thoas/go-funk"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -852,7 +852,7 @@ func getProjectFilePathFromWd() (string, error) {
 }
 
 func getProjectFilePathFromDefault() (string, error) {
-	defaultProjectPath := viper.GetString(constants.GlobalDefaultPrefname)
+	defaultProjectPath := config.Get().GetString(constants.GlobalDefaultPrefname)
 	if defaultProjectPath == "" {
 		return "", nil
 	}
@@ -1200,7 +1200,7 @@ func storeProjectMapping(namespace, projectPath string) {
 
 	projectPath = filepath.Clean(projectPath)
 
-	projects := viper.GetStringMapStringSlice(LocalProjectsConfigKey)
+	projects := config.Get().GetStringMapStringSlice(LocalProjectsConfigKey)
 	if projects == nil {
 		projects = make(map[string][]string)
 	}
@@ -1215,13 +1215,13 @@ func storeProjectMapping(namespace, projectPath string) {
 	}
 
 	projects[namespace] = paths
-	viper.Set(LocalProjectsConfigKey, projects)
+	config.Get().Set(LocalProjectsConfigKey, projects)
 }
 
 // CleanProjectMapping removes projects that no longer exist
 // on a user's filesystem from the projects config entry
 func CleanProjectMapping() {
-	projects := viper.GetStringMapStringSlice(LocalProjectsConfigKey)
+	projects := config.Get().GetStringMapStringSlice(LocalProjectsConfigKey)
 	seen := map[string]bool{}
 
 	for namespace, paths := range projects {
@@ -1237,5 +1237,5 @@ func CleanProjectMapping() {
 		seen[strings.ToLower(namespace)] = true
 	}
 
-	viper.Set("projects", projects)
+	config.Get().Set("projects", projects)
 }

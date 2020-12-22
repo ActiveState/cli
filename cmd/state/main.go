@@ -100,11 +100,12 @@ func run(args []string, isInteractive bool, out output.Outputer) (int, error) {
 	verbose := os.Getenv("VERBOSE") != "" || argsHaveVerbose(args)
 	logging.CurrentHandler().SetVerbose(verbose)
 
-	logging.Debug("ConfigPath: %s", config.ConfigPath())
-	logging.Debug("CachePath: %s", config.CachePath())
+	cfg := config.Get()
+	logging.Debug("ConfigPath: %s", cfg.ConfigPath())
+	logging.Debug("CachePath: %s", cfg.CachePath())
 
 	// Ensure any config set is preserved
-	defer config.Save()
+	defer cfg.Save()
 
 	// Retrieve project file
 	pjPath, err := projectfile.GetProjectFilePath()

@@ -29,7 +29,7 @@ func newConfig(out output.Outputer, confirm confirmAble) *Config {
 	return &Config{
 		output:  out,
 		confirm: confirm,
-		path:    config.ConfigPath(),
+		path:    config.Get().ConfigPath(),
 	}
 }
 

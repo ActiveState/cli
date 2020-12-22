@@ -13,24 +13,24 @@ import (
 
 // CreateConfigFile will create a file in the config dir with the given file name.
 func CreateConfigFile(fileName string, fileMode os.FileMode) (*os.File, error) {
-	filename := filepath.Join(config.ConfigPath(), fileName)
+	filename := filepath.Join(config.Get().ConfigPath(), fileName)
 	return os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_TRUNC, fileMode)
 }
 
 // ReadConfigFile will read the contents of a file in the config dir.
 func ReadConfigFile(fileName string) (string, error) {
-	contents, err := ioutil.ReadFile(filepath.Join(config.ConfigPath(), fileName))
+	contents, err := ioutil.ReadFile(filepath.Join(config.Get().ConfigPath(), fileName))
 	return string(contents), err
 }
 
 // RemoveConfigFile will remove a file from the config dir with the given file name.
 func RemoveConfigFile(fileName string) error {
-	return os.Remove(filepath.Join(config.ConfigPath(), fileName))
+	return os.Remove(filepath.Join(config.Get().ConfigPath(), fileName))
 }
 
 // StatConfigFile returns the os.FileInfo for a file in the config dir.
 func StatConfigFile(fileName string) (os.FileInfo, error) {
-	return os.Stat(filepath.Join(config.ConfigPath(), fileName))
+	return os.Stat(filepath.Join(config.Get().ConfigPath(), fileName))
 }
 
 // ReadTestFile will read the contents of a file from the `testdata` directory relative to the
@@ -49,7 +49,7 @@ func CopyTestFileToConfigDir(testFileName, targetFileName string, targetFileMode
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(filepath.Join(config.ConfigPath(), targetFileName), []byte(testFileContent), targetFileMode)
+	return ioutil.WriteFile(filepath.Join(config.Get().ConfigPath(), targetFileName), []byte(testFileContent), targetFileMode)
 }
 
 // getCallerPath returns the filesystem path of the caller to this func so long as it's not

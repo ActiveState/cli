@@ -51,7 +51,7 @@ func (r *Activate) activateAndWait(proj *project.Project, venv *virtualenvironme
 		}
 	}()
 
-	err = r.config.WriteConfig()
+	err = r.config.Save()
 	if err != nil {
 		return locale.WrapError(err, "err_write_config", "Could not write to configuration file")
 	}

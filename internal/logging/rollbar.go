@@ -48,7 +48,7 @@ func SetupRollbar() {
 	})
 
 	rollbar.SetCustom(map[string]interface{}{
-		"install_source": config.InstallSource(),
+		"install_source": config.Get().InstallSource(),
 	})
 
 	log.SetOutput(CurrentHandler().Output())

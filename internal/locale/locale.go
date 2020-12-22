@@ -14,9 +14,9 @@ import (
 
 	"github.com/gobuffalo/packr"
 	"github.com/nicksnyder/go-i18n/i18n"
-	"github.com/spf13/viper"
 	"github.com/thoas/go-funk"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/logging"
 )
@@ -32,7 +32,7 @@ var exit = os.Exit
 func init() {
 	logging.Debug("Init")
 
-	viper.SetDefault("Locale", "en-US")
+	config.Get().SetDefault("Locale", "en-US")
 
 	path := getLocalePath()
 	box := packr.NewBox("../../locale")
@@ -48,7 +48,7 @@ func init() {
 
 	locale := getLocaleFlag()
 	if locale == "" {
-		locale = viper.GetString("Locale")
+		locale = config.Get().GetString("Locale")
 	}
 
 	Set(locale)
@@ -98,7 +98,7 @@ func Set(localeName string) {
 	translateFunction, _ = i18n.Tfunc(localeName)
 	_ = translateFunction
 
-	viper.Set("Locale", localeName)
+	config.Get().Set("Locale", localeName)
 }
 
 // T aliases to i18n.Tfunc()

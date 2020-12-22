@@ -22,7 +22,7 @@ type configAble interface {
 	GetBool(key string) bool
 	GetString(key string) string
 	GetStringSlice(key string) []string
-	WriteConfig() error
+	Save() error
 }
 
 // NamespaceSelect will select the right directory associated with a namespace, and chdir into it

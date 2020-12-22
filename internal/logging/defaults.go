@@ -66,17 +66,17 @@ func FileNameFor(pid int) string {
 }
 
 func FilePath() string {
-	return filepath.Join(config.ConfigPath(), FileName())
+	return filepath.Join(config.Get().ConfigPath(), FileName())
 }
 
 func FilePathFor(filename string) string {
-	return filepath.Join(config.ConfigPath(), filename)
+	return filepath.Join(config.Get().ConfigPath(), filename)
 }
 
 const FileNameSuffix = ".log"
 
 func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interface{}) error {
-	datadir := config.ConfigPath()
+	datadir := config.Get().ConfigPath()
 	filename := filepath.Join(datadir, FileName())
 
 	// only log to rollbar when on release, beta or unstable branch and when built via CI (ie., non-local build)
@@ -133,7 +133,7 @@ func init() {
 	SetHandler(handler)
 
 	// Clean up old log files
-	datadir := config.ConfigPath()
+	datadir := config.Get().ConfigPath()
 	files, err := ioutil.ReadDir(datadir)
 	if err != nil {
 		Error("Could not scan config dir to clean up stale logs: %v", err)

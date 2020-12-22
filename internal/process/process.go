@@ -73,7 +73,7 @@ func isActivateCmdlineArgs(args []string) bool {
 // process id.
 func ActivationPIDFileName(n int) string {
 	fileName := fmt.Sprintf("activation.%d", n)
-	return filepath.Join(config.ConfigPath(), fileName)
+	return filepath.Join(config.Get().ConfigPath(), fileName)
 }
 
 // Activation eases the use of a PidLock for the purpose of "marking" a process

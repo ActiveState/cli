@@ -5,8 +5,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/spf13/viper"
-
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
@@ -50,7 +49,7 @@ func (v *SubShell) WriteUserEnv(env map[string]string, envType sscommon.EnvData,
 	cmdEnv := NewCmdEnv(userScope)
 
 	// Clean up old entries
-	oldEnv := viper.GetStringMap(envType.Key)
+	oldEnv := config.Get().GetStringMap(envType.Key)
 	for k, v := range oldEnv {
 		if err := cmdEnv.unset(k, v.(string)); err != nil {
 			return err
@@ -58,7 +57,7 @@ func (v *SubShell) WriteUserEnv(env map[string]string, envType sscommon.EnvData,
 	}
 
 	// Store new entries
-	viper.Set(envType.Key, env)
+	config.Get().Set(envType.Key, env)
 
 	for k, v := range env {
 		value := v

@@ -105,7 +105,7 @@ func forwardBin(versionInfo *projectfile.VersionInfo) string {
 	} else if runtime.GOOS == "windows" {
 		filename += ".exe"
 	}
-	datadir := config.ConfigPath()
+	datadir := config.Get().ConfigPath()
 	return filepath.Join(datadir, "version-cache", filename)
 }
 
