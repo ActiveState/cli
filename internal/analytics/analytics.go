@@ -15,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -158,6 +159,7 @@ func setup() {
 		osVersion:     osVersion,
 		installSource: config.InstallSource(),
 		machineID:     machineid.UniqID(),
+		output:        string(output.PlainFormatName),
 	}
 
 	if id == "unknown" {
