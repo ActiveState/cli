@@ -186,7 +186,7 @@ func TestRunActivatedCommand(t *testing.T) {
 	root, err := environment.GetRootPath()
 	assert.NoError(t, err, "Should detect root path")
 	os.Chdir(filepath.Join(root, "test"))
-	datadir := config.ConfigPath()
+	datadir := config.Get().ConfigPath()
 	os.RemoveAll(filepath.Join(datadir, "virtual"))
 	os.RemoveAll(filepath.Join(datadir, "packages"))
 	os.RemoveAll(filepath.Join(datadir, "languages"))
