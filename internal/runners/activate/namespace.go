@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/ActiveState/cli/pkg/projectfile"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -21,7 +22,9 @@ type configAble interface {
 	Set(key string, value interface{})
 	GetBool(key string) bool
 	GetString(key string) string
+	GetStringMapStringSlice(key string) map[string][]string
 	GetStringSlice(key string) []string
+	AllKeys() []string
 	Save() error
 }
 
@@ -51,12 +54,6 @@ func (r *NamespaceSelect) Run(namespace string, preferredPath string) (string, e
 		return "", err
 	}
 
-	// Save path for future use
-	key := fmt.Sprintf("project_%s", namespace)
-	paths := project.AvailableProjectPaths(r.config, namespace)
-	paths = append(paths, targetPath)
-	r.config.Set(key, paths)
-
 	err := fileutils.MkdirUnlessExists(targetPath)
 	if err != nil {
 		return "", err
@@ -67,7 +64,7 @@ func (r *NamespaceSelect) Run(namespace string, preferredPath string) (string, e
 
 func (r *NamespaceSelect) promptForPath(namespace string) (string, error) {
 	// If no targetPath was given try to get it from our config (ie. previous activations)
-	paths := project.AvailableProjectPaths(r.config, namespace)
+	paths := projectfile.GetProjectPaths(r.config, namespace)
 	if len(paths) > 0 {
 		targetPath, err := r.promptAvailablePaths(paths)
 		if err != nil {
