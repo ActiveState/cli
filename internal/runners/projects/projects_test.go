@@ -20,6 +20,16 @@ func (c *configMock) GetStringMapStringSlice(key string) map[string][]string {
 	}
 }
 
+func (c *configMock) AllKeys() []string {
+	return []string{}
+}
+
+func (c *configMock) GetStringSlice(_ string) []string {
+	return []string{}
+}
+
+func (c *configMock) Set(_ string, _ interface{}) {}
+
 func TestProjects(t *testing.T) {
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	defer httpmock.DeActivate()

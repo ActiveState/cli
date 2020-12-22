@@ -12,10 +12,17 @@ import (
 type configMock struct{}
 
 func (c *configMock) Set(key string, value interface{}) {}
-func (c *configMock) GetString(key string) string       { return "" }
 
 func (c *configMock) GetStringSlice(key string) []string {
 	return []string{}
+}
+
+func (c *configMock) AllKeys() []string {
+	return []string{}
+}
+
+func (c *configMock) GetStringMapStringSlice(key string) map[string][]string {
+	return map[string][]string{}
 }
 
 func (suite *CleanTestSuite) TestCache() {
