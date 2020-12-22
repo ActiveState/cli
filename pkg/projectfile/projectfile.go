@@ -936,6 +936,28 @@ func FromPath(path string) (*Project, error) {
 	return project, nil
 }
 
+// FromExactPath will return the projectfile that's located at the given path without walking up the directory tree
+func FromExactPath(path string) (*Project, error) {
+	// we do not want to use a path provided by state if we're running tests
+	projectFilePath := filepath.Join(path, constants.ConfigFileName)
+
+	if !fileutils.FileExists(projectFilePath) {
+		return nil, &ErrorNoProject{locale.NewInputError("err_no_projectfile")}
+	}
+
+	_, err := ioutil.ReadFile(projectFilePath)
+	if err != nil {
+		logging.Warning("Cannot load config file: %v", err)
+		return nil, &ErrorNoProject{locale.WrapInputError(err, "err_no_projectfile")}
+	}
+	project, err := Parse(projectFilePath)
+	if err != nil {
+		return nil, errs.Wrap(err, "Parse %s failed", projectFilePath)
+	}
+
+	return project, nil
+}
+
 // CreateParams are parameters that we create a custom activestate.yaml file from
 type CreateParams struct {
 	Owner           string
