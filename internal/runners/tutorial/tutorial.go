@@ -164,9 +164,8 @@ func (t *Tutorial) authFlow() error {
 	}
 
 	// Reload authentication info
-	if err := config.Reload(); err != nil {
-		return locale.WrapError(err, "err_tutorial_config", "Could not reload config after invoking `state auth ..`.")
-	}
+	config.Get().Reload()
+
 	if err := t.auth.Authenticate(); err != nil {
 		return locale.WrapError(err, "err_tutorial_auth", "Could not authenticate after invoking `state auth ..`.")
 	}

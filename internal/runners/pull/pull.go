@@ -87,7 +87,7 @@ func (p *Pull) Run() error {
 		return nil
 	}
 
-	fname := path.Join(config.ConfigPath(), constants.UpdateHailFileName)
+	fname := path.Join(config.Get().ConfigPath(), constants.UpdateHailFileName)
 	// must happen last in this function scope (defer if needed)
 	if err := hail.Send(fname, []byte(actID)); err != nil {
 		logging.Error("failed to send hail via %q: %s", fname, err)

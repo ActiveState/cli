@@ -42,12 +42,14 @@ func newUninstall(out output.Outputer, confirm confirmAble) (*Uninstall, error) 
 		return nil, err
 	}
 
+	cfg := config.Get()
+
 	return &Uninstall{
 		out:         out,
 		confirm:     confirm,
 		installPath: installPath,
-		configPath:  config.ConfigPath(),
-		cachePath:   config.CachePath(),
+		configPath:  cfg.ConfigPath(),
+		cachePath:   cfg.CachePath(),
 	}, nil
 }
 

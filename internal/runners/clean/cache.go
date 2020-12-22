@@ -34,7 +34,7 @@ func newCache(output output.Outputer, cfg project.ConfigAble, confirm confirmAbl
 		output:  output,
 		config:  cfg,
 		confirm: confirm,
-		path:    config.CachePath(),
+		path:    config.Get().CachePath(),
 	}
 }
 

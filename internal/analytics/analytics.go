@@ -155,7 +155,7 @@ func setup() {
 		userID:        userIDString,
 		osName:        osName,
 		osVersion:     osVersion,
-		installSource: config.InstallSource(),
+		installSource: config.Get().InstallSource(),
 		machineID:     machineid.UniqID(),
 	}
 

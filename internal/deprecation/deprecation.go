@@ -59,7 +59,7 @@ func NewChecker(timeout time.Duration, configuration configable) *Checker {
 	return &Checker{
 		timeout,
 		configuration,
-		filepath.Join(config.ConfigPath(), "deprecation.json"),
+		filepath.Join(config.Get().ConfigPath(), "deprecation.json"),
 	}
 }
 

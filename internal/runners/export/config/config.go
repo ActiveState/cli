@@ -25,7 +25,7 @@ func New(prime primeable) *Config {
 
 func (c *Config) Run(cmd *captain.Command, params *ConfigParams) error {
 	output := map[string]string{
-		Dir.String(): config.ConfigPath(),
+		Dir.String(): config.Get().ConfigPath(),
 	}
 
 	filteredOutput := output

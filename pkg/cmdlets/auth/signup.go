@@ -88,7 +88,7 @@ func downloadTOS() (string, error) {
 	}
 	defer resp.Body.Close()
 
-	tosPath := filepath.Join(config.ConfigPath(), "platform_tos.txt")
+	tosPath := filepath.Join(config.Get().ConfigPath(), "platform_tos.txt")
 	tosFile, err := os.Create(tosPath)
 	if err != nil {
 		return "", errs.Wrap(err, "Could not create Terms Of Service file in configuration directory.")

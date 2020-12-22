@@ -53,7 +53,7 @@ func Delete(keyName string) error {
 // (constants.PrivateKeyEnvVarName), that value will be parsed directly.
 func LoadWithDefaults() (Keypair, error) {
 	key, err := gcloud.GetSecret(constants.PrivateKeyEnvVarName)
-	if err != nil && ! errors.Is(err, gcloud.ErrNotAvailable{}) {
+	if err != nil && !errors.Is(err, gcloud.ErrNotAvailable{}) {
 		return nil, errs.Wrap(err, "gcloud.GetSecret failed")
 	}
 	if err == nil && key != "" {
@@ -93,7 +93,7 @@ func DeleteWithDefaults() error {
 
 // LocalKeyFilename returns the full filepath for the given key name
 func LocalKeyFilename(keyName string) string {
-	return filepath.Join(config.ConfigPath(), keyName+".key")
+	return filepath.Join(config.Get().ConfigPath(), keyName+".key")
 }
 
 func loadAndParseKeypair(keyFilename string) (Keypair, error) {
@@ -110,7 +110,7 @@ func hasKeyOverride() bool {
 	}
 
 	tkn, err := gcloud.GetSecret(constants.PrivateKeyEnvVarName)
-	if err != nil && ! errors.Is(err, gcloud.ErrNotAvailable{}) {
+	if err != nil && !errors.Is(err, gcloud.ErrNotAvailable{}) {
 		logging.Error("Could not retrieve gcloud secret: %v", err)
 	}
 	if err == nil && tkn != "" {

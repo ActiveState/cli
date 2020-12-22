@@ -36,7 +36,7 @@ type DefaultConfigurer interface {
 
 // BinDir returns the global binary directory
 func BinDir() string {
-	return filepath.Join(config.CachePath(), "bin")
+	return filepath.Join(config.Get().CachePath(), "bin")
 }
 
 func isBinDirOnWindowsUserPath(binDir string) bool {
