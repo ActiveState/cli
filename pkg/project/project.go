@@ -314,6 +314,20 @@ func FromPath(path string) (*Project, error) {
 	return project, nil
 }
 
+// FromExactPath will return the project that's located at the given path without walking up the directory tree
+func FromExactPath(path string) (*Project, error) {
+	pjFile, err := projectfile.FromExactPath(path)
+	if err != nil {
+		return nil, err
+	}
+	project, err := New(pjFile, output.Get())
+	if err != nil {
+		return nil, err
+	}
+
+	return project, nil
+}
+
 // Platform covers the platform structure
 type Platform struct {
 	platform *projectfile.Platform

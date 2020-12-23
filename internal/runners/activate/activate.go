@@ -99,7 +99,7 @@ func (r *Activate) run(params *ActivateParams) error {
 	}
 
 	// Detect target project
-	proj, err := r.projectToUse(pathToUse)
+	proj, err := r.pathToProject(pathToUse)
 	if err != nil {
 		return locale.WrapError(err, "err_activate_projecttouse", "Could not figure out what project to use.")
 	}
@@ -241,8 +241,8 @@ func (r *Activate) pathToUse(namespace string, preferredPath string) (string, er
 	}
 }
 
-func (r *Activate) projectToUse(path string) (*project.Project, error) {
-	projectToUse, err := project.FromPath(path)
+func (r *Activate) pathToProject(path string) (*project.Project, error) {
+	projectToUse, err := project.FromExactPath(path)
 	if err != nil && !errs.Matches(err, &projectfile.ErrorNoProject{}) {
 		return nil, locale.WrapError(err, "err_activate_projectpath", "Could not find a valid project path.")
 	}
