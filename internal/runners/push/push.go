@@ -16,8 +16,7 @@ import (
 )
 
 type configGetter interface {
-	GetString(key string) string
-	GetStringMapStringSlice(key string) map[string][]string
+	projectfile.ConfigGetter
 }
 
 type Push struct {

@@ -1166,15 +1166,25 @@ func (p *Project) Persist() {
 	os.Setenv(constants.ProjectEnvVarName, p.Path())
 }
 
-type configGetter interface {
+type ConfigGetter interface {
 	GetStringMapStringSlice(key string) map[string][]string
+	AllKeys() []string
+	GetStringSlice(string) []string
+	Set(string, interface{})
 }
 
-func GetProjectNameForPath(config configGetter, projectPath string) string {
+func GetProjectMapping(config ConfigGetter) map[string][]string {
+	addDeprecatedProjectMappings(config)
+	CleanProjectMapping()
 	projects := config.GetStringMapStringSlice(LocalProjectsConfigKey)
 	if projects == nil {
-		projects = make(map[string][]string)
+		return map[string][]string{}
 	}
+	return projects
+}
+
+func GetProjectNameForPath(config ConfigGetter, projectPath string) string {
+	projects := GetProjectMapping(config)
 
 	for name, paths := range projects {
 		if name == "/" {
@@ -1190,6 +1200,42 @@ func GetProjectNameForPath(config configGetter, projectPath string) string {
 		}
 	}
 	return ""
+}
+
+func addDeprecatedProjectMappings(config ConfigGetter) {
+	projects := config.GetStringMapStringSlice(LocalProjectsConfigKey)
+	keys := funk.FilterString(config.AllKeys(), func(v string) bool {
+		return strings.HasPrefix(v, "project_")
+	})
+
+	if len(keys) == 0 {
+		return
+	}
+
+	for _, key := range keys {
+		namespace := strings.TrimPrefix(key, "project_")
+		newPaths := projects[namespace]
+		paths := config.GetStringSlice(key)
+		projects[namespace] = funk.UniqString(append(newPaths, paths...))
+		config.Set(key, nil)
+	}
+
+	config.Set(LocalProjectsConfigKey, projects)
+}
+
+// GetProjectPaths returns the paths of all projects associated with the namespace
+func GetProjectPaths(config ConfigGetter, namespace string) []string {
+	projects := GetProjectMapping(config)
+
+	// match case-insensitively
+	var paths []string
+	for key, value := range projects {
+		if strings.ToLower(key) == strings.ToLower(namespace) {
+			paths = append(paths, value...)
+		}
+	}
+
+	return paths
 }
 
 // storeProjectMapping associates the namespace with the project

@@ -104,6 +104,10 @@ func (i *Instance) GetString(key string) string {
 	return i.viper.GetString(key)
 }
 
+func (i *Instance) AllKeys() []string {
+	return i.viper.AllKeys()
+}
+
 // GetStringMapStringSlice retrieves a map of string slices for a given key
 func (i *Instance) GetStringMapStringSlice(key string) map[string][]string {
 	return i.viper.GetStringMapStringSlice(key)

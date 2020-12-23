@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 type Cache struct {
@@ -44,7 +45,7 @@ func (c *Cache) Run(params *CacheParams) error {
 	}
 
 	if params.Project != "" {
-		paths := project.AvailableProjectPaths(c.config, params.Project)
+		paths := projectfile.GetProjectPaths(c.config, params.Project)
 
 		for _, projectPath := range paths {
 			err := c.removeProjectCache(projectPath, params.Project, params.Force)
