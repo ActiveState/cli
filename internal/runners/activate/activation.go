@@ -32,7 +32,7 @@ func (r *Activate) activateAndWait(proj *project.Project, venv *virtualenvironme
 	}
 
 	// If we're not using plain output then we should just dump the environment information
-	if r.out.Type() != output.PlainFormatName {
+	if r.out.Type() != output.PlainFormatName && r.out.Type() != output.SimpleFormatName {
 		if r.out.Type() == output.EditorV0FormatName {
 			fmt.Println("[activated-JSON]")
 		}
