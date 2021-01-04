@@ -19,7 +19,7 @@ PT_DAYS_AGED = 190 if 'PT_DAYS_AGED' not in os.environ else int(os.getenv('PT_DA
 if PT_DAYS_AGED < 30:
     PT_DAYS_AGED = 30
 
-def params(base, added):
+def mergeDicts(base, added):
     ps = base.copy()
     ps.update(added)
     return ps
@@ -28,10 +28,11 @@ def updBefFilter(daysAged):
     date = datetime.datetime.now() - datetime.timedelta(days=daysAged)
     return 'updated_before:{}'.format(date.strftime('%m/%d/%Y'))
 
+# gather stories by limit set in PT_PRMS_BASE or max allowed by API, whichever is lower
 def getAgedStories(): 
     filterVal = ', '.join(['state:unscheduled', updBefFilter(PT_DAYS_AGED)])
-    prms = params(PT_PRMS_BASE, {'filter':filterVal})
-    response = requests.get(PT_URLPFX_PRI+'/stories', headers=PT_HDRS_BASE, params=prms)
+    params = mergeDicts(PT_PRMS_BASE, {'filter':filterVal})
+    response = requests.get(PT_URLPFX_PRI+'/stories', headers=PT_HDRS_BASE, params=params)
     response.raise_for_status()
     return response.json()
 
