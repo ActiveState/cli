@@ -13,7 +13,7 @@ PT_PROJID_STR = os.getenv('PT_PROJID_STORAGE')
 PT_URLPFX_FMT = 'https://www.pivotaltracker.com/services/v5/projects/{}'
 PT_URLPFX_PRI = PT_URLPFX_FMT.format(PT_PROJID_PRI)
 PT_HDRS_BASE = {'X-TrackerToken':os.getenv('PT_API_TOKEN')}
-PT_PRMS_BASE = {'date_format':'millis', 'limit':333}
+PT_PRMS_BASE = {'date_format':'millis', 'limit':50}
 PT_DAYS_AGED = 190 if 'PT_DAYS_AGED' not in os.environ else int(os.getenv('PT_DAYS_AGED'))
 
 if PT_DAYS_AGED < 30:
