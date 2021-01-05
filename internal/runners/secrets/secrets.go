@@ -59,7 +59,7 @@ func (l *List) Run(params ListRunParams) error {
 		return locale.WrapError(err, "secrets_err_defined")
 	}
 
-	meta, err := defsToMeta(defs)
+	meta, err := defsToData(defs)
 	if err != nil {
 		return locale.WrapError(err, "secrets_err_values")
 	}
@@ -128,7 +128,7 @@ func filterSecrets(proj *project.Project, secrectDefs []*secretsModels.SecretDef
 	return secrectDefsFiltered
 }
 
-func defsToMeta(defs []*secretsModels.SecretDefinition) ([]*secretData, error) {
+func defsToData(defs []*secretsModels.SecretDefinition) ([]*secretData, error) {
 	data := make([]*secretData, len(defs))
 	expander := project.NewSecretExpander(secretsapi.Get(), project.Get(), nil)
 
