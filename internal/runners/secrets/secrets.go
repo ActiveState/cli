@@ -152,7 +152,8 @@ func defsToData(defs []*secretsModels.SecretDefinition) ([]*secretData, error) {
 
 		secretValue, err := expander.FindSecret(*def.Name, *def.Scope == secretsModels.SecretDefinitionScopeUser)
 		if err != nil {
-			return data, err
+			logging.Debug("Could not determine secret value, got error: %v", err)
+			continue
 		}
 
 		if secretValue != nil {
