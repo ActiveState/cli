@@ -631,9 +631,11 @@ secrets_header_description:
 secrets_header_usage:
   other: Usage
 secrets_row_value_set:
-  other: Defined
+  other: "[SUCCESS]Defined[/RESET]"
 secrets_row_value_unset:
-  other: Undefined
+  other: "[ERROR]Not defined[/RESET]"
+secrets_description_unset:
+  other: "[DISABLED]Not provided.[/RESET]"
 pull_not_updated:
   other: Your activestate.yaml is already up to date!
 pull_updated:
