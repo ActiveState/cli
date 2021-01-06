@@ -23,6 +23,16 @@ type Get struct {
 	out  output.Outputer
 }
 
+// SecretExport defines important information about a secret that should be
+// displayed.
+type SecretExport struct {
+	Name        string `json:"name"`
+	Scope       string `json:"scope"`
+	Description string `json:"description"`
+	HasValue    bool   `json:"has_value"`
+	Value       string `json:"value,omitempty"`
+}
+
 // NewGet prepares a get execution context for use.
 func NewGet(p getPrimeable) *Get {
 	return &Get{

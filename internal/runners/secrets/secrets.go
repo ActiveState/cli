@@ -1,13 +1,9 @@
 package secrets
 
 import (
-	"encoding/json"
 	"fmt"
 
-	"github.com/bndr/gotabulate"
-
 	"github.com/ActiveState/cli/internal/access"
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -35,6 +31,14 @@ type List struct {
 	proj          *project.Project
 }
 
+type secretData struct {
+	Name        string `locale:"name,[HEADING]Name[/RESET]"`
+	Scope       string `locale:"scope,[HEADING]Scope[/RESET]"`
+	Description string `locale:"description,[HEADING]Description[/RESET]"`
+	HasValue    string `locale:"hasvalue,[HEADING]Value[/RESET]"`
+	Usage       string `locale:"usage,[HEADING]Usage[/RESET]"`
+}
+
 // NewList prepares a list execution context for use.
 func NewList(client *secretsapi.Client, p listPrimeable) *List {
 	return &List{
@@ -54,12 +58,17 @@ func (l *List) Run(params ListRunParams) error {
 	if err != nil {
 		return locale.WrapError(err, "secrets_err_defined")
 	}
-	exports, err := defsToSecrets(defs)
+
+	meta, err := defsToData(defs)
 	if err != nil {
 		return locale.WrapError(err, "secrets_err_values")
 	}
 
-	l.out.Print(secretExports(exports))
+	l.out.Print(struct {
+		Data []*secretData `opts:"verticalTable" locale:","`
+	}{
+		Data: meta,
+	})
 
 	return nil
 }
@@ -119,30 +128,8 @@ func filterSecrets(proj *project.Project, secrectDefs []*secretsModels.SecretDef
 	return secrectDefsFiltered
 }
 
-type secretExports []*SecretExport
-
-func (es secretExports) MarshalOutput(format output.Format) interface{} {
-	switch format {
-	case output.JSONFormatName, output.EditorV0FormatName, output.EditorFormatName:
-		return es
-
-	default:
-		rows, err := secretsToRows(es)
-		if err != nil {
-			return locale.WrapError(err, "secrets_err_output")
-		}
-
-		t := gotabulate.Create(rows)
-		t.SetHeaders([]string{locale.T("secrets_header_name"), locale.T("secrets_header_scope"), locale.T("secrets_header_value"), locale.T("secrets_header_description"), locale.T("secrets_header_usage")})
-		t.SetHideLines([]string{"betweenLine", "top", "aboveTitle", "LineTop", "LineBottom", "bottomLine"}) // Don't print whitespace lines
-		t.SetAlign("left")
-
-		return t.Render("simple")
-	}
-}
-
-func defsToSecrets(defs []*secretsModels.SecretDefinition) ([]*SecretExport, error) {
-	secretsExport := make([]*SecretExport, len(defs))
+func defsToData(defs []*secretsModels.SecretDefinition) ([]*secretData, error) {
+	data := make([]*secretData, len(defs))
 	expander := project.NewSecretExpander(secretsapi.Get(), project.Get(), nil)
 
 	for i, def := range defs {
@@ -151,54 +138,28 @@ func defsToSecrets(defs []*secretsModels.SecretDefinition) ([]*SecretExport, err
 			continue
 		}
 
-		secretValue, err := expander.FindSecret(*def.Name, *def.Scope == secretsModels.SecretDefinitionScopeUser)
-		if err != nil {
-			return secretsExport, err
-		}
-
-		secretsExport[i] = &SecretExport{
+		data[i] = &secretData{
 			Name:        *def.Name,
 			Scope:       *def.Scope,
 			Description: def.Description,
-			HasValue:    secretValue != nil,
+			HasValue:    locale.T("secrets_row_value_unset"),
+			Usage:       fmt.Sprintf("%s.%s", *def.Scope, *def.Name),
+		}
+
+		if data[i].Description == "" {
+			data[i].Description = locale.T("secrets_description_unset")
+		}
+
+		secretValue, err := expander.FindSecret(*def.Name, *def.Scope == secretsModels.SecretDefinitionScopeUser)
+		if err != nil {
+			logging.Debug("Could not determine secret value, got error: %v", err)
+			continue
+		}
+
+		if secretValue != nil {
+			data[i].HasValue = locale.T("secrets_row_value_set")
 		}
 	}
 
-	return secretsExport, nil
-}
-
-func secretsAsJSON(secretExports []*SecretExport) ([]byte, error) {
-	bs, err := json.Marshal(secretExports)
-	if err != nil {
-		return nil, errs.Wrap(err, "Marshal failure")
-	}
-
-	return bs, nil
-}
-
-// secretsToRows returns the rows used in our output table
-func secretsToRows(secretExports []*SecretExport) ([][]interface{}, error) {
-	rows := [][]interface{}{}
-	for _, secret := range secretExports {
-		description := "-"
-		if secret.Description != "" {
-			description = secret.Description
-		}
-		hasValue := locale.T("secrets_row_value_set")
-		if !secret.HasValue {
-			hasValue = locale.T("secrets_row_value_unset")
-		}
-		rows = append(rows, []interface{}{secret.Name, secret.Scope, hasValue, description, fmt.Sprintf("%s.%s", secret.Scope, secret.Name)})
-	}
-	return rows, nil
-}
-
-// SecretExport defines important information about a secret that should be
-// displayed.
-type SecretExport struct {
-	Name        string `json:"name"`
-	Scope       string `json:"scope"`
-	Description string `json:"description"`
-	HasValue    bool   `json:"has_value"`
-	Value       string `json:"value,omitempty"`
+	return data, nil
 }
