@@ -147,7 +147,8 @@ func uniqueUsername(credentials *mono_models.Credentials) bool {
 }
 
 func promptSignup(credentials *mono_models.Credentials, out output.Outputer, prompt prompt.Prompter) error {
-	yesSignup, err := prompt.Confirm("", locale.T("prompt_login_to_signup"), true)
+	loginConfirmDefault := true
+	yesSignup, err := prompt.Confirm("", locale.T("prompt_login_to_signup"), &loginConfirmDefault)
 	if err != nil {
 		return err
 	}

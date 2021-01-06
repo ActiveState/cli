@@ -15,7 +15,7 @@ type Prompter interface {
 	Input(title, message, defaultResponse string, flags ...ValidatorFlag) (string, error)
 	InputAndValidate(title, message, defaultResponse string, validator ValidatorFunc, flags ...ValidatorFlag) (string, error)
 	Select(title, message string, choices []string, defaultResponse string) (string, error)
-	Confirm(title, message string, defaultChoice bool) (bool, error)
+	Confirm(title, message string, defaultChoice *bool) (bool, error)
 	InputSecret(title, message string, flags ...ValidatorFlag) (string, error)
 	IsInteractive() bool
 }
@@ -132,10 +132,13 @@ func (p *Prompt) Select(title, message string, choices []string, defaultChoice s
 }
 
 // Confirm prompts user for yes or no response.
-func (p *Prompt) Confirm(title, message string, defaultChoice bool) (bool, error) {
+func (p *Prompt) Confirm(title, message string, defaultChoice *bool) (bool, error) {
 	if !p.isInteractive {
-		logging.Debug("Prompt %s confirmed with default choice %v in non-interactive mode", title, defaultChoice)
-		return defaultChoice, nil
+		if defaultChoice != nil {
+			logging.Debug("Prompt %s confirmed with default choice %v in non-interactive mode", title, defaultChoice)
+			return *defaultChoice, nil
+		}
+		return false, locale.NewInputError("err_non_interactive_prompt", message)
 	}
 	if title != "" {
 		p.out.Notice(output.SubHeading(title))
@@ -143,10 +146,15 @@ func (p *Prompt) Confirm(title, message string, defaultChoice bool) (bool, error
 
 	analytics.EventWithLabel(analytics.CatPrompt, title, "present")
 
+	var defChoice bool
+	if defaultChoice != nil {
+		defChoice = *defaultChoice
+	}
+
 	var resp bool
 	err := survey.AskOne(&Confirm{&survey.Confirm{
 		Message: formatMessage(message, !p.out.Config().Colored),
-		Default: defaultChoice,
+		Default: defChoice,
 	}}, &resp, nil)
 	if err != nil {
 		if err == terminal.InterruptErr {

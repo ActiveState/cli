@@ -73,7 +73,7 @@ func (l *Lock) Run(params *LockParams) error {
 func confirmLock(prom prompt.Prompter) error {
 	msg := locale.T("confirm_update_locked_version_prompt")
 
-	confirmed, err := prom.Confirm(locale.T("confirm"), msg, false)
+	confirmed, err := prom.Confirm(locale.T("confirm"), msg, new(bool))
 	if err != nil {
 		return err
 	}

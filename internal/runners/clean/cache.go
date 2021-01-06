@@ -60,7 +60,7 @@ func (c *Cache) Run(params *CacheParams) error {
 
 func (c *Cache) removeCache(path string, force bool) error {
 	if !force {
-		ok, err := c.confirm.Confirm(locale.T("confirm"), locale.T("clean_cache_confirm"), false)
+		ok, err := c.confirm.Confirm(locale.T("confirm"), locale.T("clean_cache_confirm"), new(bool))
 		if err != nil {
 			return err
 		}
@@ -75,7 +75,7 @@ func (c *Cache) removeCache(path string, force bool) error {
 
 func (c *Cache) removeProjectCache(projectDir, namespace string, force bool) error {
 	if !force {
-		ok, err := c.confirm.Confirm(locale.T("confirm"), locale.Tr("clean_cache_artifact_confirm", namespace), false)
+		ok, err := c.confirm.Confirm(locale.T("confirm"), locale.Tr("clean_cache_artifact_confirm", namespace), new(bool))
 		if err != nil {
 			return err
 		}

@@ -132,7 +132,9 @@ func promptTOS(out output.Outputer, prompt prompt.Prompter) (bool, error) {
 			return false, errs.Wrap(err, "IO failure")
 		}
 		out.Print(tos)
-		return prompt.Confirm("", locale.T("tos_acceptance"), true)
+
+		tosConfirmDefault := true
+		return prompt.Confirm("", locale.T("tos_acceptance"), &tosConfirmDefault)
 	}
 
 	return false, nil
