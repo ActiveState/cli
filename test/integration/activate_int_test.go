@@ -244,7 +244,7 @@ version: %s
 		e2e.WithArgs("pull"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Your activestate.yaml has been updated to")
+	cp.Expect("activestate.yaml has been updated to")
 	cp.ExpectExitCode(0)
 
 	c2 := ts.Spawn("activate")
@@ -363,7 +363,7 @@ version: %s
 
 	// Pull to ensure we have an up to date config file
 	cp := ts.Spawn("pull")
-	cp.Expect("Your activestate.yaml has been updated to")
+	cp.Expect("activestate.yaml has been updated to")
 	cp.ExpectExitCode(0)
 
 	// Activate in the subdirectory
@@ -398,7 +398,7 @@ project: "https://platform.activestate.com/ActiveState-CLI/Python3"
 
 	// Pull to ensure we have an up to date config file
 	cp := ts.Spawn("pull")
-	cp.Expect("Your activestate.yaml has been updated to")
+	cp.Expect("activestate.yaml has been updated to")
 	cp.ExpectExitCode(0)
 
 	// Activate in the subdirectory
