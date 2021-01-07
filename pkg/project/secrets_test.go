@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	"gopkg.in/yaml.v2"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
@@ -22,6 +23,8 @@ import (
 
 type SecretsExpanderTestSuite struct {
 	suite.Suite
+
+	configPath string
 
 	projectFile *projectfile.Project
 	project     *project.Project
@@ -72,19 +75,23 @@ func (suite *SecretsExpanderTestSuite) BeforeTest(suiteName, testName string) {
 
 	suite.graphMock = mock.Init()
 	suite.graphMock.ProjectByOrgAndName(mock.NoOptions)
+
+	cfg, err := config.Get()
+	suite.Require().NoError(err)
+	suite.configPath = cfg.ConfigPath()
 }
 
 func (suite *SecretsExpanderTestSuite) AfterTest(suiteName, testName string) {
 	httpmock.DeActivate()
 	projectfile.Reset()
-	osutil.RemoveConfigFile(constants.KeypairLocalFileName + ".key")
+	osutil.RemoveConfigFile(suite.configPath, constants.KeypairLocalFileName+".key")
 	suite.graphMock.Close()
 }
 
 func (suite *SecretsExpanderTestSuite) prepareWorkingExpander() project.ExpanderFunc {
 	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg", 200)
 
-	osutil.CopyTestFileToConfigDir("self-private.key", constants.KeypairLocalFileName+".key", 0600)
+	osutil.CopyTestFileToConfigDir(suite.configPath, "self-private.key", constants.KeypairLocalFileName+".key", 0600)
 
 	suite.secretsMock.RegisterWithCode("GET", "/organizations/00010001-0001-0001-0001-000100010002/user_secrets", 200)
 	return project.NewSecretQuietExpander(suite.secretsClient)

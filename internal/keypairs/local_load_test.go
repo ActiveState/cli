@@ -8,6 +8,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
@@ -15,6 +16,13 @@ import (
 
 type KeypairLocalLoadTestSuite struct {
 	suite.Suite
+	ConfigPath string
+}
+
+func (suite *KeypairLocalLoadTestSuite) BeforeTest(suiteName, testName string) {
+	cfg, err := config.Get()
+	suite.Require().NoError(err)
+	suite.ConfigPath = cfg.ConfigPath()
 }
 
 func (suite *KeypairLocalLoadTestSuite) TestNoKeyFileFound() {
@@ -26,7 +34,7 @@ func (suite *KeypairLocalLoadTestSuite) TestNoKeyFileFound() {
 func (suite *KeypairLocalLoadTestSuite) assertTooPermissive(fileMode os.FileMode) {
 	tmpKeyName := fmt.Sprintf("test-rsa-%0.4o", fileMode)
 	keyFile := suite.createConfigDirFile(tmpKeyName+".key", fileMode)
-	defer osutil.RemoveConfigFile(tmpKeyName + ".key")
+	defer osutil.RemoveConfigFile(suite.ConfigPath, tmpKeyName+".key")
 	suite.Require().NoError(keyFile.Close())
 
 	kp, err := keypairs.Load(tmpKeyName)
@@ -48,7 +56,7 @@ func (suite *KeypairLocalLoadTestSuite) TestFileFound_PermsTooPermissive() {
 func (suite *KeypairLocalLoadTestSuite) TestFileFound_KeypairParseError() {
 	keyName := "test-rsa-parse-err"
 	keyFile := suite.createConfigDirFile(keyName+".key", 0600)
-	defer osutil.RemoveConfigFile(keyName + ".key")
+	defer osutil.RemoveConfigFile(suite.ConfigPath, keyName+".key")
 
 	keyFile.WriteString("this will never parse")
 	suite.Require().NoError(keyFile.Close())
@@ -61,7 +69,7 @@ func (suite *KeypairLocalLoadTestSuite) TestFileFound_KeypairParseError() {
 func (suite *KeypairLocalLoadTestSuite) TestFileFound_EncryptedKeypairParseFailure() {
 	keyName := "test-rsa-encrypted"
 	keyFile := suite.createConfigDirFile(keyName+".key", 0600)
-	defer osutil.RemoveConfigFile(keyName + ".key")
+	defer osutil.RemoveConfigFile(suite.ConfigPath, keyName+".key")
 
 	keyFile.WriteString(suite.readTestFile("test-keypair-encrypted.key"))
 	suite.Require().NoError(keyFile.Close())
@@ -74,7 +82,7 @@ func (suite *KeypairLocalLoadTestSuite) TestFileFound_EncryptedKeypairParseFailu
 func (suite *KeypairLocalLoadTestSuite) TestFileFound_UnencryptedKeypairParseSuccess() {
 	keyName := "test-rsa-success"
 	keyFile := suite.createConfigDirFile(keyName+".key", 0600)
-	defer osutil.RemoveConfigFile(keyName + ".key")
+	defer osutil.RemoveConfigFile(suite.ConfigPath, keyName+".key")
 
 	keyFile.WriteString(suite.readTestFile("test-keypair.key"))
 	suite.Require().NoError(keyFile.Close())
@@ -87,7 +95,7 @@ func (suite *KeypairLocalLoadTestSuite) TestFileFound_UnencryptedKeypairParseSuc
 func (suite *KeypairLocalLoadTestSuite) TestFileFound_WithDefaults() {
 	keyName := constants.KeypairLocalFileName
 	keyFile := suite.createConfigDirFile(keyName+".key", 0600)
-	defer osutil.RemoveConfigFile(keyName + ".key")
+	defer osutil.RemoveConfigFile(suite.ConfigPath, keyName+".key")
 
 	keyFile.WriteString(suite.readTestFile("test-keypair.key"))
 	suite.Require().NoError(keyFile.Close())
@@ -116,7 +124,7 @@ func (suite *KeypairLocalLoadTestSuite) TestLoadWithDefaults_Override() {
 }
 
 func (suite *KeypairLocalLoadTestSuite) createConfigDirFile(keyFile string, fileMode os.FileMode) *os.File {
-	file, err := osutil.CreateConfigFile(keyFile, fileMode)
+	file, err := osutil.CreateConfigFile(suite.ConfigPath, keyFile, fileMode)
 	suite.Require().NoError(err)
 	return file
 }

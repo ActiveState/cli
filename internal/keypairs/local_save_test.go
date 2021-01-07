@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
@@ -63,7 +64,9 @@ func (suite *KeypairLocalLoadTestSuite) TestSaveWithDefaults_Override() {
 }
 
 func (suite *KeypairLocalSaveTestSuite) statConfigDirFile(keyFile string) os.FileInfo {
-	keyFileStat, err := osutil.StatConfigFile(keyFile)
+	cfg, err := config.Get()
+	suite.Require().NoError(err)
+	keyFileStat, err := osutil.StatConfigFile(cfg.ConfigPath(), keyFile)
 	suite.Require().NoError(err)
 	return keyFileStat
 }

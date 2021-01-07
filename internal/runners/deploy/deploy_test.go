@@ -2,11 +2,15 @@ package deploy
 
 import (
 	"testing"
+
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/autarch/testify/require"
 )
 
 type InstallableMock struct{}
@@ -133,7 +137,7 @@ func Test_runStepsWithFuncs(t *testing.T) {
 				return nil
 			}
 			var configCalled bool
-			configFunc := func(string, *runtime.Runtime, output.Outputer, subshell.SubShell, project.Namespaced, bool) error {
+			configFunc := func(string, *runtime.Runtime, sscommon.Configurable, output.Outputer, subshell.SubShell, project.Namespaced, bool) error {
 				configCalled = true
 				return nil
 			}
@@ -151,7 +155,9 @@ func Test_runStepsWithFuncs(t *testing.T) {
 			forceOverwrite := true
 			userScope := false
 			namespace := project.Namespaced{"owner", "project", nil}
-			err := runStepsWithFuncs("", forceOverwrite, userScope, namespace, tt.args.step, tt.args.runtime, tt.args.installer, catcher.Outputer, nil, installFunc, configFunc, symlinkFunc, reportFunc)
+			cfg, err := config.Get()
+			require.NoError(t, err)
+			err = runStepsWithFuncs("", forceOverwrite, userScope, namespace, tt.args.step, tt.args.runtime, tt.args.installer, catcher.Outputer, cfg, nil, installFunc, configFunc, symlinkFunc, reportFunc)
 			if err != tt.want.err {
 				t.Errorf("runStepsWithFuncs() error = %v, wantErr %v", err, tt.want.err)
 			}
@@ -170,4 +176,3 @@ func Test_runStepsWithFuncs(t *testing.T) {
 		})
 	}
 }
-

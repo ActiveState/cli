@@ -2,14 +2,27 @@ package clean
 
 import (
 	"os"
+	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
+	"github.com/autarch/testify/require"
 )
 
-type configMock struct{}
+type configMock struct {
+	t          *testing.T
+	cachePath  string
+	configPath string
+}
+
+func newConfigMock(t *testing.T, cachePath, configPath string) *configMock {
+	return &configMock{
+		t, cachePath, configPath,
+	}
+}
 
 func (c *configMock) Set(key string, value interface{}) {}
 
@@ -25,8 +38,29 @@ func (c *configMock) GetStringMapStringSlice(key string) map[string][]string {
 	return map[string][]string{}
 }
 
+func (c *configMock) CachePath() string {
+	if c.cachePath != "" {
+		return c.cachePath
+	}
+	cfg, err := config.Get()
+	require.NoError(c.t, err)
+	return cfg.CachePath()
+}
+
+func (c *configMock) ConfigPath() string {
+	if c.configPath != "" {
+		return c.configPath
+	}
+	cfg, err := config.Get()
+	require.NoError(c.t, err)
+	return cfg.ConfigPath()
+}
+
+func (c *configMock) SkipSave(bool) {
+}
+
 func (suite *CleanTestSuite) TestCache() {
-	runner := newCache(&outputhelper.TestOutputer{}, &configMock{}, &confirmMock{confirm: true})
+	runner := newCache(&outputhelper.TestOutputer{}, &configMock{suite.T(), "", ""}, &confirmMock{confirm: true})
 	runner.path = suite.cachePath
 	err := runner.Run(&CacheParams{})
 	suite.Require().NoError(err)

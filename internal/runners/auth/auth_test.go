@@ -372,7 +372,9 @@ func TestExecuteToken(t *testing.T) {
 		Username: user.Username,
 		Password: user.Password,
 	})
-	token := config.Get().GetString("apiToken")
+	cfg, err := config.Get()
+	require.NoError(t, err)
+	token := cfg.GetString("apiToken")
 	authentication.Logout()
 	assert.NoError(t, err, "Executed without error")
 	assert.Nil(t, authentication.ClientAuth(), "Not Authenticated")
@@ -385,8 +387,10 @@ func TestExecuteToken(t *testing.T) {
 
 func TestExecuteLogout(t *testing.T) {
 	setup(t)
-	defer osutil.RemoveConfigFile(constants.KeypairLocalFileName + ".key")
-	osutil.CopyTestFileToConfigDir("self-private.key", constants.KeypairLocalFileName+".key", 0600)
+	cfg, err := config.Get()
+	require.NoError(t, err)
+	defer osutil.RemoveConfigFile(cfg.ConfigPath(), constants.KeypairLocalFileName+".key")
+	osutil.CopyTestFileToConfigDir(cfg.ConfigPath(), "self-private.key", constants.KeypairLocalFileName+".key", 0600)
 
 	user := setupUser()
 
@@ -398,7 +402,7 @@ func TestExecuteLogout(t *testing.T) {
 	httpmock.Register("POST", "/apikeys")
 
 	auth := authentication.Get()
-	err := auth.AuthenticateWithModel(&mono_models.Credentials{
+	err = auth.AuthenticateWithModel(&mono_models.Credentials{
 		Username: user.Username,
 		Password: user.Password,
 	})
@@ -409,7 +413,7 @@ func TestExecuteLogout(t *testing.T) {
 	assert.NoError(t, err, "Executed without error")
 	assert.False(t, auth.Authenticated(), "Not Authenticated")
 
-	pkstat, err := osutil.StatConfigFile(constants.KeypairLocalFileName + ".key")
+	pkstat, err := osutil.StatConfigFile(cfg.ConfigPath(), constants.KeypairLocalFileName+".key")
 	require.Nil(t, pkstat)
 	if runtime.GOOS != "windows" {
 		assert.Regexp(t, "no such file or directory", err.Error())

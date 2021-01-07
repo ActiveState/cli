@@ -31,7 +31,7 @@ func NewCache(prime primeable) *Cache {
 	return newCache(prime.Output(), prime.Config(), prime.Prompt())
 }
 
-func newCache(output output.Outputer, cfg *config.Instance, confirm confirmAble) *Cache {
+func newCache(output output.Outputer, cfg configurable, confirm confirmAble) *Cache {
 	return &Cache{
 		output:  output,
 		config:  cfg,

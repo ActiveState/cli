@@ -10,6 +10,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/keypairs"
@@ -24,6 +25,7 @@ import (
 
 type LoginWithKeypairTestSuite struct {
 	suite.Suite
+	configPath string
 
 	promptMock     *promptMock.Mock
 	platformMock   *httpmock.HTTPMock
@@ -31,7 +33,10 @@ type LoginWithKeypairTestSuite struct {
 }
 
 func (suite *LoginWithKeypairTestSuite) BeforeTest(suiteName, testName string) {
-	osutil.RemoveConfigFile(constants.KeypairLocalFileName + ".key")
+	cfg, err := config.Get()
+	suite.Require().NoError(err)
+	suite.configPath = cfg.ConfigPath()
+	osutil.RemoveConfigFile(suite.configPath, constants.KeypairLocalFileName+".key")
 
 	suite.platformMock = httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	suite.secretsapiMock = httpmock.Activate(secretsapi_test.NewDefaultTestClient("bearing123").BaseURI)
@@ -78,7 +83,7 @@ func (suite *LoginWithKeypairTestSuite) TestPassphraseMismatch_HasLocalPrivateKe
 	suite.mockSuccessfulLogin()
 	suite.secretsapiMock.Register("GET", "/keypair")
 
-	osutil.CopyTestFileToConfigDir("self-private.key", constants.KeypairLocalFileName+".key", 0600)
+	osutil.CopyTestFileToConfigDir(suite.configPath, "self-private.key", constants.KeypairLocalFileName+".key", 0600)
 
 	var bodyKeypair *secretsModels.KeypairChange
 	var bodyErr error
@@ -139,7 +144,7 @@ func (suite *LoginWithKeypairTestSuite) TestPassphraseMismatch_HasMismatchedLoca
 	suite.mockSuccessfulLogin()
 	suite.secretsapiMock.Register("GET", "/keypair")
 
-	osutil.CopyTestFileToConfigDir("mismatched-private.key", constants.KeypairLocalFileName+".key", 0600)
+	osutil.CopyTestFileToConfigDir(suite.configPath, "mismatched-private.key", constants.KeypairLocalFileName+".key", 0600)
 
 	var bodyKeypair *secretsModels.KeypairChange
 	var bodyErr error

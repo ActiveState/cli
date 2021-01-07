@@ -44,18 +44,20 @@ func TestAuth(t *testing.T) {
 		Username: user.Username,
 		Password: user.Password,
 	}
-	auth := New()
-	err := auth.AuthenticateWithModel(credentials)
+	cfg, err := config.Get()
+	require.NoError(t, err)
+	auth := New(cfg)
+	err = auth.AuthenticateWithModel(credentials)
 	assert.NoError(t, err, "Can Authenticate")
-	assert.NotEmpty(t, config.Get().GetString("apiToken"), "Authentication is persisted through token")
+	assert.NotEmpty(t, cfg.GetString("apiToken"), "Authentication is persisted through token")
 	assert.True(t, auth.Authenticated(), "Authentication is persisted for this session")
 	assert.Equal(t, "test", auth.WhoAmI(), "Should return username 'test'")
 
 	Reset()
-	auth = New()
+	auth = New(cfg)
 	assert.True(t, auth.Authenticated(), "Authentication should still be valid")
 
-	auth = New()
+	auth = New(cfg)
 	err = auth.AuthenticateWithUser(credentials.Username, credentials.Password, "")
 	assert.NoError(t, err, "Authentication should work again")
 }
@@ -70,8 +72,10 @@ func TestAuthAPIKeyOverride(t *testing.T) {
 
 	os.Setenv(constants.APIKeyEnvVarName, "testSuccess")
 	defer os.Unsetenv(constants.APIKeyEnvVarName)
-	auth := New()
-	err := auth.Authenticate()
+	cfg, err := config.Get()
+	require.NoError(t, err)
+	auth := New(cfg)
+	err = auth.Authenticate()
 	assert.NoError(t, err, "Authentication by user-defined token should not error")
 	assert.True(t, auth.Authenticated(), "Authentication should still be valid")
 }
@@ -94,8 +98,10 @@ func TestAuthInvalidUser(t *testing.T) {
 		Username: "testFailure",
 		Password: "testFailure",
 	}
-	auth := New()
-	err := auth.AuthenticateWithModel(credentials)
+	cfg, err := config.Get()
+	require.NoError(t, err)
+	auth := New(cfg)
+	err = auth.AuthenticateWithModel(credentials)
 	require.Error(t, err)
 	assert.Equal(t, err.Error(), locale.T("err_unauthorized"), "Should fail to authenticate")
 }
@@ -108,18 +114,21 @@ func TestAuthInvalidToken(t *testing.T) {
 
 	httpmock.RegisterWithCode("POST", "/login", 401)
 
-	cfg := config.Get()
+	cfg, err := config.Get()
+	require.NoError(t, err)
 
 	cfg.Set("apiToken", "testFailure")
-	auth := New()
-	err := auth.Authenticate()
+	auth := New(cfg)
+	err = auth.Authenticate()
 	require.Error(t, err)
 	assert.Equal(t, err.Error(), locale.T("err_no_credentials"), "Should fail to authenticate")
 	assert.Empty(t, cfg.GetString("apiToken"), "", "apiToken should have cleared")
 }
 
 func TestClientFailure(t *testing.T) {
-	auth := New()
+	cfg, err := config.Get()
+	require.NoError(t, err)
+	auth := New(cfg)
 	var exitCode int
 	exit = func(code int) {
 		exitCode = code
