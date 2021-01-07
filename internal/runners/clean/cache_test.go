@@ -60,7 +60,7 @@ func (c *configMock) SkipSave(bool) {
 }
 
 func (suite *CleanTestSuite) TestCache() {
-	runner := newCache(&outputhelper.TestOutputer{}, &configMock{suite.T(), "", ""}, &confirmMock{confirm: true})
+	runner := newCache(&outputhelper.TestOutputer{}, newConfigMock(suite.T(), "", ""), &confirmMock{confirm: true})
 	runner.path = suite.cachePath
 	err := runner.Run(&CacheParams{})
 	suite.Require().NoError(err)
@@ -78,7 +78,7 @@ func (suite *CleanTestSuite) TestCache() {
 }
 
 func (suite *CleanTestSuite) TestCache_PromptNo() {
-	runner := newCache(&outputhelper.TestOutputer{}, &configMock{}, &confirmMock{})
+	runner := newCache(&outputhelper.TestOutputer{}, newConfigMock(suite.T(), "", ""), &confirmMock{})
 	runner.path = suite.cachePath
 	err := runner.Run(&CacheParams{})
 	suite.Require().NoError(err)
@@ -94,7 +94,7 @@ func (suite *CleanTestSuite) TestCache_Activated() {
 		os.Unsetenv(constants.ActivatedStateEnvVarName)
 	}()
 
-	runner := newCache(&outputhelper.TestOutputer{}, &configMock{}, &confirmMock{})
+	runner := newCache(&outputhelper.TestOutputer{}, newConfigMock(suite.T(), "", ""), &confirmMock{})
 	runner.path = suite.cachePath
 	err := runner.Run(&CacheParams{})
 	suite.Require().Error(err)
