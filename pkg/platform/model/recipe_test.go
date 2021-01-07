@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/autarch/testify/assert"
 	"github.com/go-openapi/strfmt"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )

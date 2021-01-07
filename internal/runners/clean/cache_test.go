@@ -9,7 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
-	"github.com/autarch/testify/require"
+	"github.com/stretchr/testify/require"
 )
 
 type configMock struct {

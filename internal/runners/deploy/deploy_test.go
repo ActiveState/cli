@@ -10,7 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/autarch/testify/require"
+	"github.com/stretchr/testify/require"
 )
 
 type InstallableMock struct{}

@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/config"
-	"github.com/autarch/testify/require"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_sendEvent(t *testing.T) {

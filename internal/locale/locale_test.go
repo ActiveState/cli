@@ -4,8 +4,8 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/autarch/testify/require"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/ActiveState/cli/internal/config"
 	_ "github.com/ActiveState/cli/internal/config"
