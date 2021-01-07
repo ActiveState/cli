@@ -28,5 +28,7 @@ func main() {
 	inputDefault = ""
 	p.Input("Input", "Please write something", &inputDefault)
 
+	p.Input("Input", "Please write something, again", new(string))
+
 	p.InputSecret("Secret", "Please write something secretive")
 }

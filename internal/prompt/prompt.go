@@ -10,8 +10,6 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 )
 
-var BlankText = locale.Tl("leave_blank", "<Leave Blank>")
-
 // Prompter is the interface used to run our prompt from, useful for mocking in tests
 type Prompter interface {
 	Input(title, message string, defaultResponse *string, flags ...ValidatorFlag) (string, error)
@@ -86,17 +84,13 @@ func (p *Prompt) InputAndValidate(title, message string, defaultResponse *string
 	}
 
 	// We handle defaults more clearly than the survey package can
-	if defaultResponse != nil {
-		defaultRespText := *defaultResponse
-		if defaultRespText == "" {
-			defaultRespText = BlankText
-		}
-		v, err := p.Select("", formatMessage(message, !p.out.Config().Colored), []string{defaultRespText, locale.Tl("prompt_custom", "Other ..")}, &defaultRespText)
+	if defaultResponse != nil && *defaultResponse != "" {
+		v, err := p.Select("", formatMessage(message, !p.out.Config().Colored), []string{*defaultResponse, locale.Tl("prompt_custom", "Other ..")}, defaultResponse)
 		if err != nil {
 			return "", err
 		}
-		if v == defaultRespText {
-			return *defaultResponse, nil
+		if v == *defaultResponse {
+			return v, nil
 		}
 		message = ""
 	}
