@@ -72,7 +72,7 @@ func RequireAuthentication(message string, out output.Outputer, prompt prompt.Pr
 	out.Print(message)
 
 	choices := []string{locale.T("prompt_login_action"), locale.T("prompt_signup_action"), locale.T("prompt_signup_browser_action")}
-	choice, err := prompt.Select(locale.Tl("login_signup", "Login or Signup"), locale.T("prompt_login_or_signup"), choices, "")
+	choice, err := prompt.Select(locale.Tl("login_signup", "Login or Signup"), locale.T("prompt_login_or_signup"), choices, new(string))
 	if err != nil {
 		return errs.Wrap(err, "Prompt cancelled")
 	}

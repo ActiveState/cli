@@ -14,7 +14,7 @@ import (
 type Prompter interface {
 	Input(title, message, defaultResponse string, flags ...ValidatorFlag) (string, error)
 	InputAndValidate(title, message, defaultResponse string, validator ValidatorFunc, flags ...ValidatorFlag) (string, error)
-	Select(title, message string, choices []string, defaultResponse string) (string, error)
+	Select(title, message string, choices []string, defaultResponse *string) (string, error)
 	Confirm(title, message string, defaultChoice *bool) (bool, error)
 	InputSecret(title, message string, flags ...ValidatorFlag) (string, error)
 	IsInteractive() bool
@@ -85,7 +85,7 @@ func (p *Prompt) InputAndValidate(title, message, defaultResponse string, valida
 
 	// We handle defaults more clearly than the survey package can
 	if defaultResponse != "" {
-		v, err := p.Select("", formatMessage(message, !p.out.Config().Colored), []string{defaultResponse, locale.Tl("prompt_custom", "Other ..")}, defaultResponse)
+		v, err := p.Select("", formatMessage(message, !p.out.Config().Colored), []string{defaultResponse, locale.Tl("prompt_custom", "Other ..")}, &defaultResponse)
 		if err != nil {
 			return "", err
 		}
@@ -106,11 +106,11 @@ func (p *Prompt) InputAndValidate(title, message, defaultResponse string, valida
 }
 
 // Select prompts the user to select one entry from multiple choices
-func (p *Prompt) Select(title, message string, choices []string, defaultChoice string) (string, error) {
+func (p *Prompt) Select(title, message string, choices []string, defaultChoice *string) (string, error) {
 	if !p.isInteractive {
-		if defaultChoice != "" {
-			logging.Debug("Selecting default choice %s for Select prompt %s in non-interactive mode", defaultChoice, title)
-			return defaultChoice, nil
+		if defaultChoice != nil {
+			logging.Debug("Selecting default choice %s for Select prompt %s in non-interactive mode", *defaultChoice, title)
+			return *defaultChoice, nil
 		}
 		return "", locale.NewInputError("err_non_interactive_prompt", message)
 	}
@@ -119,11 +119,16 @@ func (p *Prompt) Select(title, message string, choices []string, defaultChoice s
 		p.out.Notice(output.SubHeading(title))
 	}
 
+	var defChoice string
+	if defaultChoice != nil {
+		defChoice = *defaultChoice
+	}
+
 	var response string
 	err := survey.AskOne(&Select{&survey.Select{
 		Message: formatMessage(message, !p.out.Config().Colored),
 		Options: choices,
-		Default: defaultChoice,
+		Default: defChoice,
 	}}, &response, nil)
 	if err != nil {
 		return "", locale.NewInputError(err.Error())

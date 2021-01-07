@@ -91,7 +91,8 @@ func (r *NamespaceSelect) promptAvailablePaths(paths []string) (*string, error) 
 
 	noneStr := locale.T("activate_select_optout")
 	choices := append(paths, noneStr)
-	path, err := r.prompter.Select(locale.Tl("activate_existing_title", "Existing Checkout"), locale.T("activate_namespace_existing"), choices, "")
+	var defaultPath string
+	path, err := r.prompter.Select(locale.Tl("activate_existing_title", "Existing Checkout"), locale.T("activate_namespace_existing"), choices, &defaultPath)
 	if err != nil {
 		return nil, err
 	}
