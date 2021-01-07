@@ -138,7 +138,7 @@ func NewCommand(name, title, description string, out output.Outputer, cfg analyt
 // PPM Shim.  Differences to NewCommand() are:
 // - the entrypoint is hidden in the help text
 // - calling the help for a subcommand will execute this subcommand
-func NewHiddenShimCommand(name string, flags []*Flag, args []*Argument, execute ExecuteFunc) *Command {
+func NewHiddenShimCommand(name string, cfg analytics.Configurable, flags []*Flag, args []*Argument, execute ExecuteFunc) *Command {
 	// Validate args
 	for idx, arg := range args {
 		if idx > 0 && arg.Required && !args[idx-1].Required {
@@ -154,6 +154,7 @@ func NewHiddenShimCommand(name string, flags []*Flag, args []*Argument, execute 
 		execute:   execute,
 		arguments: args,
 		flags:     flags,
+		cfg:       cfg,
 	}
 
 	cmd.cobra = &cobra.Command{
@@ -181,9 +182,10 @@ func NewHiddenShimCommand(name string, flags []*Flag, args []*Argument, execute 
 
 // NewShimCommand is a very specialized function that is used to support sub-commands for a hidden shim command.
 // It has only a name a description and function to execute.  All flags and arguments are ignored.
-func NewShimCommand(name, description string, execute ExecuteFunc) *Command {
+func NewShimCommand(name, description string, cfg analytics.Configurable, execute ExecuteFunc) *Command {
 	cmd := &Command{
 		execute: execute,
+		cfg:     cfg,
 	}
 
 	short := description
