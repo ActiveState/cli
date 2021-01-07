@@ -10,10 +10,12 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 )
 
+var BlankText = locale.Tl("leave_blank", "<Leave Blank>")
+
 // Prompter is the interface used to run our prompt from, useful for mocking in tests
 type Prompter interface {
-	Input(title, message, defaultResponse string, flags ...ValidatorFlag) (string, error)
-	InputAndValidate(title, message, defaultResponse string, validator ValidatorFunc, flags ...ValidatorFlag) (string, error)
+	Input(title, message string, defaultResponse *string, flags ...ValidatorFlag) (string, error)
+	InputAndValidate(title, message string, defaultResponse *string, validator ValidatorFunc, flags ...ValidatorFlag) (string, error)
 	Select(title, message string, choices []string, defaultResponse *string) (string, error)
 	Confirm(title, message string, defaultChoice *bool) (bool, error)
 	InputSecret(title, message string, flags ...ValidatorFlag) (string, error)
@@ -54,18 +56,18 @@ const (
 )
 
 // Input prompts the user for input.  The user can specify available validation flags to trigger validation of responses
-func (p *Prompt) Input(title, message, defaultResponse string, flags ...ValidatorFlag) (string, error) {
+func (p *Prompt) Input(title, message string, defaultResponse *string, flags ...ValidatorFlag) (string, error) {
 	return p.InputAndValidate(title, message, defaultResponse, func(val interface{}) error {
 		return nil
 	}, flags...)
 }
 
 // InputAndValidate prompts an input field and allows you to specfiy a custom validation function as well as the built in flags
-func (p *Prompt) InputAndValidate(title, message, defaultResponse string, validator ValidatorFunc, flags ...ValidatorFlag) (string, error) {
+func (p *Prompt) InputAndValidate(title, message string, defaultResponse *string, validator ValidatorFunc, flags ...ValidatorFlag) (string, error) {
 	if !p.isInteractive {
-		if defaultResponse != "" {
-			logging.Debug("Selecting default choice %s for Input prompt %s in non-interactive mode", defaultResponse, title)
-			return defaultResponse, nil
+		if defaultResponse != nil {
+			logging.Debug("Selecting default choice %s for Input prompt %s in non-interactive mode", *defaultResponse, title)
+			return *defaultResponse, nil
 		}
 		return "", locale.NewInputError("err_non_interactive_prompt", message)
 	}
@@ -84,13 +86,17 @@ func (p *Prompt) InputAndValidate(title, message, defaultResponse string, valida
 	}
 
 	// We handle defaults more clearly than the survey package can
-	if defaultResponse != "" {
-		v, err := p.Select("", formatMessage(message, !p.out.Config().Colored), []string{defaultResponse, locale.Tl("prompt_custom", "Other ..")}, &defaultResponse)
+	if defaultResponse != nil {
+		defaultRespText := *defaultResponse
+		if defaultRespText == "" {
+			defaultRespText = BlankText
+		}
+		v, err := p.Select("", formatMessage(message, !p.out.Config().Colored), []string{defaultRespText, locale.Tl("prompt_custom", "Other ..")}, &defaultRespText)
 		if err != nil {
 			return "", err
 		}
-		if v == defaultResponse {
-			return v, nil
+		if v == defaultRespText {
+			return *defaultResponse, nil
 		}
 		message = ""
 	}

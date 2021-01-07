@@ -147,7 +147,7 @@ func promptForSignup(input *signupInput, out output.Outputer, prompter prompt.Pr
 	if input.Username != "" {
 		out.Notice(locale.T("confirm_password_account_creation"))
 	} else {
-		input.Username, err = prompter.Input("", locale.T("username_prompt_signup"), "", prompt.InputRequired)
+		input.Username, err = prompter.Input("", locale.T("username_prompt_signup"), new(string), prompt.InputRequired)
 		if err != nil {
 			return err
 		}
@@ -175,12 +175,12 @@ func promptForSignup(input *signupInput, out output.Outputer, prompter prompt.Pr
 		return errs.Wrap(err, "InvalidPassword failure")
 	}
 
-	input.Name, err = prompter.Input("", locale.T("name_prompt"), "", prompt.InputRequired)
+	input.Name, err = prompter.Input("", locale.T("name_prompt"), new(string), prompt.InputRequired)
 	if err != nil {
 		return err
 	}
 
-	input.Email, err = prompter.Input("", locale.T("email_prompt"), "", prompt.InputRequired)
+	input.Email, err = prompter.Input("", locale.T("email_prompt"), new(string), prompt.InputRequired)
 	if err != nil {
 		return err
 	}

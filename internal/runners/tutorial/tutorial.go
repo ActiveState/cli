@@ -76,7 +76,8 @@ func (t *Tutorial) RunNewProject(params NewProjectParams) error {
 	}
 
 	// Prompt for project name
-	name, err := t.prompt.Input("", locale.Tl("tutorial_prompt_projectname", "What do you want to name your project?"), lang.Text())
+	defProjectInput := lang.Text()
+	name, err := t.prompt.Input("", locale.Tl("tutorial_prompt_projectname", "What do you want to name your project?"), &defProjectInput)
 	if err != nil {
 		return locale.WrapInputError(err, "err_tutorial_prompt_projectname", "Invalid response received.")
 	}
@@ -85,7 +86,7 @@ func (t *Tutorial) RunNewProject(params NewProjectParams) error {
 	homeDir, _ := fileutils.HomeDir()
 	dir, err := t.prompt.Input("", locale.Tl(
 		"tutorial_prompt_projectdir",
-		"Where would you like your project directory to be mapped? This is usually the root of your repository, or the place where you have your project dotfiles."), homeDir)
+		"Where would you like your project directory to be mapped? This is usually the root of your repository, or the place where you have your project dotfiles."), &homeDir)
 	if err != nil {
 		return locale.WrapInputError(err, "err_tutorial_prompt_projectdir", "Invalid response received.")
 	}

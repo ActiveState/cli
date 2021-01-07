@@ -110,9 +110,10 @@ func (r *NamespaceSelect) promptForPathInput(namespace string) (string, error) {
 		return "", errs.Wrap(err, "Runtime failure")
 	}
 
+	defDir := filepath.Join(wd, namespace)
 	directory, err := r.prompter.Input(
 		locale.Tl("choose_dest", "Choose Destination"),
-		locale.Tr("activate_namespace_location", namespace), filepath.Join(wd, namespace), prompt.InputRequired)
+		locale.Tr("activate_namespace_location", namespace), &defDir, prompt.InputRequired)
 	if err != nil {
 		return "", err
 	}

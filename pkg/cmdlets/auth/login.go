@@ -107,7 +107,7 @@ func RequireAuthentication(message string, out output.Outputer, prompt prompt.Pr
 func promptForLogin(credentials *mono_models.Credentials, prompter prompt.Prompter) error {
 	var err error
 	if credentials.Username == "" {
-		credentials.Username, err = prompter.Input("", locale.T("username_prompt"), "", prompt.InputRequired)
+		credentials.Username, err = prompter.Input("", locale.T("username_prompt"), new(string), prompt.InputRequired)
 		if err != nil {
 			return errs.Wrap(err, "Input cancelled")
 		}
@@ -161,7 +161,7 @@ func promptSignup(credentials *mono_models.Credentials, out output.Outputer, pro
 
 func promptToken(credentials *mono_models.Credentials, out output.Outputer, prompt prompt.Prompter) error {
 	var err error
-	credentials.Totp, err = prompt.Input("", locale.T("totp_prompt"), "")
+	credentials.Totp, err = prompt.Input("", locale.T("totp_prompt"), new(string))
 	if err != nil {
 		return err
 	}
