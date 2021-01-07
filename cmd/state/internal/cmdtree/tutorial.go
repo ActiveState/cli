@@ -15,6 +15,7 @@ func newTutorialCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("tutorial_title", "Running Tutorial"),
 		locale.Tl("tutorial_description", "Learn how to use the State Tool"),
 		prime.Output(),
+		prime.Config(),
 		nil,
 		nil,
 		func(ccmd *captain.Command, args []string) error {
@@ -37,6 +38,7 @@ func newTutorialProjectCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("tutorial_new_project", `Running "New Project" Tutorial`),
 		locale.Tl("tutorial_description", "Learn how to create new projects. (ie. virtual environments)"),
 		prime.Output(),
+		prime.Config(),
 		[]*captain.Flag{
 			{
 				Name:        "skip-intro",

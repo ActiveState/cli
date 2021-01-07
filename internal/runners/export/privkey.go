@@ -2,6 +2,7 @@ package export
 
 import (
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -30,7 +31,10 @@ func (p *PrivateKey) Run(params *PrivateKeyParams) error {
 		return locale.NewError("User")
 	}
 
-	filepath := keypairs.LocalKeyFilename(constants.KeypairLocalFileName)
+	filepath, err := keypairs.LocalKeyFilename(constants.KeypairLocalFileName)
+	if err != nil {
+		return errs.Wrap(err, "Failed to get local key file name")
+	}
 	contents, err := fileutils.ReadFile(filepath)
 	if err != nil {
 		return err

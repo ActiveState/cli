@@ -20,6 +20,7 @@ func newInitCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("init_title", "Initializing Project"),
 		locale.T("init_description"),
 		prime.Output(),
+		prime.Config(),
 		[]*captain.Flag{
 			{
 				Name:        "path",

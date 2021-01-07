@@ -75,9 +75,10 @@ type Command struct {
 	skipChecks bool
 
 	out output.Outputer
+	cfg analytics.Configurable
 }
 
-func NewCommand(name, title, description string, out output.Outputer, flags []*Flag, args []*Argument, execute ExecuteFunc) *Command {
+func NewCommand(name, title, description string, out output.Outputer, cfg analytics.Configurable, flags []*Flag, args []*Argument, execute ExecuteFunc) *Command {
 	// Validate args
 	for idx, arg := range args {
 		if idx > 0 && arg.Required && !args[idx-1].Required {
@@ -96,6 +97,7 @@ func NewCommand(name, title, description string, out output.Outputer, flags []*F
 		flags:     flags,
 		commands:  make([]*Command, 0),
 		out:       out,
+		cfg:       cfg,
 	}
 
 	short := description
@@ -399,7 +401,7 @@ func (c *Command) subCommandNames() []string {
 }
 
 func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
-	analytics.SetDeferred(c.deferAnalytics)
+	analytics.SetDeferred(c.cfg, c.deferAnalytics)
 
 	outputFlag := cobraCmd.Flag("output")
 	if outputFlag != nil && outputFlag.Changed {

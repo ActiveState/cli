@@ -2,14 +2,13 @@ package cmdtree
 
 import (
 	"github.com/ActiveState/cli/internal/captain"
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/projects"
 )
 
 func newProjectsCommand(prime *primer.Values) *captain.Command {
-	runner := projects.NewProjects(prime, config.Get())
+	runner := projects.NewProjects(prime)
 	params := projects.NewParams()
 
 	return captain.NewCommand(
@@ -17,6 +16,7 @@ func newProjectsCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("projects_title", "Listing Projects"),
 		locale.T("projects_description"),
 		prime.Output(),
+		prime.Config(),
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
@@ -26,7 +26,7 @@ func newProjectsCommand(prime *primer.Values) *captain.Command {
 }
 
 func newRemoteProjectsCommand(prime *primer.Values) *captain.Command {
-	runner := projects.NewProjects(prime, config.Get())
+	runner := projects.NewProjects(prime)
 	params := projects.NewParams()
 
 	return captain.NewCommand(
@@ -34,6 +34,7 @@ func newRemoteProjectsCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("projects_remote_title", "Listing Remote Projects"),
 		locale.Tl("projects_remote_description", "Manage all projects, including ones you have not checked out locally"),
 		prime.Output(),
+		prime.Config(),
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {

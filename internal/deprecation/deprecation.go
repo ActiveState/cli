@@ -50,6 +50,7 @@ type Checker struct {
 }
 
 type configable interface {
+	ConfigPath() string
 	GetTime(key string) time.Time
 	Set(key string, value interface{})
 }
@@ -59,7 +60,7 @@ func NewChecker(timeout time.Duration, configuration configable) *Checker {
 	return &Checker{
 		timeout,
 		configuration,
-		filepath.Join(config.Get().ConfigPath(), "deprecation.json"),
+		filepath.Join(configuration.ConfigPath(), "deprecation.json"),
 	}
 }
 
@@ -70,7 +71,11 @@ func Check() (*Info, error) {
 
 // CheckVersionNumber will run a Checker.Check with defaults
 func CheckVersionNumber(versionNumber string) (*Info, error) {
-	checker := NewChecker(DefaultTimeout, config.Get())
+	cfg, err := config.Get()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not load configuration required to check version number")
+	}
+	checker := NewChecker(DefaultTimeout, cfg)
 	return checker.check(versionNumber)
 }
 

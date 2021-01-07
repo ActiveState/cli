@@ -46,7 +46,7 @@ func (v *SubShell) SetBinary(binary string) {
 }
 
 // WriteUserEnv - see subshell.SubShell
-func (v *SubShell) WriteUserEnv(env map[string]string, envType sscommon.EnvData, _ bool) error {
+func (v *SubShell) WriteUserEnv(cfg sscommon.Configurable, env map[string]string, envType sscommon.EnvData, _ bool) error {
 	homeDir, err := fileutils.HomeDir()
 	if err != nil {
 		return errs.Wrap(err, "HomeDir failed")
@@ -78,10 +78,10 @@ func (v *SubShell) Quote(value string) string {
 }
 
 // Activate - see subshell.SubShell
-func (v *SubShell) Activate(out output.Outputer) error {
+func (v *SubShell) Activate(cfg sscommon.Configurable, out output.Outputer) error {
 	env := sscommon.EscapeEnv(v.env)
 	var err error
-	if v.rcFile, err = sscommon.SetupProjectRcFile("fishrc.fish", "", env, out); err != nil {
+	if v.rcFile, err = sscommon.SetupProjectRcFile("fishrc.fish", "", env, out, cfg); err != nil {
 		return err
 	}
 

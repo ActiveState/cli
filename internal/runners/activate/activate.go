@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/globaldefault"
@@ -31,7 +30,7 @@ type Activate struct {
 	namespaceSelect  *NamespaceSelect
 	activateCheckout *Checkout
 	out              output.Outputer
-	config           configAble
+	config           configurable
 	proj             *project.Project
 	subshell         subshell.SubShell
 	prompt           prompt.Prompter
@@ -50,14 +49,15 @@ type primeable interface {
 	primer.Projecter
 	primer.Subsheller
 	primer.Prompter
+	primer.Configurer
 }
 
 func NewActivate(prime primeable) *Activate {
 	return &Activate{
-		NewNamespaceSelect(config.Get(), prime),
+		NewNamespaceSelect(prime.Config(), prime),
 		NewCheckout(git.NewRepo(), prime),
 		prime.Output(),
-		config.Get(),
+		prime.Config(),
 		prime.Project(),
 		prime.Subshell(),
 		prime.Prompt(),
@@ -73,7 +73,7 @@ func (r *Activate) run(params *ActivateParams) error {
 
 	r.out.Notice(txtstyle.NewTitle(locale.T("info_activating_state")))
 
-	alreadyActivated := process.IsActivated()
+	alreadyActivated := process.IsActivated(r.config)
 	if alreadyActivated {
 		if !params.Default {
 			err := locale.NewInputError("err_already_activated",

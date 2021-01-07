@@ -18,23 +18,26 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 )
 
-type configAble interface {
-	Set(key string, value interface{})
-	GetBool(key string) bool
-	GetString(key string) string
-	GetStringMapStringSlice(key string) map[string][]string
-	GetStringSlice(key string) []string
-	AllKeys() []string
+type configurable interface {
+	Set(string, interface{})
+	GetBool(string) bool
+	GetStringMap(string) map[string]interface{}
 	Save() error
+	CachePath() string
+	ConfigPath() string
+	GetString(key string) string
+	GetStringSlice(key string) []string
+	GetStringMapStringSlice(key string) map[string][]string
+	AllKeys() []string
 }
 
 // NamespaceSelect will select the right directory associated with a namespace, and chdir into it
 type NamespaceSelect struct {
-	config   configAble
+	config   configurable
 	prompter prompt.Prompter
 }
 
-func NewNamespaceSelect(config configAble, prime primeable) *NamespaceSelect {
+func NewNamespaceSelect(config configurable, prime primeable) *NamespaceSelect {
 	return &NamespaceSelect{config, prime.Prompt()}
 }
 
