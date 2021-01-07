@@ -19,7 +19,10 @@ import (
 // the user's file system; specifically from the config dir. It is assumed that
 // this keypair file has no passphrase, even if it is encrypted.
 func Load(keyName string) (Keypair, error) {
-	keyFilename := LocalKeyFilename(keyName)
+	keyFilename, err := LocalKeyFilename(keyName)
+	if err != nil {
+		return nil, errs.Wrap(err, "Failed to get key file name to load.")
+	}
 	if err := validateKeyFile(keyFilename); err != nil {
 		return nil, err
 	}
@@ -29,7 +32,11 @@ func Load(keyName string) (Keypair, error) {
 // Save will save the unencrypted and encoded private key to a local config
 // file. The filename will be the value of `keyName` and suffixed with `.key`.
 func Save(kp Keypair, keyName string) error {
-	err := ioutil.WriteFile(LocalKeyFilename(keyName), []byte(kp.EncodePrivateKey()), 0600)
+	keyFileName, err := LocalKeyFilename(keyName)
+	if err != nil {
+		return errs.Wrap(err, "Failed to get key file name to save.")
+	}
+	err = ioutil.WriteFile(keyFileName, []byte(kp.EncodePrivateKey()), 0600)
 	if err != nil {
 		return errs.Wrap(err, "WriteFile failed")
 	}
@@ -39,7 +46,10 @@ func Save(kp Keypair, keyName string) error {
 // Delete will delete an unencrypted and encoded private key from the local
 // config directory. The base filename (sans suffix) must be provided.
 func Delete(keyName string) error {
-	filename := LocalKeyFilename(keyName)
+	filename, err := LocalKeyFilename(keyName)
+	if err != nil {
+		return errs.Wrap(err, "Failed to get key file name to delete.")
+	}
 	if fileutils.FileExists(filename) {
 		if err := os.Remove(filename); err != nil {
 			return errs.Wrap(err, "os.Remove %s failed", filename)
@@ -92,8 +102,12 @@ func DeleteWithDefaults() error {
 }
 
 // LocalKeyFilename returns the full filepath for the given key name
-func LocalKeyFilename(keyName string) string {
-	return filepath.Join(config.Get().ConfigPath(), keyName+".key")
+func LocalKeyFilename(keyName string) (string, error) {
+	cfg, err := config.Get()
+	if err != nil {
+		return "", locale.WrapError(err, "config_get_err")
+	}
+	return filepath.Join(cfg.ConfigPath(), keyName+".key"), nil
 }
 
 func loadAndParseKeypair(keyFilename string) (Keypair, error) {

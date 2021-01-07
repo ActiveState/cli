@@ -47,8 +47,16 @@ func SetupRollbar() {
 		data["platform_os"] = runtime.GOOS
 	})
 
+	cfg, err := config.Get()
+	var installSource string
+	if err != nil {
+		// we will not log this to prevent recursion
+		installSource = "config-error"
+	} else {
+		installSource = cfg.InstallSource()
+	}
 	rollbar.SetCustom(map[string]interface{}{
-		"install_source": config.Get().InstallSource(),
+		"install_source": installSource,
 	})
 
 	log.SetOutput(CurrentHandler().Output())

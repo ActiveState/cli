@@ -38,19 +38,32 @@ type Auth struct {
 	clientAuth  *runtime.ClientAuthInfoWriter
 	bearerToken string
 	user        *mono_models.User
+	cfg         Configurable
+}
+
+type Configurable interface {
+	Set(string, interface{})
+	GetString(string) string
 }
 
 // Get returns a cached version of Auth
 func Get() *Auth {
 	if persist == nil {
-		persist = New()
+		cfg, err := config.Get()
+		if err != nil {
+			// TODO: We need to get rid of this Get() function altogether...
+			logging.Error("Could not get configuration required by auth: %v", err)
+			os.Exit(1)
+		}
+		persist = New(cfg)
 	}
 	return persist
 }
 
 // Client is a shortcut for calling Client() on the persisted auth
 func Client() *mono_client.Mono {
-	return Get().Client()
+	a := Get()
+	return a.Client()
 }
 
 // ClientAuth is a shortcut for calling ClientAuth() on the persisted auth
@@ -70,10 +83,12 @@ func Logout() {
 }
 
 // New creates a new version of Auth
-func New() *Auth {
-	auth := &Auth{}
+func New(cfg Configurable) *Auth {
+	auth := &Auth{
+		cfg: cfg,
+	}
 
-	if availableAPIToken() != "" {
+	if availableAPIToken(cfg) != "" {
 		logging.Debug("Authenticating with stored API token")
 		auth.Authenticate()
 	}
@@ -114,7 +129,7 @@ func (s *Auth) Authenticate() error {
 		return nil
 	}
 
-	apiToken := availableAPIToken()
+	apiToken := availableAPIToken(s.cfg)
 	if apiToken == "" {
 		return locale.NewInputError("err_no_credentials")
 	}
@@ -149,7 +164,7 @@ func (s *Auth) AuthenticateWithModel(credentials *mono_models.Credentials) error
 	s.clientAuth = &clientAuth
 
 	if credentials.Token != "" {
-		config.Get().Set("apiToken", credentials.Token)
+		s.cfg.Set("apiToken", credentials.Token)
 	} else {
 		if err := s.CreateToken(); err != nil {
 			return errs.Wrap(err, "CreateToken failed")
@@ -201,7 +216,7 @@ func (s *Auth) UserID() *strfmt.UUID {
 
 // Logout will destroy any session tokens and reset the current Auth instance
 func (s *Auth) Logout() {
-	config.Get().Set("apiToken", "")
+	s.cfg.Set("apiToken", "")
 	s.client = nil
 	s.clientAuth = nil
 	s.bearerToken = ""
@@ -263,7 +278,7 @@ func (s *Auth) CreateToken() error {
 		return err
 	}
 
-	config.Get().Set("apiToken", token)
+	s.cfg.Set("apiToken", token)
 
 	return nil
 }
@@ -286,7 +301,7 @@ func (s *Auth) NewAPIKey(name string) (string, error) {
 	return tokenOK.Payload.Token, nil
 }
 
-func availableAPIToken() string {
+func availableAPIToken(cfg Configurable) string {
 	tkn, err := gcloud.GetSecret(constants.APIKeyEnvVarName)
 	if err != nil && !errors.Is(err, gcloud.ErrNotAvailable{}) {
 		logging.Error("Could not retrieve gcloud secret: %v", err)
@@ -300,5 +315,5 @@ func availableAPIToken() string {
 		logging.Debug("Using API token passed via env var")
 		return tkn
 	}
-	return config.Get().GetString("apiToken")
+	return cfg.GetString("apiToken")
 }

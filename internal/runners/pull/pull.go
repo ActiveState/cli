@@ -18,17 +18,20 @@ import (
 type Pull struct {
 	project *project.Project
 	out     output.Outputer
+	cfg     *config.Instance
 }
 
 type primeable interface {
 	primer.Projecter
 	primer.Outputer
+	primer.Configurer
 }
 
 func New(prime primeable) *Pull {
 	return &Pull{
 		prime.Project(),
 		prime.Output(),
+		prime.Config(),
 	}
 }
 
@@ -87,7 +90,7 @@ func (p *Pull) Run() error {
 		return nil
 	}
 
-	fname := path.Join(config.Get().ConfigPath(), constants.UpdateHailFileName)
+	fname := path.Join(p.cfg.ConfigPath(), constants.UpdateHailFileName)
 	// must happen last in this function scope (defer if needed)
 	if err := hail.Send(fname, []byte(actID)); err != nil {
 		logging.Error("failed to send hail via %q: %s", fname, err)

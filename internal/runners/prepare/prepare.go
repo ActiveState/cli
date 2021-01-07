@@ -18,12 +18,14 @@ import (
 type primeable interface {
 	primer.Outputer
 	primer.Subsheller
+	primer.Configurer
 }
 
 // Prepare manages the prepare execution context.
 type Prepare struct {
 	out      output.Outputer
 	subshell subshell.SubShell
+	cfg      globaldefault.DefaultConfigurer
 }
 
 // New prepares a prepare execution context for use.
@@ -31,6 +33,7 @@ func New(prime primeable) *Prepare {
 	return &Prepare{
 		out:      prime.Output(),
 		subshell: prime.Subshell(),
+		cfg:      prime.Config(),
 	}
 }
 
@@ -46,14 +49,14 @@ func (r *Prepare) Run() error {
 		}
 	}
 
-	if err := globaldefault.Prepare(r.subshell); err != nil {
+	if err := globaldefault.Prepare(r.cfg, r.subshell); err != nil {
 		msgLocale := fmt.Sprintf("prepare_instructions_%s", runtime.GOOS)
 		if runtime.GOOS != "linux" {
-			return locale.WrapError(err, msgLocale, globaldefault.BinDir())
+			return locale.WrapError(err, msgLocale, globaldefault.BinDir(r.cfg))
 		}
 		logging.Debug("Encountered failure attempting to update user environment: %s", err)
 		r.out.Notice(output.Heading(locale.Tl("warning", "Warning")))
-		r.out.Notice(locale.Tr(msgLocale, globaldefault.BinDir()))
+		r.out.Notice(locale.Tr(msgLocale, globaldefault.BinDir(r.cfg)))
 	}
 
 	return nil

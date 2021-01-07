@@ -19,6 +19,7 @@ func newExportCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("export_title", "Exporting Information"),
 		locale.T("export_cmd_description"),
 		prime.Output(),
+		prime.Config(),
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
@@ -36,6 +37,7 @@ func newRecipeCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("export_recipe_title", "Exporting Recipe Data"),
 		locale.T("export_recipe_cmd_description"),
 		prime.Output(),
+		prime.Config(),
 		[]*captain.Flag{
 			{
 				Name:        "pretty",
@@ -71,6 +73,7 @@ func newJWTCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("export_jwt_title", "Exporting Credentials"),
 		locale.T("export_jwt_cmd_description"),
 		prime.Output(),
+		prime.Config(),
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
@@ -88,6 +91,7 @@ func newPrivateKeyCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("export_privkey_title", "Exporting Private Key"),
 		locale.T("export_privkey_cmd_description"),
 		prime.Output(),
+		prime.Config(),
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
@@ -104,6 +108,7 @@ func newAPIKeyCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("export_new_api_key_title", "Exporting New API Key"),
 		locale.T("export_new_api_key_cmd_description"),
 		prime.Output(),
+		prime.Config(),
 		[]*captain.Flag{},
 		[]*captain.Argument{
 			{
@@ -128,6 +133,7 @@ func newExportConfigCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("export_config_title", "Exporting Configuration Data"),
 		locale.T("export_config_cmd_description"),
 		prime.Output(),
+		prime.Config(),
 		[]*captain.Flag{
 			{
 				Name: "filter",
@@ -153,6 +159,7 @@ func newExportGithubActionCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("export_ghactions_title", "Exporting Github Action Workflow"),
 		locale.Tl("export_ghactions_description", "Create a github action workflow for your project"),
 		prime.Output(),
+		prime.Config(),
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, _ []string) error {

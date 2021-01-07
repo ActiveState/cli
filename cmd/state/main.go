@@ -100,7 +100,10 @@ func run(args []string, isInteractive bool, out output.Outputer) (int, error) {
 	verbose := os.Getenv("VERBOSE") != "" || argsHaveVerbose(args)
 	logging.CurrentHandler().SetVerbose(verbose)
 
-	cfg := config.Get()
+	cfg, err := config.Get()
+	if err != nil {
+		return 1, locale.WrapError(err, "config_get_error", "Failed to load configuration.")
+	}
 	logging.Debug("ConfigPath: %s", cfg.ConfigPath())
 	logging.Debug("CachePath: %s", cfg.CachePath())
 
@@ -131,7 +134,7 @@ func run(args []string, isInteractive bool, out output.Outputer) (int, error) {
 	}
 
 	// Forward call to specific state tool version, if warranted
-	forward, err := forwardFn(args, out, pj)
+	forward, err := forwardFn(cfg.ConfigPath(), args, out, pj)
 	if err != nil {
 		return 1, err
 	}
@@ -156,7 +159,7 @@ func run(args []string, isInteractive bool, out output.Outputer) (int, error) {
 	project.RegisterExpander("secrets", project.NewSecretPromptingExpander(secretsapi.Get(), prompter))
 
 	// Run the actual command
-	cmds := cmdtree.New(primer.New(pj, out, auth, prompter, sshell, conditional), args...)
+	cmds := cmdtree.New(primer.New(pj, out, auth, prompter, sshell, conditional, cfg), args...)
 
 	childCmd, err := cmds.Command().Find(args[1:])
 	if err != nil {

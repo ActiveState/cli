@@ -5,12 +5,11 @@ package clean
 import (
 	"os"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/logging"
 )
 
-func removeConfig(configPath string) error {
-	config.Get().SkipSave(true)
+func removeConfig(cfg configurable) error {
+	cfg.SkipSave(true)
 
 	file, err := os.Open(logging.FilePath())
 	if err != nil {
@@ -25,7 +24,7 @@ func removeConfig(configPath string) error {
 		return err
 	}
 
-	return os.RemoveAll(configPath)
+	return os.RemoveAll(cfg.ConfigPath())
 }
 
 func removeInstall(installPath string) error {

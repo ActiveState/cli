@@ -14,7 +14,6 @@ import (
 	"github.com/mash/go-tempfile-suffix"
 
 	"github.com/ActiveState/cli/internal/colorize"
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -38,6 +37,13 @@ var (
 		"user_default_env",
 	}
 )
+
+// Configurable defines an interface to store and get configuration data
+type Configurable interface {
+	Set(string, interface{})
+	GetBool(string) bool
+	GetStringMap(string) map[string]interface{}
+}
 
 type EnvData struct {
 	Start string
@@ -156,7 +162,7 @@ func SetupShellRcFile(rcFileName, templateName string, env map[string]string, na
 
 // SetupProjectRcFile creates a temporary RC file that our shell is initiated from, this allows us to template the logic
 // used for initialising the subshell
-func SetupProjectRcFile(templateName, ext string, env map[string]string, out output.Outputer) (*os.File, error) {
+func SetupProjectRcFile(templateName, ext string, env map[string]string, out output.Outputer, cfg Configurable) (*os.File, error) {
 	box := packr.NewBox("../../../assets/shells")
 	tpl := box.String(templateName)
 	prj := project.Get()
@@ -171,14 +177,14 @@ func SetupProjectRcFile(templateName, ext string, env map[string]string, out out
 			return nil, errs.Wrap(err, "Misc failure")
 		}
 
-		if strings.ToLower(event.Name()) == "first-activate" && !config.Get().GetBool(activatedKey) {
+		if strings.ToLower(event.Name()) == "first-activate" && !cfg.GetBool(activatedKey) {
 			userScripts = v + "\n" + userScripts
 		}
 		if strings.ToLower(event.Name()) == "activate" {
 			userScripts = userScripts + "\n" + v
 		}
 	}
-	config.Get().Set(activatedKey, true)
+	cfg.Set(activatedKey, true)
 
 	inuse := []string{}
 	scripts := map[string]string{}

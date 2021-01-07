@@ -25,17 +25,19 @@ type ScriptRun struct {
 	out     output.Outputer
 	sub     subshell.SubShell
 	project *project.Project
+	cfg     process.Configurable
 
 	venvPrepared bool
 	venvExePath  string
 }
 
 // New returns a pointer to a prepared instance of ScriptRun.
-func New(out output.Outputer, subs subshell.SubShell, proj *project.Project) *ScriptRun {
+func New(out output.Outputer, subs subshell.SubShell, proj *project.Project, cfg process.Configurable) *ScriptRun {
 	return &ScriptRun{
 		out,
 		subs,
 		proj,
+		cfg,
 
 		false,
 
@@ -48,7 +50,7 @@ func New(out output.Outputer, subs subshell.SubShell, proj *project.Project) *Sc
 // NeedsActivation indicates whether the underlying environment has been
 // prepared and activated.
 func (s *ScriptRun) NeedsActivation() bool {
-	return !process.IsActivated() && !s.venvPrepared
+	return !process.IsActivated(s.cfg) && !s.venvPrepared
 }
 
 // PrepareVirtualEnv sets up the relevant runtime and prepares the environment.

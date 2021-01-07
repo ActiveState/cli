@@ -19,6 +19,7 @@ type Cache struct {
 	config  project.ConfigAble
 	confirm confirmAble
 	path    string
+	cfg     *config.Instance
 }
 
 type CacheParams struct {
@@ -27,15 +28,15 @@ type CacheParams struct {
 }
 
 func NewCache(prime primeable) *Cache {
-	return newCache(prime.Output(), config.Get(), prime.Prompt())
+	return newCache(prime.Output(), prime.Config(), prime.Prompt())
 }
 
-func newCache(output output.Outputer, cfg project.ConfigAble, confirm confirmAble) *Cache {
+func newCache(output output.Outputer, cfg *config.Instance, confirm confirmAble) *Cache {
 	return &Cache{
 		output:  output,
 		config:  cfg,
 		confirm: confirm,
-		path:    config.Get().CachePath(),
+		path:    cfg.CachePath(),
 	}
 }
 

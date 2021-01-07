@@ -62,14 +62,15 @@ type Projects struct {
 type primeable interface {
 	primer.Auther
 	primer.Outputer
+	primer.Configurer
 }
 
 func NewParams() *Params {
 	return &Params{Local: false}
 }
 
-func NewProjects(prime primeable, config configGetter) *Projects {
-	return newProjects(prime.Auth(), prime.Output(), config)
+func NewProjects(prime primeable) *Projects {
+	return newProjects(prime.Auth(), prime.Output(), prime.Config())
 }
 
 func newProjects(auth *authentication.Auth, out output.Outputer, config configGetter) *Projects {
