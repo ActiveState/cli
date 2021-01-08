@@ -58,12 +58,11 @@ func (t *Tutorial) RunNewProject(params NewProjectParams) error {
 	// Prompt for language
 	lang := params.Language
 	if lang == language.Unset {
-		var defaultLanguage string
 		choice, err := t.prompt.Select(
 			"",
 			locale.Tl("tutorial_language", "What language would you like to use for your new virtual environment?"),
 			[]string{language.Perl.Text(), language.Python3.Text(), language.Python2.Text()},
-			&defaultLanguage,
+			new(string),
 		)
 		if err != nil {
 			return locale.WrapInputError(err, "err_tutorial_prompt_language", "Invalid response received.")

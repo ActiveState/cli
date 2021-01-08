@@ -138,8 +138,7 @@ func removeRequirements(conf Confirmer, project *project.Project, force, isHeadl
 	if !force {
 		msg := locale.T("confirm_remove_existing_prompt")
 
-		var removeConfirmDefault bool
-		confirmed, err := conf.Confirm(locale.T("confirm"), msg, &removeConfirmDefault)
+		confirmed, err := conf.Confirm(locale.T("confirm"), msg, new(bool))
 		if err != nil {
 			return err
 		}
