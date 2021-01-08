@@ -339,8 +339,8 @@ func osIsConstrained(constraintOSes string) bool {
 
 // Returns whether or not the current platform is constrained by the given
 // named constraints, which are defined in the given project configuration.
-func platformIsConstrained(cfg projectfile.ConfigGetter, constraintNames string) bool {
-	project := projectfile.Get(cfg)
+func platformIsConstrained(constraintNames string) bool {
+	project := projectfile.Get()
 	names := strings.Split(constraintNames, ",")
 	constrained := true
 	for _, name := range names {
@@ -373,7 +373,7 @@ func environmentIsConstrained(constraints string) bool {
 // based on given project configuration.
 // The second return value is for the specificity of the constraint (i.e, how
 // many constraints were specified and checked)
-func IsConstrained(cfg projectfile.ConfigGetter, constraint projectfile.Constraint) (bool, int) {
+func IsConstrained(constraint projectfile.Constraint) (bool, int) {
 	if constraint.Platform == "" &&
 		constraint.Environment == "" &&
 		constraint.OS == "" {
@@ -387,7 +387,7 @@ func IsConstrained(cfg projectfile.ConfigGetter, constraint projectfile.Constrai
 	}
 	if constraint.Platform != "" {
 		specificity++
-		constrained = constrained || platformIsConstrained(cfg, constraint.Platform)
+		constrained = constrained || platformIsConstrained(constraint.Platform)
 	}
 	if constraint.Environment != "" {
 		specificity++
@@ -399,7 +399,7 @@ func IsConstrained(cfg projectfile.ConfigGetter, constraint projectfile.Constrai
 // FilterUnconstrained filters a list of constrained entities and returns only
 // those which are unconstrained. If two items with the same name exist, only
 // the most specific item will be added to the results.
-func FilterUnconstrained(cfg projectfile.ConfigGetter, conditional *Conditional, items []projectfile.ConstrainedEntity) ([]projectfile.ConstrainedEntity, error) {
+func FilterUnconstrained(conditional *Conditional, items []projectfile.ConstrainedEntity) ([]projectfile.ConstrainedEntity, error) {
 	type itemIndex struct {
 		specificity int
 		index       int
@@ -423,7 +423,7 @@ func FilterUnconstrained(cfg projectfile.ConfigGetter, conditional *Conditional,
 		}
 
 		if item.ConditionalFilter() == "" {
-			constrained, specificity := IsConstrained(cfg, item.ConstraintsFilter())
+			constrained, specificity := IsConstrained(item.ConstraintsFilter())
 			if !constrained {
 				if s, exists := selected[item.ID()]; !exists || s.specificity < specificity {
 					selected[item.ID()] = itemIndex{specificity, i}

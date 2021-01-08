@@ -9,7 +9,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/graphql"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
-	"github.com/ActiveState/cli/pkg/projectfile"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
@@ -26,12 +25,12 @@ type ErrProjectNameConflict struct{ *locale.LocalizedError }
 type ErrProjectNotFound struct{ *locale.LocalizedError }
 
 // FetchProjectByName fetches a project for an organization.
-func FetchProjectByName(orgName string, projectName string, cfg projectfile.ConfigGetter) (*mono_models.Project, error) {
+func FetchProjectByName(orgName string, projectName string) (*mono_models.Project, error) {
 	logging.Debug("fetching project (%s) in organization (%s)", projectName, orgName)
 
 	request := request.ProjectByOrgAndName(orgName, projectName)
 
-	gql := graphql.Get(cfg)
+	gql := graphql.Get()
 	response := model.Projects{}
 	err := gql.Run(request, &response)
 	if err != nil {
@@ -60,8 +59,8 @@ func FetchOrganizationProjects(orgName string) ([]*mono_models.Project, error) {
 }
 
 // DefaultLanguageForProject fetches the default language belonging to the given project
-func DefaultLanguageForProject(orgName, projectName string, cfg projectfile.ConfigGetter) (Language, error) {
-	languages, err := FetchLanguagesForProject(orgName, projectName, cfg)
+func DefaultLanguageForProject(orgName, projectName string) (Language, error) {
+	languages, err := FetchLanguagesForProject(orgName, projectName)
 	if err != nil {
 		return Language{}, err
 	}
@@ -74,8 +73,8 @@ func DefaultLanguageForProject(orgName, projectName string, cfg projectfile.Conf
 }
 
 // LanguageForCommit fetches the name of the language belonging to the given commit
-func LanguageForCommit(commitID strfmt.UUID, cfg projectfile.ConfigGetter) (string, error) {
-	languages, err := FetchLanguagesForCommit(commitID, cfg)
+func LanguageForCommit(commitID strfmt.UUID) (string, error) {
+	languages, err := FetchLanguagesForCommit(commitID)
 	if err != nil {
 		return "", err
 	}
@@ -88,8 +87,8 @@ func LanguageForCommit(commitID strfmt.UUID, cfg projectfile.ConfigGetter) (stri
 }
 
 // DefaultBranchForProjectName retrieves the default branch for the given project owner/name.
-func DefaultBranchForProjectName(owner, name string, cfg projectfile.ConfigGetter) (*mono_models.Branch, error) {
-	proj, err := FetchProjectByName(owner, name, cfg)
+func DefaultBranchForProjectName(owner, name string) (*mono_models.Branch, error) {
+	proj, err := FetchProjectByName(owner, name)
 	if err != nil {
 		return nil, err
 	}

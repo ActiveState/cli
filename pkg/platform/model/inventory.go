@@ -14,7 +14,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 // IngredientAndVersion is a sane version of whatever the hell it is go-swagger thinks it's doing
@@ -34,14 +33,14 @@ var platformCache []*Platform
 
 // SearchIngredients will return all ingredients+ingredientVersions that fuzzily
 // match the ingredient name.
-func SearchIngredients(namespace Namespace, name string, cfg projectfile.ConfigGetter) ([]*IngredientAndVersion, error) {
-	return searchIngredientsNamespace(50, namespace, name, cfg)
+func SearchIngredients(namespace Namespace, name string) ([]*IngredientAndVersion, error) {
+	return searchIngredientsNamespace(50, namespace, name)
 }
 
 // SearchIngredientsStrict will return all ingredients+ingredientVersions that
 // strictly match the ingredient name.
-func SearchIngredientsStrict(namespace Namespace, name string, cfg projectfile.ConfigGetter) ([]*IngredientAndVersion, error) {
-	results, err := searchIngredientsNamespace(50, namespace, name, cfg)
+func SearchIngredientsStrict(namespace Namespace, name string) ([]*IngredientAndVersion, error) {
+	results, err := searchIngredientsNamespace(50, namespace, name)
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +56,7 @@ func SearchIngredientsStrict(namespace Namespace, name string, cfg projectfile.C
 }
 
 // FetchAuthors obtains author info for an ingredient at a particular version.
-func FetchAuthors(ingredID, ingredVersionID *strfmt.UUID, cfg projectfile.ConfigGetter) (Authors, error) {
+func FetchAuthors(ingredID, ingredVersionID *strfmt.UUID) (Authors, error) {
 	if ingredID == nil {
 		return nil, errs.New("nil ingredient id provided")
 	}
@@ -66,7 +65,7 @@ func FetchAuthors(ingredID, ingredVersionID *strfmt.UUID, cfg projectfile.Config
 	}
 
 	lim := int64(32)
-	client := inventory.Get(cfg)
+	client := inventory.Get()
 
 	params := inventory_operations.NewGetIngredientVersionAuthorsParams()
 	params.SetIngredientID(*ingredID)
@@ -82,10 +81,10 @@ func FetchAuthors(ingredID, ingredVersionID *strfmt.UUID, cfg projectfile.Config
 	return results.Payload.Authors, nil
 }
 
-func searchIngredientsNamespace(limit int, ns Namespace, name string, cfg projectfile.ConfigGetter) ([]*IngredientAndVersion, error) {
+func searchIngredientsNamespace(limit int, ns Namespace, name string) ([]*IngredientAndVersion, error) {
 	lim := int64(limit)
 
-	client := inventory.Get(cfg)
+	client := inventory.Get()
 
 	params := inventory_operations.NewSearchIngredientsParams()
 	params.SetQ(name)
@@ -110,9 +109,9 @@ func searchIngredientsNamespace(limit int, ns Namespace, name string, cfg projec
 	return ingredients, nil
 }
 
-func FetchPlatforms(cfg projectfile.ConfigGetter) ([]*Platform, error) {
+func FetchPlatforms() ([]*Platform, error) {
 	if platformCache == nil {
-		client := inventory.Get(cfg)
+		client := inventory.Get()
 
 		params := inventory_operations.NewGetPlatformsParams()
 		limit := int64(99999)
@@ -143,8 +142,8 @@ func FetchPlatforms(cfg projectfile.ConfigGetter) ([]*Platform, error) {
 	return platformCache, nil
 }
 
-func FetchPlatformsForCommit(commitID strfmt.UUID, cfg projectfile.ConfigGetter) ([]*Platform, error) {
-	checkpt, _, err := FetchCheckpointForCommit(commitID, cfg)
+func FetchPlatformsForCommit(commitID strfmt.UUID) ([]*Platform, error) {
+	checkpt, _, err := FetchCheckpointForCommit(commitID)
 	if err != nil {
 		return nil, err
 	}
@@ -153,7 +152,7 @@ func FetchPlatformsForCommit(commitID strfmt.UUID, cfg projectfile.ConfigGetter)
 
 	var platforms []*Platform
 	for _, pID := range platformIDs {
-		platform, err := FetchPlatformByUID(pID, cfg)
+		platform, err := FetchPlatformByUID(pID)
 		if err != nil {
 			return nil, err
 		}
@@ -164,8 +163,8 @@ func FetchPlatformsForCommit(commitID strfmt.UUID, cfg projectfile.ConfigGetter)
 	return platforms, nil
 }
 
-func filterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID, cfg projectfile.ConfigGetter) ([]strfmt.UUID, error) {
-	runtimePlatforms, err := FetchPlatforms(cfg)
+func filterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID) ([]strfmt.UUID, error) {
+	runtimePlatforms, err := FetchPlatforms()
 	if err != nil {
 		return nil, err
 	}
@@ -210,8 +209,8 @@ func filterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID,
 	return pids, nil
 }
 
-func FetchPlatformByUID(uid strfmt.UUID, cfg projectfile.ConfigGetter) (*Platform, error) {
-	platforms, err := FetchPlatforms(cfg)
+func FetchPlatformByUID(uid strfmt.UUID) (*Platform, error) {
+	platforms, err := FetchPlatforms()
 	if err != nil {
 		return nil, err
 	}
@@ -225,8 +224,8 @@ func FetchPlatformByUID(uid strfmt.UUID, cfg projectfile.ConfigGetter) (*Platfor
 	return nil, nil
 }
 
-func FetchPlatformByDetails(name, version string, word int, cfg projectfile.ConfigGetter) (*Platform, error) {
-	runtimePlatforms, err := FetchPlatforms(cfg)
+func FetchPlatformByDetails(name, version string, word int) (*Platform, error) {
+	runtimePlatforms, err := FetchPlatforms()
 	if err != nil {
 		return nil, err
 	}
@@ -263,17 +262,17 @@ func FetchPlatformByDetails(name, version string, word int, cfg projectfile.Conf
 	return nil, locale.NewInputError("err_unsupported_platform", "", details)
 }
 
-func FetchLanguageForCommit(commitID strfmt.UUID, cfg projectfile.ConfigGetter) (*Language, error) {
-	checkpt, _, err := FetchCheckpointForCommit(commitID, cfg)
+func FetchLanguageForCommit(commitID strfmt.UUID) (*Language, error) {
+	checkpt, _, err := FetchCheckpointForCommit(commitID)
 	if err != nil {
 		return nil, err
 	}
 
-	return CheckpointToLanguage(checkpt, cfg)
+	return CheckpointToLanguage(checkpt)
 }
 
-func FetchLanguageByDetails(name, version string, cfg projectfile.ConfigGetter) (*Language, error) {
-	languages, err := FetchLanguages(cfg)
+func FetchLanguageByDetails(name, version string) (*Language, error) {
+	languages, err := FetchLanguages()
 	if err != nil {
 		return nil, err
 	}
@@ -287,8 +286,8 @@ func FetchLanguageByDetails(name, version string, cfg projectfile.ConfigGetter) 
 	return nil, locale.NewInputError("err_language_not_found", "", name, version)
 }
 
-func FetchLanguageVersions(name string, cfg projectfile.ConfigGetter) ([]string, error) {
-	languages, err := FetchLanguages(cfg)
+func FetchLanguageVersions(name string) ([]string, error) {
+	languages, err := FetchLanguages()
 	if err != nil {
 		return nil, err
 	}
@@ -303,8 +302,8 @@ func FetchLanguageVersions(name string, cfg projectfile.ConfigGetter) ([]string,
 	return versions, nil
 }
 
-func FetchLanguages(cfg projectfile.ConfigGetter) ([]Language, error) {
-	client := inventory.Get(cfg)
+func FetchLanguages() ([]Language, error) {
+	client := inventory.Get()
 
 	params := inventory_operations.NewGetNamespaceIngredientsParams()
 	params.SetNamespace("language")

@@ -77,12 +77,12 @@ var urlsByService = map[Service]*url.URL{
 }
 
 // GetServiceURL returns the URL for the given service
-func GetServiceURL(cfg projectfile.ConfigGetter, service Service) *url.URL {
+func GetServiceURL(service Service) *url.URL {
 	serviceURL, validService := urlsByService[service]
 	if !validService {
 		logging.Panic("Invalid service: %s", string(service))
 	}
-	if host := getProjectHost(cfg, service); host != nil {
+	if host := getProjectHost(service); host != nil {
 		serviceURL.Host = *host
 	}
 
@@ -95,7 +95,7 @@ func GetServiceURL(cfg projectfile.ConfigGetter, service Service) *url.URL {
 	return serviceURL
 }
 
-func getProjectHost(cfg projectfile.ConfigGetter, service Service) *string {
+func getProjectHost(service Service) *string {
 	if apiHost := os.Getenv(constants.APIHostEnvVarName); apiHost != "" {
 		return &apiHost
 	}
@@ -105,7 +105,7 @@ func getProjectHost(cfg projectfile.ConfigGetter, service Service) *string {
 		return &testingPlatform
 	}
 
-	pj, err := projectfile.GetOnce(cfg)
+	pj, err := projectfile.GetOnce()
 	if err != nil {
 		return nil
 	}

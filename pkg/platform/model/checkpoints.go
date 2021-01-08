@@ -16,7 +16,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
-	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 var (
@@ -33,8 +32,8 @@ type Language struct {
 }
 
 // GetRequirement searches a commit for a requirement by name.
-func GetRequirement(cfg projectfile.ConfigGetter, commitID strfmt.UUID, namespace, requirement string) (*model.Requirement, error) {
-	chkPt, _, err := FetchCheckpointForCommit(commitID, cfg)
+func GetRequirement(commitID strfmt.UUID, namespace, requirement string) (*model.Requirement, error) {
+	chkPt, _, err := FetchCheckpointForCommit(commitID)
 	if err != nil {
 		return nil, err
 	}
@@ -51,8 +50,8 @@ func GetRequirement(cfg projectfile.ConfigGetter, commitID strfmt.UUID, namespac
 }
 
 // FetchLanguagesForProject fetches a list of language names for the given project
-func FetchLanguagesForProject(orgName string, projectName string, cfg projectfile.ConfigGetter) ([]Language, error) {
-	platProject, err := FetchProjectByName(orgName, projectName, cfg)
+func FetchLanguagesForProject(orgName string, projectName string) ([]Language, error) {
+	platProject, err := FetchProjectByName(orgName, projectName)
 	if err != nil {
 		return nil, err
 	}
@@ -62,21 +61,21 @@ func FetchLanguagesForProject(orgName string, projectName string, cfg projectfil
 		return nil, err
 	}
 
-	return FetchLanguagesForBranch(cfg, branch)
+	return FetchLanguagesForBranch(branch)
 }
 
 // FetchLanguagesForBranch fetches a list of language names for the given branch
-func FetchLanguagesForBranch(cfg projectfile.ConfigGetter, branch *mono_models.Branch) ([]Language, error) {
+func FetchLanguagesForBranch(branch *mono_models.Branch) ([]Language, error) {
 	if branch.CommitID == nil {
 		return nil, locale.NewError("err_no_commit")
 	}
 
-	return FetchLanguagesForCommit(*branch.CommitID, cfg)
+	return FetchLanguagesForCommit(*branch.CommitID)
 }
 
 // FetchLanguagesForCommit fetches a list of language names for the given commit
-func FetchLanguagesForCommit(commitID strfmt.UUID, cfg projectfile.ConfigGetter) ([]Language, error) {
-	checkpoint, _, err := FetchCheckpointForCommit(commitID, cfg)
+func FetchLanguagesForCommit(commitID strfmt.UUID) ([]Language, error) {
+	checkpoint, _, err := FetchCheckpointForCommit(commitID)
 	if err != nil {
 		return nil, err
 	}
@@ -95,12 +94,12 @@ func FetchLanguagesForCommit(commitID strfmt.UUID, cfg projectfile.ConfigGetter)
 }
 
 // FetchCheckpointForCommit fetches the checkpoint for the given commit
-func FetchCheckpointForCommit(commitID strfmt.UUID, cfg projectfile.ConfigGetter) (Checkpoint, strfmt.DateTime, error) {
+func FetchCheckpointForCommit(commitID strfmt.UUID) (Checkpoint, strfmt.DateTime, error) {
 	logging.Debug("fetching checkpoint (%s)", commitID.String())
 
 	request := request.CheckpointByCommit(commitID)
 
-	gql := graphql.Get(cfg)
+	gql := graphql.Get()
 	response := model.Checkpoint{}
 	err := gql.Run(request, &response)
 	if err != nil {
@@ -203,12 +202,12 @@ func CheckpointToPlatforms(checkpoint Checkpoint) []strfmt.UUID {
 }
 
 // CheckpointToLanguage returns the language from a checkpoint
-func CheckpointToLanguage(checkpoint Checkpoint, cfg projectfile.ConfigGetter) (*Language, error) {
+func CheckpointToLanguage(checkpoint Checkpoint) (*Language, error) {
 	for _, req := range checkpoint {
 		if !NamespaceMatch(req.Namespace, NamespaceLanguageMatch) {
 			continue
 		}
-		lang, err := FetchLanguageByDetails(req.Requirement, req.VersionConstraint, cfg)
+		lang, err := FetchLanguageByDetails(req.Requirement, req.VersionConstraint)
 		if err != nil {
 			return nil, err
 		}

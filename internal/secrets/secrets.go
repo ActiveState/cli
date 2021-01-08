@@ -11,7 +11,6 @@ import (
 	secretsModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 // Save will add a new secret for this user or update an existing one.
@@ -107,8 +106,8 @@ func LoadKeypairFromConfigDir() (keypairs.Keypair, error) {
 }
 
 // DefsByProject fetches the secret definitions for the current user relevant to the given project
-func DefsByProject(secretsClient *secretsapi.Client, owner string, projectName string, cfg projectfile.ConfigGetter) ([]*secretsModels.SecretDefinition, error) {
-	pjm, err := model.FetchProjectByName(owner, projectName, cfg)
+func DefsByProject(secretsClient *secretsapi.Client, owner string, projectName string) ([]*secretsModels.SecretDefinition, error) {
+	pjm, err := model.FetchProjectByName(owner, projectName)
 	if err != nil {
 		return nil, err
 	}
@@ -117,10 +116,10 @@ func DefsByProject(secretsClient *secretsapi.Client, owner string, projectName s
 }
 
 // ByProject fetches the secrets for the current user relevant to the given project
-func ByProject(secretsClient *secretsapi.Client, owner string, projectName string, cfg projectfile.ConfigGetter) ([]*secretsModels.UserSecret, error) {
+func ByProject(secretsClient *secretsapi.Client, owner string, projectName string) ([]*secretsModels.UserSecret, error) {
 	result := []*secretsModels.UserSecret{}
 
-	pjm, err := model.FetchProjectByName(owner, projectName, cfg)
+	pjm, err := model.FetchProjectByName(owner, projectName)
 	if err != nil {
 		return result, err
 	}

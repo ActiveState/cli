@@ -15,7 +15,6 @@ import (
 	secretsapiClient "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_client/secrets"
 	secretsModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 var (
@@ -43,9 +42,9 @@ type Client struct {
 }
 
 // GetClient gets the cached (if any) client instance that was initialized using our default settings
-func GetClient(cfg projectfile.ConfigGetter) *Client {
+func GetClient() *Client {
 	if persistentClient == nil {
-		persistentClient = NewDefaultClient(cfg)
+		persistentClient = NewDefaultClient()
 	}
 	return persistentClient
 }
@@ -71,8 +70,8 @@ func NewClient(schema, host, basePath string) *Client {
 
 // NewDefaultClient creates a new Client using constants SecretsAPISchema, -Host, and -Path and
 // a provided Bearer-token value.
-func NewDefaultClient(cfg projectfile.ConfigGetter) *Client {
-	serviceURL := api.GetServiceURL(cfg, api.ServiceSecrets)
+func NewDefaultClient() *Client {
+	serviceURL := api.GetServiceURL(api.ServiceSecrets)
 	return NewClient(serviceURL.Scheme, serviceURL.Host, serviceURL.Path)
 }
 
@@ -86,14 +85,14 @@ var DefaultClient *Client
 // available to it at the time of the call; thus, the DefaultClient can be re-initialized this way.
 // Because this function is dependent on a runtime-value from pkg/platform/api, we are not relying on
 // the init() function for instantiation; this must be called explicitly.
-func InitializeClient(cfg projectfile.ConfigGetter) *Client {
-	DefaultClient = NewDefaultClient(cfg)
+func InitializeClient() *Client {
+	DefaultClient = NewDefaultClient()
 	return DefaultClient
 }
 
 // Get is an alias for InitializeClient used to persist our Get() pattern used throughout the codebase
-func Get(cfg projectfile.ConfigGetter) *Client {
-	return InitializeClient(cfg)
+func Get() *Client {
+	return InitializeClient()
 }
 
 // AuthenticatedUserID will check with the Secrets Service to ensure the current Bearer token
