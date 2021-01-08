@@ -72,7 +72,7 @@ func RequireAuthentication(message string, out output.Outputer, prompt prompt.Pr
 	out.Print(message)
 
 	choices := []string{locale.T("prompt_login_action"), locale.T("prompt_signup_action"), locale.T("prompt_signup_browser_action")}
-	choice, err := prompt.Select(locale.Tl("login_signup", "Login or Signup"), locale.T("prompt_login_or_signup"), choices, "")
+	choice, err := prompt.Select(locale.Tl("login_signup", "Login or Signup"), locale.T("prompt_login_or_signup"), choices, new(string))
 	if err != nil {
 		return errs.Wrap(err, "Prompt cancelled")
 	}
@@ -107,7 +107,7 @@ func RequireAuthentication(message string, out output.Outputer, prompt prompt.Pr
 func promptForLogin(credentials *mono_models.Credentials, prompter prompt.Prompter) error {
 	var err error
 	if credentials.Username == "" {
-		credentials.Username, err = prompter.Input("", locale.T("username_prompt"), "", prompt.InputRequired)
+		credentials.Username, err = prompter.Input("", locale.T("username_prompt"), new(string), prompt.InputRequired)
 		if err != nil {
 			return errs.Wrap(err, "Input cancelled")
 		}
@@ -147,7 +147,8 @@ func uniqueUsername(credentials *mono_models.Credentials) bool {
 }
 
 func promptSignup(credentials *mono_models.Credentials, out output.Outputer, prompt prompt.Prompter) error {
-	yesSignup, err := prompt.Confirm("", locale.T("prompt_login_to_signup"), true)
+	loginConfirmDefault := true
+	yesSignup, err := prompt.Confirm("", locale.T("prompt_login_to_signup"), &loginConfirmDefault)
 	if err != nil {
 		return err
 	}
@@ -160,7 +161,7 @@ func promptSignup(credentials *mono_models.Credentials, out output.Outputer, pro
 
 func promptToken(credentials *mono_models.Credentials, out output.Outputer, prompt prompt.Prompter) error {
 	var err error
-	credentials.Totp, err = prompt.Input("", locale.T("totp_prompt"), "")
+	credentials.Totp, err = prompt.Input("", locale.T("totp_prompt"), new(string))
 	if err != nil {
 		return err
 	}

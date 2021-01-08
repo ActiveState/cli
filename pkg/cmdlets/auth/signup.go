@@ -111,7 +111,8 @@ func promptTOS(out output.Outputer, prompt prompt.Prompter) (bool, error) {
 	}
 
 	out.Notice(locale.Tr("tos_disclaimer", constants.TermsOfServiceURLLatest))
-	choice, err := prompt.Select(locale.Tl("tos", "Terms of Service"), locale.T("tos_acceptance"), choices, locale.T("tos_accept"))
+	defaultChoice := locale.T("tos_accept")
+	choice, err := prompt.Select(locale.Tl("tos", "Terms of Service"), locale.T("tos_acceptance"), choices, &defaultChoice)
 	if err != nil {
 		return false, err
 	}
@@ -132,7 +133,9 @@ func promptTOS(out output.Outputer, prompt prompt.Prompter) (bool, error) {
 			return false, errs.Wrap(err, "IO failure")
 		}
 		out.Print(tos)
-		return prompt.Confirm("", locale.T("tos_acceptance"), true)
+
+		tosConfirmDefault := true
+		return prompt.Confirm("", locale.T("tos_acceptance"), &tosConfirmDefault)
 	}
 
 	return false, nil
@@ -144,7 +147,7 @@ func promptForSignup(input *signupInput, out output.Outputer, prompter prompt.Pr
 	if input.Username != "" {
 		out.Notice(locale.T("confirm_password_account_creation"))
 	} else {
-		input.Username, err = prompter.Input("", locale.T("username_prompt_signup"), "", prompt.InputRequired)
+		input.Username, err = prompter.Input("", locale.T("username_prompt_signup"), new(string), prompt.InputRequired)
 		if err != nil {
 			return err
 		}
@@ -172,12 +175,12 @@ func promptForSignup(input *signupInput, out output.Outputer, prompter prompt.Pr
 		return errs.Wrap(err, "InvalidPassword failure")
 	}
 
-	input.Name, err = prompter.Input("", locale.T("name_prompt"), "", prompt.InputRequired)
+	input.Name, err = prompter.Input("", locale.T("name_prompt"), new(string), prompt.InputRequired)
 	if err != nil {
 		return err
 	}
 
-	input.Email, err = prompter.Input("", locale.T("email_prompt"), "", prompt.InputRequired)
+	input.Email, err = prompter.Input("", locale.T("email_prompt"), new(string), prompt.InputRequired)
 	if err != nil {
 		return err
 	}
