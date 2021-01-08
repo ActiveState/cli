@@ -326,3 +326,35 @@ func FetchLanguages() ([]Language, error) {
 
 	return languages, nil
 }
+
+func FetchIngredientVersions(ingredientID *strfmt.UUID) ([]*inventory_models.IngredientVersion, error) {
+	client := inventory.Get()
+
+	params := inventory_operations.NewGetIngredientVersionsParams()
+	params.SetIngredientID(*ingredientID)
+	limit := int64(10000)
+	params.SetLimit(&limit)
+	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
+
+	res, err := client.GetIngredientVersions(params, authentication.ClientAuth())
+	if err != nil {
+		return nil, errs.Wrap(err, "GetIngredientVersions failed")
+	}
+
+	return res.Payload.IngredientVersions, nil
+}
+
+func FetchIngredientVersion(ingredientID *strfmt.UUID, version string) (*inventory_models.IngredientVersion, error) {
+	ingredientVersions, err := FetchIngredientVersions(ingredientID)
+	if err != nil {
+		return nil, locale.WrapError(err, "info_err_cannot_obtain_version", "Could not retrieve ingredient version information")
+	}
+
+	for _, iv := range ingredientVersions {
+		if *iv.Version == version {
+			return iv, nil
+		}
+	}
+
+	return nil, locale.NewError("err_no_ingredient_version_found", "No ingredient version found")
+}

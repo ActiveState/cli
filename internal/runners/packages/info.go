@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
@@ -42,7 +43,7 @@ func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 
 	ns := model.NewNamespacePkgOrBundle(language, nstype)
 
-	pkgName, _ := splitNameAndVersion(params.Package)
+	pkgName, version := splitNameAndVersion(params.Package)
 
 	packages, err := model.SearchIngredientsStrict(ns, pkgName)
 	if err != nil {
@@ -58,13 +59,21 @@ func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 	}
 
 	pkg := packages[0]
+	ingredientVersion := pkg.LatestVersion
 
-	authors, err := model.FetchAuthors(pkg.Ingredient.IngredientID, pkg.LatestVersion.IngredientVersionID)
+	if version != "" {
+		ingredientVersion, err = model.FetchIngredientVersion(pkg.Ingredient.IngredientID, version)
+		if err != nil {
+			return locale.NewInputError("info_err_version_not_found", "Could not find version {{.V0}} for package {{.V1}}", version, pkgName)
+		}
+	}
+
+	authors, err := model.FetchAuthors(pkg.Ingredient.IngredientID, ingredientVersion.IngredientVersionID)
 	if err != nil {
 		return locale.WrapError(err, "package_err_cannot_obtain_authors_info", "Cannot obtain authors info")
 	}
 
-	res := newInfoResult(pkg, authors)
+	res := newInfoResult(pkg.Ingredient, ingredientVersion, authors, pkg.Versions)
 	out := &infoResultOutput{
 		i.out,
 		res,
@@ -86,16 +95,16 @@ type PkgDetailsTable struct {
 
 type infoResult struct {
 	name            string
-	latestVersion   string
+	version         string
 	Description     string `locale:"," json:"description"`
 	PkgDetailsTable `locale:"," opts:"verticalTable"`
 	Versions        []string `locale:"," json:"versions"`
 }
 
-func newInfoResult(iv *model.IngredientAndVersion, authors model.Authors) *infoResult {
+func newInfoResult(ingredient *inventory_models.Ingredient, iv *inventory_models.IngredientVersion, authors model.Authors, versions []*inventory_models.SearchIngredientsResponseVersion) *infoResult {
 	res := infoResult{
-		name:          locale.T("unknown_value"),
-		latestVersion: locale.T("unknown_value"),
+		name:    locale.T("unknown_value"),
+		version: locale.T("unknown_value"),
 		PkgDetailsTable: PkgDetailsTable{
 			Website:   locale.T("unknown_value"),
 			copyright: locale.T("unknown_value"),
@@ -103,36 +112,32 @@ func newInfoResult(iv *model.IngredientAndVersion, authors model.Authors) *infoR
 		},
 	}
 
-	if iv.Ingredient != nil {
-		if iv.Ingredient.Name != nil {
-			res.name = *iv.Ingredient.Name
-		}
-
-		if iv.Ingredient.Description != nil {
-			res.Description = *iv.Ingredient.Description
-		}
-
-		website := iv.Ingredient.Website.String()
-		if website != "" {
-			res.PkgDetailsTable.Website = website
-		}
+	if ingredient.Name != nil {
+		res.name = *ingredient.Name
 	}
 
-	if iv.LatestVersion != nil {
-		if iv.LatestVersion.Version != nil {
-			res.latestVersion = *iv.LatestVersion.Version
-		}
-
-		if iv.LatestVersion.CopyrightText != nil {
-			res.PkgDetailsTable.copyright = *iv.LatestVersion.CopyrightText
-		}
-
-		if iv.LatestVersion.LicenseExpression != nil {
-			res.PkgDetailsTable.license = *iv.LatestVersion.LicenseExpression
-		}
+	if ingredient.Description != nil {
+		res.Description = *ingredient.Description
 	}
 
-	for _, version := range iv.Versions {
+	website := ingredient.Website.String()
+	if website != "" {
+		res.PkgDetailsTable.Website = website
+	}
+
+	if iv.Version != nil {
+		res.version = *iv.Version
+	}
+
+	if iv.CopyrightText != nil {
+		res.PkgDetailsTable.copyright = *iv.CopyrightText
+	}
+
+	if iv.LicenseExpression != nil {
+		res.PkgDetailsTable.license = *iv.LicenseExpression
+	}
+
+	for _, version := range versions {
 		res.Versions = append(res.Versions, version.Version)
 	}
 
@@ -160,13 +165,12 @@ func (ro *infoResultOutput) MarshalOutput(format output.Format) interface{} {
 	}
 
 	print, res := ro.out.Print, ro.res
-
 	{
 		print(output.Heading(
 			locale.Tl(
 				"package_info_description_header",
 				"Details for version {{.V0}}",
-				res.latestVersion,
+				res.version,
 			),
 		))
 		print(res.Description)
