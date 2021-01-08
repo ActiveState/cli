@@ -97,7 +97,6 @@ func (p *Pull) Run(params *PullParams) error {
 
 	// Update the commit ID in the activestate.yaml
 	if p.project.CommitID() != target.CommitID.String() {
-		p.project.Source().SetNamespace(target.Owner, target.Project)
 		err := p.project.Source().SetCommit(target.CommitID.String(), false)
 		if err != nil {
 			return locale.WrapError(err, "err_pull_update", "Cannot update the commit in your project file.")
