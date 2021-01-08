@@ -12,7 +12,6 @@ import (
 
 	"github.com/hashicorp/go-version"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	constvers "github.com/ActiveState/cli/internal/constants/version"
 	"github.com/ActiveState/cli/internal/errs"
@@ -65,16 +64,12 @@ func NewChecker(timeout time.Duration, configuration configable) *Checker {
 }
 
 // Check will run a Checker.Check with defaults
-func Check() (*Info, error) {
-	return CheckVersionNumber(constants.VersionNumber)
+func Check(cfg configable) (*Info, error) {
+	return CheckVersionNumber(cfg, constants.VersionNumber)
 }
 
 // CheckVersionNumber will run a Checker.Check with defaults
-func CheckVersionNumber(versionNumber string) (*Info, error) {
-	cfg, err := config.Get()
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not load configuration required to check version number")
-	}
+func CheckVersionNumber(cfg configable, versionNumber string) (*Info, error) {
 	checker := NewChecker(DefaultTimeout, cfg)
 	return checker.check(versionNumber)
 }

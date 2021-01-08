@@ -173,7 +173,7 @@ func run(args []string, isInteractive bool, out output.Outputer) (int, error) {
 		}
 
 		// Check for deprecation
-		deprecated, err := deprecation.Check()
+		deprecated, err := deprecation.Check(cfg)
 		if err != nil {
 			logging.Error("Could not check for deprecation: %s", err.Error())
 		}
