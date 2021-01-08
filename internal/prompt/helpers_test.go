@@ -32,13 +32,16 @@ func TestPrompts(t *testing.T) {
 	p := New(true)
 
 	fmt.Println("# SELECT")
-	p.Select("Title", "This is the message", []string{"choice 1", "choice 2", "choice 3"}, "choice 1")
+	selectDefault := "choice 1"
+	p.Select("Title", "This is the message", []string{"choice 1", "choice 2", "choice 3"}, &selectDefault)
 
 	fmt.Println("# CONFIRM")
-	p.Confirm("Title", "This is the message", true)
+	confirmDefault := true
+	p.Confirm("Title", "This is the message", &confirmDefault)
 
 	fmt.Println("# INPUT")
-	p.Input("Title", "This is the message", "Default response")
+	inputDefault := "Default response"
+	p.Input("Title", "This is the message", &inputDefault)
 
 	fmt.Println("# SECRET")
 	p.InputSecret("Title", "This is the message")

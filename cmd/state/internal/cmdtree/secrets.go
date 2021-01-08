@@ -17,7 +17,7 @@ func newSecretsCommand(secretsClient *secretsapi.Client, prime *primer.Values) *
 
 	ccmd := captain.NewCommand(
 		"secrets",
-		locale.Tl("secrets_title", "Listing Secrets"),
+		locale.Tl("secrets_title", "Secrets"),
 		locale.T("secrets_cmd_description"),
 		prime.Output(),
 		prime.Config(),

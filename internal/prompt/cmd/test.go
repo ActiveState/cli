@@ -16,13 +16,19 @@ func main() {
 	})
 	p := prompt.New(true)
 
-	p.Select("Select", "Please select one", []string{"choice 1", "choice 2", "choice 3"}, "choice 1")
+	selectDefault := "choice 1"
+	p.Select("Select", "Please select one", []string{"choice 1", "choice 2", "choice 3"}, &selectDefault)
 
-	p.Confirm("Confirm", "Do you confirm?", true)
+	confirmDefault := true
+	p.Confirm("Confirm", "Do you confirm?", &confirmDefault)
 
-	p.Input("Input with Default", "Write something or use default", "Default response")
+	inputDefault := "Default response"
+	p.Input("Input with Default", "Write something or use default", &inputDefault)
 
-	p.Input("Input", "Please write something", "")
+	inputDefault = ""
+	p.Input("Input", "Please write something", &inputDefault)
+
+	p.Input("Input", "Please write something, again", new(string))
 
 	p.InputSecret("Secret", "Please write something secretive")
 }

@@ -70,7 +70,7 @@ func (r *Revert) Run(params *Params) error {
 	}
 	commit.PrintCommit(r.out, revertCommit, orgs)
 
-	revert, err := r.prompt.Confirm("", locale.Tl("revert_confirm", "Revert to commit: {{.V0}}?", params.CommitID), false)
+	revert, err := r.prompt.Confirm("", locale.Tl("revert_confirm", "Revert to commit: {{.V0}}?", params.CommitID), new(bool))
 	if err != nil {
 		return locale.WrapError(err, "err_revert_confirm", "Could not confirm revert choice")
 	}
