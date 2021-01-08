@@ -18,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_client"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_client/headchef_operations"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 var (
@@ -59,8 +60,8 @@ type Client struct {
 	transport *httptransport.Runtime
 }
 
-func InitClient() *Client {
-	return NewClient(api.GetServiceURL(api.ServiceHeadChef))
+func InitClient(cfg projectfile.ConfigGetter) *Client {
+	return NewClient(api.GetServiceURL(cfg, api.ServiceHeadChef))
 }
 
 func NewClient(apiURL *url.URL) *Client {

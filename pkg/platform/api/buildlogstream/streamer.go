@@ -12,15 +12,17 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 type Request struct {
 	recipe     *inventory_models.Recipe
 	msgHandler MessageHandler
+	cfg        projectfile.ConfigGetter
 }
 
-func NewRequest(recipe *inventory_models.Recipe, msgHandler MessageHandler) *Request {
-	return &Request{recipe, msgHandler}
+func NewRequest(recipe *inventory_models.Recipe, msgHandler MessageHandler, cfg projectfile.ConfigGetter) *Request {
+	return &Request{recipe, msgHandler, cfg}
 }
 
 type MessageHandler interface {
@@ -48,7 +50,7 @@ func (r *Request) Wait() error {
 		return errs.New("recipe ID is nil")
 	}
 
-	url := api.GetServiceURL(api.BuildLogStreamer)
+	url := api.GetServiceURL(r.cfg, api.BuildLogStreamer)
 	header := make(http.Header)
 	header.Add("Origin", "https://"+url.Host)
 
@@ -117,7 +119,7 @@ func (r *Request) responseReader(conn *websocket.Conn, readErr chan error) {
 			if !artifactMapped {
 				continue // ignore
 			}
-			
+
 			// NOTE: fix to ignore current noop "final pkg artifact"
 			if msg.ArtifactID == *r.recipe.RecipeID {
 				break
@@ -130,4 +132,3 @@ func (r *Request) responseReader(conn *websocket.Conn, readErr chan error) {
 		}
 	}
 }
-

@@ -10,9 +10,10 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api/mono"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/s3"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
-func SignS3URL(u *url.URL) (*url.URL, error) {
+func SignS3URL(u *url.URL, cfg projectfile.ConfigGetter) (*url.URL, error) {
 	unescaped, err := url.QueryUnescape(u.String())
 	if err != nil {
 		return nil, errs.Wrap(err, "InvalidURL failure")
@@ -21,7 +22,7 @@ func SignS3URL(u *url.URL) (*url.URL, error) {
 	params := s3.NewSignS3URIParams()
 	params.URI = strfmt.URI(unescaped)
 
-	res, err := mono.Get().S3.SignS3URI(params)
+	res, err := mono.Get(cfg).S3.SignS3URI(params)
 	if err != nil {
 		return nil, errs.Wrap(err, "SignS3URL failure")
 	}

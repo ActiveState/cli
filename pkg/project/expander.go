@@ -113,9 +113,9 @@ func PlatformExpander(_ string, name string, meta string, isFunction bool, proje
 }
 
 // EventExpander expands events defined in the project-file.
-func EventExpander(_ string, name string, meta string, isFunction bool, project *Project) (string, error) {
+func EventExpander(_ string, name string, meta string, isFunction bool, project *Project, cfg projectfile.ConfigGetter) (string, error) {
 	projectFile := project.Source()
-	constrained, err := constraints.FilterUnconstrained(pConditional, projectFile.Events.AsConstrainedEntities())
+	constrained, err := constraints.FilterUnconstrained(cfg, pConditional, projectFile.Events.AsConstrainedEntities())
 	if err != nil {
 		return "", err
 	}
@@ -201,9 +201,9 @@ func (m *Mixin) Expander(_ string, name string, meta string, _ bool, _ *Project)
 }
 
 // ConstantExpander expands constants defined in the project-file.
-func ConstantExpander(_ string, name string, meta string, isFunction bool, project *Project) (string, error) {
+func ConstantExpander(_ string, name string, meta string, isFunction bool, project *Project, cfg projectfile.ConfigGetter) (string, error) {
 	projectFile := project.Source()
-	constrained, err := constraints.FilterUnconstrained(pConditional, projectFile.Constants.AsConstrainedEntities())
+	constrained, err := constraints.FilterUnconstrained(cfg, pConditional, projectFile.Constants.AsConstrainedEntities())
 	if err != nil {
 		return "", err
 	}

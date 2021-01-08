@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
 	iop "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 // persist contains the active API Client connection
@@ -22,8 +23,8 @@ var persist inventory_operations.ClientService
 var transport http.RoundTripper
 
 // Init will create a new API client using default settings
-func Init() (inventory_operations.ClientService, runtime.ClientTransport) {
-	return New(api.GetServiceURL(api.ServiceInventory))
+func Init(cfg projectfile.ConfigGetter) (inventory_operations.ClientService, runtime.ClientTransport) {
+	return New(api.GetServiceURL(cfg, api.ServiceInventory))
 }
 
 // New initializes a new api client
@@ -37,9 +38,9 @@ func New(serviceURL *url.URL) (inventory_operations.ClientService, runtime.Clien
 }
 
 // Get returns a cached version of the default api client
-func Get() inventory_operations.ClientService {
+func Get(cfg projectfile.ConfigGetter) inventory_operations.ClientService {
 	if persist == nil {
-		persist, _ = Init()
+		persist, _ = Init(cfg)
 	}
 	return persist
 }

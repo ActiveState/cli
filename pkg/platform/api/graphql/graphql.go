@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/retryhttp"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/projectfile"
 
 	"github.com/machinebox/graphql"
 )
@@ -37,8 +38,8 @@ type GQLClient struct {
 }
 
 // Get is a legacy method, to be removed once we have commands that don't rely on globals
-func Get() *GQLClient {
-	url := api.GetServiceURL(api.ServiceGraphQL)
+func Get(cfg projectfile.ConfigGetter) *GQLClient {
+	url := api.GetServiceURL(cfg, api.ServiceGraphQL)
 	return New(url.String(), map[string][]string{}, authentication.Get(), 0)
 }
 

@@ -15,6 +15,7 @@ import (
 	clientOrgs "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/organizations"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 var ErrMemberNotFound = errs.New("member not found")
@@ -104,11 +105,11 @@ func InviteUserToOrg(orgName string, asOwner bool, email string) (*mono_models.I
 }
 
 // FetchOrganizationsByIDs fetches organizations by their IDs
-func FetchOrganizationsByIDs(ids []strfmt.UUID) ([]model.Organization, error) {
+func FetchOrganizationsByIDs(ids []strfmt.UUID, cfg projectfile.ConfigGetter) ([]model.Organization, error) {
 	ids = funk.Uniq(ids).([]strfmt.UUID)
 	request := request.OrganizationsByIDs(ids)
 
-	gql := graphql.Get()
+	gql := graphql.Get(cfg)
 	response := model.Organizations{}
 	err := gql.Run(request, &response)
 	if err != nil {

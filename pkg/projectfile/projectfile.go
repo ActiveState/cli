@@ -662,8 +662,8 @@ func removeTemporaryLanguage(data []byte) ([]byte, error) {
 }
 
 // RemoveTemporaryLanguage removes the temporary language field from the as.yaml file during state push
-func (p *Project) RemoveTemporaryLanguage() error {
-	fp, err := GetProjectFilePath()
+func (p *Project) RemoveTemporaryLanguage(cfg ConfigGetter) error {
+	fp, err := GetProjectFilePath(cfg)
 	if err != nil {
 		return errs.Wrap(err, "Could not find the project file location.")
 	}
@@ -812,11 +812,13 @@ func setCommitInYAML(data []byte, commitID string, anonymous bool) ([]byte, erro
 }
 
 // GetProjectFilePath returns the path to the project activestate.yaml
-func GetProjectFilePath() (string, error) {
+func GetProjectFilePath(cfg ConfigGetter) (string, error) {
 	lookup := []func() (string, error){
 		getProjectFilePathFromEnv,
 		getProjectFilePathFromWd,
-		getProjectFilePathFromDefault,
+		func() (string, error) {
+			return getProjectFilePathFromDefault(cfg)
+		},
 	}
 	for _, getProjectFilePath := range lookup {
 		path, err := getProjectFilePath()
@@ -856,11 +858,7 @@ func getProjectFilePathFromWd() (string, error) {
 	return path, nil
 }
 
-func getProjectFilePathFromDefault() (string, error) {
-	cfg, err := config.Get()
-	if err != nil {
-		return "", errs.Wrap(err, "Could not read configuration required to determine default project")
-	}
+func getProjectFilePathFromDefault(cfg ConfigGetter) (string, error) {
 	defaultProjectPath := cfg.GetString(constants.GlobalDefaultPrefname)
 	if defaultProjectPath == "" {
 		return "", nil
@@ -874,8 +872,8 @@ func getProjectFilePathFromDefault() (string, error) {
 }
 
 // Get returns the project configration in an unsafe manner (exits if errors occur)
-func Get() *Project {
-	project, err := GetSafe()
+func Get(cfg ConfigGetter) *Project {
+	project, err := GetSafe(cfg)
 	if err != nil {
 		logging.Error("projectfile.Get() failed with: %s", err.Error())
 		fmt.Fprint(os.Stderr, locale.T("err_project_file_unavailable"))
@@ -891,12 +889,12 @@ func GetPersisted() *Project {
 }
 
 // GetSafe returns the project configuration in a safe manner (returns error)
-func GetSafe() (*Project, error) {
+func GetSafe(cfg ConfigGetter) (*Project, error) {
 	if persistentProject != nil {
 		return persistentProject, nil
 	}
 
-	project, err := GetOnce()
+	project, err := GetOnce(cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -906,9 +904,9 @@ func GetSafe() (*Project, error) {
 }
 
 // GetOnce returns the project configuration in a safe manner (returns error), the same as GetSafe, but it avoids persisting the project
-func GetOnce() (*Project, error) {
+func GetOnce(cfg ConfigGetter) (*Project, error) {
 	// we do not want to use a path provided by state if we're running tests
-	projectFilePath, err := GetProjectFilePath()
+	projectFilePath, err := GetProjectFilePath(cfg)
 	if err != nil {
 		if errors.Is(err, fileutils.ErrorFileNotFound) {
 			return nil, &ErrorNoProject{locale.WrapError(err, "err_project_file_notfound", "Could not detect project file path.")}
@@ -1200,6 +1198,7 @@ func (p *Project) Persist() {
 type ConfigGetter interface {
 	GetStringMapStringSlice(key string) map[string][]string
 	AllKeys() []string
+	GetString(string) string
 	GetStringSlice(string) []string
 	Set(string, interface{})
 }

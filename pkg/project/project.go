@@ -64,7 +64,7 @@ func (p *Project) Platforms() []*Platform {
 
 // Languages returns a reference to projectfile.Languages
 func (p *Project) Languages() []*Language {
-	constrained, err := constraints.FilterUnconstrained(pConditional, p.projectfile.Languages.AsConstrainedEntities())
+	constrained, err := constraints.FilterUnconstrained(cfg, pConditional, p.projectfile.Languages.AsConstrainedEntities())
 	if err != nil {
 		logging.Warning("Could not filter unconstrained languages: %v", err)
 	}

@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/api"
+	"github.com/ActiveState/cli/pkg/projectfile"
 
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -32,7 +33,7 @@ type signupInput struct {
 }
 
 // Signup will prompt the user to create an account
-func Signup(out output.Outputer, prompt prompt.Prompter) error {
+func Signup(cfg projectfile.ConfigGetter, out output.Outputer, prompt prompt.Prompter) error {
 	input := &signupInput{}
 
 	if authentication.Get().Authenticated() {
@@ -52,12 +53,12 @@ func Signup(out output.Outputer, prompt prompt.Prompter) error {
 		return locale.WrapError(err, "err_prompt_unknown")
 	}
 
-	if err = doSignup(input, out); err != nil {
+	if err = doSignup(cfg, input, out); err != nil {
 		return err
 	}
 
 	if authentication.Get().Authenticated() {
-		if err := generateKeypairForUser(input.Password); err != nil {
+		if err := generateKeypairForUser(cfg, input.Password); err != nil {
 			return locale.WrapError(err, "keypair_err_save")
 		}
 	}
@@ -65,7 +66,7 @@ func Signup(out output.Outputer, prompt prompt.Prompter) error {
 	return nil
 }
 
-func signupFromLogin(username string, password string, out output.Outputer, prompt prompt.Prompter) error {
+func signupFromLogin(username string, password string, cfg projectfile.ConfigGetter, out output.Outputer, prompt prompt.Prompter) error {
 	input := &signupInput{}
 
 	input.Username = username
@@ -75,7 +76,7 @@ func signupFromLogin(username string, password string, out output.Outputer, prom
 		return errs.Wrap(err, "UserInput failure")
 	}
 
-	return doSignup(input, out)
+	return doSignup(cfg, input, out)
 }
 
 func downloadTOS() (string, error) {
@@ -189,7 +190,7 @@ func promptForSignup(input *signupInput, out output.Outputer, prompter prompt.Pr
 	return nil
 }
 
-func doSignup(input *signupInput, out output.Outputer) error {
+func doSignup(cfg projectfile.ConfigGetter, input *signupInput, out output.Outputer) error {
 	params := users.NewAddUserParams()
 	eulaHelper := true
 	params.SetUser(&mono_models.UserEditable{
@@ -199,7 +200,7 @@ func doSignup(input *signupInput, out output.Outputer) error {
 		Name:         input.Name,
 		EULAAccepted: &eulaHelper,
 	})
-	addUserOK, err := mono.Get().Users.AddUser(params)
+	addUserOK, err := mono.Get(cfg).Users.AddUser(params)
 
 	// Error checking
 	if err != nil {
@@ -214,7 +215,7 @@ func doSignup(input *signupInput, out output.Outputer) error {
 		}
 	}
 
-	err = AuthenticateWithCredentials(&mono_models.Credentials{
+	err = AuthenticateWithCredentials(cfg, &mono_models.Credentials{
 		Username: input.Username,
 		Password: input.Password,
 	})
@@ -230,11 +231,11 @@ func doSignup(input *signupInput, out output.Outputer) error {
 }
 
 // UsernameValidator verifies whether the chosen username is usable
-func UsernameValidator(val interface{}) error {
+func UsernameValidator(cfg projectfile.ConfigGetter, val interface{}) error {
 	value := val.(string)
 	params := users.NewUniqueUsernameParams()
 	params.SetUsername(value)
-	res, err := mono.Get().Users.UniqueUsername(params)
+	res, err := mono.Get(cfg).Users.UniqueUsername(params)
 	if err != nil || *res.Payload.Code != int64(200) {
 		return errors.New(locale.T("err_username_taken"))
 	}

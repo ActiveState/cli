@@ -22,6 +22,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/authentication"
 	apiAuth "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/authentication"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 var exit = os.Exit
@@ -42,8 +43,7 @@ type Auth struct {
 }
 
 type Configurable interface {
-	Set(string, interface{})
-	GetString(string) string
+	projectfile.ConfigGetter
 }
 
 // Get returns a cached version of Auth
@@ -140,7 +140,7 @@ func (s *Auth) Authenticate() error {
 func (s *Auth) AuthenticateWithModel(credentials *mono_models.Credentials) error {
 	params := authentication.NewPostLoginParams()
 	params.SetCredentials(credentials)
-	loginOK, err := mono.Get().Authentication.PostLogin(params)
+	loginOK, err := mono.Get(s.cfg).Authentication.PostLogin(params)
 
 	if err != nil {
 		s.Logout()
@@ -237,7 +237,7 @@ func (s *Auth) Client() *mono_client.Mono {
 // ClientSafe will return an API client that has authentication set up
 func (s *Auth) ClientSafe() (*mono_client.Mono, error) {
 	if s.client == nil {
-		s.client = mono.NewWithAuth(s.clientAuth)
+		s.client = mono.NewWithAuth(s.cfg, s.clientAuth)
 	}
 	if !s.Authenticated() {
 		if err := s.Authenticate(); err != nil {

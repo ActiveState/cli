@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 const (
@@ -44,8 +45,8 @@ func New(opts Opts) (*ReqsImport, error) {
 }
 
 // Init is a convenience wrapper for New.
-func Init() *ReqsImport {
-	svcURL := api.GetServiceURL(api.ServiceRequirementsImport)
+func Init(cfg projectfile.ConfigGetter) *ReqsImport {
+	svcURL := api.GetServiceURL(cfg, api.ServiceRequirementsImport)
 	url := svcURL.Scheme + "://" + path.Join(svcURL.Host, svcURL.Path)
 
 	opts := Opts{
