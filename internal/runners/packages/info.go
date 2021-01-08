@@ -65,7 +65,7 @@ func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 	if version != "" {
 		ingredientVersion, err = specificIngredientVersion(pkg.Ingredient.IngredientID, version)
 		if err != nil {
-			return locale.NewInputError("info_err_version_not_found", "Could not find version {{.V0}} for package {{.V1}}", version, pkgName)
+			return locale.WrapInputError(err, "info_err_version_not_found", "Could not find version {{.V0}} for package {{.V1}}", version, pkgName)
 		}
 	}
 
@@ -93,12 +93,12 @@ func specificIngredientVersion(ingredientID *strfmt.UUID, version string) (*inve
 	}
 
 	for _, iv := range ingredientVersions {
-		if *iv.Version == version {
+		if iv.Version != nil && *iv.Version == version {
 			return iv, nil
 		}
 	}
 
-	return nil, locale.NewError("err_no_ingredient_version_found", "No ingredient version found")
+	return nil, locale.NewInputError("err_no_ingredient_version_found", "No ingredient version found")
 }
 
 // PkgDetailsTable describes package details.
