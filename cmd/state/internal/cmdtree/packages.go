@@ -183,8 +183,8 @@ func newInfoCommand(prime *primer.Values) *captain.Command {
 		},
 		[]*captain.Argument{
 			{
-				Name:        locale.T("package_arg_name"),
-				Description: locale.T("package_arg_name_description"),
+				Name:        locale.T("package_arg_nameversion"),
+				Description: locale.T("package_arg_nameversion_description"),
 				Value:       &params.Package,
 				Required:    true,
 			},
