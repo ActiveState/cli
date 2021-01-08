@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/go-openapi/strfmt"
 )
 
 // InfoRunParams tracks the info required for running Info.
@@ -62,7 +63,7 @@ func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 	ingredientVersion := pkg.LatestVersion
 
 	if version != "" {
-		ingredientVersion, err = model.FetchIngredientVersion(pkg.Ingredient.IngredientID, version)
+		ingredientVersion, err = specificIngredientVersion(pkg.Ingredient.IngredientID, version)
 		if err != nil {
 			return locale.NewInputError("info_err_version_not_found", "Could not find version {{.V0}} for package {{.V1}}", version, pkgName)
 		}
@@ -83,6 +84,21 @@ func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 	i.out.Print(out)
 
 	return nil
+}
+
+func specificIngredientVersion(ingredientID *strfmt.UUID, version string) (*inventory_models.IngredientVersion, error) {
+	ingredientVersions, err := model.FetchIngredientVersions(ingredientID)
+	if err != nil {
+		return nil, locale.WrapError(err, "info_err_cannot_obtain_version", "Could not retrieve ingredient version information")
+	}
+
+	for _, iv := range ingredientVersions {
+		if *iv.Version == version {
+			return iv, nil
+		}
+	}
+
+	return nil, locale.NewError("err_no_ingredient_version_found", "No ingredient version found")
 }
 
 // PkgDetailsTable describes package details.
