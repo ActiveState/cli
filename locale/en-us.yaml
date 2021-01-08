@@ -639,7 +639,7 @@ secrets_description_unset:
 pull_not_updated:
   other: Your activestate.yaml is already up to date!
 pull_updated:
-  other: Your activestate.yaml has been updated to the latest version available.
+  other: Your project in the activestate.yaml has been updated to {{.V0}}@{{.V1}}.
 keypair_cmd_description:
   other: Manage Your Keypair
 keypair_generate_cmd_description:
