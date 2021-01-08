@@ -27,6 +27,7 @@ const (
 	Headless      = "headless"
 	History       = "history"
 	Import        = "import"
+	Info          = "info"
 	Init          = "init"
 	Interrupt     = "interrupt"
 	JSON          = "json"
