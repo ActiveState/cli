@@ -62,8 +62,7 @@ func Get() *Auth {
 
 // Client is a shortcut for calling Client() on the persisted auth
 func Client() *mono_client.Mono {
-	a := Get()
-	return a.Client()
+	return Get().Client()
 }
 
 // ClientAuth is a shortcut for calling ClientAuth() on the persisted auth

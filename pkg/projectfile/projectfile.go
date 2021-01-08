@@ -595,8 +595,8 @@ func (p *Project) Reload() error {
 }
 
 // Save the project to its activestate.yaml file
-func (p *Project) Save() error {
-	return p.save(p.Path())
+func (p *Project) Save(cfg ConfigGetter) error {
+	return p.save(cfg, p.Path())
 }
 
 // parseURL returns the parsed fields of a Project URL
@@ -690,7 +690,7 @@ func (p *Project) RemoveTemporaryLanguage() error {
 }
 
 // Save the project to its activestate.yaml file
-func (p *Project) save(path string) error {
+func (p *Project) save(cfg ConfigGetter, path string) error {
 	dat, err := yaml.Marshal(p)
 	if err != nil {
 		return errs.Wrap(err, "yaml.Marshal failed")
@@ -712,11 +712,6 @@ func (p *Project) save(path string) error {
 	_, err = f.Write([]byte(dat))
 	if err != nil {
 		return errs.Wrap(err, "f.Write %s failed", path)
-	}
-
-	cfg, err := config.Get()
-	if err != nil {
-		return errs.Wrap(err, "Could not read configuration required to save project file")
 	}
 
 	storeProjectMapping(cfg, fmt.Sprintf("%s/%s", p.parsedURL.Owner, p.parsedURL.Name), filepath.Dir(p.Path()))
