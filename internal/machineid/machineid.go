@@ -17,18 +17,12 @@ func uniqID(machineIDGetter func() (string, error), uuidGetter func() string) st
 		return machID
 	}
 
-	cfg, err := config.Get()
-	if err != nil {
-		// We do not log here, as it may create a recursion
-		return "11111111-1111-1111-1111-111111111111"
-	}
-
-	machineID := cfg.GetString("machineID")
+	machineID := config.Get().GetString("machineID")
 	if machineID != "" {
 		return machineID
 	}
 
 	machineID = uuidGetter()
-	cfg.Set("machineID", machineID)
+	config.Get().Set("machineID", machineID)
 	return machineID
 }

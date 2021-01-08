@@ -17,7 +17,6 @@ func newPullCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("pull_title", "Pulling Remote Project"),
 		locale.Tl("pull_description", "Pull in the latest version of your project from the ActiveState Platform"),
 		prime.Output(),
-		prime.Config(),
 		[]*captain.Flag{
 			{
 				Name:        "force",

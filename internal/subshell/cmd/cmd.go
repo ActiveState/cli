@@ -5,6 +5,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
@@ -44,11 +45,11 @@ func (v *SubShell) SetBinary(binary string) {
 }
 
 // WriteUserEnv - see subshell.SubShell
-func (v *SubShell) WriteUserEnv(cfg sscommon.Configurable, env map[string]string, envType sscommon.EnvData, userScope bool) error {
+func (v *SubShell) WriteUserEnv(env map[string]string, envType sscommon.EnvData, userScope bool) error {
 	cmdEnv := NewCmdEnv(userScope)
 
 	// Clean up old entries
-	oldEnv := cfg.GetStringMap(envType.Key)
+	oldEnv := config.Get().GetStringMap(envType.Key)
 	for k, v := range oldEnv {
 		if err := cmdEnv.unset(k, v.(string)); err != nil {
 			return err
@@ -56,7 +57,7 @@ func (v *SubShell) WriteUserEnv(cfg sscommon.Configurable, env map[string]string
 	}
 
 	// Store new entries
-	cfg.Set(envType.Key, env)
+	config.Get().Set(envType.Key, env)
 
 	for k, v := range env {
 		value := v
@@ -105,10 +106,10 @@ func (v *SubShell) Quote(value string) string {
 }
 
 // Activate - see subshell.SubShell
-func (v *SubShell) Activate(cfg sscommon.Configurable, out output.Outputer) error {
+func (v *SubShell) Activate(out output.Outputer) error {
 	env := sscommon.EscapeEnv(v.env)
 	var err error
-	if v.rcFile, err = sscommon.SetupProjectRcFile("config.bat", ".bat", env, out, cfg); err != nil {
+	if v.rcFile, err = sscommon.SetupProjectRcFile("config.bat", ".bat", env, out); err != nil {
 		return err
 	}
 

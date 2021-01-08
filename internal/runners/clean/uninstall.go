@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
@@ -17,7 +18,8 @@ type confirmAble interface {
 type Uninstall struct {
 	out         output.Outputer
 	confirm     confirmAble
-	cfg         configurable
+	configPath  string
+	cachePath   string
 	installPath string
 }
 
@@ -28,24 +30,26 @@ type UninstallParams struct {
 type primeable interface {
 	primer.Outputer
 	primer.Prompter
-	primer.Configurer
 }
 
 func NewUninstall(prime primeable) (*Uninstall, error) {
-	return newUninstall(prime.Output(), prime.Prompt(), prime.Config())
+	return newUninstall(prime.Output(), prime.Prompt())
 }
 
-func newUninstall(out output.Outputer, confirm confirmAble, cfg configurable) (*Uninstall, error) {
+func newUninstall(out output.Outputer, confirm confirmAble) (*Uninstall, error) {
 	installPath, err := os.Executable()
 	if err != nil {
 		return nil, err
 	}
 
+	cfg := config.Get()
+
 	return &Uninstall{
 		out:         out,
 		confirm:     confirm,
 		installPath: installPath,
-		cfg:         cfg,
+		configPath:  cfg.ConfigPath(),
+		cachePath:   cfg.CachePath(),
 	}, nil
 }
 

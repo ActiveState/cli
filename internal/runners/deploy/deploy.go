@@ -9,7 +9,6 @@ import (
 
 	"github.com/gobuffalo/packr"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -46,7 +45,6 @@ type Deploy struct {
 	output   output.Outputer
 	subshell subshell.SubShell
 	step     Step
-	cfg      *config.Instance
 
 	DefaultBranchForProjectName defaultBranchForProjectNameFunc
 	NewRuntimeInstaller         newInstallerFunc
@@ -55,7 +53,6 @@ type Deploy struct {
 type primeable interface {
 	primer.Outputer
 	primer.Subsheller
-	primer.Configurer
 }
 
 func NewDeploy(step Step, prime primeable) *Deploy {
@@ -63,7 +60,6 @@ func NewDeploy(step Step, prime primeable) *Deploy {
 		prime.Output(),
 		prime.Subshell(),
 		step,
-		prime.Config(),
 		model.DefaultBranchForProjectName,
 		newInstaller,
 	}
@@ -88,7 +84,7 @@ func (d *Deploy) Run(params *Params) error {
 			"Could not initialize an installer for {{.V0}}.", params.Namespace.String())
 	}
 
-	return runSteps(targetPath, params.Force, params.UserScope, params.Namespace, d.step, runtime, installer, d.output, d.cfg, d.subshell)
+	return runSteps(targetPath, params.Force, params.UserScope, params.Namespace, d.step, runtime, installer, d.output, d.subshell)
 }
 
 func (d *Deploy) createRuntimeInstaller(namespace project.Namespaced, targetPath string) (*runtime.Runtime, installable, error) {
@@ -116,13 +112,13 @@ func (d *Deploy) createRuntimeInstaller(namespace project.Namespaced, targetPath
 	return runtime, d.NewRuntimeInstaller(runtime), nil
 }
 
-func runSteps(targetPath string, force bool, userScope bool, namespace project.Namespaced, step Step, runtime *runtime.Runtime, installer installable, out output.Outputer, cfg sscommon.Configurable, subshell subshell.SubShell) error {
+func runSteps(targetPath string, force bool, userScope bool, namespace project.Namespaced, step Step, runtime *runtime.Runtime, installer installable, out output.Outputer, subshell subshell.SubShell) error {
 	return runStepsWithFuncs(
-		targetPath, force, userScope, namespace, step, runtime, installer, out, cfg, subshell,
+		targetPath, force, userScope, namespace, step, runtime, installer, out, subshell,
 		install, configure, symlink, report)
 }
 
-func runStepsWithFuncs(targetPath string, force, userScope bool, namespace project.Namespaced, step Step, rt *runtime.Runtime, installer installable, out output.Outputer, cfg sscommon.Configurable, subshell subshell.SubShell, installf installFunc, configuref configureFunc, symlinkf symlinkFunc, reportf reportFunc) error {
+func runStepsWithFuncs(targetPath string, force, userScope bool, namespace project.Namespaced, step Step, rt *runtime.Runtime, installer installable, out output.Outputer, subshell subshell.SubShell, installf installFunc, configuref configureFunc, symlinkf symlinkFunc, reportf reportFunc) error {
 	logging.Debug("runSteps: %s", step.String())
 
 	var err error
@@ -144,7 +140,7 @@ func runStepsWithFuncs(targetPath string, force, userScope bool, namespace proje
 	}
 	if step == UnsetStep || step == ConfigureStep {
 		logging.Debug("Running configure step")
-		if err := configuref(targetPath, rt, cfg, out, subshell, namespace, userScope); err != nil {
+		if err := configuref(targetPath, rt, out, subshell, namespace, userScope); err != nil {
 			return err
 		}
 	}
@@ -189,9 +185,9 @@ func install(path string, installer installable, out output.Outputer) error {
 	return nil
 }
 
-type configureFunc func(installpath string, runtime *runtime.Runtime, cfg sscommon.Configurable, out output.Outputer, sshell subshell.SubShell, namespace project.Namespaced, userScope bool) error
+type configureFunc func(installpath string, runtime *runtime.Runtime, out output.Outputer, sshell subshell.SubShell, namespace project.Namespaced, userScope bool) error
 
-func configure(installpath string, runtime *runtime.Runtime, cfg sscommon.Configurable, out output.Outputer, sshell subshell.SubShell, namespace project.Namespaced, userScope bool) error {
+func configure(installpath string, runtime *runtime.Runtime, out output.Outputer, sshell subshell.SubShell, namespace project.Namespaced, userScope bool) error {
 	venv := virtualenvironment.New(runtime)
 	env, err := venv.GetEnv(false, "")
 	if err != nil {
@@ -200,7 +196,7 @@ func configure(installpath string, runtime *runtime.Runtime, cfg sscommon.Config
 
 	out.Notice(output.Heading(locale.Tr("deploy_configure_shell", sshell.Shell())))
 
-	err = sshell.WriteUserEnv(cfg, env, sscommon.Deploy, userScope)
+	err = sshell.WriteUserEnv(env, sscommon.Deploy, userScope)
 	if err != nil {
 		return locale.WrapError(err, "err_deploy_subshell_write", "Could not write environment information to your shell configuration.")
 	}
@@ -365,7 +361,7 @@ func report(path string, runtime *runtime.Runtime, out output.Outputer) error {
 	})
 
 	out.Notice(output.Heading(locale.T("deploy_restart")))
-
+	
 	if rt.GOOS == "windows" {
 		out.Notice(locale.Tr("deploy_restart_cmd", filepath.Join(path, "setenv.bat")))
 	} else {

@@ -19,7 +19,6 @@ func newShimCommand(prime *primer.Values, args ...string) *captain.Command {
 		"",
 		locale.T("shim_description"),
 		prime.Output(),
-		prime.Config(),
 		[]*captain.Flag{
 			{
 				Name:        "path",

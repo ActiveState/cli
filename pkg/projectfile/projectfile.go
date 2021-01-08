@@ -482,13 +482,8 @@ func Parse(configFilepath string) (*Project, error) {
 		return nil, errs.Wrap(err, "project.Init failed")
 	}
 
-	cfg, err := config.Get()
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not read configuration required by projectfile parser.")
-	}
-
 	namespace := fmt.Sprintf("%s/%s", project.parsedURL.Owner, project.parsedURL.Name)
-	storeProjectMapping(cfg, namespace, filepath.Dir(project.Path()))
+	storeProjectMapping(namespace, filepath.Dir(project.Path()))
 
 	return project, nil
 }
@@ -714,12 +709,7 @@ func (p *Project) save(path string) error {
 		return errs.Wrap(err, "f.Write %s failed", path)
 	}
 
-	cfg, err := config.Get()
-	if err != nil {
-		return errs.Wrap(err, "Could not read configuration required to save project file")
-	}
-
-	storeProjectMapping(cfg, fmt.Sprintf("%s/%s", p.parsedURL.Owner, p.parsedURL.Name), filepath.Dir(p.Path()))
+	storeProjectMapping(fmt.Sprintf("%s/%s", p.parsedURL.Owner, p.parsedURL.Name), filepath.Dir(p.Path()))
 
 	return nil
 }
@@ -862,11 +852,7 @@ func getProjectFilePathFromWd() (string, error) {
 }
 
 func getProjectFilePathFromDefault() (string, error) {
-	cfg, err := config.Get()
-	if err != nil {
-		return "", errs.Wrap(err, "Could not read configuration required to determine default project")
-	}
-	defaultProjectPath := cfg.GetString(constants.GlobalDefaultPrefname)
+	defaultProjectPath := config.Get().GetString(constants.GlobalDefaultPrefname)
 	if defaultProjectPath == "" {
 		return "", nil
 	}
@@ -1211,7 +1197,7 @@ type ConfigGetter interface {
 
 func GetProjectMapping(config ConfigGetter) map[string][]string {
 	addDeprecatedProjectMappings(config)
-	CleanProjectMapping(config)
+	CleanProjectMapping()
 	projects := config.GetStringMapStringSlice(LocalProjectsConfigKey)
 	if projects == nil {
 		return map[string][]string{}
@@ -1276,13 +1262,13 @@ func GetProjectPaths(config ConfigGetter, namespace string) []string {
 
 // storeProjectMapping associates the namespace with the project
 // path in the config
-func storeProjectMapping(cfg ConfigGetter, namespace, projectPath string) {
+func storeProjectMapping(namespace, projectPath string) {
 	projectMapMutex.Lock()
 	defer projectMapMutex.Unlock()
 
 	projectPath = filepath.Clean(projectPath)
 
-	projects := cfg.GetStringMapStringSlice(LocalProjectsConfigKey)
+	projects := config.Get().GetStringMapStringSlice(LocalProjectsConfigKey)
 	if projects == nil {
 		projects = make(map[string][]string)
 	}
@@ -1297,13 +1283,13 @@ func storeProjectMapping(cfg ConfigGetter, namespace, projectPath string) {
 	}
 
 	projects[namespace] = paths
-	cfg.Set(LocalProjectsConfigKey, projects)
+	config.Get().Set(LocalProjectsConfigKey, projects)
 }
 
 // CleanProjectMapping removes projects that no longer exist
 // on a user's filesystem from the projects config entry
-func CleanProjectMapping(cfg ConfigGetter) {
-	projects := cfg.GetStringMapStringSlice(LocalProjectsConfigKey)
+func CleanProjectMapping() {
+	projects := config.Get().GetStringMapStringSlice(LocalProjectsConfigKey)
 	seen := map[string]bool{}
 
 	for namespace, paths := range projects {
@@ -1319,5 +1305,5 @@ func CleanProjectMapping(cfg ConfigGetter) {
 		seen[strings.ToLower(namespace)] = true
 	}
 
-	cfg.Set("projects", projects)
+	config.Get().Set("projects", projects)
 }

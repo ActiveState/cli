@@ -16,7 +16,7 @@ import (
 
 // RunRemote runs the remote projects logic.
 func (r *Projects) RunRemote(params *Params) error {
-	projectfile.CleanProjectMapping(r.config)
+	projectfile.CleanProjectMapping()
 
 	projectsList, err := r.fetchProjects(params.Local)
 	if err != nil {

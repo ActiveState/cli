@@ -25,7 +25,7 @@ import (
 // under the same directory as this file
 type SubShell interface {
 	// Activate the given subshell
-	Activate(cfg sscommon.Configurable, out output.Outputer) error
+	Activate(out output.Outputer) error
 
 	// Errors returns a channel to receive errors
 	Errors() <-chan error
@@ -46,7 +46,7 @@ type SubShell interface {
 	SetBinary(string)
 
 	// WriteUserEnv writes the given env map to the users environment
-	WriteUserEnv(sscommon.Configurable, map[string]string, sscommon.EnvData, bool) error
+	WriteUserEnv(map[string]string, sscommon.EnvData, bool) error
 
 	// SetupShellRcFile writes a script or source-able file that updates the environment variables and sets the prompt
 	SetupShellRcFile(string, map[string]string, project.Namespaced) error
@@ -64,7 +64,7 @@ type SubShell interface {
 	Quote(value string) string
 }
 
-// New returns the subshell relevant to the current process, but does not activate it
+// Get returns the subshell relevant to the current process, but does not activate it
 func New() SubShell {
 	binary := os.Getenv("SHELL")
 	if binary == "" {

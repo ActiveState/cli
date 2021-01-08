@@ -9,7 +9,6 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/output/txtstyle"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/process"
 	"github.com/ActiveState/cli/internal/scriptrun"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
@@ -22,14 +21,12 @@ type Run struct {
 	out      output.Outputer
 	proj     *project.Project
 	subshell subshell.SubShell
-	cfg      process.Configurable
 }
 
 type primeable interface {
 	primer.Outputer
 	primer.Projecter
 	primer.Subsheller
-	primer.Configurer
 }
 
 // New constructs a new instance of Run.
@@ -38,16 +35,15 @@ func New(prime primeable) *Run {
 		prime.Output(),
 		prime.Project(),
 		prime.Subshell(),
-		prime.Config(),
 	}
 }
 
 // Run runs the Run run runner.
 func (r *Run) Run(name string, args []string) error {
-	return run(r.out, r.subshell, r.proj, r.cfg, name, args)
+	return run(r.out, r.subshell, r.proj, name, args)
 }
 
-func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, cfg process.Configurable, name string, args []string) error {
+func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, name string, args []string) error {
 	logging.Debug("Execute")
 
 	if proj == nil {
@@ -69,7 +65,7 @@ func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, cfg
 		return locale.NewInputError("error_state_run_unknown_name", "Script does not exist: {{.V0}}", name)
 	}
 
-	scriptrunner := scriptrun.New(out, subs, proj, cfg)
+	scriptrunner := scriptrun.New(out, subs, proj)
 	if !script.Standalone() && scriptrunner.NeedsActivation() {
 		out.Notice(output.Heading(locale.Tl("notice", "Notice")))
 		out.Notice(locale.T("info_state_run_activating_state"))

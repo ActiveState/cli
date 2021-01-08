@@ -2,6 +2,7 @@ package cmdtree
 
 import (
 	"github.com/ActiveState/cli/internal/captain"
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/push"
@@ -9,7 +10,7 @@ import (
 )
 
 func newPushCommand(prime *primer.Values) *captain.Command {
-	pushRunner := push.NewPush(prime)
+	pushRunner := push.NewPush(config.Get(), prime)
 
 	params := push.PushParams{
 		Namespace: &project.Namespaced{},
@@ -20,7 +21,6 @@ func newPushCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("push_title", "Pushing Local Project"),
 		locale.T("push_description"),
 		prime.Output(),
-		prime.Config(),
 		[]*captain.Flag{},
 		[]*captain.Argument{
 			{

@@ -13,10 +13,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/shibukawa/configdir"
 	"github.com/spf13/viper"
+	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/condition"
 	C "github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 )
 
 var defaultConfig *Instance
@@ -29,39 +30,27 @@ type Instance struct {
 	localPath     string
 	installSource string
 	noSave        bool
+	Exit          func(code int)
 }
 
-func new(localPath string) (*Instance, error) {
+func new(localPath string) *Instance {
 	instance := &Instance{
 		viper:     viper.New(),
 		localPath: localPath,
+		Exit:      os.Exit,
 	}
 
-	err := instance.Reload()
-	if err != nil {
-		return instance, errs.Wrap(err, "Failed to load configuration.")
-	}
+	instance.Reload()
 
-	return instance, nil
+	return instance
 }
 
 // Reload reloads the configuration data from the config file
-func (i *Instance) Reload() error {
-	err := i.ensureConfigExists()
-	if err != nil {
-		return err
-	}
-	err = i.ensureCacheExists()
-	if err != nil {
-		return err
-	}
-	err = i.ReadInConfig()
-	if err != nil {
-		return err
-	}
+func (i *Instance) Reload() {
+	i.ensureConfigExists()
+	i.ensureCacheExists()
+	i.ReadInConfig()
 	i.readInstallSource()
-
-	return nil
 }
 
 func configPathInTest() (string, error) {
@@ -77,7 +66,7 @@ func configPathInTest() (string, error) {
 }
 
 // New creates a new config instance
-func New() (*Instance, error) {
+func New() *Instance {
 	localPath := os.Getenv(C.ConfigEnvVarName)
 
 	if condition.InTest() {
@@ -93,20 +82,16 @@ func New() (*Instance, error) {
 }
 
 // NewWithDir creates a new instance at the given directory
-func NewWithDir(dir string) (*Instance, error) {
+func NewWithDir(dir string) *Instance {
 	return new(dir)
 }
 
 // Get returns the default configuration instance
-func Get() (*Instance, error) {
+func Get() *Instance {
 	if defaultConfig == nil {
-		var err error
-		defaultConfig, err = New()
-		if err != nil {
-			return defaultConfig, err
-		}
+		defaultConfig = New()
 	}
-	return defaultConfig, nil
+	return defaultConfig
 }
 
 // Set sets a value at the given key
@@ -194,7 +179,7 @@ func (i *Instance) InstallSource() string {
 }
 
 // ReadInConfig reads in config from the config file
-func (i *Instance) ReadInConfig() error {
+func (i *Instance) ReadInConfig() {
 	// Prepare viper, which is a library that automates configuration
 	// management between files, env vars and the CLI
 	i.viper.SetConfigName(i.Name())
@@ -203,9 +188,8 @@ func (i *Instance) ReadInConfig() error {
 	i.viper.AddConfigPath(".")
 
 	if err := i.viper.ReadInConfig(); err != nil {
-		return errs.Wrap(err, "Cannot read config.")
+		i.exit("Can't read config: %s", err)
 	}
-	return nil
 }
 
 // Save saves the config file
@@ -226,7 +210,7 @@ func (i *Instance) SkipSave(b bool) {
 	i.noSave = b
 }
 
-func (i *Instance) ensureConfigExists() error {
+func (i *Instance) ensureConfigExists() {
 	// Prepare our config dir, eg. ~/.config/activestate/cli
 	configDirs := configdir.New(i.Namespace(), i.AppName())
 
@@ -241,7 +225,7 @@ func (i *Instance) ensureConfigExists() error {
 			i.localPath, err = ioutil.TempDir("", "cli-config-test")
 		}
 		if err != nil {
-			return errs.Wrap(err, "Cannot establish a config directory, HOME environment variable is not set and fallbacks have failed")
+			i.exit("Cannot establish a config directory, HOME environment variable is not set and fallbacks have failed")
 		}
 	}
 
@@ -255,18 +239,17 @@ func (i *Instance) ensureConfigExists() error {
 	if !i.configDir.Exists(i.Filename()) {
 		configFile, err := i.configDir.Create(i.Filename())
 		if err != nil {
-			return errs.Wrap(err, "Cannot create config")
+			i.exit("Can't create config: %s", err)
 		}
 
 		err = configFile.Close()
 		if err != nil {
-			return errs.Wrap(err, "Cannot close config file")
+			i.exit("Can't close config file: %s", err)
 		}
 	}
-	return nil
 }
 
-func (i *Instance) ensureCacheExists() error {
+func (i *Instance) ensureCacheExists() {
 	// When running tests we use a unique cache dir that's located in a temp folder, to avoid collisions
 	if condition.InTest() {
 		path, err := tempDir("state-cache-tests")
@@ -286,9 +269,16 @@ func (i *Instance) ensureCacheExists() error {
 		i.cacheDir = configdir.New(i.Namespace(), "").QueryCacheFolder()
 	}
 	if err := i.cacheDir.MkdirAll(); err != nil {
-		return errs.Wrap(err, "Cannot create cache directory")
+		i.exit("Can't create cache directory: %s", err)
 	}
-	return nil
+}
+
+func (i *Instance) exit(message string, a ...interface{}) {
+	fmt.Fprintf(os.Stderr, message, a...)
+	if funk.Contains(os.Args, "-v") || condition.InTest() {
+		fmt.Fprint(os.Stderr, stacktrace.Get().String())
+	}
+	i.Exit(1)
 }
 
 // tempDir returns a temp directory path at the topmost directory possible

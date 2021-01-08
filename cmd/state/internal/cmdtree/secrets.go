@@ -20,7 +20,6 @@ func newSecretsCommand(secretsClient *secretsapi.Client, prime *primer.Values) *
 		locale.Tl("secrets_title", "Secrets"),
 		locale.T("secrets_cmd_description"),
 		prime.Output(),
-		prime.Config(),
 		[]*captain.Flag{
 			{
 				Name:        "filter-usedby",
@@ -55,7 +54,6 @@ func newSecretsGetCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("secrets_get_title", "Getting Secret"),
 		locale.T("secrets_get_cmd_description"),
 		prime.Output(),
-		prime.Config(),
 		nil,
 		[]*captain.Argument{
 			{
@@ -81,7 +79,6 @@ func newSecretsSetCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("secrets_set_title", "Setting Secret"),
 		locale.T("secrets_set_cmd_description"),
 		prime.Output(),
-		prime.Config(),
 		nil,
 		[]*captain.Argument{
 			{
@@ -111,7 +108,6 @@ func newSecretsSyncCommand(secretsClient *secretsapi.Client, prime *primer.Value
 		locale.Tl("secrets_sync_title", "Synchronizing Secrets"),
 		locale.T("secrets_sync_cmd_description"),
 		prime.Output(),
-		prime.Config(),
 		nil,
 		nil,
 		func(_ *captain.Command, _ []string) error {

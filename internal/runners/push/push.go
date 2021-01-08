@@ -32,11 +32,10 @@ type PushParams struct {
 type primeable interface {
 	primer.Outputer
 	primer.Projecter
-	primer.Configurer
 }
 
-func NewPush(prime primeable) *Push {
-	return &Push{prime.Config(), prime.Output(), prime.Project()}
+func NewPush(config configGetter, prime primeable) *Push {
+	return &Push{config, prime.Output(), prime.Project()}
 }
 
 func (r *Push) Run(params PushParams) error {

@@ -2,17 +2,13 @@ package config
 
 import (
 	"github.com/ActiveState/cli/internal/captain"
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 )
 
-type configurable interface {
-	ConfigPath() string
-}
-
 type Config struct {
 	out output.Outputer
-	cfg configurable
 }
 
 type ConfigParams struct {
@@ -21,16 +17,15 @@ type ConfigParams struct {
 
 type primeable interface {
 	primer.Outputer
-	primer.Configurer
 }
 
 func New(prime primeable) *Config {
-	return &Config{prime.Output(), prime.Config()}
+	return &Config{prime.Output()}
 }
 
 func (c *Config) Run(cmd *captain.Command, params *ConfigParams) error {
 	output := map[string]string{
-		Dir.String(): c.cfg.ConfigPath(),
+		Dir.String(): config.Get().ConfigPath(),
 	}
 
 	filteredOutput := output

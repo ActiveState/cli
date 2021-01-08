@@ -8,6 +8,7 @@ import (
 	"github.com/phayes/permbits"
 	"github.com/thoas/go-funk"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -27,7 +28,7 @@ const LatestVersion = "latest"
 
 type forwardFunc func() (int, error)
 
-func forwardFn(bindir string, args []string, out output.Outputer, pj *project.Project) (forwardFunc, error) {
+func forwardFn(args []string, out output.Outputer, pj *project.Project) (forwardFunc, error) {
 	if pj == nil {
 		return nil, nil
 	}
@@ -57,7 +58,7 @@ func forwardFn(bindir string, args []string, out output.Outputer, pj *project.Pr
 		// Perform the forward
 		out.Notice(output.Heading(locale.Tl("forward_title", "Version Locked")))
 		out.Notice(locale.Tr("forward_version", versionInfo.Version))
-		code, err := forward(bindir, args, versionInfo, out)
+		code, err := forward(args, versionInfo, out)
 		if err != nil {
 			if code == 0 {
 				code = 1
@@ -76,9 +77,9 @@ func forwardFn(bindir string, args []string, out output.Outputer, pj *project.Pr
 }
 
 // forward will forward the call to the appropriate State Tool version if necessary
-func forward(bindir string, args []string, versionInfo *projectfile.VersionInfo, out output.Outputer) (int, error) {
+func forward(args []string, versionInfo *projectfile.VersionInfo, out output.Outputer) (int, error) {
 	logging.Debug("Forwarding to version %s/%s, arguments: %v", versionInfo.Branch, versionInfo.Version, args[1:])
-	binary := forwardBin(bindir, versionInfo)
+	binary := forwardBin(versionInfo)
 	err := ensureForwardExists(binary, versionInfo, out)
 	if err != nil {
 		return 1, err
@@ -97,14 +98,15 @@ func execForward(binary string, args []string) (int, error) {
 	return code, nil
 }
 
-func forwardBin(bindir string, versionInfo *projectfile.VersionInfo) string {
+func forwardBin(versionInfo *projectfile.VersionInfo) string {
 	filename := fmt.Sprintf("%s-%s-%s", constants.CommandName, versionInfo.Branch, versionInfo.Version)
 	if forceFileExt != "" {
 		filename += forceFileExt
 	} else if runtime.GOOS == "windows" {
 		filename += ".exe"
 	}
-	return filepath.Join(bindir, "version-cache", filename)
+	datadir := config.Get().ConfigPath()
+	return filepath.Join(datadir, "version-cache", filename)
 }
 
 func ensureForwardExists(binary string, versionInfo *projectfile.VersionInfo, out output.Outputer) error {
@@ -149,3 +151,4 @@ func ensureForwardExists(binary string, versionInfo *projectfile.VersionInfo, ou
 
 	return nil
 }
+

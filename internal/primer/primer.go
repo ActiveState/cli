@@ -1,7 +1,6 @@
 package primer
 
 import (
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
@@ -19,17 +18,15 @@ type Values struct {
 	prompt      prompt.Prompter
 	subshell    subshell.SubShell
 	conditional *constraints.Conditional
-	config      *config.Instance
 }
 
-func New(project *project.Project, output output.Outputer, auth *authentication.Auth, prompt prompt.Prompter, subshell subshell.SubShell, conditional *constraints.Conditional, config *config.Instance) *Values {
+func New(project *project.Project, output output.Outputer, auth *authentication.Auth, prompt prompt.Prompter, subshell subshell.SubShell, conditional *constraints.Conditional) *Values {
 	v := &Values{
 		output:      output,
 		auth:        auth,
 		prompt:      prompt,
 		subshell:    subshell,
 		conditional: conditional,
-		config:      config,
 	}
 	if project != nil {
 		v.project = project
@@ -56,10 +53,6 @@ type Auther interface {
 
 type Prompter interface {
 	Prompt() prompt.Prompter
-}
-
-type Configurer interface {
-	Config() *config.Instance
 }
 
 type Subsheller interface {
@@ -96,8 +89,4 @@ func (v *Values) Subshell() subshell.SubShell {
 
 func (v *Values) Conditional() *constraints.Conditional {
 	return v.conditional
-}
-
-func (v *Values) Config() *config.Instance {
-	return v.config
 }

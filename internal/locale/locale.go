@@ -18,7 +18,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/environment"
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 )
 
@@ -33,14 +32,7 @@ var exit = os.Exit
 func init() {
 	logging.Debug("Init")
 
-	locale := getLocaleFlag()
-	cfg, err := config.Get()
-	if err == nil {
-		cfg.SetDefault("Locale", "en-US")
-		if locale == "" {
-			locale = cfg.GetString("Locale")
-		}
-	}
+	config.Get().SetDefault("Locale", "en-US")
 
 	path := getLocalePath()
 	box := packr.NewBox("../../locale")
@@ -53,6 +45,11 @@ func init() {
 			panic(fmt.Sprintf("Could not load %s: %v", filepath, err))
 		}
 	})
+
+	locale := getLocaleFlag()
+	if locale == "" {
+		locale = config.Get().GetString("Locale")
+	}
 
 	Set(locale)
 }
@@ -91,21 +88,17 @@ func getLocaleFlag() string {
 }
 
 // Set the active language to the given locale
-func Set(localeName string) error {
+func Set(localeName string) {
 	if !funk.Contains(Supported, localeName) {
-		return errs.New("Locale does not exist: %s", localeName)
+		fmt.Printf("Locale does not exist: %s\n", localeName)
+		exit(1)
+		return
 	}
 
 	translateFunction, _ = i18n.Tfunc(localeName)
 	_ = translateFunction
 
-	cfg, err := config.Get()
-	if err != nil {
-		return errs.Wrap(err, "Could not get configuration to store updated locale")
-	}
-	cfg.Set("Locale", localeName)
-
-	return nil
+	config.Get().Set("Locale", localeName)
 }
 
 // T aliases to i18n.Tfunc()

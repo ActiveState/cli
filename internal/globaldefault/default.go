@@ -11,6 +11,7 @@ import (
 	"github.com/gobuffalo/packr"
 	"github.com/thoas/go-funk"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
@@ -29,14 +30,13 @@ import (
 const shimDenoter = "!DO NOT EDIT! State Tool Shim !DO NOT EDIT!"
 
 type DefaultConfigurer interface {
-	sscommon.Configurable
+	Set(key string, value interface{})
 	Save() error
-	CachePath() string
 }
 
 // BinDir returns the global binary directory
-func BinDir(cfg DefaultConfigurer) string {
-	return filepath.Join(cfg.CachePath(), "bin")
+func BinDir() string {
+	return filepath.Join(config.Get().CachePath(), "bin")
 }
 
 func isBinDirOnWindowsUserPath(binDir string) bool {
@@ -57,9 +57,9 @@ func isBinDirOnWindowsUserPath(binDir string) bool {
 	)
 }
 
-func Prepare(cfg DefaultConfigurer, subshell subshell.SubShell) error {
+func Prepare(subshell subshell.SubShell) error {
 	logging.Debug("Preparing globaldefault")
-	binDir := BinDir(cfg)
+	binDir := BinDir()
 
 	// Don't run prepare if we're already on PATH
 	path := strings.Split(os.Getenv("PATH"), string(os.PathListSeparator))
@@ -90,7 +90,7 @@ func Prepare(cfg DefaultConfigurer, subshell subshell.SubShell) error {
 		"PATH": binDir,
 	}
 
-	if err := subshell.WriteUserEnv(cfg, envUpdates, sscommon.Default, true); err != nil {
+	if err := subshell.WriteUserEnv(envUpdates, sscommon.Default, true); err != nil {
 		return locale.WrapError(err, "err_globaldefault_update_env", "Could not write to user environment.")
 	}
 
@@ -125,7 +125,7 @@ func WarningForAdministrator(out output.Outputer) {
 // SetupDefaultActivation sets symlinks in the global bin directory to the currently activated runtime
 func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, runtime *runtime.Runtime, projectPath string) error {
 	logging.Debug("Setting up globaldefault")
-	if err := Prepare(cfg, subshell); err != nil {
+	if err := Prepare(subshell); err != nil {
 		return locale.WrapError(err, "err_globaldefault_prepare", "Could not prepare environment.")
 	}
 
@@ -140,7 +140,7 @@ func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, r
 	}
 
 	// roll back old symlinks
-	if err := cleanup(cfg); err != nil {
+	if err := cleanup(); err != nil {
 		return locale.WrapError(err, "err_rollback_shim", "Could not clean up previous default installation.")
 	}
 
@@ -161,7 +161,7 @@ func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, r
 		return locale.WrapError(err, "err_unique_exes", "Could not detect unique executables, make sure your PATH and PATHEXT environment variables are properly configured.")
 	}
 
-	if err := createShims(exes, projectPath, cfg); err != nil {
+	if err := createShims(exes, projectPath); err != nil {
 		return locale.WrapError(err, "err_createshims", "Could not create shim files to set up the default runtime environment.")
 	}
 
@@ -170,8 +170,8 @@ func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, r
 	return nil
 }
 
-func cleanup(cfg DefaultConfigurer) error {
-	binDir := BinDir(cfg)
+func cleanup() error {
+	binDir := BinDir()
 	if err := fileutils.MkdirUnlessExists(binDir); err != nil {
 		return locale.WrapError(err, "err_globaldefault_mkdir", "Could not create bin directory: {{.V0}}.", binDir)
 	}
@@ -197,9 +197,9 @@ func cleanup(cfg DefaultConfigurer) error {
 	return nil
 }
 
-func createShims(exePaths []string, projectPath string, cfg DefaultConfigurer) error {
+func createShims(exePaths []string, projectPath string) error {
 	for _, exePath := range exePaths {
-		if err := createShim(exePath, projectPath, cfg); err != nil {
+		if err := createShim(exePath, projectPath); err != nil {
 			return locale.WrapError(err, "err_createshim", "Could not create shim for {{.V0}}.", exePath)
 		}
 	}
@@ -207,8 +207,8 @@ func createShims(exePaths []string, projectPath string, cfg DefaultConfigurer) e
 	return nil
 }
 
-func createShim(exePath, projectPath string, cfg DefaultConfigurer) error {
-	target := filepath.Clean(filepath.Join(BinDir(cfg), filepath.Base(exePath)))
+func createShim(exePath, projectPath string) error {
+	target := filepath.Clean(filepath.Join(BinDir(), filepath.Base(exePath)))
 	if rt.GOOS == "windows" {
 		oldExt := filepath.Ext(target)
 		target = target[0:len(target)-len(oldExt)] + ".bat"

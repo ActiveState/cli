@@ -13,7 +13,6 @@ import (
 
 type EventLog struct {
 	out output.Outputer
-	cfg process.Configurable
 }
 
 type EventLogParams struct {
@@ -23,12 +22,11 @@ type EventLogParams struct {
 func NewLog(prime primeable) *EventLog {
 	return &EventLog{
 		prime.Output(),
-		prime.Config(),
 	}
 }
 
 func (e *EventLog) Run(params *EventLogParams) error {
-	pid := process.ActivationPID(e.cfg)
+	pid := process.ActivationPID()
 	if pid == -1 {
 		return locale.NewInputError("err_eventlog_pid", "Could not find parent process ID, make sure you're running this command from inside an activated state (run `state activate` first).")
 	}

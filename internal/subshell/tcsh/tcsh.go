@@ -45,7 +45,7 @@ func (v *SubShell) SetBinary(binary string) {
 }
 
 // WriteUserEnv - see subshell.SubShell
-func (v *SubShell) WriteUserEnv(cfg sscommon.Configurable, env map[string]string, envType sscommon.EnvData, _ bool) error {
+func (v *SubShell) WriteUserEnv(env map[string]string, envType sscommon.EnvData, _ bool) error {
 	homeDir, err := fileutils.HomeDir()
 	if err != nil {
 		return errs.Wrap(err, "IO failure")
@@ -77,7 +77,7 @@ func (v *SubShell) Quote(value string) string {
 }
 
 // Activate - see subshell.SubShell
-func (v *SubShell) Activate(cfg sscommon.Configurable, out output.Outputer) error {
+func (v *SubShell) Activate(out output.Outputer) error {
 	// This is horrible but it works.  tcsh doesn't offer a way to override the rc file and
 	// doesn't let us run a script and then drop to interactive mode.  So we source the
 	// state rc file and then chain an exec which inherits the environment we just set up.
@@ -88,7 +88,7 @@ func (v *SubShell) Activate(cfg sscommon.Configurable, out output.Outputer) erro
 	// hack to make it work.
 	env := sscommon.EscapeEnv(v.env)
 	var err error
-	if v.rcFile, err = sscommon.SetupProjectRcFile("tcsh.sh", "", env, out, cfg); err != nil {
+	if v.rcFile, err = sscommon.SetupProjectRcFile("tcsh.sh", "", env, out); err != nil {
 		return err
 	}
 

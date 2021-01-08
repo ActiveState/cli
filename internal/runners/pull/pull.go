@@ -22,7 +22,6 @@ type Pull struct {
 	prompt  prompt.Prompter
 	project *project.Project
 	out     output.Outputer
-	cfg     *config.Instance
 }
 
 type PullParams struct {
@@ -34,7 +33,6 @@ type primeable interface {
 	primer.Prompter
 	primer.Projecter
 	primer.Outputer
-	primer.Configurer
 }
 
 func New(prime primeable) *Pull {
@@ -42,7 +40,6 @@ func New(prime primeable) *Pull {
 		prime.Prompt(),
 		prime.Project(),
 		prime.Output(),
-		prime.Config(),
 	}
 }
 
@@ -119,7 +116,7 @@ func (p *Pull) Run(params *PullParams) error {
 		return nil
 	}
 
-	fname := path.Join(p.cfg.ConfigPath(), constants.UpdateHailFileName)
+	fname := path.Join(config.Get().ConfigPath(), constants.UpdateHailFileName)
 	// must happen last in this function scope (defer if needed)
 	if err := hail.Send(fname, []byte(actID)); err != nil {
 		logging.Error("failed to send hail via %q: %s", fname, err)

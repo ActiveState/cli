@@ -16,7 +16,6 @@ func newRevertCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("revert_title", "Reverting Commit"),
 		locale.Tl("revert_description", "Revert a commit"),
 		prime.Output(),
-		prime.Config(),
 		[]*captain.Flag{},
 		[]*captain.Argument{
 			{

@@ -57,11 +57,11 @@ func (r *Activate) activateAndWait(proj *project.Project, venv *virtualenvironme
 	}
 
 	r.subshell.SetEnv(ve)
-	if err := r.subshell.Activate(r.config, r.out); err != nil {
+	if err := r.subshell.Activate(r.out); err != nil {
 		return locale.WrapError(err, "error_could_not_activate_subshell", "Could not activate a new subshell.")
 	}
 
-	a, err := process.NewActivation(r.config, os.Getpid())
+	a, err := process.NewActivation(os.Getpid())
 	if err != nil {
 		return locale.WrapError(err, "error_could_not_mark_process", "Could not mark process as activated.")
 	}

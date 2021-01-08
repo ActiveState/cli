@@ -18,7 +18,6 @@ func newPackagesCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("package_title", "Listing Packages"),
 		locale.T("package_cmd_description"),
 		prime.Output(),
-		prime.Config(),
 		[]*captain.Flag{
 			{
 				Name:        "commit",
@@ -58,7 +57,6 @@ func newInstallCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("package_install_title", "Installing Package"),
 		locale.T("package_install_cmd_description"),
 		prime.Output(),
-		prime.Config(),
 		[]*captain.Flag{},
 		[]*captain.Argument{
 			{
@@ -84,7 +82,6 @@ func newUninstallCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("package_uninstall_title", "Uninstalling Package"),
 		locale.T("package_uninstall_cmd_description"),
 		prime.Output(),
-		prime.Config(),
 		[]*captain.Flag{},
 		[]*captain.Argument{
 			{
@@ -110,7 +107,6 @@ func newImportCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("package_import_title", "Importing Packages"),
 		locale.T("package_import_cmd_description"),
 		prime.Output(),
-		prime.Config(),
 		[]*captain.Flag{
 			{
 				Name:        "force",
@@ -142,7 +138,6 @@ func newSearchCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("package_search_title", "Searching Packages"),
 		locale.T("package_search_cmd_description"),
 		prime.Output(),
-		prime.Config(),
 		[]*captain.Flag{
 			{
 				Name:        "language",
@@ -179,7 +174,6 @@ func newInfoCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("package_info_title", "Displaying Package Information"),
 		locale.T("package_info_cmd_description"),
 		prime.Output(),
-		prime.Config(),
 		[]*captain.Flag{
 			{
 				Name:        "language",

@@ -3,6 +3,7 @@ package analytics
 import (
 	"encoding/json"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -19,7 +20,7 @@ type deferredData struct {
 
 const deferredCfgKey = "deferrer_analytics"
 
-func SetDeferred(cfg Configurable, da bool) {
+func SetDeferred(da bool) {
 	deferAnalytics = da
 	if deferAnalytics {
 		return
@@ -27,34 +28,28 @@ func SetDeferred(cfg Configurable, da bool) {
 	eventWaitGroup.Add(1)
 	go func() {
 		defer eventWaitGroup.Done()
-		if err := sendDeferred(cfg, sendEvent); err != nil {
+		if err := sendDeferred(sendEvent); err != nil {
 			logging.Errorf("Could not send deferred events: %v", err)
 		}
 	}()
 }
 
-type Configurable interface {
-	Set(string, interface{})
-	Save() error
-	GetString(string) string
-}
-
-func deferEvent(cfg Configurable, category, action, label string, dimensions map[string]string) error {
+func deferEvent(category, action, label string, dimensions map[string]string) error {
 	logging.Debug("Deferring: %s, %s, %s", category, action, label)
-	deferred, err := loadDeferred(cfg)
+	deferred, err := loadDeferred()
 	if err != nil {
 		return errs.Wrap(err, "Could not load events on defer")
 	}
 
 	deferred = append(deferred, deferredData{category, action, label, dimensions})
-	if err := saveDeferred(cfg, deferred); err != nil {
+	if err := saveDeferred(deferred); err != nil {
 		return errs.Wrap(err, "Could not save event on defer")
 	}
 	return nil
 }
 
-func sendDeferred(cfg Configurable, sender func(string, string, string, map[string]string) error) error {
-	deferred, err := loadDeferred(cfg)
+func sendDeferred(sender func(string, string, string, map[string]string) error) error {
+	deferred, err := loadDeferred()
 	if err != nil {
 		return errs.Wrap(err, "Could not load events on send")
 	}
@@ -62,27 +57,27 @@ func sendDeferred(cfg Configurable, sender func(string, string, string, map[stri
 		if err := sender(event.Category, event.Action, event.Label, event.Dimensions); err != nil {
 			return errs.Wrap(err, "Could not send deferred event")
 		}
-		if err := saveDeferred(cfg, deferred[n+1:]); err != nil {
+		if err := saveDeferred(deferred[n+1:]); err != nil {
 			return errs.Wrap(err, "Could not save deferred event on send")
 		}
 	}
-	if err := cfg.Save(); err != nil { // the global viper instance is bugged, need to work around it for now -- https://www.pivotaltracker.com/story/show/175624789
+	if err := config.Get().Save(); err != nil { // the global viper instance is bugged, need to work around it for now -- https://www.pivotaltracker.com/story/show/175624789
 		return locale.WrapError(err, "err_viper_write_send_defer", "Could not save configuration on send deferred")
 	}
 	return nil
 }
 
-func saveDeferred(cfg Configurable, v []deferredData) error {
+func saveDeferred(v []deferredData) error {
 	s, err := json.Marshal(v)
 	if err != nil {
 		return errs.New("Could not serialize deferred analytics: %v, error: %v", v, err)
 	}
-	cfg.Set(deferredCfgKey, string(s))
+	config.Get().Set(deferredCfgKey, string(s))
 	return nil
 }
 
-func loadDeferred(cfg Configurable) ([]deferredData, error) {
-	v := cfg.GetString(deferredCfgKey)
+func loadDeferred() ([]deferredData, error) {
+	v := config.Get().GetString(deferredCfgKey)
 	d := []deferredData{}
 	if v != "" {
 		err := json.Unmarshal([]byte(v), &d)

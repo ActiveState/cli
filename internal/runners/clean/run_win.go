@@ -8,13 +8,14 @@ import (
 
 	"github.com/gobuffalo/packr"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/scriptfile"
 )
 
-func removeConfig(cfg configurable) error {
-	cfg.SkipSave(true)
-	return runScript("removeConfig", cfg.ConfigPath())
+func removeConfig(configPath string) error {
+	config.Get().SkipSave(true)
+	return runScript("removeConfig", configPath)
 }
 
 func removeInstall(installPath string) error {
