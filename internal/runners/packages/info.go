@@ -117,7 +117,7 @@ type infoResult struct {
 	Versions        []string `locale:"," json:"versions"`
 }
 
-func newInfoResult(ingredient *inventory_models.Ingredient, iv *inventory_models.IngredientVersion, authors model.Authors, versions []*inventory_models.SearchIngredientsResponseVersion) *infoResult {
+func newInfoResult(ingredient *inventory_models.Ingredient, ingredientVersion *inventory_models.IngredientVersion, authors model.Authors, versions []*inventory_models.SearchIngredientsResponseVersion) *infoResult {
 	res := infoResult{
 		name:    locale.T("unknown_value"),
 		version: locale.T("unknown_value"),
@@ -141,16 +141,16 @@ func newInfoResult(ingredient *inventory_models.Ingredient, iv *inventory_models
 		res.PkgDetailsTable.Website = website
 	}
 
-	if iv.Version != nil {
-		res.version = *iv.Version
+	if ingredientVersion.Version != nil {
+		res.version = *ingredientVersion.Version
 	}
 
-	if iv.CopyrightText != nil {
-		res.PkgDetailsTable.copyright = *iv.CopyrightText
+	if ingredientVersion.CopyrightText != nil {
+		res.PkgDetailsTable.copyright = *ingredientVersion.CopyrightText
 	}
 
-	if iv.LicenseExpression != nil {
-		res.PkgDetailsTable.license = *iv.LicenseExpression
+	if ingredientVersion.LicenseExpression != nil {
+		res.PkgDetailsTable.license = *ingredientVersion.LicenseExpression
 	}
 
 	for _, version := range versions {
