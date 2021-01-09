@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
@@ -22,7 +23,7 @@ import (
 
 const latestVersion = "latest"
 
-func executePackageOperation(pj *project.Project, out output.Outputer, authentication *authentication.Auth, prompt prompt.Prompter, name, version string, operation model.Operation, ns model.Namespace) error {
+func executePackageOperation(pj *project.Project, cfg keypairs.Configurable, out output.Outputer, authentication *authentication.Auth, prompt prompt.Prompter, name, version string, operation model.Operation, ns model.Namespace) error {
 	isHeadless := pj.IsHeadless()
 	if !isHeadless && !authentication.Authenticated() {
 		anonymousOk, err := prompt.Confirm(locale.Tl("continue_anon", "Continue Anonymously?"), locale.T("prompt_headless_anonymous"), true)
@@ -34,7 +35,7 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 
 	// Note: User also lands here if answering No to the question about anonymous commit.
 	if !isHeadless {
-		err := auth.RequireAuthentication(locale.T("auth_required_activate"), out, prompt)
+		err := auth.RequireAuthentication(locale.T("auth_required_activate"), cfg, out, prompt)
 		if err != nil {
 			return locale.WrapInputError(err, "err_auth_required")
 		}

@@ -1,6 +1,7 @@
 package secrets
 
 import (
+	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
@@ -10,6 +11,7 @@ import (
 type getPrimeable interface {
 	primer.Outputer
 	primer.Projecter
+	primer.Configurer
 }
 
 // GetRunParams tracks the info required for running Get.
@@ -21,6 +23,7 @@ type GetRunParams struct {
 type Get struct {
 	proj *project.Project
 	out  output.Outputer
+	cfg  keypairs.Configurable
 }
 
 // SecretExport defines important information about a secret that should be
@@ -38,6 +41,7 @@ func NewGet(p getPrimeable) *Get {
 	return &Get{
 		out:  p.Output(),
 		proj: p.Project(),
+		cfg:  p.Config(),
 	}
 }
 
@@ -47,7 +51,7 @@ func (g *Get) Run(params GetRunParams) error {
 		return locale.WrapError(err, "secrets_err_check_access")
 	}
 
-	secret, valuePtr, err := getSecretWithValue(g.proj, params.Name)
+	secret, valuePtr, err := getSecretWithValue(g.proj, params.Name, g.cfg)
 	if err != nil {
 		return locale.WrapError(err, "secrets_err_values")
 	}

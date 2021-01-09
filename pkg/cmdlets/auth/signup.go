@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/api"
 
@@ -32,7 +33,7 @@ type signupInput struct {
 }
 
 // Signup will prompt the user to create an account
-func Signup(out output.Outputer, prompt prompt.Prompter) error {
+func Signup(cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompter) error {
 	input := &signupInput{}
 
 	if authentication.Get().Authenticated() {
@@ -57,7 +58,7 @@ func Signup(out output.Outputer, prompt prompt.Prompter) error {
 	}
 
 	if authentication.Get().Authenticated() {
-		if err := generateKeypairForUser(input.Password); err != nil {
+		if err := generateKeypairForUser(cfg, input.Password); err != nil {
 			return locale.WrapError(err, "keypair_err_save")
 		}
 	}

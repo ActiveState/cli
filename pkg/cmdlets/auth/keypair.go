@@ -13,16 +13,16 @@ import (
 
 // ensureUserKeypair checks to see if the currently authenticated user has a Keypair. If not, one is generated
 // and saved.
-func ensureUserKeypair(passphrase string, out output.Outputer, prompt prompt.Prompter) error {
+func ensureUserKeypair(passphrase string, cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompter) error {
 	keypairRes, err := keypairs.FetchRaw(secretsapi.Get())
 	if err == nil {
-		err = processExistingKeypairForUser(keypairRes, passphrase, out, prompt)
+		err = processExistingKeypairForUser(keypairRes, passphrase, cfg, out, prompt)
 	} else if errs.Matches(err, &keypairs.ErrKeypairNotFound{}) {
-		err = generateKeypairForUser(passphrase)
+		err = generateKeypairForUser(cfg, passphrase)
 	}
 
 	if err != nil {
-		Logout()
+		Logout(cfg)
 		out.Error(locale.T("auth_unresolved_keypair_issue_message"))
 		return err
 	}
@@ -31,16 +31,16 @@ func ensureUserKeypair(passphrase string, out output.Outputer, prompt prompt.Pro
 }
 
 // generateKeypairForUser attempts to generate and save a Keypair for the currently authenticated user.
-func generateKeypairForUser(passphrase string) error {
-	_, err := keypairs.GenerateAndSaveEncodedKeypair(secretsapi.Get(), passphrase, constants.DefaultRSABitLength)
+func generateKeypairForUser(cfg keypairs.Configurable, passphrase string) error {
+	_, err := keypairs.GenerateAndSaveEncodedKeypair(cfg, secretsapi.Get(), passphrase, constants.DefaultRSABitLength)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func validateLocalPrivateKey(publicKey string) bool {
-	localKeypair, err := keypairs.LoadWithDefaults()
+func validateLocalPrivateKey(cfg keypairs.Configurable, publicKey string) bool {
+	localKeypair, err := keypairs.LoadWithDefaults(cfg)
 	return err == nil && localKeypair.MatchPublicKey(publicKey)
 }
 
@@ -56,11 +56,11 @@ func validateLocalPrivateKey(publicKey string) bool {
 //
 // If all paths err, user is prompted to regenerate their keypair which will be encrypted with the
 // provided passphrase and then uploaded; unless the user declines, which results in err.
-func processExistingKeypairForUser(keypairRes *secretsModels.Keypair, passphrase string, out output.Outputer, prompt prompt.Prompter) error {
+func processExistingKeypairForUser(keypairRes *secretsModels.Keypair, passphrase string, cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompter) error {
 	keypair, err := keypairs.ParseEncryptedRSA(*keypairRes.EncryptedPrivateKey, passphrase)
 	if err == nil {
 		// yay, store keypair locally just in case it isn't
-		return keypairs.SaveWithDefaults(keypair)
+		return keypairs.SaveWithDefaults(cfg, keypair)
 	} else if !errs.Matches(err, &keypairs.ErrKeypairPassphrase{}) {
 		// err did not involve an unmatched passphrase
 		return err
@@ -68,26 +68,26 @@ func processExistingKeypairForUser(keypairRes *secretsModels.Keypair, passphrase
 
 	// failed to decrypt stored private-key with provided passphrase, try using a local private-key
 	var localKeypair keypairs.Keypair
-	localKeypair, err = keypairs.LoadWithDefaults()
+	localKeypair, err = keypairs.LoadWithDefaults(cfg)
 	if err == nil && localKeypair.MatchPublicKey(*keypairRes.PublicKey) {
 		// locally stored private-key has a matching public-key, encrypt that with new passphrase and upload
 		var encodedKeypair *keypairs.EncodedKeypair
 		if encodedKeypair, err = keypairs.EncodeKeypair(localKeypair, passphrase); err != nil {
 			return err
 		}
-		return keypairs.SaveEncodedKeypair(secretsapi.Get(), encodedKeypair)
+		return keypairs.SaveEncodedKeypair(cfg, secretsapi.Get(), encodedKeypair)
 	}
 
 	// failed to validate with local private-key, try using previous passphrase
-	err = recoverKeypairFromPreviousPassphrase(keypairRes, passphrase, out, prompt)
+	err = recoverKeypairFromPreviousPassphrase(keypairRes, passphrase, cfg, out, prompt)
 	if err != nil && errs.Matches(err, &keypairs.ErrKeypairPassphrase{}) {
 		// that failed, see if they want to regenerate their passphrase
-		err = promptUserToRegenerateKeypair(passphrase, out, prompt)
+		err = promptUserToRegenerateKeypair(passphrase, cfg, out, prompt)
 	}
 	return err
 }
 
-func recoverKeypairFromPreviousPassphrase(keypairRes *secretsModels.Keypair, passphrase string, out output.Outputer, prompt prompt.Prompter) error {
+func recoverKeypairFromPreviousPassphrase(keypairRes *secretsModels.Keypair, passphrase string, cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompter) error {
 	out.Notice(locale.T("previous_password_message"))
 	prevPassphrase, err := promptForPreviousPassphrase(prompt)
 	if err == nil {
@@ -97,7 +97,7 @@ func recoverKeypairFromPreviousPassphrase(keypairRes *secretsModels.Keypair, pas
 			// previous passphrase is valid, encrypt private-key with new passphrase and upload
 			encodedKeypair, err := keypairs.EncodeKeypair(keypair, passphrase)
 			if err == nil {
-				err = keypairs.SaveEncodedKeypair(secretsapi.Get(), encodedKeypair)
+				err = keypairs.SaveEncodedKeypair(cfg, secretsapi.Get(), encodedKeypair)
 			}
 		}
 	}
@@ -112,7 +112,7 @@ func promptForPreviousPassphrase(prompt prompt.Prompter) (string, error) {
 	return passphrase, nil
 }
 
-func promptUserToRegenerateKeypair(passphrase string, out output.Outputer, prompt prompt.Prompter) error {
+func promptUserToRegenerateKeypair(passphrase string, cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompter) error {
 	var err error
 	// previous passphrase is invalid, inform user and ask if they want to generate a new keypair
 	out.Notice(locale.T("auth_generate_new_keypair_message"))
@@ -121,7 +121,7 @@ func promptUserToRegenerateKeypair(passphrase string, out output.Outputer, promp
 		return err
 	}
 	if yes {
-		_, err = keypairs.GenerateAndSaveEncodedKeypair(secretsapi.Get(), passphrase, constants.DefaultRSABitLength)
+		_, err = keypairs.GenerateAndSaveEncodedKeypair(cfg, secretsapi.Get(), passphrase, constants.DefaultRSABitLength)
 		// TODO delete user's secrets
 	} else {
 		err = locale.NewError("auth_err_unrecoverable_keypair")

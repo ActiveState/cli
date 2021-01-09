@@ -156,7 +156,7 @@ func run(args []string, isInteractive bool, out output.Outputer) (int, error) {
 	conditional := constraints.NewPrimeConditional(auth, pjOwner, pjName, pjNamespace, sshell.Shell())
 	project.RegisterConditional(conditional)
 	project.RegisterExpander("mixin", project.NewMixin(auth).Expander)
-	project.RegisterExpander("secrets", project.NewSecretPromptingExpander(secretsapi.Get(), prompter))
+	project.RegisterExpander("secrets", project.NewSecretPromptingExpander(secretsapi.Get(), prompter, cfg))
 
 	// Run the actual command
 	cmds := cmdtree.New(primer.New(pj, out, auth, prompter, sshell, conditional, cfg), args...)
