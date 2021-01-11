@@ -20,6 +20,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/profile"
@@ -106,6 +107,10 @@ func run(args []string, isInteractive bool, out output.Outputer) (int, error) {
 	}
 	logging.Debug("ConfigPath: %s", cfg.ConfigPath())
 	logging.Debug("CachePath: %s", cfg.CachePath())
+
+	// set global configuration instances
+	machineid.SetConfiguration(cfg)
+	logging.UpdateRollbarConfig(cfg)
 
 	// Ensure any config set is preserved
 	defer cfg.Save()

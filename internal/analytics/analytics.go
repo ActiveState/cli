@@ -114,8 +114,13 @@ func WaitForAllEvents(t time.Duration) {
 }
 
 func setup() {
+	installSource := "unknown-due-to-config-error"
+	cfg, err := config.Get()
+	if err != nil {
+		installSource = cfg.InstallSource()
+	}
+
 	id := machineid.UniqID()
-	var err error
 	var trackingID string
 	if !condition.InTest() {
 		trackingID = constants.AnalyticsTrackingID
@@ -148,12 +153,6 @@ func setup() {
 	}
 	if osVersion == "unknown" {
 		logging.SendToRollbarWhenReady("warning", fmt.Sprintf("Cannot detect the OS version: %v", err))
-	}
-
-	installSource := "unknown-due-to-config-error"
-	cfg, err := config.Get()
-	if err != nil {
-		installSource = cfg.InstallSource()
 	}
 
 	CustomDimensions = &customDimensions{
