@@ -44,18 +44,19 @@ type Info struct {
 // Checker is the struct that we use to do checks with
 type Checker struct {
 	timeout         time.Duration
-	config          configable
+	config          Configurable
 	deprecationFile string
 }
 
-type configable interface {
+// Configurable defines the configuration function used by the functions in this package
+type Configurable interface {
 	ConfigPath() string
 	GetTime(key string) time.Time
 	Set(key string, value interface{})
 }
 
 // NewChecker returns a new instance of the Checker struct
-func NewChecker(timeout time.Duration, configuration configable) *Checker {
+func NewChecker(timeout time.Duration, configuration Configurable) *Checker {
 	return &Checker{
 		timeout,
 		configuration,
@@ -64,12 +65,12 @@ func NewChecker(timeout time.Duration, configuration configable) *Checker {
 }
 
 // Check will run a Checker.Check with defaults
-func Check(cfg configable) (*Info, error) {
+func Check(cfg Configurable) (*Info, error) {
 	return CheckVersionNumber(cfg, constants.VersionNumber)
 }
 
 // CheckVersionNumber will run a Checker.Check with defaults
-func CheckVersionNumber(cfg configable, versionNumber string) (*Info, error) {
+func CheckVersionNumber(cfg Configurable, versionNumber string) (*Info, error) {
 	checker := NewChecker(DefaultTimeout, cfg)
 	return checker.check(versionNumber)
 }

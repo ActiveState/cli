@@ -17,6 +17,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -229,8 +230,11 @@ func (s *Session) PrepareActiveStateYAML(contents string) {
 	err := yaml.Unmarshal([]byte(contents), projectFile)
 	require.NoError(s.t, err, msg)
 
+	cfg, err := config.Get()
+	require.NoError(s.t, err)
+
 	projectFile.SetPath(filepath.Join(s.Dirs.Work, "activestate.yaml"))
-	err = projectFile.Save()
+	err = projectFile.Save(cfg)
 	require.NoError(s.t, err, msg)
 }
 

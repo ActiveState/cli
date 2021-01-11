@@ -25,7 +25,7 @@ import (
 
 type LoginWithKeypairTestSuite struct {
 	suite.Suite
-	configPath string
+	cfg keypairs.Configurable
 
 	promptMock     *promptMock.Mock
 	platformMock   *httpmock.HTTPMock
@@ -33,10 +33,10 @@ type LoginWithKeypairTestSuite struct {
 }
 
 func (suite *LoginWithKeypairTestSuite) BeforeTest(suiteName, testName string) {
-	cfg, err := config.Get()
+	var err error
+	suite.cfg, err = config.Get()
 	suite.Require().NoError(err)
-	suite.configPath = cfg.ConfigPath()
-	osutil.RemoveConfigFile(suite.configPath, constants.KeypairLocalFileName+".key")
+	osutil.RemoveConfigFile(suite.cfg.ConfigPath(), constants.KeypairLocalFileName+".key")
 
 	suite.platformMock = httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	suite.secretsapiMock = httpmock.Activate(secretsapi_test.NewDefaultTestClient("bearing123").BaseURI)
@@ -69,12 +69,12 @@ func (suite *LoginWithKeypairTestSuite) TestSuccessfulPassphraseMatch() {
 	suite.promptMock.OnMethod("Input").Once().Return("testuser", nil)
 	suite.promptMock.OnMethod("InputSecret").Once().Return("foo", nil)
 
-	err := runAuth(&AuthParams{}, suite.promptMock)
+	err := runAuth(&AuthParams{}, suite.promptMock, suite.cfg)
 	suite.Require().NoError(err, "Executed with error")
 	suite.NotNil(authentication.ClientAuth(), "Should have been authenticated")
 
 	// very local keypair is saved
-	localKeypair, err := keypairs.LoadWithDefaults()
+	localKeypair, err := keypairs.LoadWithDefaults(suite.cfg)
 	suite.Require().Nil(err)
 	suite.NotNil(localKeypair)
 }
@@ -83,7 +83,7 @@ func (suite *LoginWithKeypairTestSuite) TestPassphraseMismatch_HasLocalPrivateKe
 	suite.mockSuccessfulLogin()
 	suite.secretsapiMock.Register("GET", "/keypair")
 
-	osutil.CopyTestFileToConfigDir(suite.configPath, "self-private.key", constants.KeypairLocalFileName+".key", 0600)
+	osutil.CopyTestFileToConfigDir(suite.cfg.ConfigPath(), "self-private.key", constants.KeypairLocalFileName+".key", 0600)
 
 	var bodyKeypair *secretsModels.KeypairChange
 	var bodyErr error
@@ -96,7 +96,7 @@ func (suite *LoginWithKeypairTestSuite) TestPassphraseMismatch_HasLocalPrivateKe
 	suite.promptMock.OnMethod("Input").Once().Return("testuser", nil)
 	suite.promptMock.OnMethod("InputSecret").Once().Return("bar", nil)
 
-	err := runAuth(&AuthParams{}, suite.promptMock)
+	err := runAuth(&AuthParams{}, suite.promptMock, suite.cfg)
 	suite.Require().NoError(err, "Executed with error")
 	suite.NotNil(authentication.ClientAuth(), "Should have been authenticated")
 
@@ -127,7 +127,7 @@ func (suite *LoginWithKeypairTestSuite) TestPassphraseMismatch_NoLocalPrivateKey
 	// passphrase mismatch, prompt for old passphrase
 	suite.promptMock.OnMethod("InputSecret").Once().Return("foo", nil)
 
-	err := runAuth(&AuthParams{}, suite.promptMock)
+	err := runAuth(&AuthParams{}, suite.promptMock, suite.cfg)
 	suite.Require().NoError(err, "Executed with error")
 	suite.NotNil(authentication.ClientAuth(), "Should have been authenticated")
 
@@ -144,7 +144,7 @@ func (suite *LoginWithKeypairTestSuite) TestPassphraseMismatch_HasMismatchedLoca
 	suite.mockSuccessfulLogin()
 	suite.secretsapiMock.Register("GET", "/keypair")
 
-	osutil.CopyTestFileToConfigDir(suite.configPath, "mismatched-private.key", constants.KeypairLocalFileName+".key", 0600)
+	osutil.CopyTestFileToConfigDir(suite.cfg.ConfigPath(), "mismatched-private.key", constants.KeypairLocalFileName+".key", 0600)
 
 	var bodyKeypair *secretsModels.KeypairChange
 	var bodyErr error
@@ -160,7 +160,7 @@ func (suite *LoginWithKeypairTestSuite) TestPassphraseMismatch_HasMismatchedLoca
 	// passphrase mismatch, prompt for old passphrase
 	suite.promptMock.OnMethod("InputSecret").Once().Return("foo", nil)
 
-	err := runAuth(&AuthParams{}, suite.promptMock)
+	err := runAuth(&AuthParams{}, suite.promptMock, suite.cfg)
 	suite.Require().NoError(err, "Executed with error")
 	suite.NotNil(authentication.ClientAuth(), "Should have been authenticated")
 
@@ -173,7 +173,7 @@ func (suite *LoginWithKeypairTestSuite) TestPassphraseMismatch_HasMismatchedLoca
 	suite.Require().NotNil(validationKeypair)
 
 	// very local keypair is now the new keypair
-	localKeypair, err := keypairs.LoadWithDefaults()
+	localKeypair, err := keypairs.LoadWithDefaults(suite.cfg)
 	suite.Require().Nil(err)
 	suite.True(localKeypair.MatchPublicKey(*bodyKeypair.PublicKey))
 }
@@ -198,7 +198,7 @@ func (suite *LoginWithKeypairTestSuite) TestPassphraseMismatch_OldPasswordMismat
 	// user wants to generate a new keypair
 	suite.promptMock.OnMethod("Confirm").Once().Return(true, nil)
 
-	err := runAuth(&AuthParams{}, suite.promptMock)
+	err := runAuth(&AuthParams{}, suite.promptMock, suite.cfg)
 	suite.Require().NoError(err, "Executed with error")
 	suite.NotNil(authentication.ClientAuth(), "Should have been authenticated")
 
@@ -211,7 +211,7 @@ func (suite *LoginWithKeypairTestSuite) TestPassphraseMismatch_OldPasswordMismat
 	suite.Require().NotNil(validationKeypair)
 
 	// very local keypair is now the new keypair
-	localKeypair, err := keypairs.LoadWithDefaults()
+	localKeypair, err := keypairs.LoadWithDefaults(suite.cfg)
 	suite.Require().Nil(err)
 	suite.True(localKeypair.MatchPublicKey(*bodyKeypair.PublicKey))
 }
@@ -228,12 +228,12 @@ func (suite *LoginWithKeypairTestSuite) TestPassphraseMismatch_OldPasswordMismat
 	// user wants to generate a new keypair
 	suite.promptMock.OnMethod("Confirm").Once().Return(true, nil)
 
-	err := runAuth(&AuthParams{}, suite.promptMock)
+	err := runAuth(&AuthParams{}, suite.promptMock, suite.cfg)
 	suite.Require().Error(err)
 	suite.Nil(authentication.ClientAuth(), "Should not have been authenticated")
 
 	// very local keypair does not exist
-	localKeypair, err := keypairs.LoadWithDefaults()
+	localKeypair, err := keypairs.LoadWithDefaults(suite.cfg)
 	suite.Require().Error(err)
 	suite.Nil(localKeypair)
 }

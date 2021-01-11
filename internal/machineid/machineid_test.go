@@ -3,6 +3,9 @@ package machineid
 import (
 	"errors"
 	"testing"
+
+	"github.com/ActiveState/cli/internal/config"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_uniqID(t *testing.T) {
@@ -32,6 +35,9 @@ func Test_uniqID(t *testing.T) {
 			"bar",
 		},
 	}
+	cfg, err := config.Get()
+	require.NoError(t, err)
+	SetConfiguration(cfg)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := uniqID(tt.args.machineIDGetter, tt.args.uuidGetter); got != tt.want {

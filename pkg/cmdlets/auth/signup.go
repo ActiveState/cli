@@ -39,7 +39,7 @@ func Signup(cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompt
 		return locale.NewInputError("err_auth_authenticated", "You are already authenticated as: {{.V0}}. You can log out by running `state auth logout`.", authentication.Get().WhoAmI())
 	}
 
-	accepted, err := promptTOS(cfg, ConfigPath(), out, prompt)
+	accepted, err := promptTOS(cfg.ConfigPath(), out, prompt)
 	if err != nil {
 		return err
 	}

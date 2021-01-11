@@ -8,6 +8,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
@@ -19,6 +20,7 @@ type KeypairSaveTestSuite struct {
 	suite.Suite
 
 	secretsClient *secretsapi.Client
+	cfg           keypairs.Configurable
 }
 
 func (suite *KeypairSaveTestSuite) BeforeTest(suiteName, testName string) {
@@ -27,6 +29,10 @@ func (suite *KeypairSaveTestSuite) BeforeTest(suiteName, testName string) {
 	suite.secretsClient = secretsClient
 
 	httpmock.Activate(secretsClient.BaseURI)
+
+	var err error
+	suite.cfg, err = config.Get()
+	suite.Require().NoError(err)
 }
 
 func (suite *KeypairSaveTestSuite) AfterTest(suiteName, testName string) {
@@ -40,7 +46,7 @@ func (suite *KeypairSaveTestSuite) TestSave_Fails() {
 	suite.Require().NotNil(encKeypair)
 	suite.Require().Nil(err)
 
-	err = keypairs.SaveEncodedKeypair(suite.secretsClient, encKeypair)
+	err = keypairs.SaveEncodedKeypair(suite.cfg, suite.secretsClient, encKeypair)
 	suite.Error(err)
 }
 
@@ -57,7 +63,7 @@ func (suite *KeypairSaveTestSuite) TestSave_Succeeds() {
 	suite.Require().NotNil(encKeypair)
 	suite.Require().Nil(err)
 
-	err = keypairs.SaveEncodedKeypair(suite.secretsClient, encKeypair)
+	err = keypairs.SaveEncodedKeypair(suite.cfg, suite.secretsClient, encKeypair)
 	suite.Require().Nil(err)
 	suite.Require().NoError(bodyErr)
 

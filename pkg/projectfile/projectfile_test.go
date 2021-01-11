@@ -244,18 +244,23 @@ func TestSave(t *testing.T) {
 	tmpfile, err := ioutil.TempFile("", "test")
 	require.NoError(t, err, errs.Join(err, "\n").Error())
 
+	cfg, err := config.Get()
+	require.NoError(t, err)
 	project.path = tmpfile.Name()
-	project.Save()
+	project.Save(cfg)
 
 	stat, err := tmpfile.Stat()
 	assert.NoError(t, err, "Should be able to stat file")
 
+	cfg, err = config.Get()
+	require.NoError(t, err)
+
 	projectURL := project.Project
 	project.Project = "thisisnotatallaprojectURL"
-	err = project.Save()
+	err = project.Save(cfg)
 	assert.Error(t, err, "Saving project should fail due to bad projectURL format")
 	project.Project = projectURL
-	err = project.Save()
+	err = project.Save(cfg)
 	assert.NoError(t, err, "Saving project should now pass")
 
 	err = tmpfile.Close()

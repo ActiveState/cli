@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/locale"
@@ -76,10 +77,13 @@ func TestRequireAuthenticationLogin(t *testing.T) {
 	httpmock.Register("GET", "/renew")
 	secretsapiMock.Register("GET", "/keypair")
 
+	cfg, err := config.Get()
+	require.NoError(t, err)
+
 	pmock.OnMethod("Select").Once().Return(locale.T("prompt_login_action"), nil)
 	pmock.OnMethod("Input").Once().Return(user.Username, nil)
 	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
-	authlet.RequireAuthentication("", outputhelper.NewCatcher(), pmock)
+	authlet.RequireAuthentication("", cfg, outputhelper.NewCatcher(), pmock)
 
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
 }
@@ -96,10 +100,12 @@ func TestRequireAuthenticationLoginFail(t *testing.T) {
 	httpmock.RegisterWithCode("POST", "/login", 401)
 
 	var err error
+	cfg, err := config.Get()
+	require.NoError(t, err)
 	pmock.OnMethod("Select").Once().Return(locale.T("prompt_login_action"), nil)
 	pmock.OnMethod("Input").Once().Return("Iammeanttoerr", nil)
 	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
-	err = authlet.RequireAuthentication("", outputhelper.NewCatcher(), pmock)
+	err = authlet.RequireAuthentication("", cfg, outputhelper.NewCatcher(), pmock)
 
 	assert.Nil(t, authentication.ClientAuth(), "Not Authenticated")
 	require.Error(t, err, "Failure occurred")
@@ -133,7 +139,9 @@ func TestRequireAuthenticationSignup(t *testing.T) {
 	pmock.OnMethod("InputSecret").Twice().Return(user.Password, nil)
 	pmock.OnMethod("Input").Once().Return(user.Name, nil)
 	pmock.OnMethod("Input").Once().Return(user.Email, nil)
-	authlet.RequireAuthentication("", outputhelper.NewCatcher(), pmock)
+	cfg, err := config.Get()
+	require.NoError(t, err)
+	authlet.RequireAuthentication("", cfg, outputhelper.NewCatcher(), pmock)
 
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
 }
@@ -160,10 +168,12 @@ func TestRequireAuthenticationSignupBrowser(t *testing.T) {
 		return nil
 	}
 
+	cfg, err := config.Get()
+	require.NoError(t, err)
 	pmock.OnMethod("Select").Once().Return(locale.T("prompt_signup_browser_action"), nil)
 	pmock.OnMethod("Input").Once().Return("Iammeanttoerr", nil)
 	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
-	authlet.RequireAuthentication("", outputhelper.NewCatcher(), pmock)
+	authlet.RequireAuthentication("", cfg, outputhelper.NewCatcher(), pmock)
 
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
 	assert.True(t, openURICalled, "OpenURI was called")

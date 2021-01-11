@@ -8,6 +8,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
@@ -19,6 +20,7 @@ type KeypairGenerateTestSuite struct {
 	suite.Suite
 
 	secretsClient *secretsapi.Client
+	cfg           keypairs.Configurable
 }
 
 func (suite *KeypairGenerateTestSuite) BeforeTest(suiteName, testName string) {
@@ -27,6 +29,9 @@ func (suite *KeypairGenerateTestSuite) BeforeTest(suiteName, testName string) {
 	suite.secretsClient = secretsClient
 
 	httpmock.Activate(secretsClient.BaseURI)
+	var err error
+	suite.cfg, err = config.Get()
+	suite.Require().NoError(err)
 }
 
 func (suite *KeypairGenerateTestSuite) AfterTest(suiteName, testName string) {
@@ -82,7 +87,7 @@ func (suite *KeypairGenerateTestSuite) TestGenerate_WithPassphrase() {
 }
 
 func (suite *KeypairGenerateTestSuite) TestGenerateAndSave_Fails_NotEnoughBits() {
-	encKeypair, err := keypairs.GenerateAndSaveEncodedKeypair(suite.secretsClient, "", keypairs.MinimumRSABitLength-1)
+	encKeypair, err := keypairs.GenerateAndSaveEncodedKeypair(suite.cfg, suite.secretsClient, "", keypairs.MinimumRSABitLength-1)
 	suite.Require().Nil(encKeypair)
 	suite.Require().Error(err)
 }
@@ -90,7 +95,7 @@ func (suite *KeypairGenerateTestSuite) TestGenerateAndSave_Fails_NotEnoughBits()
 func (suite *KeypairGenerateTestSuite) TestGenerateAndSave_Fails_OnSave() {
 	httpmock.RegisterWithCode("PUT", "/keypair", 400)
 
-	encKeypair, err := keypairs.GenerateAndSaveEncodedKeypair(suite.secretsClient, "", keypairs.MinimumRSABitLength)
+	encKeypair, err := keypairs.GenerateAndSaveEncodedKeypair(suite.cfg, suite.secretsClient, "", keypairs.MinimumRSABitLength)
 	suite.Require().Nil(encKeypair)
 	suite.Require().Error(err)
 }
@@ -104,7 +109,7 @@ func (suite *KeypairGenerateTestSuite) TestGenerateAndSave_Success_NoPassphrase(
 		return 204, "empty"
 	})
 
-	encKeypair, err := keypairs.GenerateAndSaveEncodedKeypair(suite.secretsClient, "", keypairs.MinimumRSABitLength)
+	encKeypair, err := keypairs.GenerateAndSaveEncodedKeypair(suite.cfg, suite.secretsClient, "", keypairs.MinimumRSABitLength)
 	suite.Require().NotNil(encKeypair)
 	suite.Require().Nil(err)
 	suite.Require().NoError(bodyErr)
@@ -130,7 +135,7 @@ func (suite *KeypairGenerateTestSuite) TestGenerateAndSave_Success_WithPassphras
 		return 204, "empty"
 	})
 
-	encKeypair, err := keypairs.GenerateAndSaveEncodedKeypair(suite.secretsClient, "bauhaus", keypairs.MinimumRSABitLength)
+	encKeypair, err := keypairs.GenerateAndSaveEncodedKeypair(suite.cfg, suite.secretsClient, "bauhaus", keypairs.MinimumRSABitLength)
 	suite.Require().NotNil(encKeypair)
 	suite.Require().Nil(err)
 	suite.Require().NoError(bodyErr)
