@@ -13,6 +13,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -22,6 +23,7 @@ import (
 
 type UpdateIntegrationTestSuite struct {
 	tagsuite.Suite
+	cfg projectfile.ConfigGetter
 }
 
 type matcherFunc func(expected interface{}, actual interface{}, msgAndArgs ...interface{}) bool
@@ -32,6 +34,12 @@ func init() {
 	if constants.BranchName == targetBranch {
 		targetBranch = "master"
 	}
+}
+
+func (suite *UpdateIntegrationTestSuite) BeforeTest(suiteName, testName string) {
+	var err error
+	suite.cfg, err = config.Get()
+	suite.Require().NoError(err)
 }
 
 func (suite *UpdateIntegrationTestSuite) env(disableUpdates bool) []string {
@@ -160,7 +168,7 @@ func (suite *UpdateIntegrationTestSuite) TestLocked() {
 	ts.UseDistinctStateExe()
 
 	pjfile.SetPath(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))
-	pjfile.Save()
+	pjfile.Save(suite.cfg)
 
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("update", "lock"),
@@ -185,7 +193,7 @@ func (suite *UpdateIntegrationTestSuite) TestLockedChannel() {
 	ts.UseDistinctStateExe()
 
 	pjfile.SetPath(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))
-	pjfile.Save()
+	pjfile.Save(suite.cfg)
 
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("update", "lock", "--set-channel", targetBranch),
@@ -212,7 +220,7 @@ func (suite *UpdateIntegrationTestSuite) TestLockedChannelVersion() {
 
 	yamlPath := filepath.Join(ts.Dirs.Work, constants.ConfigFileName)
 	pjfile.SetPath(yamlPath)
-	pjfile.Save()
+	pjfile.Save(suite.cfg)
 
 	lock := targetBranch + "@latest"
 	cp := ts.SpawnWithOpts(
@@ -243,7 +251,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmationNegative() 
 	ts.UseDistinctStateExe()
 
 	pjfile.SetPath(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))
-	pjfile.Save()
+	pjfile.Save(suite.cfg)
 
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("update", "lock"),
@@ -271,7 +279,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmationPositive() 
 	ts.UseDistinctStateExe()
 
 	pjfile.SetPath(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))
-	pjfile.Save()
+	pjfile.Save(suite.cfg)
 
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("update", "lock"),
@@ -299,7 +307,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmationForce() {
 	ts.UseDistinctStateExe()
 
 	pjfile.SetPath(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))
-	pjfile.Save()
+	pjfile.Save(suite.cfg)
 
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("update", "lock", "--force"),
