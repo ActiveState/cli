@@ -90,7 +90,7 @@ func (c *Cache) removeProjectCache(projectDir, namespace string, force bool) err
 		return locale.WrapError(err, "err_clean_cache_invalid_namespace", "NamespacePrefix argument is not of the correct format")
 	}
 
-	runtime, err := runtime.NewRuntime(projectDir, "", parsed.Owner, parsed.Project, nil)
+	runtime, err := runtime.NewRuntime(projectDir, c.cfg.CachePath(), "", parsed.Owner, parsed.Project, nil)
 	if err != nil {
 		return locale.WrapError(err, "err_clean_cache_runtime_init", "Could not determine cache directory for project used in {{.V0}}", projectDir)
 	}

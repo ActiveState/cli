@@ -20,19 +20,24 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
+type Configurable interface {
+	process.Configurable
+	CachePath() string
+}
+
 // ScriptRun manages the context required to run a script.
 type ScriptRun struct {
 	out     output.Outputer
 	sub     subshell.SubShell
 	project *project.Project
-	cfg     process.Configurable
+	cfg     Configurable
 
 	venvPrepared bool
 	venvExePath  string
 }
 
 // New returns a pointer to a prepared instance of ScriptRun.
-func New(out output.Outputer, subs subshell.SubShell, proj *project.Project, cfg process.Configurable) *ScriptRun {
+func New(out output.Outputer, subs subshell.SubShell, proj *project.Project, cfg Configurable) *ScriptRun {
 	return &ScriptRun{
 		out,
 		subs,
@@ -55,7 +60,7 @@ func (s *ScriptRun) NeedsActivation() bool {
 
 // PrepareVirtualEnv sets up the relevant runtime and prepares the environment.
 func (s *ScriptRun) PrepareVirtualEnv() error {
-	runtime, err := runtime.NewRuntime(s.project.Source().Path(), s.project.CommitUUID(), s.project.Owner(), s.project.Name(), runbits.NewRuntimeMessageHandler(s.out))
+	runtime, err := runtime.NewRuntime(s.project.Source().Path(), s.cfg.CachePath(), s.project.CommitUUID(), s.project.Owner(), s.project.Name(), runbits.NewRuntimeMessageHandler(s.out))
 	if err != nil {
 		return locale.WrapError(err, "err_run_runtime_init", "Failed to initialize runtime.")
 	}

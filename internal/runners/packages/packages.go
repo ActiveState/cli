@@ -21,9 +21,14 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
+type configurable interface {
+	keypairs.Configurable
+	CachePath() string
+}
+
 const latestVersion = "latest"
 
-func executePackageOperation(pj *project.Project, cfg keypairs.Configurable, out output.Outputer, authentication *authentication.Auth, prompt prompt.Prompter, name, version string, operation model.Operation, ns model.Namespace) error {
+func executePackageOperation(pj *project.Project, cfg configurable, out output.Outputer, authentication *authentication.Auth, prompt prompt.Prompter, name, version string, operation model.Operation, ns model.Namespace) error {
 	isHeadless := pj.IsHeadless()
 	if !isHeadless && !authentication.Authenticated() {
 		anonConfirmDefault := true
@@ -104,7 +109,7 @@ func executePackageOperation(pj *project.Project, cfg keypairs.Configurable, out
 	// Create runtime
 	rtMessages := runbits.NewRuntimeMessageHandler(out)
 	rtMessages.SetRequirement(name, ns)
-	rt, err := runtime.NewRuntime(pj.Source().Path(), commitID, pj.Owner(), pj.Name(), rtMessages)
+	rt, err := runtime.NewRuntime(pj.Source().Path(), cfg.CachePath(), commitID, pj.Owner(), pj.Name(), rtMessages)
 	if err != nil {
 		return locale.WrapError(err, "err_packages_update_runtime_init", "Could not initialize runtime.")
 	}

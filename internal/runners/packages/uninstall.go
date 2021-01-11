@@ -1,7 +1,6 @@
 package packages
 
 import (
-	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -18,7 +17,7 @@ type UninstallRunParams struct {
 
 // Uninstall manages the uninstalling execution context.
 type Uninstall struct {
-	cfg  keypairs.Configurable
+	cfg  configurable
 	out  output.Outputer
 	proj *project.Project
 	prompt.Prompter
