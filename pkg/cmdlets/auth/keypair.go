@@ -116,7 +116,7 @@ func promptUserToRegenerateKeypair(passphrase string, cfg keypairs.Configurable,
 	var err error
 	// previous passphrase is invalid, inform user and ask if they want to generate a new keypair
 	out.Notice(locale.T("auth_generate_new_keypair_message"))
-	yes, err := prompt.Confirm("", locale.T("auth_confirm_generate_new_keypair_prompt"), false)
+	yes, err := prompt.Confirm("", locale.T("auth_confirm_generate_new_keypair_prompt"), new(bool))
 	if err != nil {
 		return err
 	}

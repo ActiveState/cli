@@ -26,7 +26,8 @@ const latestVersion = "latest"
 func executePackageOperation(pj *project.Project, cfg keypairs.Configurable, out output.Outputer, authentication *authentication.Auth, prompt prompt.Prompter, name, version string, operation model.Operation, ns model.Namespace) error {
 	isHeadless := pj.IsHeadless()
 	if !isHeadless && !authentication.Authenticated() {
-		anonymousOk, err := prompt.Confirm(locale.Tl("continue_anon", "Continue Anonymously?"), locale.T("prompt_headless_anonymous"), true)
+		anonConfirmDefault := true
+		anonymousOk, err := prompt.Confirm(locale.Tl("continue_anon", "Continue Anonymously?"), locale.T("prompt_headless_anonymous"), &anonConfirmDefault)
 		if err != nil {
 			return locale.WrapInputError(err, "Authentication cancelled.")
 		}

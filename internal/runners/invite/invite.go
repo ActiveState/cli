@@ -91,7 +91,7 @@ func (i *invite) Run(params *Params) error {
 
 func (i *invite) promptForRole() (Role, error) {
 	choices := roleNames()
-	selection, err := i.prompt.Select(locale.Tl("invite_role", "Role"), locale.Tl("invite_select_org_role", "What role should the user(s) be given?"), choices, "")
+	selection, err := i.prompt.Select(locale.Tl("invite_role", "Role"), locale.Tl("invite_select_org_role", "What role should the user(s) be given?"), choices, new(string))
 	if err != nil {
 		return -1, err
 	}

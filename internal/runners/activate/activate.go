@@ -138,11 +138,12 @@ func (r *Activate) run(params *ActivateParams) error {
 	firstActivate := r.config.GetString(constants.GlobalDefaultPrefname) == "" && !r.config.GetBool(activatedKey)
 	promptable := r.out.Type() == output.PlainFormatName
 	if !setDefault && firstActivate && promptable {
+		defaultConfirmDefault := true
 		var err error
 		setDefault, err = r.prompt.Confirm(
 			locale.Tl("activate_default_prompt_title", "Default Project"),
 			locale.Tr("activate_default_prompt", proj.Namespace().String()),
-			true,
+			&defaultConfirmDefault,
 		)
 		if err != nil {
 			return locale.WrapInputError(err, "err_activate_cancel", "Activation cancelled")

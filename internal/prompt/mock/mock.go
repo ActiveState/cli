@@ -25,25 +25,25 @@ func (m *Mock) Close() {
 }
 
 // Input prompts the user for input
-func (m *Mock) Input(title, message, defaultResponse string, flags ...prompt.ValidatorFlag) (string, error) {
+func (m *Mock) Input(title, message string, defaultResponse *string, flags ...prompt.ValidatorFlag) (string, error) {
 	args := m.Called(title, message, defaultResponse, flags)
 	return args.String(0), failure(args.Get(1))
 }
 
 // InputAndValidate prompts the user for input witha  customer validator and validation flags
-func (m *Mock) InputAndValidate(title, message, defaultResponse string, validator prompt.ValidatorFunc, flags ...prompt.ValidatorFlag) (response string, err error) {
+func (m *Mock) InputAndValidate(title, message string, defaultResponse *string, validator prompt.ValidatorFunc, flags ...prompt.ValidatorFlag) (response string, err error) {
 	args := m.Called(message, message, defaultResponse, validator)
 	return args.String(0), failure(args.Get(1))
 }
 
 // Select prompts the user to select one entry from multiple choices
-func (m *Mock) Select(title, message string, choices []string, defaultChoice string) (string, error) {
+func (m *Mock) Select(title, message string, choices []string, defaultChoice *string) (string, error) {
 	args := m.Called(title, message, choices, defaultChoice)
 	return args.String(0), failure(args.Get(1))
 }
 
 // Confirm prompts user for yes or no response.
-func (m *Mock) Confirm(title, message string, defaultChoice bool) (bool, error) {
+func (m *Mock) Confirm(title, message string, defaultChoice *bool) (bool, error) {
 	args := m.Called(title, message, defaultChoice)
 	return args.Bool(0), failure(args.Get(1))
 }

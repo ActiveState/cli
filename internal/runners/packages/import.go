@@ -24,7 +24,7 @@ const (
 
 // Confirmer describes the behavior required to prompt a user for confirmation.
 type Confirmer interface {
-	Confirm(title, msg string, defaultOpt bool) (bool, error)
+	Confirm(title, msg string, defaultOpt *bool) (bool, error)
 }
 
 // ChangesetProvider describes the behavior required to convert some file data
@@ -84,7 +84,8 @@ func (i *Import) Run(params ImportRunParams) error {
 
 	isHeadless := i.proj.IsHeadless()
 	if !isHeadless && !authentication.Get().Authenticated() {
-		anonymousOk, err := i.Confirm(locale.Tl("continue_anon", "Continue Anonymously?"), locale.T("prompt_headless_anonymous"), true)
+		anonConfirmDefault := true
+		anonymousOk, err := i.Confirm(locale.Tl("continue_anon", "Continue Anonymously?"), locale.T("prompt_headless_anonymous"), &anonConfirmDefault)
 		if err != nil {
 			return locale.WrapInputError(err, "Authentication cancelled.")
 		}
@@ -141,7 +142,7 @@ func removeRequirements(conf Confirmer, project *project.Project, force, isHeadl
 	if !force {
 		msg := locale.T("confirm_remove_existing_prompt")
 
-		confirmed, err := conf.Confirm(locale.T("confirm"), msg, false)
+		confirmed, err := conf.Confirm(locale.T("confirm"), msg, new(bool))
 		if err != nil {
 			return err
 		}
