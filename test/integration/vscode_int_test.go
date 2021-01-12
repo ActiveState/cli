@@ -69,7 +69,7 @@ func (suite *ShowIntegrationTestSuite) TestShow_VSCode() {
 
 	var out ShowOutput
 	err := json.Unmarshal([]byte(cp.TrimmedSnapshot()), &out)
-	suite.Require().NoError(err)
+	suite.Require().NoError(err, "Failed to parse JSON from: %s", cp.TrimmedSnapshot())
 	suite.Equal("Show", out.Name)
 	suite.Equal("cli-integration-tests", out.Organization)
 	suite.Equal("Public", out.Visibility)
@@ -152,7 +152,7 @@ func (suite *PackageIntegrationTestSuite) TestPackages_VSCode() {
 
 	var po []PackageOutput
 	err := json.Unmarshal([]byte(cp.TrimmedSnapshot()), &po)
-	suite.Require().NoError(err)
+	suite.Require().NoError(err, "Could not parse JSON from: %s", cp.TrimmedSnapshot())
 
 	suite.Len(po, 2)
 }
@@ -166,7 +166,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_VSCode() {
 	cp.ExpectNotExitCode(0)
 	var out map[string]string
 	err := json.Unmarshal([]byte(cp.TrimmedSnapshot()), &out)
-	suite.Require().NoError(err)
+	suite.Require().NoError(err, "Failed to parse JSON from: %s", cp.TrimmedSnapshot())
 	suite.Contains(out, "Error")
 
 	content := strings.TrimSpace(fmt.Sprintf(`
@@ -178,7 +178,7 @@ project: "https://platform.activestate.com/ActiveState-CLI/Python3"
 	cp = ts.Spawn("activate", "--output", "editor")
 	cp.ExpectExitCode(0)
 	err = json.Unmarshal([]byte(cp.TrimmedSnapshot()), &out)
-	suite.Require().NoError(err)
+	suite.Require().NoError(err, "Failed to parse JSON from: %s", cp.TrimmedSnapshot())
 	suite.Contains(out, "ACTIVESTATE_ACTIVATED")
 	suite.Contains(out, "ACTIVESTATE_ACTIVATED_ID")
 }
