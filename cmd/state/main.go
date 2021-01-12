@@ -110,7 +110,7 @@ func run(args []string, isInteractive bool, out output.Outputer) (int, error) {
 
 	// set global configuration instances
 	machineid.SetConfiguration(cfg)
-	logging.UpdateRollbarConfig(cfg)
+	logging.UpdateConfig(cfg)
 
 	// Ensure any config set is preserved
 	defer cfg.Save()

@@ -64,7 +64,7 @@ func SendToRollbarWhenReady(level string, msg interface{}) {
 	delayedLogs = append(delayedLogs, delayedLog{level, msg})
 }
 
-func UpdateRollbarConfig(c Configurable) {
+func UpdateConfig(c Configurable) {
 	cfg = c
 	// update machine-id if user is still unknown
 	if rollbar.Custom()["UserID"] == "unknown" {
