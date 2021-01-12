@@ -16,25 +16,8 @@ Aliases:
 Examples:
     {{.Cobra.Example}}
 {{- end}}
-{{- if gt (len .Cmd.AvailableChildren) 0}}
 
-Available Commands:
-
-    {{- $group := "" }}
-    {{- $table := newTable | hideHeaders }}
-    {{- $emptyRow := mkSlice " " }}
-    {{- range .Cmd.AvailableChildren }}
-        {{- if ne $group .Group.String }}
-            {{- $group = .Group.String }}
-            {{- $table = $table.AddRow $emptyRow }}
-            {{- $groupName := print .Group.String ":" }}
-            {{- with $groupRow := mkSlice $groupName }}{{- $table = $table.AddRow $groupRow }}{{ end }}
-        {{- end}}
-    {{- $paddedName := lpad .Name }}
-    {{- with $row := mkSlice $paddedName .ShortDescription}}{{- $table = $table.AddRow $row }}{{ end }}
-    {{- end}}
-{{ $table.Render }}
-{{- end}}
+{{childCommands .Cmd}}
 {{- if .Cobra.HasAvailableFlags}}
 
 Flags:

@@ -585,22 +585,10 @@ func (cmd *Command) Usage() error {
 			template := fmt.Sprintf("%%-%ds", padding)
 			return fmt.Sprintf(template, s)
 		},
-		"lpad": func(s string) string {
-			return fmt.Sprintf("  %s", s)
-		},
 		"trimTrailingWhitespaces": func(s string) string {
 			return strings.TrimRightFunc(s, unicode.IsSpace)
 		},
-		"mkSlice": func(args ...string) []string {
-			return args
-		},
-		"newTable": func() *table.Table {
-			return table.New([]string{"", ""})
-		},
-		"hideHeaders": func(table *table.Table) *table.Table {
-			table.HideHeaders = true
-			return table
-		},
+		"childCommands": childCommands,
 	})
 
 	box := packr.NewBox("../../assets")
@@ -621,4 +609,27 @@ func (cmd *Command) Usage() error {
 	cmd.out.Print(out.String())
 
 	return nil
+
+}
+
+func childCommands(cmd *Command) string {
+	if len(cmd.AvailableChildren()) == 0 {
+		return ""
+	}
+
+	var group string
+	table := table.New([]string{"", ""})
+	table.HideHeaders = true
+	for _, child := range cmd.Children() {
+		if group != child.Group().String() && child.Group().String() != "" {
+			group = child.Group().String()
+			table.AddRow([]string{""})
+			table.AddRow([]string{fmt.Sprintf("%s:", group)})
+		}
+		if !child.cobra.Hidden {
+			table.AddRow([]string{fmt.Sprintf("  %s", child.Name()), child.ShortDescription()})
+		}
+	}
+
+	return fmt.Sprintf("Available Commands:\n%s", table.Render())
 }
