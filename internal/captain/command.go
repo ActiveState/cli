@@ -23,6 +23,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/output/txtstyle"
 	"github.com/ActiveState/cli/internal/sighandler"
+	"github.com/ActiveState/cli/internal/table"
 )
 
 var cobraMapping map[*cobra.Command]*Command = make(map[*cobra.Command]*Command)
@@ -584,8 +585,21 @@ func (cmd *Command) Usage() error {
 			template := fmt.Sprintf("%%-%ds", padding)
 			return fmt.Sprintf(template, s)
 		},
+		"lpad": func(s string) string {
+			return fmt.Sprintf("  %s", s)
+		},
 		"trimTrailingWhitespaces": func(s string) string {
 			return strings.TrimRightFunc(s, unicode.IsSpace)
+		},
+		"mkSlice": func(args ...string) []string {
+			return args
+		},
+		"newTable": func() *table.Table {
+			return table.New([]string{"", ""})
+		},
+		"hideHeaders": func(table *table.Table) *table.Table {
+			table.HideHeaders = true
+			return table
 		},
 	})
 

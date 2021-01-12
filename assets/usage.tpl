@@ -19,15 +19,21 @@ Examples:
 {{- if gt (len .Cmd.AvailableChildren) 0}}
 
 Available Commands:
+
     {{- $group := "" }}
+    {{- $table := newTable | hideHeaders }}
+    {{- $emptyRow := mkSlice " " }}
     {{- range .Cmd.AvailableChildren }}
         {{- if ne $group .Group.String }}
             {{- $group = .Group.String }}
-
-  {{ .Group.String }}:
+            {{- $table = $table.AddRow $emptyRow }}
+            {{- $groupName := print .Group.String ":" }}
+            {{- with $groupRow := mkSlice $groupName }}{{- $table = $table.AddRow $groupRow }}{{ end }}
         {{- end}}
-    {{rpad .Name .NamePadding }} {{.ShortDescription}}
+    {{- $paddedName := lpad .Name }}
+    {{- with $row := mkSlice $paddedName .ShortDescription}}{{- $table = $table.AddRow $row }}{{ end }}
     {{- end}}
+{{ $table.Render }}
 {{- end}}
 {{- if .Cobra.HasAvailableFlags}}
 
