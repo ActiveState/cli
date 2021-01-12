@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -127,6 +128,10 @@ func (suite *AuthIntegrationTestSuite) TestAuth_VSCode() {
 	cp.Expect(`"privateProjects":false}`)
 	cp.ExpectExitCode(0)
 	suite.Equal(fmt.Sprintf("%s", string(expected)), cp.TrimmedSnapshot())
+
+	cp = ts.SpawnCmd("export", "jwt", "--output", "editor")
+	cp.ExpectExitCode(0)
+	suite.Assert().Greater(len(cp.TrimmedSnapshot()), 3, "expected jwt token to be non-empty")
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackages_VSCode() {
@@ -150,4 +155,30 @@ func (suite *PackageIntegrationTestSuite) TestPackages_VSCode() {
 	suite.Require().NoError(err)
 
 	suite.Len(po, 2)
+}
+
+func (suite *ActivateIntegrationTestSuite) TestActivate_VSCode() {
+	suite.OnlyRunForTags(tagsuite.Activate, tagsuite.VSCode)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("activate", "--output", "editor")
+	cp.ExpectNotExitCode(0)
+	var out map[string]string
+	err := json.Unmarshal([]byte(cp.TrimmedSnapshot()), &out)
+	suite.Require().NoError(err)
+	suite.Contains(out, "Error")
+
+	content := strings.TrimSpace(fmt.Sprintf(`
+project: "https://platform.activestate.com/ActiveState-CLI/Python3"
+`))
+	ts.PrepareActiveStateYAML(content)
+	cp = ts.Spawn("pull")
+	cp.ExpectExitCode(0)
+	cp = ts.Spawn("activate", "--output", "editor")
+	cp.ExpectExitCode(0)
+	err = json.Unmarshal([]byte(cp.TrimmedSnapshot()), &out)
+	suite.Require().NoError(err)
+	suite.Contains(out, "ACTIVESTATE_ACTIVATED")
+	suite.Contains(out, "ACTIVESTATE_ACTIVATED_ID")
 }
