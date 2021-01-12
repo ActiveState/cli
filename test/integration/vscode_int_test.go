@@ -129,7 +129,7 @@ func (suite *AuthIntegrationTestSuite) TestAuth_VSCode() {
 	cp.ExpectExitCode(0)
 	suite.Equal(fmt.Sprintf("%s", string(expected)), cp.TrimmedSnapshot())
 
-	cp = ts.SpawnCmd("export", "jwt", "--output", "editor")
+	cp = ts.Spawn("export", "jwt", "--output", "editor")
 	cp.ExpectExitCode(0)
 	suite.Assert().Greater(len(cp.TrimmedSnapshot()), 3, "expected jwt token to be non-empty")
 }
