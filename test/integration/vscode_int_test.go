@@ -52,7 +52,7 @@ func (suite *ShowIntegrationTestSuite) TestShow_VSCode() {
 		"--output", "editor",
 		"show",
 	)
-
+	cp.Expect("}")
 	cp.ExpectExitCode(0)
 
 	type ShowOutput struct {
@@ -142,7 +142,7 @@ func (suite *PackageIntegrationTestSuite) TestPackages_VSCode() {
 	suite.PrepareActiveStateYAML(ts)
 
 	cp := ts.Spawn("packages", "--output", "editor")
-
+	cp.Expect("]")
 	cp.ExpectExitCode(0)
 
 	type PackageOutput struct {
@@ -163,8 +163,12 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_VSCode() {
 	defer ts.Close()
 
 	cp := ts.Spawn("activate", "--output", "editor")
+	cp.Expect("}")
 	cp.ExpectNotExitCode(0)
-	suite.Contains(cp.TrimmedSnapshot(), `"Error":`)
+	var out map[string]string
+	err := json.Unmarshal([]byte(cp.TrimmedSnapshot()), &out)
+	suite.Require().NoError(err, "Failed to parse JSON from: %s", cp.TrimmedSnapshot())
+	suite.Contains(out, "Error")
 
 	content := strings.TrimSpace(fmt.Sprintf(`
 project: "https://platform.activestate.com/ActiveState-CLI/Python3"
@@ -173,9 +177,9 @@ project: "https://platform.activestate.com/ActiveState-CLI/Python3"
 	cp = ts.Spawn("pull")
 	cp.ExpectExitCode(0)
 	cp = ts.Spawn("activate", "--output", "editor")
+	cp.Expect("}")
 	cp.ExpectExitCode(0)
-	var out map[string]string
-	err := json.Unmarshal([]byte(cp.TrimmedSnapshot()), &out)
+	err = json.Unmarshal([]byte(cp.TrimmedSnapshot()), &out)
 	suite.Require().NoError(err, "Failed to parse JSON from: %s", cp.TrimmedSnapshot())
 	suite.Contains(out, "ACTIVESTATE_ACTIVATED")
 	suite.Contains(out, "ACTIVESTATE_ACTIVATED_ID")
