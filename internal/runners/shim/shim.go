@@ -19,16 +19,22 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
+type configurable interface {
+	CachePath() string
+}
+
 type Shim struct {
 	subshell subshell.SubShell
 	proj     *project.Project
 	out      output.Outputer
+	cfg      configurable
 }
 
 type primeable interface {
 	primer.Outputer
 	primer.Subsheller
 	primer.Projecter
+	primer.Configurer
 }
 
 type Params struct {
@@ -40,6 +46,7 @@ func New(prime primeable) *Shim {
 		prime.Subshell(),
 		prime.Project(),
 		prime.Output(),
+		prime.Config(),
 	}
 }
 
@@ -63,7 +70,7 @@ func (s *Shim) Run(params *Params, args ...string) error {
 		return nil
 	}
 
-	runtime, err := runtime.NewRuntime(s.proj.Source().Path(), s.proj.CommitUUID(), s.proj.Owner(), s.proj.Name(), runbits.NewRuntimeMessageHandler(s.out))
+	runtime, err := runtime.NewRuntime(s.proj.Source().Path(), s.cfg.CachePath(), s.proj.CommitUUID(), s.proj.Owner(), s.proj.Name(), runbits.NewRuntimeMessageHandler(s.out))
 	if err != nil {
 		return locale.WrapError(err, "err_shim_runtime_init", "Could not initialize runtime for shim command.")
 	}

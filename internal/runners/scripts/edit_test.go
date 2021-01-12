@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	"gopkg.in/yaml.v2"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/scriptfile"
@@ -24,9 +25,14 @@ type EditTestSuite struct {
 	project        *project.Project
 	scriptFile     *scriptfile.ScriptFile
 	originalEditor string
+	cfg            projectfile.ConfigGetter
 }
 
 func (suite *EditTestSuite) BeforeTest(suiteName, testName string) {
+	var err error
+	suite.cfg, err = config.Get()
+	suite.Require().NoError(err)
+
 	suite.projectFile = &projectfile.Project{}
 	contents := strings.TrimSpace(`
 project: "https://platform.activestate.com/EditOrg/EditProject?commitID=00010001-0001-0001-0001-000100010001"
@@ -43,14 +49,14 @@ scripts:
 `)
 
 	tempDir := os.TempDir()
-	err := os.Chdir(tempDir)
+	err = os.Chdir(tempDir)
 	suite.Require().NoError(err, "should change directories without issue")
 
 	err = yaml.Unmarshal([]byte(contents), suite.projectFile)
 	suite.Require().NoError(err, "unexpected error marshalling yaml")
 
 	suite.projectFile.SetPath(filepath.Join(tempDir, "activestate.yaml"))
-	err = suite.projectFile.Save()
+	err = suite.projectFile.Save(suite.cfg)
 	suite.Require().NoError(err, "should be able to save in temp dir")
 
 	suite.project, err = project.New(suite.projectFile, nil)
@@ -189,7 +195,7 @@ func (suite *EditTestSuite) TestNewScriptWatcher() {
 	suite.Require().NoError(err, "unexpected error creating script watcher")
 
 	catcher := outputhelper.NewCatcher()
-	go watcher.run("hello", catcher.Outputer)
+	go watcher.run("hello", catcher.Outputer, suite.cfg)
 
 	watcher.done <- true
 
@@ -208,7 +214,7 @@ func (suite *EditTestSuite) TestUpdateProjectFile() {
 	suite.scriptFile, err = createScriptFile(replace, false)
 	suite.Require().NoError(err, "unexpected error creating script file")
 
-	err = updateProjectFile(suite.scriptFile, "replace")
+	err = updateProjectFile(suite.cfg, suite.scriptFile, "replace")
 	suite.Require().NoError(err, "should be able to update script file")
 
 	updatedProject := project.Get()

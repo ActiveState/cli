@@ -19,6 +19,7 @@ type Cache struct {
 	config  project.ConfigAble
 	confirm confirmAble
 	path    string
+	cfg     *config.Instance
 }
 
 type CacheParams struct {
@@ -27,15 +28,15 @@ type CacheParams struct {
 }
 
 func NewCache(prime primeable) *Cache {
-	return newCache(prime.Output(), config.Get(), prime.Prompt())
+	return newCache(prime.Output(), prime.Config(), prime.Prompt())
 }
 
-func newCache(output output.Outputer, cfg project.ConfigAble, confirm confirmAble) *Cache {
+func newCache(output output.Outputer, cfg configurable, confirm confirmAble) *Cache {
 	return &Cache{
 		output:  output,
 		config:  cfg,
 		confirm: confirm,
-		path:    config.Get().CachePath(),
+		path:    cfg.CachePath(),
 	}
 }
 
@@ -89,7 +90,7 @@ func (c *Cache) removeProjectCache(projectDir, namespace string, force bool) err
 		return locale.WrapError(err, "err_clean_cache_invalid_namespace", "NamespacePrefix argument is not of the correct format")
 	}
 
-	runtime, err := runtime.NewRuntime(projectDir, "", parsed.Owner, parsed.Project, nil)
+	runtime, err := runtime.NewRuntime(projectDir, c.cfg.CachePath(), "", parsed.Owner, parsed.Project, nil)
 	if err != nil {
 		return locale.WrapError(err, "err_clean_cache_runtime_init", "Could not determine cache directory for project used in {{.V0}}", projectDir)
 	}

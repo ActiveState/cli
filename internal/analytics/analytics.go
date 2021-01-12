@@ -114,8 +114,13 @@ func WaitForAllEvents(t time.Duration) {
 }
 
 func setup() {
+	installSource := "unknown-due-to-config-error"
+	cfg, err := config.Get()
+	if err != nil {
+		installSource = cfg.InstallSource()
+	}
+
 	id := machineid.UniqID()
-	var err error
 	var trackingID string
 	if !condition.InTest() {
 		trackingID = constants.AnalyticsTrackingID
@@ -156,7 +161,7 @@ func setup() {
 		userID:        userIDString,
 		osName:        osName,
 		osVersion:     osVersion,
-		installSource: config.Get().InstallSource(),
+		installSource: installSource,
 		machineID:     machineid.UniqID(),
 		output:        string(output.PlainFormatName),
 	}
@@ -202,11 +207,15 @@ func sendEventAndLog(category, action, label string, dimensions map[string]strin
 
 func sendEvent(category, action, label string, dimensions map[string]string) error {
 	if deferAnalytics {
-		if err := deferEvent(category, action, label, dimensions); err != nil {
+		// TODO: figure out a way to pass configuration
+		cfg, err := config.Get()
+		if err != nil {
+			return locale.WrapError(err, "config_get_error")
+		}
+		if err := deferEvent(cfg, category, action, label, dimensions); err != nil {
 			return locale.WrapError(err, "err_analytics_defer", "Could not defer event")
 		}
-		// TODO: figure out a way to pass configuration
-		if err := config.Get().Save(); err != nil { // the global viper instance is bugged, need to work around it for now -- https://www.pivotaltracker.com/story/show/175624789
+		if err := cfg.Save(); err != nil { // the global viper instance is bugged, need to work around it for now -- https://www.pivotaltracker.com/story/show/175624789
 			return locale.WrapError(err, "err_viper_write_defer", "Could not save configuration on defer")
 		}
 	}

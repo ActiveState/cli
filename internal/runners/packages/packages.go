@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
@@ -20,9 +21,14 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
+type configurable interface {
+	keypairs.Configurable
+	CachePath() string
+}
+
 const latestVersion = "latest"
 
-func executePackageOperation(pj *project.Project, out output.Outputer, authentication *authentication.Auth, prompt prompt.Prompter, name, version string, operation model.Operation, ns model.Namespace) error {
+func executePackageOperation(pj *project.Project, cfg configurable, out output.Outputer, authentication *authentication.Auth, prompt prompt.Prompter, name, version string, operation model.Operation, ns model.Namespace) error {
 	isHeadless := pj.IsHeadless()
 	if !isHeadless && !authentication.Authenticated() {
 		anonConfirmDefault := true
@@ -35,7 +41,7 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 
 	// Note: User also lands here if answering No to the question about anonymous commit.
 	if !isHeadless {
-		err := auth.RequireAuthentication(locale.T("auth_required_activate"), out, prompt)
+		err := auth.RequireAuthentication(locale.T("auth_required_activate"), cfg, out, prompt)
 		if err != nil {
 			return locale.WrapInputError(err, "err_auth_required")
 		}
@@ -103,7 +109,7 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 	// Create runtime
 	rtMessages := runbits.NewRuntimeMessageHandler(out)
 	rtMessages.SetRequirement(name, ns)
-	rt, err := runtime.NewRuntime(pj.Source().Path(), commitID, pj.Owner(), pj.Name(), rtMessages)
+	rt, err := runtime.NewRuntime(pj.Source().Path(), cfg.CachePath(), commitID, pj.Owner(), pj.Name(), rtMessages)
 	if err != nil {
 		return locale.WrapError(err, "err_packages_update_runtime_init", "Could not initialize runtime.")
 	}

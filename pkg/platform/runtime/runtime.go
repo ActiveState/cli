@@ -6,7 +6,6 @@ import (
 
 	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -23,7 +22,7 @@ type Runtime struct {
 	msgHandler  MessageHandler
 }
 
-func NewRuntime(projectDir string, commitID strfmt.UUID, owner string, projectName string, msgHandler MessageHandler) (*Runtime, error) {
+func NewRuntime(projectDir, cachePath string, commitID strfmt.UUID, owner string, projectName string, msgHandler MessageHandler) (*Runtime, error) {
 	var resolvedProjectDir string
 	if projectDir != "" {
 		var err error
@@ -35,7 +34,7 @@ func NewRuntime(projectDir string, commitID strfmt.UUID, owner string, projectNa
 		logging.Debug("In NewRuntime: resolved project dir is: %s", resolvedProjectDir)
 	}
 
-	installPath := filepath.Join(config.Get().CachePath(), hash.ShortHash(resolvedProjectDir))
+	installPath := filepath.Join(cachePath, hash.ShortHash(resolvedProjectDir))
 	return &Runtime{
 		runtimeDir:  installPath,
 		commitID:    commitID,

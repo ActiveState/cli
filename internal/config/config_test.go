@@ -17,7 +17,6 @@ import (
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/testhelpers/exiter"
 )
 
 type InstanceMock struct {
@@ -39,20 +38,22 @@ func (suite *ConfigTestSuite) SetupTest() {
 func (suite *ConfigTestSuite) BeforeTest(suiteName, testName string) {
 	viper.Reset()
 
-	suite.config = config.New()
-	suite.config.Exit = exiter.Exit
+	var err error
+	suite.config, err = config.New()
+	suite.Require().NoError(err)
 }
 
 func (suite *ConfigTestSuite) AfterTest(suiteName, testName string) {
 }
 
 func (suite *ConfigTestSuite) TestConfig() {
-	suite.NotEmpty(config.Get().ConfigPath())
-	suite.NotEmpty(config.Get().CachePath())
+	suite.NotEmpty(suite.config.ConfigPath())
+	suite.NotEmpty(suite.config.CachePath())
 }
 
 func (suite *ConfigTestSuite) TestIncludesBranch() {
-	cfg := config.NewWithDir("")
+	cfg, err := config.NewWithDir("")
+	suite.Require().NoError(err)
 	suite.Contains(cfg.ConfigPath(), filepath.Clean(constants.BranchName))
 }
 
@@ -66,15 +67,10 @@ func (suite *ConfigTestSuite) TestCorruption() {
 	err := fileutils.WriteFile(path, []byte("&"))
 	suite.Require().NoError(err)
 
-	exiter := exiter.New()
-	suite.config.Exit = exiter.Exit
 	viper.Reset()
 
-	exitCode := exiter.WaitForExit(func() {
-		suite.config.ReadInConfig()
-	})
-
-	suite.Equal(1, exitCode, "Config should fail to parse")
+	err = suite.config.ReadInConfig()
+	suite.Require().Error(err)
 }
 
 // testNoHomeRunner will run the TestNoHome test in its own process, this is because the configdir package we use
@@ -119,7 +115,9 @@ func (suite *ConfigTestSuite) TestNoHome() {
 	}
 
 	viper.Reset()
-	suite.config = config.New()
+	var err error
+	suite.config, err = config.New()
+	suite.Require().NoError(err)
 
 	suite.Contains(suite.config.ConfigPath(), os.TempDir())
 

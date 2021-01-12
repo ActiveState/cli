@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
@@ -42,7 +43,9 @@ func (suite *SecretsTestSuite) BeforeTest(suiteName, testName string) {
 }
 
 func (suite *SecretsTestSuite) AfterTest(suiteName, testName string) {
-	osutil.RemoveConfigFile(constants.KeypairLocalFileName + ".key")
+	cfg, err := config.Get()
+	suite.Require().NoError(err)
+	osutil.RemoveConfigFile(cfg.ConfigPath(), constants.KeypairLocalFileName+".key")
 	httpmock.DeActivate()
 	suite.authMock.Close()
 }

@@ -17,6 +17,7 @@ type InstallRunParams struct {
 
 // Install manages the installing execution context.
 type Install struct {
+	cfg  configurable
 	out  output.Outputer
 	proj *project.Project
 	prompt.Prompter
@@ -26,6 +27,7 @@ type Install struct {
 // NewInstall prepares an installation execution context for use.
 func NewInstall(prime primeable) *Install {
 	return &Install{
+		prime.Config(),
 		prime.Output(),
 		prime.Project(),
 		prime.Prompt(),
@@ -47,5 +49,5 @@ func (a *Install) Run(params InstallRunParams, nstype model.NamespaceType) error
 
 	ns := model.NewNamespacePkgOrBundle(language, nstype)
 	name, version := splitNameAndVersion(params.Name)
-	return executePackageOperation(a.proj, a.out, a.auth, a.Prompter, name, version, model.OperationAdded, ns)
+	return executePackageOperation(a.proj, a.cfg, a.out, a.auth, a.Prompter, name, version, model.OperationAdded, ns)
 }

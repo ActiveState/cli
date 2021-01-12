@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
@@ -43,7 +44,9 @@ func (suite *SecretsAccessTestSuite) BeforeTest(suiteName, testName string) {
 	suite.authMock = authMock.Init()
 	suite.authMock.MockLoggedin()
 
-	suite.expander = NewSecretExpander(suite.secretsClient, nil, nil)
+	cfg, err := config.Get()
+	suite.Require().NoError(err)
+	suite.expander = NewSecretExpander(suite.secretsClient, nil, nil, cfg)
 	suite.expander.project = Get()
 }
 

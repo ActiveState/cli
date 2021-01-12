@@ -61,7 +61,9 @@ scripts:
 	proj, err := project.New(pjfile, nil)
 	require.NoError(t, err)
 
-	scriptRun := New(outputhelper.NewCatcher(), subshell.New(), proj)
+	cfg, err := config.Get()
+	require.NoError(t, err)
+	scriptRun := New(outputhelper.NewCatcher(), subshell.New(), proj, cfg)
 	err = scriptRun.Run(proj.ScriptByName("run"), []string{})
 	assert.NoError(t, err, "No error occurred")
 }
@@ -92,8 +94,11 @@ func TestEnvIsSet(t *testing.T) {
 		os.Unsetenv(constants.DisableRuntime)
 	}()
 
+	cfg, err := config.Get()
+	require.NoError(t, err)
+
 	out := capturer.CaptureOutput(func() {
-		scriptRun := New(outputhelper.NewCatcher(), subshell.New(), proj)
+		scriptRun := New(outputhelper.NewCatcher(), subshell.New(), proj, cfg)
 		err = scriptRun.Run(proj.ScriptByName("run"), nil)
 		assert.NoError(t, err, "Error: "+errs.Join(err, ": ").Error())
 	})
@@ -130,8 +135,11 @@ scripts:
 	proj, err := project.New(pjfile, nil)
 	require.NoError(t, err)
 
+	cfg, err := config.Get()
+	require.NoError(t, err)
+
 	out := outputhelper.NewCatcher()
-	scriptRun := New(out, subshell.New(), proj)
+	scriptRun := New(out, subshell.New(), proj, cfg)
 	fmt.Println(proj.ScriptByName("run"))
 	err = scriptRun.Run(proj.ScriptByName("run"), nil)
 	assert.NoError(t, err, "No error occurred")
@@ -153,7 +161,10 @@ scripts:
 	proj, err := project.New(pjfile, nil)
 	require.NoError(t, err)
 
-	scriptRun := New(outputhelper.NewCatcher(), subshell.New(), proj)
+	cfg, err := config.Get()
+	require.NoError(t, err)
+
+	scriptRun := New(outputhelper.NewCatcher(), subshell.New(), proj, cfg)
 	err = scriptRun.Run(nil, nil)
 	assert.Error(t, err, "Error occurred")
 }
@@ -175,7 +186,10 @@ scripts:
 	proj, err := project.New(pjfile, nil)
 	require.NoError(t, err)
 
-	scriptRun := New(outputhelper.NewCatcher(), subshell.New(), proj)
+	cfg, err := config.Get()
+	require.NoError(t, err)
+
+	scriptRun := New(outputhelper.NewCatcher(), subshell.New(), proj, cfg)
 	err = scriptRun.Run(proj.ScriptByName("run"), nil)
 	assert.Error(t, err, "Error occurred")
 }
@@ -186,7 +200,11 @@ func TestRunActivatedCommand(t *testing.T) {
 	root, err := environment.GetRootPath()
 	assert.NoError(t, err, "Should detect root path")
 	os.Chdir(filepath.Join(root, "test"))
-	datadir := config.Get().ConfigPath()
+
+	cfg, err := config.Get()
+	require.NoError(t, err)
+
+	datadir := cfg.ConfigPath()
 	os.RemoveAll(filepath.Join(datadir, "virtual"))
 	os.RemoveAll(filepath.Join(datadir, "packages"))
 	os.RemoveAll(filepath.Join(datadir, "languages"))
@@ -218,7 +236,7 @@ scripts:
 	require.NoError(t, err)
 
 	// Run the command.
-	scriptRun := New(outputhelper.NewCatcher(), subshell.New(), proj)
+	scriptRun := New(outputhelper.NewCatcher(), subshell.New(), proj, cfg)
 	err = scriptRun.Run(proj.ScriptByName("run"), nil)
 	assert.NoError(t, err, "No error occurred")
 
@@ -303,8 +321,11 @@ func captureExecCommand(t *testing.T, tmplCmdName, cmdName string, cmdArgs []str
 	proj, err := project.New(pjfile, nil)
 	require.NoError(t, err)
 
+	cfg, err := config.Get()
+	require.NoError(t, err)
+
 	outStr, outErr := osutil.CaptureStdout(func() {
-		scriptRun := New(outputhelper.NewCatcher(), subshell.New(), proj)
+		scriptRun := New(outputhelper.NewCatcher(), subshell.New(), proj, cfg)
 		err = scriptRun.Run(proj.ScriptByName(cmdName), cmdArgs)
 	})
 	require.NoError(t, outErr, "error capturing stdout")

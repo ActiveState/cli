@@ -7,7 +7,7 @@ import (
 )
 
 func (u *Uninstall) runUninstall() error {
-	err := removeCache(u.cachePath)
+	err := removeCache(u.cfg.CachePath())
 	if err != nil {
 		return err
 	}
@@ -17,7 +17,7 @@ func (u *Uninstall) runUninstall() error {
 		return err
 	}
 
-	err = removeConfig(u.configPath)
+	err = removeConfig(u.cfg)
 	if err != nil {
 		return err
 	}

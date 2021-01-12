@@ -40,6 +40,7 @@ type APIKey struct {
 type primeable interface {
 	primer.Auther
 	primer.Outputer
+	primer.Configurer
 }
 
 // NewAPIKey is a convenience construction function.

@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/ci/gcloud"
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -15,11 +14,15 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 )
 
+type Configurable interface {
+	ConfigPath() string
+}
+
 // Load will attempt to load a Keypair using private and public-key files from
 // the user's file system; specifically from the config dir. It is assumed that
 // this keypair file has no passphrase, even if it is encrypted.
-func Load(keyName string) (Keypair, error) {
-	keyFilename := LocalKeyFilename(keyName)
+func Load(cfg Configurable, keyName string) (Keypair, error) {
+	keyFilename := LocalKeyFilename(cfg.ConfigPath(), keyName)
 	if err := validateKeyFile(keyFilename); err != nil {
 		return nil, err
 	}
@@ -28,8 +31,9 @@ func Load(keyName string) (Keypair, error) {
 
 // Save will save the unencrypted and encoded private key to a local config
 // file. The filename will be the value of `keyName` and suffixed with `.key`.
-func Save(kp Keypair, keyName string) error {
-	err := ioutil.WriteFile(LocalKeyFilename(keyName), []byte(kp.EncodePrivateKey()), 0600)
+func Save(cfg Configurable, kp Keypair, keyName string) error {
+	keyFileName := LocalKeyFilename(cfg.ConfigPath(), keyName)
+	err := ioutil.WriteFile(keyFileName, []byte(kp.EncodePrivateKey()), 0600)
 	if err != nil {
 		return errs.Wrap(err, "WriteFile failed")
 	}
@@ -38,8 +42,8 @@ func Save(kp Keypair, keyName string) error {
 
 // Delete will delete an unencrypted and encoded private key from the local
 // config directory. The base filename (sans suffix) must be provided.
-func Delete(keyName string) error {
-	filename := LocalKeyFilename(keyName)
+func Delete(cfg Configurable, keyName string) error {
+	filename := LocalKeyFilename(cfg.ConfigPath(), keyName)
 	if fileutils.FileExists(filename) {
 		if err := os.Remove(filename); err != nil {
 			return errs.Wrap(err, "os.Remove %s failed", filename)
@@ -51,7 +55,7 @@ func Delete(keyName string) error {
 // LoadWithDefaults will call Load with the default key name (i.e.
 // constants.KeypairLocalFileName). If the key override is set
 // (constants.PrivateKeyEnvVarName), that value will be parsed directly.
-func LoadWithDefaults() (Keypair, error) {
+func LoadWithDefaults(cfg Configurable) (Keypair, error) {
 	key, err := gcloud.GetSecret(constants.PrivateKeyEnvVarName)
 	if err != nil && !errors.Is(err, gcloud.ErrNotAvailable{}) {
 		return nil, errs.Wrap(err, "gcloud.GetSecret failed")
@@ -66,34 +70,34 @@ func LoadWithDefaults() (Keypair, error) {
 		return ParseRSA(key)
 	}
 
-	return Load(constants.KeypairLocalFileName)
+	return Load(cfg, constants.KeypairLocalFileName)
 }
 
 // SaveWithDefaults will call Save with the provided keypair and the default
 // key name (i.e. constants.KeypairLocalFileName). The operation will fail when
 // the key override is set (constants.PrivateKeyEnvVarName).
-func SaveWithDefaults(kp Keypair) error {
+func SaveWithDefaults(cfg Configurable, kp Keypair) error {
 	if hasKeyOverride() {
 		return locale.NewInputError("keypairs_err_override_with_save")
 	}
 
-	return Save(kp, constants.KeypairLocalFileName)
+	return Save(cfg, kp, constants.KeypairLocalFileName)
 }
 
 // DeleteWithDefaults will call Delete with the default key name (i.e.
 // constants.KeypairLocalFileName). The operation will fail when the key
 // override is set (constants.PrivateKeyEnvVarName).
-func DeleteWithDefaults() error {
+func DeleteWithDefaults(cfg Configurable) error {
 	if hasKeyOverride() {
 		return locale.NewInputError("keypairs_err_override_with_delete")
 	}
 
-	return Delete(constants.KeypairLocalFileName)
+	return Delete(cfg, constants.KeypairLocalFileName)
 }
 
 // LocalKeyFilename returns the full filepath for the given key name
-func LocalKeyFilename(keyName string) string {
-	return filepath.Join(config.Get().ConfigPath(), keyName+".key")
+func LocalKeyFilename(configPath, keyName string) string {
+	return filepath.Join(configPath, keyName+".key")
 }
 
 func loadAndParseKeypair(keyFilename string) (Keypair, error) {

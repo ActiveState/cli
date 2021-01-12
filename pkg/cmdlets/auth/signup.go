@@ -8,9 +8,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/api"
 
@@ -32,14 +32,14 @@ type signupInput struct {
 }
 
 // Signup will prompt the user to create an account
-func Signup(out output.Outputer, prompt prompt.Prompter) error {
+func Signup(cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompter) error {
 	input := &signupInput{}
 
 	if authentication.Get().Authenticated() {
 		return locale.NewInputError("err_auth_authenticated", "You are already authenticated as: {{.V0}}. You can log out by running `state auth logout`.", authentication.Get().WhoAmI())
 	}
 
-	accepted, err := promptTOS(out, prompt)
+	accepted, err := promptTOS(cfg.ConfigPath(), out, prompt)
 	if err != nil {
 		return err
 	}
@@ -57,7 +57,7 @@ func Signup(out output.Outputer, prompt prompt.Prompter) error {
 	}
 
 	if authentication.Get().Authenticated() {
-		if err := generateKeypairForUser(input.Password); err != nil {
+		if err := generateKeypairForUser(cfg, input.Password); err != nil {
 			return locale.WrapError(err, "keypair_err_save")
 		}
 	}
@@ -78,7 +78,7 @@ func signupFromLogin(username string, password string, out output.Outputer, prom
 	return doSignup(input, out)
 }
 
-func downloadTOS() (string, error) {
+func downloadTOS(configPath string) (string, error) {
 	resp, err := http.Get(constants.TermsOfServiceURLText)
 	if err != nil {
 		return "", errs.Wrap(err, "Failed to download the Terms Of Service document.")
@@ -88,7 +88,7 @@ func downloadTOS() (string, error) {
 	}
 	defer resp.Body.Close()
 
-	tosPath := filepath.Join(config.Get().ConfigPath(), "platform_tos.txt")
+	tosPath := filepath.Join(configPath, "platform_tos.txt")
 	tosFile, err := os.Create(tosPath)
 	if err != nil {
 		return "", errs.Wrap(err, "Could not create Terms Of Service file in configuration directory.")
@@ -103,7 +103,7 @@ func downloadTOS() (string, error) {
 	return tosPath, nil
 }
 
-func promptTOS(out output.Outputer, prompt prompt.Prompter) (bool, error) {
+func promptTOS(configPath string, out output.Outputer, prompt prompt.Prompter) (bool, error) {
 	choices := []string{
 		locale.T("tos_accept"),
 		locale.T("tos_not_accept"),
@@ -123,7 +123,7 @@ func promptTOS(out output.Outputer, prompt prompt.Prompter) (bool, error) {
 	case locale.T("tos_not_accept"):
 		return false, nil
 	case locale.T("tos_show_full"):
-		tosFilePath, err := downloadTOS()
+		tosFilePath, err := downloadTOS(configPath)
 		if err != nil {
 			return false, locale.WrapError(err, "err_download_tos", "Could not download terms of service file.")
 		}

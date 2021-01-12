@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
@@ -14,20 +15,29 @@ import (
 
 type KeypairLocalDeleteTestSuite struct {
 	suite.Suite
+	cfg keypairs.Configurable
+}
+
+func (suite *KeypairLocalDeleteTestSuite) BeforeTest(suiteName, testName string) {
+	var err error
+	suite.cfg, err = config.Get()
+	suite.Require().NoError(err)
 }
 
 func (suite *KeypairLocalDeleteTestSuite) TestNoKeyFileFound() {
-	err := keypairs.Delete("test-no-such")
+	err := keypairs.Delete(suite.cfg, "test-no-such")
 	suite.Nil(err)
 }
 
 func (suite *KeypairLocalDeleteTestSuite) Test_Success() {
-	osutil.CopyTestFileToConfigDir("test-keypair.key", "custom-name.key", 0600)
+	cfg, err := config.Get()
+	suite.Require().NoError(err)
+	osutil.CopyTestFileToConfigDir(cfg.ConfigPath(), "test-keypair.key", "custom-name.key", 0600)
 
-	err := keypairs.Delete("custom-name")
+	err = keypairs.Delete(suite.cfg, "custom-name")
 	suite.Require().Nil(err)
 
-	fileInfo, err := osutil.StatConfigFile("custom-name.key")
+	fileInfo, err := osutil.StatConfigFile(cfg.ConfigPath(), "custom-name.key")
 	suite.Require().Nil(fileInfo)
 	if runtime.GOOS != "windows" {
 		suite.Regexp("no such file or directory", err.Error())
@@ -37,12 +47,14 @@ func (suite *KeypairLocalDeleteTestSuite) Test_Success() {
 }
 
 func (suite *KeypairLocalDeleteTestSuite) TestWithDefaults_Success() {
-	osutil.CopyTestFileToConfigDir("test-keypair.key", constants.KeypairLocalFileName+".key", 0600)
+	cfg, err := config.Get()
+	suite.Require().NoError(err)
+	osutil.CopyTestFileToConfigDir(cfg.ConfigPath(), "test-keypair.key", constants.KeypairLocalFileName+".key", 0600)
 
-	err := keypairs.DeleteWithDefaults()
+	err = keypairs.DeleteWithDefaults(suite.cfg)
 	suite.Require().Nil(err)
 
-	fileInfo, err := osutil.StatConfigFile(constants.KeypairLocalFileName + ".key")
+	fileInfo, err := osutil.StatConfigFile(cfg.ConfigPath(), constants.KeypairLocalFileName+".key")
 	suite.Require().Nil(fileInfo)
 	if runtime.GOOS != "windows" {
 		suite.Regexp("no such file or directory", err.Error())
@@ -51,11 +63,11 @@ func (suite *KeypairLocalDeleteTestSuite) TestWithDefaults_Success() {
 	}
 }
 
-func (suite *KeypairLocalLoadTestSuite) TestDeleteWithDefaults_Override() {
+func (suite *KeypairLocalDeleteTestSuite) TestDeleteWithDefaults_Override() {
 	os.Setenv(constants.PrivateKeyEnvVarName, "some val")
 	defer os.Unsetenv(constants.PrivateKeyEnvVarName)
 
-	err := keypairs.DeleteWithDefaults()
+	err := keypairs.DeleteWithDefaults(suite.cfg)
 	suite.Require().NotNil(err)
 	suite.Error(err)
 }

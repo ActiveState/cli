@@ -20,6 +20,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/profile"
@@ -100,9 +101,16 @@ func run(args []string, isInteractive bool, out output.Outputer) (int, error) {
 	verbose := os.Getenv("VERBOSE") != "" || argsHaveVerbose(args)
 	logging.CurrentHandler().SetVerbose(verbose)
 
-	cfg := config.Get()
+	cfg, err := config.Get()
+	if err != nil {
+		return 1, locale.WrapError(err, "config_get_error", "Failed to load configuration.")
+	}
 	logging.Debug("ConfigPath: %s", cfg.ConfigPath())
 	logging.Debug("CachePath: %s", cfg.CachePath())
+
+	// set global configuration instances
+	machineid.SetConfiguration(cfg)
+	logging.UpdateConfig(cfg)
 
 	// Ensure any config set is preserved
 	defer cfg.Save()
@@ -131,7 +139,7 @@ func run(args []string, isInteractive bool, out output.Outputer) (int, error) {
 	}
 
 	// Forward call to specific state tool version, if warranted
-	forward, err := forwardFn(args, out, pj)
+	forward, err := forwardFn(cfg.ConfigPath(), args, out, pj)
 	if err != nil {
 		return 1, err
 	}
@@ -153,10 +161,10 @@ func run(args []string, isInteractive bool, out output.Outputer) (int, error) {
 	conditional := constraints.NewPrimeConditional(auth, pjOwner, pjName, pjNamespace, sshell.Shell())
 	project.RegisterConditional(conditional)
 	project.RegisterExpander("mixin", project.NewMixin(auth).Expander)
-	project.RegisterExpander("secrets", project.NewSecretPromptingExpander(secretsapi.Get(), prompter))
+	project.RegisterExpander("secrets", project.NewSecretPromptingExpander(secretsapi.Get(), prompter, cfg))
 
 	// Run the actual command
-	cmds := cmdtree.New(primer.New(pj, out, auth, prompter, sshell, conditional), args...)
+	cmds := cmdtree.New(primer.New(pj, out, auth, prompter, sshell, conditional, cfg), args...)
 
 	childCmd, err := cmds.Command().Find(args[1:])
 	if err != nil {
@@ -170,7 +178,7 @@ func run(args []string, isInteractive bool, out output.Outputer) (int, error) {
 		}
 
 		// Check for deprecation
-		deprecated, err := deprecation.Check()
+		deprecated, err := deprecation.Check(cfg)
 		if err != nil {
 			logging.Error("Could not check for deprecation: %s", err.Error())
 		}

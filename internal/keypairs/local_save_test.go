@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
@@ -14,16 +15,23 @@ import (
 
 type KeypairLocalSaveTestSuite struct {
 	suite.Suite
+	cfg keypairs.Configurable
+}
+
+func (suite *KeypairLocalSaveTestSuite) BeforeTest(suiteName, testName string) {
+	var err error
+	suite.cfg, err = config.Get()
+	suite.Require().NoError(err)
 }
 
 func (suite *KeypairLocalSaveTestSuite) TestSave_Success() {
 	kp, err := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
 	suite.Require().Nil(err)
 
-	err = keypairs.Save(kp, "save-testing")
+	err = keypairs.Save(suite.cfg, kp, "save-testing")
 	suite.Require().Nil(err)
 
-	kp2, err := keypairs.Load("save-testing")
+	kp2, err := keypairs.Load(suite.cfg, "save-testing")
 	suite.Require().Nil(err)
 	suite.Equal(kp, kp2)
 
@@ -37,10 +45,10 @@ func (suite *KeypairLocalSaveTestSuite) TestSaveWithDefaults_Success() {
 	kp, err := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
 	suite.Require().Nil(err)
 
-	err = keypairs.SaveWithDefaults(kp)
+	err = keypairs.SaveWithDefaults(suite.cfg, kp)
 	suite.Require().Nil(err)
 
-	kp2, err := keypairs.Load(constants.KeypairLocalFileName)
+	kp2, err := keypairs.Load(suite.cfg, constants.KeypairLocalFileName)
 	suite.Require().Nil(err)
 	suite.Equal(kp, kp2)
 
@@ -57,13 +65,15 @@ func (suite *KeypairLocalLoadTestSuite) TestSaveWithDefaults_Override() {
 	kp, err := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
 	suite.Require().Nil(err)
 
-	err = keypairs.SaveWithDefaults(kp)
+	err = keypairs.SaveWithDefaults(suite.cfg, kp)
 	suite.Require().NotNil(err)
 	suite.Error(err)
 }
 
 func (suite *KeypairLocalSaveTestSuite) statConfigDirFile(keyFile string) os.FileInfo {
-	keyFileStat, err := osutil.StatConfigFile(keyFile)
+	cfg, err := config.Get()
+	suite.Require().NoError(err)
+	keyFileStat, err := osutil.StatConfigFile(cfg.ConfigPath(), keyFile)
 	suite.Require().NoError(err)
 	return keyFileStat
 }

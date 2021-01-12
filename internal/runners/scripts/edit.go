@@ -20,6 +20,7 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 // The default open command and editors based on platform
@@ -40,6 +41,7 @@ type Edit struct {
 	project  *project.Project
 	output   output.Outputer
 	prompter prompt.Prompter
+	cfg      projectfile.ConfigGetter
 }
 
 // NewEdit creates a new Edit runner
@@ -48,6 +50,7 @@ func NewEdit(prime primeable) *Edit {
 		prime.Project(),
 		prime.Output(),
 		prime.Prompt(),
+		prime.Config(),
 	}
 }
 
@@ -90,7 +93,7 @@ func (e *Edit) editScript(script *project.Script, params *EditParams) error {
 			"Failed to open script file in editor.")
 	}
 
-	return start(e.prompter, watcher, params.Name, e.output)
+	return start(e.prompter, watcher, params.Name, e.output, e.cfg)
 }
 
 func createScriptFile(script *project.Script, expand bool) (*scriptfile.ScriptFile, error) {
@@ -141,7 +144,7 @@ func newScriptWatcher(scriptFile *scriptfile.ScriptFile) (*scriptWatcher, error)
 	}, nil
 }
 
-func (sw *scriptWatcher) run(scriptName string, outputer output.Outputer) {
+func (sw *scriptWatcher) run(scriptName string, outputer output.Outputer, cfg projectfile.ConfigGetter) {
 	for {
 		select {
 		case <-sw.done:
@@ -155,7 +158,7 @@ func (sw *scriptWatcher) run(scriptName string, outputer output.Outputer) {
 				return
 			}
 			if event.Op&fsnotify.Write == fsnotify.Write {
-				err := updateProjectFile(sw.scriptFile, scriptName)
+				err := updateProjectFile(cfg, sw.scriptFile, scriptName)
 				if err != nil {
 					sw.errs <- errs.Wrap(err, "Failed to write project file.")
 					return
@@ -266,15 +269,15 @@ func verifyPathEditor(editor string) (string, error) {
 	return editor, nil
 }
 
-func start(prompt prompt.Prompter, sw *scriptWatcher, scriptName string, output output.Outputer) (err error) {
+func start(prompt prompt.Prompter, sw *scriptWatcher, scriptName string, output output.Outputer, cfg projectfile.ConfigGetter) (err error) {
 	output.Print(locale.Tr("script_watcher_watch_file", sw.scriptFile.Filename()))
 	if prompt.IsInteractive() {
-		return startInteractive(sw, scriptName, output, prompt)
+		return startInteractive(sw, scriptName, output, cfg, prompt)
 	}
-	return startNoninteractive(sw, scriptName, output)
+	return startNoninteractive(sw, scriptName, output, cfg)
 }
 
-func startNoninteractive(sw *scriptWatcher, scriptName string, output output.Outputer) error {
+func startNoninteractive(sw *scriptWatcher, scriptName string, output output.Outputer, cfg projectfile.ConfigGetter) error {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 
@@ -295,7 +298,7 @@ func startNoninteractive(sw *scriptWatcher, scriptName string, output output.Out
 			// Do nothing and let defer take over
 		}
 	}()
-	sw.run(scriptName, output)
+	sw.run(scriptName, output, cfg)
 
 	err := <-errC
 
@@ -310,8 +313,8 @@ func startNoninteractive(sw *scriptWatcher, scriptName string, output output.Out
 	return nil
 }
 
-func startInteractive(sw *scriptWatcher, scriptName string, output output.Outputer, prompt prompt.Prompter) error {
-	go sw.run(scriptName, output)
+func startInteractive(sw *scriptWatcher, scriptName string, output output.Outputer, cfg projectfile.ConfigGetter, prompt prompt.Prompter) error {
+	go sw.run(scriptName, output, cfg)
 
 	for {
 		doneConfirmDefault := true
@@ -333,7 +336,7 @@ func startInteractive(sw *scriptWatcher, scriptName string, output output.Output
 	}
 }
 
-func updateProjectFile(scriptFile *scriptfile.ScriptFile, name string) error {
+func updateProjectFile(cfg projectfile.ConfigGetter, scriptFile *scriptfile.ScriptFile, name string) error {
 	updatedScript, err := fileutils.ReadFile(scriptFile.Filename())
 	if err != nil {
 		return errs.Wrap(err, "Failed to read script file %s.", scriptFile.Filename())
@@ -359,7 +362,7 @@ func updateProjectFile(scriptFile *scriptfile.ScriptFile, name string) error {
 
 	pjf.Scripts[idx].Value = string(updatedScript)
 
-	err = pjf.Save()
+	err = pjf.Save(cfg)
 	if err != nil {
 		return errs.Wrap(err, "Failed to save project file.")
 	}

@@ -1,6 +1,7 @@
 package secrets
 
 import (
+	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/pkg/project"
@@ -8,6 +9,7 @@ import (
 
 type setPrimeable interface {
 	primer.Projecter
+	primer.Configurer
 }
 
 // SetRunParams tracks the info required for running Set.
@@ -19,12 +21,14 @@ type SetRunParams struct {
 // Set manages the setting execution context.
 type Set struct {
 	proj *project.Project
+	cfg  keypairs.Configurable
 }
 
 // NewSet prepares a set execution context for use.
 func NewSet(p setPrimeable) *Set {
 	return &Set{
 		proj: p.Project(),
+		cfg:  p.Config(),
 	}
 }
 
@@ -34,7 +38,7 @@ func (s *Set) Run(params SetRunParams) error {
 		return locale.WrapError(err, "secrets_err_check_access")
 	}
 
-	secret, err := getSecret(s.proj, params.Name)
+	secret, err := getSecret(s.proj, params.Name, s.cfg)
 	if err != nil {
 		return locale.WrapError(err, "secrets_err_values")
 	}

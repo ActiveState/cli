@@ -1,10 +1,21 @@
 package machineid
 
 import (
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/denisbrodbeck/machineid"
 	"github.com/google/uuid"
 )
+
+type Configurable interface {
+	GetString(string) string
+	Set(string, interface{})
+}
+
+// global configuration object
+var cfg Configurable
+
+func SetConfiguration(c Configurable) {
+	cfg = c
+}
 
 // UniqID returns a unique ID for the current platform
 func UniqID() string {
@@ -17,12 +28,17 @@ func uniqID(machineIDGetter func() (string, error), uuidGetter func() string) st
 		return machID
 	}
 
-	machineID := config.Get().GetString("machineID")
+	if cfg == nil {
+		// We do not log here, as it may create a recursion
+		return "11111111-1111-1111-1111-111111111111"
+	}
+
+	machineID := cfg.GetString("machineID")
 	if machineID != "" {
 		return machineID
 	}
 
 	machineID = uuidGetter()
-	config.Get().Set("machineID", machineID)
+	cfg.Set("machineID", machineID)
 	return machineID
 }

@@ -7,7 +7,6 @@ import (
 	"github.com/skratchdot/open-golang/open"
 
 	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/language"
@@ -19,20 +18,26 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
+type configurable interface {
+	Reload() error
+}
+
 type Tutorial struct {
 	outputer output.Outputer
 	auth     *authentication.Auth
 	prompt   prompt.Prompter
+	cfg      configurable
 }
 
 type primeable interface {
 	primer.Outputer
 	primer.Prompter
 	primer.Auther
+	primer.Configurer
 }
 
 func New(primer primeable) *Tutorial {
-	return &Tutorial{primer.Output(), primer.Auth(), primer.Prompt()}
+	return &Tutorial{primer.Output(), primer.Auth(), primer.Prompt(), primer.Config()}
 }
 
 type NewProjectParams struct {
@@ -165,7 +170,10 @@ func (t *Tutorial) authFlow() error {
 	}
 
 	// Reload authentication info
-	config.Get().Reload()
+	err = t.cfg.Reload()
+	if err != nil {
+		return locale.WrapError(err, "err_tutorial_cfg_reload", "Failed to reload configuration.")
+	}
 
 	if err := t.auth.Authenticate(); err != nil {
 		return locale.WrapError(err, "err_tutorial_auth", "Could not authenticate after invoking `state auth ..`.")

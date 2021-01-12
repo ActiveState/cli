@@ -13,6 +13,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -101,7 +102,7 @@ func (p *Project) ConstantByName(name string) *Constant {
 }
 
 // Secrets returns a reference to projectfile.Secrets
-func (p *Project) Secrets() []*Secret {
+func (p *Project) Secrets(cfg keypairs.Configurable) []*Secret {
 	secrets := []*Secret{}
 	if p.projectfile.Secrets == nil {
 		return secrets
@@ -113,7 +114,7 @@ func (p *Project) Secrets() []*Secret {
 		}
 		secs := projectfile.MakeSecretsFromConstrainedEntities(constrained)
 		for _, s := range secs {
-			secrets = append(secrets, p.NewSecret(s, SecretScopeUser))
+			secrets = append(secrets, p.NewSecret(s, SecretScopeUser, cfg))
 		}
 	}
 	if p.projectfile.Secrets.Project != nil {
@@ -123,15 +124,15 @@ func (p *Project) Secrets() []*Secret {
 		}
 		secs := projectfile.MakeSecretsFromConstrainedEntities(constrained)
 		for _, secret := range secs {
-			secrets = append(secrets, p.NewSecret(secret, SecretScopeProject))
+			secrets = append(secrets, p.NewSecret(secret, SecretScopeProject, cfg))
 		}
 	}
 	return secrets
 }
 
 // SecretByName returns a secret matching the given name (if any)
-func (p *Project) SecretByName(name string, scope SecretScope) *Secret {
-	for _, secret := range p.Secrets() {
+func (p *Project) SecretByName(name string, scope SecretScope, cfg keypairs.Configurable) *Secret {
+	for _, secret := range p.Secrets(cfg) {
 		if secret.Name() == name && secret.scope == scope {
 			return secret
 		}
@@ -487,18 +488,19 @@ type Secret struct {
 	secret  *projectfile.Secret
 	project *Project
 	scope   SecretScope
+	cfg     keypairs.Configurable
 }
 
 // InitSecret creates a new secret with the given name and all default settings
-func (p *Project) InitSecret(name string, scope SecretScope) *Secret {
+func (p *Project) InitSecret(name string, scope SecretScope, cfg keypairs.Configurable) *Secret {
 	return p.NewSecret(&projectfile.Secret{
 		Name: name,
-	}, scope)
+	}, scope, cfg)
 }
 
 // NewSecret creates a new secret struct
-func (p *Project) NewSecret(s *projectfile.Secret, scope SecretScope) *Secret {
-	return &Secret{s, p, scope}
+func (p *Project) NewSecret(s *projectfile.Secret, scope SecretScope, cfg keypairs.Configurable) *Secret {
+	return &Secret{s, p, scope, cfg}
 }
 
 // Source returns the source projectfile
@@ -521,7 +523,7 @@ func (s *Secret) IsProject() bool { return s.scope == SecretScopeProject }
 
 // ValueOrNil acts as Value() except it can return a nil
 func (s *Secret) ValueOrNil() (*string, error) {
-	secretsExpander := NewSecretExpander(secretsapi.GetClient(), nil, nil)
+	secretsExpander := NewSecretExpander(secretsapi.GetClient(), nil, nil, s.cfg)
 
 	category := ProjectCategory
 	if s.IsUser() {
@@ -561,7 +563,7 @@ func (s *Secret) Save(value string) error {
 		return err
 	}
 
-	kp, err := secrets.LoadKeypairFromConfigDir()
+	kp, err := secrets.LoadKeypairFromConfigDir(s.cfg)
 	if err != nil {
 		return err
 	}

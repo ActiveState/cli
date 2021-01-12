@@ -3,6 +3,7 @@ package packages
 import (
 	"io/ioutil"
 
+	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
@@ -52,6 +53,7 @@ type Import struct {
 	out output.Outputer
 	prompt.Prompter
 	proj *project.Project
+	cfg  keypairs.Configurable
 }
 
 type primeable interface {
@@ -59,6 +61,7 @@ type primeable interface {
 	primer.Prompter
 	primer.Projecter
 	primer.Auther
+	primer.Configurer
 }
 
 // NewImport prepares an importation execution context for use.
@@ -67,6 +70,7 @@ func NewImport(prime primeable) *Import {
 		prime.Output(),
 		prime.Prompt(),
 		prime.Project(),
+		prime.Config(),
 	}
 }
 
@@ -89,7 +93,7 @@ func (i *Import) Run(params ImportRunParams) error {
 	}
 
 	if !isHeadless {
-		err := auth.RequireAuthentication(locale.T("auth_required_activate"), i.out, i.Prompter)
+		err := auth.RequireAuthentication(locale.T("auth_required_activate"), i.cfg, i.out, i.Prompter)
 		if err != nil {
 			return locale.WrapError(err, "err_activate_auth_required")
 		}

@@ -6,6 +6,7 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/pkg/projectfile"
 
@@ -277,17 +278,19 @@ func (suite *ProjectTestSuite) TestConstants() {
 func (suite *ProjectTestSuite) TestSecrets() {
 	prj, err := project.GetSafe()
 	suite.NoError(err, "Run without failure")
-	secrets := prj.Secrets()
+	cfg, err := config.Get()
+	suite.Require().NoError(err)
+	secrets := prj.Secrets(cfg)
 	suite.Len(secrets, 2)
 
-	userSecret := prj.SecretByName("secret", project.SecretScopeUser)
+	userSecret := prj.SecretByName("secret", project.SecretScopeUser, cfg)
 	suite.Require().NotNil(userSecret)
 	suite.Equal("secret-user", userSecret.Description())
 	suite.True(userSecret.IsUser())
 	suite.False(userSecret.IsProject())
 	suite.Equal("user", userSecret.Scope())
 
-	projectSecret := prj.SecretByName("secret", project.SecretScopeProject)
+	projectSecret := prj.SecretByName("secret", project.SecretScopeProject, cfg)
 	suite.Require().NotNil(projectSecret)
 	suite.Equal("secret-project", projectSecret.Description())
 	suite.True(projectSecret.IsProject())

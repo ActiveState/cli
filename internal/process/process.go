@@ -8,7 +8,6 @@ import (
 
 	"github.com/shirou/gopsutil/process"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -16,15 +15,19 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 )
 
+type Configurable interface {
+	ConfigPath() string
+}
+
 // ActivationPID returns the process ID of the activated state; if any
-func ActivationPID() int32 {
+func ActivationPID(cfg Configurable) int32 {
 	pid := int32(os.Getpid())
 	ppid := int32(os.Getppid())
 
 	procInfoErrMsgFmt := "Could not detect process information: %v"
 
 	for pid != 0 && pid != ppid {
-		pidFileName := ActivationPIDFileName(int(pid))
+		pidFileName := ActivationPIDFileName(cfg.ConfigPath(), int(pid))
 		if fileutils.FileExists(pidFileName) {
 			return pid
 		}
@@ -71,9 +74,9 @@ func isActivateCmdlineArgs(args []string) bool {
 
 // ActivationPIDFileName returns a consistent file path based on the given
 // process id.
-func ActivationPIDFileName(n int) string {
+func ActivationPIDFileName(configpath string, n int) string {
 	fileName := fmt.Sprintf("activation.%d", n)
-	return filepath.Join(config.Get().ConfigPath(), fileName)
+	return filepath.Join(configpath, fileName)
 }
 
 // Activation eases the use of a PidLock for the purpose of "marking" a process
@@ -83,8 +86,8 @@ type Activation struct {
 }
 
 // NewActivation creates an instance of Activation.
-func NewActivation(pid int) (*Activation, error) {
-	pidFileName := ActivationPIDFileName(pid)
+func NewActivation(cfg Configurable, pid int) (*Activation, error) {
+	pidFileName := ActivationPIDFileName(cfg.ConfigPath(), pid)
 	pidLock, err := osutils.NewPidLock(pidFileName)
 	if err != nil {
 		return nil, errs.Wrap(err, "cannot create new pid lock file")
@@ -113,6 +116,6 @@ func (a *Activation) Close() error {
 
 // IsActivated returns whether or not this process is being run in an activated
 // state. This can be this specific process, or one of it's parents.
-func IsActivated() bool {
-	return ActivationPID() != -1
+func IsActivated(cfg Configurable) bool {
+	return ActivationPID(cfg) != -1
 }
