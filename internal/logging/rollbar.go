@@ -22,7 +22,7 @@ type delayedLog struct {
 }
 
 var delayedLogs []delayedLog
-var rollbarCfg Configurable
+var cfg Configurable
 
 func SetupRollbar() {
 	// set user to unknown (if it has not been set yet)
@@ -64,8 +64,8 @@ func SendToRollbarWhenReady(level string, msg interface{}) {
 	delayedLogs = append(delayedLogs, delayedLog{level, msg})
 }
 
-func UpdateRollbarConfig(cfg Configurable) {
-	rollbarCfg = cfg
+func UpdateRollbarConfig(c Configurable) {
+	cfg = c
 	// update machine-id if user is still unknown
 	if rollbar.Custom()["UserID"] == "unknown" {
 		machID := machineid.UniqID()
