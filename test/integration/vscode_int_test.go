@@ -10,8 +10,8 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 )
 
-func (suite *PushIntegrationTestSuite) TestPush_VSCode() {
-	suite.OnlyRunForTags(tagsuite.Init, tagsuite.VSCode)
+func (suite *PushIntegrationTestSuite) TestInitAndPush_VSCode() {
+	suite.OnlyRunForTags(tagsuite.Init, tagsuite.Push, tagsuite.VSCode)
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
