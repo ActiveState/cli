@@ -58,5 +58,7 @@ func (a *Add) Run(params AddParams) error {
 		return locale.WrapError(err, "err_add_branch_update_tracking", "Could not update branch: {{.V0}} with tracking information", params.Label)
 	}
 
+	a.out.Print(locale.Tl("branch_add_success", "Successfully added branch: {{.V0}}", params.Label))
+
 	return nil
 }
