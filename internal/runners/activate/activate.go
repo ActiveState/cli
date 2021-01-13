@@ -105,13 +105,20 @@ func (r *Activate) run(params *ActivateParams) error {
 		return locale.WrapError(err, "err_activate_projecttouse", "Could not figure out what project to use.")
 	}
 
+	shouldCheckout := proj == nil || params.Branch != "" && params.Branch != proj.BranchName()
+
 	// Run checkout if no project was given
-	if proj == nil {
-		if params.Namespace == nil || !params.Namespace.IsValid() {
+	if shouldCheckout {
+		namespace := params.Namespace
+		if namespace == nil && proj != nil {
+			namespace = proj.Namespace()
+		}
+
+		if namespace == nil || !namespace.IsValid() {
 			return locale.NewInputError("err_activate_nonamespace", "Please provide a namespace (see `state activate --help` for more info).")
 		}
 
-		err := r.activateCheckout.Run(params.Namespace, params.Branch, pathToUse)
+		err := r.activateCheckout.Run(namespace, params.Branch, pathToUse)
 		if err != nil {
 			return err
 		}

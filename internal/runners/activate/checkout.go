@@ -37,8 +37,8 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, targetPath string) er
 	}
 
 	commitID := ns.CommitID
-	if commitID == nil {
-		branch, err := model.DefaultBranchForProject(pj)
+	if branchName != "" || commitID == nil {
+		branch, err := model.BranchForProjectByName(pj, branchName)
 		if err != nil {
 			return err
 		}
