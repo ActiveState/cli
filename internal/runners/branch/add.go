@@ -48,7 +48,7 @@ func (a *Add) Run(params AddParams) error {
 		return locale.NewError("err_add_branch_no_default", "Could not determine default branch")
 	}
 
-	err = model.UpdateBranchTracking(*branchID, *trackingID)
+	err = model.UpdateBranchTracking(*branchID, *trackingID, model.TrackingIgnore)
 	if err != nil {
 		logging.Debug("Unable to update tracking information, attempting to delete branch")
 		derr := model.DeleteBranch(*branchID)

@@ -64,6 +64,31 @@ const (
 	NamespaceCamelFlagsMatch = `^camel-flags$`
 )
 
+type TrackingType string
+
+const (
+	// TrackingNotify represents the notify tracking type for branches and will
+	// notify the project owner of upstream changes
+	TrackingNotify TrackingType = TrackingType(mono_models.BranchEditableTrackingTypeNotify)
+	// TrackingIgnore represents the ignore tracking type for branches and will
+	// ignore upstream changes
+	TrackingIgnore = TrackingType(mono_models.BranchEditableTrackingTypeIgnore)
+	// TrackingAutoUpdate represents the auto update tracking type for branches and will
+	// auto update the branch with any upstream changes
+	TrackingAutoUpdate = TrackingType(mono_models.BranchEditableTrackingTypeAutoUpdate)
+)
+
+func (t TrackingType) String() string {
+	switch t {
+	case TrackingNotify:
+		return mono_models.BranchEditableTrackingTypeNotify
+	case TrackingAutoUpdate:
+		return mono_models.BranchEditableTrackingTypeAutoUpdate
+	default:
+		return mono_models.BranchEditableTrackingTypeIgnore
+	}
+}
+
 // NamespaceMatch Checks if the given namespace query matches the given namespace
 func NamespaceMatch(query string, namespace NamespaceMatchable) bool {
 	match, err := regexp.Match(string(namespace), []byte(query))
@@ -289,10 +314,10 @@ func UpdateBranchCommit(branchID strfmt.UUID, commitID strfmt.UUID) error {
 }
 
 // UpdateBranchTracking updates the tracking information for the given branch
-func UpdateBranchTracking(branchID strfmt.UUID, trackingBranchID strfmt.UUID) error {
-	notifyTrackingType := "notify"
+func UpdateBranchTracking(branchID strfmt.UUID, trackingBranchID strfmt.UUID, trackingType TrackingType) error {
+	tracking := trackingType.String()
 	changeset := &mono_models.BranchEditable{
-		TrackingType: &notifyTrackingType,
+		TrackingType: &tracking,
 		Tracks:       &trackingBranchID,
 	}
 
