@@ -507,7 +507,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_JSON() {
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivate_Command() {
-	suite.OnlyRunForTags(tagsuite.Activate, tagsuite.VSCode)
+	suite.OnlyRunForTags(tagsuite.Activate)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
