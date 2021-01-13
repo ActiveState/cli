@@ -281,11 +281,28 @@ func AddCommit(parentCommitID strfmt.UUID, commitMessage string, operation Opera
 
 // UpdateBranchCommit updates the commit that a branch is pointed at
 func UpdateBranchCommit(branchID strfmt.UUID, commitID strfmt.UUID) error {
+	changeset := &mono_models.BranchEditable{
+		CommitID: &commitID,
+	}
+
+	return updateBranch(branchID, changeset)
+}
+
+// UpdateBranchTracking updates the tracking information for the given branch
+func UpdateBranchTracking(branchID strfmt.UUID, trackingBranchID strfmt.UUID) error {
+	notifyTrackingType := "notify"
+	changeset := &mono_models.BranchEditable{
+		TrackingType: &notifyTrackingType,
+		Tracks:       &trackingBranchID,
+	}
+
+	return updateBranch(branchID, changeset)
+}
+
+func updateBranch(branchID strfmt.UUID, changeset *mono_models.BranchEditable) error {
 	params := vcsClient.NewUpdateBranchParams()
 	params.SetBranchID(branchID)
-	params.SetBranch(&mono_models.BranchEditable{
-		CommitID: &commitID,
-	})
+	params.SetBranch(changeset)
 
 	_, err := authentication.Client().VersionControl.UpdateBranch(params, authentication.ClientAuth())
 	if err != nil {
@@ -302,27 +319,15 @@ func UpdateBranchCommit(branchID strfmt.UUID, commitID strfmt.UUID) error {
 	return nil
 }
 
-func UpdateBranchTracking(branchID strfmt.UUID, trackingBranchID strfmt.UUID) error {
-	params := vcsClient.NewUpdateBranchParams()
+func DeleteBranch(branchID strfmt.UUID) error {
+	params := vcsClient.NewDeleteBranchParams()
 	params.SetBranchID(branchID)
-	notifyType := "notify"
-	params.SetBranch(&mono_models.BranchEditable{
-		TrackingType: &notifyType,
-		Tracks:       &trackingBranchID,
-	})
 
-	_, err := authentication.Client().VersionControl.UpdateBranch(params, authentication.ClientAuth())
+	_, err := authentication.Client().VersionControl.DeleteBranch(params, authentication.ClientAuth())
 	if err != nil {
-		if _, ok := err.(*version_control.UpdateBranchForbidden); ok {
-			err = locale.WrapError(
-				err,
-				"err_update_branch_permissions",
-				"You do not have permission to modify the requirements for this project. You will either need to be invited to the project or you can fork it by running [ACTIONABLE]state fork <project namespace>[/RESET].",
-			)
-			return errs.AddTips(err, "Run [ACTIONABLE]state fork <project namespace>[/RESET] to make changes to this project")
-		}
-		return locale.NewError("err_update_branch", api.ErrorMessageFromPayload(err))
+		return locale.WrapError(err, "err_delete_branch", "Could not delete branch")
 	}
+
 	return nil
 }
 

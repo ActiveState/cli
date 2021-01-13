@@ -31,7 +31,7 @@ func (l *List) Run() error {
 
 	project, err := model.FetchProjectByName(l.project.Owner(), l.project.Name())
 	if err != nil {
-		return locale.WrapError(err, "branch_list_proejct_err", "Could not get project details for project: {{.V0}}", l.project.Namespace().String())
+		return locale.WrapError(err, "branch_list_project_err", "Could not get details for project: {{.V0}}", l.project.Namespace().String())
 	}
 
 	var branches []string
