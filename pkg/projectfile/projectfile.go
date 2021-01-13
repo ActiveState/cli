@@ -34,7 +34,6 @@ import (
 )
 
 var (
-	//urlProjectRegexStr = fmt.Sprintf(`https:\/\/[\w\.]+\/([\w_.-]*)\/([\w_.-]*)(?:\?commitID=)*(.*)`)
 	urlProjectRegexStr = fmt.Sprintf(`https:\/\/[\w\.]+\/([\w_.-]*)\/([\w_.-]*)(?:\?commitID=)*([^&]*)(?:\&branchName=)*(.*)`)
 	urlCommitRegexStr  = fmt.Sprintf(`https:\/\/[\w\.]+\/commit\/(.*)`)
 
