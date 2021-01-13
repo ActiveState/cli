@@ -105,20 +105,24 @@ func (r *Activate) run(params *ActivateParams) error {
 		return locale.WrapError(err, "err_activate_projecttouse", "Could not figure out what project to use.")
 	}
 
+	if proj != nil && proj.IsHeadless() && params.Branch != "" {
+		return locale.NewInputError(
+			"err_conflicting_branch_while_headless",
+			"Cannot activate branch [NOTICE]{{.V0}}[/RESET] while in a headless state.",
+			params.Branch,
+		)
+	}
+
 	shouldCheckout := proj == nil || params.Branch != "" && params.Branch != proj.BranchName()
 
 	// Run checkout if no project was given
 	if shouldCheckout {
-		namespace := params.Namespace
-		if namespace == nil && proj != nil {
-			namespace = proj.Namespace()
+		namespace, err := prioritizedNamespace(proj, params.Namespace)
+		if err != nil {
+			return err
 		}
 
-		if namespace == nil || !namespace.IsValid() {
-			return locale.NewInputError("err_activate_nonamespace", "Please provide a namespace (see `state activate --help` for more info).")
-		}
-
-		err := r.activateCheckout.Run(namespace, params.Branch, pathToUse)
+		err = r.activateCheckout.Run(namespace, params.Branch, pathToUse)
 		if err != nil {
 			return err
 		}
@@ -209,6 +213,20 @@ func (r *Activate) run(params *ActivateParams) error {
 	}
 
 	return nil
+}
+
+func prioritizedNamespace(prj *project.Project, names *project.Namespaced) (*project.Namespaced, error) {
+	var namespace *project.Namespaced
+	if prj != nil {
+		namespace = prj.Namespace()
+	}
+	if names != nil && names.IsValid() {
+		namespace = names
+	}
+	if namespace == nil || !namespace.IsValid() {
+		return nil, locale.NewInputError("err_activate_nonamespace", "Please provide a namespace (see `state activate --help` for more info).")
+	}
+	return namespace, nil
 }
 
 func updateProjectFile(prj *project.Project, names *project.Namespaced) error {
