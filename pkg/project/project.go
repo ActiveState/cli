@@ -216,6 +216,11 @@ func (p *Project) CommitUUID() strfmt.UUID {
 	return strfmt.UUID(p.CommitID())
 }
 
+// BranchName returns the project branch name
+func (p *Project) BranchName() string {
+	return p.projectfile.BranchName()
+}
+
 func (p *Project) IsHeadless() bool {
 	match := projectfile.CommitURLRe.FindStringSubmatch(p.URL())
 	return len(match) > 1

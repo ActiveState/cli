@@ -34,7 +34,8 @@ import (
 )
 
 var (
-	urlProjectRegexStr = fmt.Sprintf(`https:\/\/[\w\.]+\/([\w_.-]*)\/([\w_.-]*)(?:\?commitID=)*(.*)`)
+	//urlProjectRegexStr = fmt.Sprintf(`https:\/\/[\w\.]+\/([\w_.-]*)\/([\w_.-]*)(?:\?commitID=)*(.*)`)
+	urlProjectRegexStr = fmt.Sprintf(`https:\/\/[\w\.]+\/([\w_.-]*)\/([\w_.-]*)(?:\?commitID=)*([^&]*)(?:\&branchName=)*(.*)`)
 	urlCommitRegexStr  = fmt.Sprintf(`https:\/\/[\w\.]+\/commit\/(.*)`)
 
 	// ProjectURLRe Regex used to validate project fields /orgname/projectname[?commitID=someUUID]
@@ -51,9 +52,10 @@ type ErrorNoProjectFromEnv struct{ *locale.LocalizedError }
 
 // projectURL comprises all fields of a parsed project URL
 type projectURL struct {
-	Owner    string
-	Name     string
-	CommitID string
+	Owner      string
+	Name       string
+	CommitID   string
+	BranchName string
 }
 
 var projectMapMutex = &sync.Mutex{}
@@ -554,6 +556,11 @@ func (p *Project) CommitID() string {
 	return p.parsedURL.CommitID
 }
 
+// BranchName returns the branch name specified in the project
+func (p *Project) BranchName() string {
+	return p.parsedURL.BranchName
+}
+
 // Path returns the project's activestate.yaml file path.
 func (p *Project) Path() string {
 	return p.path
@@ -625,14 +632,20 @@ func parseURL(url string) (projectURL, error) {
 
 	match := CommitURLRe.FindStringSubmatch(url)
 	if len(match) > 1 {
-		parts := projectURL{"", "", match[1]}
+		parts := projectURL{CommitID: match[1]}
 		return parts, nil
 	}
 
 	match = ProjectURLRe.FindStringSubmatch(url)
-	parts := projectURL{match[1], match[2], ""}
-	if len(match) == 4 {
+	parts := projectURL{
+		Owner: match[1],
+		Name:  match[2],
+	}
+	if len(match) >= 4 {
 		parts.CommitID = match[3]
+	}
+	if len(match) >= 5 {
+		parts.BranchName = match[4]
 	}
 
 	if parts.CommitID != "" {

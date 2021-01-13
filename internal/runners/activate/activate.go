@@ -42,6 +42,7 @@ type ActivateParams struct {
 	Command       string
 	ReplaceWith   *project.Namespaced
 	Default       bool
+	Branch        string
 }
 
 type primeable interface {
@@ -110,7 +111,7 @@ func (r *Activate) run(params *ActivateParams) error {
 			return locale.NewInputError("err_activate_nonamespace", "Please provide a namespace (see `state activate --help` for more info).")
 		}
 
-		err := r.activateCheckout.Run(params.Namespace, pathToUse)
+		err := r.activateCheckout.Run(params.Namespace, params.Branch, pathToUse)
 		if err != nil {
 			return err
 		}

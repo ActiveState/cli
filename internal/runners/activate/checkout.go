@@ -26,7 +26,7 @@ func NewCheckout(repo git.Repository, prime primeable) *Checkout {
 	return &Checkout{repo, prime.Output()}
 }
 
-func (r *Checkout) Run(ns *project.Namespaced, targetPath string) error {
+func (r *Checkout) Run(ns *project.Namespaced, branchName, targetPath string) error {
 	if !ns.IsValid() {
 		return locale.NewError("err_namespace_invalid", "Invalid namespace: {{.V0}}.", ns.String())
 	}
