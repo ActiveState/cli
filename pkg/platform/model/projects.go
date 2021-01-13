@@ -162,3 +162,17 @@ func processProjectErrorResponse(err error, params ...string) error {
 		return locale.WrapError(err, "err_api_unknown", "Unexpected API error")
 	}
 }
+
+func AddBranch(projectID strfmt.UUID, label string) (*strfmt.UUID, error) {
+	addParams := projects.NewAddBranchParams()
+	addParams.SetProjectID(projectID)
+	addParams.Body.Label = label
+
+	res, err := authentication.Client().Projects.AddBranch(addParams, authentication.ClientAuth())
+	if err != nil {
+		msg := api.ErrorMessageFromPayload(err)
+		return nil, locale.WrapError(err, msg)
+	}
+
+	return &res.Payload.BranchID, nil
+}

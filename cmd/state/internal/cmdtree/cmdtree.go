@@ -110,6 +110,9 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 	updateCmd := newUpdateCommand(prime)
 	updateCmd.AddChildren(newUpdateLockCommand(prime))
 
+	branchCmd := newBranchCommand(prime)
+	branchCmd.AddChildren(newBranchAddCommand(prime))
+
 	stateCmd := newStateCommand(globals, prime)
 	stateCmd.AddChildren(
 		newActivateCommand(prime),
@@ -146,6 +149,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		newShimCommand(prime, args...),
 		newRevertCommand(prime),
 		secretsCmd,
+		branchCmd,
 	)
 
 	return &CmdTree{
