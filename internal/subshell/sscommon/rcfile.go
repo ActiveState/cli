@@ -43,6 +43,7 @@ type Configurable interface {
 	Set(string, interface{})
 	GetBool(string) bool
 	GetStringMap(string) map[string]interface{}
+	Save() error
 }
 
 type EnvData struct {
@@ -185,6 +186,10 @@ func SetupProjectRcFile(templateName, ext string, env map[string]string, out out
 		}
 	}
 	cfg.Set(activatedKey, true)
+	if err := cfg.Save(); err != nil {
+		// Save config now because otherwise we'd have to wait until the shell is closed, which might happen prematurely
+		return nil, errs.Wrap(err, "Config could not be saved after setting activatedKey")
+	}
 
 	inuse := []string{}
 	scripts := map[string]string{}
