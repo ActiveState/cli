@@ -114,8 +114,6 @@ func (r *Activate) run(params *ActivateParams) error {
 	}
 
 	shouldCheckout := proj == nil || params.Branch != "" && params.Branch != proj.BranchName()
-
-	// Run checkout if no project was given
 	if shouldCheckout {
 		namespace, err := prioritizedNamespace(proj, params.Namespace)
 		if err != nil {
