@@ -140,9 +140,9 @@ func targetProject(prj *project.Project, overwrite string) (*project.Namespaced,
 	}
 
 	// Retrieve commit ID to set the project to (if unset)
-	if ns.CommitID == nil || *ns.CommitID == "" {
+	if ns.CommitID == nil || *ns.CommitID == "" || prj.BranchName() != "" {
 		var err error
-		ns.CommitID, err = model.LatestCommitID(ns.Owner, ns.Project)
+		ns.CommitID, err = model.LatestCommitIDByBranch(ns.Owner, ns.Project, prj.BranchName())
 		if err != nil {
 			return nil, locale.WrapError(err, "err_pull_commit", "Could not retrieve the latest commit for your project.")
 		}

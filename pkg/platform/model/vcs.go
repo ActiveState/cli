@@ -135,14 +135,21 @@ func NewNamespacePlatform() Namespace {
 }
 
 // LatestCommitID returns the latest commit id by owner and project names. It
-// possible for a nil commit id to be returned without failure.
+// is possible for a nil commit id to be returned without failure.
 func LatestCommitID(ownerName, projectName string) (*strfmt.UUID, error) {
+	return LatestCommitIDByBranch(ownerName, projectName, "")
+}
+
+// LatestCommitIDByBranch returns the latest commit id by owner, project, and
+// branch names. It is possible for a nil commit id to be returned without
+// failure.
+func LatestCommitIDByBranch(ownerName, projectName, branchName string) (*strfmt.UUID, error) {
 	proj, err := FetchProjectByName(ownerName, projectName)
 	if err != nil {
 		return nil, err
 	}
 
-	branch, err := DefaultBranchForProject(proj)
+	branch, err := BranchForProjectByName(proj, branchName)
 	if err != nil {
 		return nil, err
 	}
@@ -342,9 +349,14 @@ func CommitPackage(parentCommitID strfmt.UUID, operation Operation, packageName,
 
 // UpdateProjectBranchCommit updates the vcs brach for a given project with a new commitID
 func UpdateProjectBranchCommit(proj *mono_models.Project, commitID strfmt.UUID) error {
-	branch, err := DefaultBranchForProject(proj)
+	return UpdateProjectBranchCommit(proj, "", commitID)
+}
+
+// UpdateProjectBranchCommit updates the vcs brach for a given project with a new commitID
+func UpdateProjectBranchCommitByBranch(proj *mono_models.Project, branchName string, commitID strfmt.UUID) error {
+	branch, err := BranchForProjectByName(proj, branchName)
 	if err != nil {
-		return errs.Wrap(err, "Failed to get default branch for project %s.", proj.Name)
+		return errs.Wrap(err, "Failed to get branch for project %s.", proj.Name)
 	}
 
 	return UpdateBranchCommit(branch.BranchID, commitID)

@@ -100,9 +100,9 @@ func (r *Push) Run(params PushParams) error {
 		}
 		r.Outputer.Notice(locale.Tl("push_to_project", "Pushing to project [NOTICE]{{.V1}}[/RESET] under [NOTICE]{{.V0}}[/RESET].", owner, name))
 
-		branch, err := model.DefaultBranchForProject(pjm)
+		branch, err := model.BranchForProjectByName(pjm, r.project.BranchName())
 		if err != nil {
-			return errs.Wrap(err, "Failed to get default branch of project.")
+			return errs.Wrap(err, "Failed to get branch of project.")
 		}
 		if branch.CommitID != nil && branch.CommitID.String() == r.project.CommitID() {
 			r.Outputer.Notice(locale.T("push_up_to_date"))
@@ -126,7 +126,7 @@ func (r *Push) Run(params PushParams) error {
 	}
 
 	// update the project at the given commit id.
-	err = model.UpdateProjectBranchCommit(pjm, commitID)
+	err = model.UpdateProjectBranchCommitByBranch(pjm, r.project.BranchName(), commitID)
 	if err != nil {
 		return locale.WrapError(err, "push_project_branch_commit_err", "Failed to update new project {{.V0}} to current commitID.", r.project.Namespace().String())
 	}
