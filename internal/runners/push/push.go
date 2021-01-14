@@ -102,7 +102,11 @@ func (r *Push) Run(params PushParams) error {
 
 		branch, err := model.BranchForProjectByName(pjm, r.project.BranchName())
 		if err != nil {
-			return errs.Wrap(err, "Failed to get branch of project.")
+			return locale.WrapError(
+				err, "err_push_cannot_get_branch",
+				"Failed to get branch [NOTICE]{{.V0}}[/RESET] of project.",
+				r.project.BranchName(),
+			)
 		}
 		if branch.CommitID != nil && branch.CommitID.String() == r.project.CommitID() {
 			r.Outputer.Notice(locale.T("push_up_to_date"))
