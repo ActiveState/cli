@@ -1,7 +1,9 @@
 package exeutils
 
 import (
+	"bytes"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -82,4 +84,18 @@ func UniqueExes(exePaths []string, pathext string) ([]string, error) {
 		result = append(result, exe.fpath)
 	}
 	return result, nil
+}
+
+func ExecSimple(bin string, args ...string) (string, string, error) {
+	c := exec.Command(bin, args...)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	c.Stdout = &stdout
+	c.Stderr = &stderr
+
+	if err := c.Run(); err != nil {
+		return stdout.String(), stderr.String(), errs.Wrap(err, "Exec failed")
+	}
+
+	return stdout.String(), stderr.String(), nil
 }

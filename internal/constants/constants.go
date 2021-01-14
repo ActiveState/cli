@@ -236,7 +236,13 @@ const RCAppendDeployStopLine = "-- STOP ACTIVESTATE DEPLOY RUNTIME ENVIRONMENT"
 const RCAppendDefaultStartLine = "-- START ACTIVESTATE DEFAULT RUNTIME ENVIRONMENT"
 
 // RCAppendDefaultStopLine is the end line used to denote our default environment config in RC files
-const RCAppendDefaultStopLine = "-- STOP ACTIVESTATE DEFAULT RUNTIME ENVIRONMENT"
+const RCAppendDefaultStopLine = "# -- STOP ACTIVESTATE DEFAULT RUNTIME ENVIRONMENT"
+
+// RCAppendCompletionsStartLine is the start line used to denote our completion data
+const RCAppendCompletionsStartLine = "# -- START ACTIVESTATE STATE TOOL COMPLETIONS"
+
+// RCAppendCompletionsStopLine is the end line used to denote our completion data
+const RCAppendCompletionsStopLine = "-- STOP ACTIVESTATE STATE TOOL COMPLETIONS"
 
 // ForumsURL is the URL to the state tool forums
 const ForumsURL = "https://community.activestate.com/c/state-tool/"

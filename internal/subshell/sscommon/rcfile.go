@@ -26,15 +26,20 @@ import (
 )
 
 var (
-	Deploy EnvData = EnvData{
+	Deploy RcIdentification = RcIdentification{
 		constants.RCAppendDeployStartLine,
 		constants.RCAppendDeployStopLine,
 		"user_env",
 	}
-	Default EnvData = EnvData{
+	Default RcIdentification = RcIdentification{
 		constants.RCAppendDefaultStartLine,
 		constants.RCAppendDefaultStopLine,
 		"user_default_env",
+	}
+	Completions RcIdentification = RcIdentification{
+		constants.RCAppendCompletionsStartLine,
+		constants.RCAppendCompletionsStopLine,
+		"",
 	}
 )
 
@@ -45,13 +50,13 @@ type Configurable interface {
 	GetStringMap(string) map[string]interface{}
 }
 
-type EnvData struct {
+type RcIdentification struct {
 	Start string
 	Stop  string
 	Key   string
 }
 
-func WriteRcFile(rcTemplateName string, path string, data EnvData, env map[string]string) error {
+func WriteRcFile(rcTemplateName string, path string, data RcIdentification, env map[string]string) error {
 	if err := fileutils.Touch(path); err != nil {
 		return err
 	}
@@ -85,7 +90,21 @@ func WriteRcFile(rcTemplateName string, path string, data EnvData, env map[strin
 	return fileutils.AppendToFile(path, []byte(fileutils.LineEnd+out.String()))
 }
 
-func cleanRcFile(path string, data EnvData) error {
+func WriteRcData(data string, path string, identification RcIdentification) error {
+	if err := fileutils.Touch(path); err != nil {
+		return err
+	}
+
+	if err := cleanRcFile(path, identification); err != nil {
+		return err
+	}
+
+	data = identification.Start + fileutils.LineEnd + data + fileutils.LineEnd + identification.Stop
+	logging.Debug("Writing to %s:\n%s", path, data)
+	return fileutils.AppendToFile(path, []byte(fileutils.LineEnd+data))
+}
+
+func cleanRcFile(path string, data RcIdentification) error {
 	readFile, err := os.Open(path)
 
 	if err != nil {
