@@ -570,8 +570,8 @@ func (p *Project) SetPath(path string) {
 	p.path = path
 }
 
-// Branch returns the branch as it was interpreted from the lock
-func (p *Project) Branch() string {
+// VersionBranch returns the branch as it was interpreted from the lock
+func (p *Project) VersionBranch() string {
 	return p.parsedBranch
 }
 
