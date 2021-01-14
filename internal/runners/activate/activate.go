@@ -20,6 +20,7 @@ import (
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/cmdlets/git"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/project"
@@ -164,7 +165,10 @@ func (r *Activate) run(params *ActivateParams) error {
 
 	err = venv.Setup(true)
 	if err != nil {
-		return locale.WrapError(err, "error_could_not_activate_venv", "Could not activate project. If this is a private project ensure that you are authenticated.")
+		if !authentication.Get().Authenticated() {
+			return locale.WrapError(err, "error_could_not_activate_venv_auth", "Could not activate project. If this is a private project ensure that you are authenticated.")
+		}
+		return locale.WrapError(err, "err_could_not_activate_venv", "Could not activate project")
 	}
 
 	if setDefault {
