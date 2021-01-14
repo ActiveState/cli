@@ -36,11 +36,6 @@ var (
 		constants.RCAppendDefaultStopLine,
 		"user_default_env",
 	}
-	Completions RcIdentification = RcIdentification{
-		constants.RCAppendCompletionsStartLine,
-		constants.RCAppendCompletionsStopLine,
-		"",
-	}
 )
 
 // Configurable defines an interface to store and get configuration data
