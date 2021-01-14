@@ -349,7 +349,7 @@ func CommitPackage(parentCommitID strfmt.UUID, operation Operation, packageName,
 
 // UpdateProjectBranchCommit updates the vcs brach for a given project with a new commitID
 func UpdateProjectBranchCommit(proj *mono_models.Project, commitID strfmt.UUID) error {
-	return UpdateProjectBranchCommit(proj, "", commitID)
+	return UpdateProjectBranchCommitByBranch(proj, "", commitID)
 }
 
 // UpdateProjectBranchCommit updates the vcs brach for a given project with a new commitID
