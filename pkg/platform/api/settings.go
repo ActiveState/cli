@@ -34,6 +34,9 @@ const (
 	// ServiceGraphQL is our service that's used as a graphql endpoint for platform requests
 	ServiceGraphQL = "platform-graphql"
 
+	// ServiceMediator is our mediator service used to query build graph data
+	ServiceMediator = "mediator"
+
 	// ServiceRequirementsImport is our service that processes requirements.txt files.
 	ServiceRequirementsImport = "requirements-import"
 )
@@ -68,6 +71,11 @@ var urlsByService = map[Service]*url.URL{
 		Scheme: "https",
 		Host:   constants.DefaultAPIHost,
 		Path:   constants.GraphqlAPIPath,
+	},
+	ServiceMediator: {
+		Scheme: "https",
+		Host:   constants.DefaultAPIHost,
+		Path:   constants.MediatorAPIPath,
 	},
 	ServiceRequirementsImport: {
 		Scheme: "https",
