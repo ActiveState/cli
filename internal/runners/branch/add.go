@@ -6,7 +6,6 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/go-openapi/strfmt"
 )
 
 type Add struct {
@@ -38,17 +37,13 @@ func (a *Add) Run(params AddParams) error {
 		return locale.WrapError(err, "err_add_branch", "Could not add branch")
 	}
 
-	var trackingID *strfmt.UUID
-	for _, branch := range project.Branches {
-		if branch.Default {
-			trackingID = &branch.BranchID
-		}
-	}
-	if trackingID == nil {
-		return locale.NewError("err_add_branch_no_default", "Could not determine default branch")
+	localBranch := a.project.BranchName()
+	branch, err := model.BranchForProjectByName(project, localBranch)
+	if err != nil {
+		return locale.WrapError(err, "err_add_branch_no_default", "Could not retrieve branch information for: {{.V0}}", localBranch)
 	}
 
-	err = model.UpdateBranchTracking(*branchID, *trackingID, model.TrackingIgnore)
+	err = model.UpdateBranchTracking(*branchID, branch.BranchID, model.TrackingIgnore)
 	if err != nil {
 		logging.Debug("Unable to update tracking information, attempting to delete branch")
 		derr := model.DeleteBranch(*branchID)
