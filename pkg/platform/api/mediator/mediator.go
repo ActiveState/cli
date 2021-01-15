@@ -33,9 +33,9 @@ type MediatorClient struct {
 }
 
 // Get is a legacy method, to be removed once we have commands that don't rely on globals
-func Get() *MediatorClient {
+func Get(auth *authentication.Auth) *MediatorClient {
 	url := api.GetServiceURL(api.ServiceMediator)
-	return New(url.String(), map[string][]string{}, authentication.Get(), 0)
+	return New(url.String(), map[string][]string{}, auth, 0)
 }
 
 func New(url string, common Header, bearerToken BearerTokenProvider, timeout time.Duration) *MediatorClient {

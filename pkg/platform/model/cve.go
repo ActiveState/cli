@@ -10,9 +10,9 @@ import (
 )
 
 // FetchProjectVulnerabilities returns the vulnerability information of a project
-func FetchProjectVulnerabilities(a *authentication.Auth, org, project string) (*model.ProjectVulnerabilities, error) {
+func FetchProjectVulnerabilities(auth *authentication.Auth, org, project string) (*model.ProjectVulnerabilities, error) {
 	// This should be removed by https://www.pivotaltracker.com/story/show/176508740
-	if !a.Authenticated() {
+	if !auth.Authenticated() {
 		return nil, errs.AddTips(
 			locale.NewError("cve_needs_authentication", "You need to be authenticated in order to access vulnerability information about your project."),
 			locale.Tl("auth_tip", "Run `state auth` to authenticate."),
@@ -20,7 +20,7 @@ func FetchProjectVulnerabilities(a *authentication.Auth, org, project string) (*
 	}
 	req := request.VulnerabilitiesByProject(org, project)
 	var resp model.ProjectVulnerabilities
-	med := mediator.Get()
+	med := mediator.Get(auth)
 	err := med.Run(req, &resp)
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to run mediator request.")
