@@ -42,13 +42,13 @@ func (l *Lock) Run(params *LockParams) error {
 	defaultChannel, lockVersion := splitChannelAndVersion(params.Channel)
 	prefer := true
 	if defaultChannel == "" {
-		defaultChannel = l.project.Branch()
+		defaultChannel = l.project.VersionBranch()
 		prefer = false // may be overwritten by env var
 	}
 	channel := fetchChannel(defaultChannel, prefer)
 
 	var version string
-	if l.project.IsLocked() && channel == l.project.Branch() {
+	if l.project.IsLocked() && channel == l.project.VersionBranch() {
 		version = l.project.Version()
 	}
 

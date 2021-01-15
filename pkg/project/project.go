@@ -216,6 +216,11 @@ func (p *Project) CommitUUID() strfmt.UUID {
 	return strfmt.UUID(p.CommitID())
 }
 
+// BranchName returns the project branch name
+func (p *Project) BranchName() string {
+	return p.projectfile.BranchName()
+}
+
 func (p *Project) IsHeadless() bool {
 	match := projectfile.CommitURLRe.FindStringSubmatch(p.URL())
 	return len(match) > 1
@@ -229,8 +234,8 @@ func (p *Project) NormalizedName() string {
 // Version returns project version
 func (p *Project) Version() string { return p.projectfile.Version() }
 
-// Branch returns branch that we're pinned to (useless unless version is also set)
-func (p *Project) Branch() string { return p.projectfile.Branch() }
+// VersionBranch returns branch that we're pinned to (useless unless version is also set)
+func (p *Project) VersionBranch() string { return p.projectfile.VersionBranch() }
 
 // IsLocked returns whether the current project is locked
 func (p *Project) IsLocked() bool { return p.Lock() != "" }

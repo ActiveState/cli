@@ -16,19 +16,8 @@ Aliases:
 Examples:
     {{.Cobra.Example}}
 {{- end}}
-{{- if gt (len .Cmd.AvailableChildren) 0}}
 
-Available Commands:
-    {{- $group := "" }}
-    {{- range .Cmd.AvailableChildren }}
-        {{- if ne $group .Group.String }}
-            {{- $group = .Group.String }}
-
-  {{ .Group.String }}:
-        {{- end}}
-    {{rpad .Name .NamePadding }} {{.ShortDescription}}
-    {{- end}}
-{{- end}}
+{{childCommands .Cmd}}
 {{- if .Cobra.HasAvailableFlags}}
 
 Flags:

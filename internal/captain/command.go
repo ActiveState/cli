@@ -23,6 +23,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/output/txtstyle"
 	"github.com/ActiveState/cli/internal/sighandler"
+	"github.com/ActiveState/cli/internal/table"
 )
 
 var cobraMapping map[*cobra.Command]*Command = make(map[*cobra.Command]*Command)
@@ -591,6 +592,7 @@ func (cmd *Command) Usage() error {
 		"trimTrailingWhitespaces": func(s string) string {
 			return strings.TrimRightFunc(s, unicode.IsSpace)
 		},
+		"childCommands": childCommands,
 	})
 
 	box := packr.NewBox("../../assets")
@@ -611,4 +613,27 @@ func (cmd *Command) Usage() error {
 	cmd.out.Print(out.String())
 
 	return nil
+
+}
+
+func childCommands(cmd *Command) string {
+	if len(cmd.AvailableChildren()) == 0 {
+		return ""
+	}
+
+	var group string
+	table := table.New([]string{"", ""})
+	table.HideHeaders = true
+	for _, child := range cmd.Children() {
+		if group != child.Group().String() && child.Group().String() != "" {
+			group = child.Group().String()
+			table.AddRow([]string{""})
+			table.AddRow([]string{fmt.Sprintf("%s:", group)})
+		}
+		if !child.cobra.Hidden {
+			table.AddRow([]string{fmt.Sprintf("  %s", child.Name()), child.ShortDescription()})
+		}
+	}
+
+	return fmt.Sprintf("Available Commands:\n%s", table.Render())
 }

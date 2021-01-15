@@ -30,7 +30,6 @@ const shimDenoter = "!DO NOT EDIT! State Tool Shim !DO NOT EDIT!"
 
 type DefaultConfigurer interface {
 	sscommon.Configurable
-	Save() error
 	CachePath() string
 }
 
