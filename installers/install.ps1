@@ -39,7 +39,7 @@ $script:ACTIVATE = ($activate).Trim()
 $script:ACTIVATE_DEFAULT = (${activate-default}).Trim()
 
 # For recipe installation without prompts we need to be able to disable
-# prompots through an environment variable.
+# prompts through an environment variable.
 if ($Env:NOPROMPT_INSTALL -eq "true") {
     $script:NOPROMPT = $true
     $script:FORCEOVERWRITE = $true
