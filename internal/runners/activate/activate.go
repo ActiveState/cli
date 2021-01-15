@@ -43,6 +43,7 @@ type ActivateParams struct {
 	Command       string
 	ReplaceWith   *project.Namespaced
 	Default       bool
+	Branch        string
 }
 
 type primeable interface {
@@ -105,13 +106,30 @@ func (r *Activate) run(params *ActivateParams) error {
 		return locale.WrapError(err, "err_activate_projecttouse", "Could not figure out what project to use.")
 	}
 
-	// Run checkout if no project was given
+	if proj != nil && params.Branch != "" {
+		if proj.IsHeadless() {
+			return locale.NewInputError(
+				"err_conflicting_branch_while_headless",
+				"Cannot activate branch [NOTICE]{{.V0}}[/RESET] while in a headless state. Please visit {{.V1}} to create your project.",
+				params.Branch, proj.URL(),
+			)
+		}
+
+		if params.Branch != proj.BranchName() {
+			return locale.NewInputError(
+				"err_conflicting_branch_while_checkedout",
+				"Cannot activate branch [NOTICE]{{.V0}}[/RESET]; Branch [NOTICE]{{.V1}}[/RESET] is already checked out.",
+				params.Branch, proj.BranchName(),
+			)
+		}
+	}
+
 	if proj == nil {
 		if params.Namespace == nil || !params.Namespace.IsValid() {
 			return locale.NewInputError("err_activate_nonamespace", "Please provide a namespace (see `state activate --help` for more info).")
 		}
 
-		err := r.activateCheckout.Run(params.Namespace, pathToUse)
+		err = r.activateCheckout.Run(params.Namespace, params.Branch, pathToUse)
 		if err != nil {
 			return err
 		}

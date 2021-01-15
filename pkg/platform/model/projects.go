@@ -106,6 +106,27 @@ func DefaultBranchForProject(pj *mono_models.Project) (*mono_models.Branch, erro
 	return nil, locale.NewError("err_no_default_branch")
 }
 
+// BranchForProjectByName retrieves the named branch for the given project, or
+// falls back to the default
+func BranchForProjectByName(pj *mono_models.Project, name string) (*mono_models.Branch, error) {
+	if name == "" {
+		logging.Debug("no branch name provided, using default")
+		return DefaultBranchForProject(pj)
+	}
+
+	for _, branch := range pj.Branches {
+		if branch.Label != "" && branch.Label == name {
+			return branch, nil
+		}
+	}
+
+	return nil, locale.NewInputError(
+		"err_no_matching_branch_label",
+		"This project has no branch with label matching [NOTICE]{{.V0}}[/RESET].",
+		name,
+	)
+}
+
 // CreateEmptyProject will create the project on the platform
 func CreateEmptyProject(owner, name string, private bool) (*mono_models.Project, error) {
 	addParams := projects.NewAddProjectParams()
