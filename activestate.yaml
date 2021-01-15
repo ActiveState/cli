@@ -147,7 +147,7 @@ scripts:
       export PT_PROJID_PRIMARY=$secrets.project.PT_PROJID_PRIMARY
       export PT_PROJID_STORAGE=$secrets.project.PT_PROJID_STORAGE
       export PT_DAYS_AGED=190 # set this value to control cleanup
-      ./scripts/story-cleanup/story-cleanup.py
+      python ./scripts/story-cleanup/story-cleanup.py
 events:
   - name: activate
     if: ne .Shell "cmd"
