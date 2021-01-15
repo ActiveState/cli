@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"github.com/thoas/go-funk"
+
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -20,6 +22,7 @@ import (
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/cmdlets/git"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
@@ -124,6 +127,16 @@ func (r *Activate) run(params *ActivateParams) error {
 		}
 	}
 
+	pjm, err := model.FetchProjectByName(proj.Owner(), proj.Name())
+	if err != nil {
+		return locale.NewInputError("err_fetch_project")
+	}
+
+	branch := proj.BranchName()
+	if branch == "" {
+		branch = model.BranchForProjectByName()
+	}
+
 	if proj == nil {
 		if params.Namespace == nil || !params.Namespace.IsValid() {
 			return locale.NewInputError("err_activate_nonamespace", "Please provide a namespace (see `state activate --help` for more info).")
@@ -183,6 +196,14 @@ func (r *Activate) run(params *ActivateParams) error {
 
 	err = venv.Setup(true)
 	if err != nil {
+		if errs.Matches(err, &model.ErrNoMatchingPlatform{}) {
+			branches, err := model.BranchesForProjectFiltered(proj.Owner(), proj.Name(), proj.BranchName())
+			if err == nil && len(branches) > 1 {
+				funk.Filter(branches, func(s *mono_models.Activity) bool {
+
+				})
+			}
+		}
 		if !authentication.Get().Authenticated() {
 			return locale.WrapError(err, "error_could_not_activate_venv_auth", "Could not activate project. If this is a private project ensure that you are authenticated.")
 		}
