@@ -11,7 +11,7 @@ import (
 
 // FetchProjectVulnerabilities returns the vulnerability information of a project
 func FetchProjectVulnerabilities(a *authentication.Auth, org, project string) (*model.ProjectVulnerabilities, error) {
-	// This should be removed by
+	// This should be removed by https://www.pivotaltracker.com/story/show/176508740
 	if !a.Authenticated() {
 		return nil, errs.AddTips(
 			locale.NewError("cve_needs_authentication", "You need to be authenticated in order to access vulnerability information about your project."),

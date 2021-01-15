@@ -76,7 +76,7 @@ func (c *Cve) Run() error {
 			continue
 		}
 
-		// Remove this with story
+		// Remove this block with story https://www.pivotaltracker.com/story/show/176508772
 		// filter double entries
 		if _, ok := visited[v.Name]; ok {
 			continue
