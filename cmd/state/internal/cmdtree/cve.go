@@ -13,7 +13,7 @@ func newCveCommand(prime *primer.Values) *captain.Command {
 	cmd := captain.NewCommand(
 		"cve",
 		locale.Tl("cve_title", "CVE Summary"),
-		locale.Tl("cve_description", "Print project vulnerabilities"),
+		locale.Tl("cve_description", "Show a summary of CVE vulnerabilities"),
 		prime.Output(),
 		prime.Config(),
 		[]*captain.Flag{},
