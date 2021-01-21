@@ -85,6 +85,7 @@ type Project struct {
 	Secrets       *SecretScopes `yaml:"secrets,omitempty"`
 	Events        Events        `yaml:"events,omitempty"`
 	Scripts       Scripts       `yaml:"scripts,omitempty"`
+	ScriptSources ScriptSources `yaml:"script_sources"`
 	Jobs          Jobs          `yaml:"jobs,omitempty"`
 	Private       bool          `yaml:"private,omitempty"`
 	path          string        // "private"
@@ -427,6 +428,53 @@ func MakeScriptsFromConstrainedEntities(items []ConstrainedEntity) (scripts []*S
 		}
 	}
 	return scripts
+}
+
+// ScriptSource covers the scriptsource structure, which goes under Project
+type ScriptSource struct {
+	Name        string      `yaml:"name"`
+	Description string      `yaml:"description,omitempty"`
+	Locations   []string    `yaml:"locations"`
+	Conditional Conditional `yaml:"if,omitempty"`
+	Constraints Constraint  `yaml:"constraints,omitempty"`
+}
+
+var _ ConstrainedEntity = ScriptSource{}
+
+// ID returns the script source name
+func (s ScriptSource) ID() string {
+	return s.Name
+}
+
+// ConstraintsFilter returns the script source constraints
+func (s ScriptSource) ConstraintsFilter() Constraint {
+	return s.Constraints
+}
+
+func (s ScriptSource) ConditionalFilter() Conditional {
+	return s.Conditional
+}
+
+// ScriptSources is a slice of ScriptSources
+type ScriptSources []ScriptSource
+
+// AsConstrainedEntities boxes scripts as a slice of ConstrainedEntities
+func (sources ScriptSources) AsConstrainedEntities() (items []ConstrainedEntity) {
+	for i := range sources {
+		items = append(items, &sources[i])
+	}
+	return items
+}
+
+// MakeScriptSourcesFromConstrainedEntities unboxes ConstraintedEntities as ScriptSources
+func MakeScriptSourcesFromConstrainedEntities(items []ConstrainedEntity) (sources []*ScriptSource) {
+	sources = make([]*ScriptSource, 0, len(items))
+	for _, v := range items {
+		if o, ok := v.(*ScriptSource); ok {
+			sources = append(sources, o)
+		}
+	}
+	return sources
 }
 
 // Job covers the job structure, which goes under Project
