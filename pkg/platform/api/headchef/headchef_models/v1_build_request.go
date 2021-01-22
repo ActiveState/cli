@@ -6,12 +6,12 @@ package headchef_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"encoding/json"
 	"strconv"
 
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
@@ -19,6 +19,7 @@ import (
 // V1BuildRequest Build Request V1
 //
 // A build request (v1) which is submitted to the Head Chef REST API. A build request may contain either a full recipe or just the ID of a recipe stored in the inventory API.
+//
 // swagger:model v1BuildRequest
 type V1BuildRequest struct {
 
@@ -37,14 +38,14 @@ type V1BuildRequest struct {
 	Format *string `json:"format,omitempty"`
 
 	// recipe
-	Recipe *V1BuildRequestRecipe `json:"recipe,omitempty"`
+	Recipe *Recipe `json:"recipe,omitempty"`
 
 	// The ID of a recipe solved using the inventory API solutions endpoint
 	// Format: uuid
 	RecipeID strfmt.UUID `json:"recipe_id,omitempty"`
 
 	// requester
-	Requester *V1BuildRequestRequester `json:"requester,omitempty"`
+	Requester *V1Requester `json:"requester,omitempty"`
 }
 
 // Validate validates this v1 build request
@@ -90,14 +91,13 @@ func init() {
 }
 
 func (m *V1BuildRequest) validateCamelFlagsItemsEnum(path, location string, value string) error {
-	if err := validate.Enum(path, location, value, v1BuildRequestCamelFlagsItemsEnum); err != nil {
+	if err := validate.EnumCase(path, location, value, v1BuildRequestCamelFlagsItemsEnum, true); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (m *V1BuildRequest) validateCamelFlags(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.CamelFlags) { // not required
 		return nil
 	}
@@ -153,14 +153,13 @@ const (
 
 // prop value enum
 func (m *V1BuildRequest) validateFormatEnum(path, location string, value string) error {
-	if err := validate.Enum(path, location, value, v1BuildRequestTypeFormatPropEnum); err != nil {
+	if err := validate.EnumCase(path, location, value, v1BuildRequestTypeFormatPropEnum, true); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (m *V1BuildRequest) validateFormat(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Format) { // not required
 		return nil
 	}
@@ -174,7 +173,6 @@ func (m *V1BuildRequest) validateFormat(formats strfmt.Registry) error {
 }
 
 func (m *V1BuildRequest) validateRecipe(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Recipe) { // not required
 		return nil
 	}
@@ -192,7 +190,6 @@ func (m *V1BuildRequest) validateRecipe(formats strfmt.Registry) error {
 }
 
 func (m *V1BuildRequest) validateRecipeID(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.RecipeID) { // not required
 		return nil
 	}
@@ -205,13 +202,58 @@ func (m *V1BuildRequest) validateRecipeID(formats strfmt.Registry) error {
 }
 
 func (m *V1BuildRequest) validateRequester(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Requester) { // not required
 		return nil
 	}
 
 	if m.Requester != nil {
 		if err := m.Requester.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("requester")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ContextValidate validate this v1 build request based on the context it is used
+func (m *V1BuildRequest) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateRecipe(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateRequester(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *V1BuildRequest) contextValidateRecipe(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Recipe != nil {
+		if err := m.Recipe.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("recipe")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *V1BuildRequest) contextValidateRequester(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Requester != nil {
+		if err := m.Requester.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("requester")
 			}

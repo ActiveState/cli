@@ -55,7 +55,7 @@ func (s *BuildStatus) Close() {
 }
 
 type Client struct {
-	client    headchef_operations.ClientService
+	client    headchef_operations.Client
 	transport *httptransport.Runtime
 }
 
@@ -71,7 +71,7 @@ func NewClient(apiURL *url.URL) *Client {
 	// transportRuntime.SetDebug(true)
 
 	return &Client{
-		client:    headchef_client.New(transportRuntime, strfmt.Default).HeadchefOperations,
+		client:    *headchef_client.New(transportRuntime, strfmt.Default).HeadchefOperations,
 		transport: transportRuntime,
 	}
 }
@@ -91,7 +91,7 @@ func NewBuildRequest(recipeID, orgID, projID strfmt.UUID, annotations BuildAnnot
 	uid := strfmt.UUID("00010001-0001-0001-0001-000100010001")
 
 	br := &headchef_models.V1BuildRequest{
-		Requester: &headchef_models.V1Requester{
+		Requester: &headchef_models.V1BuildRequestRequester{
 			OrganizationID: &orgID,
 			ProjectID:      &projID,
 			UserID:         uid,

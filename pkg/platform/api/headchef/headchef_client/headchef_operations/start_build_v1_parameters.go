@@ -6,70 +6,82 @@ package headchef_operations
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"net/http"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	headchef_models "github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
+	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 )
 
-// NewStartBuildV1Params creates a new StartBuildV1Params object
-// with the default values initialized.
+// NewStartBuildV1Params creates a new StartBuildV1Params object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewStartBuildV1Params() *StartBuildV1Params {
-	var ()
 	return &StartBuildV1Params{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewStartBuildV1ParamsWithTimeout creates a new StartBuildV1Params object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewStartBuildV1ParamsWithTimeout(timeout time.Duration) *StartBuildV1Params {
-	var ()
 	return &StartBuildV1Params{
-
 		timeout: timeout,
 	}
 }
 
 // NewStartBuildV1ParamsWithContext creates a new StartBuildV1Params object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewStartBuildV1ParamsWithContext(ctx context.Context) *StartBuildV1Params {
-	var ()
 	return &StartBuildV1Params{
-
 		Context: ctx,
 	}
 }
 
 // NewStartBuildV1ParamsWithHTTPClient creates a new StartBuildV1Params object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewStartBuildV1ParamsWithHTTPClient(client *http.Client) *StartBuildV1Params {
-	var ()
 	return &StartBuildV1Params{
 		HTTPClient: client,
 	}
 }
 
-/*StartBuildV1Params contains all the parameters to send to the API endpoint
-for the start build v1 operation typically these are written to a http.Request
+/* StartBuildV1Params contains all the parameters to send to the API endpoint
+   for the start build v1 operation.
+
+   Typically these are written to a http.Request.
 */
 type StartBuildV1Params struct {
 
-	/*BuildRequest*/
+	// BuildRequest.
 	BuildRequest *headchef_models.V1BuildRequest
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the start build v1 params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *StartBuildV1Params) WithDefaults() *StartBuildV1Params {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the start build v1 params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *StartBuildV1Params) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the start build v1 params
@@ -123,7 +135,6 @@ func (o *StartBuildV1Params) WriteToRequest(r runtime.ClientRequest, reg strfmt.
 		return err
 	}
 	var res []error
-
 	if o.BuildRequest != nil {
 		if err := r.SetBodyParam(o.BuildRequest); err != nil {
 			return err

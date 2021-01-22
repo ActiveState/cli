@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	headchef_models "github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
+	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 )
 
 // StartBuildV1Reader is a Reader for the StartBuildV1 structure.
@@ -24,42 +23,36 @@ type StartBuildV1Reader struct {
 // ReadResponse reads a server response into the received o.
 func (o *StartBuildV1Reader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 201:
 		result := NewStartBuildV1Created()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 202:
 		result := NewStartBuildV1Accepted()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewStartBuildV1BadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 401:
 		result := NewStartBuildV1Unauthorized()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewStartBuildV1Forbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewStartBuildV1Default(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -77,7 +70,7 @@ func NewStartBuildV1Created() *StartBuildV1Created {
 	return &StartBuildV1Created{}
 }
 
-/*StartBuildV1Created handles this case with default header values.
+/* StartBuildV1Created describes a response with status code 201, with default header values.
 
 The requested build has already ended. The response's type field is one of: build_completed or build_failed.
 */
@@ -87,6 +80,9 @@ type StartBuildV1Created struct {
 
 func (o *StartBuildV1Created) Error() string {
 	return fmt.Sprintf("[POST /v1/builds][%d] startBuildV1Created  %+v", 201, o.Payload)
+}
+func (o *StartBuildV1Created) GetPayload() *headchef_models.BuildStatusResponse {
+	return o.Payload
 }
 
 func (o *StartBuildV1Created) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -106,7 +102,7 @@ func NewStartBuildV1Accepted() *StartBuildV1Accepted {
 	return &StartBuildV1Accepted{}
 }
 
-/*StartBuildV1Accepted handles this case with default header values.
+/* StartBuildV1Accepted describes a response with status code 202, with default header values.
 
 The requested build has been started but hasn't yet completed.  The response's type field is build_started.
 */
@@ -116,6 +112,9 @@ type StartBuildV1Accepted struct {
 
 func (o *StartBuildV1Accepted) Error() string {
 	return fmt.Sprintf("[POST /v1/builds][%d] startBuildV1Accepted  %+v", 202, o.Payload)
+}
+func (o *StartBuildV1Accepted) GetPayload() *headchef_models.BuildStatusResponse {
+	return o.Payload
 }
 
 func (o *StartBuildV1Accepted) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -135,21 +134,24 @@ func NewStartBuildV1BadRequest() *StartBuildV1BadRequest {
 	return &StartBuildV1BadRequest{}
 }
 
-/*StartBuildV1BadRequest handles this case with default header values.
+/* StartBuildV1BadRequest describes a response with status code 400, with default header values.
 
-The submitted build request was invalid. Consult the message in the response body for further details.
+The submitted build request was invalid. Consult the message and error code in the response body for further details.
 */
 type StartBuildV1BadRequest struct {
-	Payload *headchef_models.RestAPIError
+	Payload *headchef_models.InvalidBuildRequestError
 }
 
 func (o *StartBuildV1BadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/builds][%d] startBuildV1BadRequest  %+v", 400, o.Payload)
 }
+func (o *StartBuildV1BadRequest) GetPayload() *headchef_models.InvalidBuildRequestError {
+	return o.Payload
+}
 
 func (o *StartBuildV1BadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(headchef_models.RestAPIError)
+	o.Payload = new(headchef_models.InvalidBuildRequestError)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -164,7 +166,7 @@ func NewStartBuildV1Unauthorized() *StartBuildV1Unauthorized {
 	return &StartBuildV1Unauthorized{}
 }
 
-/*StartBuildV1Unauthorized handles this case with default header values.
+/* StartBuildV1Unauthorized describes a response with status code 401, with default header values.
 
 The submitted build request contains a private recipe ID but the request couldn't be authenticated
 */
@@ -174,6 +176,9 @@ type StartBuildV1Unauthorized struct {
 
 func (o *StartBuildV1Unauthorized) Error() string {
 	return fmt.Sprintf("[POST /v1/builds][%d] startBuildV1Unauthorized  %+v", 401, o.Payload)
+}
+func (o *StartBuildV1Unauthorized) GetPayload() *headchef_models.RestAPIError {
+	return o.Payload
 }
 
 func (o *StartBuildV1Unauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -193,7 +198,7 @@ func NewStartBuildV1Forbidden() *StartBuildV1Forbidden {
 	return &StartBuildV1Forbidden{}
 }
 
-/*StartBuildV1Forbidden handles this case with default header values.
+/* StartBuildV1Forbidden describes a response with status code 403, with default header values.
 
 The submitted build request contains a private recipe ID but the authenticated user isn't allow to access it
 */
@@ -203,6 +208,9 @@ type StartBuildV1Forbidden struct {
 
 func (o *StartBuildV1Forbidden) Error() string {
 	return fmt.Sprintf("[POST /v1/builds][%d] startBuildV1Forbidden  %+v", 403, o.Payload)
+}
+func (o *StartBuildV1Forbidden) GetPayload() *headchef_models.RestAPIError {
+	return o.Payload
 }
 
 func (o *StartBuildV1Forbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -224,7 +232,7 @@ func NewStartBuildV1Default(code int) *StartBuildV1Default {
 	}
 }
 
-/*StartBuildV1Default handles this case with default header values.
+/* StartBuildV1Default describes a response with status code -1, with default header values.
 
 If there is an error processing the request
 */
@@ -241,6 +249,9 @@ func (o *StartBuildV1Default) Code() int {
 
 func (o *StartBuildV1Default) Error() string {
 	return fmt.Sprintf("[POST /v1/builds][%d] startBuildV1 default  %+v", o._statusCode, o.Payload)
+}
+func (o *StartBuildV1Default) GetPayload() *headchef_models.RestAPIError {
+	return o.Payload
 }
 
 func (o *StartBuildV1Default) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

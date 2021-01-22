@@ -6,12 +6,12 @@ package headchef_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"encoding/json"
 	"strconv"
 
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
@@ -19,6 +19,7 @@ import (
 // Artifact Artifact
 //
 // The result of building a single ingredient is an artifact, which contains the files created by the build.
+//
 // swagger:model Artifact
 type Artifact struct {
 
@@ -159,7 +160,7 @@ const (
 
 // prop value enum
 func (m *Artifact) validateBuildStateEnum(path, location string, value string) error {
-	if err := validate.Enum(path, location, value, artifactTypeBuildStatePropEnum); err != nil {
+	if err := validate.EnumCase(path, location, value, artifactTypeBuildStatePropEnum, true); err != nil {
 		return err
 	}
 	return nil
@@ -193,7 +194,6 @@ func (m *Artifact) validateBuildTimestamp(formats strfmt.Registry) error {
 }
 
 func (m *Artifact) validateDependencyIds(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.DependencyIds) { // not required
 		return nil
 	}
@@ -210,7 +210,6 @@ func (m *Artifact) validateDependencyIds(formats strfmt.Registry) error {
 }
 
 func (m *Artifact) validateIngredientVersionID(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.IngredientVersionID) { // not required
 		return nil
 	}
@@ -223,7 +222,6 @@ func (m *Artifact) validateIngredientVersionID(formats strfmt.Registry) error {
 }
 
 func (m *Artifact) validateLogURI(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.LogURI) { // not required
 		return nil
 	}
@@ -249,7 +247,6 @@ func (m *Artifact) validatePlatformID(formats strfmt.Registry) error {
 }
 
 func (m *Artifact) validateURI(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.URI) { // not required
 		return nil
 	}
@@ -258,6 +255,11 @@ func (m *Artifact) validateURI(formats strfmt.Registry) error {
 		return err
 	}
 
+	return nil
+}
+
+// ContextValidate validates this artifact based on context it is used
+func (m *Artifact) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

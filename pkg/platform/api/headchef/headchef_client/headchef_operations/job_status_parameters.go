@@ -6,72 +6,87 @@ package headchef_operations
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"net/http"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	headchef_models "github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
+	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 )
 
-// NewJobStatusParams creates a new JobStatusParams object
-// with the default values initialized.
+// NewJobStatusParams creates a new JobStatusParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewJobStatusParams() *JobStatusParams {
-	var ()
 	return &JobStatusParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewJobStatusParamsWithTimeout creates a new JobStatusParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewJobStatusParamsWithTimeout(timeout time.Duration) *JobStatusParams {
-	var ()
 	return &JobStatusParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewJobStatusParamsWithContext creates a new JobStatusParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewJobStatusParamsWithContext(ctx context.Context) *JobStatusParams {
-	var ()
 	return &JobStatusParams{
-
 		Context: ctx,
 	}
 }
 
 // NewJobStatusParamsWithHTTPClient creates a new JobStatusParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewJobStatusParamsWithHTTPClient(client *http.Client) *JobStatusParams {
-	var ()
 	return &JobStatusParams{
 		HTTPClient: client,
 	}
 }
 
-/*JobStatusParams contains all the parameters to send to the API endpoint
-for the job status operation typically these are written to a http.Request
+/* JobStatusParams contains all the parameters to send to the API endpoint
+   for the job status operation.
+
+   Typically these are written to a http.Request.
 */
 type JobStatusParams struct {
 
-	/*BuildRequestID*/
+	// BuildRequestID.
+	//
+	// Format: uuid
 	BuildRequestID strfmt.UUID
-	/*Job*/
+
+	// Job.
 	Job *headchef_models.JobComplete
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the job status params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *JobStatusParams) WithDefaults() *JobStatusParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the job status params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *JobStatusParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the job status params
@@ -141,7 +156,6 @@ func (o *JobStatusParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Reg
 	if err := r.SetPathParam("build_request_id", o.BuildRequestID.String()); err != nil {
 		return err
 	}
-
 	if o.Job != nil {
 		if err := r.SetBodyParam(o.Job); err != nil {
 			return err

@@ -6,68 +6,82 @@ package headchef_operations
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"net/http"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
-
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 )
 
-// NewGetBuildStatusParams creates a new GetBuildStatusParams object
-// with the default values initialized.
+// NewGetBuildStatusParams creates a new GetBuildStatusParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewGetBuildStatusParams() *GetBuildStatusParams {
-	var ()
 	return &GetBuildStatusParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetBuildStatusParamsWithTimeout creates a new GetBuildStatusParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewGetBuildStatusParamsWithTimeout(timeout time.Duration) *GetBuildStatusParams {
-	var ()
 	return &GetBuildStatusParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewGetBuildStatusParamsWithContext creates a new GetBuildStatusParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewGetBuildStatusParamsWithContext(ctx context.Context) *GetBuildStatusParams {
-	var ()
 	return &GetBuildStatusParams{
-
 		Context: ctx,
 	}
 }
 
 // NewGetBuildStatusParamsWithHTTPClient creates a new GetBuildStatusParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewGetBuildStatusParamsWithHTTPClient(client *http.Client) *GetBuildStatusParams {
-	var ()
 	return &GetBuildStatusParams{
 		HTTPClient: client,
 	}
 }
 
-/*GetBuildStatusParams contains all the parameters to send to the API endpoint
-for the get build status operation typically these are written to a http.Request
+/* GetBuildStatusParams contains all the parameters to send to the API endpoint
+   for the get build status operation.
+
+   Typically these are written to a http.Request.
 */
 type GetBuildStatusParams struct {
 
-	/*BuildRequestID*/
+	// BuildRequestID.
+	//
+	// Format: uuid
 	BuildRequestID strfmt.UUID
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the get build status params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetBuildStatusParams) WithDefaults() *GetBuildStatusParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the get build status params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetBuildStatusParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the get build status params

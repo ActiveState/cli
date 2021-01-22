@@ -6,72 +6,87 @@ package headchef_operations
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"net/http"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	headchef_models "github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
+	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 )
 
-// NewArtifactJobStatusParams creates a new ArtifactJobStatusParams object
-// with the default values initialized.
+// NewArtifactJobStatusParams creates a new ArtifactJobStatusParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewArtifactJobStatusParams() *ArtifactJobStatusParams {
-	var ()
 	return &ArtifactJobStatusParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewArtifactJobStatusParamsWithTimeout creates a new ArtifactJobStatusParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewArtifactJobStatusParamsWithTimeout(timeout time.Duration) *ArtifactJobStatusParams {
-	var ()
 	return &ArtifactJobStatusParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewArtifactJobStatusParamsWithContext creates a new ArtifactJobStatusParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewArtifactJobStatusParamsWithContext(ctx context.Context) *ArtifactJobStatusParams {
-	var ()
 	return &ArtifactJobStatusParams{
-
 		Context: ctx,
 	}
 }
 
 // NewArtifactJobStatusParamsWithHTTPClient creates a new ArtifactJobStatusParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewArtifactJobStatusParamsWithHTTPClient(client *http.Client) *ArtifactJobStatusParams {
-	var ()
 	return &ArtifactJobStatusParams{
 		HTTPClient: client,
 	}
 }
 
-/*ArtifactJobStatusParams contains all the parameters to send to the API endpoint
-for the artifact job status operation typically these are written to a http.Request
+/* ArtifactJobStatusParams contains all the parameters to send to the API endpoint
+   for the artifact job status operation.
+
+   Typically these are written to a http.Request.
 */
 type ArtifactJobStatusParams struct {
 
-	/*ArtifactID*/
+	// ArtifactID.
+	//
+	// Format: uuid
 	ArtifactID strfmt.UUID
-	/*Job*/
+
+	// Job.
 	Job *headchef_models.JobComplete
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the artifact job status params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ArtifactJobStatusParams) WithDefaults() *ArtifactJobStatusParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the artifact job status params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ArtifactJobStatusParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the artifact job status params
@@ -141,7 +156,6 @@ func (o *ArtifactJobStatusParams) WriteToRequest(r runtime.ClientRequest, reg st
 	if err := r.SetPathParam("artifact_id", o.ArtifactID.String()); err != nil {
 		return err
 	}
-
 	if o.Job != nil {
 		if err := r.SetBodyParam(o.Job); err != nil {
 			return err

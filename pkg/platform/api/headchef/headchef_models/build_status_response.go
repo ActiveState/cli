@@ -6,12 +6,12 @@ package headchef_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"encoding/json"
 	"strconv"
 
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
@@ -19,6 +19,7 @@ import (
 // BuildStatusResponse Build Status Response
 //
 // A response describing status of a build: started, completed or failed.
+//
 // swagger:model BuildStatusResponse
 type BuildStatusResponse struct {
 
@@ -108,7 +109,6 @@ func (m *BuildStatusResponse) Validate(formats strfmt.Registry) error {
 }
 
 func (m *BuildStatusResponse) validateArtifacts(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Artifacts) { // not required
 		return nil
 	}
@@ -158,7 +158,7 @@ const (
 
 // prop value enum
 func (m *BuildStatusResponse) validateBuildEngineEnum(path, location string, value string) error {
-	if err := validate.Enum(path, location, value, buildStatusResponseTypeBuildEnginePropEnum); err != nil {
+	if err := validate.EnumCase(path, location, value, buildStatusResponseTypeBuildEnginePropEnum, true); err != nil {
 		return err
 	}
 	return nil
@@ -201,7 +201,6 @@ func (m *BuildStatusResponse) validateIsRetryable(formats strfmt.Registry) error
 }
 
 func (m *BuildStatusResponse) validateLogURI(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.LogURI) { // not required
 		return nil
 	}
@@ -265,7 +264,7 @@ const (
 
 // prop value enum
 func (m *BuildStatusResponse) validateTypeEnum(path, location string, value string) error {
-	if err := validate.Enum(path, location, value, buildStatusResponseTypeTypePropEnum); err != nil {
+	if err := validate.EnumCase(path, location, value, buildStatusResponseTypeTypePropEnum, true); err != nil {
 		return err
 	}
 	return nil
@@ -280,6 +279,38 @@ func (m *BuildStatusResponse) validateType(formats strfmt.Registry) error {
 	// value enum
 	if err := m.validateTypeEnum("type", "body", *m.Type); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// ContextValidate validate this build status response based on the context it is used
+func (m *BuildStatusResponse) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateArtifacts(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *BuildStatusResponse) contextValidateArtifacts(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Artifacts); i++ {
+
+		if m.Artifacts[i] != nil {
+			if err := m.Artifacts[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("artifacts" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
 	}
 
 	return nil

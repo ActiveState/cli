@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	headchef_models "github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
+	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 )
 
 // JobStatusReader is a Reader for the JobStatus structure.
@@ -24,21 +23,18 @@ type JobStatusReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *JobStatusReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewJobStatusOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 404:
 		result := NewJobStatusNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewJobStatusDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -56,7 +52,7 @@ func NewJobStatusOK() *JobStatusOK {
 	return &JobStatusOK{}
 }
 
-/*JobStatusOK handles this case with default header values.
+/* JobStatusOK describes a response with status code 200, with default header values.
 
 Job completion has been recorded
 */
@@ -77,7 +73,7 @@ func NewJobStatusNotFound() *JobStatusNotFound {
 	return &JobStatusNotFound{}
 }
 
-/*JobStatusNotFound handles this case with default header values.
+/* JobStatusNotFound describes a response with status code 404, with default header values.
 
 No build exists with that request ID
 */
@@ -87,6 +83,9 @@ type JobStatusNotFound struct {
 
 func (o *JobStatusNotFound) Error() string {
 	return fmt.Sprintf("[POST /builds/{build_request_id}/job-status][%d] jobStatusNotFound  %+v", 404, o.Payload)
+}
+func (o *JobStatusNotFound) GetPayload() *headchef_models.RestAPIError {
+	return o.Payload
 }
 
 func (o *JobStatusNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -108,7 +107,7 @@ func NewJobStatusDefault(code int) *JobStatusDefault {
 	}
 }
 
-/*JobStatusDefault handles this case with default header values.
+/* JobStatusDefault describes a response with status code -1, with default header values.
 
 If there is an error processing the request
 */
@@ -125,6 +124,9 @@ func (o *JobStatusDefault) Code() int {
 
 func (o *JobStatusDefault) Error() string {
 	return fmt.Sprintf("[POST /builds/{build_request_id}/job-status][%d] jobStatus default  %+v", o._statusCode, o.Payload)
+}
+func (o *JobStatusDefault) GetPayload() *headchef_models.RestAPIError {
+	return o.Payload
 }
 
 func (o *JobStatusDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
