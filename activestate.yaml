@@ -23,10 +23,12 @@ constants:
 script_sources:
   - name: cleanit
     language: python3
+    strip_ext: true
     locations:
-      - ./scripts/story-cleanup/story-cleanup.py
+      - ./scripts/pys/*
   - name: examples
     language: bash
+    prefix: sh-
     locations:
       - ./scripts/examples/*
 scripts:
