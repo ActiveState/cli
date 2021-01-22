@@ -21,11 +21,16 @@ constants:
         GO_BUILD_TAGS="CI"
       fi
 script_sources:
-  - name: cleanit
+  - name: story-cleanup
+    description: "Runs Python script to move old stories from primary project to storage project"
     language: python3
     strip_ext: true
-    locations:
-      - ./scripts/pys/*
+    locations: [./scripts/story-cleanup/story-cleanup.py]
+    constants:
+      - {name: PT_API_TOKEN,      value: $secrets.project.PT_API_TOKEN}
+      - {name: PT_PROJID_PRIMARY, value: $secrets.project.PT_PROJID_PRIMARY}
+      - {name: PT_PROJID_STORAGE, value: $secrets.project.PT_PROJID_STORAGE}
+      - {name: PT_DAYS_AGED,      value: 190} # set this value to control cleanup
   - name: examples
     language: bash
     constants:
@@ -152,15 +157,6 @@ scripts:
     description: "Runs a remote debugger, that can be hooked into from your IDE, example usage: `state run debug activate` (will debug `state activate`)"
     standalone: true
     value: dlv debug --headless --listen=:2346 --api-version=2 github.com/ActiveState/cli/cmd/state -- $@
-  - name: story-cleanup
-    language: bash
-    description: "Runs Python script to move old stories from primary project to storage project"
-    value: |
-      export PT_API_TOKEN=$secrets.project.PT_API_TOKEN
-      export PT_PROJID_PRIMARY=$secrets.project.PT_PROJID_PRIMARY
-      export PT_PROJID_STORAGE=$secrets.project.PT_PROJID_STORAGE
-      export PT_DAYS_AGED=190 # set this value to control cleanup
-      ./scripts/story-cleanup/story-cleanup.py
 events:
   - name: activate
     if: ne .Shell "cmd"
