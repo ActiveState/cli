@@ -31,13 +31,6 @@ script_sources:
       - {name: PT_PROJID_PRIMARY, value: $secrets.project.PT_PROJID_PRIMARY}
       - {name: PT_PROJID_STORAGE, value: $secrets.project.PT_PROJID_STORAGE}
       - {name: PT_DAYS_AGED,      value: 190} # set this value to control cleanup
-  - name: examples
-    language: bash
-    constants:
-      - name: ENV_OTHER
-        value: some_secret
-    locations:
-      - ./scripts/examples/*
 scripts:
   - name: preprocess
     language: bash
