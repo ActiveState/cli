@@ -18,58 +18,75 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
-// NewAddOperatingSystemKernelParams creates a new AddOperatingSystemKernelParams object
-// with the default values initialized.
+// NewAddOperatingSystemKernelParams creates a new AddOperatingSystemKernelParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewAddOperatingSystemKernelParams() *AddOperatingSystemKernelParams {
-	var ()
 	return &AddOperatingSystemKernelParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewAddOperatingSystemKernelParamsWithTimeout creates a new AddOperatingSystemKernelParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewAddOperatingSystemKernelParamsWithTimeout(timeout time.Duration) *AddOperatingSystemKernelParams {
-	var ()
 	return &AddOperatingSystemKernelParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewAddOperatingSystemKernelParamsWithContext creates a new AddOperatingSystemKernelParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewAddOperatingSystemKernelParamsWithContext(ctx context.Context) *AddOperatingSystemKernelParams {
-	var ()
 	return &AddOperatingSystemKernelParams{
-
 		Context: ctx,
 	}
 }
 
 // NewAddOperatingSystemKernelParamsWithHTTPClient creates a new AddOperatingSystemKernelParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewAddOperatingSystemKernelParamsWithHTTPClient(client *http.Client) *AddOperatingSystemKernelParams {
-	var ()
 	return &AddOperatingSystemKernelParams{
 		HTTPClient: client,
 	}
 }
 
-/*AddOperatingSystemKernelParams contains all the parameters to send to the API endpoint
-for the add operating system kernel operation typically these are written to a http.Request
+/* AddOperatingSystemKernelParams contains all the parameters to send to the API endpoint
+   for the add operating system kernel operation.
+
+   Typically these are written to a http.Request.
 */
 type AddOperatingSystemKernelParams struct {
 
-	/*KernelID*/
+	// KernelID.
 	KernelID *inventory_models.AddOperatingSystemKernelParamsBody
-	/*OperatingSystemID*/
+
+	// OperatingSystemID.
+	//
+	// Format: uuid
 	OperatingSystemID strfmt.UUID
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the add operating system kernel params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *AddOperatingSystemKernelParams) WithDefaults() *AddOperatingSystemKernelParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the add operating system kernel params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *AddOperatingSystemKernelParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the add operating system kernel params
@@ -134,7 +151,6 @@ func (o *AddOperatingSystemKernelParams) WriteToRequest(r runtime.ClientRequest,
 		return err
 	}
 	var res []error
-
 	if o.KernelID != nil {
 		if err := r.SetBodyParam(o.KernelID); err != nil {
 			return err

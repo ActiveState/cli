@@ -18,56 +18,70 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
-// NewAddBuildFlagParams creates a new AddBuildFlagParams object
-// with the default values initialized.
+// NewAddBuildFlagParams creates a new AddBuildFlagParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewAddBuildFlagParams() *AddBuildFlagParams {
-	var ()
 	return &AddBuildFlagParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewAddBuildFlagParamsWithTimeout creates a new AddBuildFlagParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewAddBuildFlagParamsWithTimeout(timeout time.Duration) *AddBuildFlagParams {
-	var ()
 	return &AddBuildFlagParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewAddBuildFlagParamsWithContext creates a new AddBuildFlagParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewAddBuildFlagParamsWithContext(ctx context.Context) *AddBuildFlagParams {
-	var ()
 	return &AddBuildFlagParams{
-
 		Context: ctx,
 	}
 }
 
 // NewAddBuildFlagParamsWithHTTPClient creates a new AddBuildFlagParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewAddBuildFlagParamsWithHTTPClient(client *http.Client) *AddBuildFlagParams {
-	var ()
 	return &AddBuildFlagParams{
 		HTTPClient: client,
 	}
 }
 
-/*AddBuildFlagParams contains all the parameters to send to the API endpoint
-for the add build flag operation typically these are written to a http.Request
+/* AddBuildFlagParams contains all the parameters to send to the API endpoint
+   for the add build flag operation.
+
+   Typically these are written to a http.Request.
 */
 type AddBuildFlagParams struct {
 
-	/*BuildFlag*/
+	// BuildFlag.
 	BuildFlag *inventory_models.BuildFlagCore
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the add build flag params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *AddBuildFlagParams) WithDefaults() *AddBuildFlagParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the add build flag params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *AddBuildFlagParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the add build flag params
@@ -121,7 +135,6 @@ func (o *AddBuildFlagParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.
 		return err
 	}
 	var res []error
-
 	if o.BuildFlag != nil {
 		if err := r.SetBodyParam(o.BuildFlag); err != nil {
 			return err

@@ -6,6 +6,7 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/go-openapi/errors"
@@ -46,7 +47,6 @@ func (m *BuildFlagDefault) Validate(formats strfmt.Registry) error {
 }
 
 func (m *BuildFlagDefault) validateConditionSets(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.ConditionSets) { // not required
 		return nil
 	}
@@ -74,6 +74,38 @@ func (m *BuildFlagDefault) validateValue(formats strfmt.Registry) error {
 
 	if err := validate.Required("value", "body", m.Value); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// ContextValidate validate this build flag default based on the context it is used
+func (m *BuildFlagDefault) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateConditionSets(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *BuildFlagDefault) contextValidateConditionSets(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.ConditionSets); i++ {
+
+		if m.ConditionSets[i] != nil {
+			if err := m.ConditionSets[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("condition_sets" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
 	}
 
 	return nil

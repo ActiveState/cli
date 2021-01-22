@@ -6,6 +6,8 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -69,6 +71,25 @@ func (m *IngredientVersionRevisionCore) Validate(formats strfmt.Registry) error 
 	}
 	// validation for a type composition with Revision
 	if err := m.Revision.Validate(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+// ContextValidate validate this ingredient version revision core based on the context it is used
+func (m *IngredientVersionRevisionCore) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	// validation for a type composition with IngredientVersionRevisionCoreAllOf0
+	if err := m.IngredientVersionRevisionCoreAllOf0.ContextValidate(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+	// validation for a type composition with Revision
+	if err := m.Revision.ContextValidate(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 

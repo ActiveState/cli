@@ -18,58 +18,75 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
-// NewAddBuildFlagRevisionParams creates a new AddBuildFlagRevisionParams object
-// with the default values initialized.
+// NewAddBuildFlagRevisionParams creates a new AddBuildFlagRevisionParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewAddBuildFlagRevisionParams() *AddBuildFlagRevisionParams {
-	var ()
 	return &AddBuildFlagRevisionParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewAddBuildFlagRevisionParamsWithTimeout creates a new AddBuildFlagRevisionParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewAddBuildFlagRevisionParamsWithTimeout(timeout time.Duration) *AddBuildFlagRevisionParams {
-	var ()
 	return &AddBuildFlagRevisionParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewAddBuildFlagRevisionParamsWithContext creates a new AddBuildFlagRevisionParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewAddBuildFlagRevisionParamsWithContext(ctx context.Context) *AddBuildFlagRevisionParams {
-	var ()
 	return &AddBuildFlagRevisionParams{
-
 		Context: ctx,
 	}
 }
 
 // NewAddBuildFlagRevisionParamsWithHTTPClient creates a new AddBuildFlagRevisionParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewAddBuildFlagRevisionParamsWithHTTPClient(client *http.Client) *AddBuildFlagRevisionParams {
-	var ()
 	return &AddBuildFlagRevisionParams{
 		HTTPClient: client,
 	}
 }
 
-/*AddBuildFlagRevisionParams contains all the parameters to send to the API endpoint
-for the add build flag revision operation typically these are written to a http.Request
+/* AddBuildFlagRevisionParams contains all the parameters to send to the API endpoint
+   for the add build flag revision operation.
+
+   Typically these are written to a http.Request.
 */
 type AddBuildFlagRevisionParams struct {
 
-	/*BuildFlagID*/
+	// BuildFlagID.
+	//
+	// Format: uuid
 	BuildFlagID strfmt.UUID
-	/*BuildFlagRevision*/
+
+	// BuildFlagRevision.
 	BuildFlagRevision *inventory_models.BuildFlagRevisionCore
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the add build flag revision params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *AddBuildFlagRevisionParams) WithDefaults() *AddBuildFlagRevisionParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the add build flag revision params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *AddBuildFlagRevisionParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the add build flag revision params
@@ -139,7 +156,6 @@ func (o *AddBuildFlagRevisionParams) WriteToRequest(r runtime.ClientRequest, reg
 	if err := r.SetPathParam("build_flag_id", o.BuildFlagID.String()); err != nil {
 		return err
 	}
-
 	if o.BuildFlagRevision != nil {
 		if err := r.SetBodyParam(o.BuildFlagRevision); err != nil {
 			return err

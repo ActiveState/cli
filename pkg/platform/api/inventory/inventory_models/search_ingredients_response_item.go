@@ -6,6 +6,7 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/go-openapi/errors"
@@ -51,7 +52,6 @@ func (m *SearchIngredientsResponseItem) Validate(formats strfmt.Registry) error 
 }
 
 func (m *SearchIngredientsResponseItem) validateIngredient(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Ingredient) { // not required
 		return nil
 	}
@@ -69,7 +69,6 @@ func (m *SearchIngredientsResponseItem) validateIngredient(formats strfmt.Regist
 }
 
 func (m *SearchIngredientsResponseItem) validateLatestVersion(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.LatestVersion) { // not required
 		return nil
 	}
@@ -87,7 +86,6 @@ func (m *SearchIngredientsResponseItem) validateLatestVersion(formats strfmt.Reg
 }
 
 func (m *SearchIngredientsResponseItem) validateVersions(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Versions) { // not required
 		return nil
 	}
@@ -99,6 +97,74 @@ func (m *SearchIngredientsResponseItem) validateVersions(formats strfmt.Registry
 
 		if m.Versions[i] != nil {
 			if err := m.Versions[i].Validate(formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("versions" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+// ContextValidate validate this search ingredients response item based on the context it is used
+func (m *SearchIngredientsResponseItem) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateIngredient(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateLatestVersion(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateVersions(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *SearchIngredientsResponseItem) contextValidateIngredient(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Ingredient != nil {
+		if err := m.Ingredient.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("ingredient")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *SearchIngredientsResponseItem) contextValidateLatestVersion(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.LatestVersion != nil {
+		if err := m.LatestVersion.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("latest_version")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *SearchIngredientsResponseItem) contextValidateVersions(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Versions); i++ {
+
+		if m.Versions[i] != nil {
+			if err := m.Versions[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("versions" + "." + strconv.Itoa(i))
 				}

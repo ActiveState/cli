@@ -16,60 +16,80 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewDeleteIngredientVersionParams creates a new DeleteIngredientVersionParams object
-// with the default values initialized.
+// NewDeleteIngredientVersionParams creates a new DeleteIngredientVersionParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewDeleteIngredientVersionParams() *DeleteIngredientVersionParams {
-	var ()
 	return &DeleteIngredientVersionParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewDeleteIngredientVersionParamsWithTimeout creates a new DeleteIngredientVersionParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewDeleteIngredientVersionParamsWithTimeout(timeout time.Duration) *DeleteIngredientVersionParams {
-	var ()
 	return &DeleteIngredientVersionParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewDeleteIngredientVersionParamsWithContext creates a new DeleteIngredientVersionParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewDeleteIngredientVersionParamsWithContext(ctx context.Context) *DeleteIngredientVersionParams {
-	var ()
 	return &DeleteIngredientVersionParams{
-
 		Context: ctx,
 	}
 }
 
 // NewDeleteIngredientVersionParamsWithHTTPClient creates a new DeleteIngredientVersionParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewDeleteIngredientVersionParamsWithHTTPClient(client *http.Client) *DeleteIngredientVersionParams {
-	var ()
 	return &DeleteIngredientVersionParams{
 		HTTPClient: client,
 	}
 }
 
-/*DeleteIngredientVersionParams contains all the parameters to send to the API endpoint
-for the delete ingredient version operation typically these are written to a http.Request
+/* DeleteIngredientVersionParams contains all the parameters to send to the API endpoint
+   for the delete ingredient version operation.
+
+   Typically these are written to a http.Request.
 */
 type DeleteIngredientVersionParams struct {
 
-	/*Comment*/
+	// Comment.
 	Comment string
-	/*IngredientID*/
+
+	// IngredientID.
+	//
+	// Format: uuid
 	IngredientID strfmt.UUID
-	/*IngredientVersionID*/
+
+	// IngredientVersionID.
+	//
+	// Format: uuid
 	IngredientVersionID strfmt.UUID
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the delete ingredient version params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *DeleteIngredientVersionParams) WithDefaults() *DeleteIngredientVersionParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the delete ingredient version params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *DeleteIngredientVersionParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the delete ingredient version params
@@ -150,6 +170,7 @@ func (o *DeleteIngredientVersionParams) WriteToRequest(r runtime.ClientRequest, 
 	qrComment := o.Comment
 	qComment := qrComment
 	if qComment != "" {
+
 		if err := r.SetQueryParam("comment", qComment); err != nil {
 			return err
 		}

@@ -52,7 +52,7 @@ func NewAddBuildFlagCreated() *AddBuildFlagCreated {
 	return &AddBuildFlagCreated{}
 }
 
-/*AddBuildFlagCreated handles this case with default header values.
+/* AddBuildFlagCreated describes a response with status code 201, with default header values.
 
 The added build flag
 */
@@ -63,7 +63,6 @@ type AddBuildFlagCreated struct {
 func (o *AddBuildFlagCreated) Error() string {
 	return fmt.Sprintf("[POST /v1/build-flags][%d] addBuildFlagCreated  %+v", 201, o.Payload)
 }
-
 func (o *AddBuildFlagCreated) GetPayload() *inventory_models.BuildFlag {
 	return o.Payload
 }
@@ -85,7 +84,7 @@ func NewAddBuildFlagBadRequest() *AddBuildFlagBadRequest {
 	return &AddBuildFlagBadRequest{}
 }
 
-/*AddBuildFlagBadRequest handles this case with default header values.
+/* AddBuildFlagBadRequest describes a response with status code 400, with default header values.
 
 If the build flag is invalid
 */
@@ -96,7 +95,6 @@ type AddBuildFlagBadRequest struct {
 func (o *AddBuildFlagBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/build-flags][%d] addBuildFlagBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *AddBuildFlagBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
 	return o.Payload
 }
@@ -120,7 +118,7 @@ func NewAddBuildFlagDefault(code int) *AddBuildFlagDefault {
 	}
 }
 
-/*AddBuildFlagDefault handles this case with default header values.
+/* AddBuildFlagDefault describes a response with status code -1, with default header values.
 
 If there is an error processing the build flag
 */
@@ -138,7 +136,6 @@ func (o *AddBuildFlagDefault) Code() int {
 func (o *AddBuildFlagDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/build-flags][%d] addBuildFlag default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *AddBuildFlagDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

@@ -17,80 +17,102 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// NewGetOperatingSystemVersionParams creates a new GetOperatingSystemVersionParams object
-// with the default values initialized.
+// NewGetOperatingSystemVersionParams creates a new GetOperatingSystemVersionParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewGetOperatingSystemVersionParams() *GetOperatingSystemVersionParams {
-	var (
-		allowUnstableDefault = bool(false)
-	)
 	return &GetOperatingSystemVersionParams{
-		AllowUnstable: &allowUnstableDefault,
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetOperatingSystemVersionParamsWithTimeout creates a new GetOperatingSystemVersionParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewGetOperatingSystemVersionParamsWithTimeout(timeout time.Duration) *GetOperatingSystemVersionParams {
-	var (
-		allowUnstableDefault = bool(false)
-	)
 	return &GetOperatingSystemVersionParams{
-		AllowUnstable: &allowUnstableDefault,
-
 		timeout: timeout,
 	}
 }
 
 // NewGetOperatingSystemVersionParamsWithContext creates a new GetOperatingSystemVersionParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewGetOperatingSystemVersionParamsWithContext(ctx context.Context) *GetOperatingSystemVersionParams {
-	var (
-		allowUnstableDefault = bool(false)
-	)
 	return &GetOperatingSystemVersionParams{
-		AllowUnstable: &allowUnstableDefault,
-
 		Context: ctx,
 	}
 }
 
 // NewGetOperatingSystemVersionParamsWithHTTPClient creates a new GetOperatingSystemVersionParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewGetOperatingSystemVersionParamsWithHTTPClient(client *http.Client) *GetOperatingSystemVersionParams {
-	var (
-		allowUnstableDefault = bool(false)
-	)
 	return &GetOperatingSystemVersionParams{
-		AllowUnstable: &allowUnstableDefault,
-		HTTPClient:    client,
+		HTTPClient: client,
 	}
 }
 
-/*GetOperatingSystemVersionParams contains all the parameters to send to the API endpoint
-for the get operating system version operation typically these are written to a http.Request
+/* GetOperatingSystemVersionParams contains all the parameters to send to the API endpoint
+   for the get operating system version operation.
+
+   Typically these are written to a http.Request.
 */
 type GetOperatingSystemVersionParams struct {
 
-	/*AllowUnstable
-	  Whether to show an unstable revision of a resource if there is an available unstable version newer than the newest available stable version
+	/* AllowUnstable.
 
+	   Whether to show an unstable revision of a resource if there is an available unstable version newer than the newest available stable version
 	*/
 	AllowUnstable *bool
-	/*OperatingSystemID*/
-	OperatingSystemID strfmt.UUID
-	/*OperatingSystemVersionID*/
-	OperatingSystemVersionID strfmt.UUID
-	/*StateAt
-	  Show the state of a resource as it was at the specified timestamp. If omitted, shows the current state of the resource.
 
+	// OperatingSystemID.
+	//
+	// Format: uuid
+	OperatingSystemID strfmt.UUID
+
+	// OperatingSystemVersionID.
+	//
+	// Format: uuid
+	OperatingSystemVersionID strfmt.UUID
+
+	/* StateAt.
+
+	   Show the state of a resource as it was at the specified timestamp. If omitted, shows the current state of the resource.
+
+	   Format: date-time
 	*/
 	StateAt *strfmt.DateTime
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the get operating system version params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetOperatingSystemVersionParams) WithDefaults() *GetOperatingSystemVersionParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the get operating system version params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetOperatingSystemVersionParams) SetDefaults() {
+	var (
+		allowUnstableDefault = bool(false)
+	)
+
+	val := GetOperatingSystemVersionParams{
+		AllowUnstable: &allowUnstableDefault,
+	}
+
+	val.timeout = o.timeout
+	val.Context = o.Context
+	val.HTTPClient = o.HTTPClient
+	*o = val
 }
 
 // WithTimeout adds the timeout to the get operating system version params
@@ -182,16 +204,17 @@ func (o *GetOperatingSystemVersionParams) WriteToRequest(r runtime.ClientRequest
 
 		// query param allow_unstable
 		var qrAllowUnstable bool
+
 		if o.AllowUnstable != nil {
 			qrAllowUnstable = *o.AllowUnstable
 		}
 		qAllowUnstable := swag.FormatBool(qrAllowUnstable)
 		if qAllowUnstable != "" {
+
 			if err := r.SetQueryParam("allow_unstable", qAllowUnstable); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	// path param operating_system_id
@@ -208,16 +231,17 @@ func (o *GetOperatingSystemVersionParams) WriteToRequest(r runtime.ClientRequest
 
 		// query param state_at
 		var qrStateAt strfmt.DateTime
+
 		if o.StateAt != nil {
 			qrStateAt = *o.StateAt
 		}
 		qStateAt := qrStateAt.String()
 		if qStateAt != "" {
+
 			if err := r.SetQueryParam("state_at", qStateAt); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	if len(res) > 0 {

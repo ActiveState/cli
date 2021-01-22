@@ -46,7 +46,7 @@ func NewGetNamespaceIngredientsOK() *GetNamespaceIngredientsOK {
 	return &GetNamespaceIngredientsOK{}
 }
 
-/*GetNamespaceIngredientsOK handles this case with default header values.
+/* GetNamespaceIngredientsOK describes a response with status code 200, with default header values.
 
 A paginated list of ingredients and versions
 */
@@ -57,7 +57,6 @@ type GetNamespaceIngredientsOK struct {
 func (o *GetNamespaceIngredientsOK) Error() string {
 	return fmt.Sprintf("[GET /v1/namespaces/ingredients][%d] getNamespaceIngredientsOK  %+v", 200, o.Payload)
 }
-
 func (o *GetNamespaceIngredientsOK) GetPayload() *inventory_models.IngredientAndVersionPagedList {
 	return o.Payload
 }
@@ -81,7 +80,7 @@ func NewGetNamespaceIngredientsDefault(code int) *GetNamespaceIngredientsDefault
 	}
 }
 
-/*GetNamespaceIngredientsDefault handles this case with default header values.
+/* GetNamespaceIngredientsDefault describes a response with status code -1, with default header values.
 
 generic error response
 */
@@ -99,7 +98,6 @@ func (o *GetNamespaceIngredientsDefault) Code() int {
 func (o *GetNamespaceIngredientsDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/namespaces/ingredients][%d] getNamespaceIngredients default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *GetNamespaceIngredientsDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

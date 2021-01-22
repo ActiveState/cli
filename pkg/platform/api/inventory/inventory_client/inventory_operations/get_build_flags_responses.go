@@ -46,7 +46,7 @@ func NewGetBuildFlagsOK() *GetBuildFlagsOK {
 	return &GetBuildFlagsOK{}
 }
 
-/*GetBuildFlagsOK handles this case with default header values.
+/* GetBuildFlagsOK describes a response with status code 200, with default header values.
 
 A paginated list of build flags
 */
@@ -57,7 +57,6 @@ type GetBuildFlagsOK struct {
 func (o *GetBuildFlagsOK) Error() string {
 	return fmt.Sprintf("[GET /v1/build-flags][%d] getBuildFlagsOK  %+v", 200, o.Payload)
 }
-
 func (o *GetBuildFlagsOK) GetPayload() *inventory_models.BuildFlagPagedList {
 	return o.Payload
 }
@@ -81,7 +80,7 @@ func NewGetBuildFlagsDefault(code int) *GetBuildFlagsDefault {
 	}
 }
 
-/*GetBuildFlagsDefault handles this case with default header values.
+/* GetBuildFlagsDefault describes a response with status code -1, with default header values.
 
 generic error response
 */
@@ -99,7 +98,6 @@ func (o *GetBuildFlagsDefault) Code() int {
 func (o *GetBuildFlagsDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/build-flags][%d] getBuildFlags default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *GetBuildFlagsDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

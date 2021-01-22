@@ -6,6 +6,7 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/go-openapi/errors"
@@ -23,7 +24,6 @@ type VersionInfo struct {
 
 	// An array of decimal values representing all segments of a version, ordered from most to least significant. How a version string is rendered into a list of decimals will vary depending on the format of the source string and is therefore left up to the caller, but it must be done consistently across all versions of the same resource for sorting to work properly. This is represented as a string to avoid losing precision when converting to a floating point number.
 	// Required: true
-	// Min Length: 1
 	SortableVersion []string `json:"sortable_version"`
 
 	// The canonical version string for the resource. Should be as specific as possible (e.g. '10.9.6' of macOS instead of just '10.9'). May contain non-numeric version segments and other formatting characters if necessary.
@@ -57,7 +57,7 @@ func (m *VersionInfo) validateSortableVersion(formats strfmt.Registry) error {
 
 	for i := 0; i < len(m.SortableVersion); i++ {
 
-		if err := validate.MinLength("sortable_version"+"."+strconv.Itoa(i), "body", string(m.SortableVersion[i]), 1); err != nil {
+		if err := validate.MinLength("sortable_version"+"."+strconv.Itoa(i), "body", m.SortableVersion[i], 1); err != nil {
 			return err
 		}
 
@@ -72,6 +72,11 @@ func (m *VersionInfo) validateVersion(formats strfmt.Registry) error {
 		return err
 	}
 
+	return nil
+}
+
+// ContextValidate validates this version info based on context it is used
+func (m *VersionInfo) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

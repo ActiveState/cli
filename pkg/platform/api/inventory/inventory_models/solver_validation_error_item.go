@@ -6,15 +6,19 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
-// SolverValidationErrorItem A single validation error
+// SolverValidationErrorItem Solver Validation Error Item
 //
-// swagger:model SolverValidationErrorItem
+// A single validation error.
+//
+// swagger:model solverValidationErrorItem
 type SolverValidationErrorItem struct {
 
 	// Human-readable message about this specific validation error
@@ -45,6 +49,11 @@ func (m *SolverValidationErrorItem) validateError(formats strfmt.Registry) error
 		return err
 	}
 
+	return nil
+}
+
+// ContextValidate validates this solver validation error item based on context it is used
+func (m *SolverValidationErrorItem) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

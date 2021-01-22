@@ -17,132 +17,144 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// NewGetNamespaceIngredientsParams creates a new GetNamespaceIngredientsParams object
-// with the default values initialized.
+// NewGetNamespaceIngredientsParams creates a new GetNamespaceIngredientsParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewGetNamespaceIngredientsParams() *GetNamespaceIngredientsParams {
-	var (
-		allowDeletedDefault  = bool(false)
-		allowUnstableDefault = bool(false)
-		limitDefault         = int64(50)
-		pageDefault          = int64(1)
-	)
 	return &GetNamespaceIngredientsParams{
-		AllowDeleted:  &allowDeletedDefault,
-		AllowUnstable: &allowUnstableDefault,
-		Limit:         &limitDefault,
-		Page:          &pageDefault,
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetNamespaceIngredientsParamsWithTimeout creates a new GetNamespaceIngredientsParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewGetNamespaceIngredientsParamsWithTimeout(timeout time.Duration) *GetNamespaceIngredientsParams {
-	var (
-		allowDeletedDefault  = bool(false)
-		allowUnstableDefault = bool(false)
-		limitDefault         = int64(50)
-		pageDefault          = int64(1)
-	)
 	return &GetNamespaceIngredientsParams{
-		AllowDeleted:  &allowDeletedDefault,
-		AllowUnstable: &allowUnstableDefault,
-		Limit:         &limitDefault,
-		Page:          &pageDefault,
-
 		timeout: timeout,
 	}
 }
 
 // NewGetNamespaceIngredientsParamsWithContext creates a new GetNamespaceIngredientsParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewGetNamespaceIngredientsParamsWithContext(ctx context.Context) *GetNamespaceIngredientsParams {
-	var (
-		allowDeletedDefault  = bool(false)
-		allowUnstableDefault = bool(false)
-		limitDefault         = int64(50)
-		pageDefault          = int64(1)
-	)
 	return &GetNamespaceIngredientsParams{
-		AllowDeleted:  &allowDeletedDefault,
-		AllowUnstable: &allowUnstableDefault,
-		Limit:         &limitDefault,
-		Page:          &pageDefault,
-
 		Context: ctx,
 	}
 }
 
 // NewGetNamespaceIngredientsParamsWithHTTPClient creates a new GetNamespaceIngredientsParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewGetNamespaceIngredientsParamsWithHTTPClient(client *http.Client) *GetNamespaceIngredientsParams {
-	var (
-		allowDeletedDefault  = bool(false)
-		allowUnstableDefault = bool(false)
-		limitDefault         = int64(50)
-		pageDefault          = int64(1)
-	)
 	return &GetNamespaceIngredientsParams{
-		AllowDeleted:  &allowDeletedDefault,
-		AllowUnstable: &allowUnstableDefault,
-		Limit:         &limitDefault,
-		Page:          &pageDefault,
-		HTTPClient:    client,
+		HTTPClient: client,
 	}
 }
 
-/*GetNamespaceIngredientsParams contains all the parameters to send to the API endpoint
-for the get namespace ingredients operation typically these are written to a http.Request
+/* GetNamespaceIngredientsParams contains all the parameters to send to the API endpoint
+   for the get namespace ingredients operation.
+
+   Typically these are written to a http.Request.
 */
 type GetNamespaceIngredientsParams struct {
 
-	/*AllowDeleted
-	  Whether to show or hide a deleted revision of a resource if the newest revision of the resource is deleted
+	/* AllowDeleted.
 
+	   Whether to show or hide a deleted revision of a resource if the newest revision of the resource is deleted
 	*/
 	AllowDeleted *bool
-	/*AllowUnstable
-	  Whether to show an unstable revision of a resource if there is an available unstable version newer than the newest available stable version
 
+	/* AllowUnstable.
+
+	   Whether to show an unstable revision of a resource if there is an available unstable version newer than the newest available stable version
 	*/
 	AllowUnstable *bool
-	/*ExcludeFeatures
-	  Exclude provided features from returned ingredients. This is a performance optimization used when features are not needed.
 
+	/* ExcludeFeatures.
+
+	   Exclude provided features from returned ingredients. This is a performance optimization used when features are not needed.
 	*/
 	ExcludeFeatures *bool
-	/*Limit
-	  The maximum number of items returned per page
 
+	/* Limit.
+
+	   The maximum number of items returned per page
+
+	   Default: 50
 	*/
 	Limit *int64
-	/*MaxVersionsPerIngredient
-	  Return only this many versions per ingredient found
 
+	/* MaxVersionsPerIngredient.
+
+	   Return only this many versions per ingredient found
 	*/
 	MaxVersionsPerIngredient *int64
-	/*Namespace*/
-	Namespace string
-	/*Page
-	  The page number returned
 
+	// Namespace.
+	Namespace string
+
+	/* Page.
+
+	   The page number returned
+
+	   Default: 1
 	*/
 	Page *int64
-	/*Q
-	  Filter ingredient and versions to just those whose name or provided features match the specified query string
 
+	/* Q.
+
+	   Filter ingredient and versions to just those whose name or provided features match the specified query string
 	*/
 	Q *string
-	/*StateAt
-	  Show the state of a resource as it was at the specified timestamp. If omitted, shows the current state of the resource.
 
+	/* StateAt.
+
+	   Show the state of a resource as it was at the specified timestamp. If omitted, shows the current state of the resource.
+
+	   Format: date-time
 	*/
 	StateAt *strfmt.DateTime
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the get namespace ingredients params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetNamespaceIngredientsParams) WithDefaults() *GetNamespaceIngredientsParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the get namespace ingredients params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetNamespaceIngredientsParams) SetDefaults() {
+	var (
+		allowDeletedDefault = bool(false)
+
+		allowUnstableDefault = bool(false)
+
+		limitDefault = int64(50)
+
+		pageDefault = int64(1)
+	)
+
+	val := GetNamespaceIngredientsParams{
+		AllowDeleted:  &allowDeletedDefault,
+		AllowUnstable: &allowUnstableDefault,
+		Limit:         &limitDefault,
+		Page:          &pageDefault,
+	}
+
+	val.timeout = o.timeout
+	val.Context = o.Context
+	val.HTTPClient = o.HTTPClient
+	*o = val
 }
 
 // WithTimeout adds the timeout to the get namespace ingredients params
@@ -289,86 +301,92 @@ func (o *GetNamespaceIngredientsParams) WriteToRequest(r runtime.ClientRequest, 
 
 		// query param allow_deleted
 		var qrAllowDeleted bool
+
 		if o.AllowDeleted != nil {
 			qrAllowDeleted = *o.AllowDeleted
 		}
 		qAllowDeleted := swag.FormatBool(qrAllowDeleted)
 		if qAllowDeleted != "" {
+
 			if err := r.SetQueryParam("allow_deleted", qAllowDeleted); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	if o.AllowUnstable != nil {
 
 		// query param allow_unstable
 		var qrAllowUnstable bool
+
 		if o.AllowUnstable != nil {
 			qrAllowUnstable = *o.AllowUnstable
 		}
 		qAllowUnstable := swag.FormatBool(qrAllowUnstable)
 		if qAllowUnstable != "" {
+
 			if err := r.SetQueryParam("allow_unstable", qAllowUnstable); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	if o.ExcludeFeatures != nil {
 
 		// query param exclude_features
 		var qrExcludeFeatures bool
+
 		if o.ExcludeFeatures != nil {
 			qrExcludeFeatures = *o.ExcludeFeatures
 		}
 		qExcludeFeatures := swag.FormatBool(qrExcludeFeatures)
 		if qExcludeFeatures != "" {
+
 			if err := r.SetQueryParam("exclude_features", qExcludeFeatures); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	if o.Limit != nil {
 
 		// query param limit
 		var qrLimit int64
+
 		if o.Limit != nil {
 			qrLimit = *o.Limit
 		}
 		qLimit := swag.FormatInt64(qrLimit)
 		if qLimit != "" {
+
 			if err := r.SetQueryParam("limit", qLimit); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	if o.MaxVersionsPerIngredient != nil {
 
 		// query param max_versions_per_ingredient
 		var qrMaxVersionsPerIngredient int64
+
 		if o.MaxVersionsPerIngredient != nil {
 			qrMaxVersionsPerIngredient = *o.MaxVersionsPerIngredient
 		}
 		qMaxVersionsPerIngredient := swag.FormatInt64(qrMaxVersionsPerIngredient)
 		if qMaxVersionsPerIngredient != "" {
+
 			if err := r.SetQueryParam("max_versions_per_ingredient", qMaxVersionsPerIngredient); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	// query param namespace
 	qrNamespace := o.Namespace
 	qNamespace := qrNamespace
 	if qNamespace != "" {
+
 		if err := r.SetQueryParam("namespace", qNamespace); err != nil {
 			return err
 		}
@@ -378,48 +396,51 @@ func (o *GetNamespaceIngredientsParams) WriteToRequest(r runtime.ClientRequest, 
 
 		// query param page
 		var qrPage int64
+
 		if o.Page != nil {
 			qrPage = *o.Page
 		}
 		qPage := swag.FormatInt64(qrPage)
 		if qPage != "" {
+
 			if err := r.SetQueryParam("page", qPage); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	if o.Q != nil {
 
 		// query param q
 		var qrQ string
+
 		if o.Q != nil {
 			qrQ = *o.Q
 		}
 		qQ := qrQ
 		if qQ != "" {
+
 			if err := r.SetQueryParam("q", qQ); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	if o.StateAt != nil {
 
 		// query param state_at
 		var qrStateAt strfmt.DateTime
+
 		if o.StateAt != nil {
 			qrStateAt = *o.StateAt
 		}
 		qStateAt := qrStateAt.String()
 		if qStateAt != "" {
+
 			if err := r.SetQueryParam("state_at", qStateAt); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	if len(res) > 0 {

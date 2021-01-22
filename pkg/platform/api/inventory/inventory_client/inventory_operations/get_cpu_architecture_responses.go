@@ -46,7 +46,7 @@ func NewGetCPUArchitectureOK() *GetCPUArchitectureOK {
 	return &GetCPUArchitectureOK{}
 }
 
-/*GetCPUArchitectureOK handles this case with default header values.
+/* GetCPUArchitectureOK describes a response with status code 200, with default header values.
 
 The retrieved CPU architecture
 */
@@ -57,7 +57,6 @@ type GetCPUArchitectureOK struct {
 func (o *GetCPUArchitectureOK) Error() string {
 	return fmt.Sprintf("[GET /v1/cpu-architectures/{cpu_architecture_id}][%d] getCpuArchitectureOK  %+v", 200, o.Payload)
 }
-
 func (o *GetCPUArchitectureOK) GetPayload() *inventory_models.CPUArchitecture {
 	return o.Payload
 }
@@ -81,7 +80,7 @@ func NewGetCPUArchitectureDefault(code int) *GetCPUArchitectureDefault {
 	}
 }
 
-/*GetCPUArchitectureDefault handles this case with default header values.
+/* GetCPUArchitectureDefault describes a response with status code -1, with default header values.
 
 generic error response
 */
@@ -99,7 +98,6 @@ func (o *GetCPUArchitectureDefault) Code() int {
 func (o *GetCPUArchitectureDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/cpu-architectures/{cpu_architecture_id}][%d] getCpuArchitecture default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *GetCPUArchitectureDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

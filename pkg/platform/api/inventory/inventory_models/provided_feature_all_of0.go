@@ -6,6 +6,8 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -79,6 +81,11 @@ func (m *ProvidedFeatureAllOf0) validateNamespace(formats strfmt.Registry) error
 		return err
 	}
 
+	return nil
+}
+
+// ContextValidate validates this provided feature all of0 based on context it is used
+func (m *ProvidedFeatureAllOf0) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

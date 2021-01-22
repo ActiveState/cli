@@ -46,7 +46,7 @@ func NewGetPatchesOK() *GetPatchesOK {
 	return &GetPatchesOK{}
 }
 
-/*GetPatchesOK handles this case with default header values.
+/* GetPatchesOK describes a response with status code 200, with default header values.
 
 A paginated list of patches
 */
@@ -57,7 +57,6 @@ type GetPatchesOK struct {
 func (o *GetPatchesOK) Error() string {
 	return fmt.Sprintf("[GET /v1/patches][%d] getPatchesOK  %+v", 200, o.Payload)
 }
-
 func (o *GetPatchesOK) GetPayload() *inventory_models.PatchPagedList {
 	return o.Payload
 }
@@ -81,7 +80,7 @@ func NewGetPatchesDefault(code int) *GetPatchesDefault {
 	}
 }
 
-/*GetPatchesDefault handles this case with default header values.
+/* GetPatchesDefault describes a response with status code -1, with default header values.
 
 generic error response
 */
@@ -99,7 +98,6 @@ func (o *GetPatchesDefault) Code() int {
 func (o *GetPatchesDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/patches][%d] getPatches default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *GetPatchesDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

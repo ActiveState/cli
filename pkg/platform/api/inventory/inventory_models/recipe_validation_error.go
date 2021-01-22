@@ -6,6 +6,7 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/go-openapi/errors"
@@ -53,6 +54,38 @@ func (m *RecipeValidationError) validateValidationErrors(formats strfmt.Registry
 
 		if m.ValidationErrors[i] != nil {
 			if err := m.ValidationErrors[i].Validate(formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("validation_errors" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+// ContextValidate validate this recipe validation error based on the context it is used
+func (m *RecipeValidationError) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateValidationErrors(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *RecipeValidationError) contextValidateValidationErrors(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.ValidationErrors); i++ {
+
+		if m.ValidationErrors[i] != nil {
+			if err := m.ValidationErrors[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("validation_errors" + "." + strconv.Itoa(i))
 				}

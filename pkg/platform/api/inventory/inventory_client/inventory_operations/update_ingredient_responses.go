@@ -46,7 +46,7 @@ func NewUpdateIngredientOK() *UpdateIngredientOK {
 	return &UpdateIngredientOK{}
 }
 
-/*UpdateIngredientOK handles this case with default header values.
+/* UpdateIngredientOK describes a response with status code 200, with default header values.
 
 The updated ingredient
 */
@@ -57,7 +57,6 @@ type UpdateIngredientOK struct {
 func (o *UpdateIngredientOK) Error() string {
 	return fmt.Sprintf("[PUT /v1/ingredients/{ingredient_id}][%d] updateIngredientOK  %+v", 200, o.Payload)
 }
-
 func (o *UpdateIngredientOK) GetPayload() *inventory_models.Ingredient {
 	return o.Payload
 }
@@ -81,7 +80,7 @@ func NewUpdateIngredientDefault(code int) *UpdateIngredientDefault {
 	}
 }
 
-/*UpdateIngredientDefault handles this case with default header values.
+/* UpdateIngredientDefault describes a response with status code -1, with default header values.
 
 If there is an error processing the request
 */
@@ -99,7 +98,6 @@ func (o *UpdateIngredientDefault) Code() int {
 func (o *UpdateIngredientDefault) Error() string {
 	return fmt.Sprintf("[PUT /v1/ingredients/{ingredient_id}][%d] updateIngredient default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *UpdateIngredientDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

@@ -46,7 +46,7 @@ func NewGetPatchOK() *GetPatchOK {
 	return &GetPatchOK{}
 }
 
-/*GetPatchOK handles this case with default header values.
+/* GetPatchOK describes a response with status code 200, with default header values.
 
 The retrieved patch
 */
@@ -57,7 +57,6 @@ type GetPatchOK struct {
 func (o *GetPatchOK) Error() string {
 	return fmt.Sprintf("[GET /v1/patches/{patch_id}][%d] getPatchOK  %+v", 200, o.Payload)
 }
-
 func (o *GetPatchOK) GetPayload() *inventory_models.Patch {
 	return o.Payload
 }
@@ -81,7 +80,7 @@ func NewGetPatchDefault(code int) *GetPatchDefault {
 	}
 }
 
-/*GetPatchDefault handles this case with default header values.
+/* GetPatchDefault describes a response with status code -1, with default header values.
 
 generic error response
 */
@@ -99,7 +98,6 @@ func (o *GetPatchDefault) Code() int {
 func (o *GetPatchDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/patches/{patch_id}][%d] getPatch default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *GetPatchDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

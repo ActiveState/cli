@@ -46,7 +46,7 @@ func NewGetLibcVersionOK() *GetLibcVersionOK {
 	return &GetLibcVersionOK{}
 }
 
-/*GetLibcVersionOK handles this case with default header values.
+/* GetLibcVersionOK describes a response with status code 200, with default header values.
 
 The retrieved libc version
 */
@@ -57,7 +57,6 @@ type GetLibcVersionOK struct {
 func (o *GetLibcVersionOK) Error() string {
 	return fmt.Sprintf("[GET /v1/libcs/{libc_id}/versions/{libc_version_id}][%d] getLibcVersionOK  %+v", 200, o.Payload)
 }
-
 func (o *GetLibcVersionOK) GetPayload() *inventory_models.LibcVersion {
 	return o.Payload
 }
@@ -81,7 +80,7 @@ func NewGetLibcVersionDefault(code int) *GetLibcVersionDefault {
 	}
 }
 
-/*GetLibcVersionDefault handles this case with default header values.
+/* GetLibcVersionDefault describes a response with status code -1, with default header values.
 
 generic error response
 */
@@ -99,7 +98,6 @@ func (o *GetLibcVersionDefault) Code() int {
 func (o *GetLibcVersionDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/libcs/{libc_id}/versions/{libc_version_id}][%d] getLibcVersion default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *GetLibcVersionDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

@@ -46,7 +46,7 @@ func NewGetAuthorOK() *GetAuthorOK {
 	return &GetAuthorOK{}
 }
 
-/*GetAuthorOK handles this case with default header values.
+/* GetAuthorOK describes a response with status code 200, with default header values.
 
 Retrieve the author
 */
@@ -57,7 +57,6 @@ type GetAuthorOK struct {
 func (o *GetAuthorOK) Error() string {
 	return fmt.Sprintf("[GET /v1/authors/{author_id_or_email}][%d] getAuthorOK  %+v", 200, o.Payload)
 }
-
 func (o *GetAuthorOK) GetPayload() *inventory_models.Author {
 	return o.Payload
 }
@@ -81,7 +80,7 @@ func NewGetAuthorDefault(code int) *GetAuthorDefault {
 	}
 }
 
-/*GetAuthorDefault handles this case with default header values.
+/* GetAuthorDefault describes a response with status code -1, with default header values.
 
 generic error response
 */
@@ -99,7 +98,6 @@ func (o *GetAuthorDefault) Code() int {
 func (o *GetAuthorDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/authors/{author_id_or_email}][%d] getAuthor default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *GetAuthorDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

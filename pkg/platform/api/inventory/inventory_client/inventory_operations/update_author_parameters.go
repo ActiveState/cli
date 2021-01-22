@@ -18,58 +18,73 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
-// NewUpdateAuthorParams creates a new UpdateAuthorParams object
-// with the default values initialized.
+// NewUpdateAuthorParams creates a new UpdateAuthorParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewUpdateAuthorParams() *UpdateAuthorParams {
-	var ()
 	return &UpdateAuthorParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewUpdateAuthorParamsWithTimeout creates a new UpdateAuthorParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewUpdateAuthorParamsWithTimeout(timeout time.Duration) *UpdateAuthorParams {
-	var ()
 	return &UpdateAuthorParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewUpdateAuthorParamsWithContext creates a new UpdateAuthorParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewUpdateAuthorParamsWithContext(ctx context.Context) *UpdateAuthorParams {
-	var ()
 	return &UpdateAuthorParams{
-
 		Context: ctx,
 	}
 }
 
 // NewUpdateAuthorParamsWithHTTPClient creates a new UpdateAuthorParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewUpdateAuthorParamsWithHTTPClient(client *http.Client) *UpdateAuthorParams {
-	var ()
 	return &UpdateAuthorParams{
 		HTTPClient: client,
 	}
 }
 
-/*UpdateAuthorParams contains all the parameters to send to the API endpoint
-for the update author operation typically these are written to a http.Request
+/* UpdateAuthorParams contains all the parameters to send to the API endpoint
+   for the update author operation.
+
+   Typically these are written to a http.Request.
 */
 type UpdateAuthorParams struct {
 
-	/*Author*/
+	// Author.
 	Author *inventory_models.Author
-	/*AuthorIDOrEmail*/
+
+	// AuthorIDOrEmail.
 	AuthorIDOrEmail string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the update author params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *UpdateAuthorParams) WithDefaults() *UpdateAuthorParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the update author params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *UpdateAuthorParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the update author params
@@ -134,7 +149,6 @@ func (o *UpdateAuthorParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.
 		return err
 	}
 	var res []error
-
 	if o.Author != nil {
 		if err := r.SetBodyParam(o.Author); err != nil {
 			return err

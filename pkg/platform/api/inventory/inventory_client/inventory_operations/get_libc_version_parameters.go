@@ -17,80 +17,102 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// NewGetLibcVersionParams creates a new GetLibcVersionParams object
-// with the default values initialized.
+// NewGetLibcVersionParams creates a new GetLibcVersionParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewGetLibcVersionParams() *GetLibcVersionParams {
-	var (
-		allowUnstableDefault = bool(false)
-	)
 	return &GetLibcVersionParams{
-		AllowUnstable: &allowUnstableDefault,
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetLibcVersionParamsWithTimeout creates a new GetLibcVersionParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewGetLibcVersionParamsWithTimeout(timeout time.Duration) *GetLibcVersionParams {
-	var (
-		allowUnstableDefault = bool(false)
-	)
 	return &GetLibcVersionParams{
-		AllowUnstable: &allowUnstableDefault,
-
 		timeout: timeout,
 	}
 }
 
 // NewGetLibcVersionParamsWithContext creates a new GetLibcVersionParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewGetLibcVersionParamsWithContext(ctx context.Context) *GetLibcVersionParams {
-	var (
-		allowUnstableDefault = bool(false)
-	)
 	return &GetLibcVersionParams{
-		AllowUnstable: &allowUnstableDefault,
-
 		Context: ctx,
 	}
 }
 
 // NewGetLibcVersionParamsWithHTTPClient creates a new GetLibcVersionParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewGetLibcVersionParamsWithHTTPClient(client *http.Client) *GetLibcVersionParams {
-	var (
-		allowUnstableDefault = bool(false)
-	)
 	return &GetLibcVersionParams{
-		AllowUnstable: &allowUnstableDefault,
-		HTTPClient:    client,
+		HTTPClient: client,
 	}
 }
 
-/*GetLibcVersionParams contains all the parameters to send to the API endpoint
-for the get libc version operation typically these are written to a http.Request
+/* GetLibcVersionParams contains all the parameters to send to the API endpoint
+   for the get libc version operation.
+
+   Typically these are written to a http.Request.
 */
 type GetLibcVersionParams struct {
 
-	/*AllowUnstable
-	  Whether to show an unstable revision of a resource if there is an available unstable version newer than the newest available stable version
+	/* AllowUnstable.
 
+	   Whether to show an unstable revision of a resource if there is an available unstable version newer than the newest available stable version
 	*/
 	AllowUnstable *bool
-	/*LibcID*/
-	LibcID strfmt.UUID
-	/*LibcVersionID*/
-	LibcVersionID strfmt.UUID
-	/*StateAt
-	  Show the state of a resource as it was at the specified timestamp. If omitted, shows the current state of the resource.
 
+	// LibcID.
+	//
+	// Format: uuid
+	LibcID strfmt.UUID
+
+	// LibcVersionID.
+	//
+	// Format: uuid
+	LibcVersionID strfmt.UUID
+
+	/* StateAt.
+
+	   Show the state of a resource as it was at the specified timestamp. If omitted, shows the current state of the resource.
+
+	   Format: date-time
 	*/
 	StateAt *strfmt.DateTime
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the get libc version params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetLibcVersionParams) WithDefaults() *GetLibcVersionParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the get libc version params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetLibcVersionParams) SetDefaults() {
+	var (
+		allowUnstableDefault = bool(false)
+	)
+
+	val := GetLibcVersionParams{
+		AllowUnstable: &allowUnstableDefault,
+	}
+
+	val.timeout = o.timeout
+	val.Context = o.Context
+	val.HTTPClient = o.HTTPClient
+	*o = val
 }
 
 // WithTimeout adds the timeout to the get libc version params
@@ -182,16 +204,17 @@ func (o *GetLibcVersionParams) WriteToRequest(r runtime.ClientRequest, reg strfm
 
 		// query param allow_unstable
 		var qrAllowUnstable bool
+
 		if o.AllowUnstable != nil {
 			qrAllowUnstable = *o.AllowUnstable
 		}
 		qAllowUnstable := swag.FormatBool(qrAllowUnstable)
 		if qAllowUnstable != "" {
+
 			if err := r.SetQueryParam("allow_unstable", qAllowUnstable); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	// path param libc_id
@@ -208,16 +231,17 @@ func (o *GetLibcVersionParams) WriteToRequest(r runtime.ClientRequest, reg strfm
 
 		// query param state_at
 		var qrStateAt strfmt.DateTime
+
 		if o.StateAt != nil {
 			qrStateAt = *o.StateAt
 		}
 		qStateAt := qrStateAt.String()
 		if qStateAt != "" {
+
 			if err := r.SetQueryParam("state_at", qStateAt); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	if len(res) > 0 {

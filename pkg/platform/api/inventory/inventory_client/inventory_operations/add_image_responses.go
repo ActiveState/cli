@@ -52,7 +52,7 @@ func NewAddImageCreated() *AddImageCreated {
 	return &AddImageCreated{}
 }
 
-/*AddImageCreated handles this case with default header values.
+/* AddImageCreated describes a response with status code 201, with default header values.
 
 The added image
 */
@@ -63,7 +63,6 @@ type AddImageCreated struct {
 func (o *AddImageCreated) Error() string {
 	return fmt.Sprintf("[POST /v1/images][%d] addImageCreated  %+v", 201, o.Payload)
 }
-
 func (o *AddImageCreated) GetPayload() *inventory_models.Image {
 	return o.Payload
 }
@@ -85,7 +84,7 @@ func NewAddImageBadRequest() *AddImageBadRequest {
 	return &AddImageBadRequest{}
 }
 
-/*AddImageBadRequest handles this case with default header values.
+/* AddImageBadRequest describes a response with status code 400, with default header values.
 
 If the image is invalid
 */
@@ -96,7 +95,6 @@ type AddImageBadRequest struct {
 func (o *AddImageBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/images][%d] addImageBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *AddImageBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
 	return o.Payload
 }
@@ -120,7 +118,7 @@ func NewAddImageDefault(code int) *AddImageDefault {
 	}
 }
 
-/*AddImageDefault handles this case with default header values.
+/* AddImageDefault describes a response with status code -1, with default header values.
 
 If there is an error processing the image
 */
@@ -138,7 +136,6 @@ func (o *AddImageDefault) Code() int {
 func (o *AddImageDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/images][%d] addImage default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *AddImageDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

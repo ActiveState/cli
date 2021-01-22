@@ -52,7 +52,7 @@ func NewAddKernelVersionCreated() *AddKernelVersionCreated {
 	return &AddKernelVersionCreated{}
 }
 
-/*AddKernelVersionCreated handles this case with default header values.
+/* AddKernelVersionCreated describes a response with status code 201, with default header values.
 
 The added kernel version
 */
@@ -63,7 +63,6 @@ type AddKernelVersionCreated struct {
 func (o *AddKernelVersionCreated) Error() string {
 	return fmt.Sprintf("[POST /v1/kernels/{kernel_id}/versions][%d] addKernelVersionCreated  %+v", 201, o.Payload)
 }
-
 func (o *AddKernelVersionCreated) GetPayload() *inventory_models.KernelVersion {
 	return o.Payload
 }
@@ -85,7 +84,7 @@ func NewAddKernelVersionBadRequest() *AddKernelVersionBadRequest {
 	return &AddKernelVersionBadRequest{}
 }
 
-/*AddKernelVersionBadRequest handles this case with default header values.
+/* AddKernelVersionBadRequest describes a response with status code 400, with default header values.
 
 If the kernel version is invalid
 */
@@ -96,7 +95,6 @@ type AddKernelVersionBadRequest struct {
 func (o *AddKernelVersionBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/kernels/{kernel_id}/versions][%d] addKernelVersionBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *AddKernelVersionBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
 	return o.Payload
 }
@@ -120,7 +118,7 @@ func NewAddKernelVersionDefault(code int) *AddKernelVersionDefault {
 	}
 }
 
-/*AddKernelVersionDefault handles this case with default header values.
+/* AddKernelVersionDefault describes a response with status code -1, with default header values.
 
 If there is an error processing the request
 */
@@ -138,7 +136,6 @@ func (o *AddKernelVersionDefault) Code() int {
 func (o *AddKernelVersionDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/kernels/{kernel_id}/versions][%d] addKernelVersion default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *AddKernelVersionDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

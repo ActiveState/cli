@@ -43,12 +43,18 @@ func (o *GetSolutionRecipeReader) ReadResponse(response runtime.ClientResponse, 
 
 // NewGetSolutionRecipeOK creates a GetSolutionRecipeOK with default headers values
 func NewGetSolutionRecipeOK() *GetSolutionRecipeOK {
+	var (
+		// initialize headers with default values
+		cacheControlDefault = string("private, max-age 3600")
+	)
+
 	return &GetSolutionRecipeOK{
-		CacheControl: "private, max-age 3600",
+
+		CacheControl: cacheControlDefault,
 	}
 }
 
-/*GetSolutionRecipeOK handles this case with default header values.
+/* GetSolutionRecipeOK describes a response with status code 200, with default header values.
 
 The retrieved recipe
 */
@@ -61,15 +67,18 @@ type GetSolutionRecipeOK struct {
 func (o *GetSolutionRecipeOK) Error() string {
 	return fmt.Sprintf("[GET /v1/solutions/recipes/{recipe_id}][%d] getSolutionRecipeOK  %+v", 200, o.Payload)
 }
-
 func (o *GetSolutionRecipeOK) GetPayload() *inventory_models.SolutionRecipe {
 	return o.Payload
 }
 
 func (o *GetSolutionRecipeOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	// response header Cache-Control
-	o.CacheControl = response.GetHeader("Cache-Control")
+	// hydrates response header Cache-Control
+	hdrCacheControl := response.GetHeader("Cache-Control")
+
+	if hdrCacheControl != "" {
+		o.CacheControl = hdrCacheControl
+	}
 
 	o.Payload = new(inventory_models.SolutionRecipe)
 
@@ -88,7 +97,7 @@ func NewGetSolutionRecipeDefault(code int) *GetSolutionRecipeDefault {
 	}
 }
 
-/*GetSolutionRecipeDefault handles this case with default header values.
+/* GetSolutionRecipeDefault describes a response with status code -1, with default header values.
 
 generic error response
 */
@@ -106,7 +115,6 @@ func (o *GetSolutionRecipeDefault) Code() int {
 func (o *GetSolutionRecipeDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/solutions/recipes/{recipe_id}][%d] getSolutionRecipe default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *GetSolutionRecipeDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

@@ -18,58 +18,75 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
-// NewAddOperatingSystemLibcParams creates a new AddOperatingSystemLibcParams object
-// with the default values initialized.
+// NewAddOperatingSystemLibcParams creates a new AddOperatingSystemLibcParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewAddOperatingSystemLibcParams() *AddOperatingSystemLibcParams {
-	var ()
 	return &AddOperatingSystemLibcParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewAddOperatingSystemLibcParamsWithTimeout creates a new AddOperatingSystemLibcParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewAddOperatingSystemLibcParamsWithTimeout(timeout time.Duration) *AddOperatingSystemLibcParams {
-	var ()
 	return &AddOperatingSystemLibcParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewAddOperatingSystemLibcParamsWithContext creates a new AddOperatingSystemLibcParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewAddOperatingSystemLibcParamsWithContext(ctx context.Context) *AddOperatingSystemLibcParams {
-	var ()
 	return &AddOperatingSystemLibcParams{
-
 		Context: ctx,
 	}
 }
 
 // NewAddOperatingSystemLibcParamsWithHTTPClient creates a new AddOperatingSystemLibcParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewAddOperatingSystemLibcParamsWithHTTPClient(client *http.Client) *AddOperatingSystemLibcParams {
-	var ()
 	return &AddOperatingSystemLibcParams{
 		HTTPClient: client,
 	}
 }
 
-/*AddOperatingSystemLibcParams contains all the parameters to send to the API endpoint
-for the add operating system libc operation typically these are written to a http.Request
+/* AddOperatingSystemLibcParams contains all the parameters to send to the API endpoint
+   for the add operating system libc operation.
+
+   Typically these are written to a http.Request.
 */
 type AddOperatingSystemLibcParams struct {
 
-	/*LibcID*/
+	// LibcID.
 	LibcID *inventory_models.AddOperatingSystemLibcParamsBody
-	/*OperatingSystemID*/
+
+	// OperatingSystemID.
+	//
+	// Format: uuid
 	OperatingSystemID strfmt.UUID
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the add operating system libc params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *AddOperatingSystemLibcParams) WithDefaults() *AddOperatingSystemLibcParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the add operating system libc params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *AddOperatingSystemLibcParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the add operating system libc params
@@ -134,7 +151,6 @@ func (o *AddOperatingSystemLibcParams) WriteToRequest(r runtime.ClientRequest, r
 		return err
 	}
 	var res []error
-
 	if o.LibcID != nil {
 		if err := r.SetBodyParam(o.LibcID); err != nil {
 			return err
