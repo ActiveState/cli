@@ -423,20 +423,30 @@ func (scripts Scripts) AsConstrainedEntities() (items []ConstrainedEntity) {
 func MakeScriptsFromConstrainedEntities(items []ConstrainedEntity) (scripts []*Script) {
 	scripts = make([]*Script, 0, len(items))
 	for _, v := range items {
-		if o, ok := v.(*Script); ok {
+		switch o := v.(type) {
+		case *Script:
 			scripts = append(scripts, o)
+		case *ScriptSource:
+			sscripts := o.ToScripts()
+			scripts = append(scripts, sscripts...)
 		}
+
 	}
 	return scripts
 }
 
 // ScriptSource covers the scriptsource structure, which goes under Project
 type ScriptSource struct {
-	Name        string      `yaml:"name"`
-	Description string      `yaml:"description,omitempty"`
-	Locations   []string    `yaml:"locations"`
 	Conditional Conditional `yaml:"if,omitempty"`
 	Constraints Constraint  `yaml:"constraints,omitempty"`
+
+	Name        string   `yaml:"name"`
+	Description string   `yaml:"description,omitempty"`
+	Standalone  bool     `yaml:"standalone,omitempty"`
+	Language    string   `yaml:"language,omitempty"`
+	Prefix      string   `yaml:"prefix,omitempty"`
+	Locations   []string `yaml:"locations"`
+	StripExt    bool     `yaml:"strip_ext,omitempty"`
 }
 
 var _ ConstrainedEntity = ScriptSource{}
@@ -453,6 +463,45 @@ func (s ScriptSource) ConstraintsFilter() Constraint {
 
 func (s ScriptSource) ConditionalFilter() Conditional {
 	return s.Conditional
+}
+
+func (s ScriptSource) ToScripts() []*Script {
+	var scripts []*Script
+
+	for _, loc := range s.Locations {
+		fns, err := filepath.Glob(loc)
+		if err != nil {
+			logging.Warning("Bad pattern: %q", loc)
+			continue
+		}
+
+		for _, fn := range fns {
+			data, err := ioutil.ReadFile(fn)
+			if err != nil {
+				logging.Warning("File read error: %s", err)
+				continue
+			}
+
+			name := s.Prefix + filepath.Base(fn)
+			if s.StripExt {
+				ext := filepath.Ext(name)
+				name = strings.TrimSuffix(name, ext)
+			}
+
+			script := Script{
+				Conditional: s.Conditional,
+				Constraints: s.Constraints,
+				Name:        name,
+				Value:       string(data),
+				Standalone:  s.Standalone,
+				Language:    s.Language,
+			}
+
+			scripts = append(scripts, &script)
+		}
+	}
+
+	return scripts
 }
 
 // ScriptSources is a slice of ScriptSources

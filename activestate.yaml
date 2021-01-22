@@ -20,6 +20,15 @@ constants:
       if [ "$CI" = "true" ]; then
         GO_BUILD_TAGS="CI"
       fi
+script_sources:
+  - name: cleanit
+    language: python3
+    locations:
+      - ./scripts/story-cleanup/story-cleanup.py
+  - name: examples
+    language: bash
+    locations:
+      - ./scripts/examples/*
 scripts:
   - name: preprocess
     language: bash

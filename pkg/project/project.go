@@ -165,6 +165,22 @@ func (p *Project) Scripts() []*Script {
 	for _, s := range scs {
 		scripts = append(scripts, &Script{s, p})
 	}
+
+	scripts = append(scripts, p.scriptsFromSources()...)
+
+	return scripts
+}
+
+func (p *Project) scriptsFromSources() []*Script {
+	constrained, err := constraints.FilterUnconstrained(pConditional, p.projectfile.ScriptSources.AsConstrainedEntities())
+	if err != nil {
+		logging.Warning("Could not filter unconstrained scriptsources: %v", err)
+	}
+	ss := projectfile.MakeScriptsFromConstrainedEntities(constrained)
+	var scripts []*Script
+	for _, s := range ss {
+		scripts = append(scripts, &Script{s, p})
+	}
 	return scripts
 }
 
