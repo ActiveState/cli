@@ -15,7 +15,7 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-// V1BuildRequestRecipeResolvedIngredientsItemsResolvedRequirementsItems Requirement Sub Schema
+// V1BuildRequestRecipeResolvedIngredientsItemsResolvedRequirementsItems Requirement
 //
 // An order requirement is a single package name and version specifier requested in an order.
 // swagger:model v1BuildRequestRecipeResolvedIngredientsItemsResolvedRequirementsItems

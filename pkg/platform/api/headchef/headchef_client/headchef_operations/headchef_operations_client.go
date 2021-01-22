@@ -7,11 +7,12 @@ package headchef_operations
 
 import (
 	"github.com/go-openapi/runtime"
-	"github.com/go-openapi/strfmt"
+
+	strfmt "github.com/go-openapi/strfmt"
 )
 
 // New creates a new headchef operations API client.
-func New(transport runtime.ClientTransport, formats strfmt.Registry) ClientService {
+func New(transport runtime.ClientTransport, formats strfmt.Registry) *Client {
 	return &Client{transport: transport, formats: formats}
 }
 
@@ -23,23 +24,8 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
-// ClientService is the interface for Client methods
-type ClientService interface {
-	ArtifactJobStatus(params *ArtifactJobStatusParams) (*ArtifactJobStatusOK, error)
-
-	GetBuildStatus(params *GetBuildStatusParams) (*GetBuildStatusOK, error)
-
-	HealthCheck(params *HealthCheckParams) (*HealthCheckOK, error)
-
-	JobStatus(params *JobStatusParams) (*JobStatusOK, error)
-
-	StartBuildV1(params *StartBuildV1Params) (*StartBuildV1Created, *StartBuildV1Accepted, error)
-
-	SetTransport(transport runtime.ClientTransport)
-}
-
 /*
-  ArtifactJobStatus Receives job status callbacks from the scheduler when a build job for a given artifact request completes/fails. If a job fails or errors, the build will be marked as failed.
+ArtifactJobStatus Receives job status callbacks from the scheduler when a build job for a given artifact request completes/fails. If a job fails or errors, the build will be marked as failed.
 */
 func (a *Client) ArtifactJobStatus(params *ArtifactJobStatusParams) (*ArtifactJobStatusOK, error) {
 	// TODO: Validate the params before sending
@@ -62,17 +48,12 @@ func (a *Client) ArtifactJobStatus(params *ArtifactJobStatusParams) (*ArtifactJo
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*ArtifactJobStatusOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*ArtifactJobStatusDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*ArtifactJobStatusOK), nil
+
 }
 
 /*
-  GetBuildStatus Get status of a build that has previously been started using the build_request_id returned from /builds. Status requests for pre-platform builds will always result in a 404 as these are not actual platform builds.
+GetBuildStatus Get status of a build that has previously been started using the build_request_id returned from /builds. Status requests for pre-platform builds will always result in a 404 as these are not actual platform builds.
 */
 func (a *Client) GetBuildStatus(params *GetBuildStatusParams) (*GetBuildStatusOK, error) {
 	// TODO: Validate the params before sending
@@ -95,17 +76,12 @@ func (a *Client) GetBuildStatus(params *GetBuildStatusParams) (*GetBuildStatusOK
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetBuildStatusOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetBuildStatusDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*GetBuildStatusOK), nil
+
 }
 
 /*
-  HealthCheck health check API
+HealthCheck health check API
 */
 func (a *Client) HealthCheck(params *HealthCheckParams) (*HealthCheckOK, error) {
 	// TODO: Validate the params before sending
@@ -128,17 +104,12 @@ func (a *Client) HealthCheck(params *HealthCheckParams) (*HealthCheckOK, error) 
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*HealthCheckOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*HealthCheckDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*HealthCheckOK), nil
+
 }
 
 /*
-  JobStatus Receives job status callbacks from the scheduler when jobs for a given build request complete/fail. If a job fails the build will be marked as failed.
+JobStatus Receives job status callbacks from the scheduler when jobs for a given build request complete/fail. If a job fails the build will be marked as failed.
 */
 func (a *Client) JobStatus(params *JobStatusParams) (*JobStatusOK, error) {
 	// TODO: Validate the params before sending
@@ -161,17 +132,12 @@ func (a *Client) JobStatus(params *JobStatusParams) (*JobStatusOK, error) {
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*JobStatusOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*JobStatusDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return result.(*JobStatusOK), nil
+
 }
 
 /*
-  StartBuildV1 start build v1 API
+StartBuildV1 start build v1 API
 */
 func (a *Client) StartBuildV1(params *StartBuildV1Params) (*StartBuildV1Created, *StartBuildV1Accepted, error) {
 	// TODO: Validate the params before sending
@@ -200,9 +166,8 @@ func (a *Client) StartBuildV1(params *StartBuildV1Params) (*StartBuildV1Created,
 	case *StartBuildV1Accepted:
 		return nil, value, nil
 	}
-	// unexpected success response
-	unexpectedSuccess := result.(*StartBuildV1Default)
-	return nil, nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return nil, nil, nil
+
 }
 
 // SetTransport changes the transport on the client

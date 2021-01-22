@@ -15,7 +15,7 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-// V1BuildRequestRecipeImageAllOf1AllOf1AllOf2ConditionsItems Condition Sub Schema
+// V1BuildRequestRecipeImageAllOf1AllOf1AllOf2ConditionsItems Condition
 //
 // A feature that must be present in a recipe for the containing entity to apply. If nothing in the recipe matches this condition, the containing entity is disable/cannot be used.
 // swagger:model v1BuildRequestRecipeImageAllOf1AllOf1AllOf2ConditionsItems
@@ -29,7 +29,7 @@ type V1BuildRequestRecipeImageAllOf1AllOf1AllOf2ConditionsItems struct {
 	// Required: true
 	Namespace *string `json:"namespace"`
 
-	// Requirements Sub Schema
+	// Requirements
 	//
 	// The version constraints that an ingredient version's requirement or condition puts on a feature
 	// Required: true

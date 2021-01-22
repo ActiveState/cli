@@ -16,7 +16,7 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-// V1BuildRequestRecipeResolvedIngredientsItemsPatchesItemsAllOf0AllOf1ConditionsItemsRequirementsItems v1 build request recipe resolved ingredients items patches items all of0 all of1 conditions items requirements items
+// V1BuildRequestRecipeResolvedIngredientsItemsPatchesItemsAllOf0AllOf1ConditionsItemsRequirementsItems Requirement
 // swagger:model v1BuildRequestRecipeResolvedIngredientsItemsPatchesItemsAllOf0AllOf1ConditionsItemsRequirementsItems
 type V1BuildRequestRecipeResolvedIngredientsItemsPatchesItemsAllOf0AllOf1ConditionsItemsRequirementsItems struct {
 

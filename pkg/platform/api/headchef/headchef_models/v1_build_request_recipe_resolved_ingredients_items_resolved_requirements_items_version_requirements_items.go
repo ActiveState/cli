@@ -15,7 +15,7 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-// V1BuildRequestRecipeResolvedIngredientsItemsResolvedRequirementsItemsVersionRequirementsItems Version Requirement Sub Schema
+// V1BuildRequestRecipeResolvedIngredientsItemsResolvedRequirementsItemsVersionRequirementsItems Version Requirement
 //
 // The version constraint for a feature
 // swagger:model v1BuildRequestRecipeResolvedIngredientsItemsResolvedRequirementsItemsVersionRequirementsItems

@@ -30,7 +30,7 @@ type V1BuildRequestRecipePlatformImagesItemsAllOf1AllOf0 struct {
 
 	// The type of the image.
 	// Required: true
-	// Enum: [Docker Mac WindowsDocker WindowsInstance]
+	// Enum: [Docker Mac MacVMCommand WindowsDocker WindowsInstance]
 	Type *string `json:"type"`
 }
 
@@ -82,7 +82,7 @@ var v1BuildRequestRecipePlatformImagesItemsAllOf1AllOf0TypeTypePropEnum []interf
 
 func init() {
 	var res []string
-	if err := json.Unmarshal([]byte(`["Docker","Mac","WindowsDocker","WindowsInstance"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["Docker","Mac","MacVMCommand","WindowsDocker","WindowsInstance"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
@@ -97,6 +97,9 @@ const (
 
 	// V1BuildRequestRecipePlatformImagesItemsAllOf1AllOf0TypeMac captures enum value "Mac"
 	V1BuildRequestRecipePlatformImagesItemsAllOf1AllOf0TypeMac string = "Mac"
+
+	// V1BuildRequestRecipePlatformImagesItemsAllOf1AllOf0TypeMacVMCommand captures enum value "MacVMCommand"
+	V1BuildRequestRecipePlatformImagesItemsAllOf1AllOf0TypeMacVMCommand string = "MacVMCommand"
 
 	// V1BuildRequestRecipePlatformImagesItemsAllOf1AllOf0TypeWindowsDocker captures enum value "WindowsDocker"
 	V1BuildRequestRecipePlatformImagesItemsAllOf1AllOf0TypeWindowsDocker string = "WindowsDocker"

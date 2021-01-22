@@ -9,8 +9,9 @@ import (
 	"encoding/json"
 	"strconv"
 
+	strfmt "github.com/go-openapi/strfmt"
+
 	"github.com/go-openapi/errors"
-	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
@@ -18,7 +19,6 @@ import (
 // Artifact Artifact
 //
 // The result of building a single ingredient is an artifact, which contains the files created by the build.
-//
 // swagger:model Artifact
 type Artifact struct {
 
@@ -29,7 +29,7 @@ type Artifact struct {
 
 	// Indicates where in the build process the artifact currently is.
 	// Required: true
-	// Enum: [blocked doomed failed ready running starting succeeded]
+	// Enum: [blocked doomed failed ready running skipped starting succeeded]
 	BuildState *string `json:"build_state"`
 
 	// Timestamp for when the artifact was created
@@ -48,6 +48,10 @@ type Artifact struct {
 	// Source Ingredient Version ID for the artifact. Null if the artifact was not built directly from an ingredient (i.e. a packager artifact)
 	// Format: uuid
 	IngredientVersionID strfmt.UUID `json:"ingredient_version_id,omitempty"`
+
+	// URI for the storage location of the artifact's build log. Only artifacts that have finished building with the 'alternative' build engine have artifact logs. For all other cases this field is always null.
+	// Format: uri
+	LogURI strfmt.URI `json:"log_uri,omitempty"`
 
 	// Platform ID for the artifact
 	// Required: true
@@ -83,6 +87,10 @@ func (m *Artifact) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
+	if err := m.validateLogURI(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validatePlatformID(formats); err != nil {
 		res = append(res, err)
 	}
@@ -114,7 +122,7 @@ var artifactTypeBuildStatePropEnum []interface{}
 
 func init() {
 	var res []string
-	if err := json.Unmarshal([]byte(`["blocked","doomed","failed","ready","running","starting","succeeded"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["blocked","doomed","failed","ready","running","skipped","starting","succeeded"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
@@ -138,6 +146,9 @@ const (
 
 	// ArtifactBuildStateRunning captures enum value "running"
 	ArtifactBuildStateRunning string = "running"
+
+	// ArtifactBuildStateSkipped captures enum value "skipped"
+	ArtifactBuildStateSkipped string = "skipped"
 
 	// ArtifactBuildStateStarting captures enum value "starting"
 	ArtifactBuildStateStarting string = "starting"
@@ -205,6 +216,19 @@ func (m *Artifact) validateIngredientVersionID(formats strfmt.Registry) error {
 	}
 
 	if err := validate.FormatOf("ingredient_version_id", "body", "uuid", m.IngredientVersionID.String(), formats); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *Artifact) validateLogURI(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.LogURI) { // not required
+		return nil
+	}
+
+	if err := validate.FormatOf("log_uri", "body", "uri", m.LogURI.String(), formats); err != nil {
 		return err
 	}
 

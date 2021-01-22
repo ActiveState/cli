@@ -9,8 +9,9 @@ import (
 	"encoding/json"
 	"strconv"
 
+	strfmt "github.com/go-openapi/strfmt"
+
 	"github.com/go-openapi/errors"
-	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
@@ -18,7 +19,6 @@ import (
 // BuildStatusResponse Build Status Response
 //
 // A response describing status of a build: started, completed or failed.
-//
 // swagger:model BuildStatusResponse
 type BuildStatusResponse struct {
 
@@ -33,7 +33,7 @@ type BuildStatusResponse struct {
 	// build request id
 	// Required: true
 	// Format: uuid
-	BuildRequestID SubSchemaBuildRequestID `json:"build_request_id"`
+	BuildRequestID *strfmt.UUID `json:"build_request_id"`
 
 	// All of the errors from the failed build. Will be null unless 'type' is 'build_failed'. Note that these errors may not be suitable for presenting to users and should simply be logged for further investigation.
 	Errors []string `json:"errors"`
@@ -180,10 +180,11 @@ func (m *BuildStatusResponse) validateBuildEngine(formats strfmt.Registry) error
 
 func (m *BuildStatusResponse) validateBuildRequestID(formats strfmt.Registry) error {
 
-	if err := m.BuildRequestID.Validate(formats); err != nil {
-		if ve, ok := err.(*errors.Validation); ok {
-			return ve.ValidateName("build_request_id")
-		}
+	if err := validate.Required("build_request_id", "body", m.BuildRequestID); err != nil {
+		return err
+	}
+
+	if err := validate.FormatOf("build_request_id", "body", "uuid", m.BuildRequestID.String(), formats); err != nil {
 		return err
 	}
 
