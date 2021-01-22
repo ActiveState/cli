@@ -18,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_client"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_client/headchef_operations"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
 var (
@@ -55,7 +56,7 @@ func (s *BuildStatus) Close() {
 }
 
 type Client struct {
-	client    headchef_operations.Client
+	client    headchef_operations.ClientService
 	transport *httptransport.Runtime
 }
 
@@ -71,9 +72,21 @@ func NewClient(apiURL *url.URL) *Client {
 	// transportRuntime.SetDebug(true)
 
 	return &Client{
-		client:    *headchef_client.New(transportRuntime, strfmt.Default).HeadchefOperations,
+		client:    headchef_client.New(transportRuntime, strfmt.Default).HeadchefOperations,
 		transport: transportRuntime,
 	}
+}
+
+func (r *Client) GetArtifactStatus(id strfmt.UUID) (*headchef_models.Artifact, error) {
+	params := &headchef_operations.GetArtifactParams{
+		ArtifactID: id,
+		Context:    context.Background(),
+	}
+	artOK, err := r.client.GetArtifact(params)
+	if err != nil {
+		return nil, err
+	}
+	return artOK.Payload, nil
 }
 
 func (r *Client) RequestBuild(buildRequest *headchef_models.V1BuildRequest) *BuildStatus {
@@ -91,7 +104,7 @@ func NewBuildRequest(recipeID, orgID, projID strfmt.UUID, annotations BuildAnnot
 	uid := strfmt.UUID("00010001-0001-0001-0001-000100010001")
 
 	br := &headchef_models.V1BuildRequest{
-		Requester: &headchef_models.V1BuildRequestRequester{
+		Requester: &headchef_models.V1Requester{
 			OrganizationID: &orgID,
 			ProjectID:      &projID,
 			UserID:         uid,
@@ -139,7 +152,7 @@ func (r *Client) reqBuild(buildReq *headchef_models.V1BuildRequest, buildStatus 
 		HTTPClient:   retryhttp.DefaultClient.StandardClient(),
 	}
 
-	created, accepted, err := r.client.StartBuildV1(&startParams)
+	created, accepted, err := r.client.StartBuildV1(&startParams, authentication.Get().ClientAuth())
 
 	switch {
 	case err != nil:

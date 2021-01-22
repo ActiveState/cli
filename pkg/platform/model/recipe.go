@@ -74,7 +74,7 @@ func fetchRawRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *s
 	params := iop.NewResolveRecipesParams()
 	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
 	params.SetTimeout(time.Second * 60)
-	params.Order, err = commitToOrder(commitID, owner, project)
+	params.Order, err = CommitToOrder(commitID, owner, project)
 	if err != nil {
 		return "", errs.Wrap(err, "commitToOrder failed")
 	}
@@ -114,7 +114,7 @@ func fetchRawRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *s
 	return recipe, nil
 }
 
-func commitToOrder(commitID strfmt.UUID, owner, project string) (*inventory_models.Order, error) {
+func CommitToOrder(commitID strfmt.UUID, owner, project string) (*inventory_models.Order, error) {
 	monoOrder, err := FetchOrderFromCommit(commitID)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_order_recipe")
@@ -140,15 +140,11 @@ func commitToOrder(commitID strfmt.UUID, owner, project string) (*inventory_mode
 	return order, nil
 }
 
-func FetchRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *string) (*inventory_models.Recipe, error) {
-	var err error
+func FetchRecipeForOrder(commitID strfmt.UUID, order *inventory_models.Order, owner, project string, hostPlatform *string) (*inventory_models.Recipe, error) {
 	params := iop.NewResolveRecipesParams()
 	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
 	params.SetTimeout(time.Second * 60)
-	params.Order, err = commitToOrder(commitID, owner, project)
-	if err != nil {
-		return nil, errs.Wrap(err, "commitToOrder failed")
-	}
+	params.Order = order
 
 	client, _ := inventory.Init()
 
@@ -192,6 +188,15 @@ func FetchRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *stri
 	}
 
 	return nil, locale.NewInputError("err_recipe_not_found")
+
+}
+
+func FetchRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *string) (*inventory_models.Recipe, error) {
+	order, err := CommitToOrder(commitID, owner, project)
+	if err != nil {
+		return nil, errs.Wrap(err, "CommitToOrder failed")
+	}
+	return FetchRecipeForOrder(commitID, order, owner, project, hostPlatform)
 }
 
 func IngredientVersionMap(recipe *inventory_models.Recipe) map[strfmt.UUID]*inventory_models.ResolvedIngredient {

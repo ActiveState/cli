@@ -21,7 +21,7 @@ scripts:
     value: |
       WD=$(pwd)
       pushd pkg/platform/api/headchef
-      swagger generate client --with-flatten full -f ${WD}/../TheHomeRepot/service/head-chef/swagger.json -A headchef -a headchef_operations -m headchef_models -c headchef_client
+      /usr/local/bin/swagger generate client --with-flatten full -f ${WD}/../TheHomeRepot/service/head-chef/swagger.json -A headchef -a headchef_operations -m headchef_models -c headchef_client
       popd
   - name: generate-logstreamer-client
     language: bash
@@ -35,9 +35,10 @@ scripts:
     language: bash
     description: Generates the inventory-api client files
     value: |
+      set -x
       WD=$(pwd)
       pushd pkg/platform/api/inventory
-      swagger generate client --with-flatten full -f ${WD}/../TheHomeRepot/service/inventory-api-v1/swagger.json -A inventory -a inventory_operations -m inventory_models -c inventory_client
+      /usr/local/bin/swagger generate client --with-flatten full -f ${WD}/../TheHomeRepot/service/inventory-api-v1/swagger.json -A inventory -a inventory_operations -m inventory_models -c inventory_client
       popd
   - name: generate-clients
     language: bash

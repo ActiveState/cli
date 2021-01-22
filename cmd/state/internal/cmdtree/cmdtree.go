@@ -119,6 +119,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		authCmd,
 		exportCmd,
 		newOrganizationsCommand(prime),
+		newPredictCmd(prime),
 		newRunCommand(prime),
 		newShowCommand(prime),
 		installCmd,
