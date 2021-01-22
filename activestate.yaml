@@ -28,7 +28,9 @@ script_sources:
       - ./scripts/pys/*
   - name: examples
     language: bash
-    prefix: sh-
+    constants:
+      - name: ENV_OTHER
+        value: some_secret
     locations:
       - ./scripts/examples/*
 scripts:

@@ -1,1 +1,1 @@
-echo "OTHER"
+echo -${ENV_OTHER}-

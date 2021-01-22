@@ -72,7 +72,7 @@ func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, cfg
 	if !script.Standalone() && scriptrunner.NeedsActivation() {
 		out.Notice(output.Heading(locale.Tl("notice", "Notice")))
 		out.Notice(locale.T("info_state_run_activating_state"))
-		if err := scriptrunner.PrepareVirtualEnv(); err != nil {
+		if err := scriptrunner.PrepareVirtualEnv(script.Constants()); err != nil {
 			return locale.WrapError(err, "err_script_run_preparevenv", "Could not prepare virtual environment.")
 		}
 	}

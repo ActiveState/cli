@@ -658,6 +658,19 @@ func (script *Script) Languages() []language.Language {
 	return languages
 }
 
+func (script *Script) Constants() []*Constant {
+	constrained, err := constraints.FilterUnconstrained(pConditional, script.script.Constants.AsConstrainedEntities())
+	if err != nil {
+		logging.Warning("Could not filter unconstrained constants: %v", err)
+	}
+	cs := projectfile.MakeConstantsFromConstrainedEntities(constrained)
+	constants := []*Constant{}
+	for _, c := range cs {
+		constants = append(constants, &Constant{c, script.project})
+	}
+	return constants
+}
+
 // LanguageSafe returns the first languages of this script. The
 // returned languages are guaranteed to be of a known scripting language
 func (script *Script) LanguageSafe() []language.Language {

@@ -390,6 +390,7 @@ type Script struct {
 	Language    string      `yaml:"language,omitempty"`
 	Conditional Conditional `yaml:"if"`
 	Constraints Constraint  `yaml:"constraints,omitempty"`
+	Constants   Constants   `yaml:"constants,omitempty"`
 }
 
 var _ ConstrainedEntity = Script{}
@@ -439,6 +440,7 @@ func MakeScriptsFromConstrainedEntities(items []ConstrainedEntity) (scripts []*S
 type ScriptSource struct {
 	Conditional Conditional `yaml:"if,omitempty"`
 	Constraints Constraint  `yaml:"constraints,omitempty"`
+	Constants   Constants   `yaml:"constants,omitempty"`
 
 	Name        string   `yaml:"name"`
 	Description string   `yaml:"description,omitempty"`
@@ -491,6 +493,7 @@ func (s ScriptSource) ToScripts() []*Script {
 			script := Script{
 				Conditional: s.Conditional,
 				Constraints: s.Constraints,
+				Constants:   s.Constants,
 				Name:        name,
 				Value:       string(data),
 				Standalone:  s.Standalone,
