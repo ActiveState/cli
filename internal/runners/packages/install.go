@@ -1,6 +1,7 @@
 package packages
 
 import (
+	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -12,7 +13,7 @@ import (
 
 // InstallRunParams tracks the info required for running Install.
 type InstallRunParams struct {
-	Package PackageVersion
+	Package captain.PackageVersion
 }
 
 // Install manages the installing execution context.
@@ -49,5 +50,5 @@ func (a *Install) Run(params InstallRunParams, nstype model.NamespaceType) error
 
 	ns := model.NewNamespacePkgOrBundle(language, nstype)
 
-	return executePackageOperation(a.proj, a.cfg, a.out, a.auth, a.Prompter, params.Package.Name, params.Package.Version, model.OperationAdded, ns)
+	return executePackageOperation(a.proj, a.cfg, a.out, a.auth, a.Prompter, params.Package.Name(), params.Package.Version(), model.OperationAdded, ns)
 }

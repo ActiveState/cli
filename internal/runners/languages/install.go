@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
@@ -26,20 +27,19 @@ func NewUpdate(prime primeable) *Update {
 }
 
 type UpdateParams struct {
-	Language string
+	Language captain.LanguageVersion
 }
 
 func (u *Update) Run(params *UpdateParams) error {
-	lang, err := parseLanguage(params.Language)
-	if err != nil {
-		return err
+	lang := &model.Language{
+		Name: params.Language.Name(), Version: params.Language.Version(),
 	}
 
 	if u.project == nil {
 		return locale.NewInputError("err_no_project")
 	}
 
-	err = ensureLanguageProject(lang, u.project)
+	err := ensureLanguageProject(lang, u.project)
 	if err != nil {
 		return err
 	}
@@ -63,27 +63,6 @@ func (u *Update) Run(params *UpdateParams) error {
 	}
 
 	return addLanguage(u.project, lang)
-}
-
-func parseLanguage(langName string) (*model.Language, error) {
-	if !strings.Contains(langName, "@") {
-		return &model.Language{
-			Name:    langName,
-			Version: "",
-		}, nil
-	}
-
-	split := strings.Split(langName, "@")
-	if len(split) != 2 {
-		return nil, errors.New(locale.T("err_language_format"))
-	}
-	name := split[0]
-	version := split[1]
-
-	return &model.Language{
-		Name:    name,
-		Version: version,
-	}, nil
 }
 
 func ensureLanguagePlatform(language *model.Language) error {

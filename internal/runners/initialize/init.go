@@ -2,7 +2,6 @@ package initialize
 
 import (
 	"path/filepath"
-	"strings"
 
 	"github.com/gobuffalo/packr"
 
@@ -24,9 +23,8 @@ type RunParams struct {
 	Namespace *project.Namespaced
 	Path      string
 	Style     string
-	Language  string
+	Language  language.Supported
 	Private   bool
-	language  language.Supported
 	version   string
 }
 
@@ -45,21 +43,9 @@ func New(prime primeable) *Initialize {
 }
 
 func sanitize(params *RunParams) error {
-	if params.Language == "" {
+	if params.Language.Language == language.Unset {
 		// Manually check for language requirement, because we need to fallback on the --language flag to support editor.V0
 		return locale.NewInputError("err_init_no_language", "You need to supply the [NOTICE]language[/RESET] argument, run [ACTIONABLE]`state init --help`[/RESET] for more information.")
-	}
-	langParts := strings.Split(params.Language, "@")
-	if len(langParts) > 1 {
-		params.version = langParts[1]
-	}
-
-	params.language = language.Supported{language.MakeByName(langParts[0])}
-	if !params.language.Recognized() {
-		return language.NewUnrecognizedLanguageError(
-			params.language.String(),
-			language.RecognizedSupportedsNames(),
-		)
 	}
 
 	// Fail if target dir already has an activestate.yaml
@@ -134,7 +120,7 @@ func run(params *RunParams, out output.Outputer) (string, error) {
 		createParams := &projectfile.CreateParams{
 			Owner:           params.Namespace.Owner,
 			Project:         params.Namespace.Project,
-			Language:        params.language.String(),
+			Language:        params.Language.String(),
 			LanguageVersion: params.version,
 			Directory:       params.Path,
 			Private:         params.Private,

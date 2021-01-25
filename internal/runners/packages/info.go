@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -16,7 +17,7 @@ import (
 
 // InfoRunParams tracks the info required for running Info.
 type InfoRunParams struct {
-	Package  PackageVersion
+	Package  captain.PackageVersion
 	Language string
 }
 
@@ -44,7 +45,7 @@ func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 
 	ns := model.NewNamespacePkgOrBundle(language, nstype)
 
-	packages, err := model.SearchIngredientsStrict(ns, params.Package.Name)
+	packages, err := model.SearchIngredientsStrict(ns, params.Package.Name())
 	if err != nil {
 		return locale.WrapError(err, "package_err_cannot_obtain_search_results")
 	}
@@ -60,10 +61,10 @@ func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 	pkg := packages[0]
 	ingredientVersion := pkg.LatestVersion
 
-	if params.Package.Version != "" {
-		ingredientVersion, err = specificIngredientVersion(pkg.Ingredient.IngredientID, params.Package.Version)
+	if params.Package.Version() != "" {
+		ingredientVersion, err = specificIngredientVersion(pkg.Ingredient.IngredientID, params.Package.Version())
 		if err != nil {
-			return locale.WrapInputError(err, "info_err_version_not_found", "Could not find version {{.V0}} for package {{.V1}}", params.Package.Version, params.Package.Name)
+			return locale.WrapInputError(err, "info_err_version_not_found", "Could not find version {{.V0}} for package {{.V1}}", params.Package.Version(), params.Package.Name())
 		}
 	}
 

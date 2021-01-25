@@ -1,8 +1,7 @@
 package update
 
 import (
-	"strings"
-
+	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
@@ -12,7 +11,7 @@ import (
 )
 
 type LockParams struct {
-	Channel string
+	Channel captain.StateToolChannelVersion
 	Force   bool
 }
 
@@ -39,7 +38,7 @@ func (l *Lock) Run(params *LockParams) error {
 		}
 	}
 
-	defaultChannel, lockVersion := splitChannelAndVersion(params.Channel)
+	defaultChannel, lockVersion := params.Channel.Name(), params.Channel.Version()
 	prefer := true
 	if defaultChannel == "" {
 		defaultChannel = l.project.VersionBranch()
@@ -83,15 +82,4 @@ func confirmLock(prom prompt.Prompter) error {
 	}
 
 	return nil
-}
-
-func splitChannelAndVersion(input string) (string, string) {
-	nameArg := strings.Split(input, "@")
-	name := nameArg[0]
-	version := ""
-	if len(nameArg) == 2 {
-		version = nameArg[1]
-	}
-
-	return name, version
 }
