@@ -5,10 +5,10 @@ import (
 
 	"github.com/gobuffalo/packr"
 
+	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
@@ -23,9 +23,8 @@ type RunParams struct {
 	Namespace *project.Namespaced
 	Path      string
 	Style     string
-	Language  language.Supported
+	Language  captain.LanguageVersion
 	Private   bool
-	version   string
 }
 
 // Initialize stores scope-related dependencies.
@@ -43,7 +42,8 @@ func New(prime primeable) *Initialize {
 }
 
 func sanitize(params *RunParams) error {
-	if params.Language.Language == language.Unset {
+	// fmt.Printf("%s\n", params.Language.Name())
+	if params.Language.Name() == "" {
 		// Manually check for language requirement, because we need to fallback on the --language flag to support editor.V0
 		return locale.NewInputError("err_init_no_language", "You need to supply the [NOTICE]language[/RESET] argument, run [ACTIONABLE]`state init --help`[/RESET] for more information.")
 	}
@@ -120,8 +120,8 @@ func run(params *RunParams, out output.Outputer) (string, error) {
 		createParams := &projectfile.CreateParams{
 			Owner:           params.Namespace.Owner,
 			Project:         params.Namespace.Project,
-			Language:        params.Language.String(),
-			LanguageVersion: params.version,
+			Language:        params.Language.Name(),
+			LanguageVersion: params.Language.Version(),
 			Directory:       params.Path,
 			Private:         params.Private,
 		}

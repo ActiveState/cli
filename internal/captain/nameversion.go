@@ -53,6 +53,8 @@ func (pv *PackageVersion) Set(arg string) error {
 	return nil
 }
 
+var _ FlagMarshaler = &LanguageVersion{}
+
 type LanguageVersion struct {
 	NameVersion
 	language language.Supported
@@ -70,16 +72,30 @@ func (lv *LanguageVersion) Language() language.Supported {
 	return lv.language
 }
 
+func (lv *LanguageVersion) Type() string {
+	return "language"
+}
+
+var _ FlagMarshaler = &StateToolChannelVersion{}
+
 type StateToolChannelVersion struct {
 	NameVersion
 }
 
-func (lv *StateToolChannelVersion) Set(arg string) error {
-	err := lv.NameVersion.Set(arg)
+func (stv *StateToolChannelVersion) Set(arg string) error {
+	err := stv.NameVersion.Set(arg)
 	if err != nil {
 		return locale.NewError("err_channel_format", "The State Tool channel and version provided is not formatting correctly, must be in the form of <channel>@<version>")
 	}
 	return nil
+}
+
+func (stv *StateToolChannelVersion) Type() string {
+	return "channel"
+}
+
+func (stv *StateToolChannelVersion) String() string {
+	return stv.name
 }
 
 type PlatformVersion struct {
