@@ -158,14 +158,3 @@ func getSuggestions(ns model.Namespace, name string) ([]string, error) {
 
 	return suggestions, nil
 }
-
-func splitNameAndVersion(input string) (string, string) {
-	nameArg := strings.Split(input, "@")
-	name := nameArg[0]
-	version := ""
-	if len(nameArg) == 2 {
-		version = nameArg[1]
-	}
-
-	return name, version
-}
