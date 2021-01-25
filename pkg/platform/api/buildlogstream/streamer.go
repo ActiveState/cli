@@ -103,6 +103,7 @@ func (r *Request) responseReader(conn *websocket.Conn, readErr chan error) {
 		case "build_failed":
 			readErr <- locale.WrapError(artifactErr, "err_logstream_build_failed", "Build failed with error message: {{.V0}}.", msg.ErrorMessage)
 		case "build_succeeded":
+			r.msgHandler.BuildFinished()
 			readErr <- nil
 		case "artifact_started":
 			if !artifactMapped {
@@ -117,7 +118,7 @@ func (r *Request) responseReader(conn *websocket.Conn, readErr chan error) {
 			if !artifactMapped {
 				continue // ignore
 			}
-			
+
 			// NOTE: fix to ignore current noop "final pkg artifact"
 			if msg.ArtifactID == *r.recipe.RecipeID {
 				break
@@ -130,4 +131,3 @@ func (r *Request) responseReader(conn *websocket.Conn, readErr chan error) {
 		}
 	}
 }
-
