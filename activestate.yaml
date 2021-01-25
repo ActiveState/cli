@@ -1,4 +1,4 @@
-project: https://platform.activestate.com/ActiveState/cli?commitID=0ba549cb-e0af-4334-8d47-dcd245956ad2
+project: https://platform.activestate.com/ActiveState/cli?commitID=96e72fc8-c86d-4f86-b8c7-6fcb393f3941
 constants:
   - name: CLI_BUILDFLAGS
     value: -ldflags="-s -w"
