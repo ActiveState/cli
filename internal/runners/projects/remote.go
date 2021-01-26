@@ -11,12 +11,13 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/organizations"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 // RunRemote runs the remote projects logic.
 func (r *Projects) RunRemote(params *Params) error {
-	projectfile.CleanProjectMapping(r.config)
+	project.CleanProjectMapping(r.config)
 
 	projectsList, err := r.fetchProjects(params.Local)
 	if err != nil {

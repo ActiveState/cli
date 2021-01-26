@@ -38,7 +38,7 @@ func (h *History) Run(params *HistoryParams) error {
 	var commits []*mono_models.Commit
 	var err error
 	if params.Namespace != "" {
-		nsMeta, err := project.ParseNamespace(params.Namespace)
+		nsMeta, err := project.NewParsedURL(params.Namespace)
 		if err != nil {
 			return err
 		}

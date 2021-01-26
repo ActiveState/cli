@@ -6,16 +6,14 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/projectfile"
-
-	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/locale"
 )
 
 type configurable interface {
@@ -67,7 +65,7 @@ func (r *NamespaceSelect) Run(namespace string, preferredPath string) (string, e
 
 func (r *NamespaceSelect) promptForPath(namespace string) (string, error) {
 	// If no targetPath was given try to get it from our config (ie. previous activations)
-	paths := projectfile.GetProjectPaths(r.config, namespace)
+	paths := project.GetProjectPaths(r.config, namespace)
 	if len(paths) > 0 {
 		targetPath, err := r.promptAvailablePaths(paths)
 		if err != nil {

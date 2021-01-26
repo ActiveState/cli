@@ -12,7 +12,7 @@ func newInitCommand(prime *primer.Values) *captain.Command {
 	initRunner := initialize.New(prime)
 
 	params := initialize.RunParams{
-		Namespace: &project.Namespaced{},
+		Namespace: &project.ParsedURL{},
 	}
 
 	return captain.NewCommand(

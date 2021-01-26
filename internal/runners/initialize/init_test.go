@@ -51,7 +51,7 @@ func TestInitialize_Run(t *testing.T) {
 	fileutils.WriteFile(fileutils.Join(tempDirWithFile, "bogus"), []byte(""))
 
 	type args struct {
-		namespace *project.Namespaced
+		namespace *project.ParsedURL
 		path      string
 		language  string
 		version   string
@@ -70,7 +70,7 @@ func TestInitialize_Run(t *testing.T) {
 			"namespace without path or language",
 			tempDir,
 			args{
-				namespace: &project.Namespaced{
+				namespace: &project.ParsedURL{
 					Owner:   "foo",
 					Project: "bar",
 				},
@@ -86,7 +86,7 @@ func TestInitialize_Run(t *testing.T) {
 			"namespace without path and with language",
 			osutil.PrepareDir(fileutils.Join(tempDir, "0")),
 			args{
-				namespace: &project.Namespaced{
+				namespace: &project.ParsedURL{
 					Owner:   "foo",
 					Project: "bar",
 				},
@@ -103,7 +103,7 @@ func TestInitialize_Run(t *testing.T) {
 			"namespace without path and with language, wd has file",
 			tempDirWithFile,
 			args{
-				namespace: &project.Namespaced{
+				namespace: &project.ParsedURL{
 					Owner:   "foo",
 					Project: "bar",
 				},
@@ -120,7 +120,7 @@ func TestInitialize_Run(t *testing.T) {
 			"namespace with path and without language",
 			tempDir,
 			args{
-				namespace: &project.Namespaced{
+				namespace: &project.ParsedURL{
 					Owner:   "foo",
 					Project: "bar",
 				},
@@ -136,7 +136,7 @@ func TestInitialize_Run(t *testing.T) {
 			"namespace with path and language",
 			tempDir,
 			args{
-				namespace: &project.Namespaced{
+				namespace: &project.ParsedURL{
 					Owner:   "foo",
 					Project: "bar",
 				},
@@ -153,7 +153,7 @@ func TestInitialize_Run(t *testing.T) {
 			"namespace with path, language and version",
 			tempDir,
 			args{
-				namespace: &project.Namespaced{
+				namespace: &project.ParsedURL{
 					Owner:   "foo",
 					Project: "bar",
 				},
@@ -170,7 +170,7 @@ func TestInitialize_Run(t *testing.T) {
 			"as.yaml already exists",
 			tempDir,
 			args{
-				namespace: &project.Namespaced{
+				namespace: &project.ParsedURL{
 					Owner:   "foo",
 					Project: "bar",
 				},

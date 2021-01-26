@@ -13,7 +13,7 @@ import (
 )
 
 type Params struct {
-	Namespace    project.Namespaced
+	Namespace    project.ParsedURL
 	Organization string
 	Name         string
 	Private      bool
@@ -41,8 +41,8 @@ func New(prime primeable) *Fork {
 
 type outputFormat struct {
 	Message string
-	source  *project.Namespaced
-	target  *project.Namespaced
+	source  *project.ParsedURL
+	target  *project.ParsedURL
 }
 
 func (f *outputFormat) MarshalOutput(format output.Format) interface{} {
@@ -70,7 +70,7 @@ func (f *Fork) run(params *Params) error {
 		return locale.NewInputError("err_auth_required", "Authentication is required, please authenticate by running 'state auth'")
 	}
 
-	target := &project.Namespaced{
+	target := &project.ParsedURL{
 		Owner:   params.Organization,
 		Project: params.Name,
 	}

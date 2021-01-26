@@ -82,7 +82,7 @@ func targetFromCommit(commitOpt string) (*strfmt.UUID, error) {
 }
 
 func targetFromProject(projectString string) (*strfmt.UUID, error) {
-	ns, err := project.ParseNamespace(projectString)
+	ns, err := project.NewParsedURL(projectString)
 	if err != nil {
 		return nil, err
 	}

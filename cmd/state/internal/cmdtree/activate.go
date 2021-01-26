@@ -18,8 +18,8 @@ func newActivateCommand(prime *primer.Values) *captain.Command {
 	runner := activate.NewActivate(prime)
 
 	params := activate.ActivateParams{
-		Namespace:   &project.Namespaced{},
-		ReplaceWith: &project.Namespaced{},
+		Namespace:   &project.ParsedURL{},
+		ReplaceWith: &project.ParsedURL{},
 	}
 
 	cmd := captain.NewCommand(

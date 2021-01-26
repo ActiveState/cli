@@ -132,7 +132,7 @@ func run(args []string, isInteractive bool, out output.Outputer) (int, error) {
 		if err != nil {
 			return 1, err
 		}
-		pj, err = project.New(pjf, out)
+		pj, err = project.New(pjf)
 		if err != nil {
 			return 1, err
 		}

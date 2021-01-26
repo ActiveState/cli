@@ -3,6 +3,8 @@ package deploy
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/subshell"
@@ -10,7 +12,6 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/stretchr/testify/require"
 )
 
 type InstallableMock struct{}
@@ -137,7 +138,7 @@ func Test_runStepsWithFuncs(t *testing.T) {
 				return nil
 			}
 			var configCalled bool
-			configFunc := func(string, *runtime.Runtime, sscommon.Configurable, output.Outputer, subshell.SubShell, project.Namespaced, bool) error {
+			configFunc := func(string, *runtime.Runtime, sscommon.Configurable, output.Outputer, subshell.SubShell, project.ParsedURL, bool) error {
 				configCalled = true
 				return nil
 			}
@@ -154,7 +155,7 @@ func Test_runStepsWithFuncs(t *testing.T) {
 			catcher := outputhelper.NewCatcher()
 			forceOverwrite := true
 			userScope := false
-			namespace := project.Namespaced{"owner", "project", nil}
+			namespace := project.ParsedURL{"owner", "project", nil}
 			cfg, err := config.Get()
 			require.NoError(t, err)
 			err = runStepsWithFuncs("", forceOverwrite, userScope, namespace, tt.args.step, tt.args.runtime, tt.args.installer, catcher.Outputer, cfg, nil, installFunc, configFunc, symlinkFunc, reportFunc)

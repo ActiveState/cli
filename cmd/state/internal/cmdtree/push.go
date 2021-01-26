@@ -12,7 +12,7 @@ func newPushCommand(prime *primer.Values) *captain.Command {
 	pushRunner := push.NewPush(prime)
 
 	params := push.PushParams{
-		Namespace: &project.Namespaced{},
+		Namespace: &project.ParsedURL{},
 	}
 
 	return captain.NewCommand(

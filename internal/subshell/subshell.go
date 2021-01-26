@@ -49,7 +49,7 @@ type SubShell interface {
 	WriteUserEnv(sscommon.Configurable, map[string]string, sscommon.EnvData, bool) error
 
 	// SetupShellRcFile writes a script or source-able file that updates the environment variables and sets the prompt
-	SetupShellRcFile(string, map[string]string, project.Namespaced) error
+	SetupShellRcFile(string, map[string]string, project.ParsedURL) error
 
 	// Shell returns an identifiable string representing the shell, eg. bash, zsh
 	Shell() string

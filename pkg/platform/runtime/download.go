@@ -131,7 +131,7 @@ func (r *Download) FetchArtifacts(recipe *inventory_models.Recipe, platProj *mon
 
 		case resp := <-buildStatus.Started:
 			logging.Debug("BuildStarted")
-			namespaced := project.Namespaced{
+			namespaced := project.ParsedURL{
 				Owner:   r.runtime.owner,
 				Project: r.runtime.projectName,
 			}

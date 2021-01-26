@@ -84,7 +84,7 @@ func (v *SubShell) WriteUserEnv(cfg sscommon.Configurable, env map[string]string
 }
 
 // SetupShellRcFile - subshell.SubShell
-func (v *SubShell) SetupShellRcFile(targetDir string, env map[string]string, namespace project.Namespaced) error {
+func (v *SubShell) SetupShellRcFile(targetDir string, env map[string]string, namespace project.ParsedURL) error {
 	env = sscommon.EscapeEnv(env)
 	return sscommon.SetupShellRcFile(filepath.Join(targetDir, "shell.bat"), "config_global.bat", env, namespace)
 }

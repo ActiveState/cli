@@ -127,7 +127,7 @@ func cleanRcFile(path string, data EnvData) error {
 }
 
 // SetupShellRcFile create a rc file to activate a runtime (without a project being present)
-func SetupShellRcFile(rcFileName, templateName string, env map[string]string, namespace project.Namespaced) error {
+func SetupShellRcFile(rcFileName, templateName string, env map[string]string, namespace project.ParsedURL) error {
 	box := packr.NewBox("../../../assets/shells")
 	tpl := box.String(templateName)
 

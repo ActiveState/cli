@@ -82,11 +82,11 @@ func newProjects(auth *authentication.Auth, out output.Outputer, config configGe
 }
 
 func (r *Projects) Run(params *Params) error {
-	localProjects := projectfile.GetProjectMapping(r.config)
+	localProjects := project.GetProjectMapping(r.config)
 
 	var projects projectWithOrgs = []projectWithOrg{}
 	for namespace, checkouts := range localProjects {
-		ns, err := project.ParseNamespace(namespace)
+		ns, err := project.NewParsedURL(namespace)
 		if err != nil {
 			logging.Error("Invalid project namespace stored to config mapping: %s", namespace)
 			continue

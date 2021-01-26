@@ -9,7 +9,6 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
-	"sync"
 
 	"github.com/ActiveState/sysinfo"
 	"github.com/gobuffalo/packr"
@@ -18,7 +17,6 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/go-openapi/strfmt"
-	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -29,7 +27,6 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/cli/internal/strutils"
 )
 
@@ -49,22 +46,12 @@ type ErrorNoProject struct{ *locale.LocalizedError }
 
 type ErrorNoProjectFromEnv struct{ *locale.LocalizedError }
 
-// projectURL comprises all fields of a parsed project URL
-type projectURL struct {
-	Owner      string
-	Name       string
-	CommitID   string
-	BranchName string
-}
-
-var projectMapMutex = &sync.Mutex{}
-
 const LocalProjectsConfigKey = "projects"
 
 // VersionInfo is used in cases where we only care about parsing the version field. In all other cases the version is parsed via
 // the Project struct
 type VersionInfo struct {
-	Branch  string
+	Channel string
 	Version string
 	Lock    string `yaml:"lock"`
 }
@@ -88,10 +75,10 @@ type Project struct {
 	Jobs          Jobs          `yaml:"jobs,omitempty"`
 	Private       bool          `yaml:"private,omitempty"`
 	path          string        // "private"
-	parsedURL     projectURL    // parsed url data
-	parsedBranch  string
+	parsedChannel string
 	parsedVersion string
 }
+
 
 // Platform covers the platform structure of our yaml
 type Platform struct {
@@ -483,37 +470,18 @@ func Parse(configFilepath string) (*Project, error) {
 		return nil, errs.Wrap(err, "project.Init failed")
 	}
 
-	cfg, err := config.Get()
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not read configuration required by projectfile parser.")
-	}
-
-	namespace := fmt.Sprintf("%s/%s", project.parsedURL.Owner, project.parsedURL.Name)
-	storeProjectMapping(cfg, namespace, filepath.Dir(project.Path()))
-
 	return project, nil
 }
 
 // Init initializes the parsedURL field from the project url string
 func (p *Project) Init() error {
-	err := ValidateProjectURL(p.Project)
-	if err != nil {
-		return err
-	}
-
-	parsedURL, err := p.parseURL()
-	if err != nil {
-		return locale.NewInputError("parse_project_file_url_err")
-	}
-	p.parsedURL = parsedURL
-
 	if p.Lock != "" {
 		parsedLock, err := ParseLock(p.Lock)
 		if err != nil {
 			return errs.Wrap(err, "ParseLock %s failed", p.Lock)
 		}
 
-		p.parsedBranch = parsedLock.Branch
+		p.parsedChannel = parsedLock.Channel
 		p.parsedVersion = parsedLock.Version
 	}
 
@@ -540,26 +508,6 @@ func parse(configFilepath string) (*Project, error) {
 	return &project, nil
 }
 
-// Owner returns the project namespace's organization
-func (p *Project) Owner() string {
-	return p.parsedURL.Owner
-}
-
-// Name returns the project namespace's name
-func (p *Project) Name() string {
-	return p.parsedURL.Name
-}
-
-// CommitID returns the commit ID specified in the project
-func (p *Project) CommitID() string {
-	return p.parsedURL.CommitID
-}
-
-// BranchName returns the branch name specified in the project
-func (p *Project) BranchName() string {
-	return p.parsedURL.BranchName
-}
-
 // Path returns the project's activestate.yaml file path.
 func (p *Project) Path() string {
 	return p.path
@@ -572,22 +520,12 @@ func (p *Project) SetPath(path string) {
 
 // VersionBranch returns the branch as it was interpreted from the lock
 func (p *Project) VersionBranch() string {
-	return p.parsedBranch
+	return p.parsedChannel
 }
 
 // Version returns the branch as it was interpreted from the lock
 func (p *Project) Version() string {
 	return p.parsedVersion
-}
-
-// ValidateProjectURL validates the configured project URL
-func ValidateProjectURL(url string) error {
-	// Note: This line also matches headless commit URLs: match == {'commit', '<commit_id>'}
-	match := ProjectURLRe.FindStringSubmatch(url)
-	if len(match) < 3 {
-		return &ErrorParseProject{locale.NewError("err_bad_project_url")}
-	}
-	return nil
 }
 
 // Reload the project file from disk
@@ -603,57 +541,6 @@ func (p *Project) Reload() error {
 // Save the project to its activestate.yaml file
 func (p *Project) Save(cfg ConfigGetter) error {
 	return p.save(cfg, p.Path())
-}
-
-// parseURL returns the parsed fields of a Project URL
-func (p *Project) parseURL() (projectURL, error) {
-	return parseURL(p.Project)
-}
-
-func validateUUID(uuidStr string) error {
-	if ok := strfmt.Default.Validates("uuid", uuidStr); !ok {
-		return locale.NewError("invalid_uuid_val", "Invalid commit ID {{.V0}} in activestate.yaml.  You could replace it with 'latest'", uuidStr)
-	}
-
-	var uuid strfmt.UUID
-	if err := uuid.UnmarshalText([]byte(uuidStr)); err != nil {
-		return locale.WrapError(err, "err_commit_id_unmarshal", "Failed to unmarshal the commit id {{.V0}} read from activestate.yaml.", uuidStr)
-	}
-
-	return nil
-}
-
-func parseURL(url string) (projectURL, error) {
-	err := ValidateProjectURL(url)
-	if err != nil {
-		return projectURL{}, err
-	}
-
-	match := CommitURLRe.FindStringSubmatch(url)
-	if len(match) > 1 {
-		parts := projectURL{CommitID: match[1]}
-		return parts, nil
-	}
-
-	match = ProjectURLRe.FindStringSubmatch(url)
-	parts := projectURL{
-		Owner: match[1],
-		Name:  match[2],
-	}
-	if len(match) >= 4 {
-		parts.CommitID = match[3]
-	}
-	if len(match) >= 5 {
-		parts.BranchName = match[4]
-	}
-
-	if parts.CommitID != "" {
-		if err := validateUUID(parts.CommitID); err != nil {
-			return projectURL{}, err
-		}
-	}
-
-	return parts, nil
 }
 
 func removeTemporaryLanguage(data []byte) ([]byte, error) {
@@ -708,11 +595,6 @@ func (p *Project) save(cfg ConfigGetter, path string) error {
 		return errs.Wrap(err, "yaml.Marshal failed")
 	}
 
-	err = ValidateProjectURL(p.Project)
-	if err != nil {
-		return errs.Wrap(err, "ValidateProjectURL failed")
-	}
-
 	logging.Debug("Saving %s", path)
 
 	f, err := os.Create(path)
@@ -725,8 +607,6 @@ func (p *Project) save(cfg ConfigGetter, path string) error {
 	if err != nil {
 		return errs.Wrap(err, "f.Write %s failed", path)
 	}
-
-	storeProjectMapping(cfg, fmt.Sprintf("%s/%s", p.parsedURL.Owner, p.parsedURL.Name), filepath.Dir(p.Path()))
 
 	return nil
 }
@@ -1136,7 +1016,7 @@ func ParseLock(lock string) (*VersionInfo, error) {
 	}
 
 	return &VersionInfo{
-		Branch:  split[0],
+		Channel: split[0],
 		Version: split[1],
 		Lock:    lock,
 	}, nil
@@ -1216,115 +1096,3 @@ type ConfigGetter interface {
 	Set(string, interface{})
 }
 
-func GetProjectMapping(config ConfigGetter) map[string][]string {
-	addDeprecatedProjectMappings(config)
-	CleanProjectMapping(config)
-	projects := config.GetStringMapStringSlice(LocalProjectsConfigKey)
-	if projects == nil {
-		return map[string][]string{}
-	}
-	return projects
-}
-
-func GetProjectNameForPath(config ConfigGetter, projectPath string) string {
-	projects := GetProjectMapping(config)
-
-	for name, paths := range projects {
-		if name == "/" {
-			continue
-		}
-		for _, path := range paths {
-			if isEqual, err := fileutils.PathsEqual(projectPath, path); isEqual {
-				if err != nil {
-					logging.Debug("Failed to compare paths %s and %s", projectPath, path)
-				}
-				return name
-			}
-		}
-	}
-	return ""
-}
-
-func addDeprecatedProjectMappings(config ConfigGetter) {
-	projects := config.GetStringMapStringSlice(LocalProjectsConfigKey)
-	keys := funk.FilterString(config.AllKeys(), func(v string) bool {
-		return strings.HasPrefix(v, "project_")
-	})
-
-	if len(keys) == 0 {
-		return
-	}
-
-	for _, key := range keys {
-		namespace := strings.TrimPrefix(key, "project_")
-		newPaths := projects[namespace]
-		paths := config.GetStringSlice(key)
-		projects[namespace] = funk.UniqString(append(newPaths, paths...))
-		config.Set(key, nil)
-	}
-
-	config.Set(LocalProjectsConfigKey, projects)
-}
-
-// GetProjectPaths returns the paths of all projects associated with the namespace
-func GetProjectPaths(config ConfigGetter, namespace string) []string {
-	projects := GetProjectMapping(config)
-
-	// match case-insensitively
-	var paths []string
-	for key, value := range projects {
-		if strings.ToLower(key) == strings.ToLower(namespace) {
-			paths = append(paths, value...)
-		}
-	}
-
-	return paths
-}
-
-// storeProjectMapping associates the namespace with the project
-// path in the config
-func storeProjectMapping(cfg ConfigGetter, namespace, projectPath string) {
-	projectMapMutex.Lock()
-	defer projectMapMutex.Unlock()
-
-	projectPath = filepath.Clean(projectPath)
-
-	projects := cfg.GetStringMapStringSlice(LocalProjectsConfigKey)
-	if projects == nil {
-		projects = make(map[string][]string)
-	}
-
-	paths := projects[namespace]
-	if paths == nil {
-		paths = make([]string, 0)
-	}
-
-	if !funk.Contains(paths, projectPath) {
-		paths = append(paths, projectPath)
-	}
-
-	projects[namespace] = paths
-	cfg.Set(LocalProjectsConfigKey, projects)
-}
-
-// CleanProjectMapping removes projects that no longer exist
-// on a user's filesystem from the projects config entry
-func CleanProjectMapping(cfg ConfigGetter) {
-	projects := cfg.GetStringMapStringSlice(LocalProjectsConfigKey)
-	seen := map[string]bool{}
-
-	for namespace, paths := range projects {
-		for i, path := range paths {
-			if !fileutils.DirExists(path) {
-				projects[namespace] = sliceutils.RemoveFromStrings(projects[namespace], i)
-			}
-		}
-		if ok, _ := seen[strings.ToLower(namespace)]; ok || len(projects[namespace]) == 0 {
-			delete(projects, namespace)
-			continue
-		}
-		seen[strings.ToLower(namespace)] = true
-	}
-
-	cfg.Set("projects", projects)
-}

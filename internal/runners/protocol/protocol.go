@@ -37,7 +37,7 @@ func (p *Protocol) Run(params Params) error {
 		return locale.WrapError(err, "err_protocol_parse", "Invailid URL provided: {{.V0}}", params.URL)
 	}
 	trimmedPath := strings.TrimLeft(parsed.Path, "/")
-	namespace, err := project.ParseNamespace(trimmedPath)
+	namespace, err := project.NewParsedURL(trimmedPath)
 	if err != nil {
 		return locale.WrapError(err, "err_protocol_namespace", "{{.V0}} is not a valid namespace", trimmedPath)
 	}

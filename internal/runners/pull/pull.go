@@ -4,6 +4,8 @@ import (
 	"os"
 	"path"
 
+	"github.com/go-openapi/strfmt"
+
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -15,7 +17,6 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/go-openapi/strfmt"
 )
 
 type Pull struct {
@@ -129,11 +130,11 @@ func (p *Pull) Run(params *PullParams) error {
 	return nil
 }
 
-func targetProject(prj *project.Project, overwrite string) (*project.Namespaced, error) {
+func targetProject(prj *project.Project, overwrite string) (*project.ParsedURL, error) {
 	ns := prj.Namespace()
 	if overwrite != "" {
 		var err error
-		ns, err = project.ParseNamespace(overwrite)
+		ns, err = project.NewParsedURL(overwrite)
 		if err != nil {
 			return nil, locale.WrapInputError(err, "pull_set_project_parse_err", "Failed to parse namespace {{.V0}}", overwrite)
 		}

@@ -38,10 +38,10 @@ type Activate struct {
 }
 
 type ActivateParams struct {
-	Namespace     *project.Namespaced
+	Namespace     *project.ParsedURL
 	PreferredPath string
 	Command       string
-	ReplaceWith   *project.Namespaced
+	ReplaceWith   *project.ParsedURL
 	Default       bool
 	Branch        string
 }
@@ -225,7 +225,7 @@ func (r *Activate) run(params *ActivateParams) error {
 	return nil
 }
 
-func updateProjectFile(prj *project.Project, names *project.Namespaced) error {
+func updateProjectFile(prj *project.Project, names *project.ParsedURL) error {
 	var commitID string
 	if names.CommitID == nil || *names.CommitID == "" {
 		latestID, err := model.LatestCommitID(names.Owner, names.Project)

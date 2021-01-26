@@ -16,21 +16,21 @@ func newUUID(uuid string) *strfmt.UUID {
 }
 
 func TestParseNamespace(t *testing.T) {
-	_, err := ParseNamespace("valid/namespace")
+	_, err := NewParsedURL("valid/namespace")
 	assert.NoError(t, err, "should parse a valid namespace")
 
-	_, err = ParseNamespace("valid/namespace#a10-b11c12-d13e14-f15")
+	_, err = NewParsedURL("valid/namespace#a10-b11c12-d13e14-f15")
 	assert.NoError(t, err, "should parse a valid namespace with 'uuid'")
 
-	_, err = ParseNamespace("valid/namespace#")
+	_, err = NewParsedURL("valid/namespace#")
 	assert.NoError(t, err, "should parse a valid namespace with empty uuid")
 }
 
 func TestParseNamespace_Invalid(t *testing.T) {
-	_, err := ParseNamespace("invalid-namespace")
+	_, err := NewParsedURL("invalid-namespace")
 	assert.Error(t, err, "should get error with invalid namespace")
 
-	_, err = ParseNamespace("valid/namespace#invalidcommitid")
+	_, err = NewParsedURL("valid/namespace#invalidcommitid")
 	assert.Error(t, err, "should get error with valid namespace and invalid commit id (basic hex and dash filter)")
 }
 
@@ -45,16 +45,16 @@ func TestParseNamespaceOrConfigfile(t *testing.T) {
 	var tests = []struct {
 		name       string
 		configFile string
-		expected   *Namespaced
+		expected   *ParsedURL
 	}{
 		{"InvalidConfigfile", invalidConfigFile, nil},
-		{"FromConfigFile", validConfigFile, &Namespaced{Owner: "ActiveState", Project: "CodeIntel", CommitID: newUUID("00000000-0000-0000-0000-00000d7ebc72")}},
+		{"FromConfigFile", validConfigFile, &ParsedURL{Owner: "ActiveState", Project: "CodeIntel", CommitID: newUUID("00000000-0000-0000-0000-00000d7ebc72")}},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			ns := NameSpaceForConfig(tt.configFile)
+			ns := NewParsedURLFromConfig(tt.configFile)
 			assert.Equal(t, tt.expected, ns)
 		})
 	}

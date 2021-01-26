@@ -26,7 +26,7 @@ type Push struct {
 }
 
 type PushParams struct {
-	Namespace *project.Namespaced
+	Namespace *project.ParsedURL
 }
 
 type primeable interface {
@@ -57,7 +57,7 @@ func (r *Push) Run(params PushParams) error {
 	if r.project.IsHeadless() {
 		namespace := params.Namespace
 		if !namespace.IsValid() {
-			names := projectfile.GetProjectNameForPath(r.config, filepath.Dir(r.project.Source().Path()))
+			names := project.GetProjectNameForPath(r.config, filepath.Dir(r.project.Source().Path()))
 			if names == "" {
 				return errs.AddTips(
 					locale.NewInputError("push_needs_namespace", "Could not find out what project to push to."),
@@ -65,7 +65,7 @@ func (r *Push) Run(params PushParams) error {
 				)
 			}
 			var err error
-			namespace, err = project.ParseNamespace(names)
+			namespace, err = project.NewParsedURL(names)
 			if err != nil {
 				return errs.Wrap(err, "Could not parse namespace %s to push headless commit to", name)
 			}

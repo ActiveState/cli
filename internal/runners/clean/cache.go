@@ -11,7 +11,6 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 type Cache struct {
@@ -46,7 +45,7 @@ func (c *Cache) Run(params *CacheParams) error {
 	}
 
 	if params.Project != "" {
-		paths := projectfile.GetProjectPaths(c.config, params.Project)
+		paths := project.GetProjectPaths(c.config, params.Project)
 
 		for _, projectPath := range paths {
 			err := c.removeProjectCache(projectPath, params.Project, params.Force)
@@ -85,7 +84,7 @@ func (c *Cache) removeProjectCache(projectDir, namespace string, force bool) err
 		}
 	}
 
-	parsed, err := project.ParseNamespace(namespace)
+	parsed, err := project.NewParsedURL(namespace)
 	if err != nil {
 		return locale.WrapError(err, "err_clean_cache_invalid_namespace", "NamespacePrefix argument is not of the correct format")
 	}

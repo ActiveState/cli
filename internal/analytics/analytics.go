@@ -16,7 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/ActiveState/cli/pkg/project"
 )
 
 var client *ga.Client
@@ -68,7 +68,7 @@ func (d *customDimensions) SetOutput(output string) {
 }
 
 func (d *customDimensions) toMap() map[string]string {
-	pj := projectfile.GetPersisted()
+	pj := project.GetPersisted()
 	d.projectName = ""
 	if pj != nil {
 		d.projectName = pj.Owner() + "/" + pj.Name()

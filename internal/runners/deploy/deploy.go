@@ -28,7 +28,7 @@ import (
 )
 
 type Params struct {
-	Namespace project.Namespaced
+	Namespace project.ParsedURL
 	Path      string
 	Force     bool
 	UserScope bool
@@ -91,7 +91,7 @@ func (d *Deploy) Run(params *Params) error {
 	return runSteps(targetPath, params.Force, params.UserScope, params.Namespace, d.step, runtime, installer, d.output, d.cfg, d.subshell)
 }
 
-func (d *Deploy) createRuntimeInstaller(namespace project.Namespaced, targetPath string) (*runtime.Runtime, installable, error) {
+func (d *Deploy) createRuntimeInstaller(namespace project.ParsedURL, targetPath string) (*runtime.Runtime, installable, error) {
 	commitID := namespace.CommitID
 	if commitID == nil {
 		branch, err := d.DefaultBranchForProjectName(namespace.Owner, namespace.Project)
@@ -116,13 +116,13 @@ func (d *Deploy) createRuntimeInstaller(namespace project.Namespaced, targetPath
 	return runtime, d.NewRuntimeInstaller(runtime), nil
 }
 
-func runSteps(targetPath string, force bool, userScope bool, namespace project.Namespaced, step Step, runtime *runtime.Runtime, installer installable, out output.Outputer, cfg sscommon.Configurable, subshell subshell.SubShell) error {
+func runSteps(targetPath string, force bool, userScope bool, namespace project.ParsedURL, step Step, runtime *runtime.Runtime, installer installable, out output.Outputer, cfg sscommon.Configurable, subshell subshell.SubShell) error {
 	return runStepsWithFuncs(
 		targetPath, force, userScope, namespace, step, runtime, installer, out, cfg, subshell,
 		install, configure, symlink, report)
 }
 
-func runStepsWithFuncs(targetPath string, force, userScope bool, namespace project.Namespaced, step Step, rt *runtime.Runtime, installer installable, out output.Outputer, cfg sscommon.Configurable, subshell subshell.SubShell, installf installFunc, configuref configureFunc, symlinkf symlinkFunc, reportf reportFunc) error {
+func runStepsWithFuncs(targetPath string, force, userScope bool, namespace project.ParsedURL, step Step, rt *runtime.Runtime, installer installable, out output.Outputer, cfg sscommon.Configurable, subshell subshell.SubShell, installf installFunc, configuref configureFunc, symlinkf symlinkFunc, reportf reportFunc) error {
 	logging.Debug("runSteps: %s", step.String())
 
 	var err error
@@ -189,9 +189,9 @@ func install(path string, installer installable, out output.Outputer) error {
 	return nil
 }
 
-type configureFunc func(installpath string, runtime *runtime.Runtime, cfg sscommon.Configurable, out output.Outputer, sshell subshell.SubShell, namespace project.Namespaced, userScope bool) error
+type configureFunc func(installpath string, runtime *runtime.Runtime, cfg sscommon.Configurable, out output.Outputer, sshell subshell.SubShell, namespace project.ParsedURL, userScope bool) error
 
-func configure(installpath string, runtime *runtime.Runtime, cfg sscommon.Configurable, out output.Outputer, sshell subshell.SubShell, namespace project.Namespaced, userScope bool) error {
+func configure(installpath string, runtime *runtime.Runtime, cfg sscommon.Configurable, out output.Outputer, sshell subshell.SubShell, namespace project.ParsedURL, userScope bool) error {
 	venv := virtualenvironment.New(runtime)
 	env, err := venv.GetEnv(false, "")
 	if err != nil {

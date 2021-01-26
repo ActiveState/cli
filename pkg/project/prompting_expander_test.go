@@ -16,7 +16,6 @@ import (
 	promptMock "github.com/ActiveState/cli/internal/prompt/mock"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
-	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/request/mock"
@@ -48,7 +47,7 @@ func (suite *VarPromptingExpanderTestSuite) BeforeTest(suiteName, testName strin
 	suite.Require().Nil(err, "Unmarshalled project YAML")
 	pjFile.Persist()
 	suite.projectFile = pjFile
-	suite.project, err = project.New(pjFile, outputhelper.NewCatcher())
+	suite.project, err = project.New(pjFile)
 	suite.NoError(err, "no failure should occur when loading project")
 
 	secretsClient := secretsapi_test.NewDefaultTestClient("bearing123")

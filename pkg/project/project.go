@@ -3,6 +3,7 @@ package project
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"regexp"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/go-openapi/strfmt"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/keypairs"
@@ -18,7 +20,6 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/secrets"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -27,6 +28,8 @@ import (
 
 // Build covers the build structure
 type Build map[string]string
+
+type ErrorParseProject struct{ *locale.LocalizedError }
 
 var pConditional *constraints.Conditional
 var normalizeRx *regexp.Regexp
@@ -48,11 +51,23 @@ func RegisterConditional(conditional *constraints.Conditional) {
 // Project covers the platform structure
 type Project struct {
 	projectfile *projectfile.Project
-	output.Outputer
+	parsedURL   *ParsedURL
 }
 
 // Source returns the source projectfile
 func (p *Project) Source() *projectfile.Project { return p.projectfile }
+
+// Source returns the source projectfile
+func (p *Project) Save() error {
+	cfg, err := config.Get()
+	if err != nil {
+		return errs.Wrap(err, "Could not read configuration required by project saver.")
+	}
+
+	storeProjectMapping(cfg, p.parsedURL.Namespace.String(), p.projectfile.Path())
+
+	return p.projectfile.Save(cfg)
+}
 
 // Platforms gets platforms
 func (p *Project) Platforms() []*Platform {
@@ -194,12 +209,12 @@ func (p *Project) URL() string {
 
 // Owner returns project owner
 func (p *Project) Owner() string {
-	return p.projectfile.Owner()
+	return p.parsedURL.Owner
 }
 
 // Name returns project name
 func (p *Project) Name() string {
-	return p.projectfile.Name()
+	return p.parsedURL.Project
 }
 
 func (p *Project) Private() bool {
@@ -208,7 +223,7 @@ func (p *Project) Private() bool {
 
 // CommitID returns project commitID
 func (p *Project) CommitID() string {
-	return p.projectfile.CommitID()
+	return p.parsedURL.CommitID.String()
 }
 
 // CommitUUID returns project commitID in UUID format
@@ -218,7 +233,7 @@ func (p *Project) CommitUUID() strfmt.UUID {
 
 // BranchName returns the project branch name
 func (p *Project) BranchName() string {
-	return p.projectfile.BranchName()
+	return p.parsedURL.Branch
 }
 
 func (p *Project) IsHeadless() bool {
@@ -244,23 +259,39 @@ func (p *Project) IsLocked() bool { return p.Lock() != "" }
 func (p *Project) Lock() string { return p.projectfile.Lock }
 
 // Namespace returns project namespace
-func (p *Project) Namespace() *Namespaced {
-	commitID := strfmt.UUID(p.projectfile.CommitID())
-	return &Namespaced{p.projectfile.Owner(), p.projectfile.Name(), &commitID}
+func (p *Project) Namespace() *ParsedURL {
+	return p.parsedURL
 }
 
 // Environments returns project environment
 func (p *Project) Environments() string { return p.projectfile.Environments }
 
 // New creates a new Project struct
-func New(p *projectfile.Project, out output.Outputer) (*Project, error) {
-	project := &Project{projectfile: p, Outputer: out}
+func New(p *projectfile.Project) (*Project, error) {
+	u, err := NewParsedURL(p.Project)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not parse project url")
+	}
+	project := &Project{p, u}
 	return project, nil
 }
 
 // NewLegacy is for legacy use-cases only, DO NOT USE
 func NewLegacy(p *projectfile.Project) (*Project, error) {
-	return New(p, output.Get())
+	return New(p)
+}
+
+func validateUUID(uuidStr string) error {
+	if ok := strfmt.Default.Validates("uuid", uuidStr); !ok {
+		return locale.NewError("invalid_uuid_val", "Invalid commit ID {{.V0}} in activestate.yaml.  You could replace it with 'latest'", uuidStr)
+	}
+
+	var uuid strfmt.UUID
+	if err := uuid.UnmarshalText([]byte(uuidStr)); err != nil {
+		return locale.WrapError(err, "err_commit_id_unmarshal", "Failed to unmarshal the commit id {{.V0}} read from activestate.yaml.", uuidStr)
+	}
+
+	return nil
 }
 
 // Parse will parse the given projectfile and instantiate a Project struct with it
@@ -269,13 +300,36 @@ func Parse(fpath string) (*Project, error) {
 	if err != nil {
 		return nil, err
 	}
-	return New(pjfile, output.Get())
+	p, err := New(pjfile)
+	if err != nil {
+		return p, errs.Wrap(err, "Could not create new project")
+	}
+
+	cfg, err := config.Get()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not read configuration required by projectfile parser.")
+	}
+
+	storeProjectMapping(cfg, p.parsedURL.Namespace.String(), fpath)
+
+	return p, nil
 }
 
 // Get returns project struct. Quits execution if error occurs
 func Get() *Project {
 	pj := projectfile.Get()
-	project, err := New(pj, output.Get())
+	project, err := New(pj)
+	if err != nil {
+		fmt.Fprint(os.Stderr, locale.Tr("err_project_unavailable", err.Error()))
+		os.Exit(1)
+	}
+	return project
+}
+
+// GetGetPersisted returns project struct. Quits execution if error occurs
+func GetPersisted() *Project {
+	pj := projectfile.GetPersisted()
+	project, err := New(pj)
 	if err != nil {
 		fmt.Fprint(os.Stderr, locale.Tr("err_project_unavailable", err.Error()))
 		os.Exit(1)
@@ -289,7 +343,7 @@ func GetSafe() (*Project, error) {
 	if err != nil {
 		return nil, err
 	}
-	project, err := New(pjFile, output.Get())
+	project, err := New(pjFile)
 	if err != nil {
 		return nil, err
 	}
@@ -312,7 +366,7 @@ func FromPath(path string) (*Project, error) {
 	if err != nil {
 		return nil, err
 	}
-	project, err := New(pjFile, output.Get())
+	project, err := New(pjFile)
 	if err != nil {
 		return nil, err
 	}
@@ -326,7 +380,7 @@ func FromExactPath(path string) (*Project, error) {
 	if err != nil {
 		return nil, err
 	}
-	project, err := New(pjFile, output.Get())
+	project, err := New(pjFile)
 	if err != nil {
 		return nil, err
 	}
@@ -723,4 +777,32 @@ func (j *Job) Scripts() []*Script {
 		}
 	}
 	return scripts
+}
+
+// SetNamespace updates the namespace in the project file
+func (p *Project) SetNamespace(owner, project string) error {
+	data, err := ioutil.ReadFile(p.projectfile.Path())
+	if err != nil {
+		return errs.Wrap(err, "Failed to read project file %s.", p.path)
+	}
+
+	namespace := fmt.Sprintf("%s/%s", owner, project)
+	out, err := setNamespaceInYAML(data, namespace, p.CommitID())
+	if err != nil {
+		return errs.Wrap(err, "Failed to update namespace in project file.")
+	}
+
+	// keep parsed url components in sync
+	p.parsedURL.Owner = owner
+	p.parsedURL.Name = project
+
+	if err := ioutil.WriteFile(p.path, out, 0664); err != nil {
+		return errs.Wrap(err, "Failed to write project file %s", p.path)
+	}
+
+	err = p.Reload()
+	if err != nil {
+		return errs.Wrap(err, "Failed to reload updated projectfile.")
+	}
+	return nil
 }

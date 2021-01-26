@@ -21,7 +21,7 @@ import (
 
 // RunParams stores run func parameters.
 type RunParams struct {
-	Namespace *project.Namespaced
+	Namespace *project.ParsedURL
 	Path      string
 	Style     string
 	Language  string

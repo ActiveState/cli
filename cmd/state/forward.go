@@ -49,7 +49,7 @@ func forwardFn(bindir string, args []string, out output.Outputer, pj *project.Pr
 	}
 
 	// Check if we need to forward
-	if versionInfo == nil || (versionInfo.Version == constants.Version && versionInfo.Branch == constants.BranchName) {
+	if versionInfo == nil || (versionInfo.Version == constants.Version && versionInfo.Channel == constants.BranchName) {
 		return nil, nil
 	}
 
@@ -77,7 +77,7 @@ func forwardFn(bindir string, args []string, out output.Outputer, pj *project.Pr
 
 // forward will forward the call to the appropriate State Tool version if necessary
 func forward(bindir string, args []string, versionInfo *projectfile.VersionInfo, out output.Outputer) (int, error) {
-	logging.Debug("Forwarding to version %s/%s, arguments: %v", versionInfo.Branch, versionInfo.Version, args[1:])
+	logging.Debug("Forwarding to version %s/%s, arguments: %v", versionInfo.Channel, versionInfo.Version, args[1:])
 	binary := forwardBin(bindir, versionInfo)
 	err := ensureForwardExists(binary, versionInfo, out)
 	if err != nil {
@@ -98,7 +98,7 @@ func execForward(binary string, args []string) (int, error) {
 }
 
 func forwardBin(bindir string, versionInfo *projectfile.VersionInfo) string {
-	filename := fmt.Sprintf("%s-%s-%s", constants.CommandName, versionInfo.Branch, versionInfo.Version)
+	filename := fmt.Sprintf("%s-%s-%s", constants.CommandName, versionInfo.Channel, versionInfo.Version)
 	if forceFileExt != "" {
 		filename += forceFileExt
 	} else if runtime.GOOS == "windows" {
@@ -121,7 +121,7 @@ func ensureForwardExists(binary string, versionInfo *projectfile.VersionInfo, ou
 		CurrentVersion: constants.Version,
 		APIURL:         constants.APIUpdateURL,
 		CmdName:        constants.CommandName,
-		DesiredBranch:  versionInfo.Branch,
+		DesiredBranch:  versionInfo.Channel,
 		DesiredVersion: desiredVersion,
 	}
 
