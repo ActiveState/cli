@@ -26,16 +26,19 @@ type PushIntegrationTestSuite struct {
 	baseProject  string
 	language     string
 	extraPackage string
+	longWait     time.Duration
 }
 
 func (suite *PushIntegrationTestSuite) SetupSuite() {
 	suite.language = "perl@5.32.0"
 	suite.baseProject = "ActiveState/Perl-5.32"
 	suite.extraPackage = "JSON"
+	suite.longWait = time.Second * 30
 	if runtime.GOOS == "darwin" {
 		suite.language = "python3"
 		suite.baseProject = "ActiveState-CLI/small-python"
 		suite.extraPackage = "datetime"
+		suite.longWait = time.Second * 60
 	}
 }
 
@@ -78,7 +81,7 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 	cp.Expect("You're about to add packages as an anonymous user")
 	cp.Expect("(Y/n)")
 	cp.Send("y")
-	cp.Expect("added", 30*time.Second)
+	cp.Expect("added", suite.longWait)
 	cp.ExpectExitCode(0)
 
 	ts.LoginAsPersistentUser()
@@ -121,7 +124,7 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 	cp.Expect("You're about to add packages as an anonymous user")
 	cp.Expect("(Y/n)")
 	cp.Send("y")
-	cp.Expect("added", 30*time.Second)
+	cp.Expect("added", suite.longWait)
 	cp.Wait()
 
 	prj, err := project.FromPath(filepath.Join(wd, constants.ConfigFileName))
