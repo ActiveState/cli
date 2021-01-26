@@ -3,8 +3,7 @@ package activate
 import (
 	"fmt"
 	"path/filepath"
-
-	"github.com/thoas/go-funk"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
@@ -22,7 +21,6 @@ import (
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/cmdlets/git"
-	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
@@ -127,16 +125,6 @@ func (r *Activate) run(params *ActivateParams) error {
 		}
 	}
 
-	pjm, err := model.FetchProjectByName(proj.Owner(), proj.Name())
-	if err != nil {
-		return locale.NewInputError("err_fetch_project")
-	}
-
-	branch := proj.BranchName()
-	if branch == "" {
-		branch = model.BranchForProjectByName()
-	}
-
 	if proj == nil {
 		if params.Namespace == nil || !params.Namespace.IsValid() {
 			return locale.NewInputError("err_activate_nonamespace", "Please provide a namespace (see `state activate --help` for more info).")
@@ -194,14 +182,23 @@ func (r *Activate) run(params *ActivateParams) error {
 	venv := virtualenvironment.New(runtime)
 	venv.OnUseCache(func() { r.out.Notice(locale.T("using_cached_env")) })
 
+	// Determine branch name
+	branch := proj.BranchName()
+	if branch == "" {
+		branchInfo, err := model.DefaultBranchForProjectName(proj.Owner(), proj.Name())
+		if err != nil {
+			return locale.WrapError(err, "err_branch_notfound", "Could not find a default branch for your project")
+		}
+		branch = branchInfo.Label
+	}
+
 	err = venv.Setup(true)
 	if err != nil {
 		if errs.Matches(err, &model.ErrNoMatchingPlatform{}) {
-			branches, err := model.BranchesForProjectFiltered(proj.Owner(), proj.Name(), proj.BranchName())
+			branches, err := model.BranchNamesForProjectFiltered(proj.Owner(), proj.Name(), branch)
 			if err == nil && len(branches) > 1 {
-				funk.Filter(branches, func(s *mono_models.Activity) bool {
-
-				})
+				err = locale.NewInputError("err_activate_platfrom_alternate_branches", "", branch, strings.Join(branches, "\n - "))
+				return errs.AddTips(err, "Run → `[ACTIONABLE]state branch switch <NAME>[/RESET]` to switch branch")
 			}
 		}
 		if !authentication.Get().Authenticated() {

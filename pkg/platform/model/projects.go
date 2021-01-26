@@ -104,16 +104,16 @@ func BranchesForProject(owner, name string) ([]*mono_models.Branch, error) {
 	return proj.Branches, nil
 }
 
-func BranchesForProjectFiltered(owner, name string, excludes ...string) ([]*mono_models.Branch, error) {
+func BranchNamesForProjectFiltered(owner, name string, excludes ...string) ([]string, error) {
 	proj, err := FetchProjectByName(owner, name)
 	if err != nil {
 		return nil, err
 	}
-	branches := make([]*mono_models.Branch, 0)
+	branches := make([]string, 0)
 	for _, branch := range proj.Branches {
 		for _, exclude := range excludes {
 			if branch.Label != exclude {
-				branches = append(branches, branch)
+				branches = append(branches, branch.Label)
 			}
 		}
 	}
