@@ -16,6 +16,8 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
+type ErrNoMatchingPlatform struct{ *locale.LocalizedError }
+
 // IngredientAndVersion is a sane version of whatever the hell it is go-swagger thinks it's doing
 type IngredientAndVersion struct {
 	*inventory_models.SearchIngredientsResponseItem
@@ -201,9 +203,9 @@ func filterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID)
 	}
 
 	if len(pids) == 0 {
-		return nil, locale.NewInputError(
+		return nil, &ErrNoMatchingPlatform{locale.NewInputError(
 			"err_no_platform_data_remains", "", hostPlatform, hostArch,
-		)
+		)}
 	}
 
 	return pids, nil

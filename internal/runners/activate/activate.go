@@ -3,6 +3,7 @@ package activate
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
@@ -180,8 +181,25 @@ func (r *Activate) run(params *ActivateParams) error {
 	venv := virtualenvironment.New(runtime)
 	venv.OnUseCache(func() { r.out.Notice(locale.T("using_cached_env")) })
 
+	// Determine branch name
+	branch := proj.BranchName()
+	if branch == "" {
+		branchInfo, err := model.DefaultBranchForProjectName(proj.Owner(), proj.Name())
+		if err != nil {
+			return locale.WrapError(err, "err_branch_notfound", "Could not find a default branch for your project")
+		}
+		branch = branchInfo.Label
+	}
+
 	err = venv.Setup(true)
 	if err != nil {
+		if errs.Matches(err, &model.ErrNoMatchingPlatform{}) {
+			branches, err := model.BranchNamesForProjectFiltered(proj.Owner(), proj.Name(), branch)
+			if err == nil && len(branches) > 1 {
+				err = locale.NewInputError("err_activate_platfrom_alternate_branches", "", branch, strings.Join(branches, "\n - "))
+				return errs.AddTips(err, "Run → `[ACTIONABLE]state branch switch <NAME>[/RESET]` to switch branch")
+			}
+		}
 		if !authentication.Get().Authenticated() {
 			return locale.WrapError(err, "error_could_not_activate_venv_auth", "Could not activate project. If this is a private project ensure that you are authenticated.")
 		}
