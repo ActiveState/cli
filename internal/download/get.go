@@ -115,13 +115,17 @@ func _testHTTPGetWithProgress(url string, progress *progress.Progress) ([]byte, 
 
 // _testHTTPGet is used when in tests, this cannot be in the test itself as that would limit it to only that one test
 func _testHTTPGet(url string) ([]byte, error) {
-	path := strings.Replace(url, constants.APIArtifactURL, "", 1)
-	path = filepath.Join(environment.GetRootPathUnsafe(), "test", path)
-
-	body, err := ioutil.ReadFile(path)
+	resp, err := httpGet(url)
 	if err != nil {
-		return nil, errs.Wrap(err, "Could not read file contents: %s", path)
-	}
+		path := strings.Replace(url, constants.APIArtifactURL, "", 1)
+		path = filepath.Join(environment.GetRootPathUnsafe(), "test", path)
 
-	return body, nil
+		body, err := ioutil.ReadFile(path)
+		if err != nil {
+			return nil, errs.Wrap(err, "Could not read file contents: %s", path)
+		}
+
+		return body, nil
+	}
+	return resp, nil
 }

@@ -3,7 +3,6 @@ package analytics
 import (
 	"fmt"
 	"net/url"
-	"path/filepath"
 	"sync"
 	"time"
 
@@ -95,13 +94,8 @@ var (
 	eventWaitGroup sync.WaitGroup
 )
 
-var s3PixelURL = "https://cli-update.s3.ca-central-1.amazonaws.com/pixel"
-
 func init() {
 	CustomDimensions = &customDimensions{}
-	if condition.InTest() {
-		s3PixelURL = filepath.Join("download", "pixel")
-	}
 	setup()
 }
 
@@ -257,7 +251,7 @@ func sendGAEvent(category, action, label string, dimensions map[string]string) e
 
 func sendS3Pixel(category, action, label string, dimensions map[string]string) error {
 	logging.Debug("Sending S3 pixel event")
-	pixelURL, err := url.Parse(s3PixelURL)
+	pixelURL, err := url.Parse("https://cli-update.s3.ca-central-1.amazonaws.com/pixel")
 	if err != nil {
 		return locale.NewError("err_invalid_pixel_url", "Invalid URL for analytics S3 pixel")
 	}
