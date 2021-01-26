@@ -48,7 +48,7 @@ func httpGetWithProgress(url string, progress *progress.Progress) ([]byte, error
 	return httpGetWithProgressRetry(url, progress, 1, 3)
 }
 
-func httpGetWithProgressRetry(url string, progress *progress.Progress, attempt int, retries int) ([]byte, error) {
+func httpGetWithProgressRetry(url string, prog *progress.Progress, attempt int, retries int) ([]byte, error) {
 	logging.Debug("Retrieving url: %s, attempt: %d", url, attempt)
 	client := retryhttp.NewClient(0 /* 0 = no timeout */, retries)
 	resp, err := client.Get(url)
@@ -77,30 +77,31 @@ func httpGetWithProgressRetry(url string, progress *progress.Progress, attempt i
 		}
 	}
 
-	bar := progress.AddByteProgressBar(int64(total))
-
-	// Ensure bar is always closed (especially for retries)
-	defer func() {
-		if !bar.Completed() {
-			bar.Abort(true)
-		}
-	}()
-
 	src := resp.Body
 	var dst bytes.Buffer
+	var bar *progress.TotalBar
+	if prog != nil {
+		bar = prog.AddByteProgressBar(int64(total))
+		src = bar.ProxyReader(resp.Body)
 
-	src = bar.ProxyReader(resp.Body)
+		// Ensure bar is always closed (especially for retries)
+		defer func() {
+			if !bar.Completed() {
+				bar.Abort(true)
+			}
+		}()
+	}
 
 	_, err = io.Copy(&dst, src)
 	if err != nil {
 		logging.Debug("Reading body failed: %s", err)
 		if attempt <= retries {
-			return httpGetWithProgressRetry(url, progress, attempt+1, retries)
+			return httpGetWithProgressRetry(url, prog, attempt+1, retries)
 		}
 		return nil, errs.Wrap(err, "Could not copy network stream")
 	}
 
-	if !bar.Completed() {
+	if bar != nil && !bar.Completed() {
 		// Failsafe, so we don't get blocked by a progressbar
 		bar.IncrBy(total)
 	}

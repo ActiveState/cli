@@ -2,6 +2,7 @@ package analytics
 
 import (
 	"fmt"
+	"net/url"
 	"sync"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/download"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
@@ -206,6 +208,15 @@ func sendEventAndLog(category, action, label string, dimensions map[string]strin
 }
 
 func sendEvent(category, action, label string, dimensions map[string]string) error {
+	err := sendGAEvent(category, action, label, dimensions)
+	if err != nil {
+		return err
+	}
+	return sendS3Pixel(category, action, label, dimensions)
+}
+
+func sendGAEvent(category, action, label string, dimensions map[string]string) error {
+	logging.Debug("Sending Google Analytics event")
 	if deferAnalytics {
 		// TODO: figure out a way to pass configuration
 		cfg, err := config.Get()
@@ -236,4 +247,30 @@ func sendEvent(category, action, label string, dimensions map[string]string) err
 		event.Label(label)
 	}
 	return client.Send(event)
+}
+
+func sendS3Pixel(category, action, label string, dimensions map[string]string) error {
+	logging.Debug("Sending S3 pixel event")
+	pixelURL, err := url.Parse("https://cli-update.s3.ca-central-1.amazonaws.com/pixel")
+	if err != nil {
+		return locale.NewError("err_invalid_pixel_url", "Invalid URL for analytics S3 pixel")
+	}
+
+	query := pixelURL.Query()
+	query.Add("x-category", category)
+	query.Add("x-action", action)
+	query.Add("x-label", label)
+
+	for num, value := range dimensions {
+		key := fmt.Sprintf("x-custom%s", num)
+		query.Add(key, value)
+	}
+	pixelURL.RawQuery = query.Encode()
+
+	logging.Debug("Using S3 pixel URL: ", pixelURL.String())
+	_, err = download.Get(pixelURL.String())
+	if err != nil {
+		return locale.WrapError(err, "err_download_s3_pixel", "Could not download S3 pixel")
+	}
+	return nil
 }
