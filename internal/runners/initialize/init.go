@@ -2,13 +2,14 @@ package initialize
 
 import (
 	"path/filepath"
+	"strings"
 
 	"github.com/gobuffalo/packr"
 
-	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
@@ -23,8 +24,10 @@ type RunParams struct {
 	Namespace *project.Namespaced
 	Path      string
 	Style     string
-	Language  captain.LanguageVersion
+	Language  string
 	Private   bool
+	language  language.Supported
+	version   string
 }
 
 // Initialize stores scope-related dependencies.
@@ -42,10 +45,21 @@ func New(prime primeable) *Initialize {
 }
 
 func sanitize(params *RunParams) error {
-	// fmt.Printf("%s\n", params.Language.Name())
-	if params.Language.Name() == "" {
+	if params.Language == "" {
 		// Manually check for language requirement, because we need to fallback on the --language flag to support editor.V0
 		return locale.NewInputError("err_init_no_language", "You need to supply the [NOTICE]language[/RESET] argument, run [ACTIONABLE]`state init --help`[/RESET] for more information.")
+	}
+	langParts := strings.Split(params.Language, "@")
+	if len(langParts) > 1 {
+		params.version = langParts[1]
+	}
+
+	params.language = language.Supported{language.MakeByName(langParts[0])}
+	if !params.language.Recognized() {
+		return language.NewUnrecognizedLanguageError(
+			params.language.String(),
+			language.RecognizedSupportedsNames(),
+		)
 	}
 
 	// Fail if target dir already has an activestate.yaml
@@ -120,8 +134,8 @@ func run(params *RunParams, out output.Outputer) (string, error) {
 		createParams := &projectfile.CreateParams{
 			Owner:           params.Namespace.Owner,
 			Project:         params.Namespace.Project,
-			Language:        params.Language.Name(),
-			LanguageVersion: params.Language.Version(),
+			Language:        params.language.String(),
+			LanguageVersion: params.version,
 			Directory:       params.Path,
 			Private:         params.Private,
 		}

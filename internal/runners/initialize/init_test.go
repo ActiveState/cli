@@ -9,7 +9,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/language"
@@ -191,12 +190,10 @@ func TestInitialize_Run(t *testing.T) {
 			if err != nil {
 				t.Errorf("Initialize.run() chdir error = %v", err)
 			}
-			l := &captain.LanguageVersion{}
-			l.Set(tt.args.language)
 			path, err := run(&RunParams{
 				Namespace: tt.args.namespace,
 				Path:      tt.args.path,
-				Language:  *l,
+				Language:  tt.args.language,
 			}, outputhelper.NewCatcher())
 			path = osutil.PrepareDir(path)
 

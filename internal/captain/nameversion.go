@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 )
 
@@ -51,29 +50,6 @@ func (pv *PackageVersion) Set(arg string) error {
 		return locale.NewError("err_package_format", "The package and version provided is not formatting correctly, must be in the form of <package>@<version>")
 	}
 	return nil
-}
-
-var _ FlagMarshaler = &LanguageVersion{}
-
-type LanguageVersion struct {
-	NameVersion
-	language language.Supported
-}
-
-func (lv *LanguageVersion) Set(arg string) error {
-	err := lv.NameVersion.Set(arg)
-	if err != nil {
-		return locale.NewError("err_language_format")
-	}
-	return lv.language.Set(arg)
-}
-
-func (lv *LanguageVersion) Language() language.Supported {
-	return lv.language
-}
-
-func (lv *LanguageVersion) Type() string {
-	return "language"
 }
 
 var _ FlagMarshaler = &StateToolChannelVersion{}
