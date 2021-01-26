@@ -85,6 +85,10 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_install() {
 	// This can take a little while
 	cp.ExpectExitCode(0, 60*time.Second)
 
+	cp = ts.Spawn("pull")
+	cp.ExpectLongString("has been updated to the latest version available")
+	cp.ExpectExitCode(0)
+
 	cp = ts.Spawn("languages")
 	cp.Expect("Name")
 	cp.Expect("Python")
