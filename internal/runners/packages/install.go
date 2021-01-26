@@ -1,7 +1,6 @@
 package packages
 
 import (
-	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -13,7 +12,7 @@ import (
 
 // InstallRunParams tracks the info required for running Install.
 type InstallRunParams struct {
-	Package captain.PackageVersion
+	Package PackageVersion
 }
 
 // Install manages the installing execution context.

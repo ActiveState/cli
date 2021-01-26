@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -17,7 +16,7 @@ import (
 
 // InfoRunParams tracks the info required for running Info.
 type InfoRunParams struct {
-	Package  captain.PackageVersion
+	Package  PackageVersion
 	Language string
 }
 

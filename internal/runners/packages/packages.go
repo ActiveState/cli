@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -20,6 +21,18 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/project"
 )
+
+type PackageVersion struct {
+	captain.NameVersion
+}
+
+func (pv *PackageVersion) Set(arg string) error {
+	err := pv.NameVersion.Set(arg)
+	if err != nil {
+		return locale.NewError("err_package_format", "The package and version provided is not formatting correctly, must be in the form of <package>@<version>")
+	}
+	return nil
+}
 
 type configurable interface {
 	keypairs.Configurable

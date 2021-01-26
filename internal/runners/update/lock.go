@@ -10,8 +10,30 @@ import (
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
+var _ captain.FlagMarshaler = &StateToolChannelVersion{}
+
+type StateToolChannelVersion struct {
+	captain.NameVersion
+}
+
+func (stv *StateToolChannelVersion) Set(arg string) error {
+	err := stv.NameVersion.Set(arg)
+	if err != nil {
+		return locale.NewError("err_channel_format", "The State Tool channel and version provided is not formatting correctly, must be in the form of <channel>@<version>")
+	}
+	return nil
+}
+
+func (stv *StateToolChannelVersion) Type() string {
+	return "channel"
+}
+
+func (stv *StateToolChannelVersion) String() string {
+	return stv.name
+}
+
 type LockParams struct {
-	Channel captain.StateToolChannelVersion
+	Channel StateToolChannelVersion
 	Force   bool
 }
 
