@@ -72,7 +72,7 @@ func makePlatformsFromModelPlatforms(platforms []*model.Platform) []*Platform {
 
 // Params represents the minimal defining details of a platform.
 type Params struct {
-	Platform captain.PlatformVersion
+	Platform PlatformVersion
 	BitWidth int
 	name     string
 	version  string

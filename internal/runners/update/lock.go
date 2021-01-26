@@ -28,10 +28,6 @@ func (stv *StateToolChannelVersion) Type() string {
 	return "channel"
 }
 
-func (stv *StateToolChannelVersion) String() string {
-	return stv.name
-}
-
 type LockParams struct {
 	Channel StateToolChannelVersion
 	Force   bool
