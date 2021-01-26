@@ -74,7 +74,7 @@ func (r *Request) Wait() error {
 	}
 }
 
-func (r *Request) responseReader(conn *websocket.Conn, readErr chan error) {
+func (r *Request) responseReader(conn *websocket.Conn, errCh chan error) {
 	artifactMap := model.ArtifactMap(r.recipe)
 	total := len(artifactMap)
 	end := 0
@@ -84,13 +84,13 @@ func (r *Request) responseReader(conn *websocket.Conn, readErr chan error) {
 	var artifactErr error
 
 	defer func() {
-		readErr <- nil
+		r.writeError(errCh, nil)
 	}()
 	for {
 		var msg message
 		err := conn.ReadJSON(&msg)
 		if err != nil {
-			readErr <- locale.WrapError(err, "err_websocket_read", "Could not read websocket response: {{.V0}}.", err.Error())
+			r.writeError(errCh, locale.WrapError(err, "err_websocket_read", "Could not read websocket response: {{.V0}}.", err.Error()))
 			return
 		}
 
@@ -101,10 +101,9 @@ func (r *Request) responseReader(conn *websocket.Conn, readErr chan error) {
 
 		switch msg.Type {
 		case "build_failed":
-			readErr <- locale.WrapError(artifactErr, "err_logstream_build_failed", "Build failed with error message: {{.V0}}.", msg.ErrorMessage)
+			r.writeError(errCh, locale.WrapError(artifactErr, "err_logstream_build_failed", "Build failed with error message: {{.V0}}.", msg.ErrorMessage))
 		case "build_succeeded":
-			r.msgHandler.BuildFinished()
-			readErr <- nil
+			r.writeError(errCh, nil)
 		case "artifact_started":
 			if !artifactMapped {
 				continue // ignore
@@ -130,4 +129,9 @@ func (r *Request) responseReader(conn *websocket.Conn, readErr chan error) {
 			artifactErr = locale.WrapError(artifactErr, "err_artifact_failed", "Failed to build \"{{.V0}}\", error reported: {{.V1}}.", artifactName, msg.ErrorMessage)
 		}
 	}
+}
+
+func (r *Request) writeError(errCh chan error, err error) {
+	r.msgHandler.BuildFinished()
+	errCh <- err
 }
