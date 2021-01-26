@@ -1,9 +1,10 @@
 package captain
 
 import (
-	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/ActiveState/cli/internal/locale"
 )
 
 type NameVersion struct {
@@ -18,7 +19,7 @@ func (nv *NameVersion) Set(arg string) error {
 		nv.version = nameArg[1]
 	}
 	if len(nameArg) > 2 {
-		return errors.New("invalid format")
+		return locale.NewError("name_version_format_err", "Invalid format: Should be <name@version>")
 	}
 	return nil
 }
