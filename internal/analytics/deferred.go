@@ -2,11 +2,13 @@ package analytics
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"time"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
@@ -49,6 +51,7 @@ func runNonDeferredStateToolCommand(cfg Configurable) error {
 	}
 	cmd := exec.Command(exe, "--version")
 	cmd.SysProcAttr = osutils.SysProcAttrForNewProcessGroup()
+	cmd.Env = append(os.Environ(), fmt.Sprintf("%s=true", constants.DisableUpdates))
 	err = cmd.Start()
 	if err != nil {
 		return errs.Wrap(err, "Failed to run state --version in background")
