@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -20,6 +21,18 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/project"
 )
+
+type PackageVersion struct {
+	captain.NameVersion
+}
+
+func (pv *PackageVersion) Set(arg string) error {
+	err := pv.NameVersion.Set(arg)
+	if err != nil {
+		return locale.WrapInputError(err, "err_package_format", "The package and version provided is not formatting correctly, must be in the form of <package>@<version>")
+	}
+	return nil
+}
 
 type configurable interface {
 	keypairs.Configurable
@@ -157,15 +170,4 @@ func getSuggestions(ns model.Namespace, name string) ([]string, error) {
 	suggestions = append(suggestions, locale.Tr(fmt.Sprintf("%s_ingredient_alternatives_more", ns.Type()), name))
 
 	return suggestions, nil
-}
-
-func splitNameAndVersion(input string) (string, string) {
-	nameArg := strings.Split(input, "@")
-	name := nameArg[0]
-	version := ""
-	if len(nameArg) == 2 {
-		version = nameArg[1]
-	}
-
-	return name, version
 }
