@@ -80,9 +80,9 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 	cp.Send("y")
 	switch runtime.GOOS {
 	case "darwin":
-		cp.ExpectRe("added|currently building", 30*time.Second) // while cold storage is off
+		cp.ExpectRe("added|currently building", 60*time.Second) // while cold storage is off
 	default:
-		cp.Expect("added", 30*time.Second)
+		cp.Expect("added", 60*time.Second)
 	}
 	cp.ExpectExitCode(0)
 
@@ -128,9 +128,9 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 	cp.Send("y")
 	switch runtime.GOOS {
 	case "darwin":
-		cp.ExpectRe("added|currently building", 30*time.Second) // while cold storage is off
+		cp.ExpectRe("added|currently building", 60*time.Second) // while cold storage is off
 	default:
-		cp.Expect("added", 30*time.Second)
+		cp.Expect("added", 60*time.Second)
 	}
 	cp.Wait()
 
