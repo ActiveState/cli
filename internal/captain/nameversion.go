@@ -19,7 +19,7 @@ func (nv *NameVersion) Set(arg string) error {
 		nv.version = nameArg[1]
 	}
 	if len(nameArg) > 2 {
-		return locale.NewError("name_version_format_err", "Invalid format: Should be <name@version>")
+		return locale.NewInputError("name_version_format_err", "Invalid format: Should be <name@version>")
 	}
 	return nil
 }
