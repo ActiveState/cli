@@ -7,6 +7,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
@@ -29,9 +30,11 @@ type SubShell struct {
 	activateCommand *string
 }
 
+const Name string = "tcsh"
+
 // Shell - see subshell.SubShell
 func (v *SubShell) Shell() string {
-	return "tcsh"
+	return Name
 }
 
 // Binary - see subshell.SubShell
@@ -45,14 +48,27 @@ func (v *SubShell) SetBinary(binary string) {
 }
 
 // WriteUserEnv - see subshell.SubShell
-func (v *SubShell) WriteUserEnv(cfg sscommon.Configurable, env map[string]string, envType sscommon.EnvData, _ bool) error {
-	homeDir, err := fileutils.HomeDir()
+func (v *SubShell) WriteUserEnv(cfg sscommon.Configurable, env map[string]string, envType sscommon.RcIdentification, _ bool) error {
+	rcFile, err := v.RcFile()
 	if err != nil {
-		return errs.Wrap(err, "IO failure")
+		return errs.Wrap(err, "RcFile failure")
 	}
 
 	env = sscommon.EscapeEnv(env)
-	return sscommon.WriteRcFile("tcshrc_append.sh", filepath.Join(homeDir, ".tcshrc"), envType, env)
+	return sscommon.WriteRcFile("tcshrc_append.sh", rcFile, envType, env)
+}
+
+func (v *SubShell) WriteCompletionScript(completionScript string) error {
+	return locale.NewError("err_writecompletions_notsupported", "{{.V0}} does not support completions.", v.Shell())
+}
+
+func (v *SubShell) RcFile() (string, error) {
+	homeDir, err := fileutils.HomeDir()
+	if err != nil {
+		return "", errs.Wrap(err, "IO failure")
+	}
+
+	return filepath.Join(homeDir, ".tcshrc"), nil
 }
 
 // SetupShellRcFile - subshell.SubShell

@@ -4,9 +4,12 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
@@ -29,9 +32,11 @@ type SubShell struct {
 	activateCommand *string
 }
 
+const Name string = "bash"
+
 // Shell - see subshell.SubShell
 func (v *SubShell) Shell() string {
-	return "bash"
+	return Name
 }
 
 // Binary - see subshell.SubShell
@@ -45,14 +50,39 @@ func (v *SubShell) SetBinary(binary string) {
 }
 
 // WriteUserEnv - see subshell.SubShell
-func (v *SubShell) WriteUserEnv(cfg sscommon.Configurable, env map[string]string, envType sscommon.EnvData, _ bool) error {
-	homeDir, err := fileutils.HomeDir()
+func (v *SubShell) WriteUserEnv(cfg sscommon.Configurable, env map[string]string, envType sscommon.RcIdentification, _ bool) error {
+	rcFile, err := v.RcFile()
 	if err != nil {
-		return errs.Wrap(err, "HomeDir failed")
+		return errs.Wrap(err, "RcFile failure")
 	}
 
 	env = sscommon.EscapeEnv(env)
-	return sscommon.WriteRcFile("bashrc_append.sh", filepath.Join(homeDir, ".bashrc"), envType, env)
+	return sscommon.WriteRcFile("bashrc_append.sh", rcFile, envType, env)
+}
+
+func (v *SubShell) WriteCompletionScript(completionScript string) error {
+	dir := "/usr/local/etc/bash_completion.d/"
+	if runtime.GOOS != "darwin" {
+		dir = "/etc/bash_completion.d/"
+	}
+
+	fpath := filepath.Join(dir, constants.CommandName)
+	logging.Debug("Writing to %s: %s", fpath, completionScript)
+	err := fileutils.WriteFile(fpath, []byte(completionScript))
+	if err != nil {
+		return errs.Wrap(err, "Could not write completions script")
+	}
+
+	return nil
+}
+
+func (v *SubShell) RcFile() (string, error) {
+	homeDir, err := fileutils.HomeDir()
+	if err != nil {
+		return "", errs.Wrap(err, "IO failure")
+	}
+
+	return filepath.Join(homeDir, ".bashrc"), nil
 }
 
 // SetupShellRcFile - subshell.SubShell

@@ -1,8 +1,7 @@
 package update
 
 import (
-	"strings"
-
+	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
@@ -11,8 +10,26 @@ import (
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
+var _ captain.FlagMarshaler = &StateToolChannelVersion{}
+
+type StateToolChannelVersion struct {
+	captain.NameVersion
+}
+
+func (stv *StateToolChannelVersion) Set(arg string) error {
+	err := stv.NameVersion.Set(arg)
+	if err != nil {
+		return locale.WrapInputError(err, "err_channel_format", "The State Tool channel and version provided is not formatting correctly, must be in the form of <channel>@<version>")
+	}
+	return nil
+}
+
+func (stv *StateToolChannelVersion) Type() string {
+	return "channel"
+}
+
 type LockParams struct {
-	Channel string
+	Channel StateToolChannelVersion
 	Force   bool
 }
 
@@ -39,7 +56,7 @@ func (l *Lock) Run(params *LockParams) error {
 		}
 	}
 
-	defaultChannel, lockVersion := splitChannelAndVersion(params.Channel)
+	defaultChannel, lockVersion := params.Channel.Name(), params.Channel.Version()
 	prefer := true
 	if defaultChannel == "" {
 		defaultChannel = l.project.VersionBranch()
@@ -83,15 +100,4 @@ func confirmLock(prom prompt.Prompter) error {
 	}
 
 	return nil
-}
-
-func splitChannelAndVersion(input string) (string, string) {
-	nameArg := strings.Split(input, "@")
-	name := nameArg[0]
-	version := ""
-	if len(nameArg) == 2 {
-		version = nameArg[1]
-	}
-
-	return name, version
 }

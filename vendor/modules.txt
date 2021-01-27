@@ -39,8 +39,6 @@ github.com/alecthomas/template
 github.com/alecthomas/template/parse
 # github.com/asaskevich/govalidator v0.0.0-20180315120708-ccb8e960c48f
 github.com/asaskevich/govalidator
-# github.com/autarch/testify v1.2.2
-github.com/autarch/testify/assert
 # github.com/aws/aws-sdk-go v1.13.8
 github.com/aws/aws-sdk-go/aws
 github.com/aws/aws-sdk-go/aws/awserr
@@ -70,8 +68,6 @@ github.com/aws/aws-sdk-go/service/s3
 github.com/aws/aws-sdk-go/service/sts
 # github.com/blang/semver v3.5.1+incompatible
 github.com/blang/semver
-# github.com/bndr/gotabulate v0.0.0-20170315142410-bc555436bfd5
-github.com/bndr/gotabulate
 # github.com/creack/pty v1.1.11
 github.com/creack/pty
 # github.com/dave/jennifer v0.18.0
@@ -94,7 +90,7 @@ github.com/emirpasic/gods/lists/arraylist
 github.com/emirpasic/gods/trees
 github.com/emirpasic/gods/trees/binaryheap
 github.com/emirpasic/gods/utils
-# github.com/fatih/color v1.5.0
+# github.com/fatih/color v1.7.0
 github.com/fatih/color
 # github.com/felixge/fgprof v0.9.0
 github.com/felixge/fgprof
@@ -152,10 +148,6 @@ github.com/google/go-cmp/cmp/internal/diff
 github.com/google/go-cmp/cmp/internal/flags
 github.com/google/go-cmp/cmp/internal/function
 github.com/google/go-cmp/cmp/internal/value
-# github.com/google/go-github/v29 v29.0.2
-github.com/google/go-github/v29/github
-# github.com/google/go-querystring v1.0.0
-github.com/google/go-querystring/query
 # github.com/google/pprof v0.0.0-20200708004538-1a94d8640e99
 github.com/google/pprof/profile
 # github.com/google/uuid v1.1.0
@@ -170,7 +162,7 @@ github.com/hashicorp/go-cleanhttp
 github.com/hashicorp/go-retryablehttp
 # github.com/hashicorp/go-version v1.1.0
 github.com/hashicorp/go-version
-# github.com/hashicorp/hcl v0.0.0-20171017181929-23c074d0eceb
+# github.com/hashicorp/hcl v1.0.0
 github.com/hashicorp/hcl
 github.com/hashicorp/hcl/hcl/ast
 github.com/hashicorp/hcl/hcl/parser
@@ -214,7 +206,7 @@ github.com/kevinburke/ssh_config
 github.com/kr/pty
 # github.com/machinebox/graphql v0.2.2
 github.com/machinebox/graphql
-# github.com/magiconair/properties v1.7.4
+# github.com/magiconair/properties v1.8.1
 github.com/magiconair/properties
 # github.com/mailru/easyjson v0.0.0-20180323154445-8b799c424f57
 github.com/mailru/easyjson/buffer
@@ -234,7 +226,7 @@ github.com/mgutz/ansi
 github.com/mitchellh/go-homedir
 # github.com/mitchellh/go-wordwrap v1.0.0
 github.com/mitchellh/go-wordwrap
-# github.com/mitchellh/mapstructure v0.0.0-20180203102830-a4e142e9c047
+# github.com/mitchellh/mapstructure v1.1.2
 github.com/mitchellh/mapstructure
 # github.com/nicksnyder/go-i18n v1.10.0
 github.com/nicksnyder/go-i18n/i18n
@@ -243,7 +235,7 @@ github.com/nicksnyder/go-i18n/i18n/language
 github.com/nicksnyder/go-i18n/i18n/translation
 # github.com/nwaples/rardecode v0.0.0-20171029023500-e06696f847ae
 github.com/nwaples/rardecode
-# github.com/pelletier/go-toml v1.1.0
+# github.com/pelletier/go-toml v1.2.0
 github.com/pelletier/go-toml
 # github.com/phayes/permbits v0.0.0-20190108233746-1efae4548023
 github.com/phayes/permbits
@@ -270,18 +262,18 @@ github.com/shirou/gopsutil/net
 github.com/shirou/gopsutil/process
 # github.com/skratchdot/open-golang v0.0.0-20190104022628-a2dfa6d0dab6
 github.com/skratchdot/open-golang/open
-# github.com/spf13/afero v1.0.2
+# github.com/spf13/afero v1.1.2
 github.com/spf13/afero
 github.com/spf13/afero/mem
-# github.com/spf13/cast v1.1.0
+# github.com/spf13/cast v1.3.0
 github.com/spf13/cast
-# github.com/spf13/cobra v0.0.1
+# github.com/spf13/cobra v1.1.1
 github.com/spf13/cobra
-# github.com/spf13/jwalterweatherman v0.0.0-20180109140146-7c0cea34c8ec
+# github.com/spf13/jwalterweatherman v1.0.0
 github.com/spf13/jwalterweatherman
-# github.com/spf13/pflag v1.0.0
+# github.com/spf13/pflag v1.0.5
 github.com/spf13/pflag
-# github.com/spf13/viper v0.0.0-20171227194143-aafc9e6bc7b7
+# github.com/spf13/viper v1.7.0
 github.com/spf13/viper
 # github.com/src-d/gcfg v1.4.0
 github.com/src-d/gcfg
@@ -295,6 +287,8 @@ github.com/stretchr/testify/assert
 github.com/stretchr/testify/mock
 github.com/stretchr/testify/require
 github.com/stretchr/testify/suite
+# github.com/subosito/gotenv v1.2.0
+github.com/subosito/gotenv
 # github.com/thoas/go-funk v0.0.0-20170604141201-14304e8530de
 github.com/thoas/go-funk
 # github.com/ulikunitz/xz v0.5.4
@@ -493,6 +487,8 @@ gopkg.in/AlecAivazis/survey.v1/core
 gopkg.in/AlecAivazis/survey.v1/terminal
 # gopkg.in/fsnotify.v1 v1.4.7
 gopkg.in/fsnotify.v1
+# gopkg.in/ini.v1 v1.51.0
+gopkg.in/ini.v1
 # gopkg.in/mgo.v2 v2.0.0-20160818020120-3f83fa500528
 gopkg.in/mgo.v2/bson
 gopkg.in/mgo.v2/internal/json
