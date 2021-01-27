@@ -208,15 +208,6 @@ func sendEventAndLog(category, action, label string, dimensions map[string]strin
 }
 
 func sendEvent(category, action, label string, dimensions map[string]string) error {
-	err := sendGAEvent(category, action, label, dimensions)
-	if err != nil {
-		return err
-	}
-	return sendS3Pixel(category, action, label, dimensions)
-}
-
-func sendGAEvent(category, action, label string, dimensions map[string]string) error {
-	logging.Debug("Sending Google Analytics event")
 	if deferAnalytics {
 		// TODO: figure out a way to pass configuration
 		cfg, err := config.Get()
@@ -229,9 +220,18 @@ func sendGAEvent(category, action, label string, dimensions map[string]string) e
 		if err := cfg.Save(); err != nil { // the global viper instance is bugged, need to work around it for now -- https://www.pivotaltracker.com/story/show/175624789
 			return locale.WrapError(err, "err_viper_write_defer", "Could not save configuration on defer")
 		}
+		return nil
 	}
 
-	logging.Debug("Sending: %s, %s, %s", category, action, label)
+	err := sendGAEvent(category, action, label, dimensions)
+	if err != nil {
+		return err
+	}
+	return sendS3Pixel(category, action, label, dimensions)
+}
+
+func sendGAEvent(category, action, label string, dimensions map[string]string) error {
+	logging.Debug("Sending Google Analytics event with: %s, %s, %s", category, action, label)
 
 	if client == nil {
 		logging.Error("Client is not set")
@@ -250,7 +250,7 @@ func sendGAEvent(category, action, label string, dimensions map[string]string) e
 }
 
 func sendS3Pixel(category, action, label string, dimensions map[string]string) error {
-	logging.Debug("Sending S3 pixel event")
+	logging.Debug("Sending S3 pixel event with: %s, %s, %s", category, action, label)
 	pixelURL, err := url.Parse("https://cli-update.s3.ca-central-1.amazonaws.com/pixel")
 	if err != nil {
 		return locale.NewError("err_invalid_pixel_url", "Invalid URL for analytics S3 pixel")
