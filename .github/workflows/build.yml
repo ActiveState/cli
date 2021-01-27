@@ -197,7 +197,7 @@ jobs:
     - name: Unit Tests
       shell: bash
       run: |
-        go test `go list ./... | grep -v api | grep -v integration | grep -v expect`
+        go test -v `go list ./... | grep -v api | grep -v integration | grep -v expect`
   inttest_critical:
     if: github.ref != 'refs/heads/master'
     name: Critical Integration Test
