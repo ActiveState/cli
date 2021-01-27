@@ -48,7 +48,7 @@ func httpGetWithProgress(url string, progress *progress.Progress) ([]byte, error
 	return httpGetWithProgressRetry(url, progress, 1, 3)
 }
 
-func httpGetWithProgressRetry(url string, prog *progress.Progress, attempt int, retries int) ([]byte, error) {
+func httpGetWithProgressRetry(url string, progress *progress.Progress, attempt int, retries int) ([]byte, error) {
 	logging.Debug("Retrieving url: %s, attempt: %d", url, attempt)
 	client := retryhttp.NewClient(0 /* 0 = no timeout */, retries)
 	resp, err := client.Get(url)
@@ -77,31 +77,30 @@ func httpGetWithProgressRetry(url string, prog *progress.Progress, attempt int, 
 		}
 	}
 
+	bar := progress.AddByteProgressBar(int64(total))
+
+	// Ensure bar is always closed (especially for retries)
+	defer func() {
+		if !bar.Completed() {
+			bar.Abort(true)
+		}
+	}()
+
 	src := resp.Body
 	var dst bytes.Buffer
-	var bar *progress.TotalBar
-	if prog != nil {
-		bar = prog.AddByteProgressBar(int64(total))
-		src = bar.ProxyReader(resp.Body)
 
-		// Ensure bar is always closed (especially for retries)
-		defer func() {
-			if !bar.Completed() {
-				bar.Abort(true)
-			}
-		}()
-	}
+	src = bar.ProxyReader(resp.Body)
 
 	_, err = io.Copy(&dst, src)
 	if err != nil {
 		logging.Debug("Reading body failed: %s", err)
 		if attempt <= retries {
-			return httpGetWithProgressRetry(url, prog, attempt+1, retries)
+			return httpGetWithProgressRetry(url, progress, attempt+1, retries)
 		}
 		return nil, errs.Wrap(err, "Could not copy network stream")
 	}
 
-	if bar != nil && !bar.Completed() {
+	if !bar.Completed() {
 		// Failsafe, so we don't get blocked by a progressbar
 		bar.IncrBy(total)
 	}
@@ -115,17 +114,13 @@ func _testHTTPGetWithProgress(url string, progress *progress.Progress) ([]byte, 
 
 // _testHTTPGet is used when in tests, this cannot be in the test itself as that would limit it to only that one test
 func _testHTTPGet(url string) ([]byte, error) {
-	resp, err := httpGet(url)
+	path := strings.Replace(url, constants.APIArtifactURL, "", 1)
+	path = filepath.Join(environment.GetRootPathUnsafe(), "test", path)
+
+	body, err := ioutil.ReadFile(path)
 	if err != nil {
-		path := strings.Replace(url, constants.APIArtifactURL, "", 1)
-		path = filepath.Join(environment.GetRootPathUnsafe(), "test", path)
-
-		body, err := ioutil.ReadFile(path)
-		if err != nil {
-			return nil, errs.Wrap(err, "Could not read file contents: %s", path)
-		}
-
-		return body, nil
+		return nil, errs.Wrap(err, "Could not read file contents: %s", path)
 	}
-	return resp, nil
+
+	return body, nil
 }
