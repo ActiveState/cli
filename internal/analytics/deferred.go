@@ -24,14 +24,14 @@ type deferredData struct {
 }
 
 const deferredCfgKey = "deferrer_analytics"
-const deferrerTimeStamp = "deferrer"
+const deferrerFileName = "deferrer"
 
-func DeferrerTimeStamp(cfg Configurable) string {
-	return filepath.Join(cfg.ConfigPath(), deferrerTimeStamp)
+func deferrerTimeStamp(cfg Configurable) string {
+	return filepath.Join(cfg.ConfigPath(), deferrerFileName)
 }
 
-func DeferrerFlushDayOld(cfg Configurable) bool {
-	df := DeferrerTimeStamp(cfg)
+func deferrerTimeStampDayOld(cfg Configurable) bool {
+	df := deferrerTimeStamp(cfg)
 	stat, err := os.Stat(df)
 	if err != nil {
 		logging.Errorf("Could not stat file: %s, error: %v", df, err)
@@ -64,7 +64,7 @@ func runNonDeferredStateToolCommand(cfg Configurable) error {
 func SetDeferred(cfg Configurable, da bool) {
 	deferAnalytics = da
 	if deferAnalytics {
-		if DeferrerFlushDayOld(cfg) {
+		if deferrerTimeStampDayOld(cfg) {
 			err := runNonDeferredStateToolCommand(cfg)
 			if err != nil {
 				logging.Errorf("Failed to launch non-deferred State Tool command: %v", err)
@@ -95,8 +95,8 @@ func deferEvent(cfg Configurable, category, action, label string, dimensions map
 		return errs.Wrap(err, "Could not load events on defer")
 	}
 
-	if !fileutils.FileExists(DeferrerTimeStamp(cfg)) {
-		err = fileutils.Touch(DeferrerTimeStamp(cfg))
+	if !fileutils.FileExists(deferrerTimeStamp(cfg)) {
+		err = fileutils.Touch(deferrerTimeStamp(cfg))
 		if err != nil {
 			logging.Errorf("Failed to create deferrer time stamp file: %v", err)
 		}
@@ -127,7 +127,7 @@ func sendDeferred(cfg Configurable, sender func(string, string, string, map[stri
 	}
 
 	// remove deferrer time stamp file
-	err = os.Remove(DeferrerTimeStamp(cfg))
+	err = os.Remove(deferrerTimeStamp(cfg))
 	if err != nil && !os.IsNotExist(err) {
 		logging.Errorf("Could not remove deferrer time stamp file: %v", err)
 	}
