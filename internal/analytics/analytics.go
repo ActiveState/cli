@@ -2,6 +2,7 @@ package analytics
 
 import (
 	"fmt"
+	"net/http"
 	"net/url"
 	"sync"
 	"time"
@@ -12,7 +13,6 @@ import (
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/download"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
@@ -268,7 +268,7 @@ func sendS3Pixel(category, action, label string, dimensions map[string]string) e
 	pixelURL.RawQuery = query.Encode()
 
 	logging.Debug("Using S3 pixel URL: ", pixelURL.String())
-	_, err = download.Get(pixelURL.String())
+	_, err = http.Head(pixelURL.String())
 	if err != nil {
 		return locale.WrapError(err, "err_download_s3_pixel", "Could not download S3 pixel")
 	}
