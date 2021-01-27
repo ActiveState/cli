@@ -19,7 +19,7 @@ type StateToolChannelVersion struct {
 func (stv *StateToolChannelVersion) Set(arg string) error {
 	err := stv.NameVersion.Set(arg)
 	if err != nil {
-		return locale.NewInputError("err_channel_format", "The State Tool channel and version provided is not formatting correctly, must be in the form of <channel>@<version>")
+		return locale.WrapInputError(err, "err_channel_format", "The State Tool channel and version provided is not formatting correctly, must be in the form of <channel>@<version>")
 	}
 	return nil
 }
