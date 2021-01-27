@@ -332,10 +332,18 @@ func (c *Command) AddChildren(children ...*Command) {
 	}
 }
 
-func (c *Command) AddLegacyChildren(children ...cobraCommander) {
+func (c *Command) AddLegacyChildren(children ...*cobra.Command) {
 	for _, child := range children {
-		c.cobra.AddCommand(child.GetCobraCmd())
+		c.cobra.AddCommand(child)
 	}
+}
+
+func (c *Command) topLevelCobra() *cobra.Command {
+	parent := c.cobra
+	for parent.HasParent() {
+		parent = parent.Parent()
+	}
+	return parent
 }
 
 func (c *Command) Children() []*Command {
@@ -366,6 +374,38 @@ func (c *Command) Find(args []string) (*Command, error) {
 		return cmd, nil
 	}
 	return nil, locale.NewError("err_captain_cmd_find", "Could not find child Command with args: {{.V0}}", strings.Join(args, " "))
+}
+
+func (c *Command) GenBashCompletions() (string, error) {
+	buf := new(bytes.Buffer)
+	if err := c.topLevelCobra().GenBashCompletion(buf); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
+}
+
+func (c *Command) GenFishCompletions() (string, error) {
+	buf := new(bytes.Buffer)
+	if err := c.topLevelCobra().GenFishCompletion(buf, true); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
+}
+
+func (c *Command) GenPowerShellCompletion() (string, error) {
+	buf := new(bytes.Buffer)
+	if err := c.topLevelCobra().GenPowerShellCompletion(buf); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
+}
+
+func (c *Command) GenZshCompletion() (string, error) {
+	buf := new(bytes.Buffer)
+	if err := c.topLevelCobra().GenZshCompletion(buf); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
 }
 
 func (c *Command) flagByName(name string, persistOnly bool) *Flag {

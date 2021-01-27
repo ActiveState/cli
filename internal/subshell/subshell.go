@@ -46,7 +46,13 @@ type SubShell interface {
 	SetBinary(string)
 
 	// WriteUserEnv writes the given env map to the users environment
-	WriteUserEnv(sscommon.Configurable, map[string]string, sscommon.EnvData, bool) error
+	WriteUserEnv(sscommon.Configurable, map[string]string, sscommon.RcIdentification, bool) error
+
+	// WriteCompletionScript writes the completions script for the current shell
+	WriteCompletionScript(string) error
+
+	// RcFile return the path of the RC file
+	RcFile() (string, error)
 
 	// SetupShellRcFile writes a script or source-able file that updates the environment variables and sets the prompt
 	SetupShellRcFile(string, map[string]string, project.Namespaced) error
