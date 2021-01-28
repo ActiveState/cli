@@ -13,5 +13,8 @@ func UnwrapExitCode(err error) int {
 		return eerr.ExitCode()
 	}
 
+	if err == nil {
+		return 0
+	}
 	return 1
 }
