@@ -4,18 +4,13 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
-	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
-	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
-	"github.com/ActiveState/cli/internal/testhelpers/updatemocks"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
@@ -29,30 +24,6 @@ func setup(t *testing.T, withVersion bool) {
 	err = os.Chdir(path)
 	require.NoError(t, err, "Should change dir without issue.")
 	projectfile.Reset()
-}
-
-func TestTimedCheck(t *testing.T) {
-	setup(t, false)
-
-	httpmock.Activate(constants.APIUpdateURL)
-	defer httpmock.DeActivate()
-
-	updatemocks.MockUpdater(t, os.Args[0], constants.BranchName, "1.2.3-123")
-
-	out := outputhelper.NewCatcher()
-	update, _ := AutoUpdate(configPath, out.Outputer)
-	assert.True(t, update, "Should want to update")
-	// It should notify about and update attempt
-	assert.NotEqual(t, "", strings.TrimSpace(out.CombinedOutput()))
-}
-
-func TestTimedCheckLockedVersion(t *testing.T) {
-	setup(t, true)
-
-	out := outputhelper.NewCatcher()
-	update, _ := AutoUpdate(configPathWithVersion, out.Outputer)
-	assert.False(t, update, "Should not want to update because we're using a locked version")
-	assert.Equal(t, "", strings.TrimSpace(out.CombinedOutput()))
 }
 
 func TestTimeout(t *testing.T) {
