@@ -18,8 +18,29 @@ func newPrepareCommand(prime *primer.Values) *captain.Command {
 		prime.Config(),
 		[]*captain.Flag{},
 		[]*captain.Argument{},
-		func(_ *captain.Command, _ []string) error {
-			return runner.Run()
+		func(c *captain.Command, _ []string) error {
+			return runner.Run(c)
+		},
+	)
+
+	cmd.SetHidden(true)
+
+	return cmd
+}
+
+func newPrepareCompletionsCommand(prime *primer.Values) *captain.Command {
+	runner := prepare.NewCompletions(prime)
+
+	cmd := captain.NewCommand(
+		"completions",
+		"",
+		"",
+		prime.Output(),
+		prime.Config(),
+		[]*captain.Flag{},
+		[]*captain.Argument{},
+		func(c *captain.Command, _ []string) error {
+			return runner.Run(c)
 		},
 	)
 

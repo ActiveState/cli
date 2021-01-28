@@ -64,7 +64,7 @@ func newInstallCommand(prime *primer.Values) *captain.Command {
 			{
 				Name:        locale.T("package_arg_nameversion"),
 				Description: locale.T("package_arg_nameversion_description"),
-				Value:       &params.Name,
+				Value:       &params.Package,
 				Required:    true,
 			},
 		},
