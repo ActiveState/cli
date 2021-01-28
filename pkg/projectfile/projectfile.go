@@ -1314,11 +1314,13 @@ func CleanProjectMapping(cfg ConfigGetter) {
 	seen := map[string]bool{}
 
 	for namespace, paths := range projects {
+		var removals []int
 		for i, path := range paths {
 			if !fileutils.DirExists(path) {
-				projects[namespace] = sliceutils.RemoveFromStrings(projects[namespace], i)
+				removals = append(removals, i)
 			}
 		}
+		projects[namespace] = sliceutils.RemoveFromStrings(projects[namespace], removals...)
 		if ok, _ := seen[strings.ToLower(namespace)]; ok || len(projects[namespace]) == 0 {
 			delete(projects, namespace)
 			continue
