@@ -54,6 +54,7 @@ func runNonDeferredStateToolCommand(cfg Configurable) error {
 	cmd.Env = append(os.Environ(), fmt.Sprintf("%s=true", constants.DisableUpdates))
 	cmd.Stdin = nil
 	cmd.Stdout = nil
+	cmd.Stderr = nil
 	err = cmd.Start()
 	if err != nil {
 		return errs.Wrap(err, "Failed to run %s --version in background", exe)
