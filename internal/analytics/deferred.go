@@ -28,12 +28,12 @@ type deferredData struct {
 const deferredCfgKey = "deferrer_analytics"
 const deferrerFileName = "deferrer"
 
-func deferrerTimeStamp(cfg Configurable) string {
+func deferrerFilePath(cfg Configurable) string {
 	return filepath.Join(cfg.ConfigPath(), deferrerFileName)
 }
 
-func deferrerTimeStampDayOld(cfg Configurable) bool {
-	df := deferrerTimeStamp(cfg)
+func isDeferralDayAgo(cfg Configurable) bool {
+	df := deferrerFilePath(cfg)
 	stat, err := os.Stat(df)
 	if err != nil {
 		logging.Errorf("Could not stat file: %s, error: %v", df, err)
@@ -52,9 +52,11 @@ func runNonDeferredStateToolCommand(cfg Configurable) error {
 	cmd := exec.Command(exe, "--version")
 	cmd.SysProcAttr = osutils.SysProcAttrForNewProcessGroup()
 	cmd.Env = append(os.Environ(), fmt.Sprintf("%s=true", constants.DisableUpdates))
+	cmd.Stdin = nil
+	cmd.Stdout = nil
 	err = cmd.Start()
 	if err != nil {
-		return errs.Wrap(err, "Failed to run state --version in background")
+		return errs.Wrap(err, "Failed to run %s --version in background", exe)
 	}
 	err = cmd.Process.Release()
 	if err != nil {
@@ -67,7 +69,9 @@ func runNonDeferredStateToolCommand(cfg Configurable) error {
 func SetDeferred(cfg Configurable, da bool) {
 	deferAnalytics = da
 	if deferAnalytics {
-		if deferrerTimeStampDayOld(cfg) {
+		// if we have not send deferred messages for a day, run a non-deferred
+		// state command in the background to flush these messages.
+		if isDeferralDayAgo(cfg) {
 			err := runNonDeferredStateToolCommand(cfg)
 			if err != nil {
 				logging.Errorf("Failed to launch non-deferred State Tool command: %v", err)
@@ -98,8 +102,8 @@ func deferEvent(cfg Configurable, category, action, label string, dimensions map
 		return errs.Wrap(err, "Could not load events on defer")
 	}
 
-	if !fileutils.FileExists(deferrerTimeStamp(cfg)) {
-		err = fileutils.Touch(deferrerTimeStamp(cfg))
+	if !fileutils.FileExists(deferrerFilePath(cfg)) {
+		err = fileutils.Touch(deferrerFilePath(cfg))
 		if err != nil {
 			logging.Errorf("Failed to create deferrer time stamp file: %v", err)
 		}
@@ -130,7 +134,7 @@ func sendDeferred(cfg Configurable, sender func(string, string, string, map[stri
 	}
 
 	// remove deferrer time stamp file
-	err = os.Remove(deferrerTimeStamp(cfg))
+	err = os.Remove(deferrerFilePath(cfg))
 	if err != nil && !os.IsNotExist(err) {
 		logging.Errorf("Could not remove deferrer time stamp file: %v", err)
 	}
