@@ -53,15 +53,13 @@ func deferEvent(cfg Configurable, category, action, label string, dimensions map
 	return nil
 }
 
-func sendDeferred(cfg Configurable, sender func(string, string, string, map[string]string) error) error {
+func sendDeferred(cfg Configurable, eventSender func(string, string, string, map[string]string)) error {
 	deferred, err := loadDeferred(cfg)
 	if err != nil {
 		return errs.Wrap(err, "Could not load events on send")
 	}
 	for n, event := range deferred {
-		if err := sender(event.Category, event.Action, event.Label, event.Dimensions); err != nil {
-			return errs.Wrap(err, "Could not send deferred event")
-		}
+		eventSender(event.Category, event.Action, event.Label, event.Dimensions)
 		if err := saveDeferred(cfg, deferred[n+1:]); err != nil {
 			return errs.Wrap(err, "Could not save deferred event on send")
 		}

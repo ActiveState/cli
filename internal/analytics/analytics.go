@@ -90,6 +90,8 @@ func (d *customDimensions) toMap() map[string]string {
 	}
 }
 
+type sender func(string, string, string, map[string]string) error
+
 var (
 	eventWaitGroup sync.WaitGroup
 )
@@ -183,7 +185,7 @@ func Event(category string, action string) {
 }
 
 func event(category string, action string) {
-	sendEventAndLog(category, action, "", CustomDimensions.toMap())
+	sendEvent(category, action, "", CustomDimensions.toMap())
 }
 
 // EventWithLabel logs an event with a label to google analytics
@@ -196,38 +198,49 @@ func EventWithLabel(category string, action string, label string) {
 }
 
 func eventWithLabel(category, action, label string) {
-	sendEventAndLog(category, action, label, CustomDimensions.toMap())
+	sendEvent(category, action, label, CustomDimensions.toMap())
 }
 
-func sendEventAndLog(category, action, label string, dimensions map[string]string) {
-	err := sendEvent(category, action, label, dimensions)
-	if err == nil {
-		return
-	}
-	logging.Error("Error during analytics.sendEvent: %v", err)
-}
-
-func sendEvent(category, action, label string, dimensions map[string]string) error {
+func sendEvent(category, action, label string, dimensions map[string]string) {
 	if deferAnalytics {
-		// TODO: figure out a way to pass configuration
-		cfg, err := config.Get()
+		err := updateConfig(category, action, label, dimensions)
 		if err != nil {
-			return locale.WrapError(err, "config_get_error")
+			logging.Error("Error updating config: %v", err)
 		}
-		if err := deferEvent(cfg, category, action, label, dimensions); err != nil {
-			return locale.WrapError(err, "err_analytics_defer", "Could not defer event")
-		}
-		if err := cfg.Save(); err != nil { // the global viper instance is bugged, need to work around it for now -- https://www.pivotaltracker.com/story/show/175624789
-			return locale.WrapError(err, "err_viper_write_defer", "Could not save configuration on defer")
-		}
-		return nil
 	}
 
-	err := sendGAEvent(category, action, label, dimensions)
+	eventWaitGroup.Add(2)
+	go func() {
+		defer eventWaitGroup.Done()
+		sendEventAndLog(category, action, label, dimensions, sendGAEvent)
+	}()
+
+	go func() {
+		defer eventWaitGroup.Done()
+		sendEventAndLog(category, action, label, dimensions, sendS3Pixel)
+	}()
+}
+
+func updateConfig(category, action, label string, dimensions map[string]string) error {
+	// TODO: figure out a way to pass configuration
+	cfg, err := config.Get()
 	if err != nil {
-		return err
+		return locale.WrapError(err, "config_get_error")
 	}
-	return sendS3Pixel(category, action, label, dimensions)
+	if err := deferEvent(cfg, category, action, label, dimensions); err != nil {
+		return locale.WrapError(err, "err_analytics_defer", "Could not defer event")
+	}
+	if err := cfg.Save(); err != nil { // the global viper instance is bugged, need to work around it for now -- https://www.pivotaltracker.com/story/show/175624789
+		return locale.WrapError(err, "err_viper_write_defer", "Could not save configuration on defer")
+	}
+	return nil
+}
+
+func sendEventAndLog(category, action, label string, dimensions map[string]string, send sender) {
+	err := send(category, action, label, dimensions)
+	if err != nil {
+		logging.Error("Could not send event: %v", err)
+	}
 }
 
 func sendGAEvent(category, action, label string, dimensions map[string]string) error {
