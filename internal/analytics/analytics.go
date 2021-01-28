@@ -223,19 +223,18 @@ func sendEvent(category, action, label string, dimensions map[string]string) err
 		return nil
 	}
 
-	err := sendGAEvent(category, action, label, dimensions)
-	if err != nil {
-		return err
-	}
-	return sendS3Pixel(category, action, label, dimensions)
+	go sendGAEvent(category, action, label, dimensions)
+	go sendS3Pixel(category, action, label, dimensions)
+
+	return nil
 }
 
-func sendGAEvent(category, action, label string, dimensions map[string]string) error {
+func sendGAEvent(category, action, label string, dimensions map[string]string) {
 	logging.Debug("Sending Google Analytics event with: %s, %s, %s", category, action, label)
 
 	if client == nil {
 		logging.Error("Client is not set")
-		return nil
+		return
 	}
 	client.CustomDimensionMap(dimensions)
 
@@ -246,14 +245,18 @@ func sendGAEvent(category, action, label string, dimensions map[string]string) e
 	if label != "" {
 		event.Label(label)
 	}
-	return client.Send(event)
+	err := client.Send(event)
+	if err != nil {
+		logging.Error("Could not send GA Event: %v", err)
+	}
 }
 
-func sendS3Pixel(category, action, label string, dimensions map[string]string) error {
+func sendS3Pixel(category, action, label string, dimensions map[string]string) {
 	logging.Debug("Sending S3 pixel event with: %s, %s, %s", category, action, label)
 	pixelURL, err := url.Parse("https://cli-update.s3.ca-central-1.amazonaws.com/pixel")
 	if err != nil {
-		return locale.NewError("err_invalid_pixel_url", "Invalid URL for analytics S3 pixel")
+		logging.Error("Invalid URL for analytics S3 pixel")
+		return
 	}
 
 	query := pixelURL.Query()
@@ -270,7 +273,7 @@ func sendS3Pixel(category, action, label string, dimensions map[string]string) e
 	logging.Debug("Using S3 pixel URL: ", pixelURL.String())
 	_, err = http.Head(pixelURL.String())
 	if err != nil {
-		return locale.WrapError(err, "err_download_s3_pixel", "Could not download S3 pixel")
+		logging.Error("Could not download S3 pixel: %v", err)
+		return
 	}
-	return nil
 }
