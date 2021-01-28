@@ -14,6 +14,7 @@ import (
 
 	"github.com/kardianos/osext"
 
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
@@ -132,7 +133,11 @@ func (u *Updater) Run(out output.Outputer, autoUpdate bool) error {
 
 	// Run _prepare after updates to facilitate anything the new version of the state tool might need to set up
 	// Yes this is awkward, followup story here: https://www.pivotaltracker.com/story/show/176507898
-	if stdout, stderr, err := exeutils.ExecSimple(os.Args[0], "_prepare"); err != nil {
+	stateExe := os.Args[0]
+	if condition.InTest() {
+		stateExe = "state"
+	}
+	if stdout, stderr, err := exeutils.ExecSimple(stateExe, "_prepare"); err != nil {
 		logging.Error("_prepare failed after update: %v\n\nstdout: %s\n\nstderr: %s", err, stdout, stderr)
 	}
 
