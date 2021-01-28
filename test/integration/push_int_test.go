@@ -81,10 +81,11 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 	switch runtime.GOOS {
 	case "darwin":
 		cp.ExpectRe("added|currently building", 60*time.Second) // while cold storage is off
+		cp.Wait()
 	default:
 		cp.Expect("added", 60*time.Second)
+		cp.ExpectExitCode(0)
 	}
-	cp.ExpectExitCode(0)
 
 	ts.LoginAsPersistentUser()
 
@@ -129,10 +130,11 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 	switch runtime.GOOS {
 	case "darwin":
 		cp.ExpectRe("added|currently building", 60*time.Second) // while cold storage is off
+		cp.Wait()
 	default:
 		cp.Expect("added", 60*time.Second)
+		cp.ExpectExitCode(0)
 	}
-	cp.Wait()
 
 	prj, err := project.FromPath(filepath.Join(wd, constants.ConfigFileName))
 	suite.Require().NoError(err, "Could not parse project file")
