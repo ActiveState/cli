@@ -7,10 +7,23 @@ import (
 
 	"github.com/go-openapi/strfmt"
 
+	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
+
+type PlatformVersion struct {
+	captain.NameVersion
+}
+
+func (pv *PlatformVersion) Set(arg string) error {
+	err := pv.NameVersion.Set(arg)
+	if err != nil {
+		return locale.WrapInputError(err, "err_platform_format", "The platform and version provided is not formatting correctly, must be in the form of <platform>@<version>")
+	}
+	return nil
+}
 
 // Platform represents the output data of a platform.
 type Platform struct {
@@ -59,51 +72,41 @@ func makePlatformsFromModelPlatforms(platforms []*model.Platform) []*Platform {
 
 // Params represents the minimal defining details of a platform.
 type Params struct {
-	Name     string
+	Platform PlatformVersion
 	BitWidth int
-	Version  string
+	name     string
+	version  string
 }
 
 func prepareParams(ps Params) (Params, error) {
-	ps.Name, ps.Version = splitNameAndVersion(ps.Name)
-	if ps.Name == "" {
-		ps.Name = model.HostPlatform
+	ps.name = ps.Platform.Name()
+	if ps.name == "" {
+		ps.name = model.HostPlatform
+	}
+	ps.version = ps.Platform.Version()
+	if ps.version == "" {
+		return prepareLatestVersion(ps)
 	}
 
 	if ps.BitWidth == 0 {
 		ps.BitWidth = 32 << (^uint(0) >> 63) // gets host word size
 	}
 
-	if ps.Version == "" {
-		return prepareLatestVersion(ps)
-	}
-
 	return ps, nil
 }
 
-func splitNameAndVersion(input string) (string, string) {
-	nameArg := strings.Split(input, "@")
-	name := nameArg[0]
-	version := ""
-	if len(nameArg) == 2 {
-		version = nameArg[1]
-	}
-
-	return name, version
-}
-
 func prepareLatestVersion(params Params) (Params, error) {
-	platformUUID, err := model.PlatformNameToPlatformID(params.Name)
+	platformUUID, err := model.PlatformNameToPlatformID(params.Platform.Name())
 	if err != nil {
-		return params, locale.WrapInputError(err, "err_resolve_platform_id", "Could not resolve platform ID from name: {{.V0}}", params.Name)
+		return params, locale.WrapInputError(err, "err_resolve_platform_id", "Could not resolve platform ID from name: {{.V0}}", params.Platform.Name())
 	}
 
 	platform, err := model.FetchPlatformByUID(strfmt.UUID(platformUUID))
 	if err != nil {
 		return params, locale.WrapError(err, "err_fetch_platform", "Could not get platform details")
 	}
-	params.Name = *platform.Kernel.Name
-	params.Version = *platform.KernelVersion.Version
+	params.name = *platform.Kernel.Name
+	params.version = *platform.KernelVersion.Version
 
 	bitWidth, err := strconv.Atoi(*platform.CPUArchitecture.BitWidth)
 	if err != nil {
