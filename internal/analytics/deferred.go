@@ -67,12 +67,14 @@ func runNonDeferredStateToolCommand(cfg Configurable) error {
 func SetDeferred(cfg Configurable, da bool) {
 	deferAnalytics = da
 	if deferAnalytics {
-		if deferrerTimeStampDayOld(cfg) {
-			err := runNonDeferredStateToolCommand(cfg)
-			if err != nil {
-				logging.Errorf("Failed to launch non-deferred State Tool command: %v", err)
+		/*
+			if deferrerTimeStampDayOld(cfg) {
+				err := runNonDeferredStateToolCommand(cfg)
+				if err != nil {
+					logging.Errorf("Failed to launch non-deferred State Tool command: %v", err)
+				}
 			}
-		}
+		*/
 		return
 	}
 	eventWaitGroup.Add(1)
