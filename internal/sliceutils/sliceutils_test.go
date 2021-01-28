@@ -49,6 +49,11 @@ func TestRemoveFromStrings(t *testing.T) {
 			args{simpleSlice, integers(42)},
 			simpleSlice,
 		},
+		{
+			"nil indexes",
+			args{simpleSlice, nil},
+			simpleSlice,
+		},
 	}
 
 	for _, tt := range tests {
