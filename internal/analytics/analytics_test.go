@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Test_sendEvent_deferred(t *testing.T) {
+func Test_sendEvent(t *testing.T) {
 	deferValue := deferAnalytics
 	defer func() {
 		deferAnalytics = deferValue
@@ -29,11 +29,19 @@ func Test_sendEvent_deferred(t *testing.T) {
 			[]string{"category", "action", "label"},
 			[]string{"category", "action", "label"},
 		},
+		{
+			"Not Deferred",
+			false,
+			[]string{"category", "action", "label"},
+			[]string{},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			deferAnalytics = tt.deferValue
-			sendEvent(tt.values[0], tt.values[1], tt.values[2], map[string]string{})
+			if err := sendEvent(tt.values[0], tt.values[1], tt.values[2], map[string]string{}); err != nil {
+				t.Errorf("sendEvent() error = %v", err)
+			}
 			got, _ := loadDeferred(cfg)
 			gotSlice := []string{}
 			if len(got) > 0 {
@@ -44,12 +52,13 @@ func Test_sendEvent_deferred(t *testing.T) {
 			}
 			if len(got) > 0 {
 				called := false
-				sendDeferred(cfg, func(category string, action string, label string, _ map[string]string) {
+				sendDeferred(cfg, func(category string, action string, label string, _ map[string]string) error {
 					called = true
 					gotSlice := []string{category, action, label}
 					if !reflect.DeepEqual(gotSlice, tt.want) {
 						t.Errorf("sendDeferred() = %v, want %v", gotSlice, tt.want)
 					}
+					return nil
 				})
 				if !called {
 					t.Errorf("sendDeferred not called")
