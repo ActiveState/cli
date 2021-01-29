@@ -8,7 +8,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/rtutils"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestErrs(t *testing.T) {
@@ -55,11 +54,4 @@ func TestErrs(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestJoinWrappedErrors(t *testing.T) {
-	err := errs.Wrap(errs.New("inner"), "outer")
-	errString := errs.JoinWrappedErrors(err)
-
-	assert.Equal(t, "outer: inner", errString)
 }

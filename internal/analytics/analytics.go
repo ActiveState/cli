@@ -205,7 +205,7 @@ func sendEventAndLog(category, action, label string, dimensions map[string]strin
 	if err == nil {
 		return
 	}
-	logging.Error("Error during analytics.sendEvent: %v", errs.JoinWrappedErrors(err))
+	logging.Error("Error during analytics.sendEvent: %v", errs.Join(err, ":"))
 }
 
 func sendEvent(category, action, label string, dimensions map[string]string) error {
