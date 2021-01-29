@@ -7,6 +7,10 @@ import (
 // UnwrapExitCode checks if the given error is a failure of type FailExecCmdExit and
 // returns the ExitCode of the process that failed with this error
 func UnwrapExitCode(err error) int {
+	if err == nil {
+		return 0
+	}
+
 	var eerr interface{ ExitCode() int }
 	isExitError := errors.As(err, &eerr)
 	if isExitError {

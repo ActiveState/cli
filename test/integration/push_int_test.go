@@ -35,7 +35,7 @@ func (suite *PushIntegrationTestSuite) SetupSuite() {
 	if runtime.GOOS == "darwin" {
 		suite.language = "python3"
 		suite.baseProject = "ActiveState-CLI/small-python"
-		suite.extraPackage = "datetime"
+		suite.extraPackage = "six@1.10.0"
 	}
 }
 
@@ -78,8 +78,14 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 	cp.Expect("You're about to add packages as an anonymous user")
 	cp.Expect("(Y/n)")
 	cp.Send("y")
-	cp.Expect("added", 30*time.Second)
-	cp.ExpectExitCode(0)
+	switch runtime.GOOS {
+	case "darwin":
+		cp.ExpectRe("added|currently building", 60*time.Second) // while cold storage is off
+		cp.Wait()
+	default:
+		cp.Expect("added", 60*time.Second)
+		cp.ExpectExitCode(0)
+	}
 
 	ts.LoginAsPersistentUser()
 
@@ -121,8 +127,14 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 	cp.Expect("You're about to add packages as an anonymous user")
 	cp.Expect("(Y/n)")
 	cp.Send("y")
-	cp.Expect("added", 30*time.Second)
-	cp.Wait()
+	switch runtime.GOOS {
+	case "darwin":
+		cp.ExpectRe("added|currently building", 60*time.Second) // while cold storage is off
+		cp.Wait()
+	default:
+		cp.Expect("added", 60*time.Second)
+		cp.ExpectExitCode(0)
+	}
 
 	prj, err := project.FromPath(filepath.Join(wd, constants.ConfigFileName))
 	suite.Require().NoError(err, "Could not parse project file")
