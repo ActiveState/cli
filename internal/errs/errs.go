@@ -125,3 +125,19 @@ func Matches(err error, target interface{}) bool {
 	}
 	return false
 }
+
+func JoinWrappedErrors(err error) string {
+	errs := []string{err.Error()}
+	for {
+		uerr, ok := err.(interface{ Unwrap() error })
+		if !ok {
+			break
+		}
+		err = uerr.Unwrap()
+		if err == nil {
+			break
+		}
+		errs = append(errs, err.Error())
+	}
+	return strings.Join(errs, ": ")
+}
