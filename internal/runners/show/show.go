@@ -195,12 +195,12 @@ func (s *Show) Run(params Params) error {
 		return locale.WrapError(err, "err_show_platforms", "Could not retrieve platform information")
 	}
 
-	languages, err := languagesData(owner, projectName)
+	languages, err := languagesData(owner, projectName, branch.Label)
 	if err != nil {
 		return locale.WrapError(err, "err_show_langauges", "Could not retrieve language information")
 	}
 
-	commit, err := commitsData(owner, projectName, *branch.CommitID, s.project, s.auth)
+	commit, err := commitsData(owner, projectName, branch.Label, *branch.CommitID, s.project, s.auth)
 	if err != nil {
 		return locale.WrapError(err, "err_show_commit", "Could not get commit information")
 	}
@@ -302,8 +302,8 @@ func platformsData(owner, project string, branchID strfmt.UUID) ([]platformRow, 
 	return platforms, nil
 }
 
-func languagesData(owner, project string) ([]languageRow, error) {
-	platformLanguages, err := model.FetchLanguagesForProject(owner, project)
+func languagesData(owner, project, branchName string) ([]languageRow, error) {
+	platformLanguages, err := model.FetchLanguagesForProject(owner, project, branchName)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_show_get_languages", "Could not get languages for project")
 	}
@@ -324,8 +324,8 @@ func visibilityData(owner, project string, remoteProject *mono_models.Project) s
 	return locale.T("public")
 }
 
-func commitsData(owner, project string, commitID strfmt.UUID, localProject *project.Project, auth auther) (string, error) {
-	latestCommit, err := model.LatestCommitID(owner, project)
+func commitsData(owner, project, branch string, commitID strfmt.UUID, localProject *project.Project, auth auther) (string, error) {
+	latestCommit, err := model.LatestCommitID(owner, project, branch)
 	if err != nil {
 		return "", locale.WrapError(err, "err_show_get_latest_commit", "Could not get latest commit ID")
 	}
@@ -335,7 +335,7 @@ func commitsData(owner, project string, commitID strfmt.UUID, localProject *proj
 	}
 
 	if localProject != nil && localProject.Owner() == owner && localProject.Name() == project {
-		behind, err := model.CommitsBehindLatest(owner, project, localProject.CommitID())
+		behind, err := model.CommitsBehindLatest(owner, project, branch, localProject.CommitID())
 		if err != nil {
 			return "", locale.WrapError(err, "err_show_commits_behind", "Could not determine number of commits behind latest")
 		}

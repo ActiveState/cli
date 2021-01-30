@@ -53,7 +53,7 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, targetPath string) er
 		}
 	}
 
-	language, err := getLanguage(ns.Owner, ns.Project)
+	language, err := getLanguage(ns.Owner, ns.Project, branchName)
 	if err != nil {
 		return err
 	}
@@ -76,8 +76,8 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, targetPath string) er
 	return nil
 }
 
-func getLanguage(owner, project string) (string, error) {
-	modelLanguage, err := model.DefaultLanguageForProject(owner, project)
+func getLanguage(owner, project, branch string) (string, error) {
+	modelLanguage, err := model.DefaultLanguageForProject(owner, project, branch)
 	if err != nil {
 		return "", err
 	}

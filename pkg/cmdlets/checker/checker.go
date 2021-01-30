@@ -20,7 +20,7 @@ func RunCommitsBehindNotifier(out output.Outputer) {
 		return
 	}
 
-	count, err := model.CommitsBehindLatest(p.Owner(), p.Name(), p.CommitID())
+	count, err := model.CommitsBehindLatest(p.Owner(), p.Name(), p.BranchName(), p.CommitID())
 	if err != nil {
 		if errors.Is(err, model.ErrCommitCountUnknowable) {
 			out.Notice(output.Heading(locale.Tr("runtime_update_notice_unknown_count")))

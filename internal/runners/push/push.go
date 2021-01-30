@@ -130,7 +130,7 @@ func (r *Push) Run(params PushParams) error {
 	}
 
 	// update the project at the given commit id.
-	err = model.UpdateProjectBranchCommitByBranch(pjm, r.project.BranchName(), commitID)
+	err = model.UpdateProjectBranchCommit(pjm, r.project.BranchName(), commitID)
 	if err != nil {
 		return locale.WrapError(err, "push_project_branch_commit_err", "Failed to update new project {{.V0}} to current commitID.", r.project.Namespace().String())
 	}

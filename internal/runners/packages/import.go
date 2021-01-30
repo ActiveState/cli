@@ -99,7 +99,7 @@ func (i *Import) Run(params ImportRunParams) error {
 		}
 	}
 
-	latestCommit, err := model.LatestCommitID(i.proj.Owner(), i.proj.Name())
+	latestCommit, err := model.LatestCommitID(i.proj.Owner(), i.proj.Name(), i.proj.BranchName())
 	if err != nil {
 		return locale.WrapError(err, "package_err_cannot_obtain_commit")
 	}
@@ -177,7 +177,7 @@ func commitChangeset(project *project.Project, msg string, isHeadless bool, chan
 	}
 
 	if !isHeadless {
-		err := model.UpdateProjectBranchCommitByName(project.Owner(), project.Name(), commitID)
+		err := model.UpdateNamedProjectBranchCommit(project.Owner(), project.Name(), project.BranchName(), commitID)
 		if err != nil {
 			return locale.WrapError(err, "err_import_update_branch", "Failed to update branch with new commit ID")
 		}

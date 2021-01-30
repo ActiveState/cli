@@ -59,8 +59,8 @@ func FetchOrganizationProjects(orgName string) ([]*mono_models.Project, error) {
 }
 
 // DefaultLanguageForProject fetches the default language belonging to the given project
-func DefaultLanguageForProject(orgName, projectName string) (Language, error) {
-	languages, err := FetchLanguagesForProject(orgName, projectName)
+func DefaultLanguageForProject(orgName, projectName, branchName string) (Language, error) {
+	languages, err := FetchLanguagesForProject(orgName, projectName, branchName)
 	if err != nil {
 		return Language{}, err
 	}
@@ -88,12 +88,17 @@ func LanguageForCommit(commitID strfmt.UUID) (string, error) {
 
 // DefaultBranchForProjectName retrieves the default branch for the given project owner/name.
 func DefaultBranchForProjectName(owner, name string) (*mono_models.Branch, error) {
-	proj, err := FetchProjectByName(owner, name)
+	pj, err := FetchProjectByName(owner, name)
 	if err != nil {
 		return nil, err
 	}
 
-	return DefaultBranchForProject(proj)
+	for _, branch := range pj.Branches {
+		if branch.Default {
+			return branch, nil
+		}
+	}
+	return nil, locale.NewError("err_no_default_branch")
 }
 
 func BranchesForProject(owner, name string) ([]*mono_models.Branch, error) {
@@ -120,30 +125,23 @@ func BranchNamesForProjectFiltered(owner, name string, excludes ...string) ([]st
 	return branches, nil
 }
 
-// DefaultBranchForProject retrieves the default branch for the given project
-func DefaultBranchForProject(pj *mono_models.Project) (*mono_models.Branch, error) {
-	for _, branch := range pj.Branches {
-		if branch.Default {
-			return branch, nil
-		}
+// BranchForNamedProjectByName retrieves the named branch for the given project name
+func BranchForNamedProjectByName(owner, name, branch string) (*mono_models.Branch, error) {
+	proj, err := FetchProjectByName(owner, name)
+	if err != nil {
+		return nil, err
 	}
-	return nil, locale.NewError("err_no_default_branch")
+
+	return BranchForProjectByName(proj, branch)
 }
 
-// BranchForProjectByName retrieves the named branch for the given project, or
-// falls back to the default
+// BranchForProjectByName retrieves the named branch for the given project
 func BranchForProjectByName(pj *mono_models.Project, name string) (*mono_models.Branch, error) {
-	if name == "" {
-		logging.Debug("no branch name provided, using default")
-		return DefaultBranchForProject(pj)
-	}
-
 	for _, branch := range pj.Branches {
 		if branch.Label != "" && branch.Label == name {
 			return branch, nil
 		}
 	}
-
 	return nil, locale.NewInputError(
 		"err_no_matching_branch_label",
 		"This project has no branch with label matching [NOTICE]{{.V0}}[/RESET].",

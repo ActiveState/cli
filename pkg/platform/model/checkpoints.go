@@ -50,13 +50,13 @@ func GetRequirement(commitID strfmt.UUID, namespace, requirement string) (*model
 }
 
 // FetchLanguagesForProject fetches a list of language names for the given project
-func FetchLanguagesForProject(orgName string, projectName string) ([]Language, error) {
+func FetchLanguagesForProject(orgName, projectName, branchName string) ([]Language, error) {
 	platProject, err := FetchProjectByName(orgName, projectName)
 	if err != nil {
 		return nil, err
 	}
 
-	branch, err := DefaultBranchForProject(platProject)
+	branch, err := BranchForProjectByName(platProject, branchName)
 	if err != nil {
 		return nil, err
 	}

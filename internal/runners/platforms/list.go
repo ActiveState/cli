@@ -31,7 +31,7 @@ func NewList(prime primer.Outputer) *List {
 func (l *List) Run(ps ListRunParams) error {
 	logging.Debug("Execute platforms list")
 
-	listing, err := newListing("", ps.Project.Name(), ps.Project.Owner())
+	listing, err := newListing("", ps.Project.Name(), ps.Project.Owner(), ps.Project.BranchName())
 	if err != nil {
 		return err
 	}
@@ -45,8 +45,8 @@ type Listing struct {
 	Platforms []*Platform `json:"platforms"`
 }
 
-func newListing(commitID, projName, projOrg string) (*Listing, error) {
-	targetCommitID, err := targetedCommitID(commitID, projName, projOrg)
+func newListing(commitID, projName, projOrg, projBranch string) (*Listing, error) {
+	targetCommitID, err := targetedCommitID(commitID, projName, projOrg, projBranch)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +63,7 @@ func newListing(commitID, projName, projOrg string) (*Listing, error) {
 	return &listing, nil
 }
 
-func targetedCommitID(commitID, projName, projOrg string) (*strfmt.UUID, error) {
+func targetedCommitID(commitID, projName, projOrg, projBranch string) (*strfmt.UUID, error) {
 	if commitID != "" {
 		var cid strfmt.UUID
 		err := cid.UnmarshalText([]byte(commitID))
@@ -71,7 +71,7 @@ func targetedCommitID(commitID, projName, projOrg string) (*strfmt.UUID, error) 
 		return &cid, err
 	}
 
-	latest, err := model.LatestCommitID(projOrg, projName)
+	latest, err := model.LatestCommitID(projOrg, projName, projBranch)
 	if err != nil {
 		return nil, err
 	}

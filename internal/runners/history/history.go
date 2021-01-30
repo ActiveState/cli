@@ -43,7 +43,12 @@ func (h *History) Run(params *HistoryParams) error {
 			return err
 		}
 
-		commits, err = model.CommitHistory(nsMeta.Owner, nsMeta.Project)
+		branch, err := model.DefaultBranchForProjectName(nsMeta.Owner, nsMeta.Project)
+		if err != nil {
+			return locale.WrapError(err, "err_commit_history_default_branch", "Could not get default branch for provided namespace: {{.V0}}", params.Namespace)
+		}
+
+		commits, err = model.CommitHistory(nsMeta.Owner, nsMeta.Project, branch.Label)
 		if err != nil {
 			return locale.WrapError(err, "err_commit_history_namespace", "Could not get commit history from provided namespace: {{.V0}}", params.Namespace)
 		}

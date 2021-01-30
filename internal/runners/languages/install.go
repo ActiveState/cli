@@ -101,8 +101,8 @@ func ensureLanguagePlatform(language *model.Language) error {
 	return errors.New(locale.Tr("err_update_not_found", language.Name))
 }
 
-func ensureLanguageProject(language *model.Language, project *project.Project) error {
-	targetCommitID, err := model.LatestCommitID(project.Owner(), project.Name())
+func ensureLanguageProject(language *model.Language, proj *project.Project) error {
+	targetCommitID, err := model.LatestCommitID(proj.Owner(), proj.Name(), proj.BranchName())
 	if err != nil {
 		return err
 	}
@@ -143,8 +143,8 @@ func ensureVersionTestable(language *model.Language, fetchVersions fetchVersions
 	return locale.NewInputError("err_language_version_not_found", "", language.Version, language.Name)
 }
 
-func removeLanguage(project *project.Project, current string) error {
-	targetCommitID, err := model.LatestCommitID(project.Owner(), project.Name())
+func removeLanguage(proj *project.Project, current string) error {
+	targetCommitID, err := model.LatestCommitID(proj.Owner(), proj.Name(), proj.BranchName())
 	if err != nil {
 		return err
 	}
@@ -154,7 +154,7 @@ func removeLanguage(project *project.Project, current string) error {
 		return err
 	}
 
-	err = model.CommitLanguage(project.Owner(), project.Name(), model.OperationRemoved, platformLanguage.Name, platformLanguage.Version)
+	err = model.CommitLanguage(proj.Owner(), proj.Name(), proj.BranchName(), model.OperationRemoved, platformLanguage.Name, platformLanguage.Version)
 	if err != nil {
 		return err
 	}
@@ -162,8 +162,8 @@ func removeLanguage(project *project.Project, current string) error {
 	return nil
 }
 
-func addLanguage(project *project.Project, lang *model.Language) error {
-	err := model.CommitLanguage(project.Owner(), project.Name(), model.OperationAdded, lang.Name, lang.Version)
+func addLanguage(proj *project.Project, lang *model.Language) error {
+	err := model.CommitLanguage(proj.Owner(), proj.Name(), proj.BranchName(), model.OperationAdded, lang.Name, lang.Version)
 	if err != nil {
 		return err
 	}

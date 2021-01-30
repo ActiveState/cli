@@ -84,10 +84,11 @@ func fetchRecipe(proj *project.Project, commitID strfmt.UUID, platform string) (
 			return "", err
 		}
 
-		branch, err := model.DefaultBranchForProject(pj)
+		branch, err := model.BranchForProjectByName(pj, proj.BranchName())
 		if err != nil {
 			return "", err
 		}
+
 		if branch.CommitID == nil {
 			return "", locale.NewError("NoCommit")
 		}
