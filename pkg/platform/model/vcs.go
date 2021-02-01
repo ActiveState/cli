@@ -665,7 +665,7 @@ func RevertCommit(owner, project, branchName string, from, to strfmt.UUID) error
 		return err
 	}
 
-	branch, err := BranchForProjectByName(proj, "")
+	branch, err := BranchForProjectByName(proj, branchName)
 	if err != nil {
 		return err
 	}
