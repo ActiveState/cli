@@ -604,12 +604,12 @@ func FetchOrderFromCommit(commitID strfmt.UUID) (*mono_models.Order, error) {
 }
 
 func TrackBranch(source, target *mono_models.Project) error {
-	sourceBranch, err := BranchForProjectByName(source, "")
+	sourceBranch, err := DefaultBranch(source)
 	if err != nil {
 		return err
 	}
 
-	targetBranch, err := BranchForProjectByName(target, "")
+	targetBranch, err := DefaultBranch(target)
 	if err != nil {
 		return err
 	}

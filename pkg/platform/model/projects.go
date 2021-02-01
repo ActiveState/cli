@@ -92,7 +92,11 @@ func DefaultBranchForProjectName(owner, name string) (*mono_models.Branch, error
 	if err != nil {
 		return nil, err
 	}
+	return DefaultBranch(pj)
+}
 
+// DefaultBranchForProjectName retrieves the default branch for the given project.
+func DefaultBranch(pj *mono_models.Project) (*mono_models.Branch, error) {
 	for _, branch := range pj.Branches {
 		if branch.Default {
 			return branch, nil
