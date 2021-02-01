@@ -122,19 +122,18 @@ func sendDeferred(cfg Configurable, sender func(string, string, string, map[stri
 	if err != nil {
 		return errs.Wrap(err, "Could not load events on send")
 	}
-	if len(deferred) == 0 {
-		return nil
-	}
-	for n, event := range deferred {
-		if err := sender(event.Category, event.Action, event.Label, event.Dimensions); err != nil {
-			return errs.Wrap(err, "Could not send deferred event")
+	if len(deferred) > 0 {
+		for n, event := range deferred {
+			if err := sender(event.Category, event.Action, event.Label, event.Dimensions); err != nil {
+				return errs.Wrap(err, "Could not send deferred event")
+			}
+			if err := saveDeferred(cfg, deferred[n+1:]); err != nil {
+				return errs.Wrap(err, "Could not save deferred event on send")
+			}
 		}
-		if err := saveDeferred(cfg, deferred[n+1:]); err != nil {
-			return errs.Wrap(err, "Could not save deferred event on send")
+		if err := cfg.Save(); err != nil { // the global viper instance is bugged, need to work around it for now -- https://www.pivotaltracker.com/story/show/175624789
+			return locale.WrapError(err, "err_viper_write_send_defer", "Could not save configuration on send deferred")
 		}
-	}
-	if err := cfg.Save(); err != nil { // the global viper instance is bugged, need to work around it for now -- https://www.pivotaltracker.com/story/show/175624789
-		return locale.WrapError(err, "err_viper_write_send_defer", "Could not save configuration on send deferred")
 	}
 
 	// remove deferrer time stamp file
