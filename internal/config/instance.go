@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -29,12 +30,14 @@ type Instance struct {
 	localPath     string
 	installSource string
 	noSave        bool
+	rwLock        *sync.RWMutex
 }
 
 func new(localPath string) (*Instance, error) {
 	instance := &Instance{
 		viper:     viper.New(),
 		localPath: localPath,
+		rwLock:    &sync.RWMutex{},
 	}
 
 	err := instance.Reload()
@@ -111,45 +114,63 @@ func Get() (*Instance, error) {
 
 // Set sets a value at the given key
 func (i *Instance) Set(key string, value interface{}) {
+	i.rwLock.Lock()
+	defer i.rwLock.Unlock()
 	i.viper.Set(key, value)
 }
 
 // GetString retrieves a string for a given key
 func (i *Instance) GetString(key string) string {
+	i.rwLock.RLock()
+	defer i.rwLock.RUnlock()
 	return i.viper.GetString(key)
 }
 
 func (i *Instance) AllKeys() []string {
+	i.rwLock.RLock()
+	defer i.rwLock.RUnlock()
 	return i.viper.AllKeys()
 }
 
 // GetStringMapStringSlice retrieves a map of string slices for a given key
 func (i *Instance) GetStringMapStringSlice(key string) map[string][]string {
+	i.rwLock.RLock()
+	defer i.rwLock.RUnlock()
 	return i.viper.GetStringMapStringSlice(key)
 }
 
 // SetDefault sets the default value for a given key
 func (i *Instance) SetDefault(key string, value interface{}) {
+	i.rwLock.Lock()
+	defer i.rwLock.Unlock()
 	i.viper.SetDefault(key, value)
 }
 
 // GetBool retrieves a boolean value for a given key
 func (i *Instance) GetBool(key string) bool {
+	i.rwLock.RLock()
+	defer i.rwLock.RUnlock()
 	return i.viper.GetBool(key)
 }
 
 // GetStringSlice retrieves a slice of strings for a given key
 func (i *Instance) GetStringSlice(key string) []string {
+	i.rwLock.RLock()
+	defer i.rwLock.RUnlock()
 	return i.viper.GetStringSlice(key)
 }
 
 // GetTime retrieves a time instance for a given key
 func (i *Instance) GetTime(key string) time.Time {
+	i.rwLock.RLock()
+	defer i.rwLock.RUnlock()
 	return i.viper.GetTime(key)
 }
 
 // GetStringMap retrieves a map of strings to values for a given key
 func (i *Instance) GetStringMap(key string) map[string]interface{} {
+	i.rwLock.RLock()
+	defer i.rwLock.RUnlock()
 	return i.viper.GetStringMap(key)
 }
 
@@ -195,6 +216,8 @@ func (i *Instance) InstallSource() string {
 
 // ReadInConfig reads in config from the config file
 func (i *Instance) ReadInConfig() error {
+	i.rwLock.RLock()
+	defer i.rwLock.RUnlock()
 	// Prepare viper, which is a library that automates configuration
 	// management between files, env vars and the CLI
 	i.viper.SetConfigName(i.Name())
@@ -214,6 +237,8 @@ func (i *Instance) Save() error {
 		return nil
 	}
 
+	i.rwLock.Lock()
+	defer i.rwLock.Unlock()
 	if err := i.viper.MergeInConfig(); err != nil {
 		return err
 	}
