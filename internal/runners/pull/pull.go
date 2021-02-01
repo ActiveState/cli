@@ -71,6 +71,10 @@ func (p *Pull) Run(params *PullParams) error {
 		return locale.NewInputError("err_pull_headless", "You must first create a project. Please visit {{.V0}} to create your project.", p.project.URL())
 	}
 
+	if p.project.BranchName() == "" {
+		return locale.NewError("err_pull_branch", "Your activestate.yaml project does not contain a branch. Please ensure you are running the latest versio of the State Tool by running state update and try again.")
+	}
+
 	// Determine the project to pull from
 	target, err := targetProject(p.project, params.SetProject)
 	if err != nil {
