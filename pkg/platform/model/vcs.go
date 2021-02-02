@@ -321,9 +321,10 @@ func UpdateBranchCommit(branchID strfmt.UUID, commitID strfmt.UUID) error {
 }
 
 // UpdateBranchTracking updates the tracking information for the given branch
-func UpdateBranchTracking(branchID strfmt.UUID, trackingBranchID strfmt.UUID, trackingType TrackingType) error {
+func UpdateBranchTracking(branchID, commitID, trackingBranchID strfmt.UUID, trackingType TrackingType) error {
 	tracking := trackingType.String()
 	changeset := &mono_models.BranchEditable{
+		CommitID:     &commitID,
 		TrackingType: &tracking,
 		Tracks:       &trackingBranchID,
 	}

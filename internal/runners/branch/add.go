@@ -43,7 +43,7 @@ func (a *Add) Run(params AddParams) error {
 		return locale.WrapError(err, "err_add_branch_no_default", "Could not retrieve branch information for: {{.V0}}", localBranch)
 	}
 
-	err = model.UpdateBranchTracking(*branchID, branch.BranchID, model.TrackingIgnore)
+	err = model.UpdateBranchTracking(*branchID, a.project.CommitUUID(), branch.BranchID, model.TrackingIgnore)
 	if err != nil {
 		logging.Debug("Unable to update tracking information, attempting to delete branch")
 		derr := model.DeleteBranch(*branchID)
