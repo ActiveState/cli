@@ -39,6 +39,14 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, targetPath string) er
 		return err
 	}
 
+	if branchName == "" {
+		branch, err := model.DefaultBranchForProject(pj)
+		if err != nil {
+			return errs.Wrap(err, "Could not grab branch for project")
+		}
+		branchName = branch.Label
+	}
+
 	commitID := ns.CommitID
 	if commitID == nil {
 		branch, err := model.BranchForProjectByName(pj, branchName)
@@ -69,11 +77,12 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, targetPath string) er
 	configFile := filepath.Join(targetPath, constants.ConfigFileName)
 	if !fileutils.FileExists(configFile) {
 		err = projectfile.Create(&projectfile.CreateParams{
-			Owner:     ns.Owner,
-			Project:   ns.Project,
-			CommitID:  commitID,
-			Directory: targetPath,
-			Language:  language,
+			Owner:      ns.Owner,
+			Project:    ns.Project,
+			CommitID:   commitID,
+			BranchName: branchName,
+			Directory:  targetPath,
+			Language:   language,
 		})
 		if err != nil {
 			return err

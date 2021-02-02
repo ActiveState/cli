@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -438,6 +439,20 @@ project: https://example.com/xowner/xproject?commitID=00000000-0000-0000-0000-00
 	assert.Equal(t, string(expectedYAML), string(out2))
 }
 
+func TestSetProjectInYaml(t *testing.T) {
+	exampleYAML := []byte(`
+junk: xgarbage
+project: https://example.com/xowner/xproject?commitID=00000000-0000-0000-0000-000000000123
+123: xvalue
+`)
+	expectedProject := "some-bogus-but-unique-value"
+
+	out, err := setProjectInYaml(exampleYAML, expectedProject)
+	assert.NoError(t, err)
+
+	assert.Contains(t, string(out), expectedProject)
+}
+
 func TestSetNamespaceInYAML(t *testing.T) {
 	exampleYAML := []byte(`
 junk: xgarbage
@@ -525,4 +540,54 @@ func TestValidateProjectURL(t *testing.T) {
 
 	err = ValidateProjectURL("https://pr1234.activestate.build/commit/commitid")
 	assert.NoError(t, err, "This should not be an invalid project URL using the commit path")
+}
+
+func Test_parseURL(t *testing.T) {
+	tests := []struct {
+		name    string
+		rawURL  string
+		want    projectURL
+		wantErr bool
+	}{
+		{
+			"Valid full URL",
+			"https://platform.activestate.com/Owner/Name?commitID=7BA74758-8665-4D3F-921C-757CD271A0C1&branch=main",
+			projectURL{
+				Owner:      "Owner",
+				Name:       "Name",
+				CommitID:   "7BA74758-8665-4D3F-921C-757CD271A0C1",
+				BranchName: "main",
+			},
+			false,
+		},
+		{
+			"Valid commit URL",
+			"https://platform.activestate.com/commit/7BA74758-8665-4D3F-921C-757CD271A0C1",
+			projectURL{
+				Owner:      "",
+				Name:       "",
+				CommitID:   "7BA74758-8665-4D3F-921C-757CD271A0C1",
+				BranchName: "",
+			},
+			false,
+		},
+		{
+			"Invalid commit",
+			"https://platform.activestate.com/commit/nope",
+			projectURL{},
+			true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := parseURL(tt.rawURL)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("parseURL() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !tt.wantErr && !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("parseURL() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }

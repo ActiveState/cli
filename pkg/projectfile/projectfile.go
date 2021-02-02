@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -496,14 +497,9 @@ func Parse(configFilepath string) (*Project, error) {
 
 // Init initializes the parsedURL field from the project url string
 func (p *Project) Init() error {
-	err := ValidateProjectURL(p.Project)
-	if err != nil {
-		return err
-	}
-
 	parsedURL, err := p.parseURL()
 	if err != nil {
-		return locale.NewInputError("parse_project_file_url_err")
+		return locale.WrapInputError(err, "parse_project_file_url_err", "Could not parse project url: {{.V0}}.", p.Project)
 	}
 	p.parsedURL = parsedURL
 
@@ -623,37 +619,45 @@ func validateUUID(uuidStr string) error {
 	return nil
 }
 
-func parseURL(url string) (projectURL, error) {
-	err := ValidateProjectURL(url)
+func parseURL(rawURL string) (projectURL, error) {
+	p := projectURL{}
+
+	err := ValidateProjectURL(rawURL)
 	if err != nil {
-		return projectURL{}, err
+		return p, err
 	}
 
-	match := CommitURLRe.FindStringSubmatch(url)
-	if len(match) > 1 {
-		parts := projectURL{CommitID: match[1]}
-		return parts, nil
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return p, errs.Wrap(err, "Could not parse URL")
 	}
 
-	match = ProjectURLRe.FindStringSubmatch(url)
-	parts := projectURL{
-		Owner: match[1],
-		Name:  match[2],
-	}
-	if len(match) >= 4 {
-		parts.CommitID = match[3]
-	}
-	if len(match) >= 5 {
-		parts.BranchName = match[4]
-	}
-
-	if parts.CommitID != "" {
-		if err := validateUUID(parts.CommitID); err != nil {
-			return projectURL{}, err
+	path := strings.Split(u.Path, "/")
+	if len(path) > 2 {
+		if path[1] == "commit" {
+			p.CommitID = path[2]
+		} else {
+			p.Owner = path[1]
+			p.Name = path[2]
 		}
 	}
 
-	return parts, nil
+	q := u.Query()
+	if c := q.Get("commitID"); c != "" {
+		p.CommitID = c
+	}
+
+	if p.CommitID != "" {
+		if err := validateUUID(p.CommitID); err != nil {
+			return p, err
+		}
+	}
+
+	if b := q.Get("branch"); b != "" {
+		p.BranchName = b
+	}
+
+	return p, nil
 }
 
 func removeTemporaryLanguage(data []byte) ([]byte, error) {
@@ -781,6 +785,36 @@ func (p *Project) SetCommit(commitID string, headless bool) error {
 	return p.Reload()
 }
 
+// SetBranch sets the branch within the current project file. This is done
+// in-place so that line order is preserved.
+func (p *Project) SetBranch(branch string) error {
+	data, err := ioutil.ReadFile(p.path)
+	if err != nil {
+		return errs.Wrap(err, "ioutil.ReadFile %s failed", p.path)
+	}
+
+	u, err := url.Parse(p.Project)
+	if err != nil {
+		return locale.NewInputError("err_project_url", "Invalid format for project field: {{.V0}}.", p.Project)
+	}
+
+	q := u.Query()
+	q.Set("branch", branch)
+	u.RawQuery = q.Encode()
+
+	out, err := setProjectInYaml(data, u.String())
+	if err != nil {
+		return err
+	}
+	p.parsedURL.BranchName = branch
+
+	if err := ioutil.WriteFile(p.path, out, 0664); err != nil {
+		return errs.Wrap(err, "ioutil.WriteFile %s failed", p.path)
+	}
+
+	return p.Reload()
+}
+
 var (
 	// regex captures three groups:
 	// 1. from "project:" (at start of line) to protocol ("https://")
@@ -789,6 +823,16 @@ var (
 	// Everything after that is targeted, but not captured so that only the first three capture
 	// groups can be used in the replace value.
 	setCommitRE = regexp.MustCompile(`(?m:^(project: *https?:\/\/)([^\/]*\/)(.*\/[^?\r\n]*).*)`)
+)
+
+var (
+	// regex captures three groups:
+	// 1. from "project:" (at start of line) to protocol ("https://")
+	// 2. the domain name
+	// 3. the url part until a "?" or newline is reached.
+	// Everything after that is targeted, but not captured so that only the first three capture
+	// groups can be used in the replace value.
+	setProjectRE = regexp.MustCompile(`(?m:^(project: *https?:\/\/).*)`)
 )
 
 func setNamespaceInYAML(data []byte, namespace string, commitID string) ([]byte, error) {
@@ -818,6 +862,19 @@ func setCommitInYAML(data []byte, commitID string, anonymous bool) ([]byte, erro
 	out := setCommitRE.ReplaceAll(data, commitQryParam)
 	if !strings.Contains(string(out), commitID) {
 		return nil, locale.NewInputError("err_set_commit_id")
+	}
+
+	return out, nil
+}
+
+func setProjectInYaml(data []byte, project string) ([]byte, error) {
+	if project == "" {
+		return nil, errs.New("project must not be empty")
+	}
+
+	out := setProjectRE.ReplaceAll(data, []byte("project: "+project))
+	if !strings.Contains(string(out), project) {
+		return nil, locale.NewInputError("err_set_project")
 	}
 
 	return out, nil
@@ -984,6 +1041,7 @@ type CreateParams struct {
 	Owner           string
 	Project         string
 	CommitID        *strfmt.UUID
+	BranchName      string
 	Directory       string
 	Content         string
 	Language        string
@@ -1024,10 +1082,21 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 	}
 
 	if params.projectURL == "" {
-		params.projectURL = fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, params.Owner, params.Project)
-		if params.CommitID != nil {
-			params.projectURL = fmt.Sprintf("%s?commitID=%s", params.projectURL, params.CommitID.String())
+		u, err := url.Parse(fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, params.Owner, params.Project))
+		if err != nil {
+			return nil, errs.Wrap(err, "url parse new project url failed")
 		}
+		q := u.Query()
+
+		if params.CommitID != nil {
+			q.Set("commitID", params.CommitID.String())
+		}
+		if params.BranchName != "" {
+			q.Set("branch", params.BranchName)
+		}
+
+		u.RawQuery = q.Encode()
+		params.projectURL = u.String()
 	}
 
 	params.path = filepath.Join(params.Directory, constants.ConfigFileName)

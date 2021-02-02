@@ -149,7 +149,15 @@ func (r *Push) Run(params PushParams) error {
 		return locale.WrapInputError(err, "push_remove_lang_err", "Failed to remove temporary language field from activestate.yaml.")
 	}
 
-	r.project.Source().SetCommit(commitID.String(), false)
+	if err := r.project.Source().SetCommit(commitID.String(), false); err != nil {
+		return errs.Wrap(err, "Could not set commit")
+	}
+
+	if branchName != r.project.BranchName() {
+		if err := r.project.Source().SetBranch(branchName); err != nil {
+			return errs.Wrap(err, "Could not set branch")
+		}
+	}
 
 	r.Outputer.Notice(locale.Tr("push_project_created", r.project.URL(), lang.String(), langVersion))
 
