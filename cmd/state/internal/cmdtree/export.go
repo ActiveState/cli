@@ -173,7 +173,7 @@ func newExportDocsCommand(prime *primer.Values) *captain.Command {
 	params := docs.Params{}
 
 	cmd := captain.NewCommand(
-		"__docs",
+		"_docs",
 		locale.Tl("export_docs_title", "Export state tool command reference in markdown format"),
 		locale.Tl("export_docs_description", ""),
 		prime.Output(),
