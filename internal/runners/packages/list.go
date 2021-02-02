@@ -75,7 +75,7 @@ func targetFromCommit(commitOpt string) (*strfmt.UUID, error) {
 	if commitOpt == "latest" {
 		logging.Debug("latest commit selected")
 		proj := project.Get()
-		return model.LatestCommitID(proj.Owner(), proj.Name())
+		return model.BranchCommitID(proj.Owner(), proj.Name(), proj.BranchName())
 	}
 
 	return prepareCommit(commitOpt)
@@ -91,7 +91,7 @@ func targetFromProject(projectString string) (*strfmt.UUID, error) {
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not grab default branch for project")
 	}
-	
+
 	return branch.CommitID, nil
 }
 
@@ -104,7 +104,7 @@ func targetFromProjectFile() (*strfmt.UUID, error) {
 	commit := proj.CommitID()
 	if commit == "" {
 		logging.Debug("latest commit used as fallback selection")
-		return model.LatestCommitID(proj.Owner(), proj.Name())
+		return model.BranchCommitID(proj.Owner(), proj.Name(), proj.BranchName())
 	}
 
 	return prepareCommit(commit)

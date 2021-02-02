@@ -241,7 +241,7 @@ func (r *Activate) run(params *ActivateParams) error {
 func updateProjectFile(prj *project.Project, names *project.Namespaced) error {
 	var commitID string
 	if names.CommitID == nil || *names.CommitID == "" {
-		latestID, err := model.LatestCommitID(names.Owner, names.Project)
+		latestID, err := model.BranchCommitID(names.Owner, names.Project, prj.BranchName())
 		if err != nil {
 			return locale.WrapInputError(err, "err_set_namespace_retrieve_commit", "Could not retrieve the latest commit for the specified project {{.V0}}.", names.String())
 		}

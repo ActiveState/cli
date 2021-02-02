@@ -102,7 +102,7 @@ func ensureLanguagePlatform(language *model.Language) error {
 }
 
 func ensureLanguageProject(language *model.Language, project *project.Project) error {
-	targetCommitID, err := model.LatestCommitID(project.Owner(), project.Name())
+	targetCommitID, err := model.BranchCommitID(project.Owner(), project.Name(), project.BranchName())
 	if err != nil {
 		return err
 	}
@@ -144,7 +144,7 @@ func ensureVersionTestable(language *model.Language, fetchVersions fetchVersions
 }
 
 func removeLanguage(project *project.Project, current string) error {
-	targetCommitID, err := model.LatestCommitID(project.Owner(), project.Name())
+	targetCommitID, err := model.BranchCommitID(project.Owner(), project.Name(), project.BranchName())
 	if err != nil {
 		return err
 	}

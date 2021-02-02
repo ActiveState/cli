@@ -99,7 +99,7 @@ func (i *Import) Run(params ImportRunParams) error {
 		}
 	}
 
-	latestCommit, err := model.LatestCommitID(i.proj.Owner(), i.proj.Name())
+	latestCommit, err := model.BranchCommitID(i.proj.Owner(), i.proj.Name(), i.proj.BranchName())
 	if err != nil {
 		return locale.WrapError(err, "package_err_cannot_obtain_commit")
 	}

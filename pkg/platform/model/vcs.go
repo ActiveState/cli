@@ -141,16 +141,9 @@ func NewNamespacePlatform() Namespace {
 	return Namespace{NamespacePlatform, "platform"}
 }
 
-// LatestCommitID returns the latest commit id by owner and project names. It
+// BranchCommitID returns the latest commit id by owner and project names. It
 // is possible for a nil commit id to be returned without failure.
-func LatestCommitID(ownerName, projectName string) (*strfmt.UUID, error) {
-	return LatestCommitIDByBranch(ownerName, projectName, "")
-}
-
-// LatestCommitIDByBranch returns the latest commit id by owner, project, and
-// branch names. It is possible for a nil commit id to be returned without
-// failure.
-func LatestCommitIDByBranch(ownerName, projectName, branchName string) (*strfmt.UUID, error) {
+func BranchCommitID(ownerName, projectName, branchName string) (*strfmt.UUID, error) {
 	proj, err := FetchProjectByName(ownerName, projectName)
 	if err != nil {
 		return nil, err
@@ -171,8 +164,8 @@ func LatestCommitIDByBranch(ownerName, projectName, branchName string) (*strfmt.
 }
 
 // CommitHistory will return the commit history for the given owner / project
-func CommitHistory(ownerName, projectName string) ([]*mono_models.Commit, error) {
-	latestCID, err := LatestCommitID(ownerName, projectName)
+func CommitHistory(ownerName, projectName, branchName string) ([]*mono_models.Commit, error) {
+	latestCID, err := BranchCommitID(ownerName, projectName, branchName)
 	if err != nil {
 		return nil, err
 	}
@@ -223,36 +216,31 @@ func CommitHistoryPaged(commitID strfmt.UUID, offset, limit int64) (*mono_models
 	return res.Payload, nil
 }
 
-// CommitsBehindLatest compares the provided commit id with the latest commit
+// CommitsBehind compares the provided commit id with the latest commit
 // id and returns the count of commits it is behind. If an error is returned
 // along with a value of -1, then the provided commit is more than likely
 // behind, but it is not possible to clarify the count exactly.
-func CommitsBehindLatest(ownerName, projectName, commitID string) (int, error) {
-	latestCID, err := LatestCommitID(ownerName, projectName)
-	if err != nil {
-		return 0, err
-	}
-
-	if latestCID == nil {
-		if commitID == "" {
+func CommitsBehind(latestCID, currentCommitID strfmt.UUID) (int, error) {
+	if latestCID == "" {
+		if currentCommitID == "" {
 			return 0, nil // ok, nothing to do
 		}
 		return 0, locale.NewError("err_commit_count_no_latest_with_commit")
 	}
 
-	if latestCID.String() == commitID {
+	if latestCID.String() == currentCommitID.String() {
 		return 0, nil
 	}
 
 	params := vcsClient.NewGetCommitHistoryParams()
-	params.SetCommitID(*latestCID)
+	params.SetCommitID(latestCID)
 	res, err := authentication.Client().VersionControl.GetCommitHistory(params, authentication.ClientAuth())
 	if err != nil {
 		return 0, locale.WrapError(err, "err_get_commit_history", "", err.Error())
 	}
 
 	indexed := makeIndexedCommits(res.Payload.Commits)
-	return indexed.countBetween(commitID, latestCID.String())
+	return indexed.countBetween(currentCommitID.String(), latestCID.String())
 }
 
 // Changeset aliases for eased usage and to act as a disconnect from the underlying dep.

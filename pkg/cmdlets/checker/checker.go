@@ -20,7 +20,18 @@ func RunCommitsBehindNotifier(out output.Outputer) {
 		return
 	}
 
-	count, err := model.CommitsBehindLatest(p.Owner(), p.Name(), p.CommitID())
+	latestCommitID, err := model.BranchCommitID(p.Owner(), p.Name(), p.BranchName())
+	if err != nil {
+		logging.Error("Can not get branch info for %s/%s", p.Owner(), p.Name())
+		return
+	}
+
+	if latestCommitID == nil {
+		logging.Debug("Latest commit is nil")
+		return
+	}
+
+	count, err := model.CommitsBehind(*latestCommitID, p.CommitUUID())
 	if err != nil {
 		if errors.Is(err, model.ErrCommitCountUnknowable) {
 			out.Notice(output.Heading(locale.Tr("runtime_update_notice_unknown_count")))
