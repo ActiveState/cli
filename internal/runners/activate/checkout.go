@@ -3,7 +3,10 @@ package activate
 import (
 	"path/filepath"
 
+	"github.com/go-openapi/strfmt"
+
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
@@ -45,6 +48,10 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, targetPath string) er
 		commitID = branch.CommitID
 	}
 
+	if commitID == nil {
+		return errs.New("commitID is nil")
+	}
+
 	// Clone the related repo, if it is defined
 	if pj.RepoURL != nil {
 		err := r.repo.CloneProject(ns.Owner, ns.Project, targetPath, r.Outputer)
@@ -53,7 +60,7 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, targetPath string) er
 		}
 	}
 
-	language, err := getLanguage(ns.Owner, ns.Project)
+	language, err := getLanguage(*commitID)
 	if err != nil {
 		return err
 	}
@@ -76,8 +83,8 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, targetPath string) er
 	return nil
 }
 
-func getLanguage(owner, project string) (string, error) {
-	modelLanguage, err := model.DefaultLanguageForProject(owner, project)
+func getLanguage(commitID strfmt.UUID) (string, error) {
+	modelLanguage, err := model.LanguageByCommit(commitID)
 	if err != nil {
 		return "", err
 	}

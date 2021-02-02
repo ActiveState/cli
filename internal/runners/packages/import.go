@@ -177,7 +177,7 @@ func commitChangeset(project *project.Project, msg string, isHeadless bool, chan
 	}
 
 	if !isHeadless {
-		err := model.UpdateProjectBranchCommitByName(project.Owner(), project.Name(), commitID)
+		err := model.UpdateProjectBranchCommit(project, commitID)
 		if err != nil {
 			return locale.WrapError(err, "err_import_update_branch", "Failed to update branch with new commit ID")
 		}

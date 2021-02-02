@@ -87,18 +87,12 @@ func targetFromProject(projectString string) (*strfmt.UUID, error) {
 		return nil, err
 	}
 
-	proj, err := model.FetchProjectByName(ns.Owner, ns.Project)
+	branch, err := model.DefaultBranchForProjectName(ns.Owner, ns.Project)
 	if err != nil {
-		return nil, err
+		return nil, errs.Wrap(err, "Could not grab default branch for project")
 	}
-
-	for _, branch := range proj.Branches {
-		if branch.Default {
-			return branch.CommitID, nil
-		}
-	}
-
-	return nil, locale.NewError("err_package_project_no_commit")
+	
+	return branch.CommitID, nil
 }
 
 func targetFromProjectFile() (*strfmt.UUID, error) {

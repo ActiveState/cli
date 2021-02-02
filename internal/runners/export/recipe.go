@@ -8,7 +8,6 @@ import (
 
 	"github.com/ActiveState/sysinfo"
 
-	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -79,19 +78,7 @@ func fetchRecipe(proj *project.Project, commitID strfmt.UUID, platform string) (
 	}
 
 	if commitID == "" {
-		pj, err := model.FetchProjectByName(proj.Owner(), proj.Name())
-		if err != nil {
-			return "", err
-		}
-
-		branch, err := model.DefaultBranchForProject(pj)
-		if err != nil {
-			return "", err
-		}
-		if branch.CommitID == nil {
-			return "", locale.NewError("NoCommit")
-		}
-		commitID = *branch.CommitID
+		commitID = proj.CommitUUID()
 	}
 
 	return model.FetchRawRecipeForCommitAndPlatform(commitID, proj.Owner(), proj.Name(), platform)

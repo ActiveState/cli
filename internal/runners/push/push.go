@@ -89,6 +89,7 @@ func (r *Push) Run(params PushParams) error {
 		}
 	}
 
+	var branchName string
 	lang, langVersion, err := r.languageForProject(r.project)
 	if err != nil {
 		return errs.Wrap(err, "Failed to retrieve project language.")
@@ -112,12 +113,18 @@ func (r *Push) Run(params PushParams) error {
 			r.Outputer.Notice(locale.T("push_up_to_date"))
 			return nil
 		}
+		branchName = branch.Label
 	} else {
 		r.Outputer.Notice(locale.Tl("push_creating_project", "Creating project [NOTICE]{{.V1}}[/RESET] under [NOTICE]{{.V0}}[/RESET] on the ActiveState Platform", owner, name))
 		pjm, err = model.CreateEmptyProject(owner, name, r.project.Private())
 		if err != nil {
 			return locale.WrapError(err, "push_project_create_empty_err", "Failed to create a project {{.V0}}.", r.project.Namespace().String())
 		}
+		branch, err := model.DefaultBranchForProject(pjm)
+		if err != nil {
+			return errs.Wrap(err, "Could not get default branch")
+		}
+		branchName = branch.Label
 	}
 
 	var commitID = r.project.CommitUUID()
@@ -130,7 +137,7 @@ func (r *Push) Run(params PushParams) error {
 	}
 
 	// update the project at the given commit id.
-	err = model.UpdateProjectBranchCommitByBranch(pjm, r.project.BranchName(), commitID)
+	err = model.UpdateProjectBranchCommitWithModel(pjm, branchName, commitID)
 	if err != nil {
 		return locale.WrapError(err, "push_project_branch_commit_err", "Failed to update new project {{.V0}} to current commitID.", r.project.Namespace().String())
 	}

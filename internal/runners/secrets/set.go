@@ -4,6 +4,9 @@ import (
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/secrets"
+	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -43,8 +46,28 @@ func (s *Set) Run(params SetRunParams) error {
 		return locale.WrapError(err, "secrets_err_values")
 	}
 
-	if err = secret.Save(params.Value); err != nil {
-		return locale.WrapError(err, "secrets_err_try_save", "Cannot save secret")
+	org, err := model.FetchOrgByURLName(s.proj.Owner())
+	if err != nil {
+		return err
+	}
+
+	remoteProject, err := model.FetchProjectByName(org.URLname, s.proj.Name())
+	if err != nil {
+		return err
+	}
+
+	kp, err := secrets.LoadKeypairFromConfigDir(s.cfg)
+	if err != nil {
+		return err
+	}
+
+	err = secrets.Save(secretsapi.GetClient(), kp, org, remoteProject, secret.IsUser(), secret.Name(), params.Value)
+	if err != nil {
+		return err
+	}
+
+	if secret.IsProject() {
+		return secrets.ShareWithOrgUsers(secretsapi.GetClient(), org, remoteProject, secret.Name(), params.Value)
 	}
 
 	return nil

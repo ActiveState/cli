@@ -183,12 +183,8 @@ func (r *Activate) run(params *ActivateParams) error {
 
 	// Determine branch name
 	branch := proj.BranchName()
-	if branch == "" {
-		branchInfo, err := model.DefaultBranchForProjectName(proj.Owner(), proj.Name())
-		if err != nil {
-			return locale.WrapError(err, "err_branch_notfound", "Could not find a default branch for your project")
-		}
-		branch = branchInfo.Label
+	if params.Branch != "" {
+		branch = params.Branch
 	}
 
 	err = venv.Setup(true)

@@ -19,9 +19,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/secrets"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
-	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
@@ -553,36 +551,6 @@ func (s *Secret) Value() (string, error) {
 		return "", err
 	}
 	return *value, nil
-}
-
-// Save will save the provided value for this secret to the project file if not a secret, else
-// will store back to the secrets store.
-func (s *Secret) Save(value string) error {
-	org, err := model.FetchOrgByURLName(s.project.Owner())
-	if err != nil {
-		return err
-	}
-
-	remoteProject, err := model.FetchProjectByName(org.URLname, s.project.Name())
-	if err != nil {
-		return err
-	}
-
-	kp, err := secrets.LoadKeypairFromConfigDir(s.cfg)
-	if err != nil {
-		return err
-	}
-
-	err = secrets.Save(secretsapi.GetClient(), kp, org, remoteProject, s.IsUser(), s.Name(), value)
-	if err != nil {
-		return err
-	}
-
-	if s.IsProject() {
-		return secrets.ShareWithOrgUsers(secretsapi.GetClient(), org, remoteProject, s.Name(), value)
-	}
-
-	return nil
 }
 
 // Event covers the hook structure

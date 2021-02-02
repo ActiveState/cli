@@ -107,7 +107,7 @@ func executePackageOperation(pj *project.Project, cfg configurable, out output.O
 	// Update project references to the new commit, if changes were indeed made (otherwise we effectively drop the new commit)
 	if orderChanged {
 		if !isHeadless {
-			err := model.UpdateProjectBranchCommitByName(pj.Owner(), pj.Name(), commitID)
+			err := model.UpdateProjectBranchCommit(pj, commitID)
 			if err != nil {
 				return locale.WrapError(err, "err_package_"+string(operation))
 			}
