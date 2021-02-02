@@ -72,7 +72,7 @@ func newPlatformsAddCommand(prime *primer.Values) *captain.Command {
 			{
 				Name:        locale.T("arg_platforms_shared_name"),
 				Description: locale.T("arg_platforms_shared_name_description"),
-				Value:       &params.Name,
+				Value:       &params.Platform,
 				Required:    true,
 			},
 		},
@@ -110,13 +110,7 @@ func newPlatformsRemoveCommand(prime *primer.Values) *captain.Command {
 			{
 				Name:        locale.T("arg_platforms_shared_name"),
 				Description: locale.T("arg_platforms_shared_name_description"),
-				Value:       &params.Name,
-				Required:    true,
-			},
-			{
-				Name:        locale.T("arg_platforms_shared_version"),
-				Description: locale.T("arg_platforms_shared_version_description"),
-				Value:       &params.Version,
+				Value:       &params.Platform,
 				Required:    true,
 			},
 		},
