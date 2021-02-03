@@ -24,6 +24,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime/internal/rtstat"
 )
 
 // During installation after all files are unpacked to a temporary directory, the progress bar should advanced this much.
@@ -208,6 +209,8 @@ func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGet
 		}
 
 		if len(downloadArtfs) > 0 {
+			installer.runtime.once.Send(rtstat.Download)
+
 			archives, err := installer.runtimeDownloader.Download(downloadArtfs, runtimeAssembler, downloadProgress)
 			if err != nil {
 				downloadProgress.Cancel()

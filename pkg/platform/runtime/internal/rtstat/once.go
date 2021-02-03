@@ -1,23 +1,21 @@
-package runtime
+package rtstat
 
 import (
 	"sync"
-
-	"github.com/ActiveState/cli/pkg/platform/runtime/internal/rtstat"
 )
 
-type sendOnce struct {
+type SendOnce struct {
 	mu  sync.Mutex
 	set map[string]struct{}
 }
 
-func newSendOnce() *sendOnce {
-	return &sendObnce{
+func NewSendOnce() *SendOnce {
+	return &SendOnce{
 		set: make(map[string]struct{}),
 	}
 }
 
-func (so *sendOnce) send(stat rtstat.RtStat) {
+func (so *SendOnce) Send(stat RtStat) {
 	key := stat.String()
 
 	so.mu.Lock()

@@ -21,7 +21,7 @@ type Runtime struct {
 	owner       string
 	projectName string
 	msgHandler  MessageHandler
-	once        sendOnce
+	once        *rtstat.SendOnce
 }
 
 func NewRuntime(projectDir, cachePath string, commitID strfmt.UUID, owner string, projectName string, msgHandler MessageHandler) (*Runtime, error) {
@@ -38,8 +38,8 @@ func NewRuntime(projectDir, cachePath string, commitID strfmt.UUID, owner string
 
 	installPath := filepath.Join(cachePath, hash.ShortHash(resolvedProjectDir))
 
-	once := newSendOnce()
-	once.send(rtstat.Start)
+	once := rtstat.NewSendOnce()
+	once.Send(rtstat.Start)
 
 	return &Runtime{
 		runtimeDir:  installPath,
@@ -78,7 +78,7 @@ func (r *Runtime) IsCachedRuntime() bool {
 	logging.Debug("IsCachedRuntime for %s, %s==%s", marker, string(contents), r.commitID.String())
 	cached := string(contents) == r.commitID.String()
 	if cached {
-		r.once.send(rtstat.Cache)
+		r.once.Send(rtstat.Cache)
 	}
 	return cached
 }

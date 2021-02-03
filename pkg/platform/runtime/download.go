@@ -23,6 +23,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime/internal/rtstat"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -130,6 +131,8 @@ func (r *Download) FetchArtifacts(recipe *inventory_models.Recipe, platProj *mon
 			return result, locale.NewInputError("build_status_failed", "", r.projectURL(), msg)
 
 		case resp := <-buildStatus.Started:
+			r.runtime.once.Send(rtstat.Build)
+
 			logging.Debug("BuildStarted")
 			namespaced := project.Namespaced{
 				Owner:   r.runtime.owner,
