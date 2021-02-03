@@ -195,7 +195,7 @@ func (suite *EditTestSuite) TestNewScriptWatcher() {
 	suite.Require().NoError(err, "unexpected error creating script watcher")
 
 	catcher := outputhelper.NewCatcher()
-	go watcher.run("hello", catcher.Outputer, suite.cfg)
+	go watcher.run("hello", catcher.Outputer, suite.cfg, project.Get())
 
 	watcher.done <- true
 
@@ -214,7 +214,7 @@ func (suite *EditTestSuite) TestUpdateProjectFile() {
 	suite.scriptFile, err = createScriptFile(replace, false)
 	suite.Require().NoError(err, "unexpected error creating script file")
 
-	err = updateProjectFile(suite.cfg, suite.scriptFile, "replace")
+	err = updateProjectFile(suite.cfg, project.Get(), suite.scriptFile, "replace")
 	suite.Require().NoError(err, "should be able to update script file")
 
 	updatedProject := project.Get()
