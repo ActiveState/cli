@@ -1,6 +1,8 @@
 package rtstat
 
-import "github.com/ActiveState/cli/internal/analytics"
+import (
+	"github.com/ActiveState/cli/internal/analytics"
+)
 
 const (
 	runtime     = "runtime"
@@ -25,6 +27,15 @@ func (stat RtStat) Send() {
 		return
 	}
 	analytics.Event(runtime, stat.action)
+}
+
+// String implements the fmt.Stringer interface.
+func (stat RtStat) String() string {
+	s := stat.action
+	if stat.label != "" {
+		s += ":" + stat.action
+	}
+	return s
 }
 
 // RtStat vars provide convenient access to available runtime analytics event
