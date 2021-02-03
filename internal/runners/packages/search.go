@@ -9,9 +9,9 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/go-openapi/strfmt"
 )
 
 // SearchRunParams tracks the info required for running search.
@@ -23,13 +23,15 @@ type SearchRunParams struct {
 
 // Search manages the searching execution context.
 type Search struct {
-	out output.Outputer
+	out  output.Outputer
+	proj *project.Project
 }
 
 // NewSearch prepares a searching execution context for use.
-func NewSearch(prime primer.Outputer) *Search {
+func NewSearch(prime primeable) *Search {
 	return &Search{
-		out: prime.Output(),
+		out:  prime.Output(),
+		proj: prime.Project(),
 	}
 }
 
@@ -37,7 +39,11 @@ func NewSearch(prime primer.Outputer) *Search {
 func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 	logging.Debug("ExecuteSearch")
 
-	language, err := targetedLanguage(params.Language)
+	if s.proj == nil {
+		return locale.NewInputError("err_no_project")
+	}
+
+	language, err := targetedLanguage(params.Language, s.proj.CommitUUID())
 	if err != nil {
 		return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_obtain_language", nstype))
 	}
@@ -66,17 +72,12 @@ func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 	return nil
 }
 
-func targetedLanguage(languageOpt string) (string, error) {
+func targetedLanguage(languageOpt string, commitUUID strfmt.UUID) (string, error) {
 	if languageOpt != "" {
 		return languageOpt, nil
 	}
 
-	proj, err := project.GetSafe()
-	if err != nil {
-		return "", err
-	}
-
-	return model.LanguageForCommit(proj.CommitUUID())
+	return model.LanguageForCommit(commitUUID)
 }
 
 type modules []string

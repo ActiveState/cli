@@ -25,7 +25,7 @@ import (
 // under the same directory as this file
 type SubShell interface {
 	// Activate the given subshell
-	Activate(cfg sscommon.Configurable, out output.Outputer) error
+	Activate(proj *project.Project, cfg sscommon.Configurable, out output.Outputer) error
 
 	// Errors returns a channel to receive errors
 	Errors() <-chan error
