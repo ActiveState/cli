@@ -85,6 +85,8 @@ func (r *Runtime) IsCachedRuntime() bool {
 
 // MarkInstallationComplete writes the installation complete marker to the runtime directory
 func (r *Runtime) MarkInstallationComplete() error {
+	r.once.Send(rtstat.Success)
+
 	markerFile := filepath.Join(r.runtimeDir, constants.RuntimeInstallationCompleteMarker)
 	markerDir := filepath.Dir(markerFile)
 	err := fileutils.MkdirUnlessExists(markerDir)
