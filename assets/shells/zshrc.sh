@@ -1,5 +1,7 @@
 if [ -f $ZDOTDIR/.zshrc ]; then source $ZDOTDIR/.zshrc; fi
 
+cd "{{.WD}}"
+
 {{if ne .Owner ""}}
 export PS1="[{{.Owner}}/{{.Name}}] $PS1"
 {{end}}
@@ -21,8 +23,6 @@ alias {{.ExecName}}='{{.ExecAlias}}'
 {{range $K, $CMD := .Scripts}}
 alias {{$K}}='{{$.ExecName}} run {{$CMD}}'
 {{end}}
-
-cd "{{.WD}}"
 
 echo "{{.ActivateEventMessage}}"
 
