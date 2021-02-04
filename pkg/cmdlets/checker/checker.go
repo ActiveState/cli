@@ -13,13 +13,7 @@ import (
 
 // RunCommitsBehindNotifier checks for the commits behind count based on the
 // provided project and displays the results to the user in a helpful manner.
-func RunCommitsBehindNotifier(out output.Outputer) {
-	p, err := project.GetOnce()
-	if err != nil {
-		logging.Warning("Could not retrieve project, error: %v", err.Error())
-		return
-	}
-
+func RunCommitsBehindNotifier(p *project.Project,out output.Outputer) {
 	latestCommitID, err := model.BranchCommitID(p.Owner(), p.Name(), p.BranchName())
 	if err != nil {
 		logging.Error("Can not get branch info for %s/%s", p.Owner(), p.Name())

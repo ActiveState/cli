@@ -8,6 +8,7 @@ import (
 
 	"github.com/ActiveState/sysinfo"
 
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -16,10 +17,11 @@ import (
 
 type Recipe struct {
 	output.Outputer
+	*project.Project
 }
 
 func NewRecipe(prime primeable) *Recipe {
-	return &Recipe{prime.Output()}
+	return &Recipe{prime.Output(), prime.Project()}
 }
 
 type RecipeParams struct {
@@ -32,9 +34,7 @@ type RecipeParams struct {
 func (r *Recipe) Run(params *RecipeParams) error {
 	logging.Debug("Execute")
 
-	proj := project.Get()
-
-	data, err := recipeData(proj, params.CommitID, params.Platform)
+	data, err := recipeData(r.Project, params.CommitID, params.Platform)
 	if err != nil {
 		return err
 	}
@@ -75,6 +75,10 @@ func beautifyJSON(d []byte) ([]byte, error) {
 func fetchRecipe(proj *project.Project, commitID strfmt.UUID, platform string) (string, error) {
 	if platform == "" {
 		platform = sysinfo.OS().String()
+	}
+
+	if proj == nil {
+		return "", locale.NewInputError("err_no_project")
 	}
 
 	if commitID == "" {
