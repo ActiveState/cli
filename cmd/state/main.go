@@ -207,6 +207,10 @@ func run(args []string, isInteractive bool, out output.Outputer) (int, error) {
 
 func argsHaveVerbose(args []string) bool {
 	for _, arg := range args {
+		// Skip looking for verbose args after --, eg. for `state shim -- perl -v`
+		if arg == "--" {
+			return false
+		}
 		if arg == "--verbose" || arg == "-v" {
 			return true
 		}
