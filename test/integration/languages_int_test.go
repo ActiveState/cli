@@ -106,7 +106,7 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_install() {
 }
 
 func (suite *LanguagesIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session) {
-	asyData := `project: "https://platform.activestate.com/cli-integration-tests/Languages?commitID=e7df00bc-df4d-4e4a-97f7-efa741159bd2"`
+	asyData := `project: "https://platform.activestate.com/cli-integration-tests/Languages?commitID=e7df00bc-df4d-4e4a-97f7-efa741159bd2&branch=main"`
 	ts.PrepareActiveStateYAML(asyData)
 }
 
