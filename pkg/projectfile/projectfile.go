@@ -737,57 +737,47 @@ func (p *Project) save(cfg ConfigGetter, path string) error {
 
 // SetNamespace updates the namespace in the project file
 func (p *Project) SetNamespace(owner, project string) error {
-	data, err := ioutil.ReadFile(p.path)
-	if err != nil {
-		return errs.Wrap(err, "Failed to read project file %s.", p.path)
-	}
-
-	namespace := fmt.Sprintf("%s/%s", owner, project)
-	out, err := setNamespaceInYAML(data, namespace, p.CommitID())
-	if err != nil {
-		return errs.Wrap(err, "Failed to update namespace in project file.")
+	if err := p.setProjectPathField(fmt.Sprintf("/%s/%s", owner, project)); err != nil {
+		return errs.Wrap(err, "Could not set commit path in project query")
 	}
 
 	// keep parsed url components in sync
 	p.parsedURL.Owner = owner
 	p.parsedURL.Name = project
 
-	if err := ioutil.WriteFile(p.path, out, 0664); err != nil {
-		return errs.Wrap(err, "Failed to write project file %s", p.path)
-	}
-
-	err = p.Reload()
-	if err != nil {
-		return errs.Wrap(err, "Failed to reload updated projectfile.")
-	}
-	return nil
+	return p.Reload()
 }
 
 // SetCommit sets the commit id within the current project file. This is done
 // in-place so that line order is preserved.
 // If headless is true, the project is defined by a commit-id only
 func (p *Project) SetCommit(commitID string, headless bool) error {
-	data, err := ioutil.ReadFile(p.path)
-	if err != nil {
-		return errs.Wrap(err, "ioutil.ReadFile %s failed", p.path)
+	if !headless {
+		if err := p.setProjectQueryField("commitID", commitID); err != nil {
+			return errs.Wrap(err, "Could not set commitID field in project query")
+		}
+	} else {
+		if err := p.setProjectPathField("/commit/" + commitID); err != nil {
+			return errs.Wrap(err, "Could not set commit path in project query")
+		}
 	}
 
-	out, err := setCommitInYAML(data, commitID, headless)
-	if err != nil {
-		return err
-	}
 	p.parsedURL.CommitID = commitID
-
-	if err := ioutil.WriteFile(p.path, out, 0664); err != nil {
-		return errs.Wrap(err, "ioutil.WriteFile %s failed", p.path)
-	}
-
 	return p.Reload()
 }
 
 // SetBranch sets the branch within the current project file. This is done
 // in-place so that line order is preserved.
 func (p *Project) SetBranch(branch string) error {
+	if err := p.setProjectQueryField("branch", branch); err != nil {
+		return errs.Wrap(err, "Could not set branch field in project query")
+	}
+
+	p.parsedURL.BranchName = branch
+	return p.Reload()
+}
+
+func (p *Project) setProjectQueryField(key, value string) error {
 	data, err := ioutil.ReadFile(p.path)
 	if err != nil {
 		return errs.Wrap(err, "ioutil.ReadFile %s failed", p.path)
@@ -799,73 +789,53 @@ func (p *Project) SetBranch(branch string) error {
 	}
 
 	q := u.Query()
-	q.Set("branch", branch)
+	q.Set(key, value)
 	u.RawQuery = q.Encode()
 
 	out, err := setProjectInYaml(data, u.String())
 	if err != nil {
 		return err
 	}
-	p.parsedURL.BranchName = branch
 
 	if err := ioutil.WriteFile(p.path, out, 0664); err != nil {
 		return errs.Wrap(err, "ioutil.WriteFile %s failed", p.path)
 	}
 
-	return p.Reload()
+	return nil
+}
+
+func (p *Project) setProjectPathField(path string) error {
+	data, err := ioutil.ReadFile(p.path)
+	if err != nil {
+		return errs.Wrap(err, "ioutil.ReadFile %s failed", p.path)
+	}
+
+	u, err := url.Parse(p.Project)
+	if err != nil {
+		return locale.NewInputError("err_project_url", "Invalid format for project field: {{.V0}}.", p.Project)
+	}
+
+	if u.RawPath != path {
+		u.RawQuery = ""
+	}
+
+	u.Path = path
+
+	out, err := setProjectInYaml(data, u.String())
+	if err != nil {
+		return err
+	}
+
+	if err := ioutil.WriteFile(p.path, out, 0664); err != nil {
+		return errs.Wrap(err, "ioutil.WriteFile %s failed", p.path)
+	}
+
+	return nil
 }
 
 var (
-	// regex captures three groups:
-	// 1. from "project:" (at start of line) to protocol ("https://")
-	// 2. the domain name
-	// 3. the url part until a "?" or newline is reached.
-	// Everything after that is targeted, but not captured so that only the first three capture
-	// groups can be used in the replace value.
-	setCommitRE = regexp.MustCompile(`(?m:^(project: *https?:\/\/)([^\/]*\/)(.*\/[^?\r\n]*).*)`)
-)
-
-var (
-	// regex captures three groups:
-	// 1. from "project:" (at start of line) to protocol ("https://")
-	// 2. the domain name
-	// 3. the url part until a "?" or newline is reached.
-	// Everything after that is targeted, but not captured so that only the first three capture
-	// groups can be used in the replace value.
 	setProjectRE = regexp.MustCompile(`(?m:^(project: *https?:\/\/).*)`)
 )
-
-func setNamespaceInYAML(data []byte, namespace string, commitID string) ([]byte, error) {
-	queryParams := ""
-	if commitID != "" {
-		queryParams = fmt.Sprintf("?commitID=%s", commitID)
-	}
-	commitQryParam := []byte(fmt.Sprintf("${1}${2}%s%s", namespace, queryParams))
-
-	out := setCommitRE.ReplaceAll(data, commitQryParam)
-	if !strings.Contains(string(out), namespace) {
-		return nil, locale.NewError(
-			"err_set_namespace", "Failed to set namespace {{.V0}} in activestate.yaml.", namespace)
-	}
-	return out, nil
-}
-
-func setCommitInYAML(data []byte, commitID string, anonymous bool) ([]byte, error) {
-	if commitID == "" {
-		return nil, errs.New("commitID must not be empty")
-	}
-	commitQryParam := []byte("$1$2$3?commitID=" + commitID)
-	if anonymous {
-		commitQryParam = []byte(fmt.Sprintf("${1}${2}commit/%s", commitID))
-	}
-
-	out := setCommitRE.ReplaceAll(data, commitQryParam)
-	if !strings.Contains(string(out), commitID) {
-		return nil, locale.NewInputError("err_set_commit_id")
-	}
-
-	return out, nil
-}
 
 func setProjectInYaml(data []byte, project string) ([]byte, error) {
 	if project == "" {

@@ -6,6 +6,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -101,14 +102,24 @@ func (r *Push) Run(params PushParams) error {
 		}
 		r.Outputer.Notice(locale.Tl("push_to_project", "Pushing to project [NOTICE]{{.V1}}[/RESET] under [NOTICE]{{.V0}}[/RESET].", owner, name))
 
-		branch, err := model.BranchForProjectByName(pjm, r.project.BranchName())
-		if err != nil {
-			return locale.WrapError(
-				err, "err_push_cannot_get_branch",
-				"Failed to get branch [NOTICE]{{.V0}}[/RESET] of project.",
-				r.project.BranchName(),
-			)
+		var branch *mono_models.Branch
+		if r.project.BranchName() == "" {
+			// https://www.pivotaltracker.com/story/show/176806415
+			branch, err = model.DefaultBranchForProject(pjm)
+			if err != nil {
+				return locale.NewInputError("err_no_default_branch")
+			}
+		} else {
+			branch, err = model.BranchForProjectByName(pjm, branchName)
+			if err != nil {
+				return locale.WrapError(
+					err, "err_push_cannot_get_branch",
+					"Failed to get branch [NOTICE]{{.V0}}[/RESET] of project.",
+					r.project.BranchName(),
+				)
+			}
 		}
+
 		if branch.CommitID != nil && branch.CommitID.String() == r.project.CommitID() {
 			r.Outputer.Notice(locale.T("push_up_to_date"))
 			return nil

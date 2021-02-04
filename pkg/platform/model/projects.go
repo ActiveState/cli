@@ -132,6 +132,10 @@ func DefaultBranchForProject(pj *mono_models.Project) (*mono_models.Branch, erro
 // BranchForProjectByName retrieves the named branch for the given project, or
 // falls back to the default
 func BranchForProjectByName(pj *mono_models.Project, name string) (*mono_models.Branch, error) {
+	if name == "" {
+		return nil, locale.NewInputError("err_empty_branch", "Empty branch name provided.")
+	}
+
 	for _, branch := range pj.Branches {
 		if branch.Label != "" && branch.Label == name {
 			return branch, nil

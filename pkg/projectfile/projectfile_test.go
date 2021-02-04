@@ -1,7 +1,6 @@
 package projectfile
 
 import (
-	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -409,36 +408,6 @@ func TestRemoveTemporaryLanguage(t *testing.T) {
 	}
 }
 
-func TestSetCommitInYAML(t *testing.T) {
-	exampleYAML := []byte(`
-junk: xgarbage
-project: https://example.com/xowner/xproject?commitID=00000000-0000-0000-0000-000000000123
-123: xvalue
-`)
-	expectedYAML := bytes.Replace(exampleYAML, []byte("123"), []byte("987"), 1) // must be 1
-
-	_, err := setCommitInYAML(exampleYAML, "", false)
-	assert.Error(t, err)
-
-	_, err = setCommitInYAML([]byte(""), "123", false)
-	assert.Error(t, err)
-
-	out0, err := setCommitInYAML(exampleYAML, "00000000-0000-0000-0000-000000000987", false)
-	assert.NoError(t, err)
-	assert.Equal(t, string(expectedYAML), string(out0))
-
-	exampleYAMLNoID := bytes.Replace(exampleYAML, []byte("?commitID=00000000-0000-0000-0000-000000000123"), nil, 1)
-	out1, err := setCommitInYAML(exampleYAMLNoID, "00000000-0000-0000-0000-000000000987", false)
-	assert.NoError(t, err)
-	assert.Equal(t, string(expectedYAML), string(out1))
-
-	// anonymous commits
-	expectedYAML = bytes.Replace(exampleYAML, []byte("xowner/xproject?commitID=00000000-0000-0000-0000-000000000123"), []byte("commit/00000000-0000-0000-0000-000000000987"), 1)
-	out2, err := setCommitInYAML(exampleYAML, "00000000-0000-0000-0000-000000000987", true)
-	assert.NoError(t, err)
-	assert.Equal(t, string(expectedYAML), string(out2))
-}
-
 func TestSetProjectInYaml(t *testing.T) {
 	exampleYAML := []byte(`
 junk: xgarbage
@@ -451,62 +420,6 @@ project: https://example.com/xowner/xproject?commitID=00000000-0000-0000-0000-00
 	assert.NoError(t, err)
 
 	assert.Contains(t, string(out), expectedProject)
-}
-
-func TestSetNamespaceInYAML(t *testing.T) {
-	exampleYAML := []byte(`
-junk: xgarbage
-project: https://example.com/xowner/xproject?commitID=00000000-0000-0000-0000-000000000123
-123: xvalue
-`)
-	cases := []struct {
-		name     string
-		commitID string
-		expected string
-	}{
-		{
-			"without commitID", "",
-			(`
-junk: xgarbage
-project: https://example.com/yowner/yproject
-123: xvalue
-`),
-		},
-		{
-			"with commitID",
-			"00000000-0000-0000-0000-000000000123",
-			(`
-junk: xgarbage
-project: https://example.com/yowner/yproject?commitID=00000000-0000-0000-0000-000000000123
-123: xvalue
-`),
-		},
-	}
-
-	for _, c := range cases {
-		t.Run(c.name, func(tt *testing.T) {
-			out, err := setNamespaceInYAML(exampleYAML, "yowner/yproject", c.commitID)
-			assert.NoError(t, err)
-			assert.Equal(t, c.expected, string(out))
-		})
-	}
-}
-
-func TestSetCommitInYAML_NoCommitID(t *testing.T) {
-	exampleYAML := []byte(`
-junk: xgarbage
-project: https://example.com/xowner/xproject
-123: xvalue
-`)
-	expectedYAML := []byte(`
-junk: xgarbage
-project: https://example.com/xowner/xproject?commitID=00000000-0000-0000-0000-000000000123
-123: xvalue
-`)
-
-	out, err := setCommitInYAML(exampleYAML, "00000000-0000-0000-0000-000000000123", false)
-	assert.NoError(t, err)
-	assert.Equal(t, string(expectedYAML), string(out))
 }
 
 func TestNewProjectfile(t *testing.T) {
