@@ -233,7 +233,7 @@ func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGet
 		}
 
 		if len(downloadArtfs) > 0 {
-			analytics.Event(catRuntime, actDownload) // additional analytics event is located in download.go
+			analytics.Event(catRuntime, actDownload)
 
 			archives, err := installer.runtimeDownloader.Download(downloadArtfs, runtimeAssembler, downloadProgress)
 			if err != nil {
