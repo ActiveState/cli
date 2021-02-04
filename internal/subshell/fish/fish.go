@@ -105,10 +105,10 @@ func (v *SubShell) Quote(value string) string {
 }
 
 // Activate - see subshell.SubShell
-func (v *SubShell) Activate(cfg sscommon.Configurable, out output.Outputer) error {
+func (v *SubShell) Activate(proj *project.Project, cfg sscommon.Configurable, out output.Outputer) error {
 	env := sscommon.EscapeEnv(v.env)
 	var err error
-	if v.rcFile, err = sscommon.SetupProjectRcFile("fishrc.fish", "", env, out, cfg); err != nil {
+	if v.rcFile, err = sscommon.SetupProjectRcFile(proj, "fishrc.fish", "", env, out, cfg); err != nil {
 		return err
 	}
 

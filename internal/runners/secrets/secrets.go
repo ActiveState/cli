@@ -54,6 +54,9 @@ func NewList(client *secretsapi.Client, p listPrimeable) *List {
 
 // Run executes the list behavior.
 func (l *List) Run(params ListRunParams) error {
+	if l.proj == nil {
+		return locale.NewInputError("err_no_project")
+	}
 	if err := checkSecretsAccess(l.proj); err != nil {
 		return locale.WrapError(err, "secrets_err_check_access")
 	}
@@ -63,7 +66,7 @@ func (l *List) Run(params ListRunParams) error {
 		return locale.WrapError(err, "secrets_err_defined")
 	}
 
-	meta, err := defsToData(defs, l.cfg)
+	meta, err := defsToData(defs, l.cfg, l.proj)
 	if err != nil {
 		return locale.WrapError(err, "secrets_err_values")
 	}
@@ -132,9 +135,9 @@ func filterSecrets(proj *project.Project, cfg keypairs.Configurable, secrectDefs
 	return secrectDefsFiltered
 }
 
-func defsToData(defs []*secretsModels.SecretDefinition, cfg keypairs.Configurable) ([]*secretData, error) {
+func defsToData(defs []*secretsModels.SecretDefinition, cfg keypairs.Configurable, proj *project.Project) ([]*secretData, error) {
 	data := make([]*secretData, len(defs))
-	expander := project.NewSecretExpander(secretsapi.Get(), project.Get(), nil, cfg)
+	expander := project.NewSecretExpander(secretsapi.Get(), proj, nil, cfg)
 
 	for i, def := range defs {
 		if def.Name == nil || def.Scope == nil {

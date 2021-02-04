@@ -8,9 +8,9 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
 )
 
@@ -22,13 +22,15 @@ type InfoRunParams struct {
 
 // Info manages the information execution context.
 type Info struct {
-	out output.Outputer
+	out  output.Outputer
+	proj *project.Project
 }
 
 // NewInfo prepares an information execution context for use.
-func NewInfo(prime primer.Outputer) *Info {
+func NewInfo(prime primeable) *Info {
 	return &Info{
-		out: prime.Output(),
+		out:  prime.Output(),
+		proj: prime.Project(),
 	}
 }
 
@@ -36,7 +38,11 @@ func NewInfo(prime primer.Outputer) *Info {
 func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 	logging.Debug("ExecuteInfo")
 
-	language, err := targetedLanguage(params.Language)
+	if i.proj == nil {
+		return locale.NewInputError("err_no_project")
+	}
+
+	language, err := targetedLanguage(params.Language, i.proj.CommitUUID())
 	if err != nil {
 
 		return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_obtain_language", nstype))
