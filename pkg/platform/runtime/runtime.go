@@ -35,7 +35,6 @@ func NewRuntime(projectDir, cachePath string, commitID strfmt.UUID, owner string
 	}
 
 	installPath := filepath.Join(cachePath, hash.ShortHash(resolvedProjectDir))
-
 	return &Runtime{
 		runtimeDir:  installPath,
 		commitID:    commitID,
