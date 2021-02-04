@@ -101,8 +101,9 @@ func (installer *Installer) Install() (envGetter EnvGetter, freshInstallation bo
 	eg, fresh, err := installer.InstallArtifacts(assembler)
 	if err != nil {
 		analytics.EventWithLabel(catRuntime, actFailure, lblArtifacts)
+	} else {
+		analytics.Event(catRuntime, actSuccess)
 	}
-	analytics.Event(catRuntime, actSuccess)
 	return eg, fresh, err
 }
 
