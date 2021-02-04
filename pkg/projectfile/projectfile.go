@@ -737,8 +737,13 @@ func (p *Project) save(cfg ConfigGetter, path string) error {
 
 // SetNamespace updates the namespace in the project file
 func (p *Project) SetNamespace(owner, project string) error {
-	if err := p.setProjectPathField(fmt.Sprintf("/%s/%s", owner, project)); err != nil {
-		return errs.Wrap(err, "Could not set commit path in project query")
+	pf := NewProjectField()
+	if err := pf.LoadFile(p.path); err != nil {
+		return errs.Wrap(err, "Could not load activestate.yaml")
+	}
+	pf.SetNamespace(owner, project)
+	if err := pf.Save(p.path); err != nil {
+		return errs.Wrap(err, "Could not save activestate.yaml")
 	}
 
 	// keep parsed url components in sync
@@ -752,14 +757,13 @@ func (p *Project) SetNamespace(owner, project string) error {
 // in-place so that line order is preserved.
 // If headless is true, the project is defined by a commit-id only
 func (p *Project) SetCommit(commitID string, headless bool) error {
-	if !headless {
-		if err := p.setProjectQueryField("commitID", commitID); err != nil {
-			return errs.Wrap(err, "Could not set commitID field in project query")
-		}
-	} else {
-		if err := p.setProjectPathField("/commit/" + commitID); err != nil {
-			return errs.Wrap(err, "Could not set commit path in project query")
-		}
+	pf := NewProjectField()
+	if err := pf.LoadFile(p.path); err != nil {
+		return errs.Wrap(err, "Could not load activestate.yaml")
+	}
+	pf.SetCommit(commitID, headless)
+	if err := pf.Save(p.path); err != nil {
+		return errs.Wrap(err, "Could not save activestate.yaml")
 	}
 
 	p.parsedURL.CommitID = commitID
@@ -769,85 +773,17 @@ func (p *Project) SetCommit(commitID string, headless bool) error {
 // SetBranch sets the branch within the current project file. This is done
 // in-place so that line order is preserved.
 func (p *Project) SetBranch(branch string) error {
-	if err := p.setProjectQueryField("branch", branch); err != nil {
-		return errs.Wrap(err, "Could not set branch field in project query")
+	pf := NewProjectField()
+	if err := pf.LoadFile(p.path); err != nil {
+		return errs.Wrap(err, "Could not load activestate.yaml")
+	}
+	pf.SetBranch(branch)
+	if err := pf.Save(p.path); err != nil {
+		return errs.Wrap(err, "Could not save activestate.yaml")
 	}
 
 	p.parsedURL.BranchName = branch
 	return p.Reload()
-}
-
-func (p *Project) setProjectQueryField(key, value string) error {
-	data, err := ioutil.ReadFile(p.path)
-	if err != nil {
-		return errs.Wrap(err, "ioutil.ReadFile %s failed", p.path)
-	}
-
-	u, err := url.Parse(p.Project)
-	if err != nil {
-		return locale.NewInputError("err_project_url", "Invalid format for project field: {{.V0}}.", p.Project)
-	}
-
-	q := u.Query()
-	q.Set(key, value)
-	u.RawQuery = q.Encode()
-
-	out, err := setProjectInYaml(data, u.String())
-	if err != nil {
-		return err
-	}
-
-	if err := ioutil.WriteFile(p.path, out, 0664); err != nil {
-		return errs.Wrap(err, "ioutil.WriteFile %s failed", p.path)
-	}
-
-	return nil
-}
-
-func (p *Project) setProjectPathField(path string) error {
-	data, err := ioutil.ReadFile(p.path)
-	if err != nil {
-		return errs.Wrap(err, "ioutil.ReadFile %s failed", p.path)
-	}
-
-	u, err := url.Parse(p.Project)
-	if err != nil {
-		return locale.NewInputError("err_project_url", "Invalid format for project field: {{.V0}}.", p.Project)
-	}
-
-	if u.RawPath != path {
-		u.RawQuery = ""
-	}
-
-	u.Path = path
-
-	out, err := setProjectInYaml(data, u.String())
-	if err != nil {
-		return err
-	}
-
-	if err := ioutil.WriteFile(p.path, out, 0664); err != nil {
-		return errs.Wrap(err, "ioutil.WriteFile %s failed", p.path)
-	}
-
-	return nil
-}
-
-var (
-	setProjectRE = regexp.MustCompile(`(?m:^(project: *https?:\/\/).*)`)
-)
-
-func setProjectInYaml(data []byte, project string) ([]byte, error) {
-	if project == "" {
-		return nil, errs.New("project must not be empty")
-	}
-
-	out := setProjectRE.ReplaceAll(data, []byte("project: "+project))
-	if !strings.Contains(string(out), project) {
-		return nil, locale.NewInputError("err_set_project")
-	}
-
-	return out, nil
 }
 
 // GetProjectFilePath returns the path to the project activestate.yaml
