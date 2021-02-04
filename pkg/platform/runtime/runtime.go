@@ -12,7 +12,6 @@ import (
 	"github.com/ActiveState/cli/internal/hash"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/pkg/platform/runtime/internal/rtstat"
 )
 
 type Runtime struct {
@@ -21,7 +20,6 @@ type Runtime struct {
 	owner       string
 	projectName string
 	msgHandler  MessageHandler
-	once        *rtstat.SendOnce
 }
 
 func NewRuntime(projectDir, cachePath string, commitID strfmt.UUID, owner string, projectName string, msgHandler MessageHandler) (*Runtime, error) {
@@ -38,16 +36,12 @@ func NewRuntime(projectDir, cachePath string, commitID strfmt.UUID, owner string
 
 	installPath := filepath.Join(cachePath, hash.ShortHash(resolvedProjectDir))
 
-	once := rtstat.NewSendOnce()
-	once.Send(rtstat.Start)
-
 	return &Runtime{
 		runtimeDir:  installPath,
 		commitID:    commitID,
 		owner:       owner,
 		projectName: projectName,
 		msgHandler:  msgHandler,
-		once:        once,
 	}, nil
 }
 
@@ -76,17 +70,11 @@ func (r *Runtime) IsCachedRuntime() bool {
 	}
 
 	logging.Debug("IsCachedRuntime for %s, %s==%s", marker, string(contents), r.commitID.String())
-	cached := string(contents) == r.commitID.String()
-	if cached {
-		r.once.Send(rtstat.Cache)
-	}
-	return cached
+	return string(contents) == r.commitID.String()
 }
 
 // MarkInstallationComplete writes the installation complete marker to the runtime directory
 func (r *Runtime) MarkInstallationComplete() error {
-	r.once.Send(rtstat.Success)
-
 	markerFile := filepath.Join(r.runtimeDir, constants.RuntimeInstallationCompleteMarker)
 	markerDir := filepath.Dir(markerFile)
 	err := fileutils.MkdirUnlessExists(markerDir)

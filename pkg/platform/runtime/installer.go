@@ -12,6 +12,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/vbauerster/mpb/v4"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -24,7 +25,19 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime/internal/rtstat"
+)
+
+// runtime analytics values
+const (
+	catRuntime   = "runtime"
+	actStart     = "start"
+	actBuild     = "build"
+	actDownload  = "download"
+	actCache     = "cache"
+	actSuccess   = "success"
+	actFailure   = "failure"
+	lblAssembler = "assembler"
+	lblArtifacts = "install-artifacts"
 )
 
 // During installation after all files are unpacked to a temporary directory, the progress bar should advanced this much.
@@ -68,18 +81,29 @@ func NewInstaller(runtime *Runtime) *Installer {
 
 // Install will download the installer archive and invoke InstallFromArchive
 func (installer *Installer) Install() (envGetter EnvGetter, freshInstallation bool, err error) {
+	analytics.Event(catRuntime, actStart)
+
 	if installer.runtime.IsCachedRuntime() {
+		analytics.Event(catRuntime, actCache)
 		ar, err := installer.RuntimeEnv()
 		if err == nil {
+			analytics.Event(catRuntime, actSuccess)
 			return ar, true, nil
 		}
 		logging.Error("Failed to retrieve cached assembler: %v", err)
 	}
 	assembler, err := installer.Assembler()
 	if err != nil {
+		analytics.EventWithLabel(catRuntime, actFailure, lblAssembler)
 		return nil, false, err
 	}
-	return installer.InstallArtifacts(assembler)
+
+	eg, fresh, err := installer.InstallArtifacts(assembler)
+	if err != nil {
+		analytics.EventWithLabel(catRuntime, actFailure, lblArtifacts)
+	}
+	analytics.Event(catRuntime, actSuccess)
+	return eg, fresh, err
 }
 
 // Env will grab the environment information for the given runtime. This will request build info.
@@ -209,7 +233,7 @@ func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGet
 		}
 
 		if len(downloadArtfs) > 0 {
-			installer.runtime.once.Send(rtstat.Download)
+			analytics.Event(catRuntime, actDownload) // additional analytics event is located in download.go
 
 			archives, err := installer.runtimeDownloader.Download(downloadArtfs, runtimeAssembler, downloadProgress)
 			if err != nil {
