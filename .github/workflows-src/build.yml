@@ -16,7 +16,7 @@ jobs:
   build: #@ jobs_build()
   unittest: #@ jobs_unittest()
   inttest_critical:
-    if: ! contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release"]'), github.ref)
+    if: github.ref != "refs/heads/master" && github.ref != "refs/heads/beta" && github.ref != "refs/heads/release"
     _: #@ template.replace(jobs_inttestcrit())
   inttest:
     if: contains(github.event.pull_request.labels.*.name, 'run integration tests')
