@@ -21,6 +21,7 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/thoas/go-funk"
 
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -503,6 +504,16 @@ func (p *Project) Init() error {
 	}
 	p.parsedURL = parsedURL
 
+	logging.Debug("Parsed URL: %v", p.parsedURL)
+
+	// Ensure branch name is set
+	if p.parsedURL.Owner != "" && p.parsedURL.BranchName == "" {
+		logging.Debug("Appending default branch as none is set")
+		if err := p.SetBranch(constants.DefaultBranchName); err != nil {
+			return locale.WrapError(err, "err_set_default_branch", "", constants.DefaultBranchName)
+		}
+	}
+
 	if p.Lock != "" {
 		parsedLock, err := ParseLock(p.Lock)
 		if err != nil {
@@ -738,7 +749,7 @@ func (p *Project) save(cfg ConfigGetter, path string) error {
 // SetNamespace updates the namespace in the project file
 func (p *Project) SetNamespace(owner, project string) error {
 	pf := NewProjectField()
-	if err := pf.LoadFile(p.path); err != nil {
+	if err := pf.LoadProject(p.Project); err != nil {
 		return errs.Wrap(err, "Could not load activestate.yaml")
 	}
 	pf.SetNamespace(owner, project)
@@ -750,7 +761,7 @@ func (p *Project) SetNamespace(owner, project string) error {
 	p.parsedURL.Owner = owner
 	p.parsedURL.Name = project
 
-	return p.Reload()
+	return nil
 }
 
 // SetCommit sets the commit id within the current project file. This is done
@@ -758,7 +769,7 @@ func (p *Project) SetNamespace(owner, project string) error {
 // If headless is true, the project is defined by a commit-id only
 func (p *Project) SetCommit(commitID string, headless bool) error {
 	pf := NewProjectField()
-	if err := pf.LoadFile(p.path); err != nil {
+	if err := pf.LoadProject(p.Project); err != nil {
 		return errs.Wrap(err, "Could not load activestate.yaml")
 	}
 	pf.SetCommit(commitID, headless)
@@ -767,23 +778,28 @@ func (p *Project) SetCommit(commitID string, headless bool) error {
 	}
 
 	p.parsedURL.CommitID = commitID
-	return p.Reload()
+	return nil
 }
 
 // SetBranch sets the branch within the current project file. This is done
 // in-place so that line order is preserved.
 func (p *Project) SetBranch(branch string) error {
 	pf := NewProjectField()
-	if err := pf.LoadFile(p.path); err != nil {
+
+	if err := pf.LoadProject(p.Project); err != nil {
 		return errs.Wrap(err, "Could not load activestate.yaml")
 	}
+
 	pf.SetBranch(branch)
-	if err := pf.Save(p.path); err != nil {
-		return errs.Wrap(err, "Could not save activestate.yaml")
+
+	if !condition.InTest() || p.path != "" {
+		if err := pf.Save(p.path); err != nil {
+			return errs.Wrap(err, "Could not save activestate.yaml")
+		}
 	}
 
 	p.parsedURL.BranchName = branch
-	return p.Reload()
+	return nil
 }
 
 // GetProjectFilePath returns the path to the project activestate.yaml

@@ -12,10 +12,9 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 )
 
-var projectFieldRE = regexp.MustCompile(`(?m:^project: *(https?:\/\/.*)$)`)
+var projectFieldRE = regexp.MustCompile(`(?m:^project:["' ]*(https?:\/\/.*?)["' ]*$)`)
 
 type projectField struct {
-	data []byte
 	url  *url.URL
 }
 
@@ -23,26 +22,11 @@ func NewProjectField() *projectField {
 	return &projectField{}
 }
 
-func (p *projectField) LoadFile(path string) error {
-	data, err := ioutil.ReadFile(path)
-	if err != nil {
-		return errs.Wrap(err, "ioutil.ReadFile %s failed", path)
-	}
-	return p.LoadData(data)
-}
-
-func (p *projectField) LoadData(data []byte) error {
-	p.data = data
-
-	match := projectFieldRE.FindSubmatch(data)
-	if len(match) != 2 {
-		return locale.NewInputError("err_project_format", "The project field in your activestate.yaml is malformed.")
-	}
-
-	pv := string(match[1])
+func (p *projectField) LoadProject(rawProjectValue string) error {
+	pv := rawProjectValue
 	u, err := url.Parse(pv)
 	if err != nil {
-		return locale.NewInputError("err_project_url", "Invalid format for project field: {{.V0}}, value: {{.V1}}.", pv, string(data))
+		return locale.NewInputError("err_project_url", "Invalid format for project field: {{.V0}}.", pv)
 	}
 	p.url = u
 
@@ -106,8 +90,13 @@ func (p *projectField) Marshal() string {
 }
 
 func (p *projectField) Save(path string) error {
+	data, err := ioutil.ReadFile(path)
+	if err != nil {
+		return errs.Wrap(err, "ioutil.ReadFile %s failed", path)
+	}
+
 	projectValue := p.url.String()
-	out := projectFieldRE.ReplaceAll(p.data, []byte("project: "+projectValue))
+	out := projectFieldRE.ReplaceAll(data, []byte("project: "+projectValue))
 	if !strings.Contains(string(out), projectValue) {
 		return locale.NewInputError("err_set_project")
 	}
