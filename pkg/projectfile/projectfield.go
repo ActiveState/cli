@@ -12,7 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 )
 
-var projectFieldRE = regexp.MustCompile(`(?m:^project: *(https?:\/\/.*))`)
+var projectFieldRE = regexp.MustCompile(`(?m:^project: *(https?:\/\/.*)$)`)
 
 type projectField struct {
 	data []byte
@@ -42,7 +42,7 @@ func (p *projectField) LoadData(data []byte) error {
 	pv := string(match[1])
 	u, err := url.Parse(pv)
 	if err != nil {
-		return locale.NewInputError("err_project_url", "Invalid format for project field: {{.V0}}.", pv)
+		return locale.NewInputError("err_project_url", "Invalid format for project field: {{.V0}}, value: {{.V1}}.", pv, string(data))
 	}
 	p.url = u
 
