@@ -3,7 +3,6 @@ package packages
 import (
 	"io/ioutil"
 
-	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
@@ -16,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/go-openapi/strfmt"
 )
 
 const (
@@ -53,7 +53,7 @@ type Import struct {
 	out output.Outputer
 	prompt.Prompter
 	proj *project.Project
-	cfg  keypairs.Configurable
+	cfg  configurable
 }
 
 type primeable interface {
@@ -129,13 +129,13 @@ func (i *Import) Run(params ImportRunParams) error {
 	}
 
 	msg := locale.T("commit_reqstext_message")
-	err = commitChangeset(i.proj, msg, isHeadless, changeset)
+	commitID, err := commitChangeset(i.proj, msg, isHeadless, changeset)
 	if err != nil {
 		return locale.WrapError(err, "err_commit_changeset", "Could not commit import changes")
 	}
 	i.out.Notice(locale.T("update_config"))
 
-	return nil
+	return refreshRuntime(i.out, nil, i.proj, i.cfg.CachePath(), commitID, true)
 }
 
 func removeRequirements(conf Confirmer, project *project.Project, force, isHeadless bool, reqs model.Checkpoint) error {
@@ -153,7 +153,8 @@ func removeRequirements(conf Confirmer, project *project.Project, force, isHeadl
 
 	removal := model.ChangesetFromRequirements(model.OperationRemoved, reqs)
 	msg := locale.T("commit_reqstext_remove_existing_message")
-	return commitChangeset(project, msg, isHeadless, removal)
+	_, err := commitChangeset(project, msg, isHeadless, removal)
+	return err
 }
 
 func fetchImportChangeset(cp ChangesetProvider, file string, lang string) (model.Changeset, error) {
@@ -170,20 +171,20 @@ func fetchImportChangeset(cp ChangesetProvider, file string, lang string) (model
 	return changeset, err
 }
 
-func commitChangeset(project *project.Project, msg string, isHeadless bool, changeset model.Changeset) error {
+func commitChangeset(project *project.Project, msg string, isHeadless bool, changeset model.Changeset) (strfmt.UUID, error) {
 	commitID, err := model.CommitChangeset(project.CommitUUID(), msg, machineid.UniqID(), changeset)
 	if err != nil {
-		return locale.WrapError(err, "err_packages_removed")
+		return "", locale.WrapError(err, "err_packages_removed")
 	}
 
 	if !isHeadless {
 		err := model.UpdateProjectBranchCommitByName(project.Owner(), project.Name(), commitID)
 		if err != nil {
-			return locale.WrapError(err, "err_import_update_branch", "Failed to update branch with new commit ID")
+			return "", locale.WrapError(err, "err_import_update_branch", "Failed to update branch with new commit ID")
 		}
 	}
 	if err := project.Source().SetCommit(commitID.String(), isHeadless); err != nil {
-		return locale.WrapError(err, "err_package_update_pjfile")
+		return "", locale.WrapError(err, "err_package_update_pjfile")
 	}
-	return nil
+	return commitID, nil
 }

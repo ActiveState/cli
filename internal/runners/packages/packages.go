@@ -20,6 +20,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/go-openapi/strfmt"
 )
 
 type PackageVersion struct {
@@ -119,27 +120,14 @@ func executePackageOperation(pj *project.Project, cfg configurable, out output.O
 		commitID = parentCommitID
 	}
 
-	// Create runtime
-	rtMessages := runbits.NewRuntimeMessageHandler(out)
-	rtMessages.SetRequirement(name, ns)
-	rt, err := runtime.NewRuntime(pj.Source().Path(), cfg.CachePath(), commitID, pj.Owner(), pj.Name(), rtMessages)
+	// refresh runtime
+	target := refreshTarget{
+		name:      name,
+		namespace: ns,
+	}
+	err = refreshRuntime(out, &target, pj, cfg.CachePath(), commitID, orderChanged)
 	if err != nil {
-		return locale.WrapError(err, "err_packages_update_runtime_init", "Could not initialize runtime.")
-	}
-
-	if !orderChanged && rt.IsCachedRuntime() {
-		out.Print(locale.Tl("pkg_already_uptodate", "Requested dependencies are already configured and installed."))
-		return nil
-	}
-
-	// Update runtime
-	if !rt.IsCachedRuntime() {
-		out.Notice(output.Heading(locale.Tl("update_runtime", "Updating Runtime")))
-		out.Notice(locale.Tl("update_runtime_info", "Changes to your runtime may require some dependencies to be rebuilt."))
-		_, _, err := runtime.NewInstaller(rt).Install()
-		if err != nil {
-			return locale.WrapError(err, "err_packages_update_runtime_install", "Could not install dependencies.")
-		}
+		return err
 	}
 
 	// Print the result
@@ -170,4 +158,36 @@ func getSuggestions(ns model.Namespace, name string) ([]string, error) {
 	suggestions = append(suggestions, locale.Tr(fmt.Sprintf("%s_ingredient_alternatives_more", ns.Type()), name))
 
 	return suggestions, nil
+}
+
+type refreshTarget struct {
+	name      string
+	namespace model.Namespace
+}
+
+func refreshRuntime(out output.Outputer, target *refreshTarget, proj *project.Project, cachePath string, commitID strfmt.UUID, changed bool) error {
+	rtMessages := runbits.NewRuntimeMessageHandler(out)
+	if target != nil {
+		rtMessages.SetRequirement(target.name, target.namespace)
+	}
+	rt, err := runtime.NewRuntime(proj.Source().Path(), cachePath, commitID, proj.Owner(), proj.Name(), rtMessages)
+	if err != nil {
+		return locale.WrapError(err, "err_packages_update_runtime_init", "Could not initialize runtime.")
+	}
+
+	if !changed && rt.IsCachedRuntime() {
+		out.Print(locale.Tl("pkg_already_uptodate", "Requested dependencies are already configured and installed."))
+		return nil
+	}
+
+	if !rt.IsCachedRuntime() {
+		out.Notice(output.Heading(locale.Tl("update_runtime", "Updating Runtime")))
+		out.Notice(locale.Tl("update_runtime_info", "Changes to your runtime may require some dependencies to be rebuilt."))
+		_, _, err := runtime.NewInstaller(rt).Install()
+		if err != nil {
+			return locale.WrapError(err, "err_packages_update_runtime_install", "Could not install dependencies.")
+		}
+	}
+
+	return nil
 }
