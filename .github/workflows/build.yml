@@ -204,8 +204,7 @@ jobs:
       run: |
         go test `go list ./... | grep -v api | grep -v integration | grep -v expect`
   inttest_critical:
-    if: github.ref != "refs/heads/master" && github.ref != "refs/heads/beta" && github.ref
-      != "refs/heads/release"
+    if: github.ref != "refs/heads/master" && github.ref != "refs/heads/beta" && github.ref != "refs/heads/release"
     name: Critical Integration Test
     strategy:
       matrix:
