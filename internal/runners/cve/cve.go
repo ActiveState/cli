@@ -37,9 +37,21 @@ type ByPackageOutput struct {
 	CveCount int    `json:"cve_count" locale:"state_cve_package_count,Count"`
 }
 
+type DetailedByPackageOutput struct {
+	Name    string                   `json:"name"`
+	Version string                   `json:"version"`
+	Details []medmodel.Vulnerability `json:"cves"`
+}
+
 type ProjectInfo struct {
 	Project  string `locale:"project,Project"`
 	CommitID string `locale:"commit_id,Commit ID"`
+}
+
+type ReportInfo struct {
+	Project  string `locale:"project,Project"`
+	CommitID string `locale:"commit_id,Commit ID"`
+	Date     string `locale:"generated_on,Generated on"`
 }
 
 type primeable interface {
@@ -120,6 +132,14 @@ type SeverityCountOutput struct {
 	Severity string `locale:"severity,Severity"`
 }
 
+func (od *outputDataPrinter) printFooter() {
+	od.output.Print("")
+	od.output.Print([]string{
+		locale.Tl("cve_hint_report", "To view a detailed report for this runtime, run [ACTIONABLE]state cve report[/RESET]"),
+		locale.Tl("cve_hint_specific_report", "For a specific runtime, run [ACTIONABLE]state cve report [orgName/projectName][/RESET]"),
+	})
+}
+
 func (od *outputDataPrinter) MarshalOutput(format output.Format) interface{} {
 	if format != output.PlainFormatName {
 		return od.data
@@ -135,6 +155,7 @@ func (od *outputDataPrinter) MarshalOutput(format output.Format) interface{} {
 	if len(od.data.Histogram) == 0 {
 		od.output.Print("")
 		od.output.Print(fmt.Sprintf("[SUCCESS]✔ %s[/RESET]", locale.Tl("no_cves", "No CVEs detected!")))
+		od.printFooter()
 		return output.Suppress
 	}
 
@@ -162,5 +183,6 @@ func (od *outputDataPrinter) MarshalOutput(format output.Format) interface{} {
 	od.output.Print(output.Heading(fmt.Sprintf("%d Affected Packages", len(od.data.Packages))))
 	od.output.Print(od.data.Packages)
 
+	od.printFooter()
 	return output.Suppress
 }

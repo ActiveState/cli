@@ -28,8 +28,10 @@ type IngredientVulnerability struct {
 }
 
 type Vulnerability struct {
-	Version  string `json:"ingredient_version"`
-	Severity string `json:"severity"`
+	Version  string   `json:"ingredient_version"`
+	Severity string   `json:"severity"`
+	CveId    string   `json:"cve_id"`
+	AltIds   []string `json:"alt_ids"`
 }
 
 type Organization struct {
