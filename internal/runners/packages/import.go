@@ -133,7 +133,6 @@ func (i *Import) Run(params ImportRunParams) error {
 	if err != nil {
 		return locale.WrapError(err, "err_commit_changeset", "Could not commit import changes")
 	}
-	i.out.Notice(locale.T("update_config"))
 
 	return refreshRuntime(i.out, nil, i.proj, i.cfg.CachePath(), commitID, true)
 }
