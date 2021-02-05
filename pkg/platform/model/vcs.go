@@ -361,16 +361,6 @@ func CommitPackage(parentCommitID strfmt.UUID, operation Operation, packageName,
 	return commit.CommitID, nil
 }
 
-// UpdateProjectBranchCommit updates the vcs brach for a given project with a new commitID
-func UpdateProjectBranchCommitByBranch(proj *mono_models.Project, branchName string, commitID strfmt.UUID) error {
-	branch, err := BranchForProjectByName(proj, branchName)
-	if err != nil {
-		return errs.Wrap(err, "Failed to get branch for project %s.", proj.Name)
-	}
-
-	return UpdateBranchCommit(branch.BranchID, commitID)
-}
-
 // UpdateProjectBranchCommitByName updates the vcs branch for a project given by its namespace with a new commitID
 func UpdateProjectBranchCommit(pj ProjectInfo, commitID strfmt.UUID) error {
 	pjm, err := FetchProjectByName(pj.Owner(), pj.Name())
