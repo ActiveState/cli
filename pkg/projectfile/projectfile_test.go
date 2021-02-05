@@ -408,20 +408,6 @@ func TestRemoveTemporaryLanguage(t *testing.T) {
 	}
 }
 
-func TestSetProjectInYaml(t *testing.T) {
-	exampleYAML := []byte(`
-junk: xgarbage
-project: https://example.com/xowner/xproject?commitID=00000000-0000-0000-0000-000000000123
-123: xvalue
-`)
-	expectedProject := "some-bogus-but-unique-value"
-
-	out, err := setProjectInYaml(exampleYAML, expectedProject)
-	assert.NoError(t, err)
-
-	assert.Contains(t, string(out), expectedProject)
-}
-
 func TestNewProjectfile(t *testing.T) {
 	dir, err := ioutil.TempDir("", "projectfile-test")
 	assert.NoError(t, err, "Should be no error when getting a temp directory")
