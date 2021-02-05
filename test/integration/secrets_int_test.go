@@ -52,8 +52,8 @@ func (suite *SecretsIntegrationTestSuite) TestSecrets_JSON() {
 	cp.Expect("Name")
 	cp.Expect("project")
 	cp.Expect("Description")
-	cp.Expect("test-secret")
 	cp.Expect("Defined")
+	cp.Expect("test-secret")
 	cp.ExpectExitCode(0)
 }
 

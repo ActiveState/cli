@@ -1,11 +1,14 @@
 package integration
 
 import (
+	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 )
@@ -41,6 +44,22 @@ func (suite *ShowIntegrationTestSuite) TestShow() {
 	cp.Expect(`python`)
 	cp.Expect(`3.6.6`)
 	cp.ExpectExitCode(0)
+}
+
+func (suite *ShowIntegrationTestSuite) TestShowWithoutBranch() {
+	suite.OnlyRunForTags(tagsuite.Show, tagsuite.Critical)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.PrepareActiveStateYAML(`project: https://platform.activestate.com/cli-integration-tests/Show?commitID=e8f3b07b-502f-4763-83c1-763b9b952e18`)
+
+	cp := ts.SpawnWithOpts(e2e.WithArgs("show"))
+	cp.ExpectExitCode(0)
+
+	contents, err := fileutils.ReadFile(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))
+	suite.Require().NoError(err)
+
+	suite.Contains(string(contents), "branch="+constants.DefaultBranchName)
 }
 
 func (suite *ShowIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session) {
