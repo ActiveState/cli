@@ -19,6 +19,7 @@ import (
 	graphMock "github.com/ActiveState/cli/pkg/platform/api/graphql/request/mock"
 	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
@@ -61,7 +62,7 @@ func (suite *InternalTestSuite) BeforeTest(suiteName, testName string) {
 }
 
 func (suite *InternalTestSuite) AfterTest(suiteName, testName string) {
-	projectfile.Reset()
+	project.ResetProjectFile()
 	suite.authMock.Close()
 	httpmock.DeActivate()
 	suite.graphMock.Close()

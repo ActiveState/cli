@@ -15,13 +15,10 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
-	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 type SecretsAccessTestSuite struct {
 	suite.Suite
-
-	projectFile *projectfile.Project
 
 	secretsClient *secretsapi.Client
 	platformMock  *httpmock.HTTPMock

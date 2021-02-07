@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	rtmock "github.com/ActiveState/cli/pkg/platform/runtime/mock"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
@@ -33,7 +34,7 @@ func setup(t *testing.T) {
 }
 
 func teardown() {
-	projectfile.Reset()
+	project.ResetProjectFile()
 	rtMock.Close()
 }
 
@@ -44,11 +45,11 @@ func TestEnv(t *testing.T) {
 	os.Setenv(constants.DisableRuntime, "true")
 	defer os.Unsetenv(constants.DisableRuntime)
 
-	os.Setenv(constants.ProjectEnvVarName, projectfile.Get().Path())
+	os.Setenv(constants.ProjectEnvVarName, project.Get().Path())
 	defer os.Unsetenv(constants.ProjectEnvVarName)
 
 	venv := New(nil)
-	env, err := venv.GetEnv(false, filepath.Dir(projectfile.Get().Path()))
+	env, err := venv.GetEnv(false, filepath.Dir(project.Get().Path()))
 	require.NoError(t, err)
 
 	assert.NotContains(t, env, constants.ProjectEnvVarName)

@@ -7,7 +7,6 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 var _ captain.FlagMarshaler = &StateToolChannelVersion{}
@@ -78,7 +77,7 @@ func (l *Lock) Run(params *LockParams) error {
 		lockVersion = info.Version
 	}
 
-	err = projectfile.AddLockInfo(l.project.Source().Path(), channel, lockVersion)
+	err = l.project.AddLockInfo(channel, lockVersion)
 	if err != nil {
 		return locale.WrapError(err, "err_update_projectfile", "Could not update projectfile")
 	}

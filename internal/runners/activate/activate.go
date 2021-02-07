@@ -276,7 +276,7 @@ func (r *Activate) pathToUse(namespace string, preferredPath string) (string, er
 		return preferredPath, nil
 	default:
 		// Get path from working directory
-		targetPath, err := projectfile.GetProjectFilePath()
+		targetPath, err := project.GetProjectFilePath()
 		return filepath.Dir(targetPath), err
 	}
 }

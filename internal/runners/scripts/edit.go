@@ -20,7 +20,6 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 // The default open command and editors based on platform
@@ -41,7 +40,7 @@ type Edit struct {
 	project  *project.Project
 	output   output.Outputer
 	prompter prompt.Prompter
-	cfg      projectfile.ConfigGetter
+	cfg      project.ConfigGetter
 }
 
 // NewEdit creates a new Edit runner
@@ -144,7 +143,7 @@ func newScriptWatcher(scriptFile *scriptfile.ScriptFile) (*scriptWatcher, error)
 	}, nil
 }
 
-func (sw *scriptWatcher) run(scriptName string, outputer output.Outputer, cfg projectfile.ConfigGetter, proj *project.Project) {
+func (sw *scriptWatcher) run(scriptName string, outputer output.Outputer, cfg project.ConfigGetter, proj *project.Project) {
 	for {
 		select {
 		case <-sw.done:
@@ -269,7 +268,7 @@ func verifyPathEditor(editor string) (string, error) {
 	return editor, nil
 }
 
-func start(prompt prompt.Prompter, sw *scriptWatcher, scriptName string, output output.Outputer, cfg projectfile.ConfigGetter, proj *project.Project) (err error) {
+func start(prompt prompt.Prompter, sw *scriptWatcher, scriptName string, output output.Outputer, cfg project.ConfigGetter, proj *project.Project) (err error) {
 	output.Print(locale.Tr("script_watcher_watch_file", sw.scriptFile.Filename()))
 	if prompt.IsInteractive() {
 		return startInteractive(sw, scriptName, output, cfg, proj, prompt)
@@ -277,7 +276,7 @@ func start(prompt prompt.Prompter, sw *scriptWatcher, scriptName string, output 
 	return startNoninteractive(sw, scriptName, output, cfg, proj)
 }
 
-func startNoninteractive(sw *scriptWatcher, scriptName string, output output.Outputer, cfg projectfile.ConfigGetter, proj *project.Project) error {
+func startNoninteractive(sw *scriptWatcher, scriptName string, output output.Outputer, cfg project.ConfigGetter, proj *project.Project) error {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 
@@ -313,7 +312,7 @@ func startNoninteractive(sw *scriptWatcher, scriptName string, output output.Out
 	return nil
 }
 
-func startInteractive(sw *scriptWatcher, scriptName string, output output.Outputer, cfg projectfile.ConfigGetter, proj *project.Project, prompt prompt.Prompter) error {
+func startInteractive(sw *scriptWatcher, scriptName string, output output.Outputer, cfg project.ConfigGetter, proj *project.Project, prompt prompt.Prompter) error {
 	go sw.run(scriptName, output, cfg, proj)
 
 	for {
@@ -336,7 +335,7 @@ func startInteractive(sw *scriptWatcher, scriptName string, output output.Output
 	}
 }
 
-func updateProjectFile(cfg projectfile.ConfigGetter, pj *project.Project, scriptFile *scriptfile.ScriptFile, name string) error {
+func updateProjectFile(cfg project.ConfigGetter, pj *project.Project, scriptFile *scriptfile.ScriptFile, name string) error {
 	updatedScript, err := fileutils.ReadFile(scriptFile.Filename())
 	if err != nil {
 		return errs.Wrap(err, "Failed to read script file %s.", scriptFile.Filename())

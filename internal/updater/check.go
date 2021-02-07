@@ -12,7 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/ActiveState/cli/pkg/project"
 )
 
 // Runs the given updater function on a timeout.
@@ -61,7 +61,7 @@ type UpdateResult struct {
 // Otherwise, returns `false`.
 // AutoUpdate is skipped altogether if the current project has a locked version.
 func AutoUpdate(pjPath string, out output.Outputer) (updated bool, resultVersion string) {
-	if versionInfo, _ := projectfile.ParseVersionInfo(pjPath); versionInfo != nil {
+	if versionInfo, _ := project.ParseVersionInfo(pjPath); versionInfo != nil {
 		return false, ""
 	}
 

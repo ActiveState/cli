@@ -25,7 +25,7 @@ type EditTestSuite struct {
 	project        *project.Project
 	scriptFile     *scriptfile.ScriptFile
 	originalEditor string
-	cfg            projectfile.ConfigGetter
+	cfg            project.ConfigGetter
 }
 
 func (suite *EditTestSuite) BeforeTest(suiteName, testName string) {

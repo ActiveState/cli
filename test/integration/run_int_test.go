@@ -18,7 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/ActiveState/cli/pkg/project"
 )
 
 type RunIntegrationTestSuite struct {
@@ -83,7 +83,7 @@ func (suite *RunIntegrationTestSuite) SetupTest() {
 }
 
 func (suite *RunIntegrationTestSuite) TearDownTest() {
-	projectfile.Reset()
+	project.ResetProjectFile()
 }
 
 func (suite *RunIntegrationTestSuite) expectTerminateBatchJob(cp *termtest.ConsoleProcess) {

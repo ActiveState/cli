@@ -116,7 +116,7 @@ func run(args []string, isInteractive bool, out output.Outputer) (int, error) {
 	defer cfg.Save()
 
 	// Retrieve project file
-	pjPath, err := projectfile.GetProjectFilePath()
+	pjPath, err := project.GetProjectFilePath()
 	if err != nil && errs.Matches(err, &projectfile.ErrorNoProjectFromEnv{}) {
 		// Fail if we are meant to inherit the projectfile from the environment, but the file doesn't exist
 		return 1, err
@@ -128,11 +128,7 @@ func run(args []string, isInteractive bool, out output.Outputer) (int, error) {
 	// Set up project (if we have a valid path)
 	var pj *project.Project
 	if pjPath != "" {
-		pjf, err := projectfile.FromPath(pjPath)
-		if err != nil {
-			return 1, err
-		}
-		pj, err = project.New(pjf, out)
+		pj, err = project.FromPath(pjPath)
 		if err != nil {
 			return 1, err
 		}

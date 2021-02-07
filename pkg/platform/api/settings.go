@@ -25,7 +25,7 @@ const (
 	// ServiceHeadChef is our service that's used to kick off and track builds
 	ServiceHeadChef = "headchef"
 
-	// ServiceHeadChefWS is the websocket service on headchef
+	// BuildLogStreamer is the websocket service on headchef
 	BuildLogStreamer = "buildlog-streamer"
 
 	// ServiceInventory is our service that's used to query available inventory and dependencies

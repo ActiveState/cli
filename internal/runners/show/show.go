@@ -18,7 +18,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 // Params describes the data required for the show run func.
@@ -160,12 +159,12 @@ func (s *Show) Run(params Params) error {
 		projectName = s.project.Name()
 		projectURL = s.project.URL()
 
-		events, err = eventsData(s.project.Source(), s.conditional)
+		events, err = eventsData(s.project, s.conditional)
 		if err != nil {
 			return locale.WrapError(err, "err_show_events", "Could not parse events")
 		}
 
-		scripts, err = scriptsData(s.project.Source(), s.conditional)
+		scripts, err = scriptsData(s.project, s.conditional)
 		if err != nil {
 			return locale.WrapError(err, "err_show_scripts", "Could not parse scripts")
 		}
@@ -245,17 +244,17 @@ type languageRow struct {
 	Version string `json:"version" locale:"state_show_language_version,Version"`
 }
 
-func eventsData(project *projectfile.Project, conditional *constraints.Conditional) ([]string, error) {
-	if len(project.Events) == 0 {
+func eventsData(proj *project.Project, conditional *constraints.Conditional) ([]string, error) {
+	if len(proj.Source().Events) == 0 {
 		return nil, nil
 	}
 
-	constrained, err := constraints.FilterUnconstrained(conditional, project.Events.AsConstrainedEntities())
+	constrained, err := constraints.FilterUnconstrained(conditional, proj.Source().Events.AsConstrainedEntities())
 	if err != nil {
 		return nil, locale.WrapError(err, "err_event_condition", "Event has invalid conditional")
 	}
 
-	es := projectfile.MakeEventsFromConstrainedEntities(constrained)
+	es := project.MakeEventsFromConstrainedEntities(constrained)
 
 	var data []string
 	for _, event := range es {
@@ -265,17 +264,17 @@ func eventsData(project *projectfile.Project, conditional *constraints.Condition
 	return data, nil
 }
 
-func scriptsData(project *projectfile.Project, conditional *constraints.Conditional) (map[string]string, error) {
-	if len(project.Scripts) == 0 {
+func scriptsData(proj *project.Project, conditional *constraints.Conditional) (map[string]string, error) {
+	if len(proj.Source().Scripts) == 0 {
 		return nil, nil
 	}
 
-	constrained, err := constraints.FilterUnconstrained(conditional, project.Scripts.AsConstrainedEntities())
+	constrained, err := constraints.FilterUnconstrained(conditional, proj.Source().Scripts.AsConstrainedEntities())
 	if err != nil {
 		return nil, locale.WrapError(err, "err_script_condition", "Script has invalid conditional")
 	}
 
-	scripts := projectfile.MakeScriptsFromConstrainedEntities(constrained)
+	scripts := project.MakeScriptsFromConstrainedEntities(constrained)
 
 	data := make(map[string]string)
 	for _, script := range scripts {

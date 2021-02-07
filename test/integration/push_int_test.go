@@ -15,7 +15,6 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 type PushIntegrationTestSuite struct {
@@ -64,9 +63,9 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 
 	// Check that languages were reset
 	pjfilepath := filepath.Join(ts.Dirs.Work, namespace, constants.ConfigFileName)
-	pjfile, err := projectfile.Parse(pjfilepath)
+	pjfile, err := project.Parse(pjfilepath)
 	suite.Require().NoError(err)
-	if pjfile.Languages != nil {
+	if pjfile.Languages() != nil {
 		suite.FailNow("Expected languages to be nil, but got: %v", pjfile.Languages)
 	}
 

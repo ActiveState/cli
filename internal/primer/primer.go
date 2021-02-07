@@ -8,12 +8,10 @@ import (
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 type Values struct {
 	project     *project.Project
-	projectfile *projectfile.Project
 	output      output.Outputer
 	auth        *authentication.Auth
 	prompt      prompt.Prompter
@@ -33,17 +31,12 @@ func New(project *project.Project, output output.Outputer, auth *authentication.
 	}
 	if project != nil {
 		v.project = project
-		v.projectfile = project.Source()
 	}
 	return v
 }
 
 type Projecter interface {
 	Project() *project.Project
-}
-
-type Projectfiler interface {
-	Projectfile() *projectfile.Project
 }
 
 type Outputer interface {
@@ -72,10 +65,6 @@ type Conditioner interface {
 
 func (v *Values) Project() *project.Project {
 	return v.project
-}
-
-func (v *Values) Projectfile() *projectfile.Project {
-	return v.projectfile
 }
 
 func (v *Values) Output() output.Outputer {

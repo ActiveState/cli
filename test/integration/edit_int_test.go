@@ -15,7 +15,6 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 type EditIntegrationTestSuite struct {
@@ -64,7 +63,7 @@ scripts:
 }
 
 func (suite *EditIntegrationTestSuite) TearDownTest() {
-	projectfile.Reset()
+	project.ResetProjectFile()
 }
 
 func (suite *EditIntegrationTestSuite) TestEdit() {

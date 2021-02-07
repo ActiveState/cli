@@ -9,7 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/cmdlets/git"
-	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/ActiveState/cli/pkg/project"
 )
 
 var _ git.Repository = (*Mock)(nil)
@@ -31,7 +31,7 @@ func (m *Mock) CloneProject(owner, name, path string, out output.Outputer) error
 
 	dummyID := "00010001-0001-0001-0001-000100010001"
 	projectURL := fmt.Sprintf("https://%s/%s/%s?commitID=%s", constants.PlatformURL, owner, name, dummyID)
-	_, err := projectfile.TestOnlyCreateWithProjectURL(projectURL, path)
+	_, err := project.TestOnlyCreateWithProjectURL(projectURL, path)
 	if err != nil {
 		return err
 	}

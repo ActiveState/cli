@@ -10,7 +10,6 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 // Holds a union of project and organization parameters.
@@ -45,7 +44,7 @@ func (o projectWithOrgs) MarshalOutput(f output.Format) interface{} {
 }
 
 type configGetter interface {
-	projectfile.ConfigGetter
+	project.ConfigGetter
 }
 
 // Params are command line parameters
@@ -82,7 +81,7 @@ func newProjects(auth *authentication.Auth, out output.Outputer, config configGe
 }
 
 func (r *Projects) Run(params *Params) error {
-	localProjects := projectfile.GetProjectMapping(r.config)
+	localProjects := project.GetProjectMapping(r.config)
 
 	var projects projectWithOrgs = []projectWithOrg{}
 	for namespace, checkouts := range localProjects {

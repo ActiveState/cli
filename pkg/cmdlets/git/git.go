@@ -16,7 +16,6 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 // Repository is the interface used to represent a version control system repository
@@ -82,12 +81,7 @@ func ensureCorrectRepo(owner, name, projectFilePath string) error {
 		return errs.Wrap(err, "OS failure")
 	}
 
-	projectFile, err := projectfile.Parse(projectFilePath)
-	if err != nil {
-		return err
-	}
-
-	proj, err := project.NewLegacy(projectFile)
+	proj, err := project.Parse(projectFilePath)
 	if err != nil {
 		return err
 	}

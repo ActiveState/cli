@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/ActiveState/cli/internal/environment"
-	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 func setup(t *testing.T, withVersion bool) {
@@ -23,7 +22,6 @@ func setup(t *testing.T, withVersion bool) {
 	}
 	err = os.Chdir(path)
 	require.NoError(t, err, "Should change dir without issue.")
-	projectfile.Reset()
 }
 
 func TestTimeout(t *testing.T) {

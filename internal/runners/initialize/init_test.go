@@ -16,7 +16,6 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 func TestInitialize_Run(t *testing.T) {
@@ -215,22 +214,23 @@ func TestInitialize_Run(t *testing.T) {
 				t.Fatalf("Expected file to exist: %s", configFile)
 			}
 
-			pj, err := projectfile.Parse(configFile)
+			pj, err := project.Parse(configFile)
 			if err != nil {
 				t.Fatalf("Projectfile failed to parse: %s", err.Error())
 			}
-			if !strings.Contains(pj.Project, fmt.Sprintf("%s/%s", tt.args.namespace.Owner, tt.args.namespace.Project)) {
-				t.Errorf("Expected %s to contain %s/%s", pj.Project, tt.args.namespace.Owner, tt.args.namespace.Project)
+			if !strings.Contains(pj.URL(), fmt.Sprintf("%s/%s", tt.args.namespace.Owner, tt.args.namespace.Project)) {
+				t.Errorf("Expected %s to contain %s/%s", pj.URL(), tt.args.namespace.Owner, tt.args.namespace.Project)
 			}
 
-			if len(pj.Languages) != 1 {
-				t.Fatalf("Expected 1 languages but got %d: %v", len(pj.Languages), pj.Languages)
+			langs := pj.Languages()
+			if len(langs) != 1 {
+				t.Fatalf("Expected 1 languages but got %d: %v", len(langs), pj.Languages())
 			}
-			if pj.Languages[0].Name != tt.wantLanguage {
-				t.Errorf("Expected language %s, actual: %s", pj.Languages[0].Name, tt.wantLanguage)
+			if langs[0].Name() != tt.wantLanguage {
+				t.Errorf("Expected language %s, actual: %s", pj.Languages()[0].Name(), tt.wantLanguage)
 			}
-			if pj.Languages[0].Version != tt.wantLangVersion {
-				t.Errorf("Expected language version %s, actual: %s", pj.Languages[0].Version, tt.wantLangVersion)
+			if pj.Languages()[0].Version() != tt.wantLangVersion {
+				t.Errorf("Expected language version %s, actual: %s", pj.Languages()[0].Version(), tt.wantLangVersion)
 			}
 		})
 	}

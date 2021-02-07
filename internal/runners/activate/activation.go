@@ -15,7 +15,6 @@ import (
 	"github.com/ActiveState/cli/internal/sighandler"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 func (r *Activate) activateAndWait(proj *project.Project, venv *virtualenvironment.VirtualEnvironment) error {
@@ -26,7 +25,7 @@ func (r *Activate) activateAndWait(proj *project.Project, venv *virtualenvironme
 		return err
 	}
 
-	ve, err := venv.GetEnv(false, filepath.Dir(projectfile.Get().Path()))
+	ve, err := venv.GetEnv(false, filepath.Dir(project.Get().Source().Path()))
 	if err != nil {
 		return locale.WrapError(err, "error_could_not_activate_venv", "Could not retrieve environment information.")
 	}

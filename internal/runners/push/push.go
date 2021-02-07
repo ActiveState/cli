@@ -8,7 +8,6 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/projectfile"
 
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
@@ -16,7 +15,7 @@ import (
 )
 
 type configGetter interface {
-	projectfile.ConfigGetter
+	project.ConfigGetter
 }
 
 type Push struct {
@@ -57,7 +56,7 @@ func (r *Push) Run(params PushParams) error {
 	if r.project.IsHeadless() {
 		namespace := params.Namespace
 		if !namespace.IsValid() {
-			names := projectfile.GetProjectNameForPath(r.config, filepath.Dir(r.project.Source().Path()))
+			names := project.GetProjectNameForPath(r.config, filepath.Dir(r.project.Source().Path()))
 			if names == "" {
 				return errs.AddTips(
 					locale.NewInputError("push_needs_namespace", "Could not find out what project to push to."),

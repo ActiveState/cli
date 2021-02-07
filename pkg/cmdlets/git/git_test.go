@@ -20,7 +20,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
-	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/ActiveState/cli/pkg/project"
 )
 
 type GitTestSuite struct {
@@ -47,7 +47,7 @@ func (suite *GitTestSuite) BeforeTest(suiteName, testName string) {
 
 	projectURL := fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, "test-owner", "test-project")
 
-	_, err = projectfile.TestOnlyCreateWithProjectURL(projectURL, suite.dir)
+	_, err = project.TestOnlyCreateWithProjectURL(projectURL, suite.dir)
 	suite.NoError(err, "could not create a projectfile")
 
 	err = fileutils.Touch(filepath.Join(suite.dir, "test-file"))

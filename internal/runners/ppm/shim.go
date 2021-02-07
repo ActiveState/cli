@@ -10,18 +10,18 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits"
-	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/ActiveState/cli/pkg/project"
 )
 
 type Shim struct {
 	out     output.Outputer
-	project *projectfile.Project
+	project *project.Project
 }
 
 func NewShim(prime *primer.Values) *Shim {
 	return &Shim{
 		out:     prime.Output(),
-		project: prime.Projectfile(),
+		project: prime.Project(),
 	}
 }
 

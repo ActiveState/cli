@@ -11,12 +11,12 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/organizations"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/ActiveState/cli/pkg/project"
 )
 
 // RunRemote runs the remote projects logic.
 func (r *Projects) RunRemote(params *Params) error {
-	projectfile.CleanProjectMapping(r.config)
+	project.CleanProjectMapping(r.config)
 
 	projectsList, err := r.fetchProjects(params.Local)
 	if err != nil {
@@ -44,7 +44,7 @@ func (r *Projects) fetchProjects(onlyLocal bool) (projectWithOrgs, error) {
 		return nil, errs.Wrap(err, "Unknown failure")
 	}
 	var projects projectWithOrgs = []projectWithOrg{}
-	localConfigProjects := r.config.GetStringMapStringSlice(projectfile.LocalProjectsConfigKey)
+	localConfigProjects := r.config.GetStringMapStringSlice(project.LocalProjectsConfigKey)
 	for _, org := range orgs.Payload {
 		platformOrgProjects, err := model.FetchOrganizationProjects(org.URLname)
 		if err != nil {

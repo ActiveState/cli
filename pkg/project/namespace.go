@@ -8,7 +8,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 // NamespaceRegex matches the org and project name in a namespace, eg. ORG/PROJECT
@@ -22,7 +21,7 @@ type Namespaced struct {
 }
 
 type ConfigAble interface {
-	projectfile.ConfigGetter
+	ConfigGetter
 }
 
 func NewNamespace(owner, project, commitID string) *Namespaced {

@@ -22,7 +22,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/ActiveState/cli/pkg/project"
 )
 
 const plat = runtime.GOOS + "-" + runtime.GOARCH
@@ -85,7 +85,7 @@ func (u *Updater) CanUpdate() bool {
 // PrintUpdateMessage will print a message to stdout when an update is available.
 // This will only print the message if the current project has a version lock AND if an update is available
 func PrintUpdateMessage(pjPath string, out output.Outputer) {
-	if versionInfo, _ := projectfile.ParseVersionInfo(pjPath); versionInfo == nil {
+	if versionInfo, _ := project.ParseVersionInfo(pjPath); versionInfo == nil {
 		return
 	}
 

@@ -31,6 +31,8 @@ type Build map[string]string
 var pConditional *constraints.Conditional
 var normalizeRx *regexp.Regexp
 
+const LocalProjectsConfigKey = "projects"
+
 func init() {
 	var err error
 	normalizeRx, err = regexp.Compile("[^a-zA-Z0-9]+")
@@ -243,6 +245,14 @@ func (p *Project) IsLocked() bool { return p.Lock() != "" }
 // Lock returns the lock information for this project
 func (p *Project) Lock() string { return p.projectfile.Lock }
 
+func (p *Project) AddLockInfo(branch string, version string) error {
+	return projectfile.AddLockInfo(p.Source().Path(), branch, version)
+}
+
+func (p *Project) Path() string {
+	return p.projectfile.Path()
+}
+
 // Namespace returns project namespace
 func (p *Project) Namespace() *Namespaced {
 	commitID := strfmt.UUID(p.projectfile.CommitID())
@@ -251,6 +261,46 @@ func (p *Project) Namespace() *Namespaced {
 
 // Environments returns project environment
 func (p *Project) Environments() string { return p.projectfile.Environments }
+
+func ResetProjectFile() {
+	projectfile.Reset()
+}
+
+func ParseVersionInfo(path string) (*projectfile.VersionInfo, error) {
+	return projectfile.ParseVersionInfo(path)
+}
+
+func GetProjectFilePath() (string, error) {
+	return projectfile.GetProjectFilePath()
+}
+
+func MakeEventsFromConstrainedEntities(items []projectfile.ConstrainedEntity) []*projectfile.Event {
+	return projectfile.MakeEventsFromConstrainedEntities(items)
+}
+
+func MakeScriptsFromConstrainedEntities(items []projectfile.ConstrainedEntity) []*projectfile.Script {
+	return projectfile.MakeScriptsFromConstrainedEntities(items)
+}
+
+type ConfigGetter interface {
+	projectfile.ConfigGetter
+}
+
+func GetProjectPaths(config ConfigGetter, namespace string) []string {
+	return projectfile.GetProjectPaths(config, namespace)
+}
+
+func GetProjectMapping(config ConfigGetter) map[string][]string {
+	return projectfile.GetProjectMapping(config)
+}
+
+func CleanProjectMapping(config ConfigGetter) {
+	projectfile.CleanProjectMapping(config)
+}
+
+func GetProjectNameForPath(config ConfigGetter, path string) string {
+	return projectfile.GetProjectNameForPath(config, path)
+}
 
 // New creates a new Project struct
 func New(p *projectfile.Project, out output.Outputer) (*Project, error) {
@@ -261,6 +311,14 @@ func New(p *projectfile.Project, out output.Outputer) (*Project, error) {
 // NewLegacy is for legacy use-cases only, DO NOT USE
 func NewLegacy(p *projectfile.Project) (*Project, error) {
 	return New(p, output.Get())
+}
+
+func TestOnlyCreateWithProjectURL(projectURL, path string) (*Project, error) {
+	pjfile, err := projectfile.TestOnlyCreateWithProjectURL(projectURL, path)
+	if err != nil {
+		return nil, err
+	}
+	return New(pjfile, output.Get())
 }
 
 // Parse will parse the given projectfile and instantiate a Project struct with it

@@ -12,7 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/ActiveState/cli/pkg/project"
 )
 
 type InitIntegrationTestSuite struct {
@@ -61,12 +61,12 @@ func (suite *InitIntegrationTestSuite) runInitTest(addPath bool, config string, 
 
 	// Check that language was written to yaml
 	langData := strings.Split(language, "@")
-	pjfile, err := projectfile.Parse(configFilepath)
+	pjfile, err := project.Parse(configFilepath)
 	suite.Require().NoError(err)
-	if len(pjfile.Languages) != 1 {
+	if len(pjfile.Languages()) != 1 {
 		suite.FailNow("Expected one language, but got: %v", pjfile.Languages)
 	}
-	suite.Require().Equal(langData[0], pjfile.Languages[0].Name)
+	suite.Require().Equal(langData[0], pjfile.Languages()[0].Name)
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_NoLanguage() {
