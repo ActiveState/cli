@@ -19,7 +19,7 @@ func (suite *HistoryIntegrationTestSuite) TestHistory_History() {
 
 	ts.LoginAsPersistentUser()
 	cp := ts.Spawn("history", "--namespace", "ActiveState-CLI/History")
-	cp.Expect(`added Platform`)
+	cp.Expect(`- + Platform`)
 	cp.ExpectExitCode(0)
 }
 

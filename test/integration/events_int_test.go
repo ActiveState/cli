@@ -43,6 +43,8 @@ events:
 
 	cp := ts.Spawn("activate")
 	cp.Expect("before-script")
+	cp.ExpectLongString("default project?")
+	cp.Send("n")
 	cp.Expect("First activate event")
 	cp.Expect("Activate event")
 	cp.WaitForInput()

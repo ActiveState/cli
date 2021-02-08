@@ -189,7 +189,7 @@ func (suite *BundleIntegrationTestSuite) TestBundle_headless_operation() {
 		cp := ts.Spawn("bundles", "install", "Utilities")
 		cp.ExpectLongString("Do you want to continue as an anonymous user?")
 		cp.Send("Y")
-		cp.ExpectRe("(?:Bundle added|project is currently building)", 45*time.Second)
+		cp.ExpectRe("(?:Bundle successfully installed!|project is currently building)", 45*time.Second)
 		cp.Wait()
 	})
 
