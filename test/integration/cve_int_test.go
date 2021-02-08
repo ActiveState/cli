@@ -23,7 +23,7 @@ func (suite *CveIntegrationTestSuite) TestCveSummary() {
 	ts.PrepareActiveStateYAML(`project: https://platform.activestate.com/ActiveState-CLI/VulnerablePython-3.7`)
 
 	cp := ts.Spawn("cve")
-	cp.Expect("ActivePython-3.7")
+	cp.Expect("VulnerablePython-3.7")
 	cp.Expect("0b87e7a4-dc62-46fd-825b-9c35a53fe0a2")
 
 	cp.Expect("Vulnerabilities")
