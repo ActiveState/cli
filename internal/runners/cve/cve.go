@@ -37,21 +37,9 @@ type ByPackageOutput struct {
 	CveCount int    `json:"cve_count" locale:"state_cve_package_count,Count"`
 }
 
-type DetailedByPackageOutput struct {
-	Name    string                   `json:"name"`
-	Version string                   `json:"version"`
-	Details []medmodel.Vulnerability `json:"cves"`
-}
-
 type ProjectInfo struct {
 	Project  string `locale:"project,Project"`
 	CommitID string `locale:"commit_id,Commit ID"`
-}
-
-type ReportInfo struct {
-	Project  string `locale:"project,Project"`
-	CommitID string `locale:"commit_id,Commit ID"`
-	Date     string `locale:"generated_on,Generated on"`
 }
 
 type primeable interface {
@@ -71,8 +59,8 @@ func (c *Cve) Run() error {
 
 	if !c.auth.Authenticated() {
 		return errs.AddTips(
-			locale.NewError("cve_needs_authentication", "You need to be authenticated in order to access vulnerability information about your project."),
-			locale.Tl("auth_tip", "Run `state auth` to authenticate."),
+			locale.NewError("cve_needs_authentication"),
+			locale.T("auth_tip"),
 		)
 	}
 

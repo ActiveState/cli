@@ -2,6 +2,7 @@ package cve
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 	"time"
 
@@ -20,12 +21,24 @@ type Report struct {
 	out  output.Outputer
 }
 
-type ReportParams struct {
-	Namespace *project.Namespaced
+type ReportInfo struct {
+	Project  string `locale:"project,Project"`
+	CommitID string `locale:"commit_id,Commit ID"`
+	Date     string `locale:"generated_on,Generated on"`
 }
 
 func NewReport(prime primeable) *Report {
 	return &Report{prime.Project(), prime.Auth(), prime.Output()}
+}
+
+type DetailedByPackageOutput struct {
+	Name    string                   `json:"name"`
+	Version string                   `json:"version"`
+	Details []medmodel.Vulnerability `json:"cves"`
+}
+
+type ReportParams struct {
+	Namespace *project.Namespaced
 }
 
 type reportData struct {
@@ -92,7 +105,7 @@ func (r *Report) Run(params *ReportParams) error {
 	}
 
 	reportOutput := &reportData{
-		Project:  resp.Project.Name,
+		Project:  ns.String(),
 		CommitID: resp.Project.Commit.CommitID,
 		Date:     time.Now(),
 
@@ -110,29 +123,29 @@ func (r *Report) Run(params *ReportParams) error {
 	return nil
 }
 
-func (od *reportDataPrinter) MarshalOutput(format output.Format) interface{} {
+func (rd *reportDataPrinter) MarshalOutput(format output.Format) interface{} {
 	if format != output.PlainFormatName {
-		return od.data
+		return rd.data
 	}
 	ri := &ReportInfo{
-		fmt.Sprintf("[ACTIONABLE]%s[/RESET]", od.data.Project),
-		od.data.CommitID,
-		od.data.Date.Format("01/02/06"),
+		fmt.Sprintf("[ACTIONABLE]%s[/RESET]", rd.data.Project),
+		rd.data.CommitID,
+		rd.data.Date.Format("01/02/06"),
 	}
-	od.output.Print(struct {
+	rd.output.Print(struct {
 		*ReportInfo `opts:"verticalTable"`
 	}{ri})
 
-	if len(od.data.Histogram) == 0 {
-		od.output.Print("")
-		od.output.Print(fmt.Sprintf("[SUCCESS]✔ %s[/RESET]", locale.Tl("no_cves", "No CVEs detected!")))
+	if len(rd.data.Histogram) == 0 {
+		rd.output.Print("")
+		rd.output.Print(fmt.Sprintf("[SUCCESS]✔ %s[/RESET]", locale.Tl("no_cves", "No CVEs detected!")))
 
 		return output.Suppress
 	}
 
-	hist := make([]*SeverityCountOutput, 0, len(od.data.Histogram))
+	hist := make([]*SeverityCountOutput, 0, len(rd.data.Histogram))
 	totalCount := 0
-	for _, h := range od.data.Histogram {
+	for _, h := range rd.data.Histogram {
 		totalCount += h.Count
 		var ho *SeverityCountOutput
 		if h.Severity == "CRITICAL" {
@@ -148,13 +161,28 @@ func (od *reportDataPrinter) MarshalOutput(format output.Format) interface{} {
 		}
 		hist = append(hist, ho)
 	}
-	od.output.Print(output.Heading(fmt.Sprintf("%d Vulnerabilities", totalCount)))
-	od.output.Print(hist)
+	rd.output.Print(output.Heading(fmt.Sprintf("%d Vulnerabilities", totalCount)))
+	rd.output.Print(hist)
 
-	od.output.Print(output.Heading(fmt.Sprintf("%d Affected Packages", len(od.data.Packages))))
-	for _, ap := range od.data.Packages {
-		od.output.Print(fmt.Sprintf("[NOTICE]%s %s[/RESET]", ap.Name, ap.Version))
-		od.output.Print(locale.Tl("report_package_vulnerabilities", "{{.V0}} Vulnerabilities", strconv.Itoa(len(ap.Details))))
+	rd.output.Print(output.Heading(fmt.Sprintf("%d Affected Packages", len(rd.data.Packages))))
+	for _, ap := range rd.data.Packages {
+		rd.output.Print(fmt.Sprintf("[NOTICE]%s %s[/RESET]", ap.Name, ap.Version))
+		rd.output.Print(locale.Tl("report_package_vulnerabilities", "{{.V0}} Vulnerabilities", strconv.Itoa(len(ap.Details))))
+
+		sort.SliceStable(ap.Details, func(i, j int) bool {
+			sevI := ap.Details[i].Severity
+			sevJ := ap.Details[j].Severity
+			si := medmodel.ParseSeverityIndex(sevI)
+			sj := medmodel.ParseSeverityIndex(sevJ)
+			if si < sj {
+				return true
+			}
+			if si == sj {
+				return sevI < sevJ
+			}
+			return false
+		})
+
 		for i, d := range ap.Details {
 			bar := "├─"
 			if i == len(ap.Details)-1 {
@@ -162,12 +190,16 @@ func (od *reportDataPrinter) MarshalOutput(format output.Format) interface{} {
 			}
 			severity := d.Severity
 			if severity == "CRITICAL" {
-				severity = fmt.Sprintf("[ERROR]%s[/RESET]", severity)
+				severity = fmt.Sprintf("[ERROR]%-10s[/RESET]", severity)
 			}
-			od.output.Print(fmt.Sprintf("  %s %-12s [ACTIONABLE]%s[/RESET]", bar, severity, d.CveId))
+			rd.output.Print(fmt.Sprintf("  %s %-10s [ACTIONABLE]%s[/RESET]", bar, severity, d.CveId))
 		}
-		od.output.Print("")
+		rd.output.Print("")
 	}
 
+	rd.output.Print("")
+	rd.output.Print([]string{
+		locale.Tl("cve_report_hint_cve", "To view a specific CVE, run [ACTIONABLE]state cve open [cve-id][/RESET]."),
+	})
 	return output.Suppress
 }

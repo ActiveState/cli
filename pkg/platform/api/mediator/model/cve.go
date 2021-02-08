@@ -1,6 +1,35 @@
 package model
 
-import "github.com/go-openapi/strfmt"
+import (
+	"strings"
+
+	"github.com/go-openapi/strfmt"
+)
+
+type Severity int
+
+const (
+	Critical Severity = iota
+	High
+	Moderate
+	Low
+	Unknown
+)
+
+func ParseSeverityIndex(severity string) Severity {
+	switch strings.ToUpper(severity) {
+	case "CRITICAL":
+		return Critical
+	case "HIGH":
+		return High
+	case "MODERATE":
+		return Moderate
+	case "LOW":
+		return Low
+	default:
+		return Unknown
+	}
+}
 
 type ProjectVulnerabilities struct {
 	Project struct {
