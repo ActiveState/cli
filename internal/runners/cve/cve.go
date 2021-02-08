@@ -69,33 +69,12 @@ func (c *Cve) Run() error {
 		return locale.WrapError(err, "cve_mediator_resp", "Failed to retrieve vulnerability information")
 	}
 
-	var packageVulnerabilities []ByPackageOutput
-	visited := make(map[string]struct{})
-	for _, v := range resp.Project.Commit.Ingredients {
-		if len(v.Vulnerabilities) == 0 {
-			continue
-		}
-
-		// Remove this block with story https://www.pivotaltracker.com/story/show/176508772
-		// filter double entries
-		if _, ok := visited[v.Name]; ok {
-			continue
-		}
-		visited[v.Name] = struct{}{}
-
-		countByVersion := make(map[string]int)
-		for _, ve := range v.Vulnerabilities {
-			if _, ok := countByVersion[ve.Version]; !ok {
-				countByVersion[ve.Version] = 0
-			}
-			countByVersion[ve.Version]++
-		}
-
-		for ver, count := range countByVersion {
-			packageVulnerabilities = append(packageVulnerabilities, ByPackageOutput{
-				v.Name, ver, count,
-			})
-		}
+	details := model.ExtractPackageVulnerabilities(resp.Project.Commit.Ingredients)
+	packageVulnerabilities := make([]ByPackageOutput, 0, len(details))
+	for _, v := range details {
+		packageVulnerabilities = append(packageVulnerabilities, ByPackageOutput{
+			v.Name, v.Version, len(v.Details),
+		})
 	}
 
 	cveOutput := &outputData{

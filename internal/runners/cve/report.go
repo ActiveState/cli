@@ -32,22 +32,16 @@ func NewReport(prime primeable) *Report {
 	return &Report{prime.Project(), prime.Auth(), prime.Output()}
 }
 
-type DetailedByPackageOutput struct {
-	Name    string                   `json:"name"`
-	Version string                   `json:"version"`
-	Details []medmodel.Vulnerability `json:"cves"`
-}
-
 type ReportParams struct {
 	Namespace *project.Namespaced
 }
 
 type reportData struct {
-	Project   string                    `json:"project"`
-	CommitID  string                    `json:"commitID"`
-	Date      time.Time                 `json:"generated_on"`
-	Histogram []medmodel.SeverityCount  `json:"vulnerability_histogram"`
-	Packages  []DetailedByPackageOutput `json:"packages"`
+	Project   string                       `json:"project"`
+	CommitID  string                       `json:"commitID"`
+	Date      time.Time                    `json:"generated_on"`
+	Histogram []medmodel.SeverityCount     `json:"vulnerability_histogram"`
+	Packages  []model.PackageVulnerability `json:"packages"`
 }
 
 type reportDataPrinter struct {
@@ -77,34 +71,7 @@ func (r *Report) Run(params *ReportParams) error {
 		return locale.WrapError(err, "cve_mediator_resp", "Failed to retrieve vulnerability information")
 	}
 
-	var packageVulnerabilities []DetailedByPackageOutput
-	visited := make(map[string]struct{})
-	for _, v := range resp.Project.Commit.Ingredients {
-		if len(v.Vulnerabilities) == 0 {
-			continue
-		}
-
-		// Remove this block with story https://www.pivotaltracker.com/story/show/176508772
-		// filter double entries
-		if _, ok := visited[v.Name]; ok {
-			continue
-		}
-		visited[v.Name] = struct{}{}
-
-		cves := make(map[string][]medmodel.Vulnerability)
-		for _, ve := range v.Vulnerabilities {
-			if _, ok := cves[ve.Version]; !ok {
-				cves[ve.Version] = []medmodel.Vulnerability{}
-			}
-			cves[ve.Version] = append(cves[ve.Version], ve)
-		}
-
-		for ver, vuls := range cves {
-			packageVulnerabilities = append(packageVulnerabilities, DetailedByPackageOutput{
-				v.Name, ver, vuls,
-			})
-		}
-	}
+	packageVulnerabilities := model.ExtractPackageVulnerabilities(resp.Project.Commit.Ingredients)
 
 	reportOutput := &reportData{
 		Project:  ns.String(),
