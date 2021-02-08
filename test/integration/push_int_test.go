@@ -65,8 +65,8 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 	pjfilepath := filepath.Join(ts.Dirs.Work, namespace, constants.ConfigFileName)
 	pj, err := project.Parse(pjfilepath)
 	suite.Require().NoError(err)
-	if len(pj.Languages()) == 0 {
-		suite.FailNow("Expected languages to be empty, but got: %v", pj.Languages())
+	if pj.Source().Languages != nil {
+		suite.FailNow("Expected languages to be nil, but got: %v", pj.Source().Languages)
 	}
 
 	// ensure that we are logged out
