@@ -20,7 +20,7 @@ func (suite *CveIntegrationTestSuite) TestCveSummary() {
 
 	ts.LoginAsPersistentUser()
 
-	ts.PrepareActiveStateYAML(`project: https://platform.activestate.com/ActiveState/ActivePython-3.7`)
+	ts.PrepareActiveStateYAML(`project: https://platform.activestate.com/ActiveState-CLI/VulnerablePython-3.7`)
 
 	cp := ts.Spawn("cve")
 	cp.Expect("ActivePython-3.7")
@@ -44,7 +44,7 @@ func (suite *CveIntegrationTestSuite) TestCveReport() {
 
 	ts.LoginAsPersistentUser()
 
-	cp := ts.Spawn("cve", "report", "ActiveState/ActivePython-3.7")
+	cp := ts.Spawn("cve", "report", "ActiveState-CLI/VulnerablePython-3.7")
 	cp.Expect("Commit ID")
 
 	cp.Expect("Vulnerabilities")
