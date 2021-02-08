@@ -72,7 +72,7 @@ func (suite *CveIntegrationTestSuite) TestCveNoVulnerabilities() {
 	cp.Expect("No CVEs detected")
 	cp.ExpectExitCode(0)
 
-	cp := ts.Spawn("cve", "report")
+	cp = ts.Spawn("cve", "report")
 	cp.Expect("No CVEs detected")
 	cp.ExpectExitCode(0)
 }
