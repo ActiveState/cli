@@ -42,7 +42,7 @@ func newReportCommand(prime *primer.Values) *captain.Command {
 		[]*captain.Flag{},
 		[]*captain.Argument{
 			{
-				Name:        locale.Tl("cve_report_namespace_arg", "organization/project"),
+				Name:        locale.Tl("cve_report_namespace_arg", "Organization/Project"),
 				Description: locale.Tl("cve_report_namespace_arg_description", "The project for which the report is created"),
 				Value:       params.Namespace,
 			},
