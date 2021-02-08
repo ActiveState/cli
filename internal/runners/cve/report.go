@@ -8,6 +8,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	medmodel "github.com/ActiveState/cli/pkg/platform/api/mediator/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -56,7 +57,7 @@ type reportDataPrinter struct {
 
 func (r *Report) Run(params *ReportParams) error {
 	ns := params.Namespace
-	if ns == nil {
+	if !ns.IsValid() {
 		if r.proj == nil {
 			return locale.NewInputError("err_no_project")
 		}
@@ -70,6 +71,7 @@ func (r *Report) Run(params *ReportParams) error {
 		)
 	}
 
+	logging.Debug("Fetching vulnerabilities for %s", ns.String())
 	resp, err := model.FetchProjectVulnerabilities(r.auth, ns.Owner, ns.Project)
 	if err != nil {
 		return locale.WrapError(err, "cve_mediator_resp", "Failed to retrieve vulnerability information")
