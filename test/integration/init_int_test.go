@@ -61,12 +61,12 @@ func (suite *InitIntegrationTestSuite) runInitTest(addPath bool, config string, 
 
 	// Check that language was written to yaml
 	langData := strings.Split(language, "@")
-	pjfile, err := project.Parse(configFilepath)
+	pj, err := project.Parse(configFilepath)
 	suite.Require().NoError(err)
-	if len(pjfile.Languages()) != 1 {
-		suite.FailNow("Expected one language, but got: %v", pjfile.Languages)
+	if len(pj.Languages()) != 1 {
+		suite.FailNow("Expected one language, but got: %v", pj.Languages())
 	}
-	suite.Require().Equal(langData[0], pjfile.Languages()[0].Name)
+	suite.Require().Equal(langData[0], pj.Languages()[0].Name())
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_NoLanguage() {
