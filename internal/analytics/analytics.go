@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
@@ -196,7 +197,7 @@ func sendEventAndLog(category, action, label string, dimensions map[string]strin
 	if err == nil {
 		return
 	}
-	logging.Error("Error during analytics.sendEvent: %v", err)
+	logging.Error("Error during analytics.sendEvent: %v", errs.Join(err, ":"))
 }
 
 func sendEvent(category, action, label string, dimensions map[string]string) error {
