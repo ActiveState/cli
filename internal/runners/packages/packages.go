@@ -121,11 +121,11 @@ func executePackageOperation(pj *project.Project, cfg configurable, out output.O
 	}
 
 	// refresh runtime
-	target := refreshTarget{
+	req := requirement{
 		name:      name,
 		namespace: ns,
 	}
-	err = refreshRuntime(out, &target, pj, cfg.CachePath(), commitID, orderChanged)
+	err = refreshRuntime(out, &req, pj, cfg.CachePath(), commitID, orderChanged)
 	if err != nil {
 		return err
 	}
@@ -160,15 +160,19 @@ func getSuggestions(ns model.Namespace, name string) ([]string, error) {
 	return suggestions, nil
 }
 
-type refreshTarget struct {
+type requirement struct {
 	name      string
 	namespace model.Namespace
 }
 
-func refreshRuntime(out output.Outputer, target *refreshTarget, proj *project.Project, cachePath string, commitID strfmt.UUID, changed bool) error {
+// refreshRuntime should be called after runtime mutations. A nil arg for "req"
+// means that the message handler will not print output for "a single
+// requirement". For example, if multiple requirements are affected, nil is the
+// appropriate value.
+func refreshRuntime(out output.Outputer, req *requirement, proj *project.Project, cachePath string, commitID strfmt.UUID, changed bool) error {
 	rtMessages := runbits.NewRuntimeMessageHandler(out)
-	if target != nil {
-		rtMessages.SetRequirement(target.name, target.namespace)
+	if req != nil {
+		rtMessages.SetRequirement(req.name, req.namespace)
 	}
 	rt, err := runtime.NewRuntime(proj.Source().Path(), cachePath, commitID, proj.Owner(), proj.Name(), rtMessages)
 	if err != nil {
