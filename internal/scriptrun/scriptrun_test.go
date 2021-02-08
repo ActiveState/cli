@@ -241,7 +241,7 @@ scripts:
 	assert.NoError(t, err, "No error occurred")
 
 	// Reset.
-	projectfile.Reset()
+	project.ResetProjectFile()
 }
 
 func TestPathProvidesLang(t *testing.T) {
@@ -316,7 +316,7 @@ func captureExecCommand(t *testing.T, tmplCmdName, cmdName string, cmdArgs []str
 
 	pjfile := setupProjectWithScriptsExpectingArgs(t, tmplCmdName)
 	pjfile.Persist()
-	defer projectfile.Reset()
+	defer project.ResetProjectFile()
 
 	proj, err := project.New(pjfile, nil)
 	require.NoError(t, err)

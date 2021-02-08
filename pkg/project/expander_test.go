@@ -19,7 +19,7 @@ import (
 )
 
 func loadProject(t *testing.T) *project.Project {
-	projectfile.Reset()
+	project.ResetProjectFile()
 
 	pjFile := &projectfile.Project{}
 	contents := strings.TrimSpace(`
@@ -207,7 +207,7 @@ scripts:
 	expanded, err := project.ExpandFromProject("- $scripts.foo-bar -", prj)
 	assert.NoError(t, err, "Ran without failure")
 	assert.Equal(t, "- bar -", expanded)
-	projectfile.Reset()
+	project.ResetProjectFile()
 }
 
 func TestExpandScriptPath(t *testing.T) {

@@ -71,7 +71,7 @@ func (suite *VarPromptingExpanderTestSuite) BeforeTest(suiteName, testName strin
 
 func (suite *VarPromptingExpanderTestSuite) AfterTest(suiteName, testName string) {
 	httpmock.DeActivate()
-	projectfile.Reset()
+	project.ResetProjectFile()
 	cfg, err := config.Get()
 	suite.Require().NoError(err)
 	osutil.RemoveConfigFile(cfg.ConfigPath(), constants.KeypairLocalFileName+".key")

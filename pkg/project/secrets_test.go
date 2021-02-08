@@ -82,7 +82,7 @@ func (suite *SecretsExpanderTestSuite) BeforeTest(suiteName, testName string) {
 
 func (suite *SecretsExpanderTestSuite) AfterTest(suiteName, testName string) {
 	httpmock.DeActivate()
-	projectfile.Reset()
+	project.ResetProjectFile()
 	osutil.RemoveConfigFile(suite.cfg.ConfigPath(), constants.KeypairLocalFileName+".key")
 	suite.graphMock.Close()
 }

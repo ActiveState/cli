@@ -15,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
@@ -61,7 +62,7 @@ func TestRunCommandNoProjectEnv(t *testing.T) {
 	assert.Contains(t, out, "--EMPTY--  --EMPTY--", strings.TrimSpace(out),
 		"Should not echo anything cause the ACTIVESTATE_PROJECT should be undefined by the run command")
 
-	projectfile.Reset()
+	project.ResetProjectFile()
 }
 
 func TestRunCommandError(t *testing.T) {
@@ -88,5 +89,5 @@ func TestRunCommandError(t *testing.T) {
 	require.True(t, errors.As(err, &eerr), "Error is exec exit error")
 	assert.Equal(t, eerr.ExitCode(), 2, "Returns exit code 2")
 
-	projectfile.Reset()
+	project.ResetProjectFile()
 }

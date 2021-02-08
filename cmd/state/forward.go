@@ -36,7 +36,7 @@ func forwardFn(bindir string, args []string, out output.Outputer, pj *project.Pr
 	}
 
 	// Retrieve the version info specified in the activestate.yaml
-	versionInfo, err := projectfile.ParseVersionInfo(pj.Source().Path())
+	versionInfo, err := project.ParseVersionInfo(pj.Source().Path())
 	if err != nil {
 		// if we are running `state update`, we just print the error message, but don't err, as we can still update the state tool executable
 		logging.Error("Could not parse version info from projectifle: %s", err.Error())

@@ -15,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
@@ -56,5 +57,5 @@ func TestRunCommand(t *testing.T) {
 	trimmed := strings.TrimSpace(out)
 	assert.Equal(t, "Hello", trimmed[len(trimmed)-len("Hello"):])
 
-	projectfile.Reset()
+	project.ResetProjectFile()
 }
