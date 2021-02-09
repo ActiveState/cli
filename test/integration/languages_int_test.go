@@ -82,6 +82,7 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_install() {
 	cp.ExpectExitCode(1)
 
 	cp = ts.Spawn("languages", "install", "python@3.8.2")
+	cp.Expect("Language added: python@3.8.2")
 	// This can take a little while
 	cp.ExpectExitCode(0, 60*time.Second)
 
