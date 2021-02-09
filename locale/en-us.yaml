@@ -1638,3 +1638,9 @@ err_activate_platfrom_alternate_branches:
      - {{.V1}}
 
     Type [ACTIONABLE]`state branch switch <NAME>`[/RESET] to switch to a different branch.
+headless_notify_title:
+  other: Detached State
+headless_notify:
+  other: |
+    You are currently working in a detached state. Visit [ACTIONABLE]{{.V0}}[/RESET] to create a project from your detached state.
+    For more information, including how to re-attach to an existing project, visit [ACTIONABLE]{{.V1}}[/RESET].
