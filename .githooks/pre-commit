@@ -1,41 +1,41 @@
-# #!/bin/sh
-# gofiles=$(git diff --cached --name-only --diff-filter=ACM | grep '.go$' | grep -vE '^vendor/')
-# [ -z "$gofiles" ] && exit 0
+#!/bin/sh
+gofiles=$(git diff --cached --name-only --diff-filter=ACM | grep '.go$' | grep -vE '^vendor/')
+[ -z "$gofiles" ] && exit 0
 
-# # go lint
-# failed=""
-# for f in $gofiles; do
-#   lint_results="$(golint $f)"
-#   if test -n "$lint_results" ; then
-#     failed=1
-#     echo -e "Linting failed: \n$lint_results"
-#   fi
-# done
+# go lint
+failed=""
+for f in $gofiles; do
+  lint_results="$(golint $f)"
+  if test -n "$lint_results" ; then
+    failed=1
+    echo -e "Linting failed: \n$lint_results"
+  fi
+done
 
-# if test -n "$failed" ; then
-#   echo -e "Linting failed"
-#   exit 1
-# fi
+if test -n "$failed" ; then
+  echo -e "Linting failed"
+  exit 1
+fi
 
-# # Copyright 2012 The Go Authors. All rights reserved.
-# # Use of this source code is governed by a BSD-style
-# # license that can be found in the LICENSE file.
+# Copyright 2012 The Go Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style
+# license that can be found in the LICENSE file.
 
-# # git gofmt pre-commit hook
-# #
-# # To use, store as .git/hooks/pre-commit inside your repository and make sure
-# # it has execute permissions.
-# #
-# # This script does not handle file names that contain spaces.
+# git gofmt pre-commit hook
+#
+# To use, store as .git/hooks/pre-commit inside your repository and make sure
+# it has execute permissions.
+#
+# This script does not handle file names that contain spaces.
 
-# unformatted=$(gofmt -l $gofiles)
-# [ -z "$unformatted" ] && exit 0
+unformatted=$(gofmt -l $gofiles)
+[ -z "$unformatted" ] && exit 0
 
-# # Some files are not gofmt'd. Print message and fail.
+# Some files are not gofmt'd. Print message and fail.
 
-# echo >&2 "Go files must be formatted with gofmt. Please run:"
-# for fn in $unformatted; do
-# 	echo >&2 "  gofmt -w $PWD/$fn"
-# done
+echo >&2 "Go files must be formatted with gofmt. Please run:"
+for fn in $unformatted; do
+	echo >&2 "  gofmt -w $PWD/$fn"
+done
 
-# exit 1
+exit 1
