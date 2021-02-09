@@ -62,7 +62,17 @@ func (u *Update) Run(params *UpdateParams) error {
 		return err
 	}
 
-	return addLanguage(u.project, lang)
+	err = addLanguage(u.project, lang)
+	if err != nil {
+		return locale.WrapError(err, "err_add_language", "Could not add language.")
+	}
+
+	langName := lang.Name
+	if lang.Version != "" {
+		langName = langName + "@" + lang.Version
+	}
+	u.out.Notice(locale.Tl("language_added", "Language added: {{.V0}}", langName))
+	return nil
 }
 
 func parseLanguage(langName string) (*model.Language, error) {
