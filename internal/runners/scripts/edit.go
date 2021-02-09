@@ -93,7 +93,7 @@ func (e *Edit) editScript(script *project.Script, params *EditParams) error {
 			"Failed to open script file in editor.")
 	}
 
-	return start(e.prompter, watcher, params.Name, e.output, e.cfg)
+	return start(e.prompter, watcher, params.Name, e.output, e.cfg, e.project)
 }
 
 func createScriptFile(script *project.Script, expand bool) (*scriptfile.ScriptFile, error) {
@@ -144,7 +144,7 @@ func newScriptWatcher(scriptFile *scriptfile.ScriptFile) (*scriptWatcher, error)
 	}, nil
 }
 
-func (sw *scriptWatcher) run(scriptName string, outputer output.Outputer, cfg projectfile.ConfigGetter) {
+func (sw *scriptWatcher) run(scriptName string, outputer output.Outputer, cfg projectfile.ConfigGetter, proj *project.Project) {
 	for {
 		select {
 		case <-sw.done:
@@ -158,7 +158,7 @@ func (sw *scriptWatcher) run(scriptName string, outputer output.Outputer, cfg pr
 				return
 			}
 			if event.Op&fsnotify.Write == fsnotify.Write {
-				err := updateProjectFile(cfg, sw.scriptFile, scriptName)
+				err := updateProjectFile(cfg, proj, sw.scriptFile, scriptName)
 				if err != nil {
 					sw.errs <- errs.Wrap(err, "Failed to write project file.")
 					return
@@ -269,15 +269,15 @@ func verifyPathEditor(editor string) (string, error) {
 	return editor, nil
 }
 
-func start(prompt prompt.Prompter, sw *scriptWatcher, scriptName string, output output.Outputer, cfg projectfile.ConfigGetter) (err error) {
+func start(prompt prompt.Prompter, sw *scriptWatcher, scriptName string, output output.Outputer, cfg projectfile.ConfigGetter, proj *project.Project) (err error) {
 	output.Print(locale.Tr("script_watcher_watch_file", sw.scriptFile.Filename()))
 	if prompt.IsInteractive() {
-		return startInteractive(sw, scriptName, output, cfg, prompt)
+		return startInteractive(sw, scriptName, output, cfg, proj, prompt)
 	}
-	return startNoninteractive(sw, scriptName, output, cfg)
+	return startNoninteractive(sw, scriptName, output, cfg, proj)
 }
 
-func startNoninteractive(sw *scriptWatcher, scriptName string, output output.Outputer, cfg projectfile.ConfigGetter) error {
+func startNoninteractive(sw *scriptWatcher, scriptName string, output output.Outputer, cfg projectfile.ConfigGetter, proj *project.Project) error {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 
@@ -298,7 +298,7 @@ func startNoninteractive(sw *scriptWatcher, scriptName string, output output.Out
 			// Do nothing and let defer take over
 		}
 	}()
-	sw.run(scriptName, output, cfg)
+	sw.run(scriptName, output, cfg, proj)
 
 	err := <-errC
 
@@ -313,8 +313,8 @@ func startNoninteractive(sw *scriptWatcher, scriptName string, output output.Out
 	return nil
 }
 
-func startInteractive(sw *scriptWatcher, scriptName string, output output.Outputer, cfg projectfile.ConfigGetter, prompt prompt.Prompter) error {
-	go sw.run(scriptName, output, cfg)
+func startInteractive(sw *scriptWatcher, scriptName string, output output.Outputer, cfg projectfile.ConfigGetter, proj *project.Project, prompt prompt.Prompter) error {
+	go sw.run(scriptName, output, cfg, proj)
 
 	for {
 		doneConfirmDefault := true
@@ -336,13 +336,12 @@ func startInteractive(sw *scriptWatcher, scriptName string, output output.Output
 	}
 }
 
-func updateProjectFile(cfg projectfile.ConfigGetter, scriptFile *scriptfile.ScriptFile, name string) error {
+func updateProjectFile(cfg projectfile.ConfigGetter, pj *project.Project, scriptFile *scriptfile.ScriptFile, name string) error {
 	updatedScript, err := fileutils.ReadFile(scriptFile.Filename())
 	if err != nil {
 		return errs.Wrap(err, "Failed to read script file %s.", scriptFile.Filename())
 	}
 
-	pj := project.Get()
 	pjf := pj.Source()
 	script := pj.ScriptByName(name)
 	if script == nil {

@@ -26,12 +26,12 @@ import (
 )
 
 var (
-	Deploy EnvData = EnvData{
+	Deploy RcIdentification = RcIdentification{
 		constants.RCAppendDeployStartLine,
 		constants.RCAppendDeployStopLine,
 		"user_env",
 	}
-	Default EnvData = EnvData{
+	Default RcIdentification = RcIdentification{
 		constants.RCAppendDefaultStartLine,
 		constants.RCAppendDefaultStopLine,
 		"user_default_env",
@@ -46,13 +46,13 @@ type Configurable interface {
 	Save() error
 }
 
-type EnvData struct {
+type RcIdentification struct {
 	Start string
 	Stop  string
 	Key   string
 }
 
-func WriteRcFile(rcTemplateName string, path string, data EnvData, env map[string]string) error {
+func WriteRcFile(rcTemplateName string, path string, data RcIdentification, env map[string]string) error {
 	if err := fileutils.Touch(path); err != nil {
 		return err
 	}
@@ -86,7 +86,21 @@ func WriteRcFile(rcTemplateName string, path string, data EnvData, env map[strin
 	return fileutils.AppendToFile(path, []byte(fileutils.LineEnd+out.String()))
 }
 
-func cleanRcFile(path string, data EnvData) error {
+func WriteRcData(data string, path string, identification RcIdentification) error {
+	if err := fileutils.Touch(path); err != nil {
+		return err
+	}
+
+	if err := cleanRcFile(path, identification); err != nil {
+		return err
+	}
+
+	data = identification.Start + fileutils.LineEnd + data + fileutils.LineEnd + identification.Stop
+	logging.Debug("Writing to %s:\n%s", path, data)
+	return fileutils.AppendToFile(path, []byte(fileutils.LineEnd+data))
+}
+
+func cleanRcFile(path string, data RcIdentification) error {
 	readFile, err := os.Open(path)
 
 	if err != nil {
@@ -163,10 +177,9 @@ func SetupShellRcFile(rcFileName, templateName string, env map[string]string, na
 
 // SetupProjectRcFile creates a temporary RC file that our shell is initiated from, this allows us to template the logic
 // used for initialising the subshell
-func SetupProjectRcFile(templateName, ext string, env map[string]string, out output.Outputer, cfg Configurable) (*os.File, error) {
+func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[string]string, out output.Outputer, cfg Configurable) (*os.File, error) {
 	box := packr.NewBox("../../../assets/shells")
 	tpl := box.String(templateName)
-	prj := project.Get()
 
 	userScripts := ""
 

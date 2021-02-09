@@ -11,7 +11,6 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -25,13 +24,15 @@ type ListRunParams struct {
 
 // List manages the listing execution context.
 type List struct {
-	out output.Outputer
+	out     output.Outputer
+	project *project.Project
 }
 
 // NewList prepares a list execution context for use.
-func NewList(prime primer.Outputer) *List {
+func NewList(prime primeable) *List {
 	return &List{
-		out: prime.Output(),
+		out:     prime.Output(),
+		project: prime.Project(),
 	}
 }
 
@@ -43,7 +44,7 @@ func (l *List) Run(params ListRunParams, nstype model.NamespaceType) error {
 	var err error
 	switch {
 	case params.Commit != "":
-		commit, err = targetFromCommit(params.Commit)
+		commit, err = targetFromCommit(params.Commit, l.project)
 		if err != nil {
 			return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_obtain_commit", nstype))
 		}
@@ -53,7 +54,7 @@ func (l *List) Run(params ListRunParams, nstype model.NamespaceType) error {
 			return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_obtain_commit", nstype))
 		}
 	default:
-		commit, err = targetFromProjectFile()
+		commit, err = targetFromProjectFile(l.project)
 		if err != nil {
 			return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_obtain_commit", nstype))
 		}
@@ -71,10 +72,12 @@ func (l *List) Run(params ListRunParams, nstype model.NamespaceType) error {
 	return nil
 }
 
-func targetFromCommit(commitOpt string) (*strfmt.UUID, error) {
+func targetFromCommit(commitOpt string, proj *project.Project) (*strfmt.UUID, error) {
 	if commitOpt == "latest" {
 		logging.Debug("latest commit selected")
-		proj := project.Get()
+		if proj == nil {
+			return nil, locale.NewInputError("err_no_project")
+		}
 		return model.LatestCommitID(proj.Owner(), proj.Name())
 	}
 
@@ -101,11 +104,10 @@ func targetFromProject(projectString string) (*strfmt.UUID, error) {
 	return nil, locale.NewError("err_package_project_no_commit")
 }
 
-func targetFromProjectFile() (*strfmt.UUID, error) {
+func targetFromProjectFile(proj *project.Project) (*strfmt.UUID, error) {
 	logging.Debug("commit from project file")
-	proj, err := project.GetSafe()
-	if err != nil {
-		return nil, err
+	if proj == nil {
+		return nil, locale.NewInputError("err_no_project")
 	}
 	commit := proj.CommitID()
 	if commit == "" {

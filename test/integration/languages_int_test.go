@@ -64,7 +64,7 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_install() {
 	}
 
 	cp = ts.Spawn("init", fmt.Sprintf("%s/%s", username, "Languages"), "python3", "--path", path)
-	cp.Expect("successfully initialized")
+	cp.ExpectLongString("successfully initialized")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("push")
@@ -84,6 +84,10 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_install() {
 	cp = ts.Spawn("languages", "install", "python@3.8.2")
 	// This can take a little while
 	cp.ExpectExitCode(0, 60*time.Second)
+
+	cp = ts.Spawn("pull")
+	cp.ExpectLongString("has been updated to the latest version available")
+	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("languages")
 	cp.Expect("Name")

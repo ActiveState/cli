@@ -34,6 +34,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		newAPIKeyCommand(prime),
 		newExportConfigCommand(prime),
 		newExportGithubActionCommand(prime),
+		newExportDocsCommand(prime),
 	)
 
 	platformsCmd := newPlatformsCommand(prime)
@@ -113,6 +114,9 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 	branchCmd := newBranchCommand(prime)
 	branchCmd.AddChildren(newBranchAddCommand(prime))
 
+	prepareCmd := newPrepareCommand(prime)
+	prepareCmd.AddChildren(newPrepareCompletionsCommand(prime))
+
 	stateCmd := newStateCommand(globals, prime)
 	stateCmd.AddChildren(
 		newActivateCommand(prime),
@@ -144,7 +148,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		newPpmCommand(prime),
 		newInviteCommand(prime),
 		tutorialCmd,
-		newPrepareCommand(prime),
+		prepareCmd,
 		newProtocolCommand(prime),
 		newShimCommand(prime, args...),
 		newRevertCommand(prime),

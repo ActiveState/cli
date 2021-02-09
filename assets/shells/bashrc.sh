@@ -6,6 +6,8 @@ if [ -z "$PROMPT_COMMAND" ]; then
 fi
 {{end}}
 
+cd "{{.WD}}"
+
 {{- range $K, $V := .Env}}
 {{- if eq $K "PATH"}}
 export {{$K}}="{{$V}}:$PATH"
@@ -21,8 +23,6 @@ alias {{.ExecName}}='{{.ExecAlias}}'
 {{range $K, $CMD := .Scripts}}
 alias {{$K}}='{{$.ExecName}} run {{$CMD}}'
 {{end}}
-
-cd "{{.WD}}"
 
 echo "{{.ActivateEventMessage}}"
 

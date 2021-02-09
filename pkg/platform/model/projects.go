@@ -96,6 +96,30 @@ func DefaultBranchForProjectName(owner, name string) (*mono_models.Branch, error
 	return DefaultBranchForProject(proj)
 }
 
+func BranchesForProject(owner, name string) ([]*mono_models.Branch, error) {
+	proj, err := FetchProjectByName(owner, name)
+	if err != nil {
+		return nil, err
+	}
+	return proj.Branches, nil
+}
+
+func BranchNamesForProjectFiltered(owner, name string, excludes ...string) ([]string, error) {
+	proj, err := FetchProjectByName(owner, name)
+	if err != nil {
+		return nil, err
+	}
+	branches := make([]string, 0)
+	for _, branch := range proj.Branches {
+		for _, exclude := range excludes {
+			if branch.Label != exclude {
+				branches = append(branches, branch.Label)
+			}
+		}
+	}
+	return branches, nil
+}
+
 // DefaultBranchForProject retrieves the default branch for the given project
 func DefaultBranchForProject(pj *mono_models.Project) (*mono_models.Branch, error) {
 	for _, branch := range pj.Branches {

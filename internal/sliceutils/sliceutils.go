@@ -2,8 +2,14 @@ package sliceutils
 
 import "golang.org/x/text/unicode/norm"
 
-func RemoveFromStrings(slice []string, n int) []string {
-	return append(slice[:n], slice[n+1:]...)
+func RemoveFromStrings(slice []string, indexes ...int) []string {
+	var out []string
+	for i, s := range slice {
+		if !intsContain(indexes, i) {
+			out = append(out, s)
+		}
+	}
+	return out[:len(out)]
 }
 
 func GetInt(slice []int, index int) (int, bool) {
@@ -26,4 +32,13 @@ func IntRangeUncapped(in []int, start, end int) []int {
 		end = len(in)
 	}
 	return in[start:end]
+}
+
+func intsContain(ns []int, v int) bool {
+	for _, n := range ns {
+		if n == v {
+			return true
+		}
+	}
+	return false
 }

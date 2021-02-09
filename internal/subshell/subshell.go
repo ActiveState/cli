@@ -25,7 +25,7 @@ import (
 // under the same directory as this file
 type SubShell interface {
 	// Activate the given subshell
-	Activate(cfg sscommon.Configurable, out output.Outputer) error
+	Activate(proj *project.Project, cfg sscommon.Configurable, out output.Outputer) error
 
 	// Errors returns a channel to receive errors
 	Errors() <-chan error
@@ -46,7 +46,13 @@ type SubShell interface {
 	SetBinary(string)
 
 	// WriteUserEnv writes the given env map to the users environment
-	WriteUserEnv(sscommon.Configurable, map[string]string, sscommon.EnvData, bool) error
+	WriteUserEnv(sscommon.Configurable, map[string]string, sscommon.RcIdentification, bool) error
+
+	// WriteCompletionScript writes the completions script for the current shell
+	WriteCompletionScript(string) error
+
+	// RcFile return the path of the RC file
+	RcFile() (string, error)
 
 	// SetupShellRcFile writes a script or source-able file that updates the environment variables and sets the prompt
 	SetupShellRcFile(string, map[string]string, project.Namespaced) error

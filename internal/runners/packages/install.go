@@ -12,7 +12,7 @@ import (
 
 // InstallRunParams tracks the info required for running Install.
 type InstallRunParams struct {
-	Name string
+	Package PackageVersion
 }
 
 // Install manages the installing execution context.
@@ -48,6 +48,6 @@ func (a *Install) Run(params InstallRunParams, nstype model.NamespaceType) error
 	}
 
 	ns := model.NewNamespacePkgOrBundle(language, nstype)
-	name, version := splitNameAndVersion(params.Name)
-	return executePackageOperation(a.proj, a.cfg, a.out, a.auth, a.Prompter, name, version, model.OperationAdded, ns)
+
+	return executePackageOperation(a.proj, a.cfg, a.out, a.auth, a.Prompter, params.Package.Name(), params.Package.Version(), model.OperationAdded, ns)
 }
