@@ -9,6 +9,13 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
+type Vulnerability model.Vulnerability
+type PackageVulnerability struct {
+	Name    string          `json:"name"`
+	Version string          `json:"version"`
+	Details []Vulnerability `json:"cves"`
+}
+
 // FetchProjectVulnerabilities returns the vulnerability information of a project
 func FetchProjectVulnerabilities(auth *authentication.Auth, org, project string) (*model.ProjectVulnerabilities, error) {
 	// This should be removed by https://www.pivotaltracker.com/story/show/176508740
@@ -32,4 +39,37 @@ func FetchProjectVulnerabilities(auth *authentication.Auth, org, project string)
 	}
 
 	return &resp, nil
+}
+
+func ExtractPackageVulnerabilities(ingredients []model.IngredientVulnerability) []PackageVulnerability {
+	var packageVulnerabilities []PackageVulnerability
+	visited := make(map[string]struct{})
+	for _, v := range ingredients {
+		if len(v.Vulnerabilities) == 0 {
+			continue
+		}
+
+		// Remove this block with story https://www.pivotaltracker.com/story/show/176508772
+		// filter double entries
+		if _, ok := visited[v.Name]; ok {
+			continue
+		}
+		visited[v.Name] = struct{}{}
+
+		cves := make(map[string][]Vulnerability)
+		for _, ve := range v.Vulnerabilities {
+			if _, ok := cves[ve.Version]; !ok {
+				cves[ve.Version] = []Vulnerability{}
+			}
+			cves[ve.Version] = append(cves[ve.Version], Vulnerability(ve))
+		}
+
+		for ver, vuls := range cves {
+			packageVulnerabilities = append(packageVulnerabilities, PackageVulnerability{
+				v.Name, ver, vuls,
+			})
+		}
+	}
+
+	return packageVulnerabilities
 }

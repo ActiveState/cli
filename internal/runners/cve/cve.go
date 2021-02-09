@@ -59,8 +59,8 @@ func (c *Cve) Run() error {
 
 	if !c.auth.Authenticated() {
 		return errs.AddTips(
-			locale.NewError("cve_needs_authentication", "You need to be authenticated in order to access vulnerability information about your project."),
-			locale.Tl("auth_tip", "Run `state auth` to authenticate."),
+			locale.NewError("cve_needs_authentication"),
+			locale.T("auth_tip"),
 		)
 	}
 
@@ -69,33 +69,12 @@ func (c *Cve) Run() error {
 		return locale.WrapError(err, "cve_mediator_resp", "Failed to retrieve vulnerability information")
 	}
 
-	var packageVulnerabilities []ByPackageOutput
-	visited := make(map[string]struct{})
-	for _, v := range resp.Project.Commit.Ingredients {
-		if len(v.Vulnerabilities) == 0 {
-			continue
-		}
-
-		// Remove this block with story https://www.pivotaltracker.com/story/show/176508772
-		// filter double entries
-		if _, ok := visited[v.Name]; ok {
-			continue
-		}
-		visited[v.Name] = struct{}{}
-
-		countByVersion := make(map[string]int)
-		for _, ve := range v.Vulnerabilities {
-			if _, ok := countByVersion[ve.Version]; !ok {
-				countByVersion[ve.Version] = 0
-			}
-			countByVersion[ve.Version]++
-		}
-
-		for ver, count := range countByVersion {
-			packageVulnerabilities = append(packageVulnerabilities, ByPackageOutput{
-				v.Name, ver, count,
-			})
-		}
+	details := model.ExtractPackageVulnerabilities(resp.Project.Commit.Ingredients)
+	packageVulnerabilities := make([]ByPackageOutput, 0, len(details))
+	for _, v := range details {
+		packageVulnerabilities = append(packageVulnerabilities, ByPackageOutput{
+			v.Name, v.Version, len(v.Details),
+		})
 	}
 
 	cveOutput := &outputData{
@@ -120,6 +99,14 @@ type SeverityCountOutput struct {
 	Severity string `locale:"severity,Severity"`
 }
 
+func (od *outputDataPrinter) printFooter() {
+	od.output.Print("")
+	od.output.Print([]string{
+		locale.Tl("cve_hint_report", "To view a detailed report for this runtime, run [ACTIONABLE]state cve report[/RESET]"),
+		locale.Tl("cve_hint_specific_report", "For a specific runtime, run [ACTIONABLE]state cve report [Organization/Project][/RESET]"),
+	})
+}
+
 func (od *outputDataPrinter) MarshalOutput(format output.Format) interface{} {
 	if format != output.PlainFormatName {
 		return od.data
@@ -135,6 +122,7 @@ func (od *outputDataPrinter) MarshalOutput(format output.Format) interface{} {
 	if len(od.data.Histogram) == 0 {
 		od.output.Print("")
 		od.output.Print(fmt.Sprintf("[SUCCESS]✔ %s[/RESET]", locale.Tl("no_cves", "No CVEs detected!")))
+		od.printFooter()
 		return output.Suppress
 	}
 
@@ -162,5 +150,6 @@ func (od *outputDataPrinter) MarshalOutput(format output.Format) interface{} {
 	od.output.Print(output.Heading(fmt.Sprintf("%d Affected Packages", len(od.data.Packages))))
 	od.output.Print(od.data.Packages)
 
+	od.printFooter()
 	return output.Suppress
 }

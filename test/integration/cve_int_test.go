@@ -20,19 +20,41 @@ func (suite *CveIntegrationTestSuite) TestCveSummary() {
 
 	ts.LoginAsPersistentUser()
 
-	ts.PrepareActiveStateYAML(`project: https://platform.activestate.com/ActiveState/ActivePython-3.7`)
+	ts.PrepareActiveStateYAML(`project: https://platform.activestate.com/ActiveState-CLI/VulnerablePython-3.7`)
 
 	cp := ts.Spawn("cve")
-	cp.Expect("ActivePython-3.7")
+	cp.Expect("VulnerablePython-3.7")
 	cp.Expect("0b87e7a4-dc62-46fd-825b-9c35a53fe0a2")
 
-	cp.Expect("37 Vulnerabilities")
+	cp.Expect("Vulnerabilities")
 	cp.Expect("6")
 	cp.Expect("CRITICAL")
-	cp.Expect("10 Affected Packages")
+	cp.Expect("13 Affected Packages")
 	cp.Expect("tensorflow")
 	cp.Expect("1.12.0")
 	cp.Expect("18")
+	cp.ExpectExitCode(0)
+}
+
+func (suite *CveIntegrationTestSuite) TestCveReport() {
+	suite.OnlyRunForTags(tagsuite.Cve)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.LoginAsPersistentUser()
+
+	cp := ts.Spawn("cve", "report", "ActiveState-CLI/VulnerablePython-3.7")
+	cp.Expect("Commit ID")
+
+	cp.Expect("Vulnerabilities")
+	cp.Expect("6")
+	cp.Expect("CRITICAL")
+	cp.Expect("13 Affected Packages")
+	cp.Expect("tensorflow")
+	cp.Expect("1.12.0")
+	cp.Expect("CRITICAL")
+	cp.Expect("CVE-2019-16778")
 	cp.ExpectExitCode(0)
 }
 
@@ -48,7 +70,10 @@ func (suite *CveIntegrationTestSuite) TestCveNoVulnerabilities() {
 
 	cp := ts.Spawn("cve")
 	cp.Expect("No CVEs detected")
+	cp.ExpectExitCode(0)
 
+	cp = ts.Spawn("cve", "report")
+	cp.Expect("No CVEs detected")
 	cp.ExpectExitCode(0)
 }
 
