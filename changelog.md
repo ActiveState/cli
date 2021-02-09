@@ -19,6 +19,8 @@ Available on channel `master`
   headless projects) ([PR #1198](https://github.com/ActiveState/cli/pull/1198))
 - You can now switch between update channels
   via `state update --set-channel` ([PR #1190](https://github.com/ActiveState/cli/pull/1190))
+- State tool will now provide instructions on how to get out of a detached
+  state ([PR #1248](https://github.com/ActiveState/cli/pull/1248))
 
 ### Changed
 
