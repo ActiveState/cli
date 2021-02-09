@@ -36,7 +36,7 @@ func (r *Remove) Run(ps RemoveRunParams) error {
 	}
 
 	return model.CommitPlatform(
-		r.Project.Owner(), r.Project.Name(),
+		r.Project,
 		model.OperationRemoved,
 		params.name, params.version, params.BitWidth,
 	)

@@ -4,10 +4,11 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/stretchr/testify/suite"
+
 	"github.com/ActiveState/cli/internal/runners/secrets"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/stretchr/testify/suite"
 )
 
 type SecretsIntegrationTestSuite struct {
@@ -49,10 +50,10 @@ func (suite *SecretsIntegrationTestSuite) TestSecrets_JSON() {
 
 	cp = ts.Spawn("secrets")
 	cp.Expect("Name")
-	cp.Expect("Description")
-	cp.Expect("test-secret")
 	cp.Expect("project")
+	cp.Expect("Description")
 	cp.Expect("Defined")
+	cp.Expect("test-secret")
 	cp.ExpectExitCode(0)
 }
 

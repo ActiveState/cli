@@ -32,7 +32,7 @@ func (l *List) Run() error {
 		return locale.NewInputError("err_no_project")
 	}
 
-	listing, err := newListing("", l.proj.Name(), l.proj.Owner())
+	listing, err := newListing("", l.proj.Name(), l.proj.Owner(), l.proj.BranchName())
 	if err != nil {
 		return err
 	}
@@ -46,8 +46,8 @@ type Listing struct {
 	Platforms []*Platform `json:"platforms"`
 }
 
-func newListing(commitID, projName, projOrg string) (*Listing, error) {
-	targetCommitID, err := targetedCommitID(commitID, projName, projOrg)
+func newListing(commitID, projName, projOrg string, branchName string) (*Listing, error) {
+	targetCommitID, err := targetedCommitID(commitID, projName, projOrg, branchName)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +64,7 @@ func newListing(commitID, projName, projOrg string) (*Listing, error) {
 	return &listing, nil
 }
 
-func targetedCommitID(commitID, projName, projOrg string) (*strfmt.UUID, error) {
+func targetedCommitID(commitID, projName, projOrg, branchName string) (*strfmt.UUID, error) {
 	if commitID != "" {
 		var cid strfmt.UUID
 		err := cid.UnmarshalText([]byte(commitID))
@@ -72,7 +72,7 @@ func targetedCommitID(commitID, projName, projOrg string) (*strfmt.UUID, error) 
 		return &cid, err
 	}
 
-	latest, err := model.LatestCommitID(projOrg, projName)
+	latest, err := model.BranchCommitID(projOrg, projName, branchName)
 	if err != nil {
 		return nil, err
 	}
