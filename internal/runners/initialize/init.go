@@ -132,12 +132,13 @@ func run(params *RunParams, out output.Outputer) (string, error) {
 		}
 
 		createParams := &projectfile.CreateParams{
-			Owner:           params.Namespace.Owner,
-			Project:         params.Namespace.Project,
-			Language:        params.language.String(),
-			LanguageVersion: params.version,
-			Directory:       params.Path,
-			Private:         params.Private,
+			Owner:                params.Namespace.Owner,
+			Project:              params.Namespace.Project,
+			Language:             params.language.String(),
+			LanguageVersion:      params.version,
+			IncludeLanguageField: true,
+			Directory:            params.Path,
+			Private:              params.Private,
 		}
 
 		if params.Style == SkeletonEditor {

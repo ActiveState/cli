@@ -981,16 +981,17 @@ func FromExactPath(path string) (*Project, error) {
 
 // CreateParams are parameters that we create a custom activestate.yaml file from
 type CreateParams struct {
-	Owner           string
-	Project         string
-	CommitID        *strfmt.UUID
-	Directory       string
-	Content         string
-	Language        string
-	LanguageVersion string
-	Private         bool
-	path            string
-	projectURL      string
+	Owner                string
+	Project              string
+	CommitID             *strfmt.UUID
+	Directory            string
+	Content              string
+	Language             string
+	LanguageVersion      string
+	Private              bool
+	IncludeLanguageField bool
+	path                 string
+	projectURL           string
 }
 
 // TestOnlyCreateWithProjectURL a new activestate.yaml with default content
@@ -1065,11 +1066,12 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 	}
 
 	data := map[string]interface{}{
-		"Project":         params.projectURL,
-		"LanguageName":    params.Language,
-		"LanguageVersion": params.LanguageVersion,
-		"Content":         content,
-		"Private":         params.Private,
+		"Project":              params.projectURL,
+		"LanguageName":         params.Language,
+		"LanguageVersion":      params.LanguageVersion,
+		"IncludeLanguageField": params.IncludeLanguageField,
+		"Content":              content,
+		"Private":              params.Private,
 	}
 
 	tplName := "activestate.yaml.tpl"
