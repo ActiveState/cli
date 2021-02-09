@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -20,6 +21,7 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/thoas/go-funk"
 
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -496,16 +498,21 @@ func Parse(configFilepath string) (*Project, error) {
 
 // Init initializes the parsedURL field from the project url string
 func (p *Project) Init() error {
-	err := ValidateProjectURL(p.Project)
-	if err != nil {
-		return err
-	}
-
 	parsedURL, err := p.parseURL()
 	if err != nil {
-		return locale.NewInputError("parse_project_file_url_err")
+		return locale.WrapInputError(err, "parse_project_file_url_err", "Could not parse project url: {{.V0}}.", p.Project)
 	}
 	p.parsedURL = parsedURL
+
+	logging.Debug("Parsed URL: %v", p.parsedURL)
+
+	// Ensure branch name is set
+	if p.parsedURL.Owner != "" && p.parsedURL.BranchName == "" {
+		logging.Debug("Appending default branch as none is set")
+		if err := p.SetBranch(constants.DefaultBranchName); err != nil {
+			return locale.WrapError(err, "err_set_default_branch", "", constants.DefaultBranchName)
+		}
+	}
 
 	if p.Lock != "" {
 		parsedLock, err := ParseLock(p.Lock)
@@ -623,37 +630,45 @@ func validateUUID(uuidStr string) error {
 	return nil
 }
 
-func parseURL(url string) (projectURL, error) {
-	err := ValidateProjectURL(url)
+func parseURL(rawURL string) (projectURL, error) {
+	p := projectURL{}
+
+	err := ValidateProjectURL(rawURL)
 	if err != nil {
-		return projectURL{}, err
+		return p, err
 	}
 
-	match := CommitURLRe.FindStringSubmatch(url)
-	if len(match) > 1 {
-		parts := projectURL{CommitID: match[1]}
-		return parts, nil
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return p, errs.Wrap(err, "Could not parse URL")
 	}
 
-	match = ProjectURLRe.FindStringSubmatch(url)
-	parts := projectURL{
-		Owner: match[1],
-		Name:  match[2],
-	}
-	if len(match) >= 4 {
-		parts.CommitID = match[3]
-	}
-	if len(match) >= 5 {
-		parts.BranchName = match[4]
-	}
-
-	if parts.CommitID != "" {
-		if err := validateUUID(parts.CommitID); err != nil {
-			return projectURL{}, err
+	path := strings.Split(u.Path, "/")
+	if len(path) > 2 {
+		if path[1] == "commit" {
+			p.CommitID = path[2]
+		} else {
+			p.Owner = path[1]
+			p.Name = path[2]
 		}
 	}
 
-	return parts, nil
+	q := u.Query()
+	if c := q.Get("commitID"); c != "" {
+		p.CommitID = c
+	}
+
+	if p.CommitID != "" {
+		if err := validateUUID(p.CommitID); err != nil {
+			return p, err
+		}
+	}
+
+	if b := q.Get("branch"); b != "" {
+		p.BranchName = b
+	}
+
+	return p, nil
 }
 
 func removeTemporaryLanguage(data []byte) ([]byte, error) {
@@ -733,29 +748,19 @@ func (p *Project) save(cfg ConfigGetter, path string) error {
 
 // SetNamespace updates the namespace in the project file
 func (p *Project) SetNamespace(owner, project string) error {
-	data, err := ioutil.ReadFile(p.path)
-	if err != nil {
-		return errs.Wrap(err, "Failed to read project file %s.", p.path)
+	pf := NewProjectField()
+	if err := pf.LoadProject(p.Project); err != nil {
+		return errs.Wrap(err, "Could not load activestate.yaml")
 	}
-
-	namespace := fmt.Sprintf("%s/%s", owner, project)
-	out, err := setNamespaceInYAML(data, namespace, p.CommitID())
-	if err != nil {
-		return errs.Wrap(err, "Failed to update namespace in project file.")
+	pf.SetNamespace(owner, project)
+	if err := pf.Save(p.path); err != nil {
+		return errs.Wrap(err, "Could not save activestate.yaml")
 	}
 
 	// keep parsed url components in sync
 	p.parsedURL.Owner = owner
 	p.parsedURL.Name = project
 
-	if err := ioutil.WriteFile(p.path, out, 0664); err != nil {
-		return errs.Wrap(err, "Failed to write project file %s", p.path)
-	}
-
-	err = p.Reload()
-	if err != nil {
-		return errs.Wrap(err, "Failed to reload updated projectfile.")
-	}
 	return nil
 }
 
@@ -763,64 +768,38 @@ func (p *Project) SetNamespace(owner, project string) error {
 // in-place so that line order is preserved.
 // If headless is true, the project is defined by a commit-id only
 func (p *Project) SetCommit(commitID string, headless bool) error {
-	data, err := ioutil.ReadFile(p.path)
-	if err != nil {
-		return errs.Wrap(err, "ioutil.ReadFile %s failed", p.path)
+	pf := NewProjectField()
+	if err := pf.LoadProject(p.Project); err != nil {
+		return errs.Wrap(err, "Could not load activestate.yaml")
+	}
+	pf.SetCommit(commitID, headless)
+	if err := pf.Save(p.path); err != nil {
+		return errs.Wrap(err, "Could not save activestate.yaml")
 	}
 
-	out, err := setCommitInYAML(data, commitID, headless)
-	if err != nil {
-		return err
-	}
 	p.parsedURL.CommitID = commitID
-
-	if err := ioutil.WriteFile(p.path, out, 0664); err != nil {
-		return errs.Wrap(err, "ioutil.WriteFile %s failed", p.path)
-	}
-
-	return p.Reload()
+	return nil
 }
 
-var (
-	// regex captures three groups:
-	// 1. from "project:" (at start of line) to protocol ("https://")
-	// 2. the domain name
-	// 3. the url part until a "?" or newline is reached.
-	// Everything after that is targeted, but not captured so that only the first three capture
-	// groups can be used in the replace value.
-	setCommitRE = regexp.MustCompile(`(?m:^(project: *https?:\/\/)([^\/]*\/)(.*\/[^?\r\n]*).*)`)
-)
+// SetBranch sets the branch within the current project file. This is done
+// in-place so that line order is preserved.
+func (p *Project) SetBranch(branch string) error {
+	pf := NewProjectField()
 
-func setNamespaceInYAML(data []byte, namespace string, commitID string) ([]byte, error) {
-	queryParams := ""
-	if commitID != "" {
-		queryParams = fmt.Sprintf("?commitID=%s", commitID)
-	}
-	commitQryParam := []byte(fmt.Sprintf("${1}${2}%s%s", namespace, queryParams))
-
-	out := setCommitRE.ReplaceAll(data, commitQryParam)
-	if !strings.Contains(string(out), namespace) {
-		return nil, locale.NewError(
-			"err_set_namespace", "Failed to set namespace {{.V0}} in activestate.yaml.", namespace)
-	}
-	return out, nil
-}
-
-func setCommitInYAML(data []byte, commitID string, anonymous bool) ([]byte, error) {
-	if commitID == "" {
-		return nil, errs.New("commitID must not be empty")
-	}
-	commitQryParam := []byte("$1$2$3?commitID=" + commitID)
-	if anonymous {
-		commitQryParam = []byte(fmt.Sprintf("${1}${2}commit/%s", commitID))
+	if err := pf.LoadProject(p.Project); err != nil {
+		return errs.Wrap(err, "Could not load activestate.yaml")
 	}
 
-	out := setCommitRE.ReplaceAll(data, commitQryParam)
-	if !strings.Contains(string(out), commitID) {
-		return nil, locale.NewInputError("err_set_commit_id")
+	pf.SetBranch(branch)
+
+	if !condition.InTest() || p.path != "" {
+		if err := pf.Save(p.path); err != nil {
+			return errs.Wrap(err, "Could not save activestate.yaml")
+		}
 	}
 
-	return out, nil
+	p.parsedURL.BranchName = branch
+	return nil
 }
 
 // GetProjectFilePath returns the path to the project activestate.yaml
@@ -984,6 +963,7 @@ type CreateParams struct {
 	Owner           string
 	Project         string
 	CommitID        *strfmt.UUID
+	BranchName      string
 	Directory       string
 	Content         string
 	Language        string
@@ -1024,10 +1004,21 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 	}
 
 	if params.projectURL == "" {
-		params.projectURL = fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, params.Owner, params.Project)
-		if params.CommitID != nil {
-			params.projectURL = fmt.Sprintf("%s?commitID=%s", params.projectURL, params.CommitID.String())
+		u, err := url.Parse(fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, params.Owner, params.Project))
+		if err != nil {
+			return nil, errs.Wrap(err, "url parse new project url failed")
 		}
+		q := u.Query()
+
+		if params.CommitID != nil {
+			q.Set("commitID", params.CommitID.String())
+		}
+		if params.BranchName != "" {
+			q.Set("branch", params.BranchName)
+		}
+
+		u.RawQuery = q.Encode()
+		params.projectURL = u.String()
 	}
 
 	params.path = filepath.Join(params.Directory, constants.ConfigFileName)

@@ -8,6 +8,7 @@ import (
 
 	"github.com/ActiveState/sysinfo"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -82,19 +83,17 @@ func fetchRecipe(proj *project.Project, commitID strfmt.UUID, platform string) (
 	}
 
 	if commitID == "" {
-		pj, err := model.FetchProjectByName(proj.Owner(), proj.Name())
+		commitID = proj.CommitUUID()
+	}
+	if commitID == "" {
+		dcommitID, err := model.BranchCommitID(proj.Owner(), proj.Name(), proj.BranchName())
 		if err != nil {
-			return "", err
+			return "", errs.Wrap(err, "Could not get branch commit ID")
 		}
-
-		branch, err := model.DefaultBranchForProject(pj)
-		if err != nil {
-			return "", err
+		if dcommitID == nil {
+			return "", locale.NewInputError("err_branch_no_commit", "Branch has not commit associated with it")
 		}
-		if branch.CommitID == nil {
-			return "", locale.NewError("NoCommit")
-		}
-		commitID = *branch.CommitID
+		commitID = *dcommitID
 	}
 
 	return model.FetchRawRecipeForCommitAndPlatform(commitID, proj.Owner(), proj.Name(), platform)
