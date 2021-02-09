@@ -69,6 +69,12 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 	if pjfile.Languages != nil {
 		suite.FailNow("Expected languages to be nil, but got: %v", pjfile.Languages)
 	}
+	if pjfile.CommitID() == "" {
+		suite.FailNow("commitID was not set after running push for project creation")
+	}
+	if pjfile.BranchName() == "" {
+		suite.FailNow("branch was not set after running push for project creation")
+	}
 
 	// ensure that we are logged out
 	cp = ts.Spawn("auth", "logout")
@@ -87,8 +93,15 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 		cp.ExpectExitCode(0)
 	}
 
+	pjfile, err = projectfile.Parse(pjfilepath)
+	suite.Require().NoError(err)
+	if !strings.Contains(pjfile.Project, "/commit/") {
+		suite.FailNow("project field should be headless but isn't: " + pjfile.Project)
+	}
+
 	ts.LoginAsPersistentUser()
 
+	// https://www.pivotaltracker.com/n/projects/2203557/stories/175651094
 	cp = ts.SpawnWithOpts(e2e.WithArgs("push"), e2e.WithWorkDirectory(wd))
 	cp.Expect("Pushing to project")
 	cp.ExpectExitCode(0)

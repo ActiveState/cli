@@ -111,7 +111,7 @@ func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
 
 	cp := ts.Spawn("activate")
 	cp.Expect("Default Project")
-	cp.Expect("Y/n")
+	cp.Expect("y/N")
 	cp.Send("n")
 	cp.Expect("You're Activated")
 	cp.WaitForInput(10 * time.Second)
@@ -217,7 +217,7 @@ func (suite *RunIntegrationTestSuite) TestRun_Unauthenticated() {
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Default Project")
-	cp.Expect("Y/n")
+	cp.Expect("y/N")
 	cp.Send("n")
 
 	cp.Expect("You're Activated")

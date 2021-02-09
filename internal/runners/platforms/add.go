@@ -44,7 +44,7 @@ func (a *Add) Run(ps AddRunParams) error {
 	}
 
 	err = model.CommitPlatform(
-		a.project.Owner(), a.project.Name(),
+		a.project,
 		model.OperationAdded,
 		params.name, params.version, params.BitWidth,
 	)

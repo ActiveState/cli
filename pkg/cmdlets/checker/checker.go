@@ -13,12 +13,23 @@ import (
 
 // RunCommitsBehindNotifier checks for the commits behind count based on the
 // provided project and displays the results to the user in a helpful manner.
-func RunCommitsBehindNotifier(proj *project.Project, out output.Outputer) {
-	count, err := model.CommitsBehindLatest(proj.Owner(), proj.Name(), proj.CommitID())
+func RunCommitsBehindNotifier(p *project.Project,out output.Outputer) {
+	latestCommitID, err := model.BranchCommitID(p.Owner(), p.Name(), p.BranchName())
+	if err != nil {
+		logging.Error("Can not get branch info for %s/%s", p.Owner(), p.Name())
+		return
+	}
+
+	if latestCommitID == nil {
+		logging.Debug("Latest commit is nil")
+		return
+	}
+
+	count, err := model.CommitsBehind(*latestCommitID, p.CommitUUID())
 	if err != nil {
 		if errors.Is(err, model.ErrCommitCountUnknowable) {
 			out.Notice(output.Heading(locale.Tr("runtime_update_notice_unknown_count")))
-			out.Notice(locale.Tr("runtime_update_help", proj.Owner(), proj.Name()))
+			out.Notice(locale.Tr("runtime_update_help", p.Owner(), p.Name()))
 			return
 		}
 
@@ -28,6 +39,6 @@ func RunCommitsBehindNotifier(proj *project.Project, out output.Outputer) {
 	if count > 0 {
 		ct := strconv.Itoa(count)
 		out.Notice(output.Heading(locale.Tr("runtime_update_notice_known_count", ct)))
-		out.Notice(locale.Tr("runtime_update_help", proj.Owner(), proj.Name()))
+		out.Notice(locale.Tr("runtime_update_help", p.Owner(), p.Name()))
 	}
 }

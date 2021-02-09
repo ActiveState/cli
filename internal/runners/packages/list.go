@@ -75,10 +75,7 @@ func (l *List) Run(params ListRunParams, nstype model.NamespaceType) error {
 func targetFromCommit(commitOpt string, proj *project.Project) (*strfmt.UUID, error) {
 	if commitOpt == "latest" {
 		logging.Debug("latest commit selected")
-		if proj == nil {
-			return nil, locale.NewInputError("err_no_project")
-		}
-		return model.LatestCommitID(proj.Owner(), proj.Name())
+		return model.BranchCommitID(proj.Owner(), proj.Name(), proj.BranchName())
 	}
 
 	return prepareCommit(commitOpt)
@@ -90,18 +87,12 @@ func targetFromProject(projectString string) (*strfmt.UUID, error) {
 		return nil, err
 	}
 
-	proj, err := model.FetchProjectByName(ns.Owner, ns.Project)
+	branch, err := model.DefaultBranchForProjectName(ns.Owner, ns.Project)
 	if err != nil {
-		return nil, err
+		return nil, errs.Wrap(err, "Could not grab default branch for project")
 	}
 
-	for _, branch := range proj.Branches {
-		if branch.Default {
-			return branch.CommitID, nil
-		}
-	}
-
-	return nil, locale.NewError("err_package_project_no_commit")
+	return branch.CommitID, nil
 }
 
 func targetFromProjectFile(proj *project.Project) (*strfmt.UUID, error) {
@@ -112,7 +103,7 @@ func targetFromProjectFile(proj *project.Project) (*strfmt.UUID, error) {
 	commit := proj.CommitID()
 	if commit == "" {
 		logging.Debug("latest commit used as fallback selection")
-		return model.LatestCommitID(proj.Owner(), proj.Name())
+		return model.BranchCommitID(proj.Owner(), proj.Name(), proj.BranchName())
 	}
 
 	return prepareCommit(commit)

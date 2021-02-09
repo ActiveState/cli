@@ -78,7 +78,7 @@ func (r *Revert) Run(params *Params) error {
 		return nil
 	}
 
-	err = model.RevertCommit(r.project.Owner(), r.project.Name(), r.project.CommitUUID(), commitID)
+	err = model.RevertCommit(r.project, commitID)
 	if err != nil {
 		return locale.WrapError(
 			err,

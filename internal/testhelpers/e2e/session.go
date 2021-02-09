@@ -20,6 +20,7 @@ import (
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -58,9 +59,27 @@ var (
 func init() {
 	PersistentUsername = os.Getenv("INTEGRATION_TEST_USERNAME")
 	PersistentPassword = os.Getenv("INTEGRATION_TEST_PASSWORD")
+
+	// Get username / password from `state secrets` so we can run tests without needing special env setup
+	if PersistentUsername == "" {
+		out, stderr, err := exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "state", "secrets", "get", "project.INTEGRATION_TEST_USERNAME")
+		if err != nil {
+			fmt.Printf("WARNING!!! Could not retrieve username via state secrets: %v, stderr: %v\n", err, stderr)
+		}
+		PersistentUsername = strings.TrimSpace(out)
+	}
+	if PersistentPassword == "" {
+		out, stderr, err := exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "state", "secrets", "get", "project.INTEGRATION_TEST_PASSWORD")
+		if err != nil {
+			fmt.Printf("WARNING!!! Could not retrieve password via state secrets: %v, stderr: %v\n", err, stderr)
+		}
+		PersistentPassword = strings.TrimSpace(out)
+	}
+
 	if PersistentUsername == "" || PersistentPassword == "" {
 		fmt.Println("WARNING!!! Environment variables INTEGRATION_TEST_USERNAME and INTEGRATION_TEST_PASSWORD should be defined!")
 	}
+
 }
 
 // ExecutablePath returns the path to the state tool that we want to test
