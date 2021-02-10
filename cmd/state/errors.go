@@ -20,6 +20,8 @@ type ErrorTips interface {
 	ErrorTips() []string
 }
 
+type SilencedError struct{ error }
+
 type OutputError struct {
 	error
 }
