@@ -1,6 +1,7 @@
 package branch
 
 import (
+	"fmt"
 	"sort"
 
 	"github.com/ActiveState/cli/internal/locale"
@@ -36,9 +37,15 @@ func (l *List) Run() error {
 		return locale.WrapError(err, "err_fetch_project", l.project.Namespace().String())
 	}
 
+	localBranch := l.project.BranchName()
+
 	var branches []string
 	for _, branch := range project.Branches {
-		branches = append(branches, branch.Label)
+		branchName := branch.Label
+		if branchName == localBranch {
+			branchName = fmt.Sprintf("[ACTIONABLE]%s[/RESET]", branchName)
+		}
+		branches = append(branches, branchName)
 	}
 	sort.Slice(branches, func(i, j int) bool {
 		return branches[i] < branches[j]
