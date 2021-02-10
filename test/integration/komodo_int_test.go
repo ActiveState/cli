@@ -213,7 +213,7 @@ func (suite *SecretsIntegrationTestSuite) TestSecretsOutput_EditorV0() {
 	secret := secrets.SecretExport{
 		Name:        "test-secret",
 		Scope:       "project",
-		Description: "",
+		Description: "Not provided.",
 		HasValue:    true,
 	}
 
