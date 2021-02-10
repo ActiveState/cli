@@ -6,6 +6,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -18,14 +19,14 @@ func (suite *BranchIntegrationTestSuite) TestBranch_List() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.PrepareActiveStateYAML(ts)
+	suite.PrepareActiveStateYAML(ts, "ActiveState-CLI", "Branches")
 
 	cp := ts.Spawn("branch")
 	expectations := []string{
-		"firstbranchchild",
-		"secondbranch",
 		"firstbranch",
+		"firstbranchchild",
 		"main",
+		"secondbranch",
 	}
 	for _, expectation := range expectations {
 		cp.Expect(expectation)
@@ -38,25 +39,32 @@ func (suite *BranchIntegrationTestSuite) TestBranch_Add() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	username := ts.CreateNewUser()
-	namespace := fmt.Sprintf("%s/%s", username, "branch-test")
+	projectName := "Branch"
+	suite.PrepareActiveStateYAML(ts, e2e.PersistentUsername, projectName)
 
-	cp := ts.Spawn("fork", "ActiveState-CLI/Platforms", "--org", username, "--name", "platform-test")
+	ts.LoginAsPersistentUser()
+
+	cp := ts.Spawn("pull")
+	cp.ExpectLongString("Your project in the activestate.yaml has been updated")
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("activate", namespace, "--path="+ts.Dirs.Work, "--output=json")
+	cp = ts.SpawnCmd("cat", "activestate.yaml")
 	cp.ExpectExitCode(0)
+	fmt.Println(cp.TrimmedSnapshot())
 
-	cp = ts.Spawn("branch", "add", "another-branch")
+	branchName, err := uuid.NewRandom()
+	suite.Require().NoError(err)
+
+	cp = ts.Spawn("branch", "add", branchName.String())
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("branch")
-	cp.Expect("another-branch")
+	cp.Expect(branchName.String())
 	cp.ExpectExitCode(0)
 }
 
-func (suite *BranchIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session) {
-	asyData := `project: "https://platform.activestate.com/ActiveState-CLI/Branches"`
+func (suite *BranchIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session, username, project string) {
+	asyData := fmt.Sprintf(`project: "https://platform.activestate.com/%s/%s"`, username, project)
 	ts.PrepareActiveStateYAML(asyData)
 }
 

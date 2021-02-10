@@ -1,6 +1,8 @@
 package branch
 
 import (
+	"sort"
+
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -31,13 +33,16 @@ func (l *List) Run() error {
 
 	project, err := model.FetchProjectByName(l.project.Owner(), l.project.Name())
 	if err != nil {
-		return locale.WrapError(err, "branch_list_project_err", "Could not get details for project: {{.V0}}", l.project.Namespace().String())
+		return locale.WrapError(err, "err_fetch_project", l.project.Namespace().String())
 	}
 
 	var branches []string
 	for _, branch := range project.Branches {
 		branches = append(branches, branch.Label)
 	}
+	sort.Slice(branches, func(i, j int) bool {
+		return branches[i] < branches[j]
+	})
 
 	l.out.Print(branches)
 

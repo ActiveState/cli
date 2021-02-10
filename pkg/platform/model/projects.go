@@ -208,7 +208,8 @@ func processProjectErrorResponse(err error, params ...string) error {
 	}
 }
 
-func AddBranch(projectID strfmt.UUID, label string) (*strfmt.UUID, error) {
+func AddBranch(projectID strfmt.UUID, label string) (strfmt.UUID, error) {
+	var branchID strfmt.UUID
 	addParams := projects.NewAddBranchParams()
 	addParams.SetProjectID(projectID)
 	addParams.Body.Label = label
@@ -216,8 +217,8 @@ func AddBranch(projectID strfmt.UUID, label string) (*strfmt.UUID, error) {
 	res, err := authentication.Client().Projects.AddBranch(addParams, authentication.ClientAuth())
 	if err != nil {
 		msg := api.ErrorMessageFromPayload(err)
-		return nil, locale.WrapError(err, msg)
+		return branchID, locale.WrapError(err, msg)
 	}
 
-	return &res.Payload.BranchID, nil
+	return res.Payload.BranchID, nil
 }

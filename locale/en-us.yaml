@@ -1638,3 +1638,5 @@ err_activate_platfrom_alternate_branches:
      - {{.V1}}
 
     Type [ACTIONABLE]`state branch switch <NAME>`[/RESET] to switch to a different branch.
+err_fetch_project:
+  other: "Could not fetch details for project: {{.V0}}"
