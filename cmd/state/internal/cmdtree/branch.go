@@ -38,12 +38,12 @@ func newBranchAddCommand(prime *primer.Values) *captain.Command {
 		[]*captain.Argument{
 			{
 				Name:        locale.Tl("branch_arg_name", "name"),
-				Description: locale.Tl("branch_arg_name_description", "Branch name to be created"),
+				Description: locale.Tl("branch_arg_name_description", "Branch to be created"),
 				Value:       &params.Label,
 				Required:    true,
 			},
 		},
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run(params)
-		}).SetGroup(PlatformGroup)
+		})
 }
