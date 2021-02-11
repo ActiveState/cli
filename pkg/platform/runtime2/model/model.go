@@ -1,4 +1,4 @@
-package api
+package model
 
 import (
 	"github.com/ActiveState/cli/pkg/platform/api/buildlogstream"

@@ -4,10 +4,10 @@ import (
 	"sync"
 
 	runtime "github.com/ActiveState/cli/pkg/platform/runtime2"
-	"github.com/ActiveState/cli/pkg/platform/runtime2/api"
-	"github.com/ActiveState/cli/pkg/platform/runtime2/api/client"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/artifact"
 	rcommon "github.com/ActiveState/cli/pkg/platform/runtime2/common"
+	"github.com/ActiveState/cli/pkg/platform/runtime2/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime2/model/client"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/setup/alternative"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/setup/common"
 	"github.com/ActiveState/cli/pkg/project"
@@ -18,7 +18,7 @@ const maxConcurrency = 3
 
 // Setup provides methods to setup a fully-function runtime that *only* requires interactions with the local file system.
 type Setup struct {
-	client     api.ClientProvider
+	client     model.ClientProvider
 	msgHandler common.MessageHandler
 }
 
@@ -28,7 +28,7 @@ func NewSetup(project *project.Project, msgHandler common.MessageHandler) *Setup
 }
 
 // NewSetupWithAPI returns a new Setup instance with a customized API client eg., for testing purposes
-func NewSetupWithAPI(project *project.Project, msgHandler common.MessageHandler, api api.ClientProvider) *Setup {
+func NewSetupWithAPI(project *project.Project, msgHandler common.MessageHandler, api model.ClientProvider) *Setup {
 	panic("implement me")
 }
 
@@ -111,7 +111,7 @@ func (s *Setup) setupArtifact(buildEngine runtime.BuildEngine, a runtime.Artifac
 	panic("implement error handling")
 }
 
-func (s *Setup) changeSummaryArgs(buildResult *api.BuildResult) (requested common.ArtifactChanges, changed common.ArtifactChanges) {
+func (s *Setup) changeSummaryArgs(buildResult *model.BuildResult) (requested common.ArtifactChanges, changed common.ArtifactChanges) {
 	panic("implement me")
 }
 
