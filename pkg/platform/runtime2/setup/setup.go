@@ -137,7 +137,7 @@ func (s *Setup) selectSetupImplementation(buildEngine runtime.BuildEngine) impl.
 	panic("implement me")
 }
 
-func (s *Setup) selectArtifactSetupImplementation(buildEngine runtime.BuildEngine, a runtime.ArtifactID) common.ArtifactSetuper {
+func (s *Setup) selectArtifactSetupImplementation(buildEngine runtime.BuildEngine, a runtime.ArtifactID) impl.ArtifactSetuper {
 	if buildEngine == runtime.Alternative {
 		return alternative.NewArtifactSetup(a)
 	}

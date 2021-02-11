@@ -3,15 +3,16 @@ package setup
 import (
 	"testing"
 
-	"github.com/ActiveState/cli/pkg/platform/runtime2/api/client"
+	"github.com/ActiveState/cli/pkg/platform/runtime2/impl"
+	"github.com/ActiveState/cli/pkg/platform/runtime2/model/client"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
 // TestSetup
 func TestSetup(t *testing.T) {
 	var mockProject *project.Project
-	var mockMessageHandler MessageHandler
-	mockClient := client.NewMockClient()
+	var mockMessageHandler impl.MessageHandler
+	mockClient := client.NewMock()
 	// specify behavior of mock client here.
 	// ...
 
