@@ -34,7 +34,7 @@ func (l *List) Run() error {
 
 	project, err := model.FetchProjectByName(l.project.Owner(), l.project.Name())
 	if err != nil {
-		return locale.WrapError(err, "err_fetch_project", l.project.Namespace().String())
+		return locale.WrapError(err, "err_fetch_project", "", l.project.Namespace().String())
 	}
 
 	localBranch := l.project.BranchName()
@@ -43,7 +43,7 @@ func (l *List) Run() error {
 	for _, branch := range project.Branches {
 		branchName := branch.Label
 		if branchName == localBranch {
-			branchName = fmt.Sprintf("[ACTIONABLE]%s[/RESET]", branchName)
+			branchName = fmt.Sprintf("[NOTICE]%s[/RESET] *", branchName)
 		}
 		branches = append(branches, branchName)
 	}
