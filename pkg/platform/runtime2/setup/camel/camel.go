@@ -2,11 +2,10 @@ package camel
 
 import (
 	runtime "github.com/ActiveState/cli/pkg/platform/runtime2"
-	"github.com/ActiveState/cli/pkg/platform/runtime2/setup/common"
 )
 
-var _ common.Setuper = &Setup{}
-var _ common.ArtifactSetuper = &ArtifactSetup{}
+// var _ common.Setuper = &Setup{}
+// var _ common.ArtifactSetuper = &ArtifactSetup{}
 
 type Setup struct {
 }
@@ -18,7 +17,7 @@ func NewSetup() *Setup {
 	return &Setup{}
 }
 
-func (s *Setup) ArtifactSetup(artifactID runtime.ArtifactID) common.ArtifactSetuper {
+func NewArtifactSetup(artifactID runtime.ArtifactID) *ArtifactSetup {
 	return &ArtifactSetup{}
 }
 

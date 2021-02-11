@@ -53,7 +53,7 @@ func (s *Setup) InstallRuntime() error {
 
 	// Create the setup implementation based on the build engine (alternative or camel)
 	var setupImpl common.Setuper
-	setupImpl = s.newSetupImplementation(buildResult.BuildEngine)
+	setupImpl = s.selectSetupImplementation(buildResult.BuildEngine)
 
 	// Compute and handle the change summary
 	artifacts := artifact.FromRecipe(buildResult.Recipe)
@@ -77,7 +77,7 @@ func (s *Setup) InstallRuntime() error {
 			defer wg.Done()
 			for a := range ready {
 				// setup
-				s.setupArtifact(a, setupImpl)
+				s.setupArtifact(buildResult.BuildEngine, a)
 			}
 		}()
 	}
@@ -94,8 +94,8 @@ func (s *Setup) InstallRuntime() error {
 
 // setupArtifact sets up artifact
 // The artifact is downloaded, unpacked and then processed by the artifact setup implementation
-func (s *Setup) setupArtifact(a runtime.ArtifactID, setupImpl common.Setuper) {
-	as := setupImpl.ArtifactSetup(a)
+func (s *Setup) setupArtifact(buildEngine runtime.BuildEngine, a runtime.ArtifactID) {
+	as := s.selectArtifactSetupImplementation(buildEngine, a)
 	if !as.NeedsSetup() {
 		return
 	}
@@ -126,9 +126,16 @@ func (s *Setup) unpackTarball(tarballPath string) string {
 	panic("implement me")
 }
 
-func (s *Setup) newSetupImplementation(buildEngine runtime.BuildEngine) common.Setuper {
+func (s *Setup) selectSetupImplementation(buildEngine runtime.BuildEngine) common.Setuper {
 	if buildEngine == runtime.Alternative {
 		return alternative.NewSetup()
+	}
+	panic("implement me")
+}
+
+func (s *Setup) selectArtifactSetupImplementation(buildEngine runtime.BuildEngine, a runtime.ArtifactID) common.ArtifactSetuper {
+	if buildEngine == runtime.Alternative {
+		return alternative.NewArtifactSetup(a)
 	}
 	panic("implement me")
 }
