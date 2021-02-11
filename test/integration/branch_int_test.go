@@ -50,7 +50,6 @@ func (suite *BranchIntegrationTestSuite) TestBranch_Add() {
 
 	cp = ts.SpawnCmd("cat", "activestate.yaml")
 	cp.ExpectExitCode(0)
-	fmt.Println(cp.TrimmedSnapshot())
 
 	branchName, err := uuid.NewRandom()
 	suite.Require().NoError(err)
