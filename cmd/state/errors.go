@@ -20,8 +20,6 @@ type ErrorTips interface {
 	ErrorTips() []string
 }
 
-type SilencedError struct{ error }
-
 type OutputError struct {
 	error
 }
@@ -129,6 +127,12 @@ Your error log is located at: %s`, logging.FilePath()))
 		exiter(1)
 	}
 }
+
+type SilencedError struct{ error }
+
+func (s *SilencedError) Unwrap() error { return s.error }
+
+func (s *SilencedError) IsSilent() bool { return true }
 
 func isSilent(err error) bool {
 	var silentErr interface {

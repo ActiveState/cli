@@ -71,7 +71,7 @@ func main() {
 	// Run our main command logic, which is logic that defers to the error handling logic below
 	code, err := run(os.Args, isInteractive, out)
 	if err != nil {
-		if !errs.Matches(err, &SilencedError{}) {
+		if !isSilent(err) {
 			out.Error(err)
 		}
 
