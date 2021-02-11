@@ -111,7 +111,7 @@ func Matches(err error, target interface{}) bool {
 
 	val := reflect.ValueOf(target)
 	targetType := val.Type()
-	if e := targetType.Elem(); e.Kind() != reflect.Interface && !e.Implements(errorType) {
+	if targetType.Kind() != reflect.Interface && !targetType.Implements(errorType) {
 		panic("errors: *target must be interface or implement error")
 	}
 	for err != nil {
