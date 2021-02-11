@@ -1,6 +1,8 @@
-// Package common defines types that are shared between the Setup and the
-// specialized implementations for specific build engines.
-package common
+// Package impl is the top-level package for all runtime implementations.
+// Currently, the ActiveState Platform supports two build engines (Camel and
+// Alternative), their implementations can be found in sub-packages relative to
+// this directory.
+package impl
 
 import (
 	"github.com/ActiveState/cli/pkg/platform/api/buildlogstream"
@@ -11,7 +13,6 @@ import (
 // Setuper is the interface for an implementation of runtime setup functions
 // These need to be specialized for each BuildEngine type
 type Setuper interface {
-	ArtifactSetup(artifactID runtime.ArtifactID) ArtifactSetuper
 	PostInstall() error
 }
 
@@ -29,6 +30,9 @@ type ArtifactChanges struct {
 	Updated []runtime.ArtifactID
 	Removed []runtime.ArtifactID
 }
+
+// MessageHandler is the interface for callback functions that are called during
+// runtime set-up when progress messages can be forwarded to the user
 type MessageHandler interface {
 	buildlogstream.MessageHandler
 

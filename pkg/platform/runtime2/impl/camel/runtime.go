@@ -1,16 +1,15 @@
 package camel
 
 import (
-	"github.com/ActiveState/cli/pkg/platform/runtime2/common"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
-var _ common.Runtimer = &Camel{}
+// var _ runtime.Runtimer = &Camel{}
 
 // Camel is the specialization of a runtime for Camel builds
 type Camel struct{}
 
-// New the constructor function for alternative runtimes
+// New is the constructor function for Camel runtimes
 func New(proj *project.Project) (*Camel, error) {
 	panic("implement me")
 }

@@ -20,3 +20,11 @@ const (
 
 // ArtifactID represents an artifact ID
 type ArtifactID string
+
+// Runtimer is an interface for a locally installed runtime
+//
+// If the runtime is not installed on the machine yet, create a new
+// `runtime.Setup` to set it up.
+type Runtimer interface {
+	Environ() (map[string]string, error)
+}

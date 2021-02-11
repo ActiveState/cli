@@ -5,11 +5,10 @@ import (
 
 	runtime "github.com/ActiveState/cli/pkg/platform/runtime2"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/artifact"
-	rcommon "github.com/ActiveState/cli/pkg/platform/runtime2/common"
+	"github.com/ActiveState/cli/pkg/platform/runtime2/impl"
+	"github.com/ActiveState/cli/pkg/platform/runtime2/impl/alternative"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/model/client"
-	"github.com/ActiveState/cli/pkg/platform/runtime2/setup/alternative"
-	"github.com/ActiveState/cli/pkg/platform/runtime2/setup/common"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -19,23 +18,23 @@ const maxConcurrency = 3
 // Setup provides methods to setup a fully-function runtime that *only* requires interactions with the local file system.
 type Setup struct {
 	client     model.ClientProvider
-	msgHandler common.MessageHandler
+	msgHandler impl.MessageHandler
 }
 
 // NewSetup returns a new Setup instance that can install a Runtime locally on the machine.
-func NewSetup(project *project.Project, msgHandler common.MessageHandler) *Setup {
+func NewSetup(project *project.Project, msgHandler impl.MessageHandler) *Setup {
 	return NewSetupWithAPI(project, msgHandler, client.NewDefault())
 }
 
 // NewSetupWithAPI returns a new Setup instance with a customized API client eg., for testing purposes
-func NewSetupWithAPI(project *project.Project, msgHandler common.MessageHandler, api model.ClientProvider) *Setup {
+func NewSetupWithAPI(project *project.Project, msgHandler impl.MessageHandler, api model.ClientProvider) *Setup {
 	panic("implement me")
 }
 
 // InstalledRuntime returns a locally installed Runtime instance.
 //
 // If the runtime cannot be initialized a NotInstalledError is returned.
-func (s *Setup) InstalledRuntime() (rcommon.Runtimer, error) {
+func (s *Setup) InstalledRuntime() (runtime.Runtimer, error) {
 	// check if complete installation can be found locally or:
 	//   return ErrNotInstalled
 	// next: try to load from local installation
@@ -57,7 +56,7 @@ func (s *Setup) InstallRuntime() error {
 	}
 
 	// Create the setup implementation based on the build engine (alternative or camel)
-	var setupImpl common.Setuper
+	var setupImpl impl.Setuper
 	setupImpl = s.selectSetupImplementation(buildResult.BuildEngine)
 
 	// Compute and handle the change summary
@@ -116,7 +115,7 @@ func (s *Setup) setupArtifact(buildEngine runtime.BuildEngine, a runtime.Artifac
 	panic("implement error handling")
 }
 
-func (s *Setup) changeSummaryArgs(buildResult *model.BuildResult) (requested common.ArtifactChanges, changed common.ArtifactChanges) {
+func (s *Setup) changeSummaryArgs(buildResult *model.BuildResult) (requested impl.ArtifactChanges, changed impl.ArtifactChanges) {
 	panic("implement me")
 }
 
@@ -131,7 +130,7 @@ func (s *Setup) unpackTarball(tarballPath string) string {
 	panic("implement me")
 }
 
-func (s *Setup) selectSetupImplementation(buildEngine runtime.BuildEngine) common.Setuper {
+func (s *Setup) selectSetupImplementation(buildEngine runtime.BuildEngine) impl.Setuper {
 	if buildEngine == runtime.Alternative {
 		return alternative.NewSetup()
 	}
