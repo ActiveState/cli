@@ -1,6 +1,7 @@
 package client
 
 import (
+	"github.com/ActiveState/cli/pkg/platform/api/buildlogstream"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/api"
 )
@@ -25,6 +26,6 @@ func (tc *Mock) Build(order *inventory_models.Order) (*api.BuildResult, error) {
 }
 
 // BuildLog returns a mocked BuildLogger implementation
-func (tc *Mock) BuildLog(recipe *inventory_models.Recipe) (api.BuildLogger, error) {
+func (tc *Mock) BuildLog(msgHandler buildlogstream.MessageHandler, recipe *inventory_models.Recipe) (api.BuildLogger, error) {
 	panic("implement me")
 }

@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/ActiveState/cli/pkg/platform/api/buildlogstream"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	runtime "github.com/ActiveState/cli/pkg/platform/runtime2"
 )
@@ -9,7 +10,7 @@ import (
 type ClientProvider interface {
 	Solve() (*inventory_models.Order, error)
 	Build(*inventory_models.Order) (*BuildResult, error)
-	BuildLog(recipe *inventory_models.Recipe) (BuildLogger, error)
+	BuildLog(msgHandler buildlogstream.MessageHandler, recipe *inventory_models.Recipe) (BuildLogger, error)
 }
 
 // BuildLogger is an interface to communicate with the build log streamer

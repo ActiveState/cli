@@ -1,6 +1,7 @@
 package client
 
 import (
+	"github.com/ActiveState/cli/pkg/platform/api/buildlogstream"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/api"
 )
@@ -23,6 +24,6 @@ func (d *Default) Build(order *inventory_models.Order) (*api.BuildResult, error)
 	panic("implement me")
 }
 
-func (d *Default) BuildLog(recipe *inventory_models.Recipe) (api.BuildLogger, error) {
+func (d *Default) BuildLog(msgHandler buildlogstream.MessageHandler, recipe *inventory_models.Recipe) (api.BuildLogger, error) {
 	panic("implement me")
 }

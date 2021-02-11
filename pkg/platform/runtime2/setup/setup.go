@@ -62,7 +62,7 @@ func (s *Setup) InstallRuntime() error {
 
 	// Access the build log to receive build updates.
 	// Note: This may not actually connect to the build log if the build has already finished.
-	buildLog, err := s.client.BuildLog(buildResult.Recipe)
+	buildLog, err := s.client.BuildLog(s.msgHandler, buildResult.Recipe)
 	if err != nil {
 		return err
 	}
@@ -118,6 +118,7 @@ func (s *Setup) changeSummaryArgs(buildResult *api.BuildResult) (requested commo
 // downloadArtifactTarball retrieves the tarball for an artifactID
 // Note: the tarball may also be retrieved from a local cache directory if that is available.
 func (s *Setup) downloadArtifactTarball(artifactID runtime.ArtifactID) string {
+	s.msgHandler.ArtifactDownloadStarting("artifactName")
 	panic("implement me")
 }
 
