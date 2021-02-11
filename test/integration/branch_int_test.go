@@ -23,9 +23,9 @@ func (suite *BranchIntegrationTestSuite) TestBranch_List() {
 
 	cp := ts.Spawn("branch")
 	expectations := []string{
+		"main",
 		"firstbranch",
 		"firstbranchchild",
-		"main",
 		"secondbranch",
 	}
 	for _, expectation := range expectations {

@@ -39,17 +39,26 @@ func (l *List) Run() error {
 
 	localBranch := l.project.BranchName()
 
+	sort.Slice(project.Branches, func(i, j int) bool {
+		return project.Branches[i].Label < project.Branches[j].Label
+	})
+
 	var branches []string
+	var mainBranchLabel string
 	for _, branch := range project.Branches {
 		branchName := branch.Label
 		if branchName == localBranch {
 			branchName = fmt.Sprintf("[NOTICE]%s[/RESET] *", branchName)
 		}
+
+		if branch.Default {
+			mainBranchLabel = branchName
+			continue
+		}
+
 		branches = append(branches, branchName)
 	}
-	sort.Slice(branches, func(i, j int) bool {
-		return branches[i] < branches[j]
-	})
+	branches = append([]string{mainBranchLabel}, branches...)
 
 	l.out.Print(branches)
 
