@@ -45,11 +45,6 @@ func (a *Add) Run(params AddParams) error {
 
 	err = model.UpdateBranchTracking(branchID, a.project.CommitUUID(), branch.BranchID, model.TrackingIgnore)
 	if err != nil {
-		logging.Debug("Unable to update tracking information, attempting to delete branch")
-		derr := model.DeleteBranch(branchID)
-		if err != nil {
-			logging.Debug("Could not delete branch %s, got error: %v", params.Label, derr)
-		}
 		return locale.WrapError(err, "err_add_branch_update_tracking", "Could not update branch: {{.V0}} with tracking information", params.Label)
 	}
 
