@@ -55,7 +55,7 @@ func (suite *ProjectTestSuite) TestGetSafe() {
 }
 
 func (suite *ProjectTestSuite) TestProject() {
-	suite.Equal("https://platform.activestate.com/ActiveState/project?commitID=00010001-0001-0001-0001-000100010001", suite.project.URL(), "Values should match")
+	suite.Equal("https://platform.activestate.com/ActiveState/project?branch=main&commitID=00010001-0001-0001-0001-000100010001", suite.project.URL(), "Values should match")
 	suite.Equal("project", suite.project.Name(), "Values should match")
 	suite.Equal("00010001-0001-0001-0001-000100010001", suite.project.CommitID(), "Values should match")
 	suite.Equal("ActiveState", suite.project.Owner(), "Values should match")

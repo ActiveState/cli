@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"net/url"
 	"sync"
-	"time"
 
 	ga "github.com/ActiveState/go-ogle-analytics"
 	"github.com/ActiveState/sysinfo"
@@ -100,20 +99,8 @@ func init() {
 	setup()
 }
 
-// WaitForAllEvents waits for all events to return
-func WaitForAllEvents(t time.Duration) {
-	wg := make(chan struct{})
-	go func() {
-		eventWaitGroup.Wait()
-		close(wg)
-	}()
-
-	select {
-	case <-time.After(t):
-		return
-	case <-wg:
-		return
-	}
+func Wait() {
+	eventWaitGroup.Wait()
 }
 
 func setup() {

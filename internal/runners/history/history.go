@@ -3,6 +3,7 @@ package history
 import (
 	"github.com/go-openapi/strfmt"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
@@ -43,7 +44,12 @@ func (h *History) Run(params *HistoryParams) error {
 			return err
 		}
 
-		commits, err = model.CommitHistory(nsMeta.Owner, nsMeta.Project)
+		branch, err := model.DefaultBranchForProjectName(nsMeta.Owner, nsMeta.Project)
+		if err != nil {
+			return errs.Wrap(err, "Could not get default branch")
+		}
+
+		commits, err = model.CommitHistory(nsMeta.Owner, nsMeta.Project, branch.Label)
 		if err != nil {
 			return locale.WrapError(err, "err_commit_history_namespace", "Could not get commit history from provided namespace: {{.V0}}", params.Namespace)
 		}

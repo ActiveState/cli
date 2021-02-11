@@ -13,6 +13,7 @@ import (
 	"unicode"
 
 	"github.com/gobuffalo/packr"
+	"github.com/rollbar/rollbar-go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
@@ -539,9 +540,25 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	} else {
 		analytics.EventWithLabel(analytics.CatCommandExit, subCommandString, strconv.Itoa(exitCode))
 	}
-	analytics.WaitForAllEvents(time.Second * 1)
+	waitForAllEvents(time.Second * 1)
 
 	return err
+}
+
+func waitForAllEvents(t time.Duration) {
+	wg := make(chan struct{})
+	go func() {
+		analytics.Wait()
+		rollbar.Wait()
+		close(wg)
+	}()
+
+	select {
+	case <-time.After(t):
+		return
+	case <-wg:
+		return
+	}
 }
 
 func (c *Command) runFlags(persistOnly bool) {

@@ -35,7 +35,7 @@ func Test_Create(t *testing.T) {
 			args{"orgName", "projName", tempDir, "python3", &uuid},
 			nil,
 			true,
-			"orgName/projName?commitID=" + uuid.String(),
+			"orgName/projName?branch=main&commitID=" + uuid.String(),
 		},
 	}
 	for _, tt := range tests {
