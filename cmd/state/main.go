@@ -71,7 +71,9 @@ func main() {
 	// Run our main command logic, which is logic that defers to the error handling logic below
 	code, err := run(os.Args, isInteractive, out)
 	if err != nil {
-		out.Error(err)
+		if !isSilent(err) {
+			out.Error(err)
+		}
 
 		// If a state tool error occurs in a VSCode integrated terminal, we want
 		// to pause and give time to the user to read the error message.
