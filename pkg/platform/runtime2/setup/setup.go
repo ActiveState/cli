@@ -32,8 +32,13 @@ func NewSetupWithAPI(project *project.Project, msgHandler common.MessageHandler,
 	panic("implement me")
 }
 
-// InstalledRuntime returns a locally installed Runtime instance.  If not available on the
+// InstalledRuntime returns a locally installed Runtime instance.
+//
+// If the runtime cannot be initialized a NotInstalledError is returned.
 func (s *Setup) InstalledRuntime() (rcommon.Runtimer, error) {
+	// check if complete installation can be found locally or:
+	//   return ErrNotInstalled
+	// next: try to load from local installation
 	panic("implement me")
 }
 
