@@ -1640,5 +1640,7 @@ err_activate_platfrom_alternate_branches:
      - {{.V1}}
 
     Type [ACTIONABLE]`state branch switch <NAME>`[/RESET] to switch to a different branch.
+err_fetch_project:
+  other: "Could not fetch details for project: {{.V0}}"
 err_set_default_branch:
   other: Could not update project field with branch, please manually set the `branch={{.V0}}` query parameter on the project field in your activestate.yaml.
