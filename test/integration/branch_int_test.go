@@ -86,7 +86,7 @@ func (suite *BranchIntegrationTestSuite) TestBranch_Switch() {
 
 	cp = ts.Spawn("branch", "switch", "secondbranch")
 	cp.Expect("Updating Runtime")
-	cp.Expect("Downloading missing artifacts")
+	cp.Expect("Downloading missing artifacts", 60*time.Second)
 	cp.Expect("Updating missing artifacts")
 	cp.Expect("Installing")
 	cp.ExpectLongString("Successfully switched to branch: secondbranch", 60*time.Second)
