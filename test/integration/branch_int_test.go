@@ -67,6 +67,9 @@ func (suite *BranchIntegrationTestSuite) TestBranch_Switch() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
+	err := ts.ClearCache()
+	suite.Require().NoError(err)
+
 	suite.PrepareActiveStateYAML(ts, "ActiveState-CLI", "Branches")
 	pjfilepath := filepath.Join(ts.Dirs.Work, constants.ConfigFileName)
 
