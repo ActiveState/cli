@@ -1003,6 +1003,7 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 		return nil, err
 	}
 
+	var commitID string
 	if params.projectURL == "" {
 		u, err := url.Parse(fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, params.Owner, params.Project))
 		if err != nil {
@@ -1011,7 +1012,8 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 		q := u.Query()
 
 		if params.CommitID != nil {
-			q.Set("commitID", params.CommitID.String())
+			commitID = params.CommitID.String()
+			q.Set("commitID", commitID)
 		}
 		if params.BranchName != "" {
 			q.Set("branch", params.BranchName)
@@ -1059,6 +1061,7 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 		"Project":         params.projectURL,
 		"LanguageName":    params.Language,
 		"LanguageVersion": params.LanguageVersion,
+		"CommitID":        commitID,
 		"Content":         content,
 		"Private":         params.Private,
 	}
