@@ -55,7 +55,6 @@ func (s *Switch) Run(params SwitchParams) error {
 	}
 
 	// refresh runtime
-	// TODO: Verify the changed bool
 	err = runbits.RefreshRuntime(s.out, nil, s.project, s.config.CachePath(), *branch.CommitID, false)
 	if err != nil {
 		return err
