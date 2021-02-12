@@ -128,6 +128,12 @@ Your error log is located at: %s`, logging.FilePath()))
 	}
 }
 
+type SilencedError struct{ error }
+
+func (s *SilencedError) Unwrap() error { return s.error }
+
+func (s *SilencedError) IsSilent() bool { return true }
+
 func isSilent(err error) bool {
 	var silentErr interface {
 		IsSilent() bool

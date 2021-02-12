@@ -157,6 +157,7 @@ func (suite *UpdateIntegrationTestSuite) TestAutoUpdateNoPermissions() {
 }
 
 func (suite *UpdateIntegrationTestSuite) TestLocked() {
+	suite.T().SkipNow() // https://www.pivotaltracker.com/story/show/176926586
 	suite.OnlyRunForTags(tagsuite.Update)
 	pjfile := projectfile.Project{
 		Project: lockedProjectURL(),
@@ -182,6 +183,7 @@ func (suite *UpdateIntegrationTestSuite) TestLocked() {
 }
 
 func (suite *UpdateIntegrationTestSuite) TestLockedChannel() {
+	suite.T().SkipNow() // https://www.pivotaltracker.com/story/show/176926586
 	suite.OnlyRunForTags(tagsuite.Update)
 	pjfile := projectfile.Project{
 		Project: lockedProjectURL(),
