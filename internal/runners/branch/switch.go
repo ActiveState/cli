@@ -41,22 +41,22 @@ func (s *Switch) Run(params SwitchParams) error {
 
 	branch, err := model.BranchForProjectByName(project, params.Name)
 	if err != nil {
-		return locale.WrapError(err, "err_switch_no_branch", "Project {{.V0}} does not contain a branch with name {{.V1}}", s.project.Namespace().String(), params.Name)
+		return locale.WrapError(err, "err_fetch_branch", params.Name)
 	}
 
 	err = s.project.Source().SetBranch(branch.Label)
 	if err != nil {
-		return locale.WrapError(err, "err_switch_set_branch", "Could not set branch")
+		return locale.WrapError(err, "err_switch_set_branch", "Could not update branch")
 	}
 
 	err = s.project.Source().SetCommit(branch.CommitID.String(), s.project.IsHeadless())
 	if err != nil {
-		return locale.WrapError(err, "err_switch_set_commitID", "Could not set commit ID")
+		return locale.WrapError(err, "err_switch_set_commitID", "Could not update commit ID")
 	}
 
 	err = runbits.RefreshRuntime(s.out, nil, s.project, s.config.CachePath(), *branch.CommitID, false)
 	if err != nil {
-		return err
+		return locale.WrapError(err, "err_refresh_runtime")
 	}
 
 	s.out.Print(locale.Tl("branch_switch_success", "Successfully switched to branch: [NOTICE]{{.V0}}[/RESET]", params.Name))

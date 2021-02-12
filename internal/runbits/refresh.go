@@ -19,11 +19,11 @@ func RefreshRuntime(out output.Outputer, req *RequestedRequirement, proj *projec
 	}
 	rt, err := runtime.NewRuntime(proj.Source().Path(), cachePath, commitID, proj.Owner(), proj.Name(), rtMessages)
 	if err != nil {
-		return locale.WrapError(err, "err_packages_update_runtime_init", "Could not initialize runtime.")
+		return locale.WrapError(err, "err_update_runtime_init", "Could not initialize runtime.")
 	}
 
 	if !changed && rt.IsCachedRuntime() {
-		out.Print(locale.Tl("pkg_already_uptodate", "Requested dependencies are already configured and installed."))
+		out.Print(locale.Tl("runtime_already_uptodate", "Requested dependencies are already configured and installed."))
 		return nil
 	}
 
@@ -32,7 +32,7 @@ func RefreshRuntime(out output.Outputer, req *RequestedRequirement, proj *projec
 		out.Notice(locale.Tl("update_runtime_info", "Changes to your runtime may require some dependencies to be rebuilt."))
 		_, _, err := runtime.NewInstaller(rt).Install()
 		if err != nil {
-			return locale.WrapError(err, "err_packages_update_runtime_install", "Could not install dependencies.")
+			return locale.WrapError(err, "err_update_runtime_install", "Could not install dependencies.")
 		}
 	}
 
