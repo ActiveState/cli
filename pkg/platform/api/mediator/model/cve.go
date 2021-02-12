@@ -43,11 +43,11 @@ type ProjectResponse struct {
 }
 
 type CommitVulnerabilities struct {
-	CommitID               string                    `json:"commit_id"`
-	VulnerabilityHistogram []SeverityCount           `json:"vulnerability_histogram"`
-	Ingredients            []IngredientVulnerability `json:"ingredients"`
-	TypeName               *string                   `json:"__typename,omitempty"`
-	Message                *string                   `json:"message,omitempty"`
+	CommitID               string                `json:"commit_id"`
+	VulnerabilityHistogram []SeverityCount       `json:"vulnerability_histogram"`
+	Sources                []SourceVulnerability `json:"Sources"`
+	TypeName               *string               `json:"__typename,omitempty"`
+	Message                *string               `json:"message,omitempty"`
 }
 
 type CommitResponse struct {
@@ -59,15 +59,15 @@ type SeverityCount struct {
 	Count    int    `json:"count"`
 }
 
-type IngredientVulnerability struct {
+type SourceVulnerability struct {
 	Name            string          `json:"name"`
+	Version         string          `json:"version"`
 	Vulnerabilities []Vulnerability `json:"vulnerabilities"`
 }
 
 type Vulnerability struct {
-	Version  string   `json:"ingredient_version"`
 	Severity string   `json:"severity"`
-	CveId    string   `json:"cve_id"`
+	CveID    string   `json:"cve_id"`
 	AltIds   []string `json:"alt_ids"`
 }
 

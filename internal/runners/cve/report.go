@@ -65,7 +65,7 @@ func (r *Report) Run(params *ReportParams) error {
 		return locale.WrapError(err, "cve_mediator_resp", "Failed to retrieve vulnerability information")
 	}
 
-	packageVulnerabilities := model.ExtractPackageVulnerabilities(vulnerabilities.Ingredients)
+	packageVulnerabilities := model.ExtractPackageVulnerabilities(vulnerabilities.Sources)
 
 	ns := params.Namespace
 	if !ns.IsValid() {
@@ -174,7 +174,7 @@ func (rd *reportDataPrinter) MarshalOutput(format output.Format) interface{} {
 			if severity == "CRITICAL" {
 				severity = fmt.Sprintf("[ERROR]%-10s[/RESET]", severity)
 			}
-			rd.output.Print(fmt.Sprintf("  %s %-10s [ACTIONABLE]%s[/RESET]", bar, severity, d.CveId))
+			rd.output.Print(fmt.Sprintf("  %s %-10s [ACTIONABLE]%s[/RESET]", bar, severity, d.CveID))
 		}
 		rd.output.Print("")
 	}

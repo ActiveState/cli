@@ -66,10 +66,10 @@ func FetchCommitVulnerabilities(auth *authentication.Auth, commitID string) (*mo
 	return &resp.CommitVulnerabilities, nil
 }
 
-func ExtractPackageVulnerabilities(ingredients []model.IngredientVulnerability) []PackageVulnerability {
+func ExtractPackageVulnerabilities(sources []model.SourceVulnerability) []PackageVulnerability {
 	var packageVulnerabilities []PackageVulnerability
 	visited := make(map[string]struct{})
-	for _, v := range ingredients {
+	for _, v := range sources {
 		if len(v.Vulnerabilities) == 0 {
 			continue
 		}
@@ -81,19 +81,13 @@ func ExtractPackageVulnerabilities(ingredients []model.IngredientVulnerability) 
 		}
 		visited[v.Name] = struct{}{}
 
-		cves := make(map[string][]Vulnerability)
+		vuls := make([]Vulnerability, 0, len(v.Vulnerabilities))
 		for _, ve := range v.Vulnerabilities {
-			if _, ok := cves[ve.Version]; !ok {
-				cves[ve.Version] = []Vulnerability{}
-			}
-			cves[ve.Version] = append(cves[ve.Version], Vulnerability(ve))
+			vuls = append(vuls, Vulnerability(ve))
 		}
-
-		for ver, vuls := range cves {
-			packageVulnerabilities = append(packageVulnerabilities, PackageVulnerability{
-				v.Name, ver, vuls,
-			})
-		}
+		packageVulnerabilities = append(packageVulnerabilities, PackageVulnerability{
+			v.Name, v.Version, vuls,
+		})
 	}
 
 	return packageVulnerabilities

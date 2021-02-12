@@ -26,10 +26,10 @@ func (p *vulnerabilitiesByProject) Query() string {
 		          severity
 		          count
 		        }
-		        ingredients {
+		        sources {
 		          name
+				  version
 		          vulnerabilities {
-		            ingredient_version
 		            severity
 		            cve_id
 		            alt_ids
@@ -70,10 +70,10 @@ func (p *vulnerabilitiesByCommit) Query() string {
 		        severity
 		        count
 		      }
-		      ingredients {
+		      sources {
 		        name
+				version
 		        vulnerabilities {
-		          ingredient_version
 		          severity
 		          cve_id
 		          alt_ids

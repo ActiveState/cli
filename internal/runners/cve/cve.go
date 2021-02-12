@@ -69,7 +69,7 @@ func (c *Cve) Run() error {
 		return locale.WrapError(err, "cve_mediator_resp", "Failed to retrieve vulnerability information")
 	}
 
-	details := model.ExtractPackageVulnerabilities(resp.Ingredients)
+	details := model.ExtractPackageVulnerabilities(resp.Sources)
 	packageVulnerabilities := make([]ByPackageOutput, 0, len(details))
 	for _, v := range details {
 		packageVulnerabilities = append(packageVulnerabilities, ByPackageOutput{
