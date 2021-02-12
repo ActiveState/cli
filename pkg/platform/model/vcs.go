@@ -71,6 +71,31 @@ const (
 	NamespaceCamelFlagsMatch = `^camel-flags$`
 )
 
+type TrackingType string
+
+const (
+	// TrackingNotify represents the notify tracking type for branches and will
+	// notify the project owner of upstream changes
+	TrackingNotify TrackingType = TrackingType(mono_models.BranchEditableTrackingTypeNotify)
+	// TrackingIgnore represents the ignore tracking type for branches and will
+	// ignore upstream changes
+	TrackingIgnore = TrackingType(mono_models.BranchEditableTrackingTypeIgnore)
+	// TrackingAutoUpdate represents the auto update tracking type for branches and will
+	// auto update the branch with any upstream changes
+	TrackingAutoUpdate = TrackingType(mono_models.BranchEditableTrackingTypeAutoUpdate)
+)
+
+func (t TrackingType) String() string {
+	switch t {
+	case TrackingNotify:
+		return mono_models.BranchEditableTrackingTypeNotify
+	case TrackingAutoUpdate:
+		return mono_models.BranchEditableTrackingTypeAutoUpdate
+	default:
+		return mono_models.BranchEditableTrackingTypeIgnore
+	}
+}
+
 // NamespaceMatch Checks if the given namespace query matches the given namespace
 func NamespaceMatch(query string, namespace NamespaceMatchable) bool {
 	match, err := regexp.Match(string(namespace), []byte(query))
@@ -302,11 +327,29 @@ func UpdateBranchForProject(pj ProjectInfo, commitID strfmt.UUID) error {
 
 // UpdateBranchCommit updates the commit that a branch is pointed at
 func UpdateBranchCommit(branchID strfmt.UUID, commitID strfmt.UUID) error {
+	changeset := &mono_models.BranchEditable{
+		CommitID: &commitID,
+	}
+
+	return updateBranch(branchID, changeset)
+}
+
+// UpdateBranchTracking updates the tracking information for the given branch
+func UpdateBranchTracking(branchID, commitID, trackingBranchID strfmt.UUID, trackingType TrackingType) error {
+	tracking := trackingType.String()
+	changeset := &mono_models.BranchEditable{
+		CommitID:     &commitID,
+		TrackingType: &tracking,
+		Tracks:       &trackingBranchID,
+	}
+
+	return updateBranch(branchID, changeset)
+}
+
+func updateBranch(branchID strfmt.UUID, changeset *mono_models.BranchEditable) error {
 	params := vcsClient.NewUpdateBranchParams()
 	params.SetBranchID(branchID)
-	params.SetBranch(&mono_models.BranchEditable{
-		CommitID: &commitID,
-	})
+	params.SetBranch(changeset)
 
 	_, err := authentication.Client().VersionControl.UpdateBranch(params, authentication.ClientAuth())
 	if err != nil {
@@ -320,6 +363,18 @@ func UpdateBranchCommit(branchID strfmt.UUID, commitID strfmt.UUID) error {
 		}
 		return locale.NewError("err_update_branch", api.ErrorMessageFromPayload(err))
 	}
+	return nil
+}
+
+func DeleteBranch(branchID strfmt.UUID) error {
+	params := vcsClient.NewDeleteBranchParams()
+	params.SetBranchID(branchID)
+
+	_, err := authentication.Client().VersionControl.DeleteBranch(params, authentication.ClientAuth())
+	if err != nil {
+		return locale.WrapError(err, "err_delete_branch", "Could not delete branch")
+	}
+
 	return nil
 }
 
