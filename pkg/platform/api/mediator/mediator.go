@@ -45,8 +45,11 @@ func New(url string, common Header, bearerToken BearerTokenProvider, timeout tim
 
 	retryOpt := graphql.WithHTTPClient(retryhttp.DefaultClient.StandardClient())
 
+	client := graphql.NewClient(url, retryOpt)
+	// client.Log = func(msg string) { logging.Debug(msg) }
+
 	return &MediatorClient{
-		Client:        graphql.NewClient(url, retryOpt),
+		Client:        client,
 		common:        common,
 		tokenProvider: bearerToken,
 		timeout:       timeout,

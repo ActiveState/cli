@@ -47,3 +47,46 @@ func (p *vulnerabilitiesByProject) Query() string {
 func (p *vulnerabilitiesByProject) Vars() map[string]interface{} {
 	return p.vars
 }
+
+type vulnerabilitiesByCommit struct {
+	vars map[string]interface{}
+}
+
+// VulnerabilitiesByCommit returns the query for retrieving vulnerabilities for a specific commit
+func VulnerabilitiesByCommit(commitID string) *vulnerabilitiesByCommit {
+	return &vulnerabilitiesByCommit{map[string]interface{}{
+		"commit_id": commitID,
+	}}
+}
+
+func (p *vulnerabilitiesByCommit) Query() string {
+	return `query Vulnerabilities($commit_id: Uuid!)
+		{
+		  commit(commit_id: $commit_id) {
+		    __typename
+		    ... on Commit {
+		      commit_id
+		      vulnerability_histogram {
+		        severity
+		        count
+		      }
+		      ingredients {
+		        name
+		        vulnerabilities {
+		          ingredient_version
+		          severity
+		          cve_id
+		          alt_ids
+		        }
+		      }
+		    }
+		    ... on NotFound {
+		      message
+		    }
+		  }
+		}`
+}
+
+func (p *vulnerabilitiesByCommit) Vars() map[string]interface{} {
+	return p.vars
+}

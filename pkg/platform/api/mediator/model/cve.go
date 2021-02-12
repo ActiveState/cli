@@ -32,18 +32,26 @@ func ParseSeverityIndex(severity string) Severity {
 }
 
 type ProjectVulnerabilities struct {
-	Project struct {
-		TypeName string                 `json:"__typename"`
-		Name     string                 `json:"name,omitempty"`
-		Commit   *CommitVulnerabilities `json:"commit,omitempty"`
-		Message  *string                `json:"message,omitempty"`
-	} `json:"project"`
+	TypeName string                 `json:"__typename"`
+	Name     string                 `json:"name,omitempty"`
+	Commit   *CommitVulnerabilities `json:"commit,omitempty"`
+	Message  *string                `json:"message,omitempty"`
+}
+
+type ProjectResponse struct {
+	ProjectVulnerabilities `json:"project"`
 }
 
 type CommitVulnerabilities struct {
 	CommitID               string                    `json:"commit_id"`
 	VulnerabilityHistogram []SeverityCount           `json:"vulnerability_histogram"`
 	Ingredients            []IngredientVulnerability `json:"ingredients"`
+	TypeName               *string                   `json:"__typename,omitempty"`
+	Message                *string                   `json:"message,omitempty"`
+}
+
+type CommitResponse struct {
+	CommitVulnerabilities `json:"commit"`
 }
 
 type SeverityCount struct {

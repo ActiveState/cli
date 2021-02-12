@@ -20,7 +20,7 @@ func (suite *CveIntegrationTestSuite) TestCveSummary() {
 
 	ts.LoginAsPersistentUser()
 
-	ts.PrepareActiveStateYAML(`project: https://platform.activestate.com/ActiveState-CLI/VulnerablePython-3.7`)
+	ts.PrepareActiveStateYAML(`project: https://platform.activestate.com/ActiveState-CLI/VulnerablePython-3.7?commitID=0b87e7a4-dc62-46fd-825b-9c35a53fe0a2`)
 
 	cp := ts.Spawn("cve")
 	cp.Expect("VulnerablePython-3.7")
@@ -44,8 +44,9 @@ func (suite *CveIntegrationTestSuite) TestCveReport() {
 
 	ts.LoginAsPersistentUser()
 
-	cp := ts.Spawn("cve", "report", "ActiveState-CLI/VulnerablePython-3.7")
+	cp := ts.Spawn("cve", "report", "ActiveState-CLI/VulnerablePython-3.7?commitID=0b87e7a4-dc62-46fd-825b-9c35a53fe0a2")
 	cp.Expect("Commit ID")
+	cp.Expect("0b87e7a4-dc62-46fd-825b-9c35a53fe0a2")
 
 	cp.Expect("Vulnerabilities")
 	cp.Expect("6")
@@ -66,7 +67,7 @@ func (suite *CveIntegrationTestSuite) TestCveNoVulnerabilities() {
 
 	ts.LoginAsPersistentUser()
 
-	ts.PrepareActiveStateYAML(`project: https://platform.activestate.com/ActiveState-CLI/small-python`)
+	ts.PrepareActiveStateYAML(`project: https://platform.activestate.com/ActiveState-CLI/small-python?commitID=9733d11a-dfb3-41de-a37a-843b7c421db4`)
 
 	cp := ts.Spawn("cve")
 	cp.Expect("No CVEs detected")
@@ -85,9 +86,7 @@ func (suite *CveIntegrationTestSuite) TestCveInvalidProject() {
 
 	ts.LoginAsPersistentUser()
 
-	ts.PrepareActiveStateYAML(`project: https://platform.activestate.com/invalid/invalid`)
-
-	cp := ts.Spawn("cve")
+	cp := ts.Spawn("cve", "report", "invalid/invalid")
 	cp.Expect("Found no project with specified organization and name")
 
 	cp.ExpectNotExitCode(0)

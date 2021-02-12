@@ -64,12 +64,12 @@ func (c *Cve) Run() error {
 		)
 	}
 
-	resp, err := model.FetchProjectVulnerabilities(c.auth, c.proj.Owner(), c.proj.Name())
+	resp, err := model.FetchCommitVulnerabilities(c.auth, c.proj.CommitID())
 	if err != nil {
 		return locale.WrapError(err, "cve_mediator_resp", "Failed to retrieve vulnerability information")
 	}
 
-	details := model.ExtractPackageVulnerabilities(resp.Project.Commit.Ingredients)
+	details := model.ExtractPackageVulnerabilities(resp.Ingredients)
 	packageVulnerabilities := make([]ByPackageOutput, 0, len(details))
 	for _, v := range details {
 		packageVulnerabilities = append(packageVulnerabilities, ByPackageOutput{
@@ -78,9 +78,9 @@ func (c *Cve) Run() error {
 	}
 
 	cveOutput := &outputData{
-		Project:   resp.Project.Name,
-		CommitID:  resp.Project.Commit.CommitID,
-		Histogram: resp.Project.Commit.VulnerabilityHistogram,
+		Project:   c.proj.Name(),
+		CommitID:  resp.CommitID,
+		Histogram: resp.VulnerabilityHistogram,
 		Packages:  packageVulnerabilities,
 	}
 

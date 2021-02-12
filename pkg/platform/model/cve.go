@@ -26,19 +26,44 @@ func FetchProjectVulnerabilities(auth *authentication.Auth, org, project string)
 		)
 	}
 	req := request.VulnerabilitiesByProject(org, project)
-	var resp model.ProjectVulnerabilities
+	var resp model.ProjectResponse
 	med := mediator.Get(auth)
 	err := med.Run(req, &resp)
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to run mediator request.")
 	}
 
-	msg := resp.Project.Message
+	msg := resp.ProjectVulnerabilities.Message
 	if msg != nil {
 		return nil, locale.NewError("project_vulnerability_err", "Request to retrieve vulnerability information failed with error: {{.V0}}", *msg)
 	}
 
-	return &resp, nil
+	return &resp.ProjectVulnerabilities, nil
+}
+
+// FetchCommitVulnerabilities returns the vulnerability information of a project
+func FetchCommitVulnerabilities(auth *authentication.Auth, commitID string) (*model.CommitVulnerabilities, error) {
+	// This should be removed by https://www.pivotaltracker.com/story/show/176508740
+	if !auth.Authenticated() {
+		return nil, errs.AddTips(
+			locale.NewError("cve_needs_authentication", "You need to be authenticated in order to access vulnerability information about your project."),
+			locale.Tl("auth_tip", "Run `state auth` to authenticate."),
+		)
+	}
+	req := request.VulnerabilitiesByCommit(commitID)
+	var resp model.CommitResponse
+	med := mediator.Get(auth)
+	err := med.Run(req, &resp)
+	if err != nil {
+		return nil, errs.Wrap(err, "Failed to run mediator request.")
+	}
+
+	msg := resp.Message
+	if msg != nil {
+		return nil, locale.NewError("commit_vulnerability_err", "Request to retrieve vulnerability information for commit {{.V0}} failed with error: {{.V1}}", commitID, *msg)
+	}
+
+	return &resp.CommitVulnerabilities, nil
 }
 
 func ExtractPackageVulnerabilities(ingredients []model.IngredientVulnerability) []PackageVulnerability {

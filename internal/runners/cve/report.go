@@ -8,7 +8,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	medmodel "github.com/ActiveState/cli/pkg/platform/api/mediator/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -50,12 +49,8 @@ type reportDataPrinter struct {
 }
 
 func (r *Report) Run(params *ReportParams) error {
-	ns := params.Namespace
-	if !ns.IsValid() {
-		if r.proj == nil {
-			return locale.NewInputError("err_no_project")
-		}
-		ns = r.proj.Namespace()
+	if !params.Namespace.IsValid() && r.proj == nil {
+		return locale.NewInputError("err_no_project")
 	}
 
 	if !r.auth.Authenticated() {
@@ -65,20 +60,23 @@ func (r *Report) Run(params *ReportParams) error {
 		)
 	}
 
-	logging.Debug("Fetching vulnerabilities for %s", ns.String())
-	resp, err := model.FetchProjectVulnerabilities(r.auth, ns.Owner, ns.Project)
+	vulnerabilities, err := r.fetchVulnerabilities(*params.Namespace)
 	if err != nil {
 		return locale.WrapError(err, "cve_mediator_resp", "Failed to retrieve vulnerability information")
 	}
 
-	packageVulnerabilities := model.ExtractPackageVulnerabilities(resp.Project.Commit.Ingredients)
+	packageVulnerabilities := model.ExtractPackageVulnerabilities(vulnerabilities.Ingredients)
 
+	ns := params.Namespace
+	if !ns.IsValid() {
+		ns = r.proj.Namespace()
+	}
 	reportOutput := &reportData{
 		Project:  ns.String(),
-		CommitID: resp.Project.Commit.CommitID,
+		CommitID: vulnerabilities.CommitID,
 		Date:     time.Now(),
 
-		Histogram: resp.Project.Commit.VulnerabilityHistogram,
+		Histogram: vulnerabilities.VulnerabilityHistogram,
 		Packages:  packageVulnerabilities,
 	}
 
@@ -90,6 +88,21 @@ func (r *Report) Run(params *ReportParams) error {
 	r.out.Print(rdp)
 
 	return nil
+}
+
+func (r *Report) fetchVulnerabilities(namespaceOverride project.Namespaced) (*medmodel.CommitVulnerabilities, error) {
+	if !namespaceOverride.IsValid() {
+		resp, err := model.FetchCommitVulnerabilities(r.auth, r.proj.CommitID())
+		if err != nil {
+			return nil, errs.Wrap(err, "Failed to fetch vulnerability information for commit %s", r.proj.CommitID())
+		}
+		return resp, nil
+	}
+	resp, err := model.FetchProjectVulnerabilities(r.auth, namespaceOverride.Owner, namespaceOverride.Project)
+	if err != nil {
+		return nil, errs.Wrap(err, "Failed to fetch vulnerability information for project %s", namespaceOverride.String())
+	}
+	return resp.Commit, nil
 }
 
 func (rd *reportDataPrinter) MarshalOutput(format output.Format) interface{} {
