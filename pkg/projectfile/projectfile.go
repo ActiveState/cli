@@ -448,7 +448,7 @@ func Parse(configFilepath string) (*Project, error) {
 	projectDir := filepath.Dir(configFilepath)
 	files, err := ioutil.ReadDir(projectDir)
 	if err != nil {
-		return nil, locale.WrapError(err, "err_project_readdir", "Could not ready project directory: {{.V0}}.", projectDir)
+		return nil, locale.WrapError(err, "err_project_readdir", "Could not read project directory: {{.V0}}.", projectDir)
 	}
 
 	project, err := parse(configFilepath)
