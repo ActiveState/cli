@@ -89,7 +89,7 @@ func (suite *BranchIntegrationTestSuite) TestBranch_Switch() {
 	cp.ExpectLongString("Successfully switched to branch: secondbranch", 60*time.Second)
 	cp.ExpectExitCode(0)
 
-	// Check that languages were reset
+	// Check that branch and commitID were updated
 	pjfile, err = projectfile.Parse(pjfilepath)
 	suite.Require().NoError(err)
 	if pjfile.CommitID() == mainBranchCommitID {
