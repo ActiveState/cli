@@ -112,7 +112,7 @@ func (r *Push) Run(params PushParams) error {
 		} else {
 			branch, err = model.BranchForProjectByName(pjm, branchName)
 			if err != nil {
-				return locale.WrapError(err, "err_fetch_branch", branchName)
+				return locale.WrapError(err, "err_fetch_branch", "", branchName)
 			}
 		}
 

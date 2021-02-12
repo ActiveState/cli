@@ -36,12 +36,12 @@ func (s *Switch) Run(params SwitchParams) error {
 
 	project, err := model.FetchProjectByName(s.project.Owner(), s.project.Name())
 	if err != nil {
-		return locale.WrapError(err, "err_fetch_project", s.project.Namespace().String())
+		return locale.WrapError(err, "err_fetch_project", "", s.project.Namespace().String())
 	}
 
 	branch, err := model.BranchForProjectByName(project, params.Name)
 	if err != nil {
-		return locale.WrapError(err, "err_fetch_branch", params.Name)
+		return locale.WrapError(err, "err_fetch_branch", "", params.Name)
 	}
 
 	err = s.project.Source().SetBranch(branch.Label)

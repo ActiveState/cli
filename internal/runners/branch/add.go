@@ -40,7 +40,7 @@ func (a *Add) Run(params AddParams) error {
 	localBranch := a.project.BranchName()
 	branch, err := model.BranchForProjectByName(project, localBranch)
 	if err != nil {
-		return locale.WrapError(err, "err_fetch_branch", localBranch)
+		return locale.WrapError(err, "err_fetch_branch", "", localBranch)
 	}
 
 	err = model.UpdateBranchTracking(branchID, a.project.CommitUUID(), branch.BranchID, model.TrackingIgnore)
