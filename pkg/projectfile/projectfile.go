@@ -960,18 +960,17 @@ func FromExactPath(path string) (*Project, error) {
 
 // CreateParams are parameters that we create a custom activestate.yaml file from
 type CreateParams struct {
-	Owner                string
-	Project              string
-	CommitID             *strfmt.UUID
-	BranchName           string
-	Directory            string
-	Content              string
-	Language             string
-	LanguageVersion      string
-	IncludeLanguageField bool
-	Private              bool
-	path                 string
-	projectURL           string
+	Owner           string
+	Project         string
+	CommitID        *strfmt.UUID
+	BranchName      string
+	Directory       string
+	Content         string
+	Language        string
+	LanguageVersion string
+	Private         bool
+	path            string
+	projectURL      string
 }
 
 // TestOnlyCreateWithProjectURL a new activestate.yaml with default content
@@ -1004,6 +1003,7 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 		return nil, err
 	}
 
+	var commitID string
 	if params.projectURL == "" {
 		u, err := url.Parse(fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, params.Owner, params.Project))
 		if err != nil {
@@ -1012,7 +1012,8 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 		q := u.Query()
 
 		if params.CommitID != nil {
-			q.Set("commitID", params.CommitID.String())
+			commitID = params.CommitID.String()
+			q.Set("commitID", commitID)
 		}
 		if params.BranchName != "" {
 			q.Set("branch", params.BranchName)
@@ -1057,12 +1058,12 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 	}
 
 	data := map[string]interface{}{
-		"Project":              params.projectURL,
-		"LanguageName":         params.Language,
-		"LanguageVersion":      params.LanguageVersion,
-		"IncludeLanguageField": params.IncludeLanguageField,
-		"Content":              content,
-		"Private":              params.Private,
+		"Project":         params.projectURL,
+		"LanguageName":    params.Language,
+		"LanguageVersion": params.LanguageVersion,
+		"CommitID":        commitID,
+		"Content":         content,
+		"Private":         params.Private,
 	}
 
 	tplName := "activestate.yaml.tpl"
