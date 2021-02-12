@@ -15,6 +15,7 @@ import (
 type primeable interface {
 	primer.Outputer
 	primer.Projecter
+	primer.Configurer
 }
 
 type List struct {

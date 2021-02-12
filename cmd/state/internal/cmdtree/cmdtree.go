@@ -112,7 +112,10 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 	updateCmd.AddChildren(newUpdateLockCommand(prime))
 
 	branchCmd := newBranchCommand(prime)
-	branchCmd.AddChildren(newBranchAddCommand(prime))
+	branchCmd.AddChildren(
+		newBranchAddCommand(prime),
+		newBranchSwitchCommand(prime),
+	)
 
 	prepareCmd := newPrepareCommand(prime)
 	prepareCmd.AddChildren(newPrepareCompletionsCommand(prime))

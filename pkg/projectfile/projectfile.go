@@ -448,7 +448,7 @@ func Parse(configFilepath string) (*Project, error) {
 	projectDir := filepath.Dir(configFilepath)
 	files, err := ioutil.ReadDir(projectDir)
 	if err != nil {
-		return nil, locale.WrapError(err, "err_project_readdir", "Could not ready project directory: {{.V0}}.", projectDir)
+		return nil, locale.WrapError(err, "err_project_readdir", "Could not read project directory: {{.V0}}.", projectDir)
 	}
 
 	project, err := parse(configFilepath)
@@ -760,6 +760,7 @@ func (p *Project) SetNamespace(owner, project string) error {
 	// keep parsed url components in sync
 	p.parsedURL.Owner = owner
 	p.parsedURL.Name = project
+	p.Project = pf.String()
 
 	return nil
 }
@@ -778,6 +779,7 @@ func (p *Project) SetCommit(commitID string, headless bool) error {
 	}
 
 	p.parsedURL.CommitID = commitID
+	p.Project = pf.String()
 	return nil
 }
 
@@ -799,6 +801,7 @@ func (p *Project) SetBranch(branch string) error {
 	}
 
 	p.parsedURL.BranchName = branch
+	p.Project = pf.String()
 	return nil
 }
 

@@ -15,7 +15,7 @@ import (
 var projectFieldRE = regexp.MustCompile(`(?m:^project:["' ]*(https?:\/\/.*?)["' ]*$)`)
 
 type projectField struct {
-	url  *url.URL
+	url *url.URL
 }
 
 func NewProjectField() *projectField {
@@ -31,6 +31,10 @@ func (p *projectField) LoadProject(rawProjectValue string) error {
 	p.url = u
 
 	return nil
+}
+
+func (p *projectField) String() string {
+	return p.url.String()
 }
 
 func (p *projectField) SetNamespace(owner, name string) {
