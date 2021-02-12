@@ -1,11 +1,11 @@
 package projectfile
 
 import (
-	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -408,92 +408,6 @@ func TestRemoveTemporaryLanguage(t *testing.T) {
 	}
 }
 
-func TestSetCommitInYAML(t *testing.T) {
-	exampleYAML := []byte(`
-junk: xgarbage
-project: https://example.com/xowner/xproject?commitID=00000000-0000-0000-0000-000000000123
-123: xvalue
-`)
-	expectedYAML := bytes.Replace(exampleYAML, []byte("123"), []byte("987"), 1) // must be 1
-
-	_, err := setCommitInYAML(exampleYAML, "", false)
-	assert.Error(t, err)
-
-	_, err = setCommitInYAML([]byte(""), "123", false)
-	assert.Error(t, err)
-
-	out0, err := setCommitInYAML(exampleYAML, "00000000-0000-0000-0000-000000000987", false)
-	assert.NoError(t, err)
-	assert.Equal(t, string(expectedYAML), string(out0))
-
-	exampleYAMLNoID := bytes.Replace(exampleYAML, []byte("?commitID=00000000-0000-0000-0000-000000000123"), nil, 1)
-	out1, err := setCommitInYAML(exampleYAMLNoID, "00000000-0000-0000-0000-000000000987", false)
-	assert.NoError(t, err)
-	assert.Equal(t, string(expectedYAML), string(out1))
-
-	// anonymous commits
-	expectedYAML = bytes.Replace(exampleYAML, []byte("xowner/xproject?commitID=00000000-0000-0000-0000-000000000123"), []byte("commit/00000000-0000-0000-0000-000000000987"), 1)
-	out2, err := setCommitInYAML(exampleYAML, "00000000-0000-0000-0000-000000000987", true)
-	assert.NoError(t, err)
-	assert.Equal(t, string(expectedYAML), string(out2))
-}
-
-func TestSetNamespaceInYAML(t *testing.T) {
-	exampleYAML := []byte(`
-junk: xgarbage
-project: https://example.com/xowner/xproject?commitID=00000000-0000-0000-0000-000000000123
-123: xvalue
-`)
-	cases := []struct {
-		name     string
-		commitID string
-		expected string
-	}{
-		{
-			"without commitID", "",
-			(`
-junk: xgarbage
-project: https://example.com/yowner/yproject
-123: xvalue
-`),
-		},
-		{
-			"with commitID",
-			"00000000-0000-0000-0000-000000000123",
-			(`
-junk: xgarbage
-project: https://example.com/yowner/yproject?commitID=00000000-0000-0000-0000-000000000123
-123: xvalue
-`),
-		},
-	}
-
-	for _, c := range cases {
-		t.Run(c.name, func(tt *testing.T) {
-			out, err := setNamespaceInYAML(exampleYAML, "yowner/yproject", c.commitID)
-			assert.NoError(t, err)
-			assert.Equal(t, c.expected, string(out))
-		})
-	}
-}
-
-func TestSetCommitInYAML_NoCommitID(t *testing.T) {
-	exampleYAML := []byte(`
-junk: xgarbage
-project: https://example.com/xowner/xproject
-123: xvalue
-`)
-	expectedYAML := []byte(`
-junk: xgarbage
-project: https://example.com/xowner/xproject?commitID=00000000-0000-0000-0000-000000000123
-123: xvalue
-`)
-
-	out, err := setCommitInYAML(exampleYAML, "00000000-0000-0000-0000-000000000123", false)
-	assert.NoError(t, err)
-	assert.Equal(t, string(expectedYAML), string(out))
-}
-
 func TestNewProjectfile(t *testing.T) {
 	dir, err := ioutil.TempDir("", "projectfile-test")
 	assert.NoError(t, err, "Should be no error when getting a temp directory")
@@ -525,4 +439,82 @@ func TestValidateProjectURL(t *testing.T) {
 
 	err = ValidateProjectURL("https://pr1234.activestate.build/commit/commitid")
 	assert.NoError(t, err, "This should not be an invalid project URL using the commit path")
+}
+
+func Test_parseURL(t *testing.T) {
+	tests := []struct {
+		name    string
+		rawURL  string
+		want    projectURL
+		wantErr bool
+	}{
+		{
+			"Valid full URL",
+			"https://platform.activestate.com/Owner/Name?commitID=7BA74758-8665-4D3F-921C-757CD271A0C1&branch=main",
+			projectURL{
+				Owner:      "Owner",
+				Name:       "Name",
+				CommitID:   "7BA74758-8665-4D3F-921C-757CD271A0C1",
+				BranchName: "main",
+			},
+			false,
+		},
+		{
+			"Valid commit URL",
+			"https://platform.activestate.com/commit/7BA74758-8665-4D3F-921C-757CD271A0C1",
+			projectURL{
+				Owner:      "",
+				Name:       "",
+				CommitID:   "7BA74758-8665-4D3F-921C-757CD271A0C1",
+				BranchName: "",
+			},
+			false,
+		},
+		{
+			"Invalid commit",
+			"https://platform.activestate.com/commit/nope",
+			projectURL{},
+			true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := parseURL(tt.rawURL)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("parseURL() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !tt.wantErr && !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("parseURL() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestProject_Init(t *testing.T) {
+	tests := []struct {
+		name           string
+		project        *Project
+		wantProjectURL *projectURL
+		wantErr        bool
+	}{
+		{
+			"Adds default branch",
+			&Project{Project: "https://platform.activestate.com/owner/name"},
+			&projectURL{
+				"owner",
+				"name",
+				"",
+				"main",
+			},
+			false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := tt.project.Init(); (err != nil) != tt.wantErr {
+				t.Errorf("Init() error = %v, wantErr %v", errs.Join(err, ": "), tt.wantErr)
+			}
+		})
+	}
 }

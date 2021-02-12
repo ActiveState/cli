@@ -3,7 +3,10 @@ package activate
 import (
 	"path/filepath"
 
+	"github.com/go-openapi/strfmt"
+
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
@@ -26,7 +29,7 @@ func NewCheckout(repo git.Repository, prime primeable) *Checkout {
 	return &Checkout{repo, prime.Output()}
 }
 
-func (r *Checkout) Run(ns *project.Namespaced, targetPath string) error {
+func (r *Checkout) Run(ns *project.Namespaced, branchName, targetPath string) error {
 	if !ns.IsValid() {
 		return locale.NewError("err_namespace_invalid", "Invalid namespace: {{.V0}}.", ns.String())
 	}
@@ -36,13 +39,25 @@ func (r *Checkout) Run(ns *project.Namespaced, targetPath string) error {
 		return err
 	}
 
+	if branchName == "" {
+		branch, err := model.DefaultBranchForProject(pj)
+		if err != nil {
+			return errs.Wrap(err, "Could not grab branch for project")
+		}
+		branchName = branch.Label
+	}
+
 	commitID := ns.CommitID
 	if commitID == nil {
-		branch, err := model.DefaultBranchForProject(pj)
+		branch, err := model.BranchForProjectByName(pj, branchName)
 		if err != nil {
 			return err
 		}
 		commitID = branch.CommitID
+	}
+
+	if commitID == nil {
+		return errs.New("commitID is nil")
 	}
 
 	// Clone the related repo, if it is defined
@@ -53,7 +68,7 @@ func (r *Checkout) Run(ns *project.Namespaced, targetPath string) error {
 		}
 	}
 
-	language, err := getLanguage(ns.Owner, ns.Project)
+	language, err := getLanguage(*commitID)
 	if err != nil {
 		return err
 	}
@@ -62,11 +77,12 @@ func (r *Checkout) Run(ns *project.Namespaced, targetPath string) error {
 	configFile := filepath.Join(targetPath, constants.ConfigFileName)
 	if !fileutils.FileExists(configFile) {
 		err = projectfile.Create(&projectfile.CreateParams{
-			Owner:     ns.Owner,
-			Project:   ns.Project,
-			CommitID:  commitID,
-			Directory: targetPath,
-			Language:  language,
+			Owner:      ns.Owner,
+			Project:    ns.Project,
+			CommitID:   commitID,
+			BranchName: branchName,
+			Directory:  targetPath,
+			Language:   language,
 		})
 		if err != nil {
 			return err
@@ -76,8 +92,8 @@ func (r *Checkout) Run(ns *project.Namespaced, targetPath string) error {
 	return nil
 }
 
-func getLanguage(owner, project string) (string, error) {
-	modelLanguage, err := model.DefaultLanguageForProject(owner, project)
+func getLanguage(commitID strfmt.UUID) (string, error) {
+	modelLanguage, err := model.LanguageByCommit(commitID)
 	if err != nil {
 		return "", err
 	}

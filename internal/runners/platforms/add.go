@@ -12,21 +12,22 @@ import (
 // AddRunParams tracks the info required for running Add.
 type AddRunParams struct {
 	Params
-	Project *project.Project
 }
 
 // Add manages the adding execution context.
 type Add struct {
-	output.Outputer
+	out     output.Outputer
+	project *project.Project
 }
 
 type primeable interface {
 	primer.Outputer
+	primer.Projecter
 }
 
 // NewAdd prepares an add execution context for use.
 func NewAdd(prime primeable) *Add {
-	return &Add{prime.Output()}
+	return &Add{prime.Output(), prime.Project()}
 }
 
 // Run executes the add behavior.
@@ -38,16 +39,20 @@ func (a *Add) Run(ps AddRunParams) error {
 		return err
 	}
 
+	if a.project == nil {
+		return locale.NewInputError("err_no_project")
+	}
+
 	err = model.CommitPlatform(
-		ps.Project.Owner(), ps.Project.Name(),
+		a.project,
 		model.OperationAdded,
-		params.Name, params.Version, params.BitWidth,
+		params.name, params.version, params.BitWidth,
 	)
 	if err != nil {
 		return err
 	}
 
-	a.Outputer.Notice(locale.Tr("platform_added", params.Name, params.Version))
+	a.out.Notice(locale.Tr("platform_added", params.name, params.version))
 
 	return nil
 }

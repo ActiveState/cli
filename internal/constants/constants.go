@@ -246,3 +246,6 @@ const ForumsURL = "https://community.activestate.com/c/state-tool/"
 
 // GlobalDefaultPrefname is the pref that holds the path to the globally defaulted project
 const GlobalDefaultPrefname = "default_project_path"
+
+// DefaultBranchName is the default branch name used on platform projects
+const DefaultBranchName = "main"

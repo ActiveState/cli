@@ -3,6 +3,7 @@ package activate
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
@@ -20,6 +21,7 @@ import (
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/cmdlets/git"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/project"
@@ -42,6 +44,7 @@ type ActivateParams struct {
 	Command       string
 	ReplaceWith   *project.Namespaced
 	Default       bool
+	Branch        string
 }
 
 type primeable interface {
@@ -104,13 +107,30 @@ func (r *Activate) run(params *ActivateParams) error {
 		return locale.WrapError(err, "err_activate_projecttouse", "Could not figure out what project to use.")
 	}
 
-	// Run checkout if no project was given
+	if proj != nil && params.Branch != "" {
+		if proj.IsHeadless() {
+			return locale.NewInputError(
+				"err_conflicting_branch_while_headless",
+				"Cannot activate branch [NOTICE]{{.V0}}[/RESET] while in a headless state. Please visit {{.V1}} to create your project.",
+				params.Branch, proj.URL(),
+			)
+		}
+
+		if params.Branch != proj.BranchName() {
+			return locale.NewInputError(
+				"err_conflicting_branch_while_checkedout",
+				"Cannot activate branch [NOTICE]{{.V0}}[/RESET]; Branch [NOTICE]{{.V1}}[/RESET] is already checked out.",
+				params.Branch, proj.BranchName(),
+			)
+		}
+	}
+
 	if proj == nil {
 		if params.Namespace == nil || !params.Namespace.IsValid() {
 			return locale.NewInputError("err_activate_nonamespace", "Please provide a namespace (see `state activate --help` for more info).")
 		}
 
-		err := r.activateCheckout.Run(params.Namespace, pathToUse)
+		err = r.activateCheckout.Run(params.Namespace, params.Branch, pathToUse)
 		if err != nil {
 			return err
 		}
@@ -138,12 +158,11 @@ func (r *Activate) run(params *ActivateParams) error {
 	firstActivate := r.config.GetString(constants.GlobalDefaultPrefname) == "" && !r.config.GetBool(activatedKey)
 	promptable := r.out.Type() == output.PlainFormatName
 	if !setDefault && firstActivate && promptable {
-		defaultConfirmDefault := true
 		var err error
 		setDefault, err = r.prompt.Confirm(
 			locale.Tl("activate_default_prompt_title", "Default Project"),
 			locale.Tr("activate_default_prompt", proj.Namespace().String()),
-			&defaultConfirmDefault,
+			new(bool),
 		)
 		if err != nil {
 			return locale.WrapInputError(err, "err_activate_cancel", "Activation cancelled")
@@ -162,9 +181,25 @@ func (r *Activate) run(params *ActivateParams) error {
 	venv := virtualenvironment.New(runtime)
 	venv.OnUseCache(func() { r.out.Notice(locale.T("using_cached_env")) })
 
+	// Determine branch name
+	branch := proj.BranchName()
+	if params.Branch != "" {
+		branch = params.Branch
+	}
+
 	err = venv.Setup(true)
 	if err != nil {
-		return locale.WrapError(err, "error_could_not_activate_venv", "Could not activate project. If this is a private project ensure that you are authenticated.")
+		if errs.Matches(err, &model.ErrNoMatchingPlatform{}) {
+			branches, err := model.BranchNamesForProjectFiltered(proj.Owner(), proj.Name(), branch)
+			if err == nil && len(branches) > 1 {
+				err = locale.NewInputError("err_activate_platfrom_alternate_branches", "", branch, strings.Join(branches, "\n - "))
+				return errs.AddTips(err, "Run → `[ACTIONABLE]state branch switch <NAME>[/RESET]` to switch branch")
+			}
+		}
+		if !authentication.Get().Authenticated() {
+			return locale.WrapError(err, "error_could_not_activate_venv_auth", "Could not activate project. If this is a private project ensure that you are authenticated.")
+		}
+		return locale.WrapError(err, "err_could_not_activate_venv", "Could not activate project")
 	}
 
 	if setDefault {
@@ -206,7 +241,7 @@ func (r *Activate) run(params *ActivateParams) error {
 func updateProjectFile(prj *project.Project, names *project.Namespaced) error {
 	var commitID string
 	if names.CommitID == nil || *names.CommitID == "" {
-		latestID, err := model.LatestCommitID(names.Owner, names.Project)
+		latestID, err := model.BranchCommitID(names.Owner, names.Project, prj.BranchName())
 		if err != nil {
 			return locale.WrapInputError(err, "err_set_namespace_retrieve_commit", "Could not retrieve the latest commit for the specified project {{.V0}}.", names.String())
 		}

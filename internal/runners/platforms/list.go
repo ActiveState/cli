@@ -3,35 +3,36 @@ package platforms
 import (
 	"github.com/go-openapi/strfmt"
 
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
-// ListRunParams tracks the info required for running List.
-type ListRunParams struct {
-	Project *project.Project
-}
-
 // List manages the listing execution context.
 type List struct {
-	out output.Outputer
+	out  output.Outputer
+	proj *project.Project
 }
 
 // NewList prepares a list execution context for use.
-func NewList(prime primer.Outputer) *List {
+func NewList(prime primeable) *List {
 	return &List{
-		out: prime.Output(),
+		out:  prime.Output(),
+		proj: prime.Project(),
 	}
 }
 
 // Run executes the list behavior.
-func (l *List) Run(ps ListRunParams) error {
+func (l *List) Run() error {
 	logging.Debug("Execute platforms list")
 
-	listing, err := newListing("", ps.Project.Name(), ps.Project.Owner())
+	if l.proj == nil {
+		return locale.NewInputError("err_no_project")
+	}
+
+	listing, err := newListing("", l.proj.Name(), l.proj.Owner(), l.proj.BranchName())
 	if err != nil {
 		return err
 	}
@@ -45,8 +46,8 @@ type Listing struct {
 	Platforms []*Platform `json:"platforms"`
 }
 
-func newListing(commitID, projName, projOrg string) (*Listing, error) {
-	targetCommitID, err := targetedCommitID(commitID, projName, projOrg)
+func newListing(commitID, projName, projOrg string, branchName string) (*Listing, error) {
+	targetCommitID, err := targetedCommitID(commitID, projName, projOrg, branchName)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +64,7 @@ func newListing(commitID, projName, projOrg string) (*Listing, error) {
 	return &listing, nil
 }
 
-func targetedCommitID(commitID, projName, projOrg string) (*strfmt.UUID, error) {
+func targetedCommitID(commitID, projName, projOrg, branchName string) (*strfmt.UUID, error) {
 	if commitID != "" {
 		var cid strfmt.UUID
 		err := cid.UnmarshalText([]byte(commitID))
@@ -71,7 +72,7 @@ func targetedCommitID(commitID, projName, projOrg string) (*strfmt.UUID, error) 
 		return &cid, err
 	}
 
-	latest, err := model.LatestCommitID(projOrg, projName)
+	latest, err := model.BranchCommitID(projOrg, projName, branchName)
 	if err != nil {
 		return nil, err
 	}

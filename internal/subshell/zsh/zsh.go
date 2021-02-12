@@ -8,10 +8,13 @@ import (
 	"os/exec"
 	"os/user"
 	"path/filepath"
+	"strings"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
@@ -34,9 +37,11 @@ type SubShell struct {
 	activateCommand *string
 }
 
+const Name string = "zsh"
+
 // Shell - see subshell.SubShell
 func (v *SubShell) Shell() string {
-	return "zsh"
+	return Name
 }
 
 // Binary - see subshell.SubShell
@@ -50,14 +55,53 @@ func (v *SubShell) SetBinary(binary string) {
 }
 
 // WriteUserEnv - see subshell.SubShell
-func (v *SubShell) WriteUserEnv(cfg sscommon.Configurable, env map[string]string, envType sscommon.EnvData, _ bool) error {
+func (v *SubShell) WriteUserEnv(cfg sscommon.Configurable, env map[string]string, envType sscommon.RcIdentification, _ bool) error {
+	rcFile, err := v.RcFile()
+	if err != nil {
+		return errs.Wrap(err, "RcFile failure")
+	}
+
+	env = sscommon.EscapeEnv(env)
+	return sscommon.WriteRcFile("zshrc_append.sh", rcFile, envType, env)
+}
+
+func (v *SubShell) WriteCompletionScript(completionScript string) error {
+	dir := "/usr/local/share/zsh/site-functions"
+	if fpath := os.Getenv("FPATH"); fpath != "" {
+		fpathv := strings.Split(fpath, ":")
+		if len(fpathv) > 0 {
+			dir = fpathv[0]
+		}
+	}
+
+	fpath := filepath.Join(dir, "_"+constants.CommandName)
+	logging.Debug("Writing to %s: %s", fpath, completionScript)
+	err := fileutils.WriteFile(fpath, []byte(completionScript))
+	if err != nil {
+		return errs.Wrap(err, "Could not write completions script")
+	}
+
 	homeDir, err := fileutils.HomeDir()
 	if err != nil {
 		return errs.Wrap(err, "IO failure")
 	}
 
-	env = sscommon.EscapeEnv(env)
-	return sscommon.WriteRcFile("zshrc_append.sh", filepath.Join(homeDir, ".zshrc"), envType, env)
+	// Remove the zsh completions cache so our completion script actually gets picked up
+	if err := os.Remove(filepath.Join(homeDir, ".zcompdump")); err != nil {
+		// non-critical, we're just trying to eliminate any issues caused by zsh's caching
+		logging.Debug("Could not delete .zcompdump: %v", err)
+	}
+
+	return nil
+}
+
+func (v *SubShell) RcFile() (string, error) {
+	homeDir, err := fileutils.HomeDir()
+	if err != nil {
+		return "", errs.Wrap(err, "IO failure")
+	}
+
+	return filepath.Join(homeDir, ".zshrc"), nil
 }
 
 // SetupShellRcFile - subshell.SubShell
@@ -82,10 +126,10 @@ func (v *SubShell) Quote(value string) string {
 }
 
 // Activate - see subshell.SubShell
-func (v *SubShell) Activate(cfg sscommon.Configurable, out output.Outputer) error {
+func (v *SubShell) Activate(proj *project.Project, cfg sscommon.Configurable, out output.Outputer) error {
 	env := sscommon.EscapeEnv(v.env)
 	var err error
-	if v.rcFile, err = sscommon.SetupProjectRcFile("zshrc.sh", "", env, out, cfg); err != nil {
+	if v.rcFile, err = sscommon.SetupProjectRcFile(proj, "zshrc.sh", "", env, out, cfg); err != nil {
 		return err
 	}
 

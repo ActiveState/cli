@@ -8,27 +8,29 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
 )
 
 // InfoRunParams tracks the info required for running Info.
 type InfoRunParams struct {
-	Package  string
+	Package  PackageVersion
 	Language string
 }
 
 // Info manages the information execution context.
 type Info struct {
-	out output.Outputer
+	out  output.Outputer
+	proj *project.Project
 }
 
 // NewInfo prepares an information execution context for use.
-func NewInfo(prime primer.Outputer) *Info {
+func NewInfo(prime primeable) *Info {
 	return &Info{
-		out: prime.Output(),
+		out:  prime.Output(),
+		proj: prime.Project(),
 	}
 }
 
@@ -36,7 +38,11 @@ func NewInfo(prime primer.Outputer) *Info {
 func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 	logging.Debug("ExecuteInfo")
 
-	language, err := targetedLanguage(params.Language)
+	if i.proj == nil {
+		return locale.NewInputError("err_no_project")
+	}
+
+	language, err := targetedLanguage(params.Language, i.proj.CommitUUID())
 	if err != nil {
 
 		return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_obtain_language", nstype))
@@ -44,16 +50,14 @@ func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 
 	ns := model.NewNamespacePkgOrBundle(language, nstype)
 
-	pkgName, version := splitNameAndVersion(params.Package)
-
-	packages, err := model.SearchIngredientsStrict(ns, pkgName)
+	packages, err := model.SearchIngredientsStrict(ns, params.Package.Name())
 	if err != nil {
 		return locale.WrapError(err, "package_err_cannot_obtain_search_results")
 	}
 
 	if len(packages) == 0 {
 		return errs.AddTips(
-			locale.NewInputError("err_package_info_no_packages", `No packages in our catalogue are an exact match for [NOTICE]"{{.V0}}"[/RESET].`, params.Package),
+			locale.NewInputError("err_package_info_no_packages", `No packages in our catalogue are an exact match for [NOTICE]"{{.V0}}"[/RESET].`, params.Package.String()),
 			locale.Tl("info_try_search", "Valid package names can be searched using [ACTIONABLE]`state search {package_name}`[/RESET]"),
 			locale.Tl("info_request", "Request a package at [ACTIONABLE]https://community.activestate.com/[/RESET]"),
 		)
@@ -62,10 +66,10 @@ func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 	pkg := packages[0]
 	ingredientVersion := pkg.LatestVersion
 
-	if version != "" {
-		ingredientVersion, err = specificIngredientVersion(pkg.Ingredient.IngredientID, version)
+	if params.Package.Version() != "" {
+		ingredientVersion, err = specificIngredientVersion(pkg.Ingredient.IngredientID, params.Package.Version())
 		if err != nil {
-			return locale.WrapInputError(err, "info_err_version_not_found", "Could not find version {{.V0}} for package {{.V1}}", version, pkgName)
+			return locale.WrapInputError(err, "info_err_version_not_found", "Could not find version {{.V0}} for package {{.V1}}", params.Package.Version(), params.Package.Name())
 		}
 	}
 

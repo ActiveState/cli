@@ -4,6 +4,8 @@ import (
 	"os"
 	"path"
 
+	"github.com/go-openapi/strfmt"
+
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -15,7 +17,6 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/go-openapi/strfmt"
 )
 
 type Pull struct {
@@ -141,10 +142,18 @@ func targetProject(prj *project.Project, overwrite string) (*project.Namespaced,
 
 	// Retrieve commit ID to set the project to (if unset)
 	if ns.CommitID == nil || *ns.CommitID == "" {
-		var err error
-		ns.CommitID, err = model.LatestCommitID(ns.Owner, ns.Project)
-		if err != nil {
-			return nil, locale.WrapError(err, "err_pull_commit", "Could not retrieve the latest commit for your project.")
+		if overwrite != "" {
+			branch, err := model.DefaultBranchForProjectName(ns.Owner, ns.Project)
+			if err != nil {
+				return nil, locale.WrapError(err, "err_pull_commit", "Could not retrieve the latest commit for your project.")
+			}
+			ns.CommitID = branch.CommitID
+		} else {
+			var err error
+			ns.CommitID, err = model.BranchCommitID(ns.Owner, ns.Project, prj.BranchName())
+			if err != nil {
+				return nil, locale.WrapError(err, "err_pull_commit_branch", "Could not retrieve the latest commit for your project and branch.")
+			}
 		}
 	}
 

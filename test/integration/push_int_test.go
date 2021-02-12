@@ -35,7 +35,7 @@ func (suite *PushIntegrationTestSuite) SetupSuite() {
 	if runtime.GOOS == "darwin" {
 		suite.language = "python3"
 		suite.baseProject = "ActiveState-CLI/small-python"
-		suite.extraPackage = "datetime"
+		suite.extraPackage = "six@1.10.0"
 	}
 }
 
@@ -69,6 +69,12 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 	if pjfile.Languages != nil {
 		suite.FailNow("Expected languages to be nil, but got: %v", pjfile.Languages)
 	}
+	if pjfile.CommitID() == "" {
+		suite.FailNow("commitID was not set after running push for project creation")
+	}
+	if pjfile.BranchName() == "" {
+		suite.FailNow("branch was not set after running push for project creation")
+	}
 
 	// ensure that we are logged out
 	cp = ts.Spawn("auth", "logout")
@@ -78,11 +84,24 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 	cp.Expect("You're about to add packages as an anonymous user")
 	cp.Expect("(Y/n)")
 	cp.Send("y")
-	cp.Expect("added", 30*time.Second)
-	cp.ExpectExitCode(0)
+	switch runtime.GOOS {
+	case "darwin":
+		cp.ExpectRe("added|currently building", 60*time.Second) // while cold storage is off
+		cp.Wait()
+	default:
+		cp.Expect("added", 60*time.Second)
+		cp.ExpectExitCode(0)
+	}
+
+	pjfile, err = projectfile.Parse(pjfilepath)
+	suite.Require().NoError(err)
+	if !strings.Contains(pjfile.Project, "/commit/") {
+		suite.FailNow("project field should be headless but isn't: " + pjfile.Project)
+	}
 
 	ts.LoginAsPersistentUser()
 
+	// https://www.pivotaltracker.com/n/projects/2203557/stories/175651094
 	cp = ts.SpawnWithOpts(e2e.WithArgs("push"), e2e.WithWorkDirectory(wd))
 	cp.Expect("Pushing to project")
 	cp.ExpectExitCode(0)
@@ -121,8 +140,14 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 	cp.Expect("You're about to add packages as an anonymous user")
 	cp.Expect("(Y/n)")
 	cp.Send("y")
-	cp.Expect("added", 30*time.Second)
-	cp.Wait()
+	switch runtime.GOOS {
+	case "darwin":
+		cp.ExpectRe("added|currently building", 60*time.Second) // while cold storage is off
+		cp.Wait()
+	default:
+		cp.Expect("added", 60*time.Second)
+		cp.ExpectExitCode(0)
+	}
 
 	prj, err := project.FromPath(filepath.Join(wd, constants.ConfigFileName))
 	suite.Require().NoError(err, "Could not parse project file")

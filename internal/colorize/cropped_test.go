@@ -46,6 +46,16 @@ func Test_GetCroppedText(t *testing.T) {
 			[]CroppedLine{{"✔ol1", 4}, {"✔ol2", 4}, {"✔ol3", 4}},
 		},
 		{
+			"No split multi-byte character with tags",
+			args{"[HEADING]✔ Some Text[/RESET]", 20},
+			[]CroppedLine{{"[HEADING]✔ Some Text[/RESET]", 11}},
+		},
+		{
+			"Split multi-byte character with tags",
+			args{"[HEADING]✔ Some Text[/RESET]", 6},
+			[]CroppedLine{{"[HEADING]✔ Some", 6}, {" Text[/RESET]", 5}},
+		},
+		{
 			"Split line break",
 			args{"[HEADING]Hel\nlo[/RESET]", 5},
 			[]CroppedLine{{"[HEADING]Hel", 3}, {"lo[/RESET]", 2}},
@@ -58,7 +68,7 @@ func Test_GetCroppedText(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := GetCroppedText([]rune(tt.args.text), tt.args.maxLen); !reflect.DeepEqual(got, tt.want) {
+			if got := GetCroppedText(tt.args.text, tt.args.maxLen); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("getCroppedText() = %v, want %v", got, tt.want)
 			}
 		})

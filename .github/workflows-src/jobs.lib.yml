@@ -31,7 +31,7 @@ steps:
 #@ def jobs_build():
 name: Build
 needs: [ prepare ]
-strategy: #@ strategy()
+strategy: #@ strategy(False)
 runs-on: *runs-on
 env: *env
 timeout-minutes: 10
@@ -56,7 +56,7 @@ steps:
 
 #@ def jobs_unittest():
 name: "Unit Test"
-strategy: #@ strategy()
+strategy: #@ strategy(False)
 runs-on: *runs-on
 needs: [ prepare ]
 env: *env

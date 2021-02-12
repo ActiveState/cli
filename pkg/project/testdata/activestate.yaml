@@ -1,4 +1,4 @@
-project: "https://platform.activestate.com/ActiveState/project?commitID=00010001-0001-0001-0001-000100010001"
+project: https://platform.activestate.com/ActiveState/project?branch=main&commitID=00010001-0001-0001-0001-000100010001
 platforms:
   - name: fullexample
     os: darwin

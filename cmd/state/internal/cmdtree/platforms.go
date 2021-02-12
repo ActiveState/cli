@@ -5,13 +5,10 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/platforms"
-	"github.com/ActiveState/cli/pkg/project"
 )
 
 func newPlatformsCommand(prime *primer.Values) *captain.Command {
 	runner := platforms.NewList(prime)
-
-	params := platforms.ListRunParams{}
 
 	return captain.NewCommand(
 		"platforms",
@@ -22,13 +19,7 @@ func newPlatformsCommand(prime *primer.Values) *captain.Command {
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(_ *captain.Command, _ []string) error {
-			proj, err := project.GetSafe()
-			if err != nil {
-				return err
-			}
-			params.Project = proj
-
-			return runner.Run(params)
+			return runner.Run()
 		},
 	).SetGroup(PlatformGroup)
 }
@@ -72,24 +63,18 @@ func newPlatformsAddCommand(prime *primer.Values) *captain.Command {
 			{
 				Name:        locale.T("arg_platforms_shared_name"),
 				Description: locale.T("arg_platforms_shared_name_description"),
-				Value:       &params.Name,
+				Value:       &params.Platform,
 				Required:    true,
 			},
 		},
 		func(_ *captain.Command, _ []string) error {
-			proj, err := project.GetSafe()
-			if err != nil {
-				return err
-			}
-			params.Project = proj
-
 			return runner.Run(params)
 		},
 	)
 }
 
 func newPlatformsRemoveCommand(prime *primer.Values) *captain.Command {
-	runner := platforms.NewRemove()
+	runner := platforms.NewRemove(prime)
 
 	params := platforms.RemoveRunParams{}
 
@@ -110,23 +95,11 @@ func newPlatformsRemoveCommand(prime *primer.Values) *captain.Command {
 			{
 				Name:        locale.T("arg_platforms_shared_name"),
 				Description: locale.T("arg_platforms_shared_name_description"),
-				Value:       &params.Name,
-				Required:    true,
-			},
-			{
-				Name:        locale.T("arg_platforms_shared_version"),
-				Description: locale.T("arg_platforms_shared_version_description"),
-				Value:       &params.Version,
+				Value:       &params.Platform,
 				Required:    true,
 			},
 		},
 		func(_ *captain.Command, _ []string) error {
-			proj, err := project.GetSafe()
-			if err != nil {
-				return err
-			}
-			params.Project = proj
-
 			return runner.Run(params)
 		},
 	)

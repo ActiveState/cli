@@ -62,7 +62,17 @@ func (u *Update) Run(params *UpdateParams) error {
 		return err
 	}
 
-	return addLanguage(u.project, lang)
+	err = addLanguage(u.project, lang)
+	if err != nil {
+		return locale.WrapError(err, "err_add_language", "Could not add language.")
+	}
+
+	langName := lang.Name
+	if lang.Version != "" {
+		langName = langName + "@" + lang.Version
+	}
+	u.out.Notice(locale.Tl("language_added", "Language added: {{.V0}}", langName))
+	return nil
 }
 
 func parseLanguage(langName string) (*model.Language, error) {
@@ -102,7 +112,7 @@ func ensureLanguagePlatform(language *model.Language) error {
 }
 
 func ensureLanguageProject(language *model.Language, project *project.Project) error {
-	targetCommitID, err := model.LatestCommitID(project.Owner(), project.Name())
+	targetCommitID, err := model.BranchCommitID(project.Owner(), project.Name(), project.BranchName())
 	if err != nil {
 		return err
 	}
@@ -144,7 +154,7 @@ func ensureVersionTestable(language *model.Language, fetchVersions fetchVersions
 }
 
 func removeLanguage(project *project.Project, current string) error {
-	targetCommitID, err := model.LatestCommitID(project.Owner(), project.Name())
+	targetCommitID, err := model.BranchCommitID(project.Owner(), project.Name(), project.BranchName())
 	if err != nil {
 		return err
 	}
@@ -154,7 +164,7 @@ func removeLanguage(project *project.Project, current string) error {
 		return err
 	}
 
-	err = model.CommitLanguage(project.Owner(), project.Name(), model.OperationRemoved, platformLanguage.Name, platformLanguage.Version)
+	err = model.CommitLanguage(project, model.OperationRemoved, platformLanguage.Name, platformLanguage.Version)
 	if err != nil {
 		return err
 	}
@@ -163,7 +173,7 @@ func removeLanguage(project *project.Project, current string) error {
 }
 
 func addLanguage(project *project.Project, lang *model.Language) error {
-	err := model.CommitLanguage(project.Owner(), project.Name(), model.OperationAdded, lang.Name, lang.Version)
+	err := model.CommitLanguage(project, model.OperationAdded, lang.Name, lang.Version)
 	if err != nil {
 		return err
 	}

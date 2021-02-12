@@ -6,6 +6,8 @@ import (
 	"os/user"
 	"runtime"
 
+	"github.com/ActiveState/cli/internal/captain"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/globaldefault"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -38,12 +40,13 @@ func New(prime primeable) *Prepare {
 }
 
 // Run executes the prepare behavior.
-func (r *Prepare) Run() error {
+func (r *Prepare) Run(cmd *captain.Command) error {
 	logging.Debug("ExecutePrepare")
 
 	if runtime.GOOS == "windows" {
 		err := setStateProtocol()
 		if err != nil {
+			logging.Error("setStateProtocol failed: %v", err)
 			r.out.Notice(output.Heading(locale.Tl("warning", "Warning")))
 			r.out.Notice(locale.T("prepare_protocol_warning"))
 		}
@@ -54,9 +57,17 @@ func (r *Prepare) Run() error {
 		if runtime.GOOS != "linux" {
 			return locale.WrapError(err, msgLocale, globaldefault.BinDir(r.cfg))
 		}
-		logging.Debug("Encountered failure attempting to update user environment: %s", err)
+		logging.Error("Encountered failure attempting to prepare globaldefault: %v", err)
 		r.out.Notice(output.Heading(locale.Tl("warning", "Warning")))
 		r.out.Notice(locale.Tr(msgLocale, globaldefault.BinDir(r.cfg)))
+	}
+
+	if err := prepareCompletions(cmd, r.subshell); err != nil {
+		if !errs.Matches(err, &ErrorNotSupported{}) {
+			logging.Error("prepareCompletions failed: %v", err)
+			r.out.Notice(output.Heading(locale.Tl("warning", "Warning")))
+			r.out.Notice(locale.Tr("err_prepare_completions", "Could not generate completions script, error received: {{.V0}}.", err.Error()))
+		}
 	}
 
 	return nil

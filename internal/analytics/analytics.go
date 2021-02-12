@@ -2,8 +2,9 @@ package analytics
 
 import (
 	"fmt"
+	"net/http"
+	"net/url"
 	"sync"
-	"time"
 
 	ga "github.com/ActiveState/go-ogle-analytics"
 	"github.com/ActiveState/sysinfo"
@@ -11,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
@@ -97,20 +99,8 @@ func init() {
 	setup()
 }
 
-// WaitForAllEvents waits for all events to return
-func WaitForAllEvents(t time.Duration) {
-	wg := make(chan struct{})
-	go func() {
-		eventWaitGroup.Wait()
-		close(wg)
-	}()
-
-	select {
-	case <-time.After(t):
-		return
-	case <-wg:
-		return
-	}
+func Wait() {
+	eventWaitGroup.Wait()
 }
 
 func setup() {
@@ -202,7 +192,7 @@ func sendEventAndLog(category, action, label string, dimensions map[string]strin
 	if err == nil {
 		return
 	}
-	logging.Error("Error during analytics.sendEvent: %v", err)
+	logging.Error("Error during analytics.sendEvent: %v", errs.Join(err, ":"))
 }
 
 func sendEvent(category, action, label string, dimensions map[string]string) error {
@@ -218,13 +208,23 @@ func sendEvent(category, action, label string, dimensions map[string]string) err
 		if err := cfg.Save(); err != nil { // the global viper instance is bugged, need to work around it for now -- https://www.pivotaltracker.com/story/show/175624789
 			return locale.WrapError(err, "err_viper_write_defer", "Could not save configuration on defer")
 		}
+		return nil
 	}
 
-	logging.Debug("Sending: %s, %s, %s", category, action, label)
+	eventWaitGroup.Add(2)
+	go sendGAEvent(category, action, label, dimensions)
+	go sendS3Pixel(category, action, label, dimensions)
+
+	return nil
+}
+
+func sendGAEvent(category, action, label string, dimensions map[string]string) {
+	defer eventWaitGroup.Done()
+	logging.Debug("Sending Google Analytics event with: %s, %s, %s", category, action, label)
 
 	if client == nil {
 		logging.Error("Client is not set")
-		return nil
+		return
 	}
 	client.CustomDimensionMap(dimensions)
 
@@ -235,5 +235,36 @@ func sendEvent(category, action, label string, dimensions map[string]string) err
 	if label != "" {
 		event.Label(label)
 	}
-	return client.Send(event)
+	err := client.Send(event)
+	if err != nil {
+		logging.Error("Could not send GA Event: %v", err)
+	}
+}
+
+func sendS3Pixel(category, action, label string, dimensions map[string]string) {
+	defer eventWaitGroup.Done()
+	logging.Debug("Sending S3 pixel event with: %s, %s, %s", category, action, label)
+	pixelURL, err := url.Parse("https://cli-update.s3.ca-central-1.amazonaws.com/pixel")
+	if err != nil {
+		logging.Error("Invalid URL for analytics S3 pixel")
+		return
+	}
+
+	query := pixelURL.Query()
+	query.Add("x-category", category)
+	query.Add("x-action", action)
+	query.Add("x-label", label)
+
+	for num, value := range dimensions {
+		key := fmt.Sprintf("x-custom%s", num)
+		query.Add(key, value)
+	}
+	pixelURL.RawQuery = query.Encode()
+
+	logging.Debug("Using S3 pixel URL: ", pixelURL.String())
+	_, err = http.Head(pixelURL.String())
+	if err != nil {
+		logging.Error("Could not download S3 pixel: %v", err)
+		return
+	}
 }

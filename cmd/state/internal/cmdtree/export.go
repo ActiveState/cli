@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/export"
 	"github.com/ActiveState/cli/internal/runners/export/config"
+	"github.com/ActiveState/cli/internal/runners/export/docs"
 	"github.com/ActiveState/cli/internal/runners/export/ghactions"
 )
 
@@ -165,4 +166,25 @@ func newExportGithubActionCommand(prime *primer.Values) *captain.Command {
 		func(ccmd *captain.Command, _ []string) error {
 			return runner.Run(&params)
 		})
+}
+
+func newExportDocsCommand(prime *primer.Values) *captain.Command {
+	runner := docs.New(prime)
+	params := docs.Params{}
+
+	cmd := captain.NewCommand(
+		"_docs",
+		locale.Tl("export_docs_title", "Export state tool command reference in markdown format"),
+		locale.Tl("export_docs_description", ""),
+		prime.Output(),
+		prime.Config(),
+		[]*captain.Flag{},
+		[]*captain.Argument{},
+		func(ccmd *captain.Command, _ []string) error {
+			return runner.Run(&params, ccmd)
+		})
+
+	cmd.SetHidden(true)
+
+	return cmd
 }
