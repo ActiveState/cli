@@ -91,18 +91,26 @@ func (r *Report) Run(params *ReportParams) error {
 }
 
 func (r *Report) fetchVulnerabilities(namespaceOverride project.Namespaced) (*medmodel.CommitVulnerabilities, error) {
-	if !namespaceOverride.IsValid() {
-		resp, err := model.FetchCommitVulnerabilities(r.auth, r.proj.CommitID())
+	if namespaceOverride.IsValid() && namespaceOverride.CommitID == nil {
+		resp, err := model.FetchProjectVulnerabilities(r.auth, namespaceOverride.Owner, namespaceOverride.Project)
 		if err != nil {
-			return nil, errs.Wrap(err, "Failed to fetch vulnerability information for commit %s", r.proj.CommitID())
+			return nil, errs.Wrap(err, "Failed to fetch vulnerability information for project %s", namespaceOverride.String())
 		}
-		return resp, nil
+		return resp.Commit, nil
 	}
-	resp, err := model.FetchProjectVulnerabilities(r.auth, namespaceOverride.Owner, namespaceOverride.Project)
+
+	// fetch by commit ID
+	var commitID string
+	if namespaceOverride.IsValid() {
+		commitID = namespaceOverride.CommitID.String()
+	} else {
+		commitID = r.proj.CommitID()
+	}
+	resp, err := model.FetchCommitVulnerabilities(r.auth, commitID)
 	if err != nil {
-		return nil, errs.Wrap(err, "Failed to fetch vulnerability information for project %s", namespaceOverride.String())
+		return nil, errs.Wrap(err, "Failed to fetch vulnerability information for commit %s", commitID)
 	}
-	return resp.Commit, nil
+	return resp, nil
 }
 
 func (rd *reportDataPrinter) MarshalOutput(format output.Format) interface{} {

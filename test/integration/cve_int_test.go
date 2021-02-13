@@ -44,7 +44,7 @@ func (suite *CveIntegrationTestSuite) TestCveReport() {
 
 	ts.LoginAsPersistentUser()
 
-	cp := ts.Spawn("cve", "report", "ActiveState-CLI/VulnerablePython-3.7?commitID=0b87e7a4-dc62-46fd-825b-9c35a53fe0a2")
+	cp := ts.Spawn("cve", "report", "ActiveState-CLI/VulnerablePython-3.7")
 	cp.Expect("Commit ID")
 	cp.Expect("0b87e7a4-dc62-46fd-825b-9c35a53fe0a2")
 
@@ -56,6 +56,15 @@ func (suite *CveIntegrationTestSuite) TestCveReport() {
 	cp.Expect("1.12.0")
 	cp.Expect("CRITICAL")
 	cp.Expect("CVE-2019-16778")
+	cp.ExpectExitCode(0)
+
+	// make sure that we can select by commit id
+	cp = ts.Spawn("cve", "report", "ActiveState-CLI/VulnerablePython-3.7#3b222e23-64b9-4ca1-93ee-7b8a75b18c30")
+	cp.Expect("Commit ID")
+	cp.Expect("3b222e23-64b9-4ca1-93ee-7b8a75b18c30")
+
+	cp.Expect("Vulnerabilities")
+	cp.Expect("6")
 	cp.ExpectExitCode(0)
 }
 
