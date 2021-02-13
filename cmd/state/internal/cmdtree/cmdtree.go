@@ -26,6 +26,11 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		newLogoutCommand(prime),
 	)
 
+	cveCmd := newCveCommand(prime)
+	cveCmd.AddChildren(
+		newReportCommand(prime),
+	)
+
 	exportCmd := newExportCommand(prime)
 	exportCmd.AddChildren(
 		newRecipeCommand(prime),
@@ -125,6 +130,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		newActivateCommand(prime),
 		newInitCommand(prime),
 		newPushCommand(prime),
+		cveCmd,
 		projectsCmd,
 		authCmd,
 		exportCmd,

@@ -18,6 +18,7 @@ const (
 	CLIDeploy     = "cli-deploy"
 	Condition     = "condition"
 	Critical      = "critical"
+	Cve           = "cve"
 	Deploy        = "deploy"
 	Edit          = "edit"
 	Error         = "error"
