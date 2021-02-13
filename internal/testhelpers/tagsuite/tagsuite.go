@@ -12,6 +12,7 @@ const (
 	Activate      = "activate"
 	Alternative   = "alternative"
 	Auth          = "auth"
+	Branches      = "branches"
 	Bundle        = "bundle"
 	Carlisle      = "carlisle"
 	CLIDeploy     = "cli-deploy"
