@@ -58,9 +58,8 @@ func FetchOrganizationProjects(orgName string) ([]*mono_models.Project, error) {
 	return orgProjects.Payload, nil
 }
 
-// DefaultLanguageForProject fetches the default language belonging to the given project
-func DefaultLanguageForProject(orgName, projectName string) (Language, error) {
-	languages, err := FetchLanguagesForProject(orgName, projectName)
+func LanguageByCommit(commitID strfmt.UUID) (Language, error) {
+	languages, err := FetchLanguagesForCommit(commitID)
 	if err != nil {
 		return Language{}, err
 	}
@@ -134,8 +133,7 @@ func DefaultBranchForProject(pj *mono_models.Project) (*mono_models.Branch, erro
 // falls back to the default
 func BranchForProjectByName(pj *mono_models.Project, name string) (*mono_models.Branch, error) {
 	if name == "" {
-		logging.Debug("no branch name provided, using default")
-		return DefaultBranchForProject(pj)
+		return nil, locale.NewInputError("err_empty_branch", "Empty branch name provided.")
 	}
 
 	for _, branch := range pj.Branches {
@@ -206,4 +204,19 @@ func processProjectErrorResponse(err error, params ...string) error {
 	default:
 		return locale.WrapError(err, "err_api_unknown", "Unexpected API error")
 	}
+}
+
+func AddBranch(projectID strfmt.UUID, label string) (strfmt.UUID, error) {
+	var branchID strfmt.UUID
+	addParams := projects.NewAddBranchParams()
+	addParams.SetProjectID(projectID)
+	addParams.Body.Label = label
+
+	res, err := authentication.Client().Projects.AddBranch(addParams, authentication.ClientAuth())
+	if err != nil {
+		msg := api.ErrorMessageFromPayload(err)
+		return branchID, locale.WrapError(err, msg)
+	}
+
+	return res.Payload.BranchID, nil
 }

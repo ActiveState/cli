@@ -42,6 +42,11 @@ type secretData struct {
 	Usage       string `locale:"usage,[HEADING]Usage[/RESET]"`
 }
 
+type listOutput struct {
+	out  output.Outputer
+	data []*secretData
+}
+
 // NewList prepares a list execution context for use.
 func NewList(client *secretsapi.Client, p listPrimeable) *List {
 	return &List{
@@ -54,6 +59,9 @@ func NewList(client *secretsapi.Client, p listPrimeable) *List {
 
 // Run executes the list behavior.
 func (l *List) Run(params ListRunParams) error {
+	if l.proj == nil {
+		return locale.NewInputError("err_no_project")
+	}
 	if err := checkSecretsAccess(l.proj); err != nil {
 		return locale.WrapError(err, "secrets_err_check_access")
 	}
@@ -63,18 +71,44 @@ func (l *List) Run(params ListRunParams) error {
 		return locale.WrapError(err, "secrets_err_defined")
 	}
 
-	meta, err := defsToData(defs, l.cfg)
+	meta, err := defsToData(defs, l.cfg, l.proj)
 	if err != nil {
 		return locale.WrapError(err, "secrets_err_values")
 	}
 
-	l.out.Print(struct {
-		Data []*secretData `opts:"verticalTable" locale:","`
-	}{
-		Data: meta,
-	})
+	data := &listOutput{l.out, meta}
+	l.out.Print(data)
 
 	return nil
+}
+
+func (l *listOutput) MarshalOutput(format output.Format) interface{} {
+	switch format {
+	case output.EditorV0FormatName:
+		var output []*SecretExport
+		for _, d := range l.data {
+			out := &SecretExport{
+				Name:        d.Name,
+				Scope:       d.Scope,
+				Description: d.Description,
+			}
+
+			if d.HasValue == locale.T("secrets_row_value_set") {
+				out.HasValue = true
+			}
+
+			output = append(output, out)
+		}
+		l.out.Print(output)
+	default:
+		l.out.Print(struct {
+			Data []*secretData `opts:"verticalTable" locale:","`
+		}{
+			l.data,
+		})
+	}
+
+	return output.Suppress
 }
 
 // checkSecretsAccess is reusable "runner-level" logic and provides a directly
@@ -132,9 +166,9 @@ func filterSecrets(proj *project.Project, cfg keypairs.Configurable, secrectDefs
 	return secrectDefsFiltered
 }
 
-func defsToData(defs []*secretsModels.SecretDefinition, cfg keypairs.Configurable) ([]*secretData, error) {
+func defsToData(defs []*secretsModels.SecretDefinition, cfg keypairs.Configurable, proj *project.Project) ([]*secretData, error) {
 	data := make([]*secretData, len(defs))
-	expander := project.NewSecretExpander(secretsapi.Get(), project.Get(), nil, cfg)
+	expander := project.NewSecretExpander(secretsapi.Get(), proj, nil, cfg)
 
 	for i, def := range defs {
 		if def.Name == nil || def.Scope == nil {

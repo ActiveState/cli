@@ -1,7 +1,6 @@
 package clean
 
 import (
-	"errors"
 	"os"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -51,7 +50,7 @@ func newUninstall(out output.Outputer, confirm confirmAble, cfg configurable) (*
 
 func (u *Uninstall) Run(params *UninstallParams) error {
 	if os.Getenv(constants.ActivatedStateEnvVarName) != "" {
-		return errors.New(locale.T("err_uninstall_activated"))
+		return locale.NewError("err_uninstall_activated")
 	}
 
 	if !params.Force {

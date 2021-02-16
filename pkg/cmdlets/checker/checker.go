@@ -13,14 +13,19 @@ import (
 
 // RunCommitsBehindNotifier checks for the commits behind count based on the
 // provided project and displays the results to the user in a helpful manner.
-func RunCommitsBehindNotifier(out output.Outputer) {
-	p, err := project.GetOnce()
+func RunCommitsBehindNotifier(p *project.Project,out output.Outputer) {
+	latestCommitID, err := model.BranchCommitID(p.Owner(), p.Name(), p.BranchName())
 	if err != nil {
-		logging.Warning("Could not retrieve project, error: %v", err.Error())
+		logging.Error("Can not get branch info for %s/%s", p.Owner(), p.Name())
 		return
 	}
 
-	count, err := model.CommitsBehindLatest(p.Owner(), p.Name(), p.CommitID())
+	if latestCommitID == nil {
+		logging.Debug("Latest commit is nil")
+		return
+	}
+
+	count, err := model.CommitsBehind(*latestCommitID, p.CommitUUID())
 	if err != nil {
 		if errors.Is(err, model.ErrCommitCountUnknowable) {
 			out.Notice(output.Heading(locale.Tr("runtime_update_notice_unknown_count")))

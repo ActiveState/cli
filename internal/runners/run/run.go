@@ -60,7 +60,7 @@ func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, cfg
 	out.Notice(txtstyle.NewTitle(locale.Tl("run_script_title", "Running Script: [ACTIONABLE]{{.V0}}[/RESET]", name)))
 
 	if authentication.Get().Authenticated() {
-		checker.RunCommitsBehindNotifier(out)
+		checker.RunCommitsBehindNotifier(proj, out)
 	}
 
 	script := proj.ScriptByName(name)

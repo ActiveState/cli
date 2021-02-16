@@ -13,6 +13,7 @@ import (
 	"unicode"
 
 	"github.com/gobuffalo/packr"
+	"github.com/rollbar/rollbar-go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
@@ -59,6 +60,7 @@ func NewCommandGroup(name string, priority int) CommandGroup {
 type Command struct {
 	cobra    *cobra.Command
 	commands []*Command
+	parent   *Command
 
 	title string
 
@@ -248,6 +250,10 @@ func (c *Command) SetHidden(value bool) {
 	c.cobra.Hidden = value
 }
 
+func (c *Command) Hidden() bool {
+	return c.cobra.Hidden
+}
+
 func (c *Command) SetDescription(description string) {
 	c.cobra.Short = description
 }
@@ -258,6 +264,16 @@ func (c *Command) SetDisableFlagParsing(b bool) {
 
 func (c *Command) Name() string {
 	return c.cobra.Name()
+}
+
+func (c *Command) NameRecursive() string {
+	child := c
+	name := []string{}
+	for child != nil {
+		name = append([]string{child.Name()}, name...)
+		child = child.parent
+	}
+	return strings.Join(name, " ")
 }
 
 func (c *Command) NamePadding() int {
@@ -327,6 +343,11 @@ func (c *Command) AddChildren(children ...*Command) {
 		c.commands = append(c.commands, child)
 		c.cobra.AddCommand(child.cobra)
 
+		if child.parent != nil {
+			panic(fmt.Sprintf("Command %s already has a parent: %s", child.Name(), child.parent.Name()))
+		}
+		child.parent = c
+
 		interceptChain := append(c.interceptChain, child.interceptChain...)
 		child.SetInterceptChain(interceptChain...)
 	}
@@ -344,6 +365,20 @@ func (c *Command) topLevelCobra() *cobra.Command {
 		parent = parent.Parent()
 	}
 	return parent
+}
+
+func (c *Command) Parent() *Command {
+	return c.parent
+}
+
+func (c *Command) TopParent() *Command {
+	child := c
+	for {
+		if child.parent == nil {
+			return child
+		}
+		child = child.parent
+	}
 }
 
 func (c *Command) Children() []*Command {
@@ -505,9 +540,25 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	} else {
 		analytics.EventWithLabel(analytics.CatCommandExit, subCommandString, strconv.Itoa(exitCode))
 	}
-	analytics.WaitForAllEvents(time.Second * 1)
+	waitForAllEvents(time.Second * 1)
 
 	return err
+}
+
+func waitForAllEvents(t time.Duration) {
+	wg := make(chan struct{})
+	go func() {
+		analytics.Wait()
+		rollbar.Wait()
+		close(wg)
+	}()
+
+	select {
+	case <-time.After(t):
+		return
+	case <-wg:
+		return
+	}
 }
 
 func (c *Command) runFlags(persistOnly bool) {

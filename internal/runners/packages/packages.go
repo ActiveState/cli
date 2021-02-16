@@ -18,7 +18,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -107,7 +106,7 @@ func executePackageOperation(pj *project.Project, cfg configurable, out output.O
 	// Update project references to the new commit, if changes were indeed made (otherwise we effectively drop the new commit)
 	if orderChanged {
 		if !isHeadless {
-			err := model.UpdateProjectBranchCommitByName(pj.Owner(), pj.Name(), commitID)
+			err := model.UpdateProjectBranchCommit(pj, commitID)
 			if err != nil {
 				return locale.WrapError(err, "err_package_"+string(operation))
 			}
@@ -119,27 +118,14 @@ func executePackageOperation(pj *project.Project, cfg configurable, out output.O
 		commitID = parentCommitID
 	}
 
-	// Create runtime
-	rtMessages := runbits.NewRuntimeMessageHandler(out)
-	rtMessages.SetRequirement(name, ns)
-	rt, err := runtime.NewRuntime(pj.Source().Path(), cfg.CachePath(), commitID, pj.Owner(), pj.Name(), rtMessages)
+	// refresh runtime
+	req := runbits.RequestedRequirement{
+		Name:      name,
+		Namespace: ns,
+	}
+	err = runbits.RefreshRuntime(out, &req, pj, cfg.CachePath(), commitID, orderChanged)
 	if err != nil {
-		return locale.WrapError(err, "err_packages_update_runtime_init", "Could not initialize runtime.")
-	}
-
-	if !orderChanged && rt.IsCachedRuntime() {
-		out.Print(locale.Tl("pkg_already_uptodate", "Requested dependencies are already configured and installed."))
-		return nil
-	}
-
-	// Update runtime
-	if !rt.IsCachedRuntime() {
-		out.Notice(output.Heading(locale.Tl("update_runtime", "Updating Runtime")))
-		out.Notice(locale.Tl("update_runtime_info", "Changes to your runtime may require some dependencies to be rebuilt."))
-		_, _, err := runtime.NewInstaller(rt).Install()
-		if err != nil {
-			return locale.WrapError(err, "err_packages_update_runtime_install", "Could not install dependencies.")
-		}
+		return err
 	}
 
 	// Print the result

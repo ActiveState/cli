@@ -71,7 +71,9 @@ func main() {
 	// Run our main command logic, which is logic that defers to the error handling logic below
 	code, err := run(os.Args, isInteractive, out)
 	if err != nil {
-		out.Error(err)
+		if !isSilent(err) {
+			out.Error(err)
+		}
 
 		// If a state tool error occurs in a VSCode integrated terminal, we want
 		// to pause and give time to the user to read the error message.
@@ -207,6 +209,10 @@ func run(args []string, isInteractive bool, out output.Outputer) (int, error) {
 
 func argsHaveVerbose(args []string) bool {
 	for _, arg := range args {
+		// Skip looking for verbose args after --, eg. for `state shim -- perl -v`
+		if arg == "--" {
+			return false
+		}
 		if arg == "--verbose" || arg == "-v" {
 			return true
 		}

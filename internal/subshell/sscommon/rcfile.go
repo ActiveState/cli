@@ -177,10 +177,9 @@ func SetupShellRcFile(rcFileName, templateName string, env map[string]string, na
 
 // SetupProjectRcFile creates a temporary RC file that our shell is initiated from, this allows us to template the logic
 // used for initialising the subshell
-func SetupProjectRcFile(templateName, ext string, env map[string]string, out output.Outputer, cfg Configurable) (*os.File, error) {
+func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[string]string, out output.Outputer, cfg Configurable) (*os.File, error) {
 	box := packr.NewBox("../../../assets/shells")
 	tpl := box.String(templateName)
-	prj := project.Get()
 
 	userScripts := ""
 
