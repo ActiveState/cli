@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"errors"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -234,7 +233,7 @@ func UsernameValidator(val interface{}) error {
 	params.SetUsername(value)
 	res, err := mono.Get().Users.UniqueUsername(params)
 	if err != nil || *res.Payload.Code != int64(200) {
-		return errors.New(locale.T("err_username_taken"))
+		return locale.NewError("err_username_taken")
 	}
 	return nil
 }
