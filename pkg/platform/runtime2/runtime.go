@@ -1,14 +1,27 @@
 package runtime
 
 import (
-	"errors"
+	"github.com/ActiveState/cli/pkg/project"
 )
 
-// ErrNotInstalled is returned when the runtime is not locally installed yet.
-// See the `setup.Setup` on how to set up a runtime installation.
-var ErrNotInstalled = errors.New("Runtime not installed yet")
+type EnvProvider interface {
+	Environ() (map[string]string, error)
+}
 
-// IsNotInstalledError is a convenience function to checks if an error is NotInstalledError
-func IsNotInstalledError(err error) bool {
-	return errors.Is(err, ErrNotInstalled)
+type Runtime struct {
+	proj *project.Project
+	ep   EnvProvider
+}
+
+// New is the constructor function for alternative runtimes
+func New(proj *project.Project, ep EnvProvider) (*Runtime, error) {
+	r := Runtime{
+		proj: proj,
+		ep:   ep,
+	}
+	return &r, nil
+}
+
+func (r *Runtime) Environ() (map[string]string, error) {
+	return r.ep.Environ()
 }

@@ -4,7 +4,7 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
-// var _ runtime.Runtimer = &Alternative{}
+// var _ runtime.EnvProvider = &Alternative{}
 
 // Alternative is the specialization of a runtime for alternative builds
 type Alternative struct{}

@@ -1,8 +1,6 @@
 package alternative
 
-import (
-	runtime "github.com/ActiveState/cli/pkg/platform/runtime2"
-)
+import "github.com/ActiveState/cli/pkg/platform/runtime2/build"
 
 // var _ common.Setuper = &Setup{}
 // var _ common.ArtifactSetuper = &ArtifactSetup{}
@@ -17,7 +15,7 @@ func NewSetup() *Setup {
 	return &Setup{}
 }
 
-func NewArtifactSetup(artifactID runtime.ArtifactID) *ArtifactSetup {
+func NewArtifactSetup(artifactID build.ArtifactID) *ArtifactSetup {
 	return &ArtifactSetup{}
 }
 

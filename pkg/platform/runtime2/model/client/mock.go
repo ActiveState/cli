@@ -26,6 +26,6 @@ func (tc *Mock) Build(order *inventory_models.Order) (*model.BuildResult, error)
 }
 
 // BuildLog returns a mocked BuildLogger implementation
-func (tc *Mock) BuildLog(msgHandler buildlogstream.MessageHandler, recipe *inventory_models.Recipe) (model.BuildLogger, error) {
+func (tc *Mock) BuildLog(msgHandler buildlogstream.MessageHandler, recipe *inventory_models.Recipe) (model.BuildLog, error) {
 	panic("implement me")
 }

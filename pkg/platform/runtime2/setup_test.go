@@ -1,4 +1,4 @@
-package setup
+package runtime
 
 import (
 	"testing"

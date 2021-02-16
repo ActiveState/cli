@@ -24,6 +24,6 @@ func (d *Default) Build(order *inventory_models.Order) (*model.BuildResult, erro
 	panic("implement me")
 }
 
-func (d *Default) BuildLog(msgHandler buildlogstream.MessageHandler, recipe *inventory_models.Recipe) (model.BuildLogger, error) {
+func (d *Default) BuildLog(msgHandler buildlogstream.MessageHandler, recipe *inventory_models.Recipe) (model.BuildLog, error) {
 	panic("implement me")
 }
