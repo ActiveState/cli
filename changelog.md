@@ -13,6 +13,7 @@ Available on channel `master`
 ### Fixed
 
 - Error constructions no longer directly use locale.T ([PR #1257](https://github.com/ActiveState/cli/pull/1257))
+- `shim` works without a project file in the current directory ([PR #1256](https://github.com/ActiveState/cli/pull/1256))
 
 
 ## 0.25.0
