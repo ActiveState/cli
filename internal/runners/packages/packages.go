@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
@@ -16,16 +18,33 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
+type PackageVersion struct {
+	captain.NameVersion
+}
+
+func (pv *PackageVersion) Set(arg string) error {
+	err := pv.NameVersion.Set(arg)
+	if err != nil {
+		return locale.WrapInputError(err, "err_package_format", "The package and version provided is not formatting correctly, must be in the form of <package>@<version>")
+	}
+	return nil
+}
+
+type configurable interface {
+	keypairs.Configurable
+	CachePath() string
+}
+
 const latestVersion = "latest"
 
-func executePackageOperation(pj *project.Project, out output.Outputer, authentication *authentication.Auth, prompt prompt.Prompter, name, version string, operation model.Operation, ns model.Namespace) error {
+func executePackageOperation(pj *project.Project, cfg configurable, out output.Outputer, authentication *authentication.Auth, prompt prompt.Prompter, name, version string, operation model.Operation, ns model.Namespace) error {
 	isHeadless := pj.IsHeadless()
 	if !isHeadless && !authentication.Authenticated() {
-		anonymousOk, err := prompt.Confirm(locale.Tl("continue_anon", "Continue Anonymously?"), locale.T("prompt_headless_anonymous"), true)
+		anonConfirmDefault := true
+		anonymousOk, err := prompt.Confirm(locale.Tl("continue_anon", "Continue Anonymously?"), locale.T("prompt_headless_anonymous"), &anonConfirmDefault)
 		if err != nil {
 			return locale.WrapInputError(err, "Authentication cancelled.")
 		}
@@ -34,7 +53,7 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 
 	// Note: User also lands here if answering No to the question about anonymous commit.
 	if !isHeadless {
-		err := auth.RequireAuthentication(locale.T("auth_required_activate"), out, prompt)
+		err := auth.RequireAuthentication(locale.T("auth_required_activate"), cfg, out, prompt)
 		if err != nil {
 			return locale.WrapInputError(err, "err_auth_required")
 		}
@@ -87,7 +106,7 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 	// Update project references to the new commit, if changes were indeed made (otherwise we effectively drop the new commit)
 	if orderChanged {
 		if !isHeadless {
-			err := model.UpdateProjectBranchCommitByName(pj.Owner(), pj.Name(), commitID)
+			err := model.UpdateProjectBranchCommit(pj, commitID)
 			if err != nil {
 				return locale.WrapError(err, "err_package_"+string(operation))
 			}
@@ -99,27 +118,14 @@ func executePackageOperation(pj *project.Project, out output.Outputer, authentic
 		commitID = parentCommitID
 	}
 
-	// Create runtime
-	rtMessages := runbits.NewRuntimeMessageHandler(out)
-	rtMessages.SetRequirement(name, ns)
-	rt, err := runtime.NewRuntime(pj.Source().Path(), commitID, pj.Owner(), pj.Name(), rtMessages)
+	// refresh runtime
+	req := runbits.RequestedRequirement{
+		Name:      name,
+		Namespace: ns,
+	}
+	err = runbits.RefreshRuntime(out, &req, pj, cfg.CachePath(), commitID, orderChanged)
 	if err != nil {
-		return locale.WrapError(err, "err_packages_update_runtime_init", "Could not initialize runtime.")
-	}
-
-	if !orderChanged && rt.IsCachedRuntime() {
-		out.Print(locale.Tl("pkg_already_uptodate", "Requested dependencies are already configured and installed."))
-		return nil
-	}
-
-	// Update runtime
-	if !rt.IsCachedRuntime() {
-		out.Notice(output.Heading(locale.Tl("update_runtime", "Updating Runtime")))
-		out.Notice(locale.Tl("update_runtime_info", "Changes to your runtime may require some dependencies to be rebuilt."))
-		_, _, err := runtime.NewInstaller(rt).Install()
-		if err != nil {
-			return locale.WrapError(err, "err_packages_update_runtime_install", "Could not install dependencies.")
-		}
+		return err
 	}
 
 	// Print the result
@@ -150,15 +156,4 @@ func getSuggestions(ns model.Namespace, name string) ([]string, error) {
 	suggestions = append(suggestions, locale.Tr(fmt.Sprintf("%s_ingredient_alternatives_more", ns.Type()), name))
 
 	return suggestions, nil
-}
-
-func splitNameAndVersion(input string) (string, string) {
-	nameArg := strings.Split(input, "@")
-	name := nameArg[0]
-	version := ""
-	if len(nameArg) == 2 {
-		version = nameArg[1]
-	}
-
-	return name, version
 }

@@ -45,7 +45,7 @@ func (o projectWithOrgs) MarshalOutput(f output.Format) interface{} {
 }
 
 type configGetter interface {
-	GetStringMapStringSlice(key string) map[string][]string
+	projectfile.ConfigGetter
 }
 
 // Params are command line parameters
@@ -62,14 +62,15 @@ type Projects struct {
 type primeable interface {
 	primer.Auther
 	primer.Outputer
+	primer.Configurer
 }
 
 func NewParams() *Params {
 	return &Params{Local: false}
 }
 
-func NewProjects(prime primeable, config configGetter) *Projects {
-	return newProjects(prime.Auth(), prime.Output(), config)
+func NewProjects(prime primeable) *Projects {
+	return newProjects(prime.Auth(), prime.Output(), prime.Config())
 }
 
 func newProjects(auth *authentication.Auth, out output.Outputer, config configGetter) *Projects {
@@ -81,8 +82,7 @@ func newProjects(auth *authentication.Auth, out output.Outputer, config configGe
 }
 
 func (r *Projects) Run(params *Params) error {
-	projectfile.CleanProjectMapping()
-	localProjects := r.config.GetStringMapStringSlice(projectfile.LocalProjectsConfigKey)
+	localProjects := projectfile.GetProjectMapping(r.config)
 
 	var projects projectWithOrgs = []projectWithOrg{}
 	for namespace, checkouts := range localProjects {

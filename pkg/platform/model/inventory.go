@@ -16,6 +16,8 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
+type ErrNoMatchingPlatform struct{ *locale.LocalizedError }
+
 // IngredientAndVersion is a sane version of whatever the hell it is go-swagger thinks it's doing
 type IngredientAndVersion struct {
 	*inventory_models.SearchIngredientsResponseItem
@@ -201,9 +203,9 @@ func filterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID)
 	}
 
 	if len(pids) == 0 {
-		return nil, locale.NewInputError(
+		return nil, &ErrNoMatchingPlatform{locale.NewInputError(
 			"err_no_platform_data_remains", "", hostPlatform, hostArch,
-		)
+		)}
 	}
 
 	return pids, nil
@@ -325,4 +327,21 @@ func FetchLanguages() ([]Language, error) {
 	}
 
 	return languages, nil
+}
+
+func FetchIngredientVersions(ingredientID *strfmt.UUID) ([]*inventory_models.IngredientVersion, error) {
+	client := inventory.Get()
+
+	params := inventory_operations.NewGetIngredientVersionsParams()
+	params.SetIngredientID(*ingredientID)
+	limit := int64(10000)
+	params.SetLimit(&limit)
+	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
+
+	res, err := client.GetIngredientVersions(params, authentication.ClientAuth())
+	if err != nil {
+		return nil, errs.Wrap(err, "GetIngredientVersions failed")
+	}
+
+	return res.Payload.IngredientVersions, nil
 }

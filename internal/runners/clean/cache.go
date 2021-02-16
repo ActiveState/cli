@@ -1,10 +1,7 @@
 package clean
 
 import (
-	"errors"
 	"os"
-
-	"github.com/spf13/viper"
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -13,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 type Cache struct {
@@ -20,6 +18,7 @@ type Cache struct {
 	config  project.ConfigAble
 	confirm confirmAble
 	path    string
+	cfg     *config.Instance
 }
 
 type CacheParams struct {
@@ -28,25 +27,25 @@ type CacheParams struct {
 }
 
 func NewCache(prime primeable) *Cache {
-	return newCache(prime.Output(), viper.GetViper(), prime.Prompt())
+	return newCache(prime.Output(), prime.Config(), prime.Prompt())
 }
 
-func newCache(output output.Outputer, cfg project.ConfigAble, confirm confirmAble) *Cache {
+func newCache(output output.Outputer, cfg configurable, confirm confirmAble) *Cache {
 	return &Cache{
 		output:  output,
 		config:  cfg,
 		confirm: confirm,
-		path:    config.CachePath(),
+		path:    cfg.CachePath(),
 	}
 }
 
 func (c *Cache) Run(params *CacheParams) error {
 	if os.Getenv(constants.ActivatedStateEnvVarName) != "" {
-		return errors.New(locale.T("err_clean_cache_activated"))
+		return locale.NewError("err_clean_cache_activated")
 	}
 
 	if params.Project != "" {
-		paths := project.AvailableProjectPaths(c.config, params.Project)
+		paths := projectfile.GetProjectPaths(c.config, params.Project)
 
 		for _, projectPath := range paths {
 			err := c.removeProjectCache(projectPath, params.Project, params.Force)
@@ -61,7 +60,7 @@ func (c *Cache) Run(params *CacheParams) error {
 
 func (c *Cache) removeCache(path string, force bool) error {
 	if !force {
-		ok, err := c.confirm.Confirm(locale.T("confirm"), locale.T("clean_cache_confirm"), false)
+		ok, err := c.confirm.Confirm(locale.T("confirm"), locale.T("clean_cache_confirm"), new(bool))
 		if err != nil {
 			return err
 		}
@@ -76,7 +75,7 @@ func (c *Cache) removeCache(path string, force bool) error {
 
 func (c *Cache) removeProjectCache(projectDir, namespace string, force bool) error {
 	if !force {
-		ok, err := c.confirm.Confirm(locale.T("confirm"), locale.Tr("clean_cache_artifact_confirm", namespace), false)
+		ok, err := c.confirm.Confirm(locale.T("confirm"), locale.Tr("clean_cache_artifact_confirm", namespace), new(bool))
 		if err != nil {
 			return err
 		}
@@ -90,7 +89,7 @@ func (c *Cache) removeProjectCache(projectDir, namespace string, force bool) err
 		return locale.WrapError(err, "err_clean_cache_invalid_namespace", "NamespacePrefix argument is not of the correct format")
 	}
 
-	runtime, err := runtime.NewRuntime(projectDir, "", parsed.Owner, parsed.Project, nil)
+	runtime, err := runtime.NewRuntime(projectDir, c.cfg.CachePath(), "", parsed.Owner, parsed.Project, nil)
 	if err != nil {
 		return locale.WrapError(err, "err_clean_cache_runtime_init", "Could not determine cache directory for project used in {{.V0}}", projectDir)
 	}

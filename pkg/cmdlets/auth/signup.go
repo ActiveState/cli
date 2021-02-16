@@ -1,16 +1,15 @@
 package auth
 
 import (
-	"errors"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/api"
 
@@ -32,14 +31,14 @@ type signupInput struct {
 }
 
 // Signup will prompt the user to create an account
-func Signup(out output.Outputer, prompt prompt.Prompter) error {
+func Signup(cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompter) error {
 	input := &signupInput{}
 
 	if authentication.Get().Authenticated() {
 		return locale.NewInputError("err_auth_authenticated", "You are already authenticated as: {{.V0}}. You can log out by running `state auth logout`.", authentication.Get().WhoAmI())
 	}
 
-	accepted, err := promptTOS(out, prompt)
+	accepted, err := promptTOS(cfg.ConfigPath(), out, prompt)
 	if err != nil {
 		return err
 	}
@@ -57,7 +56,7 @@ func Signup(out output.Outputer, prompt prompt.Prompter) error {
 	}
 
 	if authentication.Get().Authenticated() {
-		if err := generateKeypairForUser(input.Password); err != nil {
+		if err := generateKeypairForUser(cfg, input.Password); err != nil {
 			return locale.WrapError(err, "keypair_err_save")
 		}
 	}
@@ -78,7 +77,7 @@ func signupFromLogin(username string, password string, out output.Outputer, prom
 	return doSignup(input, out)
 }
 
-func downloadTOS() (string, error) {
+func downloadTOS(configPath string) (string, error) {
 	resp, err := http.Get(constants.TermsOfServiceURLText)
 	if err != nil {
 		return "", errs.Wrap(err, "Failed to download the Terms Of Service document.")
@@ -88,7 +87,7 @@ func downloadTOS() (string, error) {
 	}
 	defer resp.Body.Close()
 
-	tosPath := filepath.Join(config.ConfigPath(), "platform_tos.txt")
+	tosPath := filepath.Join(configPath, "platform_tos.txt")
 	tosFile, err := os.Create(tosPath)
 	if err != nil {
 		return "", errs.Wrap(err, "Could not create Terms Of Service file in configuration directory.")
@@ -103,7 +102,7 @@ func downloadTOS() (string, error) {
 	return tosPath, nil
 }
 
-func promptTOS(out output.Outputer, prompt prompt.Prompter) (bool, error) {
+func promptTOS(configPath string, out output.Outputer, prompt prompt.Prompter) (bool, error) {
 	choices := []string{
 		locale.T("tos_accept"),
 		locale.T("tos_not_accept"),
@@ -111,7 +110,8 @@ func promptTOS(out output.Outputer, prompt prompt.Prompter) (bool, error) {
 	}
 
 	out.Notice(locale.Tr("tos_disclaimer", constants.TermsOfServiceURLLatest))
-	choice, err := prompt.Select(locale.Tl("tos", "Terms of Service"), locale.T("tos_acceptance"), choices, locale.T("tos_accept"))
+	defaultChoice := locale.T("tos_accept")
+	choice, err := prompt.Select(locale.Tl("tos", "Terms of Service"), locale.T("tos_acceptance"), choices, &defaultChoice)
 	if err != nil {
 		return false, err
 	}
@@ -122,7 +122,7 @@ func promptTOS(out output.Outputer, prompt prompt.Prompter) (bool, error) {
 	case locale.T("tos_not_accept"):
 		return false, nil
 	case locale.T("tos_show_full"):
-		tosFilePath, err := downloadTOS()
+		tosFilePath, err := downloadTOS(configPath)
 		if err != nil {
 			return false, locale.WrapError(err, "err_download_tos", "Could not download terms of service file.")
 		}
@@ -132,7 +132,9 @@ func promptTOS(out output.Outputer, prompt prompt.Prompter) (bool, error) {
 			return false, errs.Wrap(err, "IO failure")
 		}
 		out.Print(tos)
-		return prompt.Confirm("", locale.T("tos_acceptance"), true)
+
+		tosConfirmDefault := true
+		return prompt.Confirm("", locale.T("tos_acceptance"), &tosConfirmDefault)
 	}
 
 	return false, nil
@@ -144,7 +146,7 @@ func promptForSignup(input *signupInput, out output.Outputer, prompter prompt.Pr
 	if input.Username != "" {
 		out.Notice(locale.T("confirm_password_account_creation"))
 	} else {
-		input.Username, err = prompter.Input("", locale.T("username_prompt_signup"), "", prompt.InputRequired)
+		input.Username, err = prompter.Input("", locale.T("username_prompt_signup"), new(string), prompt.InputRequired)
 		if err != nil {
 			return err
 		}
@@ -172,12 +174,12 @@ func promptForSignup(input *signupInput, out output.Outputer, prompter prompt.Pr
 		return errs.Wrap(err, "InvalidPassword failure")
 	}
 
-	input.Name, err = prompter.Input("", locale.T("name_prompt"), "", prompt.InputRequired)
+	input.Name, err = prompter.Input("", locale.T("name_prompt"), new(string), prompt.InputRequired)
 	if err != nil {
 		return err
 	}
 
-	input.Email, err = prompter.Input("", locale.T("email_prompt"), "", prompt.InputRequired)
+	input.Email, err = prompter.Input("", locale.T("email_prompt"), new(string), prompt.InputRequired)
 	if err != nil {
 		return err
 	}
@@ -231,7 +233,7 @@ func UsernameValidator(val interface{}) error {
 	params.SetUsername(value)
 	res, err := mono.Get().Users.UniqueUsername(params)
 	if err != nil || *res.Payload.Code != int64(200) {
-		return errors.New(locale.T("err_username_taken"))
+		return locale.NewError("err_username_taken")
 	}
 	return nil
 }

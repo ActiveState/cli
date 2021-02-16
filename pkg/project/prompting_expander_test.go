@@ -9,6 +9,7 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -36,6 +37,7 @@ type VarPromptingExpanderTestSuite struct {
 	secretsMock   *httpmock.HTTPMock
 	platformMock  *httpmock.HTTPMock
 	graphMock     *mock.Mock
+	cfg           keypairs.Configurable
 }
 
 func (suite *VarPromptingExpanderTestSuite) BeforeTest(suiteName, testName string) {
@@ -62,24 +64,32 @@ func (suite *VarPromptingExpanderTestSuite) BeforeTest(suiteName, testName strin
 
 	suite.graphMock = mock.Init()
 	suite.graphMock.ProjectByOrgAndName(mock.NoOptions)
+
+	suite.cfg, err = config.Get()
+	suite.Require().NoError(err)
 }
 
 func (suite *VarPromptingExpanderTestSuite) AfterTest(suiteName, testName string) {
 	httpmock.DeActivate()
 	projectfile.Reset()
-	osutil.RemoveConfigFile(constants.KeypairLocalFileName + ".key")
+	cfg, err := config.Get()
+	suite.Require().NoError(err)
+	osutil.RemoveConfigFile(cfg.ConfigPath(), constants.KeypairLocalFileName+".key")
 	suite.graphMock.Close()
 }
 
 func (suite *VarPromptingExpanderTestSuite) prepareWorkingExpander() project.ExpanderFunc {
 	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg", 200)
 
-	osutil.CopyTestFileToConfigDir("self-private.key", constants.KeypairLocalFileName+".key", 0600)
+	cfg, err := config.Get()
+	suite.Require().NoError(err)
+
+	osutil.CopyTestFileToConfigDir(cfg.ConfigPath(), "self-private.key", constants.KeypairLocalFileName+".key", 0600)
 
 	suite.secretsMock.RegisterWithResponder("GET", "/organizations/00010001-0001-0001-0001-000100010002/user_secrets", func(req *http.Request) (int, string) {
 		return 200, "user_secrets-empty"
 	})
-	return project.NewSecretPromptingExpander(suite.secretsClient, suite.promptMock)
+	return project.NewSecretPromptingExpander(suite.secretsClient, suite.promptMock, suite.cfg)
 }
 
 func (suite *VarPromptingExpanderTestSuite) assertExpansionSaveFailure(secretName, expectedValue string) {
@@ -130,7 +140,7 @@ func (suite *VarPromptingExpanderTestSuite) assertExpansionSaveSuccess(secretNam
 
 	suite.Equal(strfmt.UUID("00010001-0001-0001-0001-000100010001"), change.ProjectID)
 
-	kp, _ := keypairs.LoadWithDefaults()
+	kp, _ := keypairs.LoadWithDefaults(suite.cfg)
 	decryptedBytes, err := kp.DecodeAndDecrypt(*change.Value)
 	suite.Require().Nil(err)
 	suite.Equal(expectedValue, string(decryptedBytes))

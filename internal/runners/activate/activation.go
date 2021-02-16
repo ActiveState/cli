@@ -32,7 +32,7 @@ func (r *Activate) activateAndWait(proj *project.Project, venv *virtualenvironme
 	}
 
 	// If we're not using plain output then we should just dump the environment information
-	if r.out.Type() != output.PlainFormatName {
+	if r.out.Type() != output.PlainFormatName && r.out.Type() != output.SimpleFormatName {
 		if r.out.Type() == output.EditorV0FormatName {
 			fmt.Println("[activated-JSON]")
 		}
@@ -51,17 +51,17 @@ func (r *Activate) activateAndWait(proj *project.Project, venv *virtualenvironme
 		}
 	}()
 
-	err = r.config.WriteConfig()
+	err = r.config.Save()
 	if err != nil {
 		return locale.WrapError(err, "err_write_config", "Could not write to configuration file")
 	}
 
 	r.subshell.SetEnv(ve)
-	if err := r.subshell.Activate(r.out); err != nil {
+	if err := r.subshell.Activate(proj, r.config, r.out); err != nil {
 		return locale.WrapError(err, "error_could_not_activate_subshell", "Could not activate a new subshell.")
 	}
 
-	a, err := process.NewActivation(os.Getpid())
+	a, err := process.NewActivation(r.config, os.Getpid())
 	if err != nil {
 		return locale.WrapError(err, "error_could_not_mark_process", "Could not mark process as activated.")
 	}

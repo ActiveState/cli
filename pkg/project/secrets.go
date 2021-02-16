@@ -39,32 +39,34 @@ type SecretExpander struct {
 	projectFile     *projectfile.Project
 	project         *Project
 	prompt          prompt.Prompter
+	cfg             keypairs.Configurable
 	secrets         []*secretsModels.UserSecret
 	secretsAccessed []*SecretAccess
 	cachedSecrets   map[string]string
 }
 
 // NewSecretExpander returns a new instance of SecretExpander
-func NewSecretExpander(secretsClient *secretsapi.Client, prj *Project, prompt prompt.Prompter) *SecretExpander {
+func NewSecretExpander(secretsClient *secretsapi.Client, prj *Project, prompt prompt.Prompter, cfg keypairs.Configurable) *SecretExpander {
 	return &SecretExpander{
 		secretsClient: secretsClient,
 		cachedSecrets: map[string]string{},
 		project:       prj,
 		prompt:        prompt,
+		cfg:           cfg,
 	}
 }
 
 // NewSecretQuietExpander creates an Expander which can retrieve and decrypt stored user secrets.
-func NewSecretQuietExpander(secretsClient *secretsapi.Client) ExpanderFunc {
-	secretsExpander := NewSecretExpander(secretsClient, nil, nil)
+func NewSecretQuietExpander(secretsClient *secretsapi.Client, cfg keypairs.Configurable) ExpanderFunc {
+	secretsExpander := NewSecretExpander(secretsClient, nil, nil, cfg)
 	return secretsExpander.Expand
 }
 
 // NewSecretPromptingExpander creates an Expander which can retrieve and decrypt stored user secrets. Additionally,
 // it will prompt the user to provide a value for a secret -- in the event none is found -- and save the new
 // value with the secrets service.
-func NewSecretPromptingExpander(secretsClient *secretsapi.Client, prompt prompt.Prompter) ExpanderFunc {
-	secretsExpander := NewSecretExpander(secretsClient, nil, prompt)
+func NewSecretPromptingExpander(secretsClient *secretsapi.Client, prompt prompt.Prompter, cfg keypairs.Configurable) ExpanderFunc {
+	secretsExpander := NewSecretExpander(secretsClient, nil, prompt, cfg)
 	return secretsExpander.ExpandWithPrompt
 }
 
@@ -80,7 +82,7 @@ func (e *SecretExpander) KeyPair() (keypairs.Keypair, error) {
 
 	var err error
 	if e.keypair == nil {
-		e.keypair, err = secrets.LoadKeypairFromConfigDir()
+		e.keypair, err = secrets.LoadKeypairFromConfigDir(e.cfg)
 		if err != nil {
 			return nil, err
 		}

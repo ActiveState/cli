@@ -21,12 +21,14 @@ type Run struct {
 	out      output.Outputer
 	proj     *project.Project
 	subshell subshell.SubShell
+	cfg      scriptrun.Configurable
 }
 
 type primeable interface {
 	primer.Outputer
 	primer.Projecter
 	primer.Subsheller
+	primer.Configurer
 }
 
 // New constructs a new instance of Run.
@@ -35,15 +37,16 @@ func New(prime primeable) *Run {
 		prime.Output(),
 		prime.Project(),
 		prime.Subshell(),
+		prime.Config(),
 	}
 }
 
 // Run runs the Run run runner.
 func (r *Run) Run(name string, args []string) error {
-	return run(r.out, r.subshell, r.proj, name, args)
+	return run(r.out, r.subshell, r.proj, r.cfg, name, args)
 }
 
-func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, name string, args []string) error {
+func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, cfg scriptrun.Configurable, name string, args []string) error {
 	logging.Debug("Execute")
 
 	if proj == nil {
@@ -57,7 +60,7 @@ func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, nam
 	out.Notice(txtstyle.NewTitle(locale.Tl("run_script_title", "Running Script: [ACTIONABLE]{{.V0}}[/RESET]", name)))
 
 	if authentication.Get().Authenticated() {
-		checker.RunCommitsBehindNotifier(out)
+		checker.RunCommitsBehindNotifier(proj, out)
 	}
 
 	script := proj.ScriptByName(name)
@@ -65,10 +68,8 @@ func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, nam
 		return locale.NewInputError("error_state_run_unknown_name", "Script does not exist: {{.V0}}", name)
 	}
 
-	scriptrunner := scriptrun.New(out, subs, proj)
+	scriptrunner := scriptrun.New(out, subs, proj, cfg)
 	if !script.Standalone() && scriptrunner.NeedsActivation() {
-		out.Notice(output.Heading(locale.Tl("notice", "Notice")))
-		out.Notice(locale.T("info_state_run_activating_state"))
 		if err := scriptrunner.PrepareVirtualEnv(); err != nil {
 			return locale.WrapError(err, "err_script_run_preparevenv", "Could not prepare virtual environment.")
 		}

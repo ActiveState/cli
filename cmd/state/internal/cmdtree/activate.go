@@ -27,6 +27,7 @@ func newActivateCommand(prime *primer.Values) *captain.Command {
 		"",
 		locale.T("activate_project"),
 		prime.Output(),
+		prime.Config(),
 		[]*captain.Flag{
 			{
 				Name:        "path",
@@ -49,6 +50,11 @@ func newActivateCommand(prime *primer.Values) *captain.Command {
 				Name:        "default",
 				Description: locale.Tl("flag_state_activate_default_description", "Configures the project to be the global default project"),
 				Value:       &params.Default,
+			},
+			{
+				Name:        "branch",
+				Description: locale.Tl("flag_state_activate_branch_description", "Defines the branch to be used"),
+				Value:       &params.Branch,
 			},
 		},
 		[]*captain.Argument{

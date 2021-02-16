@@ -26,6 +26,11 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		newLogoutCommand(prime),
 	)
 
+	cveCmd := newCveCommand(prime)
+	cveCmd.AddChildren(
+		newReportCommand(prime),
+	)
+
 	exportCmd := newExportCommand(prime)
 	exportCmd.AddChildren(
 		newRecipeCommand(prime),
@@ -34,6 +39,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		newAPIKeyCommand(prime),
 		newExportConfigCommand(prime),
 		newExportGithubActionCommand(prime),
+		newExportDocsCommand(prime),
 	)
 
 	platformsCmd := newPlatformsCommand(prime)
@@ -110,11 +116,21 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 	updateCmd := newUpdateCommand(prime)
 	updateCmd.AddChildren(newUpdateLockCommand(prime))
 
+	branchCmd := newBranchCommand(prime)
+	branchCmd.AddChildren(
+		newBranchAddCommand(prime),
+		newBranchSwitchCommand(prime),
+	)
+
+	prepareCmd := newPrepareCommand(prime)
+	prepareCmd.AddChildren(newPrepareCompletionsCommand(prime))
+
 	stateCmd := newStateCommand(globals, prime)
 	stateCmd.AddChildren(
 		newActivateCommand(prime),
 		newInitCommand(prime),
 		newPushCommand(prime),
+		cveCmd,
 		projectsCmd,
 		authCmd,
 		exportCmd,
@@ -141,11 +157,12 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		newPpmCommand(prime),
 		newInviteCommand(prime),
 		tutorialCmd,
-		newPrepareCommand(prime),
+		prepareCmd,
 		newProtocolCommand(prime),
 		newShimCommand(prime, args...),
 		newRevertCommand(prime),
 		secretsCmd,
+		branchCmd,
 	)
 
 	return &CmdTree{
@@ -183,6 +200,7 @@ func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Comm
 		"",
 		locale.T("state_description"),
 		prime.Output(),
+		prime.Config(),
 		[]*captain.Flag{
 			{
 				Name:        "locale",
@@ -274,6 +292,7 @@ func (a *addCmdAs) deprecatedAlias(aliased *captain.Command, name string) {
 		aliased.Title(),
 		aliased.Description(),
 		a.prime.Output(),
+		a.prime.Config(),
 		aliased.Flags(),
 		aliased.Arguments(),
 		func(c *captain.Command, args []string) error {

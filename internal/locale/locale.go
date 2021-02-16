@@ -14,10 +14,11 @@ import (
 
 	"github.com/gobuffalo/packr"
 	"github.com/nicksnyder/go-i18n/i18n"
-	"github.com/spf13/viper"
 	"github.com/thoas/go-funk"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 )
 
@@ -32,7 +33,14 @@ var exit = os.Exit
 func init() {
 	logging.Debug("Init")
 
-	viper.SetDefault("Locale", "en-US")
+	locale := getLocaleFlag()
+	cfg, err := config.Get()
+	if err == nil {
+		cfg.SetDefault("Locale", "en-US")
+		if locale == "" {
+			locale = cfg.GetString("Locale")
+		}
+	}
 
 	path := getLocalePath()
 	box := packr.NewBox("../../locale")
@@ -45,11 +53,6 @@ func init() {
 			panic(fmt.Sprintf("Could not load %s: %v", filepath, err))
 		}
 	})
-
-	locale := getLocaleFlag()
-	if locale == "" {
-		locale = viper.GetString("Locale")
-	}
 
 	Set(locale)
 }
@@ -88,17 +91,21 @@ func getLocaleFlag() string {
 }
 
 // Set the active language to the given locale
-func Set(localeName string) {
+func Set(localeName string) error {
 	if !funk.Contains(Supported, localeName) {
-		fmt.Printf("Locale does not exist: %s\n", localeName)
-		exit(1)
-		return
+		return errs.New("Locale does not exist: %s", localeName)
 	}
 
 	translateFunction, _ = i18n.Tfunc(localeName)
 	_ = translateFunction
 
-	viper.Set("Locale", localeName)
+	cfg, err := config.Get()
+	if err != nil {
+		return errs.Wrap(err, "Could not get configuration to store updated locale")
+	}
+	cfg.Set("Locale", localeName)
+
+	return nil
 }
 
 // T aliases to i18n.Tfunc()

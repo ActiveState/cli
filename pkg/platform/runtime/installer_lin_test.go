@@ -60,7 +60,7 @@ func (suite *InstallerLinuxTestSuite) BeforeTest(suiteName, testName string) {
 	suite.Require().NoError(err)
 
 	msgHandler := runbits.NewRuntimeMessageHandler(&outputhelper.TestOutputer{})
-	r, err := runtime.NewRuntime("", "00010001-0001-0001-0001-000100010001", "string", "string", msgHandler)
+	r, err := runtime.NewRuntime("", suite.cacheDir, "00010001-0001-0001-0001-000100010001", "string", "string", msgHandler)
 	suite.Require().NoError(err)
 	r.SetInstallPath(suite.cacheDir)
 	suite.installer = runtime.NewInstaller(r)

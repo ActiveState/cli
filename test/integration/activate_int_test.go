@@ -244,7 +244,7 @@ version: %s
 		e2e.WithArgs("pull"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Your activestate.yaml has been updated to the latest version available")
+	cp.Expect("activestate.yaml has been updated to")
 	cp.ExpectExitCode(0)
 
 	c2 := ts.Spawn("activate")
@@ -363,7 +363,7 @@ version: %s
 
 	// Pull to ensure we have an up to date config file
 	cp := ts.Spawn("pull")
-	cp.Expect("Your activestate.yaml has been updated to the latest version available")
+	cp.Expect("activestate.yaml has been updated to")
 	cp.ExpectExitCode(0)
 
 	// Activate in the subdirectory
@@ -378,7 +378,54 @@ version: %s
 	c2.WaitForInput(20 * time.Second)
 	c2.SendLine("exit")
 	c2.ExpectExitCode(0)
+}
 
+func (suite *ActivateIntegrationTestSuite) TestActivate_NamespaceWins() {
+	suite.OnlyRunForTags(tagsuite.Activate)
+	ts := e2e.New(suite.T(), false)
+	identifyPath := "identifyable-path"
+	targetPath := filepath.Join(ts.Dirs.Work, "foo", "bar", identifyPath)
+	defer ts.Close()
+	err := fileutils.Mkdir(targetPath)
+	suite.Require().NoError(err)
+
+	// Create the project file at the root of the temp dir
+	content := strings.TrimSpace(fmt.Sprintf(`
+project: "https://platform.activestate.com/ActiveState-CLI/Python3"
+`))
+
+	ts.PrepareActiveStateYAML(content)
+
+	// Pull to ensure we have an up to date config file
+	cp := ts.Spawn("pull")
+	cp.Expect("activestate.yaml has been updated to")
+	cp.ExpectExitCode(0)
+
+	// Activate in the subdirectory
+	c2 := ts.SpawnWithOpts(
+		e2e.WithArgs("activate", "ActiveState-CLI/Python2"), // activate a different namespace
+		e2e.WithWorkDirectory(targetPath),
+	)
+	c2.ExpectLongString("Where would you like")
+	c2.SendUnterminated(string([]byte{0033, '[', 'B'})) // move cursor down, and then press enter
+	c2.Expect(">")
+	c2.Send("")
+	c2.Expect(">")
+	c2.SendLine(targetPath)
+	c2.ExpectLongString("ActiveState-CLI/Python2")
+	c2.ExpectLongString("default project?")
+	c2.Send("n")
+	c2.Expect("You're Activated")
+
+	c2.WaitForInput(20 * time.Second)
+	if runtime.GOOS == "windows" {
+		c2.SendLine("@echo %cd%")
+	} else {
+		c2.SendLine("pwd")
+	}
+	c2.Expect(identifyPath)
+	c2.SendLine("exit")
+	c2.ExpectExitCode(0)
 }
 
 func (suite *ActivateIntegrationTestSuite) TestInit_Activation_NoCommitID() {
@@ -460,7 +507,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_JSON() {
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivate_Command() {
-	suite.OnlyRunForTags(tagsuite.Activate, tagsuite.VSCode)
+	suite.OnlyRunForTags(tagsuite.Activate)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 

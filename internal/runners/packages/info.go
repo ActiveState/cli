@@ -8,25 +8,29 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/project"
+	"github.com/go-openapi/strfmt"
 )
 
 // InfoRunParams tracks the info required for running Info.
 type InfoRunParams struct {
-	Package  string
+	Package  PackageVersion
 	Language string
 }
 
 // Info manages the information execution context.
 type Info struct {
-	out output.Outputer
+	out  output.Outputer
+	proj *project.Project
 }
 
 // NewInfo prepares an information execution context for use.
-func NewInfo(prime primer.Outputer) *Info {
+func NewInfo(prime primeable) *Info {
 	return &Info{
-		out: prime.Output(),
+		out:  prime.Output(),
+		proj: prime.Project(),
 	}
 }
 
@@ -34,7 +38,7 @@ func NewInfo(prime primer.Outputer) *Info {
 func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 	logging.Debug("ExecuteInfo")
 
-	language, err := targetedLanguage(params.Language)
+	language, err := targetedLanguage(params.Language, i.proj)
 	if err != nil {
 
 		return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_obtain_language", nstype))
@@ -42,29 +46,35 @@ func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 
 	ns := model.NewNamespacePkgOrBundle(language, nstype)
 
-	pkgName, _ := splitNameAndVersion(params.Package)
-
-	packages, err := model.SearchIngredientsStrict(ns, pkgName)
+	packages, err := model.SearchIngredientsStrict(ns, params.Package.Name())
 	if err != nil {
 		return locale.WrapError(err, "package_err_cannot_obtain_search_results")
 	}
 
 	if len(packages) == 0 {
 		return errs.AddTips(
-			locale.NewInputError("err_package_info_no_packages", `No packages in our catalogue are an exact match for [NOTICE]"{{.V0}}"[/RESET].`, params.Package),
+			locale.NewInputError("err_package_info_no_packages", `No packages in our catalogue are an exact match for [NOTICE]"{{.V0}}"[/RESET].`, params.Package.String()),
 			locale.Tl("info_try_search", "Valid package names can be searched using [ACTIONABLE]`state search {package_name}`[/RESET]"),
 			locale.Tl("info_request", "Request a package at [ACTIONABLE]https://community.activestate.com/[/RESET]"),
 		)
 	}
 
 	pkg := packages[0]
+	ingredientVersion := pkg.LatestVersion
 
-	authors, err := model.FetchAuthors(pkg.Ingredient.IngredientID, pkg.LatestVersion.IngredientVersionID)
+	if params.Package.Version() != "" {
+		ingredientVersion, err = specificIngredientVersion(pkg.Ingredient.IngredientID, params.Package.Version())
+		if err != nil {
+			return locale.WrapInputError(err, "info_err_version_not_found", "Could not find version {{.V0}} for package {{.V1}}", params.Package.Version(), params.Package.Name())
+		}
+	}
+
+	authors, err := model.FetchAuthors(pkg.Ingredient.IngredientID, ingredientVersion.IngredientVersionID)
 	if err != nil {
 		return locale.WrapError(err, "package_err_cannot_obtain_authors_info", "Cannot obtain authors info")
 	}
 
-	res := newInfoResult(pkg, authors)
+	res := newInfoResult(pkg.Ingredient, ingredientVersion, authors, pkg.Versions)
 	out := &infoResultOutput{
 		i.out,
 		res,
@@ -74,6 +84,21 @@ func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 	i.out.Print(out)
 
 	return nil
+}
+
+func specificIngredientVersion(ingredientID *strfmt.UUID, version string) (*inventory_models.IngredientVersion, error) {
+	ingredientVersions, err := model.FetchIngredientVersions(ingredientID)
+	if err != nil {
+		return nil, locale.WrapError(err, "info_err_cannot_obtain_version", "Could not retrieve ingredient version information")
+	}
+
+	for _, iv := range ingredientVersions {
+		if iv.Version != nil && *iv.Version == version {
+			return iv, nil
+		}
+	}
+
+	return nil, locale.NewInputError("err_no_ingredient_version_found", "No ingredient version found")
 }
 
 // PkgDetailsTable describes package details.
@@ -86,16 +111,16 @@ type PkgDetailsTable struct {
 
 type infoResult struct {
 	name            string
-	latestVersion   string
+	version         string
 	Description     string `locale:"," json:"description"`
 	PkgDetailsTable `locale:"," opts:"verticalTable"`
 	Versions        []string `locale:"," json:"versions"`
 }
 
-func newInfoResult(iv *model.IngredientAndVersion, authors model.Authors) *infoResult {
+func newInfoResult(ingredient *inventory_models.Ingredient, ingredientVersion *inventory_models.IngredientVersion, authors model.Authors, versions []*inventory_models.SearchIngredientsResponseVersion) *infoResult {
 	res := infoResult{
-		name:          locale.T("unknown_value"),
-		latestVersion: locale.T("unknown_value"),
+		name:    locale.T("unknown_value"),
+		version: locale.T("unknown_value"),
 		PkgDetailsTable: PkgDetailsTable{
 			Website:   locale.T("unknown_value"),
 			copyright: locale.T("unknown_value"),
@@ -103,36 +128,32 @@ func newInfoResult(iv *model.IngredientAndVersion, authors model.Authors) *infoR
 		},
 	}
 
-	if iv.Ingredient != nil {
-		if iv.Ingredient.Name != nil {
-			res.name = *iv.Ingredient.Name
-		}
-
-		if iv.Ingredient.Description != nil {
-			res.Description = *iv.Ingredient.Description
-		}
-
-		website := iv.Ingredient.Website.String()
-		if website != "" {
-			res.PkgDetailsTable.Website = website
-		}
+	if ingredient.Name != nil {
+		res.name = *ingredient.Name
 	}
 
-	if iv.LatestVersion != nil {
-		if iv.LatestVersion.Version != nil {
-			res.latestVersion = *iv.LatestVersion.Version
-		}
-
-		if iv.LatestVersion.CopyrightText != nil {
-			res.PkgDetailsTable.copyright = *iv.LatestVersion.CopyrightText
-		}
-
-		if iv.LatestVersion.LicenseExpression != nil {
-			res.PkgDetailsTable.license = *iv.LatestVersion.LicenseExpression
-		}
+	if ingredient.Description != nil {
+		res.Description = *ingredient.Description
 	}
 
-	for _, version := range iv.Versions {
+	website := ingredient.Website.String()
+	if website != "" {
+		res.PkgDetailsTable.Website = website
+	}
+
+	if ingredientVersion.Version != nil {
+		res.version = *ingredientVersion.Version
+	}
+
+	if ingredientVersion.CopyrightText != nil {
+		res.PkgDetailsTable.copyright = *ingredientVersion.CopyrightText
+	}
+
+	if ingredientVersion.LicenseExpression != nil {
+		res.PkgDetailsTable.license = *ingredientVersion.LicenseExpression
+	}
+
+	for _, version := range versions {
 		res.Versions = append(res.Versions, version.Version)
 	}
 
@@ -160,13 +181,12 @@ func (ro *infoResultOutput) MarshalOutput(format output.Format) interface{} {
 	}
 
 	print, res := ro.out.Print, ro.res
-
 	{
 		print(output.Heading(
 			locale.Tl(
 				"package_info_description_header",
 				"Details for version {{.V0}}",
-				res.latestVersion,
+				res.version,
 			),
 		))
 		print(res.Description)

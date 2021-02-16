@@ -28,6 +28,13 @@ var (
 	ErrCommitCountUnknowable = errs.New("Commit count is unknowable")
 )
 
+type ProjectInfo interface {
+	Owner() string
+	Name() string
+	CommitUUID() strfmt.UUID
+	BranchName() string
+}
+
 // Operation is the action to be taken in a commit
 type Operation string
 
@@ -63,6 +70,31 @@ const (
 	// NamespaceCamelFlagsMatch is the namespace used for passing camel flags
 	NamespaceCamelFlagsMatch = `^camel-flags$`
 )
+
+type TrackingType string
+
+const (
+	// TrackingNotify represents the notify tracking type for branches and will
+	// notify the project owner of upstream changes
+	TrackingNotify TrackingType = TrackingType(mono_models.BranchEditableTrackingTypeNotify)
+	// TrackingIgnore represents the ignore tracking type for branches and will
+	// ignore upstream changes
+	TrackingIgnore = TrackingType(mono_models.BranchEditableTrackingTypeIgnore)
+	// TrackingAutoUpdate represents the auto update tracking type for branches and will
+	// auto update the branch with any upstream changes
+	TrackingAutoUpdate = TrackingType(mono_models.BranchEditableTrackingTypeAutoUpdate)
+)
+
+func (t TrackingType) String() string {
+	switch t {
+	case TrackingNotify:
+		return mono_models.BranchEditableTrackingTypeNotify
+	case TrackingAutoUpdate:
+		return mono_models.BranchEditableTrackingTypeAutoUpdate
+	default:
+		return mono_models.BranchEditableTrackingTypeIgnore
+	}
+}
 
 // NamespaceMatch Checks if the given namespace query matches the given namespace
 func NamespaceMatch(query string, namespace NamespaceMatchable) bool {
@@ -134,15 +166,15 @@ func NewNamespacePlatform() Namespace {
 	return Namespace{NamespacePlatform, "platform"}
 }
 
-// LatestCommitID returns the latest commit id by owner and project names. It
-// possible for a nil commit id to be returned without failure.
-func LatestCommitID(ownerName, projectName string) (*strfmt.UUID, error) {
+// BranchCommitID returns the latest commit id by owner and project names. It
+// is possible for a nil commit id to be returned without failure.
+func BranchCommitID(ownerName, projectName, branchName string) (*strfmt.UUID, error) {
 	proj, err := FetchProjectByName(ownerName, projectName)
 	if err != nil {
 		return nil, err
 	}
 
-	branch, err := DefaultBranchForProject(proj)
+	branch, err := BranchForProjectByName(proj, branchName)
 	if err != nil {
 		return nil, err
 	}
@@ -157,8 +189,8 @@ func LatestCommitID(ownerName, projectName string) (*strfmt.UUID, error) {
 }
 
 // CommitHistory will return the commit history for the given owner / project
-func CommitHistory(ownerName, projectName string) ([]*mono_models.Commit, error) {
-	latestCID, err := LatestCommitID(ownerName, projectName)
+func CommitHistory(ownerName, projectName, branchName string) ([]*mono_models.Commit, error) {
+	latestCID, err := BranchCommitID(ownerName, projectName, branchName)
 	if err != nil {
 		return nil, err
 	}
@@ -209,36 +241,31 @@ func CommitHistoryPaged(commitID strfmt.UUID, offset, limit int64) (*mono_models
 	return res.Payload, nil
 }
 
-// CommitsBehindLatest compares the provided commit id with the latest commit
+// CommitsBehind compares the provided commit id with the latest commit
 // id and returns the count of commits it is behind. If an error is returned
 // along with a value of -1, then the provided commit is more than likely
 // behind, but it is not possible to clarify the count exactly.
-func CommitsBehindLatest(ownerName, projectName, commitID string) (int, error) {
-	latestCID, err := LatestCommitID(ownerName, projectName)
-	if err != nil {
-		return 0, err
-	}
-
-	if latestCID == nil {
-		if commitID == "" {
+func CommitsBehind(latestCID, currentCommitID strfmt.UUID) (int, error) {
+	if latestCID == "" {
+		if currentCommitID == "" {
 			return 0, nil // ok, nothing to do
 		}
 		return 0, locale.NewError("err_commit_count_no_latest_with_commit")
 	}
 
-	if latestCID.String() == commitID {
+	if latestCID.String() == currentCommitID.String() {
 		return 0, nil
 	}
 
 	params := vcsClient.NewGetCommitHistoryParams()
-	params.SetCommitID(*latestCID)
+	params.SetCommitID(latestCID)
 	res, err := authentication.Client().VersionControl.GetCommitHistory(params, authentication.ClientAuth())
 	if err != nil {
 		return 0, locale.WrapError(err, "err_get_commit_history", "", err.Error())
 	}
 
 	indexed := makeIndexedCommits(res.Payload.Commits)
-	return indexed.countBetween(commitID, latestCID.String())
+	return indexed.countBetween(currentCommitID.String(), latestCID.String())
 }
 
 // Changeset aliases for eased usage and to act as a disconnect from the underlying dep.
@@ -279,13 +306,50 @@ func AddCommit(parentCommitID strfmt.UUID, commitMessage string, operation Opera
 	return AddChangeset(parentCommitID, commitMessage, anonymousID, changeset)
 }
 
+func UpdateBranchForProject(pj ProjectInfo, commitID strfmt.UUID) error {
+	pjm, err := FetchProjectByName(pj.Owner(), pj.Name())
+	if err != nil {
+		return errs.Wrap(err, "Could not fetch project")
+	}
+
+	branch, err := BranchForProjectByName(pjm, pj.BranchName())
+	if err != nil {
+		return errs.Wrap(err, "Could not fetch branch: %s", pj.BranchName())
+	}
+
+	err = UpdateBranchCommit(branch.BranchID, commitID)
+	if err != nil {
+		return errs.Wrap(err, "Could no update branch")
+	}
+
+	return nil
+}
+
 // UpdateBranchCommit updates the commit that a branch is pointed at
 func UpdateBranchCommit(branchID strfmt.UUID, commitID strfmt.UUID) error {
+	changeset := &mono_models.BranchEditable{
+		CommitID: &commitID,
+	}
+
+	return updateBranch(branchID, changeset)
+}
+
+// UpdateBranchTracking updates the tracking information for the given branch
+func UpdateBranchTracking(branchID, commitID, trackingBranchID strfmt.UUID, trackingType TrackingType) error {
+	tracking := trackingType.String()
+	changeset := &mono_models.BranchEditable{
+		CommitID:     &commitID,
+		TrackingType: &tracking,
+		Tracks:       &trackingBranchID,
+	}
+
+	return updateBranch(branchID, changeset)
+}
+
+func updateBranch(branchID strfmt.UUID, changeset *mono_models.BranchEditable) error {
 	params := vcsClient.NewUpdateBranchParams()
 	params.SetBranchID(branchID)
-	params.SetBranch(&mono_models.BranchEditable{
-		CommitID: &commitID,
-	})
+	params.SetBranch(changeset)
 
 	_, err := authentication.Client().VersionControl.UpdateBranch(params, authentication.ClientAuth())
 	if err != nil {
@@ -299,6 +363,18 @@ func UpdateBranchCommit(branchID strfmt.UUID, commitID strfmt.UUID) error {
 		}
 		return locale.NewError("err_update_branch", api.ErrorMessageFromPayload(err))
 	}
+	return nil
+}
+
+func DeleteBranch(branchID strfmt.UUID) error {
+	params := vcsClient.NewDeleteBranchParams()
+	params.SetBranchID(branchID)
+
+	_, err := authentication.Client().VersionControl.DeleteBranch(params, authentication.ClientAuth())
+	if err != nil {
+		return locale.WrapError(err, "err_delete_branch", "Could not delete branch")
+	}
+
 	return nil
 }
 
@@ -340,24 +416,24 @@ func CommitPackage(parentCommitID strfmt.UUID, operation Operation, packageName,
 	return commit.CommitID, nil
 }
 
-// UpdateProjectBranchCommit updates the vcs brach for a given project with a new commitID
-func UpdateProjectBranchCommit(proj *mono_models.Project, commitID strfmt.UUID) error {
-	branch, err := DefaultBranchForProject(proj)
+// UpdateProjectBranchCommitByName updates the vcs branch for a project given by its namespace with a new commitID
+func UpdateProjectBranchCommit(pj ProjectInfo, commitID strfmt.UUID) error {
+	pjm, err := FetchProjectByName(pj.Owner(), pj.Name())
 	if err != nil {
-		return errs.Wrap(err, "Failed to get default branch for project %s.", proj.Name)
+		return errs.Wrap(err, "Could not fetch project")
 	}
 
-	return UpdateBranchCommit(branch.BranchID, commitID)
+	return UpdateProjectBranchCommitWithModel(pjm, pj.BranchName(), commitID)
 }
 
 // UpdateProjectBranchCommitByName updates the vcs branch for a project given by its namespace with a new commitID
-func UpdateProjectBranchCommitByName(projectOwner, projectName string, commitID strfmt.UUID) error {
-	proj, err := FetchProjectByName(projectOwner, projectName)
+func UpdateProjectBranchCommitWithModel(pjm *mono_models.Project, branchName string, commitID strfmt.UUID) error {
+	branch, err := BranchForProjectByName(pjm, branchName)
 	if err != nil {
-		return errs.Wrap(err, "Failed to fetch project.")
+		return errs.Wrap(err, "Could not fetch branch: %s", branchName)
 	}
 
-	return UpdateProjectBranchCommit(proj, commitID)
+	return UpdateBranchCommit(branch.BranchID, commitID)
 }
 
 // CommitChangeset commits multiple changes in one commit
@@ -480,20 +556,20 @@ func (cs indexedCommits) countBetween(first, last string) (int, error) {
 }
 
 // CommitPlatform commits a single platform commit
-func CommitPlatform(owner, prjName string, op Operation, name, version string, word int) error {
+func CommitPlatform(pj ProjectInfo, op Operation, name, version string, word int) error {
 	platform, err := FetchPlatformByDetails(name, version, word)
 	if err != nil {
 		return err
 	}
 
-	proj, err := FetchProjectByName(owner, prjName)
+	pjm, err := FetchProjectByName(pj.Owner(), pj.Name())
 	if err != nil {
-		return err
+		return errs.Wrap(err, "Could not fetch project")
 	}
 
-	branch, err := DefaultBranchForProject(proj)
+	branch, err := BranchForProjectByName(pjm, pj.BranchName())
 	if err != nil {
-		return err
+		return errs.Wrap(err, "Could not fetch branch: %s", pj.BranchName())
 	}
 
 	if branch.CommitID == nil {
@@ -524,20 +600,20 @@ func CommitPlatform(owner, prjName string, op Operation, name, version string, w
 }
 
 // CommitLanguage commits a single language to the platform
-func CommitLanguage(owner, project string, op Operation, name, version string) error {
+func CommitLanguage(pj ProjectInfo, op Operation, name, version string) error {
 	lang, err := FetchLanguageByDetails(name, version)
 	if err != nil {
 		return err
 	}
 
-	proj, err := FetchProjectByName(owner, project)
+	pjm, err := FetchProjectByName(pj.Owner(), pj.Name())
 	if err != nil {
-		return err
+		return errs.Wrap(err, "Could not fetch project")
 	}
 
-	branch, err := DefaultBranchForProject(proj)
+	branch, err := BranchForProjectByName(pjm, pj.BranchName())
 	if err != nil {
-		return err
+		return errs.Wrap(err, "Could not fetch branch: %s", pj.BranchName())
 	}
 
 	if branch.CommitID == nil {
@@ -649,8 +725,8 @@ func GetRevertCommit(from, to strfmt.UUID) (*mono_models.Commit, error) {
 	return res.Payload, nil
 }
 
-func RevertCommit(owner, project string, from, to strfmt.UUID) error {
-	revertCommit, err := GetRevertCommit(from, to)
+func RevertCommit(pj ProjectInfo, to strfmt.UUID) error {
+	revertCommit, err := GetRevertCommit(pj.CommitUUID(), to)
 	if err != nil {
 		return err
 	}
@@ -660,14 +736,14 @@ func RevertCommit(owner, project string, from, to strfmt.UUID) error {
 		return err
 	}
 
-	proj, err := FetchProjectByName(owner, project)
+	pjm, err := FetchProjectByName(pj.Owner(), pj.Name())
 	if err != nil {
-		return err
+		return errs.Wrap(err, "Could not fetch project")
 	}
 
-	branch, err := DefaultBranchForProject(proj)
+	branch, err := BranchForProjectByName(pjm, pj.BranchName())
 	if err != nil {
-		return err
+		return errs.Wrap(err, "Could not fetch branch: %s", pj.BranchName())
 	}
 
 	err = UpdateBranchCommit(branch.BranchID, addCommit.CommitID)

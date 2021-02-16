@@ -1,6 +1,7 @@
 package platforms
 
 import (
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -9,15 +10,16 @@ import (
 // RemoveRunParams tracks the info required for running Remove.
 type RemoveRunParams struct {
 	Params
-	Project *project.Project
 }
 
 // Remove manages the removeing execution context.
-type Remove struct{}
+type Remove struct {
+	*project.Project
+}
 
 // NewRemove prepares a remove execution context for use.
-func NewRemove() *Remove {
-	return &Remove{}
+func NewRemove(prime primeable) *Remove {
+	return &Remove{prime.Project()}
 }
 
 // Run executes the remove behavior.
@@ -29,9 +31,13 @@ func (r *Remove) Run(ps RemoveRunParams) error {
 		return nil
 	}
 
+	if err == nil {
+		return locale.NewInputError("err_no_project")
+	}
+
 	return model.CommitPlatform(
-		ps.Project.Owner(), ps.Project.Name(),
+		r.Project,
 		model.OperationRemoved,
-		params.Name, params.Version, params.BitWidth,
+		params.name, params.version, params.BitWidth,
 	)
 }

@@ -2,24 +2,65 @@ package clean
 
 import (
 	"os"
+	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
+	"github.com/stretchr/testify/require"
 )
 
-type configMock struct{}
+type configMock struct {
+	t          *testing.T
+	cachePath  string
+	configPath string
+}
+
+func newConfigMock(t *testing.T, cachePath, configPath string) *configMock {
+	return &configMock{
+		t, cachePath, configPath,
+	}
+}
 
 func (c *configMock) Set(key string, value interface{}) {}
-func (c *configMock) GetString(key string) string       { return "" }
 
 func (c *configMock) GetStringSlice(key string) []string {
 	return []string{}
 }
 
+func (c *configMock) AllKeys() []string {
+	return []string{}
+}
+
+func (c *configMock) GetStringMapStringSlice(key string) map[string][]string {
+	return map[string][]string{}
+}
+
+func (c *configMock) CachePath() string {
+	if c.cachePath != "" {
+		return c.cachePath
+	}
+	cfg, err := config.Get()
+	require.NoError(c.t, err)
+	return cfg.CachePath()
+}
+
+func (c *configMock) ConfigPath() string {
+	if c.configPath != "" {
+		return c.configPath
+	}
+	cfg, err := config.Get()
+	require.NoError(c.t, err)
+	return cfg.ConfigPath()
+}
+
+func (c *configMock) SkipSave(bool) {
+}
+
 func (suite *CleanTestSuite) TestCache() {
-	runner := newCache(&outputhelper.TestOutputer{}, &configMock{}, &confirmMock{confirm: true})
+	runner := newCache(&outputhelper.TestOutputer{}, newConfigMock(suite.T(), "", ""), &confirmMock{confirm: true})
 	runner.path = suite.cachePath
 	err := runner.Run(&CacheParams{})
 	suite.Require().NoError(err)
@@ -37,7 +78,7 @@ func (suite *CleanTestSuite) TestCache() {
 }
 
 func (suite *CleanTestSuite) TestCache_PromptNo() {
-	runner := newCache(&outputhelper.TestOutputer{}, &configMock{}, &confirmMock{})
+	runner := newCache(&outputhelper.TestOutputer{}, newConfigMock(suite.T(), "", ""), &confirmMock{})
 	runner.path = suite.cachePath
 	err := runner.Run(&CacheParams{})
 	suite.Require().NoError(err)
@@ -53,7 +94,7 @@ func (suite *CleanTestSuite) TestCache_Activated() {
 		os.Unsetenv(constants.ActivatedStateEnvVarName)
 	}()
 
-	runner := newCache(&outputhelper.TestOutputer{}, &configMock{}, &confirmMock{})
+	runner := newCache(&outputhelper.TestOutputer{}, newConfigMock(suite.T(), "", ""), &confirmMock{})
 	runner.path = suite.cachePath
 	err := runner.Run(&CacheParams{})
 	suite.Require().Error(err)

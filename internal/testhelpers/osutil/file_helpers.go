@@ -7,30 +7,29 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/fileutils"
 )
 
 // CreateConfigFile will create a file in the config dir with the given file name.
-func CreateConfigFile(fileName string, fileMode os.FileMode) (*os.File, error) {
-	filename := filepath.Join(config.ConfigPath(), fileName)
+func CreateConfigFile(configPath string, fileName string, fileMode os.FileMode) (*os.File, error) {
+	filename := filepath.Join(configPath, fileName)
 	return os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_TRUNC, fileMode)
 }
 
 // ReadConfigFile will read the contents of a file in the config dir.
-func ReadConfigFile(fileName string) (string, error) {
-	contents, err := ioutil.ReadFile(filepath.Join(config.ConfigPath(), fileName))
+func ReadConfigFile(configPath, fileName string) (string, error) {
+	contents, err := ioutil.ReadFile(filepath.Join(configPath, fileName))
 	return string(contents), err
 }
 
 // RemoveConfigFile will remove a file from the config dir with the given file name.
-func RemoveConfigFile(fileName string) error {
-	return os.Remove(filepath.Join(config.ConfigPath(), fileName))
+func RemoveConfigFile(configPath, fileName string) error {
+	return os.Remove(filepath.Join(configPath, fileName))
 }
 
 // StatConfigFile returns the os.FileInfo for a file in the config dir.
-func StatConfigFile(fileName string) (os.FileInfo, error) {
-	return os.Stat(filepath.Join(config.ConfigPath(), fileName))
+func StatConfigFile(configPath, fileName string) (os.FileInfo, error) {
+	return os.Stat(filepath.Join(configPath, fileName))
 }
 
 // ReadTestFile will read the contents of a file from the `testdata` directory relative to the
@@ -44,12 +43,12 @@ func ReadTestFile(fileName string) (string, error) {
 
 // CopyTestFileToConfigDir copies a file in a relatve `testdata` dir to the caller of this function
 // to the config dir as some target filename with some target FileMode.
-func CopyTestFileToConfigDir(testFileName, targetFileName string, targetFileMode os.FileMode) error {
+func CopyTestFileToConfigDir(configPath, testFileName, targetFileName string, targetFileMode os.FileMode) error {
 	testFileContent, err := ReadTestFile(testFileName)
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(filepath.Join(config.ConfigPath(), targetFileName), []byte(testFileContent), targetFileMode)
+	return ioutil.WriteFile(filepath.Join(configPath, targetFileName), []byte(testFileContent), targetFileMode)
 }
 
 // getCallerPath returns the filesystem path of the caller to this func so long as it's not

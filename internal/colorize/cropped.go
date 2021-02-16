@@ -7,14 +7,13 @@ type CroppedLine struct {
 	Length int
 }
 
-func GetCroppedText(text []rune, maxLen int) CroppedLines {
+func GetCroppedText(text string, maxLen int) CroppedLines {
 	entries := make([]CroppedLine, 0)
-	colorCodes := colorRx.FindAllStringSubmatchIndex(string(text), -1)
+	colorCodes := colorRx.FindAllStringSubmatchIndex(text, -1)
 
 	entry := CroppedLine{}
-	for pos := 0; pos < len(text); pos++ {
+	for pos, amend := range text {
 		inColorTag := inRange(pos, colorCodes)
-		amend := text[pos]
 		lineEnd := amend == '\n'
 
 		if !lineEnd {
@@ -24,7 +23,7 @@ func GetCroppedText(text []rune, maxLen int) CroppedLines {
 			}
 		}
 
-                // Ensure the next position is not within a color tag and check conditions that would end this entry
+		// Ensure the next position is not within a color tag and check conditions that would end this entry
 		if !inRange(pos+1, colorCodes) && (entry.Length == maxLen || lineEnd || pos == len(text)-1) {
 			entries = append(entries, entry)
 			entry = CroppedLine{}

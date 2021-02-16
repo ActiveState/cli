@@ -149,7 +149,10 @@ const InventoryAPIPath = "/sv/inventory-api-v1"
 // GraphqlAPIPath is the path used for the platform graphql api
 const GraphqlAPIPath = "/graphql/v1/graphql"
 
-// RequirementsImportAPIPath is the path used for the requiremments import api
+// MediatorAPIPath is the path used for the platform mediator api
+const MediatorAPIPath = "/sv/mediator/api"
+
+// RequirementsImportAPIPath is the path used for the requirements import api
 const RequirementsImportAPIPath = "/sv/reqsvc/reqs"
 
 // DeprecationInfoURL is the URL we check against to see what versions are deprecated
@@ -243,3 +246,6 @@ const ForumsURL = "https://community.activestate.com/c/state-tool/"
 
 // GlobalDefaultPrefname is the pref that holds the path to the globally defaulted project
 const GlobalDefaultPrefname = "default_project_path"
+
+// DefaultBranchName is the default branch name used on platform projects
+const DefaultBranchName = "main"

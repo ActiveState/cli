@@ -3,8 +3,7 @@ package activate
 import (
 	"fmt"
 	"path/filepath"
-
-	"github.com/spf13/viper"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
@@ -22,6 +21,7 @@ import (
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/cmdlets/git"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/project"
@@ -32,7 +32,7 @@ type Activate struct {
 	namespaceSelect  *NamespaceSelect
 	activateCheckout *Checkout
 	out              output.Outputer
-	config           configAble
+	config           configurable
 	proj             *project.Project
 	subshell         subshell.SubShell
 	prompt           prompt.Prompter
@@ -44,6 +44,7 @@ type ActivateParams struct {
 	Command       string
 	ReplaceWith   *project.Namespaced
 	Default       bool
+	Branch        string
 }
 
 type primeable interface {
@@ -51,14 +52,15 @@ type primeable interface {
 	primer.Projecter
 	primer.Subsheller
 	primer.Prompter
+	primer.Configurer
 }
 
 func NewActivate(prime primeable) *Activate {
 	return &Activate{
-		NewNamespaceSelect(viper.GetViper(), prime),
+		NewNamespaceSelect(prime.Config(), prime),
 		NewCheckout(git.NewRepo(), prime),
 		prime.Output(),
-		viper.GetViper(),
+		prime.Config(),
 		prime.Project(),
 		prime.Subshell(),
 		prime.Prompt(),
@@ -74,7 +76,7 @@ func (r *Activate) run(params *ActivateParams) error {
 
 	r.out.Notice(txtstyle.NewTitle(locale.T("info_activating_state")))
 
-	alreadyActivated := process.IsActivated()
+	alreadyActivated := process.IsActivated(r.config)
 	if alreadyActivated {
 		if !params.Default {
 			err := locale.NewInputError("err_already_activated",
@@ -100,18 +102,35 @@ func (r *Activate) run(params *ActivateParams) error {
 	}
 
 	// Detect target project
-	proj, err := r.projectToUse(pathToUse)
+	proj, err := r.pathToProject(pathToUse)
 	if err != nil {
 		return locale.WrapError(err, "err_activate_projecttouse", "Could not figure out what project to use.")
 	}
 
-	// Run checkout if no project was given
+	if proj != nil && params.Branch != "" {
+		if proj.IsHeadless() {
+			return locale.NewInputError(
+				"err_conflicting_branch_while_headless",
+				"Cannot activate branch [NOTICE]{{.V0}}[/RESET] while in a headless state. Please visit {{.V1}} to create your project.",
+				params.Branch, proj.URL(),
+			)
+		}
+
+		if params.Branch != proj.BranchName() {
+			return locale.NewInputError(
+				"err_conflicting_branch_while_checkedout",
+				"Cannot activate branch [NOTICE]{{.V0}}[/RESET]; Branch [NOTICE]{{.V1}}[/RESET] is already checked out.",
+				params.Branch, proj.BranchName(),
+			)
+		}
+	}
+
 	if proj == nil {
 		if params.Namespace == nil || !params.Namespace.IsValid() {
 			return locale.NewInputError("err_activate_nonamespace", "Please provide a namespace (see `state activate --help` for more info).")
 		}
 
-		err := r.activateCheckout.Run(params.Namespace, pathToUse)
+		err = r.activateCheckout.Run(params.Namespace, params.Branch, pathToUse)
 		if err != nil {
 			return err
 		}
@@ -143,7 +162,7 @@ func (r *Activate) run(params *ActivateParams) error {
 		setDefault, err = r.prompt.Confirm(
 			locale.Tl("activate_default_prompt_title", "Default Project"),
 			locale.Tr("activate_default_prompt", proj.Namespace().String()),
-			true,
+			new(bool),
 		)
 		if err != nil {
 			return locale.WrapInputError(err, "err_activate_cancel", "Activation cancelled")
@@ -154,7 +173,7 @@ func (r *Activate) run(params *ActivateParams) error {
 		r.subshell.SetActivateCommand(params.Command)
 	}
 
-	runtime, err := runtime.NewRuntime(proj.Source().Path(), proj.CommitUUID(), proj.Owner(), proj.Name(), runbits.NewRuntimeMessageHandler(r.out))
+	runtime, err := runtime.NewRuntime(proj.Source().Path(), r.config.CachePath(), proj.CommitUUID(), proj.Owner(), proj.Name(), runbits.NewRuntimeMessageHandler(r.out))
 	if err != nil {
 		return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
 	}
@@ -162,9 +181,25 @@ func (r *Activate) run(params *ActivateParams) error {
 	venv := virtualenvironment.New(runtime)
 	venv.OnUseCache(func() { r.out.Notice(locale.T("using_cached_env")) })
 
+	// Determine branch name
+	branch := proj.BranchName()
+	if params.Branch != "" {
+		branch = params.Branch
+	}
+
 	err = venv.Setup(true)
 	if err != nil {
-		return locale.WrapError(err, "error_could_not_activate_venv", "Could not activate project. If this is a private project ensure that you are authenticated.")
+		if errs.Matches(err, &model.ErrNoMatchingPlatform{}) {
+			branches, err := model.BranchNamesForProjectFiltered(proj.Owner(), proj.Name(), branch)
+			if err == nil && len(branches) > 1 {
+				err = locale.NewInputError("err_activate_platfrom_alternate_branches", "", branch, strings.Join(branches, "\n - "))
+				return errs.AddTips(err, "Run → `[ACTIONABLE]state branch switch <NAME>[/RESET]` to switch branch")
+			}
+		}
+		if !authentication.Get().Authenticated() {
+			return locale.WrapError(err, "error_could_not_activate_venv_auth", "Could not activate project. If this is a private project ensure that you are authenticated.")
+		}
+		return locale.WrapError(err, "err_could_not_activate_venv", "Could not activate project")
 	}
 
 	if setDefault {
@@ -206,7 +241,7 @@ func (r *Activate) run(params *ActivateParams) error {
 func updateProjectFile(prj *project.Project, names *project.Namespaced) error {
 	var commitID string
 	if names.CommitID == nil || *names.CommitID == "" {
-		latestID, err := model.LatestCommitID(names.Owner, names.Project)
+		latestID, err := model.BranchCommitID(names.Owner, names.Project, prj.BranchName())
 		if err != nil {
 			return locale.WrapInputError(err, "err_set_namespace_retrieve_commit", "Could not retrieve the latest commit for the specified project {{.V0}}.", names.String())
 		}
@@ -242,8 +277,8 @@ func (r *Activate) pathToUse(namespace string, preferredPath string) (string, er
 	}
 }
 
-func (r *Activate) projectToUse(path string) (*project.Project, error) {
-	projectToUse, err := project.FromPath(path)
+func (r *Activate) pathToProject(path string) (*project.Project, error) {
+	projectToUse, err := project.FromExactPath(path)
 	if err != nil && !errs.Matches(err, &projectfile.ErrorNoProject{}) {
 		return nil, locale.WrapError(err, "err_activate_projectpath", "Could not find a valid project path.")
 	}

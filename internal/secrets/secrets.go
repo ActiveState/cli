@@ -97,8 +97,8 @@ func ShareWithOrgUsers(secretsClient *secretsapi.Client, org *mono_models.Organi
 	return nil
 }
 
-func LoadKeypairFromConfigDir() (keypairs.Keypair, error) {
-	kp, err := keypairs.LoadWithDefaults()
+func LoadKeypairFromConfigDir(cfg keypairs.Configurable) (keypairs.Keypair, error) {
+	kp, err := keypairs.LoadWithDefaults(cfg)
 	if err != nil {
 		return nil, err
 	}

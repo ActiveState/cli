@@ -24,12 +24,12 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_EditorV0() {
 }
 
 func (suite *AuthIntegrationTestSuite) TestAuthOutput_EditorV0() {
-	suite.OnlyRunForTags(tagsuite.Auth, tagsuite.VSCode, tagsuite.Komodo)
+	suite.OnlyRunForTags(tagsuite.Auth, tagsuite.Komodo)
 	suite.authOutput("editor.v0")
 }
 
 func (suite *AuthIntegrationTestSuite) TestAuth_EditorV0() {
-	suite.OnlyRunForTags(tagsuite.Auth, tagsuite.VSCode, tagsuite.Komodo)
+	suite.OnlyRunForTags(tagsuite.Auth, tagsuite.Komodo)
 	user := userJSON{
 		Username: "cli-integration-tests",
 		URLName:  "cli-integration-tests",
@@ -52,7 +52,7 @@ func (suite *AuthIntegrationTestSuite) TestAuth_EditorV0() {
 }
 
 func (suite *ExportIntegrationTestSuite) TestExport_EditorV0() {
-	suite.OnlyRunForTags(tagsuite.Export, tagsuite.VSCode, tagsuite.Komodo)
+	suite.OnlyRunForTags(tagsuite.Export, tagsuite.Komodo)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -64,7 +64,7 @@ func (suite *ExportIntegrationTestSuite) TestExport_EditorV0() {
 }
 
 func (suite *ForkIntegrationTestSuite) TestFork_EditorV0() {
-	suite.OnlyRunForTags(tagsuite.Fork, tagsuite.VSCode, tagsuite.Komodo)
+	suite.OnlyRunForTags(tagsuite.Fork, tagsuite.Komodo)
 	ts := e2e.New(suite.T(), false)
 	defer suite.cleanup(ts)
 
@@ -95,7 +95,7 @@ func (suite *ForkIntegrationTestSuite) TestFork_EditorV0() {
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_EditorV0() {
-	suite.OnlyRunForTags(tagsuite.Init, tagsuite.VSCode, tagsuite.Komodo)
+	suite.OnlyRunForTags(tagsuite.Init, tagsuite.Komodo)
 	suite.runInitTest(
 		true,
 		sampleYAMLEditor,
@@ -105,7 +105,7 @@ func (suite *InitIntegrationTestSuite) TestInit_EditorV0() {
 }
 
 func (suite *OrganizationsIntegrationTestSuite) TestOrganizations_EditorV0() {
-	suite.OnlyRunForTags(tagsuite.Organizations, tagsuite.VSCode, tagsuite.Komodo)
+	suite.OnlyRunForTags(tagsuite.Organizations, tagsuite.Komodo)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -155,7 +155,7 @@ func (suite *PullIntegrationTestSuite) TestPull_EditorV0() {
 }
 
 func (suite *PushIntegrationTestSuite) TestPush_EditorV0() {
-	suite.OnlyRunForTags(tagsuite.Push, tagsuite.VSCode, tagsuite.Komodo)
+	suite.OnlyRunForTags(tagsuite.Push, tagsuite.Komodo)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	username := ts.CreateNewUser()
@@ -213,7 +213,7 @@ func (suite *SecretsIntegrationTestSuite) TestSecretsOutput_EditorV0() {
 	secret := secrets.SecretExport{
 		Name:        "test-secret",
 		Scope:       "project",
-		Description: "",
+		Description: "Not provided.",
 		HasValue:    true,
 	}
 

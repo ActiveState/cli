@@ -1,13 +1,10 @@
 package secrets
 
 import (
-	"encoding/json"
 	"fmt"
 
-	"github.com/bndr/gotabulate"
-
 	"github.com/ActiveState/cli/internal/access"
-	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -21,6 +18,7 @@ import (
 type listPrimeable interface {
 	primer.Outputer
 	primer.Projecter
+	primer.Configurer
 }
 
 // ListRunParams tracks the info required for running List.
@@ -33,6 +31,20 @@ type List struct {
 	secretsClient *secretsapi.Client
 	out           output.Outputer
 	proj          *project.Project
+	cfg           keypairs.Configurable
+}
+
+type secretData struct {
+	Name        string `locale:"name,[HEADING]Name[/RESET]"`
+	Scope       string `locale:"scope,[HEADING]Scope[/RESET]"`
+	Description string `locale:"description,[HEADING]Description[/RESET]"`
+	HasValue    string `locale:"hasvalue,[HEADING]Value[/RESET]"`
+	Usage       string `locale:"usage,[HEADING]Usage[/RESET]"`
+}
+
+type listOutput struct {
+	out  output.Outputer
+	data []*secretData
 }
 
 // NewList prepares a list execution context for use.
@@ -41,27 +53,62 @@ func NewList(client *secretsapi.Client, p listPrimeable) *List {
 		secretsClient: client,
 		out:           p.Output(),
 		proj:          p.Project(),
+		cfg:           p.Config(),
 	}
 }
 
 // Run executes the list behavior.
 func (l *List) Run(params ListRunParams) error {
+	if l.proj == nil {
+		return locale.NewInputError("err_no_project")
+	}
 	if err := checkSecretsAccess(l.proj); err != nil {
 		return locale.WrapError(err, "secrets_err_check_access")
 	}
 
-	defs, err := definedSecrets(l.proj, l.secretsClient, params.Filter)
+	defs, err := definedSecrets(l.proj, l.secretsClient, l.cfg, params.Filter)
 	if err != nil {
 		return locale.WrapError(err, "secrets_err_defined")
 	}
-	exports, err := defsToSecrets(defs)
+
+	meta, err := defsToData(defs, l.cfg, l.proj)
 	if err != nil {
 		return locale.WrapError(err, "secrets_err_values")
 	}
 
-	l.out.Print(secretExports(exports))
+	data := &listOutput{l.out, meta}
+	l.out.Print(data)
 
 	return nil
+}
+
+func (l *listOutput) MarshalOutput(format output.Format) interface{} {
+	switch format {
+	case output.EditorV0FormatName:
+		var output []*SecretExport
+		for _, d := range l.data {
+			out := &SecretExport{
+				Name:        d.Name,
+				Scope:       d.Scope,
+				Description: d.Description,
+			}
+
+			if d.HasValue == locale.T("secrets_row_value_set") {
+				out.HasValue = true
+			}
+
+			output = append(output, out)
+		}
+		l.out.Print(output)
+	default:
+		l.out.Print(struct {
+			Data []*secretData `opts:"verticalTable" locale:","`
+		}{
+			l.data,
+		})
+	}
+
+	return output.Suppress
 }
 
 // checkSecretsAccess is reusable "runner-level" logic and provides a directly
@@ -77,7 +124,7 @@ func checkSecretsAccess(proj *project.Project) error {
 	return nil
 }
 
-func definedSecrets(proj *project.Project, secCli *secretsapi.Client, filter string) ([]*secretsModels.SecretDefinition, error) {
+func definedSecrets(proj *project.Project, secCli *secretsapi.Client, cfg keypairs.Configurable, filter string) ([]*secretsModels.SecretDefinition, error) {
 	logging.Debug("listing variables for org=%s, project=%s", proj.Owner(), proj.Name())
 
 	secretDefs, err := secrets.DefsByProject(secCli, proj.Owner(), proj.Name())
@@ -86,20 +133,20 @@ func definedSecrets(proj *project.Project, secCli *secretsapi.Client, filter str
 	}
 
 	if filter != "" {
-		secretDefs = filterSecrets(proj, secretDefs, filter)
+		secretDefs = filterSecrets(proj, cfg, secretDefs, filter)
 	}
 
 	return secretDefs, nil
 }
 
-func filterSecrets(proj *project.Project, secrectDefs []*secretsModels.SecretDefinition, filter string) []*secretsModels.SecretDefinition {
+func filterSecrets(proj *project.Project, cfg keypairs.Configurable, secrectDefs []*secretsModels.SecretDefinition, filter string) []*secretsModels.SecretDefinition {
 	secrectDefsFiltered := []*secretsModels.SecretDefinition{}
 
 	oldExpander := project.RegisteredExpander("secrets")
 	if oldExpander != nil {
 		defer project.RegisterExpander("secrets", oldExpander)
 	}
-	expander := project.NewSecretExpander(secretsapi.Get(), proj, nil)
+	expander := project.NewSecretExpander(secretsapi.Get(), proj, nil, cfg)
 	project.RegisterExpander("secrets", expander.Expand)
 	project.ExpandFromProject(fmt.Sprintf("$%s", filter), proj)
 	accessedSecrets := expander.SecretsAccessed()
@@ -119,31 +166,9 @@ func filterSecrets(proj *project.Project, secrectDefs []*secretsModels.SecretDef
 	return secrectDefsFiltered
 }
 
-type secretExports []*SecretExport
-
-func (es secretExports) MarshalOutput(format output.Format) interface{} {
-	switch format {
-	case output.JSONFormatName, output.EditorV0FormatName, output.EditorFormatName:
-		return es
-
-	default:
-		rows, err := secretsToRows(es)
-		if err != nil {
-			return locale.WrapError(err, "secrets_err_output")
-		}
-
-		t := gotabulate.Create(rows)
-		t.SetHeaders([]string{locale.T("secrets_header_name"), locale.T("secrets_header_scope"), locale.T("secrets_header_value"), locale.T("secrets_header_description"), locale.T("secrets_header_usage")})
-		t.SetHideLines([]string{"betweenLine", "top", "aboveTitle", "LineTop", "LineBottom", "bottomLine"}) // Don't print whitespace lines
-		t.SetAlign("left")
-
-		return t.Render("simple")
-	}
-}
-
-func defsToSecrets(defs []*secretsModels.SecretDefinition) ([]*SecretExport, error) {
-	secretsExport := make([]*SecretExport, len(defs))
-	expander := project.NewSecretExpander(secretsapi.Get(), project.Get(), nil)
+func defsToData(defs []*secretsModels.SecretDefinition, cfg keypairs.Configurable, proj *project.Project) ([]*secretData, error) {
+	data := make([]*secretData, len(defs))
+	expander := project.NewSecretExpander(secretsapi.Get(), proj, nil, cfg)
 
 	for i, def := range defs {
 		if def.Name == nil || def.Scope == nil {
@@ -151,54 +176,28 @@ func defsToSecrets(defs []*secretsModels.SecretDefinition) ([]*SecretExport, err
 			continue
 		}
 
-		secretValue, err := expander.FindSecret(*def.Name, *def.Scope == secretsModels.SecretDefinitionScopeUser)
-		if err != nil {
-			return secretsExport, err
-		}
-
-		secretsExport[i] = &SecretExport{
+		data[i] = &secretData{
 			Name:        *def.Name,
 			Scope:       *def.Scope,
 			Description: def.Description,
-			HasValue:    secretValue != nil,
+			HasValue:    locale.T("secrets_row_value_unset"),
+			Usage:       fmt.Sprintf("%s.%s", *def.Scope, *def.Name),
+		}
+
+		if data[i].Description == "" {
+			data[i].Description = locale.T("secrets_description_unset")
+		}
+
+		secretValue, err := expander.FindSecret(*def.Name, *def.Scope == secretsModels.SecretDefinitionScopeUser)
+		if err != nil {
+			logging.Debug("Could not determine secret value, got error: %v", err)
+			continue
+		}
+
+		if secretValue != nil {
+			data[i].HasValue = locale.T("secrets_row_value_set")
 		}
 	}
 
-	return secretsExport, nil
-}
-
-func secretsAsJSON(secretExports []*SecretExport) ([]byte, error) {
-	bs, err := json.Marshal(secretExports)
-	if err != nil {
-		return nil, errs.Wrap(err, "Marshal failure")
-	}
-
-	return bs, nil
-}
-
-// secretsToRows returns the rows used in our output table
-func secretsToRows(secretExports []*SecretExport) ([][]interface{}, error) {
-	rows := [][]interface{}{}
-	for _, secret := range secretExports {
-		description := "-"
-		if secret.Description != "" {
-			description = secret.Description
-		}
-		hasValue := locale.T("secrets_row_value_set")
-		if !secret.HasValue {
-			hasValue = locale.T("secrets_row_value_unset")
-		}
-		rows = append(rows, []interface{}{secret.Name, secret.Scope, hasValue, description, fmt.Sprintf("%s.%s", secret.Scope, secret.Name)})
-	}
-	return rows, nil
-}
-
-// SecretExport defines important information about a secret that should be
-// displayed.
-type SecretExport struct {
-	Name        string `json:"name"`
-	Scope       string `json:"scope"`
-	Description string `json:"description"`
-	HasValue    bool   `json:"has_value"`
-	Value       string `json:"value,omitempty"`
+	return data, nil
 }

@@ -17,6 +17,7 @@ type primeable interface {
 	primer.Projecter
 	primer.Outputer
 	primer.Prompter
+	primer.Configurer
 }
 
 func NewScripts(prime primeable) *Scripts {

@@ -15,6 +15,7 @@ type Events struct {
 type primeable interface {
 	primer.Projecter
 	primer.Outputer
+	primer.Configurer
 }
 
 func New(prime primeable) *Events {

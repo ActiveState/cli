@@ -12,11 +12,12 @@ import (
 
 type PrivateKey struct {
 	output.Outputer
+	cfg keypairs.Configurable
 	*authentication.Auth
 }
 
 func NewPrivateKey(prime primeable) *PrivateKey {
-	return &PrivateKey{prime.Output(), prime.Auth()}
+	return &PrivateKey{prime.Output(), prime.Config(), prime.Auth()}
 }
 
 type PrivateKeyParams struct {
@@ -30,7 +31,7 @@ func (p *PrivateKey) Run(params *PrivateKeyParams) error {
 		return locale.NewError("User")
 	}
 
-	filepath := keypairs.LocalKeyFilename(constants.KeypairLocalFileName)
+	filepath := keypairs.LocalKeyFilename(p.cfg.ConfigPath(), constants.KeypairLocalFileName)
 	contents, err := fileutils.ReadFile(filepath)
 	if err != nil {
 		return err

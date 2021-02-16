@@ -7,7 +7,9 @@ import (
 	"github.com/stretchr/testify/suite"
 	"gopkg.in/yaml.v2"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
@@ -25,6 +27,7 @@ type SecretsExpanderTestSuite struct {
 
 	projectFile *projectfile.Project
 	project     *project.Project
+	cfg         keypairs.Configurable
 
 	secretsClient *secretsapi.Client
 	secretsMock   *httpmock.HTTPMock
@@ -72,22 +75,25 @@ func (suite *SecretsExpanderTestSuite) BeforeTest(suiteName, testName string) {
 
 	suite.graphMock = mock.Init()
 	suite.graphMock.ProjectByOrgAndName(mock.NoOptions)
+
+	suite.cfg, err = config.Get()
+	suite.Require().NoError(err)
 }
 
 func (suite *SecretsExpanderTestSuite) AfterTest(suiteName, testName string) {
 	httpmock.DeActivate()
 	projectfile.Reset()
-	osutil.RemoveConfigFile(constants.KeypairLocalFileName + ".key")
+	osutil.RemoveConfigFile(suite.cfg.ConfigPath(), constants.KeypairLocalFileName+".key")
 	suite.graphMock.Close()
 }
 
 func (suite *SecretsExpanderTestSuite) prepareWorkingExpander() project.ExpanderFunc {
 	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg", 200)
 
-	osutil.CopyTestFileToConfigDir("self-private.key", constants.KeypairLocalFileName+".key", 0600)
+	osutil.CopyTestFileToConfigDir(suite.cfg.ConfigPath(), "self-private.key", constants.KeypairLocalFileName+".key", 0600)
 
 	suite.secretsMock.RegisterWithCode("GET", "/organizations/00010001-0001-0001-0001-000100010002/user_secrets", 200)
-	return project.NewSecretQuietExpander(suite.secretsClient)
+	return project.NewSecretQuietExpander(suite.secretsClient, suite.cfg)
 }
 
 func (suite *SecretsExpanderTestSuite) assertExpansionFailure(secretName string) {
@@ -107,7 +113,7 @@ func (suite *SecretsExpanderTestSuite) assertExpansionSuccess(secretName string,
 }
 
 func (suite *SecretsExpanderTestSuite) TestKeypairNotFound() {
-	expanderFn := project.NewSecretQuietExpander(suite.secretsClient)
+	expanderFn := project.NewSecretQuietExpander(suite.secretsClient, suite.cfg)
 	value, err := expanderFn("", project.ProjectCategory, "undefined-secret", false, suite.project)
 	suite.Error(err)
 	suite.Zero(value)
@@ -115,7 +121,7 @@ func (suite *SecretsExpanderTestSuite) TestKeypairNotFound() {
 
 func (suite *SecretsExpanderTestSuite) TestNoAuth() {
 	authentication.Get().Logout()
-	expanderFn := project.NewSecretQuietExpander(suite.secretsClient)
+	expanderFn := project.NewSecretQuietExpander(suite.secretsClient, suite.cfg)
 	value, err := expanderFn("", project.ProjectCategory, "undefined-secret", false, suite.project)
 	suite.Error(err)
 	suite.Zero(value)

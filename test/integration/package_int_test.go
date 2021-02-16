@@ -297,6 +297,11 @@ func (suite *PackageIntegrationTestSuite) TestPackage_import() {
 
 	reqsFilePath := filepath.Join(cp.WorkDirectory(), reqsFileName)
 
+	suite.Run("uninstalled import fails", func() {
+		cp := ts.Spawn("run", "test-pyparsing")
+		cp.ExpectNotExitCode(0, time.Second*60)
+	})
+
 	suite.Run("invalid requirements.txt", func() {
 		ts.PrepareFile(reqsFilePath, badReqsData)
 
@@ -310,6 +315,11 @@ func (suite *PackageIntegrationTestSuite) TestPackage_import() {
 		cp := ts.Spawn("import", "requirements.txt")
 		cp.Expect("state pull")
 		cp.ExpectExitCode(0, time.Second*60)
+
+		suite.Run("uninstalled import fails", func() {
+			cp := ts.Spawn("run", "test-pyparsing")
+			cp.ExpectExitCode(0, time.Second*60)
+		})
 
 		suite.Run("already added", func() {
 			cp := ts.Spawn("import", "requirements.txt")
@@ -425,7 +435,14 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 }
 
 func (suite *PackageIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session) {
-	asyData := `project: "https://platform.activestate.com/ActiveState-CLI/List?commitID=a9d0bc88-585a-49cf-89c1-6c07af781cff"`
+	asyData := `project: "https://platform.activestate.com/ActiveState-CLI/List?commitID=a9d0bc88-585a-49cf-89c1-6c07af781cff"
+scripts:
+  - name: test-pyparsing
+    language: python3
+    value: |
+      from pyparsing import Word, alphas
+      print(Word(alphas).parseString("TEST"))
+`
 	ts.PrepareActiveStateYAML(asyData)
 }
 

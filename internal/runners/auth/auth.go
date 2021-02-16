@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
@@ -14,16 +15,18 @@ type Auth struct {
 	output.Outputer
 	*authentication.Auth
 	prompt.Prompter
+	cfg keypairs.Configurable
 }
 
 type primeable interface {
 	primer.Outputer
 	primer.Auther
 	primer.Prompter
+	primer.Configurer
 }
 
 func NewAuth(prime primeable) *Auth {
-	return &Auth{prime.Output(), prime.Auth(), prime.Prompt()}
+	return &Auth{prime.Output(), prime.Auth(), prime.Prompt(), prime.Config()}
 }
 
 type AuthParams struct {
@@ -58,7 +61,7 @@ func (a *Auth) Run(params *AuthParams) error {
 
 func (a *Auth) authenticate(params *AuthParams) error {
 	if params.Token == "" {
-		err := authlet.AuthenticateWithInput(params.Username, params.Password, params.Totp, a.Outputer, a.Prompter)
+		err := authlet.AuthenticateWithInput(params.Username, params.Password, params.Totp, a.cfg, a.Outputer, a.Prompter)
 		if err != nil {
 			return locale.WrapError(err, "login_err_auth")
 		}

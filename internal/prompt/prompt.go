@@ -12,10 +12,10 @@ import (
 
 // Prompter is the interface used to run our prompt from, useful for mocking in tests
 type Prompter interface {
-	Input(title, message, defaultResponse string, flags ...ValidatorFlag) (string, error)
-	InputAndValidate(title, message, defaultResponse string, validator ValidatorFunc, flags ...ValidatorFlag) (string, error)
-	Select(title, message string, choices []string, defaultResponse string) (string, error)
-	Confirm(title, message string, defaultChoice bool) (bool, error)
+	Input(title, message string, defaultResponse *string, flags ...ValidatorFlag) (string, error)
+	InputAndValidate(title, message string, defaultResponse *string, validator ValidatorFunc, flags ...ValidatorFlag) (string, error)
+	Select(title, message string, choices []string, defaultResponse *string) (string, error)
+	Confirm(title, message string, defaultChoice *bool) (bool, error)
 	InputSecret(title, message string, flags ...ValidatorFlag) (string, error)
 	IsInteractive() bool
 }
@@ -54,18 +54,18 @@ const (
 )
 
 // Input prompts the user for input.  The user can specify available validation flags to trigger validation of responses
-func (p *Prompt) Input(title, message, defaultResponse string, flags ...ValidatorFlag) (string, error) {
+func (p *Prompt) Input(title, message string, defaultResponse *string, flags ...ValidatorFlag) (string, error) {
 	return p.InputAndValidate(title, message, defaultResponse, func(val interface{}) error {
 		return nil
 	}, flags...)
 }
 
 // InputAndValidate prompts an input field and allows you to specfiy a custom validation function as well as the built in flags
-func (p *Prompt) InputAndValidate(title, message, defaultResponse string, validator ValidatorFunc, flags ...ValidatorFlag) (string, error) {
+func (p *Prompt) InputAndValidate(title, message string, defaultResponse *string, validator ValidatorFunc, flags ...ValidatorFlag) (string, error) {
 	if !p.isInteractive {
-		if defaultResponse != "" {
-			logging.Debug("Selecting default choice %s for Input prompt %s in non-interactive mode", defaultResponse, title)
-			return defaultResponse, nil
+		if defaultResponse != nil {
+			logging.Debug("Selecting default choice %s for Input prompt %s in non-interactive mode", *defaultResponse, title)
+			return *defaultResponse, nil
 		}
 		return "", locale.NewInputError("err_non_interactive_prompt", message)
 	}
@@ -84,12 +84,12 @@ func (p *Prompt) InputAndValidate(title, message, defaultResponse string, valida
 	}
 
 	// We handle defaults more clearly than the survey package can
-	if defaultResponse != "" {
-		v, err := p.Select("", formatMessage(message, !p.out.Config().Colored), []string{defaultResponse, locale.Tl("prompt_custom", "Other ..")}, defaultResponse)
+	if defaultResponse != nil && *defaultResponse != "" {
+		v, err := p.Select("", formatMessage(message, !p.out.Config().Colored), []string{*defaultResponse, locale.Tl("prompt_custom", "Other ..")}, defaultResponse)
 		if err != nil {
 			return "", err
 		}
-		if v == defaultResponse {
+		if v == *defaultResponse {
 			return v, nil
 		}
 		message = ""
@@ -106,11 +106,11 @@ func (p *Prompt) InputAndValidate(title, message, defaultResponse string, valida
 }
 
 // Select prompts the user to select one entry from multiple choices
-func (p *Prompt) Select(title, message string, choices []string, defaultChoice string) (string, error) {
+func (p *Prompt) Select(title, message string, choices []string, defaultChoice *string) (string, error) {
 	if !p.isInteractive {
-		if defaultChoice != "" {
-			logging.Debug("Selecting default choice %s for Select prompt %s in non-interactive mode", defaultChoice, title)
-			return defaultChoice, nil
+		if defaultChoice != nil {
+			logging.Debug("Selecting default choice %s for Select prompt %s in non-interactive mode", *defaultChoice, title)
+			return *defaultChoice, nil
 		}
 		return "", locale.NewInputError("err_non_interactive_prompt", message)
 	}
@@ -119,11 +119,16 @@ func (p *Prompt) Select(title, message string, choices []string, defaultChoice s
 		p.out.Notice(output.SubHeading(title))
 	}
 
+	var defChoice string
+	if defaultChoice != nil {
+		defChoice = *defaultChoice
+	}
+
 	var response string
 	err := survey.AskOne(&Select{&survey.Select{
 		Message: formatMessage(message, !p.out.Config().Colored),
 		Options: choices,
-		Default: defaultChoice,
+		Default: defChoice,
 	}}, &response, nil)
 	if err != nil {
 		return "", locale.NewInputError(err.Error())
@@ -132,10 +137,13 @@ func (p *Prompt) Select(title, message string, choices []string, defaultChoice s
 }
 
 // Confirm prompts user for yes or no response.
-func (p *Prompt) Confirm(title, message string, defaultChoice bool) (bool, error) {
+func (p *Prompt) Confirm(title, message string, defaultChoice *bool) (bool, error) {
 	if !p.isInteractive {
-		logging.Debug("Prompt %s confirmed with default choice %v in non-interactive mode", title, defaultChoice)
-		return defaultChoice, nil
+		if defaultChoice != nil {
+			logging.Debug("Prompt %s confirmed with default choice %v in non-interactive mode", title, defaultChoice)
+			return *defaultChoice, nil
+		}
+		return false, locale.NewInputError("err_non_interactive_prompt", message)
 	}
 	if title != "" {
 		p.out.Notice(output.SubHeading(title))
@@ -143,10 +151,15 @@ func (p *Prompt) Confirm(title, message string, defaultChoice bool) (bool, error
 
 	analytics.EventWithLabel(analytics.CatPrompt, title, "present")
 
+	var defChoice bool
+	if defaultChoice != nil {
+		defChoice = *defaultChoice
+	}
+
 	var resp bool
 	err := survey.AskOne(&Confirm{&survey.Confirm{
 		Message: formatMessage(message, !p.out.Config().Colored),
-		Default: defaultChoice,
+		Default: defChoice,
 	}}, &resp, nil)
 	if err != nil {
 		if err == terminal.InterruptErr {

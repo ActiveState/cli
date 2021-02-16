@@ -8,26 +8,59 @@ import (
 func TestRemoveFromStrings(t *testing.T) {
 	type args struct {
 		slice []string
-		n     int
+		ns    []int
 	}
+
+	simpleSlice := []string{"0", "1", "2", "3"}
+	integers := func(ns ...int) []int { return ns }
+
 	tests := []struct {
 		name string
 		args args
 		want []string
 	}{
 		{
-			"Removes Index",
-			args{
-				[]string{"1", "2", "3"},
-				1,
-			},
-			[]string{"1", "3"},
+			"first index",
+			args{simpleSlice, integers(0)},
+			[]string{"1", "2", "3"},
+		},
+		{
+			"last index",
+			args{simpleSlice, integers(len(simpleSlice) - 1)},
+			[]string{"0", "1", "2"},
+		},
+		{
+			"inner index",
+			args{simpleSlice, integers(1)},
+			[]string{"0", "2", "3"},
+		},
+		{
+			"multiple indexes",
+			args{simpleSlice, integers(1, len(simpleSlice)-1)},
+			[]string{"0", "2"},
+		},
+		{
+			"index too low",
+			args{simpleSlice, integers(-1)},
+			simpleSlice,
+		},
+		{
+			"index too high",
+			args{simpleSlice, integers(42)},
+			simpleSlice,
+		},
+		{
+			"nil indexes",
+			args{simpleSlice, nil},
+			simpleSlice,
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := RemoveFromStrings(tt.args.slice, tt.args.n); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("RemoveFromStrings() = %v, want %v", got, tt.want)
+			got := RemoveFromStrings(tt.args.slice, tt.args.ns...)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("got %v, want %v", got, tt.want)
 			}
 		})
 	}
