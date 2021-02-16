@@ -1,6 +1,7 @@
 package update
 
 import (
+	"context"
 	"os"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -70,7 +71,7 @@ func fetchUpdater(version, channel string) (*updater.Updater, *updater.Info, err
 	}
 	up := updater.New(version)
 	up.DesiredBranch = channel
-	info, err := up.Info()
+	info, err := up.Info(context.Background())
 	if err != nil {
 		return nil, nil, locale.WrapInputError(err, "err_update_fetch", "Could not retrieve update information, please verify that '{{.V0}}' is a valid channel.", channel)
 	}
