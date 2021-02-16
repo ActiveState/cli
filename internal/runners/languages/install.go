@@ -1,7 +1,6 @@
 package languages
 
 import (
-	"errors"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/locale"
@@ -85,7 +84,7 @@ func parseLanguage(langName string) (*model.Language, error) {
 
 	split := strings.Split(langName, "@")
 	if len(split) != 2 {
-		return nil, errors.New(locale.T("err_language_format"))
+		return nil, locale.NewError("err_language_format")
 	}
 	name := split[0]
 	version := split[1]
@@ -108,7 +107,7 @@ func ensureLanguagePlatform(language *model.Language) error {
 		}
 	}
 
-	return errors.New(locale.Tr("err_update_not_found", language.Name))
+	return locale.NewError("err_update_not_found", language.Name)
 }
 
 func ensureLanguageProject(language *model.Language, project *project.Project) error {
