@@ -6,6 +6,7 @@ package build
 
 import (
 	"github.com/ActiveState/cli/pkg/platform/api/buildlogstream"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // BuildEngine describes the build engine that was used to build the runtime
@@ -26,6 +27,12 @@ const (
 	Hybrid
 )
 
+// BuildResult is the unified response of a Build request
+type BuildResult struct {
+	BuildEngine BuildEngine
+	Recipe      *inventory_models.Recipe
+}
+
 type ArtifactChanges struct {
 	Added   []ArtifactID
 	Updated []ArtifactID
@@ -43,6 +50,6 @@ type MessageHandler interface {
 	// TODO: Decide if we want to have a method to de-activate the change summary for activations where it does not make sense.
 	ChangeSummary(artifacts map[ArtifactID]Artifact, requested ArtifactChanges, changed ArtifactChanges)
 	ArtifactDownloadStarting(artifactName string)
-	ArtifactDownloadCompleted(artifactName string, number, total int)
+	ArtifactDownloadCompleted(artifactName string)
 	ArtifactDownloadFailed(artifactName string, errorMsg string)
 }

@@ -13,8 +13,8 @@ type Runtime struct {
 	ep   EnvProvider
 }
 
-// New is the constructor function for alternative runtimes
-func New(proj *project.Project, ep EnvProvider) (*Runtime, error) {
+// new is the constructor function for alternative runtimes
+func new(proj *project.Project, ep EnvProvider) (*Runtime, error) {
 	r := Runtime{
 		proj: proj,
 		ep:   ep,

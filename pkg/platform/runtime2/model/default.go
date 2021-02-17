@@ -1,12 +1,12 @@
-package client
+package model
 
 import (
 	"github.com/ActiveState/cli/pkg/platform/api/buildlogstream"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
-	"github.com/ActiveState/cli/pkg/platform/runtime2/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime2/build"
 )
 
-// var _ model.ClientProvider = &Default{}
+// var _ runtime.ClientProvider = &Default{}
 
 // Default is the default client that actually talks to the backend
 type Default struct{}
@@ -20,10 +20,10 @@ func (d *Default) Solve() (*inventory_models.Order, error) {
 	panic("implement me")
 }
 
-func (d *Default) Build(order *inventory_models.Order) (*model.BuildResult, error) {
+func (d *Default) Build(order *inventory_models.Order) (*build.BuildResult, error) {
 	panic("implement me")
 }
 
-func (d *Default) BuildLog(msgHandler buildlogstream.MessageHandler, recipe *inventory_models.Recipe) (model.BuildLog, error) {
+func (d *Default) BuildLog(msgHandler buildlogstream.MessageHandler, recipe *inventory_models.Recipe) (BuildLog, error) {
 	panic("implement me")
 }

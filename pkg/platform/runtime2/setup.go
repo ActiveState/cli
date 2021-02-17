@@ -3,10 +3,11 @@ package runtime
 import (
 	"sync"
 
+	"github.com/ActiveState/cli/pkg/platform/api/buildlogstream"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/build"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/build/alternative"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime2/model/client"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -15,8 +16,15 @@ const maxConcurrency = 3
 
 // Setup provides methods to setup a fully-function runtime that *only* requires interactions with the local file system.
 type Setup struct {
-	client     model.ClientProvider
+	client     ClientProvider
 	msgHandler build.MessageHandler
+}
+
+// ClientProvider is the interface for all functions that involve backend communication
+type ClientProvider interface {
+	Solve() (*inventory_models.Order, error)
+	Build(*inventory_models.Order) (*build.BuildResult, error)
+	BuildLog(msgHandler buildlogstream.MessageHandler, recipe *inventory_models.Recipe) (model.BuildLog, error)
 }
 
 // ArtifactSetuper is the interface for an implementation of artifact setup functions
@@ -36,11 +44,11 @@ type Setuper interface {
 
 // NewSetup returns a new Setup instance that can install a Runtime locally on the machine.
 func NewSetup(project *project.Project, msgHandler build.MessageHandler) *Setup {
-	return NewSetupWithAPI(project, msgHandler, client.NewDefault())
+	return NewSetupWithAPI(project, msgHandler, model.NewDefault())
 }
 
 // NewSetupWithAPI returns a new Setup instance with a customized API client eg., for testing purposes
-func NewSetupWithAPI(project *project.Project, msgHandler build.MessageHandler, api model.ClientProvider) *Setup {
+func NewSetupWithAPI(project *project.Project, msgHandler build.MessageHandler, api ClientProvider) *Setup {
 	panic("implement me")
 }
 
@@ -68,10 +76,6 @@ func (s *Setup) InstallRuntime() error {
 		return err
 	}
 
-	// Create the setup implementation based on the build engine (alternative or camel)
-	var setupImpl Setuper
-	setupImpl = s.selectSetupImplementation(buildResult.BuildEngine)
-
 	// Compute and handle the change summary
 	artifacts := build.ArtifactsFromRecipe(buildResult.Recipe)
 	requestedArtifacts, changedArtifacts := s.changeSummaryArgs(buildResult)
@@ -93,11 +97,15 @@ func (s *Setup) InstallRuntime() error {
 		}
 	}
 
+	// Create the setup implementation based on the build engine (alternative or camel)
+	var setupImpl Setuper
+	setupImpl = s.selectSetupImplementation(buildResult.BuildEngine)
+
 	setupImpl.PostInstall()
 	panic("implement me")
 }
 
-func (s *Setup) installFromBuildLog(buildResult *model.BuildResult) error {
+func (s *Setup) installFromBuildLog(buildResult *build.BuildResult) error {
 	// Access the build log to receive build updates.
 	// Note: This may not actually connect to the build log if the build has already finished.
 	buildLog, err := s.client.BuildLog(s.msgHandler, buildResult.Recipe)
@@ -148,6 +156,7 @@ func (s *Setup) setupArtifact(buildEngine build.BuildEngine, a build.ArtifactID,
 	}
 
 	tarball := s.downloadArtifactTarball(a, downloadURL)
+	s.msgHandler.ArtifactDownloadCompleted(string(a))
 
 	unpackedDir := s.unpackTarball(tarball)
 
@@ -158,7 +167,7 @@ func (s *Setup) setupArtifact(buildEngine build.BuildEngine, a build.ArtifactID,
 	panic("implement error handling")
 }
 
-func (s *Setup) changeSummaryArgs(buildResult *model.BuildResult) (requested build.ArtifactChanges, changed build.ArtifactChanges) {
+func (s *Setup) changeSummaryArgs(buildResult *build.BuildResult) (requested build.ArtifactChanges, changed build.ArtifactChanges) {
 	panic("implement me")
 }
 

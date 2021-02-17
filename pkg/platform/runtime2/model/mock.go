@@ -1,12 +1,12 @@
-package client
+package model
 
 import (
 	"github.com/ActiveState/cli/pkg/platform/api/buildlogstream"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
-	"github.com/ActiveState/cli/pkg/platform/runtime2/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime2/build"
 )
 
-// var _ model.ClientProvider = &Default{}
+// var _ runtime.ClientProvider = &Default{}
 
 // Mock mocks an api client.  It can be used in tests to return configurable responses.
 type Mock struct{}
@@ -21,11 +21,11 @@ func (tc *Mock) Solve() (*inventory_models.Order, error) {
 	panic("implement me")
 }
 
-func (tc *Mock) Build(order *inventory_models.Order) (*model.BuildResult, error) {
+func (tc *Mock) Build(order *inventory_models.Order) (*build.BuildResult, error) {
 	panic("implement me")
 }
 
 // BuildLog returns a mocked BuildLogger implementation
-func (tc *Mock) BuildLog(msgHandler buildlogstream.MessageHandler, recipe *inventory_models.Recipe) (model.BuildLog, error) {
+func (tc *Mock) BuildLog(msgHandler buildlogstream.MessageHandler, recipe *inventory_models.Recipe) (BuildLog, error) {
 	panic("implement me")
 }
