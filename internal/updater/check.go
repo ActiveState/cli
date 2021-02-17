@@ -49,10 +49,10 @@ func AutoUpdate(pjPath string, out output.Outputer) (updated bool, resultVersion
 	defer cancel()
 	info, err := update.Info(ctx)
 	if err != nil {
-		if err.Error() != "timeout" {
-			logging.Error("Unable to automatically check for updates: %s", err)
-		} else {
+		if errors.Is(err, context.DeadlineExceeded) {
 			logging.Debug("Automatically checking for updates timed out")
+		} else {
+			logging.Error("Unable to automatically check for updates: %s", err)
 		}
 		return false, ""
 	} else if info == nil {

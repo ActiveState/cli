@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/pkg/errors"
 )
 
@@ -13,13 +14,11 @@ import (
 func Fetch(ctx context.Context, url string) (io.ReadCloser, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
-		return nil, errors.Wrapf(err, "Could not init get request for %s", url)
+		return nil, errs.Wrap(err, "Could not init get request for %s", url)
 	}
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return nil, errors.Wrapf(err,
-			"Couldn't get url=%s",
-			url)
+		return nil, errs.Wrap(err, "Couldn't get url=%s", url)
 	}
 
 	if resp.StatusCode != 200 {
