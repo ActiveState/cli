@@ -19,21 +19,10 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
-// Params tracks the info required for running Shim.
-type Params struct {
-	Path string
-}
-
-// NewParams constructs a Params and returns a pointer to it.
-func NewParams() *Params {
-	return &Params{}
-}
-
 type configurable interface {
 	CachePath() string
 }
 
-// Shim manages the shim execution context.
 type Shim struct {
 	subshell subshell.SubShell
 	proj     *project.Project
@@ -48,7 +37,10 @@ type primeable interface {
 	primer.Configurer
 }
 
-// New constructs a Shim and returns a pointer to it.
+type Params struct {
+	Path string
+}
+
 func New(prime primeable) *Shim {
 	return &Shim{
 		prime.Subshell(),
@@ -58,7 +50,10 @@ func New(prime primeable) *Shim {
 	}
 }
 
-// Run executes the shim behavior.
+func NewParams() *Params {
+	return &Params{}
+}
+
 func (s *Shim) Run(params *Params, args ...string) error {
 	if params.Path != "" {
 		var err error
@@ -67,35 +62,37 @@ func (s *Shim) Run(params *Params, args ...string) error {
 			return locale.WrapInputError(err, "shim_no_project_at_path", "Could not find project file at {{.V0}}", params.Path)
 		}
 	}
-	if s.proj != nil {
-		runtime, err := runtime.NewRuntime(s.proj.Source().Path(), s.cfg.CachePath(), s.proj.CommitUUID(), s.proj.Owner(), s.proj.Name(), runbits.NewRuntimeMessageHandler(s.out))
-		if err != nil {
-			return locale.WrapError(err, "err_shim_runtime_init", "Could not initialize runtime for shim command.")
-		}
-		venv := virtualenvironment.New(runtime)
-		if err := venv.Activate(); err != nil {
-			logging.Errorf("Unable to activate state: %s", err.Error())
-			return locale.WrapError(err, "err_shim_activate", "Could not activate environment for shim command")
-		}
-
-		env, err := venv.GetEnv(true, filepath.Dir(s.proj.Source().Path()))
-		if err != nil {
-			return err
-		}
-		logging.Debug("Trying to shim %s on PATH=%s", args[0], env["PATH"])
-		// Ensure that we are not calling the shim recursively
-		oldval, ok := env[constants.ShimEnvVarName]
-		if ok && oldval == args[0] {
-			return locale.NewError("err_shim_recursive_loop", "Could not resolve shimmed executable {{.V0}}", args[0])
-		}
-		env[constants.ShimEnvVarName] = args[0]
-
-		s.subshell.SetEnv(env)
+	if s.proj == nil {
+		return locale.NewError("shim_no_project_found", "Could not find a project.  You need to be in a project directory or specify a global default project via `state activate --default`")
 	}
 
 	if len(args) == 0 {
 		return nil
 	}
+
+	runtime, err := runtime.NewRuntime(s.proj.Source().Path(), s.cfg.CachePath(), s.proj.CommitUUID(), s.proj.Owner(), s.proj.Name(), runbits.NewRuntimeMessageHandler(s.out))
+	if err != nil {
+		return locale.WrapError(err, "err_shim_runtime_init", "Could not initialize runtime for shim command.")
+	}
+	venv := virtualenvironment.New(runtime)
+	if err := venv.Activate(); err != nil {
+		logging.Errorf("Unable to activate state: %s", err.Error())
+		return locale.WrapError(err, "err_shim_activate", "Could not activate environment for shim command")
+	}
+
+	env, err := venv.GetEnv(true, filepath.Dir(s.proj.Source().Path()))
+	if err != nil {
+		return err
+	}
+	logging.Debug("Trying to shim %s on PATH=%s", args[0], env["PATH"])
+	// Ensure that we are not calling the shim recursively
+	oldval, ok := env[constants.ShimEnvVarName]
+	if ok && oldval == args[0] {
+		return locale.NewError("err_shim_recursive_loop", "Could not resolve shimmed executable {{.V0}}", args[0])
+	}
+	env[constants.ShimEnvVarName] = args[0]
+
+	s.subshell.SetEnv(env)
 
 	lang := language.Bash
 	scriptArgs := fmt.Sprintf(`%s "$@"`, args[0])
