@@ -140,18 +140,23 @@ func (s *Auth) Authenticate() error {
 func (s *Auth) AuthenticateWithModel(credentials *mono_models.Credentials) error {
 	params := authentication.NewPostLoginParams()
 	params.SetCredentials(credentials)
-	loginOK, err := mono.Get().Authentication.PostLogin(params)
 
+	loginOK, err := mono.Get().Authentication.PostLogin(params)
 	if err != nil {
-		s.Logout()
+		tip := locale.T(
+			"logout_if_logged",
+			"If you are already logged in, it may help to log out [ACTIONABLE]`state auth logout`[/RESET] "+
+				"and log in [ACTIONABLE]`state auth`[/RESET] again.",
+		)
+
 		switch err.(type) {
 		case *apiAuth.PostLoginUnauthorized:
-			return &ErrUnauthorized{locale.WrapInputError(err, "err_unauthorized")}
+			return errs.AddTips(&ErrUnauthorized{locale.WrapInputError(err, "err_unauthorized")}, tip)
 		case *apiAuth.PostLoginRetryWith:
-			return &ErrTokenRequired{locale.WrapInputError(err, "err_auth_fail_totp")}
+			return errs.AddTips(&ErrTokenRequired{locale.WrapInputError(err, "err_auth_fail_totp")}, tip)
 		default:
 			logging.Error("Authentication API returned %v", err)
-			return locale.WrapError(err, "err_api_auth", "Authentication failed: {{.V0}}", err.Error())
+			return errs.AddTips(locale.WrapError(err, "err_api_auth", "Authentication failed: {{.V0}}", err.Error()), tip)
 		}
 	}
 	defer s.updateRollbarPerson()
