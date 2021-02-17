@@ -1,30 +1,24 @@
 package updater
 
 import (
+	"context"
 	"io"
 	"net/http"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/pkg/errors"
 )
 
-// Requester interface allows developers to customize the method in which
-// requests are made to retrieve the version and binary
-type Requester interface {
-	Fetch(url string) (io.ReadCloser, error)
-}
-
-// HTTPRequester is the normal requester that is used and does an HTTP
-// to the url location requested to retrieve the specified data.
-type HTTPRequester struct{}
-
 // Fetch will return an HTTP request to the specified url and return
 // the body of the result. An error will occur for a non 200 status code.
-func (hr *HTTPRequester) Fetch(url string) (io.ReadCloser, error) {
-	resp, err := http.Get(url)
+func Fetch(ctx context.Context, url string) (io.ReadCloser, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
-		return nil, errors.Wrapf(err,
-			"Couldn't get url=%s",
-			url)
+		return nil, errs.Wrap(err, "Could not init get request for %s", url)
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, errs.Wrap(err, "Couldn't get url=%s", url)
 	}
 
 	if resp.StatusCode != 200 {
@@ -34,29 +28,4 @@ func (hr *HTTPRequester) Fetch(url string) (io.ReadCloser, error) {
 	}
 
 	return resp.Body, nil
-}
-
-// mockRequester used for some mock testing to ensure the requester contract
-// works as specified.
-type mockRequester struct {
-	currentIndex int
-	fetches      []func(string) (io.ReadCloser, error)
-}
-
-func (mr *mockRequester) HandleRequest(requestHandler func(string) (io.ReadCloser, error)) {
-	if mr.fetches == nil {
-		mr.fetches = []func(string) (io.ReadCloser, error){}
-	}
-	mr.fetches = append(mr.fetches, requestHandler)
-}
-
-func (mr *mockRequester) Fetch(url string) (io.ReadCloser, error) {
-	if len(mr.fetches) <= mr.currentIndex {
-		return nil, errors.Errorf(
-			"No for currentIndex %d to mock", mr.currentIndex)
-	}
-	current := mr.fetches[mr.currentIndex]
-	mr.currentIndex++
-
-	return current(url)
 }
