@@ -6,16 +6,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
-
-Available on channel `master`
-
-### Fixed
-
-- Error constructions no longer directly use locale.T ([PR #1257](https://github.com/ActiveState/cli/pull/1257))
-- `shim` works without a project file in the current directory ([PR #1256](https://github.com/ActiveState/cli/pull/1256))
-
-
 ## 0.25.0
 
 Available on channel: `beta` (`state update --set-channel beta`)
