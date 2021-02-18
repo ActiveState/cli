@@ -164,6 +164,11 @@ func orchestrateArtifactSetup(parentCtx context.Context, ready <-chan build.Arti
 }
 
 // contextWithSigint returns a context that is cancelled when a sigint event is received
+// This could be used to make the setup installation interruptable, but ensure that
+// all go functions and resources are properly released.
+// Currently, our interrupt handling mechanism simply abandons the running function.
+// This works for a CLI tool, where go functions are stopped after the CLI tool finishes, but it is not a viable
+// approach for a server architecture.
 func contextWithSigint(ctx context.Context) (context.Context, context.CancelFunc) {
 	ctxWithCancel, cancel := context.WithCancel(ctx)
 	go func() {
@@ -185,7 +190,7 @@ func contextWithSigint(ctx context.Context) (context.Context, context.CancelFunc
 }
 
 func (s *Setup) installImmediately(buildResult *build.BuildResult, artifacts map[build.ArtifactID]build.Artifact) error {
-	ctx, cancel := contextWithSigint(context.Background())
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	scheduler := build.NewArtifactScheduler(ctx, artifacts)
 
@@ -202,7 +207,7 @@ func (s *Setup) installImmediately(buildResult *build.BuildResult, artifacts map
 }
 
 func (s *Setup) installFromBuildLog(buildResult *build.BuildResult) error {
-	ctx, cancel := contextWithSigint(context.Background())
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	// Access the build log to receive build updates.
 	buildLog, err := s.client.BuildLog(ctx, s.msgHandler, buildResult.Recipe)

@@ -141,3 +141,34 @@ func TestResolvedArtifactChanges(t *testing.T) {
 		})
 	}
 }
+
+func TestIsBuildComplete(t *testing.T) {
+	tests := []struct {
+		Name            string
+		buildStatusName string
+		expectedResult  bool
+	}{
+		{
+			"camel build",
+			"camel",
+			false,
+		},
+		{
+			"alternative build incomplete",
+			"alternative-incomplete",
+			false,
+		},
+		{
+			"alternative build completed",
+			"alternative-completed",
+			true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.Name, func(t *testing.T) {
+			bs := testhelper.LoadBuildResponse(t, tt.buildStatusName)
+			assert.Equal(t, tt.expectedResult, IsBuildComplete(bs))
+		})
+	}
+}
