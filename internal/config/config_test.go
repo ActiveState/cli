@@ -1,158 +1,96 @@
-package config_test
+package config
 
 import (
-	"bytes"
-	"fmt"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"reflect"
 	"strings"
 	"testing"
-
-	"github.com/spf13/viper"
-	"github.com/stretchr/testify/suite"
-
-	"github.com/ActiveState/cli/internal/config"
-	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/fileutils"
 )
 
-type InstanceMock struct {
-	config.Instance
-}
+func TestConfig_SetGetString(t *testing.T) {
+	dir := os.TempDir()
+	defer os.RemoveAll(dir)
 
-func (i *InstanceMock) Name() string {
-	return "cli-"
-}
-
-type ConfigTestSuite struct {
-	suite.Suite
-	config *config.Instance
-}
-
-func (suite *ConfigTestSuite) SetupTest() {
-}
-
-func (suite *ConfigTestSuite) BeforeTest(suiteName, testName string) {
-	viper.Reset()
-
-	var err error
-	suite.config, err = config.New()
-	suite.Require().NoError(err)
-}
-
-func (suite *ConfigTestSuite) AfterTest(suiteName, testName string) {
-}
-
-func (suite *ConfigTestSuite) TestConfig() {
-	suite.NotEmpty(suite.config.ConfigPath())
-	suite.NotEmpty(suite.config.CachePath())
-}
-
-func (suite *ConfigTestSuite) TestIncludesBranch() {
-	cfg, err := config.NewWithDir("")
-	suite.Require().NoError(err)
-	suite.Contains(cfg.ConfigPath(), filepath.Clean(constants.BranchName))
-}
-
-func (suite *ConfigTestSuite) TestFilesExist() {
-	suite.FileExists(filepath.Join(suite.config.ConfigPath(), suite.config.Filename()))
-	suite.DirExists(filepath.Join(suite.config.CachePath()))
-}
-
-func (suite *ConfigTestSuite) TestCorruption() {
-	path := filepath.Join(suite.config.ConfigPath(), suite.config.Filename())
-	err := fileutils.WriteFile(path, []byte("&"))
-	suite.Require().NoError(err)
-
-	viper.Reset()
-
-	err = suite.config.ReadInConfig()
-	suite.Require().Error(err)
-}
-
-// testNoHomeRunner will run the TestNoHome test in its own process, this is because the configdir package we use
-// interprets the HOME env var at init time, so we cannot spoof it any other way besides when running the got test command
-// and we don't want tests that require special knowledge of how to invoke them
-func (suite *ConfigTestSuite) testNoHomeRunner() {
-	pkgPath := reflect.TypeOf(*suite.config).PkgPath()
-	args := []string{"test", pkgPath, "-run", "TestConfigTestSuite", "-testify.m", "TestNoHome"}
-	fmt.Printf("Executing: go %s", strings.Join(args, " "))
-
-	var err error
-	goCache, err := ioutil.TempDir("", "go-cache")
-	suite.Require().NoError(err)
-
-	runCmd := exec.Command("go", args...)
-	runCmd.Env = []string{
-		"PATH=" + os.Getenv("PATH"),
-		"GOROOT=" + os.Getenv("GOROOT"),
-		"GOENV=" + os.Getenv("GOENV"),
-		"GOPATH=" + filepath.Join(os.Getenv("GOROOT"), "GOHOME"),
-		"USERPROFILE=" + os.Getenv("USERPROFILE"), // Permission error trying to use C:\Windows, ref: https://golang.org/pkg/os/#TempDir
-		"APPDATA=" + os.Getenv("APPDATA"),
-		"SystemRoot=" + os.Getenv("SystemRoot"), // Ref: https://bugs.python.org/msg248951
-		"GOFLAGS=" + os.Getenv("GOFLAGS"),
-		"GOCACHE=" + goCache,
-		"TESTNOHOME=TRUE",
+	_, err := os.Create(filepath.Join(dir, "config.yaml"))
+	if err != nil {
+		t.Fatalf("Could not create config file: %v", err)
 	}
 
-	var out bytes.Buffer
-	runCmd.Stdout = &out
-	runCmd.Stderr = &out
-
-	err = runCmd.Run()
-	suite.Require().NoError(err, "Should run without error, but returned: \n### START ###\n %s\n### END ###", out.String())
-}
-
-func (suite *ConfigTestSuite) TestNoHome() {
-	if os.Getenv("TESTNOHOME") == "" {
-		// configfile reads our home dir at init, so we need to get creative
-		suite.testNoHomeRunner()
-		return
+	config := NewConfig([]string{dir}...)
+	err = config.Set("TestKey", "TestValue")
+	if err != nil {
+		t.Fatalf("Could not set config value: %v", err)
 	}
 
-	viper.Reset()
-	var err error
-	suite.config, err = config.New()
-	suite.Require().NoError(err)
+	val := config.GetString("TestKey")
+	if val != "TestValue" {
+		t.Fail()
+	}
 
-	suite.Contains(suite.config.ConfigPath(), os.TempDir())
-
-	suite.FileExists(filepath.Join(suite.config.ConfigPath(), suite.config.Filename()))
-	suite.DirExists(filepath.Join(suite.config.CachePath()))
+	val = config.GetString("testkey")
+	if val != "TestValue" {
+		t.Fail()
+	}
 }
 
-func (suite *ConfigTestSuite) TestSave() {
-	path := filepath.Join(suite.config.ConfigPath(), suite.config.Filename())
+func TestConfig_SetWrite(t *testing.T) {
+	dir := os.TempDir()
+	defer os.RemoveAll(dir)
 
-	suite.config.Set("Foo", "bar")
-	suite.config.Save()
+	_, err := os.Create(filepath.Join(dir, "config.yaml"))
+	if err != nil {
+		t.Fatalf("Could not create config file: %v", err)
+	}
 
-	dat, err := ioutil.ReadFile(path)
-	suite.Require().NoError(err)
+	config := NewConfig([]string{dir}...)
+	err = config.Set("testkey", "value")
+	if err != nil {
+		t.Fatalf("Could not set config value: %v", err)
+	}
 
-	suite.Contains(string(dat), "foo: bar", "Config should contain our newly added field")
+	configFilePath := filepath.Join(dir, config.configName)
+	data, err := ioutil.ReadFile(configFilePath)
+	if err != nil {
+		t.Fatalf("Could not read config file data: %v", err)
+	}
+
+	if !strings.Contains(string(data), "testkey: value") {
+		t.Fatalf("Config file data does not contain expected values, got: %s", string(data))
+	}
 }
 
-func (suite *ConfigTestSuite) TestSaveMerge() {
-	path := filepath.Join(suite.config.ConfigPath(), suite.config.Filename())
+func TestConfig_MergeExisting(t *testing.T) {
+	dir := os.TempDir()
+	defer os.RemoveAll(dir)
 
-	err := fileutils.WriteFile(path, []byte("ishould: exist"))
-	suite.Require().NoError(err)
+	f, err := os.Create(filepath.Join(dir, "config.yaml"))
+	if err != nil {
+		t.Fatalf("Could not create config file: %v", err)
+	}
 
-	suite.config.Set("Foo", "bar")
-	suite.config.Save()
+	_, err = f.Write([]byte("exists: value"))
+	if err != nil {
+		t.Fatalf("Could not write data to config file: %v", err)
+	}
 
-	dat, err := ioutil.ReadFile(path)
-	suite.Require().NoError(err)
+	config := NewConfig([]string{dir}...)
+	err = config.Set("newkey", "newValue")
+	if err != nil {
+		t.Fatalf("Could not set config value: %v", err)
+	}
 
-	suite.Contains(string(dat), "foo: bar", "Config should contain our newly added field")
-	suite.Contains(string(dat), "ishould: exist", "Config should contain the pre-existing field")
-}
+	configFilePath := filepath.Join(dir, config.configName)
+	data, err := ioutil.ReadFile(configFilePath)
+	if err != nil {
+		t.Fatalf("Could not read config file data: %v", err)
+	}
 
-func TestConfigTestSuite(t *testing.T) {
-	suite.Run(t, new(ConfigTestSuite))
+	if !strings.Contains(string(data), "exists: value") {
+		t.Fatalf("Config file data does not contain existing value: %s", string(data))
+	}
+
+	if !strings.Contains(string(data), "newkey: newValue") {
+		t.Fatalf("Config file data does not contain updated values: %s", string(data))
+	}
 }
