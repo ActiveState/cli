@@ -172,12 +172,12 @@ func promptForSignup(input *signupInput, matchTries int, out output.Outputer, pr
 			break
 		}
 
-		locErr := locale.NewError("err_password_confirmation_failed")
+		locErrMsgID := "err_password_confirmation_failed"
 		if i < matchTries-1 {
-			out.Notice(locErr.UserError())
+			out.Notice(locale.T(locErrMsgID))
 			continue
 		}
-		return locErr
+		return locale.NewError(locErrMsgID)
 	}
 
 	input.Name, err = prompter.Input("", locale.T("name_prompt"), new(string), prompt.InputRequired)
