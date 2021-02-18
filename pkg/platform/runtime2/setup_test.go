@@ -135,3 +135,11 @@ func TestOrchestrateSetup(t *testing.T) {
 	})
 
 }
+
+func TestChangeSummaryArgs(t *testing.T) {
+	// TODO: This function should compute the change summary arguments that supports
+	// our message handler function to print out a summary of changes relative to the
+	// installed build.
+	// My suggestion is to implement the message handler function first to understand
+	// the requirements for this function better.
+}

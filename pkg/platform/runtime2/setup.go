@@ -81,10 +81,10 @@ func (s *Setup) InstallRuntime() error {
 
 	// Compute and handle the change summary
 	artifacts := build.ArtifactsFromRecipe(buildResult.Recipe)
-	requestedArtifacts, changedArtifacts := s.changeSummaryArgs(buildResult)
+	requestedArtifacts, changedArtifacts := changeSummaryArgs(buildResult)
 	s.msgHandler.ChangeSummary(artifacts, requestedArtifacts, changedArtifacts)
 
-	if build.IsBuildComplete(buildResult.Recipe) {
+	if build.IsBuildComplete(buildResult.BuildStatusResponse) {
 		err := s.installImmediately(buildResult, artifacts)
 		if err != nil {
 			return err
@@ -242,7 +242,8 @@ func (s *Setup) setupArtifact(buildEngine build.BuildEngine, a build.ArtifactID,
 	panic("implement error handling")
 }
 
-func (s *Setup) changeSummaryArgs(buildResult *build.BuildResult) (requested build.ArtifactChanges, changed build.ArtifactChanges) {
+// changeSummaryArgs
+func changeSummaryArgs(buildResult *build.BuildResult) (requested build.ArtifactChanges, changed build.ArtifactChanges) {
 	panic("implement me")
 }
 

@@ -1,0 +1,31 @@
+{
+  "artifacts": [
+    {
+      "artifact_id": "71e4a1fe-eba7-5ee1-a95f-94fd70aa2d87",
+      "build_state": "succeeded",
+      "build_timestamp": "2021-02-03T22:21:39.496Z",
+      "dependency_ids": null,
+      "ingredient_version_id": "a845e482-d3ec-5379-aba3-96e74794570f",
+      "log_uri": "s3://as-builds/production/language/perl/5.32.0/7/71e4a1fe-eba7-5ee1-a95f-94fd70aa2d87/logs.jsonl",
+      "platform_id": "0fa42e8c-ac7b-5dd7-9407-8aa15f9b993a",
+      "uri": "s3://as-builds/production/language/perl/5.32.0/7/71e4a1fe-eba7-5ee1-a95f-94fd70aa2d87/artifact.tar.gz"
+    },
+    {
+      "artifact_id": "ad807d9a-8214-5395-92c4-77b6301248f2",
+      "build_state": "succeeded",
+      "build_timestamp": "2021-02-06T00:17:40.179Z",
+      "dependency_ids": null,
+      "log_uri": "s3://as-builds/noop/logs.jsonl",
+      "platform_id": "0fa42e8c-ac7b-5dd7-9407-8aa15f9b993a",
+      "uri": "s3://as-builds/noop/artifact.tar.gz"
+    }
+  ],
+  "build_engine": "alternative",
+  "build_request_id": "af46a10c-e788-459e-9e17-4e4add8973c0",
+  "errors": [],
+  "is_retryable": false,
+  "message": "Recipe build completed successfully",
+  "recipe_id": "ad807d9a-8214-5395-92c4-77b6301248f2",
+  "timestamp": "2021-02-18T18:03:18.756Z",
+  "type": "build_completed"
+}

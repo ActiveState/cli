@@ -1,6 +1,8 @@
 package model
 
 import (
+	"context"
+
 	"github.com/ActiveState/cli/pkg/platform/api/buildlogstream"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/build"
@@ -24,6 +26,6 @@ func (d *Default) Build(order *inventory_models.Order) (*build.BuildResult, erro
 	panic("implement me")
 }
 
-func (d *Default) BuildLog(msgHandler buildlogstream.MessageHandler, recipe *inventory_models.Recipe) (*BuildLog, error) {
+func (d *Default) BuildLog(ctx context.Context, msgHandler buildlogstream.MessageHandler, recipe *inventory_models.Recipe) (*BuildLog, error) {
 	panic("implement me")
 }
