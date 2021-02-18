@@ -11,7 +11,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/spf13/viper"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/config"
@@ -36,7 +35,6 @@ func (suite *ConfigTestSuite) SetupTest() {
 }
 
 func (suite *ConfigTestSuite) BeforeTest(suiteName, testName string) {
-	viper.Reset()
 
 	var err error
 	suite.config, err = config.New()
@@ -66,8 +64,6 @@ func (suite *ConfigTestSuite) TestCorruption() {
 	path := filepath.Join(suite.config.ConfigPath(), suite.config.Filename())
 	err := fileutils.WriteFile(path, []byte("&"))
 	suite.Require().NoError(err)
-
-	viper.Reset()
 
 	err = suite.config.ReadInConfig()
 	suite.Require().Error(err)
@@ -114,7 +110,6 @@ func (suite *ConfigTestSuite) TestNoHome() {
 		return
 	}
 
-	viper.Reset()
 	var err error
 	suite.config, err = config.New()
 	suite.Require().NoError(err)
