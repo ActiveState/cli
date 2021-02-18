@@ -52,7 +52,7 @@ func Signup(cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompt
 
 	err = promptForSignup(input, maxMatchTries, out, prompt)
 	if err != nil {
-		return locale.WrapError(err, "signup_failed", "Signup was not successful.")
+		return locale.WrapError(err, "signup_failure")
 	}
 
 	if err = doSignup(input, out); err != nil {
@@ -76,7 +76,7 @@ func signupFromLogin(username string, password string, out output.Outputer, prom
 
 	err := promptForSignup(input, maxMatchTries, out, prompt)
 	if err != nil {
-		return errs.Wrap(err, "UserInput failure")
+		return locale.WrapError(err, "signup_failure")
 	}
 
 	return doSignup(input, out)
