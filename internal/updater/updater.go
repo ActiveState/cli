@@ -20,7 +20,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/osutils/lockfile"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -181,7 +181,7 @@ func (u *Updater) update(out output.Outputer, autoUpdate bool) error {
 	// Synchronize the update process between state tool instances by acquiring a lock file
 	lockFile := filepath.Join(filepath.Dir(path), fmt.Sprintf(".%s.update-lock", "state"))
 	logging.Debug("Attempting to open lock file at %s", lockFile)
-	pl, err := osutils.NewPidLock(lockFile)
+	pl, err := lockfile.NewPidLock(lockFile)
 	if err != nil {
 		return errs.Wrap(err, "could not create pid lock file for update process")
 	}
@@ -192,7 +192,7 @@ func (u *Updater) update(out output.Outputer, autoUpdate bool) error {
 	// same new state tool version several times.
 	_, err = pl.TryLock()
 	if err != nil {
-		if inProgErr := new(*osutils.AlreadyLockedError); errors.As(err, inProgErr) {
+		if inProgErr := new(*lockfile.AlreadyLockedError); errors.As(err, inProgErr) {
 			logging.Debug("Already updating: %s", errs.Join(*inProgErr, ": "))
 			return *inProgErr
 		}

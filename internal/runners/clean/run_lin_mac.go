@@ -9,8 +9,6 @@ import (
 )
 
 func removeConfig(cfg configurable) error {
-	cfg.SkipSave(true)
-
 	file, err := os.Open(logging.FilePath())
 	if err != nil {
 		return err

@@ -10,7 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/osutils/lockfile"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -100,7 +100,7 @@ func AutoUpdate(pjPath string, out output.Outputer) (updated bool, resultVersion
 		if os.IsPermission(errs.InnerError(err)) {
 			out.Error(locale.T("auto_update_permission_err"))
 		}
-		if errors.As(err, new(*osutils.AlreadyLockedError)) {
+		if errors.As(err, new(*lockfile.AlreadyLockedError)) {
 			log = logging.Debug
 		}
 		log("Unable to self update: %s", err)
