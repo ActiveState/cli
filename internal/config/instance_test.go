@@ -129,7 +129,6 @@ func (suite *ConfigTestSuite) TestSave() {
 	path := filepath.Join(suite.config.ConfigPath(), suite.config.Filename())
 
 	suite.config.Set("Foo", "bar")
-	suite.config.Save()
 
 	dat, err := ioutil.ReadFile(path)
 	suite.Require().NoError(err)
@@ -144,7 +143,6 @@ func (suite *ConfigTestSuite) TestSaveMerge() {
 	suite.Require().NoError(err)
 
 	suite.config.Set("Foo", "bar")
-	suite.config.Save()
 
 	dat, err := ioutil.ReadFile(path)
 	suite.Require().NoError(err)
