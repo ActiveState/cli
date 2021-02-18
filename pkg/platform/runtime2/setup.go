@@ -1,6 +1,9 @@
 package runtime
 
 import (
+	"context"
+	"os"
+	"os/signal"
 	"sync"
 
 	"github.com/ActiveState/cli/pkg/platform/api/buildlogstream"
@@ -11,8 +14,8 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
-// maximum number of parallel artifact installations
-const maxConcurrency = 3
+// MaxConcurrency is maximum number of parallel artifact installations
+const MaxConcurrency = 3
 
 // Setup provides methods to setup a fully-function runtime that *only* requires interactions with the local file system.
 type Setup struct {
@@ -24,7 +27,7 @@ type Setup struct {
 type ClientProvider interface {
 	Solve() (*inventory_models.Order, error)
 	Build(*inventory_models.Order) (*build.BuildResult, error)
-	BuildLog(msgHandler buildlogstream.MessageHandler, recipe *inventory_models.Recipe) (model.BuildLog, error)
+	BuildLog(ctx context.Context, msgHandler buildlogstream.MessageHandler, recipe *inventory_models.Recipe) (*model.BuildLog, error)
 }
 
 // ArtifactSetuper is the interface for an implementation of artifact setup functions
@@ -82,12 +85,9 @@ func (s *Setup) InstallRuntime() error {
 	s.msgHandler.ChangeSummary(artifacts, requestedArtifacts, changedArtifacts)
 
 	if build.IsBuildComplete(buildResult.Recipe) {
-		// build is complete already, just install the artifacts
-		for _, a := range artifacts {
-			err := s.setupArtifact(buildResult.BuildEngine, a.ArtifactID, a.DownloadURL)
-			if err != nil {
-				return err
-			}
+		err := s.installImmediately(buildResult, artifacts)
+		if err != nil {
+			return err
 		}
 	} else {
 		// get artifact IDs and URLs from build log streamer
@@ -105,46 +105,121 @@ func (s *Setup) InstallRuntime() error {
 	panic("implement me")
 }
 
-func (s *Setup) installFromBuildLog(buildResult *build.BuildResult) error {
-	// Access the build log to receive build updates.
-	// Note: This may not actually connect to the build log if the build has already finished.
-	buildLog, err := s.client.BuildLog(s.msgHandler, buildResult.Recipe)
-	if err != nil {
-		return err
+// readErrs reads the error channel until it is empty and returns the error slice
+func readErrs(errCh <-chan error) []error {
+	var errs []error
+	for {
+		select {
+		case e := <-errCh:
+			if e != nil {
+				errs = append(errs, e)
+			}
+		default:
+			return errs
+		}
 	}
-	defer buildLog.Wait()
+}
 
-	// wait for artifacts to be built and set them up in parallel with maximum concurrency
-	ready := buildLog.BuiltArtifactsChannel()
+// orchestrateArtifactSetup handles the orchestration of setting up artifact installations in parallel
+// When the ready channel indicates that a new artifact is ready to be downloaded a new
+// setup task will be launched for this artifact as soon as a worker task is available.
+// The number of worker tasks is limited by the constant MaxConcurrency
+func orchestrateArtifactSetup(parentCtx context.Context, ready <-chan build.Artifact, cb func(build.Artifact) error) error {
+	ctx, cancel := context.WithCancel(parentCtx)
+	defer cancel()
 	var wg sync.WaitGroup
-	errCh := make(chan error)
+	errCh := make(chan error, MaxConcurrency)
 	defer close(errCh)
-	for i := 0; i < maxConcurrency; i++ {
+	for i := 0; i < MaxConcurrency; i++ {
 		wg.Add(1)
-		go func() {
+		go func(i int) {
 			defer wg.Done()
-			for a := range ready {
-				// setup
-				err := s.setupArtifact(buildResult.BuildEngine, a.ID, a.DownloadURL)
-				if err != nil {
-					errCh <- err
+			defer func() {
+				cancel()
+			}()
+			for {
+				select {
+				case a, ok := <-ready:
+					if !ok {
+						return
+					}
+					err := cb(a)
+					if err != nil {
+						errCh <- err
+						return
+					}
+				case <-ctx.Done():
+					return
 				}
 			}
-		}()
+		}(i)
 	}
 	wg.Wait()
 
-	err = <-buildLog.Err()
-	if err != nil {
-		return err
+	errs := readErrs(errCh)
+	if len(errs) > 0 {
+		return errs[0]
 	}
-
-	err = <-errCh
-	if err != nil {
-		return err
-	}
-
 	return nil
+}
+
+// contextWithSigint returns a context that is cancelled when a sigint event is received
+func contextWithSigint(ctx context.Context) (context.Context, context.CancelFunc) {
+	ctxWithCancel, cancel := context.WithCancel(ctx)
+	go func() {
+		signalCh := make(chan os.Signal, 1)
+		signal.Notify(signalCh, os.Interrupt)
+		defer func() {
+			cancel()
+			signal.Stop(signalCh)
+			close(signalCh)
+		}()
+
+		select {
+		case <-signalCh:
+		case <-ctx.Done():
+		}
+	}()
+
+	return ctxWithCancel, cancel
+}
+
+func (s *Setup) installImmediately(buildResult *build.BuildResult, artifacts map[build.ArtifactID]build.Artifact) error {
+	ctx, cancel := contextWithSigint(context.Background())
+	defer cancel()
+	scheduler := build.NewArtifactScheduler(ctx, artifacts)
+
+	orchErr := orchestrateArtifactSetup(ctx, scheduler.BuiltArtifactsChannel(), func(a build.Artifact) error {
+		return s.setupArtifact(buildResult.BuildEngine, a.ArtifactID, a.DownloadURL)
+	})
+
+	err := scheduler.Wait()
+	if err != nil {
+		return err
+	}
+
+	return orchErr
+}
+
+func (s *Setup) installFromBuildLog(buildResult *build.BuildResult) error {
+	ctx, cancel := contextWithSigint(context.Background())
+	defer cancel()
+	// Access the build log to receive build updates.
+	buildLog, err := s.client.BuildLog(ctx, s.msgHandler, buildResult.Recipe)
+	if err != nil {
+		return err
+	}
+
+	orchErr := orchestrateArtifactSetup(ctx, buildLog.BuiltArtifactsChannel(), func(a build.Artifact) error {
+		return s.setupArtifact(buildResult.BuildEngine, a.ArtifactID, a.DownloadURL)
+	})
+
+	err = buildLog.Wait()
+	if err != nil {
+		return err
+	}
+
+	return orchErr
 }
 
 // setupArtifact sets up artifact
