@@ -140,16 +140,17 @@ func (i *Instance) Set(key string, value interface{}) error {
 }
 
 func retryLock(pl *lockfile.PidLock, attempts int, interval time.Duration) error {
-	for i := 0; i < attempts; i++ {
-		_, err := pl.TryLock()
-		if err != nil {
-			lockedErr := &lockfile.AlreadyLockedError{}
-			if errors.As(err, &lockedErr) {
-				time.Sleep(interval)
-				continue
-			}
-			return errs.Wrap(err, "failed to acquire lock for update process")
+	lockedErr := &lockfile.AlreadyLockedError{}
+	_, err := pl.TryLock()
+	if err != nil {
+		if !errors.As(err, &lockedErr) {
+			return errs.Wrap(err, "Unexpected error attempting to acquire lock file")
 		}
+		if attempts--; attempts > 0 {
+			time.Sleep(interval)
+			return retryLock(pl, attempts, interval)
+		}
+		return err
 	}
 
 	return nil
