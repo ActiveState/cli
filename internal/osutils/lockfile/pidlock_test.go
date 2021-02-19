@@ -14,7 +14,6 @@ import (
 	"io/ioutil"
 
 	"github.com/ActiveState/cli/internal/environment"
-	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -202,7 +201,8 @@ func Test_acquirePidLock(t *testing.T) {
 
 	err = pl.Close()
 	require.NoError(t, err)
-	assert.False(t, fileutils.FileExists(lockFile))
+	f, err := os.Stat(lockFile)
+	assert.True(t, err != nil && f == nil)
 
 	pl, err = NewPidLock(lockFile)
 	require.NoError(t, err)
@@ -212,7 +212,8 @@ func Test_acquirePidLock(t *testing.T) {
 
 	err = pl.Close(true)
 	require.NoError(t, err)
-	assert.True(t, fileutils.FileExists(lockFile))
+	f, err = os.Stat(lockFile)
+	assert.True(t, err == nil && !f.IsDir())
 
 	pl, err = NewPidLock(lockFile)
 	require.NoError(t, err)
