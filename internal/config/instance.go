@@ -129,25 +129,9 @@ func (i *Instance) Set(key string, value interface{}) error {
 	i.rwLock.Lock()
 	defer i.rwLock.Unlock()
 
-	pl, err := lockfile.NewPidLock(i.getLockFile())
-	if err != nil {
-		return errs.Wrap(err, "Could not create lock file for updating config")
-	}
-	defer pl.Close()
-
-	err = retryLock(pl, 5, 1*time.Second)
-	if err != nil {
-		return err
-	}
-
-	err = i.ReadInConfig()
-	if err != nil {
-		return err
-	}
-
 	i.data[strings.ToLower(key)] = value
 
-	err = i.save()
+	err := i.save()
 	if err != nil {
 		return err
 	}
@@ -258,7 +242,17 @@ func (i *Instance) InstallSource() string {
 
 // ReadInConfig reads in config from the config file
 func (i *Instance) ReadInConfig() error {
-	var err error
+	pl, err := lockfile.NewPidLock(i.getLockFile())
+	if err != nil {
+		return errs.Wrap(err, "Could not create lock file for updating config")
+	}
+	defer pl.Close()
+
+	err = retryLock(pl, 5, 1*time.Second)
+	if err != nil {
+		return err
+	}
+
 	configFile, err := i.getConfigFile()
 	if err != nil {
 		return errs.Wrap(err, "Could not find config file")
@@ -279,6 +273,21 @@ func (i *Instance) ReadInConfig() error {
 
 func (i *Instance) save() error {
 	err := i.ReadInConfig()
+	if err != nil {
+		return err
+	}
+
+	return i.writeConfig()
+}
+
+func (i *Instance) writeConfig() error {
+	pl, err := lockfile.NewPidLock(i.getLockFile())
+	if err != nil {
+		return errs.Wrap(err, "Could not create lock file for updating config")
+	}
+	defer pl.Close()
+
+	err = retryLock(pl, 5, 1*time.Second)
 	if err != nil {
 		return err
 	}
