@@ -7,7 +7,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/pkg/platform/api/headchef"
+	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/build"
+	"github.com/ActiveState/cli/pkg/platform/runtime2/testhelper"
+	"github.com/autarch/testify/require"
+	"github.com/go-openapi/strfmt"
 )
 
 // readReadyChannel is helper function that returns how many artifactIDs have been orchestrated
@@ -146,10 +154,52 @@ func TestChangeSummaryArgs(t *testing.T) {
 	// the requirements for this function better.
 }
 
-func TestValidateCheckpoint(t *testing.T) {
+type mockModel struct {
+	CheckPointResponse      model.Checkpoint
+	RecipeResponse          *inventory_models.Recipe
+	BuildStatusEnumResponse headchef.BuildStatusEnum
+	BuildStatusResponse     *headchef_models.BuildStatusResponse
+}
 
+func (mm *mockModel) FetchCheckpointForCommit(commitID strfmt.UUID) (model.Checkpoint, strfmt.DateTime, error) {
+	return mm.CheckPointResponse, strfmt.NewDateTime(), nil
+}
+
+func (mm *mockModel) ResolveRecipe(commitID strfmt.UUID, owner, projectName string) (*inventory_models.Recipe, error) {
+	return mm.RecipeResponse, nil
+}
+
+func (mm *mockModel) RequestBuild(recipeID, commitID strfmt.UUID, owner, project string) (headchef.BuildStatusEnum, *headchef_models.BuildStatusResponse, error) {
+	return mm.BuildStatusEnumResponse, mm.BuildStatusResponse, nil
+}
+
+func (mm *mockModel) BuildLog(ctx context.Context, artifactMap map[build.ArtifactID]build.Artifact, msgHandler build.BuildLogMessageHandler, recipeID strfmt.UUID) (*build.BuildLog, error) {
+	return nil, nil
+}
+
+func TestValidateCheckpoint(t *testing.T) {
+	t.Run("no commit", func(t *testing.T) {
+		mm := &mockModel{}
+		s := NewSetupWithAPI(nil, nil, mm)
+		err := s.ValidateCheckpoint("")
+		require.Error(t, err)
+	})
+	t.Run("valid commit", func(t *testing.T) {
+		mm := &mockModel{CheckPointResponse: testhelper.LoadCheckpoint(t, "perl-order")}
+		s := NewSetupWithAPI(nil, nil, mm)
+		err := s.ValidateCheckpoint(strfmt.UUID(constants.ValidZeroUUID))
+		require.NoError(t, err)
+	})
+	t.Run("preplatform order commit", func(t *testing.T) {
+		mm := &mockModel{CheckPointResponse: testhelper.LoadCheckpoint(t, "pre-platform-order")}
+		s := NewSetupWithAPI(nil, nil, mm)
+		err := s.ValidateCheckpoint(strfmt.UUID(constants.ValidZeroUUID))
+		require.Error(t, err)
+	})
 }
 
 func TestFetchBuildResult(t *testing.T) {
-
+	mock := &mockModel{}
+	/*s :=*/ NewSetupWithAPI(nil, nil, mock)
+	// s.FetchBuildResult("123", "owner", "project")
 }

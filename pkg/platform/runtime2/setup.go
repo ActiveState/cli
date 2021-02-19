@@ -14,7 +14,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime2/build"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/build/alternative"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/model"
-	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
 )
 
@@ -36,10 +35,16 @@ type MessageHandler interface {
 	ArtifactDownloadFailed(artifactName string, errorMsg string)
 }
 
+type Projecter interface {
+	CommitUUID() strfmt.UUID
+	Name() string
+	Owner() string
+}
+
 // Setup provides methods to setup a fully-function runtime that *only* requires interactions with the local file system.
 type Setup struct {
 	client     ClientProvider
-	project    *project.Project
+	project    Projecter
 	msgHandler MessageHandler
 }
 
@@ -67,12 +72,12 @@ type Setuper interface {
 }
 
 // NewSetup returns a new Setup instance that can install a Runtime locally on the machine.
-func NewSetup(project *project.Project, msgHandler MessageHandler) *Setup {
+func NewSetup(project Projecter, msgHandler MessageHandler) *Setup {
 	return NewSetupWithAPI(project, msgHandler, model.NewDefault())
 }
 
 // NewSetupWithAPI returns a new Setup instance with a customized API client eg., for testing purposes
-func NewSetupWithAPI(project *project.Project, msgHandler MessageHandler, api ClientProvider) *Setup {
+func NewSetupWithAPI(project Projecter, msgHandler MessageHandler, api ClientProvider) *Setup {
 	return &Setup{api, project, msgHandler}
 }
 
@@ -86,6 +91,7 @@ func (s *Setup) InstalledRuntime() (Runtime, error) {
 	panic("implement me")
 }
 
+// ValidateCheckpoint ensures that the commitID is valid and a build can succeed
 func (s *Setup) ValidateCheckpoint(commitID strfmt.UUID) error {
 	if commitID == "" {
 		return locale.NewInputError("setup_err_runtime_no_commitid", "A CommitID is required to install this runtime environment")
@@ -104,6 +110,7 @@ func (s *Setup) ValidateCheckpoint(commitID strfmt.UUID) error {
 	return nil
 }
 
+// FetchBuildResult requests a build for a resolved recipe and returns the result in a BuildResult struct
 func (s *Setup) FetchBuildResult(commitID strfmt.UUID, owner, project string) (*build.BuildResult, error) {
 	recipe, err := s.client.ResolveRecipe(commitID, owner, project)
 	if err != nil {
