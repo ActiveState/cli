@@ -210,9 +210,11 @@ const LocalRuntimeEnvironmentDirectory = "_runtime_env"
 // Check for existence of this file to ensure that the installation has not been interrupted prematurely.
 const RuntimeInstallationCompleteMarker = "support/completed"
 
-// RuntimeBuildEngineStore is created after all artifacts have been installed
-// Check for existence of this file to ensure that the installation has not been interrupted prematurely.
+// RuntimeBuildEngineStore contains the name of the build engine that was used to create this runtime
 const RuntimeBuildEngineStore = "support/build_engine"
+
+// RuntimeRecipeStore contains a serialization of the recipe used to create this build
+const RuntimeRecipeStore = "support/recipe"
 
 // StateToolMarketingPage links to the marketing page for the state tool
 const StateToolMarketingPage = "https://www.activestate.com/products/platform/state-tool/"

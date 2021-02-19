@@ -6,7 +6,9 @@ import (
 	"os/signal"
 	"sync"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
@@ -14,11 +16,15 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime2/build"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/build/alternative"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/model"
+	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/go-openapi/strfmt"
 )
 
 // MaxConcurrency is maximum number of parallel artifact installations
 const MaxConcurrency = 3
+
+// NotInstalledError is an error returned when the runtime is not completely installed yet.
+var NotInstalledError = errs.New("Runtime is not completely installed.")
 
 // MessageHandler is the interface for callback functions that are called during
 // runtime set-up when progress messages can be forwarded to the user
@@ -39,12 +45,18 @@ type Projecter interface {
 	CommitUUID() strfmt.UUID
 	Name() string
 	Owner() string
+	Source() *projectfile.Project
+}
+
+type Configurer interface {
+	CachePath() string
 }
 
 // Setup provides methods to setup a fully-function runtime that *only* requires interactions with the local file system.
 type Setup struct {
 	client     ClientProvider
 	project    Projecter
+	config     Configurer
 	msgHandler MessageHandler
 }
 
@@ -72,22 +84,81 @@ type Setuper interface {
 }
 
 // NewSetup returns a new Setup instance that can install a Runtime locally on the machine.
-func NewSetup(project Projecter, msgHandler MessageHandler) *Setup {
-	return NewSetupWithAPI(project, msgHandler, model.NewDefault())
+func NewSetup(project Projecter, config Configurer, msgHandler MessageHandler) *Setup {
+	return NewSetupWithAPI(project, config, msgHandler, model.NewDefault())
 }
 
 // NewSetupWithAPI returns a new Setup instance with a customized API client eg., for testing purposes
-func NewSetupWithAPI(project Projecter, msgHandler MessageHandler, api ClientProvider) *Setup {
-	return &Setup{api, project, msgHandler}
+func NewSetupWithAPI(project Projecter, config Configurer, msgHandler MessageHandler, api ClientProvider) *Setup {
+	return &Setup{api, project, config, msgHandler}
 }
 
 // InstalledRuntime returns a locally installed Runtime instance.
 //
 // If the runtime cannot be initialized a NotInstalledError is returned.
-func (s *Setup) InstalledRuntime() (Runtime, error) {
-	// check if complete installation can be found locally or:
-	//   return ErrNotInstalled
-	// next: try to load from local installation
+func (s *Setup) InstalledRuntime() (*Runtime, error) {
+	store, err := NewStore(s.project.Source().Path(), s.config.CachePath())
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not create runtime store")
+	}
+	if !store.HasCompleteInstallation(s.project.CommitUUID()) {
+		return nil, NotInstalledError
+	}
+	be, err := store.BuildEngine()
+	if err != nil {
+		return nil, errs.Wrap(NotInstalledError, "Failed to load build engine: %v", err)
+	}
+	env, err := s.selectEnvironProvider(be, store.InstallPath())
+	if err != nil {
+		return nil, errs.Wrap(NotInstalledError, "Failed to load the environ provider: %v", err)
+	}
+	return newRuntime(store, env)
+}
+
+// InstallRuntime installs the runtime locally, such that it can be retrieved with the InstalledRuntime function afterwards.
+func (s *Setup) InstallRuntime() error {
+	// Request build
+	buildResult, err := s.FetchBuildResult(s.project.CommitUUID(), s.project.Owner(), s.project.Name())
+	if err != nil {
+		return err
+	}
+
+	// Compute and handle the change summary
+	artifacts := build.ArtifactsFromRecipe(buildResult.Recipe)
+
+	store, err := NewStore(s.project.Source().Project, s.config.CachePath())
+	if err != nil {
+		return errs.Wrap(err, "Could not create runtime store")
+	}
+	oldRecipe, err := store.Recipe()
+	if err != nil {
+		logging.Debug("Could not load existing recipe.  Maybe it is a new installation: %v", err)
+	}
+	requestedArtifacts, changedArtifacts := changeSummaryArgs(oldRecipe, buildResult)
+	s.msgHandler.ChangeSummary(artifacts, requestedArtifacts, changedArtifacts)
+
+	// TODO: Here we should remove files from artifacts that are removed either by comparing with
+	// the artifactCache (that should probably be handled by the Store), or by
+	// using the `changedArtifacts`
+
+	if build.IsBuildComplete(buildResult) {
+		err := s.installImmediately(buildResult, artifacts)
+		if err != nil {
+			return err
+		}
+	} else {
+		// get artifact IDs and URLs from build log streamer
+		err := s.installFromBuildLog(buildResult, artifacts)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Create the setup implementation based on the build engine (alternative or camel)
+	var setupImpl Setuper
+	setupImpl = s.selectSetupImplementation(buildResult.BuildEngine)
+
+	setupImpl.PostInstall()
 	panic("implement me")
 }
 
@@ -130,40 +201,6 @@ func (s *Setup) FetchBuildResult(commitID strfmt.UUID, owner, project string) (*
 		BuildStatusResponse: resp,
 		BuildStatus:         bse,
 	}, nil
-}
-
-// InstallRuntime installs the runtime locally, such that it can be retrieved with the InstalledRuntime function afterwards.
-func (s *Setup) InstallRuntime() error {
-	// Request build
-	buildResult, err := s.FetchBuildResult(s.project.CommitUUID(), s.project.Owner(), s.project.Name())
-	if err != nil {
-		return err
-	}
-
-	// Compute and handle the change summary
-	artifacts := build.ArtifactsFromRecipe(buildResult.Recipe)
-	requestedArtifacts, changedArtifacts := changeSummaryArgs(buildResult)
-	s.msgHandler.ChangeSummary(artifacts, requestedArtifacts, changedArtifacts)
-
-	if build.IsBuildComplete(buildResult) {
-		err := s.installImmediately(buildResult, artifacts)
-		if err != nil {
-			return err
-		}
-	} else {
-		// get artifact IDs and URLs from build log streamer
-		err := s.installFromBuildLog(buildResult, artifacts)
-		if err != nil {
-			return err
-		}
-	}
-
-	// Create the setup implementation based on the build engine (alternative or camel)
-	var setupImpl Setuper
-	setupImpl = s.selectSetupImplementation(buildResult.BuildEngine)
-
-	setupImpl.PostInstall()
-	panic("implement me")
 }
 
 // readErrs reads the error channel until it is empty and returns the error slice
@@ -289,7 +326,7 @@ func (s *Setup) installFromBuildLog(buildResult *build.BuildResult, artifacts ma
 	return orchErr
 }
 
-// setupArtifact sets up artifact
+// setupArtifact sets up an individual artifact
 // The artifact is downloaded, unpacked and then processed by the artifact setup implementation
 func (s *Setup) setupArtifact(buildEngine build.BuildEngine, a build.ArtifactID, downloadURL string) error {
 	as := s.selectArtifactSetupImplementation(buildEngine, a)
@@ -302,6 +339,10 @@ func (s *Setup) setupArtifact(buildEngine build.BuildEngine, a build.ArtifactID,
 
 	unpackedDir := s.unpackTarball(tarball)
 
+	// TODO: Here we want to update the artifact cache
+	// NB: Be careful of concurrency when writing to the artifact cache, perhaps one file per artifact?
+	// store.WriteArtifactFiles(a, unpackDir)
+
 	as.Move(unpackedDir)
 	as.MetaDataCollection()
 	as.Relocate()
@@ -309,8 +350,8 @@ func (s *Setup) setupArtifact(buildEngine build.BuildEngine, a build.ArtifactID,
 	panic("implement error handling")
 }
 
-// changeSummaryArgs
-func changeSummaryArgs(buildResult *build.BuildResult) (requested build.ArtifactChanges, changed build.ArtifactChanges) {
+// changeSummaryArgs computes the artifact changes between an old recipe (which can be empty) and a new recipe
+func changeSummaryArgs(oldRecipe *inventory_models.Recipe, buildResult *build.BuildResult) (requested build.ArtifactChanges, changed build.ArtifactChanges) {
 	panic("implement me")
 }
 
@@ -335,6 +376,13 @@ func (s *Setup) selectSetupImplementation(buildEngine build.BuildEngine) Setuper
 func (s *Setup) selectArtifactSetupImplementation(buildEngine build.BuildEngine, a build.ArtifactID) ArtifactSetuper {
 	if buildEngine == build.Alternative {
 		return alternative.NewArtifactSetup(a)
+	}
+	panic("implement me")
+}
+
+func (s *Setup) selectEnvironProvider(buildEngine build.BuildEngine, installPath string) (EnvProvider, error) {
+	if buildEngine == build.Alternative {
+		return alternative.New(installPath)
 	}
 	panic("implement me")
 }

@@ -6,20 +6,28 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/headchef"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/go-openapi/strfmt"
 )
 
 // ArtifactID represents an artifact ID
 type ArtifactID = strfmt.UUID
 
+// ArtifactMap maps artifact ids to artifact information extracted from a recipe
+type ArtifactMap = map[ArtifactID]Artifact
+
+// Artifact comprises useful information about an artifact that we extracted from a recipe
 type Artifact struct {
-	ArtifactID   ArtifactID
-	Name         string
-	Version      *string
+	ArtifactID       ArtifactID
+	Name             string
+	Namespace        string
+	Version          *string
+	RequestedByOrder bool
+
 	Dependencies []ArtifactID
-	// ...
 }
 
+// ArtifactDownload has information necessary to download an artifact tarball
 type ArtifactDownload struct {
 	ArtifactID  ArtifactID
 	DownloadURI string
@@ -35,19 +43,48 @@ func (a Artifact) NameWithVersion() string {
 	return a.Name + version
 }
 
+type ArtifactUpdate struct {
+	FromID      ArtifactID
+	FromVersion *string
+	ToID        ArtifactID
+	ToVersion   *string
+}
+
 type ArtifactChanges struct {
 	Added   []ArtifactID
-	Updated []ArtifactID
 	Removed []ArtifactID
+	Updated []ArtifactUpdate
 }
 
 // ArtifactsFromRecipe parses a recipe and returns a map of Artifact structures that we can interpret for our purposes
 func ArtifactsFromRecipe(recipe *inventory_models.Recipe) map[ArtifactID]Artifact {
-	panic("implement me")
+	res := make(map[ArtifactID]Artifact)
+	for _, ri := range recipe.ResolvedIngredients {
+		namespace := *ri.Ingredient.PrimaryNamespace
+		if !model.NamespaceMatch(namespace, model.NamespaceLanguageMatch) && !model.NamespaceMatch(namespace, model.NamespacePackageMatch) && !model.NamespaceMatch(namespace, model.NamespaceBundlesMatch) {
+			continue
+		}
+		a := ri.ArtifactID
+		name := *ri.Ingredient.Name
+		version := ri.IngredientVersion.Version
+		requestedByOrder := len(ri.ResolvedRequirements) > 0
+
+		// TODO: Resolve dependencies
+
+		res[a] = Artifact{
+			ArtifactID:       a,
+			Name:             name,
+			Namespace:        namespace,
+			Version:          version,
+			RequestedByOrder: requestedByOrder,
+		}
+	}
+
+	return res
 }
 
 // RequestedArtifactChanges parses two recipes and returns the artifact IDs of artifacts that have changed due to changes in the order requirements
-func RequestedArtifactChanges(old, new *inventory_models.Recipe) ArtifactChanges {
+func RequestedArtifactChanges(old, new ArtifactMap) ArtifactChanges {
 	// Basic outline of what needs to happen here:
 	// - filter for `ResolvedIngredients` that also have `ResolvedRequirements` in both recipes
 	//   - add ArtifactID to the `Added` field if artifactID only appears in the the `new` recipe
@@ -58,7 +95,7 @@ func RequestedArtifactChanges(old, new *inventory_models.Recipe) ArtifactChanges
 
 // ResolvedArtifactChanges parses two recipes and returns the artifact IDs of the closure artifacts that have changed
 // This includes all artifacts returned by `RequiredArtifactsChanges` and artifacts that have been included, changed or removed due to dependency resolution.
-func ResolvedArtifactChanges(old, new *inventory_models.Recipe) ArtifactChanges {
+func ResolvedArtifactChanges(old, new ArtifactMap) ArtifactChanges {
 	panic("implement me")
 }
 
