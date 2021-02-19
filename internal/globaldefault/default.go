@@ -166,7 +166,7 @@ func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, r
 
 	err = cfg.Set(constants.GlobalDefaultPrefname, projectPath)
 	if err != nil {
-		return errs.Wrap(err, "Could not set default project in config file")
+		return locale.WrapError(err, "err_set_default_config", "Could not set default project in config file")
 	}
 
 	return nil
