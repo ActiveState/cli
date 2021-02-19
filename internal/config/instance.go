@@ -122,9 +122,15 @@ func (i *Instance) Set(key string, value interface{}) error {
 	i.rwLock.Lock()
 	defer i.rwLock.Unlock()
 
-	i.data[strings.ToLower(key)] = value
+	configData, err := i.configData()
+	if err != nil {
+		return err
+	}
 
-	err := i.save()
+	configData[strings.ToLower(key)] = value
+	i.data = configData
+
+	err = i.save()
 	if err != nil {
 		return err
 	}
@@ -236,45 +242,46 @@ func (i *Instance) InstallSource() string {
 
 // ReadInConfig reads in config from the config file
 func (i *Instance) ReadInConfig() error {
+	configData, err := i.configData()
+	if err != nil {
+		return err
+	}
+	i.data = configData
+	return nil
+}
+
+func (i *Instance) configData() (map[string]interface{}, error) {
 	pl, err := lockfile.NewPidLock(i.getLockFile())
 	if err != nil {
-		return errs.Wrap(err, "Could not create lock file for updating config")
+		return nil, errs.Wrap(err, "Could not create lock file for updating config")
 	}
 	defer pl.Close()
 
 	err = retryLock(pl, 5, 1*time.Second)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	configFile, err := i.getConfigFile()
 	if err != nil {
-		return errs.Wrap(err, "Could not find config file")
+		return nil, errs.Wrap(err, "Could not find config file")
 	}
 
 	configData, err := ioutil.ReadFile(configFile)
 	if err != nil {
-		return errs.Wrap(err, "Could not read config file")
+		return nil, errs.Wrap(err, "Could not read config file")
 	}
 
-	err = yaml.Unmarshal(configData, i.data)
+	data := make(map[string]interface{})
+	err = yaml.Unmarshal(configData, data)
 	if err != nil {
-		return errs.Wrap(err, "Could not unmarshall config data")
+		return nil, errs.Wrap(err, "Could not unmarshall config data")
 	}
 
-	return nil
+	return data, nil
 }
 
 func (i *Instance) save() error {
-	err := i.ReadInConfig()
-	if err != nil {
-		return err
-	}
-
-	return i.writeConfig()
-}
-
-func (i *Instance) writeConfig() error {
 	pl, err := lockfile.NewPidLock(i.getLockFile())
 	if err != nil {
 		return errs.Wrap(err, "Could not create lock file for updating config")
