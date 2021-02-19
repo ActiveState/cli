@@ -24,7 +24,7 @@ func newConfigMock(t *testing.T, cachePath, configPath string) *configMock {
 	}
 }
 
-func (c *configMock) Set(key string, value interface{}) {}
+func (c *configMock) Set(key string, value interface{}) error { return nil }
 
 func (c *configMock) GetStringSlice(key string) []string {
 	return []string{}
