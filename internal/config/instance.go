@@ -122,7 +122,7 @@ func (i *Instance) Set(key string, value interface{}) error {
 	i.rwLock.Lock()
 	defer i.rwLock.Unlock()
 
-	configData, err := i.configData()
+	configData, err := i.configFileData()
 	if err != nil {
 		return err
 	}
@@ -242,7 +242,7 @@ func (i *Instance) InstallSource() string {
 
 // ReadInConfig reads in config from the config file
 func (i *Instance) ReadInConfig() error {
-	configData, err := i.configData()
+	configData, err := i.configFileData()
 	if err != nil {
 		return err
 	}
@@ -250,7 +250,7 @@ func (i *Instance) ReadInConfig() error {
 	return nil
 }
 
-func (i *Instance) configData() (map[string]interface{}, error) {
+func (i *Instance) configFileData() (map[string]interface{}, error) {
 	pl, err := lockfile.NewPidLock(i.getLockFile())
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not create lock file for updating config")
