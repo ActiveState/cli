@@ -59,12 +59,10 @@ func (i *Instance) Reload() error {
 	if err != nil {
 		return err
 	}
-
 	err = i.ensureCacheExists()
 	if err != nil {
 		return err
 	}
-
 	err = i.ReadInConfig()
 	if err != nil {
 		return err
