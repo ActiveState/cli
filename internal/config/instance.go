@@ -135,7 +135,7 @@ func (i *Instance) Set(key string, value interface{}) error {
 	}
 	defer pl.Close()
 
-	err = tryLock(pl)
+	err = retryLock(pl, 5, 1*time.Second)
 	if err != nil {
 		return err
 	}
@@ -155,14 +155,13 @@ func (i *Instance) Set(key string, value interface{}) error {
 	return nil
 }
 
-func tryLock(pl *lockfile.PidLock) error {
-	attempts := 5
+func retryLock(pl *lockfile.PidLock, attempts int, interval time.Duration) error {
 	for i := 0; i < attempts; i++ {
 		_, err := pl.TryLock()
 		if err != nil {
 			lockedErr := &lockfile.AlreadyLockedError{}
 			if errors.As(err, &lockedErr) {
-				time.Sleep(1 * time.Second)
+				time.Sleep(interval)
 				continue
 			}
 			return errs.Wrap(err, "failed to acquire lock for update process")
