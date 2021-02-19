@@ -55,12 +55,7 @@ func new(localPath string) (*Instance, error) {
 
 // Reload reloads the configuration data from the config file
 func (i *Instance) Reload() error {
-	err := i.initializeConfigDir()
-	if err != nil {
-		return err
-	}
-
-	err = i.ensureConfigExists()
+	err := i.ensureConfigExists()
 	if err != nil {
 		return err
 	}
@@ -312,7 +307,7 @@ func (i *Instance) writeConfig() error {
 	return nil
 }
 
-func (i *Instance) initializeConfigDir() error {
+func (i *Instance) ensureConfigExists() error {
 	// Prepare our config dir, eg. ~/.config/activestate/cli
 	configDirs := configdir.New(i.Namespace(), i.AppName())
 
@@ -338,10 +333,6 @@ func (i *Instance) initializeConfigDir() error {
 		i.configDir = configDirs.QueryFolders(configdir.Global)[0]
 	}
 
-	return nil
-}
-
-func (i *Instance) ensureConfigExists() error {
 	if !i.configDir.Exists(i.Filename()) {
 		configFile, err := i.configDir.Create(i.Filename())
 		if err != nil {
