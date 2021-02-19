@@ -27,12 +27,12 @@ func readReadyChannel(called <-chan build.ArtifactID) int {
 func TestOrchestrateSetup(t *testing.T) {
 	tests := []struct {
 		Name        string
-		Callback    func(chan<- build.ArtifactID, build.Artifact) error
+		Callback    func(chan<- build.ArtifactID, build.ArtifactDownload) error
 		ExpectError bool
 	}{
 		{
 			"without errors",
-			func(called chan<- build.ArtifactID, a build.Artifact) error {
+			func(called chan<- build.ArtifactID, a build.ArtifactDownload) error {
 				called <- a.ArtifactID
 				return nil
 			},
@@ -40,7 +40,7 @@ func TestOrchestrateSetup(t *testing.T) {
 		},
 		{
 			"with timeouts",
-			func(called chan<- build.ArtifactID, a build.Artifact) error {
+			func(called chan<- build.ArtifactID, a build.ArtifactDownload) error {
 				// wait a second to ensure that waiting for tasks to finish works
 				time.Sleep(time.Millisecond * 100)
 				called <- a.ArtifactID
@@ -50,8 +50,8 @@ func TestOrchestrateSetup(t *testing.T) {
 		},
 		{
 			"with one error",
-			func(called chan<- build.ArtifactID, a build.Artifact) error {
-				if a.ArtifactID == "3" {
+			func(called chan<- build.ArtifactID, a build.ArtifactDownload) error {
+				if a.ArtifactID == "00000000-0000-0000-0000-000000000003" {
 					return errors.New("dummy error")
 				}
 				called <- a.ArtifactID
@@ -61,7 +61,7 @@ func TestOrchestrateSetup(t *testing.T) {
 		},
 		{
 			"with several errors",
-			func(called chan<- build.ArtifactID, a build.Artifact) error {
+			func(called chan<- build.ArtifactID, a build.ArtifactDownload) error {
 				return errors.New("dummy error")
 			},
 			true,
@@ -72,16 +72,18 @@ func TestOrchestrateSetup(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
-			ch := make(chan build.Artifact)
+			ch := make(chan build.ArtifactDownload)
 			go func() {
 				defer close(ch)
 				for i := 0; i < numArtifacts; i++ {
-					ch <- build.Artifact{ArtifactID: build.ArtifactID(fmt.Sprintf("%d", i))}
+					artID := build.ArtifactID(fmt.Sprintf("00000000-0000-0000-0000-00000000000%d", i))
+					ad := build.ArtifactDownload{ArtifactID: artID, DownloadURI: fmt.Sprintf("uri:/artifact%d", i)}
+					ch <- ad
 				}
 			}()
 			called := make(chan build.ArtifactID, numArtifacts)
 			defer close(called)
-			err := orchestrateArtifactSetup(context.Background(), ch, func(a build.Artifact) error {
+			err := orchestrateArtifactSetup(context.Background(), ch, func(a build.ArtifactDownload) error {
 				return tt.Callback(called, a)
 			})
 			if tt.ExpectError == (err == nil) {
@@ -97,11 +99,11 @@ func TestOrchestrateSetup(t *testing.T) {
 	}
 
 	t.Run("queue is closed", func(t *testing.T) {
-		ch := make(chan build.Artifact)
+		ch := make(chan build.ArtifactDownload)
 		close(ch)
 		called := make(chan build.ArtifactID, numArtifacts)
 		defer close(called)
-		err := orchestrateArtifactSetup(context.Background(), ch, func(a build.Artifact) error {
+		err := orchestrateArtifactSetup(context.Background(), ch, func(a build.ArtifactDownload) error {
 			called <- a.ArtifactID
 			return nil
 		})
@@ -115,13 +117,13 @@ func TestOrchestrateSetup(t *testing.T) {
 	})
 
 	t.Run("context is canceled", func(t *testing.T) {
-		ch := make(chan build.Artifact)
+		ch := make(chan build.ArtifactDownload)
 		defer close(ch)
 		called := make(chan build.ArtifactID, numArtifacts)
 		defer close(called)
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()
-		err := orchestrateArtifactSetup(ctx, ch, func(a build.Artifact) error {
+		err := orchestrateArtifactSetup(ctx, ch, func(a build.ArtifactDownload) error {
 			called <- a.ArtifactID
 			return nil
 		})
@@ -142,4 +144,12 @@ func TestChangeSummaryArgs(t *testing.T) {
 	// installed build.
 	// My suggestion is to implement the message handler function first to understand
 	// the requirements for this function better.
+}
+
+func TestValidateCheckpoint(t *testing.T) {
+
+}
+
+func TestFetchBuildResult(t *testing.T) {
+
 }

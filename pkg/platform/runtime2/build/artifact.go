@@ -1,19 +1,38 @@
 package build
 
 import (
+	"fmt"
+
+	"github.com/ActiveState/cli/pkg/platform/api/headchef"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/go-openapi/strfmt"
 )
 
 // ArtifactID represents an artifact ID
-type ArtifactID string
+type ArtifactID = strfmt.UUID
 
 type Artifact struct {
 	ArtifactID   ArtifactID
 	Name         string
+	Version      *string
 	Dependencies []ArtifactID
-	DownloadURL  string
 	// ...
+}
+
+type ArtifactDownload struct {
+	ArtifactID  ArtifactID
+	DownloadURI string
+	Checksum    string
+}
+
+// NameWithVersion returns a string <name>@<version> if artifact has a version specified, otherwise it returns just the name
+func (a Artifact) NameWithVersion() string {
+	version := ""
+	if a.Version != nil {
+		version = fmt.Sprintf("@%s", *a.Version)
+	}
+	return a.Name + version
 }
 
 type ArtifactChanges struct {
@@ -44,6 +63,18 @@ func ResolvedArtifactChanges(old, new *inventory_models.Recipe) ArtifactChanges 
 }
 
 // IsBuildComplete checks if the built for this recipe has already completed, or if we need to wait for artifacts to finish.
-func IsBuildComplete(buildStatus *headchef_models.BuildStatusResponse) bool {
-	panic("implement me")
+func IsBuildComplete(buildResult *BuildResult) bool {
+	return buildResult.BuildEngine == Alternative && buildResult.BuildStatus == headchef.Completed
+}
+
+// ArtifactDownloads extracts downloadable artifact information from the build status response
+func ArtifactDownloads(buildStatus *headchef_models.BuildStatusResponse) []ArtifactDownload {
+	var downloads []ArtifactDownload
+	for _, a := range buildStatus.Artifacts {
+		if a.BuildState != nil && *a.BuildState == headchef_models.ArtifactBuildStateSucceeded && a.URI != "" {
+			downloads = append(downloads, ArtifactDownload{ArtifactID: *a.ArtifactID, DownloadURI: a.URI.String()})
+		}
+	}
+
+	return downloads
 }

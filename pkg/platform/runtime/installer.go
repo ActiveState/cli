@@ -144,7 +144,7 @@ func (installer *Installer) Assembler() (Assembler, error) {
 		}
 	}
 
-	recipe, err := model.ResolveRecipe(installer.runtime.commitID, installer.runtime.owner, installer.runtime.projectName, project)
+	recipe, err := model.ResolveRecipe(installer.runtime.commitID, installer.runtime.owner, installer.runtime.projectName)
 	if err != nil {
 		return nil, errs.Wrap(err, "ResolveRecipe failed")
 	}

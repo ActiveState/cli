@@ -9,11 +9,11 @@ import (
 )
 
 func TestArtifactScheduler(t *testing.T) {
-	dummyArtifacts := make(map[ArtifactID]Artifact)
+	var dummyArtifacts []ArtifactDownload
 	numArtifacts := 5
 	for i := 0; i < numArtifacts; i++ {
-		artID := ArtifactID(fmt.Sprintf("%d", i))
-		dummyArtifacts[artID] = Artifact{ArtifactID: artID}
+		artID := ArtifactID(fmt.Sprintf("00000000-0000-0000-0000-00000000000%d", i))
+		dummyArtifacts = append(dummyArtifacts, ArtifactDownload{ArtifactID: artID, DownloadURI: fmt.Sprintf("uri:/artifact%d", i)})
 	}
 
 	t.Run("read all artifacts", func(t *testing.T) {
