@@ -6,24 +6,18 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime2/build"
 )
 
-// DownloadableArtifact stores information needed to download a built artifact from our sever
-type DownloadableArtifact struct {
-	ID          build.ArtifactID
-	DownloadURL string
-}
-
 // BuildLog is an implementation of a build log
 type BuildLog struct {
 	// TODO: This is just a rough outline of how it could look like
 	wg    *sync.WaitGroup
-	ch    chan DownloadableArtifact
+	ch    chan build.Artifact
 	errCh chan error
 }
 
 // NewBuildLog creates a new instance that allows us to wait for incoming build log information
 func NewBuildLog() *BuildLog {
 	wg := new(sync.WaitGroup)
-	ch := make(chan DownloadableArtifact)
+	ch := make(chan build.Artifact)
 	errCh := make(chan error)
 	wg.Add(1)
 	go func() {
@@ -46,8 +40,9 @@ func NewBuildLog() *BuildLog {
 }
 
 // Wait waits for the build log to close because the build is done and all downloadable artifacts are here
-func (bl *BuildLog) Wait() {
+func (bl *BuildLog) Wait() error {
 	bl.wg.Wait()
+	return nil
 }
 
 // Close stops the build log process, eg., due to a user interruption
@@ -58,7 +53,7 @@ func (bl *BuildLog) Close() error {
 }
 
 // BuiltArtifactsChannel returns the channel to listen for downloadable artifacts on
-func (bl *BuildLog) BuiltArtifactsChannel() <-chan DownloadableArtifact {
+func (bl *BuildLog) BuiltArtifactsChannel() <-chan build.Artifact {
 	return bl.ch
 }
 

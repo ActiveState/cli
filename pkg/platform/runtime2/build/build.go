@@ -6,6 +6,7 @@ package build
 
 import (
 	"github.com/ActiveState/cli/pkg/platform/api/buildlogstream"
+	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
@@ -29,14 +30,9 @@ const (
 
 // BuildResult is the unified response of a Build request
 type BuildResult struct {
-	BuildEngine BuildEngine
-	Recipe      *inventory_models.Recipe
-}
-
-type ArtifactChanges struct {
-	Added   []ArtifactID
-	Updated []ArtifactID
-	Removed []ArtifactID
+	BuildEngine         BuildEngine
+	Recipe              *inventory_models.Recipe
+	BuildStatusResponse *headchef_models.BuildStatusResponse
 }
 
 // MessageHandler is the interface for callback functions that are called during
