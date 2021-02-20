@@ -5,7 +5,7 @@
 package build
 
 import (
-	"github.com/ActiveState/cli/pkg/platform/api/buildlogstream"
+	"github.com/ActiveState/cli/pkg/platform/api/headchef"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
@@ -28,24 +28,29 @@ const (
 	Hybrid
 )
 
+// BuildEngineFromResponse handles a headchef build status response and returns
+// the relevant engine.
+func BuildEngineFromResponse(resp *headchef_models.BuildStatusResponse) BuildEngine {
+	if resp == nil || resp.BuildEngine == nil {
+		return UnknownEngine
+	}
+
+	switch *resp.BuildEngine {
+	case headchef_models.BuildStatusResponseBuildEngineCamel:
+		return Camel
+	case headchef_models.BuildStatusResponseBuildEngineAlternative:
+		return Alternative
+	case headchef_models.BuildStatusResponseBuildEngineHybrid:
+		return Hybrid
+	default:
+		return UnknownEngine
+	}
+}
+
 // BuildResult is the unified response of a Build request
 type BuildResult struct {
 	BuildEngine         BuildEngine
 	Recipe              *inventory_models.Recipe
 	BuildStatusResponse *headchef_models.BuildStatusResponse
-}
-
-// MessageHandler is the interface for callback functions that are called during
-// runtime set-up when progress messages can be forwarded to the user
-type MessageHandler interface {
-	buildlogstream.MessageHandler
-
-	// ChangeSummary summarizes the changes to the current project during the InstallRuntime() call.
-	// This summary is printed as soon as possible, providing the State Tool user with an idea of the complexity of the requested build.
-	// The arguments are for the changes introduced in the latest commit that this Setup is setting up.
-	// TODO: Decide if we want to have a method to de-activate the change summary for activations where it does not make sense.
-	ChangeSummary(artifacts map[ArtifactID]Artifact, requested ArtifactChanges, changed ArtifactChanges)
-	ArtifactDownloadStarting(artifactName string)
-	ArtifactDownloadCompleted(artifactName string)
-	ArtifactDownloadFailed(artifactName string, errorMsg string)
+	BuildStatus         headchef.BuildStatusEnum
 }

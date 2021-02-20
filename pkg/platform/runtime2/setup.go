@@ -6,28 +6,54 @@ import (
 	"os/signal"
 	"sync"
 
-	"github.com/ActiveState/cli/pkg/platform/api/buildlogstream"
+	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/pkg/platform/api/headchef"
+	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	apimodel "github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/build"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/build/alternative"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/model"
-	"github.com/ActiveState/cli/pkg/project"
+	"github.com/go-openapi/strfmt"
 )
 
 // MaxConcurrency is maximum number of parallel artifact installations
 const MaxConcurrency = 3
 
+// MessageHandler is the interface for callback functions that are called during
+// runtime set-up when progress messages can be forwarded to the user
+type MessageHandler interface {
+	build.BuildLogMessageHandler
+
+	// ChangeSummary summarizes the changes to the current project during the InstallRuntime() call.
+	// This summary is printed as soon as possible, providing the State Tool user with an idea of the complexity of the requested build.
+	// The arguments are for the changes introduced in the latest commit that this Setup is setting up.
+	// TODO: Decide if we want to have a method to de-activate the change summary for activations where it does not make sense.
+	ChangeSummary(artifacts map[build.ArtifactID]build.Artifact, requested build.ArtifactChanges, changed build.ArtifactChanges)
+	ArtifactDownloadStarting(artifactName string)
+	ArtifactDownloadCompleted(artifactName string)
+	ArtifactDownloadFailed(artifactName string, errorMsg string)
+}
+
+type Projecter interface {
+	CommitUUID() strfmt.UUID
+	Name() string
+	Owner() string
+}
+
 // Setup provides methods to setup a fully-function runtime that *only* requires interactions with the local file system.
 type Setup struct {
 	client     ClientProvider
-	msgHandler build.MessageHandler
+	project    Projecter
+	msgHandler MessageHandler
 }
 
 // ClientProvider is the interface for all functions that involve backend communication
 type ClientProvider interface {
-	Solve() (*inventory_models.Order, error)
-	Build(*inventory_models.Order) (*build.BuildResult, error)
-	BuildLog(ctx context.Context, msgHandler buildlogstream.MessageHandler, recipe *inventory_models.Recipe) (*model.BuildLog, error)
+	FetchCheckpointForCommit(commitID strfmt.UUID) (apimodel.Checkpoint, strfmt.DateTime, error)
+	ResolveRecipe(commitID strfmt.UUID, owner, projectName string) (*inventory_models.Recipe, error)
+	RequestBuild(recipeID, commitID strfmt.UUID, owner, project string) (headchef.BuildStatusEnum, *headchef_models.BuildStatusResponse, error)
+	BuildLog(context.Context, map[build.ArtifactID]build.Artifact, build.BuildLogMessageHandler, strfmt.UUID) (*build.BuildLog, error)
 }
 
 // ArtifactSetuper is the interface for an implementation of artifact setup functions
@@ -46,13 +72,13 @@ type Setuper interface {
 }
 
 // NewSetup returns a new Setup instance that can install a Runtime locally on the machine.
-func NewSetup(project *project.Project, msgHandler build.MessageHandler) *Setup {
+func NewSetup(project Projecter, msgHandler MessageHandler) *Setup {
 	return NewSetupWithAPI(project, msgHandler, model.NewDefault())
 }
 
 // NewSetupWithAPI returns a new Setup instance with a customized API client eg., for testing purposes
-func NewSetupWithAPI(project *project.Project, msgHandler build.MessageHandler, api ClientProvider) *Setup {
-	panic("implement me")
+func NewSetupWithAPI(project Projecter, msgHandler MessageHandler, api ClientProvider) *Setup {
+	return &Setup{api, project, msgHandler}
 }
 
 // InstalledRuntime returns a locally installed Runtime instance.
@@ -65,16 +91,51 @@ func (s *Setup) InstalledRuntime() (Runtime, error) {
 	panic("implement me")
 }
 
-// InstallRuntime installs the runtime locally, such that it can be retrieved with the InstalledRuntime function afterwards.
-func (s *Setup) InstallRuntime() error {
-	// Get order for commit
-	order, err := s.client.Solve()
+// ValidateCheckpoint ensures that the commitID is valid and a build can succeed
+func (s *Setup) ValidateCheckpoint(commitID strfmt.UUID) error {
+	if commitID == "" {
+		return locale.NewInputError("setup_err_runtime_no_commitid", "A CommitID is required to install this runtime environment")
+	}
+
+	checkpoint, _, err := s.client.FetchCheckpointForCommit(commitID)
 	if err != nil {
 		return err
 	}
 
+	for _, change := range checkpoint {
+		if apimodel.NamespaceMatch(change.Namespace, apimodel.NamespacePrePlatformMatch) {
+			return locale.NewInputError("installer_err_runtime_preplatform")
+		}
+	}
+	return nil
+}
+
+// FetchBuildResult requests a build for a resolved recipe and returns the result in a BuildResult struct
+func (s *Setup) FetchBuildResult(commitID strfmt.UUID, owner, project string) (*build.BuildResult, error) {
+	recipe, err := s.client.ResolveRecipe(commitID, owner, project)
+	if err != nil {
+		return nil, locale.WrapError(err, "setup_build_resolve_recipe_err", "Could not resolve recipe for project %s/%s#%s", owner, project, commitID.String())
+	}
+
+	bse, resp, err := s.client.RequestBuild(*recipe.RecipeID, commitID, owner, project)
+	if err != nil {
+		return nil, locale.WrapError(err, "headchef_build_err", "Could not request build for %s/%s#%s", owner, project, commitID.String())
+	}
+
+	engine := build.BuildEngineFromResponse(resp)
+
+	return &build.BuildResult{
+		BuildEngine:         engine,
+		Recipe:              recipe,
+		BuildStatusResponse: resp,
+		BuildStatus:         bse,
+	}, nil
+}
+
+// InstallRuntime installs the runtime locally, such that it can be retrieved with the InstalledRuntime function afterwards.
+func (s *Setup) InstallRuntime() error {
 	// Request build
-	buildResult, err := s.client.Build(order)
+	buildResult, err := s.FetchBuildResult(s.project.CommitUUID(), s.project.Owner(), s.project.Name())
 	if err != nil {
 		return err
 	}
@@ -84,14 +145,14 @@ func (s *Setup) InstallRuntime() error {
 	requestedArtifacts, changedArtifacts := changeSummaryArgs(buildResult)
 	s.msgHandler.ChangeSummary(artifacts, requestedArtifacts, changedArtifacts)
 
-	if build.IsBuildComplete(buildResult.BuildStatusResponse) {
+	if build.IsBuildComplete(buildResult) {
 		err := s.installImmediately(buildResult, artifacts)
 		if err != nil {
 			return err
 		}
 	} else {
 		// get artifact IDs and URLs from build log streamer
-		err := s.installFromBuildLog(buildResult)
+		err := s.installFromBuildLog(buildResult, artifacts)
 		if err != nil {
 			return err
 		}
@@ -124,7 +185,7 @@ func readErrs(errCh <-chan error) []error {
 // When the ready channel indicates that a new artifact is ready to be downloaded a new
 // setup task will be launched for this artifact as soon as a worker task is available.
 // The number of worker tasks is limited by the constant MaxConcurrency
-func orchestrateArtifactSetup(parentCtx context.Context, ready <-chan build.Artifact, cb func(build.Artifact) error) error {
+func orchestrateArtifactSetup(parentCtx context.Context, ready <-chan build.ArtifactDownload, cb func(build.ArtifactDownload) error) error {
 	ctx, cancel := context.WithCancel(parentCtx)
 	defer cancel()
 	var wg sync.WaitGroup
@@ -192,10 +253,11 @@ func contextWithSigint(ctx context.Context) (context.Context, context.CancelFunc
 func (s *Setup) installImmediately(buildResult *build.BuildResult, artifacts map[build.ArtifactID]build.Artifact) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	scheduler := build.NewArtifactScheduler(ctx, artifacts)
+	downloads := build.ArtifactDownloads(buildResult.BuildStatusResponse)
+	scheduler := build.NewArtifactScheduler(ctx, downloads)
 
-	orchErr := orchestrateArtifactSetup(ctx, scheduler.BuiltArtifactsChannel(), func(a build.Artifact) error {
-		return s.setupArtifact(buildResult.BuildEngine, a.ArtifactID, a.DownloadURL)
+	orchErr := orchestrateArtifactSetup(ctx, scheduler.BuiltArtifactsChannel(), func(a build.ArtifactDownload) error {
+		return s.setupArtifact(buildResult.BuildEngine, a.ArtifactID, a.DownloadURI)
 	})
 
 	err := scheduler.Wait()
@@ -206,17 +268,17 @@ func (s *Setup) installImmediately(buildResult *build.BuildResult, artifacts map
 	return orchErr
 }
 
-func (s *Setup) installFromBuildLog(buildResult *build.BuildResult) error {
+func (s *Setup) installFromBuildLog(buildResult *build.BuildResult, artifacts map[build.ArtifactID]build.Artifact) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	// Access the build log to receive build updates.
-	buildLog, err := s.client.BuildLog(ctx, s.msgHandler, buildResult.Recipe)
+	buildLog, err := s.client.BuildLog(ctx, artifacts, s.msgHandler, *buildResult.Recipe.RecipeID)
 	if err != nil {
 		return err
 	}
 
-	orchErr := orchestrateArtifactSetup(ctx, buildLog.BuiltArtifactsChannel(), func(a build.Artifact) error {
-		return s.setupArtifact(buildResult.BuildEngine, a.ArtifactID, a.DownloadURL)
+	orchErr := orchestrateArtifactSetup(ctx, buildLog.BuiltArtifactsChannel(), func(a build.ArtifactDownload) error {
+		return s.setupArtifact(buildResult.BuildEngine, a.ArtifactID, a.DownloadURI)
 	})
 
 	err = buildLog.Wait()

@@ -2,8 +2,8 @@ package alternative
 
 import "github.com/ActiveState/cli/pkg/platform/runtime2/build"
 
-// var _ common.Setuper = &Setup{}
-// var _ common.ArtifactSetuper = &ArtifactSetup{}
+// var _ runtime.Setuper = &Setup{}
+// var _ runtime.ArtifactSetuper = &ArtifactSetup{}
 
 type Setup struct {
 }

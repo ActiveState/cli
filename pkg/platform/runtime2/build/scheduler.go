@@ -7,13 +7,13 @@ import (
 // ArtifactScheduler provides a cancelable read-able channel of artifacts to download
 type ArtifactScheduler struct {
 	ctx   context.Context
-	ch    chan Artifact
+	ch    chan ArtifactDownload
 	errCh chan error
 }
 
 // NewArtifactScheduler returns a new ArtifactScheduler scheduling the provided artifacts
-func NewArtifactScheduler(ctx context.Context, artifacts map[ArtifactID]Artifact) *ArtifactScheduler {
-	ch := make(chan Artifact)
+func NewArtifactScheduler(ctx context.Context, artifacts []ArtifactDownload) *ArtifactScheduler {
+	ch := make(chan ArtifactDownload)
 	errCh := make(chan error)
 	go func() {
 		for _, a := range artifacts {
@@ -38,6 +38,6 @@ func (as *ArtifactScheduler) Wait() error {
 }
 
 // BuiltArtifactsChannel returns the channel to read from
-func (as *ArtifactScheduler) BuiltArtifactsChannel() <-chan Artifact {
+func (as *ArtifactScheduler) BuiltArtifactsChannel() <-chan ArtifactDownload {
 	return as.ch
 }
