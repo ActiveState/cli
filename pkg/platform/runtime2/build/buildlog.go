@@ -67,6 +67,8 @@ func NewBuildLog(artifactMap map[ArtifactID]Artifact, conn BuildLogConnector, me
 	messageHandler.BuildStarting(total)
 
 	go func() {
+		defer close(ch)
+		defer close(errCh)
 		defer messageHandler.BuildFinished()
 
 		var artifactErr error
@@ -94,7 +96,6 @@ func NewBuildLog(artifactMap map[ArtifactID]Artifact, conn BuildLogConnector, me
 				errCh <- locale.WrapError(artifactErr, "err_logstream_build_failed", "Build failed with error message: {{.V0}}.", msg.Err())
 				return
 			case "build_succeeded":
-				errCh <- nil
 				return
 			case "artifact_started":
 				if !artifactMapped {
@@ -142,20 +143,17 @@ func NewBuildLog(artifactMap map[ArtifactID]Artifact, conn BuildLogConnector, me
 
 // Wait waits for the build log to close because the build is done and all downloadable artifacts are here
 func (bl *BuildLog) Wait() error {
-	blErr := <-bl.errCh
-	close(bl.ch)
-	close(bl.errCh)
+	var errs []error
+	for err := range bl.errCh {
+		errs = append(errs, err)
+	}
 	err := bl.conn.Close()
 	if err != nil {
 		logging.Errorf("Failed to close build log connection: %v", err)
 	}
-	return blErr
-}
-
-// Close stops the build log process, eg., due to a user interruption
-func (bl *BuildLog) Close() error {
-	close(bl.ch)
-	close(bl.errCh)
+	if len(errs) > 0 {
+		return errs[0]
+	}
 	return nil
 }
 

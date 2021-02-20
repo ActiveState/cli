@@ -1,33 +1,37 @@
 package runtime
 
 import (
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/build"
-	"github.com/ActiveState/cli/pkg/project"
 )
 
 type EnvProvider interface {
-	Environ() (map[string]string, error)
+	Environ(inherit bool) (map[string]string, error)
 }
 
 type Runtime struct {
-	proj *project.Project
-	ep   EnvProvider
+	store *Store
+	ep    EnvProvider
 }
 
-// new is the constructor function for alternative runtimes
-func new(proj *project.Project, ep EnvProvider) (*Runtime, error) {
+// newRuntime is the constructor function for alternative runtimes
+func newRuntime(store *Store, ep EnvProvider) (*Runtime, error) {
 	r := Runtime{
-		proj: proj,
-		ep:   ep,
+		store: store,
+		ep:    ep,
 	}
 	return &r, nil
 }
 
-func (r *Runtime) Environ() (map[string]string, error) {
-	return r.ep.Environ()
+func (r *Runtime) Environ(inherit bool) (map[string]string, error) {
+	return r.ep.Environ(inherit)
 }
 
 func (r *Runtime) Artifacts() (map[build.ArtifactID]build.Artifact, error) {
-	// read in recipe stored on disk and transform into artifact
-	panic("implement me")
+	recipe, err := r.store.Recipe()
+	if err != nil {
+		return nil, locale.WrapError(err, "runtime_artifacts_recipe_load_err", "Failed to load recipe for your runtime.  Please re-install the runtime.")
+	}
+	artifacts := build.ArtifactsFromRecipe(recipe)
+	return artifacts, nil
 }

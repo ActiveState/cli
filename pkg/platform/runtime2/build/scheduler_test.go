@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/autarch/testify/require"
+	"github.com/stretchr/testify/require"
 )
 
 func TestArtifactScheduler(t *testing.T) {

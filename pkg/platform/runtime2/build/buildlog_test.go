@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/autarch/testify/assert"
-	"github.com/autarch/testify/require"
 	"github.com/go-openapi/strfmt"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type connectionMock struct {

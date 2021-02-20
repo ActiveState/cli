@@ -6,20 +6,30 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/headchef"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/go-openapi/strfmt"
+	"github.com/thoas/go-funk"
 )
 
 // ArtifactID represents an artifact ID
 type ArtifactID = strfmt.UUID
 
+// ArtifactMap maps artifact ids to artifact information extracted from a recipe
+type ArtifactMap = map[ArtifactID]Artifact
+
+// Artifact comprises useful information about an artifact that we extracted from a recipe
 type Artifact struct {
-	ArtifactID   ArtifactID
-	Name         string
-	Version      *string
+	ArtifactID       ArtifactID
+	Name             string
+	Namespace        string
+	Version          *string
+	RequestedByOrder bool
+	RecipePosition   int // Indicates that this is the n-th artifact in the recipe (for deterministic ordering of artifacts)
+
 	Dependencies []ArtifactID
-	// ...
 }
 
+// ArtifactDownload has information necessary to download an artifact tarball
 type ArtifactDownload struct {
 	ArtifactID  ArtifactID
 	DownloadURI string
@@ -35,31 +45,128 @@ func (a Artifact) NameWithVersion() string {
 	return a.Name + version
 }
 
+type ArtifactUpdate struct {
+	FromID      ArtifactID
+	FromVersion *string
+	ToID        ArtifactID
+	ToVersion   *string
+}
+
 type ArtifactChanges struct {
 	Added   []ArtifactID
-	Updated []ArtifactID
 	Removed []ArtifactID
+	Updated []ArtifactUpdate
 }
 
 // ArtifactsFromRecipe parses a recipe and returns a map of Artifact structures that we can interpret for our purposes
 func ArtifactsFromRecipe(recipe *inventory_models.Recipe) map[ArtifactID]Artifact {
-	panic("implement me")
+	res := make(map[ArtifactID]Artifact)
+	position := 0
+	for _, ri := range recipe.ResolvedIngredients {
+		namespace := *ri.Ingredient.PrimaryNamespace
+		if !model.NamespaceMatch(namespace, model.NamespaceLanguageMatch) && !model.NamespaceMatch(namespace, model.NamespacePackageMatch) && !model.NamespaceMatch(namespace, model.NamespaceBundlesMatch) {
+			continue
+		}
+		a := ri.ArtifactID
+		name := *ri.Ingredient.Name
+		version := ri.IngredientVersion.Version
+		requestedByOrder := len(ri.ResolvedRequirements) > 0
+
+		// TODO: Resolve dependencies
+
+		res[a] = Artifact{
+			ArtifactID:       a,
+			Name:             name,
+			Namespace:        namespace,
+			Version:          version,
+			RequestedByOrder: requestedByOrder,
+			Dependencies:     []ArtifactID{},
+			RecipePosition:   position,
+		}
+		position++
+	}
+
+	return res
 }
 
 // RequestedArtifactChanges parses two recipes and returns the artifact IDs of artifacts that have changed due to changes in the order requirements
-func RequestedArtifactChanges(old, new *inventory_models.Recipe) ArtifactChanges {
+func RequestedArtifactChanges(old, new ArtifactMap) ArtifactChanges {
+	changes := ResolvedArtifactChanges(old, new)
+	var added []ArtifactID
+	var removed []ArtifactID
+	var updates []ArtifactUpdate
+	for _, a := range changes.Added {
+		if new[a].RequestedByOrder {
+			added = append(added, a)
+		}
+	}
+	for _, r := range changes.Removed {
+		if old[r].RequestedByOrder {
+			removed = append(removed, r)
+		}
+	}
+	for _, u := range changes.Updated {
+		if old[u.FromID].RequestedByOrder || new[u.ToID].RequestedByOrder {
+			updates = append(updates, u)
+		}
+	}
+	return ArtifactChanges{
+		Added:   added,
+		Removed: removed,
+		Updated: updates,
+	}
+}
+
+// ResolvedArtifactChanges parses two artifact maps and returns the artifact IDs of the closure artifacts that have changed
+// This includes all artifacts returned by `RequiredArtifactsChanges` and artifacts that have been included, changed or removed due to dependency resolution.
+func ResolvedArtifactChanges(old, new ArtifactMap) ArtifactChanges {
 	// Basic outline of what needs to happen here:
-	// - filter for `ResolvedIngredients` that also have `ResolvedRequirements` in both recipes
 	//   - add ArtifactID to the `Added` field if artifactID only appears in the the `new` recipe
 	//   - add ArtifactID to the `Removed` field if artifactID only appears in the the `old` recipe
 	//   - add ArtifactID to the `Updated` field if `ResolvedRequirements.feature` appears in both recipes, but the resolved version has changed.
-	panic("implement me")
-}
+	var added []ArtifactID
+	for anew := range new {
+		if _, ok := old[anew]; !ok {
+			added = append(added, anew)
+		}
+	}
+	var removed []ArtifactID
+	for aold := range old {
+		if _, ok := new[aold]; !ok {
+			removed = append(removed, aold)
+		}
+	}
 
-// ResolvedArtifactChanges parses two recipes and returns the artifact IDs of the closure artifacts that have changed
-// This includes all artifacts returned by `RequiredArtifactsChanges` and artifacts that have been included, changed or removed due to dependency resolution.
-func ResolvedArtifactChanges(old, new *inventory_models.Recipe) ArtifactChanges {
-	panic("implement me")
+	// find potential updates
+	addedMap := make(map[string]ArtifactID)
+
+	for _, a := range added {
+		addedMap[new[a].Name] = a
+	}
+	var updates []ArtifactUpdate
+	for _, r := range removed {
+		removedName := old[r].Name
+		if toID, ok := addedMap[removedName]; ok {
+			updates = append(updates, ArtifactUpdate{FromID: r, ToID: toID, FromVersion: old[r].Version, ToVersion: new[toID].Version})
+		}
+	}
+
+	// remove updates from added and removed
+	nAdded := funk.Filter(added, func(a ArtifactID) bool {
+		return funk.Find(updates, func(u ArtifactUpdate) bool {
+			return u.ToID == a
+		}) == nil
+	}).([]ArtifactID)
+	nRemoved := funk.Filter(removed, func(a ArtifactID) bool {
+		return funk.Find(updates, func(u ArtifactUpdate) bool {
+			return u.FromID == a
+		}) == nil
+	}).([]ArtifactID)
+	return ArtifactChanges{
+		Added:   nAdded,
+		Removed: nRemoved,
+		Updated: updates,
+	}
 }
 
 // IsBuildComplete checks if the built for this recipe has already completed, or if we need to wait for artifacts to finish.
@@ -72,6 +179,9 @@ func ArtifactDownloads(buildStatus *headchef_models.BuildStatusResponse) []Artif
 	var downloads []ArtifactDownload
 	for _, a := range buildStatus.Artifacts {
 		if a.BuildState != nil && *a.BuildState == headchef_models.ArtifactBuildStateSucceeded && a.URI != "" {
+			if a.URI == "s3://as-builds/noop/artifact.tar.gz" {
+				continue
+			}
 			downloads = append(downloads, ArtifactDownload{ArtifactID: *a.ArtifactID, DownloadURI: a.URI.String()})
 		}
 	}

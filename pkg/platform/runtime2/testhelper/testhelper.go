@@ -11,7 +11,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/autarch/testify/require"
+	"github.com/stretchr/testify/require"
 )
 
 func dataPathErr() (string, error) {
@@ -54,8 +54,6 @@ func save(dir, name string, m interface{}) error {
 	if err != nil {
 		return err
 	}
-
-	fmt.Printf("%s: len(d)=%d\n", name, len(d))
 
 	return ioutil.WriteFile(fn, d, 0666)
 }
