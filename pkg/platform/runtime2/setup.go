@@ -148,6 +148,7 @@ func (s *Setup) InstallRuntime() error {
 		}
 	} else {
 		// get artifact IDs and URLs from build log streamer
+		// TODO: Here we could also report a prediction of the estimated build success to the user
 		err := s.installFromBuildLog(buildResult, artifacts)
 		if err != nil {
 			return err
@@ -203,21 +204,6 @@ func (s *Setup) FetchBuildResult(commitID strfmt.UUID, owner, project string) (*
 	}, nil
 }
 
-// readErrs reads the error channel until it is empty and returns the error slice
-func readErrs(errCh <-chan error) []error {
-	var errs []error
-	for {
-		select {
-		case e := <-errCh:
-			if e != nil {
-				errs = append(errs, e)
-			}
-		default:
-			return errs
-		}
-	}
-}
-
 // orchestrateArtifactSetup handles the orchestration of setting up artifact installations in parallel
 // When the ready channel indicates that a new artifact is ready to be downloaded a new
 // setup task will be launched for this artifact as soon as a worker task is available.
@@ -226,21 +212,21 @@ func orchestrateArtifactSetup(parentCtx context.Context, ready <-chan build.Arti
 	ctx, cancel := context.WithCancel(parentCtx)
 	defer cancel()
 	var wg sync.WaitGroup
-	errCh := make(chan error, MaxConcurrency)
-	defer close(errCh)
+	errCh := make(chan error)
+	// Run maxConcurrency runners listening for requests from the ready channel
 	for i := 0; i < MaxConcurrency; i++ {
 		wg.Add(1)
 		go func(i int) {
 			defer wg.Done()
-			defer func() {
-				cancel()
-			}()
+			defer cancel()
 			for {
 				select {
 				case a, ok := <-ready:
+					// if producer channel is closed, return
 					if !ok {
 						return
 					}
+					// handle the new ArtifactDownload
 					err := cb(a)
 					if err != nil {
 						errCh <- err
@@ -252,9 +238,15 @@ func orchestrateArtifactSetup(parentCtx context.Context, ready <-chan build.Arti
 			}
 		}(i)
 	}
-	wg.Wait()
-
-	errs := readErrs(errCh)
+	// when all runners are down, we close the error channel to indicate to the main thread that we are done
+	go func() {
+		defer close(errCh)
+		wg.Wait()
+	}()
+	var errs []error
+	for err := range errCh {
+		errs = append(errs, err)
+	}
 	if len(errs) > 0 {
 		return errs[0]
 	}
@@ -352,7 +344,13 @@ func (s *Setup) setupArtifact(buildEngine build.BuildEngine, a build.ArtifactID,
 
 // changeSummaryArgs computes the artifact changes between an old recipe (which can be empty) and a new recipe
 func changeSummaryArgs(oldRecipe *inventory_models.Recipe, buildResult *build.BuildResult) (requested build.ArtifactChanges, changed build.ArtifactChanges) {
-	panic("implement me")
+	var oldArts build.ArtifactMap
+	if oldRecipe != nil {
+		oldArts = build.ArtifactsFromRecipe(oldRecipe)
+	}
+	newArts := build.ArtifactsFromRecipe(buildResult.Recipe)
+
+	return build.RequestedArtifactChanges(oldArts, newArts), build.ResolvedArtifactChanges(oldArts, newArts)
 }
 
 // downloadArtifactTarball retrieves the tarball for an artifactID

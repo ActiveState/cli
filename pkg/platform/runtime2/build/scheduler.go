@@ -16,6 +16,8 @@ func NewArtifactScheduler(ctx context.Context, artifacts []ArtifactDownload) *Ar
 	ch := make(chan ArtifactDownload)
 	errCh := make(chan error)
 	go func() {
+		defer close(ch)
+		defer close(errCh)
 		for _, a := range artifacts {
 			select {
 			case ch <- a:
@@ -32,8 +34,6 @@ func NewArtifactScheduler(ctx context.Context, artifacts []ArtifactDownload) *Ar
 // Wait waits for all artifacts to be scheduled and returns an error if the scheduling was interrupted
 func (as *ArtifactScheduler) Wait() error {
 	err := <-as.errCh
-	close(as.ch)
-	close(as.errCh)
 	return err
 }
 

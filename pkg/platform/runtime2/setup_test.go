@@ -14,8 +14,8 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/build"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/testhelper"
-	"github.com/autarch/testify/require"
 	"github.com/go-openapi/strfmt"
+	"github.com/stretchr/testify/require"
 )
 
 // readReadyChannel is helper function that returns how many artifactIDs have been orchestrated
@@ -180,19 +180,19 @@ func (mm *mockModel) BuildLog(ctx context.Context, artifactMap map[build.Artifac
 func TestValidateCheckpoint(t *testing.T) {
 	t.Run("no commit", func(t *testing.T) {
 		mm := &mockModel{}
-		s := NewSetupWithAPI(nil, nil, mm)
+		s := NewSetupWithAPI(nil, nil, nil, mm)
 		err := s.ValidateCheckpoint("")
 		require.Error(t, err)
 	})
 	t.Run("valid commit", func(t *testing.T) {
 		mm := &mockModel{CheckPointResponse: testhelper.LoadCheckpoint(t, "perl-order")}
-		s := NewSetupWithAPI(nil, nil, mm)
+		s := NewSetupWithAPI(nil, nil, nil, mm)
 		err := s.ValidateCheckpoint(strfmt.UUID(constants.ValidZeroUUID))
 		require.NoError(t, err)
 	})
 	t.Run("preplatform order commit", func(t *testing.T) {
 		mm := &mockModel{CheckPointResponse: testhelper.LoadCheckpoint(t, "pre-platform-order")}
-		s := NewSetupWithAPI(nil, nil, mm)
+		s := NewSetupWithAPI(nil, nil, nil, mm)
 		err := s.ValidateCheckpoint(strfmt.UUID(constants.ValidZeroUUID))
 		require.Error(t, err)
 	})
@@ -200,6 +200,6 @@ func TestValidateCheckpoint(t *testing.T) {
 
 func TestFetchBuildResult(t *testing.T) {
 	mock := &mockModel{}
-	/*s :=*/ NewSetupWithAPI(nil, nil, mock)
+	/*s :=*/ NewSetupWithAPI(nil, nil, nil, mock)
 	// s.FetchBuildResult("123", "owner", "project")
 }
