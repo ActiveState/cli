@@ -1,13 +1,19 @@
 package show
 
 import (
+	"context"
 	"fmt"
+	"os"
 	"strings"
+	"time"
 
 	"github.com/go-openapi/strfmt"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/idl"
+	"github.com/ActiveState/cli/internal/idl/client"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -129,6 +135,28 @@ func New(prime primeable) *Show {
 // Run is the primary show logic.
 func (s *Show) Run(params Params) error {
 	logging.Debug("Execute show")
+
+	cfg, _ := config.Get()
+	da, errx := client.NewAddressedDaemon(cfg.ConfigPath())
+	if errx != nil {
+		return errs.Wrap(errx, "NewAddressDaemon failed")
+	}
+
+	c, errx := client.New(da)
+	if errx != nil {
+		return errs.Wrap(errx, "client.New failed")
+	}
+	defer c.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	hello, errx := c.HelloWorld(ctx, &idl.Empty{})
+	if errx != nil {
+		return errs.Wrap(errx, "HelloWorld failed")
+	}
+	fmt.Println(hello.Value)
+	os.Exit(1)
 
 	var (
 		owner       string

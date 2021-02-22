@@ -249,3 +249,12 @@ const GlobalDefaultPrefname = "default_project_path"
 
 // DefaultBranchName is the default branch name used on platform projects
 const DefaultBranchName = "main"
+
+// DaemonFile is the unix socket filename used (this should be stored in the config folder)
+const DaemonFile = "idl.sock"
+
+// DaemonPortFile holds the port on which the idl is running (only used if unix socket is not used)
+const DaemonPortFile = "idl.port"
+
+// DaemonPort is the port our idl will listen on when not running in unix socket mode
+const DaemonPort = "11153"

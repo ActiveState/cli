@@ -65,7 +65,7 @@ func FileName() string {
 }
 
 func FileNameFor(pid int) string {
-	return fmt.Sprintf("%d%s", pid, FileNameSuffix)
+	return fmt.Sprintf("%s-%d%s", filepath.Base(os.Args[0]), pid, FileNameSuffix)
 }
 
 func FilePath() string {

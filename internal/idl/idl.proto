@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+option go_package = "github.com/ActiveState/cli/cmd/idl";
+
+package main;
+
+service Daemon {
+  rpc HelloWorld(Empty) returns (StringMessage) {}
+}
+
+message Empty {
+
+}
+
+message StringMessage {
+  string value = 1;
+}

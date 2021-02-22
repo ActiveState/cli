@@ -79,3 +79,11 @@ scripts:
 
       mkdir -p build/update
       go run scripts/update-generator/main.go -o build/update $constants.BUILD_TARGET_32BIT
+  - name: generate-idl
+    language: bash
+    description: Generates idl server and client files
+    value: |
+      ${scripts.install-protoc}
+      export PATH="$PATH:$(go env GOPATH)/bin"
+      cd internal/daemon
+      protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative daemon.proto

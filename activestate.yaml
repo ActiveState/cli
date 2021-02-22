@@ -7,6 +7,9 @@ constants:
   - name: BUILD_TARGET
     if: ne .OS.Name "Windows"
     value: ./build/state
+  - name: BUILD_DAEMON_TARGET
+    if: ne .OS.Name "Windows"
+    value: ./build/state-service
   - name: BUILD_TARGET_32BIT
     if: ne .OS.Name "Windows"
     value: ./build/state32
@@ -64,12 +67,42 @@ scripts:
       export GOOS=${1}
       [ -z "${2}" ] && >&2 echo "must provide output file as 2nd arg" && exit 1
       go build -tags "internal $GO_BUILD_TAGS" -o ${2} $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
+  - name: build-idl
+    language: bash
+    description: Builds the idl
+    value: |
+      set -e
+      go build -o $constants.BUILD_DAEMON_TARGET ./cmd/daemon
   - name: install
     language: bash
     description: Installs the current HEAD version into GOBIN
     value: |
       $constants.SET_ENV
       go install $constants.CLI_BUILDFLAGS $CLI_PKGS
+  - name: install-protoc
+    language: bash
+    value: |
+      pushd ~
+      if ! type "protoc" &> /dev/null; then
+        echo "protoc was not found on your PATH, installing .."
+        if type "brew" &> /dev/null; then
+          brew install protobuf
+        elif type "apt" &> /dev/null; then
+          apt install -y protobuf-compiler
+        else
+          echo "Please install the protobuf compiler (protoc): https://grpc.io/docs/protoc-installation/"
+          exit 1
+        fi
+      fi
+      if ! type "protoc-gen-go" &> /dev/null; then
+        echo "installing protoc-gen-go"
+        go get google.golang.org/protobuf/cmd/protoc-gen-go
+      fi
+      if ! type "protoc-gen-go-grpc" &> /dev/null; then
+        echo "installing protoc-gen-go-grpc"
+        go get google.golang.org/grpc/cmd/protoc-gen-go-grpc
+      fi
+      popd
   - name: deploy-updates
     language: bash
     description: Deploys update files to S3. This steps is automated by CI and should never be ran manually unless you KNOW WHAT YOU'RE DOING.
