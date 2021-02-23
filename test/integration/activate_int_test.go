@@ -345,6 +345,44 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_Replace() {
 	cp.ExpectExitCode(0)
 }
 
+func (suite *ActivateIntegrationTestSuite) TestActivate_Headless_Replace() {
+	suite.OnlyRunForTags(tagsuite.Activate)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("activate", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.ExpectLongString("default project?")
+	cp.Send("n")
+	cp.Expect("You're Activated")
+
+	cp.WaitForInput()
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("install", "dateparser@0.7.2")
+	cp.ExpectLongString("Do you want to continue as an anonymous user?")
+	cp.Send("Y")
+	cp.ExpectRe("(?:Package added|project is currently building)", 30*time.Second)
+	cp.Wait()
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("activate", "--replace", "ActiveState-CLI/small-python"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("Activating Virtual Environment")
+	cp.ExpectLongString("default project?")
+	cp.Send("n")
+
+	cp.Expect("You're Activated")
+
+	cp.WaitForInput()
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
+}
+
 func (suite *ActivateIntegrationTestSuite) TestActivate_Subdir() {
 	suite.OnlyRunForTags(tagsuite.Activate)
 	ts := e2e.New(suite.T(), false)
