@@ -14,6 +14,8 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
+const activateCmdName = "activate"
+
 func newActivateCommand(prime *primer.Values) *captain.Command {
 	runner := activate.NewActivate(prime)
 
@@ -23,7 +25,7 @@ func newActivateCommand(prime *primer.Values) *captain.Command {
 	}
 
 	cmd := captain.NewCommand(
-		"activate",
+		activateCmdName,
 		"",
 		locale.T("activate_project"),
 		prime.Output(),
