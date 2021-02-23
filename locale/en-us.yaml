@@ -1646,5 +1646,6 @@ headless_notify_title:
   other: Detached State
 headless_notify:
   other: |
-    You are currently working in a detached state. Visit [ACTIONABLE]{{.V0}}[/RESET] to create a project from your detached state.
-    For more information, including how to re-attach to an existing project, visit [ACTIONABLE]{{.V1}}[/RESET].
+    Any changes you make are local only and will not be saved the platform. Visit: [ACTIONABLE]{{.V0}}[/RESET] to create a platform project from this commit.
+
+    For more information, including how to merge these changes into an existing project, visit: [ACTIONABLE]{{.V1}}[/RESET].

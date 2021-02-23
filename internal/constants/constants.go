@@ -171,7 +171,7 @@ const PlatformSignupURL = "https://platform.activestate.com" + "/create-account"
 const DocumentationURL = "http://docs.activestate.com/platform/state/"
 
 // DocumentationURLHeadless is the documentation URL for headless state docs
-const DocumentationURLHeadless = DocumentationURL + "advanced-topics/headless/"
+const DocumentationURLHeadless = DocumentationURL + "advanced-topics/detached/"
 
 // BugTrackerURL is the URL of our bug tracker
 const BugTrackerURL = "https://github.com/ActiveState/state-tool/issues"
