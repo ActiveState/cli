@@ -146,7 +146,7 @@ func (r *Activate) run(params *ActivateParams) error {
 
 	// on --replace, replace namespace and commit id in as.yaml
 	if params.ReplaceWith.IsValid() {
-		if err := updateProjectFile(proj, params.ReplaceWith); err != nil {
+		if err := updateProjectFile(proj, params.ReplaceWith, params.Branch); err != nil {
 			return locale.WrapError(err, "err_activate_replace_write", "Could not update the project file with a new namespace.")
 		}
 	}
@@ -238,10 +238,15 @@ func (r *Activate) run(params *ActivateParams) error {
 	return nil
 }
 
-func updateProjectFile(prj *project.Project, names *project.Namespaced) error {
+func updateProjectFile(prj *project.Project, names *project.Namespaced, providedBranch string) error {
+	branch := providedBranch
+	if branch == "" {
+		branch = constants.DefaultBranchName
+	}
+
 	var commitID string
 	if names.CommitID == nil || *names.CommitID == "" {
-		latestID, err := model.BranchCommitID(names.Owner, names.Project, prj.BranchName())
+		latestID, err := model.BranchCommitID(names.Owner, names.Project, branch)
 		if err != nil {
 			return locale.WrapInputError(err, "err_set_namespace_retrieve_commit", "Could not retrieve the latest commit for the specified project {{.V0}}.", names.String())
 		}
@@ -250,13 +255,14 @@ func updateProjectFile(prj *project.Project, names *project.Namespaced) error {
 		commitID = names.CommitID.String()
 	}
 
-	err := prj.Source().SetNamespace(names.Owner, names.Project)
-	if err != nil {
+	if err := prj.Source().SetNamespace(names.Owner, names.Project); err != nil {
 		return locale.WrapError(err, "err_activate_replace_write_namespace", "Failed to update project namespace.")
 	}
-	err = prj.Source().SetCommit(commitID, prj.IsHeadless())
-	if err != nil {
+	if err := prj.Source().SetCommit(commitID, prj.IsHeadless()); err != nil {
 		return locale.WrapError(err, "err_activate_replace_write_commit", "Failed to update commitID.")
+	}
+	if err := prj.Source().SetBranch(branch); err != nil {
+		return locale.WrapError(err, "err_activate_replace_write_branch", "Failed to update Branch.")
 	}
 
 	return nil
