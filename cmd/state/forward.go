@@ -1,7 +1,9 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 
@@ -62,8 +64,10 @@ func forwardFn(bindir string, args []string, out output.Outputer, pj *project.Pr
 			if code == 0 {
 				code = 1
 			}
-			out.Error(locale.T("forward_fail"))
-			return code, err
+			if errs.Matches(err, &exec.ExitError{}) {
+				err = &SilencedError{err}
+			}
+			return code, locale.WrapError(err, "forward_fail")
 		}
 		if code > 0 {
 			return code, locale.NewError("err_forward", "Error occurred while running older version of the state tool, you may want to 'state update'.")
@@ -125,7 +129,7 @@ func ensureForwardExists(binary string, versionInfo *projectfile.VersionInfo, ou
 		DesiredVersion: desiredVersion,
 	}
 
-	info, err := up.Info()
+	info, err := up.Info(context.Background())
 	if err != nil {
 		return errs.Wrap(err, "Info failed")
 	}

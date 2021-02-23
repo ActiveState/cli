@@ -2,6 +2,8 @@ package errs_test
 
 import (
 	"errors"
+	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -51,6 +53,68 @@ func TestErrs(t *testing.T) {
 			}
 			if joinmessage := errs.Join(tt.err, ","); joinmessage.Error() != tt.wantJoinMessage {
 				t.Errorf("JoinMessage did not match, want: %s, got: %s", tt.wantJoinMessage, joinmessage.Error())
+			}
+		})
+	}
+}
+
+type standardError struct{ error }
+
+func TestMatches(t *testing.T) {
+	type args struct {
+		err    error
+		target interface{}
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			"Simple match",
+			args{
+				&standardError{errors.New("error")},
+				&standardError{},
+			},
+			true,
+		},
+		{
+			"Simple miss-match",
+			args{
+				errors.New("error"),
+				&standardError{},
+			},
+			false,
+		},
+		{
+			"Wrapped match",
+			args{
+				errs.Wrap(&standardError{errors.New("error")}, "Wrapped"),
+				&standardError{},
+			},
+			true,
+		},
+		{
+			"exec.ExitError", // this one has proved troublesome
+			args{
+				&exec.ExitError{&os.ProcessState{}, []byte("")},
+				&exec.ExitError{},
+			},
+			true,
+		},
+		{
+			"wrapped exec.ExitError",
+			args{
+				errs.Wrap(&exec.ExitError{&os.ProcessState{}, []byte("")}, "wrapped"),
+				&exec.ExitError{},
+			},
+			true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := errs.Matches(tt.args.err, tt.args.target); got != tt.want {
+				t.Errorf("Matches() = %v, want %v", got, tt.want)
 			}
 		})
 	}
