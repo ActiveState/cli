@@ -26,6 +26,8 @@ workflow.
   headless projects) ([PR #1198](https://github.com/ActiveState/cli/pull/1198))
 - You can now switch between update channels
   via `state update --set-channel` ([PR #1190](https://github.com/ActiveState/cli/pull/1190))
+- State tool will now provide instructions on how to get out of a detached
+  state ([PR #1249](https://github.com/ActiveState/cli/pull/1249))
 - State tool now supports branches via flags in `state activate` and
   the `state branch` subcommand. See `state branch --help` for more information.
 
