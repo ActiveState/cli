@@ -1,44 +1,65 @@
 package model
 
 import (
-	"context"
+	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime2/build"
-	"github.com/go-openapi/strfmt"
 )
 
 // var _ runtime.ClientProvider = &Default{}
 
-// Default is the default client that actually talks to the backend
-type Default struct{}
+// Model is the default client that actually talks to the backend
+type Model struct{}
 
-// NewDefault is the constructor for the Default client
-func NewDefault() *Default {
-	return &Default{}
+// NewDefault is the constructor for the Model client
+func NewDefault() *Model {
+	return &Model{}
 }
 
-func (d *Default) FetchCheckpointForCommit(commitID strfmt.UUID) (model.Checkpoint, strfmt.DateTime, error) {
+func (m *Model) FetchCheckpointForCommit(commitID strfmt.UUID) (model.Checkpoint, strfmt.DateTime, error) {
 	return model.FetchCheckpointForCommit(commitID)
 }
 
-func (d *Default) ResolveRecipe(commitID strfmt.UUID, owner, projectName string) (*inventory_models.Recipe, error) {
+func (m *Model) ResolveRecipe(commitID strfmt.UUID, owner, projectName string) (*inventory_models.Recipe, error) {
 	return model.ResolveRecipe(commitID, owner, projectName)
 }
 
-func (d *Default) RequestBuild(recipeID, commitID strfmt.UUID, owner, project string) (headchef.BuildStatusEnum, *headchef_models.BuildStatusResponse, error) {
+func (m *Model) RequestBuild(recipeID, commitID strfmt.UUID, owner, project string) (headchef.BuildStatusEnum, *headchef_models.BuildStatusResponse, error) {
 	return model.RequestBuild(recipeID, commitID, owner, project)
 }
 
-func (d *Default) BuildLog(ctx context.Context, artifactMap map[build.ArtifactID]build.Artifact, msgHandler build.BuildLogMessageHandler, recipeID strfmt.UUID) (*build.BuildLog, error) {
-	conn, err := model.ConnectToBuildLogStreamer(ctx)
+// BuildResult is the unified response of a Build request
+type BuildResult struct {
+	BuildEngine         BuildEngine
+	Recipe              *inventory_models.Recipe
+	BuildStatusResponse *headchef_models.BuildStatusResponse
+	BuildStatus         headchef.BuildStatusEnum
+	BuildReady          bool
+}
+
+// FetchBuildResult requests a build for a resolved recipe and returns the result in a BuildResult struct
+func (m *Model) FetchBuildResult(commitID strfmt.UUID, owner, project string) (*BuildResult, error) {
+	recipe, err := m.ResolveRecipe(commitID, owner, project)
 	if err != nil {
-		return nil, errs.Wrap(err, "Could not get build updates")
+		return nil, locale.WrapError(err, "setup_build_resolve_recipe_err", "Could not resolve recipe for project %s/%s#%s", owner, project, commitID.String())
 	}
 
-	return build.NewBuildLog(artifactMap, conn, msgHandler, recipeID)
+	bse, resp, err := m.RequestBuild(*recipe.RecipeID, commitID, owner, project)
+	if err != nil {
+		return nil, locale.WrapError(err, "headchef_build_err", "Could not request build for %s/%s#%s", owner, project, commitID.String())
+	}
+
+	engine := buildEngineFromResponse(resp)
+
+	return &BuildResult{
+		BuildEngine:         engine,
+		Recipe:              recipe,
+		BuildStatusResponse: resp,
+		BuildStatus:         bse,
+		BuildReady:          engine == Alternative && bse == headchef.Completed,
+	}, nil
 }

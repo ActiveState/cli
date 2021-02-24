@@ -1,4 +1,4 @@
-package runtime
+package setup
 
 import (
 	"context"
@@ -7,20 +7,20 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ActiveState/cli/internal/constants"
+	"github.com/go-openapi/strfmt"
+	"github.com/stretchr/testify/require"
+
 	"github.com/ActiveState/cli/pkg/platform/api/headchef"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
-	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime2/build"
-	"github.com/ActiveState/cli/pkg/platform/runtime2/testhelper"
-	"github.com/go-openapi/strfmt"
-	"github.com/stretchr/testify/require"
+	monomodel "github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime2/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime2/setup/buildlog"
 )
 
 // readReadyChannel is helper function that returns how many artifactIDs have been orchestrated
 // This is used TestOrchestrateSetup
-func readReadyChannel(called <-chan build.ArtifactID) int {
+func readReadyChannel(called <-chan model.ArtifactID) int {
 	numCalled := 0
 	for {
 		select {
@@ -35,12 +35,12 @@ func readReadyChannel(called <-chan build.ArtifactID) int {
 func TestOrchestrateSetup(t *testing.T) {
 	tests := []struct {
 		Name        string
-		Callback    func(chan<- build.ArtifactID, build.ArtifactDownload) error
+		Callback    func(chan<- model.ArtifactID, model.ArtifactDownload) error
 		ExpectError bool
 	}{
 		{
 			"without errors",
-			func(called chan<- build.ArtifactID, a build.ArtifactDownload) error {
+			func(called chan<- model.ArtifactID, a model.ArtifactDownload) error {
 				called <- a.ArtifactID
 				return nil
 			},
@@ -48,7 +48,7 @@ func TestOrchestrateSetup(t *testing.T) {
 		},
 		{
 			"with timeouts",
-			func(called chan<- build.ArtifactID, a build.ArtifactDownload) error {
+			func(called chan<- model.ArtifactID, a model.ArtifactDownload) error {
 				// wait a second to ensure that waiting for tasks to finish works
 				time.Sleep(time.Millisecond * 100)
 				called <- a.ArtifactID
@@ -58,7 +58,7 @@ func TestOrchestrateSetup(t *testing.T) {
 		},
 		{
 			"with one error",
-			func(called chan<- build.ArtifactID, a build.ArtifactDownload) error {
+			func(called chan<- model.ArtifactID, a model.ArtifactDownload) error {
 				if a.ArtifactID == "00000000-0000-0000-0000-000000000003" {
 					return errors.New("dummy error")
 				}
@@ -69,7 +69,7 @@ func TestOrchestrateSetup(t *testing.T) {
 		},
 		{
 			"with several errors",
-			func(called chan<- build.ArtifactID, a build.ArtifactDownload) error {
+			func(called chan<- model.ArtifactID, a model.ArtifactDownload) error {
 				return errors.New("dummy error")
 			},
 			true,
@@ -80,18 +80,18 @@ func TestOrchestrateSetup(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
-			ch := make(chan build.ArtifactDownload)
+			ch := make(chan model.ArtifactDownload)
 			go func() {
 				defer close(ch)
 				for i := 0; i < numArtifacts; i++ {
-					artID := build.ArtifactID(fmt.Sprintf("00000000-0000-0000-0000-00000000000%d", i))
-					ad := build.ArtifactDownload{ArtifactID: artID, DownloadURI: fmt.Sprintf("uri:/artifact%d", i)}
+					artID := model.ArtifactID(fmt.Sprintf("00000000-0000-0000-0000-00000000000%d", i))
+					ad := model.ArtifactDownload{ArtifactID: artID, DownloadURI: fmt.Sprintf("uri:/artifact%d", i)}
 					ch <- ad
 				}
 			}()
-			called := make(chan build.ArtifactID, numArtifacts)
+			called := make(chan model.ArtifactID, numArtifacts)
 			defer close(called)
-			err := orchestrateArtifactSetup(context.Background(), ch, func(a build.ArtifactDownload) error {
+			err := orchestrateArtifactSetup(context.Background(), ch, func(a model.ArtifactDownload) error {
 				return tt.Callback(called, a)
 			})
 			if tt.ExpectError == (err == nil) {
@@ -107,11 +107,11 @@ func TestOrchestrateSetup(t *testing.T) {
 	}
 
 	t.Run("queue is closed", func(t *testing.T) {
-		ch := make(chan build.ArtifactDownload)
+		ch := make(chan model.ArtifactDownload)
 		close(ch)
-		called := make(chan build.ArtifactID, numArtifacts)
+		called := make(chan model.ArtifactID, numArtifacts)
 		defer close(called)
-		err := orchestrateArtifactSetup(context.Background(), ch, func(a build.ArtifactDownload) error {
+		err := orchestrateArtifactSetup(context.Background(), ch, func(a model.ArtifactDownload) error {
 			called <- a.ArtifactID
 			return nil
 		})
@@ -125,13 +125,13 @@ func TestOrchestrateSetup(t *testing.T) {
 	})
 
 	t.Run("context is canceled", func(t *testing.T) {
-		ch := make(chan build.ArtifactDownload)
+		ch := make(chan model.ArtifactDownload)
 		defer close(ch)
-		called := make(chan build.ArtifactID, numArtifacts)
+		called := make(chan model.ArtifactID, numArtifacts)
 		defer close(called)
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()
-		err := orchestrateArtifactSetup(ctx, ch, func(a build.ArtifactDownload) error {
+		err := orchestrateArtifactSetup(ctx, ch, func(a model.ArtifactDownload) error {
 			called <- a.ArtifactID
 			return nil
 		})
@@ -146,22 +146,50 @@ func TestOrchestrateSetup(t *testing.T) {
 
 }
 
+func TestArtifactScheduler(t *testing.T) {
+	var dummyArtifacts []model.ArtifactDownload
+	numArtifacts := 5
+	for i := 0; i < numArtifacts; i++ {
+		artID := model.ArtifactID(fmt.Sprintf("00000000-0000-0000-0000-00000000000%d", i))
+		dummyArtifacts = append(dummyArtifacts, model.ArtifactDownload{ArtifactID: artID, DownloadURI: fmt.Sprintf("uri:/artifact%d", i)})
+	}
+
+	t.Run("read all artifacts", func(t *testing.T) {
+		sched := newArtifactScheduler(context.Background(), dummyArtifacts)
+		go func() {
+			for i := 0; i < numArtifacts; i++ {
+				<-sched.BuiltArtifactsChannel()
+			}
+		}()
+		err := sched.Wait()
+		require.NoError(t, err)
+	})
+
+	t.Run("cancel context", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+		sched := newArtifactScheduler(ctx, dummyArtifacts)
+		err := sched.Wait()
+		require.EqualError(t, err, context.Canceled.Error())
+	})
+}
+
 func TestChangeSummaryArgs(t *testing.T) {
 	// TODO: This function should compute the change summary arguments that supports
 	// our message handler function to print out a summary of changes relative to the
-	// installed build.
+	// installed model.
 	// My suggestion is to implement the message handler function first to understand
 	// the requirements for this function better.
 }
 
 type mockModel struct {
-	CheckPointResponse      model.Checkpoint
+	CheckPointResponse      monomodel.Checkpoint
 	RecipeResponse          *inventory_models.Recipe
 	BuildStatusEnumResponse headchef.BuildStatusEnum
 	BuildStatusResponse     *headchef_models.BuildStatusResponse
 }
 
-func (mm *mockModel) FetchCheckpointForCommit(commitID strfmt.UUID) (model.Checkpoint, strfmt.DateTime, error) {
+func (mm *mockModel) FetchCheckpointForCommit(commitID strfmt.UUID) (monomodel.Checkpoint, strfmt.DateTime, error) {
 	return mm.CheckPointResponse, strfmt.NewDateTime(), nil
 }
 
@@ -173,33 +201,12 @@ func (mm *mockModel) RequestBuild(recipeID, commitID strfmt.UUID, owner, project
 	return mm.BuildStatusEnumResponse, mm.BuildStatusResponse, nil
 }
 
-func (mm *mockModel) BuildLog(ctx context.Context, artifactMap map[build.ArtifactID]build.Artifact, msgHandler build.BuildLogMessageHandler, recipeID strfmt.UUID) (*build.BuildLog, error) {
+func (mm *mockModel) BuildLog(ctx context.Context, artifactMap map[model.ArtifactID]model.Artifact, msgHandler buildlog.BuildLogMessageHandler, recipeID strfmt.UUID) (*buildlog.BuildLog, error) {
 	return nil, nil
 }
 
-func TestValidateCheckpoint(t *testing.T) {
-	t.Run("no commit", func(t *testing.T) {
-		mm := &mockModel{}
-		s := NewSetupWithAPI(nil, nil, nil, mm)
-		err := s.ValidateCheckpoint("")
-		require.Error(t, err)
-	})
-	t.Run("valid commit", func(t *testing.T) {
-		mm := &mockModel{CheckPointResponse: testhelper.LoadCheckpoint(t, "perl-order")}
-		s := NewSetupWithAPI(nil, nil, nil, mm)
-		err := s.ValidateCheckpoint(strfmt.UUID(constants.ValidZeroUUID))
-		require.NoError(t, err)
-	})
-	t.Run("preplatform order commit", func(t *testing.T) {
-		mm := &mockModel{CheckPointResponse: testhelper.LoadCheckpoint(t, "pre-platform-order")}
-		s := NewSetupWithAPI(nil, nil, nil, mm)
-		err := s.ValidateCheckpoint(strfmt.UUID(constants.ValidZeroUUID))
-		require.Error(t, err)
-	})
-}
-
 func TestFetchBuildResult(t *testing.T) {
-	mock := &mockModel{}
-	/*s :=*/ NewSetupWithAPI(nil, nil, nil, mock)
+	// mock := &mockModel{}
+	// /*s :=*/ NewWithModel(nil, nil, nil, mock)
 	// s.FetchBuildResult("123", "owner", "project")
 }

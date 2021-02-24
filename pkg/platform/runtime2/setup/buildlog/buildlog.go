@@ -1,10 +1,12 @@
-package build
+package buildlog
 
 import (
+	"github.com/go-openapi/strfmt"
+
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/go-openapi/strfmt"
+	"github.com/ActiveState/cli/pkg/platform/runtime2/model"
 )
 
 type message struct {
@@ -46,21 +48,21 @@ type BuildLogMessageHandler interface {
 
 // BuildLog is an implementation of a build log
 type BuildLog struct {
-	ch    chan ArtifactDownload
+	ch    chan model.ArtifactDownload
 	errCh chan error
 	conn  BuildLogConnector
 }
 
-// NewBuildLog creates a new instance that allows us to wait for incoming build log information
+// New creates a new instance that allows us to wait for incoming build log information
 // TODO: Decide if we maybe want a fail-fast option where we return on the first artifact_failed message
-func NewBuildLog(artifactMap map[ArtifactID]Artifact, conn BuildLogConnector, messageHandler BuildLogMessageHandler, recipeID strfmt.UUID) (*BuildLog, error) {
+func New(artifactMap map[model.ArtifactID]model.Artifact, conn BuildLogConnector, messageHandler BuildLogMessageHandler, recipeID strfmt.UUID) (*BuildLog, error) {
 	logging.Debug("sending websocket request")
 	request := logRequest{RecipeID: recipeID.String()}
 	if err := conn.WriteJSON(request); err != nil {
 		return nil, errs.Wrap(err, "Could not write websocket request")
 	}
 
-	ch := make(chan ArtifactDownload)
+	ch := make(chan model.ArtifactDownload)
 	errCh := make(chan error)
 
 	total := len(artifactMap)
@@ -81,7 +83,7 @@ func NewBuildLog(artifactMap map[ArtifactID]Artifact, conn BuildLogConnector, me
 			}
 			logging.Debug("Received response: " + msg.Type)
 
-			var artifact Artifact
+			var artifact model.Artifact
 			var artifactMapped bool
 			if msg.ArtifactID != nil {
 				artifact, artifactMapped = artifactMap[*msg.ArtifactID]
@@ -126,7 +128,7 @@ func NewBuildLog(artifactMap map[ArtifactID]Artifact, conn BuildLogConnector, me
 					errCh <- errs.New("artifact_succeeded message was incomplete")
 					return
 				}
-				ch <- ArtifactDownload{ArtifactID: *msg.ArtifactID, DownloadURI: *msg.ArtifactURI, Checksum: *msg.ArtifactChecksum}
+				ch <- artifact.ArtifactDownload{ArtifactID: *msg.ArtifactID, DownloadURI: *msg.ArtifactURI, Checksum: *msg.ArtifactChecksum}
 			case "artifact_failed":
 				artifactErr = locale.WrapError(artifactErr, "err_artifact_failed", "Failed to build \"{{.V0}}\", error reported: {{.V1}}.", artifactName, msg.Err())
 				messageHandler.ArtifactBuildFailed(artifactName, msg.Err())
@@ -158,6 +160,6 @@ func (bl *BuildLog) Wait() error {
 }
 
 // BuiltArtifactsChannel returns the channel to listen for downloadable artifacts on
-func (bl *BuildLog) BuiltArtifactsChannel() <-chan ArtifactDownload {
+func (bl *BuildLog) BuiltArtifactsChannel() <-chan model.ArtifactDownload {
 	return bl.ch
 }

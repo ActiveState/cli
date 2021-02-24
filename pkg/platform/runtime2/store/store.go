@@ -1,9 +1,11 @@
-package runtime
+package store
 
 import (
 	"encoding/json"
 	"path/filepath"
 	"strings"
+
+	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -12,24 +14,24 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
-	"github.com/ActiveState/cli/pkg/platform/runtime2/build"
-	"github.com/go-openapi/strfmt"
+	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
+	"github.com/ActiveState/cli/pkg/platform/runtime2/model"
 )
 
-// Store manages the storing and loading of persistable information about the runtime
+// store manages the storing and loading of persistable information about the runtime
 type Store struct {
 	cachePath   string
 	installPath string
 }
 
-// NewStore returns a new store instance
-func NewStore(projectDir, cachePath string) (*Store, error) {
+// newStore returns a new store instance
+func New(projectDir, cachePath string) (*Store, error) {
 	projectDir = strings.TrimSuffix(projectDir, constants.ConfigFileName)
 	resolvedProjectDir, err := fileutils.ResolveUniquePath(projectDir)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_new_runtime_unique_path", "Failed to resolve a unique file path to the project dir.")
 	}
-	logging.Debug("In NewStore: resolved project dir is: %s", resolvedProjectDir)
+	logging.Debug("In newStore: resolved project dir is: %s", resolvedProjectDir)
 
 	installPath := filepath.Join(cachePath, hash.ShortHash(resolvedProjectDir))
 	return &Store{
@@ -50,8 +52,8 @@ func (s *Store) recipeFile() string {
 	return filepath.Join(s.installPath, constants.RuntimeRecipeStore)
 }
 
-// HasCompleteInstallation checks if stored runtime is complete and can be loaded
-func (s *Store) HasCompleteInstallation(commitID strfmt.UUID) bool {
+// MatchesCommit checks if stored runtime is complete and can be loaded
+func (s *Store) MatchesCommit(commitID strfmt.UUID) bool {
 	marker := s.markerFile()
 	if !fileutils.FileExists(marker) {
 		logging.Debug("Marker does not exist: %s", marker)
@@ -84,19 +86,19 @@ func (s *Store) MarkInstallationComplete(commitID strfmt.UUID) error {
 }
 
 // BuildEngine returns the runtime build engine value stored in the runtime directory
-func (s *Store) BuildEngine() (build.BuildEngine, error) {
+func (s *Store) BuildEngine() (model.BuildEngine, error) {
 	storeFile := s.buildEngineFile()
 
 	data, err := fileutils.ReadFile(storeFile)
 	if err != nil {
-		return build.UnknownEngine, errs.Wrap(err, "Could not read build engine cache store.")
+		return model.UnknownEngine, errs.Wrap(err, "Could not read build engine cache store.")
 	}
 
-	return build.ParseBuildEngine(string(data)), nil
+	return model.ParseBuildEngine(string(data)), nil
 }
 
 // StoreBuildEngine stores the build engine value in the runtime directory
-func (s *Store) StoreBuildEngine(buildEngine build.BuildEngine) error {
+func (s *Store) StoreBuildEngine(buildEngine model.BuildEngine) error {
 	storeFile := s.buildEngineFile()
 	storeDir := filepath.Dir(storeFile)
 	logging.Debug("Storing build engine %s at %s", buildEngine.String(), storeFile)
@@ -137,6 +139,19 @@ func (s *Store) StoreRecipe(recipe *inventory_models.Recipe) error {
 		return errs.Wrap(err, "Could not write recipe file.")
 	}
 	return nil
+}
+
+func (s *Store) Environ(inherit bool) (map[string]string, error) {
+	mergedRuntimeDefinitionFile := filepath.Join(s.installPath, constants.RuntimeDefinitionFilename)
+	envDef, err := envdef.NewEnvironmentDefinition(mergedRuntimeDefinitionFile)
+	if err != nil {
+		return nil, locale.WrapError(
+			err, "err_no_environment_definition",
+			"Your installation seems corrupted.\nPlease try to re-run this command, as it may fix the problem.  If the problem persists, please report it in our forum: {{.V0}}",
+			constants.ForumsURL,
+		)
+	}
+	return envDef.GetEnv(inherit), nil
 }
 
 // InstallPath returns the installation path of the runtime
