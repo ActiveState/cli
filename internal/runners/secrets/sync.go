@@ -4,6 +4,7 @@ import (
 	"strconv"
 
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -21,6 +22,7 @@ import (
 type syncPrimeable interface {
 	primer.Projecter
 	primer.Outputer
+	primer.Configurer
 }
 
 // Sync manages the synchronization execution context.
@@ -28,6 +30,7 @@ type Sync struct {
 	secretsClient *secretsapi.Client
 	proj          *project.Project
 	out           output.Outputer
+	cfg           keypairs.Configurable
 }
 
 // NewSync prepares a sync execution context for use.
@@ -36,6 +39,7 @@ func NewSync(client *secretsapi.Client, p syncPrimeable) *Sync {
 		secretsClient: client,
 		proj:          p.Project(),
 		out:           p.Output(),
+		cfg:           p.Config(),
 	}
 }
 
@@ -50,7 +54,7 @@ func (s *Sync) Run() error {
 		return locale.WrapError(err, "secrets_err_fetch_org", "Cannot fetch org")
 	}
 
-	updatedCount, err := synchronizeEachOrgMember(s.secretsClient, org)
+	updatedCount, err := synchronizeEachOrgMember(s.secretsClient, org, s.cfg)
 	if err != nil {
 		return locale.WrapError(err, "secrets_err_sync", "Cannot synchronize secrets")
 	}
@@ -60,8 +64,8 @@ func (s *Sync) Run() error {
 	return nil
 }
 
-func synchronizeEachOrgMember(secretsClient *secretsapi.Client, org *mono_models.Organization) (count int, f error) {
-	sourceKeypair, err := secrets.LoadKeypairFromConfigDir()
+func synchronizeEachOrgMember(secretsClient *secretsapi.Client, org *mono_models.Organization, cfg keypairs.Configurable) (count int, f error) {
+	sourceKeypair, err := secrets.LoadKeypairFromConfigDir(cfg)
 	if err != nil {
 		return 0, err
 	}

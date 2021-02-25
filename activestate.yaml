@@ -1,4 +1,4 @@
-project: https://platform.activestate.com/ActiveState/cli?commitID=0ba549cb-e0af-4334-8d47-dcd245956ad2
+project: https://platform.activestate.com/ActiveState/cli?branch=main&commitID=96e72fc8-c86d-4f86-b8c7-6fcb393f3941
 constants:
   - name: CLI_BUILDFLAGS
     value: -ldflags="-s -w"
@@ -139,6 +139,15 @@ scripts:
     description: "Runs a remote debugger, that can be hooked into from your IDE, example usage: `state run debug activate` (will debug `state activate`)"
     standalone: true
     value: dlv debug --headless --listen=:2346 --api-version=2 github.com/ActiveState/cli/cmd/state -- $@
+  - name: story-cleanup
+    language: bash
+    description: "Runs Python script to move old stories from primary project to storage project"
+    value: |
+      export PT_API_TOKEN=$secrets.project.PT_API_TOKEN
+      export PT_PROJID_PRIMARY=$secrets.project.PT_PROJID_PRIMARY
+      export PT_PROJID_STORAGE=$secrets.project.PT_PROJID_STORAGE
+      export PT_DAYS_AGED=190 # set this value to control cleanup
+      python3 ./scripts/story-cleanup/story-cleanup.py
 events:
   - name: activate
     if: ne .Shell "cmd"

@@ -19,6 +19,9 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils"
 )
 
+// datadir is the base directory at which the log is saved
+var datadir string
+
 // Logger describes a logging function, like Debug, Error, Warning, etc.
 type Logger func(msg string, args ...interface{})
 
@@ -66,17 +69,16 @@ func FileNameFor(pid int) string {
 }
 
 func FilePath() string {
-	return filepath.Join(config.ConfigPath(), FileName())
+	return filepath.Join(datadir, FileName())
 }
 
 func FilePathFor(filename string) string {
-	return filepath.Join(config.ConfigPath(), filename)
+	return filepath.Join(datadir, filename)
 }
 
 const FileNameSuffix = ".log"
 
 func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interface{}) error {
-	datadir := config.ConfigPath()
 	filename := filepath.Join(datadir, FileName())
 
 	// only log to rollbar when on release, beta or unstable branch and when built via CI (ie., non-local build)
@@ -132,8 +134,17 @@ func init() {
 	handler := &fileHandler{DefaultFormatter, nil, safeBool{}}
 	SetHandler(handler)
 
+	cfg, err := config.Get()
+	if err != nil {
+		Error("Could not load configuration: %v", err)
+	}
+	if cfg == nil {
+		Error("Could not proceed setting up logging due to missing configuration.")
+		return
+	}
+
 	// Clean up old log files
-	datadir := config.ConfigPath()
+	datadir = cfg.ConfigPath()
 	files, err := ioutil.ReadDir(datadir)
 	if err != nil {
 		Error("Could not scan config dir to clean up stale logs: %v", err)

@@ -6,7 +6,7 @@ import (
 )
 
 // Logout will clear any stored credentials
-func Logout() {
+func Logout(cfg keypairs.Configurable) {
 	authentication.Logout()
-	keypairs.DeleteWithDefaults()
+	keypairs.DeleteWithDefaults(cfg)
 }

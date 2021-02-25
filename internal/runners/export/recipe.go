@@ -8,6 +8,7 @@ import (
 
 	"github.com/ActiveState/sysinfo"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -17,10 +18,11 @@ import (
 
 type Recipe struct {
 	output.Outputer
+	*project.Project
 }
 
 func NewRecipe(prime primeable) *Recipe {
-	return &Recipe{prime.Output()}
+	return &Recipe{prime.Output(), prime.Project()}
 }
 
 type RecipeParams struct {
@@ -33,9 +35,7 @@ type RecipeParams struct {
 func (r *Recipe) Run(params *RecipeParams) error {
 	logging.Debug("Execute")
 
-	proj := project.Get()
-
-	data, err := recipeData(proj, params.CommitID, params.Platform)
+	data, err := recipeData(r.Project, params.CommitID, params.Platform)
 	if err != nil {
 		return err
 	}
@@ -78,20 +78,22 @@ func fetchRecipe(proj *project.Project, commitID strfmt.UUID, platform string) (
 		platform = sysinfo.OS().String()
 	}
 
-	if commitID == "" {
-		pj, err := model.FetchProjectByName(proj.Owner(), proj.Name())
-		if err != nil {
-			return "", err
-		}
+	if proj == nil {
+		return "", locale.NewInputError("err_no_project")
+	}
 
-		branch, err := model.DefaultBranchForProject(pj)
+	if commitID == "" {
+		commitID = proj.CommitUUID()
+	}
+	if commitID == "" {
+		dcommitID, err := model.BranchCommitID(proj.Owner(), proj.Name(), proj.BranchName())
 		if err != nil {
-			return "", err
+			return "", errs.Wrap(err, "Could not get branch commit ID")
 		}
-		if branch.CommitID == nil {
-			return "", locale.NewError("NoCommit")
+		if dcommitID == nil {
+			return "", locale.NewInputError("err_branch_no_commit", "Branch has not commit associated with it")
 		}
-		commitID = *branch.CommitID
+		commitID = *dcommitID
 	}
 
 	return model.FetchRawRecipeForCommitAndPlatform(commitID, proj.Owner(), proj.Name(), platform)

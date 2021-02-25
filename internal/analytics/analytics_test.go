@@ -3,14 +3,19 @@ package analytics
 import (
 	"reflect"
 	"testing"
-)
 
+	"github.com/ActiveState/cli/internal/config"
+	"github.com/stretchr/testify/require"
+)
 
 func Test_sendEvent(t *testing.T) {
 	deferValue := deferAnalytics
 	defer func() {
 		deferAnalytics = deferValue
 	}()
+
+	cfg, err := config.Get()
+	require.NoError(t, err)
 
 	tests := []struct {
 		name       string
@@ -37,7 +42,7 @@ func Test_sendEvent(t *testing.T) {
 			if err := sendEvent(tt.values[0], tt.values[1], tt.values[2], map[string]string{}); err != nil {
 				t.Errorf("sendEvent() error = %v", err)
 			}
-			got, _ := loadDeferred()
+			got, _ := loadDeferred(cfg)
 			gotSlice := []string{}
 			if len(got) > 0 {
 				gotSlice = []string{got[0].Category, got[0].Action, got[0].Label}
@@ -47,7 +52,7 @@ func Test_sendEvent(t *testing.T) {
 			}
 			if len(got) > 0 {
 				called := false
-				sendDeferred(func(category string, action string, label string, _ map[string]string) error {
+				sendDeferred(cfg, func(category string, action string, label string, _ map[string]string) error {
 					called = true
 					gotSlice := []string{category, action, label}
 					if !reflect.DeepEqual(gotSlice, tt.want) {
@@ -58,12 +63,12 @@ func Test_sendEvent(t *testing.T) {
 				if !called {
 					t.Errorf("sendDeferred not called")
 				}
-				got, _ = loadDeferred()
+				got, _ = loadDeferred(cfg)
 				if len(got) > 0 {
 					t.Errorf("Deferred events not cleared after sending, got: %v", got)
 				}
 			}
-			saveDeferred([]deferredData{}) // Ensure cleanup
+			saveDeferred(cfg, []deferredData{}) // Ensure cleanup
 		})
 	}
 }

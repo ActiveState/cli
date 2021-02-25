@@ -9,12 +9,14 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/pkg/cmdlets/auth"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/reqsimport"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/go-openapi/strfmt"
 )
 
 const (
@@ -23,7 +25,7 @@ const (
 
 // Confirmer describes the behavior required to prompt a user for confirmation.
 type Confirmer interface {
-	Confirm(title, msg string, defaultOpt bool) (bool, error)
+	Confirm(title, msg string, defaultOpt *bool) (bool, error)
 }
 
 // ChangesetProvider describes the behavior required to convert some file data
@@ -52,6 +54,7 @@ type Import struct {
 	out output.Outputer
 	prompt.Prompter
 	proj *project.Project
+	cfg  configurable
 }
 
 type primeable interface {
@@ -59,6 +62,7 @@ type primeable interface {
 	primer.Prompter
 	primer.Projecter
 	primer.Auther
+	primer.Configurer
 }
 
 // NewImport prepares an importation execution context for use.
@@ -67,6 +71,7 @@ func NewImport(prime primeable) *Import {
 		prime.Output(),
 		prime.Prompt(),
 		prime.Project(),
+		prime.Config(),
 	}
 }
 
@@ -80,7 +85,8 @@ func (i *Import) Run(params ImportRunParams) error {
 
 	isHeadless := i.proj.IsHeadless()
 	if !isHeadless && !authentication.Get().Authenticated() {
-		anonymousOk, err := i.Confirm(locale.Tl("continue_anon", "Continue Anonymously?"), locale.T("prompt_headless_anonymous"), true)
+		anonConfirmDefault := true
+		anonymousOk, err := i.Confirm(locale.Tl("continue_anon", "Continue Anonymously?"), locale.T("prompt_headless_anonymous"), &anonConfirmDefault)
 		if err != nil {
 			return locale.WrapInputError(err, "Authentication cancelled.")
 		}
@@ -88,13 +94,13 @@ func (i *Import) Run(params ImportRunParams) error {
 	}
 
 	if !isHeadless {
-		err := auth.RequireAuthentication(locale.T("auth_required_activate"), i.out, i.Prompter)
+		err := auth.RequireAuthentication(locale.T("auth_required_activate"), i.cfg, i.out, i.Prompter)
 		if err != nil {
 			return locale.WrapError(err, "err_activate_auth_required")
 		}
 	}
 
-	latestCommit, err := model.LatestCommitID(i.proj.Owner(), i.proj.Name())
+	latestCommit, err := model.BranchCommitID(i.proj.Owner(), i.proj.Name(), i.proj.BranchName())
 	if err != nil {
 		return locale.WrapError(err, "package_err_cannot_obtain_commit")
 	}
@@ -124,20 +130,19 @@ func (i *Import) Run(params ImportRunParams) error {
 	}
 
 	msg := locale.T("commit_reqstext_message")
-	err = commitChangeset(i.proj, msg, isHeadless, changeset)
+	commitID, err := commitChangeset(i.proj, msg, isHeadless, changeset)
 	if err != nil {
 		return locale.WrapError(err, "err_commit_changeset", "Could not commit import changes")
 	}
-	i.out.Notice(locale.T("update_config"))
 
-	return nil
+	return runbits.RefreshRuntime(i.out, nil, i.proj, i.cfg.CachePath(), commitID, true)
 }
 
 func removeRequirements(conf Confirmer, project *project.Project, force, isHeadless bool, reqs model.Checkpoint) error {
 	if !force {
 		msg := locale.T("confirm_remove_existing_prompt")
 
-		confirmed, err := conf.Confirm(locale.T("confirm"), msg, false)
+		confirmed, err := conf.Confirm(locale.T("confirm"), msg, new(bool))
 		if err != nil {
 			return err
 		}
@@ -148,7 +153,8 @@ func removeRequirements(conf Confirmer, project *project.Project, force, isHeadl
 
 	removal := model.ChangesetFromRequirements(model.OperationRemoved, reqs)
 	msg := locale.T("commit_reqstext_remove_existing_message")
-	return commitChangeset(project, msg, isHeadless, removal)
+	_, err := commitChangeset(project, msg, isHeadless, removal)
+	return err
 }
 
 func fetchImportChangeset(cp ChangesetProvider, file string, lang string) (model.Changeset, error) {
@@ -165,20 +171,20 @@ func fetchImportChangeset(cp ChangesetProvider, file string, lang string) (model
 	return changeset, err
 }
 
-func commitChangeset(project *project.Project, msg string, isHeadless bool, changeset model.Changeset) error {
+func commitChangeset(project *project.Project, msg string, isHeadless bool, changeset model.Changeset) (strfmt.UUID, error) {
 	commitID, err := model.CommitChangeset(project.CommitUUID(), msg, machineid.UniqID(), changeset)
 	if err != nil {
-		return locale.WrapError(err, "err_packages_removed")
+		return "", locale.WrapError(err, "err_packages_removed")
 	}
 
 	if !isHeadless {
-		err := model.UpdateProjectBranchCommitByName(project.Owner(), project.Name(), commitID)
+		err := model.UpdateProjectBranchCommit(project, commitID)
 		if err != nil {
-			return locale.WrapError(err, "err_import_update_branch", "Failed to update branch with new commit ID")
+			return "", locale.WrapError(err, "err_import_update_branch", "Failed to update branch with new commit ID")
 		}
 	}
 	if err := project.Source().SetCommit(commitID.String(), isHeadless); err != nil {
-		return locale.WrapError(err, "err_package_update_pjfile")
+		return "", locale.WrapError(err, "err_package_update_pjfile")
 	}
-	return nil
+	return commitID, nil
 }

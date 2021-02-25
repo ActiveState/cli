@@ -9,14 +9,14 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
-	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	graphMock "github.com/ActiveState/cli/pkg/platform/api/graphql/request/mock"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -32,6 +32,20 @@ type InternalTestSuite struct {
 	httpmock    *httpmock.HTTPMock
 	graphMock   *graphMock.Mock
 }
+
+type MessageHandlerMock struct{}
+
+func (m MessageHandlerMock) BuildStarting(totalArtifacts int)                              {}
+func (m MessageHandlerMock) BuildFinished()                                                {}
+func (m MessageHandlerMock) ArtifactBuildStarting(artifactName string)                     {}
+func (m MessageHandlerMock) ArtifactBuildCached(artifactName string)                       {}
+func (m MessageHandlerMock) ArtifactBuildCompleted(artifactName string, number, total int) {}
+func (m MessageHandlerMock) ArtifactBuildFailed(artifactName string, errorMsg string)      {}
+
+func (m MessageHandlerMock) ChangeSummary(map[strfmt.UUID][]strfmt.UUID, map[strfmt.UUID][]strfmt.UUID, map[strfmt.UUID]*inventory_models.ResolvedIngredient) {
+}
+func (m MessageHandlerMock) DownloadStarting() {}
+func (m MessageHandlerMock) InstallStarting()  {}
 
 func (suite *InternalTestSuite) BeforeTest(suiteName, testName string) {
 	suite.authMock = authMock.Init()
@@ -50,8 +64,8 @@ func (suite *InternalTestSuite) BeforeTest(suiteName, testName string) {
 	suite.downloadDir, err = ioutil.TempDir("", "cli-installer-test-download")
 	suite.Require().NoError(err)
 
-	msgHandler := runbits.NewRuntimeMessageHandler(&outputhelper.TestOutputer{})
-	r, err := NewRuntime("", "00010001-0001-0001-0001-000100010001", "string", "string", msgHandler)
+	msgHandler := MessageHandlerMock{}
+	r, err := NewRuntime("", suite.cacheDir, "00010001-0001-0001-0001-000100010001", "string", "string", msgHandler)
 	suite.Require().NoError(err)
 	r.SetInstallPath(suite.cacheDir)
 	suite.installer = NewInstaller(r)
@@ -68,8 +82,8 @@ func (suite *InternalTestSuite) AfterTest(suiteName, testName string) {
 }
 
 func (suite *InternalTestSuite) TestValidateCheckpointNoCommit() {
-	msgHandler := runbits.NewRuntimeMessageHandler(&outputhelper.TestOutputer{})
-	r, err := NewRuntime("", "", "string", "string", msgHandler)
+	msgHandler := MessageHandlerMock{}
+	r, err := NewRuntime("", suite.cacheDir, "", "string", "string", msgHandler)
 	suite.Require().NoError(err)
 	r.SetInstallPath(suite.cacheDir)
 	suite.installer = NewInstaller(r)

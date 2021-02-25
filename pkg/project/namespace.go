@@ -2,15 +2,13 @@ package project
 
 import (
 	"fmt"
-	"path/filepath"
 	"regexp"
 
 	"github.com/go-openapi/strfmt"
-	"github.com/thoas/go-funk"
 
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 // NamespaceRegex matches the org and project name in a namespace, eg. ORG/PROJECT
@@ -24,9 +22,7 @@ type Namespaced struct {
 }
 
 type ConfigAble interface {
-	Set(key string, value interface{})
-	GetString(key string) string
-	GetStringSlice(key string) []string
+	projectfile.ConfigGetter
 }
 
 func NewNamespace(owner, project, commitID string) *Namespaced {
@@ -133,16 +129,4 @@ func NameSpaceForConfig(configFile string) *Namespaced {
 	}
 
 	return &names
-}
-
-// AvailableProjectPaths returns the paths of all projects associated with the namespace
-func AvailableProjectPaths(c ConfigAble, namespace string) []string {
-	key := fmt.Sprintf("project_%s", namespace)
-	paths := c.GetStringSlice(key)
-	paths = funk.FilterString(paths, func(path string) bool {
-		return fileutils.FileExists(filepath.Join(path, constants.ConfigFileName))
-	})
-	paths = funk.UniqString(paths)
-	c.Set(key, paths)
-	return paths
 }

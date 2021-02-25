@@ -405,8 +405,6 @@ error_state_run_undefined_name:
   other: The script name must be provided
 error_state_run_unknown_name:
   other: The script '[NOTICE]{{.V0}}[/RESET]' is not defined in activestate.yaml.
-info_state_run_activating_state:
-  other: "Setting up virtual environment. To run this script outside of a virtual environment add [ACTIONABLE]`standalone: true`[/RESET] to the script in your [NOTICE]activestate.yaml[/RESET]."
 error_state_run_activate:
   other: Unable to activate a state for running the script in. Try manually running "state activate" first.
 error_state_run_standalone_conflict:
@@ -631,13 +629,15 @@ secrets_header_description:
 secrets_header_usage:
   other: Usage
 secrets_row_value_set:
-  other: Defined
+  other: "[SUCCESS]✔ Defined[/RESET]"
 secrets_row_value_unset:
-  other: Undefined
+  other: "[ERROR]× Not defined[/RESET]"
+secrets_description_unset:
+  other: "[DISABLED]Not provided.[/RESET]"
 pull_not_updated:
   other: Your activestate.yaml is already up to date!
 pull_updated:
-  other: Your activestate.yaml has been updated to the latest version available.
+  other: Your project in the activestate.yaml has been updated to {{.V0}}@{{.V1}}.
 keypair_cmd_description:
   other: Manage Your Keypair
 keypair_generate_cmd_description:
@@ -983,6 +983,8 @@ err_deprection_code:
   other: Could not check for deprecation as the service returned a code [NOTICE]{{.V0}}[/RESET]
 err_set_commit_id:
   other: "Could not update your activestate.yaml with the latest commit ID. Please ensure you have your project defined in the format of [ACTIONABLE]`project: https://platform.activestate.com/Owner/ProjectName`[/RESET]"
+err_set_project:
+  other: "Could not update the project field in your activestate.yaml. Please ensure you have your project defined in the format of [ACTIONABLE]`project: https://platform.activestate.com/Owner/ProjectName`[/RESET]"
 err_unauthorized:
   other: You are not authorized, did you provide valid login credentials?
 err_projectfile_exists:
@@ -1348,7 +1350,7 @@ auto_update_permission_err:
     To manually update, run 'state update' as a privileged user.
     If you want the state tool to auto-update, please re-install it in a user-writable directory.
 forward_version:
-  other: "Using locked state tool version: [NOTICE]{{.V0}}[/RESET]."
+  other: "Using locked state tool version: [NOTICE]{{.V0}}[/RESET].\n"
 err_project_env_file_not_exist:
   other: |
     Your activated environment appears to have been corrupted because the activestate.yaml cannot be found anymore.
@@ -1627,3 +1629,33 @@ package_ingredient_alternatives_more:
   other: " - .. (to see more results run `state search {{.V0}}`)"
 bundle_ingredient_alternatives_more:
   other: " - .. (to see more results run `state bundles search {{.V0}}`)"
+err_lock_version_invalid:
+  other: "The locked version '{{.V0}}' could not be verified, are you sure it's valid?"
+config_get_error:
+  other: Failed to read configuration.
+cve_needs_authentication:
+  other: You need to be authenticated in order to access vulnerability information about your project.
+auth_tip:
+  other: Run `state auth` to authenticate.
+err_activate_platfrom_alternate_branches:
+  other: |
+    There are no valid dependencies for your platform in branch [ACTIONABLE]`{{.V0}}`[/RESET], perhaps you could try one of the alternate branches on your project:
+
+     - {{.V1}}
+
+    Type [ACTIONABLE]`state branch switch <NAME>`[/RESET] to switch to a different branch.
+err_fetch_project:
+  other: "Could not fetch details for project: {{.V0}}"
+err_set_default_branch:
+  other: Could not update project field with branch, please manually set the `branch={{.V0}}` query parameter on the project field in your activestate.yaml.
+err_fetch_branch:
+  other: "Cold not get branch [NOTICE]{{.V0}}[/RESET] for project"
+err_refresh_runtime:
+  other: "Failed to update runtime"
+headless_notify_title:
+  other: Detached State
+headless_notify:
+  other: |
+    Any changes you make are local only and will not be saved the platform. Visit: [ACTIONABLE]{{.V0}}[/RESET] to create a platform project from this commit.
+
+    For more information, including how to merge these changes into an existing project, visit: [ACTIONABLE]{{.V1}}[/RESET].

@@ -27,8 +27,8 @@ func Test_exeOverDayOld(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			exe, _ := os.Executable()
 			os.Chtimes(exe, tt.setExeTime, tt.setExeTime)
-			if got := exeOverDayOld(); got != tt.want {
-				t.Errorf("exeOverDayOld() = %v, want %v", got, tt.want)
+			if got := osExeOverDayOld(); got != tt.want {
+				t.Errorf("osExeOverDayOld() = %v, want %v", got, tt.want)
 			}
 		})
 	}

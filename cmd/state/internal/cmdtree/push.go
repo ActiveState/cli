@@ -1,8 +1,6 @@
 package cmdtree
 
 import (
-	"github.com/spf13/viper"
-
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
@@ -11,7 +9,7 @@ import (
 )
 
 func newPushCommand(prime *primer.Values) *captain.Command {
-	pushRunner := push.NewPush(viper.GetViper(), prime)
+	pushRunner := push.NewPush(prime)
 
 	params := push.PushParams{
 		Namespace: &project.Namespaced{},
@@ -22,6 +20,7 @@ func newPushCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("push_title", "Pushing Local Project"),
 		locale.T("push_description"),
 		prime.Output(),
+		prime.Config(),
 		[]*captain.Flag{},
 		[]*captain.Argument{
 			{

@@ -10,14 +10,30 @@ import (
 func newPullCommand(prime *primer.Values) *captain.Command {
 	runner := pull.New(prime)
 
+	params := &pull.PullParams{}
+
 	return captain.NewCommand(
 		"pull",
 		locale.Tl("pull_title", "Pulling Remote Project"),
 		locale.Tl("pull_description", "Pull in the latest version of your project from the ActiveState Platform"),
 		prime.Output(),
-		[]*captain.Flag{},
+		prime.Config(),
+		[]*captain.Flag{
+			{
+				Name:        "force",
+				Shorthand:   "",
+				Description: locale.Tl("flag_state_pull_force_description", "Force pulling specified project even if it is unrelated to checked out one"),
+				Value:       &params.Force,
+			},
+			{
+				Name:        "set-project",
+				Shorthand:   "",
+				Description: locale.Tl("flag_state_pull_set_project_description", "project even if it is unrelated to checked out one"),
+				Value:       &params.SetProject,
+			},
+		},
 		[]*captain.Argument{},
 		func(cmd *captain.Command, args []string) error {
-			return runner.Run()
+			return runner.Run(params)
 		}).SetGroup(VCSGroup)
 }

@@ -1,7 +1,6 @@
 package prompt
 
 import (
-	"errors"
 	"math"
 	"reflect"
 	"strings"
@@ -53,7 +52,7 @@ func inputRequired(val interface{}) error {
 
 	// if the value passed in is the zero value of the appropriate type
 	if isZero(value) && value.Kind() != reflect.Bool && value.Kind() != reflect.Int {
-		return errors.New(locale.T("err_value_required"))
+		return locale.NewError("err_value_required")
 	}
 	return nil
 }

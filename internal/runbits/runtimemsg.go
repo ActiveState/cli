@@ -18,9 +18,9 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
-type requestedRequirement struct {
-	name      string
-	namespace model.Namespace
+type RequestedRequirement struct {
+	Name      string
+	Namespace model.Namespace
 }
 
 type RuntimeMessageHandler struct {
@@ -28,7 +28,7 @@ type RuntimeMessageHandler struct {
 	bpg  *progress.Progress
 	bbar *progress.TotalBar
 
-	requirement *requestedRequirement
+	requirement *RequestedRequirement
 }
 
 func NewRuntimeMessageHandler(out output.Outputer) *RuntimeMessageHandler {
@@ -36,8 +36,8 @@ func NewRuntimeMessageHandler(out output.Outputer) *RuntimeMessageHandler {
 }
 
 // SetChangeSummaryFunc sets a function that is called after the build recipe is known and can display a summary of changes that happened to the build
-func (r *RuntimeMessageHandler) SetRequirement(name string, namespace model.Namespace) {
-	r.requirement = &requestedRequirement{name, namespace}
+func (r *RuntimeMessageHandler) SetRequirement(requirement *RequestedRequirement) {
+	r.requirement = requirement
 }
 
 func (r *RuntimeMessageHandler) DownloadStarting() {
@@ -59,8 +59,8 @@ func (r *RuntimeMessageHandler) ChangeSummary(directDeps map[strfmt.UUID][]strfm
 			break
 		}
 		for _, req := range ingredient.ResolvedRequirements {
-			if req.Feature != nil && *req.Feature == r.requirement.name &&
-				req.Namespace != nil && *req.Namespace == r.requirement.namespace.String() {
+			if req.Feature != nil && *req.Feature == r.requirement.Name &&
+				req.Namespace != nil && *req.Namespace == r.requirement.Namespace.String() {
 				matchedIngredient = ingredient
 				break
 			}
@@ -68,13 +68,13 @@ func (r *RuntimeMessageHandler) ChangeSummary(directDeps map[strfmt.UUID][]strfm
 	}
 
 	if matchedIngredient == nil {
-		logging.Error("Could not find requirement in resulting recipe: %s (%s)", r.requirement.name, r.requirement.namespace)
+		logging.Error("Could not find requirement in resulting recipe: %s (%s)", r.requirement.Name, r.requirement.Namespace)
 		return
 	}
 
 	depsForReq, ok := directDeps[*matchedIngredient.IngredientVersion.IngredientVersionID]
 	if !ok {
-		logging.Error("Could not find deps for supplied requirement: %s (%s)", r.requirement.name, r.requirement.namespace)
+		logging.Error("Could not find deps for supplied requirement: %s (%s)", r.requirement.Name, r.requirement.Namespace)
 		return
 	}
 

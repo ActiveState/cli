@@ -11,9 +11,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-version"
-	"github.com/spf13/viper"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	constvers "github.com/ActiveState/cli/internal/constants/version"
 	"github.com/ActiveState/cli/internal/errs"
@@ -46,32 +44,34 @@ type Info struct {
 // Checker is the struct that we use to do checks with
 type Checker struct {
 	timeout         time.Duration
-	config          configable
+	config          Configurable
 	deprecationFile string
 }
 
-type configable interface {
+// Configurable defines the configuration function used by the functions in this package
+type Configurable interface {
+	ConfigPath() string
 	GetTime(key string) time.Time
 	Set(key string, value interface{})
 }
 
 // NewChecker returns a new instance of the Checker struct
-func NewChecker(timeout time.Duration, configuration configable) *Checker {
+func NewChecker(timeout time.Duration, configuration Configurable) *Checker {
 	return &Checker{
 		timeout,
 		configuration,
-		filepath.Join(config.ConfigPath(), "deprecation.json"),
+		filepath.Join(configuration.ConfigPath(), "deprecation.json"),
 	}
 }
 
 // Check will run a Checker.Check with defaults
-func Check() (*Info, error) {
-	return CheckVersionNumber(constants.VersionNumber)
+func Check(cfg Configurable) (*Info, error) {
+	return CheckVersionNumber(cfg, constants.VersionNumber)
 }
 
 // CheckVersionNumber will run a Checker.Check with defaults
-func CheckVersionNumber(versionNumber string) (*Info, error) {
-	checker := NewChecker(DefaultTimeout, viper.GetViper())
+func CheckVersionNumber(cfg Configurable, versionNumber string) (*Info, error) {
+	checker := NewChecker(DefaultTimeout, cfg)
 	return checker.check(versionNumber)
 }
 

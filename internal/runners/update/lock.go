@@ -1,6 +1,7 @@
 package update
 
 import (
+	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
@@ -9,8 +10,26 @@ import (
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
+var _ captain.FlagMarshaler = &StateToolChannelVersion{}
+
+type StateToolChannelVersion struct {
+	captain.NameVersion
+}
+
+func (stv *StateToolChannelVersion) Set(arg string) error {
+	err := stv.NameVersion.Set(arg)
+	if err != nil {
+		return locale.WrapInputError(err, "err_channel_format", "The State Tool channel and version provided is not formatting correctly, must be in the form of <channel>@<version>")
+	}
+	return nil
+}
+
+func (stv *StateToolChannelVersion) Type() string {
+	return "channel"
+}
+
 type LockParams struct {
-	Channel string
+	Channel StateToolChannelVersion
 	Force   bool
 }
 
@@ -37,16 +56,16 @@ func (l *Lock) Run(params *LockParams) error {
 		}
 	}
 
-	defaultChannel := params.Channel
+	defaultChannel, lockVersion := params.Channel.Name(), params.Channel.Version()
 	prefer := true
 	if defaultChannel == "" {
-		defaultChannel = l.project.Branch()
+		defaultChannel = l.project.VersionBranch()
 		prefer = false // may be overwritten by env var
 	}
 	channel := fetchChannel(defaultChannel, prefer)
 
 	var version string
-	if l.project.IsLocked() && channel == l.project.Branch() {
+	if l.project.IsLocked() && channel == l.project.VersionBranch() {
 		version = l.project.Version()
 	}
 
@@ -55,19 +74,23 @@ func (l *Lock) Run(params *LockParams) error {
 		return errs.Wrap(err, "fetchUpdater failed, info: %v", info)
 	}
 
-	err = projectfile.AddLockInfo(l.project.Source().Path(), channel, info.Version)
+	if lockVersion == "" {
+		lockVersion = info.Version
+	}
+
+	err = projectfile.AddLockInfo(l.project.Source().Path(), channel, lockVersion)
 	if err != nil {
 		return locale.WrapError(err, "err_update_projectfile", "Could not update projectfile")
 	}
 
-	l.out.Print(locale.Tl("version_locked", "Version locked at {{.V0}}@{{.V1}}", channel, info.Version))
+	l.out.Print(locale.Tl("version_locked", "Version locked at {{.V0}}@{{.V1}}", channel, lockVersion))
 	return nil
 }
 
 func confirmLock(prom prompt.Prompter) error {
 	msg := locale.T("confirm_update_locked_version_prompt")
 
-	confirmed, err := prom.Confirm(locale.T("confirm"), msg, false)
+	confirmed, err := prom.Confirm(locale.T("confirm"), msg, new(bool))
 	if err != nil {
 		return err
 	}

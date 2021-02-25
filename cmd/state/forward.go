@@ -2,13 +2,13 @@ package main
 
 import (
 	"fmt"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 
 	"github.com/phayes/permbits"
 	"github.com/thoas/go-funk"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -24,9 +24,11 @@ import (
 // forceFileExt is used in tests, do not use it for anything else
 var forceFileExt string
 
+const LatestVersion = "latest"
+
 type forwardFunc func() (int, error)
 
-func forwardFn(args []string, out output.Outputer, pj *project.Project) (forwardFunc, error) {
+func forwardFn(bindir string, args []string, out output.Outputer, pj *project.Project) (forwardFunc, error) {
 	if pj == nil {
 		return nil, nil
 	}
@@ -56,10 +58,15 @@ func forwardFn(args []string, out output.Outputer, pj *project.Project) (forward
 		// Perform the forward
 		out.Notice(output.Heading(locale.Tl("forward_title", "Version Locked")))
 		out.Notice(locale.Tr("forward_version", versionInfo.Version))
-		code, err := forward(args, versionInfo, out)
+		code, err := forward(bindir, args, versionInfo, out)
 		if err != nil {
-			out.Error(locale.T("forward_fail"))
-			return 1, err
+			if code == 0 {
+				code = 1
+			}
+			if errs.Matches(err, &exec.ExitError{}) {
+				err = &SilencedError{err}
+			}
+			return code, locale.WrapError(err, "forward_fail")
 		}
 		if code > 0 {
 			return code, locale.NewError("err_forward", "Error occurred while running older version of the state tool, you may want to 'state update'.")
@@ -72,9 +79,9 @@ func forwardFn(args []string, out output.Outputer, pj *project.Project) (forward
 }
 
 // forward will forward the call to the appropriate State Tool version if necessary
-func forward(args []string, versionInfo *projectfile.VersionInfo, out output.Outputer) (int, error) {
+func forward(bindir string, args []string, versionInfo *projectfile.VersionInfo, out output.Outputer) (int, error) {
 	logging.Debug("Forwarding to version %s/%s, arguments: %v", versionInfo.Branch, versionInfo.Version, args[1:])
-	binary := forwardBin(versionInfo)
+	binary := forwardBin(bindir, versionInfo)
 	err := ensureForwardExists(binary, versionInfo, out)
 	if err != nil {
 		return 1, err
@@ -88,26 +95,29 @@ func execForward(binary string, args []string) (int, error) {
 
 	code, _, err := osutils.ExecuteAndPipeStd(binary, args[1:], []string{fmt.Sprintf("%s=true", constants.ForwardedStateEnvVarName)})
 	if err != nil {
-		logging.Error("Forwarding command resulted in error: %v", err)
-		return 1, locale.NewError("forward_fail_with_error", "", err.Error())
+		return 1, locale.WrapError(err, "forward_fail_with_error", "", err.Error())
 	}
 	return code, nil
 }
 
-func forwardBin(versionInfo *projectfile.VersionInfo) string {
+func forwardBin(bindir string, versionInfo *projectfile.VersionInfo) string {
 	filename := fmt.Sprintf("%s-%s-%s", constants.CommandName, versionInfo.Branch, versionInfo.Version)
 	if forceFileExt != "" {
 		filename += forceFileExt
 	} else if runtime.GOOS == "windows" {
 		filename += ".exe"
 	}
-	datadir := config.ConfigPath()
-	return filepath.Join(datadir, "version-cache", filename)
+	return filepath.Join(bindir, "version-cache", filename)
 }
 
 func ensureForwardExists(binary string, versionInfo *projectfile.VersionInfo, out output.Outputer) error {
-	if fileutils.FileExists(binary) {
+	if fileutils.FileExists(binary) && (versionInfo.Version != LatestVersion || !exeOverDayOld(binary)) {
 		return nil
+	}
+
+	desiredVersion := versionInfo.Version
+	if desiredVersion == LatestVersion {
+		desiredVersion = ""
 	}
 
 	up := updater.Updater{
@@ -115,7 +125,7 @@ func ensureForwardExists(binary string, versionInfo *projectfile.VersionInfo, ou
 		APIURL:         constants.APIUpdateURL,
 		CmdName:        constants.CommandName,
 		DesiredBranch:  versionInfo.Branch,
-		DesiredVersion: versionInfo.Version,
+		DesiredVersion: desiredVersion,
 	}
 
 	info, err := up.Info()

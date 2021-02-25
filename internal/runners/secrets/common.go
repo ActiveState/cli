@@ -3,11 +3,12 @@ package secrets
 import (
 	"strings"
 
+	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
-func getSecret(proj *project.Project, namespace string) (*project.Secret, error) {
+func getSecret(proj *project.Project, namespace string, cfg keypairs.Configurable) (*project.Secret, error) {
 	n := strings.Split(namespace, ".")
 	if len(n) != 2 {
 		return nil, locale.NewInputError("secrets_err_invalid_namespace", "", namespace)
@@ -19,11 +20,11 @@ func getSecret(proj *project.Project, namespace string) (*project.Secret, error)
 	}
 	secretName := n[1]
 
-	return proj.InitSecret(secretName, secretScope), nil
+	return proj.InitSecret(secretName, secretScope, cfg), nil
 }
 
-func getSecretWithValue(proj *project.Project, name string) (*project.Secret, *string, error) {
-	secret, err := getSecret(proj, name)
+func getSecretWithValue(proj *project.Project, name string, cfg keypairs.Configurable) (*project.Secret, *string, error) {
+	secret, err := getSecret(proj, name, cfg)
 	if err != nil {
 		return nil, nil, err
 	}

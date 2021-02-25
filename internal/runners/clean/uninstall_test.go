@@ -17,7 +17,7 @@ type confirmMock struct {
 	confirm bool
 }
 
-func (c *confirmMock) Confirm(title, message string, defaultChoice bool) (bool, error) {
+func (c *confirmMock) Confirm(title, message string, defaultChoice *bool) (bool, error) {
 	return c.confirm, nil
 }
 
@@ -50,10 +50,8 @@ func (suite *CleanTestSuite) SetupTest() {
 }
 
 func (suite *CleanTestSuite) TestUninstall() {
-	runner, err := newUninstall(&outputhelper.TestOutputer{}, &confirmMock{confirm: true})
+	runner, err := newUninstall(&outputhelper.TestOutputer{}, &confirmMock{confirm: true}, newConfigMock(suite.T(), suite.cachePath, suite.configPath))
 	suite.Require().NoError(err)
-	runner.configPath = suite.configPath
-	runner.cachePath = suite.cachePath
 	runner.installPath = suite.installPath
 	err = runner.Run(&UninstallParams{})
 	suite.Require().NoError(err)
@@ -71,7 +69,7 @@ func (suite *CleanTestSuite) TestUninstall() {
 }
 
 func (suite *CleanTestSuite) TestUninstall_PromptNo() {
-	runner, err := newUninstall(&outputhelper.TestOutputer{}, &confirmMock{})
+	runner, err := newUninstall(&outputhelper.TestOutputer{}, &confirmMock{}, newConfigMock(suite.T(), suite.cachePath, suite.configPath))
 	suite.Require().NoError(err)
 	err = runner.Run(&UninstallParams{})
 	suite.Require().NoError(err)
@@ -87,7 +85,7 @@ func (suite *CleanTestSuite) TestUninstall_Activated() {
 		os.Unsetenv(constants.ActivatedStateEnvVarName)
 	}()
 
-	runner, err := newUninstall(&outputhelper.TestOutputer{}, &confirmMock{})
+	runner, err := newUninstall(&outputhelper.TestOutputer{}, &confirmMock{}, &configMock{suite.T(), suite.cachePath, suite.configPath})
 	suite.Require().NoError(err)
 	err = runner.Run(&UninstallParams{})
 	suite.Require().Error(err)

@@ -6,11 +6,10 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/projectfile"
-
-	"github.com/spf13/viper"
 
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
@@ -18,8 +17,7 @@ import (
 )
 
 type configGetter interface {
-	GetString(key string) string
-	GetStringMapStringSlice(key string) map[string][]string
+	projectfile.ConfigGetter
 }
 
 type Push struct {
@@ -35,10 +33,11 @@ type PushParams struct {
 type primeable interface {
 	primer.Outputer
 	primer.Projecter
+	primer.Configurer
 }
 
-func NewPush(config *viper.Viper, prime primeable) *Push {
-	return &Push{config, prime.Output(), prime.Project()}
+func NewPush(prime primeable) *Push {
+	return &Push{prime.Config(), prime.Output(), prime.Project()}
 }
 
 func (r *Push) Run(params PushParams) error {
@@ -91,6 +90,7 @@ func (r *Push) Run(params PushParams) error {
 		}
 	}
 
+	var branchName string
 	lang, langVersion, err := r.languageForProject(r.project)
 	if err != nil {
 		return errs.Wrap(err, "Failed to retrieve project language.")
@@ -102,20 +102,36 @@ func (r *Push) Run(params PushParams) error {
 		}
 		r.Outputer.Notice(locale.Tl("push_to_project", "Pushing to project [NOTICE]{{.V1}}[/RESET] under [NOTICE]{{.V0}}[/RESET].", owner, name))
 
-		branch, err := model.DefaultBranchForProject(pjm)
-		if err != nil {
-			return errs.Wrap(err, "Failed to get default branch of project.")
+		var branch *mono_models.Branch
+		if r.project.BranchName() == "" {
+			// https://www.pivotaltracker.com/story/show/176806415
+			branch, err = model.DefaultBranchForProject(pjm)
+			if err != nil {
+				return locale.NewInputError("err_no_default_branch")
+			}
+		} else {
+			branch, err = model.BranchForProjectByName(pjm, branchName)
+			if err != nil {
+				return locale.WrapError(err, "err_fetch_branch", "", branchName)
+			}
 		}
+
 		if branch.CommitID != nil && branch.CommitID.String() == r.project.CommitID() {
 			r.Outputer.Notice(locale.T("push_up_to_date"))
 			return nil
 		}
+		branchName = branch.Label
 	} else {
 		r.Outputer.Notice(locale.Tl("push_creating_project", "Creating project [NOTICE]{{.V1}}[/RESET] under [NOTICE]{{.V0}}[/RESET] on the ActiveState Platform", owner, name))
 		pjm, err = model.CreateEmptyProject(owner, name, r.project.Private())
 		if err != nil {
 			return locale.WrapError(err, "push_project_create_empty_err", "Failed to create a project {{.V0}}.", r.project.Namespace().String())
 		}
+		branch, err := model.DefaultBranchForProject(pjm)
+		if err != nil {
+			return errs.Wrap(err, "Could not get default branch")
+		}
+		branchName = branch.Label
 	}
 
 	var commitID = r.project.CommitUUID()
@@ -128,7 +144,7 @@ func (r *Push) Run(params PushParams) error {
 	}
 
 	// update the project at the given commit id.
-	err = model.UpdateProjectBranchCommit(pjm, commitID)
+	err = model.UpdateProjectBranchCommitWithModel(pjm, branchName, commitID)
 	if err != nil {
 		return locale.WrapError(err, "push_project_branch_commit_err", "Failed to update new project {{.V0}} to current commitID.", r.project.Namespace().String())
 	}
@@ -140,7 +156,15 @@ func (r *Push) Run(params PushParams) error {
 		return locale.WrapInputError(err, "push_remove_lang_err", "Failed to remove temporary language field from activestate.yaml.")
 	}
 
-	r.project.Source().SetCommit(commitID.String(), false)
+	if err := r.project.Source().SetCommit(commitID.String(), false); err != nil {
+		return errs.Wrap(err, "Could not set commit")
+	}
+
+	if branchName != r.project.BranchName() {
+		if err := r.project.Source().SetBranch(branchName); err != nil {
+			return errs.Wrap(err, "Could not set branch")
+		}
+	}
 
 	r.Outputer.Notice(locale.Tr("push_project_created", r.project.URL(), lang.String(), langVersion))
 

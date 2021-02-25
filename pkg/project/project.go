@@ -13,14 +13,13 @@ import (
 
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/secrets"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
-	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
@@ -101,7 +100,7 @@ func (p *Project) ConstantByName(name string) *Constant {
 }
 
 // Secrets returns a reference to projectfile.Secrets
-func (p *Project) Secrets() []*Secret {
+func (p *Project) Secrets(cfg keypairs.Configurable) []*Secret {
 	secrets := []*Secret{}
 	if p.projectfile.Secrets == nil {
 		return secrets
@@ -113,7 +112,7 @@ func (p *Project) Secrets() []*Secret {
 		}
 		secs := projectfile.MakeSecretsFromConstrainedEntities(constrained)
 		for _, s := range secs {
-			secrets = append(secrets, p.NewSecret(s, SecretScopeUser))
+			secrets = append(secrets, p.NewSecret(s, SecretScopeUser, cfg))
 		}
 	}
 	if p.projectfile.Secrets.Project != nil {
@@ -123,15 +122,15 @@ func (p *Project) Secrets() []*Secret {
 		}
 		secs := projectfile.MakeSecretsFromConstrainedEntities(constrained)
 		for _, secret := range secs {
-			secrets = append(secrets, p.NewSecret(secret, SecretScopeProject))
+			secrets = append(secrets, p.NewSecret(secret, SecretScopeProject, cfg))
 		}
 	}
 	return secrets
 }
 
 // SecretByName returns a secret matching the given name (if any)
-func (p *Project) SecretByName(name string, scope SecretScope) *Secret {
-	for _, secret := range p.Secrets() {
+func (p *Project) SecretByName(name string, scope SecretScope, cfg keypairs.Configurable) *Secret {
+	for _, secret := range p.Secrets(cfg) {
 		if secret.Name() == name && secret.scope == scope {
 			return secret
 		}
@@ -215,6 +214,11 @@ func (p *Project) CommitUUID() strfmt.UUID {
 	return strfmt.UUID(p.CommitID())
 }
 
+// BranchName returns the project branch name
+func (p *Project) BranchName() string {
+	return p.projectfile.BranchName()
+}
+
 func (p *Project) IsHeadless() bool {
 	match := projectfile.CommitURLRe.FindStringSubmatch(p.URL())
 	return len(match) > 1
@@ -228,8 +232,8 @@ func (p *Project) NormalizedName() string {
 // Version returns project version
 func (p *Project) Version() string { return p.projectfile.Version() }
 
-// Branch returns branch that we're pinned to (useless unless version is also set)
-func (p *Project) Branch() string { return p.projectfile.Branch() }
+// VersionBranch returns branch that we're pinned to (useless unless version is also set)
+func (p *Project) VersionBranch() string { return p.projectfile.VersionBranch() }
 
 // IsLocked returns whether the current project is locked
 func (p *Project) IsLocked() bool { return p.Lock() != "" }
@@ -303,6 +307,20 @@ func GetOnce() (*Project, error) {
 // FromPath will return the project that's located at the given path (this will walk up the directory tree until it finds the project)
 func FromPath(path string) (*Project, error) {
 	pjFile, err := projectfile.FromPath(path)
+	if err != nil {
+		return nil, err
+	}
+	project, err := New(pjFile, output.Get())
+	if err != nil {
+		return nil, err
+	}
+
+	return project, nil
+}
+
+// FromExactPath will return the project that's located at the given path without walking up the directory tree
+func FromExactPath(path string) (*Project, error) {
+	pjFile, err := projectfile.FromExactPath(path)
 	if err != nil {
 		return nil, err
 	}
@@ -473,18 +491,19 @@ type Secret struct {
 	secret  *projectfile.Secret
 	project *Project
 	scope   SecretScope
+	cfg     keypairs.Configurable
 }
 
 // InitSecret creates a new secret with the given name and all default settings
-func (p *Project) InitSecret(name string, scope SecretScope) *Secret {
+func (p *Project) InitSecret(name string, scope SecretScope, cfg keypairs.Configurable) *Secret {
 	return p.NewSecret(&projectfile.Secret{
 		Name: name,
-	}, scope)
+	}, scope, cfg)
 }
 
 // NewSecret creates a new secret struct
-func (p *Project) NewSecret(s *projectfile.Secret, scope SecretScope) *Secret {
-	return &Secret{s, p, scope}
+func (p *Project) NewSecret(s *projectfile.Secret, scope SecretScope, cfg keypairs.Configurable) *Secret {
+	return &Secret{s, p, scope, cfg}
 }
 
 // Source returns the source projectfile
@@ -507,7 +526,7 @@ func (s *Secret) IsProject() bool { return s.scope == SecretScopeProject }
 
 // ValueOrNil acts as Value() except it can return a nil
 func (s *Secret) ValueOrNil() (*string, error) {
-	secretsExpander := NewSecretExpander(secretsapi.GetClient(), nil, nil)
+	secretsExpander := NewSecretExpander(secretsapi.GetClient(), nil, nil, s.cfg)
 
 	category := ProjectCategory
 	if s.IsUser() {
@@ -532,36 +551,6 @@ func (s *Secret) Value() (string, error) {
 		return "", err
 	}
 	return *value, nil
-}
-
-// Save will save the provided value for this secret to the project file if not a secret, else
-// will store back to the secrets store.
-func (s *Secret) Save(value string) error {
-	org, err := model.FetchOrgByURLName(s.project.Owner())
-	if err != nil {
-		return err
-	}
-
-	remoteProject, err := model.FetchProjectByName(org.URLname, s.project.Name())
-	if err != nil {
-		return err
-	}
-
-	kp, err := secrets.LoadKeypairFromConfigDir()
-	if err != nil {
-		return err
-	}
-
-	err = secrets.Save(secretsapi.GetClient(), kp, org, remoteProject, s.IsUser(), s.Name(), value)
-	if err != nil {
-		return err
-	}
-
-	if s.IsProject() {
-		return secrets.ShareWithOrgUsers(secretsapi.GetClient(), org, remoteProject, s.Name(), value)
-	}
-
-	return nil
 }
 
 // Event covers the hook structure

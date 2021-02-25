@@ -5,6 +5,8 @@
 # `set` variables are not inherited when we spawn the sub shell via exec.  Only
 # `setenv` values are inherited.
 
+cd "{{.WD}}"
+
 {{- range $K, $V := .Env}}
 {{- if eq $K "PATH"}}
 setenv {{$K}} "{{$V}}:$PATH"
@@ -19,8 +21,6 @@ alias {{.ExecName}}='{{.ExecAlias}}'
 {{range $K, $CMD := .Scripts}}
 alias {{$K}} '{{$.ExecName}} run {{$CMD}}'
 {{end}}
-
-cd "{{.WD}}"
 
 echo "{{.ActivateEventMessage}}"
 

@@ -4,11 +4,14 @@ import (
 	"github.com/ActiveState/cli/cmd/state/internal/cmdtree/intercepts/cmdcall"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/condition"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/state"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
+	"github.com/ActiveState/cli/pkg/project"
 )
 
 // CmdTree manages a tree of captain.Command instances.
@@ -26,6 +29,11 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		newLogoutCommand(prime),
 	)
 
+	cveCmd := newCveCommand(prime)
+	cveCmd.AddChildren(
+		newReportCommand(prime),
+	)
+
 	exportCmd := newExportCommand(prime)
 	exportCmd.AddChildren(
 		newRecipeCommand(prime),
@@ -34,6 +42,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		newAPIKeyCommand(prime),
 		newExportConfigCommand(prime),
 		newExportGithubActionCommand(prime),
+		newExportDocsCommand(prime),
 	)
 
 	platformsCmd := newPlatformsCommand(prime)
@@ -110,11 +119,22 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 	updateCmd := newUpdateCommand(prime)
 	updateCmd.AddChildren(newUpdateLockCommand(prime))
 
+	branchCmd := newBranchCommand(prime)
+	branchCmd.AddChildren(
+		/*  Disabled as per https://www.pivotaltracker.com/story/show/177051006
+		newBranchAddCommand(prime),
+		*/
+		newBranchSwitchCommand(prime),
+	)
+	prepareCmd := newPrepareCommand(prime)
+	prepareCmd.AddChildren(newPrepareCompletionsCommand(prime))
+
 	stateCmd := newStateCommand(globals, prime)
 	stateCmd.AddChildren(
 		newActivateCommand(prime),
 		newInitCommand(prime),
 		newPushCommand(prime),
+		cveCmd,
 		projectsCmd,
 		authCmd,
 		exportCmd,
@@ -141,11 +161,12 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		newPpmCommand(prime),
 		newInviteCommand(prime),
 		tutorialCmd,
-		newPrepareCommand(prime),
+		prepareCmd,
 		newProtocolCommand(prime),
 		newShimCommand(prime, args...),
 		newRevertCommand(prime),
 		secretsCmd,
+		branchCmd,
 	)
 
 	return &CmdTree{
@@ -183,6 +204,7 @@ func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Comm
 		"",
 		locale.T("state_description"),
 		prime.Output(),
+		prime.Config(),
 		[]*captain.Flag{
 			{
 				Name:        "locale",
@@ -248,7 +270,7 @@ func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Comm
 
 	cmdCall := cmdcall.New(prime)
 
-	cmd.SetInterceptChain(cmdCall.InterceptExec)
+	cmd.SetInterceptChain(cmdCall.InterceptExec, interceptAddHeadlessNotify(prime.Output(), prime.Project()))
 
 	return cmd
 }
@@ -274,6 +296,7 @@ func (a *addCmdAs) deprecatedAlias(aliased *captain.Command, name string) {
 		aliased.Title(),
 		aliased.Description(),
 		a.prime.Output(),
+		a.prime.Config(),
 		aliased.Flags(),
 		aliased.Arguments(),
 		func(c *captain.Command, args []string) error {
@@ -292,4 +315,17 @@ func (a *addCmdAs) deprecatedAlias(aliased *captain.Command, name string) {
 	cmd.SetHidden(true)
 
 	a.parent.AddChildren(cmd)
+}
+
+func interceptAddHeadlessNotify(out output.Outputer, pj *project.Project) captain.InterceptFunc {
+	return func(next captain.ExecuteFunc) captain.ExecuteFunc {
+		return func(cmd *captain.Command, args []string) error {
+			if pj != nil && pj.IsHeadless() && (cmd.Group() == PackagesGroup || cmd.Name() == activateCmdName) {
+				out.Notice(output.Heading(locale.Tr("headless_notify_title")))
+				out.Notice(locale.Tr("headless_notify", pj.URL(), constants.DocumentationURLHeadless))
+			}
+
+			return next(cmd, args)
+		}
+	}
 }

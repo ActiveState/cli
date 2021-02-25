@@ -130,6 +130,8 @@ func (r *Download) FetchArtifacts(recipe *inventory_models.Recipe, platProj *mon
 			return result, locale.NewInputError("build_status_failed", "", r.projectURL(), msg)
 
 		case resp := <-buildStatus.Started:
+			analytics.Event(catRuntime, actBuild)
+
 			logging.Debug("BuildStarted")
 			namespaced := project.Namespaced{
 				Owner:   r.runtime.owner,

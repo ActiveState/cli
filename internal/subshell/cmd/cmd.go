@@ -5,9 +5,8 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/spf13/viper"
-
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
@@ -30,9 +29,11 @@ type SubShell struct {
 	activateCommand *string
 }
 
+const Name string = "cmd"
+
 // Shell - see subshell.SubShell
 func (v *SubShell) Shell() string {
-	return "cmd"
+	return Name
 }
 
 // Binary - see subshell.SubShell
@@ -46,11 +47,11 @@ func (v *SubShell) SetBinary(binary string) {
 }
 
 // WriteUserEnv - see subshell.SubShell
-func (v *SubShell) WriteUserEnv(env map[string]string, envType sscommon.EnvData, userScope bool) error {
+func (v *SubShell) WriteUserEnv(cfg sscommon.Configurable, env map[string]string, envType sscommon.RcIdentification, userScope bool) error {
 	cmdEnv := NewCmdEnv(userScope)
 
 	// Clean up old entries
-	oldEnv := viper.GetStringMap(envType.Key)
+	oldEnv := cfg.GetStringMap(envType.Key)
 	for k, v := range oldEnv {
 		if err := cmdEnv.unset(k, v.(string)); err != nil {
 			return err
@@ -58,7 +59,7 @@ func (v *SubShell) WriteUserEnv(env map[string]string, envType sscommon.EnvData,
 	}
 
 	// Store new entries
-	viper.Set(envType.Key, env)
+	cfg.Set(envType.Key, env)
 
 	for k, v := range env {
 		value := v
@@ -85,6 +86,14 @@ func (v *SubShell) WriteUserEnv(env map[string]string, envType sscommon.EnvData,
 	return nil
 }
 
+func (v *SubShell) WriteCompletionScript(completionScript string) error {
+	return locale.NewError("err_writecompletions_notsupported", "{{.V0}} does not support completions.", v.Shell())
+}
+
+func (v *SubShell) RcFile() (string, error) {
+	return "", locale.NewError("err_cmd_rcile", "cmd does not support RC files")
+}
+
 // SetupShellRcFile - subshell.SubShell
 func (v *SubShell) SetupShellRcFile(targetDir string, env map[string]string, namespace project.Namespaced) error {
 	env = sscommon.EscapeEnv(env)
@@ -107,10 +116,10 @@ func (v *SubShell) Quote(value string) string {
 }
 
 // Activate - see subshell.SubShell
-func (v *SubShell) Activate(out output.Outputer) error {
+func (v *SubShell) Activate(prj *project.Project, cfg sscommon.Configurable, out output.Outputer) error {
 	env := sscommon.EscapeEnv(v.env)
 	var err error
-	if v.rcFile, err = sscommon.SetupProjectRcFile("config.bat", ".bat", env, out); err != nil {
+	if v.rcFile, err = sscommon.SetupProjectRcFile(prj, "config.bat", ".bat", env, out, cfg); err != nil {
 		return err
 	}
 

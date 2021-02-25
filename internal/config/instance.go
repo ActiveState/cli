@@ -8,40 +8,170 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/shibukawa/configdir"
 	"github.com/spf13/viper"
-	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/condition"
 	C "github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/osutils/stacktrace"
+	"github.com/ActiveState/cli/internal/errs"
 )
+
+var defaultConfig *Instance
 
 // Instance holds our main config logic
 type Instance struct {
+	viper         *viper.Viper
 	configDir     *configdir.Config
 	cacheDir      *configdir.Config
 	localPath     string
 	installSource string
 	noSave        bool
-	Exit          func(code int)
+	rwLock        *sync.RWMutex
+}
+
+func new(localPath string) (*Instance, error) {
+	instance := &Instance{
+		viper:     viper.New(),
+		localPath: localPath,
+		rwLock:    &sync.RWMutex{},
+	}
+
+	err := instance.Reload()
+	if err != nil {
+		return instance, errs.Wrap(err, "Failed to load configuration.")
+	}
+
+	return instance, nil
+}
+
+// Reload reloads the configuration data from the config file
+func (i *Instance) Reload() error {
+	err := i.ensureConfigExists()
+	if err != nil {
+		return err
+	}
+	err = i.ensureCacheExists()
+	if err != nil {
+		return err
+	}
+	err = i.ReadInConfig()
+	if err != nil {
+		return err
+	}
+	i.readInstallSource()
+
+	return nil
+}
+
+func configPathInTest() (string, error) {
+	localPath, err := ioutil.TempDir("", "cli-config")
+	if err != nil {
+		return "", fmt.Errorf("Could not create temp dir: %w", err)
+	}
+	err = os.RemoveAll(localPath)
+	if err != nil {
+		return "", fmt.Errorf("Could not remove generated config dir for tests: %w", err)
+	}
+	return localPath, nil
 }
 
 // New creates a new config instance
-func New(localPath string) *Instance {
-	instance := &Instance{
-		localPath: localPath,
-		Exit:      os.Exit,
+func New() (*Instance, error) {
+	localPath := os.Getenv(C.ConfigEnvVarName)
+
+	if condition.InTest() {
+		var err error
+		localPath, err = configPathInTest()
+		if err != nil {
+			// panic as this only happening in tests
+			panic(err)
+		}
 	}
 
-	instance.ensureConfigExists()
-	instance.ensureCacheExists()
-	instance.ReadInConfig()
-	instance.readInstallSource()
+	return new(localPath)
+}
 
-	return instance
+// NewWithDir creates a new instance at the given directory
+func NewWithDir(dir string) (*Instance, error) {
+	return new(dir)
+}
+
+// Get returns the default configuration instance
+func Get() (*Instance, error) {
+	if defaultConfig == nil {
+		var err error
+		defaultConfig, err = New()
+		if err != nil {
+			return defaultConfig, err
+		}
+	}
+	return defaultConfig, nil
+}
+
+// Set sets a value at the given key
+func (i *Instance) Set(key string, value interface{}) {
+	i.rwLock.Lock()
+	defer i.rwLock.Unlock()
+	i.viper.Set(key, value)
+}
+
+// GetString retrieves a string for a given key
+func (i *Instance) GetString(key string) string {
+	i.rwLock.RLock()
+	defer i.rwLock.RUnlock()
+	return i.viper.GetString(key)
+}
+
+func (i *Instance) AllKeys() []string {
+	i.rwLock.RLock()
+	defer i.rwLock.RUnlock()
+	return i.viper.AllKeys()
+}
+
+// GetStringMapStringSlice retrieves a map of string slices for a given key
+func (i *Instance) GetStringMapStringSlice(key string) map[string][]string {
+	i.rwLock.RLock()
+	defer i.rwLock.RUnlock()
+	return i.viper.GetStringMapStringSlice(key)
+}
+
+// SetDefault sets the default value for a given key
+func (i *Instance) SetDefault(key string, value interface{}) {
+	i.rwLock.Lock()
+	defer i.rwLock.Unlock()
+	i.viper.SetDefault(key, value)
+}
+
+// GetBool retrieves a boolean value for a given key
+func (i *Instance) GetBool(key string) bool {
+	i.rwLock.RLock()
+	defer i.rwLock.RUnlock()
+	return i.viper.GetBool(key)
+}
+
+// GetStringSlice retrieves a slice of strings for a given key
+func (i *Instance) GetStringSlice(key string) []string {
+	i.rwLock.RLock()
+	defer i.rwLock.RUnlock()
+	return i.viper.GetStringSlice(key)
+}
+
+// GetTime retrieves a time instance for a given key
+func (i *Instance) GetTime(key string) time.Time {
+	i.rwLock.RLock()
+	defer i.rwLock.RUnlock()
+	return i.viper.GetTime(key)
+}
+
+// GetStringMap retrieves a map of strings to values for a given key
+func (i *Instance) GetStringMap(key string) map[string]interface{} {
+	i.rwLock.RLock()
+	defer i.rwLock.RUnlock()
+	return i.viper.GetStringMap(key)
 }
 
 // Type returns the config filetype
@@ -85,17 +215,20 @@ func (i *Instance) InstallSource() string {
 }
 
 // ReadInConfig reads in config from the config file
-func (i *Instance) ReadInConfig() {
+func (i *Instance) ReadInConfig() error {
+	i.rwLock.RLock()
+	defer i.rwLock.RUnlock()
 	// Prepare viper, which is a library that automates configuration
 	// management between files, env vars and the CLI
-	viper.SetConfigName(i.Name())
-	viper.SetConfigType(i.Type())
-	viper.AddConfigPath(i.configDir.Path)
-	viper.AddConfigPath(".")
+	i.viper.SetConfigName(i.Name())
+	i.viper.SetConfigType(i.Type())
+	i.viper.AddConfigPath(i.configDir.Path)
+	i.viper.AddConfigPath(".")
 
-	if err := viper.ReadInConfig(); err != nil {
-		i.exit("Can't read config: %s", err)
+	if err := i.viper.ReadInConfig(); err != nil {
+		return errs.Wrap(err, "Cannot read config.")
 	}
+	return nil
 }
 
 // Save saves the config file
@@ -104,11 +237,13 @@ func (i *Instance) Save() error {
 		return nil
 	}
 
-	if err := viper.MergeInConfig(); err != nil {
+	i.rwLock.Lock()
+	defer i.rwLock.Unlock()
+	if err := i.viper.MergeInConfig(); err != nil {
 		return err
 	}
 
-	return viper.WriteConfig()
+	return i.viper.WriteConfig()
 }
 
 // SkipSave forces the save behavior to have no effect.
@@ -116,7 +251,7 @@ func (i *Instance) SkipSave(b bool) {
 	i.noSave = b
 }
 
-func (i *Instance) ensureConfigExists() {
+func (i *Instance) ensureConfigExists() error {
 	// Prepare our config dir, eg. ~/.config/activestate/cli
 	configDirs := configdir.New(i.Namespace(), i.AppName())
 
@@ -131,7 +266,7 @@ func (i *Instance) ensureConfigExists() {
 			i.localPath, err = ioutil.TempDir("", "cli-config-test")
 		}
 		if err != nil {
-			i.exit("Cannot establish a config directory, HOME environment variable is not set and fallbacks have failed")
+			return errs.Wrap(err, "Cannot establish a config directory, HOME environment variable is not set and fallbacks have failed")
 		}
 	}
 
@@ -145,17 +280,18 @@ func (i *Instance) ensureConfigExists() {
 	if !i.configDir.Exists(i.Filename()) {
 		configFile, err := i.configDir.Create(i.Filename())
 		if err != nil {
-			i.exit("Can't create config: %s", err)
+			return errs.Wrap(err, "Cannot create config")
 		}
 
 		err = configFile.Close()
 		if err != nil {
-			i.exit("Can't close config file: %s", err)
+			return errs.Wrap(err, "Cannot close config file")
 		}
 	}
+	return nil
 }
 
-func (i *Instance) ensureCacheExists() {
+func (i *Instance) ensureCacheExists() error {
 	// When running tests we use a unique cache dir that's located in a temp folder, to avoid collisions
 	if condition.InTest() {
 		path, err := tempDir("state-cache-tests")
@@ -175,16 +311,9 @@ func (i *Instance) ensureCacheExists() {
 		i.cacheDir = configdir.New(i.Namespace(), "").QueryCacheFolder()
 	}
 	if err := i.cacheDir.MkdirAll(); err != nil {
-		i.exit("Can't create cache directory: %s", err)
+		return errs.Wrap(err, "Cannot create cache directory")
 	}
-}
-
-func (i *Instance) exit(message string, a ...interface{}) {
-	fmt.Fprintf(os.Stderr, message, a...)
-	if funk.Contains(os.Args, "-v") || condition.InTest() {
-		fmt.Fprint(os.Stderr, stacktrace.Get().String())
-	}
-	i.Exit(1)
+	return nil
 }
 
 // tempDir returns a temp directory path at the topmost directory possible
