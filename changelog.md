@@ -8,8 +8,6 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## 0.25.0
 
-Available on channel: `beta` (`state update --set-channel beta`)
-
 **Warning:** This update will force a change to your activestate.yaml which is
 incompatible with earlier state tool versions. As long as everyone on your
 project updates their state tool there should be no interruption to your
