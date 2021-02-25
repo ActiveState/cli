@@ -128,7 +128,7 @@ func New(artifactMap map[model.ArtifactID]model.Artifact, conn BuildLogConnector
 					errCh <- errs.New("artifact_succeeded message was incomplete")
 					return
 				}
-				ch <- artifact.ArtifactDownload{ArtifactID: *msg.ArtifactID, DownloadURI: *msg.ArtifactURI, Checksum: *msg.ArtifactChecksum}
+				ch <- model.ArtifactDownload{ArtifactID: *msg.ArtifactID, DownloadURI: *msg.ArtifactURI, Checksum: *msg.ArtifactChecksum}
 			case "artifact_failed":
 				artifactErr = locale.WrapError(artifactErr, "err_artifact_failed", "Failed to build \"{{.V0}}\", error reported: {{.V1}}.", artifactName, msg.Err())
 				messageHandler.ArtifactBuildFailed(artifactName, msg.Err())

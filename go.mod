@@ -24,6 +24,7 @@ require (
 	github.com/fatih/color v1.7.0
 	github.com/felixge/fgprof v0.9.0
 	github.com/fsnotify/fsnotify v1.4.7
+	github.com/gammazero/workerpool v1.1.1
 	github.com/go-ini/ini v1.32.0 // indirect
 	github.com/go-ole/go-ole v1.2.4
 	github.com/go-openapi/analysis v0.0.0-20180418034448-863ac7f90e00 // indirect

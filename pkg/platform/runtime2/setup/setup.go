@@ -3,6 +3,7 @@ package setup
 import (
 	"context"
 
+	"github.com/gammazero/workerpool"
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -24,6 +25,18 @@ const MaxConcurrency = 3
 
 // NotInstalledError is an error returned when the runtime is not completely installed yet.
 var NotInstalledError = errs.New("Runtime is not completely installed.")
+
+type ArtifactSetupErrors struct {
+	errs []error
+}
+
+func (a *ArtifactSetupErrors) Error() string {
+	return "Not all artifacts could be installed"
+}
+
+func (a *ArtifactSetupErrors) Errors() []error {
+	return a.errs
+}
 
 // MessageHandler is the interface for callback functions that are called during
 // runtime set-up when progress messages can be forwarded to the user
@@ -146,22 +159,27 @@ func (s *Setup) Update() error {
 }
 
 func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, _ map[model.ArtifactID]model.Artifact) error {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	downloads := s.model.ArtifactDownloads(buildResult.BuildStatusResponse)
-	scheduler := newArtifactScheduler(ctx, downloads)
-
-	orchErr := orchestrateArtifactSetup(ctx, scheduler.BuiltArtifactsChannel(), func(a model.ArtifactDownload) error {
-		return s.setupArtifact(buildResult.BuildEngine, a.ArtifactID, a.DownloadURI)
-	})
-
-	err := scheduler.Wait()
-	if err != nil {
-		return err
+	var errors []error
+	wp := workerpool.New(MaxConcurrency)
+	for _, a := range s.model.ArtifactDownloads(buildResult.BuildStatusResponse) {
+		func(a model.ArtifactDownload) {
+			wp.Submit(func() {
+				if err := s.setupArtifact(buildResult.BuildEngine, a.ArtifactID, a.DownloadURI); err != nil {
+					errors = append(errors, err)
+				}
+			})
+		}(a)
 	}
 
-	return orchErr
+	wp.StopWait()
+
+	if len(errors) > 0 {
+		return &ArtifactSetupErrors{errors}
+	}
+
+	return nil
 }
+
 
 func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts map[model.ArtifactID]model.Artifact) error {
 	ctx, cancel := context.WithCancel(context.Background())
@@ -174,16 +192,29 @@ func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts ma
 
 	buildLog, err := buildlog.New(artifacts, conn, s.msgHandler, *buildResult.Recipe.RecipeID)
 
-	orchErr := orchestrateArtifactSetup(ctx, buildLog.BuiltArtifactsChannel(), func(a model.ArtifactDownload) error {
-		return s.setupArtifact(buildResult.BuildEngine, a.ArtifactID, a.DownloadURI)
-	})
+	var errors []error
+	wp := workerpool.New(MaxConcurrency)
+	for a := range buildLog.BuiltArtifactsChannel() {
+		func(a model.ArtifactDownload) {
+			wp.Submit(func() {
+				if err := s.setupArtifact(buildResult.BuildEngine, a.ArtifactID, a.DownloadURI); err != nil {
+					errors = append(errors, err)
+				}
+			})
+		}(a)
+	}
 
-	err = buildLog.Wait()
-	if err != nil {
+	if err = buildLog.Wait(); err != nil {
 		return err
 	}
 
-	return orchErr
+	wp.StopWait()
+
+	if len(errors) > 0 {
+		return &ArtifactSetupErrors{errors}
+	}
+
+	return nil
 }
 
 // setupArtifact sets up an individual artifact
