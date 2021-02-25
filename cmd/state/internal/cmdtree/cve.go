@@ -59,7 +59,7 @@ func newOpenCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"open",
-		locale.Tl("cve_open_title", "Opening Vulnerability"),
+		locale.Tl("cve_open_title", "Opening Vulnerability Details Page"),
 		locale.Tl("cve_open_cmd_description", "Open the given vulnerability details in your browser"),
 		prime.Output(),
 		prime.Config(),

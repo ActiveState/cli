@@ -34,7 +34,7 @@ func (o *Open) Run(params OpenParams) error {
 			locale.Tr("browser_fallback", "vulnerability details", cveURL),
 		)
 	}
-	o.out.Print(locale.Tl("cve_open_url", "Vulnerability detail URL: [NOTICE]{{.V0}}[/RESET]", cveURL))
+	o.out.Print(locale.Tl("cve_open_url", "Vulnerability detail URL: [ACTIONABLE]{{.V0}}[/RESET]", cveURL))
 
 	return nil
 }
