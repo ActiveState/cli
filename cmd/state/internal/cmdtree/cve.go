@@ -52,3 +52,27 @@ func newReportCommand(prime *primer.Values) *captain.Command {
 		},
 	)
 }
+
+func newOpenCommand(prime *primer.Values) *captain.Command {
+	open := cve.NewOpen(prime)
+	params := cve.OpenParams{}
+
+	return captain.NewCommand(
+		"open",
+		locale.Tl("cve_open_title", "Opening Vulnerability Details Page"),
+		locale.Tl("cve_open_cmd_description", "Open the given vulnerability details in your browser"),
+		prime.Output(),
+		prime.Config(),
+		[]*captain.Flag{},
+		[]*captain.Argument{
+			{
+				Name:        locale.Tl("cve_open_id_arg", "ID"),
+				Description: locale.Tl("cve_open_id_arg_description", "The vulnerablility to open in your browser"),
+				Value:       &params.ID,
+			},
+		},
+		func(_ *captain.Command, _ []string) error {
+			return open.Run(params)
+		},
+	)
+}
