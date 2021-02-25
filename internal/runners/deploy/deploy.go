@@ -112,7 +112,12 @@ func (d *Deploy) createRuntimeInstaller(namespace project.Namespaced, targetPath
 	if err != nil {
 		return nil, nil, locale.WrapError(err, "err_deploy_init_runtime", "Could not initialize runtime for deployment.")
 	}
-	runtime.SetInstallPath(targetPath)
+
+	// NewRuntime will set a default installation path
+	// Override the default path if one was provided
+	if targetPath != "" {
+		runtime.SetInstallPath(targetPath)
+	}
 	return runtime, d.NewRuntimeInstaller(runtime), nil
 }
 
