@@ -1,7 +1,6 @@
 package config
 
 import (
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -122,33 +121,15 @@ func (i *Instance) Set(key string, value interface{}) error {
 	i.rwLock.Lock()
 	defer i.rwLock.Unlock()
 
-	configData, err := i.configFileData()
+	err := i.ReadInConfig()
 	if err != nil {
 		return err
 	}
 
-	configData[strings.ToLower(key)] = value
-	i.data = configData
+	i.data[strings.ToLower(key)] = value
 
 	err = i.save()
 	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func retryLock(pl *lockfile.PidLock, attempts int, interval time.Duration) error {
-	lockedErr := &lockfile.AlreadyLockedError{}
-	_, err := pl.TryLock()
-	if err != nil {
-		if !errors.As(err, &lockedErr) {
-			return errs.Wrap(err, "Unexpected error attempting to acquire lock file")
-		}
-		if attempts--; attempts > 0 {
-			time.Sleep(interval)
-			return retryLock(pl, attempts, interval)
-		}
 		return err
 	}
 
@@ -242,43 +223,35 @@ func (i *Instance) InstallSource() string {
 
 // ReadInConfig reads in config from the config file
 func (i *Instance) ReadInConfig() error {
-	configData, err := i.configFileData()
-	if err != nil {
-		return err
-	}
-	i.data = configData
-	return nil
-}
-
-func (i *Instance) configFileData() (map[string]interface{}, error) {
 	pl, err := lockfile.NewPidLock(i.getLockFile())
 	if err != nil {
-		return nil, errs.Wrap(err, "Could not create lock file for updating config")
+		return errs.Wrap(err, "Could not create lock file for updating config")
 	}
 	defer pl.Close()
 
-	err = retryLock(pl, 5, 1*time.Second)
+	err = pl.WaitForLock(5 * time.Second)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	configFile, err := i.getConfigFile()
 	if err != nil {
-		return nil, errs.Wrap(err, "Could not find config file")
+		return errs.Wrap(err, "Could not find config file")
 	}
 
 	configData, err := ioutil.ReadFile(configFile)
 	if err != nil {
-		return nil, errs.Wrap(err, "Could not read config file")
+		return errs.Wrap(err, "Could not read config file")
 	}
 
 	data := make(map[string]interface{})
 	err = yaml.Unmarshal(configData, data)
 	if err != nil {
-		return nil, errs.Wrap(err, "Could not unmarshall config data")
+		return errs.Wrap(err, "Could not unmarshall config data")
 	}
 
-	return data, nil
+	i.data = data
+	return nil
 }
 
 func (i *Instance) save() error {
@@ -288,7 +261,7 @@ func (i *Instance) save() error {
 	}
 	defer pl.Close()
 
-	err = retryLock(pl, 5, 1*time.Second)
+	err = pl.WaitForLock(5 * time.Second)
 	if err != nil {
 		return err
 	}
@@ -379,7 +352,7 @@ func (i *Instance) ensureCacheExists() error {
 
 func (i *Instance) getLockFile() string {
 	if i.lockFile == "" {
-		i.lockFile = filepath.Join(i.configDir.Path, "config-lock")
+		i.lockFile = filepath.Join(i.configDir.Path, "config.lock")
 	}
 
 	return i.lockFile
