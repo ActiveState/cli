@@ -141,19 +141,17 @@ func targetProject(prj *project.Project, overwrite string) (*project.Namespaced,
 	}
 
 	// Retrieve commit ID to set the project to (if unset)
-	if ns.CommitID == nil || *ns.CommitID == "" {
-		if overwrite != "" {
-			branch, err := model.DefaultBranchForProjectName(ns.Owner, ns.Project)
-			if err != nil {
-				return nil, locale.WrapError(err, "err_pull_commit", "Could not retrieve the latest commit for your project.")
-			}
-			ns.CommitID = branch.CommitID
-		} else {
-			var err error
-			ns.CommitID, err = model.BranchCommitID(ns.Owner, ns.Project, prj.BranchName())
-			if err != nil {
-				return nil, locale.WrapError(err, "err_pull_commit_branch", "Could not retrieve the latest commit for your project and branch.")
-			}
+	if overwrite != "" {
+		branch, err := model.DefaultBranchForProjectName(ns.Owner, ns.Project)
+		if err != nil {
+			return nil, locale.WrapError(err, "err_pull_commit", "Could not retrieve the latest commit for your project.")
+		}
+		ns.CommitID = branch.CommitID
+	} else {
+		var err error
+		ns.CommitID, err = model.BranchCommitID(ns.Owner, ns.Project, prj.BranchName())
+		if err != nil {
+			return nil, locale.WrapError(err, "err_pull_commit_branch", "Could not retrieve the latest commit for your project and branch.")
 		}
 	}
 
