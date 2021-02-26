@@ -231,6 +231,10 @@ func (i *Instance) ReadInConfig() error {
 
 	err = pl.WaitForLock(5 * time.Second)
 	if err != nil {
+		lockedErr := &lockfile.AlreadyLockedError{}
+		if errs.Matches(err, &lockedErr) {
+			return errs.Wrap(err, "Could not write config as another process appears to be using it")
+		}
 		return err
 	}
 

@@ -1,7 +1,6 @@
 package lockfile
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -103,15 +102,15 @@ func (pl *PidLock) WaitForLock(timeout time.Duration) error {
 	for {
 		_, err := pl.TryLock()
 		if err != nil {
-			if !errors.As(err, &lockedErr) {
-				return errs.Wrap(err, "Unexpected error attempting to acquire lock file")
+			if !errs.Matches(err, &lockedErr) {
+				return errs.Wrap(err, "Could not acquire lock")
 			}
 
 			select {
 			case <-timer.C:
 				return err
 			default:
-				time.Sleep(1 * time.Second)
+				time.Sleep(100 * time.Millisecond)
 			}
 		}
 		return nil
