@@ -5,6 +5,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/pkg/platform/runtime2/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/store"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -55,11 +56,11 @@ func (r *Runtime) Environ(inherit bool) (map[string]string, error) {
 	return r.store.Environ(inherit)
 }
 
-func (r *Runtime) Artifacts() (map[model.ArtifactID]model.Artifact, error) {
+func (r *Runtime) Artifacts() (map[artifact.ArtifactID]artifact.ArtifactRecipe, error) {
 	recipe, err := r.store.Recipe()
 	if err != nil {
 		return nil, locale.WrapError(err, "runtime_artifacts_recipe_load_err", "Failed to load recipe for your runtime.  Please re-install the runtime.")
 	}
-	artifacts := r.model.ArtifactsFromRecipe(recipe)
+	artifacts := artifact.NewMapFromRecipe(recipe)
 	return artifacts, nil
 }

@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	apimodel "github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime2/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/setup/buildlog"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/setup/implementations/alternative"
@@ -47,7 +48,7 @@ type MessageHandler interface {
 	// This summary is printed as soon as possible, providing the State Tool user with an idea of the complexity of the requested build.
 	// The arguments are for the changes introduced in the latest commit that this Setup is setting up.
 	// TODO: Decide if we want to have a method to de-activate the change summary for activations where it does not make sense.
-	ChangeSummary(artifacts map[model.ArtifactID]model.Artifact, requested model.ArtifactChanges, changed model.ArtifactChanges)
+	ChangeSummary(artifacts map[artifact.ArtifactID]artifact.ArtifactRecipe, requested artifact.ArtifactChangeset, changed artifact.ArtifactChangeset)
 	ArtifactDownloadStarting(artifactName string)
 	ArtifactDownloadCompleted(artifactName string)
 	ArtifactDownloadFailed(artifactName string, errorMsg string)
@@ -78,11 +79,6 @@ type ModelProvider interface {
 	ResolveRecipe(commitID strfmt.UUID, owner, projectName string) (*inventory_models.Recipe, error)
 	RequestBuild(recipeID, commitID strfmt.UUID, owner, project string) (headchef.BuildStatusEnum, *headchef_models.BuildStatusResponse, error)
 	FetchBuildResult(commitID strfmt.UUID, owner, project string) (*model.BuildResult, error)
-	ArtifactsFromRecipe(recipe *inventory_models.Recipe) map[model.ArtifactID]model.Artifact
-	ArtifactDownloads(buildStatus *headchef_models.BuildStatusResponse) []model.ArtifactDownload
-	RequestedArtifactChanges(old, new model.ArtifactMap) model.ArtifactChanges
-	ResolvedArtifactChanges(old, new model.ArtifactMap) model.ArtifactChanges
-	DetectArtifactChanges(oldRecipe *inventory_models.Recipe, buildResult *model.BuildResult) (requested model.ArtifactChanges, changed model.ArtifactChanges)
 }
 
 // ArtifactSetuper is the interface for an implementation of artifact setup functions
@@ -119,7 +115,7 @@ func (s *Setup) Update() error {
 	}
 
 	// Compute and handle the change summary
-	artifacts := s.model.ArtifactsFromRecipe(buildResult.Recipe)
+	artifacts := artifact.NewMapFromRecipe(buildResult.Recipe)
 
 	store, err := store.New(s.project.Source().Project, s.config.CachePath())
 	if err != nil {
@@ -129,7 +125,8 @@ func (s *Setup) Update() error {
 	if err != nil {
 		logging.Debug("Could not load existing recipe.  Maybe it is a new installation: %v", err)
 	}
-	requestedArtifacts, changedArtifacts := s.model.DetectArtifactChanges(oldRecipe, buildResult)
+	requestedArtifacts := artifact.NewArtifactChangesetByRecipe(oldRecipe, buildResult.Recipe, true)
+	changedArtifacts := artifact.NewArtifactChangesetByRecipe(oldRecipe, buildResult.Recipe, false)
 	s.msgHandler.ChangeSummary(artifacts, requestedArtifacts, changedArtifacts)
 
 	// TODO: Here we should remove files from artifacts that are removed either by comparing with
@@ -158,11 +155,11 @@ func (s *Setup) Update() error {
 	panic("implement me")
 }
 
-func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, _ map[model.ArtifactID]model.Artifact) error {
+func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, _ map[artifact.ArtifactID]artifact.ArtifactRecipe) error {
 	var errors []error
 	wp := workerpool.New(MaxConcurrency)
-	for _, a := range s.model.ArtifactDownloads(buildResult.BuildStatusResponse) {
-		func(a model.ArtifactDownload) {
+	for _, a := range artifact.NewDownloadsFromBuild(buildResult.BuildStatusResponse) {
+		func(a artifact.ArtifactDownload) {
 			wp.Submit(func() {
 				if err := s.setupArtifact(buildResult.BuildEngine, a.ArtifactID, a.DownloadURI); err != nil {
 					errors = append(errors, err)
@@ -180,8 +177,7 @@ func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, _ map[mod
 	return nil
 }
 
-
-func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts map[model.ArtifactID]model.Artifact) error {
+func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts map[artifact.ArtifactID]artifact.ArtifactRecipe) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -195,7 +191,7 @@ func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts ma
 	var errors []error
 	wp := workerpool.New(MaxConcurrency)
 	for a := range buildLog.BuiltArtifactsChannel() {
-		func(a model.ArtifactDownload) {
+		func(a artifact.ArtifactDownload) {
 			wp.Submit(func() {
 				if err := s.setupArtifact(buildResult.BuildEngine, a.ArtifactID, a.DownloadURI); err != nil {
 					errors = append(errors, err)
@@ -219,7 +215,7 @@ func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts ma
 
 // setupArtifact sets up an individual artifact
 // The artifact is downloaded, unpacked and then processed by the artifact setup implementation
-func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a model.ArtifactID, downloadURL string) error {
+func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.ArtifactID, downloadURL string) error {
 	as := s.selectArtifactSetupImplementation(buildEngine, a)
 	if !as.NeedsSetup() {
 		return nil
@@ -243,7 +239,7 @@ func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a model.ArtifactID,
 
 // downloadArtifactTarball retrieves the tarball for an artifactID
 // Note: the tarball may also be retrieved from a local cache directory if that is available.
-func (s *Setup) downloadArtifactTarball(artifactID model.ArtifactID, downloadURL string) string {
+func (s *Setup) downloadArtifactTarball(artifactID artifact.ArtifactID, downloadURL string) string {
 	s.msgHandler.ArtifactDownloadStarting("artifactName")
 	panic("implement me")
 }
@@ -259,7 +255,7 @@ func (s *Setup) selectSetupImplementation(buildEngine model.BuildEngine) Setuper
 	panic("implement me")
 }
 
-func (s *Setup) selectArtifactSetupImplementation(buildEngine model.BuildEngine, a model.ArtifactID) ArtifactSetuper {
+func (s *Setup) selectArtifactSetupImplementation(buildEngine model.BuildEngine, a artifact.ArtifactID) ArtifactSetuper {
 	if buildEngine == model.Alternative {
 		return alternative.NewArtifactSetup(a)
 	}

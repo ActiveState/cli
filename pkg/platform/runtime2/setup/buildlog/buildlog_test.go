@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/ActiveState/cli/pkg/platform/runtime2/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime2/artifact"
 )
 
 type connectionMock struct {
@@ -56,7 +56,7 @@ func (cm *connectionMock) SendBuildFailedMessage(errMsg string) {
 	cm.messages = append(cm.messages, message{Type: "build_failed", ErrorMessage: &errMsg})
 }
 
-func (cm *connectionMock) SendArtifactStartedMessage(a model.Artifact, isCacheHit bool) {
+func (cm *connectionMock) SendArtifactStartedMessage(a artifact.ArtifactRecipe, isCacheHit bool) {
 	cm.messages = append(
 		cm.messages, message{
 			Type:       "artifact_started",
@@ -65,7 +65,7 @@ func (cm *connectionMock) SendArtifactStartedMessage(a model.Artifact, isCacheHi
 		})
 }
 
-func (cm *connectionMock) SendArtifactSucceededMessage(a model.Artifact) {
+func (cm *connectionMock) SendArtifactSucceededMessage(a artifact.ArtifactRecipe) {
 	chksum := "123"
 	uri := fmt.Sprintf("uri://%s", a.Name)
 	cm.messages = append(
@@ -77,7 +77,7 @@ func (cm *connectionMock) SendArtifactSucceededMessage(a model.Artifact) {
 		})
 }
 
-func (cm *connectionMock) SendArtifactFailedMessage(a model.Artifact, errMsg string) {
+func (cm *connectionMock) SendArtifactFailedMessage(a artifact.ArtifactRecipe, errMsg string) {
 	cm.messages = append(
 		cm.messages, message{
 			Type:         "artifact_failed",
@@ -124,7 +124,7 @@ func (mh *mockMessageHandler) ArtifactBuildFailed(artifactName string, errorMess
 
 func TestBuildLog(t *testing.T) {
 	recipeID := strfmt.UUID("10000000-0000-0000-0000-000000000001")
-	ids := []model.ArtifactID{
+	ids := []artifact.ArtifactID{
 		"00000000-0000-0000-0000-000000000001",
 		"00000000-0000-0000-0000-000000000002",
 	}
@@ -132,12 +132,12 @@ func TestBuildLog(t *testing.T) {
 		"artifact1",
 		"artifact2",
 	}
-	artifacts := []model.Artifact{
+	artifacts := []artifact.ArtifactRecipe{
 		{ArtifactID: ids[0], Name: names[0]},
 		{ArtifactID: ids[1], Name: names[1]},
 		{ArtifactID: recipeID, Name: "terminal-node"},
 	}
-	artifactMap := map[model.ArtifactID]model.Artifact{
+	artifactMap := map[artifact.ArtifactID]artifact.ArtifactRecipe{
 		ids[0]: artifacts[0],
 		ids[1]: artifacts[1],
 	}
@@ -207,7 +207,7 @@ func TestBuildLog(t *testing.T) {
 			bl, err := New(artifactMap, cm, mmh, recipeID)
 			require.NoError(t, err)
 
-			var downloads []model.ArtifactDownload
+			var downloads []artifact.ArtifactDownload
 			done := make(chan struct{})
 			go func() {
 				defer func() { done <- struct{}{} }()

@@ -1,11 +1,13 @@
 package alternative
 
-import "github.com/ActiveState/cli/pkg/platform/runtime2/model"
+import (
+	"github.com/ActiveState/cli/pkg/platform/runtime2/artifact"
+)
 
 type ArtifactSetup struct {
 }
 
-func NewArtifactSetup(artifactID model.ArtifactID) *ArtifactSetup {
+func NewArtifactSetup(artifactID artifact.ArtifactID) *ArtifactSetup {
 	return &ArtifactSetup{}
 }
 
