@@ -7,6 +7,7 @@ import (
 	"sort"
 
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/go-openapi/strfmt"
 )
 
 type branchNode struct {
@@ -62,12 +63,23 @@ func buildBranchTree(currentBranch *mono_models.Branch, branches mono_models.Bra
 func getRootBranches(branches mono_models.Branches) mono_models.Branches {
 	var rootBranches mono_models.Branches
 	for _, branch := range branches {
-		if branch.Tracks != nil {
+		// Account for forked projects where the root branches contain
+		// a tracking ID that is not in the current project's branches
+		if branch.Tracks != nil && containsBranch(branch.Tracks, branches) {
 			continue
 		}
 		rootBranches = append(rootBranches, branch)
 	}
 	return rootBranches
+}
+
+func containsBranch(id *strfmt.UUID, branches mono_models.Branches) bool {
+	for _, branch := range branches {
+		if branch.BranchID.String() == id.String() {
+			return true
+		}
+	}
+	return false
 }
 
 func getChildren(branch *mono_models.Branch, branches mono_models.Branches) tree {
