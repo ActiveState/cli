@@ -97,12 +97,11 @@ func (pl *PidLock) Close(keepFile ...bool) error {
 
 // WaitForLock will attempt to acquire the lock for the duration given
 func (pl *PidLock) WaitForLock(timeout time.Duration) error {
-	lockedErr := &AlreadyLockedError{}
 	timer := time.NewTimer(timeout)
 	for {
 		_, err := pl.TryLock()
 		if err != nil {
-			if !errs.Matches(err, &lockedErr) {
+			if !errs.Matches(err, &AlreadyLockedError{}) {
 				return errs.Wrap(err, "Could not acquire lock")
 			}
 
