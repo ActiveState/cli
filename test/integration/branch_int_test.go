@@ -58,7 +58,7 @@ func (suite *BranchIntegrationTestSuite) TestBranch_Add() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("branch")
-	cp.Expect(branchName.String(), 60*time.Second)
+	cp.Expect(branchName.String())
 	cp.ExpectExitCode(0)
 }
 
