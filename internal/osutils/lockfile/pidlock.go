@@ -97,7 +97,7 @@ func (pl *PidLock) Close(keepFile ...bool) error {
 
 // WaitForLock will attempt to acquire the lock for the duration given
 func (pl *PidLock) WaitForLock(timeout time.Duration) error {
-	timer := time.NewTimer(timeout)
+	expiration := time.Now().Add(timeout)
 	for {
 		_, err := pl.TryLock()
 		if err != nil {
@@ -105,12 +105,10 @@ func (pl *PidLock) WaitForLock(timeout time.Duration) error {
 				return errs.Wrap(err, "Could not acquire lock")
 			}
 
-			select {
-			case <-timer.C:
+			if time.Now().After(expiration) {
 				return err
-			default:
-				time.Sleep(100 * time.Millisecond)
 			}
+			time.Sleep(100 * time.Millisecond)
 		}
 		return nil
 	}
