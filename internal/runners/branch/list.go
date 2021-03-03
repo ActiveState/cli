@@ -1,9 +1,6 @@
 package branch
 
 import (
-	"fmt"
-	"sort"
-
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -33,35 +30,24 @@ func NewList(prime primeable) *List {
 func (l *List) Run() error {
 	logging.Debug("ExecuteList")
 
+	l.out.Print(
+		locale.Tl(
+			"branch_info",
+			"\nBranches allow you to create runtimes with different packages sets depending on your use case. Here are the branches in your current project.\n",
+		),
+	)
+
 	project, err := model.FetchProjectByName(l.project.Owner(), l.project.Name())
 	if err != nil {
 		return locale.WrapError(err, "err_fetch_project", "", l.project.Namespace().String())
 	}
 
-	localBranch := l.project.BranchName()
-
-	sort.Slice(project.Branches, func(i, j int) bool {
-		return project.Branches[i].Label < project.Branches[j].Label
-	})
-
-	var branches []string
-	var mainBranchLabel string
-	for _, branch := range project.Branches {
-		branchName := branch.Label
-		if branchName == localBranch {
-			branchName = fmt.Sprintf("[NOTICE]%s[/RESET] *", branchName)
-		}
-
-		if branch.Default {
-			mainBranchLabel = branchName
-			continue
-		}
-
-		branches = append(branches, branchName)
-	}
-	branches = append([]string{mainBranchLabel}, branches...)
-
-	l.out.Print(branches)
+	tree := NewBranchTree()
+	tree.AddLocalBranch(l.project.BranchName())
+	tree.AddBranchFormatting("[NOTICE]%s[/RESET]")
+	tree.AddLocalBranchFormatting("[ACTIONABLE]%s[/RESET] [DISABLED](Current)[/RESET]")
+	tree.BuildFromBranches(project.Branches)
+	l.out.Print(tree.String())
 
 	return nil
 }
