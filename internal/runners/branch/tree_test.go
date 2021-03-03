@@ -17,7 +17,7 @@ func TestBranchListing_Simple(t *testing.T) {
 	tree := NewBranchTree()
 	tree.BuildFromBranches(branches)
 	actual := tree.String()
-	expected := " main\n"
+	expected := "main\n"
 	assert.Equal(t, expected, actual)
 }
 
@@ -26,13 +26,13 @@ func TestBranchListing_Complex(t *testing.T) {
 	tree := NewBranchTree()
 	tree.BuildFromBranches(branches)
 	actual := tree.String()
-	expected := ` main
-  ├─ subBranch1
-  │  ├─ childOfSubBranch1
-  │  │  └─ 3rdLevelChild
-  │  └─ secondChildOfSubBranch1
-  ├─ subBranch2
-  └─ subBranch3
+	expected := `main
+ ├─ subBranch1
+ │  ├─ childOfSubBranch1
+ │  │  └─ 3rdLevelChild
+ │  └─ secondChildOfSubBranch1
+ ├─ subBranch2
+ └─ subBranch3
 `
 	assert.Equal(t, expected, actual)
 }
@@ -42,13 +42,13 @@ func TestBranchListing_MultipleRoots(t *testing.T) {
 	tree := NewBranchTree()
 	tree.BuildFromBranches(branches)
 	actual := tree.String()
-	expected := ` root1
- root2
-  ├─ root1Child1
-  ├─ root1Child2
-  │  └─ childOfRoot1Child2
-  └─ root2Child3
- root3
+	expected := `root1
+root2
+ ├─ root1Child1
+ ├─ root1Child2
+ │  └─ childOfRoot1Child2
+ └─ root2Child3
+root3
 `
 	assert.Equal(t, expected, actual)
 }

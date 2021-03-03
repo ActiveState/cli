@@ -5,17 +5,16 @@ import (
 	"fmt"
 	"io"
 	"sort"
-	"strings"
 
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
-type BranchNode struct {
+type branchNode struct {
 	Label string
 	ID    string
 }
 
-type tree map[BranchNode]tree
+type tree map[branchNode]tree
 
 type BranchTree struct {
 	tree                  tree
@@ -39,7 +38,7 @@ func NewBranchTree() *BranchTree {
 func (bt *BranchTree) BuildFromBranches(branches mono_models.Branches) {
 	bt.rootBranches = getRootBranches(branches)
 	for _, branch := range bt.rootBranches {
-		bt.tree[BranchNode{branch.Label, branch.BranchID.String()}] = buildBranchTree(branch, branches)
+		bt.tree[branchNode{branch.Label, branch.BranchID.String()}] = buildBranchTree(branch, branches)
 	}
 }
 
@@ -53,8 +52,8 @@ func buildBranchTree(currentBranch *mono_models.Branch, branches mono_models.Bra
 		}
 
 		// Check that this branch is a child branch and recursively build its tree
-		if _, ok := t[BranchNode{branch.Label, branch.BranchID.String()}]; ok {
-			t[BranchNode{branch.Label, branch.BranchID.String()}] = buildBranchTree(branch, branches)
+		if _, ok := t[branchNode{branch.Label, branch.BranchID.String()}]; ok {
+			t[branchNode{branch.Label, branch.BranchID.String()}] = buildBranchTree(branch, branches)
 		}
 	}
 	return t
@@ -82,7 +81,7 @@ func getChildren(branch *mono_models.Branch, branches mono_models.Branches) tree
 			continue
 		}
 		if b.Tracks.String() == branch.BranchID.String() {
-			children[BranchNode{b.Label, b.BranchID.String()}] = make(tree)
+			children[branchNode{b.Label, b.BranchID.String()}] = make(tree)
 		}
 	}
 	return children
@@ -108,8 +107,8 @@ func (bt *BranchTree) String() string {
 }
 
 func (bt *BranchTree) print(w io.Writer, currentTree tree, currentLevel int, levelsCompleted []int) {
-	// Sort current keys to ensure consistent output
-	var nodes []BranchNode
+	// Sort keys at current level to ensure consistent output
+	var nodes []branchNode
 	for k := range currentTree {
 		nodes = append(nodes, k)
 	}
@@ -134,16 +133,16 @@ func (bt *BranchTree) print(w io.Writer, currentTree tree, currentLevel int, lev
 	}
 }
 
-func (bt *BranchTree) printNode(w io.Writer, node BranchNode, currentLevel int, levelsCompleted []int, edge string) {
+func (bt *BranchTree) printNode(w io.Writer, node branchNode, currentLevel int, levelsCompleted []int, edge string) {
 	// Print necessary edge links for current depth
 	for i := 0; i < currentLevel; i++ {
 		// Apply spacing for completed levels
-		// Do not print edge links for projects with multiple root nodes
+		// Do not print edge links for projects with multiple root-level branches
 		if isCompleted(levelsCompleted, i) || (i == 0 && len(bt.rootBranches) > 1) {
-			fmt.Fprintf(w, "%s", strings.Repeat(" ", 2))
+			fmt.Fprint(w, " ")
 			continue
 		}
-		fmt.Fprintf(w, "%s", edgeLink)
+		fmt.Fprint(w, edgeLink)
 	}
 
 	// Apply formatting if applicable
@@ -155,10 +154,14 @@ func (bt *BranchTree) printNode(w io.Writer, node BranchNode, currentLevel int, 
 		branchName = fmt.Sprintf(bt.localBranchFormatting, node.Label)
 	}
 
-	fmt.Fprintf(w, "%s %s\n", edge, branchName)
+	format := "%s %s\n"
+	if edge == "" {
+		format = "%s%s\n"
+	}
+	fmt.Fprintf(w, format, edge, branchName)
 }
 
-func (bt *BranchTree) isRootNode(node BranchNode) bool {
+func (bt *BranchTree) isRootNode(node branchNode) bool {
 	for _, branch := range bt.rootBranches {
 		if branch.Label == node.Label {
 			return true
