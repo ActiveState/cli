@@ -1,0 +1,37 @@
+[
+  {
+    "branchID": "3a1b83b7-c2d9-4faa-9616-e5d66f8988e8",
+    "label": "subBranch2",
+    "tracks": "2072eb02-9419-407c-b3ba-666ea6fc7760"
+  },
+  {
+    "branchID": "939fc3ef-0c3c-4136-89f2-5bce01e0cfec",
+    "label": "subBranch1",
+    "tracks": "2072eb02-9419-407c-b3ba-666ea6fc7760"
+  },
+  {
+    "branchID": "bdd52cdf-2b0b-497b-89e7-1b1c8e4f6dcd",
+    "label": "childOfSubBranch1",
+    "tracks": "939fc3ef-0c3c-4136-89f2-5bce01e0cfec"
+  },
+  {
+    "branchID": "44483e6c-1382-4464-8ada-19d05978b182",
+    "label": "3rdLevelChild",
+    "tracks": "bdd52cdf-2b0b-497b-89e7-1b1c8e4f6dcd"
+  },
+  {
+    "branchID": "2072eb02-9419-407c-b3ba-666ea6fc7760",
+    "default": true,
+    "label": "main"
+  },
+  {
+    "branchID": "6027afa8-f11e-4229-926e-c867648c4c73",
+    "label": "subBranch3",
+    "tracks": "2072eb02-9419-407c-b3ba-666ea6fc7760"
+  },
+  {
+    "branchID": "04ceb77b-b0b5-4f37-90ef-8619369fcedf",
+    "label": "secondChildOfSubBranch1",
+    "tracks": "939fc3ef-0c3c-4136-89f2-5bce01e0cfec"
+  }
+]

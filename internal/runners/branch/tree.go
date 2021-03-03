@@ -21,7 +21,6 @@ type BranchTree struct {
 	tree                  tree
 	branches              mono_models.Branches
 	rootBranches          mono_models.Branches
-	multipleRoots         bool
 	localBranch           string
 	branchFormatting      string
 	localBranchFormatting string
@@ -39,9 +38,6 @@ func NewBranchTree() *BranchTree {
 
 func (bt *BranchTree) BuildFromBranches(branches mono_models.Branches) {
 	bt.rootBranches = getRootBranches(branches)
-	if len(bt.rootBranches) > 1 {
-		bt.multipleRoots = true
-	}
 	for _, branch := range bt.rootBranches {
 		bt.tree[BranchNode{branch.Label, branch.BranchID.String()}] = buildBranchTree(branch, branches)
 	}
@@ -50,9 +46,13 @@ func (bt *BranchTree) BuildFromBranches(branches mono_models.Branches) {
 func buildBranchTree(currentBranch *mono_models.Branch, branches mono_models.Branches) tree {
 	t := getChildren(currentBranch, branches)
 	for _, branch := range branches {
+		// Discard any branches without tracking information as we are only interested
+		// in child branches of the current branch
 		if branch.Tracks == nil {
 			continue
 		}
+
+		// Check that this branch is a child branch and recursively build its tree
 		if _, ok := t[BranchNode{branch.Label, branch.BranchID.String()}]; ok {
 			t[BranchNode{branch.Label, branch.BranchID.String()}] = buildBranchTree(branch, branches)
 		}
@@ -146,9 +146,12 @@ func (bt *BranchTree) printNode(w io.Writer, node BranchNode, currentLevel int, 
 		fmt.Fprintf(w, "%s", edgeLink)
 	}
 
-	// Apply formatting
-	branchName := fmt.Sprintf(bt.branchFormatting, node.Label)
-	if node.Label == bt.localBranch {
+	// Apply formatting if applicable
+	branchName := node.Label
+	if bt.branchFormatting != "" {
+		branchName = fmt.Sprintf(bt.branchFormatting, node.Label)
+	}
+	if node.Label == bt.localBranch && bt.localBranchFormatting != "" {
 		branchName = fmt.Sprintf(bt.localBranchFormatting, node.Label)
 	}
 
