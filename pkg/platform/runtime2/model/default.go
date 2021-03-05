@@ -60,6 +60,6 @@ func (m *Model) FetchBuildResult(commitID strfmt.UUID, owner, project string) (*
 		Recipe:              recipe,
 		BuildStatusResponse: resp,
 		BuildStatus:         bse,
-		BuildReady:          engine == Alternative && bse == headchef.Completed,
+		BuildReady:          bse == headchef.Completed,
 	}, nil
 }

@@ -1,55 +1,57 @@
 package runtime
 
 import (
-	"github.com/go-openapi/strfmt"
-
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime2/setup"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/store"
-	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
-type Projecter interface {
-	CommitUUID() strfmt.UUID
-	Source() *projectfile.Project
-}
-
-type Configurer interface {
-	CachePath() string
-}
-
 type Runtime struct {
-	pj    Projecter
-	cfg   Configurer
-	store *store.Store
-	model *model.Model
+	target setup.Targeter
+	store  *store.Store
+	model  *model.Model
+}
+
+type MessageHandler interface {
+	UseCache()
 }
 
 // NotInstalledError is an error returned when the runtime is not completely installed yet.
-type NeedsSetupError struct{ error }
+type NeedsUpdateError struct{ error }
 
-func IsNeedsSetupError(err error) bool {
-	return errs.Matches(err, &NeedsSetupError{})
+func IsNeedsUpdateError(err error) bool {
+	return errs.Matches(err, &NeedsUpdateError{})
 }
 
-func New(pj Projecter, cfg Configurer) (*Runtime, error) {
-	rt := &Runtime{}
-	rt.pj = pj
-	rt.cfg = cfg
+func New(target setup.Targeter) (*Runtime, error) {
+	rt := &Runtime{target: target}
 	rt.model = model.NewDefault()
 
 	var err error
-	if rt.store, err = store.New(pj.Source().Path(), cfg.CachePath()); err != nil {
+	if rt.store, err = store.New(target.Dir()); err != nil {
 		return nil, errs.Wrap(err, "Could not create runtime store")
 	}
 
-	if !rt.store.MatchesCommit(pj.CommitUUID()) {
-		return nil, &NeedsSetupError{errs.New("Runtime requires setup.")}
+	if !rt.store.MatchesCommit(target.CommitUUID()) {
+		return rt, &NeedsUpdateError{errs.New("Runtime requires setup.")}
 	}
 
 	return rt, nil
+}
+
+func (r *Runtime) Update(msgHandler setup.MessageHandler) error {
+	if err := setup.New(r.target, msgHandler).Update(); err != nil {
+		return errs.Wrap(err, "Update failed")
+	}
+	rt, err := New(r.target)
+	if err != nil {
+		return errs.Wrap(err, "Could not reinitialize runtime after update")
+	}
+	*r = *rt
+	return nil
 }
 
 func (r *Runtime) Environ(inherit bool) (map[string]string, error) {

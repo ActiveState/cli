@@ -56,12 +56,6 @@ type BuildLog struct {
 // New creates a new instance that allows us to wait for incoming build log information
 // TODO: Decide if we maybe want a fail-fast option where we return on the first artifact_failed message
 func New(artifactMap map[artifact.ArtifactID]artifact.ArtifactRecipe, conn BuildLogConnector, messageHandler BuildLogMessageHandler, recipeID strfmt.UUID) (*BuildLog, error) {
-	logging.Debug("sending websocket request")
-	request := logRequest{RecipeID: recipeID.String()}
-	if err := conn.WriteJSON(request); err != nil {
-		return nil, errs.Wrap(err, "Could not write websocket request")
-	}
-
 	ch := make(chan artifact.ArtifactDownload)
 	errCh := make(chan error)
 
@@ -136,6 +130,12 @@ func New(artifactMap map[artifact.ArtifactID]artifact.ArtifactRecipe, conn Build
 		}
 	}()
 
+	logging.Debug("sending websocket request")
+	request := logRequest{RecipeID: recipeID.String()}
+	if err := conn.WriteJSON(request); err != nil {
+		return nil, errs.Wrap(err, "Could not write websocket request")
+	}
+
 	return &BuildLog{
 		ch:    ch,
 		errCh: errCh,
@@ -148,10 +148,6 @@ func (bl *BuildLog) Wait() error {
 	var errs []error
 	for err := range bl.errCh {
 		errs = append(errs, err)
-	}
-	err := bl.conn.Close()
-	if err != nil {
-		logging.Errorf("Failed to close build log connection: %v", err)
 	}
 	if len(errs) > 0 {
 		return errs[0]

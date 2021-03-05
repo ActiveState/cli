@@ -96,6 +96,9 @@ const ArtifactArchiveName = "artifact.tar.gz"
 // ArtifactCacheFileName is the standardized name of an artifact cache file
 const ArtifactCacheFileName = "artifact_cache.json"
 
+// ArtifactMetaDir is the directory in which we store meta information about artifacts
+const ArtifactMetaDir = "artifacts"
+
 // DefaultNamespaceDomain is the domain used when no namespace is given and one has to be constructed
 const DefaultNamespaceDomain = "github.com"
 
@@ -198,23 +201,26 @@ const ActivePythonDistsDir = "python"
 const RuntimeInstallDirs = "INSTALLDIR,perl"
 
 // RuntimeMetaFile is the json file that holds meta information about our runtime
-const RuntimeMetaFile = "support/metadata.json"
+const RuntimeMetaFile = "metadata.json"
 
 // RuntimeDefinitionFilename is the filename for runtime meta data bundled with artifacts, if they are built by the alternative builder
 const RuntimeDefinitionFilename = "runtime.json"
 
 // LocalRuntimeEnvironmentDirectory is the directory (relative to the installation of a runtime build) where runtime definition files are stored
-const LocalRuntimeEnvironmentDirectory = "_runtime_env"
+const LocalRuntimeEnvironmentDirectory = "_runtime_store"
+
+// LocalRuntimeTempDirectory is the directory (relative to the installation of a runtime build) where temp files are stored
+const LocalRuntimeTempDirectory = "_runtime_temp"
 
 // RuntimeInstallationCompleteMarker is created after all artifacts have been installed
 // Check for existence of this file to ensure that the installation has not been interrupted prematurely.
-const RuntimeInstallationCompleteMarker = "support/completed"
+const RuntimeInstallationCompleteMarker = "completed"
 
 // RuntimeBuildEngineStore contains the name of the build engine that was used to create this runtime
-const RuntimeBuildEngineStore = "support/build_engine"
+const RuntimeBuildEngineStore = "build_engine"
 
 // RuntimeRecipeStore contains a serialization of the recipe used to create this build
-const RuntimeRecipeStore = "support/recipe"
+const RuntimeRecipeStore = "recipe"
 
 // StateToolMarketingPage links to the marketing page for the state tool
 const StateToolMarketingPage = "https://www.activestate.com/products/platform/state-tool/"

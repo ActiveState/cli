@@ -212,7 +212,7 @@ func TestArtifactDownloads(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
 			build := testhelper.LoadBuildResponse(t, tt.BuildName)
-			downloads := NewDownloadsFromBuild(build)
+			downloads, _ := NewDownloadsFromBuild(build)
 			assert.Equal(t, tt.Expected, downloads)
 		})
 	}

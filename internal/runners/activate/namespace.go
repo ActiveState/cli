@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
@@ -18,26 +19,13 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 )
 
-type configurable interface {
-	Set(string, interface{})
-	GetBool(string) bool
-	GetStringMap(string) map[string]interface{}
-	Save() error
-	CachePath() string
-	ConfigPath() string
-	GetString(key string) string
-	GetStringSlice(key string) []string
-	GetStringMapStringSlice(key string) map[string][]string
-	AllKeys() []string
-}
-
 // NamespaceSelect will select the right directory associated with a namespace, and chdir into it
 type NamespaceSelect struct {
-	config   configurable
+	config   *config.Instance
 	prompter prompt.Prompter
 }
 
-func NewNamespaceSelect(config configurable, prime primeable) *NamespaceSelect {
+func NewNamespaceSelect(config *config.Instance, prime primeable) *NamespaceSelect {
 	return &NamespaceSelect{config, prime.Prompt()}
 }
 

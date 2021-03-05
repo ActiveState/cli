@@ -497,7 +497,6 @@ func MoveAllFilesRecursively(fromPath, toPath string, cb MoveAllFilesCallback) e
 				return errs.Wrap(err, "os.Remove %s failed", subFromPath)
 			}
 		} else {
-			logging.Warning(locale.Tr("warn_move_destination_overwritten", "", subFromPath))
 			err = os.Rename(subFromPath, subToPath)
 			if err != nil {
 				return errs.Wrap(err, "os.Rename %s:%s failed", subFromPath, subToPath)
