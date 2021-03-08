@@ -85,7 +85,7 @@ const NonInteractive = "ACTIVESTATE_NONINTERACTIVE"
 const APIUpdateURL = "https://state-tool.s3.amazonaws.com/update/"
 
 // APIArtifactURL is the URL for downloading artifacts
-const APIArtifactURL = "https://state-tool.s3.amazonaws.com/artifacts/"
+const APIArtifactURL = "https://s3.ca-central-1.amazonaws.com/cli-artifacts/"
 
 // ArtifactFile is the name of the artifact json file contained within artifacts
 const ArtifactFile = "artifact.json"
