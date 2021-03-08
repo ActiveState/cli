@@ -1,4 +1,4 @@
-package build
+package model
 
 import "github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 
@@ -20,9 +20,9 @@ const (
 	Hybrid
 )
 
-// BuildEngineFromResponse handles a headchef build status response and returns
+// buildEngineFromResponse handles a headchef build status response and returns
 // the relevant engine.
-func BuildEngineFromResponse(resp *headchef_models.BuildStatusResponse) BuildEngine {
+func buildEngineFromResponse(resp *headchef_models.BuildStatusResponse) BuildEngine {
 	if resp == nil || resp.BuildEngine == nil {
 		return UnknownEngine
 	}

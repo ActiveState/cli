@@ -1,26 +1,14 @@
 package alternative
 
-import "github.com/ActiveState/cli/pkg/platform/runtime2/build"
-
-// var _ runtime.Setuper = &Setup{}
-// var _ runtime.ArtifactSetuper = &ArtifactSetup{}
-
-type Setup struct {
-}
+import (
+	"github.com/ActiveState/cli/pkg/platform/runtime2/artifact"
+)
 
 type ArtifactSetup struct {
 }
 
-func NewSetup() *Setup {
-	return &Setup{}
-}
-
-func NewArtifactSetup(artifactID build.ArtifactID) *ArtifactSetup {
+func NewArtifactSetup(artifactID artifact.ArtifactID) *ArtifactSetup {
 	return &ArtifactSetup{}
-}
-
-func (s *Setup) PostInstall() error {
-	panic("implement me")
 }
 
 func (as *ArtifactSetup) NeedsSetup() bool {
