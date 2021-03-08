@@ -2,6 +2,8 @@ package store
 
 import (
 	"encoding/json"
+	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -10,46 +12,42 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/hash"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
-	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
+	"github.com/ActiveState/cli/pkg/platform/runtime2/envdef"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/model"
 )
 
 // store manages the storing and loading of persistable information about the runtime
 type Store struct {
-	cachePath   string
 	installPath string
+	storagePath string
 }
 
-// newStore returns a new store instance
-func New(projectDir, cachePath string) (*Store, error) {
-	projectDir = strings.TrimSuffix(projectDir, constants.ConfigFileName)
-	resolvedProjectDir, err := fileutils.ResolveUniquePath(projectDir)
-	if err != nil {
-		return nil, locale.WrapError(err, "err_new_runtime_unique_path", "Failed to resolve a unique file path to the project dir.")
-	}
-	logging.Debug("In newStore: resolved project dir is: %s", resolvedProjectDir)
+type StoredArtifact struct {
+	ArtifactID strfmt.UUID                   `json:"artifactID"`
+	Files      []string                      `json:"files"`
+	EnvDef     *envdef.EnvironmentDefinition `json:"envdef"`
+}
 
-	installPath := filepath.Join(cachePath, hash.ShortHash(resolvedProjectDir))
+func New(installPath string) (*Store, error) {
 	return &Store{
-		cachePath,
 		installPath,
+		filepath.Join(installPath, constants.LocalRuntimeEnvironmentDirectory),
 	}, nil
 }
 
 func (s *Store) markerFile() string {
-	return filepath.Join(s.installPath, constants.RuntimeInstallationCompleteMarker)
+	return filepath.Join(s.storagePath, constants.RuntimeInstallationCompleteMarker)
 }
 
 func (s *Store) buildEngineFile() string {
-	return filepath.Join(s.installPath, constants.RuntimeBuildEngineStore)
+	return filepath.Join(s.storagePath, constants.RuntimeBuildEngineStore)
 }
 
 func (s *Store) recipeFile() string {
-	return filepath.Join(s.installPath, constants.RuntimeRecipeStore)
+	return filepath.Join(s.storagePath, constants.RuntimeRecipeStore)
 }
 
 // MatchesCommit checks if stored runtime is complete and can be loaded
@@ -141,8 +139,61 @@ func (s *Store) StoreRecipe(recipe *inventory_models.Recipe) error {
 	return nil
 }
 
+func (s *Store) Artifacts() ([]StoredArtifact, error) {
+	stored := []StoredArtifact{}
+	jsonDir := filepath.Join(s.storagePath, constants.ArtifactMetaDir)
+	if !fileutils.DirExists(jsonDir) {
+		return stored, nil
+	}
+
+	files, err := ioutil.ReadDir(jsonDir)
+	if err != nil {
+		return stored, errs.Wrap(err, "Readdir %s failed", jsonDir)
+	}
+
+	for _, file := range files {
+		if file.IsDir() || !strings.HasSuffix(file.Name(), ".json") {
+			continue
+		}
+
+		var artifactStore StoredArtifact
+		jsonBlob, err := fileutils.ReadFile(filepath.Join(jsonDir, file.Name()))
+		if err != nil {
+			return stored, errs.Wrap(err, "Could not read artifact meta file")
+		}
+		if err := json.Unmarshal(jsonBlob, &artifactStore); err != nil {
+			return stored, errs.Wrap(err, "Could not unmarshal artifact meta file")
+		}
+
+		stored = append(stored, artifactStore)
+	}
+
+	return stored, nil
+}
+
+func (s *Store) DeleteArtifactStore(id strfmt.UUID) error {
+	jsonFile := filepath.Join(s.storagePath, constants.ArtifactMetaDir, id.String()+".json")
+	if !fileutils.FileExists(jsonFile) {
+		return nil
+	}
+	return os.Remove(jsonFile)
+}
+
+func (s *Store) StoreArtifact(artf StoredArtifact) error {
+	// Save artifact cache information
+	jsonBlob, err := json.Marshal(artf)
+	if err != nil {
+		return errs.Wrap(err, "Failed to marshal artifact cache information")
+	}
+	jsonFile := filepath.Join(s.storagePath, constants.ArtifactMetaDir, artf.ArtifactID.String()+".json")
+	if err := fileutils.WriteFile(jsonFile, jsonBlob); err != nil {
+		return errs.Wrap(err, "Failed to write artifact cache information")
+	}
+	return nil
+}
+
 func (s *Store) Environ(inherit bool) (map[string]string, error) {
-	mergedRuntimeDefinitionFile := filepath.Join(s.installPath, constants.RuntimeDefinitionFilename)
+	mergedRuntimeDefinitionFile := filepath.Join(s.storagePath, constants.RuntimeDefinitionFilename)
 	envDef, err := envdef.NewEnvironmentDefinition(mergedRuntimeDefinitionFile)
 	if err != nil {
 		return nil, locale.WrapError(
@@ -152,6 +203,35 @@ func (s *Store) Environ(inherit bool) (map[string]string, error) {
 		)
 	}
 	return envDef.GetEnv(inherit), nil
+}
+
+func (s *Store) UpdateEnviron() error {
+	artifacts, err := s.Artifacts()
+	if err != nil {
+		return errs.Wrap(err, "Could not retrieve stored artifacts")
+	}
+
+	// TODO: Use the correct artifact ordering: https://www.pivotaltracker.com/story/show/177214086
+	var rtGlobal *envdef.EnvironmentDefinition
+	for _, artf := range artifacts {
+		if rtGlobal == nil {
+			rtGlobal = artf.EnvDef
+			continue
+		}
+		rtGlobal, err = rtGlobal.Merge(artf.EnvDef)
+		if err != nil {
+			return errs.Wrap(err, "Could not merge envdef")
+		}
+	}
+
+	cnst := envdef.NewConstants(s.InstallPath())
+	rtGlobal = rtGlobal.ExpandVariables(cnst)
+	err = rtGlobal.ApplyFileTransforms(s.InstallPath(), cnst)
+	if err != nil {
+		return locale.WrapError(err, "runtime_alternative_file_transforms_err", "", "Could not apply necessary file transformations after unpacking")
+	}
+
+	return rtGlobal.WriteFile(filepath.Join(s.storagePath, constants.RuntimeDefinitionFilename))
 }
 
 // InstallPath returns the installation path of the runtime

@@ -8,5 +8,5 @@ func NewSetup() *Setup {
 }
 
 func (s *Setup) PostInstall() error {
-	panic("implement me")
+	return nil
 }

@@ -37,6 +37,9 @@ func (a ArtifactRecipe) NameWithVersion() string {
 // NewMapFromRecipe parses a recipe and returns a map of ArtifactRecipe structures that we can interpret for our purposes
 func NewMapFromRecipe(recipe *inventory_models.Recipe) ArtifactRecipeMap {
 	res := make(map[ArtifactID]ArtifactRecipe)
+	if recipe == nil {
+		return res
+	}
 	position := 0
 	for _, ri := range recipe.ResolvedIngredients {
 		namespace := *ri.Ingredient.PrimaryNamespace

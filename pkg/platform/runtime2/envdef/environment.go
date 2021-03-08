@@ -113,11 +113,20 @@ func NewEnvironmentDefinition(fp string) (*EnvironmentDefinition, error) {
 
 // WriteFile marshals an environment definition to a file
 func (ed *EnvironmentDefinition) WriteFile(filepath string) error {
-	blob, err := json.MarshalIndent(ed, "", "  ")
+	blob, err := ed.Marshal()
 	if err != nil {
 		return err
 	}
 	return ioutil.WriteFile(filepath, blob, 0666)
+}
+
+// WriteFile marshals an environment definition to a file
+func (ed *EnvironmentDefinition) Marshal() ([]byte, error) {
+	blob, err := json.MarshalIndent(ed, "", "  ")
+	if err != nil {
+		return []byte(""), err
+	}
+	return blob, nil
 }
 
 // ExpandVariables expands substitution strings specified in the environment variable values.

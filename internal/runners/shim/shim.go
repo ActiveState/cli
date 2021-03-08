@@ -11,11 +11,11 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
-	"github.com/ActiveState/cli/pkg/platform/runtime"
+	"github.com/ActiveState/cli/pkg/platform/runtime2"
+	"github.com/ActiveState/cli/pkg/platform/runtime2/messagehandler"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -70,11 +70,16 @@ func (s *Shim) Run(params *Params, args ...string) error {
 		return nil
 	}
 
-	runtime, err := runtime.NewRuntime(s.proj.Source().Path(), s.cfg.CachePath(), s.proj.CommitUUID(), s.proj.Owner(), s.proj.Name(), runbits.NewRuntimeMessageHandler(s.out))
+	rt, err := runtime.New(runtime.NewProjectTarget(s.proj, s.cfg.CachePath()))
 	if err != nil {
-		return locale.WrapError(err, "err_shim_runtime_init", "Could not initialize runtime for shim command.")
+		if !runtime.IsNeedsUpdateError(err) {
+			return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
+		}
+		if err := rt.Update(messagehandler.New() /* TODO: messagehandler */); err != nil {
+			return locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
+		}
 	}
-	venv := virtualenvironment.New(runtime)
+	venv := virtualenvironment.New(rt)
 	if err := venv.Activate(); err != nil {
 		logging.Errorf("Unable to activate state: %s", err.Error())
 		return locale.WrapError(err, "err_shim_activate", "Could not activate environment for shim command")

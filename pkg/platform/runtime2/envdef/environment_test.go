@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
+	"github.com/ActiveState/cli/pkg/platform/runtime2/envdef"
 )
 
 type EnvironmentTestSuite struct {

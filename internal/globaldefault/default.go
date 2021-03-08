@@ -23,7 +23,7 @@ import (
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/cmd"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
-	"github.com/ActiveState/cli/pkg/platform/runtime"
+	"github.com/ActiveState/cli/pkg/platform/runtime2"
 )
 
 const shimDenoter = "!DO NOT EDIT! State Tool Shim !DO NOT EDIT!"
@@ -128,12 +128,7 @@ func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, r
 		return locale.WrapError(err, "err_globaldefault_prepare", "Could not prepare environment.")
 	}
 
-	env, err := runtime.Env()
-	if err != nil {
-		return errs.Wrap(err, "Could not get runtime env")
-	}
-
-	envMap, err := env.GetEnv(false, "")
+	envMap, err := runtime.Environ(false)
 	if err != nil {
 		return errs.Wrap(err, "Could not get env")
 	}

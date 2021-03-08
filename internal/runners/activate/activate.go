@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/globaldefault"
@@ -23,7 +24,7 @@ import (
 	"github.com/ActiveState/cli/pkg/cmdlets/git"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime"
+	runtime "github.com/ActiveState/cli/pkg/platform/runtime2"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -32,7 +33,7 @@ type Activate struct {
 	namespaceSelect  *NamespaceSelect
 	activateCheckout *Checkout
 	out              output.Outputer
-	config           configurable
+	config           *config.Instance
 	proj             *project.Project
 	subshell         subshell.SubShell
 	prompt           prompt.Prompter
@@ -173,13 +174,17 @@ func (r *Activate) run(params *ActivateParams) error {
 		r.subshell.SetActivateCommand(params.Command)
 	}
 
-	runtime, err := runtime.NewRuntime(proj.Source().Path(), r.config.CachePath(), proj.CommitUUID(), proj.Owner(), proj.Name(), runbits.NewRuntimeMessageHandler(r.out))
+	rt, err := runtime.New(runtime.NewProjectTarget(proj, r.config.CachePath()))
 	if err != nil {
-		return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
+		if !runtime.IsNeedsUpdateError(err) {
+			return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
+		}
+		if err := rt.Update(runbits.NewRuntimeMessageHandler2(r.out) /* TODO: messagehandler */); err != nil {
+			return locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
+		}
 	}
 
-	venv := virtualenvironment.New(runtime)
-	venv.OnUseCache(func() { r.out.Notice(locale.T("using_cached_env")) })
+	venv := virtualenvironment.New(rt)
 
 	// Determine branch name
 	branch := proj.BranchName()
@@ -187,7 +192,7 @@ func (r *Activate) run(params *ActivateParams) error {
 		branch = params.Branch
 	}
 
-	err = venv.Setup(true)
+	err = venv.Setup()
 	if err != nil {
 		if errs.Matches(err, &model.ErrNoMatchingPlatform{}) {
 			branches, err := model.BranchNamesForProjectFiltered(proj.Owner(), proj.Name(), branch)
@@ -203,7 +208,7 @@ func (r *Activate) run(params *ActivateParams) error {
 	}
 
 	if setDefault {
-		err := globaldefault.SetupDefaultActivation(r.subshell, r.config, runtime, filepath.Dir(proj.Source().Path()))
+		err := globaldefault.SetupDefaultActivation(r.subshell, r.config, rt, filepath.Dir(proj.Source().Path()))
 		if err != nil {
 			return locale.WrapError(err, "err_activate_default", "Could not configure your project as the default.")
 		}
