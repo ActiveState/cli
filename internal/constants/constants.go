@@ -82,10 +82,10 @@ const CPUProfileEnvVarName = "ACTIVESTATE_PROFILE_CPU"
 const NonInteractive = "ACTIVESTATE_NONINTERACTIVE"
 
 // APIUpdateURL is the URL for our update server
-const APIUpdateURL = "https://s3.ca-central-1.amazonaws.com/cli-update/update/"
+const APIUpdateURL = "https://state-tool.s3.amazonaws.com/update/"
 
 // APIArtifactURL is the URL for downloading artifacts
-const APIArtifactURL = "https://s3.ca-central-1.amazonaws.com/cli-artifacts/"
+const APIArtifactURL = "https://state-tool.s3.amazonaws.com/artifacts/"
 
 // ArtifactFile is the name of the artifact json file contained within artifacts
 const ArtifactFile = "artifact.json"
@@ -156,7 +156,7 @@ const MediatorAPIPath = "/sv/mediator/api"
 const RequirementsImportAPIPath = "/sv/reqsvc/reqs"
 
 // DeprecationInfoURL is the URL we check against to see what versions are deprecated
-const DeprecationInfoURL = "https://s3.ca-central-1.amazonaws.com/cli-update/deprecation.json"
+const DeprecationInfoURL = "https://state-tool.s3.amazonaws.com/deprecation.json"
 
 // DateFormatUser is the date format we use when communicating with the end-user
 const DateFormatUser = "January 02, 2006"
