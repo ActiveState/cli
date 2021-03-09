@@ -107,6 +107,8 @@ func setup() {
 	installSource := "unknown-due-to-config-error"
 	cfg, err := config.Get()
 	if err != nil {
+		logging.Error("Could not detect installSource: %s", errs.Join(err, " :: ").Error())
+	} else {
 		installSource = cfg.InstallSource()
 	}
 
