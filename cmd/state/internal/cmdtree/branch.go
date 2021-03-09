@@ -12,7 +12,7 @@ func newBranchCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"branch",
-		locale.Tl("branch_title", "Project Branches"),
+		locale.Tl("branch_title", "Listing branches"),
 		locale.Tl("branch_description", "Manage your project's branches"),
 		prime.Output(),
 		prime.Config(),

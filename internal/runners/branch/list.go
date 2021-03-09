@@ -30,13 +30,6 @@ func NewList(prime primeable) *List {
 func (l *List) Run() error {
 	logging.Debug("ExecuteList")
 
-	l.out.Print(
-		locale.Tl(
-			"branch_info",
-			"\nBranches allow you to create runtimes with different packages sets depending on your use case. Here are the branches in your current project.\n",
-		),
-	)
-
 	project, err := model.FetchProjectByName(l.project.Owner(), l.project.Name())
 	if err != nil {
 		return locale.WrapError(err, "err_fetch_project", "", l.project.Namespace().String())
