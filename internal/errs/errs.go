@@ -21,6 +21,11 @@ type ErrorTips interface {
 	ErrorTips() []string
 }
 
+type ExitCode interface {
+	ExitCode() int
+	SetExitCode(int)
+}
+
 // WrapperError is what we use for errors created from this package, this does not mean every error returned from this
 // package is wrapping something, it simply has the plumbing to.
 type WrapperError struct {
@@ -28,6 +33,7 @@ type WrapperError struct {
 	tips    []string
 	wrapped error
 	stack   *stacktrace.Stacktrace
+	code    int
 }
 
 func (e *WrapperError) Error() string {
@@ -52,12 +58,21 @@ func (e *WrapperError) Stack() *stacktrace.Stacktrace {
 	return e.stack
 }
 
+func (e *WrapperError) ExitCode() int {
+	return e.code
+}
+
+func (e *WrapperError) SetExitCode(code int) {
+	e.code = code
+}
+
 func newError(message string, wrapTarget error) *WrapperError {
 	return &WrapperError{
 		message,
 		[]string{},
 		wrapTarget,
 		stacktrace.GetWithSkip([]string{rtutils.CurrentFile()}),
+		1,
 	}
 }
 
@@ -86,6 +101,14 @@ func AddTips(err error, tips ...string) error {
 		err = newError("wrapped error to add tips", err)
 	}
 	err.(ErrorTips).AddTips(tips...)
+	return err
+}
+
+func SetExitCode(err error, code int) error {
+	if _, ok := err.(ExitCode); !ok {
+		err = newError("wrapped error to add exit code", err)
+	}
+	err.(ExitCode).SetExitCode(code)
 	return err
 }
 

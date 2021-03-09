@@ -11,7 +11,7 @@ func UnwrapExitCode(err error) int {
 		return 0
 	}
 
-	var eerr interface{ ExitCode() int }
+	var eerr ExitCode
 	isExitError := errors.As(err, &eerr)
 	if isExitError {
 		return eerr.ExitCode()
