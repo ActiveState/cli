@@ -1,6 +1,7 @@
 package updater
 
 import (
+	"context"
 	"errors"
 	"os"
 	"strconv"
@@ -14,41 +15,6 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
-
-// Runs the given updater function on a timeout.
-func timeout(f func() (*Info, error), t time.Duration) (*Info, error) {
-	timeoutCh := make(chan bool, 1)
-	infoCh := make(chan *Info, 1)
-	errCh := make(chan error, 1)
-	// Run the timeout function in a separate thread.
-	go func() {
-		time.Sleep(t)
-		timeoutCh <- true
-		close(timeoutCh)
-	}()
-	// Run the updater function in a separate thread.
-	go func() {
-		info, err := f()
-		if err == nil {
-			infoCh <- info
-		} else {
-			errCh <- err
-		}
-		close(infoCh)
-		close(errCh)
-	}()
-	// Wait until one of the threads produces data in one of the channels being
-	// monitored. If the timeout comes first, report the timeout. If the update
-	// info comes first, return that. If there was some other error, return that.
-	select {
-	case <-timeoutCh:
-		return nil, errors.New("timeout")
-	case info := <-infoCh:
-		return info, nil
-	case err := <-errCh:
-		return nil, err
-	}
-}
 
 type UpdateResult struct {
 	Updated     bool
@@ -79,12 +45,14 @@ func AutoUpdate(pjPath string, out output.Outputer) (updated bool, resultVersion
 			seconds = override
 		}
 	}
-	info, err := timeout(update.Info, time.Duration(seconds)*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(seconds)*time.Second)
+	defer cancel()
+	info, err := update.Info(ctx)
 	if err != nil {
-		if err.Error() != "timeout" {
-			logging.Error("Unable to automatically check for updates: %s", err)
-		} else {
+		if errors.Is(err, context.DeadlineExceeded) {
 			logging.Debug("Automatically checking for updates timed out")
+		} else {
+			logging.Error("Unable to automatically check for updates: %s", err)
 		}
 		return false, ""
 	} else if info == nil {

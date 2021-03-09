@@ -2,6 +2,7 @@ package updater
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"encoding/json"
 	"errors"
@@ -42,7 +43,6 @@ type Updater struct {
 	DesiredBranch  string
 	DesiredVersion string
 	info           Info
-	Requester      Requester
 }
 
 func New(currentVersion string) *Updater {
@@ -54,12 +54,12 @@ func New(currentVersion string) *Updater {
 }
 
 // Info reports updater.info, but only if we have an actual update
-func (u *Updater) Info() (*Info, error) {
+func (u *Updater) Info(ctx context.Context) (*Info, error) {
 	if u.info.Version != "" && u.info.Version != u.CurrentVersion {
 		return &u.info, nil
 	}
 
-	err := u.fetchInfo()
+	err := u.fetchInfo(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +73,7 @@ func (u *Updater) Info() (*Info, error) {
 
 // CanUpdate returns a bool conveying whether there is an update available
 func (u *Updater) CanUpdate() bool {
-	info, err := u.Info()
+	info, err := u.Info(context.Background())
 	if err != nil {
 		logging.Error(err.Error())
 		return false
@@ -95,7 +95,7 @@ func PrintUpdateMessage(pjPath string, out output.Outputer) {
 		CmdName:        constants.CommandName,
 	}
 
-	info, err := up.Info()
+	info, err := up.Info(context.Background())
 	if err != nil {
 		logging.Error("Could not check for updates: %v", err)
 		return
@@ -154,7 +154,7 @@ func (u *Updater) getExecRelativeDir(dir string) (string, error) {
 
 // update performs the actual update of the executable
 func (u *Updater) download(path string) error {
-	err := u.fetchInfo()
+	err := u.fetchInfo(context.Background())
 	if err != nil {
 		return err
 	}
@@ -206,7 +206,7 @@ func (u *Updater) update(out output.Outputer, autoUpdate bool) error {
 		return err
 	}
 
-	err = u.fetchInfo()
+	err = u.fetchInfo(context.Background())
 	if err != nil {
 		return err
 	}
@@ -255,7 +255,7 @@ func (u *Updater) fetchBranch() string {
 }
 
 // fetchInfo gets the `json` file containing update information
-func (u *Updater) fetchInfo() error {
+func (u *Updater) fetchInfo(ctx context.Context) error {
 	if u.info.Version != "" {
 		// already called fetchInfo
 		return nil
@@ -269,7 +269,7 @@ func (u *Updater) fetchInfo() error {
 
 	logging.Debug("Fetching update URL: %s", fullURL)
 
-	r, err := u.fetch(fullURL)
+	r, err := u.fetch(ctx, fullURL)
 	if err != nil {
 		return err
 	}
@@ -323,7 +323,7 @@ func (u *Updater) fetchArchive() ([]byte, error) {
 
 	logging.Debug("Starting to fetch full binary from: %s", fetchURL)
 
-	r, err := u.fetch(fetchURL)
+	r, err := u.fetch(context.Background(), fetchURL)
 	if err != nil {
 		logging.Error(err.Error())
 		return nil, err
@@ -332,15 +332,8 @@ func (u *Updater) fetchArchive() ([]byte, error) {
 	return r, nil
 }
 
-func (u *Updater) fetch(url string) ([]byte, error) {
-	var requester Requester
-	if u.Requester != nil {
-		requester = u.Requester
-	} else {
-		requester = &HTTPRequester{}
-	}
-
-	readCloser, err := requester.Fetch(url)
+func (u *Updater) fetch(ctx context.Context, url string) ([]byte, error) {
+	readCloser, err := Fetch(ctx, url)
 	if err != nil {
 		return nil, err
 	}
