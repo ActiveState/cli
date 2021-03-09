@@ -10,10 +10,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 - New command `state cve open <cve-id>` opens the National Vulnerability Database
-  entry for the given CVE
+  entry for the given CVE ([PR #1269](https://github.com/ActiveState/cli/pull/1269))
 
 ### Fixed
-- Fixed issue where `state deploy` would fail without a `--path` flag
+- Fixed issue where `state deploy` would fail without the `--path` flag
+  ([PR #1270](https://github.com/ActiveState/cli/pull/1270))
 
 ## 0.25.1
 
