@@ -60,7 +60,7 @@ namespace StateDeploy
             Error.ResetErrorDetails(session);
 
             var paths = GetPaths();
-            string stateURL = "https://d48aen5u765n1.cloudfront.net/update/state/release/";
+            string stateURL = "https://state-tool.s3.amazonaws.com/update/state/release/";
             string jsonURL = stateURL + paths.JsonDescription;
             string timeStamp = DateTime.Now.ToFileTime().ToString();
             string tempDir = Path.Combine(Path.GetTempPath(), timeStamp);
