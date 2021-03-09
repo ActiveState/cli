@@ -11,7 +11,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/spf13/viper"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/config"
@@ -36,7 +35,6 @@ func (suite *ConfigTestSuite) SetupTest() {
 }
 
 func (suite *ConfigTestSuite) BeforeTest(suiteName, testName string) {
-	viper.Reset()
 
 	var err error
 	suite.config, err = config.New()
@@ -67,14 +65,12 @@ func (suite *ConfigTestSuite) TestCorruption() {
 	err := fileutils.WriteFile(path, []byte("&"))
 	suite.Require().NoError(err)
 
-	viper.Reset()
-
 	err = suite.config.ReadInConfig()
 	suite.Require().Error(err)
 }
 
 // testNoHomeRunner will run the TestNoHome test in its own process, this is because the configdir package we use
-// interprets the HOME env var at init time, so we cannot spoof it any other way besides when running the got test command
+// interprets the HOME env var at init time, so we cannot spoof it any other way besides when running the go test command
 // and we don't want tests that require special knowledge of how to invoke them
 func (suite *ConfigTestSuite) testNoHomeRunner() {
 	pkgPath := reflect.TypeOf(*suite.config).PkgPath()
@@ -85,12 +81,17 @@ func (suite *ConfigTestSuite) testNoHomeRunner() {
 	goCache, err := ioutil.TempDir("", "go-cache")
 	suite.Require().NoError(err)
 
+	goPath := filepath.Join(os.Getenv("GOROOT"), "GOHOME")
+	if os.Getenv("GOPATH") != "" {
+		goPath = os.Getenv("GOPATH")
+	}
+
 	runCmd := exec.Command("go", args...)
 	runCmd.Env = []string{
 		"PATH=" + os.Getenv("PATH"),
 		"GOROOT=" + os.Getenv("GOROOT"),
 		"GOENV=" + os.Getenv("GOENV"),
-		"GOPATH=" + filepath.Join(os.Getenv("GOROOT"), "GOHOME"),
+		"GOPATH=" + goPath,
 		"USERPROFILE=" + os.Getenv("USERPROFILE"), // Permission error trying to use C:\Windows, ref: https://golang.org/pkg/os/#TempDir
 		"APPDATA=" + os.Getenv("APPDATA"),
 		"SystemRoot=" + os.Getenv("SystemRoot"), // Ref: https://bugs.python.org/msg248951
@@ -114,7 +115,6 @@ func (suite *ConfigTestSuite) TestNoHome() {
 		return
 	}
 
-	viper.Reset()
 	var err error
 	suite.config, err = config.New()
 	suite.Require().NoError(err)
@@ -129,7 +129,6 @@ func (suite *ConfigTestSuite) TestSave() {
 	path := filepath.Join(suite.config.ConfigPath(), suite.config.Filename())
 
 	suite.config.Set("Foo", "bar")
-	suite.config.Save()
 
 	dat, err := ioutil.ReadFile(path)
 	suite.Require().NoError(err)
@@ -144,7 +143,6 @@ func (suite *ConfigTestSuite) TestSaveMerge() {
 	suite.Require().NoError(err)
 
 	suite.config.Set("Foo", "bar")
-	suite.config.Save()
 
 	dat, err := ioutil.ReadFile(path)
 	suite.Require().NoError(err)

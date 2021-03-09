@@ -112,10 +112,8 @@ func run(args []string, isInteractive bool, out output.Outputer) (int, error) {
 
 	// set global configuration instances
 	machineid.SetConfiguration(cfg)
+	machineid.SetErrorLogger(logging.Error)
 	logging.UpdateConfig(cfg)
-
-	// Ensure any config set is preserved
-	defer cfg.Save()
 
 	// Retrieve project file
 	pjPath, err := projectfile.GetProjectFilePath()

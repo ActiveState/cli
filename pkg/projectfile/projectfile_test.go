@@ -310,7 +310,7 @@ func TestGetProjectFilePath(t *testing.T) {
 	assert.Error(t, err, "GetProjectFilePath should fail")
 	cfg, err := config.Get()
 	require.NoError(t, err)
-	cfg.SetDefault(constants.GlobalDefaultPrefname, expectedPath)
+	cfg.Set(constants.GlobalDefaultPrefname, expectedPath)
 	configPath, err = GetProjectFilePath()
 	assert.NoError(t, err, "GetProjectFilePath should succeed")
 	assert.Equal(t, expectedPath, configPath, "Project path is properly detected using default path from config")

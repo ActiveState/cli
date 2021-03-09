@@ -40,10 +40,9 @@ var (
 
 // Configurable defines an interface to store and get configuration data
 type Configurable interface {
-	Set(string, interface{})
+	Set(string, interface{}) error
 	GetBool(string) bool
 	GetStringMap(string) map[string]interface{}
-	Save() error
 }
 
 type RcIdentification struct {
@@ -198,10 +197,9 @@ func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[
 			userScripts = userScripts + "\n" + v
 		}
 	}
-	cfg.Set(activatedKey, true)
-	if err := cfg.Save(); err != nil {
-		// Save config now because otherwise we'd have to wait until the shell is closed, which might happen prematurely
-		return nil, errs.Wrap(err, "Config could not be saved after setting activatedKey")
+	err := cfg.Set(activatedKey, true)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not set activatedKey in config")
 	}
 
 	inuse := []string{}

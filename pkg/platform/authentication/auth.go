@@ -42,7 +42,7 @@ type Auth struct {
 }
 
 type Configurable interface {
-	Set(string, interface{})
+	Set(string, interface{}) error
 	GetString(string) string
 }
 
@@ -168,7 +168,10 @@ func (s *Auth) AuthenticateWithModel(credentials *mono_models.Credentials) error
 	s.clientAuth = &clientAuth
 
 	if credentials.Token != "" {
-		s.cfg.Set("apiToken", credentials.Token)
+		setErr := s.cfg.Set("apiToken", credentials.Token)
+		if setErr != nil {
+			return errs.Wrap(err, "Could not set API token credentials in config")
+		}
 	} else {
 		if err := s.CreateToken(); err != nil {
 			return errs.Wrap(err, "CreateToken failed")
@@ -220,7 +223,10 @@ func (s *Auth) UserID() *strfmt.UUID {
 
 // Logout will destroy any session tokens and reset the current Auth instance
 func (s *Auth) Logout() {
-	s.cfg.Set("apiToken", "")
+	err := s.cfg.Set("apiToken", "")
+	if err != nil {
+		logging.Error("Could not clear apiToken in config")
+	}
 	s.client = nil
 	s.clientAuth = nil
 	s.bearerToken = ""
@@ -282,7 +288,10 @@ func (s *Auth) CreateToken() error {
 		return err
 	}
 
-	s.cfg.Set("apiToken", token)
+	err = s.cfg.Set("apiToken", token)
+	if err != nil {
+		return locale.WrapError(err, "err_set_token", "Could not set token in config")
+	}
 
 	return nil
 }

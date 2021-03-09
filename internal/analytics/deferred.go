@@ -11,7 +11,6 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 )
@@ -90,8 +89,7 @@ func SetDeferred(cfg Configurable, da bool) {
 }
 
 type Configurable interface {
-	Set(string, interface{})
-	Save() error
+	Set(string, interface{}) error
 	GetString(string) string
 	ConfigPath() string
 }
@@ -131,9 +129,6 @@ func sendDeferred(cfg Configurable, sender func(string, string, string, map[stri
 				return errs.Wrap(err, "Could not save deferred event on send")
 			}
 		}
-		if err := cfg.Save(); err != nil { // the global viper instance is bugged, need to work around it for now -- https://www.pivotaltracker.com/story/show/175624789
-			return locale.WrapError(err, "err_viper_write_send_defer", "Could not save configuration on send deferred")
-		}
 	}
 
 	// remove deferrer time stamp file
@@ -149,7 +144,10 @@ func saveDeferred(cfg Configurable, v []deferredData) error {
 	if err != nil {
 		return errs.New("Could not serialize deferred analytics: %v, error: %v", v, err)
 	}
-	cfg.Set(deferredCfgKey, string(s))
+	err = cfg.Set(deferredCfgKey, string(s))
+	if err != nil {
+		return errs.Wrap(err, "Could not save deferred data in config")
+	}
 	return nil
 }
 

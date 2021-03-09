@@ -9,7 +9,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/osutils/lockfile"
 )
 
 func main() {
@@ -31,7 +31,7 @@ func main() {
 		os.Exit(2)
 	}
 	keep := os.Args[2] == "keep"
-	pl, err := osutils.NewPidLock(os.Args[1])
+	pl, err := lockfile.NewPidLock(os.Args[1])
 	if err != nil {
 		log.Fatalf("Could not open lock file: %s", os.Args[1])
 	}
