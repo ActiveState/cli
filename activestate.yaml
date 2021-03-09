@@ -75,7 +75,7 @@ scripts:
     description: Deploys update files to S3. This steps is automated by CI and should never be ran manually unless you KNOW WHAT YOU'RE DOING.
     value: |
       set -e
-      go run scripts/s3-deployer/main.go build/update ca-central-1 cli-update update/state
+      go run scripts/s3-deployer/main.go build/update us-east-1 state-tool update/state
   - name: build-install-scripts
     language: bash
     standalone: true
@@ -87,8 +87,8 @@ scripts:
     language: bash
     description: Deploys update files to S3. This steps is automated by CI and should never be ran manually unless you KNOW WHAT YOU'RE DOING.
     value: |
-      go run scripts/s3-deployer/main.go build/install.sh ca-central-1 cli-update update/state/install.sh
-      go run scripts/s3-deployer/main.go build/install.ps1 ca-central-1 cli-update update/state/install.ps1
+      go run scripts/s3-deployer/main.go build/install.sh us-east-1 state-tool update/state/install.sh
+      go run scripts/s3-deployer/main.go build/install.ps1 us-east-1 state-tool update/state/install.ps1
       go run scripts/s3-deployer/main.go build/msi us-east-1 cli-msi /
   - name: build-workflows
     language: bash
