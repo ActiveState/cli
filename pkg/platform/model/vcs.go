@@ -738,10 +738,7 @@ func GetBranchChildren(branch *mono_models.Branch, branches mono_models.Branches
 	}
 
 	for _, b := range branches {
-		if b.Tracks == nil {
-			continue
-		}
-		if b.Tracks.String() == branch.BranchID.String() {
+		if b.Tracks != nil && b.Tracks.String() == branch.BranchID.String() {
 			children = append(children, b)
 		}
 	}
