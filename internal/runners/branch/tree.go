@@ -99,15 +99,15 @@ func getChildren(branch *mono_models.Branch, branches mono_models.Branches) tree
 	return children
 }
 
-func (bt *BranchTree) AddBranchFormatting(formatting string) {
+func (bt *BranchTree) SetBranchFormatting(formatting string) {
 	bt.branchFormatting = formatting
 }
 
-func (bt *BranchTree) AddLocalBranch(branch string) {
+func (bt *BranchTree) SetLocalBranch(branch string) {
 	bt.localBranch = branch
 }
 
-func (bt *BranchTree) AddLocalBranchFormatting(formatting string) {
+func (bt *BranchTree) SetLocalBranchFormatting(formatting string) {
 	bt.localBranchFormatting = formatting
 }
 

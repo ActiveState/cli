@@ -36,9 +36,9 @@ func (l *List) Run() error {
 	}
 
 	tree := NewBranchTree()
-	tree.AddLocalBranch(l.project.BranchName())
-	tree.AddBranchFormatting("[NOTICE]%s[/RESET]")
-	tree.AddLocalBranchFormatting("[ACTIONABLE]%s[/RESET] [DISABLED](Current)[/RESET]")
+	tree.SetLocalBranch(l.project.BranchName())
+	tree.SetBranchFormatting("[NOTICE]%s[/RESET]")
+	tree.SetLocalBranchFormatting("[ACTIONABLE]%s[/RESET] [DISABLED](Current)[/RESET]")
 	tree.BuildFromBranches(project.Branches)
 	l.out.Print(tree.String())
 
