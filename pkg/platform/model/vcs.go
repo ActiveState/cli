@@ -708,6 +708,46 @@ func TrackBranch(source, target *mono_models.Project) error {
 	return nil
 }
 
+func GetRootBranches(branches mono_models.Branches) mono_models.Branches {
+	var rootBranches mono_models.Branches
+	for _, branch := range branches {
+		// Account for forked projects where the root branches contain
+		// a tracking ID that is not in the current project's branches
+		if branch.Tracks != nil && containsBranch(branch.Tracks, branches) {
+			continue
+		}
+		rootBranches = append(rootBranches, branch)
+	}
+	return rootBranches
+}
+
+func containsBranch(id *strfmt.UUID, branches mono_models.Branches) bool {
+	for _, branch := range branches {
+		if branch.BranchID.String() == id.String() {
+			return true
+		}
+	}
+	return false
+}
+
+// GetBranchChildren returns the direct children of the given branch
+func GetBranchChildren(branch *mono_models.Branch, branches mono_models.Branches) mono_models.Branches {
+	var children mono_models.Branches
+	if branch == nil {
+		return children
+	}
+
+	for _, b := range branches {
+		if b.Tracks == nil {
+			continue
+		}
+		if b.Tracks.String() == branch.BranchID.String() {
+			children = append(children, b)
+		}
+	}
+	return children
+}
+
 func GetRevertCommit(from, to strfmt.UUID) (*mono_models.Commit, error) {
 	params := vcsClient.NewGetRevertCommitParams()
 	params.SetCommitFromID(from)

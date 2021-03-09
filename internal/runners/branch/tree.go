@@ -7,7 +7,7 @@ import (
 	"sort"
 
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
-	"github.com/go-openapi/strfmt"
+	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
 type branchNode struct {
@@ -38,7 +38,7 @@ func NewBranchTree() *BranchTree {
 }
 
 func (bt *BranchTree) BuildFromBranches(branches mono_models.Branches) {
-	bt.rootBranches = getRootBranches(branches)
+	bt.rootBranches = model.GetRootBranches(branches)
 	for _, branch := range bt.rootBranches {
 		bt.tree[branchNode{branch.Label, branch.BranchID.String()}] = buildBranchTree(branch, branches)
 	}
@@ -61,43 +61,14 @@ func buildBranchTree(currentBranch *mono_models.Branch, branches mono_models.Bra
 	return t
 }
 
-func getRootBranches(branches mono_models.Branches) mono_models.Branches {
-	var rootBranches mono_models.Branches
-	for _, branch := range branches {
-		// Account for forked projects where the root branches contain
-		// a tracking ID that is not in the current project's branches
-		if branch.Tracks != nil && containsBranch(branch.Tracks, branches) {
-			continue
-		}
-		rootBranches = append(rootBranches, branch)
-	}
-	return rootBranches
-}
-
-func containsBranch(id *strfmt.UUID, branches mono_models.Branches) bool {
-	for _, branch := range branches {
-		if branch.BranchID.String() == id.String() {
-			return true
-		}
-	}
-	return false
-}
-
 func getChildren(branch *mono_models.Branch, branches mono_models.Branches) tree {
-	children := make(tree)
-	if branch == nil {
-		return children
-	}
+	childTree := make(tree)
+	children := model.GetBranchChildren(branch, branches)
 
-	for _, b := range branches {
-		if b.Tracks == nil {
-			continue
-		}
-		if b.Tracks.String() == branch.BranchID.String() {
-			children[branchNode{b.Label, b.BranchID.String()}] = make(tree)
-		}
+	for _, child := range children {
+		childTree[branchNode{child.Label, child.BranchID.String()}] = make(tree)
 	}
-	return children
+	return childTree
 }
 
 func (bt *BranchTree) SetLocalBranch(branch string) {
