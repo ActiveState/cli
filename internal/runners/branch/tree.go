@@ -18,18 +18,19 @@ type branchNode struct {
 type tree map[branchNode]tree
 
 type BranchTree struct {
-	tree                  tree
-	branches              mono_models.Branches
-	rootBranches          mono_models.Branches
-	localBranch           string
-	branchFormatting      string
-	localBranchFormatting string
+	tree         tree
+	branches     mono_models.Branches
+	rootBranches mono_models.Branches
+	localBranch  string
 }
 
 const (
 	edgeLink string = "│  "
 	edgeMid  string = "├─"
 	edgeEnd  string = "└─"
+
+	branchFormatting      string = "[NOTICE]%s[/RESET]"
+	localBranchFormatting string = "[ACTIONABLE]%s[/RESET] [DISABLED](Current)[/RESET]"
 )
 
 func NewBranchTree() *BranchTree {
@@ -99,16 +100,8 @@ func getChildren(branch *mono_models.Branch, branches mono_models.Branches) tree
 	return children
 }
 
-func (bt *BranchTree) SetBranchFormatting(formatting string) {
-	bt.branchFormatting = formatting
-}
-
 func (bt *BranchTree) SetLocalBranch(branch string) {
 	bt.localBranch = branch
-}
-
-func (bt *BranchTree) SetLocalBranchFormatting(formatting string) {
-	bt.localBranchFormatting = formatting
 }
 
 func (bt *BranchTree) String() string {
@@ -157,13 +150,9 @@ func (bt *BranchTree) printNode(w io.Writer, node branchNode, currentLevel int, 
 		fmt.Fprint(w, edgeLink)
 	}
 
-	// Apply formatting if applicable
-	branchName := node.Label
-	if bt.branchFormatting != "" {
-		branchName = fmt.Sprintf(bt.branchFormatting, node.Label)
-	}
-	if node.Label == bt.localBranch && bt.localBranchFormatting != "" {
-		branchName = fmt.Sprintf(bt.localBranchFormatting, node.Label)
+	branchName := fmt.Sprintf(branchFormatting, node.Label)
+	if node.Label == bt.localBranch {
+		branchName = fmt.Sprintf(localBranchFormatting, node.Label)
 	}
 
 	format := "%s %s\n"
