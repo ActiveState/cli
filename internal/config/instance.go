@@ -231,10 +231,7 @@ func (i *Instance) ReadInConfig() error {
 
 	err = pl.WaitForLock(5 * time.Second)
 	if err != nil {
-		if errs.Matches(err, &lockfile.AlreadyLockedError{}) {
-			return errs.Wrap(err, "Could not write config as another process appears to be using it")
-		}
-		return err
+		return errs.Wrap(err, "Unable to acquire lock")
 	}
 
 	configFile, err := i.getConfigFile()
