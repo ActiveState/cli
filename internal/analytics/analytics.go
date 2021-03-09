@@ -246,7 +246,7 @@ func sendGAEvent(category, action, label string, dimensions map[string]string) {
 func sendS3Pixel(category, action, label string, dimensions map[string]string) {
 	defer eventWaitGroup.Done()
 	logging.Debug("Sending S3 pixel event with: %s, %s, %s", category, action, label)
-	pixelURL, err := url.Parse("https://cli-update.s3.ca-central-1.amazonaws.com/pixel")
+	pixelURL, err := url.Parse("https://state-tool.s3.amazonaws.com/pixel")
 	if err != nil {
 		logging.Error("Invalid URL for analytics S3 pixel")
 		return
