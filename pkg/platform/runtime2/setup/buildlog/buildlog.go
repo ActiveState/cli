@@ -32,7 +32,6 @@ func (m message) Err() string {
 
 // BuildLogConnector describes how to interact with a build log connection
 type BuildLogConnector interface {
-	Close() error
 	ReadJSON(interface{}) error
 	WriteJSON(interface{}) error
 }
@@ -65,7 +64,6 @@ func New(artifactMap map[artifact.ArtifactID]artifact.ArtifactRecipe, conn Build
 		defer close(ch)
 		defer close(errCh)
 		defer messageHandler.BuildFinished()
-		defer conn.Close()
 
 		var artifactErr error
 		for {
