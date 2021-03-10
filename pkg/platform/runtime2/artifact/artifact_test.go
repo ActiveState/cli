@@ -1,7 +1,6 @@
 package artifact
 
 import (
-	"net/url"
 	"sort"
 	"testing"
 
@@ -188,12 +187,6 @@ func TestResolvedArtifactChanges(t *testing.T) {
 	}
 }
 
-type mockSigner struct{}
-
-func (ms *mockSigner) SignS3URL(uri *url.URL) (*url.URL, error) {
-	return uri, nil
-}
-
 func TestArtifactDownloads(t *testing.T) {
 	tests := []struct {
 		Name      string
@@ -219,7 +212,7 @@ func TestArtifactDownloads(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
 			build := testhelper.LoadBuildResponse(t, tt.BuildName)
-			downloads, err := NewDownloadsFromBuild(&mockSigner{}, build)
+			downloads, err := NewDownloadsFromBuild(build)
 			assert.NoError(t, err)
 			assert.Equal(t, tt.Expected, downloads)
 		})

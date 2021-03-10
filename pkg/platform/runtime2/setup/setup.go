@@ -255,14 +255,14 @@ func (s *Setup) deleteOutdatedArtifacts(changeset artifact.ArtifactChangeset, st
 func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, _ map[artifact.ArtifactID]artifact.ArtifactRecipe) error {
 	var errors []error
 	wp := workerpool.New(MaxConcurrency)
-	downloads, err := artifact.NewDownloadsFromBuild(s.model, buildResult.BuildStatusResponse)
+	downloads, err := artifact.NewDownloadsFromBuild(buildResult.BuildStatusResponse)
 	if err != nil {
 		return errs.Wrap(err, "Could not fetch artifacts to download.")
 	}
 	for _, a := range downloads {
 		func(a artifact.ArtifactDownload) {
 			wp.Submit(func() {
-				if err := s.setupArtifact(buildResult.BuildEngine, a.ArtifactID, a.DownloadURI); err != nil {
+				if err := s.setupArtifact(buildResult.BuildEngine, a.ArtifactID, a.UnsignedURI); err != nil {
 					errors = append(errors, err)
 				}
 			})
@@ -297,7 +297,7 @@ func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts ma
 		for a := range buildLog.BuiltArtifactsChannel() {
 			func(a artifact.ArtifactDownload) {
 				wp.Submit(func() {
-					if err := s.setupArtifact(buildResult.BuildEngine, a.ArtifactID, a.DownloadURI); err != nil {
+					if err := s.setupArtifact(buildResult.BuildEngine, a.ArtifactID, a.UnsignedURI); err != nil {
 						errors = append(errors, err)
 					}
 				})
@@ -320,7 +320,7 @@ func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts ma
 
 // setupArtifact sets up an individual artifact
 // The artifact is downloaded, unpacked and then processed by the artifact setup implementation
-func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.ArtifactID, downloadURL string) error {
+func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.ArtifactID, unsignedURI string) error {
 	as := s.selectArtifactSetupImplementation(buildEngine, a)
 
 	targetDir := filepath.Join(s.store.InstallPath(), constants.LocalRuntimeTempDirectory)
@@ -329,13 +329,13 @@ func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.Artifact
 	}
 
 	archivePath := filepath.Join(targetDir, a.String()+".tar.gz")
-	if err := s.downloadArtifact(downloadURL, archivePath); err != nil {
-		return errs.Wrap(err, "Could not download artifact %s", downloadURL)
+	if err := s.downloadArtifact(unsignedURI, archivePath); err != nil {
+		return errs.Wrap(err, "Could not download artifact %s", unsignedURI)
 	}
 	s.msgHandler.ArtifactDownloadCompleted(a)
 
 	unpackedDir := filepath.Join(targetDir, a.String())
-	logging.Debug("Unarchiving %s (%s) to %s", archivePath, downloadURL, unpackedDir)
+	logging.Debug("Unarchiving %s (%s) to %s", archivePath, unsignedURI, unpackedDir)
 	// clean up the unpacked dir
 	defer os.RemoveAll(unpackedDir)
 
@@ -378,9 +378,19 @@ func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.Artifact
 
 // downloadArtifact retrieves the tarball for an artifactID
 // Note: the tarball may also be retrieved from a local cache directory if that is available.
-func (s *Setup) downloadArtifact(downloadURL string, targetFile string) error {
+func (s *Setup) downloadArtifact(unsignedURI string, targetFile string) error {
+	artifactURL, err := url.Parse(unsignedURI)
+	if err != nil {
+		return errs.Wrap(err, "Could not parse artifact URL %s.", unsignedURI)
+	}
+
+	downloadURL, err := s.model.SignS3URL(artifactURL)
+	if err != nil {
+		return errs.Wrap(err, "Could not sign artifact URL %s.", unsignedURI)
+	}
+
 	s.msgHandler.ArtifactDownloadStarting("artifactName")
-	b, err := download.Get(downloadURL)
+	b, err := download.Get(downloadURL.String())
 	if err != nil {
 		return errs.Wrap(err, "Download %s failed", downloadURL)
 	}
