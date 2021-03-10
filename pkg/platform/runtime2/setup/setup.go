@@ -148,7 +148,7 @@ func (s *Setup) update() *updateStepError {
 	// Request build
 	buildResult, err := s.model.FetchBuildResult(s.target.CommitUUID(), s.target.Owner(), s.target.Name())
 	if err != nil {
-		return newUpdateStepError(err, LblAssembler)
+		return newUpdateStepError(err, LblBuildResults)
 	}
 
 	if buildResult.BuildStatus == headchef.Started {
@@ -165,7 +165,7 @@ func (s *Setup) update() *updateStepError {
 
 	s.store, err = store.New(s.target.Dir())
 	if err != nil {
-		return newUpdateStepError(errs.Wrap(err, "Could not create runtime store"), LblAssembler)
+		return newUpdateStepError(errs.Wrap(err, "Could not create runtime store"), LblStore)
 	}
 	oldRecipe, err := s.store.Recipe()
 	if err != nil {
@@ -177,7 +177,7 @@ func (s *Setup) update() *updateStepError {
 
 	storedArtifacts, err := s.store.Artifacts()
 	if err != nil {
-		return newUpdateStepError(locale.WrapError(err, "err_stored_artifacts", "Could not unmarshal stored artifacts, your install may be corrupted."), LblAssembler)
+		return newUpdateStepError(locale.WrapError(err, "err_stored_artifacts", "Could not unmarshal stored artifacts, your install may be corrupted."), LblStore)
 	}
 	s.deleteOutdatedArtifacts(changedArtifacts, storedArtifacts)
 
@@ -202,11 +202,11 @@ func (s *Setup) update() *updateStepError {
 
 	err = s.selectSetupImplementation(buildResult.BuildEngine).PostInstall()
 	if err != nil {
-		return newUpdateStepError(errs.Wrap(err, "PostInstall failed"), LblAssembler)
+		return newUpdateStepError(errs.Wrap(err, "PostInstall failed"), LblPostInstall)
 	}
 
 	if err := s.store.MarkInstallationComplete(s.target.CommitUUID()); err != nil {
-		return newUpdateStepError(errs.Wrap(err, "Could not mark install as complete."), LblAssembler)
+		return newUpdateStepError(errs.Wrap(err, "Could not mark install as complete."), LblStore)
 	}
 
 	return nil
