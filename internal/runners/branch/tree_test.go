@@ -8,47 +8,45 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestBranchListing_Simple(t *testing.T) {
 	branches := getBranches(t, "simple")
-	tree := NewBranchTree()
-	tree.BuildFromBranches(branches)
-	actual := tree.String()
-	expected := "main\n"
+	out := NewBranchOutput(branches, "")
+	actual := out.MarshalOutput(output.PlainFormatName)
+	expected := "[NOTICE]main[/RESET]\n"
 	assert.Equal(t, expected, actual)
 }
 
 func TestBranchListing_Complex(t *testing.T) {
 	branches := getBranches(t, "complex")
-	tree := NewBranchTree()
-	tree.BuildFromBranches(branches)
-	actual := tree.String()
-	expected := `main
- ├─ subBranch1
- │  ├─ childOfSubBranch1
- │  │  └─ 3rdLevelChild
- │  └─ secondChildOfSubBranch1
- ├─ subBranch2
- └─ subBranch3
+	out := NewBranchOutput(branches, "")
+	actual := out.MarshalOutput(output.PlainFormatName)
+	expected := `[NOTICE]main[/RESET]
+ ├─ [NOTICE]subBranch1[/RESET]
+ │  ├─ [NOTICE]childOfSubBranch1[/RESET]
+ │  │  └─ [NOTICE]3rdLevelChild[/RESET]
+ │  └─ [NOTICE]secondChildOfSubBranch1[/RESET]
+ ├─ [NOTICE]subBranch2[/RESET]
+ └─ [NOTICE]subBranch3[/RESET]
 `
 	assert.Equal(t, expected, actual)
 }
 
 func TestBranchListing_MultipleRoots(t *testing.T) {
 	branches := getBranches(t, "multipleRoots")
-	tree := NewBranchTree()
-	tree.BuildFromBranches(branches)
-	actual := tree.String()
-	expected := `root1
-root2
- ├─ root1Child1
- ├─ root1Child2
- │  └─ childOfRoot1Child2
- └─ root2Child3
-root3
+	out := NewBranchOutput(branches, "root1Child2")
+	actual := out.MarshalOutput(output.PlainFormatName)
+	expected := `[NOTICE]root1[/RESET]
+[NOTICE]root2[/RESET]
+ ├─ [NOTICE]root1Child1[/RESET]
+ ├─ [ACTIONABLE]root1Child2[/RESET] [DISABLED](Current)[/RESET]
+ │  └─ [NOTICE]childOfRoot1Child2[/RESET]
+ └─ [NOTICE]root2Child3[/RESET]
+[NOTICE]root3[/RESET]
 `
 	assert.Equal(t, expected, actual)
 }
