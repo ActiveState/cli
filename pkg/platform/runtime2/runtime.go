@@ -4,6 +4,7 @@ import (
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/setup"
@@ -47,6 +48,7 @@ func New(target setup.Targeter) (*Runtime, error) {
 }
 
 func (r *Runtime) Update(msgHandler setup.MessageHandler) error {
+	logging.Debug("Updating %s#%s @ %s", r.target.Name(), r.target.CommitUUID(), r.target.Dir())
 	if err := setup.New(r.target, msgHandler).Update(); err != nil {
 		return errs.Wrap(err, "Update failed")
 	}

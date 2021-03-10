@@ -74,7 +74,7 @@ func (s *Store) MatchesCommit(commitID strfmt.UUID) bool {
 	}
 
 	logging.Debug("MatchesCommit for %s, %s==%s", marker, string(contents), commitID.String())
-	return string(contents) == commitID.String()
+	return strings.TrimSpace(string(contents)) == commitID.String()
 }
 
 // MarkInstallationComplete writes the installation complete marker to the runtime directory

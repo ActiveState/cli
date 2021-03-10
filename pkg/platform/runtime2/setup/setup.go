@@ -207,6 +207,13 @@ func (s *Setup) update() *updateStepError {
 		return newUpdateStepError(errs.Wrap(err, "PostInstall failed"), LblPostInstall)
 	}
 
+	// clean up temp directory
+	tempDir := filepath.Join(s.store.InstallPath(), constants.LocalRuntimeTempDirectory)
+	err = os.RemoveAll(tempDir)
+	if err != nil {
+		logging.Errorf("Failed to remove temporary installation directory %s: %v", tempDir, err)
+	}
+
 	if err := s.store.MarkInstallationComplete(s.target.CommitUUID()); err != nil {
 		return newUpdateStepError(errs.Wrap(err, "Could not mark install as complete."), LblStore)
 	}
@@ -329,6 +336,9 @@ func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.Artifact
 
 	unpackedDir := filepath.Join(targetDir, a.String())
 	logging.Debug("Unarchiving %s (%s) to %s", archivePath, downloadURL, unpackedDir)
+	// clean up the unpacked dir
+	defer os.RemoveAll(unpackedDir)
+
 	err := s.unpackArtifact(as.Unarchiver(), archivePath, unpackedDir)
 	if err != nil {
 		return errs.Wrap(err, "Could not unpack artifact %s", archivePath)
