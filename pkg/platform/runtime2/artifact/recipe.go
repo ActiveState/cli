@@ -14,7 +14,6 @@ type ArtifactRecipe struct {
 	Namespace        string
 	Version          *string
 	RequestedByOrder bool
-	RecipePosition   int // Indicates that this is the n-th artifact in the recipe (for deterministic ordering of artifacts)
 
 	Dependencies []ArtifactID
 }
@@ -40,7 +39,6 @@ func NewMapFromRecipe(recipe *inventory_models.Recipe) ArtifactRecipeMap {
 	if recipe == nil {
 		return res
 	}
-	position := 0
 	for _, ri := range recipe.ResolvedIngredients {
 		namespace := *ri.Ingredient.PrimaryNamespace
 		if !monomodel.NamespaceMatch(namespace, monomodel.NamespaceLanguageMatch) &&
@@ -62,9 +60,7 @@ func NewMapFromRecipe(recipe *inventory_models.Recipe) ArtifactRecipeMap {
 			Version:          version,
 			RequestedByOrder: requestedByOrder,
 			Dependencies:     []ArtifactID{},
-			RecipePosition:   position,
 		}
-		position++
 	}
 
 	return res

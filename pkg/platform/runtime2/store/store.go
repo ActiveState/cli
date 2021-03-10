@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/envdef"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/model"
@@ -139,8 +140,10 @@ func (s *Store) StoreRecipe(recipe *inventory_models.Recipe) error {
 	return nil
 }
 
-func (s *Store) Artifacts() ([]StoredArtifact, error) {
-	stored := []StoredArtifact{}
+// Artifacts loads artifact information collected during the installation.
+// It includes the environment definition configuration and files installed for this artifact.
+func (s *Store) Artifacts() (map[artifact.ArtifactID]StoredArtifact, error) {
+	stored := make(map[artifact.ArtifactID]StoredArtifact)
 	jsonDir := filepath.Join(s.storagePath, constants.ArtifactMetaDir)
 	if !fileutils.DirExists(jsonDir) {
 		return stored, nil
@@ -165,13 +168,14 @@ func (s *Store) Artifacts() ([]StoredArtifact, error) {
 			return stored, errs.Wrap(err, "Could not unmarshal artifact meta file")
 		}
 
-		stored = append(stored, artifactStore)
+		stored[artifactStore.ArtifactID] = artifactStore
 	}
 
 	return stored, nil
 }
 
-func (s *Store) DeleteArtifactStore(id strfmt.UUID) error {
+// DeleteArtifactStore deletes the stored information for a specific artifact from the store
+func (s *Store) DeleteArtifactStore(id artifact.ArtifactID) error {
 	jsonFile := filepath.Join(s.storagePath, constants.ArtifactMetaDir, id.String()+".json")
 	if !fileutils.FileExists(jsonFile) {
 		return nil
@@ -205,20 +209,25 @@ func (s *Store) Environ(inherit bool) (map[string]string, error) {
 	return envDef.GetEnv(inherit), nil
 }
 
-func (s *Store) UpdateEnviron() error {
+func (s *Store) UpdateEnviron(buildStatus *headchef_models.BuildStatusResponse) error {
 	artifacts, err := s.Artifacts()
 	if err != nil {
 		return errs.Wrap(err, "Could not retrieve stored artifacts")
 	}
 
-	// TODO: Use the correct artifact ordering: https://www.pivotaltracker.com/story/show/177214086
 	var rtGlobal *envdef.EnvironmentDefinition
-	for _, artf := range artifacts {
-		if rtGlobal == nil {
-			rtGlobal = artf.EnvDef
+	// use artifact order as returned by the build status response form the HC for merging artifacts
+	for _, artf := range buildStatus.Artifacts {
+		a, ok := artifacts[*artf.ArtifactID]
+		if !ok {
 			continue
 		}
-		rtGlobal, err = rtGlobal.Merge(artf.EnvDef)
+
+		if rtGlobal == nil {
+			rtGlobal = a.EnvDef
+			continue
+		}
+		rtGlobal, err = rtGlobal.Merge(a.EnvDef)
 		if err != nil {
 			return errs.Wrap(err, "Could not merge envdef")
 		}
