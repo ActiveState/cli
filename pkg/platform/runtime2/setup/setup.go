@@ -2,6 +2,7 @@ package setup
 
 import (
 	"context"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -89,6 +90,7 @@ type ModelProvider interface {
 	ResolveRecipe(commitID strfmt.UUID, owner, projectName string) (*inventory_models.Recipe, error)
 	RequestBuild(recipeID, commitID strfmt.UUID, owner, project string) (headchef.BuildStatusEnum, *headchef_models.BuildStatusResponse, error)
 	FetchBuildResult(commitID strfmt.UUID, owner, project string) (*model.BuildResult, error)
+	SignS3URL(uri *url.URL) (*url.URL, error)
 }
 
 // ArtifactSetuper is the interface for an implementation of artifact setup functions
@@ -246,7 +248,7 @@ func (s *Setup) deleteOutdatedArtifacts(changeset artifact.ArtifactChangeset, st
 func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, _ map[artifact.ArtifactID]artifact.ArtifactRecipe) error {
 	var errors []error
 	wp := workerpool.New(MaxConcurrency)
-	downloads, err := artifact.NewDownloadsFromBuild(buildResult.BuildStatusResponse)
+	downloads, err := artifact.NewDownloadsFromBuild(s.model, buildResult.BuildStatusResponse)
 	if err != nil {
 		return errs.Wrap(err, "Could not fetch artifacts to download.")
 	}

@@ -6,7 +6,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
-	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
 type ArtifactDownload struct {
@@ -15,8 +14,12 @@ type ArtifactDownload struct {
 	Checksum    string
 }
 
+type urlSigner interface {
+	SignS3URL(uri *url.URL) (*url.URL, error)
+}
+
 // NewDownloadsFromBuild extracts downloadable artifact information from the build status response
-func NewDownloadsFromBuild(buildStatus *headchef_models.BuildStatusResponse) ([]ArtifactDownload, error) {
+func NewDownloadsFromBuild(model urlSigner, buildStatus *headchef_models.BuildStatusResponse) ([]ArtifactDownload, error) {
 	var downloads []ArtifactDownload
 	for _, a := range buildStatus.Artifacts {
 		if a.BuildState != nil && *a.BuildState == headchef_models.ArtifactBuildStateSucceeded && a.URI != "" {

@@ -50,7 +50,6 @@ type BuildLogMessageHandler interface {
 type BuildLog struct {
 	ch    chan artifact.ArtifactDownload
 	errCh chan error
-	conn  BuildLogConnector
 }
 
 // New creates a new instance that allows us to wait for incoming build log information
@@ -66,6 +65,7 @@ func New(artifactMap map[artifact.ArtifactID]artifact.ArtifactRecipe, conn Build
 		defer close(ch)
 		defer close(errCh)
 		defer messageHandler.BuildFinished()
+		defer conn.Close()
 
 		var artifactErr error
 		for {
@@ -139,7 +139,6 @@ func New(artifactMap map[artifact.ArtifactID]artifact.ArtifactRecipe, conn Build
 	return &BuildLog{
 		ch:    ch,
 		errCh: errCh,
-		conn:  conn,
 	}, nil
 }
 
