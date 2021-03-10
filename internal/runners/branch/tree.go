@@ -45,6 +45,10 @@ func (bt *BranchOutput) MarshalOutput(format output.Format) interface{} {
 }
 
 func branchListing(branches mono_models.Branches, localBranch string) []string {
+	sort.Slice(branches, func(i, j int) bool {
+		return branches[i].Label < branches[j].Label
+	})
+
 	var branchNames []string
 	for _, branch := range branches {
 		branchName := applyFormatting(branch.Label, localBranch)
