@@ -66,7 +66,7 @@ func NewMapFromRecipe(recipe *inventory_models.Recipe) ArtifactRecipeMap {
 	return res
 }
 
-// NewMapFromRecipe parses a recipe and returns a map of ArtifactRecipe structures that we can interpret for our purposes
+// NewNamedMapFromRecipe parses a recipe and returns a map of ArtifactRecipe structures that we can interpret for our purposes
 func NewNamedMapFromRecipe(recipe *inventory_models.Recipe) ArtifactNamedRecipeMap {
 	return NewNamedMapFromIDMap(NewMapFromRecipe(recipe))
 }
