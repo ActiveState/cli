@@ -174,6 +174,12 @@ func (r *Activate) run(params *ActivateParams) error {
 		r.subshell.SetActivateCommand(params.Command)
 	}
 
+	// Determine branch name
+	branch := proj.BranchName()
+	if params.Branch != "" {
+		branch = params.Branch
+	}
+
 	rt, err := runtime.New(runtime.NewProjectTarget(proj, r.config.CachePath()))
 	if err != nil {
 		if !runtime.IsNeedsUpdateError(err) {
@@ -182,30 +188,22 @@ func (r *Activate) run(params *ActivateParams) error {
 		if err := rt.Update(runbits.NewRuntimeMessageHandler2(r.out) /* TODO: messagehandler */); err != nil {
 			return locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
 		}
+		if err != nil {
+			if errs.Matches(err, &model.ErrNoMatchingPlatform{}) {
+				branches, err := model.BranchNamesForProjectFiltered(proj.Owner(), proj.Name(), branch)
+				if err == nil && len(branches) > 1 {
+					err = locale.NewInputError("err_activate_platfrom_alternate_branches", "", branch, strings.Join(branches, "\n - "))
+					return errs.AddTips(err, "Run → `[ACTIONABLE]state branch switch <NAME>[/RESET]` to switch branch")
+				}
+			}
+			if !authentication.Get().Authenticated() {
+				return locale.WrapError(err, "error_could_not_activate_venv_auth", "Could not activate project. If this is a private project ensure that you are authenticated.")
+			}
+			return locale.WrapError(err, "err_could_not_activate_venv", "Could not activate project")
+		}
 	}
 
 	venv := virtualenvironment.New(rt)
-
-	// Determine branch name
-	branch := proj.BranchName()
-	if params.Branch != "" {
-		branch = params.Branch
-	}
-
-	err = venv.Setup()
-	if err != nil {
-		if errs.Matches(err, &model.ErrNoMatchingPlatform{}) {
-			branches, err := model.BranchNamesForProjectFiltered(proj.Owner(), proj.Name(), branch)
-			if err == nil && len(branches) > 1 {
-				err = locale.NewInputError("err_activate_platfrom_alternate_branches", "", branch, strings.Join(branches, "\n - "))
-				return errs.AddTips(err, "Run → `[ACTIONABLE]state branch switch <NAME>[/RESET]` to switch branch")
-			}
-		}
-		if !authentication.Get().Authenticated() {
-			return locale.WrapError(err, "error_could_not_activate_venv_auth", "Could not activate project. If this is a private project ensure that you are authenticated.")
-		}
-		return locale.WrapError(err, "err_could_not_activate_venv", "Could not activate project")
-	}
 
 	if setDefault {
 		err := globaldefault.SetupDefaultActivation(r.subshell, r.config, rt, filepath.Dir(proj.Source().Path()))

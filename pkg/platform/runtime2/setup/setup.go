@@ -9,6 +9,7 @@ import (
 	"github.com/gammazero/workerpool"
 	"github.com/go-openapi/strfmt"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/download"
 	"github.com/ActiveState/cli/internal/errs"
@@ -27,6 +28,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime2/setup/buildlog"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/setup/implementations/alternative"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/store"
+	"github.com/ActiveState/cli/pkg/project"
 )
 
 // MaxConcurrency is maximum number of parallel artifact installations
@@ -113,12 +115,49 @@ func NewWithModel(target Targeter, msgHandler MessageHandler, model ModelProvide
 	return &Setup{model, target, msgHandler, nil}
 }
 
-// Update installs the runtime locally (or updates it if it's already partially installed)
+// updateStepError attaches a label to an error returned during the Update() function.
+// The label will be used in the analytics event send during setup failures.
+type updateStepError struct {
+	wrapped error
+	label   string
+}
+
+func newUpdateStepError(err error, label string) *updateStepError {
+	return &updateStepError{wrapped: err, label: label}
+}
+
+func (use *updateStepError) Error() error {
+	return use.wrapped
+}
+
+func (use *updateStepError) Label() string {
+	return use.label
+}
+
 func (s *Setup) Update() error {
+	use := s.update()
+	if use != nil {
+		analytics.EventWithLabel(CatRuntime, ActFailure, use.Label())
+		return use.Error()
+	}
+	return nil
+}
+
+// Update installs the runtime locally (or updates it if it's already partially installed)
+func (s *Setup) update() *updateStepError {
 	// Request build
 	buildResult, err := s.model.FetchBuildResult(s.target.CommitUUID(), s.target.Owner(), s.target.Name())
 	if err != nil {
-		return err
+		return newUpdateStepError(err, LblAssembler)
+	}
+
+	if buildResult.BuildStatus == headchef.Started {
+		analytics.Event(CatRuntime, ActBuild)
+		ns := project.Namespaced{
+			Owner:   s.target.Owner(),
+			Project: s.target.Name(),
+		}
+		analytics.EventWithLabel(CatRuntime, analytics.ActBuildProject, ns.String())
 	}
 
 	// Compute and handle the change summary
@@ -126,7 +165,7 @@ func (s *Setup) Update() error {
 
 	s.store, err = store.New(s.target.Dir())
 	if err != nil {
-		return errs.Wrap(err, "Could not create runtime store")
+		return newUpdateStepError(errs.Wrap(err, "Could not create runtime store"), LblAssembler)
 	}
 	oldRecipe, err := s.store.Recipe()
 	if err != nil {
@@ -138,33 +177,33 @@ func (s *Setup) Update() error {
 
 	storedArtifacts, err := s.store.Artifacts()
 	if err != nil {
-		return locale.WrapError(err, "err_stored_artifacts", "Could not unmarshal stored artifacts, your install may be corrupted.")
+		return newUpdateStepError(locale.WrapError(err, "err_stored_artifacts", "Could not unmarshal stored artifacts, your install may be corrupted."), LblAssembler)
 	}
 	s.deleteOutdatedArtifacts(changedArtifacts, storedArtifacts)
 
 	if buildResult.BuildReady {
 		err := s.installFromBuildResult(buildResult, artifacts)
 		if err != nil {
-			return err
+			return newUpdateStepError(err, LblArtifacts)
 		}
 	} else {
 		err := s.installFromBuildLog(buildResult, artifacts)
 		if err != nil {
-			return err
+			return newUpdateStepError(err, LblArtifacts)
 		}
 	}
 
 	if err := s.store.UpdateEnviron(); err != nil {
-		return errs.Wrap(err, "Could not save combined environment file")
+		return newUpdateStepError(errs.Wrap(err, "Could not save combined environment file"), LblEnv)
 	}
 
 	err = s.selectSetupImplementation(buildResult.BuildEngine).PostInstall()
 	if err != nil {
-		return errs.Wrap(err, "PostInstall failed")
+		return newUpdateStepError(errs.Wrap(err, "PostInstall failed"), LblAssembler)
 	}
 
 	if err := s.store.MarkInstallationComplete(s.target.CommitUUID()); err != nil {
-		return errs.Wrap(err, "Could not mark install as complete.")
+		return newUpdateStepError(errs.Wrap(err, "Could not mark install as complete."), LblAssembler)
 	}
 
 	return nil
@@ -311,11 +350,11 @@ func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.Artifact
 		return errs.Wrap(err, "Could not collect env info for artifact")
 	}
 
-	if err := as.Move(unpackedDir); err != nil {
+	if err := as.Move(filepath.Join(unpackedDir, envDef.InstallDir)); err != nil {
 		return errs.Wrap(err, "Move artifact failed")
 	}
 
-	if err := s.store.StoreArtifact(store.StoredArtifact{a, files, envDef}); err != nil {
+	if err := s.store.StoreArtifact(store.NewStoredArtifact(a, files, envDef)); err != nil {
 		return errs.Wrap(err, "Could not store artifact meta info")
 	}
 
@@ -358,4 +397,3 @@ func (s *Setup) selectArtifactSetupImplementation(buildEngine model.BuildEngine,
 	}
 	panic("implement me")
 }
-

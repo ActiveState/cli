@@ -14,7 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
-	"github.com/ActiveState/cli/pkg/platform/runtime2"
+	runtime "github.com/ActiveState/cli/pkg/platform/runtime2"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/messagehandler"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -80,10 +80,6 @@ func (s *Shim) Run(params *Params, args ...string) error {
 		}
 	}
 	venv := virtualenvironment.New(rt)
-	if err := venv.Activate(); err != nil {
-		logging.Errorf("Unable to activate state: %s", err.Error())
-		return locale.WrapError(err, "err_shim_activate", "Could not activate environment for shim command")
-	}
 
 	env, err := venv.GetEnv(true, filepath.Dir(s.proj.Source().Path()))
 	if err != nil {

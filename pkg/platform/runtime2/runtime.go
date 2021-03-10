@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/artifact"
@@ -10,9 +11,10 @@ import (
 )
 
 type Runtime struct {
-	target setup.Targeter
-	store  *store.Store
-	model  *model.Model
+	target      setup.Targeter
+	store       *store.Store
+	model       *model.Model
+	envAccessed bool
 }
 
 type MessageHandler interface {
@@ -39,6 +41,8 @@ func New(target setup.Targeter) (*Runtime, error) {
 		return rt, &NeedsUpdateError{errs.New("Runtime requires setup.")}
 	}
 
+	analytics.Event(setup.CatRuntime, setup.ActCache)
+
 	return rt, nil
 }
 
@@ -55,7 +59,16 @@ func (r *Runtime) Update(msgHandler setup.MessageHandler) error {
 }
 
 func (r *Runtime) Environ(inherit bool) (map[string]string, error) {
-	return r.store.Environ(inherit)
+	env, err := r.store.Environ(inherit)
+	if !r.envAccessed {
+		if err != nil {
+			analytics.EventWithLabel(setup.CatRuntime, setup.ActFailure, setup.LblEnv)
+		} else {
+			analytics.Event(setup.CatRuntime, setup.ActSuccess)
+		}
+		r.envAccessed = true
+	}
+	return env, err
 }
 
 func (r *Runtime) Artifacts() (map[artifact.ArtifactID]artifact.ArtifactRecipe, error) {
