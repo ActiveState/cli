@@ -181,6 +181,9 @@ func (s *Setup) update() *updateStepError {
 	}
 	s.deleteOutdatedArtifacts(changedArtifacts, storedArtifacts)
 
+	// if we get here, we dowload artifacts
+	analytics.Event(CatRuntime, ActDownload)
+
 	if buildResult.BuildReady {
 		err := s.installFromBuildResult(buildResult, artifacts)
 		if err != nil {
