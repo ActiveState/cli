@@ -16,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/runtime2/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/envdef"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/model"
 )
@@ -31,6 +32,8 @@ type StoredArtifact struct {
 	Files      []string                      `json:"files"`
 	EnvDef     *envdef.EnvironmentDefinition `json:"envdef"`
 }
+
+type StoredArtifactMap = map[artifact.ArtifactID]StoredArtifact
 
 func New(installPath string) (*Store, error) {
 	return &Store{
@@ -142,8 +145,8 @@ func (s *Store) StoreRecipe(recipe *inventory_models.Recipe) error {
 
 // Artifacts loads artifact information collected during the installation.
 // It includes the environment definition configuration and files installed for this artifact.
-func (s *Store) Artifacts() (map[artifact.ArtifactID]StoredArtifact, error) {
-	stored := make(map[artifact.ArtifactID]StoredArtifact)
+func (s *Store) Artifacts() (StoredArtifactMap, error) {
+	stored := make(StoredArtifactMap)
 	jsonDir := filepath.Join(s.storagePath, constants.ArtifactMetaDir)
 	if !fileutils.DirExists(jsonDir) {
 		return stored, nil
