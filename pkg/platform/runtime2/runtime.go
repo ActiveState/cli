@@ -29,11 +29,7 @@ func IsNeedsUpdateError(err error) bool {
 	return errs.Matches(err, &NeedsUpdateError{})
 }
 
-func new(target setup.Targeter, noSetupYet bool) (*Runtime, error) {
-	if noSetupYet {
-		analytics.Event(analytics.CatRuntime, analytics.ActRuntimeStart)
-	}
-
+func new(target setup.Targeter) (*Runtime, error) {
 	rt := &Runtime{target: target}
 	rt.model = model.NewDefault()
 
@@ -46,15 +42,18 @@ func new(target setup.Targeter, noSetupYet bool) (*Runtime, error) {
 		return rt, &NeedsUpdateError{errs.New("Runtime requires setup.")}
 	}
 
-	if noSetupYet {
-		analytics.Event(analytics.CatRuntime, analytics.ActRuntimeCache)
-	}
-
 	return rt, nil
 }
 
+// New attempts to create a new runtime from local storage.  If it fails with a NeedsUpdateError, Update() needs to be called to update the locally stored runtime.
 func New(target setup.Targeter) (*Runtime, error) {
-	return new(target, true)
+	analytics.Event(analytics.CatRuntime, analytics.ActRuntimeStart)
+
+	r, err := new(target)
+	if err == nil {
+		analytics.Event(analytics.CatRuntime, analytics.ActRuntimeCache)
+	}
+	return r, err
 }
 
 func (r *Runtime) Update(msgHandler setup.MessageHandler) error {
@@ -62,7 +61,7 @@ func (r *Runtime) Update(msgHandler setup.MessageHandler) error {
 	if err := setup.New(r.target, msgHandler).Update(); err != nil {
 		return errs.Wrap(err, "Update failed")
 	}
-	rt, err := new(r.target, false)
+	rt, err := new(r.target)
 	if err != nil {
 		return errs.Wrap(err, "Could not reinitialize runtime after update")
 	}
