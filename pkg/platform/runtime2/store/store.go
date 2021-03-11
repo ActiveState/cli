@@ -14,7 +14,6 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/envdef"
@@ -212,7 +211,7 @@ func (s *Store) Environ(inherit bool) (map[string]string, error) {
 	return envDef.GetEnv(inherit), nil
 }
 
-func (s *Store) UpdateEnviron(buildStatus *headchef_models.BuildStatusResponse) error {
+func (s *Store) UpdateEnviron(orderedArtifacts []artifact.ArtifactID) error {
 	artifacts, err := s.Artifacts()
 	if err != nil {
 		return errs.Wrap(err, "Could not retrieve stored artifacts")
@@ -220,8 +219,8 @@ func (s *Store) UpdateEnviron(buildStatus *headchef_models.BuildStatusResponse) 
 
 	var rtGlobal *envdef.EnvironmentDefinition
 	// use artifact order as returned by the build status response form the HC for merging artifacts
-	for _, artf := range buildStatus.Artifacts {
-		a, ok := artifacts[*artf.ArtifactID]
+	for _, artID := range orderedArtifacts {
+		a, ok := artifacts[artID]
 		if !ok {
 			continue
 		}

@@ -154,7 +154,7 @@ func (s *Setup) Update() error {
 		}
 	}
 
-	if err := s.store.UpdateEnviron(buildResult.BuildStatusResponse); err != nil {
+	if err := s.store.UpdateEnviron(buildResult.OrderedArtifacts()); err != nil {
 		return errs.Wrap(err, "Could not save combined environment file")
 	}
 

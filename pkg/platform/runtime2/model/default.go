@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime2/artifact"
 )
 
 // var _ runtime.ClientProvider = &Default{}
@@ -39,6 +40,14 @@ type BuildResult struct {
 	BuildStatusResponse *headchef_models.BuildStatusResponse
 	BuildStatus         headchef.BuildStatusEnum
 	BuildReady          bool
+}
+
+func (b *BuildResult) OrderedArtifacts() []artifact.ArtifactID {
+	res := make([]artifact.ArtifactID, 0, len(b.BuildStatusResponse.Artifacts))
+	for _, a := range b.BuildStatusResponse.Artifacts {
+		res = append(res, *a.ArtifactID)
+	}
+	return res
 }
 
 // FetchBuildResult requests a build for a resolved recipe and returns the result in a BuildResult struct
