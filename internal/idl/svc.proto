@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+option go_package = "github.com/ActiveState/cli/internal/idl";
+
+package main;
+
+service VersionSvc {
+    rpc StateVersion(StateVersionRequest) returns (StateVersionResponse) {}
+}
+
+message StateVersionRequest {}
+
+message StateVersionResponse {
+    string license = 1;
+    string version = 2;
+    string branch = 3;
+    string revision = 4;
+    string date = 5;
+}

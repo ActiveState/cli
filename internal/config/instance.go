@@ -147,6 +147,11 @@ func (i *Instance) GetString(key string) string {
 	return cast.ToString(i.get(key))
 }
 
+// GetInt retrieves an int for a given key
+func (i *Instance) GetInt(key string) int {
+	return cast.ToInt(i.get(key))
+}
+
 // AllKeys returns all of the curent config keys
 func (i *Instance) AllKeys() []string {
 	var keys []string
