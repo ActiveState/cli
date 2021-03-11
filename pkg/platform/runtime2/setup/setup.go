@@ -117,49 +117,30 @@ func NewWithModel(target Targeter, msgHandler MessageHandler, model ModelProvide
 	return &Setup{model, target, msgHandler, nil}
 }
 
-// updateStepError attaches a label to an error returned during the Update() function.
-// The label will be used in the analytics event send during setup failures.
-type updateStepError struct {
-	wrapped error
-	label   string
-}
-
-func newUpdateStepError(err error, label string) *updateStepError {
-	return &updateStepError{wrapped: err, label: label}
-}
-
-func (use *updateStepError) Error() error {
-	return use.wrapped
-}
-
-func (use *updateStepError) Label() string {
-	return use.label
-}
-
+// Update installs the runtime locally (or updates it if it's already partially installed)
 func (s *Setup) Update() error {
-	use := s.update()
-	if use != nil {
-		analytics.EventWithLabel(CatRuntime, ActFailure, use.Label())
-		return use.Error()
+	err := s.update()
+	if err != nil {
+		analytics.EventWithLabel(analytics.CatRuntime, analytics.ActRuntimeFailure, analytics.LblRtFailUpdate)
+		return err
 	}
 	return nil
 }
 
-// Update installs the runtime locally (or updates it if it's already partially installed)
-func (s *Setup) update() *updateStepError {
+func (s *Setup) update() error {
 	// Request build
 	buildResult, err := s.model.FetchBuildResult(s.target.CommitUUID(), s.target.Owner(), s.target.Name())
 	if err != nil {
-		return newUpdateStepError(err, LblBuildResults)
+		return errs.Wrap(err, "Failed to fetch build result")
 	}
 
 	if buildResult.BuildStatus == headchef.Started {
-		analytics.Event(CatRuntime, ActBuild)
+		analytics.Event(analytics.CatRuntime, analytics.ActRuntimeBuild)
 		ns := project.Namespaced{
 			Owner:   s.target.Owner(),
 			Project: s.target.Name(),
 		}
-		analytics.EventWithLabel(CatRuntime, analytics.ActBuildProject, ns.String())
+		analytics.EventWithLabel(analytics.CatRuntime, analytics.ActBuildProject, ns.String())
 	}
 
 	// Compute and handle the change summary
@@ -167,7 +148,7 @@ func (s *Setup) update() *updateStepError {
 
 	s.store, err = store.New(s.target.Dir())
 	if err != nil {
-		return newUpdateStepError(errs.Wrap(err, "Could not create runtime store"), LblStore)
+		return errs.Wrap(err, "Could not create runtime store")
 	}
 	oldRecipe, err := s.store.Recipe()
 	if err != nil {
@@ -179,32 +160,32 @@ func (s *Setup) update() *updateStepError {
 
 	storedArtifacts, err := s.store.Artifacts()
 	if err != nil {
-		return newUpdateStepError(locale.WrapError(err, "err_stored_artifacts", "Could not unmarshal stored artifacts, your install may be corrupted."), LblStore)
+		return locale.WrapError(err, "err_stored_artifacts", "Could not unmarshal stored artifacts, your install may be corrupted.")
 	}
 	s.deleteOutdatedArtifacts(changedArtifacts, storedArtifacts)
 
 	// if we get here, we dowload artifacts
-	analytics.Event(CatRuntime, ActDownload)
+	analytics.Event(analytics.CatRuntime, analytics.ActRuntimeDownload)
 
 	if buildResult.BuildReady {
 		err := s.installFromBuildResult(buildResult, artifacts)
 		if err != nil {
-			return newUpdateStepError(err, LblArtifacts)
+			return err
 		}
 	} else {
 		err := s.installFromBuildLog(buildResult, artifacts)
 		if err != nil {
-			return newUpdateStepError(err, LblArtifacts)
+			return err
 		}
 	}
 
 	if err := s.store.UpdateEnviron(); err != nil {
-		return newUpdateStepError(errs.Wrap(err, "Could not save combined environment file"), LblEnv)
+		return errs.Wrap(err, "Could not save combined environment file")
 	}
 
 	err = s.selectSetupImplementation(buildResult.BuildEngine).PostInstall()
 	if err != nil {
-		return newUpdateStepError(errs.Wrap(err, "PostInstall failed"), LblPostInstall)
+		return errs.Wrap(err, "PostInstall failed")
 	}
 
 	// clean up temp directory
@@ -215,7 +196,7 @@ func (s *Setup) update() *updateStepError {
 	}
 
 	if err := s.store.MarkInstallationComplete(s.target.CommitUUID()); err != nil {
-		return newUpdateStepError(errs.Wrap(err, "Could not mark install as complete."), LblStore)
+		return errs.Wrap(err, "Could not mark install as complete.")
 	}
 
 	return nil

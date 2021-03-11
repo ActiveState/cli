@@ -29,7 +29,11 @@ func IsNeedsUpdateError(err error) bool {
 	return errs.Matches(err, &NeedsUpdateError{})
 }
 
-func New(target setup.Targeter) (*Runtime, error) {
+func new(target setup.Targeter, noSetupYet bool) (*Runtime, error) {
+	if noSetupYet {
+		analytics.Event(analytics.CatRuntime, analytics.ActRuntimeStart)
+	}
+
 	rt := &Runtime{target: target}
 	rt.model = model.NewDefault()
 
@@ -42,9 +46,15 @@ func New(target setup.Targeter) (*Runtime, error) {
 		return rt, &NeedsUpdateError{errs.New("Runtime requires setup.")}
 	}
 
-	analytics.Event(setup.CatRuntime, setup.ActCache)
+	if noSetupYet {
+		analytics.Event(analytics.CatRuntime, analytics.ActRuntimeCache)
+	}
 
 	return rt, nil
+}
+
+func New(target setup.Targeter) (*Runtime, error) {
+	return new(target, true)
 }
 
 func (r *Runtime) Update(msgHandler setup.MessageHandler) error {
@@ -52,7 +62,7 @@ func (r *Runtime) Update(msgHandler setup.MessageHandler) error {
 	if err := setup.New(r.target, msgHandler).Update(); err != nil {
 		return errs.Wrap(err, "Update failed")
 	}
-	rt, err := New(r.target)
+	rt, err := new(r.target, false)
 	if err != nil {
 		return errs.Wrap(err, "Could not reinitialize runtime after update")
 	}
@@ -64,9 +74,9 @@ func (r *Runtime) Environ(inherit bool) (map[string]string, error) {
 	env, err := r.store.Environ(inherit)
 	if !r.envAccessed {
 		if err != nil {
-			analytics.EventWithLabel(setup.CatRuntime, setup.ActFailure, setup.LblEnv)
+			analytics.EventWithLabel(analytics.CatRuntime, analytics.ActRuntimeFailure, analytics.LblRtFailEnv)
 		} else {
-			analytics.Event(setup.CatRuntime, setup.ActSuccess)
+			analytics.Event(analytics.CatRuntime, analytics.ActRuntimeSuccess)
 		}
 		r.envAccessed = true
 	}
