@@ -93,7 +93,7 @@ scripts:
       fi
 
       OUTPUT=cmd/state-tray/assets/icon.go
-      cat cmd/state-tray/assets/as32x32.ico | 2goarray Icon assets > $OUTPUT
+      cat cmd/state-tray/assets/as.ico | 2goarray Icon assets > $OUTPUT
       if [ $? -ne 0 ]; then
           echo Failure generating $OUTPUT
           exit
