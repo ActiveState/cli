@@ -217,6 +217,15 @@ func (s *Store) UpdateEnviron(orderedArtifacts []artifact.ArtifactID) error {
 		return errs.Wrap(err, "Could not retrieve stored artifacts")
 	}
 
+	rtGlobal, err := s.updateEnviron(orderedArtifacts, artifacts)
+	if err != nil {
+		return err
+	}
+
+	return rtGlobal.WriteFile(filepath.Join(s.storagePath, constants.RuntimeDefinitionFilename))
+}
+
+func (s *Store) updateEnviron(orderedArtifacts []artifact.ArtifactID, artifacts StoredArtifactMap) (*envdef.EnvironmentDefinition, error) {
 	var rtGlobal *envdef.EnvironmentDefinition
 	// use artifact order as returned by the build status response form the HC for merging artifacts
 	for _, artID := range orderedArtifacts {
@@ -229,20 +238,21 @@ func (s *Store) UpdateEnviron(orderedArtifacts []artifact.ArtifactID) error {
 			rtGlobal = a.EnvDef
 			continue
 		}
+		var err error
 		rtGlobal, err = rtGlobal.Merge(a.EnvDef)
 		if err != nil {
-			return errs.Wrap(err, "Could not merge envdef")
+			return nil, errs.Wrap(err, "Could not merge envdef")
 		}
 	}
 
 	cnst := envdef.NewConstants(s.InstallPath())
 	rtGlobal = rtGlobal.ExpandVariables(cnst)
-	err = rtGlobal.ApplyFileTransforms(s.InstallPath(), cnst)
+	err := rtGlobal.ApplyFileTransforms(s.InstallPath(), cnst)
 	if err != nil {
-		return locale.WrapError(err, "runtime_alternative_file_transforms_err", "", "Could not apply necessary file transformations after unpacking")
+		return nil, locale.WrapError(err, "runtime_alternative_file_transforms_err", "", "Could not apply necessary file transformations after unpacking")
 	}
 
-	return rtGlobal.WriteFile(filepath.Join(s.storagePath, constants.RuntimeDefinitionFilename))
+	return rtGlobal, nil
 }
 
 // InstallPath returns the installation path of the runtime
