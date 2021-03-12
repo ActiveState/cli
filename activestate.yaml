@@ -4,12 +4,20 @@ constants:
     value: -ldflags="-s -w"
   - name: CLI_PKGS
     value: ./cmd/state
+  - name: SYSTRAY_PKGS
+    value: ./cmd/state-tray
   - name: BUILD_TARGET
     if: ne .OS.Name "Windows"
     value: ./build/state
   - name: BUILD_TARGET_32BIT
     if: ne .OS.Name "Windows"
     value: ./build/state32
+  - name: SYSTRAY_BUILD_TARGET
+    if: ne .OS.Name "Windows"
+    value: ./build/state-tray
+  - name: SYSTRAY_BUILDFLAGS
+    if: ne .OS.Name "Windows"
+    value: -ldflags="-s -w"
   - name: SET_ENV
     description: The environment settings used throughout our project
     value: |
@@ -108,6 +116,12 @@ scripts:
       $scripts.build-for.path() "windows" ./.github/deps/Windows/bin/state.exe
       $scripts.build-for.path() "linux" ./.github/deps/Linux/bin/state
       $scripts.build-for.path() "darwin" ./.github/deps/macOS/bin/state
+  - name: build-tray
+    description: Builds the State Tool system tray application
+    standalone: true
+    language: bash
+    value: |
+      go build -tags "$GO_BUILD_TAGS" -o $constants.SYSTRAY_BUILD_TARGET $constants.SYSTRAY_BUILDFLAGS $constants.SYSTRAY_PKGS
   - name: test
     language: bash
     description: Runs unit tests (not integration tests)

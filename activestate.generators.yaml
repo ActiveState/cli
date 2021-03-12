@@ -79,3 +79,22 @@ scripts:
 
       mkdir -p build/update
       go run scripts/update-generator/main.go -o build/update $constants.BUILD_TARGET_32BIT
+  - name: generate-tray-icon
+    language: bash
+    standalone: true
+    description: Generate the icon array for the systray executable
+    value: |
+      set -e
+      if ! type "2goarray" &> /dev/null; then
+        echo "2goarray was not found on your PATH, installing .."
+        pushd ~
+        go get -u github.com/cratonica/2goarray
+        popd
+      fi
+
+      OUTPUT=cmd/state-tray/assets/icon.go
+      cat cmd/state-tray/assets/as32x32.ico | 2goarray Icon assets > $OUTPUT
+      if [ $? -ne 0 ]; then
+          echo Failure generating $OUTPUT
+          exit
+      fi
