@@ -1,7 +1,6 @@
 package artifact
 
 import (
-	"sort"
 	"testing"
 
 	"github.com/go-openapi/strfmt"
@@ -41,8 +40,7 @@ func TestArtifactsFromRecipe(t *testing.T) {
 			recipe := testhelper.LoadRecipe(t, tt.recipeName)
 			res := NewMapFromRecipe(recipe)
 			artSlice := funk.Map(res, func(_ ArtifactID, a ArtifactRecipe) ArtifactRecipe { return a }).([]ArtifactRecipe)
-			sort.Slice(artSlice, func(i, j int) bool { return artSlice[i].RecipePosition < artSlice[j].RecipePosition })
-			assert.Equal(t, tt.expectedArtifactNames, funk.Map(artSlice, func(a ArtifactRecipe) string { return a.Name }))
+			assert.ElementsMatch(t, tt.expectedArtifactNames, funk.Map(artSlice, func(a ArtifactRecipe) string { return a.Name }))
 			// TODO add more assertions especially about dependencies
 		})
 	}

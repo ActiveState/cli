@@ -179,7 +179,7 @@ func (s *Setup) update() error {
 		}
 	}
 
-	if err := s.store.UpdateEnviron(); err != nil {
+	if err := s.store.UpdateEnviron(buildResult.OrderedArtifacts()); err != nil {
 		return errs.Wrap(err, "Could not save combined environment file")
 	}
 
@@ -202,7 +202,7 @@ func (s *Setup) update() error {
 	return nil
 }
 
-func (s *Setup) deleteOutdatedArtifacts(changeset artifact.ArtifactChangeset, storedArtifacted []store.StoredArtifact) error {
+func (s *Setup) deleteOutdatedArtifacts(changeset artifact.ArtifactChangeset, storedArtifacted map[artifact.ArtifactID]store.StoredArtifact) error {
 	del := map[strfmt.UUID]struct{}{}
 	for _, upd := range changeset.Updated {
 		del[upd.FromID] = struct{}{}

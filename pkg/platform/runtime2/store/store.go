@@ -20,7 +20,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime2/model"
 )
 
-// store manages the storing and loading of persistable information about the runtime
+// Store manages the storing and loading of persistable information about the runtime
 type Store struct {
 	installPath string
 	storagePath string
@@ -39,6 +39,8 @@ func NewStoredArtifact(artifactID artifact.ArtifactID, files []string, envDef *e
 		EnvDef:     envDef,
 	}
 }
+
+type StoredArtifactMap = map[artifact.ArtifactID]StoredArtifact
 
 func New(installPath string) (*Store, error) {
 	return &Store{
@@ -148,8 +150,10 @@ func (s *Store) StoreRecipe(recipe *inventory_models.Recipe) error {
 	return nil
 }
 
-func (s *Store) Artifacts() ([]StoredArtifact, error) {
-	stored := []StoredArtifact{}
+// Artifacts loads artifact information collected during the installation.
+// It includes the environment definition configuration and files installed for this artifact.
+func (s *Store) Artifacts() (StoredArtifactMap, error) {
+	stored := make(StoredArtifactMap)
 	jsonDir := filepath.Join(s.storagePath, constants.ArtifactMetaDir)
 	if !fileutils.DirExists(jsonDir) {
 		return stored, nil
@@ -174,13 +178,14 @@ func (s *Store) Artifacts() ([]StoredArtifact, error) {
 			return stored, errs.Wrap(err, "Could not unmarshal artifact meta file")
 		}
 
-		stored = append(stored, artifactStore)
+		stored[artifactStore.ArtifactID] = artifactStore
 	}
 
 	return stored, nil
 }
 
-func (s *Store) DeleteArtifactStore(id strfmt.UUID) error {
+// DeleteArtifactStore deletes the stored information for a specific artifact from the store
+func (s *Store) DeleteArtifactStore(id artifact.ArtifactID) error {
 	jsonFile := filepath.Join(s.storagePath, constants.ArtifactMetaDir, id.String()+".json")
 	if !fileutils.FileExists(jsonFile) {
 		return nil
@@ -214,33 +219,48 @@ func (s *Store) Environ(inherit bool) (map[string]string, error) {
 	return envDef.GetEnv(inherit), nil
 }
 
-func (s *Store) UpdateEnviron() error {
+func (s *Store) UpdateEnviron(orderedArtifacts []artifact.ArtifactID) error {
 	artifacts, err := s.Artifacts()
 	if err != nil {
 		return errs.Wrap(err, "Could not retrieve stored artifacts")
 	}
 
-	// TODO: Use the correct artifact ordering: https://www.pivotaltracker.com/story/show/177214086
+	rtGlobal, err := s.updateEnviron(orderedArtifacts, artifacts)
+	if err != nil {
+		return err
+	}
+
+	return rtGlobal.WriteFile(filepath.Join(s.storagePath, constants.RuntimeDefinitionFilename))
+}
+
+func (s *Store) updateEnviron(orderedArtifacts []artifact.ArtifactID, artifacts StoredArtifactMap) (*envdef.EnvironmentDefinition, error) {
 	var rtGlobal *envdef.EnvironmentDefinition
-	for _, artf := range artifacts {
-		if rtGlobal == nil {
-			rtGlobal = artf.EnvDef
+	// use artifact order as returned by the build status response form the HC for merging artifacts
+	for _, artID := range orderedArtifacts {
+		a, ok := artifacts[artID]
+		if !ok {
 			continue
 		}
-		rtGlobal, err = rtGlobal.Merge(artf.EnvDef)
+
+		if rtGlobal == nil {
+			rtGlobal = a.EnvDef
+			continue
+		}
+		var err error
+		rtGlobal, err = rtGlobal.Merge(a.EnvDef)
 		if err != nil {
-			return errs.Wrap(err, "Could not merge envdef")
+			return nil, errs.Wrap(err, "Could not merge envdef")
 		}
 	}
 
 	cnst := envdef.NewConstants(s.InstallPath())
 	rtGlobal = rtGlobal.ExpandVariables(cnst)
-	err = rtGlobal.ApplyFileTransforms(s.InstallPath(), cnst)
+	err := rtGlobal.ApplyFileTransforms(s.InstallPath(), cnst)
 	if err != nil {
-		return locale.WrapError(err, "runtime_alternative_file_transforms_err", "", "Could not apply necessary file transformations after unpacking")
+		return nil, locale.WrapError(err, "runtime_alternative_file_transforms_err", "", "Could not apply necessary file transformations after unpacking")
 	}
 
-	return rtGlobal.WriteFile(filepath.Join(s.storagePath, constants.RuntimeDefinitionFilename))
+	return rtGlobal, nil
 }
 
 // InstallPath returns the installation path of the runtime
