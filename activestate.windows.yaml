@@ -11,6 +11,9 @@ constants:
   - name: SYSTRAY_BUILDFLAGS
     if: eq .OS.Name "Windows"
     value: -ldflags="-s -w -H=windowsgui"
+  - name: SYSTRAY_ICON
+    if: eq .OS.Name "Windows"
+    value: cmd/state-tray/assets/as.ico
 scripts:
   - name: build-install-scripts
     language: bash
