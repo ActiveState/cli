@@ -32,7 +32,6 @@ func (m message) Err() string {
 
 // BuildLogConnector describes how to interact with a build log connection
 type BuildLogConnector interface {
-	Close() error
 	ReadJSON(interface{}) error
 	WriteJSON(interface{}) error
 }
@@ -50,7 +49,6 @@ type BuildLogMessageHandler interface {
 type BuildLog struct {
 	ch    chan artifact.ArtifactDownload
 	errCh chan error
-	conn  BuildLogConnector
 }
 
 // New creates a new instance that allows us to wait for incoming build log information
@@ -122,7 +120,7 @@ func New(artifactMap map[artifact.ArtifactID]artifact.ArtifactRecipe, conn Build
 					errCh <- errs.New("artifact_succeeded message was incomplete")
 					return
 				}
-				ch <- artifact.ArtifactDownload{ArtifactID: *msg.ArtifactID, DownloadURI: *msg.ArtifactURI, Checksum: *msg.ArtifactChecksum}
+				ch <- artifact.ArtifactDownload{ArtifactID: *msg.ArtifactID, UnsignedURI: *msg.ArtifactURI, Checksum: *msg.ArtifactChecksum}
 			case "artifact_failed":
 				artifactErr = locale.WrapError(artifactErr, "err_artifact_failed", "Failed to build \"{{.V0}}\", error reported: {{.V1}}.", artifactName, msg.Err())
 				messageHandler.ArtifactBuildFailed(artifactName, msg.Err())
@@ -139,7 +137,6 @@ func New(artifactMap map[artifact.ArtifactID]artifact.ArtifactRecipe, conn Build
 	return &BuildLog{
 		ch:    ch,
 		errCh: errCh,
-		conn:  conn,
 	}, nil
 }
 

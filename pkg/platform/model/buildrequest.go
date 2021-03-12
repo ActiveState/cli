@@ -36,5 +36,4 @@ func requestBuild(recipeID, orgID, projID strfmt.UUID, annotations headchef.Buil
 		return headchef.Error, nil, err
 	}
 	return headchef.InitClient().RequestBuildSync(buildRequest)
-
 }

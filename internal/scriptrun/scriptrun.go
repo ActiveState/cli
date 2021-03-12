@@ -67,11 +67,6 @@ func (s *ScriptRun) PrepareVirtualEnv() error {
 	}
 	venv := virtualenvironment.New(rt)
 
-	if err := venv.Activate(); err != nil {
-		logging.Errorf("Unable to activate state: %s", err.Error())
-		return locale.WrapError(err, "error_state_run_activate")
-	}
-
 	env, err := venv.GetEnv(true, filepath.Dir(s.project.Source().Path()))
 	if err != nil {
 		return err

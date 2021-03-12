@@ -1,6 +1,8 @@
 package model
 
 import (
+	"net/url"
+
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/locale"
@@ -31,6 +33,10 @@ func (m *Model) ResolveRecipe(commitID strfmt.UUID, owner, projectName string) (
 
 func (m *Model) RequestBuild(recipeID, commitID strfmt.UUID, owner, project string) (headchef.BuildStatusEnum, *headchef_models.BuildStatusResponse, error) {
 	return model.RequestBuild(recipeID, commitID, owner, project)
+}
+
+func (m *Model) SignS3URL(uri *url.URL) (*url.URL, error) {
+	return model.SignS3URL(uri)
 }
 
 // BuildResult is the unified response of a Build request

@@ -14,14 +14,8 @@ import (
 
 type connectionMock struct {
 	CalledWrite int
-	CalledClose int
 	messages    []interface{}
 	readCount   int
-}
-
-func (cm *connectionMock) Close() error {
-	cm.CalledClose++
-	return nil
 }
 
 func (cm *connectionMock) WriteJSON(interface{}) error {
@@ -222,7 +216,6 @@ func TestBuildLog(t *testing.T) {
 			}
 			<-done
 			assert.Len(t, downloads, tt.ExpectedDownloads)
-			assert.Equal(t, 1, cm.CalledClose)
 			assert.Equal(t, 1, cm.CalledWrite)
 			assert.Equal(t, []int{2}, mmh.BuildStartingCalls)
 			assert.Equal(t, 1, mmh.BuildFinishedCallCount)
