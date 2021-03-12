@@ -1,8 +1,10 @@
 package runtime
 
 import (
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/setup"
@@ -10,9 +12,10 @@ import (
 )
 
 type Runtime struct {
-	target setup.Targeter
-	store  *store.Store
-	model  *model.Model
+	target      setup.Targeter
+	store       *store.Store
+	model       *model.Model
+	envAccessed bool
 }
 
 type MessageHandler interface {
@@ -26,7 +29,7 @@ func IsNeedsUpdateError(err error) bool {
 	return errs.Matches(err, &NeedsUpdateError{})
 }
 
-func New(target setup.Targeter) (*Runtime, error) {
+func new(target setup.Targeter) (*Runtime, error) {
 	rt := &Runtime{target: target}
 	rt.model = model.NewDefault()
 
@@ -42,11 +45,23 @@ func New(target setup.Targeter) (*Runtime, error) {
 	return rt, nil
 }
 
+// New attempts to create a new runtime from local storage.  If it fails with a NeedsUpdateError, Update() needs to be called to update the locally stored runtime.
+func New(target setup.Targeter) (*Runtime, error) {
+	analytics.Event(analytics.CatRuntime, analytics.ActRuntimeStart)
+
+	r, err := new(target)
+	if err == nil {
+		analytics.Event(analytics.CatRuntime, analytics.ActRuntimeCache)
+	}
+	return r, err
+}
+
 func (r *Runtime) Update(msgHandler setup.MessageHandler) error {
+	logging.Debug("Updating %s#%s @ %s", r.target.Name(), r.target.CommitUUID(), r.target.Dir())
 	if err := setup.New(r.target, msgHandler).Update(); err != nil {
 		return errs.Wrap(err, "Update failed")
 	}
-	rt, err := New(r.target)
+	rt, err := new(r.target)
 	if err != nil {
 		return errs.Wrap(err, "Could not reinitialize runtime after update")
 	}
@@ -55,7 +70,16 @@ func (r *Runtime) Update(msgHandler setup.MessageHandler) error {
 }
 
 func (r *Runtime) Environ(inherit bool) (map[string]string, error) {
-	return r.store.Environ(inherit)
+	env, err := r.store.Environ(inherit)
+	if !r.envAccessed {
+		if err != nil {
+			analytics.EventWithLabel(analytics.CatRuntime, analytics.ActRuntimeFailure, analytics.LblRtFailEnv)
+		} else {
+			analytics.Event(analytics.CatRuntime, analytics.ActRuntimeSuccess)
+		}
+		r.envAccessed = true
+	}
+	return env, err
 }
 
 func (r *Runtime) Artifacts() (map[artifact.ArtifactID]artifact.ArtifactRecipe, error) {

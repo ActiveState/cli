@@ -9,9 +9,8 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/pkg/platform/runtime2"
+	runtime "github.com/ActiveState/cli/pkg/platform/runtime2"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -20,7 +19,6 @@ var persisted *VirtualEnvironment
 // VirtualEnvironment represents our virtual environment, it pulls together and virtualizes the runtime environment
 type VirtualEnvironment struct {
 	activationID string
-	onUseCache   func()
 	runtime      *runtime.Runtime
 }
 
@@ -31,36 +29,14 @@ func New(runtime *runtime.Runtime) *VirtualEnvironment {
 	}
 }
 
-// Activate the virtual environment
-func (v *VirtualEnvironment) Activate() error {
-	logging.Debug("Activating Virtual Environment")
-
-	if strings.ToLower(os.Getenv(constants.DisableRuntime)) != "true" {
-		if err := v.Setup(); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// Setup sets up a runtime environment that is fully functional.
-func (v *VirtualEnvironment) Setup() error {
-	logging.Debug("Setting up virtual Environment")
-	if strings.ToLower(os.Getenv(constants.DisableRuntime)) == "true" {
-		return nil
-	}
-
-	return nil
-}
-
 // GetEnv returns a map of the cumulative environment variables for all active virtual environments
 func (v *VirtualEnvironment) GetEnv(inherit bool, projectDir string) (map[string]string, error) {
 	envMap := make(map[string]string)
 
 	// Source runtime environment information
 	if strings.ToLower(os.Getenv(constants.DisableRuntime)) != "true" {
-		envMap, err := v.runtime.Environ(inherit)
+		var err error
+		envMap, err = v.runtime.Environ(inherit)
 		if err != nil {
 			return envMap, err
 		}

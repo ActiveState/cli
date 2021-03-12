@@ -1,17 +1,14 @@
 package artifact
 
 import (
-	"net/url"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
-	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
 type ArtifactDownload struct {
 	ArtifactID  ArtifactID
-	DownloadURI string
+	UnsignedURI string
 	Checksum    string
 }
 
@@ -24,16 +21,7 @@ func NewDownloadsFromBuild(buildStatus *headchef_models.BuildStatusResponse) ([]
 				continue
 			}
 
-			artifactURL, err := url.Parse(a.URI.String())
-			if err != nil {
-				return downloads, errs.Wrap(err, "Could not parse artifact URL.")
-			}
-			u, err := model.SignS3URL(artifactURL)
-			if err != nil {
-				return downloads, errs.Wrap(err, "Could not sign artifact URL.")
-			}
-
-			downloads = append(downloads, ArtifactDownload{ArtifactID: *a.ArtifactID, DownloadURI: u.String()})
+			downloads = append(downloads, ArtifactDownload{ArtifactID: *a.ArtifactID, UnsignedURI: a.URI.String()})
 		}
 	}
 

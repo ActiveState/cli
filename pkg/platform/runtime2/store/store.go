@@ -15,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/runtime2/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/envdef"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/model"
 )
@@ -26,9 +27,17 @@ type Store struct {
 }
 
 type StoredArtifact struct {
-	ArtifactID strfmt.UUID                   `json:"artifactID"`
+	ArtifactID artifact.ArtifactID           `json:"artifactID"`
 	Files      []string                      `json:"files"`
 	EnvDef     *envdef.EnvironmentDefinition `json:"envdef"`
+}
+
+func NewStoredArtifact(artifactID artifact.ArtifactID, files []string, envDef *envdef.EnvironmentDefinition) StoredArtifact {
+	return StoredArtifact{
+		ArtifactID: artifactID,
+		Files:      files,
+		EnvDef:     envDef,
+	}
 }
 
 func New(installPath string) (*Store, error) {
@@ -64,8 +73,8 @@ func (s *Store) MatchesCommit(commitID strfmt.UUID) bool {
 		return false
 	}
 
-	logging.Debug("IsCachedRuntime for %s, %s==%s", marker, string(contents), commitID.String())
-	return string(contents) == commitID.String()
+	logging.Debug("MatchesCommit for %s, %s==%s", marker, string(contents), commitID.String())
+	return strings.TrimSpace(string(contents)) == commitID.String()
 }
 
 // MarkInstallationComplete writes the installation complete marker to the runtime directory

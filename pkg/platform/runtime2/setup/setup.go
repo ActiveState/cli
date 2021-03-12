@@ -2,6 +2,7 @@ package setup
 
 import (
 	"context"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -9,6 +10,7 @@ import (
 	"github.com/gammazero/workerpool"
 	"github.com/go-openapi/strfmt"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/download"
 	"github.com/ActiveState/cli/internal/errs"
@@ -27,6 +29,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime2/setup/buildlog"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/setup/implementations/alternative"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/store"
+	"github.com/ActiveState/cli/pkg/project"
 )
 
 // MaxConcurrency is maximum number of parallel artifact installations
@@ -87,6 +90,7 @@ type ModelProvider interface {
 	ResolveRecipe(commitID strfmt.UUID, owner, projectName string) (*inventory_models.Recipe, error)
 	RequestBuild(recipeID, commitID strfmt.UUID, owner, project string) (headchef.BuildStatusEnum, *headchef_models.BuildStatusResponse, error)
 	FetchBuildResult(commitID strfmt.UUID, owner, project string) (*model.BuildResult, error)
+	SignS3URL(uri *url.URL) (*url.URL, error)
 }
 
 // ArtifactSetuper is the interface for an implementation of artifact setup functions
@@ -115,10 +119,28 @@ func NewWithModel(target Targeter, msgHandler MessageHandler, model ModelProvide
 
 // Update installs the runtime locally (or updates it if it's already partially installed)
 func (s *Setup) Update() error {
+	err := s.update()
+	if err != nil {
+		analytics.EventWithLabel(analytics.CatRuntime, analytics.ActRuntimeFailure, analytics.LblRtFailUpdate)
+		return err
+	}
+	return nil
+}
+
+func (s *Setup) update() error {
 	// Request build
 	buildResult, err := s.model.FetchBuildResult(s.target.CommitUUID(), s.target.Owner(), s.target.Name())
 	if err != nil {
-		return err
+		return errs.Wrap(err, "Failed to fetch build result")
+	}
+
+	if buildResult.BuildStatus == headchef.Started {
+		analytics.Event(analytics.CatRuntime, analytics.ActRuntimeBuild)
+		ns := project.Namespaced{
+			Owner:   s.target.Owner(),
+			Project: s.target.Name(),
+		}
+		analytics.EventWithLabel(analytics.CatRuntime, analytics.ActBuildProject, ns.String())
 	}
 
 	// Compute and handle the change summary
@@ -142,6 +164,9 @@ func (s *Setup) Update() error {
 	}
 	s.deleteOutdatedArtifacts(changedArtifacts, storedArtifacts)
 
+	// if we get here, we dowload artifacts
+	analytics.Event(analytics.CatRuntime, analytics.ActRuntimeDownload)
+
 	if buildResult.BuildReady {
 		err := s.installFromBuildResult(buildResult, artifacts)
 		if err != nil {
@@ -161,6 +186,13 @@ func (s *Setup) Update() error {
 	err = s.selectSetupImplementation(buildResult.BuildEngine).PostInstall()
 	if err != nil {
 		return errs.Wrap(err, "PostInstall failed")
+	}
+
+	// clean up temp directory
+	tempDir := filepath.Join(s.store.InstallPath(), constants.LocalRuntimeTempDirectory)
+	err = os.RemoveAll(tempDir)
+	if err != nil {
+		logging.Errorf("Failed to remove temporary installation directory %s: %v", tempDir, err)
 	}
 
 	if err := s.store.MarkInstallationComplete(s.target.CommitUUID()); err != nil {
@@ -211,7 +243,7 @@ func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, _ map[art
 	for _, a := range downloads {
 		func(a artifact.ArtifactDownload) {
 			wp.Submit(func() {
-				if err := s.setupArtifact(buildResult.BuildEngine, a.ArtifactID, a.DownloadURI); err != nil {
+				if err := s.setupArtifact(buildResult.BuildEngine, a.ArtifactID, a.UnsignedURI); err != nil {
 					errors = append(errors, err)
 				}
 			})
@@ -246,7 +278,7 @@ func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts ma
 		for a := range buildLog.BuiltArtifactsChannel() {
 			func(a artifact.ArtifactDownload) {
 				wp.Submit(func() {
-					if err := s.setupArtifact(buildResult.BuildEngine, a.ArtifactID, a.DownloadURI); err != nil {
+					if err := s.setupArtifact(buildResult.BuildEngine, a.ArtifactID, a.UnsignedURI); err != nil {
 						errors = append(errors, err)
 					}
 				})
@@ -269,7 +301,7 @@ func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts ma
 
 // setupArtifact sets up an individual artifact
 // The artifact is downloaded, unpacked and then processed by the artifact setup implementation
-func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.ArtifactID, downloadURL string) error {
+func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.ArtifactID, unsignedURI string) error {
 	as := s.selectArtifactSetupImplementation(buildEngine, a)
 
 	targetDir := filepath.Join(s.store.InstallPath(), constants.LocalRuntimeTempDirectory)
@@ -278,13 +310,16 @@ func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.Artifact
 	}
 
 	archivePath := filepath.Join(targetDir, a.String()+".tar.gz")
-	if err := s.downloadArtifact(downloadURL, archivePath); err != nil {
-		return errs.Wrap(err, "Could not download artifact %s", downloadURL)
+	if err := s.downloadArtifact(unsignedURI, archivePath); err != nil {
+		return errs.Wrap(err, "Could not download artifact %s", unsignedURI)
 	}
 	s.msgHandler.ArtifactDownloadCompleted(a)
 
 	unpackedDir := filepath.Join(targetDir, a.String())
-	logging.Debug("Unarchiving %s (%s) to %s", archivePath, downloadURL, unpackedDir)
+	logging.Debug("Unarchiving %s (%s) to %s", archivePath, unsignedURI, unpackedDir)
+	// clean up the unpacked dir
+	defer os.RemoveAll(unpackedDir)
+
 	err := s.unpackArtifact(as.Unarchiver(), archivePath, unpackedDir)
 	if err != nil {
 		return errs.Wrap(err, "Could not unpack artifact %s", archivePath)
@@ -311,11 +346,11 @@ func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.Artifact
 		return errs.Wrap(err, "Could not collect env info for artifact")
 	}
 
-	if err := as.Move(unpackedDir); err != nil {
+	if err := as.Move(filepath.Join(unpackedDir, envDef.InstallDir)); err != nil {
 		return errs.Wrap(err, "Move artifact failed")
 	}
 
-	if err := s.store.StoreArtifact(store.StoredArtifact{a, files, envDef}); err != nil {
+	if err := s.store.StoreArtifact(store.NewStoredArtifact(a, files, envDef)); err != nil {
 		return errs.Wrap(err, "Could not store artifact meta info")
 	}
 
@@ -324,9 +359,19 @@ func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.Artifact
 
 // downloadArtifact retrieves the tarball for an artifactID
 // Note: the tarball may also be retrieved from a local cache directory if that is available.
-func (s *Setup) downloadArtifact(downloadURL string, targetFile string) error {
+func (s *Setup) downloadArtifact(unsignedURI string, targetFile string) error {
+	artifactURL, err := url.Parse(unsignedURI)
+	if err != nil {
+		return errs.Wrap(err, "Could not parse artifact URL %s.", unsignedURI)
+	}
+
+	downloadURL, err := s.model.SignS3URL(artifactURL)
+	if err != nil {
+		return errs.Wrap(err, "Could not sign artifact URL %s.", unsignedURI)
+	}
+
 	s.msgHandler.ArtifactDownloadStarting("artifactName")
-	b, err := download.Get(downloadURL)
+	b, err := download.Get(downloadURL.String())
 	if err != nil {
 		return errs.Wrap(err, "Download %s failed", downloadURL)
 	}
@@ -358,4 +403,3 @@ func (s *Setup) selectArtifactSetupImplementation(buildEngine model.BuildEngine,
 	}
 	panic("implement me")
 }
-

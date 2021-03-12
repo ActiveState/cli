@@ -32,6 +32,33 @@ const CatRunCmd = "run-command"
 // CatBuild is the event category used for headchef builds
 const CatBuild = "build"
 
+// CatRuntime is the event category used for all runtime setup and usage
+const CatRuntime = "runtime"
+
+// ActRuntimeStart is the event action sent when creating a runtime
+const ActRuntimeStart = "start"
+
+// ActRuntimeCache is the event action sent when a runtime is constructed from the local cache alone
+const ActRuntimeCache = "cache"
+
+// ActRuntimeBuild is the event action sent when starting a remote build for the project
+const ActRuntimeBuild = "build"
+
+// ActRuntimeDownload is the event action sent before starting the download of artifacts for a runtime
+const ActRuntimeDownload = "download"
+
+// ActRuntimeSuccess is the event action sent when a runtime's environment has been successfully computed (for the first time)
+const ActRuntimeSuccess = "success"
+
+// ActRuntimeFailure is the event action sent when a failure occurred anytime during a runtime operation
+const ActRuntimeFailure = "failure"
+
+// LblRtFailUpdate is the label sent with an ActRuntimeFailure event if an error occurred during a runtime update
+const LblRtFailUpdate = "update"
+
+// LblRtFailEnv is the label sent with  an ActRuntimeFailure event if an error occurred during the resolution of the runtime environment
+const LblRtFailEnv = "env"
+
 // CatPpmConversion is the event category used for ppm-conversion events
 const CatPpmConversion = "ppm-conversion"
 
