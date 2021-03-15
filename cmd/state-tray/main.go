@@ -18,7 +18,6 @@ func main() {
 func onReady() {
 	box := packr.NewBox("assets")
 	systray.SetIcon(box.Bytes("icon.ico"))
-	systray.SetTitle("ActiveState State Tool")
 	systray.SetTooltip("ActiveState State Tool")
 
 	mAbout := systray.AddMenuItem("About State Tool", "Information about the State Tool")
