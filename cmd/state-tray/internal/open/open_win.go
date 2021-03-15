@@ -11,7 +11,7 @@ import (
 // Prompt will open the a command prompt and execute the given
 // command string
 func Prompt(command string) error {
-	cmd := exec.Command("cmd.exe", "/c", "start", "", "cmd", "/k", command)
+	cmd := exec.Command("cmd.exe", "/c", "start", "", "cmd.exe", "/k", command)
 	err := cmd.Run()
 	if err != nil {
 		return locale.WrapError(err, "err_open_prompt", "Could not open prompt")

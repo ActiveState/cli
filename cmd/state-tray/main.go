@@ -17,7 +17,7 @@ func main() {
 
 func onReady() {
 	box := packr.NewBox("assets")
-	systray.SetIcon(box.Bytes("as.ico"))
+	systray.SetIcon(box.Bytes("icon.ico"))
 	systray.SetTitle("ActiveState State Tool")
 	systray.SetTooltip("ActiveState State Tool")
 
