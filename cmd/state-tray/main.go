@@ -1,10 +1,14 @@
 package main
 
 import (
-	"github.com/ActiveState/cli/cmd/state-tray/assets"
+	"fmt"
+	"os"
+
 	"github.com/ActiveState/cli/cmd/state-tray/internal/open"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/getlantern/systray"
+	"github.com/gobuffalo/packr"
 )
 
 func main() {
@@ -12,7 +16,8 @@ func main() {
 }
 
 func onReady() {
-	systray.SetIcon(assets.Icon)
+	box := packr.NewBox("assets")
+	systray.SetIcon(box.Bytes("as.ico"))
 	systray.SetTitle("ActiveState State Tool")
 	systray.SetTooltip("ActiveState State Tool")
 
@@ -30,6 +35,7 @@ func onReady() {
 	systray.AddSeparator()
 
 	// TODO: Populate the local projects entries at application startup
+	// and repopulate on click
 	// mProjects := systray.AddMenuItem("Local Projects", "")
 	// systray.AddSeparator()
 
@@ -38,19 +44,25 @@ func onReady() {
 	for {
 		select {
 		case <-mAbout.ClickedCh:
+			logging.Debug("About event")
 			err := open.Prompt("state --version")
 			if err != nil {
-				logging.Error("Could not start command, got error: %v", err)
+				handleError(errs.Wrap(err, "Could not open command prompt"))
 			}
 		case <-mDoc.ClickedCh:
+			logging.Debug("Documentation event")
 			// Do stuff
 		case <-mLearn.ClickedCh:
+			logging.Debug("Learn event")
 			// Do stuff
 		case <-mSupport.ClickedCh:
+			logging.Debug("Support event")
 			// Do stuff
 		case <-mAccount.ClickedCh:
+			logging.Debug("Account event")
 			// Do stuff
 		case <-mQuit.ClickedCh:
+			logging.Debug("Quit event")
 			systray.Quit()
 			return
 		}
@@ -59,4 +71,9 @@ func onReady() {
 
 func onExit() {
 	// clean up here
+}
+
+func handleError(err error) {
+	fmt.Fprint(os.Stderr, err.Error())
+	logging.Error("Systray encountered an error: %v", err)
 }
