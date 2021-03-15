@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.26.1
+
+### Fixed
+- Fixed issue where `state push` would fail on existing projects.
+  ([PR #1287](https://github.com/ActiveState/cli/pull/1287))
+
 ## 0.26.0
 
 ### Added
