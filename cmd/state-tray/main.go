@@ -6,6 +6,7 @@ import (
 
 	"github.com/ActiveState/cli/cmd/state-tray/internal/open"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/getlantern/systray"
 	"github.com/gobuffalo/packr"
@@ -18,22 +19,37 @@ func main() {
 func onReady() {
 	box := packr.NewBox("assets")
 	systray.SetIcon(box.Bytes("icon.ico"))
-	systray.SetTooltip("ActiveState State Tool")
+	systray.SetTooltip(locale.Tl("tray_tooltip", "ActiveState State Tool"))
 
-	mAbout := systray.AddMenuItem("About State Tool", "Information about the State Tool")
-
-	systray.AddSeparator()
-
-	mDoc := systray.AddMenuItem("Documentation", "Open State Tool Docs")
-
-	mPlatform := systray.AddMenuItem("ActiveState Platform", "")
-	mLearn := mPlatform.AddSubMenuItem("Learn", "Open ActiveState blog")
-	mSupport := mPlatform.AddSubMenuItem("Support", "Open support page")
-	mAccount := mPlatform.AddSubMenuItem("Account", "Open your account page")
+	mAbout := systray.AddMenuItem(
+		locale.Tl("tray_about_title", "About State Tool"),
+		locale.Tl("tray_about_tooltip", "Information about the State Tool"),
+	)
 
 	systray.AddSeparator()
 
-	mQuit := systray.AddMenuItem("Exit", "")
+	mDoc := systray.AddMenuItem(
+		locale.Tl("tray_documentation_title", "Documentation"),
+		locale.Tl("tray_documentation_tooltip", "Open State Tool Docs"),
+	)
+
+	mPlatform := systray.AddMenuItem(locale.Tl("tray_platform_title", "ActiveState Platform"), "")
+	mLearn := mPlatform.AddSubMenuItem(
+		locale.Tl("tray_learn_title", "Learn"),
+		locale.Tl("tray_learn_tooltip", "Open ActiveState blog"),
+	)
+	mSupport := mPlatform.AddSubMenuItem(
+		locale.Tl("tray_support_title", "Support"),
+		locale.Tl("tray_support_tooltip", "Open support page"),
+	)
+	mAccount := mPlatform.AddSubMenuItem(
+		locale.Tl("tray_account_title", "Account"),
+		locale.Tl("tray_account_tooltip", "Open your account page"),
+	)
+
+	systray.AddSeparator()
+
+	mQuit := systray.AddMenuItem(locale.Tl("tray_exit", "Exit"), "")
 
 	for {
 		select {
