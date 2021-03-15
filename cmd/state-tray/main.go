@@ -17,6 +17,15 @@ func main() {
 }
 
 func onReady() {
+	err := run()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err.Error())
+		logging.Error("Systray encountered an error: %v", err)
+		os.Exit(1)
+	}
+}
+
+func run() error {
 	box := packr.NewBox("assets")
 	systray.SetIcon(box.Bytes("icon.ico"))
 	systray.SetTooltip(locale.Tl("tray_tooltip", "ActiveState State Tool"))
@@ -57,7 +66,7 @@ func onReady() {
 			logging.Debug("About event")
 			err := open.Prompt("state --version")
 			if err != nil {
-				handleError(errs.Wrap(err, "Could not open command prompt"))
+				return errs.Wrap(err, "Could not open command prompt")
 			}
 		case <-mDoc.ClickedCh:
 			logging.Debug("Documentation event")
@@ -74,16 +83,11 @@ func onReady() {
 		case <-mQuit.ClickedCh:
 			logging.Debug("Quit event")
 			systray.Quit()
-			return
+			return nil
 		}
 	}
 }
 
 func onExit() {
 	// Not implemented
-}
-
-func handleError(err error) {
-	fmt.Fprintln(os.Stderr, err.Error())
-	logging.Error("Systray encountered an error: %v", err)
 }
