@@ -33,11 +33,6 @@ func onReady() {
 
 	systray.AddSeparator()
 
-	// TODO: Populate the local projects entries at application startup
-	// and repopulate on click
-	// mProjects := systray.AddMenuItem("Local Projects", "")
-	// systray.AddSeparator()
-
 	mQuit := systray.AddMenuItem("Exit", "")
 
 	for {
