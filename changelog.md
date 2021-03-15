@@ -8,7 +8,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## 0.26.1
 
-### Added
+### Changed
 - Updated name of `state cve` command to `state security`. Aliased `state cve`
   to `state security` ([PR #1286](https://github.com/ActiveState/cli/pull/1286))
 
