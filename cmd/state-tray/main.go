@@ -27,7 +27,7 @@ func onReady() {
 	mDoc := systray.AddMenuItem("Documentation", "Open State Tool Docs")
 
 	mPlatform := systray.AddMenuItem("ActiveState Platform", "")
-	mLearn := mPlatform.AddSubMenuItem("Learn", "ActiveState Blog")
+	mLearn := mPlatform.AddSubMenuItem("Learn", "Open ActiveState blog")
 	mSupport := mPlatform.AddSubMenuItem("Support", "Open support page")
 	mAccount := mPlatform.AddSubMenuItem("Account", "Open your account page")
 
@@ -45,16 +45,16 @@ func onReady() {
 			}
 		case <-mDoc.ClickedCh:
 			logging.Debug("Documentation event")
-			// Do stuff
+			// Not implemented
 		case <-mLearn.ClickedCh:
 			logging.Debug("Learn event")
-			// Do stuff
+			// Not implemented
 		case <-mSupport.ClickedCh:
 			logging.Debug("Support event")
-			// Do stuff
+			// Not implemented
 		case <-mAccount.ClickedCh:
 			logging.Debug("Account event")
-			// Do stuff
+			// Not implemented
 		case <-mQuit.ClickedCh:
 			logging.Debug("Quit event")
 			systray.Quit()
@@ -64,10 +64,10 @@ func onReady() {
 }
 
 func onExit() {
-	// clean up here
+	// Not implemented
 }
 
 func handleError(err error) {
-	fmt.Fprint(os.Stderr, err.Error())
+	fmt.Fprintln(os.Stderr, err.Error())
 	logging.Error("Systray encountered an error: %v", err)
 }
