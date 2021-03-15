@@ -1,4 +1,4 @@
-package services
+package version
 
 import (
 	"golang.org/x/net/context"
@@ -8,9 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 )
 
-type Version struct {
-	idl.UnsafeVersionSvcServer // We use Unsafe because we actually want our code to complain if endpoints aren't implemented
-}
+type Version struct{}
 
 func NewVersion() *Version {
 	return &Version{}

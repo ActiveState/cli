@@ -11,7 +11,7 @@ import (
 
 	"google.golang.org/grpc"
 
-	"github.com/ActiveState/cli/cmd/state-svc/internal/services"
+	"github.com/ActiveState/cli/cmd/state-svc/internal/services/version"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/idl"
@@ -57,7 +57,7 @@ func run() error {
 		s.GracefulStop()
 	}()
 
-	idl.RegisterVersionSvcServer(s, services.NewVersion())
+	idl.RegisterVersionSvcServer(s, version.NewVersion())
 	if err := s.Serve(lis); err != nil {
 		return errs.Wrap(err, "failed to serve: %v", err)
 	}

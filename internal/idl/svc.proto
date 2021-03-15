@@ -8,6 +8,9 @@ service VersionSvc {
     rpc StateVersion(StateVersionRequest) returns (StateVersionResponse) {}
 }
 
+// Requests/Responses are ideally specific to each endpoint as it makes changes less noisy compared to if you were to
+// share request/response structures between endpoints.
+
 message StateVersionRequest {}
 
 message StateVersionResponse {

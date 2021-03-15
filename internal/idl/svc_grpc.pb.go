@@ -39,21 +39,19 @@ func (c *versionSvcClient) StateVersion(ctx context.Context, in *StateVersionReq
 }
 
 // VersionSvcServer is the server API for VersionSvc service.
-// All implementations must embed UnimplementedVersionSvcServer
+// All implementations should embed UnimplementedVersionSvcServer
 // for forward compatibility
 type VersionSvcServer interface {
 	StateVersion(context.Context, *StateVersionRequest) (*StateVersionResponse, error)
-	mustEmbedUnimplementedVersionSvcServer()
 }
 
-// UnimplementedVersionSvcServer must be embedded to have forward compatible implementations.
+// UnimplementedVersionSvcServer should be embedded to have forward compatible implementations.
 type UnimplementedVersionSvcServer struct {
 }
 
 func (UnimplementedVersionSvcServer) StateVersion(context.Context, *StateVersionRequest) (*StateVersionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StateVersion not implemented")
 }
-func (UnimplementedVersionSvcServer) mustEmbedUnimplementedVersionSvcServer() {}
 
 // UnsafeVersionSvcServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to VersionSvcServer will

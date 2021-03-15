@@ -1,6 +1,8 @@
 package model
 
 import (
+	"context"
+
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/idl"
@@ -8,22 +10,33 @@ import (
 )
 
 type SvcModel struct {
-	client *svc.Client
+	c   idl.VersionSvcClient // should remain private
+	ctx context.Context
 }
 
-func NewSvcModel(cfg *config.Instance) (*SvcModel, error) {
+type VersionResponse struct {
+	*idl.StateVersionResponse
+}
+
+func NewSvcModel(ctx context.Context, cfg *config.Instance) (*SvcModel, error) {
 	client, err := svc.New(cfg)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not initialize svc client")
 	}
-
-	return NewSvcModelWithClient(client), nil
+	return NewSvcModelWithClient(ctx, client), nil
 }
 
-func NewSvcModelWithClient(client *svc.Client) *SvcModel {
-	return &SvcModel{client}
+func NewSvcModelWithClient(ctx context.Context, client idl.VersionSvcClient) *SvcModel {
+	return &SvcModel{
+		c:   client,
+		ctx: ctx,
+	}
 }
 
-func (m *SvcModel) Version() *idl.StateVersionResponse {
-	return m.Version()
+func (m *SvcModel) StateVersion() (*VersionResponse, error) {
+	res, err := m.c.StateVersion(m.ctx, &idl.StateVersionRequest{})
+	if err != nil {
+		return nil, errs.Wrap(err, "Request failed")
+	}
+	return &VersionResponse{res}, nil
 }
