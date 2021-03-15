@@ -8,8 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 )
 
-// Prompt will open the a command prompt and execute the given
-// command string
+// Prompt will open the a command prompt and execute the given command string
 func Prompt(command string) error {
 	cmd := exec.Command("cmd.exe", "/c", "start", "", "cmd.exe", "/k", command)
 	err := cmd.Run()

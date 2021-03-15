@@ -17,10 +17,7 @@ constants:
     value: ./build/state-tray
   - name: SYSTRAY_BUILDFLAGS
     if: ne .OS.Name "Windows"
-    value: -ldflags="-s -w"
-  - name: SYSTRAY_ICON
-    if: ne .OS.Name "Windows"
-    value: cmd/state-tray/assets/as.png
+    value: $constants.CLI_BUILDFLAGS
   - name: SET_ENV
     description: The environment settings used throughout our project
     value: |
