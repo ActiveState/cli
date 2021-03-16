@@ -36,7 +36,7 @@ func (v *VirtualEnvironment) GetEnv(inherit bool, projectDir string) (map[string
 	// Source runtime environment information
 	if strings.ToLower(os.Getenv(constants.DisableRuntime)) != "true" {
 		var err error
-		envMap, err = v.runtime.Environ(inherit)
+		envMap, err = v.runtime.Environ(inherit, projectDir)
 		if err != nil {
 			return envMap, err
 		}

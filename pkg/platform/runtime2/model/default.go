@@ -60,7 +60,7 @@ func (b *BuildResult) OrderedArtifacts() []artifact.ArtifactID {
 func (m *Model) FetchBuildResult(commitID strfmt.UUID, owner, project string) (*BuildResult, error) {
 	recipe, err := m.ResolveRecipe(commitID, owner, project)
 	if err != nil {
-		return nil, locale.WrapError(err, "setup_build_resolve_recipe_err", "Could not resolve recipe for project %s/%s#%s", owner, project, commitID.String())
+		return nil, locale.WrapError(err, "setup_build_resolve_recipe_err", "Could not resolve recipe for project {{.V0}}/{{.V1}}#{{.V2}}", owner, project, commitID.String())
 	}
 
 	bse, resp, err := m.RequestBuild(*recipe.RecipeID, commitID, owner, project)

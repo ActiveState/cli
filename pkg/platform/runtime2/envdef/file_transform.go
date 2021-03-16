@@ -135,9 +135,9 @@ func (ft *FileTransform) ApplyTransform(baseDir string, constants Constants) err
 }
 
 // ApplyFileTransforms applies all file transformations to the files in the base directory
-func (ed *EnvironmentDefinition) ApplyFileTransforms(baseDir string, constants Constants) error {
+func (ed *EnvironmentDefinition) ApplyFileTransforms(installDir string, constants Constants) error {
 	for _, ft := range ed.Transforms {
-		err := ft.ApplyTransform(filepath.Join(baseDir, ed.InstallDir), constants)
+		err := ft.ApplyTransform(installDir, constants)
 		if err != nil {
 			return err
 		}

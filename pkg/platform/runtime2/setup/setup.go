@@ -28,6 +28,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime2/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/setup/buildlog"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/setup/implementations/alternative"
+	"github.com/ActiveState/cli/pkg/platform/runtime2/setup/implementations/camel"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/store"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -97,7 +98,7 @@ type ModelProvider interface {
 // These need to be specialized for each BuildEngine type
 type ArtifactSetuper interface {
 	EnvDef(tmpInstallDir string) (*envdef.EnvironmentDefinition, error)
-	Move(tmpInstallDir string) error
+	InstallerExtension() string
 	Unarchiver() unarchiver.Unarchiver
 }
 
@@ -173,6 +174,9 @@ func (s *Setup) update() error {
 			return err
 		}
 	} else {
+		if buildResult.BuildEngine == model.Camel {
+			return locale.NewInputError("build_status_in_progress", "", apimodel.ProjectURL(s.target.Owner(), s.target.Name(), s.target.CommitUUID().String()))
+		}
 		err := s.installFromBuildLog(buildResult, artifacts)
 		if err != nil {
 			return err
@@ -236,7 +240,7 @@ func (s *Setup) deleteOutdatedArtifacts(changeset artifact.ArtifactChangeset, st
 func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, _ map[artifact.ArtifactID]artifact.ArtifactRecipe) error {
 	var errors []error
 	wp := workerpool.New(MaxConcurrency)
-	downloads, err := artifact.NewDownloadsFromBuild(buildResult.BuildStatusResponse)
+	downloads, err := artifact.NewDownloadsFromBuild(buildResult.BuildStatusResponse, buildResult.BuildEngine == model.Camel)
 	if err != nil {
 		return errs.Wrap(err, "Could not fetch artifacts to download.")
 	}
@@ -302,15 +306,18 @@ func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts ma
 // setupArtifact sets up an individual artifact
 // The artifact is downloaded, unpacked and then processed by the artifact setup implementation
 func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.ArtifactID, unsignedURI string) error {
-	as := s.selectArtifactSetupImplementation(buildEngine, a)
+	as, err := s.selectArtifactSetupImplementation(buildEngine, a)
+	if err != nil {
+		return errs.Wrap(err, "Failed to select artifact setup implementation")
+	}
 
 	targetDir := filepath.Join(s.store.InstallPath(), constants.LocalRuntimeTempDirectory)
 	if err := fileutils.MkdirUnlessExists(targetDir); err != nil {
 		return errs.Wrap(err, "Could not create temp runtime dir")
 	}
 
-	archivePath := filepath.Join(targetDir, a.String()+".tar.gz")
-	if err := s.downloadArtifact(unsignedURI, archivePath); err != nil {
+	archivePath := filepath.Join(targetDir, a.String()+as.InstallerExtension())
+	if err := s.downloadArtifact(a, unsignedURI, archivePath); err != nil {
 		return errs.Wrap(err, "Could not download artifact %s", unsignedURI)
 	}
 	s.msgHandler.ArtifactDownloadCompleted(a)
@@ -320,25 +327,9 @@ func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.Artifact
 	// clean up the unpacked dir
 	defer os.RemoveAll(unpackedDir)
 
-	err := s.unpackArtifact(as.Unarchiver(), archivePath, unpackedDir)
+	err = s.unpackArtifact(as.Unarchiver(), archivePath, unpackedDir)
 	if err != nil {
 		return errs.Wrap(err, "Could not unpack artifact %s", archivePath)
-	}
-
-	// There might be room for performance improvement here by combining the file move step with the filename collection
-	// that's happening below
-	var files []string
-	err = filepath.Walk(unpackedDir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if !info.IsDir() {
-			files = append(files, info.Name())
-		}
-		return nil
-	})
-	if err != nil {
-		return errs.Wrap(err, "Could not read unpackedDir: %s", unpackedDir)
 	}
 
 	envDef, err := as.EnvDef(unpackedDir)
@@ -346,8 +337,33 @@ func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.Artifact
 		return errs.Wrap(err, "Could not collect env info for artifact")
 	}
 
-	if err := as.Move(filepath.Join(unpackedDir, envDef.InstallDir)); err != nil {
+	var files []string
+	onMoveFile := func(fromPath, toPath string) {
+		if !fileutils.IsDir(toPath) {
+			files = append(files, toPath)
+		}
+	}
+	err = fileutils.MoveAllFilesRecursively(
+		filepath.Join(unpackedDir, envDef.InstallDir),
+		s.store.InstallPath(), onMoveFile,
+	)
+	if err != nil {
 		return errs.Wrap(err, "Move artifact failed")
+	}
+
+	cnst := envdef.NewConstants(s.store.InstallPath())
+	envDef = envDef.ExpandVariables(cnst)
+	err = envDef.ApplyFileTransforms(s.store.InstallPath(), cnst)
+	if err != nil {
+		return locale.WrapError(err, "runtime_alternative_file_transforms_err", "", "Could not apply necessary file transformations after unpacking")
+	}
+
+	// Install PPM Shim if artifact provides Perl executable
+	if activePerlPath := envDef.FindBinPathFor(constants.ActivePerlExecutable); activePerlPath != "" {
+		err = installPPMShim(activePerlPath)
+		if err != nil {
+			return errs.Wrap(err, "Failed to install the PPM shim command at %s", activePerlPath)
+		}
 	}
 
 	if err := s.store.StoreArtifact(store.NewStoredArtifact(a, files, envDef)); err != nil {
@@ -397,9 +413,13 @@ func (s *Setup) selectSetupImplementation(buildEngine model.BuildEngine) Setuper
 	panic("implement me")
 }
 
-func (s *Setup) selectArtifactSetupImplementation(buildEngine model.BuildEngine, a artifact.ArtifactID) ArtifactSetuper {
-	if buildEngine == model.Alternative {
-		return alternative.NewArtifactSetup(a, s.store)
+func (s *Setup) selectArtifactSetupImplementation(buildEngine model.BuildEngine, a artifact.ArtifactID) (ArtifactSetuper, error) {
+	switch buildEngine {
+	case model.Alternative:
+		return alternative.NewArtifactSetup(a, s.store), nil
+	case model.Camel:
+		return camel.NewArtifactSetup(a, s.store), nil
+	default:
+		return nil, errs.New("Unknown build engine: %s", buildEngine)
 	}
-	panic("implement me")
 }

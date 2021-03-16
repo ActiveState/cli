@@ -253,13 +253,6 @@ func (s *Store) updateEnviron(orderedArtifacts []artifact.ArtifactID, artifacts 
 		}
 	}
 
-	cnst := envdef.NewConstants(s.InstallPath())
-	rtGlobal = rtGlobal.ExpandVariables(cnst)
-	err := rtGlobal.ApplyFileTransforms(s.InstallPath(), cnst)
-	if err != nil {
-		return nil, locale.WrapError(err, "runtime_alternative_file_transforms_err", "", "Could not apply necessary file transformations after unpacking")
-	}
-
 	return rtGlobal, nil
 }
 

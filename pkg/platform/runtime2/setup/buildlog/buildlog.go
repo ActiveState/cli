@@ -128,7 +128,7 @@ func New(artifactMap map[artifact.ArtifactID]artifact.ArtifactRecipe, conn Build
 		}
 	}()
 
-	logging.Debug("sending websocket request")
+	logging.Debug("sending websocket request for %s", recipeID.String())
 	request := logRequest{RecipeID: recipeID.String()}
 	if err := conn.WriteJSON(request); err != nil {
 		return nil, errs.Wrap(err, "Could not write websocket request")
