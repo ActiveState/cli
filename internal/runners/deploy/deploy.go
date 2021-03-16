@@ -23,7 +23,7 @@ import (
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime2"
+	runtime "github.com/ActiveState/cli/pkg/platform/runtime2"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/messagehandler"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/setup"
 	"github.com/ActiveState/cli/pkg/project"
@@ -170,6 +170,9 @@ func (d *Deploy) install(rtTarget setup.Targeter) error {
 func (d *Deploy) configure(namespace project.Namespaced, rtTarget setup.Targeter, userScope bool) error {
 	rti, err := runtime.New(rtTarget)
 	if err != nil {
+		if runtime.IsNeedsUpdateError(err) {
+			return locale.NewInputError("err_deploy_run_install")
+		}
 		return locale.WrapError(err, "deploy_runtime_err", "Could not initialize runtime")
 	}
 
@@ -204,6 +207,9 @@ func (d *Deploy) configure(namespace project.Namespaced, rtTarget setup.Targeter
 func (d *Deploy) symlink(rtTarget setup.Targeter, overwrite bool) error {
 	rti, err := runtime.New(rtTarget)
 	if err != nil {
+		if runtime.IsNeedsUpdateError(err) {
+			return locale.NewInputError("err_deploy_run_install")
+		}
 		return locale.WrapError(err, "deploy_runtime_err", "Could not initialize runtime")
 	}
 
@@ -329,6 +335,9 @@ type Report struct {
 func (d *Deploy) report(rtTarget setup.Targeter) error {
 	rti, err := runtime.New(rtTarget)
 	if err != nil {
+		if runtime.IsNeedsUpdateError(err) {
+			return locale.NewInputError("err")
+		}
 		return locale.WrapError(err, "deploy_runtime_err", "Could not initialize runtime")
 	}
 
