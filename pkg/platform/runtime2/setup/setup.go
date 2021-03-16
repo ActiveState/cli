@@ -395,13 +395,6 @@ func (s *Setup) unpackArtifact(ua unarchiver.Unarchiver, tarballPath string, tar
 	return ua.Unarchive(f, i, targetDir)
 }
 
-func (s *Setup) selectSetupImplementation(buildEngine model.BuildEngine) Setuper {
-	if buildEngine == model.Alternative {
-		return alternative.NewSetup()
-	}
-	panic("implement me")
-}
-
 func (s *Setup) selectArtifactSetupImplementation(buildEngine model.BuildEngine, a artifact.ArtifactID) (ArtifactSetuper, error) {
 	switch buildEngine {
 	case model.Alternative:
