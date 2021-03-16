@@ -102,12 +102,6 @@ type ArtifactSetuper interface {
 	Unarchiver() unarchiver.Unarchiver
 }
 
-// Setuper is the interface for an implementation of runtime setup functions
-// These need to be specialized for each BuildEngine type
-type Setuper interface {
-	PostInstall() error
-}
-
 // New returns a new Setup instance that can install a Runtime locally on the machine.
 func New(target Targeter, msgHandler MessageHandler) *Setup {
 	return NewWithModel(target, msgHandler, model.NewDefault())
@@ -185,11 +179,6 @@ func (s *Setup) update() error {
 
 	if err := s.store.UpdateEnviron(buildResult.OrderedArtifacts()); err != nil {
 		return errs.Wrap(err, "Could not save combined environment file")
-	}
-
-	err = s.selectSetupImplementation(buildResult.BuildEngine).PostInstall()
-	if err != nil {
-		return errs.Wrap(err, "PostInstall failed")
 	}
 
 	// clean up temp directory
