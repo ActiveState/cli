@@ -306,7 +306,7 @@ func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.Artifact
 	}
 
 	archivePath := filepath.Join(targetDir, a.String()+as.InstallerExtension())
-	if err := s.downloadArtifact(a, unsignedURI, archivePath); err != nil {
+	if err := s.downloadArtifact(unsignedURI, archivePath); err != nil {
 		return errs.Wrap(err, "Could not download artifact %s", unsignedURI)
 	}
 	s.msgHandler.ArtifactDownloadCompleted(a)
