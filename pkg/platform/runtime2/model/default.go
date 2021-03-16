@@ -65,7 +65,7 @@ func (m *Model) FetchBuildResult(commitID strfmt.UUID, owner, project string) (*
 
 	bse, resp, err := m.RequestBuild(*recipe.RecipeID, commitID, owner, project)
 	if err != nil {
-		return nil, locale.WrapError(err, "headchef_build_err", "Could not request build for %s/%s#%s", owner, project, commitID.String())
+		return nil, locale.WrapError(err, "headchef_build_err", "Could not request build for {{.V0}}/{{.V1}}#{{.V2}}", owner, project, commitID.String())
 	}
 
 	engine := buildEngineFromResponse(resp)

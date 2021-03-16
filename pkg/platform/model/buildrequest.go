@@ -11,7 +11,7 @@ import (
 func RequestBuild(recipeID, commitID strfmt.UUID, owner, project string) (headchef.BuildStatusEnum, *headchef_models.BuildStatusResponse, error) {
 	platProj, err := FetchProjectByName(owner, project)
 	if err != nil {
-		return headchef.Error, nil, locale.WrapError(err, "build_request_get_project_err", "Could not find project %s/%s on ActiveState Platform.", owner, project)
+		return headchef.Error, nil, locale.WrapError(err, "build_request_get_project_err", "Could not find project {{.V0}}/{{.V1}} on ActiveState Platform.", owner, project)
 	}
 
 	buildAnnotations := headchef.BuildAnnotations{
