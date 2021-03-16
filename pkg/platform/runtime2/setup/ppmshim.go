@@ -28,7 +28,7 @@ func installPPMShim(binPath string) error {
 		}
 	}
 
-	box := packr.NewBox("../../../assets/ppm")
+	box := packr.NewBox("../../../../assets/ppm")
 	ppmBytes := box.Bytes("ppm.sh")
 	shim := filepath.Join(binPath, "ppm")
 	// remove shim if it existed before, so we can overwrite (ok to drop error here)
