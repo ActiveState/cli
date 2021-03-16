@@ -21,12 +21,6 @@ func TestUpdateEnviron(t *testing.T) {
 				Separator: ":",
 				Values:    []string{fmt.Sprintf("%d", i+1)},
 			},
-			{
-				Name:      "expanded",
-				Join:      envdef.Append,
-				Separator: ":",
-				Values:    []string{"${INSTALLDIR}"},
-			},
 		}}}
 	}
 	s, err := New("/installPath")
@@ -35,7 +29,6 @@ func TestUpdateEnviron(t *testing.T) {
 	rt, err := s.updateEnviron(artifactIDs, artifacts)
 	env := rt.GetEnv(false)
 	assert.Equal(t, map[string]string{
-		"vars":     "1:2:3",
-		"expanded": "/installPath",
+		"vars": "1:2:3",
 	}, env)
 }
