@@ -70,7 +70,7 @@ func (s *Shim) Run(params *Params, args ...string) error {
 		return nil
 	}
 
-	rt, err := runtime.New(runtime.NewProjectTarget(s.proj, s.cfg.CachePath()))
+	rt, err := runtime.New(runtime.NewProjectTarget(s.proj, s.cfg.CachePath(), nil))
 	if err != nil {
 		if !runtime.IsNeedsUpdateError(err) {
 			return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
