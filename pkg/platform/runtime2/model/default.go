@@ -23,10 +23,6 @@ func NewDefault() *Model {
 	return &Model{}
 }
 
-func (m *Model) FetchCheckpointForCommit(commitID strfmt.UUID) (model.Checkpoint, strfmt.DateTime, error) {
-	return model.FetchCheckpointForCommit(commitID)
-}
-
 func (m *Model) ResolveRecipe(commitID strfmt.UUID, owner, projectName string) (*inventory_models.Recipe, error) {
 	return model.ResolveRecipe(commitID, owner, projectName)
 }

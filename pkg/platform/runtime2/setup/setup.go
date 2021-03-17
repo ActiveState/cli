@@ -95,7 +95,6 @@ type Setup struct {
 
 // ModelProvider is the interface for all functions that involve backend communication
 type ModelProvider interface {
-	FetchCheckpointForCommit(commitID strfmt.UUID) (apimodel.Checkpoint, strfmt.DateTime, error)
 	ResolveRecipe(commitID strfmt.UUID, owner, projectName string) (*inventory_models.Recipe, error)
 	RequestBuild(recipeID, commitID strfmt.UUID, owner, project string) (headchef.BuildStatusEnum, *headchef_models.BuildStatusResponse, error)
 	FetchBuildResult(commitID strfmt.UUID, owner, project string) (*model.BuildResult, error)
