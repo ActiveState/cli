@@ -336,7 +336,7 @@ func (d *Deploy) report(rtTarget setup.Targeter) error {
 	rti, err := runtime.New(rtTarget)
 	if err != nil {
 		if runtime.IsNeedsUpdateError(err) {
-			return locale.NewInputError("err")
+			return locale.NewInputError("err_deploy_run_install")
 		}
 		return locale.WrapError(err, "deploy_runtime_err", "Could not initialize runtime")
 	}

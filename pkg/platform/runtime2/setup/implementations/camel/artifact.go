@@ -153,8 +153,6 @@ func convertToFileTransforms(tmpBaseDir string, relInstDir string, metadata *Met
 		relocMap = loadRelocationFile(relocFilePath)
 	}
 
-	binariesSeparate := runtime.GOOS == "linux" && metadata.RelocationTargetBinaries != ""
-
 	err := filepath.Walk(instDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -171,7 +169,7 @@ func convertToFileTransforms(tmpBaseDir string, relInstDir string, metadata *Met
 		}
 		var padWith *string
 		var with string = "${INSTALLDIR}"
-		if binariesSeparate && fileutils.IsBinary(b) {
+		if fileutils.IsBinary(b) {
 			pad := "\000"
 			padWith = &pad
 			with = filepath.Join("${INSTALLDIR}", metadata.RelocationTargetBinaries)
