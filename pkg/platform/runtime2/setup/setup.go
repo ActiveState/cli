@@ -2,7 +2,6 @@ package setup
 
 import (
 	"context"
-	"fmt"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -315,7 +314,7 @@ func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.Artifact
 	}
 
 	archivePath := filepath.Join(targetDir, a.String()+as.InstallerExtension())
-	if err := s.downloadArtifact(a, unsignedURI, archivePath); err != nil {
+	if err := s.downloadArtifact(unsignedURI, archivePath); err != nil {
 		return errs.Wrap(err, "Could not download artifact %s", unsignedURI)
 	}
 	s.msgHandler.ArtifactDownloadCompleted(a)
@@ -373,20 +372,7 @@ func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.Artifact
 
 // downloadArtifact retrieves the tarball for an artifactID
 // Note: the tarball may also be retrieved from a local cache directory if that is available.
-func (s *Setup) downloadArtifact(a artifact.ArtifactID, unsignedURI string, targetFile string) error {
-	cachePath := filepath.Join("/tmp", "cache")
-	_ = os.MkdirAll(cachePath, 0775)
-
-	cacheFile := filepath.Join(cachePath, a.String())
-	if fileutils.FileExists(cacheFile) {
-		err := fileutils.CopyFile(cacheFile, targetFile)
-		if err != nil {
-			logging.Debug("Failed to copy cached file %s -> %s", cacheFile, targetFile)
-		} else {
-			return nil
-		}
-	}
-
+func (s *Setup) downloadArtifact(unsignedURI string, targetFile string) error {
 	artifactURL, err := url.Parse(unsignedURI)
 	if err != nil {
 		return errs.Wrap(err, "Could not parse artifact URL %s.", unsignedURI)
@@ -404,10 +390,6 @@ func (s *Setup) downloadArtifact(a artifact.ArtifactID, unsignedURI string, targ
 	}
 	if err := fileutils.WriteFile(targetFile, b); err != nil {
 		return errs.Wrap(err, "Writing download to target file %s failed", targetFile)
-	}
-	fmt.Printf("Writing to cache file: %s\n", cacheFile)
-	if err := fileutils.WriteFile(cacheFile, b); err != nil {
-		logging.Debug("Failed to write %s to cache: %v", cacheFile, err)
 	}
 	return nil
 }
