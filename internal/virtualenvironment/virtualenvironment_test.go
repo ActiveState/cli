@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	rtmock "github.com/ActiveState/cli/pkg/platform/runtime/mock"
+	runtime "github.com/ActiveState/cli/pkg/platform/runtime2"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
@@ -45,7 +46,7 @@ func TestEnv(t *testing.T) {
 	os.Setenv(constants.ProjectEnvVarName, projectfile.Get().Path())
 	defer os.Unsetenv(constants.ProjectEnvVarName)
 
-	venv := New(nil)
+	venv := New(runtime.DisabledRuntime)
 	env, err := venv.GetEnv(false, filepath.Dir(projectfile.Get().Path()))
 	require.NoError(t, err)
 
