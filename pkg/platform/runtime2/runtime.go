@@ -2,10 +2,12 @@ package runtime
 
 import (
 	"bytes"
+	"os"
 	"strings"
 	"text/template"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -21,6 +23,8 @@ type Runtime struct {
 	model       *model.Model
 	envAccessed bool
 }
+
+var DisabledRuntime = &Runtime{}
 
 type MessageHandler interface {
 	UseCache()
@@ -52,6 +56,9 @@ func new(target setup.Targeter) (*Runtime, error) {
 
 // New attempts to create a new runtime from local storage.  If it fails with a NeedsUpdateError, Update() needs to be called to update the locally stored runtime.
 func New(target setup.Targeter) (*Runtime, error) {
+	if strings.ToLower(os.Getenv(constants.DisableRuntime)) == "true" {
+		return DisabledRuntime, nil
+	}
 	analytics.Event(analytics.CatRuntime, analytics.ActRuntimeStart)
 
 	r, err := new(target)
@@ -75,6 +82,9 @@ func (r *Runtime) Update(msgHandler setup.MessageHandler) error {
 }
 
 func (r *Runtime) Environ(inherit bool, projectDir string) (map[string]string, error) {
+	if r == DisabledRuntime {
+		return nil, errs.New("Called Environ() on a disabled runtime.")
+	}
 	env, err := r.store.Environ(inherit)
 	if !r.envAccessed {
 		if err != nil {
