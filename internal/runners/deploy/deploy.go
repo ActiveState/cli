@@ -150,7 +150,14 @@ func (d *Deploy) install(rtTarget setup.Targeter) error {
 		return locale.WrapError(err, "deploy_runtime_err", "Could not initialize runtime")
 	}
 
-	if err := rti.Update(messagehandler.New() /* TODO: messagehandler */); err != nil {
+	mh := messagehandler.New()
+	mh.OnArtifactDownloadStarting = func(id strfmt.UUID) {
+		fmt.Println("Downloading")
+	}
+	mh.OnArtifactDownloadCompleted = func(id strfmt.UUID) {
+		fmt.Println("Installing")
+	}
+	if err := rti.Update(mh); err != nil {
 		return locale.WrapError(err, "deploy_install_failed", "Installation failed.")
 	}
 
