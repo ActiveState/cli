@@ -125,7 +125,7 @@ func convertToFileTransforms(tmpBaseDir string, relInstDir string, metadata *Met
 	var res []envdef.FileTransform
 	instDir := filepath.Join(tmpBaseDir, relInstDir)
 	for _, tr := range metadata.TargetedRelocations {
-		err := filepath.Walk(tr.InDir, func(path string, info os.FileInfo, err error) error {
+		err := filepath.Walk(filepath.Join(instDir, tr.InDir), func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return errs.Wrap(err, "Error walking tree for targeted relocations")
 			}
