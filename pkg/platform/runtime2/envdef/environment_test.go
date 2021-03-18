@@ -151,6 +151,32 @@ func (suite *EnvironmentTestSuite) TestGetEnv() {
 	}, res)
 }
 
+func (suite *EnvironmentTestSuite) TestPreferOS() {
+	ed := envdef.EnvironmentDefinition{}
+	err := json.Unmarshal([]byte(`{
+			"env": [
+				{"env_name": "V", "values": ["b"], "inherit": true, "prefer_os": true},
+				{"env_name": "W", "values": ["b"], "inherit": true, "prefer_os": false}
+			],
+			"installdir": "abc"
+		}`), &ed)
+	require.NoError(suite.T(), err)
+
+	lookupEnv := func(k string) (string, bool) {
+		if k == "V" {
+			return "a", true
+		}
+		return "", false
+	}
+
+	res, err := ed.GetEnvBasedOn(lookupEnv)
+	require.NoError(suite.T(), err)
+
+	suite.Assert().Equal(map[string]string{
+		"V": "a", "W": "b",
+	}, res)
+}
+
 func (suite *EnvironmentTestSuite) TestFindBinPathFor() {
 	tmpDir, err := ioutil.TempDir("", "")
 	require.NoError(suite.T(), err, "creating temporary directory")

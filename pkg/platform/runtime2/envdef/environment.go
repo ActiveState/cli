@@ -32,8 +32,9 @@ type EnvironmentVariable struct {
 	Name      string       `json:"env_name"`
 	Values    []string     `json:"values"`
 	Join      VariableJoin `json:"join"`
-	Inherit   bool         `json:"inherit"`
+	Inherit   bool         `json:"inherit"` // if true, the environment variable will be merged with the OS environment
 	Separator string       `json:"separator"`
+	PreferOS  bool         `json:"prefer_os"` // if true and the variable is defined in the OS environment, the OS choice is set, inherit needs to be set to true
 }
 
 // VariableJoin defines a strategy to join environment variables together
@@ -324,11 +325,15 @@ func (ed *EnvironmentDefinition) GetEnvBasedOn(envLookup func(string) (string, b
 			if hasOsValue {
 				osEv := ev
 				osEv.Values = []string{osValue}
-				var err error
-				pev, err = osEv.Merge(ev)
-				if err != nil {
-					return nil, err
-
+				if osEv.PreferOS {
+					pev = &osEv
+				} else {
+					// merge the OS environment with the variables values from the definition file
+					var err error
+					pev, err = osEv.Merge(ev)
+					if err != nil {
+						return nil, err
+					}
 				}
 			}
 		}

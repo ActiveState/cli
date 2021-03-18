@@ -118,6 +118,8 @@ func convertToEnvVars(metadata *MetaData) []envdef.EnvironmentVariable {
 		Separator: string(os.PathListSeparator),
 	})
 
+	res = append(res, metadata.ExtraVariables...)
+
 	return res
 }
 
