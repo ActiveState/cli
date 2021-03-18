@@ -27,12 +27,6 @@ const Perl5_28CamelProject = "Perl"
 // Perl5_28CamelCommit is a test commit for a camel Perl build
 const Perl5_28CamelCommit = strfmt.UUID("bdd07a41-1e71-4042-b666-33c17164c9d9")
 
-// Python3Project is the project name in the ActiveState-CLI organization
-const Python3Project = "Python3"
-
-// Python3Commit is a test commit for a camel Python build
-const Python3Commit = strfmt.UUID("623dadf8-ebf9-4876-bfde-f45afafe5ea8")
-
 // Perl5_32AlternativeProject is a project name in the ActiveState-CLI organization for an alternative build
 const Perl5_32AlternativeProject = "Perl-5.32.1-Alternative"
 
@@ -77,9 +71,6 @@ func saveResponses(baseName string, commitID strfmt.UUID, projectName string, ex
 
 func run() error {
 	if err := saveResponses("perl", Perl5_28CamelCommit, Perl5_28CamelProject, headchef.Completed); err != nil {
-		return err
-	}
-	if err := saveResponses("python3", Python3Commit, Python3Project, headchef.Completed); err != nil {
 		return err
 	}
 	if err := saveResponses("perl-alternative-base", Perl5_32AlternativeBaseCommit, Perl5_32AlternativeProject, headchef.Completed); err != nil {

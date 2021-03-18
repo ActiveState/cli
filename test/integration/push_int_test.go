@@ -118,7 +118,6 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs(
 			"activate", suite.baseProject,
-			"-v",
 			"--path", filepath.Join(ts.Dirs.Work, namespace)),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
