@@ -1,11 +1,9 @@
 package main
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/ActiveState/cli/cmd/state-tray/internal/open"
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/getlantern/systray"
@@ -19,13 +17,14 @@ func main() {
 func onReady() {
 	err := run()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err.Error())
 		logging.Error("Systray encountered an error: %v", err)
 		os.Exit(1)
 	}
 }
 
 func run() error {
+	logging.CurrentHandler().SetVerbose(true)
+
 	box := packr.NewBox("assets")
 	systray.SetIcon(box.Bytes("icon.ico"))
 	systray.SetTooltip(locale.Tl("tray_tooltip", "ActiveState State Tool"))
@@ -66,7 +65,7 @@ func run() error {
 			logging.Debug("About event")
 			err := open.Prompt("state --version")
 			if err != nil {
-				return errs.Wrap(err, "Could not open command prompt")
+				logging.Error("Could not open command prompt, got error: %v", err)
 			}
 		case <-mDoc.ClickedCh:
 			logging.Debug("Documentation event")
