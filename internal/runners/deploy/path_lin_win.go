@@ -13,7 +13,7 @@ import (
 
 // usablePath will find the first writable directory under PATH
 // If on PATH and writable /usr/local/bin or /usr/bin are returned
-func usablePath(skipDir string) (string, error) {
+func usablePath() (string, error) {
 	paths := strings.Split(os.Getenv("PATH"), string(os.PathListSeparator))
 	if len(paths) == 0 {
 		return "", locale.NewInputError("err_deploy_path_empty", "Your system does not have any PATH entries configured, so symlinks can not be created.")
@@ -25,7 +25,7 @@ func usablePath(skipDir string) (string, error) {
 	}
 	var result string
 	for _, path := range paths {
-		if path == "" || path == skipDir || (!fileutils.IsDir(path) && !fileutils.FileExists(path)) || !fileutils.IsWritable(path) {
+		if path == "" || (!fileutils.IsDir(path) && !fileutils.FileExists(path)) || !fileutils.IsWritable(path) {
 			continue
 		}
 
@@ -33,7 +33,6 @@ func usablePath(skipDir string) (string, error) {
 		if funk.Contains(preferredPaths, path) {
 			return path, nil
 		}
-
 		// use the first available directory in PATH
 		if result == "" {
 			result = path
