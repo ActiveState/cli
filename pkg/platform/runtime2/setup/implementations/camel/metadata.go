@@ -142,6 +142,10 @@ func (m *MetaData) setPythonEnv() {
 		logging.Debug("Not setting PYTHONPATH as the user already has it set")
 	}
 
+	// This is broken for two reasons:
+	// 1. Checking in the OS environment will only happen on installation, but at a later point, the OS environment might have changed, and we will overwrite the user's choice here
+	// 2. python code does not need to depend on PYTHONIOENCODING as pointed out here: https://stackoverflow.com/a/9942822
+	// Follow up story is here: https://www.pivotaltracker.com/story/show/177407383
 	if os.Getenv("PYTHONIOENCODING") == "" {
 		m.Env["PYTHONIOENCODING"] = "utf-8"
 	} else {
