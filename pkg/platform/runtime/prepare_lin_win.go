@@ -16,7 +16,7 @@ func (m *MetaData) Prepare() error {
 	// BinaryLocations
 	if m.BinaryLocations == nil || len(m.BinaryLocations) == 0 {
 		m.BinaryLocations = []MetaDataBinary{
-			{
+			MetaDataBinary{
 				Path:     "bin",
 				Relative: true,
 			},

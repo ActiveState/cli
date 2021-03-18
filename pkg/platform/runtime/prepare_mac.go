@@ -83,7 +83,7 @@ func (m *MetaData) Prepare() error {
 		m.TargetedRelocations = []TargetedRelocation{TargetedRelocation{
 			InDir:        filepath.Join(frameWorkDir, "Current", "bin"),
 			SearchString: "#!" + filepath.Join("/", relVersionedFrameWorkDir),
-			Replacement:  "#!" + filepath.Join("${INSTALLDIR}", relVersionedFrameWorkDir),
+			Replacement:  "#!" + filepath.Join(m.Path, relVersionedFrameWorkDir),
 		}}
 	}
 
