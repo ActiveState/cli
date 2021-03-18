@@ -5,9 +5,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/ActiveState/cli/pkg/platform/runtime2/setup/implementations/camel"
 	"github.com/stretchr/testify/suite"
-
-	"github.com/ActiveState/cli/pkg/platform/runtime"
 )
 
 type MetaDataTestSuite struct {
@@ -39,7 +38,7 @@ func (suite *MetaDataTestSuite) TestMetaData() {
 		"relocation_dir": "/relocate"
 	}`
 
-	metaData, err := runtime.ParseMetaData([]byte(contents))
+	metaData, err := camel.ParseMetaData([]byte(contents))
 	suite.Require().NoError(err)
 	suite.Equal("PYTHONPATH", metaData.AffectedEnv)
 	suite.Equal("/relocate", metaData.RelocationDir)
