@@ -214,10 +214,3 @@ func (as *ArtifactSetup) Unarchiver() unarchiver.Unarchiver {
 	}
 	return unarchiver.NewTarGz()
 }
-
-func (as *ArtifactSetup) InstallerExtension() string {
-	if runtime.GOOS == "windows" {
-		return ".zip"
-	}
-	return ".tar.gz"
-}

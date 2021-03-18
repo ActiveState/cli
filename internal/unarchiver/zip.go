@@ -27,6 +27,10 @@ func NewZip() Unarchiver {
 	return Unarchiver{&ZipArchive{archiver.NewZip()}, func(_ string, _ int64, _ bool) {}}
 }
 
+func (z *ZipArchive) Ext() string {
+	return ".zip"
+}
+
 // ExtractNext extracts the next file to destination
 func (z *ZipArchive) ExtractNext(destination string) (f archiver.File, err error) {
 	f, err = z.Read()

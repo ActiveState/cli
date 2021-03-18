@@ -45,7 +45,3 @@ func (as *ArtifactSetup) Move(tmpDir string) error {
 func (as *ArtifactSetup) Unarchiver() unarchiver.Unarchiver {
 	return unarchiver.NewTarGz()
 }
-
-func (as *ArtifactSetup) InstallerExtension() string {
-	return ".tar.gz"
-}

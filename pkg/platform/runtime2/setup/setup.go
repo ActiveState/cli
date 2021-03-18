@@ -105,7 +105,6 @@ type ModelProvider interface {
 // These need to be specialized for each BuildEngine type
 type ArtifactSetuper interface {
 	EnvDef(tmpInstallDir string) (*envdef.EnvironmentDefinition, error)
-	InstallerExtension() string
 	Unarchiver() unarchiver.Unarchiver
 }
 
@@ -312,7 +311,8 @@ func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.Artifact
 		return errs.Wrap(err, "Could not create temp runtime dir")
 	}
 
-	archivePath := filepath.Join(targetDir, a.String()+as.InstallerExtension())
+	unarchiver := as.Unarchiver()
+	archivePath := filepath.Join(targetDir, a.String()+unarchiver.Ext())
 	if err := s.downloadArtifact(unsignedURI, archivePath); err != nil {
 		return errs.Wrap(err, "Could not download artifact %s", unsignedURI)
 	}
@@ -323,7 +323,7 @@ func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.Artifact
 	// clean up the unpacked dir
 	defer os.RemoveAll(unpackedDir)
 
-	err = s.unpackArtifact(as.Unarchiver(), archivePath, unpackedDir)
+	err = s.unpackArtifact(unarchiver, archivePath, unpackedDir)
 	if err != nil {
 		return errs.Wrap(err, "Could not unpack artifact %s", archivePath)
 	}
