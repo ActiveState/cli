@@ -439,6 +439,7 @@ else
   fi
 fi
 
+# Keep --activate and --activate-default flags for backwards compatibility
 if [ -n "${POST_INSTALL_COMMAND}" ]; then
   export PATH="$PATH:$INSTALLDIR"
   exec $POST_INSTALL_COMMAND

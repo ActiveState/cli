@@ -446,9 +446,12 @@ function install() {
 $code = install
 if (($null -eq $code) -or ($code -eq 0)) {
     if ($script:POST_INSTALL_COMMAND) {
+        # Extract executable from post install command string
         $executable, $arguments = $script:POST_INSTALL_COMMAND.Split(" ")
         & $executable $arguments
-    } else {
+    }
+    else {
+        # Keep --activate and --activate-default flags for backwards compatibility
         activateIfRequested
     }
 }
