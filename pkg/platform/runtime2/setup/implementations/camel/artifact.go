@@ -118,6 +118,8 @@ func convertToEnvVars(metadata *MetaData) []envdef.EnvironmentVariable {
 		Separator: string(os.PathListSeparator),
 	})
 
+	res = append(res, metadata.ExtraVariables...)
+
 	return res
 }
 
@@ -125,22 +127,39 @@ func convertToFileTransforms(tmpBaseDir string, relInstDir string, metadata *Met
 	var res []envdef.FileTransform
 	instDir := filepath.Join(tmpBaseDir, relInstDir)
 	for _, tr := range metadata.TargetedRelocations {
-		path := filepath.Join(instDir, tr.InDir)
-		b, err := ioutil.ReadFile(path)
-		if err != nil {
-			return res, errs.Wrap(err, "Failed to find file that needs to be relocated %s path", path)
-		}
-		var padWith *string
-		if fileutils.IsBinary(b) {
-			pad := "\000"
-			padWith = &pad
-		}
-		res = append(res, envdef.FileTransform{
-			In:      []string{tr.InDir},
-			Pattern: tr.SearchString,
-			With:    tr.Replacement,
-			PadWith: padWith,
+		err := filepath.Walk(tr.InDir, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return errs.Wrap(err, "Error walking tree for targeted relocations")
+			}
+
+			if info.IsDir() {
+				return nil
+			}
+			trimmed := strings.TrimPrefix(path, instDir)
+
+			b, err := ioutil.ReadFile(path)
+			if err != nil {
+				return errs.Wrap(err, "Could not read file path %s", path)
+			}
+			var padWith *string
+			if fileutils.IsBinary(b) {
+				pad := "\000"
+				padWith = &pad
+			}
+			if bytes.Contains(b, []byte(tr.SearchString)) {
+				res = append(res, envdef.FileTransform{
+					In:      []string{trimmed},
+					Pattern: tr.SearchString,
+					With:    tr.Replacement,
+					PadWith: padWith,
+				})
+			}
+
+			return nil
 		})
+		if err != nil {
+			return res, errs.Wrap(err, "Failed convert targeted relocations")
+		}
 	}
 
 	if metadata.RelocationDir == "" {
