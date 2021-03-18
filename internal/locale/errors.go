@@ -16,7 +16,6 @@ type LocalizedError struct {
 	localized string
 	stack     *stacktrace.Stacktrace
 	inputErr  bool
-	code      int
 }
 
 // Error is the error message
@@ -52,14 +51,6 @@ func (e *LocalizedError) AddTips(tips ...string) {
 	e.tips = append(e.tips, tips...)
 }
 
-func (e *LocalizedError) ExitCode() int {
-	return e.code
-}
-
-func (e *LocalizedError) SetExitCode(code int) {
-	e.code = code
-}
-
 // ErrorLocalizer represents a localized error
 type ErrorLocalizer interface {
 	UserError() string
@@ -90,7 +81,6 @@ func WrapError(err error, id string, args ...string) *LocalizedError {
 	l.tips = []string{}
 	l.localized = translation
 	l.stack = stacktrace.GetWithSkip([]string{rtutils.CurrentFile()})
-	l.code = 1
 	return l
 }
 
