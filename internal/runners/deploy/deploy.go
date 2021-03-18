@@ -229,7 +229,7 @@ func (d *Deploy) symlink(rtTarget setup.Targeter, overwrite bool) error {
 	var path string
 	if rt.GOOS != "windows" {
 		// Retrieve path to write symlinks to
-		path, err = usablePath()
+		path, err = usablePath(filepath.Join(rtTarget.Dir(), "bin"))
 		if err != nil {
 			return locale.WrapError(err, "err_usablepath", "Could not retrieve a usable PATH")
 		}
