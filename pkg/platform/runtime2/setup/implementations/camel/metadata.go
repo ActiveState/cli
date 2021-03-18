@@ -2,6 +2,7 @@ package camel
 
 import (
 	"encoding/json"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -9,7 +10,6 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/pkg/platform/runtime2/envdef"
 )
 
 type ErrMetaData struct{ *errs.WrapperError }
@@ -46,8 +46,6 @@ type MetaData struct {
 
 	// TargetedRelocations are relocations that only target specific parts of the installation
 	TargetedRelocations []TargetedRelocation `json:"custom_relocations"`
-
-	ExtraVariables []envdef.EnvironmentVariable
 }
 
 // MetaDataBinary is used to represent a binary path contained within the metadata.json file
@@ -138,17 +136,15 @@ func (m *MetaData) hasBinaryFile(root string, executable string) bool {
 }
 
 func (m *MetaData) setPythonEnv() {
-	m.ExtraVariables = append(m.ExtraVariables, envdef.EnvironmentVariable{
-		Name:     "PYTHONPATH",
-		Values:   []string{"{{.ProjectDir}}"},
-		Inherit:  true,
-		PreferOS: true,
-	})
+	if _, exists := m.Env["PYTHONPATH"]; !exists {
+		m.Env["PYTHONPATH"] = "{{.ProjectDir}}"
+	} else {
+		logging.Debug("Not setting PYTHONPATH as the user already has it set")
+	}
 
-	m.ExtraVariables = append(m.ExtraVariables, envdef.EnvironmentVariable{
-		Name:     "PYTHONIOENCODING",
-		Values:   []string{"utf-8"},
-		Inherit:  true,
-		PreferOS: true,
-	})
+	if os.Getenv("PYTHONIOENCODING") == "" {
+		m.Env["PYTHONIOENCODING"] = "utf-8"
+	} else {
+		logging.Debug("Not setting PYTHONIOENCODING as the user already has it set")
+	}
 }
