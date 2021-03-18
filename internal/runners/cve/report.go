@@ -189,7 +189,7 @@ func (rd *reportDataPrinter) MarshalOutput(format output.Format) interface{} {
 
 	rd.output.Print("")
 	rd.output.Print([]string{
-		locale.Tl("cve_report_hint_cve", "To view a specific CVE, run [ACTIONABLE]state cve open [cve-id][/RESET]."),
+		locale.Tl("cve_report_hint_cve", "To view a specific CVE, run [ACTIONABLE]state security open [cve-id][/RESET]."),
 	})
 	return output.Suppress
 }
