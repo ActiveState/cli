@@ -2,6 +2,17 @@
 cloud.google.com/go/compute/metadata
 cloud.google.com/go/iam
 cloud.google.com/go/secretmanager/apiv1
+# github.com/99designs/gqlgen v0.13.0
+github.com/99designs/gqlgen/complexity
+github.com/99designs/gqlgen/graphql
+github.com/99designs/gqlgen/graphql/errcode
+github.com/99designs/gqlgen/graphql/executor
+github.com/99designs/gqlgen/graphql/handler
+github.com/99designs/gqlgen/graphql/handler/extension
+github.com/99designs/gqlgen/graphql/handler/lru
+github.com/99designs/gqlgen/graphql/handler/transport
+github.com/99designs/gqlgen/graphql/introspection
+github.com/99designs/gqlgen/graphql/playground
 # github.com/ActiveState/archiver v3.1.1+incompatible
 github.com/ActiveState/archiver
 # github.com/ActiveState/go-ogle-analytics v0.0.0-20170510030904-9b3f14901527
@@ -34,6 +45,8 @@ github.com/PuerkitoBio/urlesc
 github.com/StackExchange/wmi
 # github.com/VividCortex/ewma v1.1.1
 github.com/VividCortex/ewma
+# github.com/agnivade/levenshtein v1.0.3
+github.com/agnivade/levenshtein
 # github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 github.com/alecthomas/template
 github.com/alecthomas/template/parse
@@ -76,6 +89,8 @@ github.com/dave/jennifer/jen
 github.com/davecgh/go-spew/spew
 # github.com/denisbrodbeck/machineid v0.8.0
 github.com/denisbrodbeck/machineid
+# github.com/dgrijalva/jwt-go v3.2.0+incompatible
+github.com/dgrijalva/jwt-go
 # github.com/dsnet/compress v0.0.0-20171208185109-cc9eb1d7ad76
 github.com/dsnet/compress
 github.com/dsnet/compress/bzip2
@@ -162,6 +177,9 @@ github.com/hashicorp/go-cleanhttp
 github.com/hashicorp/go-retryablehttp
 # github.com/hashicorp/go-version v1.1.0
 github.com/hashicorp/go-version
+# github.com/hashicorp/golang-lru v0.5.1
+github.com/hashicorp/golang-lru
+github.com/hashicorp/golang-lru/simplelru
 # github.com/hectane/go-acl v0.0.0-20190604041725-da78bae5fc95
 github.com/hectane/go-acl
 github.com/hectane/go-acl/api
@@ -193,6 +211,14 @@ github.com/kardianos/osext
 github.com/kevinburke/ssh_config
 # github.com/kr/pty v1.1.8
 github.com/kr/pty
+# github.com/labstack/echo/v4 v4.2.1
+github.com/labstack/echo/v4
+github.com/labstack/echo/v4/middleware
+# github.com/labstack/gommon v0.3.0
+github.com/labstack/gommon/bytes
+github.com/labstack/gommon/color
+github.com/labstack/gommon/log
+github.com/labstack/gommon/random
 # github.com/machinebox/graphql v0.2.2
 github.com/machinebox/graphql
 # github.com/mailru/easyjson v0.0.0-20180323154445-8b799c424f57
@@ -201,9 +227,9 @@ github.com/mailru/easyjson/jlexer
 github.com/mailru/easyjson/jwriter
 # github.com/mash/go-tempfile-suffix v0.0.0-20150731093933-48f0f8a3a5ab
 github.com/mash/go-tempfile-suffix
-# github.com/mattn/go-colorable v0.0.9
+# github.com/mattn/go-colorable v0.1.7
 github.com/mattn/go-colorable
-# github.com/mattn/go-isatty v0.0.3
+# github.com/mattn/go-isatty v0.0.12
 github.com/mattn/go-isatty
 # github.com/mattn/go-runewidth v0.0.4
 github.com/mattn/go-runewidth
@@ -237,7 +263,7 @@ github.com/pmezard/go-difflib/difflib
 github.com/posener/wstest
 # github.com/rollbar/rollbar-go v1.1.0
 github.com/rollbar/rollbar-go
-# github.com/sergi/go-diff v1.0.0
+# github.com/sergi/go-diff v1.1.0
 github.com/sergi/go-diff/diffmatchpatch
 # github.com/shibukawa/configdir v0.0.0-20170330084843-e180dbdc8da0
 github.com/shibukawa/configdir
@@ -274,11 +300,23 @@ github.com/ulikunitz/xz
 github.com/ulikunitz/xz/internal/hash
 github.com/ulikunitz/xz/internal/xlog
 github.com/ulikunitz/xz/lzma
+# github.com/valyala/bytebufferpool v1.0.0
+github.com/valyala/bytebufferpool
+# github.com/valyala/fasttemplate v1.2.1
+github.com/valyala/fasttemplate
 # github.com/vbauerster/mpb/v4 v4.10.0
 github.com/vbauerster/mpb/v4
 github.com/vbauerster/mpb/v4/cwriter
 github.com/vbauerster/mpb/v4/decor
 github.com/vbauerster/mpb/v4/internal
+# github.com/vektah/gqlparser/v2 v2.1.0
+github.com/vektah/gqlparser/v2
+github.com/vektah/gqlparser/v2/ast
+github.com/vektah/gqlparser/v2/gqlerror
+github.com/vektah/gqlparser/v2/lexer
+github.com/vektah/gqlparser/v2/parser
+github.com/vektah/gqlparser/v2/validator
+github.com/vektah/gqlparser/v2/validator/rules
 # github.com/xanzy/ssh-agent v0.2.1
 github.com/xanzy/ssh-agent
 # github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8
@@ -299,7 +337,9 @@ go.opencensus.io/trace
 go.opencensus.io/trace/internal
 go.opencensus.io/trace/propagation
 go.opencensus.io/trace/tracestate
-# golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
+# golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a
+golang.org/x/crypto/acme
+golang.org/x/crypto/acme/autocert
 golang.org/x/crypto/blowfish
 golang.org/x/crypto/cast5
 golang.org/x/crypto/chacha20
@@ -324,6 +364,7 @@ golang.org/x/net/context
 golang.org/x/net/context/ctxhttp
 golang.org/x/net/http/httpguts
 golang.org/x/net/http2
+golang.org/x/net/http2/h2c
 golang.org/x/net/http2/hpack
 golang.org/x/net/idna
 golang.org/x/net/internal/socks
@@ -348,6 +389,8 @@ golang.org/x/text/transform
 golang.org/x/text/unicode/bidi
 golang.org/x/text/unicode/norm
 golang.org/x/text/width
+# golang.org/x/time v0.0.0-20201208040808-7e3f01d25324
+golang.org/x/time/rate
 # google.golang.org/api v0.30.0
 google.golang.org/api/internal
 google.golang.org/api/iterator

@@ -5,17 +5,15 @@ import (
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/idl"
+	"github.com/ActiveState/cli/internal/gqlclient"
+	"github.com/ActiveState/cli/internal/graph"
 	"github.com/ActiveState/cli/pkg/platform/api/svc"
+	"github.com/ActiveState/cli/pkg/platform/api/svc/request"
 )
 
 type SvcModel struct {
-	c   idl.VersionSvcClient // should remain private
-	ctx context.Context
-}
-
-type VersionResponse struct {
-	*idl.StateVersionResponse
+	ctx    context.Context
+	client *gqlclient.Client
 }
 
 func NewSvcModel(ctx context.Context, cfg *config.Instance) (*SvcModel, error) {
@@ -23,20 +21,14 @@ func NewSvcModel(ctx context.Context, cfg *config.Instance) (*SvcModel, error) {
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not initialize svc client")
 	}
-	return NewSvcModelWithClient(ctx, client), nil
+	return &SvcModel{ctx, client}, nil
 }
 
-func NewSvcModelWithClient(ctx context.Context, client idl.VersionSvcClient) *SvcModel {
-	return &SvcModel{
-		c:   client,
-		ctx: ctx,
+func (m *SvcModel) StateVersion() (*graph.Version, error) {
+	r := request.NewVersionRequest()
+	v := &graph.Version{}
+	if err := m.client.Run(r, &v); err != nil {
+		return nil, err
 	}
-}
-
-func (m *SvcModel) StateVersion() (*VersionResponse, error) {
-	res, err := m.c.StateVersion(m.ctx, &idl.StateVersionRequest{})
-	if err != nil {
-		return nil, errs.Wrap(err, "Request failed")
-	}
-	return &VersionResponse{res}, nil
+	return v, nil
 }

@@ -79,10 +79,9 @@ scripts:
 
       mkdir -p build/update
       go run scripts/update-generator/main.go -o build/update $constants.BUILD_TARGET_32BIT
-  - name: generate-idl
+  - name: generate-graph
     language: bash
-    description: Generates idl server and client files
+    description: Generates graph server and client files
     value: |
-      export PATH="$PATH:$(go env GOPATH)/bin"
-      cd internal/idl
-      protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=require_unimplemented_servers=false:. --go-grpc_opt=paths=source_relative svc.proto
+      cd cmd/state-svc
+      go run github.com/99designs/gqlgen

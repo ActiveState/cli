@@ -27,27 +27,6 @@ scripts:
   - name: install-deps
     language: bash
     value: |
-      pushd ~
-      if ! type "protoc" &> /dev/null; then
-       echo "protoc was not found on your PATH, installing .."
-       if type "brew" &> /dev/null; then
-         brew install protobuf
-       elif type "apt" &> /dev/null; then
-         apt install -y protobuf-compiler
-       else
-         echo "Please install the protobuf compiler (protoc): https://grpc.io/docs/protoc-installation/"
-         exit 1
-       fi
-      fi
-      if ! type "protoc-gen-go" &> /dev/null; then
-       echo "installing protoc-gen-go"
-       go get google.golang.org/protobuf/cmd/protoc-gen-go
-      fi
-      if ! type "protoc-gen-go-grpc" &> /dev/null; then
-       echo "installing protoc-gen-go-grpc"
-       go get google.golang.org/grpc/cmd/protoc-gen-go-grpc
-      fi
-      popd
       if ! type "packr" &> /dev/null; then
         echo "packr was not found on your PATH, installing .."
         pushd ~
