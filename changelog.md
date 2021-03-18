@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.26.1
+
+### Changed
+- Updated name of `state cve` command to `state security`. Aliased `state cve`
+  to `state security` ([PR #1286](https://github.com/ActiveState/cli/pull/1286))
+
 ## 0.26.0
 
 ### Added
