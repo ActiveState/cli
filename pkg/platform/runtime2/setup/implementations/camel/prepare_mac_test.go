@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/pkg/platform/runtime"
+	"github.com/ActiveState/cli/pkg/platform/runtime2/setup/implementations/camel"
 )
 
 func (suite *MetaDataTestSuite) TestMetaData_Prepare() {
@@ -50,16 +50,15 @@ func (suite *MetaDataTestSuite) TestMetaData_Prepare() {
 	suite.Require().NoError(err)
 
 	contents := fmt.Sprintf(template, tempDir)
-	metaData, err := runtime.ParseMetaData([]byte(contents))
-	metaData.Path = suite.dir
+	metaData, err := camel.ParseMetaData([]byte(contents))
 	suite.Require().NoError(err)
 
-	err = metaData.Prepare()
+	err = metaData.Prepare(suite.dir)
 	suite.Require().NoError(err)
-	suite.Require().NotEmpty(metaData.Env["PYTHONIOENCODING"])
+	suite.Assert().NotEmpty(metaData.Env["PYTHONIOENCODING"])
 
 	suite.Len(metaData.TargetedRelocations, 1, "expected one targeted relocation")
-	suite.Equal(runtime.TargetedRelocation{
+	suite.Equal(camel.TargetedRelocation{
 		InDir:        relBinDir,
 		SearchString: "#!" + filepath.Join("/", relVersionedDir),
 		Replacement:  "#!" + filepath.Join("${INSTALLDIR}", relVersionedDir),
