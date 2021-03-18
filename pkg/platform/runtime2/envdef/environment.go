@@ -332,7 +332,10 @@ func (ed *EnvironmentDefinition) GetEnvBasedOn(envLookup func(string) (string, b
 				}
 			}
 		}
-		res[pev.Name] = pev.ValueString()
+		// only add environment variable if at least one value is set (This allows us to remove variables from the environment.)
+		if len(ev.Values) > 0 {
+			res[pev.Name] = pev.ValueString()
+		}
 	}
 	return res, nil
 }
