@@ -440,6 +440,7 @@ else
 fi
 
 if [ -n "${POST_INSTALL_COMMAND}" ]; then
+  export PATH="$PATH:$INSTALLDIR"
   exec $POST_INSTALL_COMMAND
 elif [ -n "${ACTIVATE}" ]; then
   # control flow of this script ends with this line: replace the shell with the activated project's shell
