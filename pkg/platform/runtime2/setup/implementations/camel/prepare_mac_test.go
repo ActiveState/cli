@@ -62,6 +62,6 @@ func (suite *MetaDataTestSuite) TestMetaData_Prepare() {
 	suite.Equal(runtime.TargetedRelocation{
 		InDir:        relBinDir,
 		SearchString: "#!" + filepath.Join("/", relVersionedDir),
-		Replacement:  "#!" + filepath.Join("${INSTALLPATH}", relVersionedDir),
+		Replacement:  "#!" + filepath.Join("${INSTALLDIR}", relVersionedDir),
 	}, metaData.TargetedRelocations[0], suite.dir)
 }
