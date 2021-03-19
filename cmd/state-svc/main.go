@@ -25,16 +25,11 @@ func run() error {
 		return errs.Wrap(err, "Could not create server")
 	}
 
-	port, err := s.Port()
-	if err != nil {
-		return errs.Wrap(err, "Could not detect port")
-	}
-
 	cfg, err := config.New()
 	if err != nil {
 		return errs.Wrap(err, "Could not initialize config")
 	}
-	if err := cfg.Set("port", port); err != nil {
+	if err := cfg.Set("port", s.Port()); err != nil {
 		return errs.Wrap(err, "Could not save config")
 	}
 

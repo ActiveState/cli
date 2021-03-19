@@ -20,6 +20,7 @@ type Server struct {
 	graphServer *handler.Server
 	listener    net.Listener
 	httpServer  *echo.Echo
+	port        int
 }
 
 func NewServer() (*Server, error) {
@@ -35,19 +36,20 @@ func NewServer() (*Server, error) {
 
 	s.setupRouting()
 
+	_, portEncoded, err := net.SplitHostPort(s.listener.Addr().String())
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not parse port from address: %v", s.listener.Addr().String())
+	}
+	s.port, err = strconv.Atoi(portEncoded)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not convert port: %v", portEncoded)
+	}
+
 	return s, nil
 }
 
-func (s *Server) Port() (int, error) {
-	_, portEncoded, err := net.SplitHostPort(s.listener.Addr().String())
-	if err != nil {
-		return 0, errs.Wrap(err, "Could not parse port from address: %v", s.listener.Addr().String())
-	}
-	port, err := strconv.Atoi(portEncoded)
-	if err != nil {
-		return 0, errs.Wrap(err, "Could not convert port: %v", portEncoded)
-	}
-	return port, nil
+func (s *Server) Port() int {
+	return s.port
 }
 
 func (s *Server) Start() error {
