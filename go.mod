@@ -78,7 +78,6 @@ require (
 	github.com/stretchr/testify v1.6.2-0.20201103103935-92707c0b2d50
 	github.com/thoas/go-funk v0.0.0-20170604141201-14304e8530de
 	github.com/ulikunitz/xz v0.5.4 // indirect
-	github.com/vbauerster/mpb/v4 v4.10.0
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 	golang.org/x/net v0.0.0-20201021035429-f5854403a974

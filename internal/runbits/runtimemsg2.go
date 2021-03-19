@@ -1,20 +1,19 @@
 package runbits
 
+// Progress bar design
+//
 import (
 	"fmt"
 
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/progress"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime2/setup"
 )
 
 type RuntimeMessageHandler2 struct {
-	out  output.Outputer
-	bpg  *progress.Progress
-	bbar *progress.TotalBar
+	out output.Outputer
 }
 
 func NewRuntimeMessageHandler2(out output.Outputer) *RuntimeMessageHandler2 {

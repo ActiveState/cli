@@ -32,8 +32,6 @@ github.com/PuerkitoBio/purell
 github.com/PuerkitoBio/urlesc
 # github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d
 github.com/StackExchange/wmi
-# github.com/VividCortex/ewma v1.1.1
-github.com/VividCortex/ewma
 # github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 github.com/alecthomas/template
 github.com/alecthomas/template/parse
@@ -300,11 +298,6 @@ github.com/ulikunitz/xz
 github.com/ulikunitz/xz/internal/hash
 github.com/ulikunitz/xz/internal/xlog
 github.com/ulikunitz/xz/lzma
-# github.com/vbauerster/mpb/v4 v4.10.0
-github.com/vbauerster/mpb/v4
-github.com/vbauerster/mpb/v4/cwriter
-github.com/vbauerster/mpb/v4/decor
-github.com/vbauerster/mpb/v4/internal
 # github.com/xanzy/ssh-agent v0.2.1
 github.com/xanzy/ssh-agent
 # github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8

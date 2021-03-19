@@ -22,15 +22,7 @@ func NewProjectTarget(pj *project.Project, runtimeCacheDir string, customCommit 
 }
 
 func (p *ProjectTarget) Dir() string {
-	projectDirDirty := filepath.Dir(p.Project.Source().Path())
-	projectDir, err := fileutils.ResolveUniquePath(projectDirDirty)
-	if err != nil {
-		logging.Error("Could not resolve unique path for projectDir: %s, error: %s", projectDir, err.Error())
-		projectDir = projectDirDirty
-	}
-	logging.Debug("In newStore: resolved project dir is: %s", projectDir)
-
-	return filepath.Join(p.cacheDir, hash.ShortHash(projectDir))
+	return ProjectDirToTargetDir(p.Project.Source().Path(), p.cacheDir)
 }
 
 func (p *ProjectTarget) CommitUUID() strfmt.UUID {
@@ -71,4 +63,16 @@ func (c *CustomTarget) CommitUUID() strfmt.UUID {
 
 func (c *CustomTarget) Dir() string {
 	return c.dir
+}
+
+func ProjectDirToTargetDir(projectDir, cacheDir string) string {
+	projectDirDirty := filepath.Dir(projectDir)
+	projectDir, err := fileutils.ResolveUniquePath(projectDirDirty)
+	if err != nil {
+		logging.Error("Could not resolve unique path for projectDir: %s, error: %s", projectDir, err.Error())
+		projectDir = projectDirDirty
+	}
+	logging.Debug("In newStore: resolved project dir is: %s", projectDir)
+
+	return filepath.Join(cacheDir, hash.ShortHash(projectDir))
 }
