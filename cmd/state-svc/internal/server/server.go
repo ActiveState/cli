@@ -23,7 +23,7 @@ type Server struct {
 	port        int
 }
 
-func NewServer() (*Server, error) {
+func New() (*Server, error) {
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to listen")

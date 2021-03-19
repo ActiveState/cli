@@ -20,7 +20,7 @@ func main() {
 }
 
 func run() error {
-	s, err := server.NewServer()
+	s, err := server.New()
 	if err != nil {
 		return errs.Wrap(err, "Could not create server")
 	}
