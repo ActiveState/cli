@@ -163,7 +163,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallPerl5_32() {
 	cp.ExpectExitCode(0)
 	cp = ts.SpawnCmdWithOpts(
 		"bash",
-		e2e.WithArgs(script, "-t", ts.Dirs.Work, "--activate-default", "ActiveState/Perl-5.32"),
+		e2e.WithArgs(script, "-t", ts.Dirs.Work, "-c", "state activate ActiveState/Perl-5.32 --default"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false", "SHELL=bash"),
 	)
 	expectStateToolInstallation(cp, "y")
@@ -240,7 +240,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallPerl5_32_Windows() {
 
 	cp := ts.SpawnCmdWithOpts(
 		"powershell.exe",
-		e2e.WithArgs(script, "-t", ts.Dirs.Work, "-activate-default", "ActiveState/Perl-5.32"),
+		e2e.WithArgs(script, "-t", ts.Dirs.Work, "-c", "state activate ActiveState/Perl-5.32 --default"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"))
 	expectStateToolInstallationWindows(cp)
 	expectDefaultActivation(cp)
