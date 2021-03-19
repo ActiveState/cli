@@ -15,6 +15,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Updated name of `state cve` command to `state security`. Aliased `state cve`
   to `state security` ([PR #1286](https://github.com/ActiveState/cli/pull/1286))
 
+### Fixed
+- Fixed issue where `state push` would fail on existing projects.
+  ([PR #1287](https://github.com/ActiveState/cli/pull/1287))
+
 ## 0.26.0
 
 ### Added

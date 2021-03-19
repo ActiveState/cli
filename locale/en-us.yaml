@@ -1651,7 +1651,7 @@ err_fetch_project:
 err_set_default_branch:
   other: Could not update project field with branch, please manually set the `branch={{.V0}}` query parameter on the project field in your activestate.yaml.
 err_fetch_branch:
-  other: "Cold not get branch [NOTICE]{{.V0}}[/RESET] for project"
+  other: "Could not get branch [NOTICE]{{.V0}}[/RESET] for project"
 err_refresh_runtime:
   other: "Failed to update runtime"
 headless_notify_title:
