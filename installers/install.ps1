@@ -15,7 +15,7 @@ param (
         $t
     ,[Parameter(Mandatory=$False)][switch]$n
     ,[Parameter(Mandatory=$False)][switch]$f
-    ,[Parameter(Mandatory=$False)][string]$c = ""
+    ,[Parameter(Mandatory=$False)][string]$c
     ,[Parameter(Mandatory=$False)][switch]$h
     ,[Parameter(Mandatory=$False)]
         [ValidateScript({[IO.Path]::GetExtension($_) -eq '.exe'})]
