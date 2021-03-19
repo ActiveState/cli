@@ -10,7 +10,6 @@ import (
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
-	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/stretchr/testify/require"
 )
 
@@ -71,19 +70,4 @@ func LoadBuildResponse(t *testing.T, name string) *headchef_models.BuildStatusRe
 
 func SaveBuildResponse(name string, m *headchef_models.BuildStatusResponse) error {
 	return save("builds", name, m)
-}
-
-func LoadCheckpoint(t *testing.T, name string) model.Checkpoint {
-	d, err := ioutil.ReadFile(filepath.Join(dataPath(t), "checkpoints", fmt.Sprintf("%s.json", name)))
-	require.NoError(t, err)
-
-	var checkpoint model.Checkpoint
-	err = json.Unmarshal(d, &checkpoint)
-	require.NoError(t, err)
-
-	return checkpoint
-}
-
-func SaveCheckpoint(name string, m model.Checkpoint) error {
-	return save("checkpoints", name, m)
 }

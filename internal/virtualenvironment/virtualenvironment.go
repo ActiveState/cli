@@ -1,9 +1,7 @@
 package virtualenvironment
 
 import (
-	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/google/uuid"
 
@@ -34,9 +32,9 @@ func (v *VirtualEnvironment) GetEnv(inherit bool, projectDir string) (map[string
 	envMap := make(map[string]string)
 
 	// Source runtime environment information
-	if strings.ToLower(os.Getenv(constants.DisableRuntime)) != "true" {
+	if v.runtime != runtime.DisabledRuntime {
 		var err error
-		envMap, err = v.runtime.Environ(inherit)
+		envMap, err = v.runtime.Environ(inherit, projectDir)
 		if err != nil {
 			return envMap, err
 		}

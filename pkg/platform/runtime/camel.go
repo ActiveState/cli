@@ -192,7 +192,7 @@ func (ci *CamelInstall) PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir
 		return locale.WrapError(err, "installer_err_runtime_move_files_failed", "", tmpInstallDir, ci.runtimeDir)
 	}
 
-	tmpMetaFile := filepath.Join(tmpRuntimeDir, archiveName, constants.RuntimeMetaFile)
+	tmpMetaFile := filepath.Join(tmpRuntimeDir, archiveName, "support", constants.RuntimeMetaFile)
 	if fileutils.FileExists(tmpMetaFile) {
 		target := filepath.Join(ci.runtimeDir, constants.RuntimeMetaFile)
 		if err := fileutils.MkdirUnlessExists(filepath.Dir(target)); err != nil {

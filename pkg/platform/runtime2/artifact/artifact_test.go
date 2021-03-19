@@ -189,11 +189,13 @@ func TestArtifactDownloads(t *testing.T) {
 	tests := []struct {
 		Name      string
 		BuildName string
+		IsCamel   bool
 		Expected  []ArtifactDownload
 	}{
 		{
 			"just-perl",
 			"perl-alternative-base",
+			false,
 			[]ArtifactDownload{
 				{"b30ab2e5-4074-572c-8146-da692b1c9e45", "s3://as-builds/production/language/perl/5.32.1/3/b30ab2e5-4074-572c-8146-da692b1c9e45/artifact.tar.gz", ""},
 			},
@@ -201,16 +203,25 @@ func TestArtifactDownloads(t *testing.T) {
 		{
 			"with-one-package",
 			"perl-alternative-one-update",
+			false,
 			[]ArtifactDownload{
 				{"b30ab2e5-4074-572c-8146-da692b1c9e45", "s3://as-builds/production/language/perl/5.32.1/3/b30ab2e5-4074-572c-8146-da692b1c9e45/artifact.tar.gz", ""},
 				{"f56acc9c-dd02-5cf8-97f9-a5cd015f4c7b", "s3://as-builds/production/language/perl/JSON/4.02/4/f56acc9c-dd02-5cf8-97f9-a5cd015f4c7b/artifact.tar.gz", ""},
+			},
+		},
+		{
+			"perl-camel",
+			"perl",
+			true,
+			[]ArtifactDownload{
+				{"e88f6f1f-74c9-512e-9c9b-8c921a80c6fb", "https://s3.amazonaws.com/camel-builds/ActivePerl/x86_64-linux-glibc-2.17/20200424T172842Z/ActivePerl-5.28.1.0000-x86_64-linux-glibc-2.17-2a0758c3.tar.gz", ""},
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
 			build := testhelper.LoadBuildResponse(t, tt.BuildName)
-			downloads, err := NewDownloadsFromBuild(build)
+			downloads, err := NewDownloadsFromBuild(build, tt.IsCamel)
 			assert.NoError(t, err)
 			assert.Equal(t, tt.Expected, downloads)
 		})

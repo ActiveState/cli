@@ -51,11 +51,6 @@ const Perl5_32AlternativeFailedCommit = strfmt.UUID("adeabd0f-cf90-4b65-8f0b-924
 func saveResponses(baseName string, commitID strfmt.UUID, projectName string, expectedBuildResult headchef.BuildStatusEnum) error {
 	fmt.Printf("Downloading build for %s\n", baseName)
 	d := model.NewDefault()
-	checkpoint, _, err := d.FetchCheckpointForCommit(commitID)
-	if err != nil {
-		return fmt.Errorf("Failed to get checkpoint '%s': %w", baseName, err)
-	}
-	testhelper.SaveCheckpoint(baseName, checkpoint)
 
 	r, err := d.ResolveRecipe(commitID, "ActiveState-CLI", projectName)
 	if err != nil {

@@ -13,11 +13,12 @@ import (
 
 type ProjectTarget struct {
 	*project.Project
-	cacheDir string
+	cacheDir     string
+	customCommit *strfmt.UUID
 }
 
-func NewProjectTarget(pj *project.Project, runtimeCacheDir string) *ProjectTarget {
-	return &ProjectTarget{pj, runtimeCacheDir}
+func NewProjectTarget(pj *project.Project, runtimeCacheDir string, customCommit *strfmt.UUID) *ProjectTarget {
+	return &ProjectTarget{pj, runtimeCacheDir, customCommit}
 }
 
 func (p *ProjectTarget) Dir() string {
@@ -30,6 +31,13 @@ func (p *ProjectTarget) Dir() string {
 	logging.Debug("In newStore: resolved project dir is: %s", projectDir)
 
 	return filepath.Join(p.cacheDir, hash.ShortHash(projectDir))
+}
+
+func (p *ProjectTarget) CommitUUID() strfmt.UUID {
+	if p.customCommit != nil {
+		return *p.customCommit
+	}
+	return p.Project.CommitUUID()
 }
 
 type CustomTarget struct {

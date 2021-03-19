@@ -30,6 +30,10 @@ func NewTarGz() Unarchiver {
 	return Unarchiver{&TarGzArchive{archiver.NewTarGz()}, func(_ string, _ int64, _ bool) {}}
 }
 
+func (ar *TarGzArchive) Ext() string {
+	return ".tar.gz"
+}
+
 // GetExtractedSize returns the size of the extracted summed up files in the archive
 func (ar *TarGzArchive) GetExtractedSize(source string) (int, error) {
 	archiveStream, err := os.Open(source)
