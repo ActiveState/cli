@@ -12,6 +12,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Enhanced error reporting for errors that happened early on in the application
   logic ([PR #1280](https://github.com/ActiveState/cli/pull/1280))
+- Updated name of `state cve` command to `state security`. Aliased `state cve`
+  to `state security` ([PR #1286](https://github.com/ActiveState/cli/pull/1286))
 
 ## 0.26.0
 
