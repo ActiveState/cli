@@ -10,7 +10,7 @@ import (
 
 type Resolver struct{}
 
-var _ genserver.ResolverRoot = &Resolver{} // Must implement ResolverRoot
+// var _ genserver.ResolverRoot = &Resolver{} // Must implement ResolverRoot
 
 func New() *Resolver {
 	return &Resolver{}
