@@ -10,8 +10,8 @@ import (
 
 func init() {
 	sourcePath = "build/update"
-	awsRegionName = "ca-central-1"
-	awsBucketName = "cli-update"
+	awsRegionName = "us-east-1"
+	awsBucketName = "state-tool"
 	awsBucketPrefix = "update/state"
 }
 
