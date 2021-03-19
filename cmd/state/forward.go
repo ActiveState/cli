@@ -67,10 +67,10 @@ func forwardFn(bindir string, args []string, out output.Outputer, pj *project.Pr
 			if errs.Matches(err, &exec.ExitError{}) {
 				err = &SilencedError{err}
 			}
-			return errs.SetExitCode(locale.WrapError(err, "forward_fail"), code)
+			return locale.WrapError(err, "forward_fail")
 		}
 		if code > 0 {
-			return errs.SetExitCode(locale.NewError("err_forward", "Error occurred while running older version of the state tool, you may want to 'state update'."), code)
+			return errs.WrapExitCode(locale.NewError("err_forward", "Error occurred while running older version of the state tool, you may want to 'state update'."), code)
 		}
 
 		return nil
