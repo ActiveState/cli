@@ -40,9 +40,9 @@ func autoUpdate(args []string, out output.Outputer, pjPath string) (bool, error)
 	out.Notice(locale.Tr("auto_update_to_version", constants.Version, resultVersion))
 	code, err := relaunch()
 	if err != nil {
-		err = errs.WrapExitCode(err, code)
+		return true, errs.WrapExitCode(err, code)
 	}
-	return true, err
+	return true, nil
 }
 
 // When an update was found and applied, re-launch the update with the current
