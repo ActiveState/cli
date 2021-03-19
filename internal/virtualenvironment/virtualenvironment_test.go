@@ -10,8 +10,8 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
-	runtime "github.com/ActiveState/cli/pkg/platform/runtime2"
-	rtmock "github.com/ActiveState/cli/pkg/platform/runtime2/mock"
+	"github.com/ActiveState/cli/pkg/platform/runtime"
+	rtmock "github.com/ActiveState/cli/pkg/platform/runtime/mock"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 

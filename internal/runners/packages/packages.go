@@ -18,7 +18,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	runtime "github.com/ActiveState/cli/pkg/platform/runtime2"
+	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
 )
@@ -170,7 +170,7 @@ type requirement struct {
 // requirement". For example, if multiple requirements are affected, nil is the
 // appropriate value.
 func refreshRuntime(out output.Outputer, req *requirement, proj *project.Project, cachePath string, commitID strfmt.UUID, changed bool) error {
-	rtMessages := runbits.NewRuntimeMessageHandler2(out)
+	rtMessages := runbits.NewRuntimeMessageHandler(out)
 	/*
 		if req != nil {
 			rtMessages.SetRequirement(req.name, req.namespace)
