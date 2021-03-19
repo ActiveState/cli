@@ -43,6 +43,7 @@ func run() error {
 		if err := s.Close(); err != nil {
 			fmt.Fprintf(os.Stderr, "Closing server failed: %w", err)
 		}
+		signal.Stop(c)
 	}()
 
 	if err := s.Start(); err != nil {
