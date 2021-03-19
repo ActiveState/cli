@@ -3,7 +3,6 @@ package server
 import (
 	"net"
 	"strconv"
-	"strings"
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/extension"
@@ -40,10 +39,13 @@ func NewServer() (*Server, error) {
 }
 
 func (s *Server) Port() (int, error) {
-	address := strings.Split(s.listener.Addr().String(), ":")
-	port, err := strconv.Atoi(address[len(address)-1])
+	_, portEncoded, err := net.SplitHostPort(s.listener.Addr().String())
 	if err != nil {
-		return 0, errs.Wrap(err, "Could not parse port from address: %v", address)
+		return 0, errs.Wrap(err, "Could not parse port from address: %v", s.listener.Addr().String())
+	}
+	port, err := strconv.Atoi(portEncoded)
+	if err != nil {
+		return 0, errs.Wrap(err, "Could not convert port: %v", portEncoded)
 	}
 	return port, nil
 }
