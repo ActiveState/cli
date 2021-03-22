@@ -1,0 +1,15 @@
+type Version {
+  state: StateVersion!
+}
+
+type StateVersion {
+  license: String!
+  version: String!
+  branch: String!
+  revision: String!
+  date: String!
+}
+
+type Query {
+  version: Version
+}

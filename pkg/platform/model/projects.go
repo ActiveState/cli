@@ -30,7 +30,7 @@ func FetchProjectByName(orgName string, projectName string) (*mono_models.Projec
 
 	request := request.ProjectByOrgAndName(orgName, projectName)
 
-	gql := graphql.Get()
+	gql := graphql.New()
 	response := model.Projects{}
 	err := gql.Run(request, &response)
 	if err != nil {

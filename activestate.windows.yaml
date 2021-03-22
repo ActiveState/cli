@@ -5,6 +5,9 @@ constants:
   - name: BUILD_TARGET_32BIT
     if: eq .OS.Name "Windows"
     value: ./build/state32.exe
+  - name: BUILD_DAEMON_TARGET
+    if: eq .OS.Name "Windows"
+    value: ./build/state-svc.exe
   - name: SYSTRAY_BUILD_TARGET
     if: eq .OS.Name "Windows"
     value: ./build/state-tray.exe

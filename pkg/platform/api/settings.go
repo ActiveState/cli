@@ -16,7 +16,7 @@ import (
 type Service string
 
 const (
-	// ServiceMono is our main service for api endpoints, "Mono" refers to its monolithic nature, one that we're trying to get away from
+	// ServiceMono is our main service for api services, "Mono" refers to its monolithic nature, one that we're trying to get away from
 	ServiceMono Service = "platform"
 
 	// ServiceSecrets is our service that's used purely for setting and storing secrets
