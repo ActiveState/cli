@@ -38,8 +38,8 @@ func NewBranchOutput(branches mono_models.Branches, localBranch string) *BranchO
 }
 
 func (bt *BranchOutput) MarshalOutput(format output.Format) interface{} {
-	if format != output.PlainFormatName {
-		return branchListing(bt.branches, bt.localBranch)
+	if format != output.PlainFormatName && format != output.SimpleFormatName {
+		return bt.branches
 	}
 	return branchTree(bt.branches, bt.localBranch)
 }
