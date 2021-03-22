@@ -111,6 +111,20 @@ github.com/fatih/color
 github.com/felixge/fgprof
 # github.com/fsnotify/fsnotify v1.4.7
 github.com/fsnotify/fsnotify
+# github.com/getlantern/context v0.0.0-20190109183933-c447772a6520
+github.com/getlantern/context
+# github.com/getlantern/errors v0.0.0-20190325191628-abdb3e3e36f7
+github.com/getlantern/errors
+# github.com/getlantern/golog v0.0.0-20190830074920-4ef2e798c2d7
+github.com/getlantern/golog
+# github.com/getlantern/hex v0.0.0-20190417191902-c6586a6fe0b7
+github.com/getlantern/hex
+# github.com/getlantern/hidden v0.0.0-20190325191715-f02dbb02be55
+github.com/getlantern/hidden
+# github.com/getlantern/ops v0.0.0-20190325191751-d70cb0d6f85f
+github.com/getlantern/ops
+# github.com/getlantern/systray v1.1.0
+github.com/getlantern/systray
 # github.com/go-ini/ini v1.32.0
 github.com/go-ini/ini
 # github.com/go-ole/go-ole v1.2.4
@@ -143,6 +157,8 @@ github.com/go-openapi/strfmt
 github.com/go-openapi/swag
 # github.com/go-openapi/validate v0.0.0-20180422194751-f8f9c5961cd5
 github.com/go-openapi/validate
+# github.com/go-stack/stack v1.8.0
+github.com/go-stack/stack
 # github.com/gobuffalo/packr v1.10.7
 github.com/gobuffalo/packr
 # github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e
@@ -248,6 +264,8 @@ github.com/nicksnyder/go-i18n/i18n/language
 github.com/nicksnyder/go-i18n/i18n/translation
 # github.com/nwaples/rardecode v0.0.0-20171029023500-e06696f847ae
 github.com/nwaples/rardecode
+# github.com/oxtoacart/bpool v0.0.0-20190530202638-03653db5a59c
+github.com/oxtoacart/bpool
 # github.com/pelletier/go-toml v1.2.0
 github.com/pelletier/go-toml
 # github.com/phayes/permbits v0.0.0-20190108233746-1efae4548023

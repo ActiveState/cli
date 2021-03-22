@@ -8,6 +8,12 @@ constants:
   - name: BUILD_DAEMON_TARGET
     if: eq .OS.Name "Windows"
     value: ./build/state-svc.exe
+  - name: SYSTRAY_BUILD_TARGET
+    if: eq .OS.Name "Windows"
+    value: ./build/state-tray.exe
+  - name: SYSTRAY_BUILDFLAGS
+    if: eq .OS.Name "Windows"
+    value: -ldflags="-s -w -H=windowsgui"
 scripts:
   - name: build-install-scripts
     language: bash
