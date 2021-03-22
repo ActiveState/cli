@@ -12,7 +12,7 @@ func newCveCommand(prime *primer.Values) *captain.Command {
 	runner := cve.NewCve(prime)
 
 	cmd := captain.NewCommand(
-		"cve",
+		"security",
 		locale.Tl("cve_title", "Vulnerability Summary"),
 		locale.Tl("cve_description", "Show a summary of project vulnerabilities"),
 		prime.Output(),
@@ -24,6 +24,7 @@ func newCveCommand(prime *primer.Values) *captain.Command {
 		},
 	)
 	cmd.SetGroup(PlatformGroup)
+	cmd.SetAliases("cve")
 	return cmd
 }
 
