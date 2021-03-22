@@ -3,6 +3,7 @@ package branch
 import (
 	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
@@ -22,7 +23,7 @@ type BranchOutput struct {
 }
 
 const (
-	prefixLink string = "│  "
+	prefixLink string = "│"
 	prefixMid  string = "├─"
 	prefixEnd  string = "└─"
 
@@ -44,18 +45,18 @@ func (bt *BranchOutput) MarshalOutput(format output.Format) interface{} {
 	return branchTree(bt.branches, bt.localBranch)
 }
 
-func branchListing(branches mono_models.Branches, localBranch string) []string {
-	sort.Slice(branches, func(i, j int) bool {
-		return branches[i].Label < branches[j].Label
-	})
+// func branchListing(branches mono_models.Branches, localBranch string) []string {
+// 	sort.Slice(branches, func(i, j int) bool {
+// 		return branches[i].Label < branches[j].Label
+// 	})
 
-	var branchNames []string
-	for _, branch := range branches {
-		branchName := applyFormatting(branch.Label, localBranch)
-		branchNames = append(branchNames, branchName)
-	}
-	return branchNames
-}
+// 	var branchNames []string
+// 	for _, branch := range branches {
+// 		branchName := applyFormatting(branch.Label, localBranch)
+// 		branchNames = append(branchNames, branchName)
+// 	}
+// 	return branchNames
+// }
 
 func branchTree(branches mono_models.Branches, localBranch string) string {
 	tree := make(tree)
@@ -69,7 +70,7 @@ func branchTree(branches mono_models.Branches, localBranch string) string {
 }
 
 func buildBranchTree(currentBranch *mono_models.Branch, branches mono_models.Branches) tree {
-	children := getChildren(currentBranch, branches)
+	children := getChildTree(currentBranch, branches)
 	for _, branch := range branches {
 		// Discard any branches without tracking information as we are only interested
 		// in child branches of the current branch
@@ -86,7 +87,7 @@ func buildBranchTree(currentBranch *mono_models.Branch, branches mono_models.Bra
 	return children
 }
 
-func getChildren(branch *mono_models.Branch, branches mono_models.Branches) tree {
+func getChildTree(branch *mono_models.Branch, branches mono_models.Branches) tree {
 	childTree := make(tree)
 	children := model.GetBranchChildren(branch, branches)
 
@@ -128,24 +129,23 @@ func treeString(currentTree tree, rootBranches mono_models.Branches, localBranch
 
 func nodeString(node branchNode, rootBranches mono_models.Branches, localBranch string, currentLevel int, levelsCompleted []int, prefix string) string {
 	// Print necessary prefix links for current depth
+	indent := 2
 	var output string
 	for i := 0; i < currentLevel; i++ {
 		// Apply spacing for completed levels, print prefix link for incomplete levels
 		// Do not print prefix links for projects with multiple root-level branches
 		if isCompleted(levelsCompleted, i) || (i == 0 && len(rootBranches) > 1) {
-			output += " "
+			if i == 0 {
+				output += strings.Repeat(" ", indent)
+			} else {
+				output += strings.Repeat(" ", indent+1)
+			}
 			continue
 		}
-		output += prefixLink
+		output += fmt.Sprintf("%s%s", prefixLink, strings.Repeat(" ", indent))
 	}
 
-	branchName := applyFormatting(node.Label, localBranch)
-	format := "%s %s\n"
-	if prefix == "" {
-		format = "%s%s\n"
-	}
-
-	output += fmt.Sprintf(format, prefix, branchName)
+	output += fmt.Sprintf("%s %s\n", prefix, applyFormatting(node.Label, localBranch))
 	return output
 }
 

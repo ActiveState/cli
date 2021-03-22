@@ -17,7 +17,7 @@ func TestBranchListing_Simple(t *testing.T) {
 	branches := getBranches(t, "simple")
 	out := NewBranchOutput(branches, "")
 	actual := out.MarshalOutput(output.PlainFormatName)
-	expected := "[NOTICE]main[/RESET]\n"
+	expected := " [NOTICE]main[/RESET]\n"
 	assert.Equal(t, expected, actual)
 }
 
@@ -25,13 +25,13 @@ func TestBranchListing_Complex(t *testing.T) {
 	branches := getBranches(t, "complex")
 	out := NewBranchOutput(branches, "")
 	actual := out.MarshalOutput(output.PlainFormatName)
-	expected := `[NOTICE]main[/RESET]
- ├─ [NOTICE]subBranch1[/RESET]
- │  ├─ [NOTICE]childOfSubBranch1[/RESET]
- │  │  └─ [NOTICE]3rdLevelChild[/RESET]
- │  └─ [NOTICE]secondChildOfSubBranch1[/RESET]
- ├─ [NOTICE]subBranch2[/RESET]
- └─ [NOTICE]subBranch3[/RESET]
+	expected := ` [NOTICE]main[/RESET]
+  ├─ [NOTICE]subBranch1[/RESET]
+  │  ├─ [NOTICE]childOfSubBranch1[/RESET]
+  │  │  └─ [NOTICE]3rdLevelChild[/RESET]
+  │  └─ [NOTICE]secondChildOfSubBranch1[/RESET]
+  ├─ [NOTICE]subBranch2[/RESET]
+  └─ [NOTICE]subBranch3[/RESET]
 `
 	assert.Equal(t, expected, actual)
 }
@@ -40,13 +40,13 @@ func TestBranchListing_MultipleRoots(t *testing.T) {
 	branches := getBranches(t, "multipleRoots")
 	out := NewBranchOutput(branches, "root1Child2")
 	actual := out.MarshalOutput(output.PlainFormatName)
-	expected := `[NOTICE]root1[/RESET]
-[NOTICE]root2[/RESET]
- ├─ [NOTICE]root1Child1[/RESET]
- ├─ [ACTIONABLE]root1Child2[/RESET] [DISABLED](Current)[/RESET]
- │  └─ [NOTICE]childOfRoot1Child2[/RESET]
- └─ [NOTICE]root2Child3[/RESET]
-[NOTICE]root3[/RESET]
+	expected := ` [NOTICE]root1[/RESET]
+ [NOTICE]root2[/RESET]
+  ├─ [NOTICE]root1Child1[/RESET]
+  ├─ [ACTIONABLE]root1Child2[/RESET] [DISABLED](Current)[/RESET]
+  │  └─ [NOTICE]childOfRoot1Child2[/RESET]
+  └─ [NOTICE]root2Child3[/RESET]
+ [NOTICE]root3[/RESET]
 `
 	assert.Equal(t, expected, actual)
 }
