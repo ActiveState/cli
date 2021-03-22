@@ -26,15 +26,14 @@ func (suite *BranchIntegrationTestSuite) TestBranch_List() {
 	suite.PrepareActiveStateYAML(ts, "ActiveState-CLI", "Branches")
 
 	cp := ts.Spawn("branch")
-	expectations := []string{
-		"main",
-		"firstbranch",
-		"firstbranchchild",
-		"secondbranch",
-	}
-	for _, expectation := range expectations {
-		cp.Expect(expectation)
-	}
+	expected := `main (Current)
+ ├─ firstbranch
+ │  └─ firstbranchchild
+ │    └─ childoffirstbranchchild
+ ├─ secondbranch
+ └─ thirdbranch
+`
+	cp.ExpectLongString(expected)
 	cp.ExpectExitCode(0)
 }
 
