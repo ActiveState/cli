@@ -5,6 +5,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/osutils"
@@ -59,7 +60,10 @@ func (v *SubShell) WriteUserEnv(cfg sscommon.Configurable, env map[string]string
 	}
 
 	// Store new entries
-	cfg.Set(envType.Key, env)
+	err := cfg.Set(envType.Key, env)
+	if err != nil {
+		return errs.Wrap(err, "Could not set env infomation in config")
+	}
 
 	for k, v := range env {
 		value := v

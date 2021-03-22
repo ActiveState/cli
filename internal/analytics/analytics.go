@@ -107,6 +107,8 @@ func setup() {
 	installSource := "unknown-due-to-config-error"
 	cfg, err := config.Get()
 	if err != nil {
+		logging.Error("Could not detect installSource: %s", errs.Join(err, " :: ").Error())
+	} else {
 		installSource = cfg.InstallSource()
 	}
 
@@ -205,9 +207,6 @@ func sendEvent(category, action, label string, dimensions map[string]string) err
 		if err := deferEvent(cfg, category, action, label, dimensions); err != nil {
 			return locale.WrapError(err, "err_analytics_defer", "Could not defer event")
 		}
-		if err := cfg.Save(); err != nil { // the global viper instance is bugged, need to work around it for now -- https://www.pivotaltracker.com/story/show/175624789
-			return locale.WrapError(err, "err_viper_write_defer", "Could not save configuration on defer")
-		}
 		return nil
 	}
 
@@ -244,7 +243,7 @@ func sendGAEvent(category, action, label string, dimensions map[string]string) {
 func sendS3Pixel(category, action, label string, dimensions map[string]string) {
 	defer eventWaitGroup.Done()
 	logging.Debug("Sending S3 pixel event with: %s, %s, %s", category, action, label)
-	pixelURL, err := url.Parse("https://cli-update.s3.ca-central-1.amazonaws.com/pixel")
+	pixelURL, err := url.Parse("https://state-tool.s3.amazonaws.com/pixel")
 	if err != nil {
 		logging.Error("Invalid URL for analytics S3 pixel")
 		return

@@ -28,7 +28,7 @@ func (c *configMock) GetStringSlice(_ string) []string {
 	return []string{}
 }
 
-func (c *configMock) Set(_ string, _ interface{}) {}
+func (c *configMock) Set(_ string, _ interface{}) error { return nil }
 
 func TestProjects(t *testing.T) {
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())

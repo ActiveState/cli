@@ -27,7 +27,7 @@ var forceFileExt string
 
 const LatestVersion = "latest"
 
-type forwardFunc func() (int, error)
+type forwardFunc func() error
 
 func forwardFn(bindir string, args []string, out output.Outputer, pj *project.Project) (forwardFunc, error) {
 	if pj == nil {
@@ -55,7 +55,7 @@ func forwardFn(bindir string, args []string, out output.Outputer, pj *project.Pr
 		return nil, nil
 	}
 
-	fn := func() (int, error) {
+	fn := func() error {
 		// Perform the forward
 		out.Notice(output.Heading(locale.Tl("forward_title", "Version Locked")))
 		out.Notice(locale.Tr("forward_version", versionInfo.Version))
@@ -67,13 +67,13 @@ func forwardFn(bindir string, args []string, out output.Outputer, pj *project.Pr
 			if errs.Matches(err, &exec.ExitError{}) {
 				err = &SilencedError{err}
 			}
-			return code, locale.WrapError(err, "forward_fail")
+			return locale.WrapError(err, "forward_fail")
 		}
 		if code > 0 {
-			return code, locale.NewError("err_forward", "Error occurred while running older version of the state tool, you may want to 'state update'.")
+			return errs.WrapExitCode(locale.NewError("err_forward", "Error occurred while running older version of the state tool, you may want to 'state update'."), code)
 		}
 
-		return 0, nil
+		return nil
 	}
 
 	return fn, nil

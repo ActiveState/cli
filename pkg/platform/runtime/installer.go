@@ -37,6 +37,7 @@ const (
 	actSuccess   = "success"
 	actFailure   = "failure"
 	lblAssembler = "assembler"
+	lblEnv       = "env"
 	lblArtifacts = "install-artifacts"
 )
 
@@ -67,6 +68,7 @@ type MessageHandler interface {
 type Installer struct {
 	runtime           *Runtime
 	runtimeDownloader Downloader
+	envAccessed       bool
 }
 
 // NewInstaller creates a new RuntimeInstaller
@@ -74,6 +76,7 @@ func NewInstaller(runtime *Runtime) *Installer {
 	installer := &Installer{
 		runtime:           runtime,
 		runtimeDownloader: NewDownload(runtime),
+		envAccessed:       false,
 	}
 
 	return installer
@@ -81,13 +84,9 @@ func NewInstaller(runtime *Runtime) *Installer {
 
 // Install will download the installer archive and invoke InstallFromArchive
 func (installer *Installer) Install() (envGetter EnvGetter, freshInstallation bool, err error) {
-	analytics.Event(catRuntime, actStart)
-
 	if installer.runtime.IsCachedRuntime() {
-		analytics.Event(catRuntime, actCache)
 		ar, err := installer.RuntimeEnv()
 		if err == nil {
-			analytics.Event(catRuntime, actSuccess)
 			return ar, true, nil
 		}
 		logging.Error("Failed to retrieve cached assembler: %v", err)
@@ -134,6 +133,19 @@ func (installer *Installer) IsInstalled() (bool, error) {
 
 // RuntimeEnv returns the runtime environment specialization all constructed from cached values
 func (installer *Installer) RuntimeEnv() (EnvGetter, error) {
+	r, err := installer.runtimeEnv()
+	if !installer.envAccessed {
+		if err == nil {
+			analytics.Event(catRuntime, actSuccess)
+		} else {
+			analytics.EventWithLabel(catRuntime, actFailure, lblEnv)
+		}
+	}
+	installer.envAccessed = true
+	return r, err
+}
+
+func (installer *Installer) runtimeEnv() (EnvGetter, error) {
 	buildEngine, err := installer.runtime.BuildEngine()
 	if err != nil {
 		return nil, locale.WrapError(err, "installer_err_engine_unknown")

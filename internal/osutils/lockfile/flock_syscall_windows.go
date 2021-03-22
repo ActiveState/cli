@@ -28,7 +28,7 @@
 
 // +build windows
 
-package osutils
+package lockfile
 
 import (
 	"syscall"

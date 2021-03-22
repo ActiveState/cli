@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-openapi/strfmt"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -20,6 +21,7 @@ type Runtime struct {
 	owner       string
 	projectName string
 	msgHandler  MessageHandler
+	installer   *Installer
 }
 
 func NewRuntime(projectDir, cachePath string, commitID strfmt.UUID, owner string, projectName string, msgHandler MessageHandler) (*Runtime, error) {
@@ -35,13 +37,22 @@ func NewRuntime(projectDir, cachePath string, commitID strfmt.UUID, owner string
 	}
 
 	installPath := filepath.Join(cachePath, hash.ShortHash(resolvedProjectDir))
-	return &Runtime{
+	r := &Runtime{
 		runtimeDir:  installPath,
 		commitID:    commitID,
 		owner:       owner,
 		projectName: projectName,
 		msgHandler:  msgHandler,
-	}, nil
+	}
+
+	r.installer = NewInstaller(r)
+
+	analytics.Event(catRuntime, actStart)
+	if r.IsCachedRuntime() {
+		analytics.Event(catRuntime, actCache)
+	}
+
+	return r, nil
 }
 
 func (r *Runtime) SetInstallPath(installPath string) {
@@ -118,7 +129,7 @@ func (r *Runtime) BuildEngine() (BuildEngine, error) {
 // Env will grab the environment information for the given runtime.
 // This currently just aliases to installer, pending further refactoring
 func (r *Runtime) Env() (EnvGetter, error) {
-	return NewInstaller(r).Env()
+	return r.installer.Env()
 }
 
 func (r *Runtime) CommitID() strfmt.UUID {

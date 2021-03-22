@@ -7,14 +7,20 @@ import (
 
 type Configurable interface {
 	GetString(string) string
-	Set(string, interface{})
+	Set(string, interface{}) error
 }
 
 // global configuration object
 var cfg Configurable
 
+var errorLogger func(msg string, args ...interface{})
+
 func SetConfiguration(c Configurable) {
 	cfg = c
+}
+
+func SetErrorLogger(l func(msg string, args ...interface{})) {
+	errorLogger = l
 }
 
 // UniqID returns a unique ID for the current platform
@@ -39,6 +45,9 @@ func uniqID(machineIDGetter func() (string, error), uuidGetter func() string) st
 	}
 
 	machineID = uuidGetter()
-	cfg.Set("machineID", machineID)
+	err = cfg.Set("machineID", machineID)
+	if err != nil {
+		errorLogger("Could not set machineID in config, error: %v", err)
+	}
 	return machineID
 }

@@ -19,10 +19,9 @@ import (
 )
 
 type configurable interface {
-	Set(string, interface{})
+	Set(string, interface{}) error
 	GetBool(string) bool
 	GetStringMap(string) map[string]interface{}
-	Save() error
 	CachePath() string
 	ConfigPath() string
 	GetString(key string) string

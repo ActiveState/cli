@@ -1,10 +1,11 @@
-package osutils
+package lockfile
 
 import (
 	"fmt"
 	"io"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
@@ -92,6 +93,25 @@ func (pl *PidLock) Close(keepFile ...bool) error {
 		return errs.Wrap(err, "failed to remove lock file")
 	}
 	return nil
+}
+
+// WaitForLock will attempt to acquire the lock for the duration given
+func (pl *PidLock) WaitForLock(timeout time.Duration) error {
+	expiration := time.Now().Add(timeout)
+	for {
+		_, err := pl.TryLock()
+		if err != nil {
+			if !errs.Matches(err, &AlreadyLockedError{}) {
+				return errs.Wrap(err, "Could not acquire lock")
+			}
+
+			if time.Now().After(expiration) {
+				return err
+			}
+			time.Sleep(100 * time.Millisecond)
+		}
+		return nil
+	}
 }
 
 // AlreadyLockedError manages info that clarifies why a lock has failed, but
