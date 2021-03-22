@@ -8,6 +8,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## 0.27.0
 
+### Added
+
+- New system tray executable for the Windows platform
+  ([PR #1285](https://github.com/ActiveState/cli/pull/1285))
+
 ### Changed
 
 - Enhanced error reporting for errors that happened early on in the application
@@ -16,6 +21,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   to `state security` ([PR #1286](https://github.com/ActiveState/cli/pull/1286))
 
 ### Fixed
+
 - Fixed issue where `state push` would fail on existing projects.
   ([PR #1287](https://github.com/ActiveState/cli/pull/1287))
 
