@@ -41,7 +41,7 @@ func run() error {
 		oscall := <-c
 		logging.Debug("system call:%+v", oscall)
 		if err := s.Close(); err != nil {
-			fmt.Fprintf(os.Stderr, "Closing server failed: %w", err)
+			fmt.Fprintf(os.Stderr, "Closing server failed: %v", err)
 		}
 		signal.Stop(c)
 	}()
