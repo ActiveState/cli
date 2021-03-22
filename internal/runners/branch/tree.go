@@ -129,23 +129,29 @@ func treeString(currentTree tree, rootBranches mono_models.Branches, localBranch
 
 func nodeString(node branchNode, rootBranches mono_models.Branches, localBranch string, currentLevel int, levelsCompleted []int, prefix string) string {
 	// Print necessary prefix links for current depth
-	indent := 2
 	var output string
 	for i := 0; i < currentLevel; i++ {
-		// Apply spacing for completed levels, print prefix link for incomplete levels
-		// Do not print prefix links for projects with multiple root-level branches
-		if isCompleted(levelsCompleted, i) || (i == 0 && len(rootBranches) > 1) {
-			if i == 0 {
-				output += strings.Repeat(" ", indent)
-			} else {
-				output += strings.Repeat(" ", indent+1)
-			}
-			continue
-		}
-		output += fmt.Sprintf("%s%s", prefixLink, strings.Repeat(" ", indent))
+		output += levelPadding(i, levelsCompleted, rootBranches)
 	}
 
 	output += fmt.Sprintf("%s %s\n", prefix, applyFormatting(node.Label, localBranch))
+	return output
+}
+
+func levelPadding(currentLevel int, levelsCompleted []int, rootBranches mono_models.Branches) string {
+	indent := 2
+	output := fmt.Sprintf("%s%s", prefixLink, strings.Repeat(" ", indent))
+
+	if currentLevel != 0 {
+		indent = 3
+	}
+
+	// Apply spacing for completed levels, print prefix link for incomplete levels
+	// Do not print prefix links for projects with multiple root-level branches
+	if isCompleted(levelsCompleted, currentLevel) || (currentLevel == 0 && len(rootBranches) > 1) {
+		output = strings.Repeat(" ", indent)
+	}
+
 	return output
 }
 
