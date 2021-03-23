@@ -42,7 +42,7 @@ func (suite *BranchIntegrationTestSuite) TestBranch_Add() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.PrepareActiveStateYAML(ts, e2e.PersistentUsername, "Branch")
+	suite.PrepareActiveStateYAML(ts, e2e.PersistentUsername, "branches")
 
 	ts.LoginAsPersistentUser()
 
