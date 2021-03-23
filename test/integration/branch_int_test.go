@@ -39,10 +39,11 @@ func (suite *BranchIntegrationTestSuite) TestBranch_List() {
 
 func (suite *BranchIntegrationTestSuite) TestBranch_Add() {
 	suite.OnlyRunForTags(tagsuite.Branches)
+	suite.T().Skip("Skip test as state branch add functionality is currently disabled")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.PrepareActiveStateYAML(ts, e2e.PersistentUsername, "branches")
+	suite.PrepareActiveStateYAML(ts, e2e.PersistentUsername, "Branch")
 
 	ts.LoginAsPersistentUser()
 
