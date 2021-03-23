@@ -29,7 +29,7 @@ func (suite *BranchIntegrationTestSuite) TestBranch_List() {
 	expected := `main (Current)
  ├─ firstbranch
  │  └─ firstbranchchild
- │    └─ childoffirstbranchchild
+ │     └─ childoffirstbranchchild
  ├─ secondbranch
  └─ thirdbranch
 `
