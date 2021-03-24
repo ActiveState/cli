@@ -38,18 +38,14 @@ func (rmh *RuntimeMessageHandler) ChangeSummary(artifacts artifact.ArtifactRecip
 		return errs.New("Did not find requested artifact in ArtifactRecipeMap")
 	}
 
+	// the added (direct dependencies) of this artifact that are actually new in this project
 	addedDependencies := funk.Join(ar.Dependencies, changed.Added, funk.InnerJoin).([]artifact.ArtifactID)
-
-	allDeps := artifact.RecursiveDependenciesFor(ar.ArtifactID, artifacts)
-	fmt.Printf("allDeps=%v\n", allDeps)
-	allAddedDeps := funk.Join(allDeps, changed.Added, funk.InnerJoin).([]artifact.ArtifactID)
-	fmt.Printf("allAddedDeps=%v\n", allAddedDeps)
 
 	rmh.out.Notice("")
 	rmh.out.Notice(locale.Tl(
 		"changesummary_title",
-		"[NOTICE]{{.V0}}[/RESET] includes {{.V1}} dependencies, for a combined total of {{.V2}} dependencies.",
-		ar.Name, strconv.Itoa(len(addedDependencies)), strconv.Itoa(len(allAddedDeps)),
+		"[NOTICE]{{.V0}}[/RESET] includes {{.V1}} dependencies, for a combined total of {{.V2}} new dependencies.",
+		ar.Name, strconv.Itoa(len(addedDependencies)), strconv.Itoa(len(changed.Added)),
 	))
 	for i, dep := range addedDependencies {
 		depMapping, ok := artifacts[dep]

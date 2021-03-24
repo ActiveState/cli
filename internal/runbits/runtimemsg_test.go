@@ -41,13 +41,19 @@ func TestChangeSummary(t *testing.T) {
 			name:      "add pkg1, nothing installed",
 			requested: artifact.ArtifactChangeset{Added: []artifact.ArtifactID{"1"}},
 			changed:   artifact.ArtifactChangeset{Added: []artifact.ArtifactID{"1", "2", "3", "4", "5", "6", "7"}},
-			expected:  "Package 1 includes 2 dependencies, for a combined total of 6 dependencies.\n  ├─ Dependency 1 (2 dependencies)\n  └─ Dependency 2 (3 dependencies)",
+			expected:  "Package 1 includes 2 dependencies, for a combined total of 7 new dependencies.\n  ├─ Dependency 1 (2 dependencies)\n  └─ Dependency 2 (3 dependencies)",
 		},
 		{
 			name:      "add pkg1, dep2 already installed",
 			requested: artifact.ArtifactChangeset{Added: []artifact.ArtifactID{"1"}},
 			changed:   artifact.ArtifactChangeset{Added: []artifact.ArtifactID{"1", "2", "4"}},
-			expected:  "Package 1 includes 1 dependencies, for a combined total of 2 dependencies.\n  └─ Dependency 1 (1 dependencies)",
+			expected:  "Package 1 includes 1 dependencies, for a combined total of 3 new dependencies.\n  └─ Dependency 1 (1 dependencies)",
+		},
+		{
+			name:      "add pkg1, all deps already installed",
+			requested: artifact.ArtifactChangeset{Added: []artifact.ArtifactID{"1"}},
+			changed:   artifact.ArtifactChangeset{Added: []artifact.ArtifactID{"1"}},
+			expected:  "Package 1 includes 0 dependencies, for a combined total of 1 new dependencies.",
 		},
 		{
 			name:      "more than one package added",
