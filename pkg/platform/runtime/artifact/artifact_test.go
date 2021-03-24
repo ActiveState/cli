@@ -280,3 +280,36 @@ func TestArtifactDownloads(t *testing.T) {
 		})
 	}
 }
+
+func TestRecursiveDependencies(t *testing.T) {
+	artifacts := ArtifactRecipeMap{
+		ArtifactID("1"): ArtifactRecipe{
+			Dependencies: []ArtifactID{"2", "3"}},
+		ArtifactID("2"): ArtifactRecipe{
+			Dependencies: []ArtifactID{"4", "5"}},
+		ArtifactID("3"): ArtifactRecipe{
+			Dependencies: []ArtifactID{"4", "6"}},
+		ArtifactID("4"): ArtifactRecipe{Dependencies: nil},
+		ArtifactID("5"): ArtifactRecipe{Dependencies: nil},
+		ArtifactID("6"): ArtifactRecipe{Dependencies: []ArtifactID{"7"}},
+		ArtifactID("7"): ArtifactRecipe{Dependencies: nil},
+	}
+
+	tests := []struct {
+		name     string
+		artfID   ArtifactID
+		expected []ArtifactID
+	}{
+		{name: "root artifact", artfID: "1", expected: []ArtifactID{"2", "3", "4", "5", "6", "7"}},
+		{name: "invalid artifact", artfID: "1234", expected: nil},
+		{name: "no recursion", artfID: "2", expected: []ArtifactID{"4", "5"}},
+		{name: "partial recursion", artfID: "3", expected: []ArtifactID{"4", "6", "7"}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			res := RecursiveDependenciesFor(tt.artfID, artifacts)
+			assert.ElementsMatch(t, tt.expected, res)
+		})
+	}
+}

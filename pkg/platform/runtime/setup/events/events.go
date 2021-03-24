@@ -185,8 +185,19 @@ func (cse ChangeSummaryEvent) String() string {
 	return "change_summary"
 }
 
+func (cse ChangeSummaryEvent) Artifacts() map[artifact.ArtifactID]artifact.ArtifactRecipe {
+	return cse.artifacts
+}
+
+func (cse ChangeSummaryEvent) RequestedChangeset() artifact.ArtifactChangeset {
+	return cse.requested
+}
+
+func (cse ChangeSummaryEvent) CompleteChangeset() artifact.ArtifactChangeset {
+	return cse.changed
+}
+
 func newChangeSummaryEvent(artifacts map[artifact.ArtifactID]artifact.ArtifactRecipe, requested artifact.ArtifactChangeset, changed artifact.ArtifactChangeset) ChangeSummaryEvent {
-	// TODO: Decide whether to deep copy these so they can be used in a different thread safely...?
 	return ChangeSummaryEvent{
 		artifacts, requested, changed,
 	}

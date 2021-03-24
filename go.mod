@@ -76,7 +76,7 @@ require (
 	github.com/spf13/viper v1.7.0
 	github.com/stretchr/objx v0.3.0 // indirect
 	github.com/stretchr/testify v1.6.2-0.20201103103935-92707c0b2d50
-	github.com/thoas/go-funk v0.0.0-20170604141201-14304e8530de
+	github.com/thoas/go-funk v0.8.0
 	github.com/ulikunitz/xz v0.5.4 // indirect
 	github.com/vbauerster/mpb/v6 v6.0.2
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect

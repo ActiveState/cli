@@ -6,6 +6,10 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 )
 
+type SummaryOutputer interface {
+	ChangeSummary(artifact.ArtifactRecipeMap, artifact.ArtifactChangeset, artifact.ArtifactChangeset) error
+}
+
 type ProgressOutputer interface {
 	BuildStarted(int64) error
 	BuildIncrement() error
@@ -24,19 +28,23 @@ type ProgressOutputer interface {
 // State-ful operations should be handled in this struct rather than in the progressOutputer in order to keep the calls to the progressOutputer as simple as possible.
 type RuntimeEventConsumer struct {
 	progressOut        ProgressOutputer
+	summaryOut         SummaryOutputer
 	totalArtifacts     int64
 	numBuildFailures   int64
 	numInstallFailures int64
 }
 
-func NewRuntimeEventConsumer(progressOut ProgressOutputer) *RuntimeEventConsumer {
+func NewRuntimeEventConsumer(progressOut ProgressOutputer, summaryOut SummaryOutputer) *RuntimeEventConsumer {
 	return &RuntimeEventConsumer{
 		progressOut: progressOut,
+		summaryOut:  summaryOut,
 	}
 }
 
 func (eh *RuntimeEventConsumer) handleEvent(ev BaseEventer) error {
 	switch t := ev.(type) {
+	case ChangeSummaryEvent:
+		return eh.summaryOut.ChangeSummary(t.Artifacts(), t.RequestedChangeset(), t.CompleteChangeset())
 	case TotalArtifactEvent:
 		eh.totalArtifacts = int64(t.Total())
 		return nil

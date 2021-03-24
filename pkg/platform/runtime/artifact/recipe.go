@@ -42,10 +42,11 @@ func NewMapFromRecipe(recipe *inventory_models.Recipe) ArtifactRecipeMap {
 	if recipe == nil {
 		return res
 	}
-	ingVerIDArtIDMap := make(map[strfmt.UUID]ArtifactID)
+	// map from the ingredient version ID to the artifact ID (needed for the dependency resolution)
+	iv2artMap := make(map[strfmt.UUID]ArtifactID)
 	for _, ri := range recipe.ResolvedIngredients {
 		a := ri.ArtifactID
-		ingVerIDArtIDMap[*ri.IngredientVersion.IngredientVersionID] = a
+		iv2artMap[*ri.IngredientVersion.IngredientVersionID] = a
 	}
 	for _, ri := range recipe.ResolvedIngredients {
 		namespace := *ri.Ingredient.PrimaryNamespace
@@ -61,13 +62,16 @@ func NewMapFromRecipe(recipe *inventory_models.Recipe) ArtifactRecipeMap {
 
 		// Resolve dependencies
 		var deps []ArtifactID
-		for _, did := range ri.Dependencies {
-			if !funk.Contains(did.DependencyTypes, inventory_models.DependencyTypeRuntime) {
+		for _, dep := range ri.Dependencies {
+			if dep.IngredientVersionID == nil {
 				continue
 			}
-			aid, ok := ingVerIDArtIDMap[*did.IngredientVersionID]
+			if !funk.Contains(dep.DependencyTypes, inventory_models.DependencyTypeRuntime) {
+				continue
+			}
+			aid, ok := iv2artMap[*dep.IngredientVersionID]
 			if !ok {
-				logging.Error("Could not map ingredient version id %s to artifact id", *did.IngredientVersionID)
+				logging.Error("Could not map ingredient version id %s to artifact id", *dep.IngredientVersionID)
 			}
 			deps = append(deps, aid)
 		}
@@ -82,6 +86,38 @@ func NewMapFromRecipe(recipe *inventory_models.Recipe) ArtifactRecipeMap {
 		}
 	}
 
+	return res
+}
+
+// RecursiveDependenciesFor computes the recursive dependencies for an ArtifactID a using artifacts as a lookup table
+func RecursiveDependenciesFor(a ArtifactID, artifacts ArtifactRecipeMap) []ArtifactID {
+	allDeps := make(map[ArtifactID]struct{})
+	artf, ok := artifacts[a]
+	if !ok {
+		return nil
+	}
+	toCheck := artf.Dependencies
+
+	for len(toCheck) > 0 {
+		var newToCheck []ArtifactID
+		for _, a := range toCheck {
+			if _, ok := allDeps[a]; ok {
+				continue
+			}
+			artf, ok := artifacts[a]
+			if !ok {
+				continue
+			}
+			newToCheck = append(newToCheck, artf.Dependencies...)
+			allDeps[a] = struct{}{}
+		}
+		toCheck = newToCheck
+	}
+
+	res := make([]ArtifactID, 0, len(allDeps))
+	for a := range allDeps {
+		res = append(res, a)
+	}
 	return res
 }
 
