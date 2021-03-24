@@ -172,7 +172,6 @@ func (s *Setup) update() error {
 	// if we get here, we dowload artifacts
 	analytics.Event(analytics.CatRuntime, analytics.ActRuntimeDownload)
 
-	s.msgHandler.TotalArtifacts(len(artifacts))
 	if buildResult.BuildReady {
 		err := s.installFromBuildResult(buildResult, artifacts)
 		if err != nil {
@@ -244,6 +243,7 @@ func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, artifacts
 	if err != nil {
 		return errs.Wrap(err, "Could not fetch artifacts to download.")
 	}
+	s.msgHandler.TotalArtifacts(len(downloads))
 	for _, a := range downloads {
 		func(a artifact.ArtifactDownload) {
 			wp.Submit(func() {
@@ -268,6 +268,8 @@ func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, artifacts
 }
 
 func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts map[artifact.ArtifactID]artifact.ArtifactRecipe) error {
+	s.msgHandler.TotalArtifacts(len(artifacts))
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
