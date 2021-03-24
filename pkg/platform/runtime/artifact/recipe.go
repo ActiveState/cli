@@ -66,7 +66,8 @@ func NewMapFromRecipe(recipe *inventory_models.Recipe) ArtifactRecipeMap {
 			if dep.IngredientVersionID == nil {
 				continue
 			}
-			if !funk.Contains(dep.DependencyTypes, inventory_models.DependencyTypeRuntime) {
+			// If this is a bundle, we need to add all dependencies, as the dependent ingredients are added as Build dependencies
+			if !monomodel.NamespaceMatch(namespace, monomodel.NamespaceBundlesMatch) && !funk.Contains(dep.DependencyTypes, inventory_models.DependencyTypeRuntime) {
 				continue
 			}
 			aid, ok := iv2artMap[*dep.IngredientVersionID]

@@ -46,7 +46,7 @@ func TestArtifactsFromRecipe(t *testing.T) {
 			"perl-alternative-one-bundle",
 			ArtifactRecipeMap{
 				strfmt.UUID("c894fa23-0416-556d-9ca5-fdf9375595bc"): ArtifactRecipe{
-					Name: "Testing", Namespace: "bundles/perl", ArtifactID: strfmt.UUID("c894fa23-0416-556d-9ca5-fdf9375595bc"), Dependencies: nil, RequestedByOrder: true, Version: version("1.00")},
+					Name: "Testing", Namespace: "bundles/perl", ArtifactID: strfmt.UUID("c894fa23-0416-556d-9ca5-fdf9375595bc"), Dependencies: []ArtifactID{"288aa0db-c0e4-55e7-8f67-fc2da409be70", "5ad88c8a-bc8f-50a0-9f61-74856cd28017", "30dc7965-0a69-5686-831a-e563fa73a98c", "8c2f830d-1b31-5448-a0a4-aa9d8fcacc4b"}, RequestedByOrder: true, Version: version("1.00")},
 				strfmt.UUID("b30ab2e5-4074-572c-8146-da692b1c9e45"): ArtifactRecipe{
 					Name: "perl", Namespace: "language", ArtifactID: strfmt.UUID("b30ab2e5-4074-572c-8146-da692b1c9e45"), Dependencies: nil, RequestedByOrder: true, Version: version("5.32.1")},
 				strfmt.UUID("48951744-f839-5031-8cf4-6e82a4be2089"): ArtifactRecipe{
