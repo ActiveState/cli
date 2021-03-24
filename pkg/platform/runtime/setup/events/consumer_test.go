@@ -181,7 +181,7 @@ func TestRuntimeEventConsumer(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			evCh := make(chan BaseEventer)
 			mock := &mockProgressOutput{}
-			consumer := NewRuntimeEventConsumer(mock)
+			consumer := NewRuntimeEventConsumer(mock, nil)
 
 			go func() {
 				defer close(evCh)
