@@ -2,6 +2,12 @@
 
 package graph
 
+type Project struct {
+	Owner     string   `json:"owner"`
+	Name      string   `json:"name"`
+	Locations []string `json:"locations"`
+}
+
 type StateVersion struct {
 	License  string `json:"license"`
 	Version  string `json:"version"`

@@ -10,6 +10,13 @@ type StateVersion {
   date: String!
 }
 
+type Project {
+  owner: String!
+  name: String!
+  locations: [String!]!
+}
+
 type Query {
   version: Version
+  projects: [Project]!
 }
