@@ -3,8 +3,11 @@ package artifact
 import (
 	"fmt"
 
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	monomodel "github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/go-openapi/strfmt"
+	"github.com/thoas/go-funk"
 )
 
 // ArtifactRecipe comprises useful information about an artifact that we extracted from a recipe
@@ -39,6 +42,11 @@ func NewMapFromRecipe(recipe *inventory_models.Recipe) ArtifactRecipeMap {
 	if recipe == nil {
 		return res
 	}
+	ingVerIDArtIDMap := make(map[strfmt.UUID]ArtifactID)
+	for _, ri := range recipe.ResolvedIngredients {
+		a := ri.ArtifactID
+		ingVerIDArtIDMap[*ri.IngredientVersion.IngredientVersionID] = a
+	}
 	for _, ri := range recipe.ResolvedIngredients {
 		namespace := *ri.Ingredient.PrimaryNamespace
 		if !monomodel.NamespaceMatch(namespace, monomodel.NamespaceLanguageMatch) &&
@@ -51,7 +59,18 @@ func NewMapFromRecipe(recipe *inventory_models.Recipe) ArtifactRecipeMap {
 		version := ri.IngredientVersion.Version
 		requestedByOrder := len(ri.ResolvedRequirements) > 0
 
-		// TODO: Resolve dependencies
+		// Resolve dependencies
+		var deps []ArtifactID
+		for _, did := range ri.Dependencies {
+			if !funk.Contains(did.DependencyTypes, inventory_models.DependencyTypeRuntime) {
+				continue
+			}
+			aid, ok := ingVerIDArtIDMap[*did.IngredientVersionID]
+			if !ok {
+				logging.Error("Could not map ingredient version id %s to artifact id", *did.IngredientVersionID)
+			}
+			deps = append(deps, aid)
+		}
 
 		res[a] = ArtifactRecipe{
 			ArtifactID:       a,
@@ -59,7 +78,7 @@ func NewMapFromRecipe(recipe *inventory_models.Recipe) ArtifactRecipeMap {
 			Namespace:        namespace,
 			Version:          version,
 			RequestedByOrder: requestedByOrder,
-			Dependencies:     []ArtifactID{},
+			Dependencies:     deps,
 		}
 	}
 
