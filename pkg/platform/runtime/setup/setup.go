@@ -325,7 +325,7 @@ func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.Artifact
 
 	unarchiver := as.Unarchiver()
 	archivePath := filepath.Join(targetDir, a.String()+unarchiver.Ext())
-	downloadProgress := events.NewSubProgressProducer(s.msgHandler, events.Download, a, artifactName)
+	downloadProgress := events.NewIncrementalProgress(s.msgHandler, events.Download, a, artifactName)
 	if err := s.downloadArtifact(unsignedURI, archivePath, downloadProgress); err != nil {
 		err := errs.Wrap(err, "Could not download artifact %s", unsignedURI)
 		s.msgHandler.ArtifactStepFailed(events.Download, a, err.Error())
@@ -338,7 +338,7 @@ func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.Artifact
 	// clean up the unpacked dir
 	defer os.RemoveAll(unpackedDir)
 
-	unpackProgress := events.NewSubProgressProducer(s.msgHandler, events.Unpack, a, artifactName)
+	unpackProgress := events.NewIncrementalProgress(s.msgHandler, events.Unpack, a, artifactName)
 	numFiles, err := s.unpackArtifact(unarchiver, archivePath, unpackedDir, unpackProgress)
 	if err != nil {
 		err := errs.Wrap(err, "Could not unpack artifact %s", archivePath)
@@ -395,7 +395,7 @@ func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.Artifact
 
 // downloadArtifact retrieves the tarball for an artifactID
 // Note: the tarball may also be retrieved from a local cache directory if that is available.
-func (s *Setup) downloadArtifact(unsignedURI string, targetFile string, progress *events.SubProgressProducer) error {
+func (s *Setup) downloadArtifact(unsignedURI string, targetFile string, progress *events.IncrementalProgress) error {
 	artifactURL, err := url.Parse(unsignedURI)
 	if err != nil {
 		return errs.Wrap(err, "Could not parse artifact URL %s.", unsignedURI)
@@ -416,7 +416,7 @@ func (s *Setup) downloadArtifact(unsignedURI string, targetFile string, progress
 	return nil
 }
 
-func (s *Setup) unpackArtifact(ua unarchiver.Unarchiver, tarballPath string, targetDir string, progress *events.SubProgressProducer) (int, error) {
+func (s *Setup) unpackArtifact(ua unarchiver.Unarchiver, tarballPath string, targetDir string, progress *events.IncrementalProgress) (int, error) {
 	f, i, err := ua.PrepareUnpacking(tarballPath, targetDir)
 	progress.TotalSize(int(i))
 	defer f.Close()
