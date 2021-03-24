@@ -2,13 +2,16 @@ package runbits
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 	"github.com/vbauerster/mpb/v6"
 	"github.com/vbauerster/mpb/v6/decor"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 type artifactStepBar struct {
@@ -19,17 +22,37 @@ type artifactStepBar struct {
 // progressBar receives update events and modifies a global state accordingly
 type progressBar struct {
 	prg            *mpb.Progress
+	maxWidth       int
 	buildBar       *mpb.Bar
 	installBar     *mpb.Bar
 	artifactStates map[artifact.ArtifactID]map[events.ArtifactSetupStep]*artifactStepBar
 }
 
 func newProgressBar(prg *mpb.Progress) *progressBar {
-	// TODO: compute maxNameWidth
 	return &progressBar{
 		prg:            prg,
+		maxWidth:       maxNameWidth(),
 		artifactStates: make(map[artifact.ArtifactID]map[events.ArtifactSetupStep]*artifactStepBar),
 	}
+}
+
+// maxNameWidth returns the maximum width to be used for a name in a progress bar
+func maxNameWidth() int {
+	tw, _, err := terminal.GetSize(int(os.Stdout.Fd()))
+	if err != nil {
+		logging.Debug("Could not get terminal size, assuming width=120: %v", err)
+		tw = 120
+	}
+
+	// calculate the maximum width for a name displayed to the left of the progress bar
+	maxWidth := tw - 80 - 19 // 80 is the default size for the progressbar, 19 is taken by counters (up to 999) and percentage display
+	if maxWidth < 0 {
+		maxWidth = 4
+	}
+	if tw <= 105 && tw >= 40 {
+		maxWidth = 11 // enough space to spell "downloading"
+	}
+	return maxWidth
 }
 
 func (pb *progressBar) artifactState(id artifact.ArtifactID, step events.ArtifactSetupStep) *artifactStepBar {
@@ -161,10 +184,15 @@ func (pb *progressBar) ArtifactStepFailure(artifactID artifact.ArtifactID, step 
 	return nil
 }
 
-func (pb *progressBar) addTotalBar(name string, total int64) *mpb.Bar {
-	if len(name) > 12 {
-		name = name[0:12]
+func (pb *progressBar) trimName(name string) string {
+	if len(name) > pb.maxWidth {
+		return name[0:pb.maxWidth]
 	}
+	return name
+}
+
+func (pb *progressBar) addTotalBar(name string, total int64) *mpb.Bar {
+	name = pb.trimName(name)
 	options := []mpb.BarOption{
 		mpb.BarFillerClearOnComplete(),
 		mpb.PrependDecorators(
@@ -180,6 +208,7 @@ func (pb *progressBar) addTotalBar(name string, total int64) *mpb.Bar {
 }
 
 func (pb *progressBar) addProgressBar(name string, total int64, options ...mpb.BarOption) *mpb.Bar {
+	name = pb.trimName(name)
 	options = append([]mpb.BarOption{
 		mpb.BarRemoveOnComplete(),
 		mpb.PrependDecorators(
