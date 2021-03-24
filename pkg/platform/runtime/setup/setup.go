@@ -73,7 +73,6 @@ type MessageHandler interface {
 	// ChangeSummary summarizes the changes to the current project during the InstallRuntime() call.
 	// This summary is printed as soon as possible, providing the State Tool user with an idea of the complexity of the requested build.
 	// The arguments are for the changes introduced in the latest commit that this Setup is setting up.
-	// TODO: Decide if we want to have a method to de-activate the change summary for activations where it does not make sense.
 	ChangeSummary(artifacts map[artifact.ArtifactID]artifact.ArtifactRecipe, requested artifact.ArtifactChangeset, changed artifact.ArtifactChangeset)
 	TotalArtifacts(total int)
 	ArtifactStepStarting(events.ArtifactSetupStep, artifact.ArtifactID, string, int)
