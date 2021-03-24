@@ -248,8 +248,8 @@ func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, artifacts
 		func(a artifact.ArtifactDownload) {
 			wp.Submit(func() {
 				name := "unknown"
-				if a, ok := artifacts[a.ArtifactID]; ok {
-					name = a.Name
+				if artf, ok := artifacts[a.ArtifactID]; ok {
+					name = artf.Name
 				}
 				if err := s.setupArtifact(buildResult.BuildEngine, a.ArtifactID, a.UnsignedURI, name); err != nil {
 					errors = append(errors, err)
@@ -288,7 +288,10 @@ func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts ma
 		for a := range buildLog.BuiltArtifactsChannel() {
 			func(a artifact.ArtifactDownload) {
 				wp.Submit(func() {
-					name := artifacts[a.ArtifactID].Name
+					name := "unknown"
+					if artf, ok := artifacts[a.ArtifactID]; ok {
+						name = artf.Name
+					}
 					if err := s.setupArtifact(buildResult.BuildEngine, a.ArtifactID, a.UnsignedURI, name); err != nil {
 						errors = append(errors, err)
 					}
