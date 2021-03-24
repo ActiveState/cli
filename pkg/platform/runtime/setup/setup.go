@@ -17,6 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/runbits/proxyreader"
 	"github.com/ActiveState/cli/internal/unarchiver"
 	"github.com/ActiveState/cli/pkg/platform/api/buildlogstream"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef"
@@ -27,6 +28,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 	"github.com/ActiveState/cli/pkg/platform/runtime/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/buildlog"
+	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/implementations/alternative"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/implementations/camel"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
@@ -73,9 +75,11 @@ type MessageHandler interface {
 	// The arguments are for the changes introduced in the latest commit that this Setup is setting up.
 	// TODO: Decide if we want to have a method to de-activate the change summary for activations where it does not make sense.
 	ChangeSummary(artifacts map[artifact.ArtifactID]artifact.ArtifactRecipe, requested artifact.ArtifactChangeset, changed artifact.ArtifactChangeset)
-	ArtifactDownloadStarting(id strfmt.UUID)
-	ArtifactDownloadCompleted(id strfmt.UUID)
-	ArtifactDownloadFailed(id strfmt.UUID, errorMsg string)
+	TotalArtifacts(total int)
+	ArtifactStepStarting(events.ArtifactSetupStep, artifact.ArtifactID, string, int)
+	ArtifactStepProgress(events.ArtifactSetupStep, artifact.ArtifactID, int)
+	ArtifactStepCompleted(events.ArtifactSetupStep, artifact.ArtifactID)
+	ArtifactStepFailed(events.ArtifactSetupStep, artifact.ArtifactID, string)
 }
 
 type Targeter interface {
@@ -168,6 +172,7 @@ func (s *Setup) update() error {
 	// if we get here, we dowload artifacts
 	analytics.Event(analytics.CatRuntime, analytics.ActRuntimeDownload)
 
+	s.msgHandler.TotalArtifacts(len(artifacts))
 	if buildResult.BuildReady {
 		err := s.installFromBuildResult(buildResult, artifacts)
 		if err != nil {
@@ -232,7 +237,7 @@ func (s *Setup) deleteOutdatedArtifacts(changeset artifact.ArtifactChangeset, st
 	return nil
 }
 
-func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, _ map[artifact.ArtifactID]artifact.ArtifactRecipe) error {
+func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, artifacts map[artifact.ArtifactID]artifact.ArtifactRecipe) error {
 	var errors []error
 	wp := workerpool.New(MaxConcurrency)
 	downloads, err := artifact.NewDownloadsFromBuild(buildResult.BuildStatusResponse, buildResult.BuildEngine == model.Camel)
@@ -242,7 +247,11 @@ func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, _ map[art
 	for _, a := range downloads {
 		func(a artifact.ArtifactDownload) {
 			wp.Submit(func() {
-				if err := s.setupArtifact(buildResult.BuildEngine, a.ArtifactID, a.UnsignedURI); err != nil {
+				name := "unknown"
+				if a, ok := artifacts[a.ArtifactID]; ok {
+					name = a.Name
+				}
+				if err := s.setupArtifact(buildResult.BuildEngine, a.ArtifactID, a.UnsignedURI, name); err != nil {
 					errors = append(errors, err)
 				}
 			})
@@ -277,7 +286,8 @@ func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts ma
 		for a := range buildLog.BuiltArtifactsChannel() {
 			func(a artifact.ArtifactDownload) {
 				wp.Submit(func() {
-					if err := s.setupArtifact(buildResult.BuildEngine, a.ArtifactID, a.UnsignedURI); err != nil {
+					name := artifacts[a.ArtifactID].Name
+					if err := s.setupArtifact(buildResult.BuildEngine, a.ArtifactID, a.UnsignedURI, name); err != nil {
 						errors = append(errors, err)
 					}
 				})
@@ -300,7 +310,7 @@ func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts ma
 
 // setupArtifact sets up an individual artifact
 // The artifact is downloaded, unpacked and then processed by the artifact setup implementation
-func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.ArtifactID, unsignedURI string) error {
+func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.ArtifactID, unsignedURI, artifactName string) error {
 	as, err := s.selectArtifactSetupImplementation(buildEngine, a)
 	if err != nil {
 		return errs.Wrap(err, "Failed to select artifact setup implementation")
@@ -313,20 +323,27 @@ func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.Artifact
 
 	unarchiver := as.Unarchiver()
 	archivePath := filepath.Join(targetDir, a.String()+unarchiver.Ext())
-	if err := s.downloadArtifact(unsignedURI, archivePath); err != nil {
-		return errs.Wrap(err, "Could not download artifact %s", unsignedURI)
+	downloadProgress := events.NewSubProgressProducer(s.msgHandler, events.Download, a, artifactName)
+	if err := s.downloadArtifact(unsignedURI, archivePath, downloadProgress); err != nil {
+		err := errs.Wrap(err, "Could not download artifact %s", unsignedURI)
+		s.msgHandler.ArtifactStepFailed(events.Download, a, err.Error())
+		return err
 	}
-	s.msgHandler.ArtifactDownloadCompleted(a)
+	s.msgHandler.ArtifactStepCompleted(events.Download, a)
 
 	unpackedDir := filepath.Join(targetDir, a.String())
 	logging.Debug("Unarchiving %s (%s) to %s", archivePath, unsignedURI, unpackedDir)
 	// clean up the unpacked dir
 	defer os.RemoveAll(unpackedDir)
 
-	err = s.unpackArtifact(unarchiver, archivePath, unpackedDir)
+	unpackProgress := events.NewSubProgressProducer(s.msgHandler, events.Unpack, a, artifactName)
+	numFiles, err := s.unpackArtifact(unarchiver, archivePath, unpackedDir, unpackProgress)
 	if err != nil {
-		return errs.Wrap(err, "Could not unpack artifact %s", archivePath)
+		err := errs.Wrap(err, "Could not unpack artifact %s", archivePath)
+		s.msgHandler.ArtifactStepFailed(events.Unpack, a, err.Error())
+		return err
 	}
+	s.msgHandler.ArtifactStepCompleted(events.Unpack, a)
 
 	envDef, err := as.EnvDef(unpackedDir)
 	if err != nil {
@@ -336,16 +353,21 @@ func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.Artifact
 	var files []string
 	onMoveFile := func(fromPath, toPath string) {
 		if !fileutils.IsDir(toPath) {
+			s.msgHandler.ArtifactStepProgress(events.Install, a, 1)
 			files = append(files, toPath)
 		}
 	}
+	s.msgHandler.ArtifactStepStarting(events.Install, a, artifactName, numFiles)
 	err = fileutils.MoveAllFilesRecursively(
 		filepath.Join(unpackedDir, envDef.InstallDir),
 		s.store.InstallPath(), onMoveFile,
 	)
 	if err != nil {
-		return errs.Wrap(err, "Move artifact failed")
+		err := errs.Wrap(err, "Move artifact failed")
+		s.msgHandler.ArtifactStepFailed(events.Install, a, err.Error())
+		return err
 	}
+	s.msgHandler.ArtifactStepCompleted(events.Install, a)
 
 	cnst := envdef.NewConstants(s.store.InstallPath())
 	envDef = envDef.ExpandVariables(cnst)
@@ -371,7 +393,7 @@ func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.Artifact
 
 // downloadArtifact retrieves the tarball for an artifactID
 // Note: the tarball may also be retrieved from a local cache directory if that is available.
-func (s *Setup) downloadArtifact(unsignedURI string, targetFile string) error {
+func (s *Setup) downloadArtifact(unsignedURI string, targetFile string, progress *events.SubProgressProducer) error {
 	artifactURL, err := url.Parse(unsignedURI)
 	if err != nil {
 		return errs.Wrap(err, "Could not parse artifact URL %s.", unsignedURI)
@@ -382,8 +404,7 @@ func (s *Setup) downloadArtifact(unsignedURI string, targetFile string) error {
 		return errs.Wrap(err, "Could not sign artifact URL %s.", unsignedURI)
 	}
 
-	s.msgHandler.ArtifactDownloadStarting("artifactName")
-	b, err := download.Get(downloadURL.String())
+	b, err := download.GetWithProgress(downloadURL.String(), progress)
 	if err != nil {
 		return errs.Wrap(err, "Download %s failed", downloadURL)
 	}
@@ -393,13 +414,21 @@ func (s *Setup) downloadArtifact(unsignedURI string, targetFile string) error {
 	return nil
 }
 
-func (s *Setup) unpackArtifact(ua unarchiver.Unarchiver, tarballPath string, targetDir string) error {
+func (s *Setup) unpackArtifact(ua unarchiver.Unarchiver, tarballPath string, targetDir string, progress *events.SubProgressProducer) (int, error) {
 	f, i, err := ua.PrepareUnpacking(tarballPath, targetDir)
+	progress.TotalSize(int(i))
 	defer f.Close()
 	if err != nil {
-		return errs.Wrap(err, "Prepare for unpacking failed")
+		return 0, errs.Wrap(err, "Prepare for unpacking failed")
 	}
-	return ua.Unarchive(f, i, targetDir)
+	var numUnpackedFiles int
+	ua.SetNotifier(func(_ string, _ int64, isDir bool) {
+		if !isDir {
+			numUnpackedFiles++
+		}
+	})
+	proxy := proxyreader.NewProxyReader(progress, f)
+	return numUnpackedFiles, ua.Unarchive(proxy, i, targetDir)
 }
 
 func (s *Setup) selectArtifactSetupImplementation(buildEngine model.BuildEngine, a artifact.ArtifactID) (ArtifactSetuper, error) {

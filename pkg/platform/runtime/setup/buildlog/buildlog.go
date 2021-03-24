@@ -39,10 +39,10 @@ type BuildLogConnector interface {
 type BuildLogMessageHandler interface {
 	BuildStarting(total int)
 	BuildFinished()
-	ArtifactBuildStarting(artifactName string)
-	ArtifactBuildCached(artifactName string)
-	ArtifactBuildCompleted(artifactName string)
-	ArtifactBuildFailed(artifactName string, errorMessage string)
+	ArtifactBuildStarting(artifactID artifact.ArtifactID, artifactName string)
+	ArtifactBuildCached(artifactID artifact.ArtifactID)
+	ArtifactBuildCompleted(artifactID artifact.ArtifactID)
+	ArtifactBuildFailed(artifactID artifact.ArtifactID, errorMessage string)
 }
 
 // BuildLog is an implementation of a build log
@@ -101,9 +101,9 @@ func New(artifactMap map[artifact.ArtifactID]artifact.ArtifactRecipe, conn Build
 					break
 				}
 				if msg.CacheHit {
-					messageHandler.ArtifactBuildCached(artifactName)
+					messageHandler.ArtifactBuildCached(*msg.ArtifactID)
 				} else {
-					messageHandler.ArtifactBuildStarting(artifactName)
+					messageHandler.ArtifactBuildStarting(*msg.ArtifactID, artifactName)
 				}
 			case "artifact_succeeded":
 				if !artifactMapped {
@@ -115,7 +115,7 @@ func New(artifactMap map[artifact.ArtifactID]artifact.ArtifactRecipe, conn Build
 				if msg.ArtifactID != nil && *msg.ArtifactID == recipeID {
 					break
 				}
-				messageHandler.ArtifactBuildCompleted(artifactName)
+				messageHandler.ArtifactBuildCompleted(*msg.ArtifactID)
 				if msg.ArtifactID == nil || msg.ArtifactURI == nil || msg.ArtifactChecksum == nil {
 					errCh <- errs.New("artifact_succeeded message was incomplete")
 					return
@@ -123,7 +123,7 @@ func New(artifactMap map[artifact.ArtifactID]artifact.ArtifactRecipe, conn Build
 				ch <- artifact.ArtifactDownload{ArtifactID: *msg.ArtifactID, UnsignedURI: *msg.ArtifactURI, Checksum: *msg.ArtifactChecksum}
 			case "artifact_failed":
 				artifactErr = locale.WrapError(artifactErr, "err_artifact_failed", "Failed to build \"{{.V0}}\", error reported: {{.V1}}.", artifactName, msg.Err())
-				messageHandler.ArtifactBuildFailed(artifactName, msg.Err())
+				messageHandler.ArtifactBuildFailed(*msg.ArtifactID, msg.Err())
 			}
 		}
 	}()

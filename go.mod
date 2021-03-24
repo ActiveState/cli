@@ -57,7 +57,7 @@ require (
 	github.com/mailru/easyjson v0.0.0-20180323154445-8b799c424f57 // indirect
 	github.com/mash/go-tempfile-suffix v0.0.0-20150731093933-48f0f8a3a5ab
 	github.com/matryer/is v1.2.0 // indirect
-	github.com/mattn/go-runewidth v0.0.4
+	github.com/mattn/go-runewidth v0.0.10
 	github.com/mgutz/ansi v0.0.0-20170206155736-9520e82c474b // indirect
 	github.com/mitchellh/go-wordwrap v1.0.0
 	github.com/nicksnyder/go-i18n v1.10.0
@@ -78,10 +78,11 @@ require (
 	github.com/stretchr/testify v1.6.2-0.20201103103935-92707c0b2d50
 	github.com/thoas/go-funk v0.0.0-20170604141201-14304e8530de
 	github.com/ulikunitz/xz v0.5.4 // indirect
+	github.com/vbauerster/mpb/v6 v6.0.2
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 	golang.org/x/net v0.0.0-20201021035429-f5854403a974
-	golang.org/x/sys v0.0.0-20201201145000-ef89a241ccb3
+	golang.org/x/sys v0.0.0-20210113181707-4bcb84eeeb78
 	golang.org/x/text v0.3.3
 	google.golang.org/genproto v0.0.0-20200815001618-f69a88009b70
 	gopkg.in/AlecAivazis/survey.v1 v1.4.2

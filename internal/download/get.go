@@ -22,8 +22,7 @@ import (
 var Get func(url string) ([]byte, error)
 
 type DownloadProgress interface {
-	TotalDownloadSize(int)
-	Complete()
+	TotalSize(int)
 	IncrBy(int)
 }
 
@@ -87,8 +86,7 @@ func httpGetWithProgressRetry(url string, prg DownloadProgress, attempt int, ret
 	defer resp.Body.Close()
 
 	if prg != nil {
-		prg.TotalDownloadSize(total)
-		defer prg.Complete()
+		prg.TotalSize(total)
 		src = proxyreader.NewProxyReader(prg, resp.Body)
 	}
 

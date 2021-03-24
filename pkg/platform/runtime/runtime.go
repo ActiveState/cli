@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
+	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
 )
 
@@ -22,11 +23,8 @@ type Runtime struct {
 	envAccessed bool
 }
 
+// DisabledRuntime is an empty runtime that is only created when constants.DisableRuntime is set to true in the environment
 var DisabledRuntime = &Runtime{}
-
-type MessageHandler interface {
-	UseCache()
-}
 
 // NeedsUpdateError is an error returned when the runtime is not completely installed yet.
 type NeedsUpdateError struct{ error }
@@ -66,9 +64,24 @@ func New(target setup.Targeter) (*Runtime, error) {
 	return r, err
 }
 
-func (r *Runtime) Update(msgHandler setup.MessageHandler) error {
+type UpdateMessageHandler interface {
+	HandleUpdateEvents(eventCh <-chan events.BaseEventer, shutdownCh chan struct{})
+}
+
+func (r *Runtime) Update(msgHandler UpdateMessageHandler) error {
 	logging.Debug("Updating %s#%s @ %s", r.target.Name(), r.target.CommitUUID(), r.target.Dir())
-	if err := setup.New(r.target, msgHandler).Update(); err != nil {
+
+	shutdownCh := make(chan struct{})
+	// wait for shutdownCh to be closed before we return
+	// this indicates that the msgHandler wrote all its output, so we can write our own output again
+	defer func() {
+		<-shutdownCh
+	}()
+	eventCh := make(chan events.BaseEventer)
+	defer close(eventCh)
+	msgHandler.HandleUpdateEvents(eventCh, shutdownCh)
+	producer := events.NewRuntimeEventProducer(eventCh)
+	if err := setup.New(r.target, producer).Update(); err != nil {
 		return errs.Wrap(err, "Update failed")
 	}
 	rt, err := new(r.target)

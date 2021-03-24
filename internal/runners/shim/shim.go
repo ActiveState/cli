@@ -11,11 +11,11 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
-	"github.com/ActiveState/cli/pkg/platform/runtime2/messagehandler"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -75,7 +75,7 @@ func (s *Shim) Run(params *Params, args ...string) error {
 		if !runtime.IsNeedsUpdateError(err) {
 			return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
 		}
-		if err := rt.Update(messagehandler.New() /* TODO: messagehandler */); err != nil {
+		if err := rt.Update(runbits.NewRuntimeMessageHandler(s.out)); err != nil {
 			return locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
 		}
 	}

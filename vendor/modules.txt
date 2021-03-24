@@ -32,6 +32,10 @@ github.com/PuerkitoBio/purell
 github.com/PuerkitoBio/urlesc
 # github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d
 github.com/StackExchange/wmi
+# github.com/VividCortex/ewma v1.1.1
+github.com/VividCortex/ewma
+# github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d
+github.com/acarl005/stripansi
 # github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 github.com/alecthomas/template
 github.com/alecthomas/template/parse
@@ -220,7 +224,7 @@ github.com/mash/go-tempfile-suffix
 github.com/mattn/go-colorable
 # github.com/mattn/go-isatty v0.0.3
 github.com/mattn/go-isatty
-# github.com/mattn/go-runewidth v0.0.4
+# github.com/mattn/go-runewidth v0.0.10
 github.com/mattn/go-runewidth
 # github.com/mgutz/ansi v0.0.0-20170206155736-9520e82c474b
 github.com/mgutz/ansi
@@ -250,6 +254,8 @@ github.com/pkg/errors
 github.com/pmezard/go-difflib/difflib
 # github.com/posener/wstest v0.0.0-20180216222922-04b166ca0bf1
 github.com/posener/wstest
+# github.com/rivo/uniseg v0.2.0
+github.com/rivo/uniseg
 # github.com/rollbar/rollbar-go v1.1.0
 github.com/rollbar/rollbar-go
 # github.com/sergi/go-diff v1.0.0
@@ -298,6 +304,11 @@ github.com/ulikunitz/xz
 github.com/ulikunitz/xz/internal/hash
 github.com/ulikunitz/xz/internal/xlog
 github.com/ulikunitz/xz/lzma
+# github.com/vbauerster/mpb/v6 v6.0.2
+github.com/vbauerster/mpb/v6
+github.com/vbauerster/mpb/v6/cwriter
+github.com/vbauerster/mpb/v6/decor
+github.com/vbauerster/mpb/v6/internal
 # github.com/xanzy/ssh-agent v0.2.1
 github.com/xanzy/ssh-agent
 # github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8
@@ -355,7 +366,7 @@ golang.org/x/oauth2/google
 golang.org/x/oauth2/internal
 golang.org/x/oauth2/jws
 golang.org/x/oauth2/jwt
-# golang.org/x/sys v0.0.0-20201201145000-ef89a241ccb3
+# golang.org/x/sys v0.0.0-20210113181707-4bcb84eeeb78
 golang.org/x/sys/cpu
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix

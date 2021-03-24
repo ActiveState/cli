@@ -19,13 +19,13 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
-	"github.com/ActiveState/cli/pkg/platform/runtime2/messagehandler"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -150,14 +150,7 @@ func (d *Deploy) install(rtTarget setup.Targeter) error {
 		return locale.WrapError(err, "deploy_runtime_err", "Could not initialize runtime")
 	}
 
-	mh := messagehandler.New()
-	mh.OnArtifactDownloadStarting = func(id strfmt.UUID) {
-		fmt.Println("Downloading")
-	}
-	mh.OnArtifactDownloadCompleted = func(id strfmt.UUID) {
-		fmt.Println("Installing")
-	}
-	if err := rti.Update(mh); err != nil {
+	if err := rti.Update(runbits.NewRuntimeMessageHandler(d.output)); err != nil {
 		return locale.WrapError(err, "deploy_install_failed", "Installation failed.")
 	}
 
