@@ -8,6 +8,7 @@ type ByIncrementer interface {
 
 var _ io.Reader = &ProxyReader{}
 
+// ProxyReader wraps around a reader and calls the incrementer function on every read reporting the number of bytes read
 type ProxyReader struct {
 	increment ByIncrementer
 	r         io.Reader
