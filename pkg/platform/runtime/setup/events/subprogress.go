@@ -2,6 +2,8 @@ package events
 
 import "github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 
+// SubProgressProducer is a wrapper around the events producer that can be used to report incremental progress of a step
+// It sends a start event as soon as the total size is known, and sends byte increments through IncrBy
 type SubProgressProducer struct {
 	p            ArtifactStepProgresser
 	step         ArtifactSetupStep
