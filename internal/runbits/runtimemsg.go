@@ -72,15 +72,19 @@ func (rmh *RuntimeMessageHandler) ChangeSummary(artifacts artifact.ArtifactRecip
 	return nil
 }
 
-func (rmh *RuntimeMessageHandler) HandleUpdateEvents(eventCh <-chan events.BaseEventer, shutdownCh chan struct{}) {
+// HandleUpdateEvents prints output based on runtime events received on the eventCh
+// When the function is done processing all events, it closes the done channel
+func (rmh *RuntimeMessageHandler) HandleUpdateEvents(eventCh <-chan events.BaseEventer, done chan struct{}) {
 	ctx, cancel := context.WithCancel(context.Background())
-	prg := mpb.NewWithContext(ctx, mpb.WithShutdownNotifier(shutdownCh))
+	prgShutdownCh := make(chan struct{})
+	prg := mpb.NewWithContext(ctx, mpb.WithShutdownNotifier(prgShutdownCh))
 
 	pb := newProgressBar(prg)
 
 	eh := events.NewRuntimeEventConsumer(pb, rmh)
 	go func() {
-		defer close(shutdownCh)
+		defer close(done)
+		defer prg.Wait() // Note: This closes the prgShutdownCh
 		defer cancel()
 		eh.Run(eventCh)
 
@@ -91,7 +95,7 @@ func (rmh *RuntimeMessageHandler) HandleUpdateEvents(eventCh <-chan events.BaseE
 		// wait at most half a second for the mpb.Progress instance to finish up its processing
 		select {
 		case <-time.After(time.Millisecond * 500):
-		case <-shutdownCh:
+		case <-prgShutdownCh:
 		}
 	}()
 }
