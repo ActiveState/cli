@@ -219,18 +219,18 @@ func (s *Store) Environ(inherit bool) (map[string]string, error) {
 	return envDef.GetEnv(inherit), nil
 }
 
-func (s *Store) UpdateEnviron(orderedArtifacts []artifact.ArtifactID) error {
+func (s *Store) UpdateEnviron(orderedArtifacts []artifact.ArtifactID) (*envdef.EnvironmentDefinition, error) {
 	artifacts, err := s.Artifacts()
 	if err != nil {
-		return errs.Wrap(err, "Could not retrieve stored artifacts")
+		return nil, errs.Wrap(err, "Could not retrieve stored artifacts")
 	}
 
 	rtGlobal, err := s.updateEnviron(orderedArtifacts, artifacts)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return rtGlobal.WriteFile(filepath.Join(s.storagePath, constants.RuntimeDefinitionFilename))
+	return rtGlobal, rtGlobal.WriteFile(filepath.Join(s.storagePath, constants.RuntimeDefinitionFilename))
 }
 
 func (s *Store) updateEnviron(orderedArtifacts []artifact.ArtifactID, artifacts StoredArtifactMap) (*envdef.EnvironmentDefinition, error) {

@@ -179,23 +179,22 @@ func (s *Setup) update() error {
 	// if we get here, we dowload artifacts
 	analytics.Event(analytics.CatRuntime, analytics.ActRuntimeDownload)
 
-	if buildResult.BuildReady {
-		err := s.installFromBuildResult(buildResult, artifacts)
-		if err != nil {
-			return err
-		}
-	} else {
-		if buildResult.BuildEngine == model.Camel {
-			return locale.NewInputError("build_status_in_progress", "", apimodel.ProjectURL(s.target.Owner(), s.target.Name(), s.target.CommitUUID().String()))
-		}
-		err := s.installFromBuildLog(buildResult, artifacts)
-		if err != nil {
-			return err
-		}
+	err = s.installArtifacts(buildResult, artifacts)
+	if err != nil {
+		return err
 	}
 
-	if err := s.store.UpdateEnviron(buildResult.OrderedArtifacts()); err != nil {
+	edGlobal, err := s.store.UpdateEnviron(buildResult.OrderedArtifacts())
+	if err != nil {
 		return errs.Wrap(err, "Could not save combined environment file")
+	}
+
+	// Install PPM Shim if any of the installed artifacts provide the Perl executable
+	if activePerlPath := edGlobal.FindBinPathFor(constants.ActivePerlExecutable); activePerlPath != "" {
+		err = installPPMShim(activePerlPath)
+		if err != nil {
+			return errs.Wrap(err, "Failed to install the PPM shim command at %s", activePerlPath)
+		}
 	}
 
 	// clean up temp directory
@@ -211,6 +210,49 @@ func (s *Setup) update() error {
 
 	if err := s.store.MarkInstallationComplete(s.target.CommitUUID()); err != nil {
 		return errs.Wrap(err, "Could not mark install as complete.")
+	}
+
+	return nil
+}
+
+func (s *Setup) installArtifacts(buildResult *model.BuildResult, artifacts artifact.ArtifactRecipeMap) error {
+	if !buildResult.BuildReady && buildResult.BuildEngine == model.Camel {
+		return locale.NewInputError("build_status_in_progress", "", apimodel.ProjectURL(s.target.Owner(), s.target.Name(), s.target.CommitUUID().String()))
+	}
+	// Artifacts are installed in two stages
+	// - The first stage runs concurrently in MaxConcurrency worker threads (download, unpacking, relocation)
+	// - The second stage moves all files into its final destination is running in a single thread to avoid file conflicts
+
+	// secondStageCh is the channel over which the final installation routines are started
+	secondStageCh := make(chan func() error)
+
+	// schedule the first stage
+	var firstStageError error
+	go func() {
+		defer close(secondStageCh)
+		if buildResult.BuildReady {
+			firstStageError = s.installFromBuildResult(buildResult, artifacts, secondStageCh)
+		} else {
+			firstStageError = s.installFromBuildLog(buildResult, artifacts, secondStageCh)
+		}
+	}()
+
+	// run the move operations in the main thread
+	var errors []error
+	for f := range secondStageCh {
+		err := f()
+		if err != nil {
+			errors = append(errors, errs.Wrap(err, "Error during execution of second stage function"))
+		}
+	}
+
+	// add err message from the first stage
+	if firstStageError != nil {
+		errors = append(errors, firstStageError)
+	}
+
+	if len(errors) > 0 {
+		return &ArtifactSetupErrors{errors}
 	}
 
 	return nil
@@ -247,8 +289,9 @@ func (s *Setup) deleteOutdatedArtifacts(changeset artifact.ArtifactChangeset, st
 	return nil
 }
 
-func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, artifacts map[artifact.ArtifactID]artifact.ArtifactRecipe) error {
+func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, artifacts map[artifact.ArtifactID]artifact.ArtifactRecipe, secondStageCh chan<- func() error) error {
 	var errors []error
+
 	wp := workerpool.New(MaxConcurrency)
 	downloads, err := artifact.NewDownloadsFromBuild(buildResult.BuildStatusResponse, buildResult.BuildEngine == model.Camel)
 	if err != nil {
@@ -263,7 +306,7 @@ func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, artifacts
 				if artf, ok := artifacts[a.ArtifactID]; ok {
 					name = artf.Name
 				}
-				if err := s.setupArtifact(buildResult.BuildEngine, a.ArtifactID, a.UnsignedURI, name); err != nil {
+				if err := s.setupArtifact(buildResult.BuildEngine, a.ArtifactID, a.UnsignedURI, name, secondStageCh); err != nil {
 					errors = append(errors, err)
 				}
 			})
@@ -279,7 +322,7 @@ func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, artifacts
 	return nil
 }
 
-func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts map[artifact.ArtifactID]artifact.ArtifactRecipe) error {
+func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts map[artifact.ArtifactID]artifact.ArtifactRecipe, secondStageCh chan<- func() error) error {
 	s.msgHandler.TotalArtifacts(len(artifacts))
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -304,7 +347,7 @@ func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts ma
 					if artf, ok := artifacts[a.ArtifactID]; ok {
 						name = artf.Name
 					}
-					if err := s.setupArtifact(buildResult.BuildEngine, a.ArtifactID, a.UnsignedURI, name); err != nil {
+					if err := s.setupArtifact(buildResult.BuildEngine, a.ArtifactID, a.UnsignedURI, name, secondStageCh); err != nil {
 						errors = append(errors, err)
 					}
 				})
@@ -327,7 +370,7 @@ func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts ma
 
 // setupArtifact sets up an individual artifact
 // The artifact is downloaded, unpacked and then processed by the artifact setup implementation
-func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.ArtifactID, unsignedURI, artifactName string) error {
+func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.ArtifactID, unsignedURI, artifactName string, secondStageCh chan<- func() error) error {
 	as, err := s.selectArtifactSetupImplementation(buildEngine, a)
 	if err != nil {
 		return errs.Wrap(err, "Failed to select artifact setup implementation")
@@ -350,8 +393,6 @@ func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.Artifact
 
 	unpackedDir := filepath.Join(targetDir, a.String())
 	logging.Debug("Unarchiving %s (%s) to %s", archivePath, unsignedURI, unpackedDir)
-	// clean up the unpacked dir
-	defer os.RemoveAll(unpackedDir)
 
 	// ensure that the unpack dir is empty
 	err = os.RemoveAll(unpackedDir)
@@ -373,6 +414,22 @@ func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.Artifact
 		return errs.Wrap(err, "Could not collect env info for artifact")
 	}
 
+	cnst := envdef.NewConstants(s.store.InstallPath())
+	envDef = envDef.ExpandVariables(cnst)
+	err = envDef.ApplyFileTransforms(filepath.Join(unpackedDir, envDef.InstallDir), cnst)
+	if err != nil {
+		return locale.WrapError(err, "runtime_alternative_file_transforms_err", "", "Could not apply necessary file transformations after unpacking")
+	}
+
+	// return s.moveToInstallPath(a, artifactName, unpackedDir, envDef, numFiles)
+	secondStageCh <- func() error { return s.moveToInstallPath(a, artifactName, unpackedDir, envDef, numFiles) }
+	return nil
+}
+
+func (s *Setup) moveToInstallPath(a artifact.ArtifactID, artifactName string, unpackedDir string, envDef *envdef.EnvironmentDefinition, numFiles int) error {
+	// clean up the unpacked dir
+	defer os.RemoveAll(unpackedDir)
+
 	var files []string
 	onMoveFile := func(fromPath, toPath string) {
 		if !fileutils.IsDir(toPath) {
@@ -381,7 +438,7 @@ func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.Artifact
 		}
 	}
 	s.msgHandler.ArtifactStepStarting(events.Install, a, artifactName, numFiles)
-	err = fileutils.MoveAllFilesRecursively(
+	err := fileutils.MoveAllFilesRecursively(
 		filepath.Join(unpackedDir, envDef.InstallDir),
 		s.store.InstallPath(), onMoveFile,
 	)
@@ -391,21 +448,6 @@ func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.Artifact
 		return err
 	}
 	s.msgHandler.ArtifactStepCompleted(events.Install, a)
-
-	cnst := envdef.NewConstants(s.store.InstallPath())
-	envDef = envDef.ExpandVariables(cnst)
-	err = envDef.ApplyFileTransforms(s.store.InstallPath(), cnst)
-	if err != nil {
-		return locale.WrapError(err, "runtime_alternative_file_transforms_err", "", "Could not apply necessary file transformations after unpacking")
-	}
-
-	// Install PPM Shim if artifact provides Perl executable
-	if activePerlPath := envDef.FindBinPathFor(constants.ActivePerlExecutable); activePerlPath != "" {
-		err = installPPMShim(activePerlPath)
-		if err != nil {
-			return errs.Wrap(err, "Failed to install the PPM shim command at %s", activePerlPath)
-		}
-	}
 
 	if err := s.store.StoreArtifact(store.NewStoredArtifact(a, files, envDef)); err != nil {
 		return errs.Wrap(err, "Could not store artifact meta info")
