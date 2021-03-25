@@ -143,7 +143,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallPerl5_32Default() {
 
 func (suite *InstallScriptsIntegrationTestSuite) TestInstallPerl5_32ActivateDefault() {
 	suite.OnlyRunForTags(tagsuite.Critical)
-	suite.runInstallTest("--activate-default", "ActiveState/Perl-5.32")
+	suite.runInstallTest("-activate-default", "ActiveState/Perl-5.32")
 }
 
 func (suite *InstallScriptsIntegrationTestSuite) TestInstallPs1() {
