@@ -43,19 +43,19 @@ func (mpo *mockProgressOutput) InstallationIncrement() error {
 	mpo.installationCurrent++
 	return nil
 }
-func (mpo *mockProgressOutput) ArtifactStepStarted(artifact.ArtifactID, ArtifactSetupStep, string, int64) error {
+func (mpo *mockProgressOutput) ArtifactStepStarted(artifact.ArtifactID, string, string, int64) error {
 	mpo.artifactStartedCalled++
 	return nil
 }
-func (mpo *mockProgressOutput) ArtifactStepIncrement(artifact.ArtifactID, ArtifactSetupStep, int64) error {
+func (mpo *mockProgressOutput) ArtifactStepIncrement(artifact.ArtifactID, string, int64) error {
 	mpo.artifactIncrementCalled++
 	return nil
 }
-func (mpo *mockProgressOutput) ArtifactStepCompleted(artifact.ArtifactID, ArtifactSetupStep) error {
+func (mpo *mockProgressOutput) ArtifactStepCompleted(artifact.ArtifactID, string) error {
 	mpo.artifactCompletedCalled++
 	return nil
 }
-func (mpo *mockProgressOutput) ArtifactStepFailure(artifact.ArtifactID, ArtifactSetupStep) error {
+func (mpo *mockProgressOutput) ArtifactStepFailure(artifact.ArtifactID, string) error {
 	mpo.artifactFailureCalled++
 	return nil
 }
