@@ -172,12 +172,13 @@ func maxNameWidth() int {
 	tw := termutils.GetWidth()
 
 	// calculate the maximum width for a name displayed to the left of the progress bar
-	maxWidth := tw - 80 - 19 // 80 is the default size for the progressbar, 19 is taken by counters (up to 999) and percentage display
+	maxWidth := tw - 40 - 19 // 40 is the size for the progressbar, 19 is taken by counters (up to 999) and percentage display
 	if maxWidth < 0 {
 		maxWidth = 4
 	}
-	if tw <= 105 && tw >= 40 {
-		maxWidth = 11 // enough space to spell "downloading"
+	// limit to 30 characters such that text is not too far away from progress bars
+	if maxWidth > 30 {
+		return 30
 	}
 	return maxWidth
 }

@@ -19,7 +19,7 @@ func (pb *ProgressBar) addTotalBar(name string, total int64) *mpb.Bar {
 	options := []mpb.BarOption{
 		mpb.BarFillerClearOnComplete(),
 		mpb.PrependDecorators(
-			decor.Name(name, decor.WCSyncSpaceR),
+			decor.Name(name, decor.WC{W: pb.maxWidth, C: decor.DidentRight}),
 			decor.CountersNoUnit("%d / %d", decor.WCSyncSpace),
 		),
 		mpb.AppendDecorators(
@@ -36,7 +36,7 @@ func (pb *ProgressBar) addByteBar(name string, total int64, options ...mpb.BarOp
 	options = append([]mpb.BarOption{
 		mpb.BarRemoveOnComplete(),
 		mpb.PrependDecorators(
-			decor.Name(name, decor.WCSyncSpaceR),
+			decor.Name(name, decor.WC{W: pb.maxWidth, C: decor.DidentRight}),
 			decor.Counters(decor.UnitKB, "%.1f / %.1f", decor.WCSyncSpace),
 		),
 		mpb.AppendDecorators(decor.Percentage(decor.WC{W: 5})),
