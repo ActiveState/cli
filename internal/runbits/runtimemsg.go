@@ -73,7 +73,11 @@ func (rmh *RuntimeMessageHandler) ChangeSummary(artifacts artifact.ArtifactRecip
 func (rmh *RuntimeMessageHandler) HandleUpdateEvents(eventCh <-chan events.BaseEventer) {
 	ctx, cancel := context.WithCancel(context.Background())
 	prgShutdownCh := make(chan struct{})
-	prg := mpb.NewWithContext(ctx, mpb.WithShutdownNotifier(prgShutdownCh))
+	options := []mpb.ContainerOption{mpb.WithShutdownNotifier(prgShutdownCh)}
+	if rmh.out.Type() != output.PlainFormatName {
+		options = append(options, mpb.WithOutput(nil))
+	}
+	prg := mpb.NewWithContext(ctx, options...)
 
 	defer prg.Wait() // Note: This closes the prgShutdownCh
 	defer cancel()
