@@ -15,14 +15,14 @@ type artifactStepBar struct {
 	bar     *mpb.Bar
 }
 
-// ProgressBar prints progressbar for runtime setup events
+// RuntimeProgress prints progressbar for runtime setup events
 // It creates a summary progress bar for the overall installation counting the number of successfully installed artifacts
 // If a remote build is active, it also prints a progress bar counting the number of successfully build artifacts
 // And for every artifact it prints progress bars counting
 //   - the number of bytes downloaded
 //   - the number of bytes unpacked
 //   - the number of files moved to the destination directory
-type ProgressBar struct {
+type RuntimeProgress struct {
 	prg            *mpb.Progress
 	maxWidth       int
 	buildBar       *mpb.Bar
@@ -30,9 +30,9 @@ type ProgressBar struct {
 	artifactStates map[artifact.ArtifactID]map[string]*artifactStepBar
 }
 
-// New initializes the ProgressBar based on an mpb.Progress container
-func New(prg *mpb.Progress) *ProgressBar {
-	return &ProgressBar{
+// NewRuntimeProgress initializes the ProgressBar based on an mpb.Progress container
+func NewRuntimeProgress(prg *mpb.Progress) *RuntimeProgress {
+	return &RuntimeProgress{
 		prg:            prg,
 		maxWidth:       maxNameWidth(),
 		artifactStates: make(map[artifact.ArtifactID]map[string]*artifactStepBar),
@@ -40,7 +40,7 @@ func New(prg *mpb.Progress) *ProgressBar {
 }
 
 // artifactBar is a helper function that returns the progress bar for a given artifact and sub-step (identified by the steps title)
-func (pb *ProgressBar) artifactBar(id artifact.ArtifactID, title string) *artifactStepBar {
+func (pb *RuntimeProgress) artifactBar(id artifact.ArtifactID, title string) *artifactStepBar {
 	titles, ok := pb.artifactStates[id]
 	if !ok {
 		titles = make(map[string]*artifactStepBar)
@@ -55,7 +55,7 @@ func (pb *ProgressBar) artifactBar(id artifact.ArtifactID, title string) *artifa
 }
 
 // BuildStarted adds a build progress bar
-func (pb *ProgressBar) BuildStarted(total int64) error {
+func (pb *RuntimeProgress) BuildStarted(total int64) error {
 	if pb.buildBar == nil {
 		pb.buildBar = pb.addTotalBar("Building", total)
 	}
@@ -63,7 +63,7 @@ func (pb *ProgressBar) BuildStarted(total int64) error {
 }
 
 // BuildIncrement increments the build progress bar counter
-func (pb *ProgressBar) BuildIncrement() error {
+func (pb *RuntimeProgress) BuildIncrement() error {
 	if pb.buildBar == nil {
 		return errs.New("Build bar has not been initialized yet.")
 	}
@@ -73,7 +73,7 @@ func (pb *ProgressBar) BuildIncrement() error {
 }
 
 // BuildCompleted ensures that the build progress bar is in a completed state
-func (pb *ProgressBar) BuildCompleted(anyFailures bool) error {
+func (pb *RuntimeProgress) BuildCompleted(anyFailures bool) error {
 	if pb.buildBar == nil {
 		return errs.New("Build bar has not been initialized yet.")
 	}
@@ -89,7 +89,7 @@ func (pb *ProgressBar) BuildCompleted(anyFailures bool) error {
 }
 
 // InstallationStarted adds a progress bar for the overall installation progress
-func (pb *ProgressBar) InstallationStarted(total int64) error {
+func (pb *RuntimeProgress) InstallationStarted(total int64) error {
 	if pb.installBar == nil {
 		pb.installBar = pb.addTotalBar("Installing", total)
 	}
@@ -97,7 +97,7 @@ func (pb *ProgressBar) InstallationStarted(total int64) error {
 }
 
 // InstallationIncrement increments the overall installation progress count
-func (pb *ProgressBar) InstallationIncrement() error {
+func (pb *RuntimeProgress) InstallationIncrement() error {
 	if pb.installBar == nil {
 		return errs.New("Installation bar has not been initialized yet.")
 	}
@@ -107,7 +107,7 @@ func (pb *ProgressBar) InstallationIncrement() error {
 }
 
 // InstallationCompleted ensures that the installation progress bar is in a completed state
-func (pb *ProgressBar) InstallationCompleted(anyFailures bool) error {
+func (pb *RuntimeProgress) InstallationCompleted(anyFailures bool) error {
 	if pb.installBar == nil {
 		return errs.New("Installation bar has not been initialized yet.")
 	}
@@ -122,7 +122,7 @@ func (pb *ProgressBar) InstallationCompleted(anyFailures bool) error {
 }
 
 // ArtifactStepStarted adds a new progress bar for an artifact progress
-func (pb *ProgressBar) ArtifactStepStarted(artifactID artifact.ArtifactID, title string, name string, total int64) error {
+func (pb *RuntimeProgress) ArtifactStepStarted(artifactID artifact.ArtifactID, title string, name string, total int64) error {
 	as := pb.artifactBar(artifactID, title)
 	if as.bar != nil {
 		return errs.New("Progress bar can be initialized only once.")
@@ -134,7 +134,7 @@ func (pb *ProgressBar) ArtifactStepStarted(artifactID artifact.ArtifactID, title
 }
 
 // ArtifactStepIncrement increments the progress bar count for a specific step and artifact
-func (pb *ProgressBar) ArtifactStepIncrement(artifactID artifact.ArtifactID, title string, incr int64) error {
+func (pb *RuntimeProgress) ArtifactStepIncrement(artifactID artifact.ArtifactID, title string, incr int64) error {
 	as := pb.artifactBar(artifactID, title)
 	if as.bar == nil {
 		return errs.New("Progress bar needs to be initialized.")
@@ -146,7 +146,7 @@ func (pb *ProgressBar) ArtifactStepIncrement(artifactID artifact.ArtifactID, tit
 }
 
 // ArtifactStepCompleted ensures that the artifact progress bar is in a completed state
-func (pb *ProgressBar) ArtifactStepCompleted(artifactID artifact.ArtifactID, title string) error {
+func (pb *RuntimeProgress) ArtifactStepCompleted(artifactID artifact.ArtifactID, title string) error {
 	as := pb.artifactBar(artifactID, title)
 	if as.bar == nil {
 		return errs.New("Progress bar needs to be initialized.")
@@ -157,7 +157,7 @@ func (pb *ProgressBar) ArtifactStepCompleted(artifactID artifact.ArtifactID, tit
 }
 
 // ArtifactStepFailure aborts display of an artifact progress bar
-func (pb *ProgressBar) ArtifactStepFailure(artifactID artifact.ArtifactID, title string) error {
+func (pb *RuntimeProgress) ArtifactStepFailure(artifactID artifact.ArtifactID, title string) error {
 	as := pb.artifactBar(artifactID, title)
 	if as.bar == nil {
 		return errs.New("Progress bar needs to be initialized.")

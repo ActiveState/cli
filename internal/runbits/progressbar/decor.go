@@ -6,7 +6,7 @@ import (
 )
 
 // trimName ensures that the name in a progress bar is not too wide for a terminal to display
-func (pb *ProgressBar) trimName(name string) string {
+func (pb *RuntimeProgress) trimName(name string) string {
 	if len(name) > pb.maxWidth {
 		return name[0:pb.maxWidth]
 	}
@@ -14,7 +14,7 @@ func (pb *ProgressBar) trimName(name string) string {
 }
 
 // addTotalBar adds a bar counting a number of discrete events
-func (pb *ProgressBar) addTotalBar(name string, total int64) *mpb.Bar {
+func (pb *RuntimeProgress) addTotalBar(name string, total int64) *mpb.Bar {
 	name = pb.trimName(name)
 	options := []mpb.BarOption{
 		mpb.BarFillerClearOnComplete(),
@@ -31,7 +31,7 @@ func (pb *ProgressBar) addTotalBar(name string, total int64) *mpb.Bar {
 }
 
 // addByteBar adds a bar counting a number of bytes that have been processed eg., for a file download
-func (pb *ProgressBar) addByteBar(name string, total int64, options ...mpb.BarOption) *mpb.Bar {
+func (pb *RuntimeProgress) addByteBar(name string, total int64, options ...mpb.BarOption) *mpb.Bar {
 	name = pb.trimName(name)
 	options = append([]mpb.BarOption{
 		mpb.BarRemoveOnComplete(),

@@ -82,7 +82,7 @@ func (rmh *RuntimeMessageHandler) HandleUpdateEvents(eventCh <-chan events.BaseE
 	defer prg.Wait() // Note: This closes the prgShutdownCh
 	defer cancel()
 
-	pb := progressbar.New(prg)
+	pb := progressbar.NewRuntimeProgress(prg)
 
 	eh := events.NewRuntimeEventConsumer(pb, rmh)
 	eh.Run(eventCh)
