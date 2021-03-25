@@ -50,7 +50,7 @@ func (a *ArtifactSetupErrors) Error() string {
 	for _, err := range a.errs {
 		errors = append(errors, errs.Join(err, " :: ").Error())
 	}
-	return "Not all artifacts could be installed, errors: \n" + strings.Join(errors, "\n")
+	return "Not all artifacts could be installed, errors:\n" + strings.Join(errors, "\n")
 }
 
 func (a *ArtifactSetupErrors) Errors() []error {
@@ -60,9 +60,9 @@ func (a *ArtifactSetupErrors) Errors() []error {
 func (a *ArtifactSetupErrors) UserError() string {
 	var errStrings []string
 	for _, err := range a.errs {
-		errStrings = append(errStrings, locale.JoinErrors(err, ":").UserError())
+		errStrings = append(errStrings, locale.JoinErrors(err, " :: ").UserError())
 	}
-	return locale.Tl("setup_artifacts_err", "Not all artifacts could be installed: \n", strings.Join(errStrings, "\n"))
+	return locale.Tl("setup_artifacts_err", "Not all artifacts could be installed:\n{{.V0}}", strings.Join(errStrings, "\n"))
 }
 
 // MessageHandler is the interface for callback functions that are called during
