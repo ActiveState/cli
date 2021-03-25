@@ -15,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/runbits/progressbar"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 )
@@ -77,7 +78,7 @@ func (rmh *RuntimeMessageHandler) HandleUpdateEvents(eventCh <-chan events.BaseE
 	defer prg.Wait() // Note: This closes the prgShutdownCh
 	defer cancel()
 
-	pb := newProgressBar(prg)
+	pb := progressbar.New(prg)
 
 	eh := events.NewRuntimeEventConsumer(pb, rmh)
 	eh.Run(eventCh)

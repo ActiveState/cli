@@ -1,7 +1,10 @@
 package events
 
 import (
+	"fmt"
+
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 )
@@ -18,10 +21,10 @@ type ProgressOutputer interface {
 	InstallationStarted(int64) error
 	InstallationIncrement() error
 
-	ArtifactStepStarted(artifact.ArtifactID, ArtifactSetupStep, string, int64) error
-	ArtifactStepIncrement(artifact.ArtifactID, ArtifactSetupStep, int64) error
-	ArtifactStepCompleted(artifact.ArtifactID, ArtifactSetupStep) error
-	ArtifactStepFailure(artifact.ArtifactID, ArtifactSetupStep) error
+	ArtifactStepStarted(artifact.ArtifactID, string, string, int64) error
+	ArtifactStepIncrement(artifact.ArtifactID, string, int64) error
+	ArtifactStepCompleted(artifact.ArtifactID, string) error
+	ArtifactStepFailure(artifact.ArtifactID, string) error
 }
 
 // RuntimeEventConsumer is a struct that handles incoming SetupUpdate events in a single go-routine such that they can be forwarded to a progressOutputer.
@@ -93,10 +96,10 @@ func (eh *RuntimeEventConsumer) handleArtifactEvent(ev ArtifactEventer) error {
 			}
 		}
 		name, artBytes := t.ArtifactName(), t.Total()
-		return eh.progressOut.ArtifactStepStarted(t.ArtifactID(), t.Step(), name, int64(artBytes))
+		return eh.progressOut.ArtifactStepStarted(t.ArtifactID(), stepTitle(t.Step()), name, int64(artBytes))
 	case ArtifactProgressEvent:
 		by := t.Progress()
-		return eh.progressOut.ArtifactStepIncrement(t.ArtifactID(), t.Step(), int64(by))
+		return eh.progressOut.ArtifactStepIncrement(t.ArtifactID(), stepTitle(t.Step()), int64(by))
 	case ArtifactCompleteEvent:
 		if t.Step() == Install {
 			err := eh.progressOut.InstallationIncrement()
@@ -104,10 +107,10 @@ func (eh *RuntimeEventConsumer) handleArtifactEvent(ev ArtifactEventer) error {
 				return err
 			}
 		}
-		return eh.progressOut.ArtifactStepCompleted(t.ArtifactID(), t.Step())
+		return eh.progressOut.ArtifactStepCompleted(t.ArtifactID(), stepTitle(t.Step()))
 	case ArtifactFailureEvent:
 		eh.numInstallFailures++
-		return eh.progressOut.ArtifactStepFailure(t.ArtifactID(), t.Step())
+		return eh.progressOut.ArtifactStepFailure(t.ArtifactID(), stepTitle(t.Step()))
 	default:
 		logging.Debug("Unhandled artifact event: %s", ev.String())
 	}
@@ -128,4 +131,8 @@ func (eh *RuntimeEventConsumer) Run(ch <-chan BaseEventer) error {
 		}
 	}
 	return nil
+}
+
+func stepTitle(step ArtifactSetupStep) string {
+	return locale.T(fmt.Sprintf("artifact_progress_step_%s", step.String()))
 }

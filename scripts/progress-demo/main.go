@@ -57,7 +57,7 @@ func (mp *mockProducer) NumArtifacts() int {
 func newMockProducer(prod *events.RuntimeEventProducer, failures string) *mockProducer {
 	return &mockProducer{
 		IDs:      []strfmt.UUID{"1", "2", "3", "4", "5"},
-		Names:    []string{"pkg 1", "pkg 2", "pkg 3", "pkg 4", "pkg 5"},
+		Names:    []string{"pkg 1", "pkg 2", "pkg 3", "pkg 4", "a very long pkg name (5)"},
 		Prod:     prod,
 		Failures: failures,
 	}
