@@ -24,7 +24,7 @@ import (
 	"github.com/ActiveState/cli/pkg/cmdlets/git"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	runtime "github.com/ActiveState/cli/pkg/platform/runtime2"
+	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -185,7 +185,7 @@ func (r *Activate) run(params *ActivateParams) error {
 		if !runtime.IsNeedsUpdateError(err) {
 			return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
 		}
-		if err = rt.Update(runbits.NewRuntimeMessageHandler2(r.out) /* TODO: messagehandler */); err != nil {
+		if err = rt.Update(runbits.NewRuntimeMessageHandler(r.out) /* TODO: messagehandler */); err != nil {
 			return locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
 		}
 		if err != nil {

@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/ActiveState/cli/internal/environment"
-	"github.com/ActiveState/cli/internal/progress/mock"
+	"github.com/ActiveState/cli/internal/runbits/mock"
 )
 
 // Copies the file associated with the given filename to a temp dir and returns

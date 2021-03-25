@@ -23,7 +23,7 @@ import (
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/cmd"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
-	runtime "github.com/ActiveState/cli/pkg/platform/runtime2"
+	"github.com/ActiveState/cli/pkg/platform/runtime"
 )
 
 const shimDenoter = "!DO NOT EDIT! State Tool Shim !DO NOT EDIT!"
