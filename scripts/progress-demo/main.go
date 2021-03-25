@@ -20,13 +20,13 @@ import (
 //
 // Examples:
 // 1. All five packages install successfully (no build step)
-//    go run -race ./internal/runbits/demo
+//    go run -race ./scripts/progress-demo/demo
 // 2. All five packages install successfully (with build step)
-//    go run -race ./internal/runbits/demo true
+//    go run -race ./scripts/progress-demo/demo true
 // 3. The fourth package fails during the build step
-//    go run -race ./internal/runbits/demo true nnnbn
+//    go run -race ./scripts/progress-demo/demo true nnnbn
 // 4. The fourth package fails during the build step, and the second during the unpacking step, and the first one during the install step
-//    go run -race ./internal/runbits/demo true iunbn
+//    go run -race ./scripts/progress-demo/demo true iunbn
 
 func wait(times ...int) {
 	var factor time.Duration = 2
