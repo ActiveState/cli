@@ -2,13 +2,12 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"os"
 
+	"github.com/ActiveState/cli/cmd/state-tray/internal/menu"
 	"github.com/ActiveState/cli/cmd/state-tray/internal/open"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/graph"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -73,11 +72,15 @@ func run() error {
 
 	systray.AddSeparator()
 
-	mProjects := systray.AddMenuItem(locale.Tl("tray_projects_title", "Local Projects"), "")
-	cancel, err := refreshProjects(model, mProjects)
+	mProjects := menu.NewLocalProjectsMenu(systray.AddMenuItem(locale.Tl("tray_projects_title", "Local Projects"), ""))
+	mReload := mProjects.AddSubMenuItem("Reload", "Reload the local projects listing")
+
+	localProjects, err := model.LocalProjects()
 	if err != nil {
-		logging.Error("Could not refresh projects, got err: %v", err)
+		logging.Error("Could not get local projects listing, got err: %v", err)
 	}
+
+	mProjects.Populate(localProjects)
 
 	systray.AddSeparator()
 
@@ -108,48 +111,19 @@ func run() error {
 		case <-mAccount.ClickedCh:
 			logging.Debug("Account event")
 			// Not implemented
-		case <-mProjects.ClickedCh:
+		case <-mReload.ClickedCh:
 			logging.Debug("Projects event")
-			cancel()
-			cancel, err = refreshProjects(model, mProjects)
+			localProjects, err := model.LocalProjects()
 			if err != nil {
-				logging.Error("Could not refresh projects, got err: %v", err)
+				logging.Error("Could not get local projects listing, got err: %v", err)
 			}
+			mProjects.Reload(localProjects)
 		case <-mQuit.ClickedCh:
 			logging.Debug("Quit event")
 			systray.Quit()
 			return nil
 		}
 	}
-}
-
-func refreshProjects(model *model.SvcModel, menuItem *systray.MenuItem) (context.CancelFunc, error) {
-	logging.Debug("Refresh projects")
-	ctx, cancel := context.WithCancel(context.Background())
-
-	localProjects, err := model.LocalProjects()
-	if err != nil {
-		return cancel, errs.Wrap(err, "Could not get local project listing")
-	}
-
-	for _, project := range localProjects {
-		mProject := menuItem.AddSubMenuItem(fmt.Sprintf("%s/%s", project.Owner, project.Name), "")
-		go func(ctx context.Context, proj *graph.Project) {
-			for {
-				select {
-				case <-mProject.ClickedCh:
-					err = open.Prompt(fmt.Sprintf("state activate %s/%s --path %s", proj.Owner, proj.Name, proj.Locations[0]))
-					if err != nil {
-						logging.Error("Could not open local projects prompt for project %s/%s, got error: %v", proj.Owner, proj.Name, err)
-					}
-				case <-ctx.Done():
-					return
-				}
-			}
-		}(ctx, project)
-	}
-
-	return cancel, nil
 }
 
 func onExit() {
