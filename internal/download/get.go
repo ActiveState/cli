@@ -15,7 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/retryhttp"
-	"github.com/ActiveState/cli/internal/runbits/proxyreader"
+	"github.com/ActiveState/cli/internal/proxyreader"
 )
 
 // Get takes a URL and returns the contents as bytes
