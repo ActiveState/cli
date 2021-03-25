@@ -6,13 +6,23 @@ import (
 )
 
 type RuntimeEventProducer struct {
-	eventCh chan<- BaseEventer
+	eventCh chan BaseEventer
 }
 
+func NewRuntimeEventProducer() *RuntimeEventProducer {
+	eventCh := make(chan BaseEventer)
+	return &RuntimeEventProducer{eventCh}
+}
+
+func (r *RuntimeEventProducer) Events() <-chan BaseEventer {
+	return r.eventCh
+}
+
+func (r *RuntimeEventProducer) Close() {
+	close(r.eventCh)
+}
 func (r *RuntimeEventProducer) event(be BaseEventer) {
-	if r.eventCh != nil {
-		r.eventCh <- be
-	}
+	r.eventCh <- be
 }
 
 func (r *RuntimeEventProducer) TotalArtifacts(total int) {
@@ -61,8 +71,4 @@ func (r *RuntimeEventProducer) ArtifactStepCompleted(step ArtifactSetupStep, art
 
 func (r *RuntimeEventProducer) ArtifactStepFailed(step ArtifactSetupStep, artifactID strfmt.UUID, errorMsg string) {
 	r.event(newArtifactFailureEvent(step, artifactID, errorMsg))
-}
-
-func NewRuntimeEventProducer(eventCh chan<- BaseEventer) *RuntimeEventProducer {
-	return &RuntimeEventProducer{eventCh}
 }

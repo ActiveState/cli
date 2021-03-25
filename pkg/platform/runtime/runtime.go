@@ -3,6 +3,7 @@ package runtime
 import (
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
@@ -65,23 +66,25 @@ func New(target setup.Targeter) (*Runtime, error) {
 }
 
 type UpdateMessageHandler interface {
-	HandleUpdateEvents(eventCh <-chan events.BaseEventer, shutdownCh chan struct{})
+	HandleUpdateEvents(eventCh <-chan events.BaseEventer)
 }
 
 func (r *Runtime) Update(msgHandler UpdateMessageHandler) error {
 	logging.Debug("Updating %s#%s @ %s", r.target.Name(), r.target.CommitUUID(), r.target.Dir())
 
-	shutdownCh := make(chan struct{})
-	// wait for shutdownCh to be closed before we return
-	// this indicates that the msgHandler wrote all its output, so we can write our own output again
-	defer func() {
-		<-shutdownCh
+	prod := events.NewRuntimeEventProducer()
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		msgHandler.HandleUpdateEvents(prod.Events())
 	}()
-	eventCh := make(chan events.BaseEventer)
-	defer close(eventCh)
-	msgHandler.HandleUpdateEvents(eventCh, shutdownCh)
-	producer := events.NewRuntimeEventProducer(eventCh)
-	if err := setup.New(r.target, producer).Update(); err != nil {
+	// we need to wait for the update event handling to finish up, before we can write to stdout again
+	defer wg.Wait()
+	defer prod.Close()
+
+	if err := setup.New(r.target, prod).Update(); err != nil {
 		return errs.Wrap(err, "Update failed")
 	}
 	rt, err := new(r.target)

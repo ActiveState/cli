@@ -104,35 +104,35 @@ func run() error {
 		}
 	}
 
-	shutdownCh := make(chan struct{})
-	evCh := make(chan events.BaseEventer)
-	prod := events.NewRuntimeEventProducer(evCh)
+	prod := events.NewRuntimeEventProducer()
 	handler := runbits.NewRuntimeMessageHandler(outputhelper.NewCatcher())
-	handler.HandleUpdateEvents(evCh, shutdownCh)
 
 	mock := newMockProducer(prod, failedSteps)
 
-	var wg sync.WaitGroup
-	wg.Add(1)
 	go func() {
-		defer wg.Done()
-		prod.TotalArtifacts(mock.NumArtifacts())
-		if withBuildEvents {
-			prod.BuildStarting(mock.NumArtifacts())
-		}
-		wait()
-		for i := 0; i < mock.NumArtifacts(); i++ {
-			wg.Add(1)
-			go func(withBuildEvents bool, index int) {
-				defer wg.Done()
-				mock.mockArtifactProgress(withBuildEvents, index)
-			}(withBuildEvents, i)
-			wait(8)
-		}
+		defer prod.Close()
+
+		var wg sync.WaitGroup
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			prod.TotalArtifacts(mock.NumArtifacts())
+			if withBuildEvents {
+				prod.BuildStarting(mock.NumArtifacts())
+			}
+			wait()
+			for i := 0; i < mock.NumArtifacts(); i++ {
+				wg.Add(1)
+				go func(withBuildEvents bool, index int) {
+					defer wg.Done()
+					mock.mockArtifactProgress(withBuildEvents, index)
+				}(withBuildEvents, i)
+				wait(8)
+			}
+		}()
+		wg.Wait()
 	}()
 
-	wg.Wait()
-	close(evCh)
-	<-shutdownCh
+	handler.HandleUpdateEvents(prod.Events())
 	return nil
 }

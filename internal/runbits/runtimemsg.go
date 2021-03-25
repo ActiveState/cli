@@ -69,29 +69,26 @@ func (rmh *RuntimeMessageHandler) ChangeSummary(artifacts artifact.ArtifactRecip
 }
 
 // HandleUpdateEvents prints output based on runtime events received on the eventCh
-// When the function is done processing all events, it closes the done channel
-func (rmh *RuntimeMessageHandler) HandleUpdateEvents(eventCh <-chan events.BaseEventer, done chan struct{}) {
+func (rmh *RuntimeMessageHandler) HandleUpdateEvents(eventCh <-chan events.BaseEventer) {
 	ctx, cancel := context.WithCancel(context.Background())
 	prgShutdownCh := make(chan struct{})
 	prg := mpb.NewWithContext(ctx, mpb.WithShutdownNotifier(prgShutdownCh))
 
+	defer prg.Wait() // Note: This closes the prgShutdownCh
+	defer cancel()
+
 	pb := newProgressBar(prg)
 
 	eh := events.NewRuntimeEventConsumer(pb, rmh)
-	go func() {
-		defer close(done)
-		defer prg.Wait() // Note: This closes the prgShutdownCh
-		defer cancel()
-		eh.Run(eventCh)
+	eh.Run(eventCh)
 
-		// Note: all of the following can be removed if we do our own progress bar implementation:
-		// It is currently necessary as the mpb.Progress accepts requests from multiple threads, and therefore needs to be waited for to shutdown correctly.
-		// But we do not need that functionality as we run all requests from the the same go routine in the eventHandle.run() call
+	// Note: all of the following can be removed if we do our own progress bar implementation:
+	// It is currently necessary as the mpb.Progress accepts requests from multiple threads, and therefore needs to be waited for to shutdown correctly.
+	// But we do not need that functionality as we run all requests from the the same go routine in the eventHandle.run() call
 
-		// wait at most half a second for the mpb.Progress instance to finish up its processing
-		select {
-		case <-time.After(time.Millisecond * 500):
-		case <-prgShutdownCh:
-		}
-	}()
+	// wait at most half a second for the mpb.Progress instance to finish up its processing
+	select {
+	case <-time.After(time.Millisecond * 500):
+	case <-prgShutdownCh:
+	}
 }
