@@ -296,6 +296,20 @@ func (s *Setup) deleteOutdatedArtifacts(changeset artifact.ArtifactChangeset, st
 	return nil
 }
 
+// setupArtifactSubmitFunction returns a function that sets up an artifact and can be submitted to a workerpool
+func (s *Setup) setupArtifactSubmitFunction(a artifact.ArtifactDownload, buildResult *model.BuildResult, artifacts artifact.ArtifactRecipeMap, errors []error, secondStageCh chan<- func() error) func() {
+	return func() {
+		// 'bundle' makes sense for the single camel download
+		name := "bundle"
+		if artf, ok := artifacts[a.ArtifactID]; ok {
+			name = artf.Name
+		}
+		if err := s.setupArtifact(buildResult.BuildEngine, a.ArtifactID, a.UnsignedURI, name, secondStageCh); err != nil {
+			errors = append(errors, locale.WrapError(err, "artifact_setup_failed", "", name, a.ArtifactID.String()))
+		}
+	}
+}
+
 func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, artifacts map[artifact.ArtifactID]artifact.ArtifactRecipe, secondStageCh chan<- func() error) error {
 	var errors []error
 
@@ -306,18 +320,7 @@ func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, artifacts
 	}
 	s.msgHandler.TotalArtifacts(len(downloads))
 	for _, a := range downloads {
-		func(a artifact.ArtifactDownload) {
-			wp.Submit(func() {
-				// 'bundle' makes sense for the single camel download
-				name := "bundle"
-				if artf, ok := artifacts[a.ArtifactID]; ok {
-					name = artf.Name
-				}
-				if err := s.setupArtifact(buildResult.BuildEngine, a.ArtifactID, a.UnsignedURI, name, secondStageCh); err != nil {
-					errors = append(errors, locale.WrapError(err, "artifact_setup_failed", "", name, a.ArtifactID.String()))
-				}
-			})
-		}(a)
+		wp.Submit(s.setupArtifactSubmitFunction(a, buildResult, artifacts, errors, secondStageCh))
 	}
 
 	wp.StopWait()
@@ -348,17 +351,7 @@ func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts ma
 
 	go func() {
 		for a := range buildLog.BuiltArtifactsChannel() {
-			func(a artifact.ArtifactDownload) {
-				wp.Submit(func() {
-					name := "bundle"
-					if artf, ok := artifacts[a.ArtifactID]; ok {
-						name = artf.Name
-					}
-					if err := s.setupArtifact(buildResult.BuildEngine, a.ArtifactID, a.UnsignedURI, name, secondStageCh); err != nil {
-						errors = append(errors, locale.WrapError(err, "artifact_setup_failed", "", name, a.ArtifactID.String()))
-					}
-				})
-			}(a)
+			wp.Submit(s.setupArtifactSubmitFunction(a, buildResult, artifacts, errors, secondStageCh))
 		}
 	}()
 
