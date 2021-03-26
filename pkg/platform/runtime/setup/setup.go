@@ -166,7 +166,15 @@ func (s *Setup) update() error {
 	if err != nil {
 		return locale.WrapError(err, "err_stored_artifacts", "Could not unmarshal stored artifacts, your install may be corrupted.")
 	}
-	s.deleteOutdatedArtifacts(changedArtifacts, storedArtifacts)
+	if buildResult.BuildEngine == model.Camel {
+		// for camel builds we have to wipe previous installations
+		os.RemoveAll(s.store.InstallPath())
+	} else {
+		err := s.deleteOutdatedArtifacts(changedArtifacts, storedArtifacts)
+		if err != nil {
+			return locale.WrapError(err, "err_delete_outdated", "Could not remove outdated artifacts files in {{.V0}}.  You may try to remove the entire directory manually.", s.store.InstallPath())
+		}
+	}
 
 	// if we get here, we dowload artifacts
 	analytics.Event(analytics.CatRuntime, analytics.ActRuntimeDownload)
