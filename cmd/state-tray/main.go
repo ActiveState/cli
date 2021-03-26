@@ -79,7 +79,6 @@ func run() error {
 	if err != nil {
 		logging.Error("Could not get local projects listing, got err: %v", err)
 	}
-
 	mProjects.Populate(localProjects)
 
 	systray.AddSeparator()
@@ -90,11 +89,6 @@ func run() error {
 		select {
 		case <-mAbout.ClickedCh:
 			logging.Debug("About event")
-			// version, err := model.StateVersion()
-			// if err != nil {
-			// 	logging.Error("Could not get state version, got error: %v", err)
-			// }
-			// fmt.Println("Version in tray: ", version.State)
 			err = open.Prompt("state --version")
 			if err != nil {
 				logging.Error("Could not open command prompt, got error: %v", err)
@@ -113,7 +107,7 @@ func run() error {
 			// Not implemented
 		case <-mReload.ClickedCh:
 			logging.Debug("Projects event")
-			localProjects, err := model.LocalProjects()
+			localProjects, err = model.LocalProjects()
 			if err != nil {
 				logging.Error("Could not get local projects listing, got err: %v", err)
 			}

@@ -1,6 +1,8 @@
 package resolver
 
 import (
+	"sort"
+
 	"golang.org/x/net/context"
 
 	genserver "github.com/ActiveState/cli/cmd/state-svc/internal/server/generated"
@@ -40,7 +42,7 @@ func (r *Resolver) Version(ctx context.Context) (*graph.Version, error) {
 
 func (r *Resolver) Projects(ctx context.Context) ([]*graph.Project, error) {
 	logging.Debug("Projects resolver")
-	config, err := config.Get()
+	config, err := config.New()
 	if err != nil {
 		return nil, locale.WrapError(err, "err_resolver_get_config", "Could not get new config instance")
 	}
@@ -48,17 +50,19 @@ func (r *Resolver) Projects(ctx context.Context) ([]*graph.Project, error) {
 	var projects []*graph.Project
 	localConfigProjects := config.GetStringMapStringSlice(projectfile.LocalProjectsConfigKey)
 	for ns, locations := range localConfigProjects {
-		namespace, err := project.ParseNamespace(ns)
+		_, err := project.ParseNamespace(ns)
 		if err != nil {
 			logging.Errorf("Invalid project namespace from config: %s, got error: %v", ns, err)
 			continue
 		}
 		projects = append(projects, &graph.Project{
-			Owner:     namespace.Owner,
-			Name:      namespace.Project,
+			Namespace: ns,
 			Locations: locations,
 		})
 	}
+	sort.Slice(projects, func(i, j int) bool {
+		return projects[i].Namespace < projects[j].Namespace
+	})
 
 	return projects, nil
 }

@@ -9,8 +9,7 @@ func NewLocalProjectsRequest() *LocalProjectsRequest {
 func (l *LocalProjectsRequest) Query() string {
 	return `query {
 		projects {
-			owner
-			name
+			namespace
 			locations
 		}
 	}`

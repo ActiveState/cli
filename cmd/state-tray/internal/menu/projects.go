@@ -17,7 +17,6 @@ type LocalProjectsMenu struct {
 
 type localProjectMenuItem struct {
 	*systray.MenuItem
-	// TODO: This should be a project.project
 	project *graph.Project
 	cancel  context.CancelFunc
 }
@@ -33,42 +32,45 @@ func (m *LocalProjectsMenu) Populate(projects []*graph.Project) {
 }
 
 func (m *LocalProjectsMenu) Reload(projects []*graph.Project) {
-	for _, project := range projects {
-		// TODO: Need to address the case of a new checkout
-		if m.containsProject(project) {
-			continue
-		}
-		m.addLocalProject(project)
-	}
-}
-
-func (m *LocalProjectsMenu) containsProject(project *graph.Project) bool {
 	for _, item := range m.items {
-		if item.project.Owner == project.Owner && item.project.Name == project.Name {
-			return true
-		}
+		item.remove()
 	}
-	return false
+	m.items = make([]localProjectMenuItem, 0)
+	m.Populate(projects)
 }
 
 func (m *LocalProjectsMenu) addLocalProject(project *graph.Project) {
 	ctx, cancel := context.WithCancel(context.Background())
 
-	mProject := m.AddSubMenuItem(fmt.Sprintf("%s/%s", project.Owner, project.Name), "")
+	mProject := m.AddSubMenuItem(project.Namespace, "")
 	m.items = append(m.items, localProjectMenuItem{mProject, project, cancel})
 
-	go func(ctx context.Context, proj *graph.Project) {
-		for {
-			select {
-			case <-mProject.ClickedCh:
-				err := open.Prompt(fmt.Sprintf("state activate %s/%s --path %s", proj.Owner, proj.Name, proj.Locations[0]))
-				if err != nil {
-					logging.Error("Could not open local projects prompt for project %s/%s, got error: %v", proj.Owner, proj.Name, err)
-				}
-			case <-ctx.Done():
-				mProject.Hide()
-				return
+	if len(project.Locations) == 1 {
+		go waitForClick(ctx, mProject, project.Namespace, project.Locations[0])
+		return
+	}
+
+	for _, location := range project.Locations {
+		mLocation := mProject.AddSubMenuItem(location, "")
+		go waitForClick(ctx, mLocation, project.Namespace, location)
+	}
+}
+
+func (m *localProjectMenuItem) remove() {
+	m.cancel()
+	m.Hide()
+}
+
+func waitForClick(ctx context.Context, menuItem *systray.MenuItem, namespace, location string) {
+	for {
+		select {
+		case <-menuItem.ClickedCh:
+			err := open.Prompt(fmt.Sprintf("state activate %s --path %s", namespace, location))
+			if err != nil {
+				logging.Error("Could not open local projects prompt for project %s, got error: %v", namespace, err)
 			}
+		case <-ctx.Done():
+			return
 		}
-	}(ctx, project)
+	}
 }

@@ -11,8 +11,7 @@ type StateVersion {
 }
 
 type Project {
-  owner: String!
-  name: String!
+  namespace: String!
   locations: [String!]!
 }
 

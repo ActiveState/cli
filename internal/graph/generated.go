@@ -3,8 +3,7 @@
 package graph
 
 type Project struct {
-	Owner     string   `json:"owner"`
-	Name      string   `json:"name"`
+	Namespace string   `json:"namespace"`
 	Locations []string `json:"locations"`
 }
 
