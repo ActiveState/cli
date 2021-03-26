@@ -352,6 +352,12 @@ func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.Artifact
 	// clean up the unpacked dir
 	defer os.RemoveAll(unpackedDir)
 
+	// ensure that the unpack dir is empty
+	err = os.RemoveAll(unpackedDir)
+	if err != nil {
+		return errs.Wrap(err, "Could not remove previous temporary installation directory.")
+	}
+
 	unpackProgress := events.NewIncrementalProgress(s.msgHandler, events.Unpack, a, artifactName)
 	numFiles, err := s.unpackArtifact(unarchiver, archivePath, unpackedDir, unpackProgress)
 	if err != nil {
