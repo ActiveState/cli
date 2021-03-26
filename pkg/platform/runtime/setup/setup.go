@@ -205,6 +205,10 @@ func (s *Setup) update() error {
 		logging.Errorf("Failed to remove temporary installation directory %s: %v", tempDir, err)
 	}
 
+	if err := s.store.StoreRecipe(buildResult.Recipe); err != nil {
+		return errs.Wrap(err, "Could not save recipe file.")
+	}
+
 	if err := s.store.MarkInstallationComplete(s.target.CommitUUID()); err != nil {
 		return errs.Wrap(err, "Could not mark install as complete.")
 	}
