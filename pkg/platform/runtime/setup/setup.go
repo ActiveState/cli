@@ -258,7 +258,8 @@ func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, artifacts
 	for _, a := range downloads {
 		func(a artifact.ArtifactDownload) {
 			wp.Submit(func() {
-				name := "unknown"
+				// 'bundle' makes sense for the single camel download
+				name := "bundle"
 				if artf, ok := artifacts[a.ArtifactID]; ok {
 					name = artf.Name
 				}
@@ -299,7 +300,7 @@ func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts ma
 		for a := range buildLog.BuiltArtifactsChannel() {
 			func(a artifact.ArtifactDownload) {
 				wp.Submit(func() {
-					name := "unknown"
+					name := "bundle"
 					if artf, ok := artifacts[a.ArtifactID]; ok {
 						name = artf.Name
 					}
