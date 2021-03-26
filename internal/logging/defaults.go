@@ -65,7 +65,13 @@ func FileName() string {
 }
 
 func FileNameFor(pid int) string {
-	return fmt.Sprintf("%d%s", pid, FileNameSuffix)
+	exe, err := os.Executable()
+	if err != nil {
+		exe = os.Args[0]
+	}
+	exe = filepath.Base(exe)
+	exe = strings.Split(exe, ".")[0]
+	return fmt.Sprintf("%s-%d%s", exe, pid, FileNameSuffix)
 }
 
 func FilePath() string {

@@ -1,6 +1,6 @@
 module github.com/ActiveState/cli
 
-go 1.12
+go 1.15
 
 require (
 	cloud.google.com/go v0.64.0
@@ -55,6 +55,7 @@ require (
 	github.com/jmespath/go-jmespath v0.0.0-20160202185014-0b12d6b521d8 // indirect
 	github.com/kami-zh/go-capturer v0.0.0-20171211120116-e492ea43421d
 	github.com/kardianos/osext v0.0.0-20170510131534-ae77be60afb1
+	github.com/kardianos/service v1.2.0
 	github.com/labstack/echo/v4 v4.2.1
 	github.com/machinebox/graphql v0.2.2
 	github.com/mailru/easyjson v0.0.0-20180323154445-8b799c424f57 // indirect
