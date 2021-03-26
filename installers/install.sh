@@ -14,6 +14,7 @@ Flags:
  -f                              Forces overwrite.  Overwrite existing State Tool
  -t <dir>                        Install into target directory <dir>
  -e <file>                        Default 'state'. Filename to use for the executable
+ -c <comand>                     Run any command after the install script has completed
  --activate <project>            Activate a project when State Tool is correctly installed
  --activate-default <project>    Activate a project and make it the system default
  -h                              Show usage information (what you're currently reading)
@@ -32,6 +33,7 @@ TARGET=""
 # Optionally download and activate a project after install in the current directory
 ACTIVATE=""
 ACTIVATE_DEFAULT=""
+POST_INSTALL_COMMAND=""
 
 OS="linux"
 SHA256SUM="sha256sum"
@@ -127,7 +129,7 @@ if [ -z "$TMPDIR" ]; then
 fi
 
 # Process command line arguments.
-while getopts "nb:t:e:f?h-:" opt; do
+while getopts "nb:t:e:c:f?h-:" opt; do
   case $opt in
   -)  # parse long options
     case ${OPTARG} in
@@ -144,6 +146,9 @@ while getopts "nb:t:e:f?h-:" opt; do
     ;;
   b)
     STATEURL=`echo $STATEURL | sed -e "s/release/$OPTARG/;"`
+    ;;
+  c)
+    POST_INSTALL_COMMAND=$OPTARG
     ;;
   t)
     TARGET=$OPTARG
@@ -434,7 +439,11 @@ else
   fi
 fi
 
-if [ -n "${ACTIVATE}" ]; then
+# Keep --activate and --activate-default flags for backwards compatibility
+if [ -n "${POST_INSTALL_COMMAND}" ]; then
+  export PATH="$PATH:$INSTALLDIR"
+  exec $POST_INSTALL_COMMAND
+elif [ -n "${ACTIVATE}" ]; then
   # control flow of this script ends with this line: replace the shell with the activated project's shell
   exec $STATEPATH activate ${ACTIVATE}
 elif [ -n "${ACTIVATE_DEFAULT}" ]; then
