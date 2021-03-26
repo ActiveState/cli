@@ -2,12 +2,12 @@ package main
 
 import (
 	"fmt"
+	"net"
 	"os"
-	"strings"
-	"syscall"
+	"os/exec"
+	"time"
 
-	"golang.org/x/sys/windows"
-
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 )
@@ -15,20 +15,11 @@ import (
 type command string
 
 const (
-	CmdService    command = "service"
-	CmdForeground         = "background"
-	CmdUninstall          = "uninstall"
+	CmdBackground = "background"
 )
 
 var commands = []command{
-	CmdService,
-	CmdForeground,
-	CmdUninstall,
-}
-
-var elevatedCommands = []command{
-	CmdService,
-	CmdUninstall,
+	CmdBackground,
 }
 
 func main() {
@@ -44,34 +35,24 @@ func main() {
 func run() error {
 	cmd := command(os.Args[1])
 
-	if !amAdmin() {
-		for _, ec := range elevatedCommands {
-			if ec == cmd {
-				fmt.Println("Re-running as admin")
-				return rerunElevated()
-			}
-		}
+	cfg, err := config.New()
+	if err != nil {
+		return errs.Wrap(err, "Could not initialize config")
 	}
 
 	switch cmd {
-	case CmdService:
-		logging.Debug("Running CmdService")
-		return runService()
-	case CmdForeground:
-		logging.Debug("Running CmdForeground")
-		return runForeground()
-	case CmdUninstall:
-		logging.Debug("Running CmdUninstall")
-		return runUninstall()
+	case CmdBackground:
+		logging.Debug("Running CmdBackground")
+		return runBackground(cfg)
 	}
 
-	return errs.New("Missing command, expecting one of: %v", commands)
+	return runForeground(cfg)
 }
 
-func runForeground() error {
-	logging.Debug("Running standalone")
+func runForeground(cfg *config.Instance) error {
+	logging.Debug("Running in foreground")
 
-	p := NewProgram()
+	p := NewProgram(cfg)
 	if err := p.Start(); err != nil {
 		return errs.Wrap(err, "Could not start program")
 	}
@@ -79,92 +60,19 @@ func runForeground() error {
 	return nil
 }
 
-func runService() error {
-	logging.Debug("Running service")
+func runBackground(cfg *config.Instance) error {
+	logging.Debug("Running in background")
 
-	p := NewProgram()
-	svcHandler := NewServiceHandler(p)
-	svc, err := NewService(svcHandler)
-	if err != nil {
-		return errs.Wrap(err, "Could not construct service")
-	}
-
-	isInstalled, err := svc.IsInstalled()
-	if err != nil {
-		return errs.Wrap(err, "Could not detect if installed")
-	}
-	if !isInstalled {
-		logging.Debug("Installing service")
-		if err := svc.Install(); err != nil {
-			return errs.Wrap(err, "Installation failed")
+	// Don't run in background if we're already running
+	port := cfg.GetInt("port")
+	if port > 0 {
+		conn, err := net.DialTimeout("tcp", net.JoinHostPort("127.0.0.1", fmt.Sprintf("%d", port)), time.Second)
+		if err == nil && conn != nil {
+			conn.Close()
+			return errs.New("Service is already running on port %d", port)
 		}
 	}
-
-	logging.Debug("Starting service")
-	if err := svc.Start(); err != nil {
-		return errs.Wrap(err, "Could not start service")
-	}
-
-	return nil
-}
-
-func runUninstall() error {
-	logging.Debug("Running uninstall")
-
-	p := NewProgram()
-	svcHandler := NewServiceHandler(p)
-	svc, err := NewService(svcHandler)
-	if err != nil {
-		return errs.Wrap(err, "Could not construct service")
-	}
-
-	if err := svc.Uninstall(); err != nil {
-		return errs.Wrap(err, "Uninstall failed")
-	}
-
-	return nil
-}
-
-func rerunElevated() error {
-	logging.Debug("Rerun as admin")
-
-	verb := "runas"
-	exe, err := os.Executable()
-	if err != nil {
-		return err
-	}
-	cwd, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-	args := strings.Join(os.Args[1:], " ")
-
-	verbPtr, err := syscall.UTF16PtrFromString(verb)
-	if err != nil {
-		return err
-	}
-	exePtr, err := syscall.UTF16PtrFromString(exe)
-	if err != nil {
-		return err
-	}
-	cwdPtr, err := syscall.UTF16PtrFromString(cwd)
-	if err != nil {
-		return err
-	}
-	argPtr, err := syscall.UTF16PtrFromString(args)
-	if err != nil {
-		return err
-	}
-
-	var showCmd int32 = 0 // SW_NORMAL
-
-	return windows.ShellExecute(0, verbPtr, exePtr, argPtr, cwdPtr, showCmd)
-}
-
-func amAdmin() bool {
-	_, err := os.Open("\\\\.\\PHYSICALDRIVE0")
-	if err != nil {
-		return false
-	}
-	return true
+	
+	cmd := exec.Command(os.Args[0], os.Args[1:]...)
+	return cmd.Start()
 }

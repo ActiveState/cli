@@ -13,12 +13,13 @@ import (
 )
 
 type program struct {
+	cfg    *config.Instance
 	server *server.Server
 	sig    chan os.Signal
 }
 
-func NewProgram() *program {
-	return &program{}
+func NewProgram(cfg *config.Instance) *program {
+	return &program{cfg: cfg}
 }
 
 func (p *program) Start() error {
@@ -30,11 +31,7 @@ func (p *program) Start() error {
 		return errs.Wrap(err, "Could not create server")
 	}
 
-	cfg, err := config.New()
-	if err != nil {
-		return errs.Wrap(err, "Could not initialize config")
-	}
-	if err := cfg.Set("port", p.server.Port()); err != nil {
+	if err := p.cfg.Set("port", p.server.Port()); err != nil {
 		return errs.Wrap(err, "Could not save config")
 	}
 
