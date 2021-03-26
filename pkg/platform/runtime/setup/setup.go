@@ -2,6 +2,7 @@ package setup
 
 import (
 	"context"
+	"errors"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -238,21 +239,27 @@ func (s *Setup) installArtifacts(buildResult *model.BuildResult, artifacts artif
 	}()
 
 	// run the move operations in the main thread
-	var errors []error
+	var artfErrs []error
 	for f := range secondStageCh {
 		err := f()
 		if err != nil {
-			errors = append(errors, errs.Wrap(err, "Error during execution of second stage function"))
+			artfErrs = append(artfErrs, errs.Wrap(err, "Error during execution of second stage function"))
 		}
 	}
 
 	// add err message from the first stage
 	if firstStageError != nil {
-		errors = append(errors, firstStageError)
+		// merge with artifact setup error if possible
+		var ase *ArtifactSetupErrors
+		if errors.As(firstStageError, &ase) {
+			artfErrs = append(artfErrs, ase.Errors()...)
+		} else {
+			artfErrs = append(artfErrs, firstStageError)
+		}
 	}
 
-	if len(errors) > 0 {
-		return &ArtifactSetupErrors{errors}
+	if len(artfErrs) > 0 {
+		return &ArtifactSetupErrors{artfErrs}
 	}
 
 	return nil
@@ -307,7 +314,7 @@ func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, artifacts
 					name = artf.Name
 				}
 				if err := s.setupArtifact(buildResult.BuildEngine, a.ArtifactID, a.UnsignedURI, name, secondStageCh); err != nil {
-					errors = append(errors, err)
+					errors = append(errors, locale.WrapError(err, "artifact_setup_failed", "", name, a.ArtifactID.String()))
 				}
 			})
 		}(a)
@@ -348,7 +355,7 @@ func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts ma
 						name = artf.Name
 					}
 					if err := s.setupArtifact(buildResult.BuildEngine, a.ArtifactID, a.UnsignedURI, name, secondStageCh); err != nil {
-						errors = append(errors, err)
+						errors = append(errors, locale.WrapError(err, "artifact_setup_failed", "", name, a.ArtifactID.String()))
 					}
 				})
 			}(a)
