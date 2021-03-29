@@ -65,13 +65,17 @@ func FileName() string {
 }
 
 func FileNameFor(pid int) string {
+	return fmt.Sprintf("%s-%d%s", FileNamePrefix(), pid, FileNameSuffix)
+}
+
+func FileNamePrefix() string {
 	exe, err := os.Executable()
 	if err != nil {
 		exe = os.Args[0]
 	}
 	exe = filepath.Base(exe)
 	exe = strings.Split(exe, ".")[0]
-	return fmt.Sprintf("%s-%d%s", exe, pid, FileNameSuffix)
+	return exe
 }
 
 func FilePath() string {
@@ -136,11 +140,6 @@ func (l *fileHandler) Printf(msg string, args ...interface{}) {
 	l.Emit(getContext("DEBUG", 1), logMsg, args...)
 }
 
-func (l *fileHandler) Write(p []byte) (n int, err error) {
-	l.Printf(string(p))
-	return len(p), nil
-}
-
 func init() {
 	handler := &fileHandler{DefaultFormatter, nil, safeBool{}}
 	SetHandler(handler)
@@ -166,7 +165,7 @@ func init() {
 
 	c := 0
 	for _, file := range files {
-		if strings.HasSuffix(file.Name(), FileNameSuffix) {
+		if strings.HasPrefix(file.Name(), FileNamePrefix()) && strings.HasSuffix(file.Name(), FileNameSuffix) {
 			c = c + 1
 			if c > 9 {
 				if err := os.Remove(filepath.Join(datadir, file.Name())); err != nil {

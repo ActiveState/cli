@@ -126,7 +126,6 @@ type LoggingHandler interface {
 	Output() io.Writer
 	Emit(ctx *MessageContext, message string, args ...interface{}) error
 	Printf(msg string, args ...interface{})
-	Write(p []byte) (n int, err error)
 }
 
 type strandardHandler struct {
@@ -155,11 +154,6 @@ func (l *strandardHandler) Emit(ctx *MessageContext, message string, args ...int
 func (l *strandardHandler) Printf(msg string, args ...interface{}) {
 	logMsg := fmt.Sprintf("Third party log message: %s", msg)
 	l.Emit(getContext("DEBUG", 1), logMsg, args...)
-}
-
-func (l *strandardHandler) Write(p []byte) (n int, err error) {
-	l.Printf(string(p))
-	return len(p), nil
 }
 
 var currentHandler LoggingHandler = &strandardHandler{
