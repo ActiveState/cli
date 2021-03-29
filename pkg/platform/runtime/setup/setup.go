@@ -223,7 +223,25 @@ func (s *Setup) installArtifacts(buildResult *model.BuildResult, artifacts artif
 	// Artifacts are installed in two stages
 	// - The first stage runs concurrently in MaxConcurrency worker threads (download, unpacking, relocation)
 	// - The second stage moves all files into its final destination is running in a single thread (using the mainthread library) to avoid file conflicts
-	var artfErrs []error
+
+	// installErr is fed with exactly one error object (or nil pointer) after the installation go-routine finishes
+	installErr := make(chan error)
+
+	// artfErrs collects all errors that can happen in worker threads in
+	artfErrs := make(chan error)
+	defer close(artfErrs)
+	go func() {
+		var errs []error
+		for err := range artfErrs {
+			errs = append(errs, err)
+		}
+
+		if len(errs) > 0 {
+			installErr <- &ArtifactSetupErrors{errs}
+		} else {
+			installErr <- nil
+		}
+	}()
 
 	// schedule the first stage, binding mainthread library to this thread
 	mainthread.Run(func() {
@@ -235,17 +253,11 @@ func (s *Setup) installArtifacts(buildResult *model.BuildResult, artifacts artif
 		}
 
 		if err != nil {
-			mainthread.Call(func() {
-				artfErrs = append(artfErrs, err)
-			})
+			artfErrs <- err
 		}
 	})
 
-	if len(artfErrs) > 0 {
-		return &ArtifactSetupErrors{artfErrs}
-	}
-
-	return nil
+	return <-installErr
 }
 
 func (s *Setup) deleteOutdatedArtifacts(changeset artifact.ArtifactChangeset, storedArtifacted map[artifact.ArtifactID]store.StoredArtifact) error {
@@ -280,7 +292,7 @@ func (s *Setup) deleteOutdatedArtifacts(changeset artifact.ArtifactChangeset, st
 }
 
 // setupArtifactSubmitFunction returns a function that sets up an artifact and can be submitted to a workerpool
-func (s *Setup) setupArtifactSubmitFunction(a artifact.ArtifactDownload, buildResult *model.BuildResult, artifacts artifact.ArtifactRecipeMap, errors []error) func() {
+func (s *Setup) setupArtifactSubmitFunction(a artifact.ArtifactDownload, buildResult *model.BuildResult, artifacts artifact.ArtifactRecipeMap, errors chan<- error) func() {
 	return func() {
 		// This is the name used to describe the artifact.  As camel bundles all artifacts in one tarball, we call it 'bundle'
 		name := "bundle"
@@ -289,16 +301,13 @@ func (s *Setup) setupArtifactSubmitFunction(a artifact.ArtifactDownload, buildRe
 		}
 		if err := s.setupArtifact(buildResult.BuildEngine, a.ArtifactID, a.UnsignedURI, name); err != nil {
 			if err != nil {
-				mainthread.Call(func() {
-					// append errors in main-thread
-					errors = append(errors, locale.WrapError(err, "artifact_setup_failed", "", name, a.ArtifactID.String()))
-				})
+				errors <- locale.WrapError(err, "artifact_setup_failed", "", name, a.ArtifactID.String())
 			}
 		}
 	}
 }
 
-func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, artifacts map[artifact.ArtifactID]artifact.ArtifactRecipe, artfErrs []error) error {
+func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, artifacts map[artifact.ArtifactID]artifact.ArtifactRecipe, artfErrs chan<- error) error {
 	wp := workerpool.New(MaxConcurrency)
 	downloads, err := artifact.NewDownloadsFromBuild(buildResult.BuildStatusResponse, buildResult.BuildEngine == model.Camel)
 	if err != nil {
@@ -314,7 +323,7 @@ func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, artifacts
 	return nil
 }
 
-func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts map[artifact.ArtifactID]artifact.ArtifactRecipe, artfErrs []error) error {
+func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts map[artifact.ArtifactID]artifact.ArtifactRecipe, artfErrs chan<- error) error {
 	s.msgHandler.TotalArtifacts(len(artifacts))
 
 	ctx, cancel := context.WithCancel(context.Background())
