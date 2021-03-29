@@ -6,6 +6,7 @@ import (
 	"os/user"
 	"runtime"
 
+	"github.com/ActiveState/cli/cmd/state-tray/pkg/autostart"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/globaldefault"
@@ -68,6 +69,12 @@ func (r *Prepare) Run(cmd *captain.Command) error {
 			r.out.Notice(output.Heading(locale.Tl("warning", "Warning")))
 			r.out.Notice(locale.Tr("err_prepare_completions", "Could not generate completions script, error received: {{.V0}}.", err.Error()))
 		}
+	}
+
+	if err := autostart.New().Enable(); err != nil {
+		logging.Error("prepareAutoStart failed: %v", err)
+		r.out.Notice(output.Heading(locale.Tl("warning", "Warning")))
+		r.out.Notice(locale.Tr("err_prepare_autostart", "Could not enable auto-start, error received: {{.V0}}.", err.Error()))
 	}
 
 	return nil

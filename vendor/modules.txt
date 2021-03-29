@@ -117,6 +117,9 @@ github.com/dsnet/compress/bzip2/internal/sais
 github.com/dsnet/compress/internal
 github.com/dsnet/compress/internal/errors
 github.com/dsnet/compress/internal/prefix
+# github.com/emersion/go-autostart v0.0.0-20210130080809-00ed301c8e9a
+## explicit
+github.com/emersion/go-autostart
 # github.com/emirpasic/gods v1.12.0
 github.com/emirpasic/gods/containers
 github.com/emirpasic/gods/lists
@@ -275,9 +278,6 @@ github.com/kami-zh/go-capturer
 # github.com/kardianos/osext v0.0.0-20170510131534-ae77be60afb1
 ## explicit
 github.com/kardianos/osext
-# github.com/kardianos/service v1.2.0
-## explicit
-github.com/kardianos/service
 # github.com/kevinburke/ssh_config v0.0.0-20190725054713-01f96b0aa0cd
 github.com/kevinburke/ssh_config
 # github.com/kr/pty v1.1.8
@@ -490,9 +490,6 @@ golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
 golang.org/x/sys/windows
 golang.org/x/sys/windows/registry
-golang.org/x/sys/windows/svc
-golang.org/x/sys/windows/svc/eventlog
-golang.org/x/sys/windows/svc/mgr
 # golang.org/x/text v0.3.3
 ## explicit
 golang.org/x/text/secure/bidirule

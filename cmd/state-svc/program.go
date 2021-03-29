@@ -8,6 +8,7 @@ import (
 
 	"github.com/ActiveState/cli/cmd/state-svc/internal/server"
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 )
@@ -15,7 +16,6 @@ import (
 type program struct {
 	cfg    *config.Instance
 	server *server.Server
-	sig    chan os.Signal
 }
 
 func NewProgram(cfg *config.Instance) *program {
@@ -31,16 +31,17 @@ func (p *program) Start() error {
 		return errs.Wrap(err, "Could not create server")
 	}
 
-	if err := p.cfg.Set("port", p.server.Port()); err != nil {
+	if err := p.cfg.Set(constants.SvcConfigPort, p.server.Port()); err != nil {
 		return errs.Wrap(err, "Could not save config")
 	}
 
 	// Handle sigterm
-	p.sig = make(chan os.Signal, 1)
-	signal.Notify(p.sig, os.Interrupt, syscall.SIGTERM)
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
+	defer signal.Stop(sig)
 
 	go func() {
-		oscall := <-p.sig
+		oscall := <-sig
 		logging.Debug("system call:%+v", oscall)
 		p.Stop()
 	}()
@@ -60,6 +61,5 @@ func (p *program) Stop() error {
 	if err := p.server.Close(); err != nil {
 		fmt.Fprintf(os.Stderr, "Closing server failed: %v", err)
 	}
-	signal.Stop(p.sig)
 	return nil
 }

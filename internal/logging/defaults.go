@@ -136,6 +136,11 @@ func (l *fileHandler) Printf(msg string, args ...interface{}) {
 	l.Emit(getContext("DEBUG", 1), logMsg, args...)
 }
 
+func (l *fileHandler) Write(p []byte) (n int, err error) {
+	l.Printf(string(p))
+	return len(p), nil
+}
+
 func init() {
 	handler := &fileHandler{DefaultFormatter, nil, safeBool{}}
 	SetHandler(handler)

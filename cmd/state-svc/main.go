@@ -2,12 +2,10 @@ package main
 
 import (
 	"fmt"
-	"net"
 	"os"
-	"os/exec"
-	"time"
 
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 )
@@ -15,14 +13,24 @@ import (
 type command string
 
 const (
-	CmdBackground = "background"
+	CmdStart      = "start"
+	CmdStop       = "stop"
+	CmdStatus     = "status"
+	CmdForeground = "foreground"
 )
 
 var commands = []command{
-	CmdBackground,
+	CmdStart,
+	CmdStop,
+	CmdStatus,
+	CmdForeground,
 }
 
 func main() {
+	if os.Getenv("VERBOSE") == "true" {
+		logging.CurrentHandler().SetVerbose(true)
+	}
+
 	err := run()
 	if err != nil {
 		errMsg := errs.Join(err, ": ").Error()
@@ -33,7 +41,10 @@ func main() {
 }
 
 func run() error {
-	cmd := command(os.Args[1])
+	var cmd command = ""
+	if len(os.Args) > 1 {
+		cmd = command(os.Args[1])
+	}
 
 	cfg, err := config.New()
 	if err != nil {
@@ -41,16 +52,25 @@ func run() error {
 	}
 
 	switch cmd {
-	case CmdBackground:
-		logging.Debug("Running CmdBackground")
-		return runBackground(cfg)
+	case CmdStart:
+		logging.Debug("Running CmdStart")
+		return runStart(cfg)
+	case CmdStop:
+		logging.Debug("Running CmdStart")
+		return runStop(cfg)
+	case CmdStatus:
+		logging.Debug("Running CmdStart")
+		return runStatus(cfg)
+	case CmdForeground:
+		logging.Debug("Running CmdStart")
+		return runForeground(cfg)
 	}
 
-	return runForeground(cfg)
+	return errs.New("Expected one of following commands: %v", commands)
 }
 
 func runForeground(cfg *config.Instance) error {
-	logging.Debug("Running in foreground")
+	logging.Debug("Running in Foreground")
 
 	p := NewProgram(cfg)
 	if err := p.Start(); err != nil {
@@ -60,19 +80,46 @@ func runForeground(cfg *config.Instance) error {
 	return nil
 }
 
-func runBackground(cfg *config.Instance) error {
-	logging.Debug("Running in background")
+func runStart(cfg *config.Instance) error {
+	logging.Debug("Starting")
+
+	s := NewService(cfg)
+	if err := s.Start(os.Args[0], CmdForeground); err != nil {
+		return errs.Wrap(err, "Could not start service")
+	}
+
+	return nil
+}
+
+func runStop(cfg *config.Instance) error {
+	logging.Debug("Starting")
+
+	s := NewService(cfg)
+	if err := s.Stop(); err != nil {
+		return errs.Wrap(err, "Could not stop service")
+	}
+
+	return nil
+}
+
+func runStatus(cfg *config.Instance) error {
+	pid, err := NewService(cfg).Pid()
+	if err != nil {
+		return errs.Wrap(err, "Could not obtain pid")
+	}
+
+	if pid == nil {
+		fmt.Println("Service is not running")
+		return nil
+	}
 
 	// Don't run in background if we're already running
-	port := cfg.GetInt("port")
-	if port > 0 {
-		conn, err := net.DialTimeout("tcp", net.JoinHostPort("127.0.0.1", fmt.Sprintf("%d", port)), time.Second)
-		if err == nil && conn != nil {
-			conn.Close()
-			return errs.New("Service is already running on port %d", port)
-		}
-	}
-	
-	cmd := exec.Command(os.Args[0], os.Args[1:]...)
-	return cmd.Start()
+	port := cfg.GetInt(constants.SvcConfigPort)
+
+	fmt.Printf("Pid: %d\n", *pid)
+	fmt.Printf("Port: %d\n", port)
+	fmt.Printf("Dashboard: http://127.0.0.1:%d\n", port)
+	fmt.Printf("Log: %s\n", logging.FilePathFor(logging.FileNameFor(*pid)))
+
+	return nil
 }
