@@ -220,44 +220,27 @@ func (s *Setup) installArtifacts(buildResult *model.BuildResult, artifacts artif
 	if !buildResult.BuildReady && buildResult.BuildEngine == model.Camel {
 		return locale.NewInputError("build_status_in_progress", "", apimodel.ProjectURL(s.target.Owner(), s.target.Name(), s.target.CommitUUID().String()))
 	}
-	// Artifacts are installed in two stages
-	// - The first stage runs concurrently in MaxConcurrency worker threads (download, unpacking, relocation)
-	// - The second stage moves all files into its final destination is running in a single thread (using the mainthread library) to avoid file conflicts
 
-	// installErr is fed with exactly one error object (or nil pointer) after the installation go-routine finishes
-	installErr := make(chan error)
-
-	// artfErrs collects all errors that can happen in worker threads in
-	artfErrs := make(chan error)
-	go func() {
-		var errs []error
-		for err := range artfErrs {
-			errs = append(errs, err)
-		}
-
-		if len(errs) > 0 {
-			installErr <- &ArtifactSetupErrors{errs}
-		} else {
-			installErr <- nil
-		}
-	}()
-
+	installErrs := make(chan error)
 	// schedule the first stage, binding mainthread library to this thread
 	mainthread.Run(func() {
-		defer close(artfErrs)
-		var err error
+		defer close(installErrs)
 		if buildResult.BuildReady {
-			err = s.installFromBuildResult(buildResult, artifacts, artfErrs)
+			installErrs <- s.installFromBuildResult(buildResult, artifacts, installErrs)
 		} else {
-			err = s.installFromBuildLog(buildResult, artifacts, artfErrs)
-		}
-
-		if err != nil {
-			artfErrs <- err
+			installErrs <- s.installFromBuildLog(buildResult, artifacts, installErrs)
 		}
 	})
 
-	return <-installErr
+	var errs []error
+	for err := range installErrs {
+		errs = append(errs, err)
+	}
+	if len(errs) > 0 {
+		return &ArtifactSetupErrors{errs}
+	}
+
+	return nil
 }
 
 func (s *Setup) deleteOutdatedArtifacts(changeset artifact.ArtifactChangeset, storedArtifacted map[artifact.ArtifactID]store.StoredArtifact) error {
