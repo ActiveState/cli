@@ -6,7 +6,6 @@ import (
 	"os/exec"
 
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/skratchdot/open-golang/open"
 )
 
 // Prompt will open the a command prompt and execute the given command string
@@ -22,9 +21,4 @@ func Prompt(command string) error {
 	}
 
 	return nil
-}
-
-// Browser will open the default browser with the given URL
-func Browser(url string) error {
-	return open.Run(url)
 }
