@@ -11,7 +11,6 @@ import (
 	"github.com/ActiveState/cli/internal/graph"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
@@ -50,11 +49,6 @@ func (r *Resolver) Projects(ctx context.Context) ([]*graph.Project, error) {
 	var projects []*graph.Project
 	localConfigProjects := config.GetStringMapStringSlice(projectfile.LocalProjectsConfigKey)
 	for ns, locations := range localConfigProjects {
-		_, err := project.ParseNamespace(ns)
-		if err != nil {
-			logging.Errorf("Invalid project namespace from config: %s, got error: %v", ns, err)
-			continue
-		}
 		projects = append(projects, &graph.Project{
 			Namespace: ns,
 			Locations: locations,
