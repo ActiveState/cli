@@ -25,7 +25,7 @@ func main() {
 func onReady() {
 	err := run()
 	if err != nil {
-		logging.Error("Systray encountered an error: %v", err)
+		logging.Error("Systray encountered an error: %v", errs.Join(err, ": "))
 		os.Exit(1)
 	}
 }
@@ -127,7 +127,7 @@ func run() error {
 				}
 			}
 			if err != nil {
-				logging.Error("Could not toggle autostart tray: %v", err)
+				logging.Error("Could not toggle autostart tray: %v", errs.Join(err, ": "))
 			}
 		case <-mQuit.ClickedCh:
 			logging.Debug("Quit event")

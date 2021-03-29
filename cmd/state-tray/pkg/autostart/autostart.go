@@ -3,47 +3,15 @@ package autostart
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 
-	as "github.com/emersion/go-autostart"
-
-	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/osutils/autostart"
 )
 
-type App struct {
-	app *as.App
-}
-
-func New() *App {
-	return &App{
-		&as.App{
-			Name:        "activestate-desktop",
-			DisplayName: locale.T("tray_app_name", "ActiveState Desktop"),
-			Exec:        []string{filepath.Join(filepath.Dir(os.Args[0]), "state-tray")},
-		},
+func New() *autostart.App {
+	suffix := ""
+	if runtime.GOOS == "windows" {
+		suffix = ".exe"
 	}
-}
-
-func (a *App) Enable() error {
-	if a.IsEnabled() {
-		return nil
-	}
-	return a.app.Enable()
-}
-
-func (a *App) Toggle() error {
-	if a.IsEnabled() {
-		return a.app.Disable()
-	}
-	return a.app.Enable()
-}
-
-func (a *App) Disable() error {
-	if !a.IsEnabled() {
-		return nil
-	}
-	return a.app.Disable()
-}
-
-func (a *App) IsEnabled() bool {
-	return a.app.IsEnabled()
+	return autostart.New("activestate-desktop", filepath.Join(filepath.Dir(os.Args[0]), "state-tray"+suffix))
 }
