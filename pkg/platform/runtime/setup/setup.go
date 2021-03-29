@@ -229,7 +229,6 @@ func (s *Setup) installArtifacts(buildResult *model.BuildResult, artifacts artif
 
 	// artfErrs collects all errors that can happen in worker threads in
 	artfErrs := make(chan error)
-	defer close(artfErrs)
 	go func() {
 		var errs []error
 		for err := range artfErrs {
@@ -245,6 +244,7 @@ func (s *Setup) installArtifacts(buildResult *model.BuildResult, artifacts artif
 
 	// schedule the first stage, binding mainthread library to this thread
 	mainthread.Run(func() {
+		defer close(artfErrs)
 		var err error
 		if buildResult.BuildReady {
 			err = s.installFromBuildResult(buildResult, artifacts, artfErrs)
