@@ -2,7 +2,6 @@ package setup
 
 import (
 	"context"
-	"errors"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -34,6 +33,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/implementations/camel"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/faiface/mainthread"
 )
 
 // MaxConcurrency is maximum number of parallel artifact installations
@@ -222,41 +222,24 @@ func (s *Setup) installArtifacts(buildResult *model.BuildResult, artifacts artif
 	}
 	// Artifacts are installed in two stages
 	// - The first stage runs concurrently in MaxConcurrency worker threads (download, unpacking, relocation)
-	// - The second stage moves all files into its final destination is running in a single thread to avoid file conflicts
-
-	// secondStageCh is the channel over which the final installation routines are started
-	secondStageCh := make(chan func() error)
-
-	// schedule the first stage
-	var firstStageError error
-	go func() {
-		defer close(secondStageCh)
-		if buildResult.BuildReady {
-			firstStageError = s.installFromBuildResult(buildResult, artifacts, secondStageCh)
-		} else {
-			firstStageError = s.installFromBuildLog(buildResult, artifacts, secondStageCh)
-		}
-	}()
-
-	// run the move operations in the main thread
+	// - The second stage moves all files into its final destination is running in a single thread (using the mainthread library) to avoid file conflicts
 	var artfErrs []error
-	for f := range secondStageCh {
-		err := f()
-		if err != nil {
-			artfErrs = append(artfErrs, errs.Wrap(err, "Error during execution of second stage function"))
-		}
-	}
 
-	// add err message from the first stage
-	if firstStageError != nil {
-		// merge with artifact setup error if possible
-		var ase *ArtifactSetupErrors
-		if errors.As(firstStageError, &ase) {
-			artfErrs = append(artfErrs, ase.Errors()...)
+	// schedule the first stage, binding mainthread library to this thread
+	mainthread.Run(func() {
+		var err error
+		if buildResult.BuildReady {
+			err = s.installFromBuildResult(buildResult, artifacts, artfErrs)
 		} else {
-			artfErrs = append(artfErrs, firstStageError)
+			err = s.installFromBuildLog(buildResult, artifacts, artfErrs)
 		}
-	}
+
+		if err != nil {
+			mainthread.Call(func() {
+				artfErrs = append(artfErrs, err)
+			})
+		}
+	})
 
 	if len(artfErrs) > 0 {
 		return &ArtifactSetupErrors{artfErrs}
@@ -297,22 +280,25 @@ func (s *Setup) deleteOutdatedArtifacts(changeset artifact.ArtifactChangeset, st
 }
 
 // setupArtifactSubmitFunction returns a function that sets up an artifact and can be submitted to a workerpool
-func (s *Setup) setupArtifactSubmitFunction(a artifact.ArtifactDownload, buildResult *model.BuildResult, artifacts artifact.ArtifactRecipeMap, errors []error, secondStageCh chan<- func() error) func() {
+func (s *Setup) setupArtifactSubmitFunction(a artifact.ArtifactDownload, buildResult *model.BuildResult, artifacts artifact.ArtifactRecipeMap, errors []error) func() {
 	return func() {
 		// 'bundle' makes sense for the single camel download
 		name := "bundle"
 		if artf, ok := artifacts[a.ArtifactID]; ok {
 			name = artf.Name
 		}
-		if err := s.setupArtifact(buildResult.BuildEngine, a.ArtifactID, a.UnsignedURI, name, secondStageCh); err != nil {
-			errors = append(errors, locale.WrapError(err, "artifact_setup_failed", "", name, a.ArtifactID.String()))
+		if err := s.setupArtifact(buildResult.BuildEngine, a.ArtifactID, a.UnsignedURI, name); err != nil {
+			if err != nil {
+				mainthread.Call(func() {
+					// append errors in main-thread
+					errors = append(errors, locale.WrapError(err, "artifact_setup_failed", "", name, a.ArtifactID.String()))
+				})
+			}
 		}
 	}
 }
 
-func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, artifacts map[artifact.ArtifactID]artifact.ArtifactRecipe, secondStageCh chan<- func() error) error {
-	var errors []error
-
+func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, artifacts map[artifact.ArtifactID]artifact.ArtifactRecipe, artfErrs []error) error {
 	wp := workerpool.New(MaxConcurrency)
 	downloads, err := artifact.NewDownloadsFromBuild(buildResult.BuildStatusResponse, buildResult.BuildEngine == model.Camel)
 	if err != nil {
@@ -320,19 +306,15 @@ func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, artifacts
 	}
 	s.msgHandler.TotalArtifacts(len(downloads))
 	for _, a := range downloads {
-		wp.Submit(s.setupArtifactSubmitFunction(a, buildResult, artifacts, errors, secondStageCh))
+		wp.Submit(s.setupArtifactSubmitFunction(a, buildResult, artifacts, artfErrs))
 	}
 
 	wp.StopWait()
 
-	if len(errors) > 0 {
-		return &ArtifactSetupErrors{errors}
-	}
-
 	return nil
 }
 
-func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts map[artifact.ArtifactID]artifact.ArtifactRecipe, secondStageCh chan<- func() error) error {
+func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts map[artifact.ArtifactID]artifact.ArtifactRecipe, artfErrs []error) error {
 	s.msgHandler.TotalArtifacts(len(artifacts))
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -346,12 +328,11 @@ func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts ma
 
 	buildLog, err := buildlog.New(artifacts, conn, s.msgHandler, *buildResult.Recipe.RecipeID)
 
-	var errors []error
 	wp := workerpool.New(MaxConcurrency)
 
 	go func() {
 		for a := range buildLog.BuiltArtifactsChannel() {
-			wp.Submit(s.setupArtifactSubmitFunction(a, buildResult, artifacts, errors, secondStageCh))
+			wp.Submit(s.setupArtifactSubmitFunction(a, buildResult, artifacts, artfErrs))
 		}
 	}()
 
@@ -361,16 +342,12 @@ func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts ma
 
 	wp.StopWait()
 
-	if len(errors) > 0 {
-		return &ArtifactSetupErrors{errors}
-	}
-
 	return nil
 }
 
 // setupArtifact sets up an individual artifact
 // The artifact is downloaded, unpacked and then processed by the artifact setup implementation
-func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.ArtifactID, unsignedURI, artifactName string, secondStageCh chan<- func() error) error {
+func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.ArtifactID, unsignedURI, artifactName string) error {
 	as, err := s.selectArtifactSetupImplementation(buildEngine, a)
 	if err != nil {
 		return errs.Wrap(err, "Failed to select artifact setup implementation")
@@ -421,9 +398,8 @@ func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.Artifact
 		return locale.WrapError(err, "runtime_alternative_file_transforms_err", "", "Could not apply necessary file transformations after unpacking")
 	}
 
-	// return s.moveToInstallPath(a, artifactName, unpackedDir, envDef, numFiles)
-	secondStageCh <- func() error { return s.moveToInstallPath(a, artifactName, unpackedDir, envDef, numFiles) }
-	return nil
+	// move files to installation path in main thread, such that file operations are synchronized
+	return mainthread.CallErr(func() error { return s.moveToInstallPath(a, artifactName, unpackedDir, envDef, numFiles) })
 }
 
 func (s *Setup) moveToInstallPath(a artifact.ArtifactID, artifactName string, unpackedDir string, envDef *envdef.EnvironmentDefinition, numFiles int) error {
