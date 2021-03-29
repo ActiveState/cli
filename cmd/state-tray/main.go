@@ -78,7 +78,7 @@ func run() error {
 
 	localProjects, err := model.LocalProjects()
 	if err != nil {
-		logging.Error("Could not get local projects listing, got err: %v", err)
+		logging.Error("Could not get local projects listing: %v", err)
 	}
 	localProjectsUpdater.Reload(localProjects)
 
@@ -92,17 +92,26 @@ func run() error {
 			logging.Debug("About event")
 			err = open.Prompt("state --version")
 			if err != nil {
-				logging.Error("Could not open command prompt, got error: %v", err)
+				logging.Error("Could not open command prompt: %v", err)
 			}
 		case <-mDoc.ClickedCh:
 			logging.Debug("Documentation event")
-			// Not implemented
+			err = open.Browser("https://docs.activestate.com/platform/state/")
+			if err != nil {
+				logging.Error("Could not open documentation url: %v", err)
+			}
 		case <-mLearn.ClickedCh:
 			logging.Debug("Learn event")
-			// Not implemented
+			err = open.Browser("https://www.activestate.com/blog/")
+			if err != nil {
+				logging.Error("Could not open blog url: %v", err)
+			}
 		case <-mSupport.ClickedCh:
 			logging.Debug("Support event")
-			// Not implemented
+			err = open.Browser("https://www.activestate.com/support/")
+			if err != nil {
+				logging.Error("Could not open support url: %v", err)
+			}
 		case <-mAccount.ClickedCh:
 			logging.Debug("Account event")
 			// Not implemented
@@ -110,7 +119,7 @@ func run() error {
 			logging.Debug("Projects event")
 			localProjects, err = model.LocalProjects()
 			if err != nil {
-				logging.Error("Could not get local projects listing, got err: %v", err)
+				logging.Error("Could not get local projects listing: %v", err)
 			}
 			localProjectsUpdater.Reload(localProjects)
 		case <-mQuit.ClickedCh:

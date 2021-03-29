@@ -5,5 +5,9 @@ package open
 import "errors"
 
 func Prompt(command string) error {
-	return errors.New("Unimplemented")
+	return errors.New("Not implemented")
+}
+
+func Browser(url string) error {
+	return errors.New("Not implemented")
 }
