@@ -282,7 +282,7 @@ func (s *Setup) deleteOutdatedArtifacts(changeset artifact.ArtifactChangeset, st
 // setupArtifactSubmitFunction returns a function that sets up an artifact and can be submitted to a workerpool
 func (s *Setup) setupArtifactSubmitFunction(a artifact.ArtifactDownload, buildResult *model.BuildResult, artifacts artifact.ArtifactRecipeMap, errors []error) func() {
 	return func() {
-		// 'bundle' makes sense for the single camel download
+		// This is the name used to describe the artifact.  As camel bundles all artifacts in one tarball, we call it 'bundle'
 		name := "bundle"
 		if artf, ok := artifacts[a.ArtifactID]; ok {
 			name = artf.Name
