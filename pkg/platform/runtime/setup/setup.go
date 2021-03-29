@@ -216,6 +216,19 @@ func (s *Setup) update() error {
 	return nil
 }
 
+func aggregateErrors(bgErrs <-chan error, aggErr chan<- error) {
+	var errs []error
+	for err := range bgErrs {
+		errs = append(errs, err)
+	}
+
+	if len(errs) > 0 {
+		aggErr <- &ArtifactSetupErrors{errs}
+	} else {
+		aggErr <- nil
+	}
+}
+
 func (s *Setup) installArtifacts(buildResult *model.BuildResult, artifacts artifact.ArtifactRecipeMap) error {
 	if !buildResult.BuildReady && buildResult.BuildEngine == model.Camel {
 		return locale.NewInputError("build_status_in_progress", "", apimodel.ProjectURL(s.target.Owner(), s.target.Name(), s.target.CommitUUID().String()))
@@ -227,33 +240,22 @@ func (s *Setup) installArtifacts(buildResult *model.BuildResult, artifacts artif
 	// installErr is fed with exactly one error object (or nil pointer) after the installation go-routine finishes
 	installErr := make(chan error)
 
-	// artfErrs collects all errors that can happen in worker threads in
-	artfErrs := make(chan error)
-	go func() {
-		var errs []error
-		for err := range artfErrs {
-			errs = append(errs, err)
-		}
-
-		if len(errs) > 0 {
-			installErr <- &ArtifactSetupErrors{errs}
-		} else {
-			installErr <- nil
-		}
-	}()
+	// bgErrs collects all errors that can occur in go routines installing the artifacts
+	bgErrs := make(chan error)
+	go aggregateErrors(bgErrs, installErr)
 
 	// schedule the first stage, binding mainthread library to this thread
 	mainthread.Run(func() {
-		defer close(artfErrs)
+		defer close(bgErrs)
 		var err error
 		if buildResult.BuildReady {
-			err = s.installFromBuildResult(buildResult, artifacts, artfErrs)
+			err = s.installFromBuildResult(buildResult, artifacts, bgErrs)
 		} else {
-			err = s.installFromBuildLog(buildResult, artifacts, artfErrs)
+			err = s.installFromBuildLog(buildResult, artifacts, bgErrs)
 		}
 
 		if err != nil {
-			artfErrs <- err
+			bgErrs <- err
 		}
 	})
 
