@@ -72,14 +72,15 @@ func run() error {
 
 	systray.AddSeparator()
 
-	mProjects := menu.NewLocalProjectsMenu(systray.AddMenuItem(locale.Tl("tray_projects_title", "Local Projects"), ""))
+	mProjects := systray.AddMenuItem(locale.Tl("tray_projects_title", "Local Projects"), "")
 	mReload := mProjects.AddSubMenuItem("Reload", "Reload the local projects listing")
+	localProjectsUpdater := menu.NewLocalProjectsUpdater(mProjects)
 
 	localProjects, err := model.LocalProjects()
 	if err != nil {
 		logging.Error("Could not get local projects listing, got err: %v", err)
 	}
-	mProjects.Populate(localProjects)
+	localProjectsUpdater.Reload(localProjects)
 
 	systray.AddSeparator()
 
@@ -111,7 +112,7 @@ func run() error {
 			if err != nil {
 				logging.Error("Could not get local projects listing, got err: %v", err)
 			}
-			mProjects.Reload(localProjects)
+			localProjectsUpdater.Reload(localProjects)
 		case <-mQuit.ClickedCh:
 			logging.Debug("Quit event")
 			systray.Quit()
