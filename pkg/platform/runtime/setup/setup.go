@@ -221,26 +221,18 @@ func (s *Setup) installArtifacts(buildResult *model.BuildResult, artifacts artif
 		return locale.NewInputError("build_status_in_progress", "", apimodel.ProjectURL(s.target.Owner(), s.target.Name(), s.target.CommitUUID().String()))
 	}
 
-	installErrs := make(chan error)
+	installErr := make(chan error)
 	// schedule the first stage, binding mainthread library to this thread
 	mainthread.Run(func() {
-		defer close(installErrs)
+		defer close(installErr)
 		if buildResult.BuildReady {
-			installErrs <- s.installFromBuildResult(buildResult, artifacts, installErrs)
+			installErr <- s.installFromBuildResult(buildResult, artifacts)
 		} else {
-			installErrs <- s.installFromBuildLog(buildResult, artifacts, installErrs)
+			installErr <- s.installFromBuildLog(buildResult, artifacts)
 		}
 	})
 
-	var errs []error
-	for err := range installErrs {
-		errs = append(errs, err)
-	}
-	if len(errs) > 0 {
-		return &ArtifactSetupErrors{errs}
-	}
-
-	return nil
+	return <-installErr
 }
 
 func (s *Setup) deleteOutdatedArtifacts(changeset artifact.ArtifactChangeset, storedArtifacted map[artifact.ArtifactID]store.StoredArtifact) error {
@@ -290,23 +282,34 @@ func (s *Setup) setupArtifactSubmitFunction(a artifact.ArtifactDownload, buildRe
 	}
 }
 
-func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, artifacts map[artifact.ArtifactID]artifact.ArtifactRecipe, artfErrs chan<- error) error {
+func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, artifacts map[artifact.ArtifactID]artifact.ArtifactRecipe) error {
 	wp := workerpool.New(MaxConcurrency)
 	downloads, err := artifact.NewDownloadsFromBuild(buildResult.BuildStatusResponse, buildResult.BuildEngine == model.Camel)
 	if err != nil {
 		return errs.Wrap(err, "Could not fetch artifacts to download.")
 	}
 	s.msgHandler.TotalArtifacts(len(downloads))
+
+	errCh := make(chan error)
 	for _, a := range downloads {
-		wp.Submit(s.setupArtifactSubmitFunction(a, buildResult, artifacts, artfErrs))
+		wp.Submit(s.setupArtifactSubmitFunction(a, buildResult, artifacts, errCh))
 	}
 
 	wp.StopWait()
+	close(errCh)
+
+	var errs []error
+	for err := range errCh {
+		errs = append(errs, err)
+	}
+	if len(errs) > 0 {
+		return &ArtifactSetupErrors{errs}
+	}
 
 	return nil
 }
 
-func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts map[artifact.ArtifactID]artifact.ArtifactRecipe, artfErrs chan<- error) error {
+func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts map[artifact.ArtifactID]artifact.ArtifactRecipe) error {
 	s.msgHandler.TotalArtifacts(len(artifacts))
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -322,9 +325,10 @@ func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts ma
 
 	wp := workerpool.New(MaxConcurrency)
 
+	errCh := make(chan error)
 	go func() {
 		for a := range buildLog.BuiltArtifactsChannel() {
-			wp.Submit(s.setupArtifactSubmitFunction(a, buildResult, artifacts, artfErrs))
+			wp.Submit(s.setupArtifactSubmitFunction(a, buildResult, artifacts, errCh))
 		}
 	}()
 
@@ -333,6 +337,15 @@ func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts ma
 	}
 
 	wp.StopWait()
+	close(errCh)
+
+	var errs []error
+	for err := range errCh {
+		errs = append(errs, err)
+	}
+	if len(errs) > 0 {
+		return &ArtifactSetupErrors{errs}
+	}
 
 	return nil
 }
