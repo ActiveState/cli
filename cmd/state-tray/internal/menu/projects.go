@@ -12,7 +12,7 @@ import (
 
 type LocalProjectsUpdater struct {
 	menuItem *systray.MenuItem
-	items    []localProjectsMenuItem
+	items    []*localProjectsMenuItem
 }
 
 type localProjectsMenuItem struct {
@@ -22,15 +22,15 @@ type localProjectsMenuItem struct {
 }
 
 func NewLocalProjectsUpdater(menuItem *systray.MenuItem) *LocalProjectsUpdater {
-	return &LocalProjectsUpdater{menuItem, []localProjectsMenuItem{}}
+	return &LocalProjectsUpdater{menuItem, []*localProjectsMenuItem{}}
 }
 
-func (u *LocalProjectsUpdater) Reload(projects []*graph.Project) {
+func (u *LocalProjectsUpdater) Update(projects []*graph.Project) {
 	for _, item := range u.items {
 		item.remove()
 	}
 
-	u.items = make([]localProjectsMenuItem, 0)
+	u.items = make([]*localProjectsMenuItem, 0)
 	for _, project := range projects {
 		u.addLocalProject(project)
 	}
@@ -40,16 +40,16 @@ func (u *LocalProjectsUpdater) addLocalProject(project *graph.Project) {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	mProject := u.menuItem.AddSubMenuItem(project.Namespace, "")
-	u.items = append(u.items, localProjectsMenuItem{mProject, project, cancel})
+	u.items = append(u.items, &localProjectsMenuItem{mProject, project, cancel})
 
 	if len(project.Locations) == 1 {
-		go wait(ctx, mProject, project.Namespace, project.Locations[0])
+		go waitForClick(ctx, mProject, project.Namespace, project.Locations[0])
 		return
 	}
 
 	for _, location := range project.Locations {
 		mLocation := mProject.AddSubMenuItem(location, "")
-		go wait(ctx, mLocation, project.Namespace, location)
+		go waitForClick(ctx, mLocation, project.Namespace, location)
 	}
 }
 
@@ -58,7 +58,7 @@ func (u *localProjectsMenuItem) remove() {
 	u.menuItem.Hide()
 }
 
-func wait(ctx context.Context, menuItem *systray.MenuItem, namespace, location string) {
+func waitForClick(ctx context.Context, menuItem *systray.MenuItem, namespace, location string) {
 	for {
 		select {
 		case <-menuItem.ClickedCh:

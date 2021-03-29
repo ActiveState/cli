@@ -80,7 +80,7 @@ func run() error {
 	if err != nil {
 		logging.Error("Could not get local projects listing: %v", err)
 	}
-	localProjectsUpdater.Reload(localProjects)
+	localProjectsUpdater.Update(localProjects)
 
 	systray.AddSeparator()
 
@@ -121,7 +121,7 @@ func run() error {
 			if err != nil {
 				logging.Error("Could not get local projects listing: %v", err)
 			}
-			localProjectsUpdater.Reload(localProjects)
+			localProjectsUpdater.Update(localProjects)
 		case <-mQuit.ClickedCh:
 			logging.Debug("Quit event")
 			systray.Quit()
