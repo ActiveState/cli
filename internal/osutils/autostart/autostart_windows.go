@@ -12,18 +12,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 )
 
-type App struct {
-	Name string
-	Exec string
-}
-
-func New(name, exec string) *App {
-	return &App{
-		Name: name,
-		Exec: exec,
-	}
-}
-
 var startupPath = filepath.Join(os.Getenv("USERPROFILE"), "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "Startup")
 
 func (a *App) Enable() error {
