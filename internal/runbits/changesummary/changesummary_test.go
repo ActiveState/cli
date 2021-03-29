@@ -1,4 +1,4 @@
-package runbits
+package changesummary
 
 import (
 	"strings"
@@ -72,9 +72,9 @@ func TestChangeSummary(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			out := outputhelper.NewCatcher()
-			rmh := NewRuntimeMessageHandler(out)
+			cs := New(out)
 
-			err := rmh.ChangeSummary(artifacts, tt.requested, tt.changed)
+			err := cs.ChangeSummary(artifacts, tt.requested, tt.changed)
 			require.NoError(t, err)
 
 			assert.Equal(t, tt.expected, strings.TrimSpace(out.CombinedOutput()))

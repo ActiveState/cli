@@ -41,6 +41,7 @@ const MaxConcurrency = 10
 // NotInstalledError is an error returned when the runtime is not completely installed yet.
 var NotInstalledError = errs.New("Runtime is not completely installed.")
 
+// ArtifactSetupErrors combines all errors that can happen while installing artifacts in parallel
 type ArtifactSetupErrors struct {
 	errs []error
 }
@@ -53,10 +54,12 @@ func (a *ArtifactSetupErrors) Error() string {
 	return "Not all artifacts could be installed, errors:\n" + strings.Join(errors, "\n")
 }
 
+// Errors returns the individual error messages collected from all failing artifact installations
 func (a *ArtifactSetupErrors) Errors() []error {
 	return a.errs
 }
 
+// UserError returns a message including all user-facing sub-error messages
 func (a *ArtifactSetupErrors) UserError() string {
 	var errStrings []string
 	for _, err := range a.errs {
@@ -75,10 +78,10 @@ type MessageHandler interface {
 	// The arguments are for the changes introduced in the latest commit that this Setup is setting up.
 	ChangeSummary(artifacts map[artifact.ArtifactID]artifact.ArtifactRecipe, requested artifact.ArtifactChangeset, changed artifact.ArtifactChangeset)
 	TotalArtifacts(total int)
-	ArtifactStepStarting(events.ArtifactSetupStep, artifact.ArtifactID, string, int)
-	ArtifactStepProgress(events.ArtifactSetupStep, artifact.ArtifactID, int)
-	ArtifactStepCompleted(events.ArtifactSetupStep, artifact.ArtifactID)
-	ArtifactStepFailed(events.ArtifactSetupStep, artifact.ArtifactID, string)
+	ArtifactStepStarting(events.SetupStep, artifact.ArtifactID, string, int)
+	ArtifactStepProgress(events.SetupStep, artifact.ArtifactID, int)
+	ArtifactStepCompleted(events.SetupStep, artifact.ArtifactID)
+	ArtifactStepFailed(events.SetupStep, artifact.ArtifactID, string)
 }
 
 type Targeter interface {

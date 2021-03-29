@@ -3,13 +3,13 @@ package runtime
 import (
 	"os"
 	"strings"
-	"sync"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
@@ -65,36 +65,43 @@ func New(target setup.Targeter) (*Runtime, error) {
 	return r, err
 }
 
-type UpdateMessageHandler interface {
-	HandleUpdateEvents(eventCh <-chan events.BaseEventer)
-}
-
-func (r *Runtime) Update(msgHandler UpdateMessageHandler) error {
+// Update updates the runtime by downloading all necessary artifacts from the Platform and installing them locally.
+// This function is usually called, after New() returned with a NeedsUpdateError
+func (r *Runtime) Update(msgHandler *runbits.RuntimeMessageHandler) error {
 	logging.Debug("Updating %s#%s @ %s", r.target.Name(), r.target.CommitUUID(), r.target.Dir())
 
+	// Run the setup function (the one that produces runtime events) in the background...
 	prod := events.NewRuntimeEventProducer()
-
-	var wg sync.WaitGroup
-	wg.Add(1)
+	var setupErr error
 	go func() {
-		defer wg.Done()
-		msgHandler.HandleUpdateEvents(prod.Events())
-	}()
-	// we need to wait for the update event handling to finish up, before we can write to stdout again
-	defer wg.Wait()
-	defer prod.Close()
+		defer prod.Close()
 
-	if err := setup.New(r.target, prod).Update(); err != nil {
-		return errs.Wrap(err, "Update failed")
-	}
-	rt, err := new(r.target)
+		if err := setup.New(r.target, prod).Update(); err != nil {
+			setupErr = errs.Wrap(err, "Update failed")
+			return
+		}
+		rt, err := new(r.target)
+		if err != nil {
+			setupErr = errs.Wrap(err, "Could not reinitialize runtime after update")
+			return
+		}
+		*r = *rt
+	}()
+
+	// ... and handle the runtime events in the main thread
+	err := msgHandler.HandleEvents(prod.Events())
 	if err != nil {
-		return errs.Wrap(err, "Could not reinitialize runtime after update")
+		logging.Error("Error handling update events: %v", err)
 	}
-	*r = *rt
-	return nil
+
+	// when the msg handler returns, *r and setupErr are updated.
+
+	return setupErr
 }
 
+// Environ returns a key-value map of the environment variables that need to be set for this runtime
+// inherit includes environment variables set on the system
+// projectDir is only used for legacy camel builds
 func (r *Runtime) Environ(inherit bool, projectDir string) (map[string]string, error) {
 	if r == DisabledRuntime {
 		return nil, errs.New("Called Environ() on a disabled runtime.")
@@ -111,6 +118,7 @@ func (r *Runtime) Environ(inherit bool, projectDir string) (map[string]string, e
 	return injectProjectDir(env, projectDir), err
 }
 
+// Artifacts returns a map of artifact information extracted from the recipe
 func (r *Runtime) Artifacts() (map[artifact.ArtifactID]artifact.ArtifactRecipe, error) {
 	recipe, err := r.store.Recipe()
 	if err != nil {

@@ -6,17 +6,17 @@ import "github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 // It sends a start event as soon as the total size is known, and sends byte increments through IncrBy
 type IncrementalProgress struct {
 	p            ArtifactStepProgresser
-	step         ArtifactSetupStep
+	step         SetupStep
 	artifactID   artifact.ArtifactID
 	artifactName string
 }
 
 type ArtifactStepProgresser interface {
-	ArtifactStepStarting(ArtifactSetupStep, artifact.ArtifactID, string, int)
-	ArtifactStepProgress(ArtifactSetupStep, artifact.ArtifactID, int)
+	ArtifactStepStarting(SetupStep, artifact.ArtifactID, string, int)
+	ArtifactStepProgress(SetupStep, artifact.ArtifactID, int)
 }
 
-func NewIncrementalProgress(p ArtifactStepProgresser, step ArtifactSetupStep, artifactID artifact.ArtifactID, artifactName string) *IncrementalProgress {
+func NewIncrementalProgress(p ArtifactStepProgresser, step SetupStep, artifactID artifact.ArtifactID, artifactName string) *IncrementalProgress {
 	return &IncrementalProgress{
 		p, step, artifactID, artifactName,
 	}

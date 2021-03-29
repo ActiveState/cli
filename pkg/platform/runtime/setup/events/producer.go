@@ -5,24 +5,27 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
+// RuntimeEventProducer implements a setup.MessageHandler, and translates the
+// runtime messages into events communicated over a wrapped events channel.
+// The events need to be consumed by the RuntimeEventConsumer.
 type RuntimeEventProducer struct {
-	eventCh chan BaseEventer
+	events chan SetupEventer
 }
 
 func NewRuntimeEventProducer() *RuntimeEventProducer {
-	eventCh := make(chan BaseEventer)
+	eventCh := make(chan SetupEventer)
 	return &RuntimeEventProducer{eventCh}
 }
 
-func (r *RuntimeEventProducer) Events() <-chan BaseEventer {
-	return r.eventCh
+func (r *RuntimeEventProducer) Events() <-chan SetupEventer {
+	return r.events
 }
 
 func (r *RuntimeEventProducer) Close() {
-	close(r.eventCh)
+	close(r.events)
 }
-func (r *RuntimeEventProducer) event(be BaseEventer) {
-	r.eventCh <- be
+func (r *RuntimeEventProducer) event(be SetupEventer) {
+	r.events <- be
 }
 
 func (r *RuntimeEventProducer) TotalArtifacts(total int) {
@@ -57,18 +60,18 @@ func (r *RuntimeEventProducer) ChangeSummary(artifacts map[artifact.ArtifactID]a
 	r.event(newChangeSummaryEvent(artifacts, requested, changed))
 }
 
-func (r *RuntimeEventProducer) ArtifactStepStarting(step ArtifactSetupStep, artifactID artifact.ArtifactID, artifactName string, total int) {
+func (r *RuntimeEventProducer) ArtifactStepStarting(step SetupStep, artifactID artifact.ArtifactID, artifactName string, total int) {
 	r.event(newArtifactStartEvent(step, artifactID, artifactName, total))
 }
 
-func (r *RuntimeEventProducer) ArtifactStepProgress(step ArtifactSetupStep, artifactID artifact.ArtifactID, update int) {
+func (r *RuntimeEventProducer) ArtifactStepProgress(step SetupStep, artifactID artifact.ArtifactID, update int) {
 	r.event(newArtifactProgressEvent(step, artifactID, update))
 }
 
-func (r *RuntimeEventProducer) ArtifactStepCompleted(step ArtifactSetupStep, artifactID strfmt.UUID) {
+func (r *RuntimeEventProducer) ArtifactStepCompleted(step SetupStep, artifactID strfmt.UUID) {
 	r.event(newArtifactCompleteEvent(step, artifactID))
 }
 
-func (r *RuntimeEventProducer) ArtifactStepFailed(step ArtifactSetupStep, artifactID strfmt.UUID, errorMsg string) {
+func (r *RuntimeEventProducer) ArtifactStepFailed(step SetupStep, artifactID strfmt.UUID, errorMsg string) {
 	r.event(newArtifactFailureEvent(step, artifactID, errorMsg))
 }
