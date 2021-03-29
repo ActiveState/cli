@@ -24,26 +24,18 @@ func NewSvcModel(ctx context.Context, cfg *config.Instance) (*SvcModel, error) {
 	return &SvcModel{ctx, client}, nil
 }
 
-type versionResponse struct {
-	Version graph.Version `json:"version"`
-}
-
 func (m *SvcModel) StateVersion() (*graph.Version, error) {
 	r := request.NewVersionRequest()
-	resp := versionResponse{}
+	resp := graph.VersionResponse{}
 	if err := m.client.Run(r, &resp); err != nil {
 		return nil, err
 	}
 	return &resp.Version, nil
 }
 
-type projectsResponse struct {
-	Projects []*graph.Project `json:"projects"`
-}
-
 func (m *SvcModel) LocalProjects() ([]*graph.Project, error) {
 	r := request.NewLocalProjectsRequest()
-	response := projectsResponse{[]*graph.Project{}}
+	response := graph.ProjectsResponse{[]*graph.Project{}}
 	if err := m.client.Run(r, &response); err != nil {
 		return nil, err
 	}
