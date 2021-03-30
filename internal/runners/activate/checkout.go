@@ -61,7 +61,7 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, targetPath string) er
 	}
 
 	// Clone the related repo, if it is defined
-	if pj.RepoURL != nil {
+	if pj.RepoURL != nil && *pj.RepoURL != "" {
 		err := r.repo.CloneProject(ns.Owner, ns.Project, targetPath, r.Outputer)
 		if err != nil {
 			return err

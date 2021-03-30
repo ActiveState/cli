@@ -32,6 +32,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 	cveCmd := newCveCommand(prime)
 	cveCmd.AddChildren(
 		newReportCommand(prime),
+		newOpenCommand(prime),
 	)
 
 	exportCmd := newExportCommand(prime)

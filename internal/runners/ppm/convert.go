@@ -153,11 +153,7 @@ func (cf *ConversionFlow) openInBrowser(what, url string) {
 	err := open.Run(url)
 	if err != nil {
 		logging.Error("Could not open %s in browser: %v", url, err)
-		cf.out.Error(locale.Tl(
-			"ppm_convert_open_browser_fallback",
-			"Could not open {{.V0}} in your browser.\nYou can copy and paste the following URL manually in the address line of your browser:\n{{.V1}}",
-			what, url,
-		))
+		cf.out.Error(locale.Tr("browser_fallback", what, url))
 	}
 }
 

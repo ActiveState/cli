@@ -3,7 +3,6 @@ package integration
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -165,48 +164,6 @@ echo "Hello $name!"
 	)
 	cp.SendLine("ActiveState")
 	cp.Expect("Hello ActiveState!")
-	cp.ExpectExitCode(0)
-}
-
-func (suite *ShimIntegrationTestSuite) TestShim_SystemPython() {
-	suite.OnlyRunForTags(tagsuite.Shim)
-	_, err := exec.LookPath("python3")
-	if err != nil {
-		suite.T().Skip("Cannot run test if system does not have python installation")
-	}
-
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	scriptBlock := `print("Hello World!")`
-
-	testScript := filepath.Join(fmt.Sprintf("%s/%s.py", ts.Dirs.Work, suite.T().Name()))
-	err = fileutils.WriteFile(testScript, []byte(scriptBlock))
-	suite.Require().NoError(err)
-
-	cp := ts.Spawn("shim", "--", "python3", testScript)
-	cp.Expect("Hello World!")
-	cp.ExpectExitCode(0)
-}
-
-func (suite *ShimIntegrationTestSuite) TestShim_NoDoubleDash() {
-	suite.OnlyRunForTags(tagsuite.Shim)
-	_, err := exec.LookPath("python3")
-	if err != nil {
-		suite.T().Skip("Cannot run test if system does not have python installation")
-	}
-
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	scriptBlock := `print("Hello World!")`
-
-	testScript := filepath.Join(fmt.Sprintf("%s/%s.py", ts.Dirs.Work, suite.T().Name()))
-	err = fileutils.WriteFile(testScript, []byte(scriptBlock))
-	suite.Require().NoError(err)
-
-	cp := ts.Spawn("shim", "python3", testScript)
-	cp.Expect("Hello World!")
 	cp.ExpectExitCode(0)
 }
 

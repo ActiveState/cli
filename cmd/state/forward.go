@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os/exec"
 	"path/filepath"
@@ -128,7 +129,7 @@ func ensureForwardExists(binary string, versionInfo *projectfile.VersionInfo, ou
 		DesiredVersion: desiredVersion,
 	}
 
-	info, err := up.Info()
+	info, err := up.Info(context.Background())
 	if err != nil {
 		return errs.Wrap(err, "Info failed")
 	}
