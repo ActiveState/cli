@@ -18,6 +18,7 @@ type LocalProjectsUpdater struct {
 type localProjectsMenuItem struct {
 	menuItem *systray.MenuItem
 	project  *graph.Project
+	done     <-chan struct{}
 	cancel   context.CancelFunc
 }
 
@@ -30,44 +31,53 @@ func (u *LocalProjectsUpdater) Update(projects []*graph.Project) {
 		item.remove()
 	}
 
-	u.items = make([]*localProjectsMenuItem, 0)
-	for _, project := range projects {
-		u.addLocalProject(project)
+	u.items = make([]*localProjectsMenuItem, len(projects))
+	for i, project := range projects {
+		item := newLocalProjectMenuItem(project, u.menuItem)
+		u.items[i] = item
+		item.startEventLoop()
 	}
 }
 
-func (u *LocalProjectsUpdater) addLocalProject(project *graph.Project) {
+func newLocalProjectMenuItem(project *graph.Project, menuItem *systray.MenuItem) *localProjectsMenuItem {
 	ctx, cancel := context.WithCancel(context.Background())
 
-	mProject := u.menuItem.AddSubMenuItem(project.Namespace, "")
-	u.items = append(u.items, &localProjectsMenuItem{mProject, project, cancel})
+	mProject := menuItem.AddSubMenuItem(project.Namespace, "")
+	return &localProjectsMenuItem{mProject, project, ctx.Done(), cancel}
+}
 
-	if len(project.Locations) == 1 {
-		go waitForClick(ctx, mProject, project.Namespace, project.Locations[0])
+func (i *localProjectsMenuItem) startEventLoop() {
+	if len(i.project.Locations) == 1 {
+		go i.eventLoop(i.project.Locations[0])
 		return
 	}
 
-	for _, location := range project.Locations {
-		mLocation := mProject.AddSubMenuItem(location, "")
-		go waitForClick(ctx, mLocation, project.Namespace, location)
+	for _, location := range i.project.Locations {
+		mLocation := i.menuItem.AddSubMenuItem(location, "")
+		subItem := i.newSubMenuItem(mLocation)
+		go subItem.eventLoop(location)
 	}
 }
 
-func (u *localProjectsMenuItem) remove() {
-	u.cancel()
-	u.menuItem.Hide()
+func (i *localProjectsMenuItem) newSubMenuItem(menuItem *systray.MenuItem) *localProjectsMenuItem {
+	return &localProjectsMenuItem{menuItem, i.project, i.done, i.cancel}
 }
 
-func waitForClick(ctx context.Context, menuItem *systray.MenuItem, namespace, location string) {
+func (i *localProjectsMenuItem) eventLoop(location string) {
 	for {
 		select {
-		case <-menuItem.ClickedCh:
-			err := open.Prompt(fmt.Sprintf("state activate %s --path %s", namespace, location))
+		case <-i.menuItem.ClickedCh:
+			err := open.Prompt(fmt.Sprintf("state activate %s --path %s", i.project.Namespace, location))
 			if err != nil {
-				logging.Error("Could not open local projects prompt for project %s, got error: %v", namespace, err)
+				logging.Error("Could not open local projects prompt for project %s, got error: %v", i.project.Namespace, err)
 			}
-		case <-ctx.Done():
+		case <-i.done:
 			return
 		}
 	}
+}
+
+func (i *localProjectsMenuItem) remove() {
+	i.cancel()
+	i.menuItem.Hide()
 }
