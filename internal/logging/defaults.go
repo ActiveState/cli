@@ -73,9 +73,7 @@ func FileNamePrefix() string {
 	if err != nil {
 		exe = os.Args[0]
 	}
-	exe = filepath.Base(exe)
-	exe = strings.Split(exe, ".")[0]
-	return exe
+	return strings.TrimSuffix(exe, filepath.Ext(exe))
 }
 
 func FilePath() string {
