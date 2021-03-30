@@ -1,7 +1,6 @@
 package menu
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/ActiveState/cli/cmd/state-tray/internal/open"
@@ -16,10 +15,11 @@ type LocalProjectsUpdater struct {
 }
 
 type localProjectsMenuItem struct {
-	menuItem *systray.MenuItem
-	project  *graph.Project
-	done     <-chan struct{}
-	cancel   context.CancelFunc
+	menuItem  *systray.MenuItem
+	namespace string
+	location  string
+	done      chan struct{}
+	children  []*localProjectsMenuItem
 }
 
 func NewLocalProjectsUpdater(menuItem *systray.MenuItem) *LocalProjectsUpdater {
@@ -40,36 +40,54 @@ func (u *LocalProjectsUpdater) Update(projects []*graph.Project) {
 }
 
 func newLocalProjectMenuItem(project *graph.Project, menuItem *systray.MenuItem) *localProjectsMenuItem {
-	ctx, cancel := context.WithCancel(context.Background())
-
+	done := make(chan struct{})
 	mProject := menuItem.AddSubMenuItem(project.Namespace, "")
-	return &localProjectsMenuItem{mProject, project, ctx.Done(), cancel}
+	item := &localProjectsMenuItem{
+		menuItem:  mProject,
+		namespace: project.Namespace,
+		done:      done,
+		children:  []*localProjectsMenuItem{},
+	}
+
+	for i, location := range project.Locations {
+		if i == 0 && i == len(project.Locations)-1 {
+			item.location = location
+			break
+		}
+
+		mLocation := mProject.AddSubMenuItem(location, "")
+		item.addChild(mLocation, location)
+	}
+
+	return item
+}
+
+func (i *localProjectsMenuItem) addChild(menuItem *systray.MenuItem, location string) {
+	i.children = append(i.children, &localProjectsMenuItem{
+		menuItem:  menuItem,
+		namespace: i.namespace,
+		location:  location,
+		done:      i.done,
+	})
 }
 
 func (i *localProjectsMenuItem) startEventLoop() {
-	if len(i.project.Locations) == 1 {
-		go i.eventLoop(i.project.Locations[0])
-		return
+	if len(i.children) == 0 {
+		go i.eventLoop()
 	}
 
-	for _, location := range i.project.Locations {
-		mLocation := i.menuItem.AddSubMenuItem(location, "")
-		subItem := i.newSubMenuItem(mLocation)
-		go subItem.eventLoop(location)
+	for _, child := range i.children {
+		go child.eventLoop()
 	}
 }
 
-func (i *localProjectsMenuItem) newSubMenuItem(menuItem *systray.MenuItem) *localProjectsMenuItem {
-	return &localProjectsMenuItem{menuItem, i.project, i.done, i.cancel}
-}
-
-func (i *localProjectsMenuItem) eventLoop(location string) {
+func (i *localProjectsMenuItem) eventLoop() {
 	for {
 		select {
 		case <-i.menuItem.ClickedCh:
-			err := open.Prompt(fmt.Sprintf("state activate %s --path %s", i.project.Namespace, location))
+			err := open.Prompt(fmt.Sprintf("state activate %s --path %s", i.namespace, i.location))
 			if err != nil {
-				logging.Error("Could not open local projects prompt for project %s, got error: %v", i.project.Namespace, err)
+				logging.Error("Could not open local projects prompt for project %s, got error: %v", i.namespace, err)
 			}
 		case <-i.done:
 			return
@@ -78,6 +96,6 @@ func (i *localProjectsMenuItem) eventLoop(location string) {
 }
 
 func (i *localProjectsMenuItem) remove() {
-	i.cancel()
+	i.done <- struct{}{}
 	i.menuItem.Hide()
 }
