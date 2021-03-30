@@ -21,6 +21,7 @@ func (a *App) Enable() error {
 
 	// ALWAYS errors with "Incorrect function", which can apparently be safely ignored..
 	ole.CoInitializeEx(0, ole.COINIT_APARTMENTTHREADED|ole.COINIT_SPEED_OVER_MEMORY)
+	defer ole.CoUninitialize()
 
 	oleShellObject, err := oleutil.CreateObject("WScript.Shell")
 	if err != nil {
