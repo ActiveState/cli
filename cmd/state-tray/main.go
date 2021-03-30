@@ -7,6 +7,7 @@ import (
 	"github.com/ActiveState/cli/cmd/state-tray/internal/menu"
 	"github.com/ActiveState/cli/cmd/state-tray/internal/open"
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -96,19 +97,19 @@ func run() error {
 			}
 		case <-mDoc.ClickedCh:
 			logging.Debug("Documentation event")
-			err = open.Browser("https://docs.activestate.com/platform/state/")
+			err = open.Browser(constants.DocumentationURL)
 			if err != nil {
 				logging.Error("Could not open documentation url: %v", err)
 			}
 		case <-mLearn.ClickedCh:
 			logging.Debug("Learn event")
-			err = open.Browser("https://www.activestate.com/blog/")
+			err = open.Browser(constants.ActiveStateBlogURL)
 			if err != nil {
 				logging.Error("Could not open blog url: %v", err)
 			}
 		case <-mSupport.ClickedCh:
 			logging.Debug("Support event")
-			err = open.Browser("https://www.activestate.com/support/")
+			err = open.Browser(constants.ActiveStateSupportURL)
 			if err != nil {
 				logging.Error("Could not open support url: %v", err)
 			}
