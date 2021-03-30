@@ -29,7 +29,7 @@ func (pb *RuntimeProgress) addBar(name string, total int64, countsBytes bool, op
 		decor.Name(name, decor.WC{W: pb.maxWidth, C: decor.DidentRight}),
 	}
 	if countsBytes {
-		decorators = append(decorators, decor.CountersKibiByte("%.1f/%.1f", decor.WCSyncSpace))
+		decorators = append(decorators, decor.CountersKiloByte("%.1f/%.1f", decor.WCSyncSpace))
 	} else {
 		decorators = append(decorators, decor.CountersNoUnit("%d/%d", decor.WCSyncSpace))
 	}
