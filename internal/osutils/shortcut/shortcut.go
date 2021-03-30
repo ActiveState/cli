@@ -87,7 +87,7 @@ func (s *Shortcut) SetIconBlob(blob []byte) error {
 	filepath := filepath.Join(filepath.Dir(s.target), strings.Split(filepath.Base(s.target), ".")[0]+"_generated.ico")
 	if fileutils.FileExists(filepath) {
 		if err := os.Remove(filepath); err != nil {
-			return errs.Wrap(err, "Could not remove old ico file: %s")
+			return errs.Wrap(err, "Could not remove old ico file: %s", filepath)
 		}
 	}
 
