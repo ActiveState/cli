@@ -56,13 +56,13 @@ func run() error {
 		logging.Debug("Running CmdStart")
 		return runStart(cfg)
 	case CmdStop:
-		logging.Debug("Running CmdStart")
+		logging.Debug("Running CmdStop")
 		return runStop(cfg)
 	case CmdStatus:
-		logging.Debug("Running CmdStart")
+		logging.Debug("Running CmdStatus")
 		return runStatus(cfg)
 	case CmdForeground:
-		logging.Debug("Running CmdStart")
+		logging.Debug("Running CmdForeground")
 		return runForeground(cfg)
 	}
 
