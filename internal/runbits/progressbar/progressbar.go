@@ -7,12 +7,17 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/termutils"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/vbauerster/mpb/v6"
 )
 
+// progressBarWidth is the width for the progress bar display
+// We choose 40, because it is big enough, and gives plenty of room to write a descriptive text next to it.
 const progressBarWidth = 40
+
+// maxWaitTime is maximum time we wait for the mpb.Progress.Wait() function to return before we cancel it
 const maxWaitTime time.Duration = time.Millisecond * 500
 
 type artifactStepBar struct {
@@ -20,7 +25,7 @@ type artifactStepBar struct {
 	bar     *mpb.Bar
 }
 
-// RuntimeProgress prints progressbar for runtime setup events
+// RuntimeProgress prints a progress bar for runtime setup events based on the vbauerster/mpb progress package.
 // It creates a summary progress bar for the overall installation counting the number of successfully installed artifacts
 // If a remote build is active, it also prints a progress bar counting the number of successfully build artifacts
 // And for every artifact it prints progress bars counting
@@ -90,7 +95,7 @@ func (rp *RuntimeProgress) artifactBar(id artifact.ArtifactID, title string) *ar
 // BuildStarted adds a build progress bar
 func (rp *RuntimeProgress) BuildStarted(total int64) error {
 	if rp.buildBar == nil {
-		rp.buildBar = rp.addTotalBar("Building", total)
+		rp.buildBar = rp.addTotalBar(locale.Tl("progress_building", "Building"), total)
 	}
 	return nil
 }
@@ -124,7 +129,7 @@ func (rp *RuntimeProgress) BuildCompleted(anyFailures bool) error {
 // InstallationStarted adds a progress bar for the overall installation progress
 func (rp *RuntimeProgress) InstallationStarted(total int64) error {
 	if rp.installBar == nil {
-		rp.installBar = rp.addTotalBar("Installing", total)
+		rp.installBar = rp.addTotalBar(locale.Tl("progress_total_installing", "Installing"), total)
 	}
 	return nil
 }
@@ -155,12 +160,12 @@ func (rp *RuntimeProgress) InstallationCompleted(anyFailures bool) error {
 }
 
 // ArtifactStepStarted adds a new progress bar for an artifact progress
-func (rp *RuntimeProgress) ArtifactStepStarted(artifactID artifact.ArtifactID, title string, name string, total int64) error {
+func (rp *RuntimeProgress) ArtifactStepStarted(artifactID artifact.ArtifactID, title string, name string, total int64, countsBytes bool) error {
 	as := rp.artifactBar(artifactID, title)
 	if as.bar != nil {
 		return errs.New("Progress bar can be initialized only once.")
 	}
-	as.bar = rp.addByteBar(fmt.Sprintf("%s %s", title, name), total)
+	as.bar = rp.addArtifactStepBar(fmt.Sprintf("%s %s", title, name), total, countsBytes)
 	as.started = time.Now()
 
 	return nil

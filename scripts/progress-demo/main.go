@@ -105,7 +105,7 @@ func run() error {
 	}
 
 	prod := events.NewRuntimeEventProducer()
-	handler := runbits.NewRuntimeMessageHandler(outputhelper.NewCatcher())
+	handler := runbits.DefaultRuntimeMessageHandler(outputhelper.NewCatcher())
 
 	mock := newMockProducer(prod, failedSteps)
 

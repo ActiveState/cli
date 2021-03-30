@@ -23,7 +23,7 @@ type ProgressDigester interface {
 	InstallationStarted(totalArtifacts int64) error
 	InstallationIncrement() error
 
-	ArtifactStepStarted(artifact.ArtifactID, string, string, int64) error
+	ArtifactStepStarted(artifact.ArtifactID, string, string, int64, bool) error
 	ArtifactStepIncrement(artifact.ArtifactID, string, int64) error
 	ArtifactStepCompleted(artifact.ArtifactID, string) error
 	ArtifactStepFailure(artifact.ArtifactID, string) error
@@ -114,7 +114,9 @@ func (eh *RuntimeEventConsumer) handleArtifactEvent(ev ArtifactSetupEventer) err
 			}
 		}
 		name, artBytes := t.ArtifactName(), t.Total()
-		return eh.progress.ArtifactStepStarted(t.ArtifactID(), stepTitle(t.Step()), name, int64(artBytes))
+		// the install step does only count the number of files changed
+		countsBytes := t.Step() != Install
+		return eh.progress.ArtifactStepStarted(t.ArtifactID(), stepTitle(t.Step()), name, int64(artBytes), countsBytes)
 	case ArtifactProgressEvent:
 		by := t.Progress()
 		return eh.progress.ArtifactStepIncrement(t.ArtifactID(), stepTitle(t.Step()), int64(by))

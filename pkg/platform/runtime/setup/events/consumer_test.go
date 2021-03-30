@@ -43,7 +43,7 @@ func (mpo *mockProgressOutput) InstallationIncrement() error {
 	mpo.installationCurrent++
 	return nil
 }
-func (mpo *mockProgressOutput) ArtifactStepStarted(artifact.ArtifactID, string, string, int64) error {
+func (mpo *mockProgressOutput) ArtifactStepStarted(artifact.ArtifactID, string, string, int64, bool) error {
 	mpo.artifactStartedCalled++
 	return nil
 }
