@@ -24,7 +24,7 @@ EOF
 unset ACTIVESTATE_PROJECT
 
 # URL to fetch updates from.
-STATEURL="https://s3.ca-central-1.amazonaws.com/cli-update/update/state/release/"
+STATEURL="https://state-tool.s3.amazonaws.com/update/state/release/"
 # Name of the executable to ultimately use.
 STATEEXE="state"
 # Optional target directory

@@ -36,7 +36,10 @@ func init() {
 	locale := getLocaleFlag()
 	cfg, err := config.Get()
 	if err == nil {
-		cfg.SetDefault("Locale", "en-US")
+		setErr := cfg.Set("Locale", "en-US")
+		if err != nil {
+			logging.Error("Could not set locale entry in config, error: %v", setErr)
+		}
 		if locale == "" {
 			locale = cfg.GetString("Locale")
 		}
@@ -103,7 +106,10 @@ func Set(localeName string) error {
 	if err != nil {
 		return errs.Wrap(err, "Could not get configuration to store updated locale")
 	}
-	cfg.Set("Locale", localeName)
+	err = cfg.Set("Locale", localeName)
+	if err != nil {
+		return errs.Wrap(err, "Could not set locale in config")
+	}
 
 	return nil
 }

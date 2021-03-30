@@ -10,6 +10,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
@@ -17,7 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/updater"
 )
 
-func autoUpdate(args []string, out output.Outputer, pjPath string) (bool, int, error) {
+func autoUpdate(args []string, out output.Outputer, pjPath string) (bool, error) {
 	disableAutoUpdate := strings.ToLower(os.Getenv(constants.DisableUpdates)) == "true"
 	disableAutoUpdateCauseCI := (os.Getenv("CI") != "" || os.Getenv("BUILDER_OUTPUT") != "") && strings.ToLower(os.Getenv(constants.DisableUpdates)) != "false"
 	updateIsRunning := funk.Contains(args, "update")
@@ -25,12 +26,12 @@ func autoUpdate(args []string, out output.Outputer, pjPath string) (bool, int, e
 
 	if testsAreRunning || updateIsRunning || disableAutoUpdate || disableAutoUpdateCauseCI || !osExeOverDayOld() {
 		logging.Debug("Not running auto updates")
-		return false, 0, nil
+		return false, nil
 	}
 
 	updated, resultVersion := updater.AutoUpdate(pjPath, out)
 	if !updated {
-		return false, 0, nil
+		return false, nil
 	}
 
 	defer updater.Cleanup()
@@ -38,7 +39,10 @@ func autoUpdate(args []string, out output.Outputer, pjPath string) (bool, int, e
 	out.Notice(output.Heading(locale.Tl("auto_update_title", "Auto Update")))
 	out.Notice(locale.Tr("auto_update_to_version", constants.Version, resultVersion))
 	code, err := relaunch()
-	return true, code, err
+	if err != nil {
+		return true, errs.WrapExitCode(err, code)
+	}
+	return true, nil
 }
 
 // When an update was found and applied, re-launch the update with the current

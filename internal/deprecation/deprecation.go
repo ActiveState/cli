@@ -52,7 +52,7 @@ type Checker struct {
 type Configurable interface {
 	ConfigPath() string
 	GetTime(key string) time.Time
-	Set(key string, value interface{})
+	Set(key string, value interface{}) error
 }
 
 // NewChecker returns a new instance of the Checker struct
@@ -121,7 +121,10 @@ func (checker *Checker) shouldFetch() bool {
 		}
 	}
 
-	checker.config.Set(fetchKey, time.Now().Add(15*time.Minute))
+	err := checker.config.Set(fetchKey, time.Now().Add(15*time.Minute))
+	if err != nil {
+		logging.Error("Could not set deprecation fetch time in config, error: %v", err)
+	}
 	return true
 
 }

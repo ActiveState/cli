@@ -108,7 +108,7 @@ func FetchOrganizationsByIDs(ids []strfmt.UUID) ([]model.Organization, error) {
 	ids = funk.Uniq(ids).([]strfmt.UUID)
 	request := request.OrganizationsByIDs(ids)
 
-	gql := graphql.Get()
+	gql := graphql.New()
 	response := model.Organizations{}
 	err := gql.Run(request, &response)
 	if err != nil {
