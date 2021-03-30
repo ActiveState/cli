@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"time"
 
 	"github.com/shirou/gopsutil/process"
 
@@ -69,7 +70,9 @@ func (s *serviceManager) Stop() error {
 		return errs.Wrap(err, "Could not create request to quit svc")
 	}
 
-	client := &http.Client{}
+	client := &http.Client{
+		Timeout: time.Second * 120,
+	}
 	res, err := client.Do(req)
 	if err != nil {
 		return errs.Wrap(err, "Request to quit svc failed")
