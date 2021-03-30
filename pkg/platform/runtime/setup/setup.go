@@ -216,17 +216,23 @@ func (s *Setup) update() error {
 	return nil
 }
 
-func aggregateErrors(bgErrs <-chan error, aggErr chan<- error) {
-	var errs []error
-	for err := range bgErrs {
-		errs = append(errs, err)
-	}
+func aggregateErrors() (chan<- error, <-chan error) {
+	aggErr := make(chan error)
+	bgErrs := make(chan error)
+	go func() {
+		var errs []error
+		for err := range bgErrs {
+			errs = append(errs, err)
+		}
 
-	if len(errs) > 0 {
-		aggErr <- &ArtifactSetupErrors{errs}
-	} else {
-		aggErr <- nil
-	}
+		if len(errs) > 0 {
+			aggErr <- &ArtifactSetupErrors{errs}
+		} else {
+			aggErr <- nil
+		}
+	}()
+
+	return bgErrs, aggErr
 }
 
 func (s *Setup) installArtifacts(buildResult *model.BuildResult, artifacts artifact.ArtifactRecipeMap) error {
@@ -237,29 +243,14 @@ func (s *Setup) installArtifacts(buildResult *model.BuildResult, artifacts artif
 	// - The first stage runs concurrently in MaxConcurrency worker threads (download, unpacking, relocation)
 	// - The second stage moves all files into its final destination is running in a single thread (using the mainthread library) to avoid file conflicts
 
-	// installErr is fed with exactly one error object (or nil pointer) after the installation go-routine finishes
-	installErr := make(chan error)
+	var err error
+	if buildResult.BuildReady {
+		err = s.installFromBuildResult(buildResult, artifacts)
+	} else {
+		err = s.installFromBuildLog(buildResult, artifacts)
+	}
 
-	// bgErrs collects all errors that can occur in go routines installing the artifacts
-	bgErrs := make(chan error)
-	go aggregateErrors(bgErrs, installErr)
-
-	// schedule the first stage, binding mainthread library to this thread
-	mainthread.Run(func() {
-		defer close(bgErrs)
-		var err error
-		if buildResult.BuildReady {
-			err = s.installFromBuildResult(buildResult, artifacts, bgErrs)
-		} else {
-			err = s.installFromBuildLog(buildResult, artifacts, bgErrs)
-		}
-
-		if err != nil {
-			bgErrs <- err
-		}
-	})
-
-	return <-installErr
+	return err
 }
 
 func (s *Setup) deleteOutdatedArtifacts(changeset artifact.ArtifactChangeset, storedArtifacted map[artifact.ArtifactID]store.StoredArtifact) error {
@@ -309,23 +300,28 @@ func (s *Setup) setupArtifactSubmitFunction(a artifact.ArtifactDownload, buildRe
 	}
 }
 
-func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, artifacts map[artifact.ArtifactID]artifact.ArtifactRecipe, artfErrs chan<- error) error {
-	wp := workerpool.New(MaxConcurrency)
+func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, artifacts map[artifact.ArtifactID]artifact.ArtifactRecipe) error {
 	downloads, err := artifact.NewDownloadsFromBuild(buildResult.BuildStatusResponse, buildResult.BuildEngine == model.Camel)
 	if err != nil {
 		return errs.Wrap(err, "Could not fetch artifacts to download.")
 	}
 	s.msgHandler.TotalArtifacts(len(downloads))
-	for _, a := range downloads {
-		wp.Submit(s.setupArtifactSubmitFunction(a, buildResult, artifacts, artfErrs))
-	}
 
-	wp.StopWait()
+	errs, aggregatedErr := aggregateErrors()
+	mainthread.Run(func() {
+		defer close(errs)
+		wp := workerpool.New(MaxConcurrency)
+		for _, a := range downloads {
+			wp.Submit(s.setupArtifactSubmitFunction(a, buildResult, artifacts, errs))
+		}
 
-	return nil
+		wp.StopWait()
+	})
+
+	return <-aggregatedErr
 }
 
-func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts map[artifact.ArtifactID]artifact.ArtifactRecipe, artfErrs chan<- error) error {
+func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts map[artifact.ArtifactID]artifact.ArtifactRecipe) error {
 	s.msgHandler.TotalArtifacts(len(artifacts))
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -339,21 +335,24 @@ func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts ma
 
 	buildLog, err := buildlog.New(artifacts, conn, s.msgHandler, *buildResult.Recipe.RecipeID)
 
-	wp := workerpool.New(MaxConcurrency)
+	errs, aggregatedErr := aggregateErrors()
 
-	go func() {
-		for a := range buildLog.BuiltArtifactsChannel() {
-			wp.Submit(s.setupArtifactSubmitFunction(a, buildResult, artifacts, artfErrs))
+	mainthread.Run(func() {
+		defer close(errs)
+		wp := workerpool.New(MaxConcurrency)
+		go func() {
+			for a := range buildLog.BuiltArtifactsChannel() {
+				wp.Submit(s.setupArtifactSubmitFunction(a, buildResult, artifacts, errs))
+			}
+		}()
+
+		if err = buildLog.Wait(); err != nil {
+			errs <- err
 		}
-	}()
+		wp.StopWait()
+	})
 
-	if err = buildLog.Wait(); err != nil {
-		return err
-	}
-
-	wp.StopWait()
-
-	return nil
+	return <-aggregatedErr
 }
 
 // setupArtifact sets up an individual artifact
