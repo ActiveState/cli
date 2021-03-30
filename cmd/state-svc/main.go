@@ -72,9 +72,9 @@ func run() error {
 func runForeground(cfg *config.Instance) error {
 	logging.Debug("Running in Foreground")
 
-	p := NewProgram(cfg)
+	p := NewService(cfg)
 	if err := p.Start(); err != nil {
-		return errs.Wrap(err, "Could not start program")
+		return errs.Wrap(err, "Could not start service")
 	}
 
 	return nil
