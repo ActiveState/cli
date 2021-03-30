@@ -83,9 +83,9 @@ func runForeground(cfg *config.Instance) error {
 func runStart(cfg *config.Instance) error {
 	logging.Debug("Starting")
 
-	s := NewService(cfg)
+	s := NewServiceManager(cfg)
 	if err := s.Start(os.Args[0], CmdForeground); err != nil {
-		return errs.Wrap(err, "Could not start service")
+		return errs.Wrap(err, "Could not start serviceManager")
 	}
 
 	return nil
@@ -94,16 +94,16 @@ func runStart(cfg *config.Instance) error {
 func runStop(cfg *config.Instance) error {
 	logging.Debug("Starting")
 
-	s := NewService(cfg)
+	s := NewServiceManager(cfg)
 	if err := s.Stop(); err != nil {
-		return errs.Wrap(err, "Could not stop service")
+		return errs.Wrap(err, "Could not stop serviceManager")
 	}
 
 	return nil
 }
 
 func runStatus(cfg *config.Instance) error {
-	pid, err := NewService(cfg).Pid()
+	pid, err := NewServiceManager(cfg).Pid()
 	if err != nil {
 		return errs.Wrap(err, "Could not obtain pid")
 	}

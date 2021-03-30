@@ -17,16 +17,16 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 )
 
-type service struct {
+type serviceManager struct {
 	cfg    *config.Instance
 	lockFp string
 }
 
-func NewService(cfg *config.Instance) *service {
-	return &service{cfg, filepath.Join(cfg.ConfigPath(), "state-svc.lock")}
+func NewServiceManager(cfg *config.Instance) *serviceManager {
+	return &serviceManager{cfg, filepath.Join(cfg.ConfigPath(), "state-svc.lock")}
 }
 
-func (s *service) Start(args ...string) error {
+func (s *serviceManager) Start(args ...string) error {
 	curPid, err := s.Pid()
 	if err == nil && curPid != nil {
 		return errs.New("Service is already running")
@@ -36,13 +36,13 @@ func (s *service) Start(args ...string) error {
 	cmd.Start()
 
 	if cmd.Process == nil {
-		return errs.New("Could not obtain process information after starting service")
+		return errs.New("Could not obtain process information after starting serviceManager")
 	}
 
 	if err := s.cfg.Set(constants.SvcConfigPid, cmd.Process.Pid); err != nil {
 		if err := cmd.Process.Signal(os.Interrupt); err != nil {
 			logging.Errorf("Could not cleanup process: %v", err)
-			fmt.Printf("Failed to cleanup service after lock failed, please manually kill the following pid: %d\n", cmd.Process.Pid)
+			fmt.Printf("Failed to cleanup serviceManager after lock failed, please manually kill the following pid: %d\n", cmd.Process.Pid)
 		}
 		return errs.Wrap(err, "Could not store pid")
 	}
@@ -52,7 +52,7 @@ func (s *service) Start(args ...string) error {
 	return nil
 }
 
-func (s *service) Stop() error {
+func (s *serviceManager) Stop() error {
 	pid, err := s.Pid()
 	if err != nil {
 		return errs.Wrap(err, "Could not get pid")
@@ -88,7 +88,7 @@ func (s *service) Stop() error {
 	return nil
 }
 
-func (s *service) Pid() (*int, error) {
+func (s *serviceManager) Pid() (*int, error) {
 	pid := s.cfg.GetInt(constants.SvcConfigPid)
 	if pid <= 0 {
 		return nil, nil
