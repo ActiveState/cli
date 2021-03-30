@@ -1,10 +1,10 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"net/http"
 	"os"
-	"os/signal"
-	"syscall"
 
 	"github.com/ActiveState/cli/cmd/state-svc/internal/server"
 	"github.com/ActiveState/cli/internal/config"
@@ -35,18 +35,10 @@ func (s *service) Start() error {
 		return errs.Wrap(err, "Could not save config")
 	}
 
-	// Handle sigterm
-	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
-	defer signal.Stop(sig)
-
-	go func() {
-		oscall := <-sig
-		logging.Debug("system call:%+v", oscall)
-		s.Stop()
-	}()
-
 	if err := s.server.Start(); err != nil {
+		if errors.Is(err, http.ErrServerClosed) {
+			return nil
+		}
 		return errs.Wrap(err, "Failed to start server")
 	}
 

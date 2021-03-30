@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -73,6 +75,20 @@ func runForeground(cfg *config.Instance) error {
 	logging.Debug("Running in Foreground")
 
 	p := NewService(cfg)
+
+	// Handle sigterm
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
+	defer signal.Stop(sig)
+
+	go func() {
+		oscall := <-sig
+		logging.Debug("system call:%+v", oscall)
+		if err := p.Stop(); err != nil {
+			logging.Error("Stop on sigterm failed: %v", errs.Join(err, ": "))
+		}
+	}()
+
 	if err := p.Start(); err != nil {
 		return errs.Wrap(err, "Could not start service")
 	}
