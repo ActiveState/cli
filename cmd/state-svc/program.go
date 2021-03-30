@@ -58,7 +58,7 @@ func (p *program) Stop() error {
 		return errs.New("Can't stop program as it was never started")
 	}
 
-	if err := p.server.Close(); err != nil {
+	if err := p.server.Shutdown(); err != nil {
 		fmt.Fprintf(os.Stderr, "Closing server failed: %v", err)
 	}
 	return nil
