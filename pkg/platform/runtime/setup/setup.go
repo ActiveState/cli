@@ -69,10 +69,10 @@ func (a *ArtifactSetupErrors) UserError() string {
 	return locale.Tl("setup_artifacts_err", "Not all artifacts could be installed:\n{{.V0}}", strings.Join(errStrings, "\n"))
 }
 
-// MessageHandler is the interface for callback functions that are called during
+// Events is the interface for callback functions that are called during
 // runtime set-up when progress messages can be forwarded to the user
-type MessageHandler interface {
-	buildlog.BuildLogMessageHandler
+type Events interface {
+	buildlog.Events
 
 	// ChangeSummary summarizes the changes to the current project during the InstallRuntime() call.
 	// This summary is printed as soon as possible, providing the State Tool user with an idea of the complexity of the requested build.
@@ -94,10 +94,10 @@ type Targeter interface {
 
 // Setup provides methods to setup a fully-function runtime that *only* requires interactions with the local file system.
 type Setup struct {
-	model      ModelProvider
-	target     Targeter
-	msgHandler MessageHandler
-	store      *store.Store
+	model  ModelProvider
+	target Targeter
+	events Events
+	store  *store.Store
 }
 
 // ModelProvider is the interface for all functions that involve backend communication
@@ -122,12 +122,12 @@ type ArtifactSetuper interface {
 }
 
 // New returns a new Setup instance that can install a Runtime locally on the machine.
-func New(target Targeter, msgHandler MessageHandler) *Setup {
+func New(target Targeter, msgHandler Events) *Setup {
 	return NewWithModel(target, msgHandler, model.NewDefault())
 }
 
 // NewWithModel returns a new Setup instance with a customized model eg., for testing purposes
-func NewWithModel(target Targeter, msgHandler MessageHandler, model ModelProvider) *Setup {
+func NewWithModel(target Targeter, msgHandler Events, model ModelProvider) *Setup {
 	return &Setup{model, target, msgHandler, nil}
 }
 
@@ -170,7 +170,7 @@ func (s *Setup) update() error {
 	}
 	requestedArtifacts := artifact.NewArtifactChangesetByRecipe(oldRecipe, buildResult.Recipe, true)
 	changedArtifacts := artifact.NewArtifactChangesetByRecipe(oldRecipe, buildResult.Recipe, false)
-	s.msgHandler.ChangeSummary(artifacts, requestedArtifacts, changedArtifacts)
+	s.events.ChangeSummary(artifacts, requestedArtifacts, changedArtifacts)
 
 	setup, err := s.selectSetupImplementation(buildResult.BuildEngine, artifacts)
 	if err != nil {
@@ -227,7 +227,7 @@ func (s *Setup) update() error {
 func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, setup Setuper) error {
 	var errors []error
 	wp := workerpool.New(MaxConcurrency)
-	downloads, err := artifact.NewDownloadsFromBuild(buildResult.BuildStatusResponse, buildResult.BuildEngine == model.Camel)
+	downloads, err := setup.DownloadsFromBuild(buildResult.BuildStatusResponse)
 	if err != nil {
 		return errs.Wrap(err, "Could not fetch artifacts to download.")
 	}
@@ -253,7 +253,7 @@ func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, setup Set
 }
 
 func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts artifact.ArtifactRecipeMap, setup Setuper) error {
-	s.msgHandler.TotalArtifacts(len(artifacts))
+	s.events.TotalArtifacts(len(artifacts))
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -264,7 +264,7 @@ func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts ar
 	}
 	defer conn.Close()
 
-	buildLog, err := buildlog.New(artifacts, conn, s.msgHandler, *buildResult.Recipe.RecipeID)
+	buildLog, err := buildlog.New(artifacts, conn, s.events, *buildResult.Recipe.RecipeID)
 
 	var errors []error
 
@@ -316,13 +316,13 @@ func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.Artifact
 
 	unarchiver := as.Unarchiver()
 	archivePath := filepath.Join(targetDir, a.String()+unarchiver.Ext())
-	downloadProgress := events.NewIncrementalProgress(s.msgHandler, events.Download, a, artifactName)
+	downloadProgress := events.NewIncrementalProgress(s.events, events.Download, a, artifactName)
 	if err := s.downloadArtifact(unsignedURI, archivePath, downloadProgress); err != nil {
 		err := errs.Wrap(err, "Could not download artifact %s", unsignedURI)
-		s.msgHandler.ArtifactStepFailed(events.Download, a, err.Error())
+		s.events.ArtifactStepFailed(events.Download, a, err.Error())
 		return err
 	}
-	s.msgHandler.ArtifactStepCompleted(events.Download, a)
+	s.events.ArtifactStepCompleted(events.Download, a)
 
 	unpackedDir := filepath.Join(targetDir, a.String())
 	logging.Debug("Unarchiving %s (%s) to %s", archivePath, unsignedURI, unpackedDir)
@@ -335,14 +335,14 @@ func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.Artifact
 		return errs.Wrap(err, "Could not remove previous temporary installation directory.")
 	}
 
-	unpackProgress := events.NewIncrementalProgress(s.msgHandler, events.Unpack, a, artifactName)
+	unpackProgress := events.NewIncrementalProgress(s.events, events.Unpack, a, artifactName)
 	numFiles, err := s.unpackArtifact(unarchiver, archivePath, unpackedDir, unpackProgress)
 	if err != nil {
 		err := errs.Wrap(err, "Could not unpack artifact %s", archivePath)
-		s.msgHandler.ArtifactStepFailed(events.Unpack, a, err.Error())
+		s.events.ArtifactStepFailed(events.Unpack, a, err.Error())
 		return err
 	}
-	s.msgHandler.ArtifactStepCompleted(events.Unpack, a)
+	s.events.ArtifactStepCompleted(events.Unpack, a)
 
 	envDef, err := as.EnvDef(unpackedDir)
 	if err != nil {
@@ -352,21 +352,21 @@ func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.Artifact
 	var files []string
 	onMoveFile := func(fromPath, toPath string) {
 		if !fileutils.IsDir(toPath) {
-			s.msgHandler.ArtifactStepProgress(events.Install, a, 1)
+			s.events.ArtifactStepProgress(events.Install, a, 1)
 			files = append(files, toPath)
 		}
 	}
-	s.msgHandler.ArtifactStepStarting(events.Install, a, artifactName, numFiles)
+	s.events.ArtifactStepStarting(events.Install, a, artifactName, numFiles)
 	err = fileutils.MoveAllFilesRecursively(
 		filepath.Join(unpackedDir, envDef.InstallDir),
 		s.store.InstallPath(), onMoveFile,
 	)
 	if err != nil {
 		err := errs.Wrap(err, "Move artifact failed")
-		s.msgHandler.ArtifactStepFailed(events.Install, a, err.Error())
+		s.events.ArtifactStepFailed(events.Install, a, err.Error())
 		return err
 	}
-	s.msgHandler.ArtifactStepCompleted(events.Install, a)
+	s.events.ArtifactStepCompleted(events.Install, a)
 
 	cnst := envdef.NewConstants(s.store.InstallPath())
 	envDef = envDef.ExpandVariables(cnst)
