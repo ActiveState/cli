@@ -271,6 +271,7 @@ func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts ar
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
+		// wp.StopWait needs to be run in this go-routine after ALL tasks are scheduled, hence the need for the extra waitGroup to wait for this thread to finish
 		defer wg.Done()
 		wp := workerpool.New(MaxConcurrency)
 		defer wp.StopWait()
