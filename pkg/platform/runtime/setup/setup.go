@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/gammazero/workerpool"
 	"github.com/go-openapi/strfmt"
@@ -297,9 +298,13 @@ func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts ma
 	buildLog, err := buildlog.New(artifacts, conn, s.msgHandler, *buildResult.Recipe.RecipeID)
 
 	var errors []error
-	wp := workerpool.New(MaxConcurrency)
 
+	var wg sync.WaitGroup
+	wg.Add(1)
 	go func() {
+		defer wg.Done()
+		wp := workerpool.New(MaxConcurrency)
+		defer wp.StopWait()
 		for a := range buildLog.BuiltArtifactsChannel() {
 			func(a artifact.ArtifactDownload) {
 				wp.Submit(func() {
@@ -319,7 +324,8 @@ func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts ma
 		return err
 	}
 
-	wp.StopWait()
+	// wait for the build artifacts to be processed
+	wg.Wait()
 
 	if len(errors) > 0 {
 		return &ArtifactSetupErrors{errors}
