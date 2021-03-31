@@ -97,8 +97,6 @@ func runForeground(cfg *config.Instance) error {
 }
 
 func runStart(cfg *config.Instance) error {
-	logging.Debug("Starting")
-
 	s := NewServiceManager(cfg)
 	if err := s.Start(os.Args[0], CmdForeground); err != nil {
 		return errs.Wrap(err, "Could not start serviceManager")
@@ -108,8 +106,6 @@ func runStart(cfg *config.Instance) error {
 }
 
 func runStop(cfg *config.Instance) error {
-	logging.Debug("Starting")
-
 	s := NewServiceManager(cfg)
 	if err := s.Stop(); err != nil {
 		return errs.Wrap(err, "Could not stop serviceManager")
