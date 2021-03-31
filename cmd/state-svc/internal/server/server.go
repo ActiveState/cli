@@ -1,8 +1,10 @@
 package server
 
 import (
+	"context"
 	"net"
 	"strconv"
+	"time"
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/extension"
@@ -56,8 +58,10 @@ func (s *Server) Start() error {
 	return s.httpServer.Start(s.listener.Addr().String())
 }
 
-func (s *Server) Close() error {
-	if err := s.httpServer.Close(); err != nil {
+func (s *Server) Shutdown() error {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	if err := s.httpServer.Shutdown(ctx); err != nil {
 		return errs.Wrap(err, "Could not close http server")
 	}
 	if err := s.listener.Close(); err != nil {

@@ -258,3 +258,9 @@ const GlobalDefaultPrefname = "default_project_path"
 
 // DefaultBranchName is the default branch name used on platform projects
 const DefaultBranchName = "main"
+
+// SvcConfigPort is the config key used for storing the svc port
+const SvcConfigPort = "svc-port"
+
+// SvcConfigPid is the config key used for storing the svc pid
+const SvcConfigPid = "svc-pid"

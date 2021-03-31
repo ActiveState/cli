@@ -1,9 +1,6 @@
 package branch
 
 import (
-	"fmt"
-	"sort"
-
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -38,30 +35,8 @@ func (l *List) Run() error {
 		return locale.WrapError(err, "err_fetch_project", "", l.project.Namespace().String())
 	}
 
-	localBranch := l.project.BranchName()
-
-	sort.Slice(project.Branches, func(i, j int) bool {
-		return project.Branches[i].Label < project.Branches[j].Label
-	})
-
-	var branches []string
-	var mainBranchLabel string
-	for _, branch := range project.Branches {
-		branchName := branch.Label
-		if branchName == localBranch {
-			branchName = fmt.Sprintf("[NOTICE]%s[/RESET] *", branchName)
-		}
-
-		if branch.Default {
-			mainBranchLabel = branchName
-			continue
-		}
-
-		branches = append(branches, branchName)
-	}
-	branches = append([]string{mainBranchLabel}, branches...)
-
-	l.out.Print(branches)
+	tree := NewBranchOutput(project.Branches, l.project.BranchName())
+	l.out.Print(tree)
 
 	return nil
 }

@@ -6,6 +6,7 @@ import (
 	"os/user"
 	"runtime"
 
+	"github.com/ActiveState/cli/cmd/state-tray/pkg/autostart"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/globaldefault"
@@ -14,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/subshell"
 )
 
@@ -67,6 +69,14 @@ func (r *Prepare) Run(cmd *captain.Command) error {
 			logging.Error("prepareCompletions failed: %v", err)
 			r.out.Notice(output.Heading(locale.Tl("warning", "Warning")))
 			r.out.Notice(locale.Tr("err_prepare_completions", "Could not generate completions script, error received: {{.V0}}.", err.Error()))
+		}
+	}
+
+	if runtime.GOOS == "windows" && !rtutils.BuiltViaCI {
+		if err := autostart.New().Enable(); err != nil {
+			logging.Error("prepareAutoStart failed: %v", err)
+			r.out.Notice(output.Heading(locale.Tl("warning", "Warning")))
+			r.out.Notice(locale.Tr("err_prepare_autostart", "Could not enable auto-start, error received: {{.V0}}.", err.Error()))
 		}
 	}
 

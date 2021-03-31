@@ -3,17 +3,24 @@ package main
 import (
 	"context"
 	"os"
+	"os/exec"
+	"path/filepath"
+	"runtime"
+	"syscall"
+
+	"github.com/getlantern/systray"
+	"github.com/gobuffalo/packr"
 
 	"github.com/ActiveState/cli/cmd/state-tray/internal/menu"
 	"github.com/ActiveState/cli/cmd/state-tray/internal/open"
+	"github.com/ActiveState/cli/cmd/state-tray/pkg/autostart"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/getlantern/systray"
-	"github.com/gobuffalo/packr"
 )
 
 func main() {
@@ -29,7 +36,24 @@ func onReady() {
 }
 
 func run() error {
-	logging.CurrentHandler().SetVerbose(true)
+	if os.Getenv("VERBOSE") == "true" {
+		// Doesn't seem to work, I think the systray lib and its logging solution is interfering
+		logging.CurrentHandler().SetVerbose(true)
+	}
+
+	stateSvcExe := filepath.Join(filepath.Dir(os.Args[0]), "state-svc")
+	if runtime.GOOS == "windows" {
+		stateSvcExe = stateSvcExe + ".exe"
+	}
+	if !fileutils.FileExists(stateSvcExe) {
+		return errs.New("Could not find: %s", stateSvcExe)
+	}
+
+	cmd := exec.Command(stateSvcExe, "start")
+	cmd.SysProcAttr = &syscall.SysProcAttr{CreationFlags: 0x08000000} // CREATE_NO_WINDOW
+	if err := cmd.Start(); err != nil {
+		return errs.Wrap(err, "Could not start %s", stateSvcExe)
+	}
 
 	config, err := config.Get()
 	if err != nil {
@@ -71,6 +95,11 @@ func run() error {
 		locale.Tl("tray_account_tooltip", "Open your account page"),
 	)
 
+	systray.AddSeparator()
+	mAutoStart := systray.AddMenuItem(locale.Tl("tray_autostart", "Start on Login"), "")
+	if autostart.New().IsEnabled() {
+		mAutoStart.Check()
+	}
 	systray.AddSeparator()
 
 	mProjects := systray.AddMenuItem(locale.Tl("tray_projects_title", "Local Projects"), "")
@@ -123,12 +152,33 @@ func run() error {
 				logging.Error("Could not get local projects listing: %v", err)
 			}
 			localProjectsUpdater.Update(localProjects)
+		case <-mAutoStart.ClickedCh:
+			logging.Debug("Autostart event")
+			as := autostart.New()
+			var err error
+			if as.IsEnabled() {
+				logging.Debug("Disable")
+				err = as.Disable()
+				if err == nil {
+					mAutoStart.Uncheck()
+				}
+			} else {
+				logging.Debug("Enable")
+				err = as.Enable()
+				if err == nil {
+					mAutoStart.Check()
+				}
+			}
+			if err != nil {
+				logging.Error("Could not toggle autostart tray: %v", errs.Join(err, ": "))
+			}
 		case <-mQuit.ClickedCh:
 			logging.Debug("Quit event")
 			systray.Quit()
-			return nil
 		}
 	}
+
+	return nil
 }
 
 func onExit() {
