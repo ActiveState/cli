@@ -4,12 +4,11 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/go-ole/go-ole"
-	"github.com/go-ole/go-ole/oleutil"
+	"github.com/gobuffalo/packr"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils/shortcut"
 )
 
 var startupPath = filepath.Join(os.Getenv("USERPROFILE"), "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "Startup")
@@ -18,41 +17,14 @@ func (a *App) Enable() error {
 	if a.IsEnabled() {
 		return nil
 	}
-
-	// ALWAYS errors with "Incorrect function", which can apparently be safely ignored..
-	ole.CoInitializeEx(0, ole.COINIT_APARTMENTTHREADED|ole.COINIT_SPEED_OVER_MEMORY)
-	defer ole.CoUninitialize()
-
-	oleShellObject, err := oleutil.CreateObject("WScript.Shell")
+	s, err := shortcut.New(startupPath, a.Name, a.Exec)
 	if err != nil {
-		return errs.Wrap(err, "Could not create shell object")
+		return errs.Wrap(err, "Could not create shortcut")
 	}
-	defer oleShellObject.Release()
-
-	wshell, err := oleShellObject.QueryInterface(ole.IID_IDispatch)
-	if err != nil {
-		return errs.Wrap(err, "Could not interface with shell object")
+	box := packr.NewBox("../../../assets")
+	if err := s.SetIconBlob(box.Bytes("icon.ico")); err != nil {
+		return errs.Wrap(err, "Could not set icon for shortcut file")
 	}
-	defer wshell.Release()
-
-	logging.Debug("Creating shortcut: %s", a.shortcutFilename())
-	cs, err := oleutil.CallMethod(wshell, "CreateShortcut", a.shortcutFilename())
-	if err != nil {
-		return errs.Wrap(err, "Could not call CreateShortcut on shell object")
-	}
-	idispatch := cs.ToIDispatch()
-
-	logging.Debug("Setting TargetPath: %s", a.Exec)
-	_, err = oleutil.PutProperty(idispatch, "TargetPath", a.Exec)
-	if err != nil {
-		return errs.Wrap(err, "Could not set shortcut target")
-	}
-
-	_, err = oleutil.CallMethod(idispatch, "Save")
-	if err != nil {
-		return errs.Wrap(err, "Could not save shortcut")
-	}
-
 	return nil
 }
 

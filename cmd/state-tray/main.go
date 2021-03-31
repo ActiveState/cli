@@ -50,7 +50,7 @@ func run() error {
 		return errs.Wrap(err, "Could not start %s", stateSvcExe)
 	}
 
-	box := packr.NewBox("assets")
+	box := packr.NewBox("../../assets")
 	systray.SetIcon(box.Bytes("icon.ico"))
 	systray.SetTooltip(locale.Tl("tray_tooltip", "ActiveState State Tool"))
 
