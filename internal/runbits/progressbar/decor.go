@@ -13,34 +13,32 @@ func (pb *RuntimeProgress) trimName(name string) string {
 	return name
 }
 
-// addTotalBar adds a bar counting a number of discrete events
+// addTotalBar adds a bar counting a number of sub-events adding up to total
 func (pb *RuntimeProgress) addTotalBar(name string, total int64) *mpb.Bar {
+	return pb.addBar(name, total, false, mpb.BarFillerClearOnComplete())
+}
+
+// addArtifactStepBar adds a bar counting the progress in a specific artifact setup step
+func (pb *RuntimeProgress) addArtifactStepBar(name string, total int64, countsBytes bool) *mpb.Bar {
+	return pb.addBar(name, total, countsBytes, mpb.BarRemoveOnComplete())
+}
+
+func (pb *RuntimeProgress) addBar(name string, total int64, countsBytes bool, options ...mpb.BarOption) *mpb.Bar {
 	name = pb.trimName(name)
-	options := []mpb.BarOption{
-		mpb.BarFillerClearOnComplete(),
-		mpb.PrependDecorators(
-			decor.Name(name, decor.WC{W: pb.maxWidth, C: decor.DidentRight}),
-			decor.CountersNoUnit("%d / %d", decor.WCSyncSpace),
-		),
+	decorators := []decor.Decorator{
+		decor.Name(name, decor.WC{W: pb.maxWidth, C: decor.DidentRight}),
+	}
+	if countsBytes {
+		decorators = append(decorators, decor.CountersKiloByte("%.1f/%.1f", decor.WC{W: 17}))
+	} else {
+		decorators = append(decorators, decor.CountersNoUnit("%d/%d", decor.WC{W: 17}))
+	}
+	options = append(options,
+		mpb.PrependDecorators(decorators...),
 		mpb.AppendDecorators(
 			decor.OnComplete(decor.Percentage(decor.WC{W: 5}), ""),
 		),
-	}
-
-	return pb.prg.AddBar(total, options...)
-}
-
-// addByteBar adds a bar counting a number of bytes that have been processed eg., for a file download
-func (pb *RuntimeProgress) addByteBar(name string, total int64, options ...mpb.BarOption) *mpb.Bar {
-	name = pb.trimName(name)
-	options = append([]mpb.BarOption{
-		mpb.BarRemoveOnComplete(),
-		mpb.PrependDecorators(
-			decor.Name(name, decor.WC{W: pb.maxWidth, C: decor.DidentRight}),
-			decor.Counters(decor.UnitKB, "%.1f / %.1f", decor.WCSyncSpace),
-		),
-		mpb.AppendDecorators(decor.Percentage(decor.WC{W: 5})),
-	}, options...)
+	)
 
 	return pb.prg.AddBar(total, options...)
 }

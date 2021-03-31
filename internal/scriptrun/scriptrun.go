@@ -61,7 +61,7 @@ func (s *ScriptRun) PrepareVirtualEnv() error {
 		if !runtime.IsNeedsUpdateError(err) {
 			return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
 		}
-		if err := rt.Update(runbits.NewRuntimeMessageHandler(s.out)); err != nil {
+		if err := rt.Update(runbits.DefaultRuntimeMessageHandler(s.out)); err != nil {
 			return locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
 		}
 	}

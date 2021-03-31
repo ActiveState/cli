@@ -1,4 +1,23 @@
+// Package events handles the processing of setup events. As these events can be
+// sent in parallel, all events are collected in a single go-routine to simplify
+// their processing.
+//
+// The events are generated in the RuntimeEventProducer which exposes an events
+// channel that can be consumed by the RuntimeEventConsumer. The consumer then
+// delegates the event handling to digesters: ProgressDigester and
+// ChangeSummaryDigester
+//                                                                        +-----------------------+
+//                                                                    /-> | ChangeSummaryDigester |
+// +----------------------+              +----------------------+    |    +-----------------------+
+// | RuntimeEventProducer | -----------> | RuntimeEventConsumer | ---+
+// +----------------------+  .Events()   +----------------------+    |    +------------------+
+//                                                                    \-> | ProgressDigester |
+//                                                                        +------------------+
+// The runbits package has default implementations for digesters, and the
+// runbits.RuntimeMessageHandler combines the consumer with its digesters.
 package events
+
+// This file contains the definition of all events that the RuntimeEventProducer creates.
 
 import (
 	"fmt"
@@ -6,12 +25,12 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 )
 
-// ArtifactSetupStep is the step at which the artifact processing routine is currently at.
-type ArtifactSetupStep int
+// SetupStep is the step the runtime setup routine is currently at.
+type SetupStep int
 
 const (
 	// Build refers to a remote building artifact
-	Build ArtifactSetupStep = iota
+	Build SetupStep = iota
 	// Download refers to a currently downloading artifact
 	Download
 	// Unpack refers to the step where an artifact tarball is currently being unpacked
@@ -20,8 +39,8 @@ const (
 	Install
 )
 
-func (ass ArtifactSetupStep) String() string {
-	switch ass {
+func (s SetupStep) String() string {
+	switch s {
 	case Build:
 		return "build"
 	case Download:
@@ -35,25 +54,26 @@ func (ass ArtifactSetupStep) String() string {
 	}
 }
 
-// BaseEventer is the interface that every setup event should implement
-type BaseEventer interface {
+// SetupEventer is the interface that every setup event should implement
+type SetupEventer interface {
+	// String returns a description of the event
 	String() string
 }
 
-// ArtifactEventer describes the methods for an event that reports progress on a specific artifact
-type ArtifactEventer interface {
-	BaseEventer
-	Step() ArtifactSetupStep
+// ArtifactSetupEventer describes the methods for an event that reports progress on a specific artifact
+type ArtifactSetupEventer interface {
+	SetupEventer
+	Step() SetupStep
 	ArtifactID() artifact.ArtifactID
 }
 
 // baseEvent is a re-usable struct that implements the Step() and String() methods
 type baseEvent struct {
 	name string
-	step ArtifactSetupStep
+	step SetupStep
 }
 
-func newBaseEvent(name string, step ArtifactSetupStep) baseEvent {
+func newBaseEvent(name string, step SetupStep) baseEvent {
 	return baseEvent{name, step}
 }
 
@@ -61,7 +81,7 @@ func (be baseEvent) String() string {
 	return be.name
 }
 
-func (be baseEvent) Step() ArtifactSetupStep {
+func (be baseEvent) Step() SetupStep {
 	return be.step
 }
 
@@ -71,7 +91,7 @@ type artifactBaseEvent struct {
 	artifactID artifact.ArtifactID
 }
 
-func newArtifactBaseEvent(suffix string, step ArtifactSetupStep, artifactID artifact.ArtifactID) artifactBaseEvent {
+func newArtifactBaseEvent(suffix string, step SetupStep, artifactID artifact.ArtifactID) artifactBaseEvent {
 	return artifactBaseEvent{newBaseEvent(fmt.Sprintf("artifact_%s_%s", step.String(), suffix), step), artifactID}
 }
 
@@ -122,7 +142,7 @@ type ArtifactStartEvent struct {
 	total        int
 }
 
-func newArtifactStartEvent(step ArtifactSetupStep, artifactID artifact.ArtifactID, artifactName string, total int) ArtifactStartEvent {
+func newArtifactStartEvent(step SetupStep, artifactID artifact.ArtifactID, artifactName string, total int) ArtifactStartEvent {
 	return ArtifactStartEvent{newArtifactBaseEvent("start", step, artifactID), artifactName, total}
 }
 
@@ -147,7 +167,7 @@ func (ue ArtifactProgressEvent) Progress() int {
 	return ue.increment
 }
 
-func newArtifactProgressEvent(step ArtifactSetupStep, artifactID artifact.ArtifactID, increment int) ArtifactProgressEvent {
+func newArtifactProgressEvent(step SetupStep, artifactID artifact.ArtifactID, increment int) ArtifactProgressEvent {
 	return ArtifactProgressEvent{newArtifactBaseEvent("progress", step, artifactID), increment}
 }
 
@@ -156,7 +176,7 @@ type ArtifactCompleteEvent struct {
 	artifactBaseEvent
 }
 
-func newArtifactCompleteEvent(step ArtifactSetupStep, artifactID artifact.ArtifactID) ArtifactCompleteEvent {
+func newArtifactCompleteEvent(step SetupStep, artifactID artifact.ArtifactID) ArtifactCompleteEvent {
 	return ArtifactCompleteEvent{newArtifactBaseEvent("complete", step, artifactID)}
 }
 
@@ -171,10 +191,11 @@ func (fe ArtifactFailureEvent) Failure() string {
 	return fe.errorMessage
 }
 
-func newArtifactFailureEvent(step ArtifactSetupStep, artifactID artifact.ArtifactID, errorMessage string) ArtifactFailureEvent {
+func newArtifactFailureEvent(step SetupStep, artifactID artifact.ArtifactID, errorMessage string) ArtifactFailureEvent {
 	return ArtifactFailureEvent{newArtifactBaseEvent("failure", step, artifactID), errorMessage}
 }
 
+// ChangeSummaryEvent is sent when a the information to summarize the changes introduced by this runtime is available
 type ChangeSummaryEvent struct {
 	artifacts map[artifact.ArtifactID]artifact.ArtifactRecipe
 	requested artifact.ArtifactChangeset
@@ -185,14 +206,17 @@ func (cse ChangeSummaryEvent) String() string {
 	return "change_summary"
 }
 
+// Artifacts returns the map of ArtifactRecipe structs extracted from the recipe
 func (cse ChangeSummaryEvent) Artifacts() map[artifact.ArtifactID]artifact.ArtifactRecipe {
 	return cse.artifacts
 }
 
+// RequestedChangeset returns the changeset information for artifacts that the user requested to change (add/remove/update)
 func (cse ChangeSummaryEvent) RequestedChangeset() artifact.ArtifactChangeset {
 	return cse.requested
 }
 
+// CompleteChangeset returns the changeset information for all artifacts that have changed relative to the locally installed runtime
 func (cse ChangeSummaryEvent) CompleteChangeset() artifact.ArtifactChangeset {
 	return cse.changed
 }

@@ -36,7 +36,7 @@ type BuildLogConnector interface {
 	WriteJSON(interface{}) error
 }
 
-type BuildLogMessageHandler interface {
+type Events interface {
 	BuildStarting(total int)
 	BuildFinished()
 	ArtifactBuildStarting(artifactID artifact.ArtifactID, artifactName string)
@@ -53,17 +53,17 @@ type BuildLog struct {
 
 // New creates a new instance that allows us to wait for incoming build log information
 // TODO: Decide if we maybe want a fail-fast option where we return on the first artifact_failed message
-func New(artifactMap map[artifact.ArtifactID]artifact.ArtifactRecipe, conn BuildLogConnector, messageHandler BuildLogMessageHandler, recipeID strfmt.UUID) (*BuildLog, error) {
+func New(artifactMap map[artifact.ArtifactID]artifact.ArtifactRecipe, conn BuildLogConnector, events Events, recipeID strfmt.UUID) (*BuildLog, error) {
 	ch := make(chan artifact.ArtifactDownload)
 	errCh := make(chan error)
 
 	total := len(artifactMap)
-	messageHandler.BuildStarting(total)
+	events.BuildStarting(total)
 
 	go func() {
 		defer close(ch)
 		defer close(errCh)
-		defer messageHandler.BuildFinished()
+		defer events.BuildFinished()
 
 		var artifactErr error
 		for {
@@ -101,9 +101,9 @@ func New(artifactMap map[artifact.ArtifactID]artifact.ArtifactRecipe, conn Build
 					break
 				}
 				if msg.CacheHit {
-					messageHandler.ArtifactBuildCached(*msg.ArtifactID)
+					events.ArtifactBuildCached(*msg.ArtifactID)
 				} else {
-					messageHandler.ArtifactBuildStarting(*msg.ArtifactID, artifactName)
+					events.ArtifactBuildStarting(*msg.ArtifactID, artifactName)
 				}
 			case "artifact_succeeded":
 				if !artifactMapped {
@@ -115,7 +115,7 @@ func New(artifactMap map[artifact.ArtifactID]artifact.ArtifactRecipe, conn Build
 				if msg.ArtifactID != nil && *msg.ArtifactID == recipeID {
 					break
 				}
-				messageHandler.ArtifactBuildCompleted(*msg.ArtifactID)
+				events.ArtifactBuildCompleted(*msg.ArtifactID)
 				if msg.ArtifactID == nil || msg.ArtifactURI == nil || msg.ArtifactChecksum == nil {
 					errCh <- errs.New("artifact_succeeded message was incomplete")
 					return
@@ -123,7 +123,7 @@ func New(artifactMap map[artifact.ArtifactID]artifact.ArtifactRecipe, conn Build
 				ch <- artifact.ArtifactDownload{ArtifactID: *msg.ArtifactID, UnsignedURI: *msg.ArtifactURI, Checksum: *msg.ArtifactChecksum}
 			case "artifact_failed":
 				artifactErr = locale.WrapError(artifactErr, "err_artifact_failed", "Failed to build \"{{.V0}}\", error reported: {{.V1}}.", artifactName, msg.Err())
-				messageHandler.ArtifactBuildFailed(*msg.ArtifactID, msg.Err())
+				events.ArtifactBuildFailed(*msg.ArtifactID, msg.Err())
 			}
 		}
 	}()

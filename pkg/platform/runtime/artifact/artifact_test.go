@@ -274,7 +274,13 @@ func TestArtifactDownloads(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
 			build := testhelper.LoadBuildResponse(t, tt.BuildName)
-			downloads, err := NewDownloadsFromBuild(build, tt.IsCamel)
+			var downloads []ArtifactDownload
+			var err error
+			if tt.IsCamel {
+				downloads, err = NewDownloadsFromCamelBuild(build)
+			} else {
+				downloads, err = NewDownloadsFromBuild(build)
+			}
 			assert.NoError(t, err)
 			assert.Equal(t, tt.Expected, downloads)
 		})

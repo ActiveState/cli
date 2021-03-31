@@ -63,7 +63,7 @@ func newMockProducer(prod *events.RuntimeEventProducer, failures string) *mockPr
 	}
 }
 
-func (mp *mockProducer) mockStepProgress(index int, step events.ArtifactSetupStep) bool {
+func (mp *mockProducer) mockStepProgress(index int, step events.SetupStep) bool {
 	mp.Prod.ArtifactStepStarting(step, mp.IDs[index], mp.Names[index], 100)
 	wait()
 	for i := 0; i < 10; i++ {
@@ -79,9 +79,9 @@ func (mp *mockProducer) mockStepProgress(index int, step events.ArtifactSetupSte
 }
 
 func (mp *mockProducer) mockArtifactProgress(withBuild bool, index int) bool {
-	steps := []events.ArtifactSetupStep{events.Download, events.Unpack, events.Install}
+	steps := []events.SetupStep{events.Download, events.Unpack, events.Install}
 	if withBuild {
-		steps = append([]events.ArtifactSetupStep{events.Build}, steps...)
+		steps = append([]events.SetupStep{events.Build}, steps...)
 	}
 	for _, s := range steps {
 		if !mp.mockStepProgress(index, s) {
@@ -105,7 +105,7 @@ func run() error {
 	}
 
 	prod := events.NewRuntimeEventProducer()
-	handler := runbits.NewRuntimeMessageHandler(outputhelper.NewCatcher())
+	handler := runbits.DefaultRuntimeMessageHandler(outputhelper.NewCatcher())
 
 	mock := newMockProducer(prod, failedSteps)
 
@@ -133,6 +133,6 @@ func run() error {
 		wg.Wait()
 	}()
 
-	handler.HandleUpdateEvents(prod.Events())
+	handler.WaitForAllEvents(prod.Events())
 	return nil
 }

@@ -43,7 +43,7 @@ func (mpo *mockProgressOutput) InstallationIncrement() error {
 	mpo.installationCurrent++
 	return nil
 }
-func (mpo *mockProgressOutput) ArtifactStepStarted(artifact.ArtifactID, string, string, int64) error {
+func (mpo *mockProgressOutput) ArtifactStepStarted(artifact.ArtifactID, string, string, int64, bool) error {
 	mpo.artifactStartedCalled++
 	return nil
 }
@@ -64,7 +64,7 @@ func TestRuntimeEventConsumer(t *testing.T) {
 	ids := []artifact.ArtifactID{"1", "2"}
 	names := []string{"artifact 1", "artifact 2"}
 
-	baseEvents := []BaseEventer{
+	baseEvents := []SetupEventer{
 		newTotalArtifactEvent(2),
 		newArtifactStartEvent(Download, ids[0], names[0], 100),
 		newArtifactProgressEvent(Download, ids[0], 100),
@@ -85,14 +85,14 @@ func TestRuntimeEventConsumer(t *testing.T) {
 		newArtifactFailureEvent(Install, ids[0], "error"),
 		newArtifactFailureEvent(Install, ids[1], "error"),
 	)
-	withBuildSuccessEvents := append([]BaseEventer{
+	withBuildSuccessEvents := append([]SetupEventer{
 		newTotalArtifactEvent(2),
 		newBuildStartEvent(),
 		newArtifactCompleteEvent(Build, ids[0]),
 		newArtifactCompleteEvent(Build, ids[1]),
 		newBuildCompleteEvent(),
 	}, successEvents...)
-	buildFailureEvents := []BaseEventer{
+	buildFailureEvents := []SetupEventer{
 		newTotalArtifactEvent(2),
 		newBuildStartEvent(),
 		newArtifactFailureEvent(Build, ids[0], "error"),
@@ -102,7 +102,7 @@ func TestRuntimeEventConsumer(t *testing.T) {
 
 	tests := []struct {
 		name                            string
-		events                          []BaseEventer
+		events                          []SetupEventer
 		expectedBuildStarted            bool
 		expectedBuildCompleted          bool
 		expectedBuildTotal              int64
@@ -179,7 +179,7 @@ func TestRuntimeEventConsumer(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			evCh := make(chan BaseEventer)
+			evCh := make(chan SetupEventer)
 			mock := &mockProgressOutput{}
 			consumer := NewRuntimeEventConsumer(mock, nil)
 
@@ -189,7 +189,7 @@ func TestRuntimeEventConsumer(t *testing.T) {
 					evCh <- ev
 				}
 			}()
-			err := consumer.Run(evCh)
+			err := consumer.Consume(evCh)
 			assert.NoError(t, err)
 
 			assert.Equal(t, tc.expectedBuildStarted, mock.buildStarted)
