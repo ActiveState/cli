@@ -18,8 +18,7 @@ type localProjectsMenuItem struct {
 	menuItem  *systray.MenuItem
 	namespace string
 	location  string
-	done      chan struct{}
-	children  []*localProjectsMenuItem
+	close     chan struct{}
 }
 
 func NewLocalProjectsUpdater(menuItem *systray.MenuItem) *LocalProjectsUpdater {
@@ -27,57 +26,28 @@ func NewLocalProjectsUpdater(menuItem *systray.MenuItem) *LocalProjectsUpdater {
 }
 
 func (u *LocalProjectsUpdater) Update(projects []*graph.Project) {
+	u.removeItems()
+
+	u.items = []*localProjectsMenuItem{}
+	for _, project := range projects {
+		for _, location := range project.Locations {
+			mProject := u.menuItem.AddSubMenuItem(project.Namespace, location)
+			u.items = append(u.items, &localProjectsMenuItem{mProject, project.Namespace, location, make(chan struct{})})
+		}
+	}
+
+	u.startEventLoops()
+}
+
+func (u *LocalProjectsUpdater) removeItems() {
 	for _, item := range u.items {
 		item.remove()
 	}
-
-	u.items = make([]*localProjectsMenuItem, len(projects))
-	for i, project := range projects {
-		item := newLocalProjectMenuItem(project, u.menuItem)
-		u.items[i] = item
-		item.startEventLoop()
-	}
 }
 
-func newLocalProjectMenuItem(project *graph.Project, menuItem *systray.MenuItem) *localProjectsMenuItem {
-	done := make(chan struct{})
-	mProject := menuItem.AddSubMenuItem(project.Namespace, "")
-	item := &localProjectsMenuItem{
-		menuItem:  mProject,
-		namespace: project.Namespace,
-		done:      done,
-		children:  []*localProjectsMenuItem{},
-	}
-
-	for i, location := range project.Locations {
-		if i == 0 && i == len(project.Locations)-1 {
-			item.location = location
-			break
-		}
-
-		mLocation := mProject.AddSubMenuItem(location, "")
-		item.addChild(mLocation, location)
-	}
-
-	return item
-}
-
-func (i *localProjectsMenuItem) addChild(menuItem *systray.MenuItem, location string) {
-	i.children = append(i.children, &localProjectsMenuItem{
-		menuItem:  menuItem,
-		namespace: i.namespace,
-		location:  location,
-		done:      i.done,
-	})
-}
-
-func (i *localProjectsMenuItem) startEventLoop() {
-	if len(i.children) == 0 {
-		go i.eventLoop()
-	}
-
-	for _, child := range i.children {
-		go child.eventLoop()
+func (u *LocalProjectsUpdater) startEventLoops() {
+	for _, item := range u.items {
+		go item.eventLoop()
 	}
 }
 
@@ -89,13 +59,13 @@ func (i *localProjectsMenuItem) eventLoop() {
 			if err != nil {
 				logging.Error("Could not open local projects prompt for project %s, got error: %v", i.namespace, err)
 			}
-		case <-i.done:
+		case <-i.close:
 			return
 		}
 	}
 }
 
 func (i *localProjectsMenuItem) remove() {
-	i.done <- struct{}{}
+	i.close <- struct{}{}
 	i.menuItem.Hide()
 }
