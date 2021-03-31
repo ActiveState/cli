@@ -21,6 +21,7 @@ require (
 	github.com/dave/jennifer v0.18.0
 	github.com/denisbrodbeck/machineid v0.8.0
 	github.com/dsnet/compress v0.0.0-20171208185109-cc9eb1d7ad76 // indirect
+	github.com/faiface/mainthread v0.0.0-20171120011319-8b78f0a41ae3
 	github.com/fatih/color v1.7.0
 	github.com/felixge/fgprof v0.9.0
 	github.com/fsnotify/fsnotify v1.4.7

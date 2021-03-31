@@ -34,6 +34,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/implementations/camel"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/faiface/mainthread"
 )
 
 // MaxConcurrency is maximum number of parallel artifact installations
@@ -187,23 +188,22 @@ func (s *Setup) update() error {
 	// if we get here, we dowload artifacts
 	analytics.Event(analytics.CatRuntime, analytics.ActRuntimeDownload)
 
-	if buildResult.BuildReady {
-		err := s.installFromBuildResult(buildResult, setup)
-		if err != nil {
-			return err
-		}
-	} else {
-		if buildResult.BuildEngine == model.Camel {
-			return locale.NewInputError("build_status_in_progress", "", apimodel.ProjectURL(s.target.Owner(), s.target.Name(), s.target.CommitUUID().String()))
-		}
-		err := s.installFromBuildLog(buildResult, artifacts, setup)
-		if err != nil {
-			return err
-		}
+	err = s.installArtifacts(buildResult, artifacts, setup)
+	if err != nil {
+		return err
 	}
 
-	if err := s.store.UpdateEnviron(buildResult.OrderedArtifacts()); err != nil {
+	edGlobal, err := s.store.UpdateEnviron(buildResult.OrderedArtifacts())
+	if err != nil {
 		return errs.Wrap(err, "Could not save combined environment file")
+	}
+
+	// Install PPM Shim if any of the installed artifacts provide the Perl executable
+	if activePerlPath := edGlobal.FindBinPathFor(constants.ActivePerlExecutable); activePerlPath != "" {
+		err = installPPMShim(activePerlPath)
+		if err != nil {
+			return errs.Wrap(err, "Failed to install the PPM shim command at %s", activePerlPath)
+		}
 	}
 
 	// clean up temp directory
@@ -224,32 +224,75 @@ func (s *Setup) update() error {
 	return nil
 }
 
+func aggregateErrors() (chan<- error, <-chan error) {
+	aggErr := make(chan error)
+	bgErrs := make(chan error)
+	go func() {
+		var errs []error
+		for err := range bgErrs {
+			errs = append(errs, err)
+		}
+
+		if len(errs) > 0 {
+			aggErr <- &ArtifactSetupErrors{errs}
+		} else {
+			aggErr <- nil
+		}
+	}()
+
+	return bgErrs, aggErr
+}
+
+func (s *Setup) installArtifacts(buildResult *model.BuildResult, artifacts artifact.ArtifactRecipeMap, setup Setuper) error {
+	if !buildResult.BuildReady && buildResult.BuildEngine == model.Camel {
+		return locale.NewInputError("build_status_in_progress", "", apimodel.ProjectURL(s.target.Owner(), s.target.Name(), s.target.CommitUUID().String()))
+	}
+	// Artifacts are installed in two stages
+	// - The first stage runs concurrently in MaxConcurrency worker threads (download, unpacking, relocation)
+	// - The second stage moves all files into its final destination is running in a single thread (using the mainthread library) to avoid file conflicts
+
+	var err error
+	if buildResult.BuildReady {
+		err = s.installFromBuildResult(buildResult, setup)
+	} else {
+		err = s.installFromBuildLog(buildResult, artifacts, setup)
+	}
+
+	return err
+}
+
+// setupArtifactSubmitFunction returns a function that sets up an artifact and can be submitted to a workerpool
+func (s *Setup) setupArtifactSubmitFunction(a artifact.ArtifactDownload, buildResult *model.BuildResult, setup Setuper, errors chan<- error) func() {
+	return func() {
+		// This is the name used to describe the artifact.  As camel bundles all artifacts in one tarball, we call it 'bundle'
+		name := setup.ResolveArtifactName(a.ArtifactID)
+		if err := s.setupArtifact(buildResult.BuildEngine, a.ArtifactID, a.UnsignedURI, name); err != nil {
+			if err != nil {
+				errors <- locale.WrapError(err, "artifact_setup_failed", "", name, a.ArtifactID.String())
+			}
+		}
+	}
+}
+
 func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, setup Setuper) error {
-	var errors []error
-	wp := workerpool.New(MaxConcurrency)
 	downloads, err := setup.DownloadsFromBuild(buildResult.BuildStatusResponse)
 	if err != nil {
 		return errs.Wrap(err, "Could not fetch artifacts to download.")
 	}
 	s.events.TotalArtifacts(len(downloads))
-	for _, a := range downloads {
-		func(a artifact.ArtifactDownload) {
-			wp.Submit(func() {
-				name := setup.ResolveArtifactName(a.ArtifactID)
-				if err := s.setupArtifact(buildResult.BuildEngine, a.ArtifactID, a.UnsignedURI, name); err != nil {
-					errors = append(errors, err)
-				}
-			})
-		}(a)
-	}
 
-	wp.StopWait()
+	errs, aggregatedErr := aggregateErrors()
+	mainthread.Run(func() {
+		defer close(errs)
+		wp := workerpool.New(MaxConcurrency)
+		for _, a := range downloads {
+			wp.Submit(s.setupArtifactSubmitFunction(a, buildResult, setup, errs))
+		}
 
-	if len(errors) > 0 {
-		return &ArtifactSetupErrors{errors}
-	}
+		wp.StopWait()
+	})
 
-	return nil
+	return <-aggregatedErr
 }
 
 func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts artifact.ArtifactRecipeMap, setup Setuper) error {
@@ -266,39 +309,31 @@ func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts ar
 
 	buildLog, err := buildlog.New(artifacts, conn, s.events, *buildResult.Recipe.RecipeID)
 
-	var errors []error
+	errs, aggregatedErr := aggregateErrors()
 
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		// wp.StopWait needs to be run in this go-routine after ALL tasks are scheduled, hence the need for the extra waitGroup to wait for this thread to finish
-		defer wg.Done()
-		wp := workerpool.New(MaxConcurrency)
-		defer wp.StopWait()
-		for a := range buildLog.BuiltArtifactsChannel() {
-			func(a artifact.ArtifactDownload) {
-				wp.Submit(func() {
-					name := setup.ResolveArtifactName(a.ArtifactID)
-					if err := s.setupArtifact(buildResult.BuildEngine, a.ArtifactID, a.UnsignedURI, name); err != nil {
-						errors = append(errors, err)
-					}
-				})
-			}(a)
+	mainthread.Run(func() {
+		defer close(errs)
+
+		var wg sync.WaitGroup
+		defer wg.Wait()
+		wg.Add(1)
+		go func() {
+			// wp.StopWait needs to be run in this go-routine after ALL tasks are scheduled, hence we need to add an extra wait group
+			defer wg.Done()
+			wp := workerpool.New(MaxConcurrency)
+			defer wp.StopWait()
+
+			for a := range buildLog.BuiltArtifactsChannel() {
+				wp.Submit(s.setupArtifactSubmitFunction(a, buildResult, setup, errs))
+			}
+		}()
+
+		if err = buildLog.Wait(); err != nil {
+			errs <- err
 		}
-	}()
+	})
 
-	if err = buildLog.Wait(); err != nil {
-		return err
-	}
-
-	// wait for the build artifacts to be processed
-	wg.Wait()
-
-	if len(errors) > 0 {
-		return &ArtifactSetupErrors{errors}
-	}
-
-	return nil
+	return <-aggregatedErr
 }
 
 // setupArtifact sets up an individual artifact
@@ -326,8 +361,6 @@ func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.Artifact
 
 	unpackedDir := filepath.Join(targetDir, a.String())
 	logging.Debug("Unarchiving %s (%s) to %s", archivePath, unsignedURI, unpackedDir)
-	// clean up the unpacked dir
-	defer os.RemoveAll(unpackedDir)
 
 	// ensure that the unpack dir is empty
 	err = os.RemoveAll(unpackedDir)
@@ -349,6 +382,21 @@ func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.Artifact
 		return errs.Wrap(err, "Could not collect env info for artifact")
 	}
 
+	cnst := envdef.NewConstants(s.store.InstallPath())
+	envDef = envDef.ExpandVariables(cnst)
+	err = envDef.ApplyFileTransforms(filepath.Join(unpackedDir, envDef.InstallDir), cnst)
+	if err != nil {
+		return locale.WrapError(err, "runtime_alternative_file_transforms_err", "", "Could not apply necessary file transformations after unpacking")
+	}
+
+	// move files to installation path in main thread, such that file operations are synchronized
+	return mainthread.CallErr(func() error { return s.moveToInstallPath(a, artifactName, unpackedDir, envDef, numFiles) })
+}
+
+func (s *Setup) moveToInstallPath(a artifact.ArtifactID, artifactName string, unpackedDir string, envDef *envdef.EnvironmentDefinition, numFiles int) error {
+	// clean up the unpacked dir
+	defer os.RemoveAll(unpackedDir)
+
 	var files []string
 	onMoveFile := func(fromPath, toPath string) {
 		if !fileutils.IsDir(toPath) {
@@ -357,7 +405,7 @@ func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.Artifact
 		}
 	}
 	s.events.ArtifactStepStarting(events.Install, a, artifactName, numFiles)
-	err = fileutils.MoveAllFilesRecursively(
+	err := fileutils.MoveAllFilesRecursively(
 		filepath.Join(unpackedDir, envDef.InstallDir),
 		s.store.InstallPath(), onMoveFile,
 	)
@@ -367,21 +415,6 @@ func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.Artifact
 		return err
 	}
 	s.events.ArtifactStepCompleted(events.Install, a)
-
-	cnst := envdef.NewConstants(s.store.InstallPath())
-	envDef = envDef.ExpandVariables(cnst)
-	err = envDef.ApplyFileTransforms(s.store.InstallPath(), cnst)
-	if err != nil {
-		return locale.WrapError(err, "runtime_alternative_file_transforms_err", "", "Could not apply necessary file transformations after unpacking")
-	}
-
-	// Install PPM Shim if artifact provides Perl executable
-	if activePerlPath := envDef.FindBinPathFor(constants.ActivePerlExecutable); activePerlPath != "" {
-		err = installPPMShim(activePerlPath)
-		if err != nil {
-			return errs.Wrap(err, "Failed to install the PPM shim command at %s", activePerlPath)
-		}
-	}
 
 	if err := s.store.StoreArtifact(store.NewStoredArtifact(a, files, envDef)); err != nil {
 		return errs.Wrap(err, "Could not store artifact meta info")

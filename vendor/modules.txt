@@ -92,6 +92,8 @@ github.com/emirpasic/gods/lists/arraylist
 github.com/emirpasic/gods/trees
 github.com/emirpasic/gods/trees/binaryheap
 github.com/emirpasic/gods/utils
+# github.com/faiface/mainthread v0.0.0-20171120011319-8b78f0a41ae3
+github.com/faiface/mainthread
 # github.com/fatih/color v1.7.0
 github.com/fatih/color
 # github.com/felixge/fgprof v0.9.0
