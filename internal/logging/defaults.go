@@ -16,6 +16,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/rtutils"
 )
 
@@ -73,6 +74,7 @@ func FileNamePrefix() string {
 	if err != nil {
 		exe = os.Args[0]
 	}
+	exe = filepath.Base(exe)
 	return strings.TrimSuffix(exe, filepath.Ext(exe))
 }
 
@@ -118,7 +120,7 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 	if l.file == nil {
 		f, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, os.ModePerm)
 		if err != nil {
-			return err
+			return errs.Wrap(err, "Could not open log file for writing: %s", filename)
 		}
 		l.file = f
 	}
