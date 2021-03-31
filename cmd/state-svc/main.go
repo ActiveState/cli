@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -56,13 +58,13 @@ func run() error {
 		logging.Debug("Running CmdStart")
 		return runStart(cfg)
 	case CmdStop:
-		logging.Debug("Running CmdStart")
+		logging.Debug("Running CmdStop")
 		return runStop(cfg)
 	case CmdStatus:
-		logging.Debug("Running CmdStart")
+		logging.Debug("Running CmdStatus")
 		return runStatus(cfg)
 	case CmdForeground:
-		logging.Debug("Running CmdStart")
+		logging.Debug("Running CmdForeground")
 		return runForeground(cfg)
 	}
 
@@ -72,38 +74,48 @@ func run() error {
 func runForeground(cfg *config.Instance) error {
 	logging.Debug("Running in Foreground")
 
-	p := NewProgram(cfg)
+	p := NewService(cfg)
+
+	// Handle sigterm
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
+	defer signal.Stop(sig)
+
+	go func() {
+		oscall := <-sig
+		logging.Debug("system call:%+v", oscall)
+		if err := p.Stop(); err != nil {
+			logging.Error("Stop on sigterm failed: %v", errs.Join(err, ": "))
+		}
+	}()
+
 	if err := p.Start(); err != nil {
-		return errs.Wrap(err, "Could not start program")
-	}
-
-	return nil
-}
-
-func runStart(cfg *config.Instance) error {
-	logging.Debug("Starting")
-
-	s := NewService(cfg)
-	if err := s.Start(os.Args[0], CmdForeground); err != nil {
 		return errs.Wrap(err, "Could not start service")
 	}
 
 	return nil
 }
 
-func runStop(cfg *config.Instance) error {
-	logging.Debug("Starting")
+func runStart(cfg *config.Instance) error {
+	s := NewServiceManager(cfg)
+	if err := s.Start(os.Args[0], CmdForeground); err != nil {
+		return errs.Wrap(err, "Could not start serviceManager")
+	}
 
-	s := NewService(cfg)
+	return nil
+}
+
+func runStop(cfg *config.Instance) error {
+	s := NewServiceManager(cfg)
 	if err := s.Stop(); err != nil {
-		return errs.Wrap(err, "Could not stop service")
+		return errs.Wrap(err, "Could not stop serviceManager")
 	}
 
 	return nil
 }
 
 func runStatus(cfg *config.Instance) error {
-	pid, err := NewService(cfg).Pid()
+	pid, err := NewServiceManager(cfg).Pid()
 	if err != nil {
 		return errs.Wrap(err, "Could not obtain pid")
 	}

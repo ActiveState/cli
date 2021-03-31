@@ -45,7 +45,7 @@ func run() error {
 	}
 
 	cmd := exec.Command(stateSvcExe, "start")
-	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	cmd.SysProcAttr = &syscall.SysProcAttr{CreationFlags: 0x08000000} // CREATE_NO_WINDOW
 	if err := cmd.Start(); err != nil {
 		return errs.Wrap(err, "Could not start %s", stateSvcExe)
 	}

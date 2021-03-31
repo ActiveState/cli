@@ -12,8 +12,6 @@ import (
 func Prompt(command string) error {
 	// start will open an instance of the given executable. The first parameter
 	// of start is the title, the second is the executable to start.
-	// The /k flag tells the cmd prompt to stay open after the command
-	// has completed execution.
 	cmd := exec.Command("cmd.exe", "/c", "start", "", "cmd.exe", "/c", command+" && pause")
 	err := cmd.Run()
 	if err != nil {

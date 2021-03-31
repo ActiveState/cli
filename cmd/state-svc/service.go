@@ -1,14 +1,10 @@
 package main
 
 import (
+	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
-	"os/exec"
-	"path/filepath"
-
-	"github.com/shirou/gopsutil/process"
 
 	"github.com/ActiveState/cli/cmd/state-svc/internal/server"
 	"github.com/ActiveState/cli/internal/config"
@@ -19,88 +15,43 @@ import (
 
 type service struct {
 	cfg    *config.Instance
-	lockFp string
+	server *server.Server
 }
 
 func NewService(cfg *config.Instance) *service {
-	return &service{cfg, filepath.Join(cfg.ConfigPath(), "state-svc.lock")}
+	return &service{cfg: cfg}
 }
 
-func (s *service) Start(args ...string) error {
-	curPid, err := s.Pid()
-	if err == nil && curPid != nil {
-		return errs.New("Service is already running")
+func (s *service) Start() error {
+	logging.Debug("service:Start")
+
+	var err error
+	s.server, err = server.New()
+	if err != nil {
+		return errs.Wrap(err, "Could not create server")
 	}
 
-	cmd := exec.Command(args[0], args[1:]...)
-	cmd.Start()
-
-	if cmd.Process == nil {
-		return errs.New("Could not obtain process information after starting service")
+	if err := s.cfg.Set(constants.SvcConfigPort, s.server.Port()); err != nil {
+		return errs.Wrap(err, "Could not save config")
 	}
 
-	if err := s.cfg.Set(constants.SvcConfigPid, cmd.Process.Pid); err != nil {
-		if err := cmd.Process.Signal(os.Interrupt); err != nil {
-			logging.Errorf("Could not cleanup process: %v", err)
-			fmt.Printf("Failed to cleanup service after lock failed, please manually kill the following pid: %d\n", cmd.Process.Pid)
+	if err := s.server.Start(); err != nil {
+		if errors.Is(err, http.ErrServerClosed) {
+			return nil
 		}
-		return errs.Wrap(err, "Could not store pid")
+		return errs.Wrap(err, "Failed to start server")
 	}
-
-	logging.Debug("Process started using pid %d", cmd.Process.Pid)
 
 	return nil
 }
 
 func (s *service) Stop() error {
-	pid, err := s.Pid()
-	if err != nil {
-		return errs.Wrap(err, "Could not get pid")
-	}
-	if pid == nil {
-		return nil
+	if s.server == nil {
+		return errs.New("Can't stop service as it was never started")
 	}
 
-	port := s.cfg.GetInt(constants.SvcConfigPort)
-	quitAddress := fmt.Sprintf("http://127.0.0.1:%d%s", port, server.QuitRoute)
-	logging.Debug("Sending quit request to %s", quitAddress)
-	req, err := http.NewRequest("GET", quitAddress, nil)
-	if err != nil {
-		return errs.Wrap(err, "Could not create request to quit svc")
+	if err := s.server.Shutdown(); err != nil {
+		fmt.Fprintf(os.Stderr, "Closing server failed: %v", err)
 	}
-
-	client := &http.Client{}
-	res, err := client.Do(req)
-	if err != nil {
-		return errs.Wrap(err, "Request to quit svc failed")
-	}
-	defer res.Body.Close()
-
-	if res.StatusCode != 200 {
-		defer res.Body.Close()
-		body, err := ioutil.ReadAll(res.Body)
-		if err != nil {
-			return errs.Wrap(err, "Request to quit svc responded with status %s", res.Status)
-		}
-		return errs.New("Request to quit svc responded with status: %s, response: %s", res.Status, body)
-	}
-
 	return nil
-}
-
-func (s *service) Pid() (*int, error) {
-	pid := s.cfg.GetInt(constants.SvcConfigPid)
-	if pid <= 0 {
-		return nil, nil
-	}
-
-	pidExists, err := process.PidExists(int32(pid))
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not verify if pid exists")
-	}
-	if !pidExists {
-		return nil, nil
-	}
-
-	return &pid, nil
 }

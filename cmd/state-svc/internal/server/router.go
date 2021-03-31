@@ -1,8 +1,6 @@
 package server
 
 import (
-	"time"
-
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/labstack/echo/v4"
 
@@ -24,10 +22,9 @@ func (s *Server) setupRouting() {
 
 	s.httpServer.GET(QuitRoute, func(c echo.Context) error {
 		go func() {
-			time.Sleep(100 * time.Millisecond) // give server time to respond
-			err := s.Close()
+			err := s.Shutdown()
 			if err != nil {
-				logging.Errorf("Closing server failed: %v", err)
+				logging.Errorf("Shutting down server failed: %v", err)
 			}
 		}()
 		return nil
