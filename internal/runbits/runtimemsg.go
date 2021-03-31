@@ -39,8 +39,8 @@ func DefaultRuntimeMessageHandler(out output.Outputer) *RuntimeMessageHandler {
 	}
 }
 
-// HandleEvents prints output based on runtime events received on the events channel
-func (rmh *RuntimeMessageHandler) HandleEvents(events <-chan rtEvents.SetupEventer) error {
+// WaitForAllEvents prints output based on runtime events received on the events channel
+func (rmh *RuntimeMessageHandler) WaitForAllEvents(events <-chan rtEvents.SetupEventer) error {
 	// Asynchronous progress digester may need to be closed after
 	defer rmh.progress.Close()
 

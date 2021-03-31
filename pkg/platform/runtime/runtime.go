@@ -88,8 +88,8 @@ func (r *Runtime) Update(msgHandler *runbits.RuntimeMessageHandler) error {
 		*r = *rt
 	}()
 
-	// ... and handle the runtime events in the main thread
-	err := msgHandler.HandleEvents(prod.Events())
+	// ... and handle and wait for the runtime events in the main thread
+	err := msgHandler.WaitForAllEvents(prod.Events())
 	if err != nil {
 		logging.Error("Error handling update events: %v", err)
 	}

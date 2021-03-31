@@ -133,6 +133,6 @@ func run() error {
 		wg.Wait()
 	}()
 
-	handler.HandleEvents(prod.Events())
+	handler.WaitForAllEvents(prod.Events())
 	return nil
 }
