@@ -170,7 +170,7 @@ type requirement struct {
 // requirement". For example, if multiple requirements are affected, nil is the
 // appropriate value.
 func refreshRuntime(out output.Outputer, req *requirement, proj *project.Project, cachePath string, commitID strfmt.UUID, changed bool) error {
-	rtMessages := runbits.NewRuntimeMessageHandler(out)
+	rtMessages := runbits.DefaultRuntimeMessageHandler(out)
 	/*
 		if req != nil {
 			rtMessages.SetRequirement(req.name, req.namespace)

@@ -85,15 +85,15 @@ func (cm *connectionMock) ReadError(errMsg string) {
 }
 
 type artifactFailedArg struct {
-	ArtifactName string
-	ErrMessage   string
+	ArtifactID artifact.ArtifactID
+	ErrMessage string
 }
 type mockMessageHandler struct {
 	BuildStartingCalls          []int
 	BuildFinishedCallCount      int
-	ArtifactBuildStartingCalls  []string
-	ArtifactBuildCachedCalls    []string
-	ArtifactBuildSucceededCalls []string
+	ArtifactBuildStartingCalls  []artifact.ArtifactID
+	ArtifactBuildCachedCalls    []artifact.ArtifactID
+	ArtifactBuildSucceededCalls []artifact.ArtifactID
 	ArtifactBuildFailedCalls    []artifactFailedArg
 }
 
@@ -103,17 +103,17 @@ func (mh *mockMessageHandler) BuildStarting(total int) {
 func (mh *mockMessageHandler) BuildFinished() {
 	mh.BuildFinishedCallCount++
 }
-func (mh *mockMessageHandler) ArtifactBuildStarting(artifactName string) {
-	mh.ArtifactBuildStartingCalls = append(mh.ArtifactBuildStartingCalls, artifactName)
+func (mh *mockMessageHandler) ArtifactBuildStarting(artifactID artifact.ArtifactID, artifactName string) {
+	mh.ArtifactBuildStartingCalls = append(mh.ArtifactBuildStartingCalls, artifactID)
 }
-func (mh *mockMessageHandler) ArtifactBuildCached(artifactName string) {
-	mh.ArtifactBuildCachedCalls = append(mh.ArtifactBuildCachedCalls, artifactName)
+func (mh *mockMessageHandler) ArtifactBuildCached(artifactID artifact.ArtifactID) {
+	mh.ArtifactBuildCachedCalls = append(mh.ArtifactBuildCachedCalls, artifactID)
 }
-func (mh *mockMessageHandler) ArtifactBuildCompleted(artifactName string) {
-	mh.ArtifactBuildSucceededCalls = append(mh.ArtifactBuildSucceededCalls, artifactName)
+func (mh *mockMessageHandler) ArtifactBuildCompleted(artifactID artifact.ArtifactID) {
+	mh.ArtifactBuildSucceededCalls = append(mh.ArtifactBuildSucceededCalls, artifactID)
 }
-func (mh *mockMessageHandler) ArtifactBuildFailed(artifactName string, errorMessage string) {
-	mh.ArtifactBuildFailedCalls = append(mh.ArtifactBuildFailedCalls, artifactFailedArg{artifactName, errorMessage})
+func (mh *mockMessageHandler) ArtifactBuildFailed(artifactID artifact.ArtifactID, errorMessage string) {
+	mh.ArtifactBuildFailedCalls = append(mh.ArtifactBuildFailedCalls, artifactFailedArg{artifactID, errorMessage})
 }
 
 func TestBuildLog(t *testing.T) {
@@ -141,9 +141,9 @@ func TestBuildLog(t *testing.T) {
 		ConnectionMock            func(cm *connectionMock)
 		ExpectError               bool
 		ExpectedDownloads         int
-		ExpectedArtifactStarting  []string
-		ExpectedArtifactCached    []string
-		ExpectedArtifactSucceeded []string
+		ExpectedArtifactStarting  []artifact.ArtifactID
+		ExpectedArtifactCached    []artifact.ArtifactID
+		ExpectedArtifactSucceeded []artifact.ArtifactID
 		ExpectedArtifactFailed    []artifactFailedArg
 	}{
 		{
@@ -160,9 +160,9 @@ func TestBuildLog(t *testing.T) {
 			},
 			ExpectError:               false,
 			ExpectedDownloads:         2,
-			ExpectedArtifactStarting:  []string{names[0]},
-			ExpectedArtifactCached:    []string{names[1]},
-			ExpectedArtifactSucceeded: names,
+			ExpectedArtifactStarting:  []artifact.ArtifactID{ids[0]},
+			ExpectedArtifactCached:    []artifact.ArtifactID{ids[1]},
+			ExpectedArtifactSucceeded: ids,
 		},
 		{
 			Name: "failed",
@@ -176,9 +176,9 @@ func TestBuildLog(t *testing.T) {
 			},
 			ExpectError:               true,
 			ExpectedDownloads:         1,
-			ExpectedArtifactStarting:  names,
-			ExpectedArtifactSucceeded: []string{names[0]},
-			ExpectedArtifactFailed:    []artifactFailedArg{{names[1], "oh no"}},
+			ExpectedArtifactStarting:  ids,
+			ExpectedArtifactSucceeded: []artifact.ArtifactID{ids[0]},
+			ExpectedArtifactFailed:    []artifactFailedArg{{ids[1], "oh no"}},
 		},
 		{
 			Name: "connection read error",

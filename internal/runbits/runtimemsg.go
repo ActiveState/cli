@@ -3,61 +3,52 @@ package runbits
 // Progress bar design
 //
 import (
-	"fmt"
+	"io"
+	"os"
 
-	"github.com/go-openapi/strfmt"
-
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
-	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
+	"github.com/ActiveState/cli/internal/runbits/changesummary"
+	"github.com/ActiveState/cli/internal/runbits/progressbar"
+	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
+	rtEvents "github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 )
 
+type ProgressDigester interface {
+	events.ProgressDigester
+	Close()
+}
+
 type RuntimeMessageHandler struct {
-	out output.Outputer
+	progress ProgressDigester
+	summary  events.ChangeSummaryDigester
 }
 
-func NewRuntimeMessageHandler(out output.Outputer) *RuntimeMessageHandler {
-	return &RuntimeMessageHandler{out: out}
+func NewRuntimeMessageHandler(progress ProgressDigester, summary events.ChangeSummaryDigester) *RuntimeMessageHandler {
+	return &RuntimeMessageHandler{progress, summary}
 }
 
-func (r RuntimeMessageHandler) BuildStarting(total int) {
-	r.out.Notice(fmt.Sprintf("Build Starting: %d", total))
+func DefaultRuntimeMessageHandler(out output.Outputer) *RuntimeMessageHandler {
+	var w io.Writer = os.Stdout
+	if out.Type() != output.PlainFormatName {
+		w = nil
+	}
+	return &RuntimeMessageHandler{
+		progress: progressbar.NewRuntimeProgress(w),
+		summary:  changesummary.New(out),
+	}
 }
 
-func (r RuntimeMessageHandler) BuildFinished() {
-	r.out.Notice(fmt.Sprintf("Build Finished"))
-}
+// WaitForAllEvents prints output based on runtime events received on the events channel
+func (rmh *RuntimeMessageHandler) WaitForAllEvents(events <-chan rtEvents.SetupEventer) error {
+	// Asynchronous progress digester may need to be closed after
+	defer rmh.progress.Close()
 
-func (r RuntimeMessageHandler) ArtifactBuildStarting(artifactName string) {
-	r.out.Notice(fmt.Sprintf("Artifact Build Starting: %s", artifactName))
-}
+	eh := rtEvents.NewRuntimeEventConsumer(rmh.progress, rmh.summary)
+	err := eh.Consume(events)
+	if err != nil {
+		return errs.Wrap(err, "Failed to consume runtime events")
+	}
 
-func (r RuntimeMessageHandler) ArtifactBuildCached(artifactName string) {
-	r.out.Notice(fmt.Sprintf("Artifact Build Cached: %s", artifactName))
+	return nil
 }
-
-func (r RuntimeMessageHandler) ArtifactBuildCompleted(artifactName string) {
-	r.out.Notice(fmt.Sprintf("Artifact Build Completed: %s", artifactName))
-}
-
-func (r RuntimeMessageHandler) ArtifactBuildFailed(artifactName string, errorMessage string) {
-	r.out.Notice(fmt.Sprintf("Artifact Build Failed: %s, %s", artifactName, errorMessage))
-}
-
-func (r RuntimeMessageHandler) ChangeSummary(artifacts map[artifact.ArtifactID]artifact.ArtifactRecipe, requested artifact.ArtifactChangeset, changed artifact.ArtifactChangeset) {
-	r.out.Notice(fmt.Sprintf("Change Summary, %d added, %d updated, %d deleted", len(requested.Added), len(requested.Updated), len(requested.Removed)))
-}
-
-func (r RuntimeMessageHandler) ArtifactDownloadStarting(id strfmt.UUID) {
-	r.out.Notice(fmt.Sprintf("Download Starting: %s", id.String()))
-}
-
-func (r RuntimeMessageHandler) ArtifactDownloadCompleted(id strfmt.UUID) {
-	r.out.Notice(fmt.Sprintf("Download Completed: %s", id.String()))
-}
-
-func (r RuntimeMessageHandler) ArtifactDownloadFailed(id strfmt.UUID, errorMsg string) {
-	r.out.Notice(fmt.Sprintf("Download Failed: %s, %s", id.String(), errorMsg))
-}
-
-var _ setup.MessageHandler = &RuntimeMessageHandler{}

@@ -15,15 +15,14 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/retryhttp"
-	"github.com/ActiveState/cli/internal/runbits/proxyreader"
+	"github.com/ActiveState/cli/internal/proxyreader"
 )
 
 // Get takes a URL and returns the contents as bytes
 var Get func(url string) ([]byte, error)
 
 type DownloadProgress interface {
-	TotalDownloadSize(int)
-	Complete()
+	TotalSize(int)
 	IncrBy(int)
 }
 
@@ -87,8 +86,7 @@ func httpGetWithProgressRetry(url string, prg DownloadProgress, attempt int, ret
 	defer resp.Body.Close()
 
 	if prg != nil {
-		prg.TotalDownloadSize(total)
-		defer prg.Complete()
+		prg.TotalSize(total)
 		src = proxyreader.NewProxyReader(prg, resp.Body)
 	}
 
