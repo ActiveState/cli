@@ -108,6 +108,12 @@ type ModelProvider interface {
 	SignS3URL(uri *url.URL) (*url.URL, error)
 }
 
+type Setuper interface {
+	DeleteOutdatedArtifacts(artifact.ArtifactChangeset, store.StoredArtifactMap) error
+	ResolveArtifactName(artifact.ArtifactID) string
+	DownloadsFromBuild(buildStatus *headchef_models.BuildStatusResponse) ([]artifact.ArtifactDownload, error)
+}
+
 // ArtifactSetuper is the interface for an implementation of artifact setup functions
 // These need to be specialized for each BuildEngine type
 type ArtifactSetuper interface {
@@ -166,25 +172,23 @@ func (s *Setup) update() error {
 	changedArtifacts := artifact.NewArtifactChangesetByRecipe(oldRecipe, buildResult.Recipe, false)
 	s.msgHandler.ChangeSummary(artifacts, requestedArtifacts, changedArtifacts)
 
+	setup, err := s.selectSetupImplementation(buildResult.BuildEngine, artifacts)
+	if err != nil {
+		return errs.Wrap(err, "Failed to select setup implementation")
+	}
+
 	storedArtifacts, err := s.store.Artifacts()
 	if err != nil {
 		return locale.WrapError(err, "err_stored_artifacts", "Could not unmarshal stored artifacts, your install may be corrupted.")
 	}
-	if buildResult.BuildEngine == model.Camel {
-		// for camel builds we have to wipe previous installations
-		os.RemoveAll(s.store.InstallPath())
-	} else {
-		err := s.deleteOutdatedArtifacts(changedArtifacts, storedArtifacts)
-		if err != nil {
-			return locale.WrapError(err, "err_delete_outdated", "Could not remove outdated artifacts files in {{.V0}}.  You may try to remove the entire directory manually.", s.store.InstallPath())
-		}
-	}
+
+	setup.DeleteOutdatedArtifacts(changedArtifacts, storedArtifacts)
 
 	// if we get here, we dowload artifacts
 	analytics.Event(analytics.CatRuntime, analytics.ActRuntimeDownload)
 
 	if buildResult.BuildReady {
-		err := s.installFromBuildResult(buildResult, artifacts)
+		err := s.installFromBuildResult(buildResult, setup)
 		if err != nil {
 			return err
 		}
@@ -192,7 +196,7 @@ func (s *Setup) update() error {
 		if buildResult.BuildEngine == model.Camel {
 			return locale.NewInputError("build_status_in_progress", "", apimodel.ProjectURL(s.target.Owner(), s.target.Name(), s.target.CommitUUID().String()))
 		}
-		err := s.installFromBuildLog(buildResult, artifacts)
+		err := s.installFromBuildLog(buildResult, artifacts, setup)
 		if err != nil {
 			return err
 		}
@@ -220,53 +224,18 @@ func (s *Setup) update() error {
 	return nil
 }
 
-func (s *Setup) deleteOutdatedArtifacts(changeset artifact.ArtifactChangeset, storedArtifacted map[artifact.ArtifactID]store.StoredArtifact) error {
-	del := map[strfmt.UUID]struct{}{}
-	for _, upd := range changeset.Updated {
-		del[upd.FromID] = struct{}{}
-	}
-	for _, id := range changeset.Removed {
-		del[id] = struct{}{}
-	}
-
-	for _, artf := range storedArtifacted {
-		if _, deleteMe := del[artf.ArtifactID]; !deleteMe {
-			continue
-		}
-
-		for _, file := range artf.Files {
-			if !fileutils.TargetExists(file) {
-				continue // don't care it's already deleted (might have been deleted by another artifact that supplied the same file)
-			}
-			if err := os.Remove(file); err != nil {
-				return locale.WrapError(err, "err_rm_artf", "", "Could not remove old package file at {{.V0}}.", file)
-			}
-		}
-
-		if err := s.store.DeleteArtifactStore(artf.ArtifactID); err != nil {
-			return errs.Wrap(err, "Could not delete artifact store")
-		}
-	}
-
-	return nil
-}
-
-func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, artifacts map[artifact.ArtifactID]artifact.ArtifactRecipe) error {
+func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, setup Setuper) error {
 	var errors []error
 	wp := workerpool.New(MaxConcurrency)
 	downloads, err := artifact.NewDownloadsFromBuild(buildResult.BuildStatusResponse, buildResult.BuildEngine == model.Camel)
 	if err != nil {
 		return errs.Wrap(err, "Could not fetch artifacts to download.")
 	}
-	s.msgHandler.TotalArtifacts(len(downloads))
+	s.events.TotalArtifacts(len(downloads))
 	for _, a := range downloads {
 		func(a artifact.ArtifactDownload) {
 			wp.Submit(func() {
-				// 'bundle' makes sense for the single camel download
-				name := "bundle"
-				if artf, ok := artifacts[a.ArtifactID]; ok {
-					name = artf.Name
-				}
+				name := setup.ResolveArtifactName(a.ArtifactID)
 				if err := s.setupArtifact(buildResult.BuildEngine, a.ArtifactID, a.UnsignedURI, name); err != nil {
 					errors = append(errors, err)
 				}
@@ -283,7 +252,7 @@ func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, artifacts
 	return nil
 }
 
-func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts map[artifact.ArtifactID]artifact.ArtifactRecipe) error {
+func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts artifact.ArtifactRecipeMap, setup Setuper) error {
 	s.msgHandler.TotalArtifacts(len(artifacts))
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -308,10 +277,7 @@ func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts ma
 		for a := range buildLog.BuiltArtifactsChannel() {
 			func(a artifact.ArtifactDownload) {
 				wp.Submit(func() {
-					name := "bundle"
-					if artf, ok := artifacts[a.ArtifactID]; ok {
-						name = artf.Name
-					}
+					name := setup.ResolveArtifactName(a.ArtifactID)
 					if err := s.setupArtifact(buildResult.BuildEngine, a.ArtifactID, a.UnsignedURI, name); err != nil {
 						errors = append(errors, err)
 					}
@@ -463,6 +429,16 @@ func (s *Setup) unpackArtifact(ua unarchiver.Unarchiver, tarballPath string, tar
 	return numUnpackedFiles, ua.Unarchive(proxy, i, targetDir)
 }
 
+func (s *Setup) selectSetupImplementation(buildEngine model.BuildEngine, artifacts artifact.ArtifactRecipeMap) (Setuper, error) {
+	switch buildEngine {
+	case model.Alternative:
+		return alternative.NewSetup(s.store, artifacts), nil
+	case model.Camel:
+		return camel.NewSetup(s.store), nil
+	default:
+		return nil, errs.New("Unknown build engine: %s", buildEngine)
+	}
+}
 func (s *Setup) selectArtifactSetupImplementation(buildEngine model.BuildEngine, a artifact.ArtifactID) (ArtifactSetuper, error) {
 	switch buildEngine {
 	case model.Alternative:
