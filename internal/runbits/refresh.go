@@ -13,7 +13,7 @@ import (
 // requirement". For example, if multiple requirements are affected, nil is the
 // appropriate value.
 func RefreshRuntime(out output.Outputer, proj *project.Project, cachePath string, commitID strfmt.UUID, changed bool) error {
-	rtMessages := runbits.DefaultRuntimeMessageHandler(out)
+	rtMessages := DefaultRuntimeEventHandler(out)
 	isCached := true
 	rt, err := runtime.New(runtime.NewProjectTarget(proj, cachePath, &commitID))
 	if err != nil {

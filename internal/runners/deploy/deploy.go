@@ -150,7 +150,7 @@ func (d *Deploy) install(rtTarget setup.Targeter) error {
 		return locale.WrapError(err, "deploy_runtime_err", "Could not initialize runtime")
 	}
 
-	if err := rti.Update(runbits.DefaultRuntimeMessageHandler(d.output)); err != nil {
+	if err := rti.Update(runbits.DefaultRuntimeEventHandler(d.output)); err != nil {
 		return locale.WrapError(err, "deploy_install_failed", "Installation failed.")
 	}
 

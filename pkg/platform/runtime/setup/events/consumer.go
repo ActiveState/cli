@@ -27,6 +27,8 @@ type ProgressDigester interface {
 	ArtifactStepIncrement(artifact.ArtifactID, string, int64) error
 	ArtifactStepCompleted(artifact.ArtifactID, string) error
 	ArtifactStepFailure(artifact.ArtifactID, string) error
+
+	Close()
 }
 
 // RuntimeEventConsumer is a struct that handles incoming SetupUpdate events in a single go-routine such that they can be forwarded to a progress or summary digester.

@@ -6,15 +6,18 @@
 // channel that can be consumed by the RuntimeEventConsumer. The consumer then
 // delegates the event handling to digesters: ProgressDigester and
 // ChangeSummaryDigester
-//                                                                        +-----------------------+
-//                                                                    /-> | ChangeSummaryDigester |
-// +----------------------+              +----------------------+    |    +-----------------------+
-// | RuntimeEventProducer | -----------> | RuntimeEventConsumer | ---+
-// +----------------------+  .Events()   +----------------------+    |    +------------------+
-//                                                                    \-> | ProgressDigester |
-//                                                                        +------------------+
+//                                     +--- RuntimeEventHandler -------------------------------------+
+//                                     |                                                             |
+//                                     |                                   +-----------------------+ |
+//                                     |                               ,-> | ChangeSummaryDigester | |
+// +----------------------+            |  +----------------------+    /    +-----------------------+ |
+// | RuntimeEventProducer | ---------> |  | RuntimeEventConsumer | ---+                              |
+// +----------------------+  .Events() |  +----------------------+    \    +------------------+      |
+//                                     |                               `-> | ProgressDigester |      |
+//                                     |                                   +------------------+      |
+//                                     +-------------------------------------------------------------+
 // The runbits package has default implementations for digesters, and the
-// runbits.RuntimeMessageHandler combines the consumer with its digesters.
+// RuntimeEventHandler combines the consumer with its digesters.
 package events
 
 // This file contains the definition of all events that the RuntimeEventProducer creates.

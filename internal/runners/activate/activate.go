@@ -185,7 +185,7 @@ func (r *Activate) run(params *ActivateParams) error {
 		if !runtime.IsNeedsUpdateError(err) {
 			return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
 		}
-		if err = rt.Update(runbits.DefaultRuntimeMessageHandler(r.out) /* TODO: messagehandler */); err != nil {
+		if err = rt.Update(runbits.DefaultRuntimeEventHandler(r.out)); err != nil {
 			return locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
 		}
 		if err != nil {
