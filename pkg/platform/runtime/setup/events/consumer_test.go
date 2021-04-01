@@ -59,6 +59,7 @@ func (mpo *mockProgressOutput) ArtifactStepFailure(artifact.ArtifactID, string) 
 	mpo.artifactFailureCalled++
 	return nil
 }
+func (mpo *mockProgressOutput) Close() {}
 
 func TestRuntimeEventConsumer(t *testing.T) {
 	ids := []artifact.ArtifactID{"1", "2"}
