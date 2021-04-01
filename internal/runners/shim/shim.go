@@ -70,15 +70,16 @@ func (s *Shim) Run(params *Params, args ...string) error {
 		return nil
 	}
 
-	runtime, err := runtime.NewRuntime(s.proj.Source().Path(), s.cfg.CachePath(), s.proj.CommitUUID(), s.proj.Owner(), s.proj.Name(), runbits.NewRuntimeMessageHandler(s.out))
+	rt, err := runtime.New(runtime.NewProjectTarget(s.proj, s.cfg.CachePath(), nil))
 	if err != nil {
-		return locale.WrapError(err, "err_shim_runtime_init", "Could not initialize runtime for shim command.")
+		if !runtime.IsNeedsUpdateError(err) {
+			return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
+		}
+		if err := rt.Update(runbits.DefaultRuntimeEventHandler(s.out)); err != nil {
+			return locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
+		}
 	}
-	venv := virtualenvironment.New(runtime)
-	if err := venv.Activate(); err != nil {
-		logging.Errorf("Unable to activate state: %s", err.Error())
-		return locale.WrapError(err, "err_shim_activate", "Could not activate environment for shim command")
-	}
+	venv := virtualenvironment.New(rt)
 
 	env, err := venv.GetEnv(true, filepath.Dir(s.proj.Source().Path()))
 	if err != nil {

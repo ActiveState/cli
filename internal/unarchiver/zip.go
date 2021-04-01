@@ -19,12 +19,16 @@ var _ SingleUnarchiver = &ZipArchive{}
 // ZipArchive is an extension of an Zip archiver implementing an unarchive method with
 // progress feedback
 type ZipArchive struct {
-	archiver.Zip
+	*archiver.Zip
 }
 
 // NewZip initializes a new ZipArchive
 func NewZip() Unarchiver {
-	return Unarchiver{&ZipArchive{*archiver.DefaultZip}, func(_ string, _ int64, _ bool) {}}
+	return Unarchiver{&ZipArchive{archiver.NewZip()}, func(_ string, _ int64, _ bool) {}}
+}
+
+func (z *ZipArchive) Ext() string {
+	return ".zip"
 }
 
 // ExtractNext extracts the next file to destination

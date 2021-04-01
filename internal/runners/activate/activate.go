@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/globaldefault"
@@ -32,7 +33,7 @@ type Activate struct {
 	namespaceSelect  *NamespaceSelect
 	activateCheckout *Checkout
 	out              output.Outputer
-	config           configurable
+	config           *config.Instance
 	proj             *project.Project
 	subshell         subshell.SubShell
 	prompt           prompt.Prompter
@@ -173,37 +174,39 @@ func (r *Activate) run(params *ActivateParams) error {
 		r.subshell.SetActivateCommand(params.Command)
 	}
 
-	runtime, err := runtime.NewRuntime(proj.Source().Path(), r.config.CachePath(), proj.CommitUUID(), proj.Owner(), proj.Name(), runbits.NewRuntimeMessageHandler(r.out))
-	if err != nil {
-		return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
-	}
-
-	venv := virtualenvironment.New(runtime)
-	venv.OnUseCache(func() { r.out.Notice(locale.T("using_cached_env")) })
-
 	// Determine branch name
 	branch := proj.BranchName()
 	if params.Branch != "" {
 		branch = params.Branch
 	}
 
-	err = venv.Setup(true)
+	rt, err := runtime.New(runtime.NewProjectTarget(proj, r.config.CachePath(), nil))
 	if err != nil {
-		if errs.Matches(err, &model.ErrNoMatchingPlatform{}) {
-			branches, err := model.BranchNamesForProjectFiltered(proj.Owner(), proj.Name(), branch)
-			if err == nil && len(branches) > 1 {
-				err = locale.NewInputError("err_activate_platfrom_alternate_branches", "", branch, strings.Join(branches, "\n - "))
-				return errs.AddTips(err, "Run → `[ACTIONABLE]state branch switch <NAME>[/RESET]` to switch branch")
+		if !runtime.IsNeedsUpdateError(err) {
+			return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
+		}
+		if err = rt.Update(runbits.DefaultRuntimeEventHandler(r.out)); err != nil {
+			return locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
+		}
+		if err != nil {
+			if errs.Matches(err, &model.ErrNoMatchingPlatform{}) {
+				branches, err := model.BranchNamesForProjectFiltered(proj.Owner(), proj.Name(), branch)
+				if err == nil && len(branches) > 1 {
+					err = locale.NewInputError("err_activate_platfrom_alternate_branches", "", branch, strings.Join(branches, "\n - "))
+					return errs.AddTips(err, "Run → `[ACTIONABLE]state branch switch <NAME>[/RESET]` to switch branch")
+				}
 			}
+			if !authentication.Get().Authenticated() {
+				return locale.WrapError(err, "error_could_not_activate_venv_auth", "Could not activate project. If this is a private project ensure that you are authenticated.")
+			}
+			return locale.WrapError(err, "err_could_not_activate_venv", "Could not activate project")
 		}
-		if !authentication.Get().Authenticated() {
-			return locale.WrapError(err, "error_could_not_activate_venv_auth", "Could not activate project. If this is a private project ensure that you are authenticated.")
-		}
-		return locale.WrapError(err, "err_could_not_activate_venv", "Could not activate project")
 	}
 
+	venv := virtualenvironment.New(rt)
+
 	if setDefault {
-		err := globaldefault.SetupDefaultActivation(r.subshell, r.config, runtime, filepath.Dir(proj.Source().Path()))
+		err := globaldefault.SetupDefaultActivation(r.subshell, r.config, rt, filepath.Dir(proj.Source().Path()))
 		if err != nil {
 			return locale.WrapError(err, "err_activate_default", "Could not configure your project as the default.")
 		}

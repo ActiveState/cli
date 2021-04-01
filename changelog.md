@@ -8,6 +8,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## 0.28.0
 
+### Changed
+
+- New runtimes are installed in parallel and 2-4 times faster.
+  ([PR #1275](https://github.com/ActiveState/cli/pull/1275))
+
 ### Fixed
 
 - `state push` updates project name in activestate.yaml.

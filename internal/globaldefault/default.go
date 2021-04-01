@@ -128,12 +128,7 @@ func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, r
 		return locale.WrapError(err, "err_globaldefault_prepare", "Could not prepare environment.")
 	}
 
-	env, err := runtime.Env()
-	if err != nil {
-		return errs.Wrap(err, "Could not get runtime env")
-	}
-
-	envMap, err := env.GetEnv(false, "")
+	envMap, err := runtime.Environ(false, projectPath)
 	if err != nil {
 		return errs.Wrap(err, "Could not get env")
 	}
