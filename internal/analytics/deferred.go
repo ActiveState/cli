@@ -34,10 +34,18 @@ func deferrerFilePath(cfg Configurable) string {
 func isDeferralDayAgo(cfg Configurable) bool {
 	df := deferrerFilePath(cfg)
 	stat, err := os.Stat(df)
-	if err != nil {
-		logging.Errorf("Could not stat file: %s, error: %v", df, err)
+	if os.IsNotExist(err) {
+		tErr := fileutils.Touch(deferrerFilePath(cfg))
+		if tErr != nil {
+			logging.Errorf("Failed to create deferrer time stamp file: %v", tErr)
+		}
 		return false
 	}
+	if err != nil {
+		logging.Debug("Could not stat deferrer file: %s, error: %v", df, err)
+		return false
+	}
+
 	diff := time.Now().Sub(stat.ModTime())
 	return diff > 24*time.Hour
 }
