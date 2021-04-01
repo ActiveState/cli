@@ -2,6 +2,7 @@ package updater
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"path/filepath"
@@ -48,7 +49,7 @@ func TestUpdaterInfoDesiredVersion(t *testing.T) {
 
 	updater := createUpdater()
 	updater.DesiredVersion = "1.2.3-456"
-	info, err := updater.Info()
+	info, err := updater.Info(context.Background())
 	require.NoError(t, err)
 
 	assert.NotNil(t, info, "Returns update info")

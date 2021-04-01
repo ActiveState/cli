@@ -4,12 +4,23 @@ constants:
     value: -ldflags="-s -w"
   - name: CLI_PKGS
     value: ./cmd/state
+  - name: SYSTRAY_PKGS
+    value: ./cmd/state-tray
   - name: BUILD_TARGET
     if: ne .OS.Name "Windows"
     value: ./build/state
   - name: BUILD_TARGET_32BIT
     if: ne .OS.Name "Windows"
     value: ./build/state32
+  - name: SYSTRAY_BUILD_TARGET
+    if: ne .OS.Name "Windows"
+    value: ./build/state-tray
+  - name: SYSTRAY_BUILDFLAGS
+    if: ne .OS.Name "Windows"
+    value: $constants.CLI_BUILDFLAGS
+  - name: BUILD_DAEMON_TARGET
+    if: ne .OS.Name "Windows"
+    value: ./build/state-svc
   - name: SET_ENV
     description: The environment settings used throughout our project
     value: |
@@ -21,17 +32,21 @@ constants:
         GO_BUILD_TAGS="CI"
       fi
 scripts:
-  - name: preprocess
+  - name: install-deps
     language: bash
-    description: Generates assets required by the project that aren't just specific to the build
     value: |
-      set -e
       if ! type "packr" &> /dev/null; then
         echo "packr was not found on your PATH, installing .."
         pushd ~
         go get -u github.com/gobuffalo/packr/...
         popd
       fi
+  - name: preprocess
+    language: bash
+    description: Generates assets required by the project that aren't just specific to the build
+    value: |
+      set -e
+      $scripts.install-deps
       $constants.SET_ENV
       packr
       go run scripts/constants-generator/main.go -- internal/constants/generated.go
@@ -64,6 +79,12 @@ scripts:
       export GOOS=${1}
       [ -z "${2}" ] && >&2 echo "must provide output file as 2nd arg" && exit 1
       go build -tags "internal $GO_BUILD_TAGS" -o ${2} $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
+  - name: build-svc
+    language: bash
+    description: Builds the state-svc daemon
+    value: |
+      set -e
+      go build -o $constants.BUILD_DAEMON_TARGET ./cmd/state-svc
   - name: install
     language: bash
     description: Installs the current HEAD version into GOBIN
@@ -75,7 +96,7 @@ scripts:
     description: Deploys update files to S3. This steps is automated by CI and should never be ran manually unless you KNOW WHAT YOU'RE DOING.
     value: |
       set -e
-      go run scripts/s3-deployer/main.go build/update ca-central-1 cli-update update/state
+      go run scripts/s3-deployer/main.go build/update us-east-1 state-tool update/state
   - name: build-install-scripts
     language: bash
     standalone: true
@@ -87,8 +108,8 @@ scripts:
     language: bash
     description: Deploys update files to S3. This steps is automated by CI and should never be ran manually unless you KNOW WHAT YOU'RE DOING.
     value: |
-      go run scripts/s3-deployer/main.go build/install.sh ca-central-1 cli-update update/state/install.sh
-      go run scripts/s3-deployer/main.go build/install.ps1 ca-central-1 cli-update update/state/install.ps1
+      go run scripts/s3-deployer/main.go build/install.sh us-east-1 state-tool update/state/install.sh
+      go run scripts/s3-deployer/main.go build/install.ps1 us-east-1 state-tool update/state/install.ps1
       go run scripts/s3-deployer/main.go build/msi us-east-1 cli-msi /
   - name: build-workflows
     language: bash
@@ -108,6 +129,12 @@ scripts:
       $scripts.build-for.path() "windows" ./.github/deps/Windows/bin/state.exe
       $scripts.build-for.path() "linux" ./.github/deps/Linux/bin/state
       $scripts.build-for.path() "darwin" ./.github/deps/macOS/bin/state
+  - name: build-tray
+    description: Builds the State Tool system tray application
+    standalone: true
+    language: bash
+    value: |
+      go build -tags "$GO_BUILD_TAGS" -o $constants.SYSTRAY_BUILD_TARGET $constants.SYSTRAY_BUILDFLAGS $constants.SYSTRAY_PKGS
   - name: test
     language: bash
     description: Runs unit tests (not integration tests)

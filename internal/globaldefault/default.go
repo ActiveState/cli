@@ -159,7 +159,10 @@ func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, r
 		return locale.WrapError(err, "err_createshims", "Could not create shim files to set up the default runtime environment.")
 	}
 
-	cfg.Set(constants.GlobalDefaultPrefname, projectPath)
+	err = cfg.Set(constants.GlobalDefaultPrefname, projectPath)
+	if err != nil {
+		return locale.WrapError(err, "err_set_default_config", "Could not set default project in config file")
+	}
 
 	return nil
 }

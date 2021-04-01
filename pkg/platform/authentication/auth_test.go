@@ -121,7 +121,8 @@ func TestAuthInvalidToken(t *testing.T) {
 	auth := New(cfg)
 	err = auth.Authenticate()
 	require.Error(t, err)
-	assert.Equal(t, err.Error(), locale.T("err_no_credentials"), "Should fail to authenticate")
+	assert.IsType(t, &ErrUnauthorized{}, err, "Should fail to authenticate")
+	auth.Logout()
 	assert.Empty(t, cfg.GetString("apiToken"), "", "apiToken should have cleared")
 }
 

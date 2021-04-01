@@ -12,7 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/osutils/lockfile"
 )
 
 type Configurable interface {
@@ -82,13 +82,13 @@ func ActivationPIDFileName(configpath string, n int) string {
 // Activation eases the use of a PidLock for the purpose of "marking" a process
 // as being a valid "activation".
 type Activation struct {
-	PIDLock *osutils.PidLock
+	PIDLock *lockfile.PidLock
 }
 
 // NewActivation creates an instance of Activation.
 func NewActivation(cfg Configurable, pid int) (*Activation, error) {
 	pidFileName := ActivationPIDFileName(cfg.ConfigPath(), pid)
-	pidLock, err := osutils.NewPidLock(pidFileName)
+	pidLock, err := lockfile.NewPidLock(pidFileName)
 	if err != nil {
 		return nil, errs.Wrap(err, "cannot create new pid lock file")
 	}

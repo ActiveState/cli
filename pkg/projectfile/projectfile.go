@@ -448,7 +448,7 @@ func Parse(configFilepath string) (*Project, error) {
 	projectDir := filepath.Dir(configFilepath)
 	files, err := ioutil.ReadDir(projectDir)
 	if err != nil {
-		return nil, locale.WrapError(err, "err_project_readdir", "Could not ready project directory: {{.V0}}.", projectDir)
+		return nil, locale.WrapError(err, "err_project_readdir", "Could not read project directory: {{.V0}}.", projectDir)
 	}
 
 	project, err := parse(configFilepath)
@@ -760,6 +760,7 @@ func (p *Project) SetNamespace(owner, project string) error {
 	// keep parsed url components in sync
 	p.parsedURL.Owner = owner
 	p.parsedURL.Name = project
+	p.Project = pf.String()
 
 	return nil
 }
@@ -778,6 +779,7 @@ func (p *Project) SetCommit(commitID string, headless bool) error {
 	}
 
 	p.parsedURL.CommitID = commitID
+	p.Project = pf.String()
 	return nil
 }
 
@@ -799,6 +801,7 @@ func (p *Project) SetBranch(branch string) error {
 	}
 
 	p.parsedURL.BranchName = branch
+	p.Project = pf.String()
 	return nil
 }
 
@@ -1003,6 +1006,7 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 		return nil, err
 	}
 
+	var commitID string
 	if params.projectURL == "" {
 		u, err := url.Parse(fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, params.Owner, params.Project))
 		if err != nil {
@@ -1011,7 +1015,8 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 		q := u.Query()
 
 		if params.CommitID != nil {
-			q.Set("commitID", params.CommitID.String())
+			commitID = params.CommitID.String()
+			q.Set("commitID", commitID)
 		}
 		if params.BranchName != "" {
 			q.Set("branch", params.BranchName)
@@ -1059,6 +1064,7 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 		"Project":         params.projectURL,
 		"LanguageName":    params.Language,
 		"LanguageVersion": params.LanguageVersion,
+		"CommitID":        commitID,
 		"Content":         content,
 		"Private":         params.Private,
 	}
@@ -1204,7 +1210,7 @@ type ConfigGetter interface {
 	GetStringMapStringSlice(key string) map[string][]string
 	AllKeys() []string
 	GetStringSlice(string) []string
-	Set(string, interface{})
+	Set(string, interface{}) error
 }
 
 func GetProjectMapping(config ConfigGetter) map[string][]string {
@@ -1251,10 +1257,16 @@ func addDeprecatedProjectMappings(config ConfigGetter) {
 		newPaths := projects[namespace]
 		paths := config.GetStringSlice(key)
 		projects[namespace] = funk.UniqString(append(newPaths, paths...))
-		config.Set(key, nil)
+		err := config.Set(key, nil)
+		if err != nil {
+			logging.Error("Could not clear config entry for key %s, error: %v", key, err)
+		}
 	}
 
-	config.Set(LocalProjectsConfigKey, projects)
+	err := config.Set(LocalProjectsConfigKey, projects)
+	if err != nil {
+		logging.Error("Could not update project mapping in config, error: %v", err)
+	}
 }
 
 // GetProjectPaths returns the paths of all projects associated with the namespace
@@ -1295,7 +1307,10 @@ func storeProjectMapping(cfg ConfigGetter, namespace, projectPath string) {
 	}
 
 	projects[namespace] = paths
-	cfg.Set(LocalProjectsConfigKey, projects)
+	err := cfg.Set(LocalProjectsConfigKey, projects)
+	if err != nil {
+		logging.Error("Could not set project mapping in config, error: %v", err)
+	}
 }
 
 // CleanProjectMapping removes projects that no longer exist
@@ -1319,5 +1334,8 @@ func CleanProjectMapping(cfg ConfigGetter) {
 		seen[strings.ToLower(namespace)] = true
 	}
 
-	cfg.Set("projects", projects)
+	err := cfg.Set("projects", projects)
+	if err != nil {
+		logging.Debug("Could not set clean project mapping in config, error: %v", err)
+	}
 }

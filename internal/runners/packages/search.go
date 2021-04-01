@@ -11,7 +11,6 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/go-openapi/strfmt"
 )
 
 // SearchRunParams tracks the info required for running search.
@@ -39,11 +38,7 @@ func NewSearch(prime primeable) *Search {
 func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 	logging.Debug("ExecuteSearch")
 
-	if s.proj == nil {
-		return locale.NewInputError("err_no_project")
-	}
-
-	language, err := targetedLanguage(params.Language, s.proj.CommitUUID())
+	language, err := targetedLanguage(params.Language, s.proj)
 	if err != nil {
 		return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_obtain_language", nstype))
 	}
@@ -72,12 +67,18 @@ func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 	return nil
 }
 
-func targetedLanguage(languageOpt string, commitUUID strfmt.UUID) (string, error) {
+func targetedLanguage(languageOpt string, proj *project.Project) (string, error) {
 	if languageOpt != "" {
 		return languageOpt, nil
 	}
+	if proj == nil {
+		return "", locale.NewInputError(
+			"err_no_language_derived",
+			"Language must be provided by flag or by running this command within a project.",
+		)
+	}
 
-	return model.LanguageForCommit(commitUUID)
+	return model.LanguageForCommit(proj.CommitUUID())
 }
 
 type modules []string

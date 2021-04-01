@@ -69,9 +69,13 @@ func main() {
 		!outFlags.NonInteractive &&
 		terminal.IsTerminal(int(os.Stdin.Fd()))
 	// Run our main command logic, which is logic that defers to the error handling logic below
-	code, err := run(os.Args, isInteractive, out)
+	code := 0
+	err = run(os.Args, isInteractive, out)
 	if err != nil {
-		out.Error(err)
+		code, err = unwrapError(err)
+		if !isSilent(err) {
+			out.Error(err)
+		}
 
 		// If a state tool error occurs in a VSCode integrated terminal, we want
 		// to pause and give time to the user to read the error message.
@@ -88,12 +92,12 @@ func main() {
 	os.Exit(code)
 }
 
-func run(args []string, isInteractive bool, out output.Outputer) (int, error) {
+func run(args []string, isInteractive bool, out output.Outputer) error {
 	// Set up profiling
 	if os.Getenv(constants.CPUProfileEnvVarName) != "" {
 		cleanup, err := profile.CPU()
 		if err != nil {
-			return 1, err
+			return err
 		}
 		defer cleanup()
 	}
@@ -103,23 +107,21 @@ func run(args []string, isInteractive bool, out output.Outputer) (int, error) {
 
 	cfg, err := config.Get()
 	if err != nil {
-		return 1, locale.WrapError(err, "config_get_error", "Failed to load configuration.")
+		return locale.WrapError(err, "config_get_error", "Failed to load configuration.")
 	}
 	logging.Debug("ConfigPath: %s", cfg.ConfigPath())
 	logging.Debug("CachePath: %s", cfg.CachePath())
 
 	// set global configuration instances
 	machineid.SetConfiguration(cfg)
+	machineid.SetErrorLogger(logging.Error)
 	logging.UpdateConfig(cfg)
-
-	// Ensure any config set is preserved
-	defer cfg.Save()
 
 	// Retrieve project file
 	pjPath, err := projectfile.GetProjectFilePath()
 	if err != nil && errs.Matches(err, &projectfile.ErrorNoProjectFromEnv{}) {
 		// Fail if we are meant to inherit the projectfile from the environment, but the file doesn't exist
-		return 1, err
+		return err
 	}
 
 	// Set up prompter
@@ -130,18 +132,18 @@ func run(args []string, isInteractive bool, out output.Outputer) (int, error) {
 	if pjPath != "" {
 		pjf, err := projectfile.FromPath(pjPath)
 		if err != nil {
-			return 1, err
+			return err
 		}
 		pj, err = project.New(pjf, out)
 		if err != nil {
-			return 1, err
+			return err
 		}
 	}
 
 	// Forward call to specific state tool version, if warranted
 	forward, err := forwardFn(cfg.ConfigPath(), args, out, pj)
 	if err != nil {
-		return 1, err
+		return err
 	}
 	if forward != nil {
 		return forward()
@@ -173,8 +175,8 @@ func run(args []string, isInteractive bool, out output.Outputer) (int, error) {
 
 	if childCmd != nil && !childCmd.SkipChecks() {
 		// Auto update to latest state tool version, only runs once per day
-		if updated, code, err := autoUpdate(args, out, pjPath); err != nil || updated {
-			return code, err
+		if updated, err := autoUpdate(args, out, pjPath); err != nil || updated {
+			return err
 		}
 
 		// Check for deprecation
@@ -188,7 +190,7 @@ func run(args []string, isInteractive bool, out output.Outputer) (int, error) {
 				out.Notice(output.Heading(locale.Tl("deprecation_title", "Deprecation Warning")))
 				out.Notice(locale.Tr("warn_deprecation", date, deprecated.Reason))
 			} else {
-				return 1, locale.NewInputError("err_deprecation", "You are running a version of the State Tool that is no longer supported! Reason: {{.V1}}", date, deprecated.Reason)
+				return locale.NewInputError("err_deprecation", "You are running a version of the State Tool that is no longer supported! Reason: {{.V1}}", date, deprecated.Reason)
 			}
 		}
 	}
@@ -202,7 +204,7 @@ func run(args []string, isInteractive bool, out output.Outputer) (int, error) {
 		err = errs.AddTips(err, locale.Tl("err_tip_run_help", "Run → [ACTIONABLE]`state {{.V0}}--help`[/RESET] for general help", cmdName))
 	}
 
-	return unwrapError(err)
+	return err
 }
 
 func argsHaveVerbose(args []string) bool {

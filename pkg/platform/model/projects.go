@@ -30,7 +30,7 @@ func FetchProjectByName(orgName string, projectName string) (*mono_models.Projec
 
 	request := request.ProjectByOrgAndName(orgName, projectName)
 
-	gql := graphql.Get()
+	gql := graphql.New()
 	response := model.Projects{}
 	err := gql.Run(request, &response)
 	if err != nil {
@@ -204,4 +204,19 @@ func processProjectErrorResponse(err error, params ...string) error {
 	default:
 		return locale.WrapError(err, "err_api_unknown", "Unexpected API error")
 	}
+}
+
+func AddBranch(projectID strfmt.UUID, label string) (strfmt.UUID, error) {
+	var branchID strfmt.UUID
+	addParams := projects.NewAddBranchParams()
+	addParams.SetProjectID(projectID)
+	addParams.Body.Label = label
+
+	res, err := authentication.Client().Projects.AddBranch(addParams, authentication.ClientAuth())
+	if err != nil {
+		msg := api.ErrorMessageFromPayload(err)
+		return branchID, locale.WrapError(err, msg)
+	}
+
+	return res.Payload.BranchID, nil
 }

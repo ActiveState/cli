@@ -15,6 +15,7 @@ param (
         $t
     ,[Parameter(Mandatory=$False)][switch]$n
     ,[Parameter(Mandatory=$False)][switch]$f
+    ,[Parameter(Mandatory=$False)][string]$c
     ,[Parameter(Mandatory=$False)][switch]$h
     ,[Parameter(Mandatory=$False)]
         [ValidateScript({[IO.Path]::GetExtension($_) -eq '.exe'})]
@@ -35,6 +36,7 @@ $script:TARGET = ($t).Trim()
 $script:STATEEXE = ($e).Trim()
 $script:STATE = $e.Substring(0, $e.IndexOf("."))
 $script:BRANCH = ($b).Trim()
+$script:POST_INSTALL_COMMAND = ($c).Trim()
 $script:ACTIVATE = ($activate).Trim()
 $script:ACTIVATE_DEFAULT = (${activate-default}).Trim()
 
@@ -189,7 +191,7 @@ By running the State Tool installer you consent to the Privacy Policy. This is r
 
 function fetchArtifacts($downloadDir, $statejson, $statepkg) {
     # State Tool binary base dir
-    $STATEURL="https://s3.ca-central-1.amazonaws.com/cli-update/update/state"
+    $STATEURL="https://state-tool.s3.amazonaws.com/update/state"
     
     Write-Host "Preparing for installation...`n"
 
@@ -277,6 +279,7 @@ function install() {
     -n                   Don't prompt for anything, just install and override any existing executables
     -t <dir>             Install target dir
     -f <file>            Default 'state.exe'.  Binary filename to use
+    -c <command>         Run any command after the install script has completed
     -activate <project>  Activate a project when State Tools is correctly installed
     -h                   Show usage information (what you're currently reading)"
 
@@ -442,6 +445,14 @@ function install() {
 
 $code = install
 if (($null -eq $code) -or ($code -eq 0)) {
-    activateIfRequested
+    if ($script:POST_INSTALL_COMMAND) {
+        # Extract executable from post install command string
+        $executable, $arguments = $script:POST_INSTALL_COMMAND.Split(" ")
+        & $executable $arguments
+    }
+    else {
+        # Keep --activate and --activate-default flags for backwards compatibility
+        activateIfRequested
+    }
 }
 exit $code

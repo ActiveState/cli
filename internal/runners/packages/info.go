@@ -38,11 +38,7 @@ func NewInfo(prime primeable) *Info {
 func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 	logging.Debug("ExecuteInfo")
 
-	if i.proj == nil {
-		return locale.NewInputError("err_no_project")
-	}
-
-	language, err := targetedLanguage(params.Language, i.proj.CommitUUID())
+	language, err := targetedLanguage(params.Language, i.proj)
 	if err != nil {
 
 		return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_obtain_language", nstype))

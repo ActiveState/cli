@@ -82,7 +82,7 @@ const CPUProfileEnvVarName = "ACTIVESTATE_PROFILE_CPU"
 const NonInteractive = "ACTIVESTATE_NONINTERACTIVE"
 
 // APIUpdateURL is the URL for our update server
-const APIUpdateURL = "https://s3.ca-central-1.amazonaws.com/cli-update/update/"
+const APIUpdateURL = "https://state-tool.s3.amazonaws.com/update/"
 
 // APIArtifactURL is the URL for downloading artifacts
 const APIArtifactURL = "https://s3.ca-central-1.amazonaws.com/cli-artifacts/"
@@ -152,11 +152,14 @@ const InventoryAPIPath = "/sv/inventory-api-v1"
 // GraphqlAPIPath is the path used for the platform graphql api
 const GraphqlAPIPath = "/graphql/v1/graphql"
 
-// RequirementsImportAPIPath is the path used for the requiremments import api
+// MediatorAPIPath is the path used for the platform mediator api
+const MediatorAPIPath = "/sv/mediator/api"
+
+// RequirementsImportAPIPath is the path used for the requirements import api
 const RequirementsImportAPIPath = "/sv/reqsvc/reqs"
 
 // DeprecationInfoURL is the URL we check against to see what versions are deprecated
-const DeprecationInfoURL = "https://s3.ca-central-1.amazonaws.com/cli-update/deprecation.json"
+const DeprecationInfoURL = "https://state-tool.s3.amazonaws.com/deprecation.json"
 
 // DateFormatUser is the date format we use when communicating with the end-user
 const DateFormatUser = "January 02, 2006"
@@ -172,6 +175,9 @@ const PlatformSignupURL = "https://platform.activestate.com" + "/create-account"
 
 // DocumentationURL is the url for the state tool documentation
 const DocumentationURL = "http://docs.activestate.com/platform/state/"
+
+// DocumentationURLHeadless is the documentation URL for headless state docs
+const DocumentationURLHeadless = DocumentationURL + "advanced-topics/detached/"
 
 // BugTrackerURL is the URL of our bug tracker
 const BugTrackerURL = "https://github.com/ActiveState/state-tool/issues"
@@ -254,3 +260,12 @@ const GlobalDefaultPrefname = "default_project_path"
 
 // DefaultBranchName is the default branch name used on platform projects
 const DefaultBranchName = "main"
+
+// SvcConfigPort is the config key used for storing the svc port
+const SvcConfigPort = "svc-port"
+
+// SvcConfigPid is the config key used for storing the svc pid
+const SvcConfigPid = "svc-pid"
+
+// TrayAppName is the name we give our systray application
+const TrayAppName = "ActiveState Platform"

@@ -110,13 +110,9 @@ func (r *Push) Run(params PushParams) error {
 				return locale.NewInputError("err_no_default_branch")
 			}
 		} else {
-			branch, err = model.BranchForProjectByName(pjm, branchName)
+			branch, err = model.BranchForProjectByName(pjm, r.project.BranchName())
 			if err != nil {
-				return locale.WrapError(
-					err, "err_push_cannot_get_branch",
-					"Failed to get branch [NOTICE]{{.V0}}[/RESET] of project.",
-					r.project.BranchName(),
-				)
+				return locale.WrapError(err, "err_fetch_branch", "", r.project.BranchName())
 			}
 		}
 

@@ -39,7 +39,8 @@ func (suite *MainTestSuite) TestDeprecated() {
 	mock.MockDeprecated()
 
 	catcher := outputhelper.NewCatcher()
-	exitCode, err := run([]string{""}, true, catcher.Outputer)
+	err := run([]string{""}, true, catcher.Outputer)
+	exitCode := errs.UnwrapExitCode(err)
 	suite.Require().NoError(err)
 	suite.Require().Equal(0, exitCode, "Should exit with code 0, output: %s", catcher.CombinedOutput())
 
@@ -56,7 +57,8 @@ func (suite *MainTestSuite) TestExpired() {
 	mock.MockExpired()
 
 	catcher := outputhelper.NewCatcher()
-	exitCode, err := run([]string{""}, true, catcher.Outputer)
+	err := run([]string{""}, true, catcher.Outputer)
+	exitCode := errs.UnwrapExitCode(err)
 
 	if version.NumberIsProduction(constants.VersionNumber) {
 		suite.Require().Error(err)

@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"errors"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -21,6 +20,10 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/users"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+)
+
+const (
+	maxMatchTries = 3
 )
 
 type signupInput struct {
@@ -47,9 +50,9 @@ func Signup(cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompt
 		return locale.NewInputError("tos_not_accepted", "")
 	}
 
-	err = promptForSignup(input, out, prompt)
+	err = promptForSignup(input, maxMatchTries, out, prompt)
 	if err != nil {
-		return locale.WrapError(err, "err_prompt_unknown")
+		return locale.WrapError(err, "signup_failure")
 	}
 
 	if err = doSignup(input, out); err != nil {
@@ -70,9 +73,10 @@ func signupFromLogin(username string, password string, out output.Outputer, prom
 
 	input.Username = username
 	input.Password = password
-	err := promptForSignup(input, out, prompt)
+
+	err := promptForSignup(input, maxMatchTries, out, prompt)
 	if err != nil {
-		return errs.Wrap(err, "UserInput failure")
+		return locale.WrapError(err, "signup_failure")
 	}
 
 	return doSignup(input, out)
@@ -141,7 +145,7 @@ func promptTOS(configPath string, out output.Outputer, prompt prompt.Prompter) (
 	return false, nil
 }
 
-func promptForSignup(input *signupInput, out output.Outputer, prompter prompt.Prompter) error {
+func promptForSignup(input *signupInput, matchTries int, out output.Outputer, prompter prompt.Prompter) error {
 	var err error
 
 	if input.Username != "" {
@@ -157,22 +161,23 @@ func promptForSignup(input *signupInput, out output.Outputer, prompter prompt.Pr
 		}
 	}
 
-	// Must define password validator here as it has to reference the input
-	var passwordValidator = func(val interface{}) error {
-		value := val.(string)
-		if value != input.Password {
-			return locale.NewError("InvalidPassword")
+	for i := 0; i < matchTries; i++ {
+		confirmMsg := locale.T("password_prompt_confirm")
+		input.Password2, err = prompter.InputSecret("", confirmMsg, prompt.InputRequired)
+		if err != nil {
+			return err
 		}
-		return nil
-	}
 
-	input.Password2, err = prompter.InputSecret("", locale.T("password_prompt_confirm"), prompt.InputRequired)
-	if err != nil {
-		return err
-	}
-	err = passwordValidator(input.Password2)
-	if err != nil {
-		return errs.Wrap(err, "InvalidPassword failure")
+		if input.Password2 == input.Password {
+			break
+		}
+
+		locErrMsgID := "err_password_confirmation_failed"
+		if i < matchTries-1 {
+			out.Notice(locale.T(locErrMsgID))
+			continue
+		}
+		return locale.NewError(locErrMsgID)
 	}
 
 	input.Name, err = prompter.Input("", locale.T("name_prompt"), new(string), prompt.InputRequired)
@@ -234,7 +239,7 @@ func UsernameValidator(val interface{}) error {
 	params.SetUsername(value)
 	res, err := mono.Get().Users.UniqueUsername(params)
 	if err != nil || *res.Payload.Code != int64(200) {
-		return errors.New(locale.T("err_username_taken"))
+		return locale.NewError("err_username_taken")
 	}
 	return nil
 }

@@ -1,7 +1,6 @@
 package clean
 
 import (
-	"errors"
 	"os"
 
 	"github.com/ActiveState/cli/internal/config"
@@ -42,7 +41,7 @@ func newCache(output output.Outputer, cfg configurable, confirm confirmAble) *Ca
 
 func (c *Cache) Run(params *CacheParams) error {
 	if os.Getenv(constants.ActivatedStateEnvVarName) != "" {
-		return errors.New(locale.T("err_clean_cache_activated"))
+		return locale.NewError("err_clean_cache_activated")
 	}
 
 	if params.Project != "" {

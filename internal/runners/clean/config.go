@@ -1,7 +1,6 @@
 package clean
 
 import (
-	"errors"
 	"os"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -15,7 +14,6 @@ type configurable interface {
 	project.ConfigAble
 	ConfigPath() string
 	CachePath() string
-	SkipSave(bool)
 }
 
 type Config struct {
@@ -42,7 +40,7 @@ func newConfig(out output.Outputer, confirm confirmAble, cfg configurable) *Conf
 
 func (c *Config) Run(params *ConfigParams) error {
 	if os.Getenv(constants.ActivatedStateEnvVarName) != "" {
-		return errors.New(locale.T("err_clean_cache_activated"))
+		return locale.NewError("err_clean_cache_activated")
 	}
 
 	if !params.Force {
