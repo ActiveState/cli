@@ -7,32 +7,34 @@ the ActiveState Platform.
 
 The general usage pattern is as follows:
 
-	setup, err := setup.NewSetup(proj, msgHandler)
-	if err != nil {...}
-
-	r, err = setup.InstalledRuntime()
-	if runtime.IsNotInstalledError(err) {
-		err = setup.InstallRuntime()
-		if err != nil {...}
-		r, err = setup.InstalledRuntime()
+	rt, err := runtime.New(target)
+	if err != nil {
+		if !runtime.IsNeedsUpdateError(err) {
+			return err
+		}
+		if err = rt.Update(messageHandler); err != nil {
+			return err
+		}
 	}
-	if err != nil {...}
 
-	env, err = r.Environ()
+	env, err = r.Environ(true, projectDir)
 	if err != nil {...}
 
 ## Package structure
 
 The runtime package consists of the following sub-packages:
 
-	pkg/platform/runtime2
-	├── setup
-	├── impl
-	│   ├── alternative
-	│   └── camel
+	pkg/platform/runtime
+	├── artifact
+	├── envdef
 	├── model
-	│   └── client
-	└── artifact
+	├── setup
+	│   ├── buildlog
+	│   ├── events
+	│   └── implementations
+	│       ├── alternative
+	│       └── camel
+	└── store
 
 ### Toplevel package
 
@@ -43,12 +45,22 @@ is already installed locally.
 
 - No communication to the API backend is performed in this package
 
-### API package
+### Artifact package
 
-The package `api` defines interfaces to all backend functions necessary to set
-up a runtime locally.
+The `artifact` package provides an abstraction of artifact information that
+can be generated from recipes or the build status response. The idea is to
+address the use-case where we want to meta-data like the dependency tree
+about the current project.
 
-Two implementations are provided in `api.client`: `Default` and `Mock` for testing
+### Model package
+
+The package `model` implements tightly scoped methods to communicate with the
+Platform API.  The model implementation should be simple to mock to support unit tests.
+
+### Envdef package
+
+
+The package `envdef` implements methods to parse, merge and apply environment definitions that are shipped with artifact files.
 
 ### Setup package
 
@@ -57,39 +69,22 @@ runtime locally.  The main struct is called `setup.Setup`.
 
 **Invariants**:
 
-- It is the only package where the `api` package is used.
-- When `setup/Setup.InstallRuntime()` finishes successfully, the runtime can
+- It is the only package where the `model` package is used.
+- When `setup/Setup.Update()` finishes successfully, the runtime can
 be loaded from the disk without further Platform communication.
 - This package does not comprise build engine specific code. It is hidden
-behind the `setup/common/Setuper` interface
+behind the `setup/implementations` interface
+
+### Setup.Events package
+
+The `events` package in the `setup` directory provides structs to handle setup events, which can be sent from parallel running threads.  The `RuntimeEventHandler` translates these events to commands for "digester" implementations.  The default digesters are implemented in the `runbits.changesummary` and `runbits.progressbar` packages.
 
 ### Runtime implementations
 
-As we have two (maybe more) flavors of builds (Camel and Alternative), we split out the specific implementations for how to set them up in an implementation package called `impl`.
+As we have two (maybe more) flavors of builds (Camel and Alternative), we split out the specific implementations for how to set them up in an implementation package called `implementations`.
 
 The actual runtime implementations are in the sub-packages `alternative` and `camel`.
 
-This `impl` package can contain common functionality between the specific implementations and defines the interfaces the implementations have to fulfill.
-
 **Invariant**:
 
-- The functions in these package are not calling any api functions.
-
-Artifact package
-
-The `artifact` package provides an abstraction of artifact information that
-can be generated from recipes. The idea is to address the use-case where we
-want to meta-data like the dependency tree about the current project.
-
-## Tests
-
-I suggest the following tests:
-
-- setup/setup_test.go: tests the entire set up of a runtime based on a mocked
-API client. This is the most complicated part, and it involves some
-asynchronous operations. So, it will be nice to have some unit-tests
-available, to test some edge cases, especially w.r.t. message handling.
-- artifact/artifact_test.go: Tests to ensure that we can parse the returned
-Recipe structure correctly.
-- api/client/default_test.go: Here we could add some very focused integration
-tests, that should fail if the backend changes in an incompatible way.
+- The functions in these package are not calling any model functions.
