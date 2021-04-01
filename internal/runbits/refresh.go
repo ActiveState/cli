@@ -8,10 +8,7 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// RefreshRuntime should be called after runtime mutations. A nil arg for "req"
-// means that the message handler will not print output for "a single
-// requirement". For example, if multiple requirements are affected, nil is the
-// appropriate value.
+// RefreshRuntime should be called after runtime mutations.
 func RefreshRuntime(out output.Outputer, proj *project.Project, cachePath string, commitID strfmt.UUID, changed bool) error {
 	rtMessages := DefaultRuntimeEventHandler(out)
 	isCached := true
