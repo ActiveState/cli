@@ -157,7 +157,7 @@ func (r *Push) Run(params PushParams) error {
 		return locale.WrapInputError(err, "push_remove_lang_err", "Failed to remove temporary language field from activestate.yaml.")
 	}
 
-	if !r.project.Namespace().IsValid() {
+	if r.project.IsHeadless() {
 		if err := r.project.Source().SetNamespace(owner, name); err != nil {
 			return errs.Wrap(err, "Could not set project namespace in project file")
 		}
