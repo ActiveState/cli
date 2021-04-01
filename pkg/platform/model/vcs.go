@@ -319,7 +319,7 @@ func UpdateBranchForProject(pj ProjectInfo, commitID strfmt.UUID) error {
 
 	err = UpdateBranchCommit(branch.BranchID, commitID)
 	if err != nil {
-		return errs.Wrap(err, "Could no update branch")
+		return errs.Wrap(err, "Could no update branch to commit %s", commitID.String())
 	}
 
 	return nil
@@ -361,7 +361,7 @@ func updateBranch(branchID strfmt.UUID, changeset *mono_models.BranchEditable) e
 			)
 			return errs.AddTips(err, "Run [ACTIONABLE]state fork <project namespace>[/RESET] to make changes to this project")
 		}
-		return locale.NewError("err_update_branch", api.ErrorMessageFromPayload(err))
+		return locale.NewError("err_update_branch", "", api.ErrorMessageFromPayload(err))
 	}
 	return nil
 }
@@ -433,7 +433,11 @@ func UpdateProjectBranchCommitWithModel(pjm *mono_models.Project, branchName str
 		return errs.Wrap(err, "Could not fetch branch: %s", branchName)
 	}
 
-	return UpdateBranchCommit(branch.BranchID, commitID)
+	err = UpdateBranchCommit(branch.BranchID, commitID)
+	if err != nil {
+		return errs.Wrap(err, "Could update branch %s to commitID %s", branchName, commitID.String())
+	}
+	return nil
 }
 
 // CommitChangeset commits multiple changes in one commit
