@@ -48,7 +48,7 @@ func InvokeSilent(args ...string) error {
 	err = cmd.Run()
 
 	if err != nil {
-		return locale.WrapError(err, "err_tutorial_invoke_run", "Errors occurred while invoking State Tool command: `state {{.V0}}`.", strings.Join(args, " "))
+		return locale.WrapInputError(err, "err_tutorial_invoke_run", "Errors occurred while invoking State Tool command: `state {{.V0}}`.", strings.Join(args, " "))
 	}
 
 	return nil
