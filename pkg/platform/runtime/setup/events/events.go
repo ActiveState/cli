@@ -143,6 +143,15 @@ func (be artifactBaseEvent) ArtifactID() artifact.ArtifactID {
 	return be.artifactID
 }
 
+type ArtifactCachedEvent struct {
+	artifactBaseEvent
+}
+
+func newArtifactCachedEvent(artifactID artifact.ArtifactID) ArtifactCachedEvent {
+	return ArtifactCachedEvent{newArtifactBaseEvent("cached", Install, artifactID)}
+
+}
+
 // ArtifactStartEvent is sent when an artifact enters a new processing step
 type ArtifactStartEvent struct {
 	artifactBaseEvent

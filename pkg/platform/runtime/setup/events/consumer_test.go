@@ -86,6 +86,15 @@ func TestRuntimeEventConsumer(t *testing.T) {
 		newArtifactFailureEvent(Install, ids[0], "error"),
 		newArtifactFailureEvent(Install, ids[1], "error"),
 	)
+	cachedEvents := []SetupEventer{
+		newArtifactCachedEvent(ids[0]),
+		newArtifactStartEvent(Download, ids[1], names[1], 100),
+		newArtifactProgressEvent(Download, ids[1], 100),
+		newArtifactCompleteEvent(Download, ids[1]),
+		newArtifactStartEvent(Install, ids[1], names[1], 100),
+		newArtifactProgressEvent(Install, ids[1], 100),
+		newArtifactCompleteEvent(Install, ids[1]),
+	}
 	withBuildSuccessEvents := append([]SetupEventer{
 		newTotalArtifactEvent(2),
 		newBuildStartEvent(),
@@ -93,6 +102,13 @@ func TestRuntimeEventConsumer(t *testing.T) {
 		newArtifactCompleteEvent(Build, ids[1]),
 		newBuildCompleteEvent(),
 	}, successEvents...)
+	oneCachedArtifactEvents := append([]SetupEventer{
+		newTotalArtifactEvent(2),
+		newBuildStartEvent(),
+		newArtifactCompleteEvent(Build, ids[0]),
+		newArtifactCompleteEvent(Build, ids[1]),
+		newBuildCompleteEvent(),
+	}, cachedEvents...)
 	buildFailureEvents := []SetupEventer{
 		newTotalArtifactEvent(2),
 		newBuildStartEvent(),
@@ -159,6 +175,21 @@ func TestRuntimeEventConsumer(t *testing.T) {
 			expectedArtifactStartedCalled:   4,
 			expectedArtifactIncrementCalled: 4,
 			expectedArtifactCompletedCalled: 4,
+			expectedArtifactFailureCalled:   0,
+		},
+		{
+			name:                            "no errors, with build, 1 cached artifact",
+			events:                          oneCachedArtifactEvents,
+			expectedBuildStarted:            true,
+			expectedBuildCompleted:          true,
+			expectedBuildTotal:              int64(2),
+			expectedBuildCurrent:            2,
+			expectedInstallationStarted:     1,
+			expectedInstallationTotal:       int64(2),
+			expectedInstallationCurrent:     2,
+			expectedArtifactStartedCalled:   2,
+			expectedArtifactIncrementCalled: 2,
+			expectedArtifactCompletedCalled: 2,
 			expectedArtifactFailureCalled:   0,
 		},
 		{

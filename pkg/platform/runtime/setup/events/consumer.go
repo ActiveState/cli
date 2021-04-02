@@ -124,6 +124,11 @@ func (eh *RuntimeEventConsumer) handleArtifactEvent(ev ArtifactSetupEventer) err
 			}
 		}
 		return eh.progress.ArtifactStepCompleted(t.ArtifactID(), stepTitle(t.Step()))
+	case ArtifactCachedEvent:
+		err := eh.ensureInstallationStarted()
+		if err != nil {
+			return err
+		}
 	case ArtifactFailureEvent:
 		eh.numInstallFailures++
 		return eh.progress.ArtifactStepFailure(t.ArtifactID(), stepTitle(t.Step()))

@@ -59,6 +59,17 @@ func (s *Setup) ResolveArtifactName(a artifact.ArtifactID) string {
 	return locale.Tl("alternative_unknown_pkg_name", "unknown")
 }
 
-func (s *Setup) DownloadsFromBuild(buildStatus *headchef_models.BuildStatusResponse) ([]artifact.ArtifactDownload, error) {
-	return artifact.NewDownloadsFromBuild(buildStatus)
+func (s *Setup) DownloadsFromBuild(buildStatus *headchef_models.BuildStatusResponse, storedArtifacts store.StoredArtifactMap) ([]artifact.ArtifactDownload, error) {
+	downloads, err := artifact.NewDownloadsFromBuild(buildStatus)
+	if err != nil {
+		return nil, errs.Wrap(err, "Failed to extract downloads from build result.")
+	}
+	var res []artifact.ArtifactDownload
+	for _, d := range downloads {
+		if _, ok := storedArtifacts[d.ArtifactID]; ok {
+			continue
+		}
+		res = append(res, d)
+	}
+	return res, nil
 }

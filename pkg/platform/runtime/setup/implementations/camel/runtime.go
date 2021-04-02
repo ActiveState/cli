@@ -28,6 +28,6 @@ func (s *Setup) ResolveArtifactName(_ artifact.ArtifactID) string {
 	return locale.Tl("camel_bundle_name", "bundle")
 }
 
-func (s *Setup) DownloadsFromBuild(buildStatus *headchef_models.BuildStatusResponse) ([]artifact.ArtifactDownload, error) {
+func (s *Setup) DownloadsFromBuild(buildStatus *headchef_models.BuildStatusResponse, _ store.StoredArtifactMap) ([]artifact.ArtifactDownload, error) {
 	return artifact.NewDownloadsFromCamelBuild(buildStatus)
 }

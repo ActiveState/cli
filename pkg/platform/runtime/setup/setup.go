@@ -84,6 +84,7 @@ type Events interface {
 	ArtifactStepProgress(events.SetupStep, artifact.ArtifactID, int)
 	ArtifactStepCompleted(events.SetupStep, artifact.ArtifactID)
 	ArtifactStepFailed(events.SetupStep, artifact.ArtifactID, string)
+	ArtifactCached(artifact.ArtifactID)
 }
 
 type Targeter interface {
@@ -112,7 +113,7 @@ type ModelProvider interface {
 type Setuper interface {
 	DeleteOutdatedArtifacts(artifact.ArtifactChangeset, store.StoredArtifactMap) error
 	ResolveArtifactName(artifact.ArtifactID) string
-	DownloadsFromBuild(buildStatus *headchef_models.BuildStatusResponse) ([]artifact.ArtifactDownload, error)
+	DownloadsFromBuild(buildStatus *headchef_models.BuildStatusResponse, storedArtifacts store.StoredArtifactMap) ([]artifact.ArtifactDownload, error)
 }
 
 // ArtifactSetuper is the interface for an implementation of artifact setup functions
@@ -188,7 +189,7 @@ func (s *Setup) update() error {
 	// if we get here, we dowload artifacts
 	analytics.Event(analytics.CatRuntime, analytics.ActRuntimeDownload)
 
-	err = s.installArtifacts(buildResult, artifacts, setup)
+	err = s.installArtifacts(buildResult, storedArtifacts, artifacts, setup)
 	if err != nil {
 		return err
 	}
@@ -243,7 +244,7 @@ func aggregateErrors() (chan<- error, <-chan error) {
 	return bgErrs, aggErr
 }
 
-func (s *Setup) installArtifacts(buildResult *model.BuildResult, artifacts artifact.ArtifactRecipeMap, setup Setuper) error {
+func (s *Setup) installArtifacts(buildResult *model.BuildResult, storedArtifacts store.StoredArtifactMap, artifacts artifact.ArtifactRecipeMap, setup Setuper) error {
 	if !buildResult.BuildReady && buildResult.BuildEngine == model.Camel {
 		return locale.NewInputError("build_status_in_progress", "", apimodel.ProjectURL(s.target.Owner(), s.target.Name(), s.target.CommitUUID().String()))
 	}
@@ -253,9 +254,9 @@ func (s *Setup) installArtifacts(buildResult *model.BuildResult, artifacts artif
 
 	var err error
 	if buildResult.BuildReady {
-		err = s.installFromBuildResult(buildResult, setup)
+		err = s.installFromBuildResult(buildResult, storedArtifacts, setup)
 	} else {
-		err = s.installFromBuildLog(buildResult, artifacts, setup)
+		err = s.installFromBuildLog(buildResult, storedArtifacts, artifacts, setup)
 	}
 
 	return err
@@ -274,8 +275,8 @@ func (s *Setup) setupArtifactSubmitFunction(a artifact.ArtifactDownload, buildRe
 	}
 }
 
-func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, setup Setuper) error {
-	downloads, err := setup.DownloadsFromBuild(buildResult.BuildStatusResponse)
+func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, storedArtifacts store.StoredArtifactMap, setup Setuper) error {
+	downloads, err := setup.DownloadsFromBuild(buildResult.BuildStatusResponse, storedArtifacts)
 	if err != nil {
 		return errs.Wrap(err, "Could not fetch artifacts to download.")
 	}
@@ -286,6 +287,10 @@ func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, setup Set
 		defer close(errs)
 		wp := workerpool.New(MaxConcurrency)
 		for _, a := range downloads {
+			if _, ok := storedArtifacts[a.ArtifactID]; ok {
+				s.events.ArtifactCached(a.ArtifactID)
+				continue
+			}
 			wp.Submit(s.setupArtifactSubmitFunction(a, buildResult, setup, errs))
 		}
 
@@ -295,7 +300,7 @@ func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, setup Set
 	return <-aggregatedErr
 }
 
-func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts artifact.ArtifactRecipeMap, setup Setuper) error {
+func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, storedArtifacts store.StoredArtifactMap, artifacts artifact.ArtifactRecipeMap, setup Setuper) error {
 	s.events.TotalArtifacts(len(artifacts))
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -324,6 +329,10 @@ func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts ar
 			defer wp.StopWait()
 
 			for a := range buildLog.BuiltArtifactsChannel() {
+				if _, ok := storedArtifacts[a.ArtifactID]; ok {
+					s.events.ArtifactCached(a.ArtifactID)
+					continue
+				}
 				wp.Submit(s.setupArtifactSubmitFunction(a, buildResult, setup, errs))
 			}
 		}()
