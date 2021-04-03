@@ -58,7 +58,9 @@ func New(artifactMap map[artifact.ArtifactID]artifact.ArtifactRecipe, conn Build
 	errCh := make(chan error)
 
 	total := len(artifactMap)
-	events.BuildStarting(total)
+	// We set the total to one extra artifact, as we always have to wait for
+	// the terminal artifact to finish before the build is actually done.
+	events.BuildStarting(total + 1)
 
 	go func() {
 		defer close(ch)

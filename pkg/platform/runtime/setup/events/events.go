@@ -119,10 +119,15 @@ func newTotalArtifactEvent(total int) TotalArtifactEvent {
 // BuildStartEvent reports the beginning of the remote build process
 type BuildStartEvent struct {
 	baseEvent
+	total int
 }
 
-func newBuildStartEvent() BuildStartEvent {
-	return BuildStartEvent{newBaseEvent("build_start", Build)}
+func (bse BuildStartEvent) Total() int {
+	return bse.total
+}
+
+func newBuildStartEvent(total int) BuildStartEvent {
+	return BuildStartEvent{newBaseEvent("build_start", Build), total}
 }
 
 // BuildCompleteEvent reports the successful completion of a build
