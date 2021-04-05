@@ -71,7 +71,10 @@ func (eh *RuntimeEventConsumer) handleEvent(ev SetupEventer) error {
 		eh.totalArtifacts = int64(t.Total())
 		return nil
 	case BuildStartEvent:
-		return eh.progress.BuildStarted(int64(t.Total()))
+		if eh.totalArtifacts == 0 {
+			return errs.New("total number of artifacts has not been set yet.")
+		}
+		return eh.progress.BuildStarted(eh.totalArtifacts)
 	case BuildCompleteEvent:
 		return eh.progress.BuildCompleted(eh.numBuildFailures > 0)
 	case ArtifactSetupEventer:
