@@ -9,6 +9,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/osutils"
 )
 
 type AvailableUpdate struct {
@@ -18,6 +19,8 @@ type AvailableUpdate struct {
 	url     string
 	sha256  string
 }
+
+const InstallerName = "installer" + osutils.ExeExt
 
 // InstallDeferred will fetch the update and run its installer in a deferred process
 // This deferred process

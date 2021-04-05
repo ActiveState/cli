@@ -158,7 +158,7 @@ func run(args []string, isInteractive bool, out output.Outputer) error {
 		pjName = pj.Name()
 	}
 	// Set up conditional, which accesses a lot of primer data
-	sshell := subshell.New()
+	sshell := subshell.New(cfg)
 	auth := authentication.Get()
 	conditional := constraints.NewPrimeConditional(auth, pjOwner, pjName, pjNamespace, sshell.Shell())
 	project.RegisterConditional(conditional)

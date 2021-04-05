@@ -8,6 +8,9 @@ constants:
   - name: BUILD_DAEMON_TARGET
     if: eq .OS.Name "Windows"
     value: ./build/state-svc.exe
+  - name: BUILD_INSTALLER_TARGET
+    if: eq .OS.Name "Windows"
+    value: ./build/state-installer.exe
   - name: SYSTRAY_BUILD_TARGET
     if: eq .OS.Name "Windows"
     value: ./build/state-tray.exe

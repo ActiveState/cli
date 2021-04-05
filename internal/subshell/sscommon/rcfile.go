@@ -26,15 +26,20 @@ import (
 )
 
 var (
-	Deploy RcIdentification = RcIdentification{
+	DeployID RcIdentification = RcIdentification{
 		constants.RCAppendDeployStartLine,
 		constants.RCAppendDeployStopLine,
 		"user_env",
 	}
-	Default RcIdentification = RcIdentification{
+	DefaultID RcIdentification = RcIdentification{
 		constants.RCAppendDefaultStartLine,
 		constants.RCAppendDefaultStopLine,
 		"user_default_env",
+	}
+	InstallID RcIdentification = RcIdentification{
+		constants.RCAppendInstallStartLine,
+		constants.RCAppendInstallStopLine,
+		"user_install_env",
 	}
 )
 

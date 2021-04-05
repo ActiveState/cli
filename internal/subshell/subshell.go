@@ -8,7 +8,9 @@ import (
 
 	"github.com/thoas/go-funk"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
@@ -71,18 +73,8 @@ type SubShell interface {
 }
 
 // New returns the subshell relevant to the current process, but does not activate it
-func New() SubShell {
-	binary := os.Getenv("SHELL")
-	if binary == "" {
-		if runtime.GOOS == "windows" {
-			binary = os.Getenv("ComSpec")
-			if binary == "" {
-				binary = "cmd.exe"
-			}
-		} else {
-			binary = "bash"
-		}
-	}
+func New(cfg *config.Instance) SubShell {
+	binary := DetectShellBinary(cfg)
 
 	logging.Debug("Detected SHELL: %s", binary)
 
@@ -128,4 +120,36 @@ func New() SubShell {
 	subs.SetEnv(osutils.EnvSliceToMap(env))
 
 	return subs
+}
+
+func DetectShellBinary(cfg *config.Instance) (binary string) {
+	defer func() {
+		// We save and use the detected shell to our config so that we can use it when running code through
+		// a non-interactive shell
+		if err := cfg.Set(config.ConfigKeyShell, binary); err != nil {
+			logging.Error("Could not save shell binary: %v", errs.Join(err, ": "))
+		}
+	}()
+
+	if binary := os.Getenv("SHELL"); binary != "" {
+		return binary
+	}
+
+	fallback := cfg.GetString(config.ConfigKeyShell)
+	if fallback == "" {
+		if runtime.GOOS == "windows" {
+			fallback = "cmd.exe"
+		} else {
+			fallback = "bash"
+		}
+	}
+
+	if runtime.GOOS == "windows" {
+		binary = os.Getenv("ComSpec")
+		if binary != "" {
+			return binary
+		}
+	}
+
+	return fallback
 }

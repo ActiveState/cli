@@ -24,6 +24,9 @@ import (
 
 var defaultConfig *Instance
 
+const ConfigKeyShell = "shell"
+const ConfigKeyTrayPid = "tray-pid"
+
 // Instance holds our main config logic
 type Instance struct {
 	configDir     *configdir.Config

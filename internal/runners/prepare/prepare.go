@@ -7,6 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/globaldefault"
+	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -20,11 +21,16 @@ type primeable interface {
 	primer.Configurer
 }
 
+type Configurer interface {
+	globaldefault.DefaultConfigurer
+	installation.Configurer
+}
+
 // Prepare manages the prepare execution context.
 type Prepare struct {
 	out      output.Outputer
 	subshell subshell.SubShell
-	cfg      globaldefault.DefaultConfigurer
+	cfg      Configurer
 }
 
 // New prepares a prepare execution context for use.

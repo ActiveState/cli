@@ -29,7 +29,7 @@ func (r *Prepare) prepareOS() error {
 			r.reportError(locale.Tr("err_prepare_autostart", "Could not enable auto-start, error received: {{.V0}}.", err.Error()), err)
 		}
 
-		if err := prepareStartShortcut(); err != nil {
+		if err := r.prepareStartShortcut(); err != nil {
 			r.reportError(locale.Tr("err_prepare_shortcut", "Could not create start menu shortcut, error received: {{.V0}}.", err.Error()), err)
 		}
 	}
@@ -37,13 +37,16 @@ func (r *Prepare) prepareOS() error {
 	return nil
 }
 
-func prepareStartShortcut() error {
+func (r *Prepare) prepareStartShortcut() error {
 	dir := filepath.Join(os.Getenv("USERPROFILE"), "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "ActiveState")
 	if err := fileutils.MkdirUnlessExists(dir); err != nil {
 		return locale.WrapInputError(err, "err_preparestart_mkdir", "Could not create start menu entry: %s", dir)
 	}
 
-	appInfo := appinfo.TrayApp()
+	appInfo, err := appinfo.TrayApp()
+	if err != nil {
+		return locale.WrapError(err, "err_preparestart_appinfo", "Could not collect application information")
+	}
 	sc, err := shortcut.New(dir, appInfo.Name(), appInfo.Exec())
 	if err != nil {
 		return locale.WrapError(err, "err_preparestart_shortcut", "Could not create shortcut")

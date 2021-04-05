@@ -1,18 +1,18 @@
 package main
 
 import (
+	"fmt"
 	"os"
-	"os/exec"
-	"path/filepath"
-	"runtime"
-	"syscall"
 
 	"github.com/getlantern/systray"
 	"github.com/gobuffalo/packr"
 
 	"github.com/ActiveState/cli/cmd/state-tray/internal/open"
 	"github.com/ActiveState/cli/cmd/state-tray/pkg/autostart"
+	"github.com/ActiveState/cli/internal/appinfo"
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -25,7 +25,9 @@ func main() {
 func onReady() {
 	err := run()
 	if err != nil {
-		logging.Error("Systray encountered an error: %v", errs.Join(err, ": "))
+		msg := fmt.Sprintf("Systray encountered an error: %v", errs.Join(err, ": "))
+		logging.Error(msg)
+		fmt.Fprintln(os.Stderr, msg)
 		os.Exit(1)
 	}
 }
@@ -36,18 +38,25 @@ func run() error {
 		logging.CurrentHandler().SetVerbose(true)
 	}
 
-	stateSvcExe := filepath.Join(filepath.Dir(os.Args[0]), "state-svc")
-	if runtime.GOOS == "windows" {
-		stateSvcExe = stateSvcExe + ".exe"
+	cfg, err := config.New()
+	if err != nil {
+		return errs.Wrap(err, "Could not initialize config")
 	}
-	if !fileutils.FileExists(stateSvcExe) {
-		return errs.New("Could not find: %s", stateSvcExe)
+	if err := cfg.Set(config.ConfigKeyTrayPid, os.Getpid()); err != nil {
+		return errs.Wrap(err, "Could not save pid")
 	}
 
-	cmd := exec.Command(stateSvcExe, "start")
-	cmd.SysProcAttr = &syscall.SysProcAttr{CreationFlags: 0x08000000} // CREATE_NO_WINDOW
-	if err := cmd.Start(); err != nil {
-		return errs.Wrap(err, "Could not start %s", stateSvcExe)
+	svcInfo, err := appinfo.SvcApp()
+	if err != nil {
+		return errs.Wrap(err, "Could not detect application information")
+	}
+
+	if !fileutils.FileExists(svcInfo.Exec()) {
+		return errs.New("Could not find: %s", svcInfo.Exec())
+	}
+
+	if err := exeutils.ExecuteAndForget(svcInfo.Exec(), "start"); err != nil {
+		return errs.Wrap(err, "Could not start %s", svcInfo.Exec())
 	}
 
 	box := packr.NewBox("../../assets")

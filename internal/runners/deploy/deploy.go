@@ -205,7 +205,7 @@ func configure(installpath string, runtime *runtime.Runtime, cfg sscommon.Config
 
 	out.Notice(output.Heading(locale.Tr("deploy_configure_shell", sshell.Shell())))
 
-	err = sshell.WriteUserEnv(cfg, env, sscommon.Deploy, userScope)
+	err = sshell.WriteUserEnv(cfg, env, sscommon.DeployID, userScope)
 	if err != nil {
 		return locale.WrapError(err, "err_deploy_subshell_write", "Could not write environment information to your shell configuration.")
 	}

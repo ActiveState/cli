@@ -12,10 +12,10 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/project"
@@ -94,7 +94,7 @@ func forward(bindir string, args []string, versionInfo *projectfile.VersionInfo,
 func execForward(binary string, args []string) (int, error) {
 	logging.Debug("Forwarding to binary at %s", binary)
 
-	code, _, err := osutils.ExecuteAndPipeStd(binary, args[1:], []string{fmt.Sprintf("%s=true", constants.ForwardedStateEnvVarName)})
+	code, _, err := exeutils.ExecuteAndPipeStd(binary, args[1:], []string{fmt.Sprintf("%s=true", constants.ForwardedStateEnvVarName)})
 	if err != nil {
 		return 1, locale.WrapError(err, "forward_fail_with_error", "", err.Error())
 	}

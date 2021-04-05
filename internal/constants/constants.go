@@ -244,6 +244,12 @@ const RCAppendDefaultStartLine = "-- START ACTIVESTATE DEFAULT RUNTIME ENVIRONME
 // RCAppendDefaultStopLine is the end line used to denote our default environment config in RC files
 const RCAppendDefaultStopLine = "-- STOP ACTIVESTATE DEFAULT RUNTIME ENVIRONMENT"
 
+// RCAppendInstallStartLine is the start line used to denote our default environment config in RC files
+const RCAppendInstallStartLine = "-- START ACTIVESTATE INSTALLATION"
+
+// RCAppendInstallStopLine is the end line used to denote our default environment config in RC files
+const RCAppendInstallStopLine = "-- STOP ACTIVESTATE INSTALLATION"
+
 // ForumsURL is the URL to the state tool forums
 const ForumsURL = "https://community.activestate.com/c/state-tool/"
 
@@ -261,3 +267,6 @@ const SvcConfigPid = "svc-pid"
 
 // TrayAppName is the name we give our systray application
 const TrayAppName = "ActiveState Platform"
+
+// SvcAppName is the name we give our state-svc application
+const SvcAppName = "State Service"

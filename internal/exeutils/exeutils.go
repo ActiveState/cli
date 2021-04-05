@@ -7,11 +7,14 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"syscall"
 
 	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils"
 )
 
 // Executables will return all the Executables that need to be symlinked in the various provided bin directories
@@ -105,4 +108,44 @@ func ExecSimpleFromDir(dir, bin string, args ...string) (string, string, error) 
 	}
 
 	return stdout.String(), stderr.String(), nil
+}
+
+// ExecuteAndPipeStd will run the given command and pipe stdin, stdout and stderr
+func Execute(command string, arg []string, optSetter func(cmd *exec.Cmd) error) (int, *exec.Cmd, error) {
+	logging.Debug("Executing command: %s, %v", command, arg)
+
+	cmd := exec.Command(command, arg...)
+
+	if optSetter != nil {
+		if err := optSetter(cmd); err != nil {
+			return -1, nil, err
+		}
+	}
+
+	err := cmd.Run()
+	if err != nil {
+		logging.Debug("Executing command returned error: %v", err)
+	}
+	return osutils.CmdExitCode(cmd), cmd, err
+}
+
+// ExecuteAndPipeStd will run the given command and pipe stdin, stdout and stderr
+func ExecuteAndPipeStd(command string, arg []string, env []string) (int, *exec.Cmd, error) {
+	logging.Debug("Executing command and piping std: %s, %v", command, arg)
+
+	return Execute(command, arg, func(cmd *exec.Cmd) error {
+		cmd.Env = os.Environ()
+		cmd.Env = append(cmd.Env, env...)
+		cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
+		return nil
+	})
+}
+
+func ExecuteAndForget(command string, args ...string) error {
+	cmd := exec.Command(command, args...)
+	cmd.SysProcAttr = &syscall.SysProcAttr{CreationFlags: 0x08000000} // CREATE_NO_WINDOW
+	if err := cmd.Start(); err != nil {
+		return errs.Wrap(err, "Could not start %s %v", command, args)
+	}
+	return nil
 }

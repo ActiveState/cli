@@ -11,6 +11,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/logging"
 
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
@@ -44,7 +45,7 @@ func TestExecuteAndPipeStd(t *testing.T) {
 	out, err := osutil.CaptureStdout(func() {
 		logging.SetLevel(logging.NOTHING)
 		defer logging.SetLevel(logging.NORMAL)
-		ExecuteAndPipeStd("printenv", []string{"FOO"}, []string{"FOO=--out--"})
+		exeutils.ExecuteAndPipeStd("printenv", []string{"FOO"}, []string{"FOO=--out--"})
 	})
 	require.NoError(t, err)
 	assert.Equal(t, "--out--\n", out, "captures output")

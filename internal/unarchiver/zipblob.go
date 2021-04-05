@@ -35,7 +35,7 @@ func (z *ZipBlob) Unarchive(dest string) error {
 func (z *ZipBlob) unzipFile(file *zip.File, dest string) error {
 	rc, err := file.Open()
 	if err != nil {
-		return errs.Wrap(err, "Could not read file in archive: %s", f.Name)
+		return errs.Wrap(err, "Could not read file in archive: %s", file.Name)
 	}
 	defer rc.Close()
 

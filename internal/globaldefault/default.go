@@ -89,7 +89,7 @@ func Prepare(cfg DefaultConfigurer, subshell subshell.SubShell) error {
 		"PATH": binDir,
 	}
 
-	if err := subshell.WriteUserEnv(cfg, envUpdates, sscommon.Default, true); err != nil {
+	if err := subshell.WriteUserEnv(cfg, envUpdates, sscommon.DefaultID, true); err != nil {
 		return locale.WrapError(err, "err_globaldefault_update_env", "Could not write to user environment.")
 	}
 
