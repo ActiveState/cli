@@ -185,7 +185,7 @@ func (r *Client) reqBuildSync(buildReq *headchef_models.V1BuildRequest) (BuildSt
 		case headchef_models.BuildStatusResponseTypeBuildCompleted:
 			return Completed, created.Payload, nil
 		case headchef_models.BuildStatusResponseTypeBuildFailed:
-			return Failed, created.Payload, errs.Wrap(ErrBuildFailedResp, created.Payload.Message)
+			return Failed, created.Payload, locale.WrapError(ErrBuildFailedResp, "headchef_build_failure", "Build Failed: {{.V0}}", created.Payload.Message)
 		case headchef_models.BuildStatusResponseTypeBuildStarted:
 			return Started, created.Payload, nil
 		default:
@@ -193,7 +193,7 @@ func (r *Client) reqBuildSync(buildReq *headchef_models.V1BuildRequest) (BuildSt
 				"created response cannot be handled: unknown type %q",
 				payloadType,
 			)
-			return Error, nil, locale.WrapError(ErrBuildUnknownType, msg)
+			return Error, nil, errs.Wrap(ErrBuildUnknownType, msg)
 		}
 	default:
 		return Error, nil, errs.New("no response")

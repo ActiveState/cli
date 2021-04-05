@@ -34,11 +34,12 @@ type ProgressDigester interface {
 // RuntimeEventConsumer is a struct that handles incoming SetupUpdate events in a single go-routine such that they can be forwarded to a progress or summary digester.
 // State-ful operations should be handled in this struct rather than in the digesters in order to keep the calls to the digesters as simple as possible.
 type RuntimeEventConsumer struct {
-	progress           ProgressDigester
-	summary            ChangeSummaryDigester
-	totalArtifacts     int64
-	numBuildFailures   int64
-	numInstallFailures int64
+	progress            ProgressDigester
+	summary             ChangeSummaryDigester
+	totalArtifacts      int64
+	numBuildFailures    int64
+	numInstallFailures  int64
+	installationStarted bool
 }
 
 func NewRuntimeEventConsumer(progress ProgressDigester, summary ChangeSummaryDigester) *RuntimeEventConsumer {
@@ -106,14 +107,9 @@ func (eh *RuntimeEventConsumer) handleArtifactEvent(ev ArtifactSetupEventer) err
 	switch t := ev.(type) {
 	case ArtifactStartEvent:
 		// first download event starts the installation process
-		if t.Step() == Download {
-			if eh.totalArtifacts == 0 {
-				return errs.New("total number of artifacts has not been set yet.")
-			}
-			err := eh.progress.InstallationStarted(eh.totalArtifacts)
-			if err != nil {
-				return err
-			}
+		err := eh.ensureInstallationStarted()
+		if err != nil {
+			return err
 		}
 		name, artBytes := t.ArtifactName(), t.Total()
 		// the install step does only count the number of files changed
@@ -138,6 +134,21 @@ func (eh *RuntimeEventConsumer) handleArtifactEvent(ev ArtifactSetupEventer) err
 		logging.Debug("Unhandled artifact event: %s", ev.String())
 	}
 
+	return nil
+}
+
+func (eh *RuntimeEventConsumer) ensureInstallationStarted() error {
+	if eh.installationStarted {
+		return nil
+	}
+	if eh.totalArtifacts == 0 {
+		return errs.New("total number of artifacts has not been set yet.")
+	}
+	err := eh.progress.InstallationStarted(eh.totalArtifacts)
+	if err != nil {
+		return err
+	}
+	eh.installationStarted = true
 	return nil
 }
 

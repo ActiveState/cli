@@ -12,7 +12,7 @@ type mockProgressOutput struct {
 	buildCompleted          bool
 	buildTotal              int64
 	buildCurrent            int
-	installationStarted     bool
+	installationStarted     int
 	installationTotal       int64
 	installationCurrent     int
 	artifactStartedCalled   int
@@ -35,7 +35,7 @@ func (mpo *mockProgressOutput) BuildCompleted(bool) error {
 	return nil
 }
 func (mpo *mockProgressOutput) InstallationStarted(total int64) error {
-	mpo.installationStarted = true
+	mpo.installationStarted++
 	mpo.installationTotal = total
 	return nil
 }
@@ -108,7 +108,7 @@ func TestRuntimeEventConsumer(t *testing.T) {
 		expectedBuildCompleted          bool
 		expectedBuildTotal              int64
 		expectedBuildCurrent            int
-		expectedInstallationStarted     bool
+		expectedInstallationStarted     int
 		expectedInstallationTotal       int64
 		expectedInstallationCurrent     int
 		expectedArtifactStartedCalled   int
@@ -123,7 +123,7 @@ func TestRuntimeEventConsumer(t *testing.T) {
 			expectedBuildCompleted:          false,
 			expectedBuildTotal:              int64(0),
 			expectedBuildCurrent:            0,
-			expectedInstallationStarted:     true,
+			expectedInstallationStarted:     1,
 			expectedInstallationTotal:       int64(2),
 			expectedInstallationCurrent:     2,
 			expectedArtifactStartedCalled:   4,
@@ -138,7 +138,7 @@ func TestRuntimeEventConsumer(t *testing.T) {
 			expectedBuildCompleted:          false,
 			expectedBuildTotal:              int64(0),
 			expectedBuildCurrent:            0,
-			expectedInstallationStarted:     true,
+			expectedInstallationStarted:     1,
 			expectedInstallationTotal:       int64(2),
 			expectedInstallationCurrent:     0,
 			expectedArtifactStartedCalled:   4,
@@ -153,7 +153,7 @@ func TestRuntimeEventConsumer(t *testing.T) {
 			expectedBuildCompleted:          true,
 			expectedBuildTotal:              int64(2),
 			expectedBuildCurrent:            2,
-			expectedInstallationStarted:     true,
+			expectedInstallationStarted:     1,
 			expectedInstallationTotal:       int64(2),
 			expectedInstallationCurrent:     2,
 			expectedArtifactStartedCalled:   4,
@@ -168,7 +168,7 @@ func TestRuntimeEventConsumer(t *testing.T) {
 			expectedBuildCompleted:          true,
 			expectedBuildTotal:              int64(2),
 			expectedBuildCurrent:            0,
-			expectedInstallationStarted:     false,
+			expectedInstallationStarted:     0,
 			expectedInstallationTotal:       int64(0),
 			expectedInstallationCurrent:     0,
 			expectedArtifactStartedCalled:   0,
