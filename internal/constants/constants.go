@@ -179,6 +179,12 @@ const DocumentationURL = "http://docs.activestate.com/platform/state/"
 // DocumentationURLHeadless is the documentation URL for headless state docs
 const DocumentationURLHeadless = DocumentationURL + "advanced-topics/detached/"
 
+// ActiveStateBlogURL is the URL for the ActiveState Blog
+const ActiveStateBlogURL = "https://www.activestate.com/blog/"
+
+// ActiveStateSupportURL is the URL for the AciveState support page
+const ActiveStateSupportURL = "https://www.activestate.com/support/"
+
 // BugTrackerURL is the URL of our bug tracker
 const BugTrackerURL = "https://github.com/ActiveState/state-tool/issues"
 

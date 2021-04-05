@@ -8,6 +8,7 @@ import (
 
 	"github.com/machinebox/graphql"
 
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/retryhttp"
 )
@@ -40,10 +41,12 @@ func New(url string, timeout time.Duration) *Client {
 
 	retryOpt := graphql.WithHTTPClient(retryhttp.DefaultClient.StandardClient())
 
-	return &Client{
+	client := &Client{
 		graphqlClient: graphql.NewClient(url, retryOpt),
 		timeout:       timeout,
 	}
+	client.graphqlClient.Log = func(s string) { logging.Debug("Third party log message: %s", s) }
+	return client
 }
 
 func (c *Client) SetTokenProvider(tokenProvider BearerTokenProvider) {
@@ -81,5 +84,5 @@ func (c *Client) Run(request Request, response interface{}) error {
 
 	graphRequest.Header.Set("X-Requestor", machineid.UniqID())
 
-	return c.graphqlClient.Run(ctx, graphRequest, response)
+	return c.graphqlClient.Run(ctx, graphRequest, &response)
 }
