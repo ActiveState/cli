@@ -91,10 +91,11 @@ func New() SubShell {
 	if err == nil {
 		// if we found it, resolve all symlinks, for many Linux distributions the SHELL is "sh" but symlinked to a different default shell like bash or zsh
 		resolved, err := fileutils.ResolvePath(binaryPath)
-		if err != nil {
+		if err == nil {
+			binary = resolved
+		} else {
 			logging.Debug("Failed to resolve path to shell binary %s: %v", binaryPath, err)
 		}
-		binary = resolved
 	}
 
 	name := filepath.Base(binary)
