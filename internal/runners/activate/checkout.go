@@ -74,6 +74,9 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, targetPath string) er
 	}
 
 	// Create the config file, if the repo clone didn't already create it
+	// TODO: Need to pass the language check bool here or potentially
+	// move the projectfile creation logic out of the checkout runner
+	// and into the activation logic
 	configFile := filepath.Join(targetPath, constants.ConfigFileName)
 	if !fileutils.FileExists(configFile) {
 		err = projectfile.Create(&projectfile.CreateParams{
