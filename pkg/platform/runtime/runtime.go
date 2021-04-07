@@ -34,7 +34,7 @@ func IsNeedsUpdateError(err error) bool {
 	return errs.Matches(err, &NeedsUpdateError{})
 }
 
-func new(target setup.Targeter) (*Runtime, error) {
+func newRuntime(target setup.Targeter) (*Runtime, error) {
 	rt := &Runtime{target: target}
 	rt.model = model.NewDefault()
 
@@ -57,7 +57,7 @@ func New(target setup.Targeter) (*Runtime, error) {
 	}
 	analytics.Event(analytics.CatRuntime, analytics.ActRuntimeStart)
 
-	r, err := new(target)
+	r, err := newRuntime(target)
 	if err == nil {
 		analytics.Event(analytics.CatRuntime, analytics.ActRuntimeCache)
 	}
@@ -79,7 +79,7 @@ func (r *Runtime) Update(msgHandler *events.RuntimeEventHandler) error {
 			setupErr = errs.Wrap(err, "Update failed")
 			return
 		}
-		rt, err := new(r.target)
+		rt, err := newRuntime(r.target)
 		if err != nil {
 			setupErr = errs.Wrap(err, "Could not reinitialize runtime after update")
 			return
