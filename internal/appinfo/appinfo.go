@@ -20,6 +20,13 @@ func TrayApp() *AppInfo {
 	}
 }
 
+func StateApp() *AppInfo {
+	return &AppInfo{
+		constants.StateAppName,
+		filepath.Join(filepath.Dir(os.Args[0]), "state") + osutils.ExeExt,
+	}
+}
+
 func (a *AppInfo) Name() string {
 	return a.name
 }

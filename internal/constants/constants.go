@@ -275,3 +275,6 @@ const SvcConfigPid = "svc-pid"
 
 // TrayAppName is the name we give our systray application
 const TrayAppName = "ActiveState Platform"
+
+// StateAppName is the name we give our state cli executable
+const StateAppName = "State Tool"
