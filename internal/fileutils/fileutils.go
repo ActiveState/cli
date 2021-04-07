@@ -442,6 +442,21 @@ func IsEmptyDir(path string) (bool, error) {
 	return (len(files) == 0), nil
 }
 
+// IsEmptyDirs returns true if the directory at the provide path has no files
+// within it or any of its sub directories
+func IsEmptyDirs(path string) bool {
+	empty := true
+	filepath.Walk(path, func(p string, _ os.FileInfo, _ error) error {
+		if !IsDir(p) {
+			empty = false
+		}
+
+		return nil
+	})
+
+	return empty
+}
+
 // MoveAllFilesCallback is invoked for every file that we move
 type MoveAllFilesCallback func(fromPath, toPath string)
 

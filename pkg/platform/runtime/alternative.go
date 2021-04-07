@@ -44,6 +44,7 @@ type AlternativeInstall struct {
 type artifactCacheMeta struct {
 	ArtifactID strfmt.UUID
 	Files      []string
+	Dirs       []string
 }
 
 // NewAlternativeEnv returns a new alternative runtime environment
@@ -216,6 +217,18 @@ func (ai *AlternativeInstall) PreInstall() error {
 				return locale.WrapError(err, "err_rm_artf", "", "Could not remove old package file at {{.V0}}.", file)
 			}
 		}
+
+		for _, dir := range v.Dirs {
+			if !fileutils.DirExists(dir) {
+				continue
+			}
+			if fileutils.IsEmptyDirs(dir) {
+				err := os.RemoveAll(dir)
+				if err != nil {
+					return locale.WrapError(err, "err_rm_artf_dir", "Could not remove empty artifact directory at {{.V0}}", dir)
+				}
+			}
+		}
 	}
 
 	if err := ai.storeArtifactCache(); err != nil {
@@ -258,12 +271,17 @@ func (ai *AlternativeInstall) PostUnpackArtifact(artf *HeadChefArtifact, tmpRunt
 		return locale.WrapError(err, "runtime_alternative_file_transforms_err", "", "Could not apply necessary file transformations after unpacking")
 	}
 
-	artMeta := artifactCacheMeta{*artf.ArtifactID, []string{}}
+	artMeta := artifactCacheMeta{*artf.ArtifactID, []string{}, []string{}}
 	onMoveFile := func(fromPath, toPath string) {
 		if fileutils.IsDir(toPath) {
 			artMeta.Files = append(artMeta.Files, fileutils.ListDir(toPath, false)...)
+			artMeta.Dirs = append(artMeta.Dirs, toPath)
 		} else {
 			artMeta.Files = append(artMeta.Files, toPath)
+			dir := filepath.Dir(toPath)
+			if !funk.Contains(artMeta.Dirs, dir) {
+				artMeta.Dirs = append(artMeta.Dirs, filepath.Dir(toPath))
+			}
 		}
 		cb()
 	}
