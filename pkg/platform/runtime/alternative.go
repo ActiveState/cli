@@ -218,11 +218,18 @@ func (ai *AlternativeInstall) PreInstall() error {
 			}
 		}
 
+		sort.Slice(v.Dirs, func(i, j int) bool {
+			return v.Dirs[i] > v.Dirs[j]
+		})
 		for _, dir := range v.Dirs {
 			if !fileutils.DirExists(dir) {
 				continue
 			}
-			if fileutils.IsEmptyDirs(dir) {
+			empty, err := fileutils.IsEmptyDir(dir)
+			if err != nil {
+				return locale.WrapError(err, "err_check_empty_artf_dir", "Could not check if artifact directory at {{.V0}} is emtpy", dir)
+			}
+			if empty && !artifactsContainDir(ai.cache, dir) {
 				err := os.RemoveAll(dir)
 				if err != nil {
 					return locale.WrapError(err, "err_rm_artf_dir", "Could not remove empty artifact directory at {{.V0}}", dir)
@@ -249,6 +256,15 @@ func artifactsToKeepAndDelete(artifactCache []artifactCacheMeta, artifactRequest
 		delete = append(delete, v)
 	}
 	return keep, delete
+}
+
+func artifactsContainDir(artifactCache []artifactCacheMeta, dir string) bool {
+	for _, v := range artifactCache {
+		if funk.Contains(v.Dirs, dir) {
+			return true
+		}
+	}
+	return false
 }
 
 // PreUnpackArtifact does nothing
