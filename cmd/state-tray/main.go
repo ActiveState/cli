@@ -87,9 +87,9 @@ func run() error {
 
 	systray.AddSeparator()
 	mAutoStart := systray.AddMenuItem(locale.Tl("tray_autostart", "Start on Login"), "")
-	// if autostart.New().IsEnabled() {
-	// 	mAutoStart.Check()
-	// }
+	if autostart.New().IsEnabled() {
+		mAutoStart.Check()
+	}
 	systray.AddSeparator()
 
 	mProjects := systray.AddMenuItem(locale.Tl("tray_projects_title", "Local Projects"), "")
