@@ -3,11 +3,10 @@ package updater2
 import (
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"syscall"
 
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/osutils"
 )
@@ -38,9 +37,9 @@ func (u *AvailableUpdate) InstallDeferred() error {
 		return errs.Wrap(err, "Downloaded update does not have installer")
 	}
 
-	cmd := exec.Command(filepath.Join(tmpDir, InstallerName), filepath.Dir(os.Args[0]))
-	cmd.SysProcAttr = &syscall.SysProcAttr{CreationFlags: 0x08000000} // CREATE_NO_WINDOW
-	if err := cmd.Start(); err != nil {
+	installTargetPath := filepath.Dir(os.Args[0])
+	err := exeutils.ExecuteAndForget(filepath.Join(tmpDir, InstallerName), installTargetPath)
+	if err != nil {
 		return errs.Wrap(err, "Could not start installer")
 	}
 
