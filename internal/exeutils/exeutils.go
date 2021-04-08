@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"syscall"
 
 	"github.com/thoas/go-funk"
 
@@ -110,7 +109,7 @@ func ExecSimpleFromDir(dir, bin string, args ...string) (string, string, error) 
 	return stdout.String(), stderr.String(), nil
 }
 
-// ExecuteAndPipeStd will run the given command and pipe stdin, stdout and stderr
+// Execute will run the given command and with optional settings for the exec.Cmd struct
 func Execute(command string, arg []string, optSetter func(cmd *exec.Cmd) error) (int, *exec.Cmd, error) {
 	logging.Debug("Executing command: %s, %v", command, arg)
 
@@ -141,11 +140,13 @@ func ExecuteAndPipeStd(command string, arg []string, env []string) (int, *exec.C
 	})
 }
 
+// ExecuteAndForget will run the given command in the background, returning immediately.
 func ExecuteAndForget(command string, args ...string) error {
 	cmd := exec.Command(command, args...)
-	cmd.SysProcAttr = &syscall.SysProcAttr{CreationFlags: 0x08000000} // CREATE_NO_WINDOW
+	cmd.SysProcAttr = osutils.SysProcAttrForBackgroundProcess()
 	if err := cmd.Start(); err != nil {
 		return errs.Wrap(err, "Could not start %s %v", command, args)
 	}
+	cmd.Stdin = nil
 	return nil
 }
