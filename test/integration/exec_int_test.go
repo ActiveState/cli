@@ -15,17 +15,17 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 )
 
-type ShimIntegrationTestSuite struct {
+type ExecIntegrationTestSuite struct {
 	tagsuite.Suite
 }
 
-func (suite *ShimIntegrationTestSuite) createProjectFile(ts *e2e.Session) {
+func (suite *ExecIntegrationTestSuite) createProjectFile(ts *e2e.Session) {
 	ts.PrepareActiveStateYAML(strings.TrimSpace(`
 		project: https://platform.activestate.com/ActiveState-CLI/Python3?commitID=fbc613d6-b0b1-4f84-b26e-4aa5869c4e54
 	`))
 }
 
-func (suite *ShimIntegrationTestSuite) TestShim_Environment() {
+func (suite *ExecIntegrationTestSuite) TestExec_Environment() {
 	suite.OnlyRunForTags(tagsuite.Shim)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -47,7 +47,7 @@ func (suite *ShimIntegrationTestSuite) TestShim_Environment() {
 	suite.Require().NoError(err)
 
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("shim", testScript),
+		e2e.WithArgs("exec", testScript),
 	)
 	cp.ExpectExitCode(0)
 	output := cp.TrimmedSnapshot()
@@ -56,7 +56,7 @@ func (suite *ShimIntegrationTestSuite) TestShim_Environment() {
 	}
 }
 
-func (suite *ShimIntegrationTestSuite) TestShim_ExitCode() {
+func (suite *ExecIntegrationTestSuite) TestExec_ExitCode() {
 	suite.OnlyRunForTags(tagsuite.Shim)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -78,12 +78,12 @@ func (suite *ShimIntegrationTestSuite) TestShim_ExitCode() {
 	suite.Require().NoError(err)
 
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("shim", "--", testScript),
+		e2e.WithArgs("exec", "--", testScript),
 	)
 	cp.ExpectExitCode(42)
 }
 
-func (suite *ShimIntegrationTestSuite) TestShim_Args() {
+func (suite *ExecIntegrationTestSuite) TestExec_Args() {
 	suite.OnlyRunForTags(tagsuite.Shim)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -123,7 +123,7 @@ echo "Number of arguments: $#"
 	}
 
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("shim", "--", fmt.Sprintf("%s", testScript), args[0], args[1], args[2]),
+		e2e.WithArgs("exec", "--", fmt.Sprintf("%s", testScript), args[0], args[1], args[2]),
 	)
 	cp.Expect(args[0])
 	cp.Expect(args[1])
@@ -132,7 +132,7 @@ echo "Number of arguments: $#"
 	cp.ExpectExitCode(0)
 }
 
-func (suite *ShimIntegrationTestSuite) TestShim_Input() {
+func (suite *ExecIntegrationTestSuite) TestExec_Input() {
 	suite.OnlyRunForTags(tagsuite.Shim)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -160,13 +160,13 @@ echo "Hello $name!"
 	suite.Require().NoError(err)
 
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("shim", "--", fmt.Sprintf("%s", testScript)),
+		e2e.WithArgs("exec", "--", fmt.Sprintf("%s", testScript)),
 	)
 	cp.SendLine("ActiveState")
 	cp.Expect("Hello ActiveState!")
 	cp.ExpectExitCode(0)
 }
 
-func TestShimIntegrationTestSuite(t *testing.T) {
-	suite.Run(t, new(ShimIntegrationTestSuite))
+func TestExecIntegrationTestSuite(t *testing.T) {
+	suite.Run(t, new(ExecIntegrationTestSuite))
 }
