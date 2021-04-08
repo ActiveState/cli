@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"io/ioutil"
 	"log"
+	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -17,10 +19,21 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var dummyFiles []string = []string{"state", "other"}
-var dummyStateToolContent []byte
-var dummyInstallerContent []byte
-var dummyContent []byte = []byte("#!/bin/bash\necho updated;")
+var stateToolTestFile string = "state"
+var otherTestFile string = "other"
+var installerTestFile string = "installer"
+
+var stateToolTestFileContent []byte
+var installerTestFileContent []byte
+var updatedTestFileContent []byte = []byte("#!/bin/bash\necho updated;")
+
+func init() {
+	if runtime.GOOS == "windows" {
+		stateToolTestFile = "state.exe"
+		otherTestFile = "other.exe"
+		installerTestFile = "installer.exe"
+	}
+}
 
 func buildTestExecutable(t *testing.T, dir, exe string) {
 	root, err := environment.GetRootPath()
@@ -34,31 +47,31 @@ func buildTestExecutable(t *testing.T, dir, exe string) {
 	require.NoError(t, err)
 }
 
-func copyDummyStateTool(t *testing.T, targetPath string) {
-	if dummyStateToolContent == nil {
+func copyStateToolTestFile(t *testing.T, targetPath string) {
+	if stateToolTestFileContent == nil {
 		td, err := ioutil.TempDir("", "")
 		require.NoError(t, err)
-		fp := filepath.Join(td, "state")
+		fp := filepath.Join(td, stateToolTestFile)
 
 		buildTestExecutable(t, "testcmd", fp)
-		dummyStateToolContent, err = ioutil.ReadFile(fp)
+		stateToolTestFileContent, err = ioutil.ReadFile(fp)
 		require.NoError(t, err)
 	}
-	err := ioutil.WriteFile(targetPath, dummyStateToolContent, 0755)
+	err := ioutil.WriteFile(targetPath, stateToolTestFileContent, 0755)
 	require.NoError(t, err)
 }
 
-func copyDummyInstaller(t *testing.T, targetPath string) {
-	if dummyInstallerContent == nil {
+func copyInstallerTestFile(t *testing.T, targetPath string) {
+	if installerTestFileContent == nil {
 		td, err := ioutil.TempDir("", "")
 		require.NoError(t, err)
-		fp := filepath.Join(td, "installer")
+		fp := filepath.Join(td, installerTestFile)
 
 		buildTestExecutable(t, "testinst", fp)
-		dummyInstallerContent, err = ioutil.ReadFile(fp)
+		installerTestFileContent, err = ioutil.ReadFile(fp)
 		require.NoError(t, err)
 	}
-	err := ioutil.WriteFile(targetPath, dummyInstallerContent, 0755)
+	err := ioutil.WriteFile(targetPath, installerTestFileContent, 0755)
 	require.NoError(t, err)
 }
 
@@ -67,17 +80,17 @@ func initTempInstallDirs(t *testing.T, withAutoInstall bool) (string, string) {
 	require.NoError(t, err)
 	toDir, err := ioutil.TempDir("", "to*")
 	require.NoError(t, err)
-	// populate from dir with files that are going to be installed
-	for _, df := range dummyFiles {
-		err = ioutil.WriteFile(filepath.Join(fromDir, df), dummyContent, 0775)
-		require.NoError(t, err, "Failed to write dummy file %s", df)
-	}
+	for _, df := range []string{otherTestFile, stateToolTestFile} {
+		// populate from dir with a file that is going to be installed
+		err = ioutil.WriteFile(filepath.Join(fromDir, df), updatedTestFileContent, 0775)
+		require.NoError(t, err, "Failed to write test file %s", df)
 
-	// populate dummy State Tool file that get replaced in installation directory
-	copyDummyStateTool(t, filepath.Join(toDir, "state"))
+	}
+	// populate State Tool test file that gets replaced in installation directory
+	copyStateToolTestFile(t, filepath.Join(toDir, stateToolTestFile))
 
 	if withAutoInstall {
-		copyDummyInstaller(t, filepath.Join(fromDir, "installer"))
+		copyInstallerTestFile(t, filepath.Join(fromDir, installerTestFile))
 	}
 
 	return fromDir, toDir
@@ -86,50 +99,84 @@ func initTempInstallDirs(t *testing.T, withAutoInstall bool) (string, string) {
 func assertSuccessfulInstallation(t *testing.T, toDir, logs string) {
 	assert.Contains(t, logs, "Target files=", "logs should contain 'Target files=', got=%s", logs)
 
-	for _, df := range dummyFiles {
+	for _, df := range []string{stateToolTestFile, otherTestFile} {
 		fp := filepath.Join(toDir, df)
-		assert.FileExists(t, fp, "Expected dummy file %s to exist", fp)
+		assert.FileExists(t, fp, "Expected test file %s to exist", fp)
 		b, err := ioutil.ReadFile(fp)
 		require.NoError(t, err)
-		assert.Equal(t, dummyContent, b, "Dummy file %s was not correctly updated", fp)
+		if !bytes.Equal(updatedTestFileContent, b) {
+			t.Errorf("Test file %s was not correctly updated", fp)
+		}
 	}
 }
 
 func assertRevertedInstallation(t *testing.T, toDir, logs string) {
 	assert.Contains(t, logs, "Successfully restored original files.")
 
-	fp := filepath.Join(toDir, "state")
+	fp := filepath.Join(toDir, stateToolTestFile)
 	b, err := ioutil.ReadFile(fp)
 	require.NoError(t, err)
-	assert.Equal(t, dummyStateToolContent, b, "Dummy State Tool file was not correctly restored")
+	if !bytes.Equal(stateToolTestFileContent, b) {
+		t.Error("State Tool test file was not correctly restored.")
+	}
 }
 
 // TestAutoUpdate tests that an executable can update itself, by spawning the installer process which eventually replaces the calling executable.
 func TestAutoUpdate(t *testing.T) {
-	from, to := initTempInstallDirs(t, true)
-
-	logFile := filepath.Join(to, "install.log")
-
-	// run installer
-	_, stderr, err := exeutils.ExecSimple(filepath.Join(to, "state"), from, filepath.Join(from, "installer"), logFile)
-	require.NoError(t, err, "Error running dummy State Tool: %v, stderr=%s", err, stderr)
-
-	// poll for successful auto-update
-	for i := 0; i < 20; i++ {
-		time.Sleep(time.Millisecond * 200)
-
-		logs, err := ioutil.ReadFile(logFile)
-		require.NoError(t, err)
-		if strings.Contains(string(logs), "was successful") {
-			break
-		}
+	tests := []struct {
+		Name          string
+		Timeout       string
+		ExpectSuccess bool
+	}{
+		{
+			"replaced-executable-is-running",
+			"0",
+			// when the replaced executable is still running, the auto-update should fail on Windows
+			runtime.GOOS != "windows",
+		},
+		{
+			"replaced-executable-shut-down",
+			"2",
+			// when the replaced executable is stopped, the auto-update should always pass
+			true,
+		},
 	}
 
-	logs, err := ioutil.ReadFile(logFile)
-	require.NoError(t, err)
-	assert.Containsf(t, string(logs), "was successful", "logs should contain 'was successful', got=%s", string(logs))
+	for _, tt := range tests {
+		t.Run(tt.Name, func(t *testing.T) {
+			from, to := initTempInstallDirs(t, true)
+			defer os.RemoveAll(from)
+			defer os.RemoveAll(to)
 
-	assertSuccessfulInstallation(t, to, string(logs))
+			logFile := filepath.Join(to, "install.log")
+
+			// run installer
+			_, stderr, err := exeutils.ExecSimple(filepath.Join(to, stateToolTestFile), from, filepath.Join(from, installerTestFile), logFile, tt.Timeout)
+			require.NoError(t, err, "Error running auto-replacing test file: %v, stderr=%s", err, stderr)
+
+			// poll for successful auto-update
+			for i := 0; i < 20; i++ {
+				time.Sleep(time.Millisecond * 200)
+
+				logs, err := ioutil.ReadFile(logFile)
+				require.NoError(t, err)
+				if strings.Contains(string(logs), "was successful") || strings.Contains(string(logs), "Installation failed") {
+					break
+				}
+			}
+
+			logs, err := ioutil.ReadFile(logFile)
+			require.NoError(t, err)
+
+			if tt.ExpectSuccess {
+				assert.Containsf(t, string(logs), "was successful", "logs should contain 'was successful', got=%s", string(logs))
+				assertSuccessfulInstallation(t, to, string(logs))
+			} else {
+				assert.Containsf(t, string(logs), "Installation failed", "logs should contains 'Installation failed', got=%s", string(logs))
+				assertRevertedInstallation(t, to, string(logs))
+			}
+		})
+	}
 }
 
 // TestInstallation tests that an installation is working if there are no obstacles like running processes
@@ -149,11 +196,11 @@ func TestInstallationWhileProcessesAreActive(t *testing.T) {
 	from, to := initTempInstallDirs(t, false)
 
 	// run the old command which waits for one second.
-	cmd := exec.Command(filepath.Join(to, "state"), "2")
+	cmd := exec.Command(filepath.Join(to, stateToolTestFile), "1")
 	err := cmd.Start()
 	require.NoError(t, err)
 
-	buf := bytes.NewBuffer(make([]byte, 0, 1000))
+	buf := bytes.NewBuffer([]byte{})
 	logger := log.New(buf, "noop", 0)
 	errC := make(chan error)
 	go func() {
@@ -165,8 +212,13 @@ func TestInstallationWhileProcessesAreActive(t *testing.T) {
 
 	select {
 	case err := <-errC:
-		require.NoError(t, err)
-		assertSuccessfulInstallation(t, to, buf.String())
+		if runtime.GOOS == "windows" {
+			assert.Error(t, err, "Installation should fail on Windows.")
+			assertRevertedInstallation(t, to, buf.String())
+		} else {
+			require.NoError(t, err)
+			assertSuccessfulInstallation(t, to, buf.String())
+		}
 	case <-time.After(time.Second * 2):
 		t.Fatalf("Timeout waiting for installation to finish")
 	}
