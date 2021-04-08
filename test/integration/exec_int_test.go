@@ -26,7 +26,7 @@ func (suite *ExecIntegrationTestSuite) createProjectFile(ts *e2e.Session) {
 }
 
 func (suite *ExecIntegrationTestSuite) TestExec_Environment() {
-	suite.OnlyRunForTags(tagsuite.Shim)
+	suite.OnlyRunForTags(tagsuite.Exec)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -57,7 +57,7 @@ func (suite *ExecIntegrationTestSuite) TestExec_Environment() {
 }
 
 func (suite *ExecIntegrationTestSuite) TestExec_ExitCode() {
-	suite.OnlyRunForTags(tagsuite.Shim)
+	suite.OnlyRunForTags(tagsuite.Exec)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -84,7 +84,7 @@ func (suite *ExecIntegrationTestSuite) TestExec_ExitCode() {
 }
 
 func (suite *ExecIntegrationTestSuite) TestExec_Args() {
-	suite.OnlyRunForTags(tagsuite.Shim)
+	suite.OnlyRunForTags(tagsuite.Exec)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -133,7 +133,7 @@ echo "Number of arguments: $#"
 }
 
 func (suite *ExecIntegrationTestSuite) TestExec_Input() {
-	suite.OnlyRunForTags(tagsuite.Shim)
+	suite.OnlyRunForTags(tagsuite.Exec)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
