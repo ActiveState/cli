@@ -13,14 +13,14 @@ import (
 )
 
 func TestForwarder(t *testing.T) {
-	fw, err := New(map[string]string{}, "/project/path")
+	fw, err := New("/project/path")
 	require.NoError(t, err, errs.Join(err, ": "))
 
 	exePath := "/i/am/an/exe/"
 	exes := []string{exePath + "a", exePath + "b", exePath + "c"}
 
 	t.Run("Create forwarders", func(t *testing.T) {
-		err = fw.updateWithExes(exes)
+		err = fw.Update(exes)
 		require.NoError(t, err, errs.Join(err, ": "))
 	})
 
@@ -59,7 +59,7 @@ func TestForwarder(t *testing.T) {
 		modtime, err := fileutils.ModTime(files[0])
 		require.NoError(t, err, errs.Join(err, ": "))
 
-		err = fw.updateWithExes([]string{exes[1]})
+		err = fw.Update([]string{exes[1]})
 		require.NoError(t, err, errs.Join(err, ": "))
 
 		newModtime, err := fileutils.ModTime(files[0])

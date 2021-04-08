@@ -64,13 +64,13 @@ func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, r
 		return locale.WrapError(err, "err_globaldefault_prepare", "Could not prepare environment.")
 	}
 
-	env, err := runtime.Environ(false, projectPath)
+	exes, err := runtime.Executables()
 	if err != nil {
-		return locale.WrapError(err, "err_globaldefault_rtenv", "Could not retrieve runtime environment")
+		return locale.WrapError(err, "err_globaldefault_rtexes", "Could not retrieve runtime executables")
 	}
 
-	fw := forwarder.NewWithBinPath(env, projectPath, BinDir(cfg))
-	if err := fw.Update(); err != nil {
+	fw := forwarder.NewWithBinPath(projectPath, BinDir(cfg))
+	if err := fw.Update(exes); err != nil {
 		return locale.WrapError(err, "err_globaldefault_fw", "Could not set up forwarders")
 	}
 

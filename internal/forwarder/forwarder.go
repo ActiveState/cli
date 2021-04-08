@@ -7,11 +7,11 @@ import (
 	rt "runtime"
 	"strings"
 
+	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/gobuffalo/packr"
 
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -31,52 +31,27 @@ const shimDenoter = "!DO NOT EDIT! State Tool Shim !DO NOT EDIT!"
 const forwardTarget = "Target: "
 
 type Forward struct {
-	env         Environment
 	projectPath string
 	binPath     string
 }
 
-type Environment map[string]string
-
-func New(env Environment, projectPath string) (*Forward, error) {
+func New(projectPath string) (*Forward, error) {
 	binPath, err := ioutil.TempDir("", "forward-rt")
 	if err != nil {
 		return nil, errs.New("Could not create tempDir: %v", err)
 	}
-	return NewWithBinPath(env, projectPath, binPath), nil
+	return NewWithBinPath(projectPath, binPath), nil
 }
 
-func NewWithBinPath(env Environment, projectPath, binPath string) *Forward {
-	return &Forward{env, projectPath, binPath}
+func NewWithBinPath(projectPath, binPath string) *Forward {
+	return &Forward{projectPath, binPath}
 }
 
 func (f *Forward) BinPath() string {
 	return f.binPath
 }
 
-func (f *Forward) Update() error {
-	// Retrieve artifact binary directory
-	var bins []string
-	if p, ok := f.env["PATH"]; ok {
-		bins = strings.Split(p, string(os.PathListSeparator))
-	}
-
-	exes, err := exeutils.Executables(bins)
-	if err != nil {
-		return locale.WrapError(err, "err_symlink_exes", "Could not detect executables")
-	}
-
-	// Remove duplicate executables as per PATH and PATHEXT
-	exes, err = exeutils.UniqueExes(exes, os.Getenv("PATHEXT"))
-	if err != nil {
-		return locale.WrapError(err, "err_unique_exes", "Could not detect unique executables, make sure your PATH and PATHEXT environment variables are properly configured.")
-	}
-
-	// For testability we use updateWithExes so we don't need to rely on actual exes for tests
-	return f.updateWithExes(exes)
-}
-
-func (f *Forward) updateWithExes(exes []string) error {
+func (f *Forward) Update(exes runtime.Executables) error {
 	logging.Debug("Creating forwarders at %s, exes: %v", f.binPath, exes)
 
 	if err := f.Cleanup(exes); err != nil {
