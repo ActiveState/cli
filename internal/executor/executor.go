@@ -1,4 +1,4 @@
-package forwarder
+package executor
 
 import (
 	"io/ioutil"
@@ -18,56 +18,56 @@ import (
 	"github.com/ActiveState/cli/internal/strutils"
 )
 
-// forwardDenoter is used to communicate to the user that this file is generated as well as for us to track
-// ownership of the file. Changing this will break updates to older forwards that might need to be updated.
-const forwardDenoter = "!DO NOT EDIT! State Tool Forwarder !DO NOT EDIT!"
+// executorDenoter is used to communicate to the user that this file is generated as well as for us to track
+// ownership of the file. Changing this will break updates to older executors that might need to be updated.
+const executorDenoter = "!DO NOT EDIT! State Tool Executor !DO NOT EDIT!"
 
 // shimDenoter is our old denoter that we want to make sure we clean up
 const shimDenoter = "!DO NOT EDIT! State Tool Shim !DO NOT EDIT!"
 
-// forwardTarget tracks the target executable of the forward and is used to determine whether an existing
-// forward needs to be updating.
+// executorTarget tracks the target executable of the executor and is used to determine whether an existing
+// executor needs to be updating.
 // Update this if you want to blow away older targets (ie. you made changes to the template)
-const forwardTarget = "Target: "
+const executorTarget = "Target: "
 
-type Forward struct {
+type Executor struct {
 	projectPath string
 	binPath     string
 }
 
-func New(projectPath string) (*Forward, error) {
-	binPath, err := ioutil.TempDir("", "forward-rt")
+func New(projectPath string) (*Executor, error) {
+	binPath, err := ioutil.TempDir("", "executor")
 	if err != nil {
 		return nil, errs.New("Could not create tempDir: %v", err)
 	}
 	return NewWithBinPath(projectPath, binPath), nil
 }
 
-func NewWithBinPath(projectPath, binPath string) *Forward {
-	return &Forward{projectPath, binPath}
+func NewWithBinPath(projectPath, binPath string) *Executor {
+	return &Executor{projectPath, binPath}
 }
 
-func (f *Forward) BinPath() string {
+func (f *Executor) BinPath() string {
 	return f.binPath
 }
 
-func (f *Forward) Update(exes runtime.Executables) error {
-	logging.Debug("Creating forwarders at %s, exes: %v", f.binPath, exes)
+func (f *Executor) Update(exes runtime.Executables) error {
+	logging.Debug("Creating executors at %s, exes: %v", f.binPath, exes)
 
 	if err := f.Cleanup(exes); err != nil {
-		return errs.Wrap(err, "Could not clean up old forwards")
+		return errs.Wrap(err, "Could not clean up old executors")
 	}
 
 	for _, exe := range exes {
-		if err := f.createForward(exe); err != nil {
-			return locale.WrapError(err, "err_createforward", "Could not create forwarder for {{.V0}}.", exe)
+		if err := f.createExecutor(exe); err != nil {
+			return locale.WrapError(err, "err_createexecutor", "Could not create executor for {{.V0}}.", exe)
 		}
 	}
 
 	return nil
 }
 
-func (f *Forward) Cleanup(keep []string) error {
+func (f *Executor) Cleanup(keep []string) error {
 	if !fileutils.DirExists(f.binPath) {
 		return nil
 	}
@@ -89,35 +89,35 @@ func (f *Forward) Cleanup(keep []string) error {
 		filePath := filepath.Join(f.binPath, file.Name())
 		b, err := fileutils.ReadFile(filePath)
 		if err != nil {
-			return locale.WrapError(err, "err_cleanforward_noread", "Could not read potential forward file: {{.V0}}.", file.Name())
+			return locale.WrapError(err, "err_cleanexecutor_noread", "Could not read potential executor file: {{.V0}}.", file.Name())
 		}
 		if !isOwnedByUs(b) {
 			continue
 		}
 
 		if err := os.Remove(filePath); err != nil {
-			return locale.WrapError(err, "err_cleanforward_remove", "Could not remove forwarder: {{.V0}}", file.Name())
+			return locale.WrapError(err, "err_cleanexecutor_remove", "Could not remove executor: {{.V0}}", file.Name())
 		}
 	}
 
 	return nil
 }
 
-func (f *Forward) createForward(exe string) error {
-	name := nameForwarder(filepath.Base(exe))
+func (f *Executor) createExecutor(exe string) error {
+	name := nameExecutor(filepath.Base(exe))
 	target := filepath.Clean(filepath.Join(f.binPath, name))
 
-	logging.Debug("Creating forward for %s at %s", exe, target)
+	logging.Debug("Creating executor for %s at %s", exe, target)
 
-	denoteTarget := forwardTarget + exe
+	denoteTarget := executorTarget + exe
 
 	if fileutils.TargetExists(target) {
 		b, err := fileutils.ReadFile(target)
 		if err != nil {
-			return locale.WrapError(err, "err_createforward_exists_noread", "Could not create forwarder as target already exists and could not be read: {{.V0}}.", target)
+			return locale.WrapError(err, "err_createexecutor_exists_noread", "Could not create executor as target already exists and could not be read: {{.V0}}.", target)
 		}
 		if !isOwnedByUs(b) {
-			return locale.WrapError(err, "err_createforward_exists", "Could not create forwarder as target already exists: {{.V0}}.", target)
+			return locale.WrapError(err, "err_createexecutor_exists", "Could not create executor as target already exists: {{.V0}}.", target)
 		}
 		if strings.Contains(string(b), denoteTarget) {
 			return nil
@@ -128,12 +128,12 @@ func (f *Forward) createForward(exe string) error {
 		"state":       appinfo.StateApp().Exec(),
 		"exe":         filepath.Base(exe),
 		"projectPath": f.projectPath,
-		"denote":      []string{forwardDenoter, denoteTarget},
+		"denote":      []string{executorDenoter, denoteTarget},
 	}
-	box := packr.NewBox("../../assets/forwarders")
-	boxFile := "forwarder.sh"
+	box := packr.NewBox("../../assets/executors")
+	boxFile := "executor.sh"
 	if rt.GOOS == "windows" {
-		boxFile = "forwarder.bat"
+		boxFile = "executor.bat"
 	}
 	fwBytes := box.Bytes(boxFile)
 	fwStr, err := strutils.ParseTemplate(string(fwBytes), tplParams)
@@ -142,7 +142,7 @@ func (f *Forward) createForward(exe string) error {
 	}
 
 	if err = ioutil.WriteFile(target, []byte(fwStr), 0755); err != nil {
-		return locale.WrapError(err, "Could not create forwarder for {{.V0}} at {{.V1}}.", exe, target)
+		return locale.WrapError(err, "Could not create executor for {{.V0}} at {{.V1}}.", exe, target)
 	}
 
 	return nil
@@ -158,7 +158,7 @@ func containsBase(sourcePaths []string, targetPath string) bool {
 }
 
 func isOwnedByUs(fileContents []byte) bool {
-	if strings.Contains(string(fileContents), forwardDenoter) ||
+	if strings.Contains(string(fileContents), executorDenoter) ||
 		strings.Contains(string(fileContents), shimDenoter) {
 		return true
 	}

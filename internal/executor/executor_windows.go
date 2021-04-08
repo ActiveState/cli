@@ -1,8 +1,8 @@
-package forwarder
+package executor
 
 import "strings"
 
-func nameForwarder(exe string) string {
+func nameExecutor(exe string) string {
 	exts := strings.Split(strings.ToLower(os.Getenv("PATHEXT")), ";")
 	lowerExe := strings.ToLower(exe)
 	for _, ext := range exts {

@@ -1,4 +1,4 @@
-package forwarder
+package executor
 
 import (
 	"path/filepath"
@@ -12,29 +12,29 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 )
 
-func TestForwarder(t *testing.T) {
+func TestExecutor(t *testing.T) {
 	fw, err := New("/project/path")
 	require.NoError(t, err, errs.Join(err, ": "))
 
 	exePath := "/i/am/an/exe/"
 	exes := []string{exePath + "a", exePath + "b", exePath + "c"}
 
-	t.Run("Create forwarders", func(t *testing.T) {
+	t.Run("Create executors", func(t *testing.T) {
 		err = fw.Update(exes)
 		require.NoError(t, err, errs.Join(err, ": "))
 	})
 
-	// Verify forwarders
+	// Verify executors
 	for _, exe := range exes {
-		path := filepath.Join(fw.BinPath(), nameForwarder(filepath.Base(exe)))
-		t.Run("Forwarder Exists", func(t *testing.T) {
+		path := filepath.Join(fw.BinPath(), nameExecutor(filepath.Base(exe)))
+		t.Run("Executor Exists", func(t *testing.T) {
 			if !fileutils.FileExists(path) {
 				t.Errorf("Could not locate exe: %s", path)
 				t.FailNow()
 			}
 		})
 
-		t.Run("Forwarder containts expected executable", func(t *testing.T) {
+		t.Run("Executor containts expected executable", func(t *testing.T) {
 			contains, err := fileutils.FileContains(path, []byte(exe))
 			require.NoError(t, err, errs.Join(err, ": "))
 			if !contains {
@@ -44,7 +44,7 @@ func TestForwarder(t *testing.T) {
 		})
 	}
 
-	t.Run("Cleanup old forwarders", func(t *testing.T) {
+	t.Run("Cleanup old executors", func(t *testing.T) {
 		err = fw.Cleanup([]string{exes[1]})
 		require.NoError(t, err, errs.Join(err, ": "))
 
@@ -54,7 +54,7 @@ func TestForwarder(t *testing.T) {
 	})
 
 	t.Run("Update doesn't needlessly write", func(t *testing.T) {
-		// Verify that another update doesn't needlessly write the same forwarder again
+		// Verify that another update doesn't needlessly write the same executor again
 		files := fileutils.ListDir(fw.BinPath(), false)
 		modtime, err := fileutils.ModTime(files[0])
 		require.NoError(t, err, errs.Join(err, ": "))
@@ -69,10 +69,10 @@ func TestForwarder(t *testing.T) {
 	})
 }
 
-func TestNameForwarder(t *testing.T) {
+func TestNameExecutor(t *testing.T) {
 	if runtime.GOOS != "windows" {
 		return // Pointless to test outside windows
 	}
 
-	assert.Equal(t, "filename.bat", nameForwarder("filename.exe"))
+	assert.Equal(t, "filename.bat", nameExecutor("filename.exe"))
 }
