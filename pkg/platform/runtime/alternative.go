@@ -44,6 +44,7 @@ type AlternativeInstall struct {
 type artifactCacheMeta struct {
 	ArtifactID strfmt.UUID
 	Files      []string
+	Dirs       []string
 }
 
 // NewAlternativeEnv returns a new alternative runtime environment
@@ -216,6 +217,25 @@ func (ai *AlternativeInstall) PreInstall() error {
 				return locale.WrapError(err, "err_rm_artf", "", "Could not remove old package file at {{.V0}}.", file)
 			}
 		}
+
+		sort.Slice(v.Dirs, func(i, j int) bool {
+			return v.Dirs[i] > v.Dirs[j]
+		})
+		for _, dir := range v.Dirs {
+			if !fileutils.DirExists(dir) {
+				continue
+			}
+			empty, err := fileutils.IsEmptyDir(dir)
+			if err != nil {
+				return locale.WrapError(err, "err_check_empty_artf_dir", "Could not check if artifact directory at {{.V0}} is emtpy", dir)
+			}
+			if empty && !artifactsContainDir(ai.cache, dir) {
+				err := os.RemoveAll(dir)
+				if err != nil {
+					return locale.WrapError(err, "err_rm_artf_dir", "Could not remove empty artifact directory at {{.V0}}", dir)
+				}
+			}
+		}
 	}
 
 	if err := ai.storeArtifactCache(); err != nil {
@@ -238,6 +258,15 @@ func artifactsToKeepAndDelete(artifactCache []artifactCacheMeta, artifactRequest
 	return keep, delete
 }
 
+func artifactsContainDir(artifactCache []artifactCacheMeta, dir string) bool {
+	for _, v := range artifactCache {
+		if funk.Contains(v.Dirs, dir) {
+			return true
+		}
+	}
+	return false
+}
+
 // PreUnpackArtifact does nothing
 func (ai *AlternativeInstall) PreUnpackArtifact(artf *HeadChefArtifact) error {
 	return nil
@@ -258,12 +287,17 @@ func (ai *AlternativeInstall) PostUnpackArtifact(artf *HeadChefArtifact, tmpRunt
 		return locale.WrapError(err, "runtime_alternative_file_transforms_err", "", "Could not apply necessary file transformations after unpacking")
 	}
 
-	artMeta := artifactCacheMeta{*artf.ArtifactID, []string{}}
+	artMeta := artifactCacheMeta{*artf.ArtifactID, []string{}, []string{}}
 	onMoveFile := func(fromPath, toPath string) {
 		if fileutils.IsDir(toPath) {
 			artMeta.Files = append(artMeta.Files, fileutils.ListDir(toPath, false)...)
+			artMeta.Dirs = append(artMeta.Dirs, toPath)
 		} else {
 			artMeta.Files = append(artMeta.Files, toPath)
+			dir := filepath.Dir(toPath)
+			if !funk.Contains(artMeta.Dirs, dir) {
+				artMeta.Dirs = append(artMeta.Dirs, filepath.Dir(toPath))
+			}
 		}
 		cb()
 	}
