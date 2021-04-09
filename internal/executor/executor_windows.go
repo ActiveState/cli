@@ -1,6 +1,9 @@
 package executor
 
-import "strings"
+import (
+	"os"
+	"strings"
+)
 
 func nameExecutor(exe string) string {
 	exts := strings.Split(strings.ToLower(os.Getenv("PATHEXT")), ";")
