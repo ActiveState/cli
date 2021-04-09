@@ -7,7 +7,7 @@ func nameExecutor(exe string) string {
 	lowerExe := strings.ToLower(exe)
 	for _, ext := range exts {
 		if strings.HasSuffix(lowerExe, strings.ToLower(ext)) {
-			return exe[0 : len(exe)-ext]
+			return exe[0 : len(exe)-len(ext)]
 		}
 	}
 	return exe + ".bat"
