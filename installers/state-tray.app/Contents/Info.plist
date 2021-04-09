@@ -5,7 +5,7 @@
         <key>CFBundleExecutable</key>
         <string>state-tray</string>
         <key>CFBundleIconFile</key>
-        <string>icon.icns</string>
+        <string>state-tray.icns</string>
         <key>CFBundleIdentifier</key>
         <string>com.activestate.platform.state-tray</string>
         <key>NSHighResolutionCapable</key>
