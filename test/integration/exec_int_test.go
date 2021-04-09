@@ -51,7 +51,7 @@ func (suite *ExecIntegrationTestSuite) TestExec_Environment() {
 	)
 	cp.ExpectExitCode(0)
 	output := cp.TrimmedSnapshot()
-	suite.Contains(output, ts.Dirs.Bin, "PATH was not updated to contain cache directory")
+	suite.Contains(output, ts.Dirs.Bin, "PATH was not updated to contain cache directory, original PATH:", os.Getenv("PATH"))
 }
 
 func (suite *ExecIntegrationTestSuite) TestExec_ExitCode() {
