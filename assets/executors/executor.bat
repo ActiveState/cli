@@ -4,4 +4,4 @@
 REM {{.}}
 {{end}}
 
-{{.state}} shim --path {{.projectPath}} -- {{.exe}} %*
+{{.state}} exec --path {{.projectPath}} -- {{.exe}} %*
