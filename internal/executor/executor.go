@@ -51,7 +51,7 @@ func (f *Executor) BinPath() string {
 	return f.binPath
 }
 
-func (f *Executor) Update(exes runtime.Executables) error {
+func (f *Executor) Update(exes runtime.ExecutablePaths) error {
 	logging.Debug("Creating executors at %s, exes: %v", f.binPath, exes)
 
 	if err := f.Cleanup(exes); err != nil {

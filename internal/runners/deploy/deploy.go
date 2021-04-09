@@ -7,6 +7,7 @@ import (
 	rt "runtime"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/executor"
 	"github.com/go-openapi/strfmt"
 	"github.com/gobuffalo/packr"
 
@@ -154,6 +155,22 @@ func (d *Deploy) install(rtTarget setup.Targeter) error {
 		return locale.WrapError(err, "deploy_install_failed", "Installation failed.")
 	}
 
+	// Create executors
+	execPath := filepath.Join(rtTarget.Dir(), "exec")
+	if err := fileutils.MkdirUnlessExists(execPath); err != nil {
+		return locale.WrapError(err, "err_deploy_execpath", "Could not create exec directory.")
+	}
+
+	exePaths, err := rti.ExecutablePaths()
+	if err != nil {
+		return locale.WrapError(err, "err_deploy_execpaths", "Could not retrieve runtime executable paths")
+	}
+
+	exec := executor.NewWithBinPath(rtTarget.Dir(), execPath)
+	if err := exec.Update(exePaths); err != nil {
+		return locale.WrapError(err, "err_deploy_executors", "Could not create executors")
+	}
+
 	if rt.GOOS == "windows" {
 		box := packr.NewBox("../../../assets/scripts")
 		contents := box.Bytes("setenv.bat")
@@ -183,6 +200,12 @@ func (d *Deploy) configure(namespace project.Namespaced, rtTarget setup.Targeter
 	}
 
 	d.output.Notice(output.Heading(locale.Tr("deploy_configure_shell", d.subshell.Shell())))
+
+	// Prepend our execPath
+	execPath := filepath.Join(rtTarget.Dir(), "exec")
+	path := strings.Split(env["PATH"], string(os.PathListSeparator))
+	path = append([]string{execPath}, path...)
+	env["PATH"] = strings.Join(path, string(os.PathListSeparator))
 
 	err = d.subshell.WriteUserEnv(d.cfg, env, sscommon.Deploy, userScope)
 	if err != nil {
@@ -319,12 +342,6 @@ func symlinkWithTarget(overwrite bool, symlinkPath string, exePaths []string, ou
 	}
 
 	return nil
-}
-
-type exeFile struct {
-	fpath string
-	name  string
-	ext   string
 }
 
 type Report struct {

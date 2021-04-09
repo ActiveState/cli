@@ -24,7 +24,7 @@ type Runtime struct {
 	envAccessed bool
 }
 
-type Executables []string
+type ExecutablePaths []string
 
 // DisabledRuntime is an empty runtime that is only created when constants.DisableRuntime is set to true in the environment
 var DisabledRuntime = &Runtime{}
@@ -120,7 +120,7 @@ func (r *Runtime) Environ(inherit bool, projectDir string) (map[string]string, e
 	return injectProjectDir(env, projectDir), err
 }
 
-func (r *Runtime) Executables() (Executables, error) {
+func (r *Runtime) ExecutablePaths() (ExecutablePaths, error) {
 	env, err := r.Environ(false, "")
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not retrieve environment info")
