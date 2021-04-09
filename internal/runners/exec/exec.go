@@ -1,4 +1,4 @@
-package shim
+package exec
 
 import (
 	"fmt"
@@ -59,11 +59,11 @@ func (s *Shim) Run(params *Params, args ...string) error {
 		var err error
 		s.proj, err = project.FromPath(params.Path)
 		if err != nil {
-			return locale.WrapInputError(err, "shim_no_project_at_path", "Could not find project file at {{.V0}}", params.Path)
+			return locale.WrapInputError(err, "exec_no_project_at_path", "Could not find project file at {{.V0}}", params.Path)
 		}
 	}
 	if s.proj == nil {
-		return locale.NewError("shim_no_project_found", "Could not find a project.  You need to be in a project directory or specify a global default project via `state activate --default`")
+		return locale.NewError("exec_no_project_found", "Could not find a project.  You need to be in a project directory or specify a global default project via `state activate --default`")
 	}
 
 	if len(args) == 0 {
@@ -85,13 +85,13 @@ func (s *Shim) Run(params *Params, args ...string) error {
 	if err != nil {
 		return err
 	}
-	logging.Debug("Trying to shim %s on PATH=%s", args[0], env["PATH"])
-	// Ensure that we are not calling the shim recursively
-	oldval, ok := env[constants.ShimEnvVarName]
+	logging.Debug("Trying to exec %s on PATH=%s", args[0], env["PATH"])
+	// Ensure that we are not calling the exec recursively
+	oldval, ok := env[constants.ExecEnvVarName]
 	if ok && oldval == args[0] {
-		return locale.NewError("err_shim_recursive_loop", "Could not resolve shimmed executable {{.V0}}", args[0])
+		return locale.NewError("err_exec_recursive_loop", "Could not resolve executor executable {{.V0}}", args[0])
 	}
-	env[constants.ShimEnvVarName] = args[0]
+	env[constants.ExecEnvVarName] = args[0]
 
 	s.subshell.SetEnv(env)
 
@@ -102,9 +102,9 @@ func (s *Shim) Run(params *Params, args ...string) error {
 		scriptArgs = fmt.Sprintf("@ECHO OFF\n%s %%*", args[0])
 	}
 
-	sf, err := scriptfile.New(lang, "state-shim", scriptArgs)
+	sf, err := scriptfile.New(lang, "state-exec", scriptArgs)
 	if err != nil {
-		return locale.WrapError(err, "err_shim_create_scriptfile", "Could not generate script")
+		return locale.WrapError(err, "err_exec_create_scriptfile", "Could not generate script")
 	}
 
 	return s.subshell.Run(sf.Filename(), args[1:]...)

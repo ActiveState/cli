@@ -174,4 +174,6 @@ func init() {
 			}
 		}
 	}
+
+	Debug("Args: %v", os.Args)
 }

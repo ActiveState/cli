@@ -14,6 +14,7 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/iafan/cwalk"
 
@@ -866,4 +867,23 @@ func PathInList(listSep, pathList, path string) (bool, error) {
 		}
 	}
 	return false, nil
+}
+
+func FileContains(path string, searchText []byte) (bool, error) {
+	if !TargetExists(path) {
+		return false, nil
+	}
+	b, err := ReadFile(path)
+	if err != nil {
+		return false, errs.Wrap(err, "Could not read file")
+	}
+	return bytes.Contains(b, searchText), nil
+}
+
+func ModTime(path string) (time.Time, error) {
+	stat, err := os.Stat(path)
+	if err != nil {
+		return time.Now(), errs.Wrap(err, "Could not stat file %s", path)
+	}
+	return stat.ModTime(), nil
 }

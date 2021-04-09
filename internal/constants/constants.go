@@ -27,8 +27,8 @@ const ConfigEnvVarName = "ACTIVESTATE_CLI_CONFIGDIR"
 // CacheEnvVarName is the env var used to override the cache dir that the State Tool uses
 const CacheEnvVarName = "ACTIVESTATE_CLI_CACHEDIR"
 
-// ShimEnvVarName is the env var used to find out if we are shimming recursively
-const ShimEnvVarName = "ACTIVESTATE_CLI_SHIMMED_COMMAND"
+// ExecEnvVarName is the env var used to find out if we are shimming recursively
+const ExecEnvVarName = "ACTIVESTATE_CLI_SHIMMED_COMMAND"
 
 // DisableUpdates is the env var used to disable auto update
 const DisableUpdates = "ACTIVESTATE_CLI_DISABLE_UPDATES"
@@ -275,3 +275,6 @@ const SvcConfigPid = "svc-pid"
 
 // TrayAppName is the name we give our systray application
 const TrayAppName = "ActiveState Platform"
+
+// StateAppName is the name we give our state cli executable
+const StateAppName = "State Tool"
