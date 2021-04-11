@@ -10,6 +10,7 @@ import (
 
 	"github.com/getlantern/systray"
 	"github.com/gobuffalo/packr"
+	"github.com/rollbar/rollbar-go"
 
 	"github.com/ActiveState/cli/cmd/state-tray/internal/menu"
 	"github.com/ActiveState/cli/cmd/state-tray/internal/open"
@@ -36,6 +37,9 @@ func onReady() {
 }
 
 func run() error {
+	logging.SetupRollbar(constants.StateTrayRollbarToken)
+	defer rollbar.Close()
+
 	if os.Getenv("VERBOSE") == "true" {
 		// Doesn't seem to work, I think the systray lib and its logging solution is interfering
 		logging.CurrentHandler().SetVerbose(true)

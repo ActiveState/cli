@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/rollbar/rollbar-go"
 )
 
 type command string
@@ -29,6 +30,9 @@ var commands = []command{
 }
 
 func main() {
+	logging.SetupRollbar(constants.StateServiceRollbarToken)
+	defer rollbar.Close()
+
 	if os.Getenv("VERBOSE") == "true" {
 		logging.CurrentHandler().SetVerbose(true)
 	}
