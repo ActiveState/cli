@@ -1,12 +1,14 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 
 	"github.com/getlantern/systray"
 	"github.com/gobuffalo/packr"
 
+	"github.com/ActiveState/cli/cmd/state-tray/internal/menu"
 	"github.com/ActiveState/cli/cmd/state-tray/internal/open"
 	"github.com/ActiveState/cli/cmd/state-tray/pkg/autostart"
 	"github.com/ActiveState/cli/internal/appinfo"
@@ -16,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
 func main() {
@@ -59,6 +62,16 @@ func run() error {
 		return errs.Wrap(err, "Could not start %s", svcInfo.Exec())
 	}
 
+	config, err := config.Get()
+	if err != nil {
+		return errs.Wrap(err, "Could not get new config instance")
+	}
+
+	model, err := model.NewSvcModel(context.Background(), config)
+	if err != nil {
+		return errs.Wrap(err, "Could not create new service model")
+	}
+
 	box := packr.NewBox("../../assets")
 	systray.SetIcon(box.Bytes("icon.ico"))
 	systray.SetTooltip(locale.Tl("tray_tooltip", "ActiveState State Tool"))
@@ -96,28 +109,56 @@ func run() error {
 	}
 	systray.AddSeparator()
 
+	mProjects := systray.AddMenuItem(locale.Tl("tray_projects_title", "Local Projects"), "")
+	mReload := mProjects.AddSubMenuItem("Reload", "Reload the local projects listing")
+	localProjectsUpdater := menu.NewLocalProjectsUpdater(mProjects)
+
+	localProjects, err := model.LocalProjects()
+	if err != nil {
+		logging.Error("Could not get local projects listing: %v", err)
+	}
+	localProjectsUpdater.Update(localProjects)
+
+	systray.AddSeparator()
+
 	mQuit := systray.AddMenuItem(locale.Tl("tray_exit", "Exit"), "")
 
 	for {
 		select {
 		case <-mAbout.ClickedCh:
 			logging.Debug("About event")
-			err := open.Prompt("state --version")
+			err = open.Prompt("state --version")
 			if err != nil {
-				logging.Error("Could not open command prompt, got error: %v", err)
+				logging.Error("Could not open command prompt: %v", err)
 			}
 		case <-mDoc.ClickedCh:
 			logging.Debug("Documentation event")
-			// Not implemented
+			err = open.Browser(constants.DocumentationURL)
+			if err != nil {
+				logging.Error("Could not open documentation url: %v", err)
+			}
 		case <-mLearn.ClickedCh:
 			logging.Debug("Learn event")
-			// Not implemented
+			err = open.Browser(constants.ActiveStateBlogURL)
+			if err != nil {
+				logging.Error("Could not open blog url: %v", err)
+			}
 		case <-mSupport.ClickedCh:
 			logging.Debug("Support event")
-			// Not implemented
+			err = open.Browser(constants.ActiveStateSupportURL)
+			if err != nil {
+				logging.Error("Could not open support url: %v", err)
+			}
 		case <-mAccount.ClickedCh:
 			logging.Debug("Account event")
 			// Not implemented
+		case <-mReload.ClickedCh:
+			logging.Debug("Projects event")
+			localProjects, err = model.LocalProjects()
+			if err != nil {
+				logging.Error("Could not get local projects listing: %v", err)
+			}
+			localProjectsUpdater.Update(localProjects)
 		case <-mAutoStart.ClickedCh:
 			logging.Debug("Autostart event")
 			as := autostart.New()

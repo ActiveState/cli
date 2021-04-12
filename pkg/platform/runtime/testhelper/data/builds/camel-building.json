@@ -1,0 +1,11 @@
+{
+  "artifacts": [],
+  "build_engine": "camel",
+  "build_request_id": "ccf8173c-9810-4ae3-afd6-02f7597258ae",
+  "errors": [],
+  "is_retryable": false,
+  "message": "Camel build sent to scheduler with camel commit 3d46a065",
+  "recipe_id": "50dd4b2f-a42e-537e-911c-3122b89f8c36",
+  "timestamp": "2021-02-18T17:58:38.465Z",
+  "type": "build_started"
+}

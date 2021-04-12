@@ -15,7 +15,13 @@ type DeferredUpdate {
   version: String!
 }
 
+type Project {
+  namespace: String!
+  locations: [String!]!
+}
+
 type Query {
   version: Version
-  update(channel: String, version: String): DeferredUpdate
+  update(channel: String, version: String): DeferredUpdate!
+  projects: [Project]!
 }

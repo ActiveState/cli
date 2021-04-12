@@ -7,6 +7,11 @@ type DeferredUpdate struct {
 	Version string `json:"version"`
 }
 
+type Project struct {
+	Namespace string   `json:"namespace"`
+	Locations []string `json:"locations"`
+}
+
 type StateVersion struct {
 	License  string `json:"license"`
 	Version  string `json:"version"`

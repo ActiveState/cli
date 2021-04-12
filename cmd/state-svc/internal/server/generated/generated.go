@@ -8,6 +8,7 @@ import (
 	"errors"
 	"strconv"
 	"sync"
+	"sync/atomic"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
@@ -46,9 +47,15 @@ type ComplexityRoot struct {
 		Version func(childComplexity int) int
 	}
 
+	Project struct {
+		Locations func(childComplexity int) int
+		Namespace func(childComplexity int) int
+	}
+
 	Query struct {
-		Update  func(childComplexity int, channel *string, version *string) int
-		Version func(childComplexity int) int
+		Projects func(childComplexity int) int
+		Update   func(childComplexity int, channel *string, version *string) int
+		Version  func(childComplexity int) int
 	}
 
 	StateVersion struct {
@@ -67,6 +74,7 @@ type ComplexityRoot struct {
 type QueryResolver interface {
 	Version(ctx context.Context) (*graph.Version, error)
 	Update(ctx context.Context, channel *string, version *string) (*graph.DeferredUpdate, error)
+	Projects(ctx context.Context) ([]*graph.Project, error)
 }
 
 type executableSchema struct {
@@ -97,6 +105,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.DeferredUpdate.Version(childComplexity), true
+
+	case "Project.locations":
+		if e.complexity.Project.Locations == nil {
+			break
+		}
+
+		return e.complexity.Project.Locations(childComplexity), true
+
+	case "Project.namespace":
+		if e.complexity.Project.Namespace == nil {
+			break
+		}
+
+		return e.complexity.Project.Namespace(childComplexity), true
+
+	case "Query.projects":
+		if e.complexity.Query.Projects == nil {
+			break
+		}
+
+		return e.complexity.Query.Projects(childComplexity), true
 
 	case "Query.update":
 		if e.complexity.Query.Update == nil {
@@ -226,9 +255,15 @@ type DeferredUpdate {
   version: String!
 }
 
+type Project {
+  namespace: String!
+  locations: [String!]!
+}
+
 type Query {
   version: Version
-  update(channel: String, version: String): DeferredUpdate
+  update(channel: String, version: String): DeferredUpdate!
+  projects: [Project]!
 }
 `, BuiltIn: false},
 }
@@ -385,6 +420,76 @@ func (ec *executionContext) _DeferredUpdate_version(ctx context.Context, field g
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Project_namespace(ctx context.Context, field graphql.CollectedField, obj *graph.Project) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Project",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Namespace, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Project_locations(ctx context.Context, field graphql.CollectedField, obj *graph.Project) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Project",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Locations, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_version(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -449,11 +554,49 @@ func (ec *executionContext) _Query_update(ctx context.Context, field graphql.Col
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*graph.DeferredUpdate)
 	fc.Result = res
-	return ec.marshalODeferredUpdate2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐDeferredUpdate(ctx, field.Selections, res)
+	return ec.marshalNDeferredUpdate2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐDeferredUpdate(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_projects(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Projects(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*graph.Project)
+	fc.Result = res
+	return ec.marshalNProject2ᚕᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐProject(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1864,6 +2007,38 @@ func (ec *executionContext) _DeferredUpdate(ctx context.Context, sel ast.Selecti
 	return out
 }
 
+var projectImplementors = []string{"Project"}
+
+func (ec *executionContext) _Project(ctx context.Context, sel ast.SelectionSet, obj *graph.Project) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, projectImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Project")
+		case "namespace":
+			out.Values[i] = ec._Project_namespace(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "locations":
+			out.Values[i] = ec._Project_locations(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var queryImplementors = []string{"Query"}
 
 func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -1899,6 +2074,23 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_update(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "projects":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_projects(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
 				return res
 			})
 		case "__type":
@@ -2250,6 +2442,57 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
+func (ec *executionContext) marshalNDeferredUpdate2githubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐDeferredUpdate(ctx context.Context, sel ast.SelectionSet, v graph.DeferredUpdate) graphql.Marshaler {
+	return ec._DeferredUpdate(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNDeferredUpdate2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐDeferredUpdate(ctx context.Context, sel ast.SelectionSet, v *graph.DeferredUpdate) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._DeferredUpdate(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNProject2ᚕᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐProject(ctx context.Context, sel ast.SelectionSet, v []*graph.Project) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOProject2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐProject(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
 func (ec *executionContext) marshalNStateVersion2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐStateVersion(ctx context.Context, sel ast.SelectionSet, v *graph.StateVersion) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -2273,6 +2516,36 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNString2ᚕstringᚄ(ctx context.Context, v interface{}) ([]string, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNString2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNString2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {
@@ -2528,11 +2801,11 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	return graphql.MarshalBoolean(*v)
 }
 
-func (ec *executionContext) marshalODeferredUpdate2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐDeferredUpdate(ctx context.Context, sel ast.SelectionSet, v *graph.DeferredUpdate) graphql.Marshaler {
+func (ec *executionContext) marshalOProject2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐProject(ctx context.Context, sel ast.SelectionSet, v *graph.Project) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	return ec._DeferredUpdate(ctx, sel, v)
+	return ec._Project(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {

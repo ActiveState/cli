@@ -14,6 +14,7 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/iafan/cwalk"
 
@@ -497,7 +498,6 @@ func MoveAllFilesRecursively(fromPath, toPath string, cb MoveAllFilesCallback) e
 				return errs.Wrap(err, "os.Remove %s failed", subFromPath)
 			}
 		} else {
-			logging.Warning(locale.Tr("warn_move_destination_overwritten", "", subFromPath))
 			err = os.Rename(subFromPath, subToPath)
 			if err != nil {
 				return errs.Wrap(err, "os.Rename %s:%s failed", subFromPath, subToPath)
@@ -914,4 +914,23 @@ func PathInList(listSep, pathList, path string) (bool, error) {
 		}
 	}
 	return false, nil
+}
+
+func FileContains(path string, searchText []byte) (bool, error) {
+	if !TargetExists(path) {
+		return false, nil
+	}
+	b, err := ReadFile(path)
+	if err != nil {
+		return false, errs.Wrap(err, "Could not read file")
+	}
+	return bytes.Contains(b, searchText), nil
+}
+
+func ModTime(path string) (time.Time, error) {
+	stat, err := os.Stat(path)
+	if err != nil {
+		return time.Now(), errs.Wrap(err, "Could not stat file %s", path)
+	}
+	return stat.ModTime(), nil
 }

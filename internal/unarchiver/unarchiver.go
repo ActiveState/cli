@@ -24,6 +24,9 @@ type SingleUnarchiver interface {
 
 	// CheckExt checks that the file extension is appropriate for the archive
 	CheckExt(archiveName string) error
+
+	// Ext returns a valid file name extension for this archiver
+	Ext() string
 }
 
 // ExtractNotifier gets called when a new file has been extracted from the archive
@@ -35,6 +38,10 @@ type Unarchiver struct {
 	impl SingleUnarchiver
 
 	notifier ExtractNotifier
+}
+
+func (ua *Unarchiver) Ext() string {
+	return ua.impl.Ext()
 }
 
 // SetNotifier sets the notification function to be called after extracting a file

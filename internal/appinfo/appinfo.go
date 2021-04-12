@@ -1,6 +1,7 @@
 package appinfo
 
 import (
+	"os"
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -14,24 +15,26 @@ type AppInfo struct {
 	executable string
 }
 
+func TrayApp() *AppInfo {
+	return &AppInfo{
+		constants.TrayAppName,
+		filepath.Join(filepath.Dir(os.Args[0]), "state-tray") + osutils.ExeExt,
+	}
+}
+
+func StateApp() *AppInfo {
+	return &AppInfo{
+		constants.StateAppName,
+		filepath.Join(filepath.Dir(os.Args[0]), "state") + osutils.ExeExt,
+	}
+}
+
 func (a *AppInfo) Name() string {
 	return a.name
 }
 
 func (a *AppInfo) Exec() string {
 	return a.executable
-}
-
-func TrayApp() (*AppInfo, error) {
-	installPath, err := installation.InstallPath()
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not detect installation path")
-	}
-
-	return &AppInfo{
-		constants.TrayAppName,
-		filepath.Join(installPath, "state-tray") + osutils.ExeExt,
-	}, nil
 }
 
 func SvcApp() (*AppInfo, error) {
@@ -45,4 +48,3 @@ func SvcApp() (*AppInfo, error) {
 		filepath.Join(installPath, "state-svc") + osutils.ExeExt,
 	}, nil
 }
-

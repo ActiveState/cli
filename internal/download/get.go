@@ -14,15 +14,20 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/progress"
 	"github.com/ActiveState/cli/internal/retryhttp"
+	"github.com/ActiveState/cli/internal/proxyreader"
 )
 
 // Get takes a URL and returns the contents as bytes
 var Get func(url string) ([]byte, error)
 
+type DownloadProgress interface {
+	TotalSize(int)
+	IncrBy(int)
+}
+
 // GetWithProgress takes a URL and returns the contents as bytes, it takes an optional second arg which will spawn a progressbar
-var GetWithProgress func(url string, progress *progress.Progress) ([]byte, error)
+var GetWithProgress func(url string, progress DownloadProgress) ([]byte, error)
 
 func init() {
 	SetMocking(condition.InTest())
@@ -44,11 +49,11 @@ func httpGet(url string) ([]byte, error) {
 	return httpGetWithProgress(url, nil)
 }
 
-func httpGetWithProgress(url string, progress *progress.Progress) ([]byte, error) {
+func httpGetWithProgress(url string, progress DownloadProgress) ([]byte, error) {
 	return httpGetWithProgressRetry(url, progress, 1, 3)
 }
 
-func httpGetWithProgressRetry(url string, progress *progress.Progress, attempt int, retries int) ([]byte, error) {
+func httpGetWithProgressRetry(url string, prg DownloadProgress, attempt int, retries int) ([]byte, error) {
 	logging.Debug("Retrieving url: %s, attempt: %d", url, attempt)
 	client := retryhttp.NewClient(0 /* 0 = no timeout */, retries)
 	resp, err := client.Get(url)
@@ -77,38 +82,28 @@ func httpGetWithProgressRetry(url string, progress *progress.Progress, attempt i
 		}
 	}
 
-	bar := progress.AddByteProgressBar(int64(total))
+	var src io.Reader = resp.Body
+	defer resp.Body.Close()
 
-	// Ensure bar is always closed (especially for retries)
-	defer func() {
-		if !bar.Completed() {
-			bar.Abort(true)
-		}
-	}()
+	if prg != nil {
+		prg.TotalSize(total)
+		src = proxyreader.NewProxyReader(prg, resp.Body)
+	}
 
-	src := resp.Body
 	var dst bytes.Buffer
-
-	src = bar.ProxyReader(resp.Body)
-
 	_, err = io.Copy(&dst, src)
 	if err != nil {
 		logging.Debug("Reading body failed: %s", err)
 		if attempt <= retries {
-			return httpGetWithProgressRetry(url, progress, attempt+1, retries)
+			return httpGetWithProgressRetry(url, prg, attempt+1, retries)
 		}
 		return nil, errs.Wrap(err, "Could not copy network stream")
-	}
-
-	if !bar.Completed() {
-		// Failsafe, so we don't get blocked by a progressbar
-		bar.IncrBy(total)
 	}
 
 	return dst.Bytes(), nil
 }
 
-func _testHTTPGetWithProgress(url string, progress *progress.Progress) ([]byte, error) {
+func _testHTTPGetWithProgress(url string, progress DownloadProgress) ([]byte, error) {
 	return _testHTTPGet(url)
 }
 

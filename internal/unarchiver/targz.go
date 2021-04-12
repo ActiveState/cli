@@ -22,12 +22,16 @@ var _ SingleUnarchiver = &TarGzArchive{}
 // TarGzArchive is an extension of an TarGz archiver implementing an unarchive method with
 // progress feedback
 type TarGzArchive struct {
-	archiver.TarGz
+	*archiver.TarGz
 }
 
 // NewTarGz initializes a new TarGzArchiver
 func NewTarGz() Unarchiver {
-	return Unarchiver{&TarGzArchive{*archiver.DefaultTarGz}, func(_ string, _ int64, _ bool) {}}
+	return Unarchiver{&TarGzArchive{archiver.NewTarGz()}, func(_ string, _ int64, _ bool) {}}
+}
+
+func (ar *TarGzArchive) Ext() string {
+	return ".tar.gz"
 }
 
 // GetExtractedSize returns the size of the extracted summed up files in the archive

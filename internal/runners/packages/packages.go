@@ -119,11 +119,7 @@ func executePackageOperation(pj *project.Project, cfg configurable, out output.O
 	}
 
 	// refresh runtime
-	req := runbits.RequestedRequirement{
-		Name:      name,
-		Namespace: ns,
-	}
-	err = runbits.RefreshRuntime(out, &req, pj, cfg.CachePath(), commitID, orderChanged)
+	err = runbits.RefreshRuntime(out, pj, cfg.CachePath(), commitID, orderChanged)
 	if err != nil {
 		return err
 	}

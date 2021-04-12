@@ -1,6 +1,8 @@
 package resolver
 
 import (
+	"sort"
+
 	"golang.org/x/net/context"
 
 	genserver "github.com/ActiveState/cli/cmd/state-svc/internal/server/generated"
@@ -8,7 +10,10 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/graph"
+	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/updater2"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 type Resolver struct {
@@ -26,6 +31,7 @@ func New(cfg *config.Instance) *Resolver {
 func (r *Resolver) Query() genserver.QueryResolver { return r }
 
 func (r *Resolver) Version(ctx context.Context) (*graph.Version, error) {
+	logging.Debug("Version resolver")
 	return &graph.Version{
 		State: &graph.StateVersion{
 			License:  constants.LibraryLicense,
@@ -62,4 +68,26 @@ func (r *Resolver) Update(ctx context.Context, channel *string, version *string)
 		Channel: up.Channel(),
 		Version: up.Version(),
 	}, nil
+}
+
+func (r *Resolver) Projects(ctx context.Context) ([]*graph.Project, error) {
+	logging.Debug("Projects resolver")
+	config, err := config.New()
+	if err != nil {
+		return nil, locale.WrapError(err, "err_resolver_get_config", "Could not get new config instance")
+	}
+
+	var projects []*graph.Project
+	localConfigProjects := config.GetStringMapStringSlice(projectfile.LocalProjectsConfigKey)
+	for ns, locations := range localConfigProjects {
+		projects = append(projects, &graph.Project{
+			Namespace: ns,
+			Locations: locations,
+		})
+	}
+	sort.Slice(projects, func(i, j int) bool {
+		return projects[i].Namespace < projects[j].Namespace
+	})
+
+	return projects, nil
 }
