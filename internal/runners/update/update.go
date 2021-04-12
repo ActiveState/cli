@@ -51,7 +51,7 @@ func (u *Update) Run(params *Params) error {
 	if err != nil {
 		return errs.Wrap(err, "failed to create svc model")
 	}
-	up, err := m.UpdateDistribution(channel, "")
+	up, err := m.InitiateDeferredUpdate(channel, "")
 	if err != nil {
 		return errs.Wrap(err, "Update failed.")
 	}

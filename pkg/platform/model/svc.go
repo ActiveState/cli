@@ -42,7 +42,7 @@ func (m *SvcModel) LocalProjects() ([]*graph.Project, error) {
 	return response.Projects, nil
 }
 
-func (m *SvcModel) UpdateDistribution(channel, version string) (*graph.DeferredUpdate, error) {
+func (m *SvcModel) InitiateDeferredUpdate(channel, version string) (*graph.DeferredUpdate, error) {
 	r := request.NewUpdateRequest(channel, version)
 	u := &graph.DeferredUpdate{}
 	if err := m.client.Run(r, &u); err != nil {

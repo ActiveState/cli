@@ -52,7 +52,7 @@ func autoUpdate(args []string, out output.Outputer, cfg *config.Instance, pjPath
 	if err != nil {
 		return false, errs.Wrap(err, "Failed to create state-svc model")
 	}
-	up, err := m.UpdateDistribution("", "")
+	up, err := m.InitiateDeferredUpdate("", "")
 	if err != nil {
 		return false, errs.Wrap(err, "Failed schedule the update.")
 	}
