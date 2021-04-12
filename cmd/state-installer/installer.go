@@ -95,14 +95,13 @@ func run() error {
 		}
 	}
 
-	svcInfo, err := appinfo.SvcApp()
-	if err != nil {
-		return errs.Wrap(err, "Could not detect svc application information")
-	}
+	svcInfo := appinfo.SvcApp()
+	trayInfo := appinfo.TrayApp()
 
-	trayInfo, err := appinfo.TrayApp()
-	if err != nil {
-		return errs.Wrap(err, "Could not detect tray application information")
+	// Todo: https://www.pivotaltracker.com/story/show/177585085
+	// Yes this is awkward right now
+	if err := stopTrayApp(cfg); err != nil {
+		return errs.Wrap(err, "Failed to stop %s", trayInfo.Name())
 	}
 
 	// Stop state-svc before accessing its files
@@ -114,12 +113,6 @@ func run() error {
 		if exitCode != 0 {
 			return errs.New("Stopping %s exited with code %d", svcInfo.Name(), exitCode)
 		}
-	}
-
-	// Todo: https://www.pivotaltracker.com/story/show/177585085
-	// Yes this is awkward right now
-	if err := stopTrayApp(cfg); err != nil {
-		return errs.Wrap(err, "Failed to stop %s", trayInfo.Name())
 	}
 
 	tmpDir := filepath.Dir(exe)
