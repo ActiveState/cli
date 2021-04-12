@@ -13,6 +13,10 @@ type configurable interface {
 	GetString(key string) string
 	ConfigPath() string
 	CachePath() string
+	GetStringMapStringSlice(key string) map[string][]string
+	AllKeys() []string
+	GetStringSlice(string) []string
+	Set(string, interface{}) error
 }
 
 type Config struct {
@@ -53,5 +57,5 @@ func (c *Config) Run(params *ConfigParams) error {
 	}
 
 	logging.Debug("Removing config directory: %s", c.cfg.ConfigPath())
-	return removeConfig(c.cfg)
+	return removeConfig(c.cfg.ConfigPath())
 }

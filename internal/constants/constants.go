@@ -281,3 +281,6 @@ const StateAppName = "State Tool"
 
 // AutoStartPath is the config key that holds the path to the auto start file
 const AutoStartPath = "auto_start_path"
+
+// InstallPath is the config key that holds the path to the installation dir
+const InstallPath = "install_path"

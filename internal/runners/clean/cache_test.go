@@ -13,14 +13,15 @@ import (
 )
 
 type configMock struct {
-	t          *testing.T
-	cachePath  string
-	configPath string
+	t           *testing.T
+	installPath string
+	cachePath   string
+	configPath  string
 }
 
-func newConfigMock(t *testing.T, cachePath, configPath string) *configMock {
+func newConfigMock(t *testing.T, installPath, cachePath, configPath string) *configMock {
 	return &configMock{
-		t, cachePath, configPath,
+		t, installPath, cachePath, configPath,
 	}
 }
 
@@ -28,6 +29,10 @@ func (c *configMock) Set(key string, value interface{}) error { return nil }
 
 func (c *configMock) GetStringSlice(key string) []string {
 	return []string{}
+}
+
+func (c *configMock) GetString(key string) string {
+	return c.installPath
 }
 
 func (c *configMock) AllKeys() []string {
@@ -60,7 +65,7 @@ func (c *configMock) SkipSave(bool) {
 }
 
 func (suite *CleanTestSuite) TestCache() {
-	runner := newCache(&outputhelper.TestOutputer{}, newConfigMock(suite.T(), "", ""), &confirmMock{confirm: true})
+	runner := newCache(&outputhelper.TestOutputer{}, newConfigMock(suite.T(), "", "", ""), &confirmMock{confirm: true})
 	runner.path = suite.cachePath
 	err := runner.Run(&CacheParams{})
 	suite.Require().NoError(err)
@@ -78,7 +83,7 @@ func (suite *CleanTestSuite) TestCache() {
 }
 
 func (suite *CleanTestSuite) TestCache_PromptNo() {
-	runner := newCache(&outputhelper.TestOutputer{}, newConfigMock(suite.T(), "", ""), &confirmMock{})
+	runner := newCache(&outputhelper.TestOutputer{}, newConfigMock(suite.T(), "", "", ""), &confirmMock{})
 	runner.path = suite.cachePath
 	err := runner.Run(&CacheParams{})
 	suite.Require().NoError(err)
@@ -94,7 +99,7 @@ func (suite *CleanTestSuite) TestCache_Activated() {
 		os.Unsetenv(constants.ActivatedStateEnvVarName)
 	}()
 
-	runner := newCache(&outputhelper.TestOutputer{}, newConfigMock(suite.T(), "", ""), &confirmMock{})
+	runner := newCache(&outputhelper.TestOutputer{}, newConfigMock(suite.T(), "", "", ""), &confirmMock{})
 	runner.path = suite.cachePath
 	err := runner.Run(&CacheParams{})
 	suite.Require().Error(err)

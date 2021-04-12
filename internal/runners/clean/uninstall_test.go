@@ -50,9 +50,8 @@ func (suite *CleanTestSuite) SetupTest() {
 }
 
 func (suite *CleanTestSuite) TestUninstall() {
-	runner, err := newUninstall(&outputhelper.TestOutputer{}, &confirmMock{confirm: true}, newConfigMock(suite.T(), suite.cachePath, suite.configPath))
+	runner, err := newUninstall(&outputhelper.TestOutputer{}, &confirmMock{confirm: true}, newConfigMock(suite.T(), suite.installPath, suite.cachePath, suite.configPath))
 	suite.Require().NoError(err)
-	runner.stateToolInstallPath = suite.installPath
 	err = runner.Run(&UninstallParams{})
 	suite.Require().NoError(err)
 	time.Sleep(2 * time.Second)
@@ -69,7 +68,7 @@ func (suite *CleanTestSuite) TestUninstall() {
 }
 
 func (suite *CleanTestSuite) TestUninstall_PromptNo() {
-	runner, err := newUninstall(&outputhelper.TestOutputer{}, &confirmMock{}, newConfigMock(suite.T(), suite.cachePath, suite.configPath))
+	runner, err := newUninstall(&outputhelper.TestOutputer{}, &confirmMock{}, newConfigMock(suite.T(), suite.installPath, suite.cachePath, suite.configPath))
 	suite.Require().NoError(err)
 	err = runner.Run(&UninstallParams{})
 	suite.Require().NoError(err)
@@ -85,7 +84,7 @@ func (suite *CleanTestSuite) TestUninstall_Activated() {
 		os.Unsetenv(constants.ActivatedStateEnvVarName)
 	}()
 
-	runner, err := newUninstall(&outputhelper.TestOutputer{}, &confirmMock{}, &configMock{suite.T(), suite.cachePath, suite.configPath})
+	runner, err := newUninstall(&outputhelper.TestOutputer{}, &confirmMock{}, &configMock{suite.T(), suite.installPath, suite.cachePath, suite.configPath})
 	suite.Require().NoError(err)
 	err = runner.Run(&UninstallParams{})
 	suite.Require().Error(err)

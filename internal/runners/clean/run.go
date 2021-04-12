@@ -3,6 +3,8 @@ package clean
 import (
 	"os"
 
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 )
 
@@ -12,12 +14,12 @@ func (u *Uninstall) runUninstall() error {
 		return err
 	}
 
-	err = removeStateToolInstall()
+	err = u.removeInstall()
 	if err != nil {
 		return err
 	}
 
-	err = removeConfig(u.cfg)
+	err = removeConfig(u.cfg.ConfigPath())
 	if err != nil {
 		return err
 	}
@@ -34,10 +36,15 @@ func removeCache(cachePath string) error {
 	return nil
 }
 
-func removeAutoStartFile(path string) error {
-	err := os.Remove(path)
+func (u *Uninstall) removeAutoStartFile() error {
+	autoStartPath := u.cfg.GetString(constants.AutoStartPath)
+	if !fileutils.FileExists(autoStartPath) {
+		return nil
+	}
+
+	err := os.Remove(autoStartPath)
 	if err != nil {
-		return locale.WrapError(err, "err_remove_auto_start", "Could not remove auto start file at path: {{.V0}}", path)
+		return locale.WrapError(err, "err_remove_auto_start", "Could not remove auto start file at path: {{.V0}}", autoStartPath)
 	}
 	return nil
 }

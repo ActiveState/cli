@@ -5,30 +5,40 @@ package clean
 import (
 	"os"
 
-	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 )
 
 const (
-	trayInstallPath = "/Applications/state-tray.app"
+	trayAppInstallPath = "/Applications/state-tray.app"
 )
 
-func removeStateTray(cfg configurable) error {
-	autoStartPath := cfg.GetString(constants.AutoStartPath)
-	if autoStartPath != "" {
-		err := removeAutoStartFile(autoStartPath)
-		if err != nil {
-			return err
-		}
+func (u *Uninstall) removeInstall() error {
+	err := u.removeStateTray()
+	if err != nil {
+		return err
 	}
-	return removeTray()
+
+	return u.removeInstallDir()
 }
 
-func removeTray() error {
-	err := os.RemoveAll(trayInstallPath)
+func (u *Uninstall) removeStateTray() error {
+	err := u.removeAutoStartFile()
+	if err != nil {
+		return err
+	}
+
+	return removeTrayApp()
+}
+
+func removeTrayApp() error {
+	if !fileutils.DirExists(trayAppInstallPath) {
+		return nil
+	}
+
+	err := os.RemoveAll(trayAppInstallPath)
 	if err != nil {
 		return locale.WrapError(err, "err_remove_tray", "Could not remove state tray")
 	}
-
 	return nil
 }

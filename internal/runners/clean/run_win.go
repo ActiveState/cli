@@ -16,7 +16,7 @@ func removeConfig(cfg configurable) error {
 	return runScript("removeConfig", cfg.ConfigPath())
 }
 
-func removeStateToolInstall(installPath string) error {
+func removeInstall(installPath string) error {
 	return runScript("removeInstall", installPath)
 }
 

@@ -3,22 +3,19 @@ package clean
 import (
 	"os"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
-	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 type Cache struct {
 	output  output.Outputer
-	config  project.ConfigAble
+	cfg     configurable
 	confirm confirmAble
 	path    string
-	cfg     *config.Instance
 }
 
 type CacheParams struct {
@@ -33,7 +30,7 @@ func NewCache(prime primeable) *Cache {
 func newCache(output output.Outputer, cfg configurable, confirm confirmAble) *Cache {
 	return &Cache{
 		output:  output,
-		config:  cfg,
+		cfg:     cfg,
 		confirm: confirm,
 		path:    cfg.CachePath(),
 	}
@@ -45,7 +42,7 @@ func (c *Cache) Run(params *CacheParams) error {
 	}
 
 	if params.Project != "" {
-		paths := projectfile.GetProjectPaths(c.config, params.Project)
+		paths := projectfile.GetProjectPaths(c.cfg, params.Project)
 
 		for _, projectPath := range paths {
 			err := c.removeProjectCache(projectPath, params.Project, params.Force)
