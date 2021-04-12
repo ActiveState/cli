@@ -7,11 +7,10 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/pkg/project"
 )
 
 type configurable interface {
-	project.ConfigAble
+	GetString(key string) string
 	ConfigPath() string
 	CachePath() string
 }

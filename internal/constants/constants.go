@@ -278,3 +278,6 @@ const TrayAppName = "ActiveState Platform"
 
 // StateAppName is the name we give our state cli executable
 const StateAppName = "State Tool"
+
+// AutoStartPath is the config key that holds the path to the auto start file
+const AutoStartPath = "auto_start_path"

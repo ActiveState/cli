@@ -12,7 +12,7 @@ func (u *Uninstall) runUninstall() error {
 		return err
 	}
 
-	err = removeInstall(u.installPath)
+	err = removeStateToolInstall()
 	if err != nil {
 		return err
 	}
@@ -30,6 +30,14 @@ func removeCache(cachePath string) error {
 	err := os.RemoveAll(cachePath)
 	if err != nil {
 		return locale.WrapError(err, "err_remove_cache", "Could not remove State Tool cache directory")
+	}
+	return nil
+}
+
+func removeAutoStartFile(path string) error {
+	err := os.Remove(path)
+	if err != nil {
+		return locale.WrapError(err, "err_remove_auto_start", "Could not remove auto start file at path: {{.V0}}", path)
 	}
 	return nil
 }

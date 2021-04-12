@@ -5,6 +5,7 @@ package clean
 import (
 	"os"
 
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 )
 
@@ -25,6 +26,11 @@ func removeConfig(cfg configurable) error {
 	return os.RemoveAll(cfg.ConfigPath())
 }
 
-func removeInstall(installPath string) error {
+func removeStateToolInstall() error {
+	installPath, err := os.Executable()
+	if err != nil {
+		return locale.WrapError(err, "err_uninstall_exec_path", "Could not get executable path")
+	}
+
 	return os.Remove(installPath)
 }

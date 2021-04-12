@@ -52,7 +52,7 @@ func (suite *CleanTestSuite) SetupTest() {
 func (suite *CleanTestSuite) TestUninstall() {
 	runner, err := newUninstall(&outputhelper.TestOutputer{}, &confirmMock{confirm: true}, newConfigMock(suite.T(), suite.cachePath, suite.configPath))
 	suite.Require().NoError(err)
-	runner.installPath = suite.installPath
+	runner.stateToolInstallPath = suite.installPath
 	err = runner.Run(&UninstallParams{})
 	suite.Require().NoError(err)
 	time.Sleep(2 * time.Second)
