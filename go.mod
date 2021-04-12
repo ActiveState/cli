@@ -1,6 +1,6 @@
 module github.com/ActiveState/cli
 
-go 1.12
+go 1.15
 
 require (
 	cloud.google.com/go v0.64.0
@@ -22,9 +22,11 @@ require (
 	github.com/dave/jennifer v0.18.0
 	github.com/denisbrodbeck/machineid v0.8.0
 	github.com/dsnet/compress v0.0.0-20171208185109-cc9eb1d7ad76 // indirect
+	github.com/faiface/mainthread v0.0.0-20171120011319-8b78f0a41ae3
 	github.com/fatih/color v1.7.0
 	github.com/felixge/fgprof v0.9.0
 	github.com/fsnotify/fsnotify v1.4.7
+	github.com/gammazero/workerpool v1.1.1
 	github.com/getlantern/systray v1.1.0
 	github.com/go-ini/ini v1.32.0 // indirect
 	github.com/go-ole/go-ole v1.2.4
@@ -60,7 +62,7 @@ require (
 	github.com/mailru/easyjson v0.0.0-20180323154445-8b799c424f57 // indirect
 	github.com/mash/go-tempfile-suffix v0.0.0-20150731093933-48f0f8a3a5ab
 	github.com/matryer/is v1.2.0 // indirect
-	github.com/mattn/go-runewidth v0.0.4
+	github.com/mattn/go-runewidth v0.0.10
 	github.com/mgutz/ansi v0.0.0-20170206155736-9520e82c474b // indirect
 	github.com/mitchellh/go-wordwrap v1.0.0
 	github.com/nicksnyder/go-i18n v1.10.0
@@ -79,14 +81,14 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/objx v0.3.0 // indirect
 	github.com/stretchr/testify v1.6.2-0.20201103103935-92707c0b2d50
-	github.com/thoas/go-funk v0.0.0-20170604141201-14304e8530de
+	github.com/thoas/go-funk v0.8.0
 	github.com/ulikunitz/xz v0.5.4 // indirect
-	github.com/vbauerster/mpb/v4 v4.10.0
+	github.com/vbauerster/mpb/v6 v6.0.2
 	github.com/vektah/gqlparser/v2 v2.1.0
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a
 	golang.org/x/net v0.0.0-20201021035429-f5854403a974
-	golang.org/x/sys v0.0.0-20201201145000-ef89a241ccb3
+	golang.org/x/sys v0.0.0-20210113181707-4bcb84eeeb78
 	golang.org/x/text v0.3.3
 	google.golang.org/genproto v0.0.0-20200815001618-f69a88009b70
 	google.golang.org/grpc v1.36.0 // indirect

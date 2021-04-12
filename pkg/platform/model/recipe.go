@@ -18,7 +18,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory"
 	iop "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
-	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
@@ -50,7 +49,7 @@ func FetchRawRecipeForCommitAndPlatform(commitID strfmt.UUID, owner, project str
 	return fetchRawRecipe(commitID, owner, project, &platform)
 }
 
-func ResolveRecipe(commitID strfmt.UUID, owner, projectName string, project *mono_models.Project) (*inventory_models.Recipe, error) {
+func ResolveRecipe(commitID strfmt.UUID, owner, projectName string) (*inventory_models.Recipe, error) {
 	if commitID == "" {
 		return nil, locale.NewError("err_no_commit", "Missing Commit ID")
 	}

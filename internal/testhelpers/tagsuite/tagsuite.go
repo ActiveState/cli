@@ -50,7 +50,7 @@ const (
 	Scripts       = "scripts"
 	Secrets       = "secrets"
 	Shell         = "shell"
-	Shim          = "shim"
+	Exec          = "exec"
 	Show          = "show"
 	Update        = "update"
 	VSCode        = "vscode"

@@ -2,15 +2,19 @@ package activate
 
 import (
 	"fmt"
+	"os/user"
 	"path/filepath"
+	rt "runtime"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/globaldefault"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/output/txtstyle"
 	"github.com/ActiveState/cli/internal/primer"
@@ -32,7 +36,7 @@ type Activate struct {
 	namespaceSelect  *NamespaceSelect
 	activateCheckout *Checkout
 	out              output.Outputer
-	config           configurable
+	config           *config.Instance
 	proj             *project.Project
 	subshell         subshell.SubShell
 	prompt           prompt.Prompter
@@ -173,37 +177,39 @@ func (r *Activate) run(params *ActivateParams) error {
 		r.subshell.SetActivateCommand(params.Command)
 	}
 
-	runtime, err := runtime.NewRuntime(proj.Source().Path(), r.config.CachePath(), proj.CommitUUID(), proj.Owner(), proj.Name(), runbits.NewRuntimeMessageHandler(r.out))
-	if err != nil {
-		return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
-	}
-
-	venv := virtualenvironment.New(runtime)
-	venv.OnUseCache(func() { r.out.Notice(locale.T("using_cached_env")) })
-
 	// Determine branch name
 	branch := proj.BranchName()
 	if params.Branch != "" {
 		branch = params.Branch
 	}
 
-	err = venv.Setup(true)
+	rt, err := runtime.New(runtime.NewProjectTarget(proj, r.config.CachePath(), nil))
 	if err != nil {
-		if errs.Matches(err, &model.ErrNoMatchingPlatform{}) {
-			branches, err := model.BranchNamesForProjectFiltered(proj.Owner(), proj.Name(), branch)
-			if err == nil && len(branches) > 1 {
-				err = locale.NewInputError("err_activate_platfrom_alternate_branches", "", branch, strings.Join(branches, "\n - "))
-				return errs.AddTips(err, "Run → `[ACTIONABLE]state branch switch <NAME>[/RESET]` to switch branch")
+		if !runtime.IsNeedsUpdateError(err) {
+			return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
+		}
+		if err = rt.Update(runbits.DefaultRuntimeEventHandler(r.out)); err != nil {
+			return locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
+		}
+		if err != nil {
+			if errs.Matches(err, &model.ErrNoMatchingPlatform{}) {
+				branches, err := model.BranchNamesForProjectFiltered(proj.Owner(), proj.Name(), branch)
+				if err == nil && len(branches) > 1 {
+					err = locale.NewInputError("err_activate_platfrom_alternate_branches", "", branch, strings.Join(branches, "\n - "))
+					return errs.AddTips(err, "Run → `[ACTIONABLE]state branch switch <NAME>[/RESET]` to switch branch")
+				}
 			}
+			if !authentication.Get().Authenticated() {
+				return locale.WrapError(err, "error_could_not_activate_venv_auth", "Could not activate project. If this is a private project ensure that you are authenticated.")
+			}
+			return locale.WrapError(err, "err_could_not_activate_venv", "Could not activate project")
 		}
-		if !authentication.Get().Authenticated() {
-			return locale.WrapError(err, "error_could_not_activate_venv_auth", "Could not activate project. If this is a private project ensure that you are authenticated.")
-		}
-		return locale.WrapError(err, "err_could_not_activate_venv", "Could not activate project")
 	}
 
+	venv := virtualenvironment.New(rt)
+
 	if setDefault {
-		err := globaldefault.SetupDefaultActivation(r.subshell, r.config, runtime, filepath.Dir(proj.Source().Path()))
+		err := globaldefault.SetupDefaultActivation(r.subshell, r.config, rt, filepath.Dir(proj.Source().Path()))
 		if err != nil {
 			return locale.WrapError(err, "err_activate_default", "Could not configure your project as the default.")
 		}
@@ -211,7 +217,7 @@ func (r *Activate) run(params *ActivateParams) error {
 		r.out.Notice(output.Heading(locale.Tl("global_default_heading", "Global Default")))
 		r.out.Notice(locale.Tl("global_default_set", "Successfully configured [NOTICE]{{.V0}}[/RESET] as the global default project.", proj.Namespace().String()))
 
-		globaldefault.WarningForAdministrator(r.out)
+		warningForAdministrator(r.out)
 
 		if alreadyActivated {
 			return nil
@@ -289,4 +295,29 @@ func (r *Activate) pathToProject(path string) (*project.Project, error) {
 		return nil, locale.WrapError(err, "err_activate_projectpath", "Could not find a valid project path.")
 	}
 	return projectToUse, nil
+}
+
+// warningForAdministrator prints a warning message if default activation is invoked by a Windows Administrator
+// The default activation will only be accessible by the underlying unprivileged user.
+func warningForAdministrator(out output.Outputer) {
+	if rt.GOOS != "windows" {
+		return
+	}
+
+	isAdmin, err := osutils.IsWindowsAdmin()
+	if err != nil {
+		logging.Error("Failed to determine if run as administrator.")
+	}
+	if isAdmin {
+		u, err := user.Current()
+		if err != nil {
+			logging.Error("Failed to determine current user.")
+			return
+		}
+		out.Notice(locale.Tl(
+			"default_admin_activation_warning",
+			"[NOTICE]The default activation is added to the environment of user {{.V0}}.  The project may be inaccessible when run with Administrator privileges or authenticated as a different user.[/RESET]",
+			u.Username,
+		))
+	}
 }

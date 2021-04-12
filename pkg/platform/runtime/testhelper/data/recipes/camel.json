@@ -1,0 +1,3137 @@
+{
+  "camel_flags": [],
+  "from_recipe_store": false,
+  "image": {
+    "image_id": "4b8b53b0-609b-4a02-865a-0fb2974f9952",
+    "links": {
+      "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/images/4b8b53b0-609b-4a02-865a-0fb2974f9952"
+    },
+    "name": "macos1013-camel-builder",
+    "platform_id": "96b7e6f2-bebf-564c-bc1c-f04482398f38",
+    "type": "Mac",
+    "sortable_version": [
+      "4",
+      "0"
+    ],
+    "version": "4",
+    "provided_features": [],
+    "author_platform_user_id": "e501c7e7-40cc-4b7a-8fc9-f6a3d314c254",
+    "comment": "Added a new revision to add compiler features to images",
+    "is_stable_revision": true,
+    "conditions": [
+      {
+        "feature": "alternative-built-language",
+        "namespace": "language",
+        "requirements": [
+          {
+            "comparator": "eq",
+            "sortable_version": []
+          }
+        ]
+      }
+    ],
+    "status": "stable",
+    "revision": 5,
+    "revision_timestamp": "2020-12-03T22:54:45.160370Z"
+  },
+  "is_indemnified": false,
+  "platform": {
+    "cpu_architecture": {
+      "cpu_architecture_id": "4cdba18d-0851-4925-9ae5-9c8a2987828a",
+      "links": {
+        "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/cpu-architectures/4cdba18d-0851-4925-9ae5-9c8a2987828a"
+      },
+      "bit_width": "64",
+      "name": "x86",
+      "provided_features": [
+        {
+          "feature": "x86 64-bit",
+          "is_activestate_version": false,
+          "is_default_provider": true,
+          "namespace": "cpu-architecture",
+          "sortable_version": [
+            "1",
+            "0"
+          ],
+          "version": "1"
+        }
+      ],
+      "author_platform_user_id": "7f320133-2c9a-476e-9c09-8970ac525a8f",
+      "comment": "Created prior to addition of revision comments.",
+      "is_stable_revision": true,
+      "revision": 1,
+      "revision_timestamp": "2019-08-06T21:46:35.288458Z"
+    },
+    "cpu_extensions": [],
+    "creation_timestamp": "2019-08-06T21:46:35.288458Z",
+    "display_name": "macOS 10.12.6, Darwin 16.6.0, libSystem 1238.60.2 x86 64-bit",
+    "end_of_support_date": "2030-02-03",
+    "images": [
+      {
+        "image_id": "4b8b53b0-609b-4a02-865a-0fb2974f9952",
+        "links": {
+          "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/images/4b8b53b0-609b-4a02-865a-0fb2974f9952"
+        },
+        "name": "macos1013-camel-builder",
+        "platform_id": "96b7e6f2-bebf-564c-bc1c-f04482398f38",
+        "type": "Mac",
+        "sortable_version": [
+          "4",
+          "0"
+        ],
+        "version": "4",
+        "provided_features": [
+          {
+            "feature": "clang",
+            "is_activestate_version": false,
+            "is_default_provider": true,
+            "namespace": "compiler",
+            "sortable_version": [
+              "1000",
+              "10",
+              "44",
+              "4",
+              "0"
+            ],
+            "version": "1000.10.44.4"
+          },
+          {
+            "feature": "ISO C++03",
+            "is_activestate_version": true,
+            "is_default_provider": true,
+            "namespace": "compiler",
+            "sortable_version": [
+              "0",
+              "0"
+            ],
+            "version": "0"
+          },
+          {
+            "feature": "ISO C11",
+            "is_activestate_version": true,
+            "is_default_provider": true,
+            "namespace": "compiler",
+            "sortable_version": [
+              "0",
+              "0"
+            ],
+            "version": "0"
+          },
+          {
+            "feature": "ISO C++11",
+            "is_activestate_version": true,
+            "is_default_provider": true,
+            "namespace": "compiler",
+            "sortable_version": [
+              "0",
+              "0"
+            ],
+            "version": "0"
+          },
+          {
+            "feature": "ISO C++14",
+            "is_activestate_version": true,
+            "is_default_provider": true,
+            "namespace": "compiler",
+            "sortable_version": [
+              "0",
+              "0"
+            ],
+            "version": "0"
+          },
+          {
+            "feature": "ISO C++17",
+            "is_activestate_version": true,
+            "is_default_provider": true,
+            "namespace": "compiler",
+            "sortable_version": [
+              "0",
+              "0"
+            ],
+            "version": "0"
+          },
+          {
+            "feature": "ISO C89",
+            "is_activestate_version": true,
+            "is_default_provider": true,
+            "namespace": "compiler",
+            "sortable_version": [
+              "0",
+              "0"
+            ],
+            "version": "0"
+          },
+          {
+            "feature": "ISO C++98",
+            "is_activestate_version": true,
+            "is_default_provider": true,
+            "namespace": "compiler",
+            "sortable_version": [
+              "0",
+              "0"
+            ],
+            "version": "0"
+          },
+          {
+            "feature": "ISO C99",
+            "is_activestate_version": true,
+            "is_default_provider": true,
+            "namespace": "compiler",
+            "sortable_version": [
+              "0",
+              "0"
+            ],
+            "version": "0"
+          }
+        ],
+        "author_platform_user_id": "e501c7e7-40cc-4b7a-8fc9-f6a3d314c254",
+        "comment": "Added a new revision to add compiler features to images",
+        "is_stable_revision": true,
+        "conditions": [
+          {
+            "feature": "alternative-built-language",
+            "namespace": "language",
+            "requirements": [
+              {
+                "comparator": "eq",
+                "sortable_version": []
+              }
+            ]
+          }
+        ],
+        "status": "stable",
+        "revision": 5,
+        "revision_timestamp": "2020-12-03T22:54:45.160370Z"
+      }
+    ],
+    "is_user_visible": true,
+    "kernel": {
+      "kernel_id": "7d600f8a-bc24-4875-a09c-8e63c4da078c",
+      "links": {
+        "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/kernels/7d600f8a-bc24-4875-a09c-8e63c4da078c"
+      },
+      "name": "Darwin"
+    },
+    "kernel_version": {
+      "kernel_version_id": "e7d8c941-4dfd-49fe-81f7-5bb90df0edd9",
+      "links": {
+        "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/kernels/7d600f8a-bc24-4875-a09c-8e63c4da078c/versions/e7d8c941-4dfd-49fe-81f7-5bb90df0edd9"
+      },
+      "sortable_version": [
+        "16",
+        "6",
+        "0",
+        "0"
+      ],
+      "version": "16.6.0",
+      "provided_features": [
+        {
+          "feature": "Darwin",
+          "is_activestate_version": false,
+          "is_default_provider": true,
+          "namespace": "kernel",
+          "sortable_version": [
+            "16",
+            "6",
+            "0",
+            "0"
+          ],
+          "version": "16.6.0"
+        }
+      ],
+      "author_platform_user_id": "7f320133-2c9a-476e-9c09-8970ac525a8f",
+      "comment": "Created prior to addition of revision comments.",
+      "is_stable_revision": true,
+      "revision": 1,
+      "revision_timestamp": "2019-08-06T21:46:35.288458Z"
+    },
+    "libc": {
+      "libc_id": "669bbbe3-1f57-48d3-a11e-018780809b4a",
+      "links": {
+        "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/libcs/669bbbe3-1f57-48d3-a11e-018780809b4a"
+      },
+      "name": "libSystem"
+    },
+    "libc_version": {
+      "libc_version_id": "6e0f402c-3837-4d73-a36c-9cd4ace9d002",
+      "links": {
+        "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/libcs/669bbbe3-1f57-48d3-a11e-018780809b4a/versions/6e0f402c-3837-4d73-a36c-9cd4ace9d002"
+      },
+      "sortable_version": [
+        "1238",
+        "60",
+        "2",
+        "0"
+      ],
+      "version": "1238.60.2",
+      "provided_features": [
+        {
+          "feature": "libSystem",
+          "is_activestate_version": false,
+          "is_default_provider": true,
+          "namespace": "libc",
+          "sortable_version": [
+            "1238",
+            "60",
+            "2",
+            "0"
+          ],
+          "version": "1238.60.2"
+        }
+      ],
+      "author_platform_user_id": "7f320133-2c9a-476e-9c09-8970ac525a8f",
+      "comment": "Created prior to addition of revision comments.",
+      "is_stable_revision": true,
+      "revision": 1,
+      "revision_timestamp": "2019-08-06T21:46:35.288458Z"
+    },
+    "links": {
+      "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/platforms/96b7e6f2-bebf-564c-bc1c-f04482398f38"
+    },
+    "operating_system": {
+      "links": {
+        "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/operating-systems/63d8f1cc-5f5c-47e1-bab0-74d38938d919"
+      },
+      "operating_system_id": "63d8f1cc-5f5c-47e1-bab0-74d38938d919",
+      "has_libc": true,
+      "name": "macOS"
+    },
+    "operating_system_version": {
+      "links": {
+        "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/operating-systems/63d8f1cc-5f5c-47e1-bab0-74d38938d919/versions/da15b51d-12d8-484d-8006-cc5f93198817"
+      },
+      "operating_system_version_id": "da15b51d-12d8-484d-8006-cc5f93198817",
+      "sortable_version": [
+        "10",
+        "12",
+        "6",
+        "0"
+      ],
+      "version": "10.12.6",
+      "provided_features": [
+        {
+          "feature": "macOS",
+          "is_activestate_version": false,
+          "is_default_provider": true,
+          "namespace": "operating-system",
+          "sortable_version": [
+            "10",
+            "12",
+            "6",
+            "0"
+          ],
+          "version": "10.12.6"
+        }
+      ],
+      "author_platform_user_id": "7f320133-2c9a-476e-9c09-8970ac525a8f",
+      "comment": "Created prior to addition of revision comments.",
+      "is_stable_revision": true,
+      "revision": 1,
+      "revision_timestamp": "2019-08-06T21:46:35.288458Z"
+    },
+    "platform_id": "96b7e6f2-bebf-564c-bc1c-f04482398f38"
+  },
+  "recipe_id": "0adc81a2-760d-5577-9827-309c9c9c645f",
+  "resolved_ingredients": [
+    {
+      "alternatives": [],
+      "artifact_id": "e8a2b6cc-19de-5b87-bb84-8ba67039aa79",
+      "build_scripts": null,
+      "dependencies": [],
+      "ingredient": {
+        "creation_timestamp": "2019-10-21T19:16:38.749062Z",
+        "ingredient_id": "20816534-c073-5d68-9eb7-11c1d6be09f5",
+        "links": {
+          "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/ingredients/20816534-c073-5d68-9eb7-11c1d6be09f5"
+        },
+        "name": "camel",
+        "normalized_name": "camel",
+        "primary_namespace": "builder",
+        "description": "The camel unified build system",
+        "website": "https://platform.activestate.com"
+      },
+      "ingredient_options": null,
+      "ingredient_version": {
+        "creation_timestamp": "2021-02-16T17:50:29.599906Z",
+        "ingredient_id": "20816534-c073-5d68-9eb7-11c1d6be09f5",
+        "ingredient_version_id": "c6688f9c-b7bc-5f6e-a1f3-903ae5b8d0bc",
+        "links": {
+          "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/ingredients/20816534-c073-5d68-9eb7-11c1d6be09f5/versions/c6688f9c-b7bc-5f6e-a1f3-903ae5b8d0bc",
+          "ingredient": "https://platform.activestate.com/sv/inventory-api-v1/v1/ingredients/20816534-c073-5d68-9eb7-11c1d6be09f5"
+        },
+        "revision": 1,
+        "revision_timestamp": "2021-02-16T17:50:29.599906Z",
+        "copyright_text": "Copyright © ActiveState Inc, 2004-2020",
+        "documentation_uri": "https://github.com/ActiveState/camel/tree/3d46a065883c88b560d67edf7ea1f96bef125ae6/docs",
+        "is_binary_only": false,
+        "license_expression": "UNLICENSED",
+        "release_timestamp": "2021-02-16T17:50:24.296928Z",
+        "source_uri": "https://github.com/ActiveState/camel/tree/3d46a065883c88b560d67edf7ea1f96bef125ae6",
+        "sortable_version": [
+          "20210216",
+          "125023",
+          "3",
+          "100",
+          "46",
+          "97",
+          "65",
+          "0"
+        ],
+        "version": "20210216.125023.3d46a065",
+        "activestate_license_expression": "UNLICENSED",
+        "camel_extras": {},
+        "dependencies": null,
+        "ingredient_options": null,
+        "is_indemnified": true,
+        "is_stable_release": true,
+        "platform_source_uri": "s3://INVALID",
+        "scanner_license_expression": "UNLICENSED",
+        "source_checksum": "3d46a065883c88b560d67edf7ea1f96bef125ae6",
+        "status": "stable",
+        "provided_features": [
+          {
+            "feature": "camel",
+            "is_activestate_version": false,
+            "is_default_provider": true,
+            "namespace": "builder",
+            "sortable_version": [
+              "20210216",
+              "125023",
+              "3",
+              "100",
+              "46",
+              "97",
+              "65",
+              "0"
+            ],
+            "version": "20210216.125023.3d46a065"
+          }
+        ],
+        "author_platform_user_id": "8fd0aa9c-0483-4ee7-9197-96c9194c0318",
+        "comment": "Camel commit.",
+        "is_stable_revision": true
+      },
+      "patches": null,
+      "resolved_requirements": []
+    },
+    {
+      "alternatives": [],
+      "artifact_id": "bdd5642b-928c-5770-9e12-5816c9676960",
+      "build_scripts": null,
+      "dependencies": [
+        {
+          "dependency_types": [
+            "build"
+          ],
+          "ingredient_version_id": "06b8597a-4cc1-5e3c-b548-f0baa7861688"
+        },
+        {
+          "dependency_types": [
+            "build"
+          ],
+          "ingredient_version_id": "3bde6cf9-2445-563f-8e65-1437d1737a8f"
+        },
+        {
+          "dependency_types": [
+            "build"
+          ],
+          "ingredient_version_id": "491568f3-50a4-56f6-a971-580eaa99715f"
+        },
+        {
+          "dependency_types": [
+            "build"
+          ],
+          "ingredient_version_id": "54cbf7c2-c87c-51b5-a2cc-72b3b284d68c"
+        },
+        {
+          "dependency_types": [
+            "build"
+          ],
+          "ingredient_version_id": "8d5d63b0-e941-59a3-8653-35470bd70056"
+        },
+        {
+          "dependency_types": [
+            "build"
+          ],
+          "ingredient_version_id": "a45dc564-3e7d-5b43-b2b3-2a941b0f5807"
+        },
+        {
+          "dependency_types": [
+            "build"
+          ],
+          "ingredient_version_id": "a61c1442-98a0-576c-b606-3046b22c3413"
+        },
+        {
+          "dependency_types": [
+            "build"
+          ],
+          "ingredient_version_id": "b0d9a189-aedb-5461-b872-5e643ac97551"
+        },
+        {
+          "dependency_types": [
+            "build"
+          ],
+          "ingredient_version_id": "c3b7c513-8be8-56d9-8d30-b19e9c56e393"
+        },
+        {
+          "dependency_types": [
+            "build"
+          ],
+          "ingredient_version_id": "c6688f9c-b7bc-5f6e-a1f3-903ae5b8d0bc"
+        }
+      ],
+      "ingredient": {
+        "creation_timestamp": "2019-10-01T17:06:08.287941Z",
+        "ingredient_id": "161a6a17-6b8a-54c9-a476-2c8c960b054e",
+        "links": {
+          "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/ingredients/161a6a17-6b8a-54c9-a476-2c8c960b054e"
+        },
+        "name": "python",
+        "normalized_name": "python",
+        "primary_namespace": "language",
+        "description": "It's just a flesh wound!"
+      },
+      "ingredient_options": null,
+      "ingredient_version": {
+        "creation_timestamp": "2019-10-01T17:06:08.287941Z",
+        "ingredient_id": "161a6a17-6b8a-54c9-a476-2c8c960b054e",
+        "ingredient_version_id": "be4744a4-89a6-58bb-b345-d15468657076",
+        "links": {
+          "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/ingredients/161a6a17-6b8a-54c9-a476-2c8c960b054e/versions/be4744a4-89a6-58bb-b345-d15468657076",
+          "ingredient": "https://platform.activestate.com/sv/inventory-api-v1/v1/ingredients/161a6a17-6b8a-54c9-a476-2c8c960b054e"
+        },
+        "revision": 13,
+        "revision_timestamp": "2020-12-08T19:15:07.163109Z",
+        "copyright_text": "To be added.",
+        "is_binary_only": false,
+        "license_expression": "Unknown",
+        "release_timestamp": "1970-01-01T00:00:00.000000Z",
+        "source_uri": "https://s3.amazonaws.com/camel-sources/src/ActivePython/vendor/Python-3.7.4.tgz",
+        "sortable_version": [
+          "0",
+          "3",
+          "7",
+          "4",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        "version": "3.7.4",
+        "activestate_license_expression": "unknown",
+        "camel_extras": {},
+        "dependencies": [
+          {
+            "conditions": [
+              {
+                "feature": "Windows",
+                "namespace": "kernel",
+                "requirements": [
+                  {
+                    "comparator": "gte",
+                    "sortable_version": [
+                      "0",
+                      "0"
+                    ],
+                    "version": "0"
+                  }
+                ]
+              }
+            ],
+            "feature": "windows-python-core-openssl",
+            "namespace": "language/python",
+            "requirements": [
+              {
+                "comparator": "gte",
+                "sortable_version": [
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0"
+                ],
+                "version": "0"
+              }
+            ],
+            "type": "build"
+          },
+          {
+            "conditions": [
+              {
+                "feature": "Linux",
+                "namespace": "kernel",
+                "requirements": [
+                  {
+                    "comparator": "gte",
+                    "sortable_version": [
+                      "0",
+                      "0"
+                    ],
+                    "version": "0"
+                  }
+                ]
+              }
+            ],
+            "feature": "lzma",
+            "namespace": "shared",
+            "requirements": [
+              {
+                "comparator": "eq",
+                "sortable_version": [
+                  "5",
+                  "2",
+                  "4",
+                  "0"
+                ],
+                "version": "5.2.4"
+              }
+            ],
+            "type": "build"
+          },
+          {
+            "conditions": [
+              {
+                "feature": "Windows",
+                "namespace": "kernel",
+                "requirements": [
+                  {
+                    "comparator": "eq",
+                    "sortable_version": []
+                  }
+                ]
+              }
+            ],
+            "feature": "tk",
+            "namespace": "shared",
+            "requirements": [
+              {
+                "comparator": "eq",
+                "sortable_version": [
+                  "8",
+                  "6",
+                  "8",
+                  "0"
+                ],
+                "version": "8.6.8"
+              }
+            ],
+            "type": "build"
+          },
+          {
+            "conditions": [
+              {
+                "feature": "AIX",
+                "namespace": "kernel",
+                "requirements": [
+                  {
+                    "comparator": "eq",
+                    "sortable_version": []
+                  }
+                ]
+              },
+              {
+                "feature": "Windows",
+                "namespace": "kernel",
+                "requirements": [
+                  {
+                    "comparator": "eq",
+                    "sortable_version": []
+                  }
+                ]
+              }
+            ],
+            "feature": "sqlite3",
+            "namespace": "shared",
+            "requirements": [
+              {
+                "comparator": "eq",
+                "sortable_version": [
+                  "3",
+                  "15",
+                  "2",
+                  "0"
+                ],
+                "version": "3.15.2"
+              }
+            ],
+            "type": "build"
+          },
+          {
+            "conditions": [
+              {
+                "feature": "Windows",
+                "namespace": "kernel",
+                "requirements": [
+                  {
+                    "comparator": "eq",
+                    "sortable_version": []
+                  }
+                ]
+              }
+            ],
+            "feature": "bzip2",
+            "namespace": "shared",
+            "requirements": [
+              {
+                "comparator": "eq",
+                "sortable_version": [
+                  "1",
+                  "0",
+                  "6",
+                  "0"
+                ],
+                "version": "1.0.6"
+              }
+            ],
+            "type": "build"
+          },
+          {
+            "conditions": null,
+            "description": "All ingredients have a build-time dependency on the camel build system",
+            "feature": "camel",
+            "namespace": "builder",
+            "requirements": [
+              {
+                "comparator": "gte",
+                "sortable_version": [
+                  "0",
+                  "0"
+                ],
+                "version": "0"
+              }
+            ],
+            "type": "build"
+          },
+          {
+            "conditions": [
+              {
+                "feature": "Windows",
+                "namespace": "kernel",
+                "requirements": [
+                  {
+                    "comparator": "eq",
+                    "sortable_version": []
+                  }
+                ]
+              }
+            ],
+            "feature": "expat",
+            "namespace": "shared",
+            "requirements": [
+              {
+                "comparator": "gte",
+                "sortable_version": [
+                  "2",
+                  "2",
+                  "7",
+                  "0"
+                ],
+                "version": "2.2.7"
+              }
+            ],
+            "type": "build"
+          },
+          {
+            "conditions": [
+              {
+                "feature": "Windows",
+                "namespace": "kernel",
+                "requirements": [
+                  {
+                    "comparator": "eq",
+                    "sortable_version": []
+                  }
+                ]
+              }
+            ],
+            "feature": "tix",
+            "namespace": "shared",
+            "requirements": [
+              {
+                "comparator": "gte",
+                "sortable_version": [
+                  "8",
+                  "4",
+                  "3",
+                  "0"
+                ],
+                "version": "8.4.3"
+              }
+            ],
+            "type": "build"
+          },
+          {
+            "conditions": [
+              {
+                "feature": "Windows",
+                "namespace": "kernel",
+                "requirements": [
+                  {
+                    "comparator": "gte",
+                    "sortable_version": [
+                      "0.0",
+                      "0.0"
+                    ],
+                    "version": "0"
+                  }
+                ]
+              }
+            ],
+            "description": "The python language requires a compiler to build",
+            "feature": "Visual Studio",
+            "namespace": "compiler",
+            "requirements": [
+              {
+                "comparator": "lt",
+                "sortable_version": [
+                  "15.0",
+                  "0.0"
+                ],
+                "version": "15"
+              },
+              {
+                "comparator": "gte",
+                "sortable_version": [
+                  "14.0",
+                  "0.0"
+                ],
+                "version": "14"
+              }
+            ],
+            "type": "build"
+          },
+          {
+            "conditions": [
+              {
+                "feature": "Windows",
+                "namespace": "kernel",
+                "requirements": [
+                  {
+                    "comparator": "eq",
+                    "sortable_version": []
+                  }
+                ]
+              }
+            ],
+            "feature": "tcl",
+            "namespace": "shared",
+            "requirements": [
+              {
+                "comparator": "eq",
+                "sortable_version": [
+                  "8",
+                  "6",
+                  "8",
+                  "0"
+                ],
+                "version": "8.6.8"
+              }
+            ],
+            "type": "build"
+          },
+          {
+            "conditions": [
+              {
+                "feature": "Windows",
+                "namespace": "kernel",
+                "requirements": [
+                  {
+                    "comparator": "eq",
+                    "sortable_version": []
+                  }
+                ]
+              }
+            ],
+            "feature": "openssl",
+            "namespace": "shared",
+            "requirements": [
+              {
+                "comparator": "gte",
+                "sortable_version": [
+                  "1",
+                  "11",
+                  "0",
+                  "0",
+                  "0"
+                ],
+                "version": "1.11.0.0"
+              }
+            ],
+            "type": "build"
+          },
+          {
+            "conditions": [
+              {
+                "feature": "Windows",
+                "namespace": "kernel",
+                "requirements": [
+                  {
+                    "comparator": "eq",
+                    "sortable_version": []
+                  }
+                ]
+              }
+            ],
+            "feature": "zlib",
+            "namespace": "shared",
+            "requirements": [
+              {
+                "comparator": "eq",
+                "sortable_version": [
+                  "1",
+                  "2",
+                  "11",
+                  "0"
+                ],
+                "version": "1.2.11"
+              }
+            ],
+            "type": "build"
+          },
+          {
+            "conditions": null,
+            "description": "The python language requires a compiler to build",
+            "feature": "ISO C89",
+            "namespace": "compiler",
+            "requirements": [
+              {
+                "comparator": "gte",
+                "sortable_version": [
+                  "0.0"
+                ],
+                "version": "0"
+              }
+            ],
+            "type": "build"
+          },
+          {
+            "conditions": [
+              {
+                "feature": "Windows",
+                "namespace": "kernel",
+                "requirements": [
+                  {
+                    "comparator": "eq",
+                    "sortable_version": []
+                  }
+                ]
+              }
+            ],
+            "feature": "bsddb",
+            "namespace": "shared",
+            "requirements": [
+              {
+                "comparator": "eq",
+                "sortable_version": [
+                  "4",
+                  "4",
+                  "20",
+                  "0"
+                ],
+                "version": "4.4.20"
+              }
+            ],
+            "type": "build"
+          }
+        ],
+        "ingredient_options": null,
+        "is_indemnified": true,
+        "is_stable_release": true,
+        "platform_source_uri": "s3://platform-sources/languages/d63e63e14e6d29e17490abbe6f7d17afb3db182dbd801229f14e55f4157c4ba3/Python-3.7.4.tgz",
+        "scanner_license_expression": "unknown",
+        "source_checksum": "d63e63e14e6d29e17490abbe6f7d17afb3db182dbd801229f14e55f4157c4ba3",
+        "status": "stable",
+        "provided_features": [
+          {
+            "feature": "python",
+            "is_activestate_version": false,
+            "is_default_provider": true,
+            "namespace": "language",
+            "sortable_version": [
+              "0",
+              "3",
+              "7",
+              "4",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0"
+            ],
+            "version": "3.7.4"
+          },
+          {
+            "feature": "pip",
+            "is_activestate_version": false,
+            "is_default_provider": true,
+            "namespace": "language/python",
+            "sortable_version": [
+              "0",
+              "18",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0"
+            ],
+            "version": "18.0"
+          },
+          {
+            "feature": "setuptools",
+            "is_activestate_version": false,
+            "is_default_provider": true,
+            "namespace": "language/python",
+            "sortable_version": [
+              "0",
+              "40",
+              "8",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0"
+            ],
+            "version": "40.8.0"
+          }
+        ],
+        "author_platform_user_id": "ddfb4cc7-4a50-45a5-a6a5-1336b3ad1ef2",
+        "comment": "Created prior to addition of revision comments.",
+        "is_stable_revision": true
+      },
+      "patches": [
+        {
+          "creation_timestamp": "2020-08-31T18:14:54.204215Z",
+          "links": {
+            "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/patches/8869b8cc-11d5-43cf-8d4d-0c93ada5dba3"
+          },
+          "patch_id": "8869b8cc-11d5-43cf-8d4d-0c93ada5dba3",
+          "conditions": null,
+          "content": "s3://platform-sources/patches/7ddd664c4f000ae9c38e8730add4cd501514439c400ae3b78f76d68be2881c47.patch",
+          "description": "From 6299dd58bb662ebd801d6d86f82ade7f533b692b Mon Sep 17 00:00:00 2001\nFrom: Ashley Whetter <ashleyw@activestate.com>\nDate: Thu, 2 Jan 2020 08:57:44 -0800\nSubject: [PATCH] v3.7.4 patched from apy/3.7/*\n\nd057759576 activepython: Merge tag 'v3.7.4' into apy/3.7/activepython\n839b605c44 activepython: Add changes needed for V3.7\nd057759576 nix: Merge tag 'v3.7.4' into apy/3.7/activepython\n839b605c44 nix: Add changes needed for V3.7\n738a9121c4 win32: Compile openssl from source and build against it\n78c745359f win32: Revert \"Support downloading externals directly from cpython-bin-deps\"\n16ebbdc015 win32: Support downloading externals directly from cpython-bin-deps\n04e6fc4fcf win32: Can override version of openssl\n54d8f0462c win32: Support downloading externals directly from cpython-source-deps\nd2745843cf win32: Build against OpenSSL sources\n9309e799e8 win32: bump versions for tcl, tk, openssl and remove commands that are no longer used\nddf9c43ece win32: Merge branch 'apy/3.7/activepython' into apy/3.7/win32\nd057759576 win32: Merge tag 'v3.7.4' into apy/3.7/activepython\n839b605c44 win32: Add changes needed for V3.7\n7b3d6b9d7e win32: Update OpenSSL to 1.1.0k\n5b9627c322 win32: Add tcl 8.6.8 and openssl 1.1.0j to 3.7\n69570872c7 win32: Upgrade sqlite3 to 3.24.0.0\n0de3cf0acd win32: Set tcltk and openssl bins\n1ce01cc66a win32: Remove bin from openssl tarball name\nbaa340b145 win32: Add zlib to list of files to get for Windows\n81257a43c7 win32: Add AS specific build scripts for building",
+          "sequence_number": 1
+        },
+        {
+          "creation_timestamp": "2020-08-31T18:14:54.492940Z",
+          "links": {
+            "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/patches/80bef92b-2971-49b3-b5c5-448230d0675e"
+          },
+          "patch_id": "80bef92b-2971-49b3-b5c5-448230d0675e",
+          "conditions": null,
+          "content": "python-3.7.4-python.props.patch",
+          "description": "HEAD~1 patched from activepython/3.7/*",
+          "sequence_number": 2
+        }
+      ],
+      "resolved_requirements": [
+        {
+          "feature": "python",
+          "namespace": "language",
+          "version_requirements": [
+            {
+              "comparator": "eq",
+              "version": "3.7.4"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "alternatives": [],
+      "artifact_id": "decfc04f-5770-5663-8d00-e029402e6917",
+      "build_scripts": null,
+      "dependencies": [
+        {
+          "dependency_types": [
+            "build"
+          ],
+          "ingredient_version_id": "806b06ad-3f32-52e1-aecb-677759ce8c74"
+        },
+        {
+          "dependency_types": [
+            "build",
+            "runtime",
+            "test"
+          ],
+          "ingredient_version_id": "be4744a4-89a6-58bb-b345-d15468657076"
+        },
+        {
+          "dependency_types": [
+            "build"
+          ],
+          "ingredient_version_id": "c6688f9c-b7bc-5f6e-a1f3-903ae5b8d0bc"
+        }
+      ],
+      "ingredient": {
+        "creation_timestamp": "2020-10-18T02:02:00.611863Z",
+        "ingredient_id": "39750e64-e0bf-5a97-9caa-d6ec8ec8c456",
+        "links": {
+          "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/ingredients/39750e64-e0bf-5a97-9caa-d6ec8ec8c456"
+        },
+        "name": "json2",
+        "normalized_name": "json2",
+        "primary_namespace": "language/python",
+        "description": "# Logfast\n\n## Purpose\nPython package which just wraps the default python json but with.\n```json2.load_file``` and ```json2.save_file```\n\n## Installation\n\n```pip install json2```\n\n## Usage\n\n```\nimport ...",
+        "website": "https://github.com/ThoenigAdrian/json2"
+      },
+      "ingredient_options": null,
+      "ingredient_version": {
+        "creation_timestamp": "2020-10-23T02:19:24.740864Z",
+        "ingredient_id": "39750e64-e0bf-5a97-9caa-d6ec8ec8c456",
+        "ingredient_version_id": "a30e7169-d1b8-5f34-b50b-6be74d369e9c",
+        "links": {
+          "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/ingredients/39750e64-e0bf-5a97-9caa-d6ec8ec8c456/versions/a30e7169-d1b8-5f34-b50b-6be74d369e9c",
+          "ingredient": "https://platform.activestate.com/sv/inventory-api-v1/v1/ingredients/39750e64-e0bf-5a97-9caa-d6ec8ec8c456"
+        },
+        "revision": 1,
+        "revision_timestamp": "2020-10-23T02:19:24.740864Z",
+        "copyright_text": "Could not be determined",
+        "is_binary_only": false,
+        "license_expression": "UNKNOWN",
+        "release_timestamp": "2020-10-18T21:56:38.000000Z",
+        "source_uri": "https://files.pythonhosted.org/packages/91/2a/ec4045f29cacf6eb06c8b7577ce783149d5ec0349c2959937fe867124cfa/json2-0.4.0.tar.gz",
+        "sortable_version": [
+          "0",
+          "0",
+          "4",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        "version": "0.4.0",
+        "activestate_license_expression": "unknown",
+        "camel_extras": {},
+        "dependencies": [
+          {
+            "conditions": null,
+            "description": "Extracted from source distribution in PyPI.",
+            "feature": "wheel",
+            "namespace": "language/python",
+            "original_requirement": "wheel",
+            "requirements": [
+              {
+                "comparator": "gte",
+                "sortable_version": [
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0"
+                ],
+                "version": "0"
+              }
+            ],
+            "type": "build"
+          },
+          {
+            "conditions": null,
+            "description": "Extracted from source distribution in PyPI.",
+            "feature": "python",
+            "namespace": "language",
+            "original_requirement": "python >=0",
+            "requirements": [
+              {
+                "comparator": "gte",
+                "sortable_version": [
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0"
+                ],
+                "version": "0"
+              }
+            ],
+            "type": "runtime"
+          },
+          {
+            "conditions": null,
+            "description": "Extracted from source distribution in PyPI.",
+            "feature": "python",
+            "namespace": "language",
+            "original_requirement": "python >=0",
+            "requirements": [
+              {
+                "comparator": "gte",
+                "sortable_version": [
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0"
+                ],
+                "version": "0"
+              }
+            ],
+            "type": "build"
+          },
+          {
+            "conditions": null,
+            "feature": "camel",
+            "namespace": "builder",
+            "requirements": [
+              {
+                "comparator": "gte",
+                "sortable_version": [
+                  "0",
+                  "0"
+                ],
+                "version": "0"
+              }
+            ],
+            "type": "build"
+          },
+          {
+            "conditions": null,
+            "description": "Extracted from source distribution in PyPI.",
+            "feature": "python",
+            "namespace": "language",
+            "original_requirement": "python >=0",
+            "requirements": [
+              {
+                "comparator": "gte",
+                "sortable_version": [
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0"
+                ],
+                "version": "0"
+              }
+            ],
+            "type": "test"
+          }
+        ],
+        "ingredient_options": null,
+        "is_indemnified": false,
+        "is_stable_release": true,
+        "platform_source_uri": "s3://platform-sources/data-acquisition/eab80bdfcc30fd0ee934c3c67a959d76ea1a45a629c4c10cdf6f8078c6224fc8/json2-0.4.0.tar.gz",
+        "scanner_license_expression": "unknown",
+        "source_checksum": "eab80bdfcc30fd0ee934c3c67a959d76ea1a45a629c4c10cdf6f8078c6224fc8",
+        "status": "stable",
+        "provided_features": [
+          {
+            "feature": "json2",
+            "is_activestate_version": false,
+            "is_default_provider": true,
+            "namespace": "language/python",
+            "sortable_version": [
+              "0",
+              "0",
+              "4",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0"
+            ],
+            "version": "0.4.0"
+          }
+        ],
+        "author_platform_user_id": "2e044215-1b51-498f-a440-ae0cc11bdd4c",
+        "comment": "Data Acquisition import run with commit ID abef5908904fe908ad93c6140e56044dd4b47f72 and reason: Automated sync of newly whitelisted language/python ingredient versions",
+        "is_stable_revision": true
+      },
+      "patches": null,
+      "resolved_requirements": [
+        {
+          "feature": "json2",
+          "namespace": "language/python",
+          "version_requirements": null
+        }
+      ]
+    },
+    {
+      "alternatives": [],
+      "artifact_id": "e6997088-7854-5498-8c57-afbe4343036a",
+      "build_scripts": null,
+      "dependencies": [
+        {
+          "dependency_types": [
+            "build",
+            "runtime",
+            "test"
+          ],
+          "ingredient_version_id": "be4744a4-89a6-58bb-b345-d15468657076"
+        },
+        {
+          "dependency_types": [
+            "build"
+          ],
+          "ingredient_version_id": "c6688f9c-b7bc-5f6e-a1f3-903ae5b8d0bc"
+        }
+      ],
+      "ingredient": {
+        "creation_timestamp": "2019-10-01T17:08:07.349831Z",
+        "ingredient_id": "9d592341-b78d-5e0f-b7ee-83b4533441b2",
+        "links": {
+          "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/ingredients/9d592341-b78d-5e0f-b7ee-83b4533441b2"
+        },
+        "name": "wheel",
+        "normalized_name": "wheel",
+        "primary_namespace": "language/python",
+        "description": "The wheel package"
+      },
+      "ingredient_options": null,
+      "ingredient_version": {
+        "creation_timestamp": "2020-11-13T23:46:48.685681Z",
+        "ingredient_id": "9d592341-b78d-5e0f-b7ee-83b4533441b2",
+        "ingredient_version_id": "806b06ad-3f32-52e1-aecb-677759ce8c74",
+        "links": {
+          "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/ingredients/9d592341-b78d-5e0f-b7ee-83b4533441b2/versions/806b06ad-3f32-52e1-aecb-677759ce8c74",
+          "ingredient": "https://platform.activestate.com/sv/inventory-api-v1/v1/ingredients/9d592341-b78d-5e0f-b7ee-83b4533441b2"
+        },
+        "revision": 3,
+        "revision_timestamp": "2020-11-20T23:08:03.168261Z",
+        "copyright_text": "Could not be determined",
+        "is_binary_only": false,
+        "license_expression": "UNKNOWN",
+        "release_timestamp": "2020-08-15T02:23:59.000000Z",
+        "source_uri": "https://files.pythonhosted.org/packages/83/72/611c121b6bd15479cb62f1a425b2e3372e121b324228df28e64cc28b01c2/wheel-0.35.1.tar.gz",
+        "sortable_version": [
+          "0",
+          "0",
+          "35",
+          "1",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        "version": "0.35.1",
+        "activestate_license_expression": "unknown",
+        "camel_extras": {},
+        "dependencies": [
+          {
+            "conditions": null,
+            "description": "Extracted from source distribution in PyPI.",
+            "feature": "python",
+            "namespace": "language",
+            "original_requirement": "python >=0",
+            "requirements": [
+              {
+                "comparator": "gte",
+                "sortable_version": [
+                  "0",
+                  "3",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0"
+                ],
+                "version": "3"
+              }
+            ],
+            "type": "runtime"
+          },
+          {
+            "conditions": null,
+            "description": "Extracted from source distribution in PyPI.",
+            "feature": "python",
+            "namespace": "language",
+            "original_requirement": "python >=0",
+            "requirements": [
+              {
+                "comparator": "gte",
+                "sortable_version": [
+                  "0",
+                  "3",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0"
+                ],
+                "version": "3"
+              }
+            ],
+            "type": "test"
+          },
+          {
+            "conditions": null,
+            "description": "Extracted from source distribution in PyPI.",
+            "feature": "python",
+            "namespace": "language",
+            "original_requirement": "python >=0",
+            "requirements": [
+              {
+                "comparator": "gte",
+                "sortable_version": [
+                  "0",
+                  "3",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0"
+                ],
+                "version": "3"
+              }
+            ],
+            "type": "build"
+          },
+          {
+            "conditions": null,
+            "feature": "camel",
+            "namespace": "builder",
+            "requirements": [
+              {
+                "comparator": "gte",
+                "sortable_version": [
+                  "0",
+                  "0"
+                ],
+                "version": "0"
+              }
+            ],
+            "type": "build"
+          }
+        ],
+        "ingredient_options": null,
+        "is_indemnified": false,
+        "is_stable_release": true,
+        "platform_source_uri": "s3://platform-sources/data-acquisition/99a22d87add3f634ff917310a3d87e499f19e663413a52eb9232c447aa646c9f/wheel-0.35.1.tar.gz",
+        "scanner_license_expression": "unknown",
+        "source_checksum": "99a22d87add3f634ff917310a3d87e499f19e663413a52eb9232c447aa646c9f",
+        "status": "stable",
+        "provided_features": [
+          {
+            "feature": "wheel",
+            "is_activestate_version": false,
+            "is_default_provider": true,
+            "namespace": "language/python",
+            "sortable_version": [
+              "0",
+              "0",
+              "35",
+              "1",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0"
+            ],
+            "version": "0.35.1"
+          }
+        ],
+        "author_platform_user_id": "e51a58da-d22b-49c2-9fe6-f143159120eb",
+        "comment": "Data Acquisition import run with commit ID 0000000000000000000000000000000000000000 and reason: Could not be determined from the database query",
+        "is_stable_revision": true
+      },
+      "patches": null,
+      "resolved_requirements": []
+    },
+    {
+      "alternatives": [],
+      "artifact_id": "2a2dc52f-8324-59bf-ae5e-082ea2468a28",
+      "build_scripts": [
+        {
+          "build_script_id": "e00c71e5-6c74-487b-a67f-6a120e17f068",
+          "creation_timestamp": "2019-10-01T17:01:14.537345Z",
+          "links": {
+            "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/build-scripts/e00c71e5-6c74-487b-a67f-6a120e17f068"
+          },
+          "conditions": null,
+          "language": "perl",
+          "script": "db-4.4.20-AS-Makefile.PL"
+        }
+      ],
+      "dependencies": [
+        {
+          "dependency_types": [
+            "build"
+          ],
+          "ingredient_version_id": "c6688f9c-b7bc-5f6e-a1f3-903ae5b8d0bc"
+        }
+      ],
+      "ingredient": {
+        "creation_timestamp": "2019-10-01T17:01:14.890567Z",
+        "ingredient_id": "5a6e935d-3fb3-5629-a4cf-34e78b035e5f",
+        "links": {
+          "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/ingredients/5a6e935d-3fb3-5629-a4cf-34e78b035e5f"
+        },
+        "name": "bsddb",
+        "normalized_name": "bsddb",
+        "primary_namespace": "shared",
+        "description": "Berkeley Database"
+      },
+      "ingredient_options": null,
+      "ingredient_version": {
+        "creation_timestamp": "2019-10-01T17:01:14.890567Z",
+        "ingredient_id": "5a6e935d-3fb3-5629-a4cf-34e78b035e5f",
+        "ingredient_version_id": "06b8597a-4cc1-5e3c-b548-f0baa7861688",
+        "links": {
+          "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/ingredients/5a6e935d-3fb3-5629-a4cf-34e78b035e5f/versions/06b8597a-4cc1-5e3c-b548-f0baa7861688",
+          "ingredient": "https://platform.activestate.com/sv/inventory-api-v1/v1/ingredients/5a6e935d-3fb3-5629-a4cf-34e78b035e5f"
+        },
+        "revision": 2,
+        "revision_timestamp": "2019-10-24T21:51:00.179770Z",
+        "copyright_text": "To be added.",
+        "is_binary_only": false,
+        "license_expression": "Unknown",
+        "release_timestamp": "1970-01-01T00:00:00.000000Z",
+        "source_uri": "https://s3.amazonaws.com/camel-sources/src/vendor-sources/python/db-4.4.20.NC-pysvn.zip",
+        "sortable_version": [
+          "4",
+          "4",
+          "20",
+          "0"
+        ],
+        "version": "4.4.20",
+        "activestate_license_expression": "unknown",
+        "camel_extras": {
+          "skip_test": "yes"
+        },
+        "dependencies": [
+          {
+            "conditions": null,
+            "description": "All ingredients have a build-time dependency on the camel build system",
+            "feature": "camel",
+            "namespace": "builder",
+            "requirements": [
+              {
+                "comparator": "gte",
+                "sortable_version": [
+                  "0",
+                  "0"
+                ],
+                "version": "0"
+              }
+            ],
+            "type": "build"
+          }
+        ],
+        "ingredient_options": null,
+        "is_indemnified": true,
+        "is_stable_release": true,
+        "platform_source_uri": "s3://platform-sources/shared/0732630da52af56e1d8a92a4a386405b5b13aa21715aa4e8d28da647c57affba/db-4.4.20.NC-pysvn.zip",
+        "scanner_license_expression": "unknown",
+        "source_checksum": "0732630da52af56e1d8a92a4a386405b5b13aa21715aa4e8d28da647c57affba",
+        "status": "stable",
+        "provided_features": [
+          {
+            "feature": "bsddb",
+            "is_activestate_version": false,
+            "is_default_provider": true,
+            "namespace": "shared",
+            "sortable_version": [
+              "4",
+              "4",
+              "20",
+              "0"
+            ],
+            "version": "4.4.20"
+          }
+        ],
+        "author_platform_user_id": "7f320133-2c9a-476e-9c09-8970ac525a8f",
+        "comment": "Created prior to addition of revision comments.",
+        "is_stable_revision": true
+      },
+      "patches": null,
+      "resolved_requirements": []
+    },
+    {
+      "alternatives": [],
+      "artifact_id": "f6f7099a-2a86-5a30-8098-a111661cfbc5",
+      "build_scripts": [
+        {
+          "build_script_id": "9c94a935-e12a-4211-8c69-151cc0cea019",
+          "creation_timestamp": "2019-11-21T00:41:56.108670Z",
+          "links": {
+            "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/build-scripts/9c94a935-e12a-4211-8c69-151cc0cea019"
+          },
+          "conditions": null,
+          "language": "perl",
+          "script": "bzip2-1.0.6-AS-Makefile.PL"
+        }
+      ],
+      "dependencies": [
+        {
+          "dependency_types": [
+            "build"
+          ],
+          "ingredient_version_id": "c6688f9c-b7bc-5f6e-a1f3-903ae5b8d0bc"
+        }
+      ],
+      "ingredient": {
+        "creation_timestamp": "2019-10-01T16:55:29.800792Z",
+        "ingredient_id": "c9621f15-45d3-5da0-849a-f2979aa8e0d5",
+        "links": {
+          "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/ingredients/c9621f15-45d3-5da0-849a-f2979aa8e0d5"
+        },
+        "name": "bzip2",
+        "normalized_name": "bzip2",
+        "primary_namespace": "shared",
+        "description": "bzip2 is a data compressor."
+      },
+      "ingredient_options": null,
+      "ingredient_version": {
+        "creation_timestamp": "2019-10-01T16:55:29.800792Z",
+        "ingredient_id": "c9621f15-45d3-5da0-849a-f2979aa8e0d5",
+        "ingredient_version_id": "3bde6cf9-2445-563f-8e65-1437d1737a8f",
+        "links": {
+          "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/ingredients/c9621f15-45d3-5da0-849a-f2979aa8e0d5/versions/3bde6cf9-2445-563f-8e65-1437d1737a8f",
+          "ingredient": "https://platform.activestate.com/sv/inventory-api-v1/v1/ingredients/c9621f15-45d3-5da0-849a-f2979aa8e0d5"
+        },
+        "revision": 5,
+        "revision_timestamp": "2020-09-16T16:53:25.145774Z",
+        "copyright_text": "To be added.",
+        "is_binary_only": false,
+        "license_expression": "Unknown",
+        "release_timestamp": "2018-11-03T00:00:00.000000Z",
+        "source_uri": "https://s3.amazonaws.com/camel-sources/src/vendor-sources/bzip2-1.0.6.tar.gz",
+        "sortable_version": [
+          "1",
+          "0",
+          "6",
+          "0"
+        ],
+        "version": "1.0.6",
+        "activestate_license_expression": "unknown",
+        "camel_extras": {
+          "ppm_pkg": "no",
+          "skip_test": "yes"
+        },
+        "dependencies": [
+          {
+            "conditions": null,
+            "description": "All ingredients have a build-time dependency on the camel build system",
+            "feature": "camel",
+            "namespace": "builder",
+            "requirements": [
+              {
+                "comparator": "gte",
+                "sortable_version": [
+                  "0",
+                  "0"
+                ],
+                "version": "0"
+              }
+            ],
+            "type": "build"
+          }
+        ],
+        "ingredient_options": null,
+        "is_indemnified": true,
+        "is_stable_release": true,
+        "platform_source_uri": "s3://platform-sources/shared/a2848f34fcd5d6cf47def00461fcb528a0484d8edef8208d6d2e2909dc61d9cd/bzip2-1.0.6.tar.gz",
+        "scanner_license_expression": "unknown",
+        "source_checksum": "a2848f34fcd5d6cf47def00461fcb528a0484d8edef8208d6d2e2909dc61d9cd",
+        "status": "stable",
+        "provided_features": [
+          {
+            "feature": "bzip2",
+            "is_activestate_version": false,
+            "is_default_provider": true,
+            "namespace": "shared",
+            "sortable_version": [
+              "1",
+              "0",
+              "6",
+              "0"
+            ],
+            "version": "1.0.6"
+          }
+        ],
+        "author_platform_user_id": "a19a07b9-313a-4e8f-916b-633457d72be8",
+        "comment": "Convert patch content to S3 URI and add condition on camel builder",
+        "is_stable_revision": true
+      },
+      "patches": [
+        {
+          "creation_timestamp": "2020-09-16T16:53:24.890193Z",
+          "links": {
+            "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/patches/0e0735a7-c5cd-47ed-a599-e2c9475b37c8"
+          },
+          "patch_id": "0e0735a7-c5cd-47ed-a599-e2c9475b37c8",
+          "conditions": [
+            {
+              "feature": "camel",
+              "namespace": "builder",
+              "requirements": [
+                {
+                  "comparator": "gte",
+                  "sortable_version": [
+                    "0",
+                    "0"
+                  ],
+                  "version": "0"
+                }
+              ]
+            }
+          ],
+          "content": "s3://platform-sources/patches/Libraries/patches/bzip2-1.0.6-Makefile-install.patch",
+          "description": "Only install headers and lib, some of these paths broke on\n Windows. Add an MSVC install target.",
+          "sequence_number": 1
+        }
+      ],
+      "resolved_requirements": []
+    },
+    {
+      "alternatives": [],
+      "artifact_id": "1931b61b-5e8b-5bce-a5ff-5663a0b9b9c3",
+      "build_scripts": [
+        {
+          "build_script_id": "2bca6c96-626f-472b-a3e0-6fc2e19d5da1",
+          "creation_timestamp": "2021-01-11T17:46:35.461471Z",
+          "links": {
+            "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/build-scripts/2bca6c96-626f-472b-a3e0-6fc2e19d5da1"
+          },
+          "conditions": null,
+          "language": "perl",
+          "script": "s3://platform-sources/build_scripts/2dd5db9d3d82fffed2a682f960dc4bc4f41dcdbb62f4e83f4586c793452709f7/expat-2.2.9-AS-Makefile.PL"
+        }
+      ],
+      "dependencies": [
+        {
+          "dependency_types": [
+            "build"
+          ],
+          "ingredient_version_id": "c6688f9c-b7bc-5f6e-a1f3-903ae5b8d0bc"
+        }
+      ],
+      "ingredient": {
+        "creation_timestamp": "2019-10-01T16:55:36.729403Z",
+        "ingredient_id": "005fec58-7763-5ccf-9fce-d35fa3bfd791",
+        "links": {
+          "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/ingredients/005fec58-7763-5ccf-9fce-d35fa3bfd791"
+        },
+        "name": "expat",
+        "normalized_name": "expat",
+        "primary_namespace": "shared",
+        "description": "The expat package"
+      },
+      "ingredient_options": null,
+      "ingredient_version": {
+        "creation_timestamp": "2019-11-05T00:40:36.179438Z",
+        "ingredient_id": "005fec58-7763-5ccf-9fce-d35fa3bfd791",
+        "ingredient_version_id": "a45dc564-3e7d-5b43-b2b3-2a941b0f5807",
+        "links": {
+          "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/ingredients/005fec58-7763-5ccf-9fce-d35fa3bfd791/versions/a45dc564-3e7d-5b43-b2b3-2a941b0f5807",
+          "ingredient": "https://platform.activestate.com/sv/inventory-api-v1/v1/ingredients/005fec58-7763-5ccf-9fce-d35fa3bfd791"
+        },
+        "revision": 11,
+        "revision_timestamp": "2021-01-11T17:46:36.186158Z",
+        "copyright_text": "To be added.",
+        "documentation_uri": "https://libexpat.github.io/doc/",
+        "is_binary_only": false,
+        "license_expression": "Unknown",
+        "release_timestamp": "2019-09-24T00:00:00.000000Z",
+        "source_uri": "https://github.com/libexpat/libexpat/archive/R_2_2_9.tar.gz",
+        "sortable_version": [
+          "2",
+          "2",
+          "9",
+          "0"
+        ],
+        "version": "2.2.9",
+        "activestate_license_expression": "unknown",
+        "camel_extras": {
+          "skip_test": "yes"
+        },
+        "dependencies": [
+          {
+            "conditions": [
+              {
+                "feature": "alternative-built-language",
+                "namespace": "language",
+                "requirements": [
+                  {
+                    "comparator": "eq",
+                    "sortable_version": []
+                  }
+                ]
+              }
+            ],
+            "feature": "camel",
+            "namespace": "builder",
+            "requirements": [
+              {
+                "comparator": "gte",
+                "sortable_version": [
+                  "0",
+                  "0"
+                ],
+                "version": "0"
+              }
+            ],
+            "type": "build"
+          },
+          {
+            "conditions": [
+              {
+                "feature": "alternative-built-language",
+                "namespace": "language",
+                "requirements": [
+                  {
+                    "comparator": "gte",
+                    "sortable_version": [
+                      "0",
+                      "0"
+                    ],
+                    "version": "0"
+                  }
+                ]
+              }
+            ],
+            "feature": "autotools-builder",
+            "namespace": "builder",
+            "requirements": [
+              {
+                "comparator": "gte",
+                "sortable_version": [
+                  "0",
+                  "0"
+                ],
+                "version": "0"
+              }
+            ],
+            "type": "build"
+          }
+        ],
+        "ingredient_options": null,
+        "is_indemnified": true,
+        "is_stable_release": true,
+        "platform_source_uri": "s3://platform-sources/shared/4456e0aa72ecc7e1d4b3368cd545a5eec7f9de5133a8dc37fdb1efa6174c4947/expat-2.2.9.tar.gz",
+        "scanner_license_expression": "unknown",
+        "source_checksum": "4456e0aa72ecc7e1d4b3368cd545a5eec7f9de5133a8dc37fdb1efa6174c4947",
+        "status": "stable",
+        "provided_features": [
+          {
+            "feature": "expat",
+            "is_activestate_version": false,
+            "is_default_provider": true,
+            "namespace": "shared",
+            "sortable_version": [
+              "2",
+              "2",
+              "9",
+              "0"
+            ],
+            "version": "2.2.9"
+          }
+        ],
+        "author_platform_user_id": "8fd0aa9c-0483-4ee7-9197-96c9194c0318",
+        "comment": "Created prior to addition of revision comments.",
+        "is_stable_revision": true
+      },
+      "patches": [
+        {
+          "creation_timestamp": "2021-01-11T17:46:35.593158Z",
+          "links": {
+            "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/patches/57c568bc-9f1e-4a0b-904d-cd41ba27cd05"
+          },
+          "patch_id": "57c568bc-9f1e-4a0b-904d-cd41ba27cd05",
+          "conditions": [
+            {
+              "feature": "camel",
+              "namespace": "builder",
+              "requirements": [
+                {
+                  "comparator": "gte",
+                  "sortable_version": [
+                    "0",
+                    "0"
+                  ],
+                  "version": "0"
+                }
+              ]
+            }
+          ],
+          "content": "s3://platform-sources/patches/239341623ebad1490c7f33ec81681f497c1e2f1ffe75e6810162e7c1e40757c7.patch",
+          "description": "expat ~ Add MSVC Makefile. Created for expat-2.2.9.",
+          "sequence_number": 1
+        },
+        {
+          "creation_timestamp": "2021-01-11T17:46:35.711198Z",
+          "links": {
+            "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/patches/a55c2d03-bae1-40f1-ae5b-fbb050c702fb"
+          },
+          "patch_id": "a55c2d03-bae1-40f1-ae5b-fbb050c702fb",
+          "conditions": [
+            {
+              "feature": "camel",
+              "namespace": "builder",
+              "requirements": [
+                {
+                  "comparator": "gte",
+                  "sortable_version": [
+                    "0",
+                    "0"
+                  ],
+                  "version": "0"
+                }
+              ]
+            }
+          ],
+          "content": "s3://platform-sources/patches/ac8dcdeb798a847dc56d29de262552e873ac88883e6630552a668997a9a64b4f.patch",
+          "description": "expat ~ Remove hidden flag for AIX. Created for expat-2.2.9.",
+          "sequence_number": 2
+        },
+        {
+          "creation_timestamp": "2021-01-11T17:46:35.846122Z",
+          "links": {
+            "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/patches/798eadbe-103f-422b-a761-938cbef16a5a"
+          },
+          "patch_id": "798eadbe-103f-422b-a761-938cbef16a5a",
+          "conditions": [
+            {
+              "feature": "camel",
+              "namespace": "builder",
+              "requirements": [
+                {
+                  "comparator": "gte",
+                  "sortable_version": [
+                    "0",
+                    "0"
+                  ],
+                  "version": "0"
+                }
+              ]
+            }
+          ],
+          "content": "s3://platform-sources/patches/00b3bb81c1032a8854cf469ac7208dc6e192bc0e0acfbe41677aca61a67ad457.patch",
+          "description": "expat ~ Update for C89. Created for expat-2.2.9",
+          "sequence_number": 3
+        },
+        {
+          "creation_timestamp": "2021-01-11T17:46:36.033025Z",
+          "links": {
+            "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/patches/586a3c05-b1a4-433a-a673-7b382c681906"
+          },
+          "patch_id": "586a3c05-b1a4-433a-a673-7b382c681906",
+          "conditions": null,
+          "content": "s3://platform-sources/patches/92f35efe9d078a78bc8ab10b92649ed3f814a3242b91d83ebe1f36f4bdd0e9a4.patch",
+          "description": "expat ~ Fix tests trying to use wine when not cross-compiling",
+          "sequence_number": 4
+        }
+      ],
+      "resolved_requirements": []
+    },
+    {
+      "alternatives": [],
+      "artifact_id": "fb916bb5-73f9-55f8-9a01-ad79a876e00c",
+      "build_scripts": [
+        {
+          "build_script_id": "844336b4-e883-44c8-bf22-de11ddfbd482",
+          "creation_timestamp": "2020-10-29T19:15:40.719565Z",
+          "links": {
+            "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/build-scripts/844336b4-e883-44c8-bf22-de11ddfbd482"
+          },
+          "conditions": null,
+          "language": "perl",
+          "script": "s3://platform-sources/build_scripts/4432de517c9e851a7f7772843cb30f6dda380a5e330ce39f3169186421048566/openssl-1.1.1-AS-Makefile.PL"
+        }
+      ],
+      "dependencies": [
+        {
+          "dependency_types": [
+            "build"
+          ],
+          "ingredient_version_id": "c6688f9c-b7bc-5f6e-a1f3-903ae5b8d0bc"
+        }
+      ],
+      "ingredient": {
+        "creation_timestamp": "2019-10-01T16:56:17.721017Z",
+        "ingredient_id": "c1256669-2a2d-5cf2-8860-804bf43ceb5f",
+        "links": {
+          "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/ingredients/c1256669-2a2d-5cf2-8860-804bf43ceb5f"
+        },
+        "name": "openssl",
+        "normalized_name": "openssl",
+        "primary_namespace": "shared",
+        "description": "Open Secure Sockets Layer general cryptography library."
+      },
+      "ingredient_options": null,
+      "ingredient_version": {
+        "creation_timestamp": "2020-06-16T06:27:06.148324Z",
+        "ingredient_id": "c1256669-2a2d-5cf2-8860-804bf43ceb5f",
+        "ingredient_version_id": "491568f3-50a4-56f6-a971-580eaa99715f",
+        "links": {
+          "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/ingredients/c1256669-2a2d-5cf2-8860-804bf43ceb5f/versions/491568f3-50a4-56f6-a971-580eaa99715f",
+          "ingredient": "https://platform.activestate.com/sv/inventory-api-v1/v1/ingredients/c1256669-2a2d-5cf2-8860-804bf43ceb5f"
+        },
+        "revision": 6,
+        "revision_timestamp": "2020-10-29T19:15:41.225634Z",
+        "copyright_text": "To be added.",
+        "is_binary_only": false,
+        "license_expression": "Unknown",
+        "release_timestamp": "2020-04-21T02:22:00.000000Z",
+        "source_uri": "https://github.com/openssl/openssl/archive/OpenSSL_1_1_1g.tar.gz",
+        "sortable_version": [
+          "1",
+          "11",
+          "0",
+          "7",
+          "0"
+        ],
+        "version": "1.11.0.7",
+        "activestate_license_expression": "unknown",
+        "camel_extras": {
+          "ppm_pkg": "no"
+        },
+        "dependencies": [
+          {
+            "conditions": [
+              {
+                "feature": "alternative-built-language",
+                "namespace": "language",
+                "requirements": [
+                  {
+                    "comparator": "gte",
+                    "sortable_version": [
+                      "0",
+                      "0"
+                    ],
+                    "version": "0"
+                  }
+                ]
+              }
+            ],
+            "feature": "openssl-builder",
+            "namespace": "builder",
+            "requirements": [
+              {
+                "comparator": "gte",
+                "sortable_version": [
+                  "0",
+                  "0"
+                ],
+                "version": "0"
+              }
+            ],
+            "type": "build"
+          },
+          {
+            "conditions": [
+              {
+                "feature": "alternative-built-language",
+                "namespace": "language",
+                "requirements": [
+                  {
+                    "comparator": "eq",
+                    "sortable_version": []
+                  }
+                ]
+              }
+            ],
+            "feature": "camel",
+            "namespace": "builder",
+            "requirements": [
+              {
+                "comparator": "gte",
+                "sortable_version": [
+                  "0",
+                  "0"
+                ],
+                "version": "0"
+              }
+            ],
+            "type": "build"
+          }
+        ],
+        "ingredient_options": null,
+        "is_indemnified": true,
+        "is_stable_release": true,
+        "platform_source_uri": "s3://platform-sources/shared/281e4f13142b53657bd154481e18195b2d477572fdffa8ed1065f73ef5a19777/OpenSSL_1_1_1g.tar.gz",
+        "scanner_license_expression": "unknown",
+        "source_checksum": "281e4f13142b53657bd154481e18195b2d477572fdffa8ed1065f73ef5a19777",
+        "status": "stable",
+        "provided_features": [
+          {
+            "feature": "openssl",
+            "is_activestate_version": false,
+            "is_default_provider": true,
+            "namespace": "shared",
+            "sortable_version": [
+              "1",
+              "11",
+              "0",
+              "7",
+              "0"
+            ],
+            "version": "1.11.0.7"
+          }
+        ],
+        "author_platform_user_id": "8fd0aa9c-0483-4ee7-9197-96c9194c0318",
+        "comment": "Convert patch content to S3 URI and add condition on camel builder",
+        "is_stable_revision": true
+      },
+      "patches": [
+        {
+          "creation_timestamp": "2020-10-29T19:15:40.956403Z",
+          "links": {
+            "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/patches/df530ca2-a174-4148-a843-c7f34dd13652"
+          },
+          "patch_id": "df530ca2-a174-4148-a843-c7f34dd13652",
+          "conditions": [
+            {
+              "feature": "camel",
+              "namespace": "builder",
+              "requirements": [
+                {
+                  "comparator": "gte",
+                  "sortable_version": [
+                    "0",
+                    "0"
+                  ],
+                  "version": "0"
+                }
+              ]
+            }
+          ],
+          "content": "s3://platform-sources/patches/6a990e80dad9a75de34a762d621f4b56b93dd8d68e37cf805e820f889726e886.patch",
+          "description": "Do not attempt to install non-existent .pdb files",
+          "sequence_number": 1
+        }
+      ],
+      "resolved_requirements": []
+    },
+    {
+      "alternatives": [],
+      "artifact_id": "7b9a5527-a6d0-50b9-a6fe-0c5c73d242cd",
+      "build_scripts": [
+        {
+          "build_script_id": "e9ffe653-3f26-4dfe-b588-2883dd5eeb94",
+          "creation_timestamp": "2020-08-31T18:13:08.145236Z",
+          "links": {
+            "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/build-scripts/e9ffe653-3f26-4dfe-b588-2883dd5eeb94"
+          },
+          "conditions": null,
+          "language": "perl",
+          "script": "sqlite3-3.15.2-AS-Makefile.PL"
+        }
+      ],
+      "dependencies": [
+        {
+          "dependency_types": [
+            "build"
+          ],
+          "ingredient_version_id": "c6688f9c-b7bc-5f6e-a1f3-903ae5b8d0bc"
+        }
+      ],
+      "ingredient": {
+        "creation_timestamp": "2019-10-01T17:07:11.488759Z",
+        "ingredient_id": "380e1f63-4050-59d3-b14d-2b431b5fa2e0",
+        "links": {
+          "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/ingredients/380e1f63-4050-59d3-b14d-2b431b5fa2e0"
+        },
+        "name": "sqlite3",
+        "normalized_name": "sqlite3",
+        "primary_namespace": "shared",
+        "description": "SQL Lite Database"
+      },
+      "ingredient_options": null,
+      "ingredient_version": {
+        "creation_timestamp": "2019-10-01T17:07:11.488759Z",
+        "ingredient_id": "380e1f63-4050-59d3-b14d-2b431b5fa2e0",
+        "ingredient_version_id": "54cbf7c2-c87c-51b5-a2cc-72b3b284d68c",
+        "links": {
+          "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/ingredients/380e1f63-4050-59d3-b14d-2b431b5fa2e0/versions/54cbf7c2-c87c-51b5-a2cc-72b3b284d68c",
+          "ingredient": "https://platform.activestate.com/sv/inventory-api-v1/v1/ingredients/380e1f63-4050-59d3-b14d-2b431b5fa2e0"
+        },
+        "revision": 3,
+        "revision_timestamp": "2020-08-31T18:13:08.393927Z",
+        "copyright_text": "To be added.",
+        "is_binary_only": false,
+        "license_expression": "Unknown",
+        "release_timestamp": "1970-01-01T00:00:00.000000Z",
+        "source_uri": "https://s3.amazonaws.com/camel-sources/src/vendor-sources/python/sqlite-autoconf-3150200.tar.gz",
+        "sortable_version": [
+          "3",
+          "15",
+          "2",
+          "0"
+        ],
+        "version": "3.15.2",
+        "activestate_license_expression": "unknown",
+        "camel_extras": {
+          "skip_test": "yes"
+        },
+        "dependencies": [
+          {
+            "conditions": null,
+            "description": "All ingredients have a build-time dependency on the camel build system",
+            "feature": "camel",
+            "namespace": "builder",
+            "requirements": [
+              {
+                "comparator": "gte",
+                "sortable_version": [
+                  "0",
+                  "0"
+                ],
+                "version": "0"
+              }
+            ],
+            "type": "build"
+          }
+        ],
+        "ingredient_options": null,
+        "is_indemnified": true,
+        "is_stable_release": true,
+        "platform_source_uri": "s3://platform-sources/shared/07b35063b9386865b78226cdaca9a299d938a87aaa8fdc4d73edb0cef30f3149/sqlite-autoconf-3150200.tar.gz",
+        "scanner_license_expression": "unknown",
+        "source_checksum": "07b35063b9386865b78226cdaca9a299d938a87aaa8fdc4d73edb0cef30f3149",
+        "status": "stable",
+        "provided_features": [
+          {
+            "feature": "sqlite3",
+            "is_activestate_version": false,
+            "is_default_provider": true,
+            "namespace": "shared",
+            "sortable_version": [
+              "3",
+              "15",
+              "2",
+              "0"
+            ],
+            "version": "3.15.2"
+          }
+        ],
+        "author_platform_user_id": "ddfb4cc7-4a50-45a5-a6a5-1336b3ad1ef2",
+        "comment": "Created prior to addition of revision comments.",
+        "is_stable_revision": true
+      },
+      "patches": null,
+      "resolved_requirements": []
+    },
+    {
+      "alternatives": [],
+      "artifact_id": "06e6c26f-7645-5971-a6ad-277497bdec0c",
+      "build_scripts": [
+        {
+          "build_script_id": "b5e19267-2ad1-450e-a3d1-a9b7ed1cd344",
+          "creation_timestamp": "2019-11-26T20:46:06.363894Z",
+          "links": {
+            "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/build-scripts/b5e19267-2ad1-450e-a3d1-a9b7ed1cd344"
+          },
+          "conditions": null,
+          "language": "perl",
+          "script": "tcl-8.6.8-AS-Makefile.PL"
+        }
+      ],
+      "dependencies": [
+        {
+          "dependency_types": [
+            "build"
+          ],
+          "ingredient_version_id": "c6688f9c-b7bc-5f6e-a1f3-903ae5b8d0bc"
+        }
+      ],
+      "ingredient": {
+        "creation_timestamp": "2019-10-01T17:07:20.968772Z",
+        "ingredient_id": "040ef024-47fa-5220-aa7e-becd3b44e203",
+        "links": {
+          "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/ingredients/040ef024-47fa-5220-aa7e-becd3b44e203"
+        },
+        "name": "tcl",
+        "normalized_name": "tcl",
+        "primary_namespace": "shared",
+        "description": "Toolkit Command Language"
+      },
+      "ingredient_options": null,
+      "ingredient_version": {
+        "creation_timestamp": "2019-10-01T17:07:20.968772Z",
+        "ingredient_id": "040ef024-47fa-5220-aa7e-becd3b44e203",
+        "ingredient_version_id": "b0d9a189-aedb-5461-b872-5e643ac97551",
+        "links": {
+          "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/ingredients/040ef024-47fa-5220-aa7e-becd3b44e203/versions/b0d9a189-aedb-5461-b872-5e643ac97551",
+          "ingredient": "https://platform.activestate.com/sv/inventory-api-v1/v1/ingredients/040ef024-47fa-5220-aa7e-becd3b44e203"
+        },
+        "revision": 4,
+        "revision_timestamp": "2020-09-16T16:53:54.537734Z",
+        "copyright_text": "To be added.",
+        "is_binary_only": false,
+        "license_expression": "Unknown",
+        "release_timestamp": "1970-01-01T00:00:00.000000Z",
+        "source_uri": "https://s3.amazonaws.com/camel-sources/src/vendor-sources/tcl/tcl8.6.8-src.tar.gz",
+        "sortable_version": [
+          "8",
+          "6",
+          "8",
+          "0"
+        ],
+        "version": "8.6.8",
+        "activestate_license_expression": "unknown",
+        "camel_extras": {
+          "cold_storage_dirs": {
+            "src": "__SRC__"
+          },
+          "skip_test": "yes"
+        },
+        "dependencies": [
+          {
+            "conditions": null,
+            "description": "All ingredients have a build-time dependency on the camel build system",
+            "feature": "camel",
+            "namespace": "builder",
+            "requirements": [
+              {
+                "comparator": "gte",
+                "sortable_version": [
+                  "0",
+                  "0"
+                ],
+                "version": "0"
+              }
+            ],
+            "type": "build"
+          },
+          {
+            "conditions": [
+              {
+                "feature": "AIX",
+                "namespace": "kernel",
+                "requirements": [
+                  {
+                    "comparator": "gte",
+                    "sortable_version": [
+                      "0",
+                      "0"
+                    ],
+                    "version": "0"
+                  }
+                ]
+              }
+            ],
+            "feature": "zlib",
+            "namespace": "shared",
+            "requirements": [
+              {
+                "comparator": "gte",
+                "sortable_version": [
+                  "0",
+                  "0"
+                ],
+                "version": "0"
+              }
+            ],
+            "type": "build"
+          }
+        ],
+        "ingredient_options": null,
+        "is_indemnified": true,
+        "is_stable_release": true,
+        "platform_source_uri": "s3://platform-sources/shared/c43cb0c1518ce42b00e7c8f6eaddd5195c53a98f94adc717234a65cbcfd3f96a/tcl8.6.8-src.tar.gz",
+        "scanner_license_expression": "unknown",
+        "source_checksum": "c43cb0c1518ce42b00e7c8f6eaddd5195c53a98f94adc717234a65cbcfd3f96a",
+        "status": "stable",
+        "provided_features": [
+          {
+            "feature": "tcl",
+            "is_activestate_version": false,
+            "is_default_provider": true,
+            "namespace": "shared",
+            "sortable_version": [
+              "8",
+              "6",
+              "8",
+              "0"
+            ],
+            "version": "8.6.8"
+          }
+        ],
+        "author_platform_user_id": "a19a07b9-313a-4e8f-916b-633457d72be8",
+        "comment": "Convert patch content to S3 URI and add condition on camel builder",
+        "is_stable_revision": true
+      },
+      "patches": [
+        {
+          "creation_timestamp": "2020-09-16T16:53:54.314313Z",
+          "links": {
+            "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/patches/126a4875-aec6-476b-9ff5-83944e0c08b2"
+          },
+          "patch_id": "126a4875-aec6-476b-9ff5-83944e0c08b2",
+          "conditions": [
+            {
+              "feature": "camel",
+              "namespace": "builder",
+              "requirements": [
+                {
+                  "comparator": "gte",
+                  "sortable_version": [
+                    "0",
+                    "0"
+                  ],
+                  "version": "0"
+                }
+              ]
+            }
+          ],
+          "content": "tcl/8.6.8/0001-Add-lm-for-AIX.patch",
+          "description": "Add lm for AIX",
+          "sequence_number": 1
+        }
+      ],
+      "resolved_requirements": []
+    },
+    {
+      "alternatives": [],
+      "artifact_id": "060cc2b8-01e4-5afe-8618-c44ccb25a592",
+      "build_scripts": [
+        {
+          "build_script_id": "efe458cc-4f5f-410a-ba71-ff9ff6514dc7",
+          "creation_timestamp": "2019-11-21T00:46:19.305262Z",
+          "links": {
+            "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/build-scripts/efe458cc-4f5f-410a-ba71-ff9ff6514dc7"
+          },
+          "conditions": null,
+          "language": "perl",
+          "script": "tix-8.4.3-AS-Makefile.PL"
+        }
+      ],
+      "dependencies": [
+        {
+          "dependency_types": [
+            "build"
+          ],
+          "ingredient_version_id": "8d5d63b0-e941-59a3-8653-35470bd70056"
+        },
+        {
+          "dependency_types": [
+            "build"
+          ],
+          "ingredient_version_id": "b0d9a189-aedb-5461-b872-5e643ac97551"
+        },
+        {
+          "dependency_types": [
+            "build"
+          ],
+          "ingredient_version_id": "c6688f9c-b7bc-5f6e-a1f3-903ae5b8d0bc"
+        }
+      ],
+      "ingredient": {
+        "creation_timestamp": "2019-10-01T17:07:40.922846Z",
+        "ingredient_id": "be9d279c-48f3-5233-9250-fc5a61dc8b07",
+        "links": {
+          "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/ingredients/be9d279c-48f3-5233-9250-fc5a61dc8b07"
+        },
+        "name": "tix",
+        "normalized_name": "tix",
+        "primary_namespace": "shared",
+        "description": "Tk Interface Extension"
+      },
+      "ingredient_options": null,
+      "ingredient_version": {
+        "creation_timestamp": "2019-10-01T17:07:40.922846Z",
+        "ingredient_id": "be9d279c-48f3-5233-9250-fc5a61dc8b07",
+        "ingredient_version_id": "a61c1442-98a0-576c-b606-3046b22c3413",
+        "links": {
+          "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/ingredients/be9d279c-48f3-5233-9250-fc5a61dc8b07/versions/a61c1442-98a0-576c-b606-3046b22c3413",
+          "ingredient": "https://platform.activestate.com/sv/inventory-api-v1/v1/ingredients/be9d279c-48f3-5233-9250-fc5a61dc8b07"
+        },
+        "revision": 4,
+        "revision_timestamp": "2020-09-16T16:53:55.795504Z",
+        "copyright_text": "To be added.",
+        "is_binary_only": false,
+        "license_expression": "Unknown",
+        "release_timestamp": "1970-01-01T00:00:00.000000Z",
+        "source_uri": "https://s3.amazonaws.com/camel-sources/src/vendor-sources/python-core/tix-8.4.3.6-pysvn.tar.gz",
+        "sortable_version": [
+          "8",
+          "4",
+          "3",
+          "6",
+          "0"
+        ],
+        "version": "8.4.3.6",
+        "activestate_license_expression": "unknown",
+        "camel_extras": {
+          "skip_test": "yes"
+        },
+        "dependencies": [
+          {
+            "conditions": null,
+            "feature": "tcl",
+            "namespace": "shared",
+            "requirements": [
+              {
+                "comparator": "gte",
+                "sortable_version": [
+                  "0",
+                  "0"
+                ],
+                "version": "0"
+              }
+            ],
+            "type": "build"
+          },
+          {
+            "conditions": null,
+            "feature": "tk",
+            "namespace": "shared",
+            "requirements": [
+              {
+                "comparator": "gte",
+                "sortable_version": [
+                  "0",
+                  "0"
+                ],
+                "version": "0"
+              }
+            ],
+            "type": "build"
+          },
+          {
+            "conditions": null,
+            "description": "All ingredients have a build-time dependency on the camel build system",
+            "feature": "camel",
+            "namespace": "builder",
+            "requirements": [
+              {
+                "comparator": "gte",
+                "sortable_version": [
+                  "0",
+                  "0"
+                ],
+                "version": "0"
+              }
+            ],
+            "type": "build"
+          }
+        ],
+        "ingredient_options": null,
+        "is_indemnified": true,
+        "is_stable_release": true,
+        "platform_source_uri": "s3://platform-sources/shared/d6a92d5dd259d51a40d2293e495f34a4925ee7b360b213bb8a64360892065d35/tix-8.4.3.6-pysvn.tar.gz",
+        "scanner_license_expression": "unknown",
+        "source_checksum": "d6a92d5dd259d51a40d2293e495f34a4925ee7b360b213bb8a64360892065d35",
+        "status": "stable",
+        "provided_features": [
+          {
+            "feature": "tix",
+            "is_activestate_version": false,
+            "is_default_provider": true,
+            "namespace": "shared",
+            "sortable_version": [
+              "8",
+              "4",
+              "3",
+              "6",
+              "0"
+            ],
+            "version": "8.4.3.6"
+          }
+        ],
+        "author_platform_user_id": "a19a07b9-313a-4e8f-916b-633457d72be8",
+        "comment": "Convert patch content to S3 URI and add condition on camel builder",
+        "is_stable_revision": true
+      },
+      "patches": [
+        {
+          "creation_timestamp": "2020-09-16T16:53:55.513963Z",
+          "links": {
+            "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/patches/ce6ba6d3-4a26-4b60-be52-4db4e2fadf4b"
+          },
+          "patch_id": "ce6ba6d3-4a26-4b60-be52-4db4e2fadf4b",
+          "conditions": [
+            {
+              "feature": "camel",
+              "namespace": "builder",
+              "requirements": [
+                {
+                  "comparator": "gte",
+                  "sortable_version": [
+                    "0",
+                    "0"
+                  ],
+                  "version": "0"
+                }
+              ]
+            }
+          ],
+          "content": "tix/8.4.3.6/0001-Work-around-deprecated-access-to-Tcl_Interp-result.patch",
+          "description": "[PATCH 1/2] Work around deprecated access to Tcl_Interp->result",
+          "sequence_number": 1
+        },
+        {
+          "creation_timestamp": "2020-09-16T16:53:55.608640Z",
+          "links": {
+            "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/patches/c441dcb9-546a-4cc0-a386-f491539b5e98"
+          },
+          "patch_id": "c441dcb9-546a-4cc0-a386-f491539b5e98",
+          "conditions": [
+            {
+              "feature": "camel",
+              "namespace": "builder",
+              "requirements": [
+                {
+                  "comparator": "gte",
+                  "sortable_version": [
+                    "0",
+                    "0"
+                  ],
+                  "version": "0"
+                }
+              ]
+            }
+          ],
+          "content": "tix/8.4.3.6/0002-gcc64-fix.patch",
+          "description": "[PATCH 2/2] gcc64 fix",
+          "sequence_number": 2
+        }
+      ],
+      "resolved_requirements": []
+    },
+    {
+      "alternatives": [],
+      "artifact_id": "2c8a61b6-995c-5e59-8d52-fac8604c3e88",
+      "build_scripts": [
+        {
+          "build_script_id": "72d59ea6-6a31-4af4-acb8-a4c8cf3c5b2e",
+          "creation_timestamp": "2020-09-28T21:06:07.393481Z",
+          "links": {
+            "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/build-scripts/72d59ea6-6a31-4af4-acb8-a4c8cf3c5b2e"
+          },
+          "conditions": null,
+          "language": "perl",
+          "script": "s3://platform-sources/build_scripts/815b591199017b6171f96b1411ca33d87bba4c8241a8325321f6e4eb3f8b6efc/tk-8.6.8-AS-Makefile.PL"
+        }
+      ],
+      "dependencies": [
+        {
+          "dependency_types": [
+            "build"
+          ],
+          "ingredient_version_id": "b0d9a189-aedb-5461-b872-5e643ac97551"
+        },
+        {
+          "dependency_types": [
+            "build"
+          ],
+          "ingredient_version_id": "c6688f9c-b7bc-5f6e-a1f3-903ae5b8d0bc"
+        }
+      ],
+      "ingredient": {
+        "creation_timestamp": "2019-10-01T17:07:42.897332Z",
+        "ingredient_id": "5edfd4e0-b20a-5016-8447-635029f35565",
+        "links": {
+          "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/ingredients/5edfd4e0-b20a-5016-8447-635029f35565"
+        },
+        "name": "tk",
+        "normalized_name": "tk",
+        "primary_namespace": "shared",
+        "description": "Toolkit GUI Kit"
+      },
+      "ingredient_options": null,
+      "ingredient_version": {
+        "creation_timestamp": "2019-10-01T17:07:42.897332Z",
+        "ingredient_id": "5edfd4e0-b20a-5016-8447-635029f35565",
+        "ingredient_version_id": "8d5d63b0-e941-59a3-8653-35470bd70056",
+        "links": {
+          "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/ingredients/5edfd4e0-b20a-5016-8447-635029f35565/versions/8d5d63b0-e941-59a3-8653-35470bd70056",
+          "ingredient": "https://platform.activestate.com/sv/inventory-api-v1/v1/ingredients/5edfd4e0-b20a-5016-8447-635029f35565"
+        },
+        "revision": 9,
+        "revision_timestamp": "2020-09-28T21:06:41.439268Z",
+        "copyright_text": "To be added.",
+        "is_binary_only": false,
+        "license_expression": "Unknown",
+        "release_timestamp": "1970-01-01T00:00:00.000000Z",
+        "source_uri": "https://s3.amazonaws.com/camel-sources/src/vendor-sources/tcl/tk8.6.8-src.tar.gz",
+        "sortable_version": [
+          "8",
+          "6",
+          "8",
+          "0"
+        ],
+        "version": "8.6.8",
+        "activestate_license_expression": "unknown",
+        "camel_extras": {
+          "cold_storage_dirs": {
+            "src": "__SRC__"
+          },
+          "skip_test": "yes"
+        },
+        "dependencies": [
+          {
+            "conditions": null,
+            "description": "All ingredients have a build-time dependency on the camel build system",
+            "feature": "camel",
+            "namespace": "builder",
+            "requirements": [
+              {
+                "comparator": "gte",
+                "sortable_version": [
+                  "0",
+                  "0"
+                ],
+                "version": "0"
+              }
+            ],
+            "type": "build"
+          },
+          {
+            "conditions": null,
+            "feature": "tcl",
+            "namespace": "shared",
+            "requirements": [
+              {
+                "comparator": "eq",
+                "sortable_version": [
+                  "8",
+                  "6",
+                  "8",
+                  "0"
+                ],
+                "version": "8.6.8"
+              }
+            ],
+            "type": "build"
+          }
+        ],
+        "ingredient_options": null,
+        "is_indemnified": true,
+        "is_stable_release": true,
+        "platform_source_uri": "s3://platform-sources/shared/49e7bca08dde95195a27f594f7c850b088be357a7c7096e44e1158c7a5fd7b33/tk8.6.8-src.tar.gz",
+        "scanner_license_expression": "unknown",
+        "source_checksum": "49e7bca08dde95195a27f594f7c850b088be357a7c7096e44e1158c7a5fd7b33",
+        "status": "stable",
+        "provided_features": [
+          {
+            "feature": "tk",
+            "is_activestate_version": false,
+            "is_default_provider": true,
+            "namespace": "shared",
+            "sortable_version": [
+              "8",
+              "6",
+              "8",
+              "0"
+            ],
+            "version": "8.6.8"
+          }
+        ],
+        "author_platform_user_id": "2b378791-a94b-4bf1-9547-692b7e79dfef",
+        "comment": "Created prior to addition of revision comments.",
+        "is_stable_revision": true
+      },
+      "patches": null,
+      "resolved_requirements": []
+    },
+    {
+      "alternatives": [],
+      "artifact_id": "7b923ae1-94a9-574c-bb9e-a89163f0ccb8",
+      "build_scripts": [
+        {
+          "build_script_id": "4dba9721-e655-4da3-a414-44c346460ab5",
+          "creation_timestamp": "2020-10-02T18:32:51.953001Z",
+          "links": {
+            "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/build-scripts/4dba9721-e655-4da3-a414-44c346460ab5"
+          },
+          "conditions": null,
+          "language": "perl",
+          "script": "zlib-1.2.8-AS-Makefile.PL"
+        }
+      ],
+      "dependencies": [
+        {
+          "dependency_types": [
+            "build"
+          ],
+          "ingredient_version_id": "c6688f9c-b7bc-5f6e-a1f3-903ae5b8d0bc"
+        }
+      ],
+      "ingredient": {
+        "creation_timestamp": "2019-10-01T16:58:37.399441Z",
+        "ingredient_id": "aaa00228-14b4-5dce-9fe2-3370801e423b",
+        "links": {
+          "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/ingredients/aaa00228-14b4-5dce-9fe2-3370801e423b"
+        },
+        "name": "zlib",
+        "normalized_name": "zlib",
+        "primary_namespace": "shared",
+        "description": "General purpose data compression library."
+      },
+      "ingredient_options": null,
+      "ingredient_version": {
+        "creation_timestamp": "2019-10-01T16:58:37.399441Z",
+        "ingredient_id": "aaa00228-14b4-5dce-9fe2-3370801e423b",
+        "ingredient_version_id": "c3b7c513-8be8-56d9-8d30-b19e9c56e393",
+        "links": {
+          "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/ingredients/aaa00228-14b4-5dce-9fe2-3370801e423b/versions/c3b7c513-8be8-56d9-8d30-b19e9c56e393",
+          "ingredient": "https://platform.activestate.com/sv/inventory-api-v1/v1/ingredients/aaa00228-14b4-5dce-9fe2-3370801e423b"
+        },
+        "revision": 5,
+        "revision_timestamp": "2020-10-02T18:32:52.928805Z",
+        "copyright_text": "To be added.",
+        "is_binary_only": false,
+        "license_expression": "Unknown",
+        "release_timestamp": "2017-01-15T00:00:00.000000Z",
+        "source_uri": "https://s3.amazonaws.com/camel-sources/src/Libraries/vendor/zlib-1.2.11.tar.gz",
+        "sortable_version": [
+          "1",
+          "2",
+          "11",
+          "0"
+        ],
+        "version": "1.2.11",
+        "activestate_license_expression": "unknown",
+        "camel_extras": {
+          "ppm_pkg": "no",
+          "skip_test": "yes"
+        },
+        "dependencies": [
+          {
+            "conditions": [
+              {
+                "feature": "alternative-built-language",
+                "namespace": "language",
+                "requirements": [
+                  {
+                    "comparator": "gte",
+                    "sortable_version": [
+                      "0",
+                      "0"
+                    ],
+                    "version": "0"
+                  }
+                ]
+              }
+            ],
+            "feature": "zlib-builder",
+            "namespace": "builder",
+            "requirements": [
+              {
+                "comparator": "gte",
+                "sortable_version": [
+                  "0",
+                  "0"
+                ],
+                "version": "0"
+              }
+            ],
+            "type": "build"
+          },
+          {
+            "conditions": [
+              {
+                "feature": "alternative-built-language",
+                "namespace": "language",
+                "requirements": [
+                  {
+                    "comparator": "eq",
+                    "sortable_version": []
+                  }
+                ]
+              }
+            ],
+            "feature": "camel",
+            "namespace": "builder",
+            "requirements": [
+              {
+                "comparator": "gte",
+                "sortable_version": [
+                  "0",
+                  "0"
+                ],
+                "version": "0"
+              }
+            ],
+            "type": "build"
+          }
+        ],
+        "ingredient_options": null,
+        "is_indemnified": true,
+        "is_stable_release": true,
+        "platform_source_uri": "s3://platform-sources/shared/c3e5e9fdd5004dcb542feda5ee4f0ff0744628baf8ed2dd5d66f8ca1197cb1a1/zlib-1.2.11.tar.gz",
+        "scanner_license_expression": "unknown",
+        "source_checksum": "c3e5e9fdd5004dcb542feda5ee4f0ff0744628baf8ed2dd5d66f8ca1197cb1a1",
+        "status": "stable",
+        "provided_features": [
+          {
+            "feature": "zlib",
+            "is_activestate_version": false,
+            "is_default_provider": true,
+            "namespace": "shared",
+            "sortable_version": [
+              "1",
+              "2",
+              "11",
+              "0"
+            ],
+            "version": "1.2.11"
+          }
+        ],
+        "author_platform_user_id": "a4603881-68af-4a9f-9e4c-6de870d9cbb4",
+        "comment": "Created prior to addition of revision comments.",
+        "is_stable_revision": true
+      },
+      "patches": [
+        {
+          "creation_timestamp": "2020-10-02T18:32:52.140755Z",
+          "links": {
+            "self": "https://platform.activestate.com/sv/inventory-api-v1/v1/patches/8c1dc792-b9e1-44d8-9dfe-27cd3c9884c6"
+          },
+          "patch_id": "8c1dc792-b9e1-44d8-9dfe-27cd3c9884c6",
+          "conditions": [
+            {
+              "feature": "camel",
+              "namespace": "builder",
+              "requirements": [
+                {
+                  "comparator": "gte",
+                  "sortable_version": [
+                    "0",
+                    "0"
+                  ],
+                  "version": "0"
+                }
+              ]
+            }
+          ],
+          "content": "s3://platform-sources/patches/Libraries/patches/zlib-1.2.8-remove-Makefile.patch",
+          "description": "Remove Makefile, use EU::MM to build",
+          "sequence_number": 1
+        }
+      ],
+      "resolved_requirements": []
+    }
+  ],
+  "solver_version": 1
+}

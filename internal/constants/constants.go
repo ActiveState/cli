@@ -27,8 +27,8 @@ const ConfigEnvVarName = "ACTIVESTATE_CLI_CONFIGDIR"
 // CacheEnvVarName is the env var used to override the cache dir that the State Tool uses
 const CacheEnvVarName = "ACTIVESTATE_CLI_CACHEDIR"
 
-// ShimEnvVarName is the env var used to find out if we are shimming recursively
-const ShimEnvVarName = "ACTIVESTATE_CLI_SHIMMED_COMMAND"
+// ExecEnvVarName is the env var used to find out if we are shimming recursively
+const ExecEnvVarName = "ACTIVESTATE_CLI_SHIMMED_COMMAND"
 
 // DisableUpdates is the env var used to disable auto update
 const DisableUpdates = "ACTIVESTATE_CLI_DISABLE_UPDATES"
@@ -95,6 +95,9 @@ const ArtifactArchiveName = "artifact.tar.gz"
 
 // ArtifactCacheFileName is the standardized name of an artifact cache file
 const ArtifactCacheFileName = "artifact_cache.json"
+
+// ArtifactMetaDir is the directory in which we store meta information about artifacts
+const ArtifactMetaDir = "artifacts"
 
 // DefaultNamespaceDomain is the domain used when no namespace is given and one has to be constructed
 const DefaultNamespaceDomain = "github.com"
@@ -176,6 +179,12 @@ const DocumentationURL = "http://docs.activestate.com/platform/state/"
 // DocumentationURLHeadless is the documentation URL for headless state docs
 const DocumentationURLHeadless = DocumentationURL + "advanced-topics/detached/"
 
+// ActiveStateBlogURL is the URL for the ActiveState Blog
+const ActiveStateBlogURL = "https://www.activestate.com/blog/"
+
+// ActiveStateSupportURL is the URL for the AciveState support page
+const ActiveStateSupportURL = "https://www.activestate.com/support/"
+
 // BugTrackerURL is the URL of our bug tracker
 const BugTrackerURL = "https://github.com/ActiveState/state-tool/issues"
 
@@ -204,21 +213,26 @@ const ActivePythonDistsDir = "python"
 const RuntimeInstallDirs = "INSTALLDIR,perl"
 
 // RuntimeMetaFile is the json file that holds meta information about our runtime
-const RuntimeMetaFile = "support/metadata.json"
+const RuntimeMetaFile = "metadata.json"
 
 // RuntimeDefinitionFilename is the filename for runtime meta data bundled with artifacts, if they are built by the alternative builder
 const RuntimeDefinitionFilename = "runtime.json"
 
 // LocalRuntimeEnvironmentDirectory is the directory (relative to the installation of a runtime build) where runtime definition files are stored
-const LocalRuntimeEnvironmentDirectory = "_runtime_env"
+const LocalRuntimeEnvironmentDirectory = "_runtime_store"
+
+// LocalRuntimeTempDirectory is the directory (relative to the installation of a runtime build) where temp files are stored
+const LocalRuntimeTempDirectory = "_runtime_temp"
 
 // RuntimeInstallationCompleteMarker is created after all artifacts have been installed
 // Check for existence of this file to ensure that the installation has not been interrupted prematurely.
-const RuntimeInstallationCompleteMarker = "support/completed"
+const RuntimeInstallationCompleteMarker = "completed"
 
-// RuntimeBuildEngineStore is created after all artifacts have been installed
-// Check for existence of this file to ensure that the installation has not been interrupted prematurely.
-const RuntimeBuildEngineStore = "support/build_engine"
+// RuntimeBuildEngineStore contains the name of the build engine that was used to create this runtime
+const RuntimeBuildEngineStore = "build_engine"
+
+// RuntimeRecipeStore contains a serialization of the recipe used to create this build
+const RuntimeRecipeStore = "recipe"
 
 // StateToolMarketingPage links to the marketing page for the state tool
 const StateToolMarketingPage = "https://www.activestate.com/products/platform/state-tool/"
@@ -252,3 +266,15 @@ const GlobalDefaultPrefname = "default_project_path"
 
 // DefaultBranchName is the default branch name used on platform projects
 const DefaultBranchName = "main"
+
+// SvcConfigPort is the config key used for storing the svc port
+const SvcConfigPort = "svc-port"
+
+// SvcConfigPid is the config key used for storing the svc pid
+const SvcConfigPid = "svc-pid"
+
+// TrayAppName is the name we give our systray application
+const TrayAppName = "ActiveState Platform"
+
+// StateAppName is the name we give our state cli executable
+const StateAppName = "State Tool"

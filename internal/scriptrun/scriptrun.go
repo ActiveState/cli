@@ -6,6 +6,7 @@ import (
 	rt "runtime"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
@@ -20,24 +21,19 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
-type Configurable interface {
-	process.Configurable
-	CachePath() string
-}
-
 // ScriptRun manages the context required to run a script.
 type ScriptRun struct {
 	out     output.Outputer
 	sub     subshell.SubShell
 	project *project.Project
-	cfg     Configurable
+	cfg     *config.Instance
 
 	venvPrepared bool
 	venvExePath  string
 }
 
 // New returns a pointer to a prepared instance of ScriptRun.
-func New(out output.Outputer, subs subshell.SubShell, proj *project.Project, cfg Configurable) *ScriptRun {
+func New(out output.Outputer, subs subshell.SubShell, proj *project.Project, cfg *config.Instance) *ScriptRun {
 	return &ScriptRun{
 		out,
 		subs,
@@ -60,16 +56,16 @@ func (s *ScriptRun) NeedsActivation() bool {
 
 // PrepareVirtualEnv sets up the relevant runtime and prepares the environment.
 func (s *ScriptRun) PrepareVirtualEnv() error {
-	runtime, err := runtime.NewRuntime(s.project.Source().Path(), s.cfg.CachePath(), s.project.CommitUUID(), s.project.Owner(), s.project.Name(), runbits.NewRuntimeMessageHandler(s.out))
+	rt, err := runtime.New(runtime.NewProjectTarget(s.project, s.cfg.CachePath(), nil))
 	if err != nil {
-		return locale.WrapError(err, "err_run_runtime_init", "Failed to initialize runtime.")
+		if !runtime.IsNeedsUpdateError(err) {
+			return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
+		}
+		if err := rt.Update(runbits.DefaultRuntimeEventHandler(s.out)); err != nil {
+			return locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
+		}
 	}
-	venv := virtualenvironment.New(runtime)
-
-	if err := venv.Activate(); err != nil {
-		logging.Errorf("Unable to activate state: %s", err.Error())
-		return locale.WrapError(err, "error_state_run_activate")
-	}
+	venv := virtualenvironment.New(rt)
 
 	env, err := venv.GetEnv(true, filepath.Dir(s.project.Source().Path()))
 	if err != nil {

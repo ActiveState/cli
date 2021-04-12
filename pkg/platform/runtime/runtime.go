@@ -1,145 +1,157 @@
 package runtime
 
 import (
-	"path/filepath"
+	"os"
 	"strings"
-
-	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/hash"
+	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
+	"github.com/ActiveState/cli/pkg/platform/runtime/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
+	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
+	"github.com/ActiveState/cli/pkg/platform/runtime/store"
 )
 
 type Runtime struct {
-	runtimeDir  string
-	commitID    strfmt.UUID
-	owner       string
-	projectName string
-	msgHandler  MessageHandler
-	installer   *Installer
+	target      setup.Targeter
+	store       *store.Store
+	model       *model.Model
+	envAccessed bool
 }
 
-func NewRuntime(projectDir, cachePath string, commitID strfmt.UUID, owner string, projectName string, msgHandler MessageHandler) (*Runtime, error) {
-	var resolvedProjectDir string
-	if projectDir != "" {
-		var err error
-		projectDir = strings.TrimSuffix(projectDir, constants.ConfigFileName)
-		resolvedProjectDir, err = fileutils.ResolveUniquePath(projectDir)
-		if err != nil {
-			return nil, locale.WrapError(err, "err_new_runtime_unique_path", "Failed to resolve a unique file path to the project dir.")
+type Executables []string
+
+// DisabledRuntime is an empty runtime that is only created when constants.DisableRuntime is set to true in the environment
+var DisabledRuntime = &Runtime{}
+
+// NeedsUpdateError is an error returned when the runtime is not completely installed yet.
+type NeedsUpdateError struct{ error }
+
+// IsNeedsUpdateError checks if the error is a NeedsUpdateError
+func IsNeedsUpdateError(err error) bool {
+	return errs.Matches(err, &NeedsUpdateError{})
+}
+
+func newRuntime(target setup.Targeter) (*Runtime, error) {
+	rt := &Runtime{target: target}
+	rt.model = model.NewDefault()
+
+	var err error
+	if rt.store, err = store.New(target.Dir()); err != nil {
+		return nil, errs.Wrap(err, "Could not create runtime store")
+	}
+
+	if !rt.store.MatchesCommit(target.CommitUUID()) {
+		return rt, &NeedsUpdateError{errs.New("Runtime requires setup.")}
+	}
+
+	return rt, nil
+}
+
+// New attempts to create a new runtime from local storage.  If it fails with a NeedsUpdateError, Update() needs to be called to update the locally stored runtime.
+func New(target setup.Targeter) (*Runtime, error) {
+	if strings.ToLower(os.Getenv(constants.DisableRuntime)) == "true" {
+		return DisabledRuntime, nil
+	}
+	analytics.Event(analytics.CatRuntime, analytics.ActRuntimeStart)
+
+	r, err := newRuntime(target)
+	if err == nil {
+		analytics.Event(analytics.CatRuntime, analytics.ActRuntimeCache)
+	}
+	return r, err
+}
+
+// Update updates the runtime by downloading all necessary artifacts from the Platform and installing them locally.
+// This function is usually called, after New() returned with a NeedsUpdateError
+func (r *Runtime) Update(msgHandler *events.RuntimeEventHandler) error {
+	logging.Debug("Updating %s#%s @ %s", r.target.Name(), r.target.CommitUUID(), r.target.Dir())
+
+	// Run the setup function (the one that produces runtime events) in the background...
+	prod := events.NewRuntimeEventProducer()
+	var setupErr error
+	go func() {
+		defer prod.Close()
+
+		if err := setup.New(r.target, prod).Update(); err != nil {
+			setupErr = errs.Wrap(err, "Update failed")
+			return
 		}
-		logging.Debug("In NewRuntime: resolved project dir is: %s", resolvedProjectDir)
-	}
+		rt, err := newRuntime(r.target)
+		if err != nil {
+			setupErr = errs.Wrap(err, "Could not reinitialize runtime after update")
+			return
+		}
+		*r = *rt
+	}()
 
-	installPath := filepath.Join(cachePath, hash.ShortHash(resolvedProjectDir))
-	r := &Runtime{
-		runtimeDir:  installPath,
-		commitID:    commitID,
-		owner:       owner,
-		projectName: projectName,
-		msgHandler:  msgHandler,
-	}
-
-	r.installer = NewInstaller(r)
-
-	analytics.Event(catRuntime, actStart)
-	if r.IsCachedRuntime() {
-		analytics.Event(catRuntime, actCache)
-	}
-
-	return r, nil
-}
-
-func (r *Runtime) SetInstallPath(installPath string) {
-	logging.Debug("SetInstallPath: %s", installPath)
-	r.runtimeDir = installPath
-}
-
-func (r *Runtime) InstallPath() string {
-	return r.runtimeDir
-}
-
-// IsCachedRuntime checks if the requested runtime is already available ie.,
-// the runtime installation completed successful (marker file found) AND the requested commitID did not change
-func (r *Runtime) IsCachedRuntime() bool {
-	marker := filepath.Join(r.runtimeDir, constants.RuntimeInstallationCompleteMarker)
-	if !fileutils.FileExists(marker) {
-		logging.Debug("Marker does not exist: %s", marker)
-		return false
-	}
-
-	contents, err := fileutils.ReadFile(marker)
+	// ... and handle and wait for the runtime events in the main thread
+	err := msgHandler.WaitForAllEvents(prod.Events())
 	if err != nil {
-		logging.Error("Could not read marker: %v", err)
-		return false
+		logging.Error("Error handling update events: %v", err)
 	}
 
-	logging.Debug("IsCachedRuntime for %s, %s==%s", marker, string(contents), r.commitID.String())
-	return string(contents) == r.commitID.String()
+	// when the msg handler returns, *r and setupErr are updated.
+
+	return setupErr
 }
 
-// MarkInstallationComplete writes the installation complete marker to the runtime directory
-func (r *Runtime) MarkInstallationComplete() error {
-	markerFile := filepath.Join(r.runtimeDir, constants.RuntimeInstallationCompleteMarker)
-	markerDir := filepath.Dir(markerFile)
-	err := fileutils.MkdirUnlessExists(markerDir)
+// Environ returns a key-value map of the environment variables that need to be set for this runtime
+// inherit includes environment variables set on the system
+// projectDir is only used for legacy camel builds
+func (r *Runtime) Environ(inherit bool, projectDir string) (map[string]string, error) {
+	if r == DisabledRuntime {
+		return nil, errs.New("Called Environ() on a disabled runtime.")
+	}
+	env, err := r.store.Environ(inherit)
+	if !r.envAccessed {
+		if err != nil {
+			analytics.EventWithLabel(analytics.CatRuntime, analytics.ActRuntimeFailure, analytics.LblRtFailEnv)
+		} else {
+			analytics.Event(analytics.CatRuntime, analytics.ActRuntimeSuccess)
+		}
+		r.envAccessed = true
+	}
+	return injectProjectDir(env, projectDir), err
+}
+
+func (r *Runtime) Executables() (Executables, error) {
+	env, err := r.Environ(false, "")
 	if err != nil {
-		return errs.Wrap(err, "could not create completion marker directory")
+		return nil, errs.Wrap(err, "Could not retrieve environment info")
 	}
-	err = fileutils.WriteFile(markerFile, []byte(r.commitID.String()))
+
+	// Retrieve artifact binary directory
+	var bins []string
+	if p, ok := env["PATH"]; ok {
+		bins = strings.Split(p, string(os.PathListSeparator))
+	}
+
+	exes, err := exeutils.Executables(bins)
 	if err != nil {
-		return errs.Wrap(err, "could not set completion marker")
+		return nil, errs.Wrap(err, "Could not detect executables")
 	}
-	return nil
-}
 
-// StoreBuildEngine stores the build engine value in the runtime directory
-func (r *Runtime) StoreBuildEngine(buildEngine BuildEngine) error {
-	storeFile := filepath.Join(r.runtimeDir, constants.RuntimeBuildEngineStore)
-	storeDir := filepath.Dir(storeFile)
-	logging.Debug("Storing build engine %s at %s", buildEngine.String(), storeFile)
-	err := fileutils.MkdirUnlessExists(storeDir)
+	// Remove duplicate executables as per PATH and PATHEXT
+	exes, err = exeutils.UniqueExes(exes, os.Getenv("PATHEXT"))
 	if err != nil {
-		return errs.Wrap(err, "Could not create completion marker directory.")
+		return nil, errs.Wrap(err, "Could not detect unique executables, make sure your PATH and PATHEXT environment variables are properly configured.")
 	}
-	err = fileutils.WriteFile(storeFile, []byte(buildEngine.String()))
+
+	return exes, nil
+}
+
+// Artifacts returns a map of artifact information extracted from the recipe
+func (r *Runtime) Artifacts() (map[artifact.ArtifactID]artifact.ArtifactRecipe, error) {
+	recipe, err := r.store.Recipe()
 	if err != nil {
-		return errs.Wrap(err, "Could not store build engine string.")
+		return nil, locale.WrapError(err, "runtime_artifacts_recipe_load_err", "Failed to load recipe for your runtime.  Please re-install the runtime.")
 	}
-	return nil
-}
-
-// BuildEngine returns the runtime build engine value stored in the runtime directory
-func (r *Runtime) BuildEngine() (BuildEngine, error) {
-	storeFile := filepath.Join(r.runtimeDir, constants.RuntimeBuildEngineStore)
-
-	data, err := fileutils.ReadFile(storeFile)
-	if err != nil {
-		return UnknownEngine, errs.Wrap(err, "Could not read build engine cache store.")
-	}
-
-	return parseBuildEngine(string(data)), nil
-}
-
-// Env will grab the environment information for the given runtime.
-// This currently just aliases to installer, pending further refactoring
-func (r *Runtime) Env() (EnvGetter, error) {
-	return r.installer.Env()
-}
-
-func (r *Runtime) CommitID() strfmt.UUID {
-	return r.commitID
-}
-
-func (r *Runtime) Owner() string {
-	return r.owner
-}
-
-func (r *Runtime) ProjectName() string {
-	return r.projectName
+	artifacts := artifact.NewMapFromRecipe(recipe)
+	return artifacts, nil
 }

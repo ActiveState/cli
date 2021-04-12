@@ -10,6 +10,12 @@ type StateVersion {
   date: String!
 }
 
+type Project {
+  namespace: String!
+  locations: [String!]!
+}
+
 type Query {
   version: Version
+  projects: [Project]!
 }

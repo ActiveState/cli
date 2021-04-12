@@ -26,9 +26,18 @@ func NewSvcModel(ctx context.Context, cfg *config.Instance) (*SvcModel, error) {
 
 func (m *SvcModel) StateVersion() (*graph.Version, error) {
 	r := request.NewVersionRequest()
-	v := &graph.Version{}
-	if err := m.client.Run(r, &v); err != nil {
+	resp := graph.VersionResponse{}
+	if err := m.client.Run(r, &resp); err != nil {
 		return nil, err
 	}
-	return v, nil
+	return &resp.Version, nil
+}
+
+func (m *SvcModel) LocalProjects() ([]*graph.Project, error) {
+	r := request.NewLocalProjectsRequest()
+	response := graph.ProjectsResponse{[]*graph.Project{}}
+	if err := m.client.Run(r, &response); err != nil {
+		return nil, err
+	}
+	return response.Projects, nil
 }

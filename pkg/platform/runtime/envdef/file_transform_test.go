@@ -20,11 +20,11 @@ func TestRelocateFile(t *testing.T) {
 	}{
 		{
 			"null-padded", "/ghi", &nullCharacter, false,
-			"/ghi/something/else\u0000\u0000\u0000\u0000",
+			"/ghi/something/else\u0000\u0000\u0000\u0000text\u0000",
 		},
 		{
 			"text-only", "/ghi", nil, false,
-			"/ghi/something/else\u0000",
+			"/ghi/something/else\u0000text\u0000",
 		},
 		{
 			"invalid-padding", "/ghi", &invalidPad, true, "",
@@ -42,12 +42,12 @@ func TestRelocateFile(t *testing.T) {
 				PadWith: c.PadWith,
 			}
 
-			res, err := ft.relocateFile([]byte("/abcdef/something/else\u0000"), c.Replacement)
+			res, err := ft.relocateFile([]byte("/abcdef/something/else\u0000text\u0000"), c.Replacement)
 			if c.HasError != (err != nil) {
 				tt.Fatalf("relocateFile returned with err: %v", err)
 			}
 			if err == nil {
-				assert.Equal(tt, res, []byte(c.Expected))
+				assert.Equal(tt, []byte(c.Expected), res)
 			}
 		})
 	}

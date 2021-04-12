@@ -83,7 +83,7 @@ func (r *Push) Run(params PushParams) error {
 	pjm, err := model.FetchProjectByName(owner, name)
 	if err != nil {
 		if errs.Matches(err, &model.ErrProjectNotFound{}) && r.project.IsHeadless() {
-			return locale.WrapInputError(err, "err_push_existing_project_needed", "Cannot push to [NOTICE]{{.V0}}/{{.V1}}[/RESET], as project does not exist.")
+			return locale.WrapInputError(err, "err_push_existing_project_needed", "Cannot push to [NOTICE]{{.V0}}/{{.V1}}[/RESET], as project does not exist.", owner, name)
 		}
 		if !errs.Matches(err, &model.ErrProjectNotFound{}) {
 			return locale.WrapError(err, "err_push_try_project", "Failed to check for existence of project.")
@@ -96,7 +96,7 @@ func (r *Push) Run(params PushParams) error {
 		return errs.Wrap(err, "Failed to retrieve project language.")
 	}
 	if pjm != nil {
-		// return error if we expected to create a new project
+		// return error if we expected to create a new project initialized with `state init` (it has no commitID yet)
 		if r.project.CommitID() == "" {
 			return locale.NewError("push_already_exists", "The project [NOTICE]{{.V0}}/{{.V1}}[/RESET] already exists on the platform. To start using the latest version please run [ACTIONABLE]`state pull`[/RESET].", owner, name)
 		}
@@ -122,6 +122,7 @@ func (r *Push) Run(params PushParams) error {
 		}
 		branchName = branch.Label
 	} else {
+		// Note: We only get here when no commit ID is set yet ie., the activestate.yaml file has been created with `state init`.
 		r.Outputer.Notice(locale.Tl("push_creating_project", "Creating project [NOTICE]{{.V1}}[/RESET] under [NOTICE]{{.V0}}[/RESET] on the ActiveState Platform", owner, name))
 		pjm, err = model.CreateEmptyProject(owner, name, r.project.Private())
 		if err != nil {
@@ -139,14 +140,14 @@ func (r *Push) Run(params PushParams) error {
 		var err error
 		commitID, err = model.CommitInitial(model.HostPlatform, lang, langVersion)
 		if err != nil {
-			return locale.WrapError(err, "push_project_init_err", "Failed to initialize project {{.V0}}", r.project.Namespace().String())
+			return locale.WrapError(err, "push_project_init_err", "Failed to initialize project {{.V0}}", pjm.Name)
 		}
 	}
 
 	// update the project at the given commit id.
 	err = model.UpdateProjectBranchCommitWithModel(pjm, branchName, commitID)
 	if err != nil {
-		return locale.WrapError(err, "push_project_branch_commit_err", "Failed to update new project {{.V0}} to current commitID.", r.project.Namespace().String())
+		return locale.WrapError(err, "push_project_branch_commit_err", "Failed to update new project {{.V0}} to current commitID.", pjm.Name)
 	}
 
 	// Remove temporary language entry
@@ -154,6 +155,12 @@ func (r *Push) Run(params PushParams) error {
 	err = pjf.RemoveTemporaryLanguage()
 	if err != nil {
 		return locale.WrapInputError(err, "push_remove_lang_err", "Failed to remove temporary language field from activestate.yaml.")
+	}
+
+	if r.project.IsHeadless() {
+		if err := r.project.Source().SetNamespace(owner, name); err != nil {
+			return errs.Wrap(err, "Could not set project namespace in project file")
+		}
 	}
 
 	if err := r.project.Source().SetCommit(commitID.String(), false); err != nil {

@@ -2,6 +2,7 @@ package subshell
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -9,6 +10,7 @@ import (
 	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
@@ -84,10 +86,21 @@ func New() SubShell {
 		}
 	}
 
-	logging.Debug("Detected SHELL: %s", binary)
+	// try to find the binary on the PATH
+	binaryPath, err := exec.LookPath(binary)
+	if err == nil {
+		// if we found it, resolve all symlinks, for many Linux distributions the SHELL is "sh" but symlinked to a different default shell like bash or zsh
+		resolved, err := fileutils.ResolvePath(binaryPath)
+		if err == nil {
+			binary = resolved
+		} else {
+			logging.Debug("Failed to resolve path to shell binary %s: %v", binaryPath, err)
+		}
+	}
 
 	name := filepath.Base(binary)
 	name = strings.TrimSuffix(name, filepath.Ext(name))
+	logging.Debug("Detected SHELL: %s", name)
 
 	if runtime.GOOS == "windows" {
 		// For some reason Go or MSYS doesn't translate paths with spaces correctly, so we have to strip out the
@@ -108,7 +121,7 @@ func New() SubShell {
 	case "cmd":
 		subs = &cmd.SubShell{}
 	default:
-		logging.Errorf("Unsupported shell: %s, defaulting to OS default.", name)
+		logging.Debug("Unsupported shell: %s, defaulting to OS default.", name)
 		switch runtime.GOOS {
 		case "windows":
 			return &cmd.SubShell{}

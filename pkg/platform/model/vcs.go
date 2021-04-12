@@ -319,7 +319,7 @@ func UpdateBranchForProject(pj ProjectInfo, commitID strfmt.UUID) error {
 
 	err = UpdateBranchCommit(branch.BranchID, commitID)
 	if err != nil {
-		return errs.Wrap(err, "Could no update branch")
+		return errs.Wrap(err, "Could no update branch to commit %s", commitID.String())
 	}
 
 	return nil
@@ -361,7 +361,7 @@ func updateBranch(branchID strfmt.UUID, changeset *mono_models.BranchEditable) e
 			)
 			return errs.AddTips(err, "Run [ACTIONABLE]state fork <project namespace>[/RESET] to make changes to this project")
 		}
-		return locale.NewError("err_update_branch", api.ErrorMessageFromPayload(err))
+		return locale.NewError("err_update_branch", "", api.ErrorMessageFromPayload(err))
 	}
 	return nil
 }
@@ -433,7 +433,11 @@ func UpdateProjectBranchCommitWithModel(pjm *mono_models.Project, branchName str
 		return errs.Wrap(err, "Could not fetch branch: %s", branchName)
 	}
 
-	return UpdateBranchCommit(branch.BranchID, commitID)
+	err = UpdateBranchCommit(branch.BranchID, commitID)
+	if err != nil {
+		return errs.Wrap(err, "Could update branch %s to commitID %s", branchName, commitID.String())
+	}
+	return nil
 }
 
 // CommitChangeset commits multiple changes in one commit
@@ -706,6 +710,43 @@ func TrackBranch(source, target *mono_models.Project) error {
 		return locale.WrapError(err, msg)
 	}
 	return nil
+}
+
+func GetRootBranches(branches mono_models.Branches) mono_models.Branches {
+	var rootBranches mono_models.Branches
+	for _, branch := range branches {
+		// Account for forked projects where the root branches contain
+		// a tracking ID that is not in the current project's branches
+		if branch.Tracks != nil && containsBranch(branch.Tracks, branches) {
+			continue
+		}
+		rootBranches = append(rootBranches, branch)
+	}
+	return rootBranches
+}
+
+func containsBranch(id *strfmt.UUID, branches mono_models.Branches) bool {
+	for _, branch := range branches {
+		if branch.BranchID.String() == id.String() {
+			return true
+		}
+	}
+	return false
+}
+
+// GetBranchChildren returns the direct children of the given branch
+func GetBranchChildren(branch *mono_models.Branch, branches mono_models.Branches) mono_models.Branches {
+	var children mono_models.Branches
+	if branch == nil {
+		return children
+	}
+
+	for _, b := range branches {
+		if b.Tracks != nil && b.Tracks.String() == branch.BranchID.String() {
+			children = append(children, b)
+		}
+	}
+	return children
 }
 
 func GetRevertCommit(from, to strfmt.UUID) (*mono_models.Commit, error) {

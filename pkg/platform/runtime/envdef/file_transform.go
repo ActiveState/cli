@@ -83,11 +83,10 @@ func (ft *FileTransform) relocateFile(fileBytes []byte, replacement string) ([]b
 
 	quoteEscapeFind := regexp.QuoteMeta(ft.Pattern)
 	// replacementRegex matches the search Pattern plus subsequent text up to the string termination character (pad, which usually is 0x00)
-	replacementRegex, err := regexp.Compile(fmt.Sprintf(`%s([^\\x%02x]*)`, quoteEscapeFind, pad))
+	replacementRegex, err := regexp.Compile(fmt.Sprintf(`%s([^\x%02x]*)`, quoteEscapeFind, pad))
 	if err != nil {
 		return fileBytes, errs.Wrap(err, "Failed to compile replacement regular expression.")
 	}
-
 	return replacementRegex.ReplaceAll(fileBytes, paddedReplaceBytes), nil
 }
 
@@ -135,9 +134,9 @@ func (ft *FileTransform) ApplyTransform(baseDir string, constants Constants) err
 }
 
 // ApplyFileTransforms applies all file transformations to the files in the base directory
-func (ed *EnvironmentDefinition) ApplyFileTransforms(baseDir string, constants Constants) error {
+func (ed *EnvironmentDefinition) ApplyFileTransforms(installDir string, constants Constants) error {
 	for _, ft := range ed.Transforms {
-		err := ft.ApplyTransform(filepath.Join(baseDir, ed.InstallDir), constants)
+		err := ft.ApplyTransform(installDir, constants)
 		if err != nil {
 			return err
 		}
