@@ -61,7 +61,7 @@ func TestRunCommandError(t *testing.T) {
 	require.NoError(t, err)
 	subs := New(cfg)
 
-	err := subs.Run("some-file-that-doesnt-exist")
+	err = subs.Run("some-file-that-doesnt-exist")
 	assert.Error(t, err, "Returns an error")
 
 	data := []byte("#!/usr/bin/env bash\nexit 2")
