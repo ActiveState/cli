@@ -43,10 +43,7 @@ func (r *Prepare) prepareStartShortcut() error {
 		return locale.WrapInputError(err, "err_preparestart_mkdir", "Could not create start menu entry: %s", dir)
 	}
 
-	appInfo, err := appinfo.TrayApp()
-	if err != nil {
-		return locale.WrapError(err, "err_preparestart_appinfo", "Could not collect application information")
-	}
+	appInfo := appinfo.TrayApp()
 	sc, err := shortcut.New(dir, appInfo.Name(), appInfo.Exec())
 	if err != nil {
 		return locale.WrapError(err, "err_preparestart_shortcut", "Could not create shortcut")
