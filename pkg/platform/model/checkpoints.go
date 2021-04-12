@@ -74,7 +74,7 @@ func FetchCheckpointForCommit(commitID strfmt.UUID) (Checkpoint, strfmt.DateTime
 
 	request := request.CheckpointByCommit(commitID)
 
-	gql := graphql.Get()
+	gql := graphql.New()
 	response := model.Checkpoint{}
 	err := gql.Run(request, &response)
 	if err != nil {

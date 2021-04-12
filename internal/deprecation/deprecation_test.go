@@ -4,8 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/spf13/viper"
-
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/deprecation"
 	depMock "github.com/ActiveState/cli/internal/deprecation/mock"
@@ -21,7 +19,6 @@ type DeprecationTestSuite struct {
 
 func (suite *DeprecationTestSuite) BeforeTest(suiteName, testName string) {
 	suite.mock = depMock.Init()
-	viper.Reset()
 	var err error
 	suite.cfg, err = config.Get()
 	suite.Require().NoError(err)

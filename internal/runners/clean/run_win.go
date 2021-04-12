@@ -13,7 +13,6 @@ import (
 )
 
 func removeConfig(cfg configurable) error {
-	cfg.SkipSave(true)
 	return runScript("removeConfig", cfg.ConfigPath())
 }
 

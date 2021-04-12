@@ -14,7 +14,6 @@ type configurable interface {
 	project.ConfigAble
 	ConfigPath() string
 	CachePath() string
-	SkipSave(bool)
 }
 
 type Config struct {
