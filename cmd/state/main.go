@@ -174,11 +174,6 @@ func run(args []string, isInteractive bool, out output.Outputer) error {
 	}
 
 	if childCmd != nil && !childCmd.SkipChecks() {
-		// Auto update to latest state tool version, only runs once per day
-		if updated, err := autoUpdate(args, out, pjPath); err != nil || updated {
-			return err
-		}
-
 		// Check for deprecation
 		deprecated, err := deprecation.Check(cfg)
 		if err != nil {
@@ -202,6 +197,14 @@ func run(args []string, isInteractive bool, out output.Outputer) error {
 			cmdName = childCmd.Use() + " "
 		}
 		err = errs.AddTips(err, locale.Tl("err_tip_run_help", "Run → [ACTIONABLE]`state {{.V0}}--help`[/RESET] for general help", cmdName))
+	}
+
+	if childCmd != nil && !childCmd.SkipChecks() {
+		// Auto update to latest state tool version, only runs once per day
+		// Todo: This is better done in the `state-svc` process  https://www.pivotaltracker.com/story/show/177730748
+		if updated, err := autoUpdate(args, out, cfg, pjPath); err != nil || updated {
+			return err
+		}
 	}
 
 	return err

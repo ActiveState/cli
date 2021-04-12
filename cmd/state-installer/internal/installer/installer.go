@@ -61,6 +61,8 @@ func Install(fromDir, toDir string, logger interface{ Printf(string, ...interfac
 	// clean up temporary installation directory after we are done
 	defer os.RemoveAll(fromDir)
 
+	// Todo: https://www.pivotaltracker.com/story/show/177600107
+	// Get target file paths.
 	var targetFiles []string
 	for _, file := range fileutils.ListDir(fromDir, false) {
 		targetFile := filepath.Join(toDir, file)

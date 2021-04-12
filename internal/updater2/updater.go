@@ -22,8 +22,7 @@ type AvailableUpdate struct {
 const InstallerName = "installer" + osutils.ExeExt
 
 // InstallDeferred will fetch the update and run its installer in a deferred process
-// This deferred process
-func (u *AvailableUpdate) InstallDeferred() error {
+func (u *AvailableUpdate) InstallDeferred(configPath string) error {
 	tmpDir, err := ioutil.TempDir("", "state-update")
 	if err != nil {
 		return errs.Wrap(err, "Could not create temp dir")
@@ -37,11 +36,22 @@ func (u *AvailableUpdate) InstallDeferred() error {
 		return errs.Wrap(err, "Downloaded update does not have installer")
 	}
 
+	installLogFile := filepath.Join(configPath, "installer.log")
+
 	installTargetPath := filepath.Dir(os.Args[0])
-	err := exeutils.ExecuteAndForget(filepath.Join(tmpDir, InstallerName), installTargetPath)
+	err = exeutils.ExecuteAndForget(filepath.Join(tmpDir, InstallerName),
+		installLogFile, installTargetPath)
 	if err != nil {
 		return errs.Wrap(err, "Could not start installer")
 	}
 
 	return nil
+}
+
+func (u *AvailableUpdate) Channel() string {
+	return u.channel
+}
+
+func (u *AvailableUpdate) Version() string {
+	return u.version
 }

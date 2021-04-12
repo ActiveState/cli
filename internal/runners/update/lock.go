@@ -1,11 +1,15 @@
 package update
 
 import (
+	"context"
+
 	"github.com/ActiveState/cli/internal/captain"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -100,4 +104,22 @@ func confirmLock(prom prompt.Prompter) error {
 	}
 
 	return nil
+}
+
+func fetchUpdater(version, channel string) (*updater.Updater, *updater.Info, error) {
+	if channel != constants.BranchName {
+		version = "" // force update
+	}
+	up := updater.New(version)
+	up.DesiredBranch = channel
+	info, err := up.Info(context.Background())
+	if err != nil {
+		return nil, nil, locale.WrapInputError(err, "err_update_fetch", "Could not retrieve update information, please verify that '{{.V0}}' is a valid channel.", channel)
+	}
+
+	if info == nil && version == "" { // if version is empty then we should always have some info
+		return nil, nil, locale.NewInputError("err_update_fetch", "Could not retrieve update information, please verify that '{{.V0}}' is a valid channel.", channel)
+	}
+
+	return up, info, nil
 }

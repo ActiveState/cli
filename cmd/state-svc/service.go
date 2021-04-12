@@ -26,7 +26,7 @@ func (s *service) Start() error {
 	logging.Debug("service:Start")
 
 	var err error
-	s.server, err = server.New()
+	s.server, err = server.New(s.cfg)
 	if err != nil {
 		return errs.Wrap(err, "Could not create server")
 	}

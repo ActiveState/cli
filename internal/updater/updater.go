@@ -23,7 +23,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils/lockfile"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 const plat = runtime.GOOS + "-" + runtime.GOARCH
@@ -80,31 +79,6 @@ func (u *Updater) CanUpdate() bool {
 	}
 
 	return info != nil
-}
-
-// PrintUpdateMessage will print a message to stdout when an update is available.
-// This will only print the message if the current project has a version lock AND if an update is available
-func PrintUpdateMessage(pjPath string, out output.Outputer) {
-	if versionInfo, _ := projectfile.ParseVersionInfo(pjPath); versionInfo == nil {
-		return
-	}
-
-	up := Updater{
-		CurrentVersion: constants.Version,
-		APIURL:         constants.APIUpdateURL,
-		CmdName:        constants.CommandName,
-	}
-
-	info, err := up.Info(context.Background())
-	if err != nil {
-		logging.Error("Could not check for updates: %v", err)
-		return
-	}
-
-	if info != nil && info.Version != constants.Version {
-		out.Notice(output.Heading(locale.Tl("update_available_title", "Update Available")))
-		out.Notice(locale.Tr("update_available", constants.Version, info.Version))
-	}
 }
 
 // Download acts as Run except that it unpacks it to the specified path rather than replace the current binary

@@ -7,7 +7,6 @@ import (
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/globaldefault"
-	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -23,7 +22,6 @@ type primeable interface {
 
 type Configurer interface {
 	globaldefault.DefaultConfigurer
-	installation.Configurer
 }
 
 // Prepare manages the prepare execution context.
@@ -69,4 +67,3 @@ func (r *Prepare) reportError(message string, err error) {
 	r.out.Notice(output.Heading(locale.Tl("warning", "Warning")))
 	r.out.Notice(message)
 }
-

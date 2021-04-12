@@ -10,6 +10,12 @@ type StateVersion {
   date: String!
 }
 
+type DeferredUpdate {
+  channel: String!
+  version: String!
+}
+
 type Query {
   version: Version
+  update(channel: String, version: String): DeferredUpdate
 }

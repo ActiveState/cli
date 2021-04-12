@@ -2,13 +2,15 @@ package main
 
 import (
 	"errors"
-	"fmt"
+	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/shirou/gopsutil/process"
 
+	"github.com/ActiveState/cli/cmd/state-installer/internal/installer"
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
@@ -20,12 +22,56 @@ import (
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 )
 
+type params struct {
+	logFile     string
+	installPath string
+}
+
+func parseParams(args ...string) (*params, error) {
+	var p params
+
+	for _, arg := range args[1:] {
+		if strings.HasPrefix(arg, "--log-file=") {
+			p.logFile = strings.TrimPrefix(arg, "--log-file=")
+		} else {
+			p.installPath = arg
+		}
+	}
+
+	if p.installPath == "" {
+		installPath, err := installation.InstallPath()
+		if err != nil {
+			return nil, errs.Wrap(err, "Retrieving installPath")
+		}
+		p.installPath = installPath
+	}
+
+	return &p, nil
+}
+
 func main() {
+	params, err := parseParams(os.Args...)
+	if err != nil {
+		log.Printf("Error parsing command line parameters: %v", err)
+	}
+	// If a log file is set, update the default logger to also append logs to that file. Otherwise it is really difficult to debug what is going on.
+	if params.logFile != "" {
+		f, err := os.OpenFile(params.logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			log.Printf("error initializing log file: %v", err)
+		}
+		defer f.Close()
+		log.SetOutput(io.MultiWriter(os.Stderr, f))
+	}
+
 	if err := run(); err != nil {
-		fmt.Fprintln(os.Stderr, errs.Join(err, ": ").Error())
-		fmt.Fprintln(os.Stderr, "To retry run %s", strings.Join(os.Args, " "))
+		// Todo This is running in the background, so these error messages will not be seen and only be written to the log file.
+		// https://www.pivotaltracker.com/story/show/177691644
+		log.Println(errs.Join(err, ": ").Error())
+		log.Printf("To retry run %s", strings.Join(os.Args, " "))
 		os.Exit(1)
 	}
+	log.Println("Installation was successful.")
 }
 
 func run() error {
@@ -40,8 +86,8 @@ func run() error {
 	}
 
 	var installPath string
-	if len(os.Args) > 1 {
-		installPath = os.Args[1]
+	if len(os.Args) > 2 {
+		installPath = os.Args[2]
 	} else {
 		installPath, err = installation.InstallPath()
 		if err != nil {
@@ -76,26 +122,22 @@ func run() error {
 		return errs.Wrap(err, "Failed to stop %s", trayInfo.Name())
 	}
 
-	// Todo: https://www.pivotaltracker.com/story/show/177600107
-	// Clean up any conflicting files
 	tmpDir := filepath.Dir(exe)
-	for _, file := range fileutils.ListDir(tmpDir, false) {
-		targetFile := filepath.Join(installPath, file)
-		if fileutils.TargetExists(targetFile) {
-			if err := os.Remove(targetFile); err != nil {
-				return errs.Wrap(err, "Could not remove old file: %s", targetFile)
-			}
-		}
-	}
-
-	if err := fileutils.CopyFiles(tmpDir, installPath); err != nil {
-		return errs.Wrap(err, "Failed to copy files to install dir")
+	err = installer.Install(tmpDir, installPath, log.Default())
+	if err != nil {
+		return errs.Wrap(err, "Installation failed")
 	}
 
 	shell := subshell.New(cfg)
 	err = shell.WriteUserEnv(cfg, map[string]string{"PATH": installPath}, sscommon.InstallID, true)
 	if err != nil {
 		return errs.Wrap(err, "Could not update PATH")
+	}
+
+	// Run _prepare after updates to facilitate anything the new version of the state tool might need to set up
+	// Yes this is awkward, followup story here: https://www.pivotaltracker.com/story/show/176507898
+	if stdout, stderr, err := exeutils.ExecSimple(os.Args[0], "_prepare"); err != nil {
+		log.Printf("_prepare failed after update: %v\n\nstdout: %s\n\nstderr: %s", err, stdout, stderr)
 	}
 
 	if err := exeutils.ExecuteAndForget(trayInfo.Exec()); err != nil {

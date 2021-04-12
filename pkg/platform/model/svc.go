@@ -32,3 +32,12 @@ func (m *SvcModel) StateVersion() (*graph.Version, error) {
 	}
 	return v, nil
 }
+
+func (m *SvcModel) UpdateDistribution(channel, version string) (*graph.DeferredUpdate, error) {
+	r := request.NewUpdateRequest(channel, version)
+	u := &graph.DeferredUpdate{}
+	if err := m.client.Run(r, &u); err != nil {
+		return nil, errs.Wrap(err, "Error updating to version %s at channel %s", version, channel)
+	}
+	return u, nil
+}

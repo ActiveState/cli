@@ -121,75 +121,45 @@ func assertRevertedInstallation(t *testing.T, toDir, logs string) {
 	}
 }
 
-// TestAutoUpdate tests that an executable can update itself, by spawning the installer process which eventually replaces the calling executable.
-func TestAutoUpdate(t *testing.T) {
+// TestInstallation tests that an installation is working if there are no obstacles like running processes
+func TestInstallation(t *testing.T) {
 	tests := []struct {
-		Name          string
-		Timeout       string
-		ExpectSuccess bool
+		Name                      string
+		SimulateAdminInstallation bool
+		ExpectSuccess             bool
 	}{
-		{
-			"replaced-executable-is-running",
-			"0",
-			// when the replaced executable is still running, the auto-update should fail on Windows
-			runtime.GOOS != "windows",
-		},
-		{
-			"replaced-executable-shut-down",
-			"2",
-			// when the replaced executable is stopped, the auto-update should always pass
-			true,
-		},
+		{"successful", false, true},
+		{"update-without-permissions", true, false},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
-			from, to := initTempInstallDirs(t, true)
-			defer os.RemoveAll(from)
-			defer os.RemoveAll(to)
+			from, to := initTempInstallDirs(t, false)
 
-			logFile := filepath.Join(to, "install.log")
-
-			// run installer
-			_, stderr, err := exeutils.ExecSimple(filepath.Join(to, stateToolTestFile), from, filepath.Join(from, installerTestFile), logFile, tt.Timeout)
-			require.NoError(t, err, "Error running auto-replacing test file: %v, stderr=%s", err, stderr)
-
-			// poll for successful auto-update
-			for i := 0; i < 20; i++ {
-				time.Sleep(time.Millisecond * 200)
-
-				logs, err := ioutil.ReadFile(logFile)
+			if tt.SimulateAdminInstallation {
+				// Simulate that a previous installation has been installed with administrator rights:
+				// Remove the "Writable"-permission for installed files
+				err := os.Chmod(to, 0550)
 				require.NoError(t, err)
-				if strings.Contains(string(logs), "was successful") || strings.Contains(string(logs), "Installation failed") {
-					break
-				}
+				err = os.Chmod(filepath.Join(to, stateToolTestFile), 0550)
+				require.NoError(t, err)
 			}
 
-			logs, err := ioutil.ReadFile(logFile)
-			require.NoError(t, err)
+			buf := bytes.NewBuffer(make([]byte, 0, 1000))
+			logger := log.New(buf, "noop", 0)
+
+			err := installer.Install(from, to, logger)
 
 			if tt.ExpectSuccess {
-				assert.Containsf(t, string(logs), "was successful", "logs should contain 'was successful', got=%s", string(logs))
-				assertSuccessfulInstallation(t, to, string(logs))
+				require.NoError(t, err)
+				assertSuccessfulInstallation(t, to, buf.String())
 			} else {
-				assert.Containsf(t, string(logs), "Installation failed", "logs should contains 'Installation failed', got=%s", string(logs))
-				assertRevertedInstallation(t, to, string(logs))
+				assert.Error(t, err)
+				assertRevertedInstallation(t, to, buf.String())
 			}
 		})
+
 	}
-}
-
-// TestInstallation tests that an installation is working if there are no obstacles like running processes
-func TestInstallation(t *testing.T) {
-	from, to := initTempInstallDirs(t, false)
-
-	buf := bytes.NewBuffer(make([]byte, 0, 1000))
-	logger := log.New(buf, "noop", 0)
-
-	err := installer.Install(from, to, logger)
-	require.NoError(t, err)
-
-	assertSuccessfulInstallation(t, to, buf.String())
 }
 
 func TestInstallationWhileProcessesAreActive(t *testing.T) {
@@ -223,4 +193,64 @@ func TestInstallationWhileProcessesAreActive(t *testing.T) {
 		t.Fatalf("Timeout waiting for installation to finish")
 	}
 
+}
+
+// TestAutoUpdate tests that an executable can update itself, by spawning the installer process which eventually replaces the calling executable.
+func TestAutoUpdate(t *testing.T) {
+	tests := []struct {
+		Name          string
+		Timeout       string
+		ExpectSuccess bool
+	}{
+		{
+			"replaced-executable-is-running",
+			"0",
+			// when the replaced executable is still running, the auto-update should fail on Windows
+			runtime.GOOS != "windows",
+		},
+		{
+			"replaced-executable-shut-down",
+			"2",
+			// when the replaced executable is stopped, the auto-update should always pass
+			true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.Name, func(t *testing.T) {
+			from, to := initTempInstallDirs(t, true)
+			defer os.RemoveAll(from)
+			defer os.RemoveAll(to)
+
+			logFile := filepath.Join(to, "install.log")
+
+			// run installer
+			_, stderr, err := exeutils.ExecSimple(
+				filepath.Join(to, stateToolTestFile), from, filepath.Join(from, installerTestFile),
+				logFile, tt.Timeout)
+			require.NoError(t, err, "Error running auto-replacing test file: %v, stderr=%s", err, stderr)
+
+			// poll for successful auto-update
+			for i := 0; i < 20; i++ {
+				time.Sleep(time.Millisecond * 200)
+
+				logs, err := ioutil.ReadFile(logFile)
+				require.NoError(t, err)
+				if strings.Contains(string(logs), "was successful") || strings.Contains(string(logs), "Installation failed") {
+					break
+				}
+			}
+
+			logs, err := ioutil.ReadFile(logFile)
+			require.NoError(t, err)
+
+			if tt.ExpectSuccess {
+				assert.Containsf(t, string(logs), "was successful", "logs should contain 'was successful', got=%s", string(logs))
+				assertSuccessfulInstallation(t, to, string(logs))
+			} else {
+				assert.Containsf(t, string(logs), "Installation failed", "logs should contains 'Installation failed', got=%s", string(logs))
+				assertRevertedInstallation(t, to, string(logs))
+			}
+		})
+	}
 }

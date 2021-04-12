@@ -2,6 +2,11 @@
 
 package graph
 
+type DeferredUpdate struct {
+	Channel string `json:"channel"`
+	Version string `json:"version"`
+}
+
 type StateVersion struct {
 	License  string `json:"license"`
 	Version  string `json:"version"`

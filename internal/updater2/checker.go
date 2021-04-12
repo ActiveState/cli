@@ -8,6 +8,10 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/httpreq"
+	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 type Checker struct {
@@ -59,4 +63,26 @@ func (u *Checker) CheckFor(desiredChannel, desiredVersion string) (*AvailableUpd
 	info.url = u.apiURL + info.path
 
 	return info, nil
+}
+
+// PrintUpdateMessage will print a message to stdout when an update is available.
+// This will only print the message if the current project has a version lock AND if an update is available
+func (u *Checker) PrintUpdateMessage(pjPath string, out output.Outputer) {
+	if versionInfo, _ := projectfile.ParseVersionInfo(pjPath); versionInfo == nil {
+		return
+	}
+
+	fmt.Println("checking v")
+	info, err := u.Check()
+	if err != nil {
+		fmt.Printf("could not check for updates %v\n", err)
+		logging.Error("Could not check for updates: %v", err)
+		return
+	}
+	fmt.Printf("%v\n", info)
+
+	if info != nil && info.Version() != constants.Version {
+		out.Notice(output.Heading(locale.Tl("update_available_title", "Update Available")))
+		out.Notice(locale.Tr("update_available", constants.Version, info.Version()))
+	}
 }
