@@ -98,3 +98,7 @@ func (s *Shortcut) SetIconBlob(blob []byte) error {
 
 	return s.SetIcon(filepath)
 }
+
+func (s *Shortcut) Filepath() string {
+	return filepath.Join(s.dir, s.name+".lnk")
+}

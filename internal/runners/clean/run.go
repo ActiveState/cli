@@ -14,7 +14,18 @@ func (u *Uninstall) runUninstall() error {
 		return err
 	}
 
-	err = u.removeInstall()
+	// TODO: Stop app before this
+	err = removeTrayApp()
+	if err != nil {
+		return err
+	}
+
+	err = removeAutoStartFile(u.cfg.GetString(constants.AutoStartPath))
+	if err != nil {
+		return err
+	}
+
+	err = removeInstallDir(u.cfg.GetString(constants.InstallPath))
 	if err != nil {
 		return err
 	}
@@ -36,15 +47,14 @@ func removeCache(cachePath string) error {
 	return nil
 }
 
-func (u *Uninstall) removeAutoStartFile() error {
-	autoStartPath := u.cfg.GetString(constants.AutoStartPath)
-	if !fileutils.FileExists(autoStartPath) {
+func removeAutoStartFile(path string) error {
+	if path == "" || !fileutils.FileExists(path) {
 		return nil
 	}
 
-	err := os.Remove(autoStartPath)
+	err := os.Remove(path)
 	if err != nil {
-		return locale.WrapError(err, "err_remove_auto_start", "Could not remove auto start file at path: {{.V0}}", autoStartPath)
+		return locale.WrapError(err, "err_remove_auto_start", "Could not remove auto start file at path: {{.V0}}", path)
 	}
 	return nil
 }

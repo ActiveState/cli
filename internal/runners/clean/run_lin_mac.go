@@ -5,7 +5,6 @@ package clean
 import (
 	"os"
 
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 )
@@ -27,13 +26,12 @@ func removeConfig(configPath string) error {
 	return os.RemoveAll(configPath)
 }
 
-func (u *Uninstall) removeInstallDir() error {
-	path := u.cfg.GetString(constants.InstallPath)
-	if path == "" {
+func removeInstallDir(dir string) error {
+	if dir == "" {
 		return locale.NewError("err_uninstall_no_dir", "Could not remove installing directory, not set in config")
 	}
 
-	err := os.RemoveAll(u.cfg.GetString(constants.InstallPath))
+	err := os.RemoveAll(dir)
 	if err != nil {
 		return locale.WrapError(err, "err_remove_install_dir", "Could not remove installation directory")
 	}

@@ -13,24 +13,6 @@ const (
 	trayAppInstallPath = "/Applications/state-tray.app"
 )
 
-func (u *Uninstall) removeInstall() error {
-	err := u.removeStateTray()
-	if err != nil {
-		return err
-	}
-
-	return u.removeInstallDir()
-}
-
-func (u *Uninstall) removeStateTray() error {
-	err := u.removeAutoStartFile()
-	if err != nil {
-		return err
-	}
-
-	return removeTrayApp()
-}
-
 func removeTrayApp() error {
 	if !fileutils.DirExists(trayAppInstallPath) {
 		return nil

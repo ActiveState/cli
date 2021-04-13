@@ -11,7 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/osutils/shortcut"
 )
 
-var startupPath = filepath.Join(os.Getenv("USERPROFILE"), "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "Startup")
+var StartupPath = filepath.Join(os.Getenv("USERPROFILE"), "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "Startup")
 
 func (a *App) Enable() error {
 	if a.IsEnabled() {
@@ -25,6 +25,12 @@ func (a *App) Enable() error {
 	if err := s.SetIconBlob(box.Bytes("icon.ico")); err != nil {
 		return errs.Wrap(err, "Could not set icon for shortcut file")
 	}
+
+	err = a.cfg.Set(constants.AutoStartPath)
+	if err != nil {
+		return erros.Wrap(err, "Could not set auto start path in config")
+	}
+
 	return nil
 }
 
