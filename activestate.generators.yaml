@@ -59,20 +59,8 @@ scripts:
       $constants.SET_ENV
 
       export GOARCH=${1:-amd64}
-      export TARGET_SUFFIX=${1:-}
-      mkdir -p build/update
-      go run scripts/update-generator/main.go -o build/update $constants.BUILD_TARGET${TARGET_SUFFIX}
-  - name: generate-update-32bit
-    language: bash
-    description: Generate update files
-    value: |
-      set -e
-      $constants.SET_ENV
-
-      export GOARCH=386
-
-      mkdir -p build/update
-      go run scripts/update-generator/main.go -o build/update $constants.BUILD_TARGET_32BIT
+      mkdir -p ./build/update
+      go run scripts/update-generator/main.go -o ./build/update $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET $BUILD_TARGET_DIR/$constants.BUILD_SYSTRAY_TARGET $BUILD_TARGET_DIR/$constants.BUILD_TARGET
   - name: generate-graph
     language: bash
     description: Generates graph server and client files
