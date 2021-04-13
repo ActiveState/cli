@@ -2,6 +2,7 @@ package installer
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -57,10 +58,7 @@ func removeBackupFiles(backupFiles []string) error {
 	return nil
 }
 
-func Install(fromDir, toDir string, logger interface{ Printf(string, ...interface{}) }) error {
-	// clean up temporary installation directory after we are done
-	defer os.RemoveAll(fromDir)
-
+func Install(fromDir, toDir string) error {
 	// Todo: https://www.pivotaltracker.com/story/show/177600107
 	// Get target file paths.
 	var targetFiles []string
@@ -68,7 +66,7 @@ func Install(fromDir, toDir string, logger interface{ Printf(string, ...interfac
 		targetFile := filepath.Join(toDir, file)
 		targetFiles = append(targetFiles, targetFile)
 	}
-	logger.Printf("Target files=%s", strings.Join(targetFiles, ","))
+	log.Printf("Target files=%s", strings.Join(targetFiles, ","))
 
 	backups, err := backupFiles(targetFiles)
 	if err != nil {
@@ -81,9 +79,9 @@ func Install(fromDir, toDir string, logger interface{ Printf(string, ...interfac
 		// on failure ... restore back-up files (hopefully!!)
 		restErr := restoreFiles(backups)
 		if restErr != nil {
-			logger.Printf("restoring of backup files failed: %v", restErr)
+			log.Printf("restoring of backup files failed: %v", restErr)
 		}
-		logger.Printf("Successfully restored original files.")
+		log.Printf("Successfully restored original files.")
 		return errs.Wrap(err, "Failed to copy files to dir %s", toDir)
 	}
 	return nil

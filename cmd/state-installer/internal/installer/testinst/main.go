@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io"
 	"log"
 	"os"
 	"strconv"
@@ -31,15 +32,15 @@ func main() {
 		log.Printf("error initializing log file: %v", err)
 	}
 	defer f.Close()
+	log.SetOutput(io.MultiWriter(os.Stderr, f))
 
 	// pausing before installation (to give time to stop running executables)
 	time.Sleep(time.Duration(timeout) * time.Second)
 
-	logger := log.New(f, "installer", log.LstdFlags)
-	logger.Printf("Installing %s -> %s", fromDir, toDir)
-	err = installer.Install(fromDir, toDir, logger)
+	log.Printf("Installing %s -> %s", fromDir, toDir)
+	err = installer.Install(fromDir, toDir)
 	if err != nil {
-		logger.Printf("Installation failed: %v", err)
+		log.Printf("Installation failed: %v", err)
 	}
-	logger.Printf("Installation from %s -> %s was successful.", fromDir, toDir)
+	log.Printf("Installation from %s -> %s was successful.", fromDir, toDir)
 }

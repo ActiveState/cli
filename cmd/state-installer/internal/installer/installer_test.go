@@ -3,7 +3,6 @@ package installer_test
 import (
 	"bytes"
 	"io/ioutil"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -96,9 +95,7 @@ func initTempInstallDirs(t *testing.T, withAutoInstall bool) (string, string) {
 	return fromDir, toDir
 }
 
-func assertSuccessfulInstallation(t *testing.T, toDir, logs string) {
-	assert.Contains(t, logs, "Target files=", "logs should contain 'Target files=', got=%s", logs)
-
+func assertSuccessfulInstallation(t *testing.T, toDir string) {
 	for _, df := range []string{stateToolTestFile, otherTestFile} {
 		fp := filepath.Join(toDir, df)
 		assert.FileExists(t, fp, "Expected test file %s to exist", fp)
@@ -110,9 +107,7 @@ func assertSuccessfulInstallation(t *testing.T, toDir, logs string) {
 	}
 }
 
-func assertRevertedInstallation(t *testing.T, toDir, logs string) {
-	assert.Contains(t, logs, "Successfully restored original files.")
-
+func assertRevertedInstallation(t *testing.T, toDir string) {
 	fp := filepath.Join(toDir, stateToolTestFile)
 	b, err := ioutil.ReadFile(fp)
 	require.NoError(t, err)
@@ -145,17 +140,14 @@ func TestInstallation(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			buf := bytes.NewBuffer(make([]byte, 0, 1000))
-			logger := log.New(buf, "noop", 0)
-
-			err := installer.Install(from, to, logger)
+			err := installer.Install(from, to)
 
 			if tt.ExpectSuccess {
 				require.NoError(t, err)
-				assertSuccessfulInstallation(t, to, buf.String())
+				assertSuccessfulInstallation(t, to)
 			} else {
 				assert.Error(t, err)
-				assertRevertedInstallation(t, to, buf.String())
+				assertRevertedInstallation(t, to)
 			}
 		})
 
@@ -170,11 +162,9 @@ func TestInstallationWhileProcessesAreActive(t *testing.T) {
 	err := cmd.Start()
 	require.NoError(t, err)
 
-	buf := bytes.NewBuffer([]byte{})
-	logger := log.New(buf, "noop", 0)
 	errC := make(chan error)
 	go func() {
-		errC <- installer.Install(from, to, logger)
+		errC <- installer.Install(from, to)
 	}()
 
 	err = cmd.Wait()
@@ -184,10 +174,10 @@ func TestInstallationWhileProcessesAreActive(t *testing.T) {
 	case err := <-errC:
 		if runtime.GOOS == "windows" {
 			assert.Error(t, err, "Installation should fail on Windows.")
-			assertRevertedInstallation(t, to, buf.String())
+			assertRevertedInstallation(t, to)
 		} else {
 			require.NoError(t, err)
-			assertSuccessfulInstallation(t, to, buf.String())
+			assertSuccessfulInstallation(t, to)
 		}
 	case <-time.After(time.Second * 2):
 		t.Fatalf("Timeout waiting for installation to finish")
@@ -246,10 +236,14 @@ func TestAutoUpdate(t *testing.T) {
 
 			if tt.ExpectSuccess {
 				assert.Containsf(t, string(logs), "was successful", "logs should contain 'was successful', got=%s", string(logs))
-				assertSuccessfulInstallation(t, to, string(logs))
+				assert.Contains(t, string(logs), "Target files=", "logs should contain 'Target files=', got=%s", logs)
+
+				assertSuccessfulInstallation(t, to)
 			} else {
 				assert.Containsf(t, string(logs), "Installation failed", "logs should contains 'Installation failed', got=%s", string(logs))
-				assertRevertedInstallation(t, to, string(logs))
+				assert.Contains(t, string(logs), "Successfully restored original files.")
+
+				assertRevertedInstallation(t, to)
 			}
 		})
 	}
