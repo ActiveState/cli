@@ -2,7 +2,9 @@ package activate
 
 import (
 	"fmt"
+	"os/user"
 	"path/filepath"
+	rt "runtime"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -12,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/globaldefault"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/output/txtstyle"
 	"github.com/ActiveState/cli/internal/primer"
@@ -214,7 +217,7 @@ func (r *Activate) run(params *ActivateParams) error {
 		r.out.Notice(output.Heading(locale.Tl("global_default_heading", "Global Default")))
 		r.out.Notice(locale.Tl("global_default_set", "Successfully configured [NOTICE]{{.V0}}[/RESET] as the global default project.", proj.Namespace().String()))
 
-		globaldefault.WarningForAdministrator(r.out)
+		warningForAdministrator(r.out)
 
 		if alreadyActivated {
 			return nil
@@ -292,4 +295,29 @@ func (r *Activate) pathToProject(path string) (*project.Project, error) {
 		return nil, locale.WrapError(err, "err_activate_projectpath", "Could not find a valid project path.")
 	}
 	return projectToUse, nil
+}
+
+// warningForAdministrator prints a warning message if default activation is invoked by a Windows Administrator
+// The default activation will only be accessible by the underlying unprivileged user.
+func warningForAdministrator(out output.Outputer) {
+	if rt.GOOS != "windows" {
+		return
+	}
+
+	isAdmin, err := osutils.IsWindowsAdmin()
+	if err != nil {
+		logging.Error("Failed to determine if run as administrator.")
+	}
+	if isAdmin {
+		u, err := user.Current()
+		if err != nil {
+			logging.Error("Failed to determine current user.")
+			return
+		}
+		out.Notice(locale.Tl(
+			"default_admin_activation_warning",
+			"[NOTICE]The default activation is added to the environment of user {{.V0}}.  The project may be inaccessible when run with Administrator privileges or authenticated as a different user.[/RESET]",
+			u.Username,
+		))
+	}
 }
