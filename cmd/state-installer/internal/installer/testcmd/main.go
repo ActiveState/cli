@@ -12,6 +12,10 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 )
 
+// testcmd can auto-update itself with a (reduced) installer build from ../testinst/main.go
+// It can either sleep for a specified amount of time (to simulate being
+// active), or call the installer which should replace this executable.
+
 func main() {
 	if len(os.Args) == 2 {
 		timeout, err := strconv.Atoi(os.Args[1])

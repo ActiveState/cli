@@ -9,6 +9,10 @@ import (
 	"github.com/ActiveState/cli/cmd/state-installer/internal/installer"
 )
 
+// testinst is a reduced version of the state-installer. It only installs files
+// from a given directory but does not manage state-svc and state-tray apps.
+// This programme is used in the TestAutoUpdate() test
+
 func main() {
 	if len(os.Args) != 5 {
 		log.Println("Need to run with argument <from-dir> <to-dir> <log-file> <timeout>")
