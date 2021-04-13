@@ -26,9 +26,6 @@ jobs:
         echo "Adding $bin to PATH"
         echo "$bin" >> $GITHUB_PATH
         printenv
-    - name: Generate Version
-      shell: bash
-      run: state run generate-version
     - name: Upload Shared Artifacts
       uses: actions/upload-artifact@v2
       with:
@@ -77,9 +74,12 @@ jobs:
       shell: bash
       run: |
         state run preprocess
-    - name: Build
+    - name: Build CLI
       shell: bash
       run: state run build
+    - name: Build Service
+      shell: bash
+      run: state run build-svc
     - name: Generate Update
       shell: bash
       run: state run generate-update

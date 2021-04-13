@@ -35,9 +35,6 @@ jobs:
         echo "Adding $bin to PATH"
         echo "$bin" >> $GITHUB_PATH
         printenv
-    - name: Generate Version
-      shell: bash
-      run: state run generate-version
     - name: Upload Shared Artifacts
       uses: actions/upload-artifact@v2
       with:
@@ -86,13 +83,34 @@ jobs:
       shell: bash
       run: |
         state run preprocess
-    - name: Build
+    - name: Build CLI
       shell: bash
       run: state run build
-    - name: Build (32bit)
+    - name: Build Service
+      shell: bash
+      run: state run build-svc
+    - name: Build Tray App
+      shell: bash
+      run: state run build-tray
+    - name: Build Installer
+      shell: bash
+      run: state run build-installer
+    - name: Build CLI (32bit)
       shell: bash
       if: runner.os == 'Windows'
-      run: state run build-32bit
+      run: GOARCH=386 state run build
+    - name: Build Service (32bit)
+      shell: bash
+      if: runner.os == 'Windows'
+      run: GOARCH=386 state run build-svc
+    - name: Build Tray App (32bit)
+      shell: bash
+      if: runner.os == 'Windows'
+      run: GOARCH=386 state run build-tray
+    - name: Build Installer (32bit)
+      shell: bash
+      if: runner.os == 'Windows'
+      run: GOARCH=386 state run build-installer
     - name: Build Install Scripts
       shell: bash
       run: state run build-install-scripts
@@ -235,9 +253,12 @@ jobs:
       shell: bash
       run: |
         state run preprocess
-    - name: Build
+    - name: Build CLI
       shell: bash
       run: state run build
+    - name: Build Service
+      shell: bash
+      run: state run build-svc
     - name: Generate Update
       shell: bash
       run: state run generate-update
@@ -313,9 +334,12 @@ jobs:
       shell: bash
       run: |
         state run preprocess
-    - name: Build
+    - name: Build CLI
       shell: bash
       run: state run build
+    - name: Build Service
+      shell: bash
+      run: state run build-svc
     - name: Generate Update
       shell: bash
       run: state run generate-update

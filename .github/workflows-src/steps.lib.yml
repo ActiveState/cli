@@ -1,20 +1,53 @@
-#@ def steps_genversion():
-name: "Generate Version"
-shell: bash
-run: state run generate-version
-#@ end
----
 #@ def steps_build():
-name: Build
+name: Build CLI
 shell: bash
 run: state run build
 #@ end
 ---
+#@ def steps_build_svc():
+name: Build Service
+shell: bash
+run: state run build-svc
+#@ end
+---
+#@ def steps_build_tray():
+name: Build Tray App
+shell: bash
+run: state run build-tray
+#@ end
+---
+#@ def steps_build_installer():
+name: Build Installer
+shell: bash
+run: state run build-installer
+#@ end
+---
 #@ def steps_build_32bit():
-name: Build (32bit)
+name: Build CLI (32bit)
 shell: bash
 if: runner.os == 'Windows'
-run: state run build-32bit
+run: GOARCH=386 state run build
+#@ end
+---
+#@ def steps_build_svc_32bit():
+name: Build Service (32bit)
+shell: bash
+if: runner.os == 'Windows'
+run: GOARCH=386 state run build-svc
+#@ end
+---
+#@ def steps_build_tray_32bit():
+name: Build Tray App (32bit)
+shell: bash
+if: runner.os == 'Windows'
+run: GOARCH=386 state run build-tray
+#@ end
+---
+#@ def steps_build_installer_32bit():
+name: Build Installer (32bit)
+shell: bash
+if: runner.os == 'Windows'
+run: GOARCH=386 state run build-installer
 #@ end
 ---
 #@ def steps_build_installscripts():
