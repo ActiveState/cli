@@ -3,9 +3,6 @@ package update
 import (
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/prompt"
-	"github.com/ActiveState/cli/pkg/project"
 )
 
 var _ captain.FlagMarshaler = &StateToolChannelVersion{}
@@ -32,17 +29,10 @@ type LockParams struct {
 }
 
 type Lock struct {
-	project *project.Project
-	out     output.Outputer
-	prompt  prompt.Prompter
 }
 
 func NewLock(prime primeable) *Lock {
-	return &Lock{
-		prime.Project(),
-		prime.Output(),
-		prime.Prompt(),
-	}
+	return &Lock{}
 }
 
 func (l *Lock) Run(params *LockParams) error {
