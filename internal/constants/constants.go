@@ -275,3 +275,6 @@ const SvcConfigPid = "svc-pid"
 
 // TrayAppName is the name we give our systray application
 const TrayAppName = "ActiveState Platform"
+
+// LaunchFileMacOS is the .plist file that holds the auto launch information on MacOS
+const LaunchFileMacOS = "com.activestate.platform.state-tray.plist"

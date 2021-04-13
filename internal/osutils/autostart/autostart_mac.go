@@ -1,4 +1,4 @@
-// +build !windows
+// +build darwin
 
 package autostart
 
@@ -6,16 +6,12 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/gobuffalo/packr"
 	"github.com/mitchellh/go-homedir"
-)
-
-const (
-	relativeLaunchPath = "Library/LaunchAgents"
-	launchFile         = "com.activestate.platform.state-tray.plist"
 )
 
 func (a *App) Enable() error {
@@ -29,7 +25,7 @@ func (a *App) Enable() error {
 	}
 
 	box := packr.NewBox("../../../assets")
-	err = fileutils.WriteFile(path, box.Bytes(launchFile))
+	err = fileutils.WriteFile(path, box.Bytes(constants.LaunchFileMacOS))
 	if err != nil {
 		return errs.Wrap(err, "Could not write launch file")
 	}
@@ -60,5 +56,5 @@ func launchFilePath() (string, error) {
 	if err != nil {
 		return "", errs.Wrap(err, "Could not get home directory")
 	}
-	return filepath.Join(dir, relativeLaunchPath, launchFile), nil
+	return filepath.Join(dir, "Library/LaunchAgents", constants.LaunchFileMacOS), nil
 }
