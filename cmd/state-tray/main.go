@@ -50,10 +50,7 @@ func run() error {
 		return errs.Wrap(err, "Could not save pid")
 	}
 
-	svcInfo, err := appinfo.SvcApp()
-	if err != nil {
-		return errs.Wrap(err, "Could not detect application information")
-	}
+	svcInfo := appinfo.SvcApp()
 
 	if !fileutils.FileExists(svcInfo.Exec()) {
 		return errs.New("Could not find: %s", svcInfo.Exec())
