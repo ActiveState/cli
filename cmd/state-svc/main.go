@@ -5,10 +5,12 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/events"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/rollbar/rollbar-go"
 )
@@ -30,8 +32,9 @@ var commands = []command{
 }
 
 func main() {
+	var exitCode int
 	logging.SetupRollbar(constants.StateServiceRollbarToken)
-	defer rollbar.Close()
+	defer exit(exitCode)
 
 	if os.Getenv("VERBOSE") == "true" {
 		logging.CurrentHandler().SetVerbose(true)
@@ -42,7 +45,7 @@ func main() {
 		errMsg := errs.Join(err, ": ").Error()
 		logging.Errorf("state-svc errored out: %s", errMsg)
 		fmt.Fprintln(os.Stderr, errMsg)
-		os.Exit(1)
+		exitCode = 1
 	}
 }
 
@@ -138,4 +141,9 @@ func runStatus(cfg *config.Instance) error {
 	fmt.Printf("Log: %s\n", logging.FilePathFor(logging.FileNameFor(*pid)))
 
 	return nil
+}
+
+func exit(code int) {
+	events.WaitForEvents(1*time.Second, rollbar.Close)
+	os.Exit(code)
 }
