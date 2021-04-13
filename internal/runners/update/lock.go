@@ -1,17 +1,11 @@
 package update
 
 import (
-	"context"
-
 	"github.com/ActiveState/cli/internal/captain"
-	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
-	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 var _ captain.FlagMarshaler = &StateToolChannelVersion{}
@@ -52,74 +46,5 @@ func NewLock(prime primeable) *Lock {
 }
 
 func (l *Lock) Run(params *LockParams) error {
-	l.out.Notice(locale.Tl("locking_version", "Locking State Tool version for current project."))
-
-	if l.project.IsLocked() && !params.Force {
-		if err := confirmLock(l.prompt); err != nil {
-			return locale.WrapError(err, "err_update_lock_confirm", "Could not confirm whether to update.")
-		}
-	}
-
-	defaultChannel, lockVersion := params.Channel.Name(), params.Channel.Version()
-	prefer := true
-	if defaultChannel == "" {
-		defaultChannel = l.project.VersionBranch()
-		prefer = false // may be overwritten by env var
-	}
-	channel := fetchChannel(defaultChannel, prefer)
-
-	var version string
-	if l.project.IsLocked() && channel == l.project.VersionBranch() {
-		version = l.project.Version()
-	}
-
-	_, info, err := fetchUpdater(version, channel)
-	if err != nil || info == nil {
-		return errs.Wrap(err, "fetchUpdater failed, info: %v", info)
-	}
-
-	if lockVersion == "" {
-		lockVersion = info.Version
-	}
-
-	err = projectfile.AddLockInfo(l.project.Source().Path(), channel, lockVersion)
-	if err != nil {
-		return locale.WrapError(err, "err_update_projectfile", "Could not update projectfile")
-	}
-
-	l.out.Print(locale.Tl("version_locked", "Version locked at {{.V0}}@{{.V1}}", channel, lockVersion))
-	return nil
-}
-
-func confirmLock(prom prompt.Prompter) error {
-	msg := locale.T("confirm_update_locked_version_prompt")
-
-	confirmed, err := prom.Confirm(locale.T("confirm"), msg, new(bool))
-	if err != nil {
-		return err
-	}
-
-	if !confirmed {
-		return locale.NewInputError("err_update_lock_noconfirm", "Cancelling by your request.")
-	}
-
-	return nil
-}
-
-func fetchUpdater(version, channel string) (*updater.Updater, *updater.Info, error) {
-	if channel != constants.BranchName {
-		version = "" // force update
-	}
-	up := updater.New(version)
-	up.DesiredBranch = channel
-	info, err := up.Info(context.Background())
-	if err != nil {
-		return nil, nil, locale.WrapInputError(err, "err_update_fetch", "Could not retrieve update information, please verify that '{{.V0}}' is a valid channel.", channel)
-	}
-
-	if info == nil && version == "" { // if version is empty then we should always have some info
-		return nil, nil, locale.NewInputError("err_update_fetch", "Could not retrieve update information, please verify that '{{.V0}}' is a valid channel.", channel)
-	}
-
-	return up, info, nil
+	return locale.NewInputError("locking_unsupported", "This version of the State Tool does not support version locking anymore.")
 }
