@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"os"
-	"time"
 
 	"github.com/getlantern/systray"
 	"github.com/gobuffalo/packr"
@@ -42,8 +41,6 @@ func run() error {
 	if err != nil {
 		return errs.Wrap(err, "Could not start state service")
 	}
-	// TODO: Tempoarary. REMOVE!
-	time.Sleep(500 * time.Millisecond)
 
 	config, err := config.New()
 	if err != nil {
