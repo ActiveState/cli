@@ -16,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
+	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -55,22 +56,34 @@ func NewParams() *Params {
 }
 
 func (s *Shim) Run(params *Params, args ...string) error {
-	if params.Path != "" {
-		var err error
-		s.proj, err = project.FromPath(params.Path)
-		if err != nil {
-			return locale.WrapInputError(err, "shim_no_project_at_path", "Could not find project file at {{.V0}}", params.Path)
+	var projectDir string
+	var rtTarget setup.Targeter
+
+	// Detect target and project dir
+	// If the path passed resolves to a runtime dir (ie. has a runtime marker) then the project is not used
+	if params.Path != "" && runtime.IsRuntimeDir(params.Path) {
+		rtTarget = runtime.NewCustomTarget("", "", "", params.Path)
+	} else {
+		proj := s.proj
+		if params.Path != "" {
+			var err error
+			proj, err = project.FromPath(params.Path)
+			if err != nil {
+				return locale.WrapInputError(err, "shim_no_project_at_path", "Could not find project file at {{.V0}}", params.Path)
+			}
 		}
-	}
-	if s.proj == nil {
-		return locale.NewError("shim_no_project_found", "Could not find a project.  You need to be in a project directory or specify a global default project via `state activate --default`")
+		if s.proj == nil {
+			return locale.NewError("shim_no_project_found", "Could not find a project.  You need to be in a project directory or specify a global default project via `state activate --default`")
+		}
+		projectDir = filepath.Dir(proj.Source().Path())
+		rtTarget = runtime.NewProjectTarget(proj, s.cfg.CachePath(), nil)
 	}
 
 	if len(args) == 0 {
 		return nil
 	}
 
-	rt, err := runtime.New(runtime.NewProjectTarget(s.proj, s.cfg.CachePath(), nil))
+	rt, err := runtime.New(rtTarget)
 	if err != nil {
 		if !runtime.IsNeedsUpdateError(err) {
 			return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
@@ -81,7 +94,7 @@ func (s *Shim) Run(params *Params, args ...string) error {
 	}
 	venv := virtualenvironment.New(rt)
 
-	env, err := venv.GetEnv(true, filepath.Dir(s.proj.Source().Path()))
+	env, err := venv.GetEnv(true, projectDir)
 	if err != nil {
 		return err
 	}

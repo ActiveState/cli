@@ -2,7 +2,7 @@ package executor
 
 import "strings"
 
-func nameExecutor(exe string) string {
+func NameForExe(exe string) string {
 	exts := strings.Split(strings.ToLower(os.Getenv("PATHEXT")), ";")
 	lowerExe := strings.ToLower(exe)
 	for _, ext := range exts {

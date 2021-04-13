@@ -26,7 +26,7 @@ func TestExecutor(t *testing.T) {
 
 	// Verify executors
 	for _, exe := range exes {
-		path := filepath.Join(fw.BinPath(), nameExecutor(filepath.Base(exe)))
+		path := filepath.Join(fw.BinPath(), NameForExe(filepath.Base(exe)))
 		t.Run("Executor Exists", func(t *testing.T) {
 			if !fileutils.FileExists(path) {
 				t.Errorf("Could not locate exe: %s", path)
@@ -74,5 +74,5 @@ func TestNameExecutor(t *testing.T) {
 		return // Pointless to test outside windows
 	}
 
-	assert.Equal(t, "filename.bat", nameExecutor("filename.exe"))
+	assert.Equal(t, "filename.bat", NameForExe("filename.exe"))
 }

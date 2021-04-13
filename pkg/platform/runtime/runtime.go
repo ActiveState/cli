@@ -41,13 +41,13 @@ func newRuntime(target setup.Targeter) (*Runtime, error) {
 	rt := &Runtime{target: target}
 	rt.model = model.NewDefault()
 
-	var err error
-	if rt.store, err = store.New(target.Dir()); err != nil {
-		return nil, errs.Wrap(err, "Could not create runtime store")
-	}
-
+	rt.store = store.New(target.Dir())
 	if !rt.store.MatchesCommit(target.CommitUUID()) {
-		return rt, &NeedsUpdateError{errs.New("Runtime requires setup.")}
+		if target.ForceUseCache() {
+			logging.Debug("Using forced cache")
+		} else {
+			return rt, &NeedsUpdateError{errs.New("Runtime requires setup.")}
+		}
 	}
 
 	return rt, nil
@@ -154,4 +154,8 @@ func (r *Runtime) Artifacts() (map[artifact.ArtifactID]artifact.ArtifactRecipe, 
 	}
 	artifacts := artifact.NewMapFromRecipe(recipe)
 	return artifacts, nil
+}
+
+func IsRuntimeDir(dir string) bool {
+	return store.New(dir).HasMarker()
 }

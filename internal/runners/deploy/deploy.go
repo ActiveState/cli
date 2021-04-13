@@ -201,11 +201,9 @@ func (d *Deploy) configure(namespace project.Namespaced, rtTarget setup.Targeter
 
 	d.output.Notice(output.Heading(locale.Tr("deploy_configure_shell", d.subshell.Shell())))
 
-	// Prepend our execPath
-	execPath := filepath.Join(rtTarget.Dir(), "exec")
-	path := strings.Split(env["PATH"], string(os.PathListSeparator))
-	path = append([]string{execPath}, path...)
-	env["PATH"] = strings.Join(path, string(os.PathListSeparator))
+	// Set PATH to our execPath, since our executors will be shimming all our actual runtime executables we don't
+	// want to use the default PATH entry
+	env["PATH"] = filepath.Join(rtTarget.Dir(), "exec")
 
 	err = d.subshell.WriteUserEnv(d.cfg, env, sscommon.Deploy, userScope)
 	if err != nil {

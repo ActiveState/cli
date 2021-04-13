@@ -31,20 +31,20 @@ const shimDenoter = "!DO NOT EDIT! State Tool Shim !DO NOT EDIT!"
 const executorTarget = "Target: "
 
 type Executor struct {
-	projectPath string
-	binPath     string
+	targetPath string
+	binPath    string
 }
 
-func New(projectPath string) (*Executor, error) {
+func New(targetPath string) (*Executor, error) {
 	binPath, err := ioutil.TempDir("", "executor")
 	if err != nil {
 		return nil, errs.New("Could not create tempDir: %v", err)
 	}
-	return NewWithBinPath(projectPath, binPath), nil
+	return NewWithBinPath(targetPath, binPath), nil
 }
 
-func NewWithBinPath(projectPath, binPath string) *Executor {
-	return &Executor{projectPath, binPath}
+func NewWithBinPath(targetPath, binPath string) *Executor {
+	return &Executor{targetPath, binPath}
 }
 
 func (f *Executor) BinPath() string {
@@ -104,7 +104,7 @@ func (f *Executor) Cleanup(keep []string) error {
 }
 
 func (f *Executor) createExecutor(exe string) error {
-	name := nameExecutor(filepath.Base(exe))
+	name := NameForExe(filepath.Base(exe))
 	target := filepath.Clean(filepath.Join(f.binPath, name))
 
 	logging.Debug("Creating executor for %s at %s", exe, target)
@@ -125,10 +125,10 @@ func (f *Executor) createExecutor(exe string) error {
 	}
 
 	tplParams := map[string]interface{}{
-		"state":       appinfo.StateApp().Exec(),
-		"exe":         filepath.Base(exe),
-		"projectPath": f.projectPath,
-		"denote":      []string{executorDenoter, denoteTarget},
+		"state":      appinfo.StateApp().Exec(),
+		"exe":        filepath.Base(exe),
+		"targetPath": f.targetPath,
+		"denote":     []string{executorDenoter, denoteTarget},
 	}
 	box := packr.NewBox("../../assets/executors")
 	boxFile := "executor.sh"
@@ -155,6 +155,14 @@ func containsBase(sourcePaths []string, targetPath string) bool {
 		}
 	}
 	return false
+}
+
+func IsExecutor(filePath string) (bool, error) {
+	b, err := fileutils.ReadFile(filePath)
+	if err != nil {
+		return false, locale.WrapError(err, "err_cleanexecutor_noread", "Could not read potential executor file: {{.V0}}.", filePath)
+	}
+	return isOwnedByUs(b), nil
 }
 
 func isOwnedByUs(fileContents []byte) bool {

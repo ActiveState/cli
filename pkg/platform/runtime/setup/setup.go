@@ -91,6 +91,7 @@ type Targeter interface {
 	Name() string
 	Owner() string
 	Dir() string
+	ForceUseCache() bool
 }
 
 // Setup provides methods to setup a fully-function runtime that *only* requires interactions with the local file system.
@@ -161,10 +162,7 @@ func (s *Setup) update() error {
 	// Compute and handle the change summary
 	artifacts := artifact.NewMapFromRecipe(buildResult.Recipe)
 
-	s.store, err = store.New(s.target.Dir())
-	if err != nil {
-		return errs.Wrap(err, "Could not create runtime store")
-	}
+	s.store = store.New(s.target.Dir())
 	oldRecipe, err := s.store.Recipe()
 	if err != nil {
 		logging.Debug("Could not load existing recipe.  Maybe it is a new installation: %v", err)

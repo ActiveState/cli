@@ -42,11 +42,11 @@ func NewStoredArtifact(artifactID artifact.ArtifactID, files []string, envDef *e
 
 type StoredArtifactMap = map[artifact.ArtifactID]StoredArtifact
 
-func New(installPath string) (*Store, error) {
+func New(installPath string) *Store {
 	return &Store{
 		installPath,
 		filepath.Join(installPath, constants.LocalRuntimeEnvironmentDirectory),
-	}, nil
+	}
 }
 
 func (s *Store) markerFile() string {
@@ -59,6 +59,13 @@ func (s *Store) buildEngineFile() string {
 
 func (s *Store) recipeFile() string {
 	return filepath.Join(s.storagePath, constants.RuntimeRecipeStore)
+}
+
+func (s *Store) HasMarker() bool {
+	if fileutils.FileExists(s.markerFile()) {
+		return true
+	}
+	return false
 }
 
 // MatchesCommit checks if stored runtime is complete and can be loaded
