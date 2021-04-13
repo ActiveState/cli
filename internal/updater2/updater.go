@@ -12,14 +12,25 @@ import (
 )
 
 type AvailableUpdate struct {
-	version string
-	channel string
-	path    string
-	url     string
-	sha256  string
+	Version  string `json:"version"`
+	Channel  string `json:"channel"`
+	Platform string `json:"platform"`
+	Path     string `json:"path"`
+	Sha256   string `json:"sha256"`
+	url      string
 }
 
-const InstallerName = "installer" + osutils.ExeExt
+func NewAvailableUpdate(version, channel, platform, path, sha256 string) *AvailableUpdate {
+	return &AvailableUpdate{
+		Version:  version,
+		Channel:  channel,
+		Platform: platform,
+		Path:     path,
+		Sha256:   sha256,
+	}
+}
+
+const InstallerName = "state-installer" + osutils.ExeExt
 
 // InstallDeferred will fetch the update and run its installer in a deferred process
 func (u *AvailableUpdate) InstallDeferred(configPath string) error {
@@ -46,12 +57,4 @@ func (u *AvailableUpdate) InstallDeferred(configPath string) error {
 	}
 
 	return nil
-}
-
-func (u *AvailableUpdate) Channel() string {
-	return u.channel
-}
-
-func (u *AvailableUpdate) Version() string {
-	return u.version
 }

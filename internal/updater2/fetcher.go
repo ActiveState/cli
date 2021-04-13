@@ -11,7 +11,7 @@ import (
 )
 
 type Fetcher struct {
-	httpreq   *httpreq.Client
+	httpreq *httpreq.Client
 }
 
 func NewFetcher() *Fetcher {
@@ -24,7 +24,7 @@ func (f *Fetcher) Fetch(update *AvailableUpdate, targetDir string) error {
 		return errs.Wrap(err, "Fetch %s failed", update.url)
 	}
 
-	if err := verifySha(b, update.sha256); err != nil {
+	if err := verifySha(b, update.Sha256); err != nil {
 		return errs.Wrap(err, "Could not verify sha256")
 	}
 

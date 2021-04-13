@@ -14,21 +14,25 @@ import (
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
+type httpGetter interface {
+	Get(string) ([]byte, error)
+}
+
 type Checker struct {
 	apiURL         string
 	currentChannel string
 	currentVersion string
-	httpreq        *httpreq.Client
+	httpreq        httpGetter
 }
 
-var DefaultChecker = NewChecker(constants.APIUpdateURL, constants.BranchName, constants.Version)
+var DefaultChecker = NewChecker(constants.APIUpdateURL, constants.BranchName, constants.Version, httpreq.New())
 
-func NewChecker(apiURL, currentChannel, currentVersion string) *Checker {
+func NewChecker(apiURL, currentChannel, currentVersion string, httpget httpGetter) *Checker {
 	return &Checker{
 		apiURL,
 		currentChannel,
 		currentVersion,
-		httpreq.New(),
+		httpget,
 	}
 }
 
@@ -45,7 +49,7 @@ func (u *Checker) CheckFor(desiredChannel, desiredVersion string) (*AvailableUpd
 	if desiredVersion != "" {
 		versionPath = "/" + desiredVersion
 	}
-	url := fmt.Sprintf("%s/%s/%s%s/info.json", u.apiURL, desiredChannel, versionPath, platform)
+	url := fmt.Sprintf("%s%s%s/%s/info.json", u.apiURL, desiredChannel, versionPath, platform)
 	res, err := u.httpreq.Get(url)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not fetch update info from %s", url)
@@ -56,11 +60,11 @@ func (u *Checker) CheckFor(desiredChannel, desiredVersion string) (*AvailableUpd
 		return nil, errs.Wrap(err, "Could not unmarshal update info: %s", res)
 	}
 
-	if info.channel == u.currentChannel && info.version == u.currentVersion {
+	if info.Channel == u.currentChannel && info.Version == u.currentVersion {
 		return nil, nil
 	}
 
-	info.url = u.apiURL + info.path
+	info.url = u.apiURL + info.Path
 
 	return info, nil
 }
@@ -72,17 +76,14 @@ func (u *Checker) PrintUpdateMessage(pjPath string, out output.Outputer) {
 		return
 	}
 
-	fmt.Println("checking v")
 	info, err := u.Check()
 	if err != nil {
-		fmt.Printf("could not check for updates %v\n", err)
 		logging.Error("Could not check for updates: %v", err)
 		return
 	}
-	fmt.Printf("%v\n", info)
 
-	if info != nil && info.Version() != constants.Version {
+	if info != nil && info.Version != constants.Version {
 		out.Notice(output.Heading(locale.Tl("update_available_title", "Update Available")))
-		out.Notice(locale.Tr("update_available", constants.Version, info.Version()))
+		out.Notice(locale.Tr("update_available", constants.Version, info.Version))
 	}
 }

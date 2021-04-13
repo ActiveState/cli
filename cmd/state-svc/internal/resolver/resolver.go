@@ -65,8 +65,8 @@ func (r *Resolver) Update(ctx context.Context, channel *string, version *string)
 	}
 
 	return &graph.DeferredUpdate{
-		Channel: up.Channel(),
-		Version: up.Version(),
+		Channel: up.Channel,
+		Version: up.Version,
 	}, nil
 }
 
