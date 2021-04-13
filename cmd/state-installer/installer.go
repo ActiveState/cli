@@ -116,9 +116,18 @@ func run() error {
 	}
 
 	tmpDir := filepath.Dir(exe)
-	err = installer.Install(tmpDir, installPath, log.Default())
+	// clean-up temp directory when we are done.
+	defer os.RemoveAll(tmpDir)
+	// Install binary files in installation directory
+	err = installer.Install(filepath.Join(tmpDir, "bin"), installPath)
 	if err != nil {
 		return errs.Wrap(err, "Installation failed")
+	}
+
+	// Install files into system directories.  This function is platform-specific
+	err = installer.InstallSystemFiles(filepath.Join(tmpDir, "system"))
+	if err != nil {
+		return errs.Wrap(err, "Installation of system files failed")
 	}
 
 	shell := subshell.New(cfg)
