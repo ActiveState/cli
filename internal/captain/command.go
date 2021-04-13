@@ -541,7 +541,7 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	} else {
 		analytics.EventWithLabel(analytics.CatCommandExit, subCommandString, strconv.Itoa(exitCode))
 	}
-	events.WaitForEvents(1*time.Second, []func(){analytics.Wait, rollbar.Wait}...)
+	events.WaitForEvents(1*time.Second, analytics.Wait, rollbar.Wait)
 
 	return err
 }
