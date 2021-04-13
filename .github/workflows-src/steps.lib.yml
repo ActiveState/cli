@@ -172,14 +172,6 @@ env:
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 #@ end
 ---
-#@ def steps_uploadsharedartifacts():
-name: "Upload Shared Artifacts"
-uses: actions/upload-artifact@v2
-with:
-  name: session-shared-build
-  path: build/
-#@ end
----
 #@ def steps_uploadsessartifacts():
 name: "Upload Session Artifacts"
 uses: actions/upload-artifact@v2
@@ -193,14 +185,6 @@ name: "Upload Artifacts"
 uses: actions/upload-artifact@v2
 with:
   name: build
-  path: build/
-#@ end
----
-#@ def steps_downloadsharedartifacts():
-name: "Download Shared Artifacts"
-uses: actions/download-artifact@v2
-with:
-  name: session-shared-build
   path: build/
 #@ end
 ---
