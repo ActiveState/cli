@@ -24,7 +24,6 @@ steps:
     uses: actions/checkout@v2
   - #@ steps_installgo()
   - #@ steps_setup()
-  - #@ steps_genversion()
   - #@ steps_uploadsharedartifacts()
 #@ end
 

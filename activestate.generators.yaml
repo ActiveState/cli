@@ -51,12 +51,6 @@ scripts:
     language: bash
     description: Detects new localisation calls and generates placeholder entries in en-us.yaml
     value: python3 scripts/locale-generator.py
-  - name: generate-version
-    language: bash
-    description: Generate version file
-    value: |
-      mkdir -p build/update
-      wget -O build/update/version.json https://state-tool.s3.amazonaws.com/update/state/version.json
   - name: generate-update
     language: bash
     description: Generate update files
