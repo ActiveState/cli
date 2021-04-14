@@ -539,6 +539,10 @@ func CopyAndRenameFiles(fromPath, toPath string) error {
 			if err != nil {
 				return errs.Wrap(err, "failed to copy %s -> %s", fromPath, tmpToPath)
 			}
+			err = os.Chmod(tmpToPath, fileInfo.Mode())
+			if err != nil {
+				return errs.Wrap(err, "failed to set file permissions for %s", tmpToPath)
+			}
 			err = os.Rename(tmpToPath, toPath)
 			if err != nil {
 				// cleanup
@@ -549,6 +553,10 @@ func CopyAndRenameFiles(fromPath, toPath string) error {
 			err := CopyFile(fromPath, toPath)
 			if err != nil {
 				return errs.Wrap(err, "Copy %s -> %s failed", fromPath, toPath)
+			}
+			err = os.Chmod(toPath, fileInfo.Mode())
+			if err != nil {
+				return errs.Wrap(err, "failed to set file permissions for %s", toPath)
 			}
 		}
 	}

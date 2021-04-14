@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -64,7 +65,7 @@ func main() {
 		log.SetOutput(io.MultiWriter(os.Stderr, f))
 	}
 
-	if err := run(); err != nil {
+	if err := run(params.installPath); err != nil {
 		// Todo This is running in the background, so these error messages will not be seen and only be written to the log file.
 		// https://www.pivotaltracker.com/story/show/177691644
 		log.Println(errs.Join(err, ": ").Error())
@@ -74,7 +75,7 @@ func main() {
 	log.Println("Installation was successful.")
 }
 
-func run() error {
+func run(installPath string) error {
 	exe, err := osutils.Executable()
 	if err != nil {
 		return errs.Wrap(err, "Could not detect executable path")
@@ -83,16 +84,6 @@ func run() error {
 	cfg, err := config.New()
 	if err != nil {
 		return errs.Wrap(err, "Could not initialize config")
-	}
-
-	var installPath string
-	if len(os.Args) > 2 {
-		installPath = os.Args[2]
-	} else {
-		installPath, err = installation.InstallPath()
-		if err != nil {
-			return errs.Wrap(err, "Retrieving installPath")
-		}
 	}
 
 	svcInfo := appinfo.SvcApp()
@@ -136,9 +127,18 @@ func run() error {
 		return errs.Wrap(err, "Could not update PATH")
 	}
 
+	rcFile, err := shell.RcFile()
+	if err == nil {
+		fmt.Printf("Please either run 'source %s' or start a new login shell in order to start using the State Tool executable.", rcFile)
+	} else {
+		fmt.Println("Please start a new login shell in order to start using the State Tool executable.")
+	}
+
+	stateExe := filepath.Join(installPath, "state"+osutils.ExeExt)
+	log.Printf("Calling %s _prepare\n", stateExe)
 	// Run _prepare after updates to facilitate anything the new version of the state tool might need to set up
 	// Yes this is awkward, followup story here: https://www.pivotaltracker.com/story/show/176507898
-	if stdout, stderr, err := exeutils.ExecSimple(os.Args[0], "_prepare"); err != nil {
+	if stdout, stderr, err := exeutils.ExecSimple(stateExe, "_prepare"); err != nil {
 		log.Printf("_prepare failed after update: %v\n\nstdout: %s\n\nstderr: %s", err, stdout, stderr)
 	}
 

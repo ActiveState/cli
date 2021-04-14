@@ -63,7 +63,7 @@ func Install(fromDir, toDir string) error {
 	// Get target file paths.
 	var targetFiles []string
 	for _, file := range fileutils.ListDir(fromDir, false) {
-		targetFile := filepath.Join(toDir, file)
+		targetFile := filepath.Join(toDir, filepath.Base(file))
 		targetFiles = append(targetFiles, targetFile)
 	}
 	log.Printf("Target files=%s", strings.Join(targetFiles, ","))
