@@ -104,6 +104,9 @@ func assertSuccessfulInstallation(t *testing.T, toDir string) {
 		if !bytes.Equal(updatedTestFileContent, b) {
 			t.Errorf("Test file %s was not correctly updated", fp)
 		}
+		info, err := os.Stat(fp)
+		require.NoError(t, err)
+		assert.Equal(t, "-rwxrwxr-x", info.Mode().String())
 	}
 }
 
