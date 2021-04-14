@@ -12,7 +12,7 @@ func (a *App) Disable() error {
 	return nil
 }
 
-func (a *App) IsEnabled() bool {
+func (a *App) IsEnabled() (bool, error) {
 	panic("Not implemented")
 	return false
 }
