@@ -7,7 +7,6 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/httpreq"
-	"github.com/ActiveState/cli/internal/unarchiver"
 )
 
 type Fetcher struct {
@@ -40,8 +39,8 @@ func (f *Fetcher) Fetch(update *AvailableUpdate, targetDir string) error {
 		return errs.Wrap(err, "Target dir is not empty: %s", targetDir)
 	}
 
-	zip := unarchiver.NewZipBlob(b)
-	if err := zip.Unarchive(targetDir); err != nil {
+	a := blobUnarchiver(b)
+	if err := a.Unarchive(targetDir); err != nil {
 		return errs.Wrap(err, "Unarchiving failed")
 	}
 
