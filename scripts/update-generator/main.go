@@ -24,11 +24,11 @@ import (
 
 var exit = os.Exit
 
-var outputDirFlag, platformFlag, branchFlag *string
+var outputDirFlag, platformFlag, branchFlag, versionFlag *string
 
 func printUsage() {
 	fmt.Println("")
-	fmt.Println("[-o outputDir] [-b branchOverride] [--platform platformOverride] <installer> <binaries>...")
+	fmt.Println("[-o outputDir] [-b branchOverride] [-v versionOverride] [--platform platformOverride] <installer> <binaries>...")
 }
 
 func main() {
@@ -40,6 +40,15 @@ func main() {
 	}
 }
 
+func init() {
+	defaultPlatform := fetchPlatform()
+	outputDirFlag = flag.String("o", "public", "Output directory for writing updates")
+	platformFlag = flag.String("platform", defaultPlatform,
+		"Target platform in the form OS-ARCH. Defaults to running os/arch or the combination of the environment variables GOOS and GOARCH if both are set.")
+	branchFlag = flag.String("b", "", "Override target branch. This is the branch that will receive this update.")
+	versionFlag = flag.String("v", constants.Version, "Override version number for this update.")
+}
+
 func fetchPlatform() string {
 	goos := os.Getenv("GOOS")
 	goarch := os.Getenv("GOARCH")
@@ -47,14 +56,6 @@ func fetchPlatform() string {
 		return goos + "-" + goarch
 	}
 	return runtime.GOOS + "-" + runtime.GOARCH
-}
-
-func init() {
-	defaultPlatform := fetchPlatform()
-	outputDirFlag = flag.String("o", "public", "Output directory for writing updates")
-	platformFlag = flag.String("platform", defaultPlatform,
-		"Target platform in the form OS-ARCH. Defaults to running os/arch or the combination of the environment variables GOOS and GOARCH if both are set.")
-	branchFlag = flag.String("b", "", "Override target branch. This is the branch that will receive this update.")
 }
 
 func generateSha256(path string) string {
@@ -90,13 +91,13 @@ func copyFileToDir(filePath, dir string, isExecutable bool) error {
 	return nil
 }
 
-func createUpdate(targetPath string, channel, platform string, installerPath string, binaries []string) error {
+func createUpdate(targetPath string, channel, version, platform string, installerPath string, binaries []string) error {
 	relChannelPath := filepath.Join(channel, platform)
-	relVersionedPath := filepath.Join(channel, constants.Version, platform)
+	relVersionedPath := filepath.Join(channel, version, platform)
 	os.MkdirAll(filepath.Join(targetPath, relChannelPath), 0755)
 	os.MkdirAll(filepath.Join(targetPath, relVersionedPath), 0755)
 
-	relArchivePath := filepath.Join(relVersionedPath, fmt.Sprintf("state-%s-%s.zip", platform, constants.Version))
+	relArchivePath := filepath.Join(relVersionedPath, fmt.Sprintf("state-%s-%s.zip", platform, version))
 	archivePath := filepath.Join(targetPath, relArchivePath)
 
 	// Copy files to a temporary directory that we can create the archive from
@@ -136,7 +137,7 @@ func createUpdate(targetPath string, channel, platform string, installerPath str
 		return errs.Wrap(err, "Archiving failed")
 	}
 
-	up := updater2.NewAvailableUpdate(constants.Version, channel, platform, relArchivePath, generateSha256(archivePath))
+	up := updater2.NewAvailableUpdate(version, channel, platform, relArchivePath, generateSha256(archivePath))
 	b, err := json.MarshalIndent(up, "", "    ")
 	if err != nil {
 		return errs.Wrap(err, "Failed to marshal AvailableUpdate information.")
@@ -171,8 +172,10 @@ func run() error {
 
 	platform := *platformFlag
 
+	version := *versionFlag
+
 	targetDir := *outputDirFlag
 	os.MkdirAll(targetDir, 0755)
 
-	return createUpdate(targetDir, branch, platform, installerPath, binaries)
+	return createUpdate(targetDir, branch, version, platform, installerPath, binaries)
 }
