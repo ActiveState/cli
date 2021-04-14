@@ -67,3 +67,14 @@ scripts:
     value: |
       cd cmd/state-svc
       go run github.com/99designs/gqlgen
+  - name: generate-test-update
+    language: bash
+    description: |
+      Generate tests update files.  These can be safely uploaded to s3, and can be used to test an installation/update
+    value: |
+      set -e
+      $constants.SET_ENV
+
+      export TEST_VERSION="${1:-1.0.0}"
+      mkdir -p ./build/test-update
+      go run scripts/update-generator/main.go -b test-channel -v ${TEST_VERSION} -o ./build/test-update $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET $BUILD_TARGET_DIR/$constants.BUILD_SYSTRAY_TARGET $BUILD_TARGET_DIR/$constants.BUILD_TARGET
