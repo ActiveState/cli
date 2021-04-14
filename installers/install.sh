@@ -370,8 +370,6 @@ STATEPATH=$INSTALLDIR/$STATEEXE
 CONFIGDIR=$($STATEPATH "export" "config" "--filter=dir")
 echo "install.sh" > $CONFIGDIR/"installsource.txt"
 
-$STATEPATH _prepare || exit $?
-
 # Check if the installation is in $PATH, if so we also check if the activate
 # flag was passed and attempt to activate the project
 if [ "`dirname \`which $STATEEXE\` 2>/dev/null`" = "$INSTALLDIR" ]; then
