@@ -91,14 +91,18 @@ func copyFileToDir(filePath, dir string, isExecutable bool) error {
 	return nil
 }
 
+func archiveMeta() (archiveMethod archiver.Archiver, ext string) {
+	if runtime.GOOS == "windows" {
+		return archiver.NewZip(), ".zip"
+	}
+	return archiver.NewTarGz(), ".tar.gz"
+}
+
 func createUpdate(targetPath string, channel, version, platform string, installerPath string, binaries []string) error {
 	relChannelPath := filepath.Join(channel, platform)
 	relVersionedPath := filepath.Join(channel, version, platform)
 	os.MkdirAll(filepath.Join(targetPath, relChannelPath), 0755)
 	os.MkdirAll(filepath.Join(targetPath, relVersionedPath), 0755)
-
-	relArchivePath := filepath.Join(relVersionedPath, fmt.Sprintf("state-%s-%s.zip", platform, version))
-	archivePath := filepath.Join(targetPath, relArchivePath)
 
 	// Copy files to a temporary directory that we can create the archive from
 	tempDir, err := ioutil.TempDir("", "cli-update-generator")
@@ -127,11 +131,14 @@ func createUpdate(targetPath string, channel, version, platform string, installe
 		}
 	}
 
+	archive, archiveExt := archiveMeta()
+	relArchivePath := filepath.Join(relVersionedPath, fmt.Sprintf("state-%s-%s%s", platform, version, archiveExt))
+	archivePath := filepath.Join(targetPath, relArchivePath)
+
 	// Remove archive path if it already exists
 	_ = os.Remove(archivePath)
 	// Create main archive
 	fmt.Printf("Creating %s\n", archivePath)
-	archive := archiver.NewZip()
 	err = archive.Archive([]string{tempDir}, archivePath)
 	if err != nil {
 		return errs.Wrap(err, "Archiving failed")
