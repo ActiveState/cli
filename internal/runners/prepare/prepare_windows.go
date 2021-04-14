@@ -10,6 +10,7 @@ import (
 
 	"github.com/ActiveState/cli/cmd/state-tray/pkg/autostart"
 	"github.com/ActiveState/cli/internal/appinfo"
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -24,8 +25,13 @@ func (r *Prepare) prepareOS() error {
 		r.reportError(locale.T("prepare_protocol_warning"), err)
 	}
 
+	cfg, err := config.Get()
+	if err != nil {
+		return locale.WrapError(err, "err_prepare_config", "Could not get config")
+	}
+
 	if !rtutils.BuiltViaCI { // disabled while we're still testing this functionality
-		if err := autostart.New().Enable(); err != nil {
+		if err := autostart.New(cfg).Enable(); err != nil {
 			r.reportError(locale.Tr("err_prepare_autostart", "Could not enable auto-start, error received: {{.V0}}.", err.Error()), err)
 		}
 

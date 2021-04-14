@@ -6,6 +6,7 @@ import (
 
 	"github.com/gobuffalo/packr"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/osutils/shortcut"
@@ -17,7 +18,7 @@ func (a *App) Enable() error {
 	if a.IsEnabled() {
 		return nil
 	}
-	s, err := shortcut.New(startupPath, a.Name, a.Exec)
+	s, err := shortcut.New(StartupPath, a.Name, a.Exec)
 	if err != nil {
 		return errs.Wrap(err, "Could not create shortcut")
 	}
@@ -26,9 +27,9 @@ func (a *App) Enable() error {
 		return errs.Wrap(err, "Could not set icon for shortcut file")
 	}
 
-	err = a.cfg.Set(constants.AutoStartPath)
+	err = a.cfg.Set(constants.AutoStartPath, s.Filepath())
 	if err != nil {
-		return erros.Wrap(err, "Could not set auto start path in config")
+		return errs.Wrap(err, "Could not set auto start path in config")
 	}
 
 	return nil
@@ -38,13 +39,13 @@ func (a *App) Disable() error {
 	if !a.IsEnabled() {
 		return nil
 	}
-	return os.Remove(a.shortcutFilename())
+	return os.Remove(a.ShortcutFilename())
 }
 
 func (a *App) IsEnabled() bool {
-	return fileutils.FileExists(a.shortcutFilename())
+	return fileutils.FileExists(a.ShortcutFilename())
 }
 
-func (a *App) shortcutFilename() string {
-	return filepath.Join(startupPath, a.Name+".lnk")
+func (a *App) ShortcutFilename() string {
+	return filepath.Join(StartupPath, a.Name+".lnk")
 }

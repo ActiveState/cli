@@ -7,7 +7,7 @@ type App struct {
 }
 
 type configable interface {
-	Set(key string) error
+	Set(key string, value interface{}) error
 }
 
 func New(name, exec string, cfg configable) *App {

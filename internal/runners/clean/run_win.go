@@ -12,13 +12,12 @@ import (
 	"github.com/ActiveState/cli/internal/scriptfile"
 )
 
-func removeConfig(cfg configurable) error {
-	return runScript("removeConfig", cfg.ConfigPath())
+func removeConfig(configPath string) error {
+	return runScript("removeDir", configPath)
 }
 
-// TODO: Update this to removeInstallDir
-func removeInstall(installPath string) error {
-	return runScript("removeInstall", installPath)
+func removeInstallDir(dir string) error {
+	return runScript("removeDir", dir)
 }
 
 func runScript(scriptName, path string) error {
@@ -39,15 +38,6 @@ func runScript(scriptName, path string) error {
 }
 
 func removeTrayApp() error {
-	trayAppPath := filepath.Join(autostart.StartupPath)
-	if !fileutils.DirExists(trayAppPath) {
-		return nil
-	}
-
-	err := os.RemoveAll(trayAppPath)
-	if err != nil {
-		return locale.WrapError(err, "err_remove_tray", "Could not remove state tray")
-	}
-
+	// On Windows there is currently no separate app installation dir
 	return nil
 }
