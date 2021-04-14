@@ -7,7 +7,6 @@ import (
 	rt "runtime"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/executor"
 	"github.com/go-openapi/strfmt"
 	"github.com/gobuffalo/packr"
 
@@ -155,22 +154,6 @@ func (d *Deploy) install(rtTarget setup.Targeter) error {
 		return locale.WrapError(err, "deploy_install_failed", "Installation failed.")
 	}
 
-	// Create executors
-	execPath := filepath.Join(rtTarget.Dir(), "exec")
-	if err := fileutils.MkdirUnlessExists(execPath); err != nil {
-		return locale.WrapError(err, "err_deploy_execpath", "Could not create exec directory.")
-	}
-
-	exePaths, err := rti.ExecutablePaths()
-	if err != nil {
-		return locale.WrapError(err, "err_deploy_execpaths", "Could not retrieve runtime executable paths")
-	}
-
-	exec := executor.NewWithBinPath(rtTarget.Dir(), execPath)
-	if err := exec.Update(exePaths); err != nil {
-		return locale.WrapError(err, "err_deploy_executors", "Could not create executors")
-	}
-
 	if rt.GOOS == "windows" {
 		box := packr.NewBox("../../../assets/scripts")
 		contents := box.Bytes("setenv.bat")
@@ -194,16 +177,12 @@ func (d *Deploy) configure(namespace project.Namespaced, rtTarget setup.Targeter
 	}
 
 	venv := virtualenvironment.New(rti)
-	env, err := venv.GetEnv(false, "")
+	env, err := venv.GetEnv(false, true, "")
 	if err != nil {
 		return err
 	}
 
 	d.output.Notice(output.Heading(locale.Tr("deploy_configure_shell", d.subshell.Shell())))
-
-	// Set PATH to our execPath, since our executors will be shimming all our actual runtime executables we don't
-	// want to use the default PATH entry
-	env["PATH"] = filepath.Join(rtTarget.Dir(), "exec")
 
 	err = d.subshell.WriteUserEnv(d.cfg, env, sscommon.Deploy, userScope)
 	if err != nil {
@@ -234,12 +213,6 @@ func (d *Deploy) symlink(rtTarget setup.Targeter, overwrite bool) error {
 		return locale.WrapError(err, "deploy_runtime_err", "Could not initialize runtime")
 	}
 
-	venv := virtualenvironment.New(rti)
-	env, err := venv.GetEnv(false, "")
-	if err != nil {
-		return err
-	}
-
 	var path string
 	if rt.GOOS != "windows" {
 		// Retrieve path to write symlinks to
@@ -249,10 +222,10 @@ func (d *Deploy) symlink(rtTarget setup.Targeter, overwrite bool) error {
 		}
 	}
 
-	// Retrieve artifact binary directory
-	var bins []string
-	if p, ok := env["PATH"]; ok {
-		bins = strings.Split(p, string(os.PathListSeparator))
+	// Retrieve artifact binary directories
+	bins, err := rti.ExecutablePaths()
+	if err != nil {
+		return locale.WrapError(err, "err_symlink_exes", "Could not detect executable paths")
 	}
 
 	exes, err := exeutils.Executables(bins)
@@ -357,7 +330,7 @@ func (d *Deploy) report(rtTarget setup.Targeter) error {
 	}
 
 	venv := virtualenvironment.New(rti)
-	env, err := venv.GetEnv(false, "")
+	env, err := venv.GetEnv(false, true, "")
 	if err != nil {
 		return err
 	}

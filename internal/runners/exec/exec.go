@@ -94,15 +94,16 @@ func (s *Shim) Run(params *Params, args ...string) error {
 	}
 	venv := virtualenvironment.New(rt)
 
-	env, err := venv.GetEnv(true, projectDir)
+	env, err := venv.GetEnv(true, false, projectDir)
 	if err != nil {
-		return err
+		return locale.WrapError(err, "err_exec_env", "Could not retrieve environment information for your runtime")
 	}
+
 	logging.Debug("Trying to shim %s on PATH=%s", args[0], env["PATH"])
 	// Ensure that we are not calling the shim recursively
 	oldval, ok := env[constants.ShimEnvVarName]
 	if ok && oldval == args[0] {
-		return locale.NewError("err_shim_recursive_loop", "Could not resolve shimmed executable {{.V0}}", args[0])
+		return locale.NewError("err_shim_recursive_loop", "Could not resolve executable {{.V0}}", args[0])
 	}
 	env[constants.ShimEnvVarName] = args[0]
 

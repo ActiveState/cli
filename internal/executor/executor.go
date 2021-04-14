@@ -7,7 +7,7 @@ import (
 	rt "runtime"
 	"strings"
 
-	"github.com/ActiveState/cli/pkg/platform/runtime"
+	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 	"github.com/gobuffalo/packr"
 
 	"github.com/ActiveState/cli/internal/appinfo"
@@ -31,8 +31,8 @@ const shimDenoter = "!DO NOT EDIT! State Tool Shim !DO NOT EDIT!"
 const executorTarget = "Target: "
 
 type Executor struct {
-	targetPath string
-	binPath    string
+	targetPath   string // The path of a project or a runtime
+	executorPath string // The location to store the executors
 }
 
 func New(targetPath string) (*Executor, error) {
@@ -43,16 +43,16 @@ func New(targetPath string) (*Executor, error) {
 	return NewWithBinPath(targetPath, binPath), nil
 }
 
-func NewWithBinPath(targetPath, binPath string) *Executor {
-	return &Executor{targetPath, binPath}
+func NewWithBinPath(targetPath, executorPath string) *Executor {
+	return &Executor{targetPath, executorPath}
 }
 
 func (f *Executor) BinPath() string {
-	return f.binPath
+	return f.executorPath
 }
 
-func (f *Executor) Update(exes runtime.ExecutablePaths) error {
-	logging.Debug("Creating executors at %s, exes: %v", f.binPath, exes)
+func (f *Executor) Update(exes envdef.ExecutablePaths) error {
+	logging.Debug("Creating executors at %s, exes: %v", f.executorPath, exes)
 
 	if err := f.Cleanup(exes); err != nil {
 		return errs.Wrap(err, "Could not clean up old executors")
@@ -68,13 +68,13 @@ func (f *Executor) Update(exes runtime.ExecutablePaths) error {
 }
 
 func (f *Executor) Cleanup(keep []string) error {
-	if !fileutils.DirExists(f.binPath) {
+	if !fileutils.DirExists(f.executorPath) {
 		return nil
 	}
 
-	files, err := ioutil.ReadDir(f.binPath)
+	files, err := ioutil.ReadDir(f.executorPath)
 	if err != nil {
-		return errs.Wrap(err, "Could not read dir: %s", f.binPath)
+		return errs.Wrap(err, "Could not read dir: %s", f.executorPath)
 	}
 
 	for _, file := range files {
@@ -86,7 +86,7 @@ func (f *Executor) Cleanup(keep []string) error {
 			continue
 		}
 
-		filePath := filepath.Join(f.binPath, file.Name())
+		filePath := filepath.Join(f.executorPath, file.Name())
 		b, err := fileutils.ReadFile(filePath)
 		if err != nil {
 			return locale.WrapError(err, "err_cleanexecutor_noread", "Could not read potential executor file: {{.V0}}.", file.Name())
@@ -105,7 +105,7 @@ func (f *Executor) Cleanup(keep []string) error {
 
 func (f *Executor) createExecutor(exe string) error {
 	name := NameForExe(filepath.Base(exe))
-	target := filepath.Clean(filepath.Join(f.binPath, name))
+	target := filepath.Clean(filepath.Join(f.executorPath, name))
 
 	logging.Debug("Creating executor for %s at %s", exe, target)
 

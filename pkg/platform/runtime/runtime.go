@@ -2,15 +2,16 @@ package runtime
 
 import (
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
+	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 	"github.com/ActiveState/cli/pkg/platform/runtime/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
@@ -23,8 +24,6 @@ type Runtime struct {
 	model       *model.Model
 	envAccessed bool
 }
-
-type ExecutablePaths []string
 
 // DisabledRuntime is an empty runtime that is only created when constants.DisableRuntime is set to true in the environment
 var DisabledRuntime = &Runtime{}
@@ -101,14 +100,12 @@ func (r *Runtime) Update(msgHandler *events.RuntimeEventHandler) error {
 	return setupErr
 }
 
-// Environ returns a key-value map of the environment variables that need to be set for this runtime
-// inherit includes environment variables set on the system
+// Env returns a key-value map of the environment variables that need to be set for this runtime
+// It's different from Env in that it merges in the current active environment as well as sets up projectDir related
+// environment variables.
 // projectDir is only used for legacy camel builds
-func (r *Runtime) Environ(inherit bool, projectDir string) (map[string]string, error) {
-	if r == DisabledRuntime {
-		return nil, errs.New("Called Environ() on a disabled runtime.")
-	}
-	env, err := r.store.Environ(inherit)
+func (r *Runtime) Env(inherit bool, useExecutors bool) (map[string]string, error) {
+	envDef, err := r.envDef()
 	if !r.envAccessed {
 		if err != nil {
 			analytics.EventWithLabel(analytics.CatRuntime, analytics.ActRuntimeFailure, analytics.LblRtFailEnv)
@@ -117,33 +114,41 @@ func (r *Runtime) Environ(inherit bool, projectDir string) (map[string]string, e
 		}
 		r.envAccessed = true
 	}
-	return injectProjectDir(env, projectDir), err
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not grab environment definitions")
+	}
+
+	env := envDef.GetEnv(inherit)
+
+	if useExecutors {
+		// Override PATH entry with exec path
+		pathEntries := []string{filepath.Join(r.target.Dir(), "exec")}
+		if inherit {
+			pathEntries = append(pathEntries, os.Getenv("PATH"))
+		}
+		env["PATH"] = strings.Join(pathEntries, string(os.PathListSeparator))
+	}
+
+	return env, nil
 }
 
-func (r *Runtime) ExecutablePaths() (ExecutablePaths, error) {
-	env, err := r.Environ(false, "")
+func (r *Runtime) envDef() (*envdef.EnvironmentDefinition, error) {
+	if r == DisabledRuntime {
+		return nil, errs.New("Called envDef() on a disabled runtime.")
+	}
+	env, err := r.store.EnvDef()
+	if err != nil {
+		return nil, errs.Wrap(err, "store.EnvDef failed")
+	}
+	return env, nil
+}
+
+func (r *Runtime) ExecutablePaths() (envdef.ExecutablePaths, error) {
+	env, err := r.envDef()
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not retrieve environment info")
 	}
-
-	// Retrieve artifact binary directory
-	var bins []string
-	if p, ok := env["PATH"]; ok {
-		bins = strings.Split(p, string(os.PathListSeparator))
-	}
-
-	exes, err := exeutils.Executables(bins)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not detect executables")
-	}
-
-	// Remove duplicate executables as per PATH and PATHEXT
-	exes, err = exeutils.UniqueExes(exes, os.Getenv("PATHEXT"))
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not detect unique executables, make sure your PATH and PATHEXT environment variables are properly configured.")
-	}
-
-	return exes, nil
+	return env.ExecutablePaths()
 }
 
 // Artifacts returns a map of artifact information extracted from the recipe

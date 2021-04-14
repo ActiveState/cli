@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/ActiveState/cli/internal/executor"
 	"github.com/gammazero/workerpool"
 	"github.com/go-openapi/strfmt"
 
@@ -194,6 +195,22 @@ func (s *Setup) update() error {
 	edGlobal, err := s.store.UpdateEnviron(buildResult.OrderedArtifacts())
 	if err != nil {
 		return errs.Wrap(err, "Could not save combined environment file")
+	}
+
+	// Create executors
+	execPath := filepath.Join(s.target.Dir(), "exec")
+	if err := fileutils.MkdirUnlessExists(execPath); err != nil {
+		return locale.WrapError(err, "err_deploy_execpath", "Could not create exec directory.")
+	}
+
+	exePaths, err := edGlobal.ExecutablePaths()
+	if err != nil {
+		return locale.WrapError(err, "err_deploy_execpaths", "Could not retrieve runtime executable paths")
+	}
+
+	exec := executor.NewWithBinPath(s.target.Dir(), execPath)
+	if err := exec.Update(exePaths); err != nil {
+		return locale.WrapError(err, "err_deploy_executors", "Could not create executors")
 	}
 
 	// Install PPM Shim if any of the installed artifacts provide the Perl executable

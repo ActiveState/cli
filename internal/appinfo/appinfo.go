@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 )
 
@@ -16,14 +17,14 @@ type AppInfo struct {
 func TrayApp() *AppInfo {
 	return &AppInfo{
 		constants.TrayAppName,
-		filepath.Join(filepath.Dir(os.Args[0]), "state-tray") + osutils.ExeExt,
+		absolute(filepath.Join(filepath.Dir(os.Args[0]), "state-tray") + osutils.ExeExt),
 	}
 }
 
 func StateApp() *AppInfo {
 	return &AppInfo{
 		constants.StateAppName,
-		filepath.Join(filepath.Dir(os.Args[0]), "state") + osutils.ExeExt,
+		absolute(filepath.Join(filepath.Dir(os.Args[0]), "state") + osutils.ExeExt),
 	}
 }
 
@@ -33,4 +34,13 @@ func (a *AppInfo) Name() string {
 
 func (a *AppInfo) Exec() string {
 	return a.executable
+}
+
+func absolute(path string) string {
+	result, err := filepath.Abs(path)
+	if err != nil {
+		logging.Errorf("Could not get absolute path for %s: %v", path, err)
+		return path
+	}
+	return result
 }
