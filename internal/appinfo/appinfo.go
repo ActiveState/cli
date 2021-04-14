@@ -27,6 +27,13 @@ func StateApp() *AppInfo {
 	}
 }
 
+func SvcApp() *AppInfo {
+	return &AppInfo{
+		constants.SvcAppName,
+		filepath.Join(filepath.Dir(os.Args[0]), "state-svc") + osutils.ExeExt,
+	}
+}
+
 func (a *AppInfo) Name() string {
 	return a.name
 }

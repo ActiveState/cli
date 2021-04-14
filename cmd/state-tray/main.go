@@ -9,11 +9,13 @@ import (
 
 	"github.com/ActiveState/cli/cmd/state-tray/internal/menu"
 	"github.com/ActiveState/cli/cmd/state-tray/internal/open"
-	"github.com/ActiveState/cli/cmd/state-tray/internal/startup"
 	"github.com/ActiveState/cli/cmd/state-tray/pkg/autostart"
+	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/exeutils"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -37,9 +39,13 @@ func run() error {
 		logging.CurrentHandler().SetVerbose(true)
 	}
 
-	err := startup.StartStateService()
-	if err != nil {
-		return errs.Wrap(err, "Could not start state service")
+	svcInfo := appinfo.SvcApp()
+	if !fileutils.FileExists(svcInfo.Exec()) {
+		return errs.New("Could not find: %s", svcInfo.Exec())
+	}
+
+	if err := exeutils.ExecuteAndForget(svcInfo.Exec(), "start"); err != nil {
+		return errs.Wrap(err, "Could not start %s", svcInfo.Exec())
 	}
 
 	config, err := config.New()

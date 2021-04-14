@@ -12,6 +12,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/osutils"
 )
 
 // Executables will return all the Executables that need to be symlinked in the various provided bin directories
@@ -105,4 +106,15 @@ func ExecSimpleFromDir(dir, bin string, args ...string) (string, string, error) 
 	}
 
 	return stdout.String(), stderr.String(), nil
+}
+
+// ExecuteAndForget will run the given command in the background, returning immediately.
+func ExecuteAndForget(command string, args ...string) error {
+	cmd := exec.Command(command, args...)
+	cmd.SysProcAttr = osutils.SysProcAttrForBackgroundProcess()
+	if err := cmd.Start(); err != nil {
+		return errs.Wrap(err, "Could not start %s %v", command, args)
+	}
+	cmd.Stdin = nil
+	return nil
 }
