@@ -14,5 +14,5 @@ func (a *App) Disable() error {
 
 func (a *App) IsEnabled() (bool, error) {
 	panic("Not implemented")
-	return false
+	return false, nil
 }
