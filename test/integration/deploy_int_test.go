@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ActiveState/cli/internal/executor"
+	executor2 "github.com/ActiveState/cli/pkg/platform/runtime/executor"
 	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/suite"
 
@@ -121,12 +121,12 @@ func (suite *DeployIntegrationTestSuite) TestDeployPerl() {
 	cp.ExpectExitCode(0)
 
 	// Test that executor exists    and works
-	exec := filepath.Join(ts.Dirs.Work, "exec", executor.NameForExe("perl"))
+	exec := filepath.Join(ts.Dirs.Work, "exec", executor2.NameForExe("perl"))
 	cp = ts.SpawnCmdWithOpts(exec, e2e.WithArgs("--version"))
 	cp.Expect("This is perl 5")
 	cp.ExpectExitCode(0)
 
-	suite.Require().True(executor.IsExecutor(exec))
+	suite.Require().True(executor2.IsExecutor(exec))
 }
 
 func (suite *DeployIntegrationTestSuite) checkSymlink(name string, binDir, workDir string) {

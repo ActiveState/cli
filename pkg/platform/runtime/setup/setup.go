@@ -8,7 +8,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/ActiveState/cli/internal/executor"
+	"github.com/ActiveState/cli/pkg/platform/runtime/executor"
 	"github.com/gammazero/workerpool"
 	"github.com/go-openapi/strfmt"
 
