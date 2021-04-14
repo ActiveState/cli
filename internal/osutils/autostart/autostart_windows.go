@@ -14,7 +14,11 @@ import (
 var startupPath = filepath.Join(os.Getenv("USERPROFILE"), "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "Startup")
 
 func (a *App) Enable() error {
-	if a.IsEnabled() {
+	enabled, err := a.IsEnabled()
+	if err != nil {
+		return errs.Wrap(err, "Could not check if app is enabled")
+	}
+	if enabled {
 		return nil
 	}
 	s, err := shortcut.New(startupPath, a.Name, a.Exec)
