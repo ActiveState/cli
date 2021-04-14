@@ -13,31 +13,32 @@ type AppInfo struct {
 	executable string
 }
 
-func TrayApp() *AppInfo {
+func newAppInfo(name, executableBase string, baseDir ...string) *AppInfo {
+	dir := filepath.Dir(os.Args[0])
+	if len(baseDir) > 0 {
+		dir = baseDir[0]
+	}
 	return &AppInfo{
-		constants.TrayAppName,
-		filepath.Join(filepath.Dir(os.Args[0]), "state-tray") + osutils.ExeExt,
+		name,
+		filepath.Join(dir, executableBase+osutils.ExeExt),
 	}
 }
 
-func StateApp() *AppInfo {
-	return &AppInfo{
-		constants.StateAppName,
-		filepath.Join(filepath.Dir(os.Args[0]), "state") + osutils.ExeExt,
-	}
+func TrayApp(baseDir ...string) *AppInfo {
+	return newAppInfo(constants.TrayAppName, "state-tray", baseDir...)
 }
 
+func StateApp(baseDir ...string) *AppInfo {
+	return newAppInfo(constants.StateAppName, "state", baseDir...)
+}
+
+func SvcApp(baseDir ...string) *AppInfo {
+	return newAppInfo(constants.SvcAppName, "state-svc", baseDir...)
+}
 func (a *AppInfo) Name() string {
 	return a.name
 }
 
 func (a *AppInfo) Exec() string {
 	return a.executable
-}
-
-func SvcApp() *AppInfo {
-	return &AppInfo{
-		constants.SvcAppName,
-		filepath.Join(filepath.Dir(os.Args[0]), "state-svc") + osutils.ExeExt,
-	}
 }
