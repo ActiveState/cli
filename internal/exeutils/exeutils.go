@@ -12,6 +12,8 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils"
 )
 
 // Executables will return all the Executables that need to be symlinked in the various provided bin directories
@@ -105,4 +107,23 @@ func ExecSimpleFromDir(dir, bin string, args ...string) (string, string, error) 
 	}
 
 	return stdout.String(), stderr.String(), nil
+}
+
+// Execute will run the given command and with optional settings for the exec.Cmd struct
+func Execute(command string, arg []string, optSetter func(cmd *exec.Cmd) error) (int, *exec.Cmd, error) {
+	logging.Debug("Executing command: %s, %v", command, arg)
+
+	cmd := exec.Command(command, arg...)
+
+	if optSetter != nil {
+		if err := optSetter(cmd); err != nil {
+			return -1, nil, err
+		}
+	}
+
+	err := cmd.Run()
+	if err != nil {
+		logging.Debug("Executing command returned error: %v", err)
+	}
+	return osutils.CmdExitCode(cmd), cmd, err
 }

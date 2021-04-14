@@ -11,6 +11,7 @@ import (
 
 type configurable interface {
 	GetString(key string) string
+	GetInt(key string) int
 	ConfigPath() string
 	CachePath() string
 	GetStringMapStringSlice(key string) map[string][]string

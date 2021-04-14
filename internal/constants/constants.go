@@ -273,8 +273,14 @@ const SvcConfigPort = "svc-port"
 // SvcConfigPid is the config key used for storing the svc pid
 const SvcConfigPid = "svc-pid"
 
+// TrayConfigPid is the config key used for storing the tray pid
+const TrayConfigPid = "tray-pid"
+
 // TrayAppName is the name we give our systray application
 const TrayAppName = "ActiveState Platform"
+
+// SvcAppName is the name we give our state-svc application
+const SvcAppName = "State Service"
 
 // StateAppName is the name we give our state cli executable
 const StateAppName = "State Tool"

@@ -41,6 +41,16 @@ func run() error {
 		logging.CurrentHandler().SetVerbose(true)
 	}
 
+	config, err := config.Get()
+	if err != nil {
+		return errs.Wrap(err, "Could not get new config instance")
+	}
+
+	err = config.Set(constants.TrayConfigPid, os.Getpid())
+	if err != nil {
+		return errs.Wrap(err, "Could not save pid")
+	}
+
 	stateSvcExe := filepath.Join(filepath.Dir(os.Args[0]), "state-svc")
 	if runtime.GOOS == "windows" {
 		stateSvcExe = stateSvcExe + ".exe"
@@ -53,11 +63,6 @@ func run() error {
 	cmd.SysProcAttr = &syscall.SysProcAttr{CreationFlags: 0x08000000} // CREATE_NO_WINDOW
 	if err := cmd.Start(); err != nil {
 		return errs.Wrap(err, "Could not start %s", stateSvcExe)
-	}
-
-	config, err := config.Get()
-	if err != nil {
-		return errs.Wrap(err, "Could not get new config instance")
 	}
 
 	model, err := model.NewSvcModel(context.Background(), config)
