@@ -13,7 +13,6 @@ Flags:
  -n                              Don't prompt for anything when installing into a new location
  -f                              Forces overwrite.  Overwrite existing State Tool
  -t <dir>                        Install into target directory <dir>
- -e <file>                        Default 'state'. Filename to use for the executable
  -c <comand>                     Run any command after the install script has completed
  --activate <project>            Activate a project when State Tool is correctly installed
  --activate-default <project>    Activate a project and make it the system default
@@ -165,9 +164,6 @@ while getopts "nb:t:e:c:f?h-:" opt; do
     ;;
   f)
     FORCEOVERWRITE=true
-    ;;
-  e)
-    STATEEXE=$OPTARG
     ;;
   n)
     NOPROMPT=true
