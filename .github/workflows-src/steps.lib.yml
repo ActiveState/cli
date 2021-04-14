@@ -10,10 +10,21 @@ shell: bash
 run: state run build-svc
 #@ end
 ---
+#@ def steps_build_tray_linux():
+name: Build Tray App (linux)
+shell: bash
+if: runner.os == 'Linux'
+run: |
+  sudo apt-get install libgtk-3-dev libappindicator3-dev -y
+  state run build-tray
+#@ end
+---
 #@ def steps_build_tray():
 name: Build Tray App
 shell: bash
-run: state run build-tray
+if: runner.os != 'Linux'
+run: |
+  state run build-tray
 #@ end
 ---
 #@ def steps_build_installer():
@@ -65,7 +76,13 @@ run: |
   export PATH=/c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/:/c/Program\ Files\ \(x86\)/Windows\ Kits/10/bin/10.0.16299.0/x86/:$PATH
 
   signtool.exe sign -d "ActiveState State Tool" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state.exe 
-  signtool.exe sign -d "ActiveState State Tool (32bit)" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state32.exe 
+  signtool.exe sign -d "ActiveState State Service" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-svc.exe 
+  signtool.exe sign -d "ActiveState State Tray" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-tray.exe 
+  signtool.exe sign -d "ActiveState State Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-installer.exe 
+  signtool.exe sign -d "ActiveState State Tool (32bit)" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/386/state.exe 
+  signtool.exe sign -d "ActiveState State Service (32bit)" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/386/state-svc.exe 
+  signtool.exe sign -d "ActiveState State Tray (32bit)" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/386/state-tray.exe 
+  signtool.exe sign -d "ActiveState State Installer (32bit)" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/386/state-installer.exe 
 env:
   CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
   MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
@@ -93,7 +110,7 @@ run: state run generate-update
 name: "Generate Update (32bit)"
 shell: bash
 if: runner.os == 'Windows'
-run: state run generate-update-32bit
+run: GOARCH=386 state run generate-update
 #@ end
 ---
 #@ def steps_installgo():
