@@ -129,7 +129,7 @@ scripts:
       set -e
       $constants.SET_ENV
 
-      go run scripts/s3-deployer/main.go ${BUILD_TARGET_DIR}/update us-east-1 state-tool update/state
+      go run scripts/s3-deployer/main.go ${constants.BUILD_TARGET_DIR}/update us-east-1 state-tool update/state
   - name: build-install-scripts
     language: bash
     standalone: true
