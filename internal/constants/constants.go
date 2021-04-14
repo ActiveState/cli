@@ -279,8 +279,5 @@ const TrayAppName = "ActiveState Platform"
 // SvcAppName is the name we give our state-svc application
 const SvcAppName = "State Service"
 
-// LaunchFileMacOS is the .plist file that holds the auto launch information on MacOS
-const LaunchFileMacOS = "com.activestate.platform.state-tray.plist"
-
 // StateAppName is the name we give our state cli executable
 const StateAppName = "State Tool"

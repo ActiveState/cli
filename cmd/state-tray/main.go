@@ -90,7 +90,11 @@ func run() error {
 
 	systray.AddSeparator()
 	mAutoStart := systray.AddMenuItem(locale.Tl("tray_autostart", "Start on Login"), "")
-	if autostart.New().IsEnabled() {
+	enabled, err := autostart.New().IsEnabled()
+	if err != nil {
+		return errs.Wrap(err, "Could not check if app autostart is enabled")
+	}
+	if enabled {
 		mAutoStart.Check()
 	}
 	systray.AddSeparator()
