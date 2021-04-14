@@ -43,6 +43,10 @@ func (c *configMock) GetStringMapStringSlice(key string) map[string][]string {
 	return map[string][]string{}
 }
 
+func (c *configMock) GetInt(key string) int {
+	return 0
+}
+
 func (c *configMock) CachePath() string {
 	if c.cachePath != "" {
 		return c.cachePath
