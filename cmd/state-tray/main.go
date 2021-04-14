@@ -153,7 +153,11 @@ func run() error {
 			logging.Debug("Autostart event")
 			as := autostart.New()
 			var err error
-			if as.IsEnabled() {
+			enabled, err := as.IsEnabled()
+			if err != nil {
+				logging.Error("Could not check if autostart is enabled: %v", err)
+			}
+			if enabled {
 				logging.Debug("Disable")
 				err = as.Disable()
 				if err == nil {
