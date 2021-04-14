@@ -84,6 +84,8 @@ func copyFileToDir(filePath, dir string, isExecutable bool) error {
 		return errs.Wrap(err, "Could not stat target file %s", targetPath)
 	}
 	permissions.SetUserExecute(true)
+	permissions.SetGroupExecute(true)
+	permissions.SetOtherExecute(true)
 	err = permbits.Chmod(targetPath, permissions)
 	if err != nil {
 		return errs.Wrap(err, "Could not make file executable")
