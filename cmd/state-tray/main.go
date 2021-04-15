@@ -4,18 +4,23 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/exec"
+	"path/filepath"
+	"runtime"
+	"syscall"
+	"time"
 
 	"github.com/getlantern/systray"
 	"github.com/gobuffalo/packr"
+	"github.com/rollbar/rollbar-go"
 
 	"github.com/ActiveState/cli/cmd/state-tray/internal/menu"
 	"github.com/ActiveState/cli/cmd/state-tray/internal/open"
 	"github.com/ActiveState/cli/cmd/state-tray/pkg/autostart"
-	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/exeutils"
+	"github.com/ActiveState/cli/internal/events"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -27,12 +32,16 @@ func main() {
 }
 
 func onReady() {
+	var exitCode int
+	logging.SetupRollbar(constants.StateTrayRollbarToken)
+	defer exit(exitCode)
+
 	err := run()
 	if err != nil {
-		msg := fmt.Sprintf("Systray encountered an error: %v", errs.Join(err, ": "))
-		logging.Error(msg)
-		fmt.Fprintln(os.Stderr, msg)
-		os.Exit(1)
+		errMsg := errs.Join(err, ": ").Error()
+		logging.Error("Systray encountered an error: %v", errMsg)
+		fmt.Fprintln(os.Stderr, errMsg)
+		exitCode = 1
 	}
 }
 
@@ -42,22 +51,18 @@ func run() error {
 		logging.CurrentHandler().SetVerbose(true)
 	}
 
-	cfg, err := config.New()
-	if err != nil {
-		return errs.Wrap(err, "Could not initialize config")
+	stateSvcExe := filepath.Join(filepath.Dir(os.Args[0]), "state-svc")
+	if runtime.GOOS == "windows" {
+		stateSvcExe = stateSvcExe + ".exe"
 	}
-	if err := cfg.Set(config.ConfigKeyTrayPid, os.Getpid()); err != nil {
-		return errs.Wrap(err, "Could not save pid")
-	}
-
-	svcInfo := appinfo.SvcApp()
-
-	if !fileutils.FileExists(svcInfo.Exec()) {
-		return errs.New("Could not find: %s", svcInfo.Exec())
+	if !fileutils.FileExists(stateSvcExe) {
+		return errs.New("Could not find: %s", stateSvcExe)
 	}
 
-	if _, err := exeutils.ExecuteAndForget(svcInfo.Exec(), "start"); err != nil {
-		return errs.Wrap(err, "Could not start %s", svcInfo.Exec())
+	cmd := exec.Command(stateSvcExe, "start")
+	cmd.SysProcAttr = &syscall.SysProcAttr{CreationFlags: 0x08000000} // CREATE_NO_WINDOW
+	if err := cmd.Start(); err != nil {
+		return errs.Wrap(err, "Could not start %s", stateSvcExe)
 	}
 
 	config, err := config.Get()
@@ -188,4 +193,9 @@ func run() error {
 
 func onExit() {
 	// Not implemented
+}
+
+func exit(code int) {
+	events.WaitForEvents(1*time.Second, rollbar.Close)
+	os.Exit(code)
 }
