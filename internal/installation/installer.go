@@ -2,6 +2,7 @@ package installation
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path"
 	"path/filepath"
@@ -39,4 +40,8 @@ func StopTrayApp(cfg *config.Instance) error {
 	}
 
 	return nil
+}
+
+func LogfilePath(configPath string, pid int) string {
+	return filepath.Join(configPath, fmt.Sprintf("state-installer-%d.log", pid))
 }

@@ -2,7 +2,6 @@ package installer_test
 
 import (
 	"bytes"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -17,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/exeutils"
+	"github.com/ActiveState/cli/internal/installation"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -229,7 +229,7 @@ func TestAutoUpdate(t *testing.T) {
 
 			cfg, err := config.Get()
 			require.NoError(t, err)
-			logFile := filepath.Join(cfg.ConfigPath(), fmt.Sprintf("state-installer-%d.log", pid))
+			logFile := installation.LogfilePath(cfg.ConfigPath(), int(pid))
 
 			// poll for successful auto-update
 			for i := 0; i < 20; i++ {

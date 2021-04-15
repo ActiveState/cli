@@ -60,7 +60,7 @@ func (u *Update) Run(params *Params) error {
 		return nil
 	}
 
-	u.out.Print(locale.Tl("version_updating_deferred", "Version updating to {{.V0}}@{{.V1}} in the background.", up.Channel, up.Version))
+	u.out.Print(locale.Tl("version_updating_deferred", "Version updating to {{.V0}}@{{.V1}} in the background.\nRefer to logfile {{.V2}} for progress.", up.Channel, up.Version, up.Logfile))
 	return nil
 }
 

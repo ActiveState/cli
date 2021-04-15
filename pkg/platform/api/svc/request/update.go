@@ -17,6 +17,7 @@ func (u *UpdateRequest) Query() string {
 		update(channel: $c, version: $v) {
 			channel
 			version
+			logfile
 		}
 	}`
 }

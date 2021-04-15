@@ -33,25 +33,30 @@ func NewAvailableUpdate(version, channel, platform, path, sha256 string) *Availa
 const InstallerName = "state-installer" + osutils.ExeExt
 
 // InstallDeferred will fetch the update and run its installer in a deferred process
-func (u *AvailableUpdate) InstallDeferred(configPath string) error {
+func (u *AvailableUpdate) InstallDeferred(configPath string) (int, error) {
 	tmpDir, err := ioutil.TempDir("", "state-update")
 	if err != nil {
-		return errs.Wrap(err, "Could not create temp dir")
+		return 0, errs.Wrap(err, "Could not create temp dir")
 	}
 
 	if err := NewFetcher().Fetch(u, tmpDir); err != nil {
-		return errs.Wrap(err, "Could not download and unpack update")
+		return 0, errs.Wrap(err, "Could not download and unpack update")
 	}
 
-	if !fileutils.FileExists(filepath.Join(tmpDir, InstallerName)) {
-		return errs.Wrap(err, "Downloaded update does not have installer")
+	installerPath := filepath.Join(tmpDir, InstallerName)
+	if !fileutils.FileExists(installerPath) {
+		return 0, errs.Wrap(err, "Downloaded update does not have installer")
 	}
 
 	installTargetPath := filepath.Dir(os.Args[0])
-	_, err = exeutils.ExecuteAndForget(installerPath, installTargetPath)
+	proc, err := exeutils.ExecuteAndForget(installerPath, installTargetPath)
 	if err != nil {
-		return errs.Wrap(err, "Could not start installer")
+		return 0, errs.Wrap(err, "Could not start installer")
 	}
 
-	return nil
+	if proc == nil {
+		return 0, errs.Wrap(err, "Could not obtain process information for installer")
+	}
+
+	return proc.Pid, nil
 }

@@ -5,6 +5,7 @@ package graph
 type DeferredUpdate struct {
 	Channel string `json:"channel"`
 	Version string `json:"version"`
+	Logfile string `json:"logfile"`
 }
 
 type Project struct {
