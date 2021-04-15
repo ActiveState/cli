@@ -83,7 +83,7 @@ func initTempInstallDirs(t *testing.T, withAutoInstall bool) (string, string) {
 	toDir, err := ioutil.TempDir("", "to*")
 	require.NoError(t, err)
 	for _, df := range []string{otherTestFile, stateToolTestFile} {
-		// populate from dir with a file that is going to be installed
+		// populate fromDir with a file that is going to be installed
 		err = ioutil.WriteFile(filepath.Join(fromDir, df), updatedTestFileContent, 0775)
 		require.NoError(t, err, "Failed to write test file %s", df)
 
@@ -109,7 +109,7 @@ func assertSuccessfulInstallation(t *testing.T, toDir string) {
 		}
 		info, err := os.Stat(fp)
 		require.NoError(t, err)
-		assert.Equal(t, "-rwxrwxr-x", info.Mode().String())
+		assert.Equal(t, "rwx", info.Mode().String()[1:4])
 	}
 }
 
