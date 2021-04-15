@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -65,9 +66,8 @@ func (suite *UpdateIntegrationTestSuite) AfterTest(suiteName, testName string) {
 
 func (suite *UpdateIntegrationTestSuite) env(disableUpdates bool) []string {
 	env := []string{
-		"_TEST_UPDATE_URL=http://localhost:" + testPort,
+		fmt.Sprintf("_TEST_UPDATE_URL=http://localhost:%s/", testPort),
 		"ACTIVESTATE_CLI_AUTO_UPDATE_TIMEOUT=10",
-		"ACTIVESTATE_CLI_UPDATE_BRANCH=" + targetBranch,
 	}
 
 	if disableUpdates {
@@ -203,6 +203,19 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateLock() {
 	suite.versionCompare(ts, false, constants.Version, suite.Equal)
 }
 
+func (suite *UpdateIntegrationTestSuite) pollForUpdateInBackground(logFile string) {
+	// poll for successful auto-update
+	for i := 0; i < 20; i++ {
+		time.Sleep(time.Millisecond * 200)
+
+		logs, err := ioutil.ReadFile(logFile)
+		suite.NoError(err)
+		if strings.Contains(string(logs), "was successful") || strings.Contains(string(logs), "Installation failed") {
+			break
+		}
+	}
+}
+
 func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 	suite.OnlyRunForTags(tagsuite.Update, tagsuite.Critical)
 	ts := e2e.New(suite.T(), true)
@@ -211,22 +224,21 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 	// Ensure we always use a unique exe for updates
 	ts.UseDistinctStateExes()
 
-	cp := ts.SpawnCmd(ts.SvcExe, "start")
+	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"), e2e.AppendEnv(suite.env(false)...))
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("update"), e2e.AppendEnv(suite.env(false)...))
-	cp.Expect("Updating state tool to latest version available")
+	cp.Expect("Updating State Tool to latest version available")
 	cp.Expect(fmt.Sprintf("Version updating to %s@99.99.9999 in the background", constants.BranchName))
 	cp.ExpectExitCode(0)
 
-	regex := regexp.MustCompile(`\d+\.\d+\.\d+-(SHA)?[a-f0-9]+`)
-	resultVersions := regex.FindAllString(cp.TrimmedSnapshot(), -1)
+	regex := regexp.MustCompile(`Refer to logfile (.*) for progress.`)
+	resultLogfile := regex.FindStringSubmatch(cp.TrimmedSnapshot())
 
-	suite.GreaterOrEqual(len(resultVersions), 1,
-		fmt.Sprintf("Must have more than 0 matches (the first one being the 'Updating from X to Y' message, matched versions: %v, output:\n\n%s", resultVersions, cp.Snapshot()),
-	)
+	fmt.Printf("%v\n", resultLogfile)
+	suite.Equal(len(resultLogfile), 2, "expected to have logfile in output.")
 
-	suite.NotEqual(constants.Version, resultVersions[len(resultVersions)-1], fmt.Sprintf("Expected to update to a new a new version:\n\n%s", cp.Snapshot()))
+	suite.pollForUpdateInBackground(resultLogfile[1])
 
 	suite.versionCompare(ts, true, constants.Version, suite.NotEqual)
 }
