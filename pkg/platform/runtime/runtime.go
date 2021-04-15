@@ -105,6 +105,8 @@ func (r *Runtime) Update(msgHandler *events.RuntimeEventHandler) error {
 // environment variables.
 // projectDir is only used for legacy camel builds
 func (r *Runtime) Env(inherit bool, useExecutors bool) (map[string]string, error) {
+	logging.Debug("Getting runtime env, inherit: %v, useExec: %v", inherit, useExecutors)
+	
 	envDef, err := r.envDef()
 	if !r.envAccessed {
 		if err != nil {
