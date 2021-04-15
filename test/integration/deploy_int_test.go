@@ -185,6 +185,8 @@ func (suite *DeployIntegrationTestSuite) TestDeployPython() {
 		cp.SendLine("which python3")
 		cp.Expect(filepath.Join("target", "exec"))
 		cp.SendLine("cat $(which python3)")
+		fmt.Println(cp.Snapshot())
+		cp.SendLine("echo $PATH")
 	}
 
 	cp.SendLine("VERBOSE=true python3 --version")
