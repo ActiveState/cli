@@ -44,6 +44,7 @@ func newExecCommand(prime *primer.Values, args ...string) *captain.Command {
 	}
 
 	cmd.SetGroup(EnvironmentGroup)
+	cmd.SetAliases("shim")
 
 	return cmd
 }
