@@ -232,7 +232,7 @@ echo "$CONSENT_TEXT" | fold -s -w $WIDTH
 # Construct system-dependent filenames.
 STATEJSON=$OS-$ARCH/info.json
 STATEPKG=$OS-$ARCH$DOWNLOADEXT
-TMPEXE="state-installer"
+TMPEXE="state-install/state-installer"$BINARYEXT
 
 info "${PREFIX}Preparing for installation...${SUFFIX}"
 
@@ -282,7 +282,7 @@ fetchArtifact () {
     TMPDIRW=$(echo $(cd $TMPDIR && pwd -W) | sed 's|/|\\|g')
     powershell -command "& {&'Expand-Archive' -Force '$TMPDIRW\\$STATEPKG' '$TMPDIRW'}"
   else
-    tar --strip-components=1 -xzf $TMPDIR/$STATEPKG -C $TMPDIR || exit 1
+    tar -xzf $TMPDIR/$STATEPKG -C $TMPDIR || exit 1
   fi
   chmod +x $TMPDIR/$TMPEXE
 }

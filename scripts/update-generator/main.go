@@ -113,6 +113,9 @@ func createUpdate(targetPath string, channel, version, platform string, installe
 	}
 	defer os.RemoveAll(tempDir)
 
+	// Todo The archiver package we are using, creates an archive with a toplevel directory, so we need to give it a deterministic name ("root")
+	tempDir = filepath.Join(tempDir, constants.ToplevelInstallArchiveDir)
+
 	// copy installer to temp dir
 	err = copyFileToDir(installerPath, tempDir, true)
 	if err != nil {
